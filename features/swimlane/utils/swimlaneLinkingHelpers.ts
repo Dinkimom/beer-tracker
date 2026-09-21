@@ -8,6 +8,10 @@ import {
 import { positionToEndCell, positionToStartCell } from '@/features/sprint/utils/occupancyUtils';
 import { getSwimlaneCardRadiusClass } from '@/features/task/components/TaskCard/taskCardLayoutHelpers';
 import { isSwimlaneImageTask, isSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
+import {
+  plannerLinkEndpointAliases,
+  rewritePlannerLinkEndpoint,
+} from '@/lib/planner/plannerLinkEndpoint';
 
 /** Черновики quick-add нельзя сохранять в task_links. */
 function isUnsavedSwimlaneLinkEndpoint(taskId: string): boolean {
@@ -145,26 +149,143 @@ export function filterTaskLinksByKnownTaskIds<T extends { fromTaskId: string; to
   knownTaskIds: { has: (id: string) => boolean }
 ): T[] {
   return links.filter(
-    (link) => knownTaskIds.has(link.fromTaskId) && knownTaskIds.has(link.toTaskId)
+    (link) =>
+      knownPlannerLinkEndpoint(knownTaskIds, link.fromTaskId) &&
+      knownPlannerLinkEndpoint(knownTaskIds, link.toTaskId)
   );
+}
+
+function knownPlannerLinkEndpoint(
+  knownTaskIds: { has: (id: string) => boolean },
+  taskId: string
+): boolean {
+  return plannerLinkEndpointAliases(taskId).some((id) => knownTaskIds.has(id));
+}
+
+function linkTouchesPlannerTaskId(
+  link: { fromTaskId: string; toTaskId: string },
+  taskId: string
+): boolean {
+  const aliases = new Set(plannerLinkEndpointAliases(taskId));
+  return aliases.has(link.fromTaskId) || aliases.has(link.toTaskId);
 }
 
 export function selectTaskLinksTouchingId<T extends { fromTaskId: string; id: string; toTaskId: string }>(
   links: readonly T[],
   taskId: string
 ): T[] {
-  return links.filter((link) => link.fromTaskId === taskId || link.toTaskId === taskId);
+  return links.filter((link) => linkTouchesPlannerTaskId(link, taskId));
 }
 
 export function excludeTaskLinksTouchingId<T extends { fromTaskId: string; toTaskId: string }>(
   links: readonly T[],
   taskId: string
 ): T[] {
-  return links.filter((link) => link.fromTaskId !== taskId && link.toTaskId !== taskId);
+  return links.filter((link) => !linkTouchesPlannerTaskId(link, taskId));
+}
+
+function plannerLinkPairKey(fromTaskId: string, toTaskId: string): string {
+  return `${fromTaskId}\0${toTaskId}`;
+}
+
+function rewriteTaskLinkEndpoints<T extends { fromTaskId: string; toTaskId: string }>(
+  link: T,
+  fromTaskId: string,
+  toTaskId: string
+): T {
+  const nextFrom = rewritePlannerLinkEndpoint(link.fromTaskId, fromTaskId, toTaskId);
+  const nextTo = rewritePlannerLinkEndpoint(link.toTaskId, fromTaskId, toTaskId);
+  if (nextFrom === link.fromTaskId && nextTo === link.toTaskId) {
+    return link;
+  }
+  return { ...link, fromTaskId: nextFrom, toTaskId: nextTo };
+}
+
+function shouldDropRetargetedLink(
+  fromTaskId: string,
+  toTaskId: string,
+  existingPairs: ReadonlySet<string>
+): boolean {
+  return fromTaskId === toTaskId || existingPairs.has(plannerLinkPairKey(fromTaskId, toTaskId));
+}
+
+/** Move arrows from a note/task id onto another card; new ids so the old rows can be deleted. */
+export function retargetTaskLinksToEndpoint<
+  T extends { fromTaskId: string; id: string; toTaskId: string },
+>(
+  links: readonly T[],
+  fromTaskId: string,
+  toTaskId: string,
+  nextLinkId: (link: T) => string = () => buildSwimlaneLinkId()
+): {
+  dropped: T[];
+  nextLinks: T[];
+  replaced: Array<{ next: T; previous: T }>;
+} {
+  if (fromTaskId === toTaskId) {
+    return { dropped: [], nextLinks: [...links], replaced: [] };
+  }
+  const dropped: T[] = [];
+  const nextLinks: T[] = [];
+  const replaced: Array<{ next: T; previous: T }> = [];
+  const existingPairs = new Set(
+    links.map((link) => plannerLinkPairKey(link.fromTaskId, link.toTaskId))
+  );
+  for (const link of links) {
+    const rewritten = rewriteTaskLinkEndpoints(link, fromTaskId, toTaskId);
+    if (rewritten === link) {
+      nextLinks.push(link);
+      continue;
+    }
+    if (shouldDropRetargetedLink(rewritten.fromTaskId, rewritten.toTaskId, existingPairs)) {
+      dropped.push(link);
+      continue;
+    }
+    existingPairs.add(plannerLinkPairKey(rewritten.fromTaskId, rewritten.toTaskId));
+    const next = { ...rewritten, id: nextLinkId(link) };
+    replaced.push({ next, previous: link });
+    nextLinks.push(next);
+  }
+  return { dropped, nextLinks, replaced };
 }
 
 export function buildSwimlaneLinkId(): string {
   return `link-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+interface PlannerTaskLink {
+  fromTaskId: string;
+  id: string;
+  toTaskId: string;
+}
+
+export async function persistRetargetedTaskLinks(input: {
+  fromTaskId: string;
+  taskLinks: PlannerTaskLink[];
+  toTaskId: string;
+  deleteLink: (linkId: string) => Promise<void>;
+  saveLink: (link: PlannerTaskLink) => Promise<void>;
+  setTaskLinks: (updater: (prev: PlannerTaskLink[]) => PlannerTaskLink[]) => void;
+}): Promise<void> {
+  const result = retargetTaskLinksToEndpoint(input.taskLinks, input.fromTaskId, input.toTaskId);
+  if (result.dropped.length === 0 && result.replaced.length === 0) {
+    return;
+  }
+  input.setTaskLinks(() => result.nextLinks);
+  const persist = [
+    ...result.dropped.map((link) => input.deleteLink(link.id)),
+    ...result.replaced.flatMap(({ next, previous }) => [
+      input.deleteLink(previous.id),
+      input.saveLink(next),
+    ]),
+  ];
+  await Promise.all(
+    persist.map((operation) =>
+      operation.catch((error: unknown) => {
+        console.error('Error retargeting planner link:', error);
+      })
+    )
+  );
 }
 
 /** DOM-якорь курсора для превью рисуемой связи. */

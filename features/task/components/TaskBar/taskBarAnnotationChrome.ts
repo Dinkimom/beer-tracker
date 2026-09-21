@@ -1,22 +1,25 @@
 export function resolveTaskBarAnnotationChrome(input: {
   effectiveIsDragging: boolean;
+  hasCommentApprove?: boolean;
+  hasCommentDelete: boolean;
+  hasImageDelete: boolean;
   inlineTitleEditor?: unknown;
   isDiagramCard?: boolean;
   isLinkingSession?: boolean;
+  isLocalTask?: boolean;
   isPhotoCard: boolean;
   isResizing: boolean;
   isStickyNoteCard: boolean;
+  pendingApproval?: boolean;
+  presenceLocked?: boolean;
   quickAddMenu: unknown;
   quickAddSubmitting: boolean;
   swimlaneCommentId: string | null;
-  hasCommentDelete: boolean;
-  hasImageDelete: boolean;
-  isLocalTask?: boolean;
-  presenceLocked?: boolean;
 }): {
   showCommentDelete: boolean;
   showDraftNoteDelete: boolean;
   showImageDelete: boolean;
+  showPendingApprovalToolbar: boolean;
   showStickyNotePin: boolean;
   showStickyNoteReactions: boolean;
 } {
@@ -24,6 +27,7 @@ export function resolveTaskBarAnnotationChrome(input: {
     !input.effectiveIsDragging && !input.isResizing && !input.quickAddSubmitting;
   const chromeMutable = chromeIdle && !input.presenceLocked && !input.isLinkingSession;
   const chromeOverlay = Boolean(input.quickAddMenu) || Boolean(input.inlineTitleEditor);
+  const pendingApproval = input.pendingApproval === true;
   const showSavedAnnotationReactions =
     input.swimlaneCommentId != null &&
     (input.isStickyNoteCard || input.isPhotoCard || input.isDiagramCard === true);
@@ -32,7 +36,8 @@ export function resolveTaskBarAnnotationChrome(input: {
       input.swimlaneCommentId != null &&
       input.hasCommentDelete &&
       chromeMutable &&
-      !chromeOverlay,
+      !chromeOverlay &&
+      !pendingApproval,
     showDraftNoteDelete:
       input.isStickyNoteCard &&
       input.isLocalTask === true &&
@@ -47,9 +52,23 @@ export function resolveTaskBarAnnotationChrome(input: {
       input.hasImageDelete &&
       chromeMutable &&
       !chromeOverlay,
-    showStickyNotePin: input.isStickyNoteCard && !input.effectiveIsDragging && !input.quickAddSubmitting,
+    showPendingApprovalToolbar:
+      pendingApproval &&
+      input.swimlaneCommentId != null &&
+      (input.hasCommentApprove === true || input.hasCommentDelete) &&
+      chromeIdle &&
+      !input.isLinkingSession,
+    showStickyNotePin:
+      input.isStickyNoteCard &&
+      !input.effectiveIsDragging &&
+      !input.quickAddSubmitting &&
+      !pendingApproval,
     showStickyNoteReactions:
-      showSavedAnnotationReactions && chromeIdle && !chromeOverlay && !input.isLinkingSession,
+      showSavedAnnotationReactions &&
+      chromeIdle &&
+      !chromeOverlay &&
+      !input.isLinkingSession &&
+      !pendingApproval,
   };
 }
 

@@ -8,6 +8,10 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useRootStore } from '@/lib/layers';
 
 import { formatPlannerHistoryShortcutHint } from './plannerHistoryKeyboard';
+import {
+  formatPlannerShortcutAria,
+  PlannerShortcutTooltip,
+} from './PlannerShortcutTooltip';
 import { usePlannerHistoryKeyboardShortcuts } from './usePlannerHistoryKeyboardShortcuts';
 
 interface PlannerHistoryControlsProps {
@@ -28,12 +32,10 @@ export const PlannerHistoryControls = observer(function PlannerHistoryControls({
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
   const keyboardEnabled = sprintPlannerUi.diagramEditorTaskId == null;
-  const undoTitle = t('sprintPlanner.controls.undoPlanChange', {
-    shortcut: formatPlannerHistoryShortcutHint('undo'),
-  });
-  const redoTitle = t('sprintPlanner.controls.redoPlanChange', {
-    shortcut: formatPlannerHistoryShortcutHint('redo'),
-  });
+  const undoLabel = t('sprintPlanner.controls.undoPlanChange');
+  const redoLabel = t('sprintPlanner.controls.redoPlanChange');
+  const undoShortcut = formatPlannerHistoryShortcutHint('undo');
+  const redoShortcut = formatPlannerHistoryShortcutHint('redo');
 
   usePlannerHistoryKeyboardShortcuts(keyboardEnabled);
 
@@ -41,28 +43,34 @@ export const PlannerHistoryControls = observer(function PlannerHistoryControls({
     <div
       className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white/90 p-1 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/90 ${className}`}
     >
-      <Button
-        aria-label={undoTitle}
-        className="!min-h-0 !px-2 !py-1.5 text-gray-600 hover:!text-gray-900 dark:text-gray-300 dark:hover:!text-white"
-        disabled={!canUndo}
-        title={undoTitle}
-        type="button"
-        variant="ghost"
-        onClick={onUndo}
-      >
-        <Icon className="h-4 w-4" name="undo" />
-      </Button>
-      <Button
-        aria-label={redoTitle}
-        className="!min-h-0 !px-2 !py-1.5 text-gray-600 hover:!text-gray-900 dark:text-gray-300 dark:hover:!text-white"
-        disabled={!canRedo}
-        title={redoTitle}
-        type="button"
-        variant="ghost"
-        onClick={onRedo}
-      >
-        <Icon className="h-4 w-4" name="redo" />
-      </Button>
+      <PlannerShortcutTooltip label={undoLabel} shortcut={undoShortcut} side="bottom">
+        <span className="inline-flex">
+          <Button
+            aria-label={formatPlannerShortcutAria(undoLabel, undoShortcut)}
+            className="!min-h-0 !px-2 !py-1.5 text-gray-600 hover:!text-gray-900 dark:text-gray-300 dark:hover:!text-white"
+            disabled={!canUndo}
+            type="button"
+            variant="ghost"
+            onClick={onUndo}
+          >
+            <Icon className="h-4 w-4" name="undo" />
+          </Button>
+        </span>
+      </PlannerShortcutTooltip>
+      <PlannerShortcutTooltip label={redoLabel} shortcut={redoShortcut} side="bottom">
+        <span className="inline-flex">
+          <Button
+            aria-label={formatPlannerShortcutAria(redoLabel, redoShortcut)}
+            className="!min-h-0 !px-2 !py-1.5 text-gray-600 hover:!text-gray-900 dark:text-gray-300 dark:hover:!text-white"
+            disabled={!canRedo}
+            type="button"
+            variant="ghost"
+            onClick={onRedo}
+          >
+            <Icon className="h-4 w-4" name="redo" />
+          </Button>
+        </span>
+      </PlannerShortcutTooltip>
     </div>
   );
 });

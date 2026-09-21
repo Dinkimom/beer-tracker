@@ -2,6 +2,11 @@ import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarter
 
 import { PARTS_PER_DAY } from '@/constants';
 import { extractExcalidrawSceneText } from '@/lib/comments/excalidrawSceneText';
+import {
+  commentIdSetFromRecords,
+  resolvePlannerLinkEndpoints,
+  toPlannerCommentTaskId,
+} from '@/lib/planner/plannerLinkEndpoint';
 import { listBoardAvailabilityEvents } from '@/lib/quarterlyPlans';
 import { listSprintGoals } from '@/lib/sprintGoals';
 import { fetchFeatureLanes } from '@/lib/sprints/featureLanesRepository';
@@ -9,6 +14,7 @@ import { getSprintCommentDiagramScene } from '@/lib/sprints/sprintCommentDiagram
 import { listSprintComments } from '@/lib/sprints/sprintCommentsRepository';
 import {
   dateRangesOverlap,
+  expandLinkScopeWithNotes,
   expandScopeWithParentMap,
   filterFeatureLanesForFeature,
   filterLinksByFeatureScope,
@@ -118,10 +124,14 @@ function mapCommentRow(row: Record<string, unknown>): SprintContextNote {
     id: asString(row.id),
     kind: mapCommentKind(row.kind),
     part: asNullableNumber(row.part),
+    taskId: toPlannerCommentTaskId(asString(row.id)),
     text: asString(row.text),
   };
   if (parent) {
     note.parent = parent;
+  }
+  if (row.pending_approval === true || row.pendingApproval === true) {
+    note.pendingApproval = true;
   }
   return note;
 }
@@ -140,6 +150,14 @@ function mapLink(row: Record<string, unknown>): SprintContextTaskLink {
         : null,
     toTaskId: asString(row.to_task_id ?? row.toTaskId),
   };
+}
+
+function rewriteLinksForNoteEndpoints(
+  links: SprintContextTaskLink[],
+  notes: SprintContextNote[]
+): SprintContextTaskLink[] {
+  const commentIds = commentIdSetFromRecords(notes);
+  return links.map((link) => resolvePlannerLinkEndpoints(link, commentIds));
 }
 
 function mapGoal(row: { done: boolean; id: string; text: string }): SprintContextGoalItem {
@@ -290,7 +308,7 @@ export async function buildSprintContext(input: {
 
   let scopedPositions = positions;
   let scopedNotes = notes;
-  let scopedLinks = links;
+  let scopedLinks = rewriteLinksForNoteEndpoints(links, notes);
   let scopedLanes = featureLanes;
 
   if (featureId) {
@@ -298,7 +316,10 @@ export async function buildSprintContext(input: {
     scopeTaskIds = expandScopeWithParentMap(scopeTaskIds, featureId, input.taskIdToParentKey);
     scopedPositions = filterPositionsByFeatureScope(positions, scopeTaskIds);
     scopedNotes = filterNotesByFeatureScope(notes, featureId, scopeTaskIds);
-    scopedLinks = filterLinksByFeatureScope(links, scopeTaskIds);
+    scopedLinks = filterLinksByFeatureScope(
+      scopedLinks,
+      expandLinkScopeWithNotes(scopeTaskIds, scopedNotes)
+    );
     scopedLanes = filterFeatureLanesForFeature(featureLanes, featureId);
   }
 

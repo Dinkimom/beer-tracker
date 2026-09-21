@@ -65,6 +65,8 @@ export type SprintPlanPatchOp =
 export interface SprintPlanPatchProposeResult {
   applyToken: string;
   capacityPreview: { summary: string };
+  /** Sticky notes already written as pending (translucent in the planner) until apply. */
+  draftNoteIds?: string[];
   expiresAt: string;
   ops: SprintPlanPatchOp[];
   proposalId: string;

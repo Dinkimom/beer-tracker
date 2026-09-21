@@ -45,4 +45,11 @@ describe('SwimlanePlacementToolbarButton task icon', () => {
     expect(container.querySelectorAll('path')).toHaveLength(3);
     expect(container.querySelectorAll('rect')).toHaveLength(0);
   });
+
+  it('puts the Cmd/Ctrl shortcut into the accessible name', () => {
+    const { container } = renderTaskButton('tracker');
+    expect(container.querySelector('button')?.getAttribute('aria-label')).toMatch(
+      /sprintPlanner\.swimlane\.placementToolbar\.task \((⌘|Ctrl)\+3\)/
+    );
+  });
 });

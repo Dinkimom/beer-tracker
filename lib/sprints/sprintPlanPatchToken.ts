@@ -8,6 +8,7 @@ const TOKEN_VERSION = 'pp1';
 export const SPRINT_PLAN_PATCH_TTL_SEC = 30 * 60;
 
 interface PlanPatchTokenPayload {
+  draftNoteIds?: string[];
   exp: number;
   opsHash: string;
   orgId: string;
@@ -29,66 +30,26 @@ function signPayload(payloadB64: string, secret: string): string {
     .digest('base64url');
 }
 
-export function signSprintPlanPatchToken(input: {
-  ops: SprintPlanPatchOp[];
-  organizationId: string;
-  sprintId: number;
-  nowSec?: number;
-  ttlSec?: number;
-}): string {
-  const now = input.nowSec ?? Math.floor(Date.now() / 1000);
-  const ttl = input.ttlSec ?? SPRINT_PLAN_PATCH_TTL_SEC;
-  const payload: PlanPatchTokenPayload = {
-    exp: now + ttl,
-    opsHash: hashSprintPlanPatchOps(input.ops),
-    orgId: input.organizationId,
-    sprintId: input.sprintId,
-    v: 1,
-  };
-  const payloadB64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
-  const secret = requireSprintContextMcpSecret();
-  const sig = signPayload(payloadB64, secret);
-  return `${TOKEN_VERSION}.${payloadB64}.${sig}`;
+function parseDraftNoteIds(value: unknown): string[] | null {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  const ids: string[] = [];
+  for (const item of value) {
+    if (typeof item !== 'string' || item.length < 1 || item.length > 64) {
+      return null;
+    }
+    ids.push(item);
+  }
+  return ids;
 }
 
-export function verifySprintPlanPatchToken(input: {
-  applyToken: string;
-  ops: SprintPlanPatchOp[];
-  organizationId: string;
-  sprintId: number;
-  nowSec?: number;
-}): { ok: false; error: string } | { ok: true; exp: number } {
-  const parts = input.applyToken.split('.');
-  if (parts.length !== 3 || parts[0] !== TOKEN_VERSION) {
-    return { ok: false, error: 'invalid_apply_token: malformed' };
-  }
-  const payloadB64 = parts[1]!;
-  const sig = parts[2]!;
-  let secret: string;
-  try {
-    secret = requireSprintContextMcpSecret();
-  } catch {
-    return { ok: false, error: 'invalid_apply_token: secret not configured' };
-  }
-  const expected = signPayload(payloadB64, secret);
-  try {
-    const sigBuf = Buffer.from(sig, 'base64url');
-    const expBuf = Buffer.from(expected, 'base64url');
-    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
-      return { ok: false, error: 'invalid_apply_token: bad signature' };
-    }
-  } catch {
-    return { ok: false, error: 'invalid_apply_token: bad signature' };
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
-  } catch {
-    return { ok: false, error: 'invalid_apply_token: bad payload' };
-  }
+function parseTokenPayload(parsed: unknown): PlanPatchTokenPayload | null {
   if (!parsed || typeof parsed !== 'object') {
-    return { ok: false, error: 'invalid_apply_token: bad payload' };
+    return null;
   }
   const payload = parsed as Partial<PlanPatchTokenPayload>;
   if (
@@ -98,6 +59,96 @@ export function verifySprintPlanPatchToken(input: {
     typeof payload.orgId !== 'string' ||
     typeof payload.sprintId !== 'number'
   ) {
+    return null;
+  }
+  const draftNoteIds = parseDraftNoteIds(payload.draftNoteIds);
+  if (draftNoteIds == null) {
+    return null;
+  }
+  return {
+    exp: payload.exp,
+    opsHash: payload.opsHash,
+    orgId: payload.orgId,
+    sprintId: payload.sprintId,
+    v: 1,
+    ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),
+  };
+}
+
+export function signSprintPlanPatchToken(input: {
+  draftNoteIds?: string[];
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  sprintId: number;
+  nowSec?: number;
+  ttlSec?: number;
+}): string {
+  const now = input.nowSec ?? Math.floor(Date.now() / 1000);
+  const ttl = input.ttlSec ?? SPRINT_PLAN_PATCH_TTL_SEC;
+  const draftNoteIds = input.draftNoteIds ?? [];
+  const payload: PlanPatchTokenPayload = {
+    exp: now + ttl,
+    opsHash: hashSprintPlanPatchOps(input.ops),
+    orgId: input.organizationId,
+    sprintId: input.sprintId,
+    v: 1,
+    ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),
+  };
+  const payloadB64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+  const secret = requireSprintContextMcpSecret();
+  const sig = signPayload(payloadB64, secret);
+  return `${TOKEN_VERSION}.${payloadB64}.${sig}`;
+}
+
+function verifyTokenSignature(payloadB64: string, sig: string): 'bad' | 'missing' | 'ok' {
+  let secret: string;
+  try {
+    secret = requireSprintContextMcpSecret();
+  } catch {
+    return 'missing';
+  }
+  const expected = signPayload(payloadB64, secret);
+  try {
+    const sigBuf = Buffer.from(sig, 'base64url');
+    const expBuf = Buffer.from(expected, 'base64url');
+    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
+      return 'bad';
+    }
+    return 'ok';
+  } catch {
+    return 'bad';
+  }
+}
+
+export function verifySprintPlanPatchToken(input: {
+  applyToken: string;
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  sprintId: number;
+  nowSec?: number;
+}): { draftNoteIds: string[]; exp: number; ok: true } | { error: string; ok: false } {
+  const parts = input.applyToken.split('.');
+  if (parts.length !== 3 || parts[0] !== TOKEN_VERSION) {
+    return { ok: false, error: 'invalid_apply_token: malformed' };
+  }
+  const payloadB64 = parts[1]!;
+  const sig = parts[2]!;
+  const sigCheck = verifyTokenSignature(payloadB64, sig);
+  if (sigCheck === 'missing') {
+    return { ok: false, error: 'invalid_apply_token: secret not configured' };
+  }
+  if (sigCheck !== 'ok') {
+    return { ok: false, error: 'invalid_apply_token: bad signature' };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+  } catch {
+    return { ok: false, error: 'invalid_apply_token: bad payload' };
+  }
+  const payload = parseTokenPayload(parsed);
+  if (!payload) {
     return { ok: false, error: 'invalid_apply_token: bad payload' };
   }
   const now = input.nowSec ?? Math.floor(Date.now() / 1000);
@@ -107,9 +158,8 @@ export function verifySprintPlanPatchToken(input: {
   if (payload.sprintId !== input.sprintId || payload.orgId !== input.organizationId) {
     return { ok: false, error: 'invalid_apply_token: sprint/org mismatch' };
   }
-  const opsHash = hashSprintPlanPatchOps(input.ops);
-  if (payload.opsHash !== opsHash) {
+  if (payload.opsHash !== hashSprintPlanPatchOps(input.ops)) {
     return { ok: false, error: 'invalid_apply_token: ops hash mismatch' };
   }
-  return { ok: true, exp: payload.exp };
+  return { draftNoteIds: payload.draftNoteIds ?? [], exp: payload.exp, ok: true };
 }

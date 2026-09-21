@@ -49,8 +49,9 @@ export function buildSwimlanePropsForDeveloper(input: {
   hoveredTaskId: string | null;
   onCancelQuickAddDraft?: (taskId: string) => void;
   onCloseSidebar: () => void;
-  onCommentCreate?: (comment: Comment) => void;
+  onCommentApprove?: (commentId: string) => void;
   onCommentCardRowLayoutUpdate?: SwimlaneProps['onCommentCardRowLayoutUpdate'];
+  onCommentCreate?: (comment: Comment) => void;
   onCommentDelete?: (commentId: string) => void;
   onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
@@ -171,6 +172,7 @@ export function buildSwimlanePropsForDeveloper(input: {
     onCloseSidebar: input.onCloseSidebar,
     onCommentCreate: input.onCommentCreate,
     onCommentCardRowLayoutUpdate: input.onCommentCardRowLayoutUpdate,
+    onCommentApprove: input.onCommentApprove,
     onCommentDelete: input.onCommentDelete,
     onCommentUpdate: input.onCommentUpdate,
     onContextMenu: input.onContextMenu,

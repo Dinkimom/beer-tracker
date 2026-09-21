@@ -11,6 +11,9 @@ describe('planner writes include organization_id', () => {
   it('inserts comments with organization_id', () => {
     expect(insertSprintCommentSql()).toContain('organization_id, sprint_id, assignee_id');
     expect(insertSprintCommentSql()).toContain('image_file_id, parent');
+    expect(insertSprintCommentSql()).toContain(
+      'pending_approval, pending_approval_expires_at, plan_patch_proposal_id'
+    );
     expect(moveSprintCommentsSql()).toBe(
       'UPDATE comments SET sprint_id = $2 WHERE sprint_id = $1 AND id = ANY($3::uuid[])'
     );

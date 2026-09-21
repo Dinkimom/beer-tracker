@@ -89,6 +89,7 @@ function SwimlaneComponent({
   developers,
   onCommentCreate,
   onCommentCardRowLayoutUpdate,
+  onCommentApprove,
   onCommentDelete,
   onCommentUpdate,
   onCloseSidebar,
@@ -393,6 +394,7 @@ function SwimlaneComponent({
               timelineTotalParts={timelineTotalParts}
               totalHeight={layout.totalHeight}
               onCancelQuickAddDraft={onCancelQuickAddDraft}
+              onCommentApprove={onCommentApprove}
               onCommentCardRowLayoutUpdate={onCommentCardRowLayoutUpdate}
               onCommentDelete={onCommentDelete}
               onCommentUpdate={onCommentUpdate}

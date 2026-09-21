@@ -91,6 +91,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     hasTaskOverlaps,
     layerHeight,
     onCancelQuickAddDraft,
+    onCommentApprove,
     onCommentDelete,
     onCommentCardRowLayoutUpdate,
     onCommentUpdate,
@@ -439,6 +440,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         taskPositions={taskPositions}
         widthPercent={renderState.widthPercent}
         onClick={onTaskClick}
+        onCommentApprove={linkingActive ? undefined : onCommentApprove}
         onCommentDelete={linkingActive ? undefined : onCommentDelete}
         onCommentUpdate={linkingActive ? undefined : onCommentUpdate}
         onContextMenu={linkingActive ? undefined : onContextMenu}

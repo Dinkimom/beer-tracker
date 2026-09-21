@@ -5,6 +5,7 @@ import type {
 } from '@/lib/sprints/sprintContextTypes';
 
 import { parseCommentParent } from '@/lib/comments/commentParent';
+import { toPlannerCommentTaskId } from '@/lib/planner/plannerLinkEndpoint';
 import {
   emptyFeatureLanesDocument,
   type FeatureLanesDocument,
@@ -79,6 +80,19 @@ export function filterLinksByFeatureScope(
   return links.filter(
     (link) => scopeTaskIds.has(link.fromTaskId) && scopeTaskIds.has(link.toTaskId)
   );
+}
+
+/** Note arrows use `comment:{id}` (and raw UUID from older MCP writes). */
+export function expandLinkScopeWithNotes(
+  scopeTaskIds: Set<string>,
+  notes: readonly Pick<SprintContextNote, 'id'>[]
+): Set<string> {
+  const next = new Set(scopeTaskIds);
+  for (const note of notes) {
+    next.add(note.id);
+    next.add(toPlannerCommentTaskId(note.id));
+  }
+  return next;
 }
 
 export function filterNotesByFeatureScope(

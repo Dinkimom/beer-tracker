@@ -31,7 +31,10 @@ export const SPRINT_COMMENT_RETURNING = `
         image_file_id,
         created_by,
         created_at,
-        updated_at`;
+        updated_at,
+        pending_approval,
+        pending_approval_expires_at,
+        plan_patch_proposal_id`;
 
 const COMMENT_RETURNING = SPRINT_COMMENT_RETURNING;
 
@@ -74,6 +77,7 @@ export async function listSprintComments(input: {
   sprintId: number;
 }): Promise<unknown[]> {
   await ensurePlannerCommentImagesSchema();
+  await deleteExpiredPendingSprintComments({ sprintId: input.sprintId });
   const result = await query(
     `SELECT ${COMMENT_RETURNING}
       FROM comments
@@ -82,6 +86,15 @@ export async function listSprintComments(input: {
     sprintTenantParams(input.sprintId)
   );
   return withCommentAuthors(result.rows as CommentRowWithCreator[]);
+}
+
+export async function listSprintCommentIds(input: { sprintId: number }): Promise<string[]> {
+  await ensurePlannerCommentImagesSchema();
+  const result = await query(
+    `SELECT id FROM comments WHERE ${sprintTenantWhere()}`,
+    sprintTenantParams(input.sprintId)
+  );
+  return result.rows.map((row) => String((row as { id: string }).id));
 }
 
 export async function insertSprintComment(input: {
@@ -101,6 +114,9 @@ export async function insertSprintComment(input: {
   imageFileId?: string | null;
   kind?: 'diagram' | 'image' | 'text';
   parent?: TaskParent | null;
+  pendingApproval?: boolean;
+  pendingApprovalExpiresAt?: Date | string | null;
+  planPatchProposalId?: string | null;
 }): Promise<unknown> {
   await ensurePlannerCommentImagesSchema();
   const color = input.color ?? DEFAULT_STICKY_NOTE_COLOR;
@@ -130,9 +146,11 @@ export async function insertSprintComment(input: {
 export function insertSprintCommentSql(): string {
   return `INSERT INTO comments (
              id, organization_id, sprint_id, assignee_id, text,
-             position_x, position_y, day, part, width, height, color, created_by, kind, image_file_id, parent
+             position_x, position_y, day, part, width, height, color, created_by, kind, image_file_id, parent,
+             pending_approval, pending_approval_expires_at, plan_patch_proposal_id
            ) VALUES (
-             COALESCE($1, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb
+             COALESCE($1, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb,
+             $17, $18, $19
            )
            ON CONFLICT (id) DO NOTHING
            RETURNING ${COMMENT_RETURNING}`;
@@ -153,6 +171,9 @@ function insertSprintCommentParams(
     x: number | null | undefined;
     y: number | null | undefined;
     parent?: TaskParent | null;
+    pendingApproval?: boolean;
+    pendingApprovalExpiresAt?: Date | string | null;
+    planPatchProposalId?: string | null;
   },
   color: string,
   kind: 'diagram' | 'image' | 'text',
@@ -175,6 +196,9 @@ function insertSprintCommentParams(
     kind,
     imageFileId,
     commentParentToJsonb(input.parent ?? null),
+    input.pendingApproval === true,
+    input.pendingApprovalExpiresAt ?? null,
+    input.planPatchProposalId ?? null,
   ];
 }
 
@@ -310,6 +334,101 @@ export async function deleteSprintComment(input: {
     await query('DELETE FROM planner_files WHERE id = $1', [imageFileId]);
   }
   await deletePlannerStoredObject(storageKey);
+}
+
+async function deleteExpiredPendingSprintComments(input: {
+  sprintId: number;
+}): Promise<number> {
+  const result = await query(
+    `DELETE FROM comments
+      WHERE ${sprintTenantWhere()}
+        AND pending_approval = TRUE
+        AND pending_approval_expires_at IS NOT NULL
+        AND pending_approval_expires_at < CURRENT_TIMESTAMP`,
+    sprintTenantParams(input.sprintId)
+  );
+  return result.rowCount ?? 0;
+}
+
+export async function deletePendingSprintCommentsByProposalId(input: {
+  proposalId: string;
+  sprintId: number;
+}): Promise<number> {
+  await ensurePlannerCommentImagesSchema();
+  const result = await query(
+    `DELETE FROM comments
+      WHERE ${sprintTenantWhere()}
+        AND pending_approval = TRUE
+        AND plan_patch_proposal_id = $2`,
+    [...sprintTenantParams(input.sprintId), input.proposalId]
+  );
+  return result.rowCount ?? 0;
+}
+
+export async function confirmPendingSprintComments(input: {
+  commentIds: readonly string[];
+  sprintId: number;
+}): Promise<number> {
+  if (input.commentIds.length === 0) {
+    return 0;
+  }
+  await ensurePlannerCommentImagesSchema();
+  const result = await query(
+    `UPDATE comments
+        SET pending_approval = FALSE,
+            pending_approval_expires_at = NULL,
+            plan_patch_proposal_id = NULL,
+            updated_at = CURRENT_TIMESTAMP
+      WHERE ${sprintTenantWhere()}
+        AND id = ANY($2::uuid[])
+        AND pending_approval = TRUE`,
+    [...sprintTenantParams(input.sprintId), [...input.commentIds]]
+  );
+  return result.rowCount ?? 0;
+}
+
+export async function hasSprintComment(input: {
+  commentId: string;
+  sprintId: number;
+}): Promise<boolean> {
+  const result = await query(
+    `SELECT 1 FROM comments
+      WHERE ${sprintTenantWhere()}
+        AND id = $2::uuid
+      LIMIT 1`,
+    [...sprintTenantParams(input.sprintId), input.commentId]
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+export async function confirmAllPendingSprintComments(input: {
+  sprintId: number;
+}): Promise<number> {
+  await ensurePlannerCommentImagesSchema();
+  const result = await query(
+    `UPDATE comments
+        SET pending_approval = FALSE,
+            pending_approval_expires_at = NULL,
+            plan_patch_proposal_id = NULL,
+            updated_at = CURRENT_TIMESTAMP
+      WHERE ${sprintTenantWhere()}
+        AND pending_approval = TRUE`,
+    sprintTenantParams(input.sprintId)
+  );
+  return result.rowCount ?? 0;
+}
+
+export async function deleteAllPendingSprintComments(input: {
+  sprintId: number;
+}): Promise<number> {
+  await ensurePlannerCommentImagesSchema();
+  const result = await query(
+    `DELETE FROM comments
+      WHERE ${sprintTenantWhere()}
+        AND pending_approval = TRUE`,
+    sprintTenantParams(input.sprintId)
+  );
+  return result.rowCount ?? 0;
 }
 
 export function moveSprintCommentsSql(): string {

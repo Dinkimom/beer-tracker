@@ -143,6 +143,24 @@ describe('resolveTaskBarAnnotationChrome', () => {
     });
   });
 
+  it('shows an agent approve toolbar on a pending sticky note', () => {
+    expect(
+      resolveTaskBarAnnotationChrome({
+        ...idle,
+        hasCommentApprove: true,
+        isPhotoCard: false,
+        isStickyNoteCard: true,
+        pendingApproval: true,
+        swimlaneCommentId: 'c1',
+      })
+    ).toMatchObject({
+      showCommentDelete: false,
+      showPendingApprovalToolbar: true,
+      showStickyNotePin: false,
+      showStickyNoteReactions: false,
+    });
+  });
+
   it('hides the on-card draft delete while the note editor is open', () => {
     expect(
       resolveTaskBarAnnotationChrome({

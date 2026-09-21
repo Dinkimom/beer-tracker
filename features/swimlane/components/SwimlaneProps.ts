@@ -83,6 +83,7 @@ export interface SwimlaneProps {
   viewMode?: LayoutViewMode;
   onCancelQuickAddDraft?: (taskId: string) => void;
   onCloseSidebar?: () => void;
+  onCommentApprove?: (commentId: string) => void;
   onCommentCardRowLayoutUpdate?: (
     commentId: string,
     layout: { layerShiftUp: number; span: number }

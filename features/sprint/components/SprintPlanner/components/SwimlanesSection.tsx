@@ -17,7 +17,7 @@ import {
   sprintPlannerDaysHeaderContentWidthCss,
 } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
 import { SprintPlannerTimelineFill } from '@/features/sprint/components/SprintPlanner/layout/SprintPlannerTimelineFill';
-import { SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
+import { resolvePlacementToolbarScrollPadPx } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import {
   buildDeveloperAvailabilityMap,
   computeHoverConnectedTaskIds,
@@ -358,7 +358,11 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
             <div
               aria-hidden
               className="flex-1 bg-white dark:bg-gray-800"
-              style={{ minHeight: SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX }}
+              style={{
+                minHeight: resolvePlacementToolbarScrollPadPx(
+                  comments.some((comment) => comment.pendingApproval === true)
+                ),
+              }}
             />
           </div>
           {showAfterSprintRail ? (

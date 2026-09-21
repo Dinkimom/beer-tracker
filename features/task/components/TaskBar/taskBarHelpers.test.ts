@@ -1,3 +1,5 @@
+import type { Task } from '@/types';
+
 import { describe, expect, it } from 'vitest';
 
 import { CARD_MARGIN, ZIndex } from '@/constants';
@@ -7,6 +9,7 @@ import {
   buildSwimlaneTaskBarHorizontalStyle,
   buildTaskBarLayoutStyle,
   resolveTaskBarContentLayout,
+  resolveTaskBarEffectiveOpacity,
   resolveTaskBarInstantGeometryClass,
   resolveTaskBarLongHoverExpand,
   resolveTaskBarZIndex,
@@ -383,5 +386,29 @@ describe('shouldCancelInlineEditorOnFocusOut', () => {
         relatedTarget: null,
       })
     ).toBe(false);
+  });
+});
+
+describe('resolveTaskBarEffectiveOpacity', () => {
+  const task: Task = { id: 't1', link: '', name: 'Note', team: 'Back' };
+
+  it('keeps confirmed cards fully opaque', () => {
+    expect(
+      resolveTaskBarEffectiveOpacity({
+        contextMenuBlurOtherCards: false,
+        contextMenuTaskId: null,
+        task,
+      })
+    ).toBe(1);
+  });
+
+  it('dims MCP draft notes pending apply', () => {
+    expect(
+      resolveTaskBarEffectiveOpacity({
+        contextMenuBlurOtherCards: false,
+        contextMenuTaskId: null,
+        task: { ...task, pendingApproval: true },
+      })
+    ).toBe(0.65);
   });
 });

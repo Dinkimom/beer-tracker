@@ -3,7 +3,7 @@ import type { useSprintPlannerViewModel } from './hooks/useSprintPlannerViewMode
 
 import { ZIndex } from '@/constants';
 import { StickyNoteReactionsProvider } from '@/features/comments/StickyNoteReactionsProvider';
-import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneCommentTask, selectPendingApprovalCommentIds } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -297,6 +297,7 @@ export function SprintPlannerView({
                   onCloseSidebar: handlers.handleCloseSidebar,
                   onCommentCreate: handleCommentCreateWithFocus,
                   onCommentCardRowLayoutUpdate: handlers.handleCommentCardRowLayoutUpdate,
+                  onCommentApprove: handlers.handleCommentApprove,
                   onCommentDelete: handlers.handleCommentDelete,
                   onCommentsLeftSprint: handlers.handleCommentsLeftSprint,
                   onCommentParentChange: handlers.handleCommentParentChange,
@@ -334,7 +335,12 @@ export function SprintPlannerView({
                 viewMode={viewMode}
               />
               {viewMode === 'compact' || viewMode === 'full' || viewMode === 'features' ? (
-                <SwimlanePlacementToolbar variant={viewMode === 'features' ? 'features' : 'people'} />
+                <SwimlanePlacementToolbar
+                  pendingAgentNoteIds={selectPendingApprovalCommentIds(comments)}
+                  variant={viewMode === 'features' ? 'features' : 'people'}
+                  onApproveAgentNotes={handlers.handleCommentApproveAll}
+                  onRejectAgentNotes={handlers.handleCommentRejectAll}
+                />
               ) : null}
             </div>
 

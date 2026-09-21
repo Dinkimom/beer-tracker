@@ -54,6 +54,7 @@ export interface TaskLayerProps {
   timelineTotalParts: number;
   totalHeight: number;
   onCancelQuickAddDraft?: (taskId: string) => void;
+  onCommentApprove?: (commentId: string) => void;
   onCommentCardRowLayoutUpdate?: (
     commentId: string,
     layout: { layerShiftUp: number; span: number }

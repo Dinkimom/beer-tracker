@@ -144,6 +144,7 @@ export function SwimlanesSectionLanes({
         onCloseSidebar: section.onCloseSidebar,
         onCommentCreate: section.onCommentCreate,
         onCommentCardRowLayoutUpdate: section.onCommentCardRowLayoutUpdate,
+        onCommentApprove: section.onCommentApprove,
         onCommentDelete: section.onCommentDelete,
         onCommentUpdate: section.onCommentUpdate,
         onContextMenu: section.onContextMenu,

@@ -71,11 +71,19 @@ const AnchorSchema = z.enum(['left', 'right', 'top', 'bottom']);
 
 const UpsertLinkSchema = z.object({
   fromAnchor: AnchorSchema.nullable().optional(),
-  fromTaskId: z.string().min(1).max(255),
+  fromTaskId: z
+    .string()
+    .min(1)
+    .max(255)
+    .describe('Board card id: tracker issue key, or comment:{notes[].id} (raw notes[].id is rewritten)'),
   id: z.string().min(1).max(255),
   op: z.literal('upsertLink'),
   toAnchor: AnchorSchema.nullable().optional(),
-  toTaskId: z.string().min(1).max(255),
+  toTaskId: z
+    .string()
+    .min(1)
+    .max(255)
+    .describe('Board card id: tracker issue key, or comment:{notes[].id} (raw notes[].id is rewritten)'),
 });
 
 const DeleteLinkSchema = z.object({

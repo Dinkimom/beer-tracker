@@ -34,23 +34,23 @@ Streamable HTTP, tools:
 - `get_sprint_capacity(sprintId, featureId?)` — только capacity: overlaps / gaps / overloaded
 - `get_feature_context(sprintId, featureId)` — тот же graph, но `featureId` обязателен
 - `resolve_person(query)` — имя/email → `staffUid` / `assigneeId` (`staff:uuid`)
-- `propose_plan_patch(sprintId, ops)` — dry-run patch (без записи); summary + capacityPreview + `applyToken` (TTL 30 мин)
-- `apply_plan_patch(sprintId, ops, applyToken, confirm=true)` — запись только после propose + явного confirm
+- `propose_plan_patch(sprintId, ops)` — dry-run patch (без записи позиций/ссылок/goals); `createNote` сразу кладёт **драфт-заметки** на доску (полупрозрачные, бейдж «Агент», апрув в UI до apply); summary + capacityPreview + `draftNoteIds` + `applyToken` (TTL 30 мин)
+- `apply_plan_patch(sprintId, ops, applyToken, confirm=true)` — запись только после propose + явного confirm; драфт-заметки становятся непрозрачными
 
 Типичный диалог: пользователь помнит «спринт 31» → агент `search_sprints` → берёт `hits[].sprintId` → `get_sprint_context` / `get_sprint_capacity`. Номер в названии ≠ id (например «Sprint 31» может быть id `1152`).
 
 ### Plan patch (write, не silent)
 
 1. Агент собирает `ops[]` (max 50) после research.
-2. `propose_plan_patch` — валидация + preview capacity + HMAC `applyToken`.
-3. Человек/агент ревьюит `summary` / `capacityPreview`.
-4. `apply_plan_patch` с **теми же** `ops` + `applyToken` + `confirm: true`.
+2. `propose_plan_patch` — валидация + preview capacity + HMAC `applyToken`. **`createNote` пишется сразу** как pending (полупрозрачные стикеры на планере, TTL 30 мин).
+3. Человек ревьюит заметки на доске (бейдж «Агент» + принять/отклонить над стикером) и `summary` / `capacityPreview`. Апрув в UI подтверждает драфт сразу; отклонение удаляет заметку.
+4. `apply_plan_patch` с **теми же** `ops` + `applyToken` + `confirm: true` — оставшиеся драфт-заметки подтверждаются (полная непрозрачность), остальные ops записываются.
 
 Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `deleteNote`, `upsertLink`, `deleteLink`, `upsertFeatureDraft`, `createGoal`, `updateGoal`, `deleteGoal`.
 
-Notes: только `kind=text`; defaults `width=200`, `height=3`; кладутся по `assigneeId` + `day` + `part`.
+Notes: только `kind=text`; default `width=200` (2 части); `height` как у задачи (1 ряд), выше если текст не влезает по ширине. Кладутся по `assigneeId` + `day` + `part`. Для `upsertLink` на заметку — `comment:{notes[].id}` (поле `notes[].taskId`); сырой UUID тоже принимается и переписывается.
 
-**Нет** sync assignee/planned dates в Tracker/Jira. Diagram/image notes и UI-inbox approve — вне этого среза (UI approve — следующая волна).
+**Нет** sync assignee/planned dates в Tracker/Jira. Diagram/image notes — вне этого среза.
 
 ### Cursor / Claude — только URL + секрет
 

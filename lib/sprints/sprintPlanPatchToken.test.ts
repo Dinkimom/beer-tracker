@@ -48,7 +48,7 @@ describe('sprintPlanPatchToken', () => {
         sprintId: 1152,
         nowSec: 1_700_000_000,
       })
-    ).toEqual({ ok: true, exp: 1_700_000_000 + 30 * 60 });
+    ).toEqual({ draftNoteIds: [], ok: true, exp: 1_700_000_000 + 30 * 60 });
   });
 
   it('rejects expired tokens', () => {
@@ -112,5 +112,28 @@ describe('sprintPlanPatchToken', () => {
         sprintId: 1152,
       })
     ).toMatchObject({ ok: false, error: expect.stringContaining('signature') });
+  });
+
+  it('round-trips draft note ids used for pending createNote', () => {
+    const token = signSprintPlanPatchToken({
+      draftNoteIds: ['11111111-1111-4111-8111-111111111111'],
+      ops: OPS,
+      organizationId: 'org-1',
+      sprintId: 1152,
+      nowSec: 1_700_000_000,
+    });
+    expect(
+      verifySprintPlanPatchToken({
+        applyToken: token,
+        ops: OPS,
+        organizationId: 'org-1',
+        sprintId: 1152,
+        nowSec: 1_700_000_000,
+      })
+    ).toEqual({
+      draftNoteIds: ['11111111-1111-4111-8111-111111111111'],
+      exp: 1_700_000_000 + 30 * 60,
+      ok: true,
+    });
   });
 });

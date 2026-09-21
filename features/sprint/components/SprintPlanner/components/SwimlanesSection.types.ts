@@ -86,6 +86,7 @@ export interface SwimlanesSectionProps {
   onAddLink?: (link: { fromTaskId: string; id: string; toTaskId: string }) => void;
   onCancelQuickAddDraft?: (taskId: string) => void;
   onCloseSidebar: () => void;
+  onCommentApprove?: (commentId: string) => void;
   onCommentCardRowLayoutUpdate?: (
     commentId: string,
     layout: { layerShiftUp: number; span: number }

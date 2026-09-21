@@ -54,6 +54,12 @@ describe('isOverlayExitAnimationFinished', () => {
       true
     );
     expect(isOverlayExitAnimationFinished('overlay-fade-exit', panel, panel, 'exiting')).toBe(true);
+    expect(
+      isOverlayExitAnimationFinished('overlay-tooltip-exit-down', panel, panel, 'exiting')
+    ).toBe(true);
+    expect(isOverlayExitAnimationFinished('overlay-tooltip-exit-up', panel, panel, 'exiting')).toBe(
+      true
+    );
   });
 
   it('ignores nested animations and the enter animation', () => {

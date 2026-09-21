@@ -36,19 +36,22 @@ export function resolvePlannerHistoryShortcut(
   return event.shiftKey ? 'redo' : 'undo';
 }
 
-function resolvePlannerHistoryModLabel(
+function resolveShortcutModLabel(
   userAgent: string = typeof navigator === 'undefined' ? '' : navigator.userAgent
 ): '⌘' | 'Ctrl' {
   return /Mac|iPhone|iPad|iPod/i.test(userAgent) ? '⌘' : 'Ctrl';
+}
+
+export function formatModKeyShortcutHint(key: string, userAgent?: string): string {
+  return `${resolveShortcutModLabel(userAgent)}+${key}`;
 }
 
 export function formatPlannerHistoryShortcutHint(
   action: PlannerHistoryShortcut,
   userAgent?: string
 ): string {
-  const mod = resolvePlannerHistoryModLabel(userAgent);
   if (action === 'undo') {
-    return `${mod}+Z`;
+    return formatModKeyShortcutHint('Z', userAgent);
   }
-  return mod === '⌘' ? '⇧⌘Z' : 'Ctrl+Shift+Z';
+  return resolveShortcutModLabel(userAgent) === '⌘' ? '⇧⌘Z' : 'Ctrl+Shift+Z';
 }

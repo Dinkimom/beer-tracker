@@ -430,4 +430,4 @@ export async function saveFeatureLanes(
 }
 
 export { fetchBacklog, fetchBurndownData } from './sprintsApiBurndownBacklog';
-export { createSprintDiagramComment, createSprintImageComment, deleteComment, fetchSprintCommentDiagram, fetchSprintComments, moveSprintComments, saveComment, saveSprintCommentDiagram, toggleCommentReaction } from './sprintsApiComments';
+export { approveAllPendingSprintComments, approveSprintComment, createSprintDiagramComment, createSprintImageComment, deleteComment, fetchSprintCommentDiagram, fetchSprintComments, moveSprintComments, rejectAllPendingSprintComments, saveComment, saveSprintCommentDiagram, toggleCommentReaction } from './sprintsApiComments';

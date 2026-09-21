@@ -10,6 +10,8 @@ const OVERLAY_EXIT_ANIMATION_NAMES = new Set([
   'overlay-dialog-exit',
   'overlay-fade-exit',
   'overlay-float-exit',
+  'overlay-tooltip-exit-down',
+  'overlay-tooltip-exit-up',
 ]);
 
 type OverlayPhase = 'closed' | 'exiting' | 'open';

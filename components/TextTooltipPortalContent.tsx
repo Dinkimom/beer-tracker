@@ -1,5 +1,7 @@
 'use client';
 
+import type { AnimationEvent } from 'react';
+
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 import { OVERLAY_TOOLTIP_ANIMATION } from '@/components/overlayAnimationClasses';
@@ -15,9 +17,14 @@ interface TextTooltipPortalContentProps {
   cursorPos: { x: number; y: number };
   followCursor: boolean;
   interactive: boolean;
-  open: boolean;
+  overlayState: 'closed' | 'open';
   side: string;
   sideOffset: number;
+  onAnimationEnd: (event: AnimationEvent<HTMLElement>) => void;
+}
+
+function tooltipSurfaceClass(interactive: boolean, contentClassName: string): string {
+  return `${ZIndex.class('tooltip')} ${tooltipContentClass} ${OVERLAY_TOOLTIP_ANIMATION} ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} ${contentClassName}`;
 }
 
 export function TextTooltipPortalContent({
@@ -27,20 +34,23 @@ export function TextTooltipPortalContent({
   cursorPos,
   followCursor,
   interactive,
-  open,
+  overlayState,
   side,
   sideOffset,
+  onAnimationEnd,
 }: TextTooltipPortalContentProps) {
+  const surfaceClass = tooltipSurfaceClass(interactive, contentClassName);
   if (followCursor) {
-    if (!open) return null;
     return (
       <div
-        className={`${ZIndex.class('tooltip')} ${tooltipContentClass} ${OVERLAY_TOOLTIP_ANIMATION} ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} ${contentClassName}`}
+        className={surfaceClass}
+        data-state={overlayState}
         style={{
           position: 'fixed',
           left: cursorPos.x + 12,
           top: cursorPos.y + 12,
         }}
+        onAnimationEnd={onAnimationEnd}
       >
         {content}
       </div>
@@ -50,10 +60,13 @@ export function TextTooltipPortalContent({
   return (
     <Tooltip.Content
       align={align}
-      className={`${ZIndex.class('tooltip')} ${tooltipContentClass} ${OVERLAY_TOOLTIP_ANIMATION} ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} ${contentClassName}`}
+      className={surfaceClass}
       collisionPadding={8}
+      data-state={overlayState}
+      forceMount
       side={side as 'bottom' | 'left' | 'right' | 'top'}
       sideOffset={sideOffset}
+      onAnimationEnd={onAnimationEnd}
     >
       {content}
     </Tooltip.Content>

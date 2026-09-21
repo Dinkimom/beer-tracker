@@ -142,6 +142,19 @@ export function getStickyNoteDashedGhostStyle(
   };
 }
 
+/** Заметка агента до апрува: та же бумага, пунктирная рамка. */
+export function getStickyNotePendingApprovalCardStyle(
+  color?: StickyNoteColorInput,
+  isDark = false
+): CSSProperties {
+  const style = getStickyNoteCardStyle(color, isDark);
+  return {
+    ...style,
+    borderStyle: 'dashed',
+    borderWidth: 2,
+  };
+}
+
 function hexToRgba(hex: string, alpha: number): string {
   const r = Number.parseInt(hex.slice(1, 3), 16);
   const g = Number.parseInt(hex.slice(3, 5), 16);

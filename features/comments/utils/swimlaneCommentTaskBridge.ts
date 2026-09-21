@@ -204,6 +204,12 @@ function commentLocalDraftKind(isImage: boolean, isDiagram: boolean): 'comment' 
   return 'comment';
 }
 
+export function selectPendingApprovalCommentIds(
+  comments: readonly Pick<Comment, 'id' | 'pendingApproval'>[]
+): string[] {
+  return comments.filter((comment) => comment.pendingApproval === true).map((comment) => comment.id);
+}
+
 export function commentToSwimlaneTask(comment: Comment): Task {
   const authorName = comment.authorName?.trim();
   const isImage = comment.kind === 'image';
@@ -224,6 +230,7 @@ export function commentToSwimlaneTask(comment: Comment): Task {
     team: 'Back',
     status: 'todo',
     storyPoints: 0,
+    ...(comment.pendingApproval === true ? { pendingApproval: true } : {}),
   };
 }
 

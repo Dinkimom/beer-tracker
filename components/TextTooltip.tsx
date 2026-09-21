@@ -5,6 +5,8 @@ import type { Anchor } from '@/types';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useEffect, useState } from 'react';
 
+import { useOverlayPresence } from '@/hooks/useOverlayPresence';
+
 import { useSingleTooltipGroup } from './SingleTooltipGroupContext';
 import { applyTextTooltipOpenChange } from './textTooltipOpenChange';
 import { TextTooltipPortalContent } from './TextTooltipPortalContent';
@@ -72,12 +74,17 @@ export function TextTooltip({
     }
   }, [singleInGroupId, group?.openId]);
 
-  if (disabled || content == null || content === '') {
+  const contentVisible = !disabled && content != null && content !== '';
+  const effectiveOpen = contentVisible
+    ? resolveTextTooltipEffectiveOpen(open, singleInGroupId, group)
+    : false;
+  const presence = useOverlayPresence(effectiveOpen);
+
+  if (!contentVisible) {
     return children;
   }
 
   const trigger = buildTextTooltipTrigger(children, followCursor, setCursorPos);
-  const effectiveOpen = resolveTextTooltipEffectiveOpen(open, singleInGroupId, group);
 
   const handleOpenChange = (next: boolean) => {
     applyTextTooltipOpenChange({
@@ -97,19 +104,22 @@ export function TextTooltip({
     >
       <Tooltip.Root open={effectiveOpen} onOpenChange={handleOpenChange}>
         <Tooltip.Trigger asChild>{trigger}</Tooltip.Trigger>
-        <Tooltip.Portal>
-          <TextTooltipPortalContent
-            align={align}
-            content={content}
-            contentClassName={contentClassName}
-            cursorPos={cursorPos}
-            followCursor={followCursor}
-            interactive={interactive}
-            open={effectiveOpen}
-            side={side}
-            sideOffset={sideOffset}
-          />
-        </Tooltip.Portal>
+        {presence.mounted ? (
+          <Tooltip.Portal forceMount>
+            <TextTooltipPortalContent
+              align={align}
+              content={content}
+              contentClassName={contentClassName}
+              cursorPos={cursorPos}
+              followCursor={followCursor}
+              interactive={interactive}
+              overlayState={presence.state}
+              side={side}
+              sideOffset={sideOffset}
+              onAnimationEnd={presence.onAnimationEnd}
+            />
+          </Tooltip.Portal>
+        ) : null}
       </Tooltip.Root>
     </Tooltip.Provider>
   );

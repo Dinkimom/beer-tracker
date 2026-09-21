@@ -16,6 +16,18 @@ export const SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX =
   SWIMLANE_PLACEMENT_TOOLBAR_HEIGHT_PX +
   SWIMLANE_PLACEMENT_TOOLBAR_CLEARANCE_PX;
 
+/** Компактная капсула агента: кнопка h-6 + py-1 + бордер. */
+const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_HEIGHT_PX = 34;
+const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_STACK_PX =
+  SWIMLANE_AGENT_PROPOSAL_TOOLBAR_HEIGHT_PX + 8;
+
+export function resolvePlacementToolbarScrollPadPx(hasAgentProposalToolbar: boolean): number {
+  if (!hasAgentProposalToolbar) {
+    return SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX;
+  }
+  return SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX + SWIMLANE_AGENT_PROPOSAL_TOOLBAR_STACK_PX;
+}
+
 /** На общей строке нет отсутствия — оно привязано к человеку. Курсор и связь ничего не ставят. */
 export function canQuickAddOnSwimlaneLane(input: {
   isTeamLane: boolean;
@@ -259,17 +271,6 @@ const ESCAPE_EXITABLE_PLACEMENT_TOOLS = new Set<SwimlanePlacementTool>([
   'link',
   'task',
 ]);
-
-export function isEscapeFromEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-  if (target.isContentEditable) {
-    return true;
-  }
-  const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-}
 
 export function shouldExitPlacementToolOnEscape(input: {
   defaultPrevented?: boolean;

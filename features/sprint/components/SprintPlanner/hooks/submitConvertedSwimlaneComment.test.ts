@@ -86,7 +86,7 @@ describe('submitConvertedSwimlaneComment', () => {
       }),
       false
     );
-    expect(onCommentDelete).toHaveBeenCalledWith('note-1');
+    expect(onCommentDelete).toHaveBeenCalledWith('note-1', { retargetLinksTo: 'TASK-9' });
     expect(invalidateOccupancyQueries).toHaveBeenCalled();
   });
 
@@ -157,5 +157,13 @@ describe('submitConvertedSwimlaneComment', () => {
       ok: true,
       task: expect.objectContaining({ parent: draftParent }),
     });
+  });
+
+  it('asks to retarget the note arrows onto the created task', async () => {
+    const onCommentDelete = vi.fn();
+
+    await submitConvertedSwimlaneComment(baseInput({ onCommentDelete }));
+
+    expect(onCommentDelete).toHaveBeenCalledWith('note-1', { retargetLinksTo: 'TASK-9' });
   });
 });

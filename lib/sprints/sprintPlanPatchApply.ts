@@ -5,6 +5,7 @@ import type {
 } from '@/lib/sprints/sprintPlanPatchTypes';
 import type { TaskParent } from '@/types';
 
+import { resolvePlannerLinkEndpoints } from '@/lib/planner/plannerLinkEndpoint';
 import { deleteSprintGoal, insertSprintGoal, updateSprintGoal } from '@/lib/sprintGoals';
 import {
   fetchFeatureLanes,
@@ -13,9 +14,11 @@ import {
 import {
   deleteSprintComment,
   insertSprintComment,
+  listSprintCommentIds,
   updateSprintComment,
 } from '@/lib/sprints/sprintCommentsRepository';
 import { mergeFeatureDraftIntoDocument } from '@/lib/sprints/sprintPlanPatchHelpers';
+import { resolvePlanPatchCreateNoteSize } from '@/lib/sprints/sprintPlanPatchNoteSize';
 import { deleteTaskLink, upsertTaskLink } from '@/lib/sprints/taskLinksRepository';
 import {
   deleteTaskPosition,
@@ -24,8 +27,6 @@ import {
 } from '@/lib/sprints/taskPositionsRepository';
 
 const MCP_AGENT_USER_ID = 'mcp-agent';
-const DEFAULT_NOTE_WIDTH = 200;
-const DEFAULT_NOTE_HEIGHT = 3;
 
 function asParent(
   parent: { display: string; id: string; key: string; self?: string } | null | undefined
@@ -80,20 +81,25 @@ async function applyCreateNote(input: {
   sprintId: number;
 }): Promise<string> {
   const { op, organizationId, sprintId } = input;
+  const size = resolvePlanPatchCreateNoteSize({
+    height: op.height,
+    text: op.text,
+    width: op.width,
+  });
   const inserted = await insertSprintComment({
     assigneeId: op.assigneeId,
     color: op.color,
     commentId: undefined,
     createdBy: MCP_AGENT_USER_ID,
     day: op.day,
-    height: op.height ?? DEFAULT_NOTE_HEIGHT,
+    height: size.height,
     kind: 'text',
     organizationId,
     parent: asParent(op.parent),
     part: op.part,
     sprintId,
     text: op.text,
-    width: op.width ?? DEFAULT_NOTE_WIDTH,
+    width: size.width,
     x: null,
     y: null,
   });
@@ -196,7 +202,55 @@ async function applyUpdateGoal(input: {
   return `goal ${input.op.id}`;
 }
 
+function takeNextDraftNoteId(ids: readonly string[], cursor: { index: number }): string | undefined {
+  const id = ids[cursor.index];
+  if (id) {
+    cursor.index += 1;
+  }
+  return id;
+}
+
+function applyCreateNoteOrDraft(input: {
+  draftNoteId?: string;
+  organizationId: string;
+  op: Extract<SprintPlanPatchOp, { op: 'createNote' }>;
+  sprintId: number;
+}): Promise<string> {
+  if (input.draftNoteId) {
+    return Promise.resolve(`note ${input.draftNoteId}`);
+  }
+  return applyCreateNote({
+    organizationId: input.organizationId,
+    op: input.op,
+    sprintId: input.sprintId,
+  });
+}
+
+async function applyUpsertLink(input: {
+  commentIds?: ReadonlySet<string>;
+  organizationId: string;
+  op: Extract<SprintPlanPatchOp, { op: 'upsertLink' }>;
+  sprintId: number;
+}): Promise<string> {
+  const endpoints = resolvePlannerLinkEndpoints(
+    { fromTaskId: input.op.fromTaskId, toTaskId: input.op.toTaskId },
+    input.commentIds ?? new Set()
+  );
+  await upsertTaskLink({
+    fromAnchor: input.op.fromAnchor,
+    fromTaskId: endpoints.fromTaskId,
+    linkId: input.op.id,
+    organizationId: input.organizationId,
+    sprintId: input.sprintId,
+    toAnchor: input.op.toAnchor,
+    toTaskId: endpoints.toTaskId,
+  });
+  return `link ${input.op.id}`;
+}
+
 async function applyOneOp(input: {
+  commentIds?: ReadonlySet<string>;
+  draftNoteId?: string;
   organizationId: string;
   op: SprintPlanPatchOp;
   sprintId: number;
@@ -209,23 +263,24 @@ async function applyOneOp(input: {
       await deleteTaskPosition({ organizationId, sprintId, taskId: op.taskId });
       return `position ${op.taskId}`;
     case 'createNote':
-      return applyCreateNote({ organizationId, op, sprintId });
+      return applyCreateNoteOrDraft({
+        draftNoteId: input.draftNoteId,
+        organizationId,
+        op,
+        sprintId,
+      });
     case 'updateNote':
       return applyUpdateNote({ organizationId, op, sprintId });
     case 'deleteNote':
       await deleteSprintComment({ commentId: op.commentId, organizationId, sprintId });
       return `note ${op.commentId}`;
     case 'upsertLink':
-      await upsertTaskLink({
-        fromAnchor: op.fromAnchor,
-        fromTaskId: op.fromTaskId,
-        linkId: op.id,
+      return applyUpsertLink({
+        commentIds: input.commentIds,
         organizationId,
+        op,
         sprintId,
-        toAnchor: op.toAnchor,
-        toTaskId: op.toTaskId,
       });
-      return `link ${op.id}`;
     case 'deleteLink':
       await deleteTaskLink({ linkId: op.linkId, organizationId, sprintId });
       return `link ${op.linkId}`;
@@ -273,16 +328,41 @@ export function collectRealtimeResources(ops: SprintPlanPatchOp[]): SprintRealti
   return [...set];
 }
 
+async function collectCommentIdsForLinkOps(input: {
+  draftNoteIds: readonly string[];
+  ops: SprintPlanPatchOp[];
+  sprintId: number;
+}): Promise<ReadonlySet<string> | undefined> {
+  if (!input.ops.some((op) => op.op === 'upsertLink')) {
+    return undefined;
+  }
+  const commentIds = new Set(input.draftNoteIds);
+  for (const id of await listSprintCommentIds({ sprintId: input.sprintId })) {
+    commentIds.add(id);
+  }
+  return commentIds;
+}
+
 export async function applySprintPlanPatchOps(input: {
+  draftNoteIds?: readonly string[];
   organizationId: string;
   ops: SprintPlanPatchOp[];
   sprintId: number;
 }): Promise<{ applied: SprintPlanPatchApplyOpResult[]; error?: string }> {
   const applied: SprintPlanPatchApplyOpResult[] = [];
+  const draftCursor = { index: 0 };
+  const draftNoteIds = input.draftNoteIds ?? [];
+  const commentIds = await collectCommentIdsForLinkOps({
+    draftNoteIds,
+    ops: input.ops,
+    sprintId: input.sprintId,
+  });
   for (let index = 0; index < input.ops.length; index++) {
     const op = input.ops[index]!;
     try {
       const detail = await applyOneOp({
+        commentIds,
+        draftNoteId: op.op === 'createNote' ? takeNextDraftNoteId(draftNoteIds, draftCursor) : undefined,
         organizationId: input.organizationId,
         op,
         sprintId: input.sprintId,

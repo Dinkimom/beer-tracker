@@ -16,6 +16,7 @@ import {
   resolvePlacementToolAfterLayerChange,
   resolveNoteColorPopupOpen,
   resolveLayoutModeSubmenuViewportPosition,
+  resolvePlacementToolbarScrollPadPx,
   resolvePlacementToolbarTools,
   resolveVisibilityLayerMenuRows,
   resolveVisibilityLayerVisible,
@@ -27,6 +28,13 @@ describe('SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX', () => {
   it('leaves room for the capsule plus a gap above the last swimlane row', () => {
     expect(SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX).toBeGreaterThan(
       SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX + SWIMLANE_PLACEMENT_TOOLBAR_HEIGHT_PX
+    );
+  });
+
+  it('adds room for the compact agent proposal capsule above the placement tools', () => {
+    expect(resolvePlacementToolbarScrollPadPx(false)).toBe(SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX);
+    expect(resolvePlacementToolbarScrollPadPx(true)).toBeGreaterThan(
+      SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX
     );
   });
 });

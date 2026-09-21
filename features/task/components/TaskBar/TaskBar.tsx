@@ -28,6 +28,7 @@ import { TaskBarDraftSaveButton } from './TaskBarDraftSaveButton';
 import { TaskBarDragSourceGhost } from './TaskBarDragSourceGhost';
 import { shouldCancelInlineEditorOnFocusOut } from './taskBarHelpers';
 import { TaskBarOpacityLayer } from './TaskBarOpacityLayer';
+import { TaskBarPendingApprovalToolbar } from './TaskBarPendingApprovalToolbar';
 import { useTaskBarDisplayState } from './useTaskBarDisplayState';
 import { useTaskBarLifecycle } from './useTaskBarLifecycle';
 import { useTaskBarPhotoCardInteractions } from './useTaskBarPhotoCardInteractions';
@@ -86,6 +87,7 @@ interface TaskBarProps {
   taskPositions?: Map<string, TaskPosition>;
   widthPercent: number;
   onClick?: (taskId: string) => void;
+  onCommentApprove?: (commentId: string) => void;
   onCommentDelete?: (commentId: string) => void;
   onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
@@ -117,6 +119,7 @@ export const TaskBar = observer(function TaskBar({
   linkMode = null,
   onResize,
   onClick,
+  onCommentApprove,
   onCommentDelete,
   onCommentUpdate,
   onDeleteLocalImage,
@@ -236,9 +239,16 @@ export const TaskBar = observer(function TaskBar({
     !isDiagramCard &&
     (task.localDraftKind === 'comment' || swimlaneCommentId != null);
   const cornerStyle = resolveResizeHandleCornerStyle(isPhotoCard || isDiagramCard, isStickyNoteCard);
-  const { showCommentDelete, showDraftNoteDelete, showImageDelete, showStickyNotePin, showStickyNoteReactions } =
-    resolveTaskBarAnnotationChrome({
+  const {
+    showCommentDelete,
+    showDraftNoteDelete,
+    showImageDelete,
+    showPendingApprovalToolbar,
+    showStickyNotePin,
+    showStickyNoteReactions,
+  } = resolveTaskBarAnnotationChrome({
       effectiveIsDragging,
+      hasCommentApprove: onCommentApprove != null,
       hasCommentDelete: onCommentDelete != null,
       hasImageDelete: onDeleteLocalImage != null,
       inlineTitleEditor,
@@ -248,6 +258,7 @@ export const TaskBar = observer(function TaskBar({
       isPhotoCard,
       isResizing: isAnyResizing,
       isStickyNoteCard,
+      pendingApproval: task.pendingApproval === true,
       presenceLocked: presenceBlocksMutations,
       quickAddMenu,
       quickAddSubmitting,
@@ -386,6 +397,13 @@ export const TaskBar = observer(function TaskBar({
           onTaskHover={onTaskHover}
         />
       </TaskBarOpacityLayer>
+      {showPendingApprovalToolbar && swimlaneCommentId != null ? (
+        <TaskBarPendingApprovalToolbar
+          commentId={swimlaneCommentId}
+          onApprove={onCommentApprove}
+          onReject={onCommentDelete}
+        />
+      ) : null}
       <TaskBarDraftSaveButton noteEditor={inlineTitleEditor} />
       {quickAddMenu && !quickAddSubmitting ? (
         <SwimlaneQuickAddMenu
@@ -441,6 +459,7 @@ const MemoizedTaskBar = React.memo(TaskBar, (prevProps, nextProps) => {
     prevProps.task.imageUrl === nextProps.task.imageUrl &&
     prevProps.task.stickyNoteColor === nextProps.task.stickyNoteColor &&
     prevProps.task.stickyNoteAuthorName === nextProps.task.stickyNoteAuthorName &&
+    prevProps.task.pendingApproval === nextProps.task.pendingApproval &&
     prevProps.leftPercent === nextProps.leftPercent &&
     prevProps.widthPercent === nextProps.widthPercent &&
     prevProps.duration === nextProps.duration &&
@@ -479,6 +498,7 @@ const MemoizedTaskBar = React.memo(TaskBar, (prevProps, nextProps) => {
       Boolean(nextProps.quickAddMenu?.onCreateAvailability) &&
     Boolean(prevProps.quickAddMenu?.onPasteNote) === Boolean(nextProps.quickAddMenu?.onPasteNote) &&
     prevProps.quickAddSubmitting === nextProps.quickAddSubmitting &&
+    Boolean(prevProps.onCommentApprove) === Boolean(nextProps.onCommentApprove) &&
     Boolean(prevProps.onCommentDelete) === Boolean(nextProps.onCommentDelete) &&
     Boolean(prevProps.onCommentUpdate) === Boolean(nextProps.onCommentUpdate) &&
     Boolean(prevProps.onDeleteLocalImage) === Boolean(nextProps.onDeleteLocalImage)

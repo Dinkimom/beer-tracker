@@ -18,7 +18,12 @@ import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { STICKY_NOTE_COLOR_LABEL_KEYS, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 
+import {
+  formatPlannerShortcutAria,
+  PlannerShortcutTooltip,
+} from './PlannerShortcutTooltip';
 import { SwimlanePlacementToolbarCursorIcon } from './SwimlanePlacementToolbarCursorIcon';
+import { formatPlacementToolShortcutHint } from './swimlanePlacementToolbarKeyboard';
 
 const TOOL_ICONS: Record<Exclude<SwimlanePlacementTool, 'comment' | 'cursor' | 'diagram' | 'link' | 'task'>, string> = {
   availability: 'calendar',
@@ -90,6 +95,7 @@ export function SwimlanePlacementToolbarButton({
       ? t(STICKY_NOTE_COLOR_LABEL_KEYS[noteColor])
       : undefined;
   const title = colorLabel ? `${label} · ${colorLabel}` : label;
+  const shortcut = formatPlacementToolShortcutHint(tool);
   const iconOnly = tool === 'cursor';
   return (
     <>
@@ -99,26 +105,27 @@ export function SwimlanePlacementToolbarButton({
           className="mx-1 h-6 w-px shrink-0 self-center bg-gray-200 dark:bg-gray-600"
         />
       ) : null}
-      <Button
-        aria-expanded={tool === 'comment' ? expanded : undefined}
-        aria-haspopup={tool === 'comment' ? 'dialog' : undefined}
-        aria-label={title}
-        aria-pressed={active}
-        className={`!h-9 !min-h-0 !min-w-0 !rounded-lg !py-0 font-medium ${
-          iconOnly ? '!w-9 !gap-0 !px-0' : '!gap-2 !px-3 text-sm'
-        } ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${
-          active
-            ? '!bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!bg-blue-500/20 dark:!text-blue-200 dark:hover:!bg-blue-500/30'
-            : 'text-gray-600 hover:!bg-gray-50 dark:text-gray-300 dark:hover:!bg-gray-700'
-        }`}
-        title={title}
-        type="button"
-        variant="ghost"
-        onClick={onSelect}
-      >
-        {resolvePlacementToolbarGlyph(tool, noteColor, isDark, active, issueTrackerKind)}
-        {iconOnly ? null : <span>{label}</span>}
-      </Button>
+      <PlannerShortcutTooltip label={title} shortcut={shortcut} side="top">
+        <Button
+          aria-expanded={tool === 'comment' ? expanded : undefined}
+          aria-haspopup={tool === 'comment' ? 'dialog' : undefined}
+          aria-label={formatPlannerShortcutAria(title, shortcut)}
+          aria-pressed={active}
+          className={`!h-9 !min-h-0 !min-w-0 !rounded-lg !py-0 font-medium ${
+            iconOnly ? '!w-9 !gap-0 !px-0' : '!gap-2 !px-3 text-sm'
+          } ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${
+            active
+              ? '!bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!bg-blue-500/20 dark:!text-blue-200 dark:hover:!bg-blue-500/30'
+              : 'text-gray-600 hover:!bg-gray-50 dark:text-gray-300 dark:hover:!bg-gray-700'
+          }`}
+          type="button"
+          variant="ghost"
+          onClick={onSelect}
+        >
+          {resolvePlacementToolbarGlyph(tool, noteColor, isDark, active, issueTrackerKind)}
+          {iconOnly ? null : <span>{label}</span>}
+        </Button>
+      </PlannerShortcutTooltip>
     </>
   );
 }

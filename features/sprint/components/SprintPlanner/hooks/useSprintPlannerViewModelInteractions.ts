@@ -24,6 +24,10 @@ import { useDragAndDrop } from '@/features/swimlane/hooks/useDragAndDrop';
 import { filterTaskLinksByKnownTaskIds } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
 import { applyTaskResizeToPositions } from '@/features/task/hooks/useTaskResizeHelpers';
 import { useRootStore } from '@/lib/layers';
+import {
+  commentIdSetFromRecords,
+  resolvePlannerLinkEndpoints,
+} from '@/lib/planner/plannerLinkEndpoint';
 
 import { useDevelopersManagement } from '../../../hooks/useDevelopersManagement';
 import { useKeyboardAndMouseHandlers } from '../../../hooks/useKeyboardAndMouseHandlers';
@@ -177,10 +181,11 @@ export function useSprintPlannerViewModelInteractions({
     () => mergeSwimlaneCommentTasksMap(tasksMap, commentProjection.tasksMap),
     [commentProjection.tasksMap, tasksMap]
   );
-  const swimlaneTaskLinks = useMemo(
-    () => filterTaskLinksByKnownTaskIds(taskLinks, tasksMapWithComments),
-    [taskLinks, tasksMapWithComments]
-  );
+  const swimlaneTaskLinks = useMemo(() => {
+    const commentIds = commentIdSetFromRecords(comments);
+    const normalized = taskLinks.map((link) => resolvePlannerLinkEndpoints(link, commentIds));
+    return filterTaskLinksByKnownTaskIds(normalized, tasksMapWithComments);
+  }, [comments, taskLinks, tasksMapWithComments]);
   const taskOperations = useTaskOperations({
     tasks,
     taskPositions,

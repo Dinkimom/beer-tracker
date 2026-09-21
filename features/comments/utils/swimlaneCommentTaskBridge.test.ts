@@ -24,6 +24,7 @@ import {
   isSwimlaneDiagramTask,
   parseSwimlaneCommentTaskId,
   resolveSwimlaneAnnotationContextMenuVariant,
+  selectPendingApprovalCommentIds,
   stripSwimlaneCommentPositions,
   swimlanePositionToCommentPatch,
   swimlanePositionToCommentResizePatch,
@@ -134,6 +135,21 @@ describe('swimlaneCommentTaskBridge', () => {
     expect(task.stickyNoteColor).toBe('yellow');
     expect(task.stickyNoteAuthorName).toBeUndefined();
     expect(task.parent).toBeUndefined();
+    expect(task.pendingApproval).toBeUndefined();
+  });
+
+  it('marks an MCP pending note so the card can render translucent', () => {
+    const task = commentToSwimlaneTask(comment({ id: 'c1', pendingApproval: true, text: 'draft' }));
+    expect(task.pendingApproval).toBe(true);
+  });
+
+  it('collects ids of notes waiting for agent approval', () => {
+    expect(
+      selectPendingApprovalCommentIds([
+        comment({ id: 'keep', text: 'saved' }),
+        comment({ id: 'draft', pendingApproval: true, text: 'pending' }),
+      ])
+    ).toEqual(['draft']);
   });
 
   it('projects a stored parent onto the swimlane card', () => {

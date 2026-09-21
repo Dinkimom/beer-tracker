@@ -114,7 +114,10 @@ CREATE TABLE beer_tracker.comments (
     image_file_id UUID REFERENCES beer_tracker.planner_files (id),
     created_by UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    pending_approval BOOLEAN NOT NULL DEFAULT FALSE,
+    pending_approval_expires_at TIMESTAMP WITH TIME ZONE,
+    plan_patch_proposal_id VARCHAR(64)
 );
 
 CREATE INDEX idx_task_positions_sprint ON beer_tracker.task_positions(sprint_id);
@@ -137,6 +140,8 @@ CREATE INDEX idx_comments_sprint_assignee ON beer_tracker.comments(sprint_id, as
 CREATE INDEX idx_planner_files_org ON beer_tracker.planner_files(organization_id);
 CREATE INDEX idx_comments_image_file ON beer_tracker.comments(image_file_id)
     WHERE image_file_id IS NOT NULL;
+CREATE INDEX idx_comments_pending_approval ON beer_tracker.comments(sprint_id)
+    WHERE pending_approval = TRUE;
 
 CREATE TABLE beer_tracker.comment_reactions (
     organization_id UUID NOT NULL

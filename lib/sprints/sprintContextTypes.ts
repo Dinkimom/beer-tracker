@@ -44,6 +44,9 @@ export interface SprintContextNote {
   kind: 'diagram' | 'image' | 'text';
   parent?: SprintContextNoteParent;
   part: number | null;
+  pendingApproval?: boolean;
+  /** Board card id for upsertLink (`comment:{id}`). */
+  taskId?: string;
   text: string;
 }
 

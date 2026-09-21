@@ -66,6 +66,36 @@ export async function deleteComment(sprintId: number, commentId: string): Promis
   }
 }
 
+export async function approveSprintComment(sprintId: number, commentId: string): Promise<boolean> {
+  try {
+    await getPlannerBeerTrackerApi().post(`/sprints/${sprintId}/comments/${commentId}/approve`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to approve comment ${commentId}:`, error);
+    return false;
+  }
+}
+
+export async function approveAllPendingSprintComments(sprintId: number): Promise<boolean> {
+  try {
+    await getPlannerBeerTrackerApi().post(`/sprints/${sprintId}/comments/pending`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to approve pending comments in sprint ${sprintId}:`, error);
+    return false;
+  }
+}
+
+export async function rejectAllPendingSprintComments(sprintId: number): Promise<boolean> {
+  try {
+    await getPlannerBeerTrackerApi().delete(`/sprints/${sprintId}/comments/pending`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to reject pending comments in sprint ${sprintId}:`, error);
+    return false;
+  }
+}
+
 export async function createSprintImageComment(
   sprintId: number,
   input: {

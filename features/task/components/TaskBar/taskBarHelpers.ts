@@ -227,7 +227,8 @@ export function resolveTaskBarEffectiveOpacity(params: {
     params.contextMenuBlurOtherCards &&
     params.contextMenuTaskId != null &&
     params.contextMenuTaskId !== params.task.id;
-  return opacityFromParent * taskOpacity * (dimmedByContextMenuElsewhere ? 0.5 : 1);
+  const pendingApprovalOpacity = params.task.pendingApproval === true ? 0.65 : 1;
+  return opacityFromParent * taskOpacity * pendingApprovalOpacity * (dimmedByContextMenuElsewhere ? 0.5 : 1);
 }
 
 export function resolveTaskBarZIndex(params: {

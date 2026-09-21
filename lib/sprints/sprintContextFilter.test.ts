@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   dateRangesOverlap,
+  expandLinkScopeWithNotes,
   expandScopeWithParentMap,
   filterFeatureLanesForFeature,
   filterLinksByFeatureScope,
@@ -79,6 +80,19 @@ describe('sprintContextFilter', () => {
         scope
       ).map((l) => l.id)
     ).toEqual(['l1']);
+  });
+
+  it('keeps note arrows when the note is in the feature scope', () => {
+    const scope = expandLinkScopeWithNotes(new Set(['BT-10']), [{ id: 'n1' }]);
+    expect(
+      filterLinksByFeatureScope(
+        [
+          { fromAnchor: null, fromTaskId: 'BT-10', id: 'to-note', toAnchor: null, toTaskId: 'comment:n1' },
+          { fromAnchor: null, fromTaskId: 'BT-10', id: 'raw-note', toAnchor: null, toTaskId: 'n1' },
+        ],
+        scope
+      ).map((link) => link.id)
+    ).toEqual(['to-note', 'raw-note']);
   });
 
   it('keeps notes bound to the feature parent or lane assignee', () => {

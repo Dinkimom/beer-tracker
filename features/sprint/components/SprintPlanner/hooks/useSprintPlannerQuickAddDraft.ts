@@ -69,7 +69,7 @@ interface UseSprintPlannerQuickAddDraftParams {
   closeNoteComposer: () => void;
   getQueueByBoardId: (boardId: number | null) => string | null;
   onCommentCreate: (comment: Comment) => void;
-  onCommentDelete: (commentId: string) => void;
+  onCommentDelete: (commentId: string, options?: { retargetLinksTo?: string }) => Promise<void> | void;
   onCommentUpdate: (commentId: string, text: string, color?: StickyNoteColor) => void;
   onDiagramEditorClose: () => void;
   onDiagramEditorOpen: (taskId: string) => void;

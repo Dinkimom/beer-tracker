@@ -3,7 +3,10 @@ import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
 import type { Task, TaskCardVariant, TaskPosition } from '@/types';
 import type { CSSProperties } from 'react';
 
-import { getStickyNoteCardStyle } from '@/features/comments/utils/stickyNotePalette';
+import {
+  getStickyNoteCardStyle,
+  getStickyNotePendingApprovalCardStyle,
+} from '@/features/comments/utils/stickyNotePalette';
 import { isSwimlaneCommentTask, isSwimlaneDiagramTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { getDiagramCardStyle } from '@/features/task/utils/diagramCardSurface';
 import { getPhotoCardPaddingClass, getPhotoCardStyle } from '@/features/task/utils/photoCardSurface';
@@ -45,7 +48,8 @@ function resolvePlannerAnnotationCardStyle(
   isLocalImageCard: boolean,
   isLocalCommentDraft: boolean,
   stickyNoteColor: string | null | undefined,
-  isDark: boolean
+  isDark: boolean,
+  pendingApproval: boolean
 ): CSSProperties | undefined {
   if (isLocalDiagramCard) {
     return getDiagramCardStyle(isDark);
@@ -54,7 +58,9 @@ function resolvePlannerAnnotationCardStyle(
     return getPhotoCardStyle(isDark);
   }
   if (isLocalCommentDraft) {
-    return getStickyNoteCardStyle(stickyNoteColor, isDark);
+    return pendingApproval
+      ? getStickyNotePendingApprovalCardStyle(stickyNoteColor, isDark)
+      : getStickyNoteCardStyle(stickyNoteColor, isDark);
   }
   return undefined;
 }
@@ -183,7 +189,8 @@ function buildTaskCardRootVisualState(input: {
     input.isLocalImageCard,
     input.isLocalCommentDraft,
     input.stickyNoteColor,
-    input.isDark
+    input.isDark,
+    input.task.pendingApproval === true
   );
   const radiusClass = getSwimlaneCardRadiusClass(input.isLocalImageCard, input.isLocalCommentDraft);
   const glowColor = resolveTaskCardHoverGlowColor({

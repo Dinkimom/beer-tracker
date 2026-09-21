@@ -19,6 +19,8 @@ describe('mapCommentFromApi', () => {
     expect(mapCommentFromApi({ ...base, color: 'pink' }).color).toBe('pink');
     expect(mapCommentFromApi(base).color).toBe('yellow');
     expect(mapCommentFromApi({ ...base, color: 'purple' }).color).toBe('yellow');
+    expect(mapCommentFromApi(base).pendingApproval).toBeUndefined();
+    expect(mapCommentFromApi({ ...base, pending_approval: true }).pendingApproval).toBe(true);
     expect(mapCommentFromApi(base).reactions).toBeUndefined();
     expect(mapCommentFromApi(base).authorName).toBeUndefined();
     expect(mapCommentFromApi(base).parent).toBeUndefined();

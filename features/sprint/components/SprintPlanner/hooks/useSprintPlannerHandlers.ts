@@ -72,6 +72,7 @@ export function useSprintPlannerHandlers({
   const commentHandlers = useSprintPlannerCommentHandlers({
     deleteComment,
     deleteLink,
+    saveLink,
     selectedSprintId,
     setComments,
     setTaskLinks,

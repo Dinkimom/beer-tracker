@@ -100,6 +100,8 @@ export interface Task {
   originalTaskId?: string;
   /** Родительская задача (story, epic и т.п.) */
   parent?: TaskParent;
+  /** MCP/agent draft waiting for apply — translucent until confirmed. */
+  pendingApproval?: boolean;
   // Оригинальный ID задачи (для QA задач - ID дев задачи)
   position?: TaskPosition;
   priority?: string;
@@ -242,6 +244,8 @@ export interface Comment {
   /** Родитель из Tracker (story/epic) — как у задачи, локально на заметке. */
   parent?: TaskParent;
   part: number;
+  /** MCP plan-patch draft — translucent until apply_plan_patch. */
+  pendingApproval?: boolean;
   /** Агрегированные реакции на заметку (с точки зрения текущего пользователя). */
   reactions?: StickyNoteReaction[];
   /**
@@ -358,6 +362,7 @@ export interface SprintCommentsResponse {
     kind?: 'diagram' | 'image' | 'text' | null;
     parent?: TaskParent | null;
     part: number | null;
+    pending_approval?: boolean | null;
     reactions?: StickyNoteReaction[];
     text: string;
     updated_at?: string;

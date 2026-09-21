@@ -7,6 +7,10 @@ import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 
 import { trackerParentKeyForCreate } from './applyQuickAddDraftFields';
 
+interface ConvertedCommentDeleteOptions {
+  retargetLinksTo?: string;
+}
+
 interface SubmitConvertedSwimlaneCommentInput {
   comment: Comment;
   createFailedMessage: string;
@@ -19,7 +23,10 @@ interface SubmitConvertedSwimlaneCommentInput {
   plannerParent?: TaskParent;
   selectedSprintId: number;
   invalidateOccupancyQueries: () => void;
-  onCommentDelete: (commentId: string) => void;
+  onCommentDelete: (
+    commentId: string,
+    options?: ConvertedCommentDeleteOptions
+  ) => Promise<void> | void;
   savePosition: (position: TaskPosition, isQa: boolean) => Promise<void>;
   setTaskPositions: (
     updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>
@@ -73,7 +80,7 @@ export async function submitConvertedSwimlaneComment(
     next.set(issueKey, savedPosition);
     return next;
   });
-  input.onCommentDelete(input.comment.id);
+  await input.onCommentDelete(input.comment.id, { retargetLinksTo: issueKey });
   input.invalidateOccupancyQueries();
   return { ok: true, issueKey, task: createdTask };
 }

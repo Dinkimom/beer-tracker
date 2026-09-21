@@ -222,7 +222,7 @@ export function createSprintContextMcpServer(input: { organizationId: string }):
     'propose_plan_patch',
     {
       description:
-        'Dry-run a Beer Tracker planning patch (positions, text notes, links, feature drafts, goals). Does NOT write. Returns summary, capacityPreview, and applyToken (TTL 30m). Always call this before apply_plan_patch. Does not sync assignees/dates to Tracker/Jira.',
+        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). createNote writes draft sticky notes immediately (translucent on the board until apply). Other ops do NOT write. Returns summary, capacityPreview, draftNoteIds, and applyToken (TTL 30m). Always call this before apply_plan_patch. Does not sync assignees/dates to Tracker/Jira. For upsertLink to a note use comment:{notes[].id} (or notes[].taskId); raw notes[].id is accepted and rewritten.',
       inputSchema: {
         ops: SprintPlanPatchOpsSchema.describe(
           '1–50 ops: upsertPosition|deletePosition|createNote|updateNote|deleteNote|upsertLink|deleteLink|upsertFeatureDraft|createGoal|updateGoal|deleteGoal'
@@ -239,7 +239,7 @@ export function createSprintContextMcpServer(input: { organizationId: string }):
         });
         return toolJson({
           ...result,
-          hint: 'Review summary/capacityPreview, then call apply_plan_patch with the same ops + applyToken and confirm=true.',
+          hint: 'Review the translucent draft notes on the planner (and summary/capacityPreview), then call apply_plan_patch with the same ops + applyToken and confirm=true.',
         });
       } catch (error) {
         return toolError(error);
@@ -251,7 +251,7 @@ export function createSprintContextMcpServer(input: { organizationId: string }):
     'apply_plan_patch',
     {
       description:
-        'Apply a previously proposed plan patch. Requires confirm=true and the applyToken from propose_plan_patch (same ops). Not silent — refuse without confirm. No Tracker/Jira assignee/date sync.',
+        'Apply a previously proposed plan patch. Requires confirm=true and the applyToken from propose_plan_patch (same ops). Confirms draft notes (full opacity) and writes remaining ops. Not silent — refuse without confirm. No Tracker/Jira assignee/date sync.',
       inputSchema: {
         applyToken: z.string().min(1).describe('Token from propose_plan_patch'),
         confirm: z

@@ -14,6 +14,10 @@ import {
   collectRealtimeResources,
 } from '@/lib/sprints/sprintPlanPatchApply';
 import {
+  confirmProposedCreateNotes,
+  persistProposedCreateNotes,
+} from '@/lib/sprints/sprintPlanPatchDraftNotes';
+import {
   simulatePositionsAfterPatch,
   summarizeSprintPlanPatchOps,
 } from '@/lib/sprints/sprintPlanPatchHelpers';
@@ -39,6 +43,29 @@ function parseOpsOrThrow(raw: unknown): SprintPlanPatchOp[] {
     }
     throw error;
   }
+}
+
+function notifyPlanPatchComments(organizationId: string, sprintId: number): void {
+  notifySprintRealtime(
+    new Request('http://localhost/api/mcp'),
+    organizationId,
+    sprintId,
+    ['comments']
+  );
+}
+
+async function persistDraftNotesForProposal(input: {
+  expiresAt: Date;
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  proposalId: string;
+  sprintId: number;
+}): Promise<string[]> {
+  const draftNoteIds = await persistProposedCreateNotes(input);
+  if (draftNoteIds.length > 0) {
+    notifyPlanPatchComments(input.organizationId, input.sprintId);
+  }
+  return draftNoteIds;
 }
 
 async function loadCapacitySummary(input: {
@@ -74,22 +101,61 @@ export async function proposeSprintPlanPatch(input: {
   }).summary;
 
   const nowSec = Math.floor(Date.now() / 1000);
+  const opsHash = hashSprintPlanPatchOps(ops);
+  const expiresAt = new Date((nowSec + SPRINT_PLAN_PATCH_TTL_SEC) * 1000);
+  const draftNoteIds = await persistDraftNotesForProposal({
+    expiresAt,
+    ops,
+    organizationId: input.organizationId,
+    proposalId: opsHash,
+    sprintId: input.sprintId,
+  });
   const applyToken = signSprintPlanPatchToken({
+    draftNoteIds,
     ops,
     organizationId: input.organizationId,
     sprintId: input.sprintId,
     nowSec,
   });
-  const opsHash = hashSprintPlanPatchOps(ops);
   return {
     applyToken,
     capacityPreview: { summary: capacityPreviewSummary },
-    expiresAt: new Date((nowSec + SPRINT_PLAN_PATCH_TTL_SEC) * 1000).toISOString(),
+    ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),
+    expiresAt: expiresAt.toISOString(),
     ops,
     proposalId: proposalIdFromOpsHash(opsHash),
     sprintId: input.sprintId,
     summary: summarizeSprintPlanPatchOps(ops),
   };
+}
+
+function applyPatchRejected(
+  sprintId: number,
+  error: string
+): SprintPlanPatchApplyResult {
+  return { applied: [], error, ok: false, sprintId };
+}
+
+function notifyAppliedPlanPatch(input: {
+  applied: { ok: boolean }[];
+  draftNoteIds: readonly string[];
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  sprintId: number;
+}): void {
+  const resources = collectRealtimeResources(input.ops.slice(0, input.applied.filter((row) => row.ok).length));
+  if (input.draftNoteIds.length > 0 && !resources.includes('comments')) {
+    resources.push('comments');
+  }
+  if (resources.length === 0) {
+    return;
+  }
+  notifySprintRealtime(
+    new Request('http://localhost/api/mcp'),
+    input.organizationId,
+    input.sprintId,
+    resources
+  );
 }
 
 export async function applySprintPlanPatch(input: {
@@ -100,24 +166,20 @@ export async function applySprintPlanPatch(input: {
   sprintId: number;
 }): Promise<SprintPlanPatchApplyResult> {
   if (input.confirm !== true) {
-    return {
-      applied: [],
-      error: 'confirm_required: set confirm=true after reviewing propose_plan_patch',
-      ok: false,
-      sprintId: input.sprintId,
-    };
+    return applyPatchRejected(
+      input.sprintId,
+      'confirm_required: set confirm=true after reviewing propose_plan_patch'
+    );
   }
 
   let ops: SprintPlanPatchOp[];
   try {
     ops = parseOpsOrThrow(input.ops);
   } catch (error) {
-    return {
-      applied: [],
-      error: error instanceof Error ? error.message : String(error),
-      ok: false,
-      sprintId: input.sprintId,
-    };
+    return applyPatchRejected(
+      input.sprintId,
+      error instanceof Error ? error.message : String(error)
+    );
   }
 
   const verified = verifySprintPlanPatchToken({
@@ -127,29 +189,28 @@ export async function applySprintPlanPatch(input: {
     sprintId: input.sprintId,
   });
   if (!verified.ok) {
-    return {
-      applied: [],
-      error: verified.error,
-      ok: false,
-      sprintId: input.sprintId,
-    };
+    return applyPatchRejected(input.sprintId, verified.error);
   }
 
+  await confirmProposedCreateNotes({
+    commentIds: verified.draftNoteIds,
+    sprintId: input.sprintId,
+  });
+
   const { applied, error } = await applySprintPlanPatchOps({
+    draftNoteIds: verified.draftNoteIds,
     organizationId: input.organizationId,
     ops,
     sprintId: input.sprintId,
   });
 
-  const resources = collectRealtimeResources(ops.slice(0, applied.filter((row) => row.ok).length));
-  if (resources.length > 0) {
-    notifySprintRealtime(
-      new Request('http://localhost/api/mcp'),
-      input.organizationId,
-      input.sprintId,
-      resources
-    );
-  }
+  notifyAppliedPlanPatch({
+    applied,
+    draftNoteIds: verified.draftNoteIds,
+    ops,
+    organizationId: input.organizationId,
+    sprintId: input.sprintId,
+  });
 
   if (error) {
     return {

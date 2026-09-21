@@ -617,6 +617,50 @@ input[type="checkbox"]:disabled {
   }
 }
 
+@keyframes overlay-tooltip-enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes overlay-tooltip-exit-down {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+}
+
+@keyframes overlay-tooltip-enter-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes overlay-tooltip-exit-up {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
 @keyframes overlay-fade-enter {
   from {
     opacity: 0;
@@ -690,11 +734,20 @@ input[type="checkbox"]:disabled {
 }
 
 .overlay-tooltip {
-  animation: overlay-float-enter 150ms ease-out both;
+  animation: overlay-tooltip-enter-up 150ms ease-out both;
+}
+
+.overlay-tooltip[data-side='bottom'] {
+  animation: overlay-tooltip-enter-down 150ms ease-out both;
 }
 
 .overlay-tooltip[data-state='closed'] {
-  animation: overlay-float-exit 150ms ease-in forwards;
+  animation: overlay-tooltip-exit-down 180ms ease-in forwards;
+  pointer-events: none;
+}
+
+.overlay-tooltip[data-side='bottom'][data-state='closed'] {
+  animation: overlay-tooltip-exit-up 180ms ease-in forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -703,11 +756,13 @@ input[type="checkbox"]:disabled {
   .overlay-backdrop,
   .overlay-dialog,
   .overlay-tooltip,
+  .overlay-tooltip[data-side='bottom'],
   .overlay-float[data-state='closed'],
   .overlay-panel[data-state='closed'],
   .overlay-backdrop[data-state='closed'],
   .overlay-dialog[data-state='closed'],
-  .overlay-tooltip[data-state='closed'] {
+  .overlay-tooltip[data-state='closed'],
+  .overlay-tooltip[data-side='bottom'][data-state='closed'] {
     animation-duration: 1ms;
   }
 }

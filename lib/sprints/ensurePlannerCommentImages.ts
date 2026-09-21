@@ -38,6 +38,7 @@ async function runEnsurePlannerCommentImagesSchema(): Promise<void> {
     await createPlannerFilesStorageKeyIndex(schema);
     await ensureCommentsKindIncludesDiagram(schema);
     await ensureCommentsParentColumn(schema);
+    await ensureCommentsPendingApprovalColumns(schema);
     schemaEnsured = true;
   } catch (error) {
     schemaEnsurePromise = null;
@@ -136,5 +137,25 @@ async function ensureCommentsParentColumn(schema: string): Promise<void> {
   await query(`
     ALTER TABLE ${schema}.comments
       ADD COLUMN IF NOT EXISTS parent JSONB
+  `);
+}
+
+async function ensureCommentsPendingApprovalColumns(schema: string): Promise<void> {
+  await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS pending_approval BOOLEAN NOT NULL DEFAULT FALSE
+  `);
+  await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS pending_approval_expires_at TIMESTAMP WITH TIME ZONE
+  `);
+  await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS plan_patch_proposal_id VARCHAR(64)
+  `);
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_comments_pending_approval
+      ON ${schema}.comments (sprint_id)
+      WHERE pending_approval = TRUE
   `);
 }

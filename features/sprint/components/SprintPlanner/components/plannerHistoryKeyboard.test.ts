@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  formatModKeyShortcutHint,
   formatPlannerHistoryShortcutHint,
   isPlannerHistoryShortcutBlockedTarget,
   resolvePlannerHistoryShortcut,
@@ -60,6 +61,8 @@ describe('isPlannerHistoryShortcutBlockedTarget', () => {
 
 describe('formatPlannerHistoryShortcutHint', () => {
   it('форматирует подсказки под Mac и Windows', () => {
+    expect(formatModKeyShortcutHint('1', 'Macintosh')).toBe('⌘+1');
+    expect(formatModKeyShortcutHint('3', 'Windows')).toBe('Ctrl+3');
     expect(formatPlannerHistoryShortcutHint('undo', 'Macintosh')).toBe('⌘+Z');
     expect(formatPlannerHistoryShortcutHint('redo', 'Macintosh')).toBe('⇧⌘Z');
     expect(formatPlannerHistoryShortcutHint('undo', 'Windows')).toBe('Ctrl+Z');

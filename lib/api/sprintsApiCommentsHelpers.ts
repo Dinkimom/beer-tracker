@@ -77,6 +77,7 @@ interface CommentFromApi {
   kind?: string | null;
   parent?: TaskParent | null;
   part: number | null;
+  pending_approval?: boolean | null;
   reactions?: unknown;
   text: string;
   width: number;
@@ -113,6 +114,7 @@ export function mapCommentFromApi(comment: CommentFromApi, sprintId?: number): C
     height: comment.height,
     createdAt: comment.created_at ?? undefined,
     ...(createdBy ? { createdBy } : {}),
+    ...(comment.pending_approval === true ? { pendingApproval: true } : {}),
     ...(comment.reactions === undefined ? {} : { reactions: parseStickyNoteReactions(comment.reactions) }),
   };
 }

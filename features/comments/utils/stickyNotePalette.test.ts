@@ -5,6 +5,7 @@ import {
   getStickyNoteDashedGhostStyle,
   getStickyNoteGhostGlyphColor,
   getStickyNotePaint,
+  getStickyNotePendingApprovalCardStyle,
   getStickyNoteResizeHandlePaint,
 } from './stickyNotePalette';
 
@@ -48,6 +49,15 @@ describe('stickyNotePalette', () => {
     expect(ghost.borderColor).toBe(getStickyNotePaint('pink').border);
     expect(ghost.color).toBe(getStickyNoteGhostGlyphColor('pink'));
     expect(String(ghost.backgroundColor)).toContain('rgba(');
+  });
+
+  it('keeps pending agent notes on the same paper with a dashed border', () => {
+    const pending = getStickyNotePendingApprovalCardStyle('yellow');
+    const solid = getStickyNoteCardStyle('yellow');
+    expect(pending.backgroundColor).toBe(solid.backgroundColor);
+    expect(pending.color).toBe(solid.color);
+    expect(pending.borderStyle).toBe('dashed');
+    expect(pending.borderWidth).toBe(2);
   });
 
   it('draws the plus in the selected hue instead of ink black or paper white', () => {
