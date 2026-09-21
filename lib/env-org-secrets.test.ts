@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isSprintContextMcpSecretConfigured,
   parseOrgSecretsMasterKey,
   resetSyncPlatformEnvCacheForTests,
+  verifySprintContextMcpSecret,
   verifySyncCronSecret,
 } from './env';
 
@@ -44,6 +46,34 @@ describe('verifySyncCronSecret', () => {
     expect(verifySyncCronSecret('cron-secret-wrong')).toBe(false);
     expect(verifySyncCronSecret(null)).toBe(false);
     process.env.SYNC_CRON_SECRET = prev;
+  });
+});
+
+describe('verifySprintContextMcpSecret', () => {
+  it('returns false when SPRINT_CONTEXT_MCP_SECRET unset', () => {
+    const prev = process.env.SPRINT_CONTEXT_MCP_SECRET;
+    delete process.env.SPRINT_CONTEXT_MCP_SECRET;
+    expect(verifySprintContextMcpSecret('any')).toBe(false);
+    process.env.SPRINT_CONTEXT_MCP_SECRET = prev;
+  });
+
+  it('accepts exact match', () => {
+    const prev = process.env.SPRINT_CONTEXT_MCP_SECRET;
+    process.env.SPRINT_CONTEXT_MCP_SECRET = 'mcp-secret-value';
+    expect(verifySprintContextMcpSecret('mcp-secret-value')).toBe(true);
+    expect(verifySprintContextMcpSecret('mcp-secret-wrong')).toBe(false);
+    process.env.SPRINT_CONTEXT_MCP_SECRET = prev;
+  });
+});
+
+describe('isSprintContextMcpSecretConfigured', () => {
+  it('reflects whether the secret env is set', () => {
+    const prev = process.env.SPRINT_CONTEXT_MCP_SECRET;
+    delete process.env.SPRINT_CONTEXT_MCP_SECRET;
+    expect(isSprintContextMcpSecretConfigured()).toBe(false);
+    process.env.SPRINT_CONTEXT_MCP_SECRET = 'x';
+    expect(isSprintContextMcpSecretConfigured()).toBe(true);
+    process.env.SPRINT_CONTEXT_MCP_SECRET = prev;
   });
 });
 

@@ -4,6 +4,7 @@
     "public/sw.js",
     "apps/sync-worker/main.ts",
     "apps/sync-worker/build.mjs",
+    "apps/mcp-sprint-context/main.ts",
     "scripts/knip/*.mjs",
     "scripts/bench/runPlannerHotPathBench.ts",
     "scripts/bench/plannerHotPath.bench.ts",

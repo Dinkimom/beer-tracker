@@ -122,6 +122,7 @@ TRACKER_OAUTH_TOKEN=your_token_here
 - **[Возможности приложения](./docs/CAPABILITIES.md)** — расширенный список функций
 - **[Индекс документации](./docs/DOCUMENTATION_INDEX.md)** — навигация по `docs/`
 - **[API Документация](./docs/API_DOCUMENTATION.md)** — описание API
+- **[Sprint context (агенты)](./docs/SPRINT_CONTEXT.md)** — planning graph + remote MCP `/api/mcp` (URL + Bearer, без клона репо)
 - **[Структура проекта](./docs/STRUCTURE.md)** — архитектура приложения
 
 ### Специализированные руководства

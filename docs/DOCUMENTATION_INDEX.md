@@ -13,6 +13,7 @@ beer-tracker/
 │   ├── CAPABILITIES.md                # Список возможностей планера
 │   ├── API_DOCUMENTATION.md           # API, архитектура запросов
 │   ├── API_BACKENDS.md                # Маршруты /api → Tracker, PG
+│   ├── SPRINT_CONTEXT.md              # Agent planning graph (GET sprint-context)
 │   ├── ISSUE_TRACKERS.md              # Yandex Tracker и Jira (один провайдер на инстанс)
 │   ├── ISSUE_TRACKER_PROVIDER_MIGRATION.md  # История/детали provider-слоя
 │   ├── ISSUE_TRACKER_YANDEX_CONTRACT.md     # Контрактные тесты: не сломать Yandex при Jira
@@ -60,6 +61,7 @@ beer-tracker/
 | [CAPABILITIES.md](./CAPABILITIES.md) | Детальный список возможностей | Все |
 | [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | API, архитектура запросов | Разработчики |
 | [API_BACKENDS.md](./API_BACKENDS.md) | Маршруты `/api` → issue tracker, PostgreSQL | Разработчики |
+| [SPRINT_CONTEXT.md](./SPRINT_CONTEXT.md) | Read-only planning graph JSON для агентов | Разработчики, агенты |
 | [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md) | Yandex Tracker и Jira: выбор провайдера, auth | Все |
 | [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md) | Детали provider-слоя / история миграции routes | Разработчики |
 | [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md) | Контрактные тесты Yandex при развитии Jira | Разработчики |
@@ -102,7 +104,7 @@ beer-tracker/
 
 ### По техническим вопросам
 
-- **API** → [API_DOCUMENTATION.md](./API_DOCUMENTATION.md), [API_BACKENDS.md](./API_BACKENDS.md), [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md), [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md)
+- **API** → [API_DOCUMENTATION.md](./API_DOCUMENTATION.md), [API_BACKENDS.md](./API_BACKENDS.md), [SPRINT_CONTEXT.md](./SPRINT_CONTEXT.md), [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md), [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md)
 - **Архитектура** → [STRUCTURE.md](./STRUCTURE.md)
 - **Именование папок (домены)** → [FOLDER_NAMING.md](./FOLDER_NAMING.md)
 

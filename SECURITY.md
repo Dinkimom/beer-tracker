@@ -29,6 +29,6 @@ before any public disclosure.
 
 - User OAuth / tracker tokens are intended to stay in the browser where the
   product design allows; treat server-side secrets (`AUTH_SESSION_SECRET`,
-  `ORG_SECRETS_ENCRYPTION_KEY`, `SYNC_CRON_SECRET`, DB and S3 credentials) as
-  highly sensitive in your deployment.
+  `ORG_SECRETS_ENCRYPTION_KEY`, `SYNC_CRON_SECRET`, `SPRINT_CONTEXT_MCP_SECRET`,
+  DB and S3 credentials) as highly sensitive in your deployment.
 - Do not commit `.env`, helm `*-secrets` overlays, or production credentials.

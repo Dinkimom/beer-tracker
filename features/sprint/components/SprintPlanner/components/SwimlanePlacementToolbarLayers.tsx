@@ -72,6 +72,8 @@ export function SwimlanePlacementToolbarLayers({
       if (event.key !== 'Escape') {
         return;
       }
+      // Safari: without preventDefault, Escape exits fullscreen.
+      event.preventDefault();
       event.stopPropagation();
       setMenuOpen(false);
     };

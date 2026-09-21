@@ -91,6 +91,8 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
       ) {
         return;
       }
+      // Safari: without preventDefault, Escape exits fullscreen (collapses the window).
+      event.preventDefault();
       sprintPlannerUi.setPlacementTool('cursor');
     };
     window.addEventListener('keydown', onKeyDown);

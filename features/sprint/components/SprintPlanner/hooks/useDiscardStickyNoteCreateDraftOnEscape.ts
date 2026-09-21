@@ -31,9 +31,15 @@ export function useDiscardStickyNoteCreateDraftOnEscape(input: {
       return;
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented) {
+      if (event.key !== 'Escape') {
         return;
       }
+      // Confirm / other overlays own Escape; placement toolbar may preventDefault first for Safari.
+      if (document.querySelector('[data-confirm-dialog="true"]')) {
+        return;
+      }
+      // Safari: without preventDefault, Escape exits fullscreen.
+      event.preventDefault();
       cancelQuickAddDraft({
         closeNoteComposer,
         setSubmittingTaskId,

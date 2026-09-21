@@ -40,6 +40,8 @@ export function SwimlanePlacementToolbarNoteTool({
       if (event.key !== 'Escape') {
         return;
       }
+      // Safari: without preventDefault, Escape exits fullscreen.
+      event.preventDefault();
       event.stopPropagation();
       setPopupOpen(false);
     };
