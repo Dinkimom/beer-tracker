@@ -63,10 +63,22 @@ function resolveAppVersion(): string {
   return versionFromPackageAndCount(pkg, readCommitCount());
 }
 
+function resolveYandexOauthClientId(): string {
+  return (
+    process.env.YANDEX_OAUTH_CLIENT_ID ??
+    // legacy name from earlier builds
+    process.env.NEXT_PUBLIC_YANDEX_OAUTH_CLIENT_ID ??
+    ""
+  ).trim();
+}
+
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: resolveAppVersion(),
     NEXT_PUBLIC_GIT_SHA: resolveGitSha(),
+    // Public OAuth ClientID for Yandex Tracker authorize URL in the browser.
+    // Source env has no NEXT_PUBLIC_ prefix — domain name, not a Next convention.
+    YANDEX_OAUTH_CLIENT_ID: resolveYandexOauthClientId(),
   },
   headers() {
     return [

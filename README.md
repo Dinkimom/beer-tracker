@@ -72,39 +72,46 @@ S3_KEY_PREFIX=local/
 
 ## Настройка трекера и токенов
 
-На инстанс выбирается **один** провайдер. Кратко:
+На инстанс — **один** провайдер. Дальше идите по своей ветке в **[ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)** (там развилка A / B / C).
+
+| Провайдер | Документация |
+|-----------|----------------|
+| Яндекс Трекер (`tracker`) | [Ветка A](./docs/ISSUE_TRACKERS.md#ветка-a--яндекс-трекер) — OAuth-приложение на oauth.yandex.ru + `YANDEX_OAUTH_CLIENT_ID` |
+| Jira Cloud (`jira-cloud`) | [Ветка B](./docs/ISSUE_TRACKERS.md#ветка-b--jira-cloud) — email + API token |
+| Jira DC/Server (`jira-onprem`) | [Ветка C](./docs/ISSUE_TRACKERS.md#ветка-c--jira-data-center--server) — PAT |
 
 ```bash
-# tracker | jira-cloud | jira-onprem  (алиасы: yandex-tracker, jira)
+# Выберите один вариант и заполните URL:
 ISSUE_TRACKER_PROVIDER=tracker
 TRACKER_API_URL=https://api.tracker.yandex.net/v3
-# Jira Cloud:  https://your-site.atlassian.net/rest/api/3
-# Jira DC:     https://jira.example.com/rest/api/2
-```
+# Только для Яндекс Трекера — ClientID приложения с https://oauth.yandex.ru/
+# (scopes tracker:read + tracker:write):
+YANDEX_OAUTH_CLIENT_ID=
 
-Подробная таблица провайдеров и auth: **[ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)**.
+# ISSUE_TRACKER_PROVIDER=jira-cloud
+# TRACKER_API_URL=https://your-site.atlassian.net/rest/api/3
+
+# ISSUE_TRACKER_PROVIDER=jira-onprem
+# TRACKER_API_URL=https://jira.example.com/rest/api/2
+```
 
 ### Поля в админке организации
 
-Зависят от провайдера (не из общего env): для **Yandex Tracker** — Cloud Organization ID; для **Jira** — параметры подключения сайта/учётки, которые хранятся у организации. В запросах планера — контекст выбранной организации (`X-Organization-Id`).
+Зависят от провайдера (не из общего env): для **Yandex Tracker** — Cloud Organization ID; для **Jira** — параметры сайта/учётки. В запросах планера — `X-Organization-Id`.
 
 ### Серверный токен (опционально, fallback)
 
 ```bash
-# Пример для Yandex; для Jira — PAT / API token в том же духе (см. env.example)
 TRACKER_OAUTH_TOKEN=your_token_here
 ```
 
 ### Пользовательский токен (обязательно)
 
-1. Откройте приложение
-2. При первом запуске вас направит на страницу настройки
-3. Получите токен по инструкции для вашего провайдера (OAuth Яндекс ID / Atlassian API token / Jira PAT)
-4. Введите данные и продолжите
+1. Откройте приложение → `/auth-setup` при первом входе
+2. Получите токен по **своей** ветке (Yandex OAuth / Atlassian API token / Jira PAT)
+3. Введите данные и продолжите
 
-Без учётных данных трекера доступ к планеру невозможен.
-
-Подробнее о работе токенов в API и клиенте: [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md).
+Без учётных данных трекера доступ к планеру невозможен. Детали API: [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md).
 
 ## Документация
 
