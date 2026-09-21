@@ -15,10 +15,9 @@ Usage:
   pnpm version:bump -- 1.2.3
 
 Notes:
-  - Updates version in package.json without creating git tag/commit.
-  - Use semantic version or increment keyword.
-  - Image builds replace the patch with git commit count.
-    Use minor/major here to change the series shown in the UI (0.3.x, 1.0.x).
+  - Updates version in package.json without creating a git tag/commit.
+  - Full release (commit + annotated tag vX.Y.Z): pnpm release -- patch
+  - UI/Docker APP_VERSION is package.json semver (same as the GitHub Release).
 EOF
 }
 

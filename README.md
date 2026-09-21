@@ -144,12 +144,17 @@ pnpm sync-worker:build   # бандл в dist/sync-worker (Docker target sync-wo
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm version:bump -- patch   # только package.json
+pnpm release -- patch        # bump + commit + tag vX.Y.Z
+pnpm release -- patch --push # то же и push (remote public или origin)
 ```
+
+Версия в UI = `package.json` (= тег `vX.Y.Z` без `v`). Git SHA показывается отдельно. Push тега запускает workflow **Release** → GitHub Release.
 
 ## CI (GitHub Actions)
 
-В этом репозитории настроен workflow **CI** (`.github/workflows/ci.yml`): `pnpm lint`, `pnpm typecheck`, `pnpm test` на `push`/`pull_request` в основную ветку.
-
+- **CI** (`.github/workflows/ci.yml`): `pnpm lint`, `pnpm typecheck`, `pnpm test` на `push`/`pull_request` в `main` / `master`.
+- **Release** (`.github/workflows/release.yml`): GitHub Release при push тега `v*.*.*`, если версия в `package.json` совпадает с тегом.
 ## Структура проекта
 
 ```

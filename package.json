@@ -21,6 +21,7 @@
     "i18n:export": "tsx scripts/i18n/export-messages.ts",
     "i18n:import": "tsx scripts/i18n/import-messages.ts",
     "version:bump": "bash scripts/release/bump-version.sh",
+    "release": "bash scripts/release/release.sh",
     "test": "vitest run && pnpm check:i18n",
     "test:watch": "vitest",
     "bench:planner": "node --expose-gc --import tsx scripts/bench/runPlannerHotPathBench.ts",

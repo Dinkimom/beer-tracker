@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -24,28 +23,6 @@ function readGitShaFromDotGit(): string {
   }
 }
 
-function readCommitCount(): string {
-  try {
-    return execFileSync("/usr/bin/git", ["rev-list", "--count", "HEAD"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-  } catch {
-    return "";
-  }
-}
-
-function versionFromPackageAndCount(pkg: string, count: string): string {
-  if (!count) {
-    return pkg;
-  }
-  const [major, minor] = pkg.split(".");
-  if (!major || minor === undefined) {
-    return pkg;
-  }
-  return `${major}.${minor}.${count}`;
-}
-
 function resolveGitSha(): string {
   const fromEnv = (process.env.GIT_SHA ?? process.env.NEXT_PUBLIC_GIT_SHA ?? "").trim();
   if (fromEnv) {
@@ -54,13 +31,13 @@ function resolveGitSha(): string {
   return readGitShaFromDotGit();
 }
 
+/** Semver from env (CI/Docker) or package.json — same as GitHub Release tag without `v`. */
 function resolveAppVersion(): string {
-  const pkg = readPackageVersion();
   const fromEnv = (process.env.APP_VERSION ?? process.env.NEXT_PUBLIC_APP_VERSION ?? "").trim();
-  if (fromEnv && fromEnv !== pkg) {
+  if (fromEnv) {
     return fromEnv;
   }
-  return versionFromPackageAndCount(pkg, readCommitCount());
+  return readPackageVersion();
 }
 
 function resolveYandexOauthClientId(): string {

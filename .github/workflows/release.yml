@@ -1,0 +1,48 @@
+name: Release
+
+# Creates a GitHub Release when an annotated semver tag is pushed.
+# Tag must match package.json: v1.2.3 ↔ "version": "1.2.3"
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  github-release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify tag matches package.json
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          case "${TAG}" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *)
+              echo "Skip non-semver tag: ${TAG}"
+              exit 0
+              ;;
+          esac
+          EXPECTED="${TAG#v}"
+          ACTUAL="$(node -p "require('./package.json').version")"
+          if [[ "${ACTUAL}" != "${EXPECTED}" ]]; then
+            echo "package.json version (${ACTUAL}) != tag ${TAG} (expected ${EXPECTED})" >&2
+            exit 1
+          fi
+          echo "OK: ${TAG} == package.json ${ACTUAL}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
