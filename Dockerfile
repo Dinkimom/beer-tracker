@@ -33,6 +33,8 @@ FROM base AS builder
 ARG NODE_OPTIONS="--max-old-space-size=4096"
 ARG GIT_SHA=""
 ARG APP_VERSION=""
+# Public Yandex OAuth ClientID — inlined at `pnpm build` via next.config `env`.
+ARG YANDEX_OAUTH_CLIENT_ID=""
 ENV NODE_OPTIONS=$NODE_OPTIONS \
     NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production \
@@ -41,7 +43,8 @@ ENV NODE_OPTIONS=$NODE_OPTIONS \
     GIT_SHA=$GIT_SHA \
     NEXT_PUBLIC_GIT_SHA=$GIT_SHA \
     APP_VERSION=$APP_VERSION \
-    NEXT_PUBLIC_APP_VERSION=$APP_VERSION
+    NEXT_PUBLIC_APP_VERSION=$APP_VERSION \
+    YANDEX_OAUTH_CLIENT_ID=$YANDEX_OAUTH_CLIENT_ID
 
 COPY --link --from=deps /app/node_modules ./node_modules
 COPY --link . .
