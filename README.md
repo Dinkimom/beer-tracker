@@ -1,8 +1,8 @@
 # Beer Tracker
 
-Self-hosted веб-приложение для планирования спринтов (свимлейны, бэклог, burndown, цели) поверх **Яндекс Трекера** или **Jira**. Историческое имя UI — Sprint Manager.
+Self-hosted веб-приложение для планирования спринтов (свимлейны, бэклог, burndown, цели) поверх **Яндекс Трекера** или **Jira** (Cloud / Data Center). Историческое имя UI — Sprint Manager.
 
-Одна кодовая база под [Apache License 2.0](./LICENSE).
+Одна кодовая база под [Apache License 2.0](./LICENSE). Провайдер трекера — один на инстанс: [docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md).
 
 ## Возможности
 
@@ -10,7 +10,7 @@ Self-hosted веб-приложение для планирования спри
 - **Управление бэклогом** — просмотр и управление задачами, не включенными в спринт
 - **Burndown chart** — визуализация прогресса спринта
 - **Цели спринта** — управление целями через чеклисты
-- **Пользовательские токены** — каждый пользователь может работать под своим OAuth токеном
+- **Пользовательские учётные данные трекера** — каждый пользователь работает под своим токеном (OAuth / PAT / API token)
 
 Планировщик эпиков и квартальное планирование сняты с навигации и не развиваются. См. [product steering](./docs/steering/product.md).
 
@@ -20,7 +20,7 @@ Self-hosted веб-приложение для планирования спри
 - **Backend**: Next.js API Routes
 - **База данных**: PostgreSQL приложения (планер, снимки задач `issue_snapshots`, мультиарендность, staff/teams)
 - **Очередь (опционально)**: Redis + BullMQ — фоновая синхронизация с трекером (`pnpm sync-worker`)
-- **Внешние API**: Yandex Tracker API (спринты, доски, мутации, часть чтений)
+- **Внешний issue tracker**: Yandex Tracker **или** Jira (`ISSUE_TRACKER_PROVIDER` + `TRACKER_API_URL`)
 - **UI**: Tailwind CSS, Radix UI, dnd-kit (drag-and-drop)
 
 ## Установка
@@ -70,27 +70,39 @@ S3_KEY_PREFIX=local/
 
 Для уже существующей БД с BYTEA: `psql ... -f database/migrate-planner-files-to-s3.sql` (сносит текущие фото и схемы, без переливки).
 
-## Настройка токенов
+## Настройка трекера и токенов
 
-### Organization ID в Яндекс Трекере
+На инстанс выбирается **один** провайдер. Кратко:
 
-Cloud Organization ID для API трекера задаётся **в админке** для каждой организации продукта (поле подключения к трекеру в БД), а не через общий env. В запросах планера используется контекст выбранной организации (`X-Organization-Id`).
+```bash
+# tracker | jira-cloud | jira-onprem  (алиасы: yandex-tracker, jira)
+ISSUE_TRACKER_PROVIDER=tracker
+TRACKER_API_URL=https://api.tracker.yandex.net/v3
+# Jira Cloud:  https://your-site.atlassian.net/rest/api/3
+# Jira DC:     https://jira.example.com/rest/api/2
+```
+
+Подробная таблица провайдеров и auth: **[ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)**.
+
+### Поля в админке организации
+
+Зависят от провайдера (не из общего env): для **Yandex Tracker** — Cloud Organization ID; для **Jira** — параметры подключения сайта/учётки, которые хранятся у организации. В запросах планера — контекст выбранной организации (`X-Organization-Id`).
 
 ### Серверный токен (опционально, fallback)
 
 ```bash
-TRACKER_API_URL=https://api.tracker.yandex.net/v3
-TRACKER_OAUTH_TOKEN=your_oauth_token_here  # Опционально, для fallback
+# Пример для Yandex; для Jira — PAT / API token в том же духе (см. env.example)
+TRACKER_OAUTH_TOKEN=your_token_here
 ```
 
 ### Пользовательский токен (обязательно)
 
 1. Откройте приложение
-2. При первом запуске вы будете перенаправлены на страницу настройки
-3. Получите OAuth токен по ссылке
-4. Введите токен и нажмите «Продолжить»
+2. При первом запуске вас направит на страницу настройки
+3. Получите токен по инструкции для вашего провайдера (OAuth Яндекс ID / Atlassian API token / Jira PAT)
+4. Введите данные и продолжите
 
-Без токена доступ к приложению невозможен.
+Без учётных данных трекера доступ к планеру невозможен.
 
 Подробнее о работе токенов в API и клиенте: [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md).
 
@@ -99,6 +111,7 @@ TRACKER_OAUTH_TOKEN=your_oauth_token_here  # Опционально, для fall
 ### Основные документы
 
 - **[Обзор проекта](./docs/PROJECT_OVERVIEW.md)** — что это, для кого, функции и возможности
+- **[Issue trackers](./docs/ISSUE_TRACKERS.md)** — Yandex Tracker и Jira на одном инстансе
 - **[Возможности приложения](./docs/CAPABILITIES.md)** — расширенный список функций
 - **[Индекс документации](./docs/DOCUMENTATION_INDEX.md)** — навигация по `docs/`
 - **[API Документация](./docs/API_DOCUMENTATION.md)** — описание API
@@ -109,7 +122,6 @@ TRACKER_OAUTH_TOKEN=your_oauth_token_here  # Опционально, для fall
 - **[Руководство по тестированию](./docs/AGENT_TESTING_GUIDE.md)**
 - **[Руководство по иконкам](./docs/ICONS.md)**
 - **[Product steering](./docs/steering/product.md)** — что в продукте и что не развивать
-
 ## Плановый инкрементальный sync (multi-tenant)
 
 Внешний cron может вызывать `POST /api/internal/sync/tick` с заголовком `X-Sync-Cron-Secret: <SYNC_CRON_SECRET>` (или `Authorization: Bearer <secret>`). Поднимите Redis (`REDIS_URL`) и воркер `pnpm sync-worker`. В Docker Compose: `docker compose --profile exporter up` — сервис `sync-worker` собирается отдельным slim-образом (без Next.js). Без Redis ответ тика будет `200` с `reason: redis_not_configured` и без постановки job — удобно для CI.

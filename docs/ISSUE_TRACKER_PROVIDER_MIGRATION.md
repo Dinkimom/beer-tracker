@@ -1,26 +1,27 @@
 # Миграция на провайдеры трекеров
 
-Цель миграции — подготовить Beer Tracker к работе не только с Yandex Tracker, но и с Jira, не размазывая условия вида `if (provider === 'jira')` по `app/api/**`.
+> **Актуальное описание провайдеров для людей:** [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md).  
+> Ниже — инженерные заметки по выносу адаптеров. Статус «Jira = stub» в старых абзацах **устарел**: runtime поддерживает `tracker` / `jira-cloud` / `jira-onprem`.
 
-## Текущий статус
+Цель миграции — работать не только с Yandex Tracker, но и с Jira, не размазывая условия вида `if (provider === 'jira')` по `app/api/**`.
 
-Уже есть первый слой абстракции:
+## Текущий статус (ориентир)
 
-- `lib/issueTrackerProvider/types.ts` — provider kinds, `IssueTrackerProviderClient`, первые доменные методы.
+- Выбор трекера на инстанс: `ISSUE_TRACKER_PROVIDER` + `TRACKER_API_URL` (`lib/env.ts`, `lib/issueTrackerProvider/`).
+- Адаптеры и registry живут в `lib/issueTrackerProvider/*`; роуты должны получать provider-client, а не знать детали Yandex/Jira REST.
+- Контрактные тесты, чтобы не ломать Yandex при развитии Jira: [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md).
+
+Уже есть слой абстракции (исторический чеклист переноса routes может отставать от кода — сверяйте с `lib/issueTrackerProvider/`):
+
+- `lib/issueTrackerProvider/types.ts` — provider kinds, `IssueTrackerProviderClient`, доменные методы.
 - `lib/issueTrackerProvider/registry.ts` — registry провайдеров.
 - `lib/issueTrackerProvider/settings.ts` — хранение `organizations.settings.issueTracker` (не источник истины для выбора трекера).
-- `getIssueTrackerProviderKind()` в `lib/env.ts` — **один** трекер на инстанс через `ISSUE_TRACKER_PROVIDER=yandex-tracker|jira`.
-- `lib/issueTrackerProvider/yandexTrackerProvider.ts` — Yandex-реализация первых методов.
-- `lib/issueTrackerProvider/clientFactory.ts` — создание `IssueTrackerProviderClient` из `Request`.
+- `getIssueTrackerProviderKind()` в `lib/env.ts` — **один** трекер на инстанс.
+- Адаптеры Yandex / Jira и `clientFactory.ts` — создание `IssueTrackerProviderClient` из `Request`.
 
-Текущее поведение:
+Старый Axios-фасад (`getTrackerApiFromRequest`, `createTrackerApiClient`) может ещё использоваться в routes, которые не полностью перенесены.
 
-- По умолчанию `ISSUE_TRACKER_PROVIDER` не задан → `yandex-tracker`.
-- `jira` — валидный вид провайдера; runtime-адаптер пока stub.
-- Yandex Tracker остаётся единственным полноценным adapter-ом.
-- Старый Axios-фасад (`getTrackerApiFromRequest`, `createTrackerApiClient`) сохранён для routes, которые ещё не перенесены.
-
-Уже переведены на `IssueTrackerProviderClient`:
+Уже переведены на `IssueTrackerProviderClient` (список мог расшириться — см. код):
 
 - `GET /api/auth/myself`
 - `GET /api/boards`

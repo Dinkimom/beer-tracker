@@ -13,7 +13,8 @@ beer-tracker/
 │   ├── CAPABILITIES.md                # Список возможностей планера
 │   ├── API_DOCUMENTATION.md           # API, архитектура запросов
 │   ├── API_BACKENDS.md                # Маршруты /api → Tracker, PG
-│   ├── ISSUE_TRACKER_PROVIDER_MIGRATION.md  # Миграция Yandex/Jira provider-слоя
+│   ├── ISSUE_TRACKERS.md              # Yandex Tracker и Jira (один провайдер на инстанс)
+│   ├── ISSUE_TRACKER_PROVIDER_MIGRATION.md  # История/детали provider-слоя
 │   ├── ISSUE_TRACKER_YANDEX_CONTRACT.md     # Контрактные тесты: не сломать Yandex при Jira
 │   ├── SLA_BUGS_TAB.md                # Вкладка «Баги»: секции, сигналы, UI, API
 │   ├── SLA_BUGS_SIGNALS.md            # Краткий каталог сигналов на карточках
@@ -34,9 +35,10 @@ beer-tracker/
 
 1. **[README.md](../README.md)** — установка и настройка
 2. **[PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)** — что это, для кого, функции, стек
-3. **[STRUCTURE.md](./STRUCTURE.md)** — архитектура проекта
-4. **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** — работа с API
-5. **[API_BACKENDS.md](./API_BACKENDS.md)** — какой бэкенд у какого `/api` маршрута
+3. **[ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md)** — Yandex Tracker / Jira на инстансе
+4. **[STRUCTURE.md](./STRUCTURE.md)** — архитектура проекта
+5. **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** — работа с API
+6. **[API_BACKENDS.md](./API_BACKENDS.md)** — какой бэкенд у какого `/api` маршрута
 
 ### Для пользователей
 
@@ -57,9 +59,10 @@ beer-tracker/
 | [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) | Единый обзор продукта (что / для кого / функции) | Все |
 | [CAPABILITIES.md](./CAPABILITIES.md) | Детальный список возможностей | Все |
 | [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | API, архитектура запросов | Разработчики |
-| [API_BACKENDS.md](./API_BACKENDS.md) | Маршруты `/api` → Tracker, PostgreSQL | Разработчики |
-| [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md) | План миграции routes и sync на provider-слой для Yandex/Jira | Разработчики |
-| [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md) | Контрактные тесты: зафиксировать Yandex, пока появляется Jira | Разработчики |
+| [API_BACKENDS.md](./API_BACKENDS.md) | Маршруты `/api` → issue tracker, PostgreSQL | Разработчики |
+| [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md) | Yandex Tracker и Jira: выбор провайдера, auth | Все |
+| [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md) | Детали provider-слоя / история миграции routes | Разработчики |
+| [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md) | Контрактные тесты Yandex при развитии Jira | Разработчики |
 | [SLA_BUGS_TAB.md](./SLA_BUGS_TAB.md) | Вкладка «Баги»: секции, критерии, сигналы, сортировка, UI, API | Разработчики, PM |
 | [SLA_BUGS_SIGNALS.md](./SLA_BUGS_SIGNALS.md) | Краткий каталог сигналов на карточках (для согласования) | Разработчики, PM |
 | [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md) | Схема `beer_tracker`: каталог teams/staff и миграция для существующей БД | Разработчики, DevOps |

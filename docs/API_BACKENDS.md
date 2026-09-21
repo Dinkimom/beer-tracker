@@ -6,7 +6,7 @@
 
 | Тип | Где в коде | Назначение |
 |-----|------------|------------|
-| **Yandex Tracker** | `getTrackerApiFromRequest`, `createTrackerApiClient`, `lib/trackerApi/*` | Живые данные трекера, мутации, часть чтений (спринты, доски, workflow, детали issue при необходимости) |
+| **Issue tracker** (Yandex Tracker **или** Jira) | `lib/issueTrackerProvider/*`, `getTrackerApiFromRequest` / `lib/trackerApi/*` | Живые данные трекера, мутации, часть чтений (спринты, доски, workflow, детали issue). Выбор: `ISSUE_TRACKER_PROVIDER` — [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md) |
 | **Снимки задач (PostgreSQL)** | `lib/snapshots/*` | Чтение `issue_snapshots` (бэклог, эпики, стори, burndown/score); таблица `issue_changelog_events` — для будущего экспортёра |
 | **PostgreSQL (приложение)** | `lib/db` (`query`, `pool`) | Позиции, связи, комментарии, цели спринта, фичи, квартальные планы (часть), черновики и т.д. |
 | **S3 (совместимое API)** | `lib/storage` | Байты фотокарточек и сцен Excalidraw планера (`planner_files.storage_key`) |
@@ -24,7 +24,7 @@
 | Issues (список, статус, спринт, работа, связанные, чеклист, переходы) | `/issues`, `/issues/[issueKey]/status`, `.../sprint`, `.../update-work`, `.../create-related`, `.../checklist`, `.../transitions`, batch transitions | Tracker |
 | Issue как `Task` для UI (карточка) | `/issues/[issueKey]/task` | PostgreSQL `issue_snapshots` + tenant |
 | Issue детально (GET/PATCH и т.д.) | `/issues/[issueKey]` | `issue_snapshots` + Tracker (чеклист, fallback если нет снимка) + tenant |
-| Changelog (issue и batch) | `/issues/[issueKey]/changelog`, `/issues/changelog` | Yandex Tracker API (`/issues/.../changelog`, `/comments`) + tenant |
+| Changelog (issue и batch) | `/issues/[issueKey]/changelog`, `/issues/changelog` | Issue tracker API (changelog / comments) + tenant |
 | Статусы родителей | `/issues/parent-statuses` | PostgreSQL `issue_snapshots` (batch) + tenant |
 | Бэклог | `/backlog` | PostgreSQL `issue_snapshots` + `teams`/`staff`/`team_members` (мердж разработчиков) + tenant |
 | Эпики (список, deep) | `/epics`, `/epics/[epicKey]/deep` | PostgreSQL `issue_snapshots` + tenant + `teams` по `boardId` |

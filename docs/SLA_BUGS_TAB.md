@@ -24,7 +24,7 @@
 
 ```mermaid
 flowchart LR
-  Tracker["Yandex Tracker"] --> API["GET /api/boards/:boardId/sla-bugs"]
+  Tracker["Issue tracker\n(Yandex / Jira)"] --> API["GET /api/boards/:boardId/sla-bugs"]
   Overseer["overseer.mv_ytracker_hd_count_changelog_events"] --> API
   API --> Enrich["enrichTasksWithOverseerHdCounts"]
   Enrich --> Filter["filterSlaBugTasks"]

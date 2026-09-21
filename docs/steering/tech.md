@@ -18,15 +18,15 @@
 
 ## Внешние системы
 
-- **Yandex Tracker API** — источник правды по задачам, спринтам, доскам; изменения через API и прокси-роуты приложения.
+- **Issue tracker API** (один на инстанс: **Yandex Tracker** или **Jira**) — источник правды по задачам, спринтам, доскам; изменения через API и прокси-роуты приложения. См. [ISSUE_TRACKERS.md](../ISSUE_TRACKERS.md).
 - **PostgreSQL** — чтение снимков задач (бэклог, эпики, стори и т.д.), staff/teams, данные планера.
 
 ## Аутентификация к трекеру
 
-- Пользовательский токен хранится в **localStorage** (`beer-tracker-tracker-token`), в запросы уходит заголовок **`X-Tracker-Token`**.
+- Пользовательский токен хранится в **localStorage**, в запросы уходит заголовок **`X-Tracker-Token`** (для Jira Cloud — дополнительно email).
 - Валидация: API `POST /api/auth/validate-token` (нужны сессия продукта и организация: заголовок `X-Organization-Id` или `organizationId` в теле), клиентский хелпер `validateToken`.
 - Защита маршрутов: `AuthGuard` → редирект на `/auth-setup` без токена.
-- Опционально серверный `TRACKER_OAUTH_TOKEN` в `.env` как fallback (см. README).
+- Опционально серверный fallback-токен в `.env` (см. README / `env.example`).
 
 ## Архитектура состояния (кратко)
 
