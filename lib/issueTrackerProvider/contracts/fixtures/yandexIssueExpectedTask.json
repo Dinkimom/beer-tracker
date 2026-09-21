@@ -1,0 +1,55 @@
+{
+  "MergeRequestLink": "https://gitlab.example/mr/1",
+  "assignee": "user-42",
+  "assigneeName": "Ada Lovelace",
+  "createdAt": "2026-03-01T10:00:00.000+0000",
+  "dangerousRelease": "critical",
+  "description": "Tooltip must show story points.",
+  "epic": {
+    "display": "Epic One",
+    "id": "e1",
+    "key": "BT-1",
+    "self": "https://tracker.test/BT-1"
+  },
+  "functionalTeam": "backend",
+  "hdCount": 3,
+  "hdGrowth24h": 1,
+  "hdGrowth7d": 2,
+  "id": "BT-100",
+  "incidentSeverity": "high",
+  "keyClient": true,
+  "lastHdAt": "2026-03-09T08:00:00.000+0000",
+  "link": "https://tracker.yandex.ru/BT-100",
+  "name": "Fix occupancy tooltip",
+  "originalStatus": "inProgress",
+  "parent": {
+    "display": "Parent story",
+    "id": "p1",
+    "key": "BT-90",
+    "self": "https://tracker.test/BT-90"
+  },
+  "priority": "normal",
+  "productTeam": ["platform"],
+  "qaEngineer": "user-7",
+  "qaEngineerName": "QA Person",
+  "resolvedAt": "2026-03-11T09:00:00.000+0000",
+  "slaDeadline": "2026-03-15T00:00:00.000+0000",
+  "sprints": [
+    {
+      "display": "Sprint 12",
+      "id": "9001"
+    }
+  ],
+  "stage": "dev",
+  "status": "in-progress",
+  "statusTypeKey": "inProgress",
+  "storyPoints": 5,
+  "supPriority": true,
+  "team": "Back",
+  "testPoints": 2,
+  "trackerQueue": "BT",
+  "trackerQueueName": "Beer Tracker",
+  "trackerTags": ["sla"],
+  "type": "task",
+  "updatedAt": "2026-03-10T12:00:00.000+0000"
+}

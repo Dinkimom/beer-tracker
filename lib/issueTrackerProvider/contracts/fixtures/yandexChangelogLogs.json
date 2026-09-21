@@ -1,0 +1,50 @@
+[
+  {
+    "fields": [
+      {
+        "field": {
+          "display": "Status",
+          "id": "status"
+        },
+        "from": {
+          "display": "Open",
+          "id": "1",
+          "key": "open"
+        },
+        "to": {
+          "display": "In Progress",
+          "id": "2",
+          "key": "inProgress"
+        }
+      }
+    ],
+    "id": "log-1",
+    "updatedAt": "2026-01-01T10:00:00.000Z",
+    "updatedBy": {
+      "display": "Ada",
+      "id": "user-42"
+    }
+  },
+  {
+    "fields": [
+      {
+        "field": {
+          "display": "Status",
+          "id": "status"
+        },
+        "from": {
+          "display": "In Progress",
+          "id": "2",
+          "key": "inProgress"
+        },
+        "to": {
+          "display": "Closed",
+          "id": "3",
+          "key": "closed"
+        }
+      }
+    ],
+    "id": "log-2",
+    "updatedAt": "2026-01-02T10:00:00.000Z"
+  }
+]

@@ -1,0 +1,76 @@
+# Разработка с hot reload: исходники с хоста, Next.js в режиме dev.
+#
+#   pnpm docker:dev   # профили cron + exporter (sync-cron, sync-worker; redis стартует всегда)
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile cron --profile exporter up --build
+#
+# node_modules и .next — в именованных томах, чтобы не затирались bind-mount'ом
+# и не требовали pnpm на хосте. Первый старт: только app ставит зависимости
+# (DOCKER_DEV_INSTALL_NODE_MODULES); sync-worker ждёт stamp, иначе параллельный
+# pnpm install в общий том даёт ERR_PNPM_ENOENT.
+# sync-worker: `tsx watch` — иначе процесс не подхватывает правки в lib/sync.
+#
+# На macOS/Windows с Docker Desktop при «залипании» HMR можно усилить polling
+# (уже включён WATCHPACK_POLLING / CHOKIDAR_USEPOLLING).
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      DOCKER_DEV_INSTALL_NODE_MODULES: "1"
+      # Postgres/Redis — из .env (как у `pnpm dev`).
+      # localhost/127.0.0.1 entrypoint подменяет на db:5432 и redis:6379; удалённый хост как есть.
+      REDIS_URL: redis://redis:6379
+    entrypoint: ["/bin/sh", "/app/docker-entrypoint-dev.sh"]
+    command: ["pnpm", "dev:docker"]
+    volumes:
+      - .:/app
+      - beer_tracker_node_modules:/app/node_modules
+      - beer_tracker_next:/app/.next
+
+  sync-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    entrypoint: ["/bin/sh", "/app/docker-entrypoint-dev.sh"]
+    command: ["pnpm", "exec", "tsx", "watch", "--clear-screen=false", "apps/sync-worker/main.ts"]
+    volumes:
+      - .:/app
+      - beer_tracker_node_modules:/app/node_modules
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      DOCKER_DEV_INSTALL_NODE_MODULES: "0"
+      TRACKER_API_URL: ${TRACKER_API_URL:-https://api.tracker.yandex.net/v3}
+      ISSUE_TRACKER_PROVIDER: ${ISSUE_TRACKER_PROVIDER:-tracker}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:?Set AUTH_SESSION_SECRET in .env (≥32 characters)}
+      ORG_SECRETS_ENCRYPTION_KEY: ${ORG_SECRETS_ENCRYPTION_KEY:?Set ORG_SECRETS_ENCRYPTION_KEY in .env}
+      BEER_TRACKER_SCHEMA: ${BEER_TRACKER_SCHEMA:-beer_tracker}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      app:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: beer_tracker
+      POSTGRES_PASSWORD: ${BEER_TRACKER_DEV_POSTGRES_PASSWORD:-beer_tracker_local}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d beer_tracker"]
+
+volumes:
+  beer_tracker_node_modules:
+  beer_tracker_next:

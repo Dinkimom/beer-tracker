@@ -1,0 +1,1976 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant swimlane-row-resizing (&:where(body[data-swimlane-row-resizing] *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  /* Дизайн-система: семантические токены (см. COMPONENT_CATALOG.md) */
+  --ds-border-subtle: #e5e7eb;
+  --ds-text-muted: #6b7280;
+  --ds-surface-header: #ffffff;
+  --toast-bg: #ffffff;
+  --toast-fg: #363636;
+  /* Z-index уровни (см. constants/zIndex.ts) */
+  --z-dropdown: 100;
+  --z-dropdown-content: 110;
+  --z-dropdown-nested: 120;
+  --z-tooltip: 1000;
+  --z-overlay: 1100;
+  --z-drag-preview: 1200;
+  --z-side-panel: 1300;
+  --z-context-menu: 1400;
+  --z-submenu: 1410;
+  --z-popup-content: 1420;
+  --z-modal-backdrop: 2000;
+  --z-modal: 2001;
+  --z-modal-nested-backdrop: 2010;
+  --z-modal-nested: 2011;
+  --z-modal-confirm-backdrop: 2020;
+  --z-modal-confirm: 2021;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ds-border-subtle: var(--ds-border-subtle);
+  --color-ds-surface-header: var(--ds-surface-header);
+  --color-ds-text-muted: var(--ds-text-muted);
+  --color-toast-bg: var(--toast-bg);
+  --color-toast-fg: var(--toast-fg);
+  /* Brown = Sienna #A0522D (600): в Tailwind v4 нет brown в default @theme */
+  --color-brown-50: oklch(98% 0.018 38);
+  --color-brown-100: oklch(94% 0.045 38);
+  --color-brown-200: oklch(87% 0.075 38);
+  --color-brown-300: oklch(78% 0.105 38);
+  --color-brown-400: oklch(66% 0.12 38);
+  --color-brown-500: oklch(58% 0.128 38);
+  --color-brown-600: #a0522d;
+  --color-brown-700: oklch(42% 0.11 38);
+  --color-brown-800: oklch(34% 0.09 38);
+  --color-brown-900: oklch(27% 0.072 38);
+  --color-brown-950: oklch(20% 0.052 38);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-handwriting: var(--font-caveat);
+  --font-excalifont: var(--font-excalifont-file), cursive;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --ds-border-subtle: #374151;
+  --ds-text-muted: #9ca3af;
+  --ds-surface-header: #1f2937;
+  --toast-bg: #1e293b;
+  --toast-fg: #f1f5f9;
+}
+
+html {
+  color-scheme: light dark;
+  height: 100%;
+  max-height: 100vh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* При смене темы мгновенно применяем цвета (класс вешается в ThemeProvider на ~120ms).
+   Вне этого окна Tailwind transition-colors на кнопках и других контролах должен работать. */
+html.theme-changing,
+html.theme-changing * {
+  transition-property: background-color, background-image, color, border-color, fill, stroke !important;
+  transition-duration: 0s !important;
+}
+
+/* Исключение: плавное затемнение карточек при hover связей в свимлейне */
+.task-bar-opacity-layer {
+  transition-property: opacity !important;
+  transition-duration: 0.5s !important;
+  transition-timing-function: ease !important;
+}
+
+/* Разрешаем только анимацию ширины карточки при long-hover.
+   Переход по left отключен, чтобы карточка не "доезжала" в секцию после dnd. */
+.task-bar-item {
+  transition-property: width !important;
+  transition-duration: 0.25s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Ресайз: left и width должны применяться в одном кадре. Иначе при тяге за левую
+   рукоятку left прыгает сразу, а width анимируется от левого края — визуально «растёт справа». */
+.task-bar-item.task-bar-item-instant-geometry {
+  transition-property: none !important;
+  transition-duration: 0s !important;
+}
+
+/* Исключение: плавное появление ленивого контента (таймлайн факта, плановые фазы) при скролле */
+.occupancy-lazy-fade-in {
+  transition-property: opacity !important;
+  transition-duration: 0.12s !important;
+  transition-timing-function: ease-out !important;
+}
+
+@keyframes swimlane-quick-add-preview-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Исключение: появление «+» в ячейке свимлейна (сброс transitions при theme-changing гасит Tailwind). */
+.swimlane-quick-add-preview-fade {
+  animation: swimlane-quick-add-preview-enter 0.2s ease-out;
+}
+
+/* Исключение: затемнение/подсветка маркеров таймлайна факта (свимлейн и занятость; глобальный сброс гасит Tailwind) */
+.fact-timeline-marker-opacity {
+  transition-property: opacity !important;
+  transition-duration: 350ms !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Исключение: появление/исчезновение рукояток ресайза TaskBar (сброс transitions при theme-changing иначе гасит Tailwind).
+   Не удлинять hide: при проходе по плотной строке вспышки стали бы длиннее.
+   Hover-intent: delay только на появление, чтобы краткий заход на край карточки не подсвечивал грип. */
+.task-bar-resize-handle-visual {
+  transition-property: opacity !important;
+  transition-duration: 0.1s !important;
+  transition-delay: 0s !important;
+  transition-timing-function: ease-out !important;
+}
+
+.group\/resize-handle:hover .task-bar-resize-handle-visual {
+  transition-duration: 0.22s !important;
+  transition-delay: 0.16s !important;
+}
+
+/* Ресайз уже начат: не ждать hover-intent, грип должен остаться видимым сразу. */
+.group\/resize-handle:hover .task-bar-resize-handle-visual.task-bar-resize-handle-visual--active,
+.task-bar-resize-handle-visual.task-bar-resize-handle-visual--active {
+  transition-delay: 0s !important;
+  transition-duration: 0.1s !important;
+}
+
+/* Слой рукояток поверх контента карточки (фото/заметка); hit-area — pointer-events в .task-bar-resize-handle-hit */
+.task-bar-resize-handle-chrome {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+.task-bar-resize-handle-chrome .task-bar-resize-handle-hit {
+  pointer-events: auto;
+}
+
+@keyframes sprint-card-presence-enter {
+  from {
+    max-width: 0;
+    margin-left: 0;
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    max-width: 1.5rem;
+    margin-left: -0.375rem;
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sprint-card-presence-avatar {
+  animation: sprint-card-presence-enter 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  margin-left: -0.375rem;
+  max-width: 1.5rem;
+  overflow: hidden;
+  transform-origin: 50% 50%;
+}
+
+@keyframes sprint-card-presence-exit {
+  from {
+    max-width: 1.5rem;
+    margin-left: -0.375rem;
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    max-width: 0;
+    margin-left: 0;
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.sprint-card-presence-avatar-exit {
+  animation: sprint-card-presence-exit 220ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  margin-left: -0.375rem;
+  max-width: 1.5rem;
+  min-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+}
+
+/* Чужой жест: полоса/карточка едет вместе с presence, не только обводка */
+.sprint-card-presence-changing {
+  transition-property: left, right, width;
+  transition-duration: 90ms;
+  transition-timing-function: linear;
+}
+
+.task-bar-item:has(.sprint-card-presence-changing):not(.task-bar-item-instant-geometry) {
+  transition-property: left, width !important;
+  transition-duration: 90ms !important;
+  transition-timing-function: linear !important;
+}
+
+/* Обводка карточки, когда кто-то другой её двигает / ресайзит / редактирует */
+.sprint-card-presence-changing::after {
+  border: 2px solid #f59e0b;
+  border-radius: inherit;
+  content: '';
+  inset: -3px;
+  pointer-events: none;
+  position: absolute;
+}
+
+html.dark .sprint-card-presence-changing::after {
+  border-color: #fbbf24;
+}
+
+@keyframes sprint-card-presence-reveal {
+  from {
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.65);
+  }
+  to {
+    box-shadow: 0 0 0 0 rgb(59 130 246 / 0);
+  }
+}
+
+.sprint-card-presence-reveal {
+  animation: sprint-card-presence-reveal 1.2s ease-out;
+}
+
+/* Реакции на заметке: новый чип и +1 (свой клик и чужой SSE) */
+@keyframes sticky-note-reaction-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.16);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sticky-note-reaction-bump {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.22);
+  }
+}
+
+.sticky-note-reaction-chip-enter {
+  animation: sticky-note-reaction-enter 280ms ease-out both;
+}
+
+.sticky-note-reaction-chip-bump {
+  animation: sticky-note-reaction-bump 240ms ease-out;
+}
+
+/* Исключение: плавное появление кнопки «+» в пустой ячейке свимлейна (только на hover) */
+[data-swimlane-cell-quick-add] {
+  transition-property: opacity, transform !important;
+  transition-duration: 0.2s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Исключение: плавная тень карточки задачи / заметки в свимлейне при hover */
+.task-card-swimlane-hover-shadow {
+  transition-property: box-shadow !important;
+  transition-duration: 0.2s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* :hover на самой карточке + hover родителя (.task-bar-item): рукоятки ресайза —
+   сиблинги карточки, без parent-hover подсветка пропадала бы на краю. */
+.task-card-swimlane-hover-shadow:hover,
+.task-bar-item:hover .task-card-swimlane-hover-shadow {
+  /* Между shadow-md и shadow-lg */
+  box-shadow:
+    0 6px 12px -2px rgb(0 0 0 / 0.1),
+    0 3px 5px -2px rgb(0 0 0 / 0.08);
+}
+
+.dark .task-card-swimlane-hover-shadow:hover,
+.dark .task-bar-item:hover .task-card-swimlane-hover-shadow {
+  /* Та же геометрия, тень в цвет акцента */
+  box-shadow:
+    0 6px 12px -2px color-mix(in srgb, var(--task-card-glow-color, #a3a3a3) 34%, transparent),
+    0 3px 5px -2px color-mix(in srgb, var(--task-card-glow-color, #a3a3a3) 22%, transparent);
+}
+
+/* Исключение: плавное масштабирование и смена цвета бейджа / кнопки на карточке */
+.task-card-swimlane-corner-badge {
+  transition-property: scale, transform, background-color, border-color !important;
+  transition-duration: 0.2s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Исключение: разъезд и подъём аватаров присутствия на доске */
+.sprint-presence-avatar {
+  transition-property: transform, margin-left, box-shadow !important;
+  transition-duration: 0.18s !important;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* Исключение: плавная закраска доступных/недоступных слотов при перетаскивании фазы в режиме занятости */
+[data-occupancy-timeline-cell] {
+  transition-property: background-color, color, border-color !important;
+  transition-duration: 0.2s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* При смене темы отключаем переход у ячеек таймлайна занятости и у фаз (класс вешается на один кадр в ThemeProvider) */
+html.theme-changing [data-occupancy-timeline-cell],
+html.theme-changing .task-bar-opacity-layer,
+html.theme-changing .task-bar-resize-handle-visual,
+html.theme-changing .task-card-swimlane-hover-shadow,
+html.theme-changing .task-card-swimlane-corner-badge,
+html.theme-changing .sprint-presence-avatar,
+html.theme-changing [data-swimlane-cell-quick-add],
+html.theme-changing .fact-timeline-marker-opacity,
+html.theme-changing [data-occupancy-bar],
+html.theme-changing [data-occupancy-bar] * {
+  transition-duration: 0s !important;
+  transition-property: none !important;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  max-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Разрешаем выделение только в полях ввода и contenteditable */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Отключаем оверскролл (bounce при свайпе за край) для всех прокручиваемых областей */
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto,
+.overflow-y-scroll,
+.overflow-x-scroll {
+  overscroll-behavior: none;
+}
+
+/* Убираем outline и focus-ring (кольцо после клика) глобально у интерактивных элементов.
+   Не трогаем tabindex="-1": так Radix помечает Popover/Dialog Content, и сброс
+   box-shadow снимал бы drop-shadow попапа при клике и фокусе поля внутри. */
+*:focus,
+*:focus-visible {
+  outline: none !important;
+}
+
+button:focus,
+button:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible,
+a:focus,
+a:focus-visible,
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  box-shadow: none !important;
+}
+
+.floating-menu-shell {
+  --floating-menu-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--floating-menu-shadow);
+}
+
+.dark .floating-menu-shell {
+  --floating-menu-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.floating-menu-shell:focus,
+.floating-menu-shell:focus-visible,
+.floating-menu-shell:focus-within {
+  box-shadow: var(--floating-menu-shadow) !important;
+}
+
+/* Скрытие вертикального скроллбара */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE и Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari и Opera */
+}
+
+/* Тонкий скроллбар для сайдбаров */
+.scrollbar-thin-custom {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(209 213 219) transparent; /* gray-300 для Firefox */
+}
+
+.scrollbar-thin-custom::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin-custom::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin-custom::-webkit-scrollbar-thumb {
+  background-color: rgb(209 213 219); /* gray-300 */
+  border-radius: 9999px;
+}
+
+.scrollbar-thin-custom::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(156 163 175); /* gray-400 */
+}
+
+.dark .scrollbar-thin-custom {
+  scrollbar-color: rgb(75 85 99) transparent; /* gray-600 для Firefox в темной теме */
+}
+
+.dark .scrollbar-thin-custom::-webkit-scrollbar-thumb {
+  background-color: rgb(75 85 99); /* gray-600 */
+}
+
+.dark .scrollbar-thin-custom::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(107 114 128); /* gray-500 */
+}
+
+/* Вместе с .scrollbar-thin-custom: фиксируем gutter под вертикальный скролл — clientWidth не меняется
+   при появлении/пропадании скролла (например после открытия сайдбара), таблица занятости не «дёргается». */
+.scrollbar-thin-custom.scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
+/* Стили для чекбоксов в светлой теме */
+input[type="checkbox"] {
+  /* Убираем стандартный вид браузера */
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  
+  /* Размеры и форма - используем значения из классов Tailwind */
+  border-radius: 0.25rem; /* rounded */
+  
+  /* Стили для неотмеченного состояния в светлой теме */
+  background-color: white !important;
+  border: 1px solid rgb(209 213 219) !important; /* border-gray-300 */
+  
+  /* Центрирование галочки */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  
+  /* Курсор */
+  cursor: pointer;
+  
+  /* Позиционирование */
+  flex-shrink: 0;
+  
+  /* Убираем стандартные отступы */
+  margin: 0;
+  padding: 0;
+}
+
+/* Галочка для отмеченного чекбокса в светлой теме */
+input[type="checkbox"]:checked {
+  background-color: rgb(59 130 246) !important; /* blue-500 */
+  border-color: rgb(59 130 246) !important; /* blue-500 */
+  background-image: none !important;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  display: block;
+  /* Пропорциональный размер галочки относительно размера чекбокса */
+  width: calc(100% * 0.3);
+  height: calc(100% * 0.5);
+  min-width: 0.25rem; /* минимум 4px */
+  min-height: 0.375rem; /* минимум 6px */
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -1px;
+}
+
+/* Фокус для чекбоксов — без outline */
+input[type="checkbox"]:focus,
+input[type="checkbox"]:focus-visible {
+  outline: none !important;
+}
+
+/* Стили для чекбоксов в темной теме */
+.dark input[type="checkbox"] {
+  background-color: rgb(55 65 81) !important; /* bg-gray-700 */
+  border-color: rgb(75 85 99) !important; /* border-gray-600 */
+}
+
+.dark input[type="checkbox"]:checked {
+  background-color: rgb(96 165 250) !important; /* blue-400 */
+  border-color: rgb(96 165 250) !important; /* blue-400 */
+  background-image: none !important;
+}
+
+.dark input[type="checkbox"]:checked::after {
+  border-color: white;
+}
+
+.dark input[type="checkbox"]:focus,
+.dark input[type="checkbox"]:focus-visible {
+  outline: none !important;
+}
+
+/* Отключенное состояние */
+input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Появление и скрытие правых сайдеров (задача, уведомления) */
+@keyframes task-info-sidebar-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes task-info-sidebar-exit {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.task-info-sidebar-enter {
+  animation: task-info-sidebar-enter 220ms ease-out;
+}
+
+.task-info-sidebar-exit {
+  animation: task-info-sidebar-exit 220ms ease-in forwards;
+  pointer-events: none;
+}
+
+/* Попапы / меню / модалки: enter+exit. data-state задаёт Radix или useOverlayPresence. */
+@keyframes overlay-float-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes overlay-float-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+}
+
+@keyframes overlay-fade-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-fade-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Только opacity + scale: центрирование через Tailwind `-translate-*` (свойство
+   `translate` в v4). Translate в `transform` здесь складывался бы с ним и
+   сдвигал модалку влево/вверх примерно на половину её размера. */
+@keyframes overlay-dialog-enter {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes overlay-dialog-exit {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+
+.overlay-float,
+.overlay-panel {
+  animation: overlay-float-enter 200ms ease-out both;
+}
+
+.overlay-float[data-state='closed'],
+.overlay-panel[data-state='closed'] {
+  animation: overlay-float-exit 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+.overlay-backdrop {
+  animation: overlay-fade-enter 200ms ease-out both;
+}
+
+.overlay-backdrop[data-state='closed'] {
+  animation: overlay-fade-exit 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+.overlay-dialog {
+  animation: overlay-dialog-enter 200ms ease-out both;
+}
+
+.overlay-dialog[data-state='closed'] {
+  animation: overlay-dialog-exit 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+.overlay-tooltip {
+  animation: overlay-float-enter 150ms ease-out both;
+}
+
+.overlay-tooltip[data-state='closed'] {
+  animation: overlay-float-exit 150ms ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay-float,
+  .overlay-panel,
+  .overlay-backdrop,
+  .overlay-dialog,
+  .overlay-tooltip,
+  .overlay-float[data-state='closed'],
+  .overlay-panel[data-state='closed'],
+  .overlay-backdrop[data-state='closed'],
+  .overlay-dialog[data-state='closed'],
+  .overlay-tooltip[data-state='closed'] {
+    animation-duration: 1ms;
+  }
+}
+
+/* Точки в тексте оверлея загрузки появляются по очереди */
+.loading-overlay-dots {
+  display: inline-grid;
+  justify-items: start;
+}
+
+.loading-overlay-dots__sizer {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+
+.loading-overlay-dots__seq {
+  grid-area: 1 / 1;
+}
+
+.loading-overlay-dots__seq > span {
+  opacity: 0;
+  animation-duration: 1.4s;
+  animation-iteration-count: infinite;
+}
+
+.loading-overlay-dots__seq > span:nth-child(1) {
+  animation-name: loading-overlay-dot-1;
+}
+
+.loading-overlay-dots__seq > span:nth-child(2) {
+  animation-name: loading-overlay-dot-2;
+}
+
+.loading-overlay-dots__seq > span:nth-child(3) {
+  animation-name: loading-overlay-dot-3;
+}
+
+@keyframes loading-overlay-dot-1 {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  25%,
+  95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes loading-overlay-dot-2 {
+  0%,
+  45% {
+    opacity: 0;
+  }
+  50%,
+  95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes loading-overlay-dot-3 {
+  0%,
+  70% {
+    opacity: 0;
+  }
+  75%,
+  95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-info-sidebar-enter,
+  .task-info-sidebar-exit,
+  .sprint-card-presence-avatar,
+  .sprint-card-presence-avatar-exit,
+  .sprint-card-presence-reveal,
+  .sticky-note-reaction-chip-enter,
+  .sticky-note-reaction-chip-bump {
+    animation: none;
+  }
+
+  .resizable-sidebar-shell {
+    transition: none !important;
+  }
+
+  .sprint-card-presence-changing,
+  .task-bar-item:has(.sprint-card-presence-changing) {
+    transition: none !important;
+  }
+
+  .loading-overlay-dots__seq > span {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Анимация мерцания новогодней гирлянды */
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.christmas-light {
+  animation: twinkle 1s ease-in-out infinite;
+}
+
+/* Стили для Markdown редактора */
+.w-md-editor {
+  background-color: white !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dark .w-md-editor {
+  background-color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.w-md-editor-text-pre,
+.w-md-editor-text-input,
+.w-md-editor-text {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.w-md-editor-text-input,
+.w-md-editor-text-pre,
+.w-md-editor-text-pre > code {
+  color: rgb(17 24 39) !important; /* gray-900 */
+  caret-color: rgb(59 130 246) !important; /* blue-500 */
+}
+
+.dark .w-md-editor-text-input,
+.dark .w-md-editor-text-pre,
+.dark .w-md-editor-text-pre > code {
+  color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+.w-md-editor-content {
+  background-color: white !important;
+}
+
+.dark .w-md-editor,
+.dark .w-md-editor-content,
+.dark .w-md-editor-area,
+.dark .w-md-editor-input,
+.dark .w-md-editor-text,
+.dark .w-md-editor-text-pre,
+.dark .w-md-editor-text-pre > code,
+.dark [data-color-mode="auto"] .w-md-editor,
+.dark [data-color-mode="auto"] .w-md-editor-content {
+  background-color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+/* Стили для подсветки синтаксиса markdown */
+.w-md-editor-text-pre .title {
+  color: rgb(59 130 246) !important; /* blue-500 */
+  font-weight: 600 !important;
+}
+
+.dark .w-md-editor-text-pre .title {
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+.w-md-editor-text-pre .bold {
+  color: rgb(234 88 12) !important; /* orange-600 */
+}
+
+.dark .w-md-editor-text-pre .bold {
+  color: rgb(251 146 60) !important; /* orange-400 */
+}
+
+.w-md-editor-text-pre .italic {
+  color: rgb(147 51 234) !important; /* purple-600 */
+}
+
+.dark .w-md-editor-text-pre .italic {
+  color: rgb(192 132 252) !important; /* purple-400 */
+}
+
+.w-md-editor-text-pre .code {
+  color: rgb(22 163 74) !important; /* green-600 */
+  background-color: rgb(240 253 244) !important; /* green-50 */
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.dark .w-md-editor-text-pre .code {
+  color: rgb(74 222 128) !important; /* green-400 */
+  background-color: rgb(20 83 45 / 30%) !important;
+}
+
+.w-md-editor-text-pre .url,
+.w-md-editor-text-pre .link {
+  color: rgb(37 99 235) !important; /* blue-600 */
+}
+
+.dark .w-md-editor-text-pre .url,
+.dark .w-md-editor-text-pre .link {
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+/* Убираем дефолтный тулбар */
+.w-md-editor-toolbar {
+  display: none !important;
+}
+
+/* Стили для Markdown превью */
+.wmde-markdown {
+  background-color: transparent !important;
+  font-family: inherit !important;
+  color: rgb(17 24 39) !important; /* gray-900 - тёмный текст для светлой темы */
+}
+
+.dark .wmde-markdown {
+  color: rgb(243 244 246) !important; /* gray-100 - светлый текст для тёмной темы */
+}
+
+.wmde-markdown h1,
+.wmde-markdown h2,
+.wmde-markdown h3,
+.wmde-markdown h4 {
+  border-bottom: none !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 0.5em !important;
+}
+
+.wmde-markdown h1 {
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+}
+
+.wmde-markdown h2 {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+}
+
+.wmde-markdown h3 {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+}
+
+.wmde-markdown code {
+  background-color: rgb(243 244 246) !important;
+  color: rgb(220 38 38) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-size: 0.875em !important;
+}
+
+.dark .wmde-markdown code {
+  background-color: rgb(55 65 81) !important;
+  color: rgb(248 113 113) !important;
+}
+
+.wmde-markdown pre {
+  background-color: rgb(31 41 55) !important;
+  border-radius: 8px !important;
+  padding: 1rem !important;
+}
+
+.wmde-markdown pre code {
+  background-color: transparent !important;
+  color: rgb(229 231 235) !important;
+  padding: 0 !important;
+}
+
+.wmde-markdown blockquote {
+  border-left: 4px solid rgb(59 130 246) !important;
+  background-color: rgb(239 246 255) !important;
+  padding: 0.5rem 1rem !important;
+  margin: 1rem 0 !important;
+  border-radius: 0 8px 8px 0 !important;
+}
+
+.dark .wmde-markdown blockquote {
+  background-color: rgb(30 58 138 / 20%) !important;
+  border-left-color: rgb(96 165 250) !important;
+}
+
+.wmde-markdown a {
+  color: rgb(37 99 235) !important;
+}
+
+.dark .wmde-markdown a {
+  color: rgb(96 165 250) !important;
+}
+
+.wmde-markdown ul,
+.wmde-markdown ol {
+  padding-left: 1.5rem !important;
+}
+
+.wmde-markdown li {
+  margin: 0.25rem 0 !important;
+}
+
+.wmde-markdown hr {
+  border-color: rgb(229 231 235) !important;
+  margin: 2rem 0 !important;
+}
+
+.dark .wmde-markdown hr {
+  border-color: rgb(55 65 81) !important;
+}
+
+/* Excalidraw стили для светлой темы */
+.excalidraw {
+  --theme-filter: none;
+  --button-destructive-bg-color: #ffe5e5;
+  --button-destructive-color: #c92a2a;
+  --button-gray-1: #e9ecef;
+  --button-gray-2: #ced4da;
+  --button-gray-3: #adb5bd;
+  --mobile-action-button-bg: rgba(255, 255, 255, 0.35);
+  --mobile-color-border: var(--default-border-color);
+  --button-special-active-bg-color: #d3f9d8;
+  --dialog-border-color: var(--color-gray-20);
+  --dropdown-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="292.4" height="292.4" viewBox="0 0 292 292"><path d="M287 197L159 69c-4-3-8-5-13-5s-9 2-13 5L5 197c-3 4-5 8-5 13s2 9 5 13c4 4 8 5 13 5h256c5 0 9-1 13-5s5-8 5-13-1-9-5-13z"/></svg>');
+  --focus-highlight-color: #c5f3ff;
+  --icon-fill-color: var(--color-on-surface);
+  --icon-green-fill-color: #2b8a3e;
+  --default-bg-color: #ffffff;
+  --input-bg-color: #ffffff;
+  --input-border-color: #ced4da;
+  --input-hover-bg-color: #f8f9fa;
+  --input-label-color: #495057;
+  --island-bg-color: #ffffff;
+  --keybinding-color: var(--color-gray-40);
+  --link-color: #1971c2;
+  --overlay-bg-color: rgba(255, 255, 255, 0.88);
+  --popup-bg-color: var(--island-bg-color);
+  --popup-secondary-bg-color: #f8f9fa;
+  --popup-text-color: #000000;
+  --popup-text-inverted-color: #ffffff;
+  --select-highlight-color: #339af0;
+  --shadow-island: 0px 0px 0.9310142993927002px 0px rgba(0, 0, 0, 0.17),
+    0px 0px 3.1270833015441895px 0px rgba(0, 0, 0, 0.08),
+    0px 7px 14px 0px rgba(0, 0, 0, 0.05);
+  --button-hover-bg: var(--color-surface-high);
+  --button-active-bg: var(--color-surface-high);
+  --button-active-border: var(--color-brand-active);
+  --default-border-color: var(--color-surface-high);
+  --default-button-size: 2rem;
+  --default-icon-size: 1rem;
+  --lg-button-size: 2.25rem;
+  --lg-icon-size: 1rem;
+  --editor-container-padding: 1rem;
+  --mobile-action-button-size: 2rem;
+  --scrollbar-thumb: var(--button-gray-2);
+  --scrollbar-thumb-hover: var(--button-gray-3);
+  --color-slider-track: hsl(240, 100%, 90%);
+  --color-slider-thumb: var(--color-gray-80);
+  --modal-shadow: 0px 100px 80px rgba(0, 0, 0, 0.07),
+    0px 41.7776px 33.4221px rgba(0, 0, 0, 0.0503198),
+    0px 22.3363px 17.869px rgba(0, 0, 0, 0.0417275),
+    0px 12.5216px 10.0172px rgba(0, 0, 0, 0.035),
+    0px 6.6501px 5.32008px rgba(0, 0, 0, 0.0282725),
+    0px 2.76726px 2.21381px rgba(0, 0, 0, 0.0196802);
+  --avatar-border-color: var(--color-gray-20);
+  --sidebar-shadow: 0px 100px 80px rgba(0, 0, 0, 0.07),
+    0px 41.7776px 33.4221px rgba(0, 0, 0, 0.0503198),
+    0px 22.3363px 17.869px rgba(0, 0, 0, 0.0417275),
+    0px 12.5216px 10.0172px rgba(0, 0, 0, 0.035),
+    0px 6.6501px 5.32008px rgba(0, 0, 0, 0.0282725),
+    0px 2.76726px 2.21381px rgba(0, 0, 0, 0.0196802);
+  --sidebar-border-color: var(--color-surface-high);
+  --sidebar-bg-color: var(--island-bg-color);
+  --library-dropdown-shadow: 0px 15px 6px rgba(0, 0, 0, 0.01),
+    0px 8px 5px rgba(0, 0, 0, 0.05), 0px 4px 4px rgba(0, 0, 0, 0.09),
+    0px 1px 2px rgba(0, 0, 0, 0.1), 0px 0px 0px rgba(0, 0, 0, 0.1);
+  --space-factor: 0.25rem;
+  --text-primary-color: var(--color-on-surface);
+  --color-selection: #6965db;
+  --color-icon-white: #ffffff;
+  --color-primary: #6965db;
+  --color-primary-darker: #5b57d1;
+  --color-primary-darkest: #4a47b1;
+  --color-primary-light: #e3e2fe;
+  --color-primary-light-darker: #d7d5ff;
+  --color-primary-hover: #5753d0;
+  --color-gray-10: #f5f5f5;
+  --color-gray-20: #ebebeb;
+  --color-gray-30: #d6d6d6;
+  --color-gray-40: #b8b8b8;
+  --color-gray-50: #999999;
+  --color-gray-60: #7a7a7a;
+  --color-gray-70: #5c5c5c;
+  --color-gray-80: #3d3d3d;
+  --color-gray-85: #242424;
+  --color-gray-90: #1e1e1e;
+  --color-gray-100: #121212;
+  --color-disabled: var(--color-gray-40);
+  --color-warning: #fceeca;
+  --color-warning-dark: #f5c354;
+  --color-warning-darker: #f3ab2c;
+  --color-warning-darkest: #ec8b14;
+  --color-text-warning: var(--text-primary-color);
+  --color-danger: #db6965;
+  --color-danger-dark: #db6965;
+  --color-danger-darker: #d65550;
+  --color-danger-darkest: #d1413c;
+  --color-danger-text: black;
+  --color-danger-background: #fff0f0;
+  --color-danger-icon-background: #ffdad6;
+  --color-danger-color: #700000;
+  --color-danger-icon-color: #700000;
+  --color-warning-background: var(--color-warning);
+  --color-warning-icon-background: var(--color-warning-dark);
+  --color-warning-color: var(--text-primary-color);
+  --color-warning-icon-color: var(--text-primary-color);
+  --color-muted: var(--color-gray-30);
+  --color-muted-darker: var(--color-gray-60);
+  --color-muted-darkest: var(--color-gray-100);
+  --color-muted-background: var(--color-gray-80);
+  --color-muted-background-darker: var(--color-gray-100);
+  --color-promo: var(--color-primary);
+  --color-success: #cafccc;
+  --color-success-darker: #bafabc;
+  --color-success-darkest: #a5eba8;
+  --color-success-text: #268029;
+  --color-success-contrast: #65bb6a;
+  --color-success-contrast-hover: #6bcf70;
+  --color-success-contrast-active: #6edf74;
+  --color-logo-icon: var(--color-primary);
+  --color-logo-text: #190064;
+  --border-radius-md: 0.375rem;
+  --border-radius-lg: 0.5rem;
+  --color-surface-high: #f1f0ff;
+  --color-surface-mid: #f6f6f9;
+  --color-surface-low: #ececf4;
+  --color-surface-lowest: #ffffff;
+  --color-on-surface: #1b1b1f;
+  --color-brand-hover: #5753d0;
+  --color-on-primary-container: #030064;
+  --color-surface-primary-container: #e0dfff;
+  --color-brand-active: #4440bf;
+  --color-border-outline: #767680;
+  --color-border-outline-variant: #c5c5d0;
+  --color-badge: #0b6513;
+  --background-color-badge: #d3ffd2;
+}
+
+/* Excalidraw стили для темной темы */
+.excalidraw.theme--dark {
+  --theme-filter: invert(93%) hue-rotate(180deg);
+  --button-destructive-bg-color: #5a0000;
+  --button-destructive-color: #ff6b6b;
+  --button-gray-1: var(--color-gray-80);
+  --button-gray-2: var(--color-gray-80);
+  --button-gray-3: var(--color-gray-80);
+  --mobile-action-button-bg: var(--island-bg-color);
+  --mobile-color-border: rgba(255, 255, 255, 0.85);
+  --button-special-active-bg-color: #204624;
+  --dialog-border-color: var(--color-gray-80);
+  --dropdown-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="292.4" height="292.4" viewBox="0 0 292 292"><path fill="%23ced4da" d="M287 197L159 69c-4-3-8-5-13-5s-9 2-13 5L5 197c-3 4-5 8-5 13s2 9 5 13c4 4 8 5 13 5h256c5 0 9-1 13-5s5-8 5-13-1-9-5-13z"/></svg>');
+  --focus-highlight-color: #339af0;
+  --icon-fill-color: var(--color-gray-80);
+  --icon-green-fill-color: #51cf66;
+  --default-bg-color: #121212;
+  --input-bg-color: #121212;
+  --input-border-color: #2e2e2e;
+  --input-hover-bg-color: #181818;
+  --input-label-color: #e9ecef;
+  --island-bg-color: #232329;
+  --keybinding-color: var(--color-gray-60);
+  --link-color: #74c0fc;
+  --overlay-bg-color: rgba(18, 18, 18, 0.88);
+  --popup-secondary-bg-color: #222222;
+  --popup-text-color: #ced4da;
+  --popup-text-inverted-color: #2c2c2c;
+  --select-highlight-color: #74c0fc;
+  --shadow-island: 0px 0px 0.9310142993927002px 0px rgba(0, 0, 0, 0.17),
+    0px 0px 3.1270833015441895px 0px rgba(0, 0, 0, 0.08),
+    0px 7px 14px 0px rgba(0, 0, 0, 0.05);
+  --modal-shadow: 0px 100px 80px rgba(0, 0, 0, 0.07),
+    0px 41.7776px 33.4221px rgba(0, 0, 0, 0.0503198),
+    0px 22.3363px 17.869px rgba(0, 0, 0, 0.0417275),
+    0px 12.5216px 10.0172px rgba(0, 0, 0, 0.035),
+    0px 6.6501px 5.32008px rgba(0, 0, 0, 0.0282725),
+    0px 2.76726px 2.21381px rgba(0, 0, 0, 0.0196802);
+  --avatar-border-color: var(--color-gray-85);
+  --scrollbar-thumb: #495057;
+  --scrollbar-thumb-hover: #5c5c5c;
+  --color-slider-track: hsl(244, 23%, 39%);
+  --color-selection: #3530c4;
+  --color-icon-white: var(--color-gray-90);
+  --color-primary: #a8a5ff;
+  --color-primary-darker: #b2aeff;
+  --color-primary-darkest: #beb9ff;
+  --color-primary-light: #4f4d6f;
+  --color-primary-light-darker: #43415e;
+  --color-primary-hover: #bbb8ff;
+  --color-disabled: var(--color-gray-70);
+  --color-text-warning: var(--color-gray-80);
+  --color-danger: #ffa8a5;
+  --color-danger-dark: #672120;
+  --color-danger-darker: #8f2625;
+  --color-danger-darkest: #ac2b29;
+  --color-danger-text: #fbcbcc;
+  --color-danger-background: #fbcbcc;
+  --color-danger-icon-background: #672120;
+  --color-danger-color: #261919;
+  --color-danger-icon-color: #fbcbcc;
+  --color-warning-background: var(--color-warning);
+  --color-warning-icon-background: var(--color-warning-dark);
+  --color-warning-color: var(--color-gray-80);
+  --color-warning-icon-color: var(--color-gray-80);
+  --color-muted: var(--color-gray-80);
+  --color-muted-darker: var(--color-gray-60);
+  --color-muted-darkest: var(--color-gray-20);
+  --color-muted-background: var(--color-gray-40);
+  --color-muted-background-darker: var(--color-gray-20);
+  --color-logo-text: #e2dfff;
+  --color-surface-high: #2e2d39;
+  --color-surface-low: hsl(240, 8%, 15%);
+  --color-surface-mid: hsl(240, 6%, 10%);
+  --color-surface-lowest: hsl(0, 0%, 7%);
+  --color-on-surface: #e3e3e8;
+  --color-brand-hover: #bbb8ff;
+  --color-on-primary-container: #e0dfff;
+  --color-surface-primary-container: #403e6a;
+  --color-brand-active: #d0ccff;
+  --color-border-outline: #8e8d9c;
+  --color-border-outline-variant: #46464f;
+}
+
+/* Отключаем фильтр для canvas в темной теме */
+.excalidraw.theme--dark canvas {
+  filter: none !important;
+}
+
+/* Скрываем ненужные элементы в Excalidraw */
+/* Кнопка библиотеки теперь видна, так как мы добавили поддержку библиотек */
+/* .excalidraw .library-menu-wrap,
+.excalidraw .library-menu,
+.excalidraw button[aria-label*="Библиотека"],
+.excalidraw button[aria-label*="Library"],
+.excalidraw .menu-item__library,
+.excalidraw .ToolIcon_type_library,
+.excalidraw [data-testid="library-button"],
+.excalidraw .ToolIcon[title*="Библиотека"],
+.excalidraw .ToolIcon[title*="Library"] {
+  display: none !important;
+} */
+
+.excalidraw .menu-item__main-menu,
+.excalidraw button[aria-label*="Меню"],
+.excalidraw button[aria-label*="Menu"],
+.excalidraw [data-testid="main-menu-button"],
+.excalidraw .ToolIcon[title*="Меню"],
+.excalidraw .ToolIcon[title*="Menu"],
+.excalidraw .ToolIcon[aria-label*="Меню"],
+.excalidraw .ToolIcon[aria-label*="Menu"] {
+  display: none !important;
+}
+
+/* MDXEditor стили для светлой темы */
+.mdxeditor {
+  background-color: white !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 0 !important;
+  overflow: scroll;
+  /* Убираем overflow: hidden, чтобы скролл работал */
+  /* Переопределяем CSS переменные для скругления в toolbar */
+  --radius-medium: 0px !important;
+  --radius-base: 0px !important;
+  --radius-small: 0px !important;
+}
+
+.mdxeditor-toolbar {
+  /* Переопределяем переменные для toolbar */
+  --radius-medium: 0px !important;
+  --radius-base: 0px !important;
+  --radius-small: 0px !important;
+}
+
+.mdxeditor-toolbar {
+  background-color: rgb(249 250 251) !important; /* gray-50 */
+  border-bottom: 1px solid rgb(229 231 235) !important; /* border-gray-200 */
+  padding: 0.5rem 0.75rem !important;
+  flex-shrink: 0 !important;
+  gap: 0.25rem !important;
+}
+
+/* Блокируем кнопки toolbar, когда редактор не в фокусе */
+.mdxeditor-no-focus .mdxeditor-toolbar button:not(:disabled),
+.mdxeditor-no-focus .mdxeditor-toolbar [role="button"]:not(:disabled),
+.mdxeditor-no-focus .mdxeditor-toolbar [role="combobox"]:not(:disabled),
+.mdxeditor-no-focus .mdxeditor-toolbar select:not(:disabled) {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+/* Контейнер для скролла - это главный элемент для прокрутки контента */
+.mdxeditor-root-contenteditable {
+  flex: 1 1 0% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 0 !important;
+  background-color: white !important;
+  position: relative !important;
+}
+
+/* Внутренний wrapper от MDXEditor */
+.mdxeditor-root-contenteditable > div {
+  position: relative !important;
+  min-height: 100% !important;
+}
+
+/* Стили для contentEditable области в MDXEditor */
+.mdxeditor-root-contenteditable [contenteditable="true"] {
+  padding: 1rem !important;
+  padding-bottom: 2rem !important;
+  outline: none !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+  display: block !important;
+  min-height: calc(100% - 2rem) !important;
+  /* Более яркий цвет каретки для лучшей видимости */
+  caret-color: rgb(37 99 235) !important; /* blue-600 - более яркий и контрастный */
+  /* Увеличиваем толщину каретки (поддерживается в современных браузерах) */
+  caret-width: 2px !important;
+}
+
+/* Стили для заголовков в редакторе */
+.mdxeditor-root-contenteditable [contenteditable="true"] h1 {
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.75rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable [contenteditable="true"] h2 {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable [contenteditable="true"] h3 {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable [contenteditable="true"] h4 {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin-top: 0.875rem !important;
+  margin-bottom: 0.375rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable [contenteditable="true"] h5 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.375rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable [contenteditable="true"] h6 {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.375rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable [contenteditable="true"] p {
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1.6 !important;
+}
+
+.mdxeditor-toolbar button {
+  color: rgb(55 65 81) !important; /* gray-700 */
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0.375rem 0.5rem !important;
+  transition: background-color 0.15s ease-in-out !important;
+}
+
+.mdxeditor-toolbar button svg {
+  color: rgb(55 65 81) !important; /* gray-700 */
+  fill: rgb(55 65 81) !important; /* gray-700 */
+}
+
+.mdxeditor-toolbar button:hover:not(:disabled) svg {
+  color: rgb(17 24 39) !important; /* gray-900 */
+  fill: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-toolbar button[aria-pressed="true"] svg {
+  color: rgb(37 99 235) !important; /* blue-600 */
+  fill: rgb(37 99 235) !important; /* blue-600 */
+}
+
+.mdxeditor-toolbar button:hover:not(:disabled) {
+  background-color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+.mdxeditor-toolbar button[aria-pressed="true"] {
+  background-color: rgb(219 234 254) !important; /* blue-100 */
+  color: rgb(37 99 235) !important; /* blue-600 */
+}
+
+.mdxeditor-toolbar button:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+.mdxeditor-toolbar select {
+  background-color: white !important;
+  border: 1px solid rgb(209 213 219) !important; /* border-gray-300 */
+  color: rgb(17 24 39) !important; /* gray-900 */
+  border-radius: 0 !important;
+  padding: 0.375rem 0.5rem !important;
+  font-size: 0.875rem !important;
+}
+
+.mdxeditor-toolbar select:hover {
+  border-color: rgb(156 163 175) !important; /* gray-400 */
+}
+
+.mdxeditor-toolbar [role="separator"] {
+  background-color: rgb(229 231 235) !important; /* gray-200 */
+  width: 1px !important;
+  margin: 0.25rem 0.5rem !important;
+}
+
+/* MDXEditor стили для темной темы */
+.dark .mdxeditor {
+  background-color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.dark .mdxeditor-toolbar {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  border-bottom-color: rgb(55 65 81) !important; /* border-gray-700 */
+}
+
+/* Блокируем кнопки toolbar в темной теме, когда редактор не в фокусе */
+.dark .mdxeditor-no-focus .mdxeditor-toolbar button:not(:disabled),
+.dark .mdxeditor-no-focus .mdxeditor-toolbar [role="button"]:not(:disabled),
+.dark .mdxeditor-no-focus .mdxeditor-toolbar [role="combobox"]:not(:disabled),
+.dark .mdxeditor-no-focus .mdxeditor-toolbar select:not(:disabled) {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.dark .mdxeditor-root-contenteditable {
+  background-color: rgb(17 24 39) !important; /* gray-900 */
+  flex: 1 1 0% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 0 !important;
+}
+
+.dark .mdxeditor-root-contenteditable [contenteditable="true"] {
+  color: rgb(243 244 246) !important; /* gray-100 */
+  /* Более яркий цвет каретки для лучшей видимости в темной теме */
+  caret-color: rgb(96 165 250) !important; /* blue-400 - более яркий для темной темы */
+  /* Увеличиваем толщину каретки (поддерживается в современных браузерах) */
+  caret-width: 2px !important;
+}
+
+/* Стили для заголовков в темной теме */
+.dark .mdxeditor-root-contenteditable [contenteditable="true"] h1 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable [contenteditable="true"] h2 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable [contenteditable="true"] h3 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable [contenteditable="true"] h4 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable [contenteditable="true"] h5 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable [contenteditable="true"] h6 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-toolbar button {
+  color: rgb(209 213 219) !important; /* gray-300 */
+}
+
+.dark .mdxeditor-toolbar button svg {
+  color: rgb(209 213 219) !important; /* gray-300 */
+  fill: rgb(209 213 219) !important; /* gray-300 */
+}
+
+.dark .mdxeditor-toolbar button:hover:not(:disabled) {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+}
+
+.dark .mdxeditor-toolbar button:hover:not(:disabled) svg {
+  color: rgb(243 244 246) !important; /* gray-100 */
+  fill: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-toolbar button[aria-pressed="true"] {
+  background-color: rgb(30 64 175 / 40%) !important; /* blue-900 with opacity */
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+.dark .mdxeditor-toolbar button[aria-pressed="true"] svg {
+  color: rgb(96 165 250) !important; /* blue-400 */
+  fill: rgb(96 165 250) !important; /* blue-400 */
+}
+
+.dark .mdxeditor-toolbar button:disabled svg {
+  color: rgb(107 114 128) !important; /* gray-500 */
+  fill: rgb(107 114 128) !important; /* gray-500 */
+  opacity: 0.4 !important;
+}
+
+.dark .mdxeditor-toolbar select {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  border-color: rgb(75 85 99) !important; /* border-gray-600 */
+  color: rgb(243 244 246) !important; /* gray-100 */
+  border-radius: 0 !important;
+}
+
+.dark .mdxeditor-toolbar select:hover {
+  border-color: rgb(107 114 128) !important; /* gray-500 */
+}
+
+/* Переопределяем border-radius для всех элементов toolbar */
+.mdxeditor-toolbar *,
+.mdxeditor-toolbar button,
+.mdxeditor-toolbar [role="button"],
+.mdxeditor-toolbar [role="combobox"],
+.mdxeditor-toolbar button[data-state],
+.mdxeditor-toolbar select {
+  border-radius: 0 !important;
+}
+
+/* Принудительно убираем скругление через переопределение CSS переменных */
+.mdxeditor-toolbar ._toolbarButtonSelectTrigger_1e2ox_307,
+.mdxeditor-toolbar ._toolbarNodeKindSelectTrigger_1e2ox_306,
+.mdxeditor-toolbar ._selectTrigger_1e2ox_308 {
+  border-radius: 0 !important;
+  --radius-medium: 0px !important;
+  --radius-base: 0px !important;
+}
+
+/* Стили для селектора языка кода (code block language selector) */
+.mdxeditor [role="combobox"],
+.mdxeditor button[data-state] {
+  border-radius: 0 !important;
+}
+
+.dark .mdxeditor [role="combobox"] {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  color: rgb(243 244 246) !important; /* gray-100 */
+  border-color: rgb(75 85 99) !important; /* border-gray-600 */
+}
+
+.dark .mdxeditor [role="combobox"]:hover {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+  border-color: rgb(107 114 128) !important; /* gray-500 */
+}
+
+.dark .mdxeditor select,
+.dark .mdxeditor ._selectTrigger_1e2ox_308,
+.dark .mdxeditor ._toolbarButtonSelectTrigger_1e2ox_307 {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  color: rgb(243 244 246) !important; /* gray-100 */
+  border-color: rgb(75 85 99) !important; /* border-gray-600 */
+}
+
+/* Стили для попапа селектора в светлой теме */
+.mdxeditor ._selectContainer_1e2ox_288,
+.mdxeditor-select-content {
+  background-color: white !important;
+  border: 1px solid rgb(209 213 219) !important; /* border-gray-300 */
+  border-radius: 0 !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06) !important;
+  z-index: var(--z-dropdown-content) !important;
+}
+
+.mdxeditor ._selectItem_1e2ox_301 {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor ._selectItem_1e2ox_301:hover,
+.mdxeditor ._selectItem_1e2ox_301[data-highlighted] {
+  background-color: rgb(249 250 251) !important; /* gray-50 */
+}
+
+.mdxeditor ._selectItem_1e2ox_301[data-state='checked'] {
+  background-color: rgb(219 234 254) !important; /* blue-100 */
+  color: rgb(37 99 235) !important; /* blue-600 */
+}
+
+.dark .mdxeditor ._selectContainer_1e2ox_288,
+.dark .mdxeditor-select-content {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  border: 1px solid rgb(75 85 99) !important; /* border-gray-600 */
+  border-radius: 0 !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -1px rgb(0 0 0 / 0.2) !important;
+  z-index: var(--z-dropdown-content) !important;
+}
+
+.dark .mdxeditor ._selectItem_1e2ox_301 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor ._selectItem_1e2ox_301:hover,
+.dark .mdxeditor ._selectItem_1e2ox_301[data-highlighted] {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+}
+
+/* Стили для селектора типа блока (BlockTypeSelect - Heading/Paragraph) в светлой теме */
+.mdxeditor ._toolbarNodeKindSelectTrigger_1e2ox_306 {
+  background-color: transparent !important;
+  color: rgb(55 65 81) !important; /* gray-700 */
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.mdxeditor ._toolbarNodeKindSelectTrigger_1e2ox_306:hover {
+  background-color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+.mdxeditor ._toolbarNodeKindSelectContainer_1e2ox_285 {
+  background-color: white !important;
+  border: 1px solid rgb(209 213 219) !important; /* border-gray-300 */
+  border-radius: 0 !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06) !important;
+}
+
+.mdxeditor ._toolbarNodeKindSelectItem_1e2ox_348 {
+  color: rgb(17 24 39) !important; /* gray-900 */
+  border-radius: 0 !important;
+}
+
+.mdxeditor ._toolbarNodeKindSelectItem_1e2ox_348:hover,
+.mdxeditor ._toolbarNodeKindSelectItem_1e2ox_348[data-highlighted] {
+  background-color: rgb(249 250 251) !important; /* gray-50 */
+}
+
+.mdxeditor ._toolbarNodeKindSelectItem_1e2ox_348[data-state='checked'] {
+  background-color: rgb(219 234 254) !important; /* blue-100 */
+  color: rgb(37 99 235) !important; /* blue-600 */
+}
+
+/* Стили для селектора типа блока в темной теме */
+.dark .mdxeditor ._toolbarNodeKindSelectTrigger_1e2ox_306 {
+  background-color: transparent !important;
+  color: rgb(209 213 219) !important; /* gray-300 */
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.dark .mdxeditor ._toolbarNodeKindSelectTrigger_1e2ox_306:hover {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+}
+
+.dark .mdxeditor ._toolbarNodeKindSelectContainer_1e2ox_285 {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  border: 1px solid rgb(75 85 99) !important; /* border-gray-600 */
+  border-radius: 0 !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -1px rgb(0 0 0 / 0.2) !important;
+}
+
+.dark .mdxeditor ._toolbarNodeKindSelectItem_1e2ox_348 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+  border-radius: 0 !important;
+}
+
+.dark .mdxeditor ._toolbarNodeKindSelectItem_1e2ox_348:hover,
+.dark .mdxeditor ._toolbarNodeKindSelectItem_1e2ox_348[data-highlighted] {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+}
+
+.dark .mdxeditor ._toolbarNodeKindSelectItem_1e2ox_348[data-state='checked'] {
+  background-color: rgb(30 64 175 / 50%) !important; /* blue-900 с большей непрозрачностью */
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+.dark .mdxeditor-toolbar [role="separator"] {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+}
+
+/* Стили для скроллбара в редакторе */
+.mdxeditor-root-contenteditable::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+.mdxeditor-root-contenteditable::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.mdxeditor-root-contenteditable::-webkit-scrollbar-thumb {
+  background-color: rgb(209 213 219) !important; /* gray-300 */
+  border-radius: 4px !important;
+}
+
+.mdxeditor-root-contenteditable::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(156 163 175) !important; /* gray-400 */
+}
+
+.dark .mdxeditor-root-contenteditable::-webkit-scrollbar-thumb {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+}
+
+.dark .mdxeditor-root-contenteditable::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(75 85 99) !important; /* gray-600 */
+}
+
+/* CodeMirror стили для светлой темы */
+.mdxeditor .cm-editor {
+  background-color: white !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor .cm-scroller {
+  overflow-y: auto !important;
+}
+
+.mdxeditor .cm-focused {
+  outline: none !important;
+}
+
+.mdxeditor .cm-gutters {
+  background-color: rgb(249 250 251) !important; /* gray-50 */
+  border-right: 1px solid rgb(229 231 235) !important; /* border-gray-200 */
+}
+
+.mdxeditor .cm-activeLine {
+  background-color: rgb(249 250 251) !important; /* gray-50 */
+}
+
+.mdxeditor .cm-line {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+/* CodeMirror стили для темной темы */
+.dark .mdxeditor .cm-editor {
+  background-color: rgb(17 24 39) !important; /* gray-900 */
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor .cm-gutters {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  border-right-color: rgb(75 85 99) !important; /* border-gray-600 - более видимая линия */
+}
+
+.dark .mdxeditor .cm-activeLine {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+}
+
+.dark .mdxeditor .cm-line {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor .cm-editor .cm-content {
+  border: 1px solid rgb(75 85 99) !important; /* border-gray-600 - граница для кодового блока */
+}
+
+.dark .mdxeditor .cm-focused .cm-content {
+  border-color: rgb(96 165 250) !important; /* blue-400 - при фокусе */
+}
+
+/* Улучшаем видимость границ и линий в code blocks */
+.dark .mdxeditor .sp-wrapper,
+.dark .mdxeditor .sp-layout {
+  border-color: rgb(75 85 99) !important; /* border-gray-600 */
+}
+
+.dark .mdxeditor .sp-cm {
+  border-color: rgb(75 85 99) !important; /* border-gray-600 */
+}
+
+.dark .mdxeditor pre {
+  border: 1px solid rgb(75 85 99) !important; /* border-gray-600 */
+}
+
+.dark .mdxeditor .prose pre {
+  border-color: rgb(75 85 99) !important; /* border-gray-600 */
+}
+
+/* Стили для prose элементов в темной теме */
+.dark .mdxeditor-root-contenteditable .prose {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose p {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose h1,
+.dark .mdxeditor-root-contenteditable .prose h2,
+.dark .mdxeditor-root-contenteditable .prose h3,
+.dark .mdxeditor-root-contenteditable .prose h4,
+.dark .mdxeditor-root-contenteditable .prose h5,
+.dark .mdxeditor-root-contenteditable .prose h6 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose strong {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose em {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose a {
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose code {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
+  color: rgb(248 113 113) !important; /* red-400 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose pre {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose pre code {
+  background-color: transparent !important;
+  color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose blockquote {
+  border-left-color: rgb(96 165 250) !important; /* blue-400 */
+  background-color: rgb(30 58 138 / 20%) !important;
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose ul,
+.dark .mdxeditor-root-contenteditable .prose ol {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose li {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* Стили для отключения внутреннего скролла в QuarterlySprintsTimeline */
+.sprint-timeline-wrapper > div {
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+/* Стили для заголовков в prose (чтобы они правильно отображались при выборе типа блока) */
+.mdxeditor-root-contenteditable .prose h1 {
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.75rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable .prose h2 {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable .prose h3 {
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable .prose h4 {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  margin-top: 0.875rem !important;
+  margin-bottom: 0.375rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable .prose h5 {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.375rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.mdxeditor-root-contenteditable .prose h6 {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.375rem !important;
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose h1 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose h2 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose h3 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose h4 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose h5 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark .mdxeditor-root-contenteditable .prose h6 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}

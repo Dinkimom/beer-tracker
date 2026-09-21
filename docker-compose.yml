@@ -1,0 +1,153 @@
+# Перед запуском: скопируйте env.example в .env и задайте как минимум:
+# POSTGRES_PASSWORD, AUTH_SESSION_SECRET (≥32 символа), ORG_SECRETS_ENCRYPTION_KEY (64 hex)
+#
+# Стандартная поставка: PostgreSQL + Redis + приложение (снимки и реестр — в PG приложения).
+#
+# Redis (порт 6379): для BullMQ sync. Воркер на хосте: REDIS_URL=redis://localhost:6379 pnpm sync-worker
+# В контейнерах всегда redis://redis:6379 — не подставляем ${REDIS_URL} из .env
+# (там localhost для pnpm dev; внутри контейнера это loopback → ECONNREFUSED).
+#
+# Production-воркер — отдельный slim-образ (Dockerfile target sync-worker), без Next.js.
+#
+# Порт БД на хосте — 5433 (внутри сети compose по-прежнему db:5432), чтобы не
+# пересекаться с локальным PostgreSQL на 5432 (Homebrew и т.д.) — иначе DBeaver/psql
+# с localhost:5432 попадают не в этот контейнер.
+#
+# Важно: в docker:dev POSTGRES_HOST=localhost/127.0.0.1 и REDIS_URL=redis://localhost:6379 из .env
+# (для pnpm dev). Entrypoint подменяет на сервисы db:5432 и redis:6379. Удалённый хост как есть.
+#
+# Hot reload в Docker: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# Синхронизация с Трекером: задачи в Redis обрабатывает отдельный процесс sync-worker (см. сервис ниже).
+# Без него джобы остаются в waiting — в БД ничего не появится.
+#
+# Автоматическая постановка инкрементального sync в очередь: POST /api/internal/sync/tick с SYNC_CRON_SECRET.
+# Опциональный сервис sync-cron (профиль «cron») вызывает тик с интервалом SYNC_CRON_LOOP_SECONDS (сек).
+# Запуск: docker compose --profile cron up -d  |  dev: pnpm docker:dev (профили cron + exporter).
+# Нужны непустые SYNC_CRON_SECRET в .env (тот же, что у app) и работающий app.
+#
+# Если enqueued=0 при вызове тика: пустой секрет (401); нет REDIS_URL на app; нет org с due sync_next_run_at;
+# не завершён первичный импорт; sync выключен в settings; невалидные интервалы / overlap.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-}
+        APP_VERSION: ${APP_VERSION:-}
+    ports:
+      - "3000:3000"
+    # Все ключи из .env в процесс приложения (переменные из `environment` ниже перекрывают при совпадении).
+    # Так демо- и прочие опциональные переменные не теряются из‑за пустой подстановки `${VAR:-}`.
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_EXPORTER_ENABLED: ${NEXT_PUBLIC_EXPORTER_ENABLED:-true}
+      TRACKER_API_URL: ${TRACKER_API_URL:-https://api.tracker.yandex.net/v3}
+      ISSUE_TRACKER_PROVIDER: ${ISSUE_TRACKER_PROVIDER:-tracker}
+      EXPORTER_ENABLED: ${EXPORTER_ENABLED:-true}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:?Set AUTH_SESSION_SECRET in .env (≥32 characters)}
+      ORG_SECRETS_ENCRYPTION_KEY: ${ORG_SECRETS_ENCRYPTION_KEY:?Set ORG_SECRETS_ENCRYPTION_KEY in .env}
+      BEER_TRACKER_SCHEMA: ${BEER_TRACKER_SCHEMA:-beer_tracker}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-beer_tracker}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      REDIS_URL: redis://redis:6379
+      SYNC_CRON_SECRET: ${SYNC_CRON_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  sync-worker:
+    profiles: ["exporter"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: sync-worker
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      TRACKER_API_URL: ${TRACKER_API_URL:-https://api.tracker.yandex.net/v3}
+      ISSUE_TRACKER_PROVIDER: ${ISSUE_TRACKER_PROVIDER:-tracker}
+      EXPORTER_ENABLED: ${EXPORTER_ENABLED:-true}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:?Set AUTH_SESSION_SECRET in .env (≥32 characters)}
+      ORG_SECRETS_ENCRYPTION_KEY: ${ORG_SECRETS_ENCRYPTION_KEY:?Set ORG_SECRETS_ENCRYPTION_KEY in .env}
+      BEER_TRACKER_SCHEMA: ${BEER_TRACKER_SCHEMA:-beer_tracker}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-beer_tracker}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Профиль cron — не стартует при обычном `docker compose up` (избегаем 401 при пустом SYNC_CRON_SECRET).
+  sync-cron:
+    profiles: ["cron", "exporter"]
+    image: curlimages/curl:8.12.1
+    environment:
+      SYNC_CRON_SECRET: ${SYNC_CRON_SECRET:-}
+      SYNC_CRON_LOOP_SECONDS: ${SYNC_CRON_LOOP_SECONDS:-300}
+    depends_on:
+      app:
+        condition: service_started
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -z "$${SYNC_CRON_SECRET:-}" ]; then
+          echo "sync-cron: SYNC_CRON_SECRET is empty; idle. Set secret in .env and recreate the container."
+          exec sleep infinity
+        fi
+        echo "sync-cron: POST http://app:3000/api/internal/sync/tick every $${SYNC_CRON_LOOP_SECONDS:-300}s"
+        while true; do
+          curl -sS -f -X POST \
+            -H "X-Sync-Cron-Secret: $${SYNC_CRON_SECRET}" \
+            "http://app:3000/api/internal/sync/tick" || true
+          sleep "$${SYNC_CRON_LOOP_SECONDS:-300}"
+        done
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-beer_tracker}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Выполняется только при первом создании тома (пустой data directory)
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-beer-tracker.sql:ro
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-beer_tracker}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

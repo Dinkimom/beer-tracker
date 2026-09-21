@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Beer Tracker — offline</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #171717;
+        --muted: #6b7280;
+        --btn-bg: #2563eb;
+        --btn-fg: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f172a;
+          --fg: #f1f5f9;
+          --muted: #9ca3af;
+          --btn-bg: #3b82f6;
+        }
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+      main {
+        max-width: 22rem;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem;
+      }
+      p {
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+        margin: 0 0 1.25rem;
+      }
+      button {
+        appearance: none;
+        background: var(--btn-bg);
+        border: 0;
+        border-radius: 0.5rem;
+        color: var(--btn-fg);
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.55rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Нет сети / Offline</h1>
+      <p>
+        Beer Tracker нужен доступ к серверу и трекеру. Проверьте соединение и откройте приложение
+        снова.
+      </p>
+      <button type="button" onclick="location.reload()">Обновить / Reload</button>
+    </main>
+  </body>
+</html>

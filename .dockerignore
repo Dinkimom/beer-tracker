@@ -1,0 +1,48 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+.yarn
+.yarnrc.yml
+
+# Build & cache
+.next
+out
+build
+dist
+*.tsbuildinfo
+next-env.d.ts
+
+# Git & IDE
+.git
+.gitignore
+.cursor
+*.md
+!README.md
+
+# Env (mount or pass at runtime)
+.env
+.env*
+!.env.example
+env.example
+
+# Tests & tools
+coverage
+.playwright-mcp
+*.test.*
+*.spec.*
+
+# Misc
+.DS_Store
+*.pem
+*.sql.backup
+public/uploads
+docs
+BUGS_AND_TASKS.md
+knip.json
+.githooks
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*.yml

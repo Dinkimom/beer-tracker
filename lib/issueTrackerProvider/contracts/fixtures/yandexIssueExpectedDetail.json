@@ -1,0 +1,30 @@
+{
+  "checklistDone": 1,
+  "checklistItems": [
+    {
+      "checked": true,
+      "checklistItemType": "standard",
+      "id": "c1",
+      "text": "Done"
+    },
+    {
+      "checked": false,
+      "checklistItemType": "standard",
+      "id": "c2",
+      "text": "Todo"
+    }
+  ],
+  "checklistTotal": 2,
+  "createdAt": "2026-03-01T10:00:00.000+0000",
+  "description": "Tooltip must show story points.",
+  "key": "BT-100",
+  "originalStatus": "inProgress",
+  "resolvedAt": "2026-03-11T09:00:00.000+0000",
+  "status": {
+    "display": "In Progress",
+    "key": "inProgress"
+  },
+  "statusKey": "inProgress",
+  "summary": "Fix occupancy tooltip",
+  "updatedAt": "2026-03-10T12:00:00.000+0000"
+}

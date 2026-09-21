@@ -1,0 +1,33 @@
+#!/bin/sh
+# Git pre-commit hook для автоматического линтинга
+
+echo "🔍 Running linter..."
+
+# Запускаем автофикс
+pnpm lint:fix
+
+# Проверяем, есть ли изменения после автофикса
+if [ -n "$(git diff --name-only)" ]; then
+  echo "✨ Auto-fixed some issues, adding them to commit..."
+  git add -A
+fi
+
+# Запускаем финальную проверку
+pnpm lint
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Linter found errors that couldn't be auto-fixed."
+  echo "Please fix them manually and try again."
+  exit 1
+fi
+
+echo "✅ Linter passed!"
+exit 0
+
+
+
+
+
+
+

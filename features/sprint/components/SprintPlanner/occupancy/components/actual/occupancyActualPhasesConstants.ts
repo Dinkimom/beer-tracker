@@ -1,0 +1,3 @@
+export const OCCUPANCY_FACT_MIN_GAP_PX = 4;
+export const OCCUPANCY_FACT_THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+export const OCCUPANCY_FACT_VERY_SHORT_PHASE_MS = 20 * 60 * 1000;

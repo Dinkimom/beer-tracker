@@ -1,0 +1,74 @@
+{
+  "CustomStoryPoints": 8,
+  "HD_count": 3,
+  "HD_growth24h": 1,
+  "HD_growth7d": 2,
+  "MergeRequestLink": "https://gitlab.example/mr/1",
+  "assignee": {
+    "display": "Ada Lovelace",
+    "id": "user-42"
+  },
+  "bizErpTeam": ["platform"],
+  "createdAt": "2026-03-01T10:00:00.000+0000",
+  "dangerousRelease": "critical",
+  "description": "Tooltip must show story points.",
+  "epic": {
+    "display": "Epic One",
+    "id": "e1",
+    "key": "BT-1",
+    "self": "https://tracker.test/BT-1"
+  },
+  "functionalTeam": "backend",
+  "id": "66abc",
+  "incidentSeverity": "high",
+  "key": "BT-100",
+  "key_client": true,
+  "lastHDAt": "2026-03-09T08:00:00.000+0000",
+  "parent": {
+    "display": "Parent story",
+    "id": "p1",
+    "key": "BT-90",
+    "self": "https://tracker.test/BT-90"
+  },
+  "priority": {
+    "display": "Normal",
+    "key": "normal"
+  },
+  "qaEngineer": {
+    "display": "QA Person",
+    "id": "user-7"
+  },
+  "queue": {
+    "display": "Beer Tracker",
+    "id": "1",
+    "key": "BT"
+  },
+  "resolvedAt": "2026-03-11T09:00:00.000+0000",
+  "self": "https://api.tracker.yandex.net/v2/issues/BT-100",
+  "slaDeadline": "2026-03-15T00:00:00.000+0000",
+  "sprint": [
+    {
+      "display": "Sprint 12",
+      "id": "9001"
+    }
+  ],
+  "stage": "dev",
+  "status": {
+    "display": "In Progress",
+    "key": "inProgress"
+  },
+  "statusType": {
+    "display": "In Progress",
+    "key": "inProgress"
+  },
+  "storyPoints": 5,
+  "summary": "Fix occupancy tooltip",
+  "sup_priority": true,
+  "tags": ["sla"],
+  "testPoints": 2,
+  "type": {
+    "display": "Task",
+    "key": "task"
+  },
+  "updatedAt": "2026-03-10T12:00:00.000+0000"
+}

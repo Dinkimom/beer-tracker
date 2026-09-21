@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "public/sw.js",
+    "apps/sync-worker/main.ts",
+    "apps/sync-worker/build.mjs",
+    "scripts/knip/*.mjs",
+    "scripts/bench/runPlannerHotPathBench.ts",
+    "scripts/bench/plannerHotPath.bench.ts",
+    "features/feature-planner/components/FeaturesPage.tsx",
+    "features/feature-planner/components/EpicEditorPage.tsx",
+    "features/quarterly-planning-v2/components/QuarterlyPlanningV2Page.tsx"
+  ]
+}
