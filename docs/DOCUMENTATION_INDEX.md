@@ -7,6 +7,7 @@
 ```
 beer-tracker/
 ├── README.md                          # Быстрый старт, установка, настройка
+├── CHANGELOG.md                       # Релиз-ноуты (en + ru)
 ├── docs/
 │   ├── DOCUMENTATION_INDEX.md         # Этот индекс
 │   ├── PROJECT_OVERVIEW.md            # Единый обзор: что / для кого / функции / стек
