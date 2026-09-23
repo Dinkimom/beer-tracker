@@ -1,6 +1,6 @@
 import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { extractExcalidrawSceneText } from '@/lib/comments/excalidrawSceneText';
 import {
   commentIdSetFromRecords,
@@ -44,7 +44,7 @@ import {
 const DAY_LEGEND =
   'Zero-based index of a working day within the sprint timeline (not a calendar weekday).';
 const PART_LEGEND =
-  `Time segment within a working day: 0 .. ${PARTS_PER_DAY - 1} (PARTS_PER_DAY=${PARTS_PER_DAY}; duration is counted in these parts).`;
+  `Time segment within a working day: 0 .. ${getPartsPerDay() - 1} (getPartsPerDay()=${getPartsPerDay()}; duration is counted in these parts).`;
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)

@@ -1,5 +1,6 @@
 'use client';
 
+import { PlannerTimelineScaleProvider } from '@/features/planner/PlannerTimelineScaleProvider';
 import { MobxRootProvider } from '@/lib/layers';
 
 export default function MainLayout({
@@ -7,5 +8,9 @@ export default function MainLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <MobxRootProvider>{children}</MobxRootProvider>;
+  return (
+    <MobxRootProvider>
+      <PlannerTimelineScaleProvider>{children}</PlannerTimelineScaleProvider>
+    </MobxRootProvider>
+  );
 }

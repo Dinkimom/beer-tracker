@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { CARD_MARGIN, WORKING_DAYS, PARTS_PER_DAY } from '@/constants';
+import { CARD_MARGIN, WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { cellsToSegments, PHASE_FOCUS_RING_SOURCE, phaseSegmentCellsDirty } from '@/lib/planner-timeline';
 
@@ -34,7 +34,7 @@ export function SwimlaneSegmentEditFrame({
   initialCells,
   onCellsChange,
   rangeStartCell,
-  timelineTotalParts = WORKING_DAYS * PARTS_PER_DAY,
+  timelineTotalParts = WORKING_DAYS * getPartsPerDay(),
   totalCells,
   containerStyle,
   onSave,

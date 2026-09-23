@@ -5,7 +5,7 @@
 import type { TimeInterval } from '../types';
 import type { Task, TaskPosition, TaskLink, Developer } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 import { findQATaskPlacement } from '../utils/intervalUtils';
 import { getQALinkAnchors } from '../utils/linkUtils';
@@ -50,7 +50,7 @@ function placeNewQaTask(
 
   const qaTaskDuration = qaTask.testPoints || 1;
   const devTaskEndCell =
-    devPosition.startDay * PARTS_PER_DAY + devPosition.startPart + devPosition.duration;
+    devPosition.startDay * getPartsPerDay() + devPosition.startPart + devPosition.duration;
   const minStartCell = Math.max(devTaskEndCell, currentCell);
   const qaEngineerIntervals = occupiedIntervals.get(qaEngineerId) || [];
   const targetStartCell = findQATaskPlacement(qaEngineerIntervals, qaTaskDuration, minStartCell);
@@ -59,8 +59,8 @@ function placeNewQaTask(
     return null;
   }
 
-  const targetDay = Math.floor(targetStartCell / PARTS_PER_DAY);
-  const targetPart = targetStartCell % PARTS_PER_DAY;
+  const targetDay = Math.floor(targetStartCell / getPartsPerDay());
+  const targetPart = targetStartCell % getPartsPerDay();
   const qaPosition: TaskPosition = {
     taskId: qaTask.id,
     assignee: qaEngineerId,

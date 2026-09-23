@@ -1,7 +1,7 @@
 import type { Task } from '@/types';
 import type { MouseEvent } from 'react';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { DroppableCell } from '@/features/swimlane/components/DroppableCell';
 import {
   collectOccupiedLayersForCellRange,
@@ -49,11 +49,11 @@ function computeTimelineCellHighlight(params: {
   const { activeTaskDuration, dayIndex, hoveredCell, isDraggingTask, partIndex } = params;
   const hoverStart =
     isDraggingTask && hoveredCell && activeTaskDuration != null
-      ? hoveredCell.day * PARTS_PER_DAY + hoveredCell.part
+      ? hoveredCell.day * getPartsPerDay() + hoveredCell.part
       : null;
   const hoverEnd =
     hoverStart != null && activeTaskDuration != null ? hoverStart + activeTaskDuration : null;
-  const cellStart = dayIndex * PARTS_PER_DAY + partIndex;
+  const cellStart = dayIndex * getPartsPerDay() + partIndex;
   return hoverEnd != null && hoverStart != null && cellStart >= hoverStart && cellStart < hoverEnd;
 }
 
@@ -113,8 +113,8 @@ export function TimelineGridPartCell(props: {
   } = props;
 
   const cellId = `cell-${developerId}-${dayIndex}-${partIndex}`;
-  const cellStart = dayIndex * PARTS_PER_DAY + partIndex;
-  const remainingCells = Math.max(1, dayCount * PARTS_PER_DAY - cellStart);
+  const cellStart = dayIndex * getPartsPerDay() + partIndex;
+  const remainingCells = Math.max(1, dayCount * getPartsPerDay() - cellStart);
   const durationCells = Math.min(quickAddDurationCells, remainingCells);
   const quickAddBand = resolveSwimlaneQuickAddLayerBand(
     collectOccupiedLayersForCellRange(occupiedLayersByCell, cellStart, durationCells),

@@ -8,7 +8,7 @@ import type {
 } from './sprintRealtimeTypes';
 import type { SprintPlannerNoteEditPreview } from '@/lib/layers/application/mobx/sprintPlannerUiTypes';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { isStickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
 import { SPRINT_PRESENCE_GESTURE_KINDS } from './sprintRealtimeTypes';
@@ -141,7 +141,7 @@ export function sprintPresenceGesturePublishDelayMs(
 }
 
 function startCellFromPresencePosition(position: SprintPresenceGesturePosition): number {
-  return position.startDay * PARTS_PER_DAY + position.startPart;
+  return position.startDay * getPartsPerDay() + position.startPart;
 }
 
 function presencePositionFromStartCell(
@@ -151,8 +151,8 @@ function presencePositionFromStartCell(
 ): SprintPresenceGesturePosition {
   return {
     duration,
-    startDay: Math.floor(startCell / PARTS_PER_DAY),
-    startPart: startCell % PARTS_PER_DAY,
+    startDay: Math.floor(startCell / getPartsPerDay()),
+    startPart: startCell % getPartsPerDay(),
     ...(assignee ? { assignee } : {}),
   };
 }
@@ -278,7 +278,7 @@ function buildLocalResizeGesture(
   const startCell =
     input.resizeStartCell ??
     (input.noteDay != null && input.notePart != null
-      ? input.noteDay * PARTS_PER_DAY + input.notePart
+      ? input.noteDay * getPartsPerDay() + input.notePart
       : null);
   if (startCell == null) {
     return null;

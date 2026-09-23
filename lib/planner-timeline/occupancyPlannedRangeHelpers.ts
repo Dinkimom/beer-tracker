@@ -1,9 +1,9 @@
 import type { PhaseSegment } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 function segmentCellRange(seg: PhaseSegment): { endCell: number; startCell: number } {
-  const startCell = seg.startDay * PARTS_PER_DAY + seg.startPart;
+  const startCell = seg.startDay * getPartsPerDay() + seg.startPart;
   return { endCell: startCell + seg.duration, startCell };
 }
 
@@ -34,6 +34,6 @@ export function plannedExplicitCellRange(position: {
   if (plannedDurationParts <= 0) {
     return null;
   }
-  const startCell = plannedStartDay * PARTS_PER_DAY + plannedStartPart;
+  const startCell = plannedStartDay * getPartsPerDay() + plannedStartPart;
   return { endCell: startCell + plannedDurationParts, startCell };
 }

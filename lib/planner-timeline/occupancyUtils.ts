@@ -1,6 +1,6 @@
 import type { PhaseSegment, Task, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { getWorkingDaysRange } from '@/utils/dateUtils';
 
 import {
@@ -66,7 +66,7 @@ export function getPhaseSegmentCellBlocks(
 export function mergeAdjacentSegments(segments: PhaseSegment[]): PhaseSegment[] {
   if (segments.length <= 1) return segments;
   const withCells = segments.map((s) => {
-    const startCell = s.startDay * PARTS_PER_DAY + s.startPart;
+    const startCell = s.startDay * getPartsPerDay() + s.startPart;
     return { ...s, startCell, endCell: startCell + s.duration };
   });
   withCells.sort((a, b) => a.startCell - b.startCell);
@@ -79,16 +79,16 @@ export function mergeAdjacentSegments(segments: PhaseSegment[]): PhaseSegment[] 
       cur.duration = cur.endCell - cur.startCell;
     } else {
       merged.push({
-        startDay: Math.floor(cur.startCell / PARTS_PER_DAY),
-        startPart: cur.startCell % PARTS_PER_DAY,
+        startDay: Math.floor(cur.startCell / getPartsPerDay()),
+        startPart: cur.startCell % getPartsPerDay(),
         duration: cur.duration,
       });
       cur = { ...next, startCell: next.startCell, endCell: next.endCell };
     }
   }
   merged.push({
-    startDay: Math.floor(cur.startCell / PARTS_PER_DAY),
-    startPart: cur.startCell % PARTS_PER_DAY,
+    startDay: Math.floor(cur.startCell / getPartsPerDay()),
+    startPart: cur.startCell % getPartsPerDay(),
     duration: cur.endCell - cur.startCell,
   });
   return merged;
@@ -137,11 +137,11 @@ interface PositionSegmentRange {
 export function getPositionSegmentRanges(position: TaskPosition): PositionSegmentRange[] {
   if (position.segments && position.segments.length > 0) {
     return position.segments.map((seg) => {
-      const startCell = seg.startDay * PARTS_PER_DAY + seg.startPart;
+      const startCell = seg.startDay * getPartsPerDay() + seg.startPart;
       return { startCell, endCell: startCell + seg.duration };
     });
   }
-  const startCell = position.startDay * PARTS_PER_DAY + position.startPart;
+  const startCell = position.startDay * getPartsPerDay() + position.startPart;
   return [{ startCell, endCell: startCell + position.duration }];
 }
 
@@ -165,7 +165,7 @@ export function getSegmentEditorRangeAndCells(position: TaskPosition): {
 } {
   const ranges = getPositionSegmentRanges(position);
   if (ranges.length === 0) {
-    const startCell = position.startDay * PARTS_PER_DAY + position.startPart;
+    const startCell = position.startDay * getPartsPerDay() + position.startPart;
     return {
       rangeStartCell: startCell,
       totalCells: position.duration,
@@ -217,9 +217,9 @@ export function getPlannedCellRangeDateRange(
   workingDaysCount: number
 ): { startDate: Date; endDate: Date } | null {
   if (range.endCell <= range.startCell) return null;
-  const startDayIndex = Math.floor(range.startCell / PARTS_PER_DAY);
+  const startDayIndex = Math.floor(range.startCell / getPartsPerDay());
   const lastCellIndexInclusive = range.endCell - 1;
-  const endDayIndex = Math.floor(lastCellIndexInclusive / PARTS_PER_DAY);
+  const endDayIndex = Math.floor(lastCellIndexInclusive / getPartsPerDay());
 
   const startDate = getDayDate(sprintStartDate, startDayIndex, workingDaysCount);
   const endDate = getDayDate(sprintStartDate, endDayIndex, workingDaysCount);
@@ -251,10 +251,10 @@ export function isCellOccupiedByTask(
   cellsPerDay?: 1 | 3
 ): boolean {
   if (cellsPerDay === 1) {
-    const endDay = position.startDay + Math.max(1, Math.ceil(position.duration / PARTS_PER_DAY));
+    const endDay = position.startDay + Math.max(1, Math.ceil(position.duration / getPartsPerDay()));
     return dayIndex >= position.startDay && dayIndex < endDay;
   }
-  const cellIndex = dayIndex * PARTS_PER_DAY + partIndex;
+  const cellIndex = dayIndex * getPartsPerDay() + partIndex;
   const ranges = getPositionSegmentRanges(position);
   return ranges.some((r) => cellIndex >= r.startCell && cellIndex < r.endCell);
 }
@@ -279,7 +279,7 @@ export function occupancyPlanEndCell(position: TaskPosition): number {
   const plannedStartDay = position.plannedStartDay ?? position.startDay;
   const plannedStartPart = position.plannedStartPart ?? position.startPart;
   const plannedDuration = position.plannedDuration ?? position.duration;
-  return plannedStartDay * PARTS_PER_DAY + plannedStartPart + plannedDuration;
+  return plannedStartDay * getPartsPerDay() + plannedStartPart + plannedDuration;
 }
 
 function combinedCellExtremum(

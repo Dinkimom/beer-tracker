@@ -5,7 +5,7 @@
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 import type { Task } from '@/types';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
 import { buildUnavailableHatchRanges } from '@/features/swimlane/utils/availabilityTimelineMarks';
 
@@ -123,7 +123,7 @@ export function TimelineGrid({
                   className={`pointer-events-none absolute right-0 top-0 bottom-0 w-px ${dividerClass}`}
                 />
               ) : null}
-              {Array.from({ length: PARTS_PER_DAY }, (_, partIndex) => (
+              {Array.from({ length: getPartsPerDay() }, (_, partIndex) => (
                 <TimelineGridPartCell
                   key={`${developerId}-${dayIndex}-${partIndex}`}
                   activeTask={activeTask}

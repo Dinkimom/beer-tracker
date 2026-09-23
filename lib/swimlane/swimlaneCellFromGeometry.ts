@@ -3,7 +3,7 @@
  * Не зависит от features/ — используется DnD и остальной UI свимлейна.
  */
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 
 function cellFromRelativeX(
   relativeX: number,
@@ -11,13 +11,13 @@ function cellFromRelativeX(
   workingDaysCount: number
 ): { day: number; part: number } | null {
   const maxDays = Math.max(1, workingDaysCount);
-  const totalCells = maxDays * PARTS_PER_DAY;
+  const totalCells = maxDays * getPartsPerDay();
   if (totalWidth <= 0 || totalCells <= 0) return null;
   const cellWidth = totalWidth / totalCells;
   const rawIndex = Math.floor(relativeX / cellWidth);
   const cellIndex = Math.max(0, Math.min(totalCells - 1, rawIndex));
-  const day = Math.floor(cellIndex / PARTS_PER_DAY);
-  const part = cellIndex % PARTS_PER_DAY;
+  const day = Math.floor(cellIndex / getPartsPerDay());
+  const part = cellIndex % getPartsPerDay();
   return { day, part };
 }
 

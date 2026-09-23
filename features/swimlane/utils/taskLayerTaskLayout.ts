@@ -1,7 +1,7 @@
 import type { PhaseSegment, Task, TaskPosition } from '@/types';
 import type { CSSProperties } from 'react';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { getLeftPercent, getWidthPercent } from '@/features/swimlane/utils/positionUtils';
 
 import {
@@ -59,8 +59,8 @@ export function buildPlannedLayoutSnapshot(position: TaskPosition): PlannedLayou
       taskId: position.taskId,
     }),
     widthPercent: getWidthPercent(plannedDuration),
-    startCell: plannedStartDay * PARTS_PER_DAY + plannedStartPart,
-    endCell: plannedStartDay * PARTS_PER_DAY + plannedStartPart + plannedDuration,
+    startCell: plannedStartDay * getPartsPerDay() + plannedStartPart,
+    endCell: plannedStartDay * getPartsPerDay() + plannedStartPart + plannedDuration,
   };
 
   return { plannedDuration, plannedPosition, plannedStartDay, plannedStartPart };

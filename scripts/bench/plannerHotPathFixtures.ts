@@ -1,6 +1,6 @@
 import type { Task, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 
 export type PlannerHotPathDensity = 'dense' | 'sparse';
 
@@ -29,14 +29,14 @@ const MULTI_SEGMENT_EVERY = 11;
 const IN_PROGRESS_EVERY = 5;
 
 function totalCells(workingDaysCount: number): number {
-  return Math.max(1, workingDaysCount) * PARTS_PER_DAY;
+  return Math.max(1, workingDaysCount) * getPartsPerDay();
 }
 
 function splitCell(cell: number, cellCount: number): { startDay: number; startPart: number } {
   const normalized = ((cell % cellCount) + cellCount) % cellCount;
   return {
-    startDay: Math.floor(normalized / PARTS_PER_DAY),
-    startPart: normalized % PARTS_PER_DAY,
+    startDay: Math.floor(normalized / getPartsPerDay()),
+    startPart: normalized % getPartsPerDay(),
   };
 }
 

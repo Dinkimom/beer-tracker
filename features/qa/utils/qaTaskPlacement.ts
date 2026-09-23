@@ -5,7 +5,7 @@
 import type { Task, TaskPosition } from '@/types';
 import type { Developer } from '@/types';
 
-import { WORKING_DAYS, PARTS_PER_DAY } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { getQALinkAnchors } from '@/utils/linkAnchors';
 
 /**
@@ -19,7 +19,7 @@ export function calculateQATaskPosition(
   allTasks: Task[]
 ): TaskPosition {
   // Вычисляем позицию для QA задачи - после задачи разработки
-  const devTaskEndCell = (devTaskPosition.startDay * PARTS_PER_DAY + devTaskPosition.startPart) + devTaskPosition.duration;
+  const devTaskEndCell = (devTaskPosition.startDay * getPartsPerDay() + devTaskPosition.startPart) + devTaskPosition.duration;
   const qaTaskDuration = qaTask.testPoints || 1;
 
   // Находим все задачи QA инженера (используем assignee из QA задачи)
@@ -36,7 +36,7 @@ export function calculateQATaskPosition(
     .map(([taskId, pos]) => ({
       taskId,
       position: pos,
-      endCell: (pos.startDay * PARTS_PER_DAY + pos.startPart) + pos.duration,
+      endCell: (pos.startDay * getPartsPerDay() + pos.startPart) + pos.duration,
     }))
     .sort((a, b) => a.endCell - b.endCell);
 
@@ -48,7 +48,7 @@ export function calculateQATaskPosition(
   }
 
   // Проверяем границы
-  const maxStart = WORKING_DAYS * PARTS_PER_DAY - qaTaskDuration;
+  const maxStart = WORKING_DAYS * getPartsPerDay() - qaTaskDuration;
   if (targetStartCell > maxStart) {
     targetStartCell = maxStart;
   }
@@ -57,8 +57,8 @@ export function calculateQATaskPosition(
     targetStartCell = 0;
   }
 
-  const targetDay = Math.floor(targetStartCell / PARTS_PER_DAY);
-  const targetPart = targetStartCell % PARTS_PER_DAY;
+  const targetDay = Math.floor(targetStartCell / getPartsPerDay());
+  const targetPart = targetStartCell % getPartsPerDay();
 
   return {
     taskId: qaTask.id,

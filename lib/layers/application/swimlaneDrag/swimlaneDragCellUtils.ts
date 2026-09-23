@@ -1,6 +1,6 @@
 import type { CellPosition } from './swimlaneDragTypes';
 
-import { WORKING_DAYS, PARTS_PER_DAY } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 
 /**
  * Валидирует позицию ячейки
@@ -12,7 +12,7 @@ export function isValidCell(
   if (!cell) return false;
   const maxDays = Math.max(1, workingDaysCount);
   return (
-    cell.day >= 0 && cell.day < maxDays && cell.part >= 0 && cell.part < PARTS_PER_DAY
+    cell.day >= 0 && cell.day < maxDays && cell.part >= 0 && cell.part < getPartsPerDay()
   );
 }
 

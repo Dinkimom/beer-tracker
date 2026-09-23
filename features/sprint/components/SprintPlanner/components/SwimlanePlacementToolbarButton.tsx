@@ -15,7 +15,7 @@ import { ExcalidrawMark } from '@/features/comments/components/ExcalidrawMark';
 import { StickyNoteToolIcon } from '@/features/comments/components/StickyNoteToolIcon';
 import { CONTEXT_MENU_GHOST_BUTTON_RESET } from '@/features/context-menu/contextMenuClasses';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
-import { STICKY_NOTE_COLOR_LABEL_KEYS, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 
 import {
@@ -90,11 +90,6 @@ export function SwimlanePlacementToolbarButton({
   const isDark = useDocumentDarkClass();
   const issueTrackerKind = useIssueTrackerProviderKind();
   const label = t(`sprintPlanner.swimlane.placementToolbar.${tool}`);
-  const colorLabel =
-    tool === 'comment' && active && noteColor
-      ? t(STICKY_NOTE_COLOR_LABEL_KEYS[noteColor])
-      : undefined;
-  const title = colorLabel ? `${label} · ${colorLabel}` : label;
   const shortcut = formatPlacementToolShortcutHint(tool);
   const iconOnly = tool === 'cursor';
   return (
@@ -105,11 +100,11 @@ export function SwimlanePlacementToolbarButton({
           className="mx-1 h-6 w-px shrink-0 self-center bg-gray-200 dark:bg-gray-600"
         />
       ) : null}
-      <PlannerShortcutTooltip label={title} shortcut={shortcut} side="top">
+      <PlannerShortcutTooltip label={label} shortcut={shortcut} side="top">
         <Button
           aria-expanded={tool === 'comment' ? expanded : undefined}
           aria-haspopup={tool === 'comment' ? 'dialog' : undefined}
-          aria-label={formatPlannerShortcutAria(title, shortcut)}
+          aria-label={formatPlannerShortcutAria(label, shortcut)}
           aria-pressed={active}
           className={`!h-9 !min-h-0 !min-w-0 !rounded-lg !py-0 font-medium ${
             iconOnly ? '!w-9 !gap-0 !px-0' : '!gap-2 !px-3 text-sm'

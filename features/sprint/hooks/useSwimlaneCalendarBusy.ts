@@ -6,7 +6,7 @@ import type {
 import { useQueries } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { fetchCalDavCalendarEventsFromApi } from '@/lib/api/calendar';
 import {
   DEVELOPER_CALDAV_CREDENTIALS_STORAGE_KEY,
@@ -80,7 +80,7 @@ export function useSwimlaneCalendarBusyByDeveloper(input: {
     [sprintStartDate, sprintTimelineWorkingDays]
   );
 
-  const totalParts = sprintTimelineWorkingDays * PARTS_PER_DAY;
+  const totalParts = sprintTimelineWorkingDays * getPartsPerDay();
 
   const developersWithCredentials = useMemo(
     () => developers.map((d) => d.id.trim()).filter((id) => id && credentialsStore[id]),

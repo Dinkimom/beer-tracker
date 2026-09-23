@@ -1,6 +1,6 @@
 import type { PhaseSegment, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 export function buildPositionFromMergedSegments(
   position: TaskPosition,
@@ -26,7 +26,7 @@ function isWithinSprintCellBounds(
 }
 
 function segmentStartCell(segment: PhaseSegment): number {
-  return segment.startDay * PARTS_PER_DAY + segment.startPart;
+  return segment.startDay * getPartsPerDay() + segment.startPart;
 }
 
 function respectsPreviousSegmentOnResize(
@@ -80,8 +80,8 @@ export function applyResizedSegment(
 ): PhaseSegment[] {
   const next = [...segments];
   next[segmentIndex] = {
-    startDay: Math.floor(startCell / PARTS_PER_DAY),
-    startPart: startCell % PARTS_PER_DAY,
+    startDay: Math.floor(startCell / getPartsPerDay()),
+    startPart: startCell % getPartsPerDay(),
     duration: newDuration,
   };
   return next;

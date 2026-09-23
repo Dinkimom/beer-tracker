@@ -8,7 +8,7 @@ import type { Task, Developer, TaskPosition } from '@/types';
 import { observer } from 'mobx-react-lite';
 import React, { useRef, useState } from 'react';
 
-import { WORKING_DAYS, PARTS_PER_DAY } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { isSwimlaneDiagramTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
@@ -140,7 +140,7 @@ export const TaskBar = observer(function TaskBar({
   swimlaneBarDurationParts,
   swimlaneSegmentBadge = null,
   swimlaneDragActive,
-  swimlaneTimelineTotalParts = WORKING_DAYS * PARTS_PER_DAY,
+  swimlaneTimelineTotalParts = WORKING_DAYS * getPartsPerDay(),
 }: TaskBarProps) {
   const { sprintPlannerUi } = useRootStore();
   const isChooserDraft = isQuickAddChooserDraft(task);

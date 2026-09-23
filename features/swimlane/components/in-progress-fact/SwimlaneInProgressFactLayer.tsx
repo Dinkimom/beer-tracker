@@ -45,7 +45,7 @@ interface SwimlaneInProgressFactLayerProps {
   /** Задачи, отображаемые карточками на этой строке — для них в тултипе факта не дублируем KEY: name */
   swimlaneRowTaskIds: Set<string>;
   tasksMap: Map<string, Task>;
-  /** Всего частей таймлайна (рабочие дни × PARTS_PER_DAY), как у сетки/карточек свимлейна */
+  /** Всего частей таймлайна (рабочие дни × getPartsPerDay()), как у сетки/карточек свимлейна */
   totalParts: number;
   /** Подсветка карточки задачи при наведении на соответствующую колбасу факта */
   onFactSegmentHover?: (taskId: string | null) => void;

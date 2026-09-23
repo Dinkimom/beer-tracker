@@ -2,7 +2,7 @@ import type { TaskLayerPositionedTaskItemProps } from './TaskLayer.types';
 import type { SprintPlannerNoteComposerState, SprintPlannerNoteEditPreview } from '@/lib/layers';
 import type { PhaseSegment, Task } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
   getLeftPercentForSegmentStartCell,
@@ -238,7 +238,7 @@ function computePlanSegmentGeometry(input: {
   taskId: string;
   timelineTotalParts: number;
 }) {
-  const startCell = input.seg.startDay * PARTS_PER_DAY + input.seg.startPart;
+  const startCell = input.seg.startDay * getPartsPerDay() + input.seg.startPart;
   const draggableId = input.hasMultiplePlanSegments
     ? swimlaneTaskDraggableId(input.taskId, input.segIdx)
     : input.taskId;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { MAX_PLANNER_DAY_INDEX } from '@/constants';
+import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_PART_INDEX } from '@/constants';
 import { validatePlannerImageBytes } from '@/lib/planner/plannerImageFile';
 
 const ImageCommentMetaSchema = z.object({
@@ -9,7 +9,7 @@ const ImageCommentMetaSchema = z.object({
   day: z.coerce.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
   height: z.coerce.number().int().positive().max(2000).optional(),
   id: z.string().uuid().optional(),
-  part: z.coerce.number().int().min(0).max(2),
+  part: z.coerce.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
   width: z.coerce.number().int().positive().max(2000).optional(),
 });
 

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { CARD_MARGIN, PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { CARD_MARGIN, WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { PHASE_FOCUS_RING_SOURCE } from '@/lib/planner-timeline';
 
@@ -23,7 +23,7 @@ export function SwimlaneLinkingSourceFrame({
   containerStyle,
   outlineRadiusClass = 'rounded-lg',
   rangeStartCell,
-  timelineTotalParts = WORKING_DAYS * PARTS_PER_DAY,
+  timelineTotalParts = WORKING_DAYS * getPartsPerDay(),
   totalCells,
   onCancel,
 }: SwimlaneLinkingSourceFrameProps) {

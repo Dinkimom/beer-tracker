@@ -1,7 +1,7 @@
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { getWorkingDaysRange, getWorkingHoursBetween } from '@/utils/dateUtils';
 
-import { dateTimeToFractionalCellInRange, TOTAL_PARTS } from './sprintCellUtils';
+import { dateTimeToFractionalCellInRange, getSprintTotalParts } from './sprintCellUtils';
 
 interface StatusPhaseCell {
   contributingTaskIds?: string[];
@@ -85,6 +85,6 @@ export function resolveStatusTimelineCap(totalParts?: number): {
   cap: number;
   workingDaysCount: number;
 } {
-  const cap = totalParts ?? TOTAL_PARTS;
-  return { cap, workingDaysCount: cap / PARTS_PER_DAY };
+  const cap = totalParts ?? getSprintTotalParts();
+  return { cap, workingDaysCount: cap / getPartsPerDay() };
 }

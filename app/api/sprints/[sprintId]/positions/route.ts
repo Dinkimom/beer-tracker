@@ -5,6 +5,7 @@ import { requireTenantContext } from '@/lib/api-tenant';
 import { getTrackerApiFromRequest } from '@/lib/api-tracker';
 import { resolveParams } from '@/lib/nextjs-utils';
 import { notifyAssigneeChangedIfNeeded } from '@/lib/notifications/notifyAssigneeChangedIfNeeded';
+import { plannerGridPartError } from '@/lib/planner/migrateOrganizationPlannerGrid';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
   attachSegmentsToPositions,
@@ -115,6 +116,15 @@ export async function POST(
       segments,
       syncAssignee,
     } = validation.data;
+
+    const gridError = await plannerGridPartError(organizationId, [
+      startPart,
+      plannedStartPart,
+      ...(segments?.map((segment) => segment.startPart) ?? []),
+    ]);
+    if (gridError) {
+      return NextResponse.json({ error: gridError }, { status: 400 });
+    }
 
     const previousAssigneeId = await getTaskPositionAssigneeId({
       organizationId,

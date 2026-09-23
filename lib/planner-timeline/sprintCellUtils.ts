@@ -3,13 +3,21 @@
  * Рабочие дни: 0–4 (пн–пт), 5–9 (пн–пт следующей недели), части дня 9:00–18:00 по 3 часа.
  */
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { getWorkingDaysRange } from '@/utils/dateUtils';
 
 import { scanWorkingDayIndexFromStart } from './sprintCellUtilsHelpers';
 
-/** Всего ячеек спринта (10 рабочих дней × 3 части) */
-export const TOTAL_PARTS = WORKING_DAYS * PARTS_PER_DAY;
+/** Всего ячеек стандартного спринта при текущей сетке дня. */
+export function getSprintTotalParts(): number {
+  return WORKING_DAYS * getPartsPerDay();
+}
+
+/**
+ * Снимок на момент загрузки модуля для легаси-занятости.
+ * Планер берёт живую сетку через {@link getSprintTotalParts}.
+ */
+export const TOTAL_PARTS = WORKING_DAYS * 3;
 
 /** Дата/время → индекс рабочего дня в сетке из workingDaysCount дней (по умолчанию один «стандартный» спринт). */
 function getWorkingDayIndex(
@@ -29,13 +37,13 @@ function getWorkingDayIndex(
   return -1;
 }
 
-/**
- * Части рабочего дня (9:00–18:00), по 3 часа:
- * 0: 09:00–12:00, 1: 12:00–15:00, 2: 15:00–18:00
- */
-const WORKDAY_START_MIN = 9 * 60; // 9:00
-const WORKDAY_END_MIN = 18 * 60; // 18:00
-const PART_DURATION_MIN = 3 * 60; // 3 часа
+/** Рабочий день 9:00–18:00 делится на равные слоты текущей сетки. */
+const WORKDAY_START_MIN = 9 * 60;
+const WORKDAY_END_MIN = 18 * 60;
+
+function partDurationMin(): number {
+  return (WORKDAY_END_MIN - WORKDAY_START_MIN) / getPartsPerDay();
+}
 
 /**
  * Суббота/воскресенье не совпадают с «рабочими» днями в getWorkingDayIndex* (там считаются только пн–пт),
@@ -60,15 +68,17 @@ function getPartAndFraction(d: Date): { fraction: number; part: number } {
   if (totalMinutes < WORKDAY_START_MIN) {
     return { fraction: 0, part: 0 };
   }
+  const lastPart = getPartsPerDay() - 1;
   if (totalMinutes >= WORKDAY_END_MIN) {
-    return { fraction: 1, part: 2 };
+    return { fraction: 1, part: lastPart };
   }
 
+  const slotMinutes = partDurationMin();
   const minutesIntoWorkday = totalMinutes - WORKDAY_START_MIN;
-  const part = Math.floor(minutesIntoWorkday / PART_DURATION_MIN);
-  const minutesIntoPart = minutesIntoWorkday - part * PART_DURATION_MIN;
-  const fraction = minutesIntoPart / PART_DURATION_MIN;
-  return { fraction, part: Math.min(part, 2) };
+  const part = Math.floor(minutesIntoWorkday / slotMinutes);
+  const minutesIntoPart = minutesIntoWorkday - part * slotMinutes;
+  const fraction = minutesIntoPart / slotMinutes;
+  return { fraction, part: Math.min(part, lastPart) };
 }
 
 /** Дата/время → дробный индекс ячейки (0..totalParts) для точного позиционирования. Возвращает < 0 до спринта, > totalParts после. */
@@ -77,7 +87,7 @@ export function dateTimeToFractionalCell(
   d: Date,
   workingDaysCount: number = WORKING_DAYS
 ): number {
-  const totalParts = workingDaysCount * PARTS_PER_DAY;
+  const totalParts = workingDaysCount * getPartsPerDay();
   const adjusted = snapWeekendToLastWorkingMoment(d);
   const dayIdx = getWorkingDayIndex(sprintStartDate, adjusted, workingDaysCount);
   if (dayIdx < 0) {
@@ -88,7 +98,7 @@ export function dateTimeToFractionalCell(
   }
 
   const { fraction, part } = getPartAndFraction(adjusted);
-  return dayIdx * PARTS_PER_DAY + part + fraction;
+  return dayIdx * getPartsPerDay() + part + fraction;
 }
 
 /**
@@ -112,7 +122,7 @@ function getWorkingDayIndexInRange(
 
 /**
  * То же, что dateTimeToFractionalCell, но для диапазона из workingDaysCount рабочих дней
- * (например, 60 для 6 спринтов). totalParts = workingDaysCount * PARTS_PER_DAY.
+ * (например, 60 для 6 спринтов). totalParts = workingDaysCount * getPartsPerDay().
  */
 export function dateTimeToFractionalCellInRange(
   sprintStartDate: Date,
@@ -120,11 +130,11 @@ export function dateTimeToFractionalCellInRange(
   totalParts: number
 ): number {
   const adjusted = snapWeekendToLastWorkingMoment(d);
-  const workingDaysCount = totalParts / PARTS_PER_DAY;
+  const workingDaysCount = totalParts / getPartsPerDay();
   const dayIdx = getWorkingDayIndexInRange(sprintStartDate, adjusted, workingDaysCount);
   if (dayIdx < 0) return -1;
   if (dayIdx >= workingDaysCount) return totalParts + 1;
 
   const { fraction, part } = getPartAndFraction(adjusted);
-  return dayIdx * PARTS_PER_DAY + part + fraction;
+  return dayIdx * getPartsPerDay() + part + fraction;
 }

@@ -1,7 +1,7 @@
 import type { StoryPhasePosition } from '../types';
 import type { TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 
 import { parseQuarterlyPhaseTaskId, quarterlyPhaseTaskId } from './storyPhasesMap';
 
@@ -14,7 +14,7 @@ export function storyPhaseToTaskPosition(
     taskId: quarterlyPhaseTaskId(storyKey, phase.id),
     startDay,
     startPart: 0,
-    duration: phase.durationDays * PARTS_PER_DAY,
+    duration: phase.durationDays * getPartsPerDay(),
     assignee: '',
   };
 }
@@ -27,7 +27,7 @@ export function taskPositionToStoryPhase(
   parseQuarterlyPhaseTaskId(position.taskId);
   const sprintIndex = Math.floor(position.startDay / WORKING_DAYS);
   const startDay = position.startDay % WORKING_DAYS;
-  const durationDays = Math.max(1, Math.ceil(position.duration / PARTS_PER_DAY));
+  const durationDays = Math.max(1, Math.ceil(position.duration / getPartsPerDay()));
   return {
     id: phaseId,
     kind,

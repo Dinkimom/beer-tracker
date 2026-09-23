@@ -21,7 +21,6 @@ import {
   resolveSwimlaneQuickAddPreviewDurationCells,
   resolveSwimlaneQuickAddPreviewKind,
   resolveSwimlaneQuickAddPreviewLayerSpan,
-  resolveSwimlaneQuickAddPreviewLayout,
   type SwimlaneQuickAddPreviewKind,
 } from './swimlaneQuickAddPreviewAppearance';
 
@@ -117,11 +116,8 @@ export function SwimlaneQuickAddPreview({
       className={resolveSwimlaneQuickAddPreviewClass(kind)}
       data-swimlane-cell-quick-add-preview
       style={{
-        ...resolveSwimlaneQuickAddPreviewLayout({
-          band,
-          horizontal,
-          kind,
-        }),
+        ...band,
+        ...horizontal,
         ...resolvePreviewPaint(kind, noteColor, isDark),
         // Ниже карточек: реакции стикера выходят за край и не должны перекрываться превью.
         zIndex: ZIndex.contentOverlay,

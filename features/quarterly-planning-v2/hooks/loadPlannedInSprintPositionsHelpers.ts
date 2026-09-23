@@ -1,7 +1,7 @@
 import type { QuarterlySprintInfo } from '../types';
 import type { TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import {
   fetchSprintBatchTaskParents,
   fetchSprintPositionsBatch,
@@ -25,7 +25,7 @@ export function dedupePlannedPositions(positions: TaskPosition[]): TaskPosition[
   return result;
 }
 
-const durationDays = (p: TaskPosition) => Math.max(1, Math.ceil(p.duration / PARTS_PER_DAY));
+const durationDays = (p: TaskPosition) => Math.max(1, Math.ceil(p.duration / getPartsPerDay()));
 const endDay = (p: TaskPosition) => p.startDay + durationDays(p);
 
 function mergeAdjacentOnly(positions: TaskPosition[]): TaskPosition[] {
@@ -38,7 +38,7 @@ function mergeAdjacentOnly(positions: TaskPosition[]): TaskPosition[] {
     const curEnd = endDay(cur);
     if (next.startDay === curEnd) {
       const nextEnd = endDay(next);
-      cur.duration = (nextEnd - cur.startDay) * PARTS_PER_DAY;
+      cur.duration = (nextEnd - cur.startDay) * getPartsPerDay();
     } else {
       merged.push(cur);
       cur = { ...next };
@@ -97,14 +97,14 @@ export function buildTaskIdToEpicKey(
 
 function toGlobalPosition(pos: TaskPosition, offset: number): TaskPosition {
   const globalStartDay = offset + pos.startDay;
-  const durationParts = pos.duration ?? PARTS_PER_DAY;
-  const durationDays = Math.max(1, Math.ceil(durationParts / PARTS_PER_DAY));
+  const durationParts = pos.duration ?? getPartsPerDay();
+  const durationDays = Math.max(1, Math.ceil(durationParts / getPartsPerDay()));
   return {
     taskId: pos.taskId,
     assignee: pos.assignee ?? '',
     startDay: globalStartDay,
     startPart: pos.startPart ?? 0,
-    duration: durationDays * PARTS_PER_DAY,
+    duration: durationDays * getPartsPerDay(),
     sourceTaskId: pos.taskId,
   };
 }

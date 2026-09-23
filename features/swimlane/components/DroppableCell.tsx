@@ -4,7 +4,7 @@ import type { Task } from '@/types';
 
 import { useDroppable } from '@dnd-kit/core';
 
-import { CARD_MARGIN, ZIndex } from '@/constants';
+import { CARD_MARGIN, ZIndex, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useDelayedSwimlaneQuickAddHover } from '@/features/swimlane/hooks/useDelayedSwimlaneQuickAddHover';
 import { clampSwimlaneQuickAddBandBox } from '@/features/swimlane/utils/swimlaneCellOccupancy';
@@ -137,7 +137,7 @@ export function DroppableCell({
     <div
       ref={setNodeRef}
       className={`relative flex-1 overflow-visible pointer-events-auto ${
-        partIndex !== 2 ? 'border-r border-gray-200/50 dark:border-gray-600/50' : ''
+        partIndex !== getPartsPerDay() - 1 ? 'border-r border-gray-200/50 dark:border-gray-600/50' : ''
       } ${onQuickAddClick ? 'cursor-pointer' : ''} ${getBaseBgColor()}`}
       data-current-cell={partStatus === 'current' ? 'true' : undefined}
       style={{ height: `${totalHeight}px`, minHeight: `${totalHeight}px` }}

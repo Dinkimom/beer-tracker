@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { MAX_PLANNER_DAY_INDEX } from '@/constants';
+import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_PART_INDEX } from '@/constants';
 import {
   parseExcalidrawSceneJson,
   PLANNER_COMMENT_TEXT_MAX_LENGTH,
@@ -13,7 +13,7 @@ const CreateDiagramCommentSchema = z.object({
   height: z.number().int().positive().max(2000).optional(),
   id: z.string().uuid().optional(),
   name: z.string().max(PLANNER_COMMENT_TEXT_MAX_LENGTH).optional(),
-  part: z.number().int().min(0).max(2),
+  part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
   width: z.number().int().positive().max(2000).optional(),
 });
 

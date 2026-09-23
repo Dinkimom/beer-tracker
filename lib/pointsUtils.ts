@@ -3,6 +3,11 @@
  * Используется в свимлейне, отображении занятости, сайдбаре (метрики), бэклоге и везде, где считаются очки.
  */
 
+import {
+  getActivePlannerTimelineScale,
+  storyPointsToTimeslotsForScale,
+  timeslotsToStoryPointsForScale,
+} from '@/lib/plannerTimelineScale';
 
 /** Минимальный тип для подсчёта очков (Task, FeatureTask и т.д.). */
 interface TaskLikeForPoints {
@@ -139,46 +144,20 @@ export function formatSignedPointsDeltaForDisplay(
 }
 
 /**
- * Переводит количество таймслотов занятости в ближайшую оценку по шкале SP:
- * 1 → 1сп, 2 → 2сп, 3 → 3сп, 4–5 → 5сп, 6–7 → 8сп, 8–9 → 13сп, 10+ → 21сп.
+ * Таймслоты → SP по шкале активной организации.
+ * По умолчанию: 1 → 1сп, 2 → 2сп, 3 → 3сп, 4–5 → 5сп, 6–7 → 8сп, 8–9 → 13сп, 10+ → 21сп.
+ * Единица «сутки» делит длину на число слотов в дне и ищет по той же лестнице.
  */
-const TIMESLOTS_TO_SP_THRESHOLDS: readonly [number, number][] = [
-  [1, 1],
-  [2, 2],
-  [3, 3],
-  [5, 5],
-  [7, 8],
-  [9, 13],
-];
-
 export function timeslotsToStoryPoints(timeslots: number): number {
-  if (timeslots <= 0) return 0;
-  for (const [maxTimeslots, storyPoints] of TIMESLOTS_TO_SP_THRESHOLDS) {
-    if (timeslots <= maxTimeslots) return storyPoints;
-  }
-  return 21;
+  return timeslotsToStoryPointsForScale(timeslots, getActivePlannerTimelineScale());
 }
 
 /**
- * Переводит оценку SP в количество таймслотов для начального размера фазы.
- * Обратная к timeslotsToStoryPoints: берётся нижняя граница диапазона.
- * 1 → 1, 2 → 2, 3 → 3, 4–5 → 5, 6–8 → 6, 9–13 → 8, 14+ → 10.
+ * SP → таймслоты для начального размера фазы.
+ * По умолчанию: 1 → 1, 2 → 2, 3 → 3, 4–5 → 5, 6–8 → 6, 9–13 → 8, 14+ → 10.
  */
-const SP_TO_TIMESLOTS_THRESHOLDS: readonly [number, number][] = [
-  [1, 1],
-  [2, 2],
-  [3, 3],
-  [5, 5],
-  [8, 6],
-  [13, 8],
-];
-
 export function storyPointsToTimeslots(sp: number): number {
-  if (sp <= 0) return 0;
-  for (const [maxSp, timeslots] of SP_TO_TIMESLOTS_THRESHOLDS) {
-    if (sp <= maxSp) return timeslots;
-  }
-  return 10;
+  return storyPointsToTimeslotsForScale(sp, getActivePlannerTimelineScale());
 }
 
 interface SprintPointsTotalsOptions {

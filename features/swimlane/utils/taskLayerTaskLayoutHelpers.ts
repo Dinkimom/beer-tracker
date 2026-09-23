@@ -1,6 +1,6 @@
 import type { PhaseSegment, Task } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 
 export function baselineOpacityDuringDrag(params: {
@@ -22,7 +22,7 @@ export function baselineOpacityDuringDrag(params: {
   if (!isDraggingTask || !hoveredCell || !activeTaskDuration) return null;
   if (hoveredCell.assigneeId !== assigneeId) return null;
 
-  const targetStartCell = hoveredCell.day * PARTS_PER_DAY + hoveredCell.part;
+  const targetStartCell = hoveredCell.day * getPartsPerDay() + hoveredCell.part;
   const targetEndCell = targetStartCell + activeTaskDuration;
   const baselineEndCell = baselineStart + baselineWidth;
   if (baselineStart < targetEndCell && baselineEndCell > targetStartCell) {
@@ -79,7 +79,7 @@ export function computeSwimlaneOverdueBaselineStripsForSegments(
   if (lastSegment == null) return [];
 
   const endCell =
-    lastSegment.startDay * PARTS_PER_DAY + lastSegment.startPart + lastSegment.duration;
+    lastSegment.startDay * getPartsPerDay() + lastSegment.startPart + lastSegment.duration;
   const stretch = computeBaselineStretch(task, endCell, currentCell);
   return stretch ? [stretch] : [];
 }

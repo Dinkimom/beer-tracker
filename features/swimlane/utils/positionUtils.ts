@@ -1,6 +1,6 @@
 import type { TaskPosition } from '@/types';
 
-import { WORKING_DAYS, PARTS_PER_DAY } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { mergeAdjacentSegments, positionToStartCell } from '@/lib/planner-timeline';
 import { getOrderedPlanSegments } from '@/lib/swimlane/swimlanePlanSegments';
 
@@ -19,7 +19,7 @@ function getStartCell(position: TaskPosition): number {
   return positionToStartCell(position);
 }
 
-const defaultTimelineTotalParts = () => WORKING_DAYS * PARTS_PER_DAY;
+const defaultTimelineTotalParts = () => WORKING_DAYS * getPartsPerDay();
 
 /** Левая граница отрезка в процентах ширины таймлайна спринта. */
 export function getLeftPercentForSegmentStartCell(
@@ -58,7 +58,7 @@ export function resizeSwimlanePlanSegment(
   segmentIndex: number,
   newDuration: number,
   newStartCell?: number,
-  totalCells: number = WORKING_DAYS * PARTS_PER_DAY
+  totalCells: number = WORKING_DAYS * getPartsPerDay()
 ): TaskPosition | null {
   if (!position.segments?.length) return null;
   const ordered = getOrderedPlanSegments(position);
@@ -67,7 +67,7 @@ export function resizeSwimlanePlanSegment(
 
   const segs = ordered.map((s) => ({ ...s }));
   const seg = segs[segmentIndex]!;
-  const startCell = newStartCell ?? seg.startDay * PARTS_PER_DAY + seg.startPart;
+  const startCell = newStartCell ?? seg.startDay * getPartsPerDay() + seg.startPart;
   const endCell = startCell + newDuration;
   if (!validateResizeSegmentBounds(startCell, endCell, segmentIndex, segs, totalCells)) {
     return null;

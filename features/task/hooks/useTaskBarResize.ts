@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 
 interface UseTaskBarResizeProps {
   duration: number;
@@ -22,7 +22,7 @@ export function useTaskBarResize({
   onResize,
   onResizePreview,
   onResizeSessionChange,
-  timelineTotalCells = WORKING_DAYS * PARTS_PER_DAY,
+  timelineTotalCells = WORKING_DAYS * getPartsPerDay(),
 }: UseTaskBarResizeProps) {
   const [isResizing, setIsResizing] = useState(false);
   const [resizePreviewDuration, setResizePreviewDuration] = useState<number | null>(null);
@@ -57,7 +57,7 @@ export function useTaskBarResize({
     const containerRect = container.getBoundingClientRect();
     const cardRect = cardElement.getBoundingClientRect();
 
-    const totalCells = Math.max(PARTS_PER_DAY, timelineTotalCells);
+    const totalCells = Math.max(getPartsPerDay(), timelineTotalCells);
     const cellWidth = containerRect.width / totalCells;
 
     const cardLeftX = cardRect.left - containerRect.left;

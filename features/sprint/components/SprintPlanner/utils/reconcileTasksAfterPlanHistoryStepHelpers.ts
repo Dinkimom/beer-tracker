@@ -4,6 +4,7 @@ import type { Dispatch, SetStateAction } from 'react';
 
 import { getTaskPoints, isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { updateIssueWorkForPhase } from '@/lib/beerTrackerApi';
+import { resizeShouldPreserveEstimate } from '@/lib/plannerTimelineScale';
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 type TaskRowPatch = Partial<
@@ -132,6 +133,14 @@ function applyEstimatePatchForSave(
   tasksMap: Map<string, Task>
 ): void {
   const currentEstimate = effectiveIsQa ? (devTask.testPoints ?? 0) : getTaskPoints(devTask);
+  if (
+    resizeShouldPreserveEstimate({
+      currentEstimate,
+      previousDuration: save.position.duration,
+    })
+  ) {
+    return;
+  }
   const newPoints = timeslotsToStoryPoints(save.position.duration);
   if (newPoints === currentEstimate) return;
 

@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { buildQuickAddQueueOptionsFromBoards } from '@/features/board/quickAddQueueOptions';
 import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
@@ -215,7 +215,7 @@ export function useSprintPlannerQuickAddDraft({
         stickyNoteColor: sprintPlannerUi.stickyNoteColor,
         t,
         tasksMap,
-        timelineTotalParts: sprintTimelineWorkingDays * PARTS_PER_DAY,
+        timelineTotalParts: sprintTimelineWorkingDays * getPartsPerDay(),
       }).catch(() => undefined);
     },
     [
@@ -285,7 +285,7 @@ export function useSprintPlannerQuickAddDraft({
 
   const handleQuickAddDraftKindChange = useCallback(
     (taskId: string, kind: QuickAddDraftKind | undefined) => {
-      const timelineTotalParts = sprintTimelineWorkingDays * PARTS_PER_DAY;
+      const timelineTotalParts = sprintTimelineWorkingDays * getPartsPerDay();
       setTasks((prev) => {
         const next = applyQuickAddDraftKind(prev, taskId, kind);
         syncQuickAddCommentPresencePreview(

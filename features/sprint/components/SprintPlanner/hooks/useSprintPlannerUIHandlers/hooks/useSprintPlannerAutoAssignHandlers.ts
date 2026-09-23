@@ -6,7 +6,7 @@ import type { Developer, Task, TaskPosition } from '@/types';
 
 import { useCallback, type MutableRefObject } from 'react';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { autoAssignTasks } from '@/features/task/utils/autoAssignTasks';
 import {
   clearSprintPositions,
@@ -85,7 +85,7 @@ export function useSprintPlannerAutoAssignHandlers({
     setTaskPositions(() => new Map());
     setTaskLinks(() => []);
 
-    const currentCell = getCurrentSprintCell(sprintStartDate, PARTS_PER_DAY);
+    const currentCell = getCurrentSprintCell(sprintStartDate, getPartsPerDay());
     const result = autoAssignTasks(
       allTasksForDrag,
       developersManagement.sortedDevelopers,

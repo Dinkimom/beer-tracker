@@ -3,7 +3,7 @@
 import type { CalendarBusySegment } from '@/lib/calendar/calendarEventTypes';
 
 import { TextTooltip } from '@/components/TextTooltip';
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { CalendarBusyTooltipList } from '@/features/swimlane/components/CalendarBusyTooltipList';
 
@@ -20,10 +20,10 @@ interface CalendarBusyCardProps {
   widthPercent: number;
 }
 
-/** Ячейка лежит на границе рабочего дня (0 / PARTS_PER_DAY / …). */
+/** Ячейка лежит на границе рабочего дня (0 / getPartsPerDay() / …). */
 function cellOnDayBoundary(cell: number): boolean {
-  const rem = ((cell % PARTS_PER_DAY) + PARTS_PER_DAY) % PARTS_PER_DAY;
-  return rem < 1e-4 || Math.abs(rem - PARTS_PER_DAY) < 1e-4;
+  const rem = ((cell % getPartsPerDay()) + getPartsPerDay()) % getPartsPerDay();
+  return rem < 1e-4 || Math.abs(rem - getPartsPerDay()) < 1e-4;
 }
 
 export function CalendarBusyCard({

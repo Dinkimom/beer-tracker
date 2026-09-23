@@ -2,7 +2,7 @@ import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
 
 import { ZodError, z } from 'zod';
 
-import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS } from '@/constants';
+import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS, MAX_PLANNER_PART_INDEX } from '@/constants';
 import { PLANNER_COMMENT_TEXT_MAX_LENGTH } from '@/lib/comments/excalidrawCommentPayload';
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 
@@ -11,7 +11,7 @@ const MAX_OPS = 50;
 const SegmentSchema = z.object({
   duration: z.number().int().positive().max(MAX_PLANNER_DURATION_PARTS),
   startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
-  startPart: z.number().int().min(0).max(2),
+  startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
 });
 
 const NoteParentSchema = z.object({
@@ -28,7 +28,7 @@ const UpsertPositionSchema = z.object({
   op: z.literal('upsertPosition'),
   segments: z.array(SegmentSchema).max(100).optional(),
   startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
-  startPart: z.number().int().min(0).max(2),
+  startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
   taskId: z.string().min(1).max(255),
 });
 
@@ -44,7 +44,7 @@ const CreateNoteSchema = z.object({
   height: z.number().int().min(1).max(10).optional(),
   op: z.literal('createNote'),
   parent: NoteParentSchema.nullable().optional(),
-  part: z.number().int().min(0).max(2),
+  part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
   text: z.string().min(1).max(PLANNER_COMMENT_TEXT_MAX_LENGTH),
   width: z.number().int().positive().max(2000).optional(),
 });
@@ -57,7 +57,7 @@ const UpdateNoteSchema = z.object({
   height: z.number().int().min(1).max(10).optional(),
   op: z.literal('updateNote'),
   parent: NoteParentSchema.nullable().optional(),
-  part: z.number().int().min(0).max(2).nullable().optional(),
+  part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX).nullable().optional(),
   text: z.string().min(1).max(PLANNER_COMMENT_TEXT_MAX_LENGTH).optional(),
   width: z.number().int().positive().max(2000).optional(),
 });

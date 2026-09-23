@@ -4,7 +4,7 @@ import type { QuarterlySprintInfo } from '../types';
 
 import { useLayoutEffect, useMemo, useState, type RefObject } from 'react';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 import { buildQuarterlyWeekColumns, countWorkingDaysInSprint } from '../utils/quarterlyTimelineHeader';
 
@@ -44,7 +44,7 @@ export function useQuarterlyPlannerTableDimensions({
   const stickyColumnsWidth = taskColumnWidth + statusColumnWidth;
   const timelineWidth = Math.max(0, containerWidth - stickyColumnsWidth);
   const dayColumnWidth = weekCount > 0 && timelineWidth > 0 ? timelineWidth / weekCount : undefined;
-  const timelineTotalParts = workingDays * PARTS_PER_DAY;
+  const timelineTotalParts = workingDays * getPartsPerDay();
   const tableWidth =
     timelineWidth > 0 && dayColumnWidth != null
       ? stickyColumnsWidth + dayColumnWidth * weekCount

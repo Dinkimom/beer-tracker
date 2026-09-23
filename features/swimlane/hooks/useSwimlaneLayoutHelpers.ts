@@ -2,7 +2,7 @@ import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCa
 import type { SprintPresenceGestureCardRow, SprintPresenceGestureNote } from '@/lib/realtime/sprintRealtimeTypes';
 import type { Task, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { isSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { isTaskDone } from '@/features/sprint/utils/sprintMetrics';
 import { resolveSwimlaneOneCardHeightPx } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
@@ -98,8 +98,8 @@ function synthesizeRemotePresencePosition(
   return {
     assignee: preview.assignee ?? developerId,
     duration: preview.duration,
-    startDay: Math.floor(preview.startCell / PARTS_PER_DAY),
-    startPart: preview.startCell % PARTS_PER_DAY,
+    startDay: Math.floor(preview.startCell / getPartsPerDay()),
+    startPart: preview.startCell % getPartsPerDay(),
     taskId: preview.taskId,
   };
 }

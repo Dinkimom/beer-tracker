@@ -1,6 +1,5 @@
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { SwimlanePlacementTool } from '@/lib/layers';
-import type { CSSProperties } from 'react';
 
 export type SwimlaneQuickAddPreviewKind = 'diagram' | 'image' | 'note' | 'task';
 
@@ -104,21 +103,4 @@ export function resolveSwimlaneQuickAddPreviewLayerSpan(
   baseSpan: number
 ): number {
   return isTwoByTwoPreviewKind(kind) ? 2 : baseSpan;
-}
-
-export function resolveSwimlaneQuickAddPreviewLayout(input: {
-  band: Pick<CSSProperties, 'height' | 'top'>;
-  horizontal: Pick<CSSProperties, 'left' | 'width'>;
-  kind: SwimlaneQuickAddPreviewKind;
-}): CSSProperties {
-  if (input.kind === 'note') {
-    return {
-      height: input.band.height,
-      left: input.horizontal.left,
-      maxWidth: input.horizontal.width,
-      top: input.band.top,
-      width: input.band.height,
-    };
-  }
-  return { ...input.band, ...input.horizontal };
 }

@@ -7,7 +7,7 @@ import type { Developer, Task, TaskPosition } from '@/types';
 
 import { useCallback } from 'react';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useTaskResize } from '@/features/task/hooks/useTaskResize';
 import { useDataSyncEstimatesStorage } from '@/hooks/useLocalStorage';
 
@@ -76,7 +76,7 @@ export function useSprintPlannerTaskHandlers({
 }: UseSprintPlannerTaskHandlersProps) {
   const [syncEstimates] = useDataSyncEstimatesStorage();
   // Хук для обработки изменения размера задач
-  const timelineTotalCells = sprintTimelineWorkingDays * PARTS_PER_DAY;
+  const timelineTotalCells = sprintTimelineWorkingDays * getPartsPerDay();
   const setPlanTaskPositions = useCallback(
     (updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>) => {
       setTaskPositions(updater, { recordHistory: true });
@@ -88,7 +88,7 @@ export function useSprintPlannerTaskHandlers({
     setTaskPositions: setPlanTaskPositions,
     timelineTotalCells,
     updateXarrow: debouncedUpdateXarrow,
-    onAfterResize: (taskId, newDuration, updatedPosition) => {
+    onAfterResize: (taskId, newDuration, updatedPosition, previousDuration) => {
       handleTaskResizeAfterResize(
         taskId,
         newDuration,
@@ -97,7 +97,8 @@ export function useSprintPlannerTaskHandlers({
         qaTasksByOriginalId,
         setTasks,
         syncEstimates,
-        savePosition
+        savePosition,
+        previousDuration
       );
     },
   });

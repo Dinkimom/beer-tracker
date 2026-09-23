@@ -7,7 +7,7 @@ import type { Task, TaskPosition } from '@/types';
 import { reaction } from 'mobx';
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import {
   buildSwimlaneTaskLayerSpanById,
   buildSwimlaneTaskVerticalLayoutById,
@@ -132,7 +132,7 @@ export function useSwimlaneLayout({
 
   // Нельзя useMemo([taskPositions, …]): taskPositions — тот же observable.map, при DnD мутирует на месте,
   // ссылка не меняется — positionedTasks оставался со старыми координатами (занятость жила отдельным путём).
-  const totalCells = sprintTimelineWorkingDays * PARTS_PER_DAY;
+  const totalCells = sprintTimelineWorkingDays * getPartsPerDay();
   const localResizeLive = sprintPlannerUi.taskResizePreview;
   const localResizeForLayout = retainPresencePositionPreview(
     localResizeLive,
@@ -179,7 +179,7 @@ export function useSwimlaneLayout({
   const percentTP = totalTP > 0 ? Math.round((completedTP / totalTP) * 100) : 0;
 
   const currentCell = useMemo(() => {
-    return getCurrentSprintCell(sprintStartDate, PARTS_PER_DAY, sprintTimelineWorkingDays);
+    return getCurrentSprintCell(sprintStartDate, getPartsPerDay(), sprintTimelineWorkingDays);
   }, [sprintStartDate, sprintTimelineWorkingDays]);
 
   const baselines = calculateBaselines(positionedTasks, currentCell);

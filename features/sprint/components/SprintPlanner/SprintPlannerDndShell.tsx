@@ -13,7 +13,7 @@ import type { ReactNode, RefObject } from 'react';
 
 import { DndContext, DragOverlay, MouseSensor, PointerSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 
-import { PARTS_PER_DAY, ZIndex } from '@/constants';
+import { ZIndex, getPartsPerDay } from '@/constants';
 import { SWIMLANE_TASK_DRAG_ACTIVATION_DISTANCE_PX } from '@/features/swimlane/utils/swimlaneTaskDragActivation';
 
 import {
@@ -63,7 +63,7 @@ export function SprintPlannerDndShell({
   sprintTimelineWorkingDays,
   viewMode,
 }: SprintPlannerDndShellProps) {
-  const swimlaneTimelineTotalParts = sprintTimelineWorkingDays * PARTS_PER_DAY;
+  const swimlaneTimelineTotalParts = sprintTimelineWorkingDays * getPartsPerDay();
   const taskDragSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: SWIMLANE_TASK_DRAG_ACTIVATION_DISTANCE_PX },

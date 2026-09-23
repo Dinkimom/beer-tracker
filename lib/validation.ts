@@ -4,13 +4,13 @@
 
 import { z } from 'zod';
 
-import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS } from '@/constants';
+import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS, MAX_PLANNER_PART_INDEX } from '@/constants';
 import { PLANNER_COMMENT_TEXT_MAX_LENGTH } from '@/lib/comments/excalidrawCommentPayload';
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 import { MAX_STICKY_NOTE_REACTION_EMOJI_LENGTH } from '@/lib/comments/stickyNoteReaction';
 const PhaseSegmentSchema = z.object({
   startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
-  startPart: z.number().int().min(0).max(2),
+  startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
   duration: z.number().int().positive().max(MAX_PLANNER_DURATION_PARTS),
 });
 
@@ -18,10 +18,10 @@ export const TaskPositionSchema = z.object({
   taskId: z.string().min(1).max(255),
   assigneeId: z.string().min(1).max(255),
   startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
-  startPart: z.number().int().min(0).max(2),
+  startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
   duration: z.number().int().positive().max(MAX_PLANNER_DURATION_PARTS),
   plannedStartDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX).optional().nullable(),
-  plannedStartPart: z.number().int().min(0).max(2).optional().nullable(),
+  plannedStartPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX).optional().nullable(),
   plannedDuration: z.number().int().positive().max(MAX_PLANNER_DURATION_PARTS).optional().nullable(),
   isQa: z.boolean().optional(),
   /** Ключ задачи разработки (для QA: qaEngineer обновляется на dev-задаче) */
@@ -66,7 +66,7 @@ export const CommentSchema = z
     x: z.number().optional().nullable(),
     y: z.number().int().min(0).max(9).optional().nullable(),
     day: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX).optional().nullable(),
-    part: z.number().int().min(0).max(2).optional().nullable(),
+    part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX).optional().nullable(),
     width: z.number().int().positive().max(2000),
     height: z.number().int().min(1).max(10),
     color: z.enum(STICKY_NOTE_COLORS).optional(),

@@ -1,6 +1,6 @@
 import type { Task, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 import { getPositionSegmentRanges } from './occupancyUtils';
 
@@ -13,7 +13,7 @@ export interface AssigneePositionSegment {
 export function cellRangeToDayIndices(startCell: number, endCell: number): Set<number> {
   const days = new Set<number>();
   for (let c = startCell; c < endCell; c++) {
-    days.add(Math.floor(c / PARTS_PER_DAY));
+    days.add(Math.floor(c / getPartsPerDay()));
   }
   return days;
 }

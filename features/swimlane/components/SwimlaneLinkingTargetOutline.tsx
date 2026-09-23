@@ -1,6 +1,6 @@
 'use client';
 
-import { CARD_MARGIN, PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { CARD_MARGIN, WORKING_DAYS, getPartsPerDay } from '@/constants';
 
 interface SwimlaneLinkingTargetOutlineProps {
   containerStyle: React.CSSProperties;
@@ -17,7 +17,7 @@ export function SwimlaneLinkingTargetOutline({
   containerStyle,
   outlineRadiusClass = 'rounded-lg',
   rangeStartCell,
-  timelineTotalParts = WORKING_DAYS * PARTS_PER_DAY,
+  timelineTotalParts = WORKING_DAYS * getPartsPerDay(),
   totalCells,
 }: SwimlaneLinkingTargetOutlineProps) {
   const leftPercent = (rangeStartCell / timelineTotalParts) * 100;

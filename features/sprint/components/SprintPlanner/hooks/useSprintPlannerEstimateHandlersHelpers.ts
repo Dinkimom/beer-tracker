@@ -1,6 +1,6 @@
 import type { PhaseSegment, Task, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { getSegmentEditorRangeAndCells } from '@/features/sprint/utils/occupancyUtils';
 import { getTaskPoints, isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
@@ -65,8 +65,8 @@ export function buildPositionFromSegments(
     return {
       ...position,
       segments: [],
-      startDay: Math.floor(rangeStartCell / PARTS_PER_DAY),
-      startPart: rangeStartCell % PARTS_PER_DAY,
+      startDay: Math.floor(rangeStartCell / getPartsPerDay()),
+      startPart: rangeStartCell % getPartsPerDay(),
       duration: totalCells,
       __source: 'SprintPlanner.onSegmentEditSave',
     };

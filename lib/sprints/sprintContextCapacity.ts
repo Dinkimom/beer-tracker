@@ -9,7 +9,7 @@ import type {
   SprintContextPosition,
 } from '@/lib/sprints/sprintContextTypes';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 function cellKey(day: number, part: number): string {
   return `${day}:${part}`;
@@ -27,7 +27,7 @@ function expandSegmentCells(
   for (let i = 0; i < safeDuration; i++) {
     cells.push({ day, part });
     part += 1;
-    if (part >= PARTS_PER_DAY) {
+    if (part >= getPartsPerDay()) {
       part = 0;
       day += 1;
     }
@@ -121,7 +121,7 @@ function buildOverlapsFromCells(
 
 function loadPartsForDay(dayIndex: number, cellsByKey: Map<string, string[]>): number {
   let loadParts = 0;
-  for (let part = 0; part < PARTS_PER_DAY; part++) {
+  for (let part = 0; part < getPartsPerDay(); part++) {
     if (cellsByKey.has(cellKey(dayIndex, part))) {
       loadParts += 1;
     }
@@ -138,7 +138,7 @@ function buildPersonDays(
     const row: SprintContextCapacityPersonDay = {
       day: calendarDay.day,
       loadParts: loadPartsForDay(calendarDay.day, cellsByKey),
-      maxParts: PARTS_PER_DAY,
+      maxParts: getPartsPerDay(),
     };
     if (calendarDay.date) {
       row.date = calendarDay.date;
@@ -174,7 +174,7 @@ function buildGaps(
     if (day.unavailable) {
       continue;
     }
-    for (let part = 0; part < PARTS_PER_DAY; part++) {
+    for (let part = 0; part < getPartsPerDay(); part++) {
       const gap = gapForPart(day, part, cellsByKey);
       if (gap) {
         gaps.push(gap);

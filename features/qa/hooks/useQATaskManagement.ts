@@ -7,7 +7,7 @@ import type { Developer } from '@/types';
 
 import { useCallback } from 'react';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import {
   calculateOccupiedIntervals,
   findQATaskPlacement,
@@ -78,7 +78,7 @@ export function useQATaskManagement({
 
       const duration = Math.max(1, storyPointsToTimeslots(getTaskPoints(qaTask)));
       const devTaskEndCell =
-        devTaskPosition.startDay * PARTS_PER_DAY +
+        devTaskPosition.startDay * getPartsPerDay() +
         devTaskPosition.startPart +
         devTaskPosition.duration;
 
@@ -91,8 +91,8 @@ export function useQATaskManagement({
         return false;
       }
 
-      const startDay = Math.floor(startCell / PARTS_PER_DAY);
-      const startPart = startCell % PARTS_PER_DAY;
+      const startDay = Math.floor(startCell / getPartsPerDay());
+      const startPart = startCell % getPartsPerDay();
 
       const qaTaskPosition: TaskPosition = {
         taskId: qaTask.id,

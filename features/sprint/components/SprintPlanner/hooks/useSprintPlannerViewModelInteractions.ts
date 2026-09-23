@@ -7,7 +7,7 @@ import type { SprintListItem } from '@/types/tracker';
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useBoards } from '@/features/board/hooks/useBoards';
 import {
@@ -319,7 +319,7 @@ export function useSprintPlannerViewModelInteractions({
 
   const handlePositionUpdateWithComments = featureLaneDrag.handlePositionUpdate;
 
-  const timelineTotalCells = sprintTimelineWorkingDays * PARTS_PER_DAY;
+  const timelineTotalCells = sprintTimelineWorkingDays * getPartsPerDay();
   const handleTaskResizeWithComments = useCallback(
     (taskId: string, params: TaskResizeParams) => {
       const commentId = parseSwimlaneCommentTaskId(taskId);

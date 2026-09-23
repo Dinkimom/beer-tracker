@@ -2,7 +2,7 @@ import type { AvailabilitySegment } from './availabilitySegments';
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 function formatDDMM(d: Date): string {
   const day = d.getDate().toString().padStart(2, '0');
@@ -60,7 +60,7 @@ export function buildAvailabilitySegmentFromEntry(
   return {
     dateRangeLabel: formatDateRange(entry.startDate, entry.endDate),
     dayIndices: overlappingDays,
-    durationInParts: (lastDay - firstDay + 1) * PARTS_PER_DAY,
+    durationInParts: (lastDay - firstDay + 1) * getPartsPerDay(),
     eventId: entry.id,
     kind,
     startDay: firstDay,

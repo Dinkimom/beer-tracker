@@ -1,7 +1,7 @@
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { Task, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { isSwimlaneDiagramTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
   distributeIntervalsToLayers,
@@ -145,7 +145,7 @@ export function calculateBaselines(
     const lastSegment = segments.at(-1);
     if (lastSegment == null) return;
 
-    const startCell = lastSegment.startDay * PARTS_PER_DAY + lastSegment.startPart;
+    const startCell = lastSegment.startDay * getPartsPerDay() + lastSegment.startPart;
     const plannedEndCell = startCell + lastSegment.duration;
     if (plannedEndCell < currentCell) {
       baselines.push({

@@ -8,7 +8,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { observer } from 'mobx-react-lite';
 import React, { useContext, useMemo, useState } from 'react';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { sprintPlannerSwimlaneTimelineWidthCss } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
 import { canQuickAddOnSwimlaneLane } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
@@ -210,7 +210,7 @@ function SwimlaneComponent({
     [layout.hasTaskOverlaps, layout.layerHeight, layout.maxTaskLayers, swimlaneCardFields.showParent]
   );
 
-  const timelineTotalParts = sprintTimelineWorkingDays * PARTS_PER_DAY;
+  const timelineTotalParts = sprintTimelineWorkingDays * getPartsPerDay();
 
   const sidebarEffectiveWidthPx = sidebarOpen ? sidebarWidth : 0;
   const timelineWidth = sprintPlannerSwimlaneTimelineWidthCss(

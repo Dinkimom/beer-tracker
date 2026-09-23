@@ -2,7 +2,7 @@ import type { DragContextRef, SwimlaneDragStateApi } from './swimlaneDragTypes';
 import type { Task, TaskPosition } from '@/types';
 import type { DragEndEvent } from '@dnd-kit/core';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { getPositionEffectiveDuration } from '@/lib/planner-timeline';
 import { moveSwimlanePlanSegmentToStartCell } from '@/lib/swimlane/swimlanePlanSegments';
 
@@ -26,7 +26,7 @@ function updateExistingMultiSegmentPosition(input: {
   if (assigneeId !== existing.assignee || segmentIndex == null) {
     return;
   }
-  const newStart = day * PARTS_PER_DAY + part;
+  const newStart = day * getPartsPerDay() + part;
   const moved = moveSwimlanePlanSegmentToStartCell(existing, segmentIndex, newStart, totalCells);
   if (!moved) {
     return;
@@ -44,7 +44,7 @@ function updateExistingSingleSegmentPosition(input: {
   totalCells: number;
 }): void {
   const { assigneeId, day, existing, onPositionUpdate, part, taskId, totalCells } = input;
-  const newStart = day * PARTS_PER_DAY + part;
+  const newStart = day * getPartsPerDay() + part;
   const effectiveDuration = getPositionEffectiveDuration(existing);
   const maxStart = totalCells - effectiveDuration;
   if (newStart > maxStart) {

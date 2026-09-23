@@ -46,6 +46,10 @@ export const field =
 export const adminFormCheckbox =
   'h-4 w-4 shrink-0 cursor-pointer rounded border-2 border-gray-300 bg-white accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-500 dark:bg-gray-700 dark:accent-blue-400 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-800';
 
+/** Радио следует теме приложения, а не color-scheme системы. */
+export const adminFormRadio =
+  'h-4 w-4 shrink-0 cursor-pointer accent-blue-600 scheme-light dark:accent-blue-400 dark:scheme-dark';
+
 export const tabList =
   'inline-flex flex-wrap gap-1 rounded-xl bg-gray-100/90 p-1 dark:bg-gray-900/50';
 export const tabBtnBase =

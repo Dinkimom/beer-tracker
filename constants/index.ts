@@ -1,6 +1,9 @@
+export { getPartsPerDay, MAX_PLANNER_PART_INDEX } from '@/lib/plannerTimelineScale';
+
 export const WORKING_DAYS = 10;
 /** Рабочих дней в одной календарной неделе сетки спринта (при двухнедельном спринте = WORKING_DAYS / 2) */
 export const WORKING_DAYS_PER_WEEK = 5;
+/** Легаси-занятость и значение по умолчанию. Планер читает {@link getPartsPerDay}. */
 export const PARTS_PER_DAY = 3;
 
 /**

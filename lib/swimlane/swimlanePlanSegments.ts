@@ -1,6 +1,6 @@
 import type { PhaseSegment, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY, WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { mergeAdjacentSegments } from '@/lib/planner-timeline';
 
 function rangesOverlap(
@@ -20,7 +20,7 @@ function segmentRangesOverlap(
 
 function buildSegmentRanges(segments: PhaseSegment[]): Array<{ endCell: number; startCell: number }> {
   return segments.map((segment) => {
-    const startCell = segment.startDay * PARTS_PER_DAY + segment.startPart;
+    const startCell = segment.startDay * getPartsPerDay() + segment.startPart;
     return { startCell, endCell: startCell + segment.duration };
   });
 }
@@ -35,8 +35,8 @@ function applyMovedSegmentAtStartCell(
     index === segmentIndex
       ? {
           ...segment,
-          startDay: Math.floor(newStartCell / PARTS_PER_DAY),
-          startPart: newStartCell % PARTS_PER_DAY,
+          startDay: Math.floor(newStartCell / getPartsPerDay()),
+          startPart: newStartCell % getPartsPerDay(),
           duration,
         }
       : segment
@@ -67,7 +67,7 @@ export function getOrderedPlanSegments(position: TaskPosition): PhaseSegment[] {
   if (position.segments && position.segments.length > 0) {
     return [...position.segments].sort(
       (a, b) =>
-        a.startDay * PARTS_PER_DAY + a.startPart - (b.startDay * PARTS_PER_DAY + b.startPart)
+        a.startDay * getPartsPerDay() + a.startPart - (b.startDay * getPartsPerDay() + b.startPart)
     );
   }
   return [
@@ -87,7 +87,7 @@ export function moveSwimlanePlanSegmentToStartCell(
   position: TaskPosition,
   segmentIndex: number,
   newStartCell: number,
-  totalCells: number = WORKING_DAYS * PARTS_PER_DAY
+  totalCells: number = WORKING_DAYS * getPartsPerDay()
 ): TaskPosition | null {
   if (!position.segments?.length) return null;
   const ordered = getOrderedPlanSegments(position);

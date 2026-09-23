@@ -2,7 +2,7 @@ import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/compo
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Task, TaskParent, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { isTaskGroupSentinelKey } from '@/features/task/constants/taskGroupKeys';
 import { revokeLocalPlannerImageObjectUrl } from '@/features/task/utils/localPlannerImageFile';
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
@@ -42,7 +42,7 @@ export function resolveQuickAddDraftDurationParts(
   if (kind !== 'image' && kind !== 'diagram') {
     return 1;
   }
-  const startCell = startDay * PARTS_PER_DAY + startPart;
+  const startCell = startDay * getPartsPerDay() + startPart;
   const remaining = Math.max(1, timelineTotalParts - startCell);
   return Math.min(QUICK_ADD_IMAGE_DRAFT_DURATION_PARTS, remaining);
 }

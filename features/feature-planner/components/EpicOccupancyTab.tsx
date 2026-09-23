@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { ContextMenu } from '@/features/context-menu/components/ContextMenu';
@@ -187,8 +187,8 @@ export function EpicOccupancyTab({ epicId }: EpicOccupancyTabProps) {
         next = {
           ...position,
           segments: [],
-          startDay: Math.floor(rangeStartCell / PARTS_PER_DAY),
-          startPart: rangeStartCell % PARTS_PER_DAY,
+          startDay: Math.floor(rangeStartCell / getPartsPerDay()),
+          startPart: rangeStartCell % getPartsPerDay(),
           duration: totalCells,
           plannedDuration: totalCells,
         };

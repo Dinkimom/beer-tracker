@@ -6,7 +6,7 @@ import type { DragContextRef, SwimlaneDragStateApi } from './swimlaneDragTypes';
 import type { Task, TaskPosition } from '@/types';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 
-import { WORKING_DAYS, PARTS_PER_DAY } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { parseSwimlaneTaskDraggableId } from '@/lib/swimlane/swimlaneDragIds';
 
 import {
@@ -218,7 +218,7 @@ export function createSwimlaneDragEndHandler(
   params: SwimlaneDragEndHandlerParams
 ): (event: DragEndEvent) => void {
   const workingDaysCount = Math.max(1, params.swimlaneTimelineWorkingDays ?? WORKING_DAYS);
-  const totalCells = workingDaysCount * PARTS_PER_DAY;
+  const totalCells = workingDaysCount * getPartsPerDay();
 
   return (event: DragEndEvent) => {
     try {

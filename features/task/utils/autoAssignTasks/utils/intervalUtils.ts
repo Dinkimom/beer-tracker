@@ -4,7 +4,7 @@
 
 import type { TimeInterval } from '../types';
 
-import { WORKING_DAYS, PARTS_PER_DAY } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 
 import {
   findPlacementAfterLastInterval,
@@ -33,7 +33,7 @@ export function calculateOccupiedIntervals(
 
   positions.forEach((position) => {
     const intervals = occupiedIntervals.get(position.assignee) || [];
-    const startCell = position.startDay * PARTS_PER_DAY + position.startPart;
+    const startCell = position.startDay * getPartsPerDay() + position.startPart;
     const endCell = startCell + position.duration;
     intervals.push({ start: startCell, end: endCell });
     occupiedIntervals.set(position.assignee, intervals);
@@ -53,7 +53,7 @@ export function findNextAvailableCell(
   currentCell: number = 0
 ): number | null {
   const minStartCell = Math.max(0, currentCell);
-  const maxEndCell = WORKING_DAYS * PARTS_PER_DAY;
+  const maxEndCell = WORKING_DAYS * getPartsPerDay();
 
   if (minStartCell + taskDuration > maxEndCell) {
     return null;
@@ -91,7 +91,7 @@ export function findQATaskPlacement(
   taskDuration: number,
   minStartCell: number
 ): number | null {
-  const maxEndCell = WORKING_DAYS * PARTS_PER_DAY;
+  const maxEndCell = WORKING_DAYS * getPartsPerDay();
 
   if (minStartCell + taskDuration > maxEndCell) {
     return null;

@@ -1,6 +1,6 @@
 import type { Developer, Task, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { calculateOccupiedIntervals, findNextAvailableCell } from '@/features/task/utils/autoAssignTasks/utils/intervalUtils';
 import {
   canAutoAddTaskToSwimlane,
@@ -71,8 +71,8 @@ export function runAutoAddToSwimlane(params: AutoAddToSwimlaneParams): void {
   const startCell = findNextAvailableCell(intervals, duration, 0);
   if (startCell === null) return;
 
-  const startDay = Math.floor(startCell / PARTS_PER_DAY);
-  const startPart = startCell % PARTS_PER_DAY;
+  const startDay = Math.floor(startCell / getPartsPerDay());
+  const startPart = startCell % getPartsPerDay();
   const isQa = task.team === 'QA';
   const position = buildAutoAddPosition(task, assigneeId, startDay, startPart, duration);
 

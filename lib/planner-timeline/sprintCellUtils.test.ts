@@ -5,7 +5,7 @@ import { PARTS_PER_DAY } from '@/constants';
 import {
   dateTimeToFractionalCell,
   dateTimeToFractionalCellInRange,
-  TOTAL_PARTS,
+  getSprintTotalParts,
 } from './sprintCellUtils';
 
 /** Пн 10 марта 2025 — первый день двухнедельного спринта (10 рабочих дней). */
@@ -39,7 +39,7 @@ describe('dateTimeToFractionalCell', () => {
   it('суббота внутри спринта не даёт индекс после TOTAL_PARTS', () => {
     const saturday = new Date(2025, 2, 15, 11, 0, 0);
     const cell = dateTimeToFractionalCell(sprintStartMar2025, saturday);
-    expect(cell).toBeLessThanOrEqual(TOTAL_PARTS);
+    expect(cell).toBeLessThanOrEqual(getSprintTotalParts());
     expect(cell).toBe(4 * PARTS_PER_DAY + 2 + 1);
   });
 });

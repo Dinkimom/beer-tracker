@@ -1,7 +1,7 @@
 import type { TaskResizeParams } from './useTaskResize';
 import type { TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { getMaxDuration, resizeSwimlanePlanSegment } from '@/features/swimlane/utils/positionUtils';
 
 function applyPlanSegmentResize(
@@ -38,8 +38,8 @@ function applyStandardTaskResize(
 
   if (params.newStartCell !== undefined) {
     const newStartCell = Math.max(0, Math.min(params.newStartCell, totalCells - 1));
-    const newDay = Math.floor(newStartCell / PARTS_PER_DAY);
-    const newPart = newStartCell % PARTS_PER_DAY;
+    const newDay = Math.floor(newStartCell / getPartsPerDay());
+    const newPart = newStartCell % getPartsPerDay();
 
     newPosition.startDay = newDay;
     newPosition.startPart = newPart;

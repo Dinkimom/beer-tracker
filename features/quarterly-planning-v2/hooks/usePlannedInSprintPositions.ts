@@ -5,7 +5,7 @@ import type { TaskPosition } from '@/types';
 
 import { useQuery } from '@tanstack/react-query';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 import { enrichPositionsWithIssueMeta } from './loadPlannedInSprintPositionsEnrichment';
 import {
@@ -18,7 +18,7 @@ import {
   plannedPositionDedupeKey,
 } from './loadPlannedInSprintPositionsHelpers';
 
-const durationDays = (p: TaskPosition) => Math.max(1, Math.ceil(p.duration / PARTS_PER_DAY));
+const durationDays = (p: TaskPosition) => Math.max(1, Math.ceil(p.duration / getPartsPerDay()));
 const endDay = (p: TaskPosition) => p.startDay + durationDays(p);
 
 function findLowestAvailableStackLevel(usedLevels: Set<number>): number {

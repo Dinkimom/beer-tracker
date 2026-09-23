@@ -7,6 +7,7 @@ import { parseOptionalStickyNoteColor, parseStickyNoteColor } from '@/lib/commen
 import { resolveParams } from '@/lib/nextjs-utils';
 import { notifyCommentMentionsIfNeeded } from '@/lib/notifications/notifyCommentMentionsIfNeeded';
 import { resolveNotificationBoardIdFromRequest } from '@/lib/notifications/resolveNotificationBoardIdFromRequest';
+import { plannerGridPartError } from '@/lib/planner/migrateOrganizationPlannerGrid';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
   deleteSprintComment,
@@ -107,6 +108,11 @@ export async function POST(
       skipMentionNotifications,
     } = validation.data;
 
+    const gridError = await plannerGridPartError(organizationId, [part]);
+    if (gridError) {
+      return NextResponse.json({ error: gridError }, { status: 400 });
+    }
+
     const comment = await insertSprintComment({
       assigneeId,
       color: parseStickyNoteColor(color),
@@ -176,6 +182,12 @@ export async function PUT(
     const body = await request.json();
     const { text, x, y, width, height, assigneeId, day, part, color } = body;
     const parentUpdate = readCommentParentUpdate(body);
+    if (typeof part === 'number') {
+      const gridError = await plannerGridPartError(organizationId, [part]);
+      if (gridError) {
+        return NextResponse.json({ error: gridError }, { status: 400 });
+      }
+    }
 
     const previousText =
       typeof text === 'string'

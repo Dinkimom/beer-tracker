@@ -5,7 +5,7 @@
 import type { TimeInterval } from '../types';
 import type { Task, TaskPosition, Developer } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 import { getTaskPoints } from '../../taskUtils';
 import { findNextAvailableCell } from '../utils/intervalUtils';
@@ -45,8 +45,8 @@ export function placeDevTasks(
       return; // Задача не помещается в спринт
     }
 
-    const startDay = Math.floor(startCell / PARTS_PER_DAY);
-    const startPart = startCell % PARTS_PER_DAY;
+    const startDay = Math.floor(startCell / getPartsPerDay());
+    const startPart = startCell % getPartsPerDay();
 
     const position: TaskPosition = {
       taskId: task.id,

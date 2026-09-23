@@ -1,6 +1,6 @@
 import type { Task, TaskPosition } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { getTaskPoints, storyPointsToTimeslots } from '@/lib/pointsUtils';
 import { getWorkingDaysRange } from '@/utils/dateUtils';
 
@@ -57,10 +57,10 @@ function dayIndexOrMinusOne(
 }
 
 function rangeFromStartAndDeadline(startDayIndex: number, deadlineDayIndex: number): CellRange {
-  const startCell = startDayIndex * PARTS_PER_DAY;
-  const endCell = deadlineDayIndex * PARTS_PER_DAY + PARTS_PER_DAY;
+  const startCell = startDayIndex * getPartsPerDay();
+  const endCell = deadlineDayIndex * getPartsPerDay() + getPartsPerDay();
   if (endCell <= startCell) {
-    return { duration: PARTS_PER_DAY, startDay: startDayIndex, startPart: 0 };
+    return { duration: getPartsPerDay(), startDay: startDayIndex, startPart: 0 };
   }
   return { duration: endCell - startCell, startDay: startDayIndex, startPart: 0 };
 }
@@ -73,12 +73,12 @@ function rangeFromSingleBound(input: {
   if (input.startDayIndex >= 0) {
     return { duration: input.duration, startDay: input.startDayIndex, startPart: 0 };
   }
-  const endCell = input.deadlineDayIndex * PARTS_PER_DAY + PARTS_PER_DAY;
+  const endCell = input.deadlineDayIndex * getPartsPerDay() + getPartsPerDay();
   const startCell = Math.max(0, endCell - input.duration);
   return {
     duration: endCell - startCell,
-    startDay: Math.floor(startCell / PARTS_PER_DAY),
-    startPart: startCell % PARTS_PER_DAY,
+    startDay: Math.floor(startCell / getPartsPerDay()),
+    startPart: startCell % getPartsPerDay(),
   };
 }
 

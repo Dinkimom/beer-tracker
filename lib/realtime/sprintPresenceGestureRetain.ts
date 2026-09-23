@@ -1,6 +1,6 @@
 import type { SprintPresenceGestureCardRow } from './sprintRealtimeTypes';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 function cardRowsMatch(
   left: { layerShiftUp: number; span: number } | undefined,
@@ -60,7 +60,7 @@ function persistedPositionMatchesPreview(
   if (preview.startCell == null) {
     return true;
   }
-  return persisted.startDay * PARTS_PER_DAY + persisted.startPart === preview.startCell;
+  return persisted.startDay * getPartsPerDay() + persisted.startPart === preview.startCell;
 }
 
 export function persistedPositionForPreviewLatch(

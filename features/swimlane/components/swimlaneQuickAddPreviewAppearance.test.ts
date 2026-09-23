@@ -7,7 +7,6 @@ import {
   resolveSwimlaneQuickAddPreviewDurationCells,
   resolveSwimlaneQuickAddPreviewKind,
   resolveSwimlaneQuickAddPreviewLayerSpan,
-  resolveSwimlaneQuickAddPreviewLayout,
   resolveSwimlaneQuickAddPreviewToolProps,
 } from './swimlaneQuickAddPreviewAppearance';
 
@@ -135,34 +134,5 @@ describe('resolveSwimlaneQuickAddPreviewLayerSpan', () => {
     expect(resolveSwimlaneQuickAddPreviewLayerSpan('image', 1)).toBe(2);
     expect(resolveSwimlaneQuickAddPreviewLayerSpan('note', 1)).toBe(1);
     expect(resolveSwimlaneQuickAddPreviewLayerSpan('diagram', 1)).toBe(2);
-  });
-});
-
-describe('resolveSwimlaneQuickAddPreviewLayout', () => {
-  const band = { height: '48px', top: '12px' };
-  const horizontal = { left: '10%', width: 'calc(8% - 4px)' };
-
-  it('fills the timeslot for the default plus', () => {
-    expect(
-      resolveSwimlaneQuickAddPreviewLayout({ band, horizontal, kind: 'task' })
-    ).toEqual({ ...band, ...horizontal });
-  });
-
-  it('makes the note preview a square that cannot outgrow the cell', () => {
-    expect(
-      resolveSwimlaneQuickAddPreviewLayout({ band, horizontal, kind: 'note' })
-    ).toEqual({
-      height: '48px',
-      left: '10%',
-      maxWidth: 'calc(8% - 4px)',
-      top: '12px',
-      width: '48px',
-    });
-  });
-
-  it('lets a photo ghost keep its two-cell width', () => {
-    expect(
-      resolveSwimlaneQuickAddPreviewLayout({ band, horizontal, kind: 'image' })
-    ).toEqual({ ...band, ...horizontal });
   });
 });

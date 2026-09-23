@@ -1,6 +1,6 @@
 import type { PhaseSegment } from '@/types';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 
 export function appendOnCellSegment(
   segments: PhaseSegment[],
@@ -12,8 +12,8 @@ export function appendOnCellSegment(
   const segStartCell = startCell + fromIndex;
   const duration = toIndex - fromIndex;
   segments.push({
-    startDay: Math.floor(segStartCell / PARTS_PER_DAY),
-    startPart: segStartCell % PARTS_PER_DAY,
+    startDay: Math.floor(segStartCell / getPartsPerDay()),
+    startPart: segStartCell % getPartsPerDay(),
     duration,
   });
 }

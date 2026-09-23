@@ -5,7 +5,7 @@ import type { Comment } from '@/types';
 
 import { useEffect } from 'react';
 
-import { PARTS_PER_DAY } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { pasteNoteAtSwimlaneCell } from '@/features/sprint/components/SprintPlanner/hooks/pasteQuickAddNoteDraft';
 import { fileFromClipboardData } from '@/features/task/utils/localPlannerImageFile';
@@ -13,8 +13,8 @@ import { useSwimlaneNotesVisibleStorage } from '@/hooks/useLocalStorage';
 
 export function swimlaneCellIndexToDayPart(cellIndex: number): { day: number; part: number } {
   return {
-    day: Math.floor(cellIndex / PARTS_PER_DAY),
-    part: cellIndex % PARTS_PER_DAY,
+    day: Math.floor(cellIndex / getPartsPerDay()),
+    part: cellIndex % getPartsPerDay(),
   };
 }
 

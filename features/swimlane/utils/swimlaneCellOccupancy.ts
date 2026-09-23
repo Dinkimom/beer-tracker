@@ -75,7 +75,7 @@ function occupyTaskLayerCells(
   addCellRangeLayerSpan(occupiedLayersByCell, startCell, endCell, startLayer, span);
 }
 
-/** Индексы ячеек (day * PARTS_PER_DAY + part), занятых задачами в строке свимлейна. */
+/** Индексы ячеек (day * getPartsPerDay() + part), занятых задачами в строке свимлейна. */
 export function buildSwimlaneOccupiedCellIndices(
   positions: Iterable<TaskPosition>
 ): Set<number> {
@@ -88,7 +88,7 @@ export function buildSwimlaneOccupiedCellIndices(
   return occupied;
 }
 
-/** Слои карточек и overdue-бейзлайнов в каждой ячейке (day * PARTS_PER_DAY + part). */
+/** Слои карточек и overdue-бейзлайнов в каждой ячейке (day * getPartsPerDay() + part). */
 export function buildSwimlaneOccupiedLayersByCell(
   positions: Iterable<TaskPosition>,
   taskLayerMap: Map<string, number>,
