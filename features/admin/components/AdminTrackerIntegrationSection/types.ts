@@ -4,6 +4,8 @@ export const UNCATEGORIZED = "uncategorized" as const;
 
 export interface TrackerStatusRowMeta {
   display: string;
+  /** Tracker status id (Jira numeric) — for remapping legacy id-keyed palette overrides. */
+  id?: string;
   key: string;
   statusTypeKey?: string;
 }

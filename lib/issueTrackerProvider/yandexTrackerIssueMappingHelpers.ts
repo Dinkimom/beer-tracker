@@ -14,9 +14,17 @@ function yandexSprintFieldFromProviderIssue(
 }
 
 function yandexKeyDisplayRef(
-  ref: { display?: string; key: string } | undefined
-): { display: string; key: string } | undefined {
-  return ref ? { key: ref.key, display: ref.display ?? ref.key } : undefined;
+  ref: { display?: string; id?: string; key: string } | undefined
+): { display: string; id?: string; key: string } | undefined {
+  if (!ref) {
+    return undefined;
+  }
+  const id = ref.id?.trim();
+  return {
+    key: ref.key,
+    display: ref.display ?? ref.key,
+    ...(id ? { id } : {}),
+  };
 }
 
 function yandexEpicRef(issue: IssueTrackerIssue): TrackerIssue['epic'] {

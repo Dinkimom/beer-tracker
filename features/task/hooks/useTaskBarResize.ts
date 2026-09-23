@@ -6,13 +6,18 @@ import { useState, useEffect } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 
+import { bindPointerResizeGesture } from './bindPointerResizeGesture';
+
 interface UseTaskBarResizeProps {
   duration: number;
   /** Всего ячеек в таймлайне свимлейна */
   timelineTotalCells?: number;
   onResize: (params: { newDuration: number; newStartCell?: number }) => void;
-  /** Живое превью ширины/старта — пересчёт слоёв до mouseup. */
-  onResizePreview?: (preview: { duration: number; startCell: number | null } | null) => void;
+  /** Живое превью ширины/старта — пересчёт слоёв до mouseup. `discard` сбрасывает удержанный размер. */
+  onResizePreview?: (
+    preview: { duration: number; startCell: number | null } | null,
+    options?: { discard?: boolean }
+  ) => void;
   /** Старт/конец жеста за рукоятку (presence: как перетаскивание). */
   onResizeSessionChange?: (active: boolean) => void;
 }
@@ -76,63 +81,74 @@ export function useTaskBarResize({
     let currentPreviewDuration = duration;
     let currentPreviewStartCell = currentStartCellIndex;
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const mouseX = moveEvent.clientX - containerRect.left;
-      const targetCellIndex = Math.max(0, Math.min(totalCells - 1, Math.floor(mouseX / cellWidth)));
-
-      if (side === 'right') {
-        // При изменении справа: конечная ячейка должна быть не меньше начальной
-        // Длительность = конечная ячейка - начальная ячейка + 1
-        const newEndCellIndex = Math.max(currentStartCellIndex, targetCellIndex);
-        const newDuration = Math.max(1, newEndCellIndex - currentStartCellIndex + 1);
-        const finalDuration = Math.min(newDuration, totalCells - currentStartCellIndex);
-
-        currentPreviewDuration = finalDuration;
-        currentPreviewStartCell = currentStartCellIndex;
-        setResizePreviewDuration(finalDuration);
-        setResizePreviewStartCell(currentStartCellIndex);
-        onResizePreview?.({ duration: finalDuration, startCell: currentStartCellIndex });
-      } else {
-        // При изменении слева: сохраняем конечную позицию (currentEndCellIndex)
-        // Новая начальная позиция не должна быть больше текущей конечной
-        const newStartCellIndex = Math.min(currentEndCellIndex, targetCellIndex);
-        const finalStartCell = Math.max(0, newStartCellIndex);
-        // Длительность = конечная ячейка - новая начальная ячейка + 1
-        // Это сохраняет конечную позицию задачи
-        const finalDuration = Math.max(1, currentEndCellIndex - finalStartCell + 1);
-
-        currentPreviewStartCell = finalStartCell;
-        currentPreviewDuration = finalDuration;
-        setResizePreviewStartCell(finalStartCell);
-        setResizePreviewDuration(finalDuration);
-        onResizePreview?.({ duration: finalDuration, startCell: finalStartCell });
-      }
-    };
-
-    const handleMouseUp = () => {
+    const resetResizeUi = (discard: boolean) => {
       setIsResizing(false);
       setResizeSide(null);
-
-      const durationChanged = currentPreviewDuration !== duration;
-      const startChanged = side === 'left' && currentPreviewStartCell !== currentStartCellIndex;
-
-      if (durationChanged || startChanged) {
-        onResize({
-          newDuration: currentPreviewDuration,
-          newStartCell: side === 'left' ? currentPreviewStartCell : undefined,
-        });
-      }
-
-      onResizePreview?.(null);
+      onResizePreview?.(null, discard ? { discard: true } : undefined);
       onResizeSessionChange?.(false);
       setResizePreviewDuration(null);
       setResizePreviewStartCell(null);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    bindPointerResizeGesture({
+      onCancel: () => {
+        resetResizeUi(true);
+      },
+      onCommit: () => {
+        setIsResizing(false);
+        setResizeSide(null);
+
+        const durationChanged = currentPreviewDuration !== duration;
+        const startChanged = side === 'left' && currentPreviewStartCell !== currentStartCellIndex;
+
+        if (durationChanged || startChanged) {
+          onResize({
+            newDuration: currentPreviewDuration,
+            newStartCell: side === 'left' ? currentPreviewStartCell : undefined,
+          });
+        }
+
+        onResizePreview?.(null);
+        onResizeSessionChange?.(false);
+        setResizePreviewDuration(null);
+        setResizePreviewStartCell(null);
+      },
+      onMove: (moveEvent) => {
+        const mouseX = moveEvent.clientX - containerRect.left;
+        const targetCellIndex = Math.max(
+          0,
+          Math.min(totalCells - 1, Math.floor(mouseX / cellWidth))
+        );
+
+        if (side === 'right') {
+          // При изменении справа: конечная ячейка должна быть не меньше начальной
+          // Длительность = конечная ячейка - начальная ячейка + 1
+          const newEndCellIndex = Math.max(currentStartCellIndex, targetCellIndex);
+          const newDuration = Math.max(1, newEndCellIndex - currentStartCellIndex + 1);
+          const finalDuration = Math.min(newDuration, totalCells - currentStartCellIndex);
+
+          currentPreviewDuration = finalDuration;
+          currentPreviewStartCell = currentStartCellIndex;
+          setResizePreviewDuration(finalDuration);
+          setResizePreviewStartCell(currentStartCellIndex);
+          onResizePreview?.({ duration: finalDuration, startCell: currentStartCellIndex });
+        } else {
+          // При изменении слева: сохраняем конечную позицию (currentEndCellIndex)
+          // Новая начальная позиция не должна быть больше текущей конечной
+          const newStartCellIndex = Math.min(currentEndCellIndex, targetCellIndex);
+          const finalStartCell = Math.max(0, newStartCellIndex);
+          // Длительность = конечная ячейка - новая начальная ячейка + 1
+          // Это сохраняет конечную позицию задачи
+          const finalDuration = Math.max(1, currentEndCellIndex - finalStartCell + 1);
+
+          currentPreviewStartCell = finalStartCell;
+          currentPreviewDuration = finalDuration;
+          setResizePreviewStartCell(finalStartCell);
+          setResizePreviewDuration(finalDuration);
+          onResizePreview?.({ duration: finalDuration, startCell: finalStartCell });
+        }
+      },
+    });
   };
 
   return {

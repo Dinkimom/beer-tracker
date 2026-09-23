@@ -1,0 +1,12 @@
+---
+description: Occupancy-вью планера — легаси, агентам туда не ходить
+alwaysApply: true
+---
+
+# Occupancy — легаси
+
+`features/sprint/components/SprintPlanner/occupancy/` и `OccupancyView` — старый планер. Не искать, не читать и не менять этот код.
+
+Актуальная раскладка спринта — свимлейн: `features/swimlane/` и `features/task/components/TaskBar/`.
+
+Исключение одно: пользователь явно попросил работу в occupancy.

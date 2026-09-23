@@ -52,6 +52,25 @@ describe('sprintTaskCompletion', () => {
     expect(isSpCompleted(ready, rules)).toBe(false);
   });
 
+  it('matches readyStatusKey by originalStatusId when overrides are id-keyed', () => {
+    const rules = sprintTaskCompletionRulesFromIntegration({
+      readyStatusKey: '10042',
+      statuses: {
+        overridesByStatusKey: {
+          '10042': { category: 'in-progress' },
+        },
+      },
+    });
+    const ready = task({
+      id: '1',
+      originalStatus: 'исследование',
+      originalStatusId: '10042',
+      status: 'in-progress',
+    });
+    expect(isTpCompleted(ready, rules)).toBe(true);
+    expect(isSpCompleted(ready, rules)).toBe(false);
+  });
+
   it('falls back to legacy rc as TP-ready when readyStatusKey is unset', () => {
     const rules = sprintTaskCompletionRulesFromPlanner(null);
     const rc = task({ id: '1', originalStatus: 'rc', status: 'done' });

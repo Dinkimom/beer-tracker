@@ -57,6 +57,29 @@ describe('mapJiraTransition', () => {
     });
   });
 
+  it('keeps Jira status id on transition.to for id-keyed palette overrides', () => {
+    expect(
+      mapJiraTransition({
+        id: '21',
+        name: 'Start Progress',
+        to: {
+          id: '10009',
+          name: 'Blocked',
+          statusCategory: { key: 'indeterminate' },
+        },
+      })
+    ).toEqual({
+      display: 'Start Progress',
+      id: '21',
+      to: {
+        display: 'Blocked',
+        id: '10009',
+        key: 'blocked',
+        statusTypeKey: 'inProgress',
+      },
+    });
+  });
+
   it('skips rows without an id', () => {
     expect(mapJiraTransition(null)).toBeNull();
     expect(mapJiraTransition({ name: 'Start' })).toBeNull();

@@ -25,6 +25,7 @@ interface TaskBarOpacityLayerProps {
   contentWidthPercent: number;
   contextMenuTaskId: string | null;
   cornerStyle?: ResizeHandleCornerStyle;
+  currentDurationParts: number;
   developers: Developer[];
   dimmedByContextMenuElsewhere: boolean;
   disableResize: boolean;
@@ -34,6 +35,7 @@ interface TaskBarOpacityLayerProps {
   errorTooltip?: string;
   hasQATaskInSwimlane: boolean;
   hideSourceForOverlay: boolean;
+  hoverExpandTimelineTotalParts: number;
   inlineTitleEditor?: {
     onChange: (value: string) => void;
     onSubmit?: () => void;
@@ -80,6 +82,7 @@ interface TaskBarOpacityLayerProps {
   onPhotoClick?: () => void;
   onPhotoGestureStart?: (clientX: number, clientY: number) => void;
   onTaskHover?: (taskId: string | null) => void;
+  setHoverExpandFitDurationParts: (durationParts: number) => void;
   setNodeRef: (node: HTMLElement | null) => void;
 }
 
@@ -92,6 +95,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
     contentWidthPercent,
     contextMenuTaskId,
     cornerStyle = 'rounded',
+    currentDurationParts,
     developers,
     dimmedByContextMenuElsewhere,
     disableResize,
@@ -101,6 +105,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
     errorTooltip,
     hasQATaskInSwimlane,
     hideSourceForOverlay,
+    hoverExpandTimelineTotalParts,
     inlineTitleEditor,
     interactionDisabled,
     isDraftTask,
@@ -125,6 +130,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
     resize,
     selectedSprintId,
     setClickStartPos,
+    setHoverExpandFitDurationParts,
     setIsExpandedByLongHover,
     setNodeRef,
     swimlaneBarDurationParts,
@@ -142,6 +148,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   const handleMouseEnter = useCallback(() => {
     runTaskBarMouseEnter({
       cardElementRef,
+      currentDurationParts,
       effectiveIsDragging,
       isCommentCard,
       isDraftTask,
@@ -150,11 +157,15 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
       isResizing: resize.isResizing,
       longHoverTimeoutRef,
       onTaskHover,
+      setHoverExpandFitDurationParts,
       setIsExpandedByLongHover,
       taskId: task.id,
+      timelineTotalParts: hoverExpandTimelineTotalParts,
     });
   }, [
+    currentDurationParts,
     effectiveIsDragging,
+    hoverExpandTimelineTotalParts,
     isCommentCard,
     isDraftTask,
     isLinking,
@@ -162,6 +173,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
     longHoverTimeoutRef,
     onTaskHover,
     resize.isResizing,
+    setHoverExpandFitDurationParts,
     setIsExpandedByLongHover,
     task.id,
   ]);

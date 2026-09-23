@@ -60,10 +60,12 @@ export function StatusSubmenuTransitionList({
     <>
       {statusTransitions.map((transition) => {
         const targetStatus = transition.to?.key ?? transition.key ?? '';
+        const statusId = transition.to?.id?.trim();
         const statusColors = resolveTransitionStatusColorClasses(
           targetStatus,
           transition.to?.statusTypeKey,
-          statusOverrides
+          statusOverrides,
+          statusId && statusId !== targetStatus ? [statusId] : undefined
         );
         const isSelected = targetStatus.toLowerCase() === task.originalStatus?.toLowerCase();
         const selectedRing = isSelected

@@ -200,6 +200,7 @@ function mapIssueTrackerIssueToTaskBase(
   options?: { omitDescription?: boolean }
 ): Task {
   const statusKey = issue.status?.key || issue.statusType?.key;
+  const statusId = issue.status?.id?.trim();
   const appStatusKey = issue.statusType?.key || statusKey;
   const sla = parseSlaBugFieldsFromIssue(fieldBag);
   return {
@@ -222,6 +223,7 @@ function mapIssueTrackerIssueToTaskBase(
     qaEngineerName: issue.qaEngineer?.display,
     status: appStatusKey ? mapStatus(appStatusKey) : undefined,
     originalStatus: statusKey,
+    ...(statusId ? { originalStatusId: statusId } : {}),
     statusTypeKey: issue.statusType?.key,
     priority: issue.priority?.key || issue.priority?.display,
     type: issue.type?.key || issue.type?.display || 'task',

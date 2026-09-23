@@ -186,6 +186,7 @@ export function mapTrackerIssueToTaskBase(
   options?: MapTrackerIssueToTaskOptions
 ): Task {
   const statusKey = issue.status?.key || issue.statusType?.key;
+  const statusId = issue.status?.id?.trim();
   const team = mapTeam(issue.functionalTeam);
   const sprints = normalizeSprintField(issue.sprint);
   const slaFields = parseSlaBugFieldsFromIssue(issue);
@@ -211,6 +212,7 @@ export function mapTrackerIssueToTaskBase(
     qaEngineerName: issue.qaEngineer?.display,
     status: statusKey ? mapStatus(statusKey) : undefined,
     originalStatus: statusKey,
+    ...(statusId ? { originalStatusId: statusId } : {}),
     statusTypeKey: issue.statusType?.key,
     priority: issue.priority?.key || issue.priority?.display,
     type: issue.type?.key || issue.type?.display || 'task',

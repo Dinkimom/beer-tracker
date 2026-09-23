@@ -1,8 +1,9 @@
-import type { PositionPreview } from '../components/task-row/plan/occupancyPhaseBar.types';
+import type { PositionPreview, PositionPreviewChangeOptions } from '../components/task-row/plan/occupancyPhaseBar.types';
 import type { Task, TaskPosition } from '@/types';
 
 import { useCallback, useRef, useState } from 'react';
 
+import { bindPointerResizeGesture } from '@/features/task/hooks/bindPointerResizeGesture';
 import { getTaskPoints } from '@/features/task/utils/taskUtils';
 
 import {
@@ -26,7 +27,10 @@ interface UsePhaseBarDragResizeParams {
   resolvedTotalParts: number;
   startCell: number;
   task: Task;
-  onPreviewChange?: (preview: PositionPreview | null) => void;
+  onPreviewChange?: (
+    preview: PositionPreview | null,
+    options?: PositionPreviewChangeOptions
+  ) => void;
   onSave?: (position: TaskPosition) => void;
 }
 
@@ -166,9 +170,10 @@ export function usePhaseBarDragResize({
     (e: React.MouseEvent, side: 'left' | 'right') => {
       e.preventDefault();
       e.stopPropagation();
-      setResizeSide(side);
       const row = (e.target as HTMLElement).closest('tr') as HTMLElement;
       if (!row) return;
+
+      setResizeSide(side);
 
       onPreviewChange?.({
         startDay: position.startDay,
@@ -184,58 +189,64 @@ export function usePhaseBarDragResize({
       const grabOffsetCells =
         (e.clientX - rowRect.left) / cellWidth - grabEdgeCell;
 
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const cursorCell = (moveEvent.clientX - rowRect.left) / cellWidth;
-        const preview =
-          side === 'right'
-            ? applyPhaseBarRightResizeMove({
-                currentStart,
-                cursorCell,
-                grabOffsetCells,
-                resolvedTotalParts,
-              })
-            : applyPhaseBarLeftResizeMove({
-                currentEnd,
-                cursorCell,
-                grabOffsetCells,
-              });
-        setResizePreview(preview);
-        previewRef.current = preview;
-        emitPhaseBarResizePreview({
-          isDayMode,
-          onPreviewChange,
-          startCell: preview.startCell,
-          duration: preview.duration,
-        });
-      };
-
-      const handleMouseUp = () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+      const releaseResizeChrome = () => {
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
         setResizeSide(null);
-        const final = previewRef.current ?? { startCell, duration: durationCells };
         setResizePreview(null);
-        const changed =
-          final.startCell !== startCell || final.duration !== durationCells;
-        if (changed) {
-          onSave?.(
-            buildPhaseBarResizeSavedPosition({
-              duration: final.duration,
-              isDayMode,
-              position,
-              startCell: final.startCell,
-            })
-          );
-        }
-        onPreviewChange?.(null);
       };
+
+      bindPointerResizeGesture({
+        onCancel: () => {
+          previewRef.current = null;
+          releaseResizeChrome();
+          onPreviewChange?.(null, { discard: true });
+        },
+        onCommit: () => {
+          releaseResizeChrome();
+          const final = previewRef.current ?? { startCell, duration: durationCells };
+          const changed =
+            final.startCell !== startCell || final.duration !== durationCells;
+          if (changed) {
+            onSave?.(
+              buildPhaseBarResizeSavedPosition({
+                duration: final.duration,
+                isDayMode,
+                position,
+                startCell: final.startCell,
+              })
+            );
+          }
+          onPreviewChange?.(null);
+        },
+        onMove: (moveEvent) => {
+          const cursorCell = (moveEvent.clientX - rowRect.left) / cellWidth;
+          const preview =
+            side === 'right'
+              ? applyPhaseBarRightResizeMove({
+                  currentStart,
+                  cursorCell,
+                  grabOffsetCells,
+                  resolvedTotalParts,
+                })
+              : applyPhaseBarLeftResizeMove({
+                  currentEnd,
+                  cursorCell,
+                  grabOffsetCells,
+                });
+          setResizePreview(preview);
+          previewRef.current = preview;
+          emitPhaseBarResizePreview({
+            isDayMode,
+            onPreviewChange,
+            startCell: preview.startCell,
+            duration: preview.duration,
+          });
+        },
+      });
 
       document.body.style.cursor = 'ew-resize';
       document.body.style.userSelect = 'none';
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
     },
     [
       position,

@@ -34,7 +34,7 @@ describe('mapJiraFieldToMetadata', () => {
 });
 
 describe('mapJiraStatusToMetadata', () => {
-  it('uses status id as key and maps category', () => {
+  it('uses normalized status name as key (same as issues) and keeps id', () => {
     expect(
       mapJiraStatusToMetadata({
         description: 'Issue is open',
@@ -46,8 +46,18 @@ describe('mapJiraStatusToMetadata', () => {
       description: 'Issue is open',
       display: 'Open',
       id: '1',
-      key: '1',
+      key: 'open',
       statusType: { display: 'To Do', id: '2', key: 'new' },
+    });
+  });
+
+  it('falls back to id as key when name is missing', () => {
+    expect(mapJiraStatusToMetadata({ id: '42' })).toEqual({
+      description: undefined,
+      display: '42',
+      id: '42',
+      key: '42',
+      statusType: undefined,
     });
   });
 });
@@ -77,7 +87,7 @@ describe('fetchJiraOrganizationFields/statuses', () => {
         description: undefined,
         display: 'Open',
         id: '1',
-        key: '1',
+        key: 'open',
         statusType: undefined,
       },
     ]);

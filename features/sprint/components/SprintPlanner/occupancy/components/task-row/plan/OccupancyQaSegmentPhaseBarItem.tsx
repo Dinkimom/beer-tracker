@@ -88,7 +88,7 @@ export function OccupancyQaSegmentPhaseBarItem({
       totalParts={props.totalParts}
       onCompleteLink={props.onCompleteLink}
       onContextMenu={props.onContextMenu}
-      onPreviewChange={(preview) => props.handlePositionPreview(qaTask.id, preview)}
+      onPreviewChange={(preview, options) => props.handlePositionPreview(qaTask.id, preview, options)}
       onSave={buildQaSegmentSaveHandler({
         displayAsWeeks: props.displayAsWeeks,
         fromWeekPosition: props.fromWeekPosition,

@@ -110,6 +110,61 @@ describe('applyTrackerIntegrationToTask', () => {
     expect(next.statusColorKey).toBe('closed');
   });
 
+  it('sets statusColorKey from status id-keyed visualToken override', () => {
+    const issue = baseIssue({
+      status: { display: 'В работе', id: '10001', key: 'вработе' },
+      statusType: { display: 'In Progress', key: 'inProgress' },
+    });
+    const task = mapTrackerIssueToTask(issue, null);
+    const config: TrackerIntegrationStored = {
+      configRevision: 1,
+      statuses: {
+        defaultsByTrackerStatusType: { inProgress: 'in-progress' },
+        overridesByStatusKey: {
+          '10001': { visualToken: 'review' },
+        },
+      },
+    };
+    const next = applyTrackerIntegrationToTask(issue, task, config);
+    expect(next.statusColorKey).toBe('review');
+  });
+
+  it('falls back to legacy name-keyed visualToken when id override is absent', () => {
+    const issue = baseIssue({
+      status: { display: 'В работе', id: '10001', key: 'вработе' },
+      statusType: { display: 'In Progress', key: 'inProgress' },
+    });
+    const task = mapTrackerIssueToTask(issue, null);
+    const config: TrackerIntegrationStored = {
+      configRevision: 1,
+      statuses: {
+        overridesByStatusKey: {
+          вработе: { visualToken: 'brown' },
+        },
+      },
+    };
+    const next = applyTrackerIntegrationToTask(issue, task, config);
+    expect(next.statusColorKey).toBe('brown');
+  });
+
+  it('prefers id override when name and id both have visualToken', () => {
+    const issue = baseIssue({
+      status: { display: 'Исследование', id: '10001', key: 'исследование' },
+    });
+    const task = mapTrackerIssueToTask(issue, null);
+    const config: TrackerIntegrationStored = {
+      configRevision: 1,
+      statuses: {
+        overridesByStatusKey: {
+          '10001': { visualToken: 'review' },
+          исследование: { visualToken: 'brown' },
+        },
+      },
+    };
+    const next = applyTrackerIntegrationToTask(issue, task, config);
+    expect(next.statusColorKey).toBe('review');
+  });
+
   it('sets statusColorKey when tracker status key differs only by underscores', () => {
     const issue = baseIssue({
       status: { display: 'X', key: 'in_progress' },

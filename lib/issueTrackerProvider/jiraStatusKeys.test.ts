@@ -29,8 +29,17 @@ describe('mapJiraStatusCategory', () => {
 describe('mapJiraStatus', () => {
   it('prefers status name for kanban matching and keeps category for palette', () => {
     expect(
-      mapJiraStatus({ name: 'In Progress', statusCategory: { key: 'indeterminate' } })
-    ).toEqual({ display: 'In Progress', key: 'inprogress', statusTypeKey: 'inProgress' });
+      mapJiraStatus({
+        id: '3',
+        name: 'In Progress',
+        statusCategory: { key: 'indeterminate' },
+      })
+    ).toEqual({
+      display: 'In Progress',
+      id: '3',
+      key: 'inprogress',
+      statusTypeKey: 'inProgress',
+    });
     expect(mapJiraStatus({ name: 'Open', statusCategory: { key: 'new' } })).toEqual({
       display: 'Open',
       key: 'open',

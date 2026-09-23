@@ -79,7 +79,7 @@ export function OccupancyQaSinglePhaseBar({
       onPhaseHoverLeave={
         props.setHoveredPhaseTaskId ? () => props.setHoveredPhaseTaskId!(null) : undefined
       }
-      onPreviewChange={(preview) => props.handlePositionPreview(qaTask.id, preview)}
+      onPreviewChange={(preview, options) => props.handlePositionPreview(qaTask.id, preview, options)}
       onSave={(p) => {
         const normalized = props.displayAsWeeks ? props.fromWeekPosition(p) : p;
         props.onPositionSave?.({ ...normalized, segments: normalized.segments ?? [] }, true, qaTask.originalTaskId);

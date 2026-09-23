@@ -36,7 +36,7 @@ export function PlannerTimelineCustomStepsFields({
 
   return (
     <div className="space-y-3">
-      <div className="grid w-full grid-cols-[2.5rem_7.25rem_minmax(0,1fr)_max-content] items-center gap-x-3 gap-y-3">
+      <div className="grid w-full grid-cols-[2.5rem_7.25rem_minmax(0,1fr)_10.5rem] items-center gap-x-3 gap-y-3">
         <span />
         <span />
         <div className="relative h-6 text-xs text-gray-500 dark:text-gray-400">

@@ -96,6 +96,8 @@ export interface Task {
   /** Ссылка на merge request (кастомное поле Tracker, оригинальное имя поля) */
 
   originalStatus?: string;
+  /** Unique tracker status id (Jira numeric) — for integration overrides / readyStatusKey. */
+  originalStatusId?: string;
   // Оригинальный ключ статуса из трекера
   originalTaskId?: string;
   /** Родительская задача (story, epic и т.п.) */

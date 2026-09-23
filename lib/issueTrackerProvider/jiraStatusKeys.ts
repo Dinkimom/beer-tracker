@@ -43,6 +43,7 @@ export function mapJiraStatusCategory(
  */
 export function mapJiraStatus(status: JiraStatusRaw | null | undefined): {
   display: string;
+  id?: string;
   key: string;
   statusTypeKey?: string;
 } {
@@ -50,12 +51,14 @@ export function mapJiraStatus(status: JiraStatusRaw | null | undefined): {
   const fromCategory = mapJiraStatusCategory(status?.statusCategory);
   const statusTypeKey = fromCategory?.key;
   const withType = statusTypeKey ? { statusTypeKey } : {};
+  const idRaw = status?.id != null ? String(status.id).trim() : '';
+  const withId = idRaw ? { id: idRaw } : {};
 
   if (status?.name?.trim()) {
-    return { display, key: jiraNameKey(status.name), ...withType };
+    return { display, key: jiraNameKey(status.name), ...withId, ...withType };
   }
-  if (status?.id != null && String(status.id).trim() !== '') {
-    return { display, key: String(status.id).trim(), ...withType };
+  if (idRaw) {
+    return { display, key: idRaw, ...withId, ...withType };
   }
   if (fromCategory) {
     return { display: fromCategory.display, key: fromCategory.key, ...withType };

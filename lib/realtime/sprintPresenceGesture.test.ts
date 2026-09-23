@@ -16,6 +16,7 @@ import {
   presenceCardRowMapsEqual,
   presenceOccupancyPreviewMapsEqual,
   presencePositionPreviewEquals,
+  resolveRetainedLocalResizePreview,
   retainPresenceOccupancyPreviews,
   retainPresencePositionPreview,
   retainRemotePresenceCardRows,
@@ -257,6 +258,24 @@ describe('remote presence previews', () => {
         startPart: 0,
       })
     ).toBeNull();
+    expect(
+      resolveRetainedLocalResizePreview({
+        discardEpoch: 1,
+        latched: live,
+        latchedEpoch: 0,
+        live: null,
+        persisted: { duration: 2, startDay: 0, startPart: 0 },
+      })
+    ).toEqual({ epoch: 1, preview: null });
+    expect(
+      resolveRetainedLocalResizePreview({
+        discardEpoch: 1,
+        latched: null,
+        latchedEpoch: 1,
+        live,
+        persisted: { duration: 2, startDay: 0, startPart: 0 },
+      }).preview
+    ).toEqual(live);
     expect(presencePositionPreviewEquals(live, { duration: 5, startCell: 3, taskId: 'BT-1' })).toBe(
       true
     );

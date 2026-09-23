@@ -55,6 +55,12 @@ export class SprintPlannerUiStore {
   /** Превью ширины/старта карточки до mouseup — слои пересчитываются сразу. */
   taskResizePreview: SprintPlannerTaskResizePreview | null = null;
 
+  /**
+   * Растёт при отмене ресайза (Escape). Layout сбрасывает latch ширины,
+   * не дожидаясь, пока сохранённая позиция догонит превью.
+   */
+  localTaskResizeDiscardEpoch = 0;
+
   /** Ревизия превью/override карточек: useSyncExternalStore в layout, минуя memo свимлейна. */
   cardLayoutRevision = 0;
 
@@ -119,6 +125,7 @@ export class SprintPlannerUiStore {
       clearStickyNoteCardRowPreview: action.bound,
       commitStickyNoteCardRowLayout: action.bound,
       clearTaskResizePreview: action.bound,
+      discardLocalTaskResizePreview: action.bound,
       clearTransientUiOnSprintChange: action.bound,
       closeContextMenu: action.bound,
       closeDiagramEditor: action.bound,
@@ -171,6 +178,7 @@ export class SprintPlannerUiStore {
       setSegmentEditTaskId: action.bound,
       stickyNoteCardRowOverrides: observable,
       stickyNoteCardRowPreview: observable,
+      localTaskResizeDiscardEpoch: observable,
       taskResizePreview: observable,
       setSidebarOpen: action.bound,
       sidebarOpen: observable,
@@ -276,6 +284,13 @@ export class SprintPlannerUiStore {
       return;
     }
     this.taskResizePreview = null;
+    this.bumpCardLayoutRevision();
+  }
+
+  /** Escape: убрать превью и не удерживать последний размер в layout. */
+  discardLocalTaskResizePreview(): void {
+    this.taskResizePreview = null;
+    this.localTaskResizeDiscardEpoch += 1;
     this.bumpCardLayoutRevision();
   }
 
@@ -433,6 +448,7 @@ export class SprintPlannerUiStore {
     this.stickyNoteCardRowOverrides = new Map();
     this.stickyNoteCardRowPreview = null;
     this.taskResizePreview = null;
+    this.localTaskResizeDiscardEpoch += 1;
     this.cardLayoutRevision += 1;
     this.accountWorkModal = null;
     this.taskInfoPanelTask = null;

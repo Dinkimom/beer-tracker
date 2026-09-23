@@ -148,6 +148,7 @@ export const TaskBar = observer(function TaskBar({
     disableResize || disableDragAndResize || isChooserDraft;
   const [clickStartPos, setClickStartPos] = useState<{ x: number; y: number } | null>(null);
   const [isExpandedByLongHover, setIsExpandedByLongHover] = useState(false);
+  const [hoverExpandFitDurationParts, setHoverExpandFitDurationParts] = useState<number | null>(null);
   const longHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
@@ -183,6 +184,7 @@ export const TaskBar = observer(function TaskBar({
     draggableId,
     duration,
     globalNameFilter,
+    hoverExpandFitDurationParts,
     inlineTitleEditor,
     interactionDisabled: interactionDisabled || disableDragAndResize,
     isExpandedByLongHover,
@@ -318,6 +320,7 @@ export const TaskBar = observer(function TaskBar({
         contentWidthPercent={contentWidthPercent}
         contextMenuTaskId={contextMenuTaskId}
         cornerStyle={cornerStyle}
+        currentDurationParts={swimlaneBarDurationParts ?? duration}
         developers={developers}
         dimmedByContextMenuElsewhere={dimmedByContextMenuElsewhere}
         disableResize={resizeDisabled || presenceBlocksMutations}
@@ -328,6 +331,7 @@ export const TaskBar = observer(function TaskBar({
         getPhotoClickSuppress={getPhotoClickSuppress}
         hasQATaskInSwimlane={hasQATaskInSwimlane}
         hideSourceForOverlay={hideSourceForOverlay}
+        hoverExpandTimelineTotalParts={swimlaneTimelineTotalParts}
         inlineTitleEditor={inlineTitleEditor}
         interactionDisabled={interactionDisabled ?? false}
         isDraftTask={isDraftTask}
@@ -344,6 +348,7 @@ export const TaskBar = observer(function TaskBar({
         resize={{ ...resize, isResizing: isAnyResizing }}
         selectedSprintId={selectedSprintId}
         setClickStartPos={setClickStartPos}
+        setHoverExpandFitDurationParts={setHoverExpandFitDurationParts}
         setIsExpandedByLongHover={setIsExpandedByLongHover}
         setNodeRef={setNodeRef}
         showVerticalResize={isStickyNoteCard || isSwimlanePhotoCard}

@@ -6,8 +6,9 @@ import type { CSSProperties } from 'react';
 import { CARD_MARGIN, ZIndex } from '@/constants';
 import { SWIMLANE_TASK_ROW_VERTICAL_INSET_PX } from '@/features/swimlane/utils/taskLayerTaskLayout';
 
+import { resolveHoverExpandTargetDurationParts } from './taskBarHoverExpandFit';
+
 const TASK_BAR_LONG_HOVER_EXPAND_MAX_DURATION_PARTS = 5;
-const TASK_BAR_EXPANDED_MIN_DURATION_PARTS = 4;
 
 export function resolveTaskBarDragActivationProps(params: {
   attributes: DraggableAttributes;
@@ -47,6 +48,7 @@ export function resolveTaskBarDisplayDimensions(params: {
 export function resolveTaskBarLongHoverExpand(params: {
   duration: number;
   effectiveIsDragging: boolean;
+  hoverExpandFitDurationParts?: number | null;
   isDraftTask: boolean;
   isExpandedByLongHover: boolean;
   isLinking?: boolean;
@@ -70,8 +72,12 @@ export function resolveTaskBarLongHoverExpand(params: {
     !params.effectiveIsDragging &&
     !params.isLinking &&
     !params.isResizing;
+  const expandDurationParts = resolveHoverExpandTargetDurationParts({
+    currentDurationParts: barDurationParts,
+    measuredFitDurationParts: params.hoverExpandFitDurationParts ?? null,
+  });
   const expandedMinWidthPercent =
-    (TASK_BAR_EXPANDED_MIN_DURATION_PARTS / params.swimlaneTimelineTotalParts) * 100;
+    (expandDurationParts / params.swimlaneTimelineTotalParts) * 100;
   return { isNarrowForLongHoverExpand, shouldExpandByLongHover, expandedMinWidthPercent };
 }
 
@@ -88,7 +94,7 @@ export function resolveTaskBarContentLayout(params: {
     };
   }
   return {
-    contentDurationParts: Math.max(params.durationParts, TASK_BAR_EXPANDED_MIN_DURATION_PARTS),
+    contentDurationParts: params.durationParts,
     contentWidthPercent: Math.max(params.displayWidthPercent, params.expandedMinWidthPercent),
   };
 }

@@ -73,7 +73,15 @@ export function applyTrackerIntegrationToTask(
 
   const statusKey = issue.status?.key || issue.statusType?.key;
   const statusTypeKey = issue.statusType?.key;
-  const cat = resolveEffectiveStatusCategory(statusKey ?? '', statusTypeKey, config.statuses);
+  const statusId = issue.status?.id?.trim();
+  // Overrides are keyed by unique status id; name key is legacy fallback.
+  const alternateStatusKeys = statusId && statusId !== statusKey ? [statusId] : undefined;
+  const cat = resolveEffectiveStatusCategory(
+    statusKey ?? '',
+    statusTypeKey,
+    config.statuses,
+    alternateStatusKeys
+  );
   if (cat) {
     next = {
       ...next,
@@ -89,7 +97,8 @@ export function applyTrackerIntegrationToTask(
     statusColorKey: resolveStatusColorKey(
       statusKey,
       statusTypeKey,
-      config.statuses?.overridesByStatusKey
+      config.statuses?.overridesByStatusKey,
+      alternateStatusKeys
     ),
   };
   next = applyTestingFlowSection(issue, next, config);

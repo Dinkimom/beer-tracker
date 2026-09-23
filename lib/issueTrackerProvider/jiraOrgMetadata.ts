@@ -6,6 +6,8 @@ import {
   type TrackerMetadataStatusDto,
 } from '@/lib/trackerIntegration/fetchTrackerOrgMetadataHelpers';
 
+import { jiraNameKey } from './jiraStatusKeys';
+
 interface JiraFieldRaw {
   clauseNames?: string[];
   custom?: boolean;
@@ -57,12 +59,14 @@ export function mapJiraStatusToMetadata(raw: unknown): TrackerMetadataStatusDto 
     return null;
   }
   const display = row.name?.trim() || id;
+  // Same key as mapJiraStatus / issues so admin visualToken overrides match planner cards.
+  const key = row.name?.trim() ? jiraNameKey(row.name) : id;
   const category = row.statusCategory;
   return {
     description: row.description?.trim() || undefined,
     display,
     id,
-    key: id,
+    key,
     statusType: category
       ? {
           display: category.name,

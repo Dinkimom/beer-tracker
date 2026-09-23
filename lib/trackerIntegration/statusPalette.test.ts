@@ -19,6 +19,25 @@ describe('visualTokenForStatusKey', () => {
     ).toBe('brown');
   });
 
+  it('matches alternate keys (status id overrides take precedence)', () => {
+    expect(
+      visualTokenForStatusKey('вработе', { '10001': { visualToken: 'review' } }, ['10001'])
+    ).toBe('review');
+  });
+
+  it('prefers status id override over conflicting name-key override', () => {
+    expect(
+      visualTokenForStatusKey(
+        'вработе',
+        {
+          '10001': { visualToken: 'review' },
+          вработе: { visualToken: 'brown' },
+        },
+        ['10001']
+      )
+    ).toBe('review');
+  });
+
   it('returns undefined without override', () => {
     expect(visualTokenForStatusKey('open', { closed: { visualToken: 'closed' } })).toBeUndefined();
   });

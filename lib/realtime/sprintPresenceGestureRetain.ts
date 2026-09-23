@@ -72,6 +72,26 @@ export function persistedPositionForPreviewLatch(
   return taskId ? positions.get(taskId) : undefined;
 }
 
+/**
+ * Локальный ресайз: после mouseup держим ширину, пока позиция не сохранится.
+ * Escape увеличивает discardEpoch — тогда latch сбрасывается к сохранённому размеру.
+ */
+export function resolveRetainedLocalResizePreview(input: {
+  discardEpoch: number;
+  latched: PresencePositionPreviewLatch | null;
+  latchedEpoch: number;
+  live: PresencePositionPreviewLatch | null;
+  persisted: { duration: number; startDay: number; startPart: number } | undefined;
+}): { epoch: number; preview: PresencePositionPreviewLatch | null } {
+  if (input.discardEpoch !== input.latchedEpoch) {
+    return { epoch: input.discardEpoch, preview: null };
+  }
+  return {
+    epoch: input.latchedEpoch,
+    preview: retainPresencePositionPreview(input.live, input.latched, input.persisted),
+  };
+}
+
 /** После mouseup жест/preview пропадают раньше, чем positions/comments. */
 export function retainPresencePositionPreview(
   live: PresencePositionPreviewLatch | null,

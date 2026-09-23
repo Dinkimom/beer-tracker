@@ -15,6 +15,8 @@ import {
 } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import { useRootStore } from '@/lib/layers';
 
+import { bindPointerResizeGesture } from './bindPointerResizeGesture';
+
 interface UseStickyNoteVerticalResizeProps {
   assignedTaskLayer: number;
   committedCardRowLayout?: StickyNoteCardRowLayout;
@@ -91,57 +93,59 @@ export function useStickyNoteVerticalResize({
 
     let currentLayout: StickyNoteCardRowLayout = startLayout;
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const maxRowIndex = resolveStickyNoteMaxCardRowIndex({
-        hasTaskOverlaps,
-        layerHeight,
-        startRowIndex: startRow,
-        taskBandTotalHeight,
-      });
-      const pointerRow = pointerYToStickyNoteCardRowIndex({
-        hasTaskOverlaps,
-        layerHeight,
-        pointerYInRowPx: moveEvent.clientY - startRowTopPx,
-        startRowIndex: startRow,
-        taskBandTotalHeight,
-      });
-
-      currentLayout =
-        side === 'bottom'
-          ? resolveStickyNoteCardRowLayoutFromBottomDrag({
-              assignedTaskLayer,
-              bottomRowIndex: pointerRow,
-              layout: startLayout,
-              maxRowIndex,
-            })
-          : resolveStickyNoteCardRowLayoutFromTopDrag({
-              assignedTaskLayer,
-              anchorBottomRowIndex: bottomRow,
-              maxRowIndex,
-              topRowIndex: pointerRow,
-            });
-
-      sprintPlannerUi.setStickyNoteCardRowPreview({
-        ...resolveStickyNoteEffectiveCardRowLayout(currentLayout),
-        taskId,
-      });
-    };
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-
+    const endResizeUi = () => {
       setIsResizing(false);
       setResizeSide(null);
-
-      const committedLayout = resolveStickyNoteEffectiveCardRowLayout(currentLayout);
-      sprintPlannerUi.commitStickyNoteCardRowLayout(taskId, committedLayout);
-      onLayoutCommit?.(committedLayout);
       onResizeSessionChange?.(false);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    bindPointerResizeGesture({
+      onCancel: () => {
+        endResizeUi();
+        sprintPlannerUi.clearStickyNoteCardRowPreview();
+      },
+      onCommit: () => {
+        endResizeUi();
+        const committedLayout = resolveStickyNoteEffectiveCardRowLayout(currentLayout);
+        sprintPlannerUi.commitStickyNoteCardRowLayout(taskId, committedLayout);
+        onLayoutCommit?.(committedLayout);
+      },
+      onMove: (moveEvent) => {
+        const maxRowIndex = resolveStickyNoteMaxCardRowIndex({
+          hasTaskOverlaps,
+          layerHeight,
+          startRowIndex: startRow,
+          taskBandTotalHeight,
+        });
+        const pointerRow = pointerYToStickyNoteCardRowIndex({
+          hasTaskOverlaps,
+          layerHeight,
+          pointerYInRowPx: moveEvent.clientY - startRowTopPx,
+          startRowIndex: startRow,
+          taskBandTotalHeight,
+        });
+
+        currentLayout =
+          side === 'bottom'
+            ? resolveStickyNoteCardRowLayoutFromBottomDrag({
+                assignedTaskLayer,
+                bottomRowIndex: pointerRow,
+                layout: startLayout,
+                maxRowIndex,
+              })
+            : resolveStickyNoteCardRowLayoutFromTopDrag({
+                assignedTaskLayer,
+                anchorBottomRowIndex: bottomRow,
+                maxRowIndex,
+                topRowIndex: pointerRow,
+              });
+
+        sprintPlannerUi.setStickyNoteCardRowPreview({
+          ...resolveStickyNoteEffectiveCardRowLayout(currentLayout),
+          taskId,
+        });
+      },
+    });
   };
 
   return {

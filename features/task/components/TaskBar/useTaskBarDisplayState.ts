@@ -40,6 +40,7 @@ function publishTaskBarResizePreview(
   sprintPlannerUi: {
     clearStickyNoteCardRowPreview: () => void;
     clearTaskResizePreview: () => void;
+    discardLocalTaskResizePreview: () => void;
     setStickyNoteCardRowPreview: (preview: {
       layerShiftUp: number;
       span: number;
@@ -53,10 +54,15 @@ function publishTaskBarResizePreview(
   },
   taskId: string,
   pairsHeightWithDuration: boolean,
-  preview: { duration: number; startCell: number | null } | null
+  preview: { duration: number; startCell: number | null } | null,
+  discardLatch: boolean
 ): void {
   if (preview == null) {
-    sprintPlannerUi.clearTaskResizePreview();
+    if (discardLatch) {
+      sprintPlannerUi.discardLocalTaskResizePreview();
+    } else {
+      sprintPlannerUi.clearTaskResizePreview();
+    }
     if (pairsHeightWithDuration) {
       sprintPlannerUi.clearStickyNoteCardRowPreview();
     }
@@ -87,6 +93,7 @@ export function useTaskBarDisplayState(input: {
     onSubmit?: () => void;
     value: string;
   };
+  hoverExpandFitDurationParts?: number | null;
   interactionDisabled?: boolean;
   isExpandedByLongHover: boolean;
   isInError?: boolean;
@@ -131,8 +138,17 @@ export function useTaskBarDisplayState(input: {
   );
   const pairsHeightWithDuration = isSwimlaneDiagramTask(input.task);
   const handleResizePreview = useCallback(
-    (preview: { duration: number; startCell: number | null } | null) => {
-      publishTaskBarResizePreview(sprintPlannerUi, taskId, pairsHeightWithDuration, preview);
+    (
+      preview: { duration: number; startCell: number | null } | null,
+      options?: { discard?: boolean }
+    ) => {
+      publishTaskBarResizePreview(
+        sprintPlannerUi,
+        taskId,
+        pairsHeightWithDuration,
+        preview,
+        options?.discard ?? false
+      );
     },
     [pairsHeightWithDuration, sprintPlannerUi, taskId]
   );
@@ -220,6 +236,7 @@ export function useTaskBarDisplayState(input: {
     resolveTaskBarLongHoverExpand({
       duration: input.duration,
       effectiveIsDragging,
+      hoverExpandFitDurationParts: input.hoverExpandFitDurationParts,
       isDraftTask,
       isExpandedByLongHover: input.isExpandedByLongHover,
       isLinking: input.isLinking,

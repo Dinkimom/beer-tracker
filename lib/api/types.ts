@@ -7,7 +7,7 @@ export interface TransitionItem {
   id: string;
   key?: string;
   screen?: { id: string };
-  to?: { display?: string; key: string; statusTypeKey?: string };
+  to?: { display?: string; id?: string; key: string; statusTypeKey?: string };
 }
 
 export interface RegistryUserItem {

@@ -12,7 +12,7 @@ import {
 } from '@/lib/realtime/sprintPresenceGestureRetain';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
 
-import { pruneStalePositionPreviews } from './useOccupancyPositionPreviewHelpers';
+import { applyOccupancyPositionPreviewUpdate, pruneStalePositionPreviews } from './useOccupancyPositionPreviewHelpers';
 
 export function useOccupancyPositionPreview(taskPositions: Map<string, TaskPosition>) {
   const { sprintPlannerUi } = useRootStore();
@@ -23,7 +23,11 @@ export function useOccupancyPositionPreview(taskPositions: Map<string, TaskPosit
     () => new Map<string, PositionPreview>()
   );
 
-  const handlePositionPreview = useCallback((taskId: string, preview: PositionPreview | null) => {
+  const handlePositionPreview = useCallback((
+    taskId: string,
+    preview: PositionPreview | null,
+    options?: { discard?: boolean }
+  ) => {
     sprintPlannerUi.setOccupancyPresencePreview(
       preview
         ? {
@@ -34,14 +38,9 @@ export function useOccupancyPositionPreview(taskPositions: Map<string, TaskPosit
           }
         : null
     );
-    setPositionPreviews((prev) => {
-      if (preview === null) {
-        return prev;
-      }
-      const next = new Map(prev);
-      next.set(taskId, preview);
-      return next;
-    });
+    setPositionPreviews((prev) =>
+      applyOccupancyPositionPreviewUpdate(prev, taskId, preview, options)
+    );
   }, [sprintPlannerUi]);
 
   useEffect(() => {

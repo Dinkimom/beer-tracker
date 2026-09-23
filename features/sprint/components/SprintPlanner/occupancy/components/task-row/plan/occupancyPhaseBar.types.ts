@@ -5,6 +5,11 @@ export type PositionPreview = Pick<
   'duration' | 'startDay' | 'startPart'
 >;
 
+export interface PositionPreviewChangeOptions {
+  /** Escape: убрать превью сразу, не ждать сохранённую позицию. */
+  discard?: boolean;
+}
+
 export interface OccupancyPhaseBarProps {
   assigneeDisplayName?: string | null;
   avatarUrl?: string | null;
@@ -70,6 +75,9 @@ export interface OccupancyPhaseBarProps {
   ) => void;
   onPhaseHoverEnter?: () => void;
   onPhaseHoverLeave?: () => void;
-  onPreviewChange?: (preview: PositionPreview | null) => void;
+  onPreviewChange?: (
+    preview: PositionPreview | null,
+    options?: PositionPreviewChangeOptions
+  ) => void;
   onSave?: (position: TaskPosition) => void;
 }

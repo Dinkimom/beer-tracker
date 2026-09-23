@@ -20,6 +20,7 @@ import {
   resolveMergeRequestFieldId,
 } from "../trackerIntegrationFormModel";
 
+import { trackerStatusIdentity } from "./useTrackerIntegrationApiHelpers";
 import {
   buildEmbeddedTestingAutoDefaultsUpdate,
   readEmbeddedTestingSnapshot,
@@ -38,7 +39,7 @@ function defaultReleaseReadyStatusKey(
     return current;
   }
   const row = statuses.find((status) => status.key.trim().toLowerCase() === "rc");
-  return row?.key ?? current;
+  return row ? trackerStatusIdentity(row) : current;
 }
 
 function defaultReleaseMrFieldId(

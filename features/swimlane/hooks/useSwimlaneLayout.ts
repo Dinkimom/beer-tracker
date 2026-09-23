@@ -33,6 +33,7 @@ import {
   persistedPositionForPreviewLatch,
   presenceCardRowMapsEqual,
   presencePositionPreviewEquals,
+  resolveRetainedLocalResizePreview,
   retainPresencePositionPreview,
   retainRemotePresenceCardRows,
   type PresencePositionPreviewLatch,
@@ -95,10 +96,12 @@ export function useSwimlaneLayout({
   const [presenceLatch, setPresenceLatch] = useState<{
     cardRows: Map<string, { layerShiftUp: number; span: number }>;
     localResize: PresencePositionPreviewLatch | null;
+    localResizeDiscardEpoch: number;
     remoteResize: PresencePositionPreviewLatch | null;
   }>(() => ({
     cardRows: new Map(),
     localResize: null,
+    localResizeDiscardEpoch: 0,
     remoteResize: null,
   }));
   const mergedOverrides = mergeStickyNoteCardRowOverrideMaps(
@@ -134,11 +137,18 @@ export function useSwimlaneLayout({
   // ссылка не меняется — positionedTasks оставался со старыми координатами (занятость жила отдельным путём).
   const totalCells = sprintTimelineWorkingDays * getPartsPerDay();
   const localResizeLive = sprintPlannerUi.taskResizePreview;
-  const localResizeForLayout = retainPresencePositionPreview(
-    localResizeLive,
-    presenceLatch.localResize,
-    persistedPositionForPreviewLatch(localResizeLive, presenceLatch.localResize, taskPositions)
-  );
+  const resolvedLocalResize = resolveRetainedLocalResizePreview({
+    discardEpoch: sprintPlannerUi.localTaskResizeDiscardEpoch,
+    latched: presenceLatch.localResize,
+    latchedEpoch: presenceLatch.localResizeDiscardEpoch,
+    live: localResizeLive,
+    persisted: persistedPositionForPreviewLatch(
+      localResizeLive,
+      presenceLatch.localResize,
+      taskPositions
+    ),
+  });
+  const localResizeForLayout = resolvedLocalResize.preview;
   const remoteResizePreview = remotePresenceResizePreview(boardViewers, ownClientId);
   const remoteResizeLive =
     remoteResizePreview && remoteResizePreview.taskId === localBusyTaskId
@@ -152,11 +162,13 @@ export function useSwimlaneLayout({
   if (
     !presenceCardRowMapsEqual(remoteCardRows, presenceLatch.cardRows) ||
     !presencePositionPreviewEquals(localResizeForLayout, presenceLatch.localResize) ||
+    resolvedLocalResize.epoch !== presenceLatch.localResizeDiscardEpoch ||
     !presencePositionPreviewEquals(remotePreviewForLayout, presenceLatch.remoteResize)
   ) {
     setPresenceLatch({
       cardRows: remoteCardRows,
       localResize: localResizeForLayout,
+      localResizeDiscardEpoch: resolvedLocalResize.epoch,
       remoteResize: remotePreviewForLayout,
     });
   }

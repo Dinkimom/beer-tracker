@@ -110,6 +110,7 @@ export function useTrackerMetadataLoad(options: {
         const fields = data.fields ?? [];
         const statuses = (data.statuses ?? []) as Array<{
           display?: string;
+          id?: string;
           key?: string;
           statusType?: { key?: string };
         }>;

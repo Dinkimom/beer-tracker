@@ -14,9 +14,15 @@ export { resolveStatusCategoryFromIntegration };
 export function resolveEffectiveStatusCategory(
   statusKey: string,
   statusTypeKey: string | undefined,
-  statuses: TrackerIntegrationStored['statuses'] | undefined
+  statuses: TrackerIntegrationStored['statuses'] | undefined,
+  alternateKeys?: readonly string[] | null
 ): TaskStatus | undefined {
-  const fromConfig = resolveStatusCategoryFromIntegration(statusKey, statusTypeKey, statuses);
+  const fromConfig = resolveStatusCategoryFromIntegration(
+    statusKey,
+    statusTypeKey,
+    statuses,
+    alternateKeys
+  );
   if (fromConfig) return fromConfig;
   const fromKey = mapStatus(statusKey);
   if (fromKey) return fromKey;

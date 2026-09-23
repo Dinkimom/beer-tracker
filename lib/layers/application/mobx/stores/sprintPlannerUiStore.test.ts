@@ -192,6 +192,12 @@ describe('SprintPlannerUiStore', () => {
     expect(store.taskResizePreview).toBeNull();
     expect(store.stickyNoteCardRowPreview).toBeNull();
     expect(store.cardLayoutRevision).toBe(start + 4);
+
+    store.setTaskResizePreview({ duration: 6, startCell: 1, taskId: 't1' });
+    store.discardLocalTaskResizePreview();
+    expect(store.taskResizePreview).toBeNull();
+    expect(store.localTaskResizeDiscardEpoch).toBe(1);
+    expect(store.cardLayoutRevision).toBe(start + 6);
   });
 
   it('commits card-row preview and override in one revision', () => {

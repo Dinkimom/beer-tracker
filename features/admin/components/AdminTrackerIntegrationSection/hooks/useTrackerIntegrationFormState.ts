@@ -17,6 +17,10 @@ import {
 } from "../types";
 
 import { useTrackerPlatformFieldValues } from "./useTrackerIntegrationApi";
+import {
+  remapStatusKeyToStatusId,
+  remapStatusPaletteKeysToStatusId,
+} from "./useTrackerIntegrationApiHelpers";
 import { useTrackerIntegrationFormAutoDefaults } from "./useTrackerIntegrationFormAutoDefaults";
 import { useTrackerIntegrationFormSelectOptions } from "./useTrackerIntegrationFormSelectOptions";
 import {
@@ -135,8 +139,14 @@ export function useTrackerIntegrationFormState({
           qaEngineerFieldId,
           qaEstimateFieldId,
           releaseMrFieldId,
-          releaseReadyStatusKey,
-          statusPaletteByKey,
+          releaseReadyStatusKey: remapStatusKeyToStatusId(
+            releaseReadyStatusKey,
+            trackerStatusesList,
+          ),
+          statusPaletteByKey: remapStatusPaletteKeysToStatusId(
+            statusPaletteByKey,
+            trackerStatusesList,
+          ),
           testingFlowMode,
           zeroDevPositiveQa,
         },
@@ -159,8 +169,14 @@ export function useTrackerIntegrationFormState({
       releaseReadyStatusKey,
       statusPaletteByKey,
       testingFlowMode,
+      trackerStatusesList,
       zeroDevPositiveQa,
     ],
+  );
+
+  const releaseReadyStatusKeyForUi = useMemo(
+    () => remapStatusKeyToStatusId(releaseReadyStatusKey, trackerStatusesList),
+    [releaseReadyStatusKey, trackerStatusesList],
   );
 
   const hasUnsavedChanges = useMemo(
@@ -286,7 +302,7 @@ export function useTrackerIntegrationFormState({
     qaEngineerFieldId,
     qaEstimateFieldId,
     releaseMrFieldId,
-    releaseReadyStatusKey,
+    releaseReadyStatusKey: releaseReadyStatusKeyForUi,
     releaseReadyStatusOptions,
     reloadConfirmArmed,
     revision,

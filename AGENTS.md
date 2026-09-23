@@ -1,5 +1,9 @@
 # Подсказки для ассистентов и разработчиков
 
+## Легаси: occupancy
+
+**Не ходить** в `features/sprint/components/SprintPlanner/occupancy/` и `OccupancyView`. Это старый планер. Не искать, не читать и не менять его, пока пользователь явно не попросил работу в occupancy. Актуальная раскладка спринта — свимлейн (`features/swimlane/`, `features/task/components/TaskBar/`).
+
 ## Перед тем как считать задачу сделанной
 
 1. **`pnpm typecheck`** — без ошибок TypeScript.
@@ -67,7 +71,7 @@
 
 - **MobX (`lib/layers/application/mobx/`, сторы в `lib/layers/application/mobx/stores/`, корневой `createRootStore` рядом)** — доменное состояние приложения: позиции задач, UI-сессия планера, согласование с API (поколения ответов, оптимистичные правки). В планере позиции удобнее брать через [`hooks/useTaskPositionsApi.ts`](./hooks/useTaskPositionsApi.ts) (фасад на `TaskPositionsStore`). Не класть сюда жизненный цикл одного жеста drag, если он полностью задаётся dnd-kit.
 - **`SprintPlannerUiStore`** — преходящий UI основного планера спринта (поиск по имени, контекстное меню, hover, сегменты фаз, фокус редактирования комментария, модалка учёта работ). Сброс при смене спринта: `clearTransientUiOnSprintChange`. Листья и хуки могут читать стор через `useRootStore().sprintPlannerUi` там, где это уже сделано (канбан, свимлейны, модалки, шапка).
-- **`OccupancyView` + `usePlannerUiStore`** — при `usePlannerUiStore: true` (только основной `SprintPlanner`) поля фильтра/меню/сегментов/комментария берутся из `SprintPlannerUiStore`; при `false` или без флага — только из пропсов (эпики и внешние экраны со своим поиском не смешиваются с глобальным стором). Разрешение полей вынесено в `occupancyPlannerUiResolve.ts` для тестов и единой логики.
+- **`OccupancyView` — легаси.** См. раздел выше. Не открывать `occupancyPlannerUiResolve.ts` и дерево `SprintPlanner/occupancy/` без прямой просьбы. Поля UI основного планера — `SprintPlannerUiStore` и свимлейн.
 - **dnd-kit + React** — перетаскивание в UI: `active` / `over`, сброс в `onDragEnd` / `onDragCancel` / `onDragAbort`. Общие правила маршрутизации для планера спринта — `features/sprint/components/SprintPlanner/sprintPlannerDndHelpers.ts` (не дублировать логику между shell и хуками).
 - **`lib/` (геометрия, парсеры, чистые функции)** — без зависимостей от MobX и React; тестируемые unit-тестами без рендера.
 
@@ -102,7 +106,7 @@
 
 - **Barrel из одной строки** — `export { foo } from './fooHelpers'` в отдельном файле; импортировать **напрямую** из модуля с реализацией.
 - **Extract без wire-up** — helper рядом с route/component, но родитель по-прежнему с inline-логикой → Knip «unused file», ESLint «unused var». Сначала **подключить**, потом коммит.
-- **Big bang** — сотни файлов одним коммитом; лучше **волнами по домену** (`admin/`, `sprint/occupancy/`, `app/api/auth/`).
+- **Big bang** — сотни файлов одним коммитом; лучше **волнами по домену** (`admin/`, `features/swimlane/`, `app/api/auth/`).
 - **Дробление ради lint** — цепочки `Foo.tsx` → `fooHelpers.ts` → `fooLayoutHelpers.ts` при complexity 6–8.
 
 ### Когда вливать helper обратно
@@ -133,7 +137,7 @@
 1. Однострочные re-export barrel'ы (удалить, поправить import).
 2. Helpers **≤ 15 строк**, 1 caller (~27 файлов в аудите) — merge.
 3. Re-export строка внутри «живого» helper-файла — импорт напрямую из источника.
-4. Helpers **16–25 строк**, 1 caller — по папкам (`occupancy/`, `admin/teams/`).
+4. Helpers **16–25 строк**, 1 caller — по папкам (`swimlane/`, `admin/teams/`).
 5. **`lib/`**, **`app/api/`** с тестами — консервативно, только явный выигрыш в читаемости.
 
 ### Связь с ESLint и pre-commit

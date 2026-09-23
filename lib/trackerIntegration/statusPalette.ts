@@ -6,22 +6,35 @@ interface StatusVisualOverride {
   visualToken?: string;
 }
 
-/**
- * visualToken из overrides админки: сначала точный ключ статуса трекера, иначе нормализованный.
- */
-export function visualTokenForStatusKey(
-  statusKey: string | undefined,
-  overrides: Record<string, StatusVisualOverride> | null | undefined
+function readVisualToken(
+  overrides: Record<string, StatusVisualOverride>,
+  key: string
 ): string | undefined {
-  const sk = statusKey?.trim();
-  if (!sk || !overrides) {
-    return undefined;
+  return overrides[key]?.visualToken?.trim() || undefined;
+}
+
+function visualTokenFromAlternateKeys(
+  overrides: Record<string, StatusVisualOverride>,
+  alternateKeys: readonly string[] | null | undefined
+): string | undefined {
+  for (const alt of alternateKeys ?? []) {
+    const key = alt.trim();
+    if (!key) {
+      continue;
+    }
+    const fromAlt = readVisualToken(overrides, key);
+    if (fromAlt) {
+      return fromAlt;
+    }
   }
-  const direct = overrides[sk]?.visualToken?.trim();
-  if (direct) {
-    return direct;
-  }
-  const norm = normalizeStatusKey(sk);
+  return undefined;
+}
+
+function visualTokenFromNormalizedKey(
+  overrides: Record<string, StatusVisualOverride>,
+  statusKey: string
+): string | undefined {
+  const norm = normalizeStatusKey(statusKey);
   if (!norm) {
     return undefined;
   }
@@ -35,6 +48,32 @@ export function visualTokenForStatusKey(
     }
   }
   return undefined;
+}
+
+/**
+ * visualToken из overrides админки: status id (alternateKeys) first, then name key,
+ * then normalized name key (legacy configs).
+ */
+export function visualTokenForStatusKey(
+  statusKey: string | undefined,
+  overrides: Record<string, StatusVisualOverride> | null | undefined,
+  alternateKeys?: readonly string[] | null
+): string | undefined {
+  const sk = statusKey?.trim();
+  if (!overrides) {
+    return undefined;
+  }
+  const fromAlt = visualTokenFromAlternateKeys(overrides, alternateKeys);
+  if (fromAlt) {
+    return fromAlt;
+  }
+  if (sk) {
+    const direct = readVisualToken(overrides, sk);
+    if (direct) {
+      return direct;
+    }
+  }
+  return sk ? visualTokenFromNormalizedKey(overrides, sk) : undefined;
 }
 
 /**
@@ -66,14 +105,16 @@ export function defaultPaletteKeyForTrackerStatus(
 
 /**
  * Ключ палитры карточки: visualToken override → дефолт по статусу/типу.
+ * `alternateKeys` — status id (unique); overrides are keyed by id when available.
  */
 export function resolveStatusColorKey(
   statusKey: string | undefined,
   statusTypeKey: string | undefined,
-  overrides: Record<string, StatusVisualOverride> | null | undefined
+  overrides: Record<string, StatusVisualOverride> | null | undefined,
+  alternateKeys?: readonly string[] | null
 ): string | undefined {
   return (
-    visualTokenForStatusKey(statusKey, overrides) ||
+    visualTokenForStatusKey(statusKey, overrides, alternateKeys) ||
     defaultPaletteKeyForTrackerStatus(statusKey, statusTypeKey)
   );
 }

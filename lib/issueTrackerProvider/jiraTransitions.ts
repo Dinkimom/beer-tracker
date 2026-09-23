@@ -8,7 +8,7 @@ const JIRA_TRANSITIONS_BATCH_CONCURRENCY = 10;
 interface JiraTransitionItem {
   display: string;
   id: string;
-  to: { display: string; key: string; statusTypeKey?: string };
+  to: { display: string; id?: string; key: string; statusTypeKey?: string };
 }
 
 interface JiraTransitionRaw {

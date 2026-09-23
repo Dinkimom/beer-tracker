@@ -135,6 +135,8 @@ export interface TrackerIssue {
   start?: string;
   status?: {
     display: string;
+    /** Tracker status id (Jira numeric id) — for admin override lookup keyed by id. */
+    id?: string;
     key: string;
   };
   statusType?: {

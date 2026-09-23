@@ -1,6 +1,6 @@
 'use client';
 
-import type { PositionPreview } from '../components/task-row/plan/occupancyPhaseBar.types';
+import type { PositionPreview, PositionPreviewChangeOptions } from '../components/task-row/plan/occupancyPhaseBar.types';
 import type { Developer, Task, TaskPosition } from '@/types';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -52,7 +52,11 @@ interface UseOccupancyTaskRowStateParams {
     cellElement: HTMLElement,
     getAnchorRect?: (cell: HTMLElement) => DOMRect
   ) => void;
-  handlePositionPreview: (taskId: string, preview: PositionPreview | null) => void;
+  handlePositionPreview: (
+    taskId: string,
+    preview: PositionPreview | null,
+    options?: PositionPreviewChangeOptions
+  ) => void;
   onPositionSave?: (position: TaskPosition, isQa: boolean, devTaskKey?: string) => Promise<void> | void;
 }
 
@@ -175,8 +179,8 @@ export function useOccupancyTaskRowState(
   );
 
   const handleDevPreviewChange = useCallback(
-    (preview: PositionPreview | null) => {
-      handlePositionPreview(task.id, preview);
+    (preview: PositionPreview | null, options?: PositionPreviewChangeOptions) => {
+      handlePositionPreview(task.id, preview, options);
       if (!qaPosition || !preview) {
         setLinkedQaPreviewStart(null);
         return;

@@ -22,6 +22,8 @@ import {
   type TrackerStatusRowMeta,
 } from "../types";
 
+import { trackerStatusIdentity } from "./useTrackerIntegrationApiHelpers";
+
 export function useTrackerIntegrationFormSelectOptions({
   configBase,
   fieldRows,
@@ -58,14 +60,17 @@ export function useTrackerIntegrationFormSelectOptions({
       .sort(
         (a, b) =>
           a.display.localeCompare(b.display, sortLocale) ||
-          a.key.localeCompare(b.key, sortLocale),
+          trackerStatusIdentity(a).localeCompare(trackerStatusIdentity(b), sortLocale),
       );
     return [
       { label: t("admin.plannerIntegration.notSelected"), value: "" },
-      ...rows.map((s) => ({
-        label: joinAdminMetaLabels([s.display, s.key], s.key),
-        value: s.key,
-      })),
+      ...rows.map((s) => {
+        const identity = trackerStatusIdentity(s);
+        return {
+          label: joinAdminMetaLabels([s.display, s.key], identity),
+          value: identity,
+        };
+      }),
     ];
   }, [sortLocale, t, trackerStatusesList]);
 
@@ -120,18 +125,30 @@ export function useTrackerIntegrationFormSelectOptions({
     }, [fieldRows]);
 
   const statusTableRows = useMemo(() => {
-    const fromApi = trackerStatusesList.map((row) => ({
-      display: row.display,
-      key: row.key,
-      paletteKey: statusPaletteByKey[row.key] ?? "",
-      statusTypeKey: row.statusTypeKey,
-    }));
-    const apiKeys = new Set(fromApi.map((r) => r.key));
+    const knownIdentities = new Set<string>();
+    const fromApi = trackerStatusesList.map((row) => {
+      const identity = trackerStatusIdentity(row);
+      const nameKey = row.key;
+      knownIdentities.add(identity);
+      knownIdentities.add(nameKey);
+      const paletteKey =
+        statusPaletteByKey[identity] ??
+        (nameKey !== identity ? statusPaletteByKey[nameKey] : undefined) ??
+        "";
+      return {
+        display: row.display,
+        key: identity,
+        nameKey,
+        paletteKey,
+        statusTypeKey: row.statusTypeKey,
+      };
+    });
     const orphans = Object.entries(statusPaletteByKey)
-      .filter(([k]) => !apiKeys.has(k))
+      .filter(([k]) => !knownIdentities.has(k))
       .map(([key, paletteKey]) => ({
         display: key,
         key,
+        nameKey: key,
         paletteKey,
         statusTypeKey: undefined as string | undefined,
       }))
@@ -152,7 +169,8 @@ export function useTrackerIntegrationFormSelectOptions({
       rows.sort(
         (a, b) =>
           a.display.localeCompare(b.display, sortLocale) ||
-          a.key.localeCompare(b.key, sortLocale),
+          a.key.localeCompare(b.key, sortLocale) ||
+          (a.nameKey ?? "").localeCompare(b.nameKey ?? "", sortLocale),
       );
     }
     const sectionIds = [...m.keys()].sort((a, b) => {
@@ -182,13 +200,11 @@ export function useTrackerIntegrationFormSelectOptions({
 
   const statusMappingStats = useMemo(() => {
     const total = statusTableRows.length;
-    const customColor = statusTableRows.filter((row) => {
-      const stored = (statusPaletteByKey[row.key] ?? "").trim();
-      return stored.length > 0;
-    }).length;
+    const customColor = statusTableRows.filter((row) => row.paletteKey.trim().length > 0)
+      .length;
     const categories = statusRowsByCategory.length;
     return { categories, customColor, total };
-  }, [statusPaletteByKey, statusRowsByCategory, statusTableRows]);
+  }, [statusRowsByCategory, statusTableRows]);
 
   const basePlatformValueMap = useMemo(
     () => pickPlatformValueMap(configBase),

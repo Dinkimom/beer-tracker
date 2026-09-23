@@ -23,4 +23,14 @@ describe('resolveTransitionStatusColorClasses', () => {
     });
     expect(c.bg).toContain('bg-yellow-100');
   });
+
+  it('matches id-keyed visualToken overrides via alternateKeys', () => {
+    const c = resolveTransitionStatusColorClasses(
+      'blocked',
+      'inProgress',
+      { '10009': { visualToken: 'review' } },
+      ['10009']
+    );
+    expect(c.bg).toContain('bg-pink');
+  });
 });

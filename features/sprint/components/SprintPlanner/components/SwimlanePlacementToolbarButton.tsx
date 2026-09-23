@@ -1,5 +1,6 @@
 'use client';
 
+import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { SwimlanePlacementTool } from '@/lib/layers';
 import type { ReactNode } from 'react';
@@ -15,7 +16,6 @@ import { ExcalidrawMark } from '@/features/comments/components/ExcalidrawMark';
 import { StickyNoteToolIcon } from '@/features/comments/components/StickyNoteToolIcon';
 import { CONTEXT_MENU_GHOST_BUTTON_RESET } from '@/features/context-menu/contextMenuClasses';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
-import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 
 import {

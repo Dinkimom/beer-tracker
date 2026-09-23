@@ -26,6 +26,25 @@ function removeMatchingPreviewEntry(
   return false;
 }
 
+export function applyOccupancyPositionPreviewUpdate(
+  prev: Map<string, PositionPreview>,
+  taskId: string,
+  preview: PositionPreview | null,
+  options?: { discard?: boolean }
+): Map<string, PositionPreview> {
+  if (preview === null) {
+    if (!options?.discard || !prev.has(taskId)) {
+      return prev;
+    }
+    const next = new Map(prev);
+    next.delete(taskId);
+    return next;
+  }
+  const next = new Map(prev);
+  next.set(taskId, preview);
+  return next;
+}
+
 export function pruneStalePositionPreviews(
   prev: Map<string, PositionPreview>,
   taskPositions: Map<string, TaskPosition>

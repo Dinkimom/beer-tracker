@@ -14,7 +14,11 @@ interface TrackerStatusMappingSection {
   id: string;
   rows: Array<{
     display: string;
+    /** Unique identity for palette overrides (status id when available). */
     key: string;
+    /** Tracker name key — shown in the subtitle; may collide across statuses. */
+    nameKey?: string;
+    paletteKey?: string;
     statusTypeKey?: string;
   }>;
   title: string;
@@ -125,16 +129,18 @@ export function TrackerStatusMappingPanel({
                               <TrackerStatusTitleCell
                                 display={row.display}
                                 mutedClass={mutedClass}
-                                statusKey={row.key}
+                                statusKey={row.nameKey ?? row.key}
                                 statusTypeKey={row.statusTypeKey}
                               />
                             </div>
                             <div className="w-full sm:w-[260px]">
                               <AdminStatusPaletteSelect
                                 className="w-full"
-                                statusKey={row.key}
+                                statusKey={row.nameKey ?? row.key}
                                 statusTypeKey={row.statusTypeKey}
-                                storedPaletteKey={getStoredPaletteKey(row.key)}
+                                storedPaletteKey={
+                                  row.paletteKey ?? getStoredPaletteKey(row.key)
+                                }
                                 onPaletteChange={(next) =>
                                   onPaletteChange(row.key, next)
                                 }

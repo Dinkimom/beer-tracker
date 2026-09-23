@@ -75,7 +75,7 @@ export interface IssueTrackerIssue {
   stage?: string;
   /** Дата начала (YYYY-MM-DD или datetime). */
   start?: string;
-  status?: { display?: string; key: string };
+  status?: { display?: string; id?: string; key: string };
   statusType?: { display?: string; key: string };
   storyPoints?: number;
   summary: string;
@@ -120,7 +120,7 @@ interface IssueTrackerTransitionItem {
   display?: string;
   id: string;
   screen?: { display?: string; id: string };
-  to: { display?: string; key: string; statusTypeKey?: string };
+  to: { display?: string; id?: string; key: string; statusTypeKey?: string };
 }
 
 export interface IssueTrackerCreateSprintInput {

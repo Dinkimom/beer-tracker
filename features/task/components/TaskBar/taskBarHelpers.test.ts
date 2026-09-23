@@ -131,17 +131,17 @@ describe('resolveTaskBarContentLayout', () => {
     });
   });
 
-  it('uses at least four timeslots for content when the card is hover-expanded', () => {
+  it('widens content to the hover target and keeps the real duration', () => {
     expect(
       resolveTaskBarContentLayout({
         displayWidthPercent: 3.33,
         durationParts: 1,
-        expandedMinWidthPercent: 13.33,
+        expandedMinWidthPercent: 8,
         shouldExpandByLongHover: true,
       })
     ).toEqual({
-      contentDurationParts: 4,
-      contentWidthPercent: 13.33,
+      contentDurationParts: 1,
+      contentWidthPercent: 8,
     });
   });
 
@@ -331,6 +331,17 @@ describe('resolveTaskBarLongHoverExpand', () => {
     expect(resolveTaskBarLongHoverExpand({ ...base, isLinking: true }).shouldExpandByLongHover).toBe(
       false
     );
+  });
+
+  it('uses the measured text width and caps it at four timeslots', () => {
+    expect(
+      resolveTaskBarLongHoverExpand({ ...base, duration: 1, hoverExpandFitDurationParts: 2 })
+        .expandedMinWidthPercent
+    ).toBe(5);
+    expect(
+      resolveTaskBarLongHoverExpand({ ...base, duration: 1, hoverExpandFitDurationParts: 9 })
+        .expandedMinWidthPercent
+    ).toBe(10);
   });
 });
 

@@ -21,7 +21,10 @@ export interface SprintTaskCompletionRules {
   tpReadyStatusKeys: string[];
 }
 
-type TaskCompletionFields = Pick<Task, 'originalStatus' | 'status' | 'statusTypeKey'>;
+type TaskCompletionFields = Pick<
+  Task,
+  'originalStatus' | 'originalStatusId' | 'status' | 'statusTypeKey'
+>;
 
 const LEGACY_TP_READY_KEYS = ['rc'] as const;
 
@@ -44,9 +47,14 @@ function lookupCategoryByKey(
 
 function categoryFromRules(
   statusKey: string,
+  statusId: string | undefined,
   typeKey: string | undefined,
   rules: SprintTaskCompletionRules
 ): TaskStatus | undefined {
+  if (statusId) {
+    const fromId = lookupCategoryByKey(statusId, rules.statusCategoryByKey);
+    if (fromId) return fromId;
+  }
   if (statusKey) {
     const fromOverride = lookupCategoryByKey(statusKey, rules.statusCategoryByKey);
     if (fromOverride) return fromOverride;
@@ -134,24 +142,27 @@ export function resolveTaskCompletionCategory(
   if (task.status) return task.status;
 
   const statusKey = (task.originalStatus ?? '').trim();
+  const statusId = task.originalStatusId?.trim();
   const typeKey = task.statusTypeKey?.trim();
   if (rules) {
-    const fromRules = categoryFromRules(statusKey, typeKey, rules);
+    const fromRules = categoryFromRules(statusKey, statusId, typeKey, rules);
     if (fromRules) return fromRules;
   }
   return categoryFromHeuristics(statusKey, typeKey) ?? 'todo';
 }
 
 function isTpReadyOnlyStatus(
-  task: Pick<Task, 'originalStatus'>,
+  task: Pick<Task, 'originalStatus' | 'originalStatusId'>,
   rules?: SprintTaskCompletionRules | null
 ): boolean {
-  const key = normalizeStatusKey(task.originalStatus ?? '');
-  if (!key) return false;
+  const candidates = [task.originalStatusId, task.originalStatus]
+    .map((k) => normalizeStatusKey(k ?? ''))
+    .filter(Boolean);
+  if (candidates.length === 0) return false;
   const readyKeys = (rules?.tpReadyStatusKeys?.length ? rules.tpReadyStatusKeys : LEGACY_TP_READY_KEYS).map(
     normalizeStatusKey
   );
-  return readyKeys.includes(key);
+  return candidates.some((key) => readyKeys.includes(key));
 }
 
 /** SP сделано: завершающая категория, но не «только TP / ready» статус из настроек. */

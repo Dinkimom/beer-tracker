@@ -1,30 +1,32 @@
 
 import { getIssueTransitions, changeIssueStatus } from '@/lib/beerTrackerApi';
 
+interface TransitionToMeta {
+  id?: string;
+  key?: string;
+  statusTypeKey?: string;
+}
+
 export async function resolveStatusTransitionTargetKey(
   trackerIssueKey: string,
   transitionId: string,
   targetStatusKey?: string
 ): Promise<{
   finalTargetStatusKey: string | null;
-  transitionData: { to?: { key?: string } } | null;
+  transitionData: { to?: TransitionToMeta } | null;
 }> {
   let finalTargetStatusKey: string | null = targetStatusKey || null;
-  let transitionData: { to?: { key?: string } } | null = null;
-
-  if (finalTargetStatusKey) {
-    return { finalTargetStatusKey, transitionData };
-  }
+  let transitionData: { to?: TransitionToMeta } | null = null;
 
   try {
     const transitions = await getIssueTransitions(trackerIssueKey);
     transitionData = Array.isArray(transitions)
       ? transitions.find(
-          (t: { id?: string; key?: string; to?: { key?: string } }) =>
+          (t: { id?: string; key?: string; to?: TransitionToMeta }) =>
             t.id === transitionId || t.key === transitionId
         ) || null
       : null;
-    if (transitionData?.to?.key) {
+    if (!finalTargetStatusKey && transitionData?.to?.key) {
       finalTargetStatusKey = transitionData.to.key;
     }
   } catch (error) {
@@ -37,7 +39,7 @@ export async function resolveStatusTransitionTargetKey(
 export function isClosingStatusTransition(
   finalTargetStatusKey: string,
   transitionId: string,
-  transitionData: { to?: { key?: string } } | null
+  transitionData: { to?: TransitionToMeta } | null
 ): boolean {
   return (
     finalTargetStatusKey.toLowerCase() === 'closed' ||

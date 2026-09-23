@@ -17,6 +17,8 @@ import {
   shouldHandleTaskBarClick,
   shouldStartLongHoverExpand,
 } from './taskBarHelpers';
+import { resolveHoverExpandTargetDurationParts } from './taskBarHoverExpandFit';
+import { measureTaskBarHoverExpandFitDurationParts } from './taskBarHoverExpandMeasure';
 
 function isPointerStillOverTaskBar(taskId: string): boolean {
   if (typeof document === 'undefined') return false;
@@ -60,6 +62,7 @@ function collapseTaskBarHoverExpand(input: {
 
 export function runTaskBarMouseEnter(input: {
   cardElementRef?: React.RefObject<HTMLElement | null>;
+  currentDurationParts?: number;
   effectiveIsDragging: boolean;
   isCommentCard?: boolean;
   isDraftTask: boolean;
@@ -68,8 +71,10 @@ export function runTaskBarMouseEnter(input: {
   isResizing: boolean;
   longHoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   onTaskHover?: (taskId: string | null) => void;
+  setHoverExpandFitDurationParts?: (durationParts: number) => void;
   setIsExpandedByLongHover: React.Dispatch<React.SetStateAction<boolean>>;
   taskId: string;
+  timelineTotalParts?: number;
 }): void {
   const allowLongHoverExpand = resolveCardLongHoverExpandAllowed(
     input.cardElementRef?.current,
@@ -89,6 +94,23 @@ export function runTaskBarMouseEnter(input: {
       clearTimeout(input.longHoverTimeoutRef.current);
     }
     input.longHoverTimeoutRef.current = setTimeout(() => {
+      const card = input.cardElementRef?.current;
+      if (input.setHoverExpandFitDurationParts) {
+        const currentDurationParts = input.currentDurationParts ?? 1;
+        input.setHoverExpandFitDurationParts(
+          card
+            ? measureTaskBarHoverExpandFitDurationParts({
+                cardElement: card,
+                currentDurationParts,
+                isCommentCard: input.isCommentCard,
+                timelineTotalParts: input.timelineTotalParts ?? 1,
+              })
+            : resolveHoverExpandTargetDurationParts({
+                currentDurationParts,
+                measuredFitDurationParts: null,
+              })
+        );
+      }
       input.setIsExpandedByLongHover(true);
     }, 1000);
   }
