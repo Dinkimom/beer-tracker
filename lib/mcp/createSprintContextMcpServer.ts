@@ -43,7 +43,7 @@ function loadContext(input: {
 export function createSprintContextMcpServer(input: { organizationId: string }): McpServer {
   const server = new McpServer({
     name: 'beer-tracker-sprint-context',
-    version: '1.1.0',
+    version: '1.2.0',
   });
 
   server.registerTool(

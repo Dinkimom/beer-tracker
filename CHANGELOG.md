@@ -2,6 +2,26 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.2.0] — 2026-09-24
+
+### English
+
+**Planner grid**
+- Each organization chooses how the working day (09:00–18:00) is split: 2, 3, or 4 equal timeslots. The default stays 3, with the previous story-point ladder (1 SP is one timeslot).
+- Admin → Planner (`/admin/planner`): one SP can mean one timeslot, one working day, or a custom table. In the custom table, card length in timeslots maps to story points, and the next step does not have to be a multiple of the previous one. A preview shows story points, timeslots, and days.
+- Changing the slot count rescales planned cards, phase segments, and stickers by the fraction of the day. Whole days stay whole days. Estimates in Tracker and Jira are not rewritten. Save asks for confirmation and shows how many items will move.
+- A card sized on the previous scale keeps its estimate while you resize it, until its length matches the new scale.
+- Saving a new slot count widens the day-part checks in the database. The same statements are in `database/widen-planner-part-checks.sql` for an existing database.
+
+### Русский
+
+**Сетка планера**
+- Организация сама задаёт, как делится рабочий день (09:00–18:00): на 2, 3 или 4 равных таймслота. По умолчанию по-прежнему 3 и прежняя лестница оценок (1 SP — один таймслот).
+- Админка → Планер (`/admin/planner`): один SP может быть одним таймслотом, одним рабочим днём или своей таблицей. В своей таблице длина карточки в таймслотах задаёт сторипоинты, и следующий шаг не обязан быть кратным предыдущему. Превью показывает SP, таймслоты и сутки.
+- Смена числа слотов пересчитывает запланированные карточки, отрезки фаз и стикеры по доле дня. Целые сутки остаются целыми сутками. Оценки в Tracker и Jira не переписываются. Перед сохранением видно, сколько позиций сдвинется, и нужно подтверждение.
+- Карточка, длина которой снята со старой шкалы, при ресайзе сохраняет оценку, пока длина не совпадёт с новой шкалой.
+- Сохранение новой сетки само расширяет проверки части дня в БД. Те же операторы — в `database/widen-planner-part-checks.sql` для уже существующей базы.
+
 ## [1.1.0] — 2026-09-22
 
 ### English
