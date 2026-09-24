@@ -56,7 +56,7 @@ async function fetchSprintContext(sprintId: number, featureId?: string): Promise
 
 const server = new McpServer({
   name: 'beer-tracker-sprint-context',
-  version: '1.2.0',
+  version: '1.3.0',
 });
 
 server.registerTool(

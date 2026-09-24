@@ -2,6 +2,44 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.3.0] — 2026-09-25
+
+### English
+
+**Planner onboarding**
+- The first visit to the planner (by people, by features, or compact) opens a short welcome. The tour walks through rows, sprint days, the task card, resize, drag, moving a card between people, links, and the context menu. A sample card (“Onboarding”) sits on a demo row for the steps that need it. The row and the card exist only during the tour and are not saved to the sprint.
+- In “By features”, a row is a parent and the assignee stays on the card. The same tour follows that layout.
+- After the tour, a one-time tip appears the first time you use the task tool, links, the features view, or layers.
+- The toolbar control “How the planner works” starts the tour again. Skip closes it. Progress stays in the browser.
+
+**Synchronization**
+- Admin → Synchronization (`/admin/sync`): team queues stay in the export. Search adds extra queues and projects, and those are exported too. The raw debug block is gone.
+- Jira Cloud issue search uses `/search/jql` (Cloud removed `POST /rest/api/3/search`). The import count comes from approximate-count, and pages follow `nextPageToken`. Jira Data Center still uses `/search`.
+- Jira Cloud comments stored as ADF are turned into markdown, so the fact timeline and comment text stay readable.
+- A status change whose workflow marks fields required, but has no transition screen, shows those empty fields in the planner. They are written on the issue before the transition. Fields that already have a value are left as they are.
+
+**Planner**
+- Durations on the fact timeline use the UI language (`d` / `h` / `m` in English, `д` / `ч` / `м` in Russian).
+- The company setup page has a language switch.
+
+### Русский
+
+**Онбординг планера**
+- Первый заход в планер (по людям, по фичам или компактный) открывает короткое приветствие. Тур показывает строки, дни спринта, карточку задачи, ресайз, перетаскивание, перенос между людьми, связи и контекстное меню. Для шагов, которым нужна карточка, на демо-строку кладётся пример «Онбординг». Строка и карточка живут только во время тура и в спринт не сохраняются.
+- В режиме «По фичам» строка — родитель, исполнитель остаётся на карточке. Тур идёт по этой раскладке.
+- После тура одноразовая подсказка появляется при первом использовании инструмента задачи, связей, вида по фичам или слоёв.
+- Кнопка «Как устроен планер» в тулбаре запускает тур снова. «Пропустить» закрывает его. Прогресс хранится в браузере.
+
+**Синхронизация**
+- Админка → Синхронизация (`/admin/sync`): очереди команд по-прежнему входят в выгрузку. Поиском можно добавить ещё очереди и проекты — они тоже выгружаются. Сырой отладочный блок убран.
+- Поиск задач Jira Cloud идёт через `/search/jql` (Cloud снял `POST /rest/api/3/search`). Число задач берётся из approximate-count, страницы идут по `nextPageToken`. Jira Data Center по-прежнему ходит в `/search`.
+- Комментарии Jira Cloud в формате ADF переводятся в markdown, чтобы факт и текст комментария оставались читаемыми.
+- Смена статуса, у которой в workflow есть обязательные поля, но нет экрана перехода, показывает в планере пустые из этих полей. Они записываются в задачу до перехода. Уже заполненные поля не трогаются.
+
+**Планер**
+- Длительность на таймлайне факта берёт подписи из языка интерфейса (`d` / `h` / `m` по-английски, `д` / `ч` / `м` по-русски).
+- На странице настройки компании есть переключатель языка.
+
 ## [1.2.0] — 2026-09-24
 
 ### English
