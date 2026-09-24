@@ -103,6 +103,7 @@ export interface AdminSyncStatusPayload {
   }>;
   resolvedSync: {
     enabled: boolean;
+    extraQueueKeys: string[];
     intervalMinutes: number;
     maxIssuesPerRun: number;
     overlapMinutes: number;
@@ -118,6 +119,8 @@ export interface AdminSyncStatusPayload {
   syncCronSecretConfigured: boolean;
   syncSettingsRaw: unknown;
   syncValidation: { code: string; message: string; ok: false } | { ok: true };
+  /** Уникальные очереди активных команд. Всегда входят в выгрузку. */
+  teamQueueKeys: string[];
 }
 
 export function isAdminSyncStatusPayload(x: unknown): x is AdminSyncStatusPayload {

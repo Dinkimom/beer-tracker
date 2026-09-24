@@ -11,40 +11,39 @@ import {
   label,
   muted,
 } from '@/features/admin/adminUiTokens';
+import { AdminSyncQueuesField } from '@/features/admin/components/AdminSyncQueuesField';
 
 interface AdminSyncSectionSettingsFormProps {
   connectOrgId: string;
   formEnabled: boolean;
+  formExtraQueueKeys: string[];
   formIntervalMinutes: string;
   formMaxIssuesPerRun: string;
   formOverlapMinutes: string;
-  formWindowEnd: string;
-  formWindowStart: string;
   settingsSaving: boolean;
+  teamQueueKeys: string[];
   onFormEnabledChange: (value: boolean) => void;
+  onFormExtraQueueKeysChange: (queueKeys: string[]) => void;
   onFormIntervalChange: (value: string) => void;
   onFormMaxIssuesChange: (value: string) => void;
   onFormOverlapChange: (value: string) => void;
-  onFormWindowEndChange: (value: string) => void;
-  onFormWindowStartChange: (value: string) => void;
   onSaveSettings: (e: FormEvent) => void;
 }
 
 export function AdminSyncSectionSettingsForm({
   connectOrgId,
   formEnabled,
+  formExtraQueueKeys,
   formIntervalMinutes,
   formMaxIssuesPerRun,
   formOverlapMinutes,
-  formWindowEnd,
-  formWindowStart,
   settingsSaving,
+  teamQueueKeys,
   onFormEnabledChange,
+  onFormExtraQueueKeysChange,
   onFormIntervalChange,
   onFormMaxIssuesChange,
   onFormOverlapChange,
-  onFormWindowEndChange,
-  onFormWindowStartChange,
   onSaveSettings,
 }: AdminSyncSectionSettingsFormProps) {
   const { t } = useI18n();
@@ -65,6 +64,13 @@ export function AdminSyncSectionSettingsForm({
         />
         {t('admin.syncPage.syncEnabled')}
       </label>
+      <AdminSyncQueuesField
+        connectOrgId={connectOrgId}
+        disabled={settingsSaving}
+        extraQueueKeys={formExtraQueueKeys}
+        teamQueueKeys={teamQueueKeys}
+        onExtraQueueKeysChange={onFormExtraQueueKeysChange}
+      />
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <label className={label} htmlFor="set-int">
@@ -103,36 +109,6 @@ export function AdminSyncSectionSettingsForm({
             type="text"
             value={formMaxIssuesPerRun}
             onChange={(e) => onFormMaxIssuesChange(e.target.value)}
-          />
-        </div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className={label} htmlFor="set-ws">
-            {t('admin.syncPage.windowStart')}
-          </label>
-          <input
-            className={`${field} font-mono text-xs`}
-            id="set-ws"
-            placeholder="2026-01-01T00:00:00.000Z"
-            title={t('admin.syncPage.windowStartTitle')}
-            type="text"
-            value={formWindowStart}
-            onChange={(e) => onFormWindowStartChange(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className={label} htmlFor="set-we">
-            {t('admin.syncPage.windowEnd')}
-          </label>
-          <input
-            className={`${field} font-mono text-xs`}
-            id="set-we"
-            placeholder="2026-01-02T00:00:00.000Z"
-            title={t('admin.syncPage.windowEndTitle')}
-            type="text"
-            value={formWindowEnd}
-            onChange={(e) => onFormWindowEndChange(e.target.value)}
           />
         </div>
       </div>

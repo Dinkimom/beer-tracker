@@ -47,6 +47,12 @@ describe('orgSyncSettings', () => {
     const r = resolveOrgSyncSettings({ intervalMinutes: 200 }, platformOk);
     expect(r.intervalMinutes).toBe(120);
     expect(r.overlapMinutes).toBe(12);
+    expect(r.extraQueueKeys).toEqual([]);
+  });
+
+  it('resolveOrgSyncSettings keeps unique extra queue keys', () => {
+    const r = resolveOrgSyncSettings({ extraQueueKeys: [' OPS ', 'OPS', 'PAY'] }, platformOk);
+    expect(r.extraQueueKeys).toEqual(['OPS', 'PAY']);
   });
 
   it('validateResolvedOrgSyncSettings fails when overlap <= cron tick', () => {

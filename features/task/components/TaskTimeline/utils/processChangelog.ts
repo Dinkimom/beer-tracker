@@ -37,7 +37,9 @@ function isValidStatusTransition(
   currentStatusKey: string | null,
   historyLength: number
 ): boolean {
-  if (historyLength === 0) return fromStatusKey === null;
+  // Первая запись changelog открывает историю. У Яндекс Трекера from часто null,
+  // у Jira — уже предыдущий статус: без этой записи цепочка факта не начинается.
+  if (historyLength === 0) return true;
   return fromStatusKey === currentStatusKey;
 }
 

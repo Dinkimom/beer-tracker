@@ -9,34 +9,29 @@ import { AdminSyncProgressPanel } from '@/features/admin/AdminSyncProgressPanel'
 import { cardBody, cardShell, muted, pageStack } from '@/features/admin/adminUiTokens';
 import { AdminPageHeader } from '@/features/admin/components/AdminPageHeader';
 import { AdminSyncStateBlock } from '@/features/admin/components/AdminSyncSectionBlocks';
-import { AdminSyncSectionRawDebug } from '@/features/admin/components/AdminSyncSectionRawDebug';
 import { AdminSyncSectionSettingsForm } from '@/features/admin/components/AdminSyncSectionSettingsForm';
 
 interface AdminSyncSectionProps {
   'aria-labelledby'?: string;
   connectOrgId: string;
   formEnabled: boolean;
+  formExtraQueueKeys: string[];
   formIntervalMinutes: string;
   formMaxIssuesPerRun: string;
   formOverlapMinutes: string;
-  formWindowEnd: string;
-  formWindowStart: string;
   id?: string;
   settingsSaving: boolean;
-  showSyncRaw: boolean;
   syncStatusLoading: boolean;
   syncView: AdminSyncStatusPayload | null;
   onFormEnabledChange: (value: boolean) => void;
+  onFormExtraQueueKeysChange: (queueKeys: string[]) => void;
   onFormIntervalChange: (value: string) => void;
   onFormMaxIssuesChange: (value: string) => void;
   onFormOverlapChange: (value: string) => void;
-  onFormWindowEndChange: (value: string) => void;
-  onFormWindowStartChange: (value: string) => void;
   onFullRescan: () => void;
   onIncrementalSync: () => void;
   onRefreshStatus: () => void;
   onSaveSettings: (e: FormEvent) => void;
-  onShowSyncRawChange: (value: boolean) => void;
 }
 
 export function AdminSyncSection({
@@ -44,26 +39,22 @@ export function AdminSyncSection({
   connectOrgId,
   id,
   formEnabled,
+  formExtraQueueKeys,
   formIntervalMinutes,
   formMaxIssuesPerRun,
   formOverlapMinutes,
-  formWindowEnd,
-  formWindowStart,
   settingsSaving,
-  showSyncRaw,
   syncStatusLoading,
   syncView,
   onFormEnabledChange,
+  onFormExtraQueueKeysChange,
   onFormIntervalChange,
   onFormMaxIssuesChange,
   onFormOverlapChange,
-  onFormWindowEndChange,
-  onFormWindowStartChange,
   onFullRescan,
   onIncrementalSync,
   onRefreshStatus,
   onSaveSettings,
-  onShowSyncRawChange,
 }: AdminSyncSectionProps) {
   const { has, t } = useI18n();
   return (
@@ -112,18 +103,17 @@ export function AdminSyncSection({
             <AdminSyncSectionSettingsForm
               connectOrgId={connectOrgId}
               formEnabled={formEnabled}
+              formExtraQueueKeys={formExtraQueueKeys}
               formIntervalMinutes={formIntervalMinutes}
               formMaxIssuesPerRun={formMaxIssuesPerRun}
               formOverlapMinutes={formOverlapMinutes}
-              formWindowEnd={formWindowEnd}
-              formWindowStart={formWindowStart}
               settingsSaving={settingsSaving}
+              teamQueueKeys={syncView.teamQueueKeys}
               onFormEnabledChange={onFormEnabledChange}
+              onFormExtraQueueKeysChange={onFormExtraQueueKeysChange}
               onFormIntervalChange={onFormIntervalChange}
               onFormMaxIssuesChange={onFormMaxIssuesChange}
               onFormOverlapChange={onFormOverlapChange}
-              onFormWindowEndChange={onFormWindowEndChange}
-              onFormWindowStartChange={onFormWindowStartChange}
               onSaveSettings={onSaveSettings}
             />
           </div>
@@ -132,12 +122,6 @@ export function AdminSyncSection({
         {!syncView && syncStatusLoading && connectOrgId ? (
           <p className="text-sm text-gray-600 dark:text-gray-400">{t('admin.syncPage.loading')}</p>
         ) : null}
-
-        <AdminSyncSectionRawDebug
-          showSyncRaw={showSyncRaw}
-          syncView={syncView}
-          onShowSyncRawChange={onShowSyncRawChange}
-        />
       </div>
       </section>
     </div>

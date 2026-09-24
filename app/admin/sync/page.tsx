@@ -37,27 +37,23 @@ export default function SyncPage() {
 
   const [syncView, setSyncView] = useState<AdminSyncStatusPayload | null>(null);
   const [syncStatusLoading, setSyncStatusLoading] = useState(false);
-  const [showSyncRaw, setShowSyncRaw] = useState(false);
 
   const [settingsDirty, setSettingsDirty] = useState(false);
   const [formEnabled, setFormEnabled] = useState(true);
+  const [formExtraQueueKeys, setFormExtraQueueKeys] = useState<string[]>([]);
   const [formIntervalMinutes, setFormIntervalMinutes] = useState('');
   const [formOverlapMinutes, setFormOverlapMinutes] = useState('');
   const [formMaxIssuesPerRun, setFormMaxIssuesPerRun] = useState('');
-  const [formWindowStart, setFormWindowStart] = useState('');
-  const [formWindowEnd, setFormWindowEnd] = useState('');
   const [settingsSaving, setSettingsSaving] = useState(false);
 
   useEffect(() => {
     if (!syncView || settingsDirty) return;
     const r = syncView.resolvedSync;
     setFormEnabled(r.enabled);
+    setFormExtraQueueKeys(r.extraQueueKeys);
     setFormIntervalMinutes(String(r.intervalMinutes));
     setFormOverlapMinutes(String(r.overlapMinutes));
     setFormMaxIssuesPerRun(String(r.maxIssuesPerRun));
-    const w = r.windowUtc;
-    setFormWindowStart(w?.start ?? '');
-    setFormWindowEnd(w?.end ?? '');
   }, [syncView, settingsDirty]);
 
   useEffect(() => {
@@ -164,21 +160,14 @@ export default function SyncPage() {
       toast.error(t('admin.sync.integersOnlyError'));
       return;
     }
+    const teamQueueKeys = new Set(syncView?.teamQueueKeys ?? []);
     const body: Record<string, unknown> = {
       enabled: formEnabled,
+      extraQueueKeys: formExtraQueueKeys.filter((key) => !teamQueueKeys.has(key)),
       intervalMinutes: interval,
       maxIssuesPerRun: maxIssues,
       overlapMinutes: overlap,
     };
-    const ws = formWindowStart.trim();
-    const we = formWindowEnd.trim();
-    if (ws || we) {
-      if (!ws || !we) {
-        toast.error(t('admin.sync.utcWindowBothOrNeither'));
-        return;
-      }
-      body.windowUtc = { end: we, start: ws };
-    }
     setSettingsSaving(true);
     try {
       await patchAdminSyncSettings(connectOrgId, body);
@@ -237,18 +226,20 @@ export default function SyncPage() {
       <AdminSyncSection
       connectOrgId={connectOrgId}
       formEnabled={formEnabled}
+      formExtraQueueKeys={formExtraQueueKeys}
       formIntervalMinutes={formIntervalMinutes}
       formMaxIssuesPerRun={formMaxIssuesPerRun}
       formOverlapMinutes={formOverlapMinutes}
-      formWindowEnd={formWindowEnd}
-      formWindowStart={formWindowStart}
       settingsSaving={settingsSaving}
-      showSyncRaw={showSyncRaw}
       syncStatusLoading={syncStatusLoading}
       syncView={syncView}
       onFormEnabledChange={(v) => {
         setSettingsDirty(true);
         setFormEnabled(v);
+      }}
+      onFormExtraQueueKeysChange={(queueKeys) => {
+        setSettingsDirty(true);
+        setFormExtraQueueKeys(queueKeys);
       }}
       onFormIntervalChange={(v) => {
         setSettingsDirty(true);
@@ -262,19 +253,10 @@ export default function SyncPage() {
         setSettingsDirty(true);
         setFormOverlapMinutes(v);
       }}
-      onFormWindowEndChange={(v) => {
-        setSettingsDirty(true);
-        setFormWindowEnd(v);
-      }}
-      onFormWindowStartChange={(v) => {
-        setSettingsDirty(true);
-        setFormWindowStart(v);
-      }}
       onFullRescan={() => void postFullRescan()}
       onIncrementalSync={() => void postIncrementalSync()}
       onRefreshStatus={() => void loadSyncStatus({ silent: false })}
       onSaveSettings={(e) => void saveSyncSettings(e)}
-      onShowSyncRawChange={setShowSyncRaw}
     />
     </>
   );

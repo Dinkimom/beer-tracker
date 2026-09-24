@@ -15,6 +15,7 @@ import { SprintPlannerControlsBar } from './components/SprintPlannerControlsBar'
 import { SprintPlannerPresenceSync } from './components/SprintPlannerPresenceSync';
 import { SwimlanePlacementToolbar } from './components/SwimlanePlacementToolbar';
 import { PlannerMobxSessionBridge } from './mobx/PlannerMobxSessionBridge';
+import { PlannerOnboardingHost } from './onboarding/PlannerOnboardingHost';
 import { SprintPlannerAssigneePickerLayer } from './SprintPlannerAssigneePickerLayer';
 import { SprintPlannerDndShell } from './SprintPlannerDndShell';
 
@@ -177,6 +178,16 @@ export function SprintPlannerView({
           sprintId={selectedSprintId}
           viewMode={viewMode}
         />
+        <PlannerOnboardingHost
+          scrollContainerRef={scrollContainerRef}
+          selectedSprintId={selectedSprintId}
+          setViewMode={setViewMode}
+          sprintTimelineWorkingDays={sprintTimelineWorkingDays}
+          taskPositions={taskPositions}
+          tasksLoading={tasksLoading}
+          viewMode={viewMode}
+          onPlaceFirstTask={handleCreateTaskInSwimlaneCell}
+        >
         <div
           className="relative flex flex-col bg-gray-50 dark:bg-gray-900 flex-1 min-h-0 overflow-hidden"
           style={{
@@ -389,6 +400,7 @@ export function SprintPlannerView({
             />
           </div>
         </div>
+        </PlannerOnboardingHost>
         </FeatureDraftRowNamesProvider>
         </SprintCardPresenceProvider>
       </SprintPlannerDndShell>

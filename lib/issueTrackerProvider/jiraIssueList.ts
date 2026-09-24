@@ -8,6 +8,7 @@ import {
   buildJiraQueueScopeJql,
   buildJiraUpdatedRangeJql,
 } from './jiraIssueSearchJql';
+import { countJiraCloudIssues, postJiraIssueSearch } from './jiraIssueSearchRequest';
 
 const JIRA_LIST_FIELDS = ['*all'] as const;
 const JIRA_LIST_PAGE_CAP = 100;
@@ -16,19 +17,47 @@ function clampJiraListPerPage(perPage?: number): number {
   return Math.min(Math.max(perPage ?? 50, 1), JIRA_LIST_PAGE_CAP);
 }
 
-async function postJiraSearchPage(
+function collectJiraJqlIssues(
+  api: AxiosInstance,
+  jql: string,
+  options: {
+    maxResults: number;
+    maxTotal: number;
+    onCheckpoint?: (info: {
+      page: number;
+      totalIssues: number;
+      totalPages: number;
+    }) => Promise<void> | void;
+  }
+): Promise<{ issues: TrackerIssue[]; truncated: boolean }> {
+  return countJiraCloudIssues(api, jql).then((issueTotal) =>
+    collectPagedJiraRestIssues(
+      (startAt, maxResults, nextPageToken) =>
+        postJiraSearchPage(api, jql, startAt, maxResults, nextPageToken),
+      {
+        issueTotal: issueTotal ?? undefined,
+        maxResults: options.maxResults,
+        maxTotal: options.maxTotal,
+        onCheckpoint: options.onCheckpoint,
+      }
+    )
+  );
+}
+
+function postJiraSearchPage(
   api: AxiosInstance,
   jql: string,
   startAt: number,
-  maxResults: number
+  maxResults: number,
+  nextPageToken?: string
 ): Promise<unknown> {
-  const { data } = await api.post<unknown>('/search', {
-    fields: [...JIRA_LIST_FIELDS],
+  return postJiraIssueSearch(api, {
+    fields: JIRA_LIST_FIELDS,
     jql,
     maxResults,
+    nextPageToken,
     startAt,
   });
-  return data;
 }
 
 async function fetchAgileBoardIssuePages(
@@ -76,14 +105,9 @@ export function listJiraIssuesUpdatedInRange(
   if (maxTotal <= 0) {
     return Promise.resolve({ issues: [], truncated: true });
   }
-  return collectPagedJiraRestIssues(
-    (startAt, maxResults) =>
-      postJiraSearchPage(
-        api,
-        buildJiraUpdatedRangeJql(since, until, { queueKeys: options?.queueKeys }),
-        startAt,
-        maxResults
-      ),
+  return collectJiraJqlIssues(
+    api,
+    buildJiraUpdatedRangeJql(since, until, { queueKeys: options?.queueKeys }),
     { maxResults: clampJiraListPerPage(options?.perPage), maxTotal }
   );
 }
@@ -117,10 +141,7 @@ export async function listJiraIssuesForBoard(
   }
   const projectKey = await fetchJiraBoardProjectKey(api, boardId);
   const jql = buildJiraBoardScopeJql(boardId, projectKey);
-  return collectPagedJiraRestIssues(
-    (startAt, maxResults) => postJiraSearchPage(api, jql, startAt, maxResults),
-    { maxResults: perPage, maxTotal, onCheckpoint }
-  );
+  return collectJiraJqlIssues(api, jql, { maxResults: perPage, maxTotal, onCheckpoint });
 }
 
 export function listJiraIssuesForQueue(
@@ -150,9 +171,9 @@ export function listJiraIssuesForQueue(
     ? (info: { page: number; totalIssues: number; totalPages: number }) =>
         options.onCheckpoint?.({ queueKey: key, ...info })
     : undefined;
-  return collectPagedJiraRestIssues(
-    (startAt, maxResults) =>
-      postJiraSearchPage(api, buildJiraQueueScopeJql(key), startAt, maxResults),
-    { maxResults: perPage, maxTotal, onCheckpoint }
-  );
+  return collectJiraJqlIssues(api, buildJiraQueueScopeJql(key), {
+    maxResults: perPage,
+    maxTotal,
+    onCheckpoint,
+  });
 }

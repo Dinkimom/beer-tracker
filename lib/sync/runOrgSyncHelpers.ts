@@ -7,7 +7,15 @@ import type { ResolvedOrgSyncSettings } from '@/lib/orgSyncSettings';
 import { getIssueTrackerProviderKind, getSyncPlatformEnv, getTrackerConfig } from '@/lib/env';
 import { readIssueTrackerExternalOrgId } from '@/lib/issueTrackerProvider';
 import { createIssueTrackerProviderClientFromResolvedConfig } from '@/lib/issueTrackerProvider/clientFactory';
-import { uniqueIssueTrackerQueueKeysFromTeams } from '@/lib/issueTrackerProvider/storageAliases';
+import {
+  JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE,
+  jiraCloudRequiresBasicAuthEmail,
+} from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
+import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/settings';
+import {
+  mergeIssueTrackerQueueKeys,
+  uniqueIssueTrackerQueueKeysFromTeams,
+} from '@/lib/issueTrackerProvider/storageAliases';
 import {
   issueTrackerStoredProvider,
   type IssueTrackerProviderClient,
@@ -109,8 +117,13 @@ function createOrgIssueTrackerClient(
   token: string
 ): { issueTracker: IssueTrackerProviderClient; providerKind: IssueTrackerProviderKind } {
   const providerKind = getIssueTrackerProviderKind();
+  const jiraEmail = readIssueTrackerBasicAuthEmail(org.settings);
+  if (jiraCloudRequiresBasicAuthEmail(providerKind) && !jiraEmail) {
+    throw new Error(JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE);
+  }
   const issueTracker = createIssueTrackerProviderClientFromResolvedConfig({
     apiUrl: getTrackerConfig().apiUrl || '',
+    jiraEmail,
     oauthToken: token,
     orgId: readIssueTrackerExternalOrgId(org),
     providerKind,
@@ -138,8 +151,9 @@ async function executeIncrementalOrgSync(input: {
 
   await input.onProgress?.(25);
 
-  const queueKeys = uniqueIssueTrackerQueueKeysFromTeams(
-    await listTeams(input.org.id, { activeOnly: true })
+  const queueKeys = mergeIssueTrackerQueueKeys(
+    uniqueIssueTrackerQueueKeysFromTeams(await listTeams(input.org.id, { activeOnly: true })),
+    input.settings.extraQueueKeys
   );
   const perPage = Math.min(input.settings.maxIssuesPerRun, TRACKER_ISSUES_SEARCH_PER_PAGE_CAP);
   const { issues, truncated } = await input.issueTracker.listIssuesUpdatedInRange(since, until, {

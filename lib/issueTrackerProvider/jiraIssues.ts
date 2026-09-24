@@ -4,6 +4,7 @@ import type { AxiosInstance } from 'axios';
 
 import { jiraAdfToMarkdown } from './jiraAdfToMarkdown';
 import { jiraAgileSprintIssuesUrl, shouldStopJiraBoardPages } from './jiraCatalog';
+import { postJiraIssueSearch, readJiraSearchNextPageToken } from './jiraIssueSearchRequest';
 import { jiraNameKey, mapJiraStatus, mapJiraStatusCategory } from './jiraStatusKeys';
 
 export { mapJiraStatus } from './jiraStatusKeys';
@@ -348,7 +349,15 @@ function trackerIssuesFromJiraPageData(data: unknown): TrackerIssue[] {
   return out;
 }
 
-function jiraSearchTotalPages(data: unknown, startAt: number, maxResults: number): number {
+function jiraSearchTotalPages(
+  data: unknown,
+  startAt: number,
+  maxResults: number,
+  issueTotal?: number
+): number {
+  if (typeof issueTotal === 'number') {
+    return Math.max(1, Math.ceil(issueTotal / maxResults));
+  }
   if (data && typeof data === 'object' && typeof (data as { total?: unknown }).total === 'number') {
     return Math.max(1, Math.ceil((data as { total: number }).total / maxResults));
   }
@@ -366,8 +375,9 @@ function appendMappedJiraIssues(
 }
 
 export async function collectPagedJiraRestIssues(
-  requestPage: (startAt: number, maxResults: number) => Promise<unknown>,
+  requestPage: (startAt: number, maxResults: number, nextPageToken?: string) => Promise<unknown>,
   options?: {
+    issueTotal?: number;
     maxResults?: number;
     maxTotal?: number;
     onCheckpoint?: (info: {
@@ -381,30 +391,32 @@ export async function collectPagedJiraRestIssues(
   const maxTotal = options?.maxTotal ?? Number.POSITIVE_INFINITY;
   const issues: TrackerIssue[] = [];
   let startAt = 0;
+  let nextPageToken: string | undefined;
   for (let page = 0; page < JIRA_ISSUE_MAX_PAGES; page += 1) {
     if (issues.length >= maxTotal) {
       return { issues, truncated: true };
     }
-    const data = await requestPage(startAt, maxResults);
+    const data = await requestPage(startAt, maxResults, nextPageToken);
     if (appendMappedJiraIssues(issues, trackerIssuesFromJiraPageData(data), maxTotal)) {
       return { issues, truncated: true };
     }
     await options?.onCheckpoint?.({
       page: page + 1,
       totalIssues: issues.length,
-      totalPages: jiraSearchTotalPages(data, startAt, maxResults),
+      totalPages: jiraSearchTotalPages(data, startAt, maxResults, options?.issueTotal),
     });
     const rows = extractJiraIssueRows(data);
     if (shouldStopJiraBoardPages(data, startAt, rows.length, maxResults)) {
       return { issues, truncated: false };
     }
+    nextPageToken = readJiraSearchNextPageToken(data);
     startAt += rows.length;
   }
   return { issues, truncated: true };
 }
 
 async function fetchPagedJiraIssueData(
-  requestPage: (startAt: number, maxResults: number) => Promise<unknown>
+  requestPage: (startAt: number, maxResults: number, nextPageToken?: string) => Promise<unknown>
 ): Promise<TrackerIssue[]> {
   const { issues } = await collectPagedJiraRestIssues(requestPage, {
     maxResults: JIRA_ISSUE_PAGE_SIZE,
@@ -433,15 +445,15 @@ async function fetchAgileSprintIssues(
 }
 
 function fetchJqlSprintIssues(api: AxiosInstance, sprintId: number): Promise<TrackerIssue[]> {
-  return fetchPagedJiraIssueData(async (startAt, maxResults) => {
-    const { data } = await api.post<unknown>('/search', {
-      fields: [...JIRA_SPRINT_ISSUE_FIELDS],
+  return fetchPagedJiraIssueData((startAt, maxResults, nextPageToken) =>
+    postJiraIssueSearch(api, {
+      fields: JIRA_SPRINT_ISSUE_FIELDS,
       jql: `sprint = ${sprintId}`,
       maxResults,
+      nextPageToken,
       startAt,
-    });
-    return data;
-  });
+    })
+  );
 }
 
 export async function searchJiraIssuesInSprint(

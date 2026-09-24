@@ -12,6 +12,7 @@ import {
   buildJiraIssueSearchJql,
   buildJiraIssueSearchTextClause,
 } from './jiraIssueSearchJql';
+import { postJiraIssueSearch } from './jiraIssueSearchRequest';
 
 const JIRA_BOARD_ISSUE_SEARCH_MAX = 20;
 const JIRA_SEARCH_ISSUE_FIELDS = ['*all'] as const;
@@ -54,15 +55,14 @@ async function fetchAgileBoardIssues(
 }
 
 function fetchJqlBoardIssues(api: AxiosInstance, jql: string): Promise<TrackerIssue[]> {
-  return fetchJiraIssueSearchPage(async (startAt, maxResults) => {
-    const { data } = await api.post<unknown>('/search', {
-      fields: [...JIRA_SEARCH_ISSUE_FIELDS],
+  return fetchJiraIssueSearchPage((startAt, maxResults) =>
+    postJiraIssueSearch(api, {
+      fields: JIRA_SEARCH_ISSUE_FIELDS,
       jql,
       maxResults,
       startAt,
-    });
-    return data;
-  });
+    })
+  );
 }
 
 function isHttpBadRequest(error: unknown): boolean {

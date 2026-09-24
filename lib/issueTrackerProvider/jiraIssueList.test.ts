@@ -141,4 +141,65 @@ describe('listJiraIssuesForQueue', () => {
     ]);
     expect(result.truncated).toBe(false);
   });
+
+  it('pages Jira Cloud search with nextPageToken and a stable page total', async () => {
+    let searchPages = 0;
+    const post = vi.fn().mockImplementation((url: string) => {
+      if (url === '/search/approximate-count') {
+        return Promise.resolve({ data: { count: 2 } });
+      }
+      searchPages += 1;
+      if (searchPages === 1) {
+        return Promise.resolve({
+          data: {
+            isLast: false,
+            issues: [{ fields: { summary: 'First' }, key: 'RND-1' }],
+            nextPageToken: 'page-2',
+          },
+        });
+      }
+      return Promise.resolve({
+        data: {
+          isLast: true,
+          issues: [{ fields: { summary: 'Second' }, key: 'RND-2' }],
+        },
+      });
+    });
+    const onCheckpoint = vi.fn();
+    const result = await listJiraIssuesForQueue(
+      {
+        defaults: { baseURL: 'https://example.atlassian.net/rest/api/3' },
+        get: vi.fn(),
+        post,
+      } as never,
+      'RND',
+      { onCheckpoint, perPage: 1 }
+    );
+    expect(post).toHaveBeenCalledWith('/search/approximate-count', { jql: 'project = "RND"' });
+    expect(post).toHaveBeenCalledWith('/search/jql', {
+      fields: ['*all'],
+      jql: 'project = "RND"',
+      maxResults: 1,
+    });
+    expect(post).toHaveBeenCalledWith('/search/jql', {
+      fields: ['*all'],
+      jql: 'project = "RND"',
+      maxResults: 1,
+      nextPageToken: 'page-2',
+    });
+    expect(onCheckpoint).toHaveBeenNthCalledWith(1, {
+      page: 1,
+      queueKey: 'RND',
+      totalIssues: 1,
+      totalPages: 2,
+    });
+    expect(onCheckpoint).toHaveBeenNthCalledWith(2, {
+      page: 2,
+      queueKey: 'RND',
+      totalIssues: 2,
+      totalPages: 2,
+    });
+    expect(result.issues.map((issue) => issue.key)).toEqual(['RND-1', 'RND-2']);
+    expect(result.truncated).toBe(false);
+  });
 });

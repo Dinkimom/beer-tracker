@@ -13,6 +13,9 @@ import { WATERMARK_UNTIL_STATS_KEY } from './watermark';
 
 export type SyncRunTerminalStatus = 'failed' | 'partial' | 'success';
 
+export const INTERRUPTED_SYNC_RUN_MESSAGE =
+  'Прогон прерван перезапуском воркера синхронизации.';
+
 function isPostgresUniqueViolation(err: unknown): boolean {
   return err instanceof DatabaseError && err.code === '23505';
 }
@@ -118,6 +121,36 @@ interface SyncRunEntity {
   started_at: Date;
   stats: unknown;
   status: string;
+}
+
+export async function failInterruptedRunningSyncRuns(): Promise<number> {
+  const res = await query(
+    `UPDATE sync_runs
+     SET finished_at = CURRENT_TIMESTAMP,
+         status = 'failed',
+         error_summary = $1
+     WHERE status = 'running'`,
+    [INTERRUPTED_SYNC_RUN_MESSAGE]
+  );
+  return res.rowCount ?? 0;
+}
+
+/** Повтор той же BullMQ-задачи после убитого процесса: закрыть её зависший running. */
+export async function failRunningSyncRunForBullJob(
+  organizationId: string,
+  bullJobId: string
+): Promise<boolean> {
+  const res = await query(
+    `UPDATE sync_runs
+     SET finished_at = CURRENT_TIMESTAMP,
+         status = 'failed',
+         error_summary = $3
+     WHERE organization_id = $1
+       AND status = 'running'
+       AND stats->>'bull_job_id' = $2`,
+    [organizationId, bullJobId, INTERRUPTED_SYNC_RUN_MESSAGE] as QueryParams
+  );
+  return (res.rowCount ?? 0) > 0;
 }
 
 export async function findRunningSyncRunForOrganization(

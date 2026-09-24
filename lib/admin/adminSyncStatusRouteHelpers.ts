@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
 import { getSyncPlatformEnv } from '@/lib/env';
+import { uniqueIssueTrackerQueueKeysFromTeams } from '@/lib/issueTrackerProvider/storageAliases';
+import { listTeams } from '@/lib/staffTeams/teamsRepository';
 import { listRedisSyncJobsForOrganization } from '@/lib/sync/listRedisSyncJobsForOrganization';
 import { findLatestSyncRunForOrganization, findRunningSyncRunForOrganization } from '@/lib/sync/syncRunsRepository';
 
@@ -12,10 +14,11 @@ export async function getOrganizationSyncStatus(request: Request, organizationId
   if (authResult instanceof NextResponse) {
     return authResult;
   }
-  const [running, latest, redisJobs] = await Promise.all([
+  const [running, latest, redisJobs, teams] = await Promise.all([
     findRunningSyncRunForOrganization(authResult.org.id),
     findLatestSyncRunForOrganization(authResult.org.id),
     listRedisSyncJobsForOrganization(authResult.org.id),
+    listTeams(authResult.org.id, { activeOnly: true }),
   ]);
   const platform = getSyncPlatformEnv();
   return NextResponse.json(
@@ -25,6 +28,7 @@ export async function getOrganizationSyncStatus(request: Request, organizationId
       platform,
       redisJobs,
       running,
+      teamQueueKeys: uniqueIssueTrackerQueueKeysFromTeams(teams),
     })
   );
 }

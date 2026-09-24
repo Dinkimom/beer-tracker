@@ -6,6 +6,8 @@ import {
   readIssueTrackerTeamQueueKey,
   toIssueTrackerOrganizationConnection,
   toIssueTrackerTeamBinding,
+  mergeIssueTrackerQueueKeys,
+  normalizeIssueTrackerQueueKeys,
   uniqueIssueTrackerQueueKeysFromTeams,
 } from './storageAliases';
 
@@ -39,5 +41,14 @@ describe('issueTrackerProvider storageAliases', () => {
         { tracker_queue_key: '  ' },
       ])
     ).toEqual(['ST', 'BT']);
+  });
+
+  it('merges team queues with extra queues', () => {
+    expect(mergeIssueTrackerQueueKeys(['RND', ' PAY '], ['PAY', 'OPS', 'RND'])).toEqual([
+      'RND',
+      'PAY',
+      'OPS',
+    ]);
+    expect(normalizeIssueTrackerQueueKeys([' OPS ', 'OPS', ''])).toEqual(['OPS']);
   });
 });

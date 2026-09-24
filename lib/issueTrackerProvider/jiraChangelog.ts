@@ -11,6 +11,7 @@ import {
   buildIssueTrackerBurndownIssueFromPayloadAndLogs,
   changelogEntriesFromRawIssueLogs,
 } from './changelogNormalizer';
+import { jiraAdfToMarkdown } from './jiraAdfToMarkdown';
 import { yandexIssueFromProviderIssue } from './yandexTrackerProviderHelpers';
 
 const CHANGELOG_PAGE = 100;
@@ -219,7 +220,11 @@ async function fetchJiraIssueChangelogLogs(
 }
 
 function jiraCommentText(body: unknown): string {
-  return typeof body === 'string' ? body : '';
+  if (typeof body === 'string') {
+    return body;
+  }
+  // Jira Cloud REST API v3: comment body is ADF, not a string.
+  return jiraAdfToMarkdown(body);
 }
 
 function mapJiraComment(raw: unknown): IssueComment | null {

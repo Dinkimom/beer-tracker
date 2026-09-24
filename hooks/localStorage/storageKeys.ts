@@ -83,4 +83,6 @@ export const STORAGE_KEYS = {
   PLANNING_PHASE_CARD_COLOR_SCHEME: 'beer-tracker-planning-phase-card-color-scheme',
   /** Закрытый истёкший таймер планера (префикс + id спринта) */
   SPRINT_TIMER_DISMISSED_FINISHED_PREFIX: 'beer-tracker-sprint-timer-dismissed',
+  /** Тур планера и одноразовые подсказки (JSON) */
+  PLANNER_ONBOARDING: 'beer-tracker-planner-onboarding',
 } as const;

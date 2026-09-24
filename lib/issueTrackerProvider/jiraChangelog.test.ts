@@ -76,6 +76,22 @@ describe('fetchJiraIssueChangelogWithComments', () => {
               id: '20001',
               updated: '2026-03-10T13:00:00.000+0000',
             },
+            {
+              author: { accountId: 'acc-1', displayName: 'Bea' },
+              body: {
+                content: [
+                  {
+                    content: [{ text: 'Cloud comment', type: 'text' }],
+                    type: 'paragraph',
+                  },
+                ],
+                type: 'doc',
+                version: 1,
+              },
+              created: '2026-03-10T14:00:00.000+0000',
+              id: '20002',
+              updated: '2026-03-10T14:00:00.000+0000',
+            },
           ],
         },
       });
@@ -86,6 +102,11 @@ describe('fetchJiraIssueChangelogWithComments', () => {
         createdBy: { display: 'Ada', id: 'ada' },
         id: 20001,
         text: 'Looks good',
+      }),
+      expect.objectContaining({
+        createdBy: { display: 'Bea', id: 'acc-1' },
+        id: 20002,
+        text: 'Cloud comment',
       }),
     ]);
     expect(result.changelog).toEqual([

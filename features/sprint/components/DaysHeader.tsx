@@ -133,6 +133,7 @@ export function DaysHeader({
           >
             <div
               className="relative flex shrink-0 items-center justify-between gap-3 overflow-hidden border-r border-b border-gray-200 bg-gray-100 px-4 py-2 sticky left-0 dark:border-gray-600 dark:bg-gray-800"
+              data-onboarding="lane"
               style={{
                 width: participantsColumnWidth,
                 minWidth: participantsColumnWidth,

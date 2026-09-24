@@ -51,6 +51,7 @@ export function buildSyncStatusPayload(params: {
   platform: Parameters<typeof resolveOrgSyncSettings>[1];
   redisJobs: unknown;
   running: Parameters<typeof mapRunningSyncRun>[0];
+  teamQueueKeys: string[];
 }) {
   const rawSync = extractOrgSyncSettingsJson(params.org.settings);
   const parsedSync = OrgSyncSettingsPartialSchema.safeParse(rawSync);
@@ -80,6 +81,7 @@ export function buildSyncStatusPayload(params: {
       minOverlapMinutes: params.platform.minOverlapMinutes,
     },
     redisConfigured: isSyncRedisConfigured(),
+    teamQueueKeys: params.teamQueueKeys,
     redisJobs: params.redisJobs,
     resolvedSync,
     runningSyncRun: mapRunningSyncRun(params.running),

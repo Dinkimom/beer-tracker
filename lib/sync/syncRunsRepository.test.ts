@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { query } from '@/lib/db';
 
-import { tryBeginSyncRun } from './syncRunsRepository';
+import {
+  failInterruptedRunningSyncRuns,
+  failRunningSyncRunForBullJob,
+  INTERRUPTED_SYNC_RUN_MESSAGE,
+  tryBeginSyncRun,
+} from './syncRunsRepository';
 
 vi.mock('@/lib/db', () => ({
   query: vi.fn(),
@@ -57,6 +62,22 @@ describe('tryBeginSyncRun', () => {
     });
 
     expect(r).toEqual({ ok: false, reason: 'concurrent_sync' });
+  });
+
+  it('fails every running row when the worker restarts', async () => {
+    vi.mocked(query).mockResolvedValueOnce({ rowCount: 1, rows: [] } as never);
+    await expect(failInterruptedRunningSyncRuns()).resolves.toBe(1);
+    const [sql, params] = vi.mocked(query).mock.calls[0]!;
+    expect(String(sql)).toContain("status = 'running'");
+    expect(params).toEqual([INTERRUPTED_SYNC_RUN_MESSAGE]);
+  });
+
+  it('fails only the running row of the same BullMQ job', async () => {
+    vi.mocked(query).mockResolvedValueOnce({ rowCount: 1, rows: [] } as never);
+    await expect(failRunningSyncRunForBullJob(orgId, 'full-rescan-1')).resolves.toBe(true);
+    const [sql, params] = vi.mocked(query).mock.calls[0]!;
+    expect(String(sql)).toContain("stats->>'bull_job_id'");
+    expect(params).toEqual([orgId, 'full-rescan-1', INTERRUPTED_SYNC_RUN_MESSAGE]);
   });
 
   it('rethrows non-unique violations', async () => {

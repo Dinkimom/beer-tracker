@@ -9,6 +9,8 @@ import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useSprintPresenceReveal } from '@/hooks/useSprintPresenceReveal';
 
+import { usePlannerOnboardingReplay } from '../onboarding/plannerOnboardingChrome';
+
 import { PlannerHistoryControls } from './PlannerHistoryControls';
 import {
   applyControlsBarViewModeChange,
@@ -50,6 +52,7 @@ export function SprintPlannerControlsBarRightSection({
   viewModeSelectValue,
 }: SprintPlannerControlsBarRightSectionProps) {
   const { t } = useI18n();
+  const replayOnboarding = usePlannerOnboardingReplay();
   const revealViewer = useSprintPresenceReveal({ setViewMode, viewMode });
 
   return (
@@ -79,6 +82,19 @@ export function SprintPlannerControlsBarRightSection({
             <Icon className={`h-4 w-4 ${isReloading ? 'animate-spin' : ''}`} name="refresh" />
           </Button>
         ) : null}
+        {replayOnboarding ? (
+          <Button
+            aria-label={t('sprintPlanner.onboarding.replay')}
+            className="!h-8 !w-8 !min-w-0 shrink-0 !justify-center !px-0 text-gray-600 dark:text-gray-400"
+            title={t('sprintPlanner.onboarding.replay')}
+            type="button"
+            variant="outline"
+            onClick={replayOnboarding}
+          >
+            <Icon className="h-4 w-4" name="circle-help" />
+          </Button>
+        ) : null}
+        <div className="shrink-0" data-onboarding="view-mode">
         <CustomSelect<ControlsBarViewModeSelectValue>
           className="w-[148px] shrink-0 md:w-[165px]"
           options={[
@@ -91,6 +107,7 @@ export function SprintPlannerControlsBarRightSection({
           value={viewModeSelectValue}
           onChange={(v) => applyControlsBarViewModeChange(v, setViewMode)}
         />
+        </div>
         {onOpenSidebar && (
           <Button
             aria-label={t('sprintPlanner.controls.sidebarToggle')}

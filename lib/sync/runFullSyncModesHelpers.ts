@@ -28,7 +28,7 @@ export async function failFullSyncWithNoQueues(input: {
   });
   await finishSyncRun({
     errorSummary:
-      'Нет очередей для импорта. Добавьте команды с привязкой к очереди трекера (tracker_queue_key).',
+      'Нет очередей для импорта. Укажите очередь у команды или добавьте очередь в параметрах синхронизации.',
     extraStats: {
       issues_fetched: 0,
       issues_upserted: 0,

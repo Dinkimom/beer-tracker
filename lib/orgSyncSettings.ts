@@ -7,6 +7,8 @@ import type { SyncPlatformEnv } from './env';
 
 import { z } from 'zod';
 
+import { normalizeIssueTrackerQueueKeys } from '@/lib/issueTrackerProvider/storageAliases';
+
 const OptionalWindowUtcSchema = z
   .object({
     start: z.string().min(1),
@@ -23,6 +25,8 @@ export const OrgSyncSettingsPartialSchema = z
     maxIssuesPerRun: z.number().int().positive().optional(),
     /** ISO-время; выставляется full_rescan, не участвует в resolve интервала. */
     lastFullRescanAt: z.string().optional(),
+    /** Очереди и проекты сверх тех, что заданы у команд. */
+    extraQueueKeys: z.array(z.string().trim().min(1).max(256)).max(50).optional(),
     windowUtc: OptionalWindowUtcSchema,
   })
   .strict();
@@ -31,6 +35,7 @@ export type OrgSyncSettingsPartial = z.infer<typeof OrgSyncSettingsPartialSchema
 
 export interface ResolvedOrgSyncSettings {
   enabled: boolean;
+  extraQueueKeys: string[];
   intervalMinutes: number;
   maxIssuesPerRun: number;
   overlapMinutes: number;
@@ -111,6 +116,7 @@ export function resolveOrgSyncSettings(
   );
   return {
     enabled: partial.enabled ?? true,
+    extraQueueKeys: normalizeIssueTrackerQueueKeys(partial.extraQueueKeys),
     intervalMinutes,
     overlapMinutes,
     maxIssuesPerRun,

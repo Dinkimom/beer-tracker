@@ -10,6 +10,7 @@ import {
   resolveOrgSyncToken,
 } from './runOrgSyncHelpers';
 import {
+  failRunningSyncRunForBullJob,
   tryBeginSyncRun,
   type SyncRunTerminalStatus,
 } from './syncRunsRepository';
@@ -33,6 +34,30 @@ export interface RunOrgSyncInput {
   onProgress?: (percent: number, meta?: Record<string, unknown>) => Promise<void> | void;
 }
 
+function syncRunBeginParams(input: RunOrgSyncInput, organizationId: string) {
+  return {
+    initialStats: {
+      ...(input.bullJobId != null ? { bull_job_id: input.bullJobId } : {}),
+      mode: input.mode,
+    },
+    jobType: input.mode,
+    organizationId,
+  };
+}
+
+async function beginOrgSyncRun(input: RunOrgSyncInput, organizationId: string) {
+  const params = syncRunBeginParams(input, organizationId);
+  const began = await tryBeginSyncRun(params);
+  if (began.ok || input.bullJobId == null) {
+    return began;
+  }
+  const reclaimed = await failRunningSyncRunForBullJob(organizationId, input.bullJobId);
+  if (!reclaimed) {
+    return began;
+  }
+  return tryBeginSyncRun(params);
+}
+
 export async function runOrgSync(input: RunOrgSyncInput): Promise<RunOrgSyncResult> {
   const context = await loadOrgSyncRunContext(input);
   if ('status' in context) {
@@ -45,14 +70,7 @@ export async function runOrgSync(input: RunOrgSyncInput): Promise<RunOrgSyncResu
     return tokenResult;
   }
 
-  const began = await tryBeginSyncRun({
-    initialStats: {
-      ...(input.bullJobId != null ? { bull_job_id: input.bullJobId } : {}),
-      mode: input.mode,
-    },
-    jobType: input.mode,
-    organizationId: org.id,
-  });
+  const began = await beginOrgSyncRun(input, org.id);
   if (!began.ok) {
     return { status: 'skipped', reason: 'concurrent_sync' };
   }

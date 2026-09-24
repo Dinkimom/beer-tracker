@@ -23,7 +23,7 @@ export async function patchOrganizationSyncSettings(
     return NextResponse.json(
       {
         error:
-          'Передайте хотя бы одно поле (enabled, intervalMinutes, overlapMinutes, maxIssuesPerRun, windowUtc)',
+          'Передайте хотя бы одно поле (enabled, intervalMinutes, overlapMinutes, maxIssuesPerRun, extraQueueKeys, windowUtc)',
       },
       { status: 400 }
     );

@@ -79,7 +79,7 @@ export function buildJiraUpdatedRangeJql(
   return `${scoped} ORDER BY updated ASC`;
 }
 
-/** JQL для POST /search (паритет с buildIssueSearchQueryOnBoard в trackerApi/issues.ts). */
+/** JQL для поиска задач (паритет с buildIssueSearchQueryOnBoard в trackerApi/issues.ts). */
 export function buildJiraIssueSearchJql(
   boardId: number,
   queryText: string,

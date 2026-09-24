@@ -63,15 +63,26 @@ export function toIssueTrackerTeamBinding(
 export function uniqueIssueTrackerQueueKeysFromTeams(
   teams: Array<Pick<TeamRow, typeof DB_TEAM_QUEUE_KEY_COLUMN>>
 ): string[] {
+  return mergeIssueTrackerQueueKeys(teams.map((team) => readIssueTrackerTeamQueueKey(team)));
+}
+
+/** Уникальные непустые ключи: сначала команды, затем дополнительные. */
+export function mergeIssueTrackerQueueKeys(...groups: ReadonlyArray<readonly string[]>): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const team of teams) {
-    const queueKey = readIssueTrackerTeamQueueKey(team);
-    if (!queueKey || seen.has(queueKey)) {
-      continue;
+  for (const group of groups) {
+    for (const raw of group) {
+      const queueKey = raw.trim();
+      if (!queueKey || seen.has(queueKey)) {
+        continue;
+      }
+      seen.add(queueKey);
+      out.push(queueKey);
     }
-    seen.add(queueKey);
-    out.push(queueKey);
   }
   return out;
+}
+
+export function normalizeIssueTrackerQueueKeys(keys: readonly string[] | undefined): string[] {
+  return mergeIssueTrackerQueueKeys(keys ?? []);
 }

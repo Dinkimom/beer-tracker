@@ -285,6 +285,7 @@ export const TaskBar = observer(function TaskBar({
         shouldExpandByLongHover,
       })}
       data-draggable-id={draggableId}
+      data-onboarding-card=""
       data-task-id={task.id}
       id={htmlAnchorId}
       style={{

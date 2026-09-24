@@ -144,6 +144,7 @@ export function DaysRow({
   return (
     <div
       className="grid"
+      data-onboarding="days"
       style={{
         width: containerWidth,
         gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))`,

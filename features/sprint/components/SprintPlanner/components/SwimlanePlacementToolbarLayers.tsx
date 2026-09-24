@@ -9,6 +9,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { CONTEXT_MENU_GHOST_BUTTON_RESET } from '@/features/context-menu/contextMenuClasses';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
+import { usePlannerOnboardingChrome } from '../onboarding/plannerOnboardingChrome';
 import {
   applyVisibilityLayerToggle,
   type SwimlaneVisibilityLayer,
@@ -49,6 +50,7 @@ export function SwimlanePlacementToolbarLayers({
   onNotesVisibleChange,
 }: SwimlanePlacementToolbarLayersProps) {
   const { t } = useI18n();
+  const { toolsEmphasis } = usePlannerOnboardingChrome();
   const rootRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const overlay = useOverlayPresence(menuOpen);
@@ -110,11 +112,12 @@ export function SwimlanePlacementToolbarLayers({
           aria-expanded={menuOpen}
           aria-haspopup="menu"
           aria-label={label}
-          className={`!h-9 !w-9 !min-h-0 !min-w-0 !gap-0 !rounded-lg !px-0 !py-0 ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${
+          className={`!h-9 !w-9 !min-h-0 !min-w-0 !gap-0 !rounded-lg !px-0 !py-0 ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${toolsEmphasis ? 'opacity-40' : ''} ${
             menuOpen
               ? '!bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!bg-blue-500/20 dark:!text-blue-200 dark:hover:!bg-blue-500/30'
               : 'text-gray-600 hover:!bg-gray-50 dark:text-gray-300 dark:hover:!bg-gray-700'
           }`}
+          data-onboarding="layers"
           title={label}
           type="button"
           variant="ghost"

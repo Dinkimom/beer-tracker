@@ -19,6 +19,11 @@ import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 
 import {
+  plannerOnboardingToolChromeClass,
+  usePlannerOnboardingChrome,
+} from '../onboarding/plannerOnboardingChrome';
+
+import {
   formatPlannerShortcutAria,
   PlannerShortcutTooltip,
 } from './PlannerShortcutTooltip';
@@ -89,6 +94,7 @@ export function SwimlanePlacementToolbarButton({
   const { t } = useI18n();
   const isDark = useDocumentDarkClass();
   const issueTrackerKind = useIssueTrackerProviderKind();
+  const { toolsEmphasis } = usePlannerOnboardingChrome();
   const label = t(`sprintPlanner.swimlane.placementToolbar.${tool}`);
   const shortcut = formatPlacementToolShortcutHint(tool);
   const iconOnly = tool === 'cursor';
@@ -106,13 +112,14 @@ export function SwimlanePlacementToolbarButton({
           aria-haspopup={tool === 'comment' ? 'dialog' : undefined}
           aria-label={formatPlannerShortcutAria(label, shortcut)}
           aria-pressed={active}
-          className={`!h-9 !min-h-0 !min-w-0 !rounded-lg !py-0 font-medium ${
+          className={`!h-9 !min-h-0 !min-w-0 !rounded-lg !py-0 font-medium ${plannerOnboardingToolChromeClass(toolsEmphasis, tool)} ${
             iconOnly ? '!w-9 !gap-0 !px-0' : '!gap-2 !px-3 text-sm'
           } ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${
             active
               ? '!bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!bg-blue-500/20 dark:!text-blue-200 dark:hover:!bg-blue-500/30'
               : 'text-gray-600 hover:!bg-gray-50 dark:text-gray-300 dark:hover:!bg-gray-700'
           }`}
+          data-onboarding-tool={tool}
           type="button"
           variant="ghost"
           onClick={onSelect}

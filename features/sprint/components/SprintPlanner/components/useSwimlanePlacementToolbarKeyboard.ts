@@ -30,7 +30,9 @@ export function useSwimlanePlacementToolbarKeyboard(input: {
         hasBlockingOverlay: Boolean(
           sprintPlannerUi.contextMenu ||
             sprintPlannerUi.diagramEditorTaskId ||
-            document.querySelector('[data-confirm-dialog="true"]')
+            document.querySelector(
+              '[data-confirm-dialog="true"], [data-planner-onboarding-dialog="true"]'
+            )
         ),
         placementTool: sprintPlannerUi.placementTool,
       });

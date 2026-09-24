@@ -8,14 +8,15 @@ import type { IssueTrackerProviderClient, IssueTrackerProviderKind } from '@/lib
 import type { OrganizationRow } from '@/lib/organizations/types';
 import type { ResolvedOrgSyncSettings } from '@/lib/orgSyncSettings';
 
+import {
+  mergeIssueTrackerQueueKeys,
+  uniqueIssueTrackerQueueKeysFromTeams,
+} from '@/lib/issueTrackerProvider/storageAliases';
 import { extractOrgSyncSettingsJson } from '@/lib/orgSyncSettings';
 import { listTeams } from '@/lib/staffTeams/teamsRepository';
 import { TRACKER_ISSUES_SEARCH_PER_PAGE_CAP } from '@/lib/trackerApi/issuesFetchHelpers';
 
-import {
-  collectIssuesFullSyncAcrossQueues,
-  uniqueQueueKeysFromTeams,
-} from './fullOrgBoardScan';
+import { collectIssuesFullSyncAcrossQueues } from './fullOrgBoardScan';
 import {
   failFullSyncWithNoQueues,
   finalizeFullSyncRun,
@@ -56,7 +57,10 @@ export async function runFullSyncModes(params: {
   const { issueTracker, mode, onProgress, org, platform, providerKind, settings, syncRunId } =
     params;
 
-  const queueKeys = uniqueQueueKeysFromTeams(await listTeams(org.id, { activeOnly: true }));
+  const queueKeys = mergeIssueTrackerQueueKeys(
+    uniqueIssueTrackerQueueKeysFromTeams(await listTeams(org.id, { activeOnly: true })),
+    settings.extraQueueKeys
+  );
   await onProgress?.(12, { phase: 'list_queues', queues_total: queueKeys.length });
   if (queueKeys.length === 0) {
     return failFullSyncWithNoQueues({ mode, onProgress, syncRunId });
