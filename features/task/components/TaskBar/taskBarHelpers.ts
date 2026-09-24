@@ -5,6 +5,10 @@ import type { CSSProperties } from 'react';
 
 import { CARD_MARGIN, ZIndex } from '@/constants';
 import { SWIMLANE_TASK_ROW_VERTICAL_INSET_PX } from '@/features/swimlane/utils/taskLayerTaskLayout';
+import {
+  ONBOARDING_SAMPLE_TASK_ID,
+  isOnboardingSampleTaskId,
+} from '@/lib/plannerOnboarding/onboardingDemoLane';
 
 import { resolveHoverExpandTargetDurationParts } from './taskBarHoverExpandFit';
 
@@ -138,6 +142,32 @@ export function buildSwimlaneOverdueBaselineStripHorizontalStyle(params: {
     left: `calc(${startPercent}% - ${CARD_MARGIN}px)`,
     width: `calc(${widthPercent}%)`,
   };
+}
+
+export function resolveTaskBarOnboardingDataset(
+  taskId: string,
+  showResizeHandle: boolean,
+  dragging: boolean,
+  assigneeShift = false
+): Record<string, string> {
+  const dataset: Record<string, string> = { 'data-onboarding-card': '' };
+  if (!isOnboardingSampleTaskId(taskId)) {
+    return dataset;
+  }
+  dataset['data-onboarding-sample'] = '';
+  if (taskId !== ONBOARDING_SAMPLE_TASK_ID) {
+    return dataset;
+  }
+  if (showResizeHandle) {
+    dataset['data-onboarding-show-handle'] = '';
+  }
+  if (dragging) {
+    dataset['data-onboarding-dragging'] = '';
+  }
+  if (assigneeShift) {
+    dataset['data-onboarding-assignee-shift'] = '';
+  }
+  return dataset;
 }
 
 /** Класс из globals.css: гасит анимацию ширины `.task-bar-item` на время ресайза/оверлея. */

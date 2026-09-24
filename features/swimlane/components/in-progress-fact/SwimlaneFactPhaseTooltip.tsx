@@ -1,9 +1,10 @@
 'use client';
 
+import type { StatusPhaseCell } from '@/lib/planner-timeline';
 import type { Developer, Task } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
-import { type StatusPhaseCell, formatDuration } from '@/lib/planner-timeline';
+import { useI18n } from '@/contexts/LanguageContext';
 
 import { SwimlaneFactPhaseComments } from './SwimlaneFactPhaseComments';
 import { SwimlaneFactPhaseReestimations } from './SwimlaneFactPhaseReestimations';
@@ -12,6 +13,7 @@ import {
   collectReestimationsInPhaseWindow,
   collectStatusTransitionsForPhase,
   formatFactPhaseTaskLine,
+  formatFactTimelineDuration,
   normalizeFactStatusKey,
 } from './SwimlaneFactPhaseTooltipHelpers';
 import { SwimlaneFactPhaseTransitions } from './SwimlaneFactPhaseTransitions';
@@ -41,7 +43,8 @@ export function SwimlaneFactPhaseTooltip({
   taskId,
   tasksMap,
 }: SwimlaneFactPhaseTooltipProps) {
-  const durationStr = formatDuration(phase.durationMs);
+  const { t } = useI18n();
+  const durationStr = formatFactTimelineDuration(phase.durationMs, t);
   const isClosedStatus = normalizeFactStatusKey(phase.statusKey) === 'closed';
 
   const phaseStartMs = new Date(phase.startTime).getTime();

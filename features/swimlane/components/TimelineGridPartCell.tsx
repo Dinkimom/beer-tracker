@@ -7,6 +7,7 @@ import {
   collectOccupiedLayersForCellRange,
   resolveSwimlaneQuickAddLayerBand,
 } from '@/features/swimlane/utils/swimlaneCellOccupancy';
+import { isOnboardingDemoAssigneeId } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { getPartStatus } from '@/utils/dateUtils';
 
 function createQuickAddHoverHandler(
@@ -138,6 +139,7 @@ export function TimelineGridPartCell(props: {
     <DroppableCell
       key={`${cellId}-${isQuickAddEnabled ? 'add' : 'idle'}`}
       activeTask={activeTask}
+      dropDisabled={isOnboardingDemoAssigneeId(developerId)}
       hasAvailabilityEvent={hasAvailabilityEvent}
       hasTaskOverlaps={hasTaskOverlaps}
       id={cellId}

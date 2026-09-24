@@ -29,6 +29,7 @@ import { getPositionEffectiveDuration } from '@/features/sprint/utils/occupancyU
 import { useFollowAnchorRectByElementId } from '@/hooks/useFollowAnchorRect';
 import { useThemeStorage } from '@/hooks/useLocalStorage';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
+import { ONBOARDING_SAMPLE_TASK_ID } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 import { ContextMenuActions } from './ContextMenu/components/ContextMenuActions';
@@ -108,6 +109,7 @@ export function ContextMenu({
   const overlay = useDeferredOverlayClose(onClose);
   const requestClose = overlay.requestClose;
 
+  const closeOnOutsideClick = task.id !== ONBOARDING_SAMPLE_TASK_ID;
   const showStatusSubmenu = !isBacklogTask && !isKanbanView;
   const showEstimate = taskPositions != null && !isBacklogTask && !isKanbanView;
   const showParent = !isBacklogTask && Boolean(onParentChange);
@@ -160,6 +162,7 @@ export function ContextMenu({
     currentSprintId,
     position,
     anchorRect: effectiveAnchorRect,
+    closeOnOutsideClick,
     onClose: requestClose,
     onStatusChange,
     onMoveToSprint,
@@ -193,12 +196,16 @@ export function ContextMenu({
         style={{ zIndex: ZIndex.contextMenu - 1 }}
         onClick={(e) => {
           e.stopPropagation();
+          if (!closeOnOutsideClick) {
+            return;
+          }
           requestClose();
         }}
       />
       <div
         ref={menuRef}
         className={`fixed overflow-visible ${FLOATING_MENU_FIT_WIDTH} ${FLOATING_MENU_SHELL} ${OVERLAY_PANEL_ENTER}`}
+        data-onboarding-context-menu={task.id === ONBOARDING_SAMPLE_TASK_ID ? '' : undefined}
         data-state={overlay.state}
         style={{
           left: `${position.x}px`,

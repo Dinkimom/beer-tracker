@@ -9,6 +9,7 @@ import type { RefObject } from 'react';
 
 import { isActiveDeveloperRowDrag } from '@/features/swimlane/utils/swimlaneDragIds';
 import { isAnySwimlaneViewMode } from '@/hooks/useLocalStorage';
+import { isOnboardingDemoAssigneeId } from '@/lib/plannerOnboarding/onboardingDemoLane';
 
 const SWIMLANE_AUTO_SCROLL_THRESHOLD = { x: 0.12, y: 0.12 } as const;
 
@@ -39,6 +40,9 @@ export function runDeveloperRowDragEndIfApplicable(
   if (overId?.startsWith('swimlane-')) {
     const developerId = activeId.replace('swimlane-', '');
     const overDeveloperId = overId.replace('swimlane-', '');
+    if (isOnboardingDemoAssigneeId(developerId) || isOnboardingDemoAssigneeId(overDeveloperId)) {
+      return;
+    }
     onReorder(developerId, overDeveloperId);
   }
 }

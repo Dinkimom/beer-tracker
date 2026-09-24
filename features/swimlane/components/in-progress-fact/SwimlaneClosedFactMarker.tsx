@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { Icon } from '@/components/Icon';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
+import { useI18n } from '@/contexts/LanguageContext';
 import { SWIMLANE_FACT_MIN_GAP_PX } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
 import { mergeIssueDataForSwimlaneFactTooltip } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import { getStatusColors } from '@/utils/statusColors';
@@ -64,6 +65,7 @@ export function SwimlaneClosedFactMarker({
     [assigneeRole, changelogsByTaskId, commentsByTaskId, seg.taskId, tasksMap]
   );
 
+  const { t } = useI18n();
   const statusColors = getStatusColors(phase.statusKey);
   const verticalInset = 1;
   const barHeight = Math.max(SWIMLANE_FACT_MIN_GAP_PX, laneRowHeight - verticalInset * 2);
@@ -101,7 +103,9 @@ export function SwimlaneClosedFactMarker({
         singleInGroupId={statusTooltipId}
       >
         <div
-          aria-label={`${phase.statusKey}: закрыто`}
+          aria-label={t('sprintPlanner.swimlane.factTimeline.closedAria', {
+            status: phase.statusKey,
+          })}
           className={`pointer-events-auto flex shrink-0 items-center justify-center rounded-md overflow-hidden border-2 shadow-sm cursor-pointer box-border ${bgClass} ${borderClass} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
           id={barDomId}
           role="img"

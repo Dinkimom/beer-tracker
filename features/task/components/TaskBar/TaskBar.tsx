@@ -161,7 +161,7 @@ export const TaskBar = observer(function TaskBar({
     hasQATaskInSwimlane,
     hideSourceForOverlay,
     instantGeometryClass,
-    isAnyResizing,
+    isAnyResizing, onboardingDataset,
     isDraftTask,
     isNarrowForLongHoverExpand,
     isQATask,
@@ -285,8 +285,8 @@ export const TaskBar = observer(function TaskBar({
         shouldExpandByLongHover,
       })}
       data-draggable-id={draggableId}
-      data-onboarding-card=""
       data-task-id={task.id}
+      {...onboardingDataset}
       id={htmlAnchorId}
       style={{
         ...layoutStyle,

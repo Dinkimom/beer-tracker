@@ -24,6 +24,7 @@ import { Swimlane } from '@/features/swimlane/components/Swimlane';
 import { TaskArrows } from '@/features/swimlane/components/task-arrows';
 import { SwimlaneXarrowRedrawProvider } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import { useSwimlanePinnedRowIdsStorage } from '@/hooks/useLocalStorage';
+import { taskLinksForOnboardingArrows } from '@/lib/plannerOnboarding/onboardingDemoLane';
 
 interface SwimlanesSectionLanesProps {
   calendarBusyByDeveloper: Map<string, CalendarBusySegment[]>;
@@ -100,6 +101,7 @@ export function SwimlanesSectionLanes({
 
   const showLinks = section.showLinks !== false;
   const linksDimOnHover = section.linksDimOnHover !== false;
+  const arrowTaskLinks = taskLinksForOnboardingArrows(showLinks, section.filteredTaskLinks);
 
   const renderLane = (developer: Developer) => (
     <Swimlane
@@ -214,7 +216,7 @@ export function SwimlanesSectionLanes({
         ) : null}
         {unpinnedRows.map(renderLane)}
         <FeatureLaneAddRow participantsColumnWidth={section.participantsColumnWidth} />
-        {showLinks && (
+        {(showLinks || arrowTaskLinks.length > 0) && (
           <TaskArrows
             activeTaskId={section.dragAndDrop.activeTaskId}
             hoveredTaskId={hoveredTaskId}
@@ -223,7 +225,7 @@ export function SwimlanesSectionLanes({
             linkingSessionActive={linkingSessionActive}
             qaTasksMap={section.qaTasksMap}
             segmentEditTaskId={segmentEditTaskId}
-            taskLinks={section.filteredTaskLinks}
+            taskLinks={arrowTaskLinks}
             taskPositions={swimlanePositions}
             tasks={section.allTasksForDrag}
             visibleDeveloperIds={visibleSwimlaneAssigneeIds}

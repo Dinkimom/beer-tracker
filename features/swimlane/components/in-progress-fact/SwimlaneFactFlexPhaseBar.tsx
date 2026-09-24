@@ -1,6 +1,7 @@
 'use client';
 
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
+import type { StatusPhaseCell } from '@/lib/planner-timeline';
 import type { Developer, Task } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
@@ -8,13 +9,13 @@ import { useMemo } from 'react';
 
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
+import { useI18n } from '@/contexts/LanguageContext';
 import {
   SWIMLANE_FACT_MIN_GAP_PX,
   SWIMLANE_FACT_THREE_HOURS_MS,
   SWIMLANE_FACT_VERY_SHORT_PHASE_MS,
 } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
 import { mergeIssueDataForSwimlaneFactTooltip } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
-import { type StatusPhaseCell, formatDuration } from '@/lib/planner-timeline';
 import { getStatusColors } from '@/utils/statusColors';
 
 import {
@@ -25,6 +26,7 @@ import {
 } from './swimlaneFactMarkerHelpers';
 import { swimlaneFactMarkerOpacityClass } from './swimlaneFactMarkerOpacityClass';
 import { SwimlaneFactPhaseTooltip } from './SwimlaneFactPhaseTooltip';
+import { formatFactTimelineDuration } from './SwimlaneFactPhaseTooltipHelpers';
 
 export function SwimlaneFactFlexPhaseBar({
   assigneeRole,
@@ -69,6 +71,7 @@ export function SwimlaneFactFlexPhaseBar({
     [assigneeRole, changelogsByTaskId, commentsByTaskId, seg.taskId, tasksMap]
   );
 
+  const { t } = useI18n();
   const statusColors = getStatusColors(phase.statusKey);
   const bgClass = combineStatusBgClass(statusColors);
   const borderClass = combineStatusBorderClass(statusColors);
@@ -78,7 +81,7 @@ export function SwimlaneFactFlexPhaseBar({
   const isVeryShort = phase.durationMs <= SWIMLANE_FACT_VERY_SHORT_PHASE_MS;
   const minBarWidth = isVeryShort ? SWIMLANE_FACT_MIN_GAP_PX : 2;
   const showText = phase.durationMs >= SWIMLANE_FACT_THREE_HOURS_MS;
-  const durationStr = formatDuration(phase.durationMs);
+  const durationStr = formatFactTimelineDuration(phase.durationMs, t);
 
   const statusTooltipId = `${layerId}-${seg.taskId}-${phase.startCell}-${phase.endCell}`;
   const { isDimmedByFactHover, isFactHovered } = resolveFactMarkerHoverState(

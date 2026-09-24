@@ -11,6 +11,7 @@ import React, { useContext, useMemo, useState } from 'react';
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { sprintPlannerSwimlaneTimelineWidthCss } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
+import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintPlanner/onboarding/plannerOnboardingChrome';
 import { canQuickAddOnSwimlaneLane } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import { SwimlaneInProgressFactLayer } from '@/features/swimlane/components/in-progress-fact';
 import { memoizedSwimlanePropsEqual } from '@/features/swimlane/components/memoizedSwimlanePropsEqual';
@@ -39,6 +40,7 @@ import { resolveSwimlaneQuickAddBandLayout } from '@/features/swimlane/utils/swi
 import { resolveSwimlaneOneCardHeightPx } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
 import { useSwimlaneCardFieldsStorage } from '@/hooks/useLocalStorage';
 import { useRootStore } from '@/lib/layers';
+import { onboardingAssigneeMarker } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 
 import { SwimlaneArrowRedrawContext } from '../SwimlaneArrowRedrawContext';
@@ -142,10 +144,19 @@ function SwimlaneComponent({
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
   const isTeamLane = isTeamSwimlaneAssigneeId(developer.id);
-  const canQuickAddOnLane = canQuickAddOnSwimlaneLane({
-    isTeamLane,
-    placementTool: sprintPlannerUi.placementTool,
-  });
+  const onboardingAssignee = onboardingAssigneeMarker(developer.id);
+  const isOnboardingDemoLane = onboardingAssignee != null;
+  const onboardingChrome = usePlannerOnboardingChrome();
+  const raiseOnboardingRow =
+    onboardingAssignee === 'pivchik' &&
+    onboardingChrome.showSecondAssigneeRow &&
+    !onboardingChrome.showDemoLink;
+  const canQuickAddOnLane =
+    !isOnboardingDemoLane &&
+    canQuickAddOnSwimlaneLane({
+      isTeamLane,
+      placementTool: sprintPlannerUi.placementTool,
+    });
   const requestArrowRedraw = useContext(SwimlaneArrowRedrawContext) ?? (() => {});
   const availabilityUi = useSwimlaneAvailabilityUi({
     boardId,
@@ -162,6 +173,7 @@ function SwimlaneComponent({
   );
 
   const { setNodeRef } = useDroppable({
+    disabled: isOnboardingDemoLane,
     id: `swimlane-${developer.id}`,
   });
 
@@ -269,7 +281,7 @@ function SwimlaneComponent({
 
   return (
     <div
-      className={buildSwimlaneRootClassName(Boolean(onCloseSidebar && !disableCloseSidebarOnClick))}
+      className={`${buildSwimlaneRootClassName(Boolean(onCloseSidebar && !disableCloseSidebarOnClick))}${raiseOnboardingRow ? ' z-20' : ''}`}
       onClick={createSwimlaneRootClickHandler(
         !disableCloseSidebarOnClick,
         onCloseSidebar
@@ -277,6 +289,7 @@ function SwimlaneComponent({
     >
       <div
         className="flex min-w-max"
+        data-onboarding-assignee={onboardingAssignee ?? undefined}
         style={{
           minHeight: `${timelineOuterHeight}px`,
         }}

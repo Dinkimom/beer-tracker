@@ -7,6 +7,7 @@ import { useContext } from 'react';
 import Xarrow from 'react-xarrows';
 
 import { SwimlaneArrowRedrawGenerationContext } from '@/features/swimlane/SwimlaneArrowRedrawContext';
+import { ONBOARDING_DEMO_LINK_ID } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { resolveLinkArrowDrawTaskIds } from '@/utils/linkAnchors';
 
 import {
@@ -55,13 +56,14 @@ export function TaskArrowLink({
   );
   const fromTask = tasksMap.get(link.fromTaskId);
   const isDevQaLink = isDevQaTaskArrowLink(link.id);
-  const canDelete = Boolean(onDeleteLink) && !isDevQaLink;
+  const isOnboardingDemoLink = link.id === ONBOARDING_DEMO_LINK_ID;
+  const canDelete = Boolean(onDeleteLink) && !isDevQaLink && !isOnboardingDemoLink;
 
   const arrowColor = resolveTaskArrowLinkColor({
     canDelete,
     fromTask,
     isHovered,
-    isRelatedToHoveredTask,
+    isRelatedToHoveredTask: isRelatedToHoveredTask || isOnboardingDemoLink,
     phaseCardColorScheme,
   });
 
@@ -97,8 +99,8 @@ export function TaskArrowLink({
     >
       <Xarrow
         animateDrawing={false}
-        arrowBodyProps={resolveTaskLinkArrowBodyProps()}
-        arrowHeadProps={resolveTaskLinkArrowHeadProps(arrowColor)}
+        arrowBodyProps={resolveOnboardingArrowBodyProps(isOnboardingDemoLink)}
+        arrowHeadProps={resolveOnboardingArrowHeadProps(arrowColor, isOnboardingDemoLink)}
         color={arrowColor}
         dashness={false}
         end={`task-${endTaskId}`}
@@ -113,4 +115,20 @@ export function TaskArrowLink({
       />
     </div>
   );
+}
+
+function resolveOnboardingArrowBodyProps(demo: boolean) {
+  const props = resolveTaskLinkArrowBodyProps();
+  if (!demo) {
+    return props;
+  }
+  return { ...props, className: 'onboarding-demo-link-body', pathLength: 1 };
+}
+
+function resolveOnboardingArrowHeadProps(color: string, demo: boolean) {
+  const props = resolveTaskLinkArrowHeadProps(color);
+  if (!demo) {
+    return props;
+  }
+  return { ...props, className: 'onboarding-demo-link-head' };
 }

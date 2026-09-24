@@ -872,19 +872,34 @@ export const enMessages = {
       undoPlanChange: 'Undo plan change',
     },
     onboarding: {
+      assigneeName: 'Pint',
       done: 'Got it',
       next: 'Next',
       placeFirst: 'Place a task',
       progress: '{current} / {total}',
       replay: 'How the planner works',
+      sampleTaskName: 'Onboarding',
+      secondAssigneeName: 'Plum',
       skip: 'Skip',
+      welcomeBody: 'A short look at the board: people rows, sprint days, and task cards.',
+      welcomeStart: 'Take the tour',
+      welcomeTitle: 'Welcome!',
       steps: {
+        assigneesTitle: 'A card can be dragged between people',
+        dragTitle: 'A task can be dragged',
         laneBody: 'Tasks on a row are the sprint plan for that person.',
         laneBodyFeatures: 'A row is a parent story or epic. The assignee stays on the card.',
         laneTitle: 'Each row is a person',
         laneTitleFeatures: 'Each row is a parent',
-        spanBody: 'The width of a card is how long the work takes.',
+        linkTitle: 'Links can be drawn between cards',
+        menuBody:
+          'Other actions for a task are in the context menu, which opens with a right-click.',
+        menuTitle: 'Context menu',
+        resizeBody: 'The width of a card is how long the work takes.',
+        resizeTitle: 'A task can be resized',
+        spanBody: 'Each column is one day of the sprint.',
         spanTitle: 'A day is split into parts',
+        taskTitle: 'A task is the unit of planning',
         toolsBody:
           'Cursor moves cards. Task places a new one on a cell. Notes, links, and time off are there when you need them.',
         toolsBodyEmpty:
@@ -896,7 +911,6 @@ export const enMessages = {
         featuresView: 'A row is the parent. The person is still on the card.',
         layers: 'Hide notes, photos, and links. Fact and calendar sit under the row.',
         link: 'Draw from one card to another.',
-        resize: 'Drag the edge to change how long the card runs.',
         taskTool: 'Click an empty cell, or drag a task in from the sidebar.',
       },
     },
@@ -1108,6 +1122,16 @@ export const enMessages = {
       lanes: {
         calendar: 'Calendar',
         fact: 'Fact',
+      },
+      factTimeline: {
+        closedAria: '{status}: closed',
+        comments: 'Comments',
+        day: 'd',
+        hour: 'h',
+        minute: 'm',
+        reestimates: 'Re-estimates',
+        unknownAuthor: 'Unknown',
+        zero: '0h',
       },
       teamLane: {
         name: 'Shared',
@@ -2122,12 +2146,12 @@ export const enMessages = {
         'jira-onprem':
           'A personal access token is required. It stays in your browser and is only sent to this instance.',
         'jira-cloud':
-          'Enter the Atlassian account email and API token. They stay in your browser and are only sent to this instance.',
+          'Enter the Atlassian account email and API token. They stay in your browser.',
       },
       jiraCloudEmailLabel: 'Atlassian account email',
       jiraCloudEmailPlaceholder: 'you@example.com',
       jiraCloudEmailHint:
-        'The email of the Atlassian account that created this API token. Jira Cloud uses it together with the token.',
+        'The email of the Atlassian account that created this API token.',
       jiraCloudEmailRequired: 'Enter the Atlassian account email for this API token.',
       tokenLabel: {
         jira: 'API token',

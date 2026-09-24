@@ -15,7 +15,7 @@ import {
   withPlannerOnboardingTipSeen,
 } from '@/lib/plannerOnboarding/plannerOnboarding';
 
-type PlannerOnboardingSession = 'closed' | 'open';
+type PlannerOnboardingSession = 'closed' | 'tour';
 
 export function usePlannerOnboarding(input: {
   enabled: boolean;
@@ -23,17 +23,16 @@ export function usePlannerOnboarding(input: {
   viewMode: BoardViewMode;
 }) {
   const { enabled, setViewMode, viewMode } = input;
-  const [persisted, setPersisted] = useLocalStorage(
+  const [stored, setPersisted] = useLocalStorage(
     STORAGE_KEYS.PLANNER_ONBOARDING,
     DEFAULT_PLANNER_ONBOARDING
   );
-  const state = normalizePlannerOnboarding(persisted);
+  const state = normalizePlannerOnboarding(stored);
   const [session, setSession] = useState<PlannerOnboardingSession | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const surface = isPlannerOnboardingSurface(viewMode);
-  const open =
-    surface &&
-    (session === 'open' || (session == null && enabled && !state.tourCompleted));
+  const welcome = surface && session == null && enabled && !state.tourCompleted;
+  const open = surface && session === 'tour';
 
   const completeTour = useCallback(() => {
     setSession('closed');
@@ -55,13 +54,17 @@ export function usePlannerOnboarding(input: {
     setStepIndex(stepIndex + 1);
   }, [completeTour, stepIndex]);
 
+  const startTour = useCallback(() => {
+    setStepIndex(0);
+    setSession('tour');
+  }, []);
+
   const replay = useCallback(() => {
     if (!isPlannerOnboardingSurface(viewMode)) {
       setViewMode('full');
     }
-    setStepIndex(0);
-    setSession('open');
-  }, [setViewMode, viewMode]);
+    startTour();
+  }, [setViewMode, startTour, viewMode]);
 
   const dismissTip = useCallback(
     (tip: PlannerOnboardingTip) => {
@@ -73,8 +76,7 @@ export function usePlannerOnboarding(input: {
   );
 
   const step = PLANNER_ONBOARDING_STEPS[stepIndex] ?? 'lane';
-  const toolsEmphasis = open && step === 'tools';
-  const chrome = useMemo(() => ({ toolsEmphasis }), [toolsEmphasis]);
+  const chrome = useMemo(() => ({ toolsEmphasis: false }), []);
 
   return {
     chrome,
@@ -84,8 +86,10 @@ export function usePlannerOnboarding(input: {
     open,
     replay,
     seenTips: state.seenTips,
+    startTour,
     step,
     stepIndex,
     tourCompleted: state.tourCompleted,
+    welcome,
   };
 }

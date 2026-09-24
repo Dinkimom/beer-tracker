@@ -872,19 +872,34 @@ export const ruMessages = {
       undoPlanChange: 'Отменить изменение плана',
     },
     onboarding: {
+      assigneeName: 'Пивчик',
       done: 'Понятно',
       next: 'Дальше',
       placeFirst: 'Поставить задачу',
       progress: '{current} / {total}',
       replay: 'Как устроен планер',
+      sampleTaskName: 'Онбординг',
+      secondAssigneeName: 'Сливчик',
       skip: 'Пропустить',
+      welcomeBody: 'Покажем, как устроена доска: строки людей, дни спринта и карточки задач.',
+      welcomeStart: 'Пройти онбординг',
+      welcomeTitle: 'Добро пожаловать!',
       steps: {
+        assigneesTitle: 'Карточка может быть перетащена между исполнителями',
+        dragTitle: 'Задачу можно перетаскивать',
         laneBody: 'Задачи в строке — его план на спринт.',
         laneBodyFeatures: 'Строка — родительская стори или эпик. Исполнитель остаётся на карточке.',
         laneTitle: 'Строка — это человек',
         laneTitleFeatures: 'Строка — это родитель',
-        spanBody: 'Ширина карточки — сколько работа займёт.',
+        linkTitle: 'Между карточками можно рисовать связи',
+        menuBody:
+          'Для остальных действий с задачей есть контекстное меню, оно открывается по нажатию правой кнопки мыши.',
+        menuTitle: 'Контекстное меню',
+        resizeBody: 'Ширина карточки — сколько работа займёт.',
+        resizeTitle: 'Задачу можно менять в размере',
+        spanBody: 'Каждая колонка — один день спринта.',
         spanTitle: 'День делится на части',
+        taskTitle: 'Основная единица планирования — задача',
         toolsBody:
           'Курсор двигает карточки. Задача ставит новую в клетку. Заметки, связи и отсутствия — когда они понадобятся.',
         toolsBodyEmpty:
@@ -896,7 +911,6 @@ export const ruMessages = {
         featuresView: 'Строка — родитель, человек по-прежнему на карточке.',
         layers: 'Заметки, картинки и связи можно спрятать. Факт и календарь лежат под строкой.',
         link: 'От одной карточки к другой.',
-        resize: 'Потяните край, чтобы изменить длительность.',
         taskTool: 'Клик по пустой клетке или перенос задачи из сайдбара.',
       },
     },
@@ -1106,6 +1120,16 @@ export const ruMessages = {
       lanes: {
         calendar: 'Календарь',
         fact: 'Факт',
+      },
+      factTimeline: {
+        closedAria: '{status}: закрыто',
+        comments: 'Комментарии',
+        day: 'д',
+        hour: 'ч',
+        minute: 'м',
+        reestimates: 'Переоценки',
+        unknownAuthor: 'Неизвестно',
+        zero: '0ч',
       },
       teamLane: {
         name: 'Общее',
@@ -2124,12 +2148,12 @@ export const ruMessages = {
         'jira-onprem':
           'Для работы нужен персональный токен доступа. Он хранится в браузере и уходит только на этот инстанс.',
         'jira-cloud':
-          'Укажите email Atlassian-аккаунта и API-токен. Они хранятся в браузере и уходят только на этот инстанс.',
+          'Укажите email Atlassian-аккаунта и API-токен. Они хранятся в браузере.',
       },
       jiraCloudEmailLabel: 'Email Atlassian-аккаунта',
       jiraCloudEmailPlaceholder: 'you@example.com',
       jiraCloudEmailHint:
-        'Email аккаунта Atlassian, с которого создан этот API-токен. Jira Cloud использует его вместе с токеном.',
+        'Email аккаунта Atlassian, с которого создан этот API-токен.',
       jiraCloudEmailRequired: 'Укажите email Atlassian-аккаунта для этого API-токена.',
       tokenLabel: {
         jira: 'API-токен',

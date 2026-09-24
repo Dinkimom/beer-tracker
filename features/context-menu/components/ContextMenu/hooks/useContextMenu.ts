@@ -25,6 +25,7 @@ function isScrollTargetInsideSubmenu(e: Event): boolean {
 
 interface UseContextMenuProps {
   anchorRect?: ContextMenuAnchorRect | null;
+  closeOnOutsideClick?: boolean;
   currentSprintId: number | null;
   isBacklogTask?: boolean;
   position: { x: number; y: number };
@@ -45,6 +46,7 @@ export function useContextMenu({
   currentSprintId,
   position,
   anchorRect = null,
+  closeOnOutsideClick = true,
   onClose,
   onCloseByClickOutside,
   onStatusChange,
@@ -154,7 +156,7 @@ export function useContextMenu({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isLoading) return;
+      if (isLoading || !closeOnOutsideClick) return;
 
       const target = event.target as Node;
       const clickedInsideMenu = menuRef.current?.contains(target) ?? false;
@@ -193,7 +195,7 @@ export function useContextMenu({
       document.removeEventListener('mousedown', handleClickOutside, true);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isLoading, onClose, onCloseByClickOutside]);
+  }, [closeOnOutsideClick, isLoading, onClose, onCloseByClickOutside]);
 
   useLayoutEffect(() => {
     const el = menuRef.current;

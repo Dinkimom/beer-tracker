@@ -10,7 +10,7 @@ import type { SwimlanesSectionProps } from './SwimlanesSection.types';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { WORKING_DAYS } from '@/constants';
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   sprintPlannerContentRowWidthCss,
@@ -33,12 +33,19 @@ import {
 import { isSwimlaneLinkingSessionActive } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
 import { useRootStore } from '@/lib/layers';
 import {
+  insertOnboardingAssigneeRow,
+  pickOnboardingSampleDayIndex,
+  withOnboardingSample,
+} from '@/lib/plannerOnboarding/onboardingDemoLane';
+import {
   createTeamSwimlaneDeveloper,
   isTeamSwimlaneRowHidden,
 } from '@/lib/swimlane/teamSwimlaneAssignee';
+import { getDayStatus } from '@/utils/dateUtils';
 
 import { DaysHeader } from '../../DaysHeader';
 import { useSwimlaneLinkingHandlers } from '../hooks/useSwimlaneLinkingHandlers';
+import { usePlannerOnboardingChrome } from '../onboarding/plannerOnboardingChrome';
 
 import { ParticipantsColumnResizeHandle } from './ParticipantsColumnResizeHandle';
 import { SwimlanesSectionLanes } from './SwimlanesSectionLanes';
@@ -177,24 +184,32 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     [boardAvailabilityEvents, developers]
   );
 
+  const onboardingDemo = usePlannerOnboardingChrome();
   const swimlaneRows = useMemo(() => {
     const participantRows = developersManagement.visibleDevelopers;
-    if (
+    const withTeam =
       hideTeamLane ||
       !commentsVisible ||
       isTeamSwimlaneRowHidden(developersManagement.hiddenIds)
-    ) {
-      return participantRows;
+        ? participantRows
+        : [
+            createTeamSwimlaneDeveloper(t('sprintPlanner.swimlane.teamLane.name')),
+            ...participantRows,
+          ];
+    if (!onboardingDemo.showAssigneeRow || hideTeamLane) {
+      return withTeam;
     }
-    return [
-      createTeamSwimlaneDeveloper(t('sprintPlanner.swimlane.teamLane.name')),
-      ...participantRows,
-    ];
+    return insertOnboardingAssigneeRow(withTeam, onboardingDemo.showSecondAssigneeRow, {
+      assigneeName: t('sprintPlanner.onboarding.assigneeName'),
+      secondAssigneeName: t('sprintPlanner.onboarding.secondAssigneeName'),
+    });
   }, [
     commentsVisible,
     developersManagement.hiddenIds,
     developersManagement.visibleDevelopers,
     hideTeamLane,
+    onboardingDemo.showAssigneeRow,
+    onboardingDemo.showSecondAssigneeRow,
     t,
   ]);
 
@@ -204,12 +219,43 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   );
 
   // Не мемоизировать по ссылке Map: positions мутирует на месте (MobX), снимок иначе залипает пустым.
+  const demoDayIndex = pickOnboardingSampleDayIndex(
+    sprintTimelineWorkingDays,
+    (dayIndex) => getDayStatus(dayIndex, sprintStartDate, sprintTimelineWorkingDays) === 'today'
+  );
+  const demoBoard =
+    onboardingDemo.showAssigneeRow &&
+    !hideTeamLane &&
+    onboardingDemo.sampleDurationParts != null
+      ? withOnboardingSample({
+          dayCount: sprintTimelineWorkingDays,
+          dayIndex: demoDayIndex,
+          durationParts: onboardingDemo.sampleDurationParts,
+          includeSecondCard: onboardingDemo.showDemoLink,
+          partsPerDay: getPartsPerDay(),
+          positions: taskPositions,
+          startPart: onboardingDemo.sampleStartPart,
+          taskName: t('sprintPlanner.onboarding.sampleTaskName'),
+          tasks: tasksMap,
+        })
+      : null;
+  const laneSection = demoBoard
+    ? {
+        ...props,
+        filteredTaskLinks: demoBoard.link
+          ? [...filteredTaskLinks, demoBoard.link]
+          : filteredTaskLinks,
+        taskPositions: demoBoard.positions,
+        tasksMap: demoBoard.tasks,
+      }
+    : props;
+
   const swimlanePositions = mergeSwimlanePositionsWithVisibleComments({
     comments,
     commentsVisible,
     swimlaneImagesVisible,
     swimlaneNotesVisible,
-    taskPositions,
+    taskPositions: demoBoard?.positions ?? taskPositions,
   });
 
   /** Кластер связей при hover: все входящие позади + одна исходящая вперёд. Несвязанные затемняются только если в кластере >1 задачи. */
@@ -338,7 +384,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
                 linkToolArmed={linkToolArmed}
                 linkingFromTaskId={linkingFromTaskId}
                 linkingSessionActive={linkingSessionActive}
-                section={props}
+                section={laneSection}
                 segmentEditTaskId={segmentEditTaskId}
                 sourceLinkEndCell={sourceLinkEndCell}
                 swimlaneFactDeveloperMap={swimlaneFactDeveloperMap}

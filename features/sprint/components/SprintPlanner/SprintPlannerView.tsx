@@ -182,11 +182,8 @@ export function SprintPlannerView({
           scrollContainerRef={scrollContainerRef}
           selectedSprintId={selectedSprintId}
           setViewMode={setViewMode}
-          sprintTimelineWorkingDays={sprintTimelineWorkingDays}
-          taskPositions={taskPositions}
           tasksLoading={tasksLoading}
           viewMode={viewMode}
-          onPlaceFirstTask={handleCreateTaskInSwimlaneCell}
         >
         <div
           className="relative flex flex-col bg-gray-50 dark:bg-gray-900 flex-1 min-h-0 overflow-hidden"

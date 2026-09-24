@@ -5,10 +5,26 @@ import type { ReactNode } from 'react';
 import { createContext, useContext, useMemo } from 'react';
 
 interface PlannerOnboardingChrome {
+  sampleAssigneeShift: boolean;
+  sampleDragging: boolean;
+  sampleDurationParts: number | null;
+  sampleStartPart: number;
+  showAssigneeRow: boolean;
+  showDemoLink: boolean;
+  showResizeHandle: boolean;
+  showSecondAssigneeRow: boolean;
   toolsEmphasis: boolean;
 }
 
 const PlannerOnboardingChromeContext = createContext<PlannerOnboardingChrome>({
+  sampleAssigneeShift: false,
+  sampleDragging: false,
+  sampleDurationParts: null,
+  sampleStartPart: 0,
+  showAssigneeRow: false,
+  showDemoLink: false,
+  showResizeHandle: false,
+  showSecondAssigneeRow: false,
   toolsEmphasis: false,
 });
 
@@ -17,13 +33,52 @@ const PlannerOnboardingReplayContext = createContext<(() => void) | null>(null);
 export function PlannerOnboardingChromeProvider({
   children,
   replay,
+  sampleAssigneeShift,
+  sampleDragging,
+  sampleDurationParts,
+  sampleStartPart,
+  showAssigneeRow,
+  showDemoLink,
+  showResizeHandle,
+  showSecondAssigneeRow,
   toolsEmphasis,
 }: {
   children: ReactNode;
   replay: () => void;
+  sampleAssigneeShift: boolean;
+  sampleDragging: boolean;
+  sampleDurationParts: number | null;
+  sampleStartPart: number;
+  showAssigneeRow: boolean;
+  showDemoLink: boolean;
+  showResizeHandle: boolean;
+  showSecondAssigneeRow: boolean;
   toolsEmphasis: boolean;
 }) {
-  const chrome = useMemo(() => ({ toolsEmphasis }), [toolsEmphasis]);
+  const chrome = useMemo(
+    () => ({
+      sampleAssigneeShift,
+      sampleDragging,
+      sampleDurationParts,
+      sampleStartPart,
+      showAssigneeRow,
+      showDemoLink,
+      showResizeHandle,
+      showSecondAssigneeRow,
+      toolsEmphasis,
+    }),
+    [
+      sampleAssigneeShift,
+      sampleDragging,
+      sampleDurationParts,
+      sampleStartPart,
+      showAssigneeRow,
+      showDemoLink,
+      showResizeHandle,
+      showSecondAssigneeRow,
+      toolsEmphasis,
+    ]
+  );
   return (
     <PlannerOnboardingReplayContext.Provider value={replay}>
       <PlannerOnboardingChromeContext.Provider value={chrome}>

@@ -31,6 +31,7 @@ function resolveQuickAddHitBox(durationCells: number): {
 
 interface DroppableCellProps {
   activeTask: Task | null;
+  dropDisabled?: boolean;
   /** В ячейке есть событие отсутствия (отпуск, больничный и т.д.) */
   hasAvailabilityEvent?: boolean;
   hasTaskOverlaps?: boolean;
@@ -56,6 +57,7 @@ interface DroppableCellProps {
 }
 
 export function DroppableCell({
+  dropDisabled = false,
   id,
   isHighlighted,
   partIndex,
@@ -74,7 +76,7 @@ export function DroppableCell({
   isHoliday,
   hasAvailabilityEvent = false,
 }: DroppableCellProps) {
-  const { setNodeRef } = useDroppable({ id });
+  const { setNodeRef } = useDroppable({ disabled: dropDisabled, id });
   const { t } = useI18n();
   const isQuickAddEnabled = Boolean(onQuickAddClick);
   const quickAddHover = useDelayedSwimlaneQuickAddHover(isQuickAddEnabled, onQuickAddHoverChange);

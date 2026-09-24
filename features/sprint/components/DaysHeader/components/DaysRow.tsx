@@ -162,6 +162,8 @@ export function DaysRow({
           <div
             key={dayIndex}
             className={`relative min-w-0 py-2 text-center transition-all duration-200 flex items-center justify-center ${swimlaneDayCellClass(status, Boolean(isHoliday), weekIdx)}`}
+            data-onboarding-day={dayIndex}
+            data-onboarding-today={status === 'today' ? 'true' : undefined}
           >
             {dividerClass ? (
               <div

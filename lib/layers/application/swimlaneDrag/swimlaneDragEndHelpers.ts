@@ -4,6 +4,7 @@ import type { DragEndEvent } from '@dnd-kit/core';
 
 import { getPartsPerDay } from '@/constants';
 import { getPositionEffectiveDuration } from '@/lib/planner-timeline';
+import { isOnboardingDemoAssigneeId } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { moveSwimlanePlanSegmentToStartCell } from '@/lib/swimlane/swimlanePlanSegments';
 
 import { extractAssigneeId, isValidCell } from './swimlaneDragCellUtils';
@@ -152,7 +153,7 @@ export function handleSwimlaneBacklogDrop(input: {
   workingDaysCount: number;
 }): void {
   const assigneeId = extractAssigneeId(input.overId);
-  if (!assigneeId) {
+  if (!assigneeId || isOnboardingDemoAssigneeId(assigneeId)) {
     return;
   }
 
@@ -198,7 +199,11 @@ export function resolveSwimlaneDragFinalCell(input: {
       ? input.dragState.hoveredCell
       : cell;
 
-  if (!finalCell || !isValidCell(finalCell, input.workingDaysCount)) {
+  if (
+    !finalCell ||
+    isOnboardingDemoAssigneeId(finalCell.assigneeId) ||
+    !isValidCell(finalCell, input.workingDaysCount)
+  ) {
     return null;
   }
   return finalCell;

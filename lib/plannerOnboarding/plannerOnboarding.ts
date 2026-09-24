@@ -1,17 +1,20 @@
 /** Показ тура и подсказок. Код остаётся, на доске ничего не рисуется, пока флаг false. */
-export const PLANNER_ONBOARDING_ENABLED = false;
+export const PLANNER_ONBOARDING_ENABLED = true;
 
-export const PLANNER_ONBOARDING_STEPS = ['lane', 'span', 'tools'] as const;
+export const PLANNER_ONBOARDING_STEPS = [
+  'lane',
+  'span',
+  'task',
+  'resize',
+  'drag',
+  'assignees',
+  'link',
+  'menu',
+] as const;
 
 export type PlannerOnboardingStep = (typeof PLANNER_ONBOARDING_STEPS)[number];
 
-const PLANNER_ONBOARDING_TIPS = [
-  'featuresView',
-  'layers',
-  'link',
-  'resize',
-  'taskTool',
-] as const;
+const PLANNER_ONBOARDING_TIPS = ['featuresView', 'layers', 'link', 'taskTool'] as const;
 
 export type PlannerOnboardingTip = (typeof PLANNER_ONBOARDING_TIPS)[number];
 
@@ -24,7 +27,6 @@ export interface PlannerOnboardingTipSignals {
   featuresView: boolean;
   layers: boolean;
   link: boolean;
-  resize: boolean;
   taskTool: boolean;
 }
 
@@ -40,7 +42,6 @@ const TIP_ORDER: readonly PlannerOnboardingTip[] = [
   'link',
   'featuresView',
   'layers',
-  'resize',
 ];
 
 export function isPlannerOnboardingSurface(viewMode: string): boolean {
@@ -63,26 +64,29 @@ export function plannerBoardHasPlacedWork(
 
 export function plannerOnboardingAnchor(
   step: PlannerOnboardingStep
-): 'days' | 'lane' | 'toolbar' {
-  if (step === 'lane') {
-    return 'lane';
-  }
+): 'day' | 'lane' | 'lanes' | 'menu' | 'task' {
   if (step === 'span') {
-    return 'days';
+    return 'day';
   }
-  return 'toolbar';
+  if (step === 'task') {
+    return 'task';
+  }
+  if (step === 'menu') {
+    return 'menu';
+  }
+  if (step === 'assignees' || step === 'link') {
+    return 'lanes';
+  }
+  return 'lane';
 }
 
 export function plannerOnboardingCalloutSide(
   step: PlannerOnboardingStep
-): 'above' | 'below' | 'right' {
-  if (step === 'lane') {
+): 'below' | 'right' {
+  if (step === 'task' || step === 'span') {
     return 'right';
   }
-  if (step === 'span') {
-    return 'below';
-  }
-  return 'above';
+  return 'below';
 }
 
 function isPlannerOnboardingTip(value: unknown): value is PlannerOnboardingTip {

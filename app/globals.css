@@ -105,6 +105,70 @@ html.theme-changing * {
   transition-duration: 0s !important;
 }
 
+.task-bar-item[data-onboarding-sample],
+.task-bar-item[data-onboarding-sample] * {
+  pointer-events: none !important;
+}
+
+.task-bar-item[data-onboarding-sample] {
+  transition-property: left, width, transform !important;
+  transition-duration: 800ms !important;
+  transition-timing-function: ease-in-out !important;
+}
+
+.task-bar-item[data-onboarding-assignee-shift] {
+  transform: translateY(var(--onboarding-row-shift, 0px));
+  z-index: 5 !important;
+}
+
+.task-bar-item[data-onboarding-dragging] .task-card-swimlane-hover-shadow {
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.28);
+}
+
+.dark .task-bar-item[data-onboarding-dragging] .task-card-swimlane-hover-shadow {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.task-bar-item[data-onboarding-show-handle] .task-bar-resize-handle-visual {
+  opacity: 1 !important;
+  transition-delay: 0s !important;
+}
+
+@keyframes onboarding-demo-link-draw {
+  0%,
+  100% {
+    stroke-dashoffset: 1;
+  }
+  45%,
+  55% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes onboarding-demo-link-head {
+  0%,
+  32% {
+    opacity: 0;
+  }
+  45%,
+  55% {
+    opacity: 1;
+  }
+  68%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.onboarding-demo-link-body {
+  stroke-dasharray: 1 !important;
+  animation: onboarding-demo-link-draw 2.8s ease-in-out infinite !important;
+}
+
+.onboarding-demo-link-head {
+  animation: onboarding-demo-link-head 2.8s ease-in-out infinite !important;
+}
+
 /* Исключение: плавное появление ленивого контента (таймлайн факта, плановые фазы) при скролле */
 .occupancy-lazy-fade-in {
   transition-property: opacity !important;

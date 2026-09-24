@@ -31,23 +31,31 @@ describe('planner onboarding state', () => {
     expect(plannerBoardHasPlacedWork(new Map([['QUEUE-1', {}]]))).toBe(true);
   });
 
-  it('anchors the three beats to the lane, the days, then the toolbar', () => {
+  it('anchors the tour to the lane, a day, the sample task, then the row again', () => {
     expect(plannerOnboardingAnchor('lane')).toBe('lane');
-    expect(plannerOnboardingAnchor('span')).toBe('days');
-    expect(plannerOnboardingAnchor('tools')).toBe('toolbar');
-    expect(plannerOnboardingCalloutSide('lane')).toBe('right');
-    expect(plannerOnboardingCalloutSide('span')).toBe('below');
-    expect(plannerOnboardingCalloutSide('tools')).toBe('above');
+    expect(plannerOnboardingAnchor('span')).toBe('day');
+    expect(plannerOnboardingAnchor('task')).toBe('task');
+    expect(plannerOnboardingAnchor('resize')).toBe('lane');
+    expect(plannerOnboardingAnchor('drag')).toBe('lane');
+    expect(plannerOnboardingAnchor('assignees')).toBe('lanes');
+    expect(plannerOnboardingAnchor('link')).toBe('lanes');
+    expect(plannerOnboardingAnchor('menu')).toBe('menu');
+    expect(plannerOnboardingCalloutSide('lane')).toBe('below');
+    expect(plannerOnboardingCalloutSide('resize')).toBe('below');
+    expect(plannerOnboardingCalloutSide('drag')).toBe('below');
+    expect(plannerOnboardingCalloutSide('assignees')).toBe('below');
+    expect(plannerOnboardingCalloutSide('link')).toBe('below');
+    expect(plannerOnboardingCalloutSide('task')).toBe('right');
   });
 
   it('drops unknown persisted tips and keeps a single copy of each', () => {
     expect(
       normalizePlannerOnboarding({
-        seenTips: ['resize', 'nope', 'resize', 'link'],
+        seenTips: ['layers', 'nope', 'layers', 'link'],
         tourCompleted: true,
       })
     ).toEqual({
-      seenTips: ['resize', 'link'],
+      seenTips: ['layers', 'link'],
       tourCompleted: true,
     });
     expect(normalizePlannerOnboarding(null)).toEqual({
@@ -61,7 +69,6 @@ describe('planner onboarding state', () => {
       featuresView: true,
       layers: false,
       link: false,
-      resize: true,
       taskTool: true,
     };
     expect(resolvePlannerOnboardingTip(false, [], signals)).toBeNull();

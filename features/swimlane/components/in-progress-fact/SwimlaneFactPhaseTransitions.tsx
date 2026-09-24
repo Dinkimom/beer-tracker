@@ -5,9 +5,13 @@ import type { Developer } from '@/types';
 
 import { Avatar } from '@/components/Avatar';
 import { StatusTag } from '@/components/StatusTag';
+import { useI18n } from '@/contexts/LanguageContext';
 import { getInitials } from '@/utils/displayUtils';
 
-import { formatFactPhaseDateTime } from './SwimlaneFactPhaseTooltipHelpers';
+import {
+  factTimelineDateLocale,
+  formatFactPhaseDateTime,
+} from './SwimlaneFactPhaseTooltipHelpers';
 
 export function SwimlaneFactPhaseTransitions({
   developerMap,
@@ -16,6 +20,10 @@ export function SwimlaneFactPhaseTransitions({
   developerMap: Map<string, Developer>;
   transitions: PhaseStatusTransition[];
 }) {
+  const { language, t } = useI18n();
+  const dateLocale = factTimelineDateLocale(language);
+  const unknownAuthor = t('sprintPlanner.swimlane.factTimeline.unknownAuthor');
+
   if (transitions.length === 0) return null;
 
   return (
@@ -24,7 +32,7 @@ export function SwimlaneFactPhaseTransitions({
         const author = transition.entry.createdBy;
         const authorId = author?.id;
         const developer = authorId ? developerMap.get(authorId) : undefined;
-        const authorName = developer?.name || author?.display || 'Неизвестно';
+        const authorName = developer?.name || author?.display || unknownAuthor;
 
         return (
           <div key={idx} className="flex items-start gap-2">
@@ -39,7 +47,7 @@ export function SwimlaneFactPhaseTransitions({
                   {authorName}
                 </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
-                  {formatFactPhaseDateTime(transition.timestamp)}
+                  {formatFactPhaseDateTime(transition.timestamp, dateLocale)}
                 </span>
               </div>
               <div className="flex items-center gap-2 flex-wrap">

@@ -8,6 +8,7 @@ import omit from 'lodash-es/omit';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { isSwimlaneCommentTask, isSwimlaneDiagramTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintPlanner/onboarding/plannerOnboardingChrome';
 import { SWIMLANE_TASK_DRAG_DATA_KIND } from '@/features/swimlane/utils/swimlaneDragIds';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useStickyNoteVerticalResize } from '@/features/task/hooks/useStickyNoteVerticalResize';
@@ -19,6 +20,7 @@ import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { plannerCommentCardRowHeightFromDurationParts } from '@/lib/comments/plannerCommentCardRow';
 import { useRootStore } from '@/lib/layers';
+import { isOnboardingSampleTaskId } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { sprintCardPresenceBlocksNewGestures } from '@/lib/realtime/sprintCardPresence';
 import { getPreviewBorderColor, resolvePaletteStatusKey } from '@/utils/statusColors';
 
@@ -32,6 +34,7 @@ import {
   resolveTaskBarDragActivationProps,
   resolveTaskBarEffectiveOpacity,
   resolveTaskBarInstantGeometryClass,
+  resolveTaskBarOnboardingDataset,
   resolveTaskBarLongHoverExpand,
   resolveTaskBarZIndex,
 } from './taskBarHelpers';
@@ -121,6 +124,7 @@ export function useTaskBarDisplayState(input: {
   widthPercent: number;
 }) {
   const { sprintPlannerUi } = useRootStore();
+  const onboardingDemo = usePlannerOnboardingChrome();
   const taskId = input.task.id;
   const presenceLocked = useSprintCardPresenceLocked(taskId);
   const [ownDragActive, setOwnDragActive] = useState(false);
@@ -193,7 +197,10 @@ export function useTaskBarDisplayState(input: {
     isDragging,
   } = useDraggable({
     id: input.draggableId,
-    disabled: input.interactionDisabled || presenceBlocksDrag,
+    disabled:
+      input.interactionDisabled ||
+      presenceBlocksDrag ||
+      isOnboardingSampleTaskId(taskId),
     data: { kind: SWIMLANE_TASK_DRAG_DATA_KIND },
   });
 
@@ -323,6 +330,12 @@ export function useTaskBarDisplayState(input: {
     hideSourceForOverlay,
     instantGeometryClass,
     isAnyResizing,
+    onboardingDataset: resolveTaskBarOnboardingDataset(
+      taskId,
+      onboardingDemo.showResizeHandle,
+      onboardingDemo.sampleDragging,
+      onboardingDemo.sampleAssigneeShift
+    ),
     isDraftTask,
     isNarrowForLongHoverExpand,
     isQATask,

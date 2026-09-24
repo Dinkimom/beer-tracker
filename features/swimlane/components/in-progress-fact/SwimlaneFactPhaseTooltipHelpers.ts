@@ -1,15 +1,36 @@
+import type { AppLanguage } from '@/lib/i18n/model';
 import type { Task } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
-import { type StatusPhaseCell } from '@/lib/planner-timeline';
+import { type StatusPhaseCell, formatDuration } from '@/lib/planner-timeline';
 import { formatSignedPointsDeltaForDisplay } from '@/lib/pointsUtils';
 import { getNextWorkingDay, isWeekend } from '@/utils/dateUtils';
 
 /** Допуск по времени границы фазы (мс) — сопоставление с changelog.updatedAt */
 const PHASE_BOUNDARY_MATCH_MS = 2000;
 
-export function formatFactPhaseDateTime(isoString: string): string {
-  return new Date(isoString).toLocaleString('ru-RU', {
+const FACT_TIMELINE_COPY_PREFIX = 'sprintPlanner.swimlane.factTimeline';
+
+type FactTimelineTranslate = (key: string) => string;
+
+export function factTimelineDateLocale(language: AppLanguage): string {
+  return language === 'ru' ? 'ru-RU' : 'en-US';
+}
+
+export function formatFactTimelineDuration(
+  durationMs: number,
+  t: FactTimelineTranslate
+): string {
+  return formatDuration(durationMs, {
+    day: t(`${FACT_TIMELINE_COPY_PREFIX}.day`),
+    hour: t(`${FACT_TIMELINE_COPY_PREFIX}.hour`),
+    minute: t(`${FACT_TIMELINE_COPY_PREFIX}.minute`),
+    zero: t(`${FACT_TIMELINE_COPY_PREFIX}.zero`),
+  });
+}
+
+export function formatFactPhaseDateTime(isoString: string, locale: string): string {
+  return new Date(isoString).toLocaleString(locale, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',

@@ -15,11 +15,16 @@ import { observer } from 'mobx-react-lite';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo } from 'react';
 
+import { getPartsPerDay } from '@/constants';
 import { resolveSwimlaneAnnotationContextMenuVariant } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { ContextMenu } from '@/features/context-menu/components/ContextMenu';
 import { buildContextMenuParentOptions } from '@/features/context-menu/utils/buildContextMenuParentOptions';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useRootStore } from '@/lib/layers';
+import {
+  ONBOARDING_SAMPLE_TASK_ID,
+  withOnboardingMenuPosition,
+} from '@/lib/plannerOnboarding/onboardingDemoLane';
 
 import { SprintPlannerAnnotationContextMenu } from './SprintPlannerAnnotationContextMenu';
 import { SwimlaneDiagramEditorHost } from './SwimlaneDiagramEditorHost';
@@ -187,7 +192,11 @@ export const ModalsSection = observer(function ModalsSection({
           position={contextMenu.position}
           sprints={sprints}
           task={contextMenu.task}
-          taskPositions={taskPositions}
+          taskPositions={
+            contextMenu.task.id === ONBOARDING_SAMPLE_TASK_ID
+              ? withOnboardingMenuPosition(taskPositions, getPartsPerDay())
+              : taskPositions
+          }
           onAccountWork={sprintPlannerUi.setAccountWorkModal}
           onAssigneeSelect={bindTaskAssigneeSelect(onAssigneeSelect, contextMenu.task)}
           onClose={sprintPlannerUi.closeContextMenu}

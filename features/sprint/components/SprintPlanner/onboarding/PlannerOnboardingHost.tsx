@@ -3,36 +3,45 @@
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { ReactNode } from 'react';
 
+import { getPartsPerDay } from '@/constants';
+import { ONBOARDING_DRAG_SHIFT_PARTS } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import {
   PLANNER_ONBOARDING_ENABLED,
   isPlannerOnboardingSurface,
-  plannerBoardHasPlacedWork,
 } from '@/lib/plannerOnboarding/plannerOnboarding';
 
 import { PlannerOnboardingChromeProvider } from './plannerOnboardingChrome';
 import { PlannerOnboardingOverlay } from './PlannerOnboardingOverlay';
+import { useOnboardingAssigneeShift } from './useOnboardingAssigneeShift';
+import { useOnboardingDemoContextMenu } from './useOnboardingDemoContextMenu';
+import { useOnboardingResizePulse } from './useOnboardingResizePulse';
 import { usePlannerOnboarding } from './usePlannerOnboarding';
+
+function resolveOnboardingSampleDuration(
+  rowVisible: boolean,
+  partsPerDay: number,
+  grown: boolean
+): number | null {
+  if (!rowVisible) {
+    return null;
+  }
+  return grown ? partsPerDay + 1 : partsPerDay;
+}
 
 interface PlannerOnboardingHostProps {
   children: ReactNode;
   scrollContainerRef: { readonly current: HTMLElement | null };
   selectedSprintId: number | null;
-  sprintTimelineWorkingDays: number;
-  taskPositions: ReadonlyMap<string, unknown> | null | undefined;
   tasksLoading: boolean;
   viewMode: BoardViewMode;
-  onPlaceFirstTask: (input: { assigneeId: string; day: number; part: number }) => void;
   setViewMode: (value: BoardViewMode | ((prev: BoardViewMode) => BoardViewMode)) => void;
 }
 
 export function PlannerOnboardingHost({
   children,
-  onPlaceFirstTask,
   scrollContainerRef,
   selectedSprintId,
   setViewMode,
-  sprintTimelineWorkingDays,
-  taskPositions,
   tasksLoading,
   viewMode,
 }: PlannerOnboardingHostProps) {
@@ -46,27 +55,50 @@ export function PlannerOnboardingHost({
     viewMode,
   });
 
+  const rowVisible = onboarding.open;
+  const assigneesStep = onboarding.open && onboarding.step === 'assignees';
+  const linkStep = onboarding.open && onboarding.step === 'link';
+  const resizeGrown = useOnboardingResizePulse(onboarding.open && onboarding.step === 'resize');
+  const dragShifted = useOnboardingResizePulse(onboarding.open && onboarding.step === 'drag');
+  const assigneeShifted = useOnboardingAssigneeShift(assigneesStep);
+  useOnboardingDemoContextMenu(onboarding.open && onboarding.step === 'menu');
+  const sampleDurationParts = resolveOnboardingSampleDuration(
+    rowVisible,
+    getPartsPerDay(),
+    resizeGrown
+  );
+
   if (!PLANNER_ONBOARDING_ENABLED) {
     return children;
   }
 
   return (
-    <PlannerOnboardingChromeProvider replay={onboarding.replay} toolsEmphasis={onboarding.chrome.toolsEmphasis}>
+    <PlannerOnboardingChromeProvider
+      replay={onboarding.replay}
+      sampleAssigneeShift={assigneeShifted}
+      sampleDragging={onboarding.open && (onboarding.step === 'drag' || assigneesStep)}
+      sampleDurationParts={sampleDurationParts}
+      sampleStartPart={dragShifted ? ONBOARDING_DRAG_SHIFT_PARTS : 0}
+      showAssigneeRow={rowVisible}
+      showDemoLink={linkStep}
+      showResizeHandle={onboarding.open && onboarding.step === 'resize'}
+      showSecondAssigneeRow={assigneesStep || linkStep}
+      toolsEmphasis={onboarding.chrome.toolsEmphasis}
+    >
       {children}
       <PlannerOnboardingOverlay
-        boardHasPlacedWork={plannerBoardHasPlacedWork(taskPositions)}
         open={onboarding.open}
         scrollContainerRef={scrollContainerRef}
         seenTips={onboarding.seenTips}
-        sprintTimelineWorkingDays={sprintTimelineWorkingDays}
         step={onboarding.step}
         stepIndex={onboarding.stepIndex}
         tourCompleted={onboarding.tourCompleted}
         viewMode={viewMode}
+        welcome={onboarding.welcome}
         onComplete={onboarding.completeTour}
         onDismissTip={onboarding.dismissTip}
         onNext={onboarding.nextStep}
-        onPlaceFirstTask={onPlaceFirstTask}
+        onStart={onboarding.startTour}
       />
     </PlannerOnboardingChromeProvider>
   );

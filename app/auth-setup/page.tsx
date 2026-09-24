@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 
 import { BeerLottie } from '@/components/BeerLottie';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { useJiraCloudRequiresBasicAuthEmail } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useTrackerTokenStorage } from '@/hooks/useLocalStorage';
@@ -150,6 +151,10 @@ export default function AuthSetupPage() {
         className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-20 dark:opacity-10 pointer-events-none"
         style={{ background: 'radial-gradient(circle, #38bdf8 0%, transparent 70%)' }}
       />
+
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+        <LanguageSelector />
+      </div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-10">

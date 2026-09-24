@@ -6,9 +6,13 @@ import type { IssueComment } from '@/types/tracker';
 import ReactMarkdown from 'react-markdown';
 
 import { Avatar } from '@/components/Avatar';
+import { useI18n } from '@/contexts/LanguageContext';
 import { getInitials } from '@/utils/displayUtils';
 
-import { formatFactPhaseDateTime } from './SwimlaneFactPhaseTooltipHelpers';
+import {
+  factTimelineDateLocale,
+  formatFactPhaseDateTime,
+} from './SwimlaneFactPhaseTooltipHelpers';
 
 export function SwimlaneFactPhaseComments({
   comments,
@@ -17,18 +21,22 @@ export function SwimlaneFactPhaseComments({
   comments: IssueComment[];
   developerMap: Map<string, Developer>;
 }) {
+  const { language, t } = useI18n();
+  const dateLocale = factTimelineDateLocale(language);
+  const unknownAuthor = t('sprintPlanner.swimlane.factTimeline.unknownAuthor');
+
   if (comments.length === 0) return null;
 
   return (
     <div>
       <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
-        Комментарии
+        {t('sprintPlanner.swimlane.factTimeline.comments')}
       </div>
       <ul className="space-y-2.5">
         {comments.map((comment) => {
           const authorId = comment.createdBy.id;
           const developer = developerMap.get(authorId);
-          const authorName = developer?.name || comment.createdBy.display || 'Неизвестно';
+          const authorName = developer?.name || comment.createdBy.display || unknownAuthor;
           return (
             <li
               key={`${comment.id}-${comment.createdAt}`}
@@ -46,7 +54,7 @@ export function SwimlaneFactPhaseComments({
                       {authorName}
                     </span>
                     <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {formatFactPhaseDateTime(comment.createdAt)}
+                      {formatFactPhaseDateTime(comment.createdAt, dateLocale)}
                     </span>
                   </div>
                   <div className="text-xs text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none mt-1 [&_p]:my-0 [&_a]:break-all">
