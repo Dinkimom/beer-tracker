@@ -7,6 +7,7 @@ import { extractTrackerMetadataArray } from '@/lib/trackerIntegration/fetchTrack
 import { splitIssueTrackerIssuePatch } from './issueTrackerIssuePatch';
 import { jiraAgileIssueEstimationUrl, jiraAgileIssueUrl } from './jiraCatalog';
 import { putJiraIssueParent } from './jiraIssueParent';
+import { applyJiraScheduleFields } from './jiraScheduleFields';
 import { jiraUserSearchRequestParams } from './jiraUserSearch';
 
 const GH_RAPID_VIEW_ID = /(?:^|[,[])rapidViewId=(\d+)/;
@@ -463,7 +464,7 @@ export async function updateJiraIssue(
   );
   const { assignee, fields: withoutAssignee } = peelJiraAssigneeField(fields);
   const { parent, fields: withoutParent } = peelJiraParentField(withoutAssignee);
-  const nextFields = { ...withoutParent };
+  const nextFields = await applyJiraScheduleFields(api, key, { ...withoutParent });
   if (testPoints !== undefined) {
     await assignTestPointsField(api, nextFields, testPoints);
   }

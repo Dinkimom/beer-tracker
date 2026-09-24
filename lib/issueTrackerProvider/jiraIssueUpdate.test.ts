@@ -244,6 +244,80 @@ describe('updateJiraIssue', () => {
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1/assignee', { name: 'ada' });
   });
 
+  it('maps deadline and start onto duedate and the Start date field', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: {
+        fields: {
+          customfield_10015: { name: 'Start date', schema: { type: 'date' } },
+          duedate: { name: 'Due date', schema: { system: 'duedate', type: 'date' } },
+        },
+      },
+    });
+    const put = vi.fn().mockResolvedValue({ data: {} });
+    await expect(
+      updateJiraIssue(apiWith({ get, put }), 'RND-813', {
+        deadline: '2026-09-30',
+        start: '2026-09-24',
+      })
+    ).resolves.toEqual({});
+    expect(get).toHaveBeenCalledWith('/issue/RND-813/editmeta');
+    expect(put).toHaveBeenCalledWith('/issue/RND-813', {
+      fields: { customfield_10015: '2026-09-24', duedate: '2026-09-30' },
+    });
+  });
+
+  it('uses the field catalog when Start date is missing from editmeta', async () => {
+    const get = vi.fn((url: string) => {
+      if (url === '/issue/RND-813/editmeta') {
+        return Promise.resolve({
+          data: { fields: { duedate: { name: 'Due date', schema: { system: 'duedate', type: 'date' } } } },
+        });
+      }
+      if (url === '/field') {
+        return Promise.resolve({
+          data: [{ id: 'customfield_10015', name: 'Start date', schema: { type: 'date' } }],
+        });
+      }
+      return Promise.reject(new Error(url));
+    });
+    const put = vi.fn().mockResolvedValue({ data: {} });
+    await expect(
+      updateJiraIssue(apiWith({ get, put }), 'RND-813', {
+        deadline: '2026-09-30',
+        start: '2026-09-24',
+      })
+    ).resolves.toEqual({});
+    expect(put).toHaveBeenCalledWith('/issue/RND-813', {
+      fields: { customfield_10015: '2026-09-24', duedate: '2026-09-30' },
+    });
+  });
+
+  it('writes duedate alone when the patch has no start', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: {
+        fields: { duedate: { name: 'Due date', schema: { system: 'duedate', type: 'date' } } },
+      },
+    });
+    const put = vi.fn().mockResolvedValue({ data: {} });
+    await expect(
+      updateJiraIssue(apiWith({ get, put }), 'RND-813', { deadline: '2026-09-30' })
+    ).resolves.toEqual({});
+    expect(get).not.toHaveBeenCalledWith('/field');
+    expect(put).toHaveBeenCalledWith('/issue/RND-813', { fields: { duedate: '2026-09-30' } });
+  });
+
+  it('does not write dates when the Start date field cannot be resolved', async () => {
+    const get = vi.fn().mockResolvedValue({ data: { fields: {} } });
+    const put = vi.fn();
+    await expect(
+      updateJiraIssue(apiWith({ get, put }), 'RND-813', {
+        deadline: '2026-09-30',
+        start: '2026-09-24',
+      })
+    ).rejects.toThrow(/Start date/);
+    expect(put).not.toHaveBeenCalled();
+  });
+
   it('maps Jira QA onto assignee unless a custom field id is set', async () => {
     const get = vi.fn().mockResolvedValue({ data: { name: 'ada' } });
     const put = vi.fn().mockResolvedValue({ data: {} });

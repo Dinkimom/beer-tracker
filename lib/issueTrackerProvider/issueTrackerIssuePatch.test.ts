@@ -45,5 +45,9 @@ describe('yandexIssueUpdateBody', () => {
       storyPoints: 5,
       tags: ['a'],
     });
+    expect(yandexIssueUpdateBody({ deadline: '2026-09-30', start: '2026-09-24' })).toEqual({
+      deadline: '2026-09-30',
+      start: '2026-09-24',
+    });
   });
 });

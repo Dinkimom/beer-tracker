@@ -2,6 +2,12 @@ import type { IssueTrackerScreenField, IssueTrackerTransitionInput } from './typ
 import type { AxiosInstance } from 'axios';
 
 import { mapJiraStatus } from './jiraIssues';
+import {
+  applyJiraOffScreenRequiredFields,
+  fetchEmptyJiraIssueFieldIds,
+  fetchJiraEditmetaFields,
+  fetchJiraValidatorRequiredFieldIds,
+} from './jiraTransitionRequiredFields';
 
 const JIRA_TRANSITIONS_BATCH_CONCURRENCY = 10;
 
@@ -192,11 +198,10 @@ export async function fetchJiraIssueTransitionsBatch(
 }
 
 /**
- * Yandex Tracker lists transition screens per queue (`GET /v3/queues/{queue}/workflows`
- * + workflow + screen). Jira has no project-level equivalent: screens and required
- * fields exist only on `GET /issue/{key}/transitions?expand=transitions.fields`
- * (see fetchJiraTransitionFields). Planner prefetch is therefore an empty catalog;
- * the modal loads fields for the issue being transitioned.
+ * Yandex Tracker lists transition screens per queue. Jira screen fields come from
+ * `GET /issue/{key}/transitions?expand=transitions.fields`. Field-required workflow
+ * validators are not on that screen; fetchJiraTransitionFields merges them so the
+ * planner can open the transition modal. Queue prefetch stays empty.
  */
 export function fetchJiraQueueWorkflowScreens(): Promise<
   Record<string, Record<string, IssueTrackerScreenField[]>>
@@ -226,7 +231,48 @@ export async function fetchJiraTransitionFields(
   if (!match || typeof match !== 'object') {
     return [];
   }
-  return mapJiraTransitionFields((match as JiraTransitionRaw).fields);
+  const screenFields = mapJiraTransitionFields((match as JiraTransitionRaw).fields);
+  return appendOffScreenRequiredFields(api, key, id, screenFields);
+}
+
+async function appendOffScreenRequiredFields(
+  api: AxiosInstance,
+  issueKey: string,
+  transitionId: string,
+  screenFields: IssueTrackerScreenField[]
+): Promise<IssueTrackerScreenField[]> {
+  const requiredIds = await fetchJiraValidatorRequiredFieldIds(api, issueKey, transitionId);
+  const screenIds = new Set(screenFields.map((field) => field.id));
+  const withRequiredFlag = screenFields.map((field) =>
+    requiredIds.includes(field.id) ? { ...field, required: true } : field
+  );
+  const missingIds = requiredIds.filter((fieldId) => !screenIds.has(fieldId));
+  if (missingIds.length === 0) {
+    return withRequiredFlag;
+  }
+  try {
+    return await appendEmptyRequiredEditmetaFields(api, issueKey, withRequiredFlag, missingIds);
+  } catch {
+    return withRequiredFlag;
+  }
+}
+
+async function appendEmptyRequiredEditmetaFields(
+  api: AxiosInstance,
+  issueKey: string,
+  screenFields: IssueTrackerScreenField[],
+  missingIds: string[]
+): Promise<IssueTrackerScreenField[]> {
+  const emptyIds = await fetchEmptyJiraIssueFieldIds(api, issueKey, missingIds);
+  if (emptyIds.length === 0) {
+    return screenFields;
+  }
+  const editmeta = await fetchJiraEditmetaFields(api, issueKey);
+  const extra = emptyIds.flatMap((fieldId) => {
+    const mapped = mapJiraTransitionField(fieldId, editmeta[fieldId]);
+    return mapped ? [{ ...mapped, required: true }] : [];
+  });
+  return [...screenFields, ...extra];
 }
 
 export async function transitionJiraIssue(
@@ -240,5 +286,6 @@ export async function transitionJiraIssue(
   if (!key || !id) {
     throw new Error('Jira transition requires an issue key and transition id');
   }
-  await api.post(jiraIssueTransitionsPath(key), buildJiraTransitionRequestBody(id, input));
+  const transitionInput = await applyJiraOffScreenRequiredFields(api, key, id, input);
+  await api.post(jiraIssueTransitionsPath(key), buildJiraTransitionRequestBody(id, transitionInput));
 }

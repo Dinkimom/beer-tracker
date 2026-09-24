@@ -3,7 +3,6 @@ import type { PhaseSegment } from '@/types';
 import type { NextRequest } from 'next/server';
 import type { z } from 'zod';
 
-import { getTrackerApiFromRequest } from '@/lib/api-tracker';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import {
   getPlannedCellRangeDateRange,
@@ -11,7 +10,6 @@ import {
 } from '@/lib/planner-timeline';
 import { buildSyntheticQaTaskId } from '@/lib/qaTaskIdentity';
 import { resolvePlannerAssigneeIdForTrackerSync, resolvePlannerAssigneeIdsForTrackerSync } from '@/lib/staffTeams/resolvePlannerAssigneeForTrackerSync';
-import { fetchSprintInfo } from '@/lib/trackerApi';
 import { loadTrackerIntegrationForTrackerPatch } from '@/lib/trackerIntegration';
 import { buildIssueAssigneePatch } from '@/lib/trackerIntegration/buildIssueAssigneePatch';
 import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
@@ -87,8 +85,8 @@ async function syncPlannedDatesToTracker({
 
   const relatedTaskIds = Array.from(new Set(Array.from(groups.values()).flatMap((ids) => [...ids])));
   const persistedPositions = await loadPersistedPositionsForPlannedSync(sprintId, relatedTaskIds);
-  const trackerApi = await getTrackerApiFromRequest(request);
-  const sprintInfo = await fetchSprintInfo(sprintId, trackerApi);
+  const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
+  const sprintInfo = await issueTracker.getSprint(sprintId);
   const sprintStartDate = new Date(sprintInfo.startDate);
   sprintStartDate.setHours(0, 0, 0, 0);
   const workingDaysCount = resolveSprintTimelineWorkingDaysCount(
@@ -125,9 +123,13 @@ async function syncPlannedDatesToTracker({
       const start = toIsoDateOnlyLocal(dateRange.startDate);
       const deadline = toIsoDateOnlyLocal(dateRange.endDate);
       try {
-        await trackerApi.patch(`/issues/${issueKey}`, { deadline, start });
-      } catch {
-        await trackerApi.patch(`/issues/${issueKey}`, { deadline });
+        await issueTracker.updateIssue(issueKey, { deadline, start });
+      } catch (err) {
+        console.warn(
+          `[sync planned dates → tracker] ${issueKey}: start+deadline failed, retrying deadline`,
+          err
+        );
+        await issueTracker.updateIssue(issueKey, { deadline });
       }
     })
   );
