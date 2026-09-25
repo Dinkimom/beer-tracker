@@ -26,8 +26,6 @@ export interface ContextMenuAssigneeOptions {
   assigneePointsStats: AssigneePointsStats;
   availability?: QuarterlyAvailability | null;
   developers: Developer[];
-  minStoryPointsForAssignee?: number;
-  minTestPointsForAssignee?: number;
   sprintStartDate: Date;
 }
 
@@ -140,8 +138,6 @@ export function AssigneeSubmenu({
               assigneePointsStats={options.assigneePointsStats}
               developerAvailabilityById={developerAvailabilityById}
               developers={developers}
-              minStoryPointsForAssignee={options.minStoryPointsForAssignee}
-              minTestPointsForAssignee={options.minTestPointsForAssignee}
               selectedAssigneeId={selectedAssigneeId}
               task={task}
               onSelect={onSelect}

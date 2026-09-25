@@ -31,9 +31,6 @@ interface OccupancyAssigneePickerProps {
   /** Отпуска и техспринты из квартального планирования — для подсказки в пикере */
   availability?: QuarterlyAvailability | null;
   developers: Developer[];
-  /** Минимум оценки (из validationThresholds.occupancy), чтобы показывать «Подходит: …» */
-  minStoryPointsForAssignee?: number;
-  minTestPointsForAssignee?: number;
   position: TaskPosition;
   sprintStartDate: Date;
   task: Task;
@@ -46,8 +43,6 @@ export function OccupancyAssigneePicker({
   assigneePointsStats,
   availability,
   developers,
-  minStoryPointsForAssignee = 0,
-  minTestPointsForAssignee = 0,
   onClose,
   onSelect,
   position,
@@ -136,8 +131,6 @@ export function OccupancyAssigneePicker({
             assigneePointsStats={assigneePointsStats}
             developerAvailabilityById={developerAvailabilityById}
             developers={developers}
-            minStoryPointsForAssignee={minStoryPointsForAssignee}
-            minTestPointsForAssignee={minTestPointsForAssignee}
             selectedAssigneeId={position.assignee}
             task={task}
             onSelect={onSelect}

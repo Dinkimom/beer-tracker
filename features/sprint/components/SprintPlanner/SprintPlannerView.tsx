@@ -82,8 +82,6 @@ export function SprintPlannerView({
   isDragFromSidebar,
   kanbanGroupBy,
   linksDimOnHover,
-  minStoryPointsForAssignee,
-  minTestPointsForAssignee,
   occupancyOldTmLayout,
   occupancyRowFields,
   occupancyStatusFilter,
@@ -407,8 +405,6 @@ export function SprintPlannerView({
           assigneePointsStats,
           availability,
           developers,
-          minStoryPointsForAssignee,
-          minTestPointsForAssignee,
           sprintStartDate,
         }}
         boardId={boardIdForPlannerData}
@@ -446,8 +442,6 @@ export function SprintPlannerView({
           assigneePointsStats={assigneePointsStats}
           availability={availability}
           developers={developers}
-          minStoryPointsForAssignee={minStoryPointsForAssignee}
-          minTestPointsForAssignee={minTestPointsForAssignee}
           sprintStartDate={sprintStartDate}
           onAssigneeSelect={handleAssigneeSelect}
           onClose={() => setAssigneePicker(null)}

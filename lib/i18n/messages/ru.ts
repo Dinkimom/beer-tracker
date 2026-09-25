@@ -1617,7 +1617,7 @@ export const ruMessages = {
       },
       tabConnection: 'Подключение',
       tabIntegration: 'Интеграция',
-      integrationTabTitleUnlocked: 'Поля, статусы, пороги и режим QA',
+      integrationTabTitleUnlocked: 'Поля, статусы и режим QA',
       connectFailed: 'Не удалось подключить {tracker}',
       noChangesSaved: 'Без изменений: данные совпадают с уже сохранёнными.',
       tokenSaved: 'Токен проверен и сохранён.',

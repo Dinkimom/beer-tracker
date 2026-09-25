@@ -54,26 +54,6 @@ export function useTrackerIntegrationFormSelectOptions({
     [fieldRows],
   );
 
-  const releaseReadyStatusOptions = useMemo((): CustomSelectOption<string>[] => {
-    const rows = trackerStatusesList
-      .slice()
-      .sort(
-        (a, b) =>
-          a.display.localeCompare(b.display, sortLocale) ||
-          trackerStatusIdentity(a).localeCompare(trackerStatusIdentity(b), sortLocale),
-      );
-    return [
-      { label: t("admin.plannerIntegration.notSelected"), value: "" },
-      ...rows.map((s) => {
-        const identity = trackerStatusIdentity(s);
-        return {
-          label: joinAdminMetaLabels([s.display, s.key], identity),
-          value: identity,
-        };
-      }),
-    ];
-  }, [sortLocale, t, trackerStatusesList]);
-
   const numericFieldSelectOptions =
     useMemo((): CustomSelectOption<string>[] => {
       const numericRows = fieldRows.filter((f) => {
@@ -243,7 +223,6 @@ export function useTrackerIntegrationFormSelectOptions({
     fieldSelectOptions,
     numericFieldSelectOptions,
     platformMappingStats,
-    releaseReadyStatusOptions,
     statusMappingStats,
     statusRowsByCategory,
     statusTableRows,

@@ -26,4 +26,4 @@ export interface PlatformValueMapFormRow {
 
 export type { PlatformMappingFilter } from "@/lib/trackerIntegration/platformMappingFilter";
 
-export type IntegrationSubtabId = "other" | "process-setup" | "statuses-mapping";
+export type IntegrationSubtabId = "process-setup" | "statuses-mapping";

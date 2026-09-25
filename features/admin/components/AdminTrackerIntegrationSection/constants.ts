@@ -17,6 +17,5 @@ export function integrationSubtabs(t: (key: string) => string): Array<{
       id: 'statuses-mapping',
       label: t('admin.plannerIntegration.subtab.statusesMapping'),
     },
-    { id: 'other', label: t('admin.plannerIntegration.subtab.other') },
   ];
 }

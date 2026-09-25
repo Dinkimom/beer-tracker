@@ -8,7 +8,6 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatPointsForDisplay } from '@/lib/pointsUtils';
-import { taskHasEstimateForAssignee } from '@/lib/trackerIntegration/plannerThresholds';
 
 const TOTAL_STORY_POINTS = 20;
 const TOTAL_TEST_POINTS = 25;
@@ -30,6 +29,19 @@ function getDeveloperPlatformKey(developer: Developer): PlatformKey {
   if (platforms.includes('back')) return 'Back';
   if (platforms.includes('web')) return 'Web';
   return 'Other';
+}
+
+/** Группа пикера, которой соответствует проставленная платформа задачи. */
+export function assigneePickerGroupIsSuitable(
+  platformKey: PlatformKey,
+  taskTeam: string | undefined,
+): boolean {
+  const team = (taskTeam ?? '').toLowerCase();
+  if (team === 'qa') return platformKey === 'QA';
+  if (team === 'back') return platformKey === 'Back';
+  if (team === 'web') return platformKey === 'Web';
+  if (team === 'devops') return platformKey === 'Back' || platformKey === 'Web';
+  return false;
 }
 
 /** Порядок платформ в пикере: подходящая платформе задачи — первой */
@@ -66,8 +78,6 @@ interface AssigneePickerListProps {
   assigneePointsStats: AssigneePointsStats;
   developerAvailabilityById?: Map<string, string>;
   developers: Developer[];
-  minStoryPointsForAssignee?: number;
-  minTestPointsForAssignee?: number;
   selectedAssigneeId: string;
   task: Task;
   onSelect: (assigneeId: string) => void;
@@ -77,8 +87,6 @@ export function AssigneePickerList({
   assigneePointsStats,
   developers,
   developerAvailabilityById,
-  minStoryPointsForAssignee = 0,
-  minTestPointsForAssignee = 0,
   selectedAssigneeId,
   task,
   onSelect,
@@ -93,10 +101,6 @@ export function AssigneePickerList({
     );
   }
 
-  const hasEstimate = taskHasEstimateForAssignee(task, {
-    minStoryPointsForAssignee,
-    minTestPointsForAssignee,
-  });
   const byPlatform = new Map<PlatformKey, Developer[]>();
   developers.forEach((developer) => {
     const key = getDeveloperPlatformKey(developer);
@@ -118,7 +122,7 @@ export function AssigneePickerList({
               className={`px-3 py-1.5 ${!isFirst ? 'mt-0.5 border-t border-gray-100 dark:border-gray-700' : ''}`}
             >
               <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                {hasEstimate && isFirst
+                {assigneePickerGroupIsSuitable(platformKey, task.team)
                   ? t('sprintPlanner.occupancy.assigneePicker.suitable', { label })
                   : label}
               </p>

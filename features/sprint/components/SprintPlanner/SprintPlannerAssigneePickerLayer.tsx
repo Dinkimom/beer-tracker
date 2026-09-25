@@ -11,8 +11,6 @@ interface SprintPlannerAssigneePickerLayerProps {
   assigneePointsStats: SprintPlannerViewProps['assigneePointsStats'];
   availability: SprintPlannerViewProps['availability'];
   developers: Developer[];
-  minStoryPointsForAssignee: number;
-  minTestPointsForAssignee: number;
   sprintStartDate: Date;
   onAssigneeSelect: (assigneeId: string) => void;
   onClose: () => void;
@@ -23,8 +21,6 @@ export function SprintPlannerAssigneePickerLayer({
   assigneePointsStats,
   availability,
   developers,
-  minStoryPointsForAssignee,
-  minTestPointsForAssignee,
   sprintStartDate,
   onAssigneeSelect,
   onClose,
@@ -55,8 +51,6 @@ export function SprintPlannerAssigneePickerLayer({
       assigneePointsStats={assigneePointsStats}
       availability={availability}
       developers={getDevelopersForTaskSorted(developers, pickerTask)}
-      minStoryPointsForAssignee={minStoryPointsForAssignee}
-      minTestPointsForAssignee={minTestPointsForAssignee}
       position={position}
       sprintStartDate={sprintStartDate}
       task={pickerTask}

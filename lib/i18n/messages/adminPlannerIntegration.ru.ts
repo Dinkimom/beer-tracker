@@ -8,7 +8,6 @@ export const adminPlannerIntegrationRu = {
   subtab: {
     processSetup: 'Настройка процесса',
     statusesMapping: 'Сопоставление статусов',
-    other: 'Прочее',
   },
   notSelected: 'Не выбрано',
   searchField: 'Поиск поля…',
@@ -32,17 +31,6 @@ export const adminPlannerIntegrationRu = {
     estimateStandalone: 'Оценка',
     mergeRequest: 'Ссылка на merge request',
   },
-  thresholdsTitle: 'Пороги для подсказок исполнителя',
-  thresholdsHint:
-    'Ниже порога скрывается подпись «Хорошо подходит: …». Пусто = 0.',
-  minSpLabel: 'Мин. story points (не QA)',
-  minTpLabel: 'Мин. test points (QA)',
-  releasesPlannerTitle: 'Готовность к релизу',
-  releaseReadyStatusLabel: 'Статус Tracker (готово к релизу)',
-  releaseReadyStatusSearch: 'Поиск статуса…',
-  releaseReadyStatusTitle: 'Статус задачи для готовности к релизу',
-  loadTrackerCatalogHint:
-    'Статусы Tracker не загрузились. Проверьте подключение или нажмите «Перезагрузить».',
   footer: {
     dirty: 'Есть несохранённые изменения.',
     clean: 'Все изменения сохранены.',
@@ -56,7 +44,6 @@ export const adminPlannerIntegrationRu = {
       'Статусов: {total}, категорий: {categories}, свой цвет: {customColor}.',
     summaryPlatforms:
       'Сопоставление платформ: всего {total}, без сопоставления {unmapped}, изменено {changed}.',
-    summaryOther: 'Пороги подсказок и настройки готовности к релизу.',
   },
   rulesPreview: {
     noRules: 'Дополнительных правил нет.',

@@ -20,7 +20,6 @@ import {
 } from "@/features/admin/adminUiTokens";
 
 import { AdminTrackerIntegrationFooter } from "./components/AdminTrackerIntegrationFooter";
-import { AdminTrackerIntegrationOtherTabPanel } from "./components/AdminTrackerIntegrationOtherTabPanel";
 import { AdminTrackerIntegrationProcessSetupPanel } from "./components/AdminTrackerIntegrationProcessSetupPanel";
 import { TrackerStatusMappingPanel } from "./components/TrackerStatusMappingPanel";
 import { integrationSubtabs } from "./constants";
@@ -95,8 +94,6 @@ export function AdminTrackerIntegrationSection({
     fieldSelectOptions,
     footerSummaryText,
     hasUnsavedChanges,
-    minSp,
-    minTp,
     numericFieldSelectOptions,
     platformFieldId,
     platformFieldValues,
@@ -107,8 +104,6 @@ export function AdminTrackerIntegrationSection({
     qaEngineerFieldId,
     qaEstimateFieldId,
     releaseMrFieldId,
-    releaseReadyStatusKey,
-    releaseReadyStatusOptions,
     reloadConfirmArmed,
     revision,
     setActiveSubtab,
@@ -116,15 +111,12 @@ export function AdminTrackerIntegrationSection({
     setDevEstimateFieldId,
     setEmbeddedTestingOnlyJoins,
     setEmbeddedTestingOnlyRules,
-    setMinSp,
-    setMinTp,
     setPlatformFieldId,
     setPlatformMappingFilter,
     setPlatformValueMap,
     setQaEngineerFieldId,
     setQaEstimateFieldId,
     setReleaseMrFieldId,
-    setReleaseReadyStatusKey,
     setReloadConfirmArmed,
     setStatusPaletteByKey,
     setTestingFlowMode,
@@ -230,20 +222,6 @@ export function AdminTrackerIntegrationSection({
               onPaletteChange={(statusKey, next) =>
                 setStatusPaletteByKey((p) => nextPaletteMap(p, statusKey, next))
               }
-            />
-          ) : null}
-
-          {activeSubtab === "other" ? (
-            <AdminTrackerIntegrationOtherTabPanel
-              metaLoading={metaLoading}
-              minSp={minSp}
-              minTp={minTp}
-              releaseReadyStatusKey={releaseReadyStatusKey}
-              releaseReadyStatusOptions={releaseReadyStatusOptions}
-              setMinSp={setMinSp}
-              setMinTp={setMinTp}
-              setReleaseReadyStatusKey={setReleaseReadyStatusKey}
-              trackerStatusesList={trackerStatusesList}
             />
           ) : null}
         </div>

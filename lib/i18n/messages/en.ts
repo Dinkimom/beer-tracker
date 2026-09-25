@@ -1617,7 +1617,7 @@ export const enMessages = {
       },
       tabConnection: 'Connection',
       tabIntegration: 'Integration',
-      integrationTabTitleUnlocked: 'Fields, statuses, thresholds, and QA mode',
+      integrationTabTitleUnlocked: 'Fields, statuses, and QA mode',
       connectFailed: 'Could not connect {tracker}',
       noChangesSaved: 'No changes: data matches what is already saved.',
       tokenSaved: 'Token verified and saved.',

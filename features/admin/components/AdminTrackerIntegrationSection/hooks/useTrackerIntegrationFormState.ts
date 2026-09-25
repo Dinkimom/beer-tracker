@@ -106,7 +106,6 @@ export function useTrackerIntegrationFormState({
     fieldSelectOptions,
     numericFieldSelectOptions,
     platformMappingStats,
-    releaseReadyStatusOptions,
     statusMappingStats,
     statusRowsByCategory,
     statusTableRows,
@@ -171,11 +170,6 @@ export function useTrackerIntegrationFormState({
       trackerStatusesList,
       zeroDevPositiveQa,
     ],
-  );
-
-  const releaseReadyStatusKeyForUi = useMemo(
-    () => remapStatusKeyToStatusId(releaseReadyStatusKey, trackerStatusesList),
-    [releaseReadyStatusKey, trackerStatusesList],
   );
 
   const hasUnsavedChanges = useMemo(
@@ -289,8 +283,6 @@ export function useTrackerIntegrationFormState({
     fieldSelectOptions,
     footerSummaryText,
     hasUnsavedChanges,
-    minSp,
-    minTp,
     numericFieldSelectOptions,
     platformFieldId,
     platformFieldValues,
@@ -301,8 +293,6 @@ export function useTrackerIntegrationFormState({
     qaEngineerFieldId,
     qaEstimateFieldId,
     releaseMrFieldId,
-    releaseReadyStatusKey: releaseReadyStatusKeyForUi,
-    releaseReadyStatusOptions,
     reloadConfirmArmed,
     revision,
     setActiveSubtab,
@@ -310,15 +300,12 @@ export function useTrackerIntegrationFormState({
     setDevEstimateFieldId,
     setEmbeddedTestingOnlyJoins,
     setEmbeddedTestingOnlyRules,
-    setMinSp,
-    setMinTp,
     setPlatformFieldId,
     setPlatformMappingFilter,
     setPlatformValueMap,
     setQaEngineerFieldId,
     setQaEstimateFieldId,
     setReleaseMrFieldId,
-    setReleaseReadyStatusKey,
     setReloadConfirmArmed,
     setStatusPaletteByKey,
     setTestingFlowMode,

@@ -87,16 +87,6 @@ export function resolveIntegrationFooterSummaryText(params: {
       customColor: statusMappingStats.customColor,
     });
   }
-  if (activeSubtab === "process-setup") {
-    return t("admin.plannerIntegration.footer.summaryPlatforms", {
-      total: platformMappingStats.total,
-      unmapped: platformMappingStats.unmapped,
-      changed: platformMappingStats.changed,
-    });
-  }
-  if (activeSubtab === "other") {
-    return t("admin.plannerIntegration.footer.summaryOther");
-  }
   return t("admin.plannerIntegration.footer.summaryPlatforms", {
     total: platformMappingStats.total,
     unmapped: platformMappingStats.unmapped,

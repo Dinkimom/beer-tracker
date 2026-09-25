@@ -21,7 +21,6 @@ import { useDebouncedCallback } from '@/hooks/usePerformance';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
 import { useRootStore } from '@/lib/layers';
-import { resolveOccupancyMinEstimates } from '@/lib/trackerIntegration/plannerThresholds';
 import { DELAYS } from '@/utils/constants';
 import { getSprintStartDate, resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
@@ -92,10 +91,6 @@ export function useSprintPlannerViewModel({
   const activeOrganizationId = demoPlannerRulesOrganizationId ?? tenantOrganizationId;
   const { data: plannerIntegrationRules, isFetched: plannerRulesFetched } =
     usePlannerIntegrationRules(activeOrganizationId);
-  const occupancyAssigneeThresholds = useMemo(
-    () => resolveOccupancyMinEstimates(plannerIntegrationRules),
-    [plannerIntegrationRules]
-  );
 
   const debouncedUpdateXarrow = useDebouncedCallback(updateXarrow, 100, {
     leading: true,
@@ -405,8 +400,6 @@ export function useSprintPlannerViewModel({
     handleRemoveParticipantFromTeam,
     kanbanGroupBy,
     linksDimOnHover,
-    minStoryPointsForAssignee: occupancyAssigneeThresholds.minStoryPointsForAssignee,
-    minTestPointsForAssignee: occupancyAssigneeThresholds.minTestPointsForAssignee,
     occupancyOldTmLayout,
     occupancyRowFields,
     occupancyStatusFilter,

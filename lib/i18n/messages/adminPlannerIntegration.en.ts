@@ -8,7 +8,6 @@ export const adminPlannerIntegrationEn = {
   subtab: {
     processSetup: 'Process setup',
     statusesMapping: 'Status mapping',
-    other: 'Other',
   },
   notSelected: 'Not selected',
   searchField: 'Search field…',
@@ -32,16 +31,6 @@ export const adminPlannerIntegrationEn = {
     estimateStandalone: 'Estimate',
     mergeRequest: 'Merge request link',
   },
-  thresholdsTitle: 'Assignee picker thresholds',
-  thresholdsHint: 'Below the threshold the “Good fit: …” label is hidden. Empty = 0.',
-  minSpLabel: 'Min. story points (non-QA)',
-  minTpLabel: 'Min. test points (QA)',
-  releasesPlannerTitle: 'Release readiness',
-  releaseReadyStatusLabel: 'Tracker status (release ready)',
-  releaseReadyStatusSearch: 'Search status…',
-  releaseReadyStatusTitle: 'Issue status for release readiness',
-  loadTrackerCatalogHint:
-    'Tracker statuses did not load. Check the connection or click Reload.',
   footer: {
     dirty: 'You have unsaved changes.',
     clean: 'All changes saved.',
@@ -55,7 +44,6 @@ export const adminPlannerIntegrationEn = {
       'Statuses: {total}, categories: {categories}, custom color: {customColor}.',
     summaryPlatforms:
       'Platform mapping: total {total}, unmapped {unmapped}, changed {changed}.',
-    summaryOther: 'Picker thresholds and release readiness settings.',
   },
   rulesPreview: {
     noRules: 'No additional rules.',
