@@ -2,11 +2,12 @@
 
 import type { Task, TaskParent } from '@/types';
 
-import { useEffect, useId, useRef } from 'react';
+import * as Popover from '@radix-ui/react-popover';
+import { useId, useRef } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
+import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { ParentSubmenuOptionsList } from '@/features/context-menu/components/ParentSubmenuOptionsList';
@@ -21,35 +22,29 @@ import {
   resolveContextMenuCurrentParentLabel,
   resolveTaskParentForMenu,
 } from '@/features/context-menu/utils/buildContextMenuParentOptions';
-import { calculateSubmenuPosition } from '@/features/context-menu/utils/submenuPositioning';
-import { useOverlayPresence } from '@/hooks/useOverlayPresence';
-import { DELAYS } from '@/utils/constants';
 
 interface ParentSubmenuProps {
   boardId: number | null;
-  buttonRef: React.RefObject<HTMLButtonElement | null>;
   isLoading: boolean;
   isOpen: boolean;
-  menuRef: React.RefObject<HTMLDivElement | null>;
   parentOptions: TaskParent[];
   task: Task;
   onSelect: (parent: TaskParent | null) => void;
   onToggle: () => void;
 }
 
+const PARENT_SUBMENU_MAX_HEIGHT_PX = 320;
+
 export function ParentSubmenu({
   boardId,
-  buttonRef,
   isLoading,
   isOpen,
-  menuRef,
   parentOptions,
   task,
   onSelect,
   onToggle,
 }: ParentSubmenuProps) {
   const { t } = useI18n();
-  const parentMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchInputId = useId();
   const currentParent = resolveTaskParentForMenu(task);
@@ -62,42 +57,6 @@ export function ParentSubmenu({
       parentOptions,
     });
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-    requestAnimationFrame(() => searchInputRef.current?.focus());
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isOpen && parentMenuRef.current && buttonRef.current && menuRef.current) {
-      const menuElement = menuRef.current;
-
-      const updatePosition = () => {
-        if (!parentMenuRef.current || !buttonRef.current || !menuElement) return;
-
-        const menuRect = menuElement.getBoundingClientRect();
-        const buttonRect = buttonRef.current.getBoundingClientRect();
-        const subMenuRect = parentMenuRef.current.getBoundingClientRect();
-        const parentMenuParent = parentMenuRef.current.parentElement;
-        if (!parentMenuParent) return;
-        const parentRect = parentMenuParent.getBoundingClientRect();
-
-        const { left, top } = calculateSubmenuPosition(menuRect, buttonRect, subMenuRect, parentRect);
-
-        parentMenuRef.current.style.left = `${left}px`;
-        parentMenuRef.current.style.top = `${top}px`;
-      };
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          updatePosition();
-          setTimeout(updatePosition, DELAYS.POSITIONING);
-        });
-      });
-    }
-  }, [isOpen, menuRef, buttonRef, visibleParents.length, isSearching, searchQuery]);
-
   const formattedLabel = resolveContextMenuCurrentParentLabel(task, parentOptions);
   const currentLabel = currentParent
     ? formattedLabel
@@ -107,50 +66,68 @@ export function ParentSubmenu({
   const showEmptyLocalHint = !trimmedQuery && parentOptions.length === 0 && !isSearching;
   const showNoResults =
     Boolean(trimmedQuery) && !isSearching && visibleParents.length === 0;
-  const overlay = useOverlayPresence(isOpen);
 
   return (
-    <div className="relative">
-      <Button
-        ref={buttonRef}
-        className={`${CONTEXT_MENU_ITEM_ROW_SUBMENU} !items-start ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${
-          isOpen ? CONTEXT_MENU_ITEM_ROW_ACTIVE : ''
-        } ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-        disabled={isLoading}
-        type="button"
-        variant="ghost"
-        onClick={onToggle}
-      >
-        <div className="flex min-w-0 flex-1 items-start gap-2">
+    <Popover.Root
+      modal={false}
+      open={isOpen}
+      onOpenChange={(nextOpen) => {
+        if (nextOpen !== isOpen) onToggle();
+      }}
+    >
+      <Popover.Trigger asChild>
+        <Button
+          className={`${CONTEXT_MENU_ITEM_ROW_SUBMENU} !items-start ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${
+            isOpen ? CONTEXT_MENU_ITEM_ROW_ACTIVE : ''
+          } ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
+          disabled={isLoading}
+          type="button"
+          variant="ghost"
+        >
+          <div className="flex min-w-0 flex-1 items-start gap-2">
+            <Icon
+              aria-hidden
+              className="mt-0.5 h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400"
+              name="issue-story"
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-medium leading-5">
+                {t('sprintPlanner.contextMenu.parentIssue')}
+              </span>
+              <span className="mt-0.5 block truncate text-xs font-normal leading-4 text-gray-500 dark:text-gray-400">
+                {currentLabel}
+              </span>
+            </span>
+          </div>
           <Icon
             aria-hidden
-            className="mt-0.5 h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400"
-            name="issue-story"
+            className={`mt-0.5 h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
+              isOpen ? 'rotate-90' : ''
+            }`}
+            name="chevron-right"
           />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate font-medium leading-5">
-              {t('sprintPlanner.contextMenu.parentIssue')}
-            </span>
-            <span className="mt-0.5 block truncate text-xs font-normal leading-4 text-gray-500 dark:text-gray-400">
-              {currentLabel}
-            </span>
-          </span>
-        </div>
-        <Icon
-          aria-hidden
-          className={`mt-0.5 h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
-            isOpen ? 'rotate-90' : ''
-          }`}
-          name="chevron-right"
-        />
-      </Button>
-      {overlay.mounted ? (
-        <div
-          ref={parentMenuRef}
-          className={`absolute flex max-h-[320px] min-w-[260px] max-w-[min(320px,calc(100vw-40px))] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white py-1.5 shadow-2xl dark:border-gray-700 dark:bg-gray-800 ${ZIndex.class('submenu')} ${OVERLAY_PANEL_ENTER}`}
-          data-state={overlay.state}
+        </Button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          align="start"
+          className={`flex max-h-[320px] min-w-[260px] max-w-[min(320px,calc(100vw-40px))] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white py-1.5 shadow-2xl outline-none dark:border-gray-700 dark:bg-gray-800 ${ZIndex.class('submenu')} ${OVERLAY_FLOATING_ANIMATION}`}
+          collisionPadding={10}
           data-submenu="true"
-          onAnimationEnd={overlay.onAnimationEnd}
+          side="right"
+          sideOffset={2}
+          style={{
+            maxHeight: `min(${PARENT_SUBMENU_MAX_HEIGHT_PX}px, calc(100vh - 20px))`,
+            // Radix копирует computed z-index на портал-обёртку. Класс из ZIndex.class
+            // в CSS не генерируется, без инлайна обёртка остаётся auto и подложка меню перехватывает колесо.
+            zIndex: ZIndex.submenu,
+          }}
+          updatePositionStrategy="always"
+          onCloseAutoFocus={(event) => event.preventDefault()}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            searchInputRef.current?.focus();
+          }}
         >
           <div className="shrink-0 border-b border-gray-100 px-2 pb-1.5 pt-0.5 dark:border-gray-700">
             <input
@@ -165,17 +142,22 @@ export function ParentSubmenu({
               onKeyDown={(e) => e.stopPropagation()}
             />
           </div>
-          <ParentSubmenuOptionsList
-            currentKey={currentKey}
-            isLoading={isLoading}
-            isSearching={isSearching}
-            showEmptyLocalHint={showEmptyLocalHint}
-            showNoResults={showNoResults}
-            visibleParents={visibleParents}
-            onSelect={onSelect}
-          />
-        </div>
-      ) : null}
-    </div>
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin-custom"
+            style={{ maxHeight: 'min(272px, calc(100vh - 68px))' }}
+          >
+            <ParentSubmenuOptionsList
+              currentKey={currentKey}
+              isLoading={isLoading}
+              isSearching={isSearching}
+              showEmptyLocalHint={showEmptyLocalHint}
+              showNoResults={showNoResults}
+              visibleParents={visibleParents}
+              onSelect={onSelect}
+            />
+          </div>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

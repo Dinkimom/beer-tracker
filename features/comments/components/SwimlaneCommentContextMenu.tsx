@@ -2,7 +2,7 @@
 
 import type { Task, TaskParent } from '@/types';
 
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/Button';
 import { CardLinkIcon } from '@/components/CardLinkIcon';
@@ -90,8 +90,6 @@ export function SwimlaneCommentContextMenu({
   const showLink = onStartLinking != null;
   const showNoteActions = !isImage;
   const menuRef = useRef<HTMLDivElement>(null);
-  const parentButtonRef = useRef<HTMLButtonElement>(null);
-  const assigneeButtonRef = useRef<HTMLButtonElement>(null);
   const [isParentMenuOpen, setIsParentMenuOpen] = useState(false);
   const [isAssigneeMenuOpen, setIsAssigneeMenuOpen] = useState(false);
   const showParent = onParentSelect != null && task != null;
@@ -198,10 +196,8 @@ export function SwimlaneCommentContextMenu({
           </>
         )}
         {renderSwimlaneCommentAssigneeSubmenu({
-          assigneeButtonRef,
           assigneeOptions,
           isOpen: isAssigneeMenuOpen,
-          menuRef,
           onClose: requestClose,
           onSelect: onAssigneeSelect,
           onToggle: () => {
@@ -214,13 +210,11 @@ export function SwimlaneCommentContextMenu({
         {renderSwimlaneCommentParentSubmenu({
           boardId,
           isOpen: isParentMenuOpen,
-          menuRef,
           onSelect: onParentSelect,
           onToggle: () => {
             setIsAssigneeMenuOpen(false);
             setIsParentMenuOpen((open) => !open);
           },
-          parentButtonRef,
           parentOptions,
           show: showParent,
           task,
@@ -257,10 +251,8 @@ export function SwimlaneCommentContextMenu({
 }
 
 function renderSwimlaneCommentAssigneeSubmenu(input: {
-  assigneeButtonRef: RefObject<HTMLButtonElement | null>;
   assigneeOptions: ContextMenuAssigneeOptions | null;
   isOpen: boolean;
-  menuRef: RefObject<HTMLDivElement | null>;
   show: boolean;
   task: Task | null;
   onClose: () => void;
@@ -272,10 +264,8 @@ function renderSwimlaneCommentAssigneeSubmenu(input: {
   }
   return (
     <AssigneeSubmenu
-      buttonRef={input.assigneeButtonRef}
       isLoading={false}
       isOpen={input.isOpen}
-      menuRef={input.menuRef}
       options={input.assigneeOptions}
       selectedAssigneeId={input.task.assignee ?? ''}
       task={input.task}
@@ -291,8 +281,6 @@ function renderSwimlaneCommentAssigneeSubmenu(input: {
 function renderSwimlaneCommentParentSubmenu(input: {
   boardId: number | null;
   isOpen: boolean;
-  menuRef: RefObject<HTMLDivElement | null>;
-  parentButtonRef: RefObject<HTMLButtonElement | null>;
   parentOptions: TaskParent[];
   show: boolean;
   task: Task | null;
@@ -305,10 +293,8 @@ function renderSwimlaneCommentParentSubmenu(input: {
   return (
     <ParentSubmenu
       boardId={input.boardId}
-      buttonRef={input.parentButtonRef}
       isLoading={false}
       isOpen={input.isOpen}
-      menuRef={input.menuRef}
       parentOptions={input.parentOptions}
       task={input.task}
       onSelect={input.onSelect}

@@ -134,8 +134,6 @@ export function ContextMenu({
     statusButtonRef,
     sprintButtonRef,
     estimateButtonRef,
-    parentButtonRef,
-    assigneeButtonRef,
     isLoading,
     pendingTransitionId,
     isStatusMenuOpen,
@@ -302,7 +300,6 @@ export function ContextMenu({
           isLoading={isLoading}
           isParentMenuOpen={isParentMenuOpen}
           menuRef={menuRef}
-          parentButtonRef={parentButtonRef}
           parentOptions={parentOptions}
           showEstimate={showEstimate}
           showParent={showParent}
@@ -318,7 +315,6 @@ export function ContextMenu({
         />
 
         <ContextMenuActions
-          assigneeButtonRef={assigneeButtonRef}
           assigneeOptions={assigneeOptions}
           currentSprintId={currentSprintId}
           hasPosition={!!taskPositions?.has(task.id)}
@@ -328,7 +324,6 @@ export function ContextMenu({
           isBacklogTask={isBacklogTask}
           isKanbanView={isKanbanView}
           isLoading={isLoading}
-          menuRef={menuRef}
           selectedAssigneeId={
             (task.team === 'QA' ? task.qaEngineer : task.assignee) ||
             taskPositions?.get(task.id)?.assignee ||

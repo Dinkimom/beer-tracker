@@ -19,8 +19,9 @@ import {
 type ContextMenuAnchorRect = Pick<DOMRect, 'bottom' | 'height' | 'left' | 'right' | 'top' | 'width'>;
 
 function isScrollTargetInsideSubmenu(e: Event): boolean {
-  const target = e.target as HTMLElement;
-  return target.closest('[data-submenu="true"]') !== null;
+  const target = e.target;
+  if (!(target instanceof Element)) return false;
+  return target.closest('[data-submenu="true"], [data-radix-popper-content-wrapper]') !== null;
 }
 
 interface UseContextMenuProps {
@@ -60,8 +61,6 @@ export function useContextMenu({
   const statusButtonRef = useRef<HTMLButtonElement>(null);
   const sprintButtonRef = useRef<HTMLButtonElement>(null);
   const estimateButtonRef = useRef<HTMLButtonElement>(null);
-  const parentButtonRef = useRef<HTMLButtonElement>(null);
-  const assigneeButtonRef = useRef<HTMLButtonElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingTransitionId, setPendingTransitionId] = useState<string | null>(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
@@ -337,8 +336,6 @@ export function useContextMenu({
     statusButtonRef,
     sprintButtonRef,
     estimateButtonRef,
-    parentButtonRef,
-    assigneeButtonRef,
     isLoading,
     pendingTransitionId,
     isStatusMenuOpen,

@@ -29,7 +29,7 @@ export function ParentSubmenuOptionsList({
   const { t } = useI18n();
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
+    <div>
       <Button
         className={`flex h-auto min-h-0 w-full items-center gap-2 rounded-none border-0 bg-transparent px-4 py-2.5 text-left text-sm shadow-none hover:!bg-gray-50 dark:hover:!bg-gray-700 ${
           !currentKey

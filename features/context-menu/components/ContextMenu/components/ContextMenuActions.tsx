@@ -19,7 +19,6 @@ import {
 } from '@/features/context-menu/contextMenuClasses';
 
 interface ContextMenuActionsProps {
-  assigneeButtonRef: React.RefObject<HTMLButtonElement | null>;
   assigneeOptions?: ContextMenuAssigneeOptions | null;
   currentSprintId: number | null;
   hasPosition: boolean;
@@ -30,7 +29,6 @@ interface ContextMenuActionsProps {
   isBacklogTask: boolean;
   isKanbanView?: boolean;
   isLoading: boolean;
-  menuRef: React.RefObject<HTMLDivElement | null>;
   selectedAssigneeId: string;
   task: Task;
   onAssigneeSelect?: (assigneeId: string) => void;
@@ -42,7 +40,6 @@ interface ContextMenuActionsProps {
 }
 
 export function ContextMenuActions({
-  assigneeButtonRef,
   assigneeOptions = null,
   currentSprintId,
   hasPosition,
@@ -52,7 +49,6 @@ export function ContextMenuActions({
   isLoading,
   isBacklogTask,
   isKanbanView = false,
-  menuRef,
   selectedAssigneeId,
   task,
   onAssigneeSelect,
@@ -95,10 +91,8 @@ export function ContextMenuActions({
           {showSeparatorBeforeRegular && <div className={CONTEXT_MENU_SEPARATOR} role="separator" />}
           {showChangeAssignee && assigneeOptions && onAssigneeSelect ? (
             <AssigneeSubmenu
-              buttonRef={assigneeButtonRef}
               isLoading={isLoading}
               isOpen={isAssigneeMenuOpen}
-              menuRef={menuRef}
               options={assigneeOptions}
               selectedAssigneeId={selectedAssigneeId}
               task={task}

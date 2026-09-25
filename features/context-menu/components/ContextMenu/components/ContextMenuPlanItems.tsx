@@ -22,7 +22,6 @@ interface ContextMenuPlanItemsProps {
   isLoading: boolean;
   isParentMenuOpen: boolean;
   menuRef: React.RefObject<HTMLDivElement | null>;
-  parentButtonRef: React.RefObject<HTMLButtonElement | null>;
   parentOptions: TaskParent[];
   showEstimate: boolean;
   showParent: boolean;
@@ -45,7 +44,6 @@ export function ContextMenuPlanItems({
   isLoading,
   isParentMenuOpen,
   menuRef,
-  parentButtonRef,
   parentOptions,
   showEstimate,
   showParent,
@@ -91,10 +89,8 @@ export function ContextMenuPlanItems({
           ) : null}
           <ParentSubmenu
             boardId={boardId}
-            buttonRef={parentButtonRef}
             isLoading={isLoading}
             isOpen={isParentMenuOpen}
-            menuRef={menuRef}
             parentOptions={parentOptions}
             task={task}
             onSelect={onParentSelect}
