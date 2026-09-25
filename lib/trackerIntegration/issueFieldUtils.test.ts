@@ -39,4 +39,12 @@ describe("readStringTokensFromIssue", () => {
       "be-id",
     ]));
   });
+
+  it("collects Jira component names", () => {
+    const issue = issueWith({
+      components: [{ id: "10036", name: "Frontend" }],
+    });
+
+    expect(readStringTokensFromIssue(issue, "components")).toEqual(["Frontend", "10036"]);
+  });
 });

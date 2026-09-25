@@ -109,6 +109,7 @@ export const adminPlannerIntegrationRu = {
     platformFieldLabel: 'Поле платформы',
     platformFieldSearch: 'Поиск поля…',
     platformFieldTitle: 'Поле платформы',
+    valuesLoading: 'Загрузка списка значений…',
     valuesLoadFailed: 'Не удалось загрузить список значений для этого поля.',
     filterAll: 'Все',
     filterUnmapped: 'Без сопоставления ({count})',

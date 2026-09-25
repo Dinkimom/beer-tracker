@@ -52,11 +52,11 @@ interface AdminTrackerIntegrationProcessSetupPanelProps {
   fieldRows: TrackerIntegrationFieldRow[];
   fieldSelectOptions: CustomSelectOption<string>[];
   label: string;
-  mappingFieldSelectOptions: CustomSelectOption<string>[];
   muted: string;
   numericFieldSelectOptions: CustomSelectOption<string>[];
   platformFieldId: string;
   platformFieldValues: string[];
+  platformFieldValuesLoading: boolean;
   platformMappingFilter: PlatformMappingFilter;
   platformMappingStats: { changed: number; unmapped: number };
   platformValueMap: PlatformValueMapFormRow[];
@@ -91,11 +91,11 @@ export function AdminTrackerIntegrationProcessSetupPanel({
   fieldRows,
   fieldSelectOptions,
   label,
-  mappingFieldSelectOptions,
   muted,
   numericFieldSelectOptions,
   platformFieldId,
   platformFieldValues,
+  platformFieldValuesLoading,
   platformMappingFilter,
   platformMappingStats,
   platformValueMap,
@@ -152,11 +152,12 @@ export function AdminTrackerIntegrationProcessSetupPanel({
   return (
     <article className={sectionBlock}>
       <TrackerPlatformMappingPanel
+        fieldSelectOptions={fieldSelectOptions}
         labelClass={label}
-        mappingFieldSelectOptions={mappingFieldSelectOptions}
         mutedClass={muted}
         platformFieldId={platformFieldId}
         platformFieldValues={platformFieldValues}
+        platformFieldValuesLoading={platformFieldValuesLoading}
         platformMappingFilter={platformMappingFilter}
         platformValueMap={platformValueMap}
         stats={platformMappingStats}

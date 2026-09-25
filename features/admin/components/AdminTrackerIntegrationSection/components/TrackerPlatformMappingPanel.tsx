@@ -24,11 +24,12 @@ const PLATFORM_SELECT_OPTIONS: CustomSelectOption<string>[] = [
 ];
 
 interface TrackerPlatformMappingPanelProps {
+  fieldSelectOptions: CustomSelectOption<string>[];
   labelClass: string;
-  mappingFieldSelectOptions: CustomSelectOption<string>[];
   mutedClass: string;
   platformFieldId: string;
   platformFieldValues: string[];
+  platformFieldValuesLoading: boolean;
   platformMappingFilter: PlatformMappingFilter;
   platformValueMap: PlatformValueMapFormRow[];
   stats: { changed: number; unmapped: number };
@@ -41,14 +42,15 @@ interface TrackerPlatformMappingPanelProps {
 }
 
 export function TrackerPlatformMappingPanel({
+  fieldSelectOptions,
   labelClass,
-  mappingFieldSelectOptions,
   mutedClass,
   onPlatformFieldChange,
   onPlatformMappingFilterChange,
   onRowPlatformChange,
   platformFieldId,
   platformFieldValues,
+  platformFieldValuesLoading,
   platformMappingFilter,
   platformValueMap,
   stats,
@@ -57,6 +59,9 @@ export function TrackerPlatformMappingPanel({
   visibleRows,
 }: TrackerPlatformMappingPanelProps) {
   const { t } = useI18n();
+  const platformSelectValue = fieldSelectOptions.some((option) => option.value === platformFieldId)
+    ? platformFieldId
+    : '';
 
   const platformSelectOptions = useMemo((): CustomSelectOption<string>[] => {
     return [
@@ -102,25 +107,26 @@ export function TrackerPlatformMappingPanel({
         </div>
         <CustomSelect
           className="w-full"
-          options={mappingFieldSelectOptions}
+          options={fieldSelectOptions}
           searchPlaceholder={t(
             'admin.plannerIntegration.platformMapping.platformFieldSearch',
           )}
           searchable
           title={t('admin.plannerIntegration.platformMapping.platformFieldTitle')}
-          value={platformFieldId}
+          value={platformSelectValue}
           onChange={(v) => {
             onPlatformFieldChange(v);
           }}
         />
       </div>
-      {platformFieldId ? (
+      {platformSelectValue ? (
         <div className="mt-3 overflow-hidden rounded-lg border border-gray-200/80 bg-white/60 p-3 dark:border-gray-700 dark:bg-gray-950/20">
           <div className="space-y-2">
             <TrackerPlatformMappingValuesSection
               filterTabs={filterTabs}
               mutedClass={mutedClass}
               platformFieldValues={platformFieldValues}
+              platformFieldValuesLoading={platformFieldValuesLoading}
               platformMappingFilter={platformMappingFilter}
               platformSelectOptions={platformSelectOptions}
               platformValueMap={platformValueMap}

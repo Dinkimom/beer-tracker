@@ -2,7 +2,7 @@ import type { TrackerIntegrationStored } from './schema';
 import type { Team } from '@/types';
 import type { TrackerIssue } from '@/types/tracker';
 
-import { readIssueTagTokens, readStringTokenFromIssue } from './issueFieldUtils';
+import { readIssueTagTokens, readStringTokensFromIssue } from './issueFieldUtils';
 
 function normalizeMapKey(s: string): string {
   return s.trim().toLowerCase();
@@ -12,13 +12,14 @@ function resolvePlatformFromFieldMap(
   issue: TrackerIssue,
   platform: NonNullable<TrackerIntegrationStored['platform']>
 ): Team | undefined {
-  const raw = readStringTokenFromIssue(issue, platform.fieldId ?? 'functionalTeam');
-  if (!raw) {
+  const tokens = readStringTokensFromIssue(issue, platform.fieldId ?? 'functionalTeam')
+    .map(normalizeMapKey)
+    .filter(Boolean);
+  if (tokens.length === 0) {
     return platform.fallbackPlatform;
   }
-  const key = normalizeMapKey(raw);
   for (const row of platform.valueMap) {
-    if (normalizeMapKey(row.trackerValue) === key) {
+    if (tokens.includes(normalizeMapKey(row.trackerValue))) {
       return row.platform;
     }
   }

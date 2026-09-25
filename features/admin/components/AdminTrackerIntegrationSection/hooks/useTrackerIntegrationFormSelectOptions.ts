@@ -115,15 +115,6 @@ export function useTrackerIntegrationFormSelectOptions({
     ];
   }, [fieldRows, t]);
 
-  const mappingFieldSelectOptions =
-    useMemo((): CustomSelectOption<string>[] => {
-      const mappingRows = fieldRows.filter((f) => (f.options?.length ?? 0) > 0);
-      return mappingRows.map((f) => ({
-        label: joinAdminMetaLabels([f.display, f.name, f.key], f.id),
-        value: f.id,
-      }));
-    }, [fieldRows]);
-
   const statusTableRows = useMemo(() => {
     const knownIdentities = new Set<string>();
     const fromApi = trackerStatusesList.map((row) => {
@@ -250,7 +241,6 @@ export function useTrackerIntegrationFormSelectOptions({
   return {
     allFieldSelectOptions,
     fieldSelectOptions,
-    mappingFieldSelectOptions,
     numericFieldSelectOptions,
     platformMappingStats,
     releaseReadyStatusOptions,

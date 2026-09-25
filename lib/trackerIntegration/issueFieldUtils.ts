@@ -38,9 +38,17 @@ function pushObjectStringTokens(out: string[], value: unknown): void {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return;
   }
-  const obj = value as { display?: string; id?: string; key?: string };
+  const obj = value as {
+    display?: string;
+    id?: string;
+    key?: string;
+    name?: string;
+    value?: string;
+  };
   pushUniqueToken(out, obj.key);
   pushUniqueToken(out, obj.display);
+  pushUniqueToken(out, obj.name);
+  pushUniqueToken(out, obj.value);
   pushUniqueToken(out, obj.id);
 }
 

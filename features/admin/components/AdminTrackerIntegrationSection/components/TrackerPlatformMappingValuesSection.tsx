@@ -18,6 +18,7 @@ interface TrackerPlatformMappingValuesSectionProps {
   filterTabs: ReadonlyArray<{ id: PlatformMappingFilterTabId; label: string }>;
   mutedClass: string;
   platformFieldValues: string[];
+  platformFieldValuesLoading: boolean;
   platformMappingFilter: PlatformMappingFilterTabId;
   platformSelectOptions: CustomSelectOption<string>[];
   platformValueMap: PlatformValueMapFormRow[];
@@ -34,6 +35,7 @@ export function TrackerPlatformMappingValuesSection({
   onPlatformMappingFilterChange,
   onRowPlatformChange,
   platformFieldValues,
+  platformFieldValuesLoading,
   platformMappingFilter,
   platformSelectOptions,
   platformValueMap,
@@ -43,10 +45,13 @@ export function TrackerPlatformMappingValuesSection({
 }: TrackerPlatformMappingValuesSectionProps) {
   const { t } = useI18n();
 
-  if (platformFieldValues.length === 0) {
+  if (platformFieldValuesLoading || platformFieldValues.length === 0) {
+    const emptyMessageKey = platformFieldValuesLoading
+      ? 'admin.plannerIntegration.platformMapping.valuesLoading'
+      : 'admin.plannerIntegration.platformMapping.valuesLoadFailed';
     return (
       <p className={`text-xs ${mutedClass}`}>
-        {t('admin.plannerIntegration.platformMapping.valuesLoadFailed')}
+        {t(emptyMessageKey)}
       </p>
     );
   }

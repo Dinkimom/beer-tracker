@@ -146,7 +146,10 @@ export function useTrackerPlatformFieldValues(
 ) {
   const trimmedFieldId = platformFieldId.trim();
   const fetchEnabled = Boolean(organizationId && trimmedFieldId);
-  const [platformFieldValues, setPlatformFieldValues] = useState<string[]>([]);
+  const [loadedFieldValues, setLoadedFieldValues] = useState<{
+    fieldId: string;
+    values: string[];
+  } | null>(null);
 
   useEffect(() => {
     if (!fetchEnabled) {
@@ -157,7 +160,7 @@ export function useTrackerPlatformFieldValues(
     async function loadPlatformFieldValues() {
       const values = await fetchAdminTrackerPlatformFieldValues(organizationId, trimmedFieldId);
       if (!cancelled) {
-        setPlatformFieldValues(values);
+        setLoadedFieldValues({ fieldId: trimmedFieldId, values });
       }
     }
 
@@ -167,5 +170,9 @@ export function useTrackerPlatformFieldValues(
     };
   }, [fetchEnabled, organizationId, trimmedFieldId]);
 
-  return fetchEnabled ? platformFieldValues : [];
+  const valuesReady = loadedFieldValues?.fieldId === trimmedFieldId;
+  return {
+    platformFieldValues: fetchEnabled && valuesReady ? loadedFieldValues.values : [],
+    platformFieldValuesLoading: fetchEnabled && !valuesReady,
+  };
 }

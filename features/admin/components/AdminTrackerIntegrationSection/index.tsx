@@ -95,12 +95,12 @@ export function AdminTrackerIntegrationSection({
     fieldSelectOptions,
     footerSummaryText,
     hasUnsavedChanges,
-    mappingFieldSelectOptions,
     minSp,
     minTp,
     numericFieldSelectOptions,
     platformFieldId,
     platformFieldValues,
+    platformFieldValuesLoading,
     platformMappingFilter,
     platformMappingStats,
     platformValueMap,
@@ -190,11 +190,11 @@ export function AdminTrackerIntegrationSection({
               fieldRows={fieldRows}
               fieldSelectOptions={fieldSelectOptions}
               label={label}
-              mappingFieldSelectOptions={mappingFieldSelectOptions}
               muted={muted}
               numericFieldSelectOptions={numericFieldSelectOptions}
               platformFieldId={platformFieldId}
               platformFieldValues={platformFieldValues}
+              platformFieldValuesLoading={platformFieldValuesLoading}
               platformMappingFilter={platformMappingFilter}
               platformMappingStats={platformMappingStats}
               platformValueMap={platformValueMap}

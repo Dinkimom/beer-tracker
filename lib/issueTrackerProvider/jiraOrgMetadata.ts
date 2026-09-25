@@ -109,6 +109,163 @@ export async function fetchJiraOrganizationStatuses(
   }
 }
 
+const JIRA_FIELD_OPTION_PAGE_SIZE = 100;
+const JIRA_FIELD_OPTION_MAX_PAGES = 30;
+
+function readJiraOptionLabel(item: unknown): string {
+  if (typeof item === 'string') {
+    return item.trim();
+  }
+  if (!item || typeof item !== 'object') {
+    return '';
+  }
+  const row = item as { name?: unknown; value?: unknown };
+  if (typeof row.value === 'string' && row.value.trim()) {
+    return row.value.trim();
+  }
+  if (typeof row.name === 'string') {
+    return row.name.trim();
+  }
+  return '';
+}
+
+export function readJiraOptionLabels(raw: unknown): string[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw.map((item) => readJiraOptionLabel(item)).filter(Boolean);
+}
+
+function dedupeJiraOptionLabels(labels: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const label of labels) {
+    if (seen.has(label)) {
+      continue;
+    }
+    seen.add(label);
+    out.push(label);
+  }
+  return out;
+}
+
+function readJiraContextIds(data: unknown): string[] {
+  return extractTrackerMetadataArray(data)
+    .map((row) => {
+      if (!row || typeof row !== 'object') {
+        return '';
+      }
+      const id = (row as { id?: unknown }).id;
+      if (typeof id === 'string' || typeof id === 'number') {
+        return String(id).trim();
+      }
+      return '';
+    })
+    .filter(Boolean);
+}
+
+function jiraOptionPageIsComplete(data: unknown, count: number): boolean {
+  if (data && typeof data === 'object' && (data as { isLast?: unknown }).isLast === true) {
+    return true;
+  }
+  return count < JIRA_FIELD_OPTION_PAGE_SIZE;
+}
+
+async function fetchJiraContextOptionLabels(
+  api: AxiosInstance,
+  fieldId: string,
+  contextId: string
+): Promise<string[]> {
+  const labels: string[] = [];
+  let startAt = 0;
+  for (let page = 0; page < JIRA_FIELD_OPTION_MAX_PAGES; page += 1) {
+    const { data } = await api.get<unknown>(
+      `/field/${encodeURIComponent(fieldId)}/context/${encodeURIComponent(contextId)}/option`,
+      { params: { maxResults: JIRA_FIELD_OPTION_PAGE_SIZE, startAt } }
+    );
+    const pageValues =
+      data && typeof data === 'object' ? (data as { values?: unknown }).values : undefined;
+    const pageLabels = readJiraOptionLabels(pageValues);
+    labels.push(...pageLabels);
+    if (jiraOptionPageIsComplete(data, pageLabels.length)) {
+      break;
+    }
+    startAt += pageLabels.length;
+  }
+  return labels;
+}
+
+async function fetchJiraCustomFieldOptionLabels(
+  api: AxiosInstance,
+  fieldId: string
+): Promise<string[]> {
+  const { data } = await api.get<unknown>(`/field/${encodeURIComponent(fieldId)}/context`);
+  const labels: string[] = [];
+  for (const contextId of readJiraContextIds(data)) {
+    labels.push(...(await fetchJiraContextOptionLabels(api, fieldId, contextId)));
+  }
+  return dedupeJiraOptionLabels(labels);
+}
+
+const JIRA_COMPONENT_FETCH_CONCURRENCY = 8;
+
+function readJiraProjectKeys(data: unknown): string[] {
+  return extractTrackerMetadataArray(data)
+    .map((row) => {
+      if (!row || typeof row !== 'object') {
+        return '';
+      }
+      const key = (row as { key?: unknown }).key;
+      return typeof key === 'string' ? key.trim() : '';
+    })
+    .filter(Boolean);
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapItem: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = [];
+  for (let offset = 0; offset < items.length; offset += concurrency) {
+    const chunk = items.slice(offset, offset + concurrency);
+    results.push(...(await Promise.all(chunk.map(mapItem))));
+  }
+  return results;
+}
+
+async function fetchJiraProjectComponentNames(
+  api: AxiosInstance,
+  projectKey: string
+): Promise<string[]> {
+  try {
+    const { data } = await api.get<unknown>(
+      `/project/${encodeURIComponent(projectKey)}/components`
+    );
+    return readJiraOptionLabels(extractTrackerMetadataArray(data));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchJiraComponentOptionLabels(api: AxiosInstance): Promise<string[]> {
+  const { data } = await api.get<unknown>('/project');
+  const names = await mapWithConcurrency(
+    readJiraProjectKeys(data),
+    JIRA_COMPONENT_FETCH_CONCURRENCY,
+    (projectKey) => fetchJiraProjectComponentNames(api, projectKey)
+  );
+  return dedupeJiraOptionLabels(names.flat()).sort((left, right) => left.localeCompare(right));
+}
+
+async function fetchJiraFieldAllowedValues(api: AxiosInstance, fieldId: string): Promise<string[]> {
+  const { data } = await api.get<unknown>(`/field/${encodeURIComponent(fieldId)}`);
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return [];
+  }
+  return readJiraOptionLabels((data as { allowedValues?: unknown }).allowedValues);
+}
+
 export async function fetchJiraFieldEnumValues(
   api: AxiosInstance,
   fieldId: string
@@ -117,27 +274,23 @@ export async function fetchJiraFieldEnumValues(
   if (!id) {
     return [];
   }
+  if (id === 'components') {
+    try {
+      return await fetchJiraComponentOptionLabels(api);
+    } catch {
+      return [];
+    }
+  }
   try {
-    const { data } = await api.get<unknown>(`/field/${encodeURIComponent(id)}`);
-    if (!data || typeof data !== 'object' || Array.isArray(data)) {
-      return [];
+    const fromContext = await fetchJiraCustomFieldOptionLabels(api, id);
+    if (fromContext.length > 0) {
+      return fromContext;
     }
-    const allowed = (data as { allowedValues?: unknown }).allowedValues;
-    if (!Array.isArray(allowed)) {
-      return [];
-    }
-    return allowed
-      .map((item) => {
-        if (typeof item === 'string') {
-          return item.trim();
-        }
-        if (item && typeof item === 'object') {
-          const row = item as { name?: string; value?: string };
-          return (row.value ?? row.name ?? '').trim();
-        }
-        return '';
-      })
-      .filter(Boolean);
+  } catch {
+    // Context options exist only for select custom fields.
+  }
+  try {
+    return await fetchJiraFieldAllowedValues(api, id);
   } catch {
     return [];
   }

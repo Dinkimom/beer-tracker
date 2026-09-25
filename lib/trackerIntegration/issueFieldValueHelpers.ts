@@ -38,6 +38,9 @@ function readObjectPropertyToken(v: object, property: 'display' | 'key'): string
 }
 
 function readStringTokenFromObject(v: object): string {
+  if (Array.isArray(v)) {
+    return '';
+  }
   if ('key' in v) {
     return readObjectPropertyToken(v, 'key');
   }

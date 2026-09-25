@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  fetchJiraFieldEnumValues,
   fetchJiraOrganizationFields,
   fetchJiraOrganizationStatuses,
   mapJiraFieldToMetadata,
   mapJiraStatusToMetadata,
+  readJiraOptionLabels,
 } from './jiraOrgMetadata';
 
 describe('mapJiraFieldToMetadata', () => {
@@ -59,6 +61,78 @@ describe('mapJiraStatusToMetadata', () => {
       key: '42',
       statusType: undefined,
     });
+  });
+});
+
+describe('readJiraOptionLabels', () => {
+  it('reads string and object option labels', () => {
+    expect(
+      readJiraOptionLabels([' frontend ', { value: 'backend' }, { name: 'QA' }, { value: '  ' }, null])
+    ).toEqual(['frontend', 'backend', 'QA']);
+  });
+});
+
+describe('fetchJiraFieldEnumValues', () => {
+  it('loads select options from field contexts', async () => {
+    const get = vi.fn((url: string) => {
+      if (url.endsWith('/context')) {
+        return Promise.resolve({ data: { values: [{ id: '10156' }] } });
+      }
+      if (url.includes('/option')) {
+        return Promise.resolve({
+          data: {
+            isLast: true,
+            values: [
+              { disabled: false, id: '1', value: 'frontend' },
+              { disabled: true, id: '2', value: 'backend' },
+            ],
+          },
+        });
+      }
+      return Promise.reject(new Error(url));
+    });
+
+    await expect(fetchJiraFieldEnumValues({ get } as never, 'customfield_10050')).resolves.toEqual([
+      'frontend',
+      'backend',
+    ]);
+  });
+
+  it('loads component names from every project', async () => {
+    const get = vi.fn((url: string) => {
+      if (url === '/project') {
+        return Promise.resolve({ data: [{ key: 'RND' }, { key: 'BRZ' }, { key: '' }] });
+      }
+      if (url === '/project/RND/components') {
+        return Promise.resolve({ data: [{ name: 'Backend' }, { name: 'Frontend' }] });
+      }
+      if (url === '/project/BRZ/components') {
+        return Promise.resolve({ data: [{ name: 'Frontend' }, { name: 'Bookings and visits' }] });
+      }
+      return Promise.reject(new Error(url));
+    });
+
+    await expect(fetchJiraFieldEnumValues({ get } as never, 'components')).resolves.toEqual([
+      'Backend',
+      'Bookings and visits',
+      'Frontend',
+    ]);
+  });
+
+  it('falls back to allowedValues when the field has no context options', async () => {
+    const get = vi.fn((url: string) => {
+      if (url.endsWith('/context')) {
+        return Promise.reject(new Error('no context'));
+      }
+      return Promise.resolve({
+        data: { allowedValues: [{ value: 'yes' }, { name: 'no' }] },
+      });
+    });
+
+    await expect(fetchJiraFieldEnumValues({ get } as never, 'priority')).resolves.toEqual([
+      'yes',
+      'no',
+    ]);
   });
 });
 

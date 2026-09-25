@@ -110,6 +110,7 @@ export const adminPlannerIntegrationEn = {
     platformFieldLabel: 'Platform field',
     platformFieldSearch: 'Search field…',
     platformFieldTitle: 'Platform field',
+    valuesLoading: 'Loading option list…',
     valuesLoadFailed: 'Could not load option list for this field.',
     filterAll: 'All',
     filterUnmapped: 'Unmapped ({count})',

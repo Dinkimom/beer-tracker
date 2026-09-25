@@ -84,7 +84,7 @@ export function useTrackerIntegrationFormState({
     Record<string, string>
   >({});
 
-  const platformFieldValues = useTrackerPlatformFieldValues(
+  const { platformFieldValues, platformFieldValuesLoading } = useTrackerPlatformFieldValues(
     organizationId,
     platformFieldId,
   );
@@ -104,7 +104,6 @@ export function useTrackerIntegrationFormState({
   const {
     allFieldSelectOptions,
     fieldSelectOptions,
-    mappingFieldSelectOptions,
     numericFieldSelectOptions,
     platformMappingStats,
     releaseReadyStatusOptions,
@@ -290,12 +289,12 @@ export function useTrackerIntegrationFormState({
     fieldSelectOptions,
     footerSummaryText,
     hasUnsavedChanges,
-    mappingFieldSelectOptions,
     minSp,
     minTp,
     numericFieldSelectOptions,
     platformFieldId,
     platformFieldValues,
+    platformFieldValuesLoading,
     platformMappingFilter,
     platformMappingStats,
     platformValueMap,
