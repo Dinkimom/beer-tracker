@@ -107,4 +107,41 @@ describe('searchYandexTrackerUsers', () => {
       { email: null, trackerId: '1' },
     ]);
   });
+
+  it('paginates past 20 pages so display-name search reaches later users', async () => {
+    const get = vi.fn((_url: string, config?: { params?: { page?: number } }) => {
+      const page = config?.params?.page ?? 1;
+      if (page < 23) {
+        return Promise.resolve({
+          data: Array.from({ length: 100 }, (_, i) => ({
+            display: `User ${page}-${i}`,
+            login: `u${page}_${i}`,
+            uid: page * 1000 + i,
+          })),
+        });
+      }
+      if (page === 23) {
+        return Promise.resolve({
+          data: [
+            {
+              display: 'Полина Наконечная',
+              email: 'p.nakonechnaia@example.com',
+              login: 'p.nakonechnaia',
+              uid: 8000000000001004,
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ data: [] });
+    });
+    const api = {
+      defaults: { baseURL: 'https://api.tracker.test', headers: { Authorization: 'OAuth t' } },
+      get,
+    } as never;
+
+    await expect(searchYandexTrackerUsers(api, 'Полина Наконечная')).resolves.toMatchObject([
+      { displayName: 'Полина Наконечная', login: 'p.nakonechnaia', trackerId: '8000000000001004' },
+    ]);
+    expect(get).toHaveBeenCalledTimes(23);
+  });
 });

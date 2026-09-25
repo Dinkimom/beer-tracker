@@ -8,13 +8,14 @@ import { useCallback, useState } from 'react';
 import { Button } from '@/components/Button';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
+import { SearchInput } from '@/components/SearchInput';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   adminListShell,
   cardBody,
+  cardHeader,
   cardShell,
   muted,
-  pageStack,
 } from '@/features/admin/adminUiTokens';
 import { AdminFormModal } from '@/features/admin/components/AdminFormModal';
 import { AdminPageHeader } from '@/features/admin/components/AdminPageHeader';
@@ -50,8 +51,40 @@ export function AdminMembersPageClient({
   const editOpen = page.editingId != null;
   const editBusy = page.editingId != null && page.busyId === page.editingId;
 
+  let membersListBody;
+  if (!page.hasAnyMembers) {
+    membersListBody = (
+      <div className={cardBody}>
+        <p className={muted}>{t('admin.membersPage.emptyState')}</p>
+      </div>
+    );
+  } else if (page.sortedRows.length === 0) {
+    membersListBody = (
+      <div className={cardBody}>
+        <p className={muted}>{t('admin.membersPage.listSearchEmpty')}</p>
+      </div>
+    );
+  } else {
+    membersListBody = (
+      <ul className={adminListShell}>
+        {page.sortedRows.map((row) => (
+          <AdminMemberRow
+            key={row.staff_uid}
+            busy={page.busyId === row.staff_uid}
+            canChangeOrgRole={row.staff_uid !== currentUserId}
+            canDelete={row.staff_uid !== currentUserId}
+            row={row}
+            onDelete={() => void removeMember(row)}
+            onEdit={() => startEdit(row)}
+            onOrgRoleChange={(orgRole) => void updateOrgRole(row, orgRole)}
+          />
+        ))}
+      </ul>
+    );
+  }
+
   return (
-    <div className={pageStack}>
+    <div className="flex min-h-0 flex-1 flex-col gap-6">
       {DialogComponent}
       <AdminPageHeader
         actions={
@@ -68,27 +101,18 @@ export function AdminMembersPageClient({
         description={t('admin.membersPage.subtitle')}
         title={t('admin.membersPage.title')}
       />
-      <section className={cardShell}>
-        {page.sortedRows.length === 0 ? (
-          <div className={cardBody}>
-            <p className={muted}>{t('admin.membersPage.emptyState')}</p>
+      <section className={`${cardShell} flex min-h-0 flex-1 flex-col`}>
+        {page.hasAnyMembers ? (
+          <div className={`${cardHeader} shrink-0`}>
+            <SearchInput
+              placeholder={t('admin.membersPage.listSearchPlaceholder')}
+              size="md"
+              value={page.listQuery}
+              onChange={page.setListQuery}
+            />
           </div>
-        ) : (
-          <ul className={adminListShell}>
-            {page.sortedRows.map((row) => (
-              <AdminMemberRow
-                key={row.staff_uid}
-                busy={page.busyId === row.staff_uid}
-                canChangeOrgRole={row.staff_uid !== currentUserId}
-                canDelete={row.staff_uid !== currentUserId}
-                row={row}
-                onDelete={() => void removeMember(row)}
-                onEdit={() => startEdit(row)}
-                onOrgRoleChange={(orgRole) => void updateOrgRole(row, orgRole)}
-              />
-            ))}
-          </ul>
-        )}
+        ) : null}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">{membersListBody}</div>
       </section>
 
       <AdminFormModal

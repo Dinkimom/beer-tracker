@@ -171,7 +171,8 @@ export const cacheKeys = {
     slice: 'fields' | 'statuses'
   ) => `admin:tracker-metadata:${organizationId}:${fingerprint}:${slice}`,
   /** Полный список пользователей Яндекс Трекера (поиск в админке). */
-  trackerUsersList: (fingerprint: string) => `tracker:users:${fingerprint}`,
+  /** v2 — полный каталог (до 10k); v1 обрезал на 2000 и ломал поиск по ФИО. */
+  trackerUsersList: (fingerprint: string) => `tracker:users:v2:${fingerprint}`,
   /**
    * Gate: аватары staff для org уже обновлены из Jira (in-memory TTL).
    * Пока ключ жив — повторный GET /user не делаем.

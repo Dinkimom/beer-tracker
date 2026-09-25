@@ -88,6 +88,8 @@ export function AdminShell({ children, email, exporterEnabled, isSuperAdmin, org
   );
   const activeSection = navItems.find((item) => pathname.startsWith(item.href));
   const roleLine = resolveAdminShellRoleLine(activeOrg, isSuperAdmin, has, t);
+  /** Список пользователей: шапка и поиск фиксированы, скроллится только список. */
+  const fillMainViewport = pathname.startsWith('/admin/members');
 
   const navList = (
     <nav aria-label={t('admin.shell.navAriaLabel')} className="flex-1 overflow-y-auto p-3">
@@ -162,8 +164,22 @@ export function AdminShell({ children, email, exporterEnabled, isSuperAdmin, org
             onOpenMenu={() => setDrawerOpen(true)}
           />
 
-          <div className="flex-1 overflow-y-auto overscroll-y-contain">
-            <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8">{children}</div>
+          <div
+            className={
+              fillMainViewport
+                ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+                : 'flex-1 overflow-y-auto overscroll-y-contain'
+            }
+          >
+            <div
+              className={
+                fillMainViewport
+                  ? 'mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden px-5 py-8 sm:px-8'
+                  : 'mx-auto w-full max-w-6xl px-5 py-8 sm:px-8'
+              }
+            >
+              {children}
+            </div>
           </div>
         </div>
       </div>

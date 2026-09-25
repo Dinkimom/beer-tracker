@@ -58,7 +58,9 @@ function mapRawUser(raw: unknown): TrackerUserItem | null {
 
 /**
  * Загрузить всех пользователей организации из Яндекс Трекера (постранично).
- * Лимит Tracker API — 10 000 пользователей.
+ * Классическая пагинация Tracker API — до 10 000 пользователей (100 × 100).
+ * Раньше стояло maxPages=20 (2000), из‑за чего поиск по ФИО не находил людей
+ * дальше первой двадцатки страниц (логин при этом находился через GET /users/{id}).
  */
 function appendUsersFromPage(result: TrackerUserItem[], items: unknown[]): boolean {
   for (const raw of items) {
@@ -70,9 +72,12 @@ function appendUsersFromPage(result: TrackerUserItem[], items: unknown[]): boole
   return items.length > 0;
 }
 
+/** Макс. страниц при perPage=100 — лимит классической пагинации Tracker (10000). */
+const TRACKER_USERS_LIST_MAX_PAGES = 100;
+
 async function fetchTrackerUsersPaginate(
   api: AxiosInstance,
-  maxPages = 20
+  maxPages = TRACKER_USERS_LIST_MAX_PAGES
 ): Promise<TrackerUserItem[]> {
   const result: TrackerUserItem[] = [];
   const perPage = 100;

@@ -2088,6 +2088,8 @@ export const ruMessages = {
       updatedSuccess: 'Пользователь сохранён',
       updateFailed: 'Не удалось сохранить пользователя',
       emptyState: 'В организации пока нет пользователей.',
+      listSearchPlaceholder: 'Поиск по ФИО или email…',
+      listSearchEmpty: 'Никого не найдено. Измените запрос.',
       loadListFailed: 'Не удалось загрузить список',
       noTrackerEmail: 'У выбранного сотрудника нет email в {trackerPrepositional}',
       selectTeam: 'Выберите команду',

@@ -36,3 +36,14 @@ export function sortMembersByDisplayName(
 ): RegistryEmployeeDirectoryRow[] {
   return [...rows].sort((a, b) => memberDisplayName(a).localeCompare(memberDisplayName(b), 'ru'));
 }
+
+/** Локальный фильтр списка пользователей: ФИО и email в одном поле (все токены). */
+export function memberMatchesListQuery(
+  row: RegistryEmployeeDirectoryRow,
+  query: string
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (q.length === 0) return true;
+  const haystack = `${memberDisplayName(row)} ${normalizedMemberField(row.email)}`.toLowerCase();
+  return q.split(/\s+/).every((token) => token.length > 0 && haystack.includes(token));
+}

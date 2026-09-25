@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   memberDisplayName,
   memberInitials,
+  memberMatchesListQuery,
   sortMembersByDisplayName,
 } from './adminMemberDisplay';
 
@@ -40,5 +41,20 @@ describe('adminMemberDisplay', () => {
       { ...baseRow, staff_uid: 'a', employee_id: 'a', full_name: 'Анна' },
     ]);
     expect(sorted.map((row) => row.staff_uid)).toEqual(['a', 'b']);
+  });
+
+  it('matches list query by display name tokens and email', () => {
+    const row = {
+      ...baseRow,
+      email: 'p.nakonechnaia@yclients.tech',
+      full_name: 'Полина Наконечная',
+    };
+    expect(memberMatchesListQuery(row, '')).toBe(true);
+    expect(memberMatchesListQuery(row, 'Наконечная')).toBe(true);
+    expect(memberMatchesListQuery(row, 'Полина Наконечная')).toBe(true);
+    expect(memberMatchesListQuery(row, 'наконечная полина')).toBe(true);
+    expect(memberMatchesListQuery(row, 'p.nakonechnaia')).toBe(true);
+    expect(memberMatchesListQuery(row, 'yclients.tech')).toBe(true);
+    expect(memberMatchesListQuery(row, 'Иванов')).toBe(false);
   });
 });

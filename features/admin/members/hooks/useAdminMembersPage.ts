@@ -9,7 +9,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
-import { memberDisplayName, sortMembersByDisplayName } from '@/features/admin/members/adminMemberDisplay';
+import {
+  memberDisplayName,
+  memberMatchesListQuery,
+  sortMembersByDisplayName,
+} from '@/features/admin/members/adminMemberDisplay';
 import { patchAdminOrganizationMemberRole } from '@/lib/api/admin/members';
 import { createAdminStaff, deleteAdminStaff, patchAdminStaff } from '@/lib/api/admin/staff';
 import { readApiErrorMessage } from '@/lib/api/readApiError';
@@ -58,6 +62,7 @@ export function useAdminMembersPage({
   const { t } = useI18n();
   const router = useRouter();
   const [rows, setRows] = useState(initialRows);
+  const [listQuery, setListQuery] = useState('');
   const [createValues, setCreateValues] = useState(EMPTY_FORM);
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -68,7 +73,12 @@ export function useAdminMembersPage({
     setRows(initialRows);
   }, [initialRows]);
 
-  const sortedRows = useMemo(() => sortMembersByDisplayName(rows), [rows]);
+  const sortedRows = useMemo(() => {
+    const sorted = sortMembersByDisplayName(rows);
+    const q = listQuery.trim();
+    if (q.length === 0) return sorted;
+    return sorted.filter((row) => memberMatchesListQuery(row, q));
+  }, [listQuery, rows]);
 
   const startEdit = useCallback((row: RegistryEmployeeDirectoryRow) => {
     setEditingId(row.staff_uid);
@@ -185,9 +195,12 @@ export function useAdminMembersPage({
     createValues,
     editValues,
     editingId,
+    hasAnyMembers: rows.length > 0,
+    listQuery,
     removeMember,
     setCreateValues,
     setEditValues,
+    setListQuery,
     sortedRows,
     startEdit,
     submitCreate,

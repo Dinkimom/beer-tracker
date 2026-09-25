@@ -2086,6 +2086,8 @@ export const enMessages = {
       updatedSuccess: 'User saved',
       updateFailed: 'Could not save user',
       emptyState: 'The organization has no users yet.',
+      listSearchPlaceholder: 'Search by name or email…',
+      listSearchEmpty: 'No users match. Try a different query.',
       loadListFailed: 'Could not load list',
       noTrackerEmail: 'The selected staff member has no email in {tracker}',
       selectTeam: 'Select a team',
