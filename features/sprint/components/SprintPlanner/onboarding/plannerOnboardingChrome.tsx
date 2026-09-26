@@ -28,11 +28,8 @@ const PlannerOnboardingChromeContext = createContext<PlannerOnboardingChrome>({
   toolsEmphasis: false,
 });
 
-const PlannerOnboardingReplayContext = createContext<(() => void) | null>(null);
-
 export function PlannerOnboardingChromeProvider({
   children,
-  replay,
   sampleAssigneeShift,
   sampleDragging,
   sampleDurationParts,
@@ -44,7 +41,6 @@ export function PlannerOnboardingChromeProvider({
   toolsEmphasis,
 }: {
   children: ReactNode;
-  replay: () => void;
   sampleAssigneeShift: boolean;
   sampleDragging: boolean;
   sampleDurationParts: number | null;
@@ -80,20 +76,14 @@ export function PlannerOnboardingChromeProvider({
     ]
   );
   return (
-    <PlannerOnboardingReplayContext.Provider value={replay}>
-      <PlannerOnboardingChromeContext.Provider value={chrome}>
-        {children}
-      </PlannerOnboardingChromeContext.Provider>
-    </PlannerOnboardingReplayContext.Provider>
+    <PlannerOnboardingChromeContext.Provider value={chrome}>
+      {children}
+    </PlannerOnboardingChromeContext.Provider>
   );
 }
 
 export function usePlannerOnboardingChrome(): PlannerOnboardingChrome {
   return useContext(PlannerOnboardingChromeContext);
-}
-
-export function usePlannerOnboardingReplay(): (() => void) | null {
-  return useContext(PlannerOnboardingReplayContext);
 }
 
 export function plannerOnboardingToolChromeClass(toolsEmphasis: boolean, tool: string): string {

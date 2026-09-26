@@ -169,14 +169,6 @@ export function useTrackerIntegrationFormSelectOptions({
     }));
   }, [sortLocale, statusTableRows, t]);
 
-  const statusMappingStats = useMemo(() => {
-    const total = statusTableRows.length;
-    const customColor = statusTableRows.filter((row) => row.paletteKey.trim().length > 0)
-      .length;
-    const categories = statusRowsByCategory.length;
-    return { categories, customColor, total };
-  }, [statusRowsByCategory, statusTableRows]);
-
   const basePlatformValueMap = useMemo(
     () => pickPlatformValueMap(configBase),
     [configBase],
@@ -223,7 +215,6 @@ export function useTrackerIntegrationFormSelectOptions({
     fieldSelectOptions,
     numericFieldSelectOptions,
     platformMappingStats,
-    statusMappingStats,
     statusRowsByCategory,
     statusTableRows,
     visiblePlatformMappingRows,

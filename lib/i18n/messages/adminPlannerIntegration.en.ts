@@ -3,7 +3,6 @@ export const adminPlannerIntegrationEn = {
   title: 'Planner integration',
   intro:
     'How Tracker issues map to planner columns, card colors, and estimate fields. Save after changes.',
-  revisionTitle: 'Server config revision',
   subtabAria: 'Integration subsections',
   subtab: {
     processSetup: 'Process setup',
@@ -32,25 +31,13 @@ export const adminPlannerIntegrationEn = {
     mergeRequest: 'Merge request link',
   },
   footer: {
-    dirty: 'You have unsaved changes.',
-    clean: 'All changes saved.',
+    leaveConfirm: 'You have unsaved changes. Leave this page?',
     reloadToast: 'Click Reload again to discard changes',
     reloadLoading: 'Loading…',
     reloadConfirm: 'Confirm reset',
     reload: 'Reload',
     saveSaving: 'Saving…',
     save: 'Save',
-    summaryStatuses:
-      'Statuses: {total}, categories: {categories}, custom color: {customColor}.',
-    summaryPlatforms:
-      'Platform mapping: total {total}, unmapped {unmapped}, changed {changed}.',
-  },
-  rulesPreview: {
-    noRules: 'No additional rules.',
-    joinOr: 'OR',
-    joinAnd: 'AND',
-    fieldFallback: 'field',
-    emptyValue: 'empty',
   },
   category: {
     todo: 'To do',
@@ -112,11 +99,12 @@ export const adminPlannerIntegrationEn = {
   },
   embeddedRules: {
     title: 'What counts as testing-only work',
-    subtitle: 'Pick the condition that marks an issue as testing-only',
-    previewPrefix: 'Preview:',
+    subtitle:
+      'An issue is testing-only when this condition is true. The starting fields come from the mapping above.',
     addRule: 'Add rule',
     noRulesInList: 'No additional rules',
-    joinPrev: 'Join with previous:',
+    joinAnd: 'AND',
+    joinOr: 'OR',
     joinTitle: 'Join between rules',
     fieldPlaceholder: 'Field…',
     fieldTitle: 'Condition field',
@@ -129,14 +117,12 @@ export const adminPlannerIntegrationEn = {
     moveUpTitle: 'Move up',
     moveDownTitle: 'Move down',
     delete: 'Delete',
-    logicalAnd: 'AND',
-    logicalOr: 'OR',
   },
   operator: {
     eq: 'Equals',
     gt: 'Greater than',
-    gte: '≥',
+    gte: 'Greater or equal',
     lt: 'Less than',
-    lte: '≤',
+    lte: 'Less or equal',
   },
 } as const;

@@ -3,7 +3,6 @@ export const adminPlannerIntegrationRu = {
   title: 'Интеграция с планировщиком',
   intro:
     'Как задачи Tracker попадают в колонки планировщика, цвета карточек и поля оценок. Сохраните после изменений.',
-  revisionTitle: 'Ревизия конфигурации на сервере',
   subtabAria: 'Подразделы интеграции',
   subtab: {
     processSetup: 'Настройка процесса',
@@ -32,25 +31,13 @@ export const adminPlannerIntegrationRu = {
     mergeRequest: 'Ссылка на merge request',
   },
   footer: {
-    dirty: 'Есть несохранённые изменения.',
-    clean: 'Все изменения сохранены.',
+    leaveConfirm: 'Есть несохранённые изменения. Уйти со страницы?',
     reloadToast: 'Нажмите «Перезагрузить» ещё раз, чтобы сбросить изменения',
     reloadLoading: 'Загрузка…',
     reloadConfirm: 'Подтвердить сброс',
     reload: 'Перезагрузить',
     saveSaving: 'Сохранение…',
     save: 'Сохранить',
-    summaryStatuses:
-      'Статусов: {total}, категорий: {categories}, свой цвет: {customColor}.',
-    summaryPlatforms:
-      'Сопоставление платформ: всего {total}, без сопоставления {unmapped}, изменено {changed}.',
-  },
-  rulesPreview: {
-    noRules: 'Дополнительных правил нет.',
-    joinOr: 'ИЛИ',
-    joinAnd: 'И',
-    fieldFallback: 'поле',
-    emptyValue: 'пусто',
   },
   category: {
     todo: 'К выполнению',
@@ -110,11 +97,12 @@ export const adminPlannerIntegrationRu = {
   },
   embeddedRules: {
     title: 'Что считается работой только по тестированию',
-    subtitle: 'Выберите условие, по которому задача помечается как только тестирование',
-    previewPrefix: 'Предпросмотр:',
+    subtitle:
+      'Задача считается только тестированием, если условие верно. Начальные поля берутся из сопоставления выше.',
     addRule: 'Добавить правило',
     noRulesInList: 'Дополнительных правил нет',
-    joinPrev: 'Связь с предыдущим:',
+    joinAnd: 'И',
+    joinOr: 'ИЛИ',
     joinTitle: 'Связь между правилами',
     fieldPlaceholder: 'Поле…',
     fieldTitle: 'Поле условия',
@@ -127,14 +115,12 @@ export const adminPlannerIntegrationRu = {
     moveUpTitle: 'Выше',
     moveDownTitle: 'Ниже',
     delete: 'Удалить',
-    logicalAnd: 'И (AND)',
-    logicalOr: 'ИЛИ (OR)',
   },
   operator: {
     eq: 'Равно',
     gt: 'Больше',
-    gte: '≥',
+    gte: 'Больше или равно',
     lt: 'Меньше',
-    lte: '≤',
+    lte: 'Меньше или равно',
   },
 } as const;

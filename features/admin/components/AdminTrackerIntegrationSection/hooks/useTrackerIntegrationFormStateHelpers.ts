@@ -1,19 +1,12 @@
 import type {
   EmbeddedTestingOnlyJoin,
-  EmbeddedTestingOnlyOperator,
   EmbeddedTestingOnlyRuleForm,
-  IntegrationSubtabId,
   PlatformValueMapFormRow,
   TrackerConfigShape,
 } from "../types";
-import type { TrackerIntegrationFieldRow } from "./useTrackerIntegrationFormState";
 import type { MutableRefObject } from "react";
 
 import {
-  findFieldRowByStoredAccessor,
-} from "../embeddedTestingRuleFieldHelpers";
-import {
-  joinAdminMetaLabels,
   pickEmbeddedTestingOnlyForm,
   pickOccupancyThresholds,
   pickPlatformFieldId,
@@ -24,75 +17,6 @@ import {
   pickTestingFlowStrings,
   pickZeroDevPositiveQa,
 } from "../trackerIntegrationFormModel";
-
-type TranslateFn = (
-  key: string,
-  params?: Record<string, number | string>,
-) => string;
-
-const EMBEDDED_TESTING_OPERATOR_LABEL: Record<EmbeddedTestingOnlyOperator, string> = {
-  eq: "=",
-  gt: ">",
-  gte: ">=",
-  lt: "<",
-  lte: "<=",
-};
-
-export function formatTestingOnlyRulesPreview(params: {
-  embeddedTestingOnlyJoins: EmbeddedTestingOnlyJoin[];
-  embeddedTestingOnlyRules: EmbeddedTestingOnlyRuleForm[];
-  fieldRows: TrackerIntegrationFieldRow[];
-  t: TranslateFn;
-}): string {
-  const { embeddedTestingOnlyJoins, embeddedTestingOnlyRules, fieldRows, t } = params;
-  if (embeddedTestingOnlyRules.length === 0) {
-    return t("admin.plannerIntegration.rulesPreview.noRules");
-  }
-  return embeddedTestingOnlyRules
-    .map((rule, idx) => {
-      const row = findFieldRowByStoredAccessor(fieldRows, rule.fieldId);
-      const fieldLabel = joinAdminMetaLabels(
-        [row?.display, row?.name, row?.key],
-        rule.fieldId || t("admin.plannerIntegration.rulesPreview.fieldFallback"),
-      );
-      const valueLabel = rule.value.trim()
-        ? rule.value
-        : t("admin.plannerIntegration.rulesPreview.emptyValue");
-      const expression = `${fieldLabel} ${EMBEDDED_TESTING_OPERATOR_LABEL[rule.operator]} ${valueLabel}`;
-      if (idx === 0) {
-        return expression;
-      }
-      const join =
-        embeddedTestingOnlyJoins[idx - 1] === "or"
-          ? t("admin.plannerIntegration.rulesPreview.joinOr")
-          : t("admin.plannerIntegration.rulesPreview.joinAnd");
-      return `${join} ${expression}`;
-    })
-    .join(" ");
-}
-
-export function resolveIntegrationFooterSummaryText(params: {
-  activeSubtab: IntegrationSubtabId;
-  platformMappingStats: { changed: number; total: number; unmapped: number };
-  statusMappingStats: { categories: number; customColor: number; total: number };
-  t: TranslateFn;
-}): string {
-  const { activeSubtab, platformMappingStats, statusMappingStats, t } =
-    params;
-
-  if (activeSubtab === "statuses-mapping") {
-    return t("admin.plannerIntegration.footer.summaryStatuses", {
-      total: statusMappingStats.total,
-      categories: statusMappingStats.categories,
-      customColor: statusMappingStats.customColor,
-    });
-  }
-  return t("admin.plannerIntegration.footer.summaryPlatforms", {
-    total: platformMappingStats.total,
-    unmapped: platformMappingStats.unmapped,
-    changed: platformMappingStats.changed,
-  });
-}
 
 interface IntegrationFormHydrationSetters {
   initialIntegrationSnapshotRef: MutableRefObject<{

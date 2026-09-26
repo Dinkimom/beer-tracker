@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 
 import { useI18n } from "@/contexts/LanguageContext";
 import {
-  badgeMuted,
   cardBody,
   cardHeader,
   cardShell,
@@ -32,6 +31,7 @@ import {
   useTrackerIntegrationFormState,
 } from "./hooks/useTrackerIntegrationFormState";
 import { useTrackerMetadataPolling } from "./hooks/useTrackerMetadataPolling";
+import { useUnsavedIntegrationLeaveGuard } from "./hooks/useUnsavedIntegrationLeaveGuard";
 import { nextPaletteMap } from "./trackerIntegrationFormModel";
 import { type TrackerStatusRowMeta } from "./types";
 
@@ -75,6 +75,10 @@ export function AdminTrackerIntegrationSection({
   }, [load]);
 
   useTrackerMetadataPolling(organizationId, loadMetadata);
+  useUnsavedIntegrationLeaveGuard(
+    form.hasUnsavedChanges,
+    t("admin.plannerIntegration.footer.leaveConfirm"),
+  );
 
   async function save() {
     if (!organizationId) {
@@ -92,7 +96,6 @@ export function AdminTrackerIntegrationSection({
     embeddedTestingOnlyJoins,
     embeddedTestingOnlyRules,
     fieldSelectOptions,
-    footerSummaryText,
     hasUnsavedChanges,
     numericFieldSelectOptions,
     platformFieldId,
@@ -105,7 +108,6 @@ export function AdminTrackerIntegrationSection({
     qaEstimateFieldId,
     releaseMrFieldId,
     reloadConfirmArmed,
-    revision,
     setActiveSubtab,
     setDevAssigneeFieldId,
     setDevEstimateFieldId,
@@ -124,7 +126,6 @@ export function AdminTrackerIntegrationSection({
     statusRowsByCategory,
     statusTableRows,
     testingFlowMode,
-    testingOnlyRulesPreview,
     visiblePlatformMappingRows,
   } = form;
 
@@ -132,14 +133,7 @@ export function AdminTrackerIntegrationSection({
     <section className={`${cardShell} flex flex-col overflow-hidden`}>
       <div className="min-h-0 flex-1">
         <div className={cardHeader}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className={hCard}>{t("admin.plannerIntegration.title")}</h2>
-            {revision !== null ? (
-              <span className={badgeMuted} title={t("admin.plannerIntegration.revisionTitle")}>
-                rev.{revision}
-              </span>
-            ) : null}
-          </div>
+          <h2 className={hCard}>{t("admin.plannerIntegration.title")}</h2>
           <p className={`mt-1 max-w-3xl text-sm leading-relaxed ${muted}`}>
             {t("admin.plannerIntegration.intro")}
           </p>
@@ -207,7 +201,6 @@ export function AdminTrackerIntegrationSection({
               tabBtnBase={tabBtnBase}
               tabBtnIdle={tabBtnIdle}
               testingFlowMode={testingFlowMode}
-              testingOnlyRulesPreview={testingOnlyRulesPreview}
               visiblePlatformMappingRows={visiblePlatformMappingRows}
             />
           ) : null}
@@ -229,7 +222,6 @@ export function AdminTrackerIntegrationSection({
       </div>
 
       <AdminTrackerIntegrationFooter
-        footerSummaryText={footerSummaryText}
         hasUnsavedChanges={hasUnsavedChanges}
         loading={loading}
         reloadConfirmArmed={reloadConfirmArmed}

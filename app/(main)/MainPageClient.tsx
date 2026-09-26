@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { PhaseCardColorSchemeProvider } from '@/components/PhaseCardColorSchemeContext';
 import { Snow } from '@/components/Snow';
 import { useI18n } from '@/contexts/LanguageContext';
+import { PlannerOnboardingReplayBridge } from '@/contexts/PlannerOnboardingReplayBridge';
 import { PlannerRemoteMediaProvider } from '@/contexts/PlannerRemoteMediaContext';
 import { useBoards } from '@/features/board/hooks/useBoards';
 import { SPRINTS_STALE_TIME_MS, sprintsQueryKey } from '@/features/sprint/hooks/useSprints';
@@ -236,42 +237,44 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
       <Snow />
       <PhaseCardColorSchemeProvider>
         <PlannerRemoteMediaProvider enabled={!showFullScreenLoading}>
-          <div className="flex flex-col h-screen overflow-hidden">
-            <PageHeader
-              activeTab={activeTab}
-              adminHref={adminHref}
-              boardName={boardName}
-              selectedBoardId={selectedBoardId}
-              onBoardChange={handleBoardChange}
-              onTabChange={handleTabChange}
-            />
+          <PlannerOnboardingReplayBridge>
+            <div className="flex flex-col h-screen overflow-hidden">
+              <PageHeader
+                activeTab={activeTab}
+                adminHref={adminHref}
+                boardName={boardName}
+                selectedBoardId={selectedBoardId}
+                onBoardChange={handleBoardChange}
+                onTabChange={handleTabChange}
+              />
 
-            <MainPageClientContent
-              activeTab={activeTab}
-              checklistDone={checklistDone}
-              checklistTotal={checklistTotal}
-              deliveryChecklistItems={deliveryChecklistItems}
-              deliveryGoalsLoading={deliveryGoalsLoading}
-              discoveryChecklistItems={discoveryChecklistItems}
-              discoveryGoalsLoading={discoveryGoalsLoading}
-              goalTaskIds={goalTaskIds}
-              goalsLoading={goalsLoading}
-              isMounted={isMounted}
-              loading={loading}
-              reloadTasksPending={reloadTasksMutation.isPending}
-              selectedBoardId={selectedBoardId}
-              selectedSprintId={selectedSprintId}
-              sprintInfo={sprintInfo}
-              sprints={sprints}
-              sprintsLoading={sprintsLoading}
-              tasks={tasks}
-              tasksPending={tasksPending}
-              onGoalsUpdate={handleGoalsUpdate}
-              onSprintChange={handleSprintChange}
-              onTasksReload={handleTasksReload}
-            />
-          </div>
-          <LoadingOverlay isVisible={showFullScreenLoading} message={t('common.loading')} />
+              <MainPageClientContent
+                activeTab={activeTab}
+                checklistDone={checklistDone}
+                checklistTotal={checklistTotal}
+                deliveryChecklistItems={deliveryChecklistItems}
+                deliveryGoalsLoading={deliveryGoalsLoading}
+                discoveryChecklistItems={discoveryChecklistItems}
+                discoveryGoalsLoading={discoveryGoalsLoading}
+                goalTaskIds={goalTaskIds}
+                goalsLoading={goalsLoading}
+                isMounted={isMounted}
+                loading={loading}
+                reloadTasksPending={reloadTasksMutation.isPending}
+                selectedBoardId={selectedBoardId}
+                selectedSprintId={selectedSprintId}
+                sprintInfo={sprintInfo}
+                sprints={sprints}
+                sprintsLoading={sprintsLoading}
+                tasks={tasks}
+                tasksPending={tasksPending}
+                onGoalsUpdate={handleGoalsUpdate}
+                onSprintChange={handleSprintChange}
+                onTasksReload={handleTasksReload}
+              />
+            </div>
+            <LoadingOverlay isVisible={showFullScreenLoading} message={t('common.loading')} />
+          </PlannerOnboardingReplayBridge>
         </PlannerRemoteMediaProvider>
       </PhaseCardColorSchemeProvider>
     </ErrorBoundary>

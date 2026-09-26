@@ -24,10 +24,8 @@ import {
 import { useTrackerIntegrationFormAutoDefaults } from "./useTrackerIntegrationFormAutoDefaults";
 import { useTrackerIntegrationFormSelectOptions } from "./useTrackerIntegrationFormSelectOptions";
 import {
-  formatTestingOnlyRulesPreview,
   hydrateIntegrationFormFromConfig,
   resetIntegrationFormToEmpty,
-  resolveIntegrationFooterSummaryText,
 } from "./useTrackerIntegrationFormStateHelpers";
 
 export interface TrackerIntegrationFieldRow {
@@ -50,7 +48,7 @@ export function useTrackerIntegrationFormState({
   organizationId,
   trackerStatusesList,
 }: UseTrackerIntegrationFormStateParams) {
-  const { t, language } = useI18n();
+  const { language } = useI18n();
   const sortLocale = language === "ru" ? "ru" : "en";
 
   const [configBase, setConfigBase] = useState<TrackerConfigShape>({});
@@ -106,7 +104,6 @@ export function useTrackerIntegrationFormState({
     fieldSelectOptions,
     numericFieldSelectOptions,
     platformMappingStats,
-    statusMappingStats,
     statusRowsByCategory,
     statusTableRows,
     visiblePlatformMappingRows,
@@ -177,28 +174,6 @@ export function useTrackerIntegrationFormState({
     [configBase, draftConfig],
   );
 
-  const testingOnlyRulesPreview = useMemo(
-    () =>
-      formatTestingOnlyRulesPreview({
-        embeddedTestingOnlyJoins,
-        embeddedTestingOnlyRules,
-        fieldRows,
-        t,
-      }),
-    [embeddedTestingOnlyJoins, embeddedTestingOnlyRules, fieldRows, t],
-  );
-
-  const footerSummaryText = useMemo(
-    () =>
-      resolveIntegrationFooterSummaryText({
-        activeSubtab,
-        platformMappingStats,
-        statusMappingStats,
-        t,
-      }),
-    [activeSubtab, platformMappingStats, statusMappingStats, t],
-  );
-
   const applyLoadedConfig = useCallback(
     (cfg: TrackerConfigShape | undefined) => {
       setConfigBase(cloneConfigWithoutRevision(cfg));
@@ -244,6 +219,7 @@ export function useTrackerIntegrationFormState({
   );
 
   useTrackerIntegrationFormAutoDefaults({
+    devEstimateFieldId,
     embeddedTestingOnlyJoins,
     embeddedTestingOnlyRules,
     fieldRows,
@@ -253,6 +229,7 @@ export function useTrackerIntegrationFormState({
     platformFieldId,
     platformFieldValues,
     platformValueMap,
+    qaEstimateFieldId,
     revision,
     setDevAssigneeFieldId,
     setDevEstimateFieldId,
@@ -281,7 +258,6 @@ export function useTrackerIntegrationFormState({
     embeddedTestingOnlyJoins,
     embeddedTestingOnlyRules,
     fieldSelectOptions,
-    footerSummaryText,
     hasUnsavedChanges,
     numericFieldSelectOptions,
     platformFieldId,
@@ -294,7 +270,6 @@ export function useTrackerIntegrationFormState({
     qaEstimateFieldId,
     releaseMrFieldId,
     reloadConfirmArmed,
-    revision,
     setActiveSubtab,
     setDevAssigneeFieldId,
     setDevEstimateFieldId,
@@ -313,7 +288,6 @@ export function useTrackerIntegrationFormState({
     statusRowsByCategory,
     statusTableRows,
     testingFlowMode,
-    testingOnlyRulesPreview,
     visiblePlatformMappingRows,
     zeroDevPositiveQa,
   };

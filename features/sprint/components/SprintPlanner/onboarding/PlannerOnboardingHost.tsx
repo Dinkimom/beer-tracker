@@ -4,6 +4,7 @@ import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { ReactNode } from 'react';
 
 import { getPartsPerDay } from '@/constants';
+import { useRegisterPlannerOnboardingReplay } from '@/contexts/PlannerOnboardingReplayBridge';
 import { ONBOARDING_DRAG_SHIFT_PARTS } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import {
   PLANNER_ONBOARDING_ENABLED,
@@ -67,6 +68,7 @@ export function PlannerOnboardingHost({
     getPartsPerDay(),
     resizeGrown
   );
+  useRegisterPlannerOnboardingReplay(PLANNER_ONBOARDING_ENABLED ? onboarding.replay : null);
 
   if (!PLANNER_ONBOARDING_ENABLED) {
     return children;
@@ -74,7 +76,6 @@ export function PlannerOnboardingHost({
 
   return (
     <PlannerOnboardingChromeProvider
-      replay={onboarding.replay}
       sampleAssigneeShift={assigneeShifted}
       sampleDragging={onboarding.open && (onboarding.step === 'drag' || assigneesStep)}
       sampleDurationParts={sampleDurationParts}

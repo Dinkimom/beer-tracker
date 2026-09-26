@@ -2,12 +2,10 @@ import toast from "react-hot-toast";
 
 import { Button } from "@/components/Button";
 import { useI18n } from "@/contexts/LanguageContext";
-import { muted } from "@/features/admin/adminUiTokens";
 
 import { adminTrackerReloadButtonLabel } from "../adminTrackerReloadButtonLabel";
 
 interface AdminTrackerIntegrationFooterProps {
-  footerSummaryText: string;
   hasUnsavedChanges: boolean;
   loading: boolean;
   reloadConfirmArmed: boolean;
@@ -18,7 +16,6 @@ interface AdminTrackerIntegrationFooterProps {
 }
 
 export function AdminTrackerIntegrationFooter({
-  footerSummaryText,
   hasUnsavedChanges,
   loading,
   onReload,
@@ -31,15 +28,9 @@ export function AdminTrackerIntegrationFooter({
 
   return (
     <footer
-      className="sticky bottom-0 z-20 flex w-full flex-wrap items-center justify-between gap-2 overflow-hidden border-t border-gray-200 bg-gray-50/95 px-4 py-3 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-5"
+      className="sticky bottom-0 z-20 flex w-full flex-wrap items-center justify-end gap-2 overflow-hidden border-t border-gray-200 bg-gray-50/95 px-4 py-3 backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 sm:px-5"
       role="contentinfo"
     >
-      <div className={`min-w-0 flex-1 text-xs ${muted}`}>
-        {hasUnsavedChanges
-          ? t("admin.plannerIntegration.footer.dirty")
-          : t("admin.plannerIntegration.footer.clean")}{" "}
-        {footerSummaryText}
-      </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <Button
           className="px-3.5 py-2"

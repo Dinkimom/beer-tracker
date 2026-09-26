@@ -14,7 +14,6 @@ import type { Dispatch, SetStateAction } from 'react';
 import { CustomSelect } from '@/components/CustomSelect';
 import { useI18n } from '@/contexts/LanguageContext';
 
-import { sectionBlock } from '../constants';
 import {
   embeddedProcessSetupFieldRows,
   processSetupFieldMappingSelectOptions,
@@ -77,7 +76,6 @@ interface AdminTrackerIntegrationProcessSetupPanelProps {
   tabBtnBase: string;
   tabBtnIdle: string;
   testingFlowMode: 'embedded' | 'standalone';
-  testingOnlyRulesPreview: string;
   visiblePlatformMappingRows: TrackerPlatformMappingRow[];
 }
 
@@ -116,7 +114,6 @@ export function AdminTrackerIntegrationProcessSetupPanel({
   tabBtnBase,
   tabBtnIdle,
   testingFlowMode,
-  testingOnlyRulesPreview,
   visiblePlatformMappingRows,
 }: AdminTrackerIntegrationProcessSetupPanelProps) {
   const { t } = useI18n();
@@ -150,7 +147,7 @@ export function AdminTrackerIntegrationProcessSetupPanel({
   };
 
   return (
-    <article className={sectionBlock}>
+    <>
       <TrackerPlatformMappingPanel
         fieldSelectOptions={fieldSelectOptions}
         labelClass={label}
@@ -240,8 +237,7 @@ export function AdminTrackerIntegrationProcessSetupPanel({
         mutedClass={muted}
         setEmbeddedTestingOnlyJoins={setEmbeddedTestingOnlyJoins}
         setEmbeddedTestingOnlyRules={setEmbeddedTestingOnlyRules}
-        testingOnlyRulesPreview={testingOnlyRulesPreview}
       />
-    </article>
+    </>
   );
 }

@@ -14,22 +14,69 @@ import {
 } from '@/lib/trackerIntegration/smartIntegrationDefaults';
 
 import {
-  embeddedAutoRulesMatchDesiredPrefix,
-  resolveFieldIdByAlias,
-} from '../trackerIntegrationFormModel';
+  type EmbeddedTestingRuleFieldMapping,
+  rebindEmbeddedTestingRuleFieldId,
+  storedAccessorForMappedFieldId,
+} from '../embeddedTestingRuleFieldHelpers';
+import { resolveFieldIdByAlias } from '../trackerIntegrationFormModel';
 
 export function shouldSkipEmbeddedTestingAutoDefaults(
   snap: { hadEmbeddedTestingOnlyExtraRules: boolean } | null,
   testingFlowMode: 'embedded' | 'standalone',
   fieldRowsLength: number
 ): boolean {
-  if (snap === null || snap.hadEmbeddedTestingOnlyExtraRules) {
-    return true;
-  }
-  if (testingFlowMode !== 'embedded') {
+  if (snap === null || testingFlowMode !== 'embedded') {
     return true;
   }
   return fieldRowsLength === 0;
+}
+
+function resolveMappedStoredFieldId(
+  fieldRows: TrackerIntegrationFieldRow[],
+  mappedFieldId: string,
+  alias: string
+): string {
+  const fromMapping = storedAccessorForMappedFieldId(fieldRows, mappedFieldId);
+  if (fromMapping) {
+    return fromMapping;
+  }
+  if (!alias) {
+    return '';
+  }
+  return storedAccessorForMappedFieldId(fieldRows, resolveFieldIdByAlias(fieldRows, alias));
+}
+
+function desiredRulesFromMapping(
+  fieldRows: TrackerIntegrationFieldRow[],
+  platformValueMap: PlatformValueMapFormRow[],
+  platformFieldValues: string[],
+  mapping: EmbeddedTestingRuleFieldMapping
+): EmbeddedTestingOnlyRuleForm[] {
+  const testPointsFieldId = resolveMappedStoredFieldId(
+    fieldRows,
+    mapping.qaEstimateFieldId,
+    'testPoints'
+  );
+  const functionalTeamFieldId =
+    resolveMappedStoredFieldId(fieldRows, mapping.platformFieldId, '') ||
+    storedAccessorForMappedFieldId(fieldRows, findFunctionalTeamFieldId(fieldRows));
+  const qaEnumValue = pickQaTrackerValueForConditions(platformValueMap, platformFieldValues);
+  return buildEmbeddedTestingOnlyAutoExtraRules({
+    functionalTeamFieldId,
+    qaEnumValue,
+    testPointsFieldId,
+  });
+}
+
+function rebindRulesToMapping(
+  rules: EmbeddedTestingOnlyRuleForm[],
+  fieldRows: TrackerIntegrationFieldRow[],
+  mapping: EmbeddedTestingRuleFieldMapping
+): EmbeddedTestingOnlyRuleForm[] {
+  return rules.map((rule) => ({
+    ...rule,
+    fieldId: rebindEmbeddedTestingRuleFieldId(rule.fieldId, fieldRows, mapping),
+  }));
 }
 
 export function buildEmbeddedTestingAutoDefaultsUpdate(
@@ -37,35 +84,43 @@ export function buildEmbeddedTestingAutoDefaultsUpdate(
   platformValueMap: PlatformValueMapFormRow[],
   platformFieldValues: string[],
   embeddedTestingOnlyRules: EmbeddedTestingOnlyRuleForm[],
-  embeddedTestingOnlyJoins: EmbeddedTestingOnlyJoin[]
+  embeddedTestingOnlyJoins: EmbeddedTestingOnlyJoin[],
+  mapping: EmbeddedTestingRuleFieldMapping,
+  hadSavedRules: boolean
 ): {
   desiredJoins: EmbeddedTestingOnlyJoin[];
   desiredRules: EmbeddedTestingOnlyRuleForm[];
   shouldApply: boolean;
 } | null {
-  const tpId = resolveFieldIdByAlias(fieldRows, 'testPoints');
-  const ftId = findFunctionalTeamFieldId(fieldRows);
-  const qaVal = pickQaTrackerValueForConditions(platformValueMap, platformFieldValues);
-  const desiredRules = buildEmbeddedTestingOnlyAutoExtraRules({
-    functionalTeamFieldId: ftId,
-    qaEnumValue: qaVal,
-    testPointsFieldId: tpId,
-  });
-  if (desiredRules.length === 0) {
+  if (embeddedTestingOnlyRules.length === 0) {
+    if (hadSavedRules) {
+      return null;
+    }
+    const desiredRules = desiredRulesFromMapping(
+      fieldRows,
+      platformValueMap,
+      platformFieldValues,
+      mapping
+    );
+    if (desiredRules.length === 0) {
+      return null;
+    }
+    return {
+      desiredJoins: embeddedTestingOnlyJoinsForRuleCount(desiredRules.length),
+      desiredRules,
+      shouldApply: true,
+    };
+  }
+
+  const desiredRules = rebindRulesToMapping(embeddedTestingOnlyRules, fieldRows, mapping);
+  if (JSON.stringify(desiredRules) === JSON.stringify(embeddedTestingOnlyRules)) {
     return null;
   }
-  if (!embeddedAutoRulesMatchDesiredPrefix(embeddedTestingOnlyRules, desiredRules)) {
-    return null;
-  }
-  const desiredJoins = embeddedTestingOnlyJoinsForRuleCount(desiredRules.length);
-  const rulesSame =
-    JSON.stringify(embeddedTestingOnlyRules) === JSON.stringify(desiredRules);
-  const joinsSame =
-    JSON.stringify(embeddedTestingOnlyJoins) === JSON.stringify(desiredJoins);
-  if (rulesSame && joinsSame) {
-    return null;
-  }
-  return { desiredJoins, desiredRules, shouldApply: true };
+  return {
+    desiredJoins: embeddedTestingOnlyJoins,
+    desiredRules,
+    shouldApply: true,
+  };
 }
 
 export function readEmbeddedTestingSnapshot(

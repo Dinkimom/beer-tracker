@@ -57,7 +57,7 @@ export function TrackerEmbeddedTestingRuleValueField({
 
   return (
     <input
-      className={fieldClass}
+      className={`${fieldClass} !h-9`}
       inputMode={fieldRowIsNumeric(field) ? 'decimal' : 'text'}
       placeholder={
         fieldRowIsNumeric(field)

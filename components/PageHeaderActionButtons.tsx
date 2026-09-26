@@ -5,6 +5,7 @@ import { Icon } from '@/components/Icon';
 import { PageHeaderChristmasThemeButton } from '@/components/PageHeaderChristmasThemeButton';
 import { PageHeaderThemeToggleButton } from '@/components/PageHeaderThemeToggleButton';
 import { useI18n } from '@/contexts/LanguageContext';
+import { usePlannerOnboardingReplayAction } from '@/contexts/PlannerOnboardingReplayBridge';
 
 interface PageHeaderActionButtonsProps {
   christmasThemeEnabled: boolean;
@@ -24,6 +25,7 @@ export function PageHeaderActionButtons({
   onSettingsOpen,
 }: PageHeaderActionButtonsProps) {
   const { t } = useI18n();
+  const replayOnboarding = usePlannerOnboardingReplayAction();
 
   return (
     <div className="flex items-center gap-2">
@@ -37,6 +39,16 @@ export function PageHeaderActionButtons({
         />
       ) : null}
       <PageHeaderThemeToggleButton theme={theme} onToggle={onThemeToggle} />
+      {replayOnboarding ? (
+        <HeaderIconButton
+          aria-label={t('sprintPlanner.onboarding.replay')}
+          title={t('sprintPlanner.onboarding.replay')}
+          type="button"
+          onClick={replayOnboarding}
+        >
+          <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" name="circle-help" />
+        </HeaderIconButton>
+      ) : null}
     </div>
   );
 }

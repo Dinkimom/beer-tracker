@@ -53,6 +53,7 @@ function defaultReleaseMrFieldId(
 }
 
 export function useTrackerIntegrationFormAutoDefaults(options: {
+  devEstimateFieldId: string;
   embeddedTestingOnlyJoins: EmbeddedTestingOnlyJoin[];
   embeddedTestingOnlyRules: EmbeddedTestingOnlyRuleForm[];
   fieldRows: TrackerIntegrationFieldRow[];
@@ -66,6 +67,7 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
   platformFieldId: string;
   platformFieldValues: string[];
   platformValueMap: PlatformValueMapFormRow[];
+  qaEstimateFieldId: string;
   revision: number | null;
   setDevAssigneeFieldId: Dispatch<SetStateAction<string>>;
   setDevEstimateFieldId: Dispatch<SetStateAction<string>>;
@@ -81,6 +83,7 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
   trackerStatusesList: TrackerStatusRowMeta[];
 }) {
   const {
+    devEstimateFieldId,
     embeddedTestingOnlyJoins,
     embeddedTestingOnlyRules,
     fieldRows,
@@ -90,6 +93,7 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
     platformFieldId,
     platformFieldValues,
     platformValueMap,
+    qaEstimateFieldId,
     revision,
     setDevAssigneeFieldId,
     setDevEstimateFieldId,
@@ -229,6 +233,12 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
       platformFieldValues,
       embeddedTestingOnlyRules,
       embeddedTestingOnlyJoins,
+      {
+        devEstimateFieldId,
+        platformFieldId,
+        qaEstimateFieldId,
+      },
+      snap?.hadEmbeddedTestingOnlyExtraRules === true,
     );
     if (!update) {
       return;
@@ -238,12 +248,15 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
       setEmbeddedTestingOnlyJoins(update.desiredJoins);
     });
   }, [
+    devEstimateFieldId,
     embeddedTestingOnlyJoins,
     embeddedTestingOnlyRules,
     fieldRows,
     initialIntegrationSnapshotRef,
+    platformFieldId,
     platformFieldValues,
     platformValueMap,
+    qaEstimateFieldId,
     revision,
     setEmbeddedTestingOnlyJoins,
     setEmbeddedTestingOnlyRules,

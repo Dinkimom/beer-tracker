@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
 
-import { sectionBlock } from '../constants';
 import { trackerStatusMappingEmptyTitle } from '../trackerStatusMappingEmptyState';
 
 import { AdminStatusPaletteSelect } from './AdminStatusPaletteSelect';
@@ -67,8 +66,7 @@ export function TrackerStatusMappingPanel({
   });
 
   return (
-    <div className="space-y-5">
-      <article className={sectionBlock}>
+    <>
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {t('admin.plannerIntegration.statusMapping.title')}
         </h3>
@@ -156,7 +154,6 @@ export function TrackerStatusMappingPanel({
             </div>
           )}
         </div>
-      </article>
-    </div>
+    </>
   );
 }

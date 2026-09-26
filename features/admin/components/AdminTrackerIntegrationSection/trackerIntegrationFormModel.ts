@@ -316,24 +316,6 @@ export function resolveMergeRequestFieldId(
   return fuzzy?.id ?? "";
 }
 
-export function embeddedAutoRulesMatchDesiredPrefix(
-  prev: EmbeddedTestingOnlyRuleForm[],
-  desired: EmbeddedTestingOnlyRuleForm[],
-): boolean {
-  if (prev.length === 0) {
-    return true;
-  }
-  if (prev.length > desired.length) {
-    return false;
-  }
-  return prev.every(
-    (r, i) =>
-      r.fieldId === desired[i].fieldId &&
-      r.operator === desired[i].operator &&
-      r.value === desired[i].value,
-  );
-}
-
 export function resolveFieldIdByAlias(
   rows: Array<{ id: string; key?: string; name?: string; display?: string }>,
   alias: string,
