@@ -8,13 +8,14 @@ import { useLayoutEffect } from 'react';
 import Xarrow from 'react-xarrows';
 
 import { usePhaseCardColorScheme } from '@/components/PhaseCardColorSchemeContext';
-import { ZIndex } from '@/constants';
+import { ZIndex, getPartsPerDay } from '@/constants';
 import { SwimlaneLaneBand } from '@/features/swimlane/components/SwimlaneLaneBand';
 import { buildArrowPairsForSameTask } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactArrowHelpers';
 import { SWIMLANE_FACT_ROW_RIGHT_INSET_PX } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
 import {
   buildLanes,
   buildWithPhases,
+  factTimelineHolidayMask,
   hexToRgbaArrow,
 } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
 import {
@@ -39,6 +40,8 @@ interface SwimlaneInProgressFactLayerProps {
   developerMap: Map<string, Developer>;
   /** Подсветка колбасы факта по hover карточки/факта конкретной задачи */
   factHoveredTaskId?: string | null;
+  /** Индексы нерабочих дней — факт в этих колонках не рисуется */
+  holidayDayIndices?: Set<number>;
   layerId: string;
   segments: SwimlaneInProgressFactSegment[];
   sprintStartDate: Date;
@@ -64,6 +67,7 @@ export function SwimlaneInProgressFactLayer({
   layerId,
   onFactSegmentHover,
   factHoveredTaskId = null,
+  holidayDayIndices,
   requestArrowRedraw,
   segments,
   sprintStartDate,
@@ -102,6 +106,8 @@ export function SwimlaneInProgressFactLayer({
     return () => cancelAnimationFrame(id);
   }, [arrowPairsKey, requestArrowRedraw, segments, layerId, withPhases.length]);
 
+  const holidayMask = factTimelineHolidayMask(holidayDayIndices, totalParts, getPartsPerDay());
+
   if (segments.length === 0 || spanCells <= 0 || lanes.length === 0) {
     return null;
   }
@@ -110,6 +116,11 @@ export function SwimlaneInProgressFactLayer({
     <SwimlaneLaneBand
       accent="fact"
       className="absolute bottom-0 left-0 right-0 z-[1] pointer-events-none"
+      contentStyle={
+        holidayMask
+          ? { maskImage: holidayMask, WebkitMaskImage: holidayMask }
+          : undefined
+      }
       style={{ height: totalLayerHeight }}
     >
       <div

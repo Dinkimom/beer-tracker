@@ -9,6 +9,7 @@ import { buildArrowPairsForSameTask } from '@/features/swimlane/utils/in-progres
 import {
   buildLanes,
   buildWithPhases,
+  factTimelineHolidayMask,
   getVisibleSwimlaneFactLayerHeightPx,
   hexToRgbaArrow,
   isClosedFactPhase,
@@ -280,6 +281,19 @@ describe('getVisibleSwimlaneFactLayerHeightPx', () => {
     );
     expect(getVisibleSwimlaneFactLayerHeightPx(segments, sprintStart, fiveDayParts, noonOnDay2)).toBe(
       getSwimlaneInProgressFactLayerHeightFromLaneCount(1)
+    );
+  });
+});
+
+describe('factTimelineHolidayMask', () => {
+  it('returns nothing when there is no day off', () => {
+    expect(factTimelineHolidayMask(undefined, 30, 3)).toBeUndefined();
+    expect(factTimelineHolidayMask(new Set(), 30, 3)).toBeUndefined();
+  });
+
+  it('cuts a hard window over each day off and turns opaque again at its edge', () => {
+    expect(factTimelineHolidayMask(new Set([1]), 30, 3)).toBe(
+      'linear-gradient(to right, #000 0%, #000 10.0000%, transparent 10.0000%, transparent 20.0000%, #000 20.0000%, #000 100%)'
     );
   });
 });

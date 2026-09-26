@@ -4,6 +4,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { useEffect, useRef, useState } from 'react';
 
 import { Icon } from '@/components/Icon';
+import { IconActionMotion } from '@/components/IconActionMotion';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useSprintTimer } from '@/hooks/useSprintTimer';
 import { clampSprintTimerDurationMs, formatSprintTimerClock } from '@/lib/realtime/sprintTimerState';
@@ -147,7 +148,9 @@ export function SprintPlannerTimer({ selectedSprintId }: SprintPlannerTimerProps
           title={title}
           type="button"
         >
-          <Icon className="h-4 w-4 shrink-0" name="stopwatch" />
+          <IconActionMotion active={open} name="stopwatch">
+            <Icon className="h-4 w-4 shrink-0" name="stopwatch" />
+          </IconActionMotion>
           {timerActive ? <span>{chipClock}</span> : null}
         </button>
       </Popover.Trigger>

@@ -5,6 +5,7 @@ import type { SwimlaneBaselineLayoutMode } from '@/lib/swimlane/swimlaneBaseline
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/Button';
+import { IconActionMotion } from '@/components/IconActionMotion';
 import { useI18n } from '@/contexts/LanguageContext';
 import { CONTEXT_MENU_GHOST_BUTTON_RESET } from '@/features/context-menu/contextMenuClasses';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
@@ -123,7 +124,9 @@ export function SwimlanePlacementToolbarLayers({
           variant="ghost"
           onClick={() => setMenuOpen((open) => !open)}
         >
-          <SwimlanePlacementToolbarLayersIcon />
+          <IconActionMotion active={menuOpen} name="layers">
+            <SwimlanePlacementToolbarLayersIcon />
+          </IconActionMotion>
         </Button>
         {overlay.mounted ? (
           <SwimlanePlacementToolbarLayersMenu

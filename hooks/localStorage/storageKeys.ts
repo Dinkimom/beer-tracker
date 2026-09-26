@@ -47,6 +47,8 @@ export const STORAGE_KEYS = {
   EXPERIMENTAL_FEATURES: 'beer-tracker-experimental-features',
   /** Показывать эмодзи праздников в шапке с датами (занятость, свимлейны) */
   SHOW_HOLIDAYS: 'beer-tracker-show-holidays',
+  /** Страна календаря нерабочих дней (ISO 3166-1 alpha-2) */
+  HOLIDAY_COUNTRY: 'beer-tracker-holiday-country',
   OCCUPANCY_ASSIGNEE_FILTER: 'beer-tracker-occupancy-assignee-filter',
   OCCUPANCY_STATUS_FILTER: 'beer-tracker-occupancy-status-filter',
   OCCUPANCY_TIMELINE_SETTINGS: 'beer-tracker-occupancy-timeline-settings',

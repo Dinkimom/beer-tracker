@@ -128,7 +128,7 @@ export function DaysHeader({
           style={{ height: DAYS_HEADER_ROW_HEIGHT_PX, minHeight: DAYS_HEADER_ROW_HEIGHT_PX }}
         >
           <div
-            className="flex min-w-0 shrink-0 overflow-visible"
+            className="flex h-full min-h-0 min-w-0 shrink-0 overflow-visible"
             style={{ width: contentWidth, minWidth: contentWidth }}
           >
             <div

@@ -29,6 +29,7 @@ export function buildSwimlanePropsForDeveloper(input: {
   boardId: number | null;
   calendarBusySegments: CalendarBusySegment[];
   calendarBusyVisible: boolean;
+  cardShadowTaskId: string | null;
   comments: Comment[];
   commentsVisible: boolean;
   swimlaneImagesVisible?: boolean;
@@ -126,6 +127,7 @@ export function buildSwimlanePropsForDeveloper(input: {
     boardId: input.boardId,
     calendarBusySegments: isTeamLane ? [] : input.calendarBusySegments,
     calendarBusyVisible: isTeamLane ? false : input.calendarBusyVisible,
+    cardShadowTaskId: input.cardShadowTaskId,
     commentCardRowById: buildCommentCardRowById(developerComments),
     contextMenuBlurOtherCards: input.contextMenuBlurOtherCards,
     contextMenuTaskId: input.contextMenuTaskId,

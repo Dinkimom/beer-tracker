@@ -20,6 +20,7 @@ import {
   useEpicOccupancyRowFieldsStorage,
   useEpicOccupancyRowViewStorage,
   useEpicOccupancyTimelineSettingsStorage,
+  useHolidayCountryStorage,
   useKanbanGroupByStorage,
   useLinksDimOnHoverStorage,
   useOccupancyRowFieldsStorage,
@@ -66,6 +67,7 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
   const [syncEstimates, setSyncEstimates] = useDataSyncEstimatesStorage();
   const [syncAssignees, setSyncAssignees] = useDataSyncAssigneesStorage();
   const [showHolidays, setShowHolidays] = useShowHolidaysStorage();
+  const [holidayCountry, setHolidayCountry] = useHolidayCountryStorage();
   const [timelineSettings, setTimelineSettings] = useOccupancyTimelineSettingsStorage();
   const [occupancyTimelineScale, setOccupancyTimelineScale] = useOccupancyTimelineScaleStorage();
   const [occupancyRowView, setOccupancyRowView] = useOccupancyRowViewStorage();
@@ -225,6 +227,8 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
           <div className="px-6 py-5">
             {activeTab === 'general' && (
               <SettingsGeneralTab
+                holidayCountry={holidayCountry}
+                setHolidayCountry={setHolidayCountry}
                 setShowHolidays={setShowHolidays}
                 setSidebarTabsSettings={setSidebarTabsSettings}
                 setSyncAssignees={setSyncAssignees}

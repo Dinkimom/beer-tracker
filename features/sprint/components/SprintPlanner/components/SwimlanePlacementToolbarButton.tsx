@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/Button';
 import { CardLinkIcon } from '@/components/CardLinkIcon';
 import { Icon } from '@/components/Icon';
+import { IconActionMotion } from '@/components/IconActionMotion';
 import { JiraToolIcon } from '@/components/JiraToolIcon';
 import { YandexTrackerToolIcon } from '@/components/YandexTrackerToolIcon';
 import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKindContext';
@@ -124,7 +125,9 @@ export function SwimlanePlacementToolbarButton({
           variant="ghost"
           onClick={onSelect}
         >
-          {resolvePlacementToolbarGlyph(tool, noteColor, isDark, active, issueTrackerKind)}
+          <IconActionMotion active={active} name={tool}>
+            {resolvePlacementToolbarGlyph(tool, noteColor, isDark, active, issueTrackerKind)}
+          </IconActionMotion>
           {iconOnly ? null : <span>{label}</span>}
         </Button>
       </PlannerShortcutTooltip>

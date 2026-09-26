@@ -43,7 +43,7 @@ export function buildTaskCardRootClassName(params: {
   const radiusClass = params.radiusClass ?? 'rounded-lg';
   return `${params.cardSurfaceClasses} ${params.cardBorderColorClasses} ${radiusClass} ${params.sizeVariantClasses} ${params.cursorClass} ${params.hoverShadowClasses} flex flex-col relative ${params.paddingClasses} overflow-visible ${
     params.isResizing ? 'select-none' : ''
-  } ${params.ringClasses} ${params.contextMenuZClasses} ${params.dimmedClasses} ${params.sidebarOpacityClasses} ${params.borderClasses}${params.contextMenuBorderClasses} ${params.className}`;
+  } ${params.ringClasses} ${params.contextMenuZClasses} ${params.dimmedClasses} ${params.sidebarOpacityClasses} ${params.borderClasses}${params.contextMenuBorderClasses} task-card-context-menu-frame ${params.className}`;
 }
 
 export function buildTaskCardHoverShadowClasses(
@@ -117,20 +117,26 @@ export function buildTaskCardRingClasses(
   return '';
 }
 
+const CONTEXT_MENU_OUTLINE_BASE = ' outline outline-1 outline-offset-0';
+
 /**
  * Синяя рамка «карточка с открытым меню».
  * У заметки/задачи уже есть border — достаточно сменить цвет.
  * У фото/схемы (borderWidth: 0) рисуем outline снаружи, чтобы контент не прыгал.
+ * Outline держим и в закрытом состоянии (прозрачный), чтобы цвет мог плавно перейти.
  */
 export function resolveTaskCardContextMenuBorderClasses(
   isContextMenuOpen: boolean,
   useOutline = false
 ): string {
+  if (useOutline) {
+    const color = isContextMenuOpen
+      ? 'outline-blue-500 dark:outline-blue-400'
+      : 'outline-transparent';
+    return `${CONTEXT_MENU_OUTLINE_BASE} ${color}`;
+  }
   if (!isContextMenuOpen) {
     return '';
-  }
-  if (useOutline) {
-    return ' outline outline-1 outline-blue-500 outline-offset-0 dark:outline-blue-400';
   }
   return ' !border-blue-500 dark:!border-blue-400';
 }

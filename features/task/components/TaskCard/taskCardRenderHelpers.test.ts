@@ -32,6 +32,7 @@ function rootClass(radiusClass?: string): string {
 describe('buildTaskCardRootClassName', () => {
   it('uses rounded-lg for regular task cards', () => {
     expect(rootClass()).toContain('rounded-lg');
+    expect(rootClass()).toContain('task-card-context-menu-frame');
     expect(rootClass()).not.toContain('rounded-none');
   });
 
@@ -109,9 +110,14 @@ describe('withTaskCardHoverGlowStyle', () => {
 });
 
 describe('resolveTaskCardContextMenuBorderClasses', () => {
-  it('is empty when the context menu is closed', () => {
+  it('is empty when the context menu is closed on a bordered card', () => {
     expect(resolveTaskCardContextMenuBorderClasses(false)).toBe('');
-    expect(resolveTaskCardContextMenuBorderClasses(false, true)).toBe('');
+  });
+
+  it('keeps a transparent outline on photo cards so the frame can fade', () => {
+    expect(resolveTaskCardContextMenuBorderClasses(false, true)).toBe(
+      ' outline outline-1 outline-offset-0 outline-transparent'
+    );
   });
 
   it('only recolors the existing border for sticky notes and tasks', () => {
@@ -122,7 +128,7 @@ describe('resolveTaskCardContextMenuBorderClasses', () => {
 
   it('uses outline on photo cards so adding the frame does not shrink content', () => {
     expect(resolveTaskCardContextMenuBorderClasses(true, true)).toBe(
-      ' outline outline-1 outline-blue-500 outline-offset-0 dark:outline-blue-400'
+      ' outline outline-1 outline-offset-0 outline-blue-500 dark:outline-blue-400'
     );
   });
 });

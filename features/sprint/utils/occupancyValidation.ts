@@ -12,11 +12,7 @@ import type { BoardAvailabilityEvent, QuarterlyAvailability } from '@/types/quar
 
 import { WORKING_DAYS } from '@/constants';
 import { normalizeQuarterlyAvailabilityToBoardEvents } from '@/features/sprint/utils/quarterlyAvailabilityNormalize';
-import {
-  OCCUPANCY_ERROR_MESSAGES,
-  type OccupancyErrorReason,
-  formatOccupancyErrorTooltip,
-} from '@/lib/planner-timeline/occupancyErrorMessages';
+import { type OccupancyErrorReason } from '@/lib/planner-timeline/occupancyErrorMessages';
 import { getWorkingDaysRange } from '@/utils/dateUtils';
 
 import { getPositionSegmentRanges } from './occupancyUtils';
@@ -46,10 +42,7 @@ import {
   addRelatedQaDevOverlap,
 } from './occupancyValidationOverlap';
 
-export {
-  OCCUPANCY_ERROR_MESSAGES,
-  formatOccupancyErrorTooltip,
-};
+export { formatOccupancyErrorTooltip } from '@/lib/planner-timeline/occupancyErrorMessages';
 
 function parseIsoDateOnlyUtc(iso: string): Date {
   return new Date(`${iso}T00:00:00Z`);
@@ -227,7 +220,7 @@ export function getOverlappingTaskIds(
 }
 
 /**
- * Возвращает для каждой задачи список причин ошибки (ключи для OCCUPANCY_ERROR_MESSAGES).
+ * Возвращает для каждой задачи список причин ошибки (ключи OccupancyErrorReason).
  */
 export function getOccupancyErrorReasons(
   tasks: Task[],
@@ -272,7 +265,10 @@ export function getOccupancyErrorReasons(
   return reasons;
 }
 
-export interface DayErrorDetail { reasons: string[]; taskName: string; }
+export interface DayErrorDetail {
+  reasons: OccupancyErrorReason[];
+  taskName: string;
+}
 
 /**
  * Возвращает по каждому дню (индекс колонки) список проблемных задач и причин.
@@ -339,8 +335,7 @@ export function getOccupancyErrorDetailsByDay(
     dayMap.forEach((reasonsSet, taskId) => {
       const task = taskById.get(taskId);
       const taskName = task?.name ?? taskId;
-      const reasonLabels = Array.from(reasonsSet).map((r) => OCCUPANCY_ERROR_MESSAGES[r] ?? r);
-      list.push({ taskName, reasons: reasonLabels });
+      list.push({ taskName, reasons: Array.from(reasonsSet) });
     });
     result.set(dayIndex, list);
   });

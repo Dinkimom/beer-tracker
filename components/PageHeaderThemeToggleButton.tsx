@@ -1,7 +1,7 @@
 'use client';
 
 import { HeaderIconButton } from '@/components/HeaderIconButton';
-import { Icon } from '@/components/Icon';
+import { ThemeToggleIcon } from '@/components/ThemeToggleIcon';
 import { useI18n } from '@/contexts/LanguageContext';
 
 interface PageHeaderThemeToggleButtonProps {
@@ -18,11 +18,7 @@ export function PageHeaderThemeToggleButton({ theme, onToggle }: PageHeaderTheme
 
   return (
     <HeaderIconButton title={title} type="button" onClick={onToggle}>
-      {theme === 'light' ? (
-        <Icon className="h-4 w-4 text-amber-500" name="sun" />
-      ) : (
-        <Icon className="h-4 w-4 text-amber-400" name="moon" />
-      )}
+      <ThemeToggleIcon theme={theme} />
     </HeaderIconButton>
   );
 }

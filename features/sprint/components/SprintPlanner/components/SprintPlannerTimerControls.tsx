@@ -105,6 +105,7 @@ export function SprintPlannerTimerControls({
             </button>
           ) : null}
           <SprintPlannerTimerIconButton
+            animateOnClick
             aria-label={t(primary.actionKey)}
             disabled={busy}
             icon={primary.icon}

@@ -37,6 +37,44 @@ export function hexToRgbaArrow(hex: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
+/** Маска таймлайна факта: выходные колонки прозрачные, штриховка дня под ними остаётся. */
+export function factTimelineHolidayMask(
+  holidayDayIndices: ReadonlySet<number> | undefined,
+  totalParts: number,
+  partsPerDay: number
+): string | undefined {
+  if (!holidayDayIndices || holidayDayIndices.size === 0 || totalParts <= 0 || partsPerDay <= 0) {
+    return undefined;
+  }
+  const holes = [...holidayDayIndices]
+    .filter((day) => day >= 0)
+    .map((day) => ({
+      end: Math.min(totalParts, (day + 1) * partsPerDay) / totalParts,
+      start: (day * partsPerDay) / totalParts,
+    }))
+    .filter((hole) => hole.end > hole.start && hole.start < 1)
+    .sort((a, b) => a.start - b.start);
+  if (holes.length === 0) return undefined;
+
+  const stops = ['#000 0%'];
+  let cursor = 0;
+  for (const hole of holes) {
+    const start = Math.max(hole.start, cursor);
+    const end = Math.min(hole.end, 1);
+    if (end <= start) continue;
+    const startPct = (start * 100).toFixed(4);
+    const endPct = (end * 100).toFixed(4);
+    if (start > cursor) stops.push(`#000 ${startPct}%`);
+    stops.push(`transparent ${startPct}%`);
+    stops.push(`transparent ${endPct}%`);
+    stops.push(`#000 ${endPct}%`);
+    cursor = end;
+    if (cursor >= 1) break;
+  }
+  if (cursor < 1) stops.push('#000 100%');
+  return `linear-gradient(to right, ${stops.join(', ')})`;
+}
+
 export function buildWithPhases(
   segments: SwimlaneInProgressFactSegment[],
   sprintStartDate: Date,

@@ -4,8 +4,13 @@ import type { DayErrorDetail } from '@/features/sprint/utils/occupancyValidation
 import type { Task } from '@/types';
 
 import { DayHeaderCellContent } from '@/components/DayHeaderCell';
-import { WORKING_DAYS, WORKING_DAYS_PER_WEEK } from '@/constants';
+import { WORKING_DAYS } from '@/constants';
+import { plannerNowFromMinute, usePlannerNowMinute } from '@/features/sprint/hooks/usePlannerNowMinute';
 import { getDayDate } from '@/features/sprint/utils/occupancyUtils';
+import {
+  plannerNowWithinDay,
+  timelineDayDividerClass,
+} from '@/features/sprint/utils/timelineColumnChrome';
 import { getDayStatus } from '@/utils/dateUtils';
 
 type DayStatus = ReturnType<typeof getDayStatus>;
@@ -23,22 +28,11 @@ function occupancyDayHeaderClass(status: DayStatus, isPast: boolean, isHoliday: 
   return 'bg-white dark:bg-gray-800';
 }
 
-function swimlaneDayCellClass(status: DayStatus, isHoliday: boolean, weekIdx: number): string {
+function swimlaneDayCellClass(status: DayStatus): string {
   if (status === 'today') {
     return 'bg-gradient-to-br from-blue-50 to-blue-100/80 dark:from-blue-900/40 dark:to-blue-800/40';
   }
-  if (isHoliday) {
-    return weekIdx % 2 === 1
-      ? 'bg-gray-100 dark:bg-gray-900/40'
-      : 'bg-gray-50 dark:bg-gray-900/40';
-  }
   return 'bg-white dark:bg-gray-800';
-}
-
-/** Абсолютный w-px: CSS border-r + flex/% давал накопление 1px относительно сетки строк. */
-function swimlaneDayDividerClass(dayIndex: number, dayCount: number): string | null {
-  if (dayIndex >= dayCount - 1) return null;
-  return 'bg-gray-200 dark:bg-gray-600';
 }
 
 interface DaysRowProps {
@@ -88,6 +82,7 @@ export function DaysRow({
   showHolidayEmoji,
   workingDaysCount = WORKING_DAYS,
 }: DaysRowProps) {
+  const now = plannerNowFromMinute(usePlannerNowMinute());
   const dayCount = Math.max(1, workingDaysCount);
   const dayWidthPercent = 100 / dayCount;
 
@@ -128,6 +123,7 @@ export function DaysRow({
                   errorDetails={details}
                   hasError={hasError}
                   multiline={multilineHeader}
+                  nonWorking={Boolean(isHoliday)}
                   showHolidayEmoji={showHolidayEmoji}
                   tasks={tasks}
                   variant="timeline"
@@ -143,7 +139,7 @@ export function DaysRow({
 
   return (
     <div
-      className="grid"
+      className="grid h-full min-h-0 overflow-hidden"
       data-onboarding="days"
       style={{
         width: containerWidth,
@@ -156,28 +152,41 @@ export function DaysRow({
         const hasError = errorDayIndices?.has(dayIndex);
         const details = errorDayDetails?.get(dayIndex);
         const isHoliday = holidayDayIndices?.has(dayIndex);
-        const weekIdx = Math.floor(dayIndex / WORKING_DAYS_PER_WEEK);
-        const dividerClass = swimlaneDayDividerClass(dayIndex, dayCount);
+        const dividerClass = timelineDayDividerClass(dayIndex, dayCount);
+        const nowWithinDay =
+          status === 'today'
+            ? plannerNowWithinDay(dayDate, now)
+            : null;
         return (
           <div
             key={dayIndex}
-            className={`relative min-w-0 py-2 text-center transition-all duration-200 flex items-center justify-center ${swimlaneDayCellClass(status, Boolean(isHoliday), weekIdx)}`}
+            className={`relative flex h-full min-h-0 min-w-0 items-center justify-center overflow-hidden py-1 text-center ${swimlaneDayCellClass(status)}`}
             data-onboarding-day={dayIndex}
             data-onboarding-today={status === 'today' ? 'true' : undefined}
           >
-            {dividerClass ? (
+            {nowWithinDay != null ? (
               <div
-                className={`pointer-events-none absolute right-0 top-0 bottom-0 w-px ${dividerClass}`}
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 top-0 z-[1] w-px -translate-x-1/2 bg-blue-500 dark:bg-blue-400"
+                style={{ left: `${nowWithinDay * 100}%` }}
               />
             ) : null}
-            <DayHeaderCellContent
-              day={dayDate}
-              errorDetails={details}
-              hasError={hasError}
-              multiline={multilineHeader}
-              showHolidayEmoji={showHolidayEmoji}
-              variant="timeline"
-            />
+            {dividerClass ? (
+              <div
+                className={`pointer-events-none absolute bottom-0 right-0 top-0 w-px ${dividerClass}`}
+              />
+            ) : null}
+            <div className="relative z-[2]">
+              <DayHeaderCellContent
+                day={dayDate}
+                errorDetails={details}
+                hasError={hasError}
+                multiline={multilineHeader}
+                nonWorking={Boolean(isHoliday)}
+                showHolidayEmoji={showHolidayEmoji}
+                variant="timeline"
+              />
+            </div>
           </div>
         );
       })}

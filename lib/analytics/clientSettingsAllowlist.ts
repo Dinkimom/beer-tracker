@@ -1,7 +1,7 @@
 import { STORAGE_KEYS } from '@/hooks/localStorage/storageKeys';
 
 /** Версия JSON снимка настроек; повышение само меняет хеш и переотправляет снимок. */
-export const CLIENT_SETTINGS_PAYLOAD_VERSION = 2;
+export const CLIENT_SETTINGS_PAYLOAD_VERSION = 3;
 
 /**
  * Канонические ключи payload → ключи localStorage.
@@ -17,6 +17,7 @@ export const CLIENT_SETTINGS_FIELDS = {
   epicOccupancyRowFields: STORAGE_KEYS.EPIC_OCCUPANCY_ROW_FIELDS,
   epicOccupancyTimelineSettings: STORAGE_KEYS.EPIC_OCCUPANCY_TIMELINE_SETTINGS,
   experimentalFeatures: STORAGE_KEYS.EXPERIMENTAL_FEATURES,
+  holidayCountry: STORAGE_KEYS.HOLIDAY_COUNTRY,
   kanbanGroupBy: STORAGE_KEYS.KANBAN_GROUP_BY,
   language: STORAGE_KEYS.LANGUAGE,
   linksDimOnHover: STORAGE_KEYS.LINKS_DIM_ON_HOVER,

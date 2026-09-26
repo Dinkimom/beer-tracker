@@ -1,19 +1,23 @@
 'use client';
 
 import type { SidebarTabSettings } from '@/hooks/useLocalStorage';
+import type { HolidayCountryCode } from '@/lib/holidays/holidayCountries';
 
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useI18n } from '@/contexts/LanguageContext';
 
+import { HolidayCountrySelect } from '../components/HolidayCountrySelect';
 import { PwaInstallSection } from '../components/PwaInstallSection';
 import { SidebarTabsSettingsList } from '../components/SidebarTabsSettingsList';
 import { Toggle } from '../components/Toggle';
 
 interface SettingsGeneralTabComponentProps {
+  holidayCountry: HolidayCountryCode;
   showHolidays: boolean;
   sidebarTabsSettings: SidebarTabSettings[];
   syncAssignees: boolean;
   syncEstimates: boolean;
+  setHolidayCountry: (value: HolidayCountryCode) => void;
   setShowHolidays: (v: boolean) => void;
   setSidebarTabsSettings: (
     value: SidebarTabSettings[] | ((prev: SidebarTabSettings[]) => SidebarTabSettings[])
@@ -23,8 +27,10 @@ interface SettingsGeneralTabComponentProps {
 }
 
 export function SettingsGeneralTab({
+  holidayCountry,
   syncAssignees,
   syncEstimates,
+  setHolidayCountry,
   setSyncAssignees,
   setSyncEstimates,
   setSidebarTabsSettings,
@@ -52,6 +58,17 @@ export function SettingsGeneralTab({
           label={t('settings.generalTab.holidaysLabel')}
           onChange={setShowHolidays}
         />
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('settings.generalTab.holidayCountryLabel')}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-snug">
+              {t('settings.generalTab.holidayCountryHint')}
+            </p>
+          </div>
+          <HolidayCountrySelect value={holidayCountry} onChange={setHolidayCountry} />
+        </div>
         <PwaInstallSection />
       </section>
 

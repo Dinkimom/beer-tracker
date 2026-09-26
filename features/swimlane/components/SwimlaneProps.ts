@@ -21,6 +21,11 @@ export interface SwimlaneProps {
   calendarBusySegments?: CalendarBusySegment[];
   /** Показывать дорожку занятости календаря */
   calendarBusyVisible?: boolean;
+  /**
+   * Карточка, у которой hover дожил до тени.
+   * Затемняет бары факта других задач и не трогает карточки.
+   */
+  cardShadowTaskId?: string | null;
   commentCardRowById?: ReadonlyMap<string, StickyNoteCardRowLayout>;
   contextMenuBlurOtherCards?: boolean;
   contextMenuTaskId?: string | null;

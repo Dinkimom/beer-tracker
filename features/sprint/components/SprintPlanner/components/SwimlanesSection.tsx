@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { PlannerNowLine } from '@/features/sprint/components/SprintPlanner/layout/PlannerNowLine';
 import {
   sprintPlannerContentRowWidthCss,
   sprintPlannerDaysHeaderContentWidthCss,
@@ -26,6 +27,7 @@ import { mergeSwimlanePositionsWithVisibleComments } from '@/features/sprint/com
 import { useHolidayDays } from '@/features/sprint/hooks/useHolidayDays';
 import { useSwimlaneCalendarBusyByDeveloper } from '@/features/sprint/hooks/useSwimlaneCalendarBusy';
 import { buildAssigneeUnavailableDays, getOccupancyErrorDays, getOccupancyErrorDetailsByDay, getOccupancyErrorReasons, getOccupancyErrorTaskIds } from '@/features/sprint/utils/occupancyValidation';
+import { useCardShadowFactFocusTaskId } from '@/features/swimlane/components/in-progress-fact/useCardShadowFactFocusTaskId';
 import {
   buildSwimlaneInProgressFactSegmentsForAssignee,
   type SwimlaneInProgressFactSegment,
@@ -49,6 +51,10 @@ import { usePlannerOnboardingChrome } from '../onboarding/plannerOnboardingChrom
 
 import { ParticipantsColumnResizeHandle } from './ParticipantsColumnResizeHandle';
 import { SwimlanesSectionLanes } from './SwimlanesSectionLanes';
+
+function swimlaneHoverValueWhileIdle<T>(suspended: boolean, value: T): T | null {
+  return suspended ? null : value;
+}
 
 export const SwimlanesSection = observer(function SwimlanesSection(props: SwimlanesSectionProps) {
   const {
@@ -96,6 +102,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     linkToolArmed
   );
   const segmentEditTaskId = sprintPlannerUi.segmentEditTaskId;
+  const { cardShadowTaskId, syncCardShadowHover } = useCardShadowFactFocusTaskId();
 
   const [factHoveredTaskId, setFactHoveredTaskId] = useState<string | null>(null);
 
@@ -268,11 +275,13 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     (taskId: string | null) => {
       if (dragAndDrop.isDraggingTask || taskId == null) {
         sprintPlannerUi.setHoveredTaskId(null);
+        syncCardShadowHover(null);
         return;
       }
       sprintPlannerUi.setHoveredTaskId(taskId);
+      syncCardShadowHover(taskId);
     },
-    [dragAndDrop.isDraggingTask, sprintPlannerUi]
+    [dragAndDrop.isDraggingTask, sprintPlannerUi, syncCardShadowHover]
   );
 
   const {
@@ -290,11 +299,13 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     taskPositions: swimlanePositions,
   });
 
-  const effectiveFactHoveredTaskId =
-    linkingSessionActive || dragAndDrop.isDraggingTask ? null : factHoveredTaskId;
-
-  const effectiveHoverConnectedTaskIds =
-    linkingSessionActive || dragAndDrop.isDraggingTask ? null : hoverConnectedTaskIds;
+  const hoverDimSuspended = linkingSessionActive || dragAndDrop.isDraggingTask;
+  const effectiveFactHoveredTaskId = swimlaneHoverValueWhileIdle(hoverDimSuspended, factHoveredTaskId);
+  const effectiveCardShadowTaskId = swimlaneHoverValueWhileIdle(hoverDimSuspended, cardShadowTaskId);
+  const effectiveHoverConnectedTaskIds = swimlaneHoverValueWhileIdle(
+    hoverDimSuspended,
+    hoverConnectedTaskIds
+  );
 
   const sidebarEffectiveWidthPx = sidebarOpen ? sidebarWidth : 0;
   const swimlanesContentWidth = sprintPlannerDaysHeaderContentWidthCss(
@@ -368,9 +379,10 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
               transition: 'none',
             }}
           >
-            <div className="shrink-0" data-planner-swimlanes-lanes>
+            <div className="relative shrink-0" data-planner-swimlanes-lanes>
               <SwimlanesSectionLanes
                 calendarBusyByDeveloper={calendarBusyByDeveloper}
+                cardShadowTaskId={effectiveCardShadowTaskId}
                 comments={comments}
                 contextMenuTaskId={contextMenuTaskId}
                 developerAvailabilityMap={developerAvailabilityMap}
@@ -399,6 +411,11 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
                 onTaskClick={handleTaskClickWithLinking}
                 onTaskHover={handleTaskHover}
                 onTaskHoverEnd={() => handleTaskHover(null)}
+              />
+              <PlannerNowLine
+                dayCount={sprintTimelineWorkingDays}
+                participantsColumnWidth={participantsColumnWidth}
+                sprintStartDate={sprintStartDate}
               />
             </div>
             <div

@@ -42,6 +42,7 @@ export function memoizedSwimlanePropsEqual(
     prevProps.swimlaneInProgressDurations === nextProps.swimlaneInProgressDurations &&
     prevProps.sprintTimelineWorkingDays === nextProps.sprintTimelineWorkingDays &&
     prevProps.factHoveredTaskId === nextProps.factHoveredTaskId &&
+    prevProps.cardShadowTaskId === nextProps.cardShadowTaskId &&
     prevProps.onFactSegmentHover === nextProps.onFactSegmentHover &&
     prevProps.isPinned === nextProps.isPinned
   );

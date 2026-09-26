@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import {
+  DEFAULT_HOLIDAY_COUNTRY,
+  normalizeHolidayCountry,
+  type HolidayCountryCode,
+} from '@/lib/holidays/holidayCountries';
 import { AppLanguage, DEFAULT_LANGUAGE, isAppLanguage } from '@/lib/i18n/model';
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 import {
@@ -109,6 +114,17 @@ export function useShowHolidaysStorage(): [
   (value: boolean | ((prev: boolean) => boolean)) => void
 ] {
   return useLocalStorageBase<boolean>(STORAGE_KEYS.SHOW_HOLIDAYS, true);
+}
+
+export function useHolidayCountryStorage(): [
+  HolidayCountryCode,
+  (value: HolidayCountryCode) => void
+] {
+  const [stored, setStored] = useLocalStorageBase<string>(
+    STORAGE_KEYS.HOLIDAY_COUNTRY,
+    DEFAULT_HOLIDAY_COUNTRY
+  );
+  return [normalizeHolidayCountry(stored), setStored];
 }
 
 /**

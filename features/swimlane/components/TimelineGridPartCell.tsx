@@ -65,8 +65,6 @@ export function TimelineGridPartCell(props: {
   dayIndex: number;
   developerId: string;
   hasTaskOverlaps?: boolean;
-  hasAvailabilityEvent?: boolean;
-  holidayDayIndices?: Set<number>;
   hoveredCell: { assigneeId: string; day: number; part: number } | null;
   isDraggingTask: boolean;
   isLinking?: boolean;
@@ -94,8 +92,6 @@ export function TimelineGridPartCell(props: {
     dayIndex,
     developerId,
     hasTaskOverlaps,
-    hasAvailabilityEvent = false,
-    holidayDayIndices,
     hoveredCell,
     isDraggingTask,
     isLinking = false,
@@ -114,8 +110,9 @@ export function TimelineGridPartCell(props: {
   } = props;
 
   const cellId = `cell-${developerId}-${dayIndex}-${partIndex}`;
-  const cellStart = dayIndex * getPartsPerDay() + partIndex;
-  const remainingCells = Math.max(1, dayCount * getPartsPerDay() - cellStart);
+  const partsPerDay = getPartsPerDay();
+  const cellStart = dayIndex * partsPerDay + partIndex;
+  const remainingCells = Math.max(1, dayCount * partsPerDay - cellStart);
   const durationCells = Math.min(quickAddDurationCells, remainingCells);
   const quickAddBand = resolveSwimlaneQuickAddLayerBand(
     collectOccupiedLayersForCellRange(occupiedLayersByCell, cellStart, durationCells),
@@ -140,11 +137,9 @@ export function TimelineGridPartCell(props: {
       key={`${cellId}-${isQuickAddEnabled ? 'add' : 'idle'}`}
       activeTask={activeTask}
       dropDisabled={isOnboardingDemoAssigneeId(developerId)}
-      hasAvailabilityEvent={hasAvailabilityEvent}
       hasTaskOverlaps={hasTaskOverlaps}
       id={cellId}
       isHighlighted={isHighlighted}
-      isHoliday={holidayDayIndices?.has(dayIndex)}
       partIndex={partIndex}
       partStatus={partStatus}
       quickAddClipHeight={quickAddClipHeight}

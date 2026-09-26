@@ -1,15 +1,33 @@
-/** Ключи причин ошибки для тултипа */
-export const OCCUPANCY_ERROR_MESSAGES = {
-  assignee_unavailable: 'Исполнитель в отпуске или техспринте',
-  qa_before_dev: 'Занятость тестирования идёт раньше или пересекается с разработкой',
-  qa_without_dev: 'Задача тестирования без запланированной задачи разработки',
-  performer_overlap: 'Пересечение по занятости',
+import { translate } from '@/lib/i18n/translator';
+
+/** Ключи причин ошибки и их пути в словаре переводов */
+const OCCUPANCY_ERROR_REASONS = {
+  assignee_unavailable: 'task.occupancyRisks.assigneeUnavailable',
+  qa_before_dev: 'task.occupancyRisks.qaBeforeDev',
+  qa_without_dev: 'task.occupancyRisks.qaWithoutDev',
+  performer_overlap: 'task.occupancyRisks.performerOverlap',
 } as const;
 
-export type OccupancyErrorReason = keyof typeof OCCUPANCY_ERROR_MESSAGES;
+export type OccupancyErrorReason = keyof typeof OCCUPANCY_ERROR_REASONS;
 
-/** Собирает текст тултипа по списку причин */
-export function formatOccupancyErrorTooltip(reasons: OccupancyErrorReason[] | undefined): string {
+type OccupancyErrorTranslate = (key: string) => string;
+
+export function translateOccupancyErrorReason(
+  reason: OccupancyErrorReason,
+  t: OccupancyErrorTranslate
+): string {
+  return t(OCCUPANCY_ERROR_REASONS[reason]);
+}
+
+/**
+ * Собирает текст тултипа по списку причин.
+ * Без переводчика — русский словарь: так текст читает легаси occupancy.
+ */
+export function formatOccupancyErrorTooltip(
+  reasons: OccupancyErrorReason[] | undefined,
+  t?: OccupancyErrorTranslate
+): string {
   if (!reasons?.length) return '';
-  return reasons.map((r) => OCCUPANCY_ERROR_MESSAGES[r] ?? r).join(' • ');
+  const label = t ?? ((key: string) => translate('ru', key));
+  return reasons.map((reason) => translateOccupancyErrorReason(reason, label)).join(' • ');
 }

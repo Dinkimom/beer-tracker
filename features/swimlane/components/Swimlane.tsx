@@ -14,6 +14,7 @@ import { sprintPlannerSwimlaneTimelineWidthCss } from '@/features/sprint/compone
 import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintPlanner/onboarding/plannerOnboardingChrome';
 import { canQuickAddOnSwimlaneLane } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import { SwimlaneInProgressFactLayer } from '@/features/swimlane/components/in-progress-fact';
+import { resolveFactBarFocusTaskId } from '@/features/swimlane/components/in-progress-fact/swimlaneFactMarkerHelpers';
 import { memoizedSwimlanePropsEqual } from '@/features/swimlane/components/memoizedSwimlanePropsEqual';
 import { SwimlaneAvailabilityChips } from '@/features/swimlane/components/SwimlaneAvailabilityChips';
 import { SwimlaneAvailabilityModalGate } from '@/features/swimlane/components/SwimlaneAvailabilityModalGate';
@@ -124,6 +125,7 @@ function SwimlaneComponent({
   disableCloseSidebarOnClick = false,
   errorReasons,
   errorTaskIds,
+  cardShadowTaskId = null,
   factHoveredTaskId,
   developerAvailability,
   holidayDayIndices,
@@ -267,6 +269,7 @@ function SwimlaneComponent({
     () => new Set(layout.positionedTasks.map(({ task }) => task.id)),
     [layout.positionedTasks]
   );
+  const factBarFocusTaskId = resolveFactBarFocusTaskId(factHoveredTaskId, cardShadowTaskId);
   if (hideQuickAddPreview && quickAddHoverPreview != null) {
     setQuickAddHoverPreview(null);
   }
@@ -455,7 +458,8 @@ function SwimlaneComponent({
                 }
                 commentsByTaskId={swimlaneFactCommentsByTaskId ?? EMPTY_SWIMLANE_FACT_COMMENTS}
                 developerMap={swimlaneFactDeveloperMap ?? EMPTY_SWIMLANE_FACT_DEVELOPERS}
-                factHoveredTaskId={factHoveredTaskId}
+                factHoveredTaskId={factBarFocusTaskId}
+                holidayDayIndices={holidayDayIndices}
                 layerId={`swimlane-fact-${developer.id}`}
                 requestArrowRedraw={requestArrowRedraw}
                 segments={swimlaneInProgressDurations}

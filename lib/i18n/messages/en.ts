@@ -23,6 +23,7 @@ export const enMessages = {
     appVersionTitle: 'Version {version}',
     deprecatedFeatureNotice:
       'This screen is deprecated and will be removed. Use the sprint planner instead.',
+    nonWorkingDay: 'Day off',
     weekdays: {
       fri: 'Fri',
       mon: 'Mon',
@@ -158,8 +159,12 @@ export const enMessages = {
       languageLabel: 'Language',
       quarterlyPlanningHint: 'Quarterly planning (deprecated)',
       quarterlyPlanningLabel: 'Enable quarterly planning (deprecated)',
-      holidaysHint: 'Holiday emojis in date headers (occupancy, swimlanes)',
+      holidaysHint: 'Holiday emojis in date headers. Shown for the Russian calendar.',
       holidaysLabel: 'Show holidays',
+      holidayCountryLabel: 'Holiday calendar',
+      holidayCountryHint:
+        'Non-working weekdays on the sprint timeline. Russia, Belarus, Kazakhstan, and Uzbekistan use the production calendar; other countries use public holidays.',
+      holidayCountryEmpty: 'Nothing found',
       syncEstimatesHint: 'When enabled, estimates and task positions stay in sync with {tracker}',
       syncEstimatesLabel: 'Estimates',
       syncAssigneesHint: 'When enabled, assignee changes are sent to {tracker}',
@@ -207,7 +212,6 @@ export const enMessages = {
     },
     planningTab: {
       displaySection: 'Display',
-      freeSlotPreview: 'Free slot preview',
       swimlaneLinks: 'Show links',
       phaseColorScheme: 'Phase / task card color scheme',
       phaseColorByStatus: 'By status',
@@ -1372,6 +1376,14 @@ export const enMessages = {
       submitting: 'Saving…',
       submitError: 'Transition failed',
       statusPathAria: 'From {from} to {to}',
+    },
+    occupancyRisks: {
+      possibleRisks: 'Possible risks:',
+      dayHasPlanningErrors: 'This day has planning errors',
+      assigneeUnavailable: 'Assignee is on vacation or in a tech sprint',
+      qaBeforeDev: 'Testing occupancy starts before or overlaps development',
+      qaWithoutDev: 'Testing task without a planned development task',
+      performerOverlap: 'Occupancy overlap',
     },
     taskBar: {
       resizeRightTitle: 'Change task duration (drag right)',

@@ -23,6 +23,7 @@ export const ruMessages = {
     appVersionTitle: 'Версия {version}',
     deprecatedFeatureNotice:
       'Этот экран устарел и будет удалён. Используйте планер спринта.',
+    nonWorkingDay: 'Нерабочий',
     weekdays: {
       fri: 'Пт',
       mon: 'Пн',
@@ -158,8 +159,12 @@ export const ruMessages = {
       languageLabel: 'Язык',
       quarterlyPlanningHint: 'Квартальное планирование (устарело)',
       quarterlyPlanningLabel: 'Включить квартальное планирование (устарело)',
-      holidaysHint: 'Эмодзи праздников в шапке с датами (занятость, свимлейны)',
+      holidaysHint: 'Эмодзи праздников в шапке с датами. Показываются для российского календаря.',
       holidaysLabel: 'Показывать праздники',
+      holidayCountryLabel: 'Календарь праздников',
+      holidayCountryHint:
+        'Нерабочие будни на таймлайне спринта. Россия, Беларусь, Казахстан и Узбекистан — производственный календарь, остальные страны — государственные праздники.',
+      holidayCountryEmpty: 'Ничего не найдено',
       syncEstimatesHint: 'Если включено, оценки и позиции задач будут актуализироваться с {trackerInstrumental}',
       syncEstimatesLabel: 'Оценки',
       syncAssigneesHint: 'Если включено, изменения исполнителей будут отправляться в {trackerPrepositional}',
@@ -207,7 +212,6 @@ export const ruMessages = {
     },
     planningTab: {
       displaySection: 'Отображение',
-      freeSlotPreview: 'Превью свободных слотов',
       swimlaneLinks: 'Показывать связи',
       phaseColorScheme: 'Схема раскраски фаз / карточек задач',
       phaseColorByStatus: 'По статусам',
@@ -1371,6 +1375,14 @@ export const ruMessages = {
       submitting: 'Сохранение…',
       submitError: 'Ошибка при переходе',
       statusPathAria: 'Из статуса {from} в {to}',
+    },
+    occupancyRisks: {
+      possibleRisks: 'Возможные риски:',
+      dayHasPlanningErrors: 'В этом дне есть ошибки планирования',
+      assigneeUnavailable: 'Исполнитель в отпуске или техспринте',
+      qaBeforeDev: 'Занятость тестирования идёт раньше или пересекается с разработкой',
+      qaWithoutDev: 'Задача тестирования без запланированной задачи разработки',
+      performerOverlap: 'Пересечение по занятости',
     },
     taskBar: {
       resizeRightTitle: 'Изменить длительность задачи (перетащите вправо)',

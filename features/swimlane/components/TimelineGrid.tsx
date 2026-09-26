@@ -7,6 +7,7 @@ import type { Task } from '@/types';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
+import { timelineDayDividerClass } from '@/features/sprint/utils/timelineColumnChrome';
 import { buildUnavailableHatchRanges } from '@/features/swimlane/utils/availabilityTimelineMarks';
 
 import { TimelineGridPartCell } from './TimelineGridPartCell';
@@ -50,10 +51,7 @@ interface TimelineGridProps {
   }) => void;
 }
 
-function dayDividerClass(dayIndex: number, dayCount: number): string | null {
-  if (dayIndex >= dayCount - 1) return null;
-  return 'bg-gray-200 dark:bg-gray-600';
-}
+const DAY_COLUMN_CLASS = 'relative isolate flex h-full min-w-0';
 
 export function TimelineGrid({
   activeTask,
@@ -106,21 +104,21 @@ export function TimelineGrid({
         style={{ gridTemplateColumns: `repeat(${dayCount}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: dayCount }, (_, dayIndex) => {
-          const dividerClass = dayDividerClass(dayIndex, dayCount);
+          const isHoliday = holidayDayIndices?.has(dayIndex) ?? false;
+          const dividerClass = timelineDayDividerClass(dayIndex, dayCount);
+          const hasAvailabilityHatch = unavailableDayHatchKinds?.has(dayIndex) ?? false;
+          const showHolidayHatch = isHoliday && !hasAvailabilityHatch;
           const unavailableTitle = unavailableDayTitles?.get(dayIndex);
           return (
-            <div
-              key={dayIndex}
-              className={`relative flex h-full min-w-0 ${
-                holidayDayIndices?.has(dayIndex)
-                  ? 'bg-gray-100/80 dark:bg-gray-900/40'
-                  : ''
-              }`}
-              title={unavailableTitle}
-            >
+            <div key={dayIndex} className={DAY_COLUMN_CLASS} title={unavailableTitle}>
+              {showHolidayHatch ? (
+                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+                  <PlannerHatchOverlay />
+                </div>
+              ) : null}
               {dividerClass ? (
                 <div
-                  className={`pointer-events-none absolute right-0 top-0 bottom-0 w-px ${dividerClass}`}
+                  className={`pointer-events-none absolute bottom-0 right-0 top-0 w-px ${dividerClass}`}
                 />
               ) : null}
               {Array.from({ length: getPartsPerDay() }, (_, partIndex) => (
@@ -131,9 +129,7 @@ export function TimelineGrid({
                   dayCount={dayCount}
                   dayIndex={dayIndex}
                   developerId={developerId}
-                  hasAvailabilityEvent={unavailableDayHatchKinds?.has(dayIndex) ?? false}
                   hasTaskOverlaps={hasTaskOverlaps}
-                  holidayDayIndices={holidayDayIndices}
                   hoveredCell={hoveredCell}
                   isDraggingTask={isDraggingTask}
                   isLinking={isLinking}

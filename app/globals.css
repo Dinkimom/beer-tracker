@@ -190,10 +190,357 @@ html.theme-changing * {
   animation: swimlane-quick-add-preview-enter 0.2s ease-out;
 }
 
-/* Исключение: затемнение/подсветка маркеров таймлайна факта (свимлейн и занятость; глобальный сброс гасит Tailwind) */
+/* Жесты иконок: включение инструмента, undo/redo, таймер, тема. */
+@keyframes placement-toolbar-icon-cursor {
+  0% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-16deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes placement-toolbar-icon-link {
+  0% {
+    transform: translateX(0);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes placement-toolbar-icon-comment {
+  0% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-14deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes placement-toolbar-icon-task {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(0.88);
+  }
+  65% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes placement-toolbar-icon-image {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  40% {
+    transform: scale(1.12) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes placement-toolbar-icon-diagram {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-14deg);
+  }
+  55% {
+    transform: rotate(10deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes placement-toolbar-icon-availability {
+  0% {
+    transform: scaleY(1);
+  }
+  40% {
+    transform: scaleY(0.72);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes placement-toolbar-layers-up {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-2.5px);
+  }
+}
+
+@keyframes placement-toolbar-layers-down {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(2.5px);
+  }
+}
+
+.icon-action-motion {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.icon-action-motion[data-icon-motion='cursor'] {
+  transform-origin: 18% 20%;
+  animation-name: placement-toolbar-icon-cursor;
+}
+
+.icon-action-motion[data-icon-motion='link'] {
+  animation-name: placement-toolbar-icon-link;
+}
+
+.icon-action-motion[data-icon-motion='comment'] {
+  transform-origin: 82% 18%;
+  animation-name: placement-toolbar-icon-comment;
+}
+
+.icon-action-motion[data-icon-motion='task'] {
+  animation-name: placement-toolbar-icon-task;
+}
+
+.icon-action-motion[data-icon-motion='image'] {
+  animation-name: placement-toolbar-icon-image;
+}
+
+.icon-action-motion[data-icon-motion='diagram'] {
+  animation-name: placement-toolbar-icon-diagram;
+}
+
+.icon-action-motion[data-icon-motion='availability'] {
+  transform-origin: center top;
+  animation-name: placement-toolbar-icon-availability;
+}
+
+.icon-action-motion[data-icon-motion='layers'] {
+  animation-name: placement-toolbar-icon-task;
+}
+
+.icon-action-motion[data-icon-motion='layers'] svg path {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.icon-action-motion[data-icon-motion='layers'] svg path:nth-child(1) {
+  animation: placement-toolbar-layers-up 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.icon-action-motion[data-icon-motion='layers'] svg path:nth-child(3) {
+  animation: placement-toolbar-layers-down 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes icon-action-stopwatch-hand {
+  0% {
+    transform: rotate(0deg);
+  }
+  55% {
+    transform: rotate(48deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes icon-action-hold {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes icon-action-play {
+  0% {
+    transform: scale(1) translateX(0);
+  }
+  40% {
+    transform: scale(1.14) translateX(1px);
+  }
+  100% {
+    transform: scale(1) translateX(0);
+  }
+}
+
+@keyframes icon-action-pause-left {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(-1.5px);
+  }
+}
+
+@keyframes icon-action-pause-right {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(1.5px);
+  }
+}
+
+.icon-action-motion[data-icon-motion='stopwatch'] {
+  animation-name: icon-action-hold;
+}
+
+.icon-action-motion[data-icon-motion='stopwatch'] svg > path:first-of-type {
+  transform-box: view-box;
+  transform-origin: 50% 54%;
+  animation: icon-action-stopwatch-hand 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.icon-action-motion[data-icon-motion='play-fill'] {
+  animation-name: icon-action-play;
+}
+
+.icon-action-motion[data-icon-motion='pause-fill'] {
+  animation-name: icon-action-hold;
+}
+
+.icon-action-motion[data-icon-motion='pause-fill'] svg rect:first-child {
+  animation: icon-action-pause-left 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.icon-action-motion[data-icon-motion='pause-fill'] svg rect:last-child {
+  animation: icon-action-pause-right 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Солнце и луна лежат друг на друге и сменяются перекрёстным затуханием, без подмены глифа. */
+.theme-toggle-icon {
+  position: relative;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.theme-toggle-icon__glyph {
+  position: absolute;
+  inset: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+.theme-toggle-icon__sun {
+  color: #f59e0b;
+}
+
+.theme-toggle-icon__moon {
+  color: #fbbf24;
+}
+
+.theme-toggle-icon[data-theme='light'] .theme-toggle-icon__sun,
+.theme-toggle-icon[data-theme='dark'] .theme-toggle-icon__moon {
+  opacity: 1;
+}
+
+.theme-toggle-icon[data-theme='light'] .theme-toggle-icon__moon,
+.theme-toggle-icon[data-theme='dark'] .theme-toggle-icon__sun {
+  opacity: 0;
+}
+
+@keyframes theme-toggle-sun-out {
+  from {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(50deg) scale(0.7);
+  }
+}
+
+@keyframes theme-toggle-moon-in {
+  from {
+    opacity: 0;
+    transform: rotate(-35deg) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes theme-toggle-moon-out {
+  from {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(-35deg) scale(0.7);
+  }
+}
+
+@keyframes theme-toggle-sun-in {
+  from {
+    opacity: 0;
+    transform: rotate(50deg) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.theme-toggle-icon--play[data-theme='dark'] .theme-toggle-icon__sun {
+  animation: theme-toggle-sun-out 280ms ease forwards;
+}
+
+.theme-toggle-icon--play[data-theme='dark'] .theme-toggle-icon__moon {
+  animation: theme-toggle-moon-in 280ms ease forwards;
+}
+
+.theme-toggle-icon--play[data-theme='light'] .theme-toggle-icon__moon {
+  animation: theme-toggle-moon-out 280ms ease forwards;
+}
+
+.theme-toggle-icon--play[data-theme='light'] .theme-toggle-icon__sun {
+  animation: theme-toggle-sun-in 280ms ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-action-motion,
+  .icon-action-motion svg path,
+  .icon-action-motion svg rect,
+  .theme-toggle-icon--play .theme-toggle-icon__glyph {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* Исключение: затемнение/подсветка маркеров таймлайна факта (свимлейн и занятость; глобальный сброс гасит Tailwind).
+   Длительность совпадает с тенью карточки (.task-card-swimlane-hover-shadow), чтобы подсветка шла синхронно. */
 .fact-timeline-marker-opacity {
   transition-property: opacity !important;
-  transition-duration: 350ms !important;
+  transition-duration: 0.2s !important;
   transition-timing-function: ease-out !important;
 }
 
@@ -360,9 +707,17 @@ html.dark .sprint-card-presence-changing::after {
   transition-timing-function: ease-out !important;
 }
 
-/* Исключение: плавная тень карточки задачи / заметки в свимлейне при hover */
+/* Исключение: плавная тень карточки задачи / заметки в свимлейне при hover.
+   border-color и outline-color — синяя рамка открытого контекстного меню. */
 .task-card-swimlane-hover-shadow {
-  transition-property: box-shadow !important;
+  transition-property: box-shadow, border-color, outline-color !important;
+  transition-duration: 0.2s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Фото и схемы без hover-тени: та же плавная обводка меню. */
+.task-card-context-menu-frame:not(.task-card-swimlane-hover-shadow) {
+  transition-property: border-color, outline-color !important;
   transition-duration: 0.2s !important;
   transition-timing-function: ease-out !important;
 }
@@ -411,6 +766,7 @@ html.theme-changing [data-occupancy-timeline-cell],
 html.theme-changing .task-bar-opacity-layer,
 html.theme-changing .task-bar-resize-handle-visual,
 html.theme-changing .task-card-swimlane-hover-shadow,
+html.theme-changing .task-card-context-menu-frame,
 html.theme-changing .task-card-swimlane-corner-badge,
 html.theme-changing .sprint-presence-avatar,
 html.theme-changing [data-swimlane-cell-quick-add],

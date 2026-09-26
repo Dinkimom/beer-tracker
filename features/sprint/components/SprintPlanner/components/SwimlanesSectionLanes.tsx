@@ -28,6 +28,7 @@ import { taskLinksForOnboardingArrows } from '@/lib/plannerOnboarding/onboarding
 
 interface SwimlanesSectionLanesProps {
   calendarBusyByDeveloper: Map<string, CalendarBusySegment[]>;
+  cardShadowTaskId: string | null;
   comments: Comment[];
   contextMenuTaskId: string | null;
   developerAvailabilityMap: Map<string, { boardEvents: BoardAvailabilityEvent[] }>;
@@ -59,6 +60,7 @@ interface SwimlanesSectionLanesProps {
 
 export function SwimlanesSectionLanes({
   calendarBusyByDeveloper,
+  cardShadowTaskId,
   comments,
   contextMenuTaskId,
   developerAvailabilityMap,
@@ -118,6 +120,7 @@ export function SwimlanesSectionLanes({
         boardId: section.boardId,
         calendarBusySegments: calendarBusyByDeveloper.get(developer.id) ?? [],
         calendarBusyVisible: Boolean(section.swimlaneCalendarBusyEnabled),
+        cardShadowTaskId,
         comments,
         commentsVisible: section.commentsVisible,
         contextMenuBlurOtherCards: section.contextMenuBlurOtherCards ?? false,

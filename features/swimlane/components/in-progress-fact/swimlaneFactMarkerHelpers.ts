@@ -26,6 +26,18 @@ export function factSegmentPointerHoverHandlers(
   };
 }
 
+/**
+ * Какой задаче принадлежат яркие бары факта.
+ * Hover колбасы и hover карточки стартуют вместе с тенью карточки.
+ */
+export function resolveFactBarFocusTaskId(
+  factHoveredTaskId: string | null,
+  cardShadowTaskId: string | null
+): string | null {
+  if (factHoveredTaskId != null) return factHoveredTaskId;
+  return cardShadowTaskId;
+}
+
 export function resolveFactMarkerHoverState(
   factHoveredTaskId: string | null | undefined,
   taskId: string

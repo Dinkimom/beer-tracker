@@ -7,6 +7,8 @@ import { useMemo } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { TextTooltip } from '@/components/TextTooltip';
+import { useI18n } from '@/contexts/LanguageContext';
+import { translateOccupancyErrorReason } from '@/lib/planner-timeline/occupancyErrorMessages';
 
 interface DayErrorIndicatorProps {
   /** Список проблемных задач и причин для тултипа */
@@ -29,6 +31,8 @@ export function DayErrorIndicator({
   tasks,
   onHoveredErrorTaskIdChange,
 }: DayErrorIndicatorProps) {
+  const { t } = useI18n();
+
   // Создаем карту taskName -> taskId для быстрого поиска
   const taskNameToIdMap = useMemo(() => {
     if (!tasks) return new Map<string, string>();
@@ -42,16 +46,14 @@ export function DayErrorIndicator({
   // Проверяем, есть ли ошибки пересечения по занятости
   const hasOverlapErrors = useMemo(() => {
     if (!errorDetails) return false;
-    return errorDetails.some((detail) =>
-      detail.reasons.some((reason) => reason.includes('Пересечение по занятости'))
-    );
+    return errorDetails.some((detail) => detail.reasons.includes('performer_overlap'));
   }, [errorDetails]);
 
   const handleMouseEnter = () => {
     if (!hasOverlapErrors || !errorDetails || !tasks || !onHoveredErrorTaskIdChange) return;
     // Берем первую задачу с ошибкой пересечения
     const overlapError = errorDetails.find((detail) =>
-      detail.reasons.some((reason) => reason.includes('Пересечение по занятости'))
+      detail.reasons.includes('performer_overlap')
     );
     if (overlapError) {
       const taskId = taskNameToIdMap.get(overlapError.taskName);
@@ -72,18 +74,21 @@ export function DayErrorIndicator({
       content={
         errorDetails?.length ? (
           <>
-            <div className="font-semibold mb-1">Возможные риски:</div>
+            <div className="font-semibold mb-1">{t('task.occupancyRisks.possibleRisks')}</div>
             <ul className="list-none space-y-1">
               {errorDetails.map(({ taskName, reasons }) => (
                 <li key={taskName}>
                   <span className="font-medium">{taskName}</span>
-                  <span className="text-gray-300 dark:text-gray-400"> — {reasons.join(', ')}</span>
+                  <span className="text-gray-300 dark:text-gray-400">
+                    {' — '}
+                    {reasons.map((reason) => translateOccupancyErrorReason(reason, t)).join(', ')}
+                  </span>
                 </li>
               ))}
             </ul>
           </>
         ) : (
-          'В этом дне есть ошибки планирования'
+          t('task.occupancyRisks.dayHasPlanningErrors')
         )
       }
     >

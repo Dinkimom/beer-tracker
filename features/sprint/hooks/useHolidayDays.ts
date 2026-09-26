@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import { useHolidayCountryStorage } from '@/hooks/useLocalStorage';
 import { fetchHolidayIsDayOffRange } from '@/lib/api/holidays';
 import { getWorkingDaysRange } from '@/utils/dateUtils';
 
@@ -23,8 +24,8 @@ function collectHolidayIndicesFromIsDayOffText(
 }
 
 /**
- * Хук для получения индексов дней (0..N-1), которые являются нерабочими/праздничными
- * по данным isDayOff. Один запрос на весь диапазон через наш API (прокси), чтобы избежать CORS.
+ * Хук для получения индексов дней (0..N-1), которые являются нерабочими/праздничными.
+ * Один запрос на весь диапазон через наш API (прокси), страна — из настроек.
  *
  * @param sprintStartDate — дата начала (первого спринта)
  * @param workingDaysCount — число рабочих дней (10 для одного спринта, 10*N для N спринтов)
@@ -34,6 +35,7 @@ export function useHolidayDays(
   workingDaysCount?: number
 ): Set<number> {
   const [holidayDayIndices, setHolidayDayIndices] = useState<Set<number>>(new Set());
+  const [holidayCountry] = useHolidayCountryStorage();
 
   const { workingDays, date1, date2 } = useMemo(() => {
     if (!sprintStartDate) {
@@ -63,7 +65,12 @@ export function useHolidayDays(
 
     async function load() {
       try {
-        const text = await fetchHolidayIsDayOffRange(date1, date2, controller.signal);
+        const text = await fetchHolidayIsDayOffRange(
+          date1,
+          date2,
+          holidayCountry,
+          controller.signal
+        );
         if (!text) return;
         setHolidayDayIndices(collectHolidayIndicesFromIsDayOffText(workingDays, text));
       } catch (e) {
@@ -73,7 +80,7 @@ export function useHolidayDays(
 
     load();
     return () => controller.abort();
-  }, [date1, date2, workingDays]);
+  }, [date1, date2, holidayCountry, workingDays]);
 
   return holidayDayIndices;
 }

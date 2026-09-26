@@ -2,6 +2,8 @@ import type { Task, TaskPosition } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
+import { translate } from '@/lib/i18n/translator';
+
 import {
   buildAssigneeUnavailableDays,
   formatOccupancyErrorTooltip,
@@ -10,7 +12,6 @@ import {
   getOccupancyErrorReasons,
   getOccupancyErrorTaskIds,
   getOverlappingTaskIds,
-  OCCUPANCY_ERROR_MESSAGES,
 } from './occupancyValidation';
 
 function devTask(id: string, name = id, originalStatus?: string): Task {
@@ -348,16 +349,22 @@ describe('formatOccupancyErrorTooltip', () => {
     expect(formatOccupancyErrorTooltip([])).toBe('');
   });
 
-  it('joins known messages with bullet', () => {
-    const text = formatOccupancyErrorTooltip(['qa_before_dev', 'performer_overlap']);
-    expect(text).toContain(OCCUPANCY_ERROR_MESSAGES.qa_before_dev);
-    expect(text).toContain(OCCUPANCY_ERROR_MESSAGES.performer_overlap);
-    expect(text).toContain('•');
+  it('joins translated messages with bullet', () => {
+    const text = formatOccupancyErrorTooltip(['qa_before_dev', 'performer_overlap'], (key) =>
+      translate('en', key)
+    );
+    expect(text).toBe(
+      'Testing occupancy starts before or overlaps development • Occupancy overlap'
+    );
+  });
+
+  it('falls back to Russian labels without a translator', () => {
+    expect(formatOccupancyErrorTooltip(['performer_overlap'])).toBe('Пересечение по занятости');
   });
 });
 
 describe('getOccupancyErrorDetailsByDay', () => {
-  it('aggregates task names and human-readable reasons per day', () => {
+  it('aggregates task names and reason keys per day', () => {
     const t1 = devTask('t1', 'Task One');
     const t2 = devTask('t2', 'Task Two');
     const positions = new Map<string, TaskPosition>([
@@ -369,9 +376,7 @@ describe('getOccupancyErrorDetailsByDay', () => {
     expect(day0).toBeDefined();
     const names = day0!.map((d) => d.taskName).sort();
     expect(names).toEqual(['Task One', 'Task Two']);
-    expect(day0!.every((d) => d.reasons.includes(OCCUPANCY_ERROR_MESSAGES.performer_overlap))).toBe(
-      true
-    );
+    expect(day0!.every((d) => d.reasons.includes('performer_overlap'))).toBe(true);
   });
 
   it('includes qa_without_dev on each affected day', () => {
@@ -380,7 +385,7 @@ describe('getOccupancyErrorDetailsByDay', () => {
       ['qa-1', position({ taskId: 'qa-1', assignee: 'q', startDay: 0, startPart: 0, duration: 6 })],
     ]);
     const byDay = getOccupancyErrorDetailsByDay([qa], positions);
-    expect(byDay.get(0)?.[0]?.reasons).toContain(OCCUPANCY_ERROR_MESSAGES.qa_without_dev);
-    expect(byDay.get(1)?.[0]?.reasons).toContain(OCCUPANCY_ERROR_MESSAGES.qa_without_dev);
+    expect(byDay.get(0)?.[0]?.reasons).toContain('qa_without_dev');
+    expect(byDay.get(1)?.[0]?.reasons).toContain('qa_without_dev');
   });
 });

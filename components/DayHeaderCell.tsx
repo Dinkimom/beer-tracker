@@ -6,7 +6,7 @@ import type { Task } from '@/types';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { DayErrorIndicator } from '@/features/sprint/components/DayErrorIndicator';
-import { useShowHolidaysStorage } from '@/hooks/useLocalStorage';
+import { useHolidayCountryStorage, useShowHolidaysStorage } from '@/hooks/useLocalStorage';
 import { getHolidayForDate } from '@/lib/holidays';
 
 /**
@@ -57,6 +57,8 @@ interface DayHeaderCellContentProps {
   hasError?: boolean;
   /** Отображать день и дату в две строки (для квартального планирования) */
   multiline?: boolean;
+  /** Будний день выходного или праздничного календаря */
+  nonWorking?: boolean;
   /** Явно отключить эмодзи праздников (для квартального планирования). Если не задано — используется настройка из хранилища */
   showHolidayEmoji?: boolean;
   /** Список задач для поиска taskId по taskName */
@@ -79,20 +81,24 @@ export function DayHeaderCellContent({
   tasks,
   onHoveredErrorTaskIdChange,
   multiline = false,
+  nonWorking = false,
   showHolidayEmoji,
 }: DayHeaderCellContentProps) {
   const { t } = useI18n();
   const [showHolidaysStorage] = useShowHolidaysStorage();
+  const [holidayCountry] = useHolidayCountryStorage();
   const showHolidays = showHolidayEmoji !== undefined ? showHolidayEmoji : showHolidaysStorage;
   const today = isToday(day);
   const past = isPastDay(day);
   const textClasses = dayHeaderTextClasses(today, past);
 
-  const holiday = showHolidays ? getHolidayForDate(day) : null;
+  const holiday =
+    showHolidays && holidayCountry === 'ru' ? getHolidayForDate(day) : null;
   const holidayCaption = holiday ? t(holiday.captionKey) : '';
   const dayLabel = t(`common.weekdays.${WEEKDAY_KEYS[day.getDay()]}`);
+  const nonWorkingLabel = t('common.nonWorkingDay');
 
-  const dayContent = multiline ? (
+  const dateLine = multiline ? (
     <span className="flex flex-col leading-tight text-center">
       <span>{dayLabel}</span>
       <span>{formatDateDDMM(day)}</span>
@@ -105,7 +111,14 @@ export function DayHeaderCellContent({
 
   return (
     <span className={`text-xs inline-flex items-center justify-center gap-1 ${textClasses}`}>
-      {dayContent}
+      <span className="inline-flex min-w-0 flex-col items-center gap-0.5">
+        {dateLine}
+        {nonWorking ? (
+          <span className="max-w-full truncate text-[10px] font-normal leading-none text-gray-400 dark:text-gray-500">
+            {nonWorkingLabel}
+          </span>
+        ) : null}
+      </span>
       {holiday && (
         <TextTooltip content={holidayCaption} delayDuration={150} side="bottom">
           <span

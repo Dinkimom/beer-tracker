@@ -76,12 +76,6 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
           {t('settings.planningTab.displaySection')}
         </h3>
         <Toggle
-          checked={timelineSettings.showFreeSlotPreview ?? true}
-          id="free-slot-preview"
-          label={t('settings.planningTab.freeSlotPreview')}
-          onChange={(v) => setTimelineSettings((s) => ({ ...s, showFreeSlotPreview: v }))}
-        />
-        <Toggle
           checked={swimlaneLinksVisible}
           id="swimlane-links-visible"
           label={t('settings.planningTab.swimlaneLinks')}

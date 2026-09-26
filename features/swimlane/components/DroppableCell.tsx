@@ -32,13 +32,9 @@ function resolveQuickAddHitBox(durationCells: number): {
 interface DroppableCellProps {
   activeTask: Task | null;
   dropDisabled?: boolean;
-  /** В ячейке есть событие отсутствия (отпуск, больничный и т.д.) */
-  hasAvailabilityEvent?: boolean;
   hasTaskOverlaps?: boolean;
   id: string;
   isHighlighted: boolean;
-  /** Ячейка попадает в нерабочий/праздничный день */
-  isHoliday?: boolean;
   partIndex: number;
   partStatus: 'current' | 'future' | 'past';
   /** Не даёт превью «+» вылезти за высоту строки (фото/новый слой) */
@@ -73,8 +69,6 @@ export function DroppableCell({
   taskLayerHeight,
   onQuickAddClick,
   onQuickAddHoverChange,
-  isHoliday,
-  hasAvailabilityEvent = false,
 }: DroppableCellProps) {
   const { setNodeRef } = useDroppable({ disabled: dropDisabled, id });
   const { t } = useI18n();
@@ -112,10 +106,6 @@ export function DroppableCell({
     // Не используем useDroppable().isOver для фона: после drop dnd-kit часто оставляет isOver,
     // из‑за чего ячейки остаются закрашенными до движения мыши.
 
-    if (partStatus === 'current' && !hasAvailabilityEvent) {
-      return 'bg-blue-100/70 dark:bg-blue-900/30';
-    }
-    if (isHoliday) return 'bg-gray-50 dark:bg-gray-900/40';
     return '';
   };
 
@@ -138,7 +128,7 @@ export function DroppableCell({
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex-1 overflow-visible pointer-events-auto ${
+      className={`relative z-[1] flex-1 overflow-visible pointer-events-auto ${
         partIndex !== getPartsPerDay() - 1 ? 'border-r border-gray-200/50 dark:border-gray-600/50' : ''
       } ${onQuickAddClick ? 'cursor-pointer' : ''} ${getBaseBgColor()}`}
       data-current-cell={partStatus === 'current' ? 'true' : undefined}
