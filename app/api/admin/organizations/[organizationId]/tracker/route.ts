@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { requireTenantForOrganization } from '@/lib/api-tenant';
+import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
 import { invalidateCache } from '@/lib/cache';
 import { jiraEmailFromRequest } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
 import {
@@ -17,14 +17,14 @@ const BodySchema = z.object({
 
 /**
  * GET /api/admin/organizations/[organizationId]/tracker
- * Участник организации: сохранённые Cloud Org ID, URL API (без секретов), флаг «токен уже в БД».
+ * org_admin: сохранённые Cloud Org ID, URL API (без секретов), флаг «токен уже в БД».
  */
 export async function GET(
   request: Request,
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantForOrganization(request, organizationId);
+  const auth = await requireTenantWithAdminProfile(request, organizationId);
   if (auth.response) {
     return auth.response;
   }
@@ -38,7 +38,7 @@ export async function GET(
 
 /**
  * POST /api/admin/organizations/[organizationId]/tracker
- * Участник организации: проверка в трекере → сохранение URL/org id и при необходимости токена → initial_full.
+ * org_admin: проверка в трекере → сохранение URL/org id и при необходимости токена → initial_full.
  * Пустой oauthToken: используется сохранённый токен (если менялись только org id / URL).
  */
 export async function POST(
@@ -46,7 +46,7 @@ export async function POST(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantForOrganization(request, organizationId);
+  const auth = await requireTenantWithAdminProfile(request, organizationId);
   if (auth.response) {
     return auth.response;
   }

@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { forbidden, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { AdminMembersPageClient } from '@/features/admin/members/AdminMembersPageClient';
@@ -16,7 +16,7 @@ export default async function MembersPage() {
   const { activeOrganizationId, orgs } = await getCachedAdminOrganizationContext(userId);
   const adminOrg = orgs.find((o) => o.organization_id === activeOrganizationId);
   if (!adminOrg || adminOrg.role !== 'org_admin') {
-    redirect('/admin/tracker');
+    forbidden();
   }
 
   const connectOrgId = adminOrg.organization_id;

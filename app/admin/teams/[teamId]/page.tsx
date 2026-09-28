@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { forbidden, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { AdminTeamDetailClient } from '@/features/admin/teams/[teamId]/AdminTeamDetailClient';
@@ -28,7 +28,7 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
     orgs.find((o) => o.organization_id === activeOrganizationId && o.canAccessAdmin) ??
     orgs.find((o) => o.canAccessAdmin);
   if (!primary) {
-    redirect('/admin/tracker');
+    forbidden();
   }
 
   const orgId = primary.organization_id;

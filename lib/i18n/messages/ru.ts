@@ -3,6 +3,13 @@ import { holidayCaptionsRu } from './holidays.ru';
 import { reactionKeywordsRu } from './reactionKeywords.ru';
 
 export const ruMessages = {
+  errors: {
+    forbiddenCode: '403',
+    forbiddenTitle: 'Доступ запрещён',
+    forbiddenBody:
+      'У вас нет прав для открытия админки. Обратитесь к администратору организации.',
+    goHome: 'На главную',
+  },
   common: {
     loading: 'Загрузка...',
     redirecting: 'Перенаправление...',

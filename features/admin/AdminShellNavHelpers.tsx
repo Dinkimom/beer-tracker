@@ -36,9 +36,6 @@ export function isAdminNavItemVisible(ctx: AdminShellNavContext): boolean {
     return ctx.isSuperAdmin;
   }
   if (!ctx.exporterEnabled && ctx.item.href === '/admin/sync') return false;
-  if (ctx.item.href === '/admin/tracker') {
-    return Boolean(ctx.activeOrg);
-  }
   if (!ctx.activeOrg?.canAccessAdmin) return false;
   if (!ctx.isOrgAdminForActive) return false;
   return true;

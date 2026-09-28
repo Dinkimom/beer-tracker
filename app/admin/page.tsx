@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { getCachedAdminOrganizationContext } from '@/lib/access/adminOrganizationContext';
+import { assertAdminShellAccessOrForbidden } from '@/lib/access/assertAdminShellAccess';
 import { getVerifiedProductUserIdFromServerCookies } from '@/lib/auth';
 
 export default async function AdminPage() {
@@ -12,11 +13,12 @@ export default async function AdminPage() {
   if (orgs.length === 0) {
     redirect('/admin/org');
   }
+  assertAdminShellAccessOrForbidden(orgs);
   const active =
     orgs.find((o) => o.organization_id === activeOrganizationId && o.canAccessAdmin) ??
     orgs.find((o) => o.canAccessAdmin);
   if (!active) {
-    redirect('/admin/tracker');
+    redirect('/admin/org');
   }
   if (active.role === 'org_admin') {
     redirect('/admin/org');

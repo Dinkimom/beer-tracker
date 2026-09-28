@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { forbidden, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { AdminTeamsPageClient } from '@/features/admin/teams/AdminTeamsPageClient';
@@ -21,7 +21,7 @@ export default async function TeamsPage() {
     orgs.find((o) => o.organization_id === activeOrganizationId && o.canAccessAdmin) ??
     orgs.find((o) => o.canAccessAdmin);
   if (!primary) {
-    redirect('/admin/tracker');
+    forbidden();
   }
 
   const resolvedOrgId = primary.organization_id;

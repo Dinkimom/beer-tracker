@@ -8,7 +8,7 @@ import {
   type TrackerIntegrationStored,
 } from '@/lib/trackerIntegration';
 
-import { requireMemberOrganization } from './adminOrgRouteHelpers';
+import { requireOrgAdminOrganization } from './adminOrgRouteHelpers';
 import { parseTrackerIntegrationPutBody } from './adminTrackerIntegrationPutHelpers';
 
 function emptyStored(revision: number): TrackerIntegrationStored {
@@ -19,7 +19,7 @@ export async function saveTrackerIntegrationConfig(
   request: Request,
   organizationId: string
 ): Promise<NextResponse> {
-  const authResult = await requireMemberOrganization(request, organizationId);
+  const authResult = await requireOrgAdminOrganization(request, organizationId);
   if (authResult instanceof NextResponse) {
     return authResult;
   }
@@ -53,7 +53,7 @@ export async function getTrackerIntegrationConfig(
   request: Request,
   organizationId: string
 ): Promise<NextResponse> {
-  const authResult = await requireMemberOrganization(request, organizationId);
+  const authResult = await requireOrgAdminOrganization(request, organizationId);
   if (authResult instanceof NextResponse) {
     return authResult;
   }

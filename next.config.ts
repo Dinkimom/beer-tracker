@@ -74,6 +74,7 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === "production",
   },
   experimental: {
+    authInterrupts: true,
     proxyClientMaxBodySize: '10mb',
     optimizePackageImports: [
       "@radix-ui/react-dialog",

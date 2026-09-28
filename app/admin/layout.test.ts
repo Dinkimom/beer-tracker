@@ -5,9 +5,13 @@ const {
   getCachedAdminOrganizationContextMock,
   getVerifiedProductUserIdFromServerCookiesMock,
   redirectMock,
+  forbiddenMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
+  }),
+  forbiddenMock: vi.fn(() => {
+    throw new Error('FORBIDDEN');
   }),
   getVerifiedProductUserIdFromServerCookiesMock: vi.fn(),
   findUserByIdMock: vi.fn(),
@@ -16,6 +20,7 @@ const {
 
 vi.mock('next/navigation', () => ({
   redirect: redirectMock,
+  forbidden: forbiddenMock,
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -27,17 +32,30 @@ vi.mock('@/lib/access/adminOrganizationContext', () => ({
   getCachedAdminOrganizationContext: getCachedAdminOrganizationContextMock,
 }));
 
+vi.mock('@/lib/env', () => ({
+  isExporterEnabled: () => false,
+}));
+
+vi.mock('@/features/admin/AdminOrganizationIdContext', () => ({
+  AdminOrganizationIdProvider: ({ children }: { children: unknown }) => children,
+}));
+
+vi.mock('@/features/admin/AdminShell', () => ({
+  AdminShell: ({ children }: { children: unknown }) => children,
+}));
+
 import AdminLayout from './layout';
 
 describe('app/admin/layout', () => {
   beforeEach(() => {
     redirectMock.mockClear();
+    forbiddenMock.mockClear();
     getVerifiedProductUserIdFromServerCookiesMock.mockReset();
     findUserByIdMock.mockReset();
     getCachedAdminOrganizationContextMock.mockReset();
   });
 
-  it('does not redirect to admin-forbidden when organizations list is empty', async () => {
+  it('allows empty organizations list for onboarding', async () => {
     getVerifiedProductUserIdFromServerCookiesMock.mockResolvedValue('user-1');
     findUserByIdMock.mockResolvedValue({ email: 'new-user@example.com' });
     getCachedAdminOrganizationContextMock.mockResolvedValue({
@@ -47,10 +65,10 @@ describe('app/admin/layout', () => {
     });
 
     await expect(AdminLayout({ children: 'content' })).resolves.toBeDefined();
-    expect(redirectMock).not.toHaveBeenCalledWith('/?notice=admin-forbidden');
+    expect(forbiddenMock).not.toHaveBeenCalled();
   });
 
-  it('allows org members without admin role (tracker settings)', async () => {
+  it('forbids org members without admin role', async () => {
     getVerifiedProductUserIdFromServerCookiesMock.mockResolvedValue('user-1');
     findUserByIdMock.mockResolvedValue({ email: 'member@example.com' });
     getCachedAdminOrganizationContextMock.mockResolvedValue({
@@ -70,7 +88,7 @@ describe('app/admin/layout', () => {
       ],
     });
 
-    await expect(AdminLayout({ children: 'content' })).resolves.toBeDefined();
-    expect(redirectMock).not.toHaveBeenCalledWith('/?notice=admin-forbidden');
+    await expect(AdminLayout({ children: 'content' })).rejects.toThrow('FORBIDDEN');
+    expect(forbiddenMock).toHaveBeenCalledOnce();
   });
 });

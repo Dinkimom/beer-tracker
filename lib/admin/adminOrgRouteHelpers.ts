@@ -9,17 +9,6 @@ type OrgRouteAuth =
   | { ctx: { organizationId: string; userId: string } }
   | { response: NextResponse };
 
-export async function requireOrgMemberForOrganizationRoute(
-  request: Request,
-  organizationId: string
-): Promise<OrgRouteAuth> {
-  const auth = await requireTenantForOrganization(request, organizationId);
-  if (auth.response) {
-    return { response: auth.response };
-  }
-  return { ctx: auth.ctx };
-}
-
 export async function requireOrgAdminForOrganizationRoute(
   request: Request,
   organizationId: string
@@ -35,14 +24,14 @@ export async function requireOrgAdminForOrganizationRoute(
   return { ctx: auth.ctx };
 }
 
-export async function requireMemberOrganization(
+export async function requireOrgAdminOrganization(
   request: Request,
   organizationId: string
 ): Promise<
   | NextResponse
   | { org: NonNullable<Awaited<ReturnType<typeof findOrganizationById>>>; userId: string }
 > {
-  const auth = await requireOrgMemberForOrganizationRoute(request, organizationId);
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
   if ('response' in auth) {
     return auth.response;
   }

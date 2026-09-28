@@ -136,17 +136,10 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
   );
 
   const adminHref = useMemo(() => {
-    const adminOrg =
-      productTenant.activeOrganization?.canAccessAdmin
-        ? productTenant.activeOrganization
-        : productTenant.organizations.find((o) => o.canAccessAdmin);
-    if (adminOrg) {
-      return '/admin/org';
-    }
-    if (productTenant.activeOrganization || productTenant.organizations.length > 0) {
-      return '/admin/tracker';
-    }
-    return null;
+    const hasAdminAccess =
+      productTenant.activeOrganization?.canAccessAdmin === true ||
+      productTenant.organizations.some((o) => o.canAccessAdmin);
+    return hasAdminAccess ? '/admin/org' : null;
   }, [productTenant.activeOrganization, productTenant.organizations]);
 
   const handleTabChange = useCallback(

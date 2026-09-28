@@ -34,12 +34,12 @@ function ctx(
 }
 
 describe('isAdminNavItemVisible', () => {
-  it('shows tracker settings to an org member', () => {
+  it('hides tracker settings from an org member without admin', () => {
     expect(
       isAdminNavItemVisible(
         ctx({ item: { href: '/admin/tracker', icon: 'link', labelKey: 'admin.shell.nav.tracker' } })
       )
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('hides members admin for a non-admin member', () => {
@@ -48,6 +48,27 @@ describe('isAdminNavItemVisible', () => {
         ctx({ item: { href: '/admin/members', icon: 'user', labelKey: 'admin.shell.nav.members' } })
       )
     ).toBe(false);
+  });
+
+  it('shows tracker settings to an org admin', () => {
+    expect(
+      isAdminNavItemVisible(
+        ctx({
+          activeOrg: {
+            canAccessAdmin: true,
+            canUsePlanner: true,
+            initial_sync_completed_at: null,
+            managedTeamIds: null,
+            name: 'Org',
+            organization_id: 'org-1',
+            role: 'org_admin',
+            slug: null,
+          },
+          isOrgAdminForActive: true,
+          item: { href: '/admin/tracker', icon: 'link', labelKey: 'admin.shell.nav.tracker' },
+        })
+      )
+    ).toBe(true);
   });
 });
 

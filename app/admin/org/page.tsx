@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { forbidden, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { AdminOrgPageClient } from '@/features/admin/org/AdminOrgPageClient';
@@ -16,7 +16,7 @@ export default async function OrgPage() {
     orgs.find((o) => o.organization_id === activeOrganizationId) ??
     resolvePrimaryAdminOrganization(orgs);
   if (active && active.role !== 'org_admin') {
-    redirect('/admin/tracker');
+    forbidden();
   }
   return (
     <Suspense>

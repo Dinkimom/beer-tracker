@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { forbidden, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { AdminRolesPageClient } from '@/features/admin/roles/AdminRolesPageClient';
@@ -21,7 +21,7 @@ export default async function RolesPage() {
     if (fallbackOrg) {
       redirect('/admin/teams');
     }
-    redirect('/admin/tracker');
+    forbidden();
   }
 
   const resolvedOrgId = adminOrg.organization_id;

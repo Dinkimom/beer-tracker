@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { AdminOrganizationIdProvider } from '@/features/admin/AdminOrganizationIdContext';
 import { AdminShell } from '@/features/admin/AdminShell';
 import { getCachedAdminOrganizationContext } from '@/lib/access/adminOrganizationContext';
+import { assertAdminShellAccessOrForbidden } from '@/lib/access/assertAdminShellAccess';
 import { findUserById, getVerifiedProductUserIdFromServerCookies } from '@/lib/auth';
 import { isExporterEnabled } from '@/lib/env';
 
@@ -18,6 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const { activeOrganizationId, isSuperAdmin, orgs } = adminCtx;
+  assertAdminShellAccessOrForbidden(orgs);
   const exporterEnabled = isExporterEnabled();
 
   return (

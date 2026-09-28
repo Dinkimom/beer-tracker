@@ -3,6 +3,13 @@ import { holidayCaptionsEn } from './holidays.en';
 import { reactionKeywordsEn } from './reactionKeywords.en';
 
 export const enMessages = {
+  errors: {
+    forbiddenCode: '403',
+    forbiddenTitle: 'Access denied',
+    forbiddenBody:
+      'You do not have permission to open the admin panel. Contact your organization administrator.',
+    goHome: 'Back to planner',
+  },
   common: {
     loading: 'Loading...',
     redirecting: 'Redirecting...',

@@ -5,7 +5,7 @@ import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/setti
 import { findOrganizationById, getDecryptedOrganizationTrackerToken } from '@/lib/organizations';
 import { resolveTrackerApiBaseUrlForOrganizationRow } from '@/lib/trackerRequestConfig';
 
-import { requireOrgMemberForOrganizationRoute } from './adminOrgRouteHelpers';
+import { requireOrgAdminForOrganizationRoute } from './adminOrgRouteHelpers';
 
 async function resolveDecryptedOrgTrackerToken(
   orgId: string,
@@ -34,7 +34,7 @@ export async function requireAdminOrgTrackerApi(
       org: NonNullable<Awaited<ReturnType<typeof findOrganizationById>>>;
     }
 > {
-  const auth = await requireOrgMemberForOrganizationRoute(request, organizationId);
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
   if ('response' in auth) {
     return auth.response;
   }

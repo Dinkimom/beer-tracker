@@ -4,9 +4,13 @@ const {
   getCachedAdminOrganizationContextMock,
   getVerifiedProductUserIdFromServerCookiesMock,
   redirectMock,
+  forbiddenMock,
 } = vi.hoisted(() => ({
   redirectMock: vi.fn((url: string) => {
     throw new Error(`REDIRECT:${url}`);
+  }),
+  forbiddenMock: vi.fn(() => {
+    throw new Error('FORBIDDEN');
   }),
   getVerifiedProductUserIdFromServerCookiesMock: vi.fn(),
   getCachedAdminOrganizationContextMock: vi.fn(),
@@ -14,6 +18,7 @@ const {
 
 vi.mock('next/navigation', () => ({
   redirect: redirectMock,
+  forbidden: forbiddenMock,
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -29,6 +34,7 @@ import AdminPage from './page';
 describe('app/admin/page', () => {
   beforeEach(() => {
     redirectMock.mockClear();
+    forbiddenMock.mockClear();
     getVerifiedProductUserIdFromServerCookiesMock.mockReset();
     getCachedAdminOrganizationContextMock.mockReset();
   });
@@ -44,7 +50,7 @@ describe('app/admin/page', () => {
     expect(redirectMock).toHaveBeenCalledWith('/admin/org');
   });
 
-  it('redirects org members without admin to tracker settings', async () => {
+  it('forbids org members without admin access', async () => {
     getVerifiedProductUserIdFromServerCookiesMock.mockResolvedValue('user-1');
     getCachedAdminOrganizationContextMock.mockResolvedValue({
       activeOrganizationId: 'org-1',
@@ -62,7 +68,7 @@ describe('app/admin/page', () => {
       ],
     });
 
-    await expect(AdminPage()).rejects.toThrow('REDIRECT:/admin/tracker');
-    expect(redirectMock).toHaveBeenCalledWith('/admin/tracker');
+    await expect(AdminPage()).rejects.toThrow('FORBIDDEN');
+    expect(forbiddenMock).toHaveBeenCalledOnce();
   });
 });

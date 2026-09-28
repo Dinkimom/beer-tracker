@@ -10,7 +10,7 @@ import {
   trackerMetadataFieldsStatusesResponse,
 } from '@/lib/admin/adminTrackerMetadataRouteHelpers';
 import { handleApiError, TRACKER_UPSTREAM_FORWARD_STATUSES } from '@/lib/api-error-handler';
-import { requireTenantForOrganization } from '@/lib/api-tenant';
+import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
 import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/settings';
 import {
   findOrganizationById,
@@ -27,7 +27,7 @@ export async function GET(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantForOrganization(request, organizationId);
+  const auth = await requireTenantWithAdminProfile(request, organizationId);
   if (auth.response) {
     return auth.response;
   }

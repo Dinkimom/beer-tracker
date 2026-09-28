@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { requireTenantForOrganization } from '@/lib/api-tenant';
+import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
 import { jiraEmailFromRequest } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
 import { verifyOrganizationTrackerTokenForAdmin } from '@/lib/organizations/organizationTrackerConnection';
 
@@ -28,7 +28,7 @@ function parseTrackerVerifyRequestBody(raw: string): {
 
 /**
  * POST /api/admin/organizations/[organizationId]/tracker/verify
- * Участник организации: проверка токена против API трекера (без записи в БД).
+ * org_admin: проверка токена против API трекера (без записи в БД).
  * Тело JSON опционально: `{ "oauthToken"?: string, "trackerOrgId"?: string }` — значения из формы до «Сохранить».
  * Без тела или с пустыми полями используются сохранённые org id и токен.
  */
@@ -37,7 +37,7 @@ export async function POST(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantForOrganization(request, organizationId);
+  const auth = await requireTenantWithAdminProfile(request, organizationId);
   if (auth.response) {
     return auth.response;
   }
