@@ -28,7 +28,7 @@ export async function GET(
 ) {
   const { organizationId } = await routeContext.params;
   const auth = await requireTenantWithAdminProfile(request, organizationId);
-  if (auth.response) {
+  if ('response' in auth) {
     return auth.response;
   }
   const orgId = auth.ctx.organizationId;
