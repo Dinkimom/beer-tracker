@@ -11,6 +11,7 @@ Beer Tracker хранит команды и сотрудников **у себя
 | Чистая БД | `database/init.sql` (Docker: `docker-entrypoint-initdb.d`, только **первый** старт тома) |
 | Уже живая БД без `staff`/`teams` | `database/add-staff-teams.sql` |
 | Уже живая БД без `staff.avatar_url` | `database/add-staff-avatar-url.sql` |
+| Уже живая БД: `sprint_goals` без `organization_id` | `database/add-sprint-goals-organization-id.sql` |
 | Только слой организаций на чужой Postgres | `database/init.master-tenant-addon.sql`, затем `add-staff-teams.sql` |
 
 `add-staff-teams.sql` идемпотентен: таблицы создаёт через `IF NOT EXISTS`. Если в той же БД ещё есть `overseer.teams` и `public.registry_employees`, один раз копирует каталог в самую старую `beer_tracker.organizations` (id команд = `overseer.teams.uid`, id сотрудников = `registry_employees.uuid`, чтобы совпасть с уже выданными сессиями и `admins.staff_uid`).

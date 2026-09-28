@@ -13,6 +13,7 @@
 --    - beer_tracker.occupancy_task_order
 --    - beer_tracker.comments
 --    - beer_tracker.task_links
+--    - beer_tracker.sprint_goals (also see add-sprint-goals-organization-id.sql)
 -- 4) Backfills organization_id in existing rows.
 -- 5) Rebuilds keys/constraints to current multi-tenant shape.
 
@@ -246,6 +247,32 @@ BEGIN
       ADD CONSTRAINT unique_link UNIQUE (organization_id, sprint_id, from_task_id, to_task_id);
   END IF;
 
+  -- 6) sprint_goals (PK remains id; runtime INSERT includes organization_id)
+  IF to_regclass('beer_tracker.sprint_goals') IS NOT NULL THEN
+    ALTER TABLE beer_tracker.sprint_goals
+      ADD COLUMN IF NOT EXISTS organization_id UUID;
+
+    UPDATE beer_tracker.sprint_goals
+    SET organization_id = v_org_id
+    WHERE organization_id IS NULL;
+
+    ALTER TABLE beer_tracker.sprint_goals
+      ALTER COLUMN organization_id SET NOT NULL;
+
+    IF NOT EXISTS (
+      SELECT 1
+      FROM pg_constraint
+      WHERE conrelid = 'beer_tracker.sprint_goals'::regclass
+        AND conname = 'sprint_goals_organization_id_fkey'
+    ) THEN
+      ALTER TABLE beer_tracker.sprint_goals
+        ADD CONSTRAINT sprint_goals_organization_id_fkey
+        FOREIGN KEY (organization_id)
+        REFERENCES beer_tracker.organizations (id)
+        ON DELETE CASCADE;
+    END IF;
+  END IF;
+
   RAISE NOTICE 'Legacy organization_id migration completed. Backfill organization_id = %', v_org_id;
 END $$;
 
@@ -261,5 +288,8 @@ CREATE INDEX IF NOT EXISTS idx_comments_org_sprint
 
 CREATE INDEX IF NOT EXISTS idx_task_links_org_sprint
   ON beer_tracker.task_links (organization_id, sprint_id);
+
+CREATE INDEX IF NOT EXISTS idx_sprint_goals_org_sprint
+  ON beer_tracker.sprint_goals (organization_id, sprint_id);
 
 COMMIT;

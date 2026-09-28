@@ -187,8 +187,50 @@ describe('patchSprintTaskStatusInQueries', () => {
     patchSprintTaskStatusInQueries(qc, 5, { issueKey: 'BT-1', statusKey: 'inProgress' });
 
     const next = qc.getQueryData<typeof bundle>(sprintTasksQueryKey(5, 1));
-    expect(next?.tasks[0]).toMatchObject({ id: 'BT-1', originalStatus: 'inProgress', status: 'in-progress' });
+    expect(next?.tasks[0]).toMatchObject({
+      id: 'BT-1',
+      originalStatus: 'inProgress',
+      status: 'in-progress',
+      statusColorKey: 'inprogress',
+    });
     expect(next?.tasks[1]).toMatchObject({ id: 'BT-2', originalStatus: 'open', status: 'todo' });
+  });
+
+  it('recomputes statusColorKey so remote status sync updates badge color', () => {
+    const qc = new QueryClient();
+    const bundle = {
+      developers: [],
+      sprintInfo: { id: 5, name: 'S', status: 'in_progress' as const, version: 1 },
+      tasks: [
+        {
+          id: 'BT-1',
+          name: 'A',
+          originalStatus: 'inProgress',
+          status: 'in-progress' as const,
+          statusColorKey: 'inprogress',
+        },
+      ] as Task[],
+    };
+    qc.setQueryData(sprintTasksQueryKey(5, 1), bundle);
+    qc.setQueryData(['planner-integration-rules', 'org-1'], {
+      configRevision: 1,
+      flags: { zeroDevPositiveQaRule: false },
+      releaseReadiness: { readyStatusKey: null },
+      statusDefaultsByTrackerStatusType: {},
+      statusOverridesByStatusKey: {
+        closed: { visualToken: 'closed' },
+      },
+      testingFlowMode: 'embedded_in_dev',
+      validationThresholds: {},
+    });
+
+    patchSprintTaskStatusInQueries(qc, 5, { issueKey: 'BT-1', statusKey: 'closed' });
+
+    expect(qc.getQueryData<typeof bundle>(sprintTasksQueryKey(5, 1))?.tasks[0]).toMatchObject({
+      originalStatus: 'closed',
+      status: 'done',
+      statusColorKey: 'closed',
+    });
   });
 });
 

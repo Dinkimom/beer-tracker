@@ -15,6 +15,7 @@ import {
   resolveStatusCategoryForStatusKey,
   sprintTaskCompletionRulesFromPlanner,
 } from '@/lib/sprints/sprintTaskCompletion';
+import { resolveStatusColorKey } from '@/lib/trackerIntegration/statusPalette';
 import { mapStatus } from '@/utils/statusMapper';
 
 interface TasksResponse {
@@ -192,9 +193,15 @@ function patchTasksResponseStatus(
   const rulesEntry = queryClient.getQueriesData<PlannerIntegrationRulesDto>({
     queryKey: ['planner-integration-rules'],
   })[0];
-  const completionRules = sprintTaskCompletionRulesFromPlanner(rulesEntry?.[1]);
+  const plannerRules = rulesEntry?.[1];
+  const completionRules = sprintTaskCompletionRulesFromPlanner(plannerRules);
   const nextCategory =
     resolveStatusCategoryForStatusKey(statusKey, completionRules) ?? mapStatus(statusKey);
+  const nextStatusColorKey = resolveStatusColorKey(
+    statusKey,
+    undefined,
+    plannerRules?.statusOverridesByStatusKey
+  );
   let changed = false;
   const tasks = old.tasks.map((task) => {
     if (task.id !== issueKey && task.originalTaskId !== issueKey) {
@@ -205,6 +212,7 @@ function patchTasksResponseStatus(
       ...task,
       originalStatus: statusKey,
       status: nextCategory,
+      statusColorKey: nextStatusColorKey,
     };
   });
   if (!changed) {
