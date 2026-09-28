@@ -12,7 +12,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { PlannerNowLine } from '@/features/sprint/components/SprintPlanner/layout/PlannerNowLine';
 import {
   sprintPlannerContentRowWidthCss,
   sprintPlannerDaysHeaderContentWidthCss,
@@ -411,11 +410,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
                 onTaskClick={handleTaskClickWithLinking}
                 onTaskHover={handleTaskHover}
                 onTaskHoverEnd={() => handleTaskHover(null)}
-              />
-              <PlannerNowLine
-                dayCount={sprintTimelineWorkingDays}
-                participantsColumnWidth={participantsColumnWidth}
-                sprintStartDate={sprintStartDate}
               />
             </div>
             <div

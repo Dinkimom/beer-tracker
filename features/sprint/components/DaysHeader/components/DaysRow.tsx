@@ -5,12 +5,8 @@ import type { Task } from '@/types';
 
 import { DayHeaderCellContent } from '@/components/DayHeaderCell';
 import { WORKING_DAYS } from '@/constants';
-import { plannerNowFromMinute, usePlannerNowMinute } from '@/features/sprint/hooks/usePlannerNowMinute';
 import { getDayDate } from '@/features/sprint/utils/occupancyUtils';
-import {
-  plannerNowWithinDay,
-  timelineDayDividerClass,
-} from '@/features/sprint/utils/timelineColumnChrome';
+import { timelineDayDividerClass } from '@/features/sprint/utils/timelineColumnChrome';
 import { getDayStatus } from '@/utils/dateUtils';
 
 type DayStatus = ReturnType<typeof getDayStatus>;
@@ -82,7 +78,6 @@ export function DaysRow({
   showHolidayEmoji,
   workingDaysCount = WORKING_DAYS,
 }: DaysRowProps) {
-  const now = plannerNowFromMinute(usePlannerNowMinute());
   const dayCount = Math.max(1, workingDaysCount);
   const dayWidthPercent = 100 / dayCount;
 
@@ -153,10 +148,6 @@ export function DaysRow({
         const details = errorDayDetails?.get(dayIndex);
         const isHoliday = holidayDayIndices?.has(dayIndex);
         const dividerClass = timelineDayDividerClass(dayIndex, dayCount);
-        const nowWithinDay =
-          status === 'today'
-            ? plannerNowWithinDay(dayDate, now)
-            : null;
         return (
           <div
             key={dayIndex}
@@ -164,13 +155,6 @@ export function DaysRow({
             data-onboarding-day={dayIndex}
             data-onboarding-today={status === 'today' ? 'true' : undefined}
           >
-            {nowWithinDay != null ? (
-              <div
-                aria-hidden
-                className="pointer-events-none absolute bottom-0 top-0 z-[1] w-px -translate-x-1/2 bg-blue-500 dark:bg-blue-400"
-                style={{ left: `${nowWithinDay * 100}%` }}
-              />
-            ) : null}
             {dividerClass ? (
               <div
                 className={`pointer-events-none absolute bottom-0 right-0 top-0 w-px ${dividerClass}`}

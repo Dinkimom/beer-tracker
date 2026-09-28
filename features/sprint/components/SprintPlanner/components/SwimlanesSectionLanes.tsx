@@ -11,6 +11,7 @@ import { Xwrapper } from 'react-xarrows';
 import { WORKING_DAYS, ZIndex } from '@/constants';
 import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
 import { FeatureLaneAddRow } from '@/features/sprint/components/SprintPlanner/feature-lanes/FeatureLaneAddRow';
+import { PlannerNowLine } from '@/features/sprint/components/SprintPlanner/layout/PlannerNowLine';
 import {
   partitionPinnedSwimlaneRows,
   togglePinnedSwimlaneRowId,
@@ -205,6 +206,12 @@ export function SwimlanesSectionLanes({
     />
   );
 
+  const nowLineProps = {
+    dayCount: section.sprintTimelineWorkingDays ?? WORKING_DAYS,
+    participantsColumnWidth: section.participantsColumnWidth,
+    sprintStartDate: section.sprintStartDate,
+  };
+
   return (
     <Xwrapper>
       <SwimlaneXarrowRedrawProvider>
@@ -215,10 +222,14 @@ export function SwimlanesSectionLanes({
             style={{ top: DAYS_HEADER_ROW_HEIGHT_PX, zIndex: ZIndex.stickyPinnedRows }}
           >
             {pinnedRows.map(renderLane)}
+            <PlannerNowLine {...nowLineProps} />
           </div>
         ) : null}
-        {unpinnedRows.map(renderLane)}
-        <FeatureLaneAddRow participantsColumnWidth={section.participantsColumnWidth} />
+        <div className="relative">
+          {unpinnedRows.map(renderLane)}
+          <FeatureLaneAddRow participantsColumnWidth={section.participantsColumnWidth} />
+          <PlannerNowLine {...nowLineProps} />
+        </div>
         {(showLinks || arrowTaskLinks.length > 0) && (
           <TaskArrows
             activeTaskId={section.dragAndDrop.activeTaskId}
