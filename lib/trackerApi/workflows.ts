@@ -148,7 +148,10 @@ export async function getTransitionScreenFields(
     apiCache.set(screenCacheKey, screen, WORKFLOW_CACHE_TTL);
   }
 
-  if (!screen?.elements?.length) return null;
+  // Empty screen still often means Tracker expects a comment (same as getYandexScreenFields).
+  if (!screen?.elements?.length) {
+    return [{ id: 'comment', display: 'Комментарий', required: true }];
+  }
 
   return screen.elements.map((el) => ({
     id: el.field.id,

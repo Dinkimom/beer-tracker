@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  mergeTransitionFieldsById,
   pickTransitionFields,
   resolveCachedTransitionFields,
   shouldOpenTransitionFieldsModal,
@@ -52,6 +53,30 @@ describe('pickTransitionFields', () => {
 
   it('falls back to cache when fetch is empty', () => {
     expect(pickTransitionFields([], [resolutionField])).toEqual([resolutionField]);
+  });
+});
+
+describe('mergeTransitionFieldsById', () => {
+  it('returns extra when base is empty', () => {
+    const comment = { id: 'comment', display: 'Комментарий', required: true };
+    expect(mergeTransitionFieldsById([], [comment])).toEqual([comment]);
+  });
+
+  it('adds missing required fields from error recovery', () => {
+    const comment = { id: 'comment', display: 'Комментарий', required: true, schemaType: 'string' };
+    expect(mergeTransitionFieldsById([resolutionField], [comment])).toEqual([
+      resolutionField,
+      comment,
+    ]);
+  });
+
+  it('marks overlapping fields required if either side is required', () => {
+    expect(
+      mergeTransitionFieldsById(
+        [{ id: 'comment', display: 'Comment', required: false }],
+        [{ id: 'comment', display: 'Комментарий', required: true, schemaType: 'string' }]
+      )
+    ).toEqual([{ id: 'comment', display: 'Комментарий', required: true, schemaType: 'string' }]);
   });
 });
 

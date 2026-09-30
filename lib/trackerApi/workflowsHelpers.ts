@@ -78,10 +78,9 @@ async function resolveTransitionScreenFields(
   }
   const transitionKey = action.key || action.id;
   const screen = await resolveScreen(action.screen.id);
-  if (!screen.elements?.length) {
-    return null;
-  }
-  const fields = mapScreenElementsToTransitionFields(screen.elements);
+  const fields = screen.elements?.length
+    ? mapScreenElementsToTransitionFields(screen.elements)
+    : [{ id: 'comment', display: 'Комментарий', required: true }];
   const targetMeta = action.target?.key ? `${action.target.key}Meta` : null;
   return { fields, transitionKey, targetMeta };
 }

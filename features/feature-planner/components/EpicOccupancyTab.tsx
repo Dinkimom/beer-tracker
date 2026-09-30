@@ -93,7 +93,11 @@ export function EpicOccupancyTab({ epicId }: EpicOccupancyTabProps) {
 
   const handleStatusChange = useCallback(
     async (taskId: string, transitionId: string) => {
-      await changeIssueStatus(taskId, transitionId);
+      try {
+        await changeIssueStatus(taskId, transitionId);
+      } catch (error) {
+        console.error('Failed to change status:', error);
+      }
     },
     []
   );

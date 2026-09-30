@@ -11,6 +11,7 @@ import { mergeTransitionExtraFieldsIntoTask } from '@/features/sprint/utils/merg
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+import { isTransitionRequiresFieldsError } from '@/lib/issues/transitionRequiresFields';
 import {
   resolveStatusCategoryForStatusKey,
   sprintTaskCompletionRulesFromPlanner,
@@ -107,6 +108,10 @@ export function useTaskStatusOperations({
         setTasks((prev) =>
           updateTaskInArray(prev, taskId, () => ({ ...currentTask }))
         );
+        // Let the transition modal recover (open form for Tracker-required fields).
+        if (isTransitionRequiresFieldsError(error)) {
+          throw error;
+        }
       }
     },
     [tasks, setTasks, plannerRules]

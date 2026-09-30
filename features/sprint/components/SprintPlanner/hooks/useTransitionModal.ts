@@ -7,8 +7,13 @@ import { useCallback, useState } from 'react';
 import { findTaskById } from '@/features/sprint/hooks/useTaskOperations/utils/taskUtils';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { fetchScreenFields, getTransitionFields, type TransitionField } from '@/lib/beerTrackerApi';
+import {
+  isTransitionRequiresFieldsError,
+  transitionFieldsFromErrorMessages,
+} from '@/lib/issues/transitionRequiresFields';
 
 import {
+  mergeTransitionFieldsById,
   pickTransitionFields,
   resolveCachedTransitionFields,
   shouldOpenTransitionFieldsModal,
@@ -57,6 +62,20 @@ export function useTransitionModal({
     setTransitionModal(null);
   }, []);
 
+  const openTransitionModal = useCallback(
+    (args: {
+      fields: TransitionField[];
+      targetStatusDisplay?: string;
+      targetStatusKey: string;
+      task: Task;
+      taskId: string;
+      transitionId: string;
+    }) => {
+      setTransitionModal(args);
+    },
+    []
+  );
+
   const handleStatusChangeWithModal = useCallback(
     async (
       taskId: string,
@@ -90,7 +109,7 @@ export function useTransitionModal({
       const fields = pickTransitionFields(fetched, cached);
 
       if (shouldOpenTransitionFieldsModal(fields)) {
-        setTransitionModal({
+        openTransitionModal({
           taskId,
           transitionId,
           targetStatusKey: finalTargetStatusKey,
@@ -101,9 +120,29 @@ export function useTransitionModal({
         return;
       }
 
-      await changeStatus(taskId, transitionId, finalTargetStatusKey);
+      try {
+        await changeStatus(taskId, transitionId, finalTargetStatusKey);
+      } catch (error) {
+        if (!isTransitionRequiresFieldsError(error)) {
+          throw error;
+        }
+        // Tracker can require fields (e.g. comment) even when the transition has no screen.
+        const fromError = transitionFieldsFromErrorMessages(error.errorMessages);
+        const recovered = mergeTransitionFieldsById(fields, fromError);
+        if (!shouldOpenTransitionFieldsModal(recovered)) {
+          throw error;
+        }
+        openTransitionModal({
+          taskId,
+          transitionId,
+          targetStatusKey: finalTargetStatusKey,
+          targetStatusDisplay,
+          fields: recovered,
+          task,
+        });
+      }
     },
-    [tasks, changeStatus, workflowScreens]
+    [tasks, changeStatus, workflowScreens, openTransitionModal]
   );
 
   const handleTransitionSubmit = useCallback(

@@ -5,8 +5,15 @@
 import type { RegistryUserItem, TransitionField, TransitionItem } from './types';
 import type { IssueResponse, Task } from '@/types';
 import type { IssueChangelogWithComments } from '@/types/tracker';
+import type { AxiosError } from 'axios';
+
+import { TransitionRequiresFieldsError } from '@/lib/issues/transitionRequiresFields';
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
+
+import { readApiErrorStatus } from './readApiError';
+
+export { TransitionRequiresFieldsError } from '@/lib/issues/transitionRequiresFields';
 
 function isStructuredIssueChangelogPayload(data: unknown): data is IssueChangelogWithComments {
   return data != null && typeof data === 'object' && 'changelog' in data && 'comments' in data;
@@ -212,6 +219,16 @@ export async function changeIssueStatus(
     await getPlannerBeerTrackerApi().patch(`/issues/${issueKey}/status`, body);
     return true;
   } catch (error) {
+    const status = readApiErrorStatus(error);
+    const ax = error as AxiosError<{ error?: string; errorMessages?: string[] }>;
+    const data = ax.response?.data;
+    if (
+      status === 422 &&
+      data?.error === 'Transition requires fields' &&
+      Array.isArray(data.errorMessages)
+    ) {
+      throw new TransitionRequiresFieldsError(data.errorMessages);
+    }
     console.error(`Failed to change status for ${issueKey}:`, error);
     return false;
   }
