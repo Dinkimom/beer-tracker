@@ -13,6 +13,7 @@ describe('sprintPresenceBoardView', () => {
   it('accepts known planner views', () => {
     expect(isSprintPresenceBoardView('kanban')).toBe(true);
     expect(isSprintPresenceBoardView('occupancy')).toBe(true);
+    expect(isSprintPresenceBoardView('retro')).toBe(true);
     expect(isSprintPresenceBoardView('swimlanes')).toBe(true);
     expect(isSprintPresenceBoardView('full')).toBe(false);
   });
@@ -35,6 +36,8 @@ describe('sprintPresenceBoardView', () => {
     expect(keepCompact('compact')).toBe('compact');
     expect(keepCompact('features')).toBe('features');
     expect(keepCompact('kanban')).toBe('full');
+    applySprintPresenceBoardView('retro', setViewMode);
+    expect(setViewMode).toHaveBeenCalledTimes(2);
     applySprintPresenceBoardView('occupancy', setViewMode);
     const hideOccupancy = setViewMode.mock.calls[2][0] as (prev: string) => string;
     expect(hideOccupancy('full')).toBe('full');

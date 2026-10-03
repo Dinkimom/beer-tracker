@@ -151,11 +151,11 @@ export function SwimlaneInProgressFactLayer({
                     key={`${pair.from}->${pair.to}`}
                     animateDrawing={false}
                     color={hexToRgbaArrow(hex, 0.55)}
-                    curveness={0.42}
+                    curveness={0}
                     dashness={false}
                     end={pair.to}
                     endAnchor="left"
-                    path="smooth"
+                    path="grid"
                     showHead={false}
                     showTail={false}
                     start={pair.from}

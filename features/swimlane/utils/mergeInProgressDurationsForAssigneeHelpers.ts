@@ -2,6 +2,11 @@ import type { StatusDuration } from '@/features/task/components/TaskTimeline/typ
 import type { Developer, Task, TaskPosition } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
+import {
+  doneFactStatusKeysFromTasks,
+  isClosingFactStatusKey,
+} from './in-progress-fact/factClosingStatus';
+
 type FactPhaseKind =
   | 'blocked'
   | 'closed'
@@ -62,9 +67,12 @@ export function resolveFactDurationsForSwimlaneTask(
   return dedupeStatusDurations(direct, fromDev);
 }
 
-function factPhaseKindTestingFunnelOnly(statusKey: string): FactPhaseKind | null {
+function factPhaseKindTestingFunnelOnly(
+  statusKey: string,
+  doneStatusKeys: ReadonlySet<string>
+): FactPhaseKind | null {
   const n = normalizeStatusKey(statusKey);
-  if (n === 'closed') return 'closed';
+  if (isClosingFactStatusKey(statusKey, doneStatusKeys)) return 'closed';
   if (n === 'readyfortest' || n === 'readyfortesting') return 'readyfortest';
   if (n === 'intesting') return 'intesting';
   if (n === 'defect') return 'defect';
@@ -127,25 +135,28 @@ function factPhaseKindForPureQaCard(statusKey: string): FactPhaseKind | null {
 function factPhaseKindForTesterSwimlane(
   statusKey: string,
   task: Task | undefined,
-  tasksMap: Map<string, Task>
+  tasksMap: Map<string, Task>,
+  doneStatusKeys: ReadonlySet<string>
 ): FactPhaseKind | null {
-  const n = normalizeStatusKey(statusKey);
-  if (n === 'closed') return 'closed';
+  if (isClosingFactStatusKey(statusKey, doneStatusKeys)) return 'closed';
 
   if (!task) {
-    return factPhaseKindTestingFunnelOnly(statusKey);
+    return factPhaseKindTestingFunnelOnly(statusKey, doneStatusKeys);
   }
 
   if (isPureQaCardForFactTimeline(task, tasksMap)) {
     return factPhaseKindForPureQaCard(statusKey);
   }
 
-  return factPhaseKindTestingFunnelOnly(statusKey);
+  return factPhaseKindTestingFunnelOnly(statusKey, doneStatusKeys);
 }
 
-function factPhaseKindForDeveloperSwimlane(statusKey: string): FactPhaseKind | null {
+function factPhaseKindForDeveloperSwimlane(
+  statusKey: string,
+  doneStatusKeys: ReadonlySet<string>
+): FactPhaseKind | null {
   const n = normalizeStatusKey(statusKey);
-  if (n === 'closed') return 'closed';
+  if (isClosingFactStatusKey(statusKey, doneStatusKeys)) return 'closed';
   if (n === 'inprogress') return 'inprogress';
   if (n === 'review' || n === 'inreview' || n === 'in_review') return 'review';
   if (n === 'defect') return 'defect';
@@ -189,89 +200,49 @@ export function mergeIntervalsWithinTask(intervals: RawIv[]): RawIv[] {
   return merged;
 }
 
-function linkPrevSameTaskIndices(
-  prev: (number | null)[],
-  intervals: RawIv[],
-  indices: number[]
-): void {
-  indices.sort(
-    (ia, ib) =>
-      intervals[ia]!.startMs - intervals[ib]!.startMs ||
-      intervals[ia]!.endMs - intervals[ib]!.endMs
-  );
-  for (let k = 1; k < indices.length; k++) {
-    prev[indices[k]!] = indices[k - 1]!;
-  }
+interface TaskFactSpan {
+  endMs: number;
+  indices: number[];
+  startMs: number;
 }
 
-function computePrevSameTaskIndex(intervals: RawIv[]): (number | null)[] {
-  const prev: (number | null)[] = new Array(intervals.length).fill(null);
-  const byTask = new Map<string, number[]>();
-  for (let i = 0; i < intervals.length; i++) {
-    const tid = intervals[i]!.taskId;
-    if (!byTask.has(tid)) byTask.set(tid, []);
-    byTask.get(tid)!.push(i);
-  }
-  for (const indices of byTask.values()) {
-    linkPrevSameTaskIndices(prev, intervals, indices);
-  }
-  return prev;
+function collectTaskFactSpans(intervals: RawIv[]): TaskFactSpan[] {
+  const byTask = new Map<string, TaskFactSpan>();
+  intervals.forEach((iv, index) => {
+    const span = byTask.get(iv.taskId);
+    if (!span) {
+      byTask.set(iv.taskId, { endMs: iv.endMs, indices: [index], startMs: iv.startMs });
+      return;
+    }
+    span.startMs = Math.min(span.startMs, iv.startMs);
+    span.endMs = Math.max(span.endMs, iv.endMs);
+    span.indices.push(index);
+  });
+  return [...byTask.values()].sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
 }
 
-function feasibleLaneIndices(iv: RawIv, laneEnds: number[]): number[] {
-  const out: number[] = [];
-  for (let l = 0; l < laneEnds.length; l++) {
-    if (iv.startMs >= laneEnds[l]!) out.push(l);
+function laneForTaskSpan(span: TaskFactSpan, laneEnds: number[]): number {
+  const lane = laneEnds.findIndex((end) => span.startMs >= end);
+  if (lane === -1) {
+    laneEnds.push(span.endMs);
+    return laneEnds.length - 1;
   }
-  return out;
+  laneEnds[lane] = span.endMs;
+  return lane;
 }
 
-function preferredLaneFromPrevTask(
-  prevI: number,
-  feas: number[],
-  laneByIndex: number[]
-): number | null {
-  const preferred = laneByIndex[prevI]!;
-  if (feas.includes(preferred)) return preferred;
-  if (feas.length > 0) return feas[0]!;
-  return null;
-}
-
-function pickLaneForInterval(
-  iv: RawIv,
-  i: number,
-  prevSameTask: (number | null)[],
-  laneByIndex: number[],
-  laneEnds: number[]
-): number {
-  const feas = feasibleLaneIndices(iv, laneEnds);
-  const prevI = prevSameTask[i];
-
-  if (prevI != null) {
-    const preferredLane = preferredLaneFromPrevTask(prevI, feas, laneByIndex);
-    if (preferredLane != null) return preferredLane;
-    return laneEnds.length;
-  }
-  if (feas.length > 0) return feas[0]!;
-  return laneEnds.length;
-}
-
+/**
+ * Весь факт одной задачи — одна дорожка, чтобы стрелки не пересекали чужие бары.
+ * Задачи без пересечения по времени делят дорожку.
+ */
 export function assignLanes(intervals: RawIv[]): number[] {
-  const prevSameTask = computePrevSameTaskIndex(intervals);
-  const order = intervals
-    .map((iv, i) => ({ iv, i }))
-    .sort((a, b) => a.iv.startMs - b.iv.startMs || a.iv.endMs - b.iv.endMs);
   const laneByIndex = new Array<number>(intervals.length);
   const laneEnds: number[] = [];
-
-  for (const { iv, i } of order) {
-    const lane = pickLaneForInterval(iv, i, prevSameTask, laneByIndex, laneEnds);
-    if (lane === laneEnds.length) {
-      laneEnds.push(iv.endMs);
-    } else {
-      laneEnds[lane] = iv.endMs;
+  for (const span of collectTaskFactSpans(intervals)) {
+    const lane = laneForTaskSpan(span, laneEnds);
+    for (const index of span.indices) {
+      laneByIndex[index] = lane;
     }
-    laneByIndex[i] = lane;
   }
   return laneByIndex;
 }
@@ -318,12 +289,13 @@ export function buildRawIntervalsForTask(
   tasksMap: Map<string, Task>,
   now: number
 ): RawIv[] {
+  const doneStatusKeys = doneFactStatusKeysFromTasks(tasksMap.values());
   const raw: RawIv[] = [];
   for (const d of list) {
     const kind =
       swimlaneAssigneeRole === 'tester'
-        ? factPhaseKindForTesterSwimlane(d.statusKey, task, tasksMap)
-        : factPhaseKindForDeveloperSwimlane(d.statusKey);
+        ? factPhaseKindForTesterSwimlane(d.statusKey, task, tasksMap, doneStatusKeys)
+        : factPhaseKindForDeveloperSwimlane(d.statusKey, doneStatusKeys);
     if (!kind) continue;
     raw.push(rawIntervalFromStatusDuration(tid, d, kind, now));
   }

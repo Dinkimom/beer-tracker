@@ -1,3 +1,5 @@
+import type { SprintTab } from '@/components/PageHeader';
+
 import { reaction } from 'mobx';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
@@ -53,7 +55,7 @@ export function useMainPageSprintBundle({
   selectedBoardId,
   selectedSprintId,
 }: {
-  activeTab: 'backlog' | 'board' | 'burndown';
+  activeTab: SprintTab;
   selectedBoardId: number | null;
   selectedSprintId: number | null;
 }) {

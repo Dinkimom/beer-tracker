@@ -18,6 +18,11 @@ const BurndownChart = dynamic(
   { ssr: false }
 );
 
+const RetroPage = dynamic(
+  () => import('@/features/retro/components/RetroPage').then((mod) => mod.RetroPage),
+  { ssr: false }
+);
+
 interface MainPageClientSprintsContentProps {
   activeTab: SprintTab;
   checklistDone: number;
@@ -103,6 +108,19 @@ export function MainPageClientSprintsContent({
           sprintTasksForTiles={tasksPending ? undefined : tasks}
           sprints={sprints}
           sprintsLoading={sprintsLoading}
+          onSprintChange={onSprintChange}
+        />
+      )}
+
+      {activeTab === 'retro' && (
+        <RetroPage
+          boardId={selectedBoardId}
+          goalTaskIds={goalTaskIds}
+          selectedSprintId={selectedSprintId}
+          sprints={sprints}
+          sprintsLoading={sprintsLoading}
+          tasks={tasks}
+          tasksPending={tasksPending}
           onSprintChange={onSprintChange}
         />
       )}

@@ -237,6 +237,34 @@ CREATE TRIGGER update_sprint_feature_lanes_updated_at
 
 COMMENT ON TABLE beer_tracker.sprint_feature_lanes IS 'Черновые строки фич и порядок/видимость доски «по фичам»';
 
+CREATE TABLE beer_tracker.retro_boards (
+    organization_id UUID NOT NULL REFERENCES beer_tracker.organizations (id) ON DELETE CASCADE,
+    sprint_id INTEGER NOT NULL,
+    board JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (organization_id, sprint_id)
+);
+
+CREATE TRIGGER update_retro_boards_updated_at
+    BEFORE UPDATE ON beer_tracker.retro_boards
+    FOR EACH ROW EXECUTE FUNCTION beer_tracker.update_updated_at_column();
+
+COMMENT ON TABLE beer_tracker.retro_boards IS 'Доска ретро спринта: колонки и карточки';
+
+CREATE TABLE beer_tracker.retro_column_templates (
+    organization_id UUID PRIMARY KEY REFERENCES beer_tracker.organizations (id) ON DELETE CASCADE,
+    columns JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER update_retro_column_templates_updated_at
+    BEFORE UPDATE ON beer_tracker.retro_column_templates
+    FOR EACH ROW EXECUTE FUNCTION beer_tracker.update_updated_at_column();
+
+COMMENT ON TABLE beer_tracker.retro_column_templates IS 'Шаблон колонок ретро организации. Не переписывает сохранённые доски спринтов';
+
 -- -----------------------------------------------------------------------------
 -- Справочник типов документов
 -- -----------------------------------------------------------------------------

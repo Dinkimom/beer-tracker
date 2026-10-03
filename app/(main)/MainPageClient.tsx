@@ -31,7 +31,7 @@ import { MainPageClientRedirectingView } from './MainPageClientRedirectingView';
 import { computeMainPagePlannerAccessDenied } from './mainPagePlannerAccessDenied';
 import { useMainPageClientData } from './useMainPageClientData';
 
-const sprintTabParser = parseAsStringLiteral(['backlog', 'board', 'burndown']).withDefault('board');
+const sprintTabParser = parseAsStringLiteral(['backlog', 'board', 'burndown', 'retro']).withDefault('board');
 
 /**
  * После первого подъёма MainPageClient в этой вкладке не показываем полноэкранный лоадер при remount

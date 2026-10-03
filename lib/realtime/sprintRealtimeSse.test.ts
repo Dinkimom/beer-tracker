@@ -47,12 +47,12 @@ describe('sprintRealtimeSse', () => {
   it('parses sprint and organization query', () => {
     expect(
       parseSprintRealtimeSseQuery(new URL('http://localhost/api/realtime?sprintId=8&organizationId=org-a'))
-    ).toEqual({ clientId: null, organizationId: 'org-a', sprintId: 8 });
+    ).toEqual({ clientId: null, organizationId: 'org-a', presence: true, sprintId: 8 });
     expect(
       parseSprintRealtimeSseQuery(
         new URL('http://localhost/api/realtime?sprintId=8&organizationId=org-a&clientId=tab-1')
       )
-    ).toEqual({ clientId: 'tab-1', organizationId: 'org-a', sprintId: 8 });
+    ).toEqual({ clientId: 'tab-1', organizationId: 'org-a', presence: true, sprintId: 8 });
     expect(parseSprintRealtimeSseQuery(new URL('http://localhost/api/realtime?sprintId=0&organizationId=org-a'))).toBeNull();
   });
 

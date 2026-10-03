@@ -17,6 +17,7 @@ import {
   type BurndownEvent,
   type TaskState,
 } from './burndownFromChangelogReplayHelpers';
+import { readChangelogPointValue } from './changelogPointValue';
 
 export interface BurndownDataPoint {
   date: string;
@@ -34,20 +35,37 @@ function createTaskStateFromIssue(yt: YtrackerBurndownIssue): TaskState {
   };
 }
 
+interface PreSprintReplayFlags {
+  hasSprintField: boolean;
+  touchedSp: boolean;
+  touchedTp: boolean;
+}
+
+function pointFieldKind(fieldId: string | undefined): 'sp' | 'tp' | null {
+  if (fieldId === 'storyPoints' || fieldId === 'story_points') return 'sp';
+  if (fieldId === 'testPoints' || fieldId === 'test_points') return 'tp';
+  return null;
+}
+
 function applyPreSprintEntryFields(
   entry: YtrackerBurndownChangelogEntry,
   sprintName: string,
   sprintIdForMatch: string | undefined,
   state: TaskState,
-): boolean {
-  let hasSprintField = false;
+  flags: PreSprintReplayFlags,
+): void {
   for (const field of entry.fields ?? []) {
-    if (field?.field?.id === 'sprint') {
-      hasSprintField = true;
+    const fieldId = field?.field?.id;
+    if (fieldId === 'sprint') {
+      flags.hasSprintField = true;
+    }
+    const kind = pointFieldKind(fieldId);
+    if (kind && readChangelogPointValue(field?.to) != null) {
+      if (kind === 'sp') flags.touchedSp = true;
+      else flags.touchedTp = true;
     }
     applyFieldToTaskState(field, sprintName, sprintIdForMatch, state);
   }
-  return hasSprintField;
 }
 
 function replayPreSprintChangelogFields(
@@ -56,18 +74,81 @@ function replayPreSprintChangelogFields(
   sprintName: string,
   sprintIdForMatch: string | undefined,
   state: TaskState,
-): boolean {
-  let hasSprintField = false;
+): PreSprintReplayFlags {
+  const flags: PreSprintReplayFlags = { hasSprintField: false, touchedSp: false, touchedTp: false };
   for (const entry of raw) {
     const t = new Date(entry.updatedAt).getTime();
     if (t >= sprintStartTime) {
       break;
     }
-    if (applyPreSprintEntryFields(entry, sprintName, sprintIdForMatch, state)) {
-      hasSprintField = true;
+    applyPreSprintEntryFields(entry, sprintName, sprintIdForMatch, state, flags);
+  }
+  return flags;
+}
+
+interface InSprintPointReplay {
+  deltaSP: number;
+  deltaTP: number;
+  lastToSP: number | null;
+  lastToTP: number | null;
+}
+
+function emptyInSprintPointReplay(): InSprintPointReplay {
+  return { deltaSP: 0, deltaTP: 0, lastToSP: null, lastToTP: null };
+}
+
+function appendInSprintPointField(replay: InSprintPointReplay, fieldId: string | undefined, from: unknown, to: unknown): void {
+  const kind = pointFieldKind(fieldId);
+  if (!kind) return;
+  const fromPoints = readChangelogPointValue(from);
+  const toPoints = readChangelogPointValue(to);
+  if (fromPoints == null && toPoints == null) return;
+  const delta = (toPoints ?? 0) - (fromPoints ?? 0);
+  if (kind === 'sp') {
+    replay.deltaSP += delta;
+    if (toPoints != null) replay.lastToSP = toPoints;
+    return;
+  }
+  replay.deltaTP += delta;
+  if (toPoints != null) replay.lastToTP = toPoints;
+}
+
+function collectInSprintPointReplay(
+  raw: YtrackerBurndownChangelogEntry[],
+  sprintStartTime: number,
+  sprintEndTime: number,
+): InSprintPointReplay {
+  const replay = emptyInSprintPointReplay();
+  for (const entry of raw) {
+    const t = new Date(entry.updatedAt).getTime();
+    if (t < sprintStartTime || t > sprintEndTime) continue;
+    for (const field of entry.fields ?? []) {
+      appendInSprintPointField(replay, field?.field?.id, field?.from, field?.to);
     }
   }
-  return hasSprintField;
+  return replay;
+}
+
+function pointsMatch(current: number, target: number): boolean {
+  return Math.abs(current - target) < 1e-6;
+}
+
+/**
+ * storyPoints на задаче — текущее значение. Если оно уже совпадает с последним `to`
+ * внутри спринта, а до старта спринта оценки в changelog не было, вычитаем дельту:
+ * иначе реплей прибавит её второй раз.
+ */
+function rewindEstimatesAlreadyReflectedInCurrent(
+  state: TaskState,
+  flags: PreSprintReplayFlags,
+  replay: InSprintPointReplay,
+): void {
+  if (!flags.touchedSp && replay.lastToSP != null && pointsMatch(state.sp, replay.lastToSP)) {
+    state.sp -= replay.deltaSP;
+  }
+  if (!flags.touchedTp && replay.lastToTP != null && pointsMatch(state.tp, replay.lastToTP)) {
+    state.tp -= replay.deltaTP;
+  }
 }
 
 export function buildTaskStateAtSprintStart(
@@ -75,16 +156,22 @@ export function buildTaskStateAtSprintStart(
   sprintName: string,
   sprintIdForMatch: string | undefined,
   sprintStartTime: number,
+  sprintEndTime = Number.POSITIVE_INFINITY,
 ): TaskState {
   const state = createTaskStateFromIssue(yt);
-  const hasSprintField = replayPreSprintChangelogFields(
+  const flags = replayPreSprintChangelogFields(
     yt.rawChangelog ?? [],
     sprintStartTime,
     sprintName,
     sprintIdForMatch,
     state,
   );
-  if (!hasSprintField) state.inSprint = true;
+  if (!flags.hasSprintField) state.inSprint = true;
+  rewindEstimatesAlreadyReflectedInCurrent(
+    state,
+    flags,
+    collectInSprintPointReplay(yt.rawChangelog ?? [], sprintStartTime, sprintEndTime),
+  );
   return state;
 }
 
@@ -246,12 +333,13 @@ function buildTaskStateMapAtStart(
   sprintName: string,
   sprintIdForMatch: string | undefined,
   sprintStartTime: number,
+  sprintEndTime: number,
 ): Map<string, TaskState> {
   const taskStateAtStart = new Map<string, TaskState>();
   for (const yt of ytrackerIssues) {
     taskStateAtStart.set(
       yt.issueKey,
-      buildTaskStateAtSprintStart(yt, sprintName, sprintIdForMatch, sprintStartTime),
+      buildTaskStateAtSprintStart(yt, sprintName, sprintIdForMatch, sprintStartTime, sprintEndTime),
     );
   }
   return taskStateAtStart;
@@ -354,6 +442,7 @@ export function computeBurndownFromChangelog(
     sprintName,
     sprintIdForMatch,
     sprintStartTime,
+    sprintEndTime,
   );
   const { initialSP, initialTP } = sumInitialOpenPoints(taskStateAtStart);
 

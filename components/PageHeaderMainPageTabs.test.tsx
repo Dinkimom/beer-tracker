@@ -1,9 +1,13 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PageHeaderMainPageTabs } from './PageHeaderMainPageTabs';
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('PageHeaderMainPageTabs', () => {
   const items = [
@@ -32,5 +36,29 @@ describe('PageHeaderMainPageTabs', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Бэклог' }));
     expect(onChange).toHaveBeenCalledWith('backlog');
+  });
+
+  it('shows an icon and the short label only on the active tab', () => {
+    render(
+      <PageHeaderMainPageTabs
+        activeId="burndown"
+        ariaLabel="Sprint Tabs"
+        items={[
+          { id: 'board', icon: 'timeline', label: 'Доска' },
+          {
+            id: 'burndown',
+            icon: 'trend-down',
+            label: 'Диаграмма сгорания',
+            shortLabel: 'Сгорание',
+          },
+        ]}
+        onChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'Доска' }).textContent).toBe('');
+    expect(screen.getByRole('button', { name: 'Диаграмма сгорания' }).textContent).toContain(
+      'Сгорание'
+    );
   });
 });

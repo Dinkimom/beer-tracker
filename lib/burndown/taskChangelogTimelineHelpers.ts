@@ -16,6 +16,7 @@ import {
   toBurndownDateKey,
   type TaskState,
 } from './burndownFromChangelogReplay';
+import { changelogPointOrZero } from './changelogPointValue';
 import { sprintArrayContainsSprint } from './sprintMembership';
 import {
   pushConsolidatedReestimateIfFirst,
@@ -129,8 +130,8 @@ function parsePointsDelta(
   field: NonNullable<YtrackerBurndownChangelogEntry['fields']>[number]
 ): { deltaSP: number; deltaTP: number } {
   const fieldId = field?.field?.id;
-  const from = (field.from as number | null | undefined) ?? 0;
-  const to = (field.to as number | null | undefined) ?? 0;
+  const from = changelogPointOrZero(field.from);
+  const to = changelogPointOrZero(field.to);
   const delta = to - from;
   if (fieldId === 'storyPoints' || fieldId === 'story_points') {
     return { deltaSP: delta, deltaTP: 0 };
@@ -344,7 +345,10 @@ export function computeSprintTimelineTotalsFromRows(
 
   const taskState = new Map<string, TaskState>();
   for (const yt of issues) {
-    taskState.set(yt.issueKey, buildTaskStateAtSprintStart(yt, sprintName, sprintId, sprintStartTime));
+    taskState.set(
+      yt.issueKey,
+      buildTaskStateAtSprintStart(yt, sprintName, sprintId, sprintStartTime, options.windowEndMs),
+    );
   }
 
   for (const row of rows) {

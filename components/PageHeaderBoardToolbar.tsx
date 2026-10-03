@@ -11,7 +11,10 @@ import { PageHeaderActionButtons } from '@/components/PageHeaderActionButtons';
 import { PageHeaderAdminLink } from '@/components/PageHeaderAdminLink';
 import { PageHeaderBoardSelector } from '@/components/PageHeaderBoardSelector';
 import { pageHeaderBoardToolbarTrailingSlots } from '@/components/pageHeaderBoardToolbarTrailing';
-import { PageHeaderMainPageTabs } from '@/components/PageHeaderMainPageTabs';
+import {
+  PageHeaderMainPageTabs,
+  type PageHeaderMainPageTabItem,
+} from '@/components/PageHeaderMainPageTabs';
 import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { NotificationsBell } from '@/features/notifications/components/NotificationsBell';
@@ -24,7 +27,7 @@ interface PageHeaderBoardToolbarProps {
   christmasThemeEnabled: boolean;
   isChristmasPeriod: boolean;
   selectedBoardId: number | null | undefined;
-  sprintTabs: Array<{ id: SprintTab; label: string }>;
+  sprintTabs: Array<PageHeaderMainPageTabItem<SprintTab>>;
   theme: 'dark' | 'light';
   onBoardChange?: (boardId: number | null) => void;
   onChristmasThemeToggle: () => void;

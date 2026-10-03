@@ -2,7 +2,7 @@ import type { SprintTimerState } from './sprintTimerState';
 import type { Task } from '@/types';
 
 /** Ресурсы свимлейна, которые клиент перезапрашивает после события. */
-export type SprintRealtimeResource = 'comments' | 'links' | 'positions' | 'reactions' | 'tasks';
+export type SprintRealtimeResource = 'comments' | 'links' | 'positions' | 'reactions' | 'retro' | 'tasks';
 
 export interface SprintRealtimeIssueStatus {
   issueKey: string;
@@ -43,7 +43,7 @@ export function isSprintPresenceMutatingFocusState(
   return state === 'dragging' || state === 'editing' || state === 'resizing';
 }
 
-export const SPRINT_PRESENCE_BOARD_VIEWS = ['kanban', 'occupancy', 'swimlanes'] as const;
+export const SPRINT_PRESENCE_BOARD_VIEWS = ['kanban', 'occupancy', 'retro', 'swimlanes'] as const;
 
 export type SprintPresenceBoardView = (typeof SPRINT_PRESENCE_BOARD_VIEWS)[number];
 

@@ -28,6 +28,10 @@ describe('sprintRealtimeProtocol', () => {
 
   it('parses a valid JSON event', () => {
     expect(parseSprintRealtimeMessage(JSON.stringify(event))).toEqual(event);
+    expect(parseSprintRealtimeMessage({ ...event, resources: ['retro'] })).toEqual({
+      ...event,
+      resources: ['retro'],
+    });
   });
 
   it('parses a presence snapshot including an empty viewer list', () => {

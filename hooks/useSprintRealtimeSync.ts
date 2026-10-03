@@ -25,6 +25,7 @@ interface SprintRealtimeHandlers {
   onLinks?: () => void;
   onPositions?: () => void;
   onPresence?: (viewers: SprintPresenceViewer[]) => void;
+  onRetro?: () => void;
   onTasks?: (payload: SprintRealtimeTaskPayload) => void;
 }
 
@@ -53,6 +54,9 @@ function dispatchSprintRealtimeResources(
   }
   if (resources.includes('tasks')) {
     handlers.onTasks?.(payload);
+  }
+  if (resources.includes('retro')) {
+    handlers.onRetro?.();
   }
 }
 
@@ -108,10 +112,12 @@ function useActiveOrganizationId(): string | null {
  */
 export function useSprintRealtimeSync(
   sprintId: number | null,
-  handlers: SprintRealtimeHandlers
+  handlers: SprintRealtimeHandlers,
+  options?: { presence?: boolean }
 ): void {
   const handlersRef = useRef(handlers);
   const organizationId = useActiveOrganizationId();
+  const joinPresence = options?.presence !== false;
 
   useEffect(() => {
     handlersRef.current = handlers;
@@ -122,7 +128,9 @@ export function useSprintRealtimeSync(
       return;
     }
     const clientId = getBrowserRealtimeClientId();
-    const source = new EventSource(buildSprintRealtimeSseUrl({ clientId, organizationId, sprintId }));
+    const source = new EventSource(
+      buildSprintRealtimeSseUrl({ clientId, organizationId, presence: joinPresence, sprintId })
+    );
 
     source.onmessage = (message) => {
       applySprintRealtimeSsePayload(message.data, { clientId, organizationId, sprintId }, handlersRef.current);
@@ -132,5 +140,5 @@ export function useSprintRealtimeSync(
       source.close();
       handlersRef.current.onPresence?.([]);
     };
-  }, [organizationId, sprintId]);
+  }, [joinPresence, organizationId, sprintId]);
 }

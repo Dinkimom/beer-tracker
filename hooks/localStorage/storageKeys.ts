@@ -87,4 +87,9 @@ export const STORAGE_KEYS = {
   SPRINT_TIMER_DISMISSED_FINISHED_PREFIX: 'beer-tracker-sprint-timer-dismissed',
   /** Тур планера и одноразовые подсказки (JSON) */
   PLANNER_ONBOARDING: 'beer-tracker-planner-onboarding',
+  /** Локальная доска ретро по спринтам */
+  RETRO_BOARDS: 'beer-tracker-retro-boards',
+  /** Правая панель показателей на странице ретро */
+  RETRO_METRICS_OPEN: 'beer-tracker-retro-metrics-open',
+  RETRO_METRICS_WIDTH: 'beer-tracker-retro-metrics-width',
 } as const;

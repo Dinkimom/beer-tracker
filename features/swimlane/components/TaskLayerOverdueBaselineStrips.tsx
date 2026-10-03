@@ -1,6 +1,9 @@
 'use client';
 
-import { ZIndex } from '@/constants';
+import type { CSSProperties } from 'react';
+
+import { ZIndex, getPartsPerDay } from '@/constants';
+import { factTimelineHolidayMask } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
 import { computeBaselineStripOpacity } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { buildSwimlaneOverdueBaselineStripHorizontalStyle } from '@/features/task/components/TaskBar/taskBarHelpers';
 
@@ -10,6 +13,8 @@ interface TaskLayerOverdueBaselineStripsProps {
   baselineHeight: number;
   baselineTop: number;
   currentCell: number;
+  /** Индексы нерабочих дней таймлайна — в этих колонках полоса не видна */
+  holidayDayIndices?: ReadonlySet<number>;
   hoveredCell: { assigneeId: string; day: number; part: number } | null;
   hoveredTaskId: string | null;
   isDark: boolean;
@@ -26,6 +31,7 @@ export function TaskLayerOverdueBaselineStrips({
   baselineHeight,
   baselineTop,
   currentCell,
+  holidayDayIndices,
   hoveredCell,
   hoveredTaskId,
   isDark,
@@ -35,8 +41,22 @@ export function TaskLayerOverdueBaselineStrips({
   taskId,
   timelineTotalParts,
 }: TaskLayerOverdueBaselineStripsProps) {
+  if (strips.length === 0) return null;
+
+  const holidayMask = factTimelineHolidayMask(
+    holidayDayIndices,
+    timelineTotalParts,
+    getPartsPerDay()
+  );
+  const holidayMaskStyle: CSSProperties | undefined = holidayMask
+    ? { maskImage: holidayMask, WebkitMaskImage: holidayMask }
+    : undefined;
+
   return (
-    <>
+    <div
+      className={`absolute inset-0 pointer-events-none ${ZIndex.class('base')}`}
+      style={holidayMaskStyle}
+    >
       {strips.map(({ baselineStart, baselineWidth }, stripIdx) => {
         const baselineOpacity = computeBaselineStripOpacity({
           activeTaskDuration,
@@ -52,7 +72,7 @@ export function TaskLayerOverdueBaselineStrips({
         return (
           <div
             key={`baseline-${taskId}-${stripIdx}-${baselineStart}-${currentCell}`}
-            className={`absolute pointer-events-none overflow-hidden ${ZIndex.class('base')} rounded-r-lg transition-opacity duration-200`}
+            className="absolute pointer-events-none overflow-hidden rounded-r-lg transition-opacity duration-200"
             style={{
               background: isDark
                 ? 'repeating-linear-gradient(45deg, rgb(127 29 29), rgb(127 29 29) 8px, rgb(153 27 27) 8px, rgb(153 27 27) 16px)'
@@ -69,6 +89,6 @@ export function TaskLayerOverdueBaselineStrips({
           />
         );
       })}
-    </>
+    </div>
   );
 }

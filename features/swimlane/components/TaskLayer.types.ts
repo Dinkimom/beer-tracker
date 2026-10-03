@@ -22,6 +22,8 @@ export interface TaskLayerProps {
   globalNameFilter?: string;
   hasQuickAddDraftMode?: boolean;
   hasTaskOverlaps: boolean;
+  /** Индексы нерабочих дней — просрочка в этих колонках не рисуется */
+  holidayDayIndices?: ReadonlySet<number>;
   hoverConnectedTaskIds?: Set<string> | null;
   hoveredCell: { assigneeId: string; day: number; part: number } | null;
   hoveredTaskId?: string | null;

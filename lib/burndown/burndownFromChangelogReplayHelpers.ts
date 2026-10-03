@@ -1,6 +1,7 @@
 import type { BurndownDayChangelogItem } from '@/lib/api/types';
 import type { YtrackerBurndownChangelogEntry } from '@/lib/ytrackerRawIssues';
 
+import { changelogPointOrZero, readChangelogPointValue } from '@/lib/burndown/changelogPointValue';
 import { extractStatusKeyFromValue } from '@/lib/burndown/extractStatusKeyHelpers';
 import { sprintArrayContainsSprint } from '@/lib/burndown/sprintMembership';
 import { mapStatus } from '@/utils/statusMapper';
@@ -69,16 +70,16 @@ function applyStoryPointsFieldToTaskState(
   field: BurndownChangelogField,
   state: TaskState
 ): void {
-  const v = field.to as number | null | undefined;
-  if (typeof v === 'number') state.sp = v;
+  const points = readChangelogPointValue(field.to);
+  if (points != null) state.sp = points;
 }
 
 function applyTestPointsFieldToTaskState(
   field: BurndownChangelogField,
   state: TaskState
 ): void {
-  const v = field.to as number | null | undefined;
-  if (typeof v === 'number') state.tp = v;
+  const points = readChangelogPointValue(field.to);
+  if (points != null) state.tp = points;
 }
 
 function applySprintFieldToTaskState(
@@ -117,8 +118,8 @@ function applyPointsFieldToDeltas(
   fieldId: string,
   deltas: { deltaSP: number; deltaTP: number },
 ): void {
-  const from = (field.from as number | null | undefined) ?? 0;
-  const to = (field.to as number | null | undefined) ?? 0;
+  const from = changelogPointOrZero(field.from);
+  const to = changelogPointOrZero(field.to);
   if (fieldId === 'storyPoints' || fieldId === 'story_points') {
     deltas.deltaSP += to - from;
     return;
@@ -234,8 +235,8 @@ function appendPointsChangeToDailyChangelog(
   changeSp: number,
   changeTp: number,
 ): void {
-  const from = (field.from as number | null | undefined) ?? 0;
-  const to = (field.to as number | null | undefined) ?? 0;
+  const from = changelogPointOrZero(field.from);
+  const to = changelogPointOrZero(field.to);
   applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state);
   const { remainingSP, remainingTP } = sumRemainingOpenWork(ctx.taskState);
   appendDailyChangelogItem(ctx.dailyChangelog, ctx.dateKey, {
@@ -255,8 +256,8 @@ function appendStoryPointsFieldToDailyChangelog(
   field: BurndownChangelogField,
   ctx: DailyChangelogFieldContext,
 ): void {
-  const from = (field.from as number | null | undefined) ?? 0;
-  const to = (field.to as number | null | undefined) ?? 0;
+  const from = changelogPointOrZero(field.from);
+  const to = changelogPointOrZero(field.to);
   appendPointsChangeToDailyChangelog(field, ctx, 'story_points_change', to - from, 0);
 }
 
@@ -264,8 +265,8 @@ function appendTestPointsFieldToDailyChangelog(
   field: BurndownChangelogField,
   ctx: DailyChangelogFieldContext,
 ): void {
-  const from = (field.from as number | null | undefined) ?? 0;
-  const to = (field.to as number | null | undefined) ?? 0;
+  const from = changelogPointOrZero(field.from);
+  const to = changelogPointOrZero(field.to);
   appendPointsChangeToDailyChangelog(field, ctx, 'test_points_change', 0, to - from);
 }
 

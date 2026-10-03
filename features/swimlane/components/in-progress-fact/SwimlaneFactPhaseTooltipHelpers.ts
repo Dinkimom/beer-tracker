@@ -2,6 +2,7 @@ import type { AppLanguage } from '@/lib/i18n/model';
 import type { Task } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
+import { isClosingFactStatusKey } from '@/features/swimlane/utils/in-progress-fact/factClosingStatus';
 import { type StatusPhaseCell, formatDuration } from '@/lib/planner-timeline';
 import { formatSignedPointsDeltaForDisplay } from '@/lib/pointsUtils';
 import { getNextWorkingDay, isWeekend } from '@/utils/dateUtils';
@@ -79,15 +80,28 @@ const FACT_PHASE_CANONICAL_BY_TRACKER_KEY: Record<string, string> = {
  * Канонический ключ статуса для сопоставления changelog ↔ колбаса (как в mergeInProgressDurationsForAssignee).
  */
 function factPhaseCanonicalFromTrackerKey(statusKey: string): string {
+  if (isClosingFactStatusKey(statusKey)) return 'closed';
   const n = normalizeFactStatusKey(statusKey);
   return FACT_PHASE_CANONICAL_BY_TRACKER_KEY[n] ?? n;
 }
 
-function changelogStatusMatchesPhase(phaseStatusKey: string, changelogStatusKey: string): boolean {
-  return (
+function changelogStatusMatchesPhase(
+  phaseStatusKey: string,
+  changelogStatusKey: string,
+  phaseStatusName?: string,
+  changelogStatusName?: string | null
+): boolean {
+  if (
     factPhaseCanonicalFromTrackerKey(changelogStatusKey) ===
     factPhaseCanonicalFromTrackerKey(phaseStatusKey)
-  );
+  ) {
+    return true;
+  }
+  if (factPhaseCanonicalFromTrackerKey(phaseStatusKey) !== 'closed') return false;
+  const phaseName = phaseStatusName?.trim();
+  const changelogName = changelogStatusName?.trim();
+  if (!phaseName || !changelogName) return false;
+  return normalizeFactStatusKey(phaseName) === normalizeFactStatusKey(changelogName);
 }
 
 /** Как {@link mapHistoryItemToDuration}: старт фазы на таймлайне может быть сдвинут с выходных. */
@@ -163,7 +177,16 @@ function statusTransitionFromChangelogEntry(
   const entryTimeMs = new Date(entry.updatedAt).getTime();
   const entryAlignedStartMs = durationStartMsFromChangelogEntryUpdatedAt(entry.updatedAt);
 
-  if (isPhaseStartTransition(phase.statusKey, toStatusKey, entryAlignedStartMs, phaseStartMs)) {
+  if (
+    isPhaseStartTransition(
+      phase.statusKey,
+      toStatusKey,
+      entryAlignedStartMs,
+      phaseStartMs,
+      phase.statusName,
+      toStatusName
+    )
+  ) {
     return {
       entry,
       fromStatusKey,
@@ -174,7 +197,16 @@ function statusTransitionFromChangelogEntry(
     };
   }
 
-  if (isPhaseEndTransition(phase.statusKey, fromStatusKey, entryTimeMs, phaseEndMs)) {
+  if (
+    isPhaseEndTransition(
+      phase.statusKey,
+      fromStatusKey,
+      entryTimeMs,
+      phaseEndMs,
+      phase.statusName,
+      fromStatusName
+    )
+  ) {
     return {
       entry,
       fromStatusKey,
@@ -192,10 +224,12 @@ function isPhaseStartTransition(
   phaseStatusKey: string,
   toStatusKey: string,
   entryAlignedStartMs: number,
-  phaseStartMs: number
+  phaseStartMs: number,
+  phaseStatusName: string,
+  toStatusName: string
 ): boolean {
   return (
-    changelogStatusMatchesPhase(phaseStatusKey, toStatusKey) &&
+    changelogStatusMatchesPhase(phaseStatusKey, toStatusKey, phaseStatusName, toStatusName) &&
     Math.abs(entryAlignedStartMs - phaseStartMs) < PHASE_BOUNDARY_MATCH_MS
   );
 }
@@ -204,11 +238,13 @@ function isPhaseEndTransition(
   phaseStatusKey: string,
   fromStatusKey: string | null,
   entryTimeMs: number,
-  phaseEndMs: number | null
+  phaseEndMs: number | null,
+  phaseStatusName: string,
+  fromStatusName: string | null
 ): boolean {
   return (
     fromStatusKey != null &&
-    changelogStatusMatchesPhase(phaseStatusKey, fromStatusKey) &&
+    changelogStatusMatchesPhase(phaseStatusKey, fromStatusKey, phaseStatusName, fromStatusName) &&
     phaseEndMs !== null &&
     Math.abs(entryTimeMs - phaseEndMs) < PHASE_BOUNDARY_MATCH_MS
   );

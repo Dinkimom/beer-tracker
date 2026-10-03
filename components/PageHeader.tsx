@@ -1,5 +1,6 @@
 'use client';
 
+import type { PageHeaderMainPageTabItem } from './PageHeaderMainPageTabs';
 import type { BeerLottieRef } from '@/components/BeerLottie';
 
 import dynamic from 'next/dynamic';
@@ -16,13 +17,19 @@ const SettingsModal = dynamic(
   { ssr: false }
 );
 
-export type SprintTab = 'backlog' | 'board' | 'burndown';
+export type SprintTab = 'backlog' | 'board' | 'burndown' | 'retro';
 
-function buildSprintTabItems(t: (key: string) => string): Array<{ id: SprintTab; label: string }> {
+function buildSprintTabItems(t: (key: string) => string): Array<PageHeaderMainPageTabItem<SprintTab>> {
   return [
-    { id: 'backlog', label: t('header.sprintTabs.backlog') },
-    { id: 'board', label: t('header.sprintTabs.board') },
-    { id: 'burndown', label: t('header.sprintTabs.burndown') },
+    { id: 'backlog', icon: 'backlog', label: t('header.sprintTabs.backlog') },
+    { id: 'board', icon: 'timeline', label: t('header.sprintTabs.board') },
+    {
+      id: 'burndown',
+      icon: 'trend-down',
+      label: t('header.sprintTabs.burndown'),
+      shortLabel: t('header.sprintTabs.burndownShort'),
+    },
+    { id: 'retro', icon: 'comment', label: t('header.sprintTabs.retro') },
   ];
 }
 

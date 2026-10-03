@@ -38,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/tracker', icon: 'link', labelKey: 'admin.shell.nav.tracker' },
   { href: '/admin/roles', icon: 'hash', labelKey: 'admin.shell.nav.roles' },
   { href: '/admin/planner', icon: 'calendar', labelKey: 'admin.shell.nav.planner' },
+  { href: '/admin/retro', icon: 'menu', labelKey: 'admin.shell.nav.retro' },
   { href: '/admin/sync', icon: 'refresh', labelKey: 'admin.shell.nav.sync', requiresTracker: true },
 ];
 

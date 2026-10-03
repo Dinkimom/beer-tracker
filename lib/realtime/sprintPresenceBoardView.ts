@@ -20,6 +20,7 @@ export function applySprintPresenceBoardView(
   boardView: SprintPresenceBoardView,
   setViewMode: (value: PlannerViewMode | ((prev: PlannerViewMode) => PlannerViewMode)) => void
 ): void {
+  if (boardView === 'retro') return;
   if (boardView === 'kanban') {
     setViewMode(boardView);
     return;

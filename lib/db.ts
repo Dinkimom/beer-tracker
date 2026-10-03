@@ -82,6 +82,8 @@ const BEER_TRACKER_TABLES = [
   'quarterly_plan_v2_story_events',
   'quarterly_plan_v2_story_phases',
   'quarterly_plans',
+  'retro_boards',
+  'retro_column_templates',
   'sprint_feature_lanes', // доска «по фичам»: черновые строки и порядок
   'sprint_goals',
   'staff',

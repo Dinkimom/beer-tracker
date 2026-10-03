@@ -1,3 +1,5 @@
+import type { SprintTab } from '@/components/PageHeader';
+
 import { useCallback, useEffect } from 'react';
 
 import { useSelectedBoardStorage, useSelectedSprintStorage } from '@/hooks/useLocalStorage';
@@ -29,7 +31,7 @@ export function useMainPageClientData({
   searchParamsKey,
   t,
 }: {
-  activeTab: 'backlog' | 'board' | 'burndown';
+  activeTab: SprintTab;
   boardsLoading: boolean;
   boardSwitchPending: boolean;
   getBoardById: (id: number) => unknown;

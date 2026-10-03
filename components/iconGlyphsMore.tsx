@@ -28,6 +28,28 @@ export const iconGlyphsMore: Record<string, ReactNode> = {
       <path d="M6 20v-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </>
   ),
+  /** Три ряда в скруглённой карточке, как бэклог в Jira. */
+  backlog: (
+    <path
+      clipRule="evenodd"
+      d="M5 2.75h14a2.25 2.25 0 0 1 2.25 2.25v14a2.25 2.25 0 0 1-2.25 2.25H5a2.25 2.25 0 0 1-2.25-2.25V5A2.25 2.25 0 0 1 5 2.75zM4.6 4.6h14.8v3.8H4.6zM4.6 10.1h14.8v3.8H4.6zM4.6 15.6h14.8v3.8H4.6z"
+      fill="currentColor"
+      fillRule="evenodd"
+    />
+  ),
+  /** Две сдвинутые плашки, как хронология в Jira. */
+  timeline: (
+    <>
+      <rect fill="none" height="7.5" rx="2.5" stroke="currentColor" strokeWidth="1.75" width="16.5" x="1.5" y="2.75" />
+      <rect fill="none" height="7.5" rx="2.5" stroke="currentColor" strokeWidth="1.75" width="16.5" x="6" y="13.75" />
+    </>
+  ),
+  'trend-down': (
+    <>
+      <polyline points="22 17 13.5 8.5 8.5 13.5 2 7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <polyline points="16 17 22 17 22 11" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </>
+  ),
   'file-text': (
     <>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />

@@ -34,6 +34,7 @@ interface SprintRealtimeSseFilter {
 export function parseSprintRealtimeSseQuery(url: URL): {
   clientId: string | null;
   organizationId: string;
+  presence: boolean;
   sprintId: number;
 } | null {
   const sprintId = Number.parseInt(url.searchParams.get('sprintId') ?? '', 10);
@@ -44,6 +45,7 @@ export function parseSprintRealtimeSseQuery(url: URL): {
   return {
     clientId: parseRealtimeClientId(url.searchParams.get('clientId')),
     organizationId,
+    presence: url.searchParams.get('presence') !== '0',
     sprintId,
   };
 }
@@ -214,12 +216,17 @@ export async function createSprintRealtimeSseResponse(request: Request): Promise
     return NextResponse.json({ error: 'Нет доступа к организации' }, { status: 403 });
   }
   const userId = tenantResult.ctx.userId;
+  const joinPresence = parsed.presence;
   return new Response(
     createSprintRealtimeSseStream({
       ...parsed,
       signal: request.signal,
-      viewer: sprintPresenceViewerFromUserId(userId),
-      resolveViewer: () => resolveSprintPresenceViewer(userId),
+      ...(joinPresence
+        ? {
+            resolveViewer: () => resolveSprintPresenceViewer(userId),
+            viewer: sprintPresenceViewerFromUserId(userId),
+          }
+        : {}),
     }),
     { headers: SPRINT_REALTIME_SSE_HEADERS }
   );

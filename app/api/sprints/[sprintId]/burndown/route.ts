@@ -11,6 +11,7 @@ import {
 } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
 import { mergeTrackerIssuesByKey } from '@/lib/burndown/mergeTrackerIssuesByKey';
+import { stampBurndownIssueEstimates } from '@/lib/burndown/stampBurndownIssueEstimates';
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import {
@@ -125,7 +126,7 @@ async function computeBurndownPayload(
   const sprintIdForMatch = sprintInfo.id != null ? String(sprintInfo.id) : undefined;
 
   const issueByKey = new Map(
-    issues.map((issue) => [issue.key, normalizeYandexIssue(issue)])
+    issues.map((issue) => [issue.key, normalizeYandexIssue(stampBurndownIssueEstimates(issue, integration))])
   );
   const ytrackerIssues = await issueTracker.getBurndownIssuesForKeys(
     sprintIssueKeys,

@@ -31,6 +31,7 @@ const PRESENCE_ACTION_KEYS = {
 const PRESENCE_VIEW_KEYS = {
   kanban: 'sprintPlanner.presence.boardViewKanban',
   occupancy: 'sprintPlanner.presence.boardViewOccupancy',
+  retro: 'sprintPlanner.presence.boardViewRetro',
   swimlanes: 'sprintPlanner.presence.boardViewSwimlanes',
 } as const;
 

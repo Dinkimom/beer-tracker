@@ -6,6 +6,7 @@ const TAB_TITLES: Record<string, string> = {
   backlog: "Бэклог",
   board: "Доска",
   burndown: "Диаграмма сгорания",
+  retro: "Ретро",
 };
 
 interface PageProps {
@@ -14,7 +15,7 @@ interface PageProps {
 
 function getTitleFromSearchParams(sp: { tab?: string } | null): string {
   const tab =
-    sp?.tab === "backlog" || sp?.tab === "board" || sp?.tab === "burndown"
+    sp?.tab === "backlog" || sp?.tab === "board" || sp?.tab === "burndown" || sp?.tab === "retro"
       ? sp.tab
       : "board";
   return `Спринты · ${TAB_TITLES[tab] ?? "Доска"}`;

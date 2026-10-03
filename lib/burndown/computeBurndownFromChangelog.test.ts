@@ -308,6 +308,48 @@ describe('computeBurndownFromChangelog', () => {
     // Две записи changelog → две строки status_change; остаток на конец дня не «двойной»
     expect(closes.length).toBe(2);
   });
+
+  it('не удваивает SP, если текущая оценка уже равна Jira to-значению внутри спринта', () => {
+    const yt = issue({
+      storyPoints: 1,
+      testPoints: 0,
+      rawChangelog: [
+        {
+          updatedAt: '2025-06-10T10:00:00.000Z',
+          fields: [
+            {
+              field: { id: 'storyPoints' },
+              from: null,
+              to: { display: '1', id: '1', key: '1' },
+            },
+          ],
+        },
+      ],
+    });
+    const result = computeBurndownFromChangelog({
+      ytrackerIssues: [yt],
+      sprintName: 'S',
+      sprintIdForMatch: undefined,
+      sprintStartTime,
+      sprintEndTime,
+      sprintStartDate,
+      sprintEndDate,
+      issueSummaries: new Map([['CM-1', 'Task']]),
+    });
+
+    expect(result.initialSP).toBe(0);
+    const changeAt = new Date('2025-06-10T10:00:00.000Z');
+    const dayKey = toBurndownDateKey(changeAt);
+    const previous = new Date(changeAt);
+    previous.setDate(previous.getDate() - 1);
+    const dayBefore = result.dataPoints.find((point) => point.dateKey === toBurndownDateKey(previous));
+    expect(dayBefore?.remainingSP).toBe(0);
+    expect(result.dataPoints.find((point) => point.dateKey === dayKey)?.remainingSP).toBe(1);
+    const change = (result.dailyChangelog[dayKey] ?? []).find((item) => item.type === 'story_points_change');
+    expect(change?.change).toBe(1);
+    expect(change?.pointsTo).toBe(1);
+    expect(result.currentSP).toBe(1);
+  });
 });
 
 describe('IssueWorkflow / статус как объект', () => {

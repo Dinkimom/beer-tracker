@@ -1,5 +1,6 @@
 import type { FeatureLanesDocument, OccupancyTaskOrder } from './types';
 import type { SprintScoreResponse } from './types';
+import type { RetroBoard } from '@/lib/retro/retroBoardShared';
 import type {
   SprintLinksResponse,
   SprintPositionsResponse,
@@ -415,6 +416,25 @@ export async function fetchFeatureLanes(sprintId: number): Promise<FeatureLanesD
     console.error(`Failed to fetch feature lanes for sprint ${sprintId}:`, error);
     throw error;
   }
+}
+
+export async function fetchRetroBoard(sprintId: number): Promise<RetroBoard | null> {
+  const { data } = await getPlannerBeerTrackerApi().get<{ board: RetroBoard | null }>(
+    `/sprints/${sprintId}/retro`
+  );
+  return data?.board ?? null;
+}
+
+export async function saveRetroBoard(
+  sprintId: number,
+  board: RetroBoard,
+  base: RetroBoard | null
+): Promise<RetroBoard> {
+  const { data } = await getPlannerBeerTrackerApi().put<{ board?: RetroBoard }>(
+    `/sprints/${sprintId}/retro`,
+    { base, board }
+  );
+  return data.board ?? board;
 }
 
 export async function saveFeatureLanes(
