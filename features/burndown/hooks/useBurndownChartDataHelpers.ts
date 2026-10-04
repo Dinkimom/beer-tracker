@@ -77,3 +77,12 @@ export function formatBurndownChartDateLabel(date: Date): string {
     month: '2-digit',
   });
 }
+
+/** Подпись оси X для вертикали «сегодня», если этот день есть на графике. */
+export function resolveBurndownTodayAxisLabel(
+  dates: readonly string[],
+  today = new Date()
+): string | null {
+  const label = formatBurndownChartDateLabel(today);
+  return dates.includes(label) ? label : null;
+}

@@ -57,6 +57,7 @@ export function buildSwimlanePropsForDeveloper(input: {
   onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
+  onOverdueCloseAndCreate?: SwimlaneProps['onOverdueCloseAndCreate'];
   onCreateTaskInCell?: SwimlaneProps['onCreateTaskInCell'];
   onFactSegmentHover: (taskId: string | null) => void;
   onPasteQuickAddNote?: (taskId: string) => void;
@@ -180,6 +181,7 @@ export function buildSwimlanePropsForDeveloper(input: {
     onContextMenu: input.onContextMenu,
     onCreateQATask: input.onCreateQATask,
     onCreateTaskInCell: input.onCreateTaskInCell,
+    onOverdueCloseAndCreate: input.onOverdueCloseAndCreate,
     onFactSegmentHover: input.onFactSegmentHover,
     onPasteQuickAddNote: input.onPasteQuickAddNote,
     onQuickAddDraftAssigneeChange: input.onQuickAddDraftAssigneeChange,

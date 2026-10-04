@@ -8,6 +8,8 @@ import { resolveFeatureDraftParentLabel } from '@/features/swimlane/utils/featur
 
 import { useFeatureDraftRowNames } from '../FeatureDraftRowNamesContext';
 import { useFeatureLaneShowAssigneeAvatar } from '../FeatureLaneCardUiContext';
+import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility';
+import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 
 import {
   resolveTaskCardBodyContext,
@@ -64,6 +66,7 @@ export function TaskCardBody({
   swimlaneCardFields,
 }: TaskCardBodyProps) {
   const { t } = useI18n();
+  const estimateMapping = useTaskCardEstimateMapping();
   const showFeatureLaneAssigneeAvatar = useFeatureLaneShowAssigneeAvatar();
   const featureDraftRowNames = useFeatureDraftRowNames();
   const parentLabel = task.parent
@@ -95,8 +98,16 @@ export function TaskCardBody({
     task,
     variant,
   });
+  const showEstimateLabel = resolveTaskCardEstimateVisibility({
+    hideTestPoints: bodyContext.hideTestPoints,
+    isQATask: bodyContext.isQATask,
+    mapping: estimateMapping,
+    showEstimatesSetting: swimlaneCardFields?.showEstimates ?? true,
+    taskId: task.id,
+  }).showPrimaryEstimate;
   const showMetaRow = shouldShowTaskCardSwimlaneMetaRow({
     isVeryNarrow: bodyContext.isVeryNarrow,
+    showEstimateLabel,
     swimlaneCardFields,
     task,
     variant,
@@ -147,6 +158,7 @@ export function TaskCardBody({
               displayDuration={actualDuration ?? displayDuration}
               hideTestPoints={bodyContext.hideTestPoints}
               isQATask={bodyContext.isQATask}
+              showEstimateLabel={showEstimateLabel}
               swimlaneCardFields={swimlaneCardFields}
               task={task}
             />

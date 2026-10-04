@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses';
+import { FLOATING_MENU_SHELL, FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import {
   useSwimlaneBaselineLayoutModeStorage,
   useSwimlaneCalendarBusyVisibleStorage,
@@ -107,7 +107,7 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
         ) : null}
         <div
           aria-label={t('sprintPlanner.swimlane.placementToolbar.aria')}
-          className={`pointer-events-auto flex items-center gap-1 px-1.5 py-1.5 !rounded-xl ${FLOATING_MENU_SHELL}`}
+          className={`pointer-events-auto flex items-center gap-1 px-1.5 py-1.5 !rounded-xl ${FLOATING_MENU_SHELL} ${FLOATING_TOOLBAR_GLASS}`}
           data-swimlane-placement-toolbar=""
           role="toolbar"
         >

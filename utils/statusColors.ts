@@ -244,49 +244,36 @@ export function getQaStripedStyles(
 }
 
 /**
- * Получает цвет для превью границы при расширении задачи
- * Для QA задач применяется маппинг статусов
+ * Цвет превью границы при расширении — та же палитра, что у карточки.
+ * Второй аргумент оставлен для совместимости вызовов: отдельного QA-маппинга нет.
  */
-export function getPreviewBorderColor(status: string | undefined, isQATask: boolean): string {
+export function getPreviewBorderColor(status: string | undefined, _isQATask: boolean): string {
   if (!status) return DEFAULT_COLORS.previewBorder;
-
-  const normalizedStatus = status.toLowerCase();
-
-  // Для QA задач некоторые статусы маппятся
-  if (isQATask && (normalizedStatus === 'review' || normalizedStatus === 'inreview')) {
-    return getStatusColors('backlog').previewBorder;
-  }
-
   return getStatusColors(status).previewBorder;
 }
 
 /**
- * Получает цвета для resize handle (свимлейн, занятость).
- * `scheme === 'monochrome'` — как у бэклога; иначе по статусу и маппингу QA (review/inreview → бэклог).
+ * Цвета рукоятки ресайза (свимлейн, занятость).
+ * `scheme === 'monochrome'` — как у бэклога; иначе ключ палитры карточки (`statusColorKey` или статус).
+ * Второй аргумент оставлен для совместимости вызовов: отдельного QA-маппинга нет.
  */
 export function getResizeHandleColors(
   status: string | undefined,
-  isQATask: boolean,
+  _isQATask: boolean,
   scheme: PlanningPhaseCardColorScheme = 'status'
 ) {
-  return resolveResizeHandleColors(status, isQATask, scheme);
+  return resolveResizeHandleColors(status, scheme);
 }
 
 const DEFAULT_DIVIDER_CLASSES = 'bg-gray-300 dark:bg-gray-600';
 
 /**
  * Классы фона для разделителя «оценка / доп» в фазе (тот же цвет, что граница по статусу).
- * Учитывает маппинг статусов для QA, как getResizeHandleColors.
+ * Ключ палитры тот же, что у карточки. Второй аргумент оставлен для совместимости вызовов.
  * Использует явный маппинг PHASE_DIVIDER_CLASSES, чтобы классы не выкидывались Tailwind.
  */
-export function getPhaseDividerClasses(status?: string, isQa?: boolean): string {
+export function getPhaseDividerClasses(status?: string, _isQa?: boolean): string {
   if (!status) return DEFAULT_DIVIDER_CLASSES;
   const normalized = normalizeStatusKey(status);
-  let lookupKey: string;
-  if (isQa && (normalized === 'review' || normalized === 'inreview')) {
-    lookupKey = 'backlog';
-  } else {
-    lookupKey = normalized;
-  }
-  return PHASE_DIVIDER_CLASSES[lookupKey] ?? DEFAULT_DIVIDER_CLASSES;
+  return PHASE_DIVIDER_CLASSES[normalized] ?? DEFAULT_DIVIDER_CLASSES;
 }

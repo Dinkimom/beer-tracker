@@ -9,6 +9,7 @@ import { CustomSelectOptionsList } from '@/components/CustomSelectOptionsList';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 
 interface CustomSelectMenuProps<T extends string> {
+  align?: 'center' | 'end' | 'start';
   filteredOptions: CustomSelectOption<T>[];
   isSearchLoading: boolean;
   popoverStyle: React.CSSProperties;
@@ -19,6 +20,8 @@ interface CustomSelectMenuProps<T extends string> {
   searchPlaceholder: string;
   searchQuery: string;
   value: T;
+  onCloseAutoFocus?: (event: Event) => void;
+  onPointerDown?: (event: React.PointerEvent) => void;
   onSearchQueryChange?: (query: string) => void;
   onSelect: (value: T) => void;
   renderOption?: (option: CustomSelectOption<T>, ctx: { isSelected: boolean }) => React.ReactNode;
@@ -26,8 +29,11 @@ interface CustomSelectMenuProps<T extends string> {
 }
 
 export function CustomSelectMenu<T extends string>({
+  align = 'start',
   filteredOptions,
   isSearchLoading,
+  onCloseAutoFocus,
+  onPointerDown,
   popoverStyle,
   renderOption,
   searchEmptyMessage,
@@ -44,7 +50,7 @@ export function CustomSelectMenu<T extends string>({
   return (
     <Popover.Portal>
       <Popover.Content
-        align="start"
+        align={align}
         avoidCollisions
         className={`flex flex-col overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg outline-none dark:border-gray-600 dark:bg-gray-800 ${
           searchable ? 'max-h-72' : 'max-h-60 overflow-y-auto'
@@ -53,6 +59,7 @@ export function CustomSelectMenu<T extends string>({
         side="bottom"
         sideOffset={4}
         style={popoverStyle}
+        onCloseAutoFocus={onCloseAutoFocus}
         onOpenAutoFocus={(event) => {
           if (!searchable) return;
           event.preventDefault();
@@ -60,6 +67,7 @@ export function CustomSelectMenu<T extends string>({
             searchInputRef.current?.focus();
           });
         }}
+        onPointerDown={onPointerDown}
       >
         {searchable ? (
           <div className="shrink-0 border-b border-gray-200 px-2 py-2 dark:border-gray-600">

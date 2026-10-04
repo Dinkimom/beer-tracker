@@ -7,7 +7,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/Button';
 import { IconActionMotion } from '@/components/IconActionMotion';
 import { useI18n } from '@/contexts/LanguageContext';
-import { CONTEXT_MENU_GHOST_BUTTON_RESET } from '@/features/context-menu/contextMenuClasses';
+import {
+  CONTEXT_MENU_GHOST_BUTTON_RESET,
+  FLOATING_TOOLBAR_ITEM_IDLE,
+  FLOATING_TOOLBAR_ITEM_ON,
+} from '@/features/context-menu/contextMenuClasses';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 import { usePlannerOnboardingChrome } from '../onboarding/plannerOnboardingChrome';
@@ -115,8 +119,8 @@ export function SwimlanePlacementToolbarLayers({
           aria-label={label}
           className={`!h-9 !w-9 !min-h-0 !min-w-0 !gap-0 !rounded-lg !px-0 !py-0 ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${toolsEmphasis ? 'opacity-40' : ''} ${
             menuOpen
-              ? '!bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!bg-blue-500/20 dark:!text-blue-200 dark:hover:!bg-blue-500/30'
-              : 'text-gray-600 hover:!bg-gray-50 dark:text-gray-300 dark:hover:!bg-gray-700'
+              ? FLOATING_TOOLBAR_ITEM_ON
+              : FLOATING_TOOLBAR_ITEM_IDLE
           }`}
           data-onboarding="layers"
           title={label}

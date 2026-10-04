@@ -3,20 +3,32 @@
 import type { Developer, Task } from '@/types';
 
 import { useI18n } from '@/contexts/LanguageContext';
-import { DraggableTask } from '@/features/task/components/DraggableTask';
+
+import { BacklogShowMoreTasks } from './BacklogShowMoreTasks';
+import { BacklogTaskRow } from './BacklogTaskRow';
 
 interface BacklogColumnTaskListProps {
   developers: Developer[];
+  emptyLabel?: string;
+  hiddenCount: number;
   loading: boolean;
-  tasks: Task[];
+  tasks: readonly Task[];
+  onShowMore: () => void;
 }
 
-export function BacklogColumnTaskList({ developers, loading, tasks }: BacklogColumnTaskListProps) {
+export function BacklogColumnTaskList({
+  developers,
+  emptyLabel,
+  hiddenCount,
+  loading,
+  tasks,
+  onShowMore,
+}: BacklogColumnTaskListProps) {
   const { t } = useI18n();
 
   if (loading) {
     return (
-      <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-8">
+      <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
         {t('backlog.column.loadingTasks')}
       </div>
     );
@@ -24,22 +36,20 @@ export function BacklogColumnTaskList({ developers, loading, tasks }: BacklogCol
 
   if (tasks.length === 0) {
     return (
-      <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-8">
-        {t('backlog.column.empty')}
+      <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        {emptyLabel ?? t('backlog.column.empty')}
       </div>
     );
   }
 
   return (
-    <>
-      {tasks.map((task) => (
-        <DraggableTask
-          key={task.id}
-          developers={developers}
-          task={task}
-          viewMode="compact"
-        />
-      ))}
-    </>
+    <div>
+      <div className="divide-y divide-gray-100 dark:divide-gray-700">
+        {tasks.map((task) => (
+          <BacklogTaskRow key={task.id} developers={developers} scopeId="backlog" task={task} />
+        ))}
+      </div>
+      <BacklogShowMoreTasks count={hiddenCount} onShowMore={onShowMore} />
+    </div>
   );
 }

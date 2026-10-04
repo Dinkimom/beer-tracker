@@ -4,27 +4,30 @@ import type { Developer, Task } from '@/types';
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-import { DraggableTask } from '@/features/task/components/DraggableTask';
+
+import { useBacklogTaskPreview } from '../hooks/useBacklogTaskPreview';
+
+import { BacklogShowMoreTasks } from './BacklogShowMoreTasks';
+import { BacklogTaskRow } from './BacklogTaskRow';
 
 interface ArchivedSprintTaskListProps {
   developers: Developer[];
   isLoading: boolean;
-  selectedSprintId: number;
   tasks: Task[];
 }
 
 export function ArchivedSprintTaskList({
   developers,
   isLoading,
-  selectedSprintId,
   tasks,
 }: ArchivedSprintTaskListProps) {
   const { t } = useI18n();
+  const { hiddenCount, shownTasks, onShowMore } = useBacklogTaskPreview(tasks, 'archived');
 
   if (isLoading) {
     return (
-      <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-        <Icon className="animate-spin h-4 w-4 mx-auto mb-2" name="spinner" />
+      <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <Icon className="mx-auto mb-2 h-4 w-4 animate-spin" name="spinner" />
         {t('backlog.archived.loadingTasks')}
       </div>
     );
@@ -32,23 +35,20 @@ export function ArchivedSprintTaskList({
 
   if (tasks.length === 0) {
     return (
-      <div className="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
         {t('backlog.archived.noTasks')}
       </div>
     );
   }
 
   return (
-    <div className="p-2 space-y-2 max-h-96 overflow-y-auto">
-      {tasks.map((task) => (
-        <DraggableTask
-          key={task.id}
-          developers={developers}
-          selectedSprintId={selectedSprintId}
-          task={task}
-          viewMode="compact"
-        />
-      ))}
+    <div>
+      <div className="divide-y divide-gray-100 dark:divide-gray-700">
+        {shownTasks.map((task) => (
+          <BacklogTaskRow key={task.id} developers={developers} task={task} />
+        ))}
+      </div>
+      <BacklogShowMoreTasks count={hiddenCount} onShowMore={onShowMore} />
     </div>
   );
 }

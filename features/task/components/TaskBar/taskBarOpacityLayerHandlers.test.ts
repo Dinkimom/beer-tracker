@@ -4,7 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { TASK_CARD_TITLE_DATA_ATTR, TASK_CARD_TITLE_OVERFLOW_DATA_ATTR } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 
-import { buildTaskBarMouseEnterHandler, buildTaskBarMouseLeaveHandler, runTaskBarMouseEnter } from './taskBarOpacityLayerHandlers';
+import {
+  buildTaskBarMouseEnterHandler,
+  buildTaskBarMouseLeaveHandler,
+  runTaskBarMouseEnter,
+  runTaskBarMouseOut,
+  runTaskBarMouseOver,
+} from './taskBarOpacityLayerHandlers';
 
 function createTaskCardWithTitleOverflow(overflows: boolean): HTMLDivElement {
   const title = document.createElement('div');
@@ -233,6 +239,126 @@ describe('buildTaskBarMouseEnterHandler', () => {
       isNarrowForLongHoverExpand: true,
       isResizing: false,
       longHoverTimeoutRef,
+      setIsExpandedByLongHover,
+      taskId: 'task-1',
+    });
+    vi.runAllTimers();
+
+    expect(setIsExpandedByLongHover).toHaveBeenCalledWith(true);
+    vi.useRealTimers();
+  });
+
+  it('does not start long-hover expand when the pointer is on a resize handle', () => {
+    vi.useFakeTimers();
+    const setIsExpandedByLongHover = vi.fn();
+    const longHoverTimeoutRef: { current: ReturnType<typeof setTimeout> | null } = { current: null };
+    const handle = document.createElement('div');
+    handle.className = 'task-bar-resize-handle-hit';
+    const grip = document.createElement('span');
+    handle.appendChild(grip);
+
+    runTaskBarMouseEnter({
+      cardElementRef: { current: createTaskCardWithTitleOverflow(true) },
+      effectiveIsDragging: false,
+      isDraftTask: false,
+      isNarrowForLongHoverExpand: true,
+      isResizing: false,
+      longHoverTimeoutRef,
+      pointerTarget: grip,
+      setIsExpandedByLongHover,
+      taskId: 'task-1',
+    });
+    vi.runAllTimers();
+
+    expect(longHoverTimeoutRef.current).toBeNull();
+    expect(setIsExpandedByLongHover).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('does not start long-hover expand when the pointer coordinates hit a resize handle', () => {
+    vi.useFakeTimers();
+    const setIsExpandedByLongHover = vi.fn();
+    const longHoverTimeoutRef: { current: ReturnType<typeof setTimeout> | null } = { current: null };
+    const handle = document.createElement('div');
+    handle.className = 'task-bar-resize-handle-hit';
+    document.body.appendChild(handle);
+    const elementFromPoint = vi.fn(() => handle);
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: elementFromPoint,
+    });
+
+    runTaskBarMouseEnter({
+      cardElementRef: { current: createTaskCardWithTitleOverflow(true) },
+      effectiveIsDragging: false,
+      isDraftTask: false,
+      isNarrowForLongHoverExpand: true,
+      isResizing: false,
+      longHoverTimeoutRef,
+      pointerClient: { x: 4, y: 8 },
+      pointerTarget: document.body,
+      setIsExpandedByLongHover,
+      taskId: 'task-1',
+    });
+    vi.runAllTimers();
+
+    expect(elementFromPoint).toHaveBeenCalledWith(4, 8);
+    expect(setIsExpandedByLongHover).not.toHaveBeenCalled();
+    Reflect.deleteProperty(document, 'elementFromPoint');
+    handle.remove();
+    vi.useRealTimers();
+  });
+
+  it('cancels a pending long-hover expand when the pointer moves onto a resize handle', () => {
+    vi.useFakeTimers();
+    const setIsExpandedByLongHover = vi.fn();
+    const longHoverTimeoutRef: { current: ReturnType<typeof setTimeout> | null } = { current: null };
+    const card = createTaskCardWithTitleOverflow(true);
+    const handle = document.createElement('div');
+    handle.className = 'task-bar-resize-handle-hit';
+
+    runTaskBarMouseEnter({
+      cardElementRef: { current: card },
+      effectiveIsDragging: false,
+      isDraftTask: false,
+      isNarrowForLongHoverExpand: true,
+      isResizing: false,
+      longHoverTimeoutRef,
+      setIsExpandedByLongHover,
+      taskId: 'task-1',
+    });
+    runTaskBarMouseOver({
+      eventTarget: handle,
+      longHoverTimeoutRef,
+      relatedTarget: card,
+    });
+    vi.runAllTimers();
+
+    expect(longHoverTimeoutRef.current).toBeNull();
+    expect(setIsExpandedByLongHover).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('starts long-hover expand after the pointer leaves the resize handle onto the card', () => {
+    vi.useFakeTimers();
+    const setIsExpandedByLongHover = vi.fn();
+    const longHoverTimeoutRef: { current: ReturnType<typeof setTimeout> | null } = { current: null };
+    const taskRoot = document.createElement('div');
+    taskRoot.setAttribute('data-task-id', 'task-1');
+    const card = createTaskCardWithTitleOverflow(true);
+    const handle = document.createElement('div');
+    handle.className = 'task-bar-resize-handle-hit';
+    taskRoot.append(card, handle);
+
+    runTaskBarMouseOut({
+      cardElementRef: { current: card },
+      effectiveIsDragging: false,
+      eventTarget: handle,
+      isDraftTask: false,
+      isNarrowForLongHoverExpand: true,
+      isResizing: false,
+      longHoverTimeoutRef,
+      relatedTarget: card,
       setIsExpandedByLongHover,
       taskId: 'task-1',
     });

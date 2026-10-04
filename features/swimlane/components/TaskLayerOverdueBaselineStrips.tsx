@@ -2,10 +2,15 @@
 
 import type { CSSProperties } from 'react';
 
+import { useState } from 'react';
+
 import { ZIndex, getPartsPerDay } from '@/constants';
 import { factTimelineHolidayMask } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
+import { isStrongOverdue } from '@/features/swimlane/utils/overdueBaselineSummary';
 import { computeBaselineStripOpacity } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { buildSwimlaneOverdueBaselineStripHorizontalStyle } from '@/features/task/components/TaskBar/taskBarHelpers';
+
+import { TaskLayerOverdueBaselineChip } from './TaskLayerOverdueBaselineChip';
 
 interface TaskLayerOverdueBaselineStripsProps {
   activeTaskDuration: number | null;
@@ -20,9 +25,14 @@ interface TaskLayerOverdueBaselineStripsProps {
   isDark: boolean;
   isDraggingTask: boolean;
   linkingActive?: boolean;
+  status: string | undefined;
   strips: Array<{ baselineStart: number; baselineWidth: number }>;
   taskId: string;
   timelineTotalParts: number;
+  /** Закрыть задачу и завести новую с текущей ячейки. */
+  onCloseAndCreate?: () => Promise<void> | void;
+  /** Продлить последний отрезок плана до «сейчас». */
+  onExtend?: () => void;
 }
 
 export function TaskLayerOverdueBaselineStrips({
@@ -37,10 +47,14 @@ export function TaskLayerOverdueBaselineStrips({
   isDark,
   isDraggingTask,
   linkingActive = false,
+  onCloseAndCreate,
+  onExtend,
+  status,
   strips,
   taskId,
   timelineTotalParts,
 }: TaskLayerOverdueBaselineStripsProps) {
+  const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   if (strips.length === 0) return null;
 
   const holidayMask = factTimelineHolidayMask(
@@ -52,11 +66,12 @@ export function TaskLayerOverdueBaselineStrips({
     ? { maskImage: holidayMask, WebkitMaskImage: holidayMask }
     : undefined;
 
+  const partsPerDay = getPartsPerDay();
+  const showChip = !isDraggingTask && !linkingActive;
+
   return (
-    <div
-      className={`absolute inset-0 pointer-events-none ${ZIndex.class('base')}`}
-      style={holidayMaskStyle}
-    >
+    <div className="pointer-events-none absolute inset-0">
+      <div className={`absolute inset-0 ${ZIndex.class('base')}`} style={holidayMaskStyle}>
       {strips.map(({ baselineStart, baselineWidth }, stripIdx) => {
         const baselineOpacity = computeBaselineStripOpacity({
           activeTaskDuration,
@@ -89,6 +104,35 @@ export function TaskLayerOverdueBaselineStrips({
           />
         );
       })}
+      </div>
+      {showChip
+        ? strips.map(({ baselineStart, baselineWidth }) => {
+            const revealed =
+              isStrongOverdue(baselineWidth, partsPerDay) ||
+              hoveredTaskId === taskId ||
+              openTaskId === taskId;
+            if (!revealed) return null;
+            return (
+              <TaskLayerOverdueBaselineChip
+                key={`overdue-chip-${taskId}-${baselineStart}`}
+                baselineHeight={baselineHeight}
+                baselineTop={baselineTop}
+                canExtend={onExtend != null}
+                cells={baselineWidth}
+                isDark={isDark}
+                open={openTaskId === taskId}
+                partsPerDay={partsPerDay}
+                startCell={baselineStart}
+                status={status}
+                taskId={taskId}
+                timelineTotalParts={timelineTotalParts}
+                onCloseAndCreate={onCloseAndCreate}
+                onExtend={onExtend}
+                onOpenChange={(next) => setOpenTaskId(next ? taskId : null)}
+              />
+            );
+          })
+        : null}
     </div>
   );
 }

@@ -20,10 +20,51 @@ import {
 import { resolveHoverExpandTargetDurationParts } from './taskBarHoverExpandFit';
 import { measureTaskBarHoverExpandFitDurationParts } from './taskBarHoverExpandMeasure';
 
+const RESIZE_HANDLE_HIT_SELECTOR = '.task-bar-resize-handle-hit';
+
+function taskRootById(taskId: string): Element | null {
+  if (typeof document === 'undefined') return null;
+  const escaped =
+    typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(taskId) : taskId;
+  return document.querySelector(`[data-task-id="${escaped}"]`);
+}
+
 function isPointerStillOverTaskBar(taskId: string): boolean {
-  if (typeof document === 'undefined') return false;
-  const taskRoot = document.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
+  const taskRoot = taskRootById(taskId);
   return taskRoot instanceof Element && taskRoot.matches(':hover');
+}
+
+/** Хват ресайза не должен раскрывать карточку: ширина скачет и сдвигает рукоятку. */
+function isResizeHandleEventTarget(target: EventTarget | null): boolean {
+  return (
+    typeof Element !== 'undefined' &&
+    target instanceof Element &&
+    target.closest(RESIZE_HANDLE_HIT_SELECTOR) != null
+  );
+}
+
+function isResizeHandleUnderPoint(clientX: number, clientY: number): boolean {
+  if (typeof document === 'undefined' || typeof document.elementFromPoint !== 'function') {
+    return false;
+  }
+  return isResizeHandleEventTarget(document.elementFromPoint(clientX, clientY));
+}
+
+function isPointerOverTaskResizeHandle(taskId: string): boolean {
+  const taskRoot = taskRootById(taskId);
+  return (
+    taskRoot instanceof Element &&
+    taskRoot.querySelector(`${RESIZE_HANDLE_HIT_SELECTOR}:hover`) != null
+  );
+}
+
+function clearLongHoverTimeout(
+  longHoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
+): void {
+  if (longHoverTimeoutRef.current) {
+    clearTimeout(longHoverTimeoutRef.current);
+    longHoverTimeoutRef.current = null;
+  }
 }
 
 function resolveCardLongHoverExpandAllowed(
@@ -71,6 +112,8 @@ export function runTaskBarMouseEnter(input: {
   isResizing: boolean;
   longHoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   onTaskHover?: (taskId: string | null) => void;
+  pointerClient?: { x: number; y: number } | null;
+  pointerTarget?: EventTarget | null;
   setHoverExpandFitDurationParts?: (durationParts: number) => void;
   setIsExpandedByLongHover: React.Dispatch<React.SetStateAction<boolean>>;
   taskId: string;
@@ -80,8 +123,13 @@ export function runTaskBarMouseEnter(input: {
     input.cardElementRef?.current,
     input.isCommentCard
   );
+  const pointerOnResizeHandle =
+    isResizeHandleEventTarget(input.pointerTarget ?? null) ||
+    (input.pointerClient != null &&
+      isResizeHandleUnderPoint(input.pointerClient.x, input.pointerClient.y));
   if (
     allowLongHoverExpand &&
+    !pointerOnResizeHandle &&
     shouldStartLongHoverExpand({
       effectiveIsDragging: input.effectiveIsDragging,
       isDraftTask: input.isDraftTask,
@@ -90,10 +138,10 @@ export function runTaskBarMouseEnter(input: {
       isResizing: input.isResizing,
     })
   ) {
-    if (input.longHoverTimeoutRef.current) {
-      clearTimeout(input.longHoverTimeoutRef.current);
-    }
+    clearLongHoverTimeout(input.longHoverTimeoutRef);
     input.longHoverTimeoutRef.current = setTimeout(() => {
+      input.longHoverTimeoutRef.current = null;
+      if (isPointerOverTaskResizeHandle(input.taskId)) return;
       const card = input.cardElementRef?.current;
       if (input.setHoverExpandFitDurationParts) {
         const currentDurationParts = input.currentDurationParts ?? 1;
@@ -121,10 +169,43 @@ export function runTaskBarMouseEnter(input: {
 
 export function buildTaskBarMouseEnterHandler(
   input: Parameters<typeof runTaskBarMouseEnter>[0]
-): () => void {
-  return () => {
-    runTaskBarMouseEnter(input);
+): (event?: { target: EventTarget | null }) => void {
+  return (event) => {
+    runTaskBarMouseEnter({
+      ...input,
+      pointerTarget: event?.target ?? input.pointerTarget ?? null,
+    });
   };
+}
+
+export function runTaskBarMouseOver(input: {
+  eventTarget: EventTarget | null;
+  longHoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  relatedTarget: EventTarget | null;
+}): void {
+  const enteredResizeHandle =
+    isResizeHandleEventTarget(input.eventTarget) &&
+    !isResizeHandleEventTarget(input.relatedTarget);
+  if (!enteredResizeHandle) return;
+  clearLongHoverTimeout(input.longHoverTimeoutRef);
+}
+
+export function runTaskBarMouseOut(
+  input: Parameters<typeof runTaskBarMouseEnter>[0] & {
+    eventTarget: EventTarget | null;
+    relatedTarget: EventTarget | null;
+  }
+): void {
+  const leftResizeHandleOntoCard =
+    isResizeHandleEventTarget(input.eventTarget) &&
+    !isResizeHandleEventTarget(input.relatedTarget) &&
+    isEventTargetInsideTask(input.relatedTarget, input.taskId);
+  if (!leftResizeHandleOntoCard) return;
+  runTaskBarMouseEnter({
+    ...input,
+    pointerClient: null,
+    pointerTarget: input.relatedTarget,
+  });
 }
 
 export function buildTaskBarMouseLeaveHandler(input: {
@@ -137,10 +218,7 @@ export function buildTaskBarMouseLeaveHandler(input: {
   taskId: string;
 }): (e?: { relatedTarget: EventTarget | null }) => void {
   return (e) => {
-    if (input.longHoverTimeoutRef.current) {
-      clearTimeout(input.longHoverTimeoutRef.current);
-      input.longHoverTimeoutRef.current = null;
-    }
+    clearLongHoverTimeout(input.longHoverTimeoutRef);
     const related = e?.relatedTarget ?? null;
     // Крестик удаления связи — вне task-bar; не сбрасываем hover, пока указатель на нём.
     if (isEventTargetInsideTask(related, input.taskId)) {

@@ -5,6 +5,9 @@ import type { TaskCardTagsProps } from './TaskCardTags.types';
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatTaskTestPointsForDisplay } from '@/lib/pointsUtils';
 
+import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility';
+import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
+
 import { TaskCardTagsGitlabSection } from './TaskCardTagsGitlabSection';
 import {
   isReleaseSidebarTaskCardTags,
@@ -29,6 +32,7 @@ export function TaskCardTags({
   slaBugSignalLabel,
 }: TaskCardTagsProps) {
   const { t } = useI18n();
+  const estimateMapping = useTaskCardEstimateMapping();
 
   if (isSwimlaneTaskCardTagsVariant(variant)) {
     return null;
@@ -41,6 +45,13 @@ export function TaskCardTags({
     hideTestPoints,
     spText,
   } = resolveTaskCardTagsPoints(task);
+  const estimateVisibility = resolveTaskCardEstimateVisibility({
+    hideTestPoints,
+    isQATask: false,
+    mapping: estimateMapping,
+    showEstimatesSetting: true,
+    taskId: task.id,
+  });
   const tpText = formatTaskTestPointsForDisplay(task, 'compact');
   const gitlabChecks = releaseGitlabChecks
     ? resolveGitlabChecksDisplay({ releaseGitlabChecks, t })
@@ -68,6 +79,8 @@ export function TaskCardTags({
         hideTestPoints={hideTestPoints}
         inlineLayout={inlineLayout}
         showDangerousReleaseInsteadOfStatus={showDangerousReleaseInsteadOfStatus}
+        showStoryPoints={estimateVisibility.showStoryPoints}
+        showTestPoints={estimateVisibility.showTestPoints}
         slaBugDemoteReason={slaBugDemoteReason}
         slaBugSignalLabel={slaBugSignalLabel}
         spText={spText}

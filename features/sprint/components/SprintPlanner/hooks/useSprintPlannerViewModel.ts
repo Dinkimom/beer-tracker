@@ -393,6 +393,7 @@ export function useSprintPlannerViewModel({
     factVisible,
     filteredTaskLinks,
     filteredTaskPositions,
+    getQueueByBoardId,
     gitlabFactByLink,
     goalTaskIds,
     goalsLoading,

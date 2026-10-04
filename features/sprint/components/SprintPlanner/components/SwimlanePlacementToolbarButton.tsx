@@ -15,7 +15,11 @@ import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKind
 import { useI18n } from '@/contexts/LanguageContext';
 import { ExcalidrawMark } from '@/features/comments/components/ExcalidrawMark';
 import { StickyNoteToolIcon } from '@/features/comments/components/StickyNoteToolIcon';
-import { CONTEXT_MENU_GHOST_BUTTON_RESET } from '@/features/context-menu/contextMenuClasses';
+import {
+  CONTEXT_MENU_GHOST_BUTTON_RESET,
+  FLOATING_TOOLBAR_ITEM_IDLE,
+  FLOATING_TOOLBAR_ITEM_ON,
+} from '@/features/context-menu/contextMenuClasses';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 
@@ -117,8 +121,8 @@ export function SwimlanePlacementToolbarButton({
             iconOnly ? '!w-9 !gap-0 !px-0' : '!gap-2 !px-3 text-sm'
           } ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${
             active
-              ? '!bg-blue-50 !text-blue-700 hover:!bg-blue-100 dark:!bg-blue-500/20 dark:!text-blue-200 dark:hover:!bg-blue-500/30'
-              : 'text-gray-600 hover:!bg-gray-50 dark:text-gray-300 dark:hover:!bg-gray-700'
+              ? FLOATING_TOOLBAR_ITEM_ON
+              : FLOATING_TOOLBAR_ITEM_IDLE
           }`}
           data-onboarding-tool={tool}
           type="button"

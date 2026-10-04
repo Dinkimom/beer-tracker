@@ -7,6 +7,25 @@ export const FLOATING_MENU_SHELL =
   'floating-menu-shell rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800';
 
 /**
+ * Капсула поверх доски: контент просвечивает, подписи кнопок остаются читаемыми.
+ * `!` перебивает непрозрачный фон `FLOATING_MENU_SHELL`.
+ */
+export const FLOATING_TOOLBAR_GLASS =
+  '!border-white/50 !bg-white/75 backdrop-blur-xl backdrop-saturate-150 dark:!border-white/15 dark:!bg-gray-800/75';
+
+/**
+ * Ховер и нажатие пункта стеклянной капсулы.
+ * Прозрачная вуаль, не плоский gray: на стекле непрозрачный серый
+ * даёт чужой оттенок и выглядит грязным.
+ */
+export const FLOATING_TOOLBAR_ITEM_IDLE =
+  'text-gray-600 hover:!bg-black/10 active:!bg-black/[0.16] dark:text-gray-300 dark:hover:!bg-white/10 dark:active:!bg-white/[0.16]';
+
+/** Включённый пункт капсулы: заливка, ховер и нажатие. */
+export const FLOATING_TOOLBAR_ITEM_ON =
+  '!bg-blue-50 !text-blue-700 hover:!bg-blue-100 active:!bg-blue-200 dark:!bg-blue-500/20 dark:!text-blue-200 dark:hover:!bg-blue-500/30 dark:active:!bg-blue-500/40';
+
+/**
  * Ширина по контенту. У `fixed` + `w-max` + `max-w-[20rem]` доступная ширина =
  * `viewport - left`: справа от карточки меню растягивается до max-w, слева — нет.
  */

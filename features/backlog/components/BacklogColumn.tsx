@@ -2,51 +2,58 @@
 
 import type { Developer, Task } from '@/types';
 
-import { useDroppable } from '@dnd-kit/core';
+import { useState } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
-import { formatSprintTotalsPointsLabels, getSprintPointsTotals } from '@/lib/pointsUtils';
+
+import { useBacklogTaskPreview } from '../hooks/useBacklogTaskPreview';
+import { useRegisterBacklogVisibleTasks } from '../hooks/useRegisterBacklogVisibleTasks';
+import { backlogSectionCountKey } from '../utils/backlogTaskPreview';
 
 import { BacklogColumnTaskList } from './BacklogColumnTaskList';
+import { BacklogPointsBreakdown } from './BacklogPointsBreakdown';
+import { BacklogSectionFrame } from './BacklogSectionFrame';
 
 interface BacklogColumnProps {
   developers: Developer[];
+  emptyLabel?: string;
   loading: boolean;
+  previewResetKey: string;
   tasks: Task[];
+  totalTaskCount: number;
 }
 
-export function BacklogColumn({ developers, loading, tasks }: BacklogColumnProps) {
+export function BacklogColumn({
+  developers,
+  emptyLabel,
+  loading,
+  previewResetKey,
+  tasks,
+  totalTaskCount,
+}: BacklogColumnProps) {
   const { t } = useI18n();
-  const { setNodeRef, isOver } = useDroppable({
-    id: 'backlog-column',
-  });
-
-  const { totalSP, totalTP } = getSprintPointsTotals(tasks);
-  const { spLabel, tpLabel } = formatSprintTotalsPointsLabels(totalSP, totalTP);
+  const [expanded, setExpanded] = useState(true);
+  useRegisterBacklogVisibleTasks('backlog', tasks);
+  const { hiddenCount, shownTasks, onShowMore } = useBacklogTaskPreview(tasks, previewResetKey);
+  const sectionCount = backlogSectionCountKey(shownTasks.length, totalTaskCount);
 
   return (
-    <div
-      ref={setNodeRef}
-      className={`flex-shrink-0 w-96 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col shadow-sm ${
-        isOver ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-      }`}
+    <BacklogSectionFrame
+      countLabel={loading ? undefined : t(sectionCount.key, sectionCount.params)}
+      droppableId="backlog-column"
+      expanded={expanded}
+      meta={<BacklogPointsBreakdown tasks={tasks} />}
+      title={t('backlog.column.title')}
+      onToggle={() => setExpanded((open) => !open)}
     >
-      <div className="flex-shrink-0 px-4 py-3.5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('backlog.column.title')}</h2>
-          {!loading && (spLabel || tpLabel) && (
-            <div className="flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-300">
-              {spLabel ? <span>{spLabel}</span> : null}
-              {spLabel && tpLabel ? <span>·</span> : null}
-              {tpLabel ? <span>{tpLabel}</span> : null}
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto px-3 py-3">
-        <BacklogColumnTaskList developers={developers} loading={loading} tasks={tasks} />
-      </div>
-    </div>
+      <BacklogColumnTaskList
+        developers={developers}
+        emptyLabel={emptyLabel}
+        hiddenCount={hiddenCount}
+        loading={loading}
+        tasks={shownTasks}
+        onShowMore={onShowMore}
+      />
+    </BacklogSectionFrame>
   );
 }
-

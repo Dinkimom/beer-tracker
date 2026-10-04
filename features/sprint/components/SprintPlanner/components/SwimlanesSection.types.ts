@@ -97,6 +97,12 @@ export interface SwimlanesSectionProps {
   onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
+  onOverdueCloseAndCreate?: (args: {
+    currentCell: number;
+    position: TaskPosition;
+    task: Task;
+    timelineTotalParts: number;
+  }) => Promise<void> | void;
   onCreateTaskInCell?: (data: {
     assigneeId: string;
     day: number;

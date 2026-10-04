@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canonicalPaletteKey,
+  getPhaseDividerClasses,
+  getPreviewBorderColor,
   getQAStripedPattern,
   getQaStripedStyles,
   getResizeHandleColors,
+  getStatusColors,
   getStatusPaletteRuLabel,
   getSwimlaneTaskCardChipClassNames,
   listDistinctStatusPaletteKeys,
@@ -14,6 +17,10 @@ import {
   resolveStatusForPhaseCardColors,
 } from './statusColors';
 
+function darkToken(classes: string | undefined, kind: 'bg' | 'border' | 'text'): string | undefined {
+  return classes?.split(/\s+/).find((token) => token.startsWith(`dark:${kind}-`));
+}
+
 describe('resolvePaletteStatusKey', () => {
   it('prefers override', () => {
     expect(resolvePaletteStatusKey('review', 'closed')).toBe('closed');
@@ -22,6 +29,18 @@ describe('resolvePaletteStatusKey', () => {
   it('falls back to original', () => {
     expect(resolvePaletteStatusKey('review', '')).toBe('review');
     expect(resolvePaletteStatusKey('review', undefined)).toBe('review');
+  });
+});
+
+describe('sidebar dark palette', () => {
+  it('uses the same fill, border, and text as swimlane cards', () => {
+    const keys = [...listStatusPaletteKeys(), 'unknown-status'];
+    for (const key of keys) {
+      const colors = getStatusColors(key);
+      expect(darkToken(colors.sidebarDark, 'bg'), key).toBe(colors.bgDark);
+      expect(darkToken(colors.sidebarDark, 'border'), key).toBe(colors.borderDark);
+      expect(darkToken(colors.sidebarDark, 'text'), key).toBe(colors.textDark);
+    }
   });
 });
 
@@ -105,5 +124,18 @@ describe('resolveResizeHandleHoverBgClass / getResizeHandleColors', () => {
     const colors = getResizeHandleColors('inProgress', false, 'status');
     expect(colors.hoverBg).toBe('bg-blue-200/20');
     expect(colors.hoverBgDark).toBe('dark:bg-blue-700/20');
+  });
+
+  it('uses the card palette for QA tasks, including review and inReview', () => {
+    const reviewCard = getStatusColors('inreview');
+    const qaHandle = getResizeHandleColors('inreview', true, 'status');
+    const devHandle = getResizeHandleColors('inreview', false, 'status');
+
+    expect(qaHandle.bg).toBe(reviewCard.resizeHandle.bg);
+    expect(qaHandle.bg).toBe(devHandle.bg);
+    expect(qaHandle.bg).not.toBe(getStatusColors('backlog').resizeHandle.bg);
+
+    expect(getPreviewBorderColor('review', true)).toBe(getStatusColors('review').previewBorder);
+    expect(getPhaseDividerClasses('inreview', true)).toBe('bg-pink-300 dark:bg-pink-700');
   });
 });

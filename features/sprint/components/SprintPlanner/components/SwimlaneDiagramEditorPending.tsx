@@ -38,7 +38,7 @@ export function SwimlaneDiagramEditorPending({
           </span>
           <Button
             aria-label={closeLabel}
-            className="!h-8 !w-8 !min-h-0 !min-w-0 !rounded-full !p-0"
+            className="!h-8 !w-8 !min-h-0 !min-w-0 !rounded-lg !p-0"
             type="button"
             variant="secondary"
             onClick={onClose}

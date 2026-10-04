@@ -3,7 +3,11 @@
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-import { CONTEXT_MENU_GHOST_BUTTON_RESET, FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses';
+import {
+  CONTEXT_MENU_GHOST_BUTTON_RESET,
+  FLOATING_MENU_SHELL,
+  FLOATING_TOOLBAR_GLASS,
+} from '@/features/context-menu/contextMenuClasses';
 
 interface SwimlaneAgentProposalToolbarProps {
   pendingCommentIds: readonly string[];
@@ -25,7 +29,7 @@ export function SwimlaneAgentProposalToolbar({
   return (
     <div
       aria-label={t('comments.agentProposalAria')}
-      className={`pointer-events-auto flex items-center gap-0.5 px-1 py-1 ${FLOATING_MENU_SHELL}`}
+      className={`pointer-events-auto flex items-center gap-0.5 px-1 py-1 ${FLOATING_MENU_SHELL} ${FLOATING_TOOLBAR_GLASS}`}
       data-agent-proposal-toolbar=""
       role="toolbar"
     >

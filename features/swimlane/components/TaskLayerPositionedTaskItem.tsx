@@ -12,6 +12,7 @@ import { ZIndex } from '@/constants';
 import { SwimlaneLinkingSourceFrame } from '@/features/swimlane/components/SwimlaneLinkingSourceFrame';
 import { SwimlaneLinkingTargetOutline } from '@/features/swimlane/components/SwimlaneLinkingTargetOutline';
 import { SwimlaneSegmentEditFrame } from '@/features/swimlane/components/SwimlaneSegmentEditFrame';
+import { extendLastPlanSegmentToCell } from '@/features/swimlane/utils/overdueBaselineSummary';
 import {
   computeSwimlaneLinkAlreadyExists,
   computeSwimlaneValidLinkTargetByTime,
@@ -40,6 +41,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     linkSourceEndCell = null,
     onSegmentEditCancel,
     onSegmentEditSave,
+    onOverdueCloseAndCreate,
     position,
     segmentEditDraftCells,
     task,
@@ -111,9 +113,29 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
           isDark={isDark}
           isDraggingTask={props.isDraggingTask ?? false}
           linkingActive={linkingActive}
+          status={task.status}
           strips={overdueBaselineStrips}
           taskId={task.id}
           timelineTotalParts={timelineTotalParts}
+          onCloseAndCreate={
+            onOverdueCloseAndCreate
+              ? () =>
+                  onOverdueCloseAndCreate({
+                    currentCell,
+                    position,
+                    task,
+                    timelineTotalParts,
+                  })
+              : undefined
+          }
+          onExtend={
+            onSegmentEditSave && !segmentEditorActive
+              ? () => {
+                  const segments = extendLastPlanSegmentToCell(position, currentCell);
+                  if (segments) onSegmentEditSave(position, segments, effectivelyQa);
+                }
+              : undefined
+          }
         />
       )}
       {planSegments.map((seg, segIdx) => (

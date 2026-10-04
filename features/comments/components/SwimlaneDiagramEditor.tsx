@@ -3,7 +3,7 @@
 import type { ExcalidrawCommentScene } from '@/lib/comments/excalidrawCommentPayload';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 
@@ -11,6 +11,7 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { isDiagramEditorDirty } from '@/lib/comments/diagramEditorDirty';
 import {
   EXCALIDRAW_SCENE_MAX_BYTES,
   serializeExcalidrawScene,
@@ -35,7 +36,17 @@ export function SwimlaneDiagramEditor({
   const { t } = useI18n();
   const [getScene, setGetScene] = useState<(() => ExcalidrawCommentScene) | null>(null);
   const [nameDraft, setNameDraft] = useState(initialScene.name?.trim() ?? '');
+  const [canvasRevision, setCanvasRevision] = useState<string | null>(null);
+  const [savedCanvasRevision, setSavedCanvasRevision] = useState<string | null>(null);
+  const latestCanvasRevisionRef = useRef<string | null>(null);
+  const canvasBaselineReadyRef = useRef(false);
   const namePlaceholder = t('sprintPlanner.swimlane.quickAddMenu.diagramNamePlaceholder');
+  const canSave = isDiagramEditorDirty({
+    canvasRevision,
+    initialName: initialScene.name,
+    nameDraft,
+    savedCanvasRevision,
+  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -51,7 +62,33 @@ export function SwimlaneDiagramEditor({
     setGetScene(() => readScene);
   }, []);
 
+  const handleContentRevision = useCallback((revision: string) => {
+    latestCanvasRevisionRef.current = revision;
+    if (!canvasBaselineReadyRef.current) {
+      return;
+    }
+    setSavedCanvasRevision((saved) => saved ?? revision);
+    setCanvasRevision((current) => (current === revision ? current : revision));
+  }, []);
+
+  useEffect(() => {
+    // Excalidraw шлёт onChange на загрузке и подгонке камеры. База — сцена после этого.
+    const timeoutId = window.setTimeout(() => {
+      canvasBaselineReadyRef.current = true;
+      const revision = latestCanvasRevisionRef.current;
+      if (revision == null) {
+        return;
+      }
+      setSavedCanvasRevision(revision);
+      setCanvasRevision(revision);
+    }, 300);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   const handleSave = () => {
+    if (!canSave) {
+      return;
+    }
     const scene = {
       ...(getScene?.() ?? initialScene),
       name: nameDraft,
@@ -91,7 +128,8 @@ export function SwimlaneDiagramEditor({
           />
           <div className="flex items-center gap-2">
             <Button
-              className="!h-8 !min-h-0 !px-3 !py-0"
+              className="!h-8 !min-h-0 !rounded-lg !px-3 !py-0"
+              disabled={!canSave}
               type="button"
               variant="primary"
               onClick={handleSave}
@@ -100,7 +138,7 @@ export function SwimlaneDiagramEditor({
             </Button>
             <Button
               aria-label={t('sprintPlanner.swimlane.quickAddMenu.diagramEditorClose')}
-              className="!h-8 !w-8 !min-h-0 !min-w-0 !rounded-full !p-0"
+              className="!h-8 !w-8 !min-h-0 !min-w-0 !rounded-lg !p-0"
               type="button"
               variant="secondary"
               onClick={onClose}
@@ -110,7 +148,11 @@ export function SwimlaneDiagramEditor({
           </div>
         </div>
         <div className="relative min-h-0 flex-1">
-          <SwimlaneDiagramCanvas initialScene={initialScene} onApiReady={handleApiReady} />
+          <SwimlaneDiagramCanvas
+            initialScene={initialScene}
+            onApiReady={handleApiReady}
+            onContentRevision={handleContentRevision}
+          />
         </div>
       </div>
     </div>,

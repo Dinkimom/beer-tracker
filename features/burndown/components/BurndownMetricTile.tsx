@@ -2,8 +2,10 @@
 
 import { formatPointsForDisplay } from '@/lib/pointsUtils';
 
+import { burndownIslandClassName } from './burndownAreaChartHelpers';
+
 interface BurndownMetricTileProps {
-  barClassName: string;
+  barColor: string;
   completed: number;
   completionPercent: number;
   remainingLabel: string;
@@ -12,7 +14,7 @@ interface BurndownMetricTileProps {
 }
 
 export function BurndownMetricTile({
-  barClassName,
+  barColor,
   completed,
   completionPercent,
   remainingLabel,
@@ -20,20 +22,20 @@ export function BurndownMetricTile({
   total,
 }: BurndownMetricTileProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{title}</h3>
-      <div className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+    <div className={`${burndownIslandClassName} p-4`}>
+      <h3 className="mb-2 text-sm font-medium text-ds-text-muted">{title}</h3>
+      <div className="mb-1 text-3xl font-bold text-gray-900 dark:text-gray-100">
         {formatPointsForDisplay(completed)} / {formatPointsForDisplay(total)}
       </div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{remainingLabel}</p>
+      <p className="mb-2 text-xs text-ds-text-muted">{remainingLabel}</p>
       <div className="flex items-center gap-2">
-        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
           <div
-            className={`${barClassName} h-full transition-all duration-300`}
-            style={{ width: `${completionPercent}%` }}
+            className="h-full transition-all duration-300"
+            style={{ width: `${completionPercent}%`, backgroundColor: barColor }}
           />
         </div>
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-[3rem] text-right">
+        <span className="min-w-[3rem] text-right text-sm font-medium text-ds-text-muted">
           {completionPercent}%
         </span>
       </div>

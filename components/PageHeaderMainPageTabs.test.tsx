@@ -38,7 +38,7 @@ describe('PageHeaderMainPageTabs', () => {
     expect(onChange).toHaveBeenCalledWith('backlog');
   });
 
-  it('shows an icon and the short label only on the active tab', () => {
+  it('shows a label on every tab and the short label when one is set', () => {
     render(
       <PageHeaderMainPageTabs
         activeId="burndown"
@@ -56,7 +56,7 @@ describe('PageHeaderMainPageTabs', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Доска' }).textContent).toBe('');
+    expect(screen.getByRole('button', { name: 'Доска' }).textContent).toContain('Доска');
     expect(screen.getByRole('button', { name: 'Диаграмма сгорания' }).textContent).toContain(
       'Сгорание'
     );

@@ -66,31 +66,12 @@ function buildResizeHandleColorResult(statusColors: StatusColorGroup): ResizeHan
   };
 }
 
-function isQaReviewStatus(normalizedStatus: string): boolean {
-  return normalizedStatus === 'review' || normalizedStatus === 'inreview';
-}
-
-function resolveStatusColorsForResizeHandle(
-  status: string | undefined,
-  isQATask: boolean
-): StatusColorGroup {
-  if (!status) {
-    return DEFAULT_COLORS;
-  }
-  const normalizedStatus = status.toLowerCase();
-  if (isQATask && isQaReviewStatus(normalizedStatus)) {
-    return lookupStatusColors('backlog');
-  }
-  return lookupStatusColors(status);
-}
-
 export function resolveResizeHandleColors(
   status: string | undefined,
-  isQATask: boolean,
   scheme: PlanningPhaseCardColorScheme
 ): ResizeHandleColorResult {
   if (scheme === 'monochrome') {
     return buildResizeHandleColorResult(lookupStatusColors('backlog'));
   }
-  return buildResizeHandleColorResult(resolveStatusColorsForResizeHandle(status, isQATask));
+  return buildResizeHandleColorResult(lookupStatusColors(status));
 }

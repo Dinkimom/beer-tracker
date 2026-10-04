@@ -4,13 +4,14 @@ import type { BurndownChartDataPoint } from './BurndownAreaChart';
 import type { SprintListItem } from '@/types/tracker';
 
 import { useI18n } from '@/contexts/LanguageContext';
-import { SprintSelectorWithCreate } from '@/features/sprint/components/SprintSelectorWithCreate';
 
 import { BurndownAreaChart } from './BurndownAreaChart';
 import { BurndownChartMetricsPanel } from './BurndownChartMetricsPanel';
 import { BurndownChartPinnedTooltipOverlay } from './BurndownChartPinnedTooltipOverlay';
+import { BurndownChartSeriesLegend } from './BurndownChartSeriesLegend';
 import { BurndownChartSpTooltip } from './BurndownChartSpTooltip';
 import { BurndownChartTpTooltip } from './BurndownChartTpTooltip';
+import { BurndownPageFrame } from './BurndownPageFrame';
 
 interface BurndownChartLoadedBodyProps {
   boardId?: number | null;
@@ -72,73 +73,64 @@ export function BurndownChartLoadedBody({
   const { t } = useI18n();
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-transparent">
-      <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
-          <div className="shrink-0">
-            <SprintSelectorWithCreate
-              boardId={boardId}
-              loading={isLoading}
-              selectedSprintId={sprintId}
-              sprints={sprints}
-              sprintsLoading={sprintsLoading}
-              onSprintChange={onSprintChange}
-            />
-          </div>
-        </div>
-      </div>
+    <BurndownPageFrame
+      boardId={boardId}
+      isLoading={isLoading}
+      selectedSprintId={sprintId}
+      sprints={sprints}
+      sprintsLoading={sprintsLoading}
+      onSprintChange={onSprintChange}
+    >
+      <BurndownChartMetricsPanel
+        completedSP={completedSP}
+        completedTP={completedTP}
+        completionPercentSP={completionPercentSP}
+        completionPercentTP={completionPercentTP}
+        hideTpInBurndown={hideTpInBurndown}
+        remainingSPForLabel={remainingSPForLabel}
+        remainingTPForLabel={remainingTPForLabel}
+        totalScopeSP={totalScopeSP}
+        totalScopeTP={totalScopeTP}
+      />
+      <BurndownChartSeriesLegend hideTpInBurndown={hideTpInBurndown} />
 
-      <div className="flex-1 flex flex-col overflow-hidden p-6">
-        <BurndownChartMetricsPanel
-          completedSP={completedSP}
-          completedTP={completedTP}
-          completionPercentSP={completionPercentSP}
-          completionPercentTP={completionPercentTP}
-          hideTpInBurndown={hideTpInBurndown}
-          remainingSPForLabel={remainingSPForLabel}
-          remainingTPForLabel={remainingTPForLabel}
-          totalScopeSP={totalScopeSP}
-          totalScopeTP={totalScopeTP}
+      <div className="relative flex flex-1 flex-col gap-3">
+        {pinnedPoint && pinnedPosition ? (
+          <BurndownChartPinnedTooltipOverlay
+            changelogTypeLabels={changelogTypeLabels}
+            clearPinned={clearPinned}
+            locale={locale}
+            pinnedMetricType={pinnedMetricType}
+            pinnedPoint={pinnedPoint}
+            pinnedPosition={pinnedPosition}
+            theme={theme}
+          />
+        ) : null}
+        <BurndownAreaChart
+          chartData={chartData}
+          idealSeriesName={t('burndown.chart.idealLine')}
+          pinnedPoint={pinnedMetricType === 'SP' ? pinnedPoint : null}
+          remainingSeriesName={t('burndown.chart.remainingSp')}
+          theme={theme}
+          title={t('burndown.metrics.storyPointsTitle')}
+          tooltipContent={BurndownChartSpTooltip}
+          type="SP"
+          onPointClick={handlePointClick}
         />
-
-        <div className="flex-1 flex flex-col gap-6 min-h-0 relative">
-          {pinnedPoint && pinnedPosition ? (
-            <BurndownChartPinnedTooltipOverlay
-              changelogTypeLabels={changelogTypeLabels}
-              clearPinned={clearPinned}
-              locale={locale}
-              pinnedMetricType={pinnedMetricType}
-              pinnedPoint={pinnedPoint}
-              pinnedPosition={pinnedPosition}
-              theme={theme}
-            />
-          ) : null}
+        {!hideTpInBurndown && (
           <BurndownAreaChart
             chartData={chartData}
             idealSeriesName={t('burndown.chart.idealLine')}
-            pinnedPoint={pinnedMetricType === 'SP' ? pinnedPoint : null}
-            remainingSeriesName={t('burndown.chart.remainingSp')}
+            pinnedPoint={pinnedMetricType === 'TP' ? pinnedPoint : null}
+            remainingSeriesName={t('burndown.chart.remainingTp')}
             theme={theme}
-            title={t('burndown.metrics.storyPointsTitle')}
-            tooltipContent={BurndownChartSpTooltip}
-            type="SP"
+            title={t('burndown.metrics.testPointsTitle')}
+            tooltipContent={BurndownChartTpTooltip}
+            type="TP"
             onPointClick={handlePointClick}
           />
-          {!hideTpInBurndown && (
-            <BurndownAreaChart
-              chartData={chartData}
-              idealSeriesName={t('burndown.chart.idealLine')}
-              pinnedPoint={pinnedMetricType === 'TP' ? pinnedPoint : null}
-              remainingSeriesName={t('burndown.chart.remainingTp')}
-              theme={theme}
-              title={t('burndown.metrics.testPointsTitle')}
-              tooltipContent={BurndownChartTpTooltip}
-              type="TP"
-              onPointClick={handlePointClick}
-            />
-          )}
-        </div>
+        )}
       </div>
-    </div>
+    </BurndownPageFrame>
   );
 }

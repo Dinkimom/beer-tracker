@@ -131,8 +131,25 @@ describe('shouldShowTaskCardSwimlaneMetaRow', () => {
     expect(
       shouldShowTaskCardSwimlaneMetaRow({
         isVeryNarrow: false,
+        showEstimateLabel: true,
         swimlaneCardFields: visibleFields,
         task: task({ id: 'comment:d1', localDraftKind: 'diagram', name: '', storyPoints: 0 }),
+        variant: 'swimlane',
+      })
+    ).toBe(false);
+  });
+
+  it('skips the meta row when estimates are hidden and status is off', () => {
+    expect(
+      shouldShowTaskCardSwimlaneMetaRow({
+        isVeryNarrow: false,
+        showEstimateLabel: false,
+        swimlaneCardFields: {
+          ...visibleFields,
+          showSeverity: false,
+          showStatus: false,
+        },
+        task: trackerTask,
         variant: 'swimlane',
       })
     ).toBe(false);
@@ -142,6 +159,7 @@ describe('shouldShowTaskCardSwimlaneMetaRow', () => {
     expect(
       shouldShowTaskCardSwimlaneMetaRow({
         isVeryNarrow: false,
+        showEstimateLabel: true,
         swimlaneCardFields: visibleFields,
         task: task({ id: 'local-task-1', isLocalTask: true, name: '' }),
         variant: 'swimlane',

@@ -1,8 +1,9 @@
 'use client';
 
+import type { StatusFilter } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
-import { DndContext, DragOverlay } from '@dnd-kit/core';
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -12,17 +13,22 @@ import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { useBacklogManagement } from '@/features/sidebar/hooks/useBacklogManagement';
-import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { useSelectedBoardStorage } from '@/hooks/useLocalStorage';
 import { createSprint } from '@/lib/beerTrackerApi';
 
 import { useActiveTask } from '../hooks/useActiveTask';
 import { useBacklogDragAndDrop } from '../hooks/useBacklogDragAndDrop';
-import { useForwardHorizontalWheelScroll } from '../hooks/useForwardHorizontalWheelScroll';
+import { useBacklogFilterPeople } from '../hooks/useBacklogFilterPeople';
+import { filterTasksByAssignees } from '../utils/backlogFilterPeople';
+import { backlogTaskPreviewResetKey } from '../utils/backlogTaskPreview';
 import { organizeSprints } from '../utils/sprintUtils';
 
 import { ArchivedSprintsList } from './ArchivedSprintsList';
+import { BacklogBulkToolbar } from './BacklogBulkToolbar';
 import { BacklogColumn } from './BacklogColumn';
+import { BacklogPageFilters } from './BacklogPageFilters';
+import { BacklogSelectionProvider } from './BacklogSelectionProvider';
+import { BacklogTaskRowView } from './BacklogTaskRowView';
 import { CreateSprintModal } from './CreateSprintModal';
 import { SprintColumn } from './SprintColumn';
 
@@ -40,27 +46,60 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
   const isDemoPlannerBoards = useDemoPlannerBoardsQueryScope();
   const queryClient = useQueryClient();
   const [isCreateSprintModalOpen, setIsCreateSprintModalOpen] = useState(false);
-  const horizontalScrollRef = useRef<HTMLDivElement>(null);
-  useForwardHorizontalWheelScroll(horizontalScrollRef);
+  const [nameFilter, setNameFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [assigneeIds, setAssigneeIds] = useState<Set<string>>(() => new Set());
+  const filtersActive = nameFilter.trim() !== '' || statusFilter !== 'all' || assigneeIds.size > 0;
+  const bulkMovingRef = useRef(false);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
 
   const {
     addTask,
     backlogDevelopers,
     backlogLoading,
+    backlogTasks,
     filteredBacklogTasks,
     removeTask,
   } = useBacklogManagement({
     goalTask: null,
     mainTab: 'backlog',
-    nameFilter: '',
+    nameFilter,
     selectedBoardId: selectedBoardId || undefined,
-    statusFilter: 'all',
+    statusFilter,
   });
 
   const { activeSprints, archivedSprints } = useMemo(
     () => organizeSprints(sprints),
     [sprints]
   );
+  const sprintIds = useMemo(() => activeSprints.map((sprint) => sprint.id), [activeSprints]);
+  const people = useBacklogFilterPeople({
+    backlogDevelopers,
+    backlogTasks,
+    boardId: selectedBoardId,
+    sprintIds,
+  });
+  const visibleBacklogTasks = useMemo(
+    () => filterTasksByAssignees(filteredBacklogTasks, assigneeIds),
+    [assigneeIds, filteredBacklogTasks]
+  );
+
+  const toggleAssignee = (id: string) => {
+    setAssigneeIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const resetFilters = () => {
+    setNameFilter('');
+    setStatusFilter('all');
+    setAssigneeIds(new Set());
+  };
 
   const {
     activeTaskId,
@@ -69,15 +108,16 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
   } = useBacklogDragAndDrop({
     activeSprints,
     boardId: selectedBoardId,
-    backlogTasks: filteredBacklogTasks,
+    backlogTasks: visibleBacklogTasks,
     backlogDevelopers,
+    bulkMovingRef,
     addTask,
     removeTask,
   });
 
   const { activeTask, activeTaskDevelopers } = useActiveTask({
     activeTaskId,
-    backlogTasks: filteredBacklogTasks,
+    backlogTasks: visibleBacklogTasks,
     backlogDevelopers,
     activeSprints,
     boardId: selectedBoardId,
@@ -118,79 +158,89 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
   };
 
   return (
-    <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-transparent">
-        <div
-          ref={horizontalScrollRef}
-          className="flex h-full overflow-x-auto bg-gray-50 dark:bg-transparent"
-        >
-          {/* Колонка бэклога */}
-          <BacklogColumn
-            developers={backlogDevelopers}
-            loading={backlogLoading}
-            tasks={filteredBacklogTasks}
+    <BacklogSelectionProvider>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+        <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
+          <BacklogPageFilters
+            assigneeIds={assigneeIds}
+            nameFilter={nameFilter}
+            people={people}
+            statusFilter={statusFilter}
+            onAssigneeToggle={toggleAssignee}
+            onNameFilterChange={setNameFilter}
+            onReset={resetFilters}
+            onStatusFilterChange={setStatusFilter}
           />
-
-          {sprintsLoading ? (
-            <div className="flex items-center justify-center flex-1">
-              <div className="text-center text-gray-500 dark:text-gray-400">
-                <Icon className="animate-spin h-6 w-6 mx-auto mb-2" name="spinner" />
-                <p className="text-sm">{t('backlog.loadingSprints')}</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-shrink-0">
-                {activeSprints.map((sprint) => (
-                  <SprintColumn key={sprint.id} boardId={selectedBoardId} sprint={sprint} />
-                ))}
-
-                <div className="flex-shrink-0 w-64 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
-                  <Button
-                    className="mx-3 flex h-auto min-h-0 w-full flex-col gap-0 border-2 border-dashed border-blue-300 p-5 hover:border-blue-500 hover:bg-blue-50 dark:border-blue-600 dark:hover:border-blue-400 dark:hover:bg-blue-900/20"
-                    type="button"
-                    variant="outline"
-                    onClick={handleCreateSprint}
-                  >
-                    <Icon className="mb-2 h-6 w-6 text-blue-400 dark:text-blue-500" name="plus" />
-                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                      {t('backlog.createSprint')}
-                    </span>
-                  </Button>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="flex flex-col gap-3">
+              {sprintsLoading ? (
+                <div className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-8 text-sm text-gray-500 dark:border-gray-700 dark:bg-ds-surface-header dark:text-gray-400">
+                  <Icon className="h-4 w-4 animate-spin" name="spinner" />
+                  {t('backlog.loadingSprints')}
                 </div>
-              </div>
-
-              {archivedSprints.length > 0 && (
-                <div className="flex-shrink-0 h-full">
-                  <ArchivedSprintsList sprints={archivedSprints} />
-                </div>
+              ) : (
+                activeSprints.map((sprint) => (
+                  <SprintColumn
+                    key={sprint.id}
+                    assigneeIds={assigneeIds}
+                    boardId={selectedBoardId}
+                    nameFilter={nameFilter}
+                    sprint={sprint}
+                    statusFilter={statusFilter}
+                  />
+                ))
               )}
-            </>
-          )}
-        </div>
-      </div>
-      <DragOverlay>
-        {activeTask ? (
-          <div className="w-[380px]">
-            <TaskCard
-              className="opacity-90 rotate-3"
-              developers={activeTaskDevelopers}
-              task={activeTask}
-              variant="sidebar"
-            />
-          </div>
-        ) : null}
-      </DragOverlay>
 
-      {selectedBoardId && (
-        <CreateSprintModal
-          isOpen={isCreateSprintModalOpen}
-          sprints={sprints}
-          onClose={() => setIsCreateSprintModalOpen(false)}
-          onSubmit={handleSubmitSprint}
-        />
-      )}
-    </DndContext>
+              <Button
+                className="!h-12 w-full !rounded-2xl !border-dashed"
+                type="button"
+                variant="outline"
+                onClick={handleCreateSprint}
+              >
+                <Icon className="h-4 w-4" name="plus" />
+                {t('backlog.createSprint')}
+              </Button>
+
+              <BacklogColumn
+                developers={backlogDevelopers}
+                emptyLabel={filtersActive ? t('backlog.filters.noMatches') : undefined}
+                loading={backlogLoading}
+                previewResetKey={backlogTaskPreviewResetKey({ assigneeIds, nameFilter, statusFilter })}
+                tasks={visibleBacklogTasks}
+                totalTaskCount={backlogTasks.length}
+              />
+
+              {archivedSprints.length > 0 ? <ArchivedSprintsList sprints={archivedSprints} /> : null}
+            </div>
+          </div>
+        </div>
+        <DragOverlay>
+          {activeTask ? (
+            <div className="w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+              <BacklogTaskRowView developers={activeTaskDevelopers} task={activeTask} />
+            </div>
+          ) : null}
+        </DragOverlay>
+
+        {selectedBoardId && (
+          <CreateSprintModal
+            isOpen={isCreateSprintModalOpen}
+            sprints={sprints}
+            onClose={() => setIsCreateSprintModalOpen(false)}
+            onSubmit={handleSubmitSprint}
+          />
+        )}
+      </DndContext>
+      <BacklogBulkToolbar
+        activeSprints={activeSprints}
+        addTask={addTask}
+        backlogDevelopers={backlogDevelopers}
+        backlogTasks={backlogTasks}
+        boardId={selectedBoardId}
+        movingRef={bulkMovingRef}
+        removeTask={removeTask}
+      />
+    </BacklogSelectionProvider>
   );
 }
 

@@ -52,6 +52,18 @@ describe('resolveTaskBarResizeHandleColors', () => {
     expect(withOverride.resizeHandleColors.bg).toBe('bg-blue-200/60');
     expect(withOverride.hoverBgClass).toBe('bg-blue-200/20');
   });
+
+  it('does not replace a QA review palette with backlog', () => {
+    const qaReview = resolveTaskBarResizeHandleColors({
+      isDraftTask: false,
+      isQATask: true,
+      originalStatus: 'readyfordevelopment',
+      phaseCardColorScheme: 'status',
+      statusColorKey: 'inreview',
+    });
+    expect(qaReview.resizeHandleColors.bg).toBe('bg-pink-200/60');
+    expect(qaReview.hoverBgClass).toBe('bg-pink-200/20');
+  });
 });
 
 describe('getResizeHandleVisualVisibilityClass', () => {

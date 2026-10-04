@@ -22,19 +22,9 @@ interface PageHeaderMainPageTabsProps<T extends string> {
   onChange: (id: T) => void;
 }
 
-function tabButtonWidthClass(hasIcon: boolean, isActive: boolean): string {
-  if (hasIcon && !isActive) {
-    return 'w-8 !px-0';
-  }
-  return 'px-2.5';
-}
-
-function tabShowsTooltip(item: PageHeaderMainPageTabItem<string>, isActive: boolean): boolean {
-  if (!item.icon) {
-    return false;
-  }
+function tabShowsTooltip(item: PageHeaderMainPageTabItem<string>): boolean {
   const visibleLabel = item.shortLabel ?? item.label;
-  return !(isActive && visibleLabel === item.label);
+  return visibleLabel !== item.label;
 }
 
 export function PageHeaderMainPageTabs<T extends string>({
@@ -52,18 +42,18 @@ export function PageHeaderMainPageTabs<T extends string>({
           const button = (
             <Button
               aria-current={isActive ? 'page' : undefined}
-              aria-label={item.icon ? item.label : undefined}
-              className={`relative flex h-8 min-h-0 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap !rounded-md !border-0 !py-0 text-sm shadow-none ${tabButtonWidthClass(Boolean(item.icon), isActive)} ${pageHeaderMainPageButtonClass(isActive)}`}
+              aria-label={visibleLabel === item.label ? undefined : item.label}
+              className={`relative flex h-8 min-h-0 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap !rounded-md !border-0 !px-2.5 !py-0 text-sm shadow-none ${pageHeaderMainPageButtonClass(isActive)}`}
               type="button"
               variant="ghost"
               onClick={() => onChange(item.id)}
             >
               {item.icon ? <Icon className="h-4 w-4 shrink-0" name={item.icon} /> : null}
-              {!item.icon || isActive ? visibleLabel : null}
+              {visibleLabel}
             </Button>
           );
 
-          if (!tabShowsTooltip(item, isActive)) {
+          if (!tabShowsTooltip(item)) {
             return <Fragment key={item.id}>{button}</Fragment>;
           }
 

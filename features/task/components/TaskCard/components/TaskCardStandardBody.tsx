@@ -7,6 +7,9 @@ import type { Developer, Task, TaskCardVariant, TaskPosition } from '@/types';
 
 import React from 'react';
 
+import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility';
+import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
+
 import { TaskCardBody } from './TaskCardBody';
 import { TaskCardExtraSplitOverlay } from './TaskCardExtraSplitOverlay';
 import { TaskCardSprintBadges } from './TaskCardSprintBadges';
@@ -96,7 +99,16 @@ export function TaskCardStandardBody({
     variant === 'sidebar' &&
     slaBugCloseP4ActionsEnabled &&
     slaBugSignalLabel === 'close_p4';
+  const estimateMapping = useTaskCardEstimateMapping();
   const showTpLabels = isQATask && task.hideTestPointsByIntegration !== true;
+  const showPointsLabel = resolveTaskCardEstimateVisibility({
+    hideTestPoints: task.hideTestPointsByIntegration === true,
+    isQATask,
+    mapping: estimateMapping,
+    showEstimatesSetting:
+      variant === 'swimlane' ? (swimlaneCardFields?.showEstimates ?? true) : true,
+    taskId: task.id,
+  }).showPrimaryEstimate;
 
   return (
     <>
@@ -110,6 +122,7 @@ export function TaskCardStandardBody({
           leftPercent={leftPercent}
           qaRightBgColor={qaRightBgColor}
           rightPercent={rightPercent}
+          showPointsLabel={showPointsLabel}
           showTpLabels={showTpLabels}
         />
       )}

@@ -4,7 +4,7 @@ import type { ResizeHandleCornerStyle } from './components/taskBarResizeHandleHe
 import type { Developer, Task, TaskPosition } from '@/types';
 import type { DraggableAttributes } from '@dnd-kit/core';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { Icon } from '@/components/Icon';
 
@@ -15,6 +15,8 @@ import { TaskBarOpacityLayerChrome } from './TaskBarOpacityLayerChrome';
 import {
   buildTaskBarMouseLeaveHandler,
   runTaskBarMouseEnter,
+  runTaskBarMouseOut,
+  runTaskBarMouseOver,
 } from './taskBarOpacityLayerHandlers';
 
 interface TaskBarOpacityLayerProps {
@@ -145,8 +147,8 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   const isCommentCard = task.localDraftKind === 'comment';
   const cardElementRef = React.useRef<HTMLElement | null>(null);
 
-  const handleMouseEnter = useCallback(() => {
-    runTaskBarMouseEnter({
+  const longHoverEnterInput = useMemo(
+    () => ({
       cardElementRef,
       currentDurationParts,
       effectiveIsDragging,
@@ -161,22 +163,56 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
       setIsExpandedByLongHover,
       taskId: task.id,
       timelineTotalParts: hoverExpandTimelineTotalParts,
-    });
-  }, [
-    currentDurationParts,
-    effectiveIsDragging,
-    hoverExpandTimelineTotalParts,
-    isCommentCard,
-    isDraftTask,
-    isLinking,
-    isNarrowForLongHoverExpand,
-    longHoverTimeoutRef,
-    onTaskHover,
-    resize.isResizing,
-    setHoverExpandFitDurationParts,
-    setIsExpandedByLongHover,
-    task.id,
-  ]);
+    }),
+    [
+      currentDurationParts,
+      effectiveIsDragging,
+      hoverExpandTimelineTotalParts,
+      isCommentCard,
+      isDraftTask,
+      isLinking,
+      isNarrowForLongHoverExpand,
+      longHoverTimeoutRef,
+      onTaskHover,
+      resize.isResizing,
+      setHoverExpandFitDurationParts,
+      setIsExpandedByLongHover,
+      task.id,
+    ]
+  );
+
+  const handleMouseEnter = useCallback(
+    (event: React.MouseEvent) => {
+      runTaskBarMouseEnter({
+        ...longHoverEnterInput,
+        pointerClient: { x: event.clientX, y: event.clientY },
+        pointerTarget: event.target,
+      });
+    },
+    [longHoverEnterInput]
+  );
+
+  const handleMouseOver = useCallback(
+    (event: React.MouseEvent) => {
+      runTaskBarMouseOver({
+        eventTarget: event.target,
+        longHoverTimeoutRef,
+        relatedTarget: event.relatedTarget,
+      });
+    },
+    [longHoverTimeoutRef]
+  );
+
+  const handleMouseOut = useCallback(
+    (event: React.MouseEvent) => {
+      runTaskBarMouseOut({
+        ...longHoverEnterInput,
+        eventTarget: event.target,
+        relatedTarget: event.relatedTarget,
+      });
+    },
+    [longHoverEnterInput]
+  );
 
   const handleMouseLeave = useCallback(
     (e?: { relatedTarget: EventTarget | null }) => {
@@ -211,6 +247,8 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
       }}
       onMouseEnter={interactionDisabled ? undefined : handleMouseEnter}
       onMouseLeave={interactionDisabled ? undefined : handleMouseLeave}
+      onMouseOut={interactionDisabled ? undefined : handleMouseOut}
+      onMouseOver={interactionDisabled ? undefined : handleMouseOver}
     >
       {!hideSourceForOverlay && (
         <TaskBarDragSourceGhost

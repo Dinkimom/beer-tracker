@@ -6,6 +6,7 @@ import { Excalidraw } from '@excalidraw/excalidraw';
 import { useCallback, useRef } from 'react';
 
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
+import { diagramCanvasRevisionKey } from '@/lib/comments/diagramEditorDirty';
 import {
   excalidrawSceneHasDrawableElements,
   resolveExcalidrawSceneBackground,
@@ -16,6 +17,7 @@ import '@excalidraw/excalidraw/index.css';
 interface SwimlaneDiagramCanvasProps {
   initialScene: ExcalidrawCommentScene;
   onApiReady: (getScene: () => ExcalidrawCommentScene) => void;
+  onContentRevision: (revision: string) => void;
 }
 
 interface ExcalidrawSceneApi {
@@ -70,9 +72,30 @@ function scheduleFitToLoadedScene(api: ExcalidrawSceneApi, scene: ExcalidrawComm
   });
 }
 
-export function SwimlaneDiagramCanvas({ initialScene, onApiReady }: SwimlaneDiagramCanvasProps) {
+export function SwimlaneDiagramCanvas({
+  initialScene,
+  onApiReady,
+  onContentRevision,
+}: SwimlaneDiagramCanvasProps) {
   const isDark = useDocumentDarkClass();
   const apiRef = useRef<ExcalidrawSceneApi | null>(null);
+
+  const handleChange = useCallback(
+    (
+      elements: readonly unknown[],
+      appState: { viewBackgroundColor?: unknown },
+      files: Record<string, unknown>
+    ) => {
+      onContentRevision(
+        diagramCanvasRevisionKey({
+          elements,
+          files,
+          viewBackgroundColor: appState.viewBackgroundColor,
+        })
+      );
+    },
+    [onContentRevision]
+  );
 
   const handleApi = useCallback(
     (api: ExcalidrawSceneApi) => {
@@ -108,6 +131,7 @@ export function SwimlaneDiagramCanvas({ initialScene, onApiReady }: SwimlaneDiag
           scrollToContent: true,
         }}
         theme={isDark ? 'dark' : 'light'}
+        onChange={handleChange as never}
       />
     </div>
   );

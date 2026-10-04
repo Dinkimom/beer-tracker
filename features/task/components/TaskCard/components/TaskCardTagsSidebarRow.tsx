@@ -14,6 +14,8 @@ interface TaskCardTagsSidebarRowProps {
   hideTestPoints: boolean;
   inlineLayout: boolean;
   showDangerousReleaseInsteadOfStatus: boolean;
+  showStoryPoints: boolean;
+  showTestPoints: boolean;
   slaBugDemoteReason?: SlaBugDemoteReason;
   slaBugSignalLabel?: SlaBugLabelKey;
   spText: string;
@@ -27,6 +29,8 @@ export function TaskCardTagsSidebarRow({
   dangerousReleaseValue,
   hideTestPoints,
   inlineLayout,
+  showStoryPoints,
+  showTestPoints,
   showDangerousReleaseInsteadOfStatus,
   slaBugDemoteReason,
   slaBugSignalLabel,
@@ -59,16 +63,18 @@ export function TaskCardTagsSidebarRow({
         </span>
       ) : null}
       <div className={`flex items-center gap-0 shrink-0 flex-wrap ${tagTextSize} text-gray-600 dark:text-white`}>
-        <span>{spText}</span>
-        {!hideTestPoints ? (
+        {showStoryPoints ? <span>{spText}</span> : null}
+        {showTestPoints && !hideTestPoints ? (
           <>
-            <span className="mx-1">·</span>
+            {showStoryPoints ? <span className="mx-1">·</span> : null}
             <span>{tpText}</span>
           </>
         ) : null}
         {slaBugSignalLabel ? (
           <>
-            <span className="mx-1">·</span>
+            {showStoryPoints || (showTestPoints && !hideTestPoints) ? (
+              <span className="mx-1">·</span>
+            ) : null}
             <SlaBugSignalTag
               createdAt={task.createdAt}
               demoteReason={slaBugDemoteReason}

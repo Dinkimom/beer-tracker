@@ -6,6 +6,7 @@ import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 
 interface SearchInputProps {
+  'aria-label'?: string;
   autoFocus?: boolean;
   className?: string;
   placeholder?: string;
@@ -33,6 +34,7 @@ const clearButtonClass =
   'absolute top-1/2 z-10 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded leading-none text-ds-text-muted transition-colors hover:bg-gray-200/90 dark:hover:bg-gray-600/80';
 
 export function SearchInput({
+  'aria-label': ariaLabel,
   autoFocus = false,
   value,
   onChange,
@@ -59,6 +61,7 @@ export function SearchInput({
       />
       <input
         ref={inputRef}
+        aria-label={ariaLabel}
         className={`w-full ${s.input} text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 placeholder:text-gray-500 dark:placeholder:text-gray-400`}
         placeholder={placeholder}
         type="text"

@@ -6,8 +6,8 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  Legend,
   ReferenceDot,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,10 +15,17 @@ import {
   type TooltipProps,
 } from 'recharts';
 
+import { useI18n } from '@/contexts/LanguageContext';
+
+import { resolveBurndownTodayAxisLabel } from '../hooks/useBurndownChartDataHelpers';
+
 import {
+  BURNDOWN_IDEAL_LINE_COLOR,
+  burndownIslandClassName,
   resolveBurndownAreaChartMetricConfig,
   resolveBurndownChartAxisColors,
   resolveBurndownChartGridStroke,
+  resolveBurndownYAxisTicks,
 } from './burndownAreaChartHelpers';
 
 export interface BurndownChartDataPoint {
@@ -68,6 +75,7 @@ export function BurndownAreaChart({
   remainingSeriesName,
   onPointClick,
 }: BurndownAreaChartProps) {
+  const { t } = useI18n();
   const { gradientColor, gradientId, idealDataKey, isSP, remainingDataKey } =
     resolveBurndownAreaChartMetricConfig(type);
   const { stroke: axisStroke, tickFill: axisTickFill } = resolveBurndownChartAxisColors(theme);
@@ -75,6 +83,11 @@ export function BurndownAreaChart({
 
   const pinnedY = burndownPinnedRemainingValue(pinnedPoint, isSP);
   const showPinnedDot = pinnedPoint != null && pinnedPoint.date != null && pinnedY !== undefined;
+  const todayLabel = resolveBurndownTodayAxisLabel(chartData.map((point) => point.date));
+  const yTicks = resolveBurndownYAxisTicks(
+    chartData.flatMap((point) => (isSP ? [point.idealSP, point.remainingSP] : [point.idealTP, point.remainingTP]))
+  );
+  const yMax = yTicks[yTicks.length - 1] ?? 1;
 
   const handleDotClick = (e: React.MouseEvent, payload: BurndownChartDataPoint) => {
     e.preventDefault();
@@ -83,13 +96,11 @@ export function BurndownAreaChart({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 flex-1 min-h-0 flex flex-col">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-        {title}
-      </h3>
-      <div className="flex-1 min-h-0">
+    <div className={`${burndownIslandClassName} flex min-h-[220px] min-w-0 flex-1 flex-col p-4`}>
+      <h3 className="sr-only">{title}</h3>
+      <div className="min-h-0 flex-1">
         <ResponsiveContainer height="100%" width="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
                 <stop offset="5%" stopColor={gradientColor} stopOpacity={0.3} />
@@ -103,11 +114,26 @@ export function BurndownAreaChart({
               tick={{ fill: axisTickFill, fontSize: 12 }}
             />
             <YAxis
+              domain={[0, yMax]}
               stroke={axisStroke}
               tick={{ fill: axisTickFill, fontSize: 12 }}
+              ticks={yTicks}
+              width={40}
             />
             <Tooltip content={tooltipContent} />
-            <Legend />
+            {todayLabel ? (
+              <ReferenceLine
+                label={{
+                  fill: axisTickFill,
+                  fontSize: 11,
+                  position: 'insideTop',
+                  value: t('burndown.chart.today'),
+                }}
+                stroke={axisStroke}
+                strokeWidth={1}
+                x={todayLabel}
+              />
+            ) : null}
             {showPinnedDot && (
               <ReferenceDot
                 fill={gradientColor}
@@ -125,7 +151,7 @@ export function BurndownAreaChart({
               isAnimationActive={false}
               legendType="line"
               name={idealSeriesName}
-              stroke="#94a3b8"
+              stroke={BURNDOWN_IDEAL_LINE_COLOR}
               strokeDasharray="5 5"
               strokeWidth={2}
               type="linear"

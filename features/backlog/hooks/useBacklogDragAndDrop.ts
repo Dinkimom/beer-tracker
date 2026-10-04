@@ -20,6 +20,8 @@ interface UseBacklogDragAndDropProps {
   backlogDevelopers: Developer[];
   backlogTasks: Task[];
   boardId: number | null;
+  /** Пока идёт массовый перенос, одиночный drag не должен писать в тот же кэш. */
+  bulkMovingRef?: { current: boolean };
   addTask: (task: Task) => void;
   removeTask: (taskId: string) => void;
 }
@@ -39,6 +41,7 @@ export function useBacklogDragAndDrop({
   boardId,
   backlogTasks,
   backlogDevelopers,
+  bulkMovingRef,
   addTask,
   removeTask,
 }: UseBacklogDragAndDropProps): UseBacklogDragAndDropResult {
@@ -56,7 +59,7 @@ export function useBacklogDragAndDrop({
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       setActiveTaskId(null);
-      if (isMovingRef.current) return;
+      if (bulkMovingRef?.current || isMovingRef.current) return;
 
       const moveContext = resolveBacklogDragMoveContext({
         activeSprints,
@@ -88,7 +91,18 @@ export function useBacklogDragAndDrop({
         isMovingRef.current = false;
       }
     },
-    [activeSprints, addTask, boardId, backlogDevelopers, backlogTasks, forDemoPlanner, queryClient, removeTask, t]
+    [
+      activeSprints,
+      addTask,
+      boardId,
+      backlogDevelopers,
+      backlogTasks,
+      bulkMovingRef,
+      forDemoPlanner,
+      queryClient,
+      removeTask,
+      t,
+    ]
   );
 
   return {

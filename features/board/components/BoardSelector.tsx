@@ -78,7 +78,7 @@ export function BoardSelector({
     <div ref={dropdownRef} className="relative inline-grid max-w-[16rem]">
       <span
         aria-hidden
-        className="invisible col-start-1 row-start-1 flex h-8 w-max max-w-full items-center gap-1.5 overflow-hidden px-2.5 text-sm font-medium"
+        className="invisible col-start-1 row-start-1 flex h-8 w-max max-w-full items-center gap-1.5 overflow-hidden px-2.5 text-base font-semibold"
       >
         <span className="flex min-w-0 flex-col">
           {optionLabels.map((label, index) => (
@@ -90,7 +90,7 @@ export function BoardSelector({
         <span className="h-4 w-4 shrink-0" />
       </span>
       <Button
-        className={`group col-start-1 row-start-1 flex h-8 min-h-0 w-full justify-between gap-1.5 !rounded-md !border-0 !px-2.5 !py-0 text-left text-sm shadow-none ${
+        className={`group col-start-1 row-start-1 flex h-8 min-h-0 w-full justify-between gap-1.5 !rounded-md !border-0 !px-2.5 !py-0 text-left !text-base !font-semibold shadow-none ${
           isOpen
             ? '!bg-white hover:!bg-white dark:!bg-gray-700 dark:hover:!bg-gray-700'
             : '!bg-transparent hover:!bg-black/[0.05] dark:hover:!bg-gray-700'
@@ -99,7 +99,7 @@ export function BoardSelector({
         variant="ghost"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="min-w-0 truncate font-medium">
+        <span className="min-w-0 truncate">
           {selectedBoard
             ? boardSelectorLabel(selectedBoard)
             : t('planning.board.selectTeamPlaceholder')}

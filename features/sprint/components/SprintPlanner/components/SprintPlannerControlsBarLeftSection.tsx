@@ -2,6 +2,7 @@
 
 import type { SprintListItem } from '@/types/tracker';
 
+import { ReleaseHoroscopeChip } from '@/components/ReleaseHoroscopeChip';
 import { SearchInput } from '@/components/SearchInput';
 import { useI18n } from '@/contexts/LanguageContext';
 
@@ -51,6 +52,7 @@ export function SprintPlannerControlsBarLeftSection({
           onChange={setGlobalNameFilter}
         />
       </div>
+      <ReleaseHoroscopeChip />
     </div>
   );
 }

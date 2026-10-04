@@ -98,6 +98,12 @@ export interface SwimlaneProps {
   onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
+  onOverdueCloseAndCreate?: (args: {
+    currentCell: number;
+    position: TaskPosition;
+    task: Task;
+    timelineTotalParts: number;
+  }) => Promise<void> | void;
   onCreateTaskInCell?: (data: {
     assigneeId: string;
     day: number;

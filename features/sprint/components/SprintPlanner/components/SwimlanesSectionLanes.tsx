@@ -156,6 +156,7 @@ export function SwimlanesSectionLanes({
         onContextMenu: section.onContextMenu,
         onCreateQATask: section.onCreateQATask,
         onCreateTaskInCell: section.onCreateTaskInCell,
+        onOverdueCloseAndCreate: section.onOverdueCloseAndCreate,
         onFactSegmentHover,
         onPasteQuickAddNote: section.onPasteQuickAddNote,
         onQuickAddDraftAssigneeChange: section.onQuickAddDraftAssigneeChange,

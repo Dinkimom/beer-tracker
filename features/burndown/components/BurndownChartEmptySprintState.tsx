@@ -25,7 +25,7 @@ export function BurndownChartEmptySprintState({
       sprintsLoading={sprintsLoading}
       onSprintChange={onSprintChange}
     >
-      <div className="text-center text-gray-500 dark:text-gray-400">
+      <div className="text-center text-ds-text-muted">
         <p className="text-lg font-medium mb-2">{t('burndown.selectSprintTitle')}</p>
         <p className="text-sm">{t('burndown.selectSprintDescription')}</p>
       </div>

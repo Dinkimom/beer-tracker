@@ -65,6 +65,12 @@ export interface TaskLayerProps {
   onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu?: (e: MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
+  onOverdueCloseAndCreate?: (args: {
+    currentCell: number;
+    position: TaskPosition;
+    task: Task;
+    timelineTotalParts: number;
+  }) => Promise<void> | void;
   onPasteQuickAddNote?: (taskId: string) => void;
   onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;
   onQuickAddDraftCommentColorChange?: (taskId: string, color: StickyNoteColor) => void;

@@ -5,6 +5,11 @@ import type { TrackerIntegrationStored } from './schema';
  */
 export interface PlannerIntegrationRulesDto {
   configRevision: number;
+  /** Поля оценок из админки. Пока id пустой, карточки оценки не показывают. */
+  estimateFields: {
+    devMapped: boolean;
+    qaMapped: boolean;
+  };
   flags: {
     zeroDevPositiveQaRule: boolean;
   };
@@ -23,6 +28,7 @@ export function toPlannerIntegrationRulesDto(
   if (!config) {
     return {
       configRevision: 0,
+      estimateFields: { devMapped: false, qaMapped: false },
       flags: { zeroDevPositiveQaRule: false },
       releaseReadiness: { readyStatusKey: null },
       statusDefaultsByTrackerStatusType: {},
@@ -35,8 +41,13 @@ export function toPlannerIntegrationRulesDto(
   const mode = config.testingFlow?.mode;
   const rr = config.releaseReadiness;
   const readyKey = rr?.readyStatusKey?.trim() ?? '';
+  const flow = config.testingFlow;
   return {
     configRevision: config.configRevision,
+    estimateFields: {
+      devMapped: Boolean(flow?.devEstimateFieldId?.trim()),
+      qaMapped: Boolean(flow?.qaEstimateFieldId?.trim()),
+    },
     flags: {
       zeroDevPositiveQaRule: config.testingFlow?.zeroDevPositiveQaRule === true,
     },

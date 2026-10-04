@@ -3,6 +3,7 @@
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatPointsForDisplay } from '@/lib/pointsUtils';
 
+import { BURNDOWN_SP_COLOR, BURNDOWN_TP_COLOR } from './burndownAreaChartHelpers';
 import { BurndownMetricTile } from './BurndownMetricTile';
 
 interface BurndownChartMetricsPanelProps {
@@ -31,9 +32,9 @@ export function BurndownChartMetricsPanel({
   const { t } = useI18n();
 
   return (
-    <div className={`grid ${hideTpInBurndown ? 'grid-cols-1' : 'grid-cols-2'} gap-4 mb-6 flex-shrink-0`}>
+    <div className={`grid shrink-0 ${hideTpInBurndown ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
       <BurndownMetricTile
-        barClassName="bg-blue-600 dark:bg-blue-500"
+        barColor={BURNDOWN_SP_COLOR}
         completed={completedSP}
         completionPercent={completionPercentSP}
         remainingLabel={t('burndown.remainingSp', {
@@ -44,7 +45,7 @@ export function BurndownChartMetricsPanel({
       />
       {!hideTpInBurndown && (
         <BurndownMetricTile
-          barClassName="bg-amber-600 dark:bg-amber-500"
+          barColor={BURNDOWN_TP_COLOR}
           completed={completedTP}
           completionPercent={completionPercentTP}
           remainingLabel={t('burndown.remainingTp', {

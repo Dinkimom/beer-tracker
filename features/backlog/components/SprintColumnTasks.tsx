@@ -4,20 +4,24 @@ import type { Developer, Task } from '@/types';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { DraggableTask } from '@/features/task/components/DraggableTask';
+
+import { BacklogShowMoreTasks } from './BacklogShowMoreTasks';
+import { BacklogTaskRow } from './BacklogTaskRow';
 
 interface SprintColumnTasksProps {
   developers: Developer[];
   emptyLabel: string;
   error: unknown;
+  hiddenCount: number;
   isLoading: boolean;
   loadErrorTitle: string;
   loadingLabel: string;
   retryLabel: string;
-  sprintId: number;
-  tasks: Task[];
+  scopeId: string;
+  tasks: readonly Task[];
   unknownErrorLabel: string;
   onRetry: () => void;
+  onShowMore: () => void;
 }
 
 function sprintColumnErrorMessage(error: unknown, unknownErrorLabel: string): string {
@@ -34,11 +38,13 @@ export function SprintColumnTasks({
   loadErrorTitle,
   loadingLabel,
   retryLabel,
+  scopeId,
   unknownErrorLabel,
   emptyLabel,
-  sprintId,
+  hiddenCount,
   tasks,
   onRetry,
+  onShowMore,
 }: SprintColumnTasksProps) {
   if (isLoading) {
     return (
@@ -74,16 +80,13 @@ export function SprintColumnTasks({
   }
 
   return (
-    <>
-      {tasks.map((task) => (
-        <DraggableTask
-          key={task.id}
-          developers={developers}
-          selectedSprintId={sprintId}
-          task={task}
-          viewMode="compact"
-        />
-      ))}
-    </>
+    <div>
+      <div className="divide-y divide-gray-100 dark:divide-gray-700">
+        {tasks.map((task) => (
+          <BacklogTaskRow key={task.id} developers={developers} scopeId={scopeId} task={task} />
+        ))}
+      </div>
+      <BacklogShowMoreTasks count={hiddenCount} onShowMore={onShowMore} />
+    </div>
   );
 }

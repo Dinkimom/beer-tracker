@@ -33,3 +33,18 @@ export function organizeSprints(sprints: SprintListItem[]): {
   return { activeSprints: active, archivedSprints: archived };
 }
 
+/** «23 сент. — 4 окт.» для шапки секции спринта. Пустые даты не показываем. */
+export function formatSprintRangeLabel(
+  startDate: string | null | undefined,
+  endDate: string | null | undefined,
+  locale: string
+): string | null {
+  if (!startDate || !endDate) return null;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  const formatDate = (value: Date) =>
+    value.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  return `${formatDate(start)} — ${formatDate(end)}`;
+}
+

@@ -17,6 +17,7 @@ function isSwimlaneNoteOrPolaroid(task: Pick<Task, 'localDraftKind'>): boolean {
 
 export function shouldShowTaskCardSwimlaneMetaRow(input: {
   isVeryNarrow: boolean;
+  showEstimateLabel: boolean;
   swimlaneCardFields?: SwimlaneCardFieldsVisibility;
   task: Task;
   variant: TaskCardVariant;
@@ -26,7 +27,7 @@ export function shouldShowTaskCardSwimlaneMetaRow(input: {
   return (
     (input.swimlaneCardFields?.showStatus ?? true) ||
     (input.swimlaneCardFields?.showSeverity ?? true) ||
-    (input.swimlaneCardFields?.showEstimates ?? true)
+    input.showEstimateLabel
   );
 }
 
@@ -48,6 +49,7 @@ interface TaskCardSwimlaneMetaRowProps {
   displayDuration: number | undefined;
   hideTestPoints: boolean;
   isQATask: boolean;
+  showEstimateLabel: boolean;
   swimlaneCardFields?: SwimlaneCardFieldsVisibility;
   task: Task;
 }
@@ -57,6 +59,7 @@ export function TaskCardSwimlaneMetaRow({
   displayDuration,
   hideTestPoints,
   isQATask,
+  showEstimateLabel,
   swimlaneCardFields,
   task,
 }: TaskCardSwimlaneMetaRowProps) {
@@ -79,7 +82,7 @@ export function TaskCardSwimlaneMetaRow({
           {task.incidentSeverity}
         </span>
       )}
-      {(swimlaneCardFields?.showEstimates ?? true) && !isSwimlaneNoteOrPolaroid(task) && (
+      {showEstimateLabel && !isSwimlaneNoteOrPolaroid(task) && (
         <span className={`${assigneeTextSize} text-gray-600 dark:text-gray-300`}>
           {isQATask && !hideTestPoints
             ? formatTaskTestPointsForDisplay(task, 'compact')

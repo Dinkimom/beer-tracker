@@ -1,9 +1,12 @@
 
 import type { useSprintPlannerViewModel } from './hooks/useSprintPlannerViewModel';
 
+import { useRef } from 'react';
+
 import { ZIndex } from '@/constants';
 import { StickyNoteReactionsProvider } from '@/features/comments/StickyNoteReactionsProvider';
 import { isSwimlaneCommentTask, selectPendingApprovalCommentIds } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { useCloseOverdueAndCreateNext } from '@/features/swimlane/hooks/useCloseOverdueAndCreateNext';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -49,6 +52,7 @@ export function SprintPlannerView({
   factVisible,
   filteredTaskLinks,
   filteredTaskPositions,
+  getQueueByBoardId,
   gitlabFactByLink,
   goalTaskIds,
   goalsLoading,
@@ -139,6 +143,16 @@ export function SprintPlannerView({
   viewMode,
   DialogComponent,
 }: SprintPlannerViewProps) {
+  const boardFrameRef = useRef<HTMLDivElement>(null);
+  const onOverdueCloseAndCreate = useCloseOverdueAndCreateNext({
+    boardId: boardIdForPlannerData ?? null,
+    getQueueByBoardId,
+    onStatusChange: handlers.handleStatusChange,
+    savePosition: handleOccupancyPositionSave,
+    selectedSprintId,
+    setTasks,
+  });
+
   return (
     <StickyNoteReactionsProvider comments={comments} sprintId={selectedSprintId}>
       <PlannerMobxSessionBridge />
@@ -190,7 +204,10 @@ export function SprintPlannerView({
             height: '100%',
           }}
         >
-          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header">
+          <div
+            ref={boardFrameRef}
+            className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header"
+          >
           <SprintPlannerControlsBar
             boardId={boardIdForPlannerData ?? null}
             boardViewers={boardViewers}
@@ -309,6 +326,7 @@ export function SprintPlannerView({
                   onCommentUpdate: handlers.handleCommentUpdate,
                   onContextMenu: handlers.handleContextMenu,
                   onCreateQATask: handlers.handleCreateQATask,
+                  onOverdueCloseAndCreate,
                   onCreateTaskInCell: handleCreateTaskInSwimlaneCell,
                   onCancelQuickAddDraft: handleCancelQuickAddDraft,
                   quickAddBoardId: boardIdForPlannerData,
@@ -352,6 +370,7 @@ export function SprintPlannerView({
 
             <SidebarSection
               activeTaskDuration={dragAndDrop.activeTaskDuration}
+              closedHandleHostRef={boardFrameRef}
               activeTaskId={dragAndDrop.activeTaskId}
               allSprintTasks={tasks}
               backlogTaskRef={backlogTaskRef}

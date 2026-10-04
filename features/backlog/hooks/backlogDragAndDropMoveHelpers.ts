@@ -31,6 +31,8 @@ export async function moveTaskToBacklog(opts: {
   boardId: number | null;
   forDemoPlanner: boolean;
   queryClient: QueryClient;
+  /** Без своего тоста: массовый перенос показывает один итог. */
+  quiet?: boolean;
   removeTask: (taskId: string) => void;
   sourceSprintId: number;
   t: TranslateFn;
@@ -52,8 +54,11 @@ export async function moveTaskToBacklog(opts: {
   });
 
   try {
-    await removeIssueFromSprint(taskId, sourceSprintId);
-    toast.success(t('backlog.dnd.movedToBacklog'));
+    const removed = await removeIssueFromSprint(taskId, sourceSprintId);
+    if (!removed) {
+      throw new Error(t('common.unknownError'));
+    }
+    if (!opts.quiet) toast.success(t('backlog.dnd.movedToBacklog'));
   } catch (error) {
     revertBacklogMoveOnError({
       boardId,
@@ -64,8 +69,10 @@ export async function moveTaskToBacklog(opts: {
       sourceSprintId,
       taskId,
     });
-    const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
-    toast.error(t('backlog.dnd.moveError', { message: errorMessage }));
+    if (!opts.quiet) {
+      const errorMessage = error instanceof Error ? error.message : t('common.unknownError');
+      toast.error(t('backlog.dnd.moveError', { message: errorMessage }));
+    }
     throw error;
   }
 }
@@ -183,6 +190,8 @@ export async function moveTaskToSprint(opts: {
   boardId: number | null;
   forDemoPlanner: boolean;
   queryClient: QueryClient;
+  /** Без своего тоста: массовый перенос показывает один итог. */
+  quiet?: boolean;
   removeTask: (taskId: string) => void;
   sourceSprintId: number | null;
   t: TranslateFn;
@@ -195,18 +204,26 @@ export async function moveTaskToSprint(opts: {
 
   try {
     if (opts.sourceSprintId !== null && opts.sourceSprintId !== opts.targetSprintId) {
-      await removeIssueFromSprint(opts.taskId, opts.sourceSprintId);
+      const removed = await removeIssueFromSprint(opts.taskId, opts.sourceSprintId);
+      if (!removed) {
+        throw new Error(opts.t('common.unknownError'));
+      }
     }
-    await addIssueToSprint(opts.taskId, opts.targetSprintId);
-    toast.success(opts.t('backlog.dnd.movedToSprint'));
+    const added = await addIssueToSprint(opts.taskId, opts.targetSprintId);
+    if (!added) {
+      throw new Error(opts.t('common.unknownError'));
+    }
+    if (!opts.quiet) toast.success(opts.t('backlog.dnd.movedToSprint'));
   } catch (error) {
     rollbackMoveToSprintOptimisticUpdates({
       ...opts,
       oldSourceSprintData,
       oldTargetSprintData,
     });
-    const errorMessage = error instanceof Error ? error.message : opts.t('common.unknownError');
-    toast.error(opts.t('backlog.dnd.moveError', { message: errorMessage }));
+    if (!opts.quiet) {
+      const errorMessage = error instanceof Error ? error.message : opts.t('common.unknownError');
+      toast.error(opts.t('backlog.dnd.moveError', { message: errorMessage }));
+    }
     throw error;
   }
 }

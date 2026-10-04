@@ -116,6 +116,21 @@ export function useShowHolidaysStorage(): [
   return useLocalStorageBase<boolean>(STORAGE_KEYS.SHOW_HOLIDAYS, true);
 }
 
+export function useReleaseHoroscopeEnabledStorage(): [
+  boolean,
+  (value: boolean | ((prev: boolean) => boolean)) => void
+] {
+  return useLocalStorageBase<boolean>(STORAGE_KEYS.RELEASE_HOROSCOPE_ENABLED, false);
+}
+
+const RELEASE_HOROSCOPE_BIRTHDATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function useReleaseHoroscopeBirthdateStorage(): [string, (value: string) => void] {
+  const [stored, setStored] = useLocalStorageBase<string>(STORAGE_KEYS.RELEASE_HOROSCOPE_BIRTHDATE, '');
+  const birthdate = RELEASE_HOROSCOPE_BIRTHDATE.test(stored) ? stored : '';
+  return [birthdate, setStored];
+}
+
 export function useHolidayCountryStorage(): [
   HolidayCountryCode,
   (value: HolidayCountryCode) => void

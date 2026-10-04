@@ -241,10 +241,17 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
                 onTabChange={handleTabChange}
               />
 
-              <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-0.5">
+              <div
+                className={`flex min-h-0 flex-1 flex-col pb-3 pt-0.5 ${
+                  activeTab === 'retro' ? 'pr-3' : 'px-3'
+                }`}
+              >
                 <div
                   className={
-                    activeTab === 'board' || activeTab === 'retro'
+                    activeTab === 'board' ||
+                    activeTab === 'retro' ||
+                    activeTab === 'backlog' ||
+                    activeTab === 'burndown'
                       ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
                       : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header'
                   }

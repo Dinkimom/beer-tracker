@@ -93,7 +93,8 @@ export function getSidebarOpacityGroupClasses(
   dimmedByContextMenu: boolean
 ): string {
   if (variant !== 'sidebar') return '';
-  const opacityPart = !dimmedByContextMenu ? 'opacity-80 ' : '';
+  // В тёмной теме заливка совпадает со свимлейном; opacity-80 смешивала её с фоном и давала второй оттенок.
+  const opacityPart = !dimmedByContextMenu ? 'opacity-80 dark:opacity-100 ' : '';
   return `${opacityPart}group`;
 }
 

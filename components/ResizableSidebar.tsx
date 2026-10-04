@@ -1,8 +1,9 @@
 'use client';
 
-import type { CSSProperties, TransitionEvent } from 'react';
+import type { CSSProperties, ReactNode, RefObject, TransitionEvent } from 'react';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { ZIndex } from '@/constants';
 import { useResize } from '@/features/sidebar/hooks/useResize';
@@ -22,7 +23,12 @@ interface ResizableSidebarProps {
   /**
    * Содержимое сайдбара
    */
-  children: React.ReactNode;
+  children: ReactNode;
+  /**
+   * Хост закрытой рукоятки. Нужен overflow-hidden и скругление:
+   * полоска на всю высоту обрезается по углам, как внутри открытого сайдбара.
+   */
+  closedHandleHostRef?: RefObject<HTMLDivElement | null>;
   /**
    * docked — прижат к краю панели. island — отдельная карточка на холсте.
    */
@@ -94,6 +100,7 @@ interface ResizableSidebarProps {
  */
 export function ResizableSidebar({
   children,
+  closedHandleHostRef,
   width,
   onWidthChange,
   minWidth = 250,
@@ -113,6 +120,10 @@ export function ResizableSidebar({
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const wasOpenOnResizeStart = useRef<boolean>(isOpen);
   const [phase, setPhase] = useState<ResizableSidebarPhase>(isOpen ? 'open' : 'closed');
+  const [closedHandleHost, setClosedHandleHost] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    setClosedHandleHost(closedHandleHostRef?.current ?? null);
+  }, [closedHandleHostRef]);
 
   const { isResizing, setIsResizing } = useResize({
     calculateValue: calculateWidth || defaultCalculateWidth(resizeHandleSide),
@@ -223,25 +234,30 @@ export function ResizableSidebar({
     setIsResizing(true);
   };
 
+  const closedResizeHandle = (
+    <div
+      className={`absolute top-0 bottom-0 ${resizeHandleSide === 'left' ? 'right-0' : 'left-0'} w-1.5`}
+      style={{
+        [resizeHandleSide === 'left' ? 'right' : 'left']: '0px',
+        zIndex: ZIndex.sidebarResize,
+      }}
+    >
+      <SidebarResizeHandle
+        isResizing={isResizing}
+        linesCount={3}
+        side={resizeHandleSide}
+        onMouseDown={onResizeMouseDown}
+      />
+    </div>
+  );
+
   return (
     <>
       {/* Resize handle (всегда видимый, даже когда сайдбар закрыт) */}
-      {!mounted && (
-        <div
-          className={`absolute top-0 bottom-0 ${resizeHandleSide === 'left' ? 'right-0' : 'left-0'} w-1.5`}
-          style={{
-            [resizeHandleSide === 'left' ? 'right' : 'left']: '0px',
-            zIndex: ZIndex.sidebarResize,
-          }}
-        >
-          <SidebarResizeHandle
-            isResizing={isResizing}
-            linesCount={3}
-            side={resizeHandleSide}
-            onMouseDown={onResizeMouseDown}
-          />
-        </div>
-      )}
+      {!mounted &&
+        (closedHandleHost
+          ? createPortal(closedResizeHandle, closedHandleHost)
+          : closedResizeHandle)}
 
       {/* Сайдбар */}
       {mounted && (

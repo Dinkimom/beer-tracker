@@ -99,6 +99,7 @@ function SwimlaneComponent({
   onTaskHover,
   onContextMenu,
   onCreateTaskInCell,
+  onOverdueCloseAndCreate,
   onCancelQuickAddDraft,
   quickAddBoardId = null,
   quickAddExcludedIssueKeys,
@@ -417,6 +418,7 @@ function SwimlaneComponent({
               onCommentUpdate={onCommentUpdate}
               onContextMenu={onContextMenu}
               onCreateQATask={onCreateQATask}
+              onOverdueCloseAndCreate={onOverdueCloseAndCreate}
               onPasteQuickAddNote={onPasteQuickAddNote}
               onQuickAddDraftAssigneeChange={onQuickAddDraftAssigneeChange}
               onQuickAddDraftCommentColorChange={onQuickAddDraftCommentColorChange}

@@ -1,91 +1,95 @@
 'use client';
 
+import type { StatusFilter } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
-import { useDroppable } from '@dnd-kit/core';
+import { useMemo, useState } from 'react';
 
-import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-import { DaysHeaderStatusBadge } from '@/features/sprint/components/DaysHeader/components/DaysHeaderStatusBadge';
+import { filterTasksByAssignees } from '@/features/backlog/utils/backlogFilterPeople';
+import { SprintStatusTag } from '@/features/sprint/components/SprintStatusTag';
+import { filterTasksByName, filterTasksByStatus } from '@/features/task/hooks/useTaskFilteringHelpers';
 import { useTasks } from '@/features/task/hooks/useTasks';
-import { formatSprintTotalsPointsLabels, getSprintPointsTotals } from '@/lib/pointsUtils';
 import { formatSprintListItemDisplayName } from '@/utils/sprintDisplayName';
 
+import { useBacklogTaskPreview } from '../hooks/useBacklogTaskPreview';
+import { useRegisterBacklogVisibleTasks } from '../hooks/useRegisterBacklogVisibleTasks';
+import { backlogSectionCountKey, backlogTaskPreviewResetKey } from '../utils/backlogTaskPreview';
+import { formatSprintRangeLabel } from '../utils/sprintUtils';
+
+import { BacklogPointsBreakdown } from './BacklogPointsBreakdown';
+import { BacklogSectionFrame } from './BacklogSectionFrame';
 import { SprintColumnTasks } from './SprintColumnTasks';
 
 interface SprintColumnProps {
+  assigneeIds: ReadonlySet<string>;
   boardId: number | null;
+  nameFilter: string;
   sprint: SprintListItem;
+  statusFilter: StatusFilter;
 }
 
-export function SprintColumn({ sprint, boardId }: SprintColumnProps) {
+export function SprintColumn({ assigneeIds, sprint, boardId, nameFilter, statusFilter }: SprintColumnProps) {
   const { language, t } = useI18n();
   const dateLocale = language === 'en' ? 'en-US' : 'ru-RU';
-  const { setNodeRef, isOver } = useDroppable({
-    id: `sprint-column-${sprint.id}`,
-  });
-
+  const [expanded, setExpanded] = useState(true);
   const { data, isLoading, error, refetch } = useTasks(sprint.id, boardId);
-  const tasks = data?.tasks || [];
+  const tasks = useMemo(() => data?.tasks ?? [], [data?.tasks]);
   const developers = data?.developers || [];
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(dateLocale, {
-      day: '2-digit',
-      month: '2-digit',
-    });
-  };
-
-  const formatSprintDates = (startDate: string, endDate: string) => {
-    return `${formatDate(startDate)} - ${formatDate(endDate)}`;
-  };
-
-  // Подсчёт SP и TP через единую точку (lib/pointsUtils)
-  const { totalSP, totalTP } = getSprintPointsTotals(tasks);
-  const { spLabel, tpLabel } = formatSprintTotalsPointsLabels(totalSP, totalTP);
+  const visibleTasks = useMemo(
+    () =>
+      filterTasksByAssignees(
+        filterTasksByStatus(filterTasksByName(tasks, nameFilter), statusFilter),
+        assigneeIds
+      ),
+    [assigneeIds, nameFilter, statusFilter, tasks]
+  );
+  const filtersActive = nameFilter.trim() !== '' || statusFilter !== 'all' || assigneeIds.size > 0;
+  const scopeId = `sprint:${sprint.id}`;
+  useRegisterBacklogVisibleTasks(scopeId, visibleTasks);
+  const { hiddenCount, shownTasks, onShowMore } = useBacklogTaskPreview(
+    visibleTasks,
+    backlogTaskPreviewResetKey({ assigneeIds, nameFilter, statusFilter })
+  );
+  const dateLabel = formatSprintRangeLabel(sprint.startDate, sprint.endDate, dateLocale);
+  const sectionCount = backlogSectionCountKey(shownTasks.length, tasks.length);
 
   return (
-    <div
-      ref={setNodeRef}
-      className={`flex-shrink-0 w-[420px] border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col shadow-sm ${
-        isOver ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-      }`}
+    <BacklogSectionFrame
+      countLabel={isLoading ? undefined : t(sectionCount.key, sectionCount.params)}
+      droppableId={`sprint-column-${sprint.id}`}
+      expanded={expanded}
+      meta={
+        <>
+          {dateLabel ? (
+            <span className="text-xs text-gray-500 dark:text-gray-400">{dateLabel}</span>
+          ) : null}
+          <SprintStatusTag archived={sprint.archived} status={sprint.status} />
+          <BacklogPointsBreakdown tasks={visibleTasks} />
+        </>
+      }
+      title={formatSprintListItemDisplayName(sprint)}
+      onToggle={() => setExpanded((open) => !open)}
     >
-      <div className="flex-shrink-0 px-4 py-3.5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate min-w-0">
-            {formatSprintListItemDisplayName(sprint)}
-          </h3>
-          <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 flex-shrink-0">
-            <Icon className="w-3.5 h-3.5" name="calendar" />
-            <span>{formatSprintDates(sprint.startDate, sprint.endDate)}</span>
-          </div>
-          <DaysHeaderStatusBadge archived={sprint.archived} status={sprint.status} />
-          {(spLabel || tpLabel) && (
-            <div className="flex items-center gap-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 flex-shrink-0">
-              {spLabel ? <span>{spLabel}</span> : null}
-              {spLabel && tpLabel ? <span>·</span> : null}
-              {tpLabel ? <span>{tpLabel}</span> : null}
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto px-3 py-3">
-        <SprintColumnTasks
-          developers={developers}
-          emptyLabel={t('backlog.sprintColumn.empty')}
-          error={error}
-          isLoading={isLoading}
-          loadErrorTitle={t('backlog.sprintColumn.loadErrorTitle')}
-          loadingLabel={t('backlog.sprintColumn.loading')}
-          retryLabel={t('backlog.sprintColumn.retry')}
-          sprintId={sprint.id}
-          tasks={tasks}
-          unknownErrorLabel={t('common.unknownError')}
-          onRetry={() => refetch()}
-        />
-      </div>
-    </div>
+      <SprintColumnTasks
+        developers={developers}
+        emptyLabel={
+          filtersActive && tasks.length > 0 && visibleTasks.length === 0
+            ? t('backlog.filters.noMatches')
+            : t('backlog.sprintColumn.empty')
+        }
+        error={error}
+        hiddenCount={hiddenCount}
+        isLoading={isLoading}
+        loadErrorTitle={t('backlog.sprintColumn.loadErrorTitle')}
+        loadingLabel={t('backlog.sprintColumn.loading')}
+        retryLabel={t('backlog.sprintColumn.retry')}
+        scopeId={scopeId}
+        tasks={shownTasks}
+        unknownErrorLabel={t('common.unknownError')}
+        onRetry={() => refetch()}
+        onShowMore={onShowMore}
+      />
+    </BacklogSectionFrame>
   );
 }
-

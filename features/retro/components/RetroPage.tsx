@@ -68,11 +68,11 @@ export function RetroPage({
 
   return (
     <div
-      className="relative flex min-h-0 flex-1 gap-3 overflow-hidden"
+      className="relative flex min-h-0 flex-1 overflow-hidden"
       style={{ width: '100%', height: '100%' }}
     >
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header">
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
+        <div className={`flex shrink-0 items-center justify-between gap-4 pl-3 ${metricsOpen ? 'pr-3' : ''}`}>
           <SprintSelectorWithCreate
             boardId={boardId}
             selectedSprintId={selectedSprintId}

@@ -104,7 +104,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
     borderDark: 'dark:border-blue-500',
     highlightDark: { bg: 'dark:bg-blue-900/40', border: 'dark:border-blue-500/80' },
     textDark: 'dark:text-blue-100',
-    sidebarDark: 'dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-100',
+    sidebarDark: 'dark:bg-blue-900 dark:border-blue-500 dark:text-blue-100',
     qaStripedDark: { base: 'rgb(30, 58, 138)', stripe: 'rgb(35, 63, 145)' },
   },
 
@@ -126,7 +126,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
   highlightDark: { bg: 'dark:bg-pink-900/40', border: 'dark:border-pink-700/50' },
     borderDark: 'dark:border-pink-700',
     textDark: 'dark:text-pink-100',
-    sidebarDark: 'dark:bg-pink-900/30 dark:border-pink-700 dark:text-pink-100',
+    sidebarDark: 'dark:bg-pink-900 dark:border-pink-700 dark:text-pink-100',
     qaStripedDark: { base: 'rgb(131, 24, 67)', stripe: 'rgb(140, 28, 72)' },
   },
   inreview: {
@@ -146,7 +146,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
   highlightDark: { bg: 'dark:bg-pink-900/40', border: 'dark:border-pink-700/50' },
     borderDark: 'dark:border-pink-700',
     textDark: 'dark:text-pink-100',
-    sidebarDark: 'dark:bg-pink-900/30 dark:border-pink-700 dark:text-pink-100',
+    sidebarDark: 'dark:bg-pink-900 dark:border-pink-700 dark:text-pink-100',
     qaStripedDark: { base: 'rgb(131, 24, 67)', stripe: 'rgb(140, 28, 72)' },
   },
 
@@ -168,7 +168,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
   highlightDark: { bg: 'dark:bg-red-900/40', border: 'dark:border-red-700/50' },
     borderDark: 'dark:border-red-700',
     textDark: 'dark:text-red-100',
-    sidebarDark: 'dark:bg-red-900/30 dark:border-red-700 dark:text-red-100',
+    sidebarDark: 'dark:bg-red-900 dark:border-red-700 dark:text-red-100',
     qaStripedDark: { base: 'rgb(127, 29, 29)', stripe: 'rgb(135, 32, 32)' },
   },
   blocked: {
@@ -188,7 +188,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
   highlightDark: { bg: 'dark:bg-red-900/40', border: 'dark:border-red-700/50' },
     borderDark: 'dark:border-red-700',
     textDark: 'dark:text-red-100',
-    sidebarDark: 'dark:bg-red-900/30 dark:border-red-700 dark:text-red-100',
+    sidebarDark: 'dark:bg-red-900 dark:border-red-700 dark:text-red-100',
     qaStripedDark: { base: 'rgb(127, 29, 29)', stripe: 'rgb(135, 32, 32)' },
   },
 
@@ -211,7 +211,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
   highlightDark: { bg: 'dark:bg-orange-900/40', border: 'dark:border-orange-700/50' },
     borderDark: 'dark:border-orange-700',
     textDark: 'dark:text-orange-100',
-    sidebarDark: 'dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-100',
+    sidebarDark: 'dark:bg-orange-900 dark:border-orange-700 dark:text-orange-100',
     qaStripedDark: { base: 'rgb(154, 52, 18)', stripe: 'rgb(170, 58, 20)' },
   },
   readyfortesting: {
@@ -231,7 +231,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
   highlightDark: { bg: 'dark:bg-orange-900/40', border: 'dark:border-orange-700/50' },
     borderDark: 'dark:border-orange-700',
     textDark: 'dark:text-orange-100',
-    sidebarDark: 'dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-100',
+    sidebarDark: 'dark:bg-orange-900 dark:border-orange-700 dark:text-orange-100',
     qaStripedDark: { base: 'rgb(154, 52, 18)', stripe: 'rgb(170, 58, 20)' },
   },
 
@@ -254,7 +254,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
     highlightDark: { bg: 'dark:bg-yellow-900/40', border: 'dark:border-yellow-600/50' },
     borderDark: 'dark:border-yellow-600',
     textDark: 'dark:text-yellow-100',
-    sidebarDark: 'dark:bg-yellow-900/30 dark:border-yellow-600 dark:text-yellow-100',
+    sidebarDark: 'dark:bg-yellow-900 dark:border-yellow-600 dark:text-yellow-100',
     qaStripedDark: { base: 'rgb(113, 63, 18)', stripe: 'rgb(133, 77, 14)' },
   },
 
@@ -276,8 +276,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
   highlightDark: { bg: 'dark:bg-violet-900/40', border: 'dark:border-violet-700/50' },
     borderDark: 'dark:border-violet-700',
     textDark: 'dark:text-violet-100',
-    sidebarDark:
-      'dark:bg-violet-950/30 dark:border-violet-800/55 dark:text-violet-100',
+    sidebarDark: 'dark:bg-violet-900 dark:border-violet-700 dark:text-violet-100',
     qaStripedDark: { base: 'rgb(76, 29, 149)', stripe: 'rgb(82, 33, 160)' },
   },
 
@@ -299,7 +298,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
   highlightDark: { bg: 'dark:bg-green-900/40', border: 'dark:border-green-700/50' },
     borderDark: 'dark:border-green-700',
     textDark: 'dark:text-green-100',
-    sidebarDark: 'dark:bg-green-900/30 dark:border-green-700 dark:text-green-100',
+    sidebarDark: 'dark:bg-green-900 dark:border-green-700 dark:text-green-100',
     qaStripedDark: { base: 'rgb(20, 83, 45)', stripe: 'rgb(24, 90, 48)' },
   },
 
@@ -321,7 +320,7 @@ export const STATUS_COLOR_MAP: Record<string, StatusColorGroup> = {
     highlightDark: { bg: 'dark:bg-brown-900/40', border: 'dark:border-brown-600/50' },
     borderDark: 'dark:border-brown-600',
     textDark: 'dark:text-brown-100',
-    sidebarDark: 'dark:bg-brown-900/30 dark:border-brown-600 dark:text-brown-100',
+    sidebarDark: 'dark:bg-brown-900 dark:border-brown-600 dark:text-brown-100',
     qaStripedDark: { base: 'rgb(58, 36, 28)', stripe: 'rgb(70, 44, 34)' },
   },
 };

@@ -9,6 +9,9 @@ import React from 'react';
 
 import { formatPointsForDisplay } from '@/lib/pointsUtils';
 
+import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility';
+import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
+
 import { TaskCardBody } from './TaskCardBody';
 import { TaskCardSprintBadges } from './TaskCardSprintBadges';
 import { TaskCardTags } from './TaskCardTags';
@@ -66,7 +69,15 @@ export function TaskCardSidebarResizedSplit({
   isQATask,
   children,
 }: TaskCardSidebarResizedSplitProps) {
+  const estimateMapping = useTaskCardEstimateMapping();
   const showTpLabels = isQATask && task.hideTestPointsByIntegration !== true;
+  const showPointsLabel = resolveTaskCardEstimateVisibility({
+    hideTestPoints: task.hideTestPointsByIntegration === true,
+    isQATask,
+    mapping: estimateMapping,
+    showEstimatesSetting: true,
+    taskId: task.id,
+  }).showPrimaryEstimate;
   return (
     <>
       <div
@@ -129,7 +140,7 @@ export function TaskCardSidebarResizedSplit({
           className="absolute inset-0 rounded-r-lg pointer-events-none bg-white/40 dark:bg-black/25"
         />
 
-        {showExtraSplit && extraSP > 0 && (
+        {showPointsLabel && showExtraSplit && extraSP > 0 && (
           <span
             className={`relative text-xs font-semibold whitespace-nowrap ${
               isDark ? 'text-white/95' : 'text-gray-800'

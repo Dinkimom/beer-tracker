@@ -8,6 +8,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 
 import { HolidayCountrySelect } from '../components/HolidayCountrySelect';
 import { PwaInstallSection } from '../components/PwaInstallSection';
+import { SettingsReleaseHoroscopeSection } from '../components/SettingsReleaseHoroscopeSection';
 import { SidebarTabsSettingsList } from '../components/SidebarTabsSettingsList';
 import { Toggle } from '../components/Toggle';
 
@@ -58,6 +59,7 @@ export function SettingsGeneralTab({
           label={t('settings.generalTab.holidaysLabel')}
           onChange={setShowHolidays}
         />
+        <SettingsReleaseHoroscopeSection />
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">

@@ -9,6 +9,7 @@ interface TaskCardExtraSplitOverlayProps {
   leftPercent: number;
   qaRightBgColor?: string;
   rightPercent: number;
+  showPointsLabel: boolean;
   showTpLabels: boolean;
 }
 
@@ -21,6 +22,7 @@ export function TaskCardExtraSplitOverlay({
   extraSP,
   isVeryNarrow,
   isDark,
+  showPointsLabel,
   showTpLabels,
 }: TaskCardExtraSplitOverlayProps) {
   return (
@@ -39,7 +41,7 @@ export function TaskCardExtraSplitOverlay({
         className={`absolute top-0 bottom-0 w-0.5 pointer-events-none z-10 ${dividerBgClass}`}
         style={{ left: `${leftPercent}%` }}
       />
-      {extraSP > 0 && !isVeryNarrow && (
+      {showPointsLabel && extraSP > 0 && !isVeryNarrow && (
         <span
           className={`absolute top-1/2 -translate-y-1/2 pointer-events-none text-xs font-semibold whitespace-nowrap z-10 ${isDark ? 'text-white/95' : 'text-gray-800'}`}
           style={{
