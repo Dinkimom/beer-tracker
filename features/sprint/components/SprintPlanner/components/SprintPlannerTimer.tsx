@@ -23,10 +23,12 @@ import {
   isSprintPlannerTimerActiveStatus,
   SPRINT_PLANNER_TIMER_CLOCK_PANEL_CLASS,
   SPRINT_PLANNER_TIMER_POPOVER_CLASS,
+  type SprintPlannerTimerTriggerAppearance,
   sprintPlannerTimerTriggerClassName,
 } from './sprintPlannerTimerStyles';
 
 interface SprintPlannerTimerProps {
+  appearance?: SprintPlannerTimerTriggerAppearance;
   selectedSprintId: number | null;
 }
 
@@ -88,7 +90,10 @@ function runTimerPrimary(
   timer.start(durationMs);
 }
 
-export function SprintPlannerTimer({ selectedSprintId }: SprintPlannerTimerProps) {
+export function SprintPlannerTimer({
+  appearance = 'plain',
+  selectedSprintId,
+}: SprintPlannerTimerProps) {
   const { t } = useI18n();
   const timer = useSprintTimer(selectedSprintId);
   const [open, setOpen] = useState(false);
@@ -143,7 +148,7 @@ export function SprintPlannerTimer({ selectedSprintId }: SprintPlannerTimerProps
       <Popover.Trigger asChild>
         <button
           aria-label={title}
-          className={sprintPlannerTimerTriggerClassName(timer.status, open)}
+          className={sprintPlannerTimerTriggerClassName(timer.status, open, appearance)}
           disabled={!selectedSprintId}
           title={title}
           type="button"

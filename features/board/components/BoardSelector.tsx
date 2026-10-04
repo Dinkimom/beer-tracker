@@ -12,6 +12,16 @@ import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 import { useBoards } from '../hooks/useBoards';
 
+function boardSelectorTriggerTone(isOpen: boolean, hasBoard: boolean): string {
+  if (!hasBoard) {
+    return '!text-gray-500 dark:!text-gray-400 dark:hover:!text-gray-200';
+  }
+  if (isOpen) {
+    return '!text-gray-900 dark:!text-gray-100';
+  }
+  return '!text-gray-800 dark:!text-gray-100 dark:hover:!text-white';
+}
+
 interface BoardSelectorProps {
   selectedBoardId: number | null;
   onBoardChange: (boardId: number | null) => void;
@@ -23,19 +33,13 @@ export function BoardSelector({
 }: BoardSelectorProps) {
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
-  const [dropdownWidth, setDropdownWidth] = useState<number | undefined>(undefined);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const { boards, getBoardById } = useBoards();
   const overlay = useOverlayPresence(isOpen);
-
-  // Устанавливаем ширину dropdown равной ширине кнопки
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const buttonWidth = buttonRef.current.getBoundingClientRect().width;
-      setDropdownWidth(buttonWidth);
-    }
-  }, [isOpen]);
+  const optionLabels =
+    boards.length > 0
+      ? boards.map((board) => boardSelectorLabel(board))
+      : [t('planning.board.selectTeamPlaceholder')];
 
   // Закрываем dropdown при клике вне его или нажатии Escape
   useEffect(() => {
@@ -63,6 +67,7 @@ export function BoardSelector({
   }, [isOpen]);
 
   const selectedBoard = getBoardById(selectedBoardId);
+  const triggerTone = boardSelectorTriggerTone(isOpen, Boolean(selectedBoard));
 
   const handleSelect = (boardId: number | null) => {
     onBoardChange(boardId);
@@ -70,30 +75,38 @@ export function BoardSelector({
   };
 
   return (
-    <div ref={dropdownRef} className="relative">
+    <div ref={dropdownRef} className="relative inline-grid max-w-[16rem]">
+      <span
+        aria-hidden
+        className="invisible col-start-1 row-start-1 flex h-8 w-max max-w-full items-center gap-1.5 overflow-hidden px-2.5 text-sm font-medium"
+      >
+        <span className="flex min-w-0 flex-col">
+          {optionLabels.map((label, index) => (
+            <span key={`${label}-${index}`} className="whitespace-nowrap">
+              {label}
+            </span>
+          ))}
+        </span>
+        <span className="h-4 w-4 shrink-0" />
+      </span>
       <Button
-        ref={buttonRef}
-        className={`flex h-11 min-h-0 min-w-[240px] justify-between gap-2.5 px-4 py-0 text-left text-base ${
-          isOpen ? 'border-gray-400 dark:border-gray-500' : ''
-        }`}
+        className={`group col-start-1 row-start-1 flex h-8 min-h-0 w-full justify-between gap-1.5 !rounded-md !border-0 !px-2.5 !py-0 text-left text-sm shadow-none ${
+          isOpen
+            ? '!bg-white hover:!bg-white dark:!bg-gray-700 dark:hover:!bg-gray-700'
+            : '!bg-transparent hover:!bg-black/[0.05] dark:hover:!bg-gray-700'
+        } ${triggerTone}`}
         type="button"
-        variant="outline"
+        variant="ghost"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="min-w-0 flex-1 overflow-hidden text-left">
-          {selectedBoard ? (
-            <span className="truncate text-base font-medium text-gray-900 dark:text-gray-100">
-              {boardSelectorLabel(selectedBoard)}
-            </span>
-          ) : (
-            <span className="truncate text-base font-medium text-gray-500 dark:text-gray-400">
-              {t('planning.board.selectTeamPlaceholder')}
-            </span>
-          )}
-        </div>
+        <span className="min-w-0 truncate font-medium">
+          {selectedBoard
+            ? boardSelectorLabel(selectedBoard)
+            : t('planning.board.selectTeamPlaceholder')}
+        </span>
 
         <Icon
-          className={`h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 dark:text-gray-500 ${
+          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 group-hover:text-gray-600 dark:text-gray-400 dark:group-hover:text-gray-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
           name="chevron-down"
@@ -102,40 +115,29 @@ export function BoardSelector({
 
       {overlay.mounted ? (
         <div
-          className={`absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg ${ZIndex.class('dropdownContent')} max-h-96 overflow-auto min-w-[220px] ${OVERLAY_PANEL_ENTER}`}
+          className={`absolute top-full left-0 mt-1 w-full overflow-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-800 ${ZIndex.class('dropdownContent')} max-h-80 ${OVERLAY_PANEL_ENTER}`}
           data-state={overlay.state}
-          style={{
-            width: dropdownWidth ? `${Math.max(dropdownWidth, 220)}px` : '220px',
-            zIndex: ZIndex.dropdownContent,
-          }}
+          style={{ zIndex: ZIndex.dropdownContent }}
           onAnimationEnd={overlay.onAnimationEnd}
         >
-          <div className="py-1">
-            {boards.map((board) => {
-              const isSelected = board.id === selectedBoardId;
-              return (
-                <Button
-                  key={board.id}
-                  className={`h-auto min-h-0 w-full justify-start rounded-none border-0 border-b border-gray-100 px-4 py-2.5 text-left text-base shadow-none last:border-b-0 dark:border-gray-700 ${
-                    isSelected
-                      ? 'bg-blue-50 hover:bg-blue-50 dark:border-blue-800 dark:bg-blue-900/30 dark:hover:bg-blue-900/30'
-                      : ''
-                  }`}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => handleSelect(board.id)}
-                >
-                  <span
-                    className={`text-base ${
-                      isSelected ? 'text-blue-900 dark:text-blue-300' : 'text-gray-900 dark:text-gray-100'
-                    }`}
-                  >
-                    {boardSelectorLabel(board)}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
+          {boards.map((board) => {
+            const isSelected = board.id === selectedBoardId;
+            return (
+              <Button
+                key={board.id}
+                className={`!h-8 min-h-0 w-full justify-start !rounded-md !border-0 !px-2.5 !py-0 text-left text-sm shadow-none ${
+                  isSelected
+                    ? '!bg-blue-50 !text-blue-700 hover:!bg-blue-50 dark:!bg-blue-500/15 dark:!text-blue-300 dark:hover:!bg-blue-500/15'
+                    : '!text-gray-800 hover:!bg-black/[0.04] dark:!text-gray-100 dark:hover:!bg-white/10'
+                }`}
+                type="button"
+                variant="ghost"
+                onClick={() => handleSelect(board.id)}
+              >
+                <span className="truncate">{boardSelectorLabel(board)}</span>
+              </Button>
+            );
+          })}
         </div>
       ) : null}
     </div>

@@ -23,7 +23,7 @@ export function ArchivedSprintsList({ sprints }: ArchivedSprintsListProps) {
   return (
     <div className="flex-shrink-0 w-[420px] h-full border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col shadow-sm">
       {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+      <div className="flex-shrink-0 px-4 py-3.5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/50">
         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('backlog.archived.title')}</h2>
       </div>
 

@@ -4,6 +4,7 @@ import type { Developer, LayoutViewMode, SidebarGroupBy, Task } from '@/types';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { SidebarTaskGroupLabel } from '@/features/sidebar/components/SidebarTaskGroupLabel';
 import { sidebarTaskGroupContainerClass } from '@/features/sidebar/utils/sidebarTaskGroupContainerClass';
 import { DraggableTask } from '@/features/task/components/DraggableTask';
 
@@ -64,14 +65,7 @@ export function BacklogTabTaskGroups({
           return (
             <div key={groupKey} className={sidebarTaskGroupContainerClass(groupBy, isLastGroup)}>
               {groupBy !== 'none' && (
-                <div className="mb-3">
-                  <h3 className="w-full text-center text-xs font-semibold text-gray-800 dark:text-gray-200 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-md">
-                    {groupKey}
-                    <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-blue-600 rounded-full dark:bg-blue-500/25 dark:text-blue-200">
-                      {tasksInGroup.length}
-                    </span>
-                  </h3>
-                </div>
+                <SidebarTaskGroupLabel count={tasksInGroup.length} label={groupKey} />
               )}
               <div className="space-y-2.5">
                 {tasksInGroup.map((task) => (

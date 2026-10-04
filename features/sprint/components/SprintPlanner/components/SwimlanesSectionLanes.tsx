@@ -217,7 +217,7 @@ export function SwimlanesSectionLanes({
       <SwimlaneXarrowRedrawProvider>
         {pinnedRows.length > 0 ? (
           <div
-            className="sticky bg-white shadow-[0_4px_8px_-4px_rgba(15,23,42,0.18)] dark:bg-gray-800 dark:shadow-[0_4px_8px_-4px_rgba(0,0,0,0.45)]"
+            className="sticky bg-white dark:bg-gray-800"
             data-pinned-swimlanes
             style={{ top: DAYS_HEADER_ROW_HEIGHT_PX, zIndex: ZIndex.stickyPinnedRows }}
           >

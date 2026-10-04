@@ -2,11 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-import { Icon } from '@/components/Icon';
 import { ResizableSidebar } from '@/components/ResizableSidebar';
-import { useI18n } from '@/contexts/LanguageContext';
-
-import { retroIconButtonClass } from './retroUi';
 
 interface RetroMetricsSidebarProps {
   children: ReactNode;
@@ -23,10 +19,10 @@ export function RetroMetricsSidebar({
   onOpenChange,
   onWidthChange,
 }: RetroMetricsSidebarProps) {
-  const { t } = useI18n();
-
   return (
     <ResizableSidebar
+      chrome="island"
+      contentClassName="overflow-y-auto"
       isOpen={open}
       maxWidth={520}
       minWidth={280}
@@ -35,17 +31,7 @@ export function RetroMetricsSidebar({
       onToggle={() => onOpenChange(!open)}
       onWidthChange={onWidthChange}
     >
-      <div className="relative h-full min-h-0 overflow-y-auto">
-        <button
-          aria-label={t('retro.hideMetrics')}
-          className={`${retroIconButtonClass} absolute top-2 right-2 z-10`}
-          type="button"
-          onClick={() => onOpenChange(false)}
-        >
-          <Icon className="h-4 w-4" name="chevron-right" />
-        </button>
-        {children}
-      </div>
+      {children}
     </ResizableSidebar>
   );
 }

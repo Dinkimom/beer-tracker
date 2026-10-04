@@ -20,10 +20,12 @@ export function SprintPlannerTimelineFill({
   return (
     <div
       aria-hidden
-      className={`relative overflow-hidden bg-white dark:bg-gray-800 ${className}`.trim()}
+      className={`@container/timeline-rail relative overflow-hidden bg-white dark:bg-gray-800 ${className}`.trim()}
       style={style}
     >
       <PlannerHatchOverlay />
+      {/* Есть ширина — линия отделяет дни от штриховки. Нулевая ширина — край уже рисует рамка острова. */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-[2] hidden w-px bg-gray-200 @min-[1px]/timeline-rail:block dark:bg-gray-600" />
     </div>
   );
 }

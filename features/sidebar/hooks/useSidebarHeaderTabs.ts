@@ -9,31 +9,22 @@ import { useI18n } from '@/contexts/LanguageContext';
 
 import { isSidebarHeaderTabVisible, sidebarTabBadgeForId } from './useSidebarHeaderTabsHelpers';
 
-type SidebarHeaderTabVariant =
-  | 'amber'
-  | 'blue'
-  | 'emerald'
-  | 'purple'
-  | 'red'
-  | 'violet';
-
 interface SidebarHeaderTab {
   badge?: ReactNode;
   id: SidebarMainTab;
   label: string;
   title?: string;
-  variant: SidebarHeaderTabVariant;
 }
 
-const SIDEBAR_TAB_VARIANTS: Record<SidebarMainTab, SidebarHeaderTabVariant> = {
-  tasks: 'blue',
-  invalid: 'red',
-  goals: 'blue',
-  daily: 'blue',
-  metrics: 'emerald',
-  backlog: 'blue',
-  bugs: 'amber',
-};
+const SIDEBAR_HEADER_TAB_IDS = new Set<SidebarMainTab>([
+  'tasks',
+  'invalid',
+  'goals',
+  'daily',
+  'metrics',
+  'backlog',
+  'bugs',
+]);
 
 const DEFAULT_SIDEBAR_ORDER: SidebarMainTab[] = [
   'tasks',
@@ -78,7 +69,7 @@ function resolveConfiguredSidebarIds(
   }
   const ids = sidebarTabsSettings
     .map((tab) => tab.id)
-    .filter((id) => SIDEBAR_TAB_VARIANTS[id]) as SidebarMainTab[];
+    .filter((id) => SIDEBAR_HEADER_TAB_IDS.has(id)) as SidebarMainTab[];
   const known = new Set(ids);
   const missing = DEFAULT_SIDEBAR_ORDER.filter((id) => !known.has(id));
   return missing.length > 0 ? [...ids, ...missing] : ids;
@@ -104,13 +95,12 @@ export function useSidebarHeaderTabs({
   );
 
   return configuredSidebarIds
-    .filter((id) => SIDEBAR_TAB_VARIANTS[id])
+    .filter((id) => SIDEBAR_HEADER_TAB_IDS.has(id))
     .map((id) => {
       const visible = visibilityMap.get(id) ?? true;
       return {
         id,
         label: t(`sidebar.tabs.${id}`),
-        variant: SIDEBAR_TAB_VARIANTS[id],
         visible,
       };
     })
@@ -127,7 +117,6 @@ export function useSidebarHeaderTabs({
     .map((tab) => ({
       id: tab.id,
       label: tab.label,
-      variant: tab.variant,
       badge: sidebarTabBadgeForId(tab.id, {
         allTasksCount,
         checklistDone,

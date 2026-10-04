@@ -231,7 +231,7 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
       <PhaseCardColorSchemeProvider>
         <PlannerRemoteMediaProvider enabled={!showFullScreenLoading}>
           <PlannerOnboardingReplayBridge>
-            <div className="flex flex-col h-screen overflow-hidden">
+            <div className="flex h-screen flex-col overflow-hidden bg-ds-canvas">
               <PageHeader
                 activeTab={activeTab}
                 adminHref={adminHref}
@@ -241,30 +241,40 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
                 onTabChange={handleTabChange}
               />
 
-              <MainPageClientContent
-                activeTab={activeTab}
-                checklistDone={checklistDone}
-                checklistTotal={checklistTotal}
-                deliveryChecklistItems={deliveryChecklistItems}
-                deliveryGoalsLoading={deliveryGoalsLoading}
-                discoveryChecklistItems={discoveryChecklistItems}
-                discoveryGoalsLoading={discoveryGoalsLoading}
-                goalTaskIds={goalTaskIds}
-                goalsLoading={goalsLoading}
-                isMounted={isMounted}
-                loading={loading}
-                reloadTasksPending={reloadTasksMutation.isPending}
-                selectedBoardId={selectedBoardId}
-                selectedSprintId={selectedSprintId}
-                sprintInfo={sprintInfo}
-                sprints={sprints}
-                sprintsLoading={sprintsLoading}
-                tasks={tasks}
-                tasksPending={tasksPending}
-                onGoalsUpdate={handleGoalsUpdate}
-                onSprintChange={handleSprintChange}
-                onTasksReload={handleTasksReload}
-              />
+              <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-0.5">
+                <div
+                  className={
+                    activeTab === 'board' || activeTab === 'retro'
+                      ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+                      : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header'
+                  }
+                >
+                  <MainPageClientContent
+                    activeTab={activeTab}
+                    checklistDone={checklistDone}
+                    checklistTotal={checklistTotal}
+                    deliveryChecklistItems={deliveryChecklistItems}
+                    deliveryGoalsLoading={deliveryGoalsLoading}
+                    discoveryChecklistItems={discoveryChecklistItems}
+                    discoveryGoalsLoading={discoveryGoalsLoading}
+                    goalTaskIds={goalTaskIds}
+                    goalsLoading={goalsLoading}
+                    isMounted={isMounted}
+                    loading={loading}
+                    reloadTasksPending={reloadTasksMutation.isPending}
+                    selectedBoardId={selectedBoardId}
+                    selectedSprintId={selectedSprintId}
+                    sprintInfo={sprintInfo}
+                    sprints={sprints}
+                    sprintsLoading={sprintsLoading}
+                    tasks={tasks}
+                    tasksPending={tasksPending}
+                    onGoalsUpdate={handleGoalsUpdate}
+                    onSprintChange={handleSprintChange}
+                    onTasksReload={handleTasksReload}
+                  />
+                </div>
+              </div>
             </div>
             <LoadingOverlay isVisible={showFullScreenLoading} message={t('common.loading')} />
           </PlannerOnboardingReplayBridge>

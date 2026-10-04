@@ -24,6 +24,10 @@ interface ResizableSidebarProps {
    */
   children: React.ReactNode;
   /**
+   * docked — прижат к краю панели. island — отдельная карточка на холсте.
+   */
+  chrome?: 'docked' | 'island';
+  /**
    * Дополнительные классы для контейнера сайдбара
    */
   className?: string;
@@ -98,6 +102,7 @@ export function ResizableSidebar({
   calculateWidth,
   isOpen = true,
   onToggle,
+  chrome = 'docked',
   className = '',
   style,
   containerRef,
@@ -207,7 +212,9 @@ export function ResizableSidebar({
   const shellWidth = resizableSidebarShellWidthPx(phase, width);
   const animateWidth = !isResizing && !prefersResizableSidebarReducedMotion();
   const baseClasses =
-    'relative h-full border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col self-stretch overflow-hidden';
+    chrome === 'island'
+      ? 'relative flex h-full flex-col self-stretch overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+      : 'relative flex h-full flex-col self-stretch overflow-hidden border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800';
   const combinedClassName = `${baseClasses} ${className}`.trim();
 
   const onResizeMouseDown = (e: React.MouseEvent) => {

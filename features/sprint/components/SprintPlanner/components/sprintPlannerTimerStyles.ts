@@ -3,7 +3,20 @@ import type { SprintTimerStatus } from '@/lib/realtime/sprintTimerState';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 
 const TRIGGER_BASE =
-  'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border-0 tabular-nums text-sm font-medium outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-40';
+  'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg tabular-nums text-sm font-medium outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-40';
+
+export type SprintPlannerTimerTriggerAppearance = 'outline' | 'plain';
+
+function triggerFrame(appearance: SprintPlannerTimerTriggerAppearance, popoverOpen: boolean): string {
+  if (appearance === 'outline') {
+    const border = 'border border-gray-300 dark:border-gray-600';
+    if (popoverOpen) {
+      return border;
+    }
+    return `${border} bg-white dark:bg-gray-800`;
+  }
+  return 'border-0';
+}
 
 export function isSprintPlannerTimerActiveStatus(status: SprintTimerStatus): boolean {
   return status === 'running' || status === 'paused';
@@ -11,21 +24,23 @@ export function isSprintPlannerTimerActiveStatus(status: SprintTimerStatus): boo
 
 export function sprintPlannerTimerTriggerClassName(
   status: SprintTimerStatus,
-  popoverOpen: boolean
+  popoverOpen: boolean,
+  appearance: SprintPlannerTimerTriggerAppearance = 'plain'
 ): string {
   const active = isSprintPlannerTimerActiveStatus(status);
+  const frame = triggerFrame(appearance, popoverOpen);
   const openBackdrop = 'bg-gray-100 text-gray-800 dark:bg-gray-700/80 dark:text-gray-100';
 
   if (popoverOpen) {
     if (active) {
-      return `${TRIGGER_BASE} px-2.5 ${openBackdrop}`;
+      return `${TRIGGER_BASE} ${frame} px-2.5 ${openBackdrop}`;
     }
-    return `${TRIGGER_BASE} w-8 text-gray-700 ${openBackdrop} dark:text-gray-200`;
+    return `${TRIGGER_BASE} ${frame} w-8 text-gray-700 ${openBackdrop} dark:text-gray-200`;
   }
   if (active) {
-    return `${TRIGGER_BASE} px-2.5 text-gray-800 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700/70`;
+    return `${TRIGGER_BASE} ${frame} px-2.5 text-gray-800 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700/70`;
   }
-  return `${TRIGGER_BASE} w-8 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60 dark:hover:text-gray-200`;
+  return `${TRIGGER_BASE} ${frame} w-8 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-700/60 dark:hover:text-gray-200`;
 }
 
 export const SPRINT_PLANNER_TIMER_POPOVER_CLASS =

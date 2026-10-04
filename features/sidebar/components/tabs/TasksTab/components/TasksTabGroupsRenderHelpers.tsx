@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { sidebarTaskGroupContainerClass } from '@/features/sidebar/utils/sidebarTaskGroupContainerClass';
 import { formatTaskGroupLabel } from '@/features/task/utils/formatTaskGroupLabel';
 
+import { SidebarTaskGroupLabel } from '../../../SidebarTaskGroupLabel';
+
 import { renderTasksTabGroupRows } from './TasksTabGroupsHelpers';
 
 interface RenderTasksTabGroupSectionParams {
@@ -46,14 +48,10 @@ export function renderTasksTabGroupSection(
       className={sidebarTaskGroupContainerClass(params.groupBy, isLastGroup)}
     >
       {params.groupBy !== 'none' && (
-        <div className="mb-3">
-          <h3 className="w-full text-center text-xs font-semibold text-gray-800 dark:text-gray-200 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-md">
-            {formatTaskGroupLabel(params.groupKey, params.t)}
-            <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-blue-600 rounded-full dark:bg-blue-500/25 dark:text-blue-200">
-              {tasksInGroup.length}
-            </span>
-          </h3>
-        </div>
+        <SidebarTaskGroupLabel
+          count={tasksInGroup.length}
+          label={formatTaskGroupLabel(params.groupKey, params.t)}
+        />
       )}
       <div className="flex flex-col gap-2.5">
         {renderTasksTabGroupRows({

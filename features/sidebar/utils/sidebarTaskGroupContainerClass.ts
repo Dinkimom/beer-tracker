@@ -8,7 +8,7 @@ export function sidebarTaskGroupContainerClass(
     return '';
   }
   if (!isLastGroup) {
-    return 'mb-4 pb-4';
+    return 'mb-4';
   }
-  return 'mb-4';
+  return '';
 }

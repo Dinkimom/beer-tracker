@@ -4,6 +4,7 @@ import type { ValidationIssue } from '@/features/task/utils/taskValidation';
 
 import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
+import { SidebarTaskGroupLabel } from '@/features/sidebar/components/SidebarTaskGroupLabel';
 import { useTaskSidebar } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { sidebarTaskGroupContainerClass } from '@/features/sidebar/utils/sidebarTaskGroupContainerClass';
 import { formatTaskGroupLabel } from '@/features/task/utils/formatTaskGroupLabel';
@@ -40,7 +41,7 @@ export function InvalidTab() {
               className="rounded px-2.5 py-1 text-xs font-medium"
               title={t('task.invalidTab.groupNoneTitle')}
               type="button"
-              variant={groupBy === 'none' ? 'primary' : 'secondary'}
+              variant={groupBy === 'none' ? 'outline' : 'secondary'}
               onClick={() => setGroupBy('none')}
             >
               {t('task.invalidTab.groupNoneButton')}
@@ -49,7 +50,7 @@ export function InvalidTab() {
               className="rounded px-2.5 py-1 text-xs font-medium"
               title={t('task.invalidTab.groupAssigneeTitle')}
               type="button"
-              variant={groupBy === 'assignee' ? 'primary' : 'secondary'}
+              variant={groupBy === 'assignee' ? 'outline' : 'secondary'}
               onClick={() => setGroupBy('assignee')}
             >
               {t('task.invalidTab.groupAssigneeButton')}
@@ -58,7 +59,7 @@ export function InvalidTab() {
               className="rounded px-2.5 py-1 text-xs font-medium"
               title={t('task.invalidTab.groupParentTitle')}
               type="button"
-              variant={groupBy === 'parent' ? 'primary' : 'secondary'}
+              variant={groupBy === 'parent' ? 'outline' : 'secondary'}
               onClick={() => setGroupBy('parent')}
             >
               {t('task.invalidTab.groupParentButton')}
@@ -91,14 +92,10 @@ export function InvalidTab() {
                 className={sidebarTaskGroupContainerClass(groupBy, isLastGroup)}
               >
                 {groupBy !== 'none' && (
-                  <div className="mb-3">
-                    <h3 className="w-full text-center text-xs font-semibold text-gray-800 dark:text-gray-200 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-md">
-                      {formatTaskGroupLabel(groupKey, t)}
-                      <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold text-white bg-blue-600 rounded-full dark:bg-blue-500/25 dark:text-blue-200">
-                        {invalidTasksInGroup.length}
-                      </span>
-                    </h3>
-                  </div>
+                  <SidebarTaskGroupLabel
+                    count={invalidTasksInGroup.length}
+                    label={formatTaskGroupLabel(groupKey, t)}
+                  />
                 )}
                 <div className="space-y-2.5">
                   {invalidTasksInGroup.map(({ task, issues }) => (

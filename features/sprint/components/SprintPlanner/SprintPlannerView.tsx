@@ -184,12 +184,13 @@ export function SprintPlannerView({
           viewMode={viewMode}
         >
         <div
-          className="relative flex flex-col bg-gray-50 dark:bg-gray-900 flex-1 min-h-0 overflow-hidden"
+          className="relative flex min-h-0 flex-1 gap-3 overflow-hidden"
           style={{
             width: '100%',
             height: '100%',
           }}
         >
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header">
           <SprintPlannerControlsBar
             boardId={boardIdForPlannerData ?? null}
             boardViewers={boardViewers}
@@ -211,9 +212,7 @@ export function SprintPlannerView({
             onSprintChange={onSprintChange}
             onTasksReload={onTasksReload}
           />
-          {/* Контейнер с шапкой/свимлейнами или режимом занятости */}
-          <div className="flex flex-1 overflow-hidden min-h-0 relative" style={{ zIndex: ZIndex.base }}>
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden" style={{ zIndex: ZIndex.base }}>
               <SprintPlannerBoardViews
                 kanban={{
                   boardId: boardIdForPlannerData ?? null,
@@ -349,6 +348,7 @@ export function SprintPlannerView({
                 />
               ) : null}
             </div>
+          </div>
 
             <SidebarSection
               activeTaskDuration={dragAndDrop.activeTaskDuration}
@@ -393,7 +393,6 @@ export function SprintPlannerView({
               onToggle={handlers.handleToggleSidebar}
               onWidthChange={setSidebarWidth}
             />
-          </div>
         </div>
         </PlannerOnboardingHost>
         </FeatureDraftRowNamesProvider>

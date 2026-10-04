@@ -10,7 +10,6 @@ import { CurrentUserAvatar } from '@/components/CurrentUserAvatar';
 import { PageHeaderActionButtons } from '@/components/PageHeaderActionButtons';
 import { PageHeaderAdminLink } from '@/components/PageHeaderAdminLink';
 import { PageHeaderBoardSelector } from '@/components/PageHeaderBoardSelector';
-import { pageHeaderBoardToolbarTrailingSlots } from '@/components/pageHeaderBoardToolbarTrailing';
 import {
   PageHeaderMainPageTabs,
   type PageHeaderMainPageTabItem,
@@ -54,14 +53,11 @@ export function PageHeaderBoardToolbar({
 }: PageHeaderBoardToolbarProps) {
   const { isDemoPlanner } = useDemoPlannerShell();
   const { t } = useI18n();
-  const trailingSlots = pageHeaderBoardToolbarTrailingSlots({
-    hasAdminLink: Boolean(adminHref),
-    showUserCluster: !isDemoPlanner,
-  });
+  const showUserCluster = !isDemoPlanner;
 
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-ds-border-subtle px-4 py-3">
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
         <Button
           aria-label={t('header.clickForAnimation')}
           className="h-auto min-h-0 gap-1 border-0 bg-transparent p-0 pr-2 text-left shadow-none hover:bg-transparent dark:hover:bg-transparent"
@@ -82,13 +78,11 @@ export function PageHeaderBoardToolbar({
             {t('header.appName')}
           </span>
         </Button>
-        <div className="h-6 w-px flex-shrink-0 bg-ds-border-subtle" />
         <PageHeaderBoardSelector
           boardName={boardName}
           selectedBoardId={selectedBoardId}
           onBoardChange={onBoardChange}
         />
-        <div className="h-6 w-px flex-shrink-0 bg-ds-border-subtle" />
         <PageHeaderMainPageTabs
           activeId={activeTab}
           ariaLabel={t('header.accessibility.sprintTabsNavigation')}
@@ -96,7 +90,7 @@ export function PageHeaderBoardToolbar({
           onChange={(tab) => onTabChange?.(tab)}
         />
       </div>
-      <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+      <div className="flex shrink-0 items-center gap-4">
         <PageHeaderActionButtons
           christmasThemeEnabled={christmasThemeEnabled}
           isChristmasPeriod={isChristmasPeriod}
@@ -105,20 +99,12 @@ export function PageHeaderBoardToolbar({
           onSettingsOpen={onSettingsOpen}
           onThemeToggle={onThemeToggle}
         />
-        {trailingSlots.includes('admin-divider') ? (
-          <div aria-hidden className="hidden h-6 w-px shrink-0 bg-ds-border-subtle sm:block" />
-        ) : null}
-        {trailingSlots.includes('admin') && adminHref ? (
-          <PageHeaderAdminLink adminHref={adminHref} />
-        ) : null}
-        {trailingSlots.includes('user-divider') ? (
-          <div aria-hidden className="h-6 w-px shrink-0 bg-ds-border-subtle" />
-        ) : null}
-        {trailingSlots.includes('user') ? (
-          <>
+        {adminHref ? <PageHeaderAdminLink adminHref={adminHref} /> : null}
+        {showUserCluster ? (
+          <div className="flex items-center gap-2">
             <CurrentUserAvatar />
             <NotificationsBell />
-          </>
+          </div>
         ) : null}
       </div>
     </div>

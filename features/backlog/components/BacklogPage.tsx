@@ -119,10 +119,10 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
 
   return (
     <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-transparent">
         <div
           ref={horizontalScrollRef}
-          className="flex h-full overflow-x-auto bg-gray-50 dark:bg-gray-900"
+          className="flex h-full overflow-x-auto bg-gray-50 dark:bg-transparent"
         >
           {/* Колонка бэклога */}
           <BacklogColumn

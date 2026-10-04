@@ -8,6 +8,7 @@
   --foreground: #171717;
   /* Дизайн-система: семантические токены (см. COMPONENT_CATALOG.md) */
   --ds-border-subtle: #e5e7eb;
+  --ds-canvas: #f3f4f6;
   --ds-text-muted: #6b7280;
   --ds-surface-header: #ffffff;
   --toast-bg: #ffffff;
@@ -35,6 +36,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-ds-border-subtle: var(--ds-border-subtle);
+  --color-ds-canvas: var(--ds-canvas);
   --color-ds-surface-header: var(--ds-surface-header);
   --color-ds-text-muted: var(--ds-text-muted);
   --color-toast-bg: var(--toast-bg);
@@ -61,6 +63,7 @@
   --background: #0f172a;
   --foreground: #f1f5f9;
   --ds-border-subtle: #374151;
+  --ds-canvas: #0b1220;
   --ds-text-muted: #9ca3af;
   --ds-surface-header: #1f2937;
   --toast-bg: #1e293b;

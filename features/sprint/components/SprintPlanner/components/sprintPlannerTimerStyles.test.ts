@@ -14,6 +14,12 @@ describe('sprintPlannerTimerStyles', () => {
     expect(isSprintPlannerTimerActiveStatus('finished')).toBe(false);
   });
 
+  it('draws an outline frame when the trigger is an outline button', () => {
+    expect(sprintPlannerTimerTriggerClassName('idle', false, 'outline')).toContain('border-gray-300');
+    expect(sprintPlannerTimerTriggerClassName('idle', false, 'outline')).toContain('bg-white');
+    expect(sprintPlannerTimerTriggerClassName('running', false, 'outline')).toContain('border-gray-300');
+  });
+
   it('uses borderless rounded trigger without outline variant classes', () => {
     expect(sprintPlannerTimerTriggerClassName('idle', false)).toContain('rounded-lg');
     expect(sprintPlannerTimerTriggerClassName('idle', false)).not.toContain('rounded-full');

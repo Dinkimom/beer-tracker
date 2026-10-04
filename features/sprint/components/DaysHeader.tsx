@@ -124,7 +124,7 @@ export function DaysHeader({
       >
         {/* Days row */}
         <div
-          className="flex overflow-visible border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+          className="flex overflow-visible border-y border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
           style={{ height: DAYS_HEADER_ROW_HEIGHT_PX, minHeight: DAYS_HEADER_ROW_HEIGHT_PX }}
         >
           <div
@@ -132,13 +132,13 @@ export function DaysHeader({
             style={{ width: contentWidth, minWidth: contentWidth }}
           >
             <div
-              className="relative flex shrink-0 items-center justify-between gap-3 overflow-hidden border-r border-b border-gray-200 bg-gray-100 px-4 py-2 sticky left-0 dark:border-gray-600 dark:bg-gray-800"
+              className="relative flex shrink-0 items-center justify-between gap-3 overflow-hidden border-r border-b border-gray-200 bg-white py-2 pl-4 pr-2 sticky left-0 dark:border-r-gray-600 dark:border-b-gray-700 dark:bg-gray-800"
               data-onboarding="lane"
               style={{
                 width: participantsColumnWidth,
                 minWidth: participantsColumnWidth,
-                height: DAYS_HEADER_ROW_HEIGHT_PX,
-                minHeight: DAYS_HEADER_ROW_HEIGHT_PX,
+                height: DAYS_HEADER_ROW_HEIGHT_PX - 1,
+                minHeight: DAYS_HEADER_ROW_HEIGHT_PX - 1,
                 /* Угол шапки выше дней и колонок исполнителей при скролле по обеим осям */
                 zIndex: ZIndex.stickyMainHeader + 1,
               }}
@@ -179,7 +179,7 @@ export function DaysHeader({
           </div>
           {showAfterSprintRail ? (
             <SprintPlannerTimelineFill
-              className="min-w-0 flex-1 border-l border-gray-200 dark:border-gray-600"
+              className="min-w-0 flex-1"
               style={{
                 height: DAYS_HEADER_ROW_HEIGHT_PX,
                 minHeight: DAYS_HEADER_ROW_HEIGHT_PX,

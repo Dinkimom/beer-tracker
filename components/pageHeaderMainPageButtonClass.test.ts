@@ -11,7 +11,7 @@ describe('pageHeaderMainPageButtonClass', () => {
 
   it('keeps the inactive tab transparent', () => {
     const className = pageHeaderMainPageButtonClass(false);
-    expect(className).toContain('border-transparent');
-    expect(className).toContain('!text-gray-600');
+    expect(className).toContain('!bg-transparent');
+    expect(className).toContain('!text-gray-500');
   });
 });

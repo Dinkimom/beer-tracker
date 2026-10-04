@@ -11,7 +11,6 @@ interface TaskSidebarHeaderProps {
   tabs: Array<{
     id: SidebarMainTab;
     label: string;
-    variant: 'amber' | 'blue' | 'emerald' | 'purple' | 'red' | 'violet';
     badge?: ReactNode;
     title?: string;
   }>;
@@ -35,11 +34,12 @@ export function SidebarHeader({
   const { scrollRef, showLeft, showRight } = useSidebarTabsScrollFade(tabsKey);
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-      <div className="relative bg-white dark:bg-gray-800">
+    // h-14 совпадает с шапкой планера (py-3 + контролы h-8). Верхнюю границу не рисуем: её уже даёт рамка острова.
+    <div className="flex h-14 shrink-0 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div className="relative min-w-0 flex-1 bg-white dark:bg-gray-800">
         <div
           ref={scrollRef}
-          className="flex h-[40px] overflow-x-auto scrollbar-hide"
+          className="flex h-full overflow-x-auto scrollbar-hide"
         >
           {/* Inner wrapper: ResizeObserver видит рост scrollWidth при смене бейджей/подписей */}
           <div className="flex h-full min-w-min">
@@ -50,7 +50,6 @@ export function SidebarHeader({
                 isActive={mainTab === tab.id}
                 label={tab.label}
                 title={tab.title}
-                variant={tab.variant}
                 onClick={() => setMainTab(tab.id)}
               />
             ))}

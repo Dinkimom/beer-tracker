@@ -5,6 +5,7 @@ import type { SprintListItem } from '@/types/tracker';
 
 import { useMemo } from 'react';
 
+import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useRetroBoardCollaboration } from '@/features/retro/hooks/useRetroBoardCollaboration';
@@ -21,8 +22,8 @@ import { resolveAdjacentSprintIds } from '@/lib/retro/retroBoard';
 import { sprintTaskCompletionRulesFromPlanner } from '@/lib/sprints/sprintTaskCompletion';
 
 import { RetroBoardView } from './RetroBoardView';
+import { RetroFactsBlock } from './RetroFactsBlock';
 import { RetroMetricsSidebar } from './RetroMetricsSidebar';
-import { retroIconButtonClass } from './retroUi';
 
 interface RetroPageProps {
   boardId: number;
@@ -53,6 +54,10 @@ export function RetroPage({
     [plannerRules]
   );
   const tasksForScore = tasksPending ? undefined : tasks;
+  const selectedSprint = useMemo(
+    () => sprints.find((sprint) => sprint.id === selectedSprintId) ?? null,
+    [selectedSprintId, sprints]
+  );
   const previousSprintId = useMemo(
     () => (selectedSprintId == null ? null : resolveAdjacentSprintIds(sprints, selectedSprintId).previousSprintId),
     [selectedSprintId, sprints]
@@ -62,9 +67,12 @@ export function RetroPage({
   const [metricsWidth, setMetricsWidth] = useDebouncedNumericLocalStorage(STORAGE_KEYS.RETRO_METRICS_WIDTH, 320);
 
   return (
-    <div className="relative flex min-h-0 flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+    <div
+      className="relative flex min-h-0 flex-1 gap-3 overflow-hidden"
+      style={{ width: '100%', height: '100%' }}
+    >
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
           <SprintSelectorWithCreate
             boardId={boardId}
             selectedSprintId={selectedSprintId}
@@ -74,23 +82,27 @@ export function RetroPage({
           />
           <div className="flex shrink-0 items-center gap-2">
             <SprintPlannerPresenceAvatars viewers={boardViewers} />
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('retro.timerLabel')}</span>
-            <SprintPlannerTimer selectedSprintId={selectedSprintId} />
-            {selectedSprintId != null && !metricsOpen ? (
-              <button
-                aria-label={t('retro.showMetrics')}
-                className={retroIconButtonClass}
+            <SprintPlannerTimer appearance="outline" selectedSprintId={selectedSprintId} />
+            {selectedSprintId == null ? null : (
+              <Button
+                aria-label={metricsOpen ? t('retro.hideMetrics') : t('retro.showMetrics')}
+                aria-pressed={metricsOpen}
+                className={`!h-8 !w-8 !min-w-0 shrink-0 !justify-center !px-0 ${
+                  metricsOpen ? '' : 'text-gray-600 dark:text-gray-400'
+                }`}
+                title={metricsOpen ? t('retro.hideMetrics') : t('retro.showMetrics')}
                 type="button"
-                onClick={() => setMetricsOpen(true)}
+                variant={metricsOpen ? 'accent' : 'outline'}
+                onClick={() => setMetricsOpen(!metricsOpen)}
               >
-                <Icon className="h-4 w-4" name="chevron-left" />
-              </button>
-            ) : null}
+                <Icon className="h-4 w-4" name="menu" />
+              </Button>
+            )}
           </div>
         </div>
 
         {selectedSprintId == null ? (
-          <div className="flex flex-1 items-center justify-center px-6 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-sm text-gray-500 dark:text-gray-400">
             {t('retro.selectSprint')}
           </div>
         ) : (
@@ -114,6 +126,13 @@ export function RetroPage({
             goalTaskIds={goalTaskIds}
             localTasks={tasksForScore}
             sprintId={selectedSprintId}
+          />
+          <RetroFactsBlock
+            key={selectedSprintId}
+            completionRules={completionRules}
+            sprint={selectedSprint}
+            tasks={tasksForScore}
+            tasksPending={tasksPending}
           />
         </RetroMetricsSidebar>
       )}

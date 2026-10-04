@@ -1,6 +1,6 @@
 export function pageHeaderMainPageButtonClass(isActive: boolean): string {
   if (isActive) {
-    return 'border-gray-200/90 bg-white !text-blue-600 hover:!border-gray-200/90 hover:!bg-white dark:border-transparent dark:bg-gray-800 dark:!text-blue-400 dark:hover:!border-transparent dark:hover:!bg-gray-800';
+    return '!bg-white !text-blue-600 hover:!bg-white dark:!bg-white/10 dark:!text-blue-300 dark:hover:!bg-white/10';
   }
-  return 'border-transparent shadow-none !text-gray-600 hover:!border-transparent hover:!bg-transparent hover:!text-gray-900 dark:!text-gray-400 dark:hover:!bg-transparent dark:hover:!text-gray-200';
+  return '!bg-transparent !text-gray-500 hover:!bg-black/[0.05] hover:!text-gray-900 dark:!text-gray-400 dark:hover:!bg-white/10 dark:hover:!text-gray-100';
 }

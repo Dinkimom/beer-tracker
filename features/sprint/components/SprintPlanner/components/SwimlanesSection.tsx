@@ -423,7 +423,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
             />
           </div>
           {showAfterSprintRail ? (
-            <SprintPlannerTimelineFill className="min-w-0 flex-1 self-stretch border-l border-gray-200 dark:border-gray-600" />
+            <SprintPlannerTimelineFill className="min-w-0 flex-1 self-stretch" />
           ) : null}
         </div>
       </div>

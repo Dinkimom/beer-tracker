@@ -64,7 +64,7 @@ export function PageHeader({
   const showBoardToolbar = selectedBoardId !== undefined;
 
   return (
-    <div className="relative bg-ds-surface-header" data-page-header>
+    <div className="relative shrink-0 bg-ds-canvas" data-page-header>
       {showChristmasLights ? <ChristmasLights /> : null}
       {showBoardToolbar ? (
         <PageHeaderBoardToolbar

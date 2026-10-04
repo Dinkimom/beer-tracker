@@ -77,7 +77,7 @@ export function RetroNoteCard({
         if (!open) setPickerOpen(false);
       }}
     >
-      <article className="group relative mx-2 rounded-lg border border-gray-300 bg-gray-100 px-2.5 py-2 text-gray-800 shadow-[0_1px_2px_rgba(15,23,42,0.12)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
+      <article className="group relative mx-2 rounded-lg border border-gray-200 bg-gray-100 px-2.5 py-2 text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
         <button
           aria-label={t('retro.deleteCard')}
           className={`${retroIconButtonClass} absolute right-1 top-1 opacity-0 group-hover:opacity-100`}

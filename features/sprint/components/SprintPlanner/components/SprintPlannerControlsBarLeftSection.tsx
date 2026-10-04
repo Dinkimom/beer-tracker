@@ -42,10 +42,6 @@ export function SprintPlannerControlsBarLeftSection({
           onSprintChange={onSprintChange}
         />
       </div>
-      <span
-        aria-hidden
-        className="hidden h-6 w-px shrink-0 self-center bg-ds-border-subtle sm:block"
-      />
       <div className="min-w-0 max-w-[16rem] flex-1 basis-[12rem]">
         <SearchInput
           className="min-w-0 max-w-full"

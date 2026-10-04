@@ -2,8 +2,8 @@ import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/compo
 import type { SwimlanePlacementTool } from '@/lib/layers';
 import type { SwimlaneBaselineLayoutMode } from '@/lib/swimlane/swimlaneBaselineLayoutMode';
 
-/** Отступ капсулы от нижнего края доски. */
-export const SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX = 16;
+/** Отступ капсулы от нижнего края доски, выше скругления острова. */
+export const SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX = 32;
 
 /** Высота капсулы: кнопка h-9 + py-1.5 + бордер. */
 export const SWIMLANE_PLACEMENT_TOOLBAR_HEIGHT_PX = 50;

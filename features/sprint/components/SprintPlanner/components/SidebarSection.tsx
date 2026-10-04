@@ -107,6 +107,7 @@ export const SidebarSection = observer(function SidebarSection({
 
   return (
     <ResizableSidebar
+      chrome="island"
       isOpen={sidebarOpen}
       maxWidth={500}
       minWidth={300}

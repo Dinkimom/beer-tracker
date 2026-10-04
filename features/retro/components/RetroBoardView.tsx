@@ -71,7 +71,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
     return (
       <div
         aria-label={t('retro.boardAria')}
-        className="min-h-0 min-w-0 flex-1 bg-gray-50 dark:bg-gray-900"
+        className="min-h-0 min-w-0 flex-1"
         role="region"
       />
     );
@@ -118,7 +118,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
     >
     <div
       aria-label={t('retro.boardAria')}
-      className="flex min-h-0 min-w-0 flex-1 items-start gap-4 overflow-x-auto bg-gray-50 p-4 dark:bg-gray-900"
+      className="flex min-h-0 min-w-0 flex-1 items-start gap-4 overflow-x-auto p-4"
       role="region"
     >
       {columns.map(({ cards, column }, index) => (
@@ -142,7 +142,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
       <div className="w-[280px] shrink-0 self-start">
         {addingColumn ? (
           <form
-            className="flex flex-col gap-2 rounded-lg border border-gray-300 bg-white p-2 dark:border-gray-600 dark:bg-gray-800"
+            className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-800"
             onSubmit={submitColumn}
           >
             <input
@@ -172,7 +172,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
           </form>
         ) : (
           <button
-            className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-2.5 text-left text-sm font-medium text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-2.5 text-left text-sm font-medium text-gray-600 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:bg-gray-700"
             type="button"
             onClick={() => setAddingColumn(true)}
           >

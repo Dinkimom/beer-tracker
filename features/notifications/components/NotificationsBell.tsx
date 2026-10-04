@@ -26,6 +26,7 @@ export function NotificationsBell() {
         aria-haspopup="dialog"
         aria-label={ariaLabel}
         className="relative"
+        onCanvas
         title={panelTitle}
         type="button"
         onClick={() => setIsOpen((open) => !open)}

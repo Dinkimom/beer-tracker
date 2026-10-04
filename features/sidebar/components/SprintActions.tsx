@@ -56,7 +56,7 @@ export function SprintActions({
       )}
       {canFinishSprint && (
         <Button
-          className="w-full text-sm py-2.5"
+          className="!h-7 w-full !py-0 text-xs"
           disabled={isChangingStatus}
           variant="danger"
           onClick={onFinishSprint}

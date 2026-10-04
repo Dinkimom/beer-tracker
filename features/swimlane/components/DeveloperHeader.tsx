@@ -106,7 +106,7 @@ export function DeveloperHeader({
 
   return (
     <div
-      className="group relative flex-shrink-0 sticky left-0 self-stretch overflow-hidden border-r-1 border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-900"
+      className="group relative flex-shrink-0 sticky left-0 self-stretch overflow-hidden border-r border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
       style={{
         width,
         minWidth: width,

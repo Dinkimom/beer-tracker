@@ -13,8 +13,6 @@ import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
 import { readApiErrorStatus } from './readApiError';
 
-export { TransitionRequiresFieldsError } from '@/lib/issues/transitionRequiresFields';
-
 function isStructuredIssueChangelogPayload(data: unknown): data is IssueChangelogWithComments {
   return data != null && typeof data === 'object' && 'changelog' in data && 'comments' in data;
 }
@@ -351,6 +349,16 @@ export async function removeIssueFromAllSprints(issueKey: string): Promise<boole
     console.error(`Failed to remove issue ${issueKey} from all sprints:`, error);
     return false;
   }
+}
+
+/** Пакет changelog из кеша. Роут принимает не больше 100 ключей за запрос. */
+export async function fetchIssueChangelogBatch(
+  issueKeys: string[]
+): Promise<Record<string, IssueChangelogWithComments>> {
+  const { data } = await getPlannerBeerTrackerApi().post<
+    Record<string, IssueChangelogWithComments>
+  >('/issues/changelog', { issueKeys });
+  return data ?? {};
 }
 
 export async function fetchIssueChangelog(
