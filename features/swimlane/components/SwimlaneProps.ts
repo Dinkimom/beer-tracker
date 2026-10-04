@@ -98,12 +98,6 @@ export interface SwimlaneProps {
   onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
-  onOverdueCloseAndCreate?: (args: {
-    currentCell: number;
-    position: TaskPosition;
-    task: Task;
-    timelineTotalParts: number;
-  }) => Promise<void> | void;
   onCreateTaskInCell?: (data: {
     assigneeId: string;
     day: number;
@@ -112,6 +106,12 @@ export interface SwimlaneProps {
     part: number;
   }) => Promise<void> | void;
   onFactSegmentHover: (taskId: string | null) => void;
+  onOverdueCloseAndCreate?: (args: {
+    currentCell: number;
+    position: TaskPosition;
+    task: Task;
+    timelineTotalParts: number;
+  }) => Promise<void> | void;
   onPasteQuickAddNote?: (taskId: string) => void;
   onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;
   onQuickAddDraftCommentColorChange?: (taskId: string, color: StickyNoteColor) => void;

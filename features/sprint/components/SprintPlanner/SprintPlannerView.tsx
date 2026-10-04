@@ -1,7 +1,7 @@
 
 import type { useSprintPlannerViewModel } from './hooks/useSprintPlannerViewModel';
 
-import { useRef } from 'react';
+import { useState } from 'react';
 
 import { ZIndex } from '@/constants';
 import { StickyNoteReactionsProvider } from '@/features/comments/StickyNoteReactionsProvider';
@@ -143,7 +143,7 @@ export function SprintPlannerView({
   viewMode,
   DialogComponent,
 }: SprintPlannerViewProps) {
-  const boardFrameRef = useRef<HTMLDivElement>(null);
+  const [boardFrameEl, setBoardFrameEl] = useState<HTMLDivElement | null>(null);
   const onOverdueCloseAndCreate = useCloseOverdueAndCreateNext({
     boardId: boardIdForPlannerData ?? null,
     getQueueByBoardId,
@@ -205,7 +205,7 @@ export function SprintPlannerView({
           }}
         >
           <div
-            ref={boardFrameRef}
+            ref={setBoardFrameEl}
             className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header"
           >
           <SprintPlannerControlsBar
@@ -370,12 +370,12 @@ export function SprintPlannerView({
 
             <SidebarSection
               activeTaskDuration={dragAndDrop.activeTaskDuration}
-              closedHandleHostRef={boardFrameRef}
               activeTaskId={dragAndDrop.activeTaskId}
               allSprintTasks={tasks}
               backlogTaskRef={backlogTaskRef}
               checklistDone={checklistDone}
               checklistTotal={checklistTotal}
+              closedHandleHost={boardFrameEl}
               contextMenuBlurOtherCards={contextMenuBlurOtherCards}
               deliveryChecklistItems={deliveryChecklistItems}
               deliveryGoalsLoading={deliveryGoalsLoading}

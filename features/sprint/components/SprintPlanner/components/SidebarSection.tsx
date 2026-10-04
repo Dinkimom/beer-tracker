@@ -21,8 +21,8 @@ interface SidebarSectionProps {
     removeTask: (taskId: string) => void;
   } | null>;
   checklistDone: number;
-  closedHandleHostRef?: React.RefObject<HTMLDivElement | null>;
   checklistTotal: number;
+  closedHandleHost?: HTMLElement | null;
   contextMenuBlurOtherCards?: boolean;
   deliveryChecklistItems?: ChecklistItem[];
   deliveryGoalsLoading?: boolean;
@@ -72,8 +72,8 @@ export const SidebarSection = observer(function SidebarSection({
   sidebarDropPointerY = null,
   allSprintTasks,
   checklistDone,
-  closedHandleHostRef,
   checklistTotal,
+  closedHandleHost = null,
   contextMenuBlurOtherCards = false,
   deliveryChecklistItems = [],
   discoveryChecklistItems = [],
@@ -110,7 +110,7 @@ export const SidebarSection = observer(function SidebarSection({
   return (
     <ResizableSidebar
       chrome="island"
-      closedHandleHostRef={closedHandleHostRef}
+      closedHandleHost={closedHandleHost}
       isOpen={sidebarOpen}
       maxWidth={500}
       minWidth={300}

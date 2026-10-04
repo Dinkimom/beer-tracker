@@ -97,12 +97,6 @@ export interface SwimlanesSectionProps {
   onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
-  onOverdueCloseAndCreate?: (args: {
-    currentCell: number;
-    position: TaskPosition;
-    task: Task;
-    timelineTotalParts: number;
-  }) => Promise<void> | void;
   onCreateTaskInCell?: (data: {
     assigneeId: string;
     day: number;
@@ -111,6 +105,12 @@ export interface SwimlanesSectionProps {
     part: number;
   }) => Promise<void> | void;
   onDeleteLink: (linkId: string) => void;
+  onOverdueCloseAndCreate?: (args: {
+    currentCell: number;
+    position: TaskPosition;
+    task: Task;
+    timelineTotalParts: number;
+  }) => Promise<void> | void;
   onParticipantsColumnWidthChange?: (width: number) => void;
   onPasteQuickAddNote?: (taskId: string) => void;
   onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;

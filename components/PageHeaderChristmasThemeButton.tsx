@@ -22,7 +22,7 @@ export function PageHeaderChristmasThemeButton({
     : 'h-4 w-4 text-ds-text-muted';
 
   return (
-    <HeaderIconButton onCanvas title={title} type="button" onClick={onToggle}>
+    <HeaderIconButton title={title} type="button" onCanvas onClick={onToggle}>
       <Icon className={iconClass} name="snowflake" />
     </HeaderIconButton>
   );

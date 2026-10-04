@@ -17,7 +17,7 @@ export function PageHeaderThemeToggleButton({ theme, onToggle }: PageHeaderTheme
       : t('header.actions.switchToLightTheme');
 
   return (
-    <HeaderIconButton onCanvas title={title} type="button" onClick={onToggle}>
+    <HeaderIconButton title={title} type="button" onCanvas onClick={onToggle}>
       <ThemeToggleIcon theme={theme} />
     </HeaderIconButton>
   );

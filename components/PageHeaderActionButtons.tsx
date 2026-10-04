@@ -30,9 +30,9 @@ export function PageHeaderActionButtons({
   return (
     <div className="flex items-center gap-2">
       <HeaderIconButton
-        onCanvas
         title={t('header.actions.settings')}
         type="button"
+        onCanvas
         onClick={onSettingsOpen}
       >
         <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" name="settings" />
@@ -47,9 +47,9 @@ export function PageHeaderActionButtons({
       {replayOnboarding ? (
         <HeaderIconButton
           aria-label={t('sprintPlanner.onboarding.replay')}
-          onCanvas
           title={t('sprintPlanner.onboarding.replay')}
           type="button"
+          onCanvas
           onClick={replayOnboarding}
         >
           <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" name="circle-help" />

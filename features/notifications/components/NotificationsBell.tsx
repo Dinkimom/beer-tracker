@@ -26,9 +26,9 @@ export function NotificationsBell() {
         aria-haspopup="dialog"
         aria-label={ariaLabel}
         className="relative"
-        onCanvas
         title={panelTitle}
         type="button"
+        onCanvas
         onClick={() => setIsOpen((open) => !open)}
       >
         <svg

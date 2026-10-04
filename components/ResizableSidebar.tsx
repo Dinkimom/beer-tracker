@@ -1,8 +1,8 @@
 'use client';
 
-import type { CSSProperties, ReactNode, RefObject, TransitionEvent } from 'react';
+import type { CSSProperties, ReactNode, TransitionEvent } from 'react';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { ZIndex } from '@/constants';
@@ -25,11 +25,6 @@ interface ResizableSidebarProps {
    */
   children: ReactNode;
   /**
-   * Хост закрытой рукоятки. Нужен overflow-hidden и скругление:
-   * полоска на всю высоту обрезается по углам, как внутри открытого сайдбара.
-   */
-  closedHandleHostRef?: RefObject<HTMLDivElement | null>;
-  /**
    * docked — прижат к краю панели. island — отдельная карточка на холсте.
    */
   chrome?: 'docked' | 'island';
@@ -37,6 +32,11 @@ interface ResizableSidebarProps {
    * Дополнительные классы для контейнера сайдбара
    */
   className?: string;
+  /**
+   * Хост закрытой рукоятки. Нужен overflow-hidden и скругление:
+   * полоска на всю высоту обрезается по углам, как внутри открытого сайдбара.
+   */
+  closedHandleHost?: HTMLElement | null;
   /**
    * Дополнительные классы для контента сайдбара
    */
@@ -100,7 +100,7 @@ interface ResizableSidebarProps {
  */
 export function ResizableSidebar({
   children,
-  closedHandleHostRef,
+  closedHandleHost = null,
   width,
   onWidthChange,
   minWidth = 250,
@@ -120,10 +120,6 @@ export function ResizableSidebar({
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const wasOpenOnResizeStart = useRef<boolean>(isOpen);
   const [phase, setPhase] = useState<ResizableSidebarPhase>(isOpen ? 'open' : 'closed');
-  const [closedHandleHost, setClosedHandleHost] = useState<HTMLElement | null>(null);
-  useLayoutEffect(() => {
-    setClosedHandleHost(closedHandleHostRef?.current ?? null);
-  }, [closedHandleHostRef]);
 
   const { isResizing, setIsResizing } = useResize({
     calculateValue: calculateWidth || defaultCalculateWidth(resizeHandleSide),
