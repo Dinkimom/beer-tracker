@@ -51,7 +51,7 @@ export function QuarterlyPlannerWeekCommentCorner({
     >
       <button
         aria-label={comments.length === 1 ? comments[0]!.text.slice(0, 80) : undefined}
-        className="group pointer-events-auto absolute top-0 right-0 z-[1] block cursor-default border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80 focus-visible:ring-offset-0"
+        className="group pointer-events-auto absolute top-0 right-0 z-[1] block cursor-pointer border-0 bg-transparent p-0 outline-none transition-all duration-200 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-amber-400/80 focus-visible:ring-offset-0"
         style={{ zIndex: ZIndex.stickyInContent }}
         type="button"
       >

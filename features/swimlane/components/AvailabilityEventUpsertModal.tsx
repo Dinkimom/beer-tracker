@@ -12,6 +12,7 @@ import { Icon } from '@/components/Icon';
 import { IsoDateRangePickerField } from '@/components/IsoDateRangePickerField';
 import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
+import { useI18n } from '@/contexts/LanguageContext';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 const EVENT_OPTIONS: CustomSelectOption<BoardAvailabilityEventType>[] = [
@@ -56,6 +57,7 @@ export function AvailabilityEventUpsertModal({
   onDelete,
   onSubmit,
 }: AvailabilityEventUpsertModalProps) {
+  const { t } = useI18n();
   const [submitting, setSubmitting] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -107,7 +109,7 @@ export function AvailabilityEventUpsertModal({
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
             {title}
           </h3>
-          <HeaderIconButton aria-label="Закрыть" title="Закрыть" onClick={onClose}>
+          <HeaderIconButton aria-label={t('common.close')} onClick={onClose}>
             <Icon className="h-5 w-5" name="close" />
           </HeaderIconButton>
         </div>

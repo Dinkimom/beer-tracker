@@ -11,6 +11,7 @@ import { Icon } from '@/components/Icon';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 import {
   compareSprintNamesByNumberDesc,
 } from '@/utils/sprintDisplayName';
@@ -32,6 +33,19 @@ function sprintSelectorItemDateClass(isSelected: boolean): string {
   return 'text-gray-600 dark:text-gray-400';
 }
 
+function sprintSelectorTriggerClassName(
+  surface: 'glass' | 'solid',
+  widthClass: string,
+  className?: string
+): string {
+  const layout = `!h-8 !min-h-0 !justify-between !gap-1.5 !rounded-lg !px-2.5 !py-0 disabled:!cursor-not-allowed ${widthClass}`;
+  const chrome =
+    surface === 'glass'
+      ? glassLensControlClass()
+      : '!border-gray-300 !bg-white hover:!border-gray-400 focus-visible:!border-blue-500 focus-visible:!ring-2 focus-visible:!ring-blue-500 data-[state=open]:!border-gray-400 dark:!border-gray-600 dark:!bg-gray-700 dark:hover:!border-gray-500 dark:data-[state=open]:!border-gray-500 dark:disabled:!border-gray-600 dark:disabled:!bg-gray-800';
+  return `${layout} ${chrome} ${className ?? ''}`;
+}
+
 interface SprintSelectorProps {
   className?: string;
   /** true — поповер поверх модалки (z-index выше modal) */
@@ -40,6 +54,8 @@ interface SprintSelectorProps {
   selectedSprintId: number | null;
   sprints: SprintListItem[];
   sprintsLoading?: boolean;
+  /** На стеклянной плашке триггер — линза. Список спринтов остаётся плотным. */
+  surface?: 'glass' | 'solid';
   /** Открыть флоу создания спринта (закрывает поповер). Без колбэка — строки create нет. */
   onCreateSprint?: () => void;
   onSprintChange: (sprintId: number | null) => void;
@@ -54,6 +70,7 @@ export function SprintSelector({
   onSprintChange,
   loading = false,
   sprintsLoading = false,
+  surface = 'solid',
 }: SprintSelectorProps) {
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
@@ -93,7 +110,7 @@ export function SprintSelector({
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>
         <Button
-          className={`!h-8 !min-h-0 !justify-between !gap-1.5 !rounded-lg !border-gray-300 !bg-white !px-2.5 !py-0 hover:!border-gray-400 focus-visible:!border-blue-500 focus-visible:!ring-2 focus-visible:!ring-blue-500 data-[state=open]:!border-gray-400 disabled:!cursor-not-allowed dark:!border-gray-600 dark:!bg-gray-700 dark:hover:!border-gray-500 dark:data-[state=open]:!border-gray-500 dark:disabled:!border-gray-600 dark:disabled:!bg-gray-800 ${widthClass} ${className ?? ''}`}
+          className={sprintSelectorTriggerClassName(surface, widthClass, className)}
           disabled={isTriggerDisabled}
           type="button"
           variant="outline"
@@ -155,6 +172,7 @@ export function SprintSelector({
             width: 'var(--radix-popover-trigger-width)',
             minWidth: 'var(--radix-popover-trigger-width)',
             maxWidth: 'min(100vw - 16px, 24rem)',
+            zIndex: inModal ? 2010 : ZIndex.dropdownContent,
           }}
         >
           <div className="flex flex-col">

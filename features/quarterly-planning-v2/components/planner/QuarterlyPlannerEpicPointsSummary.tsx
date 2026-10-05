@@ -2,6 +2,7 @@
 
 import type { BurndownTilesFromTasks } from '@/features/sprint/utils/sprintMetrics';
 
+import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import {
@@ -44,8 +45,10 @@ export function QuarterlyPlannerEpicPointsSummary({
   const parts = buildEpicPointsSummaryParts(tiles, t);
 
   return (
-    <p className={EPIC_POINTS_TEXT_CLASS} title={parts.join(' · ')}>
+    <OverflowTooltip content={parts.join(' · ')}>
+    <p className={EPIC_POINTS_TEXT_CLASS}>
       {parts.join(' · ')}
     </p>
+    </OverflowTooltip>
   );
 }

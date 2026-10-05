@@ -40,6 +40,7 @@ export function SprintPlannerControlsBarLeftSection({
           selectedSprintId={selectedSprintId}
           sprints={sprints}
           sprintsLoading={sprintsLoading}
+          surface="glass"
           onSprintChange={onSprintChange}
         />
       </div>
@@ -48,6 +49,7 @@ export function SprintPlannerControlsBarLeftSection({
           className="min-w-0 max-w-full"
           placeholder={t('sprintPlanner.controls.searchPlaceholder')}
           size="md"
+          surface="glass"
           value={globalNameFilter}
           onChange={setGlobalNameFilter}
         />

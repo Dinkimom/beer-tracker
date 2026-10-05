@@ -5,15 +5,17 @@ import type { OccupancyErrorReason } from '@/lib/planner-timeline';
 import type { Comment, Developer, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { Xwrapper } from 'react-xarrows';
 
 import { WORKING_DAYS, ZIndex } from '@/constants';
-import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
+import { SwimlanePinnedArrowSync } from '@/features/sprint/components/SprintPlanner/components/SwimlanePinnedArrowSync';
 import { FeatureLaneAddRow } from '@/features/sprint/components/SprintPlanner/feature-lanes/FeatureLaneAddRow';
 import { PlannerNowLine } from '@/features/sprint/components/SprintPlanner/layout/PlannerNowLine';
 import {
+  applyPinnedSwimlaneFrameTops,
   partitionPinnedSwimlaneRows,
+  syncPinnedSwimlaneFrames,
   togglePinnedSwimlaneRowId,
 } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionHelpers';
 import {
@@ -26,6 +28,41 @@ import { TaskArrows } from '@/features/swimlane/components/task-arrows';
 import { SwimlaneXarrowRedrawProvider } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import { useSwimlanePinnedRowIdsStorage } from '@/hooks/useLocalStorage';
 import { taskLinksForOnboardingArrows } from '@/lib/plannerOnboarding/onboardingDemoLane';
+
+function useStableElementRefMap() {
+  const nodes = useRef(new Map<string, HTMLDivElement>());
+  const callbacks = useRef(new Map<string, (node: HTMLDivElement | null) => void>());
+  const refFor = useCallback((id: string) => {
+    const cached = callbacks.current.get(id);
+    if (cached) return cached;
+    const callback = (node: HTMLDivElement | null) => {
+      if (node) nodes.current.set(id, node);
+      else nodes.current.delete(id);
+    };
+    callbacks.current.set(id, callback);
+    return callback;
+  }, []);
+  return { nodes, refFor };
+}
+
+function usePinnedSwimlaneFrameTops(
+  pinnedIdKey: string,
+  frameNodes: { readonly current: Map<string, HTMLDivElement> },
+  onLaidOutRef: { readonly current: (() => void) | null }
+) {
+  useLayoutEffect(() => {
+    const pinnedIds = JSON.parse(pinnedIdKey) as string[];
+    const pinnedFrames = syncPinnedSwimlaneFrames(frameNodes.current, pinnedIds);
+    if (pinnedFrames.length > 0) onLaidOutRef.current?.();
+    if (pinnedFrames.length === 0) return undefined;
+    const observer = new ResizeObserver(() => {
+      applyPinnedSwimlaneFrameTops(pinnedFrames);
+      onLaidOutRef.current?.();
+    });
+    for (const frame of pinnedFrames) observer.observe(frame);
+    return () => observer.disconnect();
+  }, [frameNodes, onLaidOutRef, pinnedIdKey]);
+}
 
 interface SwimlanesSectionLanesProps {
   calendarBusyByDeveloper: Map<string, CalendarBusySegment[]>;
@@ -94,6 +131,15 @@ export function SwimlanesSectionLanes({
     () => partitionPinnedSwimlaneRows(swimlaneRows, pinnedRowIds),
     [pinnedRowIds, swimlaneRows]
   );
+  const orderedRows = useMemo(
+    () => [...pinnedRows, ...unpinnedRows],
+    [pinnedRows, unpinnedRows]
+  );
+  const pinnedIdKey = JSON.stringify(pinnedRows.map((row) => row.id));
+  const rowsLayoutKey = `${pinnedIdKey}|${orderedRows.map((row) => row.id).join('|')}`;
+  const { nodes: frameNodes, refFor: frameRefFor } = useStableElementRefMap();
+  const pinnedFrameArrowRedrawRef = useRef<(() => void) | null>(null);
+  usePinnedSwimlaneFrameTops(pinnedIdKey, frameNodes, pinnedFrameArrowRedrawRef);
   const pinnedIdSet = useMemo(() => new Set(pinnedRowIds), [pinnedRowIds]);
   const togglePinnedRow = useCallback(
     (assigneeId: string) => {
@@ -106,12 +152,10 @@ export function SwimlanesSectionLanes({
   const linksDimOnHover = section.linksDimOnHover !== false;
   const arrowTaskLinks = taskLinksForOnboardingArrows(showLinks, section.filteredTaskLinks);
 
-  const renderLane = (developer: Developer) => (
-    <Swimlane
-      key={developer.id}
-      isPinned={pinnedIdSet.has(developer.id)}
-      onTogglePin={togglePinnedRow}
-      {...buildSwimlanePropsForDeveloper({
+  const swimlanePropsById = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof buildSwimlanePropsForDeveloper>>();
+    for (const developer of swimlaneRows) {
+      map.set(developer.id, buildSwimlanePropsForDeveloper({
         activeDraggableId: section.dragAndDrop.activeDraggableId,
         activeTask: resolveSwimlaneActiveTask(
           section.dragAndDrop.activeTaskId,
@@ -203,51 +247,102 @@ export function SwimlanesSectionLanes({
         tasks: section.tasksByAssignee.get(developer.id) || [],
         tasksMap: section.tasksMap,
         viewMode: section.viewMode,
-      })}
-    />
-  );
+      }));
+    }
+    return map;
+  }, [
+    calendarBusyByDeveloper,
+    cardShadowTaskId,
+    comments,
+    contextMenuTaskId,
+    developerAvailabilityMap,
+    effectiveFactHoveredTaskId,
+    errorReasons,
+    errorTaskIds,
+    globalNameFilter,
+    holidayDayIndices,
+    hoverConnectedTaskIds,
+    hoveredTaskId,
+    linkingFromTaskId,
+    linkingSessionActive,
+    linksDimOnHover,
+    onFactSegmentHover,
+    onSegmentEditCancel,
+    onTaskClick,
+    onTaskHover,
+    section,
+    segmentEditTaskId,
+    showLinks,
+    sourceLinkEndCell,
+    swimlaneFactDeveloperMap,
+    swimlaneInProgressFactSegmentsByDev,
+    swimlaneRows,
+  ]);
 
   const nowLineProps = {
     dayCount: section.sprintTimelineWorkingDays ?? WORKING_DAYS,
     participantsColumnWidth: section.participantsColumnWidth,
     sprintStartDate: section.sprintStartDate,
   };
+  const showArrows = showLinks || arrowTaskLinks.length > 0;
+  const taskArrowProps = {
+    activeTaskId: section.dragAndDrop.activeTaskId,
+    hoveredTaskId,
+    linkToolArmed,
+    linkingFromTaskId,
+    linkingSessionActive,
+    qaTasksMap: section.qaTasksMap,
+    rowsLayoutKey,
+    segmentEditTaskId,
+    taskLinks: arrowTaskLinks,
+    taskPositions: swimlanePositions,
+    tasks: section.allTasksForDrag,
+    visibleDeveloperIds: visibleSwimlaneAssigneeIds,
+    onDeleteLink: section.onDeleteLink,
+    onTaskHoverEnd,
+  };
+
+  const renderLane = (developer: Developer) => {
+    const laneProps = swimlanePropsById.get(developer.id);
+    if (!laneProps) return null;
+    const isPinned = pinnedIdSet.has(developer.id);
+    return (
+      <div
+        key={developer.id}
+        ref={frameRefFor(developer.id)}
+        className={isPinned ? 'sticky planner-pinned-lane' : undefined}
+        style={isPinned ? { zIndex: ZIndex.stickyPinnedRows } : undefined}
+      >
+        <Swimlane {...laneProps} isPinned={isPinned} onTogglePin={togglePinnedRow} />
+        {isPinned ? <PlannerNowLine {...nowLineProps} /> : null}
+        {isPinned && showArrows ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 overflow-hidden"
+            data-swimlane-arrow-clip
+            style={{ zIndex: ZIndex.contentOverlay }}
+          >
+            {/* Общий слой стрелок под z-index закреплённой строки. */}
+            <TaskArrows {...taskArrowProps} clipToRow />
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <Xwrapper>
       <SwimlaneXarrowRedrawProvider>
-        {pinnedRows.length > 0 ? (
-          <div
-            className="sticky bg-white dark:bg-gray-800"
-            data-pinned-swimlanes
-            style={{ top: DAYS_HEADER_ROW_HEIGHT_PX, zIndex: ZIndex.stickyPinnedRows }}
-          >
-            {pinnedRows.map(renderLane)}
-            <PlannerNowLine {...nowLineProps} />
-          </div>
-        ) : null}
+        <SwimlanePinnedArrowSync
+          active={pinnedRows.length > 0}
+          redrawRef={pinnedFrameArrowRedrawRef}
+        />
         <div className="relative">
-          {unpinnedRows.map(renderLane)}
+          {orderedRows.map(renderLane)}
           <FeatureLaneAddRow participantsColumnWidth={section.participantsColumnWidth} />
           <PlannerNowLine {...nowLineProps} />
         </div>
-        {(showLinks || arrowTaskLinks.length > 0) && (
-          <TaskArrows
-            activeTaskId={section.dragAndDrop.activeTaskId}
-            hoveredTaskId={hoveredTaskId}
-            linkToolArmed={linkToolArmed}
-            linkingFromTaskId={linkingFromTaskId}
-            linkingSessionActive={linkingSessionActive}
-            qaTasksMap={section.qaTasksMap}
-            segmentEditTaskId={segmentEditTaskId}
-            taskLinks={arrowTaskLinks}
-            taskPositions={swimlanePositions}
-            tasks={section.allTasksForDrag}
-            visibleDeveloperIds={visibleSwimlaneAssigneeIds}
-            onDeleteLink={section.onDeleteLink}
-            onTaskHoverEnd={onTaskHoverEnd}
-          />
-        )}
+        {showArrows ? <TaskArrows {...taskArrowProps} /> : null}
       </SwimlaneXarrowRedrawProvider>
     </Xwrapper>
   );

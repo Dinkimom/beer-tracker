@@ -1,6 +1,7 @@
 'use client';
 
 import { BeerMugIcon } from '@/components/BeerMugIcon';
+import { TextTooltip } from '@/components/TextTooltip';
 import { SPRINT_SCORE_MAX_MARK } from '@/lib/sprints/sprintScoreHelpers';
 
 export { SPRINT_SCORE_MAX_MARK };
@@ -41,11 +42,11 @@ export function SprintScoreMarkInline({
   const styles = SIZE_CLASS[size];
 
   return (
+    <TextTooltip content={label}>
     <span
       aria-label={label}
       className={`inline-flex items-center ${styles.gap} ${styles.shell} bg-gray-100 dark:bg-gray-700/70`}
       role="img"
-      title={label}
     >
       {Array.from({ length: SPRINT_SCORE_MAX_MARK }, (_, index) => (
         <BeerMugIcon
@@ -55,5 +56,6 @@ export function SprintScoreMarkInline({
         />
       ))}
     </span>
+    </TextTooltip>
   );
 }

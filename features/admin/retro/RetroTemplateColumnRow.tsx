@@ -44,7 +44,7 @@ export function RetroTemplateColumnRow({
       />
       <button
         aria-label={t('admin.retroTemplate.moveUp')}
-        className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700"
+        className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
         disabled={!canMoveUp}
         type="button"
         onClick={() => onMove(-1)}
@@ -53,7 +53,7 @@ export function RetroTemplateColumnRow({
       </button>
       <button
         aria-label={t('admin.retroTemplate.moveDown')}
-        className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700"
+        className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
         disabled={!canMoveDown}
         type="button"
         onClick={() => onMove(1)}
@@ -62,7 +62,7 @@ export function RetroTemplateColumnRow({
       </button>
       <button
         aria-label={t('admin.retroTemplate.deleteColumn')}
-        className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700"
+        className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
         disabled={!canDelete}
         type="button"
         onClick={onDelete}

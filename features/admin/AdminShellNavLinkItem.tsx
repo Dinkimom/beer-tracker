@@ -17,12 +17,12 @@ function navAlertIconTone(trackerIncompleteActive: boolean): string {
 
 function navLinkSurface(isActive: boolean, trackerIncompleteActive: boolean): string {
   if (trackerIncompleteActive) {
-    return 'bg-amber-50 text-amber-950 focus-visible:ring-amber-500 dark:bg-amber-400/10 dark:text-amber-50';
+    return 'bg-amber-50 text-amber-950 hover:bg-amber-100 active:bg-amber-200 focus-visible:ring-amber-500 dark:bg-amber-400/10 dark:text-amber-50 dark:hover:bg-amber-400/20 dark:active:bg-amber-400/30';
   }
   if (isActive) {
-    return 'bg-gray-900/[0.06] text-gray-900 focus-visible:ring-blue-500 dark:bg-gray-700 dark:text-white';
+    return 'bg-gray-900/[0.06] text-gray-900 hover:bg-gray-900/[0.1] active:bg-gray-900/[0.14] focus-visible:ring-blue-500 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 dark:active:bg-gray-500';
   }
-  return 'text-gray-600 hover:bg-gray-900/[0.04] hover:text-gray-900 focus-visible:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-100';
+  return 'text-gray-600 hover:bg-gray-900/[0.04] hover:text-gray-900 active:bg-gray-900/[0.08] focus-visible:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-100 dark:active:bg-gray-600';
 }
 
 function navLeadIconTone(isActive: boolean, trackerIncompleteActive: boolean): string {
@@ -57,7 +57,7 @@ export function AdminShellNavLinkItem({
             : undefined
         }
         className={[
-          'flex w-full cursor-pointer items-center gap-3 rounded-xl py-2 pl-2.5 pr-3 text-left text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2',
+          'flex w-full cursor-pointer items-center gap-3 rounded-xl py-2 pl-2.5 pr-3 text-left text-sm font-medium transition-all duration-200 active:scale-[0.98] focus:outline-none focus-visible:ring-2',
           navLinkSurface(isActive, trackerIncompleteActive),
         ].join(' ')}
         href={ctx.item.href}

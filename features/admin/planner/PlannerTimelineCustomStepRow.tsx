@@ -74,7 +74,7 @@ export function PlannerTimelineCustomStepRow({
     <div className="contents">
       <button
         aria-label={t('admin.plannerTimeline.removeStep')}
-        className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+        className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-gray-700 dark:hover:text-gray-200 active:scale-[0.98]"
         disabled={!canRemove}
         type="button"
         onClick={onRemove}

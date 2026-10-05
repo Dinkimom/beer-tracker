@@ -25,7 +25,6 @@ export function LanguageSelector({ className }: LanguageSelectorProps) {
       className={className ? `w-32 ${className}` : 'w-32'}
       options={options}
       size="compact"
-      title="Language"
       value={language}
       onChange={setLanguage}
     />

@@ -17,10 +17,11 @@ export function SprintPlannerTimelineFill({
   className = '',
   style,
 }: SprintPlannerTimelineFillProps) {
+  const surfaceClass = 'bg-white dark:bg-gray-800';
   return (
     <div
       aria-hidden
-      className={`@container/timeline-rail relative overflow-hidden bg-white dark:bg-gray-800 ${className}`.trim()}
+      className={`@container/timeline-rail relative overflow-hidden ${surfaceClass} ${className}`.trim()}
       style={style}
     >
       <PlannerHatchOverlay />

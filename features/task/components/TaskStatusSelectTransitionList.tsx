@@ -4,6 +4,7 @@ import type { Task } from '@/types';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { resolveTransitionStatusColorClasses } from '@/features/task/utils/transitionStatusColors';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
@@ -84,12 +85,11 @@ export function TaskStatusSelectTransitionList({
               )
             }
           >
-            <span
-              className="min-w-0 flex-1 truncate font-medium"
-              title={transition.to?.display ?? transition.display}
-            >
+            <OverflowTooltip content={transition.to?.display ?? transition.display ?? ''}>
+            <span className="min-w-0 flex-1 truncate font-medium">
               {transition.to?.display ?? transition.display}
             </span>
+            </OverflowTooltip>
             {isSelected ? (
               <Icon className={`h-3.5 w-3.5 shrink-0 ${statusColors.text}`} name="check" />
             ) : null}

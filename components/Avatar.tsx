@@ -6,6 +6,8 @@ import Image from 'next/image';
 
 import { TEAM_TAG_BG, TEAM_TAG_BORDER } from '@/utils/teamColors';
 
+import { wrapWithTextTooltip } from './TextTooltip';
+
 const SIZE_CLASSES = {
   /** 16px — исполнитель в подвале карточки «по фичам» */
   '2xs': 'h-4 w-4 min-h-4 min-w-4 shrink-0 aspect-square text-[8px]',
@@ -110,28 +112,28 @@ export function Avatar({
   };
 
   if (avatarUrl) {
-    return (
+    return wrapWithTextTooltip(
       <Image
         alt=""
         className={`${baseImageClasses} ${sizeClasses} ${className}`.trim()}
         height={pixelSize}
         src={avatarUrl}
         style={sizeStyle}
-        title={title}
         unoptimized
         width={pixelSize}
-      />
+      />,
+      title
     );
   }
 
   const variantClasses = initialsClassName ?? INITIALS_VARIANT_CLASSES[initialsVariant];
-  return (
+  return wrapWithTextTooltip(
     <span
       className={`${baseInitialsClasses} ${sizeClasses} ${variantClasses} ${className}`.trim()}
       style={sizeStyle}
-      title={title}
     >
       {initials}
-    </span>
+    </span>,
+    title
   );
 }

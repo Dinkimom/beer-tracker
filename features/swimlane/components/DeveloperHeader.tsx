@@ -1,6 +1,8 @@
 'use client';
 
 import { Avatar } from '@/components/Avatar';
+import { OverflowTooltip } from '@/components/OverflowTooltip';
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { DEVELOPER_COLUMN_WIDTH, ZIndex } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
 import { getInitials } from '@/utils/displayUtils';
@@ -24,11 +26,19 @@ interface DeveloperHeaderProps {
   completedSP?: number;
   completedTP?: number;
   developerName: string;
+  /**
+   * Закреплённая строка. Ячейка сама `sticky left`, поэтому вуаль должна
+   * быть на ней: фон кадра строки при боковом скролле уезжает.
+   * Нижнюю границу не рисуем — она уже есть на корне строки.
+   */
+  frosted?: boolean;
   /** Есть ли на строке задачи с объёмом (даже если SP/TP = 0). */
   hasTasks?: boolean;
   hideAvatar?: boolean;
   /** Подписи дорожек факта / календаря, выровненные по таймлайну */
   laneLabels?: DeveloperHeaderLaneLabelItem[];
+  /** Закреплённая строка рисуется выше остальных имён, но всё ещё над общим стеклом колонки. */
+  layerZIndex?: number;
   /** Заменяет текст имени (ключ-ссылка в режиме фич). */
   nameContent?: React.ReactNode;
   percentSP?: number;
@@ -65,6 +75,7 @@ export function DeveloperHeader({
   actions,
   avatarUrl,
   developerName,
+  frosted = false,
   hasTasks,
   hideAvatar = false,
   laneLabels = [],
@@ -84,6 +95,7 @@ export function DeveloperHeader({
   showProgress = false,
   variant = 'person',
   width = DEVELOPER_COLUMN_WIDTH,
+  layerZIndex = ZIndex.stickyLeftColumn,
 }: DeveloperHeaderProps) {
   const isTeamLane = variant === 'team';
   const { hasPoints, showSP, showTP } = resolveDeveloperHeaderPointsVisibility(
@@ -104,15 +116,14 @@ export function DeveloperHeader({
     showSP && showTP
   );
 
-  return (
+  return wrapWithTextTooltip(
     <div
-      className="group relative flex-shrink-0 sticky left-0 self-stretch overflow-hidden border-r border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
+      className={`group relative sticky left-0 flex-shrink-0 self-stretch overflow-hidden border-r border-gray-200 dark:border-r-gray-600 ${frosted ? 'planner-pinned-lane-glass' : 'border-b bg-transparent dark:border-b-gray-700'}`}
       style={{
         width,
         minWidth: width,
-        zIndex: ZIndex.stickyLeftColumn,
+        zIndex: layerZIndex,
       }}
-      title={isTeamLane ? developerName : undefined}
     >
       {isTeamLane ? (
         <>
@@ -152,12 +163,11 @@ export function DeveloperHeader({
               )}
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 {nameContent ?? (
-                  <span
-                    className="min-w-0 truncate text-sm font-bold leading-tight text-gray-900 dark:text-gray-100"
-                    title={developerName}
-                  >
-                    {developerName}
-                  </span>
+                  <OverflowTooltip content={developerName}>
+                    <span className="min-w-0 truncate text-sm font-bold leading-tight text-gray-900 dark:text-gray-100">
+                      {developerName}
+                    </span>
+                  </OverflowTooltip>
                 )}
                 <div className="min-w-0 whitespace-nowrap text-[11px] tabular-nums leading-tight text-gray-500 dark:text-gray-400">
                   <DeveloperHeaderPoints
@@ -185,6 +195,7 @@ export function DeveloperHeader({
           <div className="-translate-y-full">{rowResizeHandle}</div>
         </div>
       ) : null}
-    </div>
+    </div>,
+    isTeamLane ? developerName : undefined
   );
 }

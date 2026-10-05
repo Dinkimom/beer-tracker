@@ -7,6 +7,7 @@ import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { Icon } from '@/components/Icon';
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   TaskInfoSidebarDescriptionEditor,
@@ -111,10 +112,10 @@ export function TaskInfoSidebarDescriptionField({
   return (
     <div className="group relative">
       {canEdit && !isEditing ? (
+        <TextTooltip content={t('sprintPlanner.taskInfo.editDescription')}>
         <button
           aria-label={t('sprintPlanner.taskInfo.editDescription')}
           className={`${TASK_INFO_ICON_BUTTON_CLASS} absolute right-0 top-8 z-10 bg-transparent opacity-0 group-hover:opacity-100`}
-          title={t('sprintPlanner.taskInfo.editDescription')}
           type="button"
           onClick={(event) => {
             event.stopPropagation();
@@ -123,6 +124,7 @@ export function TaskInfoSidebarDescriptionField({
         >
           <Icon className={TASK_INFO_ICON_SVG_CLASS} name="edit" />
         </button>
+        </TextTooltip>
       ) : null}
       <div
         className={`${isEditing ? DESCRIPTION_EDIT_CLASS : DESCRIPTION_VIEW_CLASS} ${

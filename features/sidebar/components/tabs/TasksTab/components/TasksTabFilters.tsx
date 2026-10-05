@@ -14,6 +14,7 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { SearchInput } from '@/components/SearchInput';
 import { useI18n } from '@/contexts/LanguageContext';
+import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 
 interface TasksTabFiltersProps {
   activeTab: SidebarTasksTab;
@@ -34,9 +35,11 @@ const sectionLabelClass =
 
 const chipButtonClass = 'shrink-0 px-2 py-1.5 text-xs leading-none';
 const chipButtonWithBadgeClass = 'shrink-0 gap-1 px-2 py-1.5 text-xs leading-none';
-/** В тёмной теме accent слишком бледный на сером чипе: усиливаем заливку, кромку и текст. */
-const selectedChipClass =
-  'dark:!border-blue-300/70 dark:!bg-blue-500/30 dark:!text-blue-50';
+
+function tasksTabChipClass(isOn: boolean, withBadge = false): string {
+  const layout = withBadge ? chipButtonWithBadgeClass : chipButtonClass;
+  return `${layout} ${glassLensControlClass(isOn)}`;
+}
 const countBadgeClass =
   'rounded px-1 py-px text-[10px] font-medium leading-none text-current tabular-nums opacity-80';
 
@@ -89,12 +92,13 @@ export function TasksTabFilters({
   const activeSummary = tasksTabActiveFilterSummary(t, statusFilter, activeTab, groupBy);
 
   return (
-    <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50/80 px-4 pb-2 pt-4 dark:border-gray-700 dark:bg-gray-900/40">
+    <div className="flex-shrink-0 border-b border-black/10 px-4 pb-2 pt-4 dark:border-white/10">
       <div className="space-y-2">
         <section aria-label={t('sidebar.tasksTab.searchAria')}>
           <SearchInput
             placeholder={t('sidebar.tasksTab.searchPlaceholder')}
             size="sm"
+            surface="glass"
             value={nameFilter}
             onChange={setNameFilter}
           />
@@ -108,7 +112,7 @@ export function TasksTabFilters({
               ? t('sidebar.tasksTab.filtersCollapseAria')
               : t('sidebar.tasksTab.filtersExpandAria')
           }
-          className="group flex w-full cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-gray-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:hover:bg-gray-700/70"
+          className="group flex w-full cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-all duration-200 hover:bg-black/10 focus-visible:outline-none active:scale-[0.98] active:bg-black/[0.16] dark:hover:bg-white/10 dark:active:bg-white/[0.16]"
           type="button"
           onClick={() => setFiltersOpen((open) => !open)}
         >
@@ -157,10 +161,10 @@ export function TasksTabFilters({
                   return (
                     <Button
                       key={id}
-                      className={`${chipButtonClass} ${isOn ? selectedChipClass : ''}`}
+                      className={tasksTabChipClass(isOn)}
                       title={title}
                       type="button"
-                      variant={isOn ? 'accent' : 'outline'}
+                      variant="outline"
                       onClick={() => setStatusFilter(id)}
                     >
                       {label}
@@ -193,10 +197,10 @@ export function TasksTabFilters({
                       <Button
                         key={id}
                         aria-selected={isActive}
-                        className={`${chipButtonWithBadgeClass} ${isActive ? selectedChipClass : ''}`}
+                        className={tasksTabChipClass(isActive, true)}
                         role="tab"
                         type="button"
-                        variant={isActive ? 'accent' : 'outline'}
+                        variant="outline"
                         onClick={() => setActiveTab(id)}
                       >
                         {label}
@@ -236,10 +240,10 @@ export function TasksTabFilters({
                     return (
                       <Button
                         key={id}
-                        className={`${chipButtonClass} ${isActive ? selectedChipClass : ''}`}
+                        className={tasksTabChipClass(isActive)}
                         title={title}
                         type="button"
-                        variant={isActive ? 'accent' : 'outline'}
+                        variant="outline"
                         onClick={() => setGroupBy(id)}
                       >
                         {label}

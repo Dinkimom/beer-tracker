@@ -83,7 +83,6 @@ export function AdminFormModal({
           <HeaderIconButton
             aria-label={t('common.close')}
             disabled={busy}
-            title={t('common.close')}
             type="button"
             onClick={onClose}
           >

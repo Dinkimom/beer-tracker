@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { FLOATING_TOOLBAR_ITEM_IDLE } from '@/features/context-menu/contextMenuClasses';
 import { useRootStore } from '@/lib/layers';
 
 import { formatPlannerHistoryShortcutHint } from './plannerHistoryKeyboard';
@@ -41,13 +42,13 @@ export const PlannerHistoryControls = observer(function PlannerHistoryControls({
 
   return (
     <div
-      className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white/90 p-1 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/90 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-lg border border-gray-200/70 bg-transparent p-1 dark:border-gray-600/70 ${className}`}
     >
       <PlannerShortcutTooltip label={undoLabel} shortcut={undoShortcut} side="bottom">
         <span className="inline-flex">
           <Button
             aria-label={formatPlannerShortcutAria(undoLabel, undoShortcut)}
-            className="!min-h-0 !px-2 !py-1.5 text-gray-600 hover:!text-gray-900 dark:text-gray-300 dark:hover:!text-white"
+            className={`!min-h-0 !px-2 !py-1.5 hover:!text-gray-900 dark:hover:!text-white ${FLOATING_TOOLBAR_ITEM_IDLE}`}
             disabled={!canUndo}
             type="button"
             variant="ghost"
@@ -61,7 +62,7 @@ export const PlannerHistoryControls = observer(function PlannerHistoryControls({
         <span className="inline-flex">
           <Button
             aria-label={formatPlannerShortcutAria(redoLabel, redoShortcut)}
-            className="!min-h-0 !px-2 !py-1.5 text-gray-600 hover:!text-gray-900 dark:text-gray-300 dark:hover:!text-white"
+            className={`!min-h-0 !px-2 !py-1.5 hover:!text-gray-900 dark:hover:!text-white ${FLOATING_TOOLBAR_ITEM_IDLE}`}
             disabled={!canRedo}
             type="button"
             variant="ghost"

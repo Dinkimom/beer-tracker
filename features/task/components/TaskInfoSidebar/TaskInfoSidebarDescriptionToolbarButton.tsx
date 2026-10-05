@@ -1,9 +1,10 @@
 'use client';
 
 import { Icon } from '@/components/Icon';
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 
 const TOOLBAR_BTN_CLASS =
-  'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100 dark:disabled:hover:bg-transparent dark:disabled:hover:text-gray-400';
+  'inline-flex h-8 shrink-0 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-0 text-gray-500 transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 active:scale-[0.98] active:bg-gray-200 disabled:pointer-events-none disabled:opacity-35 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100 dark:active:bg-gray-600';
 
 const TOOLBAR_BTN_ACTIVE_CLASS =
   'bg-gray-100 text-gray-900 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-700 dark:text-gray-50 dark:hover:bg-gray-700 dark:hover:text-gray-50';
@@ -27,7 +28,7 @@ export function TaskInfoSidebarDescriptionToolbarButton({
   text,
   onClick,
 }: TaskInfoSidebarDescriptionToolbarButtonProps) {
-  return (
+  return wrapWithTextTooltip(
     <button
       aria-label={label}
       aria-pressed={active}
@@ -35,7 +36,6 @@ export function TaskInfoSidebarDescriptionToolbarButton({
         active ? TOOLBAR_BTN_ACTIVE_CLASS : ''
       }`}
       disabled={disabled}
-      title={label}
       type="button"
       onClick={onClick}
       onMouseDown={(event) => {
@@ -43,7 +43,9 @@ export function TaskInfoSidebarDescriptionToolbarButton({
       }}
     >
       {icon ? <Icon className={TOOLBAR_ICON_CLASS} name={icon} /> : text}
-    </button>
+    </button>,
+    text ? undefined : label,
+    { disabled }
   );
 }
 

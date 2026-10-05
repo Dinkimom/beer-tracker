@@ -2,6 +2,7 @@
 
 import type { getResizeHandleColors } from '@/utils/statusColors';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 
 import {
@@ -58,6 +59,7 @@ export function TaskBarResizeHandleActive({
     : getResizeHandleGripLineClasses(isActive, resizeHandleColors);
 
   return (
+    <TextTooltip content={title}>
     <div
       className={`task-bar-resize-handle-hit absolute ${edgeClass} top-0 bottom-0 w-6 cursor-ew-resize group/resize-handle ${ZIndex.class('arrowsHovered')}`}
       // Inline zIndex: гарантирует корректное наложение в swimlane,
@@ -67,7 +69,6 @@ export function TaskBarResizeHandleActive({
         pointerEvents: 'auto',
         zIndex: ZIndex.value('arrowsHovered'),
       }}
-      title={title}
       onMouseDown={onMouseDown}
     >
       <div
@@ -93,5 +94,6 @@ export function TaskBarResizeHandleActive({
 
       <div className={`absolute inset-0 ${getResizeHandleHitAreaOffsetClass(side)}`} />
     </div>
+    </TextTooltip>
   );
 }

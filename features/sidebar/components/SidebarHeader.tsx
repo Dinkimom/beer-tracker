@@ -17,13 +17,18 @@ interface TaskSidebarHeaderProps {
   setMainTab: (tab: SidebarMainTab) => void;
 }
 
-/** Шире + плотный via: у края почти непрозрачно, обрезка таба читается сразу. */
-const FADE_BASE =
-  'pointer-events-none absolute inset-y-0 w-12 transition-opacity duration-150';
-const FADE_LEFT =
-  `${FADE_BASE} left-1.5 bg-gradient-to-r from-white from-20% via-white/85 to-transparent dark:from-gray-800 dark:via-gray-800/85`;
-const FADE_RIGHT =
-  `${FADE_BASE} right-0 bg-gradient-to-l from-white from-20% via-white/85 to-transparent dark:from-gray-800 dark:via-gray-800/85`;
+/** Высота ряда вкладок. Список под стеклом начинается ниже этой плашки. */
+export const SIDEBAR_TAB_HEADER_HEIGHT_PX = 56;
+
+/** Маска вместо белой заливки: на стекле градиент from-white рисует чужую плашку. */
+function sidebarTabsEdgeMask(showLeft: boolean, showRight: boolean): string | undefined {
+  if (!showLeft && !showRight) {
+    return undefined;
+  }
+  const left = showLeft ? 'transparent' : '#000';
+  const right = showRight ? 'transparent' : '#000';
+  return `linear-gradient(to right, ${left} 0, #000 2.75rem, #000 calc(100% - 2.75rem), ${right} 100%)`;
+}
 
 export function SidebarHeader({
   mainTab,
@@ -35,11 +40,15 @@ export function SidebarHeader({
 
   return (
     // h-14 совпадает с шапкой планера (py-3 + контролы h-8). Верхнюю границу не рисуем: её уже даёт рамка острова.
-    <div className="flex h-14 shrink-0 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <div className="relative min-w-0 flex-1 bg-white dark:bg-gray-800">
+    <div className="flex h-14 shrink-0 border-b border-black/10 dark:border-white/10">
+      <div className="relative min-w-0 flex-1">
         <div
           ref={scrollRef}
           className="flex h-full overflow-x-auto scrollbar-hide"
+          style={{
+            maskImage: sidebarTabsEdgeMask(showLeft, showRight),
+            WebkitMaskImage: sidebarTabsEdgeMask(showLeft, showRight),
+          }}
         >
           {/* Inner wrapper: ResizeObserver видит рост scrollWidth при смене бейджей/подписей */}
           <div className="flex h-full min-w-min">
@@ -55,14 +64,6 @@ export function SidebarHeader({
             ))}
           </div>
         </div>
-        <div
-          aria-hidden
-          className={`${FADE_LEFT} ${showLeft ? 'opacity-100' : 'opacity-0'}`}
-        />
-        <div
-          aria-hidden
-          className={`${FADE_RIGHT} ${showRight ? 'opacity-100' : 'opacity-0'}`}
-        />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import type { AdminTeamRow } from "@/features/admin/adminTeamCatalog";
 
 import Link from "next/link";
 
+import { wrapWithTextTooltip } from "@/components/TextTooltip";
 import { useI18n } from "@/contexts/LanguageContext";
 import {
   adminListRow,
@@ -48,18 +49,16 @@ export function AdminTeamListRow({
           </Link>
           {!team.active ? <span className={badgeMuted}>{t("admin.teamRow.badgeOff")}</span> : null}
         </div>
-        <p
-          className="truncate text-xs text-gray-500 dark:text-gray-400"
-          title={
-            boardNameFromCatalog ? undefined : t("admin.teamRow.queueUnknownHint")
-          }
-        >
+        {wrapWithTextTooltip(
+        <p className="truncate text-xs text-gray-500 dark:text-gray-400">
           <span className="font-mono">{team.tracker_queue_key}</span>
           <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
           <span>{boardTitleText}</span>
           <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
           <span className="font-mono">{team.tracker_board_id}</span>
-        </p>
+        </p>,
+          boardNameFromCatalog ? undefined : t("admin.teamRow.queueUnknownHint")
+        )}
       </div>
       <AdminTeamListRowActions
         activeTooltip={activeTooltip}

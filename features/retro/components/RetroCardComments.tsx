@@ -13,7 +13,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { RETRO_COMMENT_MAX_LENGTH } from '@/lib/retro/retroBoard';
 
 const TRIGGER_CLASS =
-  'inline-flex h-6 cursor-pointer items-center gap-0.5 rounded-md px-1 text-gray-500 hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:text-gray-300 dark:hover:bg-white/10';
+  'inline-flex h-6 cursor-pointer items-center gap-0.5 rounded-md px-1 text-gray-500 transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:text-gray-300 dark:hover:bg-white/10 dark:active:bg-white/15';
 
 const FIELD_CLASS =
   'block min-h-16 w-full resize-none rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100';
@@ -108,7 +108,7 @@ export function RetroCardComments({ comments, onAdd, onDelete }: RetroCardCommen
                     </p>
                     <button
                       aria-label={t('retro.deleteComment')}
-                      className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-gray-400 opacity-0 hover:bg-black/5 hover:text-gray-700 group-hover/comment:opacity-100 focus-visible:opacity-100 dark:hover:bg-white/10 dark:hover:text-gray-200"
+                      className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded text-gray-400 opacity-0 transition-all duration-200 hover:bg-black/5 hover:text-gray-700 active:scale-[0.98] active:bg-black/10 focus-visible:opacity-100 group-hover/comment:opacity-100 dark:hover:bg-white/10 dark:hover:text-gray-200 dark:active:bg-white/15"
                       type="button"
                       onClick={() => onDelete(comment.id)}
                       onPointerDown={stopPointer}

@@ -55,7 +55,7 @@ export function shouldShowSprintPresenceAvatars(viewers: readonly SprintPresence
 }
 
 const AVATAR_SLOT_CLASS =
-  'sprint-presence-avatar group/slot relative z-0 inline-flex -ml-2 first:ml-0 hover:z-20 hover:scale-110 hover:shadow-md group-hover/presence:-ml-0.5 first:group-hover/presence:ml-0';
+  'sprint-presence-avatar group/slot relative z-0 inline-flex -ml-2 transition-all duration-200 first:ml-0 hover:z-20 hover:scale-110 hover:shadow-md group-hover/presence:-ml-0.5 first:group-hover/presence:ml-0';
 
 const AVATAR_RING_CLASS =
   'ring-2 ring-white group-hover/slot:ring-blue-600 dark:ring-gray-800 dark:group-hover/slot:ring-blue-400';
@@ -107,7 +107,7 @@ export function SprintPlannerPresenceAvatars({
             {canReveal ? (
               <button
                 aria-label={t('sprintPlanner.presence.revealAria', { name })}
-                className={`${AVATAR_SLOT_CLASS} cursor-pointer border-0 bg-transparent p-0`}
+                className={`${AVATAR_SLOT_CLASS} cursor-pointer border-0 bg-transparent p-0 active:scale-[0.98]`}
                 type="button"
                 onClick={() => onRevealViewer?.(viewer)}
               >

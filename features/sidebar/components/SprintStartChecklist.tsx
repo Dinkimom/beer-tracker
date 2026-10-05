@@ -36,7 +36,7 @@ export function SprintStartChecklist({
   const { setMainTab } = useTaskSidebar();
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 px-4 pt-4 pb-2 flex-shrink-0 bg-white dark:bg-gray-800">
+    <div className="flex-shrink-0 border-t border-black/10 px-4 pb-2 pt-4 dark:border-white/10">
       <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">
         {t('sidebar.sprintStartChecklist.heading')}
       </h3>

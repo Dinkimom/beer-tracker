@@ -47,7 +47,7 @@ export function BacklogSectionFrame({
     >
       <button
         aria-expanded={expanded}
-        className="flex w-full cursor-pointer items-center gap-x-3 gap-y-1 px-4 py-3 text-left"
+        className="flex w-full cursor-pointer items-center gap-x-3 gap-y-1 px-4 py-3 text-left transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] active:bg-gray-100 dark:hover:bg-white/[0.04] dark:active:bg-white/[0.08]"
         type="button"
         onClick={onToggle}
       >

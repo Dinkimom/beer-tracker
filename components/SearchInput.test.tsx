@@ -33,4 +33,15 @@ describe('SearchInput', () => {
     render(<SearchInput value="" onChange={() => undefined} />);
     expect(screen.queryByRole('button', { name: 'common.clearSearch' })).toBeNull();
   });
+
+  it('uses a lens fill on glass and a solid fill otherwise', () => {
+    const { rerender } = render(<SearchInput surface="glass" value="" onChange={() => undefined} />);
+    const glass = screen.getByRole('textbox');
+    expect(glass.className).toContain('bg-black/[0.03]');
+    expect(glass.className).not.toContain('bg-white/90');
+    expect(glass.className).not.toContain('dark:bg-gray-700');
+
+    rerender(<SearchInput value="" onChange={() => undefined} />);
+    expect(screen.getByRole('textbox').className).toContain('dark:bg-gray-700');
+  });
 });

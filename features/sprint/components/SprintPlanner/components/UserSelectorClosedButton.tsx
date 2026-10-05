@@ -5,6 +5,7 @@ import type { MouseEvent } from 'react';
 
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { getUserSelectorInitials } from './userSelectorDisplayHelpers';
@@ -50,10 +51,10 @@ export function UserSelectorClosedButton({
 
   return (
     <div className={closedFieldClassName(compact, Boolean(disabled))}>
+      {wrapWithTextTooltip(
       <button
-        className="flex min-h-0 min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-3 py-0 text-left"
+        className="flex min-h-0 min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-3 py-0 text-left transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] active:bg-gray-200 disabled:pointer-events-none dark:hover:bg-white/[0.06] dark:active:bg-white/10"
         disabled={disabled}
-        title={title}
         type="button"
         onClick={onOpen}
       >
@@ -70,12 +71,14 @@ export function UserSelectorClosedButton({
         ) : (
           <span className={closedPlaceholderClassName(Boolean(value))}>{buttonText}</span>
         )}
-      </button>
+      </button>,
+        title,
+        { disabled: Boolean(disabled), fullWidth: true }
+      )}
       {showClear ? (
         <button
           aria-label={t('common.userSelector.resetSelectionAria')}
-          className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ds-text-muted hover:bg-gray-200/90 dark:hover:bg-white/[0.08]"
-          title={t('common.userSelector.clearTitle')}
+          className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ds-text-muted transition-all duration-200 hover:bg-gray-200/90 active:scale-[0.98] active:bg-gray-300 dark:hover:bg-white/[0.08] dark:active:bg-white/15"
           type="button"
           onClick={onClear}
         >
@@ -84,7 +87,7 @@ export function UserSelectorClosedButton({
       ) : null}
       <button
         aria-hidden
-        className="flex h-full shrink-0 cursor-pointer items-center py-0 pl-0.5 pr-3"
+        className="flex h-full shrink-0 cursor-pointer items-center py-0 pl-0.5 pr-3 transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] active:bg-gray-200 dark:hover:bg-white/[0.06] dark:active:bg-white/10"
         disabled={disabled}
         tabIndex={-1}
         type="button"

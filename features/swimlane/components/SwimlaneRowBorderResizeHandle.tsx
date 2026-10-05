@@ -1,5 +1,6 @@
 'use client';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 
 interface SwimlaneRowBorderResizeHandleProps {
@@ -65,13 +66,13 @@ export function SwimlaneRowBorderResizeHandle({
   const isActive = isResizing || isBorderHovered;
 
   return (
+    <TextTooltip content={label}>
     <div
       aria-label={label}
       className={`relative h-4 w-full cursor-ns-resize ${resolveSwimlaneRowResizeHandleShellClass(isActive)}`}
       data-swimlane-row-border-resize
       role="separator"
       tabIndex={-1}
-      title={label}
       onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -86,5 +87,6 @@ export function SwimlaneRowBorderResizeHandle({
         ))}
       </div>
     </div>
+    </TextTooltip>
   );
 }

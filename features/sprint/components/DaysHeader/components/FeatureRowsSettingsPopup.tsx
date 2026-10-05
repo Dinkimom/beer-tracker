@@ -94,7 +94,6 @@ export function FeatureRowsSettingsPopup({
             <HeaderIconButton
               aria-label={t('sprintPlanner.featureLanes.close')}
               className="!h-6 !w-6"
-              title={t('sprintPlanner.featureLanes.close')}
               type="button"
               onClick={handleClose}
             >
@@ -136,14 +135,14 @@ export function FeatureRowsSettingsPopup({
             </h3>
             <div className="flex items-center gap-1.5">
               <button
-                className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
                 type="button"
                 onClick={developersManagement.showAllDevelopers}
               >
                 {t('sprintPlanner.featureLanes.showAll')}
               </button>
               <button
-                className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
                 type="button"
                 onClick={developersManagement.hideAllDevelopers}
               >

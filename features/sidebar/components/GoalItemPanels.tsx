@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/Button';
+import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 
 interface GoalItemEditingPanelProps {
   cancelLabel: string;
@@ -29,7 +30,7 @@ export function GoalItemEditingPanel({
     <div className="flex-1 flex flex-col gap-3 min-w-0 px-3 pt-1 pb-1">
       <input
         autoFocus
-        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 focus:border-gray-400 dark:focus:border-gray-500 transition-all"
+        className={`w-full rounded-lg px-3 py-2 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500 ${glassLensControlClass()}`}
         placeholder={placeholder}
         type="text"
         value={editingText}

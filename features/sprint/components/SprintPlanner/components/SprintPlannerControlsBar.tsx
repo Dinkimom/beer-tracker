@@ -107,7 +107,7 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
     ) : null;
 
   return (
-    <div className="flex-shrink-0 bg-ds-surface-header px-4 py-3">
+    <div className="relative z-10 flex-shrink-0 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
       <div className="flex w-full min-w-0 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <SprintPlannerControlsBarLeftSection

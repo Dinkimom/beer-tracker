@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 
@@ -86,10 +87,10 @@ export function SidebarResizeHandle({
   };
 
   return (
+    <TextTooltip content={title}>
     <div
       className={shellClass}
       style={handleStyle}
-      title={title}
       onMouseDown={onMouseDown}
     >
       <div className="absolute inset-0 bg-transparent group-hover:bg-blue-100/60 dark:group-hover:bg-blue-900/40 transition-colors duration-200 cursor-col-resize" />
@@ -103,5 +104,6 @@ export function SidebarResizeHandle({
         />
       ) : null}
     </div>
+    </TextTooltip>
   );
 }

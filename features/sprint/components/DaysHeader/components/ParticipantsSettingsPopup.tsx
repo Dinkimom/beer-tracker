@@ -165,7 +165,7 @@ export function ParticipantsSettingsPopup({
     <>
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black/10 dark:bg-black/20 ${OVERLAY_BACKDROP_ENTER}`}
+        className={`fixed inset-0 bg-transparent ${OVERLAY_BACKDROP_ENTER}`}
         data-state={overlay.state}
         style={{ zIndex: ZIndex.contextMenu }}
         onAnimationEnd={overlay.onAnimationEnd}
@@ -177,7 +177,7 @@ export function ParticipantsSettingsPopup({
       {/* Popup — выше оверлея и остального контента */}
       <div
         ref={popupRef}
-        className={`fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl w-[380px] max-h-[70vh] overflow-hidden flex flex-col ${OVERLAY_PANEL_ENTER}`}
+        className={`fixed flex max-h-[70vh] w-[480px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800 ${OVERLAY_PANEL_ENTER}`}
         data-state={overlay.state}
         style={{
           zIndex: ZIndex.popupContent,
@@ -194,7 +194,6 @@ export function ParticipantsSettingsPopup({
               aria-label={t('common.close')}
               className="!h-6 !w-6"
               disabled={Boolean(removingDeveloperId)}
-              title={t('common.close')}
               type="button"
               onClick={onClose}
             >
@@ -204,11 +203,11 @@ export function ParticipantsSettingsPopup({
           {removeError && (
             <p className="mt-2 text-xs text-red-600 dark:text-red-400">{removeError}</p>
           )}
-          <div className="mt-3">
-            <div className="flex items-center gap-2">
+          <div className="mt-3 min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
               <UserSelector
                 allowClear
-                className="flex-1"
+                className="min-w-0 flex-1"
                 menuZIndex={ZIndex.popupContent + 1}
                 placeholder={t('sprintPlanner.participants.selectPlaceholder')}
                 searchFn={searchRegistry}
@@ -220,7 +219,7 @@ export function ParticipantsSettingsPopup({
                 }}
               />
               <Button
-                className="shrink-0"
+                className="shrink-0 whitespace-nowrap"
                 disabled={!canAddCandidate}
                 type="button"
                 variant="primary"
@@ -241,14 +240,14 @@ export function ParticipantsSettingsPopup({
             </h3>
             <div className="flex items-center gap-1.5">
               <button
-                className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
                 type="button"
                 onClick={developersManagement.showAllDevelopers}
               >
                 {t('sprintPlanner.participants.showAll')}
               </button>
               <button
-                className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
                 type="button"
                 onClick={developersManagement.hideAllDevelopers}
               >

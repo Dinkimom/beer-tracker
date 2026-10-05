@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { IconActionMotion } from '@/components/IconActionMotion';
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useSprintTimer } from '@/hooks/useSprintTimer';
 import { clampSprintTimerDurationMs, formatSprintTimerClock } from '@/lib/realtime/sprintTimerState';
@@ -23,13 +24,13 @@ import {
   isSprintPlannerTimerActiveStatus,
   SPRINT_PLANNER_TIMER_CLOCK_PANEL_CLASS,
   SPRINT_PLANNER_TIMER_POPOVER_CLASS,
-  type SprintPlannerTimerTriggerAppearance,
   sprintPlannerTimerTriggerClassName,
 } from './sprintPlannerTimerStyles';
 
 interface SprintPlannerTimerProps {
-  appearance?: SprintPlannerTimerTriggerAppearance;
   selectedSprintId: number | null;
+  /** На стекле шапки планера hover — вуаль, не серая плашка. */
+  surface?: 'glass' | 'solid';
 }
 
 function isTimerSetupStatus(status: ReturnType<typeof useSprintTimer>['status']): boolean {
@@ -91,8 +92,8 @@ function runTimerPrimary(
 }
 
 export function SprintPlannerTimer({
-  appearance = 'plain',
   selectedSprintId,
+  surface = 'solid',
 }: SprintPlannerTimerProps) {
   const { t } = useI18n();
   const timer = useSprintTimer(selectedSprintId);
@@ -145,12 +146,12 @@ export function SprintPlannerTimer({
 
   return (
     <Popover.Root open={open} onOpenChange={handleOpenChange}>
+      {wrapWithTextTooltip(
       <Popover.Trigger asChild>
         <button
           aria-label={title}
-          className={sprintPlannerTimerTriggerClassName(timer.status, open, appearance)}
+          className={sprintPlannerTimerTriggerClassName(timer.status, open, surface)}
           disabled={!selectedSprintId}
-          title={title}
           type="button"
         >
           <IconActionMotion active={open} name="stopwatch">
@@ -158,7 +159,10 @@ export function SprintPlannerTimer({
           </IconActionMotion>
           {timerActive ? <span>{chipClock}</span> : null}
         </button>
-      </Popover.Trigger>
+      </Popover.Trigger>,
+        title,
+        { disabled: !selectedSprintId }
+      )}
       <Popover.Portal>
         <Popover.Content align="end" className={SPRINT_PLANNER_TIMER_POPOVER_CLASS} sideOffset={6}>
           <div className="mb-2 flex items-center justify-between">
@@ -167,7 +171,7 @@ export function SprintPlannerTimer({
             </h2>
             <button
               aria-label={t('sprintPlanner.timer.close')}
-              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-all duration-200 active:scale-[0.98]"
               type="button"
               onClick={() => handleOpenChange(false)}
             >

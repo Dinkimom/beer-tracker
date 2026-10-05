@@ -13,13 +13,13 @@ import {
 } from '@/lib/comments/stickyNoteReaction';
 
 const CHIP_BASE_CLASS =
-  'pointer-events-auto relative flex h-6 origin-center cursor-pointer items-center gap-0.5 rounded border px-1.5 text-[11px] font-medium tabular-nums leading-none shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400';
+  'pointer-events-auto relative flex h-6 origin-center cursor-pointer items-center gap-0.5 rounded border px-1.5 text-[11px] font-medium tabular-nums leading-none shadow-sm transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400';
 
 const CHIP_MINE_CLASS =
-  'border-blue-400 bg-white text-gray-800 dark:border-blue-400 dark:bg-gray-800 dark:text-gray-100';
+  'border-blue-400 bg-white text-gray-800 hover:bg-blue-50 active:bg-blue-100 dark:border-blue-400 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 dark:active:bg-gray-600';
 
 const CHIP_OTHER_CLASS =
-  'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700';
+  'border-gray-200 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:active:bg-gray-600';
 
 const CHIP_READONLY_CLASS =
   'cursor-default border-gray-200 bg-white text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200';

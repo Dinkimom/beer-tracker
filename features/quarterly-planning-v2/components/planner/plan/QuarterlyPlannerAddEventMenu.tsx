@@ -4,6 +4,7 @@ import type { QuarterlyStoryEventKind, StoryPhasePosition } from '../../../types
 import type { QuarterlyPlannerCellMenuAnchor } from '../../../utils/quarterlyPlannerCellMenuAnchor';
 import type { TaskPosition } from '@/types';
 
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { QUARTERLY_STORY_EVENT_EMOJI_CLASS } from '../../../utils/quarterlyStoryEventCatalog';
@@ -55,7 +56,7 @@ export function QuarterlyPlannerAddEventMenu({
   };
 
   const enabledItemClass =
-    'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700 cursor-pointer';
+    'flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm text-gray-800 transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] active:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-700 dark:active:bg-gray-600';
   const disabledItemClass =
     'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed';
 
@@ -94,13 +95,12 @@ export function QuarterlyPlannerAddEventMenu({
               ? t(storyEventPickDisabledReasonI18nKey(disabledReason))
               : undefined;
 
-          return (
+          return wrapWithTextTooltip(
             <button
               key={kind}
               className={enabled ? enabledItemClass : disabledItemClass}
               disabled={!enabled}
               role="menuitem"
-              title={disabledTitle}
               type="button"
               onClick={() => {
                 if (!enabled) return;
@@ -115,14 +115,16 @@ export function QuarterlyPlannerAddEventMenu({
                 {emoji}
               </span>
               <span className="min-w-0 flex-1">{t(`planning.quarterlyV2.storyEvent.${kind}`)}</span>
-            </button>
+            </button>,
+            disabledTitle,
+            { disabled: !enabled, fullWidth: true }
           );
         })}
         {menu.hasEvent ? (
           <>
             <div className="my-1 border-t border-gray-200 dark:border-gray-600" role="separator" />
             <button
-              className="block w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 cursor-pointer"
+              className="block w-full cursor-pointer px-3 py-1.5 text-left text-sm text-red-600 transition-all duration-200 hover:bg-red-50 active:scale-[0.98] active:bg-red-100 dark:text-red-400 dark:hover:bg-red-950/40 dark:active:bg-red-950/70"
               role="menuitem"
               type="button"
               onClick={() => {

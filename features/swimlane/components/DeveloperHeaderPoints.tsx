@@ -1,5 +1,6 @@
 'use client';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatPointsForDisplay, roundPointsForDisplay } from '@/lib/pointsUtils';
 
@@ -93,7 +94,11 @@ function renderDeveloperHeaderPointSpan(
   kind: 'sp' | 'tp',
   showProgress: boolean
 ) {
-  return <span title={developerHeaderPointTitle(showProgress, kind)}>{content}</span>;
+  return (
+    <TextTooltip content={developerHeaderPointTitle(showProgress, kind)}>
+      <span>{content}</span>
+    </TextTooltip>
+  );
 }
 
 export function DeveloperHeaderPoints({

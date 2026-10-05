@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 
 import { Button } from '@/components/Button';
 import { iconSizeClassName } from '@/components/iconSizeClassName';
 import { useI18n } from '@/contexts/LanguageContext';
 
-/** Совпадает с `transition` заливки: строка переезжает после того, как иконка доиграет. */
 const PIN_FILL_TRANSITION_MS = 200;
 
 interface SwimlanePinButtonProps {
@@ -24,47 +23,21 @@ export function SwimlanePinButton({
   onToggle,
 }: SwimlanePinButtonProps) {
   const { t } = useI18n();
-  const [visualPinned, setVisualPinned] = useState(isPinned);
-  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const label = visualPinned
+  const label = isPinned
     ? t('sprintPlanner.swimlane.unpinRow')
     : t('sprintPlanner.swimlane.pinRow');
 
-  useEffect(() => {
-    setVisualPinned(isPinned);
-  }, [isPinned]);
-
-  useEffect(() => {
-    return () => {
-      if (commitTimer.current != null) {
-        clearTimeout(commitTimer.current);
-      }
-    };
-  }, []);
-
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    const next = !visualPinned;
-    setVisualPinned(next);
-    if (commitTimer.current != null) {
-      clearTimeout(commitTimer.current);
-      commitTimer.current = null;
-    }
-    if (next === isPinned) {
-      return;
-    }
-    commitTimer.current = setTimeout(() => {
-      commitTimer.current = null;
-      onToggle();
-    }, PIN_FILL_TRANSITION_MS);
+    onToggle();
   };
 
   return (
     <Button
       aria-label={label}
-      aria-pressed={visualPinned}
+      aria-pressed={isPinned}
       className={`!inline-flex !h-6 !w-6 !min-h-0 !min-w-0 !leading-none cursor-pointer items-center justify-center rounded-md !p-0 hover:!bg-gray-100 dark:hover:!bg-white/10 ${
-        visualPinned
+        isPinned
           ? '!text-gray-800 dark:!text-gray-100'
           : 'text-gray-400 hover:!text-gray-700 dark:hover:!text-gray-200'
       }`}
@@ -87,7 +60,7 @@ export function SwimlanePinButton({
         strokeWidth="2"
         style={{
           fill: 'currentColor',
-          fillOpacity: visualPinned ? 1 : 0,
+          fillOpacity: isPinned ? 1 : 0,
           transition: `fill-opacity ${PIN_FILL_TRANSITION_MS}ms ease-out`,
         }}
         viewBox="0 0 24 24"

@@ -78,7 +78,7 @@ export function NotificationListItem({ item, onActivate, onDelete }: Notificatio
 
       <button
         aria-label={t('notifications.deleteOne')}
-        className="absolute right-2 top-3 rounded p-1 text-ds-text-muted opacity-0 transition-opacity hover:bg-gray-100 hover:text-red-600 group-hover:opacity-100 dark:hover:bg-white/[0.06] dark:hover:text-red-400"
+        className="absolute right-2 top-3 cursor-pointer rounded p-1 text-ds-text-muted opacity-0 transition-all duration-200 hover:bg-gray-100 hover:text-red-600 active:scale-[0.98] active:bg-gray-200 group-hover:opacity-100 dark:hover:bg-white/[0.06] dark:hover:text-red-400 dark:active:bg-white/10"
         type="button"
         onClick={(event) => {
           event.stopPropagation();

@@ -25,6 +25,7 @@ export const ruMessages = {
     resizePanelWidth: 'Изменить ширину панели',
     clearSearch: 'Очистить поиск',
     delete: 'Удалить',
+    remove: 'Убрать',
     save: 'Сохранить',
     notSelected: 'Не выбрано',
     appVersionTitle: 'Версия {version}',
@@ -1467,6 +1468,8 @@ export const ruMessages = {
       emptyCellHint: 'Клик — добавить фазу',
       segmentEditorConfirmTitle: 'Подтвердить',
       segmentEditorDiscardTitle: 'Отменить',
+      segmentCellEnable: 'Включить отрезок',
+      segmentCellDisable: 'Выключить отрезок',
       assigneeFilter: {
         all: 'Все исполнители',
         one: '1 исполнитель',
@@ -1540,6 +1543,8 @@ export const ruMessages = {
       untitled: 'Без названия',
       segmentTooltip: 'Отрезок {index} из {total}',
       autoAddSwimlaneTitle: 'Добавить в ближайшее пустое место на свимлейне',
+      severityValue: 'Критичность: {value}',
+      priorityValue: 'Приоритет: {value}',
       noAssignee: 'Нет исполнителя',
     },
     statusSelect: {

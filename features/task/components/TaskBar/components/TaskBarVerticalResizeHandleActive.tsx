@@ -2,6 +2,7 @@
 
 import type { getResizeHandleColors } from '@/utils/statusColors';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 
 import {
@@ -65,6 +66,7 @@ export function TaskBarVerticalResizeHandleActive({
     : `${resizeHandleColors.line} ${resizeHandleColors.lineDark} ${getResizeHandleInlineGripOpacityClass(isActive)}`;
 
   return (
+    <TextTooltip content={title}>
     <div
       className={`task-bar-resize-handle-hit absolute left-0 right-0 ${edgeClass} ${heightClass} cursor-ns-resize group/resize-handle ${ZIndex.class('arrowsHovered')}`}
       style={{
@@ -72,7 +74,6 @@ export function TaskBarVerticalResizeHandleActive({
         pointerEvents: 'auto',
         zIndex: ZIndex.value('arrowsHovered'),
       }}
-      title={title}
       onMouseDown={onMouseDown}
     >
       <div
@@ -96,5 +97,6 @@ export function TaskBarVerticalResizeHandleActive({
         </div>
       </div>
     </div>
+    </TextTooltip>
   );
 }

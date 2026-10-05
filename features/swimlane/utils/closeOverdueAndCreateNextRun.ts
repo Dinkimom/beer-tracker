@@ -16,7 +16,7 @@ import { buildNextPlanPosition, pickDoneTransition } from './closeOverdueAndCrea
 
 type Translate = (key: string, values?: Record<string, number | string>) => string;
 
-export interface CloseOverdueAndCreateNextRunInput {
+interface CloseOverdueAndCreateNextRunInput {
   boardId: number | null;
   currentCell: number;
   partsPerDay: number;

@@ -46,7 +46,7 @@ export function BacklogTab() {
 
   if (isBacklogRateLimitError && onRetryBacklog) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-center">
+      <div className="flex flex-col items-center justify-center gap-3 px-4 pb-12 pt-20 text-center">
         <p className="text-sm text-amber-700 dark:text-amber-400">
           {t('sidebar.backlogTab.rateLimitMessage')}
         </p>
@@ -60,7 +60,7 @@ export function BacklogTab() {
 
   if (backlogLoading && isInitialBacklogLoad) {
     return (
-      <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-12 font-medium">
+      <div className="pt-20 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
         {t('sidebar.backlogTab.loadingTasks')}
       </div>
     );
@@ -68,7 +68,7 @@ export function BacklogTab() {
 
   if (isBacklogTabEmpty(groupKeys, groupedTasks)) {
     return (
-      <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-12 font-medium">
+      <div className="pt-20 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
         {t('sidebar.backlogTab.empty')}
       </div>
     );

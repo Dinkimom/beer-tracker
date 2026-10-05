@@ -34,8 +34,8 @@ export function QuarterlyPlannerAddPhaseMenu({
   const itemClass = (enabled: boolean) =>
     `block w-full px-3 py-1.5 text-left text-sm ${
       enabled
-        ? 'text-gray-800 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700 cursor-pointer'
-        : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+        ? 'cursor-pointer text-gray-800 transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] active:bg-gray-200 dark:text-gray-100 dark:hover:bg-gray-700 dark:active:bg-gray-600'
+        : 'cursor-not-allowed text-gray-400 dark:text-gray-500'
     }`;
 
   return (

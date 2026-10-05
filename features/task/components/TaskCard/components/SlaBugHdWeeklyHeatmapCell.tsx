@@ -39,7 +39,7 @@ export function SlaBugHdWeeklyHeatmapCell({
     <button
       aria-label={ariaLabel}
       aria-pressed={active}
-      className={`aspect-square w-full min-w-0 cursor-pointer rounded-[3px] transition-[transform,filter] duration-100 hover:brightness-110 focus-visible:outline-none dark:hover:brightness-125 ${LEVEL_CELL_CLASSES[level]} ${
+      className={`aspect-square w-full min-w-0 cursor-pointer rounded-[3px] transition-all duration-200 hover:brightness-110 active:scale-[0.98] focus-visible:outline-none dark:hover:brightness-125 ${LEVEL_CELL_CLASSES[level]} ${
         active ? 'brightness-110 dark:brightness-125' : ''
       }`}
       type="button"

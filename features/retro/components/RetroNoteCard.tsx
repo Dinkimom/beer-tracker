@@ -21,7 +21,7 @@ const NOTE_TEXT_CLASS =
   'w-full whitespace-pre-wrap break-words pr-6 text-left text-sm leading-snug';
 
 const REACTION_ADD_CLASS =
-  'pointer-events-none flex h-6 w-6 shrink-0 scale-90 cursor-pointer items-center justify-center rounded-md bg-white text-gray-900 opacity-0 shadow-[0_1px_6px_rgba(15,23,42,0.18)] transition-[opacity,transform] duration-150 ease-out group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 hover:bg-gray-50 focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 data-[state=open]:pointer-events-auto data-[state=open]:scale-100 data-[state=open]:opacity-100 dark:bg-gray-800 dark:text-gray-100 dark:shadow-[0_1px_6px_rgba(0,0,0,0.4)] dark:hover:bg-gray-700';
+  'pointer-events-none flex h-6 w-6 shrink-0 scale-90 cursor-pointer items-center justify-center rounded-md bg-white text-gray-900 opacity-0 shadow-[0_1px_6px_rgba(15,23,42,0.18)] transition-[opacity,transform,background-color] duration-150 ease-out group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 hover:bg-gray-50 active:bg-gray-100 focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 data-[state=open]:pointer-events-auto data-[state=open]:scale-100 data-[state=open]:opacity-100 dark:bg-gray-800 dark:text-gray-100 dark:shadow-[0_1px_6px_rgba(0,0,0,0.4)] dark:hover:bg-gray-700 dark:active:bg-gray-600';
 
 interface RetroNoteCardProps {
   card: RetroVisibleCard;
@@ -120,7 +120,7 @@ export function RetroNoteCard({
           </div>
         ) : (
           <button
-            className={`block ${NOTE_TEXT_CLASS}`}
+            className={`block cursor-text rounded-md transition-all duration-200 hover:bg-black/5 active:scale-[0.99] active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15 ${NOTE_TEXT_CLASS}`}
             type="button"
             onClick={() => {
               setDraft(card.text);

@@ -1,6 +1,8 @@
 'use client';
 
 
+import { TextTooltip } from '@/components/TextTooltip';
+
 import { QUARTERLY_WEEK_CELL_TARGET_OUTLINE_CLASS } from '../../../utils/quarterlyPlannerCellMenuAnchor';
 
 import { QuarterlyPlannerWeekAddCellIcon } from './QuarterlyPlannerWeekAddCellIcon';
@@ -50,12 +52,13 @@ export function QuarterlyPlannerWeekAddCell({
 
   return (
     <div className={`group/add-cell ${shellClass}`} style={widthStyle}>
+      <TextTooltip content={title}>
       <button
-        className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0 pointer-events-auto hover:bg-blue-500/[0.06] dark:hover:bg-blue-400/[0.08]"
-        title={title}
+        className="absolute inset-0 cursor-pointer border-0 bg-transparent p-0 pointer-events-auto hover:bg-blue-500/[0.06] dark:hover:bg-blue-400/[0.08] transition-all duration-200 active:scale-[0.98]"
         type="button"
         onClick={onAddClick}
       />
+      </TextTooltip>
       <QuarterlyPlannerWeekAddCellIcon variant={variant} />
     </div>
   );

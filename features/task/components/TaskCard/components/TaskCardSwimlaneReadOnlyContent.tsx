@@ -2,6 +2,7 @@
 
 import type { Task } from '@/types';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { StickyNoteTextContent } from '@/features/comments/components/StickyNoteTextContent';
 import { STICKY_NOTE_CONTENT_DATA_ATTR } from '@/features/comments/utils/stickyNoteCommentContentOverflow';
 import {
@@ -151,12 +152,15 @@ export function TaskCardSwimlaneReadOnlyContent({
         task={task}
       />
       {showKey && (
+        <TextTooltip content={keyLinkProps.title}>
         <a
           className={`font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer ${lineHeightClass}${compactKey ? ' whitespace-nowrap' : ''}`}
           {...keyLinkProps}
+          title={undefined}
         >
           {displayId}
         </a>
+        </TextTooltip>
       )}
       <span className={titleFontClass}>
         {titleText}

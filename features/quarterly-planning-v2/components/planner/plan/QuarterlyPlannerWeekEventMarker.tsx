@@ -37,7 +37,7 @@ export function QuarterlyPlannerWeekEventMarker({
       <TextTooltip content={label} delayDuration={200} side="top">
         <button
           aria-label={label}
-          className="group/event pointer-events-auto absolute inset-0 z-[2] flex cursor-pointer items-center justify-center border-0 bg-transparent p-0 outline-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-inset"
+          className="group/event pointer-events-auto absolute inset-0 z-[2] flex cursor-pointer items-center justify-center border-0 bg-transparent p-0 outline-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-inset transition-all duration-200 active:scale-[0.98]"
           type="button"
           onClick={(e) => {
             e.stopPropagation();

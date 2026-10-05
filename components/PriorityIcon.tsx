@@ -1,6 +1,9 @@
 'use client';
 
+import { useI18n } from '@/contexts/LanguageContext';
+
 import { Icon } from './Icon';
+import { TextTooltip } from './TextTooltip';
 
 interface PriorityIconProps {
   className?: string;
@@ -72,22 +75,24 @@ function iconSizeFromClassName(className: string): string {
  * Компонент для отображения иконки приоритета задачи
  */
 export function PriorityIcon({ priority, className = '' }: PriorityIconProps) {
+  const { t } = useI18n();
   if (!priority) return null;
 
   const config = resolvePriorityConfig(priority);
   const iconSize = iconSizeFromClassName(className);
 
   return (
-    <span
-      aria-label={`Приоритет: ${config.title}`}
-      className={`inline-flex items-center justify-center ${config.color} ${className}`}
-      title={config.title}
-    >
-      <Icon
-        className={iconSize}
-        name={config.iconName}
-      />
-    </span>
+    <TextTooltip content={config.title}>
+      <span
+        aria-label={t('task.card.priorityValue', { value: config.title })}
+        className={`inline-flex items-center justify-center ${config.color} ${className}`}
+      >
+        <Icon
+          className={iconSize}
+          name={config.iconName}
+        />
+      </span>
+    </TextTooltip>
   );
 }
 

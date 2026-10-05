@@ -20,7 +20,7 @@ import { FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses'
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 const TRIGGER_CLASS =
-  'pointer-events-none flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md bg-white text-gray-900 opacity-0 shadow-[0_1px_6px_rgba(15,23,42,0.18)] transition-[opacity,transform] duration-150 ease-out scale-90 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 hover:bg-gray-50 focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 data-[state=open]:pointer-events-none data-[state=open]:opacity-0 data-[state=open]:scale-90 dark:bg-gray-800 dark:text-gray-100 dark:shadow-[0_1px_6px_rgba(0,0,0,0.4)] dark:hover:bg-gray-700';
+  'pointer-events-none flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md bg-white text-gray-900 opacity-0 shadow-[0_1px_6px_rgba(15,23,42,0.18)] transition-all duration-150 ease-out scale-90 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100 hover:bg-gray-50 active:scale-[0.98] active:bg-gray-100 focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 data-[state=open]:pointer-events-none data-[state=open]:opacity-0 data-[state=open]:scale-90 dark:bg-gray-800 dark:text-gray-100 dark:shadow-[0_1px_6px_rgba(0,0,0,0.4)] dark:hover:bg-gray-700 dark:active:bg-gray-600';
 
 const ALREADY_ADDED_KEYFRAMES: Keyframe[] = [
   { transform: 'scale(1)' },

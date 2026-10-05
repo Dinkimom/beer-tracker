@@ -3,6 +3,7 @@
 import type { MouseEvent } from 'react';
 
 import { IssueTypeIcon } from '@/components/IssueTypeIcon';
+import { TextTooltip } from '@/components/TextTooltip';
 import { useIssueTrackerIssueWebUrl } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 
@@ -48,16 +49,17 @@ export function QuarterlyTaskTitleLink({
   return (
     <span className={wrapperClass}>
       {typeIcon}
+      <TextTooltip content={t('sprintPlanner.occupancy.openInTracker', { key: linkKey })}>
       <a
         className="shrink-0 text-sm text-blue-600 dark:text-blue-400 hover:underline"
         href={issueUrl}
         rel="noopener noreferrer"
         target="_blank"
-        title={t('sprintPlanner.occupancy.openInTracker', { key: linkKey })}
         onClick={stopNav}
       >
         {linkKey}
       </a>
+      </TextTooltip>
       {parts.title != null ? (
         <>
           <span

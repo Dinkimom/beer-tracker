@@ -1,3 +1,4 @@
+import { TextTooltip } from '@/components/TextTooltip';
 import { getSwimlaneTaskCardChipClassNames } from '@/utils/statusColors';
 
 export function TaskCardColorChip({ colorKey }: { colorKey: string }) {
@@ -6,10 +7,8 @@ export function TaskCardColorChip({ colorKey }: { colorKey: string }) {
     return null;
   }
   return (
-    <span
-      aria-hidden
-      className={getSwimlaneTaskCardChipClassNames(k)}
-      title={k}
-    />
+    <TextTooltip content={k}>
+      <span aria-hidden className={getSwimlaneTaskCardChipClassNames(k)} />
+    </TextTooltip>
   );
 }

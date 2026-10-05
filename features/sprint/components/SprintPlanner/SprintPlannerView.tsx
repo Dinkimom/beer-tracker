@@ -1,11 +1,13 @@
 
 import type { useSprintPlannerViewModel } from './hooks/useSprintPlannerViewModel';
 
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 import { ZIndex } from '@/constants';
 import { StickyNoteReactionsProvider } from '@/features/comments/StickyNoteReactionsProvider';
 import { isSwimlaneCommentTask, selectPendingApprovalCommentIds } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
+import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
 import { useCloseOverdueAndCreateNext } from '@/features/swimlane/hooks/useCloseOverdueAndCreateNext';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
@@ -19,6 +21,7 @@ import { SprintPlannerPresenceSync } from './components/SprintPlannerPresenceSyn
 import { SwimlanePlacementToolbar } from './components/SwimlanePlacementToolbar';
 import { PlannerMobxSessionBridge } from './mobx/PlannerMobxSessionBridge';
 import { PlannerOnboardingHost } from './onboarding/PlannerOnboardingHost';
+import { PlannerChromeSlotProvider } from './plannerChromeSlot';
 import { SprintPlannerAssigneePickerLayer } from './SprintPlannerAssigneePickerLayer';
 import { SprintPlannerDndShell } from './SprintPlannerDndShell';
 
@@ -144,6 +147,23 @@ export function SprintPlannerView({
   DialogComponent,
 }: SprintPlannerViewProps) {
   const [boardFrameEl, setBoardFrameEl] = useState<HTMLDivElement | null>(null);
+  const [controlsEl, setControlsEl] = useState<HTMLDivElement | null>(null);
+  const [daysSlotEl, setDaysSlotEl] = useState<HTMLDivElement | null>(null);
+  const daysChrome =
+    viewMode === 'compact' || viewMode === 'full' || viewMode === 'features';
+
+  useLayoutEffect(() => {
+    const frame = boardFrameEl;
+    const bar = controlsEl;
+    if (!frame || !bar) return undefined;
+    const apply = () => {
+      frame.style.setProperty('--planner-controls-h', `${bar.offsetHeight}px`);
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, [boardFrameEl, controlsEl]);
   const onOverdueCloseAndCreate = useCloseOverdueAndCreateNext({
     boardId: boardIdForPlannerData ?? null,
     getQueueByBoardId,
@@ -154,6 +174,7 @@ export function SprintPlannerView({
   });
 
   return (
+    <PlannerChromeSlotProvider slot={daysSlotEl}>
     <StickyNoteReactionsProvider comments={comments} sprintId={selectedSprintId}>
       <PlannerMobxSessionBridge />
       <SprintPlannerDndShell
@@ -206,30 +227,12 @@ export function SprintPlannerView({
         >
           <div
             ref={setBoardFrameEl}
-            className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header"
+            className="planner-board-frame relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header"
           >
-          <SprintPlannerControlsBar
-            boardId={boardIdForPlannerData ?? null}
-            boardViewers={boardViewers}
-            developers={developers}
-            occupancyStatusFilter={occupancyStatusFilter}
-            planHistory={positionHistory}
-            selectedAssigneeIds={selectedAssigneeIds}
-            selectedSprintId={selectedSprintId}
-            setOccupancyStatusFilter={setOccupancyStatusFilter}
-            setSelectedAssigneeIds={setSelectedAssigneeIds}
-            setViewMode={setViewMode}
-            sidebarOpen={sidebarOpen}
-            sprints={sprints}
-            sprintsLoading={sprintsLoading}
-            tasksLoading={tasksLoading}
-            tasksReloading={tasksReloading}
-            viewMode={viewMode}
-            onOpenSidebar={handlers.handleToggleSidebar}
-            onSprintChange={onSprintChange}
-            onTasksReload={onTasksReload}
-          />
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden" style={{ zIndex: ZIndex.base }}>
+          <div
+            className="absolute inset-0 flex min-h-0 flex-col"
+            style={{ zIndex: ZIndex.base }}
+          >
               <SprintPlannerBoardViews
                 kanban={{
                   boardId: boardIdForPlannerData ?? null,
@@ -365,7 +368,38 @@ export function SprintPlannerView({
                   onRejectAgentNotes={handlers.handleCommentRejectAll}
                 />
               ) : null}
-            </div>
+          </div>
+          <div
+            ref={setControlsEl}
+            className={`absolute inset-x-0 top-0 ${FLOATING_TOOLBAR_GLASS}`}
+            style={{ zIndex: ZIndex.plannerControls }}
+          >
+            <SprintPlannerControlsBar
+              boardId={boardIdForPlannerData ?? null}
+              boardViewers={boardViewers}
+              developers={developers}
+              occupancyStatusFilter={occupancyStatusFilter}
+              planHistory={positionHistory}
+              selectedAssigneeIds={selectedAssigneeIds}
+              selectedSprintId={selectedSprintId}
+              setOccupancyStatusFilter={setOccupancyStatusFilter}
+              setSelectedAssigneeIds={setSelectedAssigneeIds}
+              setViewMode={setViewMode}
+              sidebarOpen={sidebarOpen}
+              sprints={sprints}
+              sprintsLoading={sprintsLoading}
+              tasksLoading={tasksLoading}
+              tasksReloading={tasksReloading}
+              viewMode={viewMode}
+              onOpenSidebar={handlers.handleToggleSidebar}
+              onSprintChange={onSprintChange}
+              onTasksReload={onTasksReload}
+            />
+            <div
+              ref={setDaysSlotEl}
+              style={daysChrome ? { minHeight: DAYS_HEADER_ROW_HEIGHT_PX } : undefined}
+            />
+          </div>
           </div>
 
             <SidebarSection
@@ -466,5 +500,6 @@ export function SprintPlannerView({
         />
       )}
     </StickyNoteReactionsProvider>
+    </PlannerChromeSlotProvider>
   );
 }

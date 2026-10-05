@@ -3,6 +3,7 @@
 import type { DeveloperHeaderLaneLabelItem } from '@/features/swimlane/components/DeveloperHeaderLaneLabels';
 import type { Developer } from '@/types';
 
+import { ZIndex } from '@/constants';
 import { DeveloperHeader } from '@/features/swimlane/components/DeveloperHeader';
 import { FeatureLaneDraftRowActions } from '@/features/swimlane/components/FeatureLaneDraftRowActions';
 import { FeatureLaneRowTitle } from '@/features/swimlane/components/FeatureLaneRowTitle';
@@ -61,9 +62,11 @@ export function SwimlaneDeveloperHeader({
       completedSP={layout.completedSP}
       completedTP={layout.completedTP}
       developerName={developer.name}
+      frosted={isPinned}
       hasTasks={layout.hasVolumeTasks}
       hideAvatar={featureColumn.isFeatureLane}
       laneLabels={laneLabels}
+      layerZIndex={isPinned ? ZIndex.stickyPinnedRows : ZIndex.stickyLeftColumn}
       nameContent={
         featureTitle ? (
           <FeatureLaneRowTitle

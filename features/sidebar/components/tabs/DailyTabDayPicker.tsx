@@ -121,7 +121,6 @@ export function DailyTabDayPicker({
                 })}
                 role="tab"
                 tabIndex={isActive ? 0 : -1}
-                title={dayLabel}
                 type="button"
                 onClick={() => onSelectDay(dayIndex)}
               >

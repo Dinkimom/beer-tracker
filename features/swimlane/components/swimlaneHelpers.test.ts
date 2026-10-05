@@ -17,6 +17,7 @@ import {
 describe('buildSwimlaneRootClassName', () => {
   it('disables row hover while another swimlane row is being resized', () => {
     expect(buildSwimlaneRootClassName(false)).toContain('swimlane-row-resizing:pointer-events-none');
+    expect(buildSwimlaneRootClassName(false)).toContain('swimlane-lane-fill');
   });
 });
 

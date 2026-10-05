@@ -107,7 +107,7 @@ export function TaskCardSwimlaneDiagramCaption({
         />
       ) : (
         <button
-          className={`${CAPTION_TEXT_CLASS} border-0 p-0${canEdit ? ' cursor-text' : ''}`}
+          className={`${CAPTION_TEXT_CLASS} border-0 p-0${canEdit ? ' cursor-text rounded-sm transition-all duration-200 hover:opacity-100 active:scale-[0.98]' : ' cursor-default'}`}
           type="button"
           onClick={onCaptionClick}
           onMouseDown={canEdit ? stopCardGesture : undefined}

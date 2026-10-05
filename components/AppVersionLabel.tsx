@@ -16,7 +16,6 @@ export function AppVersionLabel({ className }: AppVersionLabelProps) {
     <span
       aria-label={label}
       className={`font-mono tabular-nums text-ds-text-muted ${className ?? ''}`}
-      title={label}
     >
       {version}
     </span>

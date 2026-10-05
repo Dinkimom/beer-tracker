@@ -22,7 +22,7 @@ export function TaskInfoSidebarDescriptionEditorActions({
       data-description-editor-chrome=""
     >
       <button
-        className="cursor-pointer border-0 bg-transparent px-1 py-1 text-sm text-gray-500 transition-colors hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-100"
+        className="cursor-pointer border-0 bg-transparent px-1 py-1 text-sm text-gray-500 transition-all duration-200 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-100 active:scale-[0.98]"
         disabled={disabled}
         type="button"
         onClick={onCancel}

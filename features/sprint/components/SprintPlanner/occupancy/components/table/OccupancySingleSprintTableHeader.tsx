@@ -67,8 +67,8 @@ export function OccupancySingleSprintTableHeader({
   return (
     <thead>
       <tr
-        className="sticky top-0 bg-gray-100 dark:bg-gray-800 [&>th]:overflow-hidden [box-shadow:0_1px_0_0_#e5e7eb] dark:[box-shadow:0_1px_0_0_#374151]"
-        style={{ zIndex: ZIndex.stickyMainHeader }}
+        className="sticky bg-gray-100 dark:bg-gray-800 [&>th]:overflow-hidden [box-shadow:0_1px_0_0_#e5e7eb] dark:[box-shadow:0_1px_0_0_#374151]"
+        style={{ top: 'var(--planner-controls-h, 0px)', zIndex: ZIndex.stickyMainHeader }}
       >
         <OccupancyTableTaskColumnHeader
           allExpanded={allExpanded}

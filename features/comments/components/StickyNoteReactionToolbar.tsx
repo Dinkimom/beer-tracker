@@ -11,7 +11,7 @@ const TOOLBAR_SHELL_CLASS =
   'pointer-events-auto flex h-8 items-center gap-0.5 rounded-lg bg-white px-1 shadow-[0_4px_16px_rgba(15,23,42,0.18)] dark:bg-gray-800 dark:shadow-[0_4px_16px_rgba(0,0,0,0.45)]';
 
 const TOOLBAR_BUTTON_CLASS =
-  'flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-700 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:text-gray-200 dark:hover:bg-gray-700';
+  'flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-700 transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] active:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:text-gray-200 dark:hover:bg-gray-700 dark:active:bg-gray-600';
 
 interface StickyNoteReactionToolbarProps {
   selectedEmojis: readonly string[];

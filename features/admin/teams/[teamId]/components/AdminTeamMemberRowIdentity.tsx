@@ -3,6 +3,7 @@
 import type { AdminTeamMember } from '@/features/admin/adminTeamCatalog';
 
 import { Avatar } from '@/components/Avatar';
+import { TextTooltip } from '@/components/TextTooltip';
 import { muted } from '@/features/admin/adminUiTokens';
 import { getInitials } from '@/utils/displayUtils';
 
@@ -40,12 +41,11 @@ export function AdminTeamMemberRowIdentity({
           )}
         </div>
         {showPlannerHint ? (
-          <p
-            className="line-clamp-2 text-[11px] leading-snug text-amber-800 dark:text-amber-200/90"
-            title={t('admin.teamMemberRow.noPlannerAccessTitle')}
-          >
+          <TextTooltip content={t('admin.teamMemberRow.noPlannerAccessTitle')}>
+          <p className="line-clamp-2 text-[11px] leading-snug text-amber-800 dark:text-amber-200/90">
             {t('admin.teamMemberRow.noPlannerAccess')}
           </p>
+          </TextTooltip>
         ) : null}
       </div>
     </div>

@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Компонент сетки времени в свимлейне
  */
@@ -5,6 +7,7 @@
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 import type { Task } from '@/types';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
 import { timelineDayDividerClass } from '@/features/sprint/utils/timelineColumnChrome';
@@ -82,7 +85,7 @@ export function TimelineGrid({
   const quickAddSpan = quickAddFootprint?.span ?? 1;
 
   return (
-    <div className="relative h-full w-full min-w-0 bg-white dark:bg-gray-800">
+    <div className="relative h-full w-full min-w-0 bg-white swimlane-lane-fill dark:bg-gray-800">
       {hatchRanges.length > 0 ? (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {hatchRanges.map((range) => (
@@ -110,7 +113,8 @@ export function TimelineGrid({
           const showHolidayHatch = isHoliday && !hasAvailabilityHatch;
           const unavailableTitle = unavailableDayTitles?.get(dayIndex);
           return (
-            <div key={dayIndex} className={DAY_COLUMN_CLASS} title={unavailableTitle}>
+            <TextTooltip key={dayIndex} content={unavailableTitle ?? ''} disabled={!unavailableTitle}>
+            <div className={DAY_COLUMN_CLASS}>
               {showHolidayHatch ? (
                 <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
                   <PlannerHatchOverlay />
@@ -148,6 +152,7 @@ export function TimelineGrid({
                 />
               ))}
             </div>
+            </TextTooltip>
           );
         })}
       </div>

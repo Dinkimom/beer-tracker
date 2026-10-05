@@ -49,6 +49,7 @@ import { useSwimlaneLinkingHandlers } from '../hooks/useSwimlaneLinkingHandlers'
 import { usePlannerOnboardingChrome } from '../onboarding/plannerOnboardingChrome';
 
 import { ParticipantsColumnResizeHandle } from './ParticipantsColumnResizeHandle';
+import { PlannerParticipantsColumnGlass } from './PlannerParticipantsColumnGlass';
 import { SwimlanesSectionLanes } from './SwimlanesSectionLanes';
 
 function swimlaneHoverValueWhileIdle<T>(suspended: boolean, value: T): T | null {
@@ -324,7 +325,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   return (
     <div
       ref={scrollContainerRef}
-      className={`overflow-y-auto min-h-0 ${viewMode === 'full' ? 'overflow-x-auto' : 'overflow-x-hidden'} scrollbar-thin-custom scrollbar-gutter-stable`}
+      className={`planner-board-scroll overflow-y-auto min-h-0 ${viewMode === 'full' ? 'overflow-x-auto' : 'overflow-x-hidden'} scrollbar-thin-custom scrollbar-gutter-stable`}
       style={sidebarOpen
         ? { flex: 1, minWidth: 0, transition: 'none' }
         : { flex: 1, transition: 'none' }
@@ -335,8 +336,9 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
       <div
         className="relative flex min-h-full flex-col"
         style={{
-          width: swimlanesRowWidth,
           minWidth: swimlanesRowWidth,
+          paddingTop: 'var(--planner-controls-h, 0px)',
+          width: swimlanesRowWidth,
         }}
       >
         {onParticipantsColumnWidthChange ? (
@@ -356,6 +358,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
           holidayDayIndices={holidayDayIndices}
           participantsColumnWidth={participantsColumnWidth}
           removeParticipantFromTeam={removeParticipantFromTeam}
+          scrollContainerRef={scrollContainerRef}
           sidebarOpen={sidebarOpen}
           sidebarWidth={sidebarWidth}
           sprintStartDate={sprintStartDate}
@@ -367,7 +370,11 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
         <div
           className="relative flex min-h-0 flex-1"
           data-planner-swimlanes-row
-          style={{ transition: 'none', zIndex: 0 }}
+          style={{
+            marginTop: 'calc(-1 * var(--planner-controls-h, 0px))',
+            transition: 'none',
+            zIndex: 0,
+          }}
         >
           <div
             className="relative flex shrink-0 flex-col bg-white dark:bg-gray-800"
@@ -378,6 +385,11 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
               transition: 'none',
             }}
           >
+            <PlannerParticipantsColumnGlass
+              className="sticky left-0 shrink-0 self-start"
+              fillScrollport
+              width={participantsColumnWidth}
+            />
             <div className="relative shrink-0" data-planner-swimlanes-lanes>
               <SwimlanesSectionLanes
                 calendarBusyByDeveloper={calendarBusyByDeveloper}

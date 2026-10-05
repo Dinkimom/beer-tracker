@@ -52,7 +52,7 @@ export function SortableSidebarTabItem({
           {...attributes}
           {...listeners}
           aria-label={t('settings.sidebarTabList.dragReorderAria')}
-          className="p-1 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded hover:bg-gray-200/60 dark:hover:bg-gray-600/60"
+          className="cursor-grab rounded p-1 text-gray-400 transition-colors duration-200 hover:bg-gray-200/60 hover:text-gray-700 active:cursor-grabbing active:bg-gray-300/70 dark:hover:bg-gray-600/60 dark:hover:text-gray-200 dark:active:bg-gray-500/60"
           type="button"
           onClick={(e) => e.stopPropagation()}
         >

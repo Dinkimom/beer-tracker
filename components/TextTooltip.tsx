@@ -1,6 +1,7 @@
 'use client';
 
 import type { Anchor } from '@/types';
+import type { ReactElement } from 'react';
 
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useEffect, useState } from 'react';
@@ -123,4 +124,24 @@ export function TextTooltip({
       </Tooltip.Root>
     </Tooltip.Provider>
   );
+}
+
+/** `title` с кнопки: стилизованный тултип. На disabled кнопка не ловит hover — оборачиваем span. */
+export function wrapWithTextTooltip(
+  node: ReactElement,
+  content: string | undefined,
+  options?: { disabled?: boolean; fullWidth?: boolean }
+): ReactElement {
+  if (!content) {
+    return node;
+  }
+  if (options?.disabled) {
+    const shellClass = options.fullWidth ? 'flex min-w-0 flex-1' : 'inline-flex max-w-full';
+    return (
+      <TextTooltip content={content}>
+        <span className={shellClass}>{node}</span>
+      </TextTooltip>
+    );
+  }
+  return <TextTooltip content={content}>{node}</TextTooltip>;
 }

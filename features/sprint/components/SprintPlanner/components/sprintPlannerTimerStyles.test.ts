@@ -14,13 +14,7 @@ describe('sprintPlannerTimerStyles', () => {
     expect(isSprintPlannerTimerActiveStatus('finished')).toBe(false);
   });
 
-  it('draws an outline frame when the trigger is an outline button', () => {
-    expect(sprintPlannerTimerTriggerClassName('idle', false, 'outline')).toContain('border-gray-300');
-    expect(sprintPlannerTimerTriggerClassName('idle', false, 'outline')).toContain('bg-white');
-    expect(sprintPlannerTimerTriggerClassName('running', false, 'outline')).toContain('border-gray-300');
-  });
-
-  it('uses borderless rounded trigger without outline variant classes', () => {
+  it('uses a borderless rounded trigger', () => {
     expect(sprintPlannerTimerTriggerClassName('idle', false)).toContain('rounded-lg');
     expect(sprintPlannerTimerTriggerClassName('idle', false)).not.toContain('rounded-full');
     expect(sprintPlannerTimerTriggerClassName('idle', false)).toContain('border-0');
@@ -38,5 +32,14 @@ describe('sprintPlannerTimerStyles', () => {
     expect(open).toContain('bg-gray-100 text-gray-800');
     expect(open).not.toContain('bg-transparent');
     expect(sprintPlannerTimerTriggerClassName('running', false)).not.toContain('bg-gray-100 text-gray-800');
+  });
+
+  it('uses a veil instead of a gray tile when the trigger sits on glass', () => {
+    const open = sprintPlannerTimerTriggerClassName('running', true, 'glass');
+    expect(open).toContain('bg-black/10');
+    expect(open).not.toContain('bg-gray-100');
+    const idle = sprintPlannerTimerTriggerClassName('idle', false, 'glass');
+    expect(idle).toContain('hover:bg-black/10');
+    expect(idle).not.toContain('hover:bg-gray-100');
   });
 });

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/Button';
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { boardSelectorLabel } from '@/features/board/boardSelectorLabel';
 import { invalidateBoardsQuery } from '@/features/board/boardsQuery';
@@ -114,13 +115,13 @@ export default function SelectBoardPage() {
           const isThisBoardLoading = loadingBoardId === board.id;
           const isBusy = loadingBoardId !== null;
           const stateClasses = isSelected
-            ? 'border-blue-500 bg-blue-50 shadow-md dark:border-blue-400 dark:bg-blue-900/20'
+            ? 'border-blue-500 bg-blue-50 shadow-md hover:bg-blue-100 active:bg-blue-200 dark:border-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/35 dark:active:bg-blue-900/50'
             : 'border-ds-border-subtle bg-white hover:border-blue-300 hover:shadow-md dark:bg-gray-700/80 dark:hover:border-blue-600';
           const titleClasses = isSelected
             ? 'text-blue-900 dark:text-blue-100'
             : 'text-gray-900 dark:text-gray-100';
           const boardButtonClass = [
-            'relative h-full min-h-0 w-full rounded-xl border-2 p-5 text-left transition-all duration-200',
+            'relative h-full min-h-0 w-full cursor-pointer rounded-xl border-2 p-5 text-left transition-all duration-200 active:scale-[0.98]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
             'dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-800',
             stateClasses,
@@ -169,12 +170,11 @@ export default function SelectBoardPage() {
                   {t('selectBoard.trackerBoardLine', { name: board.name })}
                 </p>
               ) : null}
-              <p
-                className="mt-2 font-mono text-xs text-ds-text-muted"
-                title={t('selectBoard.boardIdTitle')}
-              >
+              <TextTooltip content={t('selectBoard.boardIdTitle')}>
+              <p className="mt-2 font-mono text-xs text-ds-text-muted">
                 {t('selectBoard.boardIdLabel', { id: board.id })}
               </p>
+              </TextTooltip>
             </button>
           );
         })}

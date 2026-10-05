@@ -29,7 +29,7 @@ export function SprintActions({
   }
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 pt-3 pb-3 flex-shrink-0 space-y-2">
+    <div className="flex-shrink-0 space-y-2 border-t border-black/10 px-4 pb-3 pt-3 dark:border-white/10">
       {canStartSprint && (
         <>
           <Button

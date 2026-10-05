@@ -6,6 +6,7 @@ import type { Task, Developer, TaskCardVariant, TaskPosition } from '@/types';
 
 import React from 'react';
 
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useSwimlaneCardFieldsStorage } from '@/hooks/useLocalStorage';
 import { sprintCardPresenceHasChangingViewer, sprintCardPresenceIsLockedByRemote } from '@/lib/realtime/sprintCardPresence';
@@ -148,7 +149,7 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
     showExtraSplit,
   } = visual.barMetrics;
 
-  return (
+  return wrapWithTextTooltip(
     <div
       ref={ref}
       className={`${visual.cardRootClassName}${isResizing ? ' select-none' : ''}${
@@ -174,7 +175,6 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
       {...restProps}
       aria-busy={isRemoteChanging || undefined}
       aria-disabled={isPresenceLocked || undefined}
-      title={isPresenceLocked ? t('sprintPlanner.presence.cardLocked') : undefined}
     >
       {renderTaskCardChrome({
         developerIds: developers.map((developer) => developer.id),
@@ -223,7 +223,8 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
         variant,
       })}
       <SprintCardPresenceAvatars taskId={task.id} />
-    </div>
+    </div>,
+    isPresenceLocked ? t('sprintPlanner.presence.cardLocked') : undefined
   );
 });
 

@@ -54,7 +54,7 @@ export function SidebarTabContent({
 }: SidebarTabContentProps) {
   const { supportsSlaBugs } = useIssueTrackerProviderCapabilities();
   const isScrollable = SCROLLABLE_MAIN_TABS.includes(mainTab);
-  const contentClassName = `flex-1 min-h-0 bg-white dark:bg-gray-800 ${
+  const contentClassName = `flex-1 min-h-0 ${
     isScrollable ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'
   }`;
 

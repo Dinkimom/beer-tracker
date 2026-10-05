@@ -66,7 +66,7 @@ export function RetroColumnComposer({ onAddNote }: RetroColumnComposerProps) {
         </form>
       ) : (
         <button
-          className="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+          className="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm text-gray-500 transition-all duration-200 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 active:scale-[0.98]"
           type="button"
           onClick={() => setOpen(true)}
         >

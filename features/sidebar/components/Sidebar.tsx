@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
+import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import { buildTaskSidebarContextValue } from '@/features/sidebar/components/buildTaskSidebarContextValue';
 import { SidebarHeader } from '@/features/sidebar/components/SidebarHeader';
 import { SidebarTabContent } from '@/features/sidebar/components/SidebarTabContent';
@@ -304,17 +305,19 @@ export function TaskSidebar({
     <TaskSidebarContext.Provider value={contextValue}>
       <div
         ref={setNodeRef}
-        className="flex flex-col h-full min-h-0"
+        className="relative flex h-full min-h-0 flex-col"
       >
-        <SidebarHeader
-          mainTab={mainTab}
-          setMainTab={setMainTab}
-          tabs={headerTabs}
-        />
         <SidebarTabContent
           hideBacklogTab={hideBacklogTab}
           mainTab={mainTab}
         />
+        <div className={`absolute inset-x-0 top-0 z-20 ${FLOATING_TOOLBAR_GLASS}`}>
+          <SidebarHeader
+            mainTab={mainTab}
+            setMainTab={setMainTab}
+            tabs={headerTabs}
+          />
+        </div>
       </div>
     </TaskSidebarContext.Provider>
   );

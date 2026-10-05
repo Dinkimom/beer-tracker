@@ -11,7 +11,7 @@ import {
 import { useSprintDailyNotesStorage } from '@/hooks/localStorage/useSprintDailyNotesStorage';
 
 const NOTE_TEXTAREA_CLASS =
-  'min-h-0 flex-1 resize-none rounded-lg border border-gray-200 bg-gray-50/50 px-3 py-2.5 text-sm leading-relaxed text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-300 focus:bg-white focus:ring-2 focus:ring-gray-200/80 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-gray-500 dark:focus:bg-gray-900/70 dark:focus:ring-gray-700/60';
+  'min-h-0 flex-1 resize-none rounded-lg border border-black/10 bg-black/[0.03] px-3 py-2.5 text-sm leading-relaxed text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 dark:border-white/15 dark:bg-black/25 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:bg-gray-900';
 
 interface DailyTabContentProps {
   selectedSprintId: number;
@@ -47,7 +47,7 @@ export function DailyTabContent({ selectedSprintId, sprintDays }: DailyTabConten
   }, [safeDayIndex]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-800">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-14">
       <div className="flex-shrink-0 border-b border-gray-200 px-4 py-2.5 dark:border-gray-700">
         <DailyTabDayPicker
           locale={locale}

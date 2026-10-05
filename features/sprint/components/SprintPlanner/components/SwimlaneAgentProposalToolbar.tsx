@@ -42,7 +42,6 @@ export function SwimlaneAgentProposalToolbar({
       <Button
         aria-label={t('comments.agentApproveAll')}
         className={`${ACTION_CLASS} text-green-700 hover:!bg-green-500/[0.12] dark:text-green-400 dark:hover:!bg-green-400/[0.12]`}
-        title={t('comments.agentApproveAll')}
         type="button"
         variant="ghost"
         onClick={() => onApproveAll(pendingCommentIds)}
@@ -53,7 +52,6 @@ export function SwimlaneAgentProposalToolbar({
       <Button
         aria-label={t('comments.agentRejectAll')}
         className={`${ACTION_CLASS} text-red-600 hover:!bg-red-500/[0.1] dark:text-red-400 dark:hover:!bg-red-400/[0.1]`}
-        title={t('comments.agentRejectAll')}
         type="button"
         variant="ghost"
         onClick={() => onRejectAll(pendingCommentIds)}

@@ -25,6 +25,7 @@ export const enMessages = {
     resizePanelWidth: 'Resize panel width',
     clearSearch: 'Clear search',
     delete: 'Delete',
+    remove: 'Remove',
     save: 'Save',
     notSelected: 'Not selected',
     appVersionTitle: 'Version {version}',
@@ -1469,6 +1470,8 @@ export const enMessages = {
       emptyCellHint: 'Click — add phase',
       segmentEditorConfirmTitle: 'Confirm',
       segmentEditorDiscardTitle: 'Cancel',
+      segmentCellEnable: 'Turn this segment on',
+      segmentCellDisable: 'Turn this segment off',
       assigneeFilter: {
         all: 'All assignees',
         one: '1 assignee',
@@ -1541,6 +1544,8 @@ export const enMessages = {
       untitled: 'Untitled',
       segmentTooltip: 'Segment {index} of {total}',
       autoAddSwimlaneTitle: 'Add to nearest free swimlane slot',
+      severityValue: 'Severity: {value}',
+      priorityValue: 'Priority: {value}',
       noAssignee: 'No assignee',
     },
     statusSelect: {

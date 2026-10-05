@@ -5,6 +5,7 @@ import { useMemo } from "react";
 
 import { Button } from "@/components/Button";
 import { CustomSelect } from "@/components/CustomSelect";
+import { TextTooltip } from "@/components/TextTooltip";
 import { useI18n } from "@/contexts/LanguageContext";
 import { adminFormCheckbox, field, label } from "@/features/admin/adminUiTokens";
 import { toSlug } from "@/lib/roles/toSlug";
@@ -71,11 +72,11 @@ export function CreateOrgRoleForm({
           <label className={label} htmlFor="role-new-slug">
             Slug
           </label>
+          <TextTooltip content={t("admin.rolesPage.createSlugHint")}>
           <input
             className={field}
             id="role-new-slug"
             placeholder="latin-kebab-case"
-            title={t("admin.rolesPage.createSlugHint")}
             type="text"
             value={newSlug}
             onChange={(e) => {
@@ -83,6 +84,7 @@ export function CreateOrgRoleForm({
               setNewSlug(e.target.value);
             }}
           />
+          </TextTooltip>
         </div>
       </div>
       <div>

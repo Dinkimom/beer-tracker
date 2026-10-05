@@ -79,7 +79,7 @@ export function QuarterlyStoryDevelopmentPlanModal({
               ) : null}
             </Dialog.Title>
             <Dialog.Close asChild>
-              <HeaderIconButton aria-label={t('common.close')} title={t('common.close')}>
+              <HeaderIconButton aria-label={t('common.close')}>
                 <Icon className="h-4 w-4" name="close" />
               </HeaderIconButton>
             </Dialog.Close>

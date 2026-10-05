@@ -53,11 +53,11 @@ export const adminFormRadio =
 export const tabList =
   'inline-flex flex-wrap gap-1 rounded-xl bg-gray-100/90 p-1 dark:bg-gray-900/50';
 export const tabBtnBase =
-  'cursor-pointer rounded-lg border-0 px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0';
+  'cursor-pointer rounded-lg border-0 px-3 py-1.5 text-sm font-medium transition-all duration-200 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0';
 export const tabBtnIdle =
-  'text-gray-600 hover:bg-white/70 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700/60 dark:hover:text-gray-100';
+  'text-gray-600 hover:bg-white/70 hover:text-gray-900 active:bg-white dark:text-gray-400 dark:hover:bg-gray-700/60 dark:hover:text-gray-100 dark:active:bg-gray-600';
 export const tabBtnActive =
-  'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white dark:shadow-none';
+  'bg-white text-gray-900 shadow-sm hover:bg-gray-50 active:bg-gray-100 dark:bg-gray-700 dark:text-white dark:shadow-none dark:hover:bg-gray-600 dark:active:bg-gray-500';
 
 /** Статусный бейдж-пилюля. Пример: <span className={badgeSuccess}>Токен сохранён</span> */
 export const badgeSuccess =

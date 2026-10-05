@@ -313,7 +313,7 @@ function SwimlaneComponent({
         {/* Timeline Grid */}
         <div
           ref={setNodeRef}
-          className="flex relative bg-white dark:bg-gray-800"
+          className={`relative flex ${isPinned ? 'planner-pinned-lane-glass' : 'bg-white swimlane-lane-fill dark:bg-gray-800'}`}
           data-swimlane={developer.id}
           data-team-swimlane={isTeamLane ? 'true' : undefined}
           style={{

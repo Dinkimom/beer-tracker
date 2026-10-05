@@ -40,6 +40,11 @@ import { TaskSegmentArrowLinks } from './TaskSegmentArrowLinks';
 
 interface TaskArrowsProps {
   activeTaskId?: string | null;
+  /**
+   * Копия путей внутри закреплённой строки: общий слой стрелок лежит под её
+   * stacking context и не виден между карточками этой строки.
+   */
+  clipToRow?: boolean;
   hoveredTaskId?: string | null;
   /** Источник рисуемой связи (превью линии). */
   linkingFromTaskId?: string | null;
@@ -49,6 +54,8 @@ interface TaskArrowsProps {
   linkToolArmed?: boolean;
   /** Dev task id → QA task. Если передан, рисуются стрелки от задачи разработки к задаче тестирования. */
   qaTasksMap?: Map<string, Task>;
+  /** Порядок строк и набор закреплений — позиции карточек по Y меняются без смены assignee. */
+  rowsLayoutKey?: string;
   /** Задача в режиме редактирования отрезков — связи с ней скрываем (как в занятости). */
   segmentEditTaskId?: string | null;
   /** Связи между задачами (в т.ч. пользовательские) */
@@ -71,6 +78,8 @@ export const TaskArrows = observer(function TaskArrows({
   linkingSessionActive = false,
   linkToolArmed = false,
   segmentEditTaskId = null,
+  clipToRow = false,
+  rowsLayoutKey = '',
   visibleDeveloperIds,
   onDeleteLink,
   onTaskHoverEnd,
@@ -106,13 +115,21 @@ export const TaskArrows = observer(function TaskArrows({
 
   const visibleLinkIdsKey = visibleLinks.map((link) => link.id).join('|');
   useEffect(() => {
+    if (clipToRow) return undefined;
     const frame = requestAnimationFrame(() => redrawArrows());
     const delayed = window.setTimeout(() => redrawArrows(), DELAYS.ARROW_UPDATE);
     return () => {
       cancelAnimationFrame(frame);
       window.clearTimeout(delayed);
     };
-  }, [redrawArrows, visibleLinkIdsKey, positionsSignature, visibleAssigneesSignature]);
+  }, [
+    clipToRow,
+    positionsSignature,
+    redrawArrows,
+    rowsLayoutKey,
+    visibleAssigneesSignature,
+    visibleLinkIdsKey,
+  ]);
 
   const handleDeleteLink = bindLinkDeleteHandler(onDeleteLink, () => setHoveredLinkId(null));
 
@@ -199,6 +216,7 @@ export const TaskArrows = observer(function TaskArrows({
           cursorPos={cursorPos}
           linkingFromTaskId={linkingFromTaskId}
           previewTargetId={previewTargetId}
+          suppressCursorAnchor={clipToRow}
         />
       ) : null}
       {handleDeleteLink ? (

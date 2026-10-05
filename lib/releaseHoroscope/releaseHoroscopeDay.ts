@@ -2,7 +2,7 @@ import type { AppLanguage } from '@/lib/i18n/model';
 
 export type ReleaseSignStatus = 'bad' | 'good' | 'neutral';
 
-export interface ReleaseHoroscopeSign {
+interface ReleaseHoroscopeSign {
   comment: string;
   id: string;
   nameEn: string;

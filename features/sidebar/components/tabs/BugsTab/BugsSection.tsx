@@ -42,7 +42,7 @@ export function BugsSection({
     <section className="mb-4">
       <button
         aria-expanded={!collapsed}
-        className="flex w-full items-center justify-between gap-2 rounded-md bg-gray-100 dark:bg-gray-700/70 px-3 py-2 text-left"
+        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md bg-black/[0.06] px-3 py-2 text-left transition-all duration-200 hover:bg-black/10 active:scale-[0.98] active:bg-black/[0.16] dark:bg-white/[0.06] dark:hover:bg-white/10 dark:active:bg-white/[0.16]"
         type="button"
         onClick={() => setCollapsed((v) => !v)}
       >

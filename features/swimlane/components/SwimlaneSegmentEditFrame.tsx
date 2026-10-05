@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { TextTooltip } from '@/components/TextTooltip';
 import { CARD_MARGIN, WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { cellsToSegments, PHASE_FOCUS_RING_SOURCE, phaseSegmentCellsDirty } from '@/lib/planner-timeline';
@@ -86,19 +87,30 @@ export function SwimlaneSegmentEditFrame({
         onMouseLeave={() => setHoveredCellIndex(null)}
       >
         {cells.map((on, idx) => (
-          <button
+          <TextTooltip
             key={idx}
-            aria-label={on ? 'Выключить отрезок' : 'Включить отрезок'}
-            className={`min-h-0 min-w-0 flex-1 cursor-pointer rounded-sm border-0 transition-colors ${
+            content={
+              on
+                ? t('sprintPlanner.occupancy.segmentCellDisable')
+                : t('sprintPlanner.occupancy.segmentCellEnable')
+            }
+          >
+          <button
+            aria-label={
+              on
+                ? t('sprintPlanner.occupancy.segmentCellDisable')
+                : t('sprintPlanner.occupancy.segmentCellEnable')
+            }
+            className={`min-h-0 min-w-0 flex-1 cursor-pointer rounded-sm border-0 transition-colors duration-200 ${
               hoveredCellIndex === idx
-                ? 'bg-black/15 ring-1 ring-inset ring-black/25 dark:bg-white/15 dark:ring-white/30'
-                : 'bg-transparent hover:bg-black/10 dark:hover:bg-white/5'
+                ? 'bg-black/15 ring-1 ring-inset ring-black/25 active:bg-black/25 dark:bg-white/15 dark:ring-white/30 dark:active:bg-white/25'
+                : 'bg-transparent hover:bg-black/10 active:bg-black/20 dark:hover:bg-white/5 dark:active:bg-white/15'
             }`}
-            title={on ? 'Выключить отрезок' : 'Включить отрезок'}
             type="button"
             onClick={() => toggle(idx)}
             onMouseEnter={() => setHoveredCellIndex(idx)}
           />
+          </TextTooltip>
         ))}
       </div>
       <div

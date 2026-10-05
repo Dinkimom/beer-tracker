@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 function occupancyAssigneeFilterDisplayText(
@@ -30,11 +31,24 @@ function occupancyAssigneeFilterDisplayText(
   });
 }
 
+function occupancyAssigneeFilterTriggerClass(surface: 'glass' | 'solid', selected: boolean): string {
+  const layout = 'w-full max-w-full min-w-0 !h-8 !justify-start !gap-2 !px-3 !py-0 text-sm font-medium';
+  if (surface === 'glass') {
+    return `${layout} ${glassLensControlClass(selected)}`;
+  }
+  if (selected) {
+    return layout;
+  }
+  return `${layout} hover:!bg-gray-50 dark:hover:!bg-gray-600`;
+}
+
 interface OccupancyAssigneeFilterProps {
   /** Ограничение ширины триггера в плотных тулбарах (truncate подписи) */
   className?: string;
   developers: Developer[];
   selectedAssigneeIds: Set<string>;
+  /** На стеклянной шапке триггер — линза. Список остаётся плотным. */
+  surface?: 'glass' | 'solid';
   onSelectionChange: (selectedIds: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
 }
 
@@ -42,6 +56,7 @@ export function OccupancyAssigneeFilter({
   developers,
   selectedAssigneeIds,
   className,
+  surface = 'solid',
   onSelectionChange,
 }: OccupancyAssigneeFilterProps) {
   const { t } = useI18n();
@@ -121,11 +136,10 @@ export function OccupancyAssigneeFilter({
     <div ref={containerRef} className={`relative min-w-0 ${className ?? ''}`}>
       <Button
         ref={buttonRef}
-        className={`w-full max-w-full min-w-0 !h-8 !justify-start !gap-2 !px-3 !py-0 text-sm font-medium ${
-          selectedAssigneeIds.size > 0 ? '' : 'hover:!bg-gray-50 dark:hover:!bg-gray-600'
-        }`}
+        className={occupancyAssigneeFilterTriggerClass(surface, selectedAssigneeIds.size > 0)}
+        data-state={surface === 'glass' && isOpen ? 'open' : undefined}
         type="button"
-        variant={selectedAssigneeIds.size > 0 ? 'accent' : 'outline'}
+        variant={surface !== 'glass' && selectedAssigneeIds.size > 0 ? 'accent' : 'outline'}
         onClick={() => setIsOpen(!isOpen)}
       >
         <Icon className="h-4 w-4 shrink-0" name="user" />

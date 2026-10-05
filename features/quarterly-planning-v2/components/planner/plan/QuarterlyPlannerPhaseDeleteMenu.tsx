@@ -51,7 +51,7 @@ export function QuarterlyPlannerPhaseDeleteMenu({
         style={{ left: menu.clientX, top: menu.clientY }}
       >
         <button
-          className="block w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
+          className="block w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 cursor-pointer transition-all duration-200 active:scale-[0.98]"
           role="menuitem"
           type="button"
           onClick={() => {

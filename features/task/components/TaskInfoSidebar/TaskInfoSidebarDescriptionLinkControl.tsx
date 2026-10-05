@@ -8,6 +8,7 @@ import { useState } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   TOOLBAR_BTN_ACTIVE_CLASS,
@@ -60,13 +61,13 @@ export function TaskInfoSidebarDescriptionLinkControl({
 
   return (
     <Popover.Root modal={false} open={open && !disabled} onOpenChange={openEditor}>
+      {wrapWithTextTooltip(
       <Popover.Trigger asChild>
         <button
           aria-label={t('sprintPlanner.taskInfo.descriptionEditor.link')}
           aria-pressed={isActive}
           className={`${TOOLBAR_BTN_CLASS} w-8 ${isActive && !disabled ? TOOLBAR_BTN_ACTIVE_CLASS : ''}`}
           disabled={disabled}
-          title={t('sprintPlanner.taskInfo.descriptionEditor.link')}
           type="button"
           onMouseDown={(event) => {
             event.preventDefault();
@@ -74,7 +75,10 @@ export function TaskInfoSidebarDescriptionLinkControl({
         >
           <Icon className={TOOLBAR_ICON_CLASS} name="link" />
         </button>
-      </Popover.Trigger>
+      </Popover.Trigger>,
+        t('sprintPlanner.taskInfo.descriptionEditor.link'),
+        { disabled }
+      )}
       <Popover.Portal>
         <Popover.Content
           align="start"
@@ -108,7 +112,7 @@ export function TaskInfoSidebarDescriptionLinkControl({
           <div className="flex justify-end gap-2">
             {isActive ? (
               <button
-                className="cursor-pointer rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                className="cursor-pointer rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 transition-all duration-200 active:scale-[0.98]"
                 type="button"
                 onClick={removeLink}
               >
@@ -116,7 +120,7 @@ export function TaskInfoSidebarDescriptionLinkControl({
               </button>
             ) : null}
             <button
-              className="cursor-pointer rounded-full bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+              className="cursor-pointer rounded-full bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 transition-all duration-200 active:scale-[0.98]"
               type="button"
               onClick={applyLink}
             >

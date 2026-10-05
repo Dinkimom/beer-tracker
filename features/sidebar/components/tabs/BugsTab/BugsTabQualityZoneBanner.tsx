@@ -72,7 +72,7 @@ export function BugsTabQualityZoneBanner({ needToClose, zone }: BugsTabQualityZo
           >
             <button
               aria-label={t('sidebar.bugsTab.qualityZone.infoAria')}
-              className="inline-flex shrink-0 rounded p-0.5 text-gray-400 transition-colors hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 dark:text-gray-500 dark:hover:text-gray-300"
+              className="inline-flex shrink-0 rounded p-0.5 text-gray-400 transition-all duration-200 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 dark:text-gray-500 dark:hover:text-gray-300 cursor-pointer active:scale-[0.98]"
               type="button"
               onMouseDown={stopDragActivation}
               onPointerDown={stopDragActivation}

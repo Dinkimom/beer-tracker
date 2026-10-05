@@ -73,7 +73,7 @@ export function TasksTabGroups({
   );
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0 overscroll-contain">
+    <div className="px-4 py-4">
       {!hasTasks
         ? renderTasksTabGroupsEmpty({
             insertIndex,

@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
+import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
@@ -202,12 +203,11 @@ export function EstimateSubmenu({
               >
                 <span>{value}</span>
                 {isSuggested && !isCurrent && (
-                  <span
-                    className="truncate rounded bg-blue-100 px-1 text-[10px] text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                    title={t('sprintPlanner.contextMenu.estimateRecommended')}
-                  >
+                  <TextTooltip content={t('sprintPlanner.contextMenu.estimateRecommended')}>
+                  <span className="truncate rounded bg-blue-100 px-1 text-[10px] text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                     {t('sprintPlanner.contextMenu.estimateRecommendedShort')}
                   </span>
+                  </TextTooltip>
                 )}
                 {isCurrent && (
                   <Icon aria-hidden className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" name="check" />

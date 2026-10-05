@@ -7,6 +7,7 @@ import {
   buildDeveloperAvailabilityMap,
   computeHoverConnectedTaskIds,
   partitionPinnedSwimlaneRows,
+  pinnedSwimlaneFrameTop,
   togglePinnedSwimlaneRowId,
 } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionHelpers';
 
@@ -168,5 +169,12 @@ describe('togglePinnedSwimlaneRowId', () => {
   it('adds and removes an id', () => {
     expect(togglePinnedSwimlaneRowId(['team'], 'a')).toEqual(['team', 'a']);
     expect(togglePinnedSwimlaneRowId(['team', 'a'], 'a')).toEqual(['team']);
+  });
+});
+
+describe('pinnedSwimlaneFrameTop', () => {
+  it('stacks pinned rows under the planner controls', () => {
+    expect(pinnedSwimlaneFrameTop(0)).toBe('var(--planner-controls-h, 0px)');
+    expect(pinnedSwimlaneFrameTop(48)).toBe('calc(var(--planner-controls-h, 0px) + 48px)');
   });
 });

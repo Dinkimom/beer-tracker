@@ -25,7 +25,7 @@ interface GoalItemProps {
 export function GoalItem(props: GoalItemProps) {
   const { t } = useI18n();
   const editingContainerClass = props.isEditing
-    ? 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3 -mx-0'
+    ? 'rounded-lg border border-black/10 bg-black/[0.05] p-3 -mx-0 dark:border-white/15 dark:bg-white/[0.06]'
     : '';
   const updatingClass = props.isUpdating ? 'opacity-50' : '';
 

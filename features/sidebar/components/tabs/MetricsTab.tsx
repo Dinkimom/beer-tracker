@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 
 import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
+import { OverflowTooltip } from '@/components/OverflowTooltip';
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { SprintScoreBlock } from '@/features/sidebar/components/tabs/SprintScoreBlock';
 import { useTaskSidebar } from '@/features/sidebar/contexts/TaskSidebarContext';
@@ -39,7 +41,7 @@ export function MetricsTab() {
   );
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto bg-white dark:bg-gray-800">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-14">
       {selectedSprintId != null && selectedSprintId > 0 && (
         <SprintScoreBlock
           completionRules={completionRules}
@@ -54,21 +56,19 @@ export function MetricsTab() {
           {t('sidebar.metrics.byStatus')}
         </h3>
         <div className="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-          <div className={`grid ${hideTp ? 'grid-cols-[1fr_3.5rem]' : 'grid-cols-[1fr_3.5rem_3.5rem]'} gap-x-3 items-center bg-gray-100 dark:bg-gray-700/50 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300`}>
+          <div className={`grid ${hideTp ? 'grid-cols-[1fr_3.5rem]' : 'grid-cols-[1fr_3.5rem_3.5rem]'} gap-x-3 items-center bg-black/[0.06] dark:bg-white/[0.06] px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300`}>
             <div>{t('sidebar.metrics.statusColumn')}</div>
-            <div
-              className="text-right tabular-nums text-blue-600 dark:text-blue-400"
-              title={t('sidebar.metrics.storyPointsTitle')}
-            >
+            <TextTooltip content={t('sidebar.metrics.storyPointsTitle')}>
+            <div className="text-right tabular-nums text-blue-600 dark:text-blue-400">
               SP
             </div>
+            </TextTooltip>
             {!hideTp && (
-              <div
-                className="text-right tabular-nums text-amber-600 dark:text-amber-400"
-                title={t('sidebar.metrics.testPointsTitle')}
-              >
+              <TextTooltip content={t('sidebar.metrics.testPointsTitle')}>
+              <div className="text-right tabular-nums text-amber-600 dark:text-amber-400">
                 TP
               </div>
+              </TextTooltip>
             )}
           </div>
           {byStatus.map((row, index) => (
@@ -76,8 +76,8 @@ export function MetricsTab() {
               key={row.statusKey}
               className={`grid ${hideTp ? 'grid-cols-[1fr_3.5rem]' : 'grid-cols-[1fr_3.5rem_3.5rem]'} gap-x-3 items-center px-3 py-2 min-h-[2.25rem] ${
                 index % 2 === 0
-                  ? 'bg-white dark:bg-gray-800'
-                  : 'bg-gray-100 dark:bg-gray-700/70'
+                  ? 'bg-transparent'
+                  : 'bg-black/[0.05] dark:bg-white/[0.06]'
               }`}
             >
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 truncate block">
@@ -116,14 +116,13 @@ export function MetricsTab() {
           <p className="text-sm text-gray-500 dark:text-gray-400">{t('sidebar.metrics.noTasksWithAssignees')}</p>
         ) : (
           <div className="rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden min-w-0">
-            <div className="grid grid-cols-[1fr_auto] gap-x-3 items-center bg-gray-100 dark:bg-gray-700/50 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+            <div className="grid grid-cols-[1fr_auto] gap-x-3 items-center bg-black/[0.06] dark:bg-white/[0.06] px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300">
               <div className="min-w-0">{t('sidebar.metrics.assigneeColumn')}</div>
-              <div
-                className="text-right"
-                title={hideTp ? t('sidebar.metrics.doneTotalSp') : t('sidebar.metrics.doneTotalSpTp')}
-              >
+              <TextTooltip content={hideTp ? t('sidebar.metrics.doneTotalSp') : t('sidebar.metrics.doneTotalSpTp')}>
+              <div className="text-right">
                 {t('sidebar.metrics.metricColumn')}
               </div>
+              </TextTooltip>
             </div>
             {byAssignee.map((row, index) => {
               const isUnassigned = row.personId === '__unassigned__';
@@ -140,8 +139,8 @@ export function MetricsTab() {
                   key={row.personId}
                   className={`grid grid-cols-[1fr_auto] gap-x-3 items-center px-3 py-2 min-h-[2.25rem] ${
                     index % 2 === 0
-                      ? 'bg-white dark:bg-gray-800'
-                      : 'bg-gray-100 dark:bg-gray-700/70'
+                      ? 'bg-transparent'
+                      : 'bg-black/[0.05] dark:bg-white/[0.06]'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
@@ -156,12 +155,11 @@ export function MetricsTab() {
                         title={displayName}
                       />
                     )}
-                    <span
-                      className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 truncate"
-                      title={displayName}
-                    >
+                    <OverflowTooltip content={displayName}>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 truncate">
                       {displayName}
                     </span>
+                    </OverflowTooltip>
                   </div>
                   <div className="text-sm tabular-nums text-right flex flex-col items-end gap-0.5">
                     {(displaySP > 0 || (hideTp && displayTP > 0)) && (

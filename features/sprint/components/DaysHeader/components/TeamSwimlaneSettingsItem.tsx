@@ -1,5 +1,6 @@
 'use client';
 
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TEAM_SWIMLANE_ASSIGNEE_ID } from '@/lib/swimlane/teamSwimlaneAssignee';
 
@@ -41,17 +42,19 @@ export function TeamSwimlaneSettingsItem({
       <div aria-hidden className="w-[22px] flex-shrink-0" />
 
       <div className="flex w-8 justify-center">
+        {wrapWithTextTooltip(
         <input
           aria-label={`${toggleLabel} ${teamLaneName}`}
           checked={!isHidden}
           className="w-3.5 h-3.5 accent-blue-500 dark:accent-blue-400 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-400 dark:focus:ring-blue-400 flex-shrink-0"
           id={checkboxId}
-          title={t('sidebar.developersManagement.toggleInPlannerTitle', {
-            action: toggleLabel,
-          })}
           type="checkbox"
           onChange={onToggleVisibility}
-        />
+        />,
+          t('sidebar.developersManagement.toggleInPlannerTitle', {
+            action: toggleLabel,
+          })
+        )}
       </div>
 
       <label

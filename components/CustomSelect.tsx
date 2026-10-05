@@ -11,6 +11,7 @@ import {
 import { CustomSelectMenu } from '@/components/CustomSelectMenu';
 import { CustomSelectTrigger } from '@/components/CustomSelectTrigger';
 import { ZIndex } from '@/constants';
+import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 
 export interface CustomSelectOption<T extends string> {
   disabled?: boolean;
@@ -82,6 +83,8 @@ interface CustomSelectProps<T extends string> {
   searchPlaceholder?: string;
   selectedPrefix?: string;
   size?: 'compact' | 'default';
+  /** На стеклянной плашке триггер — линза. Меню остаётся плотным. */
+  surface?: 'glass' | 'solid';
   title?: string;
   triggerVariant?: 'default' | 'icon';
   value: T;
@@ -114,6 +117,7 @@ export function CustomSelect<T extends string>({
   selectedPrefix,
   title,
   menuZIndex,
+  surface = 'solid',
   triggerVariant = 'default',
 }: CustomSelectProps<T>) {
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -144,6 +148,10 @@ export function CustomSelect<T extends string>({
     ? options.filter((o) => optionMatchesQuery(o, searchQuery))
     : options;
 
+  const triggerClassName =
+    surface === 'glass' && !isIconTrigger
+      ? `${glassLensControlClass()} ${className ?? ''}`.trim()
+      : className;
   const contentZIndex = menuZIndex ?? ZIndex.modal + 1;
   const popoverStyle = customSelectPopoverStyle(
     menuFitContent,
@@ -157,7 +165,7 @@ export function CustomSelect<T extends string>({
       <Popover.Trigger asChild>
         <CustomSelectTrigger
           buttonRef={buttonRef}
-          className={className}
+          className={triggerClassName}
           disabled={disabled}
           isIconTrigger={isIconTrigger}
           isOpen={isOpen}

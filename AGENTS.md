@@ -41,6 +41,7 @@
 - Перед добавлением нового атома UI: поиск в [`components/`](./components/) и в [каталоге спеки](.spec-workflow/specs/project-design-review/COMPONENT_CATALOG.md); по возможности расширять существующий примитив.
 - Семантические CSS-токены (бордеры шапки, muted-текст, тосты): [`app/globals.css`](./app/globals.css) (`--ds-*`, `--toast-*`); краткий перечень — в каталоге спеки.
 - Сториз для ключевых примитивов: `components/*.stories.tsx`, запуск `pnpm storybook`.
+- Кнопка интерактивна. У `button` и контрола с `role="button"` обязательны: `cursor-pointer`; видимый hover (фон или цвет); отклик нажатия (`active:`, фон и обычно `active:scale-[0.98]`); плавный отпуск через `transition` — `transition-colors`, если меняется только цвет, и `transition-all duration-200`, если есть масштаб. Образец — [`components/HeaderIconButton.tsx`](./components/HeaderIconButton.tsx). Disabled не выглядит кликабельным: `disabled:pointer-events-none` или `disabled:cursor-not-allowed` и без hover.
 
 ## Архитектура данных (кратко)
 

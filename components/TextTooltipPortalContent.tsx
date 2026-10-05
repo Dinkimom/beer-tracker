@@ -23,7 +23,7 @@ interface TextTooltipPortalContentProps {
   onAnimationEnd: (event: AnimationEvent<HTMLElement>) => void;
 }
 
-function tooltipSurfaceClass(interactive: boolean, contentClassName: string): string {
+export function tooltipSurfaceClass(interactive: boolean, contentClassName: string): string {
   return `${ZIndex.class('tooltip')} ${tooltipContentClass} ${OVERLAY_TOOLTIP_ANIMATION} ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} ${contentClassName}`;
 }
 

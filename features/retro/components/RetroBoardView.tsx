@@ -121,7 +121,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
       className="flex min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
       role="region"
     >
-      <div className="flex h-full items-start gap-3 px-3">
+      <div className="flex h-full items-start gap-3">
         {columns.map(({ cards, column }, index) => (
           <RetroColumnView
             key={column.id}
@@ -160,7 +160,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
               </Button>
               <button
                 aria-label={t('retro.cancel')}
-                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-all duration-200 active:scale-[0.98]"
                 type="button"
                 onClick={() => {
                   setAddingColumn(false);
@@ -173,7 +173,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
           </form>
         ) : (
           <button
-            className="flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-white px-3 py-2.5 text-left text-sm font-medium text-gray-600 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:bg-gray-700"
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-gray-600 transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 dark:text-gray-300 dark:hover:bg-white/10 dark:active:bg-white/15"
             type="button"
             onClick={() => setAddingColumn(true)}
           >

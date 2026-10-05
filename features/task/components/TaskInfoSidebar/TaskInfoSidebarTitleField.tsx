@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { CopyFeedbackGlyph } from '@/components/CopyFeedbackGlyph';
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TASK_INFO_ICON_BUTTON_CLASS } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarIconClasses';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
@@ -18,7 +19,7 @@ const TITLE_PAD_CLASS = 'px-2.5 py-1.5';
 const TITLE_TEXT_CLASS =
   'text-left text-2xl font-semibold leading-snug text-gray-900 dark:text-gray-100';
 
-const TITLE_DISPLAY_CLASS = `inline-block w-fit max-w-full -ml-2.5 cursor-text rounded-lg border border-transparent ${TITLE_PAD_CLASS} ${TITLE_TEXT_CLASS} transition-colors hover:border-gray-200 disabled:cursor-default disabled:hover:border-transparent dark:hover:border-gray-600 dark:disabled:hover:border-transparent`;
+const TITLE_DISPLAY_CLASS = `inline-block w-fit max-w-full -ml-2.5 cursor-text rounded-lg border border-transparent ${TITLE_PAD_CLASS} ${TITLE_TEXT_CLASS} transition-all duration-200 hover:border-gray-200 active:scale-[0.99] active:border-gray-300 disabled:pointer-events-none disabled:hover:border-transparent dark:hover:border-gray-600 dark:active:border-gray-500 dark:disabled:hover:border-transparent`;
 
 const TITLE_EDIT_CLASS = `col-start-1 row-start-1 h-full w-full resize-none overflow-hidden rounded-lg border border-gray-300 bg-white ${TITLE_PAD_CLASS} ${TITLE_TEXT_CLASS} outline-none focus:border-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:focus:border-blue-400`;
 
@@ -133,15 +134,16 @@ export function TaskInfoSidebarTitleField({ task, onFieldsSaved }: TaskInfoSideb
           {task.name}
         </button>
       )}
+      <TextTooltip content={t('sprintPlanner.taskInfo.copyTitle')}>
       <button
         aria-label={t('sprintPlanner.taskInfo.copyTitle')}
         className={`${TASK_INFO_ICON_BUTTON_CLASS} mt-1.5 shrink-0`}
-        title={t('sprintPlanner.taskInfo.copyTitle')}
         type="button"
         onClick={copyTitle}
       >
         <CopyFeedbackGlyph copied={titleCopyFeedback.copied} idleName="copy" />
       </button>
+      </TextTooltip>
     </div>
   );
 }

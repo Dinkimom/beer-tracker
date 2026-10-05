@@ -20,7 +20,7 @@ export default function Forbidden() {
         {t('errors.forbiddenBody')}
       </p>
       <Link
-        className="mt-2 inline-flex h-10 cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700/80 dark:focus-visible:ring-offset-gray-900"
+        className="mt-2 inline-flex h-10 cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-800 transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] active:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700/80 dark:active:bg-gray-600 dark:focus-visible:ring-offset-gray-900"
         href="/"
       >
         {t('errors.goHome')}

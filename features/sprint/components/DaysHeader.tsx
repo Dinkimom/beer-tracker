@@ -3,18 +3,17 @@
 import type { DayErrorDetail } from '@/features/sprint/utils/occupancyValidation';
 import type { Developer } from '@/types';
 
-import { useState, useRef } from 'react';
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { WORKING_DAYS, ZIndex } from '@/constants';
+import { FLOATING_TOOLBAR_ITEM_IDLE } from '@/features/context-menu/contextMenuClasses';
+import { WORKING_DAYS } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import {
-  sprintPlannerContentRowWidthCss,
-  sprintPlannerDaysHeaderContentWidthCss,
-  sprintPlannerSwimlaneTimelineWidthCss,
-} from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
+import { sprintPlannerSwimlaneTimelineWidthCss } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
 import { SprintPlannerTimelineFill } from '@/features/sprint/components/SprintPlanner/layout/SprintPlannerTimelineFill';
+import { usePlannerChromeSlot } from '@/features/sprint/components/SprintPlanner/plannerChromeSlot';
 import { useFeatureLaneColumnUi } from '@/features/task/components/TaskCard/FeatureLaneCardUiContext';
 
 import { DaysRow } from './DaysHeader/components/DaysRow';
@@ -23,6 +22,12 @@ import { ParticipantsSettingsPopup } from './DaysHeader/components/ParticipantsS
 
 /** Высота шапки дат / левой колонки свимлейна — как в занятости (40 + 1px бордер). */
 export const DAYS_HEADER_ROW_HEIGHT_PX = 41;
+
+function canLinkDaysScrollTimeline(): boolean {
+  return typeof CSS !== 'undefined'
+    && typeof CSS.supports === 'function'
+    && CSS.supports('animation-timeline', 'scroll()');
+}
 
 interface DaysHeaderProps {
   boardId?: number | null;
@@ -44,6 +49,7 @@ interface DaysHeaderProps {
   /** Индексы дней (0..9), которые являются нерабочими/праздничными */
   holidayDayIndices?: Set<number>;
   participantsColumnWidth: number;
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
   sidebarOpen?: boolean;
   sidebarWidth: number;
   sprintStartDate: Date;
@@ -70,19 +76,14 @@ export function DaysHeader({
   holidayDayIndices,
   participantsColumnWidth,
   removeParticipantFromTeam,
+  scrollContainerRef,
 }: DaysHeaderProps) {
   const { t } = useI18n();
   const featureColumn = useFeatureLaneColumnUi();
   const actualSidebarWidth = sidebarOpen ? sidebarWidth : 0;
 
-  // Ширина контента = колонка участников + таймлайн (ограничено), чтобы скролл заканчивался у конца контента
-  const contentWidth = sprintPlannerDaysHeaderContentWidthCss(
-    viewMode,
-    participantsColumnWidth,
-    actualSidebarWidth,
-    sprintTimelineWorkingDays
-  );
-
+  const chromeSlot = usePlannerChromeSlot();
+  const daysTrackRef = useRef<HTMLDivElement>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -98,14 +99,6 @@ export function DaysHeader({
     }
   };
 
-  const rowWidth = sprintPlannerContentRowWidthCss(
-    viewMode,
-    participantsColumnWidth,
-    actualSidebarWidth,
-    sprintTimelineWorkingDays
-  );
-
-  // Ширина области дней (таймлайн) внутри шапки — как у таймлайна в строке свимлейна
   const containerWidth = sprintPlannerSwimlaneTimelineWidthCss(
     viewMode,
     participantsColumnWidth,
@@ -115,32 +108,63 @@ export function DaysHeader({
 
   const showAfterSprintRail = viewMode === 'full';
 
-  return (
-    <>
-      <div
-        className="sticky top-0 shrink-0 overflow-visible bg-white dark:bg-gray-800"
-        data-planner-days-header
-        style={{ width: rowWidth, minWidth: rowWidth, zIndex: ZIndex.stickyMainHeader }}
-      >
-        {/* Days row */}
+  useLayoutEffect(() => {
+    if (!chromeSlot) return undefined;
+    let cancelled = false;
+    let cleanup = () => {};
+    let attempts = 0;
+
+    const bind = () => {
+      if (cancelled) return;
+      const scroller = scrollContainerRef?.current;
+      const track = daysTrackRef.current;
+      if (!scroller || !track) {
+        attempts += 1;
+        if (attempts < 60) requestAnimationFrame(bind);
+        return;
+      }
+      const linked = canLinkDaysScrollTimeline();
+      track.classList.toggle('planner-days-scroll-track', linked);
+      const applyMetrics = () => {
+        const span = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+        track.style.width = `${Math.max(scroller.scrollWidth - participantsColumnWidth, 0)}px`;
+        track.style.setProperty('--planner-days-scroll-span', `${span}px`);
+      };
+      const applyTransform = () => {
+        track.style.transform = `translate3d(${-scroller.scrollLeft}px, 0, 0)`;
+      };
+      applyMetrics();
+      if (!linked) applyTransform();
+      if (!linked) scroller.addEventListener('scroll', applyTransform, { passive: true });
+      const observer = new ResizeObserver(applyMetrics);
+      observer.observe(scroller);
+      cleanup = () => {
+        scroller.removeEventListener('scroll', applyTransform);
+        observer.disconnect();
+      };
+    };
+
+    bind();
+    return () => {
+      cancelled = true;
+      cleanup();
+    };
+  }, [chromeSlot, participantsColumnWidth, scrollContainerRef]);
+
+  const daysRow = (
         <div
-          className="flex overflow-visible border-y border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+          className="flex overflow-hidden border-b border-gray-200 dark:border-gray-700"
+          data-planner-days-header
           style={{ height: DAYS_HEADER_ROW_HEIGHT_PX, minHeight: DAYS_HEADER_ROW_HEIGHT_PX }}
         >
-          <div
-            className="flex h-full min-h-0 min-w-0 shrink-0 overflow-visible"
-            style={{ width: contentWidth, minWidth: contentWidth }}
-          >
             <div
-              className="relative flex shrink-0 items-center justify-between gap-3 overflow-hidden border-r border-b border-gray-200 bg-white py-2 pl-4 pr-2 sticky left-0 dark:border-r-gray-600 dark:border-b-gray-700 dark:bg-gray-800"
+              className="relative flex shrink-0 items-center justify-between gap-3 overflow-hidden border-r border-gray-200 py-2 pl-4 pr-2 dark:border-r-gray-600"
               data-onboarding="lane"
               style={{
                 width: participantsColumnWidth,
                 minWidth: participantsColumnWidth,
-                height: DAYS_HEADER_ROW_HEIGHT_PX - 1,
-                minHeight: DAYS_HEADER_ROW_HEIGHT_PX - 1,
-                /* Угол шапки выше дней и колонок исполнителей при скролле по обеим осям */
-                zIndex: ZIndex.stickyMainHeader + 1,
+                height: DAYS_HEADER_ROW_HEIGHT_PX,
+                minHeight: DAYS_HEADER_ROW_HEIGHT_PX,
               }}
             >
               <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
@@ -152,7 +176,12 @@ export function DaysHeader({
                 {developersManagement && (featureColumn.isFeatureLane || developers.length > 0) && (
                   <Button
                     ref={settingsButtonRef}
-                    className="!h-6 !w-6 !min-h-0 !min-w-0 shrink-0 !justify-center !rounded-md !p-0 hover:!bg-gray-200 dark:hover:!bg-gray-700"
+                    aria-label={
+                      featureColumn.isFeatureLane
+                        ? t('sprintPlanner.featureLanes.editRowsTitle')
+                        : t('sprintPlanner.swimlane.editParticipantsTitle')
+                    }
+                    className={`!h-6 !w-6 !min-h-0 !min-w-0 shrink-0 !justify-center !rounded-md !p-0 ${FLOATING_TOOLBAR_ITEM_IDLE}`}
                     title={
                       featureColumn.isFeatureLane
                         ? t('sprintPlanner.featureLanes.editRowsTitle')
@@ -167,27 +196,34 @@ export function DaysHeader({
                 )}
               </div>
             </div>
-            <DaysRow
-              containerWidth={containerWidth}
-              errorDayDetails={errorDayDetails}
-              errorDayIndices={errorDayIndices}
-              holidayDayIndices={holidayDayIndices}
-              sprintStartDate={sprintStartDate}
-              variant="swimlanes"
-              workingDaysCount={sprintTimelineWorkingDays}
-            />
-          </div>
-          {showAfterSprintRail ? (
-            <SprintPlannerTimelineFill
-              className="min-w-0 flex-1"
-              style={{
-                height: DAYS_HEADER_ROW_HEIGHT_PX,
-                minHeight: DAYS_HEADER_ROW_HEIGHT_PX,
-              }}
-            />
-          ) : null}
+            <div className="relative min-w-0 flex-1 overflow-hidden">
+              <div ref={daysTrackRef} className="flex h-full will-change-transform">
+                <DaysRow
+                  containerWidth={containerWidth}
+                  errorDayDetails={errorDayDetails}
+                  errorDayIndices={errorDayIndices}
+                  holidayDayIndices={holidayDayIndices}
+                  sprintStartDate={sprintStartDate}
+                  variant="swimlanes"
+                  workingDaysCount={sprintTimelineWorkingDays}
+                />
+                {showAfterSprintRail ? (
+                  <SprintPlannerTimelineFill
+                    className="min-w-0 flex-1 !bg-transparent"
+                    style={{
+                      height: DAYS_HEADER_ROW_HEIGHT_PX,
+                      minHeight: DAYS_HEADER_ROW_HEIGHT_PX,
+                    }}
+                  />
+                ) : null}
+              </div>
+            </div>
         </div>
-      </div>
+  );
+
+  return (
+    <>
+      {chromeSlot ? createPortal(daysRow, chromeSlot) : null}
 
     {featureColumn.isFeatureLane && developersManagement && (
       <FeatureRowsSettingsPopup

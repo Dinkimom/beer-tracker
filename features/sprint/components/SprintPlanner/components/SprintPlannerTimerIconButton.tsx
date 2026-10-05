@@ -12,7 +12,7 @@ interface SprintPlannerTimerIconButtonProps extends Omit<ButtonHTMLAttributes<HT
 }
 
 const BASE_CLASS =
-  'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-200';
+  'inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-700 transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 dark:text-gray-200';
 
 export function SprintPlannerTimerIconButton({
   animateOnClick = false,
@@ -23,8 +23,8 @@ export function SprintPlannerTimerIconButton({
   ...props
 }: SprintPlannerTimerIconButtonProps) {
   const tone = prominent
-    ? 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
-    : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700/80 dark:hover:bg-gray-600';
+    ? 'bg-gray-100 hover:bg-gray-200 active:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500'
+    : 'bg-gray-100 hover:bg-gray-200 active:bg-gray-300 dark:bg-gray-700/80 dark:hover:bg-gray-600 dark:active:bg-gray-500';
   const glyph = <Icon className="h-5 w-5" name={icon} />;
   return (
     <button className={`${BASE_CLASS} ${tone}`} disabled={disabled} type={type} {...props}>

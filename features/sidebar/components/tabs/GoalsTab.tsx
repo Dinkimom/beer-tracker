@@ -128,8 +128,8 @@ export function GoalsTab() {
   const isLoading = goalsLoading || deliveryGoalsLoading || discoveryGoalsLoading;
 
   return (
-    <div className="flex-1 bg-white dark:bg-gray-800 min-h-0 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto min-h-0">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-y-auto pt-14">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Icon className="animate-spin h-8 w-8 text-blue-600" name="spinner" />
@@ -174,7 +174,7 @@ export function GoalsTab() {
             {canEdit && !deliveryGoalsTab.newGoalId && !deliveryGoalsTab.editingId && deliveryChecklistItems.length > 0 && (
               <div className="px-4 pb-2 pt-1 flex-shrink-0">
                 <Button
-                  className="-mx-1.5 -my-0.5 h-auto min-h-0 gap-1.5 px-1.5 py-0.5 text-sm font-normal text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+                  className="-mx-1.5 -my-0.5 h-auto min-h-0 gap-1.5 px-1.5 py-0.5 text-sm font-normal text-gray-600 hover:!bg-black/10 dark:text-gray-400 dark:hover:!bg-white/10 dark:hover:!text-gray-100"
                   disabled={deliveryGoalsTab.isAdding}
                   type="button"
                   variant="ghost"
@@ -222,9 +222,9 @@ export function GoalsTab() {
               />
             </div>
             {canEdit && !discoveryGoalsTab.newGoalId && !discoveryGoalsTab.editingId && discoveryChecklistItems.length > 0 && (
-              <div className="px-4 pb-4 pt-1 flex-shrink-0 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <div className="flex-shrink-0 px-4 pb-4 pt-1 dark:border-gray-700">
                 <Button
-                  className="-mx-1.5 -my-0.5 h-auto min-h-0 gap-1.5 px-1.5 py-0.5 text-sm font-normal text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-gray-100"
+                  className="-mx-1.5 -my-0.5 h-auto min-h-0 gap-1.5 px-1.5 py-0.5 text-sm font-normal text-gray-600 hover:!bg-black/10 dark:text-gray-400 dark:hover:!bg-white/10 dark:hover:!text-gray-100"
                   disabled={discoveryGoalsTab.isAdding}
                   type="button"
                   variant="ghost"

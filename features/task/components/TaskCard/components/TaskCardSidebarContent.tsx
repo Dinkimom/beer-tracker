@@ -4,6 +4,7 @@ import type { Task } from '@/types';
 
 import { IssueTypeIcon } from '@/components/IssueTypeIcon';
 import { PriorityIcon } from '@/components/PriorityIcon';
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { buildTaskCardKeyLinkProps } from './taskCardContentHelpers';
@@ -30,12 +31,15 @@ export function TaskCardSidebarContent({
           {task.priority && <PriorityIcon className="w-4 h-4 shrink-0" priority={task.priority} />}
           <IssueTypeIcon className="w-4 h-4 shrink-0" type={task.type} />
         </span>
+        <TextTooltip content={keyLinkProps.title}>
         <a
           className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
           {...keyLinkProps}
+          title={undefined}
         >
           {displayId}
         </a>
+        </TextTooltip>
         <span className="font-bold">{' '}{task.name || t('task.card.untitled')}</span>
       </div>
     </div>

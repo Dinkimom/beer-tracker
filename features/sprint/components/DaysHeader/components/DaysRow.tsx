@@ -26,9 +26,9 @@ function occupancyDayHeaderClass(status: DayStatus, isPast: boolean, isHoliday: 
 
 function swimlaneDayCellClass(status: DayStatus): string {
   if (status === 'today') {
-    return 'bg-gradient-to-br from-blue-50 to-blue-100/80 dark:from-blue-900/40 dark:to-blue-800/40';
+    return 'bg-gradient-to-br from-blue-50/80 to-blue-100/50 dark:from-blue-900/35 dark:to-blue-800/30';
   }
-  return 'bg-white dark:bg-gray-800';
+  return 'bg-transparent';
 }
 
 interface DaysRowProps {

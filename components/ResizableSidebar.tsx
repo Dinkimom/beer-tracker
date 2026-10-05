@@ -25,7 +25,8 @@ interface ResizableSidebarProps {
    */
   children: ReactNode;
   /**
-   * docked — прижат к краю панели. island — отдельная карточка на холсте.
+   * docked — прижат к краю панели. island — карточка на холсте, как доска планера.
+   * Стекло не на оболочке: оно блюрит только то, что скроллится позади отдельной плашки.
    */
   chrome?: 'docked' | 'island';
   /**
@@ -220,7 +221,7 @@ export function ResizableSidebar({
   const animateWidth = !isResizing && !prefersResizableSidebarReducedMotion();
   const baseClasses =
     chrome === 'island'
-      ? 'relative flex h-full flex-col self-stretch overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+      ? 'relative flex h-full flex-col self-stretch overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header'
       : 'relative flex h-full flex-col self-stretch overflow-hidden border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800';
   const combinedClassName = `${baseClasses} ${className}`.trim();
 
@@ -283,7 +284,7 @@ export function ResizableSidebar({
             {/* Заголовок сайдбара */}
             {(title || headerActions) && (
               <div
-                className={`relative flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${title ? 'px-5 py-2.5' : ''}`}
+                className={`relative flex-shrink-0 border-b border-gray-200 dark:border-gray-700 ${chrome === 'island' ? '' : 'bg-white dark:bg-gray-800'} ${title ? 'px-5 py-2.5' : ''}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   {title && (

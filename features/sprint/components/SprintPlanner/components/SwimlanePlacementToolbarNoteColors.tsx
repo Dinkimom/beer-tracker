@@ -2,6 +2,7 @@
 
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { getStickyNoteSwatchStyle } from '@/features/comments/utils/stickyNotePalette';
 import { FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses';
@@ -32,17 +33,16 @@ export function SwimlanePlacementToolbarNoteColors({
         const selected = color === value;
         const label = t(STICKY_NOTE_COLOR_LABEL_KEYS[color]);
         return (
+          <TextTooltip key={color} content={label}>
           <button
-            key={color}
             aria-checked={selected}
             aria-label={label}
-            className={`flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${
+            className={`flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${
               selected
-                ? 'bg-gray-200 dark:bg-gray-700'
-                : 'bg-transparent hover:bg-gray-50 dark:hover:bg-gray-700/80'
+                ? 'bg-gray-200 hover:bg-gray-300 active:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500'
+                : 'bg-transparent hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-gray-700/80 dark:active:bg-gray-600'
             }`}
             role="radio"
-            title={label}
             type="button"
             onClick={() => onChange(color)}
             onMouseDown={(event) => event.preventDefault()}
@@ -53,6 +53,7 @@ export function SwimlanePlacementToolbarNoteColors({
               style={getStickyNoteSwatchStyle(color, isDark)}
             />
           </button>
+          </TextTooltip>
         );
       })}
     </div>

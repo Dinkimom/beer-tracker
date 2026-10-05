@@ -1,7 +1,11 @@
+'use client';
+
 import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
 import type { Task, TaskCardVariant } from '@/types';
 
 import { StatusTag } from '@/components/StatusTag';
+import { TextTooltip } from '@/components/TextTooltip';
+import { useI18n } from '@/contexts/LanguageContext';
 import { getIncidentSeverityTagClasses } from '@/features/task/utils/incidentSeverityBadgeClasses';
 import {
   formatTaskStoryPointsForDisplay,
@@ -63,6 +67,7 @@ export function TaskCardSwimlaneMetaRow({
   swimlaneCardFields,
   task,
 }: TaskCardSwimlaneMetaRowProps) {
+  const { t } = useI18n();
   const swimlaneStoryPointsForDisplay = resolveSwimlaneStoryPointsForDisplay(task, displayDuration);
 
   return (
@@ -75,12 +80,13 @@ export function TaskCardSwimlaneMetaRow({
         />
       )}
       {(swimlaneCardFields?.showSeverity ?? true) && task.incidentSeverity && (
+        <TextTooltip content={t('task.card.severityValue', { value: task.incidentSeverity })}>
         <span
           className={`text-[10px] font-bold leading-none whitespace-nowrap px-1.5 py-0.5 rounded shrink-0 border ${getIncidentSeverityTagClasses(task.incidentSeverity)}`}
-          title={`Критичность: ${task.incidentSeverity}`}
         >
           {task.incidentSeverity}
         </span>
+        </TextTooltip>
       )}
       {showEstimateLabel && !isSwimlaneNoteOrPolaroid(task) && (
         <span className={`${assigneeTextSize} text-gray-600 dark:text-gray-300`}>

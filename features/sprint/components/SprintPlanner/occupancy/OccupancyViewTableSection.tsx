@@ -57,6 +57,7 @@ export function OccupancyViewTableSection({
     <div
       ref={tableScrollRef}
       className="flex w-full min-w-0 flex-1 flex-col overflow-y-auto overflow-x-auto relative scrollbar-thin-custom scrollbar-gutter-stable"
+      style={{ paddingTop: 'var(--planner-controls-h, 0px)' }}
     >
       <DndContext collisionDetection={closestCenter} sensors={commentDndSensors} onDragEnd={onDragEnd}>
         <div

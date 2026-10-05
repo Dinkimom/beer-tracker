@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import {
@@ -273,10 +274,16 @@ export const KanbanView = observer(function KanbanView({
         {/* min-w-full + w-max: иначе scrollWidth по ширине колонок не растёт (flex-col + stretch). */}
         <div
           className="flex w-max min-w-full flex-col"
-          style={columnsMinWidth !== undefined ? { minWidth: columnsMinWidth } : undefined}
+          style={{
+            minWidth: columnsMinWidth,
+            paddingTop: 'var(--planner-controls-h, 0px)',
+          }}
         >
         {/* Шапки колонок — липкие */}
-        <div className="sticky top-0 z-10 flex gap-4 shrink-0 bg-white dark:bg-gray-900 pl-4 pr-4 pt-2 border-transparent dark:border-gray-700">
+        <div
+          className="sticky z-10 flex shrink-0 gap-4 border-transparent bg-white pl-4 pr-4 pt-2 dark:border-gray-700 dark:bg-gray-900"
+          style={{ top: 'var(--planner-controls-h, 0px)' }}
+        >
           {headerColumns.map(({ column, filteredTasks, totalSp, totalTp }) => {
             const { spLabel, tpLabel } = formatSprintTotalsPointsLabels(totalSp, totalTp, 'spaced');
             return (
@@ -285,9 +292,11 @@ export const KanbanView = observer(function KanbanView({
               className={`min-w-[280px] w-[280px] max-w-[280px] shrink-0 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 pt-2 pb-2 ${hasLaneGrouping ? 'rounded-lg' : 'rounded-t-lg'}`}
               data-kanban-header={column.id}
             >
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate" title={column.display}>
+              <OverflowTooltip content={column.display}>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
                 {column.display}
               </h3>
+              </OverflowTooltip>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 {filteredTasks.length === 1
                   ? t('sprintPlanner.kanban.taskCountOne', { count: filteredTasks.length })

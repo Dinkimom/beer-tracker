@@ -74,7 +74,7 @@ export function AdminHeader({ canAdmin, organizationName }: AdminHeaderProps) {
           </HeaderIconButton>
 
           <Link
-            className="inline-flex h-8 shrink-0 cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700/80 dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-800"
+            className="inline-flex h-8 shrink-0 cursor-pointer items-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] active:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700/80 dark:active:bg-gray-600 dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-gray-800"
             href="/"
           >
             <span className="whitespace-nowrap">{t('admin.header.toPlanner')}</span>

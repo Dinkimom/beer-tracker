@@ -4,6 +4,7 @@ import type { ChecklistItem } from '@/types/tracker';
 
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 
 import {
   canGoalItemInteract,
@@ -42,9 +43,9 @@ export function GoalItemDisplayPanel({
 
   return (
     <>
+      {wrapWithTextTooltip(
       <span
         className={goalItemDisplayTextClassName(item, canInteract)}
-        title={canInteract ? clickToEditTitle : ''}
         onClick={() => {
           if (canInteract) {
             onStartEdit();
@@ -52,7 +53,9 @@ export function GoalItemDisplayPanel({
         }}
       >
         {goalItemDisplayText(index, item.text)}
-      </span>
+      </span>,
+        canInteract ? clickToEditTitle : undefined
+      )}
       {canInteract ? (
         <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <HeaderIconButton

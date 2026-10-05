@@ -3,7 +3,9 @@
 import type { Developer, Task } from '@/types';
 
 import { Avatar } from '@/components/Avatar';
+import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { StatusTag } from '@/components/StatusTag';
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveTaskCardBodyContext } from '@/features/task/components/TaskCard/components/taskCardBodyContextHelpers';
 import { resolveTaskCardDisplayId } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
@@ -43,12 +45,15 @@ export function BacklogTaskRowView({ developers, embedded = false, task }: Backl
 
   return (
     <div className={embedded ? 'contents' : 'flex min-w-0 items-center gap-3 px-4 py-2'}>
-      <span className="w-28 shrink-0 truncate text-xs font-medium text-blue-700 dark:text-blue-300" title={taskKey}>
-        {taskKey}
-      </span>
+      <OverflowTooltip content={taskKey}>
+        <span className="w-28 shrink-0 truncate text-xs font-medium text-blue-700 dark:text-blue-300">
+          {taskKey}
+        </span>
+      </OverflowTooltip>
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
         {parents.length > 0 ? (
-          <span className="block truncate text-[11px] leading-4 text-ds-text-muted" title={parentsTitle}>
+          <TextTooltip content={parentsTitle}>
+          <span className="block truncate text-[11px] leading-4 text-ds-text-muted">
             {parents.map((parent, index) => (
               <span key={parent.key ?? parent.title}>
                 {index > 0 ? BACKLOG_TASK_PARENT_SEPARATOR : null}
@@ -58,10 +63,13 @@ export function BacklogTaskRowView({ developers, embedded = false, task }: Backl
               </span>
             ))}
           </span>
+          </TextTooltip>
         ) : null}
-        <span className="truncate text-sm text-gray-900 dark:text-gray-100" title={task.name}>
-          {task.name}
-        </span>
+        <OverflowTooltip content={task.name}>
+          <span className="truncate text-sm text-gray-900 dark:text-gray-100">
+            {task.name}
+          </span>
+        </OverflowTooltip>
       </span>
       <StatusTag
         className="max-w-[11rem] overflow-hidden text-ellipsis"

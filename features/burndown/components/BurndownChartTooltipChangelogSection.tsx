@@ -2,6 +2,8 @@
 
 import type { BurndownDayChangelogItem } from './burndownChartTooltipContext';
 
+import { TextTooltip } from '@/components/TextTooltip';
+
 import { burndownChangelogItemDisplayType } from './burndownChartTooltipFilterHelpers';
 import {
   BURNDOWN_TOOLTIP_CHANGELOG_MAX_HEIGHT,
@@ -71,7 +73,7 @@ export function BurndownChartTooltipChangelogSection({
             const remainingVal = isTP ? item.remainingTP : item.remainingSP;
             return (
               <tr key={`${item.issueKey}-${item.type}-${rowIdx}-${changeStr}-${remainingVal}`} style={{ borderBottom: `1px solid ${isDark ? '#374151' : '#e5e7eb'}` }}>
-                <td style={{ padding: '6px 8px 6px 0', verticalAlign: 'top', minWidth: 0 }} title={item.summary}>
+                <td style={{ padding: '6px 8px 6px 0', verticalAlign: 'top', minWidth: 0 }}>
                   <span
                     style={{
                       display: 'inline-block',
@@ -85,7 +87,9 @@ export function BurndownChartTooltipChangelogSection({
                   >
                     {changelogTypeLabels[displayType] ?? displayType}
                   </span>
-                  <div style={{ marginTop: 2 }}>{summary}</div>
+                  <TextTooltip content={item.summary}>
+                    <div style={{ marginTop: 2 }}>{summary}</div>
+                  </TextTooltip>
                 </td>
                 <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'bottom', color: changeColor, fontWeight: 600 }}>
                   {changeStr}

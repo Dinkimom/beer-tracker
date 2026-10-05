@@ -39,7 +39,7 @@ export function TasksTabActions({
 
   return (
     <>
-      <div className="flex-shrink-0 space-y-2 border-t border-gray-100 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex-shrink-0 space-y-2 border-t border-black/10 px-4 py-2.5 dark:border-white/10">
         {canAdd ? (
           <TasksTabAddMenu
             boardId={boardId}
@@ -50,7 +50,7 @@ export function TasksTabActions({
         ) : null}
         {onReturnAllTasks ? (
           <Button
-            className="h-8 w-full rounded-md px-3 text-xs font-semibold"
+            className="h-8 w-full rounded-md !border-red-600/25 !bg-red-600/10 px-3 text-xs font-semibold !text-red-800 hover:!bg-red-600/15 dark:!border-red-400/35 dark:!bg-red-500/15 dark:!text-red-200 dark:hover:!bg-red-500/25"
             title={t('sidebar.tasksTabActions.returnTitle')}
             type="button"
             variant="dangerOutline"

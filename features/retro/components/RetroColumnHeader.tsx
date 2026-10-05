@@ -71,7 +71,7 @@ export function RetroColumnHeader({
         />
       ) : (
         <button
-          className="min-w-0 flex-1 whitespace-normal break-words px-1 py-1 text-left text-sm font-semibold leading-snug"
+          className="min-w-0 flex-1 cursor-text whitespace-normal break-words rounded-md px-1 py-1 text-left text-sm font-semibold leading-snug transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15"
           type="button"
           onClick={() => {
             setDraft(title);
@@ -141,11 +141,11 @@ export function RetroColumnHeader({
 
 function menuItem(label: string, onClick: () => void, disabled = false, danger = false) {
   const tone = danger
-    ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40'
-    : 'text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700';
+    ? 'text-red-600 hover:bg-red-50 active:bg-red-100 dark:text-red-400 dark:hover:bg-red-950/40 dark:active:bg-red-950/70'
+    : 'text-gray-800 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-700 dark:active:bg-gray-600';
   return (
     <button
-      className={`block w-full cursor-pointer whitespace-nowrap px-3 py-1.5 text-left disabled:cursor-not-allowed disabled:opacity-40 ${tone}`}
+      className={`block w-full cursor-pointer whitespace-nowrap px-3 py-1.5 text-left transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 ${tone}`}
       disabled={disabled}
       type="button"
       onClick={onClick}

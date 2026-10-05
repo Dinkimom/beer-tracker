@@ -108,7 +108,7 @@ export function QuarterlyPlannerSprintGoalsBadge({
     >
       <button
         aria-label={ariaLabel}
-        className="inline-flex max-w-full cursor-pointer items-center justify-center gap-1.5 rounded px-1.5 py-0.5 text-xs font-semibold transition-colors hover:bg-gray-900/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 dark:hover:bg-white/10"
+        className="inline-flex max-w-full cursor-pointer items-center justify-center gap-1.5 rounded px-1.5 py-0.5 text-xs font-semibold transition-all duration-200 hover:bg-gray-900/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 dark:hover:bg-white/10 active:scale-[0.98]"
         type="button"
       >
         {headerContent}

@@ -1,10 +1,14 @@
 'use client';
 
+import type { ReleaseHoroscopeZodiacIconRef } from '@/components/releaseHoroscope/ReleaseHoroscopeZodiacIcon';
 import type { ReleaseSignStatus } from '@/lib/releaseHoroscope/releaseHoroscopeDay';
 
+import * as Popover from '@radix-ui/react-popover';
 import { useQuery } from '@tanstack/react-query';
+import { useRef } from 'react';
 
-import { TextTooltip } from '@/components/TextTooltip';
+import { ReleaseHoroscopeZodiacIcon } from '@/components/releaseHoroscope/ReleaseHoroscopeZodiacIcon';
+import { tooltipSurfaceClass } from '@/components/TextTooltipPortalContent';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   useReleaseHoroscopeBirthdateStorage,
@@ -26,8 +30,12 @@ const VERDICT_KEY: Record<ReleaseSignStatus, string> = {
   neutral: 'header.releaseHoroscope.verdictNeutral',
 };
 
-/** Компактный гороскоп релиза в панели контролов планера. Полный текст — в тултипе. */
+const CHIP_CLASS =
+  'inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg bg-transparent px-2.5 text-sm text-gray-800 outline-none transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 dark:text-gray-100 dark:hover:bg-white/10 dark:active:bg-white/15';
+
+/** Компактный гороскоп релиза в панели контролов планера. Полный текст — по нажатию. */
 export function ReleaseHoroscopeChip() {
+  const iconRef = useRef<ReleaseHoroscopeZodiacIconRef>(null);
   const { language, t } = useI18n();
   const [enabled] = useReleaseHoroscopeEnabledStorage();
   const [birthdate] = useReleaseHoroscopeBirthdateStorage();
@@ -41,31 +49,41 @@ export function ReleaseHoroscopeChip() {
   });
 
   const sign = signId ? data?.signs.find((item) => item.id === signId) : null;
-  if (!sign) return null;
+  if (!signId || !sign) return null;
 
   const name = releaseHoroscopeSignName(sign, language);
   const verdict = t(VERDICT_KEY[sign.status]);
 
   return (
-    <TextTooltip
-      content={sign.comment}
-      contentClassName="max-w-sm font-normal leading-snug"
-      side="bottom"
-    >
-      <button
-        aria-label={`${name}. ${verdict}. ${sign.comment}`}
-        className="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-2.5 text-sm text-gray-800 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
-        type="button"
-      >
-        <span aria-hidden className="leading-none">
-          {sign.symbol}
-        </span>
-        <span>{name}</span>
-        <span aria-hidden className="text-gray-400 dark:text-gray-500">
-          ·
-        </span>
-        <span className={`font-medium ${VERDICT_CLASS[sign.status]}`}>{verdict}</span>
-      </button>
-    </TextTooltip>
+    <Popover.Root modal={false}>
+      <Popover.Trigger asChild>
+        <button
+          aria-label={`${name}. ${verdict}. ${sign.comment}`}
+          className={CHIP_CLASS}
+          type="button"
+          onClick={() => iconRef.current?.play()}
+        >
+          <ReleaseHoroscopeZodiacIcon key={signId} ref={iconRef} signId={signId} />
+          <span>{name}</span>
+          <span aria-hidden className="text-gray-400 dark:text-gray-500">
+            ·
+          </span>
+          <span className={`font-medium ${VERDICT_CLASS[sign.status]}`}>{verdict}</span>
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          align="center"
+          className={tooltipSurfaceClass(true, 'max-w-sm font-normal leading-snug')}
+          collisionPadding={8}
+          side="bottom"
+          sideOffset={6}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          {sign.comment}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

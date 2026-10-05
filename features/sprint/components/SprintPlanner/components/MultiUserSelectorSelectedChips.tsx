@@ -5,6 +5,7 @@ import type { RegistryUserItem } from '@/lib/beerTrackerApi';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { useI18n } from '@/contexts/LanguageContext';
 
 import { getInitials } from './userSelectorDisplayHelpers';
 
@@ -17,6 +18,7 @@ export function MultiUserSelectorSelectedChips({
   onRemove,
   selectedUsers,
 }: MultiUserSelectorSelectedChipsProps) {
+  const { t } = useI18n();
   if (selectedUsers.length === 0) return null;
 
   return (
@@ -33,8 +35,8 @@ export function MultiUserSelectorSelectedChips({
           />
           <span className="truncate">{user.displayName}</span>
           <Button
+            aria-label={t('common.remove')}
             className="!h-5 !w-5 !min-h-0 !min-w-0 !rounded-sm !p-0"
-            title="Убрать"
             type="button"
             variant="ghost"
             onClick={() => onRemove(user.trackerId)}

@@ -5,6 +5,7 @@ import type { UserOrganizationSummary } from '@/lib/organizations';
 import type { ReactNode } from 'react';
 
 import { Icon } from '@/components/Icon';
+import { TextTooltip } from '@/components/TextTooltip';
 import { issueTrackerProviderMessageKey } from '@/lib/issueTrackerProvider/issueTrackerUi';
 
 import { AdminShellNavLinkItem } from './AdminShellNavLinkItem';
@@ -62,17 +63,20 @@ export function showAdminTrackerIncomplete(ctx: AdminShellNavContext): boolean {
 function AdminShellLockedNavItem({ ctx }: { ctx: AdminShellNavContext }) {
   return (
     <li key={ctx.item.href}>
+      <TextTooltip
+        content={ctx.t(
+          issueTrackerProviderMessageKey('admin.shell.trackerNavLockTitle', ctx.issueTrackerProviderKind)
+        )}
+      >
       <span
         aria-disabled="true"
         className="flex w-full cursor-not-allowed items-center gap-3 rounded-lg border-l-2 border-transparent py-2.5 pl-2.5 pr-3 text-left text-sm font-medium text-gray-400 opacity-80 dark:text-gray-500"
-        title={ctx.t(
-          issueTrackerProviderMessageKey('admin.shell.trackerNavLockTitle', ctx.issueTrackerProviderKind)
-        )}
       >
         <Icon className="h-[18px] w-[18px] shrink-0 text-gray-400 dark:text-gray-500" name={ctx.item.icon} />
         <span className="flex-1 truncate">{ctx.t(ctx.item.labelKey)}</span>
         <Icon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" name="lock" />
       </span>
+      </TextTooltip>
     </li>
   );
 }

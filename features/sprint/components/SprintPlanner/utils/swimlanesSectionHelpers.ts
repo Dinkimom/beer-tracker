@@ -45,3 +45,36 @@ export function partitionPinnedSwimlaneRows<T extends { id: string }>(
 export function togglePinnedSwimlaneRowId(ids: readonly string[], id: string): string[] {
   return ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id];
 }
+
+/** Смещение sticky-строки под шапкой планера. Строки остаются в одном родителе и не размонтируются. */
+export function pinnedSwimlaneFrameTop(offsetPx: number): string {
+  if (offsetPx <= 0) return 'var(--planner-controls-h, 0px)';
+  return `calc(var(--planner-controls-h, 0px) + ${offsetPx}px)`;
+}
+
+export function applyPinnedSwimlaneFrameTops(frames: readonly HTMLElement[]): void {
+  let offset = 0;
+  for (const frame of frames) {
+    const top = pinnedSwimlaneFrameTop(offset);
+    if (frame.style.top !== top) frame.style.top = top;
+    offset += frame.offsetHeight;
+  }
+}
+
+/** Сбрасывает top у остальных кадров и выставляет стек закреплённых. Возвращает закреплённые кадры. */
+export function syncPinnedSwimlaneFrames(
+  framesById: ReadonlyMap<string, HTMLElement>,
+  pinnedIds: readonly string[]
+): HTMLElement[] {
+  const pinnedSet = new Set(pinnedIds);
+  const pinnedFrames: HTMLElement[] = [];
+  for (const id of pinnedIds) {
+    const frame = framesById.get(id);
+    if (frame) pinnedFrames.push(frame);
+  }
+  for (const [id, frame] of framesById) {
+    if (!pinnedSet.has(id)) frame.style.top = '';
+  }
+  applyPinnedSwimlaneFrameTops(pinnedFrames);
+  return pinnedFrames;
+}

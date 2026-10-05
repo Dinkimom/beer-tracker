@@ -3,7 +3,7 @@ import type { RetroColumn, RetroColumnPreset } from '@/lib/retro/retroBoard';
 import { retroColumnLabel } from '@/lib/retro/retroBoard';
 
 export const retroIconButtonClass =
-  'inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-500 hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-30 dark:text-gray-300 dark:hover:bg-white/10';
+  'inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-500 transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 disabled:pointer-events-none disabled:opacity-30 dark:text-gray-300 dark:hover:bg-white/10 dark:active:bg-white/15';
 
 export const retroFactsSectionTitleClass =
   'text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500';

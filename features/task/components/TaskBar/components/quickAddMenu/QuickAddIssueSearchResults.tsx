@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 
 import { Icon } from '@/components/Icon';
+import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import {
@@ -29,11 +30,11 @@ function renderHighlightedText(text: string, query: string): ReactNode {
 
 function resultRowClass(isActive: boolean): string {
   const base =
-    'flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50';
+    'flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-sm transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50';
   if (isActive) {
     return `${base} bg-gray-100 dark:bg-gray-700`;
   }
-  return `${base} hover:bg-gray-50 dark:hover:bg-gray-700/70`;
+    return `${base} hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-gray-700/70 dark:active:bg-gray-600`;
 }
 
 interface QuickAddIssueSearchResultsProps {
@@ -102,18 +103,16 @@ export function QuickAddIssueSearchResults({
               onClick={() => onSelectExisting(item.task)}
               onMouseEnter={() => onActiveIndexChange(index)}
             >
-              <span
-                className="w-[4.75rem] shrink-0 truncate text-xs tabular-nums text-gray-600 dark:text-gray-300"
-                title={item.key}
-              >
+              <OverflowTooltip content={item.key}>
+              <span className="w-[4.75rem] shrink-0 truncate text-xs tabular-nums text-gray-600 dark:text-gray-300">
                 {renderHighlightedText(item.key, searchQuery)}
               </span>
-              <span
-                className="min-w-0 flex-1 truncate font-medium text-gray-900 dark:text-gray-100"
-                title={item.summary}
-              >
+              </OverflowTooltip>
+              <OverflowTooltip content={item.summary}>
+              <span className="min-w-0 flex-1 truncate font-medium text-gray-900 dark:text-gray-100">
                 {renderHighlightedText(item.summary, searchQuery)}
               </span>
+              </OverflowTooltip>
               {isClosed ? (
                 <span className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-600 dark:text-gray-200">
                   {t('sprintPlanner.swimlane.quickAddMenu.closedIssue')}

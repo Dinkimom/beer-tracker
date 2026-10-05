@@ -33,6 +33,7 @@ export function SprintPlannerOccupancyFiltersRow({
         options={statusFilterOptions}
         selectedPrefix={t('sprintPlanner.controls.taskStatusPrefix')}
         size="compact"
+        surface="glass"
         title={t('sprintPlanner.controls.statusFilterTitle')}
         value={occupancyStatusFilter}
         onChange={setOccupancyStatusFilter}
@@ -41,6 +42,7 @@ export function SprintPlannerOccupancyFiltersRow({
         className="w-[min(100%,11rem)] shrink-0 sm:w-[min(100%,13rem)] lg:w-auto lg:max-w-none"
         developers={developers}
         selectedAssigneeIds={selectedAssigneeIds}
+        surface="glass"
         onSelectionChange={setSelectedAssigneeIds}
       />
     </div>

@@ -94,7 +94,7 @@ export function SlaBugCloseP4Actions({
     >
       <div className="mt-2 grid grid-cols-2 gap-2">
         <button
-          className="cursor-pointer rounded-md bg-blue-600 px-2 py-2 text-[11px] font-semibold leading-tight text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-600"
+          className="cursor-pointer rounded-md bg-blue-600 px-2 py-2 text-[11px] font-semibold leading-tight text-white transition-all duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-600 active:scale-[0.98]"
           disabled={isBusy}
           type="button"
           onClick={() => runAction('send_for_approval')}
@@ -104,7 +104,7 @@ export function SlaBugCloseP4Actions({
             : t('sidebar.bugsTab.closeP4.sendForApproval')}
         </button>
         <button
-          className="cursor-pointer rounded-md border border-gray-300 bg-white/80 px-2 py-2 text-[11px] font-semibold leading-tight text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 dark:hover:bg-gray-700/80"
+          className="cursor-pointer rounded-md border border-gray-300 bg-white/80 px-2 py-2 text-[11px] font-semibold leading-tight text-gray-800 transition-all duration-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-500 dark:bg-gray-800/80 dark:text-gray-100 dark:hover:bg-gray-700/80 active:scale-[0.98]"
           disabled={isBusy}
           type="button"
           onClick={() => runAction('keep')}

@@ -55,7 +55,7 @@ export function TasksTabAddMenu({
         <Button
           aria-haspopup="menu"
           aria-label={t('sidebar.tasksTab.addTaskAria')}
-          className="h-8 w-full rounded-md px-3 text-xs font-semibold"
+          className="h-8 w-full rounded-md !border-blue-700/25 !bg-blue-600/10 px-3 text-xs font-semibold !text-blue-800 hover:!bg-blue-600/15 active:!bg-blue-600/25 dark:!border-blue-400/35 dark:!bg-blue-500/20 dark:!text-blue-200 dark:hover:!border-blue-400/50 dark:hover:!bg-blue-500/30 dark:active:!bg-blue-500/40"
           title={t('sidebar.tasksTab.addTaskAria')}
           type="button"
           variant="primary"

@@ -2,6 +2,7 @@
 
 import type { Task } from '@/types';
 
+import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatPointsForDisplay, roundPointsForDisplay } from '@/lib/pointsUtils';
 
@@ -40,13 +41,13 @@ export function BacklogPointsBreakdown({ tasks }: BacklogPointsBreakdownProps) {
           {BUCKETS.map((bucket) => {
             const bucketLabel = t(`backlog.points.${bucket}`);
             return (
+              <TextTooltip key={bucket} content={`${group.label}: ${bucketLabel}`}>
               <span
-                key={bucket}
                 className={`inline-flex min-w-5 items-center justify-center rounded-sm px-1.5 py-0.5 text-[11px] font-medium tabular-nums leading-none ${TONE_CLASS[bucket]}`}
-                title={`${group.label}: ${bucketLabel}`}
               >
                 {formatPointsForDisplay(group.buckets[bucket])}
               </span>
+              </TextTooltip>
             );
           })}
           <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{group.label}</span>

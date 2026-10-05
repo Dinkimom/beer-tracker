@@ -2,6 +2,7 @@
 
 import type { QuarterlySprintInfo } from '../../types';
 
+import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { SidebarResizeHandle } from '@/components/SidebarResizeHandle';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -113,15 +114,15 @@ export function QuarterlyPlannerTableHeader({
         {titleTh}
         {statusTh}
         {monthSpans.map((span) => (
+          <OverflowTooltip key={span.monthKey} content={span.label}>
           <th
-            key={span.monthKey}
             className={`${quarterlyTimelineThClass} font-semibold capitalize text-gray-700 dark:text-gray-300 ${quarterlyMonthHeaderBg}`}
             colSpan={span.colSpan}
             style={quarterlyTimelineThStyle}
-            title={span.label}
           >
             <span className="block truncate">{span.label}</span>
           </th>
+          </OverflowTooltip>
         ))}
       </tr>
       <tr
@@ -131,18 +132,18 @@ export function QuarterlyPlannerTableHeader({
         {weekColumns.map((col, idx) => {
           const weekLabel = formatWeekStartLabel(col.startDate, dateLocale);
           return (
+            <OverflowTooltip key={`${col.sprintId}-w${idx}`} content={weekLabel}>
             <th
-              key={`${col.sprintId}-w${idx}`}
               className={`${quarterlyTimelineThClass} text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800`}
               style={{
                 ...quarterlyTimelineThStyle,
                 width: dayColumnWidth ?? '10%',
                 minWidth: dayColumnWidth,
               }}
-              title={weekLabel}
             >
               <span className="block truncate">{weekLabel}</span>
             </th>
+            </OverflowTooltip>
           );
         })}
       </tr>

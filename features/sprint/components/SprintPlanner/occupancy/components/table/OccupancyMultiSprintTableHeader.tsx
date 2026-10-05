@@ -62,8 +62,8 @@ export function OccupancyMultiSprintTableHeader({
   return (
     <thead>
       <tr
-        className="sticky top-0 bg-gray-100 dark:bg-gray-800 [&>th]:overflow-hidden"
-        style={{ zIndex: ZIndex.stickyMainHeader + 1 }}
+        className="sticky bg-gray-100 dark:bg-gray-800 [&>th]:overflow-hidden"
+        style={{ top: 'var(--planner-controls-h, 0px)', zIndex: ZIndex.stickyMainHeader + 1 }}
       >
         <OccupancyTableTaskColumnHeader
           allExpanded={allExpanded}

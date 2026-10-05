@@ -21,6 +21,7 @@ interface SprintSelectorWithCreateProps {
   selectedSprintId: number | null;
   sprints: SprintListItem[];
   sprintsLoading?: boolean;
+  surface?: 'glass' | 'solid';
   onSprintChange: (sprintId: number | null) => void;
 }
 
@@ -35,6 +36,7 @@ export function SprintSelectorWithCreate({
   selectedSprintId,
   sprints,
   sprintsLoading = false,
+  surface = 'solid',
   onSprintChange,
 }: SprintSelectorWithCreateProps) {
   const { t } = useI18n();
@@ -81,6 +83,7 @@ export function SprintSelectorWithCreate({
         selectedSprintId={selectedSprintId}
         sprints={sprints}
         sprintsLoading={sprintsLoading}
+        surface={surface}
         onCreateSprint={boardId ? () => setIsCreateSprintModalOpen(true) : undefined}
         onSprintChange={onSprintChange}
       />

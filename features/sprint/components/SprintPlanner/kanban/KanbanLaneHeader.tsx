@@ -49,9 +49,12 @@ export function KanbanLaneHeader({
     <div
       aria-expanded={!isLaneCollapsed}
       aria-label={kanbanLaneHeaderAriaLabel(isLaneCollapsed, t)}
-      className="sticky top-14 z-[5] flex items-center gap-2 py-4 px-1 bg-gray-50 dark:bg-gray-900 min-w-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors select-none"
+      className="sticky z-[5] flex min-w-0 cursor-pointer select-none items-center gap-2 bg-gray-50 px-1 py-4 transition-colors duration-200 hover:bg-gray-100 active:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 dark:active:bg-gray-700"
       role="button"
-      style={columnsMinWidth !== undefined ? { minWidth: columnsMinWidth } : undefined}
+      style={{
+        minWidth: columnsMinWidth,
+        top: 'calc(var(--planner-controls-h, 0px) + 3.5rem)',
+      }}
       tabIndex={0}
       onClick={() => toggleLaneCollapsed(laneKey)}
       onKeyDown={createKanbanLaneToggleKeyDownHandler(laneKey, toggleLaneCollapsed)}

@@ -4,9 +4,9 @@ import { getPartsPerDay } from '@/constants';
 import { getOrderedPlanSegments } from '@/features/swimlane/utils/positionUtils';
 
 /** От этой длины хвост читается цифрой на полосе, короче — только при наведении на задачу. */
-export const STRONG_OVERDUE_DAYS = 2;
+const STRONG_OVERDUE_DAYS = 2;
 
-export type OverdueKind = 'notStarted' | 'slipping';
+type OverdueKind = 'notStarted' | 'slipping';
 
 export function overdueDayAmount(cells: number, partsPerDay: number): number {
   if (partsPerDay <= 0 || cells <= 0) return 0;

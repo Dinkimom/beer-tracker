@@ -58,7 +58,7 @@ export function BugsTab() {
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
         <p className="text-sm text-red-600 dark:text-red-400">{t('sidebar.bugsTab.loadError')}</p>
         <button
-          className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+          className="text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer transition-all duration-200 active:scale-[0.98]"
           type="button"
           onClick={() => void refetch()}
         >
@@ -71,7 +71,7 @@ export function BugsTab() {
   const stats = data?.stats;
 
   return (
-    <div className="flex flex-1 flex-col min-h-0 overflow-y-auto px-4 py-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-14">
       <BugsTabQualityZoneBanner
         needToClose={qualityZone.needToClose}
         zone={qualityZone.zone}

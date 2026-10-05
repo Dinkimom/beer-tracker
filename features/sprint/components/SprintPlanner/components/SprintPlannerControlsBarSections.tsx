@@ -7,6 +7,10 @@ import { Button } from '@/components/Button';
 import { CustomSelect } from '@/components/CustomSelect';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import {
+  FLOATING_TOOLBAR_ITEM_IDLE,
+  FLOATING_TOOLBAR_ITEM_ON,
+} from '@/features/context-menu/contextMenuClasses';
 import { useSprintPresenceReveal } from '@/hooks/useSprintPresenceReveal';
 
 import { PlannerHistoryControls } from './PlannerHistoryControls';
@@ -56,7 +60,7 @@ export function SprintPlannerControlsBarRightSection({
     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 sm:ml-auto sm:justify-end">
       <div className="flex min-h-8 flex-wrap items-center gap-2">
         <SprintPlannerPresenceAvatars viewers={boardViewers} onRevealViewer={revealViewer} />
-        <SprintPlannerTimer selectedSprintId={selectedSprintId} />
+        <SprintPlannerTimer selectedSprintId={selectedSprintId} surface="glass" />
         {planHistory && viewMode !== 'kanban' && (
           <PlannerHistoryControls
             canRedo={planHistory.canRedo}
@@ -69,11 +73,11 @@ export function SprintPlannerControlsBarRightSection({
         {onTasksReload ? (
           <Button
             aria-label={tasksReloadButtonTitle}
-            className="!h-8 !w-8 !min-w-0 shrink-0 !justify-center !px-0 text-gray-600 dark:text-gray-400"
+            className={`!h-8 !w-8 !min-w-0 shrink-0 !justify-center !px-0 ${FLOATING_TOOLBAR_ITEM_IDLE}`}
             disabled={isReloading || !selectedSprintId}
             title={tasksReloadButtonTitle}
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={() => onTasksReload({ showToast: true })}
           >
             <Icon className={`h-4 w-4 ${isReloading ? 'animate-spin' : ''}`} name="refresh" />
@@ -88,6 +92,7 @@ export function SprintPlannerControlsBarRightSection({
             { label: t('sprintPlanner.controls.viewKanban'), value: 'kanban' },
           ]}
           size="compact"
+          surface="glass"
           title={t('sprintPlanner.controls.viewModeTitle')}
           value={viewModeSelectValue}
           onChange={(v) => applyControlsBarViewModeChange(v, setViewMode)}
@@ -98,11 +103,11 @@ export function SprintPlannerControlsBarRightSection({
             aria-label={t('sprintPlanner.controls.sidebarToggle')}
             aria-pressed={sidebarOpen}
             className={`!h-8 !w-8 !min-w-0 shrink-0 !justify-center !px-0 ${
-              sidebarOpen ? '' : 'text-gray-600 dark:text-gray-400'
+              sidebarOpen ? FLOATING_TOOLBAR_ITEM_ON : FLOATING_TOOLBAR_ITEM_IDLE
             }`}
             title={t('sprintPlanner.controls.sidebarToggle')}
             type="button"
-            variant={sidebarOpen ? 'accent' : 'outline'}
+            variant="ghost"
             onClick={onOpenSidebar}
           >
             <Icon className="h-4 w-4" name="menu" />

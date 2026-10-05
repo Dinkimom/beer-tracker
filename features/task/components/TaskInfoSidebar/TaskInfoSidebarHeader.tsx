@@ -4,6 +4,8 @@ import type { Task } from '@/types';
 
 import { CopyFeedbackGlyph } from '@/components/CopyFeedbackGlyph';
 import { Icon } from '@/components/Icon';
+import { OverflowTooltip } from '@/components/OverflowTooltip';
+import { TextTooltip } from '@/components/TextTooltip';
 import { useTrackerWebUrlContext } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveTaskInfoBreadcrumbParts } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarFormatters';
@@ -48,15 +50,16 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
         <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
           {showQueue ? (
             <>
+              <OverflowTooltip content={breadcrumb.queueLabel ?? ''}>
               <a
                 className={BREADCRUMB_MUTED_LINK_CLASS}
                 href={breadcrumb.queueUrl ?? undefined}
                 rel="noopener noreferrer"
                 target="_blank"
-                title={breadcrumb.queueLabel ?? undefined}
               >
                 {breadcrumb.queueLabel}
               </a>
+              </OverflowTooltip>
               <span aria-hidden className={BREADCRUMB_SEP_CLASS}>
                 /
               </span>
@@ -64,33 +67,35 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
           ) : null}
           {showParent && breadcrumb.parent ? (
             <>
+              <OverflowTooltip content={breadcrumb.parent.label}>
               <a
                 className={BREADCRUMB_MUTED_LINK_CLASS}
                 href={breadcrumb.parent.url}
                 rel="noopener noreferrer"
                 target="_blank"
-                title={breadcrumb.parent.label}
               >
                 {breadcrumb.parent.label}
               </a>
+              </OverflowTooltip>
               <span aria-hidden className={BREADCRUMB_SEP_CLASS}>
                 /
               </span>
             </>
           ) : null}
+          <TextTooltip content={t('sprintPlanner.taskInfo.openInTracker')}>
           <a
             className={BREADCRUMB_KEY_CLASS}
             href={issueUrl}
             rel="noopener noreferrer"
             target="_blank"
-            title={t('sprintPlanner.taskInfo.openInTracker')}
           >
             {issueKey}
           </a>
+          </TextTooltip>
+          <TextTooltip content={t('sprintPlanner.taskInfo.copyKey')}>
           <button
             aria-label={t('sprintPlanner.taskInfo.copyKey')}
             className={TASK_INFO_ICON_BUTTON_CLASS}
-            title={t('sprintPlanner.taskInfo.copyKey')}
             type="button"
             onClick={() => {
               keyCopyFeedback.copy(issueKey).catch(() => undefined);
@@ -98,10 +103,11 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
           >
             <CopyFeedbackGlyph copied={keyCopyFeedback.copied} idleName="copy" />
           </button>
+          </TextTooltip>
+          <TextTooltip content={t('sprintPlanner.taskInfo.copyLink')}>
           <button
             aria-label={t('sprintPlanner.taskInfo.copyLink')}
             className={TASK_INFO_ICON_BUTTON_CLASS}
-            title={t('sprintPlanner.taskInfo.copyLink')}
             type="button"
             onClick={() => {
               linkCopyFeedback.copy(issueUrl).catch(() => undefined);
@@ -109,12 +115,12 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
           >
             <CopyFeedbackGlyph copied={linkCopyFeedback.copied} idleName="link" />
           </button>
+          </TextTooltip>
         </div>
 
         <button
           aria-label={t('sprintPlanner.taskInfo.close')}
           className={TASK_INFO_ICON_BUTTON_CLASS}
-          title={t('sprintPlanner.taskInfo.close')}
           type="button"
           onClick={onClose}
         >

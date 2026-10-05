@@ -8,6 +8,7 @@ import { useRef, useState } from 'react';
 import { customSelectPopoverStyle } from '@/components/customSelectHelpers';
 import { CustomSelectMenu } from '@/components/CustomSelectMenu';
 import { Icon } from '@/components/Icon';
+import { TextTooltip } from '@/components/TextTooltip';
 import { CARD_MARGIN, ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
@@ -115,13 +116,13 @@ export function TaskLayerOverdueBaselineChip({
   return (
     <Popover.Root modal={false} open={open} onOpenChange={onOpenChange}>
       <div className="pointer-events-auto absolute" data-task-id={taskId} style={anchorStyle}>
+        <TextTooltip content={hint}>
         <Popover.Trigger asChild>
           <button
             aria-expanded={open}
             aria-haspopup="menu"
             aria-label={t('sprintPlanner.swimlane.overdue.menuAria', { days })}
-            className={`inline-flex h-7 min-w-[7.25rem] cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold leading-none whitespace-nowrap transition-colors ${overdueTriggerClass(isDark, strong, open)}`}
-            title={hint}
+            className={`inline-flex h-7 min-w-[7.25rem] cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold leading-none whitespace-nowrap transition-all duration-200 active:scale-[0.98] ${overdueTriggerClass(isDark, strong, open)}`}
             type="button"
             onClick={(event) => event.stopPropagation()}
             onPointerDown={(event) => event.stopPropagation()}
@@ -130,6 +131,7 @@ export function TaskLayerOverdueBaselineChip({
             <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" name="chevron-down" />
           </button>
         </Popover.Trigger>
+        </TextTooltip>
         <CustomSelectMenu<OverdueMenuAction>
           align="end"
           filteredOptions={menuOptions}

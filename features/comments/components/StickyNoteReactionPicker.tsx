@@ -15,10 +15,10 @@ import {
 } from '@/lib/comments/stickyNoteReactionCatalog';
 
 const CATEGORY_BUTTON_CLASS =
-  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-base hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:hover:bg-gray-700';
+  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-base transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] active:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:hover:bg-gray-700 dark:active:bg-gray-600';
 
 const EMOJI_BUTTON_CLASS =
-  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-lg hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:hover:bg-gray-700';
+  'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-lg transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] active:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:hover:bg-gray-700 dark:active:bg-gray-600';
 
 interface StickyNoteReactionPickerProps {
   recentEmojis: readonly string[];

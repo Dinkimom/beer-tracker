@@ -132,7 +132,7 @@ export function EpicsSidebar({
       return (
         <div key={quarterKey} className="space-y-0">
           <button
-            className="flex w-full items-center gap-2 border-0 bg-gray-100/80 px-2 py-2 text-left transition-colors hover:bg-gray-200/90 dark:bg-gray-700/40 dark:hover:bg-gray-700/70"
+            className="flex w-full items-center gap-2 border-0 bg-gray-100/80 px-2 py-2 text-left transition-all duration-200 hover:bg-gray-200/90 dark:bg-gray-700/40 dark:hover:bg-gray-700/70 cursor-pointer active:scale-[0.98]"
             type="button"
             onClick={() => toggleQuarter(quarterKey)}
           >

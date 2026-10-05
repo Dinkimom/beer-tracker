@@ -60,8 +60,7 @@ export function BacklogAssigneeFilter({ people, selectedIds, onToggle }: Backlog
           <button
             key={person.id}
             aria-pressed={selected}
-            className={`relative rounded-full ${index > 0 ? '-ml-1.5' : ''} ${selected ? 'z-10' : ''}`}
-            title={person.name}
+            className={`relative cursor-pointer rounded-full transition-all duration-200 hover:z-10 hover:scale-105 active:scale-[0.98] ${index > 0 ? '-ml-1.5' : ''} ${selected ? 'z-10' : ''}`}
             type="button"
             onClick={() => onToggle(person.id)}
           >
@@ -80,7 +79,7 @@ export function BacklogAssigneeFilter({ people, selectedIds, onToggle }: Backlog
         <button
           aria-expanded={overflowOpen}
           aria-label={t('backlog.filters.assigneeMoreAria', { count: overflow.length })}
-          className="relative -ml-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-700 dark:bg-gray-600 dark:text-gray-100"
+          className="relative -ml-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-300 active:scale-[0.98] active:bg-gray-400 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500 dark:active:bg-gray-400"
           type="button"
           onClick={() => setOverflowOpen((open) => !open)}
         >
@@ -99,7 +98,7 @@ export function BacklogAssigneeFilter({ people, selectedIds, onToggle }: Backlog
               <button
                 key={person.id}
                 aria-pressed={selected}
-                className={`flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700/60 ${
+                className={`flex w-full cursor-pointer items-center gap-2 px-2 py-1.5 text-left text-sm transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] active:bg-gray-100 dark:hover:bg-gray-700/60 dark:active:bg-gray-600 ${
                   selected ? 'bg-blue-50 dark:bg-blue-950/40' : ''
                 }`}
                 type="button"

@@ -29,7 +29,7 @@ export function ArchivedSprintItem({ expanded, onClick, sprint }: ArchivedSprint
     <div>
       <button
         aria-expanded={expanded}
-        className="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40"
+        className="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-all duration-200 active:scale-[0.98]"
         type="button"
         onClick={onClick}
       >

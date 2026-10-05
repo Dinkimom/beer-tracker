@@ -73,8 +73,8 @@ export function OccupancyQuarterlyWeekTimelineTableHeader({
   return (
     <thead>
       <tr
-        className="sticky top-0 bg-gray-100 dark:bg-gray-800 [&>th]:overflow-hidden"
-        style={{ height: rowH, zIndex: ZIndex.stickyMainHeader + 2 }}
+        className="sticky bg-gray-100 dark:bg-gray-800 [&>th]:overflow-hidden"
+        style={{ height: rowH, top: 'var(--planner-controls-h, 0px)', zIndex: ZIndex.stickyMainHeader + 2 }}
       >
         <OccupancyTableTaskColumnHeader
           allExpanded={allExpanded}

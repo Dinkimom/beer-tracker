@@ -1,6 +1,7 @@
 'use client';
 
 import { Avatar } from '@/components/Avatar';
+import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { getInitials } from '@/utils/displayUtils';
 
@@ -31,7 +32,7 @@ export function CurrentUserAvatar() {
   const initials = getInitials(user.display);
 
   return (
-    <div className="flex min-w-0 max-w-[12rem] items-center gap-2" title={user.display}>
+    <div className="flex min-w-0 max-w-[12rem] items-center gap-2">
       <Avatar
         avatarUrl={avatarUrl}
         initials={initials}
@@ -39,9 +40,11 @@ export function CurrentUserAvatar() {
         size="lg"
         title={user.display}
       />
-      <span className="hidden truncate text-sm font-medium text-gray-800 sm:inline dark:text-gray-100">
-        {user.display}
-      </span>
+      <OverflowTooltip content={user.display}>
+        <span className="hidden truncate text-sm font-medium text-gray-800 sm:inline dark:text-gray-100">
+          {user.display}
+        </span>
+      </OverflowTooltip>
     </div>
   );
 }

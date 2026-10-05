@@ -68,11 +68,11 @@ export function RetroPage({
 
   return (
     <div
-      className="relative flex min-h-0 flex-1 overflow-hidden"
+      className="relative flex min-h-0 flex-1 gap-3 overflow-hidden"
       style={{ width: '100%', height: '100%' }}
     >
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden pt-1">
-        <div className={`flex shrink-0 items-center justify-between gap-4 pl-3 ${metricsOpen ? 'pr-3' : ''}`}>
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+        <div className="flex shrink-0 items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-ds-surface-header">
           <SprintSelectorWithCreate
             boardId={boardId}
             selectedSprintId={selectedSprintId}
@@ -82,7 +82,7 @@ export function RetroPage({
           />
           <div className="flex shrink-0 items-center gap-2">
             <SprintPlannerPresenceAvatars viewers={boardViewers} />
-            <SprintPlannerTimer appearance="outline" selectedSprintId={selectedSprintId} />
+            <SprintPlannerTimer selectedSprintId={selectedSprintId} />
             {selectedSprintId == null ? null : (
               <Button
                 aria-label={metricsOpen ? t('retro.hideMetrics') : t('retro.showMetrics')}

@@ -2,6 +2,8 @@
 
 import { getStatusColors, resolvePaletteStatusKey } from '@/utils/statusColors';
 
+import { OverflowTooltip } from './OverflowTooltip';
+
 interface StatusTagProps {
   className?: string;
   /** Подпись из трекера (`display` / `statusName`); иначе показывается `status` как есть */
@@ -19,11 +21,12 @@ export function StatusTag({ status, label, className = '', statusColorKey }: Sta
   const text = label?.trim() || status;
 
   return (
-    <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium leading-none whitespace-nowrap border shrink-0 ${c.bg} ${c.bgDark ?? ''} ${c.text} ${c.textDark ?? ''} ${c.border} ${c.borderDark ?? ''} ${className}`}
-      title={text}
-    >
-      {text}
-    </span>
+    <OverflowTooltip content={text}>
+      <span
+        className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium leading-none whitespace-nowrap border shrink-0 ${c.bg} ${c.bgDark ?? ''} ${c.text} ${c.textDark ?? ''} ${c.border} ${c.borderDark ?? ''} ${className}`}
+      >
+        {text}
+      </span>
+    </OverflowTooltip>
   );
 }

@@ -80,7 +80,7 @@ export function isDailyDayPickerNavigationKey(key: string): key is DailyDayPicke
 }
 
 const DAILY_DAY_BUTTON_BASE =
-  'relative inline-flex min-w-[3.25rem] shrink-0 cursor-pointer flex-col items-center justify-center rounded-md px-2 py-1.5 text-xs leading-none transition-colors';
+  'relative inline-flex min-w-[3.25rem] shrink-0 cursor-pointer flex-col items-center justify-center rounded-md px-2 py-1.5 text-xs leading-none transition-all duration-200 active:scale-[0.98]';
 
 export function resolveDailyDayButtonClassName({
   hasNote,
@@ -92,10 +92,10 @@ export function resolveDailyDayButtonClassName({
   isToday: boolean;
 }): string {
   if (isActive) {
-    return `${DAILY_DAY_BUTTON_BASE} bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-600 dark:text-gray-50`;
+    return `${DAILY_DAY_BUTTON_BASE} bg-white font-semibold text-gray-900 shadow-sm hover:bg-gray-50 active:bg-gray-100 dark:bg-gray-600 dark:text-gray-50 dark:hover:bg-gray-500 dark:active:bg-gray-400`;
   }
 
-  let classes = `${DAILY_DAY_BUTTON_BASE} text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200`;
+  let classes = `${DAILY_DAY_BUTTON_BASE} text-gray-600 hover:bg-gray-200/80 hover:text-gray-900 active:bg-gray-300 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200 dark:active:bg-gray-600`;
   if (hasNote) {
     classes += ' font-medium text-gray-800 dark:text-gray-200';
   }

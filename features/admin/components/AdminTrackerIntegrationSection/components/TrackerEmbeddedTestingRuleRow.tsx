@@ -51,8 +51,8 @@ interface TrackerEmbeddedTestingRuleRowProps {
 
 function joinButtonClass(active: boolean): string {
   return active
-    ? 'rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100'
-    : 'rounded-md px-2.5 py-1 text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200';
+    ? 'cursor-pointer rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-gray-900 shadow-sm transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] active:bg-gray-100 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:active:bg-gray-500'
+    : 'cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium text-gray-500 transition-all duration-200 hover:bg-white/70 hover:text-gray-800 active:scale-[0.98] active:bg-white dark:text-gray-400 dark:hover:bg-gray-700/60 dark:hover:text-gray-200 dark:active:bg-gray-600';
 }
 
 export function TrackerEmbeddedTestingRuleRow({
@@ -158,6 +158,7 @@ export function TrackerEmbeddedTestingRuleRow({
         </div>
         <div className="ml-auto flex shrink-0 items-center">
           <Button
+            aria-label={t('admin.plannerIntegration.embeddedRules.moveUpTitle')}
             className="!h-9 !w-9 !px-0"
             disabled={idx === 0}
             title={t('admin.plannerIntegration.embeddedRules.moveUpTitle')}
@@ -171,6 +172,7 @@ export function TrackerEmbeddedTestingRuleRow({
             <Icon className="h-4 w-4" name="chevron-up" />
           </Button>
           <Button
+            aria-label={t('admin.plannerIntegration.embeddedRules.moveDownTitle')}
             className="!h-9 !w-9 !px-0"
             disabled={idx >= embeddedTestingOnlyRules.length - 1}
             title={t('admin.plannerIntegration.embeddedRules.moveDownTitle')}
@@ -184,6 +186,7 @@ export function TrackerEmbeddedTestingRuleRow({
             <Icon className="h-4 w-4" name="chevron-down" />
           </Button>
           <Button
+            aria-label={t('admin.plannerIntegration.embeddedRules.delete')}
             className="!h-9 !w-9 !px-0"
             title={t('admin.plannerIntegration.embeddedRules.delete')}
             type="button"

@@ -25,6 +25,8 @@ const levels = {
   arrowsHovered: 30,
   /** Стрелки быстрого скролла к фазе строки: выше контента фазы; ниже sticky-строк эпика/стори (tbody z-30), chrome */
   rowScrollArrow: 9,
+  /** Одно стекло колонки исполнителей: выше карточек, ниже имён в этой колонке. */
+  plannerLaneGlass: 45,
   stickyLeftColumn: 50,
   /** Закреплённые строки свимлейна: выше левой колонки обычных строк, ниже шапки дат */
   stickyPinnedRows: 55,
@@ -34,6 +36,8 @@ const levels = {
    * на стыке board | sidebar). Ниже dropdown (100).
    */
   sidebarResize: 65,
+  /** Шапка планера с селектом: поверх скролла доски, ниже выпадающих меню. */
+  plannerControls: 70,
   dropdown: 100,
   dropdownContent: 110,
   dropdownNested: 120,

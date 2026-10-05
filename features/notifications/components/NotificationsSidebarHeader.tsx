@@ -65,7 +65,6 @@ export function NotificationsSidebarHeader({
         ) : null}
         <HeaderIconButton
           aria-label={t('common.close')}
-          title={t('common.close')}
           type="button"
           onClick={onClose}
         >

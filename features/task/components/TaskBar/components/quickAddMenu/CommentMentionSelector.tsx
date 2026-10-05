@@ -70,10 +70,10 @@ export function CommentMentionSelector({
             <button
               aria-selected={index === activeIndex}
               className={[
-                'flex w-full cursor-pointer items-center gap-2 px-2.5 py-2 text-left text-sm text-gray-900 dark:text-gray-100',
+                'flex w-full cursor-pointer items-center gap-2 px-2.5 py-2 text-left text-sm text-gray-900 transition-all duration-200 active:scale-[0.98] dark:text-gray-100',
                 index === activeIndex
-                  ? 'bg-blue-50 dark:bg-blue-500/15'
-                  : 'hover:bg-gray-50 dark:hover:bg-white/[0.04]',
+                  ? 'bg-blue-50 active:bg-blue-100 dark:bg-blue-500/15 dark:active:bg-blue-500/25'
+                  : 'hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-white/[0.04] dark:active:bg-white/[0.08]',
               ].join(' ')}
               type="button"
               onMouseDown={(event) => {
