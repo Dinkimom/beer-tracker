@@ -885,13 +885,20 @@ textarea:focus-visible,
   background-color: transparent !important;
 }
 
+/* Нижняя линия ячейки исполнителя — в пикселе border-b строки.
+   Цвет берётся из токена, чтобы в тёмной теме не оставаться светлой. */
+.swimlane-assignee-row-line {
+  box-shadow: 0 1px 0 0 var(--ds-border-subtle);
+}
+
 .floating-menu-shell:focus,
 .floating-menu-shell:focus-visible,
 .floating-menu-shell:focus-within {
   box-shadow: var(--floating-menu-shadow) !important;
 }
 
-/* Шапка дней едет за горизонтальным скроллом доски на композиторе, без JS на каждый кадр. */
+/* Шапка дней вне скролла. Анимация на scroll-timeline идёт в том же кадре, что и колонки.
+   --planner-days-scroll-span должен быть равен max scrollLeft, иначе шапка расходится с сеткой. */
 .planner-board-frame {
   timeline-scope: --planner-x;
 }

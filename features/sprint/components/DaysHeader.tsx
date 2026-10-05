@@ -8,9 +8,9 @@ import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { FLOATING_TOOLBAR_ITEM_IDLE } from '@/features/context-menu/contextMenuClasses';
 import { WORKING_DAYS } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { FLOATING_TOOLBAR_ITEM_IDLE } from '@/features/context-menu/contextMenuClasses';
 import { sprintPlannerSwimlaneTimelineWidthCss } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
 import { SprintPlannerTimelineFill } from '@/features/sprint/components/SprintPlanner/layout/SprintPlannerTimelineFill';
 import { usePlannerChromeSlot } from '@/features/sprint/components/SprintPlanner/plannerChromeSlot';
@@ -123,23 +123,30 @@ export function DaysHeader({
         if (attempts < 60) requestAnimationFrame(bind);
         return;
       }
+      // Диапазон задаём до класса анимации и держим равным max scrollLeft.
+      // Слушатель scroll обновляет шапку на кадр позже колонок.
       const linked = canLinkDaysScrollTimeline();
-      track.classList.toggle('planner-days-scroll-track', linked);
       const applyMetrics = () => {
         const span = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
         track.style.width = `${Math.max(scroller.scrollWidth - participantsColumnWidth, 0)}px`;
         track.style.setProperty('--planner-days-scroll-span', `${span}px`);
-      };
-      const applyTransform = () => {
-        track.style.transform = `translate3d(${-scroller.scrollLeft}px, 0, 0)`;
+        if (!linked) {
+          track.style.transform = `translate3d(${-scroller.scrollLeft}px, 0, 0)`;
+        }
       };
       applyMetrics();
-      if (!linked) applyTransform();
-      if (!linked) scroller.addEventListener('scroll', applyTransform, { passive: true });
+      track.classList.toggle('planner-days-scroll-track', linked);
+      if (linked) {
+        track.style.transform = '';
+      } else {
+        scroller.addEventListener('scroll', applyMetrics, { passive: true });
+      }
       const observer = new ResizeObserver(applyMetrics);
       observer.observe(scroller);
+      const content = scroller.firstElementChild;
+      if (content) observer.observe(content);
       cleanup = () => {
-        scroller.removeEventListener('scroll', applyTransform);
+        scroller.removeEventListener('scroll', applyMetrics);
         observer.disconnect();
       };
     };

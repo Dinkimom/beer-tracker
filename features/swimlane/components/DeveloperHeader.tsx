@@ -29,7 +29,6 @@ interface DeveloperHeaderProps {
   /**
    * Закреплённая строка. Ячейка сама `sticky left`, поэтому вуаль должна
    * быть на ней: фон кадра строки при боковом скролле уезжает.
-   * Нижнюю границу не рисуем — она уже есть на корне строки.
    */
   frosted?: boolean;
   /** Есть ли на строке задачи с объёмом (даже если SP/TP = 0). */
@@ -118,7 +117,9 @@ export function DeveloperHeader({
 
   return wrapWithTextTooltip(
     <div
-      className={`group relative sticky left-0 flex-shrink-0 self-stretch overflow-hidden border-r border-gray-200 dark:border-r-gray-600 ${frosted ? 'planner-pinned-lane-glass' : 'border-b bg-transparent dark:border-b-gray-700'}`}
+      // Линия на 1px ниже ячейки — в том же пикселе, что border-b строки у дней.
+      // Свой border-b сидит внутри border-box и оказывается на пиксель выше.
+      className={`group relative sticky left-0 flex-shrink-0 self-stretch overflow-hidden border-r border-gray-200 bg-transparent swimlane-assignee-row-line dark:border-r-gray-600${frosted ? ' planner-pinned-lane-glass' : ''}`}
       style={{
         width,
         minWidth: width,
