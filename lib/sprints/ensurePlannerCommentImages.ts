@@ -62,7 +62,7 @@ async function createPlannerFilesStorageKeyIndex(schema: string): Promise<void> 
 async function createPlannerFilesTableIfMissing(schema: string): Promise<void> {
   await query(`
     CREATE TABLE IF NOT EXISTS ${schema}.planner_files (
-      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       organization_id UUID NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
       content_type VARCHAR(64) NOT NULL,
       byte_size INTEGER NOT NULL,

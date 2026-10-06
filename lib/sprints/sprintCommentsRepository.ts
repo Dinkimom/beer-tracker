@@ -149,7 +149,7 @@ export function insertSprintCommentSql(): string {
              position_x, position_y, day, part, width, height, color, created_by, kind, image_file_id, parent,
              pending_approval, pending_approval_expires_at, plan_patch_proposal_id
            ) VALUES (
-             COALESCE($1, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb,
+             COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb,
              $17, $18, $19
            )
            ON CONFLICT (id) DO NOTHING

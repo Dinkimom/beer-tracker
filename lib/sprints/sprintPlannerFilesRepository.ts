@@ -196,7 +196,7 @@ export function insertFileCommentSql(): string {
              id, organization_id, sprint_id, assignee_id, text,
              position_x, position_y, day, part, width, height, color, created_by, kind, image_file_id
            ) VALUES (
-             COALESCE($1, uuid_generate_v4()), $2, $3, $4, $5, 0, 0, $6, $7, $8, $9, $10, $11, $12, $13
+             COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, 0, 0, $6, $7, $8, $9, $10, $11, $12, $13
            )
            RETURNING ${SPRINT_COMMENT_RETURNING}`;
 }
