@@ -32,10 +32,11 @@ describe('SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX', () => {
   });
 
   it('adds room for the compact agent proposal capsule above the placement tools', () => {
-    expect(resolvePlacementToolbarScrollPadPx(false)).toBe(SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX);
-    expect(resolvePlacementToolbarScrollPadPx(true)).toBeGreaterThan(
+    expect(resolvePlacementToolbarScrollPadPx(0)).toBe(SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX);
+    expect(resolvePlacementToolbarScrollPadPx(1)).toBeGreaterThan(
       SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX
     );
+    expect(resolvePlacementToolbarScrollPadPx(2)).toBeGreaterThan(resolvePlacementToolbarScrollPadPx(1));
   });
 });
 

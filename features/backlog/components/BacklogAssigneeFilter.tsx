@@ -9,6 +9,8 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { getInitials } from '@/utils/displayUtils';
 
 const VISIBLE_ASSIGNEE_COUNT = 5;
+const ASSIGNEE_OVERLAP_CLASS = '-ml-1';
+const ASSIGNEE_MORE_CLASS = 'h-7 w-7 text-[11px]';
 
 /** Кольцо не на самой кнопке: глобальный `button:focus { box-shadow: none }` снимал бы его до потери фокуса. */
 function assigneeRingClass(selected: boolean): string {
@@ -23,7 +25,11 @@ interface BacklogAssigneeFilterProps {
   onToggle: (id: string) => void;
 }
 
-export function BacklogAssigneeFilter({ people, selectedIds, onToggle }: BacklogAssigneeFilterProps) {
+export function BacklogAssigneeFilter({
+  people,
+  selectedIds,
+  onToggle,
+}: BacklogAssigneeFilterProps) {
   const { t } = useI18n();
   const [overflowOpen, setOverflowOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -60,7 +66,7 @@ export function BacklogAssigneeFilter({ people, selectedIds, onToggle }: Backlog
           <button
             key={person.id}
             aria-pressed={selected}
-            className={`relative cursor-pointer rounded-full transition-all duration-200 hover:z-10 hover:scale-105 active:scale-[0.98] ${index > 0 ? '-ml-1.5' : ''} ${selected ? 'z-10' : ''}`}
+            className={`relative cursor-pointer rounded-full transition-all duration-200 hover:z-10 hover:scale-105 active:scale-[0.98] ${index > 0 ? ASSIGNEE_OVERLAP_CLASS : ''} ${selected ? 'z-10' : ''}`}
             type="button"
             onClick={() => onToggle(person.id)}
           >
@@ -69,7 +75,7 @@ export function BacklogAssigneeFilter({ people, selectedIds, onToggle }: Backlog
               avatarUrl={person.avatarUrl}
               initials={getInitials(person.name)}
               initialsVariant="default"
-              size="sm"
+              size="md"
               title={person.name}
             />
           </button>
@@ -79,7 +85,7 @@ export function BacklogAssigneeFilter({ people, selectedIds, onToggle }: Backlog
         <button
           aria-expanded={overflowOpen}
           aria-label={t('backlog.filters.assigneeMoreAria', { count: overflow.length })}
-          className="relative -ml-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-300 active:scale-[0.98] active:bg-gray-400 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500 dark:active:bg-gray-400"
+          className={`relative ${ASSIGNEE_OVERLAP_CLASS} flex ${ASSIGNEE_MORE_CLASS} cursor-pointer items-center justify-center rounded-full bg-gray-200 font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-300 active:scale-[0.98] active:bg-gray-400 dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500 dark:active:bg-gray-400`}
           type="button"
           onClick={() => setOverflowOpen((open) => !open)}
         >
@@ -108,7 +114,7 @@ export function BacklogAssigneeFilter({ people, selectedIds, onToggle }: Backlog
                   avatarUrl={person.avatarUrl}
                   initials={getInitials(person.name)}
                   initialsVariant="default"
-                  size="sm"
+                  size="md"
                   title={person.name}
                 />
                 <span className="min-w-0 flex-1 truncate text-gray-900 dark:text-gray-100">{person.name}</span>

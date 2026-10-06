@@ -6,6 +6,18 @@ import type { TransitionField } from '@/lib/beerTrackerApi';
 import type { Developer, Task, TaskPosition } from '@/types';
 import type { MutableRefObject } from 'react';
 
+import { useCallback } from 'react';
+import toast from 'react-hot-toast';
+
+import { getPartsPerDay } from '@/constants';
+import { useI18n } from '@/contexts/LanguageContext';
+import {
+  buildAssigneePlanDraft,
+  positionsOmittingIds,
+} from '@/features/task/utils/planAssigneeDraft';
+import { useRootStore } from '@/lib/layers';
+import { getCurrentSprintCell } from '@/utils/dateUtils';
+
 import { useSprintPlannerAutoAssignHandlers } from './useSprintPlannerUIHandlers/hooks/useSprintPlannerAutoAssignHandlers';
 import { useSprintPlannerContextMenuHandlers } from './useSprintPlannerUIHandlers/hooks/useSprintPlannerContextMenuHandlers';
 import { useSprintPlannerSidebarHandlers } from './useSprintPlannerUIHandlers/hooks/useSprintPlannerSidebarHandlers';
@@ -22,6 +34,7 @@ interface UseSprintPlannerUIHandlersProps {
   resetDragStateRef: MutableRefObject<(() => void) | null>;
   selectedSprintId: number | null;
   sprintStartDate: Date;
+  sprintTimelineWorkingDays: number;
   taskOperations: {
     changeStatus: (taskId: string, transitionId: string, targetStatusKey?: string, extraFields?: Record<string, unknown>) => Promise<void>;
     moveToSprint: (taskId: string, sprintId: number) => Promise<void>;
@@ -66,6 +79,7 @@ export function useSprintPlannerUIHandlers({
   setTaskPositions,
   setTasks,
   sprintStartDate,
+  sprintTimelineWorkingDays,
   taskOperations,
   taskPositions,
   tasks,
@@ -77,6 +91,8 @@ export function useSprintPlannerUIHandlers({
   savePosition,
   workflowScreens = {},
 }: UseSprintPlannerUIHandlersProps) {
+  const { t } = useI18n();
+  const { taskPositions: positionsStore } = useRootStore();
   // Обработчики контекстного меню
   const { handleContextMenu, handleParentChange } = useSprintPlannerContextMenuHandlers({
     onParentLayoutChanged: debouncedUpdateXarrow,
@@ -129,6 +145,34 @@ export function useSprintPlannerUIHandlers({
     workflowScreens,
   });
 
+  const handlePlanAssignees = useCallback(
+    (assigneeIds: ReadonlySet<string>) => {
+      const partsPerDay = getPartsPerDay();
+      const draft = buildAssigneePlanDraft({
+        assigneeIds,
+        currentCell: getCurrentSprintCell(sprintStartDate, partsPerDay, sprintTimelineWorkingDays),
+        developers: developersManagement.sortedDevelopers,
+        existingPositions: positionsOmittingIds(taskPositions, positionsStore.draftTaskIds),
+        tasks: allTasksForDrag,
+        timelineCellCount: sprintTimelineWorkingDays * partsPerDay,
+      });
+      if (draft.length === 0) {
+        toast(t('sidebar.tasksTab.planAssigneeEmpty'));
+        return;
+      }
+      positionsStore.stagePlanDraft(draft);
+    },
+    [
+      allTasksForDrag,
+      developersManagement.sortedDevelopers,
+      positionsStore,
+      sprintStartDate,
+      sprintTimelineWorkingDays,
+      t,
+      taskPositions,
+    ]
+  );
+
   const handleMoveToSprint = taskOperations.moveToSprint;
   const handleRemoveFromSprint = taskOperations.removeFromSprint;
 
@@ -139,6 +183,7 @@ export function useSprintPlannerUIHandlers({
     handleContextMenu,
     handleMoveToSprint,
     handleParentChange,
+    handlePlanAssignees,
     handleRemoveFromSprint,
     handleReturnAllTasks,
     handleStatusChange: handleStatusChangeWithModal,

@@ -13,6 +13,7 @@ import {
   uniqueIssueTrackerQueueKeysFromTeams,
 } from '@/lib/issueTrackerProvider/storageAliases';
 import { extractOrgSyncSettingsJson } from '@/lib/orgSyncSettings';
+import { captureActiveSprintPlanAnchorsQuietly } from '@/lib/sprints/captureActiveSprintPlanAnchors';
 import { listTeams } from '@/lib/staffTeams/teamsRepository';
 import { TRACKER_ISSUES_SEARCH_PER_PAGE_CAP } from '@/lib/trackerApi/issuesFetchHelpers';
 
@@ -88,6 +89,11 @@ export async function runFullSyncModes(params: {
     queuesProcessed,
     queuesTotal: queueKeys.length,
     syncRunId,
+  });
+
+  await captureActiveSprintPlanAnchorsQuietly({
+    issueTracker,
+    organizationId: org.id,
   });
 
   return finalizeFullSyncRun({

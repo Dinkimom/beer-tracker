@@ -2,13 +2,19 @@ import type { TaskPosition } from '@/types';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { deleteTaskPosition, fetchSprintPositions, saveTaskPosition } from '@/lib/beerTrackerApi';
+import {
+  deleteTaskPosition,
+  fetchSprintPositions,
+  saveTaskPosition,
+  saveTaskPositionsBatch,
+} from '@/lib/beerTrackerApi';
 
 import { TaskPositionsStore } from './taskPositionsStore';
 
 vi.mock('@/lib/beerTrackerApi', async (importOriginal) => {
   const actual = await importOriginal();
   return Object.assign({}, actual, {
+    fetchSprintPlanAnchors: vi.fn().mockResolvedValue([]),
     fetchSprintPositions: vi.fn(),
     deleteTaskPosition: vi.fn().mockResolvedValue(true),
     saveTaskPosition: vi.fn().mockResolvedValue(undefined),
@@ -19,6 +25,7 @@ vi.mock('@/lib/beerTrackerApi', async (importOriginal) => {
 const mockFetch = vi.mocked(fetchSprintPositions);
 const mockDelete = vi.mocked(deleteTaskPosition);
 const mockSave = vi.mocked(saveTaskPosition);
+const mockSaveBatch = vi.mocked(saveTaskPositionsBatch);
 
 function pos(id: string, startDay = 0): TaskPosition {
   return {
@@ -288,5 +295,41 @@ describe('TaskPositionsStore', () => {
     expect(handler.mock.calls[0]![0].taskParents?.get('t1')).toEqual(parentB);
 
     store.setOnPlanHistoryApplied(undefined);
+  });
+
+  it('черновик плана живёт локально, пока его не сохранят или не снимут', async () => {
+    mockFetch.mockResolvedValue([pos('saved', 0)]);
+    const store = new TaskPositionsStore();
+    await store.loadSprint(42);
+
+    store.stagePlanDraft([pos('draft-a', 1), pos('draft-b', 2)]);
+    expect(store.planDraftCount).toBe(2);
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(mockSaveBatch).not.toHaveBeenCalled();
+
+    await store.savePosition(pos('draft-a', 4), false, undefined, true);
+    expect(store.positions.get('draft-a')?.startDay).toBe(4);
+    expect(mockSave).not.toHaveBeenCalled();
+
+    await store.deletePosition('draft-b');
+    expect(store.positions.has('draft-b')).toBe(false);
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(store.planDraftCount).toBe(1);
+
+    mockFetch.mockResolvedValue([pos('saved', 0), pos('remote', 3)]);
+    await store.reconcileRemoteSprint(42);
+    expect(store.positions.get('draft-a')?.startDay).toBe(4);
+    expect(store.positions.has('remote')).toBe(true);
+
+    const committed = await store.commitPlanDraft();
+    expect(committed).toEqual({ count: 1, ok: true });
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(store.planDraftCount).toBe(0);
+
+    store.stagePlanDraft([pos('draft-c', 1), pos('draft-d', 2)]);
+    store.discardPlanDraft();
+    expect(store.positions.has('draft-c')).toBe(false);
+    expect(store.positions.has('saved')).toBe(true);
+    expect(mockDelete).not.toHaveBeenCalled();
   });
 });

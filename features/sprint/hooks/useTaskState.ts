@@ -7,6 +7,7 @@ import type { Task, TaskPosition } from '@/types';
 import { useMemo } from 'react';
 
 import { createQATasksMap } from '@/features/qa/utils/qaTaskUtils';
+import { stampPlanDraftTasks, stampPlanDraftTasksMap } from '@/features/task/utils/planAssigneeDraft';
 
 interface UseTaskStateResult {
   allTasksForDrag: Task[];
@@ -19,6 +20,7 @@ interface UseTaskStateResult {
 
 interface UseTaskStateProps {
   developers: Array<{ id: string }>;
+  planDraftTaskIds?: ReadonlySet<string>;
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
 }
@@ -26,7 +28,12 @@ interface UseTaskStateProps {
 /**
  * Хук для управления состоянием задач
  */
-export function useTaskState({ tasks, taskPositions, developers }: UseTaskStateProps): UseTaskStateResult {
+export function useTaskState({
+  tasks,
+  taskPositions,
+  developers,
+  planDraftTaskIds,
+}: UseTaskStateProps): UseTaskStateResult {
   // Мемоизируем вычисления связанные с задачами
   const { qaTasksMap, allTasksForDrag, tasksMap, qaTasksByOriginalId } = useMemo(() => {
     // Создаем словарь QA задач
@@ -60,9 +67,14 @@ export function useTaskState({ tasks, taskPositions, developers }: UseTaskStateP
     };
   }, [tasks]);
 
+  // Свимлейн берёт карточку из tasksMap. Пометка черновика должна быть там,
+  // иначе pendingApproval не доходит до прозрачности TaskBar.
+  const tasksMapForView = stampPlanDraftTasksMap(tasksMap, planDraftTaskIds);
+  const allTasksForView = stampPlanDraftTasks(allTasksForDrag, planDraftTaskIds);
+
   // taskPositions — тот же observable.map (стабильная ссылка); при переносе карточки мутирует на месте.
   // useMemo([..., taskPositions]) не пересчитывался — группировка и unassigned оставались со старыми assignee.
-  const unassignedTasks = allTasksForDrag.filter((task) => !taskPositions.has(task.id));
+  const unassignedTasks = allTasksForView.filter((task) => !taskPositions.has(task.id));
 
   const tasksByAssignee = new Map<string, Task[]>();
 
@@ -70,7 +82,7 @@ export function useTaskState({ tasks, taskPositions, developers }: UseTaskStateP
     tasksByAssignee.set(dev.id, []);
   });
 
-  allTasksForDrag.forEach((task) => {
+  allTasksForView.forEach((task) => {
     const position = taskPositions.get(task.id);
     const assigneeId = position?.assignee || 'unassigned';
     if (!tasksByAssignee.has(assigneeId)) {
@@ -84,8 +96,8 @@ export function useTaskState({ tasks, taskPositions, developers }: UseTaskStateP
 
   return {
     qaTasksMap,
-    allTasksForDrag,
-    tasksMap,
+    allTasksForDrag: allTasksForView,
+    tasksMap: tasksMapForView,
     qaTasksByOriginalId,
     unassignedTasks,
     tasksByAssignee,

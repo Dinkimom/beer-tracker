@@ -9,6 +9,7 @@ import { FeatureLaneDraftRowActions } from '@/features/swimlane/components/Featu
 import { FeatureLaneRowTitle } from '@/features/swimlane/components/FeatureLaneRowTitle';
 import { SwimlanePinControl } from '@/features/swimlane/components/SwimlanePinControl';
 import { SwimlaneRowBorderResizeHandle } from '@/features/swimlane/components/SwimlaneRowBorderResizeHandle';
+import { useAssigneeVelocityReadout } from '@/features/swimlane/hooks/useAssigneeVelocity';
 import { isFeatureLaneDraftRowId } from '@/features/swimlane/utils/featureSwimlaneRows';
 import { useFeatureLaneColumnUi } from '@/features/task/components/TaskCard/FeatureLaneCardUiContext';
 
@@ -53,6 +54,11 @@ export function SwimlaneDeveloperHeader({
   rowResizeHandleTopPx,
 }: SwimlaneDeveloperHeaderProps) {
   const featureColumn = useFeatureLaneColumnUi();
+  const velocityReadout = useAssigneeVelocityReadout(
+    developer.id,
+    developer.name,
+    developer.role
+  );
   const featureTitle = featureColumn.rowTitleById.get(developer.id);
   const isDraftRow = isFeatureLaneDraftRowId(developer.id);
   const showRowActions = featureColumn.isFeatureLane;
@@ -110,6 +116,7 @@ export function SwimlaneDeveloperHeader({
       totalSP={layout.totalSP}
       totalTP={layout.totalTP}
       variant={isTeamLane ? 'team' : 'person'}
+      velocity={isTeamLane || featureColumn.isFeatureLane ? null : velocityReadout}
       width={participantsColumnWidth}
     />
   );

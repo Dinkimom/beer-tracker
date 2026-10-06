@@ -18,7 +18,8 @@ export function FeatureLaneAddRow({ participantsColumnWidth }: FeatureLaneAddRow
   return (
     <div className="flex min-w-0 border-b border-gray-200 dark:border-gray-700">
       <div
-        className="sticky left-0 shrink-0 border-r border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
+        // Фон sticky-колонки перекрывает border-b строки. Линия — как у шапки свимлейна.
+        className="swimlane-assignee-row-line sticky left-0 shrink-0 border-r border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800"
         style={{
           width: participantsColumnWidth,
           minWidth: participantsColumnWidth,

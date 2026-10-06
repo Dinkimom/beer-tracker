@@ -58,6 +58,7 @@ interface SidebarSectionProps {
   onAutoAssignTasks: () => Promise<void>;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onGoalsUpdate?: () => void;
+  onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   onReturnAllTasks: () => Promise<void>;
   onSprintTaskUpserted?: (task: Task) => void;
   onTasksReload?: () => void;
@@ -96,6 +97,7 @@ export const SidebarSection = observer(function SidebarSection({
   backlogTaskRef,
   onAutoAddToSwimlane,
   onAutoAssignTasks,
+  onPlanAssignees,
   onContextMenu,
   onGoalsUpdate,
   onReturnAllTasks,
@@ -159,6 +161,7 @@ export const SidebarSection = observer(function SidebarSection({
         }}
         onContextMenu={onContextMenu}
         onGoalsUpdate={onGoalsUpdate}
+        onPlanAssignees={onPlanAssignees}
         onReturnAllTasks={onReturnAllTasks}
         onSprintTaskUpserted={onSprintTaskUpserted}
         onTasksReload={onTasksReload}

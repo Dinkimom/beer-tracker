@@ -25,6 +25,7 @@ import {
 } from './taskBarAnnotationChrome';
 import { TaskBarAnnotationOverlays } from './TaskBarAnnotationOverlays';
 import { TaskBarDraftSaveButton } from './TaskBarDraftSaveButton';
+import { TaskBarDragBridge } from './TaskBarDragBridge';
 import { TaskBarDragSourceGhost } from './TaskBarDragSourceGhost';
 import { shouldCancelInlineEditorOnFocusOut } from './taskBarHelpers';
 import { TaskBarOpacityLayer } from './TaskBarOpacityLayer';
@@ -98,7 +99,7 @@ interface TaskBarProps {
   requestArrowRedraw: () => void;
 }
 
-export const TaskBar = observer(function TaskBar({
+const TaskBarSurface = observer(function TaskBarSurface({
   task,
   inlineTitleEditor,
   quickAddMenu,
@@ -452,63 +453,16 @@ export const TaskBar = observer(function TaskBar({
   );
 });
 
-const MemoizedTaskBar = React.memo(TaskBar, (prevProps, nextProps) => {
+// Мост с useDraggable — родитель поверхности: сдвиг курсора не пересоздаёт её element.
+export function TaskBar(props: TaskBarProps) {
+  const draggableId = props.draggableId ?? props.task.id;
   return (
-    prevProps.task.id === nextProps.task.id &&
-    prevProps.task.status === nextProps.task.status &&
-    prevProps.task.storyPoints === nextProps.task.storyPoints &&
-    prevProps.task.testPoints === nextProps.task.testPoints &&
-    prevProps.task.name === nextProps.task.name &&
-    prevProps.task.excalidrawSceneText === nextProps.task.excalidrawSceneText &&
-    prevProps.task.diagramSceneUrl === nextProps.task.diagramSceneUrl &&
-    prevProps.task.localDraftKind === nextProps.task.localDraftKind &&
-    prevProps.task.imageUrl === nextProps.task.imageUrl &&
-    prevProps.task.stickyNoteColor === nextProps.task.stickyNoteColor &&
-    prevProps.task.stickyNoteAuthorName === nextProps.task.stickyNoteAuthorName &&
-    prevProps.task.pendingApproval === nextProps.task.pendingApproval &&
-    prevProps.leftPercent === nextProps.leftPercent &&
-    prevProps.widthPercent === nextProps.widthPercent &&
-    prevProps.duration === nextProps.duration &&
-    prevProps.isSelected === nextProps.isSelected &&
-    prevProps.contextMenuBlurOtherCards === nextProps.contextMenuBlurOtherCards &&
-    prevProps.contextMenuTaskId === nextProps.contextMenuTaskId &&
-    prevProps.isInError === nextProps.isInError &&
-    prevProps.errorTooltip === nextProps.errorTooltip &&
-    prevProps.disableResize === nextProps.disableResize &&
-    prevProps.disableDragAndResize === nextProps.disableDragAndResize &&
-    prevProps.linkMode === nextProps.linkMode &&
-    prevProps.interactionDisabled === nextProps.interactionDisabled &&
-    prevProps.draggableId === nextProps.draggableId &&
-    prevProps.htmlAnchorId === nextProps.htmlAnchorId &&
-    prevProps.swimlaneSegmentSecondary === nextProps.swimlaneSegmentSecondary &&
-    prevProps.swimlaneBarDurationParts === nextProps.swimlaneBarDurationParts &&
-    prevProps.swimlaneDragActive === nextProps.swimlaneDragActive &&
-    Boolean(prevProps.inlineTitleEditor) === Boolean(nextProps.inlineTitleEditor) &&
-    prevProps.inlineTitleEditor?.value === nextProps.inlineTitleEditor?.value &&
-    prevProps.inlineTitleEditor?.color === nextProps.inlineTitleEditor?.color &&
-    prevProps.inlineTitleEditor?.showDisabledSave === nextProps.inlineTitleEditor?.showDisabledSave &&
-    Boolean(prevProps.quickAddMenu) === Boolean(nextProps.quickAddMenu) &&
-    prevProps.quickAddMenu?.title === nextProps.quickAddMenu?.title &&
-    prevProps.quickAddMenu?.commentColor === nextProps.quickAddMenu?.commentColor &&
-    prevProps.quickAddMenu?.issueType === nextProps.quickAddMenu?.issueType &&
-    prevProps.quickAddMenu?.parentKey === nextProps.quickAddMenu?.parentKey &&
-    prevProps.quickAddMenu?.parentSelectOptions === nextProps.quickAddMenu?.parentSelectOptions &&
-    prevProps.quickAddMenu?.queueKey === nextProps.quickAddMenu?.queueKey &&
-    prevProps.quickAddMenu?.taskId === nextProps.quickAddMenu?.taskId &&
-    prevProps.quickAddMenu?.lockedMode === nextProps.quickAddMenu?.lockedMode &&
-    prevProps.quickAddMenu?.requiresAssignee === nextProps.quickAddMenu?.requiresAssignee &&
-    prevProps.quickAddMenu?.assigneeId === nextProps.quickAddMenu?.assigneeId &&
-    prevProps.quickAddMenu?.showAssigneeSelect === nextProps.quickAddMenu?.showAssigneeSelect &&
-    prevProps.quickAddMenu?.availabilityStartDate === nextProps.quickAddMenu?.availabilityStartDate &&
-    Boolean(prevProps.quickAddMenu?.onCreateAvailability) ===
-      Boolean(nextProps.quickAddMenu?.onCreateAvailability) &&
-    Boolean(prevProps.quickAddMenu?.onPasteNote) === Boolean(nextProps.quickAddMenu?.onPasteNote) &&
-    prevProps.quickAddSubmitting === nextProps.quickAddSubmitting &&
-    Boolean(prevProps.onCommentApprove) === Boolean(nextProps.onCommentApprove) &&
-    Boolean(prevProps.onCommentDelete) === Boolean(nextProps.onCommentDelete) &&
-    Boolean(prevProps.onCommentUpdate) === Boolean(nextProps.onCommentUpdate) &&
-    Boolean(prevProps.onDeleteLocalImage) === Boolean(nextProps.onDeleteLocalImage)
+    <TaskBarDragBridge
+      draggableId={draggableId}
+      interactionDisabled={Boolean(props.interactionDisabled || props.disableDragAndResize)}
+      taskId={props.task.id}
+    >
+      <TaskBarSurface {...props} draggableId={draggableId} />
+    </TaskBarDragBridge>
   );
-});
-
-MemoizedTaskBar.displayName = 'MemoizedTaskBar';
+}

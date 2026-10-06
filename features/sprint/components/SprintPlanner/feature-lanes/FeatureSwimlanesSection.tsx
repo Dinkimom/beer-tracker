@@ -16,7 +16,9 @@ import {
   projectTaskPositionsToFeatureRows,
 } from '@/features/swimlane/utils/featureSwimlaneRows';
 import { FeatureLaneCardUiProvider } from '@/features/task/components/TaskCard/FeatureLaneCardUiContext';
+import { taskWithPlanDraftFlag } from '@/features/task/utils/planAssigneeDraft';
 import { useFeatureLanesApi } from '@/hooks/useApiStorage';
+import { useRootStore } from '@/lib/layers';
 
 import { SwimlanesSection } from '../components/SwimlanesSection';
 
@@ -146,6 +148,8 @@ export function FeatureSwimlanesSection({
     },
     [props, rowManagement.rowMetaById]
   );
+  const { taskPositions: positionsStore } = useRootStore();
+  const planDraftCount = positionsStore.planDraftCount;
   const tasksByAssignee = useMemo(() => {
     const next = new Map(projection.tasksByRowId);
     for (const row of rowManagement.allRows) {
@@ -153,8 +157,18 @@ export function FeatureSwimlanesSection({
         next.set(row.id, []);
       }
     }
-    return next;
-  }, [projection.tasksByRowId, rowManagement.allRows]);
+    if (planDraftCount === 0) {
+      return next;
+    }
+    const stamped = new Map<string, Task[]>();
+    for (const [rowId, rowTasks] of next) {
+      stamped.set(
+        rowId,
+        rowTasks.map((rowTask) => taskWithPlanDraftFlag(rowTask, positionsStore.draftTaskIds))
+      );
+    }
+    return stamped;
+  }, [planDraftCount, positionsStore, projection.tasksByRowId, rowManagement.allRows]);
 
   return (
     <FeatureLaneCardUiProvider

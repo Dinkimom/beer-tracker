@@ -15,6 +15,7 @@ import {
   DeveloperHeaderPoints,
   formatDeveloperHeaderPointsContent,
   resolveDeveloperHeaderPointsVisibility,
+  type DeveloperHeaderVelocityReadout,
 } from './DeveloperHeaderPoints';
 
 interface DeveloperHeaderProps {
@@ -66,6 +67,8 @@ interface DeveloperHeaderProps {
   totalTP: number;
   /** `team` — общая строка: штриховка вместо имени, без аватара и SP/TP. */
   variant?: 'person' | 'team';
+  /** Средний велосити за последние закрытые спринты. */
+  velocity?: DeveloperHeaderVelocityReadout | null;
   /** Ширина колонки в px; по умолчанию DEVELOPER_COLUMN_WIDTH */
   width?: number;
 }
@@ -93,6 +96,7 @@ export function DeveloperHeader({
   showBothPointKinds = false,
   showProgress = false,
   variant = 'person',
+  velocity = null,
   width = DEVELOPER_COLUMN_WIDTH,
   layerZIndex = ZIndex.stickyLeftColumn,
 }: DeveloperHeaderProps) {
@@ -170,7 +174,7 @@ export function DeveloperHeader({
                     </span>
                   </OverflowTooltip>
                 )}
-                <div className="min-w-0 whitespace-nowrap text-[11px] tabular-nums leading-tight text-gray-500 dark:text-gray-400">
+                <div className="min-w-0 text-[11px] tabular-nums leading-tight text-gray-500 dark:text-gray-400">
                   <DeveloperHeaderPoints
                     hasPoints={hasPoints}
                     showProgress={showProgress}
@@ -178,6 +182,7 @@ export function DeveloperHeader({
                     showTP={showTP}
                     spContent={spContent}
                     tpContent={tpContent}
+                    velocity={velocity}
                   />
                 </div>
               </div>

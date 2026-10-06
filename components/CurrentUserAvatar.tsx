@@ -22,7 +22,7 @@ export function CurrentUserAvatar() {
         aria-hidden
         className="inline-flex h-8 items-center gap-2"
       >
-        <span className="inline-block h-8 w-8 shrink-0 animate-pulse rounded-full border border-gray-400/40 bg-gray-200 dark:border-white/30 dark:bg-gray-600" />
+        <span className="inline-block h-8 w-8 shrink-0 animate-pulse rounded-full border border-black/10 bg-gray-200 dark:border-white/15 dark:bg-gray-600" />
         <span className="hidden h-3 w-24 animate-pulse rounded bg-gray-200 sm:inline-block dark:bg-gray-600" />
       </span>
     );

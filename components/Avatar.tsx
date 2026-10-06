@@ -29,8 +29,11 @@ const AVATAR_PIXEL_SIZE: Record<keyof typeof SIZE_CLASSES, number> = {
   lg: 32,
 };
 
-/** Единый бордер для фото и инициалов (совпадает с baseImageClasses) */
-const AVATAR_BORDER = 'border border-gray-400 dark:border-white';
+/**
+ * Волосяная кромка в тон остальным бордерам (black/10, white/15).
+ * Сплошной `border-white` в тёмной теме читался как наклейка поверх доски.
+ */
+const AVATAR_BORDER = 'border border-black/10 dark:border-white/15';
 
 const teamVariant = (team: string) =>
   `${TEAM_TAG_BG[team]} text-white border ${TEAM_TAG_BORDER[team]}`;

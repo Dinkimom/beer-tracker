@@ -1,10 +1,13 @@
+import type { ReactNode } from 'react';
+
 interface SidebarTaskGroupLabelProps {
+  action?: ReactNode;
   count: number;
   label: string;
 }
 
-/** Тихий разделитель группы: имя слева и линия, без плашки. */
-export function SidebarTaskGroupLabel({ count, label }: SidebarTaskGroupLabelProps) {
+/** Тихий разделитель группы: имя слева, линия, действие справа. */
+export function SidebarTaskGroupLabel({ action, count, label }: SidebarTaskGroupLabelProps) {
   return (
     <div className="mb-2 flex items-center gap-2">
       <h3 className="min-w-0 truncate text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -14,6 +17,7 @@ export function SidebarTaskGroupLabel({ count, label }: SidebarTaskGroupLabelPro
         {count}
       </span>
       <span aria-hidden className="h-px min-w-4 flex-1 bg-gray-200 dark:bg-gray-700" />
+      {action ? <span className="shrink-0">{action}</span> : null}
     </div>
   );
 }

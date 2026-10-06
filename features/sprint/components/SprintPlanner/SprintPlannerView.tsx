@@ -8,6 +8,7 @@ import { StickyNoteReactionsProvider } from '@/features/comments/StickyNoteReact
 import { isSwimlaneCommentTask, selectPendingApprovalCommentIds } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
+import { AssigneeVelocityProvider } from '@/features/swimlane/hooks/useAssigneeVelocity';
 import { useCloseOverdueAndCreateNext } from '@/features/swimlane/hooks/useCloseOverdueAndCreateNext';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
@@ -174,6 +175,7 @@ export function SprintPlannerView({
   });
 
   return (
+    <AssigneeVelocityProvider selectedSprintId={selectedSprintId} sprints={sprints}>
     <PlannerChromeSlotProvider slot={daysSlotEl}>
     <StickyNoteReactionsProvider comments={comments} sprintId={selectedSprintId}>
       <PlannerMobxSessionBridge />
@@ -435,6 +437,7 @@ export function SprintPlannerView({
               onAutoAssignTasks={handlers.handleAutoAssignTasks}
               onContextMenu={handlers.handleContextMenu}
               onGoalsUpdate={onGoalsUpdate}
+              onPlanAssignees={handlers.handlePlanAssignees}
               onReturnAllTasks={handlers.handleReturnAllTasks}
               onSprintTaskUpserted={(task) => {
                 setTasks((prev) => [
@@ -501,5 +504,6 @@ export function SprintPlannerView({
       )}
     </StickyNoteReactionsProvider>
     </PlannerChromeSlotProvider>
+    </AssigneeVelocityProvider>
   );
 }

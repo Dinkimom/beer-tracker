@@ -159,7 +159,14 @@ export function useSprintPlannerState({
           workingDaysCount,
         });
 
-  const taskState = useTaskState({ tasks, taskPositions: displayTaskPositions, developers });
+  const planDraftTaskIds =
+    positionsStore.planDraftCount > 0 ? positionsStore.draftTaskIds : undefined;
+  const taskState = useTaskState({
+    developers,
+    planDraftTaskIds,
+    taskPositions: displayTaskPositions,
+    tasks,
+  });
   const { qaTasksMap, allTasksForDrag, tasksMap, qaTasksByOriginalId, unassignedTasks, tasksByAssignee } =
     taskState;
 

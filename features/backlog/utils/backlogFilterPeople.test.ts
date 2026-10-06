@@ -2,7 +2,11 @@ import type { Developer, Task } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { collectBacklogFilterPeople, filterTasksByAssignees } from './backlogFilterPeople';
+import {
+  collectBacklogFilterPeople,
+  filterTasksByAssignees,
+  selectedAssigneeIdsInPeople,
+} from './backlogFilterPeople';
 
 function person(id: string, name: string): Developer {
   return { id, name, role: 'developer' };
@@ -48,5 +52,22 @@ describe('filterTasksByAssignees', () => {
 
   it('keeps tasks of the selected people', () => {
     expect(filterTasksByAssignees(tasks, new Set(['b'])).map((item) => item.id)).toEqual(['2']);
+  });
+});
+
+describe('selectedAssigneeIdsInPeople', () => {
+  const people = [{ id: 'a' }, { id: 'b' }];
+
+  it('returns the same set when every selected person is in the list', () => {
+    const selected = new Set(['a']);
+    expect(selectedAssigneeIdsInPeople(selected, people)).toBe(selected);
+  });
+
+  it('drops people who are not in the current list', () => {
+    expect([...selectedAssigneeIdsInPeople(new Set(['a', 'missing']), people)]).toEqual(['a']);
+  });
+
+  it('returns an empty set when nobody from the selection is listed', () => {
+    expect(selectedAssigneeIdsInPeople(new Set(['missing']), people).size).toBe(0);
   });
 });

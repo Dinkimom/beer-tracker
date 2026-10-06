@@ -1,6 +1,7 @@
 import type { FeatureLanesDocument, OccupancyTaskOrder } from './types';
 import type { SprintScoreResponse } from './types';
 import type { RetroBoard } from '@/lib/retro/retroBoardShared';
+import type { AssigneeVelocityResponse } from '@/lib/sprints/assigneeVelocity';
 import type {
   SprintLinksResponse,
   SprintPositionsResponse,
@@ -13,6 +14,30 @@ import type { SprintInfo } from '@/types/tracker';
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
 type SprintLinkAnchor = 'bottom' | 'left' | 'right' | 'top';
+
+export interface SprintPlanAnchor {
+  anchoredAt: string;
+  assigneeId: string;
+  duration: number;
+  segments: Array<{ duration: number; startDay: number; startPart: number }> | null;
+  startDay: number;
+  startPart: number;
+  taskId: string;
+}
+
+/**
+ * Якоря плана: положение задачи в момент перехода в работу.
+ */
+export async function fetchSprintPlanAnchors(sprintId: number): Promise<SprintPlanAnchor[]> {
+  try {
+    const { data }: { data: { planAnchors?: SprintPlanAnchor[] } } =
+      await getPlannerBeerTrackerApi().get(`/sprints/${sprintId}/positions`);
+    return data.planAnchors ?? [];
+  } catch (error) {
+    console.error(`Failed to fetch plan anchors for sprint ${sprintId}:`, error);
+    throw error;
+  }
+}
 
 /**
  * Получает позиции задач в спринте
@@ -389,6 +414,21 @@ export async function fetchSprintScore(sprintId: number): Promise<SprintScoreRes
     console.error(`Failed to fetch sprint score for sprint ${sprintId}:`, error);
     return { rows: [], testingFlowMode: 'unknown' };
   }
+}
+
+/** Средний велосити исполнителей по закрытым спринтам (до трёх id). */
+export async function fetchAssigneeVelocity(
+  sprintIds: number[]
+): Promise<AssigneeVelocityResponse> {
+  const { data } = await getPlannerBeerTrackerApi().get<AssigneeVelocityResponse>(
+    '/sprints/assignee-velocity',
+    { params: { sprintIds: sprintIds.join(',') } }
+  );
+  return {
+    byAssignee: data?.byAssignee ?? {},
+    byName: data?.byName ?? {},
+    sprintCount: data?.sprintCount ?? 0,
+  };
 }
 
 /**

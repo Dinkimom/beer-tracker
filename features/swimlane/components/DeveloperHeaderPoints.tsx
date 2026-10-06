@@ -4,6 +4,12 @@ import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatPointsForDisplay, roundPointsForDisplay } from '@/lib/pointsUtils';
 
+export interface DeveloperHeaderVelocityReadout {
+  points: number;
+  sprintCount: number;
+  unit: 'sp' | 'tp';
+}
+
 interface DeveloperHeaderPointsProps {
   showProgress: boolean;
   showSP: boolean;
@@ -82,6 +88,12 @@ export function formatDeveloperHeaderPointsContent(
   };
 }
 
+function velocityTooltipKey(unit: 'sp' | 'tp'): string {
+  return unit === 'sp'
+    ? 'sprintPlanner.swimlane.velocityTooltipSp'
+    : 'sprintPlanner.swimlane.velocityTooltipTp';
+}
+
 function developerHeaderPointTitle(showProgress: boolean, kind: 'sp' | 'tp'): string {
   if (kind === 'sp') {
     return showProgress ? 'Story points: сделано / всего' : 'Story points';
@@ -108,21 +120,35 @@ export function DeveloperHeaderPoints({
   showTP,
   spContent,
   tpContent,
-}: DeveloperHeaderPointsProps & { hasPoints: boolean }) {
+  velocity,
+}: DeveloperHeaderPointsProps & {
+  hasPoints: boolean;
+  velocity?: DeveloperHeaderVelocityReadout | null;
+}) {
   const { t } = useI18n();
-  if (!hasPoints) {
-    return (
-      <span className="text-gray-500 dark:text-gray-400">
-        {t('sprintPlanner.swimlane.noTasks')}
-      </span>
-    );
-  }
-
-  return (
+  const sprintLine = hasPoints ? (
     <>
       {showSP ? renderDeveloperHeaderPointSpan(spContent, 'sp', showProgress) : null}
       {showSP && showTP ? <span aria-hidden> · </span> : null}
       {showTP ? renderDeveloperHeaderPointSpan(tpContent, 'tp', showProgress) : null}
     </>
+  ) : (
+    t('sprintPlanner.swimlane.noTasks')
+  );
+  const velocityLine = velocity ? (
+    <TextTooltip content={t(velocityTooltipKey(velocity.unit), { count: velocity.sprintCount })}>
+      <span>
+        {t('sprintPlanner.swimlane.velocityLabel', {
+          points: formatPointsForDisplay(velocity.points),
+        })}
+      </span>
+    </TextTooltip>
+  ) : null;
+
+  return (
+    <span className="flex min-w-0 flex-col gap-0.5">
+      <span className="min-w-0 truncate">{sprintLine}</span>
+      {velocityLine ? <span className="min-w-0 truncate">{velocityLine}</span> : null}
+    </span>
   );
 }

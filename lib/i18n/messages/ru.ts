@@ -855,6 +855,11 @@ export const ruMessages = {
       addNewHint: 'Задача появится в списке незапланированных, пока вы не разместите её на доске',
       searchAria: 'Поиск по названию',
       searchPlaceholder: 'Название или ключ задачи',
+      assigneeHeading: 'Исполнители',
+      planAssignee: 'Автоплан',
+      planAssigneeTitle:
+        'Разложить незапланированные задачи этого исполнителя черновиком на доске',
+      planAssigneeEmpty: 'Нет задач, которые можно поставить на доску',
       filtersToggle: 'Фильтры',
       filtersExpandAria: 'Показать фильтры и группировку',
       filtersCollapseAria: 'Скрыть фильтры и группировку',
@@ -922,6 +927,7 @@ export const ruMessages = {
     },
     tasksTabGroups: {
       allTasksPlanned: 'Все задачи запланированы',
+      noFilterMatches: 'Нет задач по этому фильтру',
     },
     goalsTab: {
       startConfirmAllPassed: 'Вы уверены, что хотите запустить спринт?',
@@ -1291,6 +1297,7 @@ export const ruMessages = {
         calendar: 'Календарь',
         fact: 'Факт',
       },
+      planAnchor: 'План на старте работы',
       factTimeline: {
         closedAria: '{status}: закрыто',
         comments: 'Комментарии',
@@ -1308,9 +1315,20 @@ export const ruMessages = {
       editParticipantsTitle: 'Редактировать участников',
       resizeParticipantsColumn: 'Изменить ширину колонки участников',
       noTasks: 'Нет задач',
+      velocityLabel: 'Среднее: {points}',
+      velocityTooltipSp: 'Средний велосити за последние спринты ({count}): закрытые story points',
+      velocityTooltipTp: 'Средний велосити за последние спринты ({count}): закрытые test points',
       pinRow: 'Закрепить строку',
       unpinRow: 'Открепить строку',
       resizeRowHeight: 'Заложить высоту строки свимлейна',
+      planDraft: {
+        aria: 'Черновик плана',
+        cancel: 'Отменить',
+        label: 'Черновик',
+        save: 'Сохранить',
+        saveFailed: 'Не удалось сохранить план',
+        saved: 'План сохранён',
+      },
       placementToolbar: {
         aria: 'Что ставить на свимлейн',
         availability: 'Отсутствие',

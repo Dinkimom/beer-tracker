@@ -31,6 +31,7 @@ import {
   parseResolveAndValidateOrgSyncFromSettingsRoot,
 } from '@/lib/orgSyncSettings';
 import { upsertIssueSnapshotsForOrg } from '@/lib/snapshots';
+import { captureActiveSprintPlanAnchorsQuietly } from '@/lib/sprints/captureActiveSprintPlanAnchors';
 import { listTeams } from '@/lib/staffTeams/teamsRepository';
 import { TRACKER_ISSUES_SEARCH_PER_PAGE_CAP } from '@/lib/trackerApi/issuesFetchHelpers';
 
@@ -180,6 +181,10 @@ async function executeIncrementalOrgSync(input: {
     percentFrom: 72,
     percentTo: 92,
     syncRunId: input.syncRunId,
+  });
+  await captureActiveSprintPlanAnchorsQuietly({
+    issueTracker: input.issueTracker,
+    organizationId: input.org.id,
   });
   await input.onProgress?.(95);
 

@@ -30,6 +30,7 @@ import { SwimlaneAgentProposalToolbar } from './SwimlaneAgentProposalToolbar';
 import { SwimlanePlacementToolbarButton } from './SwimlanePlacementToolbarButton';
 import { SwimlanePlacementToolbarLayers } from './SwimlanePlacementToolbarLayers';
 import { SwimlanePlacementToolbarNoteTool } from './SwimlanePlacementToolbarNoteTool';
+import { SwimlanePlanDraftToolbar } from './SwimlanePlanDraftToolbar';
 import { useSwimlanePlacementToolbarKeyboard } from './useSwimlanePlacementToolbarKeyboard';
 
 export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolbar({
@@ -98,6 +99,7 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
       style={{ bottom: SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX }}
     >
       <div className="flex flex-col items-center gap-2">
+        <SwimlanePlanDraftToolbar />
         {onApproveAgentNotes && onRejectAgentNotes ? (
           <SwimlaneAgentProposalToolbar
             pendingCommentIds={pendingAgentNoteIds}

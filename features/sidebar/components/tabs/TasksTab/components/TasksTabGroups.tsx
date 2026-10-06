@@ -51,7 +51,16 @@ export function TasksTabGroups({
   onAutoAddToSwimlane,
 }: TasksTabGroupsProps) {
   const { t } = useI18n();
-  const { sidebarDropTargetActive = false, sidebarDropPointerY = null } = useTaskSidebar();
+  const {
+    assigneeFilterActive,
+    nameFilter,
+    onPlanAssignees,
+    sidebarDropPointerY = null,
+    sidebarDropTargetActive = false,
+    statusFilter,
+  } = useTaskSidebar();
+  const listFiltered =
+    assigneeFilterActive || nameFilter.trim() !== '' || statusFilter !== 'all';
 
   const orderedTaskIds = useMemo(
     () => buildOrderedTaskIds(groupKeys, groupedTasks),
@@ -66,6 +75,11 @@ export function TasksTabGroups({
   });
 
   const hasTasks = orderedTaskIds.length > 0;
+  const emptyLabel = t(
+    listFiltered
+      ? 'sidebar.tasksTabGroups.noFilterMatches'
+      : 'sidebar.tasksTabGroups.allTasksPlanned'
+  );
   const visibleTaskOrdinal = { value: 0 };
 
   const renderDropSlot = (slotKey: string) => (
@@ -76,10 +90,10 @@ export function TasksTabGroups({
     <div className="px-4 py-4">
       {!hasTasks
         ? renderTasksTabGroupsEmpty({
+            emptyLabel,
             insertIndex,
             renderDropSlot,
             sidebarDropTargetActive,
-            t,
           })
         : renderTasksTabGroupsContent({
             activeTaskDuration,
@@ -93,6 +107,7 @@ export function TasksTabGroups({
             insertIndex,
             onAutoAddToSwimlane,
             onContextMenu,
+            onPlanAssignees,
             qaTasksMap,
             registerTaskRowRef,
             renderDropSlot,

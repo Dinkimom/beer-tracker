@@ -6,6 +6,7 @@
 
 'use client';
 
+import type { BacklogFilterPerson } from '@/features/backlog/utils/backlogFilterPeople';
 import type { SidebarGroupBy, SidebarTasksTab, StatusFilter } from '@/types';
 
 import { useState } from 'react';
@@ -14,16 +15,20 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { SearchInput } from '@/components/SearchInput';
 import { useI18n } from '@/contexts/LanguageContext';
+import { BacklogAssigneeFilter } from '@/features/backlog/components/BacklogAssigneeFilter';
 import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 
 interface TasksTabFiltersProps {
   activeTab: SidebarTasksTab;
   allTasksCount: number;
+  assigneeIds: ReadonlySet<string>;
+  assigneePeople: BacklogFilterPerson[];
   devTasksCount: number;
   groupBy: SidebarGroupBy;
   nameFilter: string;
   qaTasksCount: number;
   statusFilter: StatusFilter;
+  onAssigneeToggle: (id: string) => void;
   setActiveTab: (value: SidebarTasksTab) => void;
   setGroupBy: (value: SidebarGroupBy) => void;
   setNameFilter: (value: string) => void;
@@ -65,11 +70,17 @@ function tasksTabActiveFilterSummary(
   t: (key: string) => string,
   statusFilter: StatusFilter,
   activeTab: SidebarTasksTab,
-  groupBy: SidebarGroupBy
+  groupBy: SidebarGroupBy,
+  assigneeLabel: string | null
 ): string {
   const statusKey = STATUS_SUMMARY_KEY[statusFilter];
   const groupKey = GROUP_SUMMARY_KEY[groupBy];
-  return [statusKey ? t(statusKey) : null, CATEGORY_SUMMARY[activeTab], groupKey ? t(groupKey) : null]
+  return [
+    assigneeLabel,
+    statusKey ? t(statusKey) : null,
+    CATEGORY_SUMMARY[activeTab],
+    groupKey ? t(groupKey) : null,
+  ]
     .filter((part) => part != null)
     .join(' · ');
 }
@@ -80,16 +91,29 @@ export function TasksTabFilters({
   activeTab,
   setActiveTab,
   allTasksCount,
+  assigneeIds,
+  assigneePeople,
   devTasksCount,
   qaTasksCount,
   groupBy,
   setGroupBy,
   statusFilter,
   setStatusFilter,
+  onAssigneeToggle,
 }: TasksTabFiltersProps) {
   const { t } = useI18n();
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const activeSummary = tasksTabActiveFilterSummary(t, statusFilter, activeTab, groupBy);
+  const assigneeLabel = assigneePeople
+    .filter((person) => assigneeIds.has(person.id))
+    .map((person) => person.name)
+    .join(', ');
+  const activeSummary = tasksTabActiveFilterSummary(
+    t,
+    statusFilter,
+    activeTab,
+    groupBy,
+    assigneeLabel || null
+  );
 
   return (
     <div className="flex-shrink-0 border-b border-black/10 px-4 pb-2 pt-4 dark:border-white/10">
@@ -132,6 +156,16 @@ export function TasksTabFilters({
 
         {filtersOpen ? (
           <div className="space-y-2" id="sidebar-task-filters">
+            {assigneePeople.length > 0 ? (
+              <section>
+                <span className={sectionLabelClass}>{t('sidebar.tasksTab.assigneeHeading')}</span>
+                <BacklogAssigneeFilter
+                  people={assigneePeople}
+                  selectedIds={assigneeIds}
+                  onToggle={onAssigneeToggle}
+                />
+              </section>
+            ) : null}
             <section aria-label={t('sidebar.tasksTab.statusSectionAria')}>
               <span className={sectionLabelClass}>{t('sidebar.tasksTab.statusHeading')}</span>
               <div

@@ -855,6 +855,10 @@ export const enMessages = {
       addNewHint: 'The task will appear in the unplanned list until you place it on the board',
       searchAria: 'Search by name',
       searchPlaceholder: 'Task name or key',
+      assigneeHeading: 'Assignees',
+      planAssignee: 'Autoplan',
+      planAssigneeTitle: 'Lay out unplanned tasks of this assignee as a draft on the board',
+      planAssigneeEmpty: 'No tasks can be placed on the board',
       filtersToggle: 'Filters',
       filtersExpandAria: 'Show filters and grouping',
       filtersCollapseAria: 'Hide filters and grouping',
@@ -922,6 +926,7 @@ export const enMessages = {
     },
     tasksTabGroups: {
       allTasksPlanned: 'All tasks are planned',
+      noFilterMatches: 'No tasks match this filter',
     },
     goalsTab: {
       startConfirmAllPassed: 'Are you sure you want to start the sprint?',
@@ -1293,6 +1298,7 @@ export const enMessages = {
         calendar: 'Calendar',
         fact: 'Fact',
       },
+      planAnchor: 'Plan when work started',
       factTimeline: {
         closedAria: '{status}: closed',
         comments: 'Comments',
@@ -1310,9 +1316,20 @@ export const enMessages = {
       editParticipantsTitle: 'Edit participants',
       resizeParticipantsColumn: 'Resize participants column width',
       noTasks: 'No tasks',
+      velocityLabel: 'Average: {points}',
+      velocityTooltipSp: 'Average velocity across recent sprints ({count}): completed story points',
+      velocityTooltipTp: 'Average velocity across recent sprints ({count}): completed test points',
       pinRow: 'Pin row',
       unpinRow: 'Unpin row',
       resizeRowHeight: 'Reserve swimlane row height',
+      planDraft: {
+        aria: 'Plan draft',
+        cancel: 'Discard',
+        label: 'Draft',
+        save: 'Save',
+        saveFailed: 'Could not save the plan',
+        saved: 'Plan saved',
+      },
       placementToolbar: {
         aria: 'What to add on the swimlane',
         availability: 'Time off',

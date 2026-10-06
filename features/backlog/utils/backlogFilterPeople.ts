@@ -88,3 +88,17 @@ export function filterTasksByAssignees(tasks: Task[], assigneeIds: ReadonlySet<s
   if (assigneeIds.size === 0) return tasks;
   return tasks.filter((task) => task.assignee != null && assigneeIds.has(task.assignee));
 }
+
+/** Оставляет только выбранных людей, которые есть в текущем списке. */
+export function selectedAssigneeIdsInPeople(
+  selectedIds: ReadonlySet<string>,
+  people: ReadonlyArray<{ id: string }>
+): ReadonlySet<string> {
+  if (selectedIds.size === 0) return selectedIds;
+  const known = new Set(people.map((person) => person.id));
+  const next = new Set<string>();
+  for (const id of selectedIds) {
+    if (known.has(id)) next.add(id);
+  }
+  return next.size === selectedIds.size ? selectedIds : next;
+}

@@ -91,6 +91,7 @@ export function useSprintPlannerHandlers({
     setTaskPositions,
     setTasks,
     sprintStartDate,
+    sprintTimelineWorkingDays,
     taskOperations,
     taskPositions,
     tasks,

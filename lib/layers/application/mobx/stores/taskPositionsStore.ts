@@ -1,3 +1,4 @@
+import type { SprintPlanAnchor } from '@/lib/api/sprints';
 import type { GetTaskInfoFn } from '@/lib/layers/data/taskPositionsTypes';
 import type { TaskPosition } from '@/types';
 
@@ -5,6 +6,7 @@ import { action, computed, makeObservable, observable, runInAction } from 'mobx'
 
 import {
   deleteTaskPosition as deleteTaskPositionApi,
+  fetchSprintPlanAnchors,
   fetchSprintPositions,
   saveTaskPosition,
 } from '@/lib/beerTrackerApi';
@@ -17,16 +19,29 @@ import { isEphemeralPlannerPositionId } from '@/lib/planner/ephemeralPlannerPosi
 import { DELAYS } from '@/utils/constants';
 
 import {
-  planHistorySideEffectsHaveChange,
-  resolveAppliedComments,
-  resolveAppliedTaskParents,
   type PlanHistoryAppliedPayload,
-  type PlanHistoryAppliedSave,
-  type PlanHistorySideEffects,
   type PlanHistoryStep,
   type PositionHistoryOptions,
   type PositionHistoryValue,
 } from './planHistoryTypes';
+import {
+  historyStepForMap,
+  historyStepForTask,
+  historyStepHasChange,
+  pendingUpdateForPosition,
+  planHistoryAppliedPayload,
+} from './taskPositionsStoreHistory';
+import {
+  clearPlanDraft,
+  commitPlanDraft as commitStoredPlanDraft,
+  countVisiblePlanDrafts,
+  dropPlanDraftPosition,
+  keepPlanDraftPosition,
+  replacePlanDraft,
+  restorePlanDraftPositions,
+  snapshotPlanDraftPositions,
+  type PlanDraftState,
+} from './taskPositionsStorePlanDraft';
 import { flushPendingPositionUpdates, flushPendingPositionUpdatesQuietly } from './taskPositionsStoreSaveHelpers';
 
 export type {
@@ -41,6 +56,16 @@ export {
 
 interface PendingUpdate { devTaskKey?: string; isQa: boolean; position: TaskPosition }
 
+function replacePlanAnchors(
+  target: Map<string, SprintPlanAnchor>,
+  anchors: SprintPlanAnchor[]
+): void {
+  target.clear();
+  for (const anchor of anchors) {
+    target.set(anchor.taskId, anchor);
+  }
+}
+
 const MAX_PLAN_HISTORY_STEPS = 5;
 
 /**
@@ -50,6 +75,12 @@ const MAX_PLAN_HISTORY_STEPS = 5;
 export class TaskPositionsStore {
   /** taskId → позиция */
   positions = observable.map<string, TaskPosition>();
+
+  /** Локальный черновик раскладки: на доске, без записи, пока его не сохранят или не отменят. */
+  draftTaskIds = observable.set<string>();
+
+  /** taskId → план на момент перехода в работу */
+  planAnchors = observable.map<string, SprintPlanAnchor>();
 
   undoStack: PlanHistoryStep[] = [];
 
@@ -90,9 +121,12 @@ export class TaskPositionsStore {
   constructor() {
     makeObservable(this, {
       deletePosition: action,
+      draftTaskIds: observable,
       canRedo: computed,
+      planDraftCount: computed,
       canUndo: computed,
       loadSprint: action,
+      planAnchors: observable,
       positions: observable,
       positionsLoadPending: observable,
       positionsSettledSprintId: observable,
@@ -117,26 +151,38 @@ export class TaskPositionsStore {
     return this.redoStack.length > 0;
   }
 
+  get planDraftCount(): number {
+    return countVisiblePlanDrafts(this.draftTaskIds, this.positions);
+  }
+
   private bumpReconcileGeneration(): void {
     this.reconcileGeneration++;
   }
 
-  private positionsEqual(a: PositionHistoryValue, b: PositionHistoryValue): boolean {
-    return JSON.stringify(a == null ? null : stripPositionSource(a)) ===
-      JSON.stringify(b == null ? null : stripPositionSource(b));
+  private planDraftState(): PlanDraftState {
+    return {
+      draftTaskIds: this.draftTaskIds,
+      pendingUpdates: this.pendingUpdatesRef,
+      positions: this.positions,
+      resolveTaskInfo: (taskId) => this.resolveGetTaskInfo()?.(taskId) ?? { isQa: false },
+      sprintId: this.sprintId,
+      syncAssignees: this.syncAssignees,
+    };
   }
 
-  private historyStepHasChange(step: PlanHistoryStep): boolean {
-    const positionChanged = Array.from(new Set([...step.before.keys(), ...step.after.keys()])).some(
-      (taskId) => !this.positionsEqual(step.before.get(taskId) ?? null, step.after.get(taskId) ?? null)
-    );
-    if (positionChanged) {
-      return true;
-    }
-    return planHistorySideEffectsHaveChange({
-      comments: step.comments,
-      taskParents: step.taskParents,
-    });
+  /** Показать черновик на доске, не записывая его. Предыдущий черновик снимается. */
+  stagePlanDraft(positions: readonly TaskPosition[]): void {
+    this.bumpReconcileGeneration();
+    replacePlanDraft(this.planDraftState(), positions);
+  }
+
+  discardPlanDraft(): void {
+    this.bumpReconcileGeneration();
+    clearPlanDraft(this.planDraftState());
+  }
+
+  commitPlanDraft(): Promise<{ count: number; ok: boolean }> {
+    return commitStoredPlanDraft(this.planDraftState());
   }
 
   private recordHistoryStep(step: PlanHistoryStep): void {
@@ -144,7 +190,7 @@ export class TaskPositionsStore {
       return;
     }
 
-    if (!this.historyStepHasChange(step)) {
+    if (!historyStepHasChange(step)) {
       return;
     }
 
@@ -153,50 +199,6 @@ export class TaskPositionsStore {
       this.undoStack.shift();
     }
     this.redoStack = [];
-  }
-
-  private attachSideEffects(
-    step: PlanHistoryStep,
-    sideEffects?: PlanHistorySideEffects
-  ): PlanHistoryStep {
-    if (!sideEffects) {
-      return step;
-    }
-    return {
-      ...step,
-      comments: sideEffects.comments,
-      taskParents: sideEffects.taskParents,
-    };
-  }
-
-  private buildHistoryStepForTask(
-    taskId: string,
-    nextPosition: PositionHistoryValue,
-    sideEffects?: PlanHistorySideEffects
-  ): PlanHistoryStep {
-    return this.attachSideEffects(
-      {
-        after: new Map([[taskId, nextPosition == null ? null : stripPositionSource(nextPosition)]]),
-        before: new Map([[taskId, this.positions.get(taskId) ?? null]]),
-      },
-      sideEffects
-    );
-  }
-
-  private buildHistoryStepForMap(
-    updated: Map<string, TaskPosition>,
-    sideEffects?: PlanHistorySideEffects
-  ): PlanHistoryStep {
-    const taskIds = new Set<string>([...this.positions.keys(), ...updated.keys()]);
-    const before = new Map<string, PositionHistoryValue>();
-    const after = new Map<string, PositionHistoryValue>();
-
-    taskIds.forEach((taskId) => {
-      before.set(taskId, this.positions.get(taskId) ?? null);
-      after.set(taskId, updated.get(taskId) ?? null);
-    });
-
-    return this.attachSideEffects({ after, before }, sideEffects);
   }
 
   /**
@@ -212,36 +214,15 @@ export class TaskPositionsStore {
     });
   }
 
-  private getPendingUpdateForPosition(position: TaskPosition): PendingUpdate {
-    const fn = this.resolveGetTaskInfo();
-    const info = fn ? fn(position.taskId) : { isQa: false };
-    return {
-      devTaskKey: info.devTaskKey,
-      isQa: info.isQa,
-      position,
-    };
-  }
-
   private notifyPlanHistoryApplied(
     values: Map<string, PositionHistoryValue>,
     step: PlanHistoryStep,
     direction: 'after' | 'before'
   ): void {
-    if (!this.onPlanHistoryApplied) return;
-
-    const saves: PlanHistoryAppliedSave[] = [];
-    values.forEach((position) => {
-      if (position != null) {
-        saves.push(this.getPendingUpdateForPosition(position));
-      }
-    });
-    const taskParents = resolveAppliedTaskParents(step, direction);
-    const comments = resolveAppliedComments(step, direction);
-    if (saves.length === 0 && !taskParents && !comments) {
-      return;
+    const payload = planHistoryAppliedPayload(values, step, direction, this.resolveGetTaskInfo());
+    if (payload) {
+      this.onPlanHistoryApplied?.(payload);
     }
-
-    this.onPlanHistoryApplied({ comments, saves, taskParents });
   }
 
   private async syncHistoryStepValues(values: Map<string, PositionHistoryValue>): Promise<void> {
@@ -252,10 +233,13 @@ export class TaskPositionsStore {
     const deletes: string[] = [];
     values.forEach((position, taskId) => {
       this.pendingUpdatesRef.delete(taskId);
+      if (this.draftTaskIds.has(taskId)) {
+        return;
+      }
       if (position == null) {
         deletes.push(taskId);
       } else {
-        saves.push(this.getPendingUpdateForPosition(position));
+        saves.push(pendingUpdateForPosition(this.resolveGetTaskInfo(), position));
       }
     });
 
@@ -332,6 +316,8 @@ export class TaskPositionsStore {
       this.reconcileGeneration++;
       runInAction(() => {
         this.positions.clear();
+        this.planAnchors.clear();
+        this.draftTaskIds.clear();
         this.undoStack = [];
         this.redoStack = [];
         this.positionsFetchInFlight = 0;
@@ -360,13 +346,18 @@ export class TaskPositionsStore {
       if (sprintChanged) {
         this.undoStack = [];
         this.redoStack = [];
+        this.draftTaskIds.clear();
       }
       this.positionsFetchInFlight++;
       this.positionsLoadPending = true;
     });
 
+    const draftKeep = snapshotPlanDraftPositions(this.draftTaskIds, this.positions);
     try {
-      const data = await fetchSprintPositions(sprintId);
+      const [data, anchors] = await Promise.all([
+        fetchSprintPositions(sprintId),
+        fetchSprintPlanAnchors(sprintId).catch(() => [] as SprintPlanAnchor[]),
+      ]);
       if (myGen !== this.reconcileGeneration) {
         return;
       }
@@ -377,6 +368,8 @@ export class TaskPositionsStore {
             this.positions.set(position.taskId, position);
           });
         }
+        restorePlanDraftPositions(this.positions, draftKeep);
+        replacePlanAnchors(this.planAnchors, anchors);
       });
     } catch (error) {
       console.error('Error loading positions:', error);
@@ -402,11 +395,16 @@ export class TaskPositionsStore {
       return Promise.resolve();
     }
 
+    if (keepPlanDraftPosition(this.planDraftState(), position)) {
+      this.bumpReconcileGeneration();
+      return Promise.resolve();
+    }
+
     const sprintId = this.sprintId!;
 
     if (options?.recordHistory) {
       this.recordHistoryStep(
-        this.buildHistoryStepForTask(position.taskId, position, options.sideEffects)
+        historyStepForTask(this.positions, position.taskId, position, options.sideEffects)
       );
     }
 
@@ -456,10 +454,15 @@ export class TaskPositionsStore {
   async deletePosition(taskId: string, options?: PositionHistoryOptions): Promise<void> {
     if (!isValidSprintId(this.sprintId)) return;
 
+    if (dropPlanDraftPosition(this.planDraftState(), taskId)) {
+      this.bumpReconcileGeneration();
+      return;
+    }
+
     const sprintId = this.sprintId!;
 
     if (options?.recordHistory) {
-      this.recordHistoryStep(this.buildHistoryStepForTask(taskId, null, options.sideEffects));
+      this.recordHistoryStep(historyStepForTask(this.positions, taskId, null, options.sideEffects));
     }
 
     this.bumpReconcileGeneration();
@@ -489,10 +492,6 @@ export class TaskPositionsStore {
     const updated =
       typeof newPositions === 'function' ? newPositions(prev) : newPositions;
 
-    if (options?.recordHistory) {
-      this.recordHistoryStep(this.buildHistoryStepForMap(updated, options.sideEffects));
-    }
-
     const changed = new Map<string, TaskPosition>();
     updated.forEach((pos, taskId) => {
       const oldPos = prev.get(taskId);
@@ -500,6 +499,11 @@ export class TaskPositionsStore {
         changed.set(taskId, pos);
       }
     });
+
+    const historyTouchesSaved = Array.from(changed.keys()).some((taskId) => !this.draftTaskIds.has(taskId));
+    if (options?.recordHistory && historyTouchesSaved) {
+      this.recordHistoryStep(historyStepForMap(this.positions, updated, options.sideEffects));
+    }
 
     runInAction(() => {
       this.positions.clear();
@@ -512,11 +516,12 @@ export class TaskPositionsStore {
       return;
     }
 
-    if (this.debounceTimerRef) {
-      clearTimeout(this.debounceTimerRef);
-    }
-
+    let queuedPersist = false;
     changed.forEach((pos) => {
+      if (this.draftTaskIds.has(pos.taskId)) {
+        return;
+      }
+      queuedPersist = true;
       const fn = this.resolveGetTaskInfo();
       const info = fn ? fn(pos.taskId) : { isQa: false };
       this.pendingUpdatesRef.set(pos.taskId, {
@@ -525,6 +530,14 @@ export class TaskPositionsStore {
         devTaskKey: info.devTaskKey,
       });
     });
+
+    if (!queuedPersist) {
+      return;
+    }
+
+    if (this.debounceTimerRef) {
+      clearTimeout(this.debounceTimerRef);
+    }
 
     this.debounceTimerRef = setTimeout(async () => {
       const updates = new Map(this.pendingUpdatesRef);
@@ -553,11 +566,15 @@ export class TaskPositionsStore {
       return;
     }
     try {
-      const data = await fetchSprintPositions(sprintId);
+      const [data, anchors] = await Promise.all([
+        fetchSprintPositions(sprintId),
+        fetchSprintPlanAnchors(sprintId).catch(() => [] as SprintPlanAnchor[]),
+      ]);
       if (this.sprintId !== sprintId) {
         return;
       }
       const pending = this.pendingUpdatesRef;
+      const draftKeep = snapshotPlanDraftPositions(this.draftTaskIds, this.positions);
       runInAction(() => {
         const next = new Map<string, TaskPosition>();
         if (data && Array.isArray(data)) {
@@ -570,10 +587,14 @@ export class TaskPositionsStore {
         for (const [taskId, update] of pending) {
           next.set(taskId, stripPositionSource(update.position));
         }
+        draftKeep.forEach((position, taskId) => {
+          next.set(taskId, position);
+        });
         this.positions.clear();
         next.forEach((position, taskId) => {
           this.positions.set(taskId, position);
         });
+        replacePlanAnchors(this.planAnchors, anchors);
       });
     } catch (error) {
       console.error('Error reconciling remote positions:', error);

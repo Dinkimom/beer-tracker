@@ -1,5 +1,6 @@
 'use client';
 
+import type { BacklogFilterPerson } from '@/features/backlog/utils/backlogFilterPeople';
 import type { SidebarMainTab } from '@/features/sidebar/hooks/useSidebarTabsState';
 import type { ValidationIssue } from '@/features/task/utils/taskValidation';
 import type {
@@ -27,8 +28,12 @@ export interface TaskSidebarContextValue {
   activeTaskId?: string | null;
   /** Все задачи спринта для метрик (разбивка по исполнителям, итоги). Если не передано — используется goalsTasks. */
   allSprintTasksForMetrics?: Task[];
-  /** Число задач с учётом поиска и статуса (бейджи Все/Dev/QA и таб «Задачи») */
+  /** Число задач с учётом поиска, статуса и исполнителей (бейджи Все/Dev/QA и таб «Задачи») */
   allTasksCount: number;
+  /** Фильтр по исполнителям сужает список задач таба. */
+  assigneeFilterActive: boolean;
+  assigneeIds: ReadonlySet<string>;
+  assigneePeople: BacklogFilterPerson[];
 
   // BacklogTab
   backlogDevelopers: Developer[];
@@ -83,6 +88,7 @@ export interface TaskSidebarContextValue {
   width: number;
   onAddDeliveryGoal?: (text: string) => Promise<void>;
   onAddDiscoveryGoal?: (text: string) => Promise<void>;
+  onAssigneeToggle: (id: string) => void;
   onAutoAddToSwimlane?: (task: Task) => void;
   onAutoAssignTasks?: () => void;
   onCheckboxChangeDelivery: (itemId: string, checked: boolean) => void;
@@ -91,10 +97,11 @@ export interface TaskSidebarContextValue {
   onDeleteDeliveryGoal?: (itemId: string) => Promise<void>;
   onDeleteDiscoveryGoal?: (itemId: string) => Promise<void>;
   onEditDeliveryGoal?: (itemId: string, text: string) => Promise<void>;
-
   onEditDiscoveryGoal?: (itemId: string, text: string) => Promise<void>;
+
   onGoalsUpdate?: () => void;
   onLoadMore: () => void;
+  onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   onRetryBacklog?: () => void;
   onReturnAllTasks?: () => void;
   /** Оптимистично добавить задачу в локальный список спринта (таб «Задачи»). */

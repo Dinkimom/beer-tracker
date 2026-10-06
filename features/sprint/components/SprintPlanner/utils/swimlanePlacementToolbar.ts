@@ -21,11 +21,21 @@ const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_HEIGHT_PX = 34;
 const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_STACK_PX =
   SWIMLANE_AGENT_PROPOSAL_TOOLBAR_HEIGHT_PX + 8;
 
-export function resolvePlacementToolbarScrollPadPx(hasAgentProposalToolbar: boolean): number {
-  if (!hasAgentProposalToolbar) {
+export function countPlacementToolbarExtras(
+  hasPendingAgentNote: boolean,
+  planDraftCount: number
+): number {
+  return (hasPendingAgentNote ? 1 : 0) + (planDraftCount > 0 ? 1 : 0);
+}
+
+export function resolvePlacementToolbarScrollPadPx(extraToolbarCount: number): number {
+  if (extraToolbarCount <= 0) {
     return SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX;
   }
-  return SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX + SWIMLANE_AGENT_PROPOSAL_TOOLBAR_STACK_PX;
+  return (
+    SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX +
+    extraToolbarCount * SWIMLANE_AGENT_PROPOSAL_TOOLBAR_STACK_PX
+  );
 }
 
 /** На общей строке нет отсутствия — оно привязано к человеку. Курсор и связь ничего не ставят. */

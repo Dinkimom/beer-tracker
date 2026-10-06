@@ -1,3 +1,4 @@
+import type { BacklogFilterPerson } from '@/features/backlog/utils/backlogFilterPeople';
 import type { TaskSidebarContextValue } from '@/features/sidebar/contexts/TaskSidebarContext';
 import type { SidebarMainTab } from '@/features/sidebar/hooks/useSidebarTabsState';
 import type { ValidationIssue } from '@/features/task/utils/taskValidation';
@@ -23,6 +24,9 @@ interface BuildTaskSidebarContextValueParams {
   activeTaskId?: string | null;
   allSprintTasks?: Task[];
   allTasksCount: number;
+  assigneeFilterActive: boolean;
+  assigneeIds: ReadonlySet<string>;
+  assigneePeople: BacklogFilterPerson[];
   backlogDevelopers: Developer[];
   backlogHasMore: boolean;
   backlogLoading: boolean;
@@ -86,10 +90,12 @@ interface BuildTaskSidebarContextValueParams {
   tasks: Task[];
   viewMode?: LayoutViewMode;
   width: number;
+  onAssigneeToggle: (id: string) => void;
   onAutoAddToSwimlane?: (task: Task) => void;
   onAutoAssignTasks?: () => void;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onGoalsUpdate?: () => void;
+  onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   onReturnAllTasks?: () => void;
   onSprintTaskUpserted?: (task: Task) => void;
   onTasksReload?: () => void;
@@ -115,6 +121,10 @@ export function buildTaskSidebarContextValue(
     hideTasksTab: params.hideTasksTab,
     activeTab: params.activeTab,
     setActiveTab: params.setActiveTab,
+    assigneeFilterActive: params.assigneeFilterActive,
+    assigneeIds: params.assigneeIds,
+    assigneePeople: params.assigneePeople,
+    onAssigneeToggle: params.onAssigneeToggle,
     groupBy: params.groupBy,
     setGroupBy: params.setGroupBy,
     statusFilter: params.statusFilter,
@@ -138,6 +148,7 @@ export function buildTaskSidebarContextValue(
     onReturnAllTasks: params.onReturnAllTasks,
     onAutoAddToSwimlane: params.onAutoAddToSwimlane,
     onAutoAssignTasks: params.onAutoAssignTasks,
+    onPlanAssignees: params.onPlanAssignees,
     canEdit,
     deliveryChecklistItems: params.deliveryChecklistItems,
     deliveryGoalsLoading: params.deliveryGoalsLoading,

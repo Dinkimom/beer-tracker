@@ -47,5 +47,6 @@ export function useTaskFiltering({
     qaTasks: qaTasksByStatus,
     allTasks: [...devTasksFiltered, ...qaTasksByStatus],
     devTasksUnfiltered,
+    qaTasksUnfiltered,
   };
 }

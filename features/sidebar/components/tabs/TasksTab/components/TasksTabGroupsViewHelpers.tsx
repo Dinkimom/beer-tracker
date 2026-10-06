@@ -4,10 +4,10 @@ import type { ReactNode } from 'react';
 import { renderTasksTabGroupSection } from './TasksTabGroupsRenderHelpers';
 
 interface RenderTasksTabGroupsEmptyParams {
+  emptyLabel: string;
   insertIndex: number | null;
   sidebarDropTargetActive: boolean;
   renderDropSlot: (slotKey: string) => ReactNode;
-  t: (key: string) => string;
 }
 
 export function renderTasksTabGroupsEmpty(params: RenderTasksTabGroupsEmptyParams): ReactNode {
@@ -19,7 +19,7 @@ export function renderTasksTabGroupsEmpty(params: RenderTasksTabGroupsEmptyParam
       {!params.sidebarDropTargetActive ? (
         <div className="flex flex-1 items-center justify-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {params.t('sidebar.tasksTabGroups.allTasksPlanned')}
+            {params.emptyLabel}
           </p>
         </div>
       ) : null}
@@ -45,6 +45,7 @@ interface RenderTasksTabGroupsContentParams {
   visibleTaskOrdinal: { value: number };
   onAutoAddToSwimlane?: (task: Task) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
+  onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   registerTaskRowRef: (taskId: string, element: HTMLDivElement | null) => void;
   renderDropSlot: (slotKey: string) => ReactNode;
   t: (key: string) => string;
@@ -68,6 +69,7 @@ export function renderTasksTabGroupsContent(params: RenderTasksTabGroupsContentP
           insertIndex: params.insertIndex,
           onAutoAddToSwimlane: params.onAutoAddToSwimlane,
           onContextMenu: params.onContextMenu,
+          onPlanAssignees: params.onPlanAssignees,
           qaTasksMap: params.qaTasksMap,
           registerTaskRowRef: params.registerTaskRowRef,
           renderDropSlot: params.renderDropSlot,

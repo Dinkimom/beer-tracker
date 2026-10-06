@@ -37,6 +37,9 @@ export function TasksTab() {
     setStatusFilter,
     nameFilter,
     setNameFilter,
+    assigneeIds,
+    assigneePeople,
+    onAssigneeToggle,
     allTasksCount,
     allSprintTasksForMetrics,
     goalsTasks,
@@ -109,6 +112,8 @@ export function TasksTab() {
         <TasksTabFilters
           activeTab={activeTab}
           allTasksCount={allTasksCount}
+          assigneeIds={assigneeIds}
+          assigneePeople={assigneePeople}
           devTasksCount={devTasksCount}
           groupBy={groupBy}
           nameFilter={nameFilter}
@@ -118,6 +123,7 @@ export function TasksTab() {
           setNameFilter={setNameFilter}
           setStatusFilter={setStatusFilter}
           statusFilter={statusFilter}
+          onAssigneeToggle={onAssigneeToggle}
         />
       </div>
       <div

@@ -9,6 +9,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
+import {
+  collectBacklogFilterPeople,
+  filterTasksByAssignees,
+  selectedAssigneeIdsInPeople,
+} from '@/features/backlog/utils/backlogFilterPeople';
 import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import { buildTaskSidebarContextValue } from '@/features/sidebar/components/buildTaskSidebarContextValue';
 import { SidebarHeader } from '@/features/sidebar/components/SidebarHeader';
@@ -31,6 +36,13 @@ import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
 import { useTaskGrouping } from '@/features/task/hooks/useTaskGrouping';
 import { filterTasksNotOnSwimlane } from '@/features/task/utils/filterTasksNotOnSwimlane';
 import { useSidebarGroupByStorage, useSidebarStatusFilterStorage, useSidebarTabsSettingsStorage } from '@/hooks/useLocalStorage';
+
+function toggleAssigneeId(current: Set<string>, id: string): Set<string> {
+  const next = new Set(current);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  return next;
+}
 
 interface TaskSidebarProps {
   // ID активной перетаскиваемой задачи
@@ -83,6 +95,7 @@ interface TaskSidebarProps {
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   // Информация о спринте для отображения целей
   onGoalsUpdate?: () => void;
+  onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   onReturnAllTasks?: () => void; // Общее количество целей
   onSprintTaskUpserted?: (task: Task) => void;
   onTasksReload?: () => void;
@@ -97,6 +110,7 @@ export function TaskSidebar({
   width = 320,
   onReturnAllTasks,
   onAutoAssignTasks,
+  onPlanAssignees,
   activeTaskId,
   activeTaskDuration,
   viewMode = 'full',
@@ -139,6 +153,12 @@ export function TaskSidebar({
   const [groupBy, setGroupBy] = useSidebarGroupByStorage();
   const [statusFilter, setStatusFilter] = useSidebarStatusFilterStorage();
   const [nameFilter, setNameFilter] = useState<string>('');
+  const [assigneeIds, setAssigneeIds] = useState<Set<string>>(() => new Set());
+  const [assigneeFilterSprintId, setAssigneeFilterSprintId] = useState(selectedSprintId);
+  if (assigneeFilterSprintId !== selectedSprintId) {
+    setAssigneeFilterSprintId(selectedSprintId);
+    setAssigneeIds(new Set());
+  }
   const [sidebarTabsSettings] = useSidebarTabsSettingsStorage();
 
   const checklistDone = externalChecklistDone;
@@ -175,20 +195,25 @@ export function TaskSidebar({
     onGoalsUpdate,
   });
 
-  const {
-    devTasks,
-    qaTasks,
-    allTasks,
-    allTasksCount,
-    devTasksCount,
-    qaTasksCount,
-  } = useTaskFiltering({
+  const taskFiltering = useTaskFiltering({
     tasks,
     qaTasksMap,
     statusFilter,
     nameFilter,
     goalTaskIds,
   });
+  const assigneePeople = collectBacklogFilterPeople({
+    backlogDevelopers: developers,
+    backlogTasks: [...taskFiltering.devTasksUnfiltered, ...taskFiltering.qaTasksUnfiltered],
+    sprintBundles: [],
+  });
+  const appliedAssigneeIds = selectedAssigneeIdsInPeople(assigneeIds, assigneePeople);
+  const devTasks = filterTasksByAssignees(taskFiltering.devTasks, appliedAssigneeIds);
+  const qaTasks = filterTasksByAssignees(taskFiltering.qaTasks, appliedAssigneeIds);
+  const allTasks = [...devTasks, ...qaTasks];
+  const devTasksCount = devTasks.length;
+  const qaTasksCount = qaTasks.length;
+  const allTasksCount = allTasks.length;
 
   const backlogManagement = useBacklogManagement({
     selectedBoardId,
@@ -231,6 +256,10 @@ export function TaskSidebar({
   const contextValue: TaskSidebarContextValue = buildTaskSidebarContextValue({
     activeTab,
     activeTaskDuration,
+    assigneeFilterActive: appliedAssigneeIds.size > 0,
+    assigneeIds,
+    assigneePeople,
+    onAssigneeToggle: (id: string) => setAssigneeIds((current) => toggleAssigneeId(current, id)),
     activeTaskId,
     allSprintTasks,
     allTasksCount,
@@ -264,6 +293,7 @@ export function TaskSidebar({
     nameFilter,
     onAutoAddToSwimlane,
     onAutoAssignTasks,
+    onPlanAssignees,
     onContextMenu,
     onGoalsUpdate,
     onReturnAllTasks,

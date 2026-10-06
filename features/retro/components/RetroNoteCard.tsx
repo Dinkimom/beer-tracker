@@ -4,7 +4,7 @@ import type { StickyNoteReaction } from '@/lib/comments/stickyNoteReaction';
 import type { RetroVisibleCard } from '@/lib/retro/retroBoard';
 
 import * as Popover from '@radix-ui/react-popover';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -42,7 +42,7 @@ function reactionView(emojis: readonly string[]): StickyNoteReaction[] {
   }));
 }
 
-export function RetroNoteCard({
+export const RetroNoteCard = memo(function RetroNoteCard({
   card,
   pinReactions = false,
   onAddComment,
@@ -182,4 +182,4 @@ export function RetroNoteCard({
       </Popover.Portal>
     </Popover.Root>
   );
-}
+});

@@ -50,10 +50,10 @@ export function calculateOccupiedIntervals(
 export function findNextAvailableCell(
   intervals: TimeInterval[],
   taskDuration: number,
-  currentCell: number = 0
+  currentCell: number = 0,
+  maxEndCell: number = WORKING_DAYS * getPartsPerDay()
 ): number | null {
   const minStartCell = Math.max(0, currentCell);
-  const maxEndCell = WORKING_DAYS * getPartsPerDay();
 
   if (minStartCell + taskDuration > maxEndCell) {
     return null;

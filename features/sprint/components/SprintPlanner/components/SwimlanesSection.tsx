@@ -17,7 +17,10 @@ import {
   sprintPlannerDaysHeaderContentWidthCss,
 } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
 import { SprintPlannerTimelineFill } from '@/features/sprint/components/SprintPlanner/layout/SprintPlannerTimelineFill';
-import { resolvePlacementToolbarScrollPadPx } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
+import {
+  countPlacementToolbarExtras,
+  resolvePlacementToolbarScrollPadPx,
+} from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import {
   buildDeveloperAvailabilityMap,
   computeHoverConnectedTaskIds,
@@ -90,7 +93,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     onParticipantsColumnWidthChange,
     onTaskClick,
   } = props;
-  const { sprintPlannerUi } = useRootStore();
+  const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const { t } = useI18n();
   const contextMenuTaskId = sprintPlannerUi.contextMenuTaskId;
   const globalNameFilter = sprintPlannerUi.globalNameFilter;
@@ -429,7 +432,10 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
               className="flex-1 bg-white dark:bg-gray-800"
               style={{
                 minHeight: resolvePlacementToolbarScrollPadPx(
-                  comments.some((comment) => comment.pendingApproval === true)
+                  countPlacementToolbarExtras(
+                    comments.some((comment) => comment.pendingApproval === true),
+                    positionsStore.planDraftCount
+                  )
                 ),
               }}
             />
