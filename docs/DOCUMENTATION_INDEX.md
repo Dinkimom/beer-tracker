@@ -35,7 +35,7 @@ beer-tracker/
 
 ### Для новых разработчиков
 
-1. **[README.md](../README.md)** — установка и настройка
+1. **[README.md](../README.md)** — установка (Docker Hub или исходники) и настройка
 2. **[PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)** — что это, для кого, функции, стек
 3. **[ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md)** — Yandex Tracker / Jira на инстансе
 4. **[STRUCTURE.md](./STRUCTURE.md)** — архитектура проекта

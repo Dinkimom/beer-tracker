@@ -2,6 +2,52 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.4.0] — 2026-10-06
+
+### English
+
+**Install**
+- Images on Docker Hub: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) and [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Tags `1.4.0` and `latest` each include `linux/amd64` and `linux/arm64`.
+- `docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d` runs those images with Postgres and Redis from the existing compose file. `latest` tracks the newest publish; pin `1.4.0` for this release.
+
+**Planner**
+- Planner, sidebar, and shared controls use the glass / island layout.
+- A swimlane header shows average velocity from recent sprints (completed story points and test points).
+- Plan edits can stay a draft, then be saved or discarded. The plan from when work started remains as an anchor on the lane.
+- The current timeslot is marked on the day header.
+- Moving to blocked, when the workflow asks for a transition screen, opens that dialog.
+
+**Retro and admin**
+- Sprint retrospective board.
+- Staff registry updates. Legacy admin tabs are removed. Tracker integration, including the Jira platform field, lives in the integration section.
+- Admin pages require an authorized session.
+
+**Fixes**
+- A new sprint goal and a card color update arrive over the live stream.
+- Nested menus stay open while the pointer moves into the submenu.
+
+### Русский
+
+**Установка**
+- Образы на Docker Hub: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Теги `1.4.0` и `latest` содержат `linux/amd64` и `linux/arm64`.
+- `docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d` поднимает эти образы вместе с Postgres и Redis из текущего compose-файла. `latest` — последняя публикация; `1.4.0` фиксирует этот релиз.
+
+**Планер**
+- Планер, сайдбар и общие контролы переведены на стеклянный и островной вид.
+- В шапке свимлейна видно средний велосити по недавним спринтам (закрытые story points и test points).
+- Правки плана можно держать черновиком, затем сохранить или отменить. План на момент старта работы остаётся якорем на дорожке.
+- Текущий таймслот отмечен в шапке дней.
+- Переход в blocked, если workflow просит экран перехода, открывает этот диалог.
+
+**Ретро и админка**
+- Доска ретроспективы спринта.
+- Доработан реестр сотрудников. Легаси-вкладки админки убраны. Интеграция с трекером, включая поле платформы в Jira, живёт в разделе интеграции.
+- Страницы админки открываются только с авторизованной сессией.
+
+**Исправления**
+- Новая цель спринта и смена цвета карточки приходят по живому потоку.
+- Вложенные меню не закрываются, пока указатель переходит в подменю.
+
 ## [1.3.0] — 2026-09-25
 
 ### English

@@ -1,0 +1,18 @@
+# Готовые образы Docker Hub вместо локальной сборки.
+# Тег latest — последняя публикация; по умолчанию зафиксирован релиз 1.4.0.
+#
+#   cp env.example .env
+#   docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
+#   BEER_TRACKER_TAG=latest docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
+#
+# Воркер: добавьте --profile exporter (и --profile cron для тика синхронизации).
+# https://hub.docker.com/r/dinkimom/beer-tracker
+# https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker
+services:
+  app:
+    image: dinkimom/beer-tracker:${BEER_TRACKER_TAG:-1.4.0}
+    build: !reset null
+
+  sync-worker:
+    image: dinkimom/beer-tracker-sync-worker:${BEER_TRACKER_TAG:-1.4.0}
+    build: !reset null

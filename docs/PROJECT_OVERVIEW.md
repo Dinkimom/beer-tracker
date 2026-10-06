@@ -276,6 +276,15 @@ Deprecated (не развивать): `feature-planner`, `quarterly-planning-v2`
 
 ## 10. Запуск и качество
 
+Готовые образы: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker) (теги `latest` и версия релиза, `linux/amd64` + `linux/arm64`).
+
+```bash
+cp env.example .env
+docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
+```
+
+Разработка из исходников:
+
 ```bash
 pnpm install
 cp env.example .env          # POSTGRES_*, при необходимости Redis, секреты

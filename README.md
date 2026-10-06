@@ -25,6 +25,22 @@ Self-hosted веб-приложение для планирования спри
 
 ## Установка
 
+### Готовый образ (Docker Hub)
+
+Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) указывает на последнюю публикацию, тег `1.4.0` — на этот релиз. В каждом теге есть `linux/amd64` и `linux/arm64`.
+
+```bash
+cp env.example .env
+# POSTGRES_PASSWORD, AUTH_SESSION_SECRET (≥32), ORG_SECRETS_ENCRYPTION_KEY (64 hex)
+docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
+```
+
+Приложение: [http://localhost:3000](http://localhost:3000). Postgres на хосте — порт 5433. Воркер синхронизации: добавьте `--profile exporter` (и при необходимости `--profile cron`). Другой тег: `BEER_TRACKER_TAG=latest`.
+
+`YANDEX_OAUTH_CLIENT_ID` вшивается в клиентский бандл при сборке образа. В опубликованных образах его нет: ссылка «получить токен» для Яндекс Трекера заработает после своей сборки с `--build-arg YANDEX_OAUTH_CLIENT_ID=...`. Для Jira этот аргумент не нужен.
+
+### Для разработки из исходников
+
 ```bash
 pnpm install
 cp env.example .env
