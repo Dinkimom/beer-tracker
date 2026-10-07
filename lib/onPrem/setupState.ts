@@ -1,5 +1,6 @@
 import { ensureAdminsTable } from '@/lib/auth/adminsRepository';
 import { query } from '@/lib/db';
+import { sqlExcludingDemoSystemOrganization } from '@/lib/onPrem/demoSystemOrganizationConstants';
 
 interface OnPremSetupState {
   hasAdmins: boolean;
@@ -20,7 +21,10 @@ export async function readOnPremSetupState(): Promise<OnPremSetupState> {
   await ensureAdminsTable();
   const res = await query<SetupStateRow>(
     `SELECT
-       EXISTS(SELECT 1 FROM organizations) AS has_organizations,
+       EXISTS(
+         SELECT 1 FROM organizations
+         WHERE ${sqlExcludingDemoSystemOrganization()}
+       ) AS has_organizations,
        EXISTS(SELECT 1 FROM admins) AS has_admins`
   );
   const row = res.rows[0];

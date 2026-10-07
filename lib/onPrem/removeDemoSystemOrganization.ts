@@ -6,8 +6,8 @@ import {
 } from '@/lib/onPrem/demoSystemOrganizationConstants';
 
 /**
- * Удаляет системную демо-организацию из БД (сид init.sql).
- * Иначе `hasOrganizations` остаётся true без пользователей — ломается онбординг первого администратора.
+ * Удаляет системную демо-организацию, если она осталась от старого сида init.sql.
+ * Иначе пустая строка без пользователей блокирует онбординг первой компании.
  */
 function qualifiedOrganizationsTable(): string {
   const s = getBeerTrackerSchema();

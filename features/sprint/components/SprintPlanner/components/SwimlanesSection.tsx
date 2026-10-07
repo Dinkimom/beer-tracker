@@ -374,7 +374,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
           className="relative flex min-h-0 flex-1"
           data-planner-swimlanes-row
           style={{
-            marginTop: 'calc(-1 * var(--planner-controls-h, 0px))',
             transition: 'none',
             zIndex: 0,
           }}

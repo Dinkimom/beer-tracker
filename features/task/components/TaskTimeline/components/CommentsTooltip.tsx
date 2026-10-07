@@ -71,6 +71,7 @@ export function CommentsTooltip({ comments }: CommentsTooltipProps) {
             top: `${position.top}px`,
             left: `${position.left}px`,
             transform: 'translate(-50%, -100%)',
+            zIndex: ZIndex.tooltip,
           }}
         >
           <div className="overflow-y-auto max-h-96 rounded-lg">

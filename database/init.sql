@@ -752,15 +752,3 @@ CREATE INDEX idx_user_notifications_recipient_unread
     WHERE read_at IS NULL;
 
 COMMENT ON TABLE public.user_notifications IS 'In-app уведомления: assignee, availability, sprint start/finish';
-
--- Системная организация для /demo/planner.
--- При APP_DEPLOYMENT_MODE=onprem приложение удаляет эту строку при старте Node (см. lib/onPrem/removeDemoSystemOrganization.ts).
-INSERT INTO public.organizations (id, name, slug, tracker_org_id, settings)
-VALUES (
-    'f0000000-0000-4000-8000-000000000001',
-    'Demo (Beer Tracker)',
-    '__beer_tracker_system_demo__',
-    '',
-    '{}'::jsonb
-)
-ON CONFLICT (slug) DO NOTHING;

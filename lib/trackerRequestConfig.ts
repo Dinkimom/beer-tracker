@@ -8,7 +8,6 @@ import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types'
 import type { OrganizationRow } from '@/lib/organizations/types';
 
 import { getProductUserIdFromRequest } from '@/lib/auth/productSession';
-import { query } from '@/lib/db';
 import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
 import { createIssueTrackerAxiosForCredentials } from '@/lib/issueTrackerProvider/createIssueTrackerAxios';
 import {
@@ -24,7 +23,10 @@ import { JIRA_EXTERNAL_ORG_ID_FALLBACK } from '@/lib/issueTrackerProvider/types'
 import { DEFAULT_ISSUE_TRACKER_PROVIDER_KIND } from '@/lib/issueTrackerProvider/types';
 import { readOnPremSetupState } from '@/lib/onPrem/setupState';
 import { findOrganizationMembership } from '@/lib/organizations/organizationMembersRepository';
-import { findOrganizationById } from '@/lib/organizations/organizationRepository';
+import {
+  fetchFirstOrganizationId,
+  findOrganizationById,
+} from '@/lib/organizations/organizationRepository';
 import { getDecryptedOrganizationTrackerToken } from '@/lib/organizations/organizationSecretsRepository';
 import { parseRegistryUuidString } from '@/lib/registryUuidString';
 import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
@@ -179,10 +181,7 @@ export async function resolveDefaultOnPremOrganizationId(): Promise<string> {
   if (!setup.hasOrganizations) {
     throw new TrackerApiConfigError('Завершите первичную настройку.', 403);
   }
-  const res = await query<{ id: string }>(
-    `SELECT id FROM organizations ORDER BY created_at ASC LIMIT 1`
-  );
-  const organizationId = res.rows[0]?.id?.trim();
+  const organizationId = (await fetchFirstOrganizationId())?.trim();
   if (!organizationId) {
     throw new TrackerApiConfigError('Организация не найдена', 404);
   }

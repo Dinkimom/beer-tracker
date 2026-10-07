@@ -1231,7 +1231,14 @@ input[type="checkbox"]:disabled {
 }
 
 .overlay-tooltip {
+  z-index: var(--z-tooltip);
   animation: overlay-tooltip-enter-up 150ms ease-out both;
+}
+
+/* Radix ставит контент во fixed-обёртку и копирует z-index с потомка.
+   Пока класс z-[1000] не сгенерирован, обёртка остаётся auto и уходит под планер. */
+[data-radix-popper-content-wrapper]:has(> .overlay-tooltip) {
+  z-index: var(--z-tooltip);
 }
 
 .overlay-tooltip[data-side='bottom'] {
