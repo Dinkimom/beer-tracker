@@ -2,6 +2,18 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.4.2] — 2026-10-08
+
+### English
+
+- Planner and task card UI polish: resize handles, overdue baseline strips, timeline scale, and status mapping.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.4.2` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Полировка UI планера и карточки задачи: ресайз-ручки, полоски overdue baseline, шкала таймлайна, маппинг статусов.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.4.2` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.4.0] — 2026-10-06
 
 ### English

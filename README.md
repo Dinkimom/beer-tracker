@@ -27,7 +27,7 @@ Self-hosted веб-приложение для планирования спри
 
 ### Готовый образ (Docker Hub)
 
-Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) указывает на последнюю публикацию, тег `1.4.0` — на этот релиз. В каждом теге есть `linux/amd64` и `linux/arm64`.
+Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) указывает на последнюю публикацию, тег `1.4.2` — на этот релиз. В каждом теге есть `linux/amd64` и `linux/arm64`.
 
 ```bash
 cp env.example .env
