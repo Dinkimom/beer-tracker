@@ -4,6 +4,25 @@
 
 export type TaskStatus = 'done' | 'in-progress' | 'paused' | 'todo';
 
+/**
+ * Подпись статуса из трекера (`status.display`).
+ * Ключ для логики остаётся отдельно: «В работе» → ключ `вработе`, подпись «В работе».
+ */
+export function trackerStatusDisplayName(
+  display: string | null | undefined,
+  key: string | null | undefined
+): string | undefined {
+  const name = display?.trim();
+  if (!name) {
+    return undefined;
+  }
+  const statusKey = key?.trim();
+  if (statusKey && name === statusKey) {
+    return undefined;
+  }
+  return name;
+}
+
 /** Как у Jira status key: lower-case, без пробелов и пунктуации. */
 function normalizeTrackerStatusKey(statusKey: string): string {
   return statusKey

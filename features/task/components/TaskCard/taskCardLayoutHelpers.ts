@@ -57,9 +57,9 @@ export function getTaskCardBorderClasses(
   if (isLocalCommentDraft) {
     return getStickyNoteLocalDraftBorderClasses();
   }
-  if (isLocalTask) return 'border-2 border-dashed border-blue-300 dark:border-blue-700';
-  if (previewBorder && isResizing) return `border-2 border-dashed ${previewBorder}`;
-  return 'border-2';
+  if (isLocalTask) return 'border border-dashed border-blue-300 dark:border-blue-700';
+  if (previewBorder && isResizing) return `border border-dashed ${previewBorder}`;
+  return 'border';
 }
 
 export function getLocalTaskCardSurfaceClasses(isLocalCommentDraft = false, isLocalImageCard = false): string {

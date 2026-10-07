@@ -13,7 +13,6 @@ import { CARD_MARGIN, ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   formatOverdueDayAmount,
-  isStrongOverdue,
   resolveOverdueKind,
 } from '@/features/swimlane/utils/overdueBaselineSummary';
 
@@ -22,7 +21,6 @@ interface TaskLayerOverdueBaselineChipProps {
   baselineTop: number;
   canExtend: boolean;
   cells: number;
-  isDark: boolean;
   open: boolean;
   partsPerDay: number;
   startCell: number;
@@ -36,16 +34,10 @@ interface TaskLayerOverdueBaselineChipProps {
 
 type OverdueMenuAction = '' | 'closeAndCreate' | 'extend';
 
-function overdueTriggerClass(isDark: boolean, strong: boolean, open: boolean): string {
-  const pressed = open ? 'brightness-110' : '';
-  if (isDark && strong) {
-    return `bg-red-600 text-white shadow-sm ring-1 ring-red-300/80 hover:bg-red-500 ${pressed}`;
-  }
-  if (isDark) {
-    return `bg-red-950 text-red-100 shadow-sm ring-1 ring-red-400/80 hover:bg-red-900 ${pressed}`;
-  }
-  if (strong) return `bg-red-600 text-white shadow-sm hover:bg-red-700 ${pressed}`;
-  return `border border-red-200 bg-white text-red-700 shadow-sm hover:bg-red-50 ${pressed}`;
+function overdueChevronClass(open: boolean): string {
+  const shown = 'ml-0.5 w-3 opacity-100';
+  if (open) return `${shown} rotate-180`;
+  return `w-0 opacity-0 group-hover:ml-0.5 group-hover:w-3 group-hover:opacity-100`;
 }
 
 export function TaskLayerOverdueBaselineChip({
@@ -53,7 +45,6 @@ export function TaskLayerOverdueBaselineChip({
   baselineTop,
   canExtend,
   cells,
-  isDark,
   onCloseAndCreate,
   onExtend,
   onOpenChange,
@@ -71,7 +62,6 @@ export function TaskLayerOverdueBaselineChip({
 
   const days = formatOverdueDayAmount(cells, partsPerDay, language === 'ru' ? ',' : '.');
   const kind = resolveOverdueKind(status);
-  const strong = isStrongOverdue(cells, partsPerDay);
   const hint = t(
     kind === 'notStarted'
       ? 'sprintPlanner.swimlane.overdue.notStartedHint'
@@ -122,13 +112,15 @@ export function TaskLayerOverdueBaselineChip({
             aria-expanded={open}
             aria-haspopup="menu"
             aria-label={t('sprintPlanner.swimlane.overdue.menuAria', { days })}
-            className={`inline-flex h-7 min-w-[7.25rem] cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold leading-none whitespace-nowrap transition-all duration-200 active:scale-[0.98] ${overdueTriggerClass(isDark, strong, open)}`}
+            className="group inline-flex cursor-pointer items-center text-xs font-medium leading-none whitespace-nowrap text-red-900 transition-all duration-200 hover:text-red-950 active:scale-[0.98] dark:text-red-100 dark:hover:text-white"
             type="button"
             onClick={(event) => event.stopPropagation()}
             onPointerDown={(event) => event.stopPropagation()}
           >
             {t('sprintPlanner.swimlane.overdue.trigger', { days })}
-            <Icon className="h-3.5 w-3.5 shrink-0 opacity-80" name="chevron-down" />
+            <span className={`inline-flex overflow-hidden transition-all duration-200 ${overdueChevronClass(open)}`}>
+              <Icon className="h-3 w-3 shrink-0" name="chevron-down" />
+            </span>
           </button>
         </Popover.Trigger>
         </TextTooltip>

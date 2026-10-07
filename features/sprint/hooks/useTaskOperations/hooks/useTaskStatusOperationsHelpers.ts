@@ -2,6 +2,7 @@
 import { getIssueTransitions, changeIssueStatus } from '@/lib/beerTrackerApi';
 
 interface TransitionToMeta {
+  display?: string;
   id?: string;
   key?: string;
   statusTypeKey?: string;
@@ -51,6 +52,7 @@ export function isClosingStatusTransition(
 export async function submitIssueStatusChange(input: {
   extraFields?: Record<string, unknown>;
   isClosing: boolean;
+  targetStatusDisplay?: string;
   taskId: string;
   targetStatusKey: string;
   trackerIssueKey: string;
@@ -62,7 +64,8 @@ export async function submitIssueStatusChange(input: {
     input.transitionId,
     resolution,
     input.extraFields,
-    input.targetStatusKey
+    input.targetStatusKey,
+    input.targetStatusDisplay
   );
   if (!success) {
     throw new Error(`Failed to change status for task ${input.taskId}`);

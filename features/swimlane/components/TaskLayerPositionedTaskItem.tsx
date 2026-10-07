@@ -37,7 +37,6 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     currentCell,
     hasQuickAddDraftMode = false,
     hoveredTaskId = null,
-    isDark,
     isDraggingTask = false,
     linkingFromTaskId = null,
     linkSourceEndCell = null,
@@ -122,8 +121,6 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
           currentCell={currentCell}
           holidayDayIndices={props.holidayDayIndices}
           hoveredCell={props.hoveredCell ?? null}
-          hoveredTaskId={props.hoveredTaskId ?? null}
-          isDark={isDark}
           isDraggingTask={props.isDraggingTask ?? false}
           linkingActive={linkingActive}
           status={task.status}

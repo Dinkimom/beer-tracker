@@ -8,6 +8,7 @@ import {
   buildTaskInfoTimestampsLine,
   formatTaskInfoDateTime,
 } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarFormatters';
+import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
 interface TaskInfoSidebarTimestampsProps {
   task: Task;
@@ -35,7 +36,11 @@ export function TaskInfoSidebarTimestamps({ task }: TaskInfoSidebarTimestampsPro
   return (
     <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-2">
       {status ? (
-        <StatusTag status={status} statusColorKey={task.statusColorKey} />
+        <StatusTag
+          label={taskStatusLabel(task)}
+          status={status}
+          statusColorKey={task.statusColorKey}
+        />
       ) : null}
       {line ? (
         <p className="min-w-0 text-sm text-gray-500 dark:text-gray-400">{line}</p>

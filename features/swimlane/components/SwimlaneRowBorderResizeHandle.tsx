@@ -1,6 +1,6 @@
 'use client';
 
-import { TextTooltip } from '@/components/TextTooltip';
+import { RESIZE_HANDLE_TOOLTIP_DELAY_MS, TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 
 interface SwimlaneRowBorderResizeHandleProps {
@@ -66,27 +66,31 @@ export function SwimlaneRowBorderResizeHandle({
   const isActive = isResizing || isBorderHovered;
 
   return (
-    <TextTooltip content={label}>
-    <div
-      aria-label={label}
-      className={`relative h-4 w-full cursor-ns-resize ${resolveSwimlaneRowResizeHandleShellClass(isActive)}`}
-      data-swimlane-row-border-resize
-      role="separator"
-      tabIndex={-1}
-      onMouseDown={onMouseDown}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+    <TextTooltip
+      content={label}
+      delayDuration={RESIZE_HANDLE_TOOLTIP_DELAY_MS}
+      skipDelayDuration={0}
     >
-      <div className={resolveSwimlaneRowResizeHighlightStripClass(isResizing, isBorderHovered)} />
-      <div className="pointer-events-none absolute bottom-0.5 left-1/2 flex -translate-x-1/2 flex-row gap-0.5">
-        {[1, 2, 3].map((line) => (
-          <div
-            key={line}
-            className={`h-0.5 w-3 rounded-full transition-colors duration-200 ${resolveSwimlaneRowResizeHandleGripLineClass(isActive)}`}
-          />
-        ))}
+      <div
+        aria-label={label}
+        className={`relative h-4 w-full cursor-ns-resize ${resolveSwimlaneRowResizeHandleShellClass(isActive)}`}
+        data-swimlane-row-border-resize
+        role="separator"
+        tabIndex={-1}
+        onMouseDown={onMouseDown}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
+        <div className={resolveSwimlaneRowResizeHighlightStripClass(isResizing, isBorderHovered)} />
+        <div className="pointer-events-none absolute bottom-0.5 left-1/2 flex -translate-x-1/2 flex-row gap-0.5">
+          {[1, 2, 3].map((line) => (
+            <div
+              key={line}
+              className={`h-0.5 w-3 rounded-full transition-colors duration-200 ${resolveSwimlaneRowResizeHandleGripLineClass(isActive)}`}
+            />
+          ))}
+        </div>
       </div>
-    </div>
     </TextTooltip>
   );
 }

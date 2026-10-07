@@ -4,11 +4,15 @@ import type { Task } from '@/types';
 
 import { StatusTag } from '@/components/StatusTag';
 import { TaskStatusSelect } from '@/features/task/components/TaskStatusSelect';
+import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
 interface QuarterlyPlannerTaskStatusCellContentProps {
   status?: string;
   statusColorKey?: string;
-  task?: Pick<Task, 'id' | 'name' | 'originalStatus' | 'originalTaskId' | 'statusColorKey' | 'type'>;
+  task?: Pick<
+    Task,
+    'id' | 'name' | 'originalStatus' | 'originalStatusDisplay' | 'originalTaskId' | 'statusColorKey' | 'type'
+  >;
   onStatusChange?: (
     transitionId: string,
     targetStatusKey?: string,
@@ -41,6 +45,7 @@ export function QuarterlyPlannerTaskStatusCellContent({
     return (
       <StatusTag
         className="max-w-full truncate text-[10px]"
+        label={task ? taskStatusLabel(task) : undefined}
         status={status}
         statusColorKey={statusColorKey}
       />

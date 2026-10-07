@@ -22,6 +22,7 @@
   "link": "https://tracker.yandex.ru/BT-100",
   "name": "Fix occupancy tooltip",
   "originalStatus": "inProgress",
+  "originalStatusDisplay": "In Progress",
   "parent": {
     "display": "Parent story",
     "id": "p1",

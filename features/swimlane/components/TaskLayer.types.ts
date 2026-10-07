@@ -27,7 +27,6 @@ export interface TaskLayerProps {
   hoverConnectedTaskIds?: Set<string> | null;
   hoveredCell: { assigneeId: string; day: number; part: number } | null;
   hoveredTaskId?: string | null;
-  isDark: boolean;
   /** Синхронизация с MobX: подсветка превью только во время активного drag */
   isDraggingTask?: boolean;
   layerHeight: number;

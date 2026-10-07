@@ -51,6 +51,18 @@ describe('mapTrackerIssueToTask', () => {
     expect(task.dangerousRelease).toBe('High risk');
   });
 
+  it('keeps a spaced status name for the badge', () => {
+    const task = mapTrackerIssueToTask({
+      id: '6',
+      key: 'BT-6',
+      self: 'https://tracker.yandex.ru/BT-6',
+      status: { display: 'В работе', key: 'вработе' },
+      summary: 'Task',
+    });
+    expect(task.originalStatus).toBe('вработе');
+    expect(task.originalStatusDisplay).toBe('В работе');
+  });
+
   it('maps description by default', () => {
     const task = mapTrackerIssueToTask({
       id: '3',

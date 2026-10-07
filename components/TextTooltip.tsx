@@ -16,6 +16,9 @@ import { buildTextTooltipTrigger, resolveTextTooltipEffectiveOpen } from './text
 type TextTooltipAlign = 'center' | 'end' | 'start';
 type TextTooltipSide = Anchor;
 
+/** Рукоятки ресайза: не мигать подсказкой, пока целишься в жест. */
+export const RESIZE_HANDLE_TOOLTIP_DELAY_MS = 700;
+
 interface TextTooltipProps {
   /** Выравнивание по стороне */
   align?: TextTooltipAlign;
@@ -29,6 +32,11 @@ interface TextTooltipProps {
   delayDuration?: number;
   /** Отключить тултип (например, когда content пустой) */
   disabled?: boolean;
+  /**
+   * Окно после закрытия, в котором следующий показ без delay (Radix skipDelayDuration).
+   * Для рукояток ресайза лучше 0 — иначе подсказка мигает при прицеливании.
+   */
+  skipDelayDuration?: number;
   /** Показывать тултип в точке наведения курсора (вместо сверху по центру триггера) */
   followCursor?: boolean;
   /** Интерактивный режим (позволяет скролл и клики внутри тултипа) */
@@ -55,6 +63,7 @@ export function TextTooltip({
   children,
   content,
   delayDuration = 300,
+  skipDelayDuration = 100,
   side = 'bottom',
   align = 'center',
   sideOffset = 6,
@@ -101,7 +110,7 @@ export function TextTooltip({
     <Tooltip.Provider
       delayDuration={delayDuration}
       disableHoverableContent={!interactive}
-      skipDelayDuration={100}
+      skipDelayDuration={skipDelayDuration}
     >
       <Tooltip.Root open={effectiveOpen} onOpenChange={handleOpenChange}>
         <Tooltip.Trigger asChild>{trigger}</Tooltip.Trigger>

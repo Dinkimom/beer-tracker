@@ -232,6 +232,39 @@ describe('patchSprintTaskStatusInQueries', () => {
       statusColorKey: 'closed',
     });
   });
+
+  it('stores the tracker status label and drops a stale one when the next event has none', () => {
+    const qc = new QueryClient();
+    const bundle = {
+      developers: [],
+      sprintInfo: { id: 5, name: 'S', status: 'in_progress' as const, version: 1 },
+      tasks: [
+        {
+          id: 'BT-1',
+          name: 'A',
+          originalStatus: 'open',
+          originalStatusDisplay: 'Открыта',
+          status: 'todo' as const,
+        },
+      ] as Task[],
+    };
+    qc.setQueryData(sprintTasksQueryKey(5, 1), bundle);
+
+    patchSprintTaskStatusInQueries(qc, 5, {
+      issueKey: 'BT-1',
+      statusDisplay: 'В работе',
+      statusKey: 'вработе',
+    });
+
+    expect(qc.getQueryData<typeof bundle>(sprintTasksQueryKey(5, 1))?.tasks[0]).toMatchObject({
+      originalStatus: 'вработе',
+      originalStatusDisplay: 'В работе',
+    });
+
+    patchSprintTaskStatusInQueries(qc, 5, { issueKey: 'BT-1', statusKey: 'closed' });
+
+    expect(qc.getQueryData<typeof bundle>(sprintTasksQueryKey(5, 1))?.tasks[0]?.originalStatusDisplay).toBeUndefined();
+  });
 });
 
 describe('upsertSprintTaskInQueries', () => {

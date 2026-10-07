@@ -6,8 +6,10 @@ import { useState } from 'react';
 
 import { ZIndex, getPartsPerDay } from '@/constants';
 import { factTimelineHolidayMask } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
-import { isStrongOverdue } from '@/features/swimlane/utils/overdueBaselineSummary';
-import { computeBaselineStripOpacity } from '@/features/swimlane/utils/taskLayerTaskLayout';
+import {
+  computeBaselineStripOpacity,
+  computeSwimlaneOverdueBaselineBarBox,
+} from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { buildSwimlaneOverdueBaselineStripHorizontalStyle } from '@/features/task/components/TaskBar/taskBarHelpers';
 
 import { TaskLayerOverdueBaselineChip } from './TaskLayerOverdueBaselineChip';
@@ -21,8 +23,6 @@ interface TaskLayerOverdueBaselineStripsProps {
   /** Индексы нерабочих дней таймлайна — в этих колонках полоса не видна */
   holidayDayIndices?: ReadonlySet<number>;
   hoveredCell: { assigneeId: string; day: number; part: number } | null;
-  hoveredTaskId: string | null;
-  isDark: boolean;
   isDraggingTask: boolean;
   linkingActive?: boolean;
   status: string | undefined;
@@ -43,8 +43,6 @@ export function TaskLayerOverdueBaselineStrips({
   currentCell,
   holidayDayIndices,
   hoveredCell,
-  hoveredTaskId,
-  isDark,
   isDraggingTask,
   linkingActive = false,
   onCloseAndCreate,
@@ -68,6 +66,7 @@ export function TaskLayerOverdueBaselineStrips({
 
   const partsPerDay = getPartsPerDay();
   const showChip = !isDraggingTask && !linkingActive;
+  const bar = computeSwimlaneOverdueBaselineBarBox(baselineTop, baselineHeight);
 
   return (
     <div className="pointer-events-none absolute inset-0">
@@ -79,22 +78,16 @@ export function TaskLayerOverdueBaselineStrips({
           baselineStart,
           baselineWidth,
           hoveredCell,
-          hoveredTaskId,
           isDraggingTask,
-          linkingActive,
-          taskId,
         });
         return (
           <div
             key={`baseline-${taskId}-${stripIdx}-${baselineStart}-${currentCell}`}
-            className="absolute pointer-events-none overflow-hidden rounded-r-lg transition-opacity duration-200"
+            className="absolute pointer-events-none box-border overflow-hidden rounded-r-md border-y border-r border-red-300 bg-red-100 transition-opacity duration-200 dark:border-red-700 dark:bg-red-900"
             style={{
-              background: isDark
-                ? 'repeating-linear-gradient(45deg, rgb(127 29 29), rgb(127 29 29) 8px, rgb(153 27 27) 8px, rgb(153 27 27) 16px)'
-                : 'repeating-linear-gradient(45deg, rgb(254 226 226), rgb(254 226 226) 8px, rgb(252 165 165) 8px, rgb(252 165 165) 16px)',
-              height: `${baselineHeight}px`,
+              height: `${bar.height}px`,
               opacity: baselineOpacity,
-              top: `${baselineTop}px`,
+              top: `${bar.top}px`,
               ...buildSwimlaneOverdueBaselineStripHorizontalStyle({
                 durationCells: baselineWidth,
                 startCell: baselineStart,
@@ -106,32 +99,24 @@ export function TaskLayerOverdueBaselineStrips({
       })}
       </div>
       {showChip
-        ? strips.map(({ baselineStart, baselineWidth }) => {
-            const revealed =
-              isStrongOverdue(baselineWidth, partsPerDay) ||
-              hoveredTaskId === taskId ||
-              openTaskId === taskId;
-            if (!revealed) return null;
-            return (
-              <TaskLayerOverdueBaselineChip
-                key={`overdue-chip-${taskId}-${baselineStart}`}
-                baselineHeight={baselineHeight}
-                baselineTop={baselineTop}
-                canExtend={onExtend != null}
-                cells={baselineWidth}
-                isDark={isDark}
-                open={openTaskId === taskId}
-                partsPerDay={partsPerDay}
-                startCell={baselineStart}
-                status={status}
-                taskId={taskId}
-                timelineTotalParts={timelineTotalParts}
-                onCloseAndCreate={onCloseAndCreate}
-                onExtend={onExtend}
-                onOpenChange={(next) => setOpenTaskId(next ? taskId : null)}
-              />
-            );
-          })
+        ? strips.map(({ baselineStart, baselineWidth }) => (
+            <TaskLayerOverdueBaselineChip
+              key={`overdue-chip-${taskId}-${baselineStart}`}
+              baselineHeight={bar.height}
+              baselineTop={bar.top}
+              canExtend={onExtend != null}
+              cells={baselineWidth}
+              open={openTaskId === taskId}
+              partsPerDay={partsPerDay}
+              startCell={baselineStart}
+              status={status}
+              taskId={taskId}
+              timelineTotalParts={timelineTotalParts}
+              onCloseAndCreate={onCloseAndCreate}
+              onExtend={onExtend}
+              onOpenChange={(next) => setOpenTaskId(next ? taskId : null)}
+            />
+          ))
         : null}
     </div>
   );

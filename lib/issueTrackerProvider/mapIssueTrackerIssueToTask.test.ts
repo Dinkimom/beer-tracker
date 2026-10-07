@@ -80,6 +80,32 @@ describe('mapIssueTrackerIssueToTask', () => {
     });
   });
 
+  it('keeps the tracker status label separate from the normalized key', () => {
+    const task = mapIssueTrackerIssueToTask({
+      id: 'PROJ-3',
+      key: 'PROJ-3',
+      provider: 'jira',
+      status: { display: 'В процессе проверки', key: 'впроцессепроверки' },
+      summary: 'Review',
+    });
+    expect(task).toMatchObject({
+      originalStatus: 'впроцессепроверки',
+      originalStatusDisplay: 'В процессе проверки',
+    });
+  });
+
+  it('omits the status label when it matches the key', () => {
+    const task = mapIssueTrackerIssueToTask({
+      id: 'BT-3',
+      key: 'BT-3',
+      provider: 'yandex-tracker',
+      status: { display: 'inProgress', key: 'inProgress' },
+      summary: 'Same',
+    });
+    expect(task.originalStatus).toBe('inProgress');
+    expect(task.originalStatusDisplay).toBeUndefined();
+  });
+
   it('maps start and deadline from provider issue fields', () => {
     const task = mapIssueTrackerIssueToTask({
       deadline: '2026-03-20T00:00:00.000+0000',

@@ -17,7 +17,7 @@ import {
   sprintTaskCompletionRulesFromPlanner,
 } from '@/lib/sprints/sprintTaskCompletion';
 import { resolveStatusColorKey } from '@/lib/trackerIntegration/statusPalette';
-import { mapStatus } from '@/utils/statusMapper';
+import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
 import { findTaskById, updateTaskInArray } from '../utils/taskUtils';
 
@@ -72,6 +72,10 @@ export function useTaskStatusOperations({
         resolveStatusCategoryForStatusKey(finalTargetStatusKey, completionRules) ??
         mapStatus(finalTargetStatusKey);
       const statusId = transitionData?.to?.id?.trim();
+      const nextStatusDisplay = trackerStatusDisplayName(
+        transitionData?.to?.display,
+        finalTargetStatusKey
+      );
       const alternateKeys =
         statusId && statusId !== finalTargetStatusKey ? [statusId] : undefined;
       const nextStatusColorKey = resolveStatusColorKey(
@@ -85,6 +89,7 @@ export function useTaskStatusOperations({
         updateTaskInArray(prev, taskId, (task) => ({
           ...task,
           originalStatus: finalTargetStatusKey!,
+          originalStatusDisplay: nextStatusDisplay,
           ...(statusId ? { originalStatusId: statusId } : { originalStatusId: undefined }),
           status: nextCategory,
           statusColorKey: nextStatusColorKey,
@@ -96,6 +101,7 @@ export function useTaskStatusOperations({
         await submitIssueStatusChange({
           extraFields,
           isClosing,
+          targetStatusDisplay: nextStatusDisplay,
           taskId,
           targetStatusKey: finalTargetStatusKey,
           trackerIssueKey,

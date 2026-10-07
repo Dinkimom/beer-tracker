@@ -44,6 +44,30 @@ describe('planner timeline scale defaults', () => {
     expect(timeslotsToStoryPointsForScale(8, day)).toBe(2);
   });
 
+  it('maps fractional SP below 1 as a share of the first step, not the whole step', () => {
+    const timeslot = { estimateUnit: 'timeslot' as const, timeslotsPerDay: 2 as const };
+    expect(storyPointsToTimeslotsForScale(0.3, timeslot)).toBe(1);
+    expect(storyPointsToTimeslotsForScale(0.7, timeslot)).toBe(1);
+    expect(storyPointsToTimeslotsForScale(1, timeslot)).toBe(1);
+
+    const day = { estimateUnit: 'day' as const, timeslotsPerDay: 2 as const };
+    expect(storyPointsToTimeslotsForScale(0.3, day)).toBe(1);
+    expect(storyPointsToTimeslotsForScale(0.7, day)).toBe(1);
+    expect(storyPointsToTimeslotsForScale(1, day)).toBe(2);
+
+    const custom = {
+      estimateUnit: 'custom' as const,
+      steps: [
+        { slots: 2, storyPoints: 1 },
+        { slots: 4, storyPoints: 2 },
+      ],
+      timeslotsPerDay: 2 as const,
+    };
+    expect(storyPointsToTimeslotsForScale(0.3, custom)).toBe(1);
+    expect(storyPointsToTimeslotsForScale(0.7, custom)).toBe(1);
+    expect(storyPointsToTimeslotsForScale(1, custom)).toBe(2);
+  });
+
   it('does not rewrite an estimate while an existing card is off the new scale', () => {
     const day = { estimateUnit: 'day' as const, timeslotsPerDay: 3 as const };
     expect(

@@ -102,11 +102,8 @@ export function computeBaselineStripOpacity(params: {
   baselineStart: number;
   baselineWidth: number;
   hoveredCell: { assigneeId: string; day: number; part: number } | null;
-  hoveredTaskId: string | null;
   /** Превью по hoveredCell только во время drag (иначе возможны «залипшие» поля) */
   isDraggingTask: boolean;
-  linkingActive?: boolean;
-  taskId: string;
 }): number {
   const {
     activeTaskDuration,
@@ -114,14 +111,9 @@ export function computeBaselineStripOpacity(params: {
     baselineStart,
     baselineWidth,
     hoveredCell,
-    hoveredTaskId,
     isDraggingTask,
-    linkingActive = false,
-    taskId,
   } = params;
 
-  const effectiveHoveredTaskId = linkingActive ? null : hoveredTaskId;
-  let baselineOpacity = effectiveHoveredTaskId === taskId ? 1 : 0.7;
   const dragOpacity = baselineOpacityDuringDrag({
     activeTaskDuration,
     assigneeId,
@@ -130,8 +122,7 @@ export function computeBaselineStripOpacity(params: {
     hoveredCell,
     isDraggingTask,
   });
-  if (dragOpacity != null) baselineOpacity = dragOpacity;
-  return baselineOpacity;
+  return dragOpacity ?? 1;
 }
 
 function resolveSwimlaneRowBandInsetsPx(
@@ -221,6 +212,21 @@ export function computeSwimlaneRowBandBox(
   return {
     top: `${box.top}px`,
     height: `${box.height}px`,
+  };
+}
+
+/** Высота полосы отставания: ниже карточки, подпись «Отстаёт» остаётся внутри. */
+export const SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX = 24;
+
+/** Короткая полоса по вертикальному центру карточки. */
+export function computeSwimlaneOverdueBaselineBarBox(
+  bandTop: number,
+  bandHeight: number
+): { height: number; top: number } {
+  const height = Math.min(SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX, Math.max(0, bandHeight));
+  return {
+    height,
+    top: bandTop + (bandHeight - height) / 2,
   };
 }
 

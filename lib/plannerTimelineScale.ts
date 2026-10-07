@@ -134,9 +134,24 @@ function baseStoryPointsToTimeslots(sp: number): number {
   return 10;
 }
 
+/** Доля от якоря «1 SP» / первого шага: 0.3 при 2 слотах на 1 SP → 1 слот, а не весь шаг. */
+function slotsForFractionalStoryPoints(sp: number, slotsAtAnchor: number, anchorStoryPoints = 1): number {
+  if (anchorStoryPoints <= 0 || slotsAtAnchor <= 0) return 1;
+  return Math.max(1, Math.round((sp / anchorStoryPoints) * slotsAtAnchor));
+}
+
 function activeCustomSteps(scale: PlannerTimelineScale): PlannerTimelineStep[] | null {
   if (scale.estimateUnit !== 'custom') return null;
   return orderedPlannerTimelineSteps(scale.steps ?? []);
+}
+
+function customStoryPointsToTimeslots(sp: number, steps: readonly PlannerTimelineStep[]): number {
+  const first = steps[0];
+  if (sp < first.storyPoints) {
+    return slotsForFractionalStoryPoints(sp, first.slots, first.storyPoints);
+  }
+  const step = steps.find((row) => sp <= row.storyPoints) ?? steps[steps.length - 1];
+  return step.slots;
 }
 
 function promotedStoryPoints(
@@ -177,11 +192,12 @@ export function timeslotsToStoryPointsForScale(timeslots: number, scale: Planner
 export function storyPointsToTimeslotsForScale(sp: number, scale: PlannerTimelineScale): number {
   if (sp <= 0) return 0;
   const steps = activeCustomSteps(scale);
-  if (steps) {
-    const step = steps.find((row) => sp <= row.storyPoints) ?? steps[steps.length - 1];
-    return step.slots;
-  }
-  return baseStoryPointsToTimeslots(sp) * estimateTimeslotMultiplier(scale);
+  if (steps) return customStoryPointsToTimeslots(sp, steps);
+  const multiplier = estimateTimeslotMultiplier(scale);
+  // Лестница начинается с 1 SP: всё в (0, 1) раньше схлопывалось в полный первый шаг
+  // (при «1 SP = сутки» и 2 слотах/день 0.3 становилось целым рабочим днём).
+  if (sp < 1) return slotsForFractionalStoryPoints(sp, multiplier);
+  return baseStoryPointsToTimeslots(sp) * multiplier;
 }
 
 /**

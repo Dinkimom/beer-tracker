@@ -14,7 +14,10 @@ interface QuarterlyPlannerTaskStatusCellProps {
   status?: string;
   statusColorKey?: string;
   statusColumnWidth: number;
-  task?: Pick<Task, 'id' | 'name' | 'originalStatus' | 'originalTaskId' | 'statusColorKey' | 'type'>;
+  task?: Pick<
+    Task,
+    'id' | 'name' | 'originalStatus' | 'originalStatusDisplay' | 'originalTaskId' | 'statusColorKey' | 'type'
+  >;
   taskColumnWidth: number;
   onStatusChange?: (
     transitionId: string,

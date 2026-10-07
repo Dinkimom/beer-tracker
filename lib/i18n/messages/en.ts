@@ -1316,7 +1316,7 @@ export const enMessages = {
       editParticipantsTitle: 'Edit participants',
       resizeParticipantsColumn: 'Resize participants column width',
       noTasks: 'No tasks',
-      velocityLabel: 'Average: {points}',
+      velocityLabel: 'Velocity: {points}',
       velocityTooltipSp: 'Average velocity across recent sprints ({count}): completed story points',
       velocityTooltipTp: 'Average velocity across recent sprints ({count}): completed test points',
       pinRow: 'Pin row',

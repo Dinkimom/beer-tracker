@@ -5,7 +5,7 @@ import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
 import { issueTrackerIssueWebUrl } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import { parseSlaBugFieldsFromIssue } from '@/lib/slaBugs/parseSlaBugFields';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
-import { mapStatus } from '@/utils/statusMapper';
+import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
 function mapTeam(functionalTeam?: string): 'Back' | 'DevOps' | 'QA' | 'Web' {
   const teamStr = (functionalTeam || '').toLowerCase();
@@ -187,6 +187,7 @@ export function mapTrackerIssueToTaskBase(
 ): Task {
   const statusKey = issue.status?.key || issue.statusType?.key;
   const statusId = issue.status?.id?.trim();
+  const statusDisplay = trackerStatusDisplayName(issue.status?.display, statusKey);
   const team = mapTeam(issue.functionalTeam);
   const sprints = normalizeSprintField(issue.sprint);
   const slaFields = parseSlaBugFieldsFromIssue(issue);
@@ -212,6 +213,7 @@ export function mapTrackerIssueToTaskBase(
     qaEngineerName: issue.qaEngineer?.display,
     status: statusKey ? mapStatus(statusKey) : undefined,
     originalStatus: statusKey,
+    ...(statusDisplay ? { originalStatusDisplay: statusDisplay } : {}),
     ...(statusId ? { originalStatusId: statusId } : {}),
     statusTypeKey: issue.statusType?.key,
     priority: issue.priority?.key || issue.priority?.display,

@@ -1315,7 +1315,7 @@ export const ruMessages = {
       editParticipantsTitle: 'Редактировать участников',
       resizeParticipantsColumn: 'Изменить ширину колонки участников',
       noTasks: 'Нет задач',
-      velocityLabel: 'Среднее: {points}',
+      velocityLabel: 'Velocity: {points}',
       velocityTooltipSp: 'Средний велосити за последние спринты ({count}): закрытые story points',
       velocityTooltipTp: 'Средний велосити за последние спринты ({count}): закрытые test points',
       pinRow: 'Закрепить строку',

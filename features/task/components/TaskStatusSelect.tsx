@@ -10,6 +10,7 @@ import { Icon } from '@/components/Icon';
 import { StatusTag } from '@/components/StatusTag';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 import { getIssueTransitions, type TransitionItem } from '@/lib/beerTrackerApi';
 
 import { TaskStatusSelectTransitionList } from './TaskStatusSelectTransitionList';
@@ -18,7 +19,10 @@ interface TaskStatusSelectProps {
   className?: string;
   disabled?: boolean;
   menuZIndex?: number;
-  task: Pick<Task, 'id' | 'name' | 'originalStatus' | 'originalTaskId' | 'statusColorKey' | 'type'>;
+  task: Pick<
+    Task,
+    'id' | 'name' | 'originalStatus' | 'originalStatusDisplay' | 'originalTaskId' | 'statusColorKey' | 'type'
+  >;
   onTransitionSelect: (
     transitionId: string,
     targetStatusKey?: string,
@@ -135,6 +139,7 @@ export function TaskStatusSelect({
       >
         <StatusTag
           className="min-w-0 max-w-full truncate text-[10px]"
+          label={taskStatusLabel(task)}
           status={task.originalStatus}
           statusColorKey={task.statusColorKey}
         />

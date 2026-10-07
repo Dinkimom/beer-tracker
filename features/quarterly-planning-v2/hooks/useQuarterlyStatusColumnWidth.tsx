@@ -7,6 +7,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { StatusTag } from '@/components/StatusTag';
+import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
 import {
   quarterlyStatusColumnWidthFallback,
@@ -53,6 +54,7 @@ function QuarterlyStatusColumnWidthMeasurer({
         >
           <StatusTag
             className="text-[10px]"
+            label={taskStatusLabel(task)}
             status={task.originalStatus}
             statusColorKey={task.statusColorKey}
           />
@@ -70,7 +72,10 @@ export function useQuarterlyStatusColumnWidth(tasks: Task[]) {
 
   const measureTasks = useMemo(() => tasksForQuarterlyStatusColumnMeasure(tasks), [tasks]);
   const measureSignature = useMemo(
-    () => measureTasks.map((t) => `${t.id}:${t.originalStatus}:${t.statusColorKey ?? ''}`).join('|'),
+    () =>
+      measureTasks
+        .map((t) => `${t.id}:${t.originalStatus}:${t.originalStatusDisplay ?? ''}:${t.statusColorKey ?? ''}`)
+        .join('|'),
     [measureTasks]
   );
 

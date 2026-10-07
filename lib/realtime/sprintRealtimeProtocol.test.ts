@@ -67,6 +67,28 @@ describe('sprintRealtimeProtocol', () => {
     });
   });
 
+  it('keeps a spaced status label on a tasks event', () => {
+    expect(
+      parseSprintRealtimeMessage({
+        ...event,
+        resources: ['tasks'],
+        issueStatus: {
+          issueKey: 'BT-1',
+          statusDisplay: 'В работе',
+          statusKey: 'вработе',
+        },
+      })
+    ).toEqual({
+      ...event,
+      resources: ['tasks'],
+      issueStatus: {
+        issueKey: 'BT-1',
+        statusDisplay: 'В работе',
+        statusKey: 'вработе',
+      },
+    });
+  });
+
   it('parses a tasks resource with issue membership payload', () => {
     expect(
       parseSprintRealtimeMessage({

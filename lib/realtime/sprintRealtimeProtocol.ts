@@ -158,7 +158,12 @@ function parseIssueStatus(value: unknown): SprintRealtimeIssueStatus | undefined
   if (!issueKey || !statusKey) {
     return undefined;
   }
-  return { issueKey, statusKey };
+  const statusDisplay = typeof row.statusDisplay === 'string' ? row.statusDisplay.trim() : '';
+  return {
+    issueKey,
+    statusKey,
+    ...(statusDisplay && statusDisplay !== statusKey ? { statusDisplay } : {}),
+  };
 }
 
 function parseIssueMembershipTask(

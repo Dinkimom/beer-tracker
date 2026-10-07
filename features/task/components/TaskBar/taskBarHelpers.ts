@@ -127,9 +127,12 @@ export function buildSwimlaneTaskBarHorizontalStyle(params: {
   };
 }
 
+/** Насколько полоса заходит под карточку, чтобы квадратный срез не торчал у скругления. */
+export const SWIMLANE_OVERDUE_BASELINE_JOIN_PX = 8;
+
 /**
  * Overdue-baseline: продолжение от правого края карточки (startCell = конец плана).
- * Ширина — только доля таймлайна; правый край совпадает с карточкой, заканчивающейся в той же ячейке.
+ * Левый край заходит под карточку; правый совпадает с карточкой, заканчивающейся в той же ячейке.
  */
 export function buildSwimlaneOverdueBaselineStripHorizontalStyle(params: {
   durationCells: number;
@@ -138,9 +141,10 @@ export function buildSwimlaneOverdueBaselineStripHorizontalStyle(params: {
 }): Pick<CSSProperties, 'left' | 'width'> {
   const startPercent = (params.startCell / params.timelineTotalParts) * 100;
   const widthPercent = (params.durationCells / params.timelineTotalParts) * 100;
+  const joinPx = CARD_MARGIN + SWIMLANE_OVERDUE_BASELINE_JOIN_PX;
   return {
-    left: `calc(${startPercent}% - ${CARD_MARGIN}px)`,
-    width: `calc(${widthPercent}%)`,
+    left: `calc(${startPercent}% - ${joinPx}px)`,
+    width: `calc(${widthPercent}% + ${SWIMLANE_OVERDUE_BASELINE_JOIN_PX}px)`,
   };
 }
 

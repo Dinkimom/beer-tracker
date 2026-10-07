@@ -16,7 +16,7 @@ import {
   sprintTaskCompletionRulesFromPlanner,
 } from '@/lib/sprints/sprintTaskCompletion';
 import { resolveStatusColorKey } from '@/lib/trackerIntegration/statusPalette';
-import { mapStatus } from '@/utils/statusMapper';
+import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
 interface TasksResponse {
   developers: Developer[];
@@ -165,7 +165,7 @@ function applySprintTasksPatch(
 export function patchSprintTaskStatusInQueries(
   queryClient: QueryClient,
   sprintId: number | null,
-  issueStatus: { issueKey: string; statusKey: string }
+  issueStatus: { issueKey: string; statusDisplay?: string; statusKey: string }
 ): void {
   if (!sprintId) {
     return;
@@ -175,9 +175,10 @@ export function patchSprintTaskStatusInQueries(
   if (!issueKey || !statusKey) {
     return;
   }
+  const statusDisplay = trackerStatusDisplayName(issueStatus.statusDisplay, statusKey);
   queryClient.setQueriesData<TasksResponse>(
     { predicate: (query) => queryKeyTouchesSprintTasks(query.queryKey, sprintId) },
-    (old) => patchTasksResponseStatus(old, issueKey, statusKey, queryClient)
+    (old) => patchTasksResponseStatus(old, issueKey, statusKey, queryClient, statusDisplay)
   );
 }
 
@@ -185,7 +186,8 @@ function patchTasksResponseStatus(
   old: TasksResponse | undefined,
   issueKey: string,
   statusKey: string,
-  queryClient: QueryClient
+  queryClient: QueryClient,
+  statusDisplay: string | undefined
 ): TasksResponse | undefined {
   if (!old?.tasks) {
     return old;
@@ -211,6 +213,7 @@ function patchTasksResponseStatus(
     return {
       ...task,
       originalStatus: statusKey,
+      originalStatusDisplay: statusDisplay,
       status: nextCategory,
       statusColorKey: nextStatusColorKey,
     };

@@ -3,9 +3,6 @@ import type { PhaseSegment, TaskPosition } from '@/types';
 import { getPartsPerDay } from '@/constants';
 import { getOrderedPlanSegments } from '@/features/swimlane/utils/positionUtils';
 
-/** От этой длины хвост читается цифрой на полосе, короче — только при наведении на задачу. */
-const STRONG_OVERDUE_DAYS = 2;
-
 type OverdueKind = 'notStarted' | 'slipping';
 
 export function overdueDayAmount(cells: number, partsPerDay: number): number {
@@ -21,10 +18,6 @@ export function formatOverdueDayAmount(
   const amount = overdueDayAmount(cells, partsPerDay);
   const text = Number.isInteger(amount) ? String(amount) : amount.toFixed(1);
   return decimalSeparator === ',' ? text.replace('.', ',') : text;
-}
-
-export function isStrongOverdue(cells: number, partsPerDay: number): boolean {
-  return overdueDayAmount(cells, partsPerDay) >= STRONG_OVERDUE_DAYS;
 }
 
 export function resolveOverdueKind(status: string | undefined): OverdueKind {

@@ -203,7 +203,8 @@ export async function changeIssueStatus(
   transitionId: string,
   resolution?: string,
   extraFields?: Record<string, unknown>,
-  targetStatusKey?: string
+  targetStatusKey?: string,
+  targetStatusDisplay?: string
 ): Promise<boolean> {
   try {
     const body: Record<string, unknown> = { transitionId };
@@ -213,6 +214,9 @@ export async function changeIssueStatus(
     }
     if (targetStatusKey) {
       body.targetStatusKey = targetStatusKey;
+    }
+    if (targetStatusDisplay) {
+      body.targetStatusDisplay = targetStatusDisplay;
     }
     await getPlannerBeerTrackerApi().patch(`/issues/${issueKey}/status`, body);
     return true;

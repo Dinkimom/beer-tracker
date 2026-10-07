@@ -23,6 +23,8 @@ export async function PATCH(
     const body = await request.json();
     const { transitionId } = body;
     const targetStatusKey = typeof body.targetStatusKey === 'string' ? body.targetStatusKey.trim() : '';
+    const targetStatusDisplay =
+      typeof body.targetStatusDisplay === 'string' ? body.targetStatusDisplay.trim() : '';
 
     if (!issueKey) {
       return NextResponse.json(
@@ -41,6 +43,7 @@ export async function PATCH(
     const transitionBody: TransitionBody = { ...body };
     delete transitionBody.transitionId;
     delete transitionBody.targetStatusKey;
+    delete transitionBody.targetStatusDisplay;
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
 
@@ -53,6 +56,7 @@ export async function PATCH(
       issueKey,
       request,
       sprintIds,
+      statusDisplay: targetStatusDisplay || undefined,
       statusKey: targetStatusKey || undefined,
     });
 

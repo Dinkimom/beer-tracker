@@ -7,6 +7,7 @@ import { StatusTag } from '@/components/StatusTag';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { getIncidentSeverityTagClasses } from '@/features/task/utils/incidentSeverityBadgeClasses';
+import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 import {
   formatTaskStoryPointsForDisplay,
   formatTaskTestPointsForDisplay,
@@ -75,6 +76,7 @@ export function TaskCardSwimlaneMetaRow({
       {(swimlaneCardFields?.showStatus ?? true) && (
         <StatusTag
           className="text-[10px] px-1 py-0.5"
+          label={taskStatusLabel(task)}
           status={task.originalStatus}
           statusColorKey={task.statusColorKey}
         />

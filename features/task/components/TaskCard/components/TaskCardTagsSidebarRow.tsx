@@ -7,6 +7,7 @@ import { StatusTag } from '@/components/StatusTag';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { getIncidentSeverityTagClasses } from '@/features/task/utils/incidentSeverityBadgeClasses';
+import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
 import { SlaBugSignalTag } from './SlaBugSignalTag';
 
@@ -55,7 +56,11 @@ export function TaskCardTagsSidebarRow({
           {`Опасность: ${dangerousReleaseValue || '—'}`}
         </span>
       ) : (
-        <StatusTag status={task.originalStatus} statusColorKey={task.statusColorKey} />
+        <StatusTag
+          label={taskStatusLabel(task)}
+          status={task.originalStatus}
+          statusColorKey={task.statusColorKey}
+        />
       )}
       {task.incidentSeverity ? (
         <TextTooltip content={t('task.card.severityValue', { value: task.incidentSeverity })}>

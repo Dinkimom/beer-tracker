@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from 'react';
 
-import { TextTooltip } from '@/components/TextTooltip';
+import { RESIZE_HANDLE_TOOLTIP_DELAY_MS, TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 
@@ -87,23 +87,23 @@ export function SidebarResizeHandle({
   };
 
   return (
-    <TextTooltip content={title}>
-    <div
-      className={shellClass}
-      style={handleStyle}
-      onMouseDown={onMouseDown}
+    <TextTooltip
+      content={title}
+      delayDuration={RESIZE_HANDLE_TOOLTIP_DELAY_MS}
+      skipDelayDuration={0}
     >
-      <div className="absolute inset-0 bg-transparent group-hover:bg-blue-100/60 dark:group-hover:bg-blue-900/40 transition-colors duration-200 cursor-col-resize" />
-      {layout.showInlineIndicator ? (
-        <SidebarResizeInlineIndicator
-          isActive={isResizing}
-          linesCount={linesCount}
-          revealOnHover={revealOnHover}
-          side={side}
-          translateClass={layout.translateClass}
-        />
-      ) : null}
-    </div>
+      <div className={shellClass} style={handleStyle} onMouseDown={onMouseDown}>
+        <div className="absolute inset-0 bg-transparent group-hover:bg-blue-100/60 dark:group-hover:bg-blue-900/40 transition-colors duration-200 cursor-col-resize" />
+        {layout.showInlineIndicator ? (
+          <SidebarResizeInlineIndicator
+            isActive={isResizing}
+            linesCount={linesCount}
+            revealOnHover={revealOnHover}
+            side={side}
+            translateClass={layout.translateClass}
+          />
+        ) : null}
+      </div>
     </TextTooltip>
   );
 }

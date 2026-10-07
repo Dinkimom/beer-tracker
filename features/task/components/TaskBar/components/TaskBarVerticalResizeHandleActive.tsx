@@ -2,7 +2,7 @@
 
 import type { getResizeHandleColors } from '@/utils/statusColors';
 
-import { TextTooltip } from '@/components/TextTooltip';
+import { RESIZE_HANDLE_TOOLTIP_DELAY_MS, TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 
 import {
@@ -66,37 +66,41 @@ export function TaskBarVerticalResizeHandleActive({
     : `${resizeHandleColors.line} ${resizeHandleColors.lineDark} ${getResizeHandleInlineGripOpacityClass(isActive)}`;
 
   return (
-    <TextTooltip content={title}>
-    <div
-      className={`task-bar-resize-handle-hit absolute left-0 right-0 ${edgeClass} ${heightClass} cursor-ns-resize group/resize-handle ${ZIndex.class('arrowsHovered')}`}
-      style={{
-        touchAction: 'none',
-        pointerEvents: 'auto',
-        zIndex: ZIndex.value('arrowsHovered'),
-      }}
-      onMouseDown={onMouseDown}
+    <TextTooltip
+      content={title}
+      delayDuration={RESIZE_HANDLE_TOOLTIP_DELAY_MS}
+      skipDelayDuration={0}
     >
       <div
-        className={`absolute inset-0 ${RESIZE_HANDLE_VISUAL_TRANSITION_CLASS} ${visualVisibilityClass}`}
+        className={`task-bar-resize-handle-hit absolute left-0 right-0 ${edgeClass} ${heightClass} cursor-ns-resize group/resize-handle ${ZIndex.class('arrowsHovered')}`}
+        style={{
+          touchAction: 'none',
+          pointerEvents: 'auto',
+          zIndex: ZIndex.value('arrowsHovered'),
+        }}
+        onMouseDown={onMouseDown}
       >
         <div
-          className={`absolute ${backdropInsetClass} ${getResizeHandleRoundedClass(side === 'top' ? 'left' : 'right', cornerStyle)} transition-all ${backgroundClass}`}
-          style={paint ? { backgroundColor: paint.background } : undefined}
-        />
-
-        <div
-          className={`absolute left-1/2 -translate-x-1/2 ${getResizeHandleVerticalGripOffsetClass(side, cornerStyle)} flex flex-row gap-px`}
+          className={`absolute inset-0 ${RESIZE_HANDLE_VISUAL_TRANSITION_CLASS} ${visualVisibilityClass}`}
         >
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`h-0.5 ${gripLineSizeClass} rounded transition-all ${gripLineClass}`}
-              style={paint ? { backgroundColor: paint.line } : undefined}
-            />
-          ))}
+          <div
+            className={`absolute ${backdropInsetClass} ${getResizeHandleRoundedClass(side === 'top' ? 'left' : 'right', cornerStyle)} transition-all ${backgroundClass}`}
+            style={paint ? { backgroundColor: paint.background } : undefined}
+          />
+
+          <div
+            className={`absolute left-1/2 -translate-x-1/2 ${getResizeHandleVerticalGripOffsetClass(side, cornerStyle)} flex flex-row gap-px`}
+          >
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`h-0.5 ${gripLineSizeClass} rounded transition-all ${gripLineClass}`}
+                style={paint ? { backgroundColor: paint.line } : undefined}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
     </TextTooltip>
   );
 }

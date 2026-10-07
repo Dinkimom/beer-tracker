@@ -7,6 +7,7 @@ import { notifySprintRealtimeForSprintIds } from '@/lib/realtime/notifySprintRea
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 import { patchCachedSprintIssueParent, patchCachedSprintIssueStatus } from '@/lib/trackerApi/sprintIssuesCache';
+import { trackerStatusDisplayName } from '@/utils/statusMapper';
 
 function omitNonTrackerIssueRef(value: string | undefined): string | undefined {
   const key = value?.trim();
@@ -96,14 +97,18 @@ export function patchIssueStatusErrorResponse(error: unknown): NextResponse {
   );
 }
 
-function trackerStatusFromKey(statusKey: string): TrackerIssue['status'] {
-  return { key: statusKey, display: statusKey };
+function trackerStatusFromChange(
+  statusKey: string,
+  statusDisplay: string | undefined
+): TrackerIssue['status'] {
+  return { display: statusDisplay?.trim() || statusKey, key: statusKey };
 }
 
 export function completeIssueStatusChange(input: {
   issueKey: string;
   request: Request;
   sprintIds: number[];
+  statusDisplay?: string;
   statusKey?: string;
 }): void {
   invalidateBurndownForSprintIds(input.sprintIds, invalidateCache.burndown);
@@ -112,14 +117,21 @@ export function completeIssueStatusChange(input: {
   }
 
   const statusKey = input.statusKey?.trim();
+  const statusDisplay = trackerStatusDisplayName(input.statusDisplay, statusKey);
   if (statusKey) {
-    const status = trackerStatusFromKey(statusKey);
+    const status = trackerStatusFromChange(statusKey, statusDisplay);
     for (const sprintId of input.sprintIds) {
       patchCachedSprintIssueStatus(sprintId, input.issueKey, { status });
     }
   }
   notifySprintRealtimeForSprintIds(input.request, input.sprintIds, ['tasks'], {
-    issueStatus: statusKey ? { issueKey: input.issueKey, statusKey } : undefined,
+    issueStatus: statusKey
+      ? {
+          issueKey: input.issueKey,
+          statusKey,
+          ...(statusDisplay ? { statusDisplay } : {}),
+        }
+      : undefined,
   });
 }
 

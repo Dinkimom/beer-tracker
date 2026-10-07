@@ -5,11 +5,13 @@ import {
   computeBaselineStretch,
   computeBaselineStripOpacity,
   computeSwimlaneBaselineInsetsPx,
+  computeSwimlaneOverdueBaselineBarBox,
   computeSwimlaneOverdueBaselineStrips,
   computeSwimlaneRowBandBox,
   computeSwimlaneRowBandStyle,
   computeTaskLayerCardOpacity,
   resolveSwimlaneStackedTaskBandHeightPx,
+  SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX,
   SWIMLANE_STACKED_LAYER_GAP_PX,
   SWIMLANE_TASK_CARD_BORDER_RADIUS_PX,
   SWIMLANE_TASK_ROW_VERTICAL_INSET_PX,
@@ -83,7 +85,7 @@ describe('computeSwimlaneOverdueBaselineStrips', () => {
 });
 
 describe('computeBaselineStripOpacity', () => {
-  it('uses hover highlight for active task id', () => {
+  it('stays opaque unless a drag preview covers the strip', () => {
     expect(
       computeBaselineStripOpacity({
         activeTaskDuration: 3,
@@ -91,9 +93,7 @@ describe('computeBaselineStripOpacity', () => {
         baselineStart: 0,
         baselineWidth: 5,
         hoveredCell: null,
-        hoveredTaskId: 'x',
-        isDraggingTask: true,
-        taskId: 'x',
+        isDraggingTask: false,
       })
     ).toBe(1);
   });
@@ -158,6 +158,22 @@ describe('computeTaskLayerCardOpacity', () => {
         taskId: 'other',
       })
     ).toBe(0.5);
+  });
+});
+
+describe('computeSwimlaneOverdueBaselineBarBox', () => {
+  it('centers a short bar inside the card band', () => {
+    expect(computeSwimlaneOverdueBaselineBarBox(20, 42)).toEqual({
+      height: SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX,
+      top: 20 + (42 - SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX) / 2,
+    });
+  });
+
+  it('stays inside a band shorter than the compact bar', () => {
+    expect(computeSwimlaneOverdueBaselineBarBox(4, 16)).toEqual({
+      height: 16,
+      top: 4,
+    });
   });
 });
 

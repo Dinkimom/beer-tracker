@@ -30,6 +30,14 @@ export function getTaskTrackerDisplayKey(task: Task): string {
   return String(task.originalTaskId ?? task.id);
 }
 
+/** Текст бейджа статуса: подпись трекера, иначе ключ. */
+export function taskStatusLabel(task: {
+  originalStatus?: string | null;
+  originalStatusDisplay?: string | null;
+}): string | undefined {
+  return task.originalStatusDisplay?.trim() || task.originalStatus?.trim() || undefined;
+}
+
 /** URL задачи в трекере по ключу и web-base текущего инстанса (из TRACKER_API_URL). */
 export function getTaskTrackerIssueUrl(task: Task, tracker: TrackerWebUrlContext): string {
   return getTrackerIssueUrlByKey(getTaskTrackerDisplayKey(task), tracker);

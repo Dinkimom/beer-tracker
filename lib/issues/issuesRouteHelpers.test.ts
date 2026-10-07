@@ -98,6 +98,52 @@ describe('issuesRouteHelpers', () => {
     unsubscribe();
   });
 
+  it('keeps the human status name in the sprint cache and realtime payload', async () => {
+    setCachedSprintIssues(
+      77,
+      [
+        {
+          id: '1',
+          key: 'BT-1',
+          self: '',
+          status: { key: 'open', display: 'Open' },
+          summary: 'Move card',
+        },
+      ],
+      'in_progress'
+    );
+    const received: SprintRealtimeMessage[] = [];
+    const unsubscribe = subscribeLocalSprintRealtime((next) => {
+      received.push(next);
+    });
+
+    completeIssueStatusChange({
+      issueKey: 'BT-1',
+      request: new Request('http://localhost/api/issues/BT-1/status', {
+        headers: { [TENANT_ORG_HEADER]: 'org-1' },
+      }),
+      sprintIds: [77],
+      statusDisplay: 'В работе',
+      statusKey: 'вработе',
+    });
+
+    expect(getCachedSprintIssues(77)?.[0]?.status).toEqual({
+      display: 'В работе',
+      key: 'вработе',
+    });
+    await vi.waitFor(() => {
+      expect(
+        received.some(
+          (event) =>
+            event.type === 'sprint.changed' &&
+            event.issueStatus?.statusKey === 'вработе' &&
+            event.issueStatus.statusDisplay === 'В работе'
+        )
+      ).toBe(true);
+    });
+    unsubscribe();
+  });
+
   it('patches sprint cache parent after a tracker parent change', async () => {
     setCachedSprintIssues(
       77,

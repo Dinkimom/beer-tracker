@@ -6,6 +6,7 @@ export type SprintRealtimeResource = 'comments' | 'links' | 'positions' | 'react
 
 export interface SprintRealtimeIssueStatus {
   issueKey: string;
+  statusDisplay?: string;
   statusKey: string;
 }
 

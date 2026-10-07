@@ -32,7 +32,6 @@ import {
 } from '@/features/swimlane/components/SwimlaneRowReservedHeightControls';
 import { TaskLayer } from '@/features/swimlane/components/TaskLayer';
 import { TimelineGrid } from '@/features/swimlane/components/TimelineGrid';
-import { useSwimlaneDocumentDarkClass } from '@/features/swimlane/hooks/in-progress-fact/useSwimlaneDocumentDarkClass';
 import { useSwimlaneAvailabilityUi } from '@/features/swimlane/hooks/useSwimlaneAvailabilityUi';
 import { useSwimlaneLayout } from '@/features/swimlane/hooks/useSwimlaneLayout';
 import { useSwimlaneQuickAddHoverImagePaste } from '@/features/swimlane/hooks/useSwimlaneQuickAddHoverImagePaste';
@@ -179,8 +178,6 @@ function SwimlaneComponent({
     disabled: isOnboardingDemoLane,
     id: `swimlane-${developer.id}`,
   });
-
-  const isDark = useSwimlaneDocumentDarkClass();
 
   const quickAddLayout = resolveSwimlaneQuickAddLayoutState({
     canQuickAddOnLane,
@@ -386,7 +383,6 @@ function SwimlaneComponent({
               hoverConnectedTaskIds={hoverConnectedTaskIds}
               hoveredCell={hoveredCell}
               hoveredTaskId={hoveredTaskId}
-              isDark={isDark}
               isDraggingTask={isDraggingTask}
               layerHeight={layout.layerHeight}
               linkSourceEndCell={linkSourceEndCell}

@@ -9,6 +9,7 @@ import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveTaskCardBodyContext } from '@/features/task/components/TaskCard/components/taskCardBodyContextHelpers';
 import { resolveTaskCardDisplayId } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
+import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 import { formatTaskStoryPointsForDisplay, formatTaskTestPointsForDisplay } from '@/lib/pointsUtils';
 
 import {
@@ -73,6 +74,7 @@ export function BacklogTaskRowView({ developers, embedded = false, task }: Backl
       </span>
       <StatusTag
         className="max-w-[11rem] overflow-hidden text-ellipsis"
+        label={taskStatusLabel(task)}
         status={task.originalStatus}
         statusColorKey={task.statusColorKey}
       />

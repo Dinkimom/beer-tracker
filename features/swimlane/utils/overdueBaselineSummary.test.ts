@@ -7,7 +7,6 @@ import { getPartsPerDay } from '@/constants';
 import {
   extendLastPlanSegmentToCell,
   formatOverdueDayAmount,
-  isStrongOverdue,
   overdueDayAmount,
   resolveOverdueKind,
 } from './overdueBaselineSummary';
@@ -36,11 +35,6 @@ describe('overdue day amount', () => {
     expect(formatOverdueDayAmount(parts, parts, ',')).toBe('1');
     expect(formatOverdueDayAmount(3, 2, ',')).toBe('1,5');
     expect(formatOverdueDayAmount(3, 2, '.')).toBe('1.5');
-  });
-
-  it('treats two days and longer as a strong badge', () => {
-    expect(isStrongOverdue(parts * 2, parts)).toBe(true);
-    expect(isStrongOverdue(parts * 2 - 1, parts)).toBe(false);
   });
 });
 

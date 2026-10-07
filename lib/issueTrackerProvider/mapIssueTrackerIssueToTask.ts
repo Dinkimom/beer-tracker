@@ -7,7 +7,7 @@ import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
 import { parseSlaBugFieldsFromIssue } from '@/lib/slaBugs/parseSlaBugFields';
 import { applyTrackerIntegrationToTask } from '@/lib/trackerIntegration';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
-import { mapStatus } from '@/utils/statusMapper';
+import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
 import { issueTrackerIssueWebUrl } from './issueTrackerUi';
 
@@ -201,6 +201,7 @@ function mapIssueTrackerIssueToTaskBase(
 ): Task {
   const statusKey = issue.status?.key || issue.statusType?.key;
   const statusId = issue.status?.id?.trim();
+  const statusDisplay = trackerStatusDisplayName(issue.status?.display, statusKey);
   const appStatusKey = issue.statusType?.key || statusKey;
   const sla = parseSlaBugFieldsFromIssue(fieldBag);
   return {
@@ -223,6 +224,7 @@ function mapIssueTrackerIssueToTaskBase(
     qaEngineerName: issue.qaEngineer?.display,
     status: appStatusKey ? mapStatus(appStatusKey) : undefined,
     originalStatus: statusKey,
+    ...(statusDisplay ? { originalStatusDisplay: statusDisplay } : {}),
     ...(statusId ? { originalStatusId: statusId } : {}),
     statusTypeKey: issue.statusType?.key,
     priority: issue.priority?.key || issue.priority?.display,
