@@ -48,6 +48,7 @@ export function BacklogPageFilters({
         className="!w-64 shrink-0"
         placeholder={t('backlog.filters.searchPlaceholder')}
         size="md"
+        surface="glass"
         value={nameFilter}
         onChange={onNameFilterChange}
       />

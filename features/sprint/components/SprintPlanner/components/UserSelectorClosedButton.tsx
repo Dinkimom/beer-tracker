@@ -5,7 +5,6 @@ import type { MouseEvent } from 'react';
 
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
-import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { getUserSelectorInitials } from './userSelectorDisplayHelpers';
@@ -16,6 +15,7 @@ interface UserSelectorClosedButtonProps {
   compact?: boolean;
   disabled?: boolean;
   selectedUser: RegistryUserItem | null;
+  /** Accessible name for the closed trigger (no hover tooltip — labels live beside the field). */
   title?: string;
   value: string;
   onClear?: (event: MouseEvent) => void;
@@ -51,8 +51,8 @@ export function UserSelectorClosedButton({
 
   return (
     <div className={closedFieldClassName(compact, Boolean(disabled))}>
-      {wrapWithTextTooltip(
       <button
+        aria-label={title}
         className="flex min-h-0 min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-3 py-0 text-left transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] active:bg-gray-200 disabled:pointer-events-none dark:hover:bg-white/[0.06] dark:active:bg-white/10"
         disabled={disabled}
         type="button"
@@ -71,10 +71,7 @@ export function UserSelectorClosedButton({
         ) : (
           <span className={closedPlaceholderClassName(Boolean(value))}>{buttonText}</span>
         )}
-      </button>,
-        title,
-        { disabled: Boolean(disabled), fullWidth: true }
-      )}
+      </button>
       {showClear ? (
         <button
           aria-label={t('common.userSelector.resetSelectionAria')}

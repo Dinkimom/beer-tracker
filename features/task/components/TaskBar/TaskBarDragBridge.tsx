@@ -14,7 +14,7 @@ import { sprintCardPresenceBlocksNewGestures } from '@/lib/realtime/sprintCardPr
  * Сдвиг курсора живёт только здесь. Тяжёлая карточка читает стабильный bind
  * и не перерисовывается на каждом pointermove.
  */
-export interface TaskBarDragBind {
+interface TaskBarDragBind {
   attributes: DraggableAttributes;
   isDragging: boolean;
   listeners: DraggableSyntheticListeners;

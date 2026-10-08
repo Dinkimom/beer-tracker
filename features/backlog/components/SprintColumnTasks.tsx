@@ -5,6 +5,7 @@ import type { Developer, Task } from '@/types';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 
+import { BACKLOG_DIVIDE } from './backlogChromeClasses';
 import { BacklogShowMoreTasks } from './BacklogShowMoreTasks';
 import { BacklogTaskRow } from './BacklogTaskRow';
 
@@ -81,7 +82,7 @@ export function SprintColumnTasks({
 
   return (
     <div>
-      <div className="divide-y divide-gray-100 dark:divide-gray-700">
+      <div className={BACKLOG_DIVIDE}>
         {tasks.map((task) => (
           <BacklogTaskRow key={task.id} developers={developers} scopeId={scopeId} task={task} />
         ))}

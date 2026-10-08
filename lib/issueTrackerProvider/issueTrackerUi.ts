@@ -31,6 +31,7 @@ export interface IssueTrackerProviderCapabilities {
   supportsChecklists: boolean;
   supportsFieldCatalog: boolean;
   supportsIssueChildren: boolean;
+  supportsIssueLinks: boolean;
   supportsQueryLanguageSearch: boolean;
   supportsRelatedIssues: boolean;
   supportsScreenCatalog: boolean;
@@ -45,6 +46,7 @@ export function issueTrackerProviderCapabilities(
     supportsChecklists: yandexShaped,
     supportsFieldCatalog: yandexShaped,
     supportsIssueChildren: yandexShaped,
+    supportsIssueLinks: yandexShaped,
     supportsQueryLanguageSearch: yandexShaped,
     supportsRelatedIssues: yandexShaped,
     supportsScreenCatalog: yandexShaped,

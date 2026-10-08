@@ -2,12 +2,14 @@
 
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
-import type { Developer, StatusFilter } from '@/types';
+import type { Developer, StatusFilter, Task } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
 import { observer } from 'mobx-react-lite';
+import { useCallback, useMemo } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { collectBacklogFilterPeople } from '@/features/backlog/utils/backlogFilterPeople';
 import { useRootStore } from '@/lib/layers';
 
 import {
@@ -20,6 +22,8 @@ import { SprintPlannerControlsBarRightSection } from './SprintPlannerControlsBar
 import { SprintPlannerOccupancyFiltersRow } from './SprintPlannerOccupancyFiltersRow';
 
 interface SprintPlannerControlsBarProps {
+  /** Задачи спринта — для аватар-фильтра на канбане (как на бэклоге). */
+  assigneeFilterTasks?: Task[];
   boardId: number | null;
   boardViewers?: readonly SprintPresenceViewer[];
   developers: Developer[];
@@ -55,6 +59,7 @@ interface SprintPlannerControlsBarProps {
  * Панель контролов спринт-планнера: спринт, поиск, фильтр исполнителей, режим отображения.
  */
 export const SprintPlannerControlsBar = observer(function SprintPlannerControlsBar({
+  assigneeFilterTasks = [],
   boardId,
   boardViewers = [],
   developers,
@@ -94,6 +99,30 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
   const tasksReloadButtonTitle = resolveTasksReloadButtonTitle(isReloading, selectedSprintId, t);
   const statusFilterOptions = buildOccupancyStatusFilterOptions(t);
 
+  const handleAssigneeToggle = useCallback(
+    (id: string) => {
+      setSelectedAssigneeIds((current) => {
+        const next = new Set(current);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [setSelectedAssigneeIds]
+  );
+
+  const assigneeFilterPeople = useMemo(
+    () =>
+      viewMode === 'kanban'
+        ? collectBacklogFilterPeople({
+            backlogDevelopers: developers,
+            backlogTasks: assigneeFilterTasks,
+            sprintBundles: [],
+          })
+        : [],
+    [assigneeFilterTasks, developers, viewMode]
+  );
+
   const occupancyFiltersRow =
     viewMode === 'occupancy' && setOccupancyStatusFilter ? (
       <SprintPlannerOccupancyFiltersRow
@@ -106,18 +135,30 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
       />
     ) : null;
 
+  const blendWithBoard = viewMode === 'kanban';
+
   return (
-    <div className="relative z-10 flex-shrink-0 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+    <div
+      className={`relative z-10 flex-shrink-0 px-4 py-3 ${
+        blendWithBoard
+          ? 'border-b border-transparent'
+          : 'border-b border-gray-200 dark:border-gray-700'
+      }`}
+    >
       <div className="flex w-full min-w-0 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <SprintPlannerControlsBarLeftSection
+            assigneeFilterPeople={assigneeFilterPeople}
             boardId={boardId}
             globalNameFilter={globalNameFilter}
+            selectedAssigneeIds={selectedAssigneeIds}
             selectedSprintId={selectedSprintId}
             setGlobalNameFilter={setGlobalNameFilter}
             sprints={sprints}
             sprintsLoading={sprintsLoading}
             tasksLoading={tasksLoading}
+            viewMode={viewMode}
+            onAssigneeToggle={handleAssigneeToggle}
             onSprintChange={onSprintChange}
           />
           <SprintPlannerControlsBarRightSection

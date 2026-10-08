@@ -10,7 +10,6 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
-import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 
@@ -169,17 +168,15 @@ export function UserSelectorOpenPanel({
         }
         style={{ zIndex: ZIndex.dropdownContent + 1 }}
       >
-        {wrapWithTextTooltip(
-          <input
-            ref={inputRef}
-            className="min-w-0 flex-1 bg-transparent text-gray-900 outline-none placeholder-gray-500 dark:text-gray-100"
-            placeholder={searchPlaceholder}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-          />,
-          title
-        )}
+        <input
+          ref={inputRef}
+          aria-label={title}
+          className="min-w-0 flex-1 bg-transparent text-gray-900 outline-none placeholder-gray-500 dark:text-gray-100"
+          placeholder={searchPlaceholder}
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchQueryChange(e.target.value)}
+        />
         {searchQuery ? (
           <HeaderIconButton
             aria-label={clearTitle}

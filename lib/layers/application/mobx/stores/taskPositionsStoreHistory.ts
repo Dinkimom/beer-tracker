@@ -13,7 +13,7 @@ import {
   type PositionHistoryValue,
 } from './planHistoryTypes';
 
-export function positionHistoryValuesEqual(
+function positionHistoryValuesEqual(
   left: PositionHistoryValue,
   right: PositionHistoryValue
 ): boolean {

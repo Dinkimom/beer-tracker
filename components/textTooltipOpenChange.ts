@@ -15,3 +15,11 @@ export function applyTextTooltipOpenChange(params: {
   params.onOpenChange?.(params.next);
   params.setOpen(params.next);
 }
+
+/**
+ * Radix Tooltip opens on focus and stays until blur — after a click the tip
+ * lingers until another click. Suppress focus-open so tooltips are hover-only.
+ */
+export function suppressTextTooltipFocusOpen(event: { preventDefault: () => void }): void {
+  event.preventDefault();
+}

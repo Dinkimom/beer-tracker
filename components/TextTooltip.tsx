@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 import { useSingleTooltipGroup } from './SingleTooltipGroupContext';
-import { applyTextTooltipOpenChange } from './textTooltipOpenChange';
+import { applyTextTooltipOpenChange, suppressTextTooltipFocusOpen } from './textTooltipOpenChange';
 import { TextTooltipPortalContent } from './TextTooltipPortalContent';
 import { buildTextTooltipTrigger, resolveTextTooltipEffectiveOpen } from './textTooltipTriggerHelpers';
 
@@ -32,11 +32,6 @@ interface TextTooltipProps {
   delayDuration?: number;
   /** Отключить тултип (например, когда content пустой) */
   disabled?: boolean;
-  /**
-   * Окно после закрытия, в котором следующий показ без delay (Radix skipDelayDuration).
-   * Для рукояток ресайза лучше 0 — иначе подсказка мигает при прицеливании.
-   */
-  skipDelayDuration?: number;
   /** Показывать тултип в точке наведения курсора (вместо сверху по центру триггера) */
   followCursor?: boolean;
   /** Интерактивный режим (позволяет скролл и клики внутри тултипа) */
@@ -50,6 +45,11 @@ interface TextTooltipProps {
    * В группе одновременно виден только один тултип.
    */
   singleInGroupId?: string;
+  /**
+   * Окно после закрытия, в котором следующий показ без delay (Radix skipDelayDuration).
+   * Для рукояток ресайза лучше 0 — иначе подсказка мигает при прицеливании.
+   */
+  skipDelayDuration?: number;
   /** Колбэк при открытии/закрытии (для ленивой подгрузки контента). */
   onOpenChange?: (open: boolean) => void;
 }
@@ -62,7 +62,7 @@ interface TextTooltipProps {
 export function TextTooltip({
   children,
   content,
-  delayDuration = 300,
+  delayDuration = 500,
   skipDelayDuration = 100,
   side = 'bottom',
   align = 'center',
@@ -113,7 +113,9 @@ export function TextTooltip({
       skipDelayDuration={skipDelayDuration}
     >
       <Tooltip.Root open={effectiveOpen} onOpenChange={handleOpenChange}>
-        <Tooltip.Trigger asChild>{trigger}</Tooltip.Trigger>
+        <Tooltip.Trigger asChild onFocus={suppressTextTooltipFocusOpen}>
+          {trigger}
+        </Tooltip.Trigger>
         {presence.mounted ? (
           <Tooltip.Portal forceMount>
             <TextTooltipPortalContent

@@ -48,6 +48,7 @@ const YANDEX_KNOWN_ISSUE_FIELDS = new Set([
   'updatedAt',
 ]);
 
+import { createYandexIssueLink } from './yandexIssueLinks';
 import {
   applyOptionalProductTeam,
   applyOptionalRefField,
@@ -354,9 +355,9 @@ async function createYandexRelatedIssueLink(
   newIssueKey: string
 ): Promise<void> {
   try {
-    await api.post(`/issues/${sourceIssueKey}/links`, {
+    await createYandexIssueLink(api, sourceIssueKey, {
       relationship: 'relates',
-      issue: newIssueKey,
+      targetIssueKey: newIssueKey,
     });
   } catch (error) {
     console.error('Failed to create link:', error);

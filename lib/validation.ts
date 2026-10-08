@@ -174,6 +174,11 @@ export const CreateRelatedIssueSchema = z.object({
   type: z.string().optional(),
 });
 
+export const CreateIssueLinkSchema = z.object({
+  targetIssueKey: z.string().trim().min(1),
+  relationship: z.enum(['relates', 'blocks', 'blocked_by', 'duplicates']),
+});
+
 export const AddIssueToSprintSchema = z.object({
   sprintId: z.number().int().positive(),
 });

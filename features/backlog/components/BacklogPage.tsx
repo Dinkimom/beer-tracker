@@ -174,7 +174,7 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="flex flex-col gap-3">
               {sprintsLoading ? (
-                <div className="flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-8 text-sm text-gray-500 dark:border-gray-700 dark:bg-ds-surface-header dark:text-gray-400">
+                <div className="surface-glass-well flex items-center justify-center gap-2 rounded-2xl border border-black/[0.1] py-8 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
                   <Icon className="h-4 w-4 animate-spin" name="spinner" />
                   {t('backlog.loadingSprints')}
                 </div>
@@ -192,7 +192,7 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
               )}
 
               <Button
-                className="!h-12 w-full !rounded-2xl !border-dashed"
+                className="!h-12 w-full !rounded-2xl !border-dashed !border-black/15 bg-transparent hover:!bg-black/[0.03] dark:!border-white/20 dark:hover:!bg-white/[0.04]"
                 type="button"
                 variant="outline"
                 onClick={handleCreateSprint}
@@ -216,7 +216,7 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
         </div>
         <DragOverlay>
           {activeTask ? (
-            <div className="w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+            <div className="surface-glass-well w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-black/[0.08] shadow-xl dark:border-white/12">
               <BacklogTaskRowView developers={activeTaskDevelopers} task={activeTask} />
             </div>
           ) : null}

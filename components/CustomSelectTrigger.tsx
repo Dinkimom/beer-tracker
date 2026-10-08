@@ -62,7 +62,8 @@ export const CustomSelectTrigger = forwardRef<HTMLButtonElement, CustomSelectTri
         aria-label={isIconTrigger ? title : undefined}
         className={customSelectTriggerClassName(isIconTrigger, size, className)}
         disabled={disabled}
-        title={title}
+        // Text selects already show their value; tooltips on click/focus are noise.
+        title={isIconTrigger ? title : undefined}
         type="button"
         variant={isIconTrigger ? 'ghost' : 'outline'}
       >

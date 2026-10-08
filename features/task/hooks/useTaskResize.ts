@@ -20,8 +20,7 @@ interface UseTaskResizeProps {
   onAfterResize?: (
     taskId: string,
     newDuration: number,
-    updatedPosition: TaskPosition,
-    previousDuration: number | null
+    updatedPosition: TaskPosition
   ) => void;
   setTaskPositions: (updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>) => void;
   updateXarrow: () => void;
@@ -49,10 +48,8 @@ export function useTaskResize({
 
       let finalDurationForCallback: number | null = null;
       let outgoingPosition: TaskPosition | null = null;
-      let previousDurationForCallback: number | null = null;
 
       setTaskPositions((prev) => {
-        previousDurationForCallback = prev.get(taskId)?.duration ?? null;
         const result = applyTaskResizeToPositions(prev, taskId, params, timelineTotalCells);
         finalDurationForCallback = result.finalDurationForCallback;
         outgoingPosition = result.outgoingPosition;
@@ -61,7 +58,7 @@ export function useTaskResize({
       setTimeout(() => updateXarrow(), DELAYS.IMMEDIATE);
 
       if (finalDurationForCallback != null && outgoingPosition != null) {
-        onAfterResize?.(taskId, finalDurationForCallback, outgoingPosition, previousDurationForCallback);
+        onAfterResize?.(taskId, finalDurationForCallback, outgoingPosition);
       }
     },
     [setTaskPositions, updateXarrow, onAfterResize, timelineTotalCells]

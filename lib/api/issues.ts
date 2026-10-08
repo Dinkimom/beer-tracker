@@ -3,6 +3,10 @@
  */
 
 import type { RegistryUserItem, TransitionField, TransitionItem } from './types';
+import type {
+  IssueLinkCreateRelationship,
+  IssueTrackerIssueLink,
+} from '@/lib/issueTrackerProvider/issueLinkTypes';
 import type { IssueResponse, Task } from '@/types';
 import type { IssueChangelogWithComments } from '@/types/tracker';
 import type { AxiosError } from 'axios';
@@ -320,6 +324,34 @@ export async function createRelatedIssue(
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+}
+
+export async function fetchIssueLinks(
+  issueKey: string
+): Promise<{ fromCache: boolean; links: IssueTrackerIssueLink[] }> {
+  const { data } = await getPlannerBeerTrackerApi().get<{
+    fromCache?: boolean;
+    links?: IssueTrackerIssueLink[];
+  }>(`/issues/${issueKey}/links`);
+  return {
+    fromCache: Boolean(data.fromCache),
+    links: Array.isArray(data.links) ? data.links : [],
+  };
+}
+
+export async function createIssueLink(
+  issueKey: string,
+  payload: { relationship: IssueLinkCreateRelationship; targetIssueKey: string }
+): Promise<IssueTrackerIssueLink> {
+  const { data } = await getPlannerBeerTrackerApi().post<{ link: IssueTrackerIssueLink }>(
+    `/issues/${issueKey}/links`,
+    payload
+  );
+  return data.link;
+}
+
+export async function deleteIssueLink(issueKey: string, linkId: string): Promise<void> {
+  await getPlannerBeerTrackerApi().delete(`/issues/${issueKey}/links/${linkId}`);
 }
 
 export async function addIssueToSprint(issueKey: string, sprintId: number): Promise<boolean> {

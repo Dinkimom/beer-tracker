@@ -32,7 +32,7 @@ function durationFromPoints(points: number | null): number | null {
  * Есть SP — планируем по ним, даже если TP не задан («?tp»).
  * QA и testing-only берут TP, а если его нет — SP.
  */
-export function assigneePlanDuration(task: Task): number | null {
+function assigneePlanDuration(task: Task): number | null {
   if (task.isLocalTask || isTaskCompleted(task) || !task.assignee) {
     return null;
   }
@@ -49,7 +49,7 @@ export function assigneePlanDuration(task: Task): number | null {
  * У участника без tracker id дорожка — `staff:…`, а в задаче — id Jira.
  * Тогда совпадает единственный разработчик с тем же именем.
  */
-export function resolvePlanLaneId(
+function resolvePlanLaneId(
   assigneeId: string,
   assigneeName: string | undefined,
   developers: ReadonlyArray<Pick<Developer, 'id' | 'name'>>

@@ -49,7 +49,7 @@ export function KanbanLaneHeader({
     <div
       aria-expanded={!isLaneCollapsed}
       aria-label={kanbanLaneHeaderAriaLabel(isLaneCollapsed, t)}
-      className="sticky z-[5] flex min-w-0 cursor-pointer select-none items-center gap-2 bg-gray-50 px-1 py-4 transition-colors duration-200 hover:bg-gray-100 active:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-800 dark:active:bg-gray-700"
+      className="sticky z-[5] flex min-w-0 cursor-pointer select-none items-center gap-2 bg-gray-50/90 px-1 py-3 backdrop-blur-md transition-colors duration-200 hover:bg-black/[0.04] active:bg-black/[0.08] dark:bg-gray-950/70 dark:hover:bg-white/[0.06] dark:active:bg-white/10"
       role="button"
       style={{
         minWidth: columnsMinWidth,

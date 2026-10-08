@@ -6,11 +6,13 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useState } from 'react';
 
+import { PhaseCardColorSchemeOverride } from '@/components/PhaseCardColorSchemeOverride';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { useRootStore } from '@/lib/layers';
 import { sprintCardPresenceBlocksNewGestures } from '@/lib/realtime/sprintCardPresence';
 
+import { KANBAN_CARD_SURFACE } from './kanbanChromeClasses';
 import { kanbanTaskId } from './kanbanDndUtils';
 
 interface KanbanDraggableCardProps {
@@ -119,14 +121,17 @@ export function KanbanDraggableCard({
         }
       }}
     >
-      <TaskCard
-        assigneeName={task.assigneeName}
-        className="pointer-events-none"
-        developers={developers}
-        isContextMenuOpen={menuOpenHere}
-        task={task}
-        variant="sidebar"
-      />
+      <PhaseCardColorSchemeOverride value="monochrome">
+        <TaskCard
+          assigneeName={task.assigneeName}
+          className={KANBAN_CARD_SURFACE}
+          developers={developers}
+          hideStatusTag
+          isContextMenuOpen={menuOpenHere}
+          task={task}
+          variant="sidebar"
+        />
+      </PhaseCardColorSchemeOverride>
     </div>
   );
 }

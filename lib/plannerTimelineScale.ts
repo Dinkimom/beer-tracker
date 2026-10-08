@@ -88,13 +88,6 @@ export function setActivePlannerTimelineScale(scale: PlannerTimelineScale): void
   customSteps = ordered ?? [];
 }
 
-function isPlannerScaleCustomized(scale: PlannerTimelineScale = getActivePlannerTimelineScale()): boolean {
-  return (
-    scale.timeslotsPerDay !== DEFAULT_PLANNER_TIMELINE_SCALE.timeslotsPerDay ||
-    scale.estimateUnit !== DEFAULT_PLANNER_TIMELINE_SCALE.estimateUnit
-  );
-}
-
 /** Сколько слотов приходится на 1 SP в начале шкалы. «Сутки» = вся сетка дня. */
 function estimateTimeslotMultiplier(scale: PlannerTimelineScale = getActivePlannerTimelineScale()): number {
   return scale.estimateUnit === 'day' ? scale.timeslotsPerDay : 1;
@@ -198,21 +191,6 @@ export function storyPointsToTimeslotsForScale(sp: number, scale: PlannerTimelin
   // (при «1 SP = сутки» и 2 слотах/день 0.3 становилось целым рабочим днём).
   if (sp < 1) return slotsForFractionalStoryPoints(sp, multiplier);
   return baseStoryPointsToTimeslots(sp) * multiplier;
-}
-
-/**
- * Уже стоящая карточка не переписывает оценку, если её длина снята со старой шкалы.
- * Пока настройка не менялась, ресайз ведёт себя как раньше.
- */
-export function resizeShouldPreserveEstimate(input: {
-  currentEstimate: number;
-  previousDuration: number | null;
-  scale?: PlannerTimelineScale;
-}): boolean {
-  const scale = input.scale ?? getActivePlannerTimelineScale();
-  if (!isPlannerScaleCustomized(scale)) return false;
-  if (input.previousDuration == null) return true;
-  return input.previousDuration !== storyPointsToTimeslotsForScale(input.currentEstimate, scale);
 }
 
 export interface EstimateScalePreviewRow {

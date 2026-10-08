@@ -40,20 +40,13 @@ export function resolveDevTaskForPositionSave(
   return tasksMap.get(position.taskId);
 }
 
-export function shouldSyncEstimateOnResize(
-  syncEstimates: boolean,
-  fromSegmentEditor: boolean,
+/** Локально обновить SP/TP, если длительность дала другую оценку по таблице приведения. */
+export function shouldUpdateEstimateOnResize(
   devTask: Task | undefined,
   currentEstimate: number | null,
   newSP: number
 ): boolean {
-  return (
-    syncEstimates &&
-    !fromSegmentEditor &&
-    devTask != null &&
-    currentEstimate !== null &&
-    newSP !== currentEstimate
-  );
+  return devTask != null && currentEstimate !== null && newSP !== currentEstimate;
 }
 
 export function buildPositionFromSegments(

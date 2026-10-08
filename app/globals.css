@@ -848,6 +848,45 @@ textarea:focus-visible,
 }
 
 /*
+ * Секции бэклога: белая frost-вуаль на сером canvas.
+ * (slate-tint в светлой теме даёт грязные острова.)
+ */
+.surface-glass-well {
+  background-color: rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(20px) saturate(1.05);
+  backdrop-filter: blur(20px) saturate(1.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.dark .surface-glass-well {
+  background-color: rgba(255, 255, 255, 0.045);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  backdrop-filter: blur(20px) saturate(1.25);
+  box-shadow: none;
+}
+
+/*
+ * Канбан-колонка: светлая — нейтральный gray-100 (без синеватого slate),
+ * как жёлоб в Трекере; белые карточки читаются. Тёмная — лёгкое стекло.
+ */
+.kanban-column-glass {
+  background-color: #f3f4f6;
+  -webkit-backdrop-filter: blur(16px) saturate(1);
+  backdrop-filter: blur(16px) saturate(1);
+}
+
+.dark .kanban-column-glass {
+  background-color: rgba(255, 255, 255, 0.045);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  backdrop-filter: blur(20px) saturate(1.25);
+}
+
+/* Канбан: статус уже в колонке — не дублируем StatusTag на карточке. */
+[data-hide-status-tag] [data-status-tag] {
+  display: none;
+}
+
+/*
  * Стеклянная капсула (планер, бэклог).
  * Светлая доска почти белая: плотная белая заливка и белая кромка не читаются как стекло.
  * Белая вуаль 60% и saturate 1: цвет карточек читается без усиления.

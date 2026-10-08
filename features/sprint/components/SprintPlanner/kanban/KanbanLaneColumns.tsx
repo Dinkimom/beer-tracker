@@ -37,7 +37,7 @@ export function KanbanLaneColumns({
 }: KanbanLaneColumnsProps) {
   if (isLaneCollapsed) return null;
   return (
-    <div className="flex gap-4 items-stretch min-h-[120px] flex-none pr-4">
+    <div className="flex min-h-[120px] flex-none items-stretch gap-3 pr-4">
       {lane.columnsWithHeaderData.map(({ column, tasks: columnTasks }) => (
         <KanbanColumn
           key={`${laneKey}-${column.id}`}
@@ -46,7 +46,6 @@ export function KanbanLaneColumns({
           contextMenuTaskId={contextMenuTaskId}
           developers={developers}
           globalNameFilter={globalNameFilter}
-          groupByAssignee
           isDragging={Boolean(activeTaskId)}
           isDropDisabled={Boolean(activeTaskId) && !canDropInColumn(column)}
           isSourceColumn={column.id === sourceColumnId}

@@ -6,6 +6,11 @@ import { useDroppable } from '@dnd-kit/core';
 
 import { useI18n } from '@/contexts/LanguageContext';
 
+import {
+  KANBAN_COLUMN_BODY,
+  resolveKanbanColumnChromeClass,
+} from './kanbanChromeClasses';
+import { KanbanColumnHeader } from './KanbanColumnHeader';
 import { kanbanColumnId } from './kanbanDndUtils';
 import { KanbanDraggableCard } from './KanbanDraggableCard';
 
@@ -15,8 +20,13 @@ interface KanbanColumnProps {
   contextMenuTaskId?: string | null;
   developers: Developer[];
   globalNameFilter?: string;
-  /** Включена группировка по исполнителю — колонка со скруглением и границей со всех сторон */
-  groupByAssignee?: boolean;
+  /** Шапка внутри колонки (режим без группировки по lane). */
+  header?: {
+    displayName: string;
+    taskCount: number;
+    totalSp: number;
+    totalTp: number;
+  };
   /** Идёт перетаскивание задачи (показывать оверлей на недоступных колонках) */
   isDragging?: boolean;
   /** В режиме перетаскивания колонка недоступна для дропа — показываем предупреждение */
@@ -43,7 +53,7 @@ export function KanbanColumn({
   tasks,
   developers,
   globalNameFilter = '',
-  groupByAssignee = false,
+  header,
   isDragging = false,
   isDropDisabled = false,
   isSourceColumn = false,
@@ -58,35 +68,36 @@ export function KanbanColumn({
   });
 
   const filteredTasks = globalNameFilter
-    ? tasks.filter((t) => taskMatchesFilter(t, globalNameFilter))
+    ? tasks.filter((task) => taskMatchesFilter(task, globalNameFilter))
     : tasks;
 
   const showForbiddenBanner = isDragging && isDropDisabled && !isSourceColumn;
-
-  const roundAndBorderClass = groupByAssignee
-    ? 'rounded-lg border'
-    : 'rounded-b-lg border border-t-0';
+  const chromeClass = resolveKanbanColumnChromeClass(isOver, isDropDisabled);
 
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex flex-col min-w-[280px] w-[280px] max-w-[280px] shrink-0 ${roundAndBorderClass} overflow-hidden dark:shadow-none transition-colors ${
-        isOver && !isDropDisabled
-          ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/20'
-          : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800'
-      }`}
+      className={`relative flex min-h-[120px] w-[280px] max-w-[280px] min-w-[280px] shrink-0 flex-col overflow-hidden transition-colors ${chromeClass}`}
       data-kanban-column={columnId}
     >
+      {header ? (
+        <KanbanColumnHeader
+          displayName={header.displayName}
+          taskCount={header.taskCount}
+          totalSp={header.totalSp}
+          totalTp={header.totalTp}
+        />
+      ) : null}
       <div
-        className="flex-1 min-h-0 p-2 space-y-2 min-h-[120px] overflow-y-auto"
+        className={KANBAN_COLUMN_BODY}
         style={{ overscrollBehaviorX: 'auto', overscrollBehaviorY: 'auto' }}
       >
         {showForbiddenBanner && (
           <div
             aria-hidden
-            className="shrink-0 rounded-md bg-red-500/20 dark:bg-red-600/30 border border-red-400 dark:border-red-500 px-3 py-2"
+            className="shrink-0 rounded-lg border border-red-400/50 bg-red-500/15 px-3 py-2 dark:border-red-500/40 dark:bg-red-600/20"
           >
-            <p className="text-center text-xs font-medium text-red-800 dark:text-red-200 leading-tight">
+            <p className="text-center text-xs font-medium leading-tight text-red-800 dark:text-red-200">
               {t('sprintPlanner.kanban.dropForbidden')}
             </p>
           </div>

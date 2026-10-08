@@ -1,6 +1,7 @@
 import type {
   IssueTrackerCreateChecklistItemInput,
   IssueTrackerCreateIssueInput,
+  IssueTrackerCreateIssueLinkInput,
   IssueTrackerCreateIssueResult,
   IssueTrackerCreateRelatedIssueInput,
   IssueTrackerCreateSprintInput,
@@ -50,6 +51,11 @@ import { resolveTrackerApiConfigFromRequest } from '@/lib/trackerRequestConfig';
 import { yandexIssueUpdateBody } from './issueTrackerIssuePatch';
 import { mapIssueTrackerIssueToTask } from './mapIssueTrackerIssueToTask';
 import {
+  createYandexIssueLink,
+  deleteYandexIssueLink,
+  listYandexIssueLinks,
+} from './yandexIssueLinks';
+import {
   addYandexIssueToSprint,
   createYandexRelatedIssue,
   getYandexScreenFields,
@@ -98,6 +104,10 @@ function createYandexIssueTrackerProviderClient(api: AxiosInstance): IssueTracke
       return data;
     },
 
+    createIssueLink(issueKey: string, input: IssueTrackerCreateIssueLinkInput) {
+      return createYandexIssueLink(api, issueKey, input);
+    },
+
     createRelatedIssue(sourceIssueKey: string, input: IssueTrackerCreateRelatedIssueInput) {
       return createYandexRelatedIssue(api, sourceIssueKey, input);
     },
@@ -120,6 +130,10 @@ function createYandexIssueTrackerProviderClient(api: AxiosInstance): IssueTracke
 
     async deleteChecklistItem(issueKey: string, itemId: string): Promise<void> {
       await api.delete(`/issues/${issueKey}/checklistItems/${itemId}`);
+    },
+
+    deleteIssueLink(issueKey: string, trackerLinkId: string) {
+      return deleteYandexIssueLink(api, issueKey, trackerLinkId);
     },
 
     getBoard(boardId: number): Promise<unknown> {
@@ -222,6 +236,10 @@ function createYandexIssueTrackerProviderClient(api: AxiosInstance): IssueTracke
 
     listBoards() {
       return fetchTrackerBoardsPaginate(api);
+    },
+
+    listIssueLinks(issueKey: string) {
+      return listYandexIssueLinks(api, issueKey);
     },
 
     listQueues() {

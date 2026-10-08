@@ -2,7 +2,6 @@ import type { Task, TaskPosition } from '@/types';
 
 import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { updateIssueWorkForPhase } from '@/lib/beerTrackerApi';
-import { resizeShouldPreserveEstimate } from '@/lib/plannerTimelineScale';
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 import {
@@ -99,6 +98,7 @@ function syncResizeEstimateIfChanged(
   syncResizeEstimateToTracker(devTask, effectiveIsQa, newSP, syncEstimates);
 }
 
+/** После ресайза длительности — оценка по активной таблице приведения из админки. */
 export function handleTaskResizeAfterResize(
   taskId: string,
   newDuration: number,
@@ -107,21 +107,12 @@ export function handleTaskResizeAfterResize(
   qaTasksByOriginalId: Map<string, Task>,
   setTasks: HandleTaskResizeAfterResizeParams['setTasks'],
   syncEstimates: boolean,
-  savePosition: HandleTaskResizeAfterResizeParams['savePosition'],
-  previousDuration: number | null
+  savePosition: HandleTaskResizeAfterResizeParams['savePosition']
 ): void {
   const task = tasksMap.get(taskId) || qaTasksByOriginalId.get(taskId);
   if (!task) return;
 
   if (task.isLocalTask) {
-    if (
-      resizeShouldPreserveEstimate({
-        currentEstimate: task.storyPoints ?? 0,
-        previousDuration,
-      })
-    ) {
-      return;
-    }
     handleLocalTaskResizeOnSwimlane(taskId, newDuration, setTasks);
     return;
   }
@@ -130,11 +121,8 @@ export function handleTaskResizeAfterResize(
   const devTask = resolveDevTaskForResize(task, tasksMap);
   const currentEstimate = currentEstimateForResizeTask(devTask, effectiveIsQa);
   const newSP = timeslotsToStoryPoints(newDuration);
-  const preserveEstimate =
-    currentEstimate != null &&
-    resizeShouldPreserveEstimate({ currentEstimate, previousDuration });
 
-  if (devTask && !preserveEstimate) {
+  if (devTask) {
     syncResizeEstimateIfChanged(
       devTask,
       effectiveIsQa,

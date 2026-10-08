@@ -37,8 +37,13 @@ export function QueryProvider({ children }: { children: ReactNode }) {
         persister,
         maxAge: 1000 * 60 * 60 * 24, // 24 ч
         dehydrateOptions: {
-          shouldDehydrateQuery: (query) =>
-            query.queryKey[0] === 'boards' && query.state.status === 'success',
+          shouldDehydrateQuery: (query) => {
+            const root = query.queryKey[0];
+            // Список досок и параметры доски (колонки канбана) — редко меняются.
+            return (
+              (root === 'boards' || root === 'board') && query.state.status === 'success'
+            );
+          },
         },
       }}
     >

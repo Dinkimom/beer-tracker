@@ -52,7 +52,7 @@ export function KanbanColumnsLayout({
 }: KanbanColumnsLayoutProps) {
   if (hasLaneGrouping && lanesWithColumns.length > 0) {
     return (
-      <div ref={columnsContainerRef} className="flex flex-col flex-none min-h-full pl-4 pr-4 pb-4">
+      <div ref={columnsContainerRef} className="flex min-h-full flex-none flex-col pb-4 pl-4 pr-4">
         {lanesWithColumns.map((lane) => (
           <KanbanLaneSection
             key={lane.assigneeKey ?? lane.laneKey ?? ''}
@@ -81,24 +81,32 @@ export function KanbanColumnsLayout({
   return (
     <div
       ref={columnsContainerRef}
-      className="flex gap-4 items-stretch min-h-full flex-none pl-4 pr-4 pb-4 bg-white dark:bg-gray-900"
+      className="flex min-h-full flex-none items-stretch gap-3 px-4 pb-4 pt-0"
     >
-      {columnsWithHeaderData.map(({ column, tasks: columnTasks }) => (
-        <KanbanColumn
-          key={column.id}
-          columnId={column.id}
-          contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-          contextMenuTaskId={contextMenuTaskId}
-          developers={developers}
-          globalNameFilter={globalNameFilter}
-          isDragging={Boolean(activeTaskId)}
-          isDropDisabled={Boolean(activeTaskId) && !canDropInColumn(column)}
-          isSourceColumn={column.id === sourceColumnId}
-          tasks={columnTasks}
-          onContextMenu={onContextMenu}
-          onTaskClick={onTaskClick}
-        />
-      ))}
+      {columnsWithHeaderData.map(
+        ({ column, tasks: columnTasks, filteredTasks, totalSp, totalTp }) => (
+          <KanbanColumn
+            key={column.id}
+            columnId={column.id}
+            contextMenuBlurOtherCards={contextMenuBlurOtherCards}
+            contextMenuTaskId={contextMenuTaskId}
+            developers={developers}
+            globalNameFilter={globalNameFilter}
+            header={{
+              displayName: column.display,
+              taskCount: filteredTasks.length,
+              totalSp,
+              totalTp,
+            }}
+            isDragging={Boolean(activeTaskId)}
+            isDropDisabled={Boolean(activeTaskId) && !canDropInColumn(column)}
+            isSourceColumn={column.id === sourceColumnId}
+            tasks={columnTasks}
+            onContextMenu={onContextMenu}
+            onTaskClick={onTaskClick}
+          />
+        )
+      )}
     </div>
   );
 }

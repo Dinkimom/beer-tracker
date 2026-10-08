@@ -241,7 +241,7 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
                 onTabChange={handleTabChange}
               />
 
-              <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-0.5">
+              <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-0">
                 <div
                   className={
                     activeTab === 'board' ||

@@ -241,10 +241,10 @@ export function SprintPlannerView({
                   contextMenuBlurOtherCards,
                   developers,
                   groupBy: kanbanGroupBy,
+                  selectedAssigneeIds,
                   tasks: allTasksForDrag,
                   onContextMenu: handlers.handleContextMenu,
-                  onStatusChange: handlers.handleStatusChange,
-                  onTaskClick: handlers.handleTaskClick,
+                  onStatusChange: handlers.handleStatusChange, onTaskClick: handlers.handleTaskClick,
                 }}
                 occupancy={{
                   availability,
@@ -377,6 +377,7 @@ export function SprintPlannerView({
             style={{ zIndex: ZIndex.plannerControls }}
           >
             <SprintPlannerControlsBar
+              assigneeFilterTasks={allTasksForDrag}
               boardId={boardIdForPlannerData ?? null}
               boardViewers={boardViewers}
               developers={developers}

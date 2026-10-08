@@ -24,7 +24,7 @@ export function resolveKanbanGroupFlags(groupBy: SidebarGroupBy) {
 export function computeKanbanColumnsMinWidth(columnCount: number): number | undefined {
   if (columnCount === 0) return undefined;
   const COLUMN_WIDTH = 280;
-  const GAP = 16;
+  const GAP = 12;
   const PADDING_X = 32;
   return columnCount * COLUMN_WIDTH + (columnCount - 1) * GAP + PADDING_X;
 }

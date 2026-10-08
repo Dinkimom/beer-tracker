@@ -22,6 +22,8 @@ interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onCo
   children?: React.ReactNode;
   developers?: Developer[];
   dimmedByContextMenu?: boolean;
+  /** Скрыть StatusTag (канбан: статус уже в колонке). */
+  hideStatusTag?: boolean;
   inlineTitleEditor?: {
     onChange: (value: string) => void;
     onSubmit?: () => void;
@@ -87,6 +89,7 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
   layoutDuration,
   sprintBadge,
   showDangerousReleaseInsteadOfStatus = false,
+  hideStatusTag = false,
   slaBugBoardId,
   slaBugCloseP4ActionsEnabled = false,
   slaBugDemoteReason,
@@ -156,6 +159,7 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
         isRemoteChanging ? ' sprint-card-presence-changing' : ''
       }`}
       data-context-menu-source="task-card"
+      data-hide-status-tag={hideStatusTag ? '' : undefined}
       data-task-id={task.id}
       style={{ ...visual.cardRootStyle, ...style }}
       onContextMenu={(e) => {

@@ -4,22 +4,23 @@ import type { Developer, SidebarGroupBy, Task } from '@/types';
 import type { BoardColumn } from '@/types/tracker';
 
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
-import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { OverflowTooltip } from '@/components/OverflowTooltip';
+import { PhaseCardColorSchemeOverride } from '@/components/PhaseCardColorSchemeOverride';
 import { useI18n } from '@/contexts/LanguageContext';
+import { filterTasksByAssignees } from '@/features/backlog/utils/backlogFilterPeople';
+import { useBoardParams } from '@/features/board/hooks/useBoardParams';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import {
-  fetchBoard,
   getIssueTransitions,
   getIssueTransitionsBatch,
   type TransitionItem,
 } from '@/lib/beerTrackerApi';
 import { useRootStore } from '@/lib/layers';
-import { formatSprintTotalsPointsLabels } from '@/lib/pointsUtils';
 
+import { KANBAN_CARD_SURFACE, KANBAN_COLUMN_GLASS } from './kanbanChromeClasses';
+import { KanbanColumnHeader } from './KanbanColumnHeader';
 import { KanbanColumnsLayout } from './KanbanColumnsLayout';
 import { parseKanbanTaskId } from './kanbanDndUtils';
 import {
@@ -47,6 +48,8 @@ export interface KanbanViewProps {
   contextMenuBlurOtherCards?: boolean;
   developers: Developer[];
   groupBy?: SidebarGroupBy;
+  /** Пустой set — без фильтра по исполнителю. */
+  selectedAssigneeIds?: ReadonlySet<string>;
   tasks: Task[];
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onStatusChange?: (taskId: string, transitionId: string, targetStatusKey?: string, targetStatusDisplay?: string, screenId?: string) => Promise<void>;
@@ -81,6 +84,7 @@ export const KanbanView = observer(function KanbanView({
   developers,
   groupBy = 'none',
   contextMenuBlurOtherCards = false,
+  selectedAssigneeIds,
   onStatusChange,
   onTaskClick,
   onContextMenu,
@@ -106,13 +110,15 @@ export const KanbanView = observer(function KanbanView({
     });
   }, []);
 
-  const { data: board, isLoading, error } = useQuery({
-    queryKey: ['board', boardId],
-    queryFn: () => fetchBoard(boardId!),
-    enabled: boardId !== null && boardId > 0,
-  });
+  const { data: board, isLoading, error } = useBoardParams(boardId);
 
-  const tasksForKanban = useMemo(() => filterKanbanTasksForDisplay(tasks), [tasks]);
+  const tasksForKanban = useMemo(() => {
+    const displayTasks = filterKanbanTasksForDisplay(tasks);
+    if (!selectedAssigneeIds || selectedAssigneeIds.size === 0) {
+      return displayTasks;
+    }
+    return filterTasksByAssignees(displayTasks, selectedAssigneeIds);
+  }, [selectedAssigneeIds, tasks]);
 
   const columnsWithTasks = useMemo(() => {
     if (!board?.columns?.length) return [];
@@ -263,7 +269,7 @@ export const KanbanView = observer(function KanbanView({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
         <div
-          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-auto bg-gray-50 dark:bg-gray-900 scrollbar-thin-custom"
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-auto overflow-y-auto bg-white scrollbar-thin-custom dark:bg-transparent"
           style={{
             flex: 1,
             minHeight: 0,
@@ -279,41 +285,28 @@ export const KanbanView = observer(function KanbanView({
             paddingTop: 'var(--planner-controls-h, 0px)',
           }}
         >
-        {/* Шапки колонок — липкие */}
-        <div
-          className="sticky z-10 flex shrink-0 gap-4 border-transparent bg-white pl-4 pr-4 pt-2 dark:border-gray-700 dark:bg-gray-900"
-          style={{ top: 'var(--planner-controls-h, 0px)' }}
-        >
-          {headerColumns.map(({ column, filteredTasks, totalSp, totalTp }) => {
-            const { spLabel, tpLabel } = formatSprintTotalsPointsLabels(totalSp, totalTp, 'spaced');
-            return (
-            <div
-              key={column.id}
-              className={`min-w-[280px] w-[280px] max-w-[280px] shrink-0 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 pt-2 pb-2 ${hasLaneGrouping ? 'rounded-lg' : 'rounded-t-lg'}`}
-              data-kanban-header={column.id}
-            >
-              <OverflowTooltip content={column.display}>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
-                {column.display}
-              </h3>
-              </OverflowTooltip>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                {filteredTasks.length === 1
-                  ? t('sprintPlanner.kanban.taskCountOne', { count: filteredTasks.length })
-                  : t('sprintPlanner.kanban.taskCountMany', { count: filteredTasks.length })}
-                {(spLabel || tpLabel) && (
-                  <>
-                    {' · '}
-                    {spLabel ? <span>{spLabel}</span> : null}
-                    {spLabel && tpLabel ? ' · ' : null}
-                    {tpLabel ? <span>{tpLabel}</span> : null}
-                  </>
-                )}
-              </p>
-            </div>
-            );
-          })}
-        </div>
+        {/* При группировке по lane шапки колонок общие и липкие; без группировки — внутри колонки. */}
+        {hasLaneGrouping ? (
+          <div
+            className="sticky z-10 flex shrink-0 gap-3 bg-white/90 pl-4 pr-4 pt-0 backdrop-blur-md dark:bg-gray-950/70"
+            style={{ top: 'var(--planner-controls-h, 0px)' }}
+          >
+            {headerColumns.map(({ column, filteredTasks, totalSp, totalTp }) => (
+              <div
+                key={column.id}
+                className={`w-[280px] max-w-[280px] min-w-[280px] shrink-0 overflow-hidden ${KANBAN_COLUMN_GLASS}`}
+                data-kanban-header={column.id}
+              >
+                <KanbanColumnHeader
+                  displayName={column.display}
+                  taskCount={filteredTasks.length}
+                  totalSp={totalSp}
+                  totalTp={totalTp}
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
         <KanbanColumnsLayout
           activeTaskId={activeTaskId}
           canDropInColumn={canDropInColumn}
@@ -339,13 +332,17 @@ export const KanbanView = observer(function KanbanView({
         </div>
         <DragOverlay>
           {activeTask ? (
-            <div className="w-[264px] cursor-grabbing rounded-lg overflow-hidden opacity-95 rotate-2 shadow-xl">
-              <TaskCard
-                assigneeName={activeTask.assigneeName}
-                developers={developers}
-                task={activeTask}
-                variant="sidebar"
-              />
+            <div className="w-[264px] cursor-grabbing overflow-hidden rounded-lg opacity-95 shadow-xl rotate-2">
+              <PhaseCardColorSchemeOverride value="monochrome">
+                <TaskCard
+                  assigneeName={activeTask.assigneeName}
+                  className={KANBAN_CARD_SURFACE}
+                  developers={developers}
+                  hideStatusTag
+                  task={activeTask}
+                  variant="sidebar"
+                />
+              </PhaseCardColorSchemeOverride>
             </div>
           ) : null}
         </DragOverlay>

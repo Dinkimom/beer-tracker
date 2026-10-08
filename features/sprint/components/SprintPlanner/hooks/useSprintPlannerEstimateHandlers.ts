@@ -13,7 +13,7 @@ import {
   resolveEffectiveIsQa,
   resolveNewStoryPointsFromPosition,
   resolveResizeIssueKey,
-  shouldSyncEstimateOnResize,
+  shouldUpdateEstimateOnResize,
 } from './useSprintPlannerEstimateHandlersHelpers';
 
 interface UseSprintPlannerEstimateHandlersParams {
@@ -58,20 +58,21 @@ export function useSprintPlannerEstimateHandlers({
 
   const handleOccupancyPositionSave = useCallback(
     async (position: TaskPosition, isQa: boolean, devKey?: string) => {
-      const fromSegmentEditor =
-        (position as unknown as { __source?: string }).__source === 'SprintPlanner.onSegmentEditSave';
-
       const taskByPosition = tasksMap.get(position.taskId);
       const effectiveIsQa = resolveEffectiveIsQa(isQa, taskByPosition);
       const devTask = resolveDevTaskForPositionSave(position, effectiveIsQa, devKey, tasksMap);
       const currentEstimate = devTask ? resolveCurrentEstimate(devTask, effectiveIsQa) : null;
       const newSP = resolveNewStoryPointsFromPosition(position);
 
-      if (shouldSyncEstimateOnResize(syncEstimates, fromSegmentEditor, devTask, currentEstimate, newSP)) {
+      if (shouldUpdateEstimateOnResize(devTask, currentEstimate, newSP)) {
         handleUpdateEstimate(devTask!, newSP, effectiveIsQa);
-        updateIssueWorkForPhase(resolveResizeIssueKey(position, effectiveIsQa, devKey), newSP, effectiveIsQa).catch(
-          (err) => console.error('Re-estimate on resize failed:', err)
-        );
+        if (syncEstimates) {
+          updateIssueWorkForPhase(
+            resolveResizeIssueKey(position, effectiveIsQa, devKey),
+            newSP,
+            effectiveIsQa
+          ).catch((err) => console.error('Re-estimate on resize failed:', err));
+        }
       }
 
       const positionWithSource = {

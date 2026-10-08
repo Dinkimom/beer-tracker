@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { ArchivedSprintItem } from './ArchivedSprintItem';
+import { BACKLOG_DIVIDE } from './backlogChromeClasses';
 import { BacklogSectionFrame } from './BacklogSectionFrame';
 
 interface ArchivedSprintsListProps {
@@ -34,7 +35,7 @@ export function ArchivedSprintsList({ sprints }: ArchivedSprintsListProps) {
           {t('backlog.archived.empty')}
         </div>
       ) : (
-        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+        <div className={BACKLOG_DIVIDE}>
           {sprints.map((sprint) => (
             <ArchivedSprintItem
               key={sprint.id}

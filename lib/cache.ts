@@ -102,6 +102,11 @@ export const cacheKeys = {
   burndownFromPg: (organizationId: string, sprintId: number, boardId?: number) =>
     `burndown:pg:${organizationId}:${sprintId}:${boardId ?? 'na'}`,
   sprints: (boardId: number) => `sprints:${boardId}`,
+  /**
+   * Параметры доски Tracker (колонки канбана). fingerprint — токен/URL/org (+ Jira email),
+   * чтобы смена интеграции не отдавала чужой кэш.
+   */
+  boardParams: (fingerprint: string, boardId: number) => `boardParams:${fingerprint}:${boardId}`,
   sprintInfo: (sprintId: number) => `sprintInfo:${sprintId}`,
   /** POST /issues/_search по filter sprint (задачи спринта). */
   sprintIssues: (sprintId: number) => `sprintIssues:${sprintId}`,

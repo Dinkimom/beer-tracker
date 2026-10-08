@@ -1,4 +1,8 @@
 import type { IssueTrackerBurndownIssue } from './changelogTypes';
+import type {
+  IssueTrackerCreateIssueLinkInput,
+  IssueTrackerIssueLink,
+} from './issueLinkTypes';
 import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task } from '@/types';
 import type {
@@ -165,6 +169,11 @@ export interface IssueTrackerCreateRelatedIssueInput {
   type?: string;
 }
 
+export type {
+  IssueTrackerCreateIssueLinkInput,
+  IssueTrackerIssueLink,
+} from './issueLinkTypes';
+
 export interface IssueTrackerSprintRef {
   id: string;
 }
@@ -307,6 +316,10 @@ export interface IssueTrackerProviderClient {
     input: IssueTrackerCreateChecklistItemInput
   ): Promise<unknown>;
   createIssue(input: IssueTrackerCreateIssueInput): Promise<IssueTrackerCreateIssueResult>;
+  createIssueLink(
+    issueKey: string,
+    input: IssueTrackerCreateIssueLinkInput
+  ): Promise<IssueTrackerIssueLink>;
   createRelatedIssue(
     sourceIssueKey: string,
     input: IssueTrackerCreateRelatedIssueInput
@@ -314,6 +327,7 @@ export interface IssueTrackerProviderClient {
   createSprint(input: IssueTrackerCreateSprintInput): Promise<unknown>;
   deleteChecklist(issueKey: string): Promise<void>;
   deleteChecklistItem(issueKey: string, itemId: string): Promise<void>;
+  deleteIssueLink(issueKey: string, trackerLinkId: string): Promise<void>;
   getBoard(boardId: number): Promise<unknown>;
   getBurndownIssuesForKeys(
     issueKeys: string[],
@@ -346,6 +360,7 @@ export interface IssueTrackerProviderClient {
   ): Promise<IssueTrackerIssue[]>;
   getTransitionFields(issueKey: string, transitionId: string): Promise<IssueTrackerScreenField[]>;
   listBoards(): Promise<IssueTrackerBoardListItem[]>;
+  listIssueLinks(issueKey: string): Promise<IssueTrackerIssueLink[]>;
   listIssuesByQuery(
     query: string,
     options?: IssueTrackerListIssuesByQueryOptions

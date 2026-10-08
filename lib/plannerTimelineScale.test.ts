@@ -11,7 +11,6 @@ import {
   plannerCoordinateShifts,
   presetPlannerTimelineSteps,
   readPlannerTimelineScale,
-  resizeShouldPreserveEstimate,
   rescalePlannerTimelineSteps,
   scalePlannerDuration,
   scalePlannerSlot,
@@ -66,23 +65,6 @@ describe('planner timeline scale defaults', () => {
     expect(storyPointsToTimeslotsForScale(0.3, custom)).toBe(1);
     expect(storyPointsToTimeslotsForScale(0.7, custom)).toBe(1);
     expect(storyPointsToTimeslotsForScale(1, custom)).toBe(2);
-  });
-
-  it('does not rewrite an estimate while an existing card is off the new scale', () => {
-    const day = { estimateUnit: 'day' as const, timeslotsPerDay: 3 as const };
-    expect(
-      resizeShouldPreserveEstimate({
-        currentEstimate: 3,
-        previousDuration: 3,
-        scale: DEFAULT_PLANNER_TIMELINE_SCALE,
-      })
-    ).toBe(false);
-    expect(
-      resizeShouldPreserveEstimate({ currentEstimate: 3, previousDuration: 3, scale: day })
-    ).toBe(true);
-    expect(
-      resizeShouldPreserveEstimate({ currentEstimate: 1, previousDuration: 3, scale: day })
-    ).toBe(false);
   });
 
   it('preserves whole days and rounds a mid-day third', () => {

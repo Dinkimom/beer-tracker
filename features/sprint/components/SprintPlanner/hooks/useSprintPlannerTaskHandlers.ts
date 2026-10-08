@@ -88,7 +88,7 @@ export function useSprintPlannerTaskHandlers({
     setTaskPositions: setPlanTaskPositions,
     timelineTotalCells,
     updateXarrow: debouncedUpdateXarrow,
-    onAfterResize: (taskId, newDuration, updatedPosition, previousDuration) => {
+    onAfterResize: (taskId, newDuration, updatedPosition) => {
       handleTaskResizeAfterResize(
         taskId,
         newDuration,
@@ -97,8 +97,7 @@ export function useSprintPlannerTaskHandlers({
         qaTasksByOriginalId,
         setTasks,
         syncEstimates,
-        savePosition,
-        previousDuration
+        savePosition
       );
     },
   });

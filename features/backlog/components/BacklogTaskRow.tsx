@@ -8,6 +8,7 @@ import { useRef } from 'react';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveTaskCardDisplayId } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 
+import { BACKLOG_ROW_HOVER, BACKLOG_ROW_SELECTED } from './backlogChromeClasses';
 import { useBacklogSelection } from './BacklogSelectionProvider';
 import { BacklogTaskRowView } from './BacklogTaskRowView';
 
@@ -27,9 +28,7 @@ export function BacklogTaskRow({ developers, scopeId, task }: BacklogTaskRowProp
     data: { source: 'sidebar' as const },
   });
   const selected = scopeId != null && isSelected(task.id);
-  const rowTone = selected
-    ? 'bg-blue-50 dark:bg-blue-950/40'
-    : 'hover:bg-gray-50 dark:hover:bg-gray-700/40';
+  const rowTone = selected ? BACKLOG_ROW_SELECTED : BACKLOG_ROW_HOVER;
   const dragClass = `min-w-0 flex-1 cursor-grab select-none active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`;
 
   if (scopeId == null) {

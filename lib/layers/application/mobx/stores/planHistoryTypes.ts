@@ -31,7 +31,7 @@ export interface PlanHistoryStep {
 }
 
 /** Одна сохранённая позиция после шага undo/redo — для сведения задач и оценок с трекером. */
-export interface PlanHistoryAppliedSave {
+interface PlanHistoryAppliedSave {
   devTaskKey?: string;
   isQa: boolean;
   position: TaskPosition;

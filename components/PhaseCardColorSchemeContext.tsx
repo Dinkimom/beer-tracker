@@ -21,3 +21,6 @@ export function PhaseCardColorSchemeProvider({ children }: { children: ReactNode
 export function usePhaseCardColorScheme(): PlanningPhaseCardColorScheme {
   return useContext(PhaseCardColorSchemeContext);
 }
+
+/** Для локального override (канбан и т.п.) — Provider без storage. */
+export { PhaseCardColorSchemeContext };

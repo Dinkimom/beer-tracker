@@ -24,6 +24,7 @@ export function StatusTag({ status, label, className = '', statusColorKey }: Sta
     <OverflowTooltip content={text}>
       <span
         className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium leading-none whitespace-nowrap border shrink-0 ${c.bg} ${c.bgDark ?? ''} ${c.text} ${c.textDark ?? ''} ${c.border} ${c.borderDark ?? ''} ${className}`}
+        data-status-tag=""
       >
         {text}
       </span>

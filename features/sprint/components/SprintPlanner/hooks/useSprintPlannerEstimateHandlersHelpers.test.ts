@@ -2,7 +2,10 @@ import type { Task } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { applyEstimateToTasks } from './useSprintPlannerEstimateHandlersHelpers';
+import {
+  applyEstimateToTasks,
+  shouldUpdateEstimateOnResize,
+} from './useSprintPlannerEstimateHandlersHelpers';
 
 describe('applyEstimateToTasks', () => {
   it('обновляет только storyPoints у целевой задачи', () => {
@@ -24,5 +27,19 @@ describe('applyEstimateToTasks', () => {
     expect(next[0]?.testPoints).toBe(5);
     expect(next[1]?.testPoints).toBe(5);
     expect(next[0]?.storyPoints).toBe(3);
+  });
+});
+
+describe('shouldUpdateEstimateOnResize', () => {
+  it('true когда оценка по длительности изменилась', () => {
+    const task = { id: 'NW-1' } as Task;
+    expect(shouldUpdateEstimateOnResize(task, 3, 8)).toBe(true);
+  });
+
+  it('false когда оценка не изменилась или нет задачи', () => {
+    const task = { id: 'NW-1' } as Task;
+    expect(shouldUpdateEstimateOnResize(task, 8, 8)).toBe(false);
+    expect(shouldUpdateEstimateOnResize(undefined, 3, 8)).toBe(false);
+    expect(shouldUpdateEstimateOnResize(task, null, 8)).toBe(false);
   });
 });
