@@ -101,4 +101,16 @@ describe('mapTrackerIssueToTask', () => {
     expect(task.parent).toEqual({ display: 'Story', id: '10010', key: 'ST-1' });
     expect(task.epic).toEqual({ display: 'Epic', id: '55', key: 'EP-1' });
   });
+
+  it('maps start and deadline onto the planner task DTO', () => {
+    const task = mapTrackerIssueToTask({
+      deadline: '2026-10-12T00:00:00.000+0000',
+      id: '7',
+      key: 'BT-7',
+      self: 'https://tracker.yandex.ru/BT-7',
+      start: '2026-10-09',
+      summary: 'Task',
+    });
+    expect(task).toMatchObject({ deadline: '2026-10-12', start: '2026-10-09' });
+  });
 });

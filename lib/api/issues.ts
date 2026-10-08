@@ -326,17 +326,29 @@ export async function createRelatedIssue(
   }
 }
 
-export async function fetchIssueLinks(
-  issueKey: string
-): Promise<{ fromCache: boolean; links: IssueTrackerIssueLink[] }> {
-  const { data } = await getPlannerBeerTrackerApi().get<{
-    fromCache?: boolean;
-    links?: IssueTrackerIssueLink[];
-  }>(`/issues/${issueKey}/links`);
-  return {
-    fromCache: Boolean(data.fromCache),
-    links: Array.isArray(data.links) ? data.links : [],
-  };
+/** Live batch from Tracker/Jira — not stored in Beer Tracker DB. */
+export async function fetchIssueLinksBatch(issueKeys: string[]): Promise<
+  Array<{
+    direction: IssueTrackerIssueLink['direction'];
+    fromIssueKey: string;
+    id: string;
+    relationship: IssueTrackerIssueLink['relationship'];
+    toIssueKey: string;
+  }>
+> {
+  if (issueKeys.length === 0) {
+    return [];
+  }
+  const { data } = await getPlannerBeerTrackerApi().post<{
+    links?: Array<{
+      direction: IssueTrackerIssueLink['direction'];
+      fromIssueKey: string;
+      id: string;
+      relationship: IssueTrackerIssueLink['relationship'];
+      toIssueKey: string;
+    }>;
+  }>('/issues/links/batch', { issueKeys });
+  return Array.isArray(data.links) ? data.links : [];
 }
 
 export async function createIssueLink(

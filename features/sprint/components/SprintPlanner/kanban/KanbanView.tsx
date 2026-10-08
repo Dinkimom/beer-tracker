@@ -8,6 +8,7 @@ import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { PhaseCardColorSchemeOverride } from '@/components/PhaseCardColorSchemeOverride';
+import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { filterTasksByAssignees } from '@/features/backlog/utils/backlogFilterPeople';
 import { useBoardParams } from '@/features/board/hooks/useBoardParams';
@@ -19,7 +20,7 @@ import {
 } from '@/lib/beerTrackerApi';
 import { useRootStore } from '@/lib/layers';
 
-import { KANBAN_CARD_SURFACE, KANBAN_COLUMN_GLASS } from './kanbanChromeClasses';
+import { KANBAN_CARD_SURFACE, KANBAN_COLUMN_HEADER_GLASS } from './kanbanChromeClasses';
 import { KanbanColumnHeader } from './KanbanColumnHeader';
 import { KanbanColumnsLayout } from './KanbanColumnsLayout';
 import { parseKanbanTaskId } from './kanbanDndUtils';
@@ -285,28 +286,29 @@ export const KanbanView = observer(function KanbanView({
             paddingTop: 'var(--planner-controls-h, 0px)',
           }}
         >
-        {/* При группировке по lane шапки колонок общие и липкие; без группировки — внутри колонки. */}
-        {hasLaneGrouping ? (
-          <div
-            className="sticky z-10 flex shrink-0 gap-3 bg-white/90 pl-4 pr-4 pt-0 backdrop-blur-md dark:bg-gray-950/70"
-            style={{ top: 'var(--planner-controls-h, 0px)' }}
-          >
-            {headerColumns.map(({ column, filteredTasks, totalSp, totalTp }) => (
-              <div
-                key={column.id}
-                className={`w-[280px] max-w-[280px] min-w-[280px] shrink-0 overflow-hidden ${KANBAN_COLUMN_GLASS}`}
-                data-kanban-header={column.id}
-              >
-                <KanbanColumnHeader
-                  displayName={column.display}
-                  taskCount={filteredTasks.length}
-                  totalSp={totalSp}
-                  totalTp={totalTp}
-                />
-              </div>
-            ))}
-          </div>
-        ) : null}
+        {/* Sticky вне колонок: backdrop-filter на .kanban-column-glass ломает sticky внутри. */}
+        <div
+          className="sticky flex shrink-0 gap-3 bg-white pl-4 pr-4 pt-0 dark:bg-ds-surface-header"
+          style={{
+            top: 'var(--planner-controls-h, 0px)',
+            zIndex: ZIndex.stickyMainHeader,
+          }}
+        >
+          {headerColumns.map(({ column, filteredTasks, totalSp, totalTp }) => (
+            <div
+              key={column.id}
+              className={`w-[280px] max-w-[280px] min-w-[280px] shrink-0 overflow-hidden ${KANBAN_COLUMN_HEADER_GLASS}`}
+              data-kanban-header={column.id}
+            >
+              <KanbanColumnHeader
+                displayName={column.display}
+                taskCount={filteredTasks.length}
+                totalSp={totalSp}
+                totalTp={totalTp}
+              />
+            </div>
+          ))}
+        </div>
         <KanbanColumnsLayout
           activeTaskId={activeTaskId}
           canDropInColumn={canDropInColumn}

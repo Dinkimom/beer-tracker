@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { jiraParentPutBody } from './jiraIssueParent';
+import { clearJiraScheduleFieldRefsCacheForTests } from './jiraScheduleFields';
 import {
   extractJiraEstimationBoardId,
   jiraAssigneePutBody,
@@ -9,6 +10,10 @@ import {
   splitJiraIssueUpdatePatch,
   updateJiraIssue,
 } from './jiraIssueUpdate';
+
+afterEach(() => {
+  clearJiraScheduleFieldRefsCacheForTests();
+});
 
 const API_BASE = 'https://jira.example.com/rest/api/2';
 const ESTIMATION_URL = 'https://jira.example.com/rest/agile/1.0/issue/PROJ-1/estimation';
@@ -316,6 +321,24 @@ describe('updateJiraIssue', () => {
       })
     ).rejects.toThrow(/Start date/);
     expect(put).not.toHaveBeenCalled();
+  });
+
+  it('clears Start date and duedate when patch sends null', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: {
+        fields: {
+          customfield_10015: { name: 'Start date', schema: { type: 'date' } },
+          duedate: { name: 'Due date', schema: { system: 'duedate', type: 'date' } },
+        },
+      },
+    });
+    const put = vi.fn().mockResolvedValue({ data: {} });
+    await expect(
+      updateJiraIssue(apiWith({ get, put }), 'RND-813', { deadline: null, start: null })
+    ).resolves.toEqual({});
+    expect(put).toHaveBeenCalledWith('/issue/RND-813', {
+      fields: { customfield_10015: null, duedate: null },
+    });
   });
 
   it('maps Jira QA onto assignee unless a custom field id is set', async () => {

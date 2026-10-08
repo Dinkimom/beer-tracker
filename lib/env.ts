@@ -58,12 +58,13 @@ export function getPostgresConfig() {
 }
 
 /**
- * Имя схемы для таблиц beer-tracker в PostgreSQL приложения (по умолчанию beer_tracker).
+ * Имя схемы для таблиц beer-tracker в PostgreSQL приложения (по умолчанию `public`,
+ * как в `database/init.sql`). Для legacy-инстансов задайте `BEER_TRACKER_SCHEMA=beer_tracker`.
  * Для схем с дефисом в SQL используются кавычки.
  */
 export function getBeerTrackerSchema(): string {
   const v = process.env.BEER_TRACKER_SCHEMA;
-  return (typeof v === 'string' && v.trim()) ? v.trim() : 'beer_tracker';
+  return (typeof v === 'string' && v.trim()) ? v.trim() : 'public';
 }
 
 const ORG_SECRETS_KEY_BYTES = 32;
@@ -272,7 +273,7 @@ type DbContractMode = 'compatibility' | 'native';
 
 /**
  * Режим источников данных для коммерческой БД:
- * - native: чтение из beer_tracker.*
+ * - native: чтение из схемы BEER_TRACKER_SCHEMA
  * - compatibility: разрешены fallback/read-only чтения из overseer/public.
  */
 export function getDbContractMode(): DbContractMode {

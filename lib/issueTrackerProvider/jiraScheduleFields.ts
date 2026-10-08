@@ -1,3 +1,4 @@
+import type { TrackerIssue } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
 import { extractTrackerMetadataArray } from '@/lib/trackerIntegration/fetchTrackerOrgMetadataHelpers';
@@ -20,10 +21,27 @@ interface JiraDateFieldRef {
   schemaType?: string;
 }
 
-interface JiraScheduleFieldRefs {
+export interface JiraScheduleFieldRefs {
   due: JiraDateFieldRef;
   dueResolved: boolean;
   start: JiraDateFieldRef | null;
+}
+
+const DEFAULT_SCHEDULE_REFS: JiraScheduleFieldRefs = {
+  due: { id: 'duedate', schemaType: 'date' },
+  dueResolved: false,
+  start: null,
+};
+
+/**
+ * Process-wide `/field` catalog cache. Axios instances are per-request in Next.js,
+ * so WeakMap-on-api never hits and every planner load would call Jira `/field`.
+ */
+const scheduleRefsByBaseUrl = new Map<string, Promise<JiraScheduleFieldRefs>>();
+
+function jiraApiCacheKey(api: AxiosInstance): string {
+  const base = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL.trim() : '';
+  return base || 'jira';
 }
 
 interface JiraNamedDateField {
@@ -163,21 +181,103 @@ function trimmedDate(value: string | undefined): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
+function dateOnlyFromFieldValue(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value.trim());
+  return match?.[1];
+}
+
+function fieldValueFromTrackerIssue(issue: TrackerIssue, fieldId: string): unknown {
+  return (issue as unknown as Record<string, unknown>)[fieldId];
+}
+
+/**
+ * Maps Jira `duedate` / Start date (or Target start) custom fields onto Yandex-shaped
+ * `start` / `deadline` so planner fallbacks and patches share one model.
+ */
+export function applyJiraScheduleFieldRefsToTrackerIssue(
+  issue: TrackerIssue,
+  refs: JiraScheduleFieldRefs
+): TrackerIssue {
+  const start =
+    trimmedDate(issue.start) ??
+    (refs.start ? dateOnlyFromFieldValue(fieldValueFromTrackerIssue(issue, refs.start.id)) : undefined);
+  const deadline =
+    trimmedDate(issue.deadline) ?? dateOnlyFromFieldValue(fieldValueFromTrackerIssue(issue, refs.due.id));
+  if (!start && !deadline) {
+    return issue;
+  }
+  if (start === issue.start && deadline === issue.deadline) {
+    return issue;
+  }
+  return {
+    ...issue,
+    ...(deadline ? { deadline } : {}),
+    ...(start ? { start } : {}),
+  };
+}
+
+export async function loadJiraScheduleFieldRefsFromCatalog(
+  api: AxiosInstance
+): Promise<JiraScheduleFieldRefs> {
+  const cacheKey = jiraApiCacheKey(api);
+  const cached = scheduleRefsByBaseUrl.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  const pending = (async (): Promise<JiraScheduleFieldRefs> => {
+    try {
+      const { data } = await api.get<unknown>('/field');
+      return pickJiraScheduleFieldsFromCatalog(extractTrackerMetadataArray(data));
+    } catch {
+      scheduleRefsByBaseUrl.delete(cacheKey);
+      return DEFAULT_SCHEDULE_REFS;
+    }
+  })();
+  scheduleRefsByBaseUrl.set(cacheKey, pending);
+  return pending;
+}
+
+/** Vitest: process-wide `/field` cache must not leak between cases. */
+export function clearJiraScheduleFieldRefsCacheForTests(): void {
+  scheduleRefsByBaseUrl.clear();
+}
+
+/** `string` → write date; `null` → clear field; `undefined` → leave unchanged. */
+function schedulePutDate(
+  value: string | null | undefined
+): string | null | undefined {
+  if (value === null) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return trimmedDate(value);
+  }
+  return undefined;
+}
+
 export function buildJiraSchedulePutFields(
   refs: JiraScheduleFieldRefs,
-  input: { deadline?: string; start?: string }
-): Record<string, string> {
-  const deadline = trimmedDate(input.deadline);
-  const start = trimmedDate(input.start);
+  input: { deadline?: string | null; start?: string | null }
+): Record<string, string | null> {
+  const deadline = schedulePutDate(input.deadline);
+  const start = schedulePutDate(input.start);
   if (start && !refs.start) {
     throw new Error('Jira Start date field is not editable on this issue');
   }
-  const fields: Record<string, string> = {};
-  if (deadline) {
-    fields[refs.due.id] = jiraDateFieldValue(deadline, refs.due.schemaType);
+  if (start === null && !refs.start) {
+    throw new Error('Jira Start date field is not editable on this issue');
   }
-  if (start && refs.start) {
-    fields[refs.start.id] = jiraDateFieldValue(start, refs.start.schemaType);
+  const fields: Record<string, string | null> = {};
+  if (deadline !== undefined) {
+    fields[refs.due.id] =
+      deadline === null ? null : jiraDateFieldValue(deadline, refs.due.schemaType);
+  }
+  if (start !== undefined && refs.start) {
+    fields[refs.start.id] =
+      start === null ? null : jiraDateFieldValue(start, refs.start.schemaType);
   }
   return fields;
 }
@@ -198,30 +298,27 @@ async function loadJiraScheduleFieldRefs(
   issueKey: string,
   needsStart: boolean
 ): Promise<JiraScheduleFieldRefs> {
-  let refs: JiraScheduleFieldRefs = {
-    due: { id: 'duedate', schemaType: 'date' },
-    dueResolved: false,
-    start: null,
-  };
+  let refs: JiraScheduleFieldRefs = { ...DEFAULT_SCHEDULE_REFS };
   try {
     const { data } = await api.get<unknown>(`/issue/${encodeURIComponent(issueKey)}/editmeta`);
     refs = pickJiraScheduleFieldsFromEditmeta(data);
   } catch {
-    refs = {
-      due: { id: 'duedate', schemaType: 'date' },
-      dueResolved: false,
-      start: null,
-    };
+    refs = { ...DEFAULT_SCHEDULE_REFS };
   }
   if (!needsStart || refs.start) {
     return refs;
   }
-  try {
-    const { data } = await api.get<unknown>('/field');
-    return mergeScheduleFieldRefs(refs, pickJiraScheduleFieldsFromCatalog(extractTrackerMetadataArray(data)));
-  } catch {
-    return refs;
+  return mergeScheduleFieldRefs(refs, await loadJiraScheduleFieldRefsFromCatalog(api));
+}
+
+function schedulePatchDate(value: unknown): string | null | undefined {
+  if (value === null) {
+    return null;
   }
+  if (typeof value === 'string') {
+    return trimmedDate(value);
+  }
+  return undefined;
 }
 
 /** Maps Yandex `start` / `deadline` onto editable Jira date fields and drops the Yandex keys. */
@@ -230,18 +327,24 @@ export async function applyJiraScheduleFields(
   issueKey: string,
   fields: Record<string, unknown>
 ): Promise<Record<string, unknown>> {
-  if (!Object.hasOwn(fields, 'deadline') && !Object.hasOwn(fields, 'start')) {
+  const hasDeadline = Object.hasOwn(fields, 'deadline');
+  const hasStart = Object.hasOwn(fields, 'start');
+  if (!hasDeadline && !hasStart) {
     return fields;
   }
   const { deadline, start, ...rest } = fields;
-  const deadlineDate = trimmedDate(typeof deadline === 'string' ? deadline : undefined);
-  const startDate = trimmedDate(typeof start === 'string' ? start : undefined);
-  if (!deadlineDate && !startDate) {
+  const deadlineDate = hasDeadline ? schedulePatchDate(deadline) : undefined;
+  const startDate = hasStart ? schedulePatchDate(start) : undefined;
+  if (deadlineDate === undefined && startDate === undefined) {
     return rest;
   }
-  const refs = await loadJiraScheduleFieldRefs(api, issueKey, Boolean(startDate));
+  const needsStart = startDate !== undefined;
+  const refs = await loadJiraScheduleFieldRefs(api, issueKey, needsStart);
   return {
     ...rest,
-    ...buildJiraSchedulePutFields(refs, { deadline: deadlineDate, start: startDate }),
+    ...buildJiraSchedulePutFields(refs, {
+      ...(deadlineDate !== undefined ? { deadline: deadlineDate } : {}),
+      ...(startDate !== undefined ? { start: startDate } : {}),
+    }),
   };
 }

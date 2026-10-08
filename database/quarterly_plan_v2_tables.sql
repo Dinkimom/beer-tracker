@@ -1,14 +1,23 @@
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+\if :{?schema}
+\else
+\set schema public
+\endif
+CREATE SCHEMA IF NOT EXISTS :"schema";
+SET search_path TO :"schema", public;
+
 -- Квартальное планирование v2 (эпики + фазы стори). Идемпотентно для docker/init.
-CREATE TABLE IF NOT EXISTS beer_tracker.quarterly_plan_v2_epics (
-    plan_id UUID NOT NULL REFERENCES beer_tracker.quarterly_plans(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS quarterly_plan_v2_epics (
+    plan_id UUID NOT NULL REFERENCES quarterly_plans(id) ON DELETE CASCADE,
     epic_key TEXT NOT NULL,
     display_order INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (plan_id, epic_key)
 );
 
-CREATE TABLE IF NOT EXISTS beer_tracker.quarterly_plan_v2_story_phases (
+CREATE TABLE IF NOT EXISTS quarterly_plan_v2_story_phases (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    plan_id UUID NOT NULL REFERENCES beer_tracker.quarterly_plans(id) ON DELETE CASCADE,
+    plan_id UUID NOT NULL REFERENCES quarterly_plans(id) ON DELETE CASCADE,
     story_key TEXT NOT NULL,
     phase_kind VARCHAR(20) NOT NULL DEFAULT 'delivery'
         CHECK (phase_kind IN ('delivery', 'discovery')),
@@ -19,24 +28,24 @@ CREATE TABLE IF NOT EXISTS beer_tracker.quarterly_plan_v2_story_phases (
 );
 
 CREATE INDEX IF NOT EXISTS idx_quarterly_plan_v2_epics_plan
-    ON beer_tracker.quarterly_plan_v2_epics(plan_id);
+    ON quarterly_plan_v2_epics(plan_id);
 CREATE INDEX IF NOT EXISTS idx_quarterly_plan_v2_story_phases_plan
-    ON beer_tracker.quarterly_plan_v2_story_phases(plan_id);
+    ON quarterly_plan_v2_story_phases(plan_id);
 CREATE INDEX IF NOT EXISTS idx_quarterly_plan_v2_story_phases_story
-    ON beer_tracker.quarterly_plan_v2_story_phases(plan_id, story_key);
+    ON quarterly_plan_v2_story_phases(plan_id, story_key);
 
-CREATE TABLE IF NOT EXISTS beer_tracker.quarterly_plan_v2_excluded_stories (
-    plan_id UUID NOT NULL REFERENCES beer_tracker.quarterly_plans(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS quarterly_plan_v2_excluded_stories (
+    plan_id UUID NOT NULL REFERENCES quarterly_plans(id) ON DELETE CASCADE,
     story_key TEXT NOT NULL,
     PRIMARY KEY (plan_id, story_key)
 );
 
 CREATE INDEX IF NOT EXISTS idx_quarterly_plan_v2_excluded_stories_plan
-    ON beer_tracker.quarterly_plan_v2_excluded_stories(plan_id);
+    ON quarterly_plan_v2_excluded_stories(plan_id);
 
-CREATE TABLE IF NOT EXISTS beer_tracker.quarterly_plan_v2_story_events (
+CREATE TABLE IF NOT EXISTS quarterly_plan_v2_story_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    plan_id UUID NOT NULL REFERENCES beer_tracker.quarterly_plans(id) ON DELETE CASCADE,
+    plan_id UUID NOT NULL REFERENCES quarterly_plans(id) ON DELETE CASCADE,
     story_key TEXT NOT NULL,
     event_kind VARCHAR(40) NOT NULL,
     sprint_index INTEGER NOT NULL,
@@ -45,17 +54,17 @@ CREATE TABLE IF NOT EXISTS beer_tracker.quarterly_plan_v2_story_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_quarterly_plan_v2_story_events_plan
-    ON beer_tracker.quarterly_plan_v2_story_events(plan_id);
+    ON quarterly_plan_v2_story_events(plan_id);
 CREATE INDEX IF NOT EXISTS idx_quarterly_plan_v2_story_events_story
-    ON beer_tracker.quarterly_plan_v2_story_events(plan_id, story_key);
+    ON quarterly_plan_v2_story_events(plan_id, story_key);
 
 -- Миграция существующих таблиц (старая схема без id / phase_kind).
-ALTER TABLE beer_tracker.quarterly_plan_v2_story_phases
+ALTER TABLE quarterly_plan_v2_story_phases
     ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid();
-UPDATE beer_tracker.quarterly_plan_v2_story_phases
+UPDATE quarterly_plan_v2_story_phases
     SET id = gen_random_uuid()
     WHERE id IS NULL;
-ALTER TABLE beer_tracker.quarterly_plan_v2_story_phases
+ALTER TABLE quarterly_plan_v2_story_phases
     ADD COLUMN IF NOT EXISTS phase_kind VARCHAR(20) NOT NULL DEFAULT 'delivery';
 
 -- Старая схема: PRIMARY KEY (plan_id, story_key) — одна фаза на story.
@@ -69,7 +78,7 @@ BEGIN
     WHERE con.contype = 'p'
       AND con.conname = 'quarterly_plan_v2_story_phases_pkey'
       AND rel.relname = 'quarterly_plan_v2_story_phases'
-      AND nsp.nspname = 'beer_tracker'
+      AND nsp.nspname = current_schema()
       AND NOT EXISTS (
         SELECT 1
         FROM unnest(con.conkey) AS ck(attnum)
@@ -77,14 +86,14 @@ BEGIN
         WHERE a.attname = 'id'
       )
   ) THEN
-    ALTER TABLE beer_tracker.quarterly_plan_v2_story_phases
+    ALTER TABLE quarterly_plan_v2_story_phases
       DROP CONSTRAINT quarterly_plan_v2_story_phases_pkey;
-    ALTER TABLE beer_tracker.quarterly_plan_v2_story_phases
+    ALTER TABLE quarterly_plan_v2_story_phases
       ALTER COLUMN id SET NOT NULL;
-    ALTER TABLE beer_tracker.quarterly_plan_v2_story_phases
+    ALTER TABLE quarterly_plan_v2_story_phases
       ADD PRIMARY KEY (id);
   END IF;
 END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_quarterly_plan_v2_story_phases_plan_story_kind
-    ON beer_tracker.quarterly_plan_v2_story_phases (plan_id, story_key, phase_kind);
+    ON quarterly_plan_v2_story_phases (plan_id, story_key, phase_kind);

@@ -3,7 +3,6 @@ import type { Task } from '@/types';
 import type { SprintInfo, SprintListItem, ChecklistItem } from '@/types/tracker';
 
 import {
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -15,6 +14,7 @@ import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { useBoards } from '@/features/board/hooks/useBoards';
 import { useSlaBugs } from '@/features/sla-bugs/hooks/useSlaBugs';
+import { useSprintPlannerTrackerLinkHandlers } from '@/features/sprint/hooks/useSprintPlannerTrackerLinkHandlers';
 import { computeAssigneePointsStats } from '@/features/sprint/utils/assigneePointsStats';
 import { useOccupancyTaskOrderApi } from '@/hooks/useApiStorage';
 import { useDebouncedCallback } from '@/hooks/usePerformance';
@@ -238,13 +238,19 @@ export function useSprintPlannerViewModel({
     viewMode,
   });
 
-  const handleAddLink = useCallback(
-    (link: { fromTaskId: string; toTaskId: string; id: string }) => {
-      setTaskLinks((prev) => [...prev, link]);
-      saveLink(link).catch((err) => console.error('Error saving link:', err));
-    },
-    [setTaskLinks, saveLink]
-  );
+  const {
+    deleteTrackerOverlayLink,
+    handleAddLink,
+    savePlannerLinkOnly,
+    trackerTaskLinks,
+  } = useSprintPlannerTrackerLinkHandlers({
+    allTasksForDrag,
+    enabled: swimlaneLinksVisible && (viewMode === 'full' || viewMode === 'compact'),
+    saveLink,
+    selectedSprintId,
+    setTaskLinks,
+    tasksMap,
+  });
 
   const backlogTaskRef = useRef<{
     getTask: (taskId: string) => Task | undefined;
@@ -335,6 +341,7 @@ export function useSprintPlannerViewModel({
     debouncedUpdateXarrow,
     deleteComment,
     deleteLink,
+    deleteTrackerOverlayLink,
     deletePosition,
     developers,
     developersManagement,
@@ -345,7 +352,7 @@ export function useSprintPlannerViewModel({
     onTasksReload,
     qaTasksByOriginalId,
     qaTasksMap,
-    saveLink,
+    saveLink: savePlannerLinkOnly,
     savePosition,
     selectedSprintId,
     setComments,
@@ -362,6 +369,7 @@ export function useSprintPlannerViewModel({
     syncAssignees,
     syncEstimates,
     taskLinks,
+    trackerTaskLinks,
     taskPositions,
     tasks,
     tasksMap,

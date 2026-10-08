@@ -16,8 +16,17 @@ import {
   fetchJiraIssuesChangelogBatch,
 } from './jiraChangelog';
 import { createJiraIssue } from './jiraIssueCreate';
+import {
+  createJiraIssueLink,
+  deleteJiraIssueLink,
+  listJiraIssueLinks,
+} from './jiraIssueLinks';
 import { listJiraIssuesForBoard, listJiraIssuesForQueue, listJiraIssuesUpdatedInRange } from './jiraIssueList';
-import { fetchJiraIssue, normalizeJiraIssue, searchJiraIssuesInSprint } from './jiraIssues';
+import {
+  fetchJiraIssue,
+  normalizeJiraIssuesWithSchedule,
+  searchJiraIssuesInSprint,
+} from './jiraIssues';
 import { searchJiraIssuesOnBoard } from './jiraIssueSearch';
 import {
   addJiraIssueToSprint,
@@ -44,7 +53,9 @@ export const JIRA_IMPLEMENTED_PROVIDER_METHODS = [
   'addIssueComment',
   'addIssueToSprint',
   'createIssue',
+  'createIssueLink',
   'createSprint',
+  'deleteIssueLink',
   'getBoard',
   'getBurndownIssuesForKeys',
   'getCurrentUser',
@@ -59,6 +70,7 @@ export const JIRA_IMPLEMENTED_PROVIDER_METHODS = [
   'getTasksInSprintWithParents',
   'getTransitionFields',
   'listBoards',
+  'listIssueLinks',
   'listIssueTransitionsBatch',
   'listIssuesForBoard',
   'listIssuesForQueue',
@@ -112,7 +124,7 @@ async function listNormalizedJiraSprintIssues(
     return [];
   }
   const issues = await searchJiraIssuesInSprint(api, sprintId);
-  return issues.map(normalizeJiraIssue);
+  return normalizeJiraIssuesWithSchedule(api, issues);
 }
 
 function createJiraProviderClientWithApi(api: AxiosInstance): IssueTrackerProviderClient {
@@ -121,7 +133,10 @@ function createJiraProviderClientWithApi(api: AxiosInstance): IssueTrackerProvid
     addIssueToSprint: (issueKey: string, sprintId: number) =>
       addJiraIssueToSprint(api, issueKey, sprintId),
     createIssue: (input) => createJiraIssue(api, input),
+    createIssueLink: (issueKey, input) => createJiraIssueLink(api, issueKey, input),
     createSprint: (input) => createJiraSprint(api, input),
+    deleteIssueLink: (issueKey, trackerLinkId) =>
+      deleteJiraIssueLink(api, issueKey, trackerLinkId),
     getBurndownIssuesForKeys: (issueKeys, sprint, issueByKey) =>
       fetchJiraBurndownIssuesForKeys(api, issueKeys, sprint, issueByKey),
     getBoard: (boardId) => fetchJiraBoardParams(api, boardId),
@@ -142,21 +157,22 @@ function createJiraProviderClientWithApi(api: AxiosInstance): IssueTrackerProvid
     getTransitionFields: (issueKey: string, transitionId: string) =>
       fetchJiraTransitionFields(api, issueKey, transitionId),
     listBoards: () => fetchJiraBoardsForCatalog(api),
+    listIssueLinks: (issueKey) => listJiraIssueLinks(api, issueKey),
     listIssueTransitionsBatch: (issueKeys: string[]) =>
       fetchJiraIssueTransitionsBatch(api, issueKeys),
     listIssuesForBoard: (boardId, options) =>
-      listJiraIssuesForBoard(api, boardId, options).then(({ issues, truncated }) => ({
-        issues: issues.map(normalizeJiraIssue),
+      listJiraIssuesForBoard(api, boardId, options).then(async ({ issues, truncated }) => ({
+        issues: await normalizeJiraIssuesWithSchedule(api, issues),
         truncated,
       })),
     listIssuesForQueue: (queueKey, options) =>
-      listJiraIssuesForQueue(api, queueKey, options).then(({ issues, truncated }) => ({
-        issues: issues.map(normalizeJiraIssue),
+      listJiraIssuesForQueue(api, queueKey, options).then(async ({ issues, truncated }) => ({
+        issues: await normalizeJiraIssuesWithSchedule(api, issues),
         truncated,
       })),
     listIssuesUpdatedInRange: (since, until, options) =>
-      listJiraIssuesUpdatedInRange(api, since, until, options).then(({ issues, truncated }) => ({
-        issues: issues.map(normalizeJiraIssue),
+      listJiraIssuesUpdatedInRange(api, since, until, options).then(async ({ issues, truncated }) => ({
+        issues: await normalizeJiraIssuesWithSchedule(api, issues),
         truncated,
       })),
     listQueues: () => fetchJiraProjectsAsQueues(api),
@@ -170,7 +186,7 @@ function createJiraProviderClientWithApi(api: AxiosInstance): IssueTrackerProvid
       replaceJiraIssueSprints(api, issueKey, sprints),
     searchIssuesOnBoard: (boardId, query, options) =>
       searchJiraIssuesOnBoard(api, boardId, query, options).then((issues) =>
-        issues.map(normalizeJiraIssue)
+        normalizeJiraIssuesWithSchedule(api, issues)
       ),
     searchQueues: (query: string) => searchJiraQueues(api, query),
     searchUsers: (query: string) =>

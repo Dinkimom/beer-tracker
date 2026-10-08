@@ -49,5 +49,9 @@ describe('yandexIssueUpdateBody', () => {
       deadline: '2026-09-30',
       start: '2026-09-24',
     });
+    expect(yandexIssueUpdateBody({ deadline: null, start: null })).toEqual({
+      deadline: null,
+      start: null,
+    });
   });
 });

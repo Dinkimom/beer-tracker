@@ -1,6 +1,7 @@
 /**
  * Подключение к PostgreSQL для сущностей beer-tracker.
- * Параметры — `POSTGRES_*` / `PG*` (`getPostgresConfig`). В SQL — схема `beer_tracker.*`.
+ * Параметры — `POSTGRES_*` / `PG*` (`getPostgresConfig`).
+ * В SQL схема берётся из `BEER_TRACKER_SCHEMA` (`qualifyBeerTrackerTables`).
  */
 
 import type { QueryParams } from '@/types';
@@ -71,7 +72,6 @@ const BEER_TRACKER_TABLES = [
   'comment_reactions',
   'comments',
   'issue_changelog_events',
-  'issue_links',
   'issue_snapshots',
   'occupancy_task_order',
   'organization_secrets',

@@ -677,36 +677,6 @@ CREATE INDEX idx_issue_changelog_org_synced ON public.issue_changelog_events (or
 
 COMMENT ON TABLE public.issue_changelog_events IS 'Кеш ответа Tracker: changelog + comments по задаче (синк и API)';
 
-CREATE TABLE public.issue_links (
-    organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
-    issue_key TEXT NOT NULL,
-    tracker_link_id TEXT NOT NULL,
-    linked_issue_key TEXT NOT NULL,
-    relationship TEXT NOT NULL
-        CHECK (relationship IN (
-            'relates',
-            'blocks',
-            'blocked_by',
-            'duplicates',
-            'duplicated_by'
-        )),
-    direction TEXT NOT NULL
-        CHECK (direction IN ('outward', 'inward')),
-    linked_summary TEXT,
-    linked_status TEXT,
-    synced_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (organization_id, issue_key, tracker_link_id)
-);
-
-CREATE INDEX idx_issue_links_org_linked
-    ON public.issue_links (organization_id, linked_issue_key);
-
-CREATE INDEX idx_issue_links_org_issue_rel
-    ON public.issue_links (organization_id, issue_key, relationship);
-
-COMMENT ON TABLE public.issue_links IS
-    'Кэш связей issue из Tracker (write-through; источник правды — Tracker API)';
-
 CREATE TABLE public.sync_runs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,

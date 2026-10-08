@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
-import { deleteIssueLinkWriteThrough } from '@/lib/issues/issueLinksRouteHelpers';
+import { deleteTrackerIssueLink } from '@/lib/issues/trackerIssueLinksRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { rejectUnsupportedIssueTrackerCapability } from '@/lib/issueTrackerProvider/issueTrackerCapabilityRoute';
 import { resolveParams } from '@/lib/nextjs-utils';
@@ -39,10 +39,10 @@ export async function DELETE(
     }
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
-    await deleteIssueLinkWriteThrough({
-      organizationId,
+    await deleteTrackerIssueLink({
       issueKey,
       issueTracker,
+      organizationId,
       trackerLinkId: linkId,
     });
 

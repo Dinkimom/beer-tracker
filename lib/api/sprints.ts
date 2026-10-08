@@ -345,9 +345,20 @@ export async function fetchSprintTasks(
 /**
  * Удаляет позицию задачи в спринте
  */
-export async function deleteTaskPosition(sprintId: number, taskId: string): Promise<boolean> {
+export async function deleteTaskPosition(
+  sprintId: number,
+  taskId: string,
+  options?: { devTaskKey?: string; isQa?: boolean }
+): Promise<boolean> {
   try {
-    await getPlannerBeerTrackerApi().delete(`/sprints/${sprintId}/positions?taskId=${taskId}`);
+    const params = new URLSearchParams({ taskId });
+    if (options?.isQa) {
+      params.set('isQa', '1');
+    }
+    if (options?.devTaskKey) {
+      params.set('devTaskKey', options.devTaskKey);
+    }
+    await getPlannerBeerTrackerApi().delete(`/sprints/${sprintId}/positions?${params.toString()}`);
     return true;
   } catch (error) {
     console.error(`Failed to delete position for task ${taskId} in sprint ${sprintId}:`, error);

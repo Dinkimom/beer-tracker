@@ -15,6 +15,7 @@ import {
   loadPositionSegmentsByTask,
   replaceTaskPositionSegments,
   syncPutPositionSideEffects,
+  trySyncPlannedDatesAfterPositionDelete,
   trySyncPositionAssigneeToTracker,
   trySyncPositionPlannedDates,
   updateTaskPositionRecord,
@@ -302,6 +303,9 @@ export async function DELETE(
     const sprintId = parseInt(sprintIdStr, 10);
     const { searchParams } = new URL(request.url);
     const taskId = searchParams.get('taskId');
+    const isQaParam = searchParams.get('isQa');
+    const isQa = isQaParam === '1' || isQaParam === 'true';
+    const devTaskKey = searchParams.get('devTaskKey')?.trim() || undefined;
 
     if (isNaN(sprintId) || !taskId) {
       return NextResponse.json(
@@ -311,6 +315,15 @@ export async function DELETE(
     }
 
     await deleteTaskPosition({ organizationId, sprintId, taskId });
+
+    await trySyncPlannedDatesAfterPositionDelete({
+      ...(devTaskKey ? { devTaskKey } : {}),
+      isQa,
+      logLabel: 'DELETE /sprints/.../positions',
+      request,
+      sprintId,
+      taskId,
+    });
 
     notifySprintRealtime(request, organizationId, sprintId, ['positions']);
     return NextResponse.json({ success: true });

@@ -20,6 +20,7 @@ export {
   syncBatchAssigneesToTracker,
   syncBatchPlannedDatesToTracker,
   syncPutPositionSideEffects,
+  trySyncPlannedDatesAfterPositionDelete,
   trySyncPositionAssigneeToTracker,
   trySyncPositionPlannedDates,
 } from './taskPositionsTrackerSync';

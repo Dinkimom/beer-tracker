@@ -61,6 +61,12 @@ export interface UseSprintPlannerHandlersProps {
   deleteComment: (commentId: string) => Promise<void>;
   deleteLink: (linkId: string) => Promise<void>;
   deletePosition: (taskId: string, options?: { recordHistory?: boolean }) => Promise<void>;
+  /** Удаление оверлея Tracker/Jira (`tracker:{id}`). */
+  deleteTrackerOverlayLink?: (link: {
+    fromTaskId: string;
+    id: string;
+    toTaskId: string;
+  }) => Promise<void>;
   /** Кнопка + QA на dev-карточке без qaEngineer — открыть пикер исполнителя QA */
   onRequestQaEngineerPicker?: (devTaskId: string, anchorRect: DOMRect) => void;
   onTasksReload?: (options?: { showToast?: boolean }) => void;

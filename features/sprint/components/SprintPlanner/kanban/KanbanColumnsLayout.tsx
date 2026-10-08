@@ -83,30 +83,22 @@ export function KanbanColumnsLayout({
       ref={columnsContainerRef}
       className="flex min-h-full flex-none items-stretch gap-3 px-4 pb-4 pt-0"
     >
-      {columnsWithHeaderData.map(
-        ({ column, tasks: columnTasks, filteredTasks, totalSp, totalTp }) => (
-          <KanbanColumn
-            key={column.id}
-            columnId={column.id}
-            contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-            contextMenuTaskId={contextMenuTaskId}
-            developers={developers}
-            globalNameFilter={globalNameFilter}
-            header={{
-              displayName: column.display,
-              taskCount: filteredTasks.length,
-              totalSp,
-              totalTp,
-            }}
-            isDragging={Boolean(activeTaskId)}
-            isDropDisabled={Boolean(activeTaskId) && !canDropInColumn(column)}
-            isSourceColumn={column.id === sourceColumnId}
-            tasks={columnTasks}
-            onContextMenu={onContextMenu}
-            onTaskClick={onTaskClick}
-          />
-        )
-      )}
+      {columnsWithHeaderData.map(({ column, tasks: columnTasks }) => (
+        <KanbanColumn
+          key={column.id}
+          columnId={column.id}
+          contextMenuBlurOtherCards={contextMenuBlurOtherCards}
+          contextMenuTaskId={contextMenuTaskId}
+          developers={developers}
+          globalNameFilter={globalNameFilter}
+          isDragging={Boolean(activeTaskId)}
+          isDropDisabled={Boolean(activeTaskId) && !canDropInColumn(column)}
+          isSourceColumn={column.id === sourceColumnId}
+          tasks={columnTasks}
+          onContextMenu={onContextMenu}
+          onTaskClick={onTaskClick}
+        />
+      ))}
     </div>
   );
 }

@@ -1,4 +1,13 @@
--- Legacy: add organization_id to beer_tracker.sprint_goals.
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+\if :{?schema}
+\else
+\set schema public
+\endif
+CREATE SCHEMA IF NOT EXISTS :"schema";
+SET search_path TO :"schema", public;
+
+-- Legacy: add organization_id to sprint_goals.
 -- Target: deployments whose sprint_goals predates the multi-tenant column in init.sql.
 --
 -- Usage:
@@ -12,8 +21,8 @@ DO $$
 DECLARE
   v_org_id UUID;
 BEGIN
-  IF to_regclass('beer_tracker.sprint_goals') IS NULL THEN
-    RAISE NOTICE 'beer_tracker.sprint_goals missing — nothing to migrate';
+  IF to_regclass('sprint_goals') IS NULL THEN
+    RAISE NOTICE 'sprint_goals missing — nothing to migrate';
     RETURN;
   END IF;
 
@@ -30,34 +39,34 @@ BEGIN
 
   SELECT o.id
     INTO v_org_id
-    FROM beer_tracker.organizations o
+    FROM organizations o
    ORDER BY o.created_at ASC NULLS LAST, o.id ASC
    LIMIT 1;
 
   IF v_org_id IS NULL THEN
-    RAISE EXCEPTION 'No organization in beer_tracker.organizations — cannot backfill sprint_goals.organization_id';
+    RAISE EXCEPTION 'No organization in organizations — cannot backfill sprint_goals.organization_id';
   END IF;
 
-  ALTER TABLE beer_tracker.sprint_goals
+  ALTER TABLE sprint_goals
     ADD COLUMN organization_id UUID;
 
-  UPDATE beer_tracker.sprint_goals
+  UPDATE sprint_goals
      SET organization_id = v_org_id
    WHERE organization_id IS NULL;
 
-  ALTER TABLE beer_tracker.sprint_goals
+  ALTER TABLE sprint_goals
     ALTER COLUMN organization_id SET NOT NULL;
 
   IF NOT EXISTS (
     SELECT 1
     FROM pg_constraint
-    WHERE conrelid = 'beer_tracker.sprint_goals'::regclass
+    WHERE conrelid = 'sprint_goals'::regclass
       AND conname = 'sprint_goals_organization_id_fkey'
   ) THEN
-    ALTER TABLE beer_tracker.sprint_goals
+    ALTER TABLE sprint_goals
       ADD CONSTRAINT sprint_goals_organization_id_fkey
       FOREIGN KEY (organization_id)
-      REFERENCES beer_tracker.organizations (id)
+      REFERENCES organizations (id)
       ON DELETE CASCADE;
   END IF;
 
@@ -65,6 +74,6 @@ BEGIN
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_sprint_goals_org_sprint
-  ON beer_tracker.sprint_goals (organization_id, sprint_id);
+  ON sprint_goals (organization_id, sprint_id);
 
 COMMIT;

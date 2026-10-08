@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyJiraScheduleFieldRefsToTrackerIssue,
   buildJiraSchedulePutFields,
   jiraDateFieldValue,
   pickJiraScheduleFieldsFromCatalog,
@@ -71,6 +72,52 @@ describe('pickJiraScheduleFieldsFromCatalog', () => {
   });
 });
 
+describe('applyJiraScheduleFieldRefsToTrackerIssue', () => {
+  it('promotes Start date custom field and keeps duedate deadline', () => {
+    expect(
+      applyJiraScheduleFieldRefsToTrackerIssue(
+        {
+          customfield_10015: '2026-09-24T00:00:00.000+0000',
+          deadline: '2026-09-30',
+          id: '1',
+          key: 'PROJ-1',
+          self: '',
+          summary: 'Plan me',
+        },
+        {
+          due: { id: 'duedate', schemaType: 'date' },
+          dueResolved: true,
+          start: { id: 'customfield_10015', schemaType: 'date' },
+        }
+      )
+    ).toEqual(
+      expect.objectContaining({
+        deadline: '2026-09-30',
+        start: '2026-09-24',
+      })
+    );
+  });
+
+  it('reads deadline from a named end-date field when duedate is absent', () => {
+    expect(
+      applyJiraScheduleFieldRefsToTrackerIssue(
+        {
+          customfield_3: '2026-10-01',
+          id: '1',
+          key: 'PROJ-1',
+          self: '',
+          summary: 'Plan me',
+        },
+        {
+          due: { id: 'customfield_3', schemaType: 'date' },
+          dueResolved: true,
+          start: null,
+        }
+      ).deadline
+    ).toBe('2026-10-01');
+  });
+});
+
 describe('buildJiraSchedulePutFields', () => {
   it('formats datetime start fields and date-only due dates', () => {
     expect(jiraDateFieldValue('2026-09-24T15:00:00.000Z', 'datetime')).toBe(
@@ -98,5 +145,21 @@ describe('buildJiraSchedulePutFields', () => {
         { deadline: '2026-09-30', start: '2026-09-24' }
       )
     ).toThrow(/Start date/);
+  });
+
+  it('writes null to clear start and deadline', () => {
+    expect(
+      buildJiraSchedulePutFields(
+        {
+          due: { id: 'duedate', schemaType: 'date' },
+          dueResolved: true,
+          start: { id: 'customfield_10015', schemaType: 'date' },
+        },
+        { deadline: null, start: null }
+      )
+    ).toEqual({
+      customfield_10015: null,
+      duedate: null,
+    });
   });
 });

@@ -204,13 +204,13 @@ export interface IssueTrackerIssuePatch {
   assigneeField?: string;
   assigneeId?: string;
   customFields?: Record<string, unknown>;
-  /** YYYY-MM-DD. Yandex `deadline`, Jira `duedate` (or the editable end-date field). */
-  deadline?: string;
+  /** YYYY-MM-DD. Yandex `deadline`, Jira `duedate` (or the editable end-date field). `null` clears. */
+  deadline?: string | null;
   description?: string;
   isQa?: boolean;
   parent?: string | null;
-  /** YYYY-MM-DD. Yandex `start`, Jira Start date (or Target start when that is the editable field). */
-  start?: string;
+  /** YYYY-MM-DD. Yandex `start`, Jira Start date (or Target start when that is the editable field). `null` clears. */
+  start?: string | null;
   storyPoints?: number | null;
   summary?: string;
   tags?: string[];

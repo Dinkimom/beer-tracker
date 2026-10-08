@@ -1,12 +1,21 @@
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+\if :{?schema}
+\else
+\set schema public
+\endif
+CREATE SCHEMA IF NOT EXISTS :"schema";
+SET search_path TO :"schema", public;
+
 -- Одноразовая миграция: vacations → board_availability_events
--- Все строки из beer_tracker.vacations становятся событиями с event_type = 'vacation'
+-- Все строки из vacations становятся событиями с event_type = 'vacation'
 -- (UUID и прочие поля сохраняются).
 --
 -- Порядок для продакшена:
 -- 1) Задеплоить приложение с новой таблицей/API (или сначала применить только CREATE TABLE вручную).
 -- 2) Выполнить этот файл целиком в целевой БД.
 
-CREATE TABLE IF NOT EXISTS beer_tracker.board_availability_events (
+CREATE TABLE IF NOT EXISTS board_availability_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     board_id INTEGER NOT NULL,
     member_id TEXT NOT NULL,
@@ -33,7 +42,7 @@ BEGIN
         WHERE t.table_schema = 'beer_tracker'
           AND t.table_name = 'vacations'
     ) THEN
-        INSERT INTO beer_tracker.board_availability_events (
+        INSERT INTO board_availability_events (
             id,
             board_id,
             member_id,
@@ -56,19 +65,19 @@ BEGIN
             v.end_date,
             v.created_at,
             v.updated_at
-        FROM beer_tracker.vacations AS v
+        FROM vacations AS v
         ON CONFLICT (id) DO NOTHING;
     END IF;
 END
 $migrate$;
 
-DROP INDEX IF EXISTS beer_tracker.idx_vacations_board;
-DROP INDEX IF EXISTS beer_tracker.idx_vacations_member;
-DROP INDEX IF EXISTS beer_tracker.idx_vacations_dates;
+DROP INDEX IF EXISTS idx_vacations_board;
+DROP INDEX IF EXISTS idx_vacations_member;
+DROP INDEX IF EXISTS idx_vacations_dates;
 
-DROP TABLE IF EXISTS beer_tracker.vacations;
+DROP TABLE IF EXISTS vacations;
 
-CREATE INDEX IF NOT EXISTS idx_board_availability_events_board ON beer_tracker.board_availability_events(board_id);
-CREATE INDEX IF NOT EXISTS idx_board_availability_events_member ON beer_tracker.board_availability_events(member_id);
-CREATE INDEX IF NOT EXISTS idx_board_availability_events_dates ON beer_tracker.board_availability_events(start_date, end_date);
-CREATE INDEX IF NOT EXISTS idx_board_availability_events_type ON beer_tracker.board_availability_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_board_availability_events_board ON board_availability_events(board_id);
+CREATE INDEX IF NOT EXISTS idx_board_availability_events_member ON board_availability_events(member_id);
+CREATE INDEX IF NOT EXISTS idx_board_availability_events_dates ON board_availability_events(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_board_availability_events_type ON board_availability_events(event_type);

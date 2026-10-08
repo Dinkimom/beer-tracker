@@ -6,6 +6,7 @@ import type {
 import type { TaskParent } from '@/types';
 
 import { resolvePlannerLinkEndpoints } from '@/lib/planner/plannerLinkEndpoint';
+import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 import { deleteSprintGoal, insertSprintGoal, updateSprintGoal } from '@/lib/sprintGoals';
 import {
   fetchFeatureLanes,
@@ -236,6 +237,9 @@ async function applyUpsertLink(input: {
     { fromTaskId: input.op.fromTaskId, toTaskId: input.op.toTaskId },
     input.commentIds ?? new Set()
   );
+  if (!plannerLinkInvolvesComment(endpoints.fromTaskId, endpoints.toTaskId)) {
+    return `link skipped ${input.op.id}`;
+  }
   await upsertTaskLink({
     fromAnchor: input.op.fromAnchor,
     fromTaskId: endpoints.fromTaskId,

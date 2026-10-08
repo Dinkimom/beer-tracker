@@ -217,6 +217,13 @@ export interface TaskLink {
   fromAnchor?: Anchor;
   fromTaskId: string;
   id: string;
+  /**
+   * `planner` — локальная стрелка (заметка/фото/схема ↔ задача), SoT в Postgres.
+   * `tracker` — оверлей из Tracker/Jira, в Postgres не хранится.
+   */
+  origin?: 'planner' | 'tracker';
+  /** Канонический тип связи трекера (только для origin=tracker). */
+  relationship?: string;
   toAnchor?: Anchor;
   toTaskId: string;
 }

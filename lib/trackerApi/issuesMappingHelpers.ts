@@ -30,6 +30,34 @@ function mapTeam(functionalTeam?: string): 'Back' | 'DevOps' | 'QA' | 'Web' {
   return 'Back';
 }
 
+/** YYYY-MM-DD prefix from tracker ISO / date fields. */
+function trackerDateOnly(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value.trim());
+  return match?.[1];
+}
+
+function trackerIssueFieldString(issue: TrackerIssue, key: string): string | undefined {
+  const value = (issue as Record<string, unknown>)[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** start/deadline for planner fallbacks from DB-less tracker dates. */
+function trackerScheduleDates(issue: TrackerIssue): Pick<Task, 'deadline' | 'start'> {
+  const start =
+    trackerDateOnly(issue.start) ?? trackerDateOnly(trackerIssueFieldString(issue, 'start'));
+  const deadline =
+    trackerDateOnly(issue.deadline) ??
+    trackerDateOnly(trackerIssueFieldString(issue, 'deadline')) ??
+    trackerDateOnly(trackerIssueFieldString(issue, 'duedate'));
+  return {
+    ...(start ? { start } : {}),
+    ...(deadline ? { deadline } : {}),
+  };
+}
+
 function isSprintObject(value: unknown): value is SprintObject {
   return (
     typeof value === 'object' &&
@@ -240,5 +268,6 @@ export function mapTrackerIssueToTaskBase(
     updatedAt: issue.updatedAt,
     resolvedAt: issue.resolvedAt,
     ...queueFields,
+    ...trackerScheduleDates(issue),
   };
 }

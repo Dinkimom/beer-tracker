@@ -105,10 +105,10 @@ vi.mock('./jiraIssues', () => ({
       summary: 'Fix login',
     })
   ),
-  normalizeJiraIssue: (issue: { key: string; summary: string; type?: { key: string } }) => ({
-    ...issue,
-    provider: 'jira',
-  }),
+  normalizeJiraIssuesWithSchedule: vi.fn(
+    (_api: unknown, issues: Array<{ key: string; summary: string; type?: { key: string } }>) =>
+      Promise.resolve(issues.map((issue) => ({ ...issue, provider: 'jira' as const })))
+  ),
   searchJiraIssuesInSprint: vi.fn(() =>
     Promise.resolve([
       { id: '10001', key: 'PROJ-1', self: '', summary: 'Fix login', type: { key: 'task' } },
@@ -358,7 +358,9 @@ describe('jiraTrackerProvider skeleton', () => {
       'addIssueComment',
       'addIssueToSprint',
       'createIssue',
+      'createIssueLink',
       'createSprint',
+      'deleteIssueLink',
       'getBoard',
       'getBurndownIssuesForKeys',
       'getCurrentUser',
@@ -373,6 +375,7 @@ describe('jiraTrackerProvider skeleton', () => {
       'getTasksInSprintWithParents',
       'getTransitionFields',
       'listBoards',
+      'listIssueLinks',
       'listIssueTransitionsBatch',
       'listIssuesForBoard',
       'listIssuesForQueue',

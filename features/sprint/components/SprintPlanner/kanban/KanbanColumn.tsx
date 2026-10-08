@@ -10,7 +10,6 @@ import {
   KANBAN_COLUMN_BODY,
   resolveKanbanColumnChromeClass,
 } from './kanbanChromeClasses';
-import { KanbanColumnHeader } from './KanbanColumnHeader';
 import { kanbanColumnId } from './kanbanDndUtils';
 import { KanbanDraggableCard } from './KanbanDraggableCard';
 
@@ -20,13 +19,6 @@ interface KanbanColumnProps {
   contextMenuTaskId?: string | null;
   developers: Developer[];
   globalNameFilter?: string;
-  /** Шапка внутри колонки (режим без группировки по lane). */
-  header?: {
-    displayName: string;
-    taskCount: number;
-    totalSp: number;
-    totalTp: number;
-  };
   /** Идёт перетаскивание задачи (показывать оверлей на недоступных колонках) */
   isDragging?: boolean;
   /** В режиме перетаскивания колонка недоступна для дропа — показываем предупреждение */
@@ -53,7 +45,6 @@ export function KanbanColumn({
   tasks,
   developers,
   globalNameFilter = '',
-  header,
   isDragging = false,
   isDropDisabled = false,
   isSourceColumn = false,
@@ -80,14 +71,6 @@ export function KanbanColumn({
       className={`relative flex min-h-[120px] w-[280px] max-w-[280px] min-w-[280px] shrink-0 flex-col overflow-hidden transition-colors ${chromeClass}`}
       data-kanban-column={columnId}
     >
-      {header ? (
-        <KanbanColumnHeader
-          displayName={header.displayName}
-          taskCount={header.taskCount}
-          totalSp={header.totalSp}
-          totalTp={header.totalTp}
-        />
-      ) : null}
       <div
         className={KANBAN_COLUMN_BODY}
         style={{ overscrollBehaviorX: 'auto', overscrollBehaviorY: 'auto' }}

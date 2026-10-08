@@ -60,7 +60,7 @@ pnpm dev
 
 ### Без Docker (свой Postgres)
 
-Задайте `POSTGRES_*` в `.env` и убедитесь, что выполнен `database/init.sql` на чистой БД. Если БД уже была развёрнута без `staff`/`teams`: `psql ... -f database/add-staff-teams.sql` (см. [COMMERCIAL_DB_CONTRACT.md](./docs/COMMERCIAL_DB_CONTRACT.md)).
+Задайте `POSTGRES_*` и `BEER_TRACKER_SCHEMA` (по умолчанию `public`) в `.env` и убедитесь, что выполнен `database/init.sql` на чистой БД. Если БД уже была развёрнута без `staff`/`teams`: `./scripts/db/psql-with-schema.sh -f database/add-staff-teams.sql` (см. [COMMERCIAL_DB_CONTRACT.md](./docs/COMMERCIAL_DB_CONTRACT.md)).
 
 ```bash
 pnpm dev
@@ -181,7 +181,7 @@ pnpm release -- patch --push # то же и push (remote public или origin)
 ├── features/            # Домены (sprint, backlog, burndown, …)
 ├── lib/                 # DB, snapshots, tracker API, sync, tenant, …
 ├── hooks/
-├── database/            # init.sql (схема beer_tracker)
+├── database/            # init.sql + миграции (схема BEER_TRACKER_SCHEMA)
 └── docs/
 ```
 

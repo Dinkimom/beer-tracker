@@ -186,6 +186,9 @@ export const cacheKeys = {
     `jira:staff-avatars:${organizationId}`,
   /** GitLab MR fact (checks + timeline events); TTL 10 мин. */
   gitlabMergeRequestFact: (normalizedLink: string) => `gitlab:mr-fact:${normalizedLink}`,
+  /** Live issue links from Tracker/Jira (per issue key); TTL 30 мин. */
+  trackerIssueLinks: (organizationId: string, issueKey: string) =>
+    `tracker:issue-links:${organizationId}:${issueKey.trim()}`,
 };
 
 /**
@@ -250,6 +253,16 @@ export const invalidateCache = {
   adminTrackerCatalogQueuesBoards: (organizationId: string) => {
     const escaped = organizationId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     apiCache.deleteByPattern(new RegExp(`^admin:tracker-catalog:qb:${escaped}:`));
+  },
+  /** Связи issue в Tracker/Jira после create/delete из приложения. */
+  trackerIssueLinks: (organizationId: string, ...issueKeys: string[]) => {
+    for (const raw of issueKeys) {
+      const key = raw.trim();
+      if (!key) {
+        continue;
+      }
+      apiCache.delete(cacheKeys.trackerIssueLinks(organizationId, key));
+    }
   },
 };
 

@@ -25,7 +25,7 @@ describe('issueTrackerUi', () => {
       supportsChecklists: false,
       supportsFieldCatalog: false,
       supportsIssueChildren: false,
-      supportsIssueLinks: false,
+      supportsIssueLinks: true,
       supportsQueryLanguageSearch: false,
       supportsRelatedIssues: false,
       supportsScreenCatalog: false,

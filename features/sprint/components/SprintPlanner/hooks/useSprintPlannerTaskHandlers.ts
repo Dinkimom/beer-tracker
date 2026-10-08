@@ -11,6 +11,10 @@ import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useTaskResize } from '@/features/task/hooks/useTaskResize';
 import { useDataSyncEstimatesStorage } from '@/hooks/useLocalStorage';
 
+import {
+  clearTaskScheduleDatesInList,
+  resolveIssueKeyForScheduleClear,
+} from './clearTaskScheduleDatesOnRemoveFromPlan';
 import { handleTaskResizeAfterResize } from './sprintPlannerTaskHandlersResizeHelpers';
 import { runAutoAddToSwimlane } from './useSprintPlannerTaskHandlersAutoAddHelpers';
 import {
@@ -202,12 +206,16 @@ export function useSprintPlannerTaskHandlers({
         newPositions.delete(taskId);
         return newPositions;
       }, { recordHistory: true });
+      const issueKey = resolveIssueKeyForScheduleClear(taskId, tasksMap);
+      if (issueKey) {
+        setTasks((prev) => clearTaskScheduleDatesInList(prev, issueKey));
+      }
       deletePosition(taskId).catch((error) => {
         console.error('Error deleting position:', error);
         // При ошибке перезагрузим позиции — они подтянутся при следующем fetch
       });
     },
-    [setTaskPositions, deletePosition]
+    [deletePosition, setTaskPositions, setTasks, tasksMap]
   );
 
   const handleCreateQATask = useCallback(

@@ -8,8 +8,11 @@ import {
   getPlannedCellRangeDateRange,
   getPlannedPositionCellRange,
 } from '@/lib/planner-timeline';
+import { isEphemeralPlannerPositionId } from '@/lib/planner/ephemeralPlannerPositionId';
+import { isPlannerCommentLinkEndpoint } from '@/lib/planner/plannerLinkPersistence';
 import { buildSyntheticQaTaskId } from '@/lib/qaTaskIdentity';
 import { resolvePlannerAssigneeIdForTrackerSync, resolvePlannerAssigneeIdsForTrackerSync } from '@/lib/staffTeams/resolvePlannerAssigneeForTrackerSync';
+import { clearCachedSprintIssueScheduleDates } from '@/lib/trackerApi/sprintIssuesCache';
 import { loadTrackerIntegrationForTrackerPatch } from '@/lib/trackerIntegration';
 import { buildIssueAssigneePatch } from '@/lib/trackerIntegration/buildIssueAssigneePatch';
 import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
@@ -310,5 +313,74 @@ export async function syncBatchPlannedDatesToTracker(input: {
     });
   } catch (err) {
     console.error('[sync planned dates → tracker] POST /sprints/.../positions/batch', err);
+  }
+}
+
+function resolveIssueKeyForPositionDelete(input: {
+  devTaskKey?: string;
+  isQa?: boolean;
+  taskId: string;
+}): string | null {
+  const issueKey =
+    input.isQa && input.devTaskKey?.trim() ? input.devTaskKey.trim() : input.taskId.trim();
+  if (!issueKey || isEphemeralPlannerPositionId(issueKey) || isPlannerCommentLinkEndpoint(issueKey)) {
+    return null;
+  }
+  return issueKey;
+}
+
+/**
+ * После DELETE позиции: если у issue не осталось плановых позиций в спринте —
+ * чистим start/deadline в трекере (иначе fallback снова положит карточку).
+ * Если sibling (dev/QA) ещё на плане — пересчитываем даты по оставшимся.
+ */
+export async function trySyncPlannedDatesAfterPositionDelete(input: {
+  devTaskKey?: string;
+  isQa?: boolean;
+  logLabel: string;
+  request: NextRequest;
+  sprintId: number;
+  taskId: string;
+}): Promise<void> {
+  const issueKey = resolveIssueKeyForPositionDelete(input);
+  if (!issueKey) {
+    return;
+  }
+
+  try {
+    const relatedTaskIds = [issueKey, buildSyntheticQaTaskId(issueKey)];
+    const persisted = await loadPersistedPositionsForPlannedSync(input.sprintId, relatedTaskIds);
+    const remaining: PlannedDateSyncPosition[] = [];
+    for (const position of persisted.values()) {
+      if (!getPlannedPositionCellRange(position)) {
+        continue;
+      }
+      remaining.push({
+        duration: position.duration,
+        plannedDuration: position.plannedDuration,
+        plannedStartDay: position.plannedStartDay,
+        plannedStartPart: position.plannedStartPart,
+        segments: position.segments,
+        taskId: position.taskId,
+        ...(position.taskId === issueKey
+          ? { isQa: false }
+          : { isQa: true, devTaskKey: issueKey }),
+      });
+    }
+
+    if (remaining.length > 0) {
+      await syncPlannedDatesToTracker({
+        positions: remaining,
+        request: input.request,
+        sprintId: input.sprintId,
+      });
+      return;
+    }
+
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(input.request);
+    await issueTracker.updateIssue(issueKey, { deadline: null, start: null });
+    clearCachedSprintIssueScheduleDates(input.sprintId, issueKey);
+  } catch (err) {
+    console.error(`[sync planned dates → tracker] ${input.logLabel}`, err);
   }
 }

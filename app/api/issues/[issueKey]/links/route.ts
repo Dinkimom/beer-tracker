@@ -3,14 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
 import {
-  createIssueLinkWriteThrough,
-  loadIssueLinksWithCacheRefresh,
-} from '@/lib/issues/issueLinksRouteHelpers';
+  createTrackerIssueLink,
+  listTrackerIssueLinkEdges,
+} from '@/lib/issues/trackerIssueLinksRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { rejectUnsupportedIssueTrackerCapability } from '@/lib/issueTrackerProvider/issueTrackerCapabilityRoute';
 import { resolveParams } from '@/lib/nextjs-utils';
 import { CreateIssueLinkSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
+/** List from Tracker/Jira with in-memory per-issue cache (30m). */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ issueKey: string }> | { issueKey: string } }
@@ -36,13 +37,16 @@ export async function GET(
     }
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
-    const { fromCache, links } = await loadIssueLinksWithCacheRefresh({
-      organizationId,
-      issueKey,
+    const links = await listTrackerIssueLinkEdges({
+      issueKeys: [issueKey],
       issueTracker,
+      organizationId,
     });
 
-    return NextResponse.json({ links, fromCache });
+    return NextResponse.json(
+      { links },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    );
   } catch (error) {
     return handleApiError(error, 'list issue links', {
       forwardStatuses: TRACKER_UPSTREAM_FORWARD_STATUSES,
@@ -87,10 +91,10 @@ export async function POST(
     }
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
-    const link = await createIssueLinkWriteThrough({
-      organizationId,
+    const link = await createTrackerIssueLink({
       issueKey,
       issueTracker,
+      organizationId,
       payload: validation.data,
     });
 

@@ -3,20 +3,17 @@
  * Иерархия (parent/subtask/epic) сюда не входит — она в хлебных крошках.
  */
 
-export const ISSUE_LINK_RELATIONSHIPS = [
-  'relates',
-  'blocks',
-  'blocked_by',
-  'duplicates',
-  'duplicated_by',
-] as const;
-
-export type IssueLinkRelationship = (typeof ISSUE_LINK_RELATIONSHIPS)[number];
+type IssueLinkRelationship =
+  | 'blocked_by'
+  | 'blocks'
+  | 'duplicated_by'
+  | 'duplicates'
+  | 'relates';
 
 export type IssueLinkDirection = 'inward' | 'outward';
 
-/** Типы, доступные в форме добавления связи. */
-export const ISSUE_LINK_CREATE_RELATIONSHIPS = [
+/** Типы, доступные при создании связи из планера / API. */
+const ISSUE_LINK_CREATE_RELATIONSHIPS = [
   'relates',
   'blocks',
   'blocked_by',
@@ -83,7 +80,12 @@ export function mapTrackerRelationshipLabelToCanonical(
   if (token === 'is dependent by' || token === 'blocks') {
     return 'blocks';
   }
-  if (token === 'depends on' || token === 'blocked by' || token === 'blocked_by') {
+  if (
+    token === 'depends on' ||
+    token === 'blocked by' ||
+    token === 'blocked_by' ||
+    token === 'is blocked by'
+  ) {
     return 'blocked_by';
   }
   if (token === 'duplicates') {
@@ -95,12 +97,10 @@ export function mapTrackerRelationshipLabelToCanonical(
   return null;
 }
 
-export function isIssueLinkRelationship(value: string): value is IssueLinkRelationship {
-  return (ISSUE_LINK_RELATIONSHIPS as readonly string[]).includes(value);
-}
-
-export function isIssueLinkCreateRelationship(
+function isIssueLinkCreateRelationship(
   value: string
 ): value is IssueLinkCreateRelationship {
   return (ISSUE_LINK_CREATE_RELATIONSHIPS as readonly string[]).includes(value);
 }
+
+export { isIssueLinkCreateRelationship };

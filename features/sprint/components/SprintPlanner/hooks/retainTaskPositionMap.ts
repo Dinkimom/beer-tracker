@@ -1,5 +1,24 @@
 import type { TaskPosition } from '@/types';
 
+/** Same object or same planner geometry — tracker-date fallbacks rebuild every render. */
+export function taskPositionsEqualForRetain(left: TaskPosition, right: TaskPosition): boolean {
+  if (left === right) {
+    return true;
+  }
+  return (
+    left.taskId === right.taskId &&
+    left.assignee === right.assignee &&
+    left.duration === right.duration &&
+    left.startDay === right.startDay &&
+    left.startPart === right.startPart &&
+    left.plannedStartDay === right.plannedStartDay &&
+    left.plannedStartPart === right.plannedStartPart &&
+    left.plannedDuration === right.plannedDuration &&
+    left.isQa === right.isQa &&
+    left.devTaskKey === right.devTaskKey
+  );
+}
+
 export function taskPositionMapsHaveSameEntries(
   left: ReadonlyMap<string, TaskPosition>,
   right: ReadonlyMap<string, TaskPosition>
@@ -8,7 +27,8 @@ export function taskPositionMapsHaveSameEntries(
     return false;
   }
   for (const [taskId, position] of left) {
-    if (right.get(taskId) !== position) {
+    const other = right.get(taskId);
+    if (!other || !taskPositionsEqualForRetain(position, other)) {
       return false;
     }
   }

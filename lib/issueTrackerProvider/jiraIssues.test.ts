@@ -254,25 +254,44 @@ describe('searchJiraIssuesInSprint', () => {
 });
 
 describe('fetchJiraIssue', () => {
-  it('GETs /issue/{key} and maps the payload', async () => {
-    const get = vi.fn().mockResolvedValue({
-      data: {
-        fields: {
-          sprint: { id: 78804, name: 'Booking 12' },
-          summary: 'Fix login',
+  it('GETs /issue/{key} and maps Start date via the field catalog', async () => {
+    const get = vi.fn(async (url: string) => {
+      if (url === '/field') {
+        return {
+          data: [
+            { id: 'duedate', name: 'Due Date', schema: { system: 'duedate', type: 'date' } },
+            {
+              id: 'customfield_10015',
+              name: 'Start date',
+              schema: { type: 'date' },
+            },
+          ],
+        };
+      }
+      return {
+        data: {
+          fields: {
+            customfield_10015: '2026-09-24',
+            duedate: '2026-09-30',
+            sprint: { id: 78804, name: 'Booking 12' },
+            summary: 'Fix login',
+          },
+          key: 'PROJ-1',
         },
-        key: 'PROJ-1',
-      },
+      };
     });
     await expect(fetchJiraIssue(apiWith({ get }), 'PROJ-1')).resolves.toEqual(
       expect.objectContaining({
+        deadline: '2026-09-30',
         key: 'PROJ-1',
         provider: 'jira',
         sprint: [{ display: 'Booking 12', id: '78804' }],
+        start: '2026-09-24',
         summary: 'Fix login',
       })
     );
     expect(get).toHaveBeenCalledWith('/issue/PROJ-1');
+    expect(get).toHaveBeenCalledWith('/field');
   });
 
   it('returns null for 404', async () => {

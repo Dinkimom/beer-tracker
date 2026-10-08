@@ -31,13 +31,17 @@ export function KanbanColumnHeader({
           {taskCount}
         </span>
       </div>
-      {hasPoints ? (
-        <p className="mt-1 text-xs tabular-nums text-gray-500 dark:text-gray-400">
-          {spLabel ? <span>{spLabel}</span> : null}
-          {spLabel && tpLabel ? ' · ' : null}
-          {tpLabel ? <span>{tpLabel}</span> : null}
-        </p>
-      ) : null}
+      <p className="mt-1 min-h-4 text-xs leading-4 tabular-nums text-gray-500 dark:text-gray-400">
+        {hasPoints ? (
+          <>
+            {spLabel ? <span>{spLabel}</span> : null}
+            {spLabel && tpLabel ? ' · ' : null}
+            {tpLabel ? <span>{tpLabel}</span> : null}
+          </>
+        ) : (
+          '\u00a0'
+        )}
+      </p>
     </div>
   );
 }

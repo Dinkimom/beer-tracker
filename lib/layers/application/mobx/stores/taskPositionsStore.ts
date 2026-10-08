@@ -244,11 +244,15 @@ export class TaskPositionsStore {
     });
 
     await Promise.all([
-      ...deletes.map((taskId) =>
-        deleteTaskPositionApi(sprintId, taskId).catch((error) => {
+      ...deletes.map((taskId) => {
+        const info = this.resolveGetTaskInfo()?.(taskId) ?? { isQa: false };
+        return deleteTaskPositionApi(sprintId, taskId, {
+          isQa: info.isQa,
+          ...(info.devTaskKey ? { devTaskKey: info.devTaskKey } : {}),
+        }).catch((error) => {
           console.error('Error deleting position during history apply:', error);
-        })
-      ),
+        });
+      }),
       ...saves.map(({ position, isQa, devTaskKey }) => {
         const apiData = {
           ...taskPositionToApi(position, isQa, devTaskKey),
@@ -477,7 +481,11 @@ export class TaskPositionsStore {
     }
 
     try {
-      await deleteTaskPositionApi(sprintId, taskId);
+      const info = this.resolveGetTaskInfo()?.(taskId) ?? { isQa: false };
+      await deleteTaskPositionApi(sprintId, taskId, {
+        isQa: info.isQa,
+        ...(info.devTaskKey ? { devTaskKey: info.devTaskKey } : {}),
+      });
     } catch (error) {
       console.error('Error deleting position:', error);
     }

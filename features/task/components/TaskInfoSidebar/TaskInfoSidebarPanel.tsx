@@ -5,12 +5,10 @@ import type { Task } from '@/types';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskInfoSidebarDescriptionField } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarDescriptionField';
 import { TaskInfoSidebarHeader } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarHeader';
-import { TaskInfoSidebarIssueLinks } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarIssueLinks';
 import { TaskInfoSidebarTimestamps } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarTimestamps';
 import { TaskInfoSidebarTitleField } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarTitleField';
 import { TaskInfoSidebarTransitions } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarTransitions';
 import { useTaskInfoSidebarDetailTask } from '@/features/task/components/TaskInfoSidebar/useTaskInfoSidebarDetailTask';
-import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 
 interface TaskInfoSidebarPanelProps {
   task: Task;
@@ -58,8 +56,6 @@ export function TaskInfoSidebarPanel({
           task={detailTask}
           onFieldsSaved={handleFieldsSaved}
         />
-
-        <TaskInfoSidebarIssueLinks issueKey={getTaskTrackerDisplayKey(detailTask)} />
       </div>
     </aside>
   );

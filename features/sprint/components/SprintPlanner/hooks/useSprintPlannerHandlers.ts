@@ -8,6 +8,7 @@ import type { UseSprintPlannerHandlersProps } from './useSprintPlannerHandlers.t
 import { useCallback } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { parseTrackerOverlayLinkId } from '@/lib/planner/trackerLinkOverlay';
 
 import { useSprintPlannerCommentHandlers } from './useSprintPlannerCommentHandlers';
 import { useSprintPlannerTaskHandlers } from './useSprintPlannerTaskHandlers';
@@ -41,6 +42,7 @@ export function useSprintPlannerHandlers({
   taskPositions,
   deletePosition,
   deleteLink,
+  deleteTrackerOverlayLink,
   deleteComment,
   onRequestQaEngineerPicker,
   saveLink,
@@ -106,7 +108,23 @@ export function useSprintPlannerHandlers({
 
   const applyDeleteLink = useCallback(
     (linkId: string) => {
-      setTaskLinks((prev) => prev.filter((link) => link.id !== linkId));
+      const trackerLinkId = parseTrackerOverlayLinkId(linkId);
+      const link =
+        taskLinks.find((item) => item.id === linkId) ??
+        filteredTaskLinks.find((item) => item.id === linkId);
+
+      setTaskLinks((prev) => prev.filter((item) => item.id !== linkId));
+
+      if (trackerLinkId) {
+        if (link && deleteTrackerOverlayLink) {
+          deleteTrackerOverlayLink(link).catch((error) => {
+            console.error('Error deleting tracker link:', error);
+          });
+        }
+        debouncedUpdateXarrow();
+        return;
+      }
+
       if (selectedSprintId) {
         deleteLink(linkId).catch((error) => {
           console.error('Error deleting link:', error);
@@ -114,7 +132,15 @@ export function useSprintPlannerHandlers({
       }
       debouncedUpdateXarrow();
     },
-    [setTaskLinks, selectedSprintId, deleteLink, debouncedUpdateXarrow]
+    [
+      setTaskLinks,
+      selectedSprintId,
+      deleteLink,
+      deleteTrackerOverlayLink,
+      debouncedUpdateXarrow,
+      taskLinks,
+      filteredTaskLinks,
+    ]
   );
 
   // Обработчик удаления связи (с подтверждением)

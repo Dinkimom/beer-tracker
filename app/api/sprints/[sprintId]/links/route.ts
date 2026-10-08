@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
 import { resolveParams } from '@/lib/nextjs-utils';
+import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
   deleteTaskLink,
@@ -34,7 +35,14 @@ export async function GET(
       );
     }
 
-    const links = await listTaskLinksForSprint({ organizationId, sprintId });
+    const rows = await listTaskLinksForSprint({ organizationId, sprintId });
+    const links = rows.filter((row) => {
+      const record = row as { from_task_id?: string; to_task_id?: string };
+      return plannerLinkInvolvesComment(
+        String(record.from_task_id ?? ''),
+        String(record.to_task_id ?? '')
+      );
+    });
     return NextResponse.json(
       { links },
       { headers: { 'Cache-Control': 'private, no-store' } }
@@ -82,6 +90,15 @@ export async function POST(
     }
 
     const { fromTaskId, toTaskId, fromAnchor, toAnchor, id } = validation.data;
+    if (!plannerLinkInvolvesComment(fromTaskId, toTaskId)) {
+      return NextResponse.json(
+        {
+          error:
+            'Only links involving a planner note, photo, or diagram can be stored. Task-to-task links belong in the issue tracker.',
+        },
+        { status: 400 }
+      );
+    }
     const linkId = id || `link-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     const link = await upsertTaskLink({

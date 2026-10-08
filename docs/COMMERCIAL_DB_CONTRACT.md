@@ -1,6 +1,6 @@
-# Схема `beer_tracker`: каталог и runtime
+# Схема приложения: каталог и runtime
 
-Beer Tracker хранит команды и сотрудников **у себя**: `beer_tracker.teams`, `staff`, `team_members`. Это не внешний реестр `public.registry_employees` и не `overseer.teams`.
+Beer Tracker хранит команды и сотрудников **у себя**: `teams`, `staff`, `team_members` в схеме `BEER_TRACKER_SCHEMA` (по умолчанию `public`, как в `database/init.sql`). Это не внешний реестр `public.registry_employees` и не `overseer.teams`. Legacy-инстансы могут держать таблицы в схеме `beer_tracker` через `BEER_TRACKER_SCHEMA=beer_tracker`.
 
 Трекер задач (Яндекс Трекер или Jira) — отдельный переключатель инстанса: `ISSUE_TRACKER_PROVIDER` + `TRACKER_API_URL`. На доску и логин влияют email и `staff.tracker_user_id` (uid Яндекса или Jira `accountId`).
 
@@ -14,12 +14,16 @@ Beer Tracker хранит команды и сотрудников **у себя
 | Уже живая БД: `sprint_goals` без `organization_id` | `database/add-sprint-goals-organization-id.sql` |
 | Только слой организаций на чужой Postgres | `database/init.master-tenant-addon.sql`, затем `add-staff-teams.sql` |
 
-`add-staff-teams.sql` идемпотентен: таблицы создаёт через `IF NOT EXISTS`. Если в той же БД ещё есть `overseer.teams` и `public.registry_employees`, один раз копирует каталог в самую старую `beer_tracker.organizations` (id команд = `overseer.teams.uid`, id сотрудников = `registry_employees.uuid`, чтобы совпасть с уже выданными сессиями и `admins.staff_uid`).
+Миграции в `database/*.sql` (кроме `init.sql`) читают psql-переменную `schema` из `BEER_TRACKER_SCHEMA` и выставляют `search_path`. Запускайте через обёртку:
 
 ```bash
-psql -v ON_ERROR_STOP=1 -h localhost -p 5433 -U postgres -d beer_tracker \
+./scripts/db/psql-with-schema.sh -h localhost -p 5433 -U postgres -d beer_tracker \
   -f database/add-staff-teams.sql
+# legacy-схема:
+BEER_TRACKER_SCHEMA=beer_tracker ./scripts/db/psql-with-schema.sh -f database/add-issue-links.sql
 ```
+
+`add-staff-teams.sql` идемпотентен: таблицы создаёт через `IF NOT EXISTS`. Если в той же БД ещё есть `overseer.teams` и `public.registry_employees`, один раз копирует каталог в самую старую `organizations` (id команд = `overseer.teams.uid`, id сотрудников = `registry_employees.uuid`, чтобы совпасть с уже выданными сессиями и `admins.staff_uid`).
 
 Том Docker, созданный по старому `init.sql` без этих таблиц, **сам не обновится** — нужен этот файл (или новый том).
 
@@ -32,7 +36,7 @@ psql -v ON_ERROR_STOP=1 -h localhost -p 5433 -U postgres -d beer_tracker \
 
 Состав команд правится в админке. `DB_CONTRACT_MODE` на этот каталог не влияет.
 
-## 3) Остальной runtime в `beer_tracker`
+## 3) Остальной runtime
 
 Планер: `task_positions`, `task_position_segments`, `task_links`, `comments`, `board_availability_events`, …
 
@@ -48,4 +52,4 @@ psql -v ON_ERROR_STOP=1 -h localhost -p 5433 -U postgres -d beer_tracker \
 
 ## 5) Права
 
-Техпользователю приложения: `USAGE` + `SELECT, INSERT, UPDATE, DELETE` на объекты `beer_tracker`, `USAGE, SELECT` на sequence. DDL в runtime не нужен. В production приложению не выдавать `CREATE` / `ALTER` / `DROP`.
+Техпользователю приложения: `USAGE` + `SELECT, INSERT, UPDATE, DELETE` на объекты схемы `BEER_TRACKER_SCHEMA`, `USAGE, SELECT` на sequence. DDL в runtime не нужен. В production приложению не выдавать `CREATE` / `ALTER` / `DROP`.

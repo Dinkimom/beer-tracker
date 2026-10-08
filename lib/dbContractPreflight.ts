@@ -1,5 +1,6 @@
 import { query } from '@/lib/db';
 import {
+  getBeerTrackerSchema,
   getDbContractMode,
   isDbCompatibilityMode,
   isDbContractPreflightStrict,
@@ -38,7 +39,11 @@ interface DbContractStatusReport {
   strict: boolean;
 }
 
-const REQUIRED_SCHEMAS = ['beer_tracker', 'overseer', 'public'] as const;
+function requiredSchemasForCompatibility(): string[] {
+  const appSchema = getBeerTrackerSchema();
+  const schemas = new Set<string>([appSchema, 'overseer', 'public']);
+  return [...schemas];
+}
 const REQUIRED_OVERSEER_TABLES = [
   'teams',
   'staff_teams',
@@ -62,14 +67,15 @@ const REQUIRED_COLUMNS: Array<{
 ];
 
 async function checkSchemas(): Promise<DbContractCheck> {
+  const required = requiredSchemasForCompatibility();
   const res = await query<{ schema_name: string }>(
     `SELECT schema_name
      FROM information_schema.schemata
      WHERE schema_name = ANY($1::text[])`,
-    [REQUIRED_SCHEMAS]
+    [required]
   );
   const existing = new Set(res.rows.map((r) => r.schema_name));
-  const missing = REQUIRED_SCHEMAS.filter((s) => !existing.has(s));
+  const missing = required.filter((s) => !existing.has(s));
   return {
     name: 'required_schemas',
     level: 'error',

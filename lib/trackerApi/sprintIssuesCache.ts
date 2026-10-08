@@ -83,6 +83,16 @@ export function patchCachedSprintIssueEstimates(
   patchCachedSprintIssue(sprintId, issueKey, (issue) => withPatchedEstimates(issue, estimates));
 }
 
+/** После очистки start/deadline в трекере — не отдаём старые даты из memory cache. */
+export function clearCachedSprintIssueScheduleDates(sprintId: number, issueKey: string): void {
+  patchCachedSprintIssue(sprintId, issueKey, (issue) => {
+    const next = { ...issue };
+    delete next.start;
+    delete next.deadline;
+    return next;
+  });
+}
+
 /**
  * После перехода статуса search Tracker тоже отстаёт —
  * подменяем status в кэше, чтобы соседние вкладки не читали старый снимок.

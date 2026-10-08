@@ -5,6 +5,10 @@ import type { AxiosInstance } from 'axios';
 import { jiraAdfToMarkdown } from './jiraAdfToMarkdown';
 import { jiraAgileSprintIssuesUrl, shouldStopJiraBoardPages } from './jiraCatalog';
 import { postJiraIssueSearch, readJiraSearchNextPageToken } from './jiraIssueSearchRequest';
+import {
+  applyJiraScheduleFieldRefsToTrackerIssue,
+  loadJiraScheduleFieldRefsFromCatalog,
+} from './jiraScheduleFields';
 import { jiraNameKey, mapJiraStatus, mapJiraStatusCategory } from './jiraStatusKeys';
 
 export { mapJiraStatus } from './jiraStatusKeys';
@@ -335,6 +339,20 @@ export function normalizeJiraIssue(issue: TrackerIssue): IssueTrackerIssue {
   };
 }
 
+/** Resolves Start date / due custom fields via `/field`, then normalizes. */
+export async function normalizeJiraIssuesWithSchedule(
+  api: AxiosInstance,
+  issues: TrackerIssue[]
+): Promise<IssueTrackerIssue[]> {
+  if (issues.length === 0) {
+    return [];
+  }
+  const refs = await loadJiraScheduleFieldRefsFromCatalog(api);
+  return issues.map((issue) =>
+    normalizeJiraIssue(applyJiraScheduleFieldRefsToTrackerIssue(issue, refs))
+  );
+}
+
 const JIRA_ISSUE_PAGE_SIZE = 50;
 const JIRA_ISSUE_MAX_PAGES = 40;
 
@@ -489,7 +507,11 @@ export async function fetchJiraIssue(
   try {
     const { data } = await api.get<unknown>(jiraIssuePath(key));
     const mapped = mapJiraRestIssueToTrackerIssue(data);
-    return mapped ? normalizeJiraIssue(mapped) : null;
+    if (!mapped) {
+      return null;
+    }
+    const [normalized] = await normalizeJiraIssuesWithSchedule(api, [mapped]);
+    return normalized ?? null;
   } catch (error) {
     if (isHttpNotFound(error)) {
       return null;

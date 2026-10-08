@@ -46,7 +46,8 @@ export function issueTrackerProviderCapabilities(
     supportsChecklists: yandexShaped,
     supportsFieldCatalog: yandexShaped,
     supportsIssueChildren: yandexShaped,
-    supportsIssueLinks: yandexShaped,
+    /** Список/создание/удаление issue links — Yandex и Jira. */
+    supportsIssueLinks: true,
     supportsQueryLanguageSearch: yandexShaped,
     supportsRelatedIssues: yandexShaped,
     supportsScreenCatalog: yandexShaped,

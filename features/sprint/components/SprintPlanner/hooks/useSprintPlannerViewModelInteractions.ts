@@ -28,6 +28,7 @@ import {
   commentIdSetFromRecords,
   resolvePlannerLinkEndpoints,
 } from '@/lib/planner/plannerLinkEndpoint';
+import { mergePlannerAndTrackerTaskLinks } from '@/lib/planner/trackerLinkOverlay';
 
 import { useDevelopersManagement } from '../../../hooks/useDevelopersManagement';
 import { useKeyboardAndMouseHandlers } from '../../../hooks/useKeyboardAndMouseHandlers';
@@ -84,6 +85,8 @@ interface UseSprintPlannerViewModelInteractionsParams {
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
   tasksMap: Map<string, Task>;
+  /** Live overlay from Tracker/Jira (not in Postgres). */
+  trackerTaskLinks?: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
   viewMode: BoardViewMode;
   workflowScreens: WorkflowScreens;
   confirm: (message: string, options?: ConfirmDialogPromptOptions) => Promise<boolean>;
@@ -91,6 +94,11 @@ interface UseSprintPlannerViewModelInteractionsParams {
   deleteComment: (commentId: string) => Promise<void>;
   deleteLink: (linkId: string) => Promise<void>;
   deletePosition: (taskId: string) => Promise<void>;
+  deleteTrackerOverlayLink?: (link: {
+    fromTaskId: string;
+    id: string;
+    toTaskId: string;
+  }) => Promise<void>;
   onTasksReload?: (options?: { showToast?: boolean }) => void;
   saveLink: (link: { fromTaskId: string; toTaskId: string; id: string }) => Promise<void>;
   savePosition: (
@@ -119,6 +127,7 @@ export function useSprintPlannerViewModelInteractions({
   debouncedUpdateXarrow,
   deleteComment,
   deleteLink,
+  deleteTrackerOverlayLink,
   deletePosition,
   developers,
   developersManagement,
@@ -146,6 +155,7 @@ export function useSprintPlannerViewModelInteractions({
   syncAssignees,
   syncEstimates,
   taskLinks,
+  trackerTaskLinks = [],
   taskPositions,
   tasks,
   tasksMap,
@@ -184,8 +194,9 @@ export function useSprintPlannerViewModelInteractions({
   const swimlaneTaskLinks = useMemo(() => {
     const commentIds = commentIdSetFromRecords(comments);
     const normalized = taskLinks.map((link) => resolvePlannerLinkEndpoints(link, commentIds));
-    return filterTaskLinksByKnownTaskIds(normalized, tasksMapWithComments);
-  }, [comments, taskLinks, tasksMapWithComments]);
+    const plannerOnly = filterTaskLinksByKnownTaskIds(normalized, tasksMapWithComments);
+    return mergePlannerAndTrackerTaskLinks(plannerOnly, trackerTaskLinks);
+  }, [comments, taskLinks, tasksMapWithComments, trackerTaskLinks]);
   const taskOperations = useTaskOperations({
     tasks,
     taskPositions,
@@ -248,6 +259,15 @@ export function useSprintPlannerViewModelInteractions({
 
   const resetDragStateRef = useRef<(() => void) | null>(null);
 
+  const linksVisibleForHandlers = useMemo(
+    () => mergePlannerAndTrackerTaskLinks(filteredTaskLinks, trackerTaskLinks),
+    [filteredTaskLinks, trackerTaskLinks]
+  );
+  const taskLinksForHandlers = useMemo(
+    () => mergePlannerAndTrackerTaskLinks(taskLinks, trackerTaskLinks),
+    [taskLinks, trackerTaskLinks]
+  );
+
   const handlers = useSprintPlannerHandlers({
     selectedSprintId,
     setComments,
@@ -262,7 +282,7 @@ export function useSprintPlannerViewModelInteractions({
     debouncedUpdateXarrow,
     developersManagement,
     resetDragStateRef,
-    filteredTaskLinks,
+    filteredTaskLinks: linksVisibleForHandlers,
     filteredTaskPositions: filteredTaskPositionsWithComments,
     qaTaskManagement,
     qaTasksMap,
@@ -274,13 +294,14 @@ export function useSprintPlannerViewModelInteractions({
     tasksMap: tasksMapWithComments,
     taskPositions,
     deleteLink,
+    deleteTrackerOverlayLink,
     deletePosition,
     deleteComment,
     onRequestQaEngineerPicker,
     saveLink,
     savePosition,
     onTasksReload,
-    taskLinks,
+    taskLinks: taskLinksForHandlers,
     workflowScreens,
   });
 
