@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.5.0] — 2026-10-08
+
+### English
+
+- Issue links in the task sidebar (list, add, remove) with Tracker provider support.
+- Kanban and backlog UI chrome polish; board columns cached on server and client (they change rarely).
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.5.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Связи задач в сайдбаре задачи (список, добавление, удаление) с поддержкой провайдера Tracker.
+- Полировка chrome канбана и бэклога; колонки доски кэшируются на сервере и клиенте (меняются редко).
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.5.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.4.2] — 2026-10-08
 
 ### English
