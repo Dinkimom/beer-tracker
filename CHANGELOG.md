@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.6.0] — 2026-10-08
+
+### English
+
+- Planner sync with Tracker: clear schedule dates when a task leaves the plan; issue-link overlay and batch fetch for sprint links.
+- Kanban chrome polish; DB migrations respect `BEER_TRACKER_SCHEMA` via `scripts/db/psql-with-schema.sh`.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.6.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Синхронизация планера с Tracker: очистка дат расписания при снятии задачи с плана; оверлей связей и batch-загрузка ссылок спринта.
+- Полировка chrome канбана; миграции БД учитывают `BEER_TRACKER_SCHEMA` через `scripts/db/psql-with-schema.sh`.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.6.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.5.0] — 2026-10-08
 
 ### English
