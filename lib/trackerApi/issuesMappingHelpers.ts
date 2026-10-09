@@ -40,7 +40,7 @@ function trackerDateOnly(value: string | undefined): string | undefined {
 }
 
 function trackerIssueFieldString(issue: TrackerIssue, key: string): string | undefined {
-  const value = (issue as Record<string, unknown>)[key];
+  const value = (issue as unknown as Record<string, unknown>)[key];
   return typeof value === 'string' ? value : undefined;
 }
 

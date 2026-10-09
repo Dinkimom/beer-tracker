@@ -13,9 +13,7 @@ export function taskPositionsEqualForRetain(left: TaskPosition, right: TaskPosit
     left.startPart === right.startPart &&
     left.plannedStartDay === right.plannedStartDay &&
     left.plannedStartPart === right.plannedStartPart &&
-    left.plannedDuration === right.plannedDuration &&
-    left.isQa === right.isQa &&
-    left.devTaskKey === right.devTaskKey
+    left.plannedDuration === right.plannedDuration
   );
 }
 
