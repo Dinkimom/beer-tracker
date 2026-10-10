@@ -2,6 +2,26 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.8.0] — 2026-10-11
+
+### English
+
+- Task info sidebar shows assignee, priority, story/test points, and type as meta fields.
+- Runtime S3 object-storage detection (`isS3Configured`) exposed to the client for upload UI.
+- Hide the tracker token settings tab for Jira Cloud; users reconnect via «Continue with Atlassian».
+- Planner onboarding is tour-only (tip layer removed); shared planner clock replaces now-line helpers.
+- Swimlane placement toolbar, quick-add menu, and settings modal polish.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.8.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- В сайдбаре задачи — метаполя: исполнитель, приоритет, story/test points и тип.
+- Определение S3 object storage в runtime (`isS3Configured`) доступно клиенту для UI загрузок.
+- Вкладка токена трекера в настройках скрыта для Jira Cloud; переподключение через «Продолжить с Atlassian».
+- Онбординг планера только как тур (слой tip убран); общий planner clock вместо хелперов now-line.
+- Полировка тулбара размещения свимлейнов, quick-add меню и модалки настроек.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.8.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.7.2] — 2026-10-11
 
 ### English
