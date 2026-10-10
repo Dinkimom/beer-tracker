@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { resolveAdminOrgTrackerApiUrl } from '@/lib/admin/adminOrgTrackerApiHelpers';
 import {
   createAdminTrackerMetadataAxios,
   fetchTrackerMetadataFieldValues,
@@ -16,7 +17,6 @@ import {
   findOrganizationById,
   getDecryptedOrganizationTrackerToken,
 } from '@/lib/organizations';
-import { resolveTrackerApiBaseUrlForOrganizationRow } from '@/lib/trackerRequestConfig';
 
 /**
  * GET /api/admin/organizations/[organizationId]/tracker-metadata?resource=fields|statuses|all|field-values&fieldId=<id>
@@ -50,12 +50,15 @@ export async function GET(
     );
   }
 
-  const tokenResult = await resolveTrackerMetadataToken(orgId, getDecryptedOrganizationTrackerToken);
+  const tokenResult = await resolveTrackerMetadataToken(
+    orgId,
+    getDecryptedOrganizationTrackerToken
+  );
   if (tokenResult instanceof NextResponse) {
     return tokenResult;
   }
 
-  const apiUrl = resolveTrackerApiBaseUrlForOrganizationRow(org);
+  const apiUrl = resolveAdminOrgTrackerApiUrl(org);
   const trackerCloudOrgId = org.tracker_org_id.trim();
   const fingerprint = trackerAdminCatalogConnectionFingerprint(tokenResult, apiUrl, trackerCloudOrgId);
   const api = createAdminTrackerMetadataAxios({

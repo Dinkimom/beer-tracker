@@ -169,9 +169,25 @@ export function useDataSyncAssigneesStorage(): [
  * Первый элемент — сохранённый токен (для форм); при несовпадении org с активной tenant «эффективный»
  * токен для API см. {@link getEffectiveTrackerTokenForBrowser} / AuthGuard.
  */
+interface SetTrackerTokenMeta {
+  cloudId?: string;
+  email?: string;
+  expiresAt?: number;
+  refreshToken?: string;
+}
+
+function normalizeSetTrackerTokenMeta(
+  meta?: SetTrackerTokenMeta | string
+): SetTrackerTokenMeta {
+  if (typeof meta === 'string') {
+    return { email: meta };
+  }
+  return meta ?? {};
+}
+
 export function useTrackerTokenStorage(): [
   string,
-  (token: string, organizationId?: string, email?: string) => void,
+  (token: string, organizationId?: string, meta?: SetTrackerTokenMeta | string) => void,
 ] {
   const [, setTick] = useState(() => {
     migrateTrackerTokenInLocalStorage();
@@ -203,7 +219,7 @@ export function useTrackerTokenStorage(): [
   }, [bump]);
 
   const setToken = useCallback(
-    (token: string, organizationId?: string, email?: string) => {
+    (token: string, organizationId?: string, meta?: SetTrackerTokenMeta | string) => {
       const trimmed = token.trim();
       if (!trimmed) {
         writeTrackerTokenPayload({ organizationId: '', token: '' });
@@ -221,12 +237,23 @@ export function useTrackerTokenStorage(): [
           org = '';
         }
       }
+      const opts = normalizeSetTrackerTokenMeta(meta);
       const existing = readTrackerTokenPayload();
+      const sameOrg = org === existing.organizationId;
       const nextEmail =
-        email?.trim() || (org === existing.organizationId ? existing.email?.trim() ?? '' : '');
+        opts.email?.trim() || (sameOrg ? existing.email?.trim() ?? '' : '');
+      const nextRefresh =
+        opts.refreshToken?.trim() || (sameOrg ? existing.refreshToken?.trim() ?? '' : '');
+      const nextCloudId =
+        opts.cloudId?.trim() || (sameOrg ? existing.cloudId?.trim() ?? '' : '');
+      const nextExpiresAt =
+        opts.expiresAt ?? (sameOrg ? existing.expiresAt : undefined);
       writeTrackerTokenPayload({
+        cloudId: nextCloudId || undefined,
         email: nextEmail || undefined,
+        expiresAt: nextExpiresAt,
         organizationId: org,
+        refreshToken: nextRefresh || undefined,
         token: trimmed,
       });
       window.dispatchEvent(

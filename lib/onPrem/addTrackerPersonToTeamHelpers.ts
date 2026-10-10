@@ -91,7 +91,6 @@ async function rollbackTeamMemberOnProvisionFailure(input: {
 }
 
 export async function provisionTrackerJoinWithRollback(input: {
-  emailNorm: string;
   member: TeamMemberRow | null;
   orgRole: Extract<OrgMemberRole, 'member' | 'team_lead'>;
   organizationId: string;
@@ -100,9 +99,9 @@ export async function provisionTrackerJoinWithRollback(input: {
 }): Promise<void> {
   try {
     await provisionProductUserForTrackerJoin({
-      emailNorm: input.emailNorm,
       organizationId: input.organizationId,
       orgRole: input.orgRole,
+      staffId: input.staffId,
     });
   } catch (error) {
     await rollbackTeamMemberOnProvisionFailure(input);

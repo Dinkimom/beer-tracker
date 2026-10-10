@@ -21,6 +21,7 @@
 |---------|------------|
 | `pnpm lint` | ESLint по проекту |
 | `pnpm lint:fix` | ESLint с автоисправлением |
+| `pnpm lint:sonar-density` | Плотность SonarJS-срабатываний / 1000 LoC (цель ≤ 6) |
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm test` | Vitest (`vitest run`) и затем **`pnpm check:i18n`** (паритет ключей ru/en) |
 | `pnpm check:i18n` | Паритет ключей ru/en + проверка английских листьев (пустые строки, TODO/TBD/FIXME); исключения — `scripts/i18n/english-quality-allowlist.json` |
@@ -80,9 +81,10 @@
 
 - Следовать существующим паттернам в соседних файлах (именование, импорты, стиль компонентов).
 - Не добавлять лишние зависимости без необходимости; неиспользуемый код удалять, а не «заглушать» без причины.
-- Политика по Sonar/React Compiler зафиксирована в `eslint.config.mjs` (см. комментарий в начале файла).
-- Целевые quality-пороги: Sonar-плотность `<= 6/1000 LoC`; cognitive-complexity: **10** (`lib/**`, `app/api/**`), **15** (UI: `features/**`, `components/**`, `contexts/**`, `hooks/**`, `app/**/*.tsx`) — см. `eslint.config.mjs` (`sonarjs/core-complexity`, `sonarjs/ui-complexity`). **`scripts/**`**: complexity **25**, часть Sonar-правил смягчена (CLI).
-- `sonarjs/no-nested-conditional`, `no-nested-functions`, `no-nested-template-literals` — **warn**, не error (ветвистый UI не дробить ради стиля).
+- Политика по Sonar/React Hooks зафиксирована в `eslint.config.mjs` (см. комментарий в начале файла).
+- Целевые quality-пороги: Sonar-плотность `<= 6/1000 LoC` (`pnpm lint:sonar-density`); cognitive-complexity: **10** (`lib/**`, `app/api/**`), **15** (UI: `features/**`, `components/**`, `contexts/**`, `hooks/**`, `app/**/*.tsx`) — см. `eslint.config.mjs` (`sonarjs/core-complexity`, `sonarjs/ui-complexity`). **`scripts/**`**: complexity **25**, часть Sonar-правил смягчена (CLI).
+- `sonarjs/no-nested-conditional`, `no-nested-functions`, `no-nested-template-literals` — **error** в `lib/**` и `app/api/**`; **off** в UI (ветвистый JSX не дробить ради стиля).
+- `react-hooks/exhaustive-deps` — **error** (явно строже recommended warn).
 - Архитектурное правило UI: **один компонент = один файл** (допускаются только точечные исключения с комментарием причины).
 - Размер файлов ограничивать и снижать поэтапно (см. `docs/REFACTORING_WAVES_PLAN.md`, трек `max-lines`).
 

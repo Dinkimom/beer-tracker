@@ -6,7 +6,10 @@ import { isSyncRedisConfigured } from '@/lib/sync/redisConnection';
 import { validateIssueTrackerCredentials } from '@/lib/trackerCredentialsValidation';
 
 import { findOrganizationById } from './organizationRepository';
-import { getDecryptedOrganizationTrackerToken } from './organizationSecretsRepository';
+import {
+  getDecryptedOrganizationTrackerSecretRaw,
+  getDecryptedOrganizationTrackerToken,
+} from './organizationSecretsRepository';
 import { isOrganizationTrackerConnectionReady } from './organizationTrackerAdminFormState';
 import {
   connectOrganizationTracker,
@@ -25,6 +28,7 @@ vi.mock('./organizationRepository', () => ({
 }));
 
 vi.mock('./organizationSecretsRepository', () => ({
+  getDecryptedOrganizationTrackerSecretRaw: vi.fn(),
   getDecryptedOrganizationTrackerToken: vi.fn(),
 }));
 
@@ -89,6 +93,7 @@ describe('connectOrganizationTracker', () => {
       .mockResolvedValueOnce({ rowCount: 1 })
       .mockResolvedValueOnce(undefined);
     vi.mocked(findOrganizationById).mockResolvedValue(minimalOrg());
+    vi.mocked(getDecryptedOrganizationTrackerSecretRaw).mockResolvedValue(null);
     vi.mocked(getDecryptedOrganizationTrackerToken).mockResolvedValue(null);
     vi.mocked(getIssueTrackerProviderKind).mockReturnValue('tracker');
     vi.mocked(validateIssueTrackerCredentials).mockResolvedValue({ ok: true });
@@ -192,6 +197,7 @@ describe('connectOrganizationTracker', () => {
   });
 
   it('updates org/url using stored token when oauthToken is empty', async () => {
+    vi.mocked(getDecryptedOrganizationTrackerSecretRaw).mockResolvedValue('stored-oauth-token');
     vi.mocked(getDecryptedOrganizationTrackerToken).mockResolvedValue('stored-oauth-token');
     vi.mocked(findOrganizationById).mockResolvedValue({
       ...minimalOrg(),
@@ -261,7 +267,7 @@ describe('verifyStoredOrganizationTrackerToken', () => {
     expect(validateIssueTrackerCredentials).toHaveBeenCalled();
   });
 
-  it('passes stored Atlassian email when verifying a Jira Cloud token', async () => {
+  it('uses site URL and Basic email when verifying a Jira Cloud org API token', async () => {
     vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-cloud');
     vi.mocked(findOrganizationById).mockResolvedValue({
       ...minimalOrg(),
@@ -278,6 +284,7 @@ describe('verifyStoredOrganizationTrackerToken', () => {
     expect(r).toEqual({ ok: true });
     expect(validateIssueTrackerCredentials).toHaveBeenCalledWith(
       expect.objectContaining({
+        apiUrl: 'https://example.atlassian.net/rest/api/3',
         email: 'ada@example.com',
         oauthToken: 'decrypted-token',
       })
@@ -307,6 +314,7 @@ describe('isOrganizationTrackerConnectionReady', () => {
     expect(
       isOrganizationTrackerConnectionReady({
         hasStoredToken: false,
+        jiraEmail: '',
         organizationId: 'o1',
         trackerOrgId: 'cloud',
       })
@@ -314,6 +322,7 @@ describe('isOrganizationTrackerConnectionReady', () => {
     expect(
       isOrganizationTrackerConnectionReady({
         hasStoredToken: true,
+        jiraEmail: '',
         organizationId: 'o1',
         trackerOrgId: '  ',
       })
@@ -324,6 +333,7 @@ describe('isOrganizationTrackerConnectionReady', () => {
     expect(
       isOrganizationTrackerConnectionReady({
         hasStoredToken: true,
+        jiraEmail: 'ada@example.com',
         organizationId: 'o1',
         trackerOrgId: 'cloud-1',
       })

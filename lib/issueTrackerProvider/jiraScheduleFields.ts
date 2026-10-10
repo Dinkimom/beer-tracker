@@ -21,7 +21,7 @@ interface JiraDateFieldRef {
   schemaType?: string;
 }
 
-export interface JiraScheduleFieldRefs {
+interface JiraScheduleFieldRefs {
   due: JiraDateFieldRef;
   dueResolved: boolean;
   start: JiraDateFieldRef | null;
@@ -219,7 +219,20 @@ export function applyJiraScheduleFieldRefsToTrackerIssue(
   };
 }
 
-export async function loadJiraScheduleFieldRefsFromCatalog(
+async function fetchJiraScheduleFieldRefsFromCatalog(
+  api: AxiosInstance,
+  cacheKey: string
+): Promise<JiraScheduleFieldRefs> {
+  try {
+    const { data } = await api.get<unknown>('/field');
+    return pickJiraScheduleFieldsFromCatalog(extractTrackerMetadataArray(data));
+  } catch {
+    scheduleRefsByBaseUrl.delete(cacheKey);
+    return DEFAULT_SCHEDULE_REFS;
+  }
+}
+
+export function loadJiraScheduleFieldRefsFromCatalog(
   api: AxiosInstance
 ): Promise<JiraScheduleFieldRefs> {
   const cacheKey = jiraApiCacheKey(api);
@@ -227,15 +240,7 @@ export async function loadJiraScheduleFieldRefsFromCatalog(
   if (cached) {
     return cached;
   }
-  const pending = (async (): Promise<JiraScheduleFieldRefs> => {
-    try {
-      const { data } = await api.get<unknown>('/field');
-      return pickJiraScheduleFieldsFromCatalog(extractTrackerMetadataArray(data));
-    } catch {
-      scheduleRefsByBaseUrl.delete(cacheKey);
-      return DEFAULT_SCHEDULE_REFS;
-    }
-  })();
+  const pending = fetchJiraScheduleFieldRefsFromCatalog(api, cacheKey);
   scheduleRefsByBaseUrl.set(cacheKey, pending);
   return pending;
 }
@@ -246,7 +251,7 @@ export function clearJiraScheduleFieldRefsCacheForTests(): void {
 }
 
 /** `string` → write date; `null` → clear field; `undefined` → leave unchanged. */
-function schedulePutDate(
+function scheduleOptionalDate(
   value: string | null | undefined
 ): string | null | undefined {
   if (value === null) {
@@ -258,26 +263,38 @@ function schedulePutDate(
   return undefined;
 }
 
+function assertStartFieldEditable(
+  refs: JiraScheduleFieldRefs,
+  start: string | null | undefined
+): void {
+  if (start === undefined || refs.start) {
+    return;
+  }
+  throw new Error('Jira Start date field is not editable on this issue');
+}
+
+function putScheduleDateField(
+  fields: Record<string, string | null>,
+  fieldId: string,
+  schemaType: string | undefined,
+  value: string | null
+): void {
+  fields[fieldId] = value === null ? null : jiraDateFieldValue(value, schemaType);
+}
+
 export function buildJiraSchedulePutFields(
   refs: JiraScheduleFieldRefs,
   input: { deadline?: string | null; start?: string | null }
 ): Record<string, string | null> {
-  const deadline = schedulePutDate(input.deadline);
-  const start = schedulePutDate(input.start);
-  if (start && !refs.start) {
-    throw new Error('Jira Start date field is not editable on this issue');
-  }
-  if (start === null && !refs.start) {
-    throw new Error('Jira Start date field is not editable on this issue');
-  }
+  const deadline = scheduleOptionalDate(input.deadline);
+  const start = scheduleOptionalDate(input.start);
+  assertStartFieldEditable(refs, start);
   const fields: Record<string, string | null> = {};
   if (deadline !== undefined) {
-    fields[refs.due.id] =
-      deadline === null ? null : jiraDateFieldValue(deadline, refs.due.schemaType);
+    putScheduleDateField(fields, refs.due.id, refs.due.schemaType, deadline);
   }
   if (start !== undefined && refs.start) {
-    fields[refs.start.id] =
-      start === null ? null : jiraDateFieldValue(start, refs.start.schemaType);
+    putScheduleDateField(fields, refs.start.id, refs.start.schemaType, start);
   }
   return fields;
 }
@@ -312,11 +329,8 @@ async function loadJiraScheduleFieldRefs(
 }
 
 function schedulePatchDate(value: unknown): string | null | undefined {
-  if (value === null) {
-    return null;
-  }
-  if (typeof value === 'string') {
-    return trimmedDate(value);
+  if (value === null || typeof value === 'string') {
+    return scheduleOptionalDate(value);
   }
   return undefined;
 }

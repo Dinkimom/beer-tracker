@@ -7,6 +7,7 @@ import { resolveProductUserIdForOnPremTrackerSession } from '@/lib/onPrem/establ
 import { TrackerApiConfigError } from '@/lib/trackerRequestConfig';
 
 const BodySchema = z.object({
+  cloudId: z.string().max(128).optional(),
   jiraEmail: z.string().max(320).optional(),
   organizationId: z.string().uuid(),
   token: z.string().min(1).max(8192),
@@ -19,11 +20,12 @@ function cleanToken(token: string): string {
 async function issueOnPremTrackerSession(
   organizationId: string,
   oauthToken: string,
-  jiraEmail?: string
+  options?: { cloudId?: string; jiraEmail?: string }
 ): Promise<NextResponse> {
   try {
     const { userId } = await resolveProductUserIdForOnPremTrackerSession({
-      jiraEmail,
+      cloudId: options?.cloudId,
+      jiraEmail: options?.jiraEmail,
       oauthToken,
       organizationProductId: organizationId,
     });
@@ -55,9 +57,8 @@ export async function establishOnPremTrackerSession(request: Request): Promise<N
     return NextResponse.json({ error: 'Токен пустой' }, { status: 400 });
   }
 
-  return issueOnPremTrackerSession(
-    parsed.data.organizationId,
-    oauthToken,
-    parsed.data.jiraEmail
-  );
+  return issueOnPremTrackerSession(parsed.data.organizationId, oauthToken, {
+    cloudId: parsed.data.cloudId,
+    jiraEmail: parsed.data.jiraEmail,
+  });
 }

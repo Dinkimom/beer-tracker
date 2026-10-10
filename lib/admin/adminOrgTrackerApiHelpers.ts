@@ -7,6 +7,13 @@ import { resolveTrackerApiBaseUrlForOrganizationRow } from '@/lib/trackerRequest
 
 import { requireOrgAdminForOrganizationRoute } from './adminOrgRouteHelpers';
 
+/** Site REST URL for org API-token pulls (not OAuth gateway). */
+export function resolveAdminOrgTrackerApiUrl(
+  org: NonNullable<Awaited<ReturnType<typeof findOrganizationById>>>
+): string {
+  return resolveTrackerApiBaseUrlForOrganizationRow(org);
+}
+
 async function resolveDecryptedOrgTrackerToken(
   orgId: string,
   missingTokenMessage: string

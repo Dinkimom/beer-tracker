@@ -188,6 +188,10 @@ export function CustomSelect<T extends string>({
         searchable={searchable}
         setSearchQuery={setSearchQuery}
         value={value}
+        onCloseAutoFocus={(event) => {
+          // Не возвращать фокус на триггер после закрытия (как у других поповеров в проекте).
+          event.preventDefault();
+        }}
         onSearchQueryChange={onSearchQueryChange}
         onSelect={(optionValue) => {
           onChange(optionValue);

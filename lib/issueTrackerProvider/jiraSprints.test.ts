@@ -229,6 +229,44 @@ describe('updateJiraSprintStatus', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
+  it('falls back to Agile when GreenHopper start returns 401 (Cloud OAuth)', async () => {
+    let snapshot: unknown = current;
+    const get = getMock(() => snapshot);
+    const put = vi
+      .fn()
+      .mockRejectedValueOnce({ response: { status: 401 } })
+      .mockImplementation(() => {
+        snapshot = active;
+        return Promise.resolve({ data: undefined });
+      });
+    await expect(
+      updateJiraSprintStatus(apiWith({ get, put }), 83866, 'in_progress')
+    ).resolves.toMatchObject({ status: 'in_progress' });
+    expect(put).toHaveBeenNthCalledWith(2, sprintUrl, writeBody);
+  });
+
+  it('skips GreenHopper on Atlassian OAuth gateway and uses Agile only', async () => {
+    const oauthBase = 'https://api.atlassian.com/ex/jira/cloud-1/rest/api/3';
+    let snapshot: unknown = current;
+    const get = vi.fn(() => Promise.resolve({ data: snapshot }));
+    const put = vi.fn().mockImplementation(() => {
+      snapshot = active;
+      return Promise.resolve({ data: undefined });
+    });
+    await expect(
+      updateJiraSprintStatus(
+        { defaults: { baseURL: oauthBase }, get, put } as never,
+        83866,
+        'in_progress'
+      )
+    ).resolves.toMatchObject({ status: 'in_progress' });
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(put).toHaveBeenCalledWith(
+      'https://api.atlassian.com/ex/jira/cloud-1/rest/agile/1.0/sprint/83866',
+      writeBody
+    );
+  });
+
   it('falls back to Agile POST when GreenHopper and PUT are not allowed', async () => {
     let snapshot: unknown = current;
     const get = getMock(() => snapshot);

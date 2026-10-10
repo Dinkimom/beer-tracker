@@ -61,6 +61,7 @@ export default function TrackerPage() {
   );
 
   const [trackerOrgId, setTrackerOrgId] = useState('');
+  const [trackerEmail, setTrackerEmail] = useState('');
   const [trackerToken, setTrackerToken] = useState('');
   const [trackerHasStoredToken, setTrackerHasStoredToken] = useState(false);
   const [trackerTokenEditOpen, setTrackerTokenEditOpen] = useState(false);
@@ -77,6 +78,7 @@ export default function TrackerPage() {
     try {
       const data = await fetchAdminTrackerForm(connectOrgId);
       setTrackerOrgId(data.trackerOrgId ?? '');
+      setTrackerEmail(data.jiraEmail ?? '');
       setTrackerHasStoredToken(data.hasStoredToken === true);
     } catch {
       /* ignore */
@@ -86,8 +88,6 @@ export default function TrackerPage() {
   }, [connectOrgId]);
 
   useEffect(() => {
-    setTrackerToken('');
-    setTrackerTokenEditOpen(false);
     void loadTrackerForm();
   }, [loadTrackerForm]);
 
@@ -123,9 +123,10 @@ export default function TrackerPage() {
     if (!connectOrgId) return;
     setTrackerVerifyLoading(true);
     try {
-      const body: { oauthToken?: string; trackerOrgId?: string } = {};
+      const body: { jiraEmail?: string; oauthToken?: string; trackerOrgId?: string } = {};
       if (trackerExternalOrgId) body.trackerOrgId = trackerExternalOrgId;
       if (trackerToken.trim()) body.oauthToken = trackerToken.trim();
+      if (trackerEmail.trim()) body.jiraEmail = trackerEmail.trim();
 
       const data = await verifyAdminTrackerToken(connectOrgId, body);
       toast.success(
@@ -151,6 +152,7 @@ export default function TrackerPage() {
       issueTrackerProviderKind,
       needNewTokenEntry,
       t,
+      trackerEmail,
       trackerToken,
       trackerTokenEditOpen,
     });
@@ -163,6 +165,9 @@ export default function TrackerPage() {
       const body: Record<string, unknown> = { trackerOrgId: trackerExternalOrgId };
       if (trackerToken.trim()) {
         body.oauthToken = trackerToken;
+      }
+      if (trackerEmail.trim()) {
+        body.jiraEmail = trackerEmail.trim();
       }
       const data = await connectAdminTracker(connectOrgId, body);
       toast.success(buildTrackerConnectSuccessMessage({ data, t, trackerToken }));
@@ -255,6 +260,7 @@ export default function TrackerPage() {
           aria-labelledby="tracker-tab-connection"
           connectLoading={connectLoading}
           connectOrgId={connectOrgId}
+          trackerEmail={trackerEmail}
           trackerHasStoredToken={trackerHasStoredToken}
           trackerOrgId={trackerOrgId}
           trackerToken={trackerToken}
@@ -269,6 +275,7 @@ export default function TrackerPage() {
             setTrackerTokenEditOpen(true);
             setTrackerToken('');
           }}
+          onTrackerEmailChange={setTrackerEmail}
           onTrackerOrgIdChange={setTrackerOrgId}
           onTrackerTokenChange={setTrackerToken}
           onVerify={() => void verifyTrackerToken()}

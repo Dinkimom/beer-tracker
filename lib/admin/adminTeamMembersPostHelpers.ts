@@ -50,7 +50,7 @@ export async function addTeamMemberFromPostBody(
   }
   return addMemberByTrackerUser({
     displayName: display_name,
-    email: email!,
+    email: email?.trim() || '',
     orgId,
     roleSlug,
     teamId,

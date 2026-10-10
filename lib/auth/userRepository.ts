@@ -6,6 +6,7 @@ import { query } from '@/lib/db';
 
 interface ProductIdentityRow {
   created_at: Date;
+  display_name: string;
   email: string;
   id: string;
 }
@@ -19,6 +20,7 @@ export async function findUserByEmail(email: string): Promise<ProductIdentityRow
   const res = await query<ProductIdentityRow>(
     `SELECT DISTINCT ON (LOWER(TRIM(s.email)))
        s.id::text AS id,
+       COALESCE(NULLIF(TRIM(s.display_name), ''), '') AS display_name,
        LOWER(TRIM(s.email)) AS email,
        s.created_at
      FROM staff s
@@ -35,6 +37,7 @@ export async function findUserById(userId: string): Promise<ProductIdentityRow |
     const res = await query<ProductIdentityRow>(
       `SELECT
          s.id::text AS id,
+         COALESCE(NULLIF(TRIM(s.display_name), ''), '') AS display_name,
          COALESCE(NULLIF(LOWER(TRIM(s.email)), ''), '') AS email,
          s.created_at
        FROM staff s

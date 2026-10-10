@@ -7,8 +7,11 @@ import {
   type IssueTrackerProviderKind,
 } from './types';
 
-/** Jira Cloud API tokens are created in the Atlassian account, not on the Jira site. */
-export const JIRA_CLOUD_API_TOKEN_HELP_URL =
+/** Jira Cloud: Atlassian OAuth 3LO start (user login). */
+export const JIRA_CLOUD_OAUTH_START_PATH = '/api/auth/atlassian/start';
+
+/** Org admin API token page (Basic auth against site REST). */
+const JIRA_CLOUD_API_TOKEN_HELP_URL =
   'https://id.atlassian.com/manage-profile/security/api-tokens';
 
 const JIRA_PROFILE_TOKEN_PATH = '/secure/ViewProfile.jspa';
@@ -140,6 +143,10 @@ export function jiraSiteBaseFromTrackerApiUrl(trackerApiUrl: string | undefined)
   }
   try {
     const url = new URL(raw);
+    // OAuth gateway is not a browser UI host — keep TRACKER_API_URL on *.atlassian.net for links.
+    if (url.hostname === 'api.atlassian.com') {
+      return null;
+    }
     const path = url.pathname.replace(/\/$/, '').replace(JIRA_REST_API_PATH, '');
     return `${url.origin}${path}`;
   } catch {
@@ -218,6 +225,7 @@ export function issueTrackerTokenHelpUrl(
   trackerApiUrl?: string
 ): string {
   if (kind === 'jira-cloud') {
+    // Admin org pulls use API token; user login uses Connect (separate UI).
     return JIRA_CLOUD_API_TOKEN_HELP_URL;
   }
   if (kind === 'jira-onprem') {

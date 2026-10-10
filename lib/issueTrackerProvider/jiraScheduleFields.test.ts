@@ -1,3 +1,5 @@
+import type { TrackerIssue } from '@/types/tracker';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -83,7 +85,7 @@ describe('applyJiraScheduleFieldRefsToTrackerIssue', () => {
           key: 'PROJ-1',
           self: '',
           summary: 'Plan me',
-        },
+        } as TrackerIssue & { customfield_10015: string },
         {
           due: { id: 'duedate', schemaType: 'date' },
           dueResolved: true,
@@ -107,7 +109,7 @@ describe('applyJiraScheduleFieldRefsToTrackerIssue', () => {
           key: 'PROJ-1',
           self: '',
           summary: 'Plan me',
-        },
+        } as TrackerIssue & { customfield_3: string },
         {
           due: { id: 'customfield_3', schemaType: 'date' },
           dueResolved: true,

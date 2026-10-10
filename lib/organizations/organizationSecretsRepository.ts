@@ -2,6 +2,7 @@
  * Чтение organization_secrets (серверный токен трекера).
  */
 
+import { parseOrgTrackerSecretPayload } from '@/lib/atlassianOAuth/orgSecretPayload';
 import { decryptOrgTrackerToken } from '@/lib/crypto-org-secrets';
 import { query } from '@/lib/db';
 import { getOrgSecretsMasterKey } from '@/lib/env';
@@ -23,11 +24,8 @@ export async function findOrganizationSecretRow(
   return res.rows[0] ?? null;
 }
 
-/**
- * Расшифровывает OAuth-токен трекера для организации.
- * Поддерживается только encryption_key_version === 1 (ротация — позже).
- */
-export async function getDecryptedOrganizationTrackerToken(
+/** Raw decrypted secret (bare token or OAuth JSON). */
+export async function getDecryptedOrganizationTrackerSecretRaw(
   organizationId: string
 ): Promise<string | null> {
   const row = await findOrganizationSecretRow(organizationId);
@@ -44,4 +42,18 @@ export async function getDecryptedOrganizationTrackerToken(
     : Buffer.from(row.encrypted_tracker_token);
   const key = getOrgSecretsMasterKey();
   return decryptOrgTrackerToken(buf, key);
+}
+
+/**
+ * Расшифровывает OAuth-токен трекера для организации (access token).
+ * Поддерживается только encryption_key_version === 1 (ротация — позже).
+ */
+export async function getDecryptedOrganizationTrackerToken(
+  organizationId: string
+): Promise<string | null> {
+  const raw = await getDecryptedOrganizationTrackerSecretRaw(organizationId);
+  if (!raw) {
+    return null;
+  }
+  return parseOrgTrackerSecretPayload(raw).accessToken || null;
 }

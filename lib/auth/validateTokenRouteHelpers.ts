@@ -2,12 +2,11 @@ import type { AxiosError } from 'axios';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { jiraCloudOAuthApiBaseUrl } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
 import { getIssueTrackerProviderKind } from '@/lib/env';
 import {
-  cleanJiraBasicAuthEmail,
-  JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE,
-  jiraCloudRequiresBasicAuthEmail,
-  jiraEmailFromRequest,
+  JIRA_CLOUD_OAUTH_CLOUD_ID_REQUIRED_MESSAGE,
+  jiraCloudIdFromRequest,
 } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
 import { createTrackerApiClient } from '@/lib/tracker-client';
 import { userMessageFromYandexTrackerErrorBody } from '@/lib/trackerApi/yandexTrackerErrorMessages';
@@ -17,10 +16,11 @@ import {
 } from '@/lib/trackerRequestConfig';
 
 export function validateTokenRequestBody(body: {
+  cloudId?: unknown;
   email?: unknown;
   organizationId?: unknown;
   token?: unknown;
-}): NextResponse | { cleanedToken: string; email: string } {
+}): NextResponse | { cleanedToken: string; cloudId: string } {
   const { token } = body;
   if (!token || typeof token !== 'string') {
     return NextResponse.json({ error: 'Token is required', valid: false }, { status: 400 });
@@ -34,7 +34,7 @@ export function validateTokenRequestBody(body: {
   }
   return {
     cleanedToken,
-    email: typeof body.email === 'string' ? cleanJiraBasicAuthEmail(body.email) : '',
+    cloudId: typeof body.cloudId === 'string' ? body.cloudId.trim() : '',
   };
 }
 
@@ -58,20 +58,24 @@ export async function resolveValidateTokenApiClient(
   request: NextRequest,
   organizationId: unknown,
   cleanedToken: string,
-  bodyEmail: string
+  bodyCloudId: string
 ): Promise<NextResponse | ReturnType<typeof createTrackerApiClient>> {
   try {
     const ctx = await resolveValidateTokenTrackerContext(request, organizationId);
-    const jiraEmail = bodyEmail || jiraEmailFromRequest(request);
-    if (jiraCloudRequiresBasicAuthEmail(getIssueTrackerProviderKind()) && !jiraEmail) {
+    const cloudId = bodyCloudId || jiraCloudIdFromRequest(request) || ctx.cloudId;
+    if (getIssueTrackerProviderKind() === 'jira-cloud' && !cloudId) {
       return NextResponse.json(
-        { error: JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE, valid: false },
+        { error: JIRA_CLOUD_OAUTH_CLOUD_ID_REQUIRED_MESSAGE, valid: false },
         { status: 400 }
       );
     }
+    const apiUrl =
+      getIssueTrackerProviderKind() === 'jira-cloud' && cloudId
+        ? jiraCloudOAuthApiBaseUrl(cloudId)
+        : ctx.apiUrl;
     return createTrackerApiClient({
-      apiUrl: ctx.apiUrl,
-      jiraEmail,
+      apiUrl,
+      jiraEmail: '',
       oauthToken: cleanedToken,
       orgId: ctx.orgId,
     });

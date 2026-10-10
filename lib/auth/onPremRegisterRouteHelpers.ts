@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 
+import { serializeOrgAtlassianOAuthSecret } from '@/lib/atlassianOAuth/orgSecretPayload';
 import { registerOnPremFirstUser } from '@/lib/auth/onPremRegisterRepository';
 import { getIssueTrackerProviderKind } from '@/lib/env';
 import {
-  cleanJiraBasicAuthEmail,
-  JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE,
-  jiraCloudRequiresBasicAuthEmail,
+  JIRA_CLOUD_OAUTH_CLOUD_ID_REQUIRED_MESSAGE,
 } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
 import {
   assertOnPremRegisterTrackerOrgId,
@@ -26,11 +25,14 @@ function mapTrackerIdentityError(err: unknown): NextResponse {
 
 /**
  * Первичная on-prem регистрация.
- * Jira Cloud: email для Basic-auth приходит с формы; профиль админа — из GET /myself.
+ * Jira Cloud: Atlassian OAuth access/refresh + cloudId; профиль админа — из GET /myself.
  */
 export async function registerOnPremFirstUserFromTrackerToken(input: {
+  cloudId?: string;
+  expiresAt?: number;
   jiraEmail?: string;
   orgName: string;
+  refreshToken?: string;
   token: string;
   trackerOrgId?: string;
 }): Promise<NextResponse> {
@@ -39,12 +41,10 @@ export async function registerOnPremFirstUserFromTrackerToken(input: {
     return NextResponse.json({ error: 'Укажите токен трекера' }, { status: 400 });
   }
 
-  const jiraEmail = cleanJiraBasicAuthEmail(input.jiraEmail);
-  if (
-    jiraCloudRequiresBasicAuthEmail(getIssueTrackerProviderKind()) &&
-    !jiraEmail
-  ) {
-    return NextResponse.json({ error: JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE }, { status: 400 });
+  const kind = getIssueTrackerProviderKind();
+  const cloudId = input.cloudId?.trim() ?? '';
+  if (kind === 'jira-cloud' && !cloudId) {
+    return NextResponse.json({ error: JIRA_CLOUD_OAUTH_CLOUD_ID_REQUIRED_MESSAGE }, { status: 400 });
   }
 
   const trackerOrgId = resolveOnPremRegisterTrackerOrgId(input.trackerOrgId);
@@ -52,7 +52,7 @@ export async function registerOnPremFirstUserFromTrackerToken(input: {
   try {
     assertOnPremRegisterTrackerOrgId(trackerOrgId);
     identity = await fetchOnPremRegisterTrackerIdentity({
-      jiraEmail,
+      cloudId: cloudId || undefined,
       token,
       trackerOrgId,
     });
@@ -60,16 +60,25 @@ export async function registerOnPremFirstUserFromTrackerToken(input: {
     return mapTrackerIdentityError(err);
   }
 
-  const encrypted = encryptTrackerTokenOrError(token);
+  const secretToStore =
+    kind === 'jira-cloud' && input.refreshToken?.trim()
+      ? serializeOrgAtlassianOAuthSecret({
+          accessToken: token,
+          expiresAt: input.expiresAt,
+          refreshToken: input.refreshToken.trim(),
+        })
+      : token;
+
+  const encrypted = encryptTrackerTokenOrError(secretToStore);
   if (!encrypted.ok) {
     return NextResponse.json({ error: encrypted.error }, { status: encrypted.status });
   }
 
   return registerOnPremFirstUser({
+    cloudId: cloudId || undefined,
     displayName: identity.displayName,
     email: identity.email,
     encryptedTrackerToken: encrypted.encrypted,
-    jiraBasicAuthEmail: jiraEmail,
     orgName: input.orgName,
     trackerOrgId,
     trackerUserId: identity.trackerUserId,

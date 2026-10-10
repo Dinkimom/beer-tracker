@@ -47,6 +47,23 @@ describe('postJiraIssueSearch', () => {
       nextPageToken: 'page-2',
     });
   });
+
+  it('uses enhanced search on Atlassian OAuth gateway (api.atlassian.com)', async () => {
+    const { api, post } = apiWith(
+      'https://api.atlassian.com/ex/jira/cloud-1/rest/api/3'
+    );
+    await postJiraIssueSearch(api, {
+      fields: ['summary'],
+      jql: 'sprint = 1',
+      maxResults: 50,
+      startAt: 0,
+    });
+    expect(post).toHaveBeenCalledWith('/search/jql', {
+      fields: ['summary'],
+      jql: 'sprint = 1',
+      maxResults: 50,
+    });
+  });
 });
 
 describe('countJiraCloudIssues', () => {

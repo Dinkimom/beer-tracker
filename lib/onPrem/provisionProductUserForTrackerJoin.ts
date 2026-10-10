@@ -1,25 +1,24 @@
 import type { OrgMemberRole } from '@/lib/organizations/types';
 
-import { findUserByEmail } from '@/lib/auth';
 import { insertOrganizationMember } from '@/lib/organizations/organizationMembersRepository';
 
 /**
- * Резолвит сотрудника в `staff` и при org_admin выдаёт строку в beer_tracker.admins.
+ * Выдаёт доступ к продукту для уже созданного `staff` (id = user id).
+ * При org_admin пишет роль админа организации.
  */
 export async function provisionProductUserForTrackerJoin(input: {
   organizationId: string;
-  emailNorm: string;
   orgRole: OrgMemberRole;
+  staffId: string;
 }): Promise<{ userId: string }> {
-  const emailNorm = input.emailNorm.trim().toLowerCase();
-  const identity = await findUserByEmail(emailNorm);
-  if (!identity) {
+  const staffId = input.staffId.trim();
+  if (!staffId) {
     throw new Error('Сотрудник не найден в справочнике организации');
   }
 
   if (input.orgRole === 'org_admin') {
-    await insertOrganizationMember(input.organizationId, identity.id, 'org_admin');
+    await insertOrganizationMember(input.organizationId, staffId, 'org_admin');
   }
 
-  return { userId: identity.id };
+  return { userId: staffId };
 }

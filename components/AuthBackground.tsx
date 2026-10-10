@@ -2,6 +2,8 @@
 
 import type { ReactNode } from 'react';
 
+import { LanguageSelector } from '@/components/LanguageSelector';
+
 /** Светлая тема: холодные нейтрали, без жёлтого акцента на весь экран. */
 const LIGHT_AUTH_BG =
   'linear-gradient(165deg, #f0f9ff 0%, #e8f4fc 42%, #f1f5f9 78%, #f8fafc 100%)';
@@ -22,6 +24,9 @@ export function AuthBackground({ children }: { children: ReactNode }) {
         className="pointer-events-none absolute inset-0 hidden dark:block"
         style={{ background: DARK_AUTH_BG }}
       />
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+        <LanguageSelector />
+      </div>
       <div className="relative z-10 flex w-full justify-center">{children}</div>
     </div>
   );

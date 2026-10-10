@@ -54,8 +54,10 @@ export async function GET(request: Request) {
     const data = await issueTracker.listSprints(Number(validatedBoardId));
     const sprints = Array.isArray(data) ? data : [];
 
-    // Сохраняем в кэш
-    apiCache.set(cacheKey, sprints, SPRINTS_CACHE_TTL);
+    // Не кэшируем пустой список — иначе кратковременный сбой upstream «залипает» на TTL.
+    if (sprints.length > 0) {
+      apiCache.set(cacheKey, sprints, SPRINTS_CACHE_TTL);
+    }
 
     return jsonGzipResponse(sprints, acceptEncoding);
   } catch (error) {

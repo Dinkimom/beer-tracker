@@ -5,6 +5,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 
 import { LoadingOverlayView } from '@/components/LoadingOverlayView';
 import { useI18n } from '@/contexts/LanguageContext';
+import { persistAtlassianOAuthFragmentFromLocation } from '@/lib/atlassianOAuth/persistOAuthFragment';
 import {
   getTrackerTokenGateSnapshot,
   subscribeTrackerTokenGate,
@@ -59,6 +60,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
     () => ''
   );
   const isMounted = useSyncExternalStore(subscribeClient, getClientSnapshot, getServerSnapshot);
+
+  useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
+    persistAtlassianOAuthFragmentFromLocation();
+  }, [isMounted, pathname]);
 
   useEffect(() => {
     if (!isMounted || bypassTrackerToken(pathname)) {

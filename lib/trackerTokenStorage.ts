@@ -1,6 +1,7 @@
 /**
- * OAuth-токен Яндекс Трекера в localStorage с привязкой к организации продукта (tenant).
+ * OAuth-токен трекера в localStorage с привязкой к организации продукта (tenant).
  * Legacy: значение как JSON-строка токена (`"y0_..."`) или сырой текст — см. {@link migrateTrackerTokenInLocalStorage}.
+ * Jira Cloud OAuth: access + refresh + cloudId + expiresAt.
  */
 
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
@@ -9,16 +10,11 @@ import {
   parseTrackerTokenFromObject,
   parseTrackerTokenFromString,
   parseTrackerTokenJson,
+  type TrackerTokenPayload,
 } from './trackerTokenStorageParseHelpers';
 
 /** Совпадает с {@link STORAGE_KEYS.TRACKER_TOKEN} в `hooks/localStorage/storageKeys.ts`. */
 export const TRACKER_OAUTH_LOCAL_STORAGE_KEY = 'beer-tracker-tracker-token' as const;
-
-interface TrackerTokenPayload {
-  email?: string;
-  organizationId: string;
-  token: string;
-}
 
 function readActiveOrganizationIdRaw(): string {
   if (typeof window === 'undefined') {
@@ -93,13 +89,24 @@ export function writeTrackerTokenPayload(payload: TrackerTokenPayload): void {
       localStorage.removeItem(TRACKER_OAUTH_LOCAL_STORAGE_KEY);
       return;
     }
-    const email = payload.email?.trim() ?? '';
-    const body: { email?: string; organizationId: string; token: string } = {
+    const body: TrackerTokenPayload = {
       organizationId: org,
       token: t,
     };
+    const email = payload.email?.trim() ?? '';
     if (email) {
       body.email = email;
+    }
+    const refreshToken = payload.refreshToken?.trim() ?? '';
+    if (refreshToken) {
+      body.refreshToken = refreshToken;
+    }
+    const cloudId = payload.cloudId?.trim() ?? '';
+    if (cloudId) {
+      body.cloudId = cloudId;
+    }
+    if (typeof payload.expiresAt === 'number' && Number.isFinite(payload.expiresAt)) {
+      body.expiresAt = payload.expiresAt;
     }
     localStorage.setItem(TRACKER_OAUTH_LOCAL_STORAGE_KEY, JSON.stringify(body));
     if (org) {
@@ -127,9 +134,8 @@ function migrateParsedTrackerToken(parsed: unknown, activeOrg: string): void {
   const payload = parseTrackerTokenFromObject(parsed);
   if (payload && !payload.organizationId && activeOrg) {
     writeTrackerTokenPayload({
-      email: payload.email,
+      ...payload,
       organizationId: activeOrg,
-      token: payload.token,
     });
   }
 }
@@ -190,9 +196,22 @@ export function getEffectiveTrackerTokenForBrowser(): string {
   return readEffectiveTrackerPayloadForBrowser()?.token ?? '';
 }
 
-/** Email Atlassian-аккаунта для Jira Cloud Basic; та же привязка к org, что и у токена. */
+/** @deprecated Jira Cloud Basic email; OAuth uses cloudId instead. */
 export function getEffectiveTrackerEmailForBrowser(): string {
   return readEffectiveTrackerPayloadForBrowser()?.email?.trim() ?? '';
+}
+
+export function getEffectiveTrackerCloudIdForBrowser(): string {
+  return readEffectiveTrackerPayloadForBrowser()?.cloudId?.trim() ?? '';
+}
+
+export function getEffectiveTrackerRefreshTokenForBrowser(): string {
+  return readEffectiveTrackerPayloadForBrowser()?.refreshToken?.trim() ?? '';
+}
+
+export function getEffectiveTrackerExpiresAtForBrowser(): number | null {
+  const v = readEffectiveTrackerPayloadForBrowser()?.expiresAt;
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
 /** Для {@link useSyncExternalStore} в AuthGuard и согласованности с axios. */

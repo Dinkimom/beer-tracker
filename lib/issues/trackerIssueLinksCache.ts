@@ -12,7 +12,7 @@ export interface TrackerIssueLinkEdge {
 }
 
 /** Связи редко меняются вне планера; при мутациях из приложения инвалидируем точечно. */
-export const TRACKER_ISSUE_LINKS_CACHE_TTL_SEC = 30 * 60;
+const TRACKER_ISSUE_LINKS_CACHE_TTL_SEC = 30 * 60;
 
 export function getCachedTrackerIssueLinks(
   organizationId: string,

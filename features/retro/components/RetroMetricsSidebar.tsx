@@ -21,7 +21,7 @@ export function RetroMetricsSidebar({
 }: RetroMetricsSidebarProps) {
   return (
     <ResizableSidebar
-      chrome="island"
+      chrome="glass"
       contentClassName="overflow-y-auto"
       isOpen={open}
       maxWidth={520}

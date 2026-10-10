@@ -3,17 +3,27 @@ import type { AxiosInstance } from 'axios';
 import { mapRawQueue } from '@/lib/trackerApi/queueMappingHelpers';
 import { extractTrackerMetadataArray } from '@/lib/trackerIntegration/fetchTrackerOrgMetadataHelpers';
 
+import { isJiraCloudHost } from './jiraBasicAuthEmail';
+
 interface JiraBoardRef {
   id: number;
   name: string;
 }
 
-function jiraSiteOrigin(restApiBaseUrl: string): string {
-  return new URL(restApiBaseUrl).origin;
+const JIRA_REST_API_SUFFIX = /\/rest\/api\/\d+\/?$/i;
+
+/**
+ * Root for Agile/Greenhopper paths: origin (+ optional context path / OAuth `/ex/jira/{cloudId}`),
+ * with `/rest/api/N` stripped. Do not use bare `.origin` — OAuth base is under `/ex/jira/{id}`.
+ */
+export function jiraApiSiteRoot(restApiBaseUrl: string): string {
+  const url = new URL(restApiBaseUrl);
+  const path = url.pathname.replace(/\/$/, '').replace(JIRA_REST_API_SUFFIX, '');
+  return `${url.origin}${path}`;
 }
 
 export function jiraAgileBoardListUrl(restApiBaseUrl: string): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/agile/1.0/board`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/agile/1.0/board`;
 }
 
 function jiraAgileBoardByIdUrl(restApiBaseUrl: string, boardId: number): string {
@@ -21,11 +31,11 @@ function jiraAgileBoardByIdUrl(restApiBaseUrl: string, boardId: number): string 
 }
 
 export function jiraGreenhopperRapidViewsListUrl(restApiBaseUrl: string): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/greenhopper/1.0/rapidviews/list`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/greenhopper/1.0/rapidviews/list`;
 }
 
 function jiraGreenhopperRapidViewCollectionUrl(restApiBaseUrl: string): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/greenhopper/1.0/rapidview`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/greenhopper/1.0/rapidview`;
 }
 
 export function jiraGreenhopperRapidViewByIdUrl(restApiBaseUrl: string, rapidViewId: number): string {
@@ -41,7 +51,7 @@ export function jiraAgileBoardIssuesUrl(restApiBaseUrl: string, boardId: number)
 }
 
 export function jiraAgileSprintCreateUrl(restApiBaseUrl: string): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/agile/1.0/sprint`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/agile/1.0/sprint`;
 }
 
 export function jiraAgileSprintIssuesUrl(restApiBaseUrl: string, sprintId: number): string {
@@ -53,19 +63,19 @@ export function jiraAgileSprintByIdUrl(restApiBaseUrl: string, sprintId: number)
 }
 
 export function jiraAgileBacklogIssueUrl(restApiBaseUrl: string): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/agile/1.0/backlog/issue`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/agile/1.0/backlog/issue`;
 }
 
 export function jiraAgileIssueUrl(restApiBaseUrl: string, issueIdOrKey: string): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/agile/1.0/issue/${encodeURIComponent(issueIdOrKey)}`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/agile/1.0/issue/${encodeURIComponent(issueIdOrKey)}`;
 }
 
 export function jiraAgileEpicIssuesUrl(restApiBaseUrl: string, epicIdOrKey: string): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/agile/1.0/epic/${encodeURIComponent(epicIdOrKey)}/issue`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/agile/1.0/epic/${encodeURIComponent(epicIdOrKey)}/issue`;
 }
 
 export function jiraAgileEpicNoneIssuesUrl(restApiBaseUrl: string): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/agile/1.0/epic/none/issue`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/agile/1.0/epic/none/issue`;
 }
 
 export function jiraAgileIssueEstimationUrl(restApiBaseUrl: string, issueIdOrKey: string): string {
@@ -73,11 +83,11 @@ export function jiraAgileIssueEstimationUrl(restApiBaseUrl: string, issueIdOrKey
 }
 
 export function jiraGreenhopperSprintQueryUrl(restApiBaseUrl: string, rapidViewId: number): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/greenhopper/1.0/sprintquery/${rapidViewId}`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/greenhopper/1.0/sprintquery/${rapidViewId}`;
 }
 
 function jiraGreenhopperSprintByIdUrl(restApiBaseUrl: string, sprintId: number): string {
-  return `${jiraSiteOrigin(restApiBaseUrl)}/rest/greenhopper/1.0/sprint/${sprintId}`;
+  return `${jiraApiSiteRoot(restApiBaseUrl)}/rest/greenhopper/1.0/sprint/${sprintId}`;
 }
 
 export function jiraGreenhopperSprintStartUrl(restApiBaseUrl: string, sprintId: number): string {
@@ -262,7 +272,7 @@ export async function fetchJiraAgileBoards(api: AxiosInstance): Promise<JiraBoar
 
 async function fetchJiraRapidViews(api: AxiosInstance): Promise<JiraBoardRef[]> {
   const baseUrl = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
-  if (!baseUrl) {
+  if (!baseUrl || isJiraCloudHost(baseUrl)) {
     return [];
   }
   const fromList = await fetchPagedJiraBoardsOrEmpty(api, jiraGreenhopperRapidViewsListUrl(baseUrl));

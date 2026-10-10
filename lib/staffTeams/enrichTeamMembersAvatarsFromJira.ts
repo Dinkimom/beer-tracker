@@ -10,9 +10,6 @@ import type { AxiosInstance } from 'axios';
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { getIssueTrackerProviderKind } from '@/lib/env';
 import { createIssueTrackerAxiosForCredentials } from '@/lib/issueTrackerProvider/createIssueTrackerAxios';
-import {
-  jiraCloudRequiresBasicAuthEmail,
-} from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
 import { fetchJiraUserAvatarUrl } from '@/lib/issueTrackerProvider/jiraUserAvatar';
 import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/settings';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
@@ -53,26 +50,25 @@ async function createJiraAxiosForOrganization(
     return null;
   }
 
-  let token: string;
+  let token: string | null;
   try {
-    const t = await getDecryptedOrganizationTrackerToken(organizationId);
-    if (!t?.trim()) {
-      return null;
-    }
-    token = t.trim();
+    token = (await getDecryptedOrganizationTrackerToken(organizationId))?.trim() || null;
   } catch {
     return null;
   }
+  if (!token) {
+    return null;
+  }
 
-  const jiraEmail = readIssueTrackerBasicAuthEmail(org.settings);
-  if (jiraCloudRequiresBasicAuthEmail(kind) && !jiraEmail) {
+  const apiUrl = resolveTrackerApiBaseUrlForOrganizationRow(org);
+  if (!apiUrl) {
     return null;
   }
 
   return {
     api: createIssueTrackerAxiosForCredentials({
-      apiUrl: resolveTrackerApiBaseUrlForOrganizationRow(org),
-      jiraEmail,
+      apiUrl,
+      jiraEmail: readIssueTrackerBasicAuthEmail(org.settings),
       oauthToken: token,
       orgId: JIRA_EXTERNAL_ORG_ID_FALLBACK,
     }),

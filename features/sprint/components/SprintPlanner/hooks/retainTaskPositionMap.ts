@@ -1,7 +1,7 @@
 import type { TaskPosition } from '@/types';
 
 /** Same object or same planner geometry — tracker-date fallbacks rebuild every render. */
-export function taskPositionsEqualForRetain(left: TaskPosition, right: TaskPosition): boolean {
+function taskPositionsEqualForRetain(left: TaskPosition, right: TaskPosition): boolean {
   if (left === right) {
     return true;
   }

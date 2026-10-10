@@ -2,6 +2,8 @@ import type { IssueTrackerProviderKind } from './types';
 
 import { z } from 'zod';
 
+import { cleanTrackerCloudId } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
+
 import { cleanJiraBasicAuthEmail } from './jiraBasicAuthEmail';
 import { parseIssueTrackerProviderKind } from './providerKind';
 import {
@@ -21,8 +23,10 @@ const IssueTrackerProviderKindSchema = z.preprocess((raw) => {
 
 const IssueTrackerSettingsSchema = z
   .object({
-    /** Email Atlassian-аккаунта org-токена (Jira Cloud Basic). Не секрет. */
+    /** Email Atlassian-аккаунта org API-токена (Jira Cloud Basic). Не секрет. */
     basicAuthEmail: z.string().optional(),
+    /** Atlassian cloudId (user OAuth REST via `api.atlassian.com/ex/jira/{id}`). */
+    cloudId: z.string().optional(),
     provider: IssueTrackerProviderKindSchema.default(DEFAULT_ISSUE_TRACKER_PROVIDER_KIND),
   })
   .strict();
@@ -60,6 +64,12 @@ export function resolveIssueTrackerProviderKindFromSettingsRoot(
   settingsRoot: unknown
 ): IssueTrackerProviderKind {
   return parseIssueTrackerSettings(extractIssueTrackerSettingsJson(settingsRoot)).provider;
+}
+
+export function readIssueTrackerCloudId(settingsRoot: unknown): string {
+  return cleanTrackerCloudId(
+    parseIssueTrackerSettings(extractIssueTrackerSettingsJson(settingsRoot)).cloudId
+  );
 }
 
 export function readIssueTrackerBasicAuthEmail(settingsRoot: unknown): string {

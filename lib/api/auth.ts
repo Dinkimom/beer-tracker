@@ -39,14 +39,14 @@ export async function getMyself(): Promise<TrackerMyselfUser> {
  */
 export async function validateToken(
   token: string,
-  options?: { email?: string; organizationId?: string }
+  options?: { cloudId?: string; email?: string; organizationId?: string }
 ): Promise<{
   error?: string;
   valid: boolean;
 }> {
   try {
     const { data } = await getPlannerBeerTrackerApi().post('/auth/validate-token', {
-      email: options?.email?.trim() || undefined,
+      cloudId: options?.cloudId?.trim() || undefined,
       organizationId: options?.organizationId?.trim() || undefined,
       token: token.trim(),
     });
@@ -78,8 +78,11 @@ export async function fetchProductSession(): Promise<ProductSessionResponse> {
 }
 
 export async function postProductRegister(body: {
+  cloudId?: string;
+  expiresAt?: number;
   jiraEmail?: string;
   orgName: string;
+  refreshToken?: string;
   token: string;
   trackerOrgId?: string;
 }): Promise<{ organization: { id: string; name: string; slug: string } }> {
@@ -96,6 +99,7 @@ export async function fetchAdminTrackerConnectionState(
   options?: { signal?: AbortSignal }
 ): Promise<{
   hasStoredToken?: boolean;
+  jiraEmail?: string;
   organizationId?: string;
   trackerOrgId?: string;
 }> {

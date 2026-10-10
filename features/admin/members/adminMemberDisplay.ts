@@ -15,7 +15,6 @@ export function memberDisplayName(row: RegistryEmployeeDirectoryRow): string {
     .trim();
   if (composed) return composed;
   return (
-    normalizedMemberField(row.email) ||
     normalizedMemberField(row.tracker_id) ||
     normalizedMemberField(row.employee_id) ||
     normalizedMemberField(row.staff_uid) ||
@@ -37,13 +36,14 @@ export function sortMembersByDisplayName(
   return [...rows].sort((a, b) => memberDisplayName(a).localeCompare(memberDisplayName(b), 'ru'));
 }
 
-/** Локальный фильтр списка пользователей: ФИО и email в одном поле (все токены). */
+/** Локальный фильтр списка пользователей: ФИО и tracker id (все токены). */
 export function memberMatchesListQuery(
   row: RegistryEmployeeDirectoryRow,
   query: string
 ): boolean {
   const q = query.trim().toLowerCase();
   if (q.length === 0) return true;
-  const haystack = `${memberDisplayName(row)} ${normalizedMemberField(row.email)}`.toLowerCase();
+  const haystack =
+    `${memberDisplayName(row)} ${normalizedMemberField(row.tracker_id)}`.toLowerCase();
   return q.split(/\s+/).every((token) => token.length > 0 && haystack.includes(token));
 }

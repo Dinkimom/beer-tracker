@@ -310,7 +310,7 @@ export const enMessages = {
       loadFailedPrefix: 'Loading error:',
       genericLoad: 'Failed to load data',
       retry: 'Reload',
-      retryHint: 'Check your connection, then reload. In the installed app this replaces a browser refresh.',
+      retryHint: 'Check your connection, then reload.',
     },
     access: {
       plannerDenied: 'No planner access: you are not yet assigned to a team. Please contact your organization administrator.',
@@ -621,11 +621,11 @@ export const enMessages = {
       onboardingTitle: 'Company setup',
       onboardingTagline: {
         tracker:
-          'Create the first organization. Your email is taken from the Yandex Tracker profile for this token.',
+          'Create the first organization. Connect with a Yandex Tracker token of the administrator.',
         'jira-onprem':
           'Create the first organization. Enter the Jira personal access token of the administrator who connects the site.',
         'jira-cloud':
-          'Create the first organization. Enter the Atlassian account email that created the API token, then paste the token.',
+          'Create the first organization. Connect with Atlassian as the administrator who links Jira.',
       },
       onboardingSubmit: 'Create organization and administrator',
       closedTitle: 'Registration is closed',
@@ -1447,11 +1447,10 @@ export const enMessages = {
     },
     participants: {
       addTitle: 'Add participant',
-      selectPlaceholder: 'Search registry by name or email',
+      selectPlaceholder: 'Search registry by name',
       addButton: 'Add',
       adding: 'Adding…',
       alreadyInTeam: 'This user is already on the team',
-      noEmailCannotAdd: 'Selected user has no email — cannot add to the team',
       listTitle: 'Participants',
       showAll: 'Show all',
       hideAll: 'Hide all',
@@ -1849,7 +1848,7 @@ export const enMessages = {
       },
       description: {
         jira:
-          'The Jira site URL is set on this instance. Save a personal access token to access the API. You can verify before saving; secrets are stored encrypted on the server.',
+          'The Jira site URL is set on this instance. For sync and the field catalog, save the Atlassian account email and API token. Users sign in with Connect with Atlassian. You can verify before saving; secrets are stored encrypted on the server.',
         'yandex-tracker':
           'Cloud Organization ID and OAuth token are both required to access the API. You can verify before saving; secrets are stored encrypted on the server.',
       },
@@ -2151,7 +2150,6 @@ export const enMessages = {
       saved: 'Saved',
       genericError: 'Error',
       userAddedToTeam: 'User added to the team',
-      noEmailCannotInvite: 'No email — cannot invite',
       noTrackerIdForDirectAdd: 'Select a user from {tracker} (with id) to add them to the team',
       inviteSendFailed: 'Could not send invitation',
       inviteSent: 'Invitation sent',
@@ -2189,7 +2187,7 @@ export const enMessages = {
         'Search organization staff. The list shows people who are not on this team yet.',
       userTitle: 'User',
       teamRoleTitle: 'Role in team',
-      registrySearchPlaceholder: 'Search by name or email',
+      registrySearchPlaceholder: 'Search by name',
       addLoading: 'Adding…',
       addSubmit: 'Add to team',
       noMembers: 'No members yet.',
@@ -2198,7 +2196,7 @@ export const enMessages = {
       deleteSr: 'Remove from team',
     },
     teamMemberRow: {
-      noEmail: 'No email',
+      unnamed: 'Unnamed',
       noPlannerAccessTitle: 'Grant access in the «Users» section',
       noPlannerAccess:
         'No planner access for this team — use the «Users» section.',
@@ -2299,14 +2297,12 @@ export const enMessages = {
       inviteSubmitting: 'Adding…',
       inviteSubmit: 'Add to organization',
       displayNameLabel: 'Name',
-      emailLabel: 'Email',
-      emailEmpty: 'email: —',
       trackerIdLabel: '{tracker} ID',
       trackerIdHint: 'Optional. Yandex Tracker uid or Jira accountId — used to match tasks.',
       trackerSearchLabel: 'Person in {tracker}',
-      trackerSearchPlaceholder: 'Search by name, login, or email',
+      trackerSearchPlaceholder: 'Search by name or login',
       trackerSearchHint:
-        'Master data lives in {tracker}. Find the person by name, login, or email; name and {tracker} ID are filled from the result.',
+        'Master data lives in {tracker}. Find the person by name or login; name and {tracker} ID are filled from the result.',
       trackerUserRequired: 'Select a person from {tracker}',
       teamsLine: 'Teams: {teams}',
       edit: 'Edit',
@@ -2316,10 +2312,9 @@ export const enMessages = {
       updatedSuccess: 'User saved',
       updateFailed: 'Could not save user',
       emptyState: 'The organization has no users yet.',
-      listSearchPlaceholder: 'Search by name or email…',
+      listSearchPlaceholder: 'Search by name or ID…',
       listSearchEmpty: 'No users match. Try a different query.',
       loadListFailed: 'Could not load list',
-      noTrackerEmail: 'The selected staff member has no email in {tracker}',
       selectTeam: 'Select a team',
       inviteSendFailed: 'Could not add user',
       inviteCreatedSuccess: 'User was added and can sign in to the product.',
@@ -2336,7 +2331,7 @@ export const enMessages = {
       orgRoleTeamLead: 'Team lead',
       orgRoleOrgAdmin: 'Admin',
       deleteUserMessage:
-        'Delete user {email}? The account will be removed and this email will no longer be able to sign in.',
+        'Delete user {name}? The account will be removed and they will no longer be able to sign in.',
       deleteUserTitle: 'Delete user',
       userDeleteFailed: 'Could not delete user',
       userDeleted: 'User deleted',
@@ -2348,7 +2343,7 @@ export const enMessages = {
       cannotChangeOwnRoleTitle:
         'You cannot change your own organization role — ask another administrator',
       savingOrgRoleTitle: 'Saving…',
-      orgRoleSelectTitle: 'Organization role: {email}',
+      orgRoleSelectTitle: 'Organization role: {name}',
       inSystemStatus: 'In system',
       assignSelectTeam: 'Select a team',
       assignFailed: 'Could not assign',
@@ -2356,7 +2351,7 @@ export const enMessages = {
       teamChangeFailed: 'Could not update team',
       teamChangeSuccess: 'Team updated',
       noTeams: 'No teams',
-      assignTeamAria: 'Team for {email}',
+      assignTeamAria: 'Team for {name}',
       teamInactiveSuffix: ' (inactive)',
       teamDisabledInSelect: ' (off)',
       assignButton: 'Assign',
@@ -2366,7 +2361,6 @@ export const enMessages = {
   auth: {
     setup: {
       title: 'Access setup',
-      appTitle: 'Tracker',
       welcome: 'Welcome!',
       sessionLoading: 'Loading…',
       description: 'Provide token and organization to work with {tracker}.',
@@ -2377,9 +2371,10 @@ export const enMessages = {
           'OAuth token is required. It is stored only in your browser and is never sent elsewhere.',
         'jira-onprem':
           'A personal access token is required. It stays in your browser and is only sent to this instance.',
-        'jira-cloud':
-          'Enter the Atlassian account email and API token. They stay in your browser.',
+        'jira-cloud': 'Authorization credentials are stored only in your browser',
       },
+      atlassianConnectButton: 'Continue with Atlassian',
+      atlassianConnectedHint: 'Atlassian connected — signing you in…',
       jiraCloudEmailLabel: 'Atlassian account email',
       jiraCloudEmailPlaceholder: 'you@example.com',
       jiraCloudEmailHint:
@@ -2397,7 +2392,7 @@ export const enMessages = {
       showToken: 'Show token',
       getTokenPrefix: 'Get token:',
       oauthLink: {
-        jira: 'API token in Atlassian account',
+        jira: 'Continue with Atlassian',
         'yandex-tracker': 'Yandex ID OAuth',
       },
       validatingToken: 'Validating token...',

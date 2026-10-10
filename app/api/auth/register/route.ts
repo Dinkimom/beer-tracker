@@ -6,9 +6,12 @@ import { parseJsonRequestBody } from '@/lib/http/parseJsonRequestBody';
 import { readOnPremSetupState } from '@/lib/onPrem/setupState';
 
 const BodySchema = z.object({
+  cloudId: z.string().max(128).optional(),
+  expiresAt: z.number().finite().optional(),
   jiraEmail: z.string().max(320).optional(),
   orgName: z.string().min(1).max(200),
-  token: z.string().min(1).max(4096),
+  refreshToken: z.string().max(8192).optional(),
+  token: z.string().min(1).max(8192),
   trackerOrgId: z.string().max(200).optional(),
 });
 
@@ -49,8 +52,11 @@ export async function POST(request: Request) {
   }
 
   return registerOnPremFirstUserFromTrackerToken({
+    cloudId: parsed.data.cloudId,
+    expiresAt: parsed.data.expiresAt,
     jiraEmail: parsed.data.jiraEmail,
     orgName,
+    refreshToken: parsed.data.refreshToken,
     token: parsed.data.token,
     trackerOrgId: parsed.data.trackerOrgId,
   });

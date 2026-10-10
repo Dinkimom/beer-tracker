@@ -57,7 +57,10 @@ describe('app/admin/layout', () => {
 
   it('allows empty organizations list for onboarding', async () => {
     getVerifiedProductUserIdFromServerCookiesMock.mockResolvedValue('user-1');
-    findUserByIdMock.mockResolvedValue({ email: 'new-user@example.com' });
+    findUserByIdMock.mockResolvedValue({
+      display_name: 'New User',
+      email: 'new-user@example.com',
+    });
     getCachedAdminOrganizationContextMock.mockResolvedValue({
       activeOrganizationId: '',
       isSuperAdmin: false,
@@ -70,8 +73,10 @@ describe('app/admin/layout', () => {
 
   it('forbids org members without admin role', async () => {
     getVerifiedProductUserIdFromServerCookiesMock.mockResolvedValue('user-1');
-    findUserByIdMock.mockResolvedValue({ email: 'member@example.com' });
-    getCachedAdminOrganizationContextMock.mockResolvedValue({
+    findUserByIdMock.mockResolvedValue({
+      display_name: 'Member',
+      email: 'member@example.com',
+    });    getCachedAdminOrganizationContextMock.mockResolvedValue({
       activeOrganizationId: 'org-1',
       isSuperAdmin: false,
       orgs: [

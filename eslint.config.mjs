@@ -11,42 +11,24 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import i18nPlugin from './scripts/eslint/plugin-i18n.mjs';
 
 /**
- * Политика по уровням (см. также блок `sonarjs/pragmatic-overrides` ниже).
+ * Политика качества (SonarJS + React Hooks). `pnpm lint` = `--max-warnings 0`.
  *
- * Уже `error` в основном блоке: unused-imports, no-eval, eqeqeq, react/jsx-no-target-blank,
- * react-hooks (кроме переопределений ниже), часть no-restricted-syntax, semi, и т.д.
+ * SonarJS (`sonarjs/strict-overrides` + слои ниже):
+ * - High-signal (duplicated branches, identical functions, dead-store, slow-regex,
+ *   todo/fixme-tag, …) → **error** в app/lib.
+ * - nested-conditional / nested-functions / nested-template-literals:
+ *   **error** в `lib/**` и `app/api/**`; **off** в UI (ветвистый JSX не дробить ради стиля).
+ * - `sonarjs/no-unused-vars` → **off** (дублирует `unused-imports/*`, severity error).
+ * - `sonarjs/pseudo-random` → **off** (нормально для UI/трекера).
+ * - `scripts/**` — ослаблено (`scripts/relaxed-sonar`): complexity 25, todo/fixme warn.
  *
- * Снимок предупреждений (pnpm lint, ~256 warn) по правилам — ориентир для «что поднимать в error»:
- *
- * | Правило | ~кол-во | Рекомендация |
- * |---------|---------|--------------|
- * | sonarjs/no-nested-conditional | ~145 | Оставить warn или off в UI — иначе массовый рефакторинг. |
- * | sonarjs/no-nested-functions | ~35 | То же. |
- * | sonarjs/cognitive-complexity | ~23 | Порог уже 25; error только после снижения шума или отдельный порог в SonarQube. |
- * | react-hooks/exhaustive-deps | ~9 | Кандидат в error поэтапно: много ложных срабатываний — чинить пачками. |
- * | sonarjs/no-nested-template-literals | ~7 | Низкий приоритет / warn. |
- * | sonarjs/todo-tag | ~5 | Можно error в команде без FIXME в проде; иначе warn. |
- * | sonarjs/no-unused-vars | — | `off` (дублирует unused-imports). Неиспользуемые переменные/импорты — см. `unused-imports/*` ниже, severity **error**. |
- * | sonarjs/no-all-duplicated-branches | ~5 | Кандидат в error: мало точек, часто реальные баги. |
- * | react-hooks/set-state-in-effect | ~5 | Сейчас warn (Compiler); error — после согласованного рефакторинга эффектов. |
- * | sonarjs/no-identical-functions | ~3 | Хороший кандидат в error: дублирование логики. |
- * | sonarjs/use-type-alias | ~2 | Кандидат в error при желании единообразия типов. |
- * | sonarjs/no-redundant-jump | ~2 | Кандидат в error (мало срабатываний). |
- * | sonarjs/slow-regex | ~1 | Сильный кандидат в error (безопасность/DoS). |
- * | sonarjs/void-use | ~1 | Кандидат в error. |
- * | sonarjs/no-gratuitous-expressions | ~1 | Кандидат в error (подозрительная логика). |
- * | sonarjs/no-nested-assignment | ~1 | Кандидат в error. |
- * | react-hooks/refs | ~1 | Сейчас warn; error после правки места. |
- * | @next/next/no-img-element | ~1 | Кандидат в error после замены на next/image. |
- * | react/no-unused-prop-types | — | error: неиспользуемые пропы в компонентах с propTypes / проверка имён пропов. |
- *
- * Практичный порядок: (1) поднять в error правила с 1–5 срабатываниями выше;
- * (2) no-all-duplicated-branches, no-identical-functions; (3) react-hooks/exhaustive-deps батчами;
- * (4) Sonar «стилевые» (nested-conditional, nested-functions) — warn (см. sonarjs/strict-overrides).
- *
- * Cognitive complexity (Wave 2.5, tiered):
+ * Cognitive complexity:
  * - lib/**, app/api/** → error при > 10
  * - features/**, components/**, contexts/**, hooks/**, app UI (tsx) → error при > 15
+ *
+ * React Hooks: recommended + `exhaustive-deps` → **error** (явно строже recommended warn).
+ *
+ * Плотность Sonar-срабатываний: `pnpm lint:sonar-density` (цель ≤ 6 / 1000 LoC).
  */
 
 export default [
@@ -55,17 +37,18 @@ export default [
     files: ['**/*.{js,jsx,ts,tsx,mjs}'],
     ...sonarjs.configs.recommended,
   },
-  // SonarJS: strict policy (Wave 2.5) — high-signal rules error; nested ternaries/functions warn
+  // SonarJS: high-signal rules error; nested-* default error (UI turns them off below)
   {
     files: ['**/*.{js,jsx,ts,tsx,mjs}'],
     name: 'sonarjs/strict-overrides',
     rules: {
       'sonarjs/cognitive-complexity': ['error', 10],
       'sonarjs/pseudo-random': 'off',
-      'sonarjs/no-nested-conditional': 'warn',
-      'sonarjs/no-nested-functions': 'warn',
-      'sonarjs/no-nested-template-literals': 'warn',
+      'sonarjs/no-nested-conditional': 'error',
+      'sonarjs/no-nested-functions': 'error',
+      'sonarjs/no-nested-template-literals': 'error',
       'sonarjs/todo-tag': 'error',
+      'sonarjs/fixme-tag': 'error',
       'sonarjs/no-all-duplicated-branches': 'error',
       'sonarjs/no-collapsible-if': 'error',
       'sonarjs/no-duplicated-branches': 'error',
@@ -89,7 +72,7 @@ export default [
       'sonarjs/slow-regex': 'error',
     },
   },
-  // UI-слои: планер, компоненты — выше порог complexity (ветвистый UI)
+  // UI: выше complexity; nested-* off (ветвистый JSX — не стилевой долг)
   {
     files: [
       'features/**/*.{js,jsx,ts,tsx}',
@@ -101,14 +84,20 @@ export default [
     name: 'sonarjs/ui-complexity',
     rules: {
       'sonarjs/cognitive-complexity': ['error', 15],
+      'sonarjs/no-nested-conditional': 'off',
+      'sonarjs/no-nested-functions': 'off',
+      'sonarjs/no-nested-template-literals': 'off',
     },
   },
-  // Ядро: lib + API routes — строже, но не «5 на каждый if»
+  // Ядро: lib + API — complexity 10 и nested-* error
   {
     files: ['lib/**/*.{js,jsx,ts,tsx}', 'app/api/**/*.{js,jsx,ts,tsx}'],
     name: 'sonarjs/core-complexity',
     rules: {
       'sonarjs/cognitive-complexity': ['error', 10],
+      'sonarjs/no-nested-conditional': 'error',
+      'sonarjs/no-nested-functions': 'error',
+      'sonarjs/no-nested-template-literals': 'error',
     },
   },
   {
@@ -158,6 +147,8 @@ export default [
       ...reactHooksPlugin.configs.recommended.rules,
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
+      // recommended: warn; с --max-warnings 0 всё равно гейт — фиксируем error явно
+      'react-hooks/exhaustive-deps': 'error',
       // Отключаем стандартное правило, используем TypeScript версию
       'no-unused-vars': 'off',
       'no-undef': 'off', // TypeScript handles this
@@ -418,6 +409,8 @@ export default [
       'sonarjs/todo-tag': 'warn',
       'sonarjs/fixme-tag': 'warn',
       'sonarjs/no-os-command-from-path': 'off',
+      'sonarjs/no-nested-conditional': 'off',
+      'sonarjs/no-nested-functions': 'off',
       'sonarjs/no-nested-template-literals': 'off',
     },
   },

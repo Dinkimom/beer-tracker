@@ -4,13 +4,13 @@ import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 
 export function AdminShellSidebarFooter({
-  email,
+  displayName,
   roleLine,
   logoutAria,
   logoutTitle,
   onLogout,
 }: {
-  email: string;
+  displayName: string;
   logoutAria: string;
   logoutTitle: string;
   onLogout: () => void;
@@ -20,7 +20,9 @@ export function AdminShellSidebarFooter({
     <div className="border-t border-ds-border-subtle px-4 py-3">
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">{email}</p>
+          <p className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
+            {displayName}
+          </p>
           {roleLine ? (
             <p className="truncate text-xs text-gray-500 dark:text-gray-400">{roleLine}</p>
           ) : null}

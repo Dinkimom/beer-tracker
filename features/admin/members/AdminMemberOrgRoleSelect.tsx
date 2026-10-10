@@ -12,17 +12,17 @@ type OrgDirectoryRole = 'member' | 'org_admin';
 interface AdminMemberOrgRoleSelectProps {
   busy: boolean;
   canChange: boolean;
-  email: string;
   isOrgAdmin: boolean;
+  subjectName: string;
   onChange: (orgRole: OrgDirectoryRole) => void;
 }
 
 export function AdminMemberOrgRoleSelect({
   busy,
   canChange,
-  email,
   isOrgAdmin,
   onChange,
+  subjectName,
 }: AdminMemberOrgRoleSelectProps) {
   const { t } = useI18n();
   const options = useMemo(
@@ -43,7 +43,7 @@ export function AdminMemberOrgRoleSelect({
       options={options}
       selectedPrefix=""
       size="compact"
-      title={lockedTitle ?? t('admin.membersPage.orgRoleSelectTitle', { email })}
+      title={lockedTitle ?? t('admin.membersPage.orgRoleSelectTitle', { name: subjectName })}
       value={value}
       onChange={onChange}
     />

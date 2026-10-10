@@ -133,9 +133,9 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
         setIsValidating(false);
         return;
       }
-      const storedEmail = readTrackerTokenPayload().email;
+      const stored = readTrackerTokenPayload();
       const result = await validateToken(localToken, {
-        email: storedEmail,
+        cloudId: stored.cloudId,
         organizationId,
       });
       if (!result.valid) {
@@ -143,7 +143,11 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
         setIsValidating(false);
         return;
       }
-      setToken(localToken.trim(), organizationId, storedEmail);
+      setToken(localToken.trim(), organizationId, {
+        cloudId: stored.cloudId,
+        expiresAt: stored.expiresAt,
+        refreshToken: stored.refreshToken,
+      });
       setIsValidating(false);
       onClose();
     } catch (err) {

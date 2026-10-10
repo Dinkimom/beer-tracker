@@ -16,7 +16,7 @@ const OrgRoleInviteSchema = z.enum(['member', 'team_lead']);
 const PostFromTrackerSchema = z
   .object({
     display_name: z.string().trim().min(1).max(512).optional(),
-    email: z.string().trim().email().max(320),
+    email: z.string().trim().email().max(320).optional().nullable(),
     org_role: OrgRoleInviteSchema,
     role_slug: z.string().trim().min(1).max(128).optional().nullable(),
     team_id: z.string().uuid().optional().nullable(),
@@ -101,7 +101,7 @@ export async function POST(
   try {
     const { member } = await addTrackerPersonToOrganizationWithProductUser({
       displayName: display_name,
-      emailStr: email,
+      emailStr: email?.trim() ?? '',
       organizationId: orgId,
       orgRole,
       roleSlug: roleSlug ?? null,

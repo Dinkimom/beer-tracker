@@ -39,14 +39,7 @@ const TeamMemberPostBodySchema = z
     if (methods !== 1) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Укажите ровно один способ: user_id, staff_uid или tracker_user_id (+ email)',
-      });
-    }
-    if (byTracker && !data.email?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Для добавления из трекера укажите email',
-        path: ['email'],
+        message: 'Укажите ровно один способ: user_id, staff_uid или tracker_user_id',
       });
     }
   });

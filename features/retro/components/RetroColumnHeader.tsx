@@ -52,12 +52,12 @@ export function RetroColumnHeader({
   };
 
   return (
-    <div className="relative flex items-start gap-1 px-2 pb-1 pt-2">
+    <div className="relative flex items-start gap-1 border-b border-gray-200/90 px-2 pb-2 pt-2.5 dark:border-white/10">
       {editing ? (
         <input
           aria-label={t('retro.renameColumn')}
           autoFocus
-          className="min-w-0 flex-1 rounded-md border border-blue-500 bg-white px-2 py-1 text-sm font-semibold text-gray-900 outline-none dark:bg-gray-900 dark:text-gray-100"
+          className="min-w-0 flex-1 rounded-md border border-blue-500 bg-white px-2 py-1 text-sm font-semibold text-gray-900 outline-none dark:bg-white/[0.08] dark:text-gray-100"
           value={draft}
           onBlur={commitTitle}
           onChange={(event) => setDraft(event.target.value)}
@@ -71,7 +71,7 @@ export function RetroColumnHeader({
         />
       ) : (
         <button
-          className="min-w-0 flex-1 cursor-text whitespace-normal break-words rounded-md px-1 py-1 text-left text-sm font-semibold leading-snug transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15"
+          className="min-w-0 flex-1 cursor-text whitespace-normal break-words rounded-md px-1 py-1 text-left text-sm font-semibold leading-snug text-gray-700 transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 dark:text-gray-200 dark:hover:bg-white/10 dark:active:bg-white/15"
           type="button"
           onClick={() => {
             setDraft(title);
@@ -84,7 +84,7 @@ export function RetroColumnHeader({
       )}
       <span
         aria-label={t('retro.cardCount', { count: String(cardCount) })}
-        className="mt-1.5 text-xs font-medium tabular-nums text-gray-500 dark:text-gray-400"
+        className="mt-1 inline-flex shrink-0 items-center rounded-md bg-white px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-gray-600 shadow-sm dark:bg-white/[0.08] dark:text-gray-300 dark:shadow-none"
       >
         {cardCount}
       </span>

@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { jiraParentPutBody } from './jiraIssueParent';
-import { clearJiraScheduleFieldRefsCacheForTests } from './jiraScheduleFields';
 import {
   extractJiraEstimationBoardId,
   jiraAssigneePutBody,
@@ -10,6 +9,7 @@ import {
   splitJiraIssueUpdatePatch,
   updateJiraIssue,
 } from './jiraIssueUpdate';
+import { clearJiraScheduleFieldRefsCacheForTests } from './jiraScheduleFields';
 
 afterEach(() => {
   clearJiraScheduleFieldRefsCacheForTests();

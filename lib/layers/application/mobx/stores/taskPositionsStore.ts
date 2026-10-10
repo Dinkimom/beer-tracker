@@ -10,11 +10,7 @@ import {
   fetchSprintPositions,
   saveTaskPosition,
 } from '@/lib/beerTrackerApi';
-import {
-  isValidSprintId,
-  stripPositionSource,
-  taskPositionToApi,
-} from '@/lib/layers/data/mappers/taskPositionToApi';
+import { isValidSprintId, stripPositionSource, taskPositionToApi } from '@/lib/layers/data/mappers/taskPositionToApi';
 import { isEphemeralPlannerPositionId } from '@/lib/planner/ephemeralPlannerPositionId';
 import { DELAYS } from '@/utils/constants';
 
@@ -53,7 +49,6 @@ export {
   commentHistorySliceFromComment,
   commentHistorySlicesEqual,
 } from './planHistoryTypes';
-
 interface PendingUpdate { devTaskKey?: string; isQa: boolean; position: TaskPosition }
 
 function replacePlanAnchors(

@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
+    "lint:sonar-density": "node scripts/eslint/report-sonar-density.mjs",
     "lint:unused": "knip",
     "lint:unused-exports": "knip --exports",
     "typecheck": "tsc --noEmit",

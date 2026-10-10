@@ -3,13 +3,13 @@ import { z } from 'zod';
 
 import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
 import { invalidateCache } from '@/lib/cache';
-import { jiraEmailFromRequest } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
 import {
   connectOrganizationTracker,
   getOrganizationTrackerAdminFormState,
 } from '@/lib/organizations/organizationTrackerConnection';
 
 const BodySchema = z.object({
+  jiraEmail: z.string().max(320).optional(),
   oauthToken: z.string().optional(),
   trackerApiBaseUrl: z.string().max(512).optional().nullable(),
   trackerOrgId: z.string().max(256).optional(),
@@ -66,7 +66,7 @@ export async function POST(
   }
 
   const result = await connectOrganizationTracker({
-    jiraEmail: jiraEmailFromRequest(request),
+    jiraEmail: parsed.data.jiraEmail?.trim() || undefined,
     oauthToken: parsed.data.oauthToken ?? '',
     organizationId: auth.ctx.organizationId,
     trackerApiBaseUrl: parsed.data.trackerApiBaseUrl,

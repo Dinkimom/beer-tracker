@@ -5,6 +5,8 @@
 
 export interface OrganizationTrackerAdminFormState {
   hasStoredToken: boolean;
+  /** Email Atlassian-аккаунта org API-токена (Jira Cloud Basic); пусто для других провайдеров. */
+  jiraEmail: string;
   /** UUID организации в продукте (tenant). */
   organizationId: string;
   trackerOrgId: string;

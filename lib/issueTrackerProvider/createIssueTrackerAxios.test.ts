@@ -51,18 +51,13 @@ describe('createIssueTrackerAxiosForCredentials', () => {
     expect(createTrackerAxiosInstance).not.toHaveBeenCalled();
   });
 
-  it('passes Atlassian email for Jira Cloud Basic auth', () => {
+  it('uses Jira axios for jira-cloud (Bearer OAuth; email unused)', () => {
     vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-cloud');
-    expect(
-      createIssueTrackerAxiosForCredentials({
-        ...config,
-        jiraEmail: 'ada@example.com',
-      })
-    ).toEqual({ kind: 'jira' });
+    expect(createIssueTrackerAxiosForCredentials(config)).toEqual({ kind: 'jira' });
     expect(createJiraAxiosInstance).toHaveBeenCalledWith({
       apiToken: 'pat-1',
       apiUrl: config.apiUrl,
-      email: 'ada@example.com',
+      email: undefined,
     });
   });
 });

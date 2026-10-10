@@ -27,7 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <Suspense fallback={<div className="h-full" />}>
         <AdminOrganizationIdProvider organizationId={activeOrganizationId}>
           <AdminShell
-            email={user.email}
+            displayName={user.display_name?.trim() || user.email || user.id}
             exporterEnabled={exporterEnabled}
             isSuperAdmin={isSuperAdmin}
             orgs={orgs}

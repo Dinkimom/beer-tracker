@@ -25,10 +25,10 @@ interface ResizableSidebarProps {
    */
   children: ReactNode;
   /**
-   * docked — прижат к краю панели. island — карточка на холсте, как доска планера.
-   * Стекло не на оболочке: оно блюрит только то, что скроллится позади отдельной плашки.
+   * docked — прижат к краю панели. island — непрозрачная карточка на холсте.
+   * glass — остров со стеклом (ретро и др.), блюрит холст позади.
    */
-  chrome?: 'docked' | 'island';
+  chrome?: 'docked' | 'glass' | 'island';
   /**
    * Дополнительные классы для контейнера сайдбара
    */
@@ -219,11 +219,7 @@ export function ResizableSidebar({
   const mounted = phase !== 'closed';
   const shellWidth = resizableSidebarShellWidthPx(phase, width);
   const animateWidth = !isResizing && !prefersResizableSidebarReducedMotion();
-  const baseClasses =
-    chrome === 'island'
-      ? 'relative flex h-full flex-col self-stretch overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header'
-      : 'relative flex h-full flex-col self-stretch overflow-hidden border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800';
-  const combinedClassName = `${baseClasses} ${className}`.trim();
+  const combinedClassName = `${resizableSidebarChromeClass(chrome)} ${className}`.trim();
 
   const onResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -284,7 +280,7 @@ export function ResizableSidebar({
             {/* Заголовок сайдбара */}
             {(title || headerActions) && (
               <div
-                className={`relative flex-shrink-0 border-b border-gray-200 dark:border-gray-700 ${chrome === 'island' ? '' : 'bg-white dark:bg-gray-800'} ${title ? 'px-5 py-2.5' : ''}`}
+                className={`relative flex-shrink-0 border-b border-gray-200 dark:border-gray-700 ${chrome === 'docked' ? 'bg-white dark:bg-gray-800' : ''} ${title ? 'px-5 py-2.5' : ''}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   {title && (
@@ -313,6 +309,16 @@ export function ResizableSidebar({
       )}
     </>
   );
+}
+
+function resizableSidebarChromeClass(chrome: 'docked' | 'glass' | 'island'): string {
+  if (chrome === 'glass') {
+    return 'relative flex h-full flex-col self-stretch overflow-hidden rounded-2xl border border-gray-200 floating-toolbar-glass dark:border-white/10';
+  }
+  if (chrome === 'island') {
+    return 'relative flex h-full flex-col self-stretch overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header';
+  }
+  return 'relative flex h-full flex-col self-stretch overflow-hidden border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800';
 }
 
 function defaultCalculateWidth(resizeHandleSide: 'left' | 'right') {

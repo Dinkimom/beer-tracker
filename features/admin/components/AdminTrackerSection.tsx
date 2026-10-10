@@ -27,12 +27,17 @@ function isTrackerVerifyDisabled(
   trackerOrgId: string,
   trackerHasStoredToken: boolean,
   trackerToken: string,
-  requiresExternalOrgId: boolean
+  requiresExternalOrgId: boolean,
+  isJiraCloud: boolean,
+  trackerEmail: string
 ): boolean {
   if (!connectOrgId || trackerVerifyLoading) {
     return true;
   }
   if (requiresExternalOrgId && !trackerOrgId.trim()) {
+    return true;
+  }
+  if (isJiraCloud && !trackerEmail.trim() && !trackerHasStoredToken) {
     return true;
   }
   return !trackerHasStoredToken && !trackerToken.trim();
@@ -43,6 +48,7 @@ interface AdminTrackerSectionProps {
   connectLoading: boolean;
   connectOrgId: string;
   id?: string;
+  trackerEmail: string;
   trackerHasStoredToken: boolean;
   trackerOrgId: string;
   trackerToken: string;
@@ -51,6 +57,7 @@ interface AdminTrackerSectionProps {
   onSubmit: (e: FormEvent) => void;
   onTokenEditCancel: () => void;
   onTokenEditOpen: () => void;
+  onTrackerEmailChange: (value: string) => void;
   onTrackerOrgIdChange: (value: string) => void;
   onTrackerTokenChange: (value: string) => void;
   onVerify: () => void;
@@ -61,6 +68,7 @@ export function AdminTrackerSection({
   connectLoading,
   connectOrgId,
   id,
+  trackerEmail,
   trackerHasStoredToken,
   trackerOrgId,
   trackerToken,
@@ -69,6 +77,7 @@ export function AdminTrackerSection({
   onSubmit,
   onTokenEditCancel,
   onTokenEditOpen,
+  onTrackerEmailChange,
   onTrackerOrgIdChange,
   onTrackerTokenChange,
   onVerify,
@@ -76,6 +85,7 @@ export function AdminTrackerSection({
   const { t } = useI18n();
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
   const tokenHelpUrl = useIssueTrackerTokenHelpUrl();
+  const isJiraCloud = issueTrackerProviderKind === 'jira-cloud';
   const storedTokenOnly = trackerHasStoredToken && !trackerTokenEditOpen;
   const requiresExternalOrgId = issueTrackerRequiresExternalOrgId(issueTrackerProviderKind);
 
@@ -101,6 +111,25 @@ export function AdminTrackerSection({
       </div>
       <div className={`${cardBody} space-y-5`}>
         <form className="space-y-5" onSubmit={onSubmit}>
+          {isJiraCloud ? (
+            <div className="min-w-0">
+              <label className={label} htmlFor="tr-email">
+                {t('auth.setup.jiraCloudEmailLabel')}
+              </label>
+              <input
+                autoComplete="email"
+                className={field}
+                id="tr-email"
+                placeholder={t('auth.setup.jiraCloudEmailPlaceholder')}
+                required={!trackerHasStoredToken}
+                type="email"
+                value={trackerEmail}
+                onChange={(e) => onTrackerEmailChange(e.target.value)}
+              />
+              <p className={`mt-1.5 text-xs ${muted}`}>{t('auth.setup.jiraCloudEmailHint')}</p>
+            </div>
+          ) : null}
+
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-3">
             {requiresExternalOrgId ? (
               <div className="w-full shrink-0 sm:w-[9rem] md:w-[10rem]">
@@ -145,7 +174,9 @@ export function AdminTrackerSection({
                 trackerOrgId,
                 trackerHasStoredToken,
                 trackerToken,
-                requiresExternalOrgId
+                requiresExternalOrgId,
+                isJiraCloud,
+                trackerEmail
               )}
               type="button"
               variant="outline"

@@ -19,8 +19,16 @@ describe('onPremRegisterIdentityFromMyself', () => {
     });
   });
 
-  it('throws when email is missing', () => {
-    expect(() => onPremRegisterIdentityFromMyself({ uid: 1 })).toThrow(TrackerApiConfigError);
+  it('throws when email and tracker identity are missing', () => {
+    expect(() => onPremRegisterIdentityFromMyself({})).toThrow(TrackerApiConfigError);
+  });
+
+  it('synthesizes a local email from tracker uid when /myself has no email', () => {
+    expect(onPremRegisterIdentityFromMyself({ uid: 'acc-1' })).toEqual({
+      displayName: 'acc-1',
+      email: 'acc-1@users.atlassian.local',
+      trackerUserId: 'acc-1',
+    });
   });
 
   it('falls back to the form Atlassian email when /myself hides emailAddress', () => {

@@ -255,9 +255,9 @@ describe('searchJiraIssuesInSprint', () => {
 
 describe('fetchJiraIssue', () => {
   it('GETs /issue/{key} and maps Start date via the field catalog', async () => {
-    const get = vi.fn(async (url: string) => {
+    const get = vi.fn((url: string) => {
       if (url === '/field') {
-        return {
+        return Promise.resolve({
           data: [
             { id: 'duedate', name: 'Due Date', schema: { system: 'duedate', type: 'date' } },
             {
@@ -266,9 +266,9 @@ describe('fetchJiraIssue', () => {
               schema: { type: 'date' },
             },
           ],
-        };
+        });
       }
-      return {
+      return Promise.resolve({
         data: {
           fields: {
             customfield_10015: '2026-09-24',
@@ -278,7 +278,7 @@ describe('fetchJiraIssue', () => {
           },
           key: 'PROJ-1',
         },
-      };
+      });
     });
     await expect(fetchJiraIssue(apiWith({ get }), 'PROJ-1')).resolves.toEqual(
       expect.objectContaining({

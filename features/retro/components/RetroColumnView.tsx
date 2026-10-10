@@ -9,7 +9,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { RetroCardView } from './RetroCardView';
 import { RetroColumnComposer } from './RetroColumnComposer';
 import { RetroColumnHeader } from './RetroColumnHeader';
-import { retroColumnDragId, retroColumnTitle, retroListClass } from './retroUi';
+import { retroColumnDragId, retroColumnTitle, retroListClass, retroListDropClass } from './retroUi';
 
 interface RetroColumnViewProps {
   cards: RetroVisibleCard[];
@@ -50,7 +50,7 @@ export function RetroColumnView({
   });
 
   return (
-    <section aria-label={title} className={retroListClass}>
+    <section aria-label={title} className={isOver ? retroListDropClass : retroListClass}>
       <RetroColumnHeader
         cardCount={cards.length}
         column={column}
@@ -62,7 +62,8 @@ export function RetroColumnView({
       />
       <div
         ref={setNodeRef}
-        className={`flex min-h-8 flex-1 flex-col gap-2.5 overflow-y-auto px-0.5 pt-1.5 pb-2.5 ${isOver ? 'bg-blue-50/80 dark:bg-blue-500/10' : ''}`}
+        className="flex min-h-8 flex-1 flex-col gap-2.5 overflow-x-hidden overflow-y-auto px-0.5 pt-1.5 pb-2.5"
+        style={{ overscrollBehaviorX: 'auto' }}
       >
         {cards.map((card) => (
           <RetroCardView

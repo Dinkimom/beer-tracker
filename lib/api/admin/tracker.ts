@@ -6,6 +6,7 @@ import { adminOrgApiPath } from './paths';
 
 interface AdminTrackerFormState {
   hasStoredToken?: boolean;
+  jiraEmail?: string;
   organizationId?: string;
   trackerOrgId?: string;
 }
@@ -19,7 +20,7 @@ export async function fetchAdminTrackerForm(orgId: string): Promise<AdminTracker
 
 export async function verifyAdminTrackerToken(
   orgId: string,
-  body: { oauthToken?: string; trackerOrgId?: string }
+  body: { jiraEmail?: string; oauthToken?: string; trackerOrgId?: string }
 ): Promise<{ message?: string; ok?: boolean }> {
   const { data } = await getPlannerBeerTrackerApi().post<{ message?: string; ok?: boolean }>(
     adminOrgApiPath(orgId, 'tracker/verify'),

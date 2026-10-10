@@ -65,13 +65,23 @@ YANDEX_OAUTH_CLIENT_ID=ваш_client_id
 ```bash
 ISSUE_TRACKER_PROVIDER=jira-cloud
 TRACKER_API_URL=https://your-site.atlassian.net/rest/api/3
+ATLASSIAN_OAUTH_CLIENT_ID=…
+ATLASSIAN_OAUTH_CLIENT_SECRET=…
 ```
 
 - **Не нужен** `YANDEX_OAUTH_CLIENT_ID` — это только для ветки A.
-- Auth: **email** Atlassian-аккаунта + **API token**  
-  Создание токена: https://id.atlassian.com/manage-profile/security/api-tokens
-- В UI / заголовках: токен + email (не Yandex OAuth).
-- Поля подключения сайта/учётки организации — в админке «Трекер» / integration.
+- **Пользователи:** Atlassian OAuth 2.0 (3LO) — кнопка **Connect with Atlassian** (`/auth-setup`, register, настройки).
+  1. Создайте OAuth-приложение в [Developer Console](https://developer.atlassian.com/console/).
+  2. Authorization → OAuth 2.0 (3LO): callback `{origin}/api/auth/atlassian/callback`.
+  3. Permissions → Jira API (classic): `read:jira-work`, `write:jira-work`, `read:jira-user` + `offline_access`;
+     Jira Software (granular, иначе Agile 401): `read:board-scope:jira-software`, `write:board-scope:jira-software`,
+     `read:board-scope.admin:jira-software`, `read:sprint:jira-software`, `write:sprint:jira-software`,
+     `read:epic:jira-software`, `write:epic:jira-software`, `read:issue:jira-software`, `write:issue:jira-software`,
+     `read:project:jira`.
+  4. Скопируйте Client ID / Secret в `.env`.
+  - Access + refresh + `cloudId` — в браузере (localStorage); REST: `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3` с `Bearer`.
+- **Организация (админка «Трекер»):** обычный **API-токен** Atlassian + email аккаунта (Basic к `TRACKER_API_URL` на `*.atlassian.net`). Нужен для sync, каталога полей и прочих org-вызовов.
+- `TRACKER_API_URL` — site REST (`https://your-site.atlassian.net/rest/api/3`) и ссылки `/browse/{key}`.
 
 ---
 
@@ -93,13 +103,13 @@ TRACKER_API_URL=https://jira.example.com/rest/api/2
 
 - Задачи, статусы, спринты/доски живут во внешнем трекере.
 - Планер хранит позиции, связи, цели, availability в PostgreSQL.
-- Пользовательская учётка — в браузере; в API — `X-Tracker-Token` (для Jira Cloud ещё email).
+- Пользовательская учётка — в браузере; в API — `X-Tracker-Token` (+ для Jira Cloud OAuth: `X-Tracker-Cloud-Id`).
 - Опциональный серверный fallback-токен в env — README / `env.example`.
 - Фоновый sync (`pnpm sync-worker`) пишет `issue_snapshots` для любого провайдера.
 
 ## Где настраивать
 
-1. **Инстанс** — `.env`: `ISSUE_TRACKER_PROVIDER`, `TRACKER_API_URL` (+ для ветки A: `YANDEX_OAUTH_CLIENT_ID`).
+1. **Инстанс** — `.env`: `ISSUE_TRACKER_PROVIDER`, `TRACKER_API_URL` (+ ветка A: `YANDEX_OAUTH_CLIENT_ID`; ветка B: `ATLASSIAN_OAUTH_*`).
 2. **Организация** — админка «Трекер» / integration.
 3. **Пользователь** — `/auth-setup` или настройки.
 

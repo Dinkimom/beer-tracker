@@ -11,11 +11,19 @@ export function validateTrackerConnectForm(args: {
   issueTrackerProviderKind: IssueTrackerProviderKind;
   needNewTokenEntry: boolean;
   t: TranslateFn;
+  trackerEmail?: string;
   trackerToken: string;
   trackerTokenEditOpen: boolean;
 }): string | null {
   if (!args.connectOrgId) {
     return args.t('admin.common.selectOrganization');
+  }
+  if (
+    args.issueTrackerProviderKind === 'jira-cloud' &&
+    args.needNewTokenEntry &&
+    !args.trackerEmail?.trim()
+  ) {
+    return args.t('auth.setup.jiraCloudEmailRequired');
   }
   if (args.needNewTokenEntry && !args.trackerToken.trim()) {
     return args.trackerTokenEditOpen

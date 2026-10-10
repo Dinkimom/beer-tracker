@@ -50,6 +50,7 @@ export function useAdminTrackerConnectionReady(organizationId: string) {
         });
         const nextReady = isOrganizationTrackerConnectionReady({
           hasStoredToken: data.hasStoredToken === true,
+          jiraEmail: data.jiraEmail ?? '',
           organizationId: data.organizationId ?? organizationId,
           trackerOrgId: data.trackerOrgId ?? '',
         });

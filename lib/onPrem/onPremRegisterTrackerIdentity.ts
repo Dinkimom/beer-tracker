@@ -1,8 +1,10 @@
+import { jiraCloudOAuthApiBaseUrl } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
 import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
 import {
   issueTrackerRequiresExternalOrgId,
   resolveIssueTrackerExternalOrgIdForConnect,
 } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import { JIRA_EXTERNAL_ORG_ID_FALLBACK } from '@/lib/issueTrackerProvider/types';
 import { TrackerApiConfigError } from '@/lib/trackerRequestConfig';
 
 import { fetchTrackerMyselfOrThrow } from './fetchTrackerMyself';
@@ -35,32 +37,44 @@ export function onPremRegisterIdentityFromMyself(
   myself: unknown,
   fallbackEmail?: string
 ): OnPremRegisterTrackerIdentity {
+  const trackerUserId = trackerIdentityCandidatesFromMyself(myself)[0] ?? null;
   const email =
     trackerWorkEmailFromMyself(myself) ??
-    (fallbackEmail?.trim().toLowerCase() || null);
+    (fallbackEmail?.trim().toLowerCase() || null) ??
+    (trackerUserId ? `${trackerUserId}@users.atlassian.local` : null);
   if (!email) {
     throw new TrackerApiConfigError(
-      'В профиле трекера не указан email. Укажите email в трекере и повторите настройку.',
+      'Не удалось определить пользователя трекера (accountId/email). Повторите Connect with Atlassian.',
       422
     );
   }
   return {
     displayName: trackerDisplayNameFromMyself(myself, email),
     email,
-    trackerUserId: trackerIdentityCandidatesFromMyself(myself)[0] ?? null,
+    trackerUserId,
   };
 }
 
 export async function fetchOnPremRegisterTrackerIdentity(input: {
+  cloudId?: string;
   jiraEmail?: string;
   token: string;
   trackerOrgId: string;
 }): Promise<OnPremRegisterTrackerIdentity> {
+  const kind = getIssueTrackerProviderKind();
+  const apiUrl =
+    kind === 'jira-cloud' && input.cloudId?.trim()
+      ? jiraCloudOAuthApiBaseUrl(input.cloudId.trim())
+      : getTrackerConfig().apiUrl;
+  const orgId =
+    kind === 'jira-cloud'
+      ? input.trackerOrgId || JIRA_EXTERNAL_ORG_ID_FALLBACK
+      : input.trackerOrgId;
   const myself = await fetchTrackerMyselfOrThrow({
-    apiUrl: getTrackerConfig().apiUrl,
-    jiraEmail: input.jiraEmail,
+    apiUrl,
+    jiraEmail: '',
     oauthToken: input.token,
-    orgId: input.trackerOrgId,
+    orgId,
   });
   return onPremRegisterIdentityFromMyself(myself, input.jiraEmail);
 }

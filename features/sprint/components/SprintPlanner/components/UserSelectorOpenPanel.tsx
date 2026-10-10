@@ -138,14 +138,7 @@ export function UserSelectorOpenPanel({
                     initials={getInitials(user.displayName)}
                     size="sm"
                   />
-                  <span className="min-w-0 flex-1 truncate">
-                    {user.displayName}
-                    {user.email && (
-                      <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
-                        {user.email}
-                      </span>
-                    )}
-                  </span>
+                  <span className="min-w-0 flex-1 truncate">{user.displayName}</span>
                   {isSelected && (
                     <Icon className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" name="check" />
                   )}

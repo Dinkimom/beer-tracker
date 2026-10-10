@@ -60,6 +60,7 @@ describe('buildProductSessionResponse', () => {
     vi.mocked(getProductUserIdFromRequest).mockReturnValue(SESSION_USER);
     vi.mocked(findUserById).mockResolvedValue({
       created_at: new Date(),
+      display_name: 'Ada',
       email: 'a@example.com',
       id: SESSION_USER,
     });

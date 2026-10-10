@@ -49,6 +49,14 @@ function resolveYandexOauthClientId(): string {
   ).trim();
 }
 
+function resolveAtlassianOauthClientId(): string {
+  return (
+    process.env.ATLASSIAN_OAUTH_CLIENT_ID ??
+    process.env.NEXT_PUBLIC_ATLASSIAN_OAUTH_CLIENT_ID ??
+    ""
+  ).trim();
+}
+
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: resolveAppVersion(),
@@ -56,6 +64,8 @@ const nextConfig: NextConfig = {
     // Public OAuth ClientID for Yandex Tracker authorize URL in the browser.
     // Source env has no NEXT_PUBLIC_ prefix — domain name, not a Next convention.
     YANDEX_OAUTH_CLIENT_ID: resolveYandexOauthClientId(),
+    // Public Atlassian OAuth ClientID (3LO start URL / Connect button).
+    ATLASSIAN_OAUTH_CLIENT_ID: resolveAtlassianOauthClientId(),
   },
   headers() {
     return [

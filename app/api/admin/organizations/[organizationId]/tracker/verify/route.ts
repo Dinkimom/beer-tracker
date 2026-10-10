@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 
 import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
-import { jiraEmailFromRequest } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
 import { verifyOrganizationTrackerTokenForAdmin } from '@/lib/organizations/organizationTrackerConnection';
 
 function parseTrackerVerifyRequestBody(raw: string): {
+  jiraEmail?: string;
   oauthToken?: string;
   trackerOrgId?: string;
 } {
-  const result: { oauthToken?: string; trackerOrgId?: string } = {};
+  const result: { jiraEmail?: string; oauthToken?: string; trackerOrgId?: string } = {};
   if (!raw.trim()) {
     return result;
   }
@@ -20,6 +20,7 @@ function parseTrackerVerifyRequestBody(raw: string): {
     const o = parsed as Record<string, unknown>;
     if (typeof o.oauthToken === 'string') result.oauthToken = o.oauthToken;
     if (typeof o.trackerOrgId === 'string') result.trackerOrgId = o.trackerOrgId;
+    if (typeof o.jiraEmail === 'string') result.jiraEmail = o.jiraEmail;
   } catch {
     /* пустое или невалидное тело — как раньше, только сохранённые данные */
   }
@@ -29,8 +30,6 @@ function parseTrackerVerifyRequestBody(raw: string): {
 /**
  * POST /api/admin/organizations/[organizationId]/tracker/verify
  * org_admin: проверка токена против API трекера (без записи в БД).
- * Тело JSON опционально: `{ "oauthToken"?: string, "trackerOrgId"?: string }` — значения из формы до «Сохранить».
- * Без тела или с пустыми полями используются сохранённые org id и токен.
  */
 export async function POST(
   request: Request,
@@ -43,10 +42,10 @@ export async function POST(
   }
 
   const raw = await request.text();
-  const { oauthToken, trackerOrgId } = parseTrackerVerifyRequestBody(raw);
+  const { jiraEmail, oauthToken, trackerOrgId } = parseTrackerVerifyRequestBody(raw);
 
   const result = await verifyOrganizationTrackerTokenForAdmin(auth.ctx.organizationId, {
-    jiraEmail: jiraEmailFromRequest(request),
+    jiraEmail,
     oauthToken,
     trackerOrgId,
   });

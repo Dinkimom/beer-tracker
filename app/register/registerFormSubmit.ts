@@ -2,9 +2,12 @@ import { postProductRegister } from '@/lib/api/auth';
 import { readApiErrorMessage } from '@/lib/api/readApiError';
 
 export async function submitRegisterForm(input: {
+  cloudId?: string;
+  expiresAt?: number;
   jiraEmail?: string;
   onboardingMode: boolean;
   organizationName: string;
+  refreshToken?: string;
   t: (key: string) => string;
   token: string;
   trackerOrgId: string;
@@ -14,8 +17,10 @@ export async function submitRegisterForm(input: {
   }
   try {
     const data = await postProductRegister({
-      jiraEmail: input.jiraEmail?.trim() || undefined,
+      cloudId: input.cloudId?.trim() || undefined,
+      expiresAt: input.expiresAt,
       orgName: input.organizationName,
+      refreshToken: input.refreshToken?.trim() || undefined,
       token: input.token,
       trackerOrgId: input.trackerOrgId.trim() || undefined,
     });

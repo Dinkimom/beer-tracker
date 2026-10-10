@@ -31,7 +31,7 @@ vi.mock('@/lib/trackerRequestConfig', () => ({
 }));
 
 vi.mock('@/lib/issueTrackerProvider/settings', () => ({
-  readIssueTrackerBasicAuthEmail: vi.fn(() => 'admin@example.com'),
+  readIssueTrackerBasicAuthEmail: vi.fn(() => 'ada@example.com'),
 }));
 
 import { createIssueTrackerAxiosForCredentials } from '@/lib/issueTrackerProvider/createIssueTrackerAxios';
@@ -76,7 +76,9 @@ describe('enrichPlannerTeamMembersAvatarsFromJira', () => {
     vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-cloud');
     vi.mocked(findOrganizationById).mockResolvedValue({
       id: 'org-1',
-      settings: {},
+      settings: {
+        issueTracker: { basicAuthEmail: 'ada@example.com', provider: 'jira-cloud' },
+      },
     } as never);
     vi.mocked(getDecryptedOrganizationTrackerToken).mockResolvedValue('token');
     vi.mocked(createIssueTrackerAxiosForCredentials).mockReturnValue({ get: vi.fn() } as never);

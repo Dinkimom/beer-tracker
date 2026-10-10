@@ -15,25 +15,29 @@ describe('submitRegisterForm', () => {
     vi.mocked(postProductRegister).mockReset();
   });
 
-  it('sends Atlassian email with the token on first-run register', async () => {
+  it('sends Atlassian OAuth fields on first-run register', async () => {
     vi.mocked(postProductRegister).mockResolvedValue({
       organization: { id: 'org-1', name: 'Acme', slug: 'acme' },
     });
 
     const result = await submitRegisterForm({
-      jiraEmail: ' ada@example.com ',
+      cloudId: ' cloud-1 ',
+      expiresAt: 123,
       onboardingMode: true,
       organizationName: 'Acme',
+      refreshToken: ' refresh-1 ',
       t,
-      token: 'atlassian-api-token',
+      token: 'access-token',
       trackerOrgId: '',
     });
 
     expect(result).toEqual({ ok: true, organizationId: 'org-1' });
     expect(postProductRegister).toHaveBeenCalledWith({
-      jiraEmail: 'ada@example.com',
+      cloudId: 'cloud-1',
+      expiresAt: 123,
       orgName: 'Acme',
-      token: 'atlassian-api-token',
+      refreshToken: 'refresh-1',
+      token: 'access-token',
       trackerOrgId: undefined,
     });
   });

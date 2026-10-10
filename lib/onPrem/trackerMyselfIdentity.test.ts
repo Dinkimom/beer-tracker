@@ -58,6 +58,10 @@ describe('trackerIdentityCandidatesFromMyself', () => {
     expect(trackerIdentityCandidatesFromMyself({ id: '  y-user-1  ' })).toEqual(['y-user-1']);
   });
 
+  it('reads Jira Cloud accountId', () => {
+    expect(trackerIdentityCandidatesFromMyself({ accountId: 'acc-1' })).toEqual(['acc-1']);
+  });
+
   it('returns empty for invalid input', () => {
     expect(trackerIdentityCandidatesFromMyself(null)).toEqual([]);
     expect(trackerIdentityCandidatesFromMyself({})).toEqual([]);

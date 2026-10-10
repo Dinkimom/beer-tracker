@@ -6,6 +6,10 @@ import type { OrganizationTrackerAdminFormState } from './organizationTrackerAdm
 import type { QueryParams } from '@/types';
 
 import { pool, qualifyBeerTrackerTables } from '@/lib/db';
+import {
+  mergeOrganizationSettingsIssueTrackerPatch,
+  readIssueTrackerBasicAuthEmail,
+} from '@/lib/issueTrackerProvider/settings';
 import { readIssueTrackerExternalOrgId } from '@/lib/issueTrackerProvider/storageAliases';
 import { cleanOrganizationTrackerToken } from '@/lib/trackerCredentialsValidation';
 
@@ -28,7 +32,7 @@ export type VerifyStoredTrackerTokenResult =
   { error: string; ok: false; status: number } | { ok: true };
 
 interface ConnectOrganizationTrackerInput {
-  /** Email Atlassian для Jira Cloud Basic; иначе из настроек организации. */
+  /** Email Atlassian-аккаунта для org API-токена (Jira Cloud Basic). */
   jiraEmail?: string;
   /**
    * Пустая строка / не передан — берётся сохранённый в БД токен (если есть).
@@ -54,7 +58,9 @@ type ConnectOrganizationTrackerResult =
 
 async function persistTrackerConnection(params: {
   encryptedToken: Buffer;
+  jiraEmail?: string;
   organizationId: string;
+  settingsRoot: unknown;
   trackerOrgId: string;
 }): Promise<void> {
   const client = await pool.connect();
@@ -63,13 +69,28 @@ async function persistTrackerConnection(params: {
     const run = async (text: string, values?: QueryParams) => {
       await client.query(qualifyBeerTrackerTables(text), values);
     };
-    await run(
-      `UPDATE organizations
-       SET tracker_org_id = $2,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1`,
-      [params.organizationId, params.trackerOrgId]
-    );
+    const email = params.jiraEmail?.trim() ?? '';
+    if (email) {
+      const nextSettings = mergeOrganizationSettingsIssueTrackerPatch(params.settingsRoot, {
+        basicAuthEmail: email,
+      });
+      await run(
+        `UPDATE organizations
+         SET tracker_org_id = $2,
+             settings = $3::jsonb,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1`,
+        [params.organizationId, params.trackerOrgId, JSON.stringify(nextSettings)]
+      );
+    } else {
+      await run(
+        `UPDATE organizations
+         SET tracker_org_id = $2,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1`,
+        [params.organizationId, params.trackerOrgId]
+      );
+    }
     await run(
       `INSERT INTO organization_secrets (organization_id, encrypted_tracker_token, encryption_key_version)
        VALUES ($1, $2, 1)
@@ -93,7 +114,9 @@ async function persistTrackerConnection(params: {
 }
 
 async function persistTrackerOrgFieldsOnly(params: {
+  jiraEmail?: string;
   organizationId: string;
+  settingsRoot: unknown;
   trackerOrgId: string;
 }): Promise<void> {
   const client = await pool.connect();
@@ -102,13 +125,28 @@ async function persistTrackerOrgFieldsOnly(params: {
     const run = async (text: string, values?: QueryParams) => {
       await client.query(qualifyBeerTrackerTables(text), values);
     };
-    await run(
-      `UPDATE organizations
-       SET tracker_org_id = $2,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1`,
-      [params.organizationId, params.trackerOrgId]
-    );
+    const email = params.jiraEmail?.trim() ?? '';
+    if (email) {
+      const nextSettings = mergeOrganizationSettingsIssueTrackerPatch(params.settingsRoot, {
+        basicAuthEmail: email,
+      });
+      await run(
+        `UPDATE organizations
+         SET tracker_org_id = $2,
+             settings = $3::jsonb,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1`,
+        [params.organizationId, params.trackerOrgId, JSON.stringify(nextSettings)]
+      );
+    } else {
+      await run(
+        `UPDATE organizations
+         SET tracker_org_id = $2,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1`,
+        [params.organizationId, params.trackerOrgId]
+      );
+    }
     await client.query('COMMIT');
   } catch (e) {
     try {
@@ -138,13 +176,14 @@ export async function getOrganizationTrackerAdminFormState(
     buf != null && (Buffer.isBuffer(buf) ? buf.length > 0 : Buffer.byteLength(Buffer.from(buf)) > 0);
   return {
     hasStoredToken,
+    jiraEmail: readIssueTrackerBasicAuthEmail(org.org.settings),
     organizationId: org.org.id,
     trackerOrgId: readIssueTrackerExternalOrgId(org.org),
   };
 }
 
 export interface VerifyOrganizationTrackerTokenOptions {
-  /** Email Atlassian (Jira Cloud Basic); иначе из настроек организации. */
+  /** Email Atlassian-аккаунта для org API-токена (Jira Cloud Basic). */
   jiraEmail?: string;
   /** Токен из формы; если не передан или пустой — берётся сохранённый в БД. */
   oauthToken?: string;
@@ -209,7 +248,9 @@ export function verifyStoredOrganizationTrackerToken(
  * При изменении настроек или новом токене ставит initial_full в Redis (если настроен).
  */
 async function persistConnectedTrackerCredentials(input: {
+  jiraEmail?: string;
   organizationId: string;
+  settingsRoot: unknown;
   trackerOrgId: string;
   token: string;
   wroteNewToken: boolean;
@@ -222,13 +263,17 @@ async function persistConnectedTrackerCredentials(input: {
       }
       await persistTrackerConnection({
         encryptedToken: encryptedResult.encrypted,
+        jiraEmail: input.jiraEmail,
         organizationId: input.organizationId,
+        settingsRoot: input.settingsRoot,
         trackerOrgId: input.trackerOrgId,
       });
       return { ok: true };
     }
     await persistTrackerOrgFieldsOnly({
+      jiraEmail: input.jiraEmail,
       organizationId: input.organizationId,
+      settingsRoot: input.settingsRoot,
       trackerOrgId: input.trackerOrgId,
     });
     return { ok: true };
@@ -242,10 +287,14 @@ async function finalizeTrackerConnection(
   input: ConnectOrganizationTrackerInput,
   trackerOrgId: string,
   token: string,
-  wroteNewToken: boolean
+  wroteNewToken: boolean,
+  settingsRoot: unknown,
+  jiraEmail?: string
 ): Promise<ConnectOrganizationTrackerResult> {
   const persisted = await persistConnectedTrackerCredentials({
+    jiraEmail,
     organizationId: input.organizationId,
+    settingsRoot,
     trackerOrgId,
     token,
     wroteNewToken,
@@ -275,13 +324,17 @@ function resolveConnectTrackerApiUrl(
 }
 
 function unchangedTrackerConnectResult(
-  org: { tracker_org_id: string },
+  org: { settings: unknown; tracker_org_id: string },
   trackerOrgId: string,
-  oauthToken?: string
+  oauthToken?: string,
+  jiraEmail?: string
 ): ConnectOrganizationTrackerResult | null {
   const prevOrgId = readIssueTrackerExternalOrgId(org);
   const wroteNewToken = Boolean(cleanOrganizationTrackerToken(oauthToken ?? ''));
-  if (prevOrgId === trackerOrgId && !wroteNewToken) {
+  const email = jiraEmail?.trim() ?? '';
+  const emailUnchanged =
+    !email || email === readIssueTrackerBasicAuthEmail(org.settings);
+  if (prevOrgId === trackerOrgId && !wroteNewToken && emailUnchanged) {
     return { ok: true, syncJobEnqueued: false, unchanged: true };
   }
   return null;
@@ -294,26 +347,27 @@ async function resolveAndValidateTrackerOAuth(
   trackerApiBaseUrl: string,
   settingsRoot: unknown,
   jiraEmail?: string
-): Promise<ConnectOrganizationTrackerResult | { cleanedToken: string }> {
+): Promise<ConnectOrganizationTrackerResult | { cleanedToken: string; jiraEmail: string }> {
   const tokenFromInput = cleanOrganizationTrackerToken(oauthToken ?? '');
   const tokenResult = await resolveOAuthTokenForConnect(organizationId, tokenFromInput);
   if (!tokenResult.ok) {
     return tokenResult;
   }
+  const resolvedEmail = resolveTrackerConnectionEmail({
+    jiraEmail,
+    oauthToken,
+    settingsRoot,
+  });
   const validated = await validateTrackerOAuthOrError({
     apiUrl: trackerApiBaseUrl,
-    email: resolveTrackerConnectionEmail({
-      jiraEmail,
-      oauthToken,
-      settingsRoot,
-    }),
+    email: resolvedEmail,
     oauthToken: tokenResult.cleanedToken,
     orgId: trackerOrgId,
   });
   if (!validated.ok) {
     return validated;
   }
-  return { cleanedToken: tokenResult.cleanedToken };
+  return { cleanedToken: tokenResult.cleanedToken, jiraEmail: resolvedEmail };
 }
 
 export async function connectOrganizationTracker(
@@ -334,7 +388,12 @@ export async function connectOrganizationTracker(
     return { error: 'Укажите идентификатор организации в трекере', ok: false, status: 400 };
   }
 
-  const unchanged = unchangedTrackerConnectResult(orgResult.org, trackerOrgId, input.oauthToken);
+  const unchanged = unchangedTrackerConnectResult(
+    orgResult.org,
+    trackerOrgId,
+    input.oauthToken,
+    input.jiraEmail
+  );
   if (unchanged) {
     return unchanged;
   }
@@ -352,5 +411,12 @@ export async function connectOrganizationTracker(
     return authResult;
   }
 
-  return finalizeTrackerConnection(input, trackerOrgId, authResult.cleanedToken, wroteNewToken);
+  return finalizeTrackerConnection(
+    input,
+    trackerOrgId,
+    authResult.cleanedToken,
+    wroteNewToken,
+    orgResult.org.settings,
+    authResult.jiraEmail
+  );
 }

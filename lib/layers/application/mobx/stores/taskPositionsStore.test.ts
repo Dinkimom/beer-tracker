@@ -196,7 +196,7 @@ describe('TaskPositionsStore', () => {
 
     store.redo();
     expect(store.positions.has('t1')).toBe(false);
-    expect(mockDelete).toHaveBeenCalledWith(42, 't1');
+    expect(mockDelete).toHaveBeenCalledWith(42, 't1', { isQa: false });
   });
 
   it('reconcileRemoteSprint подменяет карту, но не затирает pending-правки', async () => {

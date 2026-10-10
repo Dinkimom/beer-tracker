@@ -39,9 +39,6 @@ export function AdminMemberRow({
           <Avatar avatarUrl={row.avatar_link} initials={memberInitials(row)} size="md" title={name} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{name}</p>
-            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-              {row.email || t('admin.membersPage.emailEmpty')}
-            </p>
             <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
               {t('admin.membersPage.teamsLine', { teams: teamsLine })}
             </p>
@@ -56,8 +53,8 @@ export function AdminMemberRow({
           <AdminMemberOrgRoleSelect
             busy={busy}
             canChange={canChangeOrgRole}
-            email={row.email?.trim() || name}
             isOrgAdmin={row.is_org_admin}
+            subjectName={name}
             onChange={onOrgRoleChange}
           />
           <Button

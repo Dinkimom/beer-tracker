@@ -43,7 +43,7 @@ export function RetroColumnComposer({ onAddNote }: RetroColumnComposerProps) {
           <textarea
             ref={fieldRef}
             aria-label={t('retro.addCard')}
-            className="block min-h-16 w-full resize-none rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+            className="block min-h-16 w-full resize-none rounded-lg border border-black/10 bg-white px-2.5 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-500 dark:border-white/15 dark:bg-white/[0.08] dark:text-gray-100"
             placeholder={t('retro.addCardPlaceholder')}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -66,7 +66,7 @@ export function RetroColumnComposer({ onAddNote }: RetroColumnComposerProps) {
         </form>
       ) : (
         <button
-          className="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm text-gray-500 transition-all duration-200 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 active:scale-[0.98]"
+          className="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm text-gray-500 transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 dark:text-gray-400 dark:hover:bg-white/10 dark:active:bg-white/15"
           type="button"
           onClick={() => setOpen(true)}
         >

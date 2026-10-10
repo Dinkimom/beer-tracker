@@ -22,7 +22,6 @@ export async function addTrackerPersonToOrganizationWithProductUser(input: {
   teamId?: string | null;
   trackerUserId: string;
 }): Promise<{ member: TeamMemberRow | null }> {
-  const emailNorm = input.emailStr.trim().toLowerCase();
   const teamIdNorm =
     input.teamId != null && String(input.teamId).trim() !== '' ? String(input.teamId).trim() : null;
 
@@ -42,7 +41,6 @@ export async function addTrackerPersonToOrganizationWithProductUser(input: {
   });
 
   await provisionTrackerJoinWithRollback({
-    emailNorm,
     member,
     orgRole: input.orgRole,
     organizationId: input.organizationId,

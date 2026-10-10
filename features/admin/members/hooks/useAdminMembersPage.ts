@@ -161,9 +161,9 @@ export function useAdminMembersPage({
   const removeMember = useCallback(
     async (row: RegistryEmployeeDirectoryRow) => {
       if (!orgId) return;
-      const label = row.email?.trim() || memberDisplayName(row);
+      const label = memberDisplayName(row);
       const confirmed = await confirmDestructive(
-        t('admin.membersPage.deleteUserMessage', { email: label }),
+        t('admin.membersPage.deleteUserMessage', { name: label }),
         {
           confirmText: t('common.delete'),
           title: t('admin.membersPage.deleteUserTitle'),

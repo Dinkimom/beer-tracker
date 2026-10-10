@@ -4,8 +4,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { AuthPageLoadingFallback } from '@/components/AuthScreenChrome';
+import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useTrackerTokenStorage } from '@/hooks/useLocalStorage';
+import { useAtlassianOAuthClientTokenState } from '@/lib/atlassianOAuth/authSetupTokenState';
 
 import { RegisterFormClosedView } from './RegisterFormClosedView';
 import { RegisterFormFields } from './RegisterFormFields';
@@ -19,13 +21,21 @@ export function RegisterForm() {
   const next = searchParams.get('next') || '/admin';
   const { setupLoading, onPremMode, setupInitialized } = useRegisterSetupState();
   const [, setToken] = useTrackerTokenStorage();
+  const providerKind = useIssueTrackerProviderKind();
+  const oauthState = useAtlassianOAuthClientTokenState();
 
   const [token, setTokenField] = useState('');
-  const [jiraEmail, setJiraEmail] = useState('');
   const [trackerOrgId, setTrackerOrgId] = useState('');
   const [organizationName, setOrganizationName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const cloudId = oauthState.cloudId;
+  const refreshToken = oauthState.refreshToken;
+  const expiresAt = oauthState.expiresAt;
+  const atlassianConnected = oauthState.atlassianConnected;
+  const tokenForSubmit = (token.trim() || oauthState.token).trim();
+  const displayError = error || oauthState.error;
 
   const onboardingMode = onPremMode && !setupInitialized;
   const signInHref = `/auth-setup?next=${encodeURIComponent(next)}`;
@@ -33,13 +43,19 @@ export function RegisterForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (providerKind === 'jira-cloud' && !cloudId.trim()) {
+      setError(t('auth.setup.jiraCloudEmailRequired'));
+      return;
+    }
     setLoading(true);
     const result = await submitRegisterForm({
-      jiraEmail,
+      cloudId,
+      expiresAt,
       onboardingMode,
       organizationName,
+      refreshToken,
       t,
-      token,
+      token: tokenForSubmit,
       trackerOrgId,
     });
     if (!result.ok) {
@@ -47,13 +63,17 @@ export function RegisterForm() {
       setLoading(false);
       return;
     }
-    setToken(token, result.organizationId, jiraEmail);
+    setToken(tokenForSubmit, result.organizationId, {
+      cloudId: cloudId || undefined,
+      expiresAt,
+      refreshToken: refreshToken || undefined,
+    });
     router.push(next);
     router.refresh();
     setLoading(false);
   }
 
-  if (setupLoading) {
+  if (setupLoading || !oauthState.oauthHydrated) {
     return <AuthPageLoadingFallback />;
   }
 
@@ -63,16 +83,15 @@ export function RegisterForm() {
 
   return (
     <RegisterFormFields
-      error={error}
-      jiraEmail={jiraEmail}
+      atlassianConnected={atlassianConnected}
+      error={displayError}
       loading={loading}
       onboardingMode={onboardingMode}
       organizationName={organizationName}
       signInHref={signInHref}
       t={t}
-      token={token}
+      token={token || oauthState.token}
       trackerOrgId={trackerOrgId}
-      onJiraEmailChange={setJiraEmail}
       onOrganizationNameChange={setOrganizationName}
       onSubmit={onSubmit}
       onTokenChange={setTokenField}

@@ -15,7 +15,7 @@ import { StickyNoteReactionToolbar } from '@/features/comments/components/Sticky
 import { StickyNoteTextContent } from '@/features/comments/components/StickyNoteTextContent';
 
 import { RetroCardComments } from './RetroCardComments';
-import { retroIconButtonClass } from './retroUi';
+import { retroCardSurfaceClass, retroIconButtonClass } from './retroUi';
 
 const NOTE_TEXT_CLASS =
   'w-full whitespace-pre-wrap break-words pr-6 text-left text-sm leading-snug';
@@ -77,7 +77,7 @@ export const RetroNoteCard = memo(function RetroNoteCard({
         if (!open) setPickerOpen(false);
       }}
     >
-      <article className="group relative mx-2 rounded-lg border border-gray-200 bg-gray-100 px-2.5 py-2 text-gray-800 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+      <article className={retroCardSurfaceClass}>
         <button
           aria-label={t('retro.deleteCard')}
           className={`${retroIconButtonClass} absolute right-1 top-1 opacity-0 group-hover:opacity-100`}

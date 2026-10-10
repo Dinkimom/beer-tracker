@@ -60,7 +60,6 @@ export function AdminMemberForm({
 }: AdminMemberFormProps) {
   const { t } = useI18n();
   const nameId = `${idPrefix}-display-name`;
-  const emailId = `${idPrefix}-email`;
   const searchTrackerUsers = useCallback(
     (query: string, signal?: AbortSignal) => searchAdminOrgUsers(orgId, query, signal),
     [orgId]
@@ -110,18 +109,6 @@ export function AdminMemberForm({
           type="text"
           value={values.displayName}
           onChange={(event) => onChange({ ...values, displayName: event.target.value })}
-        />
-      </div>
-      <div>
-        <label className={label} htmlFor={emailId}>
-          {t('admin.membersPage.emailLabel')}
-        </label>
-        <input
-          className={field}
-          id={emailId}
-          type="email"
-          value={values.email}
-          onChange={(event) => onChange({ ...values, email: event.target.value })}
         />
       </div>
       <AdminMemberTeamsMultiSelect

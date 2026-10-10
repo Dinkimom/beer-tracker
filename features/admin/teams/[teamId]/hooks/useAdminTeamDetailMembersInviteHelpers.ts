@@ -26,10 +26,12 @@ export async function inviteOnPremTeamMember(args: {
 
   const body: Record<string, unknown> = {
     display_name: args.trackerContext?.display_name?.trim() || undefined,
-    email: args.email,
     role_slug: catalogRoleSlugForPlannerTeamRole(args.invitedTeamRole),
     tracker_user_id: tid,
   };
+  if (args.email.trim()) {
+    body.email = args.email.trim();
+  }
   try {
     await postAdminTeamMember(args.orgId, args.teamId, body);
     toast.success(args.t("admin.teamDetail.userAddedToTeam"));

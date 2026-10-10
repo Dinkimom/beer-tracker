@@ -1,5 +1,6 @@
 'use client';
 
+import { AtlassianOAuthConnectButton } from '@/components/AtlassianOAuthConnectButton';
 import {
   AuthBackground,
   AuthCard,
@@ -7,12 +8,10 @@ import {
 import { BeerLottie } from '@/components/BeerLottie';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
-import { JiraCloudEmailField } from '@/components/JiraCloudEmailField';
 import { PasswordInput } from '@/components/PasswordInput';
 import {
   useIssueTrackerProviderKind,
   useIssueTrackerTokenHelpUrl,
-  useJiraCloudRequiresBasicAuthEmail,
 } from '@/contexts/IssueTrackerProviderKindContext';
 import {
   issueTrackerRequiresExternalOrgId,
@@ -23,15 +22,14 @@ import { RegisterFormOrgNameField } from './RegisterFormOrgNameField';
 import { RegisterFormSignInFooter } from './RegisterFormSignInFooter';
 
 interface RegisterFormFieldsProps {
+  atlassianConnected: boolean;
   error: string;
-  jiraEmail: string;
   loading: boolean;
   onboardingMode: boolean;
   organizationName: string;
   signInHref: string;
   token: string;
   trackerOrgId: string;
-  onJiraEmailChange: (value: string) => void;
   onOrganizationNameChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onTokenChange: (value: string) => void;
@@ -40,8 +38,8 @@ interface RegisterFormFieldsProps {
 }
 
 export function RegisterFormFields({
+  atlassianConnected,
   error,
-  jiraEmail,
   loading,
   onboardingMode,
   organizationName,
@@ -49,7 +47,6 @@ export function RegisterFormFields({
   t,
   token,
   trackerOrgId,
-  onJiraEmailChange,
   onOrganizationNameChange,
   onSubmit,
   onTokenChange,
@@ -57,7 +54,7 @@ export function RegisterFormFields({
 }: RegisterFormFieldsProps) {
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
   const tokenHelpUrl = useIssueTrackerTokenHelpUrl();
-  const showJiraCloudEmail = useJiraCloudRequiresBasicAuthEmail();
+  const isJiraCloud = issueTrackerProviderKind === 'jira-cloud';
   const showTrackerOrgId = issueTrackerRequiresExternalOrgId(issueTrackerProviderKind);
   const title = onboardingMode
     ? t('productAuth.register.onboardingTitle')
@@ -116,54 +113,58 @@ export function RegisterFormFields({
               />
             </div>
           ) : null}
-          {showJiraCloudEmail ? (
-            <JiraCloudEmailField
-              id="reg-jira-email"
-              value={jiraEmail}
-              onChange={onJiraEmailChange}
-            />
-          ) : null}
-          <div>
-            <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              htmlFor="reg-tracker-token"
-            >
-              {translateIssueTrackerProviderMessage(
-                t,
-                issueTrackerProviderKind,
-                'auth.setup.tokenLabel'
-              )}
-            </label>
-            <div className="mt-1">
-              <PasswordInput
-                autoComplete="off"
-                id="reg-tracker-token"
-                placeholder={translateIssueTrackerProviderMessage(
-                  t,
-                  issueTrackerProviderKind,
-                  'auth.setup.tokenPlaceholder'
-                )}
-                required
-                value={token}
-                onChange={(e) => onTokenChange(e.target.value)}
-              />
+          {isJiraCloud ? (
+            <div className="space-y-2">
+              <AtlassianOAuthConnectButton returnPath="/register?next=/admin" />
+              {atlassianConnected ? (
+                <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                  {t('auth.setup.atlassianConnectedHint')}
+                </p>
+              ) : null}
             </div>
-            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              {t('auth.setup.getTokenPrefix')}{' '}
-              <a
-                className="font-semibold text-amber-600 hover:underline dark:text-amber-400"
-                href={tokenHelpUrl}
-                rel="noopener noreferrer"
-                target="_blank"
+          ) : (
+            <div>
+              <label
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                htmlFor="reg-tracker-token"
               >
                 {translateIssueTrackerProviderMessage(
                   t,
                   issueTrackerProviderKind,
-                  'auth.setup.oauthLink'
+                  'auth.setup.tokenLabel'
                 )}
-              </a>
-            </p>
-          </div>
+              </label>
+              <div className="mt-1">
+                <PasswordInput
+                  autoComplete="off"
+                  id="reg-tracker-token"
+                  placeholder={translateIssueTrackerProviderMessage(
+                    t,
+                    issueTrackerProviderKind,
+                    'auth.setup.tokenPlaceholder'
+                  )}
+                  required
+                  value={token}
+                  onChange={(e) => onTokenChange(e.target.value)}
+                />
+              </div>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                {t('auth.setup.getTokenPrefix')}{' '}
+                <a
+                  className="font-semibold text-amber-600 hover:underline dark:text-amber-400"
+                  href={tokenHelpUrl}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {translateIssueTrackerProviderMessage(
+                    t,
+                    issueTrackerProviderKind,
+                    'auth.setup.oauthLink'
+                  )}
+                </a>
+              </p>
+            </div>
+          )}
           {error ? (
             <div
               className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/45 dark:text-red-200"
@@ -172,7 +173,12 @@ export function RegisterFormFields({
               {error}
             </div>
           ) : null}
-          <Button className="w-full" disabled={loading} type="submit" variant="primary">
+          <Button
+            className="w-full"
+            disabled={loading || (isJiraCloud && !token.trim())}
+            type="submit"
+            variant="primary"
+          >
             {loading ? t('productAuth.register.submitLoading') : submitLabel}
           </Button>
         </form>

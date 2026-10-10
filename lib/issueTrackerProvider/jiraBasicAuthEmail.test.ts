@@ -10,10 +10,11 @@ import {
 } from './jiraBasicAuthEmail';
 
 describe('isJiraCloudHost', () => {
-  it('detects Atlassian Cloud sites', () => {
+  it('detects Atlassian Cloud sites and OAuth gateway', () => {
     expect(isJiraCloudHost('https://example.atlassian.net/rest/api/3')).toBe(true);
     expect(isJiraCloudHost('https://example.atlassian.net')).toBe(true);
     expect(isJiraCloudHost('example.atlassian.net')).toBe(true);
+    expect(isJiraCloudHost('https://api.atlassian.com/ex/jira/cloud-1/rest/api/3')).toBe(true);
   });
 
   it('rejects Data Center and empty values', () => {
@@ -24,7 +25,7 @@ describe('isJiraCloudHost', () => {
 });
 
 describe('jiraCloudRequiresBasicAuthEmail', () => {
-  it('is required only for jira-cloud', () => {
+  it('is required only for Jira Cloud org API tokens', () => {
     expect(jiraCloudRequiresBasicAuthEmail('jira-cloud')).toBe(true);
     expect(jiraCloudRequiresBasicAuthEmail('jira-onprem')).toBe(false);
     expect(jiraCloudRequiresBasicAuthEmail('tracker')).toBe(false);

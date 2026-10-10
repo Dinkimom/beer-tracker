@@ -24,9 +24,11 @@ interface OnPremFirstUserInsertInput {
 }
 
 interface RegisterOnPremFirstUserInput {
+  cloudId?: string;
   displayName: string;
   email: string;
   encryptedTrackerToken: Buffer;
+  /** @deprecated Jira Cloud OAuth uses cloudId. */
   jiraBasicAuthEmail?: string;
   orgName: string;
   trackerOrgId: string;
@@ -133,7 +135,7 @@ async function runOnPremFirstUserTransaction(input: RegisterOnPremFirstUserInput
     buildDefaultTrackerIntegrationStored(0)
   );
   settings = mergeOrganizationSettingsIssueTrackerPatch(settings, {
-    basicAuthEmail: input.jiraBasicAuthEmail,
+    cloudId: input.cloudId,
     provider: getIssueTrackerProviderKind(),
   });
   const client = await pool.connect();

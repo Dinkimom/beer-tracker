@@ -3,6 +3,11 @@ import type { SprintInfo, SprintListItem } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
 import {
+  axiosErrorStatusAndDetails,
+  throwIfJiraAgileAuthError,
+} from './jiraAgileAuthError';
+import { isJiraCloudHost } from './jiraBasicAuthEmail';
+import {
   jiraAgileBoardSprintsUrl,
   jiraAgileSprintByIdUrl,
   jiraAgileSprintCreateUrl,
@@ -117,7 +122,9 @@ async function fetchAgileSprintRows(
       }
       startAt += rows.length;
     }
-  } catch {
+  } catch (error) {
+    const { details, status } = axiosErrorStatusAndDetails(error);
+    throwIfJiraAgileAuthError({ boardId, details, status, url });
     return [];
   }
   return out;
@@ -128,7 +135,7 @@ async function fetchGreenhopperSprintRows(
   boardId: number
 ): Promise<unknown[]> {
   const baseUrl = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
-  if (!baseUrl) {
+  if (!baseUrl || isJiraCloudHost(baseUrl)) {
     return [];
   }
   try {
@@ -340,9 +347,9 @@ function isSprintWriteFallbackError(error: unknown): boolean {
   return status === 400 || status === 404 || status === 405;
 }
 
+/** Soft-fail GreenHopper → Agile; Cloud OAuth often returns 401/403 for GreenHopper. */
 function isGreenhopperFallbackError(error: unknown): boolean {
-  const status = httpResponseStatus(error);
-  return status != null && status !== 401 && status !== 403;
+  return httpResponseStatus(error) != null;
 }
 
 async function applyJiraSprintState(
@@ -430,7 +437,8 @@ async function tryWriteGreenhopperSprintState(
   state: JiraSprintAgileState,
   boardId: number | undefined
 ): Promise<boolean> {
-  if (boardId == null) {
+  // GreenHopper is not available on Atlassian OAuth gateway — go straight to Agile.
+  if (boardId == null || isJiraCloudHost(baseUrl)) {
     return false;
   }
   if (state === 'active') {

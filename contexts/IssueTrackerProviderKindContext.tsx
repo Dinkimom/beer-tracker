@@ -12,7 +12,6 @@ import {
   issueTrackerTokenHelpUrl,
   issueTrackerWebBaseFromApiUrl,
 } from '@/lib/issueTrackerProvider/issueTrackerUi';
-import { jiraCloudRequiresBasicAuthEmail } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
 
 const DEFAULT_KIND: IssueTrackerProviderKind = 'tracker';
 const DEFAULT_ISSUE_WEB_BASE_URL = issueTrackerWebBaseFromApiUrl(DEFAULT_KIND);
@@ -61,10 +60,6 @@ export function useIssueTrackerProviderCapabilities(): IssueTrackerProviderCapab
 
 export function useIssueTrackerTokenHelpUrl(): string {
   return useContext(IssueTrackerProviderKindContext).tokenHelpUrl;
-}
-
-export function useJiraCloudRequiresBasicAuthEmail(): boolean {
-  return jiraCloudRequiresBasicAuthEmail(useContext(IssueTrackerProviderKindContext).kind);
 }
 
 export function useTrackerWebUrlContext(): TrackerWebUrlContext {

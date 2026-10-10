@@ -16,6 +16,7 @@ import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
+      cloudId?: unknown;
       email?: unknown;
       organizationId?: unknown;
       token?: unknown;
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (tokenResult instanceof NextResponse) {
       return tokenResult;
     }
-    const { cleanedToken, email } = tokenResult;
+    const { cleanedToken, cloudId } = tokenResult;
 
     const rawHeader = request.headers.get(TENANT_ORG_HEADER)?.trim() ?? '';
     const rawBodyOrg =
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       request,
       body.organizationId,
       cleanedToken,
-      email
+      cloudId
     );
     if (clientResult instanceof NextResponse) {
       return clientResult;

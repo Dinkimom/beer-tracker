@@ -9,7 +9,10 @@ import {
   jiraCloudRequiresBasicAuthEmail,
   resolveJiraBasicAuthEmail,
 } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
-import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/settings';
+import {
+  readIssueTrackerBasicAuthEmail,
+  readIssueTrackerCloudId,
+} from '@/lib/issueTrackerProvider/settings';
 import { readIssueTrackerExternalOrgId } from '@/lib/issueTrackerProvider/storageAliases';
 import { enqueueInitialFullSync } from '@/lib/sync/queue';
 import { isSyncRedisConfigured } from '@/lib/sync/redisConnection';
@@ -20,7 +23,10 @@ import {
 } from '@/lib/trackerCredentialsValidation';
 
 import { findOrganizationById } from './organizationRepository';
-import { getDecryptedOrganizationTrackerToken } from './organizationSecretsRepository';
+import {
+  getDecryptedOrganizationTrackerSecretRaw,
+  getDecryptedOrganizationTrackerToken,
+} from './organizationSecretsRepository';
 
 export function resolveDefaultTrackerApiUrl(): string {
   return getTrackerConfig().apiUrl;
@@ -97,6 +103,17 @@ export function normalizeTrackerApiUrlOrError(
   }
 }
 
+export function resolveTrackerConnectionCloudId(input: {
+  cloudId?: string;
+  settingsRoot: unknown;
+}): string {
+  const fromInput = input.cloudId?.trim() ?? '';
+  if (fromInput) {
+    return fromInput;
+  }
+  return readIssueTrackerCloudId(input.settingsRoot);
+}
+
 export function resolveTrackerConnectionEmail(input: {
   jiraEmail?: string;
   oauthToken?: string;
@@ -131,7 +148,7 @@ export async function validateTrackerOAuthOrError(input: {
   const validated = await validateIssueTrackerCredentials({
     apiUrl: input.apiUrl,
     email: input.email,
-    oauthToken: input.oauthToken,
+    oauthToken: cleanOrganizationTrackerToken(input.oauthToken),
     orgId: input.orgId,
   });
   if (!validated.ok) {
@@ -150,12 +167,14 @@ export async function resolveOAuthTokenForConnect(
 
   let stored: string | null;
   try {
-    stored = await getDecryptedOrganizationTrackerToken(orgId);
+    stored =
+      (await getDecryptedOrganizationTrackerSecretRaw(orgId)) ??
+      (await getDecryptedOrganizationTrackerToken(orgId));
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Не удалось прочитать сохранённый токен';
     return { error: msg, ok: false, status: 500 };
   }
-  const s = stored?.replace(/\s+/g, '').trim() ?? '';
+  const s = stored?.trim() ?? '';
   if (!s) {
     return {
       error: 'Укажите OAuth-токен при первом подключении или смените токен',

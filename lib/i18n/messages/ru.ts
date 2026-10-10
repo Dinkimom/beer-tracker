@@ -310,7 +310,7 @@ export const ruMessages = {
       loadFailedPrefix: 'Ошибка загрузки:',
       genericLoad: 'Не удалось загрузить данные',
       retry: 'Перезагрузить',
-      retryHint: 'Проверьте соединение и нажмите «Перезагрузить». В установленном приложении это заменяет обновление страницы в браузере.',
+      retryHint: 'Проверьте соединение и нажмите «Перезагрузить».',
     },
     access: {
       plannerDenied: 'Нет доступа к планеру: вас еще не назначили в команду. Обратитесь к администратору организации.',
@@ -621,11 +621,11 @@ export const ruMessages = {
       onboardingTitle: 'Первичная настройка компании',
       onboardingTagline: {
         tracker:
-          'Создайте первую организацию. Email администратора система возьмёт из профиля Яндекс Трекера по токену.',
+          'Создайте первую организацию. Подключите токен администратора Яндекс Трекера.',
         'jira-onprem':
           'Создайте первую организацию. Укажите персональный токен доступа администратора, который подключает Jira.',
         'jira-cloud':
-          'Создайте первую организацию. Укажите email Atlassian-аккаунта, с которого создан API-токен, затем вставьте токен.',
+          'Создайте первую организацию. Подключите Atlassian от имени администратора, который связывает Jira.',
       },
       onboardingSubmit: 'Создать администратора и организацию',
       closedTitle: 'Регистрация закрыта',
@@ -1446,11 +1446,10 @@ export const ruMessages = {
     },
     participants: {
       addTitle: 'Добавить участника',
-      selectPlaceholder: 'Поиск в реестре по имени или email',
+      selectPlaceholder: 'Поиск в реестре по имени',
       addButton: 'Добавить',
       adding: 'Добавляем…',
       alreadyInTeam: 'Этот пользователь уже в команде',
-      noEmailCannotAdd: 'У выбранного пользователя нет email — добавить в команду нельзя',
       listTitle: 'Участники',
       showAll: 'Показать всех',
       hideAll: 'Скрыть всех',
@@ -1850,7 +1849,7 @@ export const ruMessages = {
       },
       description: {
         jira:
-          'URL сайта Jira задаётся на этом инстансе. Сохраните персональный токен доступа, чтобы ходить в API. Проверить можно до сохранения; секреты на сервере хранятся в зашифрованном виде.',
+          'URL сайта Jira задаётся на этом инстансе. Для синхронизации и каталога полей сохраните email Atlassian-аккаунта и API-токен. Пользователи входят через Connect with Atlassian. Проверить можно до сохранения; секреты на сервере хранятся в зашифрованном виде.',
         'yandex-tracker':
           'Cloud Organization ID и OAuth-токен нужны вместе: по ним проверяется доступ к API. Проверить можно до сохранения; секреты на сервере хранятся в зашифрованном виде.',
       },
@@ -2153,9 +2152,7 @@ export const ruMessages = {
       saved: 'Сохранено',
       genericError: 'Ошибка',
       userAddedToTeam: 'Пользователь добавлен в команду',
-      noEmailCannotInvite: 'Нет email — пригласить нельзя',
-      noTrackerIdForDirectAdd: 'Выберите пользователя из {trackerGenitive} (с id), чтобы добавить в команду',
-      inviteSendFailed: 'Не удалось отправить приглашение',
+      noTrackerIdForDirectAdd: 'Выберите пользователя из {trackerGenitive} (с id), чтобы добавить в команду',      inviteSendFailed: 'Не удалось отправить приглашение',
       inviteSent: 'Приглашение отправлено',
       removeMemberConfirm: 'Удалить «{label}» из команды?',
       removeMemberFallback: 'этого участника',
@@ -2191,8 +2188,7 @@ export const ruMessages = {
         'Поиск по сотрудникам организации. В списке — те, кто ещё не состоит в этой команде.',
       userTitle: 'Пользователь',
       teamRoleTitle: 'Роль в команде',
-      registrySearchPlaceholder: 'Поиск по имени или email',
-      addLoading: 'Добавление…',
+      registrySearchPlaceholder: 'Поиск по имени',      addLoading: 'Добавление…',
       addSubmit: 'Добавить в команду',
       noMembers: 'Участников нет.',
       tableStaff: 'Сотрудник',
@@ -2200,7 +2196,7 @@ export const ruMessages = {
       deleteSr: 'Удалить из команды',
     },
     teamMemberRow: {
-      noEmail: 'Нет email',
+      unnamed: 'Без имени',
       noPlannerAccessTitle: 'Назначьте доступ в разделе «Пользователи»',
       noPlannerAccess:
         'Нет доступа к планеру по этой команде — раздел «Пользователи».',
@@ -2302,14 +2298,12 @@ export const ruMessages = {
       inviteSubmitting: 'Добавление…',
       inviteSubmit: 'Добавить в систему',
       displayNameLabel: 'Имя',
-      emailLabel: 'Email',
-      emailEmpty: 'email: —',
       trackerIdLabel: 'ID в {trackerPrepositional}',
       trackerIdHint: 'Необязательно. uid Яндекс Трекера или Jira accountId — чтобы сопоставлять задачи.',
       trackerSearchLabel: 'Сотрудник в {trackerPrepositional}',
-      trackerSearchPlaceholder: 'Поиск по имени, логину или email',
+      trackerSearchPlaceholder: 'Поиск по имени или логину',
       trackerSearchHint:
-        'Мастер-данные — в {trackerPrepositional}. Найдите человека по имени, логину или email; имя и идентификатор подставятся из результата.',
+        'Мастер-данные — в {trackerPrepositional}. Найдите человека по имени или логину; имя и идентификатор подставятся из результата.',
       trackerUserRequired: 'Выберите сотрудника в {trackerPrepositional}',
       teamsLine: 'Команды: {teams}',
       edit: 'Изменить',
@@ -2319,10 +2313,9 @@ export const ruMessages = {
       updatedSuccess: 'Пользователь сохранён',
       updateFailed: 'Не удалось сохранить пользователя',
       emptyState: 'В организации пока нет пользователей.',
-      listSearchPlaceholder: 'Поиск по ФИО или email…',
+      listSearchPlaceholder: 'Поиск по ФИО или ID…',
       listSearchEmpty: 'Никого не найдено. Измените запрос.',
       loadListFailed: 'Не удалось загрузить список',
-      noTrackerEmail: 'У выбранного сотрудника нет email в {trackerPrepositional}',
       selectTeam: 'Выберите команду',
       inviteSendFailed: 'Не удалось добавить пользователя',
       inviteCreatedSuccess: 'Пользователь добавлен и может войти в продукт.',
@@ -2339,7 +2332,7 @@ export const ruMessages = {
       orgRoleTeamLead: 'Тимлид',
       orgRoleOrgAdmin: 'Админ',
       deleteUserMessage:
-        'Удалить пользователя {email}? Учётная запись будет удалена, войти в систему этим email станет невозможно.',
+        'Удалить пользователя {name}? Учётная запись будет удалена, войти в систему станет невозможно.',
       deleteUserTitle: 'Удалить пользователя',
       userDeleteFailed: 'Не удалось удалить пользователя',
       userDeleted: 'Пользователь удалён',
@@ -2351,7 +2344,7 @@ export const ruMessages = {
       cannotChangeOwnRoleTitle:
         'Нельзя изменить свою роль в организации — попросите другого администратора',
       savingOrgRoleTitle: 'Сохранение…',
-      orgRoleSelectTitle: 'Роль в организации: {email}',
+      orgRoleSelectTitle: 'Роль в организации: {name}',
       inSystemStatus: 'В системе',
       assignSelectTeam: 'Выберите команду',
       assignFailed: 'Не удалось назначить',
@@ -2359,7 +2352,7 @@ export const ruMessages = {
       teamChangeFailed: 'Не удалось обновить команду',
       teamChangeSuccess: 'Команда обновлена',
       noTeams: 'Нет команд',
-      assignTeamAria: 'Команда для {email}',
+      assignTeamAria: 'Команда для {name}',
       teamInactiveSuffix: ' (неактивна)',
       teamDisabledInSelect: ' (выкл.)',
       assignButton: 'Назначить',
@@ -2369,7 +2362,6 @@ export const ruMessages = {
   auth: {
     setup: {
       title: 'Настройка доступа',
-      appTitle: 'Трекер',
       welcome: 'Добро пожаловать!',
       sessionLoading: 'Загрузка…',
       description: 'Укажите токен и организацию для работы с {trackerInstrumental}.',
@@ -2380,9 +2372,10 @@ export const ruMessages = {
           'Для работы нужен OAuth токен. Он хранится только в вашем браузере и никуда не передаётся.',
         'jira-onprem':
           'Для работы нужен персональный токен доступа. Он хранится в браузере и уходит только на этот инстанс.',
-        'jira-cloud':
-          'Укажите email Atlassian-аккаунта и API-токен. Они хранятся в браузере.',
+        'jira-cloud': 'Авторизационные данные хранятся только в вашем браузере',
       },
+      atlassianConnectButton: 'Продолжить с Atlassian',
+      atlassianConnectedHint: 'Atlassian подключён — выполняем вход…',
       jiraCloudEmailLabel: 'Email Atlassian-аккаунта',
       jiraCloudEmailPlaceholder: 'you@example.com',
       jiraCloudEmailHint:
@@ -2400,7 +2393,7 @@ export const ruMessages = {
       showToken: 'Показать токен',
       getTokenPrefix: 'Получить токен:',
       oauthLink: {
-        jira: 'API-токен в аккаунте Atlassian',
+        jira: 'Продолжить с Atlassian',
         'yandex-tracker': 'Яндекс ID OAuth',
       },
       validatingToken: 'Проверка токена...',

@@ -16,6 +16,7 @@ import {
   jiraAgileIssueUrl,
   jiraAgileSprintCreateUrl,
   jiraAgileSprintIssuesUrl,
+  jiraApiSiteRoot,
   jiraGreenhopperRapidViewByIdUrl,
   jiraGreenhopperRapidViewsListUrl,
   jiraGreenhopperSprintCompleteUrl,
@@ -34,6 +35,14 @@ function apiWithGet(get: ReturnType<typeof vi.fn>) {
 }
 
 describe('jira board urls', () => {
+  it('keeps OAuth /ex/jira/{cloudId} on Agile URLs', () => {
+    const oauthBase = 'https://api.atlassian.com/ex/jira/cloud-1/rest/api/3';
+    expect(jiraApiSiteRoot(oauthBase)).toBe('https://api.atlassian.com/ex/jira/cloud-1');
+    expect(jiraAgileBoardSprintsUrl(oauthBase, 113)).toBe(
+      'https://api.atlassian.com/ex/jira/cloud-1/rest/agile/1.0/board/113/sprint'
+    );
+  });
+
   it('maps rest/api/2 to Agile and GreenHopper Rapid View', () => {
     expect(jiraAgileBoardListUrl('https://jira.example.com/rest/api/2')).toBe(
       'https://jira.example.com/rest/agile/1.0/board'

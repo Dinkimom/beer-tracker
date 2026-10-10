@@ -15,7 +15,14 @@ describe('userRepository', () => {
 
   it('findUserById reads beer_tracker.staff by uuid', async () => {
     vi.mocked(query).mockResolvedValue({
-      rows: [{ created_at: new Date(), email: 'a@example.com', id: 'uid-1' }],
+      rows: [
+        {
+          created_at: new Date(),
+          display_name: 'Ada',
+          email: 'a@example.com',
+          id: 'uid-1',
+        },
+      ],
     } as never);
 
     const row = await findUserById('11111111-1111-4111-8111-111111111111');

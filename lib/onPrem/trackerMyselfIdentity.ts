@@ -49,7 +49,7 @@ export function trackerIdentityCandidatesFromMyself(data: unknown): string[] {
     return [];
   }
   const o = data as Record<string, unknown>;
-  return parseTrackerUidCandidates(o.uid ?? o.trackerUid ?? o.id);
+  return parseTrackerUidCandidates(o.uid ?? o.trackerUid ?? o.accountId ?? o.id);
 }
 
 function combinedGivenAndFamilyName(data: Record<string, unknown>): string | null {

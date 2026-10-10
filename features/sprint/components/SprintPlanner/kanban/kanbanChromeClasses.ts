@@ -8,7 +8,7 @@ export const KANBAN_COLUMN_HEADER_GLASS =
   'kanban-column-glass rounded-t-xl rounded-b-none border-x border-t border-b-0 border-gray-200 dark:border-white/10';
 
 /** Тело колонки под sticky-шапкой: верх плоский. */
-export const KANBAN_COLUMN_GLASS =
+const KANBAN_COLUMN_GLASS =
   'kanban-column-glass rounded-b-xl rounded-t-none border-x border-b border-t-0 border-gray-200 dark:border-white/10';
 
 export const KANBAN_COLUMN_IDLE = `${KANBAN_COLUMN_GLASS}`;

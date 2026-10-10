@@ -90,15 +90,10 @@ export function useAdminTeamDetailMembers({
       invitedTeamRole: "team_lead" | "team_member",
       trackerContext?: { display_name: string; tracker_user_id: string } | null,
     ) => {
-      const trimmed = email.trim();
-      if (!trimmed) {
-        toast.error(t("admin.teamDetail.noEmailCannotInvite"));
-        return;
-      }
       setInviteBusyStaffId(staffId);
       try {
         await inviteOnPremTeamMember({
-          email: trimmed,
+          email: email.trim(),
           invitedTeamRole,
           orgId,
           setMembers,

@@ -5,7 +5,8 @@
 
 import axios from 'axios';
 
-import { TRACKER_EMAIL_HEADER } from './issueTrackerProvider/jiraBasicAuthEmail';
+import { ensureFreshAtlassianAccessToken } from './atlassianOAuth/browserRefresh';
+import { TRACKER_CLOUD_ID_HEADER } from './atlassianOAuth/constants';
 import { getBrowserRealtimeClientId } from './realtime/sprintRealtimeClientId';
 import { REALTIME_CLIENT_ID_HEADER } from './realtime/sprintRealtimeConstants';
 import { parseRegistryUuidString } from './registryUuidString';
@@ -14,7 +15,8 @@ import {
   TENANT_ORG_HEADER,
 } from './tenantHttpConstants';
 import {
-  getEffectiveTrackerEmailForBrowser,
+  getEffectiveTrackerCloudIdForBrowser,
+  getEffectiveTrackerRefreshTokenForBrowser,
   getEffectiveTrackerTokenForBrowser,
 } from './trackerTokenStorage';
 
@@ -38,9 +40,9 @@ function applyBeerTrackerBrowserRequestHeaders(config: Parameters<
     config.headers['X-Tracker-Token'] = trackerToken;
   }
 
-  const trackerEmail = getEffectiveTrackerEmailForBrowser();
-  if (trackerEmail) {
-    config.headers[TRACKER_EMAIL_HEADER] = trackerEmail;
+  const cloudId = getEffectiveTrackerCloudIdForBrowser();
+  if (cloudId) {
+    config.headers[TRACKER_CLOUD_ID_HEADER] = cloudId;
   }
 
   const orgId = parseRegistryUuidString(
@@ -69,12 +71,15 @@ function redirectBeerTrackerApiUnauthorized(): void {
 }
 
 beerTrackerApi.interceptors.request.use(
-  (config) => {
+  async (config) => {
     if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
       config.headers.delete('Content-Type');
     }
     if (typeof window !== 'undefined') {
       try {
+        if (getEffectiveTrackerRefreshTokenForBrowser()) {
+          await ensureFreshAtlassianAccessToken(false);
+        }
         applyBeerTrackerBrowserRequestHeaders(config);
       } catch (error) {
         console.error('[beerTrackerApi] Error reading token from localStorage:', error);
@@ -89,8 +94,25 @@ beerTrackerApi.interceptors.request.use(
 
 beerTrackerApi.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const status = error?.response?.status as number | undefined;
+    const config = error?.config as
+      | (typeof error.config & { _atlassianRetry?: boolean })
+      | undefined;
+    if (
+      status === 401 &&
+      typeof window !== 'undefined' &&
+      config &&
+      !config._atlassianRetry &&
+      getEffectiveTrackerRefreshTokenForBrowser()
+    ) {
+      const refreshed = await ensureFreshAtlassianAccessToken(true);
+      if (refreshed) {
+        config._atlassianRetry = true;
+        applyBeerTrackerBrowserRequestHeaders(config);
+        return beerTrackerApi.request(config);
+      }
+    }
     if (status === 401 && typeof window !== 'undefined') {
       redirectBeerTrackerApiUnauthorized();
     }

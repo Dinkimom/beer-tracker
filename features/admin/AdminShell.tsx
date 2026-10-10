@@ -44,13 +44,19 @@ const NAV_ITEMS: NavItem[] = [
 
 interface AdminShellProps {
   children: ReactNode;
-  email: string;
+  displayName: string;
   exporterEnabled: boolean;
   isSuperAdmin: boolean;
   orgs: UserOrganizationSummary[];
 }
 
-export function AdminShell({ children, email, exporterEnabled, isSuperAdmin, orgs }: AdminShellProps) {
+export function AdminShell({
+  children,
+  displayName,
+  exporterEnabled,
+  isSuperAdmin,
+  orgs,
+}: AdminShellProps) {
   const { has, t } = useI18n();
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -119,7 +125,7 @@ export function AdminShell({ children, email, exporterEnabled, isSuperAdmin, org
 
   const sidebarFooter = (
     <AdminShellSidebarFooter
-      email={email}
+      displayName={displayName}
       logoutAria={t('admin.shell.logoutAria')}
       logoutTitle={t('admin.shell.logout')}
       roleLine={roleLine}

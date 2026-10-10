@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { YANDEX_OAUTH_CLIENT_ID } from '@/constants';
 
 import {
-  JIRA_CLOUD_API_TOKEN_HELP_URL,
+  JIRA_CLOUD_OAUTH_START_PATH,
   isHttpUrlOnTrackerWebBase,
   issueTrackerIssueWebUrl,
   issueTrackerIssueWebUrlFromBase,
@@ -79,7 +79,7 @@ describe('issueTrackerUi', () => {
       'https://jira.example.com/secure/ViewProfile.jspa'
     );
     expect(issueTrackerTokenHelpUrl('jira-cloud', 'https://example.atlassian.net/rest/api/3')).toBe(
-      JIRA_CLOUD_API_TOKEN_HELP_URL
+      JIRA_CLOUD_OAUTH_START_PATH
     );
     expect(
       issueTrackerTokenHelpUrl('jira-onprem', 'https://jira.example.com/jira/rest/api/2')
@@ -103,6 +103,9 @@ describe('issueTrackerUi', () => {
     expect(jiraSiteBaseFromTrackerApiUrl('https://jira.example.com/jira/rest/api/2')).toBe(
       'https://jira.example.com/jira'
     );
+    expect(
+      jiraSiteBaseFromTrackerApiUrl('https://api.atlassian.com/ex/jira/cloud-1/rest/api/3')
+    ).toBeNull();
     expect(
       issueTrackerWebBaseFromApiUrl('jira-onprem', 'https://jira.example.com/jira/rest/api/2')
     ).toBe('https://jira.example.com/jira');
