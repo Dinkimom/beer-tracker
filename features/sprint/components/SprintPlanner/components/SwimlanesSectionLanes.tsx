@@ -322,8 +322,15 @@ export function SwimlanesSectionLanes({
             data-swimlane-arrow-clip
             style={{ zIndex: ZIndex.contentOverlay }}
           >
-            {/* Общий слой стрелок под z-index закреплённой строки. */}
-            <TaskArrows {...taskArrowProps} clipToRow />
+            {/*
+              Копия только связей этой строки: общий слой лежит под sticky z-index
+              и не виден между карточками; чужие линии при скролле не рисуем поверх стекла.
+            */}
+            <TaskArrows
+              {...taskArrowProps}
+              clipToAssigneeId={developer.id}
+              clipToRow
+            />
           </div>
         ) : null}
       </div>

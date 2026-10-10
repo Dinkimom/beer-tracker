@@ -18,14 +18,10 @@ import { bindLinkDeleteHandler } from '@/features/swimlane/utils/task-arrows/lin
 import { buildSwimlaneSegmentArrowLinks } from '@/features/swimlane/utils/task-arrows/swimlaneSegmentArrowHelpers';
 import {
   buildTasksMapById,
-  filterTaskLinksByPlacedEndpoints,
-  filterTaskLinksByVisibleDevelopers,
-  filterTaskLinksForActiveDrag,
-  filterTaskLinksForSegmentEdit,
   getSwimlaneTaskPositionsSignature,
   getSwimlaneVisibleAssigneesSignature,
-  mergeTaskLinksWithDevQa,
   partitionTaskArrowLinks,
+  resolveVisibleTaskArrowLinks,
 } from '@/features/swimlane/utils/task-arrows/taskArrowsHelpers';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { DELAYS } from '@/utils/constants';
@@ -40,6 +36,8 @@ import { TaskSegmentArrowLinks } from './TaskSegmentArrowLinks';
 
 interface TaskArrowsProps {
   activeTaskId?: string | null;
+  /** При `clipToRow` — только связи, касающиеся задач этой строки. */
+  clipToAssigneeId?: string | null;
   /**
    * Копия путей внутри закреплённой строки: общий слой стрелок лежит под её
    * stacking context и не виден между карточками этой строки.
@@ -78,6 +76,7 @@ export const TaskArrows = observer(function TaskArrows({
   linkingSessionActive = false,
   linkToolArmed = false,
   segmentEditTaskId = null,
+  clipToAssigneeId = null,
   clipToRow = false,
   rowsLayoutKey = '',
   visibleDeveloperIds,
@@ -97,21 +96,17 @@ export const TaskArrows = observer(function TaskArrows({
   const visibleAssigneesSignature = getSwimlaneVisibleAssigneesSignature(visibleDeveloperIds);
 
   const tasksMap = buildTasksMapById(tasks);
-
-  const allLinks = mergeTaskLinksWithDevQa(taskLinks, qaTasksMap, taskPositions);
-
-  let visibleLinks = filterTaskLinksByPlacedEndpoints(allLinks, taskPositions);
-  visibleLinks = filterTaskLinksForActiveDrag(visibleLinks, activeTaskId);
-  visibleLinks = filterTaskLinksForSegmentEdit(visibleLinks, segmentEditTaskId);
-
-  if (visibleDeveloperIds) {
-    visibleLinks = filterTaskLinksByVisibleDevelopers(
-      visibleLinks,
-      tasksMap,
-      taskPositions,
-      visibleDeveloperIds
-    );
-  }
+  const visibleLinks = resolveVisibleTaskArrowLinks({
+    activeTaskId,
+    clipToAssigneeId,
+    clipToRow,
+    qaTasksMap,
+    segmentEditTaskId,
+    taskLinks,
+    taskPositions,
+    tasksMap,
+    visibleDeveloperIds,
+  });
 
   const visibleLinkIdsKey = visibleLinks.map((link) => link.id).join('|');
   useEffect(() => {
@@ -140,10 +135,12 @@ export const TaskArrows = observer(function TaskArrows({
     return ids.size > 0 ? ids : null;
   }, [activeTaskId, segmentEditTaskId]);
 
+  const clipAssigneeSet =
+    clipToRow && clipToAssigneeId ? new Set([clipToAssigneeId]) : null;
   const segmentArrowLinks = buildSwimlaneSegmentArrowLinks(taskPositions, {
     excludeTaskIds: excludeSegmentArrowTaskIds,
     tasksMap,
-    visibleDeveloperIds,
+    visibleDeveloperIds: clipAssigneeSet ?? visibleDeveloperIds,
   });
 
   const effectiveHoveredLinkId = linkModeActive ? hoveredLinkId : null;
@@ -211,15 +208,14 @@ export const TaskArrows = observer(function TaskArrows({
           <TaskArrowLink {...linkProps} link={hoveredLink} />
         </TaskArrowLayer>
       )}
-      {linkingFromTaskId != null ? (
+      {linkingFromTaskId != null && !clipToRow ? (
         <SwimlaneLinkPreviewArrow
           cursorPos={cursorPos}
           linkingFromTaskId={linkingFromTaskId}
           previewTargetId={previewTargetId}
-          suppressCursorAnchor={clipToRow}
         />
       ) : null}
-      {handleDeleteLink ? (
+      {handleDeleteLink && !clipToRow ? (
         <LinkArrowDeleteHandles
           handles={deleteHandles}
           hoveredLinkId={effectiveHoveredLinkId}

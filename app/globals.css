@@ -924,6 +924,19 @@ textarea:focus-visible,
   background-color: transparent !important;
 }
 
+/*
+ * Общий слой стрелок лежит под sticky z-index закреплённой строки и иначе
+ * просвечивает сквозь полупрозрачное стекло при скролле. Плотнее вуаль —
+ * чужие линии не читаются, блюр контента снизу сохраняется.
+ */
+.planner-pinned-lane .planner-pinned-lane-glass {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.dark .planner-pinned-lane .planner-pinned-lane-glass {
+  background-color: rgb(31 41 55 / 0.92) !important;
+}
+
 /* Нижняя линия ячейки исполнителя — в пикселе border-b строки.
    Цвет берётся из токена, чтобы в тёмной теме не оставаться светлой. */
 .swimlane-assignee-row-line {

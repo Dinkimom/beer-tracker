@@ -139,6 +139,64 @@ export function filterTaskLinksByVisibleDevelopers(
   });
 }
 
+/**
+ * Копия стрелок в закреплённой строке: только связи, у которых хотя бы один конец
+ * на этой строке. Иначе чужие линии, пересекающие sticky-полосу при скролле,
+ * рисуются поверх стекла строки.
+ */
+export function filterTaskLinksTouchingAssignee(
+  links: TaskLink[],
+  tasksMap: Map<string, Task>,
+  taskPositions: Map<string, TaskPosition> | undefined,
+  assigneeId: string
+): TaskLink[] {
+  return links.filter((link) => {
+    const fromAssignee =
+      taskPositions?.get(link.fromTaskId)?.assignee || tasksMap.get(link.fromTaskId)?.assignee;
+    const toAssignee =
+      taskPositions?.get(link.toTaskId)?.assignee || tasksMap.get(link.toTaskId)?.assignee;
+    return fromAssignee === assigneeId || toAssignee === assigneeId;
+  });
+}
+
+export function resolveVisibleTaskArrowLinks(input: {
+  activeTaskId: string | null;
+  clipToAssigneeId: string | null;
+  clipToRow: boolean;
+  qaTasksMap: Map<string, Task> | undefined;
+  segmentEditTaskId: string | null;
+  taskLinks: TaskLink[];
+  taskPositions: Map<string, TaskPosition> | undefined;
+  tasksMap: Map<string, Task>;
+  visibleDeveloperIds: Set<string> | undefined;
+}): TaskLink[] {
+  const allLinks = mergeTaskLinksWithDevQa(
+    input.taskLinks,
+    input.qaTasksMap,
+    input.taskPositions
+  );
+  let visibleLinks = filterTaskLinksByPlacedEndpoints(allLinks, input.taskPositions);
+  visibleLinks = filterTaskLinksForActiveDrag(visibleLinks, input.activeTaskId);
+  visibleLinks = filterTaskLinksForSegmentEdit(visibleLinks, input.segmentEditTaskId);
+  if (input.visibleDeveloperIds) {
+    visibleLinks = filterTaskLinksByVisibleDevelopers(
+      visibleLinks,
+      input.tasksMap,
+      input.taskPositions,
+      input.visibleDeveloperIds
+    );
+  }
+  if (input.clipToRow && input.clipToAssigneeId) {
+    visibleLinks = filterTaskLinksTouchingAssignee(
+      visibleLinks,
+      input.tasksMap,
+      input.taskPositions,
+      input.clipToAssigneeId
+    );
+  }
+  return visibleLinks;
+}
+
 export function partitionTaskArrowLinks(
   visibleLinks: TaskLink[],
   hoveredLinkId: string | null,

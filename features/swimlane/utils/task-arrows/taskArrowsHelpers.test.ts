@@ -9,10 +9,12 @@ import {
   filterTaskLinksByVisibleDevelopers,
   filterTaskLinksForActiveDrag,
   filterTaskLinksForSegmentEdit,
+  filterTaskLinksTouchingAssignee,
   getSwimlaneTaskPositionsSignature,
   getSwimlaneVisibleAssigneesSignature,
   mergeTaskLinksWithDevQa,
   partitionTaskArrowLinks,
+  resolveVisibleTaskArrowLinks,
   TASK_ARROWS_DEV_QA_LINK_PREFIX,
 } from '@/features/swimlane/utils/task-arrows/taskArrowsHelpers';
 
@@ -169,6 +171,67 @@ describe('filterTaskLinksByVisibleDevelopers', () => {
     expect(
       filterTaskLinksByVisibleDevelopers(links, tasksMap, positions, visible)
     ).toHaveLength(0);
+  });
+});
+
+describe('filterTaskLinksTouchingAssignee', () => {
+  const tasksMap = buildTasksMapById([
+    task('t1', 'u1'),
+    task('t2', 'u2'),
+    task('t3', 'u3'),
+  ]);
+  const positions = new Map<string, TaskPosition>([
+    ['t1', pos('u1')],
+    ['t2', pos('u2')],
+    ['t3', pos('u3')],
+  ]);
+
+  it('keeps links with an endpoint on the assignee row', () => {
+    const links: TaskLink[] = [
+      { fromTaskId: 't1', id: '1', toTaskId: 't2' },
+      { fromTaskId: 't2', id: '2', toTaskId: 't3' },
+      { fromTaskId: 't1', id: '3', toTaskId: 't1' },
+    ];
+    expect(
+      filterTaskLinksTouchingAssignee(links, tasksMap, positions, 'u1').map((l) => l.id)
+    ).toEqual(['1', '3']);
+  });
+
+  it('drops links that only cross through the row geometrically', () => {
+    const links: TaskLink[] = [{ fromTaskId: 't2', id: '2', toTaskId: 't3' }];
+    expect(filterTaskLinksTouchingAssignee(links, tasksMap, positions, 'u1')).toEqual([]);
+  });
+});
+
+describe('resolveVisibleTaskArrowLinks', () => {
+  it('keeps only clip-row links that touch the pinned assignee', () => {
+    const tasksMap = buildTasksMapById([
+      task('t1', 'u1'),
+      task('t2', 'u2'),
+      task('t3', 'u3'),
+    ]);
+    const positions = new Map<string, TaskPosition>([
+      ['t1', pos('u1')],
+      ['t2', pos('u2')],
+      ['t3', pos('u3')],
+    ]);
+    const links: TaskLink[] = [
+      { fromTaskId: 't1', id: '1', toTaskId: 't2' },
+      { fromTaskId: 't2', id: '2', toTaskId: 't3' },
+    ];
+    expect(
+      resolveVisibleTaskArrowLinks({
+        activeTaskId: null,
+        clipToAssigneeId: 'u1',
+        clipToRow: true,
+        qaTasksMap: undefined,
+        segmentEditTaskId: null,
+        taskLinks: links,
+        taskPositions: positions,
+        tasksMap,
+        visibleDeveloperIds: new Set(['u1', 'u2', 'u3']),
+      }).map((link) => link.id)
+    ).toEqual(['1']);
   });
 });
 

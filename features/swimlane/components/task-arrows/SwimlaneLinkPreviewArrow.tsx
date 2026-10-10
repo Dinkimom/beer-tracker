@@ -21,8 +21,6 @@ interface SwimlaneLinkPreviewArrowProps {
   cursorPos: { x: number; y: number } | null;
   linkingFromTaskId: string;
   previewTargetId: string | null;
-  /** Копия внутри закреплённой строки использует якорь курсора общего слоя. */
-  suppressCursorAnchor?: boolean;
 }
 
 const PREVIEW_COLOR = '#60a5fa';
@@ -31,7 +29,6 @@ export function SwimlaneLinkPreviewArrow({
   cursorPos,
   linkingFromTaskId,
   previewTargetId,
-  suppressCursorAnchor = false,
 }: SwimlaneLinkPreviewArrowProps) {
   useXarrow();
   const redrawGeneration = useContext(SwimlaneArrowRedrawGenerationContext);
@@ -49,7 +46,7 @@ export function SwimlaneLinkPreviewArrow({
 
   return (
     <>
-      {cursorPos != null && !snapped && !suppressCursorAnchor ? (
+      {cursorPos != null && !snapped ? (
         <div
           className="pointer-events-none fixed h-px w-px"
           id={SWIMLANE_LINK_PREVIEW_CURSOR_ID}
