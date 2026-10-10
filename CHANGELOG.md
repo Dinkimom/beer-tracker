@@ -2,6 +2,18 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.7.2] — 2026-10-11
+
+### English
+
+- Fix planner task links overlapping pinned swimlane rows while scrolling: clip-layer arrows only for links that touch the pinned assignee; denser glass so the global arrow layer does not show through.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.7.2` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Исправление связей в планере поверх закреплённых строк при скролле: в clip-слое только связи, касающиеся задач этой строки; плотнее стекло, чтобы общий слой стрелок не просвечивал.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.7.2` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.7.1] — 2026-10-11
 
 ### English
