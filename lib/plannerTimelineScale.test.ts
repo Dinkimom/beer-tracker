@@ -34,13 +34,21 @@ describe('planner timeline scale defaults', () => {
     expect(storyPointsToTimeslots(21)).toBe(10);
   });
 
-  it('scales the same ladder by the day length', () => {
-    const day = { estimateUnit: 'day' as const, timeslotsPerDay: 4 as const };
-    expect(storyPointsToTimeslotsForScale(1, day)).toBe(4);
-    expect(storyPointsToTimeslotsForScale(5, day)).toBe(20);
-    expect(timeslotsToStoryPointsForScale(3, day)).toBe(0);
-    expect(timeslotsToStoryPointsForScale(4, day)).toBe(1);
-    expect(timeslotsToStoryPointsForScale(8, day)).toBe(2);
+  it('maps day estimates linearly so a single timeslot is a day fraction', () => {
+    const day = { estimateUnit: 'day' as const, timeslotsPerDay: 2 as const };
+    expect(storyPointsToTimeslotsForScale(1, day)).toBe(2);
+    expect(storyPointsToTimeslotsForScale(1.5, day)).toBe(3);
+    expect(storyPointsToTimeslotsForScale(5, day)).toBe(10);
+    expect(timeslotsToStoryPointsForScale(1, day)).toBe(0.5);
+    expect(timeslotsToStoryPointsForScale(2, day)).toBe(1);
+    expect(timeslotsToStoryPointsForScale(3, day)).toBe(1.5);
+    expect(timeslotsToStoryPointsForScale(4, day)).toBe(2);
+
+    const quarters = { estimateUnit: 'day' as const, timeslotsPerDay: 4 as const };
+    expect(storyPointsToTimeslotsForScale(1, quarters)).toBe(4);
+    expect(timeslotsToStoryPointsForScale(1, quarters)).toBe(0.25);
+    expect(timeslotsToStoryPointsForScale(3, quarters)).toBe(0.75);
+    expect(timeslotsToStoryPointsForScale(4, quarters)).toBe(1);
   });
 
   it('maps fractional SP below 1 as a share of the first step, not the whole step', () => {
@@ -91,10 +99,11 @@ describe('planner timeline scale defaults', () => {
     expect(steps[1]).toMatchObject({ slots: 4, storyPoints: 2 });
   });
 
-  it('previews the day ladder in timeslots', () => {
+  it('previews the day scale as SP × timeslots per day', () => {
     const rows = buildEstimateScalePreview({ estimateUnit: 'day', timeslotsPerDay: 2 });
     expect(rows.find((row) => row.storyPoints === 1)?.timeslots).toBe(2);
-    expect(rows.find((row) => row.storyPoints === 21)?.timeslots).toBe(20);
+    expect(rows.find((row) => row.storyPoints === 8)?.timeslots).toBe(16);
+    expect(rows.find((row) => row.storyPoints === 21)?.timeslots).toBe(42);
   });
 
   it('rejects a part index outside the active grid', () => {
@@ -168,7 +177,8 @@ describe('planner timeline scale defaults', () => {
     setActivePlannerTimelineScale({ estimateUnit: 'day', timeslotsPerDay: 2 });
     expect(getActivePlannerTimelineScale().timeslotsPerDay).toBe(2);
     expect(storyPointsToTimeslots(1)).toBe(2);
-    expect(timeslotsToStoryPoints(1)).toBe(0);
+    expect(timeslotsToStoryPoints(1)).toBe(0.5);
     expect(timeslotsToStoryPoints(2)).toBe(1);
+    expect(timeslotsToStoryPoints(3)).toBe(1.5);
   });
 });

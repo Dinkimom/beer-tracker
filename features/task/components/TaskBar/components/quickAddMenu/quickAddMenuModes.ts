@@ -74,6 +74,10 @@ export function quickAddModeIconName(mode: QuickAddMode): string {
   return QUICK_ADD_MODE_ICONS[mode];
 }
 
+export function quickAddModeRequiresObjectStorage(mode: QuickAddMode): boolean {
+  return mode === 'image' || mode === 'diagram';
+}
+
 export function resolveQuickAddModeChange(input: {
   canCreateAvailability: boolean;
   canPasteNote: boolean;
@@ -81,6 +85,7 @@ export function resolveQuickAddModeChange(input: {
   lockedMode?: Exclude<QuickAddMode, 'existing'>;
   nextMode: QuickAddMode;
   notesVisible: boolean;
+  objectStorageConfigured?: boolean;
 }): 'availability' | 'form' | 'noop' | 'paste' {
   if (input.lockedMode) {
     return 'noop';
@@ -93,6 +98,12 @@ export function resolveQuickAddModeChange(input: {
   }
   if (input.nextMode === 'pasteNote') {
     return input.canPasteNote ? 'paste' : 'noop';
+  }
+  if (
+    quickAddModeRequiresObjectStorage(input.nextMode) &&
+    input.objectStorageConfigured === false
+  ) {
+    return 'noop';
   }
   if ((input.nextMode === 'comment' || input.nextMode === 'diagram') && !input.notesVisible) {
     return 'noop';

@@ -3,15 +3,14 @@
 import type { Task } from '@/types';
 
 import { CopyFeedbackGlyph } from '@/components/CopyFeedbackGlyph';
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useTrackerWebUrlContext } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveTaskInfoBreadcrumbParts } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarFormatters';
-import {
-  TASK_INFO_ICON_BUTTON_CLASS,
-} from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarIconClasses';
+import { TASK_INFO_ICON_BUTTON_CLASS } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarIconClasses';
 import {
   getTaskTrackerDisplayKey,
   getTaskTrackerIssueUrl,
@@ -45,7 +44,7 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
   const showParent = Boolean(breadcrumb.parent);
 
   return (
-    <header className="shrink-0 border-b border-gray-200 px-4 py-2.5 dark:border-gray-700">
+    <header className="shrink-0 border-b border-ds-border-subtle px-4 py-2.5">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
           {showQueue ? (
@@ -118,14 +117,13 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
           </TextTooltip>
         </div>
 
-        <button
+        <HeaderIconButton
           aria-label={t('sprintPlanner.taskInfo.close')}
-          className={TASK_INFO_ICON_BUTTON_CLASS}
           type="button"
           onClick={onClose}
         >
-          <Icon className="h-5 w-5 shrink-0 text-current" name="x-bold" />
-        </button>
+          <Icon className="h-5 w-5" name="close" />
+        </HeaderIconButton>
       </div>
     </header>
   );

@@ -1,5 +1,6 @@
 import type { SprintStatus } from '@/types';
 
+import { getPlannerNow } from './plannerClock';
 
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -90,7 +91,7 @@ export function getMondayIndexForWeekend(
   getWorkingDaysRange: (startDate: Date, count: number) => Date[],
   isWeekend: (date: Date) => boolean
 ): number | null {
-  const today = new Date();
+  const today = getPlannerNow();
   today.setHours(0, 0, 0, 0);
 
   if (!isWeekend(today)) return null;

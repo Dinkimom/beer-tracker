@@ -1080,13 +1080,6 @@ export const enMessages = {
           'Cursor moves cards. Task places a new one on a cell. Click the dashed card to place the first task.',
         toolsTitle: 'Cursor moves, Task places',
       },
-      tipDismiss: 'Got it',
-      tips: {
-        featuresView: 'A row is the parent. The person is still on the card.',
-        layers: 'Hide notes, photos, and links. Fact and calendar sit under the row.',
-        link: 'Draw from one card to another.',
-        taskTool: 'Click an empty cell, or drag a task in from the sidebar.',
-      },
     },
     presence: {
       actionDragging: 'moving a card',
@@ -1349,6 +1342,7 @@ export const enMessages = {
         link: 'Link',
         noteColorPopup: 'Note color',
         notePlaceholder: 'Note text',
+        objectStorageRequired: 'Object storage (S3) is not configured',
         task: 'Task',
       },
       overdue: {

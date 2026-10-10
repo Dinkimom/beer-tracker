@@ -125,16 +125,16 @@ export function TaskBarOpacityLayerChrome({
 
       {isInError && !swimlaneSegmentSecondary && (
         <span
-          className="absolute -right-2 -top-2"
+          className="absolute -right-1.5 -top-1.5"
           style={{ zIndex: ZIndex.value('dropdown') }}
         >
           <TextTooltip content={errorTooltip || t('task.taskBar.planningError')}>
             <span
-              className={`task-card-swimlane-corner-badge inline-flex w-5 h-5 items-center justify-center rounded-full bg-red-500 dark:bg-red-400 text-white shrink-0 border-2 border-white dark:border-gray-800 shadow-sm cursor-default hover:scale-125 ${
+              className={`task-card-swimlane-corner-badge inline-flex h-5 w-5 shrink-0 cursor-default items-center justify-center rounded-md border border-red-300/90 bg-red-50 text-red-600 shadow-sm hover:scale-110 dark:border-gray-800 dark:bg-red-400 dark:text-white ${
                 interactionDisabled ? 'pointer-events-none' : 'pointer-events-auto'
               }`}
             >
-              <Icon className="w-3 h-3 shrink-0" name="exclamation" />
+              <Icon className="h-3 w-3 shrink-0" name="exclamation" />
             </span>
           </TextTooltip>
         </span>

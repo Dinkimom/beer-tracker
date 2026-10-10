@@ -84,7 +84,7 @@ export function TaskInfoSidebar({ task, onClose, onFieldsSaved, onStatusChange }
       }}
       onAnimationEnd={presence.onAnimationEnd}
     >
-      <div className="relative flex h-full w-full flex-col border-l border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+      <div className="relative flex h-full w-full flex-col border-l border-ds-border-subtle bg-white shadow-xl dark:bg-gray-800">
         <TaskInfoSidebarPanel
           task={displayedTask}
           onClose={onClose}

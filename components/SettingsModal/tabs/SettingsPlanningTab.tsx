@@ -70,9 +70,9 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
   } = props;
 
   return (
-    <div className="space-y-6" role="tabpanel">
-      <section className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+    <div className="space-y-5" role="tabpanel">
+      <section className="space-y-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ds-text-muted">
           {t('settings.planningTab.displaySection')}
         </h3>
         <Toggle
@@ -96,39 +96,33 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
             onChange={setPhaseCardColorScheme}
           />
           {phaseCardColorScheme === 'monochrome' && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md">
+            <p className="mt-1 max-w-md text-xs text-ds-text-muted">
               {t('settings.planningTab.monochromeHint')}
             </p>
           )}
         </div>
-        {swimlaneLinksVisible && (
-          <div className="pl-1">
-            <CheckboxOption
-              checked={linksDimOnHover}
-              label={t('settings.planningTab.dimUnlinkedOnHover')}
-              onChange={setLinksDimOnHover}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 ml-6">
-              {t('settings.planningTab.dimUnlinkedHelp')}
-            </p>
-          </div>
-        )}
+        {swimlaneLinksVisible ? (
+          <Toggle
+            checked={linksDimOnHover}
+            hint={t('settings.planningTab.dimUnlinkedHelp')}
+            id="links-dim-on-hover"
+            label={t('settings.planningTab.dimUnlinkedOnHover')}
+            onChange={setLinksDimOnHover}
+          />
+        ) : null}
       </section>
 
-      <div
-        className="flex gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-700/50"
-        role="tablist"
-      >
+      <div className="flex gap-1" role="tablist">
         {ganttTabs.map(({ id, label }) => {
           const isOn = ganttTab === id;
           return (
             <Button
               key={id}
               aria-selected={isOn}
-              className={`flex-1 px-3 py-2 text-sm font-medium shadow-none ${
+              className={`h-7 min-h-0 !rounded-md !border-0 !px-2.5 !py-0 text-sm font-medium shadow-none ${
                 isOn
-                  ? '!bg-white !text-gray-900 shadow-sm hover:!bg-white dark:!bg-gray-700 dark:!text-gray-100 dark:hover:!bg-gray-700'
-                  : '!text-gray-600 hover:!bg-gray-200/60 dark:!text-gray-400 dark:hover:!bg-gray-600/40 dark:hover:!text-gray-200'
+                  ? '!bg-ds-canvas !text-blue-600 hover:!bg-gray-100 dark:!bg-white/10 dark:!text-blue-300 dark:hover:!bg-white/15'
+                  : '!bg-transparent !text-ds-text-muted hover:!bg-black/[0.04] hover:!text-gray-900 dark:hover:!bg-white/10 dark:hover:!text-gray-100'
               }`}
               role="tab"
               type="button"
@@ -234,8 +228,8 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
       )}
 
       {ganttTab === 'swimlane' && (
-        <section className="space-y-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <section className="space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-ds-text-muted">
             {t('settings.planningTab.swimlaneSection')}
           </h3>
           <Toggle
@@ -250,11 +244,11 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
             label={t('settings.planningTab.swimlaneCalendarBusy')}
             onChange={setSwimlaneCalendarBusyVisible}
           />
-          <div className="space-y-2 pt-2">
-            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <div className="space-y-2 pt-1">
+            <h4 className="text-xs font-medium uppercase tracking-wide text-ds-text-muted">
               {t('settings.planningTab.taskCardFieldsHeading')}
             </h4>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
               <CheckboxOption
                 checked={swimlaneCardFields.showParent}
                 label={t('settings.planningTab.parentIssue')}
@@ -310,8 +304,8 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
       )}
 
       {ganttTab === 'kanban' && (
-        <section className="space-y-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <section className="space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-ds-text-muted">
             {t('settings.planningTab.kanbanSection')}
           </h3>
           <div className="space-y-1.5">

@@ -133,7 +133,7 @@ TRACKER_API_URL=https://jira.example.com/rest/api/2
 
 1. **Инстанс** — `.env`: `ISSUE_TRACKER_PROVIDER`, `TRACKER_API_URL` (+ ветка A: `YANDEX_OAUTH_CLIENT_ID`; ветка B: `ATLASSIAN_OAUTH_*`).
 2. **Организация** — админка «Трекер» / integration (ветка B: email + API-токен).
-3. **Пользователь** — `/auth-setup` или `/register` (ветка B: OAuth); настройки — правка сохранённого токена в браузере.
+3. **Пользователь** — `/auth-setup` или `/register` (ветка B: OAuth; вкладка токена в настройках скрыта). Для Yandex / Jira on-prem — также вкладка трекера в настройках.
 
 Поля env: [`env.example`](../env.example).  
 Инженерия адаптеров / контракты Yandex: [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md), [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md).

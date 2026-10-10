@@ -145,8 +145,8 @@ export function formatSignedPointsDeltaForDisplay(
 
 /**
  * Таймслоты → SP по шкале активной организации.
- * По умолчанию: 1 → 1сп, 2 → 2сп, 3 → 3сп, 4–5 → 5сп, 6–7 → 8сп, 8–9 → 13сп, 10+ → 21сп.
- * Единица «сутки» делит длину на число слотов в дне и ищет по той же лестнице.
+ * По умолчанию (1 SP = слот): 1 → 1сп, 2 → 2сп, 3 → 3сп, 4–5 → 5сп, 6–7 → 8сп, 8–9 → 13сп, 10+ → 21сп.
+ * Единица «сутки»: SP = длина / число слотов в дне (полдня при 2 слотах → 0.5сп).
  */
 export function timeslotsToStoryPoints(timeslots: number): number {
   return timeslotsToStoryPointsForScale(timeslots, getActivePlannerTimelineScale());
@@ -155,6 +155,7 @@ export function timeslotsToStoryPoints(timeslots: number): number {
 /**
  * SP → таймслоты для начального размера фазы.
  * По умолчанию: 1 → 1, 2 → 2, 3 → 3, 4–5 → 5, 6–8 → 6, 9–13 → 8, 14+ → 10.
+ * Единица «сутки»: длина = SP × слоты в дне.
  */
 export function storyPointsToTimeslots(sp: number): number {
   return storyPointsToTimeslotsForScale(sp, getActivePlannerTimelineScale());

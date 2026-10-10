@@ -115,7 +115,7 @@ export function BoardSelector({
 
       {overlay.mounted ? (
         <div
-          className={`absolute top-full left-0 mt-1 w-full overflow-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-800 ${ZIndex.class('dropdownContent')} max-h-80 ${OVERLAY_PANEL_ENTER}`}
+          className={`absolute top-full left-0 mt-1 flex w-full max-h-80 flex-col gap-0.5 overflow-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-800 ${ZIndex.class('dropdownContent')} ${OVERLAY_PANEL_ENTER}`}
           data-state={overlay.state}
           style={{ zIndex: ZIndex.dropdownContent }}
           onAnimationEnd={overlay.onAnimationEnd}

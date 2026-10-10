@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   getS3Config,
+  isS3Configured,
   parseS3ForcePathStyle,
   parseS3KeyPrefix,
   resetS3ConfigCacheForTests,
@@ -86,5 +87,44 @@ describe('getS3Config', () => {
     process.env.S3_ACCESS_KEY = 'a';
     process.env.S3_SECRET_KEY = 's';
     expect(() => getS3Config()).toThrow(/S3_ENDPOINT_URL/);
+  });
+});
+
+describe('isS3Configured', () => {
+  const previous: Record<string, string | undefined> = {};
+
+  afterEach(() => {
+    for (const key of S3_ENV_KEYS) {
+      const value = previous[key];
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  });
+
+  function snapshotEnv(): void {
+    for (const key of S3_ENV_KEYS) {
+      previous[key] = process.env[key];
+    }
+  }
+
+  it('is true when required keys are set', () => {
+    snapshotEnv();
+    process.env.S3_ENDPOINT_URL = 'https://s3.example.com';
+    process.env.S3_BUCKET = 'beer-tracker-storage';
+    process.env.S3_ACCESS_KEY = 'ak';
+    process.env.S3_SECRET_KEY = 'sk';
+    expect(isS3Configured()).toBe(true);
+  });
+
+  it('is false when a required key is missing', () => {
+    snapshotEnv();
+    process.env.S3_ENDPOINT_URL = 'https://s3.example.com';
+    process.env.S3_BUCKET = 'beer-tracker-storage';
+    process.env.S3_ACCESS_KEY = 'ak';
+    delete process.env.S3_SECRET_KEY;
+    expect(isS3Configured()).toBe(false);
   });
 });

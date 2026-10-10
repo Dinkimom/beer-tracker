@@ -90,14 +90,11 @@ export function PlannerOnboardingHost({
       <PlannerOnboardingOverlay
         open={onboarding.open}
         scrollContainerRef={scrollContainerRef}
-        seenTips={onboarding.seenTips}
         step={onboarding.step}
         stepIndex={onboarding.stepIndex}
-        tourCompleted={onboarding.tourCompleted}
         viewMode={viewMode}
         welcome={onboarding.welcome}
         onComplete={onboarding.completeTour}
-        onDismissTip={onboarding.dismissTip}
         onNext={onboarding.nextStep}
         onStart={onboarding.startTour}
       />

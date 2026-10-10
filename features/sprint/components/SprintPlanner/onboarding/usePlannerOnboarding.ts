@@ -1,7 +1,6 @@
 'use client';
 
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
-import type { PlannerOnboardingTip } from '@/lib/plannerOnboarding/plannerOnboarding';
 
 import { useCallback, useMemo, useState } from 'react';
 
@@ -12,7 +11,6 @@ import {
   PLANNER_ONBOARDING_STEPS,
   isPlannerOnboardingSurface,
   normalizePlannerOnboarding,
-  withPlannerOnboardingTipSeen,
 } from '@/lib/plannerOnboarding/plannerOnboarding';
 
 type PlannerOnboardingSession = 'closed' | 'tour';
@@ -36,15 +34,11 @@ export function usePlannerOnboarding(input: {
 
   const completeTour = useCallback(() => {
     setSession('closed');
-    setPersisted((prev) => {
-      const current = normalizePlannerOnboarding(prev);
-      const next =
-        viewMode === 'features'
-          ? withPlannerOnboardingTipSeen(current, 'featuresView')
-          : current;
-      return { ...next, tourCompleted: true };
-    });
-  }, [setPersisted, viewMode]);
+    setPersisted((prev) => ({
+      ...normalizePlannerOnboarding(prev),
+      tourCompleted: true,
+    }));
+  }, [setPersisted]);
 
   const nextStep = useCallback(() => {
     if (stepIndex >= PLANNER_ONBOARDING_STEPS.length - 1) {
@@ -66,26 +60,15 @@ export function usePlannerOnboarding(input: {
     startTour();
   }, [setViewMode, startTour, viewMode]);
 
-  const dismissTip = useCallback(
-    (tip: PlannerOnboardingTip) => {
-      setPersisted((prev) =>
-        withPlannerOnboardingTipSeen(normalizePlannerOnboarding(prev), tip)
-      );
-    },
-    [setPersisted]
-  );
-
   const step = PLANNER_ONBOARDING_STEPS[stepIndex] ?? 'lane';
   const chrome = useMemo(() => ({ toolsEmphasis: false }), []);
 
   return {
     chrome,
     completeTour,
-    dismissTip,
     nextStep,
     open,
     replay,
-    seenTips: state.seenTips,
     startTour,
     step,
     stepIndex,

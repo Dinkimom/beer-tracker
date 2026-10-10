@@ -175,4 +175,16 @@ describe('resolveQuickAddModeChange', () => {
       'noop'
     );
   });
+
+  it('blocks image and diagram when object storage is off', () => {
+    expect(
+      resolveQuickAddModeChange({ ...base, objectStorageConfigured: false, nextMode: 'image' })
+    ).toBe('noop');
+    expect(
+      resolveQuickAddModeChange({ ...base, objectStorageConfigured: false, nextMode: 'diagram' })
+    ).toBe('noop');
+    expect(
+      resolveQuickAddModeChange({ ...base, objectStorageConfigured: true, nextMode: 'image' })
+    ).toBe('form');
+  });
 });

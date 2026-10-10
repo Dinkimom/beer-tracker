@@ -21,9 +21,9 @@ export function SettingsCalendarTab({
     : '';
 
   return (
-    <div className="space-y-6" role="tabpanel">
-      <section className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+    <div className="space-y-5" role="tabpanel">
+      <section className="space-y-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ds-text-muted">
           {t('settings.calendarTab.displaySection')}
         </h3>
         <Toggle
@@ -36,22 +36,16 @@ export function SettingsCalendarTab({
 
       <section className="space-y-3">
         <div className="space-y-1">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-ds-text-muted">
             {t('settings.calendarTab.myCalendarHeading')}
           </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t('settings.calendarTab.myCalendarHelp')}
-          </p>
+          <p className="text-xs text-ds-text-muted">{t('settings.calendarTab.myCalendarHelp')}</p>
         </div>
         {isLoading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {t('settings.calendarTab.myCalendarLoading')}
-          </p>
+          <p className="text-sm text-ds-text-muted">{t('settings.calendarTab.myCalendarLoading')}</p>
         ) : null}
         {isError || (!isLoading && !developerId) ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {t('settings.calendarTab.myCalendarUnavailable')}
-          </p>
+          <p className="text-sm text-ds-text-muted">{t('settings.calendarTab.myCalendarUnavailable')}</p>
         ) : null}
         {developerId ? <DeveloperCalDavCredentialsForm developerId={developerId} /> : null}
       </section>

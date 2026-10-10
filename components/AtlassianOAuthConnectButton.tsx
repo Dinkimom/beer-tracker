@@ -2,6 +2,7 @@
 
 import { AtlassianLogoIcon } from '@/components/AtlassianLogoIcon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { JIRA_CLOUD_OAUTH_START_PATH } from '@/lib/issueTrackerProvider/issueTrackerUi';
 
 interface AtlassianOAuthConnectButtonProps {
   className?: string;
@@ -20,7 +21,7 @@ export function AtlassianOAuthConnectButton({
   returnPath,
 }: AtlassianOAuthConnectButtonProps) {
   const { t } = useI18n();
-  const href = `/api/auth/atlassian/start?return=${encodeURIComponent(returnPath)}`;
+  const href = `${JIRA_CLOUD_OAUTH_START_PATH}?return=${encodeURIComponent(returnPath)}`;
   const label = (
     <>
       <AtlassianLogoIcon className="h-5 w-5 shrink-0" />

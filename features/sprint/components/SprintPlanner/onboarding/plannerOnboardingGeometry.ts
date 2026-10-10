@@ -5,7 +5,7 @@ export interface RectBox {
   width: number;
 }
 
-export type PlannerOnboardingCalloutSide = 'above' | 'below' | 'left' | 'right';
+type PlannerOnboardingCalloutSide = 'above' | 'below' | 'left' | 'right';
 
 const VIEWPORT_GAP_PX = 16;
 

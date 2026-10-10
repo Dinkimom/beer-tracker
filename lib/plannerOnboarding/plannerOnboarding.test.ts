@@ -5,8 +5,6 @@ import {
   plannerBoardHasPlacedWork,
   plannerOnboardingAnchor,
   plannerOnboardingCalloutSide,
-  resolvePlannerOnboardingTip,
-  withPlannerOnboardingTipSeen,
   isPlannerOnboardingSurface,
 } from './plannerOnboarding';
 
@@ -48,40 +46,17 @@ describe('planner onboarding state', () => {
     expect(plannerOnboardingCalloutSide('task')).toBe('right');
   });
 
-  it('drops unknown persisted tips and keeps a single copy of each', () => {
+  it('reads only tourCompleted from persisted state', () => {
     expect(
       normalizePlannerOnboarding({
-        seenTips: ['layers', 'nope', 'layers', 'link'],
+        seenTips: ['layers', 'link'],
         tourCompleted: true,
       })
     ).toEqual({
-      seenTips: ['layers', 'link'],
       tourCompleted: true,
     });
     expect(normalizePlannerOnboarding(null)).toEqual({
-      seenTips: [],
       tourCompleted: false,
     });
-  });
-
-  it('shows one unseen tip and hides tips while the tour is running', () => {
-    const signals = {
-      featuresView: true,
-      layers: false,
-      link: false,
-      taskTool: true,
-    };
-    expect(resolvePlannerOnboardingTip(false, [], signals)).toBeNull();
-    expect(resolvePlannerOnboardingTip(true, [], signals)).toBe('taskTool');
-    expect(resolvePlannerOnboardingTip(true, ['taskTool'], signals)).toBe('featuresView');
-  });
-
-  it('records a tip once', () => {
-    const seen = withPlannerOnboardingTipSeen(
-      { seenTips: [], tourCompleted: true },
-      'layers'
-    );
-    expect(seen.seenTips).toEqual(['layers']);
-    expect(withPlannerOnboardingTipSeen(seen, 'layers')).toBe(seen);
   });
 });

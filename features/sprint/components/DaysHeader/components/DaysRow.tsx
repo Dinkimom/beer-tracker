@@ -12,23 +12,13 @@ import { getDayStatus } from '@/utils/dateUtils';
 type DayStatus = ReturnType<typeof getDayStatus>;
 
 function occupancyDayHeaderClass(status: DayStatus, isPast: boolean, isHoliday: boolean): string {
-  if (status === 'today') {
-    return 'bg-gradient-to-br from-blue-50 to-blue-100/80 dark:from-blue-900/40 dark:to-blue-800/40';
-  }
-  if (isPast) {
+  if (isPast && status !== 'today') {
     return 'bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500';
   }
   if (isHoliday) {
     return 'bg-gray-50 dark:bg-gray-900/40';
   }
   return 'bg-white dark:bg-gray-800';
-}
-
-function swimlaneDayCellClass(status: DayStatus): string {
-  if (status === 'today') {
-    return 'bg-gradient-to-br from-blue-50/80 to-blue-100/50 dark:from-blue-900/35 dark:to-blue-800/30';
-  }
-  return 'bg-transparent';
 }
 
 interface DaysRowProps {
@@ -151,7 +141,7 @@ export function DaysRow({
         return (
           <div
             key={dayIndex}
-            className={`relative flex h-full min-h-0 min-w-0 items-center justify-center overflow-hidden py-1 text-center ${swimlaneDayCellClass(status)}`}
+            className="relative flex h-full min-h-0 min-w-0 items-center justify-center overflow-hidden py-1 text-center"
             data-onboarding-day={dayIndex}
             data-onboarding-today={status === 'today' ? 'true' : undefined}
           >

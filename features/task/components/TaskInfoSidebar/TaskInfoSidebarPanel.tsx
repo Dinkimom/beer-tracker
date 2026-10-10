@@ -5,6 +5,7 @@ import type { Task } from '@/types';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskInfoSidebarDescriptionField } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarDescriptionField';
 import { TaskInfoSidebarHeader } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarHeader';
+import { TaskInfoSidebarMetaFields } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarMetaFields';
 import { TaskInfoSidebarTimestamps } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarTimestamps';
 import { TaskInfoSidebarTitleField } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarTitleField';
 import { TaskInfoSidebarTransitions } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarTransitions';
@@ -46,10 +47,10 @@ export function TaskInfoSidebarPanel({
       <TaskInfoSidebarHeader task={detailTask} onClose={onClose} />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <TaskInfoSidebarTransitions task={detailTask} onStatusChange={onStatusChange} />
         <TaskInfoSidebarTimestamps task={detailTask} />
         <TaskInfoSidebarTitleField task={detailTask} onFieldsSaved={handleFieldsSaved} />
-
-        <TaskInfoSidebarTransitions task={detailTask} onStatusChange={onStatusChange} />
+        <TaskInfoSidebarMetaFields task={detailTask} />
 
         <TaskInfoSidebarDescriptionField
           isDescriptionLoading={isDescriptionLoading}

@@ -8,10 +8,12 @@ import {
   SWIMLANE_VISIBILITY_LAYER_GROUPS,
   applyVisibilityLayerToggle,
   canQuickAddOnSwimlaneLane,
+  isPlacementToolbarToolSelectable,
   placementToolbarLayerIconName,
   placementToolbarLayerLabelMessageKey,
   placementToolbarLayoutModeMessageKey,
   placementToolLayerToReveal,
+  placementToolRequiresObjectStorage,
   placementToolToDraftKind,
   resolvePlacementToolAfterLayerChange,
   resolveNoteColorPopupOpen,
@@ -87,6 +89,18 @@ describe('SWIMLANE_PLACEMENT_TOOLS', () => {
       'diagram',
       'availability',
     ]);
+  });
+});
+
+describe('placementToolRequiresObjectStorage', () => {
+  it('marks photo and diagram tools only', () => {
+    expect(placementToolRequiresObjectStorage('image')).toBe(true);
+    expect(placementToolRequiresObjectStorage('diagram')).toBe(true);
+    expect(placementToolRequiresObjectStorage('comment')).toBe(false);
+    expect(isPlacementToolbarToolSelectable('image', false)).toBe(false);
+    expect(isPlacementToolbarToolSelectable('diagram', false)).toBe(false);
+    expect(isPlacementToolbarToolSelectable('comment', false)).toBe(true);
+    expect(isPlacementToolbarToolSelectable('image', true)).toBe(true);
   });
 });
 

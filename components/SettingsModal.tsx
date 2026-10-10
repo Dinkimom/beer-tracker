@@ -42,7 +42,10 @@ import {
 } from '@/hooks/useLocalStorage';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import { validateToken } from '@/lib/beerTrackerApi';
-import { translateIssueTrackerProviderMessage } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import {
+  issueTrackerShowsSettingsTokenTab,
+  translateIssueTrackerProviderMessage,
+} from '@/lib/issueTrackerProvider/issueTrackerUi';
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 import { readTrackerTokenPayload } from '@/lib/trackerTokenStorage';
 
@@ -165,70 +168,72 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
 
   if (!overlay.mounted) return null;
 
+  const showTrackerTokenTab = issueTrackerShowsSettingsTokenTab(issueTrackerProviderKind);
   const mainTabs: { id: SettingsTab; label: string; icon: 'calendar' | 'diagram' | 'link' | 'settings' }[] = [
     { id: 'planning', label: t('settings.tabs.planning'), icon: 'diagram' },
     { id: 'calendar', label: t('settings.tabs.calendar'), icon: 'calendar' },
-    {
-      id: 'ytracker',
-      label: translateIssueTrackerProviderMessage(
-        t,
-        issueTrackerProviderKind,
-        'settings.tabs.tracker'
-      ),
-      icon: 'link',
-    },
+    ...(showTrackerTokenTab
+      ? ([
+          {
+            id: 'ytracker',
+            label: translateIssueTrackerProviderMessage(
+              t,
+              issueTrackerProviderKind,
+              'settings.tabs.tracker'
+            ),
+            icon: 'link',
+          },
+        ] as const)
+      : []),
     { id: 'general', label: t('settings.tabs.general'), icon: 'settings' },
   ];
 
   const content = (
     <div
-      className={`fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 cursor-pointer ${OVERLAY_BACKDROP_ENTER}`}
+      className={`fixed inset-0 flex cursor-pointer items-center justify-center bg-black/40 dark:bg-black/60 ${OVERLAY_BACKDROP_ENTER}`}
       data-state={overlay.state}
       style={{ zIndex: ZIndex.modalBackdrop }}
       onAnimationEnd={overlay.onAnimationEnd}
       onClick={handleCancel}
     >
       <div
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col ${OVERLAY_PANEL_ENTER}`}
+        className={`mx-4 flex max-h-[90vh] w-full max-w-2xl cursor-default flex-col overflow-hidden rounded-lg border border-ds-border-subtle bg-white shadow-xl dark:bg-gray-800 ${OVERLAY_PANEL_ENTER}`}
         data-state={overlay.state}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t('settings.title')}</h2>
+        <div className="flex flex-shrink-0 items-center justify-between px-5 pb-1 pt-3">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('settings.title')}</h2>
           <HeaderIconButton aria-label={t('settings.accessibility.closeSettings')} type="button" onClick={handleCancel}>
             <Icon className="h-5 w-5" name="close" />
           </HeaderIconButton>
         </div>
 
-        <div
-          className="flex gap-1 px-4 pt-2 pb-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0"
-          role="tablist"
-        >
+        <div className="flex flex-shrink-0 gap-1 px-3 pb-1 pt-1" role="tablist">
           {mainTabs.map(({ id, label, icon }) => {
             const isOn = activeTab === id;
             return (
               <Button
                 key={id}
                 aria-selected={isOn}
-                className={`gap-2 px-4 py-2.5 text-sm font-medium shadow-none ${
+                className={`h-8 min-h-0 gap-1.5 !rounded-md !border-0 !px-2.5 !py-0 text-sm font-medium shadow-none ${
                   isOn
-                    ? '!bg-gray-200 !text-gray-900 hover:!bg-gray-200 dark:!bg-gray-600 dark:!text-gray-100 dark:hover:!bg-gray-600'
-                    : '!text-gray-600 hover:!bg-gray-100 dark:!text-gray-400 dark:hover:!bg-gray-700/50 dark:hover:!text-gray-200'
+                    ? '!bg-ds-canvas !text-blue-600 hover:!bg-gray-100 active:!bg-gray-200 dark:!bg-white/10 dark:!text-blue-300 dark:hover:!bg-white/15 dark:active:!bg-white/20'
+                    : '!bg-transparent !text-ds-text-muted hover:!bg-black/[0.05] hover:!text-gray-900 active:!bg-black/10 dark:hover:!bg-white/10 dark:hover:!text-gray-100 dark:active:!bg-white/15'
                 }`}
                 role="tab"
                 type="button"
                 variant="ghost"
                 onClick={() => setActiveTab(id)}
               >
-                <Icon className="h-4 w-4" name={icon} />
+                <Icon className="h-4 w-4 shrink-0" name={icon} />
                 {label}
               </Button>
             );
           })}
         </div>
 
-        <div className="overflow-y-auto flex-1 min-h-0">
-          <div className="px-6 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="px-5 py-4">
             {activeTab === 'general' && (
               <SettingsGeneralTab
                 holidayCountry={holidayCountry}
@@ -244,7 +249,7 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
               />
             )}
 
-            {activeTab === 'ytracker' && (
+            {activeTab === 'ytracker' && showTrackerTokenTab ? (
               <SettingsYTrackerTab
                 error={error}
                 handleSave={handleSave}
@@ -256,7 +261,7 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
                 showToken={showToken}
                 token={token}
               />
-            )}
+            ) : null}
 
             {activeTab === 'calendar' && (
               <SettingsCalendarTab
@@ -308,7 +313,7 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
           </div>
         </div>
 
-        <div className="flex flex-shrink-0 items-center border-t border-gray-200 px-6 py-2.5 dark:border-gray-700">
+        <div className="flex flex-shrink-0 items-center px-5 pb-2.5 pt-1">
           <p className="text-xs text-ds-text-muted">
             {t('settings.generalTab.versionLabel')}{' '}
             <AppVersionLabel className="text-xs" />

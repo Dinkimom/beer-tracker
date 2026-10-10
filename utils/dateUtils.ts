@@ -23,6 +23,7 @@ import {
   WORKDAY_END_MS,
   WORKDAY_START_MS,
 } from './dateUtilsHelpers';
+import { getPlannerNow } from './plannerClock';
 
 /**
  * Проверяет, является ли дата выходным днем (суббота или воскресенье)
@@ -207,7 +208,7 @@ export function getDayStatus(
 ): SprintStatus | 'today' {
   if (!sprintStartDate) return 'future';
 
-  const today = new Date();
+  const today = getPlannerNow();
   today.setHours(0, 0, 0, 0);
 
   const mondayIndex = getMondayIndexForWeekend(

@@ -20,7 +20,7 @@ interface DayErrorIndicatorProps {
 }
 
 const ERROR_ICON_CLASS =
-  'relative inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 dark:bg-red-400 text-white flex-shrink-0 border border-white dark:border-gray-800 cursor-default pointer-events-auto transition-transform duration-150 hover:scale-125';
+  'relative inline-flex h-5 w-5 flex-shrink-0 cursor-default items-center justify-center rounded-md border border-red-300/90 bg-red-50 text-red-600 pointer-events-auto transition-transform duration-150 hover:scale-110 dark:border-gray-800 dark:bg-red-400 dark:text-white';
 
 /**
  * Иконка ошибки планирования с тултипом.
@@ -97,7 +97,7 @@ export function DayErrorIndicator({
         onMouseEnter={hasOverlapErrors ? handleMouseEnter : undefined}
         onMouseLeave={hasOverlapErrors ? handleMouseLeave : undefined}
       >
-        <Icon className="w-2.5 h-2.5 shrink-0" name="exclamation" />
+        <Icon className="h-3 w-3 shrink-0" name="exclamation" />
       </span>
     </TextTooltip>
   );

@@ -12,10 +12,10 @@ export function CheckboxOption({
   onChange,
 }: CheckboxOptionProps) {
   return (
-    <label className="flex items-center gap-2 cursor-pointer py-1">
+    <label className="flex cursor-pointer items-center gap-2 py-0.5">
       <input
         checked={checked}
-        className="w-4 h-4 rounded border-2 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 cursor-pointer accent-blue-600"
+        className="h-3.5 w-3.5 cursor-pointer rounded border border-gray-300 bg-white text-blue-500 accent-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 dark:border-gray-500 dark:bg-gray-700 dark:accent-blue-400"
         type="checkbox"
         onChange={(e) => onChange(e.target.checked)}
       />

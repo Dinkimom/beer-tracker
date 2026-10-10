@@ -10,6 +10,14 @@ import {
 /** Jira Cloud: Atlassian OAuth 3LO start (user login). */
 export const JIRA_CLOUD_OAUTH_START_PATH = '/api/auth/atlassian/start';
 
+/**
+ * Settings modal tab for pasting a tracker token.
+ * Hidden for Jira Cloud — users reconnect via «Continue with Atlassian» on `/auth-setup`.
+ */
+export function issueTrackerShowsSettingsTokenTab(kind: IssueTrackerProviderKind): boolean {
+  return kind !== 'jira-cloud';
+}
+
 /** Org admin API token page (Basic auth against site REST). */
 const JIRA_CLOUD_API_TOKEN_HELP_URL =
   'https://id.atlassian.com/manage-profile/security/api-tokens';

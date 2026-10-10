@@ -5,6 +5,7 @@ import type { QuickAddMode, SwimlaneQuickAddMenuProps } from './types';
 import { useCallback, useRef, useState } from 'react';
 
 import { ZIndex } from '@/constants';
+import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import {
   QUICK_ADD_KIND_PICKER_WIDTH_PX,
   useFollowAnchorRect,
@@ -79,6 +80,7 @@ export function SwimlaneQuickAddMenu({
   title,
 }: SwimlaneQuickAddMenuProps) {
   const sprintPlannerUi = useRootStore().sprintPlannerUi;
+  const objectStorageConfigured = useObjectStorageConfigured();
   const [notesVisible] = useSwimlaneNotesVisibleStorage();
   const [imagesVisible] = useSwimlaneImagesVisibleStorage();
   const initialDraft = splitQuickAddDraftFields({ draftKind, imageUrl, lockedMode, title });
@@ -181,6 +183,7 @@ export function SwimlaneQuickAddMenu({
     isSubmitting,
     lockedMode,
     notesVisible,
+    objectStorageConfigured,
     onCancel,
     onCommentColorChange,
     onCreateAvailability,

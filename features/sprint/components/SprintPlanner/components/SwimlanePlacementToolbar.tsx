@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import { FLOATING_MENU_SHELL, FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import {
   useSwimlaneBaselineLayoutModeStorage,
@@ -20,7 +21,9 @@ import { useRootStore } from '@/lib/layers';
 
 import {
   SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX,
+  isPlacementToolbarToolSelectable,
   placementToolLayerToReveal,
+  placementToolRequiresObjectStorage,
   resolvePlacementToolAfterLayerChange,
   resolvePlacementToolbarTools,
   toggleSwimlanePlacementTool,
@@ -46,10 +49,18 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
 }) {
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
+  const objectStorageConfigured = useObjectStorageConfigured();
   const hidePersonBoundTools = variant === 'features';
   const tools = useMemo(
     () => resolvePlacementToolbarTools({ hidePersonBoundTools }),
     [hidePersonBoundTools]
+  );
+  const selectableTools = useMemo(
+    () => tools.filter((tool) => isPlacementToolbarToolSelectable(tool, objectStorageConfigured)),
+    [objectStorageConfigured, tools]
+  );
+  const objectStorageRequiredHint = t(
+    'sprintPlanner.swimlane.placementToolbar.objectStorageRequired'
   );
   const [notesVisible, setNotesVisible] = useSwimlaneNotesVisibleStorage();
   const [imagesVisible, setImagesVisible] = useSwimlaneImagesVisibleStorage();
@@ -61,6 +72,9 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
 
   const applyPlacementTool = useCallback(
     (tool: SwimlanePlacementTool, options?: { toggle?: boolean }) => {
+      if (!isPlacementToolbarToolSelectable(tool, objectStorageConfigured)) {
+        return;
+      }
       const next = options?.toggle ? toggleSwimlanePlacementTool(active, tool) : tool;
       const layer = placementToolLayerToReveal(next);
       if (layer === 'notes') {
@@ -74,7 +88,14 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
       }
       sprintPlannerUi.setPlacementTool(next);
     },
-    [active, setImagesVisible, setLinksVisible, setNotesVisible, sprintPlannerUi]
+    [
+      active,
+      objectStorageConfigured,
+      setImagesVisible,
+      setLinksVisible,
+      setNotesVisible,
+      sprintPlannerUi,
+    ]
   );
 
   useEffect(() => {
@@ -88,8 +109,15 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
     }
   }, [imagesVisible, linksVisible, notesVisible, sprintPlannerUi]);
 
+  useEffect(() => {
+    if (isPlacementToolbarToolSelectable(sprintPlannerUi.placementTool, objectStorageConfigured)) {
+      return;
+    }
+    sprintPlannerUi.setPlacementTool('cursor');
+  }, [objectStorageConfigured, sprintPlannerUi]);
+
   useSwimlanePlacementToolbarKeyboard({
-    availableTools: tools,
+    availableTools: selectableTools,
     onSelectTool: applyPlacementTool,
   });
 
@@ -113,25 +141,33 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
           data-swimlane-placement-toolbar=""
           role="toolbar"
         >
-          {tools.map((tool) =>
-            tool === 'comment' ? (
-              <SwimlanePlacementToolbarNoteTool
-                key={tool}
-                active={active === 'comment'}
-                color={sprintPlannerUi.stickyNoteColor}
-                onColorChange={sprintPlannerUi.setStickyNoteColor}
-                onSelect={() => applyPlacementTool('comment', { toggle: true })}
-              />
-            ) : (
+          {tools.map((tool) => {
+            const toolDisabled =
+              !objectStorageConfigured && placementToolRequiresObjectStorage(tool);
+            const disabledReason = toolDisabled ? objectStorageRequiredHint : undefined;
+            if (tool === 'comment') {
+              return (
+                <SwimlanePlacementToolbarNoteTool
+                  key={tool}
+                  active={active === 'comment'}
+                  color={sprintPlannerUi.stickyNoteColor}
+                  onColorChange={sprintPlannerUi.setStickyNoteColor}
+                  onSelect={() => applyPlacementTool('comment', { toggle: true })}
+                />
+              );
+            }
+            return (
               <SwimlanePlacementToolbarButton
                 key={tool}
                 active={active === tool}
+                disabled={toolDisabled}
+                disabledReason={disabledReason}
                 showSeparatorBefore={tool === 'task' || tool === 'availability'}
                 tool={tool}
                 onSelect={() => applyPlacementTool(tool, { toggle: true })}
               />
-            )
-          )}
+            );
+          })}
           <SwimlanePlacementToolbarLayers
             baselineLayoutMode={baselineLayoutMode}
             calendarVisible={calendarVisible}

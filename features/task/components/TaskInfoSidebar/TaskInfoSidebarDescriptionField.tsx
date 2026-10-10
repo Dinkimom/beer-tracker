@@ -25,11 +25,11 @@ import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { updateIssueFields } from '@/lib/beerTrackerApi';
 
 const DESCRIPTION_VIEW_CLASS =
-  'mt-8 w-full rounded-lg border border-transparent px-0 py-0';
+  'mt-4 w-full rounded-lg border border-transparent px-0 py-0';
 
 /** Та же поверхность, что у сайдбара (`dark:bg-gray-800`), чтобы редактор не выбивался островом. */
 const DESCRIPTION_EDIT_CLASS =
-  'mt-8 w-full overflow-hidden rounded-xl border border-gray-200 bg-white focus-within:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:focus-within:border-gray-600';
+  'mt-4 w-full overflow-hidden rounded-xl border border-ds-border-subtle bg-white focus-within:border-gray-300 dark:bg-gray-800 dark:focus-within:border-gray-600';
 
 interface TaskInfoSidebarDescriptionFieldProps {
   isDescriptionLoading?: boolean;
@@ -103,7 +103,7 @@ export function TaskInfoSidebarDescriptionField({
 
   if (isDescriptionLoading) {
     return (
-      <p className="mt-8 text-sm text-gray-500 dark:text-gray-400">
+      <p className="mt-4 text-sm text-ds-text-muted">
         {t('sprintPlanner.taskInfo.descriptionLoading')}
       </p>
     );
@@ -115,7 +115,7 @@ export function TaskInfoSidebarDescriptionField({
         <TextTooltip content={t('sprintPlanner.taskInfo.editDescription')}>
         <button
           aria-label={t('sprintPlanner.taskInfo.editDescription')}
-          className={`${TASK_INFO_ICON_BUTTON_CLASS} absolute right-0 top-8 z-10 bg-transparent opacity-0 group-hover:opacity-100`}
+          className={`${TASK_INFO_ICON_BUTTON_CLASS} absolute right-0 top-4 z-10 bg-transparent opacity-0 group-hover:opacity-100`}
           type="button"
           onClick={(event) => {
             event.stopPropagation();

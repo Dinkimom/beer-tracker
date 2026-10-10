@@ -41,9 +41,9 @@ export function SettingsGeneralTab({
 }: SettingsGeneralTabComponentProps) {
   const { t } = useI18n();
   return (
-    <div className="space-y-6" role="tabpanel">
-      <section className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+    <div className="space-y-5" role="tabpanel">
+      <section className="space-y-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ds-text-muted">
           {t('settings.generalTab.sections.display')}
         </h3>
         <div className="flex items-center justify-between gap-3">
@@ -65,7 +65,7 @@ export function SettingsGeneralTab({
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('settings.generalTab.holidayCountryLabel')}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-snug">
+            <p className="mt-1 text-xs leading-snug text-ds-text-muted">
               {t('settings.generalTab.holidayCountryHint')}
             </p>
           </div>
@@ -74,8 +74,8 @@ export function SettingsGeneralTab({
         <PwaInstallSection />
       </section>
 
-      <section className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <section className="space-y-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ds-text-muted">
           {t('settings.generalTab.sections.sync')}
         </h3>
         <Toggle
@@ -95,7 +95,7 @@ export function SettingsGeneralTab({
       </section>
 
       <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-ds-text-muted">
           {t('settings.generalTab.sections.sidebarTabs')}
         </h3>
         <p className="text-xs text-gray-500 dark:text-gray-400">

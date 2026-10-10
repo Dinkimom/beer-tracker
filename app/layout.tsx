@@ -13,7 +13,8 @@ import { PwaServiceWorkerRegistrar } from "@/components/PwaServiceWorkerRegistra
 import { QueryProvider } from "@/components/QueryProvider";
 import { IssueTrackerProviderKindProvider } from "@/contexts/IssueTrackerProviderKindContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { getIssueTrackerProviderKind, getTrackerConfig } from "@/lib/env";
+import { ObjectStorageConfiguredProvider } from "@/contexts/ObjectStorageConfiguredContext";
+import { getIssueTrackerProviderKind, getTrackerConfig, isS3Configured } from "@/lib/env";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n/model";
 import { translate } from "@/lib/i18n/translator";
 import {
@@ -89,6 +90,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const issueTrackerProviderKind = getIssueTrackerProviderKind();
+  const objectStorageConfigured = isS3Configured();
   const trackerApiUrl = getTrackerConfig().apiUrl;
   const issueTrackerTokenHelpHref = issueTrackerTokenHelpUrl(
     issueTrackerProviderKind,
@@ -142,34 +144,36 @@ export default function RootLayout({
                   kind={issueTrackerProviderKind}
                   tokenHelpUrl={issueTrackerTokenHelpHref}
                 >
-                  <AuthGuard>
-                    <AnalyticsCollector />
-                    {children}
-                    <Toaster
-                      position="top-center"
-                      toastOptions={{
-                        duration: 4000,
-                        style: {
-                          background: 'var(--toast-bg)',
-                          color: 'var(--toast-fg)',
-                        },
-                        success: {
-                          duration: 3000,
-                          iconTheme: {
-                            primary: "#10b981",
-                            secondary: "#fff",
+                  <ObjectStorageConfiguredProvider configured={objectStorageConfigured}>
+                    <AuthGuard>
+                      <AnalyticsCollector />
+                      {children}
+                      <Toaster
+                        position="top-center"
+                        toastOptions={{
+                          duration: 4000,
+                          style: {
+                            background: 'var(--toast-bg)',
+                            color: 'var(--toast-fg)',
                           },
-                        },
-                        error: {
-                          duration: 5000,
-                          iconTheme: {
-                            primary: "#ef4444",
-                            secondary: "#fff",
+                          success: {
+                            duration: 3000,
+                            iconTheme: {
+                              primary: "#10b981",
+                              secondary: "#fff",
+                            },
                           },
-                        },
-                      }}
-                    />
-                  </AuthGuard>
+                          error: {
+                            duration: 5000,
+                            iconTheme: {
+                              primary: "#ef4444",
+                              secondary: "#fff",
+                            },
+                          },
+                        }}
+                      />
+                    </AuthGuard>
+                  </ObjectStorageConfiguredProvider>
                 </IssueTrackerProviderKindProvider>
               </LanguageProvider>
             </ThemeProvider>

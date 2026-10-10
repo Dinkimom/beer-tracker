@@ -2,13 +2,11 @@
 
 import type { Task } from '@/types';
 
-import { StatusTag } from '@/components/StatusTag';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   buildTaskInfoTimestampsLine,
   formatTaskInfoDateTime,
 } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarFormatters';
-import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
 interface TaskInfoSidebarTimestampsProps {
   task: Task;
@@ -27,24 +25,10 @@ export function TaskInfoSidebarTimestamps({ task }: TaskInfoSidebarTimestampsPro
     formatTaskInfoDateTime(task.updatedAt, locale, relativeLabels),
     t
   );
-  const status = task.originalStatus?.trim() || null;
 
-  if (!line && !status) {
+  if (!line) {
     return null;
   }
 
-  return (
-    <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-2">
-      {status ? (
-        <StatusTag
-          label={taskStatusLabel(task)}
-          status={status}
-          statusColorKey={task.statusColorKey}
-        />
-      ) : null}
-      {line ? (
-        <p className="min-w-0 text-sm text-gray-500 dark:text-gray-400">{line}</p>
-      ) : null}
-    </div>
-  );
+  return <p className="mb-3 text-xs text-ds-text-muted">{line}</p>;
 }

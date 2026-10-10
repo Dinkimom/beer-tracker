@@ -10,6 +10,7 @@ import React, { useContext, useMemo, useState } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import { sprintPlannerSwimlaneTimelineWidthCss } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
 import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintPlanner/onboarding/plannerOnboardingChrome';
 import { canQuickAddOnSwimlaneLane } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
@@ -144,6 +145,7 @@ function SwimlaneComponent({
   onTogglePin,
 }: SwimlaneProps) {
   const { t } = useI18n();
+  const objectStorageConfigured = useObjectStorageConfigured();
   const { sprintPlannerUi } = useRootStore();
   const isTeamLane = isTeamSwimlaneAssigneeId(developer.id);
   const onboardingAssignee = onboardingAssigneeMarker(developer.id);
@@ -277,7 +279,8 @@ function SwimlaneComponent({
     cellIndex: quickAddHoverPreview?.cellIndex ?? null,
     enabled: Boolean(quickAddHoverPreview && !hideQuickAddPreview),
     noteClipboard: sprintPlannerUi.noteClipboard,
-    onCommentCreate, onCreateTaskInCell,
+    onCommentCreate,
+    onCreateTaskInCell: objectStorageConfigured ? onCreateTaskInCell : undefined,
   });
 
   return (

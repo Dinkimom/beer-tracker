@@ -54,16 +54,16 @@ describe('handleTaskResizeAfterResize', () => {
     expect(savePosition).toHaveBeenCalled();
   });
 
-  it('при кастомной шкале всё равно обновляет оценку у карточки «со старой длины»', () => {
+  it('при «1 SP = день» и 2 слотах обновляет оценку на полдня за один таймслот', () => {
     setActivePlannerTimelineScale({ estimateUnit: 'day', timeslotsPerDay: 2 });
-    const task = { id: 'NW-1', storyPoints: 3 } as Task;
+    const task = { id: 'NW-1', storyPoints: 1 } as Task;
     const tasksMap = new Map([['NW-1', task]]);
     let nextTasks: Task[] = [task];
 
     handleTaskResizeAfterResize(
       'NW-1',
-      4,
-      position('NW-1', 4),
+      3,
+      position('NW-1', 3),
       tasksMap,
       new Map(),
       (updater) => {
@@ -73,8 +73,8 @@ describe('handleTaskResizeAfterResize', () => {
       vi.fn().mockResolvedValue(undefined)
     );
 
-    // 4 слота / 2 слота в дне → 2 единицы шкалы → 2 SP
-    expect(nextTasks[0]?.storyPoints).toBe(2);
+    // 3 слота / 2 слота в дне → 1.5 SP (не целый день)
+    expect(nextTasks[0]?.storyPoints).toBe(1.5);
     expect(mockUpdateIssue).not.toHaveBeenCalled();
   });
 

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { YANDEX_OAUTH_CLIENT_ID } from '@/constants';
 
 import {
-  JIRA_CLOUD_OAUTH_START_PATH,
   isHttpUrlOnTrackerWebBase,
   issueTrackerIssueWebUrl,
   issueTrackerIssueWebUrlFromBase,
@@ -11,6 +10,7 @@ import {
   issueTrackerProviderMessageKey,
   issueTrackerQueueWebUrlFromBase,
   issueTrackerRequiresExternalOrgId,
+  issueTrackerShowsSettingsTokenTab,
   issueTrackerTokenHelpUrl,
   issueTrackerWebBaseFromApiUrl,
   jiraSiteBaseFromTrackerApiUrl,
@@ -71,6 +71,12 @@ describe('issueTrackerUi', () => {
     expect(resolveIssueTrackerExternalOrgIdForConnect('tracker', '')).toBe('');
   });
 
+  it('hides settings token-paste tab for Jira Cloud OAuth', () => {
+    expect(issueTrackerShowsSettingsTokenTab('jira-cloud')).toBe(false);
+    expect(issueTrackerShowsSettingsTokenTab('jira-onprem')).toBe(true);
+    expect(issueTrackerShowsSettingsTokenTab('tracker')).toBe(true);
+  });
+
   it('points Jira token help at the site profile page from TRACKER_API_URL', () => {
     expect(jiraSiteOriginFromTrackerApiUrl('https://jira.example.com/rest/api/2')).toBe(
       'https://jira.example.com'
@@ -79,7 +85,7 @@ describe('issueTrackerUi', () => {
       'https://jira.example.com/secure/ViewProfile.jspa'
     );
     expect(issueTrackerTokenHelpUrl('jira-cloud', 'https://example.atlassian.net/rest/api/3')).toBe(
-      JIRA_CLOUD_OAUTH_START_PATH
+      'https://id.atlassian.com/manage-profile/security/api-tokens'
     );
     expect(
       issueTrackerTokenHelpUrl('jira-onprem', 'https://jira.example.com/jira/rest/api/2')

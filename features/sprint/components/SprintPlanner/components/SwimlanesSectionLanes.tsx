@@ -11,7 +11,6 @@ import { Xwrapper } from 'react-xarrows';
 import { WORKING_DAYS, ZIndex } from '@/constants';
 import { SwimlanePinnedArrowSync } from '@/features/sprint/components/SprintPlanner/components/SwimlanePinnedArrowSync';
 import { FeatureLaneAddRow } from '@/features/sprint/components/SprintPlanner/feature-lanes/FeatureLaneAddRow';
-import { PlannerNowLine } from '@/features/sprint/components/SprintPlanner/layout/PlannerNowLine';
 import {
   applyPinnedSwimlaneFrameTops,
   partitionPinnedSwimlaneRows,
@@ -279,11 +278,6 @@ export function SwimlanesSectionLanes({
     swimlaneRows,
   ]);
 
-  const nowLineProps = {
-    dayCount: section.sprintTimelineWorkingDays ?? WORKING_DAYS,
-    participantsColumnWidth: section.participantsColumnWidth,
-    sprintStartDate: section.sprintStartDate,
-  };
   const showArrows = showLinks || arrowTaskLinks.length > 0;
   const taskArrowProps = {
     activeTaskId: section.dragAndDrop.activeTaskId,
@@ -314,7 +308,6 @@ export function SwimlanesSectionLanes({
         style={isPinned ? { zIndex: ZIndex.stickyPinnedRows } : undefined}
       >
         <Swimlane {...laneProps} isPinned={isPinned} onTogglePin={togglePinnedRow} />
-        {isPinned ? <PlannerNowLine {...nowLineProps} /> : null}
         {isPinned && showArrows ? (
           <div
             aria-hidden
@@ -347,7 +340,6 @@ export function SwimlanesSectionLanes({
         <div className="relative">
           {orderedRows.map(renderLane)}
           <FeatureLaneAddRow participantsColumnWidth={section.participantsColumnWidth} />
-          <PlannerNowLine {...nowLineProps} />
         </div>
         {showArrows ? <TaskArrows {...taskArrowProps} /> : null}
       </SwimlaneXarrowRedrawProvider>

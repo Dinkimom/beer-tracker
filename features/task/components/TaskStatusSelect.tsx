@@ -18,6 +18,8 @@ import { TaskStatusSelectTransitionList } from './TaskStatusSelectTransitionList
 interface TaskStatusSelectProps {
   className?: string;
   disabled?: boolean;
+  /** Растягивать триггер на ширину контейнера (ячейки квартала). В сайдере — `false`. */
+  fullWidth?: boolean;
   menuZIndex?: number;
   task: Pick<
     Task,
@@ -36,6 +38,7 @@ export function TaskStatusSelect({
   task,
   onTransitionSelect,
   disabled = false,
+  fullWidth = true,
   className = '',
   menuZIndex = ZIndex.value('submenu'),
 }: TaskStatusSelectProps) {
@@ -126,9 +129,9 @@ export function TaskStatusSelect({
     <div ref={containerRef} className={`relative min-w-0 max-w-full ${className}`}>
       <Button
         ref={buttonRef}
-        className={`!h-auto !min-h-0 w-full min-w-0 !justify-between !gap-1 !rounded-md !px-1.5 !py-1 hover:!border-gray-400 focus-visible:!border-blue-500 focus-visible:!ring-2 focus-visible:!ring-blue-500 dark:hover:!border-gray-500 ${
-          isOpen ? '!border-gray-400 dark:!border-gray-500' : ''
-        }`}
+        className={`!h-auto !min-h-0 min-w-0 !justify-between !gap-1 !rounded-md !px-1.5 !py-1 hover:!border-gray-400 focus-visible:!border-blue-500 focus-visible:!ring-2 focus-visible:!ring-blue-500 dark:hover:!border-gray-500 ${
+          fullWidth ? 'w-full' : '!w-auto'
+        } ${isOpen ? '!border-gray-400 dark:!border-gray-500' : ''}`}
         disabled={disabled}
         type="button"
         variant="outline"

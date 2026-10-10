@@ -100,6 +100,18 @@ export function resolvePlacementToolbarTools(input: {
   return SWIMLANE_PLACEMENT_TOOLS.filter((tool) => tool !== 'availability');
 }
 
+/** Фото и схемы пишутся в object storage (S3); без него инструменты только disabled. */
+export function placementToolRequiresObjectStorage(tool: SwimlanePlacementTool): boolean {
+  return tool === 'image' || tool === 'diagram';
+}
+
+export function isPlacementToolbarToolSelectable(
+  tool: SwimlanePlacementTool,
+  objectStorageConfigured: boolean
+): boolean {
+  return objectStorageConfigured || !placementToolRequiresObjectStorage(tool);
+}
+
 export function resolveVisibilityLayerMenuRows(input: {
   calendarAvailable: boolean;
   personBoundLayersAvailable?: boolean;

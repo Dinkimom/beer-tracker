@@ -122,7 +122,6 @@ export function SwimlanePlacementToolbarLayers({
               ? FLOATING_TOOLBAR_ITEM_ON
               : FLOATING_TOOLBAR_ITEM_IDLE
           }`}
-          data-onboarding="layers"
           title={label}
           type="button"
           variant="ghost"

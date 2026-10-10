@@ -8,6 +8,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { DayErrorIndicator } from '@/features/sprint/components/DayErrorIndicator';
 import { useHolidayCountryStorage, useShowHolidaysStorage } from '@/hooks/useLocalStorage';
 import { getHolidayForDate } from '@/lib/holidays';
+import { getPlannerNow } from '@/utils/plannerClock';
 
 /**
  * Общий компонент ячейки дня для заголовка таймлайна (свимлейн и занятость).
@@ -23,7 +24,7 @@ function formatDateDDMM(date: Date): string {
 }
 
 function isToday(date: Date): boolean {
-  const today = new Date();
+  const today = getPlannerNow();
   return (
     date.getFullYear() === today.getFullYear() &&
     date.getMonth() === today.getMonth() &&
@@ -32,7 +33,7 @@ function isToday(date: Date): boolean {
 }
 
 function isPastDay(date: Date): boolean {
-  const today = new Date();
+  const today = getPlannerNow();
   today.setHours(0, 0, 0, 0);
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -41,12 +42,12 @@ function isPastDay(date: Date): boolean {
 
 function dayHeaderTextClasses(today: boolean, past: boolean): string {
   if (today) {
-    return 'text-blue-700 dark:text-blue-300 font-semibold';
+    return 'font-semibold text-blue-600 dark:text-blue-400';
   }
   if (past) {
-    return 'text-gray-400 dark:text-gray-500 font-medium';
+    return 'font-medium text-gray-400 dark:text-gray-500';
   }
-  return 'text-gray-700 dark:text-gray-300 font-medium';
+  return 'font-medium text-gray-700 dark:text-gray-300';
 }
 
 interface DayHeaderCellContentProps {
@@ -129,12 +130,6 @@ export function DayHeaderCellContent({
             {holiday.emoji}
           </span>
         </TextTooltip>
-      )}
-      {today && (
-        <span
-          aria-hidden
-          className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-pulse shrink-0"
-        />
       )}
       {hasError && (
         <DayErrorIndicator

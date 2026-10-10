@@ -4,15 +4,12 @@ import type { Task } from '@/types';
 
 import { useState } from 'react';
 
-import { Button } from '@/components/Button';
-import { Icon } from '@/components/Icon';
+import { StatusTag } from '@/components/StatusTag';
+import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveTaskInfoActionTaskId } from '@/features/task/components/TaskInfoSidebar/resolveTaskInfoActionTaskId';
-import { useTaskInfoSidebarTransitions } from '@/features/task/components/TaskInfoSidebar/useTaskInfoSidebarTransitions';
-import { getStatusColors } from '@/utils/statusColors';
-
-const TRANSITION_PILL_BASE_CLASS =
-  'inline-flex h-7 cursor-pointer items-center rounded-md border px-2.5 text-sm font-medium shadow-none hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
+import { TaskStatusSelect } from '@/features/task/components/TaskStatusSelect';
+import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
 interface TaskInfoSidebarTransitionsProps {
   task: Task;
@@ -30,89 +27,56 @@ export function TaskInfoSidebarTransitions({
   onStatusChange,
 }: TaskInfoSidebarTransitionsProps) {
   const { t } = useI18n();
-  const { isLoading, transitions } = useTaskInfoSidebarTransitions(task);
-  const [pendingTransitionId, setPendingTransitionId] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const status = task.originalStatus?.trim() || null;
+  const canChangeStatus = Boolean(onStatusChange) && !task.isLocalTask && Boolean(status);
 
-  if (task.isLocalTask || !onStatusChange) {
+  if (!status) {
     return null;
   }
 
-  if (isLoading) {
-    return (
-      <div className="mt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-        <Icon className="h-4 w-4 animate-spin" name="spinner" />
-        <span>{t('task.statusSelect.loadingTransitions')}</span>
-      </div>
-    );
-  }
-
-  if (transitions.length === 0) {
-    return null;
-  }
-
-  const handleSelect = async (
+  const handleTransitionSelect = (
     transitionId: string,
     targetStatusKey?: string,
     targetStatusDisplay?: string,
     screenId?: string
   ) => {
-    if (pendingTransitionId) {
+    if (!onStatusChange || isPending) {
       return;
     }
-    setPendingTransitionId(transitionId);
-    try {
-      await onStatusChange(
-        resolveTaskInfoActionTaskId(task),
-        transitionId,
-        targetStatusKey,
-        targetStatusDisplay,
-        screenId
-      );
-    } finally {
-      setPendingTransitionId(null);
-    }
+    setIsPending(true);
+    onStatusChange(
+      resolveTaskInfoActionTaskId(task),
+      transitionId,
+      targetStatusKey,
+      targetStatusDisplay,
+      screenId
+    )
+      .catch(() => undefined)
+      .finally(() => {
+        setIsPending(false);
+      });
   };
 
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {transitions.map((transition) => {
-        const label = transition.to?.display || transition.display || transition.id;
-        const targetStatus = transition.to?.key ?? transition.key ?? '';
-        const statusColors = getStatusColors(targetStatus);
-        const colorClasses = [
-          statusColors.bg,
-          statusColors.bgDark ?? '',
-          statusColors.text,
-          statusColors.textDark ?? '',
-          statusColors.border,
-          statusColors.borderDark ?? '',
-        ]
-          .filter(Boolean)
-          .join(' ');
-        const isPending = pendingTransitionId === transition.id;
-        return (
-          <Button
-            key={transition.id}
-            className={`${TRANSITION_PILL_BASE_CLASS} ${colorClasses}`}
-            disabled={pendingTransitionId != null}
-            type="button"
-            variant="ghost"
-            onClick={() =>
-              void handleSelect(
-                transition.id,
-                transition.to?.key,
-                transition.to?.display,
-                transition.screen?.id
-              )
-            }
-          >
-            <span className="truncate">{label}</span>
-            {isPending ? (
-              <Icon className="ml-1.5 h-3.5 w-3.5 shrink-0 animate-spin" name="spinner" />
-            ) : null}
-          </Button>
-        );
-      })}
+    <div className="mb-3">
+      <p className="mb-1.5 text-xs font-medium text-ds-text-muted">{t('sprintPlanner.taskInfo.status')}</p>
+      {canChangeStatus ? (
+        <TaskStatusSelect
+          className="w-fit max-w-full"
+          disabled={isPending}
+          fullWidth={false}
+          menuZIndex={ZIndex.value('popupContent')}
+          task={task}
+          onTransitionSelect={handleTransitionSelect}
+        />
+      ) : (
+        <StatusTag
+          label={taskStatusLabel(task)}
+          status={status}
+          statusColorKey={task.statusColorKey}
+        />
+      )}
     </div>
   );
 }

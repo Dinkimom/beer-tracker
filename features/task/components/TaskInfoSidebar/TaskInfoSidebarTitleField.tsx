@@ -17,7 +17,7 @@ import { updateIssueFields } from '@/lib/beerTrackerApi';
 const TITLE_PAD_CLASS = 'px-2.5 py-1.5';
 
 const TITLE_TEXT_CLASS =
-  'text-left text-2xl font-semibold leading-snug text-gray-900 dark:text-gray-100';
+  'text-left text-xl font-semibold leading-snug text-gray-900 dark:text-gray-100';
 
 const TITLE_DISPLAY_CLASS = `inline-block w-fit max-w-full -ml-2.5 cursor-text rounded-lg border border-transparent ${TITLE_PAD_CLASS} ${TITLE_TEXT_CLASS} transition-all duration-200 hover:border-gray-200 active:scale-[0.99] active:border-gray-300 disabled:pointer-events-none disabled:hover:border-transparent dark:hover:border-gray-600 dark:active:border-gray-500 dark:disabled:hover:border-transparent`;
 

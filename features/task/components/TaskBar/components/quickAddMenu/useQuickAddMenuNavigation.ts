@@ -18,6 +18,7 @@ interface UseQuickAddMenuNavigationInput {
   isSubmitting: boolean;
   lockedMode?: Exclude<QuickAddMode, 'existing'>;
   notesVisible: boolean;
+  objectStorageConfigured?: boolean;
   sprintPlannerUi: {
     noteClipboard: SwimlaneNoteClipboard | null;
     clearNoteEditPreview: () => void;
@@ -47,6 +48,7 @@ export function useQuickAddMenuNavigation({
   isSubmitting,
   lockedMode,
   notesVisible,
+  objectStorageConfigured = true,
   onCancel,
   onCommentColorChange,
   onCreateAvailability,
@@ -69,6 +71,7 @@ export function useQuickAddMenuNavigation({
         lockedMode,
         nextMode,
         notesVisible,
+        objectStorageConfigured,
       });
       if (action === 'noop') {
         return;
@@ -112,6 +115,7 @@ export function useQuickAddMenuNavigation({
       imagesVisible,
       lockedMode,
       notesVisible,
+      objectStorageConfigured,
       onCommentColorChange,
       onCreateAvailability,
       onDraftKindChange,

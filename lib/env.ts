@@ -436,6 +436,18 @@ export function parseS3ForcePathStyle(raw: string | undefined): boolean {
   return value !== 'false' && value !== '0' && value !== 'off' && value !== 'no';
 }
 
+const S3_REQUIRED_ENV_KEYS = [
+  'S3_ACCESS_KEY',
+  'S3_BUCKET',
+  'S3_ENDPOINT_URL',
+  'S3_SECRET_KEY',
+] as const;
+
+/** True when all required `S3_*` variables are set (uploads/previews can run). */
+export function isS3Configured(): boolean {
+  return S3_REQUIRED_ENV_KEYS.every((name) => Boolean(process.env[name]?.trim()));
+}
+
 /**
  * S3-compatible object storage. Cached per process.
  * Throws if required `S3_*` variables are missing — upload/get fail loudly.

@@ -88,11 +88,6 @@ export function setActivePlannerTimelineScale(scale: PlannerTimelineScale): void
   customSteps = ordered ?? [];
 }
 
-/** Сколько слотов приходится на 1 SP в начале шкалы. «Сутки» = вся сетка дня. */
-function estimateTimeslotMultiplier(scale: PlannerTimelineScale = getActivePlannerTimelineScale()): number {
-  return scale.estimateUnit === 'day' ? scale.timeslotsPerDay : 1;
-}
-
 const TIMESLOTS_TO_SP_THRESHOLDS: readonly [number, number][] = [
   [1, 1],
   [2, 2],
@@ -112,6 +107,7 @@ const SP_TO_TIMESLOTS_THRESHOLDS: readonly [number, number][] = [
 ];
 
 const SCALE_ANCHOR_STORY_POINTS = [1, 2, 3, 5, 8, 13, 21] as const;
+const SCALE_POINTS_FACTOR = 100;
 
 function baseTimeslotsToStoryPoints(units: number): number {
   for (const [maxTimeslots, storyPoints] of TIMESLOTS_TO_SP_THRESHOLDS) {
@@ -125,6 +121,22 @@ function baseStoryPointsToTimeslots(sp: number): number {
     if (sp <= maxSp) return timeslots;
   }
   return 10;
+}
+
+/** Доля дня без плавающего мусора (1/3 слота при 3 слотах/день → 0.33). */
+function roundDayStoryPoints(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const rounded = Math.round(value * SCALE_POINTS_FACTOR) / SCALE_POINTS_FACTOR;
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
+/** «1 SP = рабочий день»: длина карточки прямо пропорциональна оценке. */
+function dayTimeslotsToStoryPoints(timeslots: number, timeslotsPerDay: TimeslotsPerDay): number {
+  return roundDayStoryPoints(timeslots / timeslotsPerDay);
+}
+
+function dayStoryPointsToTimeslots(sp: number, timeslotsPerDay: TimeslotsPerDay): number {
+  return Math.max(1, Math.round(sp * timeslotsPerDay));
 }
 
 /** Доля от якоря «1 SP» / первого шага: 0.3 при 2 слотах на 1 SP → 1 слот, а не весь шаг. */
@@ -177,20 +189,22 @@ export function timeslotsToStoryPointsForScale(timeslots: number, scale: Planner
   if (timeslots <= 0) return 0;
   const steps = activeCustomSteps(scale);
   if (steps) return customTimeslotsToStoryPoints(timeslots, steps);
-  const units = Math.floor(timeslots / estimateTimeslotMultiplier(scale));
-  if (units <= 0) return 0;
-  return baseTimeslotsToStoryPoints(units);
+  if (scale.estimateUnit === 'day') {
+    return dayTimeslotsToStoryPoints(timeslots, scale.timeslotsPerDay);
+  }
+  return baseTimeslotsToStoryPoints(timeslots);
 }
 
 export function storyPointsToTimeslotsForScale(sp: number, scale: PlannerTimelineScale): number {
   if (sp <= 0) return 0;
   const steps = activeCustomSteps(scale);
   if (steps) return customStoryPointsToTimeslots(sp, steps);
-  const multiplier = estimateTimeslotMultiplier(scale);
-  // Лестница начинается с 1 SP: всё в (0, 1) раньше схлопывалось в полный первый шаг
-  // (при «1 SP = сутки» и 2 слотах/день 0.3 становилось целым рабочим днём).
-  if (sp < 1) return slotsForFractionalStoryPoints(sp, multiplier);
-  return baseStoryPointsToTimeslots(sp) * multiplier;
+  if (scale.estimateUnit === 'day') {
+    return dayStoryPointsToTimeslots(sp, scale.timeslotsPerDay);
+  }
+  // Лестница начинается с 1 SP: всё в (0, 1) раньше схлопывалось в полный первый шаг.
+  if (sp < 1) return slotsForFractionalStoryPoints(sp, 1);
+  return baseStoryPointsToTimeslots(sp);
 }
 
 export interface EstimateScalePreviewRow {

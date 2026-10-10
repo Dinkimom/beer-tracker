@@ -83,7 +83,6 @@ export function SprintPlannerControlsBarRightSection({
             <Icon className={`h-4 w-4 ${isReloading ? 'animate-spin' : ''}`} name="refresh" />
           </Button>
         ) : null}
-        <div className="shrink-0" data-onboarding="view-mode">
         <CustomSelect<ControlsBarViewModeSelectValue>
           className="w-[148px] shrink-0 md:w-[165px]"
           options={[
@@ -97,7 +96,6 @@ export function SprintPlannerControlsBarRightSection({
           value={viewModeSelectValue}
           onChange={(v) => applyControlsBarViewModeChange(v, setViewMode)}
         />
-        </div>
         {onOpenSidebar && (
           <Button
             aria-label={t('sprintPlanner.controls.sidebarToggle')}

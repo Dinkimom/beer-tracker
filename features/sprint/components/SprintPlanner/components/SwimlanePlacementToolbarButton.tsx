@@ -42,6 +42,8 @@ const TOOL_ICONS: Record<Exclude<SwimlanePlacementTool, 'comment' | 'cursor' | '
 
 interface SwimlanePlacementToolbarButtonProps {
   active: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
   expanded?: boolean;
   noteColor?: StickyNoteColor;
   showSeparatorBefore: boolean;
@@ -90,6 +92,8 @@ function resolvePlacementToolbarGlyph(
 
 export function SwimlanePlacementToolbarButton({
   active,
+  disabled = false,
+  disabledReason,
   expanded,
   noteColor,
   showSeparatorBefore,
@@ -103,6 +107,33 @@ export function SwimlanePlacementToolbarButton({
   const label = t(`sprintPlanner.swimlane.placementToolbar.${tool}`);
   const shortcut = formatPlacementToolShortcutHint(tool);
   const iconOnly = tool === 'cursor';
+  const ariaLabel = disabledReason
+    ? `${label}. ${disabledReason}`
+    : formatPlannerShortcutAria(label, shortcut);
+  const button = (
+    <Button
+      aria-expanded={tool === 'comment' ? expanded : undefined}
+      aria-haspopup={tool === 'comment' ? 'dialog' : undefined}
+      aria-label={ariaLabel}
+      aria-pressed={active}
+      className={`!h-9 !min-h-0 !min-w-0 !rounded-lg !py-0 font-medium ${plannerOnboardingToolChromeClass(toolsEmphasis, tool)} ${
+        iconOnly ? '!w-9 !gap-0 !px-0' : '!gap-2 !px-3 text-sm'
+      } ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${
+        active
+          ? FLOATING_TOOLBAR_ITEM_ON
+          : FLOATING_TOOLBAR_ITEM_IDLE
+      }`}
+      disabled={disabled}
+      type="button"
+      variant="ghost"
+      onClick={onSelect}
+    >
+      <IconActionMotion active={active} name={tool}>
+        {resolvePlacementToolbarGlyph(tool, noteColor, isDark, active, issueTrackerKind)}
+      </IconActionMotion>
+      {iconOnly ? null : <span>{label}</span>}
+    </Button>
+  );
   return (
     <>
       {showSeparatorBefore ? (
@@ -111,30 +142,15 @@ export function SwimlanePlacementToolbarButton({
           className="mx-1 h-6 w-px shrink-0 self-center bg-gray-200 dark:bg-gray-600"
         />
       ) : null}
-      <PlannerShortcutTooltip label={label} shortcut={shortcut} side="top">
-        <Button
-          aria-expanded={tool === 'comment' ? expanded : undefined}
-          aria-haspopup={tool === 'comment' ? 'dialog' : undefined}
-          aria-label={formatPlannerShortcutAria(label, shortcut)}
-          aria-pressed={active}
-          className={`!h-9 !min-h-0 !min-w-0 !rounded-lg !py-0 font-medium ${plannerOnboardingToolChromeClass(toolsEmphasis, tool)} ${
-            iconOnly ? '!w-9 !gap-0 !px-0' : '!gap-2 !px-3 text-sm'
-          } ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${
-            active
-              ? FLOATING_TOOLBAR_ITEM_ON
-              : FLOATING_TOOLBAR_ITEM_IDLE
-          }`}
-          data-onboarding-tool={tool}
-          type="button"
-          variant="ghost"
-          onClick={onSelect}
-        >
-          <IconActionMotion active={active} name={tool}>
-            {resolvePlacementToolbarGlyph(tool, noteColor, isDark, active, issueTrackerKind)}
-          </IconActionMotion>
-          {iconOnly ? null : <span>{label}</span>}
-        </Button>
-      </PlannerShortcutTooltip>
+      {disabledReason ? (
+        <PlannerShortcutTooltip label={disabledReason} shortcut="" side="top">
+          <span className="inline-flex">{button}</span>
+        </PlannerShortcutTooltip>
+      ) : (
+        <PlannerShortcutTooltip label={label} shortcut={shortcut} side="top">
+          {button}
+        </PlannerShortcutTooltip>
+      )}
     </>
   );
 }
