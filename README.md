@@ -93,7 +93,7 @@ S3_KEY_PREFIX=local/
 | Провайдер | Документация |
 |-----------|----------------|
 | Яндекс Трекер (`tracker`) | [Ветка A](./docs/ISSUE_TRACKERS.md#ветка-a--яндекс-трекер) — OAuth-приложение на oauth.yandex.ru + `YANDEX_OAUTH_CLIENT_ID` |
-| Jira Cloud (`jira-cloud`) | [Ветка B](./docs/ISSUE_TRACKERS.md#ветка-b--jira-cloud) — email + API token |
+| Jira Cloud (`jira-cloud`) | [Ветка B](./docs/ISSUE_TRACKERS.md#ветка-b--jira-cloud) — Atlassian OAuth (пользователи) + email/API-токен (орг) |
 | Jira DC/Server (`jira-onprem`) | [Ветка C](./docs/ISSUE_TRACKERS.md#ветка-c--jira-data-center--server) — PAT |
 
 ```bash
@@ -106,6 +106,8 @@ YANDEX_OAUTH_CLIENT_ID=
 
 # ISSUE_TRACKER_PROVIDER=jira-cloud
 # TRACKER_API_URL=https://your-site.atlassian.net/rest/api/3
+# ATLASSIAN_OAUTH_CLIENT_ID=
+# ATLASSIAN_OAUTH_CLIENT_SECRET=
 
 # ISSUE_TRACKER_PROVIDER=jira-onprem
 # TRACKER_API_URL=https://jira.example.com/rest/api/2
@@ -113,7 +115,7 @@ YANDEX_OAUTH_CLIENT_ID=
 
 ### Поля в админке организации
 
-Зависят от провайдера (не из общего env): для **Yandex Tracker** — Cloud Organization ID; для **Jira** — параметры сайта/учётки. В запросах планера — `X-Organization-Id`.
+Зависят от провайдера (не из общего env): для **Yandex Tracker** — Cloud Organization ID; для **Jira Cloud** — email + API-токен (Basic для sync); для **Jira on-prem** — PAT/учётка сайта. В запросах планера — `X-Organization-Id`.
 
 ### Серверный токен (опционально, fallback)
 
@@ -121,13 +123,13 @@ YANDEX_OAUTH_CLIENT_ID=
 TRACKER_OAUTH_TOKEN=your_token_here
 ```
 
-### Пользовательский токен (обязательно)
+### Пользовательская учётка (обязательно)
 
-1. Откройте приложение → `/auth-setup` при первом входе
-2. Получите токен по **своей** ветке (Yandex OAuth / Atlassian API token / Jira PAT)
-3. Введите данные и продолжите
+1. Откройте приложение → `/auth-setup` (или `/register` при первом on-prem setup)
+2. По **своей** ветке: Yandex OAuth / **«Продолжить с Atlassian»** (Jira Cloud) / Jira PAT (on-prem)
+3. Продолжите вход
 
-Без учётных данных трекера доступ к планеру невозможен. Детали API: [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md).
+Без учётных данных трекера доступ к планеру невозможен. Детали: [ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md), API — [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md).
 
 ## Документация
 

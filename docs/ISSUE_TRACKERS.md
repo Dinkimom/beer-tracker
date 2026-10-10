@@ -62,6 +62,13 @@ YANDEX_OAUTH_CLIENT_ID=ваш_client_id
 
 ## Ветка B — Jira Cloud
 
+Два разных канала учётки:
+
+| Кто | Как | Где |
+|-----|-----|-----|
+| Пользователь | Atlassian OAuth 2.0 (3LO) | `/auth-setup`, `/register` — кнопка **«Продолжить с Atlassian»** / **Continue with Atlassian** |
+| Организация | email + API-токен (Basic) | админка «Трекер» — sync, каталог полей, org-вызовы |
+
 ```bash
 ISSUE_TRACKER_PROVIDER=jira-cloud
 TRACKER_API_URL=https://your-site.atlassian.net/rest/api/3
@@ -70,18 +77,33 @@ ATLASSIAN_OAUTH_CLIENT_SECRET=…
 ```
 
 - **Не нужен** `YANDEX_OAUTH_CLIENT_ID` — это только для ветки A.
-- **Пользователи:** Atlassian OAuth 2.0 (3LO) — кнопка **Connect with Atlassian** (`/auth-setup`, register, настройки).
-  1. Создайте OAuth-приложение в [Developer Console](https://developer.atlassian.com/console/).
-  2. Authorization → OAuth 2.0 (3LO): callback `{origin}/api/auth/atlassian/callback`.
-  3. Permissions → Jira API (classic): `read:jira-work`, `write:jira-work`, `read:jira-user` + `offline_access`;
-     Jira Software (granular, иначе Agile 401): `read:board-scope:jira-software`, `write:board-scope:jira-software`,
-     `read:board-scope.admin:jira-software`, `read:sprint:jira-software`, `write:sprint:jira-software`,
-     `read:epic:jira-software`, `write:epic:jira-software`, `read:issue:jira-software`, `write:issue:jira-software`,
-     `read:project:jira`.
-  4. Скопируйте Client ID / Secret в `.env`.
-  - Access + refresh + `cloudId` — в браузере (localStorage); REST: `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3` с `Bearer`.
-- **Организация (админка «Трекер»):** обычный **API-токен** Atlassian + email аккаунта (Basic к `TRACKER_API_URL` на `*.atlassian.net`). Нужен для sync, каталога полей и прочих org-вызовов.
-- `TRACKER_API_URL` — site REST (`https://your-site.atlassian.net/rest/api/3`) и ссылки `/browse/{key}`.
+
+### 1. OAuth-приложение Atlassian (пользовательский вход)
+
+1. Создайте OAuth-приложение в [Developer Console](https://developer.atlassian.com/console/).
+2. Authorization → OAuth 2.0 (3LO): callback `{origin}/api/auth/atlassian/callback` (точно, с origin инстанса).
+3. Permissions → Jira API (classic): `read:jira-work`, `write:jira-work`, `read:jira-user` + `offline_access`;
+   Jira Software (granular, иначе Agile 401): `read:board-scope:jira-software`, `write:board-scope:jira-software`,
+   `read:board-scope.admin:jira-software`, `read:sprint:jira-software`, `write:sprint:jira-software`,
+   `read:epic:jira-software`, `write:epic:jira-software`, `read:issue:jira-software`, `write:issue:jira-software`,
+   `read:project:jira`.
+   Тот же набор задан в коде: `lib/atlassianOAuth/constants.ts` (`ATLASSIAN_OAUTH_SCOPES`).
+4. Client ID / Secret → runtime `.env` / secrets контейнера (`ATLASSIAN_OAUTH_*`), затем рестарт app.
+   Это **не** Docker build ARG (в отличие от `YANDEX_OAUTH_CLIENT_ID`): пустые значения на сборке образа не мешают, если задать их при запуске.
+
+После «Продолжить с Atlassian»: access + refresh + `cloudId` в браузере (localStorage).  
+REST пользователя: `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3` с `Bearer` (заголовок `X-Tracker-Cloud-Id` в запросах к Beer Tracker API).
+
+Роуты: `/api/auth/atlassian/start`, `/api/auth/atlassian/callback`, `/api/auth/atlassian/refresh`.
+
+### 2. Организация в админке
+
+Email Atlassian-аккаунта + **API-токен** (Basic к site `TRACKER_API_URL` на `*.atlassian.net`).  
+Это **не** пользовательский OAuth: отдельный секрет для sync и каталога. Help: [Atlassian API tokens](https://id.atlassian.com/manage-profile/security/api-tokens).
+
+### 3. `TRACKER_API_URL`
+
+Site REST (`https://your-site.atlassian.net/rest/api/3`) и ссылки `/browse/{key}`. Живые user-вызовы к API идут через `api.atlassian.com` (см. выше).
 
 ---
 
@@ -110,8 +132,8 @@ TRACKER_API_URL=https://jira.example.com/rest/api/2
 ## Где настраивать
 
 1. **Инстанс** — `.env`: `ISSUE_TRACKER_PROVIDER`, `TRACKER_API_URL` (+ ветка A: `YANDEX_OAUTH_CLIENT_ID`; ветка B: `ATLASSIAN_OAUTH_*`).
-2. **Организация** — админка «Трекер» / integration.
-3. **Пользователь** — `/auth-setup` или настройки.
+2. **Организация** — админка «Трекер» / integration (ветка B: email + API-токен).
+3. **Пользователь** — `/auth-setup` или `/register` (ветка B: OAuth); настройки — правка сохранённого токена в браузере.
 
 Поля env: [`env.example`](../env.example).  
 Инженерия адаптеров / контракты Yandex: [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md), [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md).

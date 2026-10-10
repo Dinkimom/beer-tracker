@@ -57,4 +57,4 @@ export const JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE =
   'Укажите email Atlassian-аккаунта для API-токена организации.';
 
 export const JIRA_CLOUD_OAUTH_CLOUD_ID_REQUIRED_MESSAGE =
-  'Укажите Atlassian cloudId (повторно выполните Connect with Atlassian).';
+  'Укажите Atlassian cloudId (повторно выполните «Продолжить с Atlassian»).';

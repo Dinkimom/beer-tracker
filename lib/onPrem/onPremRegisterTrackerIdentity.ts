@@ -44,7 +44,7 @@ export function onPremRegisterIdentityFromMyself(
     (trackerUserId ? `${trackerUserId}@users.atlassian.local` : null);
   if (!email) {
     throw new TrackerApiConfigError(
-      'Не удалось определить пользователя трекера (accountId/email). Повторите Connect with Atlassian.',
+      'Не удалось определить пользователя трекера (accountId/email). Повторите «Продолжить с Atlassian».',
       422
     );
   }

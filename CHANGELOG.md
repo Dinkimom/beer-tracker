@@ -6,15 +6,15 @@ Notable changes to Beer Tracker, newest first. English first, then Russian.
 
 ### English
 
-- Atlassian OAuth for Jira Cloud: connect from auth-setup and admin tracker settings; token refresh and org secret storage.
-- Registration and session flows accept OAuth-backed Jira Cloud identity; token paste remains for on-prem / PAT setups.
+- Atlassian OAuth for Jira Cloud: «Continue with Atlassian» on auth-setup and register; token refresh; org still uses email + API token for sync.
+- Registration and session flows accept OAuth-backed Jira Cloud identity; token paste remains for on-prem / PAT and org admin.
 - Retro board horizontal scroll via mouse wheel; planner and admin UI polish around tracker connection.
 - Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.7.0` and `latest` (`linux/amd64`, `linux/arm64`).
 
 ### Русский
 
-- Atlassian OAuth для Jira Cloud: подключение из auth-setup и настроек трекера в админке; обновление токена и хранение секрета организации.
-- Регистрация и сессии принимают OAuth-идентичность Jira Cloud; вставка токена остаётся для on-prem / PAT.
+- Atlassian OAuth для Jira Cloud: «Продолжить с Atlassian» на auth-setup и register; обновление токена; орг по-прежнему email + API-токен для sync.
+- Регистрация и сессии принимают OAuth-идентичность Jira Cloud; вставка токена остаётся для on-prem / PAT и админки организации.
 - Горизонтальный скролл доски ретро колесом мыши; полировка UI планера и админки вокруг подключения трекера.
 - Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.7.0` и `latest` (`linux/amd64`, `linux/arm64`).
 

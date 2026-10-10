@@ -39,7 +39,7 @@
 | · Бэклог | `?tab=backlog` | Задачи вне спринта |
 | · Диаграмма сгорания | `?tab=burndown` | Burndown SP/TP |
 | **Выбор доски** | `/select-board` | Первичный выбор доски Tracker |
-| **Настройка токена** | `/auth-setup` | OAuth-токен Tracker |
+| **Настройка доступа** | `/auth-setup` | Учётка трекера (Yandex OAuth / Atlassian OAuth / Jira PAT) |
 | **Вход / регистрация** | `/login`, `/register` | Аккаунт продукта |
 | **Админка** | `/admin/*` | Организации, команды, sync |
 
@@ -169,7 +169,7 @@
 
 ### 4.9. Настройки пользователя (модалка)
 
-- Токен / учётка подключённого issue tracker (Yandex OAuth или Jira PAT / API token)
+- Токен / учётка подключённого issue tracker (Yandex OAuth, Jira Cloud OAuth или Jira PAT / API token)
 - Календарь (CalDAV) и показ занятости на свимлейне
 - Общие: функции UI, отображение, sync, видимость табов сайдбара
 - Язык интерфейса (ru/en), тема

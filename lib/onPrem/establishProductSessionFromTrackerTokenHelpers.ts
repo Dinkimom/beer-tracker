@@ -20,7 +20,7 @@ function resolveSessionApiUrl(input: {
   const cloudId = input.cloudId?.trim() ?? '';
   if (!cloudId) {
     throw new TrackerApiConfigError(
-      'Укажите Atlassian cloudId (повторно выполните Connect with Atlassian).',
+      'Укажите Atlassian cloudId (повторно выполните «Продолжить с Atlassian»).',
       400
     );
   }

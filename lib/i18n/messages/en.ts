@@ -625,7 +625,7 @@ export const enMessages = {
         'jira-onprem':
           'Create the first organization. Enter the Jira personal access token of the administrator who connects the site.',
         'jira-cloud':
-          'Create the first organization. Connect with Atlassian as the administrator who links Jira.',
+          'Create the first organization. Continue with Atlassian as the administrator who links Jira.',
       },
       onboardingSubmit: 'Create organization and administrator',
       closedTitle: 'Registration is closed',
@@ -1848,7 +1848,7 @@ export const enMessages = {
       },
       description: {
         jira:
-          'The Jira site URL is set on this instance. For sync and the field catalog, save the Atlassian account email and API token. Users sign in with Connect with Atlassian. You can verify before saving; secrets are stored encrypted on the server.',
+          'The Jira site URL is set on this instance. For sync and the field catalog, save the Atlassian account email and API token. Users sign in with Continue with Atlassian. You can verify before saving; secrets are stored encrypted on the server.',
         'yandex-tracker':
           'Cloud Organization ID and OAuth token are both required to access the API. You can verify before saving; secrets are stored encrypted on the server.',
       },

@@ -225,7 +225,7 @@ export function issueTrackerTokenHelpUrl(
   trackerApiUrl?: string
 ): string {
   if (kind === 'jira-cloud') {
-    // Admin org pulls use API token; user login uses Connect (separate UI).
+    // Admin org pulls use API token; user login uses Continue with Atlassian (separate UI).
     return JIRA_CLOUD_API_TOKEN_HELP_URL;
   }
   if (kind === 'jira-onprem') {

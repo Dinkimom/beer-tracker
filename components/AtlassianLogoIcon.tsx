@@ -2,7 +2,7 @@ interface AtlassianLogoIconProps {
   className?: string;
 }
 
-/** Знак Atlassian (синий), для кнопки Connect with Atlassian. */
+/** Знак Atlassian (синий), для кнопки «Продолжить с Atlassian». */
 export function AtlassianLogoIcon({ className }: AtlassianLogoIconProps) {
   return (
     <svg

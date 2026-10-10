@@ -30,7 +30,7 @@ export function throwIfJiraAgileAuthError(input: {
       ? (details as { message: string }).message
       : '';
   const scopeHint = detailMessage.toLowerCase().includes('scope')
-    ? ' Добавьте Jira Software scopes в Atlassian Developer Console и выполните Connect with Atlassian снова.'
+    ? ' Добавьте Jira Software scopes в Atlassian Developer Console и выполните «Продолжить с Atlassian» снова.'
     : '';
   throw new Error(
     `Jira Agile: нет доступа к спринтам доски ${boardId} (${status}${
