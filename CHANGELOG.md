@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.7.1] — 2026-10-11
+
+### English
+
+- Fix Atlassian OAuth credentials: read `ATLASSIAN_OAUTH_CLIENT_ID` / `SECRET` at runtime so Docker Hub images are not stuck with empty build-time values.
+- Clarify Jira Cloud docs and copy: user «Continue with Atlassian»; org admin still uses email + API token.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.7.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Исправление учёток Atlassian OAuth: `ATLASSIAN_OAUTH_CLIENT_ID` / `SECRET` читаются в runtime, чтобы образы Docker Hub не залипали с пустыми значениями со сборки.
+- Уточнены docs и копирайт Jira Cloud: пользователь — «Продолжить с Atlassian»; орг — email + API-токен.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.7.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.7.0] — 2026-10-11
 
 ### English
