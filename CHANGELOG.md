@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.10.0] — 2026-10-11
+
+### English
+
+- Tracker provider and API URL are chosen per organization on registration and in admin «Tracker», and stored in the database instead of instance-wide `ISSUE_TRACKER_PROVIDER` and `TRACKER_API_URL`.
+- The organization tracker token is stored encrypted in the database; there is no `TRACKER_OAUTH_TOKEN` environment fallback.
+- The tracker type can be changed until the first sync, then it is locked.
+- Existing databases can copy the previous env provider and API URL with `database/add-organization-issue-tracker-settings.sql`.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.10.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Тип трекера и URL API выбираются на организацию при регистрации и в админке «Трекер» и хранятся в БД вместо общих `ISSUE_TRACKER_PROVIDER` и `TRACKER_API_URL`.
+- Токен организации хранится в БД в зашифрованном виде; переменной окружения `TRACKER_OAUTH_TOKEN` больше нет.
+- Тип трекера можно менять до первой синхронизации, после неё он фиксируется.
+- Для уже существующей БД прежние значения из env переносятся скриптом `database/add-organization-issue-tracker-settings.sql`.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.10.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.9.0] — 2026-10-11
 
 ### English
