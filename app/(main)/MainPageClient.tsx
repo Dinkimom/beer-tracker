@@ -30,6 +30,7 @@ import { MainPageClientErrorView } from './MainPageClientErrorView';
 import { MainPageClientRedirectingView } from './MainPageClientRedirectingView';
 import { computeMainPagePlannerAccessDenied } from './mainPagePlannerAccessDenied';
 import { useMainPageClientData } from './useMainPageClientData';
+import { usePlannerDocumentTitle } from './usePlannerDocumentTitle';
 
 const sprintTabParser = parseAsStringLiteral(['backlog', 'board', 'burndown', 'retro']).withDefault('board');
 
@@ -106,6 +107,7 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
     reloadTasksMutation,
     selectedBoardId,
     selectedSprintId,
+    selectedSprintName,
     setSelectedBoardId,
     setSelectedSprintId,
     showFullScreenLoading,
@@ -134,6 +136,13 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
     () => getBoardSelectorLabel(selectedBoardId),
     [selectedBoardId, getBoardSelectorLabel]
   );
+
+  usePlannerDocumentTitle({
+    backlogTitle: t('header.sprintTabs.backlog'),
+    boardLabel: boardName,
+    sprintName: selectedSprintName,
+    tab: activeTab,
+  });
 
   const adminHref = useMemo(() => {
     const hasAdminAccess =

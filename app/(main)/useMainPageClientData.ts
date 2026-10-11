@@ -1,6 +1,6 @@
 import type { SprintTab } from '@/components/PageHeader';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
 import { useSelectedBoardStorage, useSelectedSprintStorage } from '@/hooks/useLocalStorage';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
@@ -97,11 +97,6 @@ export function useMainPageClientData({
   const selectedSprintFromList = sprints.find((s) => s.id === effectiveSprintId);
   const selectedSprintName = selectedSprintDisplayName(selectedSprintFromList, sprintInfo);
 
-  useEffect(() => {
-    if (!selectedSprintName?.trim()) return;
-    document.title = selectedSprintName.trim();
-  }, [selectedSprintName]);
-
   useMainPageClientRedirects({
     boardsLoading,
     getBoardById,
@@ -170,6 +165,7 @@ export function useMainPageClientData({
     reloadTasksMutation,
     selectedBoardId: queryBoardId,
     selectedSprintId: querySprintId,
+    selectedSprintName,
     setSelectedBoardId,
     setSelectedSprintId: setSelectedSprintIdState,
     showFullScreenLoading,
