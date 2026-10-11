@@ -69,17 +69,17 @@ export function StatusSubmenuTransitionList({
         );
         const isSelected = targetStatus.toLowerCase() === task.originalStatus?.toLowerCase();
         const selectedRing = isSelected
-          ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-blue-400 dark:ring-offset-gray-800'
+          ? 'ring-1 ring-blue-500 dark:ring-blue-400'
           : '';
         const isPending = pendingTransitionId === transition.id;
 
         return (
           <div
             key={transition.id}
-            className={`mb-1.5 rounded-md border-2 last:mb-0 ${statusColors.bg} ${statusColors.border} ${selectedRing}`}
+            className={`mb-1 rounded-md border last:mb-0 ${statusColors.bg} ${statusColors.border} ${selectedRing}`}
           >
             <Button
-              className={`flex w-full items-center gap-2 rounded-[inherit] border-0 bg-transparent px-3 py-2 text-left text-sm font-medium shadow-none hover:!bg-black/[0.06] dark:hover:!bg-white/[0.1] ${statusColors.text} ${
+              className={`flex w-full items-center gap-1.5 rounded-[inherit] border-0 bg-transparent !px-2 !py-1 text-left !text-xs font-medium leading-4 shadow-none hover:!bg-black/[0.06] active:!bg-black/10 dark:hover:!bg-white/[0.1] dark:active:!bg-white/[0.16] ${statusColors.text} ${
                 isPending ? '!opacity-100' : ''
               }`}
               disabled={isLoading}
@@ -99,12 +99,12 @@ export function StatusSubmenuTransitionList({
               </span>
               {isPending ? (
                 <Icon
-                  className={`h-4 w-4 shrink-0 animate-spin ${statusColors.text}`}
+                  className={`h-3.5 w-3.5 shrink-0 animate-spin ${statusColors.text}`}
                   name="spinner"
                 />
               ) : null}
               {!isPending && isSelected ? (
-                <Icon className={`h-4 w-4 shrink-0 ${statusColors.text}`} name="check" />
+                <Icon className={`h-3.5 w-3.5 shrink-0 ${statusColors.text}`} name="check" />
               ) : null}
             </Button>
           </div>

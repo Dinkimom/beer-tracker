@@ -197,6 +197,49 @@ export function resolveVisibleTaskArrowLinks(input: {
   return visibleLinks;
 }
 
+function linkEndpointsArePlaced(
+  fromTaskId: string,
+  toTaskId: string,
+  taskPositions: Map<string, TaskPosition> | undefined
+): boolean {
+  if (!taskPositions) return true;
+  return taskPositions.has(fromTaskId) && taskPositions.has(toTaskId);
+}
+
+function devQaArrowTouchesTask(
+  taskId: string,
+  qaTasksMap: Map<string, Task>,
+  taskPositions: Map<string, TaskPosition>
+): boolean {
+  const qaOfDev = qaTasksMap.get(taskId);
+  if (qaOfDev && taskPositions.has(taskId) && taskPositions.has(qaOfDev.id)) {
+    return true;
+  }
+  for (const [devTaskId, qaTask] of qaTasksMap) {
+    if (qaTask.id !== taskId) continue;
+    if (taskPositions.has(devTaskId) && taskPositions.has(qaTask.id)) return true;
+  }
+  return false;
+}
+
+/** Задача — конец нарисованной стрелки: пользовательская связь или dev → QA. */
+export function taskTouchesSwimlaneArrow(params: {
+  qaTasksMap?: Map<string, Task>;
+  taskId: string;
+  taskLinks: ReadonlyArray<{ fromTaskId: string; toTaskId: string }>;
+  taskPositions?: Map<string, TaskPosition>;
+}): boolean {
+  const { qaTasksMap, taskId, taskLinks, taskPositions } = params;
+  for (const link of taskLinks) {
+    const touches = link.fromTaskId === taskId || link.toTaskId === taskId;
+    if (touches && linkEndpointsArePlaced(link.fromTaskId, link.toTaskId, taskPositions)) {
+      return true;
+    }
+  }
+  if (!qaTasksMap || !taskPositions) return false;
+  return devQaArrowTouchesTask(taskId, qaTasksMap, taskPositions);
+}
+
 export function partitionTaskArrowLinks(
   visibleLinks: TaskLink[],
   hoveredLinkId: string | null,

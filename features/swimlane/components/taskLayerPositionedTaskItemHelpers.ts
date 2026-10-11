@@ -1,13 +1,15 @@
 import type { TaskLayerPositionedTaskItemProps } from './TaskLayer.types';
-import type { PhaseSegment } from '@/types';
+import type { PhaseSegment, Task, TaskPosition } from '@/types';
 
 import { resolveSwimlaneCardLayerSpan } from '@/features/swimlane/utils/layerUtils';
 import { getOrderedPlanSegments } from '@/features/swimlane/utils/positionUtils';
+import { taskTouchesSwimlaneArrow } from '@/features/swimlane/utils/task-arrows/taskArrowsHelpers';
 import {
   computeSwimlaneBaselineInsetsPx,
   computeSwimlaneOverdueBaselineStrips,
   computeSwimlaneRowBandBox,
   computeTaskLayerCardOpacity,
+  resolveOverdueBaselineLinkClearanceOffsetPx,
 } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { cellsToSegments, getSegmentEditorRangeAndCells } from '@/lib/planner-timeline';
@@ -102,4 +104,26 @@ export function resolveTaskLayerPlanContext(props: TaskLayerPositionedTaskItemPr
     segmentEditorActive: Boolean(segmentEditorActive),
     swimlaneRowBandStyle,
   };
+}
+
+/** 0 — бейзлайн по центру. Иначе сдвиг вниз, чтобы не пересечь стрелку связи. */
+export function resolveTaskLayerBaselineCenterOffsetPx(params: {
+  baselineHeight: number;
+  qaTasksMap?: Map<string, Task>;
+  stripCount: number;
+  taskId: string;
+  taskLinks: ReadonlyArray<{ fromTaskId: string; toTaskId: string }>;
+  taskPositions?: Map<string, TaskPosition>;
+  /** Пользовательские стрелки скрыты. Dev → QA рисуется и при выключенных связях. */
+  userLinksVisible?: boolean;
+}): number {
+  if (params.stripCount === 0) return 0;
+  const hasArrow = taskTouchesSwimlaneArrow({
+    qaTasksMap: params.qaTasksMap,
+    taskId: params.taskId,
+    taskLinks: params.userLinksVisible === false ? [] : params.taskLinks,
+    taskPositions: params.taskPositions,
+  });
+  if (!hasArrow) return 0;
+  return resolveOverdueBaselineLinkClearanceOffsetPx(params.baselineHeight);
 }

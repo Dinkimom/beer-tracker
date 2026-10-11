@@ -49,7 +49,7 @@ interface ContextMenuProps {
   /** Скрыть пункт «Удалить из плана» (например, при открытии меню по клику по строке в occupancy) */
   hideRemoveFromPlan?: boolean;
   isBacklogTask?: boolean;
-  /** В режиме канбана скрываем переключение статусов и удаление из плана */
+  /** В канбане скрываем оценку, дробление фазы и удаление из плана. Смена статуса остаётся. */
   isKanbanView?: boolean;
   /** Родительские задачи текущего спринта для подменю */
   parentOptions?: TaskParent[];
@@ -110,7 +110,7 @@ export function ContextMenu({
   const requestClose = overlay.requestClose;
 
   const closeOnOutsideClick = task.id !== ONBOARDING_SAMPLE_TASK_ID;
-  const showStatusSubmenu = !isBacklogTask && !isKanbanView;
+  const showStatusSubmenu = !isBacklogTask;
   const showEstimate = taskPositions != null && !isBacklogTask && !isKanbanView;
   const showParent = !isBacklogTask && Boolean(onParentChange);
 

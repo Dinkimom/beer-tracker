@@ -184,6 +184,7 @@ export function SwimlanesSectionLanes({
         hoveredTaskId,
         linkingFromTaskId: showLinks ? linkingFromTaskId : null,
         linkSourceEndCell: showLinks ? sourceLinkEndCell : null,
+        showLinks,
         onCancelQuickAddDraft: section.onCancelQuickAddDraft,
         onCloseSidebar: section.onCloseSidebar,
         onCommentCreate: section.onCommentCreate,

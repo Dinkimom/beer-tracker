@@ -1534,8 +1534,12 @@ export const ruMessages = {
       taskCountMany: '{count} задач',
       expandGroup: 'Развернуть группу',
       collapseGroup: 'Свернуть группу',
+      dueDate: 'Срок {date}',
+      dueDateOverdue: 'Срок истёк {date}',
       dropForbidden:
         'Нельзя переместить задачу в эту колонку: переходы в соответствующие статусы недоступны.',
+      chooseStatusTitle: 'Выберите статус',
+      chooseStatusDescription: 'В колонке «{column}» несколько статусов. Куда перевести задачу?',
     },
   },
   task: {

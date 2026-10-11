@@ -152,7 +152,7 @@ export function TaskCardSwimlaneReadOnlyContent({
       {showKey && (
         <TextTooltip content={keyLinkProps.title}>
         <a
-          className="break-all text-[10px] font-normal leading-tight text-gray-500 hover:underline cursor-pointer dark:text-gray-400"
+          className="break-all cursor-pointer text-[10px] font-bold leading-tight text-blue-600 hover:underline dark:text-blue-400"
           {...keyLinkProps}
           title={undefined}
         >

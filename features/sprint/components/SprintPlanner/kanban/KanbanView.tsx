@@ -12,6 +12,7 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { filterTasksByAssignees } from '@/features/backlog/utils/backlogFilterPeople';
 import { useBoardParams } from '@/features/board/hooks/useBoardParams';
+import { TaskCardDueDateContext } from '@/features/task/components/TaskCard/components/TaskCardDueDateChip';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import {
   getIssueTransitions,
@@ -23,6 +24,7 @@ import { useRootStore } from '@/lib/layers';
 import { KANBAN_CARD_SURFACE, KANBAN_COLUMN_HEADER_GLASS } from './kanbanChromeClasses';
 import { KanbanColumnHeader } from './KanbanColumnHeader';
 import { KanbanColumnsLayout } from './KanbanColumnsLayout';
+import { KanbanColumnStatusChoiceModal } from './KanbanColumnStatusChoiceModal';
 import { parseKanbanTaskId } from './kanbanDndUtils';
 import {
   groupKanbanTasksByColumns,
@@ -31,10 +33,12 @@ import {
 import { KanbanViewGate } from './KanbanViewGate';
 import { buildKanbanColumnsWithHeaderData } from './kanbanViewHelpers';
 import {
+  applyKanbanStatusTransition,
   buildKanbanAssigneeLanes,
   buildKanbanParentLanes,
   handleKanbanDragEndStatusChange,
   kanbanColumnAllowsDrop,
+  type KanbanDragEndStatusResult,
 } from './kanbanViewLaneHelpers';
 import {
   computeKanbanColumnsMinWidth,
@@ -100,6 +104,10 @@ export const KanbanView = observer(function KanbanView({
   const [transitionsForActive, setTransitionsForActive] = useState<TransitionItem[]>([]);
   const [transitionsByTaskId, setTransitionsByTaskId] = useState<Map<string, TransitionItem[]>>(new Map());
   const [collapsedLanes, setCollapsedLanes] = useState<Set<string>>(new Set());
+  const [statusChoice, setStatusChoice] = useState<Extract<
+    KanbanDragEndStatusResult,
+    { type: 'choose' }
+  > | null>(null);
   const preloadStartedForRef = useRef<Set<string>>(new Set());
 
   const toggleLaneCollapsed = useCallback((laneKey: string) => {
@@ -208,6 +216,7 @@ export const KanbanView = observer(function KanbanView({
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = parseKanbanTaskId(String(event.active.id));
     if (!taskId) return;
+    setStatusChoice(null);
     setActiveTaskId(taskId);
     const cached = transitionsByTaskId.get(taskId);
     if (cached !== undefined) {
@@ -224,24 +233,39 @@ export const KanbanView = observer(function KanbanView({
     }).catch(() => setTransitionsForActive([]));
   }, [transitionsByTaskId]);
 
+  const forgetTaskTransitions = useCallback((taskId: string) => {
+    setTransitionsByTaskId((prev) => {
+      const next = new Map(prev);
+      next.delete(taskId);
+      return next;
+    });
+  }, []);
+
   const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const deletedTaskId = handleKanbanDragEndStatusChange(
+    const result = handleKanbanDragEndStatusChange(
       event,
       tasksForKanban,
       columnsWithTasks,
       transitionsForActive,
       onStatusChange
     );
-    if (deletedTaskId) {
-      setTransitionsByTaskId((prev) => {
-        const next = new Map(prev);
-        next.delete(deletedTaskId);
-        return next;
-      });
-    }
+    if (result?.type === 'applied') forgetTaskTransitions(result.taskId);
+    setStatusChoice(result?.type === 'choose' ? result : null);
     setActiveTaskId(null);
     setTransitionsForActive([]);
-  }, [columnsWithTasks, onStatusChange, tasksForKanban, transitionsForActive]);
+  }, [columnsWithTasks, forgetTaskTransitions, onStatusChange, tasksForKanban, transitionsForActive]);
+
+  const handleStatusChoice = useCallback((transition: TransitionItem) => {
+    if (!statusChoice || !onStatusChange) return;
+    applyKanbanStatusTransition(
+      statusChoice.taskId,
+      statusChoice.column,
+      transition,
+      onStatusChange
+    );
+    forgetTaskTransitions(statusChoice.taskId);
+    setStatusChoice(null);
+  }, [forgetTaskTransitions, onStatusChange, statusChoice]);
 
   const canDropInColumn = useCallback(
     (column: BoardColumn) => kanbanColumnAllowsDrop(column, transitionsForActive),
@@ -256,10 +280,14 @@ export const KanbanView = observer(function KanbanView({
   );
 
   const activeTask = activeTaskId ? tasksForKanban.find((t) => t.id === activeTaskId) : null;
+  const statusChoiceTask = statusChoice
+    ? tasksForKanban.find((task) => task.id === statusChoice.taskId)
+    : null;
   const displayColumns = resolveKanbanDisplayColumns(hasLaneGrouping, lanesWithColumns, columnsWithHeaderData);
   const headerColumns = resolveKanbanHeaderColumns(hasLaneGrouping, columnsWithHeaderData, lanesWithColumns, displayColumns);
 
   return (
+    <TaskCardDueDateContext.Provider value={true}>
     <KanbanViewGate
       boardId={boardId}
       error={error}
@@ -349,7 +377,17 @@ export const KanbanView = observer(function KanbanView({
           ) : null}
         </DragOverlay>
       </DndContext>
+      {statusChoice && statusChoiceTask ? (
+        <KanbanColumnStatusChoiceModal
+          columnName={statusChoice.column.display}
+          task={statusChoiceTask}
+          transitions={statusChoice.transitions}
+          onClose={() => setStatusChoice(null)}
+          onSelect={handleStatusChoice}
+        />
+      ) : null}
       </div>
     </KanbanViewGate>
+    </TaskCardDueDateContext.Provider>
   );
 });

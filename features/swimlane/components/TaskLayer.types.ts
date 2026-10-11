@@ -41,6 +41,8 @@ export interface TaskLayerProps {
   segmentEditTaskId?: string | null;
   selectedSprintId?: number | null;
   selectedTaskId?: string | null;
+  /** Пользовательские стрелки на доске. false — бейзлайн не уступает им место. */
+  showLinks?: boolean;
   sprintStartDate: Date;
   sprintTimelineWorkingDays: number;
   /** Эффективный вертикальный layout заметок/фото (БД + MobX override). */

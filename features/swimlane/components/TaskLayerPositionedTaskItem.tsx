@@ -27,7 +27,10 @@ import { getSegmentEditorRangeAndCells } from '@/lib/planner-timeline';
 import { TaskLayerOverdueBaselineStrips } from './TaskLayerOverdueBaselineStrips';
 import { TaskLayerPlanAnchorGhost } from './TaskLayerPlanAnchorGhost';
 import { TaskLayerPlanSegmentItem } from './TaskLayerPlanSegmentItem';
-import { resolveTaskLayerPlanContext } from './taskLayerPositionedTaskItemHelpers';
+import {
+  resolveTaskLayerBaselineCenterOffsetPx,
+  resolveTaskLayerPlanContext,
+} from './taskLayerPositionedTaskItemHelpers';
 
 const EMPTY_TASK_LINKS: Array<{ fromTaskId: string; toTaskId: string; id: string }> = [];
 
@@ -40,6 +43,8 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     isDraggingTask = false,
     linkingFromTaskId = null,
     linkSourceEndCell = null,
+    qaTasksMap,
+    showLinks = true,
     onSegmentEditCancel,
     onSegmentEditSave,
     onOverdueCloseAndCreate,
@@ -68,6 +73,16 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     segmentEditorActive,
     swimlaneRowBandStyle,
   } = resolveTaskLayerPlanContext(props);
+
+  const baselineCenterOffsetPx = resolveTaskLayerBaselineCenterOffsetPx({
+    baselineHeight,
+    qaTasksMap,
+    stripCount: overdueBaselineStrips.length,
+    taskId: task.id,
+    taskLinks,
+    taskPositions,
+    userLinksVisible: showLinks,
+  });
 
   const linkingActive =
     linkingFromTaskId != null || sprintPlannerUi.placementTool === 'link';
@@ -116,6 +131,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
         <TaskLayerOverdueBaselineStrips
           activeTaskDuration={props.activeTaskDuration ?? null}
           assigneeId={position.assignee}
+          baselineCenterOffsetPx={baselineCenterOffsetPx}
           baselineHeight={baselineHeight}
           baselineTop={baselineTop}
           currentCell={currentCell}

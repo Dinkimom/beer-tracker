@@ -16,6 +16,7 @@ import {
   partitionTaskArrowLinks,
   resolveVisibleTaskArrowLinks,
   TASK_ARROWS_DEV_QA_LINK_PREFIX,
+  taskTouchesSwimlaneArrow,
 } from '@/features/swimlane/utils/task-arrows/taskArrowsHelpers';
 
 function task(id: string, assignee?: string): Task {
@@ -31,6 +32,51 @@ function pos(assignee: string, startDay = 0, duration = 3): TaskPosition {
     taskId: '',
   };
 }
+
+describe('taskTouchesSwimlaneArrow', () => {
+  const positions = new Map<string, TaskPosition>([
+    ['dev', pos('u1')],
+    ['qa', pos('u1')],
+    ['other', pos('u2')],
+  ]);
+
+  it('is true for either end of a placed link', () => {
+    const links = [{ fromTaskId: 'dev', toTaskId: 'other' }];
+    expect(
+      taskTouchesSwimlaneArrow({ taskId: 'dev', taskLinks: links, taskPositions: positions })
+    ).toBe(true);
+    expect(
+      taskTouchesSwimlaneArrow({ taskId: 'other', taskLinks: links, taskPositions: positions })
+    ).toBe(true);
+  });
+
+  it('ignores a link whose other end is not on the board', () => {
+    const links = [{ fromTaskId: 'dev', toTaskId: 'missing' }];
+    expect(
+      taskTouchesSwimlaneArrow({ taskId: 'dev', taskLinks: links, taskPositions: positions })
+    ).toBe(false);
+  });
+
+  it('is true for both ends of a dev-qa arrow', () => {
+    const qaTasksMap = new Map<string, Task>([['dev', task('qa')]]);
+    expect(
+      taskTouchesSwimlaneArrow({
+        qaTasksMap,
+        taskId: 'dev',
+        taskLinks: [],
+        taskPositions: positions,
+      })
+    ).toBe(true);
+    expect(
+      taskTouchesSwimlaneArrow({
+        qaTasksMap,
+        taskId: 'qa',
+        taskLinks: [],
+        taskPositions: positions,
+      })
+    ).toBe(true);
+  });
+});
 
 describe('buildTasksMapById', () => {
   it('indexes tasks by id', () => {

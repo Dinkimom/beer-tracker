@@ -18,6 +18,7 @@ import {
 import { SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX } from '@/features/task/components/TaskBar/taskBarHelpers';
 
 interface TaskLayerOverdueBaselineChipProps {
+  baselineCenterOffsetPx?: number;
   baselineHeight: number;
   baselineTop: number;
   canExtend: boolean;
@@ -42,6 +43,7 @@ function overdueChevronClass(open: boolean): string {
 }
 
 export function TaskLayerOverdueBaselineChip({
+  baselineCenterOffsetPx = 0,
   baselineHeight,
   baselineTop,
   canExtend,
@@ -72,7 +74,7 @@ export function TaskLayerOverdueBaselineChip({
   const endPercent = ((startCell + cells) / timelineTotalParts) * 100;
   const anchorStyle: CSSProperties = {
     left: `calc(${endPercent}% - ${CARD_MARGIN + SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX}px)`,
-    top: `${baselineTop + baselineHeight / 2}px`,
+    top: `${baselineTop + baselineHeight / 2 + baselineCenterOffsetPx}px`,
     transform: 'translate(-100%, -50%)',
     zIndex: ZIndex.stickyElevated,
   };

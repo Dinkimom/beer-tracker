@@ -26,6 +26,7 @@ import {
   TaskCardSidebarAssigneeRow,
 } from './taskCardBodyLayoutHelpers';
 import { TaskCardContent } from './TaskCardContent';
+import { TaskCardDueDateChip } from './TaskCardDueDateChip';
 import { TaskCardFeatureLaneAssigneeChip } from './TaskCardFeatureLaneAssigneeChip';
 
 interface TaskCardBodyProps {
@@ -136,6 +137,8 @@ export function TaskCardBody({
         onCommentUpdate={onCommentUpdate}
         onPhotoClick={onPhotoClick}
       />
+
+      {variant === 'sidebar' ? <TaskCardDueDateChip task={task} /> : null}
 
       {variant === 'sidebar' && (
         <TaskCardSidebarAssigneeRow

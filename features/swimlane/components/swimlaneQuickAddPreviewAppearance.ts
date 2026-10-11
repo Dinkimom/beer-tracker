@@ -8,7 +8,7 @@ function isTwoByTwoPreviewKind(kind: SwimlaneQuickAddPreviewKind): boolean {
 }
 
 const QUICK_ADD_PREVIEW_TASK_CLASS =
-  'swimlane-quick-add-preview-fade pointer-events-none absolute flex items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/70 text-blue-600 dark:border-blue-700 dark:bg-blue-900/25 dark:text-blue-300';
+  'swimlane-quick-add-preview-fade pointer-events-none absolute flex items-center justify-center rounded-lg border border-dashed border-blue-300 bg-blue-50/70 text-blue-600 dark:border-blue-700 dark:bg-blue-900/25 dark:text-blue-300';
 
 const QUICK_ADD_PREVIEW_NOTE_CLASS =
   'swimlane-quick-add-preview-fade pointer-events-none absolute flex items-center justify-center border-2 border-dashed';

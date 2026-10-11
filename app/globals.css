@@ -887,6 +887,21 @@ textarea:focus-visible,
 }
 
 /*
+ * Канбан: оценки не прибиты к нижней кромке (absolute bottom),
+ * а идут следом за исполнителем, в том же поле, что и заголовок.
+ */
+[data-hide-status-tag] [data-task-card-assignee] {
+  margin-bottom: 0;
+}
+
+[data-hide-status-tag] [data-task-card-tags] {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  margin-top: 0.5rem;
+}
+
+/*
  * Стеклянная капсула (планер, бэклог).
  * Светлая доска почти белая: плотная белая заливка и белая кромка не читаются как стекло.
  * Белая вуаль 60% и saturate 1: цвет карточек читается без усиления.

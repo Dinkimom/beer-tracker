@@ -11,6 +11,7 @@ import {
   computeSwimlaneRowBandBox,
   computeSwimlaneRowBandStyle,
   computeTaskLayerCardOpacity,
+  resolveOverdueBaselineLinkClearanceOffsetPx,
   resolveSwimlaneStackedTaskBandHeightPx,
   SWIMLANE_STACKED_LAYER_GAP_PX,
   SWIMLANE_TASK_CARD_BORDER_RADIUS_PX,
@@ -182,6 +183,19 @@ describe('computeTaskLayerCardOpacity', () => {
         taskId: 'other',
       })
     ).toBe(0.5);
+  });
+});
+
+describe('resolveOverdueBaselineLinkClearanceOffsetPx', () => {
+  it('drops the baseline below a centered link arrow without leaving the row inset', () => {
+    const baseline = computeSwimlaneBaselineInsetsPx(false, 0, 82, 82);
+    const offset = resolveOverdueBaselineLinkClearanceOffsetPx(baseline.height);
+    const chipHalf = 12;
+    const arrowHalf = 1.25;
+    expect(offset).toBeGreaterThan(chipHalf + arrowHalf);
+    const cardHalf = baseline.height / 2 + SWIMLANE_TASK_CARD_BORDER_RADIUS_PX;
+    const hangBelowCard = offset + chipHalf - cardHalf;
+    expect(hangBelowCard).toBeLessThanOrEqual(SWIMLANE_TASK_ROW_VERTICAL_INSET_PX);
   });
 });
 

@@ -87,6 +87,7 @@ export function buildSwimlanePropsForDeveloper(input: {
   quickAddSubmittingTaskId: string | null;
   linkingFromTaskId?: string | null;
   linkSourceEndCell?: number | null;
+  showLinks?: boolean;
   taskLinks?: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
   segmentEditTaskId: string | null;
   selectedSprintId: number | null;
@@ -145,6 +146,7 @@ export function buildSwimlanePropsForDeveloper(input: {
     isDraggingTask: input.dragAndDropIsDraggingTask,
     linkingFromTaskId: input.linkingFromTaskId ?? null,
     linkSourceEndCell: input.linkSourceEndCell ?? null,
+    showLinks: input.showLinks,
     participantsColumnWidth: input.participantsColumnWidth,
     qaTasksMap: input.qaTasksMap,
     quickAddBoardId: input.quickAddBoardId,

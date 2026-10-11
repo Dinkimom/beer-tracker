@@ -6,13 +6,8 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { TASK_GROUP_KEY_NO_PARENT } from '@/features/task/constants/taskGroupKeys';
 
 import { addTaskToKanbanAssigneeLane } from './kanbanAssigneeLaneHelpers';
-import {
-  buildKanbanColumnKeysNorm,
-} from './kanbanColumnTransitionHelpers';
-import {
-  getColumnStatusKey,
-  normalizeStatusKeyForComparison,
-} from './kanbanDndUtils';
+import { listKanbanColumnTransitions } from './kanbanColumnTransitionHelpers';
+import { getColumnStatusKey } from './kanbanDndUtils';
 import { resolveKanbanDragEndTarget } from './kanbanDragEndResolveHelpers';
 import { KANBAN_UNKNOWN_STATUS_COLUMN_ID } from './kanbanGroupTasksHelpers';
 
@@ -119,16 +114,33 @@ export function buildKanbanParentLanes(
   return ordered;
 }
 
-function applyKanbanStatusTransition(
+type KanbanStatusChangeHandler = (
+  taskId: string,
+  transitionId: string,
+  targetStatusKey?: string,
+  targetStatusDisplay?: string,
+  screenId?: string
+) => Promise<void>;
+
+export type KanbanDragEndStatusResult =
+  | { type: 'applied'; taskId: string }
+  | { type: 'choose'; column: BoardColumn; taskId: string; transitions: TransitionItem[] };
+
+export function applyKanbanStatusTransition(
   taskId: string,
   column: BoardColumn,
   transition: TransitionItem,
-  onStatusChange: NonNullable<Parameters<typeof handleKanbanDragEndStatusChange>[4]>
+  onStatusChange: KanbanStatusChangeHandler
 ): void {
   const targetStatusKey = transition.to?.key ?? getColumnStatusKey(column);
-  const targetDisplay = column.display ?? (transition.to as { display?: string })?.display;
-  const screenId = (transition as { screen?: { id: string } }).screen?.id;
-  onStatusChange(taskId, transition.id, targetStatusKey ?? undefined, targetDisplay, screenId);
+  const targetDisplay = transition.to?.display ?? column.display;
+  onStatusChange(
+    taskId,
+    transition.id,
+    targetStatusKey ?? undefined,
+    targetDisplay,
+    transition.screen?.id
+  );
 }
 
 export function handleKanbanDragEndStatusChange(
@@ -136,14 +148,8 @@ export function handleKanbanDragEndStatusChange(
   tasksForKanban: Task[],
   columnsWithTasks: Array<{ column: BoardColumn; tasks: Task[] }>,
   transitionsForActive: TransitionItem[],
-  onStatusChange?: (
-    taskId: string,
-    transitionId: string,
-    targetStatusKey?: string,
-    targetStatusDisplay?: string,
-    screenId?: string
-  ) => Promise<void>
-): string | null {
+  onStatusChange?: KanbanStatusChangeHandler
+): KanbanDragEndStatusResult | null {
   if (!onStatusChange) return null;
 
   const target = resolveKanbanDragEndTarget(
@@ -154,8 +160,18 @@ export function handleKanbanDragEndStatusChange(
   );
   if (!target) return null;
 
-  applyKanbanStatusTransition(target.taskId, target.column, target.transition, onStatusChange);
-  return target.taskId;
+  const onlyTransition = target.transitions.length === 1 ? target.transitions[0] : undefined;
+  if (onlyTransition) {
+    applyKanbanStatusTransition(target.taskId, target.column, onlyTransition, onStatusChange);
+    return { type: 'applied', taskId: target.taskId };
+  }
+
+  return {
+    type: 'choose',
+    taskId: target.taskId,
+    column: target.column,
+    transitions: target.transitions,
+  };
 }
 
 export function kanbanColumnAllowsDrop(
@@ -163,10 +179,5 @@ export function kanbanColumnAllowsDrop(
   transitionsForActive: TransitionItem[]
 ): boolean {
   if (column.id === KANBAN_UNKNOWN_STATUS_COLUMN_ID) return false;
-  const columnKeysNorm = buildKanbanColumnKeysNorm(column);
-  if (!columnKeysNorm.size) return false;
-  return transitionsForActive.some((t) => {
-    const toKeyNorm = normalizeStatusKeyForComparison(t.to?.key || '');
-    return toKeyNorm && columnKeysNorm.has(toKeyNorm);
-  });
+  return listKanbanColumnTransitions(transitionsForActive, column).length > 0;
 }

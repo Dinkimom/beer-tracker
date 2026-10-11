@@ -63,6 +63,13 @@ describe('resolveSwimlaneQuickAddPreviewClass', () => {
     expect(resolveSwimlaneQuickAddPreviewClass('note')).not.toContain('rounded-lg');
     expect(resolveSwimlaneQuickAddPreviewClass('image')).toContain('border-dashed');
   });
+
+  it('uses the same hairline dashed border as the draft card after click', () => {
+    const taskPreview = resolveSwimlaneQuickAddPreviewClass('task');
+    expect(taskPreview).toContain('border border-dashed border-blue-300');
+    expect(taskPreview).toContain('dark:border-blue-700');
+    expect(taskPreview).not.toContain('border-2');
+  });
 });
 
 describe('resolveSwimlaneQuickAddPreviewDurationCells', () => {

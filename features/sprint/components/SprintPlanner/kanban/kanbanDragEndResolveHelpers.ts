@@ -5,7 +5,7 @@ import type { DragEndEvent } from '@dnd-kit/core';
 
 import {
   buildKanbanColumnKeysNorm,
-  findKanbanStatusTransition,
+  listKanbanColumnTransitions,
 } from './kanbanColumnTransitionHelpers';
 import { getColumnIdFromDroppable, normalizeStatusKeyForComparison, parseKanbanTaskId } from './kanbanDndUtils';
 import { KANBAN_UNKNOWN_STATUS_COLUMN_ID } from './kanbanGroupTasksHelpers';
@@ -27,18 +27,19 @@ function findKanbanDropColumn(
   return column;
 }
 
-function findKanbanColumnTransition(
+function listDropColumnTransitions(
   column: BoardColumn,
   task: Task | undefined,
   transitionsForActive: TransitionItem[]
-): TransitionItem | null {
+): TransitionItem[] | null {
   const columnKeysNorm = buildKanbanColumnKeysNorm(column);
   if (!columnKeysNorm.size) return null;
 
   const taskStatusNorm = normalizeStatusKeyForComparison(task?.originalStatus || '');
   if (taskStatusNorm && columnKeysNorm.has(taskStatusNorm)) return null;
 
-  return findKanbanStatusTransition(transitionsForActive, columnKeysNorm) ?? null;
+  const transitions = listKanbanColumnTransitions(transitionsForActive, column);
+  return transitions.length > 0 ? transitions : null;
 }
 
 export function resolveKanbanDragEndTarget(
@@ -46,7 +47,7 @@ export function resolveKanbanDragEndTarget(
   tasksForKanban: Task[],
   columnsWithTasks: Array<{ column: BoardColumn; tasks: Task[] }>,
   transitionsForActive: TransitionItem[]
-): { column: BoardColumn; taskId: string; transition: TransitionItem } | null {
+): { column: BoardColumn; taskId: string; transitions: TransitionItem[] } | null {
   const ids = parseKanbanDragEndDropIds(event);
   if (!ids) return null;
 
@@ -54,8 +55,8 @@ export function resolveKanbanDragEndTarget(
   if (!column) return null;
 
   const task = tasksForKanban.find((t) => t.id === ids.taskId);
-  const transition = findKanbanColumnTransition(column, task, transitionsForActive);
-  if (!transition) return null;
+  const transitions = listDropColumnTransitions(column, task, transitionsForActive);
+  if (!transitions) return null;
 
-  return { taskId: ids.taskId, column, transition };
+  return { taskId: ids.taskId, column, transitions };
 }

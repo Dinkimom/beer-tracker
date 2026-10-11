@@ -67,7 +67,7 @@ export function TaskCardTags({
   });
 
   return (
-    <div className={containerClass}>
+    <div className={containerClass} data-task-card-tags="">
       <TaskCardTagsGitlabSection
         gitlabChecks={gitlabChecks}
         loading={releaseGitlabChecksLoading}

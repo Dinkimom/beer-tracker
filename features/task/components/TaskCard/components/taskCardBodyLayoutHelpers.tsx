@@ -32,6 +32,7 @@ export function TaskCardSidebarAssigneeRow({
   return (
     <div
       className={`${assigneeTextSize} ${assigneeMargin} text-gray-700 dark:text-gray-200 truncate flex-shrink-0 font-medium flex items-center gap-2`}
+      data-task-card-assignee=""
       style={{ lineHeight: '1.3' }}
     >
       {assigneeDisplayName && (

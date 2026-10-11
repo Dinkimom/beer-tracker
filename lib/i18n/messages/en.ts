@@ -1534,8 +1534,13 @@ export const enMessages = {
       taskCountMany: '{count} tasks',
       expandGroup: 'Expand group',
       collapseGroup: 'Collapse group',
+      dueDate: 'Due date {date}',
+      dueDateOverdue: 'Overdue {date}',
       dropForbidden:
         'Cannot move the task to this column: transitions to the matching statuses are not available.',
+      chooseStatusTitle: 'Choose a status',
+      chooseStatusDescription:
+        '"{column}" includes more than one status. Where should this task go?',
     },
   },
   task: {

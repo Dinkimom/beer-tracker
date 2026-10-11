@@ -135,6 +135,7 @@ function SwimlaneComponent({
   swimlaneFactTimelineEnabled = false,
   linkingFromTaskId = null,
   linkSourceEndCell = null,
+  showLinks = true,
   taskLinks,
   segmentEditTaskId = null,
   swimlaneInProgressDurations = [],
@@ -400,6 +401,7 @@ function SwimlaneComponent({
               segmentEditTaskId={segmentEditTaskId}
               selectedSprintId={selectedSprintId}
               selectedTaskId={selectedTaskId}
+              showLinks={showLinks}
               sprintStartDate={sprintStartDate}
               sprintTimelineWorkingDays={sprintTimelineWorkingDays}
               stickyNoteCardRowById={layout.stickyNoteCardRowById}

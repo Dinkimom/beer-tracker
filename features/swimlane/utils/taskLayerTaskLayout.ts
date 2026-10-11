@@ -215,6 +215,29 @@ export function computeSwimlaneRowBandBox(
   };
 }
 
+/** Чип «Отстаёт»: text-xs, py-1, рамка 1.5px. */
+const OVERDUE_BASELINE_CHIP_HEIGHT_PX = 24;
+/** Зазор между стрелкой связи и чипом бейзлайна. */
+const OVERDUE_BASELINE_LINK_CLEARANCE_PX = 6;
+const TASK_LINK_ARROW_STROKE_PX = 2.5;
+
+/**
+ * Сдвиг бейзлайна вниз от центра карточки.
+ * Стрелка связи выходит из середины стороны — линия и чип уступают ей этот уровень.
+ * Чип может зайти в нижний inset строки, но не дальше него.
+ */
+export function resolveOverdueBaselineLinkClearanceOffsetPx(baselineHeight: number): number {
+  const chipHalf = OVERDUE_BASELINE_CHIP_HEIGHT_PX / 2;
+  const desired =
+    chipHalf + TASK_LINK_ARROW_STROKE_PX / 2 + OVERDUE_BASELINE_LINK_CLEARANCE_PX;
+  const roomBelowCenter =
+    baselineHeight / 2 +
+    SWIMLANE_TASK_CARD_BORDER_RADIUS_PX +
+    SWIMLANE_TASK_ROW_VERTICAL_INSET_PX;
+  const maxOffset = Math.max(0, roomBelowCenter - chipHalf);
+  return Math.min(Math.round(desired), maxOffset);
+}
+
 /** Вертикальный box overdue-baseline — высота карточки минус скругление; без bottom, чтобы не тянуться за строкой. */
 export function computeSwimlaneBaselineInsetsPx(
   hasTaskOverlaps: boolean,

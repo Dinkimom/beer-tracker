@@ -21,6 +21,8 @@ const OVERDUE_BASELINE_LINE_PX = 3;
 interface TaskLayerOverdueBaselineStripsProps {
   activeTaskDuration: number | null;
   assigneeId: string;
+  /** Сдвиг линии и чипа вниз от центра карточки, чтобы не пересечь стрелку связи. */
+  baselineCenterOffsetPx?: number;
   baselineHeight: number;
   baselineTop: number;
   currentCell: number;
@@ -41,6 +43,7 @@ interface TaskLayerOverdueBaselineStripsProps {
 export function TaskLayerOverdueBaselineStrips({
   activeTaskDuration,
   assigneeId,
+  baselineCenterOffsetPx = 0,
   baselineHeight,
   baselineTop,
   currentCell,
@@ -93,7 +96,7 @@ export function TaskLayerOverdueBaselineStrips({
             style={{
               height: `${OVERDUE_BASELINE_LINE_PX}px`,
               opacity: baselineOpacity,
-              top: `${baselineTop + (baselineHeight - OVERDUE_BASELINE_LINE_PX) / 2}px`,
+              top: `${baselineTop + (baselineHeight - OVERDUE_BASELINE_LINE_PX) / 2 + baselineCenterOffsetPx}px`,
               ...buildSwimlaneOverdueBaselineStripHorizontalStyle({
                 durationCells: baselineWidth,
                 endInsetPx: SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX,
@@ -109,6 +112,7 @@ export function TaskLayerOverdueBaselineStrips({
         ? strips.map(({ baselineStart, baselineWidth }) => (
             <TaskLayerOverdueBaselineChip
               key={`overdue-chip-${taskId}-${baselineStart}`}
+              baselineCenterOffsetPx={baselineCenterOffsetPx}
               baselineHeight={baselineHeight}
               baselineTop={baselineTop}
               canExtend={onExtend != null}

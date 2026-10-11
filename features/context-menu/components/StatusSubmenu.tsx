@@ -181,7 +181,7 @@ export function StatusSubmenu({
       {overlay.mounted ? (
         <div
           ref={statusMenuRef}
-          className={`absolute bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl py-2 px-1.5 min-w-[240px] max-w-[min(320px,calc(100vw-40px))] max-h-[400px] overflow-y-auto ${ZIndex.class('submenu')} ${OVERLAY_PANEL_ENTER}`}
+          className={`absolute bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl py-1.5 px-1 min-w-[220px] max-w-[min(280px,calc(100vw-40px))] max-h-[400px] overflow-y-auto ${ZIndex.class('submenu')} ${OVERLAY_PANEL_ENTER}`}
           data-state={overlay.state}
           data-submenu="true"
           onAnimationEnd={overlay.onAnimationEnd}

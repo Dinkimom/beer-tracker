@@ -65,6 +65,8 @@ export interface SwimlaneProps {
   segmentEditTaskId?: string | null;
   selectedSprintId?: number | null;
   selectedTaskId?: string | null;
+  /** Пользовательские стрелки видны. От этого зависит, уступает ли бейзлайн место связи. */
+  showLinks?: boolean;
   sidebarOpen?: boolean;
   sidebarWidth?: number;
   sprintStartDate: Date;
