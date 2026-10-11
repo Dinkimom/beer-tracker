@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.11.1] — 2026-10-12
+
+### English
+
+- The planner browser tab keeps the sprint name and team label; a short sprint number is no longer the whole title. Next.js no longer overwrites it with the static «Sprints» title after navigation.
+- The backlog tab shows the backlog label.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.11.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Вкладка браузера в планере держит имя спринта и подпись команды; короткий номер спринта больше не остаётся единственным текстом. Next.js больше не затирает его статическим «Спринты» после перехода.
+- На вкладке бэклога показывается подпись бэклога.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.11.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.11.0] — 2026-10-11
 
 ### English
