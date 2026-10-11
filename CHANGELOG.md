@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.11.0] — 2026-10-11
+
+### English
+
+- Task cards show a due-date chip; a past date is marked overdue until the task is completed.
+- Dropping a task onto a kanban column that maps to several statuses opens a choice of the available transitions.
+- Swimlane arrows are drawn only when both ends are placed on the board, and they redraw after a card moves to another lane.
+- The overdue baseline chip shifts down when a link arrow crosses the card center.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.11.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- На карточке задачи показывается срок; прошедшая дата помечается как просроченная, пока задача не закрыта.
+- Если колонка канбана соответствует нескольким статусам, при дропе открывается выбор доступного перехода.
+- Стрелки свимлейна рисуются только когда оба конца стоят на доске и перерисовываются после переноса карточки в другую дорожку.
+- Чип просроченного бейзлайна сдвигается вниз, если стрелка связи проходит через центр карточки.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.11.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.10.0] — 2026-10-11
 
 ### English
