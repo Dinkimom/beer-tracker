@@ -50,7 +50,6 @@ function resolveSwimlaneStoryPointsForDisplay(
 }
 
 interface TaskCardSwimlaneMetaRowProps {
-  assigneeTextSize: string;
   displayDuration: number | undefined;
   hideTestPoints: boolean;
   isQATask: boolean;
@@ -60,7 +59,6 @@ interface TaskCardSwimlaneMetaRowProps {
 }
 
 export function TaskCardSwimlaneMetaRow({
-  assigneeTextSize,
   displayDuration,
   hideTestPoints,
   isQATask,
@@ -91,7 +89,7 @@ export function TaskCardSwimlaneMetaRow({
         </TextTooltip>
       )}
       {showEstimateLabel && !isSwimlaneNoteOrPolaroid(task) && (
-        <span className={`${assigneeTextSize} text-gray-600 dark:text-gray-300`}>
+        <span className="text-[11px] font-normal leading-none text-gray-500 dark:text-gray-400">
           {isQATask && !hideTestPoints
             ? formatTaskTestPointsForDisplay(task, 'compact')
             : formatTaskStoryPointsForDisplay(

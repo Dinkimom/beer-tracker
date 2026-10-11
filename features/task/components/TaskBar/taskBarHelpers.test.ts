@@ -6,6 +6,7 @@ import { CARD_MARGIN, ZIndex } from '@/constants';
 
 import {
   buildSwimlaneOverdueBaselineStripHorizontalStyle,
+  SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX,
   SWIMLANE_OVERDUE_BASELINE_JOIN_PX,
   buildSwimlaneTaskBarHorizontalStyle,
   buildTaskBarLayoutStyle,
@@ -117,6 +118,30 @@ describe('buildSwimlaneOverdueBaselineStripHorizontalStyle', () => {
     });
 
     expect(baselineEdges.rightPx).toBe(referenceEdges.rightPx);
+  });
+
+  it('ends the overdue line on the chip, not past it', () => {
+    const timelineTotalParts = 30;
+    const containerWidthPx = 900;
+    const startCell = 15;
+    const durationCells = 6;
+    const endPercent = ((startCell + durationCells) / timelineTotalParts) * 100;
+
+    const line = buildSwimlaneOverdueBaselineStripHorizontalStyle({
+      durationCells,
+      endInsetPx: SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX,
+      startCell,
+      timelineTotalParts,
+    });
+    const lineEdges = resolveHorizontalBarEdgesPx({
+      containerWidthPx,
+      style: line as { left: string; width: string },
+    });
+    const chipRightPx =
+      (endPercent / 100) * containerWidthPx -
+      (CARD_MARGIN + SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX);
+
+    expect(lineEdges.rightPx).toBeCloseTo(chipRightPx, 5);
   });
 });
 

@@ -4,8 +4,6 @@ import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilit
 
 import { Button } from '@/components/Button';
 import { ZIndex } from '@/constants';
-import { PlannerAvailabilityLabelBackground } from '@/features/sprint/components/SprintPlanner/layout/PlannerAvailabilityLabelBackground';
-import { PLANNER_HATCH_BASE_CLASS } from '@/features/sprint/components/SprintPlanner/layout/plannerHatchTones';
 
 interface SwimlaneAvailabilityChipProps {
   kind: AvailabilityCardKind;
@@ -16,15 +14,14 @@ interface SwimlaneAvailabilityChipProps {
   onClick: () => void;
 }
 
-const CHIP_TONE_CLASS: Record<AvailabilityCardKind, string> = {
-  duty: 'border-violet-400/80 text-violet-900 dark:border-violet-500/70 dark:text-violet-100',
-  sick_leave: 'border-rose-400/80 text-rose-900 dark:border-rose-500/70 dark:text-rose-100',
-  'tech-sprint-back':
-    'border-emerald-400/80 text-emerald-900 dark:border-emerald-500/70 dark:text-emerald-100',
-  'tech-sprint-qa':
-    'border-orange-400/80 text-orange-900 dark:border-orange-500/70 dark:text-orange-100',
-  'tech-sprint-web': 'border-sky-400/80 text-sky-900 dark:border-sky-500/70 dark:text-sky-100',
-  vacation: 'border-amber-400/80 text-amber-900 dark:border-amber-500/70 dark:text-amber-100',
+/** Цвет текста по kind — без пилюли; hover только через opacity/underline. */
+const CHIP_TEXT_CLASS: Record<AvailabilityCardKind, string> = {
+  duty: 'text-violet-900 dark:text-violet-50',
+  sick_leave: 'text-rose-900 dark:text-rose-50',
+  'tech-sprint-back': 'text-emerald-900 dark:text-emerald-50',
+  'tech-sprint-qa': 'text-orange-900 dark:text-orange-50',
+  'tech-sprint-web': 'text-sky-900 dark:text-sky-50',
+  vacation: 'text-amber-950 dark:text-amber-50',
 };
 
 export function SwimlaneAvailabilityChip({
@@ -38,14 +35,13 @@ export function SwimlaneAvailabilityChip({
   return (
     <Button
       aria-label={label}
-      className={`absolute h-5 min-h-0 min-w-0 max-w-full cursor-pointer overflow-hidden rounded-md border !px-0 !py-0 text-left text-[11px] font-medium leading-5 shadow-none hover:!bg-white dark:hover:!bg-gray-800 ${PLANNER_HATCH_BASE_CLASS} ${CHIP_TONE_CLASS[kind]}`}
+      className={`absolute h-5 min-h-0 min-w-0 max-w-full cursor-pointer overflow-hidden rounded-none border-0 !bg-transparent !px-0 !py-0 text-left text-[11px] font-semibold leading-5 shadow-none transition-opacity duration-200 hover:!bg-transparent hover:opacity-80 hover:underline active:!bg-transparent active:scale-[0.98] active:opacity-70 dark:hover:!bg-transparent dark:active:!bg-transparent ${CHIP_TEXT_CLASS[kind]}`}
       style={{
         left: `calc(${leftPercent}% + 4px)`,
         maxWidth: `calc(${maxWidthPercent}% - 8px)`,
         top: topPx,
         zIndex: ZIndex.contentInteractive,
       }}
-      title={label}
       type="button"
       variant="ghost"
       onClick={(event) => {
@@ -53,8 +49,9 @@ export function SwimlaneAvailabilityChip({
         onClick();
       }}
     >
-      <PlannerAvailabilityLabelBackground tone={kind} />
-      <span className="relative z-10 block truncate px-1.5">{label}</span>
+      <span className="relative block truncate px-1.5 [text-shadow:0_0_6px_rgb(255_255_255_/_0.7),0_1px_1px_rgb(0_0_0_/_0.1)] dark:[text-shadow:none]">
+        {label}
+      </span>
     </Button>
   );
 }

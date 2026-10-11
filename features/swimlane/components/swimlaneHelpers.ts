@@ -2,6 +2,7 @@ import type { DeveloperHeaderLaneLabelItem } from '@/features/swimlane/component
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 import type { AvailabilitySegment } from '@/features/swimlane/utils/availabilitySegments';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
+import type { SwimlaneDropPreviewTarget } from '@/features/swimlane/utils/swimlaneDropPreview';
 import type { SwimlanePlacementTool } from '@/lib/layers';
 import type { Task } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
@@ -15,7 +16,6 @@ import {
 import { getSegmentsForDeveloper } from '@/features/swimlane/utils/availabilitySegments';
 import {
   buildUnavailableDayHatchKinds,
-  buildUnavailableDayTitles,
   isoDateOnlyFromWorkingDayIndex,
 } from '@/features/swimlane/utils/availabilityTimelineMarks';
 import { getVisibleSwimlaneFactLayerHeightPx } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
@@ -56,11 +56,9 @@ export function resolveSwimlaneAvailabilityTimeline(input: {
   developerId: string;
   sprintStartDate: Date;
   sprintTimelineWorkingDays: number;
-  titleForKind: (kind: AvailabilityCardKind) => string;
 }): {
   availabilitySegments: AvailabilitySegment[];
   unavailableDayHatchKinds: Map<number, AvailabilityCardKind>;
-  unavailableDayTitles: Map<number, string>;
 } {
   const availabilitySegments = input.boardEvents?.length
     ? getSegmentsForDeveloper(
@@ -73,7 +71,6 @@ export function resolveSwimlaneAvailabilityTimeline(input: {
   return {
     availabilitySegments,
     unavailableDayHatchKinds: buildUnavailableDayHatchKinds(availabilitySegments),
-    unavailableDayTitles: buildUnavailableDayTitles(availabilitySegments, input.titleForKind),
   };
 }
 
@@ -131,6 +128,29 @@ function shouldCloseSidebarOnSwimlaneClick(target: HTMLElement): boolean {
     !target.closest('[role="button"]') &&
     !target.closest('.pointer-events-none')
   );
+}
+
+export function resolveSwimlaneDropPreviewTarget(input: {
+  activeDraggableId: string | null;
+  activeTask: Task | null;
+  activeTaskDuration: number | null;
+  developerId: string;
+  dropDisabled: boolean;
+  hoveredCell: { assigneeId: string; day: number; part: number } | null;
+  isDraggingTask: boolean;
+}): SwimlaneDropPreviewTarget | null {
+  const { activeDraggableId, activeTask, activeTaskDuration, hoveredCell } = input;
+  if (
+    !input.isDraggingTask ||
+    input.dropDisabled ||
+    activeDraggableId == null ||
+    activeTask == null ||
+    activeTaskDuration == null ||
+    hoveredCell?.assigneeId !== input.developerId
+  ) {
+    return null;
+  }
+  return { activeDraggableId, activeTask, durationCells: activeTaskDuration, hoveredCell };
 }
 
 export function resolveSwimlaneHideQuickAddPreview(input: {

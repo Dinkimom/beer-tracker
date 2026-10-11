@@ -10,6 +10,7 @@ import {
   buildUnavailableDayTitles,
   buildUnavailableHatchRanges,
   isoDateOnlyFromWorkingDayIndex,
+  isInternalAvailabilityDayDivider,
   pickAvailabilityHatchKind,
 } from './availabilityTimelineMarks';
 
@@ -68,6 +69,23 @@ describe('buildUnavailableHatchRanges', () => {
 describe('pickAvailabilityHatchKind', () => {
   it('picks duty over a tech sprint', () => {
     expect(pickAvailabilityHatchKind(['tech-sprint-web', 'duty'])).toBe('duty');
+  });
+});
+
+describe('isInternalAvailabilityDayDivider', () => {
+  it('is true only inside a continuous same-kind block', () => {
+    const kinds = new Map<number, AvailabilityCardKind>([
+      [0, 'vacation'],
+      [1, 'vacation'],
+      [2, 'vacation'],
+      [3, 'duty'],
+      [4, 'duty'],
+    ]);
+    expect(isInternalAvailabilityDayDivider(kinds, 0, 6)).toBe(true);
+    expect(isInternalAvailabilityDayDivider(kinds, 1, 6)).toBe(true);
+    expect(isInternalAvailabilityDayDivider(kinds, 2, 6)).toBe(false);
+    expect(isInternalAvailabilityDayDivider(kinds, 3, 6)).toBe(true);
+    expect(isInternalAvailabilityDayDivider(kinds, 4, 6)).toBe(false);
   });
 });
 

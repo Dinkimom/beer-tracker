@@ -94,11 +94,21 @@ export function buildSwimlaneTaskLayerSpanById(
  * Черновик quick-add кладётся после уже лежащих карточек, чтобы занять
  * свободный слой (тот же слот, что и превью «+»), а не вытеснять их вверх.
  */
-export function distributeTasksToLayers(
+export interface SwimlaneLayerPackingItem {
+  baseline: { end: number; start: number } | null;
+  id: string;
+  isQuickAddDraft: boolean;
+  layerShiftUp: number;
+  position: TaskPosition;
+  span: number;
+}
+
+/** Элементы раскладки в порядке укладки (черновики quick-add — после остальных). */
+export function buildSwimlaneLayerPackingItems(
   tasksWithPositions: TaskWithPosition[],
   baselines: Array<{ end: number; start: number; taskId: string }> = [],
   stickyNoteCardRowById?: ReadonlyMap<string, StickyNoteCardRowLayout>
-): Map<string, number> {
+): SwimlaneLayerPackingItem[] {
   const baselineByTaskId = new Map(baselines.map((baseline) => [baseline.taskId, baseline]));
   const items = tasksWithPositions.map(({ task, position }) => {
     const verticalLayout = resolveSwimlaneTaskVerticalLayout(task, position, stickyNoteCardRowById);
@@ -112,6 +122,15 @@ export function distributeTasksToLayers(
     };
   });
   items.sort((a, b) => Number(a.isQuickAddDraft) - Number(b.isQuickAddDraft));
+  return items;
+}
+
+export function distributeTasksToLayers(
+  tasksWithPositions: TaskWithPosition[],
+  baselines: Array<{ end: number; start: number; taskId: string }> = [],
+  stickyNoteCardRowById?: ReadonlyMap<string, StickyNoteCardRowLayout>
+): Map<string, number> {
+  const items = buildSwimlaneLayerPackingItems(tasksWithPositions, baselines, stickyNoteCardRowById);
   const placed = placeSpannedLayerItems(items, swimlaneLayerItemsConflict);
 
   const layerMap = new Map<string, number>();

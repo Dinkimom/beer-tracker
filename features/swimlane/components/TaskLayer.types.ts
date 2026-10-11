@@ -25,7 +25,6 @@ export interface TaskLayerProps {
   /** Индексы нерабочих дней — просрочка в этих колонках не рисуется */
   holidayDayIndices?: ReadonlySet<number>;
   hoverConnectedTaskIds?: Set<string> | null;
-  hoveredCell: { assigneeId: string; day: number; part: number } | null;
   hoveredTaskId?: string | null;
   /** Синхронизация с MobX: подсветка превью только во время активного drag */
   isDraggingTask?: boolean;

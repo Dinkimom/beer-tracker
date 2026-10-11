@@ -217,7 +217,6 @@ export function useSwimlaneLayout({
     packingBaselines,
     taskVerticalLayoutById
   );
-
   const layoutInputBase = {
     baselineLayerMap,
     showParent: swimlaneCardFields.showParent,
@@ -288,6 +287,7 @@ export function useSwimlaneLayout({
     taskBandTotalHeight,
     taskBandVisualHeight,
     baselineLayerHeight,
+    baselineLayoutMode,
     occupiedLayersByCell,
   };
 }

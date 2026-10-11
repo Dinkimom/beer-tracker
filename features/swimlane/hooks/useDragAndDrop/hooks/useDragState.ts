@@ -2,15 +2,15 @@
  * Превью DnD свимлейна: React state + ref для синхронных чтений в обработчиках dnd-kit.
  *
  * Перфоманс:
- * - `setHoveredCell` не вызывает setState, если ячейка та же (`areCellPositionsEqual`);
- * - React-обновление hover батчится в rAF (как occupancy), snapshot обновляется сразу для drop;
+ * - ячейка под курсором живёт в `SwimlaneDragHoverStore`, а не в React state: движение
+ *   курсора не перерисовывает планер, подписчики (превью слота, просрочка) читают её селектором;
  * - `beginDragSession` — один setState на старт вместо трёх.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  areCellPositionsEqual,
+  SwimlaneDragHoverStore,
   type CellPosition,
   type SwimlaneDragStateApi,
 } from '@/lib/layers/application/swimlaneDrag';
@@ -18,7 +18,6 @@ import {
 interface DragUiSnapshot {
   activeDraggableId: string | null;
   activeTaskId: string | null;
-  hoveredCell: CellPosition | null;
   isDraggingTask: boolean;
   isSidebarDropTarget: boolean;
   sidebarDropPointerY: number | null;
@@ -28,7 +27,6 @@ function emptyDragUi(): DragUiSnapshot {
   return {
     activeDraggableId: null,
     activeTaskId: null,
-    hoveredCell: null,
     isDraggingTask: false,
     isSidebarDropTarget: false,
     sidebarDropPointerY: null,
@@ -38,48 +36,30 @@ function emptyDragUi(): DragUiSnapshot {
 export function useDragState(taskPositionsSize: number): {
   dragUi: DragUiSnapshot;
   dragStateApi: SwimlaneDragStateApi;
+  hoverStore: SwimlaneDragHoverStore;
 } {
   const snapshotRef = useRef<DragUiSnapshot>(emptyDragUi());
   const [dragUi, setDragUi] = useState<DragUiSnapshot>(() => emptyDragUi());
+  const [hoverStore] = useState(() => new SwimlaneDragHoverStore());
   const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
-  const pendingHoveredCellRef = useRef<CellPosition | null>(null);
-  const hoveredCellRafRef = useRef<number | null>(null);
-
-  const cancelPendingHoveredCellFrame = useCallback(() => {
-    if (hoveredCellRafRef.current !== null) {
-      cancelAnimationFrame(hoveredCellRafRef.current);
-      hoveredCellRafRef.current = null;
-    }
-    pendingHoveredCellRef.current = null;
-  }, []);
-
-  const flushHoveredCellToReact = useCallback((cell: CellPosition | null) => {
-    setDragUi((prev) => {
-      if (areCellPositionsEqual(prev.hoveredCell, cell)) {
-        return prev;
-      }
-      return { ...prev, hoveredCell: cell };
-    });
-  }, []);
 
   const resetDragState = useCallback(() => {
-    cancelPendingHoveredCellFrame();
+    hoverStore.reset();
     const next = emptyDragUi();
     snapshotRef.current = next;
     mousePositionRef.current = null;
     setDragUi(next);
-  }, [cancelPendingHoveredCellFrame]);
+  }, [hoverStore]);
 
   const beginDragSession = useCallback(
     (activeDraggableId: string, activeTaskId: string) => {
-      cancelPendingHoveredCellFrame();
+      hoverStore.reset();
       setDragUi((prev) => {
         const next: DragUiSnapshot = {
           ...prev,
           activeDraggableId,
           activeTaskId,
           isDraggingTask: true,
-          hoveredCell: null,
           isSidebarDropTarget: false,
           sidebarDropPointerY: null,
         };
@@ -87,35 +67,14 @@ export function useDragState(taskPositionsSize: number): {
         return next;
       });
     },
-    [cancelPendingHoveredCellFrame]
+    [hoverStore]
   );
 
   const setHoveredCell = useCallback(
     (cell: CellPosition | null) => {
-      if (areCellPositionsEqual(snapshotRef.current.hoveredCell, cell)) {
-        return;
-      }
-
-      // Snapshot immediately so drag-end reads the latest cell even if React lags a frame.
-      snapshotRef.current = { ...snapshotRef.current, hoveredCell: cell };
-
-      if (cell === null) {
-        cancelPendingHoveredCellFrame();
-        flushHoveredCellToReact(null);
-        return;
-      }
-
-      pendingHoveredCellRef.current = cell;
-      if (hoveredCellRafRef.current !== null) {
-        return;
-      }
-      hoveredCellRafRef.current = requestAnimationFrame(() => {
-        hoveredCellRafRef.current = null;
-        flushHoveredCellToReact(pendingHoveredCellRef.current);
-        pendingHoveredCellRef.current = null;
-      });
+      hoverStore.set(cell);
     },
-    [cancelPendingHoveredCellFrame, flushHoveredCellToReact]
+    [hoverStore]
   );
 
   const setSidebarDropPreview = useCallback(
@@ -148,7 +107,7 @@ export function useDragState(taskPositionsSize: number): {
         return snapshotRef.current.activeTaskId;
       },
       get hoveredCell() {
-        return snapshotRef.current.hoveredCell;
+        return hoverStore.getLatest();
       },
       get isDraggingTask() {
         return snapshotRef.current.isDraggingTask;
@@ -165,17 +124,21 @@ export function useDragState(taskPositionsSize: number): {
       setHoveredCell,
       setSidebarDropPreview,
     }),
-    [resetDragState, beginDragSession, setHoveredCell, setSidebarDropPreview],
+    [hoverStore, resetDragState, beginDragSession, setHoveredCell, setSidebarDropPreview],
   );
 
   useEffect(() => {
     const isEmpty = taskPositionsSize === 0;
-    if (isEmpty && !dragUi.isDraggingTask && (dragUi.activeTaskId !== null || dragUi.hoveredCell !== null)) {
+    if (
+      isEmpty &&
+      !dragUi.isDraggingTask &&
+      (dragUi.activeTaskId !== null || hoverStore.getLatest() !== null)
+    ) {
       setTimeout(() => {
         resetDragState();
       }, 0);
     }
-  }, [taskPositionsSize, dragUi.isDraggingTask, dragUi.activeTaskId, dragUi.hoveredCell, resetDragState]);
+  }, [taskPositionsSize, dragUi.isDraggingTask, dragUi.activeTaskId, hoverStore, resetDragState]);
 
   useEffect(() => {
     if (!dragUi.isDraggingTask) {
@@ -193,12 +156,7 @@ export function useDragState(taskPositionsSize: number): {
     };
   }, [dragUi.isDraggingTask]);
 
-  useEffect(
-    () => () => {
-      cancelPendingHoveredCellFrame();
-    },
-    [cancelPendingHoveredCellFrame]
-  );
+  useEffect(() => () => hoverStore.dispose(), [hoverStore]);
 
-  return { dragUi, dragStateApi };
+  return { dragUi, dragStateApi, hoverStore };
 }

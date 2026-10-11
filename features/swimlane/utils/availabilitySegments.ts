@@ -26,7 +26,10 @@ function parseIsoDateOnlyUtc(iso: string): Date {
   return new Date(`${iso}T00:00:00Z`);
 }
 
-function dayOverlapsEntry(dayDate: Date, entry: BoardAvailabilityEvent): boolean {
+function dayOverlapsEntry(
+  dayDate: Date,
+  entry: Pick<BoardAvailabilityEvent, 'endDate' | 'startDate'>
+): boolean {
   const dayStart = normalizeDayStart(dayDate);
   const dayEnd = normalizeDayEnd(dayDate);
   const entryStart = normalizeDayStart(parseIsoDateOnlyUtc(entry.startDate));
@@ -63,4 +66,24 @@ export function getSegmentsForDeveloper(
   }
 
   return segments;
+}
+
+/** Рабочие дни спринта, которые задевает период; null — период целиком вне спринта. */
+export function resolveAvailabilityDayRange(input: {
+  endDate: string;
+  sprintStartDate: Date;
+  startDate: string;
+  workingDaysCount: number;
+}): { dayCount: number; startDay: number } | null {
+  if (!input.startDate || !input.endDate || input.startDate > input.endDate) {
+    return null;
+  }
+  const workingDays = getWorkingDaysRange(input.sprintStartDate, Math.max(1, input.workingDaysCount));
+  const range = { endDate: input.endDate, startDate: input.startDate };
+  const indices = workingDays.flatMap((day, index) => (dayOverlapsEntry(day, range) ? [index] : []));
+  if (indices.length === 0) {
+    return null;
+  }
+  const startDay = indices[0]!;
+  return { dayCount: indices[indices.length - 1]! - startDay + 1, startDay };
 }

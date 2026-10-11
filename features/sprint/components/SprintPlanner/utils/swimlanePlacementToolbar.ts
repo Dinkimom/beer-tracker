@@ -310,6 +310,16 @@ export function shouldExitPlacementToolOnEscape(input: {
   return ESCAPE_EXITABLE_PLACEMENT_TOOLS.has(input.placementTool);
 }
 
+/** После сохранения или отмены поповера отсутствия выходим из режима выставления. */
+export function resolvePlacementToolAfterAvailabilityPopoverClose(
+  tool: SwimlanePlacementTool
+): SwimlanePlacementTool {
+  if (tool === 'availability') {
+    return 'cursor';
+  }
+  return tool;
+}
+
 export function toggleSwimlanePlacementTool(
   current: SwimlanePlacementTool,
   next: SwimlanePlacementTool

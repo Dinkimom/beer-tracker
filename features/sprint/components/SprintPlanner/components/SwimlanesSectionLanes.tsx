@@ -20,7 +20,6 @@ import {
 import {
   buildSwimlanePropsForDeveloper,
   resolveSwimlaneActiveTask,
-  resolveSwimlaneHoveredCellForDeveloper,
 } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionSwimlanePropsHelpers';
 import { Swimlane } from '@/features/swimlane/components/Swimlane';
 import { TaskArrows } from '@/features/swimlane/components/task-arrows';
@@ -182,10 +181,6 @@ export function SwimlanesSectionLanes({
           showLinks && linksDimOnHover && !linkingSessionActive
             ? hoverConnectedTaskIds
             : null,
-        hoveredCell: resolveSwimlaneHoveredCellForDeveloper(
-          section.dragAndDrop.hoveredCell,
-          developer.id
-        ),
         hoveredTaskId,
         linkingFromTaskId: showLinks ? linkingFromTaskId : null,
         linkSourceEndCell: showLinks ? sourceLinkEndCell : null,

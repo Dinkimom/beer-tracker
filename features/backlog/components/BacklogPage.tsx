@@ -171,8 +171,8 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
             onReset={resetFilters}
             onStatusFilterChange={setStatusFilter}
           />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="flex flex-col gap-3">
+          <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin-custom">
+            <div className="flex flex-col gap-3 pr-2">
               {sprintsLoading ? (
                 <div className="surface-glass-well flex items-center justify-center gap-2 rounded-2xl border border-black/[0.1] py-8 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
                   <Icon className="h-4 w-4 animate-spin" name="spinner" />

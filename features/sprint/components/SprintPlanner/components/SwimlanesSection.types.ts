@@ -34,7 +34,6 @@ export interface SwimlanesSectionProps {
     activeDraggableId: string | null;
     activeTaskDuration: number | null;
     activeTaskId: string | null;
-    hoveredCell: { assigneeId: string; day: number; part: number } | null;
     isDraggingTask: boolean;
   };
   filteredTaskLinks: Array<{

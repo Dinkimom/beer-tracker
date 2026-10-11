@@ -139,17 +139,28 @@ function resolveEffectiveLayerRange(
   return { start, endExclusive: start + Math.max(1, span) };
 }
 
-function spannedItemConflictsAtLayer<T>(
+export interface PlacedSpannedLayerItem<T> {
+  item: T;
+  layer: number;
+  layerShiftUp: number;
+  span: number;
+}
+
+/**
+ * Первый слой, где `item` не пересекается по времени и по вертикали с `placed`.
+ * Конфликт по времени считается один раз на пару, перебор слоёв — только по конфликтующим.
+ */
+export function findSpannedLayerForItem<T extends { layerShiftUp?: number; span: number }>(
   item: T,
-  span: number,
-  layer: number,
-  layerShiftUp: number,
-  placed: Array<{ item: T; layer: number; layerShiftUp: number; span: number }>,
+  placed: ReadonlyArray<PlacedSpannedLayerItem<T>>,
   hasTimeConflict: (item: T, other: T) => boolean
-): boolean {
-  return placed.some(
-    (other) =>
-      hasTimeConflict(item, other.item) &&
+): PlacedSpannedLayerItem<T> {
+  const span = Math.max(1, item.span);
+  const layerShiftUp = Math.max(0, item.layerShiftUp ?? 0);
+  const conflicting = placed.filter((other) => hasTimeConflict(item, other.item));
+  let layer = 0;
+  while (
+    conflicting.some((other) =>
       verticalLayerRangesOverlap(
         layer,
         span,
@@ -158,27 +169,23 @@ function spannedItemConflictsAtLayer<T>(
         other.span,
         other.layerShiftUp
       )
-  );
+    )
+  ) {
+    layer += 1;
+  }
+  return { item, layer, layerShiftUp, span };
 }
 
 /** Раскладка с вертикальным span: фото на n таймслотов занимает n слоёв. */
 export function placeSpannedLayerItems<T extends { layerShiftUp?: number; span: number }>(
   items: T[],
   hasTimeConflict: (item: T, other: T) => boolean
-): Array<{ item: T; layer: number }> {
-  const placed: Array<{ item: T; layer: number; layerShiftUp: number; span: number }> = [];
+): Array<PlacedSpannedLayerItem<T>> {
+  const placed: Array<PlacedSpannedLayerItem<T>> = [];
   for (const item of items) {
-    const span = Math.max(1, item.span);
-    const layerShiftUp = Math.max(0, item.layerShiftUp ?? 0);
-    let layer = 0;
-    while (
-      spannedItemConflictsAtLayer(item, span, layer, layerShiftUp, placed, hasTimeConflict)
-    ) {
-      layer += 1;
-    }
-    placed.push({ item, layer, layerShiftUp, span });
+    placed.push(findSpannedLayerForItem(item, placed, hasTimeConflict));
   }
-  return placed.map(({ item, layer }) => ({ item, layer }));
+  return placed;
 }
 
 export function distributeIntervalsToLayers(

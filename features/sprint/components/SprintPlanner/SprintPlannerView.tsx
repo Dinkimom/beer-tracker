@@ -10,6 +10,7 @@ import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClass
 import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
 import { AssigneeVelocityProvider } from '@/features/swimlane/hooks/useAssigneeVelocity';
 import { useCloseOverdueAndCreateNext } from '@/features/swimlane/hooks/useCloseOverdueAndCreateNext';
+import { SwimlaneDragHoverContext } from '@/features/swimlane/hooks/useSwimlaneDragHover';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -194,11 +195,10 @@ export function SprintPlannerView({
         sprintTimelineWorkingDays={sprintTimelineWorkingDays}
         viewMode={viewMode}
       >
+        <SwimlaneDragHoverContext.Provider value={dragAndDrop.hoverStore}>
         <SprintCardPresenceProvider viewers={boardViewers}>
         <FeatureDraftRowNamesProvider names={featureDraftRowNamesById}>
         <SprintPlannerPresenceSync
-          dragAssigneeId={dragAndDrop.hoveredCell?.assigneeId ?? null}
-          dragDay={dragAndDrop.hoveredCell?.day ?? null}
           dragDuration={dragAndDrop.activeTaskDuration ?? null}
           dragNoteColor={
             activeTask && isSwimlaneCommentTask(activeTask)
@@ -208,7 +208,6 @@ export function SprintPlannerView({
           dragNoteText={
             activeTask && isSwimlaneCommentTask(activeTask) ? (activeTask.name ?? '') : null
           }
-          dragPart={dragAndDrop.hoveredCell?.part ?? null}
           draggingTaskId={dragAndDrop.isDraggingTask ? dragAndDrop.activeTaskId : null}
           sprintId={selectedSprintId}
           viewMode={viewMode}
@@ -454,6 +453,7 @@ export function SprintPlannerView({
         </PlannerOnboardingHost>
         </FeatureDraftRowNamesProvider>
         </SprintCardPresenceProvider>
+        </SwimlaneDragHoverContext.Provider>
       </SprintPlannerDndShell>
       <ModalsSection
         DialogComponent={DialogComponent}

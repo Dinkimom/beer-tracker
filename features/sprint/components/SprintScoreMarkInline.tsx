@@ -7,16 +7,24 @@ import { SPRINT_SCORE_MAX_MARK } from '@/lib/sprints/sprintScoreHelpers';
 export { SPRINT_SCORE_MAX_MARK };
 
 const SIZE_CLASS = {
+  bar: {
+    gap: 'gap-1',
+    icon: 'sm',
+    shell: 'h-8 shrink-0 rounded-lg px-2.5',
+  },
   lg: {
     gap: 'gap-1',
+    icon: 'lg',
     shell: 'rounded-xl px-2.5 py-2',
   },
   md: {
     gap: 'gap-1',
+    icon: 'md',
     shell: 'rounded-lg px-2.5 py-2',
   },
   sm: {
     gap: 'gap-0.5',
+    icon: 'sm',
     shell: 'rounded-md px-1.5 py-1',
   },
 } as const;
@@ -35,7 +43,7 @@ export function SprintScoreMarkInline({
 }: {
   ariaLabel?: string;
   mark: number;
-  size?: 'lg' | 'md' | 'sm';
+  size?: keyof typeof SIZE_CLASS;
 }) {
   const filled = clampSprintScoreMark(mark);
   const label = ariaLabel ?? `${filled}/${SPRINT_SCORE_MAX_MARK}`;
@@ -51,7 +59,7 @@ export function SprintScoreMarkInline({
       {Array.from({ length: SPRINT_SCORE_MAX_MARK }, (_, index) => (
         <BeerMugIcon
           key={index}
-          size={size}
+          size={styles.icon}
           tone={index < filled ? 'color' : 'solid'}
         />
       ))}

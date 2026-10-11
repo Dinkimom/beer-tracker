@@ -17,9 +17,6 @@ export function memoizedSwimlanePropsEqual(
     prevProps.tasksMap.size === nextProps.tasksMap.size &&
     prevProps.activeTask?.id === nextProps.activeTask?.id &&
     prevProps.activeDraggableId === nextProps.activeDraggableId &&
-    prevProps.hoveredCell?.day === nextProps.hoveredCell?.day &&
-    prevProps.hoveredCell?.part === nextProps.hoveredCell?.part &&
-    prevProps.hoveredCell?.assigneeId === nextProps.hoveredCell?.assigneeId &&
     prevProps.hoverConnectedTaskIds === nextProps.hoverConnectedTaskIds &&
     prevProps.hoveredTaskId === nextProps.hoveredTaskId &&
     prevProps.isDraggingTask === nextProps.isDraggingTask &&

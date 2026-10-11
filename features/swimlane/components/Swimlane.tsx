@@ -18,9 +18,10 @@ import { SwimlaneInProgressFactLayer } from '@/features/swimlane/components/in-p
 import { resolveFactBarFocusTaskId } from '@/features/swimlane/components/in-progress-fact/swimlaneFactMarkerHelpers';
 import { memoizedSwimlanePropsEqual } from '@/features/swimlane/components/memoizedSwimlanePropsEqual';
 import { SwimlaneAvailabilityChips } from '@/features/swimlane/components/SwimlaneAvailabilityChips';
-import { SwimlaneAvailabilityModalGate } from '@/features/swimlane/components/SwimlaneAvailabilityModalGate';
+import { SwimlaneAvailabilityPopoverGate } from '@/features/swimlane/components/SwimlaneAvailabilityPopoverGate';
 import { SwimlaneCalendarBusyLane } from '@/features/swimlane/components/SwimlaneCalendarBusyLane';
 import { SwimlaneDeveloperHeader } from '@/features/swimlane/components/SwimlaneDeveloperHeader';
+import { SwimlaneDropPreview } from '@/features/swimlane/components/SwimlaneDropPreview';
 import {
   SwimlaneQuickAddPreview,
   type SwimlaneQuickAddHoverPreview,
@@ -36,7 +37,6 @@ import { TimelineGrid } from '@/features/swimlane/components/TimelineGrid';
 import { useSwimlaneAvailabilityUi } from '@/features/swimlane/hooks/useSwimlaneAvailabilityUi';
 import { useSwimlaneLayout } from '@/features/swimlane/hooks/useSwimlaneLayout';
 import { useSwimlaneQuickAddHoverImagePaste } from '@/features/swimlane/hooks/useSwimlaneQuickAddHoverImagePaste';
-import { availabilityKindMessageKey } from '@/features/swimlane/utils/availabilityCardKind';
 import { resolveSwimlaneQuickAddBandLayout } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { resolveSwimlaneOneCardHeightPx } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
 import { useSwimlaneCardFieldsStorage } from '@/hooks/useLocalStorage';
@@ -73,7 +73,6 @@ function SwimlaneComponent({
   calendarBusyVisible = false,
   commentCardRowById,
   globalNameFilter,
-  hoveredCell,
   hoverConnectedTaskIds = null,
   hoveredTaskId = null,
   isDraggingTask = false,
@@ -162,7 +161,13 @@ function SwimlaneComponent({
       placementTool: sprintPlannerUi.placementTool,
     });
   const requestArrowRedraw = useContext(SwimlaneArrowRedrawContext) ?? (() => {});
-  const availabilityUi = useSwimlaneAvailabilityUi({
+  const {
+    close: closeAvailabilityPopover,
+    openCreateForDate: openAvailabilityCreateForDate,
+    openUpsertForEventId: openAvailabilityUpsertForEventId,
+    ui: availabilityPopover,
+  } = useSwimlaneAvailabilityUi({
+    boardEvents: developerAvailability?.boardEvents,
     boardId,
     developer,
     sprintId: selectedSprintId,
@@ -240,16 +245,15 @@ function SwimlaneComponent({
     sprintStartDate,
     timelineTotalParts
   );
-  const { availabilitySegments, unavailableDayHatchKinds, unavailableDayTitles } = useMemo(
+  const { availabilitySegments, unavailableDayHatchKinds } = useMemo(
     () =>
       resolveSwimlaneAvailabilityTimeline({
         boardEvents: developerAvailability?.boardEvents,
         developerId: developer.id,
         sprintStartDate,
         sprintTimelineWorkingDays,
-        titleForKind: (kind) => t(availabilityKindMessageKey(kind)),
       }),
-    [developer.id, developerAvailability, sprintStartDate, sprintTimelineWorkingDays, t]
+    [developer.id, developerAvailability, sprintStartDate, sprintTimelineWorkingDays]
   );
   const {
     calendarBusyLaneVisible,
@@ -330,12 +334,9 @@ function SwimlaneComponent({
           />
           {/* Сетка таймлайна на всю высоту, включая lane календаря */}
           <TimelineGrid
-            activeTask={activeTask}
-            activeTaskDuration={activeTaskDuration}
             developerId={developer.id}
             hasTaskOverlaps={quickAddBandLayout.hasTaskOverlaps}
             holidayDayIndices={holidayDayIndices}
-            hoveredCell={hoveredCell}
             isDraggingTask={isDraggingTask}
             isLinking={linkingFromTaskId != null}
             maxTaskLayers={layout.maxTaskLayers}
@@ -348,14 +349,13 @@ function SwimlaneComponent({
             taskLayerHeight={quickAddBandLayout.layerHeight}
             totalHeight={timelineOuterHeight}
             unavailableDayHatchKinds={unavailableDayHatchKinds}
-            unavailableDayTitles={unavailableDayTitles}
             onQuickAddHoverPreviewChange={setQuickAddHoverPreview}
             onQuickAddTask={buildSwimlanePlacementQuickAddHandler({
               canQuickAddOnLane,
               developerId: developer.id,
               hasQuickAddDraftMode,
               onCreateTaskInCell,
-              onOpenAvailabilityForDate: availabilityUi.openCreateForDate,
+              onOpenAvailabilityForDate: openAvailabilityCreateForDate,
               placementTool: sprintPlannerUi.placementTool,
               sprintStartDate,
               sprintTimelineWorkingDays,
@@ -384,7 +384,6 @@ function SwimlaneComponent({
               hasTaskOverlaps={layout.hasTaskOverlaps}
               holidayDayIndices={holidayDayIndices}
               hoverConnectedTaskIds={hoverConnectedTaskIds}
-              hoveredCell={hoveredCell}
               hoveredTaskId={hoveredTaskId}
               isDraggingTask={isDraggingTask}
               layerHeight={layout.layerHeight}
@@ -438,6 +437,18 @@ function SwimlaneComponent({
               onTaskHover={onTaskHover}
               onTaskResize={onTaskResize}
             />
+            <SwimlaneDropPreview
+              activeDraggableId={activeDraggableId}
+              activeTask={activeTask}
+              activeTaskDuration={activeTaskDuration}
+              band={quickAddBandLayout}
+              developerId={developer.id}
+              dropDisabled={isOnboardingDemoLane}
+              isDraggingTask={isDraggingTask}
+              layout={layout}
+              taskPositions={taskPositions}
+              timelineTotalParts={timelineTotalParts}
+            />
             {quickAddHoverPreview && !hideQuickAddPreview ? (
               <SwimlaneQuickAddPreview
                 clipHeight={layout.totalHeight}
@@ -485,20 +496,16 @@ function SwimlaneComponent({
             dayCount={sprintTimelineWorkingDays}
             mainAreaHeight={mainAreaHeight}
             segments={availabilitySegments}
-            onChipClick={(eventId) => {
-              const event = developerAvailability?.boardEvents.find((item) => item.id === eventId);
-              if (event) {
-                availabilityUi.openUpsertForEvent(event);
-              }
-            }}
+            onChipClick={openAvailabilityUpsertForEventId}
           />
-
+          <SwimlaneAvailabilityPopoverGate
+            popover={availabilityPopover}
+            sprintStartDate={sprintStartDate}
+            sprintTimelineWorkingDays={sprintTimelineWorkingDays}
+            onClose={closeAvailabilityPopover}
+          />
         </div>
       </div>
-      <SwimlaneAvailabilityModalGate
-        upsertModal={availabilityUi.ui}
-        onClose={availabilityUi.close}
-      />
     </div>
   );
 }

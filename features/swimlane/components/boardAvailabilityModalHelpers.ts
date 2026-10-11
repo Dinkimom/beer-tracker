@@ -93,7 +93,7 @@ function removeAvailabilityEventById(
   return events.filter((event) => event.id !== eventId);
 }
 
-async function deleteBoardAvailabilityEventAndPatchCache(args: {
+export async function deleteBoardAvailabilityEventAndPatchCache(args: {
   boardId: number;
   eventId: string;
   memberId: string;
@@ -112,27 +112,4 @@ async function deleteBoardAvailabilityEventAndPatchCache(args: {
   }
   args.patchBoardEventsCache((prev) => removeAvailabilityEventById(prev, args.eventId));
   toast.success('Событие удалено');
-}
-
-export function confirmAndDeleteBoardAvailabilityEvent(args: {
-  boardId: number;
-  confirmWithAction: (
-    message: string,
-    onConfirmAction: () => Promise<void> | void,
-    options: { confirmText: string; title: string; variant: 'destructive' }
-  ) => Promise<boolean>;
-  confirmMessage: string;
-  eventId: string;
-  memberId: string;
-  patchBoardEventsCache: (patch: (prev: BoardAvailabilityEvent[]) => BoardAvailabilityEvent[]) => void;
-}): Promise<boolean> {
-  return args.confirmWithAction(
-    args.confirmMessage,
-    () => deleteBoardAvailabilityEventAndPatchCache(args),
-    {
-      confirmText: 'Удалить',
-      title: 'Удаление события',
-      variant: 'destructive',
-    }
-  );
 }

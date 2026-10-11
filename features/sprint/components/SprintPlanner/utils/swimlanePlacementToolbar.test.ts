@@ -15,6 +15,7 @@ import {
   placementToolLayerToReveal,
   placementToolRequiresObjectStorage,
   placementToolToDraftKind,
+  resolvePlacementToolAfterAvailabilityPopoverClose,
   resolvePlacementToolAfterLayerChange,
   resolveNoteColorPopupOpen,
   resolveLayoutModeSubmenuViewportPosition,
@@ -143,6 +144,17 @@ describe('shouldExitPlacementToolOnEscape', () => {
       })
     ).toBe(false);
     expect(shouldExitPlacementToolOnEscape({ key: 'Enter', placementTool: 'diagram' })).toBe(false);
+  });
+});
+
+describe('resolvePlacementToolAfterAvailabilityPopoverClose', () => {
+  it('exits availability placement after save or cancel', () => {
+    expect(resolvePlacementToolAfterAvailabilityPopoverClose('availability')).toBe('cursor');
+  });
+
+  it('keeps other tools when the modal was opened outside placement mode', () => {
+    expect(resolvePlacementToolAfterAvailabilityPopoverClose('cursor')).toBe('cursor');
+    expect(resolvePlacementToolAfterAvailabilityPopoverClose('task')).toBe('task');
   });
 });
 

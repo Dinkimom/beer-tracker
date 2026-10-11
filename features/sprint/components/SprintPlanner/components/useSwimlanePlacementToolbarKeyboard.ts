@@ -31,7 +31,7 @@ export function useSwimlanePlacementToolbarKeyboard(input: {
           sprintPlannerUi.contextMenu ||
             sprintPlannerUi.diagramEditorTaskId ||
             document.querySelector(
-              '[data-confirm-dialog="true"], [data-planner-onboarding-dialog="true"]'
+              '[data-confirm-dialog="true"], [data-planner-onboarding-dialog="true"], [data-swimlane-availability-popover="true"]'
             )
         ),
         placementTool: sprintPlannerUi.placementTool,

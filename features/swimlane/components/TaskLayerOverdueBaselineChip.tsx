@@ -15,6 +15,7 @@ import {
   formatOverdueDayAmount,
   resolveOverdueKind,
 } from '@/features/swimlane/utils/overdueBaselineSummary';
+import { SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX } from '@/features/task/components/TaskBar/taskBarHelpers';
 
 interface TaskLayerOverdueBaselineChipProps {
   baselineHeight: number;
@@ -70,7 +71,7 @@ export function TaskLayerOverdueBaselineChip({
   );
   const endPercent = ((startCell + cells) / timelineTotalParts) * 100;
   const anchorStyle: CSSProperties = {
-    left: `calc(${endPercent}% - ${CARD_MARGIN + 4}px)`,
+    left: `calc(${endPercent}% - ${CARD_MARGIN + SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX}px)`,
     top: `${baselineTop + baselineHeight / 2}px`,
     transform: 'translate(-100%, -50%)',
     zIndex: ZIndex.stickyElevated,
@@ -112,7 +113,7 @@ export function TaskLayerOverdueBaselineChip({
             aria-expanded={open}
             aria-haspopup="menu"
             aria-label={t('sprintPlanner.swimlane.overdue.menuAria', { days })}
-            className="group inline-flex cursor-pointer items-center text-xs font-medium leading-none whitespace-nowrap text-red-900 transition-all duration-200 hover:text-red-950 active:scale-[0.98] dark:text-red-100 dark:hover:text-white"
+            className="group inline-flex cursor-pointer items-center rounded-md border-[1.5px] border-red-400 bg-white px-1.5 py-1 text-xs font-medium leading-none whitespace-nowrap text-red-700 transition-all duration-200 hover:bg-red-50 active:scale-[0.98] dark:border-red-400/80 dark:bg-gray-800 dark:text-red-300 dark:hover:bg-gray-700"
             type="button"
             onClick={(event) => event.stopPropagation()}
             onPointerDown={(event) => event.stopPropagation()}

@@ -11,6 +11,8 @@ import { BacklogAssigneeFilter } from '@/features/backlog/components/BacklogAssi
 
 import { SprintSelectorWithCreate } from '../../SprintSelectorWithCreate';
 
+import { SprintPlannerScoreMark } from './SprintPlannerScoreMark';
+
 interface SprintPlannerControlsBarLeftSectionProps {
   assigneeFilterPeople?: BacklogFilterPerson[];
   boardId: number | null;
@@ -56,6 +58,7 @@ export function SprintPlannerControlsBarLeftSection({
           onSprintChange={onSprintChange}
         />
       </div>
+      <SprintPlannerScoreMark sprintId={selectedSprintId} />
       <div className="min-w-0 max-w-[16rem] flex-1 basis-[12rem]">
         <SearchInput
           className="min-w-0 max-w-full"

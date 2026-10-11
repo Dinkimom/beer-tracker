@@ -1,4 +1,3 @@
-import type { Task } from '@/types';
 import type { MouseEvent } from 'react';
 
 import { getPartsPerDay } from '@/constants';
@@ -40,32 +39,12 @@ function createQuickAddTaskHandler(
   };
 }
 
-function computeTimelineCellHighlight(params: {
-  activeTaskDuration: number | null;
-  dayIndex: number;
-  hoveredCell: { assigneeId: string; day: number; part: number } | null;
-  isDraggingTask: boolean;
-  partIndex: number;
-}): boolean {
-  const { activeTaskDuration, dayIndex, hoveredCell, isDraggingTask, partIndex } = params;
-  const hoverStart =
-    isDraggingTask && hoveredCell && activeTaskDuration != null
-      ? hoveredCell.day * getPartsPerDay() + hoveredCell.part
-      : null;
-  const hoverEnd =
-    hoverStart != null && activeTaskDuration != null ? hoverStart + activeTaskDuration : null;
-  const cellStart = dayIndex * getPartsPerDay() + partIndex;
-  return hoverEnd != null && hoverStart != null && cellStart >= hoverStart && cellStart < hoverEnd;
-}
-
 export function TimelineGridPartCell(props: {
-  activeTask: Task | null;
-  activeTaskDuration: number | null;
   dayCount: number;
   dayIndex: number;
   developerId: string;
   hasTaskOverlaps?: boolean;
-  hoveredCell: { assigneeId: string; day: number; part: number } | null;
+  hidePartDivider?: boolean;
   isDraggingTask: boolean;
   isLinking?: boolean;
   maxTaskLayers?: number;
@@ -86,13 +65,11 @@ export function TimelineGridPartCell(props: {
   onQuickAddTask?: (payload: { assigneeId: string; day: number; part: number }) => void;
 }) {
   const {
-    activeTask,
-    activeTaskDuration,
     dayCount,
     dayIndex,
     developerId,
     hasTaskOverlaps,
-    hoveredCell,
+    hidePartDivider = false,
     isDraggingTask,
     isLinking = false,
     maxTaskLayers = 1,
@@ -119,13 +96,6 @@ export function TimelineGridPartCell(props: {
     maxTaskLayers,
     quickAddSpan
   );
-  const isHighlighted = computeTimelineCellHighlight({
-    activeTaskDuration,
-    dayIndex,
-    hoveredCell,
-    isDraggingTask,
-    partIndex,
-  });
   const partStatus = getPartStatus(dayIndex, partIndex, sprintStartDate, dayCount);
   // Key stays stable across drag so droppables are not remounted when + is suppressed.
   const isQuickAddEnabled = Boolean(onQuickAddTask);
@@ -135,11 +105,10 @@ export function TimelineGridPartCell(props: {
   return (
     <DroppableCell
       key={`${cellId}-${isQuickAddEnabled ? 'add' : 'idle'}`}
-      activeTask={activeTask}
       dropDisabled={isOnboardingDemoAssigneeId(developerId)}
       hasTaskOverlaps={hasTaskOverlaps}
+      hidePartDivider={hidePartDivider}
       id={cellId}
-      isHighlighted={isHighlighted}
       partIndex={partIndex}
       partStatus={partStatus}
       quickAddClipHeight={quickAddClipHeight}

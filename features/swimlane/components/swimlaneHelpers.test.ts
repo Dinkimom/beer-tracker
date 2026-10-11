@@ -1,3 +1,4 @@
+import type { Task } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { describe, expect, it, vi } from 'vitest';
@@ -8,6 +9,7 @@ import {
   buildSwimlanePlacementQuickAddHandler,
   buildSwimlaneRootClassName,
   resolveSwimlaneAvailabilityTimeline,
+  resolveSwimlaneDropPreviewTarget,
   resolveSwimlaneHasQuickAddDraftMode,
   resolveSwimlaneHideQuickAddPreview,
   resolveSwimlaneQuickAddLayoutState,
@@ -116,6 +118,40 @@ describe('resolveSwimlaneQuickAddLayoutState', () => {
   });
 });
 
+describe('resolveSwimlaneDropPreviewTarget', () => {
+  const activeTask: Task = {
+    id: 'TASK-1',
+    link: '',
+    name: 'Task',
+    status: 'todo',
+    team: 'Back',
+  };
+  const base = {
+    activeDraggableId: 'TASK-1',
+    activeTask,
+    activeTaskDuration: 2,
+    developerId: 'dev-1',
+    dropDisabled: false,
+    hoveredCell: { assigneeId: 'dev-1', day: 1, part: 0 },
+    isDraggingTask: true,
+  };
+
+  it('targets the lane under the pointer', () => {
+    expect(resolveSwimlaneDropPreviewTarget(base)).toEqual({
+      activeDraggableId: 'TASK-1',
+      activeTask,
+      durationCells: 2,
+      hoveredCell: base.hoveredCell,
+    });
+  });
+
+  it('skips other lanes and disabled drop targets', () => {
+    expect(resolveSwimlaneDropPreviewTarget({ ...base, developerId: 'dev-2' })).toBeNull();
+    expect(resolveSwimlaneDropPreviewTarget({ ...base, dropDisabled: true })).toBeNull();
+    expect(resolveSwimlaneDropPreviewTarget({ ...base, isDraggingTask: false })).toBeNull();
+  });
+});
+
 describe('resolveSwimlaneHideQuickAddPreview', () => {
   const visible = {
     canQuickAddOnLane: true,
@@ -167,15 +203,13 @@ describe('resolveSwimlaneAvailabilityTimeline', () => {
       developerId: 'dev-1',
       sprintStartDate,
       sprintTimelineWorkingDays: 5,
-      titleForKind: () => 'Duty',
     });
 
     expect(result.availabilitySegments).toEqual([]);
     expect(result.unavailableDayHatchKinds.size).toBe(0);
-    expect(result.unavailableDayTitles.size).toBe(0);
   });
 
-  it('builds hatch kinds and titles for the assignee events', () => {
+  it('builds hatch kinds for the assignee events', () => {
     const boardEvents: BoardAvailabilityEvent[] = [
       {
         endDate: '2025-08-11',
@@ -191,12 +225,10 @@ describe('resolveSwimlaneAvailabilityTimeline', () => {
       developerId: 'dev-1',
       sprintStartDate,
       sprintTimelineWorkingDays: 5,
-      titleForKind: (kind) => kind,
     });
 
     expect(result.availabilitySegments).toHaveLength(1);
     expect(result.unavailableDayHatchKinds.get(0)).toBe('duty');
-    expect(result.unavailableDayTitles.get(0)).toContain('duty');
   });
 });
 

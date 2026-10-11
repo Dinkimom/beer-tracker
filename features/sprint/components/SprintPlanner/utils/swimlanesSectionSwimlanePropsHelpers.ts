@@ -46,7 +46,6 @@ export function buildSwimlanePropsForDeveloper(input: {
   globalNameFilter: string;
   holidayDayIndices: Set<number>;
   hoverConnectedTaskIds: Set<string> | null;
-  hoveredCell: SwimlaneProps['hoveredCell'];
   hoveredTaskId: string | null;
   onCancelQuickAddDraft?: (taskId: string) => void;
   onCloseSidebar: () => void;
@@ -142,7 +141,6 @@ export function buildSwimlanePropsForDeveloper(input: {
     globalNameFilter: input.globalNameFilter,
     holidayDayIndices: input.holidayDayIndices,
     hoverConnectedTaskIds: input.hoverConnectedTaskIds,
-    hoveredCell: input.hoveredCell,
     hoveredTaskId: input.hoveredTaskId,
     isDraggingTask: input.dragAndDropIsDraggingTask,
     linkingFromTaskId: input.linkingFromTaskId ?? null,
@@ -229,11 +227,4 @@ export function resolveSwimlaneActiveTask(
 ): Task | null {
   if (!activeTaskId) return null;
   return allTasksForDrag.find((t) => t.id === activeTaskId) ?? null;
-}
-
-export function resolveSwimlaneHoveredCellForDeveloper(
-  hoveredCell: { assigneeId: string; day: number; part: number } | null,
-  developerId: string
-) {
-  return hoveredCell?.assigneeId === developerId ? hoveredCell : null;
 }

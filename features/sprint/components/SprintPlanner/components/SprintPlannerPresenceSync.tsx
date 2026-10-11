@@ -4,6 +4,7 @@ import type { BoardViewMode } from '@/hooks/useLocalStorage';
 
 import { observer } from 'mobx-react-lite';
 
+import { useSwimlaneDragHoverSelector } from '@/features/swimlane/hooks/useSwimlaneDragHover';
 import { useSprintCardPresenceReporter } from '@/hooks/useSprintCardPresenceReporter';
 import { useRootStore } from '@/lib/layers';
 import { resolveSprintCardPresenceFocus } from '@/lib/realtime/sprintCardPresence';
@@ -11,29 +12,24 @@ import { toSprintPresenceBoardView } from '@/lib/realtime/sprintPresenceBoardVie
 import { buildLocalSprintPresenceGesture } from '@/lib/realtime/sprintPresenceGesture';
 
 interface SprintPlannerPresenceSyncProps {
-  dragAssigneeId?: string | null;
-  dragDay?: number | null;
   dragDuration?: number | null;
   draggingTaskId: string | null;
   dragNoteColor?: string | null;
   dragNoteText?: string | null;
-  dragPart?: number | null;
   sprintId: number | null;
   viewMode: BoardViewMode;
 }
 
 /** Observer-обёртка: читает фокус и live-жест из MobX и пишет presence. */
 export const SprintPlannerPresenceSync = observer(function SprintPlannerPresenceSync({
-  dragAssigneeId = null,
-  dragDay = null,
   dragDuration = null,
   dragNoteColor = null,
   dragNoteText = null,
-  dragPart = null,
   draggingTaskId,
   sprintId,
   viewMode,
 }: SprintPlannerPresenceSyncProps) {
+  const dragCell = useSwimlaneDragHoverSelector((cell) => cell);
   const { sprintPlannerUi, taskPositions } = useRootStore();
   const contextMenuTaskId = sprintPlannerUi.contextMenuTaskId;
   const note = sprintPlannerUi.noteEditPreview;
@@ -62,10 +58,10 @@ export const SprintPlannerPresenceSync = observer(function SprintPlannerPresence
     cardRowLayerShiftUp: cardRow?.layerShiftUp ?? null,
     cardRowSpan: cardRow?.span ?? null,
     cardRowTaskId: cardRow?.taskId ?? null,
-    dragAssigneeId,
-    dragDay,
+    dragAssigneeId: dragCell?.assigneeId ?? null,
+    dragDay: dragCell?.day ?? null,
     dragDuration,
-    dragPart,
+    dragPart: dragCell?.part ?? null,
     draggingTaskId: effectiveDraggingTaskId,
     focus,
     noteAssignee: notePosition?.assignee ?? null,

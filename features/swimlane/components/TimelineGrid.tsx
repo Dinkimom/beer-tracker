@@ -5,24 +5,22 @@
  */
 
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
-import type { Task } from '@/types';
 
-import { TextTooltip } from '@/components/TextTooltip';
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
 import { timelineDayDividerClass } from '@/features/sprint/utils/timelineColumnChrome';
-import { buildUnavailableHatchRanges } from '@/features/swimlane/utils/availabilityTimelineMarks';
+import {
+  buildUnavailableHatchRanges,
+  isInternalAvailabilityDayDivider,
+} from '@/features/swimlane/utils/availabilityTimelineMarks';
 
 import { TimelineGridPartCell } from './TimelineGridPartCell';
 
 interface TimelineGridProps {
-  activeTask: Task | null;
-  activeTaskDuration: number | null;
   developerId: string;
   hasTaskOverlaps?: boolean;
   /** Индексы дней (0..9), которые являются нерабочими/праздничными */
   holidayDayIndices?: Set<number>;
-  hoveredCell: { assigneeId: string; day: number; part: number } | null;
   isDraggingTask: boolean;
   isLinking?: boolean;
   maxTaskLayers?: number;
@@ -41,7 +39,6 @@ interface TimelineGridProps {
   totalHeight: number;
   /** Дни, когда исполнитель недоступен, и тон штриховки по типу события */
   unavailableDayHatchKinds?: ReadonlyMap<number, AvailabilityCardKind>;
-  unavailableDayTitles?: ReadonlyMap<number, string>;
   onQuickAddHoverPreviewChange?: (preview: {
     cellIndex: number;
     layer: number;
@@ -57,10 +54,7 @@ interface TimelineGridProps {
 const DAY_COLUMN_CLASS = 'relative isolate flex h-full min-w-0';
 
 export function TimelineGrid({
-  activeTask,
-  activeTaskDuration,
   developerId,
-  hoveredCell,
   isDraggingTask,
   isLinking = false,
   sprintStartDate,
@@ -74,7 +68,6 @@ export function TimelineGrid({
   taskLayerHeight,
   totalHeight,
   unavailableDayHatchKinds,
-  unavailableDayTitles,
   onQuickAddHoverPreviewChange,
   onQuickAddTask,
   holidayDayIndices,
@@ -97,7 +90,7 @@ export function TimelineGrid({
                 width: `${(range.daySpan / dayCount) * 100}%`,
               }}
             >
-              <PlannerHatchOverlay tone={range.kind} />
+              <PlannerHatchOverlay heightPx={totalHeight} tone={range.kind} />
             </div>
           ))}
         </div>
@@ -108,13 +101,18 @@ export function TimelineGrid({
       >
         {Array.from({ length: dayCount }, (_, dayIndex) => {
           const isHoliday = holidayDayIndices?.has(dayIndex) ?? false;
-          const dividerClass = timelineDayDividerClass(dayIndex, dayCount);
+          const hideDayDivider = isInternalAvailabilityDayDivider(
+            unavailableDayHatchKinds,
+            dayIndex,
+            dayCount
+          );
+          const dividerClass = hideDayDivider
+            ? null
+            : timelineDayDividerClass(dayIndex, dayCount);
           const hasAvailabilityHatch = unavailableDayHatchKinds?.has(dayIndex) ?? false;
           const showHolidayHatch = isHoliday && !hasAvailabilityHatch;
-          const unavailableTitle = unavailableDayTitles?.get(dayIndex);
           return (
-            <TextTooltip key={dayIndex} content={unavailableTitle ?? ''} disabled={!unavailableTitle}>
-            <div className={DAY_COLUMN_CLASS}>
+            <div key={dayIndex} className={DAY_COLUMN_CLASS}>
               {showHolidayHatch ? (
                 <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
                   <PlannerHatchOverlay />
@@ -128,13 +126,11 @@ export function TimelineGrid({
               {Array.from({ length: getPartsPerDay() }, (_, partIndex) => (
                 <TimelineGridPartCell
                   key={`${developerId}-${dayIndex}-${partIndex}`}
-                  activeTask={activeTask}
-                  activeTaskDuration={activeTaskDuration}
                   dayCount={dayCount}
                   dayIndex={dayIndex}
                   developerId={developerId}
                   hasTaskOverlaps={hasTaskOverlaps}
-                  hoveredCell={hoveredCell}
+                  hidePartDivider={hasAvailabilityHatch}
                   isDraggingTask={isDraggingTask}
                   isLinking={isLinking}
                   maxTaskLayers={maxTaskLayers}
@@ -152,7 +148,6 @@ export function TimelineGrid({
                 />
               ))}
             </div>
-            </TextTooltip>
           );
         })}
       </div>

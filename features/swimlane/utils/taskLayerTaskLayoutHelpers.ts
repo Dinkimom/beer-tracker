@@ -3,6 +3,8 @@ import type { PhaseSegment, Task } from '@/types';
 import { getPartsPerDay } from '@/constants';
 import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 
+export const SWIMLANE_BASELINE_DRAG_DIM_OPACITY = 0.3;
+
 export function baselineOpacityDuringDrag(params: {
   activeTaskDuration: number | null;
   assigneeId: string;
@@ -26,7 +28,7 @@ export function baselineOpacityDuringDrag(params: {
   const targetEndCell = targetStartCell + activeTaskDuration;
   const baselineEndCell = baselineStart + baselineWidth;
   if (baselineStart < targetEndCell && baselineEndCell > targetStartCell) {
-    return 0.3;
+    return SWIMLANE_BASELINE_DRAG_DIM_OPACITY;
   }
   return null;
 }

@@ -96,33 +96,33 @@ export function computeSwimlaneOverdueBaselineStrips(
   );
 }
 
-export function computeBaselineStripOpacity(params: {
+/**
+ * Полосы просрочки под превью drag: бит i — strips[i] приглушена.
+ * Примитив, чтобы подписчик hover-стора перерисовывался только при смене маски.
+ */
+export function computeBaselineStripsDragDimMask(params: {
   activeTaskDuration: number | null;
   assigneeId: string;
-  baselineStart: number;
-  baselineWidth: number;
   hoveredCell: { assigneeId: string; day: number; part: number } | null;
   /** Превью по hoveredCell только во время drag (иначе возможны «залипшие» поля) */
   isDraggingTask: boolean;
+  strips: ReadonlyArray<{ baselineStart: number; baselineWidth: number }>;
 }): number {
-  const {
-    activeTaskDuration,
-    assigneeId,
-    baselineStart,
-    baselineWidth,
-    hoveredCell,
-    isDraggingTask,
-  } = params;
-
-  const dragOpacity = baselineOpacityDuringDrag({
-    activeTaskDuration,
-    assigneeId,
-    baselineStart,
-    baselineWidth,
-    hoveredCell,
-    isDraggingTask,
+  let mask = 0;
+  params.strips.forEach(({ baselineStart, baselineWidth }, idx) => {
+    const dragOpacity = baselineOpacityDuringDrag({
+      activeTaskDuration: params.activeTaskDuration,
+      assigneeId: params.assigneeId,
+      baselineStart,
+      baselineWidth,
+      hoveredCell: params.hoveredCell,
+      isDraggingTask: params.isDraggingTask,
+    });
+    if (dragOpacity != null) {
+      mask |= 1 << idx;
+    }
   });
-  return dragOpacity ?? 1;
+  return mask;
 }
 
 function resolveSwimlaneRowBandInsetsPx(
@@ -212,21 +212,6 @@ export function computeSwimlaneRowBandBox(
   return {
     top: `${box.top}px`,
     height: `${box.height}px`,
-  };
-}
-
-/** Высота полосы отставания: ниже карточки, подпись «Отстаёт» остаётся внутри. */
-export const SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX = 24;
-
-/** Короткая полоса по вертикальному центру карточки. */
-export function computeSwimlaneOverdueBaselineBarBox(
-  bandTop: number,
-  bandHeight: number
-): { height: number; top: number } {
-  const height = Math.min(SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX, Math.max(0, bandHeight));
-  return {
-    height,
-    top: bandTop + (bandHeight - height) / 2,
   };
 }
 

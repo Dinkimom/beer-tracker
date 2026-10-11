@@ -1,7 +1,5 @@
 'use client';
 
-import type { Task } from '@/types';
-
 import { useDroppable } from '@dnd-kit/core';
 
 import { CARD_MARGIN, ZIndex, getPartsPerDay } from '@/constants';
@@ -9,7 +7,6 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useDelayedSwimlaneQuickAddHover } from '@/features/swimlane/hooks/useDelayedSwimlaneQuickAddHover';
 import { clampSwimlaneQuickAddBandBox } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { computeSwimlaneRowBandBox } from '@/features/swimlane/utils/taskLayerTaskLayout';
-import { getStatusColors, resolvePaletteStatusKey } from '@/utils/statusColors';
 
 function resolveQuickAddHitBox(durationCells: number): {
   left: string;
@@ -30,11 +27,11 @@ function resolveQuickAddHitBox(durationCells: number): {
 }
 
 interface DroppableCellProps {
-  activeTask: Task | null;
   dropDisabled?: boolean;
   hasTaskOverlaps?: boolean;
+  /** Скрыть part-разделитель (внутри интервала занятости). */
+  hidePartDivider?: boolean;
   id: string;
-  isHighlighted: boolean;
   partIndex: number;
   partStatus: 'current' | 'future' | 'past';
   /** Не даёт превью «+» вылезти за высоту строки (фото/новый слой) */
@@ -54,11 +51,10 @@ interface DroppableCellProps {
 
 export function DroppableCell({
   dropDisabled = false,
+  hidePartDivider = false,
   id,
-  isHighlighted,
   partIndex,
   partStatus,
-  activeTask,
   taskAreaHeight,
   hasTaskOverlaps = false,
   quickAddClipHeight,
@@ -75,40 +71,6 @@ export function DroppableCell({
   const isQuickAddEnabled = Boolean(onQuickAddClick);
   const quickAddHover = useDelayedSwimlaneQuickAddHover(isQuickAddEnabled, onQuickAddHoverChange);
 
-  const getHighlightColor = () => {
-    if (!activeTask) return { bg: 'bg-blue-100/80 dark:bg-blue-900/40', border: 'border-blue-300/50 dark:border-blue-700/50' };
-
-    const statusColors = getStatusColors(
-      resolvePaletteStatusKey(activeTask.originalStatus, activeTask.statusColorKey)
-    );
-    // Используем темные варианты для highlight, если они есть
-    if (statusColors.highlightDark) {
-      return {
-        bg: `${statusColors.highlight.bg} ${statusColors.highlightDark.bg}`,
-        border: `${statusColors.highlight.border} ${statusColors.highlightDark.border}`
-      };
-    }
-    // Fallback: используем bgDark и borderDark для создания highlightDark
-    const bgDark = statusColors.bgDark ? statusColors.bgDark.replace('dark:', '').replace('/40', '/40') : 'dark:bg-gray-700/40';
-    const borderDark = statusColors.borderDark ? `${statusColors.borderDark.replace('dark:', '').replace('border-', 'border-')  }/50` : 'dark:border-gray-600/50';
-
-    return {
-      bg: `${statusColors.highlight.bg} dark:${bgDark}`,
-      border: `${statusColors.highlight.border} dark:${borderDark}`
-    };
-  };
-
-  const getBaseBgColor = () => {
-    if (isHighlighted) {
-      const highlightColor = getHighlightColor();
-      return `${highlightColor.bg} ${highlightColor.border}`;
-    }
-    // Не используем useDroppable().isOver для фона: после drop dnd-kit часто оставляет isOver,
-    // из‑за чего ячейки остаются закрашенными до движения мыши.
-
-    return '';
-  };
-
   const quickAddBandStyle =
     onQuickAddClick != null
       ? clampSwimlaneQuickAddBandBox(
@@ -124,13 +86,15 @@ export function DroppableCell({
       : null;
 
   const isQuickAddVisible = Boolean(onQuickAddClick && quickAddBandStyle && quickAddHover.isHovered);
+  const showPartDivider =
+    !hidePartDivider && partIndex !== getPartsPerDay() - 1;
 
   return (
     <div
       ref={setNodeRef}
       className={`relative z-[1] flex-1 overflow-visible pointer-events-auto ${
-        partIndex !== getPartsPerDay() - 1 ? 'border-r border-gray-200/50 dark:border-gray-600/50' : ''
-      } ${onQuickAddClick ? 'cursor-pointer' : ''} ${getBaseBgColor()}`}
+        showPartDivider ? 'border-r border-gray-200/50 dark:border-gray-600/50' : ''
+      } ${onQuickAddClick ? 'cursor-pointer' : ''}`}
       data-current-cell={partStatus === 'current' ? 'true' : undefined}
       style={{ height: `${totalHeight}px`, minHeight: `${totalHeight}px` }}
       onMouseEnter={quickAddHover.onPointerEnter}

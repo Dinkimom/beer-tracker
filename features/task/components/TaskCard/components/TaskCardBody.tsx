@@ -154,7 +154,6 @@ export function TaskCardBody({
         <div className="flex min-w-0 shrink-0 items-center gap-1.5">
           {showMetaRow ? (
             <TaskCardSwimlaneMetaRow
-              assigneeTextSize={bodyContext.assigneeTextSize}
               displayDuration={actualDuration ?? displayDuration}
               hideTestPoints={bodyContext.hideTestPoints}
               isQATask={bodyContext.isQATask}

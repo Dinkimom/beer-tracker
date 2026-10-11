@@ -22,7 +22,6 @@ import {
 import { TaskCardSwimlaneMetaIconsRow } from './TaskCardSwimlaneMetaIconsRow';
 
 interface TaskCardSwimlaneReadOnlyContentProps {
-  compactKey?: boolean;
   displayId: string;
   inlineIconSize: string;
   isDragging: boolean;
@@ -42,7 +41,6 @@ interface TaskCardSwimlaneReadOnlyContentProps {
 }
 
 export function TaskCardSwimlaneReadOnlyContent({
-  compactKey = false,
   displayId,
   inlineIconSize,
   isDragging,
@@ -154,7 +152,7 @@ export function TaskCardSwimlaneReadOnlyContent({
       {showKey && (
         <TextTooltip content={keyLinkProps.title}>
         <a
-          className={`font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer ${lineHeightClass}${compactKey ? ' whitespace-nowrap' : ''}`}
+          className="break-all text-[10px] font-normal leading-tight text-gray-500 hover:underline cursor-pointer dark:text-gray-400"
           {...keyLinkProps}
           title={undefined}
         >

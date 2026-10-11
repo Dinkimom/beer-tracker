@@ -5,7 +5,10 @@ import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { useCallback, useState } from 'react';
 
-export interface AvailabilityUpsertModalState {
+import { resolvePlacementToolAfterAvailabilityPopoverClose } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
+import { useRootStore } from '@/lib/layers';
+
+export interface AvailabilityPopoverState {
   boardId: number;
   editing: BoardAvailabilityEvent | null;
   endDate: string;
@@ -16,23 +19,33 @@ export interface AvailabilityUpsertModalState {
 }
 
 interface UseSwimlaneAvailabilityUiParams {
+  boardEvents?: BoardAvailabilityEvent[];
   boardId: number | null;
   developer: Developer;
   sprintId?: number | null;
 }
 
 export function useSwimlaneAvailabilityUi({
+  boardEvents,
   boardId,
   developer,
   sprintId,
 }: UseSwimlaneAvailabilityUiParams) {
-  const [ui, setUi] = useState<AvailabilityUpsertModalState | null>(null);
+  const { sprintPlannerUi } = useRootStore();
+  const [ui, setUi] = useState<AvailabilityPopoverState | null>(null);
 
-  const close = useCallback(() => setUi(null), []);
+  const close = useCallback(() => {
+    setUi(null);
+    const next = resolvePlacementToolAfterAvailabilityPopoverClose(sprintPlannerUi.placementTool);
+    if (next !== sprintPlannerUi.placementTool) {
+      sprintPlannerUi.setPlacementTool(next);
+    }
+  }, [sprintPlannerUi]);
 
-  const openUpsertForEvent = useCallback(
-    (event: BoardAvailabilityEvent) => {
-      if (!boardId) {
+  const openUpsertForEventId = useCallback(
+    (eventId: string) => {
+      const event = boardEvents?.find((item) => item.id === eventId);
+      if (!boardId || !event) {
         return;
       }
       setUi({
@@ -45,7 +58,7 @@ export function useSwimlaneAvailabilityUi({
         startDate: event.startDate,
       });
     },
-    [boardId, developer.id, developer.name, sprintId]
+    [boardEvents, boardId, developer.id, developer.name, sprintId]
   );
 
   const openCreateForDate = useCallback(
@@ -66,5 +79,5 @@ export function useSwimlaneAvailabilityUi({
     [boardId, developer.id, developer.name, sprintId]
   );
 
-  return { close, openCreateForDate, openUpsertForEvent, ui };
+  return { close, openCreateForDate, openUpsertForEventId, ui };
 }

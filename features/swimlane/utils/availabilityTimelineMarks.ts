@@ -90,6 +90,23 @@ export function buildUnavailableHatchRanges(
   return ranges;
 }
 
+/**
+ * Day-разделитель справа от dayIndex внутри одного непрерывного блока занятости
+ * (оба дня недоступны и одного kind). Между разными событиями границу оставляем.
+ */
+export function isInternalAvailabilityDayDivider(
+  kinds: ReadonlyMap<number, AvailabilityCardKind> | undefined,
+  dayIndex: number,
+  dayCount: number
+): boolean {
+  if (!kinds || dayIndex < 0 || dayIndex >= dayCount - 1) {
+    return false;
+  }
+  const left = kinds.get(dayIndex);
+  const right = kinds.get(dayIndex + 1);
+  return left != null && right != null && left === right;
+}
+
 export function isoDateOnlyFromWorkingDayIndex(
   sprintStartDate: Date,
   dayIndex: number,

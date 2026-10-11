@@ -3,8 +3,6 @@
 import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
 import type { Developer, Task } from '@/types';
 
-import { isSwimlaneSingleTimeslotWidth } from '../taskCardLayoutHelpers';
-
 import {
   buildTaskCardKeyLinkProps,
   resolveTaskCardSwimlaneMetaVisibility,
@@ -91,7 +89,6 @@ export function TaskCardSwimlaneContent({
 
   return (
     <TaskCardSwimlaneReadOnlyContent
-      compactKey={isSwimlaneSingleTimeslotWidth(displayDuration)}
       displayId={displayId}
       inlineIconSize={inlineIconSize}
       isDragging={isDragging}

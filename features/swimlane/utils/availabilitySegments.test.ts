@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { PARTS_PER_DAY } from '@/constants';
 
-import { getSegmentsForDeveloper } from './availabilitySegments';
+import { getSegmentsForDeveloper, resolveAvailabilityDayRange } from './availabilitySegments';
 import { getWidthPercent } from './positionUtils';
 
 function boardEvent(
@@ -51,5 +51,39 @@ describe('getSegmentsForDeveloper', () => {
 
     const wrongTimelineTotalParts = 10 * PARTS_PER_DAY;
     expect(getWidthPercent(segments[0]!.durationInParts, wrongTimelineTotalParts)).toBe(50);
+  });
+});
+
+describe('resolveAvailabilityDayRange', () => {
+  /** Пн 11.08.2025 */
+  const sprintStart = new Date(2025, 7, 11);
+  const base = { sprintStartDate: sprintStart, workingDaysCount: 10 };
+
+  it('maps a single clicked day to one column', () => {
+    expect(
+      resolveAvailabilityDayRange({ ...base, endDate: '2025-08-13', startDate: '2025-08-13' })
+    ).toEqual({ dayCount: 1, startDay: 2 });
+  });
+
+  it('spans the weekend as working-day columns', () => {
+    expect(
+      resolveAvailabilityDayRange({ ...base, endDate: '2025-08-19', startDate: '2025-08-14' })
+    ).toEqual({ dayCount: 4, startDay: 3 });
+  });
+
+  it('clips a period that starts before the sprint', () => {
+    expect(
+      resolveAvailabilityDayRange({ ...base, endDate: '2025-08-12', startDate: '2025-08-01' })
+    ).toEqual({ dayCount: 2, startDay: 0 });
+  });
+
+  it('returns null outside the sprint or for an inverted range', () => {
+    expect(
+      resolveAvailabilityDayRange({ ...base, endDate: '2025-07-10', startDate: '2025-07-01' })
+    ).toBeNull();
+    expect(
+      resolveAvailabilityDayRange({ ...base, endDate: '2025-08-11', startDate: '2025-08-15' })
+    ).toBeNull();
+    expect(resolveAvailabilityDayRange({ ...base, endDate: '', startDate: '' })).toBeNull();
   });
 });

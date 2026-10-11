@@ -46,7 +46,6 @@ export interface SwimlaneProps {
   holidayDayIndices?: Set<number>;
   /** Кластер связей при hover. Несвязанные затемняются (opacity 0.5), если в кластере больше одной задачи. */
   hoverConnectedTaskIds?: Set<string> | null;
-  hoveredCell: { assigneeId: string; day: number; part: number } | null;
   hoveredTaskId?: string | null;
   isDraggingTask?: boolean;
   /** Строка закреплена под шапкой дат */

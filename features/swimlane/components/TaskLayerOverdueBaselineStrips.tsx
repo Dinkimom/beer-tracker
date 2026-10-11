@@ -5,14 +5,18 @@ import type { CSSProperties } from 'react';
 import { useState } from 'react';
 
 import { ZIndex, getPartsPerDay } from '@/constants';
+import { useSwimlaneDragHoverSelector } from '@/features/swimlane/hooks/useSwimlaneDragHover';
 import { factTimelineHolidayMask } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
+import { computeBaselineStripsDragDimMask } from '@/features/swimlane/utils/taskLayerTaskLayout';
+import { SWIMLANE_BASELINE_DRAG_DIM_OPACITY } from '@/features/swimlane/utils/taskLayerTaskLayoutHelpers';
 import {
-  computeBaselineStripOpacity,
-  computeSwimlaneOverdueBaselineBarBox,
-} from '@/features/swimlane/utils/taskLayerTaskLayout';
-import { buildSwimlaneOverdueBaselineStripHorizontalStyle } from '@/features/task/components/TaskBar/taskBarHelpers';
+  buildSwimlaneOverdueBaselineStripHorizontalStyle,
+  SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX,
+} from '@/features/task/components/TaskBar/taskBarHelpers';
 
 import { TaskLayerOverdueBaselineChip } from './TaskLayerOverdueBaselineChip';
+
+const OVERDUE_BASELINE_LINE_PX = 3;
 
 interface TaskLayerOverdueBaselineStripsProps {
   activeTaskDuration: number | null;
@@ -22,7 +26,6 @@ interface TaskLayerOverdueBaselineStripsProps {
   currentCell: number;
   /** Индексы нерабочих дней таймлайна — в этих колонках полоса не видна */
   holidayDayIndices?: ReadonlySet<number>;
-  hoveredCell: { assigneeId: string; day: number; part: number } | null;
   isDraggingTask: boolean;
   linkingActive?: boolean;
   status: string | undefined;
@@ -42,7 +45,6 @@ export function TaskLayerOverdueBaselineStrips({
   baselineTop,
   currentCell,
   holidayDayIndices,
-  hoveredCell,
   isDraggingTask,
   linkingActive = false,
   onCloseAndCreate,
@@ -53,6 +55,17 @@ export function TaskLayerOverdueBaselineStrips({
   timelineTotalParts,
 }: TaskLayerOverdueBaselineStripsProps) {
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+  const dragDimMask = useSwimlaneDragHoverSelector(
+    (hoveredCell) =>
+      computeBaselineStripsDragDimMask({
+        activeTaskDuration,
+        assigneeId,
+        hoveredCell,
+        isDraggingTask,
+        strips,
+      }),
+    isDraggingTask && strips.length > 0
+  );
   if (strips.length === 0) return null;
 
   const holidayMask = factTimelineHolidayMask(
@@ -66,30 +79,24 @@ export function TaskLayerOverdueBaselineStrips({
 
   const partsPerDay = getPartsPerDay();
   const showChip = !isDraggingTask && !linkingActive;
-  const bar = computeSwimlaneOverdueBaselineBarBox(baselineTop, baselineHeight);
 
   return (
     <div className="pointer-events-none absolute inset-0">
       <div className={`absolute inset-0 ${ZIndex.class('base')}`} style={holidayMaskStyle}>
       {strips.map(({ baselineStart, baselineWidth }, stripIdx) => {
-        const baselineOpacity = computeBaselineStripOpacity({
-          activeTaskDuration,
-          assigneeId,
-          baselineStart,
-          baselineWidth,
-          hoveredCell,
-          isDraggingTask,
-        });
+        const baselineOpacity =
+          (dragDimMask >> stripIdx) & 1 ? SWIMLANE_BASELINE_DRAG_DIM_OPACITY : 1;
         return (
           <div
             key={`baseline-${taskId}-${stripIdx}-${baselineStart}-${currentCell}`}
-            className="absolute pointer-events-none box-border overflow-hidden rounded-r-md border-y border-r border-red-300 bg-red-100 transition-opacity duration-200 dark:border-red-700 dark:bg-red-900"
+            className="absolute pointer-events-none rounded-full bg-red-400 transition-opacity duration-200 dark:bg-red-400/80"
             style={{
-              height: `${bar.height}px`,
+              height: `${OVERDUE_BASELINE_LINE_PX}px`,
               opacity: baselineOpacity,
-              top: `${bar.top}px`,
+              top: `${baselineTop + (baselineHeight - OVERDUE_BASELINE_LINE_PX) / 2}px`,
               ...buildSwimlaneOverdueBaselineStripHorizontalStyle({
                 durationCells: baselineWidth,
+                endInsetPx: SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX,
                 startCell: baselineStart,
                 timelineTotalParts,
               }),
@@ -102,8 +109,8 @@ export function TaskLayerOverdueBaselineStrips({
         ? strips.map(({ baselineStart, baselineWidth }) => (
             <TaskLayerOverdueBaselineChip
               key={`overdue-chip-${taskId}-${baselineStart}`}
-              baselineHeight={bar.height}
-              baselineTop={bar.top}
+              baselineHeight={baselineHeight}
+              baselineTop={baselineTop}
               canExtend={onExtend != null}
               cells={baselineWidth}
               open={openTaskId === taskId}

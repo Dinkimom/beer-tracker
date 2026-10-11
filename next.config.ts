@@ -9,28 +9,6 @@ function readPackageVersion(): string {
   return typeof pkg.version === "string" ? pkg.version : "";
 }
 
-function readGitShaFromDotGit(): string {
-  try {
-    const gitDir = join(process.cwd(), ".git");
-    const head = readFileSync(join(gitDir, "HEAD"), "utf8").trim();
-    if (!head.startsWith("ref: ")) {
-      return head.slice(0, 7);
-    }
-    const refPath = join(gitDir, ...head.slice("ref: ".length).trim().split("/"));
-    return readFileSync(refPath, "utf8").trim().slice(0, 7);
-  } catch {
-    return "";
-  }
-}
-
-function resolveGitSha(): string {
-  const fromEnv = (process.env.GIT_SHA ?? process.env.NEXT_PUBLIC_GIT_SHA ?? "").trim();
-  if (fromEnv) {
-    return fromEnv;
-  }
-  return readGitShaFromDotGit();
-}
-
 /** Semver from env (CI/Docker) or package.json — same as GitHub Release tag without `v`. */
 function resolveAppVersion(): string {
   const fromEnv = (process.env.APP_VERSION ?? process.env.NEXT_PUBLIC_APP_VERSION ?? "").trim();
@@ -52,7 +30,6 @@ function resolveYandexOauthClientId(): string {
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: resolveAppVersion(),
-    NEXT_PUBLIC_GIT_SHA: resolveGitSha(),
     // Public OAuth ClientID for Yandex Tracker authorize URL in the browser.
     // Source env has no NEXT_PUBLIC_ prefix — domain name, not a Next convention.
     YANDEX_OAUTH_CLIENT_ID: resolveYandexOauthClientId(),

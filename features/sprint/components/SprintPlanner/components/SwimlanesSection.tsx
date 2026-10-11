@@ -324,6 +324,12 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     sprintTimelineWorkingDays
   );
   const showAfterSprintRail = viewMode === 'full';
+  const placementToolbarClearancePx = resolvePlacementToolbarScrollPadPx(
+    countPlacementToolbarExtras(
+      comments.some((comment) => comment.pendingApproval === true),
+      positionsStore.planDraftCount
+    )
+  );
 
   return (
     <div
@@ -429,14 +435,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
             <div
               aria-hidden
               className="flex-1 bg-white dark:bg-gray-800"
-              style={{
-                minHeight: resolvePlacementToolbarScrollPadPx(
-                  countPlacementToolbarExtras(
-                    comments.some((comment) => comment.pendingApproval === true),
-                    positionsStore.planDraftCount
-                  )
-                ),
-              }}
+              style={{ minHeight: placementToolbarClearancePx }}
             />
           </div>
           {showAfterSprintRail ? (

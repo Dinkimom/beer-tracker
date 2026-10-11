@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
+import { getPartsPerDay } from '@/constants';
+
 import {
   buildPlannedLayoutSnapshot,
   computeBaselineStretch,
-  computeBaselineStripOpacity,
+  computeBaselineStripsDragDimMask,
   computeSwimlaneBaselineInsetsPx,
-  computeSwimlaneOverdueBaselineBarBox,
   computeSwimlaneOverdueBaselineStrips,
   computeSwimlaneRowBandBox,
   computeSwimlaneRowBandStyle,
   computeTaskLayerCardOpacity,
   resolveSwimlaneStackedTaskBandHeightPx,
-  SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX,
   SWIMLANE_STACKED_LAYER_GAP_PX,
   SWIMLANE_TASK_CARD_BORDER_RADIUS_PX,
   SWIMLANE_TASK_ROW_VERTICAL_INSET_PX,
@@ -84,18 +84,42 @@ describe('computeSwimlaneOverdueBaselineStrips', () => {
   });
 });
 
-describe('computeBaselineStripOpacity', () => {
-  it('stays opaque unless a drag preview covers the strip', () => {
+describe('computeBaselineStripsDragDimMask', () => {
+  const strips = [
+    { baselineStart: 0, baselineWidth: 2 },
+    { baselineStart: 6, baselineWidth: 2 },
+  ];
+
+  it('stays zero unless a drag preview covers a strip', () => {
     expect(
-      computeBaselineStripOpacity({
+      computeBaselineStripsDragDimMask({
         activeTaskDuration: 3,
         assigneeId: 'a',
-        baselineStart: 0,
-        baselineWidth: 5,
         hoveredCell: null,
         isDraggingTask: false,
+        strips,
       })
-    ).toBe(1);
+    ).toBe(0);
+  });
+
+  it('marks only strips under the drop range of the same lane', () => {
+    const atCell = (cell: number, assigneeId = 'a') => ({
+      assigneeId,
+      day: Math.floor(cell / getPartsPerDay()),
+      part: cell % getPartsPerDay(),
+    });
+    const mask = (hoveredCell: ReturnType<typeof atCell>) =>
+      computeBaselineStripsDragDimMask({
+        activeTaskDuration: 2,
+        assigneeId: 'a',
+        hoveredCell,
+        isDraggingTask: true,
+        strips,
+      });
+    expect(mask(atCell(1))).toBe(0b01);
+    expect(mask(atCell(6))).toBe(0b10);
+    expect(mask(atCell(3))).toBe(0);
+    expect(mask(atCell(1, 'b'))).toBe(0);
   });
 });
 
@@ -158,22 +182,6 @@ describe('computeTaskLayerCardOpacity', () => {
         taskId: 'other',
       })
     ).toBe(0.5);
-  });
-});
-
-describe('computeSwimlaneOverdueBaselineBarBox', () => {
-  it('centers a short bar inside the card band', () => {
-    expect(computeSwimlaneOverdueBaselineBarBox(20, 42)).toEqual({
-      height: SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX,
-      top: 20 + (42 - SWIMLANE_OVERDUE_BASELINE_BAR_HEIGHT_PX) / 2,
-    });
-  });
-
-  it('stays inside a band shorter than the compact bar', () => {
-    expect(computeSwimlaneOverdueBaselineBarBox(4, 16)).toEqual({
-      height: 16,
-      top: 4,
-    });
   });
 });
 
