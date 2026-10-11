@@ -22,6 +22,17 @@ describe('atlassian OAuth fragment', () => {
     });
   });
 
+  it('round-trips the Jira Cloud site address', () => {
+    const fragment = encodeAtlassianOAuthFragment({
+      accessToken: 'a1',
+      cloudId: 'c1',
+      expiresAt: 42,
+      refreshToken: 'r1',
+      siteUrl: 'https://acme.atlassian.net',
+    });
+    expect(parseAtlassianOAuthFragment(`#${fragment}`)?.siteUrl).toBe('https://acme.atlassian.net');
+  });
+
   it('keeps auth-setup and register returns; wraps other paths with next', () => {
     const fragment = 'atlassian_oauth=abc';
     expect(buildAtlassianOAuthSuccessRedirect('/auth-setup', fragment)).toBe(

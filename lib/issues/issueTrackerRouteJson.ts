@@ -1,4 +1,5 @@
 import type { IssueTrackerIssue } from '@/lib/issueTrackerProvider';
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task } from '@/types';
 
@@ -12,12 +13,13 @@ interface IssueSearchApiItem {
 
 export function taskJsonFromSnapshotRow(
   row: { payload: unknown } | null,
+  trackerWeb: TrackerWebUrlContext,
   integration?: TrackerIntegrationStored | null
 ): Task | null {
   if (!row) {
     return null;
   }
-  return mapIssueSnapshotPayloadToTask(row.payload, integration);
+  return mapIssueSnapshotPayloadToTask(row.payload, trackerWeb, integration);
 }
 
 export function buildIssueSearchApiResponse(

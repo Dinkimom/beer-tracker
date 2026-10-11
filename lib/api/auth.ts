@@ -3,6 +3,9 @@
  */
 
 import type { TrackerMyselfUser } from './types';
+import type { OrganizationIssueTrackerPublicDto } from '@/lib/issueTrackerProvider/settings';
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+import type { OrganizationTrackerAdminFormState } from '@/lib/organizations/organizationTrackerAdminFormState';
 import type { AxiosError } from 'axios';
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
@@ -64,6 +67,7 @@ interface ProductSessionResponse {
     canAccessAdmin?: boolean;
     canUsePlanner?: boolean;
     id: string;
+    issueTracker?: OrganizationIssueTrackerPublicDto | null;
     managedTeamIds?: string[] | null;
     name: string;
     role: 'member' | 'org_admin' | 'team_lead';
@@ -82,8 +86,10 @@ export async function postProductRegister(body: {
   expiresAt?: number;
   jiraEmail?: string;
   orgName: string;
+  provider: IssueTrackerProviderKind;
   refreshToken?: string;
   token: string;
+  trackerApiBaseUrl: string;
   trackerOrgId?: string;
 }): Promise<{ organization: { id: string; name: string; slug: string } }> {
   const { data } = await getPlannerBeerTrackerApi().post('/auth/register', body);
@@ -97,12 +103,7 @@ export async function postProductLogout(): Promise<void> {
 export async function fetchAdminTrackerConnectionState(
   organizationId: string,
   options?: { signal?: AbortSignal }
-): Promise<{
-  hasStoredToken?: boolean;
-  jiraEmail?: string;
-  organizationId?: string;
-  trackerOrgId?: string;
-}> {
+): Promise<Partial<OrganizationTrackerAdminFormState>> {
   const { data } = await getPlannerBeerTrackerApi().get(
     `/admin/organizations/${organizationId}/tracker`,
     { signal: options?.signal }

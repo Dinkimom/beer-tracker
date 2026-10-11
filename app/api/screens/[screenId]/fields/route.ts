@@ -23,7 +23,9 @@ export async function GET(
       );
     }
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsScreenCatalog',
       'getScreenFields'
     );
@@ -31,7 +33,6 @@ export async function GET(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const fields: TransitionFieldEnriched[] = await issueTracker.getScreenFields(screenId);
 
     return NextResponse.json({ fields });

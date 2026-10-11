@@ -11,6 +11,7 @@ import {
 import { mergeTeamMembersWithAssignees } from '@/lib/teamMemberUtils';
 import { extractDevelopers, mapTrackerIssueToTask } from '@/lib/trackerApi';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
+import { resolveTrackerWebUrlContextForOrganizationId } from '@/lib/trackerRequestConfig';
 
 interface BacklogPayloadForOrganization {
   developers: unknown;
@@ -65,16 +66,17 @@ export async function loadBacklogForOrganization(
     };
   }
 
-  const [{ rows, totalPages, totalCount }, integration] = await Promise.all([
+  const [{ rows, totalPages, totalCount }, integration, trackerWeb] = await Promise.all([
     queryBacklogIssueSnapshots(organizationId, {
       page: pageNum,
       perPage: perPageNum,
       trackerQueueKey: queueKey,
     }),
     loadTrackerIntegrationForOrganization(organizationId),
+    resolveTrackerWebUrlContextForOrganizationId(organizationId),
   ]);
   const issues = rows.map((r) => r.payload);
-  const tasks = issues.map((issue) => mapTrackerIssueToTask(issue, integration));
+  const tasks = issues.map((issue) => mapTrackerIssueToTask(issue, trackerWeb, integration));
   const backlogAssignees = extractDevelopers(issues);
   const developers = await mergeDevelopersWithOrgTeam(organizationId, boardIdNum, backlogAssignees);
   return {

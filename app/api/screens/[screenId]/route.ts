@@ -19,12 +19,16 @@ export async function GET(
       );
     }
 
-    const unsupported = rejectUnsupportedIssueTrackerCapability('supportsScreenCatalog', 'getScreen');
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
+    const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
+      'supportsScreenCatalog',
+      'getScreen'
+    );
     if (unsupported) {
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const screen = await issueTracker.getScreen(screenId);
 
     return NextResponse.json(screen);

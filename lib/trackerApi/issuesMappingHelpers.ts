@@ -1,8 +1,8 @@
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { Task } from '@/types';
 import type { SprintObject, TrackerIssue } from '@/types/tracker';
 
-import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
-import { issueTrackerIssueWebUrl } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import { issueTrackerIssueWebUrlFromBase } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import { parseSlaBugFieldsFromIssue } from '@/lib/slaBugs/parseSlaBugFields';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
@@ -211,6 +211,7 @@ export interface MapTrackerIssueToTaskOptions {
 
 export function mapTrackerIssueToTaskBase(
   issue: TrackerIssue,
+  trackerWeb: TrackerWebUrlContext,
   options?: MapTrackerIssueToTaskOptions
 ): Task {
   const statusKey = issue.status?.key || issue.statusType?.key;
@@ -225,11 +226,7 @@ export function mapTrackerIssueToTaskBase(
     id: issue.key,
     name: issue.summary,
     MergeRequestLink: issue.MergeRequestLink,
-    link: issueTrackerIssueWebUrl(
-      getIssueTrackerProviderKind(),
-      issue.key,
-      getTrackerConfig().apiUrl
-    ),
+    link: issueTrackerIssueWebUrlFromBase(trackerWeb.kind, trackerWeb.webBaseUrl, issue.key),
     ...(options?.omitDescription ? {} : { description: issue.description }),
     createdAt: issue.createdAt,
     storyPoints: optionalPoints(issue.storyPoints),

@@ -7,6 +7,7 @@ import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompleti
 import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task } from '@/types';
 
+import { issueTrackerClientWebContext } from '@/lib/issueTrackerProvider/types';
 import { queryIssueSnapshotsMatchingSprint } from '@/lib/snapshots/issueSnapshotSprintRead';
 import { mapTrackerIssueToTask } from '@/lib/trackerApi/issues';
 
@@ -14,7 +15,7 @@ import { averageAssigneeVelocity, deliveryFromTasks, type AssigneeVelocityRespon
 
 type AssigneeVelocityIssueSource = Pick<
   IssueTrackerProviderClient,
-  'getSprint' | 'listSprintIssues' | 'mapIssueToTask'
+  'getSprint' | 'listSprintIssues' | 'mapIssueToTask' | 'providerKind' | 'webBaseUrl'
 >;
 
 /** Имя, которое не совпадёт с пустым display в снимке, если трекер не отдал спринт. */
@@ -41,6 +42,7 @@ async function tasksFromTracker(
 }
 
 async function tasksFromSnapshots(
+  issueTracker: AssigneeVelocityIssueSource,
   organizationId: string,
   sprintId: number,
   sprintName: string,
@@ -51,7 +53,7 @@ async function tasksFromSnapshots(
       sprintId: String(sprintId),
       sprintName,
     });
-    return issues.map((issue) => mapTrackerIssueToTask(issue, integration));
+    return issues.map((issue) => mapTrackerIssueToTask(issue, issueTrackerClientWebContext(issueTracker), integration));
   } catch (error) {
     console.warn(`[assignee-velocity] sprint ${sprintId} snapshot read failed`, error);
     return null;
@@ -69,6 +71,7 @@ async function tasksForSprint(
     return fromTracker.tasks;
   }
   const snapshots = await tasksFromSnapshots(
+    issueTracker,
     organizationId,
     sprintId,
     fromTracker?.name ?? SNAPSHOT_NAME_FALLBACK,

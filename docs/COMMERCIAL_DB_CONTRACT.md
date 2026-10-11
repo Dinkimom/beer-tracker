@@ -2,7 +2,7 @@
 
 Beer Tracker хранит команды и сотрудников **у себя**: `teams`, `staff`, `team_members` в схеме `BEER_TRACKER_SCHEMA` (по умолчанию `public`, как в `database/init.sql`). Это не внешний реестр `public.registry_employees` и не `overseer.teams`. Legacy-инстансы могут держать таблицы в схеме `beer_tracker` через `BEER_TRACKER_SCHEMA=beer_tracker`.
 
-Трекер задач (Яндекс Трекер или Jira) — отдельный переключатель инстанса: `ISSUE_TRACKER_PROVIDER` + `TRACKER_API_URL`. На доску и логин влияют email и `staff.tracker_user_id` (uid Яндекса или Jira `accountId`).
+Трекер задач (Яндекс Трекер или Jira) — настройка организации в БД: `organizations.settings.issueTracker` (`provider` + `apiUrl`), задаётся на `/register` и в админке. На доску и логин влияют email и `staff.tracker_user_id` (uid Яндекса или Jira `accountId`).
 
 ## 1) Откуда берётся схема
 
@@ -12,6 +12,7 @@ Beer Tracker хранит команды и сотрудников **у себя
 | Уже живая БД без `staff`/`teams` | `database/add-staff-teams.sql` |
 | Уже живая БД без `staff.avatar_url` | `database/add-staff-avatar-url.sql` |
 | Уже живая БД: `sprint_goals` без `organization_id` | `database/add-sprint-goals-organization-id.sql` |
+| Уже живая БД: трекер был задан в env (`ISSUE_TRACKER_PROVIDER`, `TRACKER_API_URL`) | `database/add-organization-issue-tracker-settings.sql` с `-v provider=… -v api_url=…` |
 | Только слой организаций на чужой Postgres | `database/init.master-tenant-addon.sql`, затем `add-staff-teams.sql` |
 
 Миграции в `database/*.sql` (кроме `init.sql`) читают psql-переменную `schema` из `BEER_TRACKER_SCHEMA` и выставляют `search_path`. Запускайте через обёртку:

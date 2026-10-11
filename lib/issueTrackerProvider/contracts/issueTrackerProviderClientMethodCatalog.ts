@@ -59,13 +59,21 @@ export const ISSUE_TRACKER_PROVIDER_CLIENT_METHODS = [
 type IssueTrackerProviderClientMethod =
   (typeof ISSUE_TRACKER_PROVIDER_CLIENT_METHODS)[number];
 
+type IssueTrackerProviderClientFunctionKey = {
+  [K in keyof IssueTrackerProviderClient]: IssueTrackerProviderClient[K] extends (
+    ...args: never[]
+  ) => unknown
+    ? K
+    : never;
+}[keyof IssueTrackerProviderClient];
+
 type MissingClientMethod = Exclude<
-  keyof IssueTrackerProviderClient,
+  IssueTrackerProviderClientFunctionKey,
   IssueTrackerProviderClientMethod
 >;
 type ExtraClientMethod = Exclude<
   IssueTrackerProviderClientMethod,
-  keyof IssueTrackerProviderClient
+  IssueTrackerProviderClientFunctionKey
 >;
 
 type AssertIssueTrackerProviderClientMethodsExhaustive = [

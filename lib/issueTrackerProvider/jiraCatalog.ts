@@ -310,9 +310,14 @@ export async function fetchJiraBoardById(
   if (!baseUrl) {
     return null;
   }
-  const rapidView = await getMappedBoardByUrl(api, jiraGreenhopperRapidViewByIdUrl(baseUrl, boardId));
-  if (rapidView) {
-    return rapidView;
+  if (!isJiraCloudHost(baseUrl)) {
+    const rapidView = await getMappedBoardByUrl(
+      api,
+      jiraGreenhopperRapidViewByIdUrl(baseUrl, boardId)
+    );
+    if (rapidView) {
+      return rapidView;
+    }
   }
   return getMappedBoardByUrl(api, jiraAgileBoardByIdUrl(baseUrl, boardId));
 }

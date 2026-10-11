@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server';
 
-import { resolveAdminOrgTrackerApiUrl } from '@/lib/admin/adminOrgTrackerApiHelpers';
+import { resolveAdminOrgIssueTracker } from '@/lib/admin/adminOrgTrackerApiHelpers';
 import {
   createAdminTrackerMetadataAxios,
   fetchTrackerMetadataFieldValues,
   loadCachedTrackerOrgMetadata,
   parseTrackerMetadataResource,
-  resolveTrackerMetadataToken,
+  resolveTrackerMetadataCredentials,
   trackerAdminCatalogConnectionFingerprint,
   trackerMetadataFieldsStatusesResponse,
 } from '@/lib/admin/adminTrackerMetadataRouteHelpers';
 import { handleApiError, TRACKER_UPSTREAM_FORWARD_STATUSES } from '@/lib/api-error-handler';
 import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
-import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/settings';
 import {
-  findOrganizationById,
-  getDecryptedOrganizationTrackerToken,
-} from '@/lib/organizations';
+  readIssueTrackerBasicAuthEmail,
+  readIssueTrackerCloudId,
+} from '@/lib/issueTrackerProvider/settings';
+import { findOrganizationById } from '@/lib/organizations';
 
 /**
  * GET /api/admin/organizations/[organizationId]/tracker-metadata?resource=fields|statuses|all|field-values&fieldId=<id>
@@ -50,27 +50,37 @@ export async function GET(
     );
   }
 
-  const tokenResult = await resolveTrackerMetadataToken(
-    orgId,
-    getDecryptedOrganizationTrackerToken
-  );
-  if (tokenResult instanceof NextResponse) {
-    return tokenResult;
+  const credentials = await resolveTrackerMetadataCredentials(orgId);
+  if (credentials instanceof NextResponse) {
+    return credentials;
   }
 
-  const apiUrl = resolveAdminOrgTrackerApiUrl(org);
+  const tracker = resolveAdminOrgIssueTracker(org);
+  if (tracker instanceof NextResponse) {
+    return tracker;
+  }
   const trackerCloudOrgId = org.tracker_org_id.trim();
-  const fingerprint = trackerAdminCatalogConnectionFingerprint(tokenResult, apiUrl, trackerCloudOrgId);
+  const fingerprint = trackerAdminCatalogConnectionFingerprint(
+    credentials.accessToken,
+    tracker.apiUrl,
+    trackerCloudOrgId
+  );
   const api = createAdminTrackerMetadataAxios({
-    apiUrl,
+    apiUrl: tracker.apiUrl,
+    cloudId: readIssueTrackerCloudId(org.settings),
+    credentials,
     jiraEmail: readIssueTrackerBasicAuthEmail(org.settings),
     orgId: trackerCloudOrgId,
-    token: tokenResult,
+    providerKind: tracker.kind,
   });
 
   try {
     if (resource === 'field-values') {
-      const fieldValues = await fetchTrackerMetadataFieldValues(api, searchParams.get('fieldId'));
+      const fieldValues = await fetchTrackerMetadataFieldValues(
+        api,
+        tracker.kind,
+        searchParams.get('fieldId')
+      );
       if (fieldValues instanceof NextResponse) {
         return fieldValues;
       }
@@ -80,6 +90,7 @@ export async function GET(
     const { fields, statuses } = await loadCachedTrackerOrgMetadata({
       api,
       fingerprint,
+      kind: tracker.kind,
       orgId,
       resource,
     });

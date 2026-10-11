@@ -9,10 +9,6 @@ export {
   listUserOrganizations
 } from './organizationMembersRepository';
 export {
-
-  getDecryptedOrganizationTrackerToken
-} from './organizationSecretsRepository';
-export {
   fetchFirstOrganizationId,
   findOrganizationById,
   findOrganizationBySlug,

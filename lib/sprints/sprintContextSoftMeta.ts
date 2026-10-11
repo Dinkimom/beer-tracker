@@ -1,9 +1,9 @@
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { SprintContextSoftMeta } from '@/lib/sprints/sprintContextTypes';
 import type { AxiosInstance } from 'axios';
 import type { NextRequest } from 'next/server';
 
 import { getTrackerApiFromRequest } from '@/lib/api-tracker';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import {
   getIssueTrackerProviderClientForOrganization,
   getIssueTrackerProviderClientFromRequest,
@@ -47,13 +47,14 @@ function parseOriginBoardId(data: unknown): number | undefined {
 
 async function softResolveBoardId(
   trackerApi: AxiosInstance,
-  sprintId: number
+  sprintId: number,
+  kind: IssueTrackerProviderKind
 ): Promise<number | undefined> {
   const fromTracker = await resolveTrackerSprintBoardId(sprintId, trackerApi);
   if (fromTracker != null) {
     return fromTracker;
   }
-  if (!isJiraProviderKind(getIssueTrackerProviderKind())) {
+  if (!isJiraProviderKind(kind)) {
     return undefined;
   }
   const baseUrl = typeof trackerApi.defaults.baseURL === 'string' ? trackerApi.defaults.baseURL : '';
@@ -92,7 +93,7 @@ export async function softLoadSprintContextMeta(input: {
       );
     }
     try {
-      const boardId = await softResolveBoardId(trackerApi, input.sprintId);
+      const boardId = await softResolveBoardId(trackerApi, input.sprintId, issueTracker.providerKind);
       if (boardId != null) {
         soft.boardId = boardId;
       } else if (soft.sprintWindow) {

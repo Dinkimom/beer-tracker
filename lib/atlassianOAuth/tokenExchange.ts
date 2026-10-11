@@ -126,8 +126,14 @@ export async function fetchAtlassianAccessibleResources(
     .filter((r): r is AtlassianAccessibleResource => r != null);
 }
 
-/** Prefer first resource with a Jira scope / any site id. */
-export function pickAtlassianCloudId(resources: AtlassianAccessibleResource[]): string | null {
-  const first = resources[0]?.id?.trim();
-  return first || null;
+/** Первый доступный сайт: cloudId для OAuth REST и адрес сайта для ссылок. */
+export function pickAtlassianSite(
+  resources: AtlassianAccessibleResource[]
+): { cloudId: string; siteUrl: string } | null {
+  const first = resources[0];
+  const cloudId = first?.id?.trim();
+  if (!cloudId) {
+    return null;
+  }
+  return { cloudId, siteUrl: first?.url?.trim() ?? '' };
 }

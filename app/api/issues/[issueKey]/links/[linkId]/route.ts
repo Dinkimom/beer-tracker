@@ -30,7 +30,9 @@ export async function DELETE(
       );
     }
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsIssueLinks',
       'deleteIssueLink'
     );
@@ -38,7 +40,6 @@ export async function DELETE(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     await deleteTrackerIssueLink({
       issueKey,
       issueTracker,

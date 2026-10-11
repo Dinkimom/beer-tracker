@@ -1,14 +1,13 @@
+import type { VerifyOrganizationTrackerTokenOptions } from '@/lib/organizations/organizationTrackerConnection';
+
 import { NextResponse } from 'next/server';
 
 import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
+import { isIssueTrackerProviderKind } from '@/lib/issueTrackerProvider/registry';
 import { verifyOrganizationTrackerTokenForAdmin } from '@/lib/organizations/organizationTrackerConnection';
 
-function parseTrackerVerifyRequestBody(raw: string): {
-  jiraEmail?: string;
-  oauthToken?: string;
-  trackerOrgId?: string;
-} {
-  const result: { jiraEmail?: string; oauthToken?: string; trackerOrgId?: string } = {};
+function parseTrackerVerifyRequestBody(raw: string): VerifyOrganizationTrackerTokenOptions {
+  const result: VerifyOrganizationTrackerTokenOptions = {};
   if (!raw.trim()) {
     return result;
   }
@@ -21,6 +20,8 @@ function parseTrackerVerifyRequestBody(raw: string): {
     if (typeof o.oauthToken === 'string') result.oauthToken = o.oauthToken;
     if (typeof o.trackerOrgId === 'string') result.trackerOrgId = o.trackerOrgId;
     if (typeof o.jiraEmail === 'string') result.jiraEmail = o.jiraEmail;
+    if (isIssueTrackerProviderKind(o.provider)) result.provider = o.provider;
+    if (typeof o.trackerApiBaseUrl === 'string') result.trackerApiBaseUrl = o.trackerApiBaseUrl;
   } catch {
     /* пустое или невалидное тело — как раньше, только сохранённые данные */
   }
@@ -42,13 +43,10 @@ export async function POST(
   }
 
   const raw = await request.text();
-  const { jiraEmail, oauthToken, trackerOrgId } = parseTrackerVerifyRequestBody(raw);
-
-  const result = await verifyOrganizationTrackerTokenForAdmin(auth.ctx.organizationId, {
-    jiraEmail,
-    oauthToken,
-    trackerOrgId,
-  });
+  const result = await verifyOrganizationTrackerTokenForAdmin(
+    auth.ctx.organizationId,
+    parseTrackerVerifyRequestBody(raw)
+  );
   if (!result.ok) {
     return NextResponse.json({ error: result.error, ok: false }, { status: result.status });
   }

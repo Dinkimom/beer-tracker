@@ -9,6 +9,24 @@ export function jiraCloudOAuthApiBaseUrl(cloudId: string): string {
   return `${JIRA_CLOUD_OAUTH_API_HOST}/ex/jira/${encodeURIComponent(id)}/rest/api/3`;
 }
 
+/** REST site URL (`https://acme.atlassian.net/rest/api/3`) from the Atlassian site address; '' if invalid. */
+export function jiraCloudSiteRestApiUrl(siteUrl: string): string {
+  try {
+    return `${new URL(siteUrl.trim()).origin}/rest/api/3`;
+  } catch {
+    return '';
+  }
+}
+
+/** Хост сайта Jira Cloud для подписи (`acme.atlassian.net`); исходная строка, если это не URL. */
+export function jiraCloudSiteHost(siteOrApiUrl: string): string {
+  try {
+    return new URL(siteOrApiUrl.trim()).host;
+  } catch {
+    return siteOrApiUrl.trim();
+  }
+}
+
 export function cleanTrackerCloudId(raw: string | null | undefined): string {
   return raw?.trim() ?? '';
 }

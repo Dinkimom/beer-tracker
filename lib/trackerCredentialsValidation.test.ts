@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { createJiraAxiosInstance } from '@/lib/issueTrackerProvider/jiraAxios';
 import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
 
@@ -20,13 +19,8 @@ vi.mock('@/lib/issueTrackerProvider/jiraAxios', () => ({
   createJiraAxiosInstance: vi.fn(),
 }));
 
-vi.mock('@/lib/env', () => ({
-  getIssueTrackerProviderKind: vi.fn(() => 'tracker'),
-}));
-
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(getIssueTrackerProviderKind).mockReturnValue('tracker');
   vi.mocked(createTrackerAxiosInstance).mockImplementation(
     () =>
       ({
@@ -147,8 +141,7 @@ describe('validateJiraTrackerToken', () => {
 });
 
 describe('validateIssueTrackerCredentials', () => {
-  it('dispatches to Jira when ISSUE_TRACKER_PROVIDER is jira', async () => {
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-onprem');
+  it('dispatches to Jira for jira-onprem', async () => {
     const get = vi.fn((url: string) => {
       if (url === '/myself') return Promise.resolve({ data: {} });
       return Promise.reject(new Error(`unexpected GET ${url}`));
@@ -159,6 +152,7 @@ describe('validateIssueTrackerCredentials', () => {
       apiUrl: 'https://jira.example.com/rest/api/2',
       oauthToken: 'pat-1',
       orgId: 'jira',
+      providerKind: 'jira-onprem',
     });
     expect(r.ok).toBe(true);
     expect(createJiraAxiosInstance).toHaveBeenCalled();
@@ -166,7 +160,6 @@ describe('validateIssueTrackerCredentials', () => {
   });
 
   it('passes Atlassian email to Jira Cloud Basic axios', async () => {
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-cloud');
     const get = vi.fn((url: string) => {
       if (url === '/myself') return Promise.resolve({ data: {} });
       return Promise.reject(new Error(`unexpected GET ${url}`));
@@ -178,6 +171,7 @@ describe('validateIssueTrackerCredentials', () => {
       email: 'ada@example.com',
       oauthToken: 'api-token',
       orgId: 'jira',
+      providerKind: 'jira-cloud',
     });
     expect(r.ok).toBe(true);
     expect(createJiraAxiosInstance).toHaveBeenCalledWith({

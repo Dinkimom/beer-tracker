@@ -1,3 +1,5 @@
+import type { OrganizationIssueTrackerPublicDto } from '@/lib/issueTrackerProvider/settings';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 
@@ -15,6 +17,8 @@ interface ProductSessionOrganization {
   canAccessAdmin: boolean;
   canUsePlanner: boolean;
   id: string;
+  /** `null` — трекер ещё не подключён. */
+  issueTracker: OrganizationIssueTrackerPublicDto | null;
   /** `null` — org_admin (все команды); иначе пустой список. */
   managedTeamIds: string[] | null;
   name: string;
@@ -27,6 +31,7 @@ interface SessionResponse {
     canAccessAdmin?: boolean;
     canUsePlanner?: boolean;
     id: string;
+    issueTracker?: OrganizationIssueTrackerPublicDto | null;
     managedTeamIds?: string[] | null;
     name: string;
     role: ProductSessionOrgRole;
@@ -113,6 +118,7 @@ export function normalizeProductSessionOrganizations(
     canAccessAdmin: o.canAccessAdmin ?? o.role === 'org_admin',
     canUsePlanner: o.canUsePlanner ?? true,
     id: o.id,
+    issueTracker: o.issueTracker ?? null,
     managedTeamIds: managedTeamIdsFromSessionOrg(o),
     name: o.name,
     role: o.role,

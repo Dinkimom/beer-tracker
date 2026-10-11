@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { apiCache, cacheKeys } from '@/lib/cache';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { issueTrackerProviderCapabilities } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import { resolveParams } from '@/lib/nextjs-utils';
@@ -57,7 +56,7 @@ export async function GET(
 
     // Загружаем задачи напрямую из трекера
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
-    if (!issueTrackerProviderCapabilities(getIssueTrackerProviderKind()).supportsIssueChildren) {
+    if (!issueTrackerProviderCapabilities(issueTracker.providerKind).supportsIssueChildren) {
       const responseData = { tasks: [] };
       apiCache.set(cacheKey, responseData, STORY_TASKS_CACHE_TTL);
       return NextResponse.json(responseData);

@@ -49,9 +49,12 @@ export function useAdminTrackerConnectionReady(organizationId: string) {
           signal: controller.signal,
         });
         const nextReady = isOrganizationTrackerConnectionReady({
+          apiUrl: data.apiUrl ?? '',
           hasStoredToken: data.hasStoredToken === true,
           jiraEmail: data.jiraEmail ?? '',
           organizationId: data.organizationId ?? organizationId,
+          provider: data.provider ?? null,
+          providerLocked: data.providerLocked === true,
           trackerOrgId: data.trackerOrgId ?? '',
         });
         if (!cancelled) {

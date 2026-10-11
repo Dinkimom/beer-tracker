@@ -45,8 +45,6 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_EXPORTER_ENABLED: ${NEXT_PUBLIC_EXPORTER_ENABLED:-true}
-      TRACKER_API_URL: ${TRACKER_API_URL:-https://api.tracker.yandex.net/v3}
-      ISSUE_TRACKER_PROVIDER: ${ISSUE_TRACKER_PROVIDER:-tracker}
       EXPORTER_ENABLED: ${EXPORTER_ENABLED:-true}
       AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:?Set AUTH_SESSION_SECRET in .env (≥32 characters)}
       ORG_SECRETS_ENCRYPTION_KEY: ${ORG_SECRETS_ENCRYPTION_KEY:?Set ORG_SECRETS_ENCRYPTION_KEY in .env}
@@ -75,8 +73,6 @@ services:
       - .env
     environment:
       NODE_ENV: production
-      TRACKER_API_URL: ${TRACKER_API_URL:-https://api.tracker.yandex.net/v3}
-      ISSUE_TRACKER_PROVIDER: ${ISSUE_TRACKER_PROVIDER:-tracker}
       EXPORTER_ENABLED: ${EXPORTER_ENABLED:-true}
       AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET:?Set AUTH_SESSION_SECRET in .env (≥32 characters)}
       ORG_SECRETS_ENCRYPTION_KEY: ${ORG_SECRETS_ENCRYPTION_KEY:?Set ORG_SECRETS_ENCRYPTION_KEY in .env}

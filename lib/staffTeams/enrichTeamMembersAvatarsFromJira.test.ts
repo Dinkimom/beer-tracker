@@ -1,17 +1,18 @@
+import type * as OrganizationTrackerCredentialsModule from '@/lib/organizations/organizationTrackerCredentials';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiCache } from '@/lib/cache';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 
 import { enrichPlannerTeamMembersAvatarsFromJira } from './enrichTeamMembersAvatarsFromJira';
 
-vi.mock('@/lib/env', () => ({
-  getIssueTrackerProviderKind: vi.fn(() => 'tracker'),
-}));
-
 vi.mock('@/lib/organizations', () => ({
   findOrganizationById: vi.fn(),
-  getDecryptedOrganizationTrackerToken: vi.fn(),
+}));
+
+vi.mock('@/lib/organizations/organizationTrackerCredentials', async (importOriginal) => ({
+  ...(await importOriginal<typeof OrganizationTrackerCredentialsModule>()),
+  getOrganizationTrackerCredentials: vi.fn(),
 }));
 
 vi.mock('@/lib/issueTrackerProvider/createIssueTrackerAxios', () => ({
@@ -26,17 +27,10 @@ vi.mock('@/lib/staffTeams/staffRepository', () => ({
   updateStaff: vi.fn(),
 }));
 
-vi.mock('@/lib/trackerRequestConfig', () => ({
-  resolveTrackerApiBaseUrlForOrganizationRow: vi.fn(() => 'https://jira.example'),
-}));
-
-vi.mock('@/lib/issueTrackerProvider/settings', () => ({
-  readIssueTrackerBasicAuthEmail: vi.fn(() => 'ada@example.com'),
-}));
-
 import { createIssueTrackerAxiosForCredentials } from '@/lib/issueTrackerProvider/createIssueTrackerAxios';
 import { fetchJiraUserAvatarUrl } from '@/lib/issueTrackerProvider/jiraUserAvatar';
-import { findOrganizationById, getDecryptedOrganizationTrackerToken } from '@/lib/organizations';
+import { findOrganizationById } from '@/lib/organizations';
+import { getOrganizationTrackerCredentials } from '@/lib/organizations/organizationTrackerCredentials';
 import { updateStaff } from '@/lib/staffTeams/staffRepository';
 
 function member(partial: {
@@ -61,26 +55,37 @@ describe('enrichPlannerTeamMembersAvatarsFromJira', () => {
   beforeEach(() => {
     apiCache.clear();
     vi.clearAllMocks();
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('tracker');
   });
 
-  it('skips Yandex Tracker provider', async () => {
+  it('skips Yandex Tracker organizations and caches the decision', async () => {
+    vi.mocked(findOrganizationById).mockResolvedValue({
+      id: 'org-1',
+      settings: { issueTracker: { provider: 'tracker' } },
+    } as never);
     const members = [member({ uid: 'staff-1' })];
     await expect(
       enrichPlannerTeamMembersAvatarsFromJira('org-1', members)
     ).resolves.toBe(members);
-    expect(findOrganizationById).not.toHaveBeenCalled();
+    await enrichPlannerTeamMembersAvatarsFromJira('org-1', members);
+    expect(findOrganizationById).toHaveBeenCalledTimes(1);
+    expect(getOrganizationTrackerCredentials).not.toHaveBeenCalled();
   });
 
   it('fetches from Jira, writes staff, then uses cache gate', async () => {
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-cloud');
     vi.mocked(findOrganizationById).mockResolvedValue({
       id: 'org-1',
       settings: {
-        issueTracker: { basicAuthEmail: 'ada@example.com', provider: 'jira-cloud' },
+        issueTracker: {
+          apiUrl: 'https://jira.example/rest/api/3',
+          basicAuthEmail: 'ada@example.com',
+          provider: 'jira-cloud',
+        },
       },
     } as never);
-    vi.mocked(getDecryptedOrganizationTrackerToken).mockResolvedValue('token');
+    vi.mocked(getOrganizationTrackerCredentials).mockResolvedValue({
+      accessToken: 'token',
+      atlassianOAuth: false,
+    });
     vi.mocked(createIssueTrackerAxiosForCredentials).mockReturnValue({ get: vi.fn() } as never);
     vi.mocked(fetchJiraUserAvatarUrl).mockResolvedValue('https://cdn.example/a.png');
     vi.mocked(updateStaff).mockResolvedValue({} as never);
@@ -92,9 +97,46 @@ describe('enrichPlannerTeamMembersAvatarsFromJira', () => {
       avatar_url: 'https://cdn.example/a.png',
     });
     expect(fetchJiraUserAvatarUrl).toHaveBeenCalledTimes(1);
+    expect(createIssueTrackerAxiosForCredentials).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiUrl: 'https://jira.example/rest/api/3',
+        jiraEmail: 'ada@example.com',
+        providerKind: 'jira-cloud',
+      })
+    );
 
     const second = await enrichPlannerTeamMembersAvatarsFromJira('org-1', members);
     expect(second).toBe(members);
     expect(fetchJiraUserAvatarUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the Atlassian OAuth gateway for an org-stored OAuth pair', async () => {
+    vi.mocked(findOrganizationById).mockResolvedValue({
+      id: 'org-1',
+      settings: {
+        issueTracker: {
+          apiUrl: 'https://acme.atlassian.net/rest/api/3',
+          cloudId: 'cloud-1',
+          provider: 'jira-cloud',
+        },
+      },
+    } as never);
+    vi.mocked(getOrganizationTrackerCredentials).mockResolvedValue({
+      accessToken: 'oauth-access',
+      atlassianOAuth: true,
+    });
+    vi.mocked(createIssueTrackerAxiosForCredentials).mockReturnValue({ get: vi.fn() } as never);
+    vi.mocked(fetchJiraUserAvatarUrl).mockResolvedValue('https://cdn.example/a.png');
+    vi.mocked(updateStaff).mockResolvedValue({} as never);
+
+    await enrichPlannerTeamMembersAvatarsFromJira('org-1', [member({ uid: 'staff-1' })]);
+
+    expect(createIssueTrackerAxiosForCredentials).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiUrl: 'https://api.atlassian.com/ex/jira/cloud-1/rest/api/3',
+        jiraEmail: '',
+        oauthToken: 'oauth-access',
+      })
+    );
   });
 });

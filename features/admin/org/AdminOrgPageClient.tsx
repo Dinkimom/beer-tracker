@@ -59,6 +59,7 @@ export function AdminOrgPageClient({ initialOrgs }: AdminOrgPageClientProps) {
         canUsePlanner: true,
         managedTeamIds: null,
         initial_sync_completed_at: null,
+        issueTracker: null,
         name: organization.name,
         organization_id: organization.id,
         role: 'org_admin',

@@ -41,8 +41,11 @@ describe('yandexTrackerProvider', () => {
       apiUrl: 'https://api.tracker.test/v3',
       jiraEmail: '',
       oauthToken: 'token-from-request',
+      cloudId: '',
       orgId: 'org-from-request',
       providerKind: 'tracker',
+      storedJiraEmail: '',
+      webBaseUrl: 'https://tracker.yandex.ru',
     });
 
     const request = new Request('https://beer-tracker.test/api/tracker');

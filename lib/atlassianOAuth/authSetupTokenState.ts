@@ -12,6 +12,7 @@ interface AtlassianOAuthClientTokenState {
   expiresAt: number | undefined;
   oauthHydrated: boolean;
   refreshToken: string;
+  siteUrl: string;
   token: string;
 }
 
@@ -22,6 +23,7 @@ const EMPTY_STATE: AtlassianOAuthClientTokenState = {
   expiresAt: undefined,
   oauthHydrated: false,
   refreshToken: '',
+  siteUrl: '',
   token: '',
 };
 
@@ -37,6 +39,7 @@ function stateFromLocationBootstrap(): Omit<AtlassianOAuthClientTokenState, 'oau
       error: bootstrap.error,
       expiresAt: undefined,
       refreshToken: '',
+      siteUrl: '',
       token: '',
     };
   }
@@ -46,6 +49,7 @@ function stateFromLocationBootstrap(): Omit<AtlassianOAuthClientTokenState, 'oau
     error: bootstrap.error,
     expiresAt: tokens.expiresAt,
     refreshToken: tokens.refreshToken,
+    siteUrl: tokens.siteUrl,
     token: tokens.accessToken,
   };
 }

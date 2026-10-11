@@ -1,29 +1,46 @@
+import type { OrganizationIssueTrackerConfig } from '@/lib/issueTrackerProvider/settings';
+import type { OrganizationRow } from '@/lib/organizations/types';
+
 import { NextResponse } from 'next/server';
 
 import { createAdminTrackerMetadataAxios } from '@/lib/admin/adminTrackerMetadataRouteHelpers';
-import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/settings';
-import { findOrganizationById, getDecryptedOrganizationTrackerToken } from '@/lib/organizations';
-import { resolveTrackerApiBaseUrlForOrganizationRow } from '@/lib/trackerRequestConfig';
+import {
+  readIssueTrackerBasicAuthEmail,
+  readIssueTrackerCloudId,
+} from '@/lib/issueTrackerProvider/settings';
+import { findOrganizationById } from '@/lib/organizations';
+import {
+  getOrganizationTrackerCredentials,
+  type OrganizationTrackerCredentials,
+} from '@/lib/organizations/organizationTrackerCredentials';
+import { requireOrganizationIssueTrackerConfig, TrackerApiConfigError } from '@/lib/trackerRequestConfig';
 
 import { requireOrgAdminForOrganizationRoute } from './adminOrgRouteHelpers';
 
-/** Site REST URL for org API-token pulls (not OAuth gateway). */
-export function resolveAdminOrgTrackerApiUrl(
-  org: NonNullable<Awaited<ReturnType<typeof findOrganizationById>>>
-): string {
-  return resolveTrackerApiBaseUrlForOrganizationRow(org);
+/** Трекер организации (site REST URL для org-токена, не OAuth-шлюз). */
+export function resolveAdminOrgIssueTracker(
+  org: Pick<OrganizationRow, 'settings'>
+): NextResponse | OrganizationIssueTrackerConfig {
+  try {
+    return requireOrganizationIssueTrackerConfig(org);
+  } catch (e) {
+    if (e instanceof TrackerApiConfigError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
+  }
 }
 
-async function resolveDecryptedOrgTrackerToken(
+async function resolveOrgTrackerCredentials(
   orgId: string,
   missingTokenMessage: string
-): Promise<NextResponse | { token: string }> {
+): Promise<NextResponse | OrganizationTrackerCredentials> {
   try {
-    const token = await getDecryptedOrganizationTrackerToken(orgId);
-    if (!token?.trim()) {
+    const credentials = await getOrganizationTrackerCredentials(orgId);
+    if (!credentials?.accessToken.trim()) {
       return NextResponse.json({ error: missingTokenMessage }, { status: 422 });
     }
-    return { token: token.trim() };
+    return { ...credentials, accessToken: credentials.accessToken.trim() };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
@@ -39,6 +56,7 @@ export async function requireAdminOrgTrackerApi(
   | {
       api: ReturnType<typeof createAdminTrackerMetadataAxios>;
       org: NonNullable<Awaited<ReturnType<typeof findOrganizationById>>>;
+      tracker: OrganizationIssueTrackerConfig;
     }
 > {
   const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
@@ -55,15 +73,21 @@ export async function requireAdminOrgTrackerApi(
       { status: 422 }
     );
   }
-  const tokenResult = await resolveDecryptedOrgTrackerToken(auth.ctx.organizationId, missingTokenMessage);
-  if (!('token' in tokenResult)) {
-    return tokenResult;
+  const tracker = resolveAdminOrgIssueTracker(org);
+  if (tracker instanceof NextResponse) {
+    return tracker;
+  }
+  const credentials = await resolveOrgTrackerCredentials(auth.ctx.organizationId, missingTokenMessage);
+  if (credentials instanceof NextResponse) {
+    return credentials;
   }
   const api = createAdminTrackerMetadataAxios({
-    apiUrl: resolveTrackerApiBaseUrlForOrganizationRow(org),
+    apiUrl: tracker.apiUrl,
+    cloudId: readIssueTrackerCloudId(org.settings),
+    credentials,
     jiraEmail: readIssueTrackerBasicAuthEmail(org.settings),
     orgId: org.tracker_org_id.trim(),
-    token: tokenResult.token,
+    providerKind: tracker.kind,
   });
-  return { api, org };
+  return { api, org, tracker };
 }

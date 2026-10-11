@@ -1,26 +1,31 @@
 import type { TrackerConfigShape } from '@/lib/api/admin/types';
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+import type { OrganizationTrackerAdminFormState } from '@/lib/organizations/organizationTrackerAdminFormState';
 
 import { getPlannerBeerTrackerApi } from '@/lib/plannerBeerTrackerApiOverride';
 
 import { adminOrgApiPath } from './paths';
 
-interface AdminTrackerFormState {
-  hasStoredToken?: boolean;
-  jiraEmail?: string;
-  organizationId?: string;
-  trackerOrgId?: string;
-}
-
-export async function fetchAdminTrackerForm(orgId: string): Promise<AdminTrackerFormState> {
-  const { data } = await getPlannerBeerTrackerApi().get<AdminTrackerFormState>(
+export async function fetchAdminTrackerForm(
+  orgId: string
+): Promise<Partial<OrganizationTrackerAdminFormState>> {
+  const { data } = await getPlannerBeerTrackerApi().get<Partial<OrganizationTrackerAdminFormState>>(
     adminOrgApiPath(orgId, 'tracker')
   );
   return data;
 }
 
+export interface AdminTrackerConnectionBody {
+  jiraEmail?: string;
+  oauthToken?: string;
+  provider: IssueTrackerProviderKind;
+  trackerApiBaseUrl?: string;
+  trackerOrgId?: string;
+}
+
 export async function verifyAdminTrackerToken(
   orgId: string,
-  body: { jiraEmail?: string; oauthToken?: string; trackerOrgId?: string }
+  body: AdminTrackerConnectionBody
 ): Promise<{ message?: string; ok?: boolean }> {
   const { data } = await getPlannerBeerTrackerApi().post<{ message?: string; ok?: boolean }>(
     adminOrgApiPath(orgId, 'tracker/verify'),
@@ -31,7 +36,7 @@ export async function verifyAdminTrackerToken(
 
 export async function connectAdminTracker(
   orgId: string,
-  body: Record<string, unknown>
+  body: AdminTrackerConnectionBody
 ): Promise<{
   success?: boolean;
   syncJobEnqueued?: boolean;

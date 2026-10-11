@@ -1,16 +1,17 @@
 /**
- * Резолв Cloud Organization ID и URL API трекера для запроса планера:
- * только при сессии продукта + {@link TENANT_ORG_HEADER} — из external org id организации
- * (DB: `organizations.tracker_org_id`) и env `TRACKER_API_URL`.
+ * Резолв трекера для запроса планера: тип, URL API и external org id — из настроек
+ * организации (`organizations.settings.issueTracker`, `organizations.tracker_org_id`).
  */
 
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import type { OrganizationIssueTrackerConfig } from '@/lib/issueTrackerProvider/settings';
 import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { OrganizationRow } from '@/lib/organizations/types';
 
 import { jiraCloudOAuthApiBaseUrl } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
 import { getProductUserIdFromRequest } from '@/lib/auth/productSession';
-import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
 import { createIssueTrackerAxiosForCredentials } from '@/lib/issueTrackerProvider/createIssueTrackerAxios';
+import { issueTrackerWebBaseFromApiUrl } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import {
   JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE,
   JIRA_CLOUD_OAUTH_CLOUD_ID_REQUIRED_MESSAGE,
@@ -20,18 +21,18 @@ import {
 import {
   readIssueTrackerBasicAuthEmail,
   readIssueTrackerCloudId,
+  readOrganizationIssueTrackerConfig,
 } from '@/lib/issueTrackerProvider/settings';
 import { readIssueTrackerExternalOrgId } from '@/lib/issueTrackerProvider/storageAliases';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 import { JIRA_EXTERNAL_ORG_ID_FALLBACK } from '@/lib/issueTrackerProvider/types';
-import { DEFAULT_ISSUE_TRACKER_PROVIDER_KIND } from '@/lib/issueTrackerProvider/types';
 import { readOnPremSetupState } from '@/lib/onPrem/setupState';
 import { findOrganizationMembership } from '@/lib/organizations/organizationMembersRepository';
 import {
   fetchFirstOrganizationId,
   findOrganizationById,
 } from '@/lib/organizations/organizationRepository';
-import { getDecryptedOrganizationTrackerToken } from '@/lib/organizations/organizationSecretsRepository';
+import { getOrganizationTrackerCredentials } from '@/lib/organizations/organizationTrackerCredentials';
 import { parseRegistryUuidString } from '@/lib/registryUuidString';
 import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
 import { normalizeTrackerApiBaseUrl } from '@/lib/trackerCredentialsValidation';
@@ -42,11 +43,19 @@ interface TrackerCloudContext {
   orgId: string;
   providerKind: IssueTrackerProviderKind;
   storedJiraEmail: string;
+  /** Browser base для ссылок на задачи (от URL сайта, не от OAuth-шлюза). */
+  webBaseUrl: string;
 }
 
 interface TrackerApiResolvedConfig extends TrackerCloudContext {
   jiraEmail: string;
   oauthToken: string;
+}
+
+interface ResolvedTrackerToken {
+  /** Jira Cloud OAuth 3LO (через шлюз по cloudId), а не API-токен с Basic. */
+  oauthGateway: boolean;
+  token: string;
 }
 
 function cleanTrackerTokenFromRequest(request: Request): string {
@@ -64,20 +73,19 @@ function resolveJiraCloudApiUrl(cloudId: string, fallbackApiUrl: string): string
 
 /**
  * Jira Cloud dual auth:
- * - user request token + cloudId → OAuth Bearer via api.atlassian.com/ex/jira/{cloudId}
- * - org-stored API token → Basic (email + token) against TRACKER_API_URL site
+ * - OAuth token (user request token or org-stored OAuth pair) + cloudId → Bearer via api.atlassian.com/ex/jira/{cloudId}
+ * - org-stored API token → Basic (email + token) against the org's stored site URL
  */
 function withJiraCloudAuth(
   request: Request | null,
   ctx: TrackerCloudContext,
-  oauthToken: string,
-  requestTokenPresent: boolean
+  { oauthGateway, token: oauthToken }: ResolvedTrackerToken
 ): TrackerApiResolvedConfig {
   if (ctx.providerKind !== 'jira-cloud') {
     return { ...ctx, jiraEmail: '', oauthToken };
   }
 
-  if (requestTokenPresent) {
+  if (oauthGateway) {
     const requestCloudId = request ? jiraCloudIdFromRequest(request) : '';
     const cloudId = requestCloudId || ctx.cloudId;
     if (!cloudId) {
@@ -96,7 +104,7 @@ function withJiraCloudAuth(
   if (jiraCloudRequiresBasicAuthEmail(ctx.providerKind) && !jiraEmail) {
     throw new TrackerApiConfigError(JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE, 400);
   }
-  // Site REST URL from TRACKER_API_URL (Basic); not the OAuth gateway.
+  // Site REST URL from org settings (Basic); not the OAuth gateway.
   return { ...ctx, jiraEmail, oauthToken };
 }
 
@@ -111,55 +119,47 @@ export class TrackerApiConfigError extends Error {
   }
 }
 
-export function resolveTrackerApiBaseUrlForOrganizationRow(_org: OrganizationRow): string {
-  const envUrl = getTrackerConfig().apiUrl?.trim();
-  if (envUrl) {
-    try {
-      return normalizeTrackerApiBaseUrl(envUrl);
-    } catch {
-      /* fall through */
-    }
-  }
-  return 'https://api.tracker.yandex.net/v3';
-}
+const ORGANIZATION_TRACKER_NOT_CONFIGURED_MESSAGE =
+  'Для организации не подключён трекер задач. Откройте админку и подключите трекер.';
 
-function assertYandexTrackerProvider(
-  providerKind: IssueTrackerProviderKind
-): asserts providerKind is typeof DEFAULT_ISSUE_TRACKER_PROVIDER_KIND {
-  if (providerKind === 'tracker') {
-    return;
+/** Трекер организации из настроек; не выбран — 422 с подсказкой про админку. */
+export function requireOrganizationIssueTrackerConfig(
+  org: Pick<OrganizationRow, 'settings'>
+): OrganizationIssueTrackerConfig {
+  const config = readOrganizationIssueTrackerConfig(org.settings);
+  if (!config) {
+    throw new TrackerApiConfigError(ORGANIZATION_TRACKER_NOT_CONFIGURED_MESSAGE, 422);
   }
-  throw new TrackerApiConfigError(
-    `Инстанс настроен на ${providerKind}, но этот маршрут пока поддерживает только Яндекс Трекер.`,
-    422
-  );
+  let apiUrl: string;
+  try {
+    apiUrl = normalizeTrackerApiBaseUrl(config.apiUrl);
+  } catch {
+    throw new TrackerApiConfigError('Некорректный URL API трекера в настройках организации', 422);
+  }
+  return { apiUrl, kind: config.kind };
 }
 
 function issueTrackerCloudContextForOrganizationRow(
   org: OrganizationRow
 ): TrackerCloudContext {
-  const providerKind = getIssueTrackerProviderKind();
-  const apiUrl = resolveTrackerApiBaseUrlForOrganizationRow(org);
+  const { apiUrl, kind: providerKind } = requireOrganizationIssueTrackerConfig(org);
   const externalOrgId = readIssueTrackerExternalOrgId(org);
-  const cloudId = readIssueTrackerCloudId(org.settings);
+  const webBaseUrl = issueTrackerWebBaseFromApiUrl(providerKind, apiUrl);
 
   if (isJiraProviderKind(providerKind)) {
     return {
       // Keep site URL here; OAuth gateway is applied only for user Bearer tokens.
       apiUrl,
-      cloudId,
+      cloudId: readIssueTrackerCloudId(org.settings),
       orgId: externalOrgId || JIRA_EXTERNAL_ORG_ID_FALLBACK,
       providerKind,
       storedJiraEmail: readIssueTrackerBasicAuthEmail(org.settings),
+      webBaseUrl,
     };
   }
 
-  assertYandexTrackerProvider(providerKind);
   if (!externalOrgId) {
-    throw new TrackerApiConfigError(
-      'Для организации не настроен Яндекс Трекер. Откройте админку и подключите трекер.',
-      422
-    );
+    throw new TrackerApiConfigError(ORGANIZATION_TRACKER_NOT_CONFIGURED_MESSAGE, 422);
   }
   return {
     apiUrl,
@@ -167,6 +167,7 @@ function issueTrackerCloudContextForOrganizationRow(
     orgId: externalOrgId,
     providerKind,
     storedJiraEmail: '',
+    webBaseUrl,
   };
 }
 
@@ -196,6 +197,18 @@ export async function resolveTrackerCloudContextForProductOrganizationId(
     throw new TrackerApiConfigError('Организация не найдена', 404);
   }
   return issueTrackerCloudContextForOrganizationRow(org);
+}
+
+/** Тип трекера и web-base для ссылок на задачи (маппинг снапшотов без клиента трекера). */
+export async function resolveTrackerWebUrlContextForOrganizationId(
+  organizationProductId: string
+): Promise<TrackerWebUrlContext> {
+  const org = await findOrganizationById(organizationProductId);
+  if (!org) {
+    throw new TrackerApiConfigError('Организация не найдена', 404);
+  }
+  const { apiUrl, kind } = requireOrganizationIssueTrackerConfig(org);
+  return { kind, webBaseUrl: issueTrackerWebBaseFromApiUrl(kind, apiUrl) };
 }
 
 /**
@@ -233,7 +246,7 @@ async function resolveTrackerApiConfigForOrganization(
   const oauthToken = cleanTrackerTokenFromRequest(request);
   const ctx = await resolveTrackerCloudContextForProductOrganizationIdOnPrem(organizationProductId);
   const token = await resolveOauthTokenOrThrow(organizationProductId, oauthToken, 422);
-  return withJiraCloudAuth(request, ctx, token, Boolean(oauthToken));
+  return withJiraCloudAuth(request, ctx, token);
 }
 
 /** Проверяет OAuth-токен трекера запросом GET /myself в контексте организации продукта. */
@@ -241,16 +254,9 @@ export async function verifyTrackerAccessForOrganization(
   request: Request,
   organizationProductId: string
 ): Promise<void> {
-  const { apiUrl, jiraEmail, oauthToken, orgId } = await resolveTrackerApiConfigForOrganization(
-    request,
-    organizationProductId
+  const trackerApi = createIssueTrackerAxiosForCredentials(
+    await resolveTrackerApiConfigForOrganization(request, organizationProductId)
   );
-  const trackerApi = createIssueTrackerAxiosForCredentials({
-    apiUrl,
-    jiraEmail,
-    oauthToken,
-    orgId,
-  });
   try {
     await trackerApi.get('/myself');
   } catch {
@@ -266,15 +272,25 @@ export async function resolveStoredOrganizationTrackerApiConfig(
   organizationProductId: string
 ): Promise<TrackerApiResolvedConfig> {
   const ctx = await resolveTrackerCloudContextForProductOrganizationId(organizationProductId);
-  const storedToken = await getDecryptedOrganizationTrackerToken(organizationProductId);
-  const token = storedToken?.replace(/\s+/g, '').trim() ?? '';
-  if (!token) {
+  const stored = await readStoredOrganizationTrackerToken(organizationProductId);
+  if (!stored) {
     throw new TrackerApiConfigError(
       'Нет токена трекера. Сохраните токен во вкладке подключения трекера.',
       422
     );
   }
-  return withJiraCloudAuth(null, ctx, token, false);
+  return withJiraCloudAuth(null, ctx, stored);
+}
+
+async function readStoredOrganizationTrackerToken(
+  organizationProductId: string
+): Promise<ResolvedTrackerToken | null> {
+  const credentials = await getOrganizationTrackerCredentials(organizationProductId);
+  if (!credentials) {
+    return null;
+  }
+  const token = credentials.accessToken.replace(/\s+/g, '').trim();
+  return token ? { oauthGateway: credentials.atlassianOAuth, token } : null;
 }
 
 /** Токен из `X-Tracker-Token` или сохранённый токен организации. */
@@ -282,14 +298,13 @@ async function resolveOauthTokenOrThrow(
   organizationProductId: string,
   oauthToken: string,
   missingStatus: 401 | 422
-): Promise<string> {
+): Promise<ResolvedTrackerToken> {
   if (oauthToken) {
-    return oauthToken;
+    return { oauthGateway: true, token: oauthToken };
   }
-  const storedToken = await getDecryptedOrganizationTrackerToken(organizationProductId);
-  const resolved = storedToken?.replace(/\s+/g, '').trim() ?? '';
-  if (resolved) {
-    return resolved;
+  const stored = await readStoredOrganizationTrackerToken(organizationProductId);
+  if (stored) {
+    return stored;
   }
   throw new TrackerApiConfigError(
     'Не найден токен Tracker: добавьте X-Tracker-Token или сохраните токен в настройках организации.',
@@ -305,7 +320,7 @@ async function resolveAuthedOrganizationTrackerApiConfig(
 ): Promise<TrackerApiResolvedConfig> {
   const ctx = await trackerCloudContextForProductOrganization(userId, organizationProductId);
   const token = await resolveOauthTokenOrThrow(organizationProductId, oauthToken, 401);
-  return withJiraCloudAuth(request, ctx, token, Boolean(oauthToken));
+  return withJiraCloudAuth(request, ctx, token);
 }
 
 async function resolveOnPremTrackerApiConfigFromRequest(
@@ -317,17 +332,12 @@ async function resolveOnPremTrackerApiConfigFromRequest(
     organizationIdFromHeader ?? (await resolveDefaultOnPremOrganizationId());
   const resolvedToken = await resolveOauthTokenOrThrow(organizationId, oauthToken, 422);
   const ctx = await resolveTrackerCloudContextForProductOrganizationIdOnPrem(organizationId);
-  return withJiraCloudAuth(request, ctx, resolvedToken, Boolean(oauthToken));
+  return withJiraCloudAuth(request, ctx, resolvedToken);
 }
 
-export async function resolveTrackerApiConfigFromRequest(request: Request): Promise<{
-  apiUrl: string;
-  cloudId?: string;
-  jiraEmail: string;
-  oauthToken: string;
-  orgId: string;
-  providerKind: IssueTrackerProviderKind;
-}> {
+export async function resolveTrackerApiConfigFromRequest(
+  request: Request
+): Promise<TrackerApiResolvedConfig> {
   const oauthToken = cleanTrackerTokenFromRequest(request);
   const userId = getProductUserIdFromRequest(request);
   const organizationId = parseRegistryUuidString(request.headers.get(TENANT_ORG_HEADER));

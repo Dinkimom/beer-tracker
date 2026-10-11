@@ -26,7 +26,7 @@ const JIRA_PROFILE_TOKEN_PATH = '/secure/ViewProfile.jspa';
 const JIRA_REST_API_PATH = /\/rest\/api\/\d+\/?$/i;
 const YANDEX_TRACKER_WEB_ORIGIN = 'https://tracker.yandex.ru';
 
-/** Cloud/API hosts whose browser UI lives on a different origin than TRACKER_API_URL. */
+/** Cloud/API hosts whose browser UI lives on a different origin than the tracker API URL. */
 const YANDEX_API_HOST_TO_WEB_ORIGIN: Readonly<Record<string, string>> = {
   'api.tracker.yandex.net': YANDEX_TRACKER_WEB_ORIGIN,
   'st-api.yandex-team.ru': 'https://st.yandex-team.ru',
@@ -151,7 +151,7 @@ export function jiraSiteBaseFromTrackerApiUrl(trackerApiUrl: string | undefined)
   }
   try {
     const url = new URL(raw);
-    // OAuth gateway is not a browser UI host — keep TRACKER_API_URL on *.atlassian.net for links.
+    // OAuth gateway is not a browser UI host — keep the API URL on *.atlassian.net for links.
     if (url.hostname === 'api.atlassian.com') {
       return null;
     }
@@ -163,7 +163,7 @@ export function jiraSiteBaseFromTrackerApiUrl(trackerApiUrl: string | undefined)
 }
 
 /**
- * Browser origin/base for issue links. TRACKER_API_URL is the REST root, not the UI:
+ * Browser origin/base for issue links. The tracker API URL is the REST root, not the UI:
  * Jira — site base of that URL (`/browse/{key}`); Yandex Cloud — tracker.yandex.ru.
  */
 export function issueTrackerWebBaseFromApiUrl(

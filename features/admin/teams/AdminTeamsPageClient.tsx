@@ -2,15 +2,18 @@
 
 import type { AdminTeamRow } from "@/features/admin/adminTeamCatalog";
 
-import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { Icon } from "@/components/Icon";
+import { useIssueTrackerProviderKind } from "@/contexts/IssueTrackerProviderKindContext";
 import { useI18n } from "@/contexts/LanguageContext";
 import { pageStack } from "@/features/admin/adminUiTokens";
 import { AdminFormModal } from "@/features/admin/components/AdminFormModal";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { translateIssueTrackerProviderMessage } from "@/lib/issueTrackerProvider/issueTrackerUi";
 
 import { AdminNewTeamFormSection } from "./components/AdminNewTeamFormSection";
 import { AdminTeamsListRefreshTeamsButton } from "./components/AdminTeamsListRefreshTeamsButton";
@@ -25,10 +28,31 @@ interface AdminTeamsPageClientProps {
 
 export function AdminTeamsPageClient({ initialTeams, isOrgAdmin, orgId }: AdminTeamsPageClientProps) {
   const { t } = useI18n();
+  const issueTrackerProviderKind = useIssueTrackerProviderKind();
+  const router = useRouter();
   const { confirm, DialogComponent } = useConfirmDialog();
   const page = useAdminTeamsPage({ confirmDestructive: confirm, initialTeams, isOrgAdmin, orgId });
   const [createOpen, setCreateOpen] = useState(false);
   const closeCreate = useCallback(() => setCreateOpen(false), []);
+
+  useEffect(() => {
+    if (!isOrgAdmin || page.trackerGateLoading || page.trackerConnectionReady) return;
+    router.replace("/admin/tracker");
+  }, [isOrgAdmin, page.trackerConnectionReady, page.trackerGateLoading, router]);
+
+  if (isOrgAdmin && (page.trackerGateLoading || !page.trackerConnectionReady)) {
+    return (
+      <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 text-sm text-ds-text-muted">
+        {page.trackerGateLoading
+          ? t("admin.common.loading")
+          : translateIssueTrackerProviderMessage(
+              t,
+              issueTrackerProviderKind,
+              "admin.common.redirectingToTrackerSettings",
+            )}
+      </div>
+    );
+  }
 
   return (
     <div className={pageStack}>

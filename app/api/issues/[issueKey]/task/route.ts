@@ -6,6 +6,7 @@ import { getRouteParam } from '@/lib/api-utils';
 import { taskJsonFromSnapshotRow } from '@/lib/issues/issueTrackerRouteJson';
 import { findIssueSnapshot } from '@/lib/snapshots';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
+import { resolveTrackerWebUrlContextForOrganizationId } from '@/lib/trackerRequestConfig';
 
 /**
  * GET /api/issues/[issueKey]/task
@@ -27,15 +28,16 @@ export async function GET(
     }
 
     const organizationId = tenantResult.ctx.organizationId;
-    const [row, integration] = await Promise.all([
+    const [row, integration, trackerWeb] = await Promise.all([
       findIssueSnapshot(organizationId, issueKey.trim()),
       loadTrackerIntegrationForOrganization(organizationId),
+      resolveTrackerWebUrlContextForOrganizationId(organizationId),
     ]);
     if (!row) {
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
     }
 
-    const task = taskJsonFromSnapshotRow(row, integration);
+    const task = taskJsonFromSnapshotRow(row, trackerWeb, integration);
     return NextResponse.json(task);
   } catch (error) {
     return handleApiError(error, 'fetch issue task');

@@ -35,7 +35,9 @@ export async function POST(
       );
     }
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsRelatedIssues',
       'createRelatedIssue'
     );
@@ -43,7 +45,6 @@ export async function POST(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const newIssue = await issueTracker.createRelatedIssue(issueKey, validation.data);
     const createdKey =
       newIssue && typeof newIssue === 'object' && 'key' in newIssue

@@ -1,3 +1,5 @@
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+
 import { createTrackerApiClient } from '@/lib/tracker-client';
 import { TrackerApiConfigError } from '@/lib/trackerRequestConfig';
 
@@ -7,13 +9,9 @@ export async function fetchTrackerMyselfOrThrow(input: {
   jiraEmail?: string;
   oauthToken: string;
   orgId: string;
+  providerKind: IssueTrackerProviderKind;
 }): Promise<unknown> {
-  const trackerApi = createTrackerApiClient({
-    apiUrl: input.apiUrl,
-    jiraEmail: input.jiraEmail,
-    oauthToken: input.oauthToken,
-    orgId: input.orgId,
-  });
+  const trackerApi = createTrackerApiClient(input);
   try {
     const res = await trackerApi.get('/myself');
     return res.data;

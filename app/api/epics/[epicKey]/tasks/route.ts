@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { apiCache } from '@/lib/cache';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import {
   collectEpicTasksFromStories,
   isTaskOrBugIssue,
@@ -46,7 +45,7 @@ export async function GET(
     }
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
-    if (!issueTrackerProviderCapabilities(getIssueTrackerProviderKind()).supportsIssueChildren) {
+    if (!issueTrackerProviderCapabilities(issueTracker.providerKind).supportsIssueChildren) {
       const responseData = { tasks: [] };
       apiCache.set(cacheKey, responseData, EPIC_TASKS_CACHE_TTL);
       return NextResponse.json(responseData);

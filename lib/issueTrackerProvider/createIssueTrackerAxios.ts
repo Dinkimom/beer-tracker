@@ -1,6 +1,6 @@
+import type { IssueTrackerProviderKind } from './types';
 import type { AxiosInstance } from 'axios';
 
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
 
 import { createJiraAxiosInstance } from './jiraAxios';
@@ -12,8 +12,9 @@ export function createIssueTrackerAxiosForCredentials(config: {
   jiraEmail?: string;
   oauthToken: string;
   orgId: string;
+  providerKind: IssueTrackerProviderKind;
 }): AxiosInstance {
-  if (isJiraProviderKind(getIssueTrackerProviderKind())) {
+  if (isJiraProviderKind(config.providerKind)) {
     return createJiraAxiosInstance({
       apiToken: config.oauthToken,
       apiUrl: config.apiUrl,

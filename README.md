@@ -2,7 +2,7 @@
 
 Self-hosted веб-приложение для планирования спринтов (свимлейны, бэклог, burndown, цели) поверх **Яндекс Трекера** или **Jira** (Cloud / Data Center). Историческое имя UI — Sprint Manager.
 
-Одна кодовая база под [Apache License 2.0](./LICENSE). Провайдер трекера — один на инстанс: [docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md).
+Одна кодовая база под [Apache License 2.0](./LICENSE). Провайдер трекера выбирается на организацию: [docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md).
 
 ## Возможности
 
@@ -20,7 +20,7 @@ Self-hosted веб-приложение для планирования спри
 - **Backend**: Next.js API Routes
 - **База данных**: PostgreSQL приложения (планер, снимки задач `issue_snapshots`, мультиарендность, staff/teams)
 - **Очередь (опционально)**: Redis + BullMQ — фоновая синхронизация с трекером (`pnpm sync-worker`)
-- **Внешний issue tracker**: Yandex Tracker **или** Jira (`ISSUE_TRACKER_PROVIDER` + `TRACKER_API_URL`)
+- **Внешний issue tracker**: Yandex Tracker **или** Jira (тип и URL API выбираются при онбординге и в админке, хранятся в БД)
 - **UI**: Tailwind CSS, Radix UI, dnd-kit (drag-and-drop)
 
 ## Установка
@@ -88,7 +88,7 @@ S3_KEY_PREFIX=local/
 
 ## Настройка трекера и токенов
 
-На инстанс — **один** провайдер. Дальше идите по своей ветке в **[ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)** (там развилка A / B / C).
+Провайдер выбирается **на организацию** (онбординг и админка «Трекер»). Дальше идите по своей ветке в **[ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)** (там развилка A / B / C).
 
 | Провайдер | Документация |
 |-----------|----------------|
@@ -97,31 +97,21 @@ S3_KEY_PREFIX=local/
 | Jira DC/Server (`jira-onprem`) | [Ветка C](./docs/ISSUE_TRACKERS.md#ветка-c--jira-data-center--server) — PAT |
 
 ```bash
-# Выберите один вариант и заполните URL:
-ISSUE_TRACKER_PROVIDER=tracker
-TRACKER_API_URL=https://api.tracker.yandex.net/v3
+# Тип трекера и URL API задаются на /register и в админке «Трекер».
 # Только для Яндекс Трекера — ClientID приложения с https://oauth.yandex.ru/
 # (scopes tracker:read + tracker:write):
 YANDEX_OAUTH_CLIENT_ID=
 
-# ISSUE_TRACKER_PROVIDER=jira-cloud
-# TRACKER_API_URL=https://your-site.atlassian.net/rest/api/3
+# Только для Jira Cloud — OAuth-приложение Atlassian (вход пользователей):
 # ATLASSIAN_OAUTH_CLIENT_ID=
 # ATLASSIAN_OAUTH_CLIENT_SECRET=
-
-# ISSUE_TRACKER_PROVIDER=jira-onprem
-# TRACKER_API_URL=https://jira.example.com/rest/api/2
 ```
 
 ### Поля в админке организации
 
-Зависят от провайдера (не из общего env): для **Yandex Tracker** — Cloud Organization ID; для **Jira Cloud** — email + API-токен (Basic для sync); для **Jira on-prem** — PAT/учётка сайта. В запросах планера — `X-Organization-Id`.
+Тип трекера и URL API (до первой синхронизации их можно поменять), дальше — по провайдеру: для **Yandex Tracker** — Cloud Organization ID; для **Jira Cloud** — email + API-токен (Basic для sync); для **Jira on-prem** — PAT/учётка сайта. В запросах планера — `X-Organization-Id`.
 
-### Серверный токен (опционально, fallback)
-
-```bash
-TRACKER_OAUTH_TOKEN=your_token_here
-```
+Токен организации хранится в БД в зашифрованном виде. Отдельной переменной окружения для него нет.
 
 ### Пользовательская учётка (обязательно)
 
@@ -136,7 +126,7 @@ TRACKER_OAUTH_TOKEN=your_token_here
 ### Основные документы
 
 - **[Обзор проекта](./docs/PROJECT_OVERVIEW.md)** — что это, для кого, функции и возможности
-- **[Issue trackers](./docs/ISSUE_TRACKERS.md)** — Yandex Tracker и Jira на одном инстансе
+- **[Issue trackers](./docs/ISSUE_TRACKERS.md)** — Yandex Tracker и Jira, выбор на организацию
 - **[Возможности приложения](./docs/CAPABILITIES.md)** — расширенный список функций
 - **[Индекс документации](./docs/DOCUMENTATION_INDEX.md)** — навигация по `docs/`
 - **[API Документация](./docs/API_DOCUMENTATION.md)** — описание API

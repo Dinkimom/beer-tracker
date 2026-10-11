@@ -210,6 +210,19 @@ describe('fetchJiraBoardById', () => {
     expect(get).toHaveBeenCalledWith('https://jira.example.com/rest/greenhopper/1.0/rapidview/14684');
   });
 
+  it('skips GreenHopper on Jira Cloud and reads the Agile board', async () => {
+    const get = vi.fn().mockResolvedValue({ data: { id: 113, name: 'Team 1' } });
+    const api = {
+      defaults: { baseURL: 'https://api.atlassian.com/ex/jira/cloud-1/rest/api/3' },
+      get,
+    } as never;
+    await expect(fetchJiraBoardById(api, 113)).resolves.toEqual({ id: 113, name: 'Team 1' });
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get).toHaveBeenCalledWith(
+      'https://api.atlassian.com/ex/jira/cloud-1/rest/agile/1.0/board/113'
+    );
+  });
+
   it('falls back to Agile board by id', async () => {
     const get = vi
       .fn()

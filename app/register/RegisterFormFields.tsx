@@ -1,5 +1,7 @@
 'use client';
 
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+
 import { AtlassianOAuthConnectButton } from '@/components/AtlassianOAuthConnectButton';
 import {
   AuthBackground,
@@ -8,11 +10,14 @@ import {
 import { BeerLottie } from '@/components/BeerLottie';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { IssueTrackerConnectionFields } from '@/components/IssueTrackerConnectionFields';
 import { PasswordInput } from '@/components/PasswordInput';
 import {
   useIssueTrackerProviderKind,
   useIssueTrackerTokenHelpUrl,
 } from '@/contexts/IssueTrackerProviderKindContext';
+import { useI18n } from '@/contexts/LanguageContext';
+import { jiraCloudSiteHost } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
 import {
   issueTrackerRequiresExternalOrgId,
   translateIssueTrackerProviderMessage,
@@ -23,35 +28,45 @@ import { RegisterFormSignInFooter } from './RegisterFormSignInFooter';
 
 interface RegisterFormFieldsProps {
   atlassianConnected: boolean;
+  atlassianReturnPath: string;
+  /** Сайт Jira Cloud из OAuth (`https://acme.atlassian.net`). */
+  atlassianSiteUrl: string;
   error: string;
   loading: boolean;
   onboardingMode: boolean;
   organizationName: string;
   signInHref: string;
   token: string;
+  trackerApiBaseUrl: string;
   trackerOrgId: string;
   onOrganizationNameChange: (value: string) => void;
+  onProviderKindChange: (value: IssueTrackerProviderKind) => void;
   onSubmit: (e: React.FormEvent) => void;
   onTokenChange: (value: string) => void;
+  onTrackerApiBaseUrlChange: (value: string) => void;
   onTrackerOrgIdChange: (value: string) => void;
-  t: (key: string) => string;
 }
 
 export function RegisterFormFields({
   atlassianConnected,
+  atlassianSiteUrl,
+  atlassianReturnPath,
   error,
   loading,
   onboardingMode,
   organizationName,
   signInHref,
-  t,
   token,
+  trackerApiBaseUrl,
   trackerOrgId,
   onOrganizationNameChange,
+  onProviderKindChange,
   onSubmit,
   onTokenChange,
+  onTrackerApiBaseUrlChange,
   onTrackerOrgIdChange,
 }: RegisterFormFieldsProps) {
+  const { t } = useI18n();
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
   const tokenHelpUrl = useIssueTrackerTokenHelpUrl();
   const isJiraCloud = issueTrackerProviderKind === 'jira-cloud';
@@ -86,6 +101,17 @@ export function RegisterFormFields({
             organizationName={organizationName}
             onOrganizationNameChange={onOrganizationNameChange}
           />
+          {onboardingMode ? (
+            <IssueTrackerConnectionFields
+              apiUrl={trackerApiBaseUrl}
+              apiUrlHidden={isJiraCloud}
+              disabled={loading}
+              idPrefix="reg"
+              kind={issueTrackerProviderKind}
+              onApiUrlChange={onTrackerApiBaseUrlChange}
+              onKindChange={onProviderKindChange}
+            />
+          ) : null}
           {showTrackerOrgId ? (
             <div>
               <label
@@ -115,12 +141,15 @@ export function RegisterFormFields({
           ) : null}
           {isJiraCloud ? (
             <div className="space-y-2">
-              <AtlassianOAuthConnectButton returnPath="/register?next=/admin" />
               {atlassianConnected ? (
                 <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                  {t('auth.setup.atlassianConnectedHint')}
+                  {t('productAuth.register.atlassianConnectedSite', {
+                    site: jiraCloudSiteHost(atlassianSiteUrl),
+                  })}
                 </p>
-              ) : null}
+              ) : (
+                <AtlassianOAuthConnectButton returnPath={atlassianReturnPath} />
+              )}
             </div>
           ) : (
             <div>

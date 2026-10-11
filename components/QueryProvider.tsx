@@ -7,6 +7,14 @@ import { ReactNode, useState } from 'react';
 
 const BOARDS_CACHE_KEY = 'beer-tracker-query-cache';
 
+function persistedBoardParamsHaveColumns(data: unknown): boolean {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+  const columns = (data as { columns?: unknown }).columns;
+  return Array.isArray(columns) && columns.length > 0;
+}
+
 export function QueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -40,9 +48,13 @@ export function QueryProvider({ children }: { children: ReactNode }) {
           shouldDehydrateQuery: (query) => {
             const root = query.queryKey[0];
             // Список досок и параметры доски (колонки канбана) — редко меняются.
-            return (
-              (root === 'boards' || root === 'board') && query.state.status === 'success'
-            );
+            if (query.state.status !== 'success') {
+              return false;
+            }
+            if (root === 'boards') {
+              return true;
+            }
+            return root === 'board' && persistedBoardParamsHaveColumns(query.state.data);
           },
         },
       }}

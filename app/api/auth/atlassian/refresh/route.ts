@@ -5,24 +5,20 @@ import {
   assertAtlassianOAuthConfigured,
   refreshAtlassianAccessToken,
 } from '@/lib/atlassianOAuth';
-import { getIssueTrackerProviderKind } from '@/lib/env';
+import { refreshOrganizationSharedAtlassianGrant } from '@/lib/organizations/organizationTrackerCredentials';
+import { parseRegistryUuidString } from '@/lib/registryUuidString';
 
 const BodySchema = z.object({
+  organizationId: z.string().trim().max(64).optional(),
   refreshToken: z.string().trim().min(1).max(8192),
 });
 
 /**
  * POST /api/auth/atlassian/refresh
- * Body: { refreshToken } → { accessToken, refreshToken, expiresAt }
+ * Body: { refreshToken, organizationId? } → { accessToken, refreshToken, expiresAt }
+ * Если refresh token — грант, сохранённый в организации, пара берётся из БД (единая ротация).
  */
 export async function POST(request: Request) {
-  if (getIssueTrackerProviderKind() !== 'jira-cloud') {
-    return NextResponse.json(
-      { error: 'Atlassian OAuth доступен только при ISSUE_TRACKER_PROVIDER=jira-cloud' },
-      { status: 400 }
-    );
-  }
-
   const configured = assertAtlassianOAuthConfigured();
   if (!configured.ok) {
     return NextResponse.json({ error: configured.error }, { status: 503 });
@@ -39,12 +35,24 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Укажите refreshToken' }, { status: 400 });
   }
+  const { refreshToken } = parsed.data;
+  const organizationId = parseRegistryUuidString(parsed.data.organizationId);
 
   try {
+    const shared = organizationId
+      ? await refreshOrganizationSharedAtlassianGrant(organizationId, refreshToken)
+      : null;
+    if (shared) {
+      return NextResponse.json({
+        accessToken: shared.accessToken,
+        expiresAt: shared.expiresAt,
+        refreshToken: shared.refreshToken,
+      });
+    }
     const tokens = await refreshAtlassianAccessToken({
       clientId: configured.clientId,
       clientSecret: configured.clientSecret,
-      refreshToken: parsed.data.refreshToken,
+      refreshToken,
     });
     return NextResponse.json({
       accessToken: tokens.accessToken,

@@ -1,3 +1,4 @@
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { TrackerIssue } from '@/types/tracker';
 
 import { describe, expect, it, vi } from 'vitest';
@@ -12,6 +13,8 @@ import {
   normalizeJiraIssue,
   searchJiraIssuesInSprint,
 } from './jiraIssues';
+
+const TRACKER_WEB: TrackerWebUrlContext = { kind: 'jira-onprem', webBaseUrl: 'https://jira.example.com' };
 
 const API_BASE = 'https://jira.example.com/rest/api/2';
 
@@ -147,7 +150,7 @@ describe('mapJiraRestIssueToTrackerIssue', () => {
       })
     );
     expect(
-      mapTrackerIssueToTask(issue!, {
+      mapTrackerIssueToTask(issue!, TRACKER_WEB, {
         configRevision: 1,
         testingFlow: {
           devEstimateFieldId: 'customfield_10016',

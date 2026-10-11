@@ -7,6 +7,7 @@ import type { UserOrganizationSummary } from './types';
 import type { QueryParams } from '@/types';
 
 import { query } from '@/lib/db';
+import { organizationIssueTrackerPublicDto } from '@/lib/issueTrackerProvider/settings';
 import { sqlExcludingDemoSystemOrganization } from '@/lib/onPrem/demoSystemOrganizationConstants';
 
 export async function findOrganizationById(
@@ -156,15 +157,17 @@ export async function listAllOrganizationsAdminSummaries(): Promise<UserOrganiza
     initial_sync_completed_at: Date | null;
     name: string;
     organization_id: string;
+    settings: Record<string, unknown>;
     slug: string | null;
   }>(
-    `SELECT o.id AS organization_id, o.name, o.slug, o.initial_sync_completed_at
+    `SELECT o.id AS organization_id, o.name, o.slug, o.initial_sync_completed_at, o.settings
      FROM organizations o
      WHERE ${sqlExcludingDemoSystemOrganization('o.id', 'o.slug')}
      ORDER BY o.name ASC`
   );
-  return res.rows.map((row) => ({
+  return res.rows.map(({ settings, ...row }) => ({
     ...row,
+    issueTracker: organizationIssueTrackerPublicDto(settings),
     role: 'org_admin' as const,
     canAccessAdmin: true,
     canUsePlanner: true,

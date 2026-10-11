@@ -17,6 +17,6 @@ export { atlassianOAuthCallbackUrl, requestOriginFromRequest } from './requestOr
 export {
   exchangeAtlassianAuthorizationCode,
   fetchAtlassianAccessibleResources,
-  pickAtlassianCloudId,
+  pickAtlassianSite,
   refreshAtlassianAccessToken,
 } from './tokenExchange';

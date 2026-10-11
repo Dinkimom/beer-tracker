@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { issueTrackerProviderCapabilities } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import { enrichTasksWithOverseerHdCounts } from '@/lib/overseer/hdCountRead';
@@ -60,7 +59,7 @@ export async function GET(
     }
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
-    if (!issueTrackerProviderCapabilities(getIssueTrackerProviderKind()).supportsSlaBugs) {
+    if (!issueTrackerProviderCapabilities(issueTracker.providerKind).supportsSlaBugs) {
       const grouped = classifyAndGroupSlaBugs([]);
       return NextResponse.json({
         tasks: [],

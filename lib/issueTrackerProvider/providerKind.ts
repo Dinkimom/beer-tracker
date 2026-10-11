@@ -1,9 +1,10 @@
+import type { IssueTrackerProviderKind } from './types';
+
 import { isJiraCloudHost } from './jiraBasicAuthEmail';
-import { ISSUE_TRACKER_PROVIDER_KINDS, type IssueTrackerProviderKind } from './types';
 
 /**
- * Канонические значения `ISSUE_TRACKER_PROVIDER` и алиасы:
- * `yandex-tracker` → `tracker`; `jira` → Cloud vs DC по TRACKER_API_URL.
+ * Тип трекера из `settings.issueTracker.provider` или query-параметра.
+ * Алиасы: `yandex-tracker` → `tracker`; `jira` → Cloud vs DC по URL API.
  */
 export function parseIssueTrackerProviderKind(
   raw: string | null | undefined,
@@ -23,8 +24,4 @@ export function parseIssueTrackerProviderKind(
     return isJiraCloudHost(trackerApiUrl) ? 'jira-cloud' : 'jira-onprem';
   }
   return null;
-}
-
-export function issueTrackerProviderKindEnvErrorMessage(): string {
-  return `ISSUE_TRACKER_PROVIDER must be one of: ${ISSUE_TRACKER_PROVIDER_KINDS.join(', ')}`;
 }

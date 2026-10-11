@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { registerOnPremFirstUserFromTrackerToken } from '@/lib/auth/onPremRegisterRouteHelpers';
 import { parseJsonRequestBody } from '@/lib/http/parseJsonRequestBody';
+import { ISSUE_TRACKER_PROVIDER_KINDS } from '@/lib/issueTrackerProvider/types';
 import { readOnPremSetupState } from '@/lib/onPrem/setupState';
 
 const BodySchema = z.object({
@@ -10,8 +11,10 @@ const BodySchema = z.object({
   expiresAt: z.number().finite().optional(),
   jiraEmail: z.string().max(320).optional(),
   orgName: z.string().min(1).max(200),
+  provider: z.enum(ISSUE_TRACKER_PROVIDER_KINDS),
   refreshToken: z.string().max(8192).optional(),
   token: z.string().min(1).max(8192),
+  trackerApiBaseUrl: z.string().max(2048).optional(),
   trackerOrgId: z.string().max(200).optional(),
 });
 
@@ -56,8 +59,10 @@ export async function POST(request: Request) {
     expiresAt: parsed.data.expiresAt,
     jiraEmail: parsed.data.jiraEmail,
     orgName,
+    provider: parsed.data.provider,
     refreshToken: parsed.data.refreshToken,
     token: parsed.data.token,
+    trackerApiBaseUrl: parsed.data.trackerApiBaseUrl,
     trackerOrgId: parsed.data.trackerOrgId,
   });
 }

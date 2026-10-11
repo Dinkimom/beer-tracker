@@ -19,6 +19,7 @@ type RunOrgSyncSkippedReason =
   | 'concurrent_sync'
   | 'incremental_before_initial'
   | 'invalid_sync_settings'
+  | 'missing_issue_tracker'
   | 'missing_tracker_org_id'
   | 'missing_tracker_token'
   | 'sync_disabled';
@@ -82,6 +83,6 @@ export async function runOrgSync(input: RunOrgSyncInput): Promise<RunOrgSyncResu
     platform,
     settings,
     syncRunId: began.syncRunId,
-    token: tokenResult.token,
+    trackerCredentials: tokenResult.credentials,
   });
 }

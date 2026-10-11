@@ -1,7 +1,10 @@
 import type { VerifyOrganizationTrackerTokenOptions, VerifyStoredTrackerTokenResult } from './organizationTrackerConnection';
+import type { OrganizationIssueTrackerConfig } from '@/lib/issueTrackerProvider/settings';
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+import type { OrganizationRow } from '@/lib/organizations/types';
 
 import { encryptOrgTrackerToken } from '@/lib/crypto-org-secrets';
-import { getIssueTrackerProviderKind, getOrgSecretsMasterKey, getTrackerConfig } from '@/lib/env';
+import { getOrgSecretsMasterKey } from '@/lib/env';
 import { resolveIssueTrackerExternalOrgIdForConnect } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import {
   cleanJiraBasicAuthEmail,
@@ -12,6 +15,8 @@ import {
 import {
   readIssueTrackerBasicAuthEmail,
   readIssueTrackerCloudId,
+  readOrganizationIssueTrackerConfig,
+  YANDEX_TRACKER_DEFAULT_API_URL,
 } from '@/lib/issueTrackerProvider/settings';
 import { readIssueTrackerExternalOrgId } from '@/lib/issueTrackerProvider/storageAliases';
 import { enqueueInitialFullSync } from '@/lib/sync/queue';
@@ -28,12 +33,41 @@ import {
   getDecryptedOrganizationTrackerToken,
 } from './organizationSecretsRepository';
 
-export function resolveDefaultTrackerApiUrl(): string {
-  return getTrackerConfig().apiUrl;
+interface ConnectionError { error: string; ok: false; status: number }
+
+/** Трекер из формы админки; не передан — сохранённый в организации. */
+export function resolveIssueTrackerForConnection(
+  org: Pick<OrganizationRow, 'initial_sync_completed_at' | 'settings'>,
+  input: { provider?: IssueTrackerProviderKind; trackerApiBaseUrl?: string | null }
+): ConnectionError | { config: OrganizationIssueTrackerConfig; ok: true } {
+  const stored = readOrganizationIssueTrackerConfig(org.settings);
+  const kind = input.provider ?? stored?.kind;
+  if (!kind) {
+    return { error: 'Выберите трекер задач', ok: false, status: 400 };
+  }
+  if (stored && org.initial_sync_completed_at && kind !== stored.kind) {
+    return {
+      error: 'Трекер нельзя сменить после первой синхронизации: данные привязаны к его идентификаторам',
+      ok: false,
+      status: 409,
+    };
+  }
+  const fromInput = input.trackerApiBaseUrl?.trim() ?? '';
+  const fromStored = stored?.kind === kind ? stored.apiUrl : '';
+  const rawUrl = fromInput || fromStored || (kind === 'tracker' ? YANDEX_TRACKER_DEFAULT_API_URL : '');
+  if (!rawUrl) {
+    return { error: 'Укажите URL API трекера', ok: false, status: 400 };
+  }
+  try {
+    return { config: { apiUrl: normalizeTrackerApiBaseUrl(rawUrl), kind }, ok: true };
+  } catch {
+    return { error: 'Некорректный URL API трекера', ok: false, status: 400 };
+  }
 }
 
 export function resolveTrackerOrgIdForVerify(
   org: { tracker_org_id: string },
+  kind: IssueTrackerProviderKind,
   options?: VerifyOrganizationTrackerTokenOptions
 ): string | null {
   const fromFormOrg = options?.trackerOrgId?.trim();
@@ -44,12 +78,15 @@ export function resolveTrackerOrgIdForVerify(
   if (stored) {
     return stored;
   }
-  const fallback = resolveIssueTrackerExternalOrgIdForConnect(getIssueTrackerProviderKind(), '');
+  const fallback = resolveIssueTrackerExternalOrgIdForConnect(kind, '');
   return fallback || null;
 }
 
-export function resolveTrackerOrgIdForConnect(rawOrgId: string): string {
-  return resolveIssueTrackerExternalOrgIdForConnect(getIssueTrackerProviderKind(), rawOrgId);
+export function resolveTrackerOrgIdForConnect(
+  kind: IssueTrackerProviderKind,
+  rawOrgId: string
+): string {
+  return resolveIssueTrackerExternalOrgIdForConnect(kind, rawOrgId);
 }
 
 async function loadStoredOAuthTokenForVerify(
@@ -89,20 +126,6 @@ export function resolveOAuthTokenForVerify(
   return loadStoredOAuthTokenForVerify(organizationId);
 }
 
-export function normalizeTrackerApiUrlOrError(
-  rawUrl: string
-): VerifyStoredTrackerTokenResult | { ok: true; trackerApiBaseUrl: string } {
-  try {
-    return { ok: true, trackerApiBaseUrl: normalizeTrackerApiBaseUrl(rawUrl) };
-  } catch {
-    return {
-      error: 'Некорректный URL API трекера в настройках организации',
-      ok: false,
-      status: 400,
-    };
-  }
-}
-
 export function resolveTrackerConnectionCloudId(input: {
   cloudId?: string;
   settingsRoot: unknown;
@@ -137,8 +160,9 @@ export async function validateTrackerOAuthOrError(input: {
   email?: string;
   oauthToken: string;
   orgId: string;
+  providerKind: IssueTrackerProviderKind;
 }): Promise<VerifyStoredTrackerTokenResult | { ok: true }> {
-  if (jiraCloudRequiresBasicAuthEmail(getIssueTrackerProviderKind()) && !input.email?.trim()) {
+  if (jiraCloudRequiresBasicAuthEmail(input.providerKind) && !input.email?.trim()) {
     return {
       error: JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE,
       ok: false,
@@ -150,6 +174,7 @@ export async function validateTrackerOAuthOrError(input: {
     email: input.email,
     oauthToken: cleanOrganizationTrackerToken(input.oauthToken),
     orgId: input.orgId,
+    providerKind: input.providerKind,
   });
   if (!validated.ok) {
     return { error: validated.message, ok: false, status: validated.status ?? 400 };

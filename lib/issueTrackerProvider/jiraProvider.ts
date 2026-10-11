@@ -1,8 +1,8 @@
+import type { TrackerWebUrlContext } from './issueTrackerUi';
 import type { IssueTrackerProviderClient } from './types';
-import type { JiraIssueTrackerProvider, JiraTrackerClientConfig } from './types';
+import type { JiraIssueTrackerProvider, JiraProviderClientConfig } from './types';
 import type { AxiosInstance } from 'axios';
 
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { resolveTrackerApiConfigFromRequest } from '@/lib/trackerRequestConfig';
 
 import { UnsupportedIssueTrackerOperationError } from './errors';
@@ -46,6 +46,7 @@ import {
 } from './jiraTransitions';
 import { searchJiraUsers } from './jiraUserSearch';
 import { mapIssueTrackerIssueToTask } from './mapIssueTrackerIssueToTask';
+import { isJiraProviderKind } from './types';
 
 const JIRA_PROVIDER_KIND = 'jira' as const;
 
@@ -92,7 +93,10 @@ export const JIRA_IMPLEMENTED_PROVIDER_METHODS = [
 /** Иначе `return proxy` из async-функции ждёт `.then` и валит клиент как thenable. */
 const JIRA_PROXY_PASSTHROUGH = new Set(['catch', 'finally', 'then']);
 
+type JiraClientWebContext = TrackerWebUrlContext & { kind: JiraProviderClientConfig['kind'] };
+
 function createJiraClientProxy(
+  web: JiraClientWebContext,
   implemented: Partial<IssueTrackerProviderClient>
 ): IssueTrackerProviderClient {
   const client = {} as IssueTrackerProviderClient;
@@ -100,6 +104,12 @@ function createJiraClientProxy(
     get(_target, prop) {
       if (typeof prop !== 'string' || JIRA_PROXY_PASSTHROUGH.has(prop)) {
         return undefined;
+      }
+      if (prop === 'providerKind') {
+        return web.kind;
+      }
+      if (prop === 'webBaseUrl') {
+        return web.webBaseUrl;
       }
       const method = implemented[prop as keyof IssueTrackerProviderClient];
       if (typeof method === 'function') {
@@ -111,8 +121,10 @@ function createJiraClientProxy(
   });
 }
 
-export function createJiraUnsupportedProviderClient(): IssueTrackerProviderClient {
-  return createJiraClientProxy({});
+export function createJiraUnsupportedProviderClient(
+  web: JiraClientWebContext
+): IssueTrackerProviderClient {
+  return createJiraClientProxy(web, {});
 }
 
 async function listNormalizedJiraSprintIssues(
@@ -127,8 +139,11 @@ async function listNormalizedJiraSprintIssues(
   return normalizeJiraIssuesWithSchedule(api, issues);
 }
 
-function createJiraProviderClientWithApi(api: AxiosInstance): IssueTrackerProviderClient {
-  return createJiraClientProxy({
+function createJiraProviderClientWithApi(
+  api: AxiosInstance,
+  web: JiraClientWebContext
+): IssueTrackerProviderClient {
+  return createJiraClientProxy(web, {
     addIssueComment: (issueKey, text) => addJiraIssueComment(api, issueKey, text),
     addIssueToSprint: (issueKey: string, sprintId: number) =>
       addJiraIssueToSprint(api, issueKey, sprintId),
@@ -179,7 +194,7 @@ function createJiraProviderClientWithApi(api: AxiosInstance): IssueTrackerProvid
     listSprintIssues: (sprintId, options) =>
       listNormalizedJiraSprintIssues(api, sprintId, options?.cacheOnly),
     listSprints: (boardId: number) => listJiraSprints(api, boardId),
-    mapIssueToTask: (issue, integration) => mapIssueTrackerIssueToTask(issue, integration),
+    mapIssueToTask: (issue, integration) => mapIssueTrackerIssueToTask(issue, web, integration),
     removeIssueFromSprint: (issueKey: string, sprintId: string) =>
       removeJiraIssueFromSprint(api, issueKey, sprintId),
     replaceIssueSprints: (issueKey: string, sprints) =>
@@ -189,29 +204,36 @@ function createJiraProviderClientWithApi(api: AxiosInstance): IssueTrackerProvid
         normalizeJiraIssuesWithSchedule(api, issues)
       ),
     searchQueues: (query: string) => searchJiraQueues(api, query),
-    searchUsers: (query: string) =>
-      searchJiraUsers(api, query, getIssueTrackerProviderKind()),
+    searchUsers: (query: string) => searchJiraUsers(api, query, web.kind),
     transitionIssue: (issueKey, transitionId, input) =>
       transitionJiraIssue(api, issueKey, transitionId, input),
-    updateIssue: (issueKey, patch) => updateJiraIssue(api, issueKey, patch),
+    updateIssue: (issueKey, patch) => updateJiraIssue(api, issueKey, patch, web.kind),
     updateSprintStatus: (sprintId, status) => updateJiraSprintStatus(api, sprintId, status),
   });
 }
 
 export function createJiraProviderClient(
-  config: JiraTrackerClientConfig
+  config: JiraProviderClientConfig
 ): IssueTrackerProviderClient {
-  return createJiraProviderClientWithApi(createJiraAxiosInstance(config));
+  return createJiraProviderClientWithApi(createJiraAxiosInstance(config), {
+    kind: config.kind,
+    webBaseUrl: config.webBaseUrl,
+  });
 }
 
 async function createJiraProviderClientFromRequest(
   request: Request
 ): Promise<IssueTrackerProviderClient> {
   const config = await resolveTrackerApiConfigFromRequest(request);
+  if (!isJiraProviderKind(config.providerKind)) {
+    throw new Error(`Organization tracker is ${config.providerKind}, not Jira`);
+  }
   return createJiraProviderClient({
     apiToken: config.oauthToken,
     apiUrl: config.apiUrl,
     email: config.jiraEmail,
+    kind: config.providerKind,
+    webBaseUrl: config.webBaseUrl,
   });
 }
 

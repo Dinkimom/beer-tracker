@@ -1,3 +1,4 @@
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { TrackerIssue } from '@/types/tracker';
 
 import { describe, expect, it } from 'vitest';
@@ -12,29 +13,31 @@ import yandexIssueExpectedDetail from './fixtures/yandexIssueExpectedDetail.json
 import yandexIssueExpectedTask from './fixtures/yandexIssueExpectedTask.json';
 import yandexIssueFull from './fixtures/yandexIssueFull.json';
 
+const TRACKER_WEB: TrackerWebUrlContext = { kind: 'tracker', webBaseUrl: 'https://tracker.yandex.ru' };
+
 const yandexIssue = yandexIssueFull as TrackerIssue;
 
 const yandexChecklist = yandexIssueExpectedDetail.checklistItems;
 
 describe('Yandex issue golden contract', () => {
   it('maps a legacy Yandex snapshot payload to the planner Task JSON', () => {
-    expect(mapIssueSnapshotPayloadToTask(yandexIssue)).toEqual(yandexIssueExpectedTask);
+    expect(mapIssueSnapshotPayloadToTask(yandexIssue, TRACKER_WEB)).toEqual(yandexIssueExpectedTask);
   });
 
   it('maps a snapshot envelope the same way as a legacy Yandex payload', () => {
     const envelope = wrapIssueSnapshotForStorage('yandex-tracker', yandexIssue);
-    expect(mapIssueSnapshotPayloadToTask(envelope)).toEqual(yandexIssueExpectedTask);
+    expect(mapIssueSnapshotPayloadToTask(envelope, TRACKER_WEB)).toEqual(yandexIssueExpectedTask);
   });
 
   it('maps a normalized provider issue the same way as a legacy Yandex payload', () => {
-    expect(mapIssueSnapshotPayloadToTask(normalizeYandexIssue(yandexIssue))).toEqual(
+    expect(mapIssueSnapshotPayloadToTask(normalizeYandexIssue(yandexIssue), TRACKER_WEB)).toEqual(
       yandexIssueExpectedTask
     );
   });
 
   it('keeps CustomStoryPoints available for tracker integration mapping', () => {
     expect(
-      mapIssueSnapshotPayloadToTask(yandexIssue, {
+      mapIssueSnapshotPayloadToTask(yandexIssue, TRACKER_WEB, {
         configRevision: 1,
         testingFlow: {
           devEstimateFieldId: 'CustomStoryPoints',
@@ -85,7 +88,7 @@ describe('Yandex issue golden contract', () => {
           self: '',
           summary: 'Fix login',
         })
-      )
+      , TRACKER_WEB)
     ).toMatchObject({
       id: 'JIRA-1',
       name: 'Fix login',

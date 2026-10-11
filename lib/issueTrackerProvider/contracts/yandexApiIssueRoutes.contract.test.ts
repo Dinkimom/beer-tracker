@@ -1,3 +1,4 @@
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { TrackerIssue } from '@/types/tracker';
 
 import { NextResponse } from 'next/server';
@@ -23,6 +24,8 @@ import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
 import yandexIssueExpectedDetail from './fixtures/yandexIssueExpectedDetail.json';
 import yandexIssueExpectedTask from './fixtures/yandexIssueExpectedTask.json';
 import yandexIssueFull from './fixtures/yandexIssueFull.json';
+
+const TRACKER_WEB: TrackerWebUrlContext = { kind: 'tracker', webBaseUrl: 'https://tracker.yandex.ru' };
 
 vi.mock('@/lib/trackerAxiosFactory', () => ({
   createTrackerAxiosInstance: vi.fn((config: unknown) => ({ config })),
@@ -50,7 +53,7 @@ function yandexMapIssueToTask() {
 
 describe('GET /api/issues/[issueKey]/task JSON', () => {
   it('maps a Yandex snapshot row to the Task card JSON', () => {
-    expect(taskJsonFromSnapshotRow({ payload: yandexIssue }, null)).toEqual(
+    expect(taskJsonFromSnapshotRow({ payload: yandexIssue }, TRACKER_WEB, null)).toEqual(
       yandexIssueExpectedTask
     );
   });
@@ -58,7 +61,7 @@ describe('GET /api/issues/[issueKey]/task JSON', () => {
   it('maps a Yandex snapshot envelope to the same Task JSON', () => {
     expect(
       taskJsonFromSnapshotRow(
-        { payload: wrapIssueSnapshotForStorage('yandex-tracker', yandexIssue) },
+        { payload: wrapIssueSnapshotForStorage('yandex-tracker', yandexIssue) }, TRACKER_WEB,
         null
       )
     ).toEqual(yandexIssueExpectedTask);

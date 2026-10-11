@@ -1,3 +1,5 @@
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -6,6 +8,8 @@ import {
   formatTrackerApiDateTimeUtc,
   mapTrackerIssueToTask,
 } from './issues';
+
+const TRACKER_WEB: TrackerWebUrlContext = { kind: 'tracker', webBaseUrl: 'https://tracker.yandex.ru' };
 
 describe('formatTrackerApiDateTimeUtc', () => {
   it('formats as Tracker API datetime with +0000 offset', () => {
@@ -36,7 +40,7 @@ describe('mapTrackerIssueToTask', () => {
       self: 'https://tracker.yandex.ru/BT-1',
       summary: 'Task',
       dangerousRelease: 'critical',
-    });
+    }, TRACKER_WEB);
     expect(task.dangerousRelease).toBe('critical');
   });
 
@@ -47,7 +51,7 @@ describe('mapTrackerIssueToTask', () => {
       self: 'https://tracker.yandex.ru/BT-2',
       summary: 'Task',
       dangerousRelease: { display: 'High risk', key: 'high' },
-    });
+    }, TRACKER_WEB);
     expect(task.dangerousRelease).toBe('High risk');
   });
 
@@ -58,7 +62,7 @@ describe('mapTrackerIssueToTask', () => {
       self: 'https://tracker.yandex.ru/BT-6',
       status: { display: 'В работе', key: 'вработе' },
       summary: 'Task',
-    });
+    }, TRACKER_WEB);
     expect(task.originalStatus).toBe('вработе');
     expect(task.originalStatusDisplay).toBe('В работе');
   });
@@ -70,7 +74,7 @@ describe('mapTrackerIssueToTask', () => {
       self: 'https://tracker.yandex.ru/BT-3',
       summary: 'Task',
       description: 'Long markdown body',
-    });
+    }, TRACKER_WEB);
     expect(task.description).toBe('Long markdown body');
   });
 
@@ -82,7 +86,7 @@ describe('mapTrackerIssueToTask', () => {
         self: 'https://tracker.yandex.ru/BT-4',
         summary: 'Task',
         description: 'Long markdown body',
-      },
+      }, TRACKER_WEB,
       null,
       { omitDescription: true }
     );
@@ -97,7 +101,7 @@ describe('mapTrackerIssueToTask', () => {
       parent: { display: 'Story', id: 10010 as never, key: 'ST-1', self: '' },
       self: 'https://tracker.yandex.ru/BT-5',
       summary: 'Task',
-    });
+    }, TRACKER_WEB);
     expect(task.parent).toEqual({ display: 'Story', id: '10010', key: 'ST-1' });
     expect(task.epic).toEqual({ display: 'Epic', id: '55', key: 'EP-1' });
   });
@@ -110,7 +114,7 @@ describe('mapTrackerIssueToTask', () => {
       self: 'https://tracker.yandex.ru/BT-7',
       start: '2026-10-09',
       summary: 'Task',
-    });
+    }, TRACKER_WEB);
     expect(task).toMatchObject({ deadline: '2026-10-12', start: '2026-10-09' });
   });
 });

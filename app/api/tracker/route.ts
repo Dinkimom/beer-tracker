@@ -5,6 +5,7 @@ import { requireTenantContext } from '@/lib/api-tenant';
 import { getQueryParam } from '@/lib/api-utils';
 import { jsonGzipResponse } from '@/lib/http/jsonGzipResponse';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
+import { issueTrackerClientWebContext } from '@/lib/issueTrackerProvider/types';
 import { loadSprintIssuesForPlanner } from '@/lib/tracker/loadSprintIssuesForPlanner';
 import { resolveTrackerRouteSprintInfo } from '@/lib/tracker/resolveTrackerRouteSprintInfo';
 import { slimSprintPlannerListTask } from '@/lib/tracker/slimSprintPlannerListTask';
@@ -66,8 +67,9 @@ export async function GET(request: NextRequest) {
       fetchDevelopersForBoard(organizationId, boardId),
     ]);
 
+    const trackerWeb = issueTrackerClientWebContext(issueTracker);
     let tasks = issues.map((issue) =>
-      mapTrackerIssueToTask(issue, integration, { omitDescription: true })
+      mapTrackerIssueToTask(issue, trackerWeb, integration, { omitDescription: true })
     );
     const [orderedTasks, developers] = await Promise.all([
       applyOccupancyOrderToTasks(organizationId, sprintIdNum, tasks),

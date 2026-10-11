@@ -29,6 +29,7 @@ function mapSessionOrganizations(organizations: UserOrganizationSummary[]) {
     initialSyncCompletedAt: o.initial_sync_completed_at
       ? new Date(o.initial_sync_completed_at).toISOString()
       : null,
+    issueTracker: o.issueTracker,
     name: o.name,
     role: o.role,
     slug: o.slug,

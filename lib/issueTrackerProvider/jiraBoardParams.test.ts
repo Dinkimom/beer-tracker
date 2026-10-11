@@ -117,6 +117,26 @@ describe('fetchJiraBoardParams', () => {
     );
   });
 
+  it('loads columns from configuration when the board lookup is empty', async () => {
+    vi.mocked(fetchJiraBoardById).mockResolvedValue(null);
+    const get = vi.fn().mockResolvedValue({
+      data: {
+        columnConfig: {
+          columns: [{ name: 'To Do', statuses: [{ id: '10000' }] }],
+        },
+        id: 15116,
+        name: 'Booking',
+      },
+    });
+    await expect(
+      fetchJiraBoardParams({ defaults: { baseURL: API_BASE }, get } as never, 15116)
+    ).resolves.toMatchObject({
+      id: 15116,
+      name: 'Booking',
+      columns: [expect.objectContaining({ display: 'To Do' })],
+    });
+  });
+
   it('returns board without columns when configuration is unavailable', async () => {
     const get = vi.fn().mockRejectedValue(new Error('403'));
     await expect(

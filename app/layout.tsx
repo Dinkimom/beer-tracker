@@ -14,13 +14,9 @@ import { QueryProvider } from "@/components/QueryProvider";
 import { IssueTrackerProviderKindProvider } from "@/contexts/IssueTrackerProviderKindContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ObjectStorageConfiguredProvider } from "@/contexts/ObjectStorageConfiguredContext";
-import { getIssueTrackerProviderKind, getTrackerConfig, isS3Configured } from "@/lib/env";
+import { isS3Configured } from "@/lib/env";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n/model";
 import { translate } from "@/lib/i18n/translator";
-import {
-  issueTrackerTokenHelpUrl,
-  issueTrackerWebBaseFromApiUrl,
-} from "@/lib/issueTrackerProvider/issueTrackerUi";
 import { PWA_START_HEADER, buildPwaManifestLinkHref } from "@/lib/pwa/pwaWebManifest";
 
 import { ThemeProvider } from "./ThemeProvider";
@@ -89,17 +85,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const issueTrackerProviderKind = getIssueTrackerProviderKind();
   const objectStorageConfigured = isS3Configured();
-  const trackerApiUrl = getTrackerConfig().apiUrl;
-  const issueTrackerTokenHelpHref = issueTrackerTokenHelpUrl(
-    issueTrackerProviderKind,
-    trackerApiUrl
-  );
-  const issueWebBaseUrl = issueTrackerWebBaseFromApiUrl(
-    issueTrackerProviderKind,
-    trackerApiUrl
-  );
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -139,11 +125,7 @@ export default function RootLayout({
           <NuqsAdapter>
             <ThemeProvider>
               <LanguageProvider>
-                <IssueTrackerProviderKindProvider
-                  issueWebBaseUrl={issueWebBaseUrl}
-                  kind={issueTrackerProviderKind}
-                  tokenHelpUrl={issueTrackerTokenHelpHref}
-                >
+                <IssueTrackerProviderKindProvider>
                   <ObjectStorageConfiguredProvider configured={objectStorageConfigured}>
                     <AuthGuard>
                       <AnalyticsCollector />

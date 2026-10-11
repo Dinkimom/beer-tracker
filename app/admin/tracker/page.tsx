@@ -1,5 +1,9 @@
 'use client';
 
+import type { AdminTrackerConnectionBody } from '@/lib/api/admin/tracker';
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+
+import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -7,6 +11,7 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKindContext';
+import { IssueTrackerProviderOverride } from '@/contexts/IssueTrackerProviderOverride';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAdminOrganizationId } from '@/features/admin/AdminOrganizationIdContext';
 import { muted, pageStack, tabBtnActive, tabBtnBase, tabBtnIdle, tabList } from '@/features/admin/adminUiTokens';
@@ -14,6 +19,7 @@ import { AdminPageHeader } from '@/features/admin/components/AdminPageHeader';
 import { AdminTrackerIntegrationSection } from '@/features/admin/components/AdminTrackerIntegrationSection';
 import { AdminTrackerSection } from '@/features/admin/components/AdminTrackerSection';
 import { notifyAdminTrackerConnectionChanged } from '@/features/admin/hooks/useAdminTrackerConnectionReady';
+import { productSessionQueryKey } from '@/hooks/useProductTenantOrganizations';
 import {
   connectAdminTracker,
   fetchAdminTrackerForm,
@@ -39,7 +45,8 @@ function tabFromSearchParams(tabParam: string | null): TrackerAdminTabId {
 
 export default function TrackerPage() {
   const { t } = useI18n();
-  const issueTrackerProviderKind = useIssueTrackerProviderKind();
+  const sessionProviderKind = useIssueTrackerProviderKind();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -60,8 +67,16 @@ export default function TrackerPage() {
     [pathname, router, searchParams]
   );
 
+  const [trackerProvider, setTrackerProvider] = useState<IssueTrackerProviderKind | null>(null);
+  const [trackerApiUrl, setTrackerApiUrl] = useState('');
+  const [trackerProviderLocked, setTrackerProviderLocked] = useState(false);
+  const [savedTracker, setSavedTracker] = useState<{
+    apiUrl: string;
+    kind: IssueTrackerProviderKind;
+  } | null>(null);
   const [trackerOrgId, setTrackerOrgId] = useState('');
   const [trackerEmail, setTrackerEmail] = useState('');
+  const [savedJiraEmail, setSavedJiraEmail] = useState('');
   const [trackerToken, setTrackerToken] = useState('');
   const [trackerHasStoredToken, setTrackerHasStoredToken] = useState(false);
   const [trackerTokenEditOpen, setTrackerTokenEditOpen] = useState(false);
@@ -77,8 +92,13 @@ export default function TrackerPage() {
     setTrackerFormHydrated(false);
     try {
       const data = await fetchAdminTrackerForm(connectOrgId);
+      setTrackerProvider(data.provider ?? null);
+      setSavedTracker(data.provider ? { apiUrl: data.apiUrl ?? '', kind: data.provider } : null);
+      setTrackerProviderLocked(data.providerLocked === true);
+      setTrackerApiUrl(data.apiUrl ?? '');
       setTrackerOrgId(data.trackerOrgId ?? '');
       setTrackerEmail(data.jiraEmail ?? '');
+      setSavedJiraEmail(data.jiraEmail ?? '');
       setTrackerHasStoredToken(data.hasStoredToken === true);
     } catch {
       /* ignore */
@@ -91,12 +111,29 @@ export default function TrackerPage() {
     void loadTrackerForm();
   }, [loadTrackerForm]);
 
+  const issueTrackerProviderKind = trackerProvider ?? sessionProviderKind;
   const trackerExternalOrgId = resolveIssueTrackerExternalOrgIdForConnect(
     issueTrackerProviderKind,
     trackerOrgId
   );
+  // OAuth с регистрации не считается API-токеном Jira Cloud, пока не сохранён email аккаунта.
+  const orgApiTokenReady =
+    trackerHasStoredToken &&
+    (issueTrackerProviderKind !== 'jira-cloud' || savedJiraEmail.trim() !== '');
   const trackerIntegrationUnlocked =
-    trackerFormHydrated && trackerHasStoredToken && trackerExternalOrgId !== '';
+    trackerFormHydrated &&
+    savedTracker !== null &&
+    orgApiTokenReady &&
+    trackerExternalOrgId !== '';
+
+  function trackerConnectionBody(): AdminTrackerConnectionBody {
+    const body: AdminTrackerConnectionBody = { provider: issueTrackerProviderKind };
+    if (trackerApiUrl.trim()) body.trackerApiBaseUrl = trackerApiUrl.trim();
+    if (trackerExternalOrgId) body.trackerOrgId = trackerExternalOrgId;
+    if (trackerToken.trim()) body.oauthToken = trackerToken.trim();
+    if (trackerEmail.trim()) body.jiraEmail = trackerEmail.trim();
+    return body;
+  }
 
   const tabSearchParam = searchParams.get('tab');
 
@@ -123,12 +160,7 @@ export default function TrackerPage() {
     if (!connectOrgId) return;
     setTrackerVerifyLoading(true);
     try {
-      const body: { jiraEmail?: string; oauthToken?: string; trackerOrgId?: string } = {};
-      if (trackerExternalOrgId) body.trackerOrgId = trackerExternalOrgId;
-      if (trackerToken.trim()) body.oauthToken = trackerToken.trim();
-      if (trackerEmail.trim()) body.jiraEmail = trackerEmail.trim();
-
-      const data = await verifyAdminTrackerToken(connectOrgId, body);
+      const data = await verifyAdminTrackerToken(connectOrgId, trackerConnectionBody());
       toast.success(
         data.message ??
           translateIssueTrackerProviderMessage(
@@ -162,18 +194,15 @@ export default function TrackerPage() {
     }
     setConnectLoading(true);
     try {
-      const body: Record<string, unknown> = { trackerOrgId: trackerExternalOrgId };
-      if (trackerToken.trim()) {
-        body.oauthToken = trackerToken;
-      }
-      if (trackerEmail.trim()) {
-        body.jiraEmail = trackerEmail.trim();
-      }
-      const data = await connectAdminTracker(connectOrgId, body);
+      const data = await connectAdminTracker(connectOrgId, {
+        ...trackerConnectionBody(),
+        trackerOrgId: trackerExternalOrgId,
+      });
       toast.success(buildTrackerConnectSuccessMessage({ data, t, trackerToken }));
       if (trackerToken.trim()) setTrackerToken('');
       setTrackerTokenEditOpen(false);
       void loadTrackerForm();
+      await queryClient.invalidateQueries({ queryKey: productSessionQueryKey });
       notifyAdminTrackerConnectionChanged(connectOrgId);
       router.refresh();
     } catch (error) {
@@ -256,36 +285,45 @@ export default function TrackerPage() {
         id="tracker-panel-connection"
         role="tabpanel"
       >
-        <AdminTrackerSection
-          aria-labelledby="tracker-tab-connection"
-          connectLoading={connectLoading}
-          connectOrgId={connectOrgId}
-          trackerEmail={trackerEmail}
-          trackerHasStoredToken={trackerHasStoredToken}
-          trackerOrgId={trackerOrgId}
-          trackerToken={trackerToken}
-          trackerTokenEditOpen={trackerTokenEditOpen}
-          trackerVerifyLoading={trackerVerifyLoading}
-          onSubmit={(e) => void connectTracker(e)}
-          onTokenEditCancel={() => {
-            setTrackerTokenEditOpen(false);
-            setTrackerToken('');
-          }}
-          onTokenEditOpen={() => {
-            setTrackerTokenEditOpen(true);
-            setTrackerToken('');
-          }}
-          onTrackerEmailChange={setTrackerEmail}
-          onTrackerOrgIdChange={setTrackerOrgId}
-          onTrackerTokenChange={setTrackerToken}
-          onVerify={() => void verifyTrackerToken()}
-        />
+        <IssueTrackerProviderOverride apiUrl={trackerApiUrl} kind={issueTrackerProviderKind}>
+          <AdminTrackerSection
+            aria-labelledby="tracker-tab-connection"
+            connectLoading={connectLoading}
+            connectOrgId={connectOrgId}
+            jiraCloudSavedApiUrl={savedTracker?.kind === 'jira-cloud' ? savedTracker.apiUrl : ''}
+            trackerApiUrl={trackerApiUrl}
+            trackerEmail={trackerEmail}
+            trackerHasStoredToken={orgApiTokenReady}
+            trackerOrgId={trackerOrgId}
+            trackerProviderLocked={trackerProviderLocked}
+            trackerToken={trackerToken}
+            trackerTokenEditOpen={trackerTokenEditOpen}
+            trackerVerifyLoading={trackerVerifyLoading}
+            onSubmit={(e) => void connectTracker(e)}
+            onTokenEditCancel={() => {
+              setTrackerTokenEditOpen(false);
+              setTrackerToken('');
+            }}
+            onTokenEditOpen={() => {
+              setTrackerTokenEditOpen(true);
+              setTrackerToken('');
+            }}
+            onTrackerApiUrlChange={setTrackerApiUrl}
+            onTrackerEmailChange={setTrackerEmail}
+            onTrackerOrgIdChange={setTrackerOrgId}
+            onTrackerProviderChange={(kind) => {
+              setTrackerProvider(kind);
+              setTrackerApiUrl(kind === savedTracker?.kind ? savedTracker.apiUrl : '');
+            }}
+            onTrackerTokenChange={setTrackerToken}
+            onVerify={() => void verifyTrackerToken()}
+          />
+        </IssueTrackerProviderOverride>
       </div>
 
-      {connectOrgId && trackerIntegrationUnlocked ? (
+      {connectOrgId && trackerIntegrationUnlocked && activeTab === 'integration' ? (
         <div
           aria-labelledby="tracker-tab-integration"
-          hidden={activeTab !== 'integration'}
           id="tracker-panel-integration"
           role="tabpanel"
         >

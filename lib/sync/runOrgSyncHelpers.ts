@@ -4,14 +4,19 @@ import type { SyncPlatformEnv } from '@/lib/env';
 import type { OrganizationRow } from '@/lib/organizations/types';
 import type { ResolvedOrgSyncSettings } from '@/lib/orgSyncSettings';
 
-import { getIssueTrackerProviderKind, getSyncPlatformEnv, getTrackerConfig } from '@/lib/env';
+import { getSyncPlatformEnv } from '@/lib/env';
 import { readIssueTrackerExternalOrgId } from '@/lib/issueTrackerProvider';
 import { createIssueTrackerProviderClientFromResolvedConfig } from '@/lib/issueTrackerProvider/clientFactory';
+import { issueTrackerWebBaseFromApiUrl } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import {
   JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE,
   jiraCloudRequiresBasicAuthEmail,
 } from '@/lib/issueTrackerProvider/jiraBasicAuthEmail';
-import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/settings';
+import {
+  readIssueTrackerBasicAuthEmail,
+  readIssueTrackerCloudId,
+  readOrganizationIssueTrackerConfig,
+} from '@/lib/issueTrackerProvider/settings';
 import {
   mergeIssueTrackerQueueKeys,
   uniqueIssueTrackerQueueKeysFromTeams,
@@ -22,10 +27,12 @@ import {
   type IssueTrackerProviderKind,
 } from '@/lib/issueTrackerProvider/types';
 import { yandexIssueFromProviderIssue } from '@/lib/issueTrackerProvider/yandexTrackerProvider';
+import { findOrganizationById } from '@/lib/organizations';
 import {
-  findOrganizationById,
-  getDecryptedOrganizationTrackerToken,
-} from '@/lib/organizations';
+  getOrganizationTrackerCredentials,
+  organizationTrackerClientAuth,
+  type OrganizationTrackerCredentials,
+} from '@/lib/organizations/organizationTrackerCredentials';
 import {
   getLastFullRescanAtFromSettingsRoot,
   parseResolveAndValidateOrgSyncFromSettingsRoot,
@@ -64,8 +71,11 @@ function skipIncrementalOrgSync(
   if (input.mode === 'incremental' && !org.initial_sync_completed_at) {
     return { status: 'skipped', reason: 'incremental_before_initial' };
   }
-  const providerKind = getIssueTrackerProviderKind();
-  if (providerKind === 'tracker' && !readIssueTrackerExternalOrgId(org)) {
+  const tracker = readOrganizationIssueTrackerConfig(org.settings);
+  if (!tracker) {
+    return { status: 'skipped', reason: 'missing_issue_tracker' };
+  }
+  if (tracker.kind === 'tracker' && !readIssueTrackerExternalOrgId(org)) {
     return { status: 'skipped', reason: 'missing_tracker_org_id' };
   }
   return null;
@@ -97,13 +107,16 @@ export async function loadOrgSyncRunContext(
   return { org, platform, settings: validated.settings };
 }
 
-export async function resolveOrgSyncToken(orgId: string): Promise<RunOrgSyncResult | { token: string }> {
+export async function resolveOrgSyncToken(
+  orgId: string
+): Promise<RunOrgSyncResult | { credentials: OrganizationTrackerCredentials }> {
   try {
-    const t = await getDecryptedOrganizationTrackerToken(orgId);
-    if (!t?.trim()) {
+    const credentials = await getOrganizationTrackerCredentials(orgId);
+    const accessToken = credentials?.accessToken.trim();
+    if (!credentials || !accessToken) {
       return { status: 'skipped', reason: 'missing_tracker_token' };
     }
-    return { token: t.trim() };
+    return { credentials: { ...credentials, accessToken } };
   } catch (e) {
     return {
       status: 'skipped',
@@ -115,19 +128,33 @@ export async function resolveOrgSyncToken(orgId: string): Promise<RunOrgSyncResu
 
 function createOrgIssueTrackerClient(
   org: OrganizationRow,
-  token: string
+  credentials: OrganizationTrackerCredentials
 ): { issueTracker: IssueTrackerProviderClient; providerKind: IssueTrackerProviderKind } {
-  const providerKind = getIssueTrackerProviderKind();
-  const jiraEmail = readIssueTrackerBasicAuthEmail(org.settings);
-  if (jiraCloudRequiresBasicAuthEmail(providerKind) && !jiraEmail) {
+  const tracker = readOrganizationIssueTrackerConfig(org.settings);
+  if (!tracker) {
+    throw new Error(`Issue tracker is not configured for organization ${org.id}`);
+  }
+  const providerKind = tracker.kind;
+  const auth = organizationTrackerClientAuth({
+    apiUrl: tracker.apiUrl,
+    cloudId: readIssueTrackerCloudId(org.settings),
+    credentials,
+    jiraEmail: readIssueTrackerBasicAuthEmail(org.settings),
+  });
+  if (
+    !credentials.atlassianOAuth &&
+    jiraCloudRequiresBasicAuthEmail(providerKind) &&
+    !auth.jiraEmail
+  ) {
     throw new Error(JIRA_CLOUD_BASIC_AUTH_EMAIL_REQUIRED_MESSAGE);
   }
   const issueTracker = createIssueTrackerProviderClientFromResolvedConfig({
-    apiUrl: getTrackerConfig().apiUrl || '',
-    jiraEmail,
-    oauthToken: token,
+    apiUrl: auth.apiUrl,
+    jiraEmail: auth.jiraEmail,
+    oauthToken: credentials.accessToken,
     orgId: readIssueTrackerExternalOrgId(org),
     providerKind,
+    webBaseUrl: issueTrackerWebBaseFromApiUrl(providerKind, tracker.apiUrl),
   });
   return { issueTracker, providerKind };
 }
@@ -215,11 +242,14 @@ export async function executeStartedOrgSync(input: {
   platform: SyncPlatformEnv;
   settings: ResolvedOrgSyncSettings;
   syncRunId: string;
-  token: string;
+  trackerCredentials: OrganizationTrackerCredentials;
 }): Promise<RunOrgSyncResult> {
   try {
     await input.onProgress?.(10);
-    const { issueTracker, providerKind } = createOrgIssueTrackerClient(input.org, input.token);
+    const { issueTracker, providerKind } = createOrgIssueTrackerClient(
+      input.org,
+      input.trackerCredentials
+    );
 
     if (input.mode === 'incremental') {
       const incremental = await executeIncrementalOrgSync({

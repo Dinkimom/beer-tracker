@@ -28,7 +28,9 @@ export async function GET(
       return NextResponse.json({ error: 'issueKey is required' }, { status: 400 });
     }
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsIssueLinks',
       'listIssueLinks'
     );
@@ -36,7 +38,6 @@ export async function GET(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const links = await listTrackerIssueLinkEdges({
       issueKeys: [issueKey],
       issueTracker,
@@ -82,7 +83,9 @@ export async function POST(
       );
     }
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsIssueLinks',
       'createIssueLink'
     );
@@ -90,7 +93,6 @@ export async function POST(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const link = await createTrackerIssueLink({
       issueKey,
       issueTracker,

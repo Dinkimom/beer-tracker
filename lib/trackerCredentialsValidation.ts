@@ -2,9 +2,8 @@
  * Проверка токена трекера до сохранения в organization_secrets.
  */
 
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { createJiraAxiosInstance } from '@/lib/issueTrackerProvider/jiraAxios';
-import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
+import { isJiraProviderKind, type IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
 
 import {
@@ -107,14 +106,15 @@ export async function validateJiraTrackerToken(params: {
   return { message: 'Токен валиден, доступ к Jira подтверждён', ok: true };
 }
 
-/** Проверка токена выбранного провайдера инстанса до сохранения в organization_secrets. */
+/** Проверка токена выбранного трекера организации до сохранения в organization_secrets. */
 export function validateIssueTrackerCredentials(params: {
   apiUrl: string;
   email?: string;
   oauthToken: string;
   orgId: string;
+  providerKind: IssueTrackerProviderKind;
 }): Promise<ValidateTrackerCredentialsResult> {
-  if (isJiraProviderKind(getIssueTrackerProviderKind())) {
+  if (isJiraProviderKind(params.providerKind)) {
     return validateJiraTrackerToken({
       apiToken: params.oauthToken,
       apiUrl: params.apiUrl,

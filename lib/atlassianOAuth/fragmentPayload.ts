@@ -1,10 +1,13 @@
 import { ATLASSIAN_OAUTH_FRAGMENT_KEY } from './constants';
+import { atlassianOAuthPayloadFromJson } from './fragmentPayloadClient';
 
 export interface AtlassianOAuthFragmentPayload {
   accessToken: string;
   cloudId: string;
   expiresAt: number;
   refreshToken: string;
+  /** Адрес сайта Jira Cloud (`https://acme.atlassian.net`). */
+  siteUrl?: string;
 }
 
 export function encodeAtlassianOAuthFragment(payload: AtlassianOAuthFragmentPayload): string {
@@ -13,6 +16,7 @@ export function encodeAtlassianOAuthFragment(payload: AtlassianOAuthFragmentPayl
     cloud_id: payload.cloudId,
     expires_at: payload.expiresAt,
     refresh_token: payload.refreshToken,
+    site_url: payload.siteUrl || undefined,
   });
   const b64 = Buffer.from(json, 'utf8').toString('base64url');
   return `${ATLASSIAN_OAUTH_FRAGMENT_KEY}=${b64}`;
@@ -31,21 +35,9 @@ export function parseAtlassianOAuthFragment(
     return null;
   }
   try {
-    const json = Buffer.from(encoded, 'base64url').toString('utf8');
-    const data = JSON.parse(json) as Record<string, unknown>;
-    const accessToken =
-      typeof data.access_token === 'string' ? data.access_token.trim() : '';
-    const refreshToken =
-      typeof data.refresh_token === 'string' ? data.refresh_token.trim() : '';
-    const cloudId = typeof data.cloud_id === 'string' ? data.cloud_id.trim() : '';
-    const expiresAt =
-      typeof data.expires_at === 'number' && Number.isFinite(data.expires_at)
-        ? data.expires_at
-        : Number.parseInt(String(data.expires_at ?? ''), 10);
-    if (!accessToken || !refreshToken || !cloudId || !Number.isFinite(expiresAt)) {
-      return null;
-    }
-    return { accessToken, cloudId, expiresAt, refreshToken };
+    return atlassianOAuthPayloadFromJson(
+      JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'))
+    );
   } catch {
     return null;
   }

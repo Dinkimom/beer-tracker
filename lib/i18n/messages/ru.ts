@@ -68,6 +68,22 @@ export const ruMessages = {
         jira: 'Jira',
         'yandex-tracker': 'Яндекс Трекере',
       },
+      providerLabel: 'Трекер задач',
+      providerOption: {
+        tracker: 'Яндекс Трекер',
+        'jira-cloud': 'Jira Cloud',
+        'jira-onprem': 'Jira Server / Data Center',
+      },
+      providerLocked: 'Трекер нельзя сменить после первой синхронизации.',
+      apiUrlLabel: 'URL API трекера',
+      apiUrlPlaceholder: {
+        'jira-cloud': 'https://your-site.atlassian.net/rest/api/3',
+        'jira-onprem': 'https://jira.example.com/rest/api/2',
+      },
+      apiUrlHint: {
+        'jira-cloud': 'REST API вашего сайта Atlassian: https://<сайт>.atlassian.net/rest/api/3.',
+        'jira-onprem': 'REST API вашего сервера Jira, обычно …/rest/api/2.',
+      },
     },
   },
   header: {
@@ -627,6 +643,8 @@ export const ruMessages = {
         'jira-cloud':
           'Создайте первую организацию. Нажмите «Продолжить с Atlassian» от имени администратора, который связывает Jira.',
       },
+      atlassianConnectedSite: 'Atlassian подключён: {site}',
+      atlassianRequired: 'Сначала нажмите «Продолжить с Atlassian», чтобы подключить сайт Jira Cloud.',
       onboardingSubmit: 'Создать администратора и организацию',
       closedTitle: 'Регистрация закрыта',
       closedDescription:
@@ -1764,10 +1782,7 @@ export const ruMessages = {
       nav: {
         organization: 'Организация',
         members: 'Пользователи',
-        tracker: {
-          jira: 'Jira',
-          'yandex-tracker': 'Яндекс Трекер',
-        },
+        tracker: 'Трекер',
         teams: 'Команды',
         roles: 'Роли',
         planner: 'Планер',
@@ -1775,9 +1790,9 @@ export const ruMessages = {
         sync: 'Синхронизация',
       },
       trackerNavLockTitle: {
-        jira: 'Сначала подключите Jira: сохраните персональный токен доступа в разделе «Jira».',
+        jira: 'Сначала подключите Jira: сохраните токен доступа в разделе «Трекер».',
         'yandex-tracker':
-          'Сначала подключите Яндекс Трекер: укажите Cloud Organization ID и сохраните OAuth-токен в разделе «Яндекс Трекер».',
+          'Сначала подключите Яндекс Трекер: укажите Cloud Organization ID и сохраните OAuth-токен в разделе «Трекер».',
       },
       trackerIncompleteAria: {
         jira: 'Jira, интеграция не настроена',
@@ -1853,10 +1868,11 @@ export const ruMessages = {
       },
       description: {
         jira:
-          'URL сайта Jira задаётся на этом инстансе. Для синхронизации и каталога полей сохраните email Atlassian-аккаунта и API-токен. Пользователи входят через «Продолжить с Atlassian». Проверить можно до сохранения; секреты на сервере хранятся в зашифрованном виде.',
+          'Для синхронизации и каталога полей сохраните токен доступа организации к Jira. Проверить можно до сохранения; секреты на сервере хранятся в зашифрованном виде.',
         'yandex-tracker':
           'Cloud Organization ID и OAuth-токен нужны вместе: по ним проверяется доступ к API. Проверить можно до сохранения; секреты на сервере хранятся в зашифрованном виде.',
       },
+      jiraCloudSite: 'Сайт Jira Cloud: {site}',
       tokenSaved: 'Токен сохранён',
       notConfigured: 'Не настроен',
       orgIdLabel: {

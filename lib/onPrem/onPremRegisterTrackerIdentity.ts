@@ -1,5 +1,7 @@
+import type { OrganizationIssueTrackerConfig } from '@/lib/issueTrackerProvider/settings';
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+
 import { jiraCloudOAuthApiBaseUrl } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
-import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
 import {
   issueTrackerRequiresExternalOrgId,
   resolveIssueTrackerExternalOrgIdForConnect,
@@ -20,15 +22,18 @@ interface OnPremRegisterTrackerIdentity {
   trackerUserId: string | null;
 }
 
-export function resolveOnPremRegisterTrackerOrgId(rawTrackerOrgId: string | undefined): string {
-  return resolveIssueTrackerExternalOrgIdForConnect(
-    getIssueTrackerProviderKind(),
-    rawTrackerOrgId ?? ''
-  );
+export function resolveOnPremRegisterTrackerOrgId(
+  kind: IssueTrackerProviderKind,
+  rawTrackerOrgId: string | undefined
+): string {
+  return resolveIssueTrackerExternalOrgIdForConnect(kind, rawTrackerOrgId ?? '');
 }
 
-export function assertOnPremRegisterTrackerOrgId(trackerOrgId: string): void {
-  if (issueTrackerRequiresExternalOrgId(getIssueTrackerProviderKind()) && !trackerOrgId) {
+export function assertOnPremRegisterTrackerOrgId(
+  kind: IssueTrackerProviderKind,
+  trackerOrgId: string
+): void {
+  if (issueTrackerRequiresExternalOrgId(kind) && !trackerOrgId) {
     throw new TrackerApiConfigError('Укажите Cloud Organization ID', 400);
   }
 }
@@ -59,13 +64,14 @@ export async function fetchOnPremRegisterTrackerIdentity(input: {
   cloudId?: string;
   jiraEmail?: string;
   token: string;
+  tracker: OrganizationIssueTrackerConfig;
   trackerOrgId: string;
 }): Promise<OnPremRegisterTrackerIdentity> {
-  const kind = getIssueTrackerProviderKind();
+  const { kind } = input.tracker;
   const apiUrl =
     kind === 'jira-cloud' && input.cloudId?.trim()
       ? jiraCloudOAuthApiBaseUrl(input.cloudId.trim())
-      : getTrackerConfig().apiUrl;
+      : input.tracker.apiUrl;
   const orgId =
     kind === 'jira-cloud'
       ? input.trackerOrgId || JIRA_EXTERNAL_ORG_ID_FALLBACK
@@ -75,6 +81,7 @@ export async function fetchOnPremRegisterTrackerIdentity(input: {
     jiraEmail: '',
     oauthToken: input.token,
     orgId,
+    providerKind: kind,
   });
   return onPremRegisterIdentityFromMyself(myself, input.jiraEmail);
 }

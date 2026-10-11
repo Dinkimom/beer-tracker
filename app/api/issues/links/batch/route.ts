@@ -21,7 +21,9 @@ export async function POST(request: NextRequest) {
     }
     const { organizationId } = tenantResult.ctx;
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsIssueLinks',
       'listIssueLinks'
     );
@@ -41,7 +43,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const links = await listTrackerIssueLinkEdges({
       issueKeys: validation.data.issueKeys,
       issueTracker,

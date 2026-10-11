@@ -76,7 +76,7 @@ export function AdminTrackerIntegrationSection({
 
   useTrackerMetadataPolling(organizationId, loadMetadata);
   useUnsavedIntegrationLeaveGuard(
-    form.hasUnsavedChanges,
+    form.hasUserUnsavedChanges,
     t("admin.plannerIntegration.footer.leaveConfirm"),
   );
 

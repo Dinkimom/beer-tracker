@@ -111,7 +111,7 @@ describe('updateJiraIssue', () => {
       data: { fields: { sprint: { originBoardId: 14684 } } },
     });
     const put = vi.fn().mockResolvedValue({ data: undefined });
-    await expect(updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { storyPoints: 5 })).resolves.toEqual(
+    await expect(updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { storyPoints: 5 }, 'jira-onprem')).resolves.toEqual(
       {}
     );
     expect(get).toHaveBeenCalledWith(AGILE_ISSUE_URL);
@@ -125,7 +125,7 @@ describe('updateJiraIssue', () => {
       updateJiraIssue(apiWith({ put }), 'PROJ-1', {
         customFields: { customfield_10016: 8 },
         summary: 'Fix',
-      })
+      }, 'jira-onprem')
     ).resolves.toEqual({ id: '10001' });
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1', {
       fields: { customfield_10016: 8, summary: 'Fix' },
@@ -138,7 +138,7 @@ describe('updateJiraIssue', () => {
     });
     const put = vi.fn().mockResolvedValue({ data: {} });
     await expect(
-      updateJiraIssue(apiWith({ get, put }), 'PROJ-6438', { parent: 'PROJ-26' })
+      updateJiraIssue(apiWith({ get, put }), 'PROJ-6438', { parent: 'PROJ-26' }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/PROJ-6438', {
       fields: { parent: { key: 'PROJ-26' } },
@@ -154,7 +154,7 @@ describe('updateJiraIssue', () => {
       return Promise.resolve({ data: {} });
     });
     const put = vi.fn().mockResolvedValue({ data: undefined });
-    await expect(updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { storyPoints: 3 })).resolves.toEqual(
+    await expect(updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { storyPoints: 3 }, 'jira-onprem')).resolves.toEqual(
       {}
     );
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1', { fields: { customfield_10016: 3 } });
@@ -164,7 +164,7 @@ describe('updateJiraIssue', () => {
     const get = vi.fn().mockResolvedValue({ data: { name: 'ada' } });
     const put = vi.fn().mockResolvedValue({ data: undefined });
     await expect(
-      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada' })
+      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada' }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(get).toHaveBeenCalledWith('/user', { params: { username: 'ada' } });
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1/assignee', { name: 'ada' });
@@ -190,7 +190,7 @@ describe('updateJiraIssue', () => {
     await expect(
       updateJiraIssue(apiWith({ get, put }), 'PROJ-26', {
         assigneeId: 'jane.doe@example.com',
-      })
+      }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/PROJ-26/assignee', {
       name: 'jdoe',
@@ -201,7 +201,7 @@ describe('updateJiraIssue', () => {
     const get = vi.fn().mockRejectedValue(new Error('404'));
     const put = vi.fn().mockResolvedValue({ data: undefined });
     await expect(
-      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada' })
+      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada' }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1/assignee', { name: 'ada' });
   });
@@ -211,7 +211,7 @@ describe('updateJiraIssue', () => {
     await expect(
       updateJiraIssue(apiWith({ put }), 'PROJ-1', {
         customFields: { customfield_10020: { id: 'ada' } },
-      })
+      }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1', {
       fields: { customfield_10020: { name: 'ada' } },
@@ -222,7 +222,7 @@ describe('updateJiraIssue', () => {
     const get = vi.fn().mockResolvedValue({ data: { name: 'ada' } });
     const put = vi.fn().mockResolvedValue({ data: { id: '10001' } });
     await expect(
-      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada', summary: 'Fix' })
+      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada', summary: 'Fix' }, 'jira-onprem')
     ).resolves.toEqual({ id: '10001' });
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1/assignee', { name: 'ada' });
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1', { fields: { summary: 'Fix' } });
@@ -233,7 +233,7 @@ describe('updateJiraIssue', () => {
       data: [{ id: 'customfield_20', name: 'Test Points' }],
     });
     const put = vi.fn().mockResolvedValue({ data: undefined });
-    await expect(updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { testPoints: 2 })).resolves.toEqual(
+    await expect(updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { testPoints: 2 }, 'jira-onprem')).resolves.toEqual(
       {}
     );
     expect(get).toHaveBeenCalledWith('/field');
@@ -244,7 +244,7 @@ describe('updateJiraIssue', () => {
     const get = vi.fn().mockResolvedValue({ data: { name: 'ada' } });
     const put = vi.fn().mockResolvedValue({ data: undefined });
     await expect(
-      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada', isQa: false })
+      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada', isQa: false }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1/assignee', { name: 'ada' });
   });
@@ -263,7 +263,7 @@ describe('updateJiraIssue', () => {
       updateJiraIssue(apiWith({ get, put }), 'RND-813', {
         deadline: '2026-09-30',
         start: '2026-09-24',
-      })
+      }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(get).toHaveBeenCalledWith('/issue/RND-813/editmeta');
     expect(put).toHaveBeenCalledWith('/issue/RND-813', {
@@ -290,7 +290,7 @@ describe('updateJiraIssue', () => {
       updateJiraIssue(apiWith({ get, put }), 'RND-813', {
         deadline: '2026-09-30',
         start: '2026-09-24',
-      })
+      }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/RND-813', {
       fields: { customfield_10015: '2026-09-24', duedate: '2026-09-30' },
@@ -305,7 +305,7 @@ describe('updateJiraIssue', () => {
     });
     const put = vi.fn().mockResolvedValue({ data: {} });
     await expect(
-      updateJiraIssue(apiWith({ get, put }), 'RND-813', { deadline: '2026-09-30' })
+      updateJiraIssue(apiWith({ get, put }), 'RND-813', { deadline: '2026-09-30' }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(get).not.toHaveBeenCalledWith('/field');
     expect(put).toHaveBeenCalledWith('/issue/RND-813', { fields: { duedate: '2026-09-30' } });
@@ -318,7 +318,7 @@ describe('updateJiraIssue', () => {
       updateJiraIssue(apiWith({ get, put }), 'RND-813', {
         deadline: '2026-09-30',
         start: '2026-09-24',
-      })
+      }, 'jira-onprem')
     ).rejects.toThrow(/Start date/);
     expect(put).not.toHaveBeenCalled();
   });
@@ -334,7 +334,7 @@ describe('updateJiraIssue', () => {
     });
     const put = vi.fn().mockResolvedValue({ data: {} });
     await expect(
-      updateJiraIssue(apiWith({ get, put }), 'RND-813', { deadline: null, start: null })
+      updateJiraIssue(apiWith({ get, put }), 'RND-813', { deadline: null, start: null }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/RND-813', {
       fields: { customfield_10015: null, duedate: null },
@@ -345,7 +345,7 @@ describe('updateJiraIssue', () => {
     const get = vi.fn().mockResolvedValue({ data: { name: 'ada' } });
     const put = vi.fn().mockResolvedValue({ data: {} });
     await expect(
-      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada', isQa: true })
+      updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'ada', isQa: true }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1/assignee', { name: 'ada' });
     await expect(
@@ -353,7 +353,7 @@ describe('updateJiraIssue', () => {
         assigneeField: 'customfield_10020',
         assigneeId: 'ada',
         isQa: true,
-      })
+      }, 'jira-onprem')
     ).resolves.toEqual({});
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1', {
       fields: { customfield_10020: { name: 'ada' } },

@@ -14,6 +14,7 @@ describe('resolvePrimaryAdminOrganization', () => {
       role: 'org_admin' as const,
       slug: null,
       initial_sync_completed_at: null,
+      issueTracker: null,
     };
     const member = {
       canAccessAdmin: false,
@@ -22,6 +23,7 @@ describe('resolvePrimaryAdminOrganization', () => {
       role: 'member' as const,
       slug: null,
       initial_sync_completed_at: null,
+      issueTracker: null,
     };
     expect(resolvePrimaryAdminOrganization([member, admin])).toEqual(admin);
   });
@@ -34,6 +36,7 @@ describe('resolvePrimaryAdminOrganization', () => {
       role: 'member' as const,
       slug: null,
       initial_sync_completed_at: null,
+      issueTracker: null,
     };
     expect(resolvePrimaryAdminOrganization([member])).toEqual(member);
     expect(resolvePrimaryAdminOrganizationId([member])).toBe('member-org');

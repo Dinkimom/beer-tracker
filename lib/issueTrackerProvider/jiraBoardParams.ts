@@ -1,6 +1,7 @@
 import type { BoardColumn, BoardParams } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
+import { axiosErrorStatusAndDetails } from './jiraAgileAuthError';
 import { fetchJiraBoardById, jiraAgileBoardListUrl } from './jiraCatalog';
 import { fetchJiraOrganizationStatuses } from './jiraOrgMetadata';
 import { jiraNameKey } from './jiraStatusKeys';
@@ -88,6 +89,46 @@ async function loadJiraStatusDisplayById(api: AxiosInstance): Promise<Map<string
   return byId;
 }
 
+function readJiraBoardConfigIdentity(data: unknown): { id: number; name: string } | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+  const row = data as { id?: unknown; name?: unknown };
+  const id = typeof row.id === 'number' ? row.id : Number.parseInt(String(row.id ?? ''), 10);
+  const name = typeof row.name === 'string' ? row.name.trim() : '';
+  if (!Number.isFinite(id) || id <= 0 || !name) {
+    return null;
+  }
+  return { id, name };
+}
+
+async function loadJiraBoardColumnConfig(
+  api: AxiosInstance,
+  baseUrl: string,
+  boardId: number,
+  boardSelf: string
+): Promise<{ columns: BoardColumn[]; id: number | null; name: string } | null> {
+  const url = jiraAgileBoardConfigurationUrl(baseUrl, boardId);
+  try {
+    const { data } = await api.get<unknown>(url);
+    const identity = readJiraBoardConfigIdentity(data);
+    const statusDisplayById = await loadJiraStatusDisplayById(api);
+    return {
+      columns: mapJiraBoardConfigColumns(
+        extractJiraBoardConfigColumns(data),
+        statusDisplayById,
+        boardSelf
+      ),
+      id: identity?.id ?? null,
+      name: identity?.name ?? '',
+    };
+  } catch (error) {
+    const { details, status } = axiosErrorStatusAndDetails(error);
+    console.error('[jira] board configuration failed', { boardId, details, status, url });
+    return null;
+  }
+}
+
 export async function fetchJiraBoardParams(
   api: AxiosInstance,
   boardId: number
@@ -97,26 +138,21 @@ export async function fetchJiraBoardParams(
     return null;
   }
 
-  const board = await fetchJiraBoardById(api, boardId);
-  if (!board) {
+  const boardSelf = jiraAgileBoardConfigurationUrl(baseUrl, boardId).replace(/\/configuration$/, '');
+  const [board, configured] = await Promise.all([
+    fetchJiraBoardById(api, boardId),
+    loadJiraBoardColumnConfig(api, baseUrl, boardId, boardSelf),
+  ]);
+  const id = board?.id ?? configured?.id ?? null;
+  const name = board?.name || configured?.name || '';
+  if (id == null || !name) {
     return null;
   }
 
-  const boardSelf = jiraAgileBoardConfigurationUrl(baseUrl, boardId).replace(/\/configuration$/, '');
-  let columns: BoardColumn[] = [];
-  try {
-    const { data } = await api.get<unknown>(jiraAgileBoardConfigurationUrl(baseUrl, boardId));
-    const rawColumns = extractJiraBoardConfigColumns(data);
-    const statusDisplayById = await loadJiraStatusDisplayById(api);
-    columns = mapJiraBoardConfigColumns(rawColumns, statusDisplayById, boardSelf);
-  } catch {
-    columns = [];
-  }
-
   return {
-    columns,
-    id: board.id,
-    name: board.name,
+    columns: configured?.columns ?? [],
+    id,
+    name,
     self: boardSelf,
   };
 }

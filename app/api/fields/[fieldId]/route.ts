@@ -19,12 +19,16 @@ export async function GET(
       );
     }
 
-    const unsupported = rejectUnsupportedIssueTrackerCapability('supportsFieldCatalog', 'getField');
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
+    const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
+      'supportsFieldCatalog',
+      'getField'
+    );
     if (unsupported) {
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const field = await issueTracker.getField(fieldId);
 
     if (!field) {

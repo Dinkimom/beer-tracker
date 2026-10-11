@@ -15,7 +15,7 @@ beer-tracker/
 │   ├── API_DOCUMENTATION.md           # API, архитектура запросов
 │   ├── API_BACKENDS.md                # Маршруты /api → Tracker, PG
 │   ├── SPRINT_CONTEXT.md              # Agent planning graph (GET sprint-context)
-│   ├── ISSUE_TRACKERS.md              # Yandex Tracker и Jira (один провайдер на инстанс)
+│   ├── ISSUE_TRACKERS.md              # Yandex Tracker и Jira (выбор на организацию)
 │   ├── ISSUE_TRACKER_PROVIDER_MIGRATION.md  # История/детали provider-слоя
 │   ├── ISSUE_TRACKER_YANDEX_CONTRACT.md     # Контрактные тесты: не сломать Yandex при Jira
 │   ├── SLA_BUGS_TAB.md                # Вкладка «Баги»: секции, сигналы, UI, API

@@ -4,8 +4,11 @@ import type { IssueTrackerProviderCapabilities, TrackerWebUrlContext } from '@/l
 import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { ReactNode } from 'react';
 
+import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useMemo } from 'react';
 
+import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+import { fetchOnPremDefaultOrganization } from '@/lib/api/onprem';
 import {
   issueTrackerIssueWebUrlFromBase,
   issueTrackerProviderCapabilities,
@@ -14,7 +17,6 @@ import {
 } from '@/lib/issueTrackerProvider/issueTrackerUi';
 
 const DEFAULT_KIND: IssueTrackerProviderKind = 'tracker';
-const DEFAULT_ISSUE_WEB_BASE_URL = issueTrackerWebBaseFromApiUrl(DEFAULT_KIND);
 
 interface IssueTrackerProviderUiValue {
   issueWebBaseUrl: string;
@@ -22,26 +24,44 @@ interface IssueTrackerProviderUiValue {
   tokenHelpUrl: string;
 }
 
-const IssueTrackerProviderKindContext = createContext<IssueTrackerProviderUiValue>({
-  issueWebBaseUrl: DEFAULT_ISSUE_WEB_BASE_URL,
-  kind: DEFAULT_KIND,
-  tokenHelpUrl: issueTrackerTokenHelpUrl(DEFAULT_KIND),
-});
+export function issueTrackerProviderUiValue(
+  kind: IssueTrackerProviderKind,
+  apiUrl?: string
+): IssueTrackerProviderUiValue {
+  return {
+    issueWebBaseUrl: issueTrackerWebBaseFromApiUrl(kind, apiUrl),
+    kind,
+    tokenHelpUrl: issueTrackerTokenHelpUrl(kind, apiUrl),
+  };
+}
 
-export function IssueTrackerProviderKindProvider({
-  children,
-  issueWebBaseUrl,
-  kind,
-  tokenHelpUrl,
-}: {
-  children: ReactNode;
-  issueWebBaseUrl: string;
-  kind: IssueTrackerProviderKind;
-  tokenHelpUrl: string;
-}) {
+export const IssueTrackerProviderKindContext = createContext<IssueTrackerProviderUiValue>(
+  issueTrackerProviderUiValue(DEFAULT_KIND)
+);
+
+/** Трекер активной организации; до входа — трекер организации по умолчанию. */
+export function IssueTrackerProviderKindProvider({ children }: { children: ReactNode }) {
+  const { activeOrganization, sessionLoading, signedIn } = useProductTenantOrganizations({
+    pollIntervalMs: 0,
+  });
+  const { data: defaultOrganization } = useQuery({
+    enabled: !sessionLoading && !signedIn,
+    queryFn: fetchOnPremDefaultOrganization,
+    queryKey: ['onprem', 'default-organization'],
+    retry: false,
+    staleTime: 60_000,
+  });
+  const tracker = signedIn ? activeOrganization?.issueTracker : defaultOrganization?.issueTracker;
   const value = useMemo(
-    () => ({ issueWebBaseUrl, kind, tokenHelpUrl }),
-    [issueWebBaseUrl, kind, tokenHelpUrl]
+    () =>
+      tracker
+        ? {
+            issueWebBaseUrl: tracker.webBaseUrl,
+            kind: tracker.kind,
+            tokenHelpUrl: issueTrackerTokenHelpUrl(tracker.kind, tracker.apiUrl),
+          }
+        : issueTrackerProviderUiValue(DEFAULT_KIND),
+    [tracker]
   );
   return (
     <IssueTrackerProviderKindContext.Provider value={value}>

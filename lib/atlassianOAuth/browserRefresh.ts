@@ -27,8 +27,12 @@ async function refreshAtlassianTokenOnce(): Promise<boolean> {
   if (!refreshToken) {
     return false;
   }
+  const existingPayload = readTrackerTokenPayload();
   const res = await fetch('/api/auth/atlassian/refresh', {
-    body: JSON.stringify({ refreshToken }),
+    body: JSON.stringify({
+      organizationId: existingPayload.organizationId || undefined,
+      refreshToken,
+    }),
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     method: 'POST',

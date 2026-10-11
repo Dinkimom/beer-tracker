@@ -6,42 +6,6 @@
 import { timingSafeEqual } from 'crypto';
 
 import { assertSyncPlatformEnvBounds } from './envSyncPlatformHelpers';
-import {
-  issueTrackerProviderKindEnvErrorMessage,
-  parseIssueTrackerProviderKind,
-} from './issueTrackerProvider/providerKind';
-import {
-  DEFAULT_ISSUE_TRACKER_PROVIDER_KIND,
-  type IssueTrackerProviderKind,
-} from './issueTrackerProvider/types';
-
-export function getTrackerConfig() {
-  return {
-    apiUrl: process.env.TRACKER_API_URL || 'https://api.tracker.yandex.net/v3',
-    // Умышленно не используем токен из переменных окружения –
-    // авторизация всегда должна идти через пользовательский токен из заголовка.
-    oauthToken: '',
-    /** Не используется: Cloud Org ID трекера берётся из tenant (organizations.tracker_org_id). */
-    orgId: '',
-  };
-}
-
-/**
- * Какой issue tracker использует этот инстанс: ровно один.
- * `ISSUE_TRACKER_PROVIDER=tracker|jira-onprem|jira-cloud` (по умолчанию tracker).
- * Алиасы: `yandex-tracker` → tracker; `jira` → cloud/on-prem по TRACKER_API_URL.
- */
-export function getIssueTrackerProviderKind(): IssueTrackerProviderKind {
-  const raw = process.env.ISSUE_TRACKER_PROVIDER?.trim();
-  if (!raw) {
-    return DEFAULT_ISSUE_TRACKER_PROVIDER_KIND;
-  }
-  const parsed = parseIssueTrackerProviderKind(raw, getTrackerConfig().apiUrl);
-  if (parsed) {
-    return parsed;
-  }
-  throw new Error(issueTrackerProviderKindEnvErrorMessage());
-}
 
 /**
  * Подключение к PostgreSQL приложения (схема `BEER_TRACKER_SCHEMA`).

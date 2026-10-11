@@ -13,6 +13,7 @@ import {
   teamTitleUsingBoard,
   teamTitleUsingQueue,
 } from "@/features/admin/adminTeamCatalog";
+import { useAdminTrackerConnectionReady } from "@/features/admin/hooks/useAdminTrackerConnectionReady";
 import { invalidateBoardsQuery } from "@/features/board/boardsQuery";
 import {
   createAdminTeam,
@@ -40,6 +41,8 @@ export function useAdminTeamsPage({
   orgId,
 }: UseAdminTeamsPageParams) {
   const { language, t } = useI18n();
+  const { loading: trackerGateLoading, ready: trackerConnectionReady } =
+    useAdminTrackerConnectionReady(isOrgAdmin ? orgId : "");
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -85,15 +88,15 @@ export function useAdminTeamsPage({
 
   const { boardSearchLoading, onBoardSearchQueryChange } = useEnsureTrackerCatalogBoard({
     boards: trackerCatalog?.boards ?? [],
-    enabled: Boolean(isOrgAdmin && orgId),
+    enabled: Boolean(isOrgAdmin && orgId && trackerConnectionReady),
     orgId,
     onCatalog: setTrackerCatalog,
   });
 
   useEffect(() => {
-    if (!isOrgAdmin) return;
+    if (!isOrgAdmin || !trackerConnectionReady) return;
     void loadTrackerCatalog();
-  }, [isOrgAdmin, loadTrackerCatalog]);
+  }, [isOrgAdmin, loadTrackerCatalog, trackerConnectionReady]);
 
   useEffect(() => {
     if (!trackerCatalog) return;
@@ -281,6 +284,8 @@ export function useAdminTeamsPage({
     teamFormSubmitting,
     teamHref,
     teamsList,
+    trackerConnectionReady,
+    trackerGateLoading,
     teamsLoading,
     trackerCatalog,
   };

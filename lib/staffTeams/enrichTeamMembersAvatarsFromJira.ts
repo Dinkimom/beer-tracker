@@ -4,19 +4,29 @@
  * Яндекс Трекер не трогаем (аватары не отдаёт).
  */
 
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { TeamMember } from '@/types/team';
 import type { AxiosInstance } from 'axios';
 
 import { apiCache, cacheKeys } from '@/lib/cache';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { createIssueTrackerAxiosForCredentials } from '@/lib/issueTrackerProvider/createIssueTrackerAxios';
 import { fetchJiraUserAvatarUrl } from '@/lib/issueTrackerProvider/jiraUserAvatar';
-import { readIssueTrackerBasicAuthEmail } from '@/lib/issueTrackerProvider/settings';
+import {
+  readIssueTrackerBasicAuthEmail,
+  readIssueTrackerCloudId,
+  readOrganizationIssueTrackerConfig,
+} from '@/lib/issueTrackerProvider/settings';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 import { JIRA_EXTERNAL_ORG_ID_FALLBACK } from '@/lib/issueTrackerProvider/types';
-import { findOrganizationById, getDecryptedOrganizationTrackerToken } from '@/lib/organizations';
+import { findOrganizationById } from '@/lib/organizations';
+import {
+  getOrganizationTrackerCredentials,
+  organizationTrackerClientAuth,
+  type OrganizationTrackerCredentials,
+} from '@/lib/organizations/organizationTrackerCredentials';
 import { updateStaff } from '@/lib/staffTeams/staffRepository';
-import { resolveTrackerApiBaseUrlForOrganizationRow } from '@/lib/trackerRequestConfig';
+
+type JiraProviderKind = Extract<IssueTrackerProviderKind, 'jira-cloud' | 'jira-onprem'>;
 
 const JIRA_AVATAR_REFRESH_TTL_SEC = 30 * 60;
 const JIRA_AVATAR_REFRESH_TIMEOUT_MS = 2500;
@@ -37,51 +47,60 @@ function membersNeedingTrackerLookup(members: TeamMember[]): TeamMember[] {
   return members.filter((m) => Boolean(m.tracker_uid?.trim()) && Boolean(m.uid?.trim()));
 }
 
-async function createJiraAxiosForOrganization(
+interface JiraOrganizationTracker {
+  apiUrl: string;
+  cloudId: string;
+  jiraEmail: string;
+  kind: JiraProviderKind;
+}
+
+async function readJiraOrganizationTracker(
   organizationId: string
-): Promise<{ api: AxiosInstance; kind: ReturnType<typeof getIssueTrackerProviderKind> } | null> {
-  const kind = getIssueTrackerProviderKind();
-  if (!isJiraProviderKind(kind)) {
-    return null;
-  }
-
+): Promise<JiraOrganizationTracker | null> {
   const org = await findOrganizationById(organizationId);
-  if (!org) {
+  const tracker = org ? readOrganizationIssueTrackerConfig(org.settings) : null;
+  if (!org || !tracker || !isJiraProviderKind(tracker.kind)) {
     return null;
   }
+  return {
+    apiUrl: tracker.apiUrl,
+    cloudId: readIssueTrackerCloudId(org.settings),
+    jiraEmail: readIssueTrackerBasicAuthEmail(org.settings),
+    kind: tracker.kind,
+  };
+}
 
-  let token: string | null;
+async function createJiraAxiosForOrganization(
+  organizationId: string,
+  tracker: JiraOrganizationTracker
+): Promise<AxiosInstance | null> {
+  let credentials: OrganizationTrackerCredentials | null;
   try {
-    token = (await getDecryptedOrganizationTrackerToken(organizationId))?.trim() || null;
+    credentials = await getOrganizationTrackerCredentials(organizationId);
   } catch {
     return null;
   }
-  if (!token) {
+  const token = credentials?.accessToken.trim();
+  if (!credentials || !token) {
     return null;
   }
-
-  const apiUrl = resolveTrackerApiBaseUrlForOrganizationRow(org);
-  if (!apiUrl) {
-    return null;
-  }
-
-  return {
-    api: createIssueTrackerAxiosForCredentials({
-      apiUrl,
-      jiraEmail: readIssueTrackerBasicAuthEmail(org.settings),
-      oauthToken: token,
-      orgId: JIRA_EXTERNAL_ORG_ID_FALLBACK,
-    }),
-    kind,
-  };
+  const auth = organizationTrackerClientAuth({ ...tracker, credentials });
+  return createIssueTrackerAxiosForCredentials({
+    apiUrl: auth.apiUrl,
+    jiraEmail: auth.jiraEmail,
+    oauthToken: token,
+    orgId: JIRA_EXTERNAL_ORG_ID_FALLBACK,
+    providerKind: tracker.kind,
+  });
 }
 
 async function fetchAvatarUrlsFromJira(
   organizationId: string,
+  tracker: JiraOrganizationTracker,
   members: TeamMember[]
 ): Promise<Map<string, string> | null> {
-  const client = await createJiraAxiosForOrganization(organizationId);
-  if (!client) {
+  const api = await createJiraAxiosForOrganization(organizationId, tracker);
+  if (!api) {
     return null;
   }
 
@@ -93,7 +112,7 @@ async function fetchAvatarUrlsFromJira(
   const settled = await Promise.allSettled(
     targets.map(async (m) => {
       const trackerId = m.tracker_uid!.trim();
-      const avatarUrl = await fetchJiraUserAvatarUrl(client.api, trackerId, client.kind);
+      const avatarUrl = await fetchJiraUserAvatarUrl(api, trackerId, tracker.kind);
       return { staffId: m.uid, avatarUrl };
     })
   );
@@ -132,11 +151,12 @@ async function persistAvatarUrls(
 
 async function refreshJiraAvatarsUncached(
   organizationId: string,
+  tracker: JiraOrganizationTracker,
   members: TeamMember[]
 ): Promise<Map<string, string> | null> {
   try {
     const byStaffId = await withTimeout(
-      fetchAvatarUrlsFromJira(organizationId, members),
+      fetchAvatarUrlsFromJira(organizationId, tracker, members),
       JIRA_AVATAR_REFRESH_TIMEOUT_MS
     );
     if (!byStaffId) {
@@ -171,9 +191,6 @@ export async function enrichPlannerTeamMembersAvatarsFromJira(
   organizationId: string,
   members: TeamMember[]
 ): Promise<TeamMember[]> {
-  if (members.length === 0 || !isJiraProviderKind(getIssueTrackerProviderKind())) {
-    return members;
-  }
   if (membersNeedingTrackerLookup(members).length === 0) {
     return members;
   }
@@ -189,7 +206,13 @@ export async function enrichPlannerTeamMembersAvatarsFromJira(
     return byStaffId ? applyAvatarMap(members, byStaffId) : members;
   }
 
-  const loadPromise = refreshJiraAvatarsUncached(organizationId, members).then((byStaffId) => {
+  const tracker = await readJiraOrganizationTracker(organizationId);
+  if (!tracker) {
+    apiCache.set(cacheKey, true, JIRA_AVATAR_REFRESH_TTL_SEC);
+    return members;
+  }
+
+  const loadPromise = refreshJiraAvatarsUncached(organizationId, tracker, members).then((byStaffId) => {
     if (byStaffId) {
       apiCache.set(cacheKey, true, JIRA_AVATAR_REFRESH_TTL_SEC);
     }

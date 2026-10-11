@@ -10,6 +10,8 @@ import {
 } from './boardParamsRouteHelpers';
 
 vi.mock('@/lib/trackerRequestConfig', () => ({
+  resolveDefaultOnPremOrganizationId: vi.fn(),
+  resolveStoredOrganizationTrackerApiConfig: vi.fn(),
   resolveTrackerApiConfigFromRequest: vi.fn(),
 }));
 
@@ -18,7 +20,12 @@ vi.mock('@/lib/issueTrackerProvider/clientFactory', () => ({
 }));
 
 import { createIssueTrackerProviderClientFromResolvedConfig } from '@/lib/issueTrackerProvider/clientFactory';
-import { resolveTrackerApiConfigFromRequest } from '@/lib/trackerRequestConfig';
+import {
+  resolveStoredOrganizationTrackerApiConfig,
+  resolveTrackerApiConfigFromRequest,
+} from '@/lib/trackerRequestConfig';
+
+const ORG_ID = '6cd15a5b-7b9c-4abb-9f88-793571e956d8';
 
 const boardFixture = {
   columns: [{ display: 'Todo', id: '1', statusKeys: ['open'] }],
@@ -33,6 +40,9 @@ const trackerConfig = {
   oauthToken: 'token-xyz',
   orgId: 'org-1',
   providerKind: 'tracker' as const,
+  cloudId: '',
+  storedJiraEmail: '',
+  webBaseUrl: 'https://tracker.example',
 };
 
 function cacheKeyForConfig(): string {
@@ -99,5 +109,46 @@ describe('loadBoardParamsForRequest', () => {
     expect(result).toEqual(boardFixture);
     expect(getBoard).not.toHaveBeenCalled();
     expect(createIssueTrackerProviderClientFromResolvedConfig).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the stored organization token when the request token has no columns', async () => {
+    const storedConfig = {
+      ...trackerConfig,
+      apiUrl: 'https://example.atlassian.net/rest/api/3',
+      jiraEmail: 'planner@example.com',
+      oauthToken: 'org-api-token',
+    };
+    vi.mocked(resolveStoredOrganizationTrackerApiConfig).mockResolvedValue(storedConfig);
+    const requestGetBoard = vi.fn().mockResolvedValue({ columns: [], id: 42, name: 'Board' });
+    const storedGetBoard = vi.fn().mockResolvedValue(boardFixture);
+    vi.mocked(createIssueTrackerProviderClientFromResolvedConfig).mockImplementation((config) => {
+      const getBoard =
+        config.oauthToken === storedConfig.oauthToken ? storedGetBoard : requestGetBoard;
+      return { getBoard } as never;
+    });
+
+    const request = new Request('http://localhost/api/boards/42', {
+      headers: { 'x-organization-id': ORG_ID },
+    });
+    await expect(loadBoardParamsForRequest(request, 42)).resolves.toEqual(boardFixture);
+    expect(requestGetBoard).toHaveBeenCalledWith(42);
+    expect(storedGetBoard).toHaveBeenCalledWith(42);
+    expect(apiCache.get(cacheKeyForConfig())).toEqual(boardFixture);
+  });
+
+  it('does not cache a board when neither token can load columns', async () => {
+    vi.mocked(resolveStoredOrganizationTrackerApiConfig).mockRejectedValue(new Error('no token'));
+    const getBoard = vi.fn().mockResolvedValue(null);
+    vi.mocked(createIssueTrackerProviderClientFromResolvedConfig).mockReturnValue({
+      getBoard,
+    } as never);
+
+    const request = new Request('http://localhost/api/boards/42', {
+      headers: { 'x-organization-id': ORG_ID },
+    });
+    await expect(loadBoardParamsForRequest(request, 42)).rejects.toThrow(
+      'Board 42 columns are unavailable'
+    );
+    expect(apiCache.get(cacheKeyForConfig())).toBeNull();
   });
 });

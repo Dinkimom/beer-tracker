@@ -6,7 +6,7 @@
 
 | Тип | Где в коде | Назначение |
 |-----|------------|------------|
-| **Issue tracker** (Yandex Tracker **или** Jira) | `lib/issueTrackerProvider/*`, `getTrackerApiFromRequest` / `lib/trackerApi/*` | Живые данные трекера, мутации, часть чтений (спринты, доски, workflow, детали issue). Выбор: `ISSUE_TRACKER_PROVIDER` — [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md) |
+| **Issue tracker** (Yandex Tracker **или** Jira) | `lib/issueTrackerProvider/*`, `getTrackerApiFromRequest` / `lib/trackerApi/*` | Живые данные трекера, мутации, часть чтений (спринты, доски, workflow, детали issue). Выбор: настройка организации (`organizations.settings.issueTracker`) — [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md) |
 | **Снимки задач (PostgreSQL)** | `lib/snapshots/*` | Чтение `issue_snapshots` (бэклог, эпики, стори, burndown/score); таблица `issue_changelog_events` — для будущего экспортёра |
 | **PostgreSQL (приложение)** | `lib/db` (`query`, `pool`) | Позиции, связи, комментарии, цели спринта, фичи, квартальные планы (часть), черновики и т.д. |
 | **S3 (совместимое API)** | `lib/storage` | Байты фотокарточек и сцен Excalidraw планера (`planner_files.storage_key`) |

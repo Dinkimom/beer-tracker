@@ -38,7 +38,7 @@ export function taskStatusLabel(task: {
   return task.originalStatusDisplay?.trim() || task.originalStatus?.trim() || undefined;
 }
 
-/** URL задачи в трекере по ключу и web-base текущего инстанса (из TRACKER_API_URL). */
+/** URL задачи в трекере по ключу и web-base трекера организации (из URL API). */
 export function getTaskTrackerIssueUrl(task: Task, tracker: TrackerWebUrlContext): string {
   return getTrackerIssueUrlByKey(getTaskTrackerDisplayKey(task), tracker);
 }

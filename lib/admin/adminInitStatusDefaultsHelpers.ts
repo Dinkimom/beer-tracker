@@ -55,7 +55,10 @@ export async function initTrackerStatusDefaults(
   }
 
   try {
-    const trackerStatuses = await fetchTrackerOrganizationStatuses(apiResult.api);
+    const trackerStatuses = await fetchTrackerOrganizationStatuses(
+      apiResult.api,
+      apiResult.tracker.kind
+    );
     const { built, stored, trackerStatusCount } = mergeStatusDefaults(
       apiResult.org.settings,
       trackerStatuses

@@ -227,6 +227,8 @@ describe('jiraTrackerProvider skeleton', () => {
     const client = createJiraProviderClient({
       apiToken: 'token',
       email: 'user@example.com',
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://example.atlassian.net',
     });
 
     await expect(client.getField('customfield_1')).rejects.toBeInstanceOf(
@@ -238,6 +240,8 @@ describe('jiraTrackerProvider skeleton', () => {
     const client = createJiraProviderClient({
       apiToken: 'token',
       email: 'user@example.com',
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://example.atlassian.net',
     });
     expect(Reflect.get(client, 'then')).toBeUndefined();
     await expect(Promise.resolve(client)).resolves.toBe(client);
@@ -247,6 +251,8 @@ describe('jiraTrackerProvider skeleton', () => {
     const client = createJiraProviderClient({
       apiToken: 'token',
       email: 'user@example.com',
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://example.atlassian.net',
     });
     await expect(client.getCurrentUser()).resolves.toMatchObject({ display: 'Ada', uid: 'ada' });
     await expect(client.listSprints(14684)).resolves.toEqual([
@@ -396,7 +402,10 @@ describe('jiraTrackerProvider skeleton', () => {
   });
 
   it('uses the same unsupported client from factory helper', async () => {
-    const client = createJiraUnsupportedProviderClient();
+    const client = createJiraUnsupportedProviderClient({
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://example.atlassian.net',
+    });
     await expect(client.getIssue('JIRA-1')).rejects.toMatchObject({
       operation: 'getIssue',
       providerKind: 'jira',

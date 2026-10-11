@@ -5,6 +5,7 @@ export interface AppliedAtlassianOAuthTokens {
   cloudId: string;
   expiresAt: number;
   refreshToken: string;
+  siteUrl: string;
 }
 
 function tokensFromHash(hash: string): AppliedAtlassianOAuthTokens | null {
@@ -17,6 +18,7 @@ function tokensFromHash(hash: string): AppliedAtlassianOAuthTokens | null {
     cloudId: payload.cloudId,
     expiresAt: payload.expiresAt,
     refreshToken: payload.refreshToken,
+    siteUrl: payload.siteUrl ?? '',
   };
 }
 

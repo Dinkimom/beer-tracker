@@ -1,6 +1,7 @@
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+
 import { jiraCloudOAuthApiBaseUrl } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
 import { findUserByEmail } from '@/lib/auth';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { findStaffByOrganizationAndTrackerUserId } from '@/lib/staffTeams';
 import {
   resolveTrackerCloudContextForProductOrganizationIdOnPrem,
@@ -13,8 +14,9 @@ import { onPremRegisterIdentityFromMyself } from './onPremRegisterTrackerIdentit
 function resolveSessionApiUrl(input: {
   cloudId?: string;
   fallbackApiUrl: string;
+  providerKind: IssueTrackerProviderKind;
 }): string {
-  if (getIssueTrackerProviderKind() !== 'jira-cloud') {
+  if (input.providerKind !== 'jira-cloud') {
     return input.fallbackApiUrl;
   }
   const cloudId = input.cloudId?.trim() ?? '';
@@ -67,6 +69,7 @@ export async function resolveProductUserIdForOnPremTrackerSession(input: {
   const apiUrl = resolveSessionApiUrl({
     cloudId,
     fallbackApiUrl: ctx.apiUrl,
+    providerKind: ctx.providerKind,
   });
 
   const myself = await fetchTrackerMyselfOrThrow({
@@ -74,6 +77,7 @@ export async function resolveProductUserIdForOnPremTrackerSession(input: {
     jiraEmail: '',
     oauthToken: input.oauthToken,
     orgId: ctx.orgId,
+    providerKind: ctx.providerKind,
   });
 
   const identity = onPremRegisterIdentityFromMyself(myself, input.jiraEmail);

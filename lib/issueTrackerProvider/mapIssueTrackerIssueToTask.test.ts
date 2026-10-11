@@ -1,6 +1,10 @@
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
+
 import { describe, expect, it } from 'vitest';
 
 import { mapIssueTrackerIssueToTask } from './mapIssueTrackerIssueToTask';
+
+const TRACKER_WEB: TrackerWebUrlContext = { kind: 'tracker', webBaseUrl: 'https://tracker.yandex.ru' };
 
 describe('mapIssueTrackerIssueToTask', () => {
   it('maps provider fields without going through a Yandex raw payload', () => {
@@ -15,7 +19,7 @@ describe('mapIssueTrackerIssueToTask', () => {
       storyPoints: 3,
       summary: 'Fix login',
       type: { display: 'Task', key: 'task' },
-    });
+    }, TRACKER_WEB);
     expect(task).toMatchObject({
       id: 'PROJ-1',
       name: 'Fix login',
@@ -44,7 +48,7 @@ describe('mapIssueTrackerIssueToTask', () => {
       provider: 'yandex-tracker',
       raw: { HD_count: 99, key: 'BT-1', resolvedAt: 'ignored' },
       summary: 'SLA bug',
-    });
+    }, TRACKER_WEB);
     expect(task).toMatchObject({
       hdCount: 3,
       hdGrowth24h: 1,
@@ -65,7 +69,7 @@ describe('mapIssueTrackerIssueToTask', () => {
         key: 'BT-1',
         provider: 'yandex-tracker',
         summary: 'Mapped custom issue',
-      },
+      }, TRACKER_WEB,
       {
         configRevision: 1,
         testingFlow: {
@@ -87,7 +91,7 @@ describe('mapIssueTrackerIssueToTask', () => {
       provider: 'jira',
       status: { display: 'В процессе проверки', key: 'впроцессепроверки' },
       summary: 'Review',
-    });
+    }, TRACKER_WEB);
     expect(task).toMatchObject({
       originalStatus: 'впроцессепроверки',
       originalStatusDisplay: 'В процессе проверки',
@@ -101,7 +105,7 @@ describe('mapIssueTrackerIssueToTask', () => {
       provider: 'yandex-tracker',
       status: { display: 'inProgress', key: 'inProgress' },
       summary: 'Same',
-    });
+    }, TRACKER_WEB);
     expect(task.originalStatus).toBe('inProgress');
     expect(task.originalStatusDisplay).toBeUndefined();
   });
@@ -114,7 +118,7 @@ describe('mapIssueTrackerIssueToTask', () => {
       provider: 'yandex-tracker',
       start: '2026-03-18',
       summary: 'Scheduled',
-    });
+    }, TRACKER_WEB);
     expect(task).toMatchObject({
       deadline: '2026-03-20',
       id: 'BT-2',

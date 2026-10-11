@@ -92,6 +92,18 @@ beerTrackerApi.interceptors.request.use(
   }
 );
 
+/**
+ * 401 трекера (`code: 'unauthorized'` из `handleApiError`) на повторе после успешного refresh:
+ * токен пользователя свежий, значит отказ апстрима (scope, токен организации), а не конец сессии.
+ */
+function isTrackerRejectionAfterRefresh(
+  error: { response?: { data?: unknown } },
+  config: { _atlassianRetry?: boolean } | undefined
+): boolean {
+  const data = error.response?.data as { code?: unknown } | undefined;
+  return Boolean(config?._atlassianRetry) && data?.code === 'unauthorized';
+}
+
 beerTrackerApi.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -113,7 +125,11 @@ beerTrackerApi.interceptors.response.use(
         return beerTrackerApi.request(config);
       }
     }
-    if (status === 401 && typeof window !== 'undefined') {
+    if (
+      status === 401 &&
+      typeof window !== 'undefined' &&
+      !isTrackerRejectionAfterRefresh(error, config)
+    ) {
       redirectBeerTrackerApiUnauthorized();
     }
     return Promise.reject(error);

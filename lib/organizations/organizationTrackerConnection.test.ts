@@ -1,18 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
 import { enqueueInitialFullSync } from '@/lib/sync/queue';
 import { isSyncRedisConfigured } from '@/lib/sync/redisConnection';
 import { validateIssueTrackerCredentials } from '@/lib/trackerCredentialsValidation';
 
 import { findOrganizationById } from './organizationRepository';
 import {
+  findOrganizationSecretRow,
   getDecryptedOrganizationTrackerSecretRaw,
   getDecryptedOrganizationTrackerToken,
 } from './organizationSecretsRepository';
 import { isOrganizationTrackerConnectionReady } from './organizationTrackerAdminFormState';
 import {
   connectOrganizationTracker,
+  getOrganizationTrackerAdminFormState,
   verifyStoredOrganizationTrackerToken,
 } from './organizationTrackerConnection';
 
@@ -28,6 +29,7 @@ vi.mock('./organizationRepository', () => ({
 }));
 
 vi.mock('./organizationSecretsRepository', () => ({
+  findOrganizationSecretRow: vi.fn(),
   getDecryptedOrganizationTrackerSecretRaw: vi.fn(),
   getDecryptedOrganizationTrackerToken: vi.fn(),
 }));
@@ -42,9 +44,7 @@ vi.mock('@/lib/crypto-org-secrets', () => ({
 }));
 
 vi.mock('@/lib/env', () => ({
-  getIssueTrackerProviderKind: vi.fn(() => 'tracker'),
   getOrgSecretsMasterKey: vi.fn(() => Buffer.alloc(32, 1)),
-  getTrackerConfig: vi.fn(() => ({ apiUrl: 'https://api.tracker.yandex.net/v3' })),
 }));
 
 vi.mock('@/lib/sync/queue', () => ({
@@ -62,6 +62,9 @@ vi.mock('@/lib/trackerCredentialsValidation', async (importOriginal) => {
     validateIssueTrackerCredentials: vi.fn(),
   };
 });
+
+const YANDEX_API = 'https://api.tracker.yandex.net/v3';
+const YANDEX_SETTINGS = { issueTracker: { apiUrl: YANDEX_API, provider: 'tracker' } };
 
 function minimalOrg() {
   return {
@@ -95,7 +98,6 @@ describe('connectOrganizationTracker', () => {
     vi.mocked(findOrganizationById).mockResolvedValue(minimalOrg());
     vi.mocked(getDecryptedOrganizationTrackerSecretRaw).mockResolvedValue(null);
     vi.mocked(getDecryptedOrganizationTrackerToken).mockResolvedValue(null);
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('tracker');
     vi.mocked(validateIssueTrackerCredentials).mockResolvedValue({ ok: true });
     vi.mocked(isSyncRedisConfigured).mockReturnValue(true);
   });
@@ -110,7 +112,8 @@ describe('connectOrganizationTracker', () => {
     const r = await connectOrganizationTracker({
       oauthToken: 'bad',
       organizationId: ORG,
-      trackerApiBaseUrl: 'https://api.tracker.yandex.net/v3',
+      provider: 'tracker',
+      trackerApiBaseUrl: YANDEX_API,
       trackerOrgId: 'cloud-1',
       userId: USER,
     });
@@ -127,7 +130,8 @@ describe('connectOrganizationTracker', () => {
     const r = await connectOrganizationTracker({
       oauthToken: 'oauth-secret-token',
       organizationId: ORG,
-      trackerApiBaseUrl: 'https://api.tracker.yandex.net/v3',
+      provider: 'tracker',
+      trackerApiBaseUrl: YANDEX_API,
       trackerOrgId: 'cloud-1',
       userId: USER,
     });
@@ -143,17 +147,57 @@ describe('connectOrganizationTracker', () => {
   });
 
   it('stores a Jira sentinel instead of Cloud Org ID when the field is empty', async () => {
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-onprem');
-
     const r = await connectOrganizationTracker({
       oauthToken: 'jira-pat',
       organizationId: ORG,
+      provider: 'jira-onprem',
+      trackerApiBaseUrl: 'https://jira.example.com/rest/api/2/',
       trackerOrgId: '',
       userId: USER,
     });
 
     expect(r.ok).toBe(true);
     expect(mockClientQuery.mock.calls.some((call) => call[1]?.[1] === 'jira')).toBe(true);
+    const settingsWrite = mockClientQuery.mock.calls.find((call) => call[1]?.[1] === 'jira');
+    expect(JSON.parse(String(settingsWrite?.[1]?.[2]))).toMatchObject({
+      issueTracker: { apiUrl: 'https://jira.example.com/rest/api/2', provider: 'jira-onprem' },
+    });
+    expect(validateIssueTrackerCredentials).toHaveBeenCalledWith(
+      expect.objectContaining({ providerKind: 'jira-onprem' })
+    );
+  });
+
+  it('asks to pick a tracker when neither the form nor the organization has one', async () => {
+    const r = await connectOrganizationTracker({
+      oauthToken: 'token',
+      organizationId: ORG,
+      trackerOrgId: 'cloud-1',
+      userId: USER,
+    });
+
+    expect(r).toMatchObject({ ok: false, status: 400 });
+    expect(validateIssueTrackerCredentials).not.toHaveBeenCalled();
+  });
+
+  it('refuses to switch the tracker after the first sync', async () => {
+    vi.mocked(findOrganizationById).mockResolvedValue({
+      ...minimalOrg(),
+      initial_sync_completed_at: new Date(),
+      settings: YANDEX_SETTINGS,
+      tracker_org_id: 'cloud-1',
+    });
+
+    const r = await connectOrganizationTracker({
+      oauthToken: 'jira-pat',
+      organizationId: ORG,
+      provider: 'jira-onprem',
+      trackerApiBaseUrl: 'https://jira.example.com/rest/api/2',
+      trackerOrgId: '',
+      userId: USER,
+    });
+
+    expect(r).toMatchObject({ ok: false, status: 409 });
+    expect(mockConnect).not.toHaveBeenCalled();
   });
 
   it('returns syncJobEnqueued false with warning when Redis is not configured', async () => {
@@ -162,7 +206,8 @@ describe('connectOrganizationTracker', () => {
     const r = await connectOrganizationTracker({
       oauthToken: 'oauth-secret-token',
       organizationId: ORG,
-      trackerApiBaseUrl: 'https://api.tracker.yandex.net/v3',
+      provider: 'tracker',
+      trackerApiBaseUrl: YANDEX_API,
       trackerOrgId: 'cloud-1',
       userId: USER,
     });
@@ -179,13 +224,14 @@ describe('connectOrganizationTracker', () => {
   it('returns unchanged without DB or Tracker when org/url match and token not re-sent', async () => {
     vi.mocked(findOrganizationById).mockResolvedValue({
       ...minimalOrg(),
+      settings: YANDEX_SETTINGS,
       tracker_org_id: 'cloud-1',
     });
 
     const r = await connectOrganizationTracker({
       oauthToken: '',
       organizationId: ORG,
-      trackerApiBaseUrl: 'https://api.tracker.yandex.net/v3',
+      trackerApiBaseUrl: YANDEX_API,
       trackerOrgId: 'cloud-1',
       userId: USER,
     });
@@ -212,7 +258,8 @@ describe('connectOrganizationTracker', () => {
     const r = await connectOrganizationTracker({
       oauthToken: '',
       organizationId: ORG,
-      trackerApiBaseUrl: 'https://api.tracker.yandex.net/v3',
+      provider: 'tracker',
+      trackerApiBaseUrl: YANDEX_API,
       trackerOrgId: 'cloud-1',
       userId: USER,
     });
@@ -237,7 +284,8 @@ describe('connectOrganizationTracker', () => {
     const r = await connectOrganizationTracker({
       oauthToken: '',
       organizationId: ORG,
-      trackerApiBaseUrl: 'https://api.tracker.yandex.net/v3',
+      provider: 'tracker',
+      trackerApiBaseUrl: YANDEX_API,
       trackerOrgId: 'cloud-1',
       userId: USER,
     });
@@ -252,9 +300,9 @@ describe('connectOrganizationTracker', () => {
 
 describe('verifyStoredOrganizationTrackerToken', () => {
   beforeEach(() => {
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('tracker');
     vi.mocked(findOrganizationById).mockResolvedValue({
       ...minimalOrg(),
+      settings: YANDEX_SETTINGS,
       tracker_org_id: 'cloud-verify',
     });
     vi.mocked(getDecryptedOrganizationTrackerToken).mockResolvedValue('decrypted-token');
@@ -268,17 +316,17 @@ describe('verifyStoredOrganizationTrackerToken', () => {
   });
 
   it('uses site URL and Basic email when verifying a Jira Cloud org API token', async () => {
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-cloud');
     vi.mocked(findOrganizationById).mockResolvedValue({
       ...minimalOrg(),
       settings: {
-        issueTracker: { basicAuthEmail: 'ada@example.com', provider: 'jira-cloud' },
+        issueTracker: {
+          apiUrl: 'https://example.atlassian.net/rest/api/3',
+          basicAuthEmail: 'ada@example.com',
+          provider: 'jira-cloud',
+        },
       },
       tracker_org_id: 'jira',
     });
-    vi.mocked(getTrackerConfig).mockReturnValue({
-      apiUrl: 'https://example.atlassian.net/rest/api/3',
-    } as never);
 
     const r = await verifyStoredOrganizationTrackerToken(ORG);
     expect(r).toEqual({ ok: true });
@@ -287,6 +335,7 @@ describe('verifyStoredOrganizationTrackerToken', () => {
         apiUrl: 'https://example.atlassian.net/rest/api/3',
         email: 'ada@example.com',
         oauthToken: 'decrypted-token',
+        providerKind: 'jira-cloud',
       })
     );
   });
@@ -294,6 +343,7 @@ describe('verifyStoredOrganizationTrackerToken', () => {
   it('returns error when Cloud Org ID is not set', async () => {
     vi.mocked(findOrganizationById).mockResolvedValue({
       ...minimalOrg(),
+      settings: YANDEX_SETTINGS,
       tracker_org_id: '',
     });
     const r = await verifyStoredOrganizationTrackerToken(ORG);
@@ -313,30 +363,132 @@ describe('isOrganizationTrackerConnectionReady', () => {
   it('returns false without token or org id', () => {
     expect(
       isOrganizationTrackerConnectionReady({
+        apiUrl: YANDEX_API,
         hasStoredToken: false,
         jiraEmail: '',
         organizationId: 'o1',
+        provider: 'tracker',
+        providerLocked: false,
         trackerOrgId: 'cloud',
       })
     ).toBe(false);
     expect(
       isOrganizationTrackerConnectionReady({
+        apiUrl: YANDEX_API,
         hasStoredToken: true,
         jiraEmail: '',
         organizationId: 'o1',
+        provider: 'tracker',
+        providerLocked: false,
         trackerOrgId: '  ',
       })
     ).toBe(false);
   });
 
-  it('returns true when token and non-empty cloud org id', () => {
+  it('returns false until a tracker is picked', () => {
     expect(
       isOrganizationTrackerConnectionReady({
+        apiUrl: '',
+        hasStoredToken: true,
+        jiraEmail: '',
+        organizationId: 'o1',
+        provider: null,
+        providerLocked: false,
+        trackerOrgId: 'cloud-1',
+      })
+    ).toBe(false);
+  });
+
+  it('stays closed for Jira Cloud until the Atlassian account email is saved', () => {
+    expect(
+      isOrganizationTrackerConnectionReady({
+        apiUrl: 'https://acme.atlassian.net/rest/api/3',
+        hasStoredToken: true,
+        jiraEmail: '',
+        organizationId: 'o1',
+        provider: 'jira-cloud',
+        providerLocked: false,
+        trackerOrgId: 'jira',
+      })
+    ).toBe(false);
+    expect(
+      isOrganizationTrackerConnectionReady({
+        apiUrl: 'https://acme.atlassian.net/rest/api/3',
         hasStoredToken: true,
         jiraEmail: 'ada@example.com',
         organizationId: 'o1',
+        provider: 'jira-cloud',
+        providerLocked: false,
+        trackerOrgId: 'jira',
+      })
+    ).toBe(true);
+  });
+
+  it('returns true when token and non-empty cloud org id', () => {
+    expect(
+      isOrganizationTrackerConnectionReady({
+        apiUrl: YANDEX_API,
+        hasStoredToken: true,
+        jiraEmail: 'ada@example.com',
+        organizationId: 'o1',
+        provider: 'tracker',
+        providerLocked: false,
         trackerOrgId: 'cloud-1',
       })
     ).toBe(true);
+  });
+});
+
+describe('getOrganizationTrackerAdminFormState', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('reports an organization without a tracker as not configured', async () => {
+    vi.mocked(findOrganizationById).mockResolvedValue({ ...minimalOrg(), tracker_org_id: '' });
+    vi.mocked(findOrganizationSecretRow).mockResolvedValue(null);
+
+    await expect(getOrganizationTrackerAdminFormState(ORG)).resolves.toMatchObject({
+      apiUrl: '',
+      hasStoredToken: false,
+      provider: null,
+      providerLocked: false,
+    });
+  });
+
+  it('returns the stored tracker and locks the type after the first sync', async () => {
+    vi.mocked(findOrganizationById).mockResolvedValue({
+      ...minimalOrg(),
+      initial_sync_completed_at: new Date(),
+      settings: {
+        issueTracker: { apiUrl: 'https://jira.example.com/rest/api/2', provider: 'jira-onprem' },
+      },
+      tracker_org_id: 'jira',
+    });
+    vi.mocked(findOrganizationSecretRow).mockResolvedValue({
+      encrypted_tracker_token: Buffer.from('cipher'),
+    } as never);
+
+    await expect(getOrganizationTrackerAdminFormState(ORG)).resolves.toMatchObject({
+      apiUrl: 'https://jira.example.com/rest/api/2',
+      hasStoredToken: true,
+      provider: 'jira-onprem',
+      providerLocked: true,
+    });
+  });
+
+  it('keeps the type editable before the first sync', async () => {
+    vi.mocked(findOrganizationById).mockResolvedValue({
+      ...minimalOrg(),
+      settings: YANDEX_SETTINGS,
+      tracker_org_id: 'cloud-1',
+    });
+    vi.mocked(findOrganizationSecretRow).mockResolvedValue(null);
+
+    await expect(getOrganizationTrackerAdminFormState(ORG)).resolves.toMatchObject({
+      apiUrl: YANDEX_API,
+      provider: 'tracker',
+      providerLocked: false,
+    });
   });
 });

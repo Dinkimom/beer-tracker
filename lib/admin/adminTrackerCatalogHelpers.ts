@@ -8,7 +8,7 @@ import {
   TRACKER_ADMIN_CATALOG_QUEUES_BOARDS_TTL_SEC,
   trackerAdminCatalogConnectionFingerprint,
 } from '@/lib/trackerApi/trackerAdminCatalogCache';
-import { resolveTrackerApiBaseUrlForOrganizationRow } from '@/lib/trackerRequestConfig';
+import { requireOrganizationIssueTrackerConfig } from '@/lib/trackerRequestConfig';
 
 interface CachedTrackerCatalogSlice {
   boards: { id: number; name: string }[];
@@ -83,11 +83,11 @@ async function withEnsuredBoard(
 
 export async function loadTrackerCatalogResponse(
   orgId: string,
-  org: Pick<OrganizationRow, 'id' | 'tracker_org_id'>,
+  org: Pick<OrganizationRow, 'id' | 'settings' | 'tracker_org_id'>,
   issueTracker: IssueTrackerProviderClient,
   options?: { authFingerprint?: string; ensureBoardId?: number }
 ) {
-  const apiUrl = resolveTrackerApiBaseUrlForOrganizationRow(org as OrganizationRow);
+  const { apiUrl } = requireOrganizationIssueTrackerConfig(org);
   const cacheFingerprint = `${trackerAdminCatalogConnectionFingerprint(
     options?.authFingerprint ?? '',
     apiUrl,

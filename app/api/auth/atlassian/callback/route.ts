@@ -9,7 +9,7 @@ import {
   encodeAtlassianOAuthFragment,
   exchangeAtlassianAuthorizationCode,
   fetchAtlassianAccessibleResources,
-  pickAtlassianCloudId,
+  pickAtlassianSite,
   readCookieValue,
   requestOriginFromRequest,
   sanitizeAtlassianOAuthReturnPath,
@@ -18,7 +18,6 @@ import {
   ATLASSIAN_OAUTH_RETURN_COOKIE,
   ATLASSIAN_OAUTH_STATE_COOKIE,
 } from '@/lib/atlassianOAuth/constants';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 
 function errorRedirect(origin: string, returnPath: string, message: string): NextResponse {
   const path = sanitizeAtlassianOAuthReturnPath(returnPath);
@@ -38,10 +37,6 @@ export async function GET(request: Request) {
   const returnPath = sanitizeAtlassianOAuthReturnPath(
     readCookieValue(request, ATLASSIAN_OAUTH_RETURN_COOKIE)
   );
-
-  if (getIssueTrackerProviderKind() !== 'jira-cloud') {
-    return errorRedirect(origin, returnPath, 'Atlassian OAuth недоступен на этом инстансе');
-  }
 
   const configured = assertAtlassianOAuthConfigured();
   if (!configured.ok) {
@@ -71,8 +66,8 @@ export async function GET(request: Request) {
       redirectUri,
     });
     const resources = await fetchAtlassianAccessibleResources(tokens.accessToken);
-    const cloudId = pickAtlassianCloudId(resources);
-    if (!cloudId) {
+    const site = pickAtlassianSite(resources);
+    if (!site) {
       return errorRedirect(
         origin,
         returnPath,
@@ -82,9 +77,10 @@ export async function GET(request: Request) {
     const expiresAt = Date.now() + tokens.expiresIn * 1000;
     const fragment = encodeAtlassianOAuthFragment({
       accessToken: tokens.accessToken,
-      cloudId,
+      cloudId: site.cloudId,
       expiresAt,
       refreshToken: tokens.refreshToken,
+      siteUrl: site.siteUrl,
     });
     const dest = new URL(buildAtlassianOAuthSuccessRedirect(returnPath, fragment), origin);
     const res = NextResponse.redirect(dest);

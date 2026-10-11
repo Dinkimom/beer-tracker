@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { handleApiError, TRACKER_UPSTREAM_FORWARD_STATUSES } from '@/lib/api-error-handler';
 import { invalidateCache } from '@/lib/cache';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { loadIssueTrackerChecklistItems } from '@/lib/issues/issueDetailRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { rejectUnsupportedIssueTrackerCapability } from '@/lib/issueTrackerProvider/issueTrackerCapabilityRoute';
@@ -47,7 +46,9 @@ export async function POST(
 
     const { text, checked = false } = validation.data;
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsChecklists',
       'createChecklistItem'
     );
@@ -55,7 +56,6 @@ export async function POST(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const data = await issueTracker.createChecklistItem(issueKey, { text, checked });
 
     invalidateCache.issueFull(issueKey);
@@ -88,7 +88,7 @@ export async function GET(
     const checklistItems = await loadIssueTrackerChecklistItems(
       issueTracker,
       issueKey,
-      getIssueTrackerProviderKind()
+      issueTracker.providerKind
     );
 
     return NextResponse.json(checklistItems);
@@ -132,7 +132,9 @@ export async function PUT(
 
     const { items } = validation.data;
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsChecklists',
       'replaceChecklistItems'
     );
@@ -140,7 +142,6 @@ export async function PUT(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const data = await issueTracker.replaceChecklistItems(issueKey, items);
 
     return NextResponse.json(data);
@@ -168,7 +169,9 @@ export async function DELETE(
       );
     }
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsChecklists',
       'deleteChecklist'
     );
@@ -176,7 +179,6 @@ export async function DELETE(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     await issueTracker.deleteChecklist(issueKey);
 
     return NextResponse.json({ success: true });

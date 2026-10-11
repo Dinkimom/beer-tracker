@@ -44,11 +44,11 @@ describe('issueTrackerUi', () => {
   });
 
   it('appends provider kind to an i18n base key', () => {
-    expect(issueTrackerProviderMessageKey('admin.shell.nav.tracker', 'jira-cloud')).toBe(
-      'admin.shell.nav.tracker.jira'
+    expect(issueTrackerProviderMessageKey('admin.trackerSection.title', 'jira-cloud')).toBe(
+      'admin.trackerSection.title.jira'
     );
-    expect(issueTrackerProviderMessageKey('admin.shell.nav.tracker', 'tracker')).toBe(
-      'admin.shell.nav.tracker.yandex-tracker'
+    expect(issueTrackerProviderMessageKey('admin.trackerSection.title', 'tracker')).toBe(
+      'admin.trackerSection.title.yandex-tracker'
     );
     expect(
       issueTrackerProviderMessageKey('productAuth.register.onboardingTagline', 'jira-cloud')
@@ -57,8 +57,8 @@ describe('issueTrackerUi', () => {
 
   it('translates via the provider-suffixed i18n key', () => {
     const t = (key: string) => key;
-    expect(translateIssueTrackerProviderMessage(t, 'jira-cloud', 'admin.shell.nav.tracker')).toBe(
-      'admin.shell.nav.tracker.jira'
+    expect(translateIssueTrackerProviderMessage(t, 'jira-cloud', 'admin.trackerSection.title')).toBe(
+      'admin.trackerSection.title.jira'
     );
   });
 
@@ -77,7 +77,7 @@ describe('issueTrackerUi', () => {
     expect(issueTrackerShowsSettingsTokenTab('tracker')).toBe(true);
   });
 
-  it('points Jira token help at the site profile page from TRACKER_API_URL', () => {
+  it('points Jira token help at the site profile page from the API URL', () => {
     expect(jiraSiteOriginFromTrackerApiUrl('https://jira.example.com/rest/api/2')).toBe(
       'https://jira.example.com'
     );
@@ -95,7 +95,7 @@ describe('issueTrackerUi', () => {
     expect(issueTrackerTokenHelpUrl('tracker')).toContain(YANDEX_OAUTH_CLIENT_ID);
   });
 
-  it('derives the issue web base from TRACKER_API_URL instead of hardcoding Yandex', () => {
+  it('derives the issue web base from the API URL instead of hardcoding Yandex', () => {
     expect(issueTrackerWebBaseFromApiUrl('tracker')).toBe('https://tracker.yandex.ru');
     expect(
       issueTrackerWebBaseFromApiUrl('tracker', 'https://api.tracker.yandex.net/v3')

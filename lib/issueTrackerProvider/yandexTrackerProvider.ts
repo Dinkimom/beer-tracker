@@ -49,6 +49,7 @@ import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
 import { resolveTrackerApiConfigFromRequest } from '@/lib/trackerRequestConfig';
 
 import { yandexIssueUpdateBody } from './issueTrackerIssuePatch';
+import { issueTrackerWebBaseFromApiUrl } from './issueTrackerUi';
 import { mapIssueTrackerIssueToTask } from './mapIssueTrackerIssueToTask';
 import {
   createYandexIssueLink,
@@ -85,8 +86,15 @@ export async function createYandexTrackerClientFromRequest(
   });
 }
 
-function createYandexIssueTrackerProviderClient(api: AxiosInstance): IssueTrackerProviderClient {
+function createYandexIssueTrackerProviderClient(
+  api: AxiosInstance,
+  webBaseUrl: string
+): IssueTrackerProviderClient {
+  const trackerWeb = { kind: 'tracker', webBaseUrl } as const;
   return {
+    providerKind: 'tracker',
+    webBaseUrl,
+
     addIssueToSprint(issueKey: string, sprintId: number) {
       return addYandexIssueToSprint(api, issueKey, sprintId);
     },
@@ -290,7 +298,7 @@ function createYandexIssueTrackerProviderClient(api: AxiosInstance): IssueTracke
     },
 
     mapIssueToTask(issue, integration) {
-      return mapIssueTrackerIssueToTask(issue, integration);
+      return mapIssueTrackerIssueToTask(issue, trackerWeb, integration);
     },
 
     async replaceChecklistItems(issueKey: string, items: unknown[]): Promise<unknown> {
@@ -357,15 +365,21 @@ function createYandexIssueTrackerProviderClient(api: AxiosInstance): IssueTracke
 export function createYandexProviderClient(
   config: YandexTrackerClientConfig
 ): IssueTrackerProviderClient {
-  return createYandexIssueTrackerProviderClient(createYandexTrackerClient(config));
+  return createYandexIssueTrackerProviderClient(
+    createYandexTrackerClient(config),
+    issueTrackerWebBaseFromApiUrl('tracker', config.apiUrl)
+  );
 }
 
 async function createYandexProviderClientFromRequest(
   request: Request
 ): Promise<IssueTrackerProviderClient> {
-  return createYandexIssueTrackerProviderClient(
-    await createYandexTrackerClientFromRequest(request)
-  );
+  const config = await resolveTrackerApiConfigFromRequest(request);
+  return createYandexProviderClient({
+    apiUrl: config.apiUrl,
+    oauthToken: config.oauthToken,
+    orgId: config.orgId,
+  });
 }
 
 export const yandexTrackerProvider: YandexIssueTrackerProvider = {

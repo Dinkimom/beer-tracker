@@ -45,7 +45,9 @@ export async function PATCH(
       updateBody.text = text;
     }
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsChecklists',
       'updateChecklistItem'
     );
@@ -53,7 +55,6 @@ export async function PATCH(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     await issueTracker.updateChecklistItem(issueKey, itemId, updateBody);
 
     invalidateCache.issueFull(issueKey);
@@ -79,7 +80,9 @@ export async function DELETE(
       );
     }
 
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
+      issueTracker.providerKind,
       'supportsChecklists',
       'deleteChecklistItem'
     );
@@ -87,7 +90,6 @@ export async function DELETE(
       return unsupported;
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     await issueTracker.deleteChecklistItem(issueKey, itemId);
 
     invalidateCache.issueFull(issueKey);

@@ -1,15 +1,15 @@
+import type { TrackerWebUrlContext } from './issueTrackerUi';
 import type { IssueTrackerIssue } from './types';
 import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task } from '@/types';
 import type { TrackerIssue } from '@/types/tracker';
 
-import { getIssueTrackerProviderKind, getTrackerConfig } from '@/lib/env';
 import { parseSlaBugFieldsFromIssue } from '@/lib/slaBugs/parseSlaBugFields';
 import { applyTrackerIntegrationToTask } from '@/lib/trackerIntegration';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
-import { issueTrackerIssueWebUrl } from './issueTrackerUi';
+import { issueTrackerIssueWebUrlFromBase } from './issueTrackerUi';
 
 function optionalPoints(value: number | null | undefined): number | undefined {
   return value === undefined || value === null ? undefined : value;
@@ -197,6 +197,7 @@ function issueTrackerIssueFieldBag(issue: IssueTrackerIssue): TrackerIssue {
 function mapIssueTrackerIssueToTaskBase(
   issue: IssueTrackerIssue,
   fieldBag: TrackerIssue,
+  trackerWeb: TrackerWebUrlContext,
   options?: { omitDescription?: boolean }
 ): Task {
   const statusKey = issue.status?.key || issue.statusType?.key;
@@ -208,11 +209,7 @@ function mapIssueTrackerIssueToTaskBase(
     id: issue.key,
     name: issue.summary,
     MergeRequestLink: issue.mergeRequestLink,
-    link: issueTrackerIssueWebUrl(
-      getIssueTrackerProviderKind(),
-      issue.key,
-      getTrackerConfig().apiUrl
-    ),
+    link: issueTrackerIssueWebUrlFromBase(trackerWeb.kind, trackerWeb.webBaseUrl, issue.key),
     ...(options?.omitDescription ? {} : { description: issue.description }),
     createdAt: issue.createdAt,
     storyPoints: optionalPoints(issue.storyPoints),
@@ -254,13 +251,14 @@ function mapIssueTrackerIssueToTaskBase(
 
 export function mapIssueTrackerIssueToTask(
   issue: IssueTrackerIssue,
+  trackerWeb: TrackerWebUrlContext,
   integration?: TrackerIntegrationStored | null,
   options?: { omitDescription?: boolean }
 ): Task {
   const fieldBag = issueTrackerIssueFieldBag(issue);
   return applyTrackerIntegrationToTask(
     fieldBag,
-    mapIssueTrackerIssueToTaskBase(issue, fieldBag, options),
+    mapIssueTrackerIssueToTaskBase(issue, fieldBag, trackerWeb, options),
     integration ?? null
   );
 }

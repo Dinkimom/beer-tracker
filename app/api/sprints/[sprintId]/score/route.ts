@@ -6,6 +6,7 @@ import {
 } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
+import { issueTrackerClientWebContext } from '@/lib/issueTrackerProvider/types';
 import { resolveParams } from '@/lib/nextjs-utils';
 import { queryIssueSnapshotsMatchingSprint } from '@/lib/snapshots';
 import { aggregateSprintGoalsByTeam } from '@/lib/sprintGoals';
@@ -73,7 +74,9 @@ export async function GET(
               sprintId: String(sprintIdNum),
               sprintName: sprintInfo.name ?? '',
             })
-          ).map((issue) => mapTrackerIssueToTask(issue, integration));
+          ).map((issue) =>
+            mapTrackerIssueToTask(issue, issueTrackerClientWebContext(issueTracker), integration)
+          );
     const completionRules = sprintTaskCompletionRulesFromIntegration({
       readyStatusKey: integration?.releaseReadiness?.readyStatusKey,
       statuses: integration?.statuses,

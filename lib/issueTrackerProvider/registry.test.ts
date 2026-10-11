@@ -6,8 +6,10 @@ import { jiraTrackerProvider } from './jiraProvider';
 import { isIssueTrackerProviderKind, resolveIssueTrackerProvider } from './registry';
 import {
   mergeOrganizationSettingsIssueTrackerPatch,
+  organizationIssueTrackerPublicDto,
   parseIssueTrackerSettings,
-  resolveIssueTrackerProviderKindFromSettingsRoot,
+  readOrganizationIssueTrackerConfig,
+  YANDEX_TRACKER_DEFAULT_API_URL,
 } from './settings';
 
 describe('issueTrackerProvider registry', () => {
@@ -40,8 +42,33 @@ describe('issueTrackerProvider registry', () => {
 });
 
 describe('issueTrackerProvider settings', () => {
-  it('defaults missing settings to tracker', () => {
-    expect(resolveIssueTrackerProviderKindFromSettingsRoot({})).toBe('tracker');
+  it('treats an organization without a provider as not connected', () => {
+    expect(readOrganizationIssueTrackerConfig({})).toBeNull();
+    expect(readOrganizationIssueTrackerConfig(null)).toBeNull();
+    expect(organizationIssueTrackerPublicDto({ issueTracker: {} })).toBeNull();
+  });
+
+  it('uses the public Yandex API when the tracker provider has no stored URL', () => {
+    expect(readOrganizationIssueTrackerConfig({ issueTracker: { provider: 'tracker' } })).toEqual({
+      apiUrl: YANDEX_TRACKER_DEFAULT_API_URL,
+      kind: 'tracker',
+    });
+  });
+
+  it('requires an explicit URL for Jira', () => {
+    expect(readOrganizationIssueTrackerConfig({ issueTracker: { provider: 'jira-onprem' } })).toBeNull();
+    expect(
+      organizationIssueTrackerPublicDto({
+        issueTracker: {
+          apiUrl: 'https://acme.atlassian.net/rest/api/3',
+          provider: 'jira-cloud',
+        },
+      })
+    ).toEqual({
+      apiUrl: 'https://acme.atlassian.net/rest/api/3',
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://acme.atlassian.net',
+    });
   });
 
   it('parses Jira Cloud as a provider setting', () => {

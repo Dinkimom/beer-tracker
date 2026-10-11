@@ -19,7 +19,6 @@ import { useAdminTrackerConnectionReady } from '@/features/admin/hooks/useAdminT
 import { useAdminShellPersistence } from '@/features/admin/useAdminShellPersistence';
 import { resolvePrimaryAdminOrganization } from '@/lib/access/resolvePrimaryAdminOrganization';
 import { postProductLogout } from '@/lib/api/auth';
-import { issueTrackerProviderMessageKey } from '@/lib/issueTrackerProvider/issueTrackerUi';
 
 interface NavItem {
   href: string;
@@ -33,7 +32,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { href: '/admin/org', icon: 'home', labelKey: 'admin.shell.nav.organization' },
-  { href: '/admin/teams', icon: 'users', labelKey: 'admin.shell.nav.teams' },
+  { href: '/admin/teams', icon: 'users', labelKey: 'admin.shell.nav.teams', requiresTracker: true },
   { href: '/admin/members', icon: 'user', labelKey: 'admin.shell.nav.members' },
   { href: '/admin/tracker', icon: 'link', labelKey: 'admin.shell.nav.tracker' },
   { href: '/admin/roles', icon: 'hash', labelKey: 'admin.shell.nav.roles' },
@@ -82,18 +81,7 @@ export function AdminShell({
     router.refresh();
   }
 
-  const navItems = useMemo(
-    () =>
-      NAV_ITEMS.map((item) => ({
-        ...item,
-        labelKey:
-          item.href === '/admin/tracker'
-            ? issueTrackerProviderMessageKey(item.labelKey, issueTrackerProviderKind)
-            : item.labelKey,
-      })),
-    [issueTrackerProviderKind]
-  );
-  const activeSection = navItems.find((item) => pathname.startsWith(item.href));
+  const activeSection = NAV_ITEMS.find((item) => pathname.startsWith(item.href));
   const roleLine = resolveAdminShellRoleLine(activeOrg, isSuperAdmin, has, t);
   /** Список пользователей: шапка и поиск фиксированы, скроллится только список. */
   const fillMainViewport = pathname.startsWith('/admin/members');
@@ -101,7 +89,7 @@ export function AdminShell({
   const navList = (
     <nav aria-label={t('admin.shell.navAriaLabel')} className="flex-1 overflow-y-auto p-3">
       <ul className="space-y-1">
-        {navItems.map((item) =>
+        {NAV_ITEMS.map((item) =>
           renderAdminNavListEntry(
             {
               activeOrg,

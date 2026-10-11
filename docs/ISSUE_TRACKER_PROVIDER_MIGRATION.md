@@ -7,7 +7,7 @@
 
 ## Текущий статус (ориентир)
 
-- Выбор трекера на инстанс: `ISSUE_TRACKER_PROVIDER` + `TRACKER_API_URL` (`lib/env.ts`, `lib/issueTrackerProvider/`).
+- Выбор трекера на организацию: `organizations.settings.issueTracker` (`provider` + `apiUrl`), `readOrganizationIssueTrackerConfig` в `lib/issueTrackerProvider/settings.ts`.
 - Адаптеры и registry живут в `lib/issueTrackerProvider/*`; роуты должны получать provider-client, а не знать детали Yandex/Jira REST.
 - Контрактные тесты, чтобы не ломать Yandex при развитии Jira: [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md).
 
@@ -15,8 +15,8 @@
 
 - `lib/issueTrackerProvider/types.ts` — provider kinds, `IssueTrackerProviderClient`, доменные методы.
 - `lib/issueTrackerProvider/registry.ts` — registry провайдеров.
-- `lib/issueTrackerProvider/settings.ts` — хранение `organizations.settings.issueTracker` (не источник истины для выбора трекера).
-- `getIssueTrackerProviderKind()` в `lib/env.ts` — **один** трекер на инстанс.
+- `lib/issueTrackerProvider/settings.ts` — источник истины для выбора трекера: `organizations.settings.issueTracker`.
+- `client.providerKind` / `client.webBaseUrl` — тип и web-base трекера текущей организации.
 - Адаптеры Yandex / Jira и `clientFactory.ts` — создание `IssueTrackerProviderClient` из `Request`.
 
 Старый Axios-фасад (`getTrackerApiFromRequest`, `createTrackerApiClient`) может ещё использоваться в routes, которые не полностью перенесены.

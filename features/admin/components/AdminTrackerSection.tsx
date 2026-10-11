@@ -1,8 +1,10 @@
 'use client';
 
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { FormEvent } from 'react';
 
 import { Button } from '@/components/Button';
+import { IssueTrackerConnectionFields } from '@/components/IssueTrackerConnectionFields';
 import { useIssueTrackerProviderKind, useIssueTrackerTokenHelpUrl } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
@@ -16,6 +18,7 @@ import {
   muted,
 } from '@/features/admin/adminUiTokens';
 import { AdminTrackerSectionTokenFields } from '@/features/admin/components/AdminTrackerSectionTokenFields';
+import { jiraCloudSiteHost } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
 import {
   issueTrackerRequiresExternalOrgId,
   translateIssueTrackerProviderMessage,
@@ -48,17 +51,23 @@ interface AdminTrackerSectionProps {
   connectLoading: boolean;
   connectOrgId: string;
   id?: string;
+  /** Сохранённый URL сайта Jira Cloud (из онбординга); пусто — сайт ещё не известен. */
+  jiraCloudSavedApiUrl: string;
+  trackerApiUrl: string;
   trackerEmail: string;
   trackerHasStoredToken: boolean;
   trackerOrgId: string;
+  trackerProviderLocked: boolean;
   trackerToken: string;
   trackerTokenEditOpen: boolean;
   trackerVerifyLoading: boolean;
   onSubmit: (e: FormEvent) => void;
   onTokenEditCancel: () => void;
   onTokenEditOpen: () => void;
+  onTrackerApiUrlChange: (value: string) => void;
   onTrackerEmailChange: (value: string) => void;
   onTrackerOrgIdChange: (value: string) => void;
+  onTrackerProviderChange: (value: IssueTrackerProviderKind) => void;
   onTrackerTokenChange: (value: string) => void;
   onVerify: () => void;
 }
@@ -68,17 +77,22 @@ export function AdminTrackerSection({
   connectLoading,
   connectOrgId,
   id,
+  jiraCloudSavedApiUrl,
   trackerEmail,
   trackerHasStoredToken,
+  trackerApiUrl,
   trackerOrgId,
   trackerToken,
   trackerTokenEditOpen,
   trackerVerifyLoading,
+  trackerProviderLocked,
   onSubmit,
   onTokenEditCancel,
   onTokenEditOpen,
+  onTrackerApiUrlChange,
   onTrackerEmailChange,
   onTrackerOrgIdChange,
+  onTrackerProviderChange,
   onTrackerTokenChange,
   onVerify,
 }: AdminTrackerSectionProps) {
@@ -88,6 +102,7 @@ export function AdminTrackerSection({
   const isJiraCloud = issueTrackerProviderKind === 'jira-cloud';
   const storedTokenOnly = trackerHasStoredToken && !trackerTokenEditOpen;
   const requiresExternalOrgId = issueTrackerRequiresExternalOrgId(issueTrackerProviderKind);
+  const jiraCloudSiteKnown = isJiraCloud && jiraCloudSavedApiUrl !== '';
 
   return (
     <section aria-labelledby={ariaLabelledBy} className={cardShell} id={id}>
@@ -111,6 +126,24 @@ export function AdminTrackerSection({
       </div>
       <div className={`${cardBody} space-y-5`}>
         <form className="space-y-5" onSubmit={onSubmit}>
+          <IssueTrackerConnectionFields
+            apiUrl={trackerApiUrl}
+            apiUrlHidden={jiraCloudSiteKnown}
+            disabled={connectLoading}
+            idPrefix="tr"
+            kind={issueTrackerProviderKind}
+            kindLocked={trackerProviderLocked}
+            onApiUrlChange={onTrackerApiUrlChange}
+            onKindChange={onTrackerProviderChange}
+          />
+          {jiraCloudSiteKnown ? (
+            <p className={`text-sm ${muted}`}>
+              {t('admin.trackerSection.jiraCloudSite', {
+                site: jiraCloudSiteHost(jiraCloudSavedApiUrl),
+              })}
+            </p>
+          ) : null}
+
           {isJiraCloud ? (
             <div className="min-w-0">
               <label className={label} htmlFor="tr-email">

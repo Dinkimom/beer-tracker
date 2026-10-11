@@ -1,26 +1,28 @@
 # Issue trackers (Yandex Tracker и Jira)
 
-Beer Tracker — **надстройка** над внешней системой учёта задач. На один self-hosted инстанс выбирается **один** провайдер; планер, снимки и staff/teams от провайдера не зависят.
+Beer Tracker — **надстройка** над внешней системой учёта задач. Провайдер выбирается **на организацию** и хранится в БД (`organizations.settings.issueTracker`: `provider` + `apiUrl`); планер, снимки и staff/teams от провайдера не зависят.
 
 ## Развилка: куда смотреть
 
-Сначала задайте в `.env` провайдер и URL API (см. [`env.example`](../env.example)), затем идите **только** по своей ветке:
+Тип трекера и URL API выбираются при онбординге (`/register`) и меняются в админке «Трекер» без перезапуска. После первой синхронизации тип трекера зафиксирован. Дальше идите **только** по своей ветке:
 
-| Если `ISSUE_TRACKER_PROVIDER`… | Смотрите раздел |
-|--------------------------------|-----------------|
-| `tracker` или `yandex-tracker` | [Ветка A — Яндекс Трекер](#ветка-a--яндекс-трекер) |
-| `jira-cloud` | [Ветка B — Jira Cloud](#ветка-b--jira-cloud) |
-| `jira-onprem` | [Ветка C — Jira Data Center / Server](#ветка-c--jira-data-center--server) |
-| `jira` (алиас) | cloud или on-prem по виду `TRACKER_API_URL` → ветка B или C |
+| Тип трекера | Смотрите раздел |
+|-------------|-----------------|
+| Яндекс Трекер (`tracker`) | [Ветка A — Яндекс Трекер](#ветка-a--яндекс-трекер) |
+| Jira Cloud (`jira-cloud`) | [Ветка B — Jira Cloud](#ветка-b--jira-cloud) |
+| Jira Data Center / Server (`jira-onprem`) | [Ветка C — Jira Data Center / Server](#ветка-c--jira-data-center--server) |
 
 Общее для всех: [Что общее](#что-общее) и [Где настраивать](#где-настраивать).
 
+Обновление инстанса, где трекер был задан в env: один раз перенесите прежние значения в БД.
+
 ```bash
-# Один из вариантов:
-ISSUE_TRACKER_PROVIDER=tracker      # → ветка A
-# ISSUE_TRACKER_PROVIDER=jira-cloud # → ветка B
-# ISSUE_TRACKER_PROVIDER=jira-onprem # → ветка C
+./scripts/db/psql-with-schema.sh -d beer_tracker \
+  -v provider=jira-onprem -v api_url=https://jira.example.com/rest/api/2 \
+  -f database/add-organization-issue-tracker-settings.sql
 ```
+
+Без миграции организации на Jira и организации без сохранённого трекера считаются неподключёнными, пока админ не сохранит трекер в админке.
 
 Код провайдера: `lib/issueTrackerProvider/` (registry + адаптеры). HTTP-роуты должны ходить в provider-client, а не в Yandex/Jira API напрямую.
 
@@ -28,11 +30,7 @@ ISSUE_TRACKER_PROVIDER=tracker      # → ветка A
 
 ## Ветка A — Яндекс Трекер
 
-```bash
-ISSUE_TRACKER_PROVIDER=tracker
-# или алиас: yandex-tracker
-TRACKER_API_URL=https://api.tracker.yandex.net/v3
-```
+URL API необязателен: по умолчанию `https://api.tracker.yandex.net/v3`.
 
 ### 1. OAuth-приложение Яндекс ID (обязательно для кнопки «получить токен»)
 
@@ -51,8 +49,7 @@ YANDEX_OAUTH_CLIENT_ID=ваш_client_id
 
 ### 2. Организация в админке
 
-- **Cloud Organization ID** (org id Яндекс 360 / Cloud для API Трекера) — в админке организации, не в общем env.
-- Опционально серверный fallback-токен: `TRACKER_OAUTH_TOKEN` в `.env`.
+- **Cloud Organization ID** (org id Яндекс 360 / Cloud для API Трекера) и OAuth-токен организации — в админке «Трекер», не в env. Токен хранится в БД в зашифрованном виде.
 
 ### 3. Пользователь
 
@@ -69,9 +66,9 @@ YANDEX_OAUTH_CLIENT_ID=ваш_client_id
 | Пользователь | Atlassian OAuth 2.0 (3LO) | `/auth-setup`, `/register` — кнопка **«Продолжить с Atlassian»** / **Continue with Atlassian** |
 | Организация | email + API-токен (Basic) | админка «Трекер» — sync, каталог полей, org-вызовы |
 
+URL API в настройках организации: `https://your-site.atlassian.net/rest/api/3`.
+
 ```bash
-ISSUE_TRACKER_PROVIDER=jira-cloud
-TRACKER_API_URL=https://your-site.atlassian.net/rest/api/3
 ATLASSIAN_OAUTH_CLIENT_ID=…
 ATLASSIAN_OAUTH_CLIENT_SECRET=…
 ```
@@ -98,10 +95,10 @@ REST пользователя: `https://api.atlassian.com/ex/jira/{cloudId}/rest
 
 ### 2. Организация в админке
 
-Email Atlassian-аккаунта + **API-токен** (Basic к site `TRACKER_API_URL` на `*.atlassian.net`).  
+Email Atlassian-аккаунта + **API-токен** (Basic к site из URL API организации на `*.atlassian.net`).  
 Это **не** пользовательский OAuth: отдельный секрет для sync и каталога. Help: [Atlassian API tokens](https://id.atlassian.com/manage-profile/security/api-tokens).
 
-### 3. `TRACKER_API_URL`
+### 3. URL API
 
 Site REST (`https://your-site.atlassian.net/rest/api/3`) и ссылки `/browse/{key}`. Живые user-вызовы к API идут через `api.atlassian.com` (см. выше).
 
@@ -109,10 +106,7 @@ Site REST (`https://your-site.atlassian.net/rest/api/3`) и ссылки `/brows
 
 ## Ветка C — Jira Data Center / Server
 
-```bash
-ISSUE_TRACKER_PROVIDER=jira-onprem
-TRACKER_API_URL=https://jira.example.com/rest/api/2
-```
+URL API в настройках организации: `https://jira.example.com/rest/api/2`.
 
 - **Не нужен** `YANDEX_OAUTH_CLIENT_ID`.
 - Auth: **personal access token (PAT)** в профиле Jira  
@@ -126,13 +120,13 @@ TRACKER_API_URL=https://jira.example.com/rest/api/2
 - Задачи, статусы, спринты/доски живут во внешнем трекере.
 - Планер хранит позиции, связи, цели, availability в PostgreSQL.
 - Пользовательская учётка — в браузере; в API — `X-Tracker-Token` (+ для Jira Cloud OAuth: `X-Tracker-Cloud-Id`).
-- Опциональный серверный fallback-токен в env — README / `env.example`.
+- Токен организации для синхронизации и каталога — в админке «Трекер», в БД, не в env.
 - Фоновый sync (`pnpm sync-worker`) пишет `issue_snapshots` для любого провайдера.
 
 ## Где настраивать
 
-1. **Инстанс** — `.env`: `ISSUE_TRACKER_PROVIDER`, `TRACKER_API_URL` (+ ветка A: `YANDEX_OAUTH_CLIENT_ID`; ветка B: `ATLASSIAN_OAUTH_*`).
-2. **Организация** — админка «Трекер» / integration (ветка B: email + API-токен).
+1. **Инстанс** — `.env`: только OAuth-приложения (ветка A: `YANDEX_OAUTH_CLIENT_ID`; ветка B: `ATLASSIAN_OAUTH_*`).
+2. **Организация** — `/register` и админка «Трекер»: тип трекера, URL API, учётка (ветка B: email + API-токен).
 3. **Пользователь** — `/auth-setup` или `/register` (ветка B: OAuth; вкладка токена в настройках скрыта). Для Yandex / Jira on-prem — также вкладка трекера в настройках.
 
 Поля env: [`env.example`](../env.example).  

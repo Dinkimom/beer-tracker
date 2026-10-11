@@ -3,6 +3,7 @@ import type {
   IssueTrackerCreateIssueLinkInput,
   IssueTrackerIssueLink,
 } from './issueLinkTypes';
+import type { TrackerWebUrlContext } from './issueTrackerUi';
 import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task } from '@/types';
 import type {
@@ -24,7 +25,9 @@ export type IssueTrackerProviderKind = (typeof ISSUE_TRACKER_PROVIDER_KINDS)[num
 /** Адаптер и payload снимков: Yandex Tracker vs Jira (Cloud и DC — один REST-адаптер). */
 export type IssueTrackerStoredProvider = 'jira' | 'yandex-tracker';
 
-export function isJiraProviderKind(kind: IssueTrackerProviderKind): boolean {
+export function isJiraProviderKind(
+  kind: IssueTrackerProviderKind
+): kind is 'jira-cloud' | 'jira-onprem' {
   return kind === 'jira-cloud' || kind === 'jira-onprem';
 }
 
@@ -32,6 +35,13 @@ export function issueTrackerStoredProvider(
   kind: IssueTrackerProviderKind
 ): IssueTrackerStoredProvider {
   return isJiraProviderKind(kind) ? 'jira' : 'yandex-tracker';
+}
+
+/** Ссылки на задачи для маппинга снапшотов тем же трекером, что и клиент. */
+export function issueTrackerClientWebContext(
+  client: Pick<IssueTrackerProviderClient, 'providerKind' | 'webBaseUrl'>
+): TrackerWebUrlContext {
+  return { kind: client.providerKind, webBaseUrl: client.webBaseUrl };
 }
 
 export function issueTrackerProviderI18nSuffix(
@@ -306,6 +316,10 @@ export interface IssueTrackerIssueSearchOptions {
 }
 
 export interface IssueTrackerProviderClient {
+  /** Трекер организации, для которой создан клиент. */
+  readonly providerKind: IssueTrackerProviderKind;
+  /** Browser base ссылок на задачи этой организации. */
+  readonly webBaseUrl: string;
   addIssueComment(issueKey: string, text: string): Promise<void>;
   addIssueToSprint(
     issueKey: string,
@@ -431,12 +445,17 @@ export interface YandexTrackerClientConfig {
   orgId: string;
 }
 
-/** Skeleton config; поля будут расширены при реализации Jira REST. */
 export interface JiraTrackerClientConfig {
   apiToken: string;
   apiUrl?: string;
   /** Jira Cloud Basic auth; пусто — Bearer PAT. */
   email?: string;
+}
+
+export interface JiraProviderClientConfig extends JiraTrackerClientConfig {
+  kind: 'jira-cloud' | 'jira-onprem';
+  /** От URL сайта: при user OAuth `apiUrl` указывает на шлюз api.atlassian.com. */
+  webBaseUrl: string;
 }
 
 interface IssueTrackerProviderBase {
@@ -453,7 +472,7 @@ export interface YandexIssueTrackerProvider extends IssueTrackerProviderBase {
 
 export interface JiraIssueTrackerProvider extends IssueTrackerProviderBase {
   kind: 'jira';
-  createProviderClient(config: JiraTrackerClientConfig): IssueTrackerProviderClient;
+  createProviderClient(config: JiraProviderClientConfig): IssueTrackerProviderClient;
 }
 
 export type IssueTrackerProvider = JiraIssueTrackerProvider | YandexIssueTrackerProvider;

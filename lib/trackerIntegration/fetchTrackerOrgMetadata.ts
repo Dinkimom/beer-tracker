@@ -2,9 +2,9 @@
  * Метаданные трекера для админки (поля, статусы) — сервер, org-токен.
  */
 
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { AxiosInstance } from 'axios';
 
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import {
   fetchJiraFieldEnumValues,
   fetchJiraOrganizationFields,
@@ -28,9 +28,10 @@ export type { TrackerMetadataFieldDto, TrackerMetadataStatusDto };
  * GET /v3/fields — глобальные поля организации.
  */
 export async function fetchTrackerOrganizationFields(
-  api: AxiosInstance
+  api: AxiosInstance,
+  kind: IssueTrackerProviderKind
 ): Promise<TrackerMetadataFieldDto[]> {
-  if (isJiraProviderKind(getIssueTrackerProviderKind())) {
+  if (isJiraProviderKind(kind)) {
     return fetchJiraOrganizationFields(api);
   }
   const { data } = await api.get<unknown>(`${TRACKER_V3_BASE}/fields`);
@@ -49,9 +50,10 @@ export async function fetchTrackerOrganizationFields(
  * GET /v3/statuses — список статусов (если метод доступен для организации).
  */
 export async function fetchTrackerOrganizationStatuses(
-  api: AxiosInstance
+  api: AxiosInstance,
+  kind: IssueTrackerProviderKind
 ): Promise<TrackerMetadataStatusDto[]> {
-  if (isJiraProviderKind(getIssueTrackerProviderKind())) {
+  if (isJiraProviderKind(kind)) {
     return fetchJiraOrganizationStatuses(api);
   }
   try {
@@ -74,9 +76,10 @@ export async function fetchTrackerOrganizationStatuses(
 
 export async function fetchTrackerFieldEnumValues(
   api: AxiosInstance,
+  kind: IssueTrackerProviderKind,
   fieldId: string
 ): Promise<string[]> {
-  if (isJiraProviderKind(getIssueTrackerProviderKind())) {
+  if (isJiraProviderKind(kind)) {
     return fetchJiraFieldEnumValues(api, fieldId);
   }
   const id = fieldId.trim();

@@ -9,6 +9,7 @@ import { resolveParams } from '@/lib/nextjs-utils';
 import { fetchEpicDeepFromSnapshots } from '@/lib/snapshots';
 import { mapTrackerIssueToTask } from '@/lib/trackerApi';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
+import { resolveTrackerWebUrlContextForOrganizationId } from '@/lib/trackerRequestConfig';
 
 const EPIC_DEEP_CACHE_TTL = 3 * 60;
 
@@ -51,9 +52,10 @@ export async function GET(
       return NextResponse.json(cached);
     }
 
-    const [{ epic, stories }, integration] = await Promise.all([
+    const [{ epic, stories }, integration, trackerWeb] = await Promise.all([
       fetchEpicDeepFromSnapshots(organizationId, epicKey),
       loadTrackerIntegrationForOrganization(organizationId),
+      resolveTrackerWebUrlContextForOrganizationId(organizationId),
     ]);
 
     const response: EpicDeepApiResponse = {
@@ -66,7 +68,7 @@ export async function GET(
           key: story.key,
           summary: story.summary,
         },
-        tasks: tasks.map((issue) => mapTrackerIssueToTask(issue, integration)),
+        tasks: tasks.map((issue) => mapTrackerIssueToTask(issue, trackerWeb, integration)),
       })),
     };
 

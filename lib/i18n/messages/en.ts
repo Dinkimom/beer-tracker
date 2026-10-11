@@ -68,6 +68,22 @@ export const enMessages = {
         jira: 'Jira',
         'yandex-tracker': 'Yandex Tracker',
       },
+      providerLabel: 'Issue tracker',
+      providerOption: {
+        tracker: 'Yandex Tracker',
+        'jira-cloud': 'Jira Cloud',
+        'jira-onprem': 'Jira Server / Data Center',
+      },
+      providerLocked: 'The tracker cannot be changed after the first sync.',
+      apiUrlLabel: 'Tracker API URL',
+      apiUrlPlaceholder: {
+        'jira-cloud': 'https://your-site.atlassian.net/rest/api/3',
+        'jira-onprem': 'https://jira.example.com/rest/api/2',
+      },
+      apiUrlHint: {
+        'jira-cloud': 'REST API of your Atlassian site: https://<site>.atlassian.net/rest/api/3.',
+        'jira-onprem': 'REST API of your Jira server, usually …/rest/api/2.',
+      },
     },
   },
   header: {
@@ -627,6 +643,8 @@ export const enMessages = {
         'jira-cloud':
           'Create the first organization. Continue with Atlassian as the administrator who links Jira.',
       },
+      atlassianConnectedSite: 'Atlassian connected: {site}',
+      atlassianRequired: 'Click “Continue with Atlassian” first to connect your Jira Cloud site.',
       onboardingSubmit: 'Create organization and administrator',
       closedTitle: 'Registration is closed',
       closedDescription:
@@ -1764,10 +1782,7 @@ export const enMessages = {
       nav: {
         organization: 'Organization',
         members: 'Users',
-        tracker: {
-          jira: 'Jira',
-          'yandex-tracker': 'Yandex Tracker',
-        },
+        tracker: 'Tracker',
         teams: 'Teams',
         roles: 'Roles',
         planner: 'Planner',
@@ -1775,9 +1790,9 @@ export const enMessages = {
         sync: 'Synchronization',
       },
       trackerNavLockTitle: {
-        jira: 'Connect Jira first: save a personal access token under Jira.',
+        jira: 'Connect Jira first: save an access token under Tracker.',
         'yandex-tracker':
-          'Connect Yandex Tracker first: set Cloud Organization ID and save the OAuth token under Yandex Tracker.',
+          'Connect Yandex Tracker first: set Cloud Organization ID and save the OAuth token under Tracker.',
       },
       trackerIncompleteAria: {
         jira: 'Jira — integration not configured',
@@ -1852,10 +1867,11 @@ export const enMessages = {
       },
       description: {
         jira:
-          'The Jira site URL is set on this instance. For sync and the field catalog, save the Atlassian account email and API token. Users sign in with Continue with Atlassian. You can verify before saving; secrets are stored encrypted on the server.',
+          'For sync and the field catalog, save the organization access token for Jira. You can verify before saving; secrets are stored encrypted on the server.',
         'yandex-tracker':
           'Cloud Organization ID and OAuth token are both required to access the API. You can verify before saving; secrets are stored encrypted on the server.',
       },
+      jiraCloudSite: 'Jira Cloud site: {site}',
       tokenSaved: 'Token saved',
       notConfigured: 'Not configured',
       orgIdLabel: {

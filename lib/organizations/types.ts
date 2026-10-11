@@ -2,6 +2,8 @@
  * Строки таблиц tenant-ядра (organizations, organization_members).
  */
 
+import type { OrganizationIssueTrackerPublicDto } from '@/lib/issueTrackerProvider/settings';
+
 export type OrgMemberRole = 'member' | 'org_admin' | 'team_lead';
 
 export interface OrganizationRow {
@@ -32,6 +34,8 @@ export interface UserOrganizationSummary {
   /** Доступ к планеру: org_admin или есть команда (после enrich). */
   canUsePlanner?: boolean;
   initial_sync_completed_at: Date | null;
+  /** `null` — трекер ещё не подключён. */
+  issueTracker: OrganizationIssueTrackerPublicDto | null;
   /**
    * Команды под управлением тимлида. `null` — org_admin (все команды); `[]` — нет роли тимлида.
    */

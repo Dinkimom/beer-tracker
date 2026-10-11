@@ -2,6 +2,7 @@
  * Tracker API: задачи, поиск, маппинг (только сервер).
  */
 
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task, Developer } from '@/types';
 import type { ChecklistItem, TrackerIssue } from '@/types/tracker';
@@ -40,10 +41,11 @@ export function formatTrackerApiDateTimeUtc(d: Date): string {
  */
 export function mapTrackerIssueToTask(
   issue: TrackerIssue,
+  trackerWeb: TrackerWebUrlContext,
   integration?: TrackerIntegrationStored | null,
   options?: MapTrackerIssueToTaskOptions
 ): Task {
-  const base = mapTrackerIssueToTaskBase(issue, options);
+  const base = mapTrackerIssueToTaskBase(issue, trackerWeb, options);
   return applyTrackerIntegrationToTask(issue, base, integration ?? null);
 }
 

@@ -4,14 +4,16 @@ import { rejectUnsupportedIssueTrackerCapability } from './issueTrackerCapabilit
 
 describe('rejectUnsupportedIssueTrackerCapability', () => {
   afterEach(() => {
-    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
   it('returns 422 for unimplemented Jira catalog holes', async () => {
-    vi.stubEnv('ISSUE_TRACKER_PROVIDER', 'jira-cloud');
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    const res = rejectUnsupportedIssueTrackerCapability('supportsFieldCatalog', 'getField');
+    const res = rejectUnsupportedIssueTrackerCapability(
+      'jira-cloud',
+      'supportsFieldCatalog',
+      'getField'
+    );
     expect(res).not.toBeNull();
     expect(res?.status).toBe(422);
     expect(await res?.json()).toMatchObject({
@@ -22,7 +24,8 @@ describe('rejectUnsupportedIssueTrackerCapability', () => {
   });
 
   it('lets Yandex-shaped capabilities through', () => {
-    vi.stubEnv('ISSUE_TRACKER_PROVIDER', 'tracker');
-    expect(rejectUnsupportedIssueTrackerCapability('supportsFieldCatalog', 'getField')).toBeNull();
+    expect(
+      rejectUnsupportedIssueTrackerCapability('tracker', 'supportsFieldCatalog', 'getField')
+    ).toBeNull();
   });
 });

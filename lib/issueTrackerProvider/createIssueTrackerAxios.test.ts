@@ -1,14 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { createJiraAxiosInstance } from '@/lib/issueTrackerProvider/jiraAxios';
 import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
 
 import { createIssueTrackerAxiosForCredentials } from './createIssueTrackerAxios';
-
-vi.mock('@/lib/env', () => ({
-  getIssueTrackerProviderKind: vi.fn(() => 'tracker'),
-}));
 
 vi.mock('@/lib/issueTrackerProvider/jiraAxios', () => ({
   createJiraAxiosInstance: vi.fn(() => ({ kind: 'jira' })),
@@ -20,7 +15,6 @@ vi.mock('@/lib/trackerAxiosFactory', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(getIssueTrackerProviderKind).mockReturnValue('tracker');
 });
 
 describe('createIssueTrackerAxiosForCredentials', () => {
@@ -30,8 +24,10 @@ describe('createIssueTrackerAxiosForCredentials', () => {
     orgId: 'jira',
   };
 
-  it('uses Yandex OAuth axios by default', () => {
-    expect(createIssueTrackerAxiosForCredentials(config)).toEqual({ kind: 'yandex' });
+  it('uses Yandex OAuth axios for the tracker provider', () => {
+    expect(
+      createIssueTrackerAxiosForCredentials({ ...config, providerKind: 'tracker' })
+    ).toEqual({ kind: 'yandex' });
     expect(createTrackerAxiosInstance).toHaveBeenCalledWith({
       apiUrl: config.apiUrl,
       oauthToken: 'pat-1',
@@ -40,9 +36,10 @@ describe('createIssueTrackerAxiosForCredentials', () => {
     expect(createJiraAxiosInstance).not.toHaveBeenCalled();
   });
 
-  it('uses Jira Bearer/Basic axios when ISSUE_TRACKER_PROVIDER is jira', () => {
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-onprem');
-    expect(createIssueTrackerAxiosForCredentials(config)).toEqual({ kind: 'jira' });
+  it('uses Jira Bearer/Basic axios for jira-onprem', () => {
+    expect(
+      createIssueTrackerAxiosForCredentials({ ...config, providerKind: 'jira-onprem' })
+    ).toEqual({ kind: 'jira' });
     expect(createJiraAxiosInstance).toHaveBeenCalledWith({
       apiToken: 'pat-1',
       apiUrl: config.apiUrl,
@@ -52,8 +49,9 @@ describe('createIssueTrackerAxiosForCredentials', () => {
   });
 
   it('uses Jira axios for jira-cloud (Bearer OAuth; email unused)', () => {
-    vi.mocked(getIssueTrackerProviderKind).mockReturnValue('jira-cloud');
-    expect(createIssueTrackerAxiosForCredentials(config)).toEqual({ kind: 'jira' });
+    expect(
+      createIssueTrackerAxiosForCredentials({ ...config, providerKind: 'jira-cloud' })
+    ).toEqual({ kind: 'jira' });
     expect(createJiraAxiosInstance).toHaveBeenCalledWith({
       apiToken: 'pat-1',
       apiUrl: config.apiUrl,

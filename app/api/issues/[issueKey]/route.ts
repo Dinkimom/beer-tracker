@@ -4,7 +4,6 @@ import { handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
 import { getRouteParam } from '@/lib/api-utils';
 import { apiCache, cacheKeys } from '@/lib/cache';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import {
   buildIssueDetailResponse,
   loadIssueTrackerChecklistItems,
@@ -61,7 +60,7 @@ export async function GET(
     const checklistItems = await loadIssueTrackerChecklistItems(
       issueTracker,
       validIssueKey,
-      getIssueTrackerProviderKind()
+      issueTracker.providerKind
     );
     const responseData = buildIssueDetailResponse(issue, checklistItems);
     apiCache.set(cacheKey, responseData, 60);

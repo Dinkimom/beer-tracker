@@ -1,4 +1,11 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { useI18n } from "@/contexts/LanguageContext";
 
@@ -35,6 +42,16 @@ export interface TrackerIntegrationFieldRow {
   name?: string;
   options?: string[];
   schemaType?: string;
+}
+
+function withUserEditMark<T>(
+  setter: Dispatch<SetStateAction<T>>,
+  markUserEdited: () => void,
+): Dispatch<SetStateAction<T>> {
+  return (value) => {
+    markUserEdited();
+    setter(value);
+  };
 }
 
 interface UseTrackerIntegrationFormStateParams {
@@ -174,8 +191,30 @@ export function useTrackerIntegrationFormState({
     [configBase, draftConfig],
   );
 
+  /** Автодефолты тоже меняют черновик; уход со страницы блокируют только правки пользователя. */
+  const [userEdited, setUserEdited] = useState(false);
+  const hasUserUnsavedChanges = userEdited && hasUnsavedChanges;
+
+  const userSetters = useMemo(() => {
+    const mark = () => setUserEdited(true);
+    return {
+      setDevAssigneeFieldId: withUserEditMark(setDevAssigneeFieldId, mark),
+      setDevEstimateFieldId: withUserEditMark(setDevEstimateFieldId, mark),
+      setEmbeddedTestingOnlyJoins: withUserEditMark(setEmbeddedTestingOnlyJoins, mark),
+      setEmbeddedTestingOnlyRules: withUserEditMark(setEmbeddedTestingOnlyRules, mark),
+      setPlatformFieldId: withUserEditMark(setPlatformFieldId, mark),
+      setPlatformValueMap: withUserEditMark(setPlatformValueMap, mark),
+      setQaEngineerFieldId: withUserEditMark(setQaEngineerFieldId, mark),
+      setQaEstimateFieldId: withUserEditMark(setQaEstimateFieldId, mark),
+      setReleaseMrFieldId: withUserEditMark(setReleaseMrFieldId, mark),
+      setStatusPaletteByKey: withUserEditMark(setStatusPaletteByKey, mark),
+      setTestingFlowMode: withUserEditMark(setTestingFlowMode, mark),
+    };
+  }, []);
+
   const applyLoadedConfig = useCallback(
     (cfg: TrackerConfigShape | undefined) => {
+      setUserEdited(false);
       setConfigBase(cloneConfigWithoutRevision(cfg));
       const setters = {
         initialIntegrationSnapshotRef,
@@ -259,6 +298,7 @@ export function useTrackerIntegrationFormState({
     embeddedTestingOnlyRules,
     fieldSelectOptions,
     hasUnsavedChanges,
+    hasUserUnsavedChanges,
     numericFieldSelectOptions,
     platformFieldId,
     platformFieldValues,
@@ -271,19 +311,9 @@ export function useTrackerIntegrationFormState({
     releaseMrFieldId,
     reloadConfirmArmed,
     setActiveSubtab,
-    setDevAssigneeFieldId,
-    setDevEstimateFieldId,
-    setEmbeddedTestingOnlyJoins,
-    setEmbeddedTestingOnlyRules,
-    setPlatformFieldId,
     setPlatformMappingFilter,
-    setPlatformValueMap,
-    setQaEngineerFieldId,
-    setQaEstimateFieldId,
-    setReleaseMrFieldId,
     setReloadConfirmArmed,
-    setStatusPaletteByKey,
-    setTestingFlowMode,
+    ...userSetters,
     statusPaletteByKey,
     statusRowsByCategory,
     statusTableRows,

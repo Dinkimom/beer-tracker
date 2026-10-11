@@ -1,9 +1,12 @@
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { TrackerIssue } from '@/types/tracker';
 
 import { describe, expect, it } from 'vitest';
 
 import { mapIssueSnapshotPayloadToTask } from './issueSnapshotMapper';
 import { normalizeYandexIssue } from './yandexTrackerProvider';
+
+const TRACKER_WEB: TrackerWebUrlContext = { kind: 'tracker', webBaseUrl: 'https://tracker.yandex.ru' };
 
 const yandexSnapshotIssue: TrackerIssue = {
   CustomStoryPoints: 8,
@@ -17,7 +20,7 @@ const yandexSnapshotIssue: TrackerIssue = {
 describe('mapIssueSnapshotPayloadToTask', () => {
   it('maps a legacy Yandex snapshot payload through the provider issue shape', () => {
     expect(
-      mapIssueSnapshotPayloadToTask(yandexSnapshotIssue, {
+      mapIssueSnapshotPayloadToTask(yandexSnapshotIssue, TRACKER_WEB, {
         configRevision: 1,
         testingFlow: {
           devEstimateFieldId: 'CustomStoryPoints',
@@ -34,7 +37,7 @@ describe('mapIssueSnapshotPayloadToTask', () => {
   it('maps an already normalized provider issue snapshot', () => {
     const providerIssue = normalizeYandexIssue(yandexSnapshotIssue);
 
-    expect(mapIssueSnapshotPayloadToTask(providerIssue)).toMatchObject({
+    expect(mapIssueSnapshotPayloadToTask(providerIssue, TRACKER_WEB)).toMatchObject({
       id: 'BT-W2-SNAPSHOT',
       name: 'Snapshot issue',
       originalStatus: 'inProgress',
@@ -47,7 +50,7 @@ describe('mapIssueSnapshotPayloadToTask', () => {
         payload: yandexSnapshotIssue,
         provider: 'yandex-tracker',
         schemaVersion: 1,
-      })
+      }, TRACKER_WEB)
     ).toMatchObject({
       id: 'BT-W2-SNAPSHOT',
       name: 'Snapshot issue',
@@ -68,7 +71,7 @@ describe('mapIssueSnapshotPayloadToTask', () => {
           },
           provider: 'jira',
           schemaVersion: 1,
-        },
+        }, TRACKER_WEB,
         {
           configRevision: 1,
           testingFlow: {

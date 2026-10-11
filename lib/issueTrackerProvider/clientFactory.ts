@@ -11,6 +11,7 @@ import {
 } from '@/lib/trackerRequestConfig';
 
 import { resolveIssueTrackerProvider } from './registry';
+import { isJiraProviderKind } from './types';
 
 interface ResolvedTrackerApiConfig {
   apiUrl: string;
@@ -18,17 +19,20 @@ interface ResolvedTrackerApiConfig {
   oauthToken: string;
   orgId: string;
   providerKind: IssueTrackerProviderKind;
+  webBaseUrl: string;
 }
 
 export function createIssueTrackerProviderClientFromResolvedConfig(
   config: ResolvedTrackerApiConfig
 ): IssueTrackerProviderClient {
   const provider = resolveIssueTrackerProvider(config.providerKind);
-  if (provider.kind === 'jira') {
+  if (isJiraProviderKind(config.providerKind)) {
     return (provider as JiraIssueTrackerProvider).createProviderClient({
       apiToken: config.oauthToken,
       apiUrl: config.apiUrl,
       email: config.jiraEmail,
+      kind: config.providerKind,
+      webBaseUrl: config.webBaseUrl,
     });
   }
   return (provider as YandexIssueTrackerProvider).createProviderClient({

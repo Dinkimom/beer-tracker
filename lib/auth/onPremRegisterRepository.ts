@@ -1,10 +1,10 @@
+import type { OrganizationIssueTrackerConfig } from '@/lib/issueTrackerProvider/settings';
 import type { PoolClient } from 'pg';
 
 import { NextResponse } from 'next/server';
 
 import { allocateUniqueOrganizationSlug } from '@/lib/auth/orgSlug';
 import { pool, qualifyBeerTrackerTables } from '@/lib/db';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { mergeOrganizationSettingsIssueTrackerPatch } from '@/lib/issueTrackerProvider/settings';
 import { sqlExcludingDemoSystemOrganization } from '@/lib/onPrem/demoSystemOrganizationConstants';
 import { buildDefaultTrackerIntegrationStored, mergeOrganizationSettingsTrackerIntegration } from '@/lib/trackerIntegration';
@@ -31,6 +31,7 @@ interface RegisterOnPremFirstUserInput {
   /** @deprecated Jira Cloud OAuth uses cloudId. */
   jiraBasicAuthEmail?: string;
   orgName: string;
+  tracker: OrganizationIssueTrackerConfig;
   trackerOrgId: string;
   trackerUserId: string | null;
 }
@@ -135,8 +136,9 @@ async function runOnPremFirstUserTransaction(input: RegisterOnPremFirstUserInput
     buildDefaultTrackerIntegrationStored(0)
   );
   settings = mergeOrganizationSettingsIssueTrackerPatch(settings, {
+    apiUrl: input.tracker.apiUrl,
     cloudId: input.cloudId,
-    provider: getIssueTrackerProviderKind(),
+    provider: input.tracker.kind,
   });
   const client = await pool.connect();
   try {

@@ -1,7 +1,6 @@
-import type { IssueTrackerIssuePatch } from './types';
+import type { IssueTrackerIssuePatch, IssueTrackerProviderKind } from './types';
 import type { AxiosInstance } from 'axios';
 
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import { extractTrackerMetadataArray } from '@/lib/trackerIntegration/fetchTrackerOrgMetadataHelpers';
 
 import { splitIssueTrackerIssuePatch } from './issueTrackerIssuePatch';
@@ -358,11 +357,12 @@ async function readJiraUser(
 
 async function searchJiraUserIdentity(
   api: AxiosInstance,
-  id: string
+  id: string,
+  kind: IssueTrackerProviderKind
 ): Promise<{ accountId?: string; email?: string; key?: string; name?: string } | null> {
   try {
     const { data } = await api.get<unknown>('/user/search', {
-      params: jiraUserSearchRequestParams(id, getIssueTrackerProviderKind(), 5),
+      params: jiraUserSearchRequestParams(id, kind, 5),
     });
     const rows = Array.isArray(data) ? data : [];
     const users = rows
@@ -376,13 +376,14 @@ async function searchJiraUserIdentity(
 
 async function lookupJiraUserIdentity(
   api: AxiosInstance,
-  id: string
+  id: string,
+  kind: IssueTrackerProviderKind
 ): Promise<{ accountId?: string; email?: string; key?: string; name?: string } | null> {
   return (
     (await readJiraUser(api, { username: id })) ??
     (await readJiraUser(api, { key: id })) ??
     (await readJiraUser(api, { accountId: id })) ??
-    (await searchJiraUserIdentity(api, id))
+    (await searchJiraUserIdentity(api, id, kind))
   );
 }
 
@@ -405,14 +406,15 @@ function jiraAssigneePutBodyFromUser(
 async function putJiraIssueAssignee(
   api: AxiosInstance,
   issueKey: string,
-  value: unknown
+  value: unknown,
+  kind: IssueTrackerProviderKind
 ): Promise<void> {
   const id = extractJiraUserId(value);
   if (!id) {
     await api.put(`${jiraIssuePath(issueKey)}/assignee`, { name: null });
     return;
   }
-  const user = await lookupJiraUserIdentity(api, id);
+  const user = await lookupJiraUserIdentity(api, id, kind);
   await api.put(
     `${jiraIssuePath(issueKey)}/assignee`,
     jiraAssigneePutBodyFromUser(id, user)
@@ -456,7 +458,8 @@ async function assignTestPointsField(
 export async function updateJiraIssue(
   api: AxiosInstance,
   issueKey: string,
-  patch: IssueTrackerIssuePatch
+  patch: IssueTrackerIssuePatch,
+  kind: IssueTrackerProviderKind
 ): Promise<unknown> {
   const key = issueKey.trim();
   const { fields, storyPoints, testPoints } = splitJiraIssueUpdatePatch(
@@ -472,7 +475,7 @@ export async function updateJiraIssue(
     await updateJiraStoryPoints(api, key, storyPoints);
   }
   if (assignee !== undefined) {
-    await putJiraIssueAssignee(api, key, assignee);
+    await putJiraIssueAssignee(api, key, assignee, kind);
   }
   if (parent !== undefined) {
     await putJiraIssueParent(api, key, parent);

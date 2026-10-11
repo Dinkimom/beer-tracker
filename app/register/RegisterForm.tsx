@@ -1,17 +1,20 @@
 'use client';
 
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
+
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { AuthPageLoadingFallback } from '@/components/AuthScreenChrome';
-import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKindContext';
+import { IssueTrackerProviderOverride } from '@/contexts/IssueTrackerProviderOverride';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useTrackerTokenStorage } from '@/hooks/useLocalStorage';
 import { useAtlassianOAuthClientTokenState } from '@/lib/atlassianOAuth/authSetupTokenState';
+import { parseIssueTrackerProviderKind } from '@/lib/issueTrackerProvider/providerKind';
 
 import { RegisterFormClosedView } from './RegisterFormClosedView';
 import { RegisterFormFields } from './RegisterFormFields';
-import { submitRegisterForm } from './registerFormSubmit';
+import { registerTrackerApiUrl, submitRegisterForm } from './registerFormSubmit';
 import { useRegisterSetupState } from './useRegisterSetupState';
 
 export function RegisterForm() {
@@ -21,9 +24,14 @@ export function RegisterForm() {
   const next = searchParams.get('next') || '/admin';
   const { setupLoading, onPremMode, setupInitialized } = useRegisterSetupState();
   const [, setToken] = useTrackerTokenStorage();
-  const providerKind = useIssueTrackerProviderKind();
   const oauthState = useAtlassianOAuthClientTokenState();
 
+  const [providerKind, setProviderKind] = useState<IssueTrackerProviderKind>(
+    () => parseIssueTrackerProviderKind(searchParams.get('tracker')) ?? 'tracker'
+  );
+  const [trackerApiBaseUrl, setTrackerApiBaseUrl] = useState(
+    () => searchParams.get('trackerApi') ?? ''
+  );
   const [token, setTokenField] = useState('');
   const [trackerOrgId, setTrackerOrgId] = useState('');
   const [organizationName, setOrganizationName] = useState('');
@@ -35,16 +43,25 @@ export function RegisterForm() {
   const expiresAt = oauthState.expiresAt;
   const atlassianConnected = oauthState.atlassianConnected;
   const tokenForSubmit = (token.trim() || oauthState.token).trim();
+  const apiUrlForSubmit = registerTrackerApiUrl(providerKind, {
+    atlassianSiteUrl: oauthState.siteUrl,
+    typedApiUrl: trackerApiBaseUrl,
+  });
   const displayError = error || oauthState.error;
 
   const onboardingMode = onPremMode && !setupInitialized;
   const signInHref = `/auth-setup?next=${encodeURIComponent(next)}`;
+  const atlassianReturnPath = `/register?${new URLSearchParams({
+    next,
+    tracker: providerKind,
+    trackerApi: trackerApiBaseUrl.trim(),
+  }).toString()}`;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (providerKind === 'jira-cloud' && !cloudId.trim()) {
-      setError(t('auth.setup.jiraCloudEmailRequired'));
+    if (providerKind === 'jira-cloud' && (!cloudId.trim() || !apiUrlForSubmit)) {
+      setError(t('productAuth.register.atlassianRequired'));
       return;
     }
     setLoading(true);
@@ -53,9 +70,11 @@ export function RegisterForm() {
       expiresAt,
       onboardingMode,
       organizationName,
+      provider: providerKind,
       refreshToken,
       t,
       token: tokenForSubmit,
+      trackerApiBaseUrl: apiUrlForSubmit,
       trackerOrgId,
     });
     if (!result.ok) {
@@ -82,20 +101,26 @@ export function RegisterForm() {
   }
 
   return (
-    <RegisterFormFields
-      atlassianConnected={atlassianConnected}
-      error={displayError}
-      loading={loading}
-      onboardingMode={onboardingMode}
-      organizationName={organizationName}
-      signInHref={signInHref}
-      t={t}
-      token={token || oauthState.token}
-      trackerOrgId={trackerOrgId}
-      onOrganizationNameChange={setOrganizationName}
-      onSubmit={onSubmit}
-      onTokenChange={setTokenField}
-      onTrackerOrgIdChange={setTrackerOrgId}
-    />
+    <IssueTrackerProviderOverride apiUrl={apiUrlForSubmit} kind={providerKind}>
+      <RegisterFormFields
+        atlassianConnected={atlassianConnected}
+        atlassianReturnPath={atlassianReturnPath}
+        atlassianSiteUrl={oauthState.siteUrl}
+        error={displayError}
+        loading={loading}
+        onboardingMode={onboardingMode}
+        organizationName={organizationName}
+        signInHref={signInHref}
+        token={token || oauthState.token}
+        trackerApiBaseUrl={trackerApiBaseUrl}
+        trackerOrgId={trackerOrgId}
+        onOrganizationNameChange={setOrganizationName}
+        onProviderKindChange={setProviderKind}
+        onSubmit={onSubmit}
+        onTokenChange={setTokenField}
+        onTrackerApiBaseUrlChange={setTrackerApiBaseUrl}
+        onTrackerOrgIdChange={setTrackerOrgId}
+      />
+    </IssueTrackerProviderOverride>
   );
 }

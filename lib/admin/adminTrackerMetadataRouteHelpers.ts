@@ -1,3 +1,4 @@
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type {
   TrackerMetadataFieldDto,
   TrackerMetadataStatusDto,
@@ -9,6 +10,11 @@ import { NextResponse } from 'next/server';
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { createIssueTrackerAxiosForCredentials } from '@/lib/issueTrackerProvider/createIssueTrackerAxios';
 import {
+  getOrganizationTrackerCredentials,
+  organizationTrackerClientAuth,
+  type OrganizationTrackerCredentials,
+} from '@/lib/organizations/organizationTrackerCredentials';
+import {
   trackerAdminCatalogConnectionFingerprint,
   TRACKER_ADMIN_METADATA_TTL_SEC,
 } from '@/lib/trackerApi/trackerAdminCatalogCache';
@@ -18,17 +24,22 @@ import {
   fetchTrackerFieldEnumValues,
 } from '@/lib/trackerIntegration/fetchTrackerOrgMetadata';
 
+/** Клиент трекера с секретом организации: OAuth-пара Jira Cloud — через шлюз по cloudId. */
 export function createAdminTrackerMetadataAxios(input: {
   apiUrl: string;
-  jiraEmail?: string;
+  cloudId: string;
+  credentials: OrganizationTrackerCredentials;
+  jiraEmail: string;
   orgId: string;
-  token: string;
+  providerKind: IssueTrackerProviderKind;
 }): AxiosInstance {
+  const auth = organizationTrackerClientAuth(input);
   return createIssueTrackerAxiosForCredentials({
-    apiUrl: input.apiUrl,
-    jiraEmail: input.jiraEmail,
-    oauthToken: input.token,
+    apiUrl: auth.apiUrl,
+    jiraEmail: auth.jiraEmail,
+    oauthToken: input.credentials.accessToken,
     orgId: input.orgId,
+    providerKind: input.providerKind,
   });
 }
 
@@ -45,13 +56,12 @@ export function parseTrackerMetadataResource(
   return resource;
 }
 
-export async function resolveTrackerMetadataToken(
-  orgId: string,
-  getToken: (orgId: string) => Promise<string | null>
-): Promise<NextResponse | string> {
+export async function resolveTrackerMetadataCredentials(
+  orgId: string
+): Promise<NextResponse | OrganizationTrackerCredentials> {
   try {
-    const token = await getToken(orgId);
-    if (!token?.trim()) {
+    const credentials = await getOrganizationTrackerCredentials(orgId);
+    if (!credentials?.accessToken.trim()) {
       return NextResponse.json(
         {
           error:
@@ -60,7 +70,7 @@ export async function resolveTrackerMetadataToken(
         { status: 422 }
       );
     }
-    return token.trim();
+    return { ...credentials, accessToken: credentials.accessToken.trim() };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
@@ -69,6 +79,7 @@ export async function resolveTrackerMetadataToken(
 
 export async function fetchTrackerMetadataFieldValues(
   api: AxiosInstance,
+  kind: IssueTrackerProviderKind,
   fieldIdRaw: string | null
 ): Promise<NextResponse | { fieldId: string; values: unknown[] }> {
   const fieldId = (fieldIdRaw ?? '').trim();
@@ -78,13 +89,14 @@ export async function fetchTrackerMetadataFieldValues(
       { status: 400 }
     );
   }
-  const values = await fetchTrackerFieldEnumValues(api, fieldId);
+  const values = await fetchTrackerFieldEnumValues(api, kind, fieldId);
   return { fieldId, values };
 }
 
 export async function loadCachedTrackerOrgMetadata(args: {
   api: AxiosInstance;
   fingerprint: string;
+  kind: IssueTrackerProviderKind;
   orgId: string;
   resource: string;
 }): Promise<{ fields: TrackerMetadataFieldDto[]; statuses: TrackerMetadataStatusDto[] }> {
@@ -103,7 +115,7 @@ export async function loadCachedTrackerOrgMetadata(args: {
     : null;
 
   if (wantFields && !fields) {
-    fields = await fetchTrackerOrganizationFields(args.api);
+    fields = await fetchTrackerOrganizationFields(args.api, args.kind);
     apiCache.set(
       cacheKeys.adminTrackerOrgMetadata(args.orgId, args.fingerprint, 'fields'),
       fields,
@@ -111,7 +123,7 @@ export async function loadCachedTrackerOrgMetadata(args: {
     );
   }
   if (wantStatuses && !statuses) {
-    statuses = await fetchTrackerOrganizationStatuses(args.api);
+    statuses = await fetchTrackerOrganizationStatuses(args.api, args.kind);
     apiCache.set(
       cacheKeys.adminTrackerOrgMetadata(args.orgId, args.fingerprint, 'statuses'),
       statuses,

@@ -279,7 +279,7 @@ fetchBacklog(boardId: number, page?: number, perPage?: number): Promise<BacklogR
 - Чтение задач, бэклога, стори, эпиков, changelog из PostgreSQL (`issue_snapshots`)
 - Основные утилиты: `lib/snapshots/issueSnapshotRead.ts`, `lib/snapshots/backlogPayload.ts`
 
-**Вариант Б: Работа со спринтами или изменение данных** → добавляйте в `trackerApi.ts`
+**Вариант Б: Работа со спринтами или изменение данных** → вызывайте `IssueTrackerProviderClient` (`getIssueTrackerProviderClientFromRequest`)
 - Функция будет использоваться в серверных API routes
 - GET запросы к спринтам (не все спринты есть в экспортере)
 - POST/PUT/DELETE запросы (изменение данных в Tracker)
@@ -308,37 +308,18 @@ export async function mySnapshotFunction(
 }
 ```
 
-#### Пример для trackerApi.ts:
+#### Пример вызова трекера из route:
 
 ```typescript
+import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
+
 /**
- * Краткое описание функции
+ * URL API и токен берутся из организации (settings.issueTracker и секрет в БД)
+ * плюс X-Tracker-Token запроса. Переменных TRACKER_API_URL / TRACKER_OAUTH_TOKEN нет.
  */
-export async function myTrackerFunction(
-  param1: string,
-  param2?: number
-): Promise<MyReturnType> {
-  try {
-    const response = await fetch(`${TRACKER_API_URL}/endpoint/${param1}`, {
-      method: 'GET', // или POST, PATCH, DELETE
-      headers: {
-        Authorization: `OAuth ${TRACKER_OAUTH_TOKEN}`,
-        'X-Org-ID': '<cloud_org_id из контекста tenant / organizations.tracker_org_id>',
-        'Content-Type': 'application/json',
-      },
-      // Если нужен body:
-      body: JSON.stringify({ param2 }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to ...: ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error(`Failed to ...:`, error);
-    throw error; // или return null, в зависимости от логики
-  }
+export async function myTrackerFunction(request: Request, issueKey: string) {
+  const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
+  return issueTracker.getIssue(issueKey);
 }
 ```
 
@@ -841,7 +822,7 @@ console.error(`Failed to fetch sprints for board ${boardId}:`, error);
 
 | Ошибка | Причина | Решение |
 |--------|---------|---------|
-| 401 Unauthorized | Неверный токен | Проверьте `TRACKER_OAUTH_TOKEN` в `.env.local` |
+| 401 Unauthorized | Неверный токен | Проверьте токен пользователя (`X-Tracker-Token`) или токен организации в админке «Трекер» |
 | 404 Not Found | Неверный endpoint | Проверьте URL в запросе |
 | 500 Internal Error | Ошибка на сервере | Проверьте логи API route |
 | CORS Error | Проблема с CORS | Используйте API routes вместо прямых запросов |

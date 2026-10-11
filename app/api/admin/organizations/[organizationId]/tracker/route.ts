@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
 import { invalidateCache } from '@/lib/cache';
+import { ISSUE_TRACKER_PROVIDER_KINDS } from '@/lib/issueTrackerProvider/types';
 import {
   connectOrganizationTracker,
   getOrganizationTrackerAdminFormState,
@@ -11,13 +12,14 @@ import {
 const BodySchema = z.object({
   jiraEmail: z.string().max(320).optional(),
   oauthToken: z.string().optional(),
+  provider: z.enum(ISSUE_TRACKER_PROVIDER_KINDS).optional(),
   trackerApiBaseUrl: z.string().max(512).optional().nullable(),
   trackerOrgId: z.string().max(256).optional(),
 });
 
 /**
  * GET /api/admin/organizations/[organizationId]/tracker
- * org_admin: сохранённые Cloud Org ID, URL API (без секретов), флаг «токен уже в БД».
+ * org_admin: трекер, URL API, Cloud Org ID (без секретов), флаг «токен уже в БД».
  */
 export async function GET(
   request: Request,
@@ -38,7 +40,7 @@ export async function GET(
 
 /**
  * POST /api/admin/organizations/[organizationId]/tracker
- * org_admin: проверка в трекере → сохранение URL/org id и при необходимости токена → initial_full.
+ * org_admin: проверка в трекере → сохранение трекера/URL/org id и при необходимости токена → initial_full.
  * Пустой oauthToken: используется сохранённый токен (если менялись только org id / URL).
  */
 export async function POST(
@@ -69,6 +71,7 @@ export async function POST(
     jiraEmail: parsed.data.jiraEmail?.trim() || undefined,
     oauthToken: parsed.data.oauthToken ?? '',
     organizationId: auth.ctx.organizationId,
+    provider: parsed.data.provider,
     trackerApiBaseUrl: parsed.data.trackerApiBaseUrl,
     trackerOrgId: parsed.data.trackerOrgId ?? '',
     userId: auth.ctx.userId,

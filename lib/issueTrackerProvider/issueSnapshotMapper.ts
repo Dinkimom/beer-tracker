@@ -1,3 +1,4 @@
+import type { TrackerWebUrlContext } from './issueTrackerUi';
 import type { IssueTrackerIssue } from './types';
 import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task } from '@/types';
@@ -19,12 +20,13 @@ function isProviderIssue(payload: unknown): payload is IssueTrackerIssue {
 
 function mapProviderIssueToTask(
   issue: IssueTrackerIssue,
+  trackerWeb: TrackerWebUrlContext,
   integration?: TrackerIntegrationStored | null
 ): Task {
   switch (issue.provider) {
     case 'yandex-tracker':
     case 'jira':
-      return mapIssueTrackerIssueToTask(issue, integration);
+      return mapIssueTrackerIssueToTask(issue, trackerWeb, integration);
     default: {
       const exhaustive: never = issue.provider;
       throw new Error(`Unsupported issue tracker provider: ${exhaustive}`);
@@ -37,17 +39,19 @@ function mapProviderIssueToTask(
  */
 export function mapIssueSnapshotPayloadToTask(
   payload: unknown,
+  trackerWeb: TrackerWebUrlContext,
   integration?: TrackerIntegrationStored | null
 ): Task {
   const unwrapped = unwrapIssueSnapshotPayload(payload);
   if (isProviderIssue(unwrapped.payload)) {
-    return mapProviderIssueToTask(unwrapped.payload, integration);
+    return mapProviderIssueToTask(unwrapped.payload, trackerWeb, integration);
   }
   if (unwrapped.provider === 'jira') {
-    return mapTrackerIssueToTask(unwrapped.payload as TrackerIssue, integration);
+    return mapTrackerIssueToTask(unwrapped.payload as TrackerIssue, trackerWeb, integration);
   }
   return mapProviderIssueToTask(
     normalizeYandexIssue(unwrapped.payload as TrackerIssue),
+    trackerWeb,
     integration
   );
 }

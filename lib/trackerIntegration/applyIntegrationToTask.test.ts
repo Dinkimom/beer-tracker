@@ -1,4 +1,5 @@
 import type { TrackerIntegrationStored } from './schema';
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { TrackerIssue } from '@/types/tracker';
 
 import { describe, expect, it } from 'vitest';
@@ -6,6 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { mapTrackerIssueToTask } from '@/lib/trackerApi/issues';
 
 import { applyTrackerIntegrationToTask } from './applyIntegrationToTask';
+
+const TRACKER_WEB: TrackerWebUrlContext = { kind: 'tracker', webBaseUrl: 'https://tracker.yandex.ru' };
 
 function baseIssue(over: Partial<TrackerIssue> = {}): TrackerIssue {
   return {
@@ -21,13 +24,13 @@ function baseIssue(over: Partial<TrackerIssue> = {}): TrackerIssue {
 describe('applyTrackerIntegrationToTask', () => {
   it('leaves task unchanged without config', () => {
     const issue = baseIssue();
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     expect(applyTrackerIntegrationToTask(issue, task, null)).toEqual(task);
   });
 
   it('maps platform from field valueMap', () => {
     const issue = baseIssue({ functionalTeam: 'qa-squad' });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       platform: {
@@ -45,7 +48,7 @@ describe('applyTrackerIntegrationToTask', () => {
       status: { display: 'Done', key: 'closed' },
       statusType: { display: 'Done', key: 'done' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       statuses: {
@@ -63,7 +66,7 @@ describe('applyTrackerIntegrationToTask', () => {
       status: { display: 'Closed', key: 'customClosed' },
       statusType: { display: 'Done', key: 'done' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       statuses: {
@@ -80,7 +83,7 @@ describe('applyTrackerIntegrationToTask', () => {
       status: { display: 'Blocked', key: 'blocked' },
       statusType: { display: 'In Progress', key: 'inProgress' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       statuses: {
@@ -97,7 +100,7 @@ describe('applyTrackerIntegrationToTask', () => {
       status: { display: 'X', key: 'customstatus' },
       statusType: { display: 'T', key: 'type1' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       statuses: {
@@ -115,7 +118,7 @@ describe('applyTrackerIntegrationToTask', () => {
       status: { display: 'В работе', id: '10001', key: 'вработе' },
       statusType: { display: 'In Progress', key: 'inProgress' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       statuses: {
@@ -134,7 +137,7 @@ describe('applyTrackerIntegrationToTask', () => {
       status: { display: 'В работе', id: '10001', key: 'вработе' },
       statusType: { display: 'In Progress', key: 'inProgress' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       statuses: {
@@ -151,7 +154,7 @@ describe('applyTrackerIntegrationToTask', () => {
     const issue = baseIssue({
       status: { display: 'Исследование', id: '10001', key: 'исследование' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       statuses: {
@@ -169,7 +172,7 @@ describe('applyTrackerIntegrationToTask', () => {
     const issue = baseIssue({
       status: { display: 'X', key: 'in_progress' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       statuses: {
@@ -187,7 +190,7 @@ describe('applyTrackerIntegrationToTask', () => {
       status: { display: 'W', key: 'weirdstatus' },
       statusType: { display: 'In progress', key: 'inProgress' },
     });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     expect(task.status).toBeUndefined();
     const config: TrackerIntegrationStored = {
       configRevision: 1,
@@ -205,7 +208,7 @@ describe('applyTrackerIntegrationToTask', () => {
 
   it('sets testingOnlyByIntegrationRules when embedded user rules match', () => {
     const issue = baseIssue({ storyPoints: 0, testPoints: 5 });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       testingFlow: {
@@ -219,7 +222,7 @@ describe('applyTrackerIntegrationToTask', () => {
 
   it('does not set flag when no embedded user rules are configured', () => {
     const issue = baseIssue({ storyPoints: 2, testPoints: 4 });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       testingFlow: {
@@ -232,7 +235,7 @@ describe('applyTrackerIntegrationToTask', () => {
 
   it('sets flag from standalone user rule without implicit platform fallback', () => {
     const issue = baseIssue({ functionalTeam: 'qa-squad' });
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       testingFlow: {
@@ -250,7 +253,7 @@ describe('applyTrackerIntegrationToTask', () => {
       ...baseIssue(),
       mergeRequestCustom: 'https://gitlab.example/mr/1',
     } as TrackerIssue;
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       releaseReadiness: {
@@ -267,7 +270,7 @@ describe('applyTrackerIntegrationToTask', () => {
       storyPoints: 2,
       testPoints: 0,
     } as Partial<TrackerIssue>);
-    const task = mapTrackerIssueToTask(issue, null);
+    const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
       configRevision: 1,
       testingFlow: {

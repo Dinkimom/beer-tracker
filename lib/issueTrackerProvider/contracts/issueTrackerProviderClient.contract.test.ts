@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { handleApiError } from '@/lib/api-error-handler';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 
 import { UnsupportedIssueTrackerOperationError } from '../errors';
 import { createJiraProviderClient, JIRA_IMPLEMENTED_PROVIDER_METHODS } from '../jiraProvider';
@@ -23,29 +22,33 @@ describe('IssueTrackerProviderClient surface contract', () => {
       orgId: 'org-1',
     });
 
-    expect(Object.keys(client).sort()).toEqual(
-      [...ISSUE_TRACKER_PROVIDER_CLIENT_METHODS].sort()
-    );
+    const methods = Object.entries(client)
+      .filter(([, value]) => typeof value === 'function')
+      .map(([key]) => key);
+    expect(methods.sort()).toEqual([...ISSUE_TRACKER_PROVIDER_CLIENT_METHODS].sort());
   });
 
-  it('defaults the instance to yandex-tracker when env is unset', () => {
-    const previous = process.env.ISSUE_TRACKER_PROVIDER;
-    delete process.env.ISSUE_TRACKER_PROVIDER;
-    try {
-      expect(getIssueTrackerProviderKind()).toBe('tracker');
-    } finally {
-      if (previous === undefined) {
-        delete process.env.ISSUE_TRACKER_PROVIDER;
-      } else {
-        process.env.ISSUE_TRACKER_PROVIDER = previous;
-      }
-    }
+  it('carries the tracker kind and issue web base on the client', () => {
+    const yandex = createYandexProviderClient({ oauthToken: 'token-1', orgId: 'org-1' });
+    expect(yandex.providerKind).toBe('tracker');
+    expect(yandex.webBaseUrl).toBe('https://tracker.yandex.ru');
+
+    const jira = createJiraProviderClient({
+      apiToken: 'token',
+      email: 'user@example.com',
+      kind: 'jira-onprem',
+      webBaseUrl: 'https://jira.example.com',
+    });
+    expect(jira.providerKind).toBe('jira-onprem');
+    expect(jira.webBaseUrl).toBe('https://jira.example.com');
   });
 
   it('rejects unimplemented catalogued methods on the Jira adapter', async () => {
     const client = createJiraProviderClient({
       apiToken: 'token',
       email: 'user@example.com',
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://example.atlassian.net',
     });
 
     for (const method of ISSUE_TRACKER_PROVIDER_CLIENT_METHODS) {
@@ -65,6 +68,8 @@ describe('IssueTrackerProviderClient surface contract', () => {
     const client = createJiraProviderClient({
       apiToken: 'token',
       email: 'user@example.com',
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://example.atlassian.net',
     });
     await expect(client.searchUsers('a')).resolves.toEqual([]);
     expect(typeof client.getCurrentUser).toBe('function');
@@ -87,6 +92,8 @@ describe('IssueTrackerProviderClient surface contract', () => {
     const client = createJiraProviderClient({
       apiToken: 'token',
       email: 'user@example.com',
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://example.atlassian.net',
     });
     expect(Reflect.get(client, 'then')).toBeUndefined();
     await expect(Promise.resolve(client)).resolves.toBe(client);

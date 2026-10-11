@@ -3,7 +3,6 @@ import type { AxiosError } from 'axios';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { jiraCloudOAuthApiBaseUrl } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
-import { getIssueTrackerProviderKind } from '@/lib/env';
 import {
   JIRA_CLOUD_OAUTH_CLOUD_ID_REQUIRED_MESSAGE,
   jiraCloudIdFromRequest,
@@ -63,21 +62,19 @@ export async function resolveValidateTokenApiClient(
   try {
     const ctx = await resolveValidateTokenTrackerContext(request, organizationId);
     const cloudId = bodyCloudId || jiraCloudIdFromRequest(request) || ctx.cloudId;
-    if (getIssueTrackerProviderKind() === 'jira-cloud' && !cloudId) {
+    const jiraCloud = ctx.providerKind === 'jira-cloud';
+    if (jiraCloud && !cloudId) {
       return NextResponse.json(
         { error: JIRA_CLOUD_OAUTH_CLOUD_ID_REQUIRED_MESSAGE, valid: false },
         { status: 400 }
       );
     }
-    const apiUrl =
-      getIssueTrackerProviderKind() === 'jira-cloud' && cloudId
-        ? jiraCloudOAuthApiBaseUrl(cloudId)
-        : ctx.apiUrl;
     return createTrackerApiClient({
-      apiUrl,
+      apiUrl: jiraCloud ? jiraCloudOAuthApiBaseUrl(cloudId) : ctx.apiUrl,
       jiraEmail: '',
       oauthToken: cleanedToken,
       orgId: ctx.orgId,
+      providerKind: ctx.providerKind,
     });
   } catch (e) {
     if (e instanceof TrackerApiConfigError) {
