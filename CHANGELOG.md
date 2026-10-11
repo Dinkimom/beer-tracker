@@ -2,6 +2,28 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.9.0] — 2026-10-11
+
+### English
+
+- Swimlane drag-and-drop shows a drop preview of where the task will land; cell hover lives in a per-frame store so untouched rows do not re-render.
+- Availability events (vacation, sick leave, duty, tech sprint) are created and edited in a popover on the lane instead of a modal.
+- Availability cards and hatched cells get an emoji pattern per absence type that scales with row height.
+- Sprint score mugs are shown in the sprint planner controls bar.
+- Overdue baseline strips and task card layout polish.
+- App version label shows the semver only (git SHA removed).
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.9.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- При перетаскивании в свимлейне показывается превью места дропа; ячейка под курсором хранится в сторе с обновлением раз в кадр, незатронутые строки не перерисовываются.
+- События отсутствия (отпуск, больничный, дежурство, техспринт) заводятся и правятся в поповере на дорожке вместо модалки.
+- Карточки отсутствия и заштрихованные ячейки получили эмодзи-узор по типу отсутствия, масштабируемый по высоте строки.
+- Кружки скора спринта отображаются на панели управления планера.
+- Полировка полос просроченного baseline и раскладки карточек задач.
+- Метка версии приложения показывает только semver (git SHA убран).
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.9.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.8.0] — 2026-10-11
 
 ### English
