@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.12.0] — 2026-10-13
+
+### English
+
+- Task card fields sit in slots: drag them into place, hide them, and choose how each one is drawn. Narrow cards can drop the header, the title lead, or the footer by width.
+- Tracker fields can be added to the card by name, with short labels for their values.
+- When a plan runs past the last sprint cell, the timeline grows and the overflow is marked as an overtime graveyard.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.12.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Поля карточки задачи лежат в слотах: их можно перетаскивать, скрывать и выбирать способ отрисовки. На узких карточках шапка, начало заголовка и подвал прячутся по ширине.
+- Поля трекера добавляются на карточку по имени, с короткими подписями значений.
+- Если план вылезает за последнюю ячейку спринта, шкала растягивается, а хвост помечается как кладбище переработок.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.12.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.11.1] — 2026-10-12
 
 ### English
