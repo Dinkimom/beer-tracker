@@ -115,7 +115,7 @@ export function TaskLayerOverdueBaselineChip({
             aria-expanded={open}
             aria-haspopup="menu"
             aria-label={t('sprintPlanner.swimlane.overdue.menuAria', { days })}
-            className="group inline-flex cursor-pointer items-center rounded-md border-[1.5px] border-red-400 bg-white px-1.5 py-1 text-xs font-medium leading-none whitespace-nowrap text-red-700 transition-all duration-200 hover:bg-red-50 active:scale-[0.98] dark:border-red-400/80 dark:bg-gray-800 dark:text-red-300 dark:hover:bg-gray-700"
+            className="group inline-flex cursor-pointer items-center rounded-md border-[1.5px] border-red-400 bg-white px-1.5 py-1 text-xs font-medium leading-none whitespace-nowrap text-red-700 transition-all duration-200 hover:bg-red-50 active:scale-[0.98] active:bg-red-100 dark:border-red-400/80 dark:bg-gray-800 dark:text-red-300 dark:hover:bg-red-950 dark:active:bg-red-900"
             type="button"
             onClick={(event) => event.stopPropagation()}
             onPointerDown={(event) => event.stopPropagation()}

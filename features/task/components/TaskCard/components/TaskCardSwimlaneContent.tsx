@@ -1,18 +1,14 @@
 'use client';
 
-import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
+import type { TaskCardSlotItemContext } from '@/features/task/components/TaskCard/slots/taskCardSlotItemContext';
+import type { ResolvedTaskCardSlotItem } from '@/lib/taskCard/taskCardSlots';
 import type { Developer, Task } from '@/types';
 
-import {
-  buildTaskCardKeyLinkProps,
-  resolveTaskCardSwimlaneMetaVisibility,
-} from './taskCardContentHelpers';
 import { TaskCardSwimlaneInlineEditor } from './TaskCardSwimlaneInlineEditor';
 import { TaskCardSwimlaneReadOnlyContent } from './TaskCardSwimlaneReadOnlyContent';
 
 interface TaskCardSwimlaneContentProps {
   developers?: readonly Developer[];
-  displayDuration: number;
   displayId: string;
   inlineTitleEditor?: {
     onChange: (value: string) => void;
@@ -20,16 +16,16 @@ interface TaskCardSwimlaneContentProps {
     value: string;
   };
   isDragging: boolean;
-  keyLinkProps: ReturnType<typeof buildTaskCardKeyLinkProps>;
   lineHeightClass: string;
   maxLines: number;
-  mergedFields: SwimlaneCardFieldsVisibility;
+  slotContext?: TaskCardSlotItemContext;
   task: Task;
   teamTextColor: string;
   textRef: React.RefObject<HTMLDivElement | null>;
   textSize: string;
   titleEditorClassName: string;
   titleInputRef: React.RefObject<HTMLTextAreaElement | null>;
+  titleLeadItems?: readonly ResolvedTaskCardSlotItem[];
   onCommentUpdate?: (commentId: string, text: string) => void;
   onTitleChange: (value: string, selection: { end: number; start: number }) => void;
   t: (key: string, params?: Record<string, string>) => string;
@@ -37,51 +33,36 @@ interface TaskCardSwimlaneContentProps {
 
 export function TaskCardSwimlaneContent({
   developers,
-  displayDuration,
   displayId,
   inlineTitleEditor,
   isDragging,
-  keyLinkProps,
   lineHeightClass,
   maxLines,
-  mergedFields,
   onCommentUpdate,
   onTitleChange,
   task,
   teamTextColor,
   textRef,
+  slotContext,
   textSize,
   titleEditorClassName,
   titleInputRef,
+  titleLeadItems = [],
   t,
 }: TaskCardSwimlaneContentProps) {
-  const inlineIconSize = 'w-3 h-3';
-  const {
-    showKey,
-    showMetaIcons,
-    showPriorityIcon,
-    showTypeIcon,
-  } = resolveTaskCardSwimlaneMetaVisibility({
-    displayDuration,
-    mergedFields,
-    task,
-  });
-
   if (inlineTitleEditor) {
     return (
       <TaskCardSwimlaneInlineEditor
         developers={developers}
-        inlineIconSize={inlineIconSize}
         inlineTitleEditor={inlineTitleEditor}
         lineHeightClass={lineHeightClass}
-        showMetaIcons={showMetaIcons}
-        showPriorityIcon={showPriorityIcon}
-        showTypeIcon={showTypeIcon}
+        slotContext={slotContext}
         task={task}
         teamTextColor={teamTextColor}
         textSize={textSize}
         titleEditorClassName={titleEditorClassName}
         titleInputRef={titleInputRef}
+        titleLeadItems={titleLeadItems}
         onTitleChange={onTitleChange}
       />
     );
@@ -90,20 +71,16 @@ export function TaskCardSwimlaneContent({
   return (
     <TaskCardSwimlaneReadOnlyContent
       displayId={displayId}
-      inlineIconSize={inlineIconSize}
       isDragging={isDragging}
-      keyLinkProps={keyLinkProps}
       lineHeightClass={lineHeightClass}
       maxLines={maxLines}
-      showKey={showKey}
-      showMetaIcons={showMetaIcons}
-      showPriorityIcon={showPriorityIcon}
-      showTypeIcon={showTypeIcon}
+      slotContext={slotContext}
       t={t}
       task={task}
       teamTextColor={teamTextColor}
       textRef={textRef}
       textSize={textSize}
+      titleLeadItems={titleLeadItems}
       onCommentUpdate={onCommentUpdate}
     />
   );

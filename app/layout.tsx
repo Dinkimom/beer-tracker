@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
-import { Caveat, Geist, Geist_Mono } from "next/font/google";
+import { Caveat, Geist, Geist_Mono, Ruslan_Display } from "next/font/google";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -40,6 +40,14 @@ const caveat = Caveat({
   subsets: ["latin", "cyrillic"],
   variable: "--font-caveat",
   weight: "700",
+});
+
+const ruslanDisplay = Ruslan_Display({
+  display: "swap",
+  preload: false,
+  subsets: ["cyrillic", "latin"],
+  variable: "--font-ruslan",
+  weight: "400",
 });
 
 const excalifont = localFont({
@@ -117,7 +125,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${excalifont.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${caveat.variable} ${ruslanDisplay.variable} ${excalifont.variable} antialiased`}
       >
         <DisableContextMenu />
         <PwaServiceWorkerRegistrar />

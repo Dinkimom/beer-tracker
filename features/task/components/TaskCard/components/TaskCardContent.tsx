@@ -1,7 +1,8 @@
 'use client';
 
-import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
+import type { TaskCardSlotItemContext } from '@/features/task/components/TaskCard/slots/taskCardSlotItemContext';
 import type { PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
+import type { ResolvedTaskCardSlotItem } from '@/lib/taskCard/taskCardSlots';
 import type { Developer, Task, TaskCardVariant } from '@/types';
 
 import { useLayoutEffect, useRef, useState } from 'react';
@@ -21,7 +22,6 @@ import {
   adjustTaskCardTitleEditorHeight,
   isQuickAddChooserDraft,
   isSidebarTaskCardVariant,
-  mergeSwimlaneCardFields,
   resolveSwimlaneDisplayModes,
   resolveTaskCardDisplayId,
   resolveTaskCardSwimlaneContentWrapperClass,
@@ -48,8 +48,9 @@ interface TaskCardContentProps {
   isDragging?: boolean;
   isResizing?: boolean;
   phaseCardColorScheme?: PlanningPhaseCardColorScheme;
-  swimlaneCardFields?: SwimlaneCardFieldsVisibility;
+  slotContext?: TaskCardSlotItemContext;
   task: Task;
+  titleLeadItems?: readonly ResolvedTaskCardSlotItem[];
   variant?: TaskCardVariant;
   onCommentUpdate?: (commentId: string, text: string) => void;
   onPhotoClick?: () => void;
@@ -68,7 +69,8 @@ export function TaskCardContent({
   onPhotoClick,
   onCommentUpdate,
   phaseCardColorScheme = 'status',
-  swimlaneCardFields,
+  slotContext,
+  titleLeadItems = [],
 }: TaskCardContentProps) {
   const { t } = useI18n();
   const teamTextColor = resolveTaskCardTeamTextColor(task, phaseCardColorScheme);
@@ -139,7 +141,6 @@ export function TaskCardContent({
     task.localDraftKind === 'comment'
       ? resolveStickyNoteDisplayModes()
       : resolveSwimlaneDisplayModes(fontDuration ?? displayDuration);
-  const mergedFields = mergeSwimlaneCardFields(swimlaneCardFields);
   const isDiagramCard = task.localDraftKind === 'diagram';
   const isImageCard = task.localDraftKind === 'image';
   const isChooserDraft = isQuickAddChooserDraft(task);
@@ -181,14 +182,12 @@ export function TaskCardContent({
     contentEl = (
       <TaskCardSwimlaneContent
         developers={developers}
-        displayDuration={displayDuration}
         displayId={displayId}
         inlineTitleEditor={inlineTitleEditor}
         isDragging={isDragging}
-        keyLinkProps={keyLinkProps}
         lineHeightClass={lineHeightClass}
         maxLines={maxLines}
-        mergedFields={mergedFields}
+        slotContext={slotContext}
         t={t}
         task={task}
         teamTextColor={teamTextColor}
@@ -196,6 +195,7 @@ export function TaskCardContent({
         textSize={textSize}
         titleEditorClassName={titleEditorClassName}
         titleInputRef={titleInputRef}
+        titleLeadItems={titleLeadItems}
         onCommentUpdate={onCommentUpdate}
         onTitleChange={(value, selection) => {
           pendingTitleEditorSelectionRef.current = selection;

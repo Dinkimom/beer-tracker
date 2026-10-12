@@ -38,6 +38,7 @@ interface SwimlanePlacementToolbarLayersMenuProps {
   personBoundLayersAvailable?: boolean;
   onAnimationEnd: (event: AnimationEvent<HTMLElement>) => void;
   onBaselineLayoutModeChange: (mode: SwimlaneBaselineLayoutMode) => void;
+  onOpenTaskCards: () => void;
   onToggleLayer: (layer: SwimlaneVisibilityLayer) => void;
 }
 
@@ -62,6 +63,7 @@ export function SwimlanePlacementToolbarLayersMenu({
   personBoundLayersAvailable = true,
   onAnimationEnd,
   onBaselineLayoutModeChange,
+  onOpenTaskCards,
   onToggleLayer,
 }: SwimlanePlacementToolbarLayersMenuProps) {
   const { t } = useI18n();
@@ -89,6 +91,18 @@ export function SwimlanePlacementToolbarLayersMenu({
         mode={baselineLayoutMode}
         onChange={onBaselineLayoutModeChange}
       />
+      <Button
+        className={`!h-9 !min-h-0 w-full !justify-between !gap-2 !rounded-none !px-3 !py-0 text-sm font-medium ${CONTEXT_MENU_GHOST_BUTTON_RESET} text-gray-700 hover:!bg-gray-50 dark:text-gray-200 dark:hover:!bg-gray-700`}
+        role="menuitem"
+        type="button"
+        variant="ghost"
+        onClick={onOpenTaskCards}
+      >
+        <span className="min-w-0 flex-1 truncate text-left">
+          {t('sprintPlanner.swimlane.placementToolbar.tasks')}
+        </span>
+        <Icon aria-hidden className="h-4 w-4 shrink-0 text-gray-400" name="chevron-right" />
+      </Button>
       <div className={CONTEXT_MENU_SEPARATOR} role="separator" />
       {rows.map((row, index) => {
         if (row.kind === 'separator') {

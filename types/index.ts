@@ -53,6 +53,8 @@ export interface Task {
   // ID исполнителя
   assigneeName?: string;
   createdAt?: string;
+  /** Значения полей трекера вне встроенного набора карточки, уже приведённые к строке. */
+  customFieldValues?: Record<string, string>;
   /** Признак/метка опасности релиза (кастомное поле Tracker dangerousRelease). */
   dangerousRelease?: string;
   /** Дедлайн из трекера (YYYY-MM-DD). */

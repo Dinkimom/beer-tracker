@@ -40,14 +40,38 @@ export function sprintPlannerDaysHeaderContentWidthCss(
 }
 
 /**
+ * Ширина хвоста таймлайна, на который карточка вылезает за последнюю ячейку.
+ * null — план внутри сетки, колонку после спринта не растягиваем.
+ */
+export function sprintPlannerOverflowTimelineWidthCss(
+  viewMode: 'compact' | 'full',
+  participantsColumnWidth: number,
+  sidebarEffectiveWidthPx: number,
+  workingDaysCount: number,
+  overflowCells: number,
+  totalCells: number
+): string | null {
+  if (viewMode !== 'full' || overflowCells <= 0 || totalCells <= 0) return null;
+  const timeline = sprintPlannerSwimlaneTimelineWidthCss(
+    viewMode,
+    participantsColumnWidth,
+    sidebarEffectiveWidthPx,
+    workingDaysCount
+  );
+  return `calc(${overflowCells} * (${timeline}) / ${totalCells})`;
+}
+
+/**
  * Ширина строки планера (шапка + свимлейны): не уже viewport, чтобы справа
  * заполнить зону после спринта, когда дней меньше капа по max-width.
+ * `overflowWidthCss` добавляет хвост, если карточка вылезла за сетку.
  */
 export function sprintPlannerContentRowWidthCss(
   viewMode: 'compact' | 'full',
   participantsColumnWidth: number,
   sidebarEffectiveWidthPx: number,
-  workingDaysCount: number = WORKING_DAYS
+  workingDaysCount: number = WORKING_DAYS,
+  overflowWidthCss: string | null = null
 ): string {
   if (viewMode !== 'full') return '100%';
   const content = sprintPlannerDaysHeaderContentWidthCss(
@@ -56,5 +80,6 @@ export function sprintPlannerContentRowWidthCss(
     sidebarEffectiveWidthPx,
     workingDaysCount
   );
-  return `max(100%, ${content})`;
+  if (!overflowWidthCss) return `max(100%, ${content})`;
+  return `max(100%, calc(${content} + ${overflowWidthCss}))`;
 }

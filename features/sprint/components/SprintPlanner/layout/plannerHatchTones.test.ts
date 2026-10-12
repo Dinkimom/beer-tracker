@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PLANNER_EMOJI_PATTERN_TILE_HEIGHT_PX,
   PLANNER_EMOJI_PATTERN_TILE_WIDTH_PX,
+  PLANNER_HATCH_TONES,
   plannerAvailabilityEmojiPattern,
   plannerEmojiPatternImage,
   resolvePlannerEmojiPatternTile,
@@ -79,6 +80,16 @@ describe('plannerAvailabilityEmojiPattern', () => {
 
   it('keeps diagonal hatch only for neutral cells', () => {
     expect(plannerAvailabilityEmojiPattern('neutral')).toBeNull();
+  });
+
+  it('scatters a skull and a tombstone the same way as an absence', () => {
+    const shards = plannerAvailabilityEmojiPattern('shards');
+    const vacation = plannerAvailabilityEmojiPattern('vacation');
+    expect(shards?.emojis).toEqual(['💀', '🪦']);
+    expect(shards?.lightOpacity).toBe(vacation?.lightOpacity);
+    expect(shards?.darkOpacity).toBe(vacation?.darkOpacity);
+    expect(PLANNER_HATCH_TONES.shards.lightFill).toBeUndefined();
+    expect(PLANNER_HATCH_TONES.shards.darkFill).toBeUndefined();
   });
 });
 

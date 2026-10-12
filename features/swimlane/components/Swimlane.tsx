@@ -39,7 +39,7 @@ import { useSwimlaneLayout } from '@/features/swimlane/hooks/useSwimlaneLayout';
 import { useSwimlaneQuickAddHoverImagePaste } from '@/features/swimlane/hooks/useSwimlaneQuickAddHoverImagePaste';
 import { resolveSwimlaneQuickAddBandLayout } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { resolveSwimlaneOneCardHeightPx } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
-import { useSwimlaneCardFieldsStorage } from '@/hooks/useLocalStorage';
+import { useSwimlaneCardReservesEyebrow } from '@/hooks/useLocalStorage';
 import { useRootStore } from '@/lib/layers';
 import { onboardingAssigneeMarker } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
@@ -176,7 +176,7 @@ function SwimlaneComponent({
   const [quickAddHoverPreview, setQuickAddHoverPreview] =
     React.useState<SwimlaneQuickAddHoverPreview | null>(null);
   const [reservedTaskLayersPreview, setReservedTaskLayersPreview] = useState<number | null>(null);
-  const [swimlaneCardFields] = useSwimlaneCardFieldsStorage();
+  const reserveEyebrow = useSwimlaneCardReservesEyebrow();
   const storedReservedTaskLayers = useSwimlaneRowReservedLayersForAssignee(
     developer.id,
     selectedSprintId
@@ -215,7 +215,7 @@ function SwimlaneComponent({
     assigneeId: developer.id,
     contentMaxTaskLayers: layout.contentMaxTaskLayers,
     selectedSprintId,
-    showParent: swimlaneCardFields.showParent,
+    showParent: reserveEyebrow,
     onPreviewLayersChange: setReservedTaskLayersPreview,
   });
 
@@ -224,10 +224,10 @@ function SwimlaneComponent({
       resolveSwimlaneQuickAddBandLayout({
         contentHasTaskOverlaps: layout.hasTaskOverlaps,
         maxTaskLayers: layout.maxTaskLayers,
-        oneCardHeightPx: resolveSwimlaneOneCardHeightPx(swimlaneCardFields.showParent),
+        oneCardHeightPx: resolveSwimlaneOneCardHeightPx(reserveEyebrow),
         singleRowLayerHeight: layout.layerHeight,
       }),
-    [layout.hasTaskOverlaps, layout.layerHeight, layout.maxTaskLayers, swimlaneCardFields.showParent]
+    [layout.hasTaskOverlaps, layout.layerHeight, layout.maxTaskLayers, reserveEyebrow]
   );
 
   const timelineTotalParts = sprintTimelineWorkingDays * getPartsPerDay();

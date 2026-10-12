@@ -1,6 +1,6 @@
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 
-export type PlannerHatchTone = AvailabilityCardKind | 'neutral';
+export type PlannerHatchTone = AvailabilityCardKind | 'neutral' | 'shards';
 
 interface PlannerHatchToneColors {
   darkFill?: string;
@@ -55,6 +55,9 @@ const EMOJI_PATTERN_SLOTS: readonly EmojiPatternSlot[] = [
   { emojiIndex: 2, o: 0.84, rotate: 11, size: 17, x: 228, y: 38 },
   { emojiIndex: 1, o: 0.62, rotate: -8, size: 16, x: 48, y: 50 },
 ];
+
+/** Череп и надгробие в колонке за концом недели, если карточка вылезла за сетку. */
+const OVERFLOW_GRAVE_EMOJIS = ['💀', '🪦'] as const;
 
 interface EmojiPatternSpec {
   darkOpacity: number;
@@ -116,7 +119,7 @@ export function plannerAvailabilityEmojiPattern(
   }
   return {
     darkOpacity: 0.26,
-    emojis: PLANNER_AVAILABILITY_EMOJI_SETS[tone],
+    emojis: tone === 'shards' ? OVERFLOW_GRAVE_EMOJIS : PLANNER_AVAILABILITY_EMOJI_SETS[tone],
     lightOpacity: 0.34,
   };
 }
@@ -164,5 +167,9 @@ export const PLANNER_HATCH_TONES: Record<PlannerHatchTone, PlannerHatchToneColor
     lightLine: 'rgb(249 115 22 / 0.4)',
     darkFill: 'rgb(124 45 18 / 0.45)',
     darkLine: 'rgb(251 146 60 / 0.45)',
+  },
+  shards: {
+    lightLine: 'rgb(0 0 0 / 0.06)',
+    darkLine: 'rgb(255 255 255 / 0.07)',
   },
 };

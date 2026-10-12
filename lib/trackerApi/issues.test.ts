@@ -117,4 +117,18 @@ describe('mapTrackerIssueToTask', () => {
     }, TRACKER_WEB);
     expect(task).toMatchObject({ deadline: '2026-10-12', start: '2026-10-09' });
   });
+
+  it('keeps a tracker field outside the built-in task fields', () => {
+    const task = mapTrackerIssueToTask(
+      {
+        customer: { display: 'Northwind' },
+        id: '9',
+        key: 'BT-9',
+        self: 'https://tracker.yandex.ru/BT-9',
+        summary: 'Task',
+      } as Parameters<typeof mapTrackerIssueToTask>[0],
+      TRACKER_WEB
+    );
+    expect(task.customFieldValues).toEqual({ customer: 'Northwind' });
+  });
 });

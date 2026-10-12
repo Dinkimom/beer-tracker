@@ -7,6 +7,7 @@ import {
   sprintPlannerDaysHeaderContentWidthCss,
   sprintPlannerFullTimelineWidthExpr,
   sprintPlannerMaxTimelineWidthPx,
+  sprintPlannerOverflowTimelineWidthCss,
   sprintPlannerSwimlaneTimelineWidthCss,
 } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
 
@@ -53,5 +54,23 @@ describe('sprintPlannerSwimlaneLayoutWidths', () => {
 
   it('content row width in compact mode is 100%', () => {
     expect(sprintPlannerContentRowWidthCss('compact', 200, 48, 5)).toBe('100%');
+  });
+
+  it('does not widen the row when the plan stays inside the timeline', () => {
+    expect(sprintPlannerOverflowTimelineWidthCss('full', 200, 48, 5, 0, 15)).toBeNull();
+    expect(sprintPlannerContentRowWidthCss('full', 200, 48, 5, null)).toBe(
+      `max(100%, ${sprintPlannerDaysHeaderContentWidthCss('full', 200, 48, 5)})`
+    );
+  });
+
+  it('adds the overflow tail in full mode and ignores it in compact mode', () => {
+    const overflow = sprintPlannerOverflowTimelineWidthCss('full', 200, 48, 10, 3, 30);
+    const timeline = sprintPlannerSwimlaneTimelineWidthCss('full', 200, 48, 10);
+    expect(overflow).toBe(`calc(3 * (${timeline}) / 30)`);
+    expect(sprintPlannerOverflowTimelineWidthCss('compact', 200, 48, 10, 3, 30)).toBeNull();
+    const content = sprintPlannerDaysHeaderContentWidthCss('full', 200, 48, 10);
+    expect(sprintPlannerContentRowWidthCss('full', 200, 48, 10, overflow)).toBe(
+      `max(100%, calc(${content} + ${overflow}))`
+    );
   });
 });

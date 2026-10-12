@@ -1,7 +1,4 @@
-import type {
-  PlanningPhaseCardColorScheme,
-  SwimlaneCardFieldsVisibility,
-} from '@/hooks/useLocalStorage';
+import type { PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
 import type { SlaBugDemoteReason, SlaBugLabelKey } from '@/lib/slaBugs';
 import type { Developer, Task, TaskCardVariant, TaskPosition } from '@/types';
 
@@ -37,7 +34,6 @@ interface TaskCardSidebarResizedSplitProps {
   slaBugDemoteReason?: SlaBugDemoteReason;
   slaBugSignalLabel?: SlaBugLabelKey;
   sprintBadge?: { display: string; id: string } | null;
-  swimlaneCardFields: SwimlaneCardFieldsVisibility | undefined;
   task: Task;
   taskPosition?: TaskPosition;
   variant: TaskCardVariant;
@@ -54,7 +50,6 @@ export function TaskCardSidebarResizedSplit({
   estimatedTimeslots,
   isDragging,
   phaseCardColorScheme,
-  swimlaneCardFields,
   task,
   variant,
   taskPosition,
@@ -102,7 +97,6 @@ export function TaskCardSidebarResizedSplit({
               isDragging={isDragging}
               isQATask={isQATask}
               phaseCardColorScheme={phaseCardColorScheme}
-              swimlaneCardFields={swimlaneCardFields}
               task={task}
               variant={variant}
             />

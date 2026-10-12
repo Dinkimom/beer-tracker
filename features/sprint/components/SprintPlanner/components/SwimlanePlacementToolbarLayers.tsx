@@ -12,6 +12,7 @@ import {
   FLOATING_TOOLBAR_ITEM_IDLE,
   FLOATING_TOOLBAR_ITEM_ON,
 } from '@/features/context-menu/contextMenuClasses';
+import { TaskCardDisplayDialog } from '@/features/task/components/TaskCard/slots/TaskCardDisplayDialog';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 import { usePlannerOnboardingChrome } from '../onboarding/plannerOnboardingChrome';
@@ -58,6 +59,7 @@ export function SwimlanePlacementToolbarLayers({
   const { toolsEmphasis } = usePlannerOnboardingChrome();
   const rootRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [taskCardsOpen, setTaskCardsOpen] = useState(false);
   const overlay = useOverlayPresence(menuOpen);
   const label = t('sprintPlanner.swimlane.placementToolbar.layers');
 
@@ -143,10 +145,20 @@ export function SwimlanePlacementToolbarLayers({
             personBoundLayersAvailable={personBoundLayersAvailable}
             onAnimationEnd={overlay.onAnimationEnd}
             onBaselineLayoutModeChange={onBaselineLayoutModeChange}
+            onOpenTaskCards={() => {
+              setMenuOpen(false);
+              setTaskCardsOpen(true);
+            }}
             onToggleLayer={toggleLayer}
           />
         ) : null}
       </div>
+      <TaskCardDisplayDialog
+        open={taskCardsOpen}
+        onClose={() => {
+          setTaskCardsOpen(false);
+        }}
+      />
     </>
   );
 }

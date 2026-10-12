@@ -40,11 +40,13 @@ export function mapJiraFieldToMetadata(raw: unknown): TrackerMetadataFieldDto | 
     return null;
   }
   const name = row.name?.trim() || id;
+  const schemaCustom = row.schema?.custom?.trim();
   return {
     display: name,
     id,
     key: row.key?.trim() || id,
     name,
+    ...(schemaCustom ? { schemaCustom } : {}),
     schemaType: row.schema?.type,
   };
 }

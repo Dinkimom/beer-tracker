@@ -74,6 +74,8 @@ export const STORAGE_KEYS = {
   QUARTERLY_V2_OCCUPANCY_ROW_FIELDS: 'beer-tracker-quarterly-v2-occupancy-row-fields',
   QUARTERLY_V2_SHOW_PLANNED_TASKS: 'beer-tracker-quarterly-v2-show-planned-tasks',
   SWIMLANE_CARD_FIELDS: 'beer-tracker-swimlane-card-fields',
+  /** Раскладка слотов карточки свимлейна. null — следовать галочкам полей. */
+  SWIMLANE_CARD_SLOT_LAYOUT: 'beer-tracker-swimlane-card-slot-layout',
   /**
    * Упаковка бейзлайна просрочки: compact | noOverlap.
    * Тот же ключ, что раньше был boolean «показывать просрочку».

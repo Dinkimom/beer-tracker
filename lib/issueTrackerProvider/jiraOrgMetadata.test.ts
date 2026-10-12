@@ -30,8 +30,11 @@ describe('mapJiraFieldToMetadata', () => {
         key: 'customfield_10001',
         name: 'Team',
         schema: { custom: 'com.atlassian.jira.plugin.system.customfieldtypes:select', type: 'option' },
-      })?.schemaType
-    ).toBe('option');
+      })
+    ).toMatchObject({
+      schemaCustom: 'com.atlassian.jira.plugin.system.customfieldtypes:select',
+      schemaType: 'option',
+    });
   });
 });
 

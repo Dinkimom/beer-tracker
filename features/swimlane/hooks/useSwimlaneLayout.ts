@@ -22,7 +22,7 @@ import { applyTaskResizePreviewToPositionedTasks } from '@/features/task/hooks/u
 import { buildEffectiveStickyNoteCardRowById, mergeStickyNoteCardRowOverrideMaps, type StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import {
   useSwimlaneBaselineLayoutModeStorage,
-  useSwimlaneCardFieldsStorage,
+  useSwimlaneCardReservesEyebrow,
 } from '@/hooks/useLocalStorage';
 import { useRootStore } from '@/lib/layers';
 import {
@@ -130,7 +130,7 @@ export function useSwimlaneLayout({
     remoteCardRows,
     localBusyTaskId
   );
-  const [swimlaneCardFields] = useSwimlaneCardFieldsStorage();
+  const reserveEyebrow = useSwimlaneCardReservesEyebrow();
   const [baselineLayoutMode] = useSwimlaneBaselineLayoutModeStorage();
 
   // Нельзя useMemo([taskPositions, …]): taskPositions — тот же observable.map, при DnD мутирует на месте,
@@ -219,7 +219,7 @@ export function useSwimlaneLayout({
   );
   const layoutInputBase = {
     baselineLayerMap,
-    showParent: swimlaneCardFields.showParent,
+    showParent: reserveEyebrow,
     taskLayerMap,
     taskLayerSpanById,
     taskVerticalLayoutById,

@@ -34,7 +34,6 @@ import {
   useShowHolidaysStorage,
   useSidebarTabsSettingsStorage,
   useSwimlaneCalendarBusyVisibleStorage,
-  useSwimlaneCardFieldsStorage,
   useSwimlaneFactTimelineVisibleStorage,
   useSwimlaneLinksVisibilityStorage,
   useTrackerTokenStorage,
@@ -89,7 +88,6 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
   const [quarterlyV2TimelineSettings, setQuarterlyV2TimelineSettings] = useQuarterlyV2OccupancyTimelineSettingsStorage();
   const [quarterlyV2RowFields, setQuarterlyV2RowFields] = useQuarterlyV2OccupancyRowFieldsStorage();
   const [quarterlyV2ShowPlannedTasks, setQuarterlyV2ShowPlannedTasks] = useQuarterlyV2ShowPlannedTasksStorage();
-  const [swimlaneCardFields, setSwimlaneCardFields] = useSwimlaneCardFieldsStorage();
   const [sidebarTabsSettings, setSidebarTabsSettings] = useSidebarTabsSettingsStorage();
   const [boardViewMode] = useBoardViewModeStorage();
 
@@ -299,12 +297,10 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
                 setQuarterlyV2ShowPlannedTasks={setQuarterlyV2ShowPlannedTasks}
                 setQuarterlyV2TimelineSettings={setQuarterlyV2TimelineSettings}
                 setSwimlaneCalendarBusyVisible={setSwimlaneCalendarBusyVisible}
-                setSwimlaneCardFields={setSwimlaneCardFields}
                 setSwimlaneFactTimelineVisible={setSwimlaneFactTimelineVisible}
                 setSwimlaneLinksVisible={setSwimlaneLinksVisible}
                 setTimelineSettings={setTimelineSettings}
                 swimlaneCalendarBusyVisible={swimlaneCalendarBusyVisible}
-                swimlaneCardFields={swimlaneCardFields}
                 swimlaneFactTimelineVisible={swimlaneFactTimelineVisible}
                 swimlaneLinksVisible={swimlaneLinksVisible}
                 timelineSettings={timelineSettings}

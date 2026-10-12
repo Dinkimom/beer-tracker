@@ -3,7 +3,6 @@ import type {
   OccupancyRowView,
   OccupancyTimelineScale,
   OccupancyTimelineSettings,
-  SwimlaneCardFieldsVisibility,
 } from '@/hooks/useLocalStorage';
 import type { SidebarGroupBy } from '@/types';
 
@@ -24,7 +23,6 @@ export interface SettingsPlanningTabProps {
   quarterlyV2ShowPlannedTasks: boolean;
   quarterlyV2TimelineSettings: OccupancyTimelineSettings;
   swimlaneCalendarBusyVisible: boolean;
-  swimlaneCardFields: SwimlaneCardFieldsVisibility;
   /** Fact timeline (“in progress”) under the swimlane row */
   swimlaneFactTimelineVisible: boolean;
   swimlaneLinksVisible: boolean;
@@ -55,9 +53,6 @@ export interface SettingsPlanningTabProps {
     v: OccupancyTimelineSettings | ((prev: OccupancyTimelineSettings) => OccupancyTimelineSettings)
   ) => void;
   setSwimlaneCalendarBusyVisible: (v: boolean) => void;
-  setSwimlaneCardFields: (
-    v: SwimlaneCardFieldsVisibility | ((prev: SwimlaneCardFieldsVisibility) => SwimlaneCardFieldsVisibility)
-  ) => void;
   setSwimlaneFactTimelineVisible: (v: boolean) => void;
   setSwimlaneLinksVisible: (v: boolean) => void;
   setTimelineSettings: (

@@ -142,7 +142,6 @@ export function TaskCardStandardBody({
           isQATask={isQATask}
           isResizing={isResizing}
           phaseCardColorScheme={phaseCardColorScheme}
-          swimlaneCardFields={swimlaneCardFields}
           task={task}
           variant={variant}
           onCommentUpdate={onCommentUpdate}

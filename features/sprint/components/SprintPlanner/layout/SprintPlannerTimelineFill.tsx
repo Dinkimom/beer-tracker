@@ -1,5 +1,6 @@
 'use client';
 
+import type { PlannerHatchTone } from '@/features/sprint/components/SprintPlanner/layout/plannerHatchTones';
 import type { CSSProperties } from 'react';
 
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
@@ -7,6 +8,8 @@ import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/
 interface SprintPlannerTimelineFillProps {
   className?: string;
   style?: CSSProperties;
+  /** neutral — диагональ, когда планер уже окна. shards — череп и надгробие, карточка вылезла за сетку. */
+  tone?: PlannerHatchTone;
 }
 
 /**
@@ -16,6 +19,7 @@ interface SprintPlannerTimelineFillProps {
 export function SprintPlannerTimelineFill({
   className = '',
   style,
+  tone = 'neutral',
 }: SprintPlannerTimelineFillProps) {
   const surfaceClass = 'bg-white dark:bg-gray-800';
   return (
@@ -24,7 +28,7 @@ export function SprintPlannerTimelineFill({
       className={`@container/timeline-rail relative overflow-hidden ${surfaceClass} ${className}`.trim()}
       style={style}
     >
-      <PlannerHatchOverlay />
+      <PlannerHatchOverlay tone={tone} />
       {/* Есть ширина — линия отделяет дни от штриховки. Нулевая ширина — край уже рисует рамка острова. */}
       <div className="pointer-events-none absolute inset-y-0 left-0 z-[2] hidden w-px bg-gray-200 @min-[1px]/timeline-rail:block dark:bg-gray-600" />
     </div>

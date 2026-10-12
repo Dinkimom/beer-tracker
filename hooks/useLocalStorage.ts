@@ -5,6 +5,7 @@ import { useLocalStorage as useLocalStorageBase } from './localStorage/useLocalS
 export { useLocalStorageBase as useLocalStorage };
 
 export * from './localStorage/hooksOccupancyEpicQuarterly';
+export * from './localStorage/swimlaneCardSlotLayout';
 export * from './localStorage/hooksSelectionThemeAndSync';
 export * from './localStorage/hooksSidebarAndDevelopers';
 export * from './localStorage/hooksDeveloperCalDav';

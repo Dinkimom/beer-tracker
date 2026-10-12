@@ -3,16 +3,7 @@
 import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
 import type { Task, TaskCardVariant } from '@/types';
 
-import { StatusTag } from '@/components/StatusTag';
-import { TextTooltip } from '@/components/TextTooltip';
-import { useI18n } from '@/contexts/LanguageContext';
-import { getIncidentSeverityTagClasses } from '@/features/task/utils/incidentSeverityBadgeClasses';
-import { taskStatusLabel } from '@/features/task/utils/taskUtils';
-import {
-  formatTaskStoryPointsForDisplay,
-  formatTaskTestPointsForDisplay,
-  timeslotsToStoryPoints,
-} from '@/lib/pointsUtils';
+import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 import { isQuickAddChooserDraft } from './taskCardContentHelpers';
 
@@ -36,7 +27,7 @@ export function shouldShowTaskCardSwimlaneMetaRow(input: {
   );
 }
 
-function resolveSwimlaneStoryPointsForDisplay(
+export function resolveSwimlaneStoryPointsForDisplay(
   task: Task,
   displayDuration: number | undefined
 ): number | undefined {
@@ -47,57 +38,4 @@ function resolveSwimlaneStoryPointsForDisplay(
     return timeslotsToStoryPoints(displayDuration);
   }
   return task.storyPoints;
-}
-
-interface TaskCardSwimlaneMetaRowProps {
-  displayDuration: number | undefined;
-  hideTestPoints: boolean;
-  isQATask: boolean;
-  showEstimateLabel: boolean;
-  swimlaneCardFields?: SwimlaneCardFieldsVisibility;
-  task: Task;
-}
-
-export function TaskCardSwimlaneMetaRow({
-  displayDuration,
-  hideTestPoints,
-  isQATask,
-  showEstimateLabel,
-  swimlaneCardFields,
-  task,
-}: TaskCardSwimlaneMetaRowProps) {
-  const { t } = useI18n();
-  const swimlaneStoryPointsForDisplay = resolveSwimlaneStoryPointsForDisplay(task, displayDuration);
-
-  return (
-    <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-      {(swimlaneCardFields?.showStatus ?? true) && (
-        <StatusTag
-          className="text-[10px] px-1 py-0.5"
-          label={taskStatusLabel(task)}
-          status={task.originalStatus}
-          statusColorKey={task.statusColorKey}
-        />
-      )}
-      {(swimlaneCardFields?.showSeverity ?? true) && task.incidentSeverity && (
-        <TextTooltip content={t('task.card.severityValue', { value: task.incidentSeverity })}>
-        <span
-          className={`text-[10px] font-bold leading-none whitespace-nowrap px-1.5 py-0.5 rounded shrink-0 border ${getIncidentSeverityTagClasses(task.incidentSeverity)}`}
-        >
-          {task.incidentSeverity}
-        </span>
-        </TextTooltip>
-      )}
-      {showEstimateLabel && !isSwimlaneNoteOrPolaroid(task) && (
-        <span className="text-[11px] font-normal leading-none text-gray-500 dark:text-gray-400">
-          {isQATask && !hideTestPoints
-            ? formatTaskTestPointsForDisplay(task, 'compact')
-            : formatTaskStoryPointsForDisplay(
-                { storyPoints: swimlaneStoryPointsForDisplay },
-                'compact'
-              )}
-        </span>
-      )}
-    </div>
-  );
 }

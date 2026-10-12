@@ -2,6 +2,7 @@ import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrack
 import type { Task } from '@/types';
 import type { SprintObject, TrackerIssue } from '@/types/tracker';
 
+import { customFieldDisplayMap } from '@/lib/issueTrackerProvider/customFieldDisplayValue';
 import { issueTrackerIssueWebUrlFromBase } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import { parseSlaBugFieldsFromIssue } from '@/lib/slaBugs/parseSlaBugFields';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
@@ -266,5 +267,59 @@ export function mapTrackerIssueToTaskBase(
     resolvedAt: issue.resolvedAt,
     ...queueFields,
     ...trackerScheduleDates(issue),
+    ...customFieldValuesFromIssue(issue),
   };
+}
+
+const TRACKER_ISSUE_MAPPED_KEYS = new Set([
+  'HD_count',
+  'HD_growth24h',
+  'HD_growth7d',
+  'MergeRequestLink',
+  'assignee',
+  'bizErpTeam',
+  'checklistDone',
+  'checklistItems',
+  'checklistTotal',
+  'createdAt',
+  'dangerousRelease',
+  'deadline',
+  'description',
+  'epic',
+  'functionalTeam',
+  'id',
+  'incidentSeverity',
+  'key',
+  'key_client',
+  'lastHDAt',
+  'parent',
+  'priority',
+  'qaEngineer',
+  'queue',
+  'resolvedAt',
+  'self',
+  'slaDeadline',
+  'sprint',
+  'stage',
+  'start',
+  'status',
+  'statusType',
+  'storyPoints',
+  'summary',
+  'sup_priority',
+  'tags',
+  'testPoints',
+  'type',
+  'updatedAt',
+]);
+
+function customFieldValuesFromIssue(issue: TrackerIssue): Pick<Task, 'customFieldValues'> {
+  const extra: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(issue)) {
+    if (!TRACKER_ISSUE_MAPPED_KEYS.has(key)) {
+      extra[key] = value;
+    }
+  }
+  const customFieldValues = customFieldDisplayMap(extra);
+  return customFieldValues ? { customFieldValues } : {};
 }

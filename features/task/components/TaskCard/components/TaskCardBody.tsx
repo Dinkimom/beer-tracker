@@ -1,33 +1,36 @@
 'use client';
 
-import type { PlanningPhaseCardColorScheme, SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
+import type { TaskCardSlotItemContext } from '@/features/task/components/TaskCard/slots/taskCardSlotItemContext';
+import type { PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
 import type { Task, Developer, TaskCardVariant } from '@/types';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveFeatureDraftParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
+import { useResolvedSwimlaneCardSlotLayout } from '@/hooks/useLocalStorage';
+import {
+  formatTaskStoryPointsForDisplay,
+  formatTaskTestPointsForDisplay,
+} from '@/lib/pointsUtils';
 
 import { useFeatureDraftRowNames } from '../FeatureDraftRowNamesContext';
 import { useFeatureLaneShowAssigneeAvatar } from '../FeatureLaneCardUiContext';
+import { resolveSwimlaneTaskCardSlots } from '../slots/resolveSwimlaneTaskCardSlots';
+import { TaskCardSlotItems } from '../slots/TaskCardSlotItems';
 import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility';
 import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 
 import {
   resolveTaskCardBodyContext,
 } from './taskCardBodyContextHelpers';
-import {
-  shouldShowTaskCardSwimlaneMetaRow,
-  TaskCardSwimlaneMetaRow,
-} from './taskCardBodyHelpers';
+import { resolveSwimlaneStoryPointsForDisplay } from './taskCardBodyHelpers';
 import {
   resolveTaskCardBodyStackClass,
   resolveTaskCardContentDisplayDuration,
-  resolveTaskCardSwimlaneAssigneeAvatarPlacement,
-  shouldShowTaskCardParentRow,
+  shouldShowTaskCardSwimlaneAssigneeAvatar,
   TaskCardSidebarAssigneeRow,
 } from './taskCardBodyLayoutHelpers';
 import { TaskCardContent } from './TaskCardContent';
 import { TaskCardDueDateChip } from './TaskCardDueDateChip';
-import { TaskCardFeatureLaneAssigneeChip } from './TaskCardFeatureLaneAssigneeChip';
 
 interface TaskCardBodyProps {
   actualDuration?: number;
@@ -43,7 +46,6 @@ interface TaskCardBodyProps {
   isQATask?: boolean;
   isResizing?: boolean;
   phaseCardColorScheme?: PlanningPhaseCardColorScheme;
-  swimlaneCardFields?: SwimlaneCardFieldsVisibility;
   task: Task;
   variant?: TaskCardVariant;
   onCommentUpdate?: (commentId: string, text: string) => void;
@@ -64,12 +66,12 @@ export function TaskCardBody({
   onPhotoClick,
   onCommentUpdate,
   phaseCardColorScheme = 'status',
-  swimlaneCardFields,
 }: TaskCardBodyProps) {
   const { t } = useI18n();
   const estimateMapping = useTaskCardEstimateMapping();
   const showFeatureLaneAssigneeAvatar = useFeatureLaneShowAssigneeAvatar();
   const featureDraftRowNames = useFeatureDraftRowNames();
+  const slotLayout = useResolvedSwimlaneCardSlotLayout();
   const parentLabel = task.parent
     ? resolveFeatureDraftParentLabel(task.parent, featureDraftRowNames)
     : '';
@@ -82,48 +84,59 @@ export function TaskCardBody({
     task,
     variant,
   });
-
-  const showParentRow =
-    Boolean(parentLabel) &&
-    shouldShowTaskCardParentRow({
-      displayDuration,
-      hideParent: showFeatureLaneAssigneeAvatar,
-      swimlaneCardFields,
-      task,
-      variant,
-    });
-  const assigneeAvatarPlacement = resolveTaskCardSwimlaneAssigneeAvatarPlacement({
-    displayDuration,
+  const hasEstimate = resolveTaskCardEstimateVisibility({
+    hideTestPoints: bodyContext.hideTestPoints,
+    isQATask: bodyContext.isQATask,
+    mapping: estimateMapping,
+    showEstimatesSetting: true,
+    taskId: task.id,
+  }).showPrimaryEstimate;
+  const hasAssignee = shouldShowTaskCardSwimlaneAssigneeAvatar({
     hasAssignee: Boolean(bodyContext.assigneeDisplayName),
     showAssigneeAvatar: showFeatureLaneAssigneeAvatar,
     task,
     variant,
   });
-  const showEstimateLabel = resolveTaskCardEstimateVisibility({
-    hideTestPoints: bodyContext.hideTestPoints,
-    isQATask: bodyContext.isQATask,
-    mapping: estimateMapping,
-    showEstimatesSetting: swimlaneCardFields?.showEstimates ?? true,
-    taskId: task.id,
-  }).showPrimaryEstimate;
-  const showMetaRow = shouldShowTaskCardSwimlaneMetaRow({
-    isVeryNarrow: bodyContext.isVeryNarrow,
-    showEstimateLabel,
-    swimlaneCardFields,
-    task,
-    variant,
-  });
-  const showFooterAssignee = assigneeAvatarPlacement === 'footer';
+  const slots = variant === 'swimlane'
+    ? resolveSwimlaneTaskCardSlots({
+        displayDuration,
+        hasAssignee,
+        hasEstimate,
+        hasKey: true,
+        hideParent: showFeatureLaneAssigneeAvatar,
+        layout: slotLayout,
+        task,
+      })
+    : null;
+  const estimateLabel = bodyContext.isQATask && !bodyContext.hideTestPoints
+    ? formatTaskTestPointsForDisplay(task, 'compact')
+    : formatTaskStoryPointsForDisplay(
+        { storyPoints: resolveSwimlaneStoryPointsForDisplay(task, actualDuration ?? displayDuration) },
+        'compact'
+      );
+  const slotContext: TaskCardSlotItemContext = {
+    assignee: bodyContext.assigneeDisplayName
+      ? {
+          avatarUrl: bodyContext.assigneeDeveloper?.avatarUrl,
+          initials: bodyContext.assigneeInitials,
+          initialsVariant: bodyContext.assigneeAvatarVariant,
+          label: bodyContext.assigneeDisplayName,
+        }
+      : undefined,
+    estimateLabel,
+    isDragging,
+    parentLabel,
+  };
+  const showEyebrow = Boolean(slots && slots.eyebrow.length > 0);
+  const showFooter = Boolean(slots && (slots.footer.length > 0 || slots.footerEnd.length > 0));
   return (
     <div className={resolveTaskCardBodyStackClass(variant, task.localDraftKind === 'diagram' || task.localDraftKind === 'image')}>
-      {showParentRow && (
-        <div className="shrink-0 truncate text-[10px] leading-tight text-gray-700 dark:text-gray-200">
-          {parentLabel}
-        </div>
-      )}
+      {showEyebrow && slots ? (
+        <TaskCardSlotItems context={slotContext} items={slots.eyebrow} task={task} />
+      ) : null}
 
       <TaskCardContent
-        centerTitle={showParentRow}
+        centerTitle={showEyebrow}
         developers={developers}
         displayDuration={resolveTaskCardContentDisplayDuration(variant, displayDuration)}
         fontDuration={actualDuration ?? displayDuration}
@@ -131,8 +144,9 @@ export function TaskCardBody({
         isDragging={isDragging}
         isResizing={isResizing}
         phaseCardColorScheme={phaseCardColorScheme}
-        swimlaneCardFields={swimlaneCardFields}
+        slotContext={slotContext}
         task={task}
+        titleLeadItems={slots?.titleLead}
         variant={variant}
         onCommentUpdate={onCommentUpdate}
         onPhotoClick={onPhotoClick}
@@ -153,28 +167,12 @@ export function TaskCardBody({
         />
       )}
 
-      {(showFooterAssignee || showMetaRow) && (
+      {showFooter && slots ? (
         <div className="flex min-w-0 shrink-0 items-center gap-1.5">
-          {showMetaRow ? (
-            <TaskCardSwimlaneMetaRow
-              displayDuration={actualDuration ?? displayDuration}
-              hideTestPoints={bodyContext.hideTestPoints}
-              isQATask={bodyContext.isQATask}
-              showEstimateLabel={showEstimateLabel}
-              swimlaneCardFields={swimlaneCardFields}
-              task={task}
-            />
-          ) : null}
-          {showFooterAssignee && bodyContext.assigneeDisplayName ? (
-            <TaskCardFeatureLaneAssigneeChip
-              assigneeAvatarUrl={bodyContext.assigneeDeveloper?.avatarUrl}
-              assigneeAvatarVariant={bodyContext.assigneeAvatarVariant}
-              assigneeInitials={bodyContext.assigneeInitials}
-              assigneeLabel={bodyContext.assigneeDisplayName}
-            />
-          ) : null}
+          <TaskCardSlotItems context={slotContext} items={slots.footer} task={task} />
+          <TaskCardSlotItems alignEnd context={slotContext} items={slots.footerEnd} task={task} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

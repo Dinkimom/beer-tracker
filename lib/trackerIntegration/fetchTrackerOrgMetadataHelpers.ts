@@ -6,6 +6,7 @@ export interface TrackerMetadataFieldDto {
   name?: string;
   options?: string[];
   readonly?: boolean;
+  schemaCustom?: string;
   schemaType?: string;
 }
 

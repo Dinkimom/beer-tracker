@@ -15,8 +15,10 @@ import { useI18n } from '@/contexts/LanguageContext';
 import {
   sprintPlannerContentRowWidthCss,
   sprintPlannerDaysHeaderContentWidthCss,
+  sprintPlannerOverflowTimelineWidthCss,
 } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
 import { SprintPlannerTimelineFill } from '@/features/sprint/components/SprintPlanner/layout/SprintPlannerTimelineFill';
+import { timelineOverflowCellCount } from '@/features/sprint/components/SprintPlanner/layout/timelineOverflowCellCount';
 import {
   countPlacementToolbarExtras,
   resolvePlacementToolbarScrollPadPx,
@@ -311,6 +313,17 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   );
 
   const sidebarEffectiveWidthPx = sidebarOpen ? sidebarWidth : 0;
+  const timelineTotalCells = sprintTimelineWorkingDays * getPartsPerDay();
+  const overflowCells = timelineOverflowCellCount(swimlanePositions.values(), timelineTotalCells);
+  const overflowWidthCss = sprintPlannerOverflowTimelineWidthCss(
+    viewMode,
+    participantsColumnWidth,
+    sidebarEffectiveWidthPx,
+    sprintTimelineWorkingDays,
+    overflowCells,
+    timelineTotalCells
+  );
+  const afterSprintTone = overflowCells > 0 ? 'shards' : 'neutral';
   const swimlanesContentWidth = sprintPlannerDaysHeaderContentWidthCss(
     viewMode,
     participantsColumnWidth,
@@ -321,7 +334,8 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     viewMode,
     participantsColumnWidth,
     sidebarEffectiveWidthPx,
-    sprintTimelineWorkingDays
+    sprintTimelineWorkingDays,
+    overflowWidthCss
   );
   const showAfterSprintRail = viewMode === 'full';
   const placementToolbarClearancePx = resolvePlacementToolbarScrollPadPx(
@@ -359,6 +373,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
         ) : null}
         {/* DaysHeader: sticky top внутри этого flex-col (высота = весь контент скролла) */}
         <DaysHeader
+          afterSprintTone={afterSprintTone}
           boardId={boardId}
           developers={developers}
           developersManagement={developersManagement}
@@ -439,7 +454,10 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
             />
           </div>
           {showAfterSprintRail ? (
-            <SprintPlannerTimelineFill className="min-w-0 flex-1 self-stretch" />
+            <SprintPlannerTimelineFill
+              className="min-w-0 flex-1 self-stretch"
+              tone={afterSprintTone}
+            />
           ) : null}
         </div>
       </div>

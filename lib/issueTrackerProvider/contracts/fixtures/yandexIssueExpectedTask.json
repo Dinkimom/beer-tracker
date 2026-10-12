@@ -3,6 +3,19 @@
   "assignee": "user-42",
   "assigneeName": "Ada Lovelace",
   "createdAt": "2026-03-01T10:00:00.000+0000",
+  "customFieldValues": {
+    "CustomStoryPoints": "8",
+    "HD_count": "3",
+    "HD_growth24h": "1",
+    "HD_growth7d": "2",
+    "key_client": "true",
+    "lastHDAt": "2026-03-09T08:00:00.000+0000",
+    "queue": "Beer Tracker",
+    "resolvedAt": "2026-03-11T09:00:00.000+0000",
+    "slaDeadline": "2026-03-15T00:00:00.000+0000",
+    "sup_priority": "true",
+    "tags": "sla"
+  },
   "dangerousRelease": "critical",
   "description": "Tooltip must show story points.",
   "epic": {

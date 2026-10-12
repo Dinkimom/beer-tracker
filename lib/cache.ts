@@ -175,6 +175,9 @@ export const cacheKeys = {
     fingerprint: string,
     slice: 'fields' | 'statuses'
   ) => `admin:tracker-metadata:${organizationId}:${fingerprint}:${slice}`,
+  /** Фиксированные значения поля-списка для коротких подписей на карточке. */
+  adminTrackerFieldValues: (organizationId: string, fingerprint: string, fieldId: string) =>
+    `admin:tracker-field-values:${organizationId}:${fingerprint}:${fieldId}`,
   /** Полный список пользователей Яндекс Трекера (поиск в админке). */
   /** v2 — полный каталог (до 10k); v1 обрезал на 2000 и ломал поиск по ФИО. */
   trackerUsersList: (fingerprint: string) => `tracker:users:v2:${fingerprint}`,

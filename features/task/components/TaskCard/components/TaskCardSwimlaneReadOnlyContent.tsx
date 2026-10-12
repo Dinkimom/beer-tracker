@@ -1,8 +1,9 @@
 'use client';
 
+import type { TaskCardSlotItemContext } from '@/features/task/components/TaskCard/slots/taskCardSlotItemContext';
+import type { ResolvedTaskCardSlotItem } from '@/lib/taskCard/taskCardSlots';
 import type { Task } from '@/types';
 
-import { TextTooltip } from '@/components/TextTooltip';
 import { StickyNoteTextContent } from '@/features/comments/components/StickyNoteTextContent';
 import { STICKY_NOTE_CONTENT_DATA_ATTR } from '@/features/comments/utils/stickyNoteCommentContentOverflow';
 import {
@@ -14,59 +15,50 @@ import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCo
 import { MarkdownChecklistPreview } from '@/features/markdown/components/MarkdownChecklistPreview';
 import { stickyNoteUsesMarkdownLayout } from '@/lib/markdown/markdownChecklist';
 
+import { TaskCardSlotItems } from '../slots/TaskCardSlotItems';
+
 import {
-  buildTaskCardKeyLinkProps,
   resolveTaskCardTitleText,
   TASK_CARD_TITLE_DATA_ATTR,
 } from './taskCardContentHelpers';
-import { TaskCardSwimlaneMetaIconsRow } from './TaskCardSwimlaneMetaIconsRow';
 
 interface TaskCardSwimlaneReadOnlyContentProps {
   displayId: string;
-  inlineIconSize: string;
   isDragging: boolean;
-  keyLinkProps: ReturnType<typeof buildTaskCardKeyLinkProps>;
   lineHeightClass: string;
   maxLines: number;
-  showKey: boolean;
-  showMetaIcons: boolean;
-  showPriorityIcon: boolean;
-  showTypeIcon: boolean;
+  slotContext?: TaskCardSlotItemContext;
   task: Task;
   teamTextColor: string;
   textRef: React.RefObject<HTMLDivElement | null>;
   textSize: string;
+  titleLeadItems?: readonly ResolvedTaskCardSlotItem[];
   onCommentUpdate?: (commentId: string, text: string) => void;
   t: (key: string, params?: Record<string, string>) => string;
 }
 
 export function TaskCardSwimlaneReadOnlyContent({
   displayId,
-  inlineIconSize,
   isDragging,
-  keyLinkProps,
   lineHeightClass,
   maxLines,
   onCommentUpdate,
-  showKey,
-  showMetaIcons,
-  showPriorityIcon,
-  showTypeIcon,
+  slotContext,
   t,
   task,
   teamTextColor,
   textRef,
   textSize,
+  titleLeadItems = [],
 }: TaskCardSwimlaneReadOnlyContentProps) {
   const isCommentCard = task.localDraftKind === 'comment';
   const titleFontClass = isCommentCard ? getStickyNoteTextClass() : 'font-bold';
   const resolvedTitle = resolveTaskCardTitleText(task, t);
-  const titleText = (
-    <>
-      {showKey ? ' ' : ''}
-      {resolvedTitle}
-    </>
-  );
+  const slotItemContext: TaskCardSlotItemContext = {
+    ...slotContext,
+    displayId,
+    isDragging,
+  };
 
   if (isCommentCard) {
     if (typeof resolvedTitle !== 'string') {
@@ -142,26 +134,15 @@ export function TaskCardSwimlaneReadOnlyContent({
         overflow: 'hidden',
       }}
     >
-      <TaskCardSwimlaneMetaIconsRow
-        inlineIconSize={inlineIconSize}
-        showMetaIcons={showMetaIcons}
-        showPriorityIcon={showPriorityIcon}
-        showTypeIcon={showTypeIcon}
+      <TaskCardSlotItems
+        context={slotItemContext}
+        flow="inline"
+        items={titleLeadItems}
         task={task}
       />
-      {showKey && (
-        <TextTooltip content={keyLinkProps.title}>
-        <a
-          className="break-all cursor-pointer text-[10px] font-bold leading-tight text-blue-600 hover:underline dark:text-blue-400"
-          {...keyLinkProps}
-          title={undefined}
-        >
-          {displayId}
-        </a>
-        </TextTooltip>
-      )}
+      {titleLeadItems.length > 0 ? ' ' : null}
       <span className={titleFontClass}>
-        {titleText}
+        {resolvedTitle}
       </span>
     </div>
   );

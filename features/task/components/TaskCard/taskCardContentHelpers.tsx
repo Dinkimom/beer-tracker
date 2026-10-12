@@ -86,7 +86,6 @@ export function renderTaskCardBody(params: RenderTaskCardBodyParams): React.Reac
       slaBugDemoteReason={params.slaBugDemoteReason}
       slaBugSignalLabel={params.slaBugSignalLabel}
       sprintBadge={params.sprintBadge}
-      swimlaneCardFields={params.resolvedSwimlaneCardFields}
       task={params.task}
       taskPosition={params.taskPosition}
       variant={params.variant}

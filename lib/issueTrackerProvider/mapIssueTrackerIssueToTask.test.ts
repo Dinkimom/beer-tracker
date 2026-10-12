@@ -29,6 +29,7 @@ describe('mapIssueTrackerIssueToTask', () => {
       type: 'task',
     });
     expect(task.name).not.toBe('From raw Yandex JSON');
+    expect(task.customFieldValues).toEqual({ CustomStoryPoints: '8' });
   });
 
   it('reads SLA and resolvedAt from customFields, not from raw', () => {

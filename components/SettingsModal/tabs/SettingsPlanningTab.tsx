@@ -6,14 +6,14 @@ import type {
   PlanningPhaseCardColorScheme,
 } from '@/hooks/useLocalStorage';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { CustomSelect } from '@/components/CustomSelect';
 import { useI18n } from '@/contexts/LanguageContext';
+import { TaskCardDisplayDialog } from '@/features/task/components/TaskCard/slots/TaskCardDisplayDialog';
 import { usePlanningPhaseCardColorSchemeStorage } from '@/hooks/useLocalStorage';
 
-import { CheckboxOption } from '../components/CheckboxOption';
 import { OccupancySettingsSection } from '../components/OccupancySettingsSection';
 import { Toggle } from '../components/Toggle';
 
@@ -21,6 +21,7 @@ import { SettingsPlanningTabRowFieldsGrid } from './SettingsPlanningTabRowFields
 
 export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
   const [phaseCardColorScheme, setPhaseCardColorScheme] = usePlanningPhaseCardColorSchemeStorage();
+  const [cardDisplayOpen, setCardDisplayOpen] = useState(false);
   const { t } = useI18n();
   const ganttTabs = useMemo(
     () =>
@@ -58,12 +59,10 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
     setQuarterlyV2ShowPlannedTasks,
     setQuarterlyV2TimelineSettings,
     setSwimlaneCalendarBusyVisible,
-    setSwimlaneCardFields,
     setSwimlaneFactTimelineVisible,
     setSwimlaneLinksVisible,
     setTimelineSettings,
     swimlaneCalendarBusyVisible,
-    swimlaneCardFields,
     swimlaneFactTimelineVisible,
     swimlaneLinksVisible,
     timelineSettings,
@@ -248,57 +247,16 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
             <h4 className="text-xs font-medium uppercase tracking-wide text-ds-text-muted">
               {t('settings.planningTab.taskCardFieldsHeading')}
             </h4>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-              <CheckboxOption
-                checked={swimlaneCardFields.showParent}
-                label={t('settings.planningTab.parentIssue')}
-                onChange={(checked) =>
-                  setSwimlaneCardFields((prev) => ({ ...prev, showParent: checked }))
-                }
-              />
-              <CheckboxOption
-                checked={swimlaneCardFields.showKey}
-                label={t('settings.planningTab.rowFieldLabels.issueKey')}
-                onChange={(checked) =>
-                  setSwimlaneCardFields((prev) => ({ ...prev, showKey: checked }))
-                }
-              />
-              <CheckboxOption
-                checked={swimlaneCardFields.showPriority}
-                label={t('settings.planningTab.rowFieldLabels.priority')}
-                onChange={(checked) =>
-                  setSwimlaneCardFields((prev) => ({ ...prev, showPriority: checked }))
-                }
-              />
-              <CheckboxOption
-                checked={swimlaneCardFields.showType}
-                label={t('settings.planningTab.rowFieldLabels.type')}
-                onChange={(checked) =>
-                  setSwimlaneCardFields((prev) => ({ ...prev, showType: checked }))
-                }
-              />
-              <CheckboxOption
-                checked={swimlaneCardFields.showEstimates ?? true}
-                label={t('settings.planningTab.swimlaneEstimatesSpTp')}
-                onChange={(checked) =>
-                  setSwimlaneCardFields((prev) => ({ ...prev, showEstimates: checked }))
-                }
-              />
-              <CheckboxOption
-                checked={swimlaneCardFields.showStatus ?? true}
-                label={t('settings.planningTab.rowFieldLabels.status')}
-                onChange={(checked) =>
-                  setSwimlaneCardFields((prev) => ({ ...prev, showStatus: checked }))
-                }
-              />
-              <CheckboxOption
-                checked={swimlaneCardFields.showSeverity ?? true}
-                label={t('settings.planningTab.rowFieldLabels.severity')}
-                onChange={(checked) =>
-                  setSwimlaneCardFields((prev) => ({ ...prev, showSeverity: checked }))
-                }
-              />
-            </div>
+            <p className="text-xs leading-relaxed text-ds-text-muted">{t('settings.planningTab.cardSlots.hint')}</p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCardDisplayOpen(true);
+              }}
+            >
+              {t('settings.planningTab.cardSlots.open')}
+            </Button>
           </div>
         </section>
       )}
@@ -329,6 +287,13 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
           </div>
         </section>
       )}
+      <TaskCardDisplayDialog
+        nested
+        open={cardDisplayOpen}
+        onClose={() => {
+          setCardDisplayOpen(false);
+        }}
+      />
     </div>
   );
 }

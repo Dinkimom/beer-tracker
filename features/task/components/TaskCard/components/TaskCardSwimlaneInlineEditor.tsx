@@ -1,5 +1,7 @@
 'use client';
 
+import type { TaskCardSlotItemContext } from '@/features/task/components/TaskCard/slots/taskCardSlotItemContext';
+import type { ResolvedTaskCardSlotItem } from '@/lib/taskCard/taskCardSlots';
 import type { Developer, Task } from '@/types';
 import type { KeyboardEvent } from 'react';
 
@@ -10,11 +12,10 @@ import { CommentMentionSelector } from '@/features/task/components/TaskBar/compo
 import { useCommentMentionAutocomplete } from '@/features/task/components/TaskBar/components/quickAddMenu/hooks/useCommentMentionAutocomplete';
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 
-import { TaskCardSwimlaneMetaIconsRow } from './TaskCardSwimlaneMetaIconsRow';
+import { TaskCardSlotItems } from '../slots/TaskCardSlotItems';
 
 interface TaskCardSwimlaneInlineEditorProps {
   developers?: readonly Developer[];
-  inlineIconSize: string;
   inlineTitleEditor: {
     placeholder?: string;
     value: string;
@@ -23,14 +24,13 @@ interface TaskCardSwimlaneInlineEditorProps {
     onSubmit?: () => void;
   };
   lineHeightClass: string;
-  showMetaIcons: boolean;
-  showPriorityIcon: boolean;
-  showTypeIcon: boolean;
+  slotContext?: TaskCardSlotItemContext;
   task: Task;
   teamTextColor: string;
   textSize: string;
   titleEditorClassName: string;
   titleInputRef: React.RefObject<HTMLTextAreaElement | null>;
+  titleLeadItems?: readonly ResolvedTaskCardSlotItem[];
   onTitleChange: (value: string, selection: { end: number; start: number }) => void;
 }
 
@@ -60,13 +60,11 @@ export function TaskCardSwimlaneInlineEditor({
   textSize,
   lineHeightClass,
   teamTextColor,
-  showMetaIcons,
-  showPriorityIcon,
-  showTypeIcon,
   task,
-  inlineIconSize,
   titleInputRef,
+  slotContext,
   titleEditorClassName,
+  titleLeadItems = [],
   inlineTitleEditor,
   onTitleChange,
 }: TaskCardSwimlaneInlineEditorProps) {
@@ -100,17 +98,11 @@ export function TaskCardSwimlaneInlineEditor({
           : 'flex min-h-0 w-full flex-col'}
       }`}
     >
-      {!isCommentCard && showMetaIcons && (
+      {!isCommentCard && titleLeadItems.length > 0 && slotContext ? (
         <div className="mb-0.5 shrink-0">
-          <TaskCardSwimlaneMetaIconsRow
-            inlineIconSize={inlineIconSize}
-            showMetaIcons={showMetaIcons}
-            showPriorityIcon={showPriorityIcon}
-            showTypeIcon={showTypeIcon}
-            task={task}
-          />
+          <TaskCardSlotItems context={slotContext} items={titleLeadItems} task={task} />
         </div>
-      )}
+      ) : null}
       <textarea
         ref={titleInputRef}
         aria-label={inlineTitleEditor.placeholder}

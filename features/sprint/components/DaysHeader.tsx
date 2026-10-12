@@ -1,5 +1,6 @@
 'use client';
 
+import type { PlannerHatchTone } from '@/features/sprint/components/SprintPlanner/layout/plannerHatchTones';
 import type { DayErrorDetail } from '@/features/sprint/utils/occupancyValidation';
 import type { Developer } from '@/types';
 
@@ -30,6 +31,8 @@ function canLinkDaysScrollTimeline(): boolean {
 }
 
 interface DaysHeaderProps {
+  /** Тон колонки после спринта: штриховка или кладбище, если план вылез за сетку. */
+  afterSprintTone?: PlannerHatchTone;
   boardId?: number | null;
   developers?: Developer[];
   developersManagement?: {
@@ -64,6 +67,7 @@ interface DaysHeaderProps {
 
 export function DaysHeader({
   boardId = null,
+  afterSprintTone = 'neutral',
   sprintStartDate,
   sprintTimelineWorkingDays = WORKING_DAYS,
   viewMode,
@@ -180,27 +184,29 @@ export function DaysHeader({
                     ? t('sprintPlanner.featureLanes.columnTitle')
                     : t('sprintPlanner.swimlane.columnTitle')}
                 </span>
-                {developersManagement && (featureColumn.isFeatureLane || developers.length > 0) && (
-                  <Button
-                    ref={settingsButtonRef}
-                    aria-label={
-                      featureColumn.isFeatureLane
-                        ? t('sprintPlanner.featureLanes.editRowsTitle')
-                        : t('sprintPlanner.swimlane.editParticipantsTitle')
-                    }
-                    className={`!h-6 !w-6 !min-h-0 !min-w-0 shrink-0 !justify-center !rounded-md !p-0 ${FLOATING_TOOLBAR_ITEM_IDLE}`}
-                    title={
-                      featureColumn.isFeatureLane
-                        ? t('sprintPlanner.featureLanes.editRowsTitle')
-                        : t('sprintPlanner.swimlane.editParticipantsTitle')
-                    }
-                    type="button"
-                    variant="ghost"
-                    onClick={handleSettingsClick}
-                  >
-                    <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" name="edit" />
-                  </Button>
-                )}
+                <div className="flex shrink-0 items-center gap-1">
+                  {developersManagement && (featureColumn.isFeatureLane || developers.length > 0) && (
+                    <Button
+                      ref={settingsButtonRef}
+                      aria-label={
+                        featureColumn.isFeatureLane
+                          ? t('sprintPlanner.featureLanes.editRowsTitle')
+                          : t('sprintPlanner.swimlane.editParticipantsTitle')
+                      }
+                      className={`!h-6 !w-6 !min-h-0 !min-w-0 shrink-0 !justify-center !rounded-md !p-0 ${FLOATING_TOOLBAR_ITEM_IDLE}`}
+                      title={
+                        featureColumn.isFeatureLane
+                          ? t('sprintPlanner.featureLanes.editRowsTitle')
+                          : t('sprintPlanner.swimlane.editParticipantsTitle')
+                      }
+                      type="button"
+                      variant="ghost"
+                      onClick={handleSettingsClick}
+                    >
+                      <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" name="edit" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             <div className="relative min-w-0 flex-1 overflow-hidden">
@@ -214,13 +220,33 @@ export function DaysHeader({
                   variant="swimlanes"
                   workingDaysCount={sprintTimelineWorkingDays}
                 />
-                {showAfterSprintRail ? (
+                {showAfterSprintRail && afterSprintTone === 'shards' ? (
+                  <div
+                    className="flex min-w-0 flex-1 items-center justify-center overflow-hidden border-l border-gray-200 px-2 dark:border-gray-600"
+                    style={{
+                      height: DAYS_HEADER_ROW_HEIGHT_PX,
+                      minHeight: DAYS_HEADER_ROW_HEIGHT_PX,
+                    }}
+                  >
+                    <span
+                      className="truncate text-base font-normal leading-none text-gray-400 dark:text-gray-500"
+                      style={{
+                        fontFamily: 'var(--font-ruslan), "Times New Roman", serif',
+                        transform: 'translateY(0.16em)',
+                      }}
+                    >
+                      {t('sprintPlanner.swimlane.overtimeGraveyard')}
+                    </span>
+                  </div>
+                ) : null}
+                {showAfterSprintRail && afterSprintTone !== 'shards' ? (
                   <SprintPlannerTimelineFill
                     className="min-w-0 flex-1 !bg-transparent"
                     style={{
                       height: DAYS_HEADER_ROW_HEIGHT_PX,
                       minHeight: DAYS_HEADER_ROW_HEIGHT_PX,
                     }}
+                    tone={afterSprintTone}
                   />
                 ) : null}
               </div>

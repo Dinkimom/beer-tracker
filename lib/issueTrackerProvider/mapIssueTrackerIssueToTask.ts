@@ -9,7 +9,15 @@ import { applyTrackerIntegrationToTask } from '@/lib/trackerIntegration';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
+import { customFieldDisplayMap } from './customFieldDisplayValue';
 import { issueTrackerIssueWebUrlFromBase } from './issueTrackerUi';
+
+function customFieldValuesOf(
+  fields: Record<string, unknown> | undefined
+): Pick<Task, 'customFieldValues'> {
+  const customFieldValues = customFieldDisplayMap(fields);
+  return customFieldValues ? { customFieldValues } : {};
+}
 
 function optionalPoints(value: number | null | undefined): number | undefined {
   return value === undefined || value === null ? undefined : value;
@@ -212,6 +220,7 @@ function mapIssueTrackerIssueToTaskBase(
     link: issueTrackerIssueWebUrlFromBase(trackerWeb.kind, trackerWeb.webBaseUrl, issue.key),
     ...(options?.omitDescription ? {} : { description: issue.description }),
     createdAt: issue.createdAt,
+    ...customFieldValuesOf(issue.customFields),
     storyPoints: optionalPoints(issue.storyPoints),
     testPoints: optionalPoints(issue.testPoints),
     team: mapTeam(issue.functionalTeam),
