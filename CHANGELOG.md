@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.13.0] — 2026-10-14
+
+### English
+
+- Swimlane cards include a tic-tac-toe widget, placed from the cards tool. A finished game bursts confetti. Existing databases add the `widget` comment kind with `database/add-comment-widget-kind.sql`.
+- Hovering a link arrow shows the relationship: blocks, relates, and the tracker’s own phrase for custom Jira or Yandex Tracker links.
+- The overdue baseline chip sits on the card side opposite the incoming link arrow.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.13.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- На свимлейне можно поставить карточку крестиков-ноликов из инструмента карточек. Законченная партия сыплет конфетти. Для уже существующей БД тип комментария `widget` добавляется скриптом `database/add-comment-widget-kind.sql`.
+- При наведении на стрелку связи показывается её тип: блокирует, связана, а для своих фраз Jira и Яндекс Трекера — текст трекера.
+- Чип просроченного бейзлайна встаёт на сторону карточки, противоположную входящей стрелке.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.13.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.12.0] — 2026-10-13
 
 ### English
