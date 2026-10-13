@@ -32,6 +32,7 @@ describe('placementToolShortcutDigit', () => {
       '5',
       '6',
       '7',
+      '8',
     ]);
   });
 });
@@ -40,7 +41,7 @@ describe('formatPlacementToolShortcutHint', () => {
   it('formats Cmd/Ctrl plus the tool digit', () => {
     expect(formatPlacementToolShortcutHint('cursor', 'Macintosh')).toBe('⌘+1');
     expect(formatPlacementToolShortcutHint('task', 'Windows')).toBe('Ctrl+3');
-    expect(formatPlacementToolShortcutHint('availability', 'Macintosh')).toBe('⌘+7');
+    expect(formatPlacementToolShortcutHint('availability', 'Macintosh')).toBe('⌘+8');
   });
 });
 
@@ -60,7 +61,7 @@ describe('resolvePlacementToolShortcut', () => {
   it('ignores hidden tools, modifiers without Ctrl/Cmd, and Shift/Alt', () => {
     const withoutAvailability = SWIMLANE_PLACEMENT_TOOLS.filter((tool) => tool !== 'availability');
     expect(
-      resolvePlacementToolShortcut(keyEvent('Digit7', { metaKey: true }), withoutAvailability)
+      resolvePlacementToolShortcut(keyEvent('Digit8', { metaKey: true }), withoutAvailability)
     ).toBeNull();
     expect(resolvePlacementToolShortcut(keyEvent('Digit2'), SWIMLANE_PLACEMENT_TOOLS)).toBeNull();
     expect(

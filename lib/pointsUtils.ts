@@ -13,7 +13,7 @@ import {
 interface TaskLikeForPoints {
   id?: string;
   isLocalTask?: boolean;
-  localDraftKind?: 'comment' | 'diagram' | 'existing' | 'image' | 'task';
+  localDraftKind?: 'comment' | 'diagram' | 'existing' | 'image' | 'task' | 'widget';
   storyPoints?: number | null;
   team?: string;
   testPoints?: number | null;
@@ -23,7 +23,8 @@ function isPlannerAnnotationForVolume(task: TaskLikeForPoints): boolean {
   if (
     task.localDraftKind === 'comment' ||
     task.localDraftKind === 'diagram' ||
-    task.localDraftKind === 'image'
+    task.localDraftKind === 'image' ||
+    task.localDraftKind === 'widget'
   ) {
     return true;
   }

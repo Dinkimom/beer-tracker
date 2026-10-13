@@ -9,7 +9,7 @@ import { observer } from 'mobx-react-lite';
 import React, { useRef, useState } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
-import { isSwimlaneDiagramTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
@@ -146,7 +146,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
   const { sprintPlannerUi } = useRootStore();
   const isChooserDraft = isQuickAddChooserDraft(task);
   const resizeDisabled =
-    disableResize || disableDragAndResize || isChooserDraft;
+    disableResize || disableDragAndResize || isChooserDraft || isSwimlaneWidgetTask(task);
   const [clickStartPos, setClickStartPos] = useState<{ x: number; y: number } | null>(null);
   const [isExpandedByLongHover, setIsExpandedByLongHover] = useState(false);
   const [hoverExpandFitDurationParts, setHoverExpandFitDurationParts] = useState<number | null>(null);
@@ -236,12 +236,17 @@ const TaskBarSurface = observer(function TaskBarSurface({
     openPhotoLightbox,
   } = useTaskBarPhotoCardInteractions(task, effectiveIsDragging);
   const isDiagramCard = isSwimlaneDiagramTask(task);
+  const isWidgetCard = isSwimlaneWidgetTask(task);
   const isSwimlanePhotoCard = isSwimlaneImageTask(task);
   const isStickyNoteCard =
     !isSwimlanePhotoCard &&
     !isDiagramCard &&
+    !isWidgetCard &&
     (task.localDraftKind === 'comment' || swimlaneCommentId != null);
-  const cornerStyle = resolveResizeHandleCornerStyle(isPhotoCard || isDiagramCard, isStickyNoteCard);
+  const cornerStyle = resolveResizeHandleCornerStyle(
+    isPhotoCard || isDiagramCard || isWidgetCard,
+    isStickyNoteCard
+  );
   const {
     showCommentDelete,
     showDraftNoteDelete,
@@ -281,7 +286,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
         effectiveIsDragging,
         instantGeometryClass,
         interactionDisabled,
-        isAnnotationCard: isStickyNoteCard || isPhotoCard || isDiagramCard,
+        isAnnotationCard: isStickyNoteCard || isPhotoCard || isDiagramCard || isWidgetCard,
         linkCursorClass,
         shouldExpandByLongHover,
       })}
@@ -362,7 +367,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
         transform={transform}
         verticalResize={verticalResize}
         onClick={
-          presenceBlocksMutations && !isPhotoCard && !isDiagramCard
+          isWidgetCard || (presenceBlocksMutations && !isPhotoCard && !isDiagramCard)
             ? undefined
             : resolveTaskBarCardClick({
                 imageUrl: task.imageUrl,
@@ -388,7 +393,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
       >
         <TaskBarAnnotationOverlays
           isDiagramCard={isDiagramCard}
-          isPhotoCard={isPhotoCard}
+          isPhotoCard={isPhotoCard || isWidgetCard}
           isResizing={isAnyResizing}
           readOnly={presenceBlocksMutations}
           showCommentDelete={showCommentDelete}

@@ -52,7 +52,13 @@ export function canQuickAddOnSwimlaneLane(input: {
 export function placementToolToDraftKind(
   tool: SwimlanePlacementTool
 ): QuickAddDraftKind | undefined {
-  if (tool === 'cursor' || tool === 'link' || tool === 'task' || tool === 'availability') {
+  if (
+    tool === 'cursor' ||
+    tool === 'link' ||
+    tool === 'task' ||
+    tool === 'availability' ||
+    tool === 'tictactoe'
+  ) {
     return undefined;
   }
   return tool;
@@ -65,8 +71,38 @@ export const SWIMLANE_PLACEMENT_TOOLS: readonly SwimlanePlacementTool[] = [
   'comment',
   'image',
   'diagram',
+  'tictactoe',
   'availability',
 ];
+
+export const SWIMLANE_CARD_PLACEMENT_TOOLS = ['image', 'diagram', 'tictactoe'] as const;
+
+export type SwimlaneCardPlacementTool = (typeof SWIMLANE_CARD_PLACEMENT_TOOLS)[number];
+
+export function isSwimlaneCardPlacementTool(
+  tool: SwimlanePlacementTool
+): tool is SwimlaneCardPlacementTool {
+  return (SWIMLANE_CARD_PLACEMENT_TOOLS as readonly string[]).includes(tool);
+}
+
+/** После постановки карточки штамп выключается. Фото и схема оставляют открытый черновик. */
+export function releaseCardPlacementTool(input: {
+  activeTool: SwimlanePlacementTool;
+  keepInlineCardDraftRef: { current: boolean };
+  placed: boolean;
+  placementTool: SwimlanePlacementTool;
+  setPlacementTool: (tool: SwimlanePlacementTool) => void;
+}): void {
+  if (!input.placed || !isSwimlaneCardPlacementTool(input.placementTool)) {
+    return;
+  }
+  if (input.placementTool === 'image' || input.placementTool === 'diagram') {
+    input.keepInlineCardDraftRef.current = true;
+  }
+  if (input.activeTool === input.placementTool) {
+    input.setPlacementTool('cursor');
+  }
+}
 
 type SwimlaneBoardLayer = 'images' | 'links' | 'notes';
 
@@ -112,6 +148,27 @@ export function isPlacementToolbarToolSelectable(
   return objectStorageConfigured || !placementToolRequiresObjectStorage(tool);
 }
 
+export function resolveArmedCardPlacementTool(
+  remembered: SwimlaneCardPlacementTool,
+  objectStorageConfigured: boolean
+): SwimlaneCardPlacementTool {
+  if (isPlacementToolbarToolSelectable(remembered, objectStorageConfigured)) {
+    return remembered;
+  }
+  return 'tictactoe';
+}
+
+/** Повторный клик по уже выбранным карточкам только закрывает меню. */
+export function resolveCardMenuOpen(input: {
+  cardWasActive: boolean;
+  popupWasOpen: boolean;
+}): boolean {
+  if (input.cardWasActive) {
+    return !input.popupWasOpen;
+  }
+  return true;
+}
+
 export function resolveVisibilityLayerMenuRows(input: {
   calendarAvailable: boolean;
   personBoundLayersAvailable?: boolean;
@@ -140,7 +197,7 @@ export function resolveVisibilityLayerMenuRows(input: {
 export function placementToolLayerToReveal(
   tool: SwimlanePlacementTool
 ): SwimlaneBoardLayer | null {
-  if (tool === 'comment' || tool === 'diagram') {
+  if (tool === 'comment' || tool === 'diagram' || tool === 'tictactoe') {
     return 'notes';
   }
   if (tool === 'image') {
@@ -272,7 +329,7 @@ export function resolvePlacementToolAfterLayerChange(
   tool: SwimlanePlacementTool,
   input: { imagesVisible: boolean; linksVisible: boolean; notesVisible: boolean }
 ): SwimlanePlacementTool {
-  if ((tool === 'comment' || tool === 'diagram') && !input.notesVisible) {
+  if ((tool === 'comment' || tool === 'diagram' || tool === 'tictactoe') && !input.notesVisible) {
     return 'cursor';
   }
   if (tool === 'image' && !input.imagesVisible) {
@@ -292,6 +349,7 @@ const ESCAPE_EXITABLE_PLACEMENT_TOOLS = new Set<SwimlanePlacementTool>([
   'image',
   'link',
   'task',
+  'tictactoe',
 ]);
 
 export function shouldExitPlacementToolOnEscape(input: {

@@ -1,6 +1,6 @@
 import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { SwimlanePlacementTool } from '@/lib/layers';
-import type { Developer, Task, TaskParent, TaskPosition } from '@/types';
+import type { Comment, Developer, Task, TaskParent, TaskPosition } from '@/types';
 
 import toast from 'react-hot-toast';
 
@@ -8,12 +8,14 @@ import {
   createLocalPlannerImageObjectUrl,
   prepareLocalPlannerImageFile,
 } from '@/features/task/utils/localPlannerImageFile';
+import { buildTicTacToeComment } from '@/features/widgets/buildTicTacToeComment';
 import { parseStickyNoteColor, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 
 import {
   canQuickAddOnSwimlaneLane,
   placementToolToDraftKind,
+  releaseCardPlacementTool,
 } from '../utils/swimlanePlacementToolbar';
 
 import { resolveQuickAddDraftDurationParts } from './applyQuickAddDraftFields';
@@ -139,20 +141,58 @@ export async function createSwimlaneCellFromPlacementTool(
     imageFile?: File;
     placementTool: SwimlanePlacementTool;
     t: (key: string) => string;
+    onCommentCreate?: (comment: Comment) => void;
+    getPlacementTool?: () => SwimlanePlacementTool;
+    keepInlineCardDraftRef?: { current: boolean };
+    setPlacementTool?: (tool: SwimlanePlacementTool) => void;
   }
-): Promise<void> {
+): Promise<boolean> {
+  const placed = await placeSwimlaneCellFromPlacementTool(input);
+  if (input.getPlacementTool && input.keepInlineCardDraftRef && input.setPlacementTool) {
+    releaseCardPlacementTool({
+      activeTool: input.getPlacementTool(),
+      keepInlineCardDraftRef: input.keepInlineCardDraftRef,
+      placed,
+      placementTool: input.placementTool,
+      setPlacementTool: input.setPlacementTool,
+    });
+  }
+  return placed;
+}
+
+async function placeSwimlaneCellFromPlacementTool(
+  input: CreateQuickAddDraftInSwimlaneCellInput & {
+    allowImageDraft?: boolean;
+    imageFile?: File;
+    placementTool: SwimlanePlacementTool;
+    t: (key: string) => string;
+    onCommentCreate?: (comment: Comment) => void;
+  }
+): Promise<boolean> {
   if (
     !canQuickAddOnSwimlaneLane({
       isTeamLane: isTeamSwimlaneAssigneeId(input.assigneeId),
       placementTool: input.placementTool,
     })
   ) {
-    return;
+    return false;
+  }
+  if (input.placementTool === 'tictactoe') {
+    input.onCommentCreate?.(
+      buildTicTacToeComment({
+        assigneeId: input.assigneeId,
+        day: input.day,
+        parent: input.parent,
+        part: input.part,
+        timelineTotalParts: input.timelineTotalParts,
+      })
+    );
+    return input.onCommentCreate != null;
   }
   if (!input.imageFile && input.placementTool === 'availability') {
-    return;
+    return false;
   }
-  await openQuickAddDraftInSwimlaneCell({
+  const draftId = await openQuickAddDraftInSwimlaneCell({
     allowImageDraft: input.allowImageDraft,
     assigneeId: input.assigneeId,
     boardIdForPlannerData: input.boardIdForPlannerData,
@@ -171,4 +211,5 @@ export async function createSwimlaneCellFromPlacementTool(
     tasksMap: input.tasksMap,
     timelineTotalParts: input.timelineTotalParts,
   });
+  return draftId != null;
 }

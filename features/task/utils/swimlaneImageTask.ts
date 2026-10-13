@@ -32,7 +32,8 @@ export function isPlannerAnnotationTask(
   if (
     task.localDraftKind === 'comment' ||
     task.localDraftKind === 'diagram' ||
-    task.localDraftKind === 'image'
+    task.localDraftKind === 'image' ||
+    task.localDraftKind === 'widget'
   ) {
     return true;
   }

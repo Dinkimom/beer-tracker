@@ -6,7 +6,7 @@ import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/store
 import type { Comment, Developer, Task, TaskParent, TaskPosition } from '@/types';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { getPartsPerDay } from '@/constants';
@@ -116,6 +116,7 @@ export function useSprintPlannerQuickAddDraft({
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
   const queryClient = useQueryClient();
+  const keepInlineCardDraftRef = useRef(false);
   const [featureLanes, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const { handlePasteQuickAddNote, handleSubmitQuickAddCommentDraft } =
     useSprintPlannerQuickAddNoteActions({
@@ -183,18 +184,11 @@ export function useSprintPlannerQuickAddDraft({
 
   const handleCreateTaskInSwimlaneCell = useCallback(
     ({
-      assigneeId,
-      day,
-      imageFile,
-      parent,
-      part,
+      assigneeId, day, imageFile, parent, part,
     }: {
-      assigneeId: string;
-      day: number;
-      imageFile?: File;
-      parent?: TaskParent;
-      part: number;
+      assigneeId: string; day: number; imageFile?: File; parent?: TaskParent; part: number;
     }) => {
+      const placementTool = sprintPlannerUi.placementTool;
       createSwimlaneCellFromPlacementTool({
         allowImageDraft: swimlaneImagesVisible,
         assigneeId,
@@ -203,13 +197,17 @@ export function useSprintPlannerQuickAddDraft({
         developers,
         getQueueByBoardId,
         imageFile,
+        onCommentCreate,
         onCreated: (taskId, kind) => {
           applyQuickAddImageDraftCardRow(taskId, kind, sprintPlannerUi);
           syncQuickAddCommentPresencePreview(sprintPlannerUi, taskId, kind);
         },
         parent,
         part,
-        placementTool: sprintPlannerUi.placementTool,
+        placementTool,
+        getPlacementTool: () => sprintPlannerUi.placementTool,
+        keepInlineCardDraftRef,
+        setPlacementTool: sprintPlannerUi.setPlacementTool,
         setTaskPositions,
         setTasks,
         stickyNoteColor: sprintPlannerUi.stickyNoteColor,
@@ -222,6 +220,7 @@ export function useSprintPlannerQuickAddDraft({
       boardIdForPlannerData,
       developers,
       getQueueByBoardId,
+      onCommentCreate,
       setTaskPositions,
       setTasks,
       sprintPlannerUi,
@@ -278,6 +277,7 @@ export function useSprintPlannerQuickAddDraft({
     setTasks,
     submittingTaskId: quickAddSubmittingTaskId,
     tasks,
+    keepInlineCardDraftRef,
   };
   useCancelInlineNoteDraftOnToolLeave(cancelDraftOnToolLeave);
   useCancelInlineImageDraftOnToolLeave(cancelDraftOnToolLeave);

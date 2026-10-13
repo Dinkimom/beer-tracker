@@ -48,6 +48,9 @@ export function resolveSwimlaneQuickAddPreviewToolProps(
   if (tool === 'diagram') {
     return { iconName: 'diagram', isDiagramTool: true, isImageTool: false };
   }
+  if (tool === 'tictactoe') {
+    return { iconName: 'tictactoe', isImageTool: true };
+  }
   if (tool === 'comment') {
     return { iconName: 'plus', isImageTool: false, noteColor: stickyNoteColor };
   }

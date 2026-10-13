@@ -5,7 +5,7 @@ import type {
 } from './issueLinkTypes';
 import type { AxiosInstance } from 'axios';
 
-import { mapTrackerRelationshipLabelToCanonical } from './issueLinkTypes';
+import { resolveStoredIssueLinkRelationship } from './issueLinkTypes';
 
 interface JiraIssueLinkType {
   inward?: string;
@@ -35,7 +35,7 @@ const JIRA_LINK_TYPE_NAME: Record<IssueLinkCreateRelationship, string> = {
   duplicates: 'Duplicate',
 };
 
-function mapJiraIssueLink(
+export function mapJiraIssueLink(
   issueKey: string,
   payload: JiraIssueLinkPayload
 ): IssueTrackerIssueLink | null {
@@ -69,15 +69,16 @@ function mapJiraIssueLink(
     return null;
   }
 
-  const relationship = mapTrackerRelationshipLabelToCanonical(label ?? '');
-  if (!relationship) {
+  const stored = resolveStoredIssueLinkRelationship(label ?? '');
+  if (!stored) {
     return null;
   }
 
   return {
     id,
     direction,
-    relationship,
+    relationship: stored.relationship,
+    relationshipLabel: stored.relationshipLabel,
     linkedIssueKey,
     linkedSummary: linkedIssue?.fields?.summary?.trim() || null,
     linkedStatus: linkedIssue?.fields?.status?.name?.trim() || null,
@@ -145,6 +146,7 @@ export async function createJiraIssueLink(
     id: '',
     direction: 'outward',
     relationship: input.relationship,
+    relationshipLabel: input.relationship.replaceAll('_', ' '),
     linkedIssueKey: target,
     linkedSummary: null,
     linkedStatus: null,

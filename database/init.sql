@@ -121,7 +121,7 @@ CREATE TABLE public.comments (
     color VARCHAR(16) NOT NULL DEFAULT 'yellow'
         CHECK (color IN ('yellow', 'pink', 'green', 'blue', 'gray')),
     kind VARCHAR(16) NOT NULL DEFAULT 'text'
-        CHECK (kind IN ('text', 'image', 'diagram')),
+        CHECK (kind IN ('text', 'image', 'diagram', 'widget')),
     parent JSONB,
     image_file_id UUID REFERENCES public.planner_files (id),
     created_by UUID,

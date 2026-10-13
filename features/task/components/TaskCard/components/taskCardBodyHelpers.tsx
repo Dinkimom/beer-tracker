@@ -8,7 +8,7 @@ import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 import { isQuickAddChooserDraft } from './taskCardContentHelpers';
 
 function isSwimlaneNoteOrPolaroid(task: Pick<Task, 'localDraftKind'>): boolean {
-  return task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image';
+  return task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget';
 }
 
 export function shouldShowTaskCardSwimlaneMetaRow(input: {

@@ -333,6 +333,7 @@ export async function fetchIssueLinksBatch(issueKeys: string[]): Promise<
     fromIssueKey: string;
     id: string;
     relationship: IssueTrackerIssueLink['relationship'];
+    relationshipLabel?: string;
     toIssueKey: string;
   }>
 > {
@@ -345,6 +346,7 @@ export async function fetchIssueLinksBatch(issueKeys: string[]): Promise<
       fromIssueKey: string;
       id: string;
       relationship: IssueTrackerIssueLink['relationship'];
+      relationshipLabel?: string;
       toIssueKey: string;
     }>;
   }>('/issues/links/batch', { issueKeys });

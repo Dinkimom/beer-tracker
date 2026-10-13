@@ -58,7 +58,7 @@ export function isPlannerAnnotationVisibleOnLayers(
   if (task.localDraftKind === 'image') {
     return layers.imagesVisible;
   }
-  if (task.localDraftKind === 'comment' || task.localDraftKind === 'diagram') {
+  if (task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'widget') {
     return layers.notesVisible;
   }
   return true;
@@ -81,7 +81,11 @@ export function isSwimlaneCommentTaskId(taskId: string): boolean {
 }
 
 export function isSwimlaneCommentTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  if (task.localDraftKind === 'image' || task.localDraftKind === 'diagram') {
+  if (
+    task.localDraftKind === 'image' ||
+    task.localDraftKind === 'diagram' ||
+    task.localDraftKind === 'widget'
+  ) {
     return false;
   }
   return task.localDraftKind === 'comment' || isSwimlaneCommentTaskId(task.id);
@@ -92,7 +96,8 @@ export function isSavedSwimlaneCommentTask(task: Pick<Task, 'id' | 'localDraftKi
   return (
     isSwimlaneCommentTaskId(task.id) &&
     task.localDraftKind !== 'image' &&
-    task.localDraftKind !== 'diagram'
+    task.localDraftKind !== 'diagram' &&
+    task.localDraftKind !== 'widget'
   );
 }
 
@@ -111,14 +116,22 @@ export function isSavedSwimlaneDiagramTask(task: Pick<Task, 'id' | 'localDraftKi
   return isSwimlaneCommentTaskId(task.id) && task.localDraftKind === 'diagram';
 }
 
+/** Сохранённая карточка-виджет (`comment:id`, kind=widget). */
+export function isSwimlaneWidgetTask(task: Pick<Task, 'localDraftKind'>): boolean {
+  return task.localDraftKind === 'widget';
+}
+
 export function resolveSwimlaneAnnotationContextMenuVariant(
   task: Pick<Task, 'id' | 'localDraftKind'>
-): 'diagram' | 'image' | 'note' | null {
+): 'diagram' | 'image' | 'note' | 'widget' | null {
   if (isSavedSwimlaneImageCommentTask(task)) {
     return 'image';
   }
   if (isSavedSwimlaneDiagramTask(task)) {
     return 'diagram';
+  }
+  if (isSwimlaneWidgetTask(task) && isSwimlaneCommentTaskId(task.id)) {
+    return 'widget';
   }
   if (isSavedSwimlaneCommentTask(task)) {
     return 'note';
@@ -194,12 +207,19 @@ export function commentSizeFromDraftPosition(
   };
 }
 
-function commentLocalDraftKind(isImage: boolean, isDiagram: boolean): 'comment' | 'diagram' | 'image' {
+function commentLocalDraftKind(
+  isImage: boolean,
+  isDiagram: boolean,
+  isWidget: boolean
+): 'comment' | 'diagram' | 'image' | 'widget' {
   if (isImage) {
     return 'image';
   }
   if (isDiagram) {
     return 'diagram';
+  }
+  if (isWidget) {
+    return 'widget';
   }
   return 'comment';
 }
@@ -214,13 +234,14 @@ export function commentToSwimlaneTask(comment: Comment): Task {
   const authorName = comment.authorName?.trim();
   const isImage = comment.kind === 'image';
   const isDiagram = comment.kind === 'diagram';
+  const isWidget = comment.kind === 'widget';
   return {
     id: toSwimlaneCommentTaskId(comment.id),
     name: comment.text,
     link: '',
     // Не isLocalTask: иначе TaskBar считает это quick-add черновиком и
     // открывает попап, который «не закрывается» (в т.ч. после reload).
-    localDraftKind: commentLocalDraftKind(isImage, isDiagram),
+    localDraftKind: commentLocalDraftKind(isImage, isDiagram, isWidget),
     ...(isDiagram && comment.diagramUrl ? { diagramSceneUrl: comment.diagramUrl } : {}),
     ...(isImage && comment.imageUrl ? { imageUrl: comment.imageUrl } : {}),
     ...(authorName ? { stickyNoteAuthorName: authorName } : {}),

@@ -112,7 +112,7 @@ export async function insertSprintComment(input: {
   x: number | null | undefined;
   y: number | null | undefined;
   imageFileId?: string | null;
-  kind?: 'diagram' | 'image' | 'text';
+  kind?: 'diagram' | 'image' | 'text' | 'widget';
   parent?: TaskParent | null;
   pendingApproval?: boolean;
   pendingApprovalExpiresAt?: Date | string | null;
@@ -176,7 +176,7 @@ function insertSprintCommentParams(
     planPatchProposalId?: string | null;
   },
   color: string,
-  kind: 'diagram' | 'image' | 'text',
+  kind: 'diagram' | 'image' | 'text' | 'widget',
   imageFileId: string | null
 ): QueryParams {
   return [

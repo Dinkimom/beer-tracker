@@ -2,8 +2,8 @@ import type { TaskLayerPositionedTaskItemProps } from './TaskLayer.types';
 import type { PhaseSegment, Task, TaskPosition } from '@/types';
 
 import { resolveSwimlaneCardLayerSpan } from '@/features/swimlane/utils/layerUtils';
+import { linkSharesOverdueBaselineSide } from '@/features/swimlane/utils/overdueBaselineLinkSide';
 import { getOrderedPlanSegments } from '@/features/swimlane/utils/positionUtils';
-import { taskTouchesSwimlaneArrow } from '@/features/swimlane/utils/task-arrows/taskArrowsHelpers';
 import {
   computeSwimlaneBaselineInsetsPx,
   computeSwimlaneOverdueBaselineStrips,
@@ -106,24 +106,20 @@ export function resolveTaskLayerPlanContext(props: TaskLayerPositionedTaskItemPr
   };
 }
 
-/** 0 — бейзлайн по центру. Иначе сдвиг вниз, чтобы не пересечь стрелку связи. */
+/** 0 — бейзлайн по центру. Иначе сдвиг вниз, если стрелка на той же стороне, что и полоса. */
 export function resolveTaskLayerBaselineCenterOffsetPx(params: {
+  assigneeOrder?: ReadonlyArray<{ id: string }>;
   baselineHeight: number;
   qaTasksMap?: Map<string, Task>;
   stripCount: number;
   taskId: string;
+  taskLayerMap?: ReadonlyMap<string, number>;
   taskLinks: ReadonlyArray<{ fromTaskId: string; toTaskId: string }>;
   taskPositions?: Map<string, TaskPosition>;
   /** Пользовательские стрелки скрыты. Dev → QA рисуется и при выключенных связях. */
   userLinksVisible?: boolean;
 }): number {
   if (params.stripCount === 0) return 0;
-  const hasArrow = taskTouchesSwimlaneArrow({
-    qaTasksMap: params.qaTasksMap,
-    taskId: params.taskId,
-    taskLinks: params.userLinksVisible === false ? [] : params.taskLinks,
-    taskPositions: params.taskPositions,
-  });
-  if (!hasArrow) return 0;
+  if (!linkSharesOverdueBaselineSide(params)) return 0;
   return resolveOverdueBaselineLinkClearanceOffsetPx(params.baselineHeight);
 }

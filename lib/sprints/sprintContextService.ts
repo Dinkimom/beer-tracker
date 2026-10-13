@@ -99,7 +99,7 @@ function mapPosition(row: Record<string, unknown>): SprintContextPosition {
 }
 
 function mapCommentKind(value: unknown): SprintContextNote['kind'] {
-  if (value === 'diagram' || value === 'image') {
+  if (value === 'diagram' || value === 'image' || value === 'widget') {
     return value;
   }
   return 'text';
@@ -125,7 +125,7 @@ function mapCommentRow(row: Record<string, unknown>): SprintContextNote {
     kind: mapCommentKind(row.kind),
     part: asNullableNumber(row.part),
     taskId: toPlannerCommentTaskId(asString(row.id)),
-    text: asString(row.text),
+    text: mapCommentKind(row.kind) === 'widget' ? 'Tic-tac-toe' : asString(row.text),
   };
   if (parent) {
     note.parent = parent;

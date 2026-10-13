@@ -112,7 +112,7 @@ function buildAnnotationContextMenuActions(input: {
   showStartLinking: boolean;
   t: (key: string) => string;
   taskId: string;
-  variant: 'diagram' | 'image' | 'note';
+  variant: 'diagram' | 'image' | 'note' | 'widget';
   sprintPlannerUi: {
     closeContextMenu: () => void;
     openDiagramEditor: (taskId: string) => void;
@@ -142,7 +142,7 @@ function buildAnnotationContextMenuActions(input: {
       deleteAnnotationFromContextMenu(taskId, input.onCommentDelete, sprintPlannerUi.closeContextMenu);
     },
     onEdit:
-      variant === 'image'
+      variant === 'image' || variant === 'widget'
         ? undefined
         : () => editAnnotationFromContextMenu(variant, taskId, sprintPlannerUi),
     onParentSelect: (parent: TaskParent | null) => {

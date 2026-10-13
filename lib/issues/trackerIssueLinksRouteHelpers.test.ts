@@ -99,7 +99,7 @@ describe('trackerIssueLinksRouteHelpers', () => {
     expect(second).toHaveLength(2);
 
     // Sanity: cache keys exist in the shared apiCache.
-    expect(apiCache.get(`tracker:issue-links:${ORG}:A-1`)).not.toBeNull();
+    expect(apiCache.get(`tracker:issue-links:v2:${ORG}:A-1`)).not.toBeNull();
   });
 
   it('fetches only cache misses when the batch grows', async () => {

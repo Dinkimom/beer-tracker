@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities';
 import omit from 'lodash-es/omit';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { isSwimlaneCommentTask, isSwimlaneDiagramTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneCommentTask, isSwimlaneDiagramTask, isSwimlaneWidgetTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintPlanner/onboarding/plannerOnboardingChrome';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useStickyNoteVerticalResize } from '@/features/task/hooks/useStickyNoteVerticalResize';
@@ -231,7 +231,7 @@ export function useTaskBarDisplayState(input: {
       isDraftTask,
       isExpandedByLongHover: input.isExpandedByLongHover,
       isLinking: input.isLinking,
-      isPhotoCard,
+      isPhotoCard: isPhotoCard || isSwimlaneWidgetTask(input.task),
       isResizing: isAnyResizing,
       swimlaneBarDurationParts: input.swimlaneBarDurationParts,
       swimlaneTimelineTotalParts: input.swimlaneTimelineTotalParts,

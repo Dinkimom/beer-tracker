@@ -2,7 +2,7 @@
 
 import type { Developer, Task } from '@/types';
 
-import { isSwimlaneCommentTask, isSwimlaneDiagramTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneCommentTask, isSwimlaneDiagramTask, isSwimlaneWidgetTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { getSwimlaneCardRadiusClass } from '@/features/task/components/TaskCard/taskCardLayoutHelpers';
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
@@ -46,7 +46,10 @@ export function SprintPlannerDragOverlayPreview({
   }
 
   const isStickyNote = isSwimlaneCommentTask(activeTask);
-  const isPhotoCard = isSwimlaneImageTask(activeTask) || isSwimlaneDiagramTask(activeTask);
+  const isPhotoCard =
+    isSwimlaneImageTask(activeTask) ||
+    isSwimlaneDiagramTask(activeTask) ||
+    isSwimlaneWidgetTask(activeTask);
 
   return (
     <div className={getSwimlaneDragOverlayShellClass(isStickyNote, isPhotoCard)}>

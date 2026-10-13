@@ -27,6 +27,19 @@ function isQuickAddDraftTask(task: Task): boolean {
   return task.isLocalTask === true && parseSwimlaneCommentTaskId(task.id) == null;
 }
 
+function quickAddDraftKind(kind: Task['localDraftKind']): QuickAddDraftKind | undefined {
+  if (
+    kind === 'comment' ||
+    kind === 'diagram' ||
+    kind === 'existing' ||
+    kind === 'image' ||
+    kind === 'task'
+  ) {
+    return kind;
+  }
+  return undefined;
+}
+
 function invokeOptionalAsync(handler: (() => Promise<void> | void) | undefined): void {
   const result = handler?.();
   if (result && typeof result.then === 'function') {
@@ -168,7 +181,7 @@ function buildQuickAddMenuProps(
     taskId: input.task.id,
     title: input.task.name ?? '',
     commentColor: input.task.stickyNoteColor,
-    draftKind: input.task.localDraftKind,
+    draftKind: quickAddDraftKind(input.task.localDraftKind),
     imageUrl: input.task.imageUrl,
     onCancel: () => input.onCancelQuickAddDraft?.(input.task.id),
     onCommentColorChange: (color) =>

@@ -6,14 +6,14 @@ import { resolveOverdueBaselineLinkClearanceOffsetPx } from '@/features/swimlane
 
 import { resolveTaskLayerBaselineCenterOffsetPx } from './taskLayerPositionedTaskItemHelpers';
 
-function pos(): TaskPosition {
-  return { assignee: 'u', duration: 2, startDay: 0, startPart: 0, taskId: '' };
+function pos(startDay: number): TaskPosition {
+  return { assignee: 'u', duration: 2, startDay, startPart: 0, taskId: '' };
 }
 
 describe('resolveTaskLayerBaselineCenterOffsetPx', () => {
   const positions = new Map<string, TaskPosition>([
-    ['a', pos()],
-    ['b', pos()],
+    ['a', pos(0)],
+    ['b', pos(2)],
   ]);
   const links = [{ fromTaskId: 'a', toTaskId: 'b' }];
 
@@ -29,7 +29,7 @@ describe('resolveTaskLayerBaselineCenterOffsetPx', () => {
     ).toBe(0);
   });
 
-  it('drops the baseline when a user link is drawn', () => {
+  it('drops the baseline when the link leaves the same side', () => {
     expect(
       resolveTaskLayerBaselineCenterOffsetPx({
         baselineHeight: 42,
@@ -39,6 +39,18 @@ describe('resolveTaskLayerBaselineCenterOffsetPx', () => {
         taskPositions: positions,
       })
     ).toBe(resolveOverdueBaselineLinkClearanceOffsetPx(42));
+  });
+
+  it('stays centered when the link is on the opposite side', () => {
+    expect(
+      resolveTaskLayerBaselineCenterOffsetPx({
+        baselineHeight: 42,
+        stripCount: 1,
+        taskId: 'b',
+        taskLinks: links,
+        taskPositions: positions,
+      })
+    ).toBe(0);
   });
 
   it('stays centered when user links are hidden', () => {
@@ -54,7 +66,7 @@ describe('resolveTaskLayerBaselineCenterOffsetPx', () => {
     ).toBe(0);
   });
 
-  it('still drops for a dev-qa arrow when user links are hidden', () => {
+  it('still drops for a dev-qa arrow on the baseline side when user links are hidden', () => {
     const qaTasksMap = new Map<string, Task>([['a', { id: 'b' } as Task]]);
     expect(
       resolveTaskLayerBaselineCenterOffsetPx({

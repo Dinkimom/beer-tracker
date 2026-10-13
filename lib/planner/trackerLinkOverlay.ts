@@ -26,12 +26,14 @@ export function mapTrackerIssueLinkEdgesToTaskLinks(
     if (!fromTaskId || !toTaskId || fromTaskId === toTaskId) {
       continue;
     }
+    const relationshipLabel = edge.relationshipLabel?.trim() || undefined;
     out.push({
       id: toTrackerOverlayLinkId(edge.id),
       fromTaskId,
       toTaskId,
       origin: 'tracker',
-      relationship: edge.relationship,
+      ...(edge.relationship ? { relationship: edge.relationship } : {}),
+      ...(relationshipLabel ? { relationshipLabel } : {}),
     });
   }
   return out;

@@ -49,7 +49,7 @@ export const TaskLinkSchema = z.object({
   toAnchor: z.enum(['left', 'right', 'top', 'bottom']).optional().nullable(),
 });
 
-const CommentKindSchema = z.enum(['diagram', 'image', 'text']);
+const CommentKindSchema = z.enum(['diagram', 'image', 'text', 'widget']);
 
 const CommentParentSchema = z.object({
   display: z.string().trim().min(1).max(500),

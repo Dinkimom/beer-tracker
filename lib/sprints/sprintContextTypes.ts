@@ -41,7 +41,7 @@ export interface SprintContextNote {
   day: number | null;
   diagramText?: string[];
   id: string;
-  kind: 'diagram' | 'image' | 'text';
+  kind: 'diagram' | 'image' | 'text' | 'widget';
   parent?: SprintContextNoteParent;
   part: number | null;
   pendingApproval?: boolean;

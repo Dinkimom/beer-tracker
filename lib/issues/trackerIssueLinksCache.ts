@@ -8,6 +8,8 @@ export interface TrackerIssueLinkEdge {
   fromIssueKey: string;
   id: string;
   relationship: IssueTrackerIssueLink['relationship'];
+  /** Фраза типа из трекера, с точки зрения fromIssueKey. */
+  relationshipLabel?: string;
   toIssueKey: string;
 }
 

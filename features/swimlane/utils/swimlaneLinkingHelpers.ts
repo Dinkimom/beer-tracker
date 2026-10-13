@@ -4,6 +4,7 @@ import {
   isSwimlaneCommentTask,
   isSwimlaneCommentTaskId,
   isSwimlaneDiagramTask,
+  isSwimlaneWidgetTask,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { positionToEndCell, positionToStartCell } from '@/features/sprint/utils/occupancyUtils';
 import { getSwimlaneCardRadiusClass } from '@/features/task/components/TaskCard/taskCardLayoutHelpers';
@@ -296,7 +297,7 @@ export function resolveSwimlaneLinkingOutlineRadiusClass(
   task: Pick<Task, 'id' | 'localDraftKind'>
 ): string {
   return getSwimlaneCardRadiusClass(
-    isSwimlaneImageTask(task) || isSwimlaneDiagramTask(task),
+    isSwimlaneImageTask(task) || isSwimlaneDiagramTask(task) || isSwimlaneWidgetTask(task),
     isSwimlaneCommentTask(task)
   );
 }

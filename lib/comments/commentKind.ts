@@ -1,7 +1,7 @@
-type PlannerCommentKind = 'diagram' | 'image' | 'text';
+export type PlannerCommentKind = 'diagram' | 'image' | 'text' | 'widget';
 
 export function parsePlannerCommentKind(value: unknown): PlannerCommentKind {
-  if (value === 'image' || value === 'diagram') {
+  if (value === 'image' || value === 'diagram' || value === 'widget') {
     return value;
   }
   return 'text';

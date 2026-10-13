@@ -1226,6 +1226,7 @@ export const enMessages = {
       copyNote: 'Copy note',
       deleteDiagram: 'Delete diagram',
       deleteDiagramConfirm: 'The diagram will be removed from the swimlane. This cannot be undone.',
+      deleteCard: 'Delete card',
       deleteImage: 'Delete photo',
       deleteNote: 'Delete',
       editDiagram: 'Edit diagram',
@@ -1258,6 +1259,13 @@ export const enMessages = {
       removeTitle: 'Delete link',
       removeConfirmAction: 'Delete',
       removeCancelAction: 'Cancel',
+      relationship: {
+        blockedBy: 'Blocked by',
+        blocks: 'Blocks',
+        duplicatedBy: 'Duplicated by',
+        duplicates: 'Duplicates',
+        relates: 'Relates',
+      },
     },
     taskInfo: {
       assignee: 'Assignee',
@@ -1417,6 +1425,8 @@ export const enMessages = {
       placementToolbar: {
         aria: 'What to add on the swimlane',
         availability: 'Time off',
+        cards: 'Cards',
+        cardsMenu: 'Cards for the board',
         comment: 'Note',
         cursor: 'Cursor',
         diagram: 'Diagram',
@@ -1436,6 +1446,15 @@ export const enMessages = {
         objectStorageRequired: 'Object storage (S3) is not configured',
         task: 'Task',
         tasks: 'Tasks',
+        tictactoe: 'Tic-tac-toe',
+      },
+      ticTacToe: {
+        cellEmpty: 'Empty cell {index}',
+        cellFilled: 'Cell {index}, {mark}',
+        draw: 'Draw',
+        reset: 'Restart',
+        turn: '{mark} to move',
+        winner: '{mark} wins',
       },
       overdue: {
         closeAndCreate: 'Close the task and start a new one',

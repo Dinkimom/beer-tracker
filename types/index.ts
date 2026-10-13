@@ -1,4 +1,5 @@
 import type { ChecklistItem } from './tracker';
+import type { PlannerCommentKind } from '@/lib/comments/commentKind';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { StickyNoteReaction } from '@/lib/comments/stickyNoteReaction';
 import type { TaskStatus } from '@/utils/statusMapper';
@@ -90,7 +91,7 @@ export interface Task {
   link: string;
   linkedTaskIds?: string[];
   /** Вид локального черновика quick-add: задача, поиск в трекере, заметка, схема или картинка. */
-  localDraftKind?: 'comment' | 'diagram' | 'existing' | 'image' | 'task';
+  localDraftKind?: 'comment' | 'diagram' | 'existing' | 'image' | 'task' | 'widget';
   MergeRequestLink?: string;
   /** Ссылка на merge request (алиас для удобства, может мапиться на MergeRequestLink) */
   mergeRequestLink?: string;
@@ -226,6 +227,8 @@ export interface TaskLink {
   origin?: 'planner' | 'tracker';
   /** Канонический тип связи трекера (только для origin=tracker). */
   relationship?: string;
+  /** Фраза типа из Jira/Tracker с точки зрения fromTask. */
+  relationshipLabel?: string;
   toAnchor?: Anchor;
   toTaskId: string;
 }
@@ -253,7 +256,7 @@ export interface Comment {
   id: string;
   imageFileId?: string;
   imageUrl?: string;
-  kind?: 'diagram' | 'image' | 'text';
+  kind?: PlannerCommentKind;
   /** Родитель из Tracker (story/epic) — как у задачи, локально на заметке. */
   parent?: TaskParent;
   part: number;
@@ -372,7 +375,7 @@ export interface SprintCommentsResponse {
     height: number;
     id: string;
     image_file_id?: string | null;
-    kind?: 'diagram' | 'image' | 'text' | null;
+    kind?: PlannerCommentKind | null;
     parent?: TaskParent | null;
     part: number | null;
     pending_approval?: boolean | null;

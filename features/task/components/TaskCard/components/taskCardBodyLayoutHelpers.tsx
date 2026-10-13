@@ -111,7 +111,7 @@ export function shouldShowTaskCardSwimlaneAssigneeAvatar(input: {
     return false;
   }
   const kind = input.task.localDraftKind;
-  if (kind === 'diagram' || kind === 'existing' || kind === 'image') {
+  if (kind === 'diagram' || kind === 'existing' || kind === 'image' || kind === 'widget') {
     return false;
   }
   if (isFeatureLaneSyntheticRowId(input.task.assignee)) {

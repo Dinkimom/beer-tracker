@@ -7,11 +7,12 @@ import {
   getStickyNoteCardStyle,
   getStickyNotePendingApprovalCardStyle,
 } from '@/features/comments/utils/stickyNotePalette';
-import { isSwimlaneCommentTask, isSwimlaneDiagramTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneCommentTask, isSwimlaneDiagramTask, isSwimlaneWidgetTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { getDiagramCardStyle } from '@/features/task/utils/diagramCardSurface';
 import { getPhotoCardPaddingClass, getPhotoCardStyle } from '@/features/task/utils/photoCardSurface';
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
+import { getTicTacToeCardStyle } from '@/features/task/utils/ticTacToeCardSurface';
 import {
   getPhaseDividerClasses,
   getQaStripedStyles,
@@ -265,7 +266,8 @@ export function buildTaskCardVisualState(input: {
   const { isNarrow, isVeryNarrow } = getSwimlaneWidthModes(isSwimlane, input.widthPercent);
   const isLocalCommentDraft = isSwimlaneCommentTask(input.task);
   const isLocalDiagramCard = isSwimlaneDiagramTask(input.task);
-  const isLocalImageCard = isSwimlaneImageTask(input.task);
+  const isLocalImageCard = isSwimlaneImageTask(input.task) || isSwimlaneWidgetTask(input.task);
+  const isWidgetCard = isSwimlaneWidgetTask(input.task);
   const isLocalPhotoOrDiagramCard = isLocalImageCard || isLocalDiagramCard;
   const effectiveIsLocalTask =
     isLocalCommentDraft ||
@@ -273,14 +275,16 @@ export function buildTaskCardVisualState(input: {
     input.isLocalTask ||
     input.task.isLocalTask === true;
 
-  const paddingClasses = resolveTaskCardPaddingClassesForAnnotation(
-    isLocalPhotoOrDiagramCard,
-    isLocalCommentDraft,
-    Boolean(input.task.name?.trim()),
-    isVeryNarrow,
-    isNarrow,
-    isSwimlane
-  );
+  const paddingClasses = isWidgetCard
+    ? '!p-0'
+    : resolveTaskCardPaddingClassesForAnnotation(
+        isLocalPhotoOrDiagramCard,
+        isLocalCommentDraft,
+        Boolean(input.task.name?.trim()),
+        isVeryNarrow,
+        isNarrow,
+        isSwimlane
+      );
   const cursorClass = getTaskCardCursorClass(input.isDragging, input.isResizing, input.isLocked, {
     linkMode: input.linkMode,
     linkingActive: input.linkingActive,
@@ -312,7 +316,7 @@ export function buildTaskCardVisualState(input: {
     variant: input.variant,
   });
 
-  const { cardRootClassName, cardRootStyle } = buildTaskCardRootVisualState({
+  const { cardRootClassName, cardRootStyle: annotationRootStyle } = buildTaskCardRootVisualState({
     borderClasses,
     cardBorderColorClasses,
     cardSurfaceClasses,
@@ -340,6 +344,10 @@ export function buildTaskCardVisualState(input: {
     task: input.task,
     variant: input.variant,
   });
+
+  const cardRootStyle = isWidgetCard
+    ? { ...annotationRootStyle, ...getTicTacToeCardStyle(input.isDark) }
+    : annotationRootStyle;
 
   return {
     cardRootClassName,

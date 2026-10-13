@@ -172,6 +172,46 @@ html.theme-changing * {
   animation: onboarding-demo-link-head 2.8s ease-in-out infinite !important;
 }
 
+/* Подпись типа связи на ховере: в том же темпе, что и подсветка стрелки (0.2s).
+   Класс, а не utility: смена arbitrary-animation не перезапускает кадры, и чип
+   просто висит 200мс, затем исчезает. data-state снимает enter и включает exit. */
+@keyframes task-link-relationship-enter {
+  from {
+    opacity: 0;
+    scale: 0.92;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes task-link-relationship-exit {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 0.92;
+  }
+}
+
+.task-link-relationship-chip {
+  animation: task-link-relationship-enter 200ms ease-out both;
+}
+
+.task-link-relationship-chip[data-state='closed'] {
+  animation: task-link-relationship-exit 200ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-link-relationship-chip,
+  .task-link-relationship-chip[data-state='closed'] {
+    animation: none;
+  }
+}
+
 /* Исключение: плавное появление ленивого контента (таймлайн факта, плановые фазы) при скролле */
 .occupancy-lazy-fade-in {
   transition-property: opacity !important;

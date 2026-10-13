@@ -3,7 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import toast from 'react-hot-toast';
 
-import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneCommentTask, isSwimlaneWidgetTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
   trackerAssigneeKeyForCreate,
   trackerParentKeyForCreate,
@@ -42,7 +42,12 @@ export async function closeOverdueAndCreateNextRun(
   input: CloseOverdueAndCreateNextRunInput
 ): Promise<void> {
   const failed = () => toast.error(input.t('sprintPlanner.swimlane.overdue.closeAndCreateFailed'));
-  if (input.task.isLocalTask || isSwimlaneCommentTask(input.task) || !input.selectedSprintId) {
+  if (
+    input.task.isLocalTask ||
+    isSwimlaneCommentTask(input.task) ||
+    isSwimlaneWidgetTask(input.task) ||
+    !input.selectedSprintId
+  ) {
     failed();
     return;
   }

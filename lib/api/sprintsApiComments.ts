@@ -34,7 +34,7 @@ export async function saveComment(
     height: number;
     id?: string;
     imageFileId?: string | null;
-    kind?: 'diagram' | 'image' | 'text';
+    kind?: 'diagram' | 'image' | 'text' | 'widget';
     parent?: TaskParent | null;
     part?: number | null;
     skipMentionNotifications?: boolean;

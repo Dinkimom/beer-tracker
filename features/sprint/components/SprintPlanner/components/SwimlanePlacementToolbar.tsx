@@ -31,6 +31,7 @@ import {
 
 import { SwimlaneAgentProposalToolbar } from './SwimlaneAgentProposalToolbar';
 import { SwimlanePlacementToolbarButton } from './SwimlanePlacementToolbarButton';
+import { SwimlanePlacementToolbarCardsTool } from './SwimlanePlacementToolbarCardsTool';
 import { SwimlanePlacementToolbarLayers } from './SwimlanePlacementToolbarLayers';
 import { SwimlanePlacementToolbarNoteTool } from './SwimlanePlacementToolbarNoteTool';
 import { SwimlanePlanDraftToolbar } from './SwimlanePlanDraftToolbar';
@@ -142,6 +143,9 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
           role="toolbar"
         >
           {tools.map((tool) => {
+            if (tool === 'diagram' || tool === 'tictactoe') {
+              return null;
+            }
             const toolDisabled =
               !objectStorageConfigured && placementToolRequiresObjectStorage(tool);
             const disabledReason = toolDisabled ? objectStorageRequiredHint : undefined;
@@ -153,6 +157,16 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
                   color={sprintPlannerUi.stickyNoteColor}
                   onColorChange={sprintPlannerUi.setStickyNoteColor}
                   onSelect={() => applyPlacementTool('comment', { toggle: true })}
+                />
+              );
+            }
+            if (tool === 'image') {
+              return (
+                <SwimlanePlacementToolbarCardsTool
+                  key="cards"
+                  activeTool={active}
+                  objectStorageConfigured={objectStorageConfigured}
+                  onArm={(cardTool) => applyPlacementTool(cardTool)}
                 />
               );
             }

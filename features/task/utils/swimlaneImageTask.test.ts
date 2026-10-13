@@ -25,6 +25,7 @@ describe('swimlaneImageTask', () => {
     expect(isPlannerAnnotationTask({ id: 'comment:1', localDraftKind: 'comment' })).toBe(true);
     expect(isPlannerAnnotationTask({ id: 'comment:1', localDraftKind: 'diagram' })).toBe(true);
     expect(isPlannerAnnotationTask({ id: 'comment:1', localDraftKind: 'image' })).toBe(true);
+    expect(isPlannerAnnotationTask({ id: 'comment:1', localDraftKind: 'widget' })).toBe(true);
     expect(isPlannerAnnotationTask({ id: 'QUEUE-1', localDraftKind: 'task' })).toBe(false);
   });
 });

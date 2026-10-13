@@ -191,7 +191,7 @@ export const cacheKeys = {
   gitlabMergeRequestFact: (normalizedLink: string) => `gitlab:mr-fact:${normalizedLink}`,
   /** Live issue links from Tracker/Jira (per issue key); TTL 30 мин. */
   trackerIssueLinks: (organizationId: string, issueKey: string) =>
-    `tracker:issue-links:${organizationId}:${issueKey.trim()}`,
+    `tracker:issue-links:v2:${organizationId}:${issueKey.trim()}`,
 };
 
 /**

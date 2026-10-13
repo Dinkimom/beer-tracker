@@ -120,7 +120,7 @@ async function ensureCommentsKindIncludesDiagram(schema: string): Promise<void> 
   await query(`
     ALTER TABLE ${schema}.comments
       ADD CONSTRAINT comments_kind_check
-      CHECK (kind IN ('text', 'image', 'diagram'))
+      CHECK (kind IN ('text', 'image', 'diagram', 'widget'))
   `);
   await query(`
     ALTER TABLE ${schema}.comments

@@ -20,7 +20,7 @@ export function resolveTaskCardTeamTextColor(
     task.statusColorKey
   );
   const statusColors = getStatusColors(statusForTitle);
-  if (task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image') {
+  if (task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget') {
     return '';
   }
   if (task.isLocalTask) {
@@ -227,7 +227,8 @@ export function resolveTaskCardSwimlaneMetaVisibility(input: {
     input.task.isLocalTask === true ||
     input.task.localDraftKind === 'comment' ||
     input.task.localDraftKind === 'diagram' ||
-    input.task.localDraftKind === 'image';
+    input.task.localDraftKind === 'image' ||
+    input.task.localDraftKind === 'widget';
   const hideCompactMeta = isSwimlaneSingleTimeslotWidth(input.displayDuration);
   const showKey = hideTrackerMeta ? false : input.mergedFields.showKey;
   const showType = hideTrackerMeta || hideCompactMeta ? false : input.mergedFields.showType;

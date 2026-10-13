@@ -20,6 +20,7 @@ describe('yandexIssueLinks', () => {
       id: '10',
       direction: 'outward',
       relationship: 'blocks',
+      relationshipLabel: 'is dependent by',
       linkedIssueKey: 'BT-2',
       linkedSummary: 'Blocked task',
       linkedStatus: 'Open',
@@ -35,7 +36,23 @@ describe('yandexIssueLinks', () => {
     ).toMatchObject({
       id: '11',
       relationship: 'blocked_by',
+      relationshipLabel: 'depends on',
       linkedIssueKey: 'BT-3',
+    });
+  });
+
+  it('keeps a custom relationship phrase', () => {
+    expect(
+      mapYandexIssueLinkPayload({
+        id: 12,
+        direction: 'outward',
+        type: { outward: 'has linked QA task', inward: 'is QA for' },
+        object: { key: 'MQA-1', display: 'QA' },
+      })
+    ).toMatchObject({
+      relationship: null,
+      relationshipLabel: 'has linked QA task',
+      linkedIssueKey: 'MQA-1',
     });
   });
 
@@ -61,6 +78,7 @@ describe('yandexIssueLinks', () => {
         id: '3',
         direction: 'outward',
         relationship: 'relates',
+        relationshipLabel: 'relates',
         linkedIssueKey: 'BT-4',
         linkedSummary: 'Related',
         linkedStatus: null,
@@ -88,6 +106,7 @@ describe('yandexIssueLinks', () => {
     expect(link).toMatchObject({
       id: '99',
       relationship: 'blocked_by',
+      relationshipLabel: 'depends on',
       linkedIssueKey: 'BT-5',
     });
   });

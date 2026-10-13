@@ -1227,6 +1227,7 @@ export const ruMessages = {
       copyNote: 'Копировать заметку',
       deleteDiagram: 'Удалить схему',
       deleteDiagramConfirm: 'Схема будет удалена со свимлейна. Это действие нельзя отменить.',
+      deleteCard: 'Удалить карточку',
       deleteImage: 'Удалить картинку',
       deleteNote: 'Удалить',
       editDiagram: 'Редактировать схему',
@@ -1259,6 +1260,13 @@ export const ruMessages = {
       removeTitle: 'Удаление связи',
       removeConfirmAction: 'Удалить',
       removeCancelAction: 'Отмена',
+      relationship: {
+        blockedBy: 'Заблокирована',
+        blocks: 'Блокирует',
+        duplicatedBy: 'Дублируется',
+        duplicates: 'Дублирует',
+        relates: 'Связана',
+      },
     },
     taskInfo: {
       assignee: 'Исполнитель',
@@ -1416,6 +1424,8 @@ export const ruMessages = {
       placementToolbar: {
         aria: 'Что ставить на свимлейн',
         availability: 'Отсутствие',
+        cards: 'Карточки',
+        cardsMenu: 'Карточки на доску',
         comment: 'Заметка',
         cursor: 'Курсор',
         diagram: 'Схема',
@@ -1435,6 +1445,15 @@ export const ruMessages = {
         objectStorageRequired: 'Object storage (S3) не настроен',
         task: 'Задача',
         tasks: 'Задачи',
+        tictactoe: 'Крестики-нолики',
+      },
+      ticTacToe: {
+        cellEmpty: 'Пустая клетка {index}',
+        cellFilled: 'Клетка {index}, {mark}',
+        draw: 'Ничья',
+        reset: 'Заново',
+        turn: 'Ход {mark}',
+        winner: 'Победа {mark}',
       },
       overdue: {
         closeAndCreate: 'Закрыть задачу и завести новую',

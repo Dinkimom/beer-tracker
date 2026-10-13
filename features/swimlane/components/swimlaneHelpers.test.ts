@@ -116,6 +116,19 @@ describe('resolveSwimlaneQuickAddLayoutState', () => {
     expect(state.hoverMinTaskLayers).toBeUndefined();
     expect(state.quickAddFootprint).toEqual({ durationCells: 2, span: 2 });
   });
+
+  it('uses the same 2x2 hit target for tic-tac-toe as for a photo', () => {
+    const state = resolveSwimlaneQuickAddLayoutState({
+      canQuickAddOnLane: true,
+      hoverPreview: { layer: 0, span: 2 },
+      isDraggingTask: false,
+      isLinking: false,
+      placementTool: 'tictactoe',
+      tasks: [],
+    });
+    expect(state.quickAddFootprint).toEqual({ durationCells: 2, span: 2 });
+    expect(state.previewSpanLayers).toBe(2);
+  });
 });
 
 describe('resolveSwimlaneDropPreviewTarget', () => {

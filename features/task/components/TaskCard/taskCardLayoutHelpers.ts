@@ -125,7 +125,7 @@ export function computeTaskCardBarMetrics(
     swimlaneBarDurationParts ?? taskPosition?.duration ?? estimatedTimeslots;
   const actualDuration = resizePreviewDuration ?? planSlotsOnBar;
   // Заметка, схема и фото: width = duration в частях, без оценки SP — не показываем «+N» при resize.
-  if (task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image') {
+  if (task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget') {
     return {
       actualDuration,
       baselineSP: 0,

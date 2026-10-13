@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isGenericRelatesLabel,
   isIssueLinkCreateRelationship,
   mapTrackerRelationshipLabelToCanonical,
+  resolveStoredIssueLinkRelationship,
   yandexRelationshipForCreate,
 } from './issueLinkTypes';
 
@@ -14,6 +16,29 @@ describe('issueLinkTypes', () => {
     expect(mapTrackerRelationshipLabelToCanonical('depends on')).toBe('blocked_by');
     expect(mapTrackerRelationshipLabelToCanonical('duplicates')).toBe('duplicates');
     expect(mapTrackerRelationshipLabelToCanonical('is duplicated by')).toBe('duplicated_by');
+  });
+
+  it('keeps a custom Jira phrase and drops hierarchy', () => {
+    expect(resolveStoredIssueLinkRelationship('has linked QA task')).toEqual({
+      relationship: null,
+      relationshipLabel: 'has linked QA task',
+    });
+    expect(resolveStoredIssueLinkRelationship('  связана с задачей ')).toEqual({
+      relationship: null,
+      relationshipLabel: 'связана с задачей',
+    });
+    expect(resolveStoredIssueLinkRelationship('relates to')).toEqual({
+      relationship: 'relates',
+      relationshipLabel: 'relates to',
+    });
+    expect(resolveStoredIssueLinkRelationship('is subtask for')).toBeNull();
+    expect(resolveStoredIssueLinkRelationship('   ')).toBeNull();
+  });
+
+  it('treats relates phrases as the generic link', () => {
+    expect(isGenericRelatesLabel('relates to')).toBe(true);
+    expect(isGenericRelatesLabel('Связана с задачей')).toBe(true);
+    expect(isGenericRelatesLabel('has linked QA task')).toBe(false);
   });
 
   it('filters hierarchy relationships', () => {

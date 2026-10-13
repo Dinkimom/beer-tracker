@@ -32,13 +32,16 @@ import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
 
 function contextMenuDeleteLabel(
   t: (key: string) => string,
-  variant: 'diagram' | 'image' | 'note'
+  variant: 'diagram' | 'image' | 'note' | 'widget'
 ): string {
   if (variant === 'image') {
     return t('sprintPlanner.contextMenu.deleteImage');
   }
   if (variant === 'diagram') {
     return t('sprintPlanner.contextMenu.deleteDiagram');
+  }
+  if (variant === 'widget') {
+    return t('sprintPlanner.contextMenu.deleteCard');
   }
   return t('sprintPlanner.contextMenu.deleteNote');
 }
@@ -53,7 +56,7 @@ interface SwimlaneCommentContextMenuProps {
   parentOptions?: TaskParent[];
   position: { x: number; y: number };
   task?: Task | null;
-  variant?: 'diagram' | 'image' | 'note';
+  variant?: 'diagram' | 'image' | 'note' | 'widget';
   onAssigneeSelect?: (assigneeId: string) => void;
   onClose: () => void;
   onConvertToTask?: () => void;
@@ -86,9 +89,10 @@ export function SwimlaneCommentContextMenu({
   const { t } = useI18n();
   const isImage = variant === 'image';
   const isDiagram = variant === 'diagram';
+  const hidesComposer = isImage || variant === 'widget';
   const author = authorName?.trim();
   const showLink = onStartLinking != null;
-  const showNoteActions = !isImage;
+  const showNoteActions = !hidesComposer;
   const menuRef = useRef<HTMLDivElement>(null);
   const [isParentMenuOpen, setIsParentMenuOpen] = useState(false);
   const [isAssigneeMenuOpen, setIsAssigneeMenuOpen] = useState(false);
@@ -153,10 +157,10 @@ export function SwimlaneCommentContextMenu({
             >
               {t('sprintPlanner.contextMenu.imageAuthor', { name: author })}
             </div>
-            {isImage ? <div className={CONTEXT_MENU_SEPARATOR} role="separator" /> : null}
+            {isImage || variant === 'widget' ? <div className={CONTEXT_MENU_SEPARATOR} role="separator" /> : null}
           </>
         ) : null}
-        {isImage ? null : (
+        {hidesComposer ? null : (
           <>
             <Button
               className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}

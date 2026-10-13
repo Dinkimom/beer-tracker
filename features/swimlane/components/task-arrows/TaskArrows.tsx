@@ -32,6 +32,7 @@ import { SwimlaneLinkPreviewArrow } from './SwimlaneLinkPreviewArrow';
 import { TaskArrowLayer } from './TaskArrowLayer';
 import { TaskArrowLink } from './TaskArrowLink';
 import { isDevQaTaskArrowLink } from './taskArrowLinkHelpers';
+import { TaskArrowRelationshipMarker } from './TaskArrowRelationshipMarker';
 import { TaskSegmentArrowLinks } from './TaskSegmentArrowLinks';
 
 interface TaskArrowsProps {
@@ -208,6 +209,9 @@ export const TaskArrows = observer(function TaskArrows({
           <TaskArrowLink {...linkProps} link={hoveredLink} />
         </TaskArrowLayer>
       )}
+      <TaskArrowLayer zIndex={ZIndex.arrowsHovered}>
+        <TaskArrowRelationshipMarker links={hoveredTaskLinks} taskPositions={taskPositions} />
+      </TaskArrowLayer>
       {linkingFromTaskId != null && !clipToRow ? (
         <SwimlaneLinkPreviewArrow
           cursorPos={cursorPos}

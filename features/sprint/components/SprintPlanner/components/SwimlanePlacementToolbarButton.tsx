@@ -20,6 +20,7 @@ import {
   FLOATING_TOOLBAR_ITEM_IDLE,
   FLOATING_TOOLBAR_ITEM_ON,
 } from '@/features/context-menu/contextMenuClasses';
+import { TicTacToeMark } from '@/features/widgets/components/TicTacToeMark';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 
@@ -35,7 +36,10 @@ import {
 import { SwimlanePlacementToolbarCursorIcon } from './SwimlanePlacementToolbarCursorIcon';
 import { formatPlacementToolShortcutHint } from './swimlanePlacementToolbarKeyboard';
 
-const TOOL_ICONS: Record<Exclude<SwimlanePlacementTool, 'comment' | 'cursor' | 'diagram' | 'link' | 'task'>, string> = {
+const TOOL_ICONS: Record<
+  Exclude<SwimlanePlacementTool, 'comment' | 'cursor' | 'diagram' | 'link' | 'task' | 'tictactoe'>,
+  string
+> = {
   availability: 'calendar',
   image: 'image',
 };
@@ -86,6 +90,9 @@ function resolvePlacementToolbarGlyph(
   }
   if (tool === 'diagram') {
     return <ExcalidrawMark className="h-3.5 w-3.5 shrink-0" tone={active ? 'brand' : 'inherit'} />;
+  }
+  if (tool === 'tictactoe') {
+    return <TicTacToeMark className="h-4 w-4 shrink-0" />;
   }
   return <Icon className="h-4 w-4 shrink-0" name={TOOL_ICONS[tool]} />;
 }

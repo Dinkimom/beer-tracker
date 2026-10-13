@@ -12,7 +12,8 @@ export type SwimlanePlacementTool =
   | 'diagram'
   | 'image'
   | 'link'
-  | 'task';
+  | 'task'
+  | 'tictactoe';
 
 /** Сериализуемый rect для якорения контекстного меню у карточки задачи */
 export interface SprintPlannerContextMenuAnchorRect {

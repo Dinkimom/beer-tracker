@@ -120,7 +120,7 @@ export function useCommentsApi(
     assigneeId: string;
     color?: string;
     imageFileId: string | null;
-    kind?: 'diagram' | 'image' | 'text';
+    kind?: 'diagram' | 'image' | 'text' | 'widget';
     parent?: Comment['parent'] | null;
     text: string;
     x: number | null;

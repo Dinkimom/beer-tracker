@@ -14,6 +14,7 @@ import { computeSwimlaneRowBandBox } from '@/features/swimlane/utils/taskLayerTa
 import { buildSwimlaneTaskBarHorizontalStyle } from '@/features/task/components/TaskBar/taskBarHelpers';
 import { getDiagramCardDashedGhostStyle } from '@/features/task/utils/diagramCardSurface';
 import { getPhotoCardDashedGhostStyle } from '@/features/task/utils/photoCardSurface';
+import { TicTacToeMark } from '@/features/widgets/components/TicTacToeMark';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 
 import {
@@ -125,6 +126,8 @@ export function SwimlaneQuickAddPreview({
     >
       {kind === 'diagram' ? (
         <ExcalidrawMark className="h-5 w-5" />
+      ) : iconName === 'tictactoe' ? (
+        <TicTacToeMark className="h-5 w-5" />
       ) : (
         <Icon className="h-5 w-5" name={glyph} />
       )}

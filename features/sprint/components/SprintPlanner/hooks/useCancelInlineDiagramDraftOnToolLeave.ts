@@ -11,6 +11,7 @@ export function useCancelInlineDiagramDraftOnToolLeave(input: {
   tasks: Task[];
   clearStickyNoteCardRowOverride: (taskId: string) => void;
   closeNoteComposer: () => void;
+  keepInlineCardDraftRef?: { current: boolean };
   setSubmittingTaskId: (taskId: string | null) => void;
   setTaskPositions: (
     updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>,
@@ -22,6 +23,7 @@ export function useCancelInlineDiagramDraftOnToolLeave(input: {
   const {
     clearStickyNoteCardRowOverride,
     closeNoteComposer,
+    keepInlineCardDraftRef,
     placementTool,
     setSubmittingTaskId,
     setTaskPositions,
@@ -33,6 +35,10 @@ export function useCancelInlineDiagramDraftOnToolLeave(input: {
   useEffect(() => {
     const previousTool = previousToolRef.current;
     previousToolRef.current = placementTool;
+    if (keepInlineCardDraftRef?.current && previousTool === 'diagram' && placementTool !== 'diagram') {
+      keepInlineCardDraftRef.current = false;
+      return;
+    }
     cancelLocalDiagramCreateDraftIfLeftDiagramTool({
       clearStickyNoteCardRowOverride,
       closeNoteComposer,
@@ -47,6 +53,7 @@ export function useCancelInlineDiagramDraftOnToolLeave(input: {
   }, [
     clearStickyNoteCardRowOverride,
     closeNoteComposer,
+    keepInlineCardDraftRef,
     placementTool,
     setSubmittingTaskId,
     setTaskPositions,

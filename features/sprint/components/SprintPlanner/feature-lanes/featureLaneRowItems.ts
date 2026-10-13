@@ -9,6 +9,7 @@ export function isFeatureLaneAnnotationTask(task: Pick<Task, 'id' | 'localDraftK
     task.localDraftKind === 'comment' ||
     task.localDraftKind === 'diagram' ||
     task.localDraftKind === 'image' ||
+    task.localDraftKind === 'widget' ||
     isSwimlaneImageTaskId(task.id)
   );
 }

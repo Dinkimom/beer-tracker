@@ -49,6 +49,34 @@ describe('trackerLinkOverlay', () => {
     ]);
   });
 
+  it('keeps a custom tracker phrase when there is no canonical type', () => {
+    const links = mapTrackerIssueLinkEdgesToTaskLinks(
+      [
+        {
+          id: '3',
+          fromIssueKey: 'A-1',
+          toIssueKey: 'B-2',
+          relationship: null,
+          relationshipLabel: 'has linked QA task',
+          direction: 'outward',
+        },
+      ],
+      new Map([
+        ['A-1', 'A-1'],
+        ['B-2', 'B-2'],
+      ])
+    );
+    expect(links).toEqual([
+      {
+        id: 'tracker:3',
+        fromTaskId: 'A-1',
+        toTaskId: 'B-2',
+        origin: 'tracker',
+        relationshipLabel: 'has linked QA task',
+      },
+    ]);
+  });
+
   it('merges planner and tracker links by id', () => {
     expect(
       mergePlannerAndTrackerTaskLinks(

@@ -15,6 +15,8 @@ import {
   getStickyNoteTextClass,
   resolveStickyNoteDisplayModes,
 } from '@/features/comments/utils/stickyNoteSurfaceClasses';
+import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { TicTacToeBoard } from '@/features/widgets/components/TicTacToeBoard';
 
 import { isSwimlaneSingleTimeslotWidth } from '../taskCardLayoutHelpers';
 
@@ -143,6 +145,7 @@ export function TaskCardContent({
       : resolveSwimlaneDisplayModes(fontDuration ?? displayDuration);
   const isDiagramCard = task.localDraftKind === 'diagram';
   const isImageCard = task.localDraftKind === 'image';
+  const isWidgetCard = task.localDraftKind === 'widget';
   const isChooserDraft = isQuickAddChooserDraft(task);
   const titleFontClass =
     isCommentCard ? getStickyNoteTextClass() : 'font-bold';
@@ -165,6 +168,21 @@ export function TaskCardContent({
         sceneText={task.excalidrawSceneText}
         sceneUrl={task.diagramSceneUrl}
         untitledName={t('sprintPlanner.swimlane.quickAddMenu.diagramUntitledName')}
+      />
+    );
+  } else if (isWidgetCard) {
+    const commentId = parseSwimlaneCommentTaskId(task.id);
+    contentEl = (
+      <TicTacToeBoard
+        isDragging={isDragging}
+        text={task.name}
+        onChange={
+          commentId && onCommentUpdate
+            ? (next) => {
+                onCommentUpdate(commentId, next);
+              }
+            : undefined
+        }
       />
     );
   } else if (isImageCard) {
@@ -208,7 +226,7 @@ export function TaskCardContent({
 
   const wrapperClassName = resolveTaskCardSwimlaneContentWrapperClass({
     centerTitle,
-    isCommentCard: isCommentCard || isImageCard || isDiagramCard || isChooserDraft,
+    isCommentCard: isCommentCard || isImageCard || isDiagramCard || isWidgetCard || isChooserDraft,
   });
   return (
     <div ref={wrapperRef} className={wrapperClassName}>

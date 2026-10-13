@@ -18,6 +18,7 @@ import {
   resolvePlacementToolAfterAvailabilityPopoverClose,
   resolvePlacementToolAfterLayerChange,
   resolveNoteColorPopupOpen,
+  releaseCardPlacementTool,
   resolveLayoutModeSubmenuViewportPosition,
   resolvePlacementToolbarScrollPadPx,
   resolvePlacementToolbarTools,
@@ -76,6 +77,44 @@ describe('placementToolToDraftKind', () => {
     expect(placementToolToDraftKind('availability')).toBeUndefined();
     expect(placementToolToDraftKind('comment')).toBe('comment');
     expect(placementToolToDraftKind('image')).toBe('image');
+    expect(placementToolToDraftKind('tictactoe')).toBeUndefined();
+  });
+});
+
+describe('releaseCardPlacementTool', () => {
+  it('returns to the cursor after a card is placed and keeps a photo draft', () => {
+    const setPlacementTool = vi.fn();
+    const keepInlineCardDraftRef = { current: false };
+    releaseCardPlacementTool({
+      activeTool: 'tictactoe',
+      keepInlineCardDraftRef,
+      placed: true,
+      placementTool: 'tictactoe',
+      setPlacementTool,
+    });
+    expect(setPlacementTool).toHaveBeenCalledWith('cursor');
+    expect(keepInlineCardDraftRef.current).toBe(false);
+
+    releaseCardPlacementTool({
+      activeTool: 'image',
+      keepInlineCardDraftRef,
+      placed: true,
+      placementTool: 'image',
+      setPlacementTool,
+    });
+    expect(keepInlineCardDraftRef.current).toBe(true);
+  });
+
+  it('stays on the note tool', () => {
+    const setPlacementTool = vi.fn();
+    releaseCardPlacementTool({
+      activeTool: 'comment',
+      keepInlineCardDraftRef: { current: false },
+      placed: true,
+      placementTool: 'comment',
+      setPlacementTool,
+    });
+    expect(setPlacementTool).not.toHaveBeenCalled();
   });
 });
 
@@ -88,6 +127,7 @@ describe('SWIMLANE_PLACEMENT_TOOLS', () => {
       'comment',
       'image',
       'diagram',
+      'tictactoe',
       'availability',
     ]);
   });
@@ -303,6 +343,7 @@ describe('resolvePlacementToolbarTools', () => {
       'comment',
       'image',
       'diagram',
+      'tictactoe',
     ]);
   });
 });

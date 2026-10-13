@@ -163,7 +163,8 @@ async function persistNewTrackerIssueLink(input: {
           ? {
               ...item,
               id: overlayId,
-              relationship: created.relationship,
+              relationship: created.relationship ?? item.relationship,
+              relationshipLabel: created.relationshipLabel ?? item.relationshipLabel,
             }
           : item
       )

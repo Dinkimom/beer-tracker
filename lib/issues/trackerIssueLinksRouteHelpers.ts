@@ -43,6 +43,7 @@ export function trackerIssueLinkToEdge(
     fromIssueKey: issueKey,
     toIssueKey: link.linkedIssueKey,
     relationship: link.relationship,
+    ...(link.relationshipLabel ? { relationshipLabel: link.relationshipLabel } : {}),
     direction: link.direction,
   };
 }

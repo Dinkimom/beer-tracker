@@ -38,7 +38,7 @@ export function useSprintTrackerIssueLinks(input: {
   const issueKeys = useMemo(() => [...issueKeyToTaskId.keys()], [issueKeyToTaskId]);
 
   const query = useQuery({
-    queryKey: ['sprint-tracker-issue-links', input.sprintId, issueKeys],
+    queryKey: ['sprint-tracker-issue-links', 2, input.sprintId, issueKeys],
     enabled:
       input.enabled &&
       supportsIssueLinks &&

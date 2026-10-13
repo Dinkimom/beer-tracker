@@ -38,6 +38,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
   const {
     activeDraggableId = null,
     currentCell,
+    developers,
     hasQuickAddDraftMode = false,
     hoveredTaskId = null,
     isDraggingTask = false,
@@ -51,6 +52,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     position,
     segmentEditDraftCells,
     task,
+    taskLayerMap,
     taskLinks = EMPTY_TASK_LINKS,
     taskPositions,
     timelineTotalParts,
@@ -75,10 +77,12 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
   } = resolveTaskLayerPlanContext(props);
 
   const baselineCenterOffsetPx = resolveTaskLayerBaselineCenterOffsetPx({
+    assigneeOrder: developers,
     baselineHeight,
     qaTasksMap,
     stripCount: overdueBaselineStrips.length,
     taskId: task.id,
+    taskLayerMap,
     taskLinks,
     taskPositions,
     userLinksVisible: showLinks,

@@ -6,7 +6,7 @@ import type {
 import type { AxiosInstance } from 'axios';
 
 import {
-  mapTrackerRelationshipLabelToCanonical,
+  resolveStoredIssueLinkRelationship,
   yandexRelationshipForCreate,
 } from './issueLinkTypes';
 
@@ -73,11 +73,8 @@ export function mapYandexIssueLinkPayload(
   }
 
   const label = resolveYandexRelationshipLabel(payload);
-  if (!label) {
-    return null;
-  }
-  const relationship = mapTrackerRelationshipLabelToCanonical(label);
-  if (!relationship) {
+  const stored = label ? resolveStoredIssueLinkRelationship(label) : null;
+  if (!stored) {
     return null;
   }
 
@@ -87,7 +84,8 @@ export function mapYandexIssueLinkPayload(
   return {
     id,
     direction,
-    relationship,
+    relationship: stored.relationship,
+    relationshipLabel: stored.relationshipLabel,
     linkedIssueKey,
     linkedSummary: payload.object?.display?.trim() || null,
     linkedStatus: extractStatusDisplay(payload.status),
@@ -139,6 +137,7 @@ export async function createYandexIssueLink(
     id: data?.id == null ? '' : String(data.id),
     direction: 'outward',
     relationship: input.relationship,
+    relationshipLabel: input.relationship.replaceAll('_', ' '),
     linkedIssueKey: input.targetIssueKey.trim(),
     linkedSummary: data?.object?.display?.trim() || null,
     linkedStatus: extractStatusDisplay(data?.status),

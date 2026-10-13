@@ -196,7 +196,9 @@ export function resolveSwimlaneQuickAddLayoutState(input: {
     hasQuickAddDraftMode,
     hideQuickAddPreview,
     quickAddFootprint: resolveSwimlaneQuickAddPlacementFootprint(
-      input.placementTool === 'image' || input.placementTool === 'diagram'
+      input.placementTool === 'image' ||
+        input.placementTool === 'diagram' ||
+        input.placementTool === 'tictactoe'
     ),
     ...resolveSwimlaneQuickAddRowGrowLayers({
       hideQuickAddPreview,

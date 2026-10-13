@@ -59,6 +59,7 @@ describe('swimlaneCommentTaskBridge', () => {
     expect(isSwimlaneCommentTask({ id: 'local-draft-1', localDraftKind: 'comment' })).toBe(true);
     expect(isSwimlaneCommentTask({ id: 'comment:c1', localDraftKind: 'image' })).toBe(false);
     expect(isSwimlaneCommentTask({ id: 'comment:c1', localDraftKind: 'diagram' })).toBe(false);
+    expect(isSwimlaneCommentTask({ id: 'comment:c1', localDraftKind: 'widget' })).toBe(false);
     expect(isSwimlaneCommentTask({ id: 'TASK-1', localDraftKind: 'task' })).toBe(false);
   });
 
@@ -77,6 +78,9 @@ describe('swimlaneCommentTaskBridge', () => {
     expect(
       resolveSwimlaneAnnotationContextMenuVariant({ id: 'comment:c1', localDraftKind: 'diagram' })
     ).toBe('diagram');
+    expect(
+      resolveSwimlaneAnnotationContextMenuVariant({ id: 'comment:c1', localDraftKind: 'widget' })
+    ).toBe('widget');
     expect(resolveSwimlaneAnnotationContextMenuVariant({ id: 'NW-1' })).toBeNull();
   });
 

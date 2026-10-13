@@ -55,6 +55,13 @@ describe('resolveSwimlaneQuickAddPreviewToolProps', () => {
       isImageTool: false,
     });
   });
+
+  it('uses the photo-sized ghost for tic-tac-toe', () => {
+    expect(resolveSwimlaneQuickAddPreviewToolProps('tictactoe', 'yellow')).toEqual({
+      iconName: 'tictactoe',
+      isImageTool: true,
+    });
+  });
 });
 
 describe('resolveSwimlaneQuickAddPreviewClass', () => {

@@ -28,7 +28,13 @@ export interface IssueTrackerIssueLink {
   linkedIssueKey: string;
   linkedStatus?: string | null;
   linkedSummary?: string | null;
-  relationship: IssueLinkRelationship;
+  /**
+   * Канон BT, если фраза трекера известна.
+   * `null` — своя фраза Jira/Tracker («has linked QA task», «has to be done after»).
+   */
+  relationship: IssueLinkRelationship | null;
+  /** Фраза inward/outward как в трекере, с точки зрения текущей задачи. */
+  relationshipLabel?: string;
 }
 
 export interface IssueTrackerCreateIssueLinkInput {
@@ -54,6 +60,18 @@ const HIERARCHY_RELATIONSHIP_TOKENS = new Set([
 
 function normalizeRelationshipToken(raw: string): string {
   return raw.trim().toLowerCase().replaceAll('_', ' ');
+}
+
+/** Общая связь: английский relates и русская фраза Jira. Не конкретный тип вроде QA. */
+const GENERIC_RELATES_LABELS = new Set([
+  'relates',
+  'relates to',
+  'связана',
+  'связана с задачей',
+]);
+
+export function isGenericRelatesLabel(label: string): boolean {
+  return GENERIC_RELATES_LABELS.has(normalizeRelationshipToken(label));
 }
 
 /** Yandex POST `relationship` для канонического BT-типа. */
@@ -95,6 +113,28 @@ export function mapTrackerRelationshipLabelToCanonical(
     return 'duplicated_by';
   }
   return null;
+}
+
+export function isHierarchyIssueLinkLabel(label: string): boolean {
+  return HIERARCHY_RELATIONSHIP_TOKENS.has(normalizeRelationshipToken(label));
+}
+
+/**
+ * Связь для планера. Иерархию (parent/subtask/epic) по-прежнему не тащим.
+ * Неизвестная фраза остаётся как `relationshipLabel`, без канона.
+ */
+export function resolveStoredIssueLinkRelationship(label: string): {
+  relationship: IssueLinkRelationship | null;
+  relationshipLabel: string;
+} | null {
+  const relationshipLabel = label.trim();
+  if (!relationshipLabel || isHierarchyIssueLinkLabel(relationshipLabel)) {
+    return null;
+  }
+  return {
+    relationship: mapTrackerRelationshipLabelToCanonical(relationshipLabel),
+    relationshipLabel,
+  };
 }
 
 function isIssueLinkCreateRelationship(
