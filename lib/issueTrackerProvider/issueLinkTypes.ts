@@ -115,7 +115,7 @@ export function mapTrackerRelationshipLabelToCanonical(
   return null;
 }
 
-export function isHierarchyIssueLinkLabel(label: string): boolean {
+function isHierarchyIssueLinkLabel(label: string): boolean {
   return HIERARCHY_RELATIONSHIP_TOKENS.has(normalizeRelationshipToken(label));
 }
 

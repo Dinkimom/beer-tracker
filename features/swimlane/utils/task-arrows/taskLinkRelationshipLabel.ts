@@ -11,7 +11,7 @@ import { resolveLinkArrowDrawTaskIds } from '@/utils/linkAnchors';
  */
 
 /** Длиннее этого — плашка фиксированной ширины в две строки. */
-export const TASK_LINK_RELATIONSHIP_CHIP_WRAP_AFTER = 16;
+const TASK_LINK_RELATIONSHIP_CHIP_WRAP_AFTER = 16;
 
 const ISSUE_LINK_RELATIONSHIP_INVERSE: Record<string, string> = {
   blocked_by: 'blocks',
