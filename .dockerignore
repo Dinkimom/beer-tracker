@@ -19,6 +19,7 @@ next-env.d.ts
 .cursor
 *.md
 !README.md
+!CHANGELOG.md
 
 # Env (mount or pass at runtime)
 .env
