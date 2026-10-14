@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.13.1] — 2026-10-14
+
+### English
+
+- Opening a sprint board no longer asks Jira for issue links one task at a time. Links are taken from the sprint search that already loaded the board, and a cold batch is a single `key in (...)` search.
+- Sprint issue search, sprint info, score, and assignee velocity share an in-memory cache on the instance, so a second open does not repeat the same Jira calls.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.13.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Открытие доски спринта больше не ходит в Jira за связями по одной задаче. Связи берутся из поиска спринта, которым уже загружена доска, а холодный batch — один поиск `key in (...)`.
+- Поиск задач спринта, сведения о спринте, score и velocity делят кэш в памяти инстанса, поэтому повторное открытие не повторяет те же запросы в Jira.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.13.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.13.0] — 2026-10-14
 
 ### English
