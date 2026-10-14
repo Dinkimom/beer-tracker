@@ -119,6 +119,30 @@ export async function listYandexIssueLinks(
   return mapYandexIssueLinksPayload(data);
 }
 
+const YANDEX_LINK_BATCH_CONCURRENCY = 6;
+
+/** У Трекера нет пакетного links API — те же GET, но пачками по 6. */
+export async function listYandexIssueLinksBatch(
+  api: AxiosInstance,
+  issueKeys: string[]
+): Promise<Record<string, IssueTrackerIssueLink[]>> {
+  const out: Record<string, IssueTrackerIssueLink[]> = {};
+  for (let offset = 0; offset < issueKeys.length; offset += YANDEX_LINK_BATCH_CONCURRENCY) {
+    const chunk = issueKeys.slice(offset, offset + YANDEX_LINK_BATCH_CONCURRENCY);
+    await Promise.all(
+      chunk.map(async (issueKey) => {
+        try {
+          out[issueKey] = await listYandexIssueLinks(api, issueKey);
+        } catch (error) {
+          console.error(`Failed to list issue links for ${issueKey}:`, error);
+          out[issueKey] = [];
+        }
+      })
+    );
+  }
+  return out;
+}
+
 export async function createYandexIssueLink(
   api: AxiosInstance,
   issueKey: string,

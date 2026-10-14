@@ -53,7 +53,11 @@ describe('loadSprintIssuesForPlanner', () => {
       sprintName: '',
     });
     expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('PG-1'), issue('PG-2')], undefined);
-    expect(deps.scheduleTrackerRefresh).toHaveBeenCalledWith(1974, baseParams.issueTracker);
+    expect(deps.scheduleTrackerRefresh).toHaveBeenCalledWith(
+      1974,
+      baseParams.issueTracker,
+      baseParams.organizationId
+    );
     expect(deps.fetchFromTracker).not.toHaveBeenCalled();
   });
 
@@ -65,9 +69,13 @@ describe('loadSprintIssuesForPlanner', () => {
 
     expect(result).toEqual([issue('TR-1')]);
     expect(deps.scheduleTrackerRefresh).not.toHaveBeenCalled();
-    expect(deps.fetchFromTracker).toHaveBeenCalledWith(baseParams.issueTracker, 1974, {
-      forceRefresh: false,
-    });
+    expect(deps.fetchFromTracker).toHaveBeenCalledWith(
+      baseParams.issueTracker,
+      1974,
+      { forceRefresh: false },
+      baseParams.organizationId
+    );
+    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], undefined);
   });
 
   it('skips snapshot on forceRefresh', async () => {
@@ -77,9 +85,13 @@ describe('loadSprintIssuesForPlanner', () => {
 
     expect(deps.getCached).not.toHaveBeenCalled();
     expect(deps.querySnapshots).not.toHaveBeenCalled();
-    expect(deps.fetchFromTracker).toHaveBeenCalledWith(baseParams.issueTracker, 1974, {
-      forceRefresh: true,
-    });
+    expect(deps.fetchFromTracker).toHaveBeenCalledWith(
+      baseParams.issueTracker,
+      1974,
+      { forceRefresh: true },
+      baseParams.organizationId
+    );
+    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], undefined);
   });
 
   it('forwards known sprint status to Tracker fallback', async () => {
@@ -88,10 +100,13 @@ describe('loadSprintIssuesForPlanner', () => {
 
     await loadSprintIssuesForPlanner({ ...baseParams, sprintStatus: 'in_progress' }, deps);
 
-    expect(deps.fetchFromTracker).toHaveBeenCalledWith(baseParams.issueTracker, 1974, {
-      forceRefresh: false,
-      sprintStatus: 'in_progress',
-    });
+    expect(deps.fetchFromTracker).toHaveBeenCalledWith(
+      baseParams.issueTracker,
+      1974,
+      { forceRefresh: false, sprintStatus: 'in_progress' },
+      baseParams.organizationId
+    );
+    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], 'in_progress');
   });
 
   it('falls back to Tracker when the board has no team title', async () => {

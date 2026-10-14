@@ -6,6 +6,8 @@ import type {
 import type { AxiosInstance } from 'axios';
 
 import { resolveStoredIssueLinkRelationship } from './issueLinkTypes';
+import { shouldStopJiraBoardPages } from './jiraCatalog';
+import { postJiraIssueSearch, readJiraSearchNextPageToken } from './jiraIssueSearchRequest';
 
 interface JiraIssueLinkType {
   inward?: string;
@@ -27,6 +29,9 @@ interface JiraIssueLinkPayload {
   outwardIssue?: JiraLinkedIssue;
   type?: JiraIssueLinkType;
 }
+
+const SAFE_JIRA_ISSUE_KEY = /^[A-Za-z]\w*-\d+$/;
+const harvestedJiraIssueLinks = new WeakMap<object, IssueTrackerIssueLink[]>();
 
 const JIRA_LINK_TYPE_NAME: Record<IssueLinkCreateRelationship, string> = {
   relates: 'Relates',
@@ -85,6 +90,129 @@ export function mapJiraIssueLink(
   };
 }
 
+function mapJiraIssueLinkList(issueKey: string, raw: unknown): IssueTrackerIssueLink[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const out: IssueTrackerIssueLink[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') {
+      continue;
+    }
+    const mapped = mapJiraIssueLink(issueKey, item);
+    if (mapped) {
+      out.push(mapped);
+    }
+  }
+  return out;
+}
+
+/**
+ * Запоминает `issuelinks` с объекта задачи поиска спринта.
+ * Пустой массив — поле было и связей нет. Нет массива — не кэшируем.
+ */
+export function harvestJiraIssueLinks(
+  owner: object,
+  issueKey: string,
+  fields: { issuelinks?: unknown } | null | undefined
+): void {
+  const raw = fields?.issuelinks;
+  if (!Array.isArray(raw)) {
+    return;
+  }
+  harvestedJiraIssueLinks.set(owner, mapJiraIssueLinkList(issueKey, raw));
+}
+
+export function readHarvestedJiraIssueLinks(
+  owner: object | undefined
+): IssueTrackerIssueLink[] | undefined {
+  if (!owner) {
+    return undefined;
+  }
+  return harvestedJiraIssueLinks.get(owner);
+}
+
+interface JiraSearchLinkRow {
+  issuelinks: unknown;
+  key: string;
+}
+
+function jiraSearchLinkRows(data: unknown): JiraSearchLinkRow[] {
+  if (!data || typeof data !== 'object') {
+    return [];
+  }
+  const issues = (data as { issues?: unknown }).issues;
+  if (!Array.isArray(issues)) {
+    return [];
+  }
+  const out: JiraSearchLinkRow[] = [];
+  for (const row of issues) {
+    if (!row || typeof row !== 'object') {
+      continue;
+    }
+    const key = (row as { key?: unknown }).key;
+    if (typeof key !== 'string' || !key.trim()) {
+      continue;
+    }
+    const fields = (row as { fields?: { issuelinks?: unknown } }).fields;
+    out.push({ issuelinks: fields?.issuelinks, key: key.trim() });
+  }
+  return out;
+}
+
+async function fillJiraIssueLinksFromSearch(
+  api: AxiosInstance,
+  issueKeys: string[],
+  out: Record<string, IssueTrackerIssueLink[]>
+): Promise<void> {
+  let startAt = 0;
+  let nextPageToken: string | undefined;
+  const maxResults = Math.min(100, Math.max(issueKeys.length, 1));
+  for (let page = 0; page < 4; page += 1) {
+    const data = await postJiraIssueSearch(api, {
+      fields: ['issuelinks'],
+      jql: `key in (${issueKeys.join(',')})`,
+      maxResults,
+      nextPageToken,
+      startAt,
+    });
+    const rows = jiraSearchLinkRows(data);
+    for (const row of rows) {
+      out[row.key] = mapJiraIssueLinkList(row.key, row.issuelinks);
+    }
+    if (shouldStopJiraBoardPages(data, startAt, rows.length, maxResults)) {
+      return;
+    }
+    nextPageToken = readJiraSearchNextPageToken(data);
+    startAt += rows.length;
+  }
+}
+
+/** Один поиск `key in (...)` вместо GET /issue на каждый ключ. */
+export async function listJiraIssueLinksForKeys(
+  api: AxiosInstance,
+  issueKeys: string[]
+): Promise<Record<string, IssueTrackerIssueLink[]>> {
+  const unique = [...new Set(issueKeys.map((key) => key.trim()).filter(Boolean))];
+  const out: Record<string, IssueTrackerIssueLink[]> = {};
+  for (const key of unique) {
+    out[key] = [];
+  }
+  const safe = unique.filter((key) => SAFE_JIRA_ISSUE_KEY.test(key));
+  const unsafe = unique.filter((key) => !SAFE_JIRA_ISSUE_KEY.test(key));
+  if (safe.length > 0) {
+    await fillJiraIssueLinksFromSearch(api, safe, out);
+  }
+  if (unsafe.length > 0) {
+    await Promise.all(
+      unsafe.map(async (issueKey) => {
+        out[issueKey] = await listJiraIssueLinks(api, issueKey);
+      })
+    );
+  }
+  return out;
+}
+
 export async function listJiraIssueLinks(
   api: AxiosInstance,
   issueKey: string
@@ -93,18 +221,7 @@ export async function listJiraIssueLinks(
     `/issue/${encodeURIComponent(issueKey)}`,
     { params: { fields: 'issuelinks' } }
   );
-  const raw = data.fields?.issuelinks;
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-  const out: IssueTrackerIssueLink[] = [];
-  for (const item of raw) {
-    const mapped = mapJiraIssueLink(issueKey, item);
-    if (mapped) {
-      out.push(mapped);
-    }
-  }
-  return out;
+  return mapJiraIssueLinkList(issueKey, data.fields?.issuelinks);
 }
 
 export async function createJiraIssueLink(

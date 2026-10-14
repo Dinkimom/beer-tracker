@@ -35,6 +35,7 @@ export const ISSUE_TRACKER_PROVIDER_CLIENT_METHODS = [
   'getTransitionFields',
   'listBoards',
   'listIssueLinks',
+  'listIssueLinksBatch',
   'listIssueTransitionsBatch',
   'listIssuesByQuery',
   'listIssuesForBoard',

@@ -55,6 +55,7 @@ import {
   createYandexIssueLink,
   deleteYandexIssueLink,
   listYandexIssueLinks,
+  listYandexIssueLinksBatch,
 } from './yandexIssueLinks';
 import {
   addYandexIssueToSprint,
@@ -248,6 +249,10 @@ function createYandexIssueTrackerProviderClient(
 
     listIssueLinks(issueKey: string) {
       return listYandexIssueLinks(api, issueKey);
+    },
+
+    listIssueLinksBatch(issueKeys: string[]) {
+      return listYandexIssueLinksBatch(api, issueKeys);
     },
 
     listQueues() {

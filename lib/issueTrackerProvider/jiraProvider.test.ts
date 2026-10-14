@@ -109,9 +109,19 @@ vi.mock('./jiraIssues', () => ({
     (_api: unknown, issues: Array<{ key: string; summary: string; type?: { key: string } }>) =>
       Promise.resolve(issues.map((issue) => ({ ...issue, provider: 'jira' as const })))
   ),
-  searchJiraIssuesInSprint: vi.fn(() =>
+}));
+
+vi.mock('./jiraSprintIssueLoad', () => ({
+  loadJiraSprintIssues: vi.fn(() =>
     Promise.resolve([
-      { id: '10001', key: 'PROJ-1', self: '', summary: 'Fix login', type: { key: 'task' } },
+      {
+        id: '10001',
+        key: 'PROJ-1',
+        provider: 'jira',
+        self: '',
+        summary: 'Fix login',
+        type: { key: 'task' },
+      },
     ])
   ),
 }));
@@ -382,6 +392,7 @@ describe('jiraTrackerProvider skeleton', () => {
       'getTransitionFields',
       'listBoards',
       'listIssueLinks',
+      'listIssueLinksBatch',
       'listIssueTransitionsBatch',
       'listIssuesForBoard',
       'listIssuesForQueue',

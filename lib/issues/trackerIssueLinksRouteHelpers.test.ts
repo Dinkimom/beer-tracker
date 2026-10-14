@@ -6,10 +6,20 @@ import { invalidateCachedTrackerIssueLinks } from './trackerIssueLinksCache';
 import {
   listTrackerIssueLinkEdges,
   normalizeIssueKeysForLinkBatch,
+  rememberHarvestedIssueLinks,
   trackerIssueLinkToEdge,
 } from './trackerIssueLinksRouteHelpers';
 
 const ORG = 'org-links-test';
+
+function relates(id: string, linkedIssueKey: string) {
+  return {
+    id,
+    direction: 'outward' as const,
+    relationship: 'relates' as const,
+    linkedIssueKey,
+  };
+}
 
 describe('trackerIssueLinksRouteHelpers', () => {
   afterEach(() => {
@@ -38,95 +48,111 @@ describe('trackerIssueLinksRouteHelpers', () => {
   });
 
   it('dedupes edges by tracker link id across issues', async () => {
-    const listIssueLinks = vi.fn((key: string) => {
-      if (key === 'A-1') {
-        return Promise.resolve([
+    const listIssueLinks = vi.fn();
+    const listIssueLinksBatch = vi.fn(() =>
+      Promise.resolve({
+        'A-1': [relates('shared', 'B-2')],
+        'B-2': [
           {
             id: 'shared',
-            direction: 'outward' as const,
+            direction: 'inward' as const,
             relationship: 'relates' as const,
-            linkedIssueKey: 'B-2',
+            linkedIssueKey: 'A-1',
           },
-        ]);
-      }
-      return Promise.resolve([
-        {
-          id: 'shared',
-          direction: 'inward' as const,
-          relationship: 'relates' as const,
-          linkedIssueKey: 'A-1',
-        },
-      ]);
-    });
+        ],
+      })
+    );
 
     const edges = await listTrackerIssueLinkEdges({
       issueKeys: ['A-1', 'B-2'],
-      issueTracker: { listIssueLinks },
+      issueTracker: { listIssueLinks, listIssueLinksBatch },
       organizationId: ORG,
     });
 
+    expect(listIssueLinksBatch).toHaveBeenCalledTimes(1);
+    expect(listIssueLinks).not.toHaveBeenCalled();
     expect(edges).toHaveLength(1);
     expect(edges[0]).toMatchObject({ id: 'shared', fromIssueKey: 'A-1', toIssueKey: 'B-2' });
   });
 
   it('serves cached per-issue links on the second batch call', async () => {
-    const listIssueLinks = vi.fn((key: string) =>
-      Promise.resolve([
-        {
-          id: `link-${key}`,
-          direction: 'outward' as const,
-          relationship: 'relates' as const,
-          linkedIssueKey: 'C-3',
-        },
-      ])
+    const listIssueLinks = vi.fn();
+    const listIssueLinksBatch = vi.fn((keys: string[]) =>
+      Promise.resolve(
+        Object.fromEntries(keys.map((key) => [key, [relates(`link-${key}`, 'C-3')]]))
+      )
     );
 
     const first = await listTrackerIssueLinkEdges({
       issueKeys: ['A-1', 'B-2'],
-      issueTracker: { listIssueLinks },
+      issueTracker: { listIssueLinks, listIssueLinksBatch },
       organizationId: ORG,
     });
-    expect(listIssueLinks).toHaveBeenCalledTimes(2);
+    expect(listIssueLinksBatch).toHaveBeenCalledTimes(1);
     expect(first).toHaveLength(2);
 
-    listIssueLinks.mockClear();
+    listIssueLinksBatch.mockClear();
     const second = await listTrackerIssueLinkEdges({
       issueKeys: ['A-1', 'B-2'],
-      issueTracker: { listIssueLinks },
+      issueTracker: { listIssueLinks, listIssueLinksBatch },
       organizationId: ORG,
     });
-    expect(listIssueLinks).not.toHaveBeenCalled();
+    expect(listIssueLinksBatch).not.toHaveBeenCalled();
     expect(second).toHaveLength(2);
 
-    // Sanity: cache keys exist in the shared apiCache.
     expect(apiCache.get(`tracker:issue-links:v2:${ORG}:A-1`)).not.toBeNull();
   });
 
   it('fetches only cache misses when the batch grows', async () => {
-    const listIssueLinks = vi.fn((key: string) =>
-      Promise.resolve([
-        {
-          id: `link-${key}`,
-          direction: 'outward' as const,
-          relationship: 'relates' as const,
-          linkedIssueKey: 'Z-9',
-        },
-      ])
+    const listIssueLinks = vi.fn();
+    const listIssueLinksBatch = vi.fn((keys: string[]) =>
+      Promise.resolve(
+        Object.fromEntries(keys.map((key) => [key, [relates(`link-${key}`, 'Z-9')]]))
+      )
     );
 
     await listTrackerIssueLinkEdges({
       issueKeys: ['A-1'],
-      issueTracker: { listIssueLinks },
+      issueTracker: { listIssueLinks, listIssueLinksBatch },
       organizationId: ORG,
     });
-    listIssueLinks.mockClear();
+    listIssueLinksBatch.mockClear();
 
     await listTrackerIssueLinkEdges({
       issueKeys: ['A-1', 'B-2'],
-      issueTracker: { listIssueLinks },
+      issueTracker: { listIssueLinks, listIssueLinksBatch },
       organizationId: ORG,
     });
-    expect(listIssueLinks).toHaveBeenCalledTimes(1);
-    expect(listIssueLinks).toHaveBeenCalledWith('B-2');
+    expect(listIssueLinksBatch).toHaveBeenCalledTimes(1);
+    expect(listIssueLinksBatch).toHaveBeenCalledWith(['B-2']);
+  });
+
+  it('falls back to per-issue fetches when the batch request fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const listIssueLinksBatch = vi.fn(() => Promise.reject(new Error('search down')));
+    const listIssueLinks = vi.fn((key: string) => Promise.resolve([relates(`link-${key}`, 'C-3')]));
+
+    const edges = await listTrackerIssueLinkEdges({
+      issueKeys: ['A-1'],
+      issueTracker: { listIssueLinks, listIssueLinksBatch },
+      organizationId: ORG,
+    });
+
+    expect(listIssueLinks).toHaveBeenCalledWith('A-1');
+    expect(edges).toHaveLength(1);
+  });
+
+  it('remembers links harvested with the sprint issue payload', async () => {
+    rememberHarvestedIssueLinks(ORG, [
+      { key: 'A-1', issueLinks: [relates('from-search', 'B-2')] },
+    ]);
+    const listIssueLinksBatch = vi.fn();
+    const edges = await listTrackerIssueLinkEdges({
+      issueKeys: ['A-1'],
+      issueTracker: { listIssueLinks: vi.fn(), listIssueLinksBatch },
+      organizationId: ORG,
+    });
+    expect(listIssueLinksBatch).not.toHaveBeenCalled();
+    expect(edges[0]).toMatchObject({ id: 'from-search', fromIssueKey: 'A-1', toIssueKey: 'B-2' });
   });
 });

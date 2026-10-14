@@ -12,7 +12,7 @@ const BatchIssueLinksSchema = z.object({
   issueKeys: z.array(z.string().trim().min(1)).min(1).max(80),
 });
 
-/** Batch list from Tracker/Jira with in-memory per-issue cache (30m). */
+/** Batch list from Tracker/Jira. One upstream search for cache misses; 30m in-memory cache. */
 export async function POST(request: NextRequest) {
   try {
     const tenantResult = await requireTenantContext(request);

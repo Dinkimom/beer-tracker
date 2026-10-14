@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { apiCache } from '@/lib/cache';
+
 import {
   createJiraSprint,
   extractJiraSprintRows,
@@ -83,6 +85,7 @@ describe('mapJiraSprintToPlannerListItem', () => {
 
 describe('fetchJiraSprintInfo', () => {
   it('GETs an Agile sprint and maps SprintInfo', async () => {
+    apiCache.deleteByPattern(/^jira:sprint-info:55:/);
     const get = vi.fn().mockResolvedValue({
       data: {
         endDate: '2026-09-11T18:00:00.000+03:00',

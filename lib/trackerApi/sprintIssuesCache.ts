@@ -33,6 +33,7 @@ export function setCachedSprintIssues(
 /** Сброс кэша задач спринта (кнопка «Обновить», смена состава спринта и т.п.). */
 export function invalidateCachedSprintIssues(sprintId: number): void {
   apiCache.delete(cacheKeys.sprintIssues(sprintId));
+  apiCache.deleteByPattern(new RegExp(`^jira:sprint-issues:${sprintId}:`));
 }
 
 function optionalEstimateValue(value: number | null | undefined): number | undefined {

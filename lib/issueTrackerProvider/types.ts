@@ -76,6 +76,11 @@ export interface IssueTrackerIssue {
   functionalTeam?: string;
   id: string;
   incidentSeverity?: string | { display?: string; key?: string };
+  /**
+   * Связи из того же ответа, что и задача (Jira `issuelinks`).
+   * `undefined` — поле не приходило, кэш связей не заполняем.
+   */
+  issueLinks?: IssueTrackerIssueLink[];
   key: string;
   mergeRequestLink?: string;
   parent?: IssueTrackerEntityRef;
@@ -375,6 +380,8 @@ export interface IssueTrackerProviderClient {
   getTransitionFields(issueKey: string, transitionId: string): Promise<IssueTrackerScreenField[]>;
   listBoards(): Promise<IssueTrackerBoardListItem[]>;
   listIssueLinks(issueKey: string): Promise<IssueTrackerIssueLink[]>;
+  /** Все ключи одним запросом, где трекер это умеет. Отсутствующий ключ — нет связей. */
+  listIssueLinksBatch(issueKeys: string[]): Promise<Record<string, IssueTrackerIssueLink[]>>;
   listIssuesByQuery(
     query: string,
     options?: IssueTrackerListIssuesByQueryOptions

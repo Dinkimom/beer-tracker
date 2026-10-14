@@ -2,6 +2,8 @@ import type { IssueTrackerCreateSprintInput, IssueTrackerSprintStatus } from './
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
+import { apiCache } from '@/lib/cache';
+
 import {
   axiosErrorStatusAndDetails,
   throwIfJiraAgileAuthError,
@@ -165,10 +167,22 @@ function jiraSprintInfoFromRaw(raw: unknown): SprintInfo | null {
   };
 }
 
+const JIRA_SPRINT_INFO_CACHE_TTL_SEC = 10 * 60;
+
+function jiraSprintInfoCacheKey(api: AxiosInstance, sprintId: number): string {
+  const base = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
+  return `jira:sprint-info:${sprintId}:${base}`;
+}
+
 export async function fetchJiraSprintInfo(
   api: AxiosInstance,
   sprintId: number
 ): Promise<SprintInfo> {
+  const cacheKey = jiraSprintInfoCacheKey(api, sprintId);
+  const cached = apiCache.get<SprintInfo>(cacheKey);
+  if (cached) {
+    return cached;
+  }
   const baseUrl = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
   if (!baseUrl) {
     throw new Error('Jira getSprint requires API base URL');
@@ -178,6 +192,7 @@ export async function fetchJiraSprintInfo(
   if (!info) {
     throw new Error(`Jira getSprint returned no sprint for ${sprintId}`);
   }
+  apiCache.set(cacheKey, info, JIRA_SPRINT_INFO_CACHE_TTL_SEC);
   return info;
 }
 

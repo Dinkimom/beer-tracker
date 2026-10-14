@@ -84,6 +84,18 @@ function dedupeTrackerIssueLinkEdges(perKey: TrackerIssueLinkEdge[][]): TrackerI
   return [...byId.values()];
 }
 
+type IssueLinkLister = Pick<IssueTrackerProviderClient, 'listIssueLinks' | 'listIssueLinksBatch'>;
+
+function cacheIssueLinkEdges(
+  organizationId: string,
+  issueKey: string,
+  links: IssueTrackerIssueLink[]
+): TrackerIssueLinkEdge[] {
+  const edges = links.map((link) => trackerIssueLinkToEdge(issueKey, link));
+  setCachedTrackerIssueLinks(organizationId, issueKey, edges);
+  return edges;
+}
+
 async function fetchAndCacheIssueLinkEdges(input: {
   issueKey: string;
   issueTracker: Pick<IssueTrackerProviderClient, 'listIssueLinks'>;
@@ -91,23 +103,56 @@ async function fetchAndCacheIssueLinkEdges(input: {
 }): Promise<TrackerIssueLinkEdge[]> {
   try {
     const links = await input.issueTracker.listIssueLinks(input.issueKey);
-    const edges = links.map((link) => trackerIssueLinkToEdge(input.issueKey, link));
-    setCachedTrackerIssueLinks(input.organizationId, input.issueKey, edges);
-    return edges;
+    return cacheIssueLinkEdges(input.organizationId, input.issueKey, links);
   } catch (error) {
     console.error(`Failed to list issue links for ${input.issueKey}:`, error);
     return [];
   }
 }
 
+async function loadMissedIssueLinkEdges(input: {
+  issueKeys: string[];
+  issueTracker: IssueLinkLister;
+  organizationId: string;
+}): Promise<TrackerIssueLinkEdge[][]> {
+  try {
+    const byKey = await input.issueTracker.listIssueLinksBatch(input.issueKeys);
+    return input.issueKeys.map((issueKey) =>
+      cacheIssueLinkEdges(input.organizationId, issueKey, byKey[issueKey] ?? [])
+    );
+  } catch (error) {
+    console.error('Failed to list issue links in batch, falling back per issue:', error);
+    return mapPool(input.issueKeys, LIST_CONCURRENCY, (issueKey) =>
+      fetchAndCacheIssueLinkEdges({
+        issueKey,
+        issueTracker: input.issueTracker,
+        organizationId: input.organizationId,
+      })
+    );
+  }
+}
+
+/** Кладёт связи, уже пришедшие вместе с задачами спринта, чтобы batch не ходил в трекер. */
+export function rememberHarvestedIssueLinks(
+  organizationId: string,
+  issues: ReadonlyArray<{ issueLinks?: IssueTrackerIssueLink[]; key: string }>
+): void {
+  for (const issue of issues) {
+    if (issue.issueLinks === undefined) {
+      continue;
+    }
+    cacheIssueLinkEdges(organizationId, issue.key, issue.issueLinks);
+  }
+}
+
 /**
  * Связи из Tracker/Jira без Postgres.
- * Кэш на 30 мин по (org, issueKey); в батче ходят в трекер только cache miss.
+ * Кэш на 30 мин по (org, issueKey). Промахи — одним batch-запросом, не GET на задачу.
  * Дедуп по tracker link id (одна связь может прийти с обеих сторон).
  */
 export async function listTrackerIssueLinkEdges(input: {
   issueKeys: string[];
-  issueTracker: Pick<IssueTrackerProviderClient, 'listIssueLinks'>;
+  issueTracker: IssueLinkLister;
   organizationId: string;
 }): Promise<TrackerIssueLinkEdge[]> {
   const keys = normalizeIssueKeysForLinkBatch(input.issueKeys);
@@ -129,13 +174,11 @@ export async function listTrackerIssueLinkEdges(input: {
   const fetchedEdges =
     misses.length === 0
       ? []
-      : await mapPool(misses, LIST_CONCURRENCY, (issueKey) =>
-          fetchAndCacheIssueLinkEdges({
-            issueKey,
-            issueTracker: input.issueTracker,
-            organizationId: input.organizationId,
-          })
-        );
+      : await loadMissedIssueLinkEdges({
+          issueKeys: misses,
+          issueTracker: input.issueTracker,
+          organizationId: input.organizationId,
+        });
 
   return dedupeTrackerIssueLinkEdges([...cachedEdges, ...fetchedEdges]);
 }

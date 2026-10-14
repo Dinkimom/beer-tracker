@@ -207,6 +207,7 @@ export const invalidateCache = {
   },
   sprintInfo: (sprintId: number) => {
     apiCache.delete(cacheKeys.sprintInfo(sprintId));
+    apiCache.deleteByPattern(new RegExp(`^jira:sprint-info:${sprintId}:`));
   },
   backlog: (boardId: number) => {
     apiCache.deleteByPattern(`^backlog:${boardId}:`);
@@ -228,6 +229,8 @@ export const invalidateCache = {
     apiCache.deleteByPattern(new RegExp(`^burndown:pg:.+:${sprintId}:`));
     apiCache.delete(cacheKeys.sprintInfo(sprintId));
     apiCache.delete(cacheKeys.sprintIssues(sprintId));
+    apiCache.deleteByPattern(new RegExp(`^jira:sprint-issues:${sprintId}:`));
+    apiCache.deleteByPattern(new RegExp(`^jira:sprint-info:${sprintId}:`));
   },
   stories: (boardId: number) => {
     apiCache.deleteByPattern(`^stories:${boardId}:`);

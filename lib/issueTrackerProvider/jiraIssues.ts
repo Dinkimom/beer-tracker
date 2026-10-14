@@ -4,6 +4,7 @@ import type { AxiosInstance } from 'axios';
 
 import { jiraAdfToMarkdown } from './jiraAdfToMarkdown';
 import { jiraAgileSprintIssuesUrl, shouldStopJiraBoardPages } from './jiraCatalog';
+import { harvestJiraIssueLinks } from './jiraIssueLinks';
 import { postJiraIssueSearch, readJiraSearchNextPageToken } from './jiraIssueSearchRequest';
 import {
   applyJiraScheduleFieldRefsToTrackerIssue,
@@ -283,7 +284,7 @@ export function mapJiraRestIssueToTrackerIssue(raw: unknown): TrackerIssue | nul
   const id = row.id != null && String(row.id).trim() !== '' ? String(row.id) : key;
   const epic = mapJiraEpic(fields.epic);
   const duedate = typeof fields.duedate === 'string' ? fields.duedate.trim() : '';
-  return {
+  const mapped: TrackerIssue = {
     ...extractJiraExtraFields(fields),
     assignee: mapJiraUser(fields.assignee),
     createdAt: fields.created,
@@ -303,6 +304,8 @@ export function mapJiraRestIssueToTrackerIssue(raw: unknown): TrackerIssue | nul
     type: mapJiraType(fields.issuetype),
     updatedAt: fields.updated,
   };
+  harvestJiraIssueLinks(mapped, key, fields as { issuelinks?: unknown });
+  return mapped;
 }
 
 export function normalizeJiraIssue(issue: TrackerIssue): IssueTrackerIssue {

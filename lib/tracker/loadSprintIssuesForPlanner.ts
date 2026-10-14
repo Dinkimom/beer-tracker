@@ -6,6 +6,7 @@
 import type { IssueTrackerProviderClient, IssueTrackerSprintIssuesOptions } from '@/lib/issueTrackerProvider/types';
 import type { TrackerIssue } from '@/types/tracker';
 
+import { rememberHarvestedIssueLinks } from '@/lib/issues/trackerIssueLinksRouteHelpers';
 import { buildTrackerIssueFromProviderIssue } from '@/lib/issueTrackerProvider/yandexTrackerIssueMappingHelpers';
 import { queryIssueSnapshotsMatchingSprint } from '@/lib/snapshots';
 import { getTeamByBoardId } from '@/lib/staffTeams';
@@ -25,13 +26,15 @@ interface LoadSprintIssuesForPlannerParams {
 
 type ScheduleTrackerRefreshFn = (
   sprintId: number,
-  issueTracker: IssueTrackerProviderClient
+  issueTracker: IssueTrackerProviderClient,
+  organizationId: string
 ) => void;
 
 type FetchPlannerSprintIssuesFn = (
   issueTracker: IssueTrackerProviderClient,
   sprintId: number,
-  options?: IssueTrackerSprintIssuesOptions
+  options: IssueTrackerSprintIssuesOptions | undefined,
+  organizationId: string
 ) => Promise<TrackerIssue[]>;
 
 interface LoadSprintIssuesForPlannerDeps {
@@ -46,17 +49,25 @@ interface LoadSprintIssuesForPlannerDeps {
 async function fetchPlannerSprintIssuesFromProvider(
   issueTracker: IssueTrackerProviderClient,
   sprintId: number,
-  options?: IssueTrackerSprintIssuesOptions
+  options: IssueTrackerSprintIssuesOptions | undefined,
+  organizationId: string
 ): Promise<TrackerIssue[]> {
   const issues = await issueTracker.listSprintIssues(sprintId, options);
+  rememberHarvestedIssueLinks(organizationId, issues);
   return issues.map(buildTrackerIssueFromProviderIssue);
 }
 
 function scheduleDefaultTrackerRefresh(
   sprintId: number,
-  issueTracker: IssueTrackerProviderClient
+  issueTracker: IssueTrackerProviderClient,
+  organizationId: string
 ): void {
-  fetchPlannerSprintIssuesFromProvider(issueTracker, sprintId, { forceRefresh: true })
+  fetchPlannerSprintIssuesFromProvider(
+    issueTracker,
+    sprintId,
+    { forceRefresh: true },
+    organizationId
+  )
     .then((issues) => {
       setCachedSprintIssues(sprintId, issues, undefined);
     })
@@ -131,13 +142,20 @@ export async function loadSprintIssuesForPlanner(
     }
     const fromPg = await loadSprintIssuesFromSnapshots(params, deps);
     if (fromPg.length > 0) {
-      deps.setCached(params.sprintId, fromPg, undefined);
-      deps.scheduleTrackerRefresh(params.sprintId, params.issueTracker);
+      deps.setCached(params.sprintId, fromPg, params.sprintStatus);
+      deps.scheduleTrackerRefresh(params.sprintId, params.issueTracker, params.organizationId);
       return fromPg;
     }
   }
-  return deps.fetchFromTracker(params.issueTracker, params.sprintId, {
-    forceRefresh: params.forceRefresh,
-    ...(params.sprintStatus !== undefined ? { sprintStatus: params.sprintStatus } : {}),
-  });
+  const issues = await deps.fetchFromTracker(
+    params.issueTracker,
+    params.sprintId,
+    {
+      forceRefresh: params.forceRefresh,
+      ...(params.sprintStatus !== undefined ? { sprintStatus: params.sprintStatus } : {}),
+    },
+    params.organizationId
+  );
+  deps.setCached(params.sprintId, issues, params.sprintStatus);
+  return issues;
 }

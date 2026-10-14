@@ -20,13 +20,10 @@ import {
   createJiraIssueLink,
   deleteJiraIssueLink,
   listJiraIssueLinks,
+  listJiraIssueLinksForKeys,
 } from './jiraIssueLinks';
 import { listJiraIssuesForBoard, listJiraIssuesForQueue, listJiraIssuesUpdatedInRange } from './jiraIssueList';
-import {
-  fetchJiraIssue,
-  normalizeJiraIssuesWithSchedule,
-  searchJiraIssuesInSprint,
-} from './jiraIssues';
+import { fetchJiraIssue, normalizeJiraIssuesWithSchedule } from './jiraIssues';
 import { searchJiraIssuesOnBoard } from './jiraIssueSearch';
 import {
   addJiraIssueToSprint,
@@ -36,6 +33,7 @@ import {
 import { updateJiraIssue } from './jiraIssueUpdate';
 import { fetchJiraCurrentUser } from './jiraMyself';
 import { fetchJiraQueueByKey, fetchJiraQueueWorkflows, searchJiraQueues } from './jiraQueues';
+import { loadJiraSprintIssues } from './jiraSprintIssueLoad';
 import { createJiraSprint, fetchJiraSprintInfo, listJiraSprints, updateJiraSprintStatus } from './jiraSprints';
 import {
   fetchJiraIssueTransitions,
@@ -72,6 +70,7 @@ export const JIRA_IMPLEMENTED_PROVIDER_METHODS = [
   'getTransitionFields',
   'listBoards',
   'listIssueLinks',
+  'listIssueLinksBatch',
   'listIssueTransitionsBatch',
   'listIssuesForBoard',
   'listIssuesForQueue',
@@ -127,18 +126,6 @@ export function createJiraUnsupportedProviderClient(
   return createJiraClientProxy(web, {});
 }
 
-async function listNormalizedJiraSprintIssues(
-  api: AxiosInstance,
-  sprintId: number,
-  cacheOnly?: boolean
-) {
-  if (cacheOnly) {
-    return [];
-  }
-  const issues = await searchJiraIssuesInSprint(api, sprintId);
-  return normalizeJiraIssuesWithSchedule(api, issues);
-}
-
 function createJiraProviderClientWithApi(
   api: AxiosInstance,
   web: JiraClientWebContext
@@ -166,13 +153,14 @@ function createJiraProviderClientWithApi(
     getQueueWorkflows: (queueKey: string) => fetchJiraQueueWorkflows(api, queueKey),
     getSprint: (sprintId) => fetchJiraSprintInfo(api, sprintId),
     getTasksInSprintWithParents: async (sprintId, options) => {
-      const issues = await listNormalizedJiraSprintIssues(api, sprintId, options?.cacheOnly);
+      const issues = await loadJiraSprintIssues(api, sprintId, options);
       return issues.filter((issue) => issue.type?.key === 'task' || issue.type?.key === 'bug');
     },
     getTransitionFields: (issueKey: string, transitionId: string) =>
       fetchJiraTransitionFields(api, issueKey, transitionId),
     listBoards: () => fetchJiraBoardsForCatalog(api),
     listIssueLinks: (issueKey) => listJiraIssueLinks(api, issueKey),
+    listIssueLinksBatch: (issueKeys) => listJiraIssueLinksForKeys(api, issueKeys),
     listIssueTransitionsBatch: (issueKeys: string[]) =>
       fetchJiraIssueTransitionsBatch(api, issueKeys),
     listIssuesForBoard: (boardId, options) =>
@@ -191,8 +179,7 @@ function createJiraProviderClientWithApi(
         truncated,
       })),
     listQueues: () => fetchJiraProjectsAsQueues(api),
-    listSprintIssues: (sprintId, options) =>
-      listNormalizedJiraSprintIssues(api, sprintId, options?.cacheOnly),
+    listSprintIssues: (sprintId, options) => loadJiraSprintIssues(api, sprintId, options),
     listSprints: (boardId: number) => listJiraSprints(api, boardId),
     mapIssueToTask: (issue, integration) => mapIssueTrackerIssueToTask(issue, web, integration),
     removeIssueFromSprint: (issueKey: string, sprintId: string) =>
