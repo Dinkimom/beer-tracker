@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.14.0] — 2026-10-15
+
+### English
+
+- Settings opens What’s new from the version label: recent releases from `CHANGELOG.md`, without the Docker Hub publish lines.
+- The swimlane cards tool lets you pick which card types appear when placing sticky notes and widgets.
+- The participants feature column remembers its width; a new default applies when nothing is stored yet.
+- Admin tracker catalog and metadata responses share a fresher cache so integration setup reloads fields without stale boards.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.14.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- В настройках по подписи версии открывается «Что нового»: последние релизы из `CHANGELOG.md`, без строк про публикацию образов Docker Hub.
+- В инструменте карточек свимлейна можно выбрать, какие типы карточек показывать при размещении стикеров и виджетов.
+- Ширина колонки фич у участников запоминается; если значения ещё нет, применяется новый default.
+- Ответы каталога и метаданных трекера в админке делят более свежий кэш, чтобы настройка интеграции подтягивала поля без устаревших досок.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.14.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.13.1] — 2026-10-14
 
 ### English
