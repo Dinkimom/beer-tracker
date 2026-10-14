@@ -102,11 +102,13 @@ export function useTrackerMetadataLoad(options: {
   const [metaLoading, setMetaLoading] = useState(false);
 
   const loadMetadata = useCallback(
-    async (opts?: { silent?: boolean }) => {
+    async (opts?: { refresh?: boolean; silent?: boolean }) => {
       if (!organizationId) return;
       setMetaLoading(true);
       try {
-        const data = await fetchAdminTrackerMetadataAll(organizationId);
+        const data = await fetchAdminTrackerMetadataAll(organizationId, {
+          refresh: opts?.refresh === true,
+        });
         const fields = data.fields ?? [];
         const statuses = (data.statuses ?? []) as Array<{
           display?: string;

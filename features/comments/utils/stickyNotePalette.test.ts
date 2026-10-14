@@ -47,6 +47,7 @@ describe('stickyNotePalette', () => {
     expect(ghost.borderRadius).toBe(0);
     expect(ghost.borderStyle).toBe('dashed');
     expect(ghost.borderColor).toBe(getStickyNotePaint('pink').border);
+    expect(ghost.borderWidth).toBe(getStickyNoteCardStyle('pink').borderWidth);
     expect(ghost.color).toBe(getStickyNoteGhostGlyphColor('pink'));
     expect(String(ghost.backgroundColor)).toContain('rgba(');
   });

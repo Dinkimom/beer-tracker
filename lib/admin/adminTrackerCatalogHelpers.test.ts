@@ -81,4 +81,45 @@ describe('loadTrackerCatalogResponse', () => {
     ]);
     expect(issueTracker.getBoard).toHaveBeenCalledWith(14684);
   });
+
+  it('serves queues and boards from cache until forceRefresh', async () => {
+    const issueTracker = {
+      getBoard: vi.fn(),
+      listBoards: vi.fn(() => Promise.resolve([{ id: 1, name: 'A' }])),
+      listQueues: vi.fn(() => Promise.resolve([{ key: 'A', name: 'A' }])),
+    };
+
+    await loadTrackerCatalogResponse(
+      'org-cache',
+      { id: 'org-cache', settings: JIRA_SETTINGS, tracker_org_id: 'jira' },
+      issueTracker as never,
+      { authFingerprint: 'token-cache' }
+    );
+    await loadTrackerCatalogResponse(
+      'org-cache',
+      { id: 'org-cache', settings: JIRA_SETTINGS, tracker_org_id: 'jira' },
+      issueTracker as never,
+      { authFingerprint: 'token-cache' }
+    );
+    expect(issueTracker.listQueues).toHaveBeenCalledTimes(1);
+
+    issueTracker.listQueues.mockClear();
+    issueTracker.listBoards.mockClear();
+    issueTracker.listQueues.mockImplementation(() =>
+      Promise.resolve([{ key: 'B', name: 'B' }])
+    );
+    issueTracker.listBoards.mockImplementation(() =>
+      Promise.resolve([{ id: 2, name: 'B' }])
+    );
+
+    const refreshed = await loadTrackerCatalogResponse(
+      'org-cache',
+      { id: 'org-cache', settings: JIRA_SETTINGS, tracker_org_id: 'jira' },
+      issueTracker as never,
+      { authFingerprint: 'token-cache', forceRefresh: true }
+    );
+    expect(issueTracker.listQueues).toHaveBeenCalledTimes(1);
+    expect(refreshed.queues).toEqual([{ key: 'B', name: 'B' }]);
+    expect(refreshed.boards).toEqual([{ id: 2, name: 'B' }]);
+  });
 });

@@ -2,10 +2,10 @@ import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/type
 import type { OrganizationRow } from '@/lib/organizations/types';
 import type { AxiosInstance } from 'axios';
 
-import { apiCache, cacheKeys } from '@/lib/cache';
+import { apiCache, cacheKeys, invalidateCache } from '@/lib/cache';
 import { listTeams } from '@/lib/staffTeams';
 import {
-  TRACKER_ADMIN_CATALOG_QUEUES_BOARDS_TTL_SEC,
+  TRACKER_ADMIN_CATALOG_TTL_SEC,
   trackerAdminCatalogConnectionFingerprint,
 } from '@/lib/trackerApi/trackerAdminCatalogCache';
 import { requireOrganizationIssueTrackerConfig } from '@/lib/trackerRequestConfig';
@@ -74,7 +74,7 @@ async function withEnsuredBoard(
       return slice;
     }
     const next = { ...slice, boards };
-    apiCache.set(qbCacheKey, next, TRACKER_ADMIN_CATALOG_QUEUES_BOARDS_TTL_SEC);
+    apiCache.set(qbCacheKey, next, TRACKER_ADMIN_CATALOG_TTL_SEC);
     return next;
   } catch {
     return slice;
@@ -85,8 +85,12 @@ export async function loadTrackerCatalogResponse(
   orgId: string,
   org: Pick<OrganizationRow, 'id' | 'settings' | 'tracker_org_id'>,
   issueTracker: IssueTrackerProviderClient,
-  options?: { authFingerprint?: string; ensureBoardId?: number }
+  options?: { authFingerprint?: string; ensureBoardId?: number; forceRefresh?: boolean }
 ) {
+  if (options?.forceRefresh) {
+    invalidateCache.adminTrackerCatalogQueuesBoards(orgId);
+  }
+
   const { apiUrl } = requireOrganizationIssueTrackerConfig(org);
   const cacheFingerprint = `${trackerAdminCatalogConnectionFingerprint(
     options?.authFingerprint ?? '',
@@ -98,7 +102,7 @@ export async function loadTrackerCatalogResponse(
   let slice = apiCache.get<CachedTrackerCatalogSlice>(qbCacheKey);
   if (!slice) {
     slice = await fetchCatalogQueuesAndBoards(issueTracker);
-    apiCache.set(qbCacheKey, slice, TRACKER_ADMIN_CATALOG_QUEUES_BOARDS_TTL_SEC);
+    apiCache.set(qbCacheKey, slice, TRACKER_ADMIN_CATALOG_TTL_SEC);
   }
   slice = await withEnsuredBoard(issueTracker, slice, options?.ensureBoardId, qbCacheKey);
 

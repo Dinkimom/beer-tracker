@@ -100,13 +100,8 @@ describe("mergeFormIntoConfig", () => {
       source: "field",
       valueMap: [{ platform: "Web", trackerValue: "web" }],
     });
-    expect(merged.testingFlow).toMatchObject({
+    expect(merged.testingFlow).toEqual({
       devAssigneeFieldId: "dev",
-      embeddedTestingOnlyJoins: ["or"],
-      embeddedTestingOnlyRules: [
-        { fieldId: "qa", operator: "gt", value: "0" },
-        { fieldId: "flag", operator: "eq", value: "yes" },
-      ],
       mode: "standalone_qa_tasks",
       zeroDevPositiveQaRule: true,
     });
@@ -123,6 +118,32 @@ describe("mergeFormIntoConfig", () => {
       mergeRequestFieldId: "mrKey",
       readyStatusKey: "ready",
     });
+  });
+});
+
+describe("mergeFormIntoConfig embedded testing rules", () => {
+  it("keeps testing-only rules in the all-in-one-issue mode", () => {
+    const merged = mergeFormIntoConfig(
+      {},
+      baseForm({
+        embeddedTestingOnlyJoins: ["or"],
+        embeddedTestingOnlyRules: [
+          { fieldId: " qa ", operator: "gt", value: " 0 " },
+          { fieldId: " flag ", operator: "eq", value: " yes " },
+        ],
+        testingFlowMode: "embedded",
+      }),
+      []
+    );
+
+    expect(merged.testingFlow).toMatchObject({
+      embeddedTestingOnlyJoins: ["or"],
+      embeddedTestingOnlyRules: [
+        { fieldId: "qa", operator: "gt", value: "0" },
+        { fieldId: "flag", operator: "eq", value: "yes" },
+      ],
+    });
+    expect(merged.testingFlow).not.toHaveProperty("mode");
   });
 });
 

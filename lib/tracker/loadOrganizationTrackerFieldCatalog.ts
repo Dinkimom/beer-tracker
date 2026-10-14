@@ -16,7 +16,7 @@ import {
 } from '@/lib/issueTrackerProvider/settings';
 import { getOrganizationTrackerCredentials } from '@/lib/organizations/organizationTrackerCredentials';
 import {
-  TRACKER_ADMIN_METADATA_TTL_SEC,
+  TRACKER_ADMIN_CATALOG_TTL_SEC,
   trackerAdminCatalogConnectionFingerprint,
 } from '@/lib/trackerApi/trackerAdminCatalogCache';
 import { fetchTrackerFieldEnumValues } from '@/lib/trackerIntegration/fetchTrackerOrgMetadata';
@@ -180,6 +180,6 @@ export async function loadOrganizationTrackerFieldOptions(
   const values = limitOptionValues(
     await fetchTrackerFieldEnumValues(session.api, session.kind, fieldId)
   );
-  apiCache.set(cacheKey, values, TRACKER_ADMIN_METADATA_TTL_SEC);
+  apiCache.set(cacheKey, values, TRACKER_ADMIN_CATALOG_TTL_SEC);
   return { values };
 }

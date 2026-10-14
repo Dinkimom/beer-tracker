@@ -17,10 +17,11 @@ import {
   readIssueTrackerCloudId,
 } from '@/lib/issueTrackerProvider/settings';
 import { findOrganizationById } from '@/lib/organizations';
+import { isTrackerAdminCatalogRefreshParam } from '@/lib/trackerApi/trackerAdminCatalogCache';
 
 /**
  * GET /api/admin/organizations/[organizationId]/tracker-metadata?resource=fields|statuses|all|field-values&fieldId=<id>
- * Поля и статусы Tracker v3 (кэш 5 мин).
+ * Поля и статусы Tracker/Jira (кэш 30 мин). `refresh=1` — сброс кэша и перезагрузка.
  */
 export async function GET(
   request: Request,
@@ -33,6 +34,7 @@ export async function GET(
   }
   const orgId = auth.ctx.organizationId;
   const { searchParams } = new URL(request.url);
+  const forceRefresh = isTrackerAdminCatalogRefreshParam(searchParams.get('refresh'));
   const resourceParsed = parseTrackerMetadataResource(searchParams.get('resource'));
   if (resourceParsed instanceof NextResponse) {
     return resourceParsed;
@@ -79,7 +81,8 @@ export async function GET(
       const fieldValues = await fetchTrackerMetadataFieldValues(
         api,
         tracker.kind,
-        searchParams.get('fieldId')
+        searchParams.get('fieldId'),
+        { fingerprint, forceRefresh, orgId }
       );
       if (fieldValues instanceof NextResponse) {
         return fieldValues;
@@ -90,6 +93,7 @@ export async function GET(
     const { fields, statuses } = await loadCachedTrackerOrgMetadata({
       api,
       fingerprint,
+      forceRefresh,
       kind: tracker.kind,
       orgId,
       resource,

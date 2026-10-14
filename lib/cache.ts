@@ -260,6 +260,17 @@ export const invalidateCache = {
     const escaped = organizationId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     apiCache.deleteByPattern(new RegExp(`^admin:tracker-catalog:qb:${escaped}:`));
   },
+  /** Поля / статусы / значения списков для админки и планера. */
+  adminTrackerOrgMetadata: (organizationId: string) => {
+    const escaped = organizationId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    apiCache.deleteByPattern(new RegExp(`^admin:tracker-metadata:${escaped}:`));
+    apiCache.deleteByPattern(new RegExp(`^admin:tracker-field-values:${escaped}:`));
+  },
+  /** Полный каталог трекера организации: проекты/доски + поля/статусы. */
+  adminTrackerCatalog: (organizationId: string) => {
+    invalidateCache.adminTrackerCatalogQueuesBoards(organizationId);
+    invalidateCache.adminTrackerOrgMetadata(organizationId);
+  },
   /** Связи issue в Tracker/Jira после create/delete из приложения. */
   trackerIssueLinks: (organizationId: string, ...issueKeys: string[]) => {
     for (const raw of issueKeys) {

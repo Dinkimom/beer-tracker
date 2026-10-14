@@ -5,6 +5,7 @@ import type { RefObject } from 'react';
 import { SidebarResizeHandle } from '@/components/SidebarResizeHandle';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useFeatureLaneColumnUi } from '@/features/task/components/TaskCard/FeatureLaneCardUiContext';
 
 import { useParticipantsColumnResizeGeometry } from '../hooks/useParticipantsColumnResizeGeometry';
 import { useParticipantsColumnWidthResize } from '../hooks/useParticipantsColumnWidthResize';
@@ -25,6 +26,7 @@ export function ParticipantsColumnResizeHandle({
   scrollContainerRef,
 }: ParticipantsColumnResizeHandleProps) {
   const { t } = useI18n();
+  const featureColumn = useFeatureLaneColumnUi();
   const geometry = useParticipantsColumnResizeGeometry(scrollContainerRef, true);
   const { isResizing, onResizeMouseDown } = useParticipantsColumnWidthResize(
     columnWidth,
@@ -43,7 +45,11 @@ export function ParticipantsColumnResizeHandle({
       isResizing={isResizing}
       revealOnHover
       side="right"
-      title={t('sprintPlanner.swimlane.resizeParticipantsColumn')}
+      title={t(
+        featureColumn.isFeatureLane
+          ? 'sprintPlanner.featureLanes.resizeColumn'
+          : 'sprintPlanner.swimlane.resizeParticipantsColumn'
+      )}
       zIndexClassName={ZIndex.class('floatingControls')}
       onMouseDown={onResizeMouseDown}
     />

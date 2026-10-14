@@ -7,7 +7,11 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 
 import { ZIndex } from '@/constants';
 import { getWidthPercent } from '@/features/swimlane/utils/positionUtils';
-import { useParticipantsColumnWidthStorage } from '@/hooks/useLocalStorage';
+import {
+  useBoardViewModeStorage,
+  useFeatureColumnWidthStorage,
+  useParticipantsColumnWidthStorage,
+} from '@/hooks/useLocalStorage';
 
 import {
   buildDraggableTaskStyle,
@@ -32,7 +36,11 @@ export function useDraggableTask({
   viewMode,
   sidebarWidth,
 }: UseDraggableTaskProps) {
-  const [participantsColumnWidth] = useParticipantsColumnWidthStorage(DEFAULT_PARTICIPANTS_COLUMN_WIDTH);
+  const [boardViewMode] = useBoardViewModeStorage();
+  const [assigneeColumnWidth] = useParticipantsColumnWidthStorage(DEFAULT_PARTICIPANTS_COLUMN_WIDTH);
+  const [featureColumnWidth] = useFeatureColumnWidthStorage(DEFAULT_PARTICIPANTS_COLUMN_WIDTH);
+  const participantsColumnWidth =
+    boardViewMode === 'features' ? featureColumnWidth : assigneeColumnWidth;
   const [initialRect, setInitialRect] = useState<{ left: number; top: number; width: number } | null>(null);
   const [mouseOffset, setMouseOffset] = useState<{ x: number; y: number } | null>(null);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);

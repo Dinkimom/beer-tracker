@@ -85,6 +85,33 @@ describe('mapIssueTrackerIssueToTask', () => {
     });
   });
 
+  it('reads the standalone estimate field for development tasks', () => {
+    const task = mapIssueTrackerIssueToTask(
+      {
+        customFields: { CustomStoryPoints: 8 },
+        id: 'BT-2',
+        key: 'BT-2',
+        provider: 'yandex-tracker',
+        summary: 'Dev issue',
+        type: { display: 'Task', key: 'task' },
+      },
+      TRACKER_WEB,
+      {
+        configRevision: 1,
+        testingFlow: {
+          devEstimateFieldId: 'CustomStoryPoints',
+          mode: 'standalone_qa_tasks',
+          standaloneClassification: { typeKeys: ['qaTask'] },
+        },
+      }
+    );
+    expect(task).toMatchObject({
+      hideTestPointsByIntegration: true,
+      id: 'BT-2',
+      storyPoints: 8,
+    });
+  });
+
   it('keeps the tracker status label separate from the normalized key', () => {
     const task = mapIssueTrackerIssueToTask({
       id: 'PROJ-3',

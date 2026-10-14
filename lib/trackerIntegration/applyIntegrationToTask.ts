@@ -44,6 +44,9 @@ function applyTestingFlowSection(
       : { ...task, hideTestPointsByIntegration: undefined };
   next = applyTestingFlowEstimates(issue, next, config.testingFlow);
   next = applyQaEngineerField(issue, next, config.testingFlow.qaEngineerFieldId);
+  if (config.testingFlow.mode === 'standalone_qa_tasks') {
+    return next;
+  }
   const rules = config.testingFlow.embeddedTestingOnlyRules ?? [];
   const joins = padEmbeddedTestingOnlyJoins(rules.length, config.testingFlow.embeddedTestingOnlyJoins);
   if (rules.length > 0 && evaluateEmbeddedTestingOnlyPredicate(issue, rules, joins)) {

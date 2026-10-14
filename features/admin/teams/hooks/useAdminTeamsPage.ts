@@ -72,11 +72,13 @@ export function useAdminTeamsPage({
     }
   }, [orgId, t]);
 
-  const loadTrackerCatalog = useCallback(async () => {
+  const loadTrackerCatalog = useCallback(async (opts?: { refresh?: boolean }) => {
     if (!orgId) return;
     setCatalogLoading(true);
     try {
-      const data = await fetchAdminTrackerCatalog(orgId);
+      const data = await fetchAdminTrackerCatalog(orgId, {
+        refresh: opts?.refresh === true,
+      });
       setTrackerCatalog(parseTrackerCatalogPayload(data));
     } catch (error) {
       setTrackerCatalog(null);
@@ -85,6 +87,13 @@ export function useAdminTeamsPage({
       setCatalogLoading(false);
     }
   }, [orgId, t]);
+
+  const refreshTeamsAndCatalog = useCallback(async () => {
+    await loadTeams();
+    if (isOrgAdmin && trackerConnectionReady) {
+      await loadTrackerCatalog({ refresh: true });
+    }
+  }, [isOrgAdmin, loadTeams, loadTrackerCatalog, trackerConnectionReady]);
 
   const { boardSearchLoading, onBoardSearchQueryChange } = useEnsureTrackerCatalogBoard({
     boards: trackerCatalog?.boards ?? [],
@@ -267,7 +276,7 @@ export function useAdminTeamsPage({
     boardSearchLoading,
     boardSelectOptions,
     catalogLoading,
-    loadTeams,
+    loadTeams: refreshTeamsAndCatalog,
     newTeamTitle,
     onBoardSearchQueryChange,
     orgId,

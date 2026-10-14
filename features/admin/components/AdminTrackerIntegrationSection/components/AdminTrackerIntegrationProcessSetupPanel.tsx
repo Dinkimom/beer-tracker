@@ -228,16 +228,18 @@ export function AdminTrackerIntegrationProcessSetupPanel({
         </div>
       </div>
 
-      <TrackerEmbeddedTestingRulesPanel
-        allFieldSelectOptions={allFieldSelectOptions}
-        embeddedTestingOnlyJoins={embeddedTestingOnlyJoins}
-        embeddedTestingOnlyRules={embeddedTestingOnlyRules}
-        fieldClass={fieldClass}
-        fieldRows={fieldRows}
-        mutedClass={muted}
-        setEmbeddedTestingOnlyJoins={setEmbeddedTestingOnlyJoins}
-        setEmbeddedTestingOnlyRules={setEmbeddedTestingOnlyRules}
-      />
+      {testingFlowMode === 'embedded' ? (
+        <TrackerEmbeddedTestingRulesPanel
+          allFieldSelectOptions={allFieldSelectOptions}
+          embeddedTestingOnlyJoins={embeddedTestingOnlyJoins}
+          embeddedTestingOnlyRules={embeddedTestingOnlyRules}
+          fieldClass={fieldClass}
+          fieldRows={fieldRows}
+          mutedClass={muted}
+          setEmbeddedTestingOnlyJoins={setEmbeddedTestingOnlyJoins}
+          setEmbeddedTestingOnlyRules={setEmbeddedTestingOnlyRules}
+        />
+      ) : null}
     </>
   );
 }

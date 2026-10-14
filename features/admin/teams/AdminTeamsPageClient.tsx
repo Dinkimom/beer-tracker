@@ -69,7 +69,7 @@ export function AdminTeamsPageClient({ initialTeams, isOrgAdmin, orgId }: AdminT
             <AdminTeamsListRefreshTeamsButton
               loadTeams={page.loadTeams}
               orgId={page.orgId}
-              teamsLoading={page.teamsLoading}
+              teamsLoading={page.teamsLoading || page.catalogLoading}
             />
           </>
         }

@@ -233,7 +233,7 @@ describe('applyTrackerIntegrationToTask', () => {
     expect(next.testingOnlyByIntegrationRules).toBeUndefined();
   });
 
-  it('sets flag from standalone user rule without implicit platform fallback', () => {
+  it('does not mark testing-only tasks from embedded rules in standalone mode', () => {
     const issue = baseIssue({ functionalTeam: 'qa-squad' });
     const task = mapTrackerIssueToTask(issue, TRACKER_WEB, null);
     const config: TrackerIntegrationStored = {
@@ -244,7 +244,7 @@ describe('applyTrackerIntegrationToTask', () => {
       },
     };
     const next = applyTrackerIntegrationToTask(issue, task, config);
-    expect(next.testingOnlyByIntegrationRules).toBe(true);
+    expect(next.testingOnlyByIntegrationRules).toBeUndefined();
     expect(next.hideTestPointsByIntegration).toBe(true);
   });
 

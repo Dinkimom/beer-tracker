@@ -167,6 +167,7 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
                   activeTool={active}
                   objectStorageConfigured={objectStorageConfigured}
                   onArm={(cardTool) => applyPlacementTool(cardTool)}
+                  onDeactivate={() => applyPlacementTool('cursor')}
                 />
               );
             }

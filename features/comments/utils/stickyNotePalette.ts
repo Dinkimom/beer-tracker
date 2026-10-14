@@ -126,7 +126,7 @@ export function getStickyNoteGhostGlyphColor(
   return getStickyNotePaint(color, !isDark).swatch;
 }
 
-/** Превью постановки заметки: бумага выбранного цвета и пунктир, без скругления. */
+/** Превью постановки заметки: бумага выбранного цвета и пунктир той же толщины, что у карточки. */
 export function getStickyNoteDashedGhostStyle(
   color?: StickyNoteColorInput,
   isDark = false
@@ -137,7 +137,7 @@ export function getStickyNoteDashedGhostStyle(
     borderColor: paint.border,
     borderRadius: 0,
     borderStyle: 'dashed',
-    borderWidth: 2,
+    borderWidth: 1,
     color: getStickyNoteGhostGlyphColor(color, isDark),
   };
 }

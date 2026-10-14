@@ -1,8 +1,11 @@
 import { useEffect } from "react";
 
+/** Тихий опрос: серверный TTL каталога 30 мин — чаще ходим только за cache hit. */
+const TRACKER_METADATA_POLL_MS = 15 * 60 * 1000;
+
 export function useTrackerMetadataPolling(
   organizationId: string,
-  loadMetadata: (opts?: { silent?: boolean }) => Promise<void>
+  loadMetadata: (opts?: { refresh?: boolean; silent?: boolean }) => Promise<void>
 ): void {
   useEffect(() => {
     if (!organizationId) return;
@@ -13,7 +16,7 @@ export function useTrackerMetadataPolling(
     if (!organizationId) return;
     const timer = window.setInterval(() => {
       void loadMetadata({ silent: true });
-    }, 5 * 60 * 1000);
+    }, TRACKER_METADATA_POLL_MS);
     return () => window.clearInterval(timer);
   }, [organizationId, loadMetadata]);
 }

@@ -79,25 +79,40 @@ interface TrackerMetadataFieldRow {
   schemaType?: string;
 }
 
-export async function fetchAdminTrackerMetadataAll(orgId: string): Promise<{
+export async function fetchAdminTrackerMetadataAll(
+  orgId: string,
+  options?: { refresh?: boolean }
+): Promise<{
   fields?: TrackerMetadataFieldRow[];
   statuses?: unknown[];
 }> {
   const { data } = await getPlannerBeerTrackerApi().get<{
     fields?: TrackerMetadataFieldRow[];
     statuses?: unknown[];
-  }>(adminOrgApiPath(orgId, 'tracker-metadata'), { params: { resource: 'all' } });
+  }>(adminOrgApiPath(orgId, 'tracker-metadata'), {
+    params: {
+      resource: 'all',
+      ...(options?.refresh ? { refresh: '1' } : {}),
+    },
+  });
   return data;
 }
 
 export async function fetchAdminTrackerPlatformFieldValues(
   orgId: string,
-  fieldId: string
+  fieldId: string,
+  options?: { refresh?: boolean }
 ): Promise<string[]> {
   try {
     const { data } = await getPlannerBeerTrackerApi().get<{ values?: string[] }>(
       adminOrgApiPath(orgId, 'tracker-metadata'),
-      { params: { fieldId, resource: 'field-values' } }
+      {
+        params: {
+          fieldId,
+          resource: 'field-values',
+          ...(options?.refresh ? { refresh: '1' } : {}),
+        },
+      }
     );
     return Array.isArray(data.values) ? data.values : [];
   } catch {

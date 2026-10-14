@@ -44,6 +44,8 @@ export const STORAGE_KEYS = {
   OCCUPANCY_TASK_COLUMN_WIDTH: 'beer-tracker-occupancy-task-column-width',
   BOARD_VIEW_MODE: 'beer-tracker-board-view-mode',
   PARTICIPANTS_COLUMN_WIDTH: 'beer-tracker-participants-column-width',
+  /** Ширина левой колонки свимлейна «по фичам» — отдельно от колонки исполнителей */
+  FEATURE_COLUMN_WIDTH: 'beer-tracker-feature-column-width',
   EXPERIMENTAL_FEATURES: 'beer-tracker-experimental-features',
   /** Показывать эмодзи праздников в шапке с датами (занятость, свимлейны) */
   SHOW_HOLIDAYS: 'beer-tracker-show-holidays',

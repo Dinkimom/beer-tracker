@@ -158,17 +158,6 @@ export function resolveArmedCardPlacementTool(
   return 'tictactoe';
 }
 
-/** Повторный клик по уже выбранным карточкам только закрывает меню. */
-export function resolveCardMenuOpen(input: {
-  cardWasActive: boolean;
-  popupWasOpen: boolean;
-}): boolean {
-  if (input.cardWasActive) {
-    return !input.popupWasOpen;
-  }
-  return true;
-}
-
 export function resolveVisibilityLayerMenuRows(input: {
   calendarAvailable: boolean;
   personBoundLayersAvailable?: boolean;

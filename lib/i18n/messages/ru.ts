@@ -219,6 +219,13 @@ export const ruMessages = {
           'В Chrome или Edge: меню браузера → Установить Beer Tracker. В Safari на Mac можно добавить в Dock.',
       },
     },
+    changelog: {
+      title: 'Что нового',
+      back: 'К настройкам',
+      empty: 'Для этой версии пока нет заметок о релизе.',
+      current: 'Эта версия',
+      open: 'Что нового в версии {version}',
+    },
     yTrackerTab: {
       browserOnlyNote:
         'Токен хранится только в браузере и не сохраняется на сервере Beer Tracker',
@@ -1327,6 +1334,7 @@ export const ruMessages = {
       assigneeRequired: 'Сначала назначьте исполнителя на карточке — в режиме по фичам строка не задаёт человека',
       close: 'Закрыть',
       columnTitle: 'Фичи',
+      resizeColumn: 'Изменить ширину колонки фич',
       convertExistingFailed: 'Не удалось привязать строку к задаче из {trackerGenitive}.',
       convertExistingSuccess: 'Привязано к {key}',
       convertFailed: 'Не удалось создать задачу в {trackerPrepositional}.',

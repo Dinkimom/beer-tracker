@@ -89,6 +89,11 @@ function applyEmbeddedTestingRules(
   target: Record<string, unknown>,
   form: TrackerIntegrationConfigForm,
 ): void {
+  if (form.testingFlowMode === "standalone") {
+    delete target.embeddedTestingOnlyRules;
+    delete target.embeddedTestingOnlyJoins;
+    return;
+  }
   const embeddedRules = normalizeEmbeddedRules(form.embeddedTestingOnlyRules);
   if (embeddedRules.length === 0) {
     delete target.embeddedTestingOnlyRules;

@@ -99,8 +99,10 @@ export function useSprintPlannerViewModel({
 
   const {
     selectedBoardId,
-    participantsColumnWidth,
-    setParticipantsColumnWidth,
+    assigneeColumnWidth,
+    setAssigneeColumnWidth,
+    featureColumnWidth,
+    setFeatureColumnWidth,
     selectedAssigneeIds,
     setSelectedAssigneeIds,
     timelineSettingsStorage,
@@ -185,6 +187,11 @@ export function useSprintPlannerViewModel({
     filteredTaskPositions,
     filteredTaskLinks,
   } = state;
+
+  const participantsColumnWidth =
+    viewMode === 'features' ? featureColumnWidth : assigneeColumnWidth;
+  const setParticipantsColumnWidth =
+    viewMode === 'features' ? setFeatureColumnWidth : setAssigneeColumnWidth;
 
   useSprintPlannerSyntheticQaCleanup({
     deletePosition,

@@ -5,16 +5,18 @@ import { getAppVersionLabel } from '@/lib/appVersion';
 
 interface AppVersionLabelProps {
   className?: string;
+  /** Родительская кнопка уже задаёт доступное имя. */
+  embedded?: boolean;
 }
 
-export function AppVersionLabel({ className }: AppVersionLabelProps) {
+export function AppVersionLabel({ className, embedded = false }: AppVersionLabelProps) {
   const { t } = useI18n();
   const version = getAppVersionLabel();
-  const label = t('common.appVersionTitle', { version });
 
   return (
     <span
-      aria-label={label}
+      aria-hidden={embedded ? true : undefined}
+      aria-label={embedded ? undefined : t('common.appVersionTitle', { version })}
       className={`font-mono tabular-nums text-ds-text-muted ${className ?? ''}`}
     >
       {version}

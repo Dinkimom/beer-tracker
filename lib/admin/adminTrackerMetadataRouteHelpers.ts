@@ -7,7 +7,7 @@ import type { AxiosInstance } from 'axios';
 
 import { NextResponse } from 'next/server';
 
-import { apiCache, cacheKeys } from '@/lib/cache';
+import { apiCache, cacheKeys, invalidateCache } from '@/lib/cache';
 import { createIssueTrackerAxiosForCredentials } from '@/lib/issueTrackerProvider/createIssueTrackerAxios';
 import {
   getOrganizationTrackerCredentials,
@@ -15,8 +15,8 @@ import {
   type OrganizationTrackerCredentials,
 } from '@/lib/organizations/organizationTrackerCredentials';
 import {
+  TRACKER_ADMIN_CATALOG_TTL_SEC,
   trackerAdminCatalogConnectionFingerprint,
-  TRACKER_ADMIN_METADATA_TTL_SEC,
 } from '@/lib/trackerApi/trackerAdminCatalogCache';
 import {
   fetchTrackerOrganizationFields,
@@ -80,7 +80,8 @@ export async function resolveTrackerMetadataCredentials(
 export async function fetchTrackerMetadataFieldValues(
   api: AxiosInstance,
   kind: IssueTrackerProviderKind,
-  fieldIdRaw: string | null
+  fieldIdRaw: string | null,
+  options?: { fingerprint?: string; forceRefresh?: boolean; orgId?: string }
 ): Promise<NextResponse | { fieldId: string; values: unknown[] }> {
   const fieldId = (fieldIdRaw ?? '').trim();
   if (!fieldId) {
@@ -89,17 +90,37 @@ export async function fetchTrackerMetadataFieldValues(
       { status: 400 }
     );
   }
+  const orgId = options?.orgId?.trim();
+  const fingerprint = options?.fingerprint?.trim();
+  const cacheKey =
+    orgId && fingerprint
+      ? cacheKeys.adminTrackerFieldValues(orgId, fingerprint, fieldId)
+      : null;
+  if (cacheKey && !options?.forceRefresh) {
+    const cached = apiCache.get<unknown[]>(cacheKey);
+    if (cached) {
+      return { fieldId, values: cached };
+    }
+  }
   const values = await fetchTrackerFieldEnumValues(api, kind, fieldId);
+  if (cacheKey) {
+    apiCache.set(cacheKey, values, TRACKER_ADMIN_CATALOG_TTL_SEC);
+  }
   return { fieldId, values };
 }
 
 export async function loadCachedTrackerOrgMetadata(args: {
   api: AxiosInstance;
   fingerprint: string;
+  forceRefresh?: boolean;
   kind: IssueTrackerProviderKind;
   orgId: string;
   resource: string;
 }): Promise<{ fields: TrackerMetadataFieldDto[]; statuses: TrackerMetadataStatusDto[] }> {
+  if (args.forceRefresh) {
+    invalidateCache.adminTrackerOrgMetadata(args.orgId);
+  }
+
   const wantFields = args.resource === 'all' || args.resource === 'fields';
   const wantStatuses = args.resource === 'all' || args.resource === 'statuses';
 
@@ -119,7 +140,7 @@ export async function loadCachedTrackerOrgMetadata(args: {
     apiCache.set(
       cacheKeys.adminTrackerOrgMetadata(args.orgId, args.fingerprint, 'fields'),
       fields,
-      TRACKER_ADMIN_METADATA_TTL_SEC
+      TRACKER_ADMIN_CATALOG_TTL_SEC
     );
   }
   if (wantStatuses && !statuses) {
@@ -127,7 +148,7 @@ export async function loadCachedTrackerOrgMetadata(args: {
     apiCache.set(
       cacheKeys.adminTrackerOrgMetadata(args.orgId, args.fingerprint, 'statuses'),
       statuses,
-      TRACKER_ADMIN_METADATA_TTL_SEC
+      TRACKER_ADMIN_CATALOG_TTL_SEC
     );
   }
 

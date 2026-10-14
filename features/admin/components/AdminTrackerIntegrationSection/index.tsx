@@ -88,6 +88,11 @@ export function AdminTrackerIntegrationSection({
     await saveTrackerIntegration(form.draftConfig);
   }
 
+  async function reloadConfigAndCatalog() {
+    await load();
+    await loadMetadata({ refresh: true });
+  }
+
   const {
     activeSubtab,
     allFieldSelectOptions,
@@ -223,11 +228,11 @@ export function AdminTrackerIntegrationSection({
 
       <AdminTrackerIntegrationFooter
         hasUnsavedChanges={hasUnsavedChanges}
-        loading={loading}
+        loading={loading || metaLoading}
         reloadConfirmArmed={reloadConfirmArmed}
         saving={saving}
         setReloadConfirmArmed={setReloadConfirmArmed}
-        onReload={() => void load()}
+        onReload={() => void reloadConfigAndCatalog()}
         onSave={() => void save()}
       />
     </section>

@@ -13,11 +13,18 @@ export async function fetchAdminTeams(orgId: string): Promise<AdminTeamRow[]> {
 
 export async function fetchAdminTrackerCatalog(
   orgId: string,
-  params?: { boardId?: number }
+  params?: { boardId?: number; refresh?: boolean }
 ): Promise<AdminTrackerCatalogPayload> {
+  const query: Record<string, number | string> = {};
+  if (params?.boardId != null) {
+    query.boardId = params.boardId;
+  }
+  if (params?.refresh) {
+    query.refresh = '1';
+  }
   const { data } = await getPlannerBeerTrackerApi().get<AdminTrackerCatalogPayload>(
     adminOrgApiPath(orgId, 'teams/tracker-catalog'),
-    params?.boardId != null ? { params: { boardId: params.boardId } } : undefined
+    Object.keys(query).length > 0 ? { params: query } : undefined
   );
   return {
     boards: Array.isArray(data.boards) ? data.boards : [],

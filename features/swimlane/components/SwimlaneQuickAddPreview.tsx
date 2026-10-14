@@ -120,8 +120,8 @@ export function SwimlaneQuickAddPreview({
         ...band,
         ...horizontal,
         ...resolvePreviewPaint(kind, noteColor, isDark),
-        // Ниже карточек: реакции стикера выходят за край и не должны перекрываться превью.
-        zIndex: ZIndex.contentOverlay,
+        // Выше стрелок связей, ниже карточек: реакции стикера выходят за край.
+        zIndex: ZIndex.contentInteractive,
       }}
     >
       {kind === 'diagram' ? (

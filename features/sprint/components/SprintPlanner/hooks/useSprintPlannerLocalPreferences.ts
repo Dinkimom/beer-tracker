@@ -2,6 +2,7 @@ import { DEVELOPER_COLUMN_WIDTH } from '@/constants';
 import {
   useDataSyncAssigneesStorage,
   useDataSyncEstimatesStorage,
+  useFeatureColumnWidthStorage,
   useKanbanGroupByStorage,
   useLinksDimOnHoverStorage,
   useOccupancyAssigneeFilterStorage,
@@ -25,8 +26,10 @@ import {
  */
 export function useSprintPlannerLocalPreferences() {
   const [selectedBoardId] = useSelectedBoardStorage();
-  const [participantsColumnWidth, setParticipantsColumnWidth] =
+  const [assigneeColumnWidth, setAssigneeColumnWidth] =
     useParticipantsColumnWidthStorage(DEVELOPER_COLUMN_WIDTH);
+  const [featureColumnWidth, setFeatureColumnWidth] =
+    useFeatureColumnWidthStorage(DEVELOPER_COLUMN_WIDTH);
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useOccupancyAssigneeFilterStorage();
   const [timelineSettingsStorage] = useOccupancyTimelineSettingsStorage();
   const [swimlaneLinksVisible] = useSwimlaneLinksVisibilityStorage();
@@ -45,8 +48,10 @@ export function useSprintPlannerLocalPreferences() {
 
   return {
     selectedBoardId,
-    participantsColumnWidth,
-    setParticipantsColumnWidth,
+    assigneeColumnWidth,
+    setAssigneeColumnWidth,
+    featureColumnWidth,
+    setFeatureColumnWidth,
     selectedAssigneeIds,
     setSelectedAssigneeIds,
     timelineSettingsStorage,

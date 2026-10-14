@@ -1,4 +1,6 @@
+import { resolveFeatureColumnWidthDefault } from './localStorage/featureColumnWidthDefault';
 import { STORAGE_KEYS } from './localStorage/storageKeys';
+import { getFromStorage } from './localStorage/storagePrimitives';
 import { useDebouncedNumericLocalStorage } from './localStorage/useDebouncedNumericLocalStorage';
 import { useLocalStorage as useLocalStorageBase } from './localStorage/useLocalStorageBase';
 
@@ -29,13 +31,32 @@ export function useNotificationsSidebarWidthStorage(
 }
 
 /**
- * Ширина колонки «Участники» на доске (свимлейны). По умолчанию — DEVELOPER_COLUMN_WIDTH.
- * Сохраняется в localStorage, можно менять ресайзом.
+ * Ширина колонки исполнителей на свимлейне. По умолчанию — DEVELOPER_COLUMN_WIDTH.
+ * Сохраняется отдельно от колонки фич.
  */
 export function useParticipantsColumnWidthStorage(
   defaultValue: number
 ): [number, (value: number | ((prev: number) => number)) => void] {
   return useDebouncedNumericLocalStorage(STORAGE_KEYS.PARTICIPANTS_COLUMN_WIDTH, defaultValue);
+}
+
+/**
+ * Ширина колонки фич. Если ключа ещё нет, стартует с текущей ширины колонки исполнителей.
+ */
+export function useFeatureColumnWidthStorage(
+  defaultValue: number
+): [number, (value: number | ((prev: number) => number)) => void] {
+  const storedFeatureWidth = readStoredColumnWidth(STORAGE_KEYS.FEATURE_COLUMN_WIDTH);
+  const storedAssigneeWidth = getFromStorage(STORAGE_KEYS.PARTICIPANTS_COLUMN_WIDTH, defaultValue);
+  return useDebouncedNumericLocalStorage(
+    STORAGE_KEYS.FEATURE_COLUMN_WIDTH,
+    resolveFeatureColumnWidthDefault(storedFeatureWidth, storedAssigneeWidth)
+  );
+}
+
+function readStoredColumnWidth(key: string): number | null {
+  const value = getFromStorage<unknown>(key, null);
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 export function useOccupancyTaskColumnWidthStorage(

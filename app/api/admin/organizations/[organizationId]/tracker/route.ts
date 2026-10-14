@@ -81,7 +81,7 @@ export async function POST(
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  invalidateCache.adminTrackerCatalogQueuesBoards(auth.ctx.organizationId);
+  invalidateCache.adminTrackerCatalog(auth.ctx.organizationId);
 
   return NextResponse.json({
     success: true,

@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { parseAppChangelog, selectAppChangelogReleases } from "./lib/changelog/appChangelog";
+
 function readPackageVersion(): string {
   const pkgPath = join(process.cwd(), "package.json");
   const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { version?: string };
@@ -18,6 +20,12 @@ function resolveAppVersion(): string {
   return readPackageVersion();
 }
 
+/** Последние продуктовые заметки. В клиентский бандл, без файла в Docker runner. */
+function readEmbeddedAppChangelogJson(): string {
+  const markdown = readFileSync(join(process.cwd(), "CHANGELOG.md"), "utf8");
+  return JSON.stringify(selectAppChangelogReleases(parseAppChangelog(markdown), resolveAppVersion()));
+}
+
 function resolveYandexOauthClientId(): string {
   return (
     process.env.YANDEX_OAUTH_CLIENT_ID ??
@@ -30,6 +38,7 @@ function resolveYandexOauthClientId(): string {
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: resolveAppVersion(),
+    NEXT_PUBLIC_APP_CHANGELOG: readEmbeddedAppChangelogJson(),
     // Public OAuth ClientID for Yandex Tracker authorize URL in the browser.
     // Source env has no NEXT_PUBLIC_ prefix — domain name, not a Next convention.
     YANDEX_OAUTH_CLIENT_ID: resolveYandexOauthClientId(),

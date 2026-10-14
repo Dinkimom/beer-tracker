@@ -42,7 +42,7 @@ Update pins to `VERSION`:
 
 1. `docker-compose.hub.yml` — default `${BEER_TRACKER_TAG:-VERSION}` for `app` and `sync-worker`, and the comment that mentions the pinned release.
 2. `README.md` — sentence that names the release tag (replace the previous pin).
-3. `CHANGELOG.md` — new top section `## [VERSION] — YYYY-MM-DD` (English then Russian), brief bullets for commits since the previous tag.
+3. `CHANGELOG.md` — new top section `## [VERSION] — YYYY-MM-DD` (English then Russian), brief bullets for commits since the previous tag. Settings → version shows the latest product bullets from this file. Keep the Docker Hub publish line (`Docker Hub images` / `Образы Docker Hub`); that screen omits it.
 
 Commit prep separately if needed:
 

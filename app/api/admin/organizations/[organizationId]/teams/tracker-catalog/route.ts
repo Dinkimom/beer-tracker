@@ -8,10 +8,12 @@ import {
 import { parsePositiveDecimalId } from '@/lib/admin/parsePositiveDecimalId';
 import { handleApiError, TRACKER_UPSTREAM_FORWARD_STATUSES } from '@/lib/api-error-handler';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import { isTrackerAdminCatalogRefreshParam } from '@/lib/trackerApi/trackerAdminCatalogCache';
 
 /**
  * GET /api/admin/organizations/[organizationId]/teams/tracker-catalog
- * Участник организации: очереди и доски из Трекера (серверный токен организации) + привязки команд.
+ * Участник организации: очереди/проекты и доски из Трекера (кэш 30 мин) + привязки команд.
+ * `refresh=1` — сброс кэша и перезагрузка из трекера.
  */
 export async function GET(
   request: Request,
@@ -28,11 +30,14 @@ export async function GET(
   }
 
   try {
-    const ensureBoardId = parsePositiveDecimalId(new URL(request.url).searchParams.get('boardId'));
+    const searchParams = new URL(request.url).searchParams;
+    const ensureBoardId = parsePositiveDecimalId(searchParams.get('boardId'));
+    const forceRefresh = isTrackerAdminCatalogRefreshParam(searchParams.get('refresh'));
     const issueTracker = await getIssueTrackerProviderClientForOrganization(apiResult.org.id);
     const payload = await loadTrackerCatalogResponse(apiResult.org.id, apiResult.org, issueTracker, {
       authFingerprint: trackerCatalogAuthFingerprint(apiResult.api),
       ensureBoardId: ensureBoardId ?? undefined,
+      forceRefresh,
     });
     return NextResponse.json(payload);
   } catch (error) {

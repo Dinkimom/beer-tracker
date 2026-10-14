@@ -10,6 +10,7 @@ import { Button } from '@/components/Button';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
+import { SettingsChangelogPanel } from '@/components/SettingsModal/SettingsChangelogPanel';
 import { getSettingsTabsForPage } from '@/components/settingsModalPageContext';
 import { ZIndex } from '@/constants';
 import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKindContext';
@@ -40,6 +41,7 @@ import {
   useBoardViewModeStorage,
 } from '@/hooks/useLocalStorage';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
+import { getAppVersionLabel } from '@/lib/appVersion';
 import { validateToken } from '@/lib/beerTrackerApi';
 import {
   issueTrackerShowsSettingsTokenTab,
@@ -92,11 +94,20 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
   const [boardViewMode] = useBoardViewModeStorage();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('planning');
+  const [showChangelog, setShowChangelog] = useState(false);
+  const [wasOpen, setWasOpen] = useState(isOpen);
   const [ganttTab, setGanttTab] = useState<'epics' | 'kanban' | 'quarterly-v2' | 'sprint' | 'swimlane'>('swimlane');
   const [localToken, setLocalToken] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState('');
+
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
+      setShowChangelog(false);
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -199,122 +210,134 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
         data-state={overlay.state}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-shrink-0 items-center justify-between px-5 pb-1 pt-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('settings.title')}</h2>
-          <HeaderIconButton aria-label={t('settings.accessibility.closeSettings')} type="button" onClick={handleCancel}>
-            <Icon className="h-5 w-5" name="close" />
-          </HeaderIconButton>
-        </div>
+        {showChangelog ? (
+          <SettingsChangelogPanel onBack={() => setShowChangelog(false)} onClose={handleCancel} />
+        ) : (
+          <>
+            <div className="flex flex-shrink-0 items-center justify-between px-5 pb-1 pt-3">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">{t('settings.title')}</h2>
+              <HeaderIconButton aria-label={t('settings.accessibility.closeSettings')} type="button" onClick={handleCancel}>
+                <Icon className="h-5 w-5" name="close" />
+              </HeaderIconButton>
+            </div>
 
-        <div className="flex flex-shrink-0 gap-1 px-3 pb-1 pt-1" role="tablist">
-          {mainTabs.map(({ id, label, icon }) => {
-            const isOn = activeTab === id;
-            return (
+            <div className="flex flex-shrink-0 gap-1 px-3 pb-1 pt-1" role="tablist">
+              {mainTabs.map(({ id, label, icon }) => {
+                const isOn = activeTab === id;
+                return (
+                  <Button
+                    key={id}
+                    aria-selected={isOn}
+                    className={`h-8 min-h-0 gap-1.5 !rounded-md !border-0 !px-2.5 !py-0 text-sm font-medium shadow-none ${
+                      isOn
+                        ? '!bg-ds-canvas !text-blue-600 hover:!bg-gray-100 active:!bg-gray-200 dark:!bg-white/10 dark:!text-blue-300 dark:hover:!bg-white/15 dark:active:!bg-white/20'
+                        : '!bg-transparent !text-ds-text-muted hover:!bg-black/[0.05] hover:!text-gray-900 active:!bg-black/10 dark:hover:!bg-white/10 dark:hover:!text-gray-100 dark:active:!bg-white/15'
+                    }`}
+                    role="tab"
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setActiveTab(id)}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" name={icon} />
+                    {label}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="px-5 py-4">
+                {activeTab === 'general' && (
+                  <SettingsGeneralTab
+                    holidayCountry={holidayCountry}
+                    setHolidayCountry={setHolidayCountry}
+                    setShowHolidays={setShowHolidays}
+                    setSidebarTabsSettings={setSidebarTabsSettings}
+                    setSyncAssignees={setSyncAssignees}
+                    setSyncEstimates={setSyncEstimates}
+                    showHolidays={showHolidays}
+                    sidebarTabsSettings={sidebarTabsSettings}
+                    syncAssignees={syncAssignees}
+                    syncEstimates={syncEstimates}
+                  />
+                )}
+
+                {activeTab === 'ytracker' && showTrackerTokenTab ? (
+                  <SettingsYTrackerTab
+                    error={error}
+                    handleSave={handleSave}
+                    isValidating={isValidating}
+                    localToken={localToken}
+                    setError={setError}
+                    setLocalToken={setLocalToken}
+                    setShowToken={setShowToken}
+                    showToken={showToken}
+                    token={token}
+                  />
+                ) : null}
+
+                {activeTab === 'calendar' && (
+                  <SettingsCalendarTab
+                    setSwimlaneCalendarBusyVisible={setSwimlaneCalendarBusyVisible}
+                    swimlaneCalendarBusyVisible={swimlaneCalendarBusyVisible}
+                  />
+                )}
+
+                {activeTab === 'planning' && (
+                  <SettingsPlanningTab
+                    epicOccupancyRowFields={epicOccupancyRowFields}
+                    epicOccupancyRowView={epicOccupancyRowView}
+                    epicTimelineSettings={epicTimelineSettings}
+                    ganttTab={ganttTab}
+                    kanbanGroupBy={kanbanGroupBy}
+                    linksDimOnHover={linksDimOnHover}
+                    occupancyRowFields={occupancyRowFields}
+                    occupancyRowView={occupancyRowView}
+                    occupancyTimelineScale={occupancyTimelineScale}
+                    quarterlyV2RowFields={quarterlyV2RowFields}
+                    quarterlyV2RowView={quarterlyV2RowView}
+                    quarterlyV2ShowPlannedTasks={quarterlyV2ShowPlannedTasks}
+                    quarterlyV2TimelineSettings={quarterlyV2TimelineSettings}
+                    setEpicOccupancyRowFields={setEpicOccupancyRowFields}
+                    setEpicOccupancyRowView={setEpicOccupancyRowView}
+                    setEpicTimelineSettings={setEpicTimelineSettings}
+                    setGanttTab={setGanttTab}
+                    setKanbanGroupBy={setKanbanGroupBy}
+                    setLinksDimOnHover={setLinksDimOnHover}
+                    setOccupancyRowFields={setOccupancyRowFields}
+                    setOccupancyRowView={setOccupancyRowView}
+                    setOccupancyTimelineScale={setOccupancyTimelineScale}
+                    setQuarterlyV2RowFields={setQuarterlyV2RowFields}
+                    setQuarterlyV2RowView={setQuarterlyV2RowView}
+                    setQuarterlyV2ShowPlannedTasks={setQuarterlyV2ShowPlannedTasks}
+                    setQuarterlyV2TimelineSettings={setQuarterlyV2TimelineSettings}
+                    setSwimlaneCalendarBusyVisible={setSwimlaneCalendarBusyVisible}
+                    setSwimlaneFactTimelineVisible={setSwimlaneFactTimelineVisible}
+                    setSwimlaneLinksVisible={setSwimlaneLinksVisible}
+                    setTimelineSettings={setTimelineSettings}
+                    swimlaneCalendarBusyVisible={swimlaneCalendarBusyVisible}
+                    swimlaneFactTimelineVisible={swimlaneFactTimelineVisible}
+                    swimlaneLinksVisible={swimlaneLinksVisible}
+                    timelineSettings={timelineSettings}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-shrink-0 items-center px-5 pb-2.5 pt-1">
               <Button
-                key={id}
-                aria-selected={isOn}
-                className={`h-8 min-h-0 gap-1.5 !rounded-md !border-0 !px-2.5 !py-0 text-sm font-medium shadow-none ${
-                  isOn
-                    ? '!bg-ds-canvas !text-blue-600 hover:!bg-gray-100 active:!bg-gray-200 dark:!bg-white/10 dark:!text-blue-300 dark:hover:!bg-white/15 dark:active:!bg-white/20'
-                    : '!bg-transparent !text-ds-text-muted hover:!bg-black/[0.05] hover:!text-gray-900 active:!bg-black/10 dark:hover:!bg-white/10 dark:hover:!text-gray-100 dark:active:!bg-white/15'
-                }`}
-                role="tab"
+                aria-label={t('settings.changelog.open', { version: getAppVersionLabel() })}
+                className="!h-auto !min-h-0 !rounded-md !px-1.5 !py-0.5 !text-xs !font-normal !text-ds-text-muted hover:!text-gray-900 focus-visible:!outline-none focus-visible:!ring-2 focus-visible:!ring-blue-500 focus-visible:!ring-offset-2 dark:hover:!bg-white/10 dark:hover:!text-gray-100 dark:focus-visible:!ring-blue-400 dark:focus-visible:!ring-offset-gray-800"
                 type="button"
                 variant="ghost"
-                onClick={() => setActiveTab(id)}
+                onClick={() => setShowChangelog(true)}
               >
-                <Icon className="h-4 w-4 shrink-0" name={icon} />
-                {label}
+                {t('settings.generalTab.versionLabel')}{' '}
+                <AppVersionLabel className="!text-inherit text-xs" embedded />
               </Button>
-            );
-          })}
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="px-5 py-4">
-            {activeTab === 'general' && (
-              <SettingsGeneralTab
-                holidayCountry={holidayCountry}
-                setHolidayCountry={setHolidayCountry}
-                setShowHolidays={setShowHolidays}
-                setSidebarTabsSettings={setSidebarTabsSettings}
-                setSyncAssignees={setSyncAssignees}
-                setSyncEstimates={setSyncEstimates}
-                showHolidays={showHolidays}
-                sidebarTabsSettings={sidebarTabsSettings}
-                syncAssignees={syncAssignees}
-                syncEstimates={syncEstimates}
-              />
-            )}
-
-            {activeTab === 'ytracker' && showTrackerTokenTab ? (
-              <SettingsYTrackerTab
-                error={error}
-                handleSave={handleSave}
-                isValidating={isValidating}
-                localToken={localToken}
-                setError={setError}
-                setLocalToken={setLocalToken}
-                setShowToken={setShowToken}
-                showToken={showToken}
-                token={token}
-              />
-            ) : null}
-
-            {activeTab === 'calendar' && (
-              <SettingsCalendarTab
-                setSwimlaneCalendarBusyVisible={setSwimlaneCalendarBusyVisible}
-                swimlaneCalendarBusyVisible={swimlaneCalendarBusyVisible}
-              />
-            )}
-
-            {activeTab === 'planning' && (
-              <SettingsPlanningTab
-                epicOccupancyRowFields={epicOccupancyRowFields}
-                epicOccupancyRowView={epicOccupancyRowView}
-                epicTimelineSettings={epicTimelineSettings}
-                ganttTab={ganttTab}
-                kanbanGroupBy={kanbanGroupBy}
-                linksDimOnHover={linksDimOnHover}
-                occupancyRowFields={occupancyRowFields}
-                occupancyRowView={occupancyRowView}
-                occupancyTimelineScale={occupancyTimelineScale}
-                quarterlyV2RowFields={quarterlyV2RowFields}
-                quarterlyV2RowView={quarterlyV2RowView}
-                quarterlyV2ShowPlannedTasks={quarterlyV2ShowPlannedTasks}
-                quarterlyV2TimelineSettings={quarterlyV2TimelineSettings}
-                setEpicOccupancyRowFields={setEpicOccupancyRowFields}
-                setEpicOccupancyRowView={setEpicOccupancyRowView}
-                setEpicTimelineSettings={setEpicTimelineSettings}
-                setGanttTab={setGanttTab}
-                setKanbanGroupBy={setKanbanGroupBy}
-                setLinksDimOnHover={setLinksDimOnHover}
-                setOccupancyRowFields={setOccupancyRowFields}
-                setOccupancyRowView={setOccupancyRowView}
-                setOccupancyTimelineScale={setOccupancyTimelineScale}
-                setQuarterlyV2RowFields={setQuarterlyV2RowFields}
-                setQuarterlyV2RowView={setQuarterlyV2RowView}
-                setQuarterlyV2ShowPlannedTasks={setQuarterlyV2ShowPlannedTasks}
-                setQuarterlyV2TimelineSettings={setQuarterlyV2TimelineSettings}
-                setSwimlaneCalendarBusyVisible={setSwimlaneCalendarBusyVisible}
-                setSwimlaneFactTimelineVisible={setSwimlaneFactTimelineVisible}
-                setSwimlaneLinksVisible={setSwimlaneLinksVisible}
-                setTimelineSettings={setTimelineSettings}
-                swimlaneCalendarBusyVisible={swimlaneCalendarBusyVisible}
-                swimlaneFactTimelineVisible={swimlaneFactTimelineVisible}
-                swimlaneLinksVisible={swimlaneLinksVisible}
-                timelineSettings={timelineSettings}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-shrink-0 items-center px-5 pb-2.5 pt-1">
-          <p className="text-xs text-ds-text-muted">
-            {t('settings.generalTab.versionLabel')}{' '}
-            <AppVersionLabel className="text-xs" />
-          </p>
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

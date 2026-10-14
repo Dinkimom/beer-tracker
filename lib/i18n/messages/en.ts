@@ -219,6 +219,13 @@ export const enMessages = {
           'In Chrome or Edge: browser menu → Install Beer Tracker. On a Mac, Safari can add it to the Dock.',
       },
     },
+    changelog: {
+      title: 'What\'s new',
+      back: 'Back to settings',
+      empty: 'No release notes for this version yet.',
+      current: 'This version',
+      open: 'What\'s new in version {version}',
+    },
     yTrackerTab: {
       browserOnlyNote:
         'The token is stored only in your browser and is not saved on the Beer Tracker server',
@@ -1327,6 +1334,7 @@ export const enMessages = {
         'Assign someone on the card first — a feature row does not set the assignee',
       close: 'Close',
       columnTitle: 'Features',
+      resizeColumn: 'Resize features column width',
       convertExistingFailed: 'Could not attach the row to the {tracker} issue.',
       convertExistingSuccess: 'Linked to {key}',
       convertFailed: 'Could not create the issue in {tracker}.',
