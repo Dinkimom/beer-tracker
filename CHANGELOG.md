@@ -2,6 +2,18 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.14.1] — 2026-10-15
+
+### English
+
+- Docker image build includes `CHANGELOG.md` again so What’s new can be embedded at build time.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.14.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- В Docker-сборку снова попадает `CHANGELOG.md`, чтобы «Что нового» встраивалось на этапе build.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.14.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.14.0] — 2026-10-15
 
 ### English
