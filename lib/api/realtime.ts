@@ -1,4 +1,5 @@
 import type {
+  SprintPresenceAttention,
   SprintPresenceBoardView,
   SprintPresenceFocus,
   SprintPresenceGesture,
@@ -7,6 +8,7 @@ import type {
 import { getPlannerBeerTrackerApi } from '@/lib/plannerBeerTrackerApiOverride';
 
 export async function putSprintPresenceFocus(input: {
+  attention?: SprintPresenceAttention;
   boardView?: SprintPresenceBoardView;
   focus: SprintPresenceFocus | null;
   gesture?: SprintPresenceGesture | null;

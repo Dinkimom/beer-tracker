@@ -7,7 +7,7 @@ import { isTaskCompleted } from '@/features/task/utils/taskUtils';
 import { getPositionSegmentRanges } from './occupancyUtils';
 import {
   cellRangeToDayIndices,
-  forEachOpenOverlappingSegmentPair,
+  forEachHeavyPerformerOverlapCell,
   forEachOpenQaDevOverlap,
   forEachUnavailableDayOnTask,
   qaDevTimingConflictBounds,
@@ -87,8 +87,8 @@ export function collectPerformerOverlapDays(params: {
 }): void {
   const { byAssignee, closedIds, errorDays } = params;
   byAssignee.forEach((positions) => {
-    forEachOpenOverlappingSegmentPair(positions, closedIds, (_a, _b, overlapStart, overlapEnd) => {
-      cellRangeToDayIndices(overlapStart, overlapEnd).forEach((d) => errorDays.add(d));
+    forEachHeavyPerformerOverlapCell(positions, closedIds, (_taskIds, cell) => {
+      cellRangeToDayIndices(cell, cell + 1).forEach((d) => errorDays.add(d));
     });
   });
 }
@@ -100,9 +100,8 @@ export function collectPerformerOverlapTaskIds(params: {
 }): void {
   const { byAssignee, closedIds, errorTaskIds } = params;
   byAssignee.forEach((positions) => {
-    forEachOpenOverlappingSegmentPair(positions, closedIds, (a, b) => {
-      errorTaskIds.add(a.taskId);
-      errorTaskIds.add(b.taskId);
+    forEachHeavyPerformerOverlapCell(positions, closedIds, (taskIds) => {
+      taskIds.forEach((taskId) => errorTaskIds.add(taskId));
     });
   });
 }
@@ -185,9 +184,8 @@ export function collectPerformerOverlapReasons(params: {
 }): void {
   const { addReason, byAssignee, closedIds } = params;
   byAssignee.forEach((positions) => {
-    forEachOpenOverlappingSegmentPair(positions, closedIds, (a, b) => {
-      addReason(a.taskId, 'performer_overlap');
-      addReason(b.taskId, 'performer_overlap');
+    forEachHeavyPerformerOverlapCell(positions, closedIds, (taskIds) => {
+      taskIds.forEach((taskId) => addReason(taskId, 'performer_overlap'));
     });
   });
 }
@@ -232,10 +230,9 @@ export function collectPerformerOverlapDetailsByDay(params: {
 }): void {
   const { add, byAssignee, closedIds } = params;
   byAssignee.forEach((positions) => {
-    forEachOpenOverlappingSegmentPair(positions, closedIds, (a, b, overlapStart, overlapEnd) => {
-      cellRangeToDayIndices(overlapStart, overlapEnd).forEach((d) => {
-        add(d, a.taskId, 'performer_overlap');
-        add(d, b.taskId, 'performer_overlap');
+    forEachHeavyPerformerOverlapCell(positions, closedIds, (taskIds, cell) => {
+      cellRangeToDayIndices(cell, cell + 1).forEach((dayIndex) => {
+        taskIds.forEach((taskId) => add(dayIndex, taskId, 'performer_overlap'));
       });
     });
   });

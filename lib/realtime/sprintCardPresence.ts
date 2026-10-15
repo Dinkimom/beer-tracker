@@ -115,6 +115,7 @@ export function serializeSprintPresenceViewer(viewer: SprintPresenceViewer): Spr
     avatarUrl: viewer.avatarUrl,
     displayName: viewer.displayName,
     userId: viewer.userId,
+    ...(viewer.attention ? { attention: viewer.attention } : {}),
     ...(viewer.boardView ? { boardView: viewer.boardView } : {}),
     ...(viewer.clientId ? { clientId: viewer.clientId } : {}),
     ...(viewer.focus ? { focus: viewer.focus } : {}),

@@ -5,6 +5,7 @@ import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
 import { Avatar } from '@/components/Avatar';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
+import { isSprintPresenceViewerIdle } from '@/lib/realtime/sprintPresenceAttention';
 import {
   canRevealSprintPresenceViewer,
   formatSprintPresenceViewerTooltip,
@@ -87,13 +88,15 @@ export function SprintPlannerPresenceAvatars({
     >
       {shown.map((viewer) => {
         const name = sprintPresenceLabelName(viewer, anonymousLabel);
-        const actionKey = sprintPresenceFocusActionKey(viewer.focus?.state);
+        const idle = isSprintPresenceViewerIdle(viewer.attention);
+        const actionKey = idle ? null : sprintPresenceFocusActionKey(viewer.focus?.state);
         const tooltip = formatSprintPresenceViewerTooltip({
           action: actionKey ? t(PRESENCE_ACTION_KEYS[actionKey]) : null,
           name,
           view: viewer.boardView ? t(PRESENCE_VIEW_KEYS[viewer.boardView]) : null,
         });
         const canReveal = Boolean(onRevealViewer) && canRevealSprintPresenceViewer(viewer);
+        const idleClass = idle ? 'opacity-40' : 'opacity-100';
         const avatar = (
           <Avatar
             avatarUrl={viewer.avatarUrl}
@@ -107,14 +110,14 @@ export function SprintPlannerPresenceAvatars({
             {canReveal ? (
               <button
                 aria-label={t('sprintPlanner.presence.revealAria', { name })}
-                className={`${AVATAR_SLOT_CLASS} cursor-pointer border-0 bg-transparent p-0 active:scale-[0.98]`}
+                className={`${AVATAR_SLOT_CLASS} ${idleClass} cursor-pointer border-0 bg-transparent p-0 active:scale-[0.98]`}
                 type="button"
                 onClick={() => onRevealViewer?.(viewer)}
               >
                 {avatar}
               </button>
             ) : (
-              <span className={`${AVATAR_SLOT_CLASS} cursor-default`}>{avatar}</span>
+              <span className={`${AVATAR_SLOT_CLASS} ${idleClass} cursor-default`}>{avatar}</span>
             )}
           </TextTooltip>
         );

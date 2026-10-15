@@ -133,14 +133,27 @@ describe('getOccupancyErrorDays', () => {
     expect(getOccupancyErrorDays(tasks, positions).size).toBe(0);
   });
 
-  it('flags days when same assignee has overlapping segments on different tasks', () => {
+  it('does not flag when same assignee has at most three overlapping tasks', () => {
     const t1 = devTask('t1');
     const t2 = devTask('t2');
+    const t3 = devTask('t3');
     const positions = new Map<string, TaskPosition>([
-      ['t1', position({ taskId: 't1', assignee: 'same', startDay: 0, startPart: 0, duration: 2 })],
-      ['t2', position({ taskId: 't2', assignee: 'same', startDay: 0, startPart: 1, duration: 2 })],
+      ['t1', position({ taskId: 't1', assignee: 'same', startDay: 0, startPart: 0, duration: 3 })],
+      ['t2', position({ taskId: 't2', assignee: 'same', startDay: 0, startPart: 0, duration: 3 })],
+      ['t3', position({ taskId: 't3', assignee: 'same', startDay: 0, startPart: 0, duration: 3 })],
     ]);
-    const days = getOccupancyErrorDays([t1, t2], positions);
+    expect(getOccupancyErrorDays([t1, t2, t3], positions).size).toBe(0);
+  });
+
+  it('flags days when same assignee has more than three overlapping tasks', () => {
+    const tasks = [devTask('t1'), devTask('t2'), devTask('t3'), devTask('t4')];
+    const positions = new Map<string, TaskPosition>(
+      tasks.map((task) => [
+        task.id,
+        position({ taskId: task.id, assignee: 'same', startDay: 0, startPart: 0, duration: 2 }),
+      ])
+    );
+    const days = getOccupancyErrorDays(tasks, positions);
     expect(days.has(0)).toBe(true);
   });
 
@@ -172,6 +185,22 @@ describe('getOccupancyErrorDays', () => {
       ['t2', position({ taskId: 't2', assignee: 'same', startDay: 0, startPart: 1, duration: 2 })],
     ]);
     expect(getOccupancyErrorDays([t1, t2], positions).size).toBe(0);
+  });
+
+  it('does not flag heavy overlap when enough overlapping tasks are closed', () => {
+    const tasks = [
+      devTask('t1', 't1', 'closed'),
+      devTask('t2'),
+      devTask('t3'),
+      devTask('t4'),
+    ];
+    const positions = new Map<string, TaskPosition>(
+      tasks.map((task) => [
+        task.id,
+        position({ taskId: task.id, assignee: 'same', startDay: 0, startPart: 0, duration: 2 }),
+      ])
+    );
+    expect(getOccupancyErrorDays(tasks, positions).size).toBe(0);
   });
 
   it('ignores positions for tasks not in the tasks list', () => {
@@ -207,7 +236,7 @@ describe('getOccupancyErrorTaskIds', () => {
     expect(ids.has('qa-1')).toBe(true);
   });
 
-  it('includes both tasks on performer overlap', () => {
+  it('does not include tasks when performer overlap is at most three', () => {
     const t1 = devTask('t1');
     const t2 = devTask('t2');
     const positions = new Map<string, TaskPosition>([
@@ -215,8 +244,20 @@ describe('getOccupancyErrorTaskIds', () => {
       ['t2', position({ taskId: 't2', assignee: 'x', startDay: 0, startPart: 1, duration: 2 })],
     ]);
     const ids = getOccupancyErrorTaskIds([t1, t2], positions);
-    expect(ids.has('t1')).toBe(true);
-    expect(ids.has('t2')).toBe(true);
+    expect(ids.has('t1')).toBe(false);
+    expect(ids.has('t2')).toBe(false);
+  });
+
+  it('includes all tasks when more than three overlap on the same cells', () => {
+    const tasks = [devTask('t1'), devTask('t2'), devTask('t3'), devTask('t4')];
+    const positions = new Map<string, TaskPosition>(
+      tasks.map((task) => [
+        task.id,
+        position({ taskId: task.id, assignee: 'x', startDay: 0, startPart: 0, duration: 2 }),
+      ])
+    );
+    const ids = getOccupancyErrorTaskIds(tasks, positions);
+    expect([...ids].sort()).toEqual(['t1', 't2', 't3', 't4']);
   });
 
   it('does not flag either task on performer overlap when one is closed', () => {
@@ -255,19 +296,25 @@ describe('getOccupancyErrorTaskIds', () => {
     expect(ids.has('t1')).toBe(false);
   });
 
-  it('still flags overlapping real tasks when a photo sits on the same cells', () => {
+  it('still flags heavy overlapping real tasks when a photo sits on the same cells', () => {
     const photo = photoTask('local-image:1');
-    const t1 = devTask('t1');
-    const t2 = devTask('t2');
+    const tasks = [devTask('t1'), devTask('t2'), devTask('t3'), devTask('t4')];
     const positions = new Map<string, TaskPosition>([
-      ['local-image:1', position({ taskId: 'local-image:1', assignee: 'x', startDay: 0, startPart: 0, duration: 2 })],
-      ['t1', position({ taskId: 't1', assignee: 'x', startDay: 0, startPart: 0, duration: 2 })],
-      ['t2', position({ taskId: 't2', assignee: 'x', startDay: 0, startPart: 1, duration: 2 })],
+      [
+        'local-image:1',
+        position({ taskId: 'local-image:1', assignee: 'x', startDay: 0, startPart: 0, duration: 2 }),
+      ],
+      ...tasks.map(
+        (task) =>
+          [
+            task.id,
+            position({ taskId: task.id, assignee: 'x', startDay: 0, startPart: 0, duration: 2 }),
+          ] as const
+      ),
     ]);
-    const ids = getOccupancyErrorTaskIds([photo, t1, t2], positions);
+    const ids = getOccupancyErrorTaskIds([photo, ...tasks], positions);
     expect(ids.has('local-image:1')).toBe(false);
-    expect(ids.has('t1')).toBe(true);
-    expect(ids.has('t2')).toBe(true);
+    expect([...ids].sort()).toEqual(['t1', 't2', 't3', 't4']);
   });
 });
 
@@ -320,16 +367,28 @@ describe('getOccupancyErrorReasons', () => {
   });
 
   it('dedupes repeated performer_overlap for same task', () => {
+    const tasks = [devTask('t1'), devTask('t2'), devTask('t3'), devTask('t4')];
+    const positions = new Map<string, TaskPosition>(
+      tasks.map((task) => [
+        task.id,
+        position({ taskId: task.id, assignee: 'x', startDay: 0, startPart: 0, duration: 3 }),
+      ])
+    );
+    const reasons = getOccupancyErrorReasons(tasks, positions);
+    expect(reasons.get('t1')?.filter((r) => r === 'performer_overlap').length).toBe(1);
+  });
+
+  it('skips performer_overlap reason when at most three tasks overlap', () => {
     const t1 = devTask('t1');
     const t2 = devTask('t2');
     const t3 = devTask('t3');
     const positions = new Map<string, TaskPosition>([
       ['t1', position({ taskId: 't1', assignee: 'x', startDay: 0, startPart: 0, duration: 3 })],
-      ['t2', position({ taskId: 't2', assignee: 'x', startDay: 0, startPart: 1, duration: 3 })],
-      ['t3', position({ taskId: 't3', assignee: 'x', startDay: 0, startPart: 2, duration: 3 })],
+      ['t2', position({ taskId: 't2', assignee: 'x', startDay: 0, startPart: 0, duration: 3 })],
+      ['t3', position({ taskId: 't3', assignee: 'x', startDay: 0, startPart: 0, duration: 3 })],
     ]);
     const reasons = getOccupancyErrorReasons([t1, t2, t3], positions);
-    expect(reasons.get('t1')?.filter((r) => r === 'performer_overlap').length).toBe(1);
+    expect(reasons.get('t1')).toBeUndefined();
   });
 
   it('adds assignee_unavailable from map', () => {
@@ -364,19 +423,35 @@ describe('formatOccupancyErrorTooltip', () => {
 });
 
 describe('getOccupancyErrorDetailsByDay', () => {
-  it('aggregates task names and reason keys per day', () => {
+  it('aggregates task names and reason keys per day for heavy overlaps', () => {
+    const tasks = [
+      devTask('t1', 'Task One'),
+      devTask('t2', 'Task Two'),
+      devTask('t3', 'Task Three'),
+      devTask('t4', 'Task Four'),
+    ];
+    const positions = new Map<string, TaskPosition>(
+      tasks.map((task) => [
+        task.id,
+        position({ taskId: task.id, assignee: 'x', startDay: 0, startPart: 0, duration: 2 }),
+      ])
+    );
+    const byDay = getOccupancyErrorDetailsByDay(tasks, positions);
+    const day0 = byDay.get(0);
+    expect(day0).toBeDefined();
+    const names = day0!.map((d) => d.taskName).sort();
+    expect(names).toEqual(['Task Four', 'Task One', 'Task Three', 'Task Two']);
+    expect(day0!.every((d) => d.reasons.includes('performer_overlap'))).toBe(true);
+  });
+
+  it('omits performer_overlap details when at most three tasks overlap', () => {
     const t1 = devTask('t1', 'Task One');
     const t2 = devTask('t2', 'Task Two');
     const positions = new Map<string, TaskPosition>([
       ['t1', position({ taskId: 't1', assignee: 'x', startDay: 0, startPart: 0, duration: 2 })],
       ['t2', position({ taskId: 't2', assignee: 'x', startDay: 0, startPart: 1, duration: 2 })],
     ]);
-    const byDay = getOccupancyErrorDetailsByDay([t1, t2], positions);
-    const day0 = byDay.get(0);
-    expect(day0).toBeDefined();
-    const names = day0!.map((d) => d.taskName).sort();
-    expect(names).toEqual(['Task One', 'Task Two']);
-    expect(day0!.every((d) => d.reasons.includes('performer_overlap'))).toBe(true);
+    expect(getOccupancyErrorDetailsByDay([t1, t2], positions).size).toBe(0);
   });
 
   it('includes qa_without_dev on each affected day', () => {

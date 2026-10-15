@@ -35,4 +35,12 @@ describe('qualifyBeerTrackerTables', () => {
     expect(sql).toMatch(/UPDATE beer_tracker\.team_members tm/i);
     expect(sql).toMatch(/FROM beer_tracker\.teams t/i);
   });
+
+  it('prefixes MCP OAuth tables', () => {
+    process.env.BEER_TRACKER_SCHEMA = 'beer_tracker';
+    const sql = qualifyBeerTrackerTables(
+      `INSERT INTO mcp_oauth_clients (client_id) VALUES ($1)`
+    );
+    expect(sql).toMatch(/INSERT INTO beer_tracker\.mcp_oauth_clients/i);
+  });
 });

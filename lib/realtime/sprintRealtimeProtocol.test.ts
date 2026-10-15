@@ -188,6 +188,32 @@ describe('sprintRealtimeProtocol', () => {
     });
   });
 
+  it('parses attention idle on a presence viewer', () => {
+    expect(
+      parseSprintRealtimeMessage({
+        ...presence,
+        viewers: [
+          {
+            ...presence.viewers[0],
+            attention: 'idle',
+            boardView: 'swimlanes',
+            clientId: 'tab-1',
+          },
+        ],
+      })
+    ).toEqual({
+      ...presence,
+      viewers: [
+        {
+          ...presence.viewers[0],
+          attention: 'idle',
+          boardView: 'swimlanes',
+          clientId: 'tab-1',
+        },
+      ],
+    });
+  });
+
   it('parses a shared timer snapshot', () => {
     const timerEvent = {
       at: 3,

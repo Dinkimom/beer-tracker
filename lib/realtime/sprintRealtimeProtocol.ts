@@ -10,6 +10,7 @@ import type {
   SprintTimerEvent,
 } from './sprintRealtimeTypes';
 
+import { isSprintPresenceAttention } from './sprintPresenceAttention';
 import { isSprintPresenceBoardView } from './sprintPresenceBoardView';
 import { parseSprintPresenceGesture } from './sprintPresenceGesture';
 import { parseRealtimeClientId } from './sprintRealtimeClientId';
@@ -95,12 +96,14 @@ function parseSprintPresenceFocus(value: unknown): SprintPresenceFocus | undefin
 
 function parseSprintPresenceViewerOptionalFields(
   row: Record<string, unknown>
-): Pick<SprintPresenceViewer, 'boardView' | 'clientId' | 'focus' | 'gesture'> {
+): Pick<SprintPresenceViewer, 'attention' | 'boardView' | 'clientId' | 'focus' | 'gesture'> {
   const clientId = parseRealtimeClientId(typeof row.clientId === 'string' ? row.clientId : null);
   const focus = parseSprintPresenceFocus(row.focus);
   const boardView = isSprintPresenceBoardView(row.boardView) ? row.boardView : undefined;
   const gesture = parseSprintPresenceGesture(row.gesture);
+  const attention = isSprintPresenceAttention(row.attention) ? row.attention : undefined;
   return {
+    ...(attention ? { attention } : {}),
     ...(boardView ? { boardView } : {}),
     ...(clientId ? { clientId } : {}),
     ...(focus ? { focus } : {}),

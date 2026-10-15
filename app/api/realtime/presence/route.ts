@@ -30,7 +30,7 @@ export async function PUT(request: NextRequest): Promise<Response> {
       { status: 400 }
     );
   }
-  const { boardView, focus, gesture, organizationId, sprintId } = validation.data;
+  const { attention, boardView, focus, gesture, organizationId, sprintId } = validation.data;
   const tenantResult = await requireTenantContext(requestWithOrganizationHeader(request, organizationId));
   if (!('ctx' in tenantResult)) {
     return tenantResult.response;
@@ -48,7 +48,8 @@ export async function PUT(request: NextRequest): Promise<Response> {
     clientId,
     focus,
     boardView,
-    gesture
+    gesture,
+    attention
   );
   return NextResponse.json({ applied: applied !== 'missing' });
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  SprintPresenceAttention,
   SprintPresenceBoardView,
   SprintPresenceFocus,
   SprintPresenceGesture,
@@ -10,6 +11,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 import { putSprintPresenceFocus } from '@/lib/api/realtime';
 import { resolveSprintCardPresenceFocus } from '@/lib/realtime/sprintCardPresence';
+import { isSprintPresenceAttention } from '@/lib/realtime/sprintPresenceAttention';
 import { isSprintPresenceBoardView } from '@/lib/realtime/sprintPresenceBoardView';
 import {
   parseSprintPresenceGesture,
@@ -18,6 +20,8 @@ import {
 } from '@/lib/realtime/sprintPresenceGesture';
 import { SPRINT_PRESENCE_FOCUS_STATES } from '@/lib/realtime/sprintRealtimeTypes';
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
+
+import { useSprintPresenceAttention } from './useSprintPresenceAttention';
 
 const JOIN_RETRY_DELAYS_MS = [0, 200, 400, 800];
 const FOCUS_STATES = new Set<string>(SPRINT_PRESENCE_FOCUS_STATES);
@@ -52,11 +56,13 @@ function focusKey(focus: SprintPresenceFocus | null): string {
 }
 
 function packPresencePublishKey(input: {
+  attention: SprintPresenceAttention;
   boardView: SprintPresenceBoardView;
   focus: SprintPresenceFocus | null;
   gesture: SprintPresenceGesture | null;
 }): string {
   return JSON.stringify({
+    attention: input.attention,
     boardView: input.boardView,
     focus: input.focus,
     gestureKey: sprintPresenceGesturePublishKey(input.gesture),
@@ -64,6 +70,7 @@ function packPresencePublishKey(input: {
 }
 
 function unpackPresencePublishKey(key: string): {
+  attention: SprintPresenceAttention;
   boardView?: SprintPresenceBoardView;
   focus: SprintPresenceFocus | null;
   gesture: SprintPresenceGesture | null;
@@ -74,12 +81,13 @@ function unpackPresencePublishKey(key: string): {
     const state = focus?.state;
     const targetId = focus?.targetId?.trim();
     return {
+      attention: isSprintPresenceAttention(row.attention) ? row.attention : 'active',
       boardView: isSprintPresenceBoardView(row.boardView) ? row.boardView : undefined,
       focus: state && FOCUS_STATES.has(state) && targetId ? { state, targetId } : null,
       gesture: typeof row.gestureKey === 'string' ? parseSprintPresenceGesture(JSON.parse(row.gestureKey || 'null')) ?? null : null,
     };
   } catch {
-    return { focus: null, gesture: null };
+    return { attention: 'active', focus: null, gesture: null };
   }
 }
 
@@ -95,7 +103,7 @@ async function publishSprintCardPresenceFocus(input: {
   organizationId: string;
   sprintId: number;
 }): Promise<boolean> {
-  const { boardView, focus, gesture } = unpackPresencePublishKey(input.desiredKey);
+  const { attention, boardView, focus, gesture } = unpackPresencePublishKey(input.desiredKey);
   for (const delayMs of JOIN_RETRY_DELAYS_MS) {
     if (input.isCancelled()) {
       return false;
@@ -108,6 +116,7 @@ async function publishSprintCardPresenceFocus(input: {
     }
     try {
       const result = await putSprintPresenceFocus({
+        attention,
         boardView,
         focus,
         gesture,
@@ -128,7 +137,7 @@ async function publishSprintCardPresenceFocus(input: {
 }
 
 /**
- * Пишет вид доски, фокус и live-жест в presence. SSE односторонний — это REST.
+ * Пишет вид доски, фокус, attention и live-жест в presence. SSE односторонний — это REST.
  */
 export function useSprintCardPresenceReporter(input: {
   boardView: SprintPresenceBoardView;
@@ -151,10 +160,14 @@ export function useSprintCardPresenceReporter(input: {
     linkingTaskId: input.linkingTaskId,
     resizingTaskId: input.resizingTaskId,
   });
+  const attention = useSprintPresenceAttention(Boolean(focus));
+  const publishFocus = attention === 'idle' ? null : focus;
+  const publishGesture = attention === 'idle' ? null : input.gesture;
   const desiredKey = packPresencePublishKey({
+    attention,
     boardView: input.boardView,
-    focus,
-    gesture: input.gesture,
+    focus: publishFocus,
+    gesture: publishGesture,
   });
 
   useEffect(() => {
@@ -200,7 +213,13 @@ export function useSprintCardPresenceReporter(input: {
         return;
       }
       lastPostedKeyRef.current = '';
-      putSprintPresenceFocus({ focus: null, gesture: null, organizationId, sprintId }).catch(() => undefined);
+      putSprintPresenceFocus({
+        attention: 'idle',
+        focus: null,
+        gesture: null,
+        organizationId,
+        sprintId,
+      }).catch(() => undefined);
     };
   }, [input.sprintId, organizationId]);
 }

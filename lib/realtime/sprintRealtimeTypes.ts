@@ -57,6 +57,11 @@ export const SPRINT_PRESENCE_GESTURE_KINDS = ['drag', 'edit', 'resize'] as const
 
 type SprintPresenceGestureKind = (typeof SPRINT_PRESENCE_GESTURE_KINDS)[number];
 
+/** Вкладка на переднем плане и недавняя активность vs «просто сидит» в приложении. */
+export const SPRINT_PRESENCE_ATTENTIONS = ['active', 'idle'] as const;
+
+export type SprintPresenceAttention = (typeof SPRINT_PRESENCE_ATTENTIONS)[number];
+
 export interface SprintPresenceGesturePosition {
   assignee?: string;
   duration: number;
@@ -84,6 +89,8 @@ export interface SprintPresenceGesture {
 }
 
 export interface SprintPresenceViewer {
+  /** active — смотрит; idle — вкладка в фоне или давно без действий (блеклый аватар). */
+  attention?: SprintPresenceAttention;
   avatarUrl: string | null;
   /** Вид планера, который открыт у вкладки (свимлейн / канбан / occupancy). */
   boardView?: SprintPresenceBoardView;

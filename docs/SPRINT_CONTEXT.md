@@ -15,10 +15,10 @@ GET /api/sprints/{sprintId}/sprint-context?featureId={laneOrIssueKey}
 
 ### Auth
 
-1. **MCP / агент:** `Authorization: Bearer <SPRINT_CONTEXT_MCP_SECRET>` или `X-Sprint-Context-Secret`. Секрет в `.env` инстанса. Soft tracker meta — из сохранённого токена org.
+1. **MCP / агент:** `Authorization: Bearer <MCP OAuth access_token>` (после OAuth 2.1 + PKCE к инстансу). Soft tracker meta — из сохранённого токена org.
 2. **UI:** обычный tenant (`requireTenantContext`).
 
-Если `SPRINT_CONTEXT_MCP_SECRET` пуст, Bearer MCP не принимается.
+Без валидного OAuth Bearer агентский доступ к MCP / sprint-context не принимается.
 
 ## Remote MCP (рекомендуется)
 
@@ -28,7 +28,23 @@ MCP крутится **на хосте/контейнере Beer Tracker** — �
 POST|GET|DELETE /api/mcp
 ```
 
-Streamable HTTP, tools:
+Streamable HTTP, **OAuth 2.1** (Beer Tracker = Authorization Server + Resource Server):
+
+| Endpoint | Role |
+|----------|------|
+| `/.well-known/oauth-protected-resource` | RFC 9728 protected resource metadata |
+| `/.well-known/oauth-protected-resource/api/mcp` | Path-aware PRM for `/api/mcp` |
+| `/.well-known/oauth-authorization-server` | RFC 8414 AS metadata |
+| `/api/oauth/register` | Dynamic client registration |
+| `/api/oauth/authorize` | Auth code + PKCE (login + consent) |
+| `/api/oauth/token` | Code / refresh exchange |
+| `/api/oauth/revoke` | Token revocation |
+
+Unauthenticated MCP calls return **401** with `WWW-Authenticate` pointing at resource metadata. Cursor/Claude open the browser → product login (`/auth-setup`) → consent → Bearer token.
+
+Scope: `mcp:tools`.
+
+Tools:
 - `search_sprints(query, boardId?, limit?)` — найти спринт по фрагменту имени («Sprint 31», «RND Team 1»)
 - `get_sprint_context(sprintId, featureId?)` — planning graph по **числовому** sprintId (включая `capacity`)
 - `get_sprint_capacity(sprintId, featureId?)` — только capacity: overlaps / gaps / overloaded
@@ -52,7 +68,7 @@ Notes: только `kind=text`; default `width=200` (2 части); `height` к
 
 **Нет** sync assignee/planned dates в Tracker/Jira. Diagram/image notes — вне этого среза.
 
-### Cursor / Claude — только URL + секрет
+### Cursor / Claude — только URL
 
 [`.cursor/mcp.json.example`](../.cursor/mcp.json.example):
 
@@ -60,10 +76,7 @@ Notes: только `kind=text`; default `width=200` (2 части); `height` к
 {
   "mcpServers": {
     "beer-tracker-planning": {
-      "url": "https://<your-bt-host>/api/mcp",
-      "headers": {
-        "Authorization": "Bearer <SPRINT_CONTEXT_MCP_SECRET>"
-      }
+      "url": "https://<your-bt-host>/api/mcp"
     }
   }
 }
@@ -75,19 +88,22 @@ Notes: только `kind=text`; default `width=200` (2 части); `height` к
 
 ```bash
 claude mcp add --transport http beer-tracker-sprint-context \
-  --header "Authorization: Bearer <SPRINT_CONTEXT_MCP_SECRET>" \
   https://<your-bt-host>/api/mcp
 ```
 
 (точный флаг `--transport` смотрите в `claude mcp add --help` своей версии.)
 
-Выдать пользователю: URL инстанса + секрет. Node/pnpm/клон репо не требуются.
+Клиент выполнит OAuth (логин в Beer Tracker + consent). Shared secret в конфиге не нужен.
+
+DB: применить [`database/add-mcp-oauth.sql`](../database/add-mcp-oauth.sql) (или таблицы создаются при первом обращении к OAuth).
 
 ## curl
 
+После OAuth (или с вручную выданным access token):
+
 ```bash
 curl -sS \
-  -H "Authorization: Bearer $SPRINT_CONTEXT_MCP_SECRET" \
+  -H "Authorization: Bearer $BEER_TRACKER_MCP_ACCESS_TOKEN" \
   "https://<host>/api/sprints/123/sprint-context"
 ```
 
@@ -109,4 +125,4 @@ curl -sS \
 
 ## Optional: local stdio
 
-`pnpm mcp:sprint-context` — HTTP-клиент к `BEER_TRACKER_URL` для отладки без remote MCP. Обычным пользователям не нужен.
+`pnpm mcp:sprint-context` — HTTP-клиент к `BEER_TRACKER_URL` для отладки без remote MCP. Нужен `BEER_TRACKER_MCP_ACCESS_TOKEN` (OAuth access token). Обычным пользователям не нужен — используйте remote MCP URL.

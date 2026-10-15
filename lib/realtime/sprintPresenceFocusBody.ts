@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS } from '@/constants';
 
 import {
+  SPRINT_PRESENCE_ATTENTIONS,
   SPRINT_PRESENCE_BOARD_VIEWS,
   SPRINT_PRESENCE_FOCUS_STATES,
   SPRINT_PRESENCE_GESTURE_KINDS,
@@ -12,6 +13,7 @@ const FOCUS_TARGET_ID_MAX = 200;
 const GESTURE_NOTE_MAX = 2000;
 
 export const SprintPresenceFocusBodySchema = z.object({
+  attention: z.enum(SPRINT_PRESENCE_ATTENTIONS).optional(),
   boardView: z.enum(SPRINT_PRESENCE_BOARD_VIEWS).optional(),
   focus: z
     .object({

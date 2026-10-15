@@ -19,17 +19,17 @@ const OPS: SprintPlanPatchOp[] = [
 ];
 
 describe('sprintPlanPatchToken', () => {
-  const prev = process.env.SPRINT_CONTEXT_MCP_SECRET;
+  const prev = process.env.AUTH_SESSION_SECRET;
 
   beforeEach(() => {
-    process.env.SPRINT_CONTEXT_MCP_SECRET = 'test-secret-for-plan-patch-hmac';
+    process.env.AUTH_SESSION_SECRET = 'test-secret-for-plan-patch-hmac-32chars';
   });
 
   afterEach(() => {
     if (prev === undefined) {
-      delete process.env.SPRINT_CONTEXT_MCP_SECRET;
+      delete process.env.AUTH_SESSION_SECRET;
     } else {
-      process.env.SPRINT_CONTEXT_MCP_SECRET = prev;
+      process.env.AUTH_SESSION_SECRET = prev;
     }
   });
 

@@ -97,67 +97,45 @@ export function forEachOpenQaDevOverlap(
   }
 }
 
-function segmentsOverlapCells(
-  aStart: number,
-  aEnd: number,
-  bStart: number,
-  bEnd: number,
-): boolean {
-  return Math.max(aStart, bStart) < Math.min(aEnd, bEnd);
-}
+/**
+ * Порог предупреждения о пересечении по занятости: одновременно больше трёх задач
+ * у одного исполнителя на одной ячейке таймлайна.
+ */
+const PERFORMER_OVERLAP_WARN_MAX_WITHOUT_ALERT = 3;
 
-function shouldSkipOpenSegmentPair(
-  a: AssigneePositionSegment,
-  b: AssigneePositionSegment,
-  closedIds: Set<string>,
-): boolean {
-  if (a.taskId === b.taskId) {
-    return true;
-  }
-  if (!segmentsOverlapCells(a.startCell, a.endCell, b.startCell, b.endCell)) {
-    return true;
-  }
-  return closedIds.has(a.taskId) || closedIds.has(b.taskId);
-}
-
-function forEachOverlappingPairsForSegment(
+/**
+ * Ячейки, где у исполнителя одновременно занято больше трёх открытых задач.
+ */
+export function forEachHeavyPerformerOverlapCell(
   positions: AssigneePositionSegment[],
-  index: number,
   closedIds: Set<string>,
-  onOverlap: (
-    a: AssigneePositionSegment,
-    b: AssigneePositionSegment,
-    overlapStart: number,
-    overlapEnd: number,
-  ) => void,
+  onHeavy: (taskIds: ReadonlySet<string>, cell: number) => void,
 ): void {
-  const a = positions[index]!;
-  for (let j = index + 1; j < positions.length; j++) {
-    const b = positions[j]!;
-    if (shouldSkipOpenSegmentPair(a, b, closedIds)) {
-      continue;
+  const open = positions.filter((segment) => !closedIds.has(segment.taskId));
+  if (open.length <= PERFORMER_OVERLAP_WARN_MAX_WITHOUT_ALERT) {
+    return;
+  }
+
+  let minCell = Number.POSITIVE_INFINITY;
+  let maxCell = Number.NEGATIVE_INFINITY;
+  for (const segment of open) {
+    minCell = Math.min(minCell, segment.startCell);
+    maxCell = Math.max(maxCell, segment.endCell);
+  }
+  if (!Number.isFinite(minCell) || maxCell <= minCell) {
+    return;
+  }
+
+  for (let cell = minCell; cell < maxCell; cell++) {
+    const covering = new Set<string>();
+    for (const segment of open) {
+      if (segment.startCell <= cell && cell < segment.endCell) {
+        covering.add(segment.taskId);
+      }
     }
-    onOverlap(
-      a,
-      b,
-      Math.max(a.startCell, b.startCell),
-      Math.min(a.endCell, b.endCell),
-    );
-  }
-}
-
-export function forEachOpenOverlappingSegmentPair(
-  positions: AssigneePositionSegment[],
-  closedIds: Set<string>,
-  onOverlap: (
-    a: AssigneePositionSegment,
-    b: AssigneePositionSegment,
-    overlapStart: number,
-    overlapEnd: number,
-  ) => void,
-): void {
-  for (let i = 0; i < positions.length; i++) {
-    forEachOverlappingPairsForSegment(positions, i, closedIds, onOverlap);
+    if (covering.size > PERFORMER_OVERLAP_WARN_MAX_WITHOUT_ALERT) {
+      onHeavy(covering, cell);
+    }
   }
 }
 

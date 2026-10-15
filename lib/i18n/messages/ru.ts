@@ -2532,4 +2532,17 @@ export const ruMessages = {
       adminLoginLink: 'Открыть админку',
     },
   },
+  mcpOAuth: {
+    consent: {
+      title: 'Подключить MCP-клиент',
+      body: '{client} запрашивает доступ к инструментам планирования спринта Beer Tracker ({scope}).',
+      allow: 'Разрешить',
+      deny: 'Отклонить',
+      invalidTitle: 'Некорректный запрос авторизации',
+      invalidBody: 'Не указаны client_id, redirect_uri или code_challenge.',
+      unknownClient: 'Неизвестный клиент',
+      beerTrackerLabel: 'Beer Tracker',
+      connectHint: 'Инструменты планирования: поиск спринтов, capacity и plan patches.',
+    },
+  },
 } as const;

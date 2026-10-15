@@ -1,4 +1,5 @@
 import type {
+  SprintPresenceAttention,
   SprintPresenceBoardView,
   SprintPresenceFocus,
   SprintPresenceGesture,
@@ -142,8 +143,10 @@ function mergeSprintPresenceIdentity(
   if (!existing) {
     return incoming;
   }
+  const attention = incoming.attention ?? existing.attention;
   return {
     ...incoming,
+    ...(attention ? { attention } : {}),
     ...(incoming.boardView ?? existing.boardView
       ? { boardView: incoming.boardView ?? existing.boardView }
       : {}),
@@ -158,7 +161,8 @@ export async function updateSprintPresenceFocus(
   connectionId: string,
   focus: SprintPresenceFocus | null,
   boardView?: SprintPresenceBoardView,
-  gesture?: SprintPresenceGesture | null
+  gesture?: SprintPresenceGesture | null,
+  attention?: SprintPresenceAttention
 ): Promise<'missing' | 'unchanged' | 'updated'> {
   const current = await readStoredPresenceViewer(organizationId, sprintId, connectionId);
   if (!current) {
@@ -166,14 +170,17 @@ export async function updateSprintPresenceFocus(
   }
   const nextBoardView = boardView ?? current.boardView;
   const nextGesture = gesture === undefined ? current.gesture : gesture ?? undefined;
+  const nextAttention = attention ?? current.attention ?? 'active';
   if (
     sprintPresenceFocusEquals(current.focus, focus) &&
     current.boardView === nextBoardView &&
-    sprintPresenceGestureEquals(current.gesture, nextGesture)
+    sprintPresenceGestureEquals(current.gesture, nextGesture) &&
+    (current.attention ?? 'active') === nextAttention
   ) {
     return 'unchanged';
   }
   const next: SprintPresenceViewer = {
+    attention: nextAttention,
     avatarUrl: current.avatarUrl,
     displayName: current.displayName,
     userId: current.userId,

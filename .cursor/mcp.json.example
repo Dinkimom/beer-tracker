@@ -1,10 +1,7 @@
 {
   "mcpServers": {
     "beer-tracker-planning": {
-      "url": "https://beer-tracker.example/api/mcp",
-      "headers": {
-        "Authorization": "Bearer replace-with-SPRINT_CONTEXT_MCP_SECRET"
-      }
+      "url": "https://beer-tracker.example/api/mcp"
     }
   }
 }

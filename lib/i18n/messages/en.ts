@@ -2532,4 +2532,17 @@ export const enMessages = {
       adminLoginLink: 'Open admin panel',
     },
   },
+  mcpOAuth: {
+    consent: {
+      title: 'Connect MCP client',
+      body: '{client} wants access to Beer Tracker sprint planning tools ({scope}).',
+      allow: 'Allow',
+      deny: 'Deny',
+      invalidTitle: 'Invalid authorization request',
+      invalidBody: 'Missing client_id, redirect_uri, or code_challenge.',
+      unknownClient: 'Unknown client',
+      beerTrackerLabel: 'Beer Tracker',
+      connectHint: 'Planning tools: search sprints, capacity, and plan patches.',
+    },
+  },
 } as const;

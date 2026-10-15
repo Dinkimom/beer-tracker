@@ -79,6 +79,25 @@ describe('sprintPresence', () => {
     ).toEqual([ada, bob]);
   });
 
+  it('sorts active viewers before idle and prefers active when merging tabs', () => {
+    const idleAda = { ...ada, attention: 'idle' as const };
+    const idleBob = { ...bob, attention: 'idle' as const };
+    expect(collapseSprintPresenceViewers([idleAda, bob])).toEqual([
+      bob,
+      idleAda,
+    ]);
+    expect(
+      collapseSprintPresenceViewers([
+        idleAda,
+        { ...ada, attention: 'active', clientId: 'tab-2' },
+      ])
+    ).toMatchObject([{ attention: 'active', displayName: 'Ada', userId: 'user-a' }]);
+    expect(collapseSprintPresenceViewers([idleAda, idleBob]).map((viewer) => viewer.userId)).toEqual([
+      'user-a',
+      'user-b',
+    ]);
+  });
+
   it('keeps the profile with an avatar when another tab only has an id stub', () => {
     const stub = {
       avatarUrl: null,
@@ -242,5 +261,24 @@ describe('sprintPresence', () => {
       focus: { state: 'dragging', targetId: 'BT-1' },
       gesture: { kind: 'drag', position: { duration: 3, startDay: 1, startPart: 0 } },
     });
+  });
+
+  it('stores attention idle and clears focus when the client goes idle', async () => {
+    await addSprintPresence('org', 3, 'conn-1', ada);
+    expect(
+      await updateSprintPresenceFocus('org', 3, 'conn-1', { state: 'viewing', targetId: 'BT-1' }, 'swimlanes')
+    ).toBe('updated');
+    expect(
+      await updateSprintPresenceFocus('org', 3, 'conn-1', null, 'swimlanes', null, 'idle')
+    ).toBe('updated');
+    expect(
+      await updateSprintPresenceFocus('org', 3, 'conn-1', null, 'swimlanes', null, 'idle')
+    ).toBe('unchanged');
+    const snapshot = await addSprintPresence('org', 3, 'probe', bob);
+    expect(snapshot.find((viewer) => viewer.userId === 'user-a')).toMatchObject({
+      attention: 'idle',
+      boardView: 'swimlanes',
+    });
+    expect(snapshot.find((viewer) => viewer.userId === 'user-a')?.focus).toBeUndefined();
   });
 });

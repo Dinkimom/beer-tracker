@@ -792,7 +792,7 @@ html.dark .sprint-card-presence-changing::after {
 
 /* Исключение: разъезд и подъём аватаров присутствия на доске */
 .sprint-presence-avatar {
-  transition-property: transform, margin-left, box-shadow !important;
+  transition-property: transform, margin-left, box-shadow, opacity !important;
   transition-duration: 0.18s !important;
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
 }

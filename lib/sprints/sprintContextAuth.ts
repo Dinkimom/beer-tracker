@@ -3,51 +3,62 @@ import type { RequirePlannerTenantResult, TenantContext } from '@/lib/api-tenant
 
 import { NextResponse } from 'next/server';
 
-import { verifySprintContextMcpSecret } from '@/lib/env';
-import { listAllOrganizationsAdminSummaries } from '@/lib/organizations/organizationRepository';
+import { resolveAccessProfile } from '@/lib/access/orgAccess';
+import { requestOriginFromRequest } from '@/lib/atlassianOAuth/requestOrigin';
+import { MCP_OAUTH_CORS_HEADERS } from '@/lib/mcp/oauth/constants';
+import { verifyMcpAccessToken } from '@/lib/mcp/oauth/mcpOAuthService';
+import { wwwAuthenticateHeader } from '@/lib/mcp/oauth/metadata';
 
-const MCP_AGENT_USER_ID = 'mcp-agent';
-
-/** Bearer или `X-Sprint-Context-Secret` — секрет MCP без org_id. */
+/** Bearer access token from MCP OAuth (or empty). */
 export function readSprintContextMcpToken(request: Request): string {
-  const headerSecret = request.headers.get('x-sprint-context-secret')?.trim() ?? '';
-  if (headerSecret) {
-    return headerSecret;
-  }
   return request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim() ?? '';
 }
 
+export function mcpUnauthorizedResponse(request: Request): NextResponse {
+  const origin = requestOriginFromRequest(request);
+  return NextResponse.json(
+    { error: 'Unauthorized: complete MCP OAuth (Bearer access token required)' },
+    {
+      headers: {
+        ...MCP_OAUTH_CORS_HEADERS,
+        'WWW-Authenticate': wwwAuthenticateHeader(origin),
+      },
+      status: 401,
+    }
+  );
+}
+
 /**
- * Если передан валидный MCP-секрет — tenant первой (единственной) org инстанса.
- * Org header не нужен: мультитенантность в этой сборке не используется.
- * Иначе `null` — вызывающий код идёт в обычный {@link requireTenantContext}.
+ * If a valid MCP OAuth access token is present — tenant from token subject.
+ * Otherwise `null` — caller falls through to {@link requireTenantContext} (UI session).
  */
 export async function tryRequireSprintContextMcpAuth(
   request: Request
 ): Promise<RequirePlannerTenantResult | null> {
   const token = readSprintContextMcpToken(request);
-  if (!token || !verifySprintContextMcpSecret(token)) {
+  if (!token) {
     return null;
   }
 
-  const organizationId =
-    (await listAllOrganizationsAdminSummaries())[0]?.organization_id ?? null;
-  if (!organizationId) {
-    return {
-      response: NextResponse.json({ error: 'Организация не найдена' }, { status: 503 }),
-    };
+  const verified = await verifyMcpAccessToken(token);
+  if (!verified) {
+    return { response: mcpUnauthorizedResponse(request) };
   }
 
-  const ctx: TenantContext = {
-    organizationId,
-    role: 'org_admin',
-    userId: MCP_AGENT_USER_ID,
-  };
-  const profile: AccessProfile = {
-    organizationId,
+  const profileFromAccess = await resolveAccessProfile(
+    verified.userId,
+    verified.organizationId
+  );
+  const profile: AccessProfile = profileFromAccess ?? {
+    organizationId: verified.organizationId,
     orgRole: 'org_admin',
     teamMemberships: [],
-    userId: MCP_AGENT_USER_ID,
+    userId: verified.userId,
+  };
+  const ctx: TenantContext = {
+    organizationId: profile.organizationId,
+    role: profile.orgRole,
+    userId: profile.userId,
   };
   return { ctx, profile };
 }

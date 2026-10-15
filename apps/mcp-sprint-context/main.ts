@@ -2,9 +2,10 @@
  * MCP stdio server: thin client for GET /api/sprints/{id}/sprint-context.
  *
  * Env:
- *   BEER_TRACKER_URL              — base URL (e.g. http://localhost:3000)
- *   SPRINT_CONTEXT_MCP_SECRET     — same secret as on the BT instance
+ *   BEER_TRACKER_URL                 — base URL (e.g. http://localhost:3000)
+ *   BEER_TRACKER_MCP_ACCESS_TOKEN    — OAuth access token from /api/oauth/token
  *
+ * Prefer remote MCP at /api/mcp (browser OAuth). This helper is for local debug.
  * No org_id: on-prem uses the single instance organization.
  */
 
@@ -28,8 +29,8 @@ function baseUrl(): string {
   return url;
 }
 
-function mcpSecret(): string {
-  return requireEnv('SPRINT_CONTEXT_MCP_SECRET');
+function mcpAccessToken(): string {
+  return requireEnv('BEER_TRACKER_MCP_ACCESS_TOKEN');
 }
 
 async function fetchSprintContext(sprintId: number, featureId?: string): Promise<unknown> {
@@ -40,7 +41,7 @@ async function fetchSprintContext(sprintId: number, featureId?: string): Promise
   const response = await fetch(url, {
     headers: {
       Accept: 'application/json',
-      Authorization: `Bearer ${mcpSecret()}`,
+      Authorization: `Bearer ${mcpAccessToken()}`,
     },
   });
   const text = await response.text();
@@ -91,7 +92,7 @@ server.registerTool(
 async function main(): Promise<void> {
   // Validate env early so Cursor shows a clear failure instead of silent tool errors.
   baseUrl();
-  mcpSecret();
+  mcpAccessToken();
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

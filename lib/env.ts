@@ -307,34 +307,6 @@ export function verifySyncCronSecret(provided: string | null | undefined): boole
   return verifyTimingSafeSecret(getSyncCronSecret(), provided);
 }
 
-/**
- * Секрет MCP / агентского доступа к GET …/sprint-context и POST/GET /api/mcp.
- * Пусто — MCP Bearer не принимается (UI по-прежнему через tenant).
- */
-function getSprintContextMcpSecret(): string {
-  const v = process.env.SPRINT_CONTEXT_MCP_SECRET;
-  return typeof v === 'string' ? v.trim() : '';
-}
-
-/** Есть ли непустой {@link getSprintContextMcpSecret}. */
-export function isSprintContextMcpSecretConfigured(): boolean {
-  return getSprintContextMcpSecret().length > 0;
-}
-
-/** Секрет MCP для HMAC apply-токенов plan patch; пустой — throw. */
-export function requireSprintContextMcpSecret(): string {
-  const secret = getSprintContextMcpSecret();
-  if (!secret) {
-    throw new Error('SPRINT_CONTEXT_MCP_SECRET is not configured');
-  }
-  return secret;
-}
-
-/** Сравнение {@link getSprintContextMcpSecret} без утечки по времени. */
-export function verifySprintContextMcpSecret(provided: string | null | undefined): boolean {
-  return verifyTimingSafeSecret(getSprintContextMcpSecret(), provided);
-}
-
 const AUTH_SESSION_SECRET_MIN_LEN = 32;
 
 /**

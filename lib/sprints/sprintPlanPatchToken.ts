@@ -2,7 +2,7 @@ import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
 
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 
-import { requireSprintContextMcpSecret } from '@/lib/env';
+import { getAuthSessionSecret } from '@/lib/env';
 
 const TOKEN_VERSION = 'pp1';
 export const SPRINT_PLAN_PATCH_TTL_SEC = 30 * 60;
@@ -95,7 +95,7 @@ export function signSprintPlanPatchToken(input: {
     ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),
   };
   const payloadB64 = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
-  const secret = requireSprintContextMcpSecret();
+  const secret = getAuthSessionSecret();
   const sig = signPayload(payloadB64, secret);
   return `${TOKEN_VERSION}.${payloadB64}.${sig}`;
 }
@@ -103,7 +103,7 @@ export function signSprintPlanPatchToken(input: {
 function verifyTokenSignature(payloadB64: string, sig: string): 'bad' | 'missing' | 'ok' {
   let secret: string;
   try {
-    secret = requireSprintContextMcpSecret();
+    secret = getAuthSessionSecret();
   } catch {
     return 'missing';
   }

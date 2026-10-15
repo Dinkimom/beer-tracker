@@ -1,5 +1,9 @@
 import type { SprintPresenceViewer } from './sprintRealtimeTypes';
 
+import {
+  isSprintPresenceViewerIdle,
+  mergeSprintPresenceAttention,
+} from './sprintPresenceAttention';
 import { isSprintPresenceMutatingFocusState } from './sprintRealtimeTypes';
 
 function normalizePresenceUserId(userId: string): string {
@@ -85,10 +89,13 @@ function mergeCollapsedPresenceViewer(
   const base = preferIncomingIdentity ? incoming : existing;
   const focusSource = presenceFocusScore(incoming) > presenceFocusScore(existing) ? incoming : existing;
   const boardView = focusSource.boardView ?? base.boardView;
+  const attention = mergeSprintPresenceAttention(existing.attention, incoming.attention);
+  const hadAttention = existing.attention != null || incoming.attention != null;
   return {
     avatarUrl: base.avatarUrl,
     displayName: base.displayName,
     userId: base.userId,
+    ...(hadAttention ? { attention } : {}),
     ...(boardView ? { boardView } : {}),
     ...(focusSource.clientId ? { clientId: focusSource.clientId } : {}),
     ...(focusSource.focus ? { focus: focusSource.focus } : {}),
@@ -104,6 +111,7 @@ function mergeCollapsedPresenceViewer(
  */
 function viewerUiSignature(viewer: SprintPresenceViewer, ignoreGesture: boolean): string {
   return JSON.stringify({
+    attention: viewer.attention ?? 'active',
     avatarUrl: viewer.avatarUrl,
     boardView: viewer.boardView ?? null,
     clientId: viewer.clientId ?? null,
@@ -155,6 +163,11 @@ export function collapseSprintPresenceViewers(
     byKey.set(key, existing ? mergeCollapsedPresenceViewer(existing, normalized) : normalized);
   }
   return [...byKey.values()].sort((a, b) => {
+    const aIdle = isSprintPresenceViewerIdle(a.attention) ? 1 : 0;
+    const bIdle = isSprintPresenceViewerIdle(b.attention) ? 1 : 0;
+    if (aIdle !== bIdle) {
+      return aIdle - bIdle;
+    }
     const byName = a.displayName.localeCompare(b.displayName);
     if (byName !== 0) {
       return byName;
