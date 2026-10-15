@@ -10,8 +10,6 @@ import {
 } from '@/lib/sprints/sprintCommentsRepository';
 import { resolvePlanPatchCreateNoteSize } from '@/lib/sprints/sprintPlanPatchNoteSize';
 
-const MCP_AGENT_USER_ID = 'mcp-agent';
-
 type SprintPlanPatchCreateNoteOp = Extract<SprintPlanPatchOp, { op: 'createNote' }>;
 
 export function collectCreateNoteOps(ops: SprintPlanPatchOp[]): SprintPlanPatchCreateNoteOp[] {
@@ -34,6 +32,7 @@ function asParent(parent: SprintPlanPatchCreateNoteOp['parent']): TaskParent | n
 }
 
 export async function persistProposedCreateNotes(input: {
+  actorUserId: string;
   expiresAt: Date;
   ops: SprintPlanPatchOp[];
   organizationId: string;
@@ -57,7 +56,7 @@ export async function persistProposedCreateNotes(input: {
       assigneeId: op.assigneeId,
       color: op.color,
       commentId,
-      createdBy: MCP_AGENT_USER_ID,
+      createdBy: input.actorUserId,
       day: op.day,
       height: size.height,
       kind: 'text',

@@ -49,12 +49,10 @@ export async function tryRequireSprintContextMcpAuth(
     verified.userId,
     verified.organizationId
   );
-  const profile: AccessProfile = profileFromAccess ?? {
-    organizationId: verified.organizationId,
-    orgRole: 'org_admin',
-    teamMemberships: [],
-    userId: verified.userId,
-  };
+  if (!profileFromAccess) {
+    return { response: mcpUnauthorizedResponse(request) };
+  }
+  const profile: AccessProfile = profileFromAccess;
   const ctx: TenantContext = {
     organizationId: profile.organizationId,
     role: profile.orgRole,

@@ -6,6 +6,7 @@ import { DatabaseError } from 'pg';
 import { z } from 'zod';
 
 import { deleteAdmin, isStaffAdmin } from '@/lib/auth/adminsRepository';
+import { revokeMcpOAuthTokensForUser } from '@/lib/mcp/oauth/mcpOAuthRepository';
 import {
   countAdminsInOrganization,
   deleteStaff,
@@ -240,5 +241,6 @@ export async function deleteStaffFromAdmin(input: {
   if (!ok) {
     return NextResponse.json({ error: 'Сотрудник не найден' }, { status: 404 });
   }
+  await revokeMcpOAuthTokensForUser(input.staffId);
   return NextResponse.json({ ok: true });
 }

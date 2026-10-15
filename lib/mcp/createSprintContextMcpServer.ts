@@ -1,6 +1,9 @@
+import type { AccessProfile } from '@/lib/access/orgAccess';
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
+import { canUsePlanner } from '@/lib/access/orgAccess';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
@@ -40,7 +43,18 @@ function loadContext(input: {
   });
 }
 
-export function createSprintContextMcpServer(input: { organizationId: string }): McpServer {
+function plannerWriteDenied(profile: AccessProfile): string | null {
+  if (canUsePlanner(profile)) {
+    return null;
+  }
+  return 'forbidden: planner write requires organization admin or team membership';
+}
+
+export function createSprintContextMcpServer(input: {
+  organizationId: string;
+  profile: AccessProfile;
+  userId: string;
+}): McpServer {
   const server = new McpServer({
     name: 'beer-tracker-sprint-context',
     version: '1.4.0',
@@ -232,7 +246,12 @@ export function createSprintContextMcpServer(input: { organizationId: string }):
     },
     async ({ ops, sprintId }) => {
       try {
+        const denied = plannerWriteDenied(input.profile);
+        if (denied) {
+          return toolError(new Error(denied));
+        }
         const result = await proposeSprintPlanPatch({
+          actorUserId: input.userId,
           ops,
           organizationId: input.organizationId,
           sprintId,
@@ -263,7 +282,12 @@ export function createSprintContextMcpServer(input: { organizationId: string }):
     },
     async ({ applyToken, confirm, ops, sprintId }) => {
       try {
+        const denied = plannerWriteDenied(input.profile);
+        if (denied) {
+          return toolError(new Error(denied));
+        }
         const result = await applySprintPlanPatch({
+          actorUserId: input.userId,
           applyToken,
           confirm,
           ops,

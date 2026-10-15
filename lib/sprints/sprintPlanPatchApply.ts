@@ -27,8 +27,6 @@ import {
   upsertTaskPositionRecord,
 } from '@/lib/sprints/taskPositionsRepository';
 
-const MCP_AGENT_USER_ID = 'mcp-agent';
-
 function asParent(
   parent: { display: string; id: string; key: string; self?: string } | null | undefined
 ): TaskParent | null {
@@ -77,6 +75,7 @@ async function applyUpsertPosition(input: {
 }
 
 async function applyCreateNote(input: {
+  actorUserId: string;
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'createNote' }>;
   sprintId: number;
@@ -91,7 +90,7 @@ async function applyCreateNote(input: {
     assigneeId: op.assigneeId,
     color: op.color,
     commentId: undefined,
-    createdBy: MCP_AGENT_USER_ID,
+    createdBy: input.actorUserId,
     day: op.day,
     height: size.height,
     kind: 'text',
@@ -212,6 +211,7 @@ function takeNextDraftNoteId(ids: readonly string[], cursor: { index: number }):
 }
 
 function applyCreateNoteOrDraft(input: {
+  actorUserId: string;
   draftNoteId?: string;
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'createNote' }>;
@@ -221,6 +221,7 @@ function applyCreateNoteOrDraft(input: {
     return Promise.resolve(`note ${input.draftNoteId}`);
   }
   return applyCreateNote({
+    actorUserId: input.actorUserId,
     organizationId: input.organizationId,
     op: input.op,
     sprintId: input.sprintId,
@@ -253,6 +254,7 @@ async function applyUpsertLink(input: {
 }
 
 async function applyOneOp(input: {
+  actorUserId: string;
   commentIds?: ReadonlySet<string>;
   draftNoteId?: string;
   organizationId: string;
@@ -268,6 +270,7 @@ async function applyOneOp(input: {
       return `position ${op.taskId}`;
     case 'createNote':
       return applyCreateNoteOrDraft({
+        actorUserId: input.actorUserId,
         draftNoteId: input.draftNoteId,
         organizationId,
         op,
@@ -348,6 +351,7 @@ async function collectCommentIdsForLinkOps(input: {
 }
 
 export async function applySprintPlanPatchOps(input: {
+  actorUserId: string;
   draftNoteIds?: readonly string[];
   organizationId: string;
   ops: SprintPlanPatchOp[];
@@ -365,6 +369,7 @@ export async function applySprintPlanPatchOps(input: {
     const op = input.ops[index]!;
     try {
       const detail = await applyOneOp({
+        actorUserId: input.actorUserId,
         commentIds,
         draftNoteId: op.op === 'createNote' ? takeNextDraftNoteId(draftNoteIds, draftCursor) : undefined,
         organizationId: input.organizationId,

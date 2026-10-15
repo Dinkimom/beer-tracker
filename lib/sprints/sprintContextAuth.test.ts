@@ -81,4 +81,26 @@ describe('tryRequireSprintContextMcpAuth', () => {
       expect(result.profile.orgRole).toBe('member');
     }
   });
+
+  it('returns 401 when token is valid but user has no org access', async () => {
+    vi.mocked(verifyMcpAccessToken).mockResolvedValue({
+      clientId: 'client-1',
+      expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      organizationId: '11111111-1111-1111-1111-111111111111',
+      resource: 'http://localhost/api/mcp',
+      scopes: ['mcp:tools'],
+      userId: 'removed-user',
+    });
+    vi.mocked(resolveAccessProfile).mockResolvedValue(null);
+
+    const result = await tryRequireSprintContextMcpAuth(
+      new Request('http://localhost/api/mcp', {
+        headers: { authorization: 'Bearer still-alive' },
+      })
+    );
+    expect(result && 'response' in result).toBe(true);
+    if (result && 'response' in result) {
+      expect(result.response.status).toBe(401);
+    }
+  });
 });

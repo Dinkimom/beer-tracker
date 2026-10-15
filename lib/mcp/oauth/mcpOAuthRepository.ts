@@ -319,3 +319,13 @@ export async function revokeMcpOAuthToken(token: string): Promise<void> {
     [hashOpaqueToken(token)]
   );
 }
+
+/** Revoke all MCP OAuth access/refresh tokens for a user (e.g. after staff delete). */
+export async function revokeMcpOAuthTokensForUser(userId: string): Promise<void> {
+  await ensureMcpOAuthTables();
+  await query(
+    `UPDATE mcp_oauth_tokens SET revoked_at = NOW()
+     WHERE user_id = $1 AND revoked_at IS NULL`,
+    [userId]
+  );
+}

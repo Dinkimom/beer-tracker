@@ -55,6 +55,7 @@ function notifyPlanPatchComments(organizationId: string, sprintId: number): void
 }
 
 async function persistDraftNotesForProposal(input: {
+  actorUserId: string;
   expiresAt: Date;
   ops: SprintPlanPatchOp[];
   organizationId: string;
@@ -82,6 +83,7 @@ async function loadCapacitySummary(input: {
 }
 
 export async function proposeSprintPlanPatch(input: {
+  actorUserId: string;
   ops: unknown;
   organizationId: string;
   sprintId: number;
@@ -104,6 +106,7 @@ export async function proposeSprintPlanPatch(input: {
   const opsHash = hashSprintPlanPatchOps(ops);
   const expiresAt = new Date((nowSec + SPRINT_PLAN_PATCH_TTL_SEC) * 1000);
   const draftNoteIds = await persistDraftNotesForProposal({
+    actorUserId: input.actorUserId,
     expiresAt,
     ops,
     organizationId: input.organizationId,
@@ -159,6 +162,7 @@ function notifyAppliedPlanPatch(input: {
 }
 
 export async function applySprintPlanPatch(input: {
+  actorUserId: string;
   applyToken: string;
   confirm: boolean;
   ops: unknown;
@@ -198,6 +202,7 @@ export async function applySprintPlanPatch(input: {
   });
 
   const { applied, error } = await applySprintPlanPatchOps({
+    actorUserId: input.actorUserId,
     draftNoteIds: verified.draftNoteIds,
     organizationId: input.organizationId,
     ops,

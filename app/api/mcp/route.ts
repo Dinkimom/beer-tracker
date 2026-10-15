@@ -38,7 +38,11 @@ async function handleMcp(request: NextRequest): Promise<Response> {
     enableJsonResponse: true,
     sessionIdGenerator: undefined,
   });
-  const server = createSprintContextMcpServer({ organizationId: auth.ctx.organizationId });
+  const server = createSprintContextMcpServer({
+    organizationId: auth.ctx.organizationId,
+    profile: auth.profile,
+    userId: auth.ctx.userId,
+  });
   await server.connect(transport);
   return withCors(await transport.handleRequest(request));
 }
