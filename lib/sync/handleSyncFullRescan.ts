@@ -7,7 +7,16 @@ import { findOrganizationById } from '@/lib/organizations';
 
 import { fullRescanCooldownRemainingMs } from './fullRescanCooldown';
 import { runOrgSync, type RunOrgSyncResult } from './runOrgSync';
-import { findLastFullRescanFinishedAt, findRunningSyncRunForOrganization } from './syncRunsRepository';
+import {
+  findLastFullRescanFinishedAt,
+  findRunningSyncRunForOrganization,
+  finishSyncRun,
+} from './syncRunsRepository';
+
+/** Больше maxDuration маршрута (30 мин): running после таймаута Cloud Run / деплоя считаем зависшим. */
+const STALE_INLINE_SYNC_RUN_MS = 40 * 60_000;
+
+const STALE_INLINE_SYNC_RUN_MESSAGE = 'Прервано: превышено время inline-прогона';
 
 interface SyncFullRescanSuccessBody {
   finalStatus: string;
@@ -33,17 +42,33 @@ function skippedReasonToHttp(result: Extract<RunOrgSyncResult, { status: 'skippe
   };
 }
 
+function isStaleInlineSyncRun(startedAt: Date, nowMs: number): boolean {
+  const startedMs = new Date(startedAt).getTime();
+  if (!Number.isFinite(startedMs)) {
+    return true;
+  }
+  return nowMs - startedMs > STALE_INLINE_SYNC_RUN_MS;
+}
+
 async function assertCanRunFullRescan(
   organizationId: string
 ): Promise<Extract<HandleSyncFullRescanResponse, { ok: false }> | null> {
   const running = await findRunningSyncRunForOrganization(organizationId);
   if (running) {
-    return {
-      error: 'Уже выполняется синхронизация',
-      ok: false,
-      status: 409,
-      syncRunId: running.id,
-    };
+    if (isStaleInlineSyncRun(running.started_at, Date.now())) {
+      await finishSyncRun({
+        errorSummary: STALE_INLINE_SYNC_RUN_MESSAGE,
+        status: 'failed',
+        syncRunId: running.id,
+      });
+    } else {
+      return {
+        error: 'Уже выполняется синхронизация',
+        ok: false,
+        status: 409,
+        syncRunId: running.id,
+      };
+    }
   }
 
   const platform = getSyncPlatformEnv();

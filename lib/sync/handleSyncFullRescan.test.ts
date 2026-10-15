@@ -6,6 +6,7 @@ const findOrganizationById = vi.fn();
 const runOrgSync = vi.fn();
 const findRunningSyncRunForOrganization = vi.fn();
 const findLastFullRescanFinishedAt = vi.fn();
+const finishSyncRun = vi.fn();
 
 vi.mock('@/lib/organizations', () => ({
   findOrganizationById,
@@ -18,6 +19,7 @@ vi.mock('@/lib/sync/runOrgSync', () => ({
 vi.mock('@/lib/sync/syncRunsRepository', () => ({
   findLastFullRescanFinishedAt,
   findRunningSyncRunForOrganization,
+  finishSyncRun,
 }));
 
 describe('handleSyncFullRescan', () => {
@@ -36,6 +38,7 @@ describe('handleSyncFullRescan', () => {
     });
     findRunningSyncRunForOrganization.mockResolvedValue(null);
     findLastFullRescanFinishedAt.mockResolvedValue(null);
+    finishSyncRun.mockResolvedValue(undefined);
     runOrgSync.mockResolvedValue({
       finalStatus: 'success',
       status: 'ok',
@@ -72,8 +75,11 @@ describe('handleSyncFullRescan', () => {
     expect(runOrgSync).not.toHaveBeenCalled();
   });
 
-  it('returns 409 when a sync run is already running', async () => {
-    findRunningSyncRunForOrganization.mockResolvedValue({ id: 'run-1' });
+  it('returns 409 when a fresh sync run is already running', async () => {
+    findRunningSyncRunForOrganization.mockResolvedValue({
+      id: 'run-1',
+      started_at: new Date(),
+    });
     const { handleSyncFullRescan } = await import('./handleSyncFullRescan');
     const r = await handleSyncFullRescan({ cronSecret: secret, organizationId: orgId });
     expect(r.ok).toBe(false);
@@ -81,7 +87,27 @@ describe('handleSyncFullRescan', () => {
       expect(r.status).toBe(409);
       expect(r.syncRunId).toBe('run-1');
     }
+    expect(finishSyncRun).not.toHaveBeenCalled();
     expect(runOrgSync).not.toHaveBeenCalled();
+  });
+
+  it('fails stale running sync and continues inline rescan', async () => {
+    findRunningSyncRunForOrganization.mockResolvedValue({
+      id: 'run-stale',
+      started_at: new Date(Date.now() - 41 * 60_000),
+    });
+    const { handleSyncFullRescan } = await import('./handleSyncFullRescan');
+    const r = await handleSyncFullRescan({ cronSecret: secret, organizationId: orgId });
+    expect(r.ok).toBe(true);
+    expect(finishSyncRun).toHaveBeenCalledWith({
+      errorSummary: 'Прервано: превышено время inline-прогона',
+      status: 'failed',
+      syncRunId: 'run-stale',
+    });
+    expect(runOrgSync).toHaveBeenCalledWith({
+      mode: 'full_rescan',
+      organizationId: orgId,
+    });
   });
 
   it('returns 429 during cooldown', async () => {
