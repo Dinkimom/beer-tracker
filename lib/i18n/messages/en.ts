@@ -1008,6 +1008,7 @@ export const enMessages = {
       loadError: 'Could not load',
       emptyNotStarted: 'No sprint score yet because the sprint has not been started',
       scoreMarkAria: '{mark} of 5 beers',
+      openMetricsAria: 'Open metrics ({mark} of 5 beers)',
       scoreInfoAria: 'How the score is calculated',
       scoreInfoTitle: 'Score is out of 5 beers',
       scoreInfoGoals: 'Goals: up to 2 pts (≥60% done → 2, ≥30% → 1)',

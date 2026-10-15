@@ -3,13 +3,23 @@ import type { SprintInfo } from '@/types/tracker';
 
 import { isTodaySprintFirstWeekMonday } from '@/utils/dateUtils';
 
-export function resolveSidebarCanEdit(sprintInfo?: SprintInfo | null): boolean {
+/** Цели: в драфте — всем; в работе — админу организации всегда, остальным только в первый понедельник. */
+export function resolveSidebarCanEdit(
+  sprintInfo?: SprintInfo | null,
+  isOrganizationAdmin = false,
+): boolean {
   if (!sprintInfo) {
     return false;
   }
   const isDraft = sprintInfo.status === 'draft' || sprintInfo.status === 'Draft';
-  const goalsEditOnFirstMonday = !isDraft && isTodaySprintFirstWeekMonday(sprintInfo.startDate);
-  return isDraft || goalsEditOnFirstMonday;
+  if (isDraft) {
+    return true;
+  }
+  const isInProgress = sprintInfo.status === 'in_progress' || sprintInfo.status === 'In Progress';
+  if (isOrganizationAdmin && isInProgress) {
+    return true;
+  }
+  return isTodaySprintFirstWeekMonday(sprintInfo.startDate);
 }
 
 export function resolveSidebarGoalsLoading(

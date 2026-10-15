@@ -8,14 +8,15 @@
 import type { DragContextRef } from '@/features/swimlane/hooks/useDragAndDrop/hooks/useDragEnd';
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { Developer, Task } from '@/types';
-import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 import type { ReactNode, RefObject } from 'react';
 
-import { DndContext, DragOverlay, MouseSensor, PointerSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, DragOverlay, MouseSensor, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 
 import { ZIndex, getPartsPerDay } from '@/constants';
 import { SWIMLANE_TASK_DRAG_ACTIVATION_DISTANCE_PX } from '@/features/swimlane/utils/swimlaneTaskDragActivation';
 
+import { sprintPlannerCollisionDetection } from './sprintPlannerCollisionDetection';
 import {
   isActiveDeveloperRowDrag,
   resolveSwimlanePlannerAutoScrollOptions,
@@ -33,7 +34,7 @@ interface SprintPlannerDndShellProps {
   };
   dragAndDrop: {
     handleDragEnd: (event: DragEndEvent) => void;
-    handleDragOver: (event: DragOverEvent) => void;
+    handleDragOver: (event: DragMoveEvent) => void;
     handleDragStart: (event: DragStartEvent) => void;
     resetDragState: () => void;
   };
@@ -83,10 +84,30 @@ export function SprintPlannerDndShell({
       ? (activeTaskDuration / swimlaneTimelineTotalParts) * 100
       : undefined;
 
+  const syncSidebarDragContext = () => {
+    if (!dragContextRef.current) {
+      return;
+    }
+    dragContextRef.current = {
+      ...dragContextRef.current,
+      sidebarOpen,
+      sidebarWidth,
+      viewportWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
+    };
+  };
+
+  const handleTaskDragMoveOrOver = (event: DragMoveEvent) => {
+    if (isActiveDeveloperRowDrag(event.active)) {
+      return;
+    }
+    syncSidebarDragContext();
+    dragAndDrop.handleDragOver(event);
+  };
+
   return (
     <DndContext
       autoScroll={resolveSwimlanePlannerAutoScrollOptions(viewMode, scrollContainerRef)}
-      collisionDetection={closestCenter}
+      collisionDetection={sprintPlannerCollisionDetection}
       sensors={taskDragSensors}
       onDragAbort={() => {
         dragAndDrop.resetDragState();
@@ -105,20 +126,8 @@ export function SprintPlannerDndShell({
         dragAndDrop.handleDragEnd(event);
         dragContextRef.current = null;
       }}
-      onDragOver={(event) => {
-        if (isActiveDeveloperRowDrag(event.active)) {
-          return;
-        }
-        if (dragContextRef.current) {
-          dragContextRef.current = {
-            ...dragContextRef.current,
-            sidebarOpen,
-            sidebarWidth,
-            viewportWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
-          };
-        }
-        dragAndDrop.handleDragOver(event);
-      }}
+      onDragMove={handleTaskDragMoveOrOver}
+      onDragOver={handleTaskDragMoveOrOver}
       onDragStart={(event) => {
         if (isActiveDeveloperRowDrag(event.active)) {
           return;

@@ -36,6 +36,7 @@ import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
 import { useTaskGrouping } from '@/features/task/hooks/useTaskGrouping';
 import { filterTasksNotOnSwimlane } from '@/features/task/utils/filterTasksNotOnSwimlane';
 import { useSidebarGroupByStorage, useSidebarStatusFilterStorage, useSidebarTabsSettingsStorage } from '@/hooks/useLocalStorage';
+import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
 
 function toggleAssigneeId(current: Set<string>, id: string): Set<string> {
   const next = new Set(current);
@@ -79,7 +80,6 @@ interface TaskSidebarProps {
   qaTasksMap: Map<string, Task>;
   selectedBoardId?: number | null; // ID выбранной доски для загрузки бэклога
   selectedSprintId?: number | null; // ID текущего спринта для валидации
-  sidebarDropPointerY?: number | null;
   /** Дроп в неназначенные: слот в списке задач */
   sidebarDropTargetActive?: boolean;
   sprintInfo?: SprintInfo | null; // Callback для обновления целей
@@ -138,7 +138,6 @@ export function TaskSidebar({
   hideBacklogTab = false,
   onAutoAddToSwimlane,
   sidebarDropTargetActive = false,
-  sidebarDropPointerY = null,
 }: TaskSidebarProps) {
   const { supportsSlaBugs } = useIssueTrackerProviderCapabilities();
   const { setNodeRef, isOver } = useDroppable({
@@ -175,7 +174,8 @@ export function TaskSidebar({
 
   const invalidTasks = collectInvalidSprintDevTasks(allSprintTasks ?? tasks, goalTaskIds);
 
-  const canEdit = resolveSidebarCanEdit(sprintInfo);
+  const { activeOrganization } = useProductTenantOrganizations({ pollIntervalMs: 0 });
+  const canEdit = resolveSidebarCanEdit(sprintInfo, activeOrganization?.canAccessAdmin === true);
 
   const queryClient = useQueryClient();
 
@@ -308,7 +308,6 @@ export function TaskSidebar({
     setMainTab,
     setNameFilter,
     setStatusFilter,
-    sidebarDropPointerY,
     sidebarDropTargetActive,
     sprintInfo,
     sprints,

@@ -37,6 +37,25 @@ describe('useDragState', () => {
     expect(renders()).toBe(afterBegin);
   });
 
+  it('sidebar pointer Y updates never re-render the planner owner after target activates', () => {
+    const { hook, renders } = renderCountedDragState();
+    act(() => {
+      hook.result.current.dragStateApi.beginDragSession('TASK-1', 'TASK-1');
+      hook.result.current.dragStateApi.setSidebarDropPreview({ active: true, pointerY: 100 });
+    });
+    const afterActivate = renders();
+
+    act(() => {
+      for (let y = 101; y < 10_101; y++) {
+        hook.result.current.dragStateApi.setSidebarDropPreview({ active: true, pointerY: y });
+      }
+    });
+
+    expect(renders()).toBe(afterActivate);
+    expect(hook.result.current.dragStateApi.sidebarDropPointerY).toBe(10_100);
+    expect(hook.result.current.dragUi.isSidebarDropTarget).toBe(true);
+  });
+
   it('drag-end reads the latest cell synchronously, before the frame commits', () => {
     const { hook } = renderCountedDragState();
     const api = hook.result.current.dragStateApi;

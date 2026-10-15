@@ -36,7 +36,8 @@ export function useDragAndDrop({
   dragContextRef,
   swimlaneTimelineWorkingDays,
 }: UseDragAndDropProps) {
-  const { dragUi, dragStateApi, hoverStore } = useDragState(taskPositions.size);
+  const { dragUi, dragStateApi, hoverStore, sidebarDropPointerStore } =
+    useDragState(taskPositions.size);
 
   const { handleDragStart } = useDragStart({
     tasks,
@@ -80,8 +81,8 @@ export function useDragAndDrop({
     activeDraggableId: dragUi.activeDraggableId,
     isDraggingTask: dragUi.isDraggingTask,
     isSidebarDropTarget: dragUi.isSidebarDropTarget,
-    sidebarDropPointerY: dragUi.sidebarDropPointerY,
     hoverStore,
+    sidebarDropPointerStore,
     activeTaskDuration,
     handleDragStart,
     handleDragOver,

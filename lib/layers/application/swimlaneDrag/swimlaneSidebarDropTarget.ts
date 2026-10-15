@@ -1,4 +1,4 @@
-import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragMoveEvent } from '@dnd-kit/core';
 
 import {
   getDragOverlayCenterX,
@@ -42,7 +42,7 @@ export function isSidebarDropTargetAtPointer(input: SidebarDropTargetInput): boo
 }
 
 export function resolveSidebarDropTargetFromDragEvent(
-  event: DragEndEvent | DragOverEvent,
+  event: DragEndEvent | DragMoveEvent,
   pointerX: number | null | undefined,
   ctx: {
     sidebarOpen: boolean;

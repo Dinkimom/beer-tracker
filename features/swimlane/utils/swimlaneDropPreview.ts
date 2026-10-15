@@ -128,7 +128,8 @@ function countItemsPlacedBefore(
 /**
  * Слот карточки после drop: та же позиция, что применит drag-end, и тот же жадный
  * алгоритм слоёв. Жадная укладка не смотрит вперёд, поэтому слой новой карточки
- * зависит только от карточек, уложенных до неё. null — drop в эту ячейку ничего не изменит.
+ * зависит только от карточек, уложенных до неё. Геометрический бэкдроп ячеек
+ * всегда возвращается (даже если apply отказал) — чтобы не «нащупывать» превью.
  */
 export function resolveSwimlaneDropPreviewSlot(input: {
   lane: SwimlaneDropPreviewLaneModel;
@@ -137,9 +138,17 @@ export function resolveSwimlaneDropPreviewSlot(input: {
   totalCells: number;
 }): SwimlaneDropPreviewSlot | null {
   const { lane, target } = input;
+  const startCell =
+    target.hoveredCell.day * getPartsPerDay() + target.hoveredCell.part;
   const dropped = resolveDroppedPosition(target, input.taskPositions, input.totalCells);
+  // Геометрический бэкдроп ячеек под курсором — всегда, даже если apply отказал (край таймлайна).
   if (!dropped) {
-    return null;
+    return {
+      durationCells: target.durationCells,
+      layer: 0,
+      span: 1,
+      startCell,
+    };
   }
   const droppedItem = { task: target.activeTask, position: dropped };
   const [activeItem] = buildSwimlaneLayerPackingItems(
@@ -148,7 +157,12 @@ export function resolveSwimlaneDropPreviewSlot(input: {
     lane.stickyNoteCardRowById
   );
   if (!activeItem) {
-    return null;
+    return {
+      durationCells: target.durationCells,
+      layer: 0,
+      span: 1,
+      startCell,
+    };
   }
   const before = countItemsPlacedBefore(
     lane.placed,
@@ -164,6 +178,6 @@ export function resolveSwimlaneDropPreviewSlot(input: {
     durationCells: target.durationCells,
     layer: Math.max(0, placedActive.layer - placedActive.layerShiftUp),
     span: placedActive.span,
-    startCell: target.hoveredCell.day * getPartsPerDay() + target.hoveredCell.part,
+    startCell,
   };
 }

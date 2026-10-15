@@ -6,4 +6,5 @@ export {
   createSwimlaneDragStartHandler
 } from './swimlaneDragHandlers';
 export { SwimlaneDragHoverStore } from './swimlaneDragHoverStore';
+export { SwimlaneSidebarDropPointerStore } from './swimlaneSidebarDropPointerStore';
 export {  resolveActiveDragDurationParts } from './swimlaneDragTaskDuration';

@@ -1009,6 +1009,7 @@ export const ruMessages = {
       loadError: 'Не удалось загрузить',
       emptyNotStarted: 'Нет скора спринта, так как он ещё не запущен',
       scoreMarkAria: '{mark} из 5 пив',
+      openMetricsAria: 'Открыть метрики ({mark} из 5 пив)',
       scoreInfoAria: 'Как считается скор',
       scoreInfoTitle: 'Скор из 5 пив',
       scoreInfoGoals: 'Цели: до 2 баллов (≥60% сделано → 2, ≥30% → 1)',

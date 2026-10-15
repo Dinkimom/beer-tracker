@@ -172,7 +172,7 @@ describe('resolveSwimlaneDropPreviewSlot', () => {
     expect(slot?.layer).toBe(0);
   });
 
-  it('returns null when the card would not fit before the sprint end', () => {
+  it('still shows a cell backdrop when the card would not fit before the sprint end', () => {
     const slot = resolve({
       activeTask: task('a'),
       durationCells: 3,
@@ -180,10 +180,15 @@ describe('resolveSwimlaneDropPreviewSlot', () => {
       startCell: TOTAL_CELLS - 1,
       taskPositions: new Map([['a', position('a', 'dev-a', 0, 3)]]),
     });
-    expect(slot).toBeNull();
+    expect(slot).toEqual({
+      durationCells: 3,
+      layer: 0,
+      span: 1,
+      startCell: TOTAL_CELLS - 1,
+    });
   });
 
-  it('returns null for a multi-segment task dropped on another lane', () => {
+  it('still shows a cell backdrop for a multi-segment task aimed at another lane', () => {
     const activePos: TaskPosition = {
       ...position('split', 'dev-a', 0, 2),
       segments: [
@@ -199,7 +204,12 @@ describe('resolveSwimlaneDropPreviewSlot', () => {
       startCell: 3,
       taskPositions: new Map([['split', activePos]]),
     });
-    expect(slot).toBeNull();
+    expect(slot).toEqual({
+      durationCells: 1,
+      layer: 0,
+      span: 1,
+      startCell: 3,
+    });
   });
 
   it.each([

@@ -191,6 +191,7 @@ export function SwimlaneDropPreview({
           ...horizontal,
           borderTopColor: lineColor,
           borderTopWidth: NEW_LAYER_LINE_PX,
+          boxSizing: 'border-box',
           top: clipHeight - (SWIMLANE_TASK_ROW_VERTICAL_INSET_PX + NEW_LAYER_LINE_PX) / 2,
           zIndex: ZIndex.stickyElevated,
         }}
@@ -209,13 +210,14 @@ export function SwimlaneDropPreview({
   return (
     <div
       aria-hidden
-      className={`swimlane-quick-add-preview-fade pointer-events-none absolute border-2 border-dashed ${radiusClass} ${statusPaintClass}`}
+      className={`swimlane-quick-add-preview-fade pointer-events-none absolute box-border border-2 border-dashed ${radiusClass} ${statusPaintClass}`}
       data-swimlane-drop-preview="slot"
       style={{
         ...box,
-        ...horizontal,
         ...annotationPaint,
-        zIndex: ZIndex.contentOverlay,
+        // horizontal после paint — left/width с CARD_MARGIN не перебиваются
+        ...horizontal,
+        zIndex: ZIndex.stickyElevated,
       }}
     />
   );

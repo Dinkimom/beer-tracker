@@ -22,7 +22,7 @@ function cellFromRelativeX(
 }
 
 /**
- * Вычисляет позицию ячейки из координат мыши (clientX в координатах viewport).
+ * Ячейка под курсором (clientX): `floor` — превью появляется при наведении на ячейку.
  * @param taskDuration зарезервировано под будущую логику (сейчас не используется); передаётся из DnD для стабильности API.
  */
 export function calculateCellFromMouse(

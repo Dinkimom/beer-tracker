@@ -26,8 +26,7 @@ import {
 import { TaskBarAnnotationOverlays } from './TaskBarAnnotationOverlays';
 import { TaskBarDraftSaveButton } from './TaskBarDraftSaveButton';
 import { TaskBarDragBridge } from './TaskBarDragBridge';
-import { TaskBarDragSourceGhost } from './TaskBarDragSourceGhost';
-import { shouldCancelInlineEditorOnFocusOut } from './taskBarHelpers';
+import { resolveTaskBarRootStyle, shouldCancelInlineEditorOnFocusOut } from './taskBarHelpers';
 import { TaskBarOpacityLayer } from './TaskBarOpacityLayer';
 import { TaskBarPendingApprovalToolbar } from './TaskBarPendingApprovalToolbar';
 import { useTaskBarDisplayState } from './useTaskBarDisplayState';
@@ -294,10 +293,11 @@ const TaskBarSurface = observer(function TaskBarSurface({
       data-task-id={task.id}
       {...onboardingDataset}
       id={htmlAnchorId}
-      style={{
-        ...layoutStyle,
-        zIndex: taskBarZIndex,
-      }}
+      style={resolveTaskBarRootStyle({
+        hideSourceForOverlay,
+        layoutStyle,
+        taskBarZIndex,
+      })}
       onBlur={(event) => {
         const next = event.relatedTarget;
         if (
@@ -312,14 +312,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
         }
       }}
     >
-      {hideSourceForOverlay && (
-        <TaskBarDragSourceGhost
-          cornerStyle={cornerStyle}
-          enabled={effectiveIsDragging}
-          pinToSource
-          transform={transform}
-        />
-      )}
       <TaskBarOpacityLayer
         assigneeName={assigneeName}
         clickStartPos={clickStartPos}

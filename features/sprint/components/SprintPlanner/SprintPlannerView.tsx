@@ -10,7 +10,6 @@ import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClass
 import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
 import { AssigneeVelocityProvider } from '@/features/swimlane/hooks/useAssigneeVelocity';
 import { useCloseOverdueAndCreateNext } from '@/features/swimlane/hooks/useCloseOverdueAndCreateNext';
-import { SwimlaneDragHoverContext } from '@/features/swimlane/hooks/useSwimlaneDragHover';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -26,9 +25,9 @@ import { PlannerOnboardingHost } from './onboarding/PlannerOnboardingHost';
 import { PlannerChromeSlotProvider } from './plannerChromeSlot';
 import { SprintPlannerAssigneePickerLayer } from './SprintPlannerAssigneePickerLayer';
 import { SprintPlannerDndShell } from './SprintPlannerDndShell';
+import { SprintPlannerDragStoresProvider } from './SprintPlannerDragStoresProvider';
 
 export type SprintPlannerViewProps = ReturnType<typeof useSprintPlannerViewModel>;
-
 
 export function SprintPlannerView({
   activeTask,
@@ -195,7 +194,7 @@ export function SprintPlannerView({
         sprintTimelineWorkingDays={sprintTimelineWorkingDays}
         viewMode={viewMode}
       >
-        <SwimlaneDragHoverContext.Provider value={dragAndDrop.hoverStore}>
+        <SprintPlannerDragStoresProvider hoverStore={dragAndDrop.hoverStore} sidebarDropPointerStore={dragAndDrop.sidebarDropPointerStore}>
         <SprintCardPresenceProvider viewers={boardViewers}>
         <FeatureDraftRowNamesProvider names={featureDraftRowNamesById}>
         <SprintPlannerPresenceSync
@@ -425,7 +424,6 @@ export function SprintPlannerView({
               qaTasksMap={qaTasksMap}
               selectedBoardId={boardIdForPlannerData}
               selectedSprintId={selectedSprintId}
-              sidebarDropPointerY={dragAndDrop.sidebarDropPointerY}
               sidebarOpen={sidebarOpen}
               sidebarWidth={sidebarWidth}
               sprintInfo={sprintInfo}
@@ -453,7 +451,7 @@ export function SprintPlannerView({
         </PlannerOnboardingHost>
         </FeatureDraftRowNamesProvider>
         </SprintCardPresenceProvider>
-        </SwimlaneDragHoverContext.Provider>
+        </SprintPlannerDragStoresProvider>
       </SprintPlannerDndShell>
       <ModalsSection
         DialogComponent={DialogComponent}

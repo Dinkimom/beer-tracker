@@ -283,6 +283,8 @@ export function resolveTaskBarEffectiveOpacity(params: {
 
 export function resolveTaskBarZIndex(params: {
   effectiveIsDragging: boolean;
+  /** Планер: DragOverlay несёт визуал — source не должен перекрывать drop-preview (z=1200 vs 1). */
+  hideSourceForOverlay?: boolean;
   inlineTitleEditor?: unknown;
   isInError: boolean;
   isPhotoCard?: boolean;
@@ -290,12 +292,27 @@ export function resolveTaskBarZIndex(params: {
   quickAddMenu?: unknown;
   shouldExpandByLongHover: boolean;
 }): number {
-  if (params.effectiveIsDragging) return ZIndex.dragPreview;
+  if (params.effectiveIsDragging && !params.hideSourceForOverlay) {
+    return ZIndex.dragPreview;
+  }
   if (params.quickAddMenu || params.inlineTitleEditor) return ZIndex.floatingControls;
   if (params.shouldExpandByLongHover) return ZIndex.arrowsHovered;
   if (params.isStickyNote || params.isPhotoCard) return ZIndex.stickyNote;
   if (params.isInError) return ZIndex.stickyElevated;
   return ZIndex.stickyInContent;
+}
+
+/** Root style: при overlay-drag source полностью hidden, чтобы drop-preview был виден в слоте. */
+export function resolveTaskBarRootStyle(params: {
+  hideSourceForOverlay: boolean;
+  layoutStyle: CSSProperties;
+  taskBarZIndex: number;
+}): CSSProperties {
+  return {
+    ...params.layoutStyle,
+    visibility: params.hideSourceForOverlay ? 'hidden' : params.layoutStyle.visibility,
+    zIndex: params.taskBarZIndex,
+  };
 }
 
 export function shouldStartLongHoverExpand(params: {

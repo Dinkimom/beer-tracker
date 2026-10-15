@@ -81,7 +81,6 @@ interface BuildTaskSidebarContextValueParams {
   qaTasksMap: Map<string, Task>;
   selectedBoardId?: number | null;
   selectedSprintId?: number | null;
-  sidebarDropPointerY?: number | null;
   sidebarDropTargetActive?: boolean;
   sprintInfo?: SprintInfo | null;
   sprints: SprintListItem[];
@@ -184,6 +183,5 @@ export function buildTaskSidebarContextValue(
     onRetryBacklog: params.backlogManagement.refetchBacklog,
     invalidTasks: params.invalidTasks,
     sidebarDropTargetActive: params.sidebarDropTargetActive || params.isOver,
-    sidebarDropPointerY: params.sidebarDropPointerY,
   };
 }

@@ -290,6 +290,24 @@ describe('resolveTaskBarZIndex', () => {
       resolveTaskBarZIndex({ ...idle, isStickyNote: true, shouldExpandByLongHover: true })
     ).toBe(ZIndex.arrowsHovered);
   });
+
+  it('keeps planner overlay source below drop-preview so origin slot stays visible', () => {
+    expect(
+      resolveTaskBarZIndex({
+        ...idle,
+        effectiveIsDragging: true,
+        hideSourceForOverlay: true,
+        isStickyNote: true,
+      })
+    ).toBe(ZIndex.stickyNote);
+    expect(
+      resolveTaskBarZIndex({
+        ...idle,
+        effectiveIsDragging: true,
+        hideSourceForOverlay: true,
+      })
+    ).toBe(ZIndex.stickyInContent);
+  });
 });
 
 describe('buildTaskBarLayoutStyle', () => {

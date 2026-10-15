@@ -1,6 +1,10 @@
 'use client';
 
-import { useDroppable } from '@dnd-kit/core';
+/**
+ * Ячейка таймлайна: визуал part-разделителя и hit-zone quick-add.
+ * Droppable регистрируется на уровне полосы (`swimlane-${id}`), hit-test ячейки —
+ * геометрией в `calculateCellFromDragEvent` (без сотен useDroppable на pointermove).
+ */
 
 import { CARD_MARGIN, ZIndex, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -27,11 +31,9 @@ function resolveQuickAddHitBox(durationCells: number): {
 }
 
 interface DroppableCellProps {
-  dropDisabled?: boolean;
   hasTaskOverlaps?: boolean;
   /** Скрыть part-разделитель (внутри интервала занятости). */
   hidePartDivider?: boolean;
-  id: string;
   partIndex: number;
   partStatus: 'current' | 'future' | 'past';
   /** Не даёт превью «+» вылезти за высоту строки (фото/новый слой) */
@@ -50,9 +52,7 @@ interface DroppableCellProps {
 }
 
 export function DroppableCell({
-  dropDisabled = false,
   hidePartDivider = false,
-  id,
   partIndex,
   partStatus,
   taskAreaHeight,
@@ -66,7 +66,6 @@ export function DroppableCell({
   onQuickAddClick,
   onQuickAddHoverChange,
 }: DroppableCellProps) {
-  const { setNodeRef } = useDroppable({ disabled: dropDisabled, id });
   const { t } = useI18n();
   const isQuickAddEnabled = Boolean(onQuickAddClick);
   const quickAddHover = useDelayedSwimlaneQuickAddHover(isQuickAddEnabled, onQuickAddHoverChange);
@@ -91,7 +90,6 @@ export function DroppableCell({
 
   return (
     <div
-      ref={setNodeRef}
       className={`relative z-[1] flex-1 overflow-visible pointer-events-auto ${
         showPartDivider ? 'border-r border-gray-200/50 dark:border-gray-600/50' : ''
       } ${onQuickAddClick ? 'cursor-pointer' : ''}`}

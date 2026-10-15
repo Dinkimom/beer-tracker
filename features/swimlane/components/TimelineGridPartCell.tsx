@@ -6,7 +6,6 @@ import {
   collectOccupiedLayersForCellRange,
   resolveSwimlaneQuickAddLayerBand,
 } from '@/features/swimlane/utils/swimlaneCellOccupancy';
-import { isOnboardingDemoAssigneeId } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { getPartStatus } from '@/utils/dateUtils';
 
 function createQuickAddHoverHandler(
@@ -97,7 +96,7 @@ export function TimelineGridPartCell(props: {
     quickAddSpan
   );
   const partStatus = getPartStatus(dayIndex, partIndex, sprintStartDate, dayCount);
-  // Key stays stable across drag so droppables are not remounted when + is suppressed.
+  // Key stays stable across drag so cells are not remounted when + is suppressed.
   const isQuickAddEnabled = Boolean(onQuickAddTask);
   const showQuickAddButton =
     isQuickAddEnabled && !isDraggingTask && !isLinking && quickAddBand != null;
@@ -105,10 +104,8 @@ export function TimelineGridPartCell(props: {
   return (
     <DroppableCell
       key={`${cellId}-${isQuickAddEnabled ? 'add' : 'idle'}`}
-      dropDisabled={isOnboardingDemoAssigneeId(developerId)}
       hasTaskOverlaps={hasTaskOverlaps}
       hidePartDivider={hidePartDivider}
-      id={cellId}
       partIndex={partIndex}
       partStatus={partStatus}
       quickAddClipHeight={quickAddClipHeight}

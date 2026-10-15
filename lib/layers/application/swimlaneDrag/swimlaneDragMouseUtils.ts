@@ -1,4 +1,4 @@
-import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragMoveEvent } from '@dnd-kit/core';
 import type { MutableRefObject } from 'react';
 
 interface RightSidebarDropBandOptions {
@@ -55,7 +55,7 @@ export function isAnyClientXInOpenRightSidebar(
 }
 
 /** Центр DragOverlay на момент dragOver/dragEnd (точнее ref на mouseup). */
-export function getDragOverlayCenterX(event: DragEndEvent | DragOverEvent): number | null {
+export function getDragOverlayCenterX(event: DragEndEvent | DragMoveEvent): number | null {
   const translated = event.active.rect.current?.translated;
   if (!translated) {
     return null;
@@ -64,7 +64,7 @@ export function getDragOverlayCenterX(event: DragEndEvent | DragOverEvent): numb
 }
 
 /** Левый край DragOverlay / перетаскиваемой карточки (якорь привязки к сетке). */
-export function getDragOverlayLeftX(event: DragEndEvent | DragOverEvent): number | null {
+export function getDragOverlayLeftX(event: DragEndEvent | DragMoveEvent): number | null {
   const translated = event.active.rect.current?.translated;
   if (translated) {
     return translated.left;
@@ -79,7 +79,7 @@ export function getDragOverlayLeftX(event: DragEndEvent | DragOverEvent): number
  */
 export function getSwimlanePlacementAnchorX(
   mousePositionRef: MutableRefObject<{ x: number; y: number } | null>,
-  event?: DragEndEvent | DragOverEvent
+  event?: DragEndEvent | DragMoveEvent
 ): number | null {
   const overlayLeft = event ? getDragOverlayLeftX(event) : null;
   if (overlayLeft != null) {

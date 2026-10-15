@@ -1,12 +1,12 @@
 import type { DragContextRef, SwimlaneDragStateApi } from './swimlaneDragTypes';
 import type { Task, TaskPosition } from '@/types';
-import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 
 import { calculateCellFromDragEvent } from './swimlaneDragPositionCalculation';
 import { resolveSidebarDropTargetFromDragEvent } from './swimlaneSidebarDropTarget';
 
 export function updateSidebarDropPreview(
-  event: DragOverEvent,
+  event: DragMoveEvent,
   dragState: SwimlaneDragStateApi,
   dragContextRef?: DragContextRef | null
 ): boolean {
@@ -25,7 +25,7 @@ export function updateSidebarDropPreview(
 }
 
 export function applySwimlaneDragOverCell(
-  event: DragOverEvent,
+  event: DragMoveEvent,
   dragState: SwimlaneDragStateApi,
   taskPositions: Map<string, TaskPosition>,
   tasks: Task[],
@@ -47,7 +47,7 @@ export function applySwimlaneDragOverCell(
 }
 
 export function isSidebarSourcedDragEvent(
-  event: DragEndEvent | DragOverEvent | DragStartEvent,
+  event: DragEndEvent | DragMoveEvent | DragStartEvent,
   dragContextRef?: DragContextRef | null
 ): boolean {
   const fromActive =

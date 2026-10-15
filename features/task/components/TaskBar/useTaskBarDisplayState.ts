@@ -290,6 +290,7 @@ export function useTaskBarDisplayState(input: {
 
   const taskBarZIndex = resolveTaskBarZIndex({
     effectiveIsDragging,
+    hideSourceForOverlay,
     inlineTitleEditor: input.inlineTitleEditor,
     isInError: input.isInError ?? false,
     isPhotoCard,

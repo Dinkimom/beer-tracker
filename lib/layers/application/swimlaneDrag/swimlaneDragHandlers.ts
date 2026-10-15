@@ -4,7 +4,7 @@
 
 import type { DragContextRef, SwimlaneDragStateApi } from './swimlaneDragTypes';
 import type { Task, TaskPosition } from '@/types';
-import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { parseSwimlaneTaskDraggableId } from '@/lib/swimlane/swimlaneDragIds';
@@ -31,7 +31,7 @@ function taskExistsInDragContext(
 }
 
 function isSidebarSourcedDragEventFromContext(
-  event: DragEndEvent | DragOverEvent | DragStartEvent,
+  event: DragEndEvent | DragMoveEvent | DragStartEvent,
   dragContextRef?: DragContextRef | null
 ): boolean {
   return isSidebarSourcedDragEvent(event, dragContextRef);
@@ -68,7 +68,7 @@ function clearHoveredCellIfNeeded(dragState: SwimlaneDragStateApi): void {
 }
 
 function processSwimlaneDragOverEvent(
-  event: DragOverEvent,
+  event: DragMoveEvent,
   params: {
     dragContextRef?: DragContextRef | null;
     dragState: SwimlaneDragStateApi;
@@ -103,10 +103,10 @@ export function createSwimlaneDragOverHandler(params: {
   swimlaneTimelineWorkingDays?: number;
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
-}): (event: DragOverEvent) => void {
+}): (event: DragMoveEvent) => void {
   const workingDaysCount = Math.max(1, params.swimlaneTimelineWorkingDays ?? WORKING_DAYS);
 
-  return (event: DragOverEvent) => {
+  return (event: DragMoveEvent) => {
     processSwimlaneDragOverEvent(event, { ...params, workingDaysCount });
   };
 }

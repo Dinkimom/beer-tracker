@@ -46,7 +46,6 @@ interface SidebarSectionProps {
   qaTasksMap: Map<string, Task>;
   selectedBoardId: number | null;
   selectedSprintId: number | null;
-  sidebarDropPointerY?: number | null;
   sidebarOpen: boolean;
   sidebarWidth: number;
   sprintInfo: SprintInfo | null;
@@ -70,7 +69,6 @@ export const SidebarSection = observer(function SidebarSection({
   activeTaskDuration,
   activeTaskId,
   isSidebarDropTarget = false,
-  sidebarDropPointerY = null,
   allSprintTasks,
   checklistDone,
   checklistTotal,
@@ -142,7 +140,6 @@ export const SidebarSection = observer(function SidebarSection({
         qaTasksMap={qaTasksMap}
         selectedBoardId={selectedBoardId}
         selectedSprintId={selectedSprintId}
-        sidebarDropPointerY={sidebarDropPointerY}
         sidebarDropTargetActive={isSidebarDropTarget}
         sprintInfo={sprintInfo}
         sprints={sprints}

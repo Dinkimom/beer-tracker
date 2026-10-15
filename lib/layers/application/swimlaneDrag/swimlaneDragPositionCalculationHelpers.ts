@@ -1,13 +1,13 @@
 import type { CellPosition } from './swimlaneDragTypes';
 import type { Task, TaskPosition } from '@/types';
-import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragMoveEvent } from '@dnd-kit/core';
 import type { MutableRefObject } from 'react';
 
 import { calculateCellFromElement, calculateCellFromMouse } from '@/lib/swimlane/swimlaneCellFromGeometry';
 import { parseSwimlaneTaskDraggableId } from '@/lib/swimlane/swimlaneDragIds';
 
 import { extractCellFromId, isValidCell } from './swimlaneDragCellUtils';
-import { getSwimlanePlacementAnchorX } from './swimlaneDragMouseUtils';
+import { getDragOverlayLeftX, getSwimlanePlacementAnchorX } from './swimlaneDragMouseUtils';
 import { getTaskDuration } from './swimlaneDragTaskDuration';
 
 function escapeSelectorAttr(value: string): string {
@@ -24,6 +24,31 @@ export function querySwimlaneElement(assigneeId: string): HTMLElement | null {
     console.warn('Error querying swimlane element:', error);
     return null;
   }
+}
+
+/**
+ * Полоса под pointer Y по DOM `[data-swimlane]`.
+ * Нужна как tie-break, если dnd-kit `over` кратковременно указывает соседнюю строку.
+ */
+export function resolveAssigneeIdFromPointerY(pointerY: number | null | undefined): string | null {
+  if (pointerY == null || typeof document === 'undefined') {
+    return null;
+  }
+  try {
+    const lanes = document.querySelectorAll<HTMLElement>('[data-swimlane]');
+    for (const lane of lanes) {
+      const rect = lane.getBoundingClientRect();
+      if (pointerY >= rect.top && pointerY <= rect.bottom) {
+        const id = lane.getAttribute('data-swimlane');
+        if (id) {
+          return id;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Error resolving swimlane from pointer Y:', error);
+  }
+  return null;
 }
 
 function queryActiveDraggableElement(draggableActiveId: string): HTMLElement | null {
@@ -122,7 +147,7 @@ function resolveCellAfterElementFallback(
 export function resolveTargetCellInSwimlane(input: {
   assigneeId: string;
   draggableActiveId: string;
-  event: DragEndEvent | DragOverEvent;
+  event: DragEndEvent | DragMoveEvent;
   mousePositionRef: MutableRefObject<{ x: number; y: number } | null>;
   overId: string;
   swimlaneElement: HTMLElement;
@@ -138,10 +163,23 @@ export function resolveTargetCellInSwimlane(input: {
   return resolveFallbackCellInSwimlane(input);
 }
 
+function resolvePointerClientX(
+  mousePositionRef: MutableRefObject<{ x: number; y: number } | null>,
+  event: DragEndEvent | DragMoveEvent
+): number | null {
+  if (mousePositionRef.current) {
+    return mousePositionRef.current.x;
+  }
+  if (event.activatorEvent instanceof MouseEvent) {
+    return event.activatorEvent.clientX;
+  }
+  return null;
+}
+
 function resolvePrimaryCellInSwimlane(input: {
   assigneeId: string;
   draggableActiveId: string;
-  event: DragEndEvent | DragOverEvent;
+  event: DragEndEvent | DragMoveEvent;
   mousePositionRef: MutableRefObject<{ x: number; y: number } | null>;
   swimlaneElement: HTMLElement;
   taskId: string;
@@ -149,21 +187,40 @@ function resolvePrimaryCellInSwimlane(input: {
   tasks: Task[];
   workingDaysCount: number;
 }): CellPosition | null {
-  const anchorX = getSwimlanePlacementAnchorX(input.mousePositionRef, input.event);
-  if (anchorX !== null) {
-    const fromMouse = tryCellFromMousePosition(
+  // Сначала курсор: превью = ячейка под указателем («наведение на ячейку»).
+  const pointerX = resolvePointerClientX(input.mousePositionRef, input.event);
+  if (pointerX != null) {
+    const fromPointer = tryCellFromMousePosition(
       input.assigneeId,
       input.swimlaneElement,
-      anchorX,
+      pointerX,
       input.taskId,
       input.taskPositions,
       input.tasks,
       input.workingDaysCount
     );
-    if (fromMouse) {
-      return fromMouse;
+    if (fromPointer) {
+      return fromPointer;
     }
   }
+
+  // Fallback: левый край overlay (клик без move / нет mousePositionRef).
+  const overlayLeft = getDragOverlayLeftX(input.event);
+  if (overlayLeft != null) {
+    const fromOverlay = tryCellFromMousePosition(
+      input.assigneeId,
+      input.swimlaneElement,
+      overlayLeft,
+      input.taskId,
+      input.taskPositions,
+      input.tasks,
+      input.workingDaysCount
+    );
+    if (fromOverlay) {
+      return fromOverlay;
+    }
+  }
+
   return tryResolveCellFromActiveElement(
     input.assigneeId,
     input.swimlaneElement,
@@ -175,7 +232,7 @@ function resolvePrimaryCellInSwimlane(input: {
 
 function resolveFallbackCellInSwimlane(input: {
   draggableActiveId: string;
-  event: DragEndEvent | DragOverEvent;
+  event: DragEndEvent | DragMoveEvent;
   mousePositionRef: MutableRefObject<{ x: number; y: number } | null>;
   overId: string;
   swimlaneElement: HTMLElement;

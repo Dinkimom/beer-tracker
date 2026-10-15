@@ -4,7 +4,7 @@
 
 import type { CellPosition } from './swimlaneDragTypes';
 import type { Task, TaskPosition } from '@/types';
-import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragMoveEvent } from '@dnd-kit/core';
 import type { MutableRefObject } from 'react';
 
 import { WORKING_DAYS } from '@/constants';
@@ -13,6 +13,7 @@ import { parseSwimlaneTaskDraggableId } from '@/lib/swimlane/swimlaneDragIds';
 import { extractAssigneeId } from './swimlaneDragCellUtils';
 import {
   querySwimlaneElement,
+  resolveAssigneeIdFromPointerY,
   resolveTargetCellInSwimlane,
 } from './swimlaneDragPositionCalculationHelpers';
 
@@ -21,7 +22,7 @@ import {
  * @param draggableActiveId — id активного элемента dnd-kit (в т.ч. `taskId::segmentIndex`)
  */
 export function calculateCellFromDragEvent(
-  event: DragEndEvent | DragOverEvent,
+  event: DragEndEvent | DragMoveEvent,
   draggableActiveId: string,
   taskPositions: Map<string, TaskPosition>,
   tasks: Task[],
@@ -41,7 +42,9 @@ export function calculateCellFromDragEvent(
     return null;
   }
 
-  const assigneeId = extractAssigneeId(overId);
+  const overAssigneeId = extractAssigneeId(overId);
+  const pointerAssigneeId = resolveAssigneeIdFromPointerY(mousePositionRef.current?.y);
+  const assigneeId = pointerAssigneeId ?? overAssigneeId;
   if (!assigneeId) {
     return null;
   }

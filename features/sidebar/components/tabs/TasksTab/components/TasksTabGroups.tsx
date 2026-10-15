@@ -10,6 +10,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { SidebarTaskDropPlaceholder } from '@/features/sidebar/components/SidebarTaskDropPlaceholder';
 import { useTaskSidebar } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { useSidebarDropInsertIndex } from '@/features/sidebar/hooks/useSidebarDropInsertIndex';
+import { useSidebarDropPointerY } from '@/features/sidebar/hooks/useSidebarDropPointer';
 
 import { buildOrderedTaskIds } from './TasksTabGroupsHelpers';
 import {
@@ -55,10 +56,10 @@ export function TasksTabGroups({
     assigneeFilterActive,
     nameFilter,
     onPlanAssignees,
-    sidebarDropPointerY = null,
     sidebarDropTargetActive = false,
     statusFilter,
   } = useTaskSidebar();
+  const sidebarDropPointerY = useSidebarDropPointerY(sidebarDropTargetActive);
   const listFiltered =
     assigneeFilterActive || nameFilter.trim() !== '' || statusFilter !== 'all';
 

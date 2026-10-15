@@ -75,7 +75,6 @@ export interface TaskSidebarContextValue {
   qaTasksMap: Map<string, Task>;
   selectedBoardId?: number | null;
   selectedSprintId?: number | null;
-  sidebarDropPointerY?: number | null;
   /** Дроп в неназначенные: показывать слот в списке */
   sidebarDropTargetActive?: boolean;
   sprintInfo: { endDate?: string; id: number; startDate?: string; status: string; version?: number } | null;
