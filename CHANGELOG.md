@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.15.0] — 2026-10-15
+
+### English
+
+- Cloud Scheduler can run a full tracker rescan via `POST /api/internal/sync/full-rescan` (shared `SYNC_CRON_SECRET`) inline in the HTTP request — no Redis or sync-worker required.
+- Standalone QA tasks (`hideTestPointsByIntegration`) count story points like other work; header and velocity readout prefer SP instead of TP in that mode.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.15.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Google Cloud Scheduler может запустить полный rescan трекера через `POST /api/internal/sync/full-rescan` (общий `SYNC_CRON_SECRET`) прямо в HTTP-запросе — без Redis и sync-worker.
+- Отдельные QA-задачи (`hideTestPointsByIntegration`) учитывают story points как обычная работа; в шапке и velocity в этом режиме приоритет у SP, а не TP.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.15.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.14.2] — 2026-10-15
 
 ### English

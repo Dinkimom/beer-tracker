@@ -22,6 +22,7 @@ interface SwimlaneDeveloperHeaderProps {
     completedSP: number;
     completedTP: number;
     hasVolumeTasks: boolean;
+    hideTestPoints: boolean;
     percentSP: number;
     percentTP: number;
     totalHeight: number;
@@ -57,7 +58,8 @@ export function SwimlaneDeveloperHeader({
   const velocityReadout = useAssigneeVelocityReadout(
     developer.id,
     developer.name,
-    developer.role
+    developer.role,
+    layout.hideTestPoints
   );
   const featureTitle = featureColumn.rowTitleById.get(developer.id);
   const isDraftRow = isFeatureLaneDraftRowId(developer.id);
@@ -71,6 +73,7 @@ export function SwimlaneDeveloperHeader({
       frosted={isPinned}
       hasTasks={layout.hasVolumeTasks}
       hideAvatar={featureColumn.isFeatureLane}
+      hideTestPoints={layout.hideTestPoints}
       laneLabels={laneLabels}
       layerZIndex={isPinned ? ZIndex.stickyPinnedRows : ZIndex.stickyLeftColumn}
       nameContent={

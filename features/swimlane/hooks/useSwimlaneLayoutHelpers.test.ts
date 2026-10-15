@@ -9,7 +9,6 @@ import {
 } from '@/features/swimlane/utils/taskLayerTaskLayout';
 
 import {
-  applyRemotePresenceCardRowPreviews,
   applyRemotePresencePositionToDeveloperTasks,
   computeSwimlaneLayoutDimensions,
   computeSwimlanePointTotals,
@@ -72,6 +71,7 @@ describe('computeSwimlanePointTotals', () => {
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
+      hideTestPoints: false,
       totalSP: 6,
       totalTP: 0,
     });
@@ -102,6 +102,7 @@ describe('computeSwimlanePointTotals', () => {
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
+      hideTestPoints: false,
       totalSP: 5,
       totalTP: 3,
     });
@@ -150,6 +151,7 @@ describe('computeSwimlanePointTotals', () => {
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
+      hideTestPoints: false,
       totalSP: 5,
       totalTP: 3,
     });
@@ -181,6 +183,7 @@ describe('computeSwimlanePointTotals', () => {
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
+      hideTestPoints: false,
       totalSP: 0,
       totalTP: 3,
     });
@@ -211,6 +214,7 @@ describe('computeSwimlanePointTotals', () => {
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: false,
+      hideTestPoints: false,
       totalSP: 0,
       totalTP: 0,
     });
@@ -241,6 +245,7 @@ describe('computeSwimlanePointTotals', () => {
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
+      hideTestPoints: false,
       totalSP: 0,
       totalTP: 0,
     });
@@ -521,20 +526,5 @@ describe('applyRemotePresencePositionToDeveloperTasks', () => {
       startDay: 2,
       startPart: 0,
     });
-  });
-});
-
-describe('applyRemotePresenceCardRowPreviews', () => {
-  it('overlays a foreign height without replacing the local busy card', () => {
-    const next = applyRemotePresenceCardRowPreviews(
-      new Map([['note-1', { layerShiftUp: 0, span: 1 }]]),
-      new Map([
-        ['note-1', { layerShiftUp: 1, span: 3 }],
-        ['note-2', { layerShiftUp: 0, span: 4 }],
-      ]),
-      'note-1'
-    );
-    expect(next.get('note-1')).toEqual({ layerShiftUp: 0, span: 1 });
-    expect(next.get('note-2')).toEqual({ layerShiftUp: 0, span: 4 });
   });
 });

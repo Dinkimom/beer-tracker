@@ -226,7 +226,8 @@ export function getRedisUrl(): string | undefined {
 }
 
 /**
- * Секрет для POST /api/internal/sync/tick и аналогов. Пустая строка — эндпоинт не должен принимать вызовы.
+ * Секрет для POST /api/internal/sync/tick, inline /api/internal/sync/full-rescan и аналогов.
+ * Пустая строка — эндпоинты не должны принимать вызовы.
  */
 export function getSyncCronSecret(): string {
   const v = process.env.SYNC_CRON_SECRET;

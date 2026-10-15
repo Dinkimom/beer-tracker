@@ -185,7 +185,7 @@ export function useSwimlaneLayout({
     totalCells
   );
 
-  const { totalSP, totalTP, completedSP, completedTP, hasVolumeTasks } =
+  const { totalSP, totalTP, completedSP, completedTP, hasVolumeTasks, hideTestPoints } =
     computeSwimlanePointTotals(positionedTasks);
   const percentSP = totalSP > 0 ? Math.round((completedSP / totalSP) * 100) : 0;
   const percentTP = totalTP > 0 ? Math.round((completedTP / totalTP) * 100) : 0;
@@ -270,6 +270,7 @@ export function useSwimlaneLayout({
     completedSP,
     completedTP,
     hasVolumeTasks,
+    hideTestPoints,
     percentSP,
     percentTP,
     currentCell,

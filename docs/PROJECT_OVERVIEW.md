@@ -251,7 +251,8 @@ Deprecated (не развивать): `feature-planner`, `quarterly-planning-v2`
 | `/api/boards/[boardId]/sla-bugs` | SLA-баги |
 | `/api/teams/members` | Участники |
 | `/api/admin/*`, `/api/auth/*` | Админка и сессии |
-| `/api/internal/sync/tick` | Cron sync |
+| `/api/internal/sync/tick` | Cron incremental sync |
+| `/api/internal/sync/full-rescan` | Cron full rescan inline, без Redis (body: organizationId) |
 
 Полный разбор: [API_DOCUMENTATION.md](./API_DOCUMENTATION.md), [API_BACKENDS.md](./API_BACKENDS.md).
 

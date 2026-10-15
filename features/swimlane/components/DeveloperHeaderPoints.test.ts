@@ -22,11 +22,27 @@ describe('resolveDeveloperHeaderPointsVisibility', () => {
     });
   });
 
+  it('shows SP for a tester row when test points are hidden by the flow', () => {
+    expect(resolveDeveloperHeaderPointsVisibility('tester', 4, 0, false, true, true)).toEqual({
+      hasPoints: true,
+      showSP: true,
+      showTP: false,
+    });
+  });
+
   it('shows SP and TP together on a feature row', () => {
     expect(resolveDeveloperHeaderPointsVisibility('other', 5, 3, true)).toEqual({
       hasPoints: true,
       showSP: true,
       showTP: true,
+    });
+  });
+
+  it('hides TP on a feature row when test points are hidden by the flow', () => {
+    expect(resolveDeveloperHeaderPointsVisibility('other', 5, 0, true, true, true)).toEqual({
+      hasPoints: true,
+      showSP: true,
+      showTP: false,
     });
   });
 

@@ -74,12 +74,13 @@ export function AssigneeVelocityProvider({
 export function useAssigneeVelocityReadout(
   assigneeId: string,
   assigneeName: string,
-  role: 'developer' | 'other' | 'tester' | undefined
+  role: 'developer' | 'other' | 'tester' | undefined,
+  hideTestPoints = false
 ): (AssigneeVelocityReadout & { sprintCount: number }) | null {
   const { byAssignee, byName } = useContext(AssigneeVelocityContext);
   const entry =
     byAssignee.get(assigneeId) ?? byName.get(assigneeVelocityNameKey(assigneeName));
-  const readout = resolveAssigneeVelocityReadout(entry, role);
+  const readout = resolveAssigneeVelocityReadout(entry, role, hideTestPoints);
   if (!entry || !readout) return null;
   const counted = readout.unit === 'tp' ? entry.tpSprintCount : entry.spSprintCount;
   if (!Number.isFinite(counted) || counted <= 0) return null;

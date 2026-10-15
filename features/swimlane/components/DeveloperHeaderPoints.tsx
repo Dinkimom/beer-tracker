@@ -23,17 +23,21 @@ export function resolveDeveloperHeaderPointsVisibility(
   totalSP: number,
   totalTP: number,
   showBothPointKinds = false,
-  hasTasks?: boolean
+  hasTasks?: boolean,
+  /** Режим отдельных QA-задач: оценки в SP, TP в шапке не показываем. */
+  hideTestPoints = false
 ): { hasPoints: boolean; showSP: boolean; showTP: boolean } {
   const rowHasWork = hasTasks ?? (totalSP > 0 || totalTP > 0);
   if (!rowHasWork) {
     return { hasPoints: false, showSP: false, showTP: false };
   }
   if (showBothPointKinds) {
-    return { hasPoints: true, showSP: true, showTP: true };
+    return { hasPoints: true, showSP: true, showTP: !hideTestPoints };
   }
-  const isTester = role === 'tester';
-  return { hasPoints: true, showSP: !isTester, showTP: isTester };
+  if (hideTestPoints || role !== 'tester') {
+    return { hasPoints: true, showSP: true, showTP: false };
+  }
+  return { hasPoints: true, showSP: false, showTP: true };
 }
 
 function formatHeaderPointValue(

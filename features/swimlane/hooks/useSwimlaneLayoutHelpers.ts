@@ -199,6 +199,7 @@ export function computeSwimlanePointTotals(positionedTasks: Array<{ task: Task; 
   completedSP: number;
   completedTP: number;
   hasVolumeTasks: boolean;
+  hideTestPoints: boolean;
   totalSP: number;
   totalTP: number;
 } {
@@ -208,6 +209,9 @@ export function computeSwimlanePointTotals(positionedTasks: Array<{ task: Task; 
   const totalTP = volumeTasks.reduce(
     (sum, { task }) => sum + getRowTaskTestPoints(task, originalIdsOnRow),
     0
+  );
+  const hideTestPoints = volumeTasks.some(
+    ({ task }) => task.hideTestPointsByIntegration === true
   );
 
   let completedSP = 0;
@@ -222,6 +226,7 @@ export function computeSwimlanePointTotals(positionedTasks: Array<{ task: Task; 
     completedSP,
     completedTP,
     hasVolumeTasks: volumeTasks.length > 0,
+    hideTestPoints,
     totalSP,
     totalTP,
   };

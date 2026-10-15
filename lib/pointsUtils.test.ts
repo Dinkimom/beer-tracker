@@ -28,8 +28,18 @@ describe('isOriginalTask', () => {
 });
 
 describe('getTaskStoryPoints', () => {
-  it('returns 0 for QA team', () => {
+  it('returns 0 for synthetic QA phantoms', () => {
     expect(getTaskStoryPoints({ storyPoints: 5, team: 'QA' })).toBe(0);
+  });
+
+  it('returns storyPoints for standalone QA tasks', () => {
+    expect(
+      getTaskStoryPoints({
+        hideTestPointsByIntegration: true,
+        storyPoints: 5,
+        team: 'QA',
+      })
+    ).toBe(5);
   });
 
   it('returns storyPoints for non-QA', () => {

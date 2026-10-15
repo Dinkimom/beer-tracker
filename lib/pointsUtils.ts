@@ -11,6 +11,7 @@ import {
 
 /** Минимальный тип для подсчёта очков (Task, FeatureTask и т.д.). */
 interface TaskLikeForPoints {
+  hideTestPointsByIntegration?: boolean;
   id?: string;
   isLocalTask?: boolean;
   localDraftKind?: 'comment' | 'diagram' | 'existing' | 'image' | 'task' | 'widget';
@@ -50,10 +51,13 @@ export function isOriginalTask(task: TaskLikeForPoints): boolean {
 
 /**
  * Вклад задачи в Story Points.
- * У фантомных QA-задач (team === 'QA') — 0, у остальных — task.storyPoints ?? 0.
+ * Синтетические QA-фантомы (embedded, team === 'QA') — 0: оценка тестирования в TP.
+ * Отдельные QA-задачи (standalone, hideTestPointsByIntegration) — SP как у остальных.
  */
 export function getTaskStoryPoints(task: TaskLikeForPoints): number {
-  if (task.team === 'QA') return 0;
+  if (task.team === 'QA' && task.hideTestPointsByIntegration !== true) {
+    return 0;
+  }
   return task.storyPoints ?? 0;
 }
 
@@ -207,6 +211,7 @@ export function getSprintPointsTotals(
 
 /** Минимальный тип для длительности карточки (SP/TP по команде). */
 interface TaskLikeForDurationPoints {
+  hideTestPointsByIntegration?: boolean;
   storyPoints?: number;
   team?: string;
   testingOnlyByIntegrationRules?: boolean;
@@ -224,9 +229,13 @@ function isQaOnlyTaskForDuration(task: TaskLikeForDurationPoints): boolean {
 
 /**
  * Очки для длительности карточки: QA / testing-only — TP, иначе SP (с fallback 1).
+ * В режиме отдельных QA-задач оценка живёт в SP.
  */
 export function resolveTaskPointsForTeam(task: TaskLikeForDurationPoints): number {
   if (task.team === 'QA') {
+    if (task.hideTestPointsByIntegration === true) {
+      return task.storyPoints || 1;
+    }
     return task.testPoints || 1;
   }
   if (task.testingOnlyByIntegrationRules === true) {

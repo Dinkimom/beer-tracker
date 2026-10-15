@@ -35,6 +35,8 @@ interface DeveloperHeaderProps {
   /** Есть ли на строке задачи с объёмом (даже если SP/TP = 0). */
   hasTasks?: boolean;
   hideAvatar?: boolean;
+  /** Режим отдельных QA-задач: в шапке только SP (в т.ч. у тестировщиков). */
+  hideTestPoints?: boolean;
   /** Подписи дорожек факта / календаря, выровненные по таймлайну */
   laneLabels?: DeveloperHeaderLaneLabelItem[];
   /** Закреплённая строка рисуется выше остальных имён, но всё ещё над общим стеклом колонки. */
@@ -80,6 +82,7 @@ export function DeveloperHeader({
   frosted = false,
   hasTasks,
   hideAvatar = false,
+  hideTestPoints = false,
   laneLabels = [],
   nameContent,
   taskAreaHeight,
@@ -106,7 +109,8 @@ export function DeveloperHeader({
     totalSP,
     totalTP,
     showBothPointKinds,
-    hasTasks
+    hasTasks,
+    hideTestPoints
   );
   const { spContent, tpContent } = formatDeveloperHeaderPointsContent(
     showProgress,

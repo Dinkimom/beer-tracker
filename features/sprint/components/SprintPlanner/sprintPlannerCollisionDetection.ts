@@ -20,7 +20,7 @@ import { isActiveDeveloperRowDrag } from '@/features/swimlane/utils/swimlaneDrag
 
 export const SIDEBAR_UNASSIGNED_DROPPABLE_ID = 'sidebar-unassigned';
 
-export function isSwimlaneDroppableId(id: UniqueIdentifier): boolean {
+function isSwimlaneDroppableId(id: UniqueIdentifier): boolean {
   return String(id).startsWith('swimlane-');
 }
 

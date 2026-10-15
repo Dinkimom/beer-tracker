@@ -19,6 +19,13 @@ describe('resolveAssigneeVelocityReadout', () => {
     });
   });
 
+  it('shows story points for a tester when test points are hidden by the flow', () => {
+    expect(resolveAssigneeVelocityReadout(entry, 'tester', true)).toEqual({
+      points: 4,
+      unit: 'sp',
+    });
+  });
+
   it('falls back to story points when a tester has no test-point history', () => {
     expect(
       resolveAssigneeVelocityReadout(

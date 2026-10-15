@@ -27,7 +27,7 @@ Self-hosted веб-приложение для планирования спри
 
 ### Готовый образ (Docker Hub)
 
-Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) указывает на последнюю публикацию, тег `1.14.2` — на этот релиз. В каждом теге есть `linux/amd64` и `linux/arm64`.
+Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) указывает на последнюю публикацию, тег `1.15.0` — на этот релиз. В каждом теге есть `linux/amd64` и `linux/arm64`.
 
 ```bash
 cp env.example .env
@@ -140,7 +140,12 @@ YANDEX_OAUTH_CLIENT_ID=
 - **[Product steering](./docs/steering/product.md)** — что в продукте и что не развивать
 ## Плановый инкрементальный sync (multi-tenant)
 
-Внешний cron может вызывать `POST /api/internal/sync/tick` с заголовком `X-Sync-Cron-Secret: <SYNC_CRON_SECRET>` (или `Authorization: Bearer <secret>`). Поднимите Redis (`REDIS_URL`) и воркер `pnpm sync-worker`. В Docker Compose: `docker compose --profile exporter up` — сервис `sync-worker` собирается отдельным slim-образом (без Next.js). Без Redis ответ тика будет `200` с `reason: redis_not_configured` и без постановки job — удобно для CI.
+Внешний cron может вызывать:
+
+- `POST /api/internal/sync/tick` — плановый **incremental** по org’ам, у которых `sync_next_run_at` наступил (нужны Redis + `pnpm sync-worker`);
+- `POST /api/internal/sync/full-rescan` с телом `{ "organizationId": "<uuid>" }` — **полный** rescan одной организации **inline в HTTP-запросе** (без Redis/воркера; те же cooldown и блокировка по `sync_runs`). Подходит для Google Cloud Scheduler: увеличьте HTTP timeout цели (до ~30 мин) под длительность выгрузки.
+
+Заголовок: `X-Sync-Cron-Secret: <SYNC_CRON_SECRET>` (или `Authorization: Bearer <secret>`). Для incremental tick: Redis (`REDIS_URL`) и воркер `pnpm sync-worker`. В Docker Compose: `docker compose --profile exporter up` — сервис `sync-worker` собирается отдельным slim-образом (без Next.js). Без Redis ответ тика будет `200` с `reason: redis_not_configured` и без постановки job — удобно для CI.
 
 ## Основные команды
 
