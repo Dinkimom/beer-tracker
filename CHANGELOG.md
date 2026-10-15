@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.1] — 2026-10-16
+
+### English
+
+- MCP OAuth no longer elevates removed users to org admin: a live token without org membership is rejected (401), and deleting a user revokes their MCP tokens.
+- Plan-patch tools receive the signed-in user and role; writes require planner access (`canUsePlanner`), and draft notes use that user as author.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.16.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- MCP OAuth больше не повышает удалённых пользователей до org admin: живой токен без членства в org отклоняется (401), при удалении пользователя его MCP-токены отзываются.
+- Инструменты plan patch получают пользователя и роль; запись требует доступ к планеру (`canUsePlanner`), черновики заметок пишутся от этого пользователя.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.16.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.16.0] — 2026-10-16
 
 ### English
