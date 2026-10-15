@@ -27,7 +27,7 @@ Self-hosted веб-приложение для планирования спри
 
 ### Готовый образ (Docker Hub)
 
-Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) указывает на последнюю публикацию, тег `1.15.1` — на этот релиз. В каждом теге есть `linux/amd64` и `linux/arm64`.
+Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) указывает на последнюю публикацию, тег `1.16.0` — на этот релиз. В каждом теге есть `linux/amd64` и `linux/arm64`.
 
 ```bash
 cp env.example .env
@@ -130,7 +130,7 @@ YANDEX_OAUTH_CLIENT_ID=
 - **[Возможности приложения](./docs/CAPABILITIES.md)** — расширенный список функций
 - **[Индекс документации](./docs/DOCUMENTATION_INDEX.md)** — навигация по `docs/`
 - **[API Документация](./docs/API_DOCUMENTATION.md)** — описание API
-- **[Sprint context (агенты)](./docs/SPRINT_CONTEXT.md)** — planning graph + remote MCP `/api/mcp` (URL + Bearer, без клона репо)
+- **[Sprint context (агенты)](./docs/SPRINT_CONTEXT.md)** — planning graph + remote MCP `/api/mcp` (URL + OAuth, без клона репо)
 - **[Структура проекта](./docs/STRUCTURE.md)** — архитектура приложения
 
 ### Специализированные руководства

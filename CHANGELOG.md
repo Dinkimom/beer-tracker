@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.0] — 2026-10-16
+
+### English
+
+- **Breaking:** Remote MCP (`/api/mcp`) and agent sprint-context auth use **OAuth 2.1** (PKCE, DCR, consent UI). `SPRINT_CONTEXT_MCP_SECRET` and `X-Sprint-Context-Secret` are removed — connect with URL only; Cursor/Claude complete browser login.
+- Consent screen shows agent ↔ Beer Tracker branding; POST consent redirects with HTTP 303 so desktop callbacks receive GET.
+- Plan-patch `applyToken` HMAC uses `AUTH_SESSION_SECRET`.
+- Sprint planner presence reports idle/active attention (tab hidden or no pointer/keyboard for 90s).
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.16.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- **Breaking:** Remote MCP (`/api/mcp`) и агентский sprint-context — **OAuth 2.1** (PKCE, DCR, consent UI). `SPRINT_CONTEXT_MCP_SECRET` и `X-Sprint-Context-Secret` убраны — в конфиге достаточно URL; логин в браузере.
+- Экран согласия с брендами агента и Beer Tracker; после POST consent редирект **303**, чтобы desktop-callback получал GET.
+- HMAC `applyToken` для plan patch — через `AUTH_SESSION_SECRET`.
+- Presence в планере: idle/active (скрытая вкладка или нет pointer/keyboard 90 с).
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.16.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.15.1] — 2026-10-15
 
 ### English
