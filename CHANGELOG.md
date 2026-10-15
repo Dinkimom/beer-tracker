@@ -2,6 +2,18 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.15.1] — 2026-10-15
+
+### English
+
+- Inline full-rescan no longer sticks forever on a `running` sync_runs row after Cloud Run timeout or a mid-sync deploy: runs older than 40 minutes are marked failed so the next Scheduler call can proceed.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.15.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Inline full-rescan больше не блокируется навечно записью `running` в sync_runs после таймаута Cloud Run или деплоя посреди прогона: прогоны старше 40 минут помечаются failed, и следующий вызов Scheduler снова проходит.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.15.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.15.0] — 2026-10-15
 
 ### English
