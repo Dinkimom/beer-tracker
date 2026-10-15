@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.14.2] — 2026-10-15
+
+### English
+
+- Swimlane drag-and-drop picks the row under the pointer by Y instead of `closestCenter`, so tasks no longer jump between full-width rows or fight the unassigned sidebar at the right edge.
+- Sidebar drop targeting uses a dedicated pointer store; drop preview and position math stay in sync while dragging onto unassigned.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.14.2` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- DnD на свимлейне выбирает полосу под курсором по Y вместо `closestCenter`, поэтому задачи больше не скачут между full-width рядами и не конкурируют с сайдбаром «не назначено» у правого края.
+- Цель сброса в сайдбар идёт через отдельный store указателя; превью слота и расчёт позиции остаются согласованными при перетаскивании в неназначенные.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.14.2` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.14.1] — 2026-10-15
 
 ### English
