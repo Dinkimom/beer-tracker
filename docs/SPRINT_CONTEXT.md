@@ -7,10 +7,13 @@ Read-only snapshot of Beer Tracker’s **planning graph** for a sprint — layou
 ```http
 GET /api/sprints/{sprintId}/sprint-context
 GET /api/sprints/{sprintId}/sprint-context?featureId={laneOrIssueKey}
+GET /api/sprints/{sprintId}/sprint-context?assigneeId=staff:{uuid}
+GET /api/sprints/{sprintId}/sprint-context?taskId=RND-1&taskId=RND-2
 ```
 
 - Cache: `Cache-Control: private, no-store`
 - Optional `featureId`: narrows positions, notes, links, and feature-lanes. Sprint goals stay sprint-level.
+- Optional `assigneeId` / repeated `taskId`: further narrow the graph (and rebuild `capacity`).
 - **Org id не нужен** (одна организация на инстанс).
 
 ### Auth
@@ -46,27 +49,29 @@ Scope: `mcp:tools`.
 
 Tools:
 - `search_sprints(query, boardId?, limit?)` — найти спринт по фрагменту имени («Sprint 31», «RND Team 1»)
-- `get_sprint_context(sprintId, featureId?)` — planning graph по **числовому** sprintId (включая `capacity`)
-- `get_sprint_capacity(sprintId, featureId?)` — только capacity: overlaps / gaps / overloaded
+- `get_sprint_context(sprintId, featureId?, assigneeId?, taskIds?)` — planning graph по **числовому** sprintId (включая `capacity`, `meta.partsPerDay`, `planVsActual`)
+- `get_sprint_capacity(sprintId, featureId?, assigneeId?)` — только capacity: overlaps / gaps / overloaded
 - `get_feature_context(sprintId, featureId)` — тот же graph, но `featureId` обязателен
 - `resolve_person(query)` — имя/email → `staffUid` / `assigneeId` (`staff:uuid`)
-- `propose_plan_patch(sprintId, ops)` — dry-run patch (без записи позиций/ссылок/goals); `createNote` сразу кладёт **драфт-заметки** на доску (полупрозрачные, бейдж «Агент», апрув в UI до apply); summary + capacityPreview + `draftNoteIds` + `applyToken` (TTL 30 мин)
-- `apply_plan_patch(sprintId, ops, applyToken, confirm=true)` — запись только после propose + явного confirm; драфт-заметки становятся непрозрачными
+- `propose_plan_patch(sprintId, ops)` — dry-run; `schedule[]` (раскладка по датам), `warnings` (`issue_not_in_sprint: KEY`), capacityPreview, applyToken
+- `apply_plan_patch(sprintId, ops, applyToken, confirm=true)` — запись после propose + confirm; `schedule[]` после apply
 
 Типичный диалог: пользователь помнит «спринт 31» → агент `search_sprints` → берёт `hits[].sprintId` → `get_sprint_context` / `get_sprint_capacity`. Номер в названии ≠ id (например «Sprint 31» может быть id `1152`).
 
 ### Plan patch (write, не silent)
 
-1. Агент собирает `ops[]` (max 50) после research.
-2. `propose_plan_patch` — валидация + preview capacity + HMAC `applyToken`. **`createNote` пишется сразу** как pending (полупрозрачные стикеры на планере, TTL 30 мин).
-3. Человек ревьюит заметки на доске (бейдж «Агент» + принять/отклонить над стикером) и `summary` / `capacityPreview`. Апрув в UI подтверждает драфт сразу; отклонение удаляет заметку.
-4. `apply_plan_patch` с **теми же** `ops` + `applyToken` + `confirm: true` — оставшиеся драфт-заметки подтверждаются (полная непрозрачность), остальные ops записываются.
+1. Агент собирает `ops[]` (max 50) после research. Индексы `startPart` / `part` — `0 .. meta.partsPerDay-1` (из настроек орги).
+2. `propose_plan_patch` — валидация сетки + preview capacity + `schedule` + HMAC `applyToken`. **`createNote` пишется сразу** как pending (полупрозрачные стикеры, TTL 30 мин). Заметки **не** резервируют capacity.
+3. Человек ревьюит заметки / `summary` / `schedule` / `capacityPreview` / `warnings`.
+4. `apply_plan_patch` с **теми же** `ops` + `applyToken` + `confirm: true`.
 
 Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `deleteNote`, `upsertLink`, `deleteLink`, `upsertFeatureDraft`, `createGoal`, `updateGoal`, `deleteGoal`.
 
-Notes: только `kind=text`; default `width=200` (2 части); `height` как у задачи (1 ряд), выше если текст не влезает по ширине. Кладутся по `assigneeId` + `day` + `part`. Для `upsertLink` на заметку — `comment:{notes[].id}` (поле `notes[].taskId`); сырой UUID тоже принимается и переписывается.
+**Резерв времени** — только задача через `upsertPosition` (start + duration в слотах). Sticky notes можно пересекать с задачами; они не занимают слоты в `capacity`.
 
-**Нет** sync assignee/planned dates в Tracker/Jira. Diagram/image notes — вне этого среза.
+`upsertPosition.syncToTracker=true` — дополнительно `addIssueToSprint` + assign в Tracker/Jira (позиция в BT пишется всегда; ошибка sync — в `applied[].detail` / warning). Без флага — только планировщик BT; propose предупредит `issue_not_in_sprint: KEY`, если задачи нет на доске спринта.
+
+Notes: только `kind=text`; default `width=200` (2 части); `height` как у задачи. Для `upsertLink` на заметку — `comment:{notes[].id}`.
 
 ### Cursor / Claude — только URL
 
@@ -104,24 +109,24 @@ DB: применить [`database/add-mcp-oauth.sql`](../database/add-mcp-oauth.
 ```bash
 curl -sS \
   -H "Authorization: Bearer $BEER_TRACKER_MCP_ACCESS_TOKEN" \
-  "https://<host>/api/sprints/123/sprint-context"
+  "https://<host>/api/sprints/123/sprint-context?assigneeId=staff:…"
 ```
 
 ## Response (schemaVersion 2)
 
 | Field | Meaning |
 |-------|---------|
-| `meta` | `schemaVersion`, `sprintId`, `organizationId`, legend, optional `sprintWindow` + `boardId` + `featureId`, `calendarDays[]` (`day`→`YYYY-MM-DD`), `warnings[]` |
-| `positions` | Placements + `assigneeName`/`assigneeEmail`, `summary`/`issueType`/`parentKey` (soft from tracker) |
+| `meta` | `schemaVersion`, `sprintId`, `organizationId`, **`partsPerDay`** (из настроек орги), legend, optional `sprintWindow` + `boardId` + `featureId`, `calendarDays[]`, `warnings[]` |
+| `positions` | Placements + soft tracker fields + **`planVsActual`** (`planParts` / `actualParts` / `slippedParts` / optional `carriedOver`) |
 | `agenda` | Sorted timeline view: day/part/date + task + assignee name + summary |
-| `capacity` | Per-person load vs free parts, overlaps, gaps, overloaded days (incl. work while unavailable) |
+| `capacity` | Per-person load vs free parts (**tasks only**; notes ignored), overlaps, gaps, overloaded |
 | `featureLanes` | `draftRows`, `orderIds`, `hiddenIds` |
-| `notes` | Notes / diagrams / images; diagrams may include `diagramText[]` |
+| `notes` | Notes / diagrams / images; do **not** block capacity |
 | `taskLinks` | Arrows |
 | `sprintGoals` | `{ delivery: [], discovery: [] }` |
 | `availability` | Board events overlapping sprint window when known |
 
-`day` = working-day index; `part` = time segment `0 .. PARTS_PER_DAY-1` (currently 3 parts/day).
+`day` = working-day index; `part` = `0 .. meta.partsPerDay-1`.
 
 ## Optional: local stdio
 

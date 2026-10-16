@@ -23,15 +23,22 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
     }
 
-    const featureIdParam = new URL(request.url).searchParams.get('featureId');
-    const featureId = featureIdParam?.trim() || undefined;
+    const searchParams = new URL(request.url).searchParams;
+    const featureId = searchParams.get('featureId')?.trim() || undefined;
+    const assigneeId = searchParams.get('assigneeId')?.trim() || undefined;
+    const taskIds = searchParams
+      .getAll('taskId')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const useStoredTracker = mcpAuth != null;
 
     const payload = await loadSprintContextForOrganization({
+      assigneeId,
       featureId,
       organizationId: tenantResult.ctx.organizationId,
       request: useStoredTracker ? null : request,
       sprintId,
+      taskIds: taskIds.length > 0 ? taskIds : undefined,
       useStoredTracker,
     });
 

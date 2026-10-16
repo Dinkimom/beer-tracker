@@ -9,7 +9,19 @@ import type {
   SprintContextPosition,
 } from '@/lib/sprints/sprintContextTypes';
 
-import { getPartsPerDay } from '@/constants';
+import { DEFAULT_PLANNER_TIMELINE_SCALE } from '@/lib/plannerTimelineScale';
+
+function resolvePartsPerDay(partsPerDay: number | undefined): number {
+  if (
+    typeof partsPerDay === 'number' &&
+    Number.isInteger(partsPerDay) &&
+    partsPerDay >= 2 &&
+    partsPerDay <= 4
+  ) {
+    return partsPerDay;
+  }
+  return DEFAULT_PLANNER_TIMELINE_SCALE.timeslotsPerDay;
+}
 
 function cellKey(day: number, part: number): string {
   return `${day}:${part}`;
@@ -18,7 +30,8 @@ function cellKey(day: number, part: number): string {
 function expandSegmentCells(
   startDay: number,
   startPart: number,
-  duration: number
+  duration: number,
+  partsPerDay: number
 ): Array<{ day: number; part: number }> {
   const cells: Array<{ day: number; part: number }> = [];
   let day = startDay;
@@ -27,7 +40,7 @@ function expandSegmentCells(
   for (let i = 0; i < safeDuration; i++) {
     cells.push({ day, part });
     part += 1;
-    if (part >= getPartsPerDay()) {
+    if (part >= partsPerDay) {
       part = 0;
       day += 1;
     }
@@ -37,14 +50,16 @@ function expandSegmentCells(
 
 /** Expand a position into occupied day/part cells (same model as planner). */
 export function expandPositionOccupiedCells(
-  position: Pick<SprintContextPosition, 'duration' | 'segments' | 'startDay' | 'startPart'>
+  position: Pick<SprintContextPosition, 'duration' | 'segments' | 'startDay' | 'startPart'>,
+  partsPerDay: number = DEFAULT_PLANNER_TIMELINE_SCALE.timeslotsPerDay
 ): Array<{ day: number; part: number }> {
+  const grid = resolvePartsPerDay(partsPerDay);
   if (position.segments && position.segments.length > 0) {
     return position.segments.flatMap((segment) =>
-      expandSegmentCells(segment.startDay, segment.startPart, segment.duration)
+      expandSegmentCells(segment.startDay, segment.startPart, segment.duration, grid)
     );
   }
-  return expandSegmentCells(position.startDay, position.startPart, position.duration);
+  return expandSegmentCells(position.startDay, position.startPart, position.duration, grid);
 }
 
 function dateByDayMap(calendarDays: SprintContextCalendarDay[]): Map<number, string> {
@@ -81,10 +96,13 @@ function unavailableDaysForAssignee(
   return unavailable;
 }
 
-function collectCellsByKey(positions: SprintContextPosition[]): Map<string, string[]> {
+function collectCellsByKey(
+  positions: SprintContextPosition[],
+  partsPerDay: number
+): Map<string, string[]> {
   const cellsByKey = new Map<string, string[]>();
   for (const position of positions) {
-    for (const cell of expandPositionOccupiedCells(position)) {
+    for (const cell of expandPositionOccupiedCells(position, partsPerDay)) {
       const key = cellKey(cell.day, cell.part);
       const list = cellsByKey.get(key) ?? [];
       list.push(position.taskId);
@@ -119,9 +137,13 @@ function buildOverlapsFromCells(
   return overlaps;
 }
 
-function loadPartsForDay(dayIndex: number, cellsByKey: Map<string, string[]>): number {
+function loadPartsForDay(
+  dayIndex: number,
+  cellsByKey: Map<string, string[]>,
+  partsPerDay: number
+): number {
   let loadParts = 0;
-  for (let part = 0; part < getPartsPerDay(); part++) {
+  for (let part = 0; part < partsPerDay; part++) {
     if (cellsByKey.has(cellKey(dayIndex, part))) {
       loadParts += 1;
     }
@@ -132,13 +154,14 @@ function loadPartsForDay(dayIndex: number, cellsByKey: Map<string, string[]>): n
 function buildPersonDays(
   calendarDays: SprintContextCalendarDay[],
   cellsByKey: Map<string, string[]>,
-  unavailableDays: Set<number>
+  unavailableDays: Set<number>,
+  partsPerDay: number
 ): SprintContextCapacityPersonDay[] {
   return calendarDays.map((calendarDay) => {
     const row: SprintContextCapacityPersonDay = {
       day: calendarDay.day,
-      loadParts: loadPartsForDay(calendarDay.day, cellsByKey),
-      maxParts: getPartsPerDay(),
+      loadParts: loadPartsForDay(calendarDay.day, cellsByKey, partsPerDay),
+      maxParts: partsPerDay,
     };
     if (calendarDay.date) {
       row.date = calendarDay.date;
@@ -167,14 +190,15 @@ function gapForPart(
 
 function buildGaps(
   days: SprintContextCapacityPersonDay[],
-  cellsByKey: Map<string, string[]>
+  cellsByKey: Map<string, string[]>,
+  partsPerDay: number
 ): SprintContextCapacityPerson['gaps'] {
   const gaps: SprintContextCapacityPerson['gaps'] = [];
   for (const day of days) {
     if (day.unavailable) {
       continue;
     }
-    for (let part = 0; part < getPartsPerDay(); part++) {
+    for (let part = 0; part < partsPerDay; part++) {
       const gap = gapForPart(day, part, cellsByKey);
       if (gap) {
         gaps.push(gap);
@@ -188,14 +212,20 @@ function buildPersonCapacity(input: {
   assigneeId: string;
   assigneeName?: string | null;
   calendarDays: SprintContextCalendarDay[];
+  partsPerDay: number;
   positions: SprintContextPosition[];
   unavailableDays: Set<number>;
 }): SprintContextCapacityPerson {
   const dateByDay = dateByDayMap(input.calendarDays);
-  const cellsByKey = collectCellsByKey(input.positions);
+  const cellsByKey = collectCellsByKey(input.positions, input.partsPerDay);
   const overlaps = buildOverlapsFromCells(cellsByKey, dateByDay);
-  const days = buildPersonDays(input.calendarDays, cellsByKey, input.unavailableDays);
-  const gaps = buildGaps(days, cellsByKey);
+  const days = buildPersonDays(
+    input.calendarDays,
+    cellsByKey,
+    input.unavailableDays,
+    input.partsPerDay
+  );
+  const gaps = buildGaps(days, cellsByKey, input.partsPerDay);
   const totalLoadParts = days.reduce((sum, day) => sum + day.loadParts, 0);
   const totalMaxParts = days.reduce(
     (sum, day) => sum + (day.unavailable ? 0 : day.maxParts),
@@ -294,6 +324,7 @@ export function buildSprintContextCapacity(
   payload: Pick<SprintContextPayload, 'availability' | 'meta' | 'positions'>
 ): SprintContextCapacityReport {
   const calendarDays = payload.meta.calendarDays ?? [];
+  const partsPerDay = resolvePartsPerDay(payload.meta.partsPerDay);
   const byAssignee = groupPositionsByAssignee(payload.positions);
   const people: SprintContextCapacityPerson[] = [];
   for (const [assigneeId, positions] of byAssignee) {
@@ -303,6 +334,7 @@ export function buildSprintContextCapacity(
         assigneeId,
         assigneeName,
         calendarDays,
+        partsPerDay,
         positions,
         unavailableDays: unavailableDaysForAssignee(
           assigneeId,

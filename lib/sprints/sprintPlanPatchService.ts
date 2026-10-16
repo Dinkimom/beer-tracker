@@ -21,6 +21,7 @@ import {
   simulatePositionsAfterPatch,
   summarizeSprintPlanPatchOps,
 } from '@/lib/sprints/sprintPlanPatchHelpers';
+import { assertPlanPatchOpsFitPartsPerDay } from '@/lib/sprints/sprintPlanPatchPartsValidation';
 import { parseSprintPlanPatchOps } from '@/lib/sprints/sprintPlanPatchSchema';
 import {
   proposalIdFromOpsHash,
@@ -29,6 +30,14 @@ import {
   SPRINT_PLAN_PATCH_TTL_SEC,
   verifySprintPlanPatchToken,
 } from '@/lib/sprints/sprintPlanPatchToken';
+import {
+  collectIssueNotInSprintWarnings,
+  loadSprintIssueKeySet,
+} from '@/lib/sprints/sprintPlanPatchTrackerSync';
+import {
+  collectUpsertPositionTaskIds,
+  formatSprintPlanScheduleForTaskIds,
+} from '@/lib/sprints/sprintPlanScheduleFormat';
 
 function formatZodError(error: ZodError): string {
   return error.issues.map((issue) => `${issue.path.join('.') || 'ops'}: ${issue.message}`).join('; ');
@@ -69,19 +78,6 @@ async function persistDraftNotesForProposal(input: {
   return draftNoteIds;
 }
 
-async function loadCapacitySummary(input: {
-  organizationId: string;
-  sprintId: number;
-}): Promise<string> {
-  const current = await loadSprintContextForOrganization({
-    organizationId: input.organizationId,
-    request: null,
-    sprintId: input.sprintId,
-    useStoredTracker: true,
-  });
-  return buildSprintContextCapacity(current).summary;
-}
-
 export async function proposeSprintPlanPatch(input: {
   actorUserId: string;
   ops: unknown;
@@ -95,12 +91,28 @@ export async function proposeSprintPlanPatch(input: {
     sprintId: input.sprintId,
     useStoredTracker: true,
   });
+  assertPlanPatchOpsFitPartsPerDay(ops, current.meta.partsPerDay);
   const simulated = simulatePositionsAfterPatch(current.positions, ops);
   const capacityPreviewSummary = buildSprintContextCapacity({
     availability: current.availability,
     meta: current.meta,
     positions: simulated,
   }).summary;
+  const schedule = formatSprintPlanScheduleForTaskIds(
+    simulated,
+    current.meta.calendarDays ?? [],
+    current.meta.partsPerDay,
+    collectUpsertPositionTaskIds(ops)
+  );
+  const sprintIssues = await loadSprintIssueKeySet({
+    organizationId: input.organizationId,
+    sprintId: input.sprintId,
+    sprintStatus: current.meta.sprintWindow?.status,
+  });
+  const warnings = [
+    ...(sprintIssues.warning ? [sprintIssues.warning] : []),
+    ...collectIssueNotInSprintWarnings(ops, sprintIssues.keys),
+  ];
 
   const nowSec = Math.floor(Date.now() / 1000);
   const opsHash = hashSprintPlanPatchOps(ops);
@@ -127,8 +139,10 @@ export async function proposeSprintPlanPatch(input: {
     expiresAt: expiresAt.toISOString(),
     ops,
     proposalId: proposalIdFromOpsHash(opsHash),
+    schedule,
     sprintId: input.sprintId,
     summary: summarizeSprintPlanPatchOps(ops),
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }
 
@@ -227,11 +241,21 @@ export async function applySprintPlanPatch(input: {
   }
 
   let capacity: { summary: string } | undefined;
+  let schedule: string[] | undefined;
   try {
-    capacity = { summary: await loadCapacitySummary({
+    const after = await loadSprintContextForOrganization({
       organizationId: input.organizationId,
+      request: null,
       sprintId: input.sprintId,
-    }) };
+      useStoredTracker: true,
+    });
+    capacity = { summary: buildSprintContextCapacity(after).summary };
+    schedule = formatSprintPlanScheduleForTaskIds(
+      after.positions,
+      after.meta.calendarDays ?? [],
+      after.meta.partsPerDay,
+      collectUpsertPositionTaskIds(ops)
+    );
   } catch (capacityError) {
     console.warn('[sprint-plan-patch] capacity after apply:', capacityError);
   }
@@ -240,6 +264,7 @@ export async function applySprintPlanPatch(input: {
     applied,
     ...(capacity ? { capacity } : {}),
     ok: true,
+    ...(schedule ? { schedule } : {}),
     sprintId: input.sprintId,
   };
 }

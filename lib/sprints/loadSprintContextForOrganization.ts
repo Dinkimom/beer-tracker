@@ -2,6 +2,7 @@ import type { SprintContextPayload } from '@/lib/sprints/sprintContextTypes';
 import type { NextRequest } from 'next/server';
 
 import { enrichSprintContextPayload } from '@/lib/sprints/sprintContextEnrichment';
+import { applySprintContextQueryFilters } from '@/lib/sprints/sprintContextQueryFilter';
 import { buildSprintContext } from '@/lib/sprints/sprintContextService';
 import {
   softLoadSprintContextMeta,
@@ -10,10 +11,12 @@ import {
 
 /** Shared loader for HTTP sprint-context and in-process MCP tools. */
 export async function loadSprintContextForOrganization(input: {
+  assigneeId?: string;
   featureId?: string;
   organizationId: string;
   request: NextRequest | null;
   sprintId: number;
+  taskIds?: string[];
   useStoredTracker: boolean;
 }): Promise<SprintContextPayload> {
   const [softMeta, taskIdToParentKey] = await Promise.all([
@@ -40,11 +43,16 @@ export async function loadSprintContextForOrganization(input: {
     taskIdToParentKey,
   });
 
-  return enrichSprintContextPayload({
+  const enriched = await enrichSprintContextPayload({
     organizationId: input.organizationId,
     payload,
     request: input.useStoredTracker ? null : input.request,
     softMeta,
     useStoredTracker: input.useStoredTracker,
+  });
+
+  return applySprintContextQueryFilters(enriched, {
+    assigneeId: input.assigneeId,
+    taskIds: input.taskIds,
   });
 }

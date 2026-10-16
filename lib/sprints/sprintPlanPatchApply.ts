@@ -20,6 +20,7 @@ import {
 } from '@/lib/sprints/sprintCommentsRepository';
 import { mergeFeatureDraftIntoDocument } from '@/lib/sprints/sprintPlanPatchHelpers';
 import { resolvePlanPatchCreateNoteSize } from '@/lib/sprints/sprintPlanPatchNoteSize';
+import { syncUpsertPositionToTracker } from '@/lib/sprints/sprintPlanPatchTrackerSync';
 import { deleteTaskLink, upsertTaskLink } from '@/lib/sprints/taskLinksRepository';
 import {
   deleteTaskPosition,
@@ -71,7 +72,23 @@ async function applyUpsertPosition(input: {
       taskId: op.taskId,
     });
   }
-  return `position ${op.taskId}`;
+  if (!op.syncToTracker) {
+    return `position ${op.taskId}`;
+  }
+  const sync = await syncUpsertPositionToTracker({
+    assigneeId: op.assigneeId,
+    organizationId,
+    sprintId,
+    taskId: op.taskId,
+  });
+  const parts = [`position ${op.taskId}`];
+  if (sync.detail) {
+    parts.push(sync.detail);
+  }
+  if (sync.warning) {
+    parts.push(sync.warning);
+  }
+  return parts.join('; ');
 }
 
 async function applyCreateNote(input: {

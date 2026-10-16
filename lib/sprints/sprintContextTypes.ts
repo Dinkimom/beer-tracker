@@ -9,6 +9,14 @@ interface SprintContextPositionSegment {
   startPart: number;
 }
 
+export interface SprintContextPlanVsActual {
+  actualParts: number;
+  /** Best-effort: closed sprint and issue unfinished or missing from sprint board. */
+  carriedOver?: boolean;
+  planParts: number;
+  slippedParts: number;
+}
+
 export interface SprintContextPosition {
   assigneeEmail?: string | null;
   assigneeId: string;
@@ -20,6 +28,7 @@ export interface SprintContextPosition {
   plannedDuration: number | null;
   plannedStartDay: number | null;
   plannedStartPart: number | null;
+  planVsActual?: SprintContextPlanVsActual;
   segments?: SprintContextPositionSegment[];
   startDay: number;
   startPart: number;
@@ -112,6 +121,8 @@ interface SprintContextMeta {
     part: string;
   };
   organizationId: string;
+  /** Org planner grid: timeslots per working day (2–4). Capacity and part indices use this. */
+  partsPerDay: number;
   schemaVersion: typeof SPRINT_CONTEXT_SCHEMA_VERSION;
   sprintId: number;
   sprintWindow?: SprintContextSprintWindow;

@@ -70,6 +70,47 @@ export function filterPositionsByFeatureScope(
   return positions.filter((position) => scopeTaskIds.has(position.taskId));
 }
 
+function assigneeMatchIds(assigneeId: string): Set<string> {
+  const trimmed = assigneeId.trim();
+  if (!trimmed) {
+    return new Set();
+  }
+  return new Set([trimmed, trimmed.replace(/^staff:/i, ''), `staff:${trimmed.replace(/^staff:/i, '')}`]);
+}
+
+export function filterPositionsByAssigneeId(
+  positions: SprintContextPosition[],
+  assigneeId: string
+): SprintContextPosition[] {
+  const ids = assigneeMatchIds(assigneeId);
+  if (ids.size === 0) {
+    return positions;
+  }
+  return positions.filter((position) => ids.has(position.assigneeId.trim()));
+}
+
+export function filterNotesByAssigneeId(
+  notes: SprintContextNote[],
+  assigneeId: string
+): SprintContextNote[] {
+  const ids = assigneeMatchIds(assigneeId);
+  if (ids.size === 0) {
+    return notes;
+  }
+  return notes.filter((note) => ids.has(note.assigneeId.trim()));
+}
+
+export function filterPositionsByTaskIds(
+  positions: SprintContextPosition[],
+  taskIds: readonly string[]
+): SprintContextPosition[] {
+  const scope = new Set(taskIds.map((id) => id.trim()).filter(Boolean));
+  if (scope.size === 0) {
+    return positions;
+  }
+  return positions.filter((position) => scope.has(position.taskId));
+}
+
 export function filterLinksByFeatureScope(
   links: SprintContextTaskLink[],
   scopeTaskIds: Set<string>

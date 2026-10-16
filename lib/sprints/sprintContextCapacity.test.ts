@@ -17,6 +17,7 @@ function basePayload(
     meta: {
       legend: { day: 'd', part: 'p' },
       organizationId: 'org-1',
+      partsPerDay: PARTS_PER_DAY,
       schemaVersion: 2,
       sprintId: 1,
       calendarDays: [
@@ -163,5 +164,41 @@ describe('buildSprintContextCapacity', () => {
       })
     );
     expect(report.people).toEqual([]);
+  });
+
+  it('uses meta.partsPerDay for maxParts and gaps', () => {
+    const report = buildSprintContextCapacity(
+      basePayload({
+        meta: {
+          legend: { day: 'd', part: 'p' },
+          organizationId: 'org-1',
+          partsPerDay: 2,
+          schemaVersion: 2,
+          sprintId: 1,
+          calendarDays: [
+            { date: '2026-09-07', day: 0 },
+            { date: '2026-09-08', day: 1 },
+          ],
+        },
+        positions: [
+          {
+            assigneeId: 'staff:a',
+            assigneeName: 'Ada',
+            duration: 1,
+            isQa: false,
+            plannedDuration: null,
+            plannedStartDay: null,
+            plannedStartPart: null,
+            startDay: 0,
+            startPart: 0,
+            taskId: 'T-1',
+          },
+        ],
+      })
+    );
+
+    expect(report.people[0]?.days[0]?.maxParts).toBe(2);
+    expect(report.people[0]?.totalMaxParts).toBe(4);
+    expect(report.people[0]?.gaps.length).toBe(3);
   });
 });

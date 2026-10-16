@@ -36,6 +36,8 @@ export type SprintPlanPatchOp =
       segments?: SprintPlanPatchSegment[];
       startDay: number;
       startPart: number;
+      /** When true, add issue to tracker sprint and assign (BT position always written). */
+      syncToTracker?: boolean;
       taskId: string;
     } | {
       assigneeId?: string;
@@ -70,8 +72,11 @@ export interface SprintPlanPatchProposeResult {
   expiresAt: string;
   ops: SprintPlanPatchOp[];
   proposalId: string;
+  /** Calendar layout for upsertPosition ops after simulation (dates + partsPerDay). */
+  schedule: string[];
   sprintId: number;
   summary: string[];
+  warnings?: string[];
 }
 
 export interface SprintPlanPatchApplyOpResult {
@@ -87,5 +92,8 @@ export interface SprintPlanPatchApplyResult {
   capacity?: { summary: string };
   error?: string;
   ok: boolean;
+  /** Calendar layout for upsertPosition ops after apply. */
+  schedule?: string[];
   sprintId: number;
+  warnings?: string[];
 }

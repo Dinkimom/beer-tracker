@@ -76,6 +76,7 @@ describe('simulatePositionsAfterPatch', () => {
         calendarDays: [{ date: '2026-09-07', day: 0 }],
         legend: { day: 'd', part: 'p' },
         organizationId: 'org-1',
+        partsPerDay: 3,
         schemaVersion: 2,
         sprintId: 1,
       },

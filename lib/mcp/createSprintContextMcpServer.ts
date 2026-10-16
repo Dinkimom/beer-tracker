@@ -30,15 +30,19 @@ function toolJson(payload: unknown) {
 }
 
 function loadContext(input: {
+  assigneeId?: string;
   featureId?: string;
   organizationId: string;
   sprintId: number;
+  taskIds?: string[];
 }) {
   return loadSprintContextForOrganization({
+    assigneeId: input.assigneeId,
     featureId: input.featureId,
     organizationId: input.organizationId,
     request: null,
     sprintId: input.sprintId,
+    taskIds: input.taskIds,
     useStoredTracker: true,
   });
 }
@@ -57,7 +61,7 @@ export function createSprintContextMcpServer(input: {
 }): McpServer {
   const server = new McpServer({
     name: 'beer-tracker-sprint-context',
-    version: '1.4.0',
+    version: '1.5.0',
   });
 
   server.registerTool(
@@ -111,8 +115,13 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_context',
     {
       description:
-        'Read-only Beer Tracker planning graph for a sprint: positions (day/part), capacity, feature lanes, notes (+ diagram text), task links, sprint goals, availability. Requires numeric tracker sprintId — call search_sprints first if only a name fragment is known. Not a Tracker/Jira ticket proxy.',
+        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual), capacity (tasks only; sticky notes do not reserve time), feature lanes, notes, links, goals, availability. Prefer assigneeId/taskIds to keep the payload small. Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
       inputSchema: {
+        assigneeId: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional staff:uuid or tracker user id — narrow positions/notes/capacity'),
         featureId: z
           .string()
           .optional()
@@ -122,14 +131,21 @@ export function createSprintContextMcpServer(input: {
           .int()
           .positive()
           .describe('Tracker sprint id from search_sprints or planner URL'),
+        taskIds: z
+          .array(z.string().min(1))
+          .max(100)
+          .optional()
+          .describe('Optional issue keys to include (positions/links scoped to these tasks)'),
       },
     },
-    async ({ featureId, sprintId }) => {
+    async ({ assigneeId, featureId, sprintId, taskIds }) => {
       try {
         const payload = await loadContext({
+          assigneeId,
           featureId,
           organizationId: input.organizationId,
           sprintId,
+          taskIds,
         });
         return toolJson(payload);
       } catch (error) {
@@ -142,8 +158,13 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_capacity',
     {
       description:
-        'Capacity analysis for a sprint: per-person load vs free parts, overlap cells (two+ tasks same day/part), gaps, and days overloaded or planned while unavailable. Prefer this over raw positions when answering "who is overloaded / where is free capacity".',
+        'Capacity analysis for a sprint: per-person load vs free parts (meta.partsPerDay from org settings), overlaps, gaps, overloaded days. Sticky notes do not reserve capacity — only task positions. Prefer this over raw positions when answering "who is overloaded / where is free capacity".',
       inputSchema: {
+        assigneeId: z
+          .string()
+          .min(1)
+          .optional()
+          .describe('Optional staff:uuid — capacity for one person'),
         featureId: z
           .string()
           .optional()
@@ -151,9 +172,10 @@ export function createSprintContextMcpServer(input: {
         sprintId: z.number().int().positive().describe('Tracker sprint id'),
       },
     },
-    async ({ featureId, sprintId }) => {
+    async ({ assigneeId, featureId, sprintId }) => {
       try {
         const payload = await loadContext({
+          assigneeId,
           featureId,
           organizationId: input.organizationId,
           sprintId,
@@ -163,6 +185,7 @@ export function createSprintContextMcpServer(input: {
           meta: {
             calendarDays: payload.meta.calendarDays,
             featureId: payload.meta.featureId,
+            partsPerDay: payload.meta.partsPerDay,
             sprintId: payload.meta.sprintId,
             sprintWindow: payload.meta.sprintWindow,
             warnings: payload.meta.warnings,
@@ -236,7 +259,7 @@ export function createSprintContextMcpServer(input: {
     'propose_plan_patch',
     {
       description:
-        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). createNote writes draft sticky notes immediately (translucent on the board until apply). Other ops do NOT write. Returns summary, capacityPreview, draftNoteIds, and applyToken (TTL 30m). Always call this before apply_plan_patch. Does not sync assignees/dates to Tracker/Jira. For upsertLink to a note use comment:{notes[].id} (or notes[].taskId); raw notes[].id is accepted and rewritten.',
+        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). createNote writes draft sticky notes immediately (translucent until apply) — notes do NOT reserve capacity. upsertPosition places tasks; set syncToTracker=true to also add the issue to the tracker sprint and assign. Returns summary, schedule (calendar layout), capacityPreview, warnings (e.g. issue_not_in_sprint), draftNoteIds, applyToken (TTL 30m). Always call before apply_plan_patch. Part indices must be 0..meta.partsPerDay-1.',
       inputSchema: {
         ops: SprintPlanPatchOpsSchema.describe(
           '1–50 ops: upsertPosition|deletePosition|createNote|updateNote|deleteNote|upsertLink|deleteLink|upsertFeatureDraft|createGoal|updateGoal|deleteGoal'
@@ -270,7 +293,7 @@ export function createSprintContextMcpServer(input: {
     'apply_plan_patch',
     {
       description:
-        'Apply a previously proposed plan patch. Requires confirm=true and the applyToken from propose_plan_patch (same ops). Confirms draft notes (full opacity) and writes remaining ops. Not silent — refuse without confirm. No Tracker/Jira assignee/date sync.',
+        'Apply a previously proposed plan patch. Requires confirm=true and the applyToken from propose_plan_patch (same ops). Confirms draft notes and writes remaining ops. upsertPosition with syncToTracker=true adds the issue to the tracker sprint and assigns (BT position is always written even if tracker sync fails). Returns schedule + capacity. Not silent — refuse without confirm.',
       inputSchema: {
         applyToken: z.string().min(1).describe('Token from propose_plan_patch'),
         confirm: z

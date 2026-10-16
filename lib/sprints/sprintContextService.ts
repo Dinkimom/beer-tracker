@@ -1,12 +1,16 @@
 import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
 
-import { getPartsPerDay } from '@/constants';
 import { extractExcalidrawSceneText } from '@/lib/comments/excalidrawSceneText';
+import { findOrganizationById } from '@/lib/organizations';
 import {
   commentIdSetFromRecords,
   resolvePlannerLinkEndpoints,
   toPlannerCommentTaskId,
 } from '@/lib/planner/plannerLinkEndpoint';
+import {
+  DEFAULT_PLANNER_TIMELINE_SCALE,
+  readPlannerTimelineScale,
+} from '@/lib/plannerTimelineScale';
 import { listBoardAvailabilityEvents } from '@/lib/quarterlyPlans';
 import { listSprintGoals } from '@/lib/sprintGoals';
 import { fetchFeatureLanes } from '@/lib/sprints/featureLanesRepository';
@@ -43,8 +47,18 @@ import {
 
 const DAY_LEGEND =
   'Zero-based index of a working day within the sprint timeline (not a calendar weekday).';
-const PART_LEGEND =
-  `Time segment within a working day: 0 .. ${getPartsPerDay() - 1} (getPartsPerDay()=${getPartsPerDay()}; duration is counted in these parts).`;
+
+function partLegend(partsPerDay: number): string {
+  return `Time segment within a working day: 0 .. ${partsPerDay - 1} (meta.partsPerDay=${partsPerDay}; duration is counted in these parts).`;
+}
+
+async function loadOrgPartsPerDay(organizationId: string): Promise<number> {
+  const org = await findOrganizationById(organizationId);
+  if (!org) {
+    return DEFAULT_PLANNER_TIMELINE_SCALE.timeslotsPerDay;
+  }
+  return readPlannerTimelineScale(org.settings).timeslotsPerDay;
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -283,28 +297,37 @@ export async function buildSprintContext(input: {
   const featureId = input.featureId?.trim() || undefined;
   const softMeta = input.softMeta ?? {};
 
-  const [positions, featureLanes, notes, links, deliveryGoals, discoveryGoals, availability] =
-    await Promise.all([
-      loadPositions({ organizationId, sprintId }),
-      fetchFeatureLanes({ organizationId, sprintId }),
-      loadNotesWithDiagramText({ organizationId, sprintId }),
-      listTaskLinksForSprint({ organizationId, sprintId }).then((rows) =>
-        rows.flatMap((row) => {
-          const rec = asRecord(row);
-          return rec ? [mapLink(rec)] : [];
-        })
-      ),
-      listSprintGoals({ goalType: 'delivery', organizationId, sprintId }).then((rows) =>
-        rows.map(mapGoal)
-      ),
-      listSprintGoals({ goalType: 'discovery', organizationId, sprintId }).then((rows) =>
-        rows.map(mapGoal)
-      ),
-      loadAvailability({
-        boardId: softMeta.boardId,
-        sprintWindow: softMeta.sprintWindow,
-      }),
-    ]);
+  const [
+    positions,
+    featureLanes,
+    notes,
+    links,
+    deliveryGoals,
+    discoveryGoals,
+    availability,
+    partsPerDay,
+  ] = await Promise.all([
+    loadPositions({ organizationId, sprintId }),
+    fetchFeatureLanes({ organizationId, sprintId }),
+    loadNotesWithDiagramText({ organizationId, sprintId }),
+    listTaskLinksForSprint({ organizationId, sprintId }).then((rows) =>
+      rows.flatMap((row) => {
+        const rec = asRecord(row);
+        return rec ? [mapLink(rec)] : [];
+      })
+    ),
+    listSprintGoals({ goalType: 'delivery', organizationId, sprintId }).then((rows) =>
+      rows.map(mapGoal)
+    ),
+    listSprintGoals({ goalType: 'discovery', organizationId, sprintId }).then((rows) =>
+      rows.map(mapGoal)
+    ),
+    loadAvailability({
+      boardId: softMeta.boardId,
+      sprintWindow: softMeta.sprintWindow,
+    }),
+    loadOrgPartsPerDay(organizationId),
+  ]);
 
   let scopedPositions = positions;
   let scopedNotes = notes;
@@ -324,8 +347,9 @@ export async function buildSprintContext(input: {
   }
 
   const meta: SprintContextPayload['meta'] = {
-    legend: { day: DAY_LEGEND, part: PART_LEGEND },
+    legend: { day: DAY_LEGEND, part: partLegend(partsPerDay) },
     organizationId,
+    partsPerDay,
     schemaVersion: SPRINT_CONTEXT_SCHEMA_VERSION,
     sprintId,
   };

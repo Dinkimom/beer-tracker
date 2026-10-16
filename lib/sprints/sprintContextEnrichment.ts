@@ -17,6 +17,7 @@ import {
   collectSprintContextWarnings,
   parseStaffUuidFromAssigneeId,
 } from '@/lib/sprints/sprintContextEnrichmentHelpers';
+import { buildPlanVsActual } from '@/lib/sprints/sprintContextPlanVsActual';
 import { listStaff } from '@/lib/staffTeams';
 
 interface AssigneeInfo {
@@ -25,8 +26,11 @@ interface AssigneeInfo {
 }
 
 interface IssueInfo {
+  inSprint: boolean;
   issueType: string | null;
   parentKey: string | null;
+  statusKey: string | null;
+  statusTypeKey: string | null;
   summary: string;
 }
 
@@ -81,17 +85,24 @@ function issueTypeLabel(issue: IssueTrackerIssue): string | null {
   return key || null;
 }
 
+function mapIssueInfo(issue: IssueTrackerIssue, inSprint: boolean): IssueInfo {
+  return {
+    inSprint,
+    issueType: issueTypeLabel(issue),
+    parentKey: issue.parent?.key?.trim() || null,
+    statusKey: issue.status?.key?.trim() || null,
+    statusTypeKey: issue.statusType?.key?.trim() || null,
+    summary: issue.summary?.trim() || issue.key,
+  };
+}
+
 function mapIssuesByKey(issues: IssueTrackerIssue[]): Map<string, IssueInfo> {
   const map = new Map<string, IssueInfo>();
   for (const issue of issues) {
     if (!issue.key) {
       continue;
     }
-    map.set(issue.key, {
-      issueType: issueTypeLabel(issue),
-      parentKey: issue.parent?.key?.trim() || null,
-      summary: issue.summary?.trim() || issue.key,
-    });
+    map.set(issue.key, mapIssueInfo(issue, true));
   }
   return map;
 }
@@ -103,7 +114,11 @@ async function softLoadSprintIssues(input: {
   sprintStatus?: string;
   taskIds: string[];
   useStoredTracker: boolean;
-}): Promise<{ issuesByKey: Map<string, IssueInfo>; warning?: string }> {
+}): Promise<{
+  issuesByKey: Map<string, IssueInfo>;
+  loaded: boolean;
+  warning?: string;
+}> {
   try {
     const issueTracker = input.useStoredTracker
       ? await getIssueTrackerProviderClientForOrganization(input.organizationId)
@@ -122,11 +137,7 @@ async function softLoadSprintIssues(input: {
             if (!issue?.key) {
               return;
             }
-            issuesByKey.set(issue.key, {
-              issueType: issueTypeLabel(issue),
-              parentKey: issue.parent?.key?.trim() || null,
-              summary: issue.summary?.trim() || issue.key,
-            });
+            issuesByKey.set(issue.key, mapIssueInfo(issue, false));
           } catch (error) {
             console.warn(`[sprint-context] soft getIssue(${taskId}):`, error);
           }
@@ -138,16 +149,18 @@ async function softLoadSprintIssues(input: {
     if (stillMissing.length > 0) {
       return {
         issuesByKey,
+        loaded: true,
         warning: `tracker_issues_partial: missing summaries for ${stillMissing.slice(0, 8).join(', ')}${
           stillMissing.length > 8 ? ', …' : ''
         }`,
       };
     }
-    return { issuesByKey };
+    return { issuesByKey, loaded: true };
   } catch (error) {
     console.warn(`[sprint-context] soft issues(${input.sprintId}):`, error);
     return {
       issuesByKey: new Map(),
+      loaded: false,
       warning: `tracker_issues_unavailable: could not load issue summaries for sprint ${input.sprintId}`,
     };
   }
@@ -156,7 +169,9 @@ async function softLoadSprintIssues(input: {
 function enrichPosition(
   position: SprintContextPosition,
   lookup: ReturnType<typeof buildAssigneeLookup>,
-  issuesByKey: Map<string, IssueInfo>
+  issuesByKey: Map<string, IssueInfo>,
+  sprintStatus: string | undefined,
+  trackerIssuesLoaded: boolean
 ): { position: SprintContextPosition; unresolved: boolean } {
   const next = { ...position };
   const assignee = resolveAssignee(position.assigneeId, lookup);
@@ -170,6 +185,15 @@ function enrichPosition(
     next.issueType = issue.issueType;
     next.parentKey = issue.parentKey;
   }
+  next.planVsActual = buildPlanVsActual({
+    inSprint: issue?.inSprint,
+    issueFound: issue != null,
+    issueStatusKey: issue?.statusKey,
+    issueStatusTypeKey: issue?.statusTypeKey,
+    position,
+    sprintStatus,
+    trackerIssuesLoaded,
+  });
   return { position: next, unresolved: !assignee };
 }
 
@@ -187,7 +211,11 @@ export async function enrichSprintContextPayload(input: {
   const staffRows = await listStaff(input.organizationId);
   const lookup = buildAssigneeLookup(staffRows);
 
-  const { issuesByKey, warning: issuesWarning } = await softLoadSprintIssues({
+  const {
+    issuesByKey,
+    loaded: trackerIssuesLoaded,
+    warning: issuesWarning,
+  } = await softLoadSprintIssues({
     organizationId: input.organizationId,
     request: input.request,
     sprintId: input.payload.meta.sprintId,
@@ -200,8 +228,15 @@ export async function enrichSprintContextPayload(input: {
   }
 
   const unresolvedAssigneeIds: string[] = [];
+  const sprintStatus = input.payload.meta.sprintWindow?.status;
   const positions = input.payload.positions.map((position) => {
-    const { position: next, unresolved } = enrichPosition(position, lookup, issuesByKey);
+    const { position: next, unresolved } = enrichPosition(
+      position,
+      lookup,
+      issuesByKey,
+      sprintStatus,
+      trackerIssuesLoaded
+    );
     if (unresolved && position.assigneeId) {
       unresolvedAssigneeIds.push(position.assigneeId);
     }

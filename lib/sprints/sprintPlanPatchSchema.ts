@@ -29,6 +29,7 @@ const UpsertPositionSchema = z.object({
   segments: z.array(SegmentSchema).max(100).optional(),
   startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
   startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
+  syncToTracker: z.boolean().optional(),
   taskId: z.string().min(1).max(255),
 });
 
