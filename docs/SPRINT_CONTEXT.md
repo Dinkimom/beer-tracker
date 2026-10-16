@@ -49,21 +49,22 @@ Scope: `mcp:tools`.
 
 Tools:
 - `search_sprints(query, boardId?, limit?)` — найти спринт по фрагменту имени («Sprint 31», «RND Team 1»)
-- `get_sprint_context(sprintId, featureId?, assigneeId?, taskIds?)` — planning graph по **числовому** sprintId (включая `capacity`, `meta.partsPerDay`, `planVsActual`)
+- `get_sprint_context(sprintId, featureId?, assigneeId?, taskIds?)` — planning graph по **числовому** sprintId (включая `capacity`, `meta.partsPerDay`, `planVsActual`, статусы и `sprintHistory` на позициях)
 - `get_sprint_capacity(sprintId, featureId?, assigneeId?)` — только capacity: overlaps / gaps / overloaded
 - `get_feature_context(sprintId, featureId)` — тот же graph, но `featureId` обязателен
+- `search_issues(query?, boardId?, sprintId?, status?, assignee?, limit?)` — поиск задач на доске/бэклоге (оценка, статус, assignee)
 - `resolve_person(query)` — имя/email → `staffUid` / `assigneeId` (`staff:uuid`)
-- `propose_plan_patch(sprintId, ops)` — dry-run; `schedule[]` (раскладка по датам), `warnings` (`issue_not_in_sprint: KEY`), capacityPreview, applyToken
-- `apply_plan_patch(sprintId, ops, applyToken, confirm=true)` — запись после propose + confirm; `schedule[]` после apply
+- `propose_plan_patch(sprintId, ops, persistNotes?)` — dry-run; `schedule[]`, `warnings`, capacityPreview, `persistNotes`, applyToken
+- `apply_plan_patch(sprintId, ops, applyToken, confirm=true, onError?)` — запись после propose + confirm; `onError=stop|continue`; `schedule[]` после apply
 
 Типичный диалог: пользователь помнит «спринт 31» → агент `search_sprints` → берёт `hits[].sprintId` → `get_sprint_context` / `get_sprint_capacity`. Номер в названии ≠ id (например «Sprint 31» может быть id `1152`).
 
 ### Plan patch (write, не silent)
 
 1. Агент собирает `ops[]` (max 50) после research. Индексы `startPart` / `part` — `0 .. meta.partsPerDay-1` (из настроек орги).
-2. `propose_plan_patch` — валидация сетки + preview capacity + `schedule` + HMAC `applyToken`. **`createNote` пишется сразу** как pending (полупрозрачные стикеры, TTL 30 мин). Заметки **не** резервируют capacity.
-3. Человек ревьюит заметки / `summary` / `schedule` / `capacityPreview` / `warnings`.
-4. `apply_plan_patch` с **теми же** `ops` + `applyToken` + `confirm: true`.
+2. `propose_plan_patch` — валидация сетки + **preflight** (missing note/goal → `preflight_failed`) + preview capacity + `schedule` + HMAC `applyToken`. По умолчанию **`createNote` пишется сразу** как pending (полупрозрачные стикеры, TTL 30 мин). `persistNotes: false` — чистый dry-run без записи заметок (createNote только на apply). Заметки **не** резервируют capacity.
+3. Человек ревьюит заметки (если были) / `summary` / `schedule` / `capacityPreview` / `warnings`.
+4. `apply_plan_patch` с **теми же** `ops` + `applyToken` + `confirm: true`. `onError: stop` (default) — стоп на первой ошибке; `continue` — остальные ops применяются, ошибки в `applied[]`.
 
 Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `deleteNote`, `upsertLink`, `deleteLink`, `upsertFeatureDraft`, `createGoal`, `updateGoal`, `deleteGoal`.
 
@@ -71,7 +72,7 @@ Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `
 
 `upsertPosition.syncToTracker=true` — дополнительно `addIssueToSprint` + assign в Tracker/Jira (позиция в BT пишется всегда; ошибка sync — в `applied[].detail` / warning). Без флага — только планировщик BT; propose предупредит `issue_not_in_sprint: KEY`, если задачи нет на доске спринта.
 
-Notes: только `kind=text`; default `width=200` (2 части); `height` как у задачи. Для `upsertLink` на заметку — `comment:{notes[].id}`.
+Notes: только `kind=text`; default `width=200` (2 части); `height` как у задачи. В context: `updatedAt` / `updatedBy` / `version`; soft-delete. `updateNote.ifVersion` — optimistic lock (иначе `version conflict`). Для `upsertLink` на заметку — `comment:{notes[].id}`.
 
 ### Cursor / Claude — только URL
 
@@ -121,7 +122,7 @@ curl -sS \
 | `agenda` | Sorted timeline view: day/part/date + task + assignee name + summary |
 | `capacity` | Per-person load vs free parts (**tasks only**; notes ignored), overlaps, gaps, overloaded |
 | `featureLanes` | `draftRows`, `orderIds`, `hiddenIds` |
-| `notes` | Notes / diagrams / images; do **not** block capacity |
+| `notes` | Notes / diagrams / images; `updatedAt` / `updatedBy` / `version`; do **not** block capacity |
 | `taskLinks` | Arrows |
 | `sprintGoals` | `{ delivery: [], discovery: [] }` |
 | `availability` | Board events overlapping sprint window when known |

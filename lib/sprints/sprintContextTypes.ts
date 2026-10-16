@@ -17,10 +17,16 @@ export interface SprintContextPlanVsActual {
   slippedParts: number;
 }
 
+interface SprintContextSprintHistoryItem {
+  name: string;
+  sprintId: string;
+}
+
 export interface SprintContextPosition {
   assigneeEmail?: string | null;
   assigneeId: string;
   assigneeName?: string | null;
+  createdAt?: string | null;
   duration: number;
   isQa: boolean;
   issueType?: string | null;
@@ -29,9 +35,17 @@ export interface SprintContextPosition {
   plannedStartDay: number | null;
   plannedStartPart: number | null;
   planVsActual?: SprintContextPlanVsActual;
+  priority?: string | null;
   segments?: SprintContextPositionSegment[];
+  /** Soft from tracker: sprints the issue belongs/belonged to (current + closed). */
+  sprintHistory?: SprintContextSprintHistoryItem[];
   startDay: number;
   startPart: number;
+  /** Tracker status key (e.g. inProgress / closed). */
+  status?: string | null;
+  statusDisplay?: string | null;
+  /** Tracker status category (new / inProgress / done). */
+  statusType?: string | null;
   summary?: string | null;
   taskId: string;
 }
@@ -57,6 +71,10 @@ export interface SprintContextNote {
   /** Board card id for upsertLink (`comment:{id}`). */
   taskId?: string;
   text: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  /** Optimistic concurrency token for updateNote.ifVersion. */
+  version?: number;
 }
 
 export interface SprintContextTaskLink {

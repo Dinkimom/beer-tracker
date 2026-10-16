@@ -129,8 +129,16 @@ CREATE TABLE public.comments (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     pending_approval BOOLEAN NOT NULL DEFAULT FALSE,
     pending_approval_expires_at TIMESTAMP WITH TIME ZONE,
-    plan_patch_proposal_id VARCHAR(64)
+    plan_patch_proposal_id VARCHAR(64),
+    updated_by UUID,
+    version INTEGER NOT NULL DEFAULT 1,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    deleted_by UUID
 );
+
+CREATE INDEX IF NOT EXISTS idx_comments_sprint_active
+    ON public.comments (sprint_id)
+    WHERE deleted_at IS NULL;
 
 CREATE INDEX idx_task_positions_sprint ON public.task_positions(sprint_id);
 CREATE INDEX idx_task_positions_org_sprint ON public.task_positions(organization_id, sprint_id);

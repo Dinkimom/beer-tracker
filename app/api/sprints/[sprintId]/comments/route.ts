@@ -22,6 +22,19 @@ import {
   validateRequest,
 } from '@/lib/validation';
 
+function commentUpdateErrorResponse(
+  conflict: boolean | undefined,
+  row: unknown
+): NextResponse | null {
+  if (conflict) {
+    return NextResponse.json({ error: 'Comment version conflict' }, { status: 409 });
+  }
+  if (!row) {
+    return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+  }
+  return null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
@@ -194,7 +207,7 @@ export async function PUT(
         ? await getSprintCommentText({ commentId, organizationId, sprintId })
         : null;
 
-    const { row } = await updateSprintComment({
+    const { conflict, row } = await updateSprintComment({
       assigneeId,
       color: parseOptionalStickyNoteColor(color),
       commentId,
@@ -206,16 +219,15 @@ export async function PUT(
       part,
       sprintId,
       text,
+      updatedBy: tenantResult.ctx.userId,
       width,
       x,
       y,
     });
 
-    if (!row) {
-      return NextResponse.json(
-        { error: 'Comment not found' },
-        { status: 404 }
-      );
+    const updateError = commentUpdateErrorResponse(conflict, row);
+    if (updateError) {
+      return updateError;
     }
 
     if (typeof text === 'string') {
@@ -264,7 +276,15 @@ export async function DELETE(
       );
     }
 
-    await deleteSprintComment({ commentId, organizationId, sprintId });
+    const { ok } = await deleteSprintComment({
+      actorUserId: tenantResult.ctx.userId,
+      commentId,
+      organizationId,
+      sprintId,
+    });
+    if (!ok) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+    }
 
     notifySprintRealtime(request, organizationId, sprintId, ['comments']);
     return NextResponse.json({ success: true });

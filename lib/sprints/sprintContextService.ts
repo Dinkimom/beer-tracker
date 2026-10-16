@@ -147,6 +147,20 @@ function mapCommentRow(row: Record<string, unknown>): SprintContextNote {
   if (row.pending_approval === true || row.pendingApproval === true) {
     note.pendingApproval = true;
   }
+  const updatedAt = row.updated_at ?? row.updatedAt;
+  if (updatedAt instanceof Date) {
+    note.updatedAt = updatedAt.toISOString();
+  } else if (typeof updatedAt === 'string') {
+    note.updatedAt = updatedAt;
+  }
+  const updatedBy = asString(row.updated_by ?? row.updatedBy, '');
+  if (updatedBy) {
+    note.updatedBy = updatedBy;
+  }
+  const version = asNullableNumber(row.version);
+  if (version != null) {
+    note.version = version;
+  }
   return note;
 }
 

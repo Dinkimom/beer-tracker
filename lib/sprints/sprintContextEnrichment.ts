@@ -26,9 +26,13 @@ interface AssigneeInfo {
 }
 
 interface IssueInfo {
+  createdAt: string | null;
   inSprint: boolean;
   issueType: string | null;
   parentKey: string | null;
+  priority: string | null;
+  sprintHistory: Array<{ name: string; sprintId: string }>;
+  statusDisplay: string | null;
   statusKey: string | null;
   statusTypeKey: string | null;
   summary: string;
@@ -85,11 +89,43 @@ function issueTypeLabel(issue: IssueTrackerIssue): string | null {
   return key || null;
 }
 
+function mapSprintHistory(
+  sprint: IssueTrackerIssue['sprint']
+): Array<{ name: string; sprintId: string }> {
+  if (!sprint) {
+    return [];
+  }
+  const rows = Array.isArray(sprint) ? sprint : [sprint];
+  const byId = new Map<string, { name: string; sprintId: string }>();
+  for (const row of rows) {
+    if (typeof row === 'string') {
+      const id = row.trim();
+      if (id) {
+        byId.set(id, { name: id, sprintId: id });
+      }
+      continue;
+    }
+    const sprintId = String(row.id ?? '').trim();
+    if (!sprintId) {
+      continue;
+    }
+    byId.set(sprintId, {
+      name: row.display?.trim() || sprintId,
+      sprintId,
+    });
+  }
+  return [...byId.values()];
+}
+
 function mapIssueInfo(issue: IssueTrackerIssue, inSprint: boolean): IssueInfo {
   return {
+    createdAt: issue.createdAt?.trim() || null,
     inSprint,
     issueType: issueTypeLabel(issue),
     parentKey: issue.parent?.key?.trim() || null,
+    priority: issue.priority?.display?.trim() || issue.priority?.key?.trim() || null,
+    sprintHistory: mapSprintHistory(issue.sprint),
+    statusDisplay: issue.status?.display?.trim() || null,
     statusKey: issue.status?.key?.trim() || null,
     statusTypeKey: issue.statusType?.key?.trim() || null,
     summary: issue.summary?.trim() || issue.key,
@@ -184,6 +220,14 @@ function enrichPosition(
     next.summary = issue.summary;
     next.issueType = issue.issueType;
     next.parentKey = issue.parentKey;
+    next.status = issue.statusKey;
+    next.statusDisplay = issue.statusDisplay;
+    next.statusType = issue.statusTypeKey;
+    next.priority = issue.priority;
+    next.createdAt = issue.createdAt;
+    if (issue.sprintHistory.length > 0) {
+      next.sprintHistory = issue.sprintHistory;
+    }
   }
   next.planVsActual = buildPlanVsActual({
     inSprint: issue?.inSprint,

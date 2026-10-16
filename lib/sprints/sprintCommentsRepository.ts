@@ -10,7 +10,6 @@ import { commentParentToJsonb } from '@/lib/comments/commentParent';
 import { DEFAULT_PLANNER_COMMENT_CARD_ROW_HEIGHT } from '@/lib/comments/plannerCommentCardRow';
 import { DEFAULT_STICKY_NOTE_COLOR } from '@/lib/comments/stickyNoteColor';
 import { query } from '@/lib/db';
-import { deletePlannerStoredObject } from '@/lib/storage/getPlannerObjectStore';
 
 import { ensurePlannerCommentImagesSchema } from './ensurePlannerCommentImages';
 import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
@@ -32,6 +31,10 @@ export const SPRINT_COMMENT_RETURNING = `
         created_by,
         created_at,
         updated_at,
+        updated_by,
+        version,
+        deleted_at,
+        deleted_by,
         pending_approval,
         pending_approval_expires_at,
         plan_patch_proposal_id`;
@@ -82,6 +85,7 @@ export async function listSprintComments(input: {
     `SELECT ${COMMENT_RETURNING}
       FROM comments
       WHERE ${sprintTenantWhere()}
+        AND deleted_at IS NULL
       ORDER BY created_at`,
     sprintTenantParams(input.sprintId)
   );
@@ -91,10 +95,28 @@ export async function listSprintComments(input: {
 export async function listSprintCommentIds(input: { sprintId: number }): Promise<string[]> {
   await ensurePlannerCommentImagesSchema();
   const result = await query(
-    `SELECT id FROM comments WHERE ${sprintTenantWhere()}`,
+    `SELECT id FROM comments
+      WHERE ${sprintTenantWhere()}
+        AND deleted_at IS NULL`,
     sprintTenantParams(input.sprintId)
   );
   return result.rows.map((row) => String((row as { id: string }).id));
+}
+
+export async function sprintCommentExists(input: {
+  commentId: string;
+  sprintId: number;
+}): Promise<boolean> {
+  await ensurePlannerCommentImagesSchema();
+  const result = await query(
+    `SELECT 1 FROM comments
+      WHERE ${sprintTenantWhere()}
+        AND id = $2
+        AND deleted_at IS NULL
+      LIMIT 1`,
+    [...sprintTenantParams(input.sprintId), input.commentId]
+  );
+  return result.rows.length > 0;
 }
 
 export async function insertSprintComment(input: {
@@ -210,7 +232,9 @@ async function loadSprintCommentRow(input: {
   const result = await query(
     `SELECT ${COMMENT_RETURNING}
        FROM comments
-      WHERE ${sprintTenantWhere()} AND id = $2
+      WHERE ${sprintTenantWhere()}
+        AND id = $2
+        AND deleted_at IS NULL
       LIMIT 1`,
     [...sprintTenantParams(input.sprintId), input.commentId]
   );
@@ -239,8 +263,13 @@ export function updateSprintCommentSql(): string {
         part = COALESCE($8, part),
         color = COALESCE($9, color),
         parent = CASE WHEN $10 THEN $11::jsonb ELSE parent END,
+        updated_by = COALESCE($12, updated_by),
+        version = version + 1,
         updated_at = CURRENT_TIMESTAMP
-      WHERE sprint_id = $12 AND id = $13
+      WHERE sprint_id = $13
+        AND id = $14
+        AND deleted_at IS NULL
+        AND ($15::int IS NULL OR version = $15)
       RETURNING ${COMMENT_RETURNING}`;
 }
 
@@ -250,12 +279,14 @@ function updateSprintCommentParams(input: {
   commentId: string;
   day: unknown;
   height: unknown;
+  ifVersion?: number | null;
   organizationId: string;
   parent: TaskParent | null;
   parentProvided: boolean;
   part: unknown;
   sprintId: number;
   text: unknown;
+  updatedBy?: string | null;
   width: unknown;
   x: unknown;
   y: unknown;
@@ -272,8 +303,10 @@ function updateSprintCommentParams(input: {
     input.color ?? null,
     input.parentProvided,
     commentParentToJsonb(input.parent),
+    input.updatedBy ?? null,
     input.sprintId,
     input.commentId,
+    input.ifVersion ?? null,
   ] as QueryParams;
 }
 
@@ -283,16 +316,18 @@ export async function updateSprintComment(input: {
   commentId: string;
   day: unknown;
   height: unknown;
+  ifVersion?: number | null;
   organizationId: string;
   parent?: TaskParent | null;
   parentProvided?: boolean;
   part: unknown;
   sprintId: number;
   text: unknown;
+  updatedBy?: string | null;
   width: unknown;
   x: unknown;
   y: unknown;
-}): Promise<{ row: unknown | null }> {
+}): Promise<{ conflict?: boolean; row: unknown | null }> {
   await ensurePlannerCommentImagesSchema();
   const result = await query(
     updateSprintCommentSql(),
@@ -304,6 +339,15 @@ export async function updateSprintComment(input: {
   );
   const row = (result.rows[0] as CommentRowWithCreator | undefined) ?? null;
   if (!row) {
+    if (input.ifVersion != null) {
+      const stillThere = await sprintCommentExists({
+        commentId: input.commentId,
+        sprintId: input.sprintId,
+      });
+      if (stillThere) {
+        return { conflict: true, row: null };
+      }
+    }
     return { row: null };
   }
   const [withAuthor] = await withCommentAuthors([row]);
@@ -311,29 +355,26 @@ export async function updateSprintComment(input: {
 }
 
 export async function deleteSprintComment(input: {
+  actorUserId?: string | null;
   commentId: string;
   organizationId: string;
   sprintId: number;
-}): Promise<void> {
+}): Promise<{ ok: boolean }> {
   await ensurePlannerCommentImagesSchema();
-  const existing = await loadSprintCommentRow(input);
-  const imageFileId = (existing as { image_file_id?: string | null } | undefined)?.image_file_id;
-  let storageKey: string | null = null;
-  if (imageFileId) {
-    const fileResult = await query<{ storage_key: string }>(
-      'SELECT storage_key FROM planner_files WHERE id = $1 LIMIT 1',
-      [imageFileId]
-    );
-    storageKey = fileResult.rows[0]?.storage_key ?? null;
-  }
-  await query('DELETE FROM comments WHERE sprint_id = $1 AND id = $2', [
-    input.sprintId,
-    input.commentId,
-  ]);
-  if (imageFileId) {
-    await query('DELETE FROM planner_files WHERE id = $1', [imageFileId]);
-  }
-  await deletePlannerStoredObject(storageKey);
+  const result = await query(
+    `UPDATE comments SET
+        deleted_at = CURRENT_TIMESTAMP,
+        deleted_by = $3,
+        updated_at = CURRENT_TIMESTAMP,
+        updated_by = COALESCE($3, updated_by),
+        version = version + 1
+      WHERE sprint_id = $1
+        AND id = $2
+        AND deleted_at IS NULL
+      RETURNING id`,
+    [input.sprintId, input.commentId, input.actorUserId ?? null]
+  );
+  return { ok: (result.rowCount ?? 0) > 0 };
 }
 
 async function deleteExpiredPendingSprintComments(input: {

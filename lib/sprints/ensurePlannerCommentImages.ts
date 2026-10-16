@@ -39,6 +39,7 @@ async function runEnsurePlannerCommentImagesSchema(): Promise<void> {
     await ensureCommentsKindIncludesDiagram(schema);
     await ensureCommentsParentColumn(schema);
     await ensureCommentsPendingApprovalColumns(schema);
+    await ensureCommentsAuditVersionColumns(schema);
     schemaEnsured = true;
   } catch (error) {
     schemaEnsurePromise = null;
@@ -157,5 +158,29 @@ async function ensureCommentsPendingApprovalColumns(schema: string): Promise<voi
     CREATE INDEX IF NOT EXISTS idx_comments_pending_approval
       ON ${schema}.comments (sprint_id)
       WHERE pending_approval = TRUE
+  `);
+}
+
+async function ensureCommentsAuditVersionColumns(schema: string): Promise<void> {
+  await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS updated_by UUID
+  `);
+  await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1
+  `);
+  await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE
+  `);
+  await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS deleted_by UUID
+  `);
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_comments_sprint_active
+      ON ${schema}.comments (sprint_id)
+      WHERE deleted_at IS NULL
   `);
 }

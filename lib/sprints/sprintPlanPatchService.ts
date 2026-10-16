@@ -1,5 +1,6 @@
 import type {
   SprintPlanPatchApplyResult,
+  SprintPlanPatchOnError,
   SprintPlanPatchOp,
   SprintPlanPatchProposeResult,
 } from '@/lib/sprints/sprintPlanPatchTypes';
@@ -22,6 +23,7 @@ import {
   summarizeSprintPlanPatchOps,
 } from '@/lib/sprints/sprintPlanPatchHelpers';
 import { assertPlanPatchOpsFitPartsPerDay } from '@/lib/sprints/sprintPlanPatchPartsValidation';
+import { assertPlanPatchTargetsExist } from '@/lib/sprints/sprintPlanPatchPreflight';
 import { parseSprintPlanPatchOps } from '@/lib/sprints/sprintPlanPatchSchema';
 import {
   proposalIdFromOpsHash,
@@ -82,9 +84,12 @@ export async function proposeSprintPlanPatch(input: {
   actorUserId: string;
   ops: unknown;
   organizationId: string;
+  /** When false, skip writing translucent createNote drafts (still returns applyToken). Default true. */
+  persistNotes?: boolean;
   sprintId: number;
 }): Promise<SprintPlanPatchProposeResult> {
   const ops = parseOpsOrThrow(input.ops);
+  const persistNotes = input.persistNotes !== false;
   const current = await loadSprintContextForOrganization({
     organizationId: input.organizationId,
     request: null,
@@ -92,6 +97,7 @@ export async function proposeSprintPlanPatch(input: {
     useStoredTracker: true,
   });
   assertPlanPatchOpsFitPartsPerDay(ops, current.meta.partsPerDay);
+  await assertPlanPatchTargetsExist({ ops, sprintId: input.sprintId });
   const simulated = simulatePositionsAfterPatch(current.positions, ops);
   const capacityPreviewSummary = buildSprintContextCapacity({
     availability: current.availability,
@@ -117,14 +123,16 @@ export async function proposeSprintPlanPatch(input: {
   const nowSec = Math.floor(Date.now() / 1000);
   const opsHash = hashSprintPlanPatchOps(ops);
   const expiresAt = new Date((nowSec + SPRINT_PLAN_PATCH_TTL_SEC) * 1000);
-  const draftNoteIds = await persistDraftNotesForProposal({
-    actorUserId: input.actorUserId,
-    expiresAt,
-    ops,
-    organizationId: input.organizationId,
-    proposalId: opsHash,
-    sprintId: input.sprintId,
-  });
+  const draftNoteIds = persistNotes
+    ? await persistDraftNotesForProposal({
+        actorUserId: input.actorUserId,
+        expiresAt,
+        ops,
+        organizationId: input.organizationId,
+        proposalId: opsHash,
+        sprintId: input.sprintId,
+      })
+    : [];
   const applyToken = signSprintPlanPatchToken({
     draftNoteIds,
     ops,
@@ -138,6 +146,7 @@ export async function proposeSprintPlanPatch(input: {
     ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),
     expiresAt: expiresAt.toISOString(),
     ops,
+    persistNotes,
     proposalId: proposalIdFromOpsHash(opsHash),
     schedule,
     sprintId: input.sprintId,
@@ -148,19 +157,30 @@ export async function proposeSprintPlanPatch(input: {
 
 function applyPatchRejected(
   sprintId: number,
-  error: string
+  error: string,
+  onError?: SprintPlanPatchOnError
 ): SprintPlanPatchApplyResult {
-  return { applied: [], error, ok: false, sprintId };
+  return {
+    applied: [],
+    error,
+    ok: false,
+    ...(onError ? { onError } : {}),
+    sprintId,
+  };
 }
 
 function notifyAppliedPlanPatch(input: {
-  applied: { ok: boolean }[];
+  applied: { index: number; ok: boolean }[];
   draftNoteIds: readonly string[];
   ops: SprintPlanPatchOp[];
   organizationId: string;
   sprintId: number;
 }): void {
-  const resources = collectRealtimeResources(input.ops.slice(0, input.applied.filter((row) => row.ok).length));
+  const okOps = input.applied
+    .filter((row) => row.ok)
+    .map((row) => input.ops[row.index])
+    .filter((op): op is SprintPlanPatchOp => op != null);
+  const resources = collectRealtimeResources(okOps);
   if (input.draftNoteIds.length > 0 && !resources.includes('comments')) {
     resources.push('comments');
   }
@@ -179,14 +199,17 @@ export async function applySprintPlanPatch(input: {
   actorUserId: string;
   applyToken: string;
   confirm: boolean;
+  onError?: SprintPlanPatchOnError;
   ops: unknown;
   organizationId: string;
   sprintId: number;
 }): Promise<SprintPlanPatchApplyResult> {
+  const onError = input.onError ?? 'stop';
   if (input.confirm !== true) {
     return applyPatchRejected(
       input.sprintId,
-      'confirm_required: set confirm=true after reviewing propose_plan_patch'
+      'confirm_required: set confirm=true after reviewing propose_plan_patch',
+      onError
     );
   }
 
@@ -196,7 +219,8 @@ export async function applySprintPlanPatch(input: {
   } catch (error) {
     return applyPatchRejected(
       input.sprintId,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
+      onError
     );
   }
 
@@ -207,7 +231,7 @@ export async function applySprintPlanPatch(input: {
     sprintId: input.sprintId,
   });
   if (!verified.ok) {
-    return applyPatchRejected(input.sprintId, verified.error);
+    return applyPatchRejected(input.sprintId, verified.error, onError);
   }
 
   await confirmProposedCreateNotes({
@@ -218,6 +242,7 @@ export async function applySprintPlanPatch(input: {
   const { applied, error } = await applySprintPlanPatchOps({
     actorUserId: input.actorUserId,
     draftNoteIds: verified.draftNoteIds,
+    onError,
     organizationId: input.organizationId,
     ops,
     sprintId: input.sprintId,
@@ -236,6 +261,7 @@ export async function applySprintPlanPatch(input: {
       applied,
       error,
       ok: false,
+      onError,
       sprintId: input.sprintId,
     };
   }
@@ -264,6 +290,7 @@ export async function applySprintPlanPatch(input: {
     applied,
     ...(capacity ? { capacity } : {}),
     ok: true,
+    onError,
     ...(schedule ? { schedule } : {}),
     sprintId: input.sprintId,
   };

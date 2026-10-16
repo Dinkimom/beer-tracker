@@ -45,6 +45,8 @@ export type SprintPlanPatchOp =
       commentId: string;
       day?: number | null;
       height?: number;
+      /** Fail update when note.version differs (optimistic lock). */
+      ifVersion?: number;
       op: 'updateNote';
       parent?: SprintPlanPatchNoteParent | null;
       part?: number | null;
@@ -64,6 +66,9 @@ export type SprintPlanPatchOp =
       op: 'upsertFeatureDraft';
     } | { commentId: string; op: 'deleteNote' } | { done?: boolean; id: string; op: 'updateGoal'; text?: string } | { goalType: SprintPlanPatchGoalType; op: 'createGoal'; text: string } | { id: string; op: 'deleteGoal' } | { linkId: string; op: 'deleteLink' } | { op: 'deletePosition'; taskId: string };
 
+/** stop = halt on first failure (default); continue = apply remaining ops. */
+export type SprintPlanPatchOnError = 'continue' | 'stop';
+
 export interface SprintPlanPatchProposeResult {
   applyToken: string;
   capacityPreview: { summary: string };
@@ -71,6 +76,8 @@ export interface SprintPlanPatchProposeResult {
   draftNoteIds?: string[];
   expiresAt: string;
   ops: SprintPlanPatchOp[];
+  /** False when propose skipped writing createNote drafts. */
+  persistNotes: boolean;
   proposalId: string;
   /** Calendar layout for upsertPosition ops after simulation (dates + partsPerDay). */
   schedule: string[];
@@ -92,6 +99,7 @@ export interface SprintPlanPatchApplyResult {
   capacity?: { summary: string };
   error?: string;
   ok: boolean;
+  onError?: SprintPlanPatchOnError;
   /** Calendar layout for upsertPosition ops after apply. */
   schedule?: string[];
   sprintId: number;

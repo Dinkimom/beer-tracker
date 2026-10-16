@@ -22,7 +22,9 @@ describe('planner writes include organization_id', () => {
     expect(updateSprintCommentSql()).toContain(
       'parent = CASE WHEN $10 THEN $11::jsonb ELSE parent END'
     );
-    expect(updateSprintCommentSql()).toContain('WHERE sprint_id = $12 AND id = $13');
+    expect(updateSprintCommentSql()).toContain('WHERE sprint_id = $13');
+    expect(updateSprintCommentSql()).toContain('AND id = $14');
+    expect(updateSprintCommentSql()).toContain('deleted_at IS NULL');
   });
 
   it('upserts occupancy order on the organization-scoped primary key', () => {

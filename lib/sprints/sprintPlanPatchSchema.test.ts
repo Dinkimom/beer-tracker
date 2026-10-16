@@ -44,6 +44,25 @@ describe('parseSprintPlanPatchOps', () => {
     ).toThrow(/updateNote/);
   });
 
+  it('accepts updateNote with ifVersion', () => {
+    const ops = parseSprintPlanPatchOps([
+      {
+        commentId: '8ffc8985-0001-472e-84bc-cfae58dc283f',
+        ifVersion: 3,
+        op: 'updateNote',
+        text: 'revised',
+      },
+    ]);
+    expect(ops).toEqual([
+      {
+        commentId: '8ffc8985-0001-472e-84bc-cfae58dc283f',
+        ifVersion: 3,
+        op: 'updateNote',
+        text: 'revised',
+      },
+    ]);
+  });
+
   it('rejects unknown op', () => {
     expect(() => parseSprintPlanPatchOps([{ op: 'explodeEverything' }])).toThrow();
   });

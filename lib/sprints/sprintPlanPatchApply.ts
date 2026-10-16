@@ -1,6 +1,7 @@
 import type { SprintRealtimeResource } from '@/lib/realtime/sprintRealtimeTypes';
 import type {
   SprintPlanPatchApplyOpResult,
+  SprintPlanPatchOnError,
   SprintPlanPatchOp,
 } from '@/lib/sprints/sprintPlanPatchTypes';
 import type { TaskParent } from '@/types';
@@ -128,32 +129,56 @@ async function applyCreateNote(input: {
 }
 
 async function applyUpdateNote(input: {
+  actorUserId: string;
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'updateNote' }>;
   sprintId: number;
 }): Promise<string> {
   const { op, organizationId, sprintId } = input;
   const parentProvided = op.parent !== undefined;
-  const { row } = await updateSprintComment({
+  const { conflict, row } = await updateSprintComment({
     assigneeId: op.assigneeId,
     color: op.color,
     commentId: op.commentId,
     day: op.day,
     height: op.height,
+    ifVersion: op.ifVersion,
     organizationId,
     parent: parentProvided ? asParent(op.parent) : undefined,
     parentProvided,
     part: op.part,
     sprintId,
     text: op.text,
+    updatedBy: input.actorUserId,
     width: op.width,
     x: undefined,
     y: undefined,
   });
+  if (conflict) {
+    throw new Error(`note ${op.commentId} version conflict`);
+  }
   if (!row) {
     throw new Error(`note ${op.commentId} not found`);
   }
   return `note ${op.commentId}`;
+}
+
+async function applyDeleteNote(input: {
+  actorUserId: string;
+  organizationId: string;
+  op: Extract<SprintPlanPatchOp, { op: 'deleteNote' }>;
+  sprintId: number;
+}): Promise<string> {
+  const { ok } = await deleteSprintComment({
+    actorUserId: input.actorUserId,
+    commentId: input.op.commentId,
+    organizationId: input.organizationId,
+    sprintId: input.sprintId,
+  });
+  if (!ok) {
+    throw new Error(`note ${input.op.commentId} not found`);
+  }
+  return `note ${input.op.commentId}`;
 }
 
 async function applyUpsertFeatureDraft(input: {
@@ -294,10 +319,19 @@ async function applyOneOp(input: {
         sprintId,
       });
     case 'updateNote':
-      return applyUpdateNote({ organizationId, op, sprintId });
+      return applyUpdateNote({
+        actorUserId: input.actorUserId,
+        organizationId,
+        op,
+        sprintId,
+      });
     case 'deleteNote':
-      await deleteSprintComment({ commentId: op.commentId, organizationId, sprintId });
-      return `note ${op.commentId}`;
+      return applyDeleteNote({
+        actorUserId: input.actorUserId,
+        organizationId,
+        op,
+        sprintId,
+      });
     case 'upsertLink':
       return applyUpsertLink({
         commentIds: input.commentIds,
@@ -367,9 +401,50 @@ async function collectCommentIdsForLinkOps(input: {
   return commentIds;
 }
 
+async function applyIndexedOp(input: {
+  actorUserId: string;
+  commentIds?: ReadonlySet<string>;
+  draftNoteId?: string;
+  index: number;
+  organizationId: string;
+  op: SprintPlanPatchOp;
+  sprintId: number;
+}): Promise<SprintPlanPatchApplyOpResult> {
+  try {
+    const detail = await applyOneOp({
+      actorUserId: input.actorUserId,
+      commentIds: input.commentIds,
+      draftNoteId: input.draftNoteId,
+      organizationId: input.organizationId,
+      op: input.op,
+      sprintId: input.sprintId,
+    });
+    return { detail, index: input.index, ok: true, op: input.op.op };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { error: message, index: input.index, ok: false, op: input.op.op };
+  }
+}
+
+function summarizeApplyFailures(
+  applied: SprintPlanPatchApplyOpResult[],
+  onError: SprintPlanPatchOnError
+): string | undefined {
+  const failed = applied.filter((row) => !row.ok);
+  if (failed.length === 0) {
+    return undefined;
+  }
+  if (onError === 'stop') {
+    const first = failed[0]!;
+    return `stopped at op[${first.index}] ${first.op}: ${first.error ?? 'unknown'}`;
+  }
+  return `continued with ${failed.length} failed op(s)`;
+}
+
 export async function applySprintPlanPatchOps(input: {
   actorUserId: string;
   draftNoteIds?: readonly string[];
+  onError?: SprintPlanPatchOnError;
   organizationId: string;
   ops: SprintPlanPatchOp[];
   sprintId: number;
@@ -377,6 +452,7 @@ export async function applySprintPlanPatchOps(input: {
   const applied: SprintPlanPatchApplyOpResult[] = [];
   const draftCursor = { index: 0 };
   const draftNoteIds = input.draftNoteIds ?? [];
+  const onError = input.onError ?? 'stop';
   const commentIds = await collectCommentIdsForLinkOps({
     draftNoteIds,
     ops: input.ops,
@@ -384,24 +460,19 @@ export async function applySprintPlanPatchOps(input: {
   });
   for (let index = 0; index < input.ops.length; index++) {
     const op = input.ops[index]!;
-    try {
-      const detail = await applyOneOp({
-        actorUserId: input.actorUserId,
-        commentIds,
-        draftNoteId: op.op === 'createNote' ? takeNextDraftNoteId(draftNoteIds, draftCursor) : undefined,
-        organizationId: input.organizationId,
-        op,
-        sprintId: input.sprintId,
-      });
-      applied.push({ detail, index, ok: true, op: op.op });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      applied.push({ error: message, index, ok: false, op: op.op });
-      return {
-        applied,
-        error: `stopped at op[${index}] ${op.op}: ${message}`,
-      };
+    const row = await applyIndexedOp({
+      actorUserId: input.actorUserId,
+      commentIds,
+      draftNoteId: op.op === 'createNote' ? takeNextDraftNoteId(draftNoteIds, draftCursor) : undefined,
+      index,
+      organizationId: input.organizationId,
+      op,
+      sprintId: input.sprintId,
+    });
+    applied.push(row);
+    if (!row.ok && onError === 'stop') {
+      return { applied, error: summarizeApplyFailures(applied, onError) };
     }
   }
-  return { applied };
+  return { applied, error: summarizeApplyFailures(applied, onError) };
 }

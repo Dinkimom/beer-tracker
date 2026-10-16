@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { canUsePlanner } from '@/lib/access/orgAccess';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
@@ -61,7 +62,7 @@ export function createSprintContextMcpServer(input: {
 }): McpServer {
   const server = new McpServer({
     name: 'beer-tracker-sprint-context',
-    version: '1.5.0',
+    version: '1.7.0',
   });
 
   server.registerTool(
@@ -225,6 +226,73 @@ export function createSprintContextMcpServer(input: {
   );
 
   server.registerTool(
+    'search_issues',
+    {
+      description:
+        'Search tracker issues on a board/backlog (not only planned positions). Filter by text, issueType (e.g. Bug), status/statusType, priority, notInActiveSprint. Returns compact hits: key, summary, status, priority, createdAt, descriptionPreview, sprintIds, linkKeys. Use before estimating backlog bugs.',
+      inputSchema: {
+        boardId: z.number().int().positive().describe('Tracker board id'),
+        issueType: z
+          .string()
+          .optional()
+          .describe('Issue type substring, e.g. Bug / Task'),
+        limit: z.number().int().positive().max(50).optional().describe('Max hits (default 30)'),
+        notInActiveSprint: z
+          .boolean()
+          .optional()
+          .describe('When true, only issues with no sprint membership'),
+        priority: z.string().optional().describe('Priority substring, e.g. Critical'),
+        query: z
+          .string()
+          .optional()
+          .describe('Optional text/key search; omit to scan board issues then filter'),
+        status: z.string().optional().describe('Status key/display substring'),
+        statusType: z
+          .string()
+          .optional()
+          .describe('Status category: new | inProgress | done'),
+      },
+    },
+    async ({
+      boardId,
+      issueType,
+      limit,
+      notInActiveSprint,
+      priority,
+      query: queryText,
+      status,
+      statusType,
+    }) => {
+      try {
+        const issueTracker = await getIssueTrackerProviderClientForOrganization(
+          input.organizationId
+        );
+        const result = await searchIssuesForOrganization({
+          filters: {
+            boardId,
+            issueType,
+            limit,
+            notInActiveSprint,
+            priority,
+            query: queryText,
+            status,
+            statusType,
+          },
+          issueTracker,
+        });
+        return toolJson({
+          hits: result.hits,
+          hint: 'Hits are tracker issues (not Beer Tracker positions). Pair with get_sprint_context for planned layout.',
+          truncated: result.truncated,
+          warnings: result.warnings,
+        });
+      } catch (error) {
+        return toolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
     'resolve_person',
     {
       description:
@@ -259,15 +327,21 @@ export function createSprintContextMcpServer(input: {
     'propose_plan_patch',
     {
       description:
-        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). createNote writes draft sticky notes immediately (translucent until apply) — notes do NOT reserve capacity. upsertPosition places tasks; set syncToTracker=true to also add the issue to the tracker sprint and assign. Returns summary, schedule (calendar layout), capacityPreview, warnings (e.g. issue_not_in_sprint), draftNoteIds, applyToken (TTL 30m). Always call before apply_plan_patch. Part indices must be 0..meta.partsPerDay-1.',
+        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). By default createNote writes draft sticky notes immediately (translucent until apply); set persistNotes=false for a pure dry-run (notes created only on apply). Notes do NOT reserve capacity. Preflight fails if updateNote/deleteNote/updateGoal/deleteGoal targets are missing. upsertPosition places tasks; set syncToTracker=true to also add the issue to the tracker sprint and assign. Returns summary, schedule, capacityPreview, warnings, persistNotes, draftNoteIds, applyToken (TTL 30m). Always call before apply_plan_patch. Part indices must be 0..meta.partsPerDay-1. Notes expose updatedAt/updatedBy/version — pass ifVersion on updateNote for optimistic lock.',
       inputSchema: {
         ops: SprintPlanPatchOpsSchema.describe(
           '1–50 ops: upsertPosition|deletePosition|createNote|updateNote|deleteNote|upsertLink|deleteLink|upsertFeatureDraft|createGoal|updateGoal|deleteGoal'
         ),
+        persistNotes: z
+          .boolean()
+          .optional()
+          .describe(
+            'Default true: write translucent createNote drafts now. false: dry-run only; createNote runs on apply.'
+          ),
         sprintId: z.number().int().positive().describe('Tracker sprint id'),
       },
     },
-    async ({ ops, sprintId }) => {
+    async ({ ops, persistNotes, sprintId }) => {
       try {
         const denied = plannerWriteDenied(input.profile);
         if (denied) {
@@ -277,11 +351,15 @@ export function createSprintContextMcpServer(input: {
           actorUserId: input.userId,
           ops,
           organizationId: input.organizationId,
+          persistNotes,
           sprintId,
         });
+        const hint = result.persistNotes
+          ? 'Review the translucent draft notes on the planner (and summary/capacityPreview), then call apply_plan_patch with the same ops + applyToken and confirm=true.'
+          : 'Review summary/capacityPreview/schedule (no draft notes written). Call apply_plan_patch with the same ops + applyToken and confirm=true to write.';
         return toolJson({
           ...result,
-          hint: 'Review the translucent draft notes on the planner (and summary/capacityPreview), then call apply_plan_patch with the same ops + applyToken and confirm=true.',
+          hint,
         });
       } catch (error) {
         return toolError(error);
@@ -293,17 +371,21 @@ export function createSprintContextMcpServer(input: {
     'apply_plan_patch',
     {
       description:
-        'Apply a previously proposed plan patch. Requires confirm=true and the applyToken from propose_plan_patch (same ops). Confirms draft notes and writes remaining ops. upsertPosition with syncToTracker=true adds the issue to the tracker sprint and assigns (BT position is always written even if tracker sync fails). Returns schedule + capacity. Not silent — refuse without confirm.',
+        'Apply a previously proposed plan patch. Requires confirm=true and the applyToken from propose_plan_patch (same ops). Confirms draft notes (if any) and writes remaining ops. onError=stop (default) halts on first failure; onError=continue applies remaining ops and reports per-op errors. upsertPosition with syncToTracker=true adds the issue to the tracker sprint and assigns (BT position is always written even if tracker sync fails). Returns schedule + capacity. Not silent — refuse without confirm.',
       inputSchema: {
         applyToken: z.string().min(1).describe('Token from propose_plan_patch'),
         confirm: z
           .literal(true)
           .describe('Must be true — explicit approval to write'),
+        onError: z
+          .enum(['continue', 'stop'])
+          .optional()
+          .describe('stop (default): halt on first failed op. continue: apply remaining ops.'),
         ops: SprintPlanPatchOpsSchema.describe('Exact ops array from propose_plan_patch'),
         sprintId: z.number().int().positive().describe('Tracker sprint id'),
       },
     },
-    async ({ applyToken, confirm, ops, sprintId }) => {
+    async ({ applyToken, confirm, onError, ops, sprintId }) => {
       try {
         const denied = plannerWriteDenied(input.profile);
         if (denied) {
@@ -313,6 +395,7 @@ export function createSprintContextMcpServer(input: {
           actorUserId: input.userId,
           applyToken,
           confirm,
+          onError,
           ops,
           organizationId: input.organizationId,
           sprintId,

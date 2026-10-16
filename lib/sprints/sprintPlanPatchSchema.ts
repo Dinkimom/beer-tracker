@@ -56,6 +56,7 @@ const UpdateNoteSchema = z.object({
   commentId: z.string().uuid(),
   day: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX).nullable().optional(),
   height: z.number().int().min(1).max(10).optional(),
+  ifVersion: z.number().int().positive().optional(),
   op: z.literal('updateNote'),
   parent: NoteParentSchema.nullable().optional(),
   part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX).nullable().optional(),

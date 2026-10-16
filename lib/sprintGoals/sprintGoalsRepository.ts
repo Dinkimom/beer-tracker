@@ -63,6 +63,11 @@ export async function deleteSprintGoal(input: {
   return result.rows.length > 0;
 }
 
+export async function sprintGoalExists(input: { goalId: string }): Promise<boolean> {
+  const result = await query('SELECT 1 FROM sprint_goals WHERE id = $1 LIMIT 1', [input.goalId]);
+  return result.rows.length > 0;
+}
+
 interface SprintGoalsAggRow {
   goals_done: number;
   goals_total: number;
