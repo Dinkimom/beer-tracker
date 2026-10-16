@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.5] — 2026-10-17
+
+### English
+
+- Retro board reactions: per-user votes with counts (legacy string emojis migrate on parse); merge keeps concurrent votes; MCP view returns unique emojis.
+- Swimlane in-progress fact timeline hides days with availability events (leave, on-call, sick leave, etc.), not only weekends.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.16.5` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Реакции на доске ретро: голоса по пользователям со счётчиками (legacy-строки emoji мигрируют при parse); merge сохраняет одновременные голоса; MCP-view отдаёт уникальные emoji.
+- Таймлайн факта In Progress на свимлейне скрывает дни с событиями занятости (отпуск, дежурство, больничный и т.п.), не только выходные.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.16.5` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.16.4] — 2026-10-16
 
 ### English
