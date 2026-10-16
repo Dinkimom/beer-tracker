@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.2] — 2026-10-16
+
+### English
+
+- MCP sprint context uses the org planner grid (`meta.partsPerDay`); capacity, legends, and plan-patch reject parts outside that grid.
+- `propose_plan_patch` / `apply_plan_patch` return a calendar `schedule`; propose warns `issue_not_in_sprint`; `upsertPosition.syncToTracker` can add the issue to the tracker sprint and assign.
+- `get_sprint_context` accepts `assigneeId` / `taskIds` filters; positions include `planVsActual` (plan vs actual parts, best-effort `carriedOver`).
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.16.2` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- MCP sprint context берёт сетку дня из настроек орги (`meta.partsPerDay`); capacity, легенда и plan patch отклоняют слоты вне сетки.
+- `propose_plan_patch` / `apply_plan_patch` отдают календарный `schedule`; propose предупреждает `issue_not_in_sprint`; `upsertPosition.syncToTracker` может добавить задачу в спринт трекера и назначить исполнителя.
+- `get_sprint_context` фильтрует по `assigneeId` / `taskIds`; у позиций есть `planVsActual` (план против факта, best-effort `carriedOver`).
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.16.2` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.16.1] — 2026-10-16
 
 ### English
