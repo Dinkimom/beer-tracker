@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.4] — 2026-10-16
+
+### English
+
+- MCP `whoami`, `get_issue` (description/links/comments), and `get_issue_snapshot` (synced `issue_snapshots` dump).
+- Planning `statusCategory` on positions and `search_issues` (e.g. Ready for development → not-started); prefer over raw Jira `statusType`.
+- MCP retro board: `get_retro_board` / `apply_retro_board` (notes, comments, columns).
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.16.4` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- MCP `whoami`, `get_issue` (описание/связи/комментарии) и `get_issue_snapshot` (снимок из выгрузки `issue_snapshots`).
+- Планировочный `statusCategory` на позициях и в `search_issues` (Ready for development → not-started); предпочтительнее сырого Jira `statusType`.
+- MCP-доска ретро: `get_retro_board` / `apply_retro_board` (заметки, комментарии, колонки).
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.16.4` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.16.3] — 2026-10-16
 
 ### English
