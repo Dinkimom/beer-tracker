@@ -10,6 +10,7 @@ import {
   getIssueTrackerProviderClientForOrganization,
   getIssueTrackerProviderClientFromRequest,
 } from '@/lib/issueTrackerProvider/clientFactory';
+import { resolveMcpIssueStatusCategory } from '@/lib/mcp/resolveMcpIssueStatusCategory';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
 import {
   buildSprintContextAgenda,
@@ -223,6 +224,10 @@ function enrichPosition(
     next.status = issue.statusKey;
     next.statusDisplay = issue.statusDisplay;
     next.statusType = issue.statusTypeKey;
+    next.statusCategory = resolveMcpIssueStatusCategory({
+      statusKey: issue.statusKey,
+      statusTypeKey: issue.statusTypeKey,
+    });
     next.priority = issue.priority;
     next.createdAt = issue.createdAt;
     if (issue.sprintHistory.length > 0) {

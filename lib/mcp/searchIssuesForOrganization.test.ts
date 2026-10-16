@@ -56,7 +56,48 @@ describe('searchIssuesForOrganization', () => {
     expect(result.hits).toHaveLength(1);
     expect(result.hits[0]?.key).toBe('RND-1');
     expect(result.hits[0]?.linkKeys).toEqual(['SUP-9']);
+    expect(result.hits[0]?.statusCategory).toBe('todo');
     expect(result.hits[0]?.descriptionPreview?.endsWith('…')).toBe(true);
     expect(issueTracker.searchIssuesOnBoard).not.toHaveBeenCalled();
+  });
+
+  it('treats Ready for development as todo when filtering statusType=inProgress', async () => {
+    const issueTracker = {
+      listIssueLinksBatch: vi.fn().mockResolvedValue({}),
+      listIssuesForBoard: vi.fn().mockResolvedValue({
+        issues: [
+          {
+            key: 'RND-10',
+            provider: 'jira',
+            status: { display: 'Ready for development', key: 'readyfordevelopment' },
+            statusType: { key: 'inProgress' },
+            summary: 'Not started',
+            type: { display: 'Task', key: 'task' },
+          },
+          {
+            key: 'RND-11',
+            provider: 'jira',
+            status: { display: 'In Progress', key: 'inprogress' },
+            statusType: { key: 'inProgress' },
+            summary: 'Active',
+            type: { display: 'Task', key: 'task' },
+          },
+        ],
+        truncated: false,
+      }),
+      searchIssuesOnBoard: vi.fn(),
+    };
+
+    const inProgress = await searchIssuesForOrganization({
+      filters: { boardId: 1, statusType: 'inProgress' },
+      issueTracker: issueTracker as never,
+    });
+    expect(inProgress.hits.map((hit) => hit.key)).toEqual(['RND-11']);
+
+    const todo = await searchIssuesForOrganization({
+      filters: { boardId: 1, statusType: 'todo' },
+      issueTracker: issueTracker as never,
+    });
+    expect(todo.hits.map((hit) => hit.key)).toEqual(['RND-10']);
   });
 });

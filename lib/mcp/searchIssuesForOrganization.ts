@@ -1,5 +1,7 @@
 import type { IssueTrackerIssue, IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/types';
 
+import { resolveMcpIssueStatusCategory } from '@/lib/mcp/resolveMcpIssueStatusCategory';
+
 interface SearchIssuesHit {
   createdAt: string | null;
   descriptionPreview: string | null;
@@ -9,6 +11,8 @@ interface SearchIssuesHit {
   priority: string | null;
   sprintIds: string[];
   status: string | null;
+  /** Planning category (not-started / in-progress / paused / done). Prefer over statusType. */
+  statusCategory: string;
   statusDisplay: string | null;
   statusType: string | null;
   summary: string;
@@ -68,6 +72,42 @@ function matchesKeyOrDisplay(
   return includesNormalized(normalize(key), needle) || includesNormalized(normalize(display), needle);
 }
 
+function compactStatusToken(value: string): string {
+  return normalize(value).replaceAll(/[_\s-]+/g, '');
+}
+
+function statusCategoryTokens(category: string): string[] {
+  switch (category) {
+    case 'todo':
+      return ['todo', 'notstarted', 'new', 'open', 'backlog'];
+    case 'in-progress':
+      return ['inprogress', 'indeterminate'];
+    case 'paused':
+      return ['paused', 'blocked'];
+    case 'done':
+      return ['done', 'closed', 'resolved'];
+    default:
+      return [compactStatusToken(category)];
+  }
+}
+
+function matchesStatusTypeFilter(
+  issue: IssueTrackerIssue,
+  want: string | undefined
+): boolean {
+  if (!want) {
+    return true;
+  }
+  const needle = compactStatusToken(want);
+  const statusCategory = resolveMcpIssueStatusCategory({
+    statusKey: issue.status?.key,
+    statusTypeKey: issue.statusType?.key,
+  });
+  return statusCategoryTokens(statusCategory).some(
+    (token) => token === needle || token.includes(needle) || needle.includes(token)
+  );
+}
+
 function matchesFilters(issue: IssueTrackerIssue, input: SearchIssuesInput): boolean {
   if (!matchesKeyOrDisplay(input.issueType, issue.type?.key, issue.type?.display)) {
     return false;
@@ -75,7 +115,7 @@ function matchesFilters(issue: IssueTrackerIssue, input: SearchIssuesInput): boo
   if (!matchesKeyOrDisplay(input.status, issue.status?.key, issue.status?.display)) {
     return false;
   }
-  if (!matchesKeyOrDisplay(input.statusType, issue.statusType?.key, undefined)) {
+  if (!matchesStatusTypeFilter(issue, input.statusType)) {
     return false;
   }
   if (!matchesKeyOrDisplay(input.priority, issue.priority?.key, issue.priority?.display)) {
@@ -93,6 +133,8 @@ function descriptionPreview(description: string | undefined): string | null {
 }
 
 function toHit(issue: IssueTrackerIssue, linkKeys: string[]): SearchIssuesHit {
+  const statusKey = issue.status?.key?.trim() || null;
+  const statusTypeKey = issue.statusType?.key?.trim() || null;
   return {
     createdAt: issue.createdAt?.trim() || null,
     descriptionPreview: descriptionPreview(issue.description),
@@ -101,9 +143,13 @@ function toHit(issue: IssueTrackerIssue, linkKeys: string[]): SearchIssuesHit {
     linkKeys,
     priority: issue.priority?.display?.trim() || issue.priority?.key?.trim() || null,
     sprintIds: sprintIdsOf(issue),
-    status: issue.status?.key?.trim() || null,
+    status: statusKey,
+    statusCategory: resolveMcpIssueStatusCategory({
+      statusKey,
+      statusTypeKey,
+    }),
     statusDisplay: issue.status?.display?.trim() || null,
-    statusType: issue.statusType?.key?.trim() || null,
+    statusType: statusTypeKey,
     summary: issue.summary?.trim() || issue.key,
   };
 }

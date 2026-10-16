@@ -43,8 +43,15 @@ export interface SprintContextPosition {
   startPart: number;
   /** Tracker status key (e.g. inProgress / closed). */
   status?: string | null;
+  /**
+   * Planning category: not-started | in-progress | paused | done
+   * (value for not-started matches TaskStatus backlog bucket).
+   * Prefer for “in work” filters — uses status-name heuristics
+   * (e.g. Ready for development → not-started) over raw Jira statusCategory.
+   */
+  statusCategory?: string | null;
   statusDisplay?: string | null;
-  /** Tracker status category (new / inProgress / done). */
+  /** Raw tracker status category (Jira: new / inProgress / done). */
   statusType?: string | null;
   summary?: string | null;
   taskId: string;

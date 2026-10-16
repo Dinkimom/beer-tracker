@@ -48,14 +48,21 @@ Unauthenticated MCP calls return **401** with `WWW-Authenticate` pointing at res
 Scope: `mcp:tools`.
 
 Tools:
+- `whoami(includeTracker?)` — текущий MCP-пользователь (userId, email, orgRole, canUsePlanner; опционально tracker `/myself`)
 - `search_sprints(query, boardId?, limit?)` — найти спринт по фрагменту имени («Sprint 31», «RND Team 1»)
-- `get_sprint_context(sprintId, featureId?, assigneeId?, taskIds?)` — planning graph по **числовому** sprintId (включая `capacity`, `meta.partsPerDay`, `planVsActual`, статусы и `sprintHistory` на позициях)
+- `get_sprint_context(sprintId, featureId?, assigneeId?, taskIds?)` — planning graph по **числовому** sprintId (включая `capacity`, `meta.partsPerDay`, `planVsActual`, статусы / **`statusCategory`** / `sprintHistory`)
 - `get_sprint_capacity(sprintId, featureId?, assigneeId?)` — только capacity: overlaps / gaps / overloaded
 - `get_feature_context(sprintId, featureId)` — тот же graph, но `featureId` обязателен
-- `search_issues(query?, boardId?, sprintId?, status?, assignee?, limit?)` — поиск задач на доске/бэклоге (оценка, статус, assignee)
+- `search_issues(boardId, query?, status?, statusType?, …)` — поиск задач на доске/бэклоге; фильтр «в работе» — через `statusCategory` / `statusType` с эвристиками
+- `get_issue(issueKey, includeComments?)` — живая задача: description, links, comments
+- `get_issue_snapshot(issueKey)` — снимок из выгрузки sync (`issue_snapshots`)
 - `resolve_person(query)` — имя/email → `staffUid` / `assigneeId` (`staff:uuid`)
 - `propose_plan_patch(sprintId, ops, persistNotes?)` — dry-run; `schedule[]`, `warnings`, capacityPreview, `persistNotes`, applyToken
 - `apply_plan_patch(sprintId, ops, applyToken, confirm=true, onError?)` — запись после propose + confirm; `onError=stop|continue`; `schedule[]` после apply
+- `get_retro_board(sprintId)` — колонки и карточки ретро (без картинок); если доски ещё нет — шаблон орги без записи
+- `apply_retro_board(sprintId, ops, confirm=true)` — заметки/комментарии/колонки ретро (`addNote`, `moveCard`, `addComment`, `addColumn`, …); колонка по `columnId` или `columnPreset`
+
+**Статусы:** `statusType` — сырая категория трекера (у Jira «Ready for development» часто ошибочно `inProgress`). Для фильтров «что уже в работе» используйте **`statusCategory`**: not-started | `in-progress` | `paused` | `done` (имя статуса важнее категории; `readyfordevelopment` → not-started bucket).
 
 Типичный диалог: пользователь помнит «спринт 31» → агент `search_sprints` → берёт `hits[].sprintId` → `get_sprint_context` / `get_sprint_capacity`. Номер в названии ≠ id (например «Sprint 31» может быть id `1152`).
 
@@ -118,7 +125,7 @@ curl -sS \
 | Field | Meaning |
 |-------|---------|
 | `meta` | `schemaVersion`, `sprintId`, `organizationId`, **`partsPerDay`** (из настроек орги), legend, optional `sprintWindow` + `boardId` + `featureId`, `calendarDays[]`, `warnings[]` |
-| `positions` | Placements + soft tracker fields + **`planVsActual`** (`planParts` / `actualParts` / `slippedParts` / optional `carriedOver`) |
+| `positions` | Placements + soft tracker fields (`status` / `statusDisplay` / `statusType` / **`statusCategory`** / `sprintHistory`) + **`planVsActual`** |
 | `agenda` | Sorted timeline view: day/part/date + task + assignee name + summary |
 | `capacity` | Per-person load vs free parts (**tasks only**; notes ignored), overlaps, gaps, overloaded |
 | `featureLanes` | `draftRows`, `orderIds`, `hiddenIds` |

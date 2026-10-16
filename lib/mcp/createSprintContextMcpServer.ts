@@ -4,7 +4,11 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { canUsePlanner } from '@/lib/access/orgAccess';
+import { findUserById } from '@/lib/auth/userRepository';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import { getIssueForOrganization } from '@/lib/mcp/getIssueForOrganization';
+import { getIssueSnapshotForOrganization } from '@/lib/mcp/getIssueSnapshotForOrganization';
+import { registerRetroBoardMcpTools } from '@/lib/mcp/registerRetroBoardMcpTools';
 import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
@@ -62,8 +66,49 @@ export function createSprintContextMcpServer(input: {
 }): McpServer {
   const server = new McpServer({
     name: 'beer-tracker-sprint-context',
-    version: '1.7.0',
+    version: '1.9.0',
   });
+
+  server.registerTool(
+    'whoami',
+    {
+      description:
+        'Current Beer Tracker MCP identity: product userId, email/displayName, orgRole, canUsePlanner, and optionally the linked tracker /myself.',
+      inputSchema: {
+        includeTracker: z
+          .boolean()
+          .optional()
+          .describe('When true, also call tracker getCurrentUser (/myself)'),
+      },
+    },
+    async ({ includeTracker }) => {
+      try {
+        const user = await findUserById(input.userId);
+        const payload: Record<string, unknown> = {
+          canUsePlanner: canUsePlanner(input.profile),
+          displayName: user?.display_name || null,
+          email: user?.email || null,
+          organizationId: input.organizationId,
+          orgRole: input.profile.orgRole,
+          userId: input.userId,
+        };
+        if (includeTracker) {
+          try {
+            const issueTracker = await getIssueTrackerProviderClientForOrganization(
+              input.organizationId
+            );
+            payload.trackerUser = await issueTracker.getCurrentUser();
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            payload.trackerUserWarning = `tracker_myself_unavailable: ${message}`;
+          }
+        }
+        return toolJson(payload);
+      } catch (error) {
+        return toolError(error);
+      }
+    }
+  );
 
   server.registerTool(
     'search_sprints',
@@ -116,7 +161,7 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_context',
     {
       description:
-        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual), capacity (tasks only; sticky notes do not reserve time), feature lanes, notes, links, goals, availability. Prefer assigneeId/taskIds to keep the payload small. Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
+        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + status/statusCategory/sprintHistory), capacity (tasks only; sticky notes do not reserve time), feature lanes, notes, links, goals, availability. Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
       inputSchema: {
         assigneeId: z
           .string()
@@ -229,7 +274,7 @@ export function createSprintContextMcpServer(input: {
     'search_issues',
     {
       description:
-        'Search tracker issues on a board/backlog (not only planned positions). Filter by text, issueType (e.g. Bug), status/statusType, priority, notInActiveSprint. Returns compact hits: key, summary, status, priority, createdAt, descriptionPreview, sprintIds, linkKeys. Use before estimating backlog bugs.',
+        'Search tracker issues on a board/backlog (not only planned positions). Filter by text, issueType (e.g. Bug), status/statusType, priority, notInActiveSprint. statusType filters use planning statusCategory (Ready for development → not-started, not inProgress). Returns compact hits including statusCategory. Use before estimating backlog bugs.',
       inputSchema: {
         boardId: z.number().int().positive().describe('Tracker board id'),
         issueType: z
@@ -250,7 +295,7 @@ export function createSprintContextMcpServer(input: {
         statusType: z
           .string()
           .optional()
-          .describe('Status category: new | inProgress | done'),
+          .describe('Planning filter: not-started|new|inProgress|done (uses statusCategory heuristics)'),
       },
     },
     async ({
@@ -282,9 +327,67 @@ export function createSprintContextMcpServer(input: {
         });
         return toolJson({
           hits: result.hits,
-          hint: 'Hits are tracker issues (not Beer Tracker positions). Pair with get_sprint_context for planned layout.',
+          hint: 'Hits are tracker issues (not Beer Tracker positions). Prefer statusCategory over statusType for “in work”. Pair with get_issue / get_sprint_context.',
           truncated: result.truncated,
           warnings: result.warnings,
+        });
+      } catch (error) {
+        return toolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_issue',
+    {
+      description:
+        'Live tracker issue detail: summary, description, status/statusCategory, links, and comments (from changelog+comments API). Use after search_issues when you need full context for estimation or planning.',
+      inputSchema: {
+        includeComments: z
+          .boolean()
+          .optional()
+          .describe('Default true; set false to skip comments fetch'),
+        issueKey: z.string().min(1).describe('Tracker issue key, e.g. RND-123'),
+      },
+    },
+    async ({ includeComments, issueKey }) => {
+      try {
+        const issueTracker = await getIssueTrackerProviderClientForOrganization(
+          input.organizationId
+        );
+        const result = await getIssueForOrganization({
+          includeComments,
+          issueKey,
+          issueTracker,
+        });
+        return toolJson({
+          ...result,
+          hint: 'Live tracker data. For synced dump (admin sync), use get_issue_snapshot.',
+        });
+      } catch (error) {
+        return toolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_issue_snapshot',
+    {
+      description:
+        'Read the Beer Tracker synced issue dump (`issue_snapshots` from admin Jira/Tracker sync). Offline/cached fields: summary, description, status, assignee, dates, syncedAt. Prefer get_issue for live comments/links.',
+      inputSchema: {
+        issueKey: z.string().min(1).describe('Tracker issue key, e.g. RND-123'),
+      },
+    },
+    async ({ issueKey }) => {
+      try {
+        const result = await getIssueSnapshotForOrganization({
+          issueKey,
+          organizationId: input.organizationId,
+        });
+        return toolJson({
+          ...result,
+          hint: 'Snapshot from last org sync. Missing → run Admin → Sync / full rescan. Live detail: get_issue.',
         });
       } catch (error) {
         return toolError(error);
@@ -406,6 +509,8 @@ export function createSprintContextMcpServer(input: {
       }
     }
   );
+
+  registerRetroBoardMcpTools(server, input);
 
   return server;
 }
