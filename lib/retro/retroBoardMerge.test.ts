@@ -43,10 +43,34 @@ describe('mergeRetroBoards', () => {
 
   it('keeps independent edits and prefers the incoming edit of the same card', () => {
     const current = board(base.columns, [card('a', 'Server'), card('b', 'Beta')]);
-    const incoming = board(base.columns, [card('a', 'Alpha'), { ...card('b', 'Beta'), reactions: ['👍'] }]);
+    const incoming = board(base.columns, [
+      card('a', 'Alpha'),
+      { ...card('b', 'Beta'), reactions: [{ emoji: '👍', userId: 'u1', userName: 'Ada' }] },
+    ]);
     const merged = mergeRetroBoards(base, current, incoming);
     expect(merged.cards.find((item) => item.id === 'a')?.text).toBe('Server');
-    expect(merged.cards.find((item) => item.id === 'b')?.reactions).toEqual(['👍']);
+    expect(merged.cards.find((item) => item.id === 'b')?.reactions).toEqual([
+      { emoji: '👍', userId: 'u1', userName: 'Ada' },
+    ]);
+  });
+
+  it('keeps reaction votes added on both sides of the same card', () => {
+    const withVotes = (reactions: RetroCard['reactions']) => ({ ...card('a', 'Alpha'), reactions });
+    const merged = mergeRetroBoards(
+      board(base.columns, [withVotes([]), card('b', 'Beta')]),
+      board(base.columns, [
+        withVotes([{ emoji: '👍', userId: 'u1', userName: 'Ada' }]),
+        card('b', 'Beta'),
+      ]),
+      board(base.columns, [
+        withVotes([{ emoji: '👍', userId: 'u2', userName: 'Bob' }]),
+        card('b', 'Beta'),
+      ])
+    );
+    expect(merged.cards.find((item) => item.id === 'a')?.reactions).toEqual([
+      { emoji: '👍', userId: 'u1', userName: 'Ada' },
+      { emoji: '👍', userId: 'u2', userName: 'Bob' },
+    ]);
   });
 
   it('keeps comments added on both sides of the same card', () => {

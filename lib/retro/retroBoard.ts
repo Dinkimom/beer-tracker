@@ -5,7 +5,10 @@
  */
 
 import { DEFAULT_STICKY_NOTE_COLOR } from '@/lib/comments/stickyNoteColor';
-import { isStickyNoteReactionEmoji } from '@/lib/comments/stickyNoteReaction';
+import {
+  isStickyNoteReactionEmoji,
+  type StickyNoteReaction,
+} from '@/lib/comments/stickyNoteReaction';
 
 import {
   defaultAgreementsColumn,
@@ -18,6 +21,7 @@ import {
   type RetroBoard,
   type RetroCard,
   type RetroCardComment,
+  type RetroCardReaction,
   type RetroColumn,
   type RetroColumnPreset,
   type RetroSprintOrderItem,
@@ -40,6 +44,11 @@ export {
   type RetroVisibleCard,
 } from './retroBoardShared';
 export { parseRetroColumnTemplate, parseRetroStore } from './retroBoardParse';
+
+export interface RetroReactionActor {
+  userId: string;
+  userName: string;
+}
 
 const COLUMN_GLAD = 'glad';
 const COLUMN_SAD = 'sad';
@@ -215,18 +224,98 @@ export function toggleRetroCardReaction(
   store: RetroStore,
   ownerSprintId: number,
   cardId: string,
-  emoji: string
+  emoji: string,
+  actor: RetroReactionActor
 ): RetroStore {
   if (!isStickyNoteReactionEmoji(emoji)) return store;
+  const userId = actor.userId.trim();
+  if (!userId) return store;
   const board = store.boards[String(ownerSprintId)];
   if (!board) return store;
   const current = board.cards.find((card) => card.id === cardId);
   if (!current || current.kind === 'image') return store;
-  const reactions = current.reactions.includes(emoji)
-    ? current.reactions.filter((item) => item !== emoji)
-    : [...current.reactions, emoji];
+  const reactions = toggleRetroReactionVotes(current.reactions, emoji, {
+    userId,
+    userName: actor.userName.trim().slice(0, RETRO_COMMENT_AUTHOR_MAX_LENGTH),
+  });
+  if (reactions === current.reactions) return store;
   const cards = board.cards.map((card) => (card.id === cardId ? { ...card, reactions } : card));
   return writeBoard(store, { ...board, cards });
+}
+
+/** Голосование за emoji: свой голос добавляется или снимается, чужие не трогаются. */
+function toggleRetroReactionVotes(
+  votes: readonly RetroCardReaction[],
+  emoji: string,
+  actor: RetroReactionActor
+): RetroCardReaction[] {
+  if (!isStickyNoteReactionEmoji(emoji) || !actor.userId) return votes as RetroCardReaction[];
+  const mine = votes.some((vote) => vote.emoji === emoji && vote.userId === actor.userId);
+  if (mine) {
+    return votes.filter((vote) => !(vote.emoji === emoji && vote.userId === actor.userId));
+  }
+  return [
+    ...votes,
+    {
+      emoji,
+      userId: actor.userId,
+      userName: actor.userName.slice(0, RETRO_COMMENT_AUTHOR_MAX_LENGTH),
+    },
+  ];
+}
+
+/** Агрегат голосов для чипов sticky-note: count / mine / users. */
+export function aggregateRetroReactions(
+  votes: readonly RetroCardReaction[],
+  currentUserId: string
+): StickyNoteReaction[] {
+  const byEmoji = new Map<string, RetroCardReaction[]>();
+  for (const vote of votes) {
+    const list = byEmoji.get(vote.emoji);
+    if (list) {
+      list.push(vote);
+    } else {
+      byEmoji.set(vote.emoji, [vote]);
+    }
+  }
+  return [...byEmoji.entries()].map(([emoji, emojiVotes]) => {
+    const mine = Boolean(currentUserId) && emojiVotes.some((vote) => vote.userId === currentUserId);
+    return {
+      count: emojiVotes.length,
+      emoji,
+      mine,
+      users: emojiVotes.map((vote) => ({
+        mine: Boolean(currentUserId) && vote.userId === currentUserId,
+        name: vote.userName,
+      })),
+    };
+  });
+}
+
+export function myRetroReactionEmojis(
+  votes: readonly RetroCardReaction[],
+  currentUserId: string
+): string[] {
+  if (!currentUserId) return [];
+  const emojis: string[] = [];
+  const seen = new Set<string>();
+  for (const vote of votes) {
+    if (vote.userId !== currentUserId || seen.has(vote.emoji)) continue;
+    seen.add(vote.emoji);
+    emojis.push(vote.emoji);
+  }
+  return emojis;
+}
+
+export function uniqueRetroReactionEmojis(votes: readonly RetroCardReaction[]): string[] {
+  const emojis: string[] = [];
+  const seen = new Set<string>();
+  for (const vote of votes) {
+    if (seen.has(vote.emoji)) continue;
+    seen.add(vote.emoji);
+    emojis.push(vote.emoji);
+  }
+  return emojis;
 }
 
 export function addRetroCardComment(

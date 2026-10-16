@@ -15,6 +15,7 @@ import {
   renameRetroColumn,
   resolveRetroBoard,
   retroStoreFromBoards,
+  uniqueRetroReactionEmojis,
   updateRetroCardText,
 } from '@/lib/retro/retroBoard';
 import { fetchRetroBoard, upsertRetroBoard } from '@/lib/retro/retroBoardRepository';
@@ -62,7 +63,7 @@ function toMcpView(board: RetroBoard): McpRetroBoardView {
         })),
         createdAt: card.createdAt,
         kind: card.kind,
-        reactions: card.reactions,
+        reactions: uniqueRetroReactionEmojis(card.reactions),
         text: card.text,
       })),
     columns: board.columns.map((column) => ({

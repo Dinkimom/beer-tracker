@@ -37,6 +37,7 @@ import { TimelineGrid } from '@/features/swimlane/components/TimelineGrid';
 import { useSwimlaneAvailabilityUi } from '@/features/swimlane/hooks/useSwimlaneAvailabilityUi';
 import { useSwimlaneLayout } from '@/features/swimlane/hooks/useSwimlaneLayout';
 import { useSwimlaneQuickAddHoverImagePaste } from '@/features/swimlane/hooks/useSwimlaneQuickAddHoverImagePaste';
+import { mergeFactTimelineHiddenDayIndices } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
 import { resolveSwimlaneQuickAddBandLayout } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { resolveSwimlaneOneCardHeightPx } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
 import { useSwimlaneCardReservesEyebrow } from '@/hooks/useLocalStorage';
@@ -256,6 +257,10 @@ function SwimlaneComponent({
       }),
     [developer.id, developerAvailability, sprintStartDate, sprintTimelineWorkingDays]
   );
+  const factHiddenDayIndices = useMemo(
+    () => mergeFactTimelineHiddenDayIndices(holidayDayIndices, unavailableDayHatchKinds.keys()),
+    [holidayDayIndices, unavailableDayHatchKinds]
+  );
   const {
     calendarBusyLaneVisible,
     laneLabels,
@@ -474,7 +479,7 @@ function SwimlaneComponent({
                 commentsByTaskId={swimlaneFactCommentsByTaskId ?? EMPTY_SWIMLANE_FACT_COMMENTS}
                 developerMap={swimlaneFactDeveloperMap ?? EMPTY_SWIMLANE_FACT_DEVELOPERS}
                 factHoveredTaskId={factBarFocusTaskId}
-                holidayDayIndices={holidayDayIndices}
+                holidayDayIndices={factHiddenDayIndices}
                 layerId={`swimlane-fact-${developer.id}`}
                 requestArrowRedraw={requestArrowRedraw}
                 segments={swimlaneInProgressDurations}

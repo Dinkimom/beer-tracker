@@ -40,7 +40,7 @@ interface SwimlaneInProgressFactLayerProps {
   developerMap: Map<string, Developer>;
   /** Подсветка колбасы факта по hover карточки/факта конкретной задачи */
   factHoveredTaskId?: string | null;
-  /** Индексы нерабочих дней — факт в этих колонках не рисуется */
+  /** Индексы дней (выходные / события занятости), в которых факт не рисуется */
   holidayDayIndices?: Set<number>;
   layerId: string;
   segments: SwimlaneInProgressFactSegment[];

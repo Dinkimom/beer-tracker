@@ -95,7 +95,7 @@ const FIELD_PRESENTATIONS: Record<TaskCardFieldId, readonly TaskCardPresentation
   type: ['hidden', 'icon', 'text', 'tag'],
 };
 
-const NOTE_KINDS = new Set<Task['localDraftKind']>(['comment', 'diagram', 'image']);
+const NOTE_KINDS = new Set<Task['localDraftKind']>(['comment', 'diagram', 'image', 'widget']);
 const TRACKER_META_FIELDS: readonly TaskCardFieldId[] = [
   'key',
   'priority',
@@ -152,7 +152,7 @@ function emptyTaskCardSlots(): ResolvedTaskCardSlots {
   return { eyebrow: [], footer: [], footerEnd: [], titleLead: [] };
 }
 
-/** Заметки, фото, схемы и черновик-плюсик не показывают трекерные поля. Локальная задача прячет ключ, тип и приоритет. */
+/** Заметки, фото, схемы, виджеты и черновик-плюсик не показывают трекерные поля. Локальная задача прячет ключ, тип и приоритет. */
 export function taskCardFieldsSuppressedByKind(
   task: Pick<Task, 'isLocalTask' | 'localDraftKind'>
 ): TaskCardFieldId[] {

@@ -1,6 +1,6 @@
 'use client';
 
-import type { RetroColumn, RetroVisibleCard } from '@/lib/retro/retroBoard';
+import type { RetroColumn, RetroReactionActor, RetroVisibleCard } from '@/lib/retro/retroBoard';
 
 import { useDroppable } from '@dnd-kit/core';
 
@@ -23,7 +23,12 @@ interface RetroColumnViewProps {
   onDeleteComment: (ownerSprintId: number, cardId: string, commentId: string) => void;
   onMove: (columnId: string, direction: -1 | 1) => void;
   onRename: (columnId: string, title: string) => void;
-  onToggleReaction: (ownerSprintId: number, cardId: string, emoji: string) => void;
+  onToggleReaction: (
+    ownerSprintId: number,
+    cardId: string,
+    emoji: string,
+    actor: RetroReactionActor
+  ) => void;
   onUpdateCardText: (ownerSprintId: number, cardId: string, text: string) => void;
 }
 

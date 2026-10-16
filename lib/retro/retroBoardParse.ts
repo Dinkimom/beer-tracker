@@ -19,6 +19,7 @@ import {
   type RetroCard,
   type RetroCardComment,
   type RetroCardKind,
+  type RetroCardReaction,
   type RetroColumn,
   type RetroColumnPreset,
   type RetroStore,
@@ -65,9 +66,39 @@ function readPreset(value: unknown): RetroColumnPreset | null {
   return null;
 }
 
-function readReactions(value: unknown): string[] {
+function readReactions(value: unknown): RetroCardReaction[] {
   if (!Array.isArray(value)) return [];
-  return value.filter(isStickyNoteReactionEmoji);
+  return uniqueReactionVotes(value.map(parseReactionVote).filter(isRetroReaction));
+}
+
+/** Старый формат — массив emoji-строк; новый — голоса { emoji, userId, userName }. */
+function parseReactionVote(raw: unknown): RetroCardReaction | null {
+  if (typeof raw === 'string') {
+    if (!isStickyNoteReactionEmoji(raw)) return null;
+    return { emoji: raw, userId: '', userName: '' };
+  }
+  if (!isRecord(raw) || !isStickyNoteReactionEmoji(raw.emoji)) return null;
+  return {
+    emoji: raw.emoji,
+    userId: readBoundedString(raw.userId, 80).trim(),
+    userName: readBoundedString(raw.userName, RETRO_COMMENT_AUTHOR_MAX_LENGTH).trim(),
+  };
+}
+
+function isRetroReaction(value: RetroCardReaction | null): value is RetroCardReaction {
+  return value != null;
+}
+
+function uniqueReactionVotes(votes: readonly RetroCardReaction[]): RetroCardReaction[] {
+  const seen = new Set<string>();
+  const unique: RetroCardReaction[] = [];
+  for (const vote of votes) {
+    const key = `${vote.userId}\0${vote.emoji}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(vote);
+  }
+  return unique;
 }
 
 function parseComment(raw: unknown): RetroCardComment | null {

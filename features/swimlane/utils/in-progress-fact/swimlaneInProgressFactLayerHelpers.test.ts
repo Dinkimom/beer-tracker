@@ -10,6 +10,7 @@ import {
   buildLanes,
   buildWithPhases,
   factTimelineHolidayMask,
+  mergeFactTimelineHiddenDayIndices,
   getVisibleSwimlaneFactLayerHeightPx,
   hexToRgbaArrow,
   isClosedFactPhase,
@@ -282,6 +283,18 @@ describe('getVisibleSwimlaneFactLayerHeightPx', () => {
     expect(getVisibleSwimlaneFactLayerHeightPx(segments, sprintStart, fiveDayParts, noonOnDay2)).toBe(
       getSwimlaneInProgressFactLayerHeightFromLaneCount(1)
     );
+  });
+});
+
+describe('mergeFactTimelineHiddenDayIndices', () => {
+  it('returns nothing when there are no holidays or availability days', () => {
+    expect(mergeFactTimelineHiddenDayIndices(undefined, undefined)).toBeUndefined();
+    expect(mergeFactTimelineHiddenDayIndices(new Set(), [])).toBeUndefined();
+  });
+
+  it('unions holidays with availability event days', () => {
+    expect(mergeFactTimelineHiddenDayIndices(new Set([1]), [3, 1])).toEqual(new Set([1, 3]));
+    expect(mergeFactTimelineHiddenDayIndices(undefined, [0])).toEqual(new Set([0]));
   });
 });
 

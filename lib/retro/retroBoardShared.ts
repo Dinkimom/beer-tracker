@@ -35,6 +35,13 @@ export interface RetroCardComment {
   text: string;
 }
 
+/** Один голос пользователя за emoji на карточке ретро. */
+export interface RetroCardReaction {
+  emoji: string;
+  userId: string;
+  userName: string;
+}
+
 export interface RetroColumn {
   id: string;
   preset: RetroColumnPreset | null;
@@ -52,7 +59,7 @@ export interface RetroCard {
   imageDataUrl: string | null;
   kind: RetroCardKind;
   originSprintId: number | null;
-  reactions: string[];
+  reactions: RetroCardReaction[];
   text: string;
 }
 

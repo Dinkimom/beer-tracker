@@ -5,6 +5,7 @@ import {
   addRetroColumn,
   addRetroImageCard,
   addRetroNote,
+  aggregateRetroReactions,
   cardsForRetroColumn,
   convertRetroNote,
   deleteRetroCard,
@@ -20,6 +21,7 @@ import {
   changedRetroBoards,
   resolveRetroBoard,
   retroStoreFromBoards,
+  toggleRetroCardReaction,
   RETRO_COMMENT_MAX_LENGTH,
   RETRO_IMAGE_MAX_DATA_URL_CHARS,
 } from './retroBoard';
@@ -278,5 +280,65 @@ describe('retro board mutations', () => {
     const changed = changedRetroBoards(before, after);
     expect(changed.map((board) => board.sprintId)).toEqual([2]);
     expect(retroStoreFromBoards(changed).boards['2']?.cards[0]?.text).toBe('Wait');
+  });
+
+  it('counts reaction votes per user and keeps other votes when toggling', () => {
+    const withNote = addRetroNote(emptyRetroStore(), 1, 'glad', 'Vote me');
+    const cardId = resolveRetroBoard(withNote, 1).cards[0]?.id;
+    expect(cardId).toBeTruthy();
+    const afterAda = toggleRetroCardReaction(withNote, 1, cardId!, '👍', {
+      userId: '1',
+      userName: 'Ada',
+    });
+    const afterBob = toggleRetroCardReaction(afterAda, 1, cardId!, '👍', {
+      userId: '2',
+      userName: 'Bob',
+    });
+    const votes = resolveRetroBoard(afterBob, 1).cards[0]?.reactions ?? [];
+    expect(votes).toEqual([
+      { emoji: '👍', userId: '1', userName: 'Ada' },
+      { emoji: '👍', userId: '2', userName: 'Bob' },
+    ]);
+    expect(aggregateRetroReactions(votes, '1')).toEqual([
+      {
+        count: 2,
+        emoji: '👍',
+        mine: true,
+        users: [
+          { mine: true, name: 'Ada' },
+          { mine: false, name: 'Bob' },
+        ],
+      },
+    ]);
+    const afterAdaLeaves = toggleRetroCardReaction(afterBob, 1, cardId!, '👍', {
+      userId: '1',
+      userName: 'Ada',
+    });
+    expect(resolveRetroBoard(afterAdaLeaves, 1).cards[0]?.reactions).toEqual([
+      { emoji: '👍', userId: '2', userName: 'Bob' },
+    ]);
+  });
+
+  it('parses legacy string reactions into anonymous votes', () => {
+    const store = parseRetroStore({
+      boards: {
+        4: {
+          columns: [{ id: 'glad', preset: 'glad', role: null, title: '' }],
+          cards: [
+            {
+              id: 'n1',
+              columnId: 'glad',
+              kind: 'note',
+              text: 'Legacy',
+              reactions: ['🔥', { emoji: '👍', userId: '9', userName: 'Ada' }],
+            },
+          ],
+        },
+      },
+    });
+    expect(store.boards['4']?.cards[0]?.reactions).toEqual([
+      { emoji: '🔥', userId: '', userName: '' },
+      { emoji: '👍', userId: '9', userName: 'Ada' },
+    ]);
   });
 });

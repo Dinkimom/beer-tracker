@@ -1,6 +1,5 @@
 'use client';
 
-import type { StickyNoteReaction } from '@/lib/comments/stickyNoteReaction';
 import type { RetroVisibleCard } from '@/lib/retro/retroBoard';
 
 import * as Popover from '@radix-ui/react-popover';
@@ -13,6 +12,13 @@ import { StickyNoteReactionChips } from '@/features/comments/components/StickyNo
 import { StickyNoteReactionPicker } from '@/features/comments/components/StickyNoteReactionPicker';
 import { StickyNoteReactionToolbar } from '@/features/comments/components/StickyNoteReactionToolbar';
 import { StickyNoteTextContent } from '@/features/comments/components/StickyNoteTextContent';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import {
+  aggregateRetroReactions,
+  myRetroReactionEmojis,
+  uniqueRetroReactionEmojis,
+  type RetroReactionActor,
+} from '@/lib/retro/retroBoard';
 
 import { RetroCardComments } from './RetroCardComments';
 import { retroCardSurfaceClass, retroIconButtonClass } from './retroUi';
@@ -29,17 +35,23 @@ interface RetroNoteCardProps {
   onAddComment?: (ownerSprintId: number, cardId: string, text: string, authorName: string) => void;
   onDelete: (cardId: string) => void;
   onDeleteComment?: (ownerSprintId: number, cardId: string, commentId: string) => void;
-  onToggleReaction: (ownerSprintId: number, cardId: string, emoji: string) => void;
+  onToggleReaction: (
+    ownerSprintId: number,
+    cardId: string,
+    emoji: string,
+    actor: RetroReactionActor
+  ) => void;
   onUpdateText: (ownerSprintId: number, cardId: string, text: string) => void;
 }
 
-function reactionView(emojis: readonly string[]): StickyNoteReaction[] {
-  return emojis.map((emoji) => ({
-    count: 1,
-    emoji,
-    mine: true,
-    users: [{ mine: true, name: '' }],
-  }));
+function reactionActor(user: {
+  display: string;
+  email: string;
+  login: string;
+  uid: number;
+}): RetroReactionActor {
+  const userName = user.display.trim() || user.login.trim() || user.email.trim();
+  return { userId: String(user.uid), userName };
 }
 
 export const RetroNoteCard = memo(function RetroNoteCard({
@@ -52,6 +64,9 @@ export const RetroNoteCard = memo(function RetroNoteCard({
   onUpdateText,
 }: RetroNoteCardProps) {
   const { t } = useI18n();
+  const { data: user } = useCurrentUser();
+  const actor = user ? reactionActor(user) : null;
+  const currentUserId = actor?.userId ?? '';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(card.text);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -59,6 +74,9 @@ export const RetroNoteCard = memo(function RetroNoteCard({
   const reactionAddClass = pinReactions
     ? `${REACTION_ADD_CLASS} !pointer-events-auto !scale-100 !opacity-100`
     : REACTION_ADD_CLASS;
+  const reactionChips = aggregateRetroReactions(card.reactions, currentUserId);
+  const myEmojis = myRetroReactionEmojis(card.reactions, currentUserId);
+  const recentEmojis = uniqueRetroReactionEmojis(card.reactions);
 
   const saveText = () => {
     setEditing(false);
@@ -68,7 +86,8 @@ export const RetroNoteCard = memo(function RetroNoteCard({
   };
 
   const toggle = (emoji: string) => {
-    onToggleReaction(card.ownerSprintId, card.id, emoji);
+    if (!actor) return;
+    onToggleReaction(card.ownerSprintId, card.id, emoji, actor);
   };
 
   return (
@@ -131,8 +150,8 @@ export const RetroNoteCard = memo(function RetroNoteCard({
           </button>
         )}
         <div className={reactionRowClass}>
-          {card.reactions.length > 0 ? (
-            <StickyNoteReactionChips reactions={reactionView(card.reactions)} onToggle={toggle} />
+          {reactionChips.length > 0 ? (
+            <StickyNoteReactionChips reactions={reactionChips} onToggle={toggle} />
           ) : null}
           <Popover.Trigger
             aria-label={t('comments.addReactionAria')}
@@ -167,14 +186,14 @@ export const RetroNoteCard = memo(function RetroNoteCard({
           {pickerOpen ? (
             <div className="overflow-hidden rounded-xl bg-white shadow-xl dark:bg-gray-900">
               <StickyNoteReactionPicker
-                recentEmojis={card.reactions}
-                selectedEmojis={card.reactions}
+                recentEmojis={recentEmojis}
+                selectedEmojis={myEmojis}
                 onSelect={toggle}
               />
             </div>
           ) : null}
           <StickyNoteReactionToolbar
-            selectedEmojis={card.reactions}
+            selectedEmojis={myEmojis}
             onOpenPicker={() => setPickerOpen((open) => !open)}
             onSelect={toggle}
           />

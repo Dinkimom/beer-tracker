@@ -25,6 +25,7 @@ import {
   retroStoreFromBoards,
   toggleRetroCardReaction,
   updateRetroCardText,
+  type RetroReactionActor,
 } from '@/lib/retro/retroBoard';
 import { mergeRetroBoards } from '@/lib/retro/retroBoardMerge';
 
@@ -139,8 +140,8 @@ export function useRetroBoard(
     [commit, sprintId]
   );
   const toggleReaction = useCallback(
-    (ownerSprintId: number, cardId: string, emoji: string) => {
-      commit((current) => toggleRetroCardReaction(current, ownerSprintId, cardId, emoji));
+    (ownerSprintId: number, cardId: string, emoji: string, actor: RetroReactionActor) => {
+      commit((current) => toggleRetroCardReaction(current, ownerSprintId, cardId, emoji, actor));
     },
     [commit]
   );

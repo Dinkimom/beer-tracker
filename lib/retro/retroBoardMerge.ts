@@ -1,8 +1,10 @@
-import type { RetroBoard, RetroColumn } from './retroBoardShared';
+import type { RetroBoard, RetroCardReaction, RetroColumn } from './retroBoardShared';
 
 interface Identified {
   id: string;
 }
+
+interface ReactionVoteIdentified extends RetroCardReaction, Identified {}
 
 function sameJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
@@ -81,6 +83,51 @@ function mergeCommentList(base: unknown, current: unknown, incoming: unknown): I
   return mergeList(asIdentifiedList(base), asIdentifiedList(current), asIdentifiedList(incoming), () => false);
 }
 
+function reactionVoteId(vote: Pick<RetroCardReaction, 'emoji' | 'userId'>): string {
+  return `${vote.userId}\0${vote.emoji}`;
+}
+
+function asReactionVoteList(value: unknown): ReactionVoteIdentified[] {
+  if (!Array.isArray(value)) return [];
+  const votes: ReactionVoteIdentified[] = [];
+  for (const item of value) {
+    if (!isRecord(item) || typeof item.emoji !== 'string') continue;
+    const userId = typeof item.userId === 'string' ? item.userId : '';
+    const userName = typeof item.userName === 'string' ? item.userName : '';
+    votes.push({
+      emoji: item.emoji,
+      id: reactionVoteId({ emoji: item.emoji, userId }),
+      userId,
+      userName,
+    });
+  }
+  return votes;
+}
+
+function mergeReactionVoteList(base: unknown, current: unknown, incoming: unknown): RetroCardReaction[] {
+  return mergeList(
+    asReactionVoteList(base),
+    asReactionVoteList(current),
+    asReactionVoteList(incoming),
+    () => false
+  ).map(({ emoji, userId, userName }) => ({ emoji, userId, userName }));
+}
+
+function mergeEntityField<T extends Identified>(
+  key: keyof T,
+  base: T,
+  current: T,
+  incoming: T
+): T[keyof T] {
+  if (key === ('comments' as keyof T)) {
+    return mergeCommentList(base[key], current[key], incoming[key]) as T[keyof T];
+  }
+  if (key === ('reactions' as keyof T)) {
+    return mergeReactionVoteList(base[key], current[key], incoming[key]) as T[keyof T];
+  }
+  return sameJson(incoming[key], base[key]) ? current[key] : incoming[key];
+}
+
 function mergeEntity<T extends Identified>(base: T | undefined, current: T | undefined, incoming: T | undefined): T | null {
   if (!incoming) return current ?? null;
   if (!current || !base) return incoming;
@@ -88,11 +135,7 @@ function mergeEntity<T extends Identified>(base: T | undefined, current: T | und
   const keys = new Set<keyof T>([...Object.keys(current), ...Object.keys(incoming)] as (keyof T)[]);
   for (const key of keys) {
     if (key === 'id') continue;
-    if (key === ('comments' as keyof T)) {
-      merged[key] = mergeCommentList(base[key], current[key], incoming[key]) as T[keyof T];
-      continue;
-    }
-    merged[key] = sameJson(incoming[key], base[key]) ? current[key] : incoming[key];
+    merged[key] = mergeEntityField(key, base, current, incoming);
   }
   return merged;
 }

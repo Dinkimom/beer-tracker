@@ -37,7 +37,24 @@ export function hexToRgbaArrow(hex: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
-/** Маска таймлайна факта: выходные колонки прозрачные, штриховка дня под ними остаётся. */
+/**
+ * Дни, в которых таймлайн факта не рисуется: выходные и дни с событием занятости
+ * (отпуск, дежурство, больничный и т.п.).
+ */
+export function mergeFactTimelineHiddenDayIndices(
+  holidayDayIndices: ReadonlySet<number> | undefined,
+  availabilityDayIndices: Iterable<number> | undefined
+): Set<number> | undefined {
+  const merged = new Set<number>(holidayDayIndices ?? []);
+  if (availabilityDayIndices) {
+    for (const dayIndex of availabilityDayIndices) {
+      if (dayIndex >= 0) merged.add(dayIndex);
+    }
+  }
+  return merged.size === 0 ? undefined : merged;
+}
+
+/** Маска таймлайна факта: скрытые дни прозрачные, штриховка дня под ними остаётся. */
 export function factTimelineHolidayMask(
   holidayDayIndices: ReadonlySet<number> | undefined,
   totalParts: number,

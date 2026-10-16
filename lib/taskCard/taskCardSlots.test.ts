@@ -184,22 +184,12 @@ describe('resolveTaskCardSlots', () => {
 
 describe('taskCardFieldsSuppressedByKind', () => {
   it('hides tracker fields on notes and the chooser, and title meta on local drafts', () => {
-    expect(taskCardFieldsSuppressedByKind({ localDraftKind: 'comment' })).toEqual([
-      'key',
-      'priority',
-      'type',
-      'status',
-      'severity',
-      'estimate',
-    ]);
-    expect(taskCardFieldsSuppressedByKind({ isLocalTask: true })).toEqual([
-      'key',
-      'priority',
-      'type',
-      'status',
-      'severity',
-      'estimate',
-    ]);
+    const trackerMeta = ['key', 'priority', 'type', 'status', 'severity', 'estimate'];
+    expect(taskCardFieldsSuppressedByKind({ localDraftKind: 'comment' })).toEqual(trackerMeta);
+    expect(taskCardFieldsSuppressedByKind({ localDraftKind: 'diagram' })).toEqual(trackerMeta);
+    expect(taskCardFieldsSuppressedByKind({ localDraftKind: 'image' })).toEqual(trackerMeta);
+    expect(taskCardFieldsSuppressedByKind({ localDraftKind: 'widget' })).toEqual(trackerMeta);
+    expect(taskCardFieldsSuppressedByKind({ isLocalTask: true })).toEqual(trackerMeta);
     expect(taskCardFieldsSuppressedByKind({ isLocalTask: true, localDraftKind: 'task' })).toEqual([
       'key',
       'priority',

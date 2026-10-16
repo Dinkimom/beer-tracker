@@ -1,6 +1,6 @@
 'use client';
 
-import type { RetroVisibleCard } from '@/lib/retro/retroBoard';
+import type { RetroReactionActor, RetroVisibleCard } from '@/lib/retro/retroBoard';
 
 import { useDraggable } from '@dnd-kit/core';
 
@@ -19,7 +19,12 @@ interface RetroCardViewProps {
   onAddComment: (ownerSprintId: number, cardId: string, text: string, authorName: string) => void;
   onDelete: (cardId: string) => void;
   onDeleteComment: (ownerSprintId: number, cardId: string, commentId: string) => void;
-  onToggleReaction: (ownerSprintId: number, cardId: string, emoji: string) => void;
+  onToggleReaction: (
+    ownerSprintId: number,
+    cardId: string,
+    emoji: string,
+    actor: RetroReactionActor
+  ) => void;
   onUpdateText: (ownerSprintId: number, cardId: string, text: string) => void;
 }
 
