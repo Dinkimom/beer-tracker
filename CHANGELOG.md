@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.3] — 2026-10-16
+
+### English
+
+- MCP positions expose tracker `status` / `statusDisplay` / `statusType` / `priority` / `createdAt` and `sprintHistory` for carry-over planning.
+- New MCP tool `search_issues` searches board/backlog issues with filters and compact fields for estimation.
+- Sticky notes: soft-delete + `updatedAt` / `updatedBy` / `version`; `updateNote.ifVersion`; propose preflight for missing notes/goals; `persistNotes?: false`; apply `onError: stop|continue`.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.16.3` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- MCP-позиции отдают статус трекера (`status` / `statusDisplay` / `statusType` / `priority` / `createdAt`) и `sprintHistory` для планирования переносов.
+- Новый MCP-инструмент `search_issues` — поиск задач на доске/бэклоге с фильтрами и компактными полями для оценки.
+- Sticky notes: soft-delete + `updatedAt` / `updatedBy` / `version`; `updateNote.ifVersion`; preflight в propose; `persistNotes?: false`; apply `onError: stop|continue`.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.16.3` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.16.2] — 2026-10-16
 
 ### English
