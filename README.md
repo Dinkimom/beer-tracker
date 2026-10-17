@@ -14,7 +14,7 @@
 <p align="center">
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" /></a>
   <a href="https://hub.docker.com/r/dinkimom/beer-tracker"><img alt="Docker Hub" src="https://img.shields.io/badge/docker-dinkimom%2Fbeer--tracker-2496ED?logo=docker&logoColor=white" /></a>
-  <a href="./CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-1.16.5-informational" /></a>
+  <a href="./CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-1.16.6-informational" /></a>
 </p>
 
 <p align="center">
@@ -194,7 +194,7 @@ cp env.example .env
 docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
 ```
 
-Откройте [http://localhost:3000](http://localhost:3000). Образы: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker).
+Откройте [http://localhost:3000](http://localhost:3000). Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker), тег `1.16.6`.
 
 Полная установка (исходники, S3, трекер, sync, CI) — **[docs/INSTALL.md](./docs/INSTALL.md)**.  
 Настройка провайдера — **[docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)**.

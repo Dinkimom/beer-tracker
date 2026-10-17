@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.6] — 2026-10-17
+
+### English
+
+- Public fixture demo at `/demo/planner` (no tracker login): swimlanes, backlog, burndown, and retro, with a frozen planner clock.
+- README is a product landing page with screenshots; install steps live in `docs/INSTALL.md`.
+- Swimlane weekend and holiday columns share one hatch (sleep, coffee, home) when the day is not covered by an absence.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.16.6` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Публичное демо на фикстурах `/demo/planner` (без логина в трекер): свимлейны, бэклог, burndown и ретро, часы планера зафиксированы.
+- README — посадочная страница со скринами; установка вынесена в `docs/INSTALL.md`.
+- Выходные и праздники на свимлейне рисуются одной штриховкой (сон, кофе, дом), если день не перекрыт отсутствием.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.16.6` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.16.5] — 2026-10-17
 
 ### English
