@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.8] — 2026-10-17
+
+### English
+
+- README landing opens on the planner and walks the screens (backlog, burndown, fact, retro, collaboration) before install and MCP.
+- Planner copy matches the grid: sprint length follows tracker dates, 2–4 timeslots per day (default three), leave and tech sprints on the lanes, notes with links, checklists, and reactions.
+- The header mark is the two-mug Lottie from the app. Planner shots are in English and include the task sidebar.
+- Docker Hub images were not republished; compose stays on tag `1.16.7`.
+
+### Русский
+
+- Посадочная README открывается планером и идёт по экранам (бэклог, burndown, факт, ретро, совместная работа) до установки и MCP.
+- Текст планера совпадает с сеткой: длина спринта из дат трекера, 2–4 таймслота в дне (по умолчанию три), отпуска и техспринты на дорожках, заметки со ссылками, чеклистами и реакциями.
+- Знак в шапке — лотти с двумя кружками из приложения. Кадры планера на английском и с открытым списком задач.
+- Образы Docker Hub не публиковались заново; compose остаётся на теге `1.16.7`.
+
 ## [1.16.7] — 2026-10-17
 
 ### English
