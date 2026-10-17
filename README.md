@@ -1,14 +1,14 @@
 <h1 align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/logo-button-dark.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/logo-button-light.svg" />
-    <img src="./docs/media/logo-button-light.svg" alt="Beer Tracker" height="44" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/logo-button-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/logo-button-light.png" />
+    <img src="./docs/media/logo-button-light.png" alt="Beer Tracker" height="44" />
   </picture>
 </h1>
 
 <p align="center">
-  <strong>Умный планер спринтов поверх Яндекс Трекера и Jira</strong><br />
-  Свимлейны по людям и дням, бэклог, цели, burndown — без замены вашего трекера.
+  <strong>Планер спринтов поверх Яндекс Трекера и Jira</strong><br />
+  Свимлейны по людям и дням, бэклог, цели, burndown — задачи остаются в вашем трекере.
 </p>
 
 <p align="center">
@@ -18,20 +18,20 @@
 </p>
 
 <p align="center">
-  <a href="#зачем">Зачем</a> ·
-  <a href="#возможности">Возможности</a> ·
   <a href="#планер">Планер</a> ·
   <a href="#бэклог">Бэклог</a> ·
-  <a href="#burndown">Burndown</a> ·
-  <a href="#выгрузка-факта">Факт</a> ·
+  <a href="#факт">Факт</a> ·
   <a href="#ретро">Ретро</a> ·
   <a href="#совместная-работа">Совместная работа</a> ·
-  <a href="#mcp-для-агентов">MCP</a> ·
   <a href="#быстрый-старт">Старт</a> ·
-  <a href="#документация">Docs</a>
+  <a href="#mcp-для-агентов">MCP</a>
 </p>
 
----
+## Планер
+
+Длина сетки — рабочие дни между началом и концом спринта в трекере. День делится на 2, 3 или 4 таймслота, по умолчанию на три. Отдельная дорожка на разработчика и тестировщика.
+
+Карточки задач тянутся мышкой, длительность меняется resize’ом. На тех же дорожках видны отпуска и техспринты. Можно оставлять заметки по ходу спринта, чтобы ничего не забыть: в них видны ссылки, чеклисты и реакции. Справа — задачи этого спринта.
 
 <p align="center">
   <picture>
@@ -41,43 +41,9 @@
   </picture>
 </p>
 
-## Зачем
-
-Задачи, статусы и спринты остаются в **Яндекс Трекере** или **Jira**. Beer Tracker даёт то, чего не хватает в самом трекере: **визуальный план на 10 рабочих дней** — кто чем занят утром, днём и вечером, с DnD и сохранением позиций. Плюс выгрузка **факта** из трекера, **ретро** спринта и **совместная работа** на одной доске в реальном времени.
-
-| Кто | Что получает |
-|-----|----------------|
-| Разработка / QA | План по дням и людям, загрузка, перенос из бэклога |
-| Тимлиды / PM | Цели, метрики, burndown, ретро с договорённостями |
-| Вся команда | Presence и live-обновления, пока планируете вместе |
-| Админы | Организации, команды, sync / выгрузка снимков и changelog |
-
-Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI — Sprint Manager. Провайдер трекера — на организацию: [Issue trackers](./docs/ISSUE_TRACKERS.md).
-
-## Возможности
-
-- **Свимлейны** — дорожка на человека, сетка 10×3 (утро / день / вечер), DnD и resize карточек
-- **Бэклог** — отбор, фильтры, перенос задач в спринт
-- **Цели и burndown** — чеклисты Delivery / Discovery и график выгорания SP/TP
-- **Выгрузка факта** — changelog из трекера → таймлайн фактических фаз на свимлейне
-- **Ретро** — доска ретроспективы, метрики спринта, договорённости в следующий спринт
-- **Совместная работа** — presence-аватары, live-обновления доски, блокировка чужих жестов
-- **Связи и стикеры** — стрелки между задачами, комментарии на таймлайне
-- **MCP для агентов** — Cursor / Claude читают план и предлагают правки по OAuth 2.1
-
-Подробный каталог — [CAPABILITIES.md](./docs/CAPABILITIES.md). Обзор продукта — [PROJECT_OVERVIEW.md](./docs/PROJECT_OVERVIEW.md).
-
-> Планировщик эпиков и квартальный план сняты с навигации и не развиваются. См. [product steering](./docs/steering/product.md).
-
-## Планер
-
-Сетка спринта: **10 рабочих дней × 3 части дня**, отдельная дорожка на разработчика и тестировщика. Карточки тянутся мышкой, длительность меняется resize’ом, позиции и сегменты фаз сохраняются в PostgreSQL. Сбоку — задачи спринта, бэклог, цели, метрики и SLA-баги.
-
-Живой кадр — в шапке README (`/demo/planner`). Светлая/тёмная версия скрина подстраивается под тему GitHub.
-
 ## Бэклог
 
-Отбор задач вне спринта, фильтры по статусу и людям, перенос в активный спринт. Снимок с `/demo/planner` → вкладка Backlog.
+Отбор задач вне спринта, фильтры по статусу и людям, перенос в активный спринт.
 
 <p align="center">
   <picture>
@@ -89,7 +55,7 @@ Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI
 
 ## Burndown
 
-График выгорания Story Points и Test Points по дням спринта, с идеальной линией и маркером «сегодня».
+Story Points и Test Points по дням спринта, идеальная линия и маркер «сегодня».
 
 <p align="center">
   <picture>
@@ -99,11 +65,11 @@ Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI
   </picture>
 </p>
 
-## Выгрузка факта
+## Факт
 
-Фоновый sync подтягивает из трекера не только снимки задач, но и **историю статусов** (changelog). По ней на свимлейне строится **таймлайн факта**: когда задача была в работе, на ревью, в тесте — рядом с планом, а не вместо него.
+Sync забирает из трекера историю статусов. На свимлейне это **таймлайн факта**: когда задача была в работе, на ревью и в тесте — рядом с планом, а не вместо него.
 
-Настраивают и запускают выгрузку админы в `/admin/sync` (очереди команд + доп. параметры). Для планового incremental sync нужны Redis и `pnpm sync-worker`; полный rescan можно гонять inline — см. [INSTALL.md](./docs/INSTALL.md).
+Выгрузку запускают в `/admin/sync`. Плановый incremental sync — Redis и `pnpm sync-worker`; полный rescan можно гнать inline. Подробности — [INSTALL.md](./docs/INSTALL.md).
 
 <p align="center">
   <picture>
@@ -115,7 +81,7 @@ Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI
 
 ## Ретро
 
-Отдельный режим ретроспективы спринта: колонки, заметки, картинки, комментарии и реакции. Сбоку блок **«Факты»** — состав спринта (закрыто / добавили / отказались / перенос), cycle time, узкие места по выгруженному changelog. Сформированные **договорённости** в процессе ретро переносятся в следующий спринт, чтобы ритуал не заканчивалось разговором.
+Колонки, заметки, картинки, комментарии и реакции. Сбоку блок **«Факты»**: что закрыли, добавили, сняли и перенесли, cycle time и узкие места по changelog. Договорённости из ретро переносятся в следующий спринт.
 
 <p align="center">
   <picture>
@@ -127,9 +93,9 @@ Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI
 
 ## Совместная работа
 
-Несколько человек на одном спринте видят **кто сейчас на доске**: аватары в шапке и на карточках, действие (смотрит / двигает / редактирует / меняет продолжительность). Чужой жест **блокирует** карточку; правки позиций, задач, связей, комментариев и ретро приходят по SSE без ручного обновления. Есть общий **таймер спринта**. Работает на свимлейнах, канбане и ретро.
+На одном спринте видно, кто сейчас на доске: аватары в шапке и на карточках, действие (смотрит, двигает, редактирует, меняет продолжительность). Чужой жест блокирует карточку. Правки позиций, задач, связей, комментариев и ретро приходят без обновления страницы. Есть общий таймер спринта.
 
-Для нескольких инстансов приложения нужен Redis (pub/sub + presence); без него realtime живёт в памяти одного процесса.
+Для нескольких инстансов нужен Redis. Без него realtime живёт в памяти одного процесса.
 
 <p align="center">
   <picture>
@@ -139,48 +105,34 @@ Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI
   </picture>
 </p>
 
-## Как это работает
+## Быстрый старт
 
-```mermaid
-flowchart LR
-  Tracker["Яндекс Трекер<br/>или Jira"]
-  BT["Beer Tracker<br/>планер + PostgreSQL"]
-  Agents["Cursor / Claude<br/>MCP + OAuth"]
-
-  Tracker <-->|"sync / API"| BT
-  Agents <-->|"Bearer после login"| BT
+```bash
+cp env.example .env
+# POSTGRES_PASSWORD, AUTH_SESSION_SECRET (≥32), ORG_SECRETS_ENCRYPTION_KEY (64 hex)
+docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
 ```
 
-1. Подключаете организацию к трекеру (Yandex / Jira Cloud / Jira DC).
-2. Пользователи входят со своей учёткой трекера.
-3. Спринты и задачи подтягиваются в планер; позиции и планы живут в PostgreSQL.
-4. Sync выгружает снимки и changelog → факт на свимлейне и метрики ретро.
-5. Несколько вкладок/коллег делят доску через realtime (presence + live updates).
-6. Агенты подключаются к `/api/mcp` по OAuth 2.1 — без shared secret в конфиге.
+Откройте [http://localhost:3000](http://localhost:3000) и подключите трекер. Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker), тег `1.16.7`.
 
-Стек: Next.js 16, React 19, PostgreSQL, опционально Redis + BullMQ (sync-воркер и multi-instance realtime).
+Установка, S3, sync и разработка из исходников — [docs/INSTALL.md](./docs/INSTALL.md). Провайдер на организацию — [docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md).
 
 ## MCP для агентов
 
-Remote MCP крутится **на вашем инстансе** Beer Tracker. Клиент (Cursor, Claude Desktop / Code) открывает браузер → логин и consent → получает Bearer. Scope: `mcp:tools`. Подробности и URL — [SPRINT_CONTEXT.md](./docs/SPRINT_CONTEXT.md).
+Remote MCP крутится на вашем инстансе. Клиент (Cursor, Claude Desktop / Code) открывает браузер, логин и consent, затем получает Bearer. Scope: `mcp:tools`. Подробности — [SPRINT_CONTEXT.md](./docs/SPRINT_CONTEXT.md).
 
-**Что умеет агент**
+Агент читает план и предлагает правки. Запись в спринт идёт только после confirm.
 
-- Найти спринт по имени (`search_sprints`) и снять **planning graph**: позиции, capacity, цели, заметки, связи (`get_sprint_context` / `get_sprint_capacity`)
-- Поискать задачи и людей (`search_issues`, `resolve_person`), открыть issue / snapshot
-- **Предложить** правки плана (`propose_plan_patch`) и **применить** только после confirm (`apply_plan_patch`) — не silent write
-- Читать и править доску ретро (`get_retro_board` / `apply_retro_board`)
-
-**Кейсы**
+- Найти спринт (`search_sprints`) и снять planning graph: позиции, capacity, цели, заметки, связи (`get_sprint_context`, `get_sprint_capacity`)
+- Найти задачи и людей (`search_issues`, `resolve_person`), открыть issue и snapshot
+- Предложить правки (`propose_plan_patch`) и применить их (`apply_plan_patch`)
+- Читать и править доску ретро (`get_retro_board`, `apply_retro_board`)
 
 | Кейс | Как это выглядит |
 |------|------------------|
-| «Какие есть риски в планировании спринта Demo 2615?» | Агент ищет спринт → capacity / overlaps → коротко объясняет перегруз |
-| Запланируй DEMO-101 на Алису | Propose позиции и заметок → человек смотрит preview → apply |
-| «Подготовь ретро по спринту Demo 2614» | Сводка фактов + черновик карточек на доске ретро |
-| Планирование в IDE | Тот же graph, что на свимлейне, без скринов и без клона репо |
-
-В конфиге достаточно URL:
+| «Какие риски в спринте Demo 2615?» | Спринт → capacity и overlaps → короткий разбор перегруза |
+| Запланируй DEMO-101 на Алису | Propose позиций и заметок → человек смотрит preview → apply |
+| «Подготовь ретро по Demo 2614» | Сводка фактов и черновик карточек на доске |
 
 ```json
 {
@@ -192,37 +144,24 @@ Remote MCP крутится **на вашем инстансе** Beer Tracker. �
 }
 ```
 
-## Быстрый старт
-
-```bash
-cp env.example .env
-# POSTGRES_PASSWORD, AUTH_SESSION_SECRET (≥32), ORG_SECRETS_ENCRYPTION_KEY (64 hex)
-docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
-```
-
-Откройте [http://localhost:3000](http://localhost:3000). Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker), тег `1.16.7`.
-
-Полная установка (исходники, S3, трекер, sync, CI) — **[docs/INSTALL.md](./docs/INSTALL.md)**.  
-Настройка провайдера — **[docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)**.
-
 ## Документация
 
 | Документ | О чём |
 |----------|--------|
-| [Установка](./docs/INSTALL.md) | Docker, dev, env, sync, команды |
-| [Обзор проекта](./docs/PROJECT_OVERVIEW.md) | Что это, для кого, экраны |
-| [Issue trackers](./docs/ISSUE_TRACKERS.md) | Yandex Tracker и Jira |
-| [Возможности](./docs/CAPABILITIES.md) | Расширенный список функций |
-| [Медиа для README](./docs/media/README.md) | Слоты скринов / GIF |
-| [Индекс docs](./docs/DOCUMENTATION_INDEX.md) | Навигация по всей документации |
-| [API](./docs/API_DOCUMENTATION.md) | HTTP API |
+| [Установка](./docs/INSTALL.md) | Docker, dev, env, sync |
+| [Issue trackers](./docs/ISSUE_TRACKERS.md) | Яндекс Трекер и Jira |
+| [Возможности](./docs/CAPABILITIES.md) | Полный список функций |
+| [Обзор](./docs/PROJECT_OVERVIEW.md) | Для кого продукт и какие экраны |
 | [Sprint context / MCP](./docs/SPRINT_CONTEXT.md) | Planning graph и ретро для агентов |
-| [Архитектура](./ARCHITECTURE.md) | Данные, слои, паттерны клиента |
+| [Индекс](./docs/DOCUMENTATION_INDEX.md) | Вся документация |
 
 ## Контрибьюция
 
-Коммиты с [DCO](https://developercertificate.org/) (`git commit -s`) — см. [CONTRIBUTING.md](./CONTRIBUTING.md).  
-Уязвимости — [SECURITY.md](./SECURITY.md).
+Коммиты с [DCO](https://developercertificate.org/) (`git commit -s`) — [CONTRIBUTING.md](./CONTRIBUTING.md). Уязвимости — [SECURITY.md](./SECURITY.md).
+
+Историческое имя UI — Sprint Manager. Стек и слои — [ARCHITECTURE.md](./ARCHITECTURE.md). Слоты скринов — [docs/media/README.md](./docs/media/README.md).
+
+Планировщик эпиков и квартальный план сняты с навигации и не развиваются: [product steering](./docs/steering/product.md).
 
 ## Лицензия
 

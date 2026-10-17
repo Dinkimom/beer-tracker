@@ -4,7 +4,7 @@
 
 | Файл | Что | Источник |
 |------|-----|----------|
-| `logo-button-light.svg` / `logo-button-dark.svg` | Бренд без фона (кружка + Caveat), цвет текста под тему | сгенерировано из `beer-mug.svg` + Caveat Bold |
+| `logo-button-light.png` / `logo-button-dark.png` | Бренд без фона: две кружки из `public/assets/beer-emoji.json` и Caveat, цвет текста под тему | кадр покоя лотти шапки |
 | `swimlane-light.png` / `swimlane-dark.png` | Свимлейны | Board, сайдбар закрыт |
 | `backlog-light.png` / `backlog-dark.png` | Бэклог | Backlog |
 | `burndown-light.png` / `burndown-dark.png` | Burndown SP/TP | Burndown |
@@ -17,7 +17,7 @@
 ## Как обновить скрины
 
 1. `pnpm docker:dev` → [http://localhost:3000/demo/planner](http://localhost:3000/demo/planner)
-2. Светлая / тёмная тема в шапке; вкладки Board / Backlog / Burndown / Retro
+2. Язык интерфейса — английский (кадры на посадочной в одном языке). Светлая / тёмная тема в шапке; вкладки Board / Backlog / Burndown / Retro
 3. Закройте сайдбар и онбординг, кадр ~1680×1050 → соответствующие `*-light.png` / `*-dark.png` в этой папке. Факт — с включённым «Таймлайн факта под свимлейном».
 
 ## Светлая / тёмная в README
