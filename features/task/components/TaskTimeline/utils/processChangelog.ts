@@ -12,6 +12,7 @@ import {
   isFullyOnWeekend,
   isWeekend,
 } from '@/utils/dateUtils';
+import { getPlannerNowMs } from '@/utils/plannerClock';
 
 interface StatusHistoryItem {
   createdBy?: {
@@ -130,7 +131,7 @@ function mapHistoryItemToDuration(status: StatusHistoryItem, nowMs: number): Sta
 }
 
 function durationsFromStatusHistory(statusHistory: StatusHistoryItem[]): StatusDuration[] {
-  const nowMs = new Date().getTime();
+  const nowMs = getPlannerNowMs();
   return statusHistory
     .map((status) => mapHistoryItemToDuration(status, nowMs))
     .filter((d): d is StatusDuration => d !== null);

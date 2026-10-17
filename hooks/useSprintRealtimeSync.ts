@@ -11,6 +11,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
 import { DEMO_ORG_ID } from '@/lib/demo/demoIds';
+import { buildDemoPresenceViewers } from '@/lib/demo/demoPresenceViewers';
 import { buildSprintRealtimeSseUrl } from '@/lib/realtime/buildSprintRealtimeSseUrl';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
 import { parseSprintRealtimeMessage, shouldApplySprintRealtimeEvent } from '@/lib/realtime/sprintRealtimeProtocol';
@@ -131,6 +132,11 @@ export function useSprintRealtimeSync(
   useEffect(() => {
     handlersRef.current = handlers;
   }, [handlers]);
+
+  useEffect(() => {
+    if (!isDemoPlanner || !sprintId || sprintId <= 0) return;
+    handlersRef.current.onPresence?.(buildDemoPresenceViewers());
+  }, [isDemoPlanner, sprintId]);
 
   useEffect(() => {
     // Fixture demo has no real SSE tenant — EventSource 403 would reconnect forever.

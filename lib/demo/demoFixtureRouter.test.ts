@@ -116,6 +116,14 @@ describe('handleDemoFixtureRequest', () => {
     });
   });
 
+  it('returns swimlane fact changelogs keyed by issue', () => {
+    const result = handleDemoFixtureRequest(cfg('post', '/issues/changelog'));
+    expect(result.status).toBe(200);
+    const data = result.data as Record<string, { changelog: unknown[] }>;
+    expect(data['DEMO-102']?.changelog.length).toBeGreaterThan(1);
+    expect(data['DEMO-104']?.changelog.length).toBeGreaterThan(1);
+  });
+
   it('returns assignee velocity averages for demo developers', () => {
     const result = handleDemoFixtureRequest(
       cfg('get', `/sprints/assignee-velocity?sprintIds=${DEMO_SPRINT_ID}`)

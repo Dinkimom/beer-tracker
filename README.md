@@ -105,9 +105,12 @@ Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI
 
 Настраивают и запускают выгрузку админы в `/admin/sync` (очереди команд + доп. параметры). Для планового incremental sync нужны Redis и `pnpm sync-worker`; полный rescan можно гонять inline — см. [INSTALL.md](./docs/INSTALL.md).
 
-<!-- media-slot: docs/media/fact-timeline.png -->
 <p align="center">
-  <img src="./docs/media/fact-timeline.svg" alt="Таймлайн факта на свимлейне" width="900" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/fact-timeline-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/fact-timeline-light.png" />
+    <img src="./docs/media/fact-timeline-light.png" alt="Таймлайн факта на свимлейне" width="900" />
+  </picture>
 </p>
 
 ## Ретро
@@ -128,9 +131,12 @@ Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI
 
 Для нескольких инстансов приложения нужен Redis (pub/sub + presence); без него realtime живёт в памяти одного процесса.
 
-<!-- media-slot: docs/media/collaboration.png -->
 <p align="center">
-  <img src="./docs/media/collaboration.svg" alt="Совместная работа: presence на доске" width="900" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/collaboration-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/collaboration-light.png" />
+    <img src="./docs/media/collaboration-light.png" alt="Совместная работа: presence на доске" width="900" />
+  </picture>
 </p>
 
 ## Как это работает

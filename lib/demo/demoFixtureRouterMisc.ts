@@ -1,6 +1,7 @@
 import type { DemoFixtureResult } from './demoFixtureRouterTypes';
 
 import { buildHolidayZeroString } from './demoFixtureBurndown';
+import { buildDemoIssueChangelogs } from './demoFixtureChangelog';
 import { getDemoFixtureStore } from './demoFixtureStore';
 
 function ok(data: unknown, status = 200): DemoFixtureResult {
@@ -22,7 +23,7 @@ function handleIssueByKey(path: string): DemoFixtureResult {
 function handleIssues(path: string, method: string): DemoFixtureResult | null {
   if (!path.startsWith('/issues/')) return null;
   if (path === '/issues/changelog' && method === 'post') {
-    return ok({ changelogs: {} });
+    return ok(buildDemoIssueChangelogs());
   }
   if (path === '/issues/parent-statuses' && method === 'get') {
     return ok({ statuses: {} });

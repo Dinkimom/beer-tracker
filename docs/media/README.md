@@ -5,12 +5,12 @@
 | Файл | Что | Источник |
 |------|-----|----------|
 | `logo-button-light.svg` / `logo-button-dark.svg` | Бренд без фона (кружка + Caveat), цвет текста под тему | сгенерировано из `beer-mug.svg` + Caveat Bold |
-| `swimlane-light.png` / `swimlane-dark.png` | Свимлейны | Board |
+| `swimlane-light.png` / `swimlane-dark.png` | Свимлейны | Board, сайдбар закрыт |
 | `backlog-light.png` / `backlog-dark.png` | Бэклог | Backlog |
 | `burndown-light.png` / `burndown-dark.png` | Burndown SP/TP | Burndown |
 | `retro-light.png` / `retro-dark.png` | Ретро + «Факты» | Retro |
-| `fact-timeline.svg` → `.png` | Таймлайн факта | Живой планер после sync |
-| `collaboration.svg` → `.png` | Presence | Живой планер (2+ вкладки) |
+| `fact-timeline-light.png` / `fact-timeline-dark.png` | Таймлайн факта под дорожками | Board, настройка «Таймлайн факта» |
+| `collaboration-light.png` / `collaboration-dark.png` | Presence: стек в шапке и аватары на карточках | Board |
 
 Демо-участники (имена + портреты Wikimedia в [`public/demo/avatars/`](../../public/demo/avatars/)): Linus Torvalds, Guido van Rossum, Margaret Hamilton, John Carmack.
 
@@ -18,7 +18,7 @@
 
 1. `pnpm docker:dev` → [http://localhost:3000/demo/planner](http://localhost:3000/demo/planner)
 2. Светлая / тёмная тема в шапке; вкладки Board / Backlog / Burndown / Retro
-3. Кадр ~1440×900 → соответствующие `*-light.png` / `*-dark.png` в этой папке
+3. Закройте сайдбар и онбординг, кадр ~1680×1050 → соответствующие `*-light.png` / `*-dark.png` в этой папке. Факт — с включённым «Таймлайн факта под свимлейном».
 
 ## Светлая / тёмная в README
 
