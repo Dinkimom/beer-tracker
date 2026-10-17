@@ -7,6 +7,10 @@
 </h1>
 
 <p align="center">
+  <strong>Русский</strong> · <a href="./README.en.md">English</a>
+</p>
+
+<p align="center">
   <strong>Планер спринтов поверх Яндекс Трекера и Jira</strong><br />
   Свимлейны по людям и дням, бэклог, цели, burndown — задачи остаются в вашем трекере.
 </p>
@@ -23,6 +27,7 @@
   <a href="#факт">Факт</a> ·
   <a href="#ретро">Ретро</a> ·
   <a href="#совместная-работа">Совместная работа</a> ·
+  <a href="#где-используется">Где используется</a> ·
   <a href="#быстрый-старт">Старт</a> ·
   <a href="#mcp-для-агентов">MCP</a>
 </p>
@@ -105,6 +110,21 @@ Sync забирает из трекера историю статусов. На 
   </picture>
 </p>
 
+## Где используется
+
+Компании, которые ведут спринты в Beer Tracker.
+
+<!-- adopters: тот же порядок, что в docs/companies.md. Пара файлов docs/media/companies/<id>-light.svg и <id>-dark.svg. -->
+<p align="center">
+  <a href="https://www.yclients.com">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./docs/media/companies/yclients-dark.svg" />
+      <source media="(prefers-color-scheme: light)" srcset="./docs/media/companies/yclients-light.svg" />
+      <img src="./docs/media/companies/yclients-light.svg" alt="YCLIENTS" height="40" />
+    </picture>
+  </a>
+</p>
+
 ## Быстрый старт
 
 ```bash
@@ -159,7 +179,7 @@ Remote MCP крутится на вашем инстансе. Клиент (Curs
 
 Коммиты с [DCO](https://developercertificate.org/) (`git commit -s`) — [CONTRIBUTING.md](./CONTRIBUTING.md). Уязвимости — [SECURITY.md](./SECURITY.md).
 
-Историческое имя UI — Sprint Manager. Стек и слои — [ARCHITECTURE.md](./ARCHITECTURE.md). Слоты скринов — [docs/media/README.md](./docs/media/README.md).
+Историческое имя UI — Sprint Manager. Стек и слои — [ARCHITECTURE.md](./ARCHITECTURE.md). Слоты скринов — [docs/media/README.md](./docs/media/README.md). Ещё одна компания на посадочной — [docs/companies.md](./docs/companies.md).
 
 Планировщик эпиков и квартальный план сняты с навигации и не развиваются: [product steering](./docs/steering/product.md).
 

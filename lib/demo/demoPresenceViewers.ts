@@ -2,7 +2,7 @@ import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
 
 import { DEMO_DEV_DISPLAY } from './demoFixtureSeedTasks';
 
-/** Two colleagues already on the demo board (header stack + card avatars). */
+/** Two colleagues already on the demo board (header stack + card avatars). One is resizing, so that card shows the action outline. */
 export function buildDemoPresenceViewers(): SprintPresenceViewer[] {
   return [
     {
@@ -11,7 +11,7 @@ export function buildDemoPresenceViewers(): SprintPresenceViewer[] {
       boardView: 'swimlanes',
       clientId: 'demo-presence-carol',
       displayName: DEMO_DEV_DISPLAY.carol.name,
-      focus: { state: 'viewing', targetId: 'DEMO-102' },
+      focus: { state: 'resizing', targetId: 'DEMO-102' },
       userId: 'demo-presence-carol',
     },
     {

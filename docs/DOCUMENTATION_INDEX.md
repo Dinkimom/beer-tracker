@@ -6,11 +6,13 @@
 
 ```
 beer-tracker/
-├── README.md                          # Посадочная: зачем, возможности, быстрый старт
+├── README.md                          # Посадочная (ru)
+├── README.en.md                       # Посадочная (en)
 ├── CHANGELOG.md                       # Релиз-ноуты (en + ru)
 ├── docs/
 │   ├── DOCUMENTATION_INDEX.md         # Этот индекс
 │   ├── INSTALL.md                     # Установка, Docker, env, sync, команды
+│   ├── companies.md                   # Компании на посадочной: как добавить следующую
 │   ├── media/                         # Скрины/GIF для README (+ SVG-плейсхолдеры)
 │   ├── PROJECT_OVERVIEW.md            # Единый обзор: что / для кого / функции / стек
 │   ├── CAPABILITIES.md                # Список возможностей планера
@@ -77,7 +79,9 @@ beer-tracker/
 | [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md) | Схема `beer_tracker`: каталог teams/staff и миграция для существующей БД | Разработчики, DevOps |
 | [STRUCTURE.md](./STRUCTURE.md) | Feature-based архитектура | Разработчики |
 | [FOLDER_NAMING.md](./FOLDER_NAMING.md) | Именование папок (kebab vs PascalCase для доменов) | Разработчики |
-| [README.md](../README.md) | Посадочная страница репозитория | Все |
+| [README.md](../README.md) | Посадочная страница репозитория (ru) | Все |
+| [README.en.md](../README.en.md) | Та же посадочная на английском | Все |
+| [companies.md](./companies.md) | Компании, где уже используется, и как добавить следующую | Все |
 
 ### 🔧 Специализированные руководства
 
