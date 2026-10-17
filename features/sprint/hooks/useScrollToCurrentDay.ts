@@ -6,6 +6,7 @@ import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { useEffect, useRef } from 'react';
 
+import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
 import { DELAYS } from '@/utils/constants';
 
 import { scrollContainerToCurrentCell, shouldSkipScrollToCurrentDay } from './useScrollToCurrentDayHelpers';
@@ -27,6 +28,7 @@ export function useScrollToCurrentDay({
   sprints,
   scrollContainerRef,
 }: UseScrollToCurrentDayProps) {
+  const { isDemoPlanner } = useDemoPlannerShell();
   const hasScrolledRef = useRef<boolean>(false);
 
   useEffect(() => {
@@ -53,6 +55,13 @@ export function useScrollToCurrentDay({
         return;
       }
 
+      // Demo: keep the sprint start (week beginning) in frame instead of centering on «today».
+      if (isDemoPlanner) {
+        container.scrollLeft = 0;
+        hasScrolledRef.current = true;
+        return;
+      }
+
       scrollContainerToCurrentCell(container, 0, () => {
         hasScrolledRef.current = true;
       });
@@ -60,5 +69,5 @@ export function useScrollToCurrentDay({
 
     const timeoutId = setTimeout(scrollToCurrentCell, DELAYS.INITIAL_SCROLL);
     return () => clearTimeout(timeoutId);
-  }, [isMounted, viewMode, sprintInfo, selectedSprintId, sprints, scrollContainerRef]);
+  }, [isDemoPlanner, isMounted, viewMode, sprintInfo, selectedSprintId, sprints, scrollContainerRef]);
 }

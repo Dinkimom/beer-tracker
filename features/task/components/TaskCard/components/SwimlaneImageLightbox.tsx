@@ -45,8 +45,9 @@ export function SwimlaneImageLightbox({ authorName, caption, src, onClose }: Swi
   return createPortal(
     <div
       aria-modal="true"
-      className={`fixed inset-0 flex flex-col items-center justify-center bg-black/85 p-4 sm:p-6 ${ZIndex.class('modalBackdrop')}`}
+      className="fixed inset-0 flex flex-col items-center justify-center bg-black/85 p-4 sm:p-6"
       role="dialog"
+      style={{ zIndex: ZIndex.modalBackdrop }}
       onClick={onClose}
     >
       <Button
@@ -59,7 +60,8 @@ export function SwimlaneImageLightbox({ authorName, caption, src, onClose }: Swi
         <Icon className="h-5 w-5" name="close" size="sm" />
       </Button>
       <div
-        className={`flex max-h-full w-full max-w-[95vw] flex-col items-center ${ZIndex.class('modal')}`}
+        className="flex max-h-full w-full max-w-[95vw] flex-col items-center"
+        style={{ zIndex: ZIndex.modal }}
         onClick={(event) => event.stopPropagation()}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}

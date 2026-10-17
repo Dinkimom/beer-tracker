@@ -6,11 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { PARTS_PER_DAY } from '@/constants';
 
 import {
+  buildHolidayHatchRanges,
   buildUnavailableDayHatchKinds,
   buildUnavailableDayTitles,
   buildUnavailableHatchRanges,
   isoDateOnlyFromWorkingDayIndex,
   isInternalAvailabilityDayDivider,
+  isInternalHolidayDayDivider,
   pickAvailabilityHatchKind,
 } from './availabilityTimelineMarks';
 
@@ -86,6 +88,30 @@ describe('isInternalAvailabilityDayDivider', () => {
     expect(isInternalAvailabilityDayDivider(kinds, 2, 6)).toBe(false);
     expect(isInternalAvailabilityDayDivider(kinds, 3, 6)).toBe(true);
     expect(isInternalAvailabilityDayDivider(kinds, 4, 6)).toBe(false);
+  });
+});
+
+describe('buildHolidayHatchRanges', () => {
+  it('merges consecutive holidays and skips days with availability', () => {
+    expect(
+      buildHolidayHatchRanges(new Set([0, 1, 2, 4, 5]), new Map([[1, 'vacation']]), 6)
+    ).toEqual([
+      { daySpan: 1, startDay: 0 },
+      { daySpan: 1, startDay: 2 },
+      { daySpan: 2, startDay: 4 },
+    ]);
+  });
+});
+
+describe('isInternalHolidayDayDivider', () => {
+  it('is true only between adjacent holiday-only days', () => {
+    const holidays = new Set([0, 1, 2, 4]);
+    const unavailable = new Map<number, AvailabilityCardKind>([[1, 'duty']]);
+    expect(isInternalHolidayDayDivider(holidays, unavailable, 0, 6)).toBe(false);
+    expect(isInternalHolidayDayDivider(holidays, undefined, 0, 6)).toBe(true);
+    expect(isInternalHolidayDayDivider(holidays, undefined, 1, 6)).toBe(true);
+    expect(isInternalHolidayDayDivider(holidays, undefined, 2, 6)).toBe(false);
+    expect(isInternalHolidayDayDivider(holidays, undefined, 3, 6)).toBe(false);
   });
 });
 

@@ -4,12 +4,7 @@ import type { TaskPosition } from '@/types';
 
 import { action, computed, makeObservable, observable, runInAction } from 'mobx';
 
-import {
-  deleteTaskPosition as deleteTaskPositionApi,
-  fetchSprintPlanAnchors,
-  fetchSprintPositions,
-  saveTaskPosition,
-} from '@/lib/beerTrackerApi';
+import { deleteTaskPosition as deleteTaskPositionApi, saveTaskPosition } from '@/lib/beerTrackerApi';
 import { isValidSprintId, stripPositionSource, taskPositionToApi } from '@/lib/layers/data/mappers/taskPositionToApi';
 import { isEphemeralPlannerPositionId } from '@/lib/planner/ephemeralPlannerPositionId';
 import { DELAYS } from '@/utils/constants';
@@ -27,6 +22,7 @@ import {
   pendingUpdateForPosition,
   planHistoryAppliedPayload,
 } from './taskPositionsStoreHistory';
+import { fetchSprintPositionsBundle } from './taskPositionsStoreLoadHelpers';
 import {
   clearPlanDraft,
   commitPlanDraft as commitStoredPlanDraft,
@@ -91,6 +87,11 @@ export class TaskPositionsStore {
   positionsSettledSprintId: number | null = null;
 
   private positionsFetchInFlight = 0;
+
+  /** In-flight `loadSprint` for the current sprint — coalesces remount / dual-hook callers. */
+  private loadSprintInFlight: Promise<void> | null = null;
+
+  private loadSprintInFlightGen = 0;
 
   private debounceTimerRef: NodeJS.Timeout | null = null;
 
@@ -309,9 +310,11 @@ export class TaskPositionsStore {
     this.syncAssignees = syncAssignees;
   }
 
-  async loadSprint(sprintId: number | null): Promise<void> {
+  loadSprint(sprintId: number | null): Promise<void> {
     if (!isValidSprintId(sprintId)) {
       this.sprintId = sprintId;
+      this.loadSprintInFlight = null;
+      this.loadSprintInFlightGen = 0;
       this.reconcileGeneration++;
       runInAction(() => {
         this.positions.clear();
@@ -323,12 +326,10 @@ export class TaskPositionsStore {
         this.positionsLoadPending = false;
         this.positionsSettledSprintId = null;
       });
-      return;
+      return Promise.resolve();
     }
 
-    // Уже загрузили позиции для этого спринта и нет параллельного fetch — выходим без bump gen / pending.
-    // Иначе повторный вызов из useTaskPositionsApi при монтировании планера включает positionsLoadPending,
-    // полноэкранный лоадер снова скрывает SprintPlanner → размонтирование → бесконечный цикл.
+    // Settled + idle: skip (avoids remount↔pending loader loop with useTaskPositionsApi).
     if (
       this.sprintId === sprintId &&
       this.positionsSettledSprintId === sprintId &&
@@ -336,11 +337,13 @@ export class TaskPositionsStore {
     ) {
       return Promise.resolve();
     }
+    if (this.sprintId === sprintId && this.loadSprintInFlight) {
+      return this.loadSprintInFlight;
+    }
 
     const sprintChanged = this.sprintId !== sprintId;
     this.sprintId = sprintId;
     const myGen = ++this.reconcileGeneration;
-
     runInAction(() => {
       if (sprintChanged) {
         this.undoStack = [];
@@ -352,21 +355,25 @@ export class TaskPositionsStore {
     });
 
     const draftKeep = snapshotPlanDraftPositions(this.draftTaskIds, this.positions);
+    const loadPromise = this.fetchAndApplySprintLoad(sprintId, myGen, draftKeep);
+    this.loadSprintInFlight = loadPromise;
+    this.loadSprintInFlightGen = myGen;
+    return loadPromise;
+  }
+
+  private async fetchAndApplySprintLoad(
+    sprintId: number,
+    myGen: number,
+    draftKeep: Map<string, TaskPosition>
+  ): Promise<void> {
     try {
-      const [data, anchors] = await Promise.all([
-        fetchSprintPositions(sprintId),
-        fetchSprintPlanAnchors(sprintId).catch(() => [] as SprintPlanAnchor[]),
-      ]);
-      if (myGen !== this.reconcileGeneration) {
-        return;
-      }
+      const { anchors, positions: data } = await fetchSprintPositionsBundle(sprintId);
+      if (myGen !== this.reconcileGeneration) return;
       runInAction(() => {
         this.positions.clear();
-        if (data && Array.isArray(data)) {
-          data.forEach((position: TaskPosition) => {
-            this.positions.set(position.taskId, position);
-          });
-        }
+        data.forEach((position) => {
+          this.positions.set(position.taskId, position);
+        });
         restorePlanDraftPositions(this.positions, draftKeep);
         replacePlanAnchors(this.planAnchors, anchors);
       });
@@ -380,6 +387,7 @@ export class TaskPositionsStore {
           this.positionsSettledSprintId = this.sprintId;
         }
       });
+      if (this.loadSprintInFlightGen === myGen) this.loadSprintInFlight = null;
     }
   }
 
@@ -569,23 +577,14 @@ export class TaskPositionsStore {
       return;
     }
     try {
-      const [data, anchors] = await Promise.all([
-        fetchSprintPositions(sprintId),
-        fetchSprintPlanAnchors(sprintId).catch(() => [] as SprintPlanAnchor[]),
-      ]);
-      if (this.sprintId !== sprintId) {
-        return;
-      }
+      const { anchors, positions: data } = await fetchSprintPositionsBundle(sprintId);
+      if (this.sprintId !== sprintId) return;
       const pending = this.pendingUpdatesRef;
       const draftKeep = snapshotPlanDraftPositions(this.draftTaskIds, this.positions);
       runInAction(() => {
         const next = new Map<string, TaskPosition>();
-        if (data && Array.isArray(data)) {
-          for (const position of data) {
-            if (!pending.has(position.taskId)) {
-              next.set(position.taskId, position);
-            }
-          }
+        for (const position of data) {
+          if (!pending.has(position.taskId)) next.set(position.taskId, position);
         }
         for (const [taskId, update] of pending) {
           next.set(taskId, stripPositionSource(update.position));

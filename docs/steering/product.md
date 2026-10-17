@@ -36,4 +36,5 @@
 
 - [ISSUE_TRACKERS.md](../ISSUE_TRACKERS.md) — Yandex Tracker и Jira.
 - [CAPABILITIES.md](../CAPABILITIES.md) — полный список возможностей.
-- [README.md](../../README.md) — быстрый старт и токены.
+- [README.md](../../README.md) — посадочная страница продукта.
+- [INSTALL.md](../INSTALL.md) — установка, env, токены трекера.

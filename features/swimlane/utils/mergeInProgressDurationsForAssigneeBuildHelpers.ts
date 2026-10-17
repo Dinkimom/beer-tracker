@@ -2,6 +2,8 @@ import type { SwimlaneInProgressFactSegment } from './mergeInProgressDurationsFo
 import type { StatusDuration } from '@/features/task/components/TaskTimeline/types';
 import type { Developer, Task, TaskPosition } from '@/types';
 
+import { getPlannerNowMs } from '@/utils/plannerClock';
+
 import {
   assignLanes,
   buildRawIntervalsForTask,
@@ -36,7 +38,7 @@ export function buildMergedFactIntervalsForAssignee(
   taskPositions: Map<string, TaskPosition>,
   durationsByTaskId: Map<string, StatusDuration[]>,
   tasksMap: Map<string, Task>,
-  now: number = Date.now()
+  now: number = getPlannerNowMs()
 ) {
   const taskIds = getTaskIdsOnSwimlaneRow(developerId, taskPositions);
   return taskIds.flatMap((taskId) =>

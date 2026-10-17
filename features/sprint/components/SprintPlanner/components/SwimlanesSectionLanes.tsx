@@ -292,6 +292,8 @@ export function SwimlanesSectionLanes({
     onTaskHoverEnd,
   };
 
+  const lastRowId = orderedRows[orderedRows.length - 1]?.id;
+
   const renderLane = (developer: Developer) => {
     const laneProps = swimlanePropsById.get(developer.id);
     if (!laneProps) return null;
@@ -303,7 +305,12 @@ export function SwimlanesSectionLanes({
         className={isPinned ? 'sticky planner-pinned-lane' : undefined}
         style={isPinned ? { zIndex: ZIndex.stickyPinnedRows } : undefined}
       >
-        <Swimlane {...laneProps} isPinned={isPinned} onTogglePin={togglePinnedRow} />
+        <Swimlane
+          {...laneProps}
+          isLastRow={developer.id === lastRowId}
+          isPinned={isPinned}
+          onTogglePin={togglePinnedRow}
+        />
         {isPinned && showArrows ? (
           <div
             aria-hidden

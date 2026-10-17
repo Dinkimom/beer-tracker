@@ -48,6 +48,8 @@ export interface SwimlaneProps {
   hoverConnectedTaskIds?: Set<string> | null;
   hoveredTaskId?: string | null;
   isDraggingTask?: boolean;
+  /** Последняя строка списка — нижняя граница нужна и на колонках с паттерном. */
+  isLastRow?: boolean;
   /** Строка закреплена под шапкой дат */
   isPinned?: boolean;
   /** Режим создания связи: id задачи-источника (null — режим выключен). */

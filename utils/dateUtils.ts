@@ -290,7 +290,7 @@ export function getPartStatus(
     return mondayPartStatus;
   }
 
-  const now = new Date();
+  const now = getPlannerNow();
   const currentPart = resolveCurrentDayPartIndex(now.getHours(), now.getMinutes());
   return classifyPartStatusForToday(partIndex, currentPart);
 }
@@ -305,7 +305,7 @@ export function getCurrentSprintCell(
   partsPerDay: number = 3,
   workingDaysCount: number = WORKING_DAYS
 ): number {
-  const today = new Date();
+  const today = getPlannerNow();
   today.setHours(0, 0, 0, 0);
 
   const mondayIndex = getMondayIndexForWeekend(
@@ -323,7 +323,7 @@ export function getCurrentSprintCell(
   const workingDayIndex = findTodayWorkingDayIndex(range, today);
 
   if (workingDayIndex >= 0 && workingDayIndex < count) {
-    const now = new Date();
+    const now = getPlannerNow();
     const currentPart = resolveCurrentDayPartIndex(now.getHours(), now.getMinutes());
     return workingDayIndex * partsPerDay + currentPart;
   }

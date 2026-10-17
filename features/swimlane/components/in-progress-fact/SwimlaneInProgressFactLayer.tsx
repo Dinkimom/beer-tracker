@@ -29,6 +29,7 @@ import {
   OCCUPANCY_FACT_PHASE_GAP_PX,
   PHASE_ROW_INSET_PX,
 } from '@/lib/planner-timeline';
+import { getPlannerNow } from '@/utils/plannerClock';
 import { getPhaseLinkArrowDefaultHex } from '@/utils/statusColors';
 
 import { SwimlaneFactLaneFlexRow } from './SwimlaneFactLaneFlexRow';
@@ -77,7 +78,7 @@ export function SwimlaneInProgressFactLayer({
 }: SwimlaneInProgressFactLayerProps) {
   const phaseCardColorScheme = usePhaseCardColorScheme();
   const toCell = (d: Date) => dateTimeToFractionalCellInRange(sprintStartDate, d, totalParts);
-  const nowCell = Math.min(toCell(new Date()), totalParts);
+  const nowCell = Math.min(toCell(getPlannerNow()), totalParts);
   const timelineStartCell = 0;
   const spanCells = nowCell - timelineStartCell;
   const leftPercent = (timelineStartCell / totalParts) * 100;
@@ -112,16 +113,15 @@ export function SwimlaneInProgressFactLayer({
     return null;
   }
 
+  const dayHoleMaskStyle = holidayMask
+    ? { maskImage: holidayMask, WebkitMaskImage: holidayMask }
+    : undefined;
+
   return (
     <SwimlaneLaneBand
       accent="fact"
       className="absolute bottom-0 left-0 right-0 z-[1] pointer-events-none"
-      contentStyle={
-        holidayMask
-          ? { maskImage: holidayMask, WebkitMaskImage: holidayMask }
-          : undefined
-      }
-      style={{ height: totalLayerHeight }}
+      style={{ height: totalLayerHeight, ...dayHoleMaskStyle }}
     >
       <div
         className="absolute flex pointer-events-none"

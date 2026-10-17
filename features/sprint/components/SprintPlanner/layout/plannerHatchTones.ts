@@ -1,6 +1,6 @@
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 
-export type PlannerHatchTone = AvailabilityCardKind | 'neutral' | 'shards';
+export type PlannerHatchTone = AvailabilityCardKind | 'neutral' | 'shards' | 'weekend';
 
 interface PlannerHatchToneColors {
   darkFill?: string;
@@ -58,6 +58,8 @@ const EMOJI_PATTERN_SLOTS: readonly EmojiPatternSlot[] = [
 
 /** Череп и надгробие в колонке за концом недели, если карточка вылезла за сетку. */
 const OVERFLOW_GRAVE_EMOJIS = ['💀', '🪦'] as const;
+/** Выходной / нерабочий день на свимлейне — тот же scatter, что у отсутствий. */
+const WEEKEND_EMOJIS = ['😴', '☕', '🏡'] as const;
 
 interface EmojiPatternSpec {
   darkOpacity: number;
@@ -111,6 +113,18 @@ export function plannerEmojiPatternImage(
   return `url("data:image/svg+xml,${encodeURIComponent(emojiPatternSvg(emojis, opacity, resolvePlannerEmojiPatternTile(heightPx)))}")`;
 }
 
+function emojisForPlannerHatchTone(
+  tone: Exclude<PlannerHatchTone, 'neutral'>
+): readonly string[] {
+  if (tone === 'shards') {
+    return OVERFLOW_GRAVE_EMOJIS;
+  }
+  if (tone === 'weekend') {
+    return WEEKEND_EMOJIS;
+  }
+  return PLANNER_AVAILABILITY_EMOJI_SETS[tone];
+}
+
 export function plannerAvailabilityEmojiPattern(
   tone: PlannerHatchTone
 ): EmojiPatternSpec | null {
@@ -119,7 +133,7 @@ export function plannerAvailabilityEmojiPattern(
   }
   return {
     darkOpacity: 0.26,
-    emojis: tone === 'shards' ? OVERFLOW_GRAVE_EMOJIS : PLANNER_AVAILABILITY_EMOJI_SETS[tone],
+    emojis: emojisForPlannerHatchTone(tone),
     lightOpacity: 0.34,
   };
 }
@@ -170,6 +184,12 @@ export const PLANNER_HATCH_TONES: Record<PlannerHatchTone, PlannerHatchToneColor
   },
   shards: {
     lightLine: 'rgb(0 0 0 / 0.06)',
+    darkLine: 'rgb(255 255 255 / 0.07)',
+  },
+  weekend: {
+    lightFill: 'rgb(243 244 246 / 0.55)',
+    lightLine: 'rgb(0 0 0 / 0.06)',
+    darkFill: 'rgb(31 41 55 / 0.4)',
     darkLine: 'rgb(255 255 255 / 0.07)',
   },
 };

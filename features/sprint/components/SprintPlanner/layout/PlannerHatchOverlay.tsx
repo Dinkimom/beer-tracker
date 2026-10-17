@@ -12,11 +12,11 @@ import {
 interface PlannerHatchOverlayProps {
   /** Высота полосы: от неё считается шаг между значками. */
   heightPx?: number;
-  /** По умолчанию нейтральная штриховка «не слот». Цветные тона — отпуска и др. */
+  /** По умолчанию нейтральная штриховка «не слот». weekend / отпуска / shards — emoji-паттерн. */
   tone?: PlannerHatchTone;
 }
 
-/** Фон недоступности: цвет тона + emoji-паттерн или диагональ. */
+/** Фон недоступности: цвет тона + emoji-паттерн (отсутствия, выходные) или диагональ (neutral). */
 export function PlannerHatchOverlay({ heightPx, tone = 'neutral' }: PlannerHatchOverlayProps) {
   const colors = PLANNER_HATCH_TONES[tone];
   const emojiPattern = plannerAvailabilityEmojiPattern(tone);

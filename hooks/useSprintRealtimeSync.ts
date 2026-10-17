@@ -9,6 +9,8 @@ import type {
 
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 
+import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
+import { DEMO_ORG_ID } from '@/lib/demo/demoIds';
 import { buildSprintRealtimeSseUrl } from '@/lib/realtime/buildSprintRealtimeSseUrl';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
 import { parseSprintRealtimeMessage, shouldApplySprintRealtimeEvent } from '@/lib/realtime/sprintRealtimeProtocol';
@@ -32,7 +34,13 @@ interface SprintRealtimeHandlers {
 function readActiveOrganizationId(): string | null {
   try {
     const value = localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)?.trim();
-    return value || null;
+    if (!value || value === DEMO_ORG_ID) {
+      if (value === DEMO_ORG_ID) {
+        localStorage.removeItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
+      }
+      return null;
+    }
+    return value;
   } catch {
     return null;
   }
@@ -116,6 +124,7 @@ export function useSprintRealtimeSync(
   options?: { presence?: boolean }
 ): void {
   const handlersRef = useRef(handlers);
+  const { isDemoPlanner } = useDemoPlannerShell();
   const organizationId = useActiveOrganizationId();
   const joinPresence = options?.presence !== false;
 
@@ -124,7 +133,8 @@ export function useSprintRealtimeSync(
   }, [handlers]);
 
   useEffect(() => {
-    if (!sprintId || sprintId <= 0 || !organizationId) {
+    // Fixture demo has no real SSE tenant — EventSource 403 would reconnect forever.
+    if (isDemoPlanner || !sprintId || sprintId <= 0 || !organizationId) {
       return;
     }
     const clientId = getBrowserRealtimeClientId();
@@ -140,5 +150,5 @@ export function useSprintRealtimeSync(
       source.close();
       handlersRef.current.onPresence?.([]);
     };
-  }, [joinPresence, organizationId, sprintId]);
+  }, [isDemoPlanner, joinPresence, organizationId, sprintId]);
 }

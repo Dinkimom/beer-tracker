@@ -745,8 +745,7 @@ export const enMessages = {
   },
   demoPlanner: {
     unavailableTitle: 'Demo planner unavailable',
-    unavailableBody:
-      'Demo environment variables are not set. Required: DEMO_PLANNER_BOARD_ID, DEMO_TRACKER_QUEUE_KEY, DEMO_TRACKER_OAUTH_TOKEN, and DEMO_TRACKER_CLOUD_ORG_ID (see env.example).',
+    unavailableBody: 'Open /demo/planner to browse the fixture-backed planner (backlog → board → burndown → retro).',
     loadErrorPrefix: 'Load error:',
     loading: 'Loading…',
   },

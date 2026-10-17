@@ -1,10 +1,9 @@
 'use client';
 
 import type { PageHeaderMainPageTabItem } from './PageHeaderMainPageTabs';
-import type { BeerLottieRef } from '@/components/BeerLottie';
 
 import dynamic from 'next/dynamic';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { ChristmasLights, isInChristmasPeriod } from '@/components/ChristmasLights';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -56,7 +55,6 @@ export function PageHeader({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsRequested, setSettingsRequested] = useState(false);
   const isChristmasPeriod = isInChristmasPeriod();
-  const beerLottieRef = useRef<BeerLottieRef>(null);
 
   const sprintTabs = useMemo(() => buildSprintTabItems(t), [t]);
 
@@ -70,7 +68,6 @@ export function PageHeader({
         <PageHeaderBoardToolbar
           activeTab={activeTab}
           adminHref={adminHref}
-          beerLottieRef={beerLottieRef}
           boardName={boardName}
           christmasThemeEnabled={christmasThemeEnabled}
           isChristmasPeriod={isChristmasPeriod}

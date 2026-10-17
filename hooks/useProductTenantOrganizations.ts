@@ -3,11 +3,15 @@ import type { OrganizationIssueTrackerPublicDto } from '@/lib/issueTrackerProvid
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 
-import { fetchProductSession } from '@/lib/api/auth';
+import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
+import { fetchDemoProductSession, fetchProductSession } from '@/lib/api/auth';
+import { DEMO_ORG_ID } from '@/lib/demo/demoIds';
 import { parseRegistryUuidString } from '@/lib/registryUuidString';
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 
 const productSessionQueryKey = ['product-session'] as const;
+/** Отдельный кэш сессии для `/demo/planner`, чтобы фикстуры не затирали реальный tenant. */
+const demoProductSessionQueryKey = [...productSessionQueryKey, 'demo'] as const;
 
 export { productSessionQueryKey };
 
@@ -46,7 +50,13 @@ function readStoredOrganizationId(): string | null {
   }
   try {
     const v = localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
-    return parseRegistryUuidString(v);
+    const parsed = parseRegistryUuidString(v);
+    // Fixture org from `/demo/planner` must never stick as the real tenant header.
+    if (parsed === DEMO_ORG_ID) {
+      localStorage.removeItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }
@@ -57,10 +67,17 @@ function writeStoredOrganizationId(id: string | null): void {
     return;
   }
   try {
-    if (!id) {
+    const previous = parseRegistryUuidString(
+      localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)
+    );
+    const next = id === DEMO_ORG_ID ? null : id;
+    if (previous === next) {
+      return;
+    }
+    if (!next) {
       localStorage.removeItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
     } else {
-      localStorage.setItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY, id);
+      localStorage.setItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY, next);
     }
     window.dispatchEvent(
       new CustomEvent('localStorageChange', {
@@ -141,14 +158,17 @@ export function resolveActiveOrganizationId(
 }
 
 /**
- * Анонимный ответ `/auth/session` (ещё нет cookie) не должен затирать tenant,
- * к которому только что привязали токен трекера — иначе AuthGuard снова шлёт на /auth-setup.
+ * Анонимный или «пустой» ответ `/auth/session` не должен затирать tenant в localStorage.
+ * Иначе: (1) гонка до cookie после OAuth → AuthGuard на /auth-setup;
+ * (2) отравленный кэш demo-сессии (signedIn + только DEMO_ORG, после фильтра orgs=[]) →
+ * writeStoredOrganizationId(null) → токен без active org → снова /auth-setup.
  */
 export function shouldSyncStoredOrganizationFromSession(args: {
   organizationCount: number;
+  /** Kept for call-site compatibility; sync keys off org list only. */
   signedIn: boolean;
 }): boolean {
-  return args.signedIn || args.organizationCount > 0;
+  return args.organizationCount > 0;
 }
 
 export function resolveDisplayedActiveOrganizationId(args: {
@@ -187,36 +207,56 @@ export function useProductTenantOrganizations(options?: {
   pollIntervalMs?: number;
 }): UseProductTenantOrganizationsResult {
   const queryClient = useQueryClient();
+  const { isDemoPlanner } = useDemoPlannerShell();
   const pollIntervalMs = options?.pollIntervalMs ?? DEFAULT_POLL_MS;
+  const sessionQueryKey = isDemoPlanner ? demoProductSessionQueryKey : productSessionQueryKey;
 
   const { data, isPending } = useQuery({
-    queryFn: fetchProductSession,
-    queryKey: productSessionQueryKey,
+    queryFn: isDemoPlanner ? fetchDemoProductSession : fetchProductSession,
+    queryKey: sessionQueryKey,
     refetchInterval: pollIntervalMs > 0 ? pollIntervalMs : false,
     refetchOnMount: false,
     retry: false,
   });
 
-  const organizations = useMemo(
-    () => normalizeProductSessionOrganizations(data?.organizations),
-    [data]
-  );
+  const organizations = useMemo(() => {
+    const normalized = normalizeProductSessionOrganizations(data?.organizations);
+    // Fixture session must never drive the real tenant (SSE / X-Organization-Id / auth-setup).
+    if (isDemoPlanner) {
+      return normalized;
+    }
+    return normalized.filter((org) => org.id !== DEMO_ORG_ID);
+  }, [data, isDemoPlanner]);
   const signedIn = data?.user != null;
+
+  useEffect(() => {
+    if (isDemoPlanner || !data) {
+      return;
+    }
+    const raw = normalizeProductSessionOrganizations(data.organizations);
+    if (raw.some((org) => org.id === DEMO_ORG_ID)) {
+      // Drop poisoned cache from an older demo visit that shared product-session key.
+      queryClient.removeQueries({ queryKey: productSessionQueryKey });
+    }
+  }, [data, isDemoPlanner, queryClient]);
   const storedOrganizationId = useSyncExternalStore(
     subscribeStoredOrganizationId,
     readStoredOrganizationId,
     getServerStoredOrganizationId
   );
-  const activeOrganizationId = data
-    ? resolveDisplayedActiveOrganizationId({
-        organizations,
-        signedIn,
-        storedId: storedOrganizationId,
-      })
-    : storedOrganizationId;
+  let activeOrganizationId: string | null = storedOrganizationId;
+  if (isDemoPlanner) {
+    activeOrganizationId = resolveActiveOrganizationId(null, organizations);
+  } else if (data) {
+    activeOrganizationId = resolveDisplayedActiveOrganizationId({
+      organizations,
+      signedIn,
+      storedId: storedOrganizationId,
+    });
+  }
 
   useEffect(() => {
-    if (!data) {
+    if (isDemoPlanner || !data) {
       return;
     }
     if (
@@ -231,10 +271,13 @@ export function useProductTenantOrganizations(options?: {
     if (next !== storedOrganizationId) {
       writeStoredOrganizationId(next);
     }
-  }, [data, organizations, signedIn, storedOrganizationId]);
+  }, [data, isDemoPlanner, organizations, signedIn, storedOrganizationId]);
 
   const setActiveOrganizationId = useCallback(
     (organizationId: string) => {
+      if (isDemoPlanner) {
+        return;
+      }
       if (!organizations.some((o) => o.id === organizationId)) {
         return;
       }
@@ -243,7 +286,7 @@ export function useProductTenantOrganizations(options?: {
         /* ignore */
       });
     },
-    [organizations, queryClient]
+    [isDemoPlanner, organizations, queryClient]
   );
 
   const activeOrganization =

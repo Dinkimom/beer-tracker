@@ -746,7 +746,7 @@ export const ruMessages = {
   demoPlanner: {
     unavailableTitle: 'Демо-планер недоступен',
     unavailableBody:
-      'Не заданы переменные окружения для демо. Нужны DEMO_PLANNER_BOARD_ID, DEMO_TRACKER_QUEUE_KEY, DEMO_TRACKER_OAUTH_TOKEN и DEMO_TRACKER_CLOUD_ORG_ID (см. env.example).',
+      'Откройте /demo/planner, чтобы просмотреть планер на фикстурах (бэклог → доска → берндаун → ретро).',
     loadErrorPrefix: 'Ошибка загрузки:',
     loading: 'Загрузка…',
   },

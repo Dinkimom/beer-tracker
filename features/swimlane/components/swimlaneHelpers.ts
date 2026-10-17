@@ -22,7 +22,9 @@ import { getVisibleSwimlaneFactLayerHeightPx } from '@/features/swimlane/utils/i
 
 export function buildSwimlaneRootClassName(sidebarClickEnabled: boolean): string {
   const interactive = sidebarClickEnabled ? 'cursor-pointer' : '';
-  return `group/swimlane relative border-b border-gray-200 dark:border-gray-700 bg-white swimlane-lane-fill dark:bg-gray-800 swimlane-row-resizing:pointer-events-none ${interactive}`;
+  // Без полного border-b: линия только у рабочих дней (и у последней строки целиком),
+  // чтобы паттерн выходного не резался горизонтальными границами.
+  return `group/swimlane relative bg-white swimlane-lane-fill dark:bg-gray-800 swimlane-row-resizing:pointer-events-none ${interactive}`;
 }
 
 export function createSwimlaneRootClickHandler(

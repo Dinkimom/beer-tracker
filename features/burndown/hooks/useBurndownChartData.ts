@@ -6,6 +6,8 @@ import type { BurndownDayChangelogItem } from '@/lib/api/types';
 
 import { useMemo } from 'react';
 
+import { getPlannerNow } from '@/utils/plannerClock';
+
 import { countWorkingDays } from '../utils/dateUtils';
 
 import {
@@ -68,7 +70,7 @@ export function useBurndownChartData({
     const endDate = new Date(burndownData.sprintInfo.endDate);
     endDate.setHours(0, 0, 0, 0);
 
-    const today = new Date();
+    const today = getPlannerNow();
     today.setHours(0, 0, 0, 0);
     const maxDataDate = isArchived ? endDate : today;
 

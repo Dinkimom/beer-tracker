@@ -1,11 +1,8 @@
 'use client';
 
-import type { BeerLottieRef } from '@/components/BeerLottie';
 import type { SprintTab } from '@/components/PageHeader';
-import type { RefObject } from 'react';
 
-import { BeerLottie } from '@/components/BeerLottie';
-import { Button } from '@/components/Button';
+import { BeerTrackerLogoButton } from '@/components/BeerTrackerLogoButton';
 import { CurrentUserAvatar } from '@/components/CurrentUserAvatar';
 import { PageHeaderActionButtons } from '@/components/PageHeaderActionButtons';
 import { PageHeaderAdminLink } from '@/components/PageHeaderAdminLink';
@@ -21,7 +18,6 @@ import { NotificationsBell } from '@/features/notifications/components/Notificat
 interface PageHeaderBoardToolbarProps {
   activeTab: SprintTab;
   adminHref?: string | null;
-  beerLottieRef: RefObject<BeerLottieRef | null>;
   boardName?: string | null;
   christmasThemeEnabled: boolean;
   isChristmasPeriod: boolean;
@@ -38,7 +34,6 @@ interface PageHeaderBoardToolbarProps {
 export function PageHeaderBoardToolbar({
   activeTab,
   adminHref,
-  beerLottieRef,
   boardName,
   christmasThemeEnabled,
   isChristmasPeriod,
@@ -58,26 +53,7 @@ export function PageHeaderBoardToolbar({
   return (
     <div className="flex items-center justify-between gap-4 px-4 pb-1 pt-3">
       <div className="flex min-w-0 flex-1 items-center gap-4">
-        <Button
-          aria-label={t('header.clickForAnimation')}
-          className="h-auto min-h-0 gap-1 border-0 bg-transparent p-0 pr-2 text-left shadow-none hover:bg-transparent dark:hover:bg-transparent"
-          type="button"
-          variant="ghost"
-          onClick={() => beerLottieRef.current?.play()}
-        >
-          <BeerLottie ref={beerLottieRef} />
-          <span
-            className="whitespace-nowrap text-2xl font-bold text-gray-900 dark:text-gray-100"
-            style={{
-              fontFamily: 'var(--font-caveat), cursive',
-              fontWeight: 700,
-              letterSpacing: '0.02em',
-              transform: 'rotate(-1deg)',
-            }}
-          >
-            {t('header.appName')}
-          </span>
-        </Button>
+        <BeerTrackerLogoButton />
         <PageHeaderBoardSelector
           boardName={boardName}
           selectedBoardId={selectedBoardId}

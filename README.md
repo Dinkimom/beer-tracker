@@ -1,33 +1,192 @@
-# Beer Tracker
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/logo-button-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/logo-button-light.svg" />
+    <img src="./docs/media/logo-button-light.svg" alt="Beer Tracker" height="44" />
+  </picture>
+</h1>
 
-Self-hosted веб-приложение для планирования спринтов (свимлейны, бэклог, burndown, цели) поверх **Яндекс Трекера** или **Jira** (Cloud / Data Center). Историческое имя UI — Sprint Manager.
+<p align="center">
+  <strong>Умный планер спринтов поверх Яндекс Трекера и Jira</strong><br />
+  Свимлейны по людям и дням, бэклог, цели, burndown — без замены вашего трекера.
+</p>
 
-Одна кодовая база под [Apache License 2.0](./LICENSE). Провайдер трекера выбирается на организацию: [docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md).
+<p align="center">
+  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" /></a>
+  <a href="https://hub.docker.com/r/dinkimom/beer-tracker"><img alt="Docker Hub" src="https://img.shields.io/badge/docker-dinkimom%2Fbeer--tracker-2496ED?logo=docker&logoColor=white" /></a>
+  <a href="./CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-1.16.5-informational" /></a>
+</p>
+
+<p align="center">
+  <a href="#зачем">Зачем</a> ·
+  <a href="#возможности">Возможности</a> ·
+  <a href="#планер">Планер</a> ·
+  <a href="#бэклог">Бэклог</a> ·
+  <a href="#burndown">Burndown</a> ·
+  <a href="#выгрузка-факта">Факт</a> ·
+  <a href="#ретро">Ретро</a> ·
+  <a href="#совместная-работа">Совместная работа</a> ·
+  <a href="#mcp-для-агентов">MCP</a> ·
+  <a href="#быстрый-старт">Старт</a> ·
+  <a href="#документация">Docs</a>
+</p>
+
+---
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/swimlane-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/swimlane-light.png" />
+    <img src="./docs/media/swimlane-light.png" alt="Планер спринта: свимлейны" width="900" />
+  </picture>
+</p>
+
+## Зачем
+
+Задачи, статусы и спринты остаются в **Яндекс Трекере** или **Jira**. Beer Tracker даёт то, чего не хватает в самом трекере: **визуальный план на 10 рабочих дней** — кто чем занят утром, днём и вечером, с DnD и сохранением позиций. Плюс выгрузка **факта** из трекера, **ретро** спринта и **совместная работа** на одной доске в реальном времени.
+
+| Кто | Что получает |
+|-----|----------------|
+| Разработка / QA | План по дням и людям, загрузка, перенос из бэклога |
+| Тимлиды / PM | Цели, метрики, burndown, ретро с договорённостями |
+| Вся команда | Presence и live-обновления, пока планируете вместе |
+| Админы | Организации, команды, sync / выгрузка снимков и changelog |
+
+Self-hosted, [Apache License 2.0](./LICENSE). Историческое имя UI — Sprint Manager. Провайдер трекера — на организацию: [Issue trackers](./docs/ISSUE_TRACKERS.md).
 
 ## Возможности
 
-- **Планирование спринтов** — визуальное распределение задач по дням и разработчикам
-- **Управление бэклогом** — просмотр и управление задачами, не включенными в спринт
-- **Burndown chart** — визуализация прогресса спринта
-- **Цели спринта** — управление целями через чеклисты
-- **Пользовательские учётные данные трекера** — каждый пользователь работает под своим токеном (OAuth / PAT / API token)
+- **Свимлейны** — дорожка на человека, сетка 10×3 (утро / день / вечер), DnD и resize карточек
+- **Бэклог** — отбор, фильтры, перенос задач в спринт
+- **Цели и burndown** — чеклисты Delivery / Discovery и график выгорания SP/TP
+- **Выгрузка факта** — changelog из трекера → таймлайн фактических фаз на свимлейне
+- **Ретро** — доска ретроспективы, метрики спринта, договорённости в следующий спринт
+- **Совместная работа** — presence-аватары, live-обновления доски, блокировка чужих жестов
+- **Связи и стикеры** — стрелки между задачами, комментарии на таймлайне
+- **MCP для агентов** — Cursor / Claude читают план и предлагают правки по OAuth 2.1
 
-Планировщик эпиков и квартальное планирование сняты с навигации и не развиваются. См. [product steering](./docs/steering/product.md).
+Подробный каталог — [CAPABILITIES.md](./docs/CAPABILITIES.md). Обзор продукта — [PROJECT_OVERVIEW.md](./docs/PROJECT_OVERVIEW.md).
 
-## Технологический стек
+> Планировщик эпиков и квартальный план сняты с навигации и не развиваются. См. [product steering](./docs/steering/product.md).
 
-- **Frontend**: Next.js 16, React 19, TypeScript
-- **Backend**: Next.js API Routes
-- **База данных**: PostgreSQL приложения (планер, снимки задач `issue_snapshots`, мультиарендность, staff/teams)
-- **Очередь (опционально)**: Redis + BullMQ — фоновая синхронизация с трекером (`pnpm sync-worker`)
-- **Внешний issue tracker**: Yandex Tracker **или** Jira (тип и URL API выбираются при онбординге и в админке, хранятся в БД)
-- **UI**: Tailwind CSS, Radix UI, dnd-kit (drag-and-drop)
+## Планер
 
-## Установка
+Сетка спринта: **10 рабочих дней × 3 части дня**, отдельная дорожка на разработчика и тестировщика. Карточки тянутся мышкой, длительность меняется resize’ом, позиции и сегменты фаз сохраняются в PostgreSQL. Сбоку — задачи спринта, бэклог, цели, метрики и SLA-баги.
 
-### Готовый образ (Docker Hub)
+Живой кадр — в шапке README (`/demo/planner`). Светлая/тёмная версия скрина подстраивается под тему GitHub.
 
-Образы этого релиза — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) указывает на последнюю публикацию, тег `1.16.5` — на этот релиз. В каждом теге есть `linux/amd64` и `linux/arm64`.
+## Бэклог
+
+Отбор задач вне спринта, фильтры по статусу и людям, перенос в активный спринт. Снимок с `/demo/planner` → вкладка Backlog.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/backlog-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/backlog-light.png" />
+    <img src="./docs/media/backlog-light.png" alt="Бэклог" width="900" />
+  </picture>
+</p>
+
+## Burndown
+
+График выгорания Story Points и Test Points по дням спринта, с идеальной линией и маркером «сегодня».
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/burndown-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/burndown-light.png" />
+    <img src="./docs/media/burndown-light.png" alt="Burndown SP/TP" width="900" />
+  </picture>
+</p>
+
+## Выгрузка факта
+
+Фоновый sync подтягивает из трекера не только снимки задач, но и **историю статусов** (changelog). По ней на свимлейне строится **таймлайн факта**: когда задача была в работе, на ревью, в тесте — рядом с планом, а не вместо него.
+
+Настраивают и запускают выгрузку админы в `/admin/sync` (очереди команд + доп. параметры). Для планового incremental sync нужны Redis и `pnpm sync-worker`; полный rescan можно гонять inline — см. [INSTALL.md](./docs/INSTALL.md).
+
+<!-- media-slot: docs/media/fact-timeline.png -->
+<p align="center">
+  <img src="./docs/media/fact-timeline.svg" alt="Таймлайн факта на свимлейне" width="900" />
+</p>
+
+## Ретро
+
+Отдельный режим ретроспективы спринта: колонки, заметки, картинки, комментарии и реакции. Сбоку блок **«Факты»** — состав спринта (закрыто / добавили / отказались / перенос), cycle time, узкие места по выгруженному changelog. Сформированные **договорённости** в процессе ретро переносятся в следующий спринт, чтобы ритуал не заканчивалось разговором.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/retro-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/retro-light.png" />
+    <img src="./docs/media/retro-light.png" alt="Доска ретроспринта" width="900" />
+  </picture>
+</p>
+
+## Совместная работа
+
+Несколько человек на одном спринте видят **кто сейчас на доске**: аватары в шапке и на карточках, действие (смотрит / двигает / редактирует / меняет продолжительность). Чужой жест **блокирует** карточку; правки позиций, задач, связей, комментариев и ретро приходят по SSE без ручного обновления. Есть общий **таймер спринта**. Работает на свимлейнах, канбане и ретро.
+
+Для нескольких инстансов приложения нужен Redis (pub/sub + presence); без него realtime живёт в памяти одного процесса.
+
+<!-- media-slot: docs/media/collaboration.png -->
+<p align="center">
+  <img src="./docs/media/collaboration.svg" alt="Совместная работа: presence на доске" width="900" />
+</p>
+
+## Как это работает
+
+```mermaid
+flowchart LR
+  Tracker["Яндекс Трекер<br/>или Jira"]
+  BT["Beer Tracker<br/>планер + PostgreSQL"]
+  Agents["Cursor / Claude<br/>MCP + OAuth"]
+
+  Tracker <-->|"sync / API"| BT
+  Agents <-->|"Bearer после login"| BT
+```
+
+1. Подключаете организацию к трекеру (Yandex / Jira Cloud / Jira DC).
+2. Пользователи входят со своей учёткой трекера.
+3. Спринты и задачи подтягиваются в планер; позиции и планы живут в PostgreSQL.
+4. Sync выгружает снимки и changelog → факт на свимлейне и метрики ретро.
+5. Несколько вкладок/коллег делят доску через realtime (presence + live updates).
+6. Агенты подключаются к `/api/mcp` по OAuth 2.1 — без shared secret в конфиге.
+
+Стек: Next.js 16, React 19, PostgreSQL, опционально Redis + BullMQ (sync-воркер и multi-instance realtime).
+
+## MCP для агентов
+
+Remote MCP крутится **на вашем инстансе** Beer Tracker. Клиент (Cursor, Claude Desktop / Code) открывает браузер → логин и consent → получает Bearer. Scope: `mcp:tools`. Подробности и URL — [SPRINT_CONTEXT.md](./docs/SPRINT_CONTEXT.md).
+
+**Что умеет агент**
+
+- Найти спринт по имени (`search_sprints`) и снять **planning graph**: позиции, capacity, цели, заметки, связи (`get_sprint_context` / `get_sprint_capacity`)
+- Поискать задачи и людей (`search_issues`, `resolve_person`), открыть issue / snapshot
+- **Предложить** правки плана (`propose_plan_patch`) и **применить** только после confirm (`apply_plan_patch`) — не silent write
+- Читать и править доску ретро (`get_retro_board` / `apply_retro_board`)
+
+**Кейсы**
+
+| Кейс | Как это выглядит |
+|------|------------------|
+| «Какие есть риски в планировании спринта Demo 2615?» | Агент ищет спринт → capacity / overlaps → коротко объясняет перегруз |
+| Запланируй DEMO-101 на Алису | Propose позиции и заметок → человек смотрит preview → apply |
+| «Подготовь ретро по спринту Demo 2614» | Сводка фактов + черновик карточек на доске ретро |
+| Планирование в IDE | Тот же graph, что на свимлейне, без скринов и без клона репо |
+
+В конфиге достаточно URL:
+
+```json
+{
+  "mcpServers": {
+    "beer-tracker-planning": {
+      "url": "https://<your-bt-host>/api/mcp"
+    }
+  }
+}
+```
+
+## Быстрый старт
 
 ```bash
 cp env.example .env
@@ -35,172 +194,30 @@ cp env.example .env
 docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
 ```
 
-Приложение: [http://localhost:3000](http://localhost:3000). Postgres на хосте — порт 5433. Воркер синхронизации: добавьте `--profile exporter` (и при необходимости `--profile cron`). Другой тег: `BEER_TRACKER_TAG=latest`.
+Откройте [http://localhost:3000](http://localhost:3000). Образы: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker).
 
-`YANDEX_OAUTH_CLIENT_ID` вшивается в клиентский бандл при сборке образа. В опубликованных образах его нет: ссылка «получить токен» для Яндекс Трекера заработает после своей сборки с `--build-arg YANDEX_OAUTH_CLIENT_ID=...`. Для Jira этот аргумент не нужен.
-
-### Для разработки из исходников
-
-```bash
-pnpm install
-cp env.example .env
-# Заполните POSTGRES_PASSWORD и при необходимости AUTH_SESSION_SECRET, ORG_SECRETS_ENCRYPTION_KEY, REDIS_URL — см. env.example
-# Для фотокарточек и схем планера задайте S3_* (MinIO или любой S3 API), S3_KEY_PREFIX=local/
-```
-
-### Локально: PostgreSQL и Redis через Docker
-
-```bash
-docker compose up -d db redis
-# В .env: POSTGRES_HOST=localhost, POSTGRES_PORT=5433, REDIS_URL=redis://localhost:6379
-pnpm dev
-```
-
-Сервис `app` в `docker-compose.yml` поднимает приложение в production-режиме вместе с БД и Redis (порт приложения 3000, БД на хосте 5433).
-
-### Без Docker (свой Postgres)
-
-Задайте `POSTGRES_*` и `BEER_TRACKER_SCHEMA` (по умолчанию `public`) в `.env` и убедитесь, что выполнен `database/init.sql` на чистой БД. Если БД уже была развёрнута без `staff`/`teams`: `./scripts/db/psql-with-schema.sh -f database/add-staff-teams.sql` (см. [COMMERCIAL_DB_CONTRACT.md](./docs/COMMERCIAL_DB_CONTRACT.md)).
-
-```bash
-pnpm dev
-```
-
-### S3 (фотокарточки и схемы планера)
-
-Байты файлов лежат в S3-совместимом хранилище, в Postgres только `planner_files.storage_key`. Браузер ходит в `/api/sprints/.../image` и `/diagram` (Next проксирует в S3).
-
-Пример для локального MinIO в `.env` / `.env.local`:
-
-```
-S3_ENDPOINT_URL=http://localhost:9000
-S3_REGION=us-east-1
-S3_FORCE_PATH_STYLE=true
-S3_BUCKET=beer-tracker-storage
-S3_ACCESS_KEY=...
-S3_SECRET_KEY=...
-S3_KEY_PREFIX=local/
-```
-
-Бакет нужно создать заранее. Проверка: загрузить фотокарточки в планере → объект `local/orgs/<orgId>/planner/<fileId>` в бакете.
-
-Для уже существующей БД с BYTEA: `psql ... -f database/migrate-planner-files-to-s3.sql` (сносит текущие фото и схемы, без переливки).
-
-## Настройка трекера и токенов
-
-Провайдер выбирается **на организацию** (онбординг и админка «Трекер»). Дальше идите по своей ветке в **[ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)** (там развилка A / B / C).
-
-| Провайдер | Документация |
-|-----------|----------------|
-| Яндекс Трекер (`tracker`) | [Ветка A](./docs/ISSUE_TRACKERS.md#ветка-a--яндекс-трекер) — OAuth-приложение на oauth.yandex.ru + `YANDEX_OAUTH_CLIENT_ID` |
-| Jira Cloud (`jira-cloud`) | [Ветка B](./docs/ISSUE_TRACKERS.md#ветка-b--jira-cloud) — Atlassian OAuth (пользователи) + email/API-токен (орг) |
-| Jira DC/Server (`jira-onprem`) | [Ветка C](./docs/ISSUE_TRACKERS.md#ветка-c--jira-data-center--server) — PAT |
-
-```bash
-# Тип трекера и URL API задаются на /register и в админке «Трекер».
-# Только для Яндекс Трекера — ClientID приложения с https://oauth.yandex.ru/
-# (scopes tracker:read + tracker:write):
-YANDEX_OAUTH_CLIENT_ID=
-
-# Только для Jira Cloud — OAuth-приложение Atlassian (вход пользователей):
-# ATLASSIAN_OAUTH_CLIENT_ID=
-# ATLASSIAN_OAUTH_CLIENT_SECRET=
-```
-
-### Поля в админке организации
-
-Тип трекера и URL API (до первой синхронизации их можно поменять), дальше — по провайдеру: для **Yandex Tracker** — Cloud Organization ID; для **Jira Cloud** — email + API-токен (Basic для sync); для **Jira on-prem** — PAT/учётка сайта. В запросах планера — `X-Organization-Id`.
-
-Токен организации хранится в БД в зашифрованном виде. Отдельной переменной окружения для него нет.
-
-### Пользовательская учётка (обязательно)
-
-1. Откройте приложение → `/auth-setup` (или `/register` при первом on-prem setup)
-2. По **своей** ветке: Yandex OAuth / **«Продолжить с Atlassian»** (Jira Cloud) / Jira PAT (on-prem)
-3. Продолжите вход
-
-Без учётных данных трекера доступ к планеру невозможен. Детали: [ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md), API — [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md).
+Полная установка (исходники, S3, трекер, sync, CI) — **[docs/INSTALL.md](./docs/INSTALL.md)**.  
+Настройка провайдера — **[docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md)**.
 
 ## Документация
 
-### Основные документы
-
-- **[Обзор проекта](./docs/PROJECT_OVERVIEW.md)** — что это, для кого, функции и возможности
-- **[Issue trackers](./docs/ISSUE_TRACKERS.md)** — Yandex Tracker и Jira, выбор на организацию
-- **[Возможности приложения](./docs/CAPABILITIES.md)** — расширенный список функций
-- **[Индекс документации](./docs/DOCUMENTATION_INDEX.md)** — навигация по `docs/`
-- **[API Документация](./docs/API_DOCUMENTATION.md)** — описание API
-- **[Sprint context (агенты)](./docs/SPRINT_CONTEXT.md)** — planning graph + remote MCP `/api/mcp` (URL + OAuth, без клона репо)
-- **[Структура проекта](./docs/STRUCTURE.md)** — архитектура приложения
-
-### Специализированные руководства
-
-- **[Руководство по тестированию](./docs/AGENT_TESTING_GUIDE.md)**
-- **[Руководство по иконкам](./docs/ICONS.md)**
-- **[Product steering](./docs/steering/product.md)** — что в продукте и что не развивать
-## Плановый инкрементальный sync (multi-tenant)
-
-Внешний cron может вызывать:
-
-- `POST /api/internal/sync/tick` — плановый **incremental** по org’ам, у которых `sync_next_run_at` наступил (нужны Redis + `pnpm sync-worker`);
-- `POST /api/internal/sync/full-rescan` с телом `{ "organizationId": "<uuid>" }` — **полный** rescan одной организации **inline в HTTP-запросе** (без Redis/воркера; те же cooldown и блокировка по `sync_runs`). Подходит для Google Cloud Scheduler: увеличьте HTTP timeout цели (до ~30 мин) под длительность выгрузки.
-
-Заголовок: `X-Sync-Cron-Secret: <SYNC_CRON_SECRET>` (или `Authorization: Bearer <secret>`). Для incremental tick: Redis (`REDIS_URL`) и воркер `pnpm sync-worker`. В Docker Compose: `docker compose --profile exporter up` — сервис `sync-worker` собирается отдельным slim-образом (без Next.js). Без Redis ответ тика будет `200` с `reason: redis_not_configured` и без постановки job — удобно для CI.
-
-## Основные команды
-
-```bash
-pnpm dev                 # разработка
-pnpm build               # production-сборка Next.js
-pnpm start               # запуск production-сборки
-pnpm sync-worker         # BullMQ-воркер (нужен REDIS_URL)
-pnpm sync-worker:build   # бандл в dist/sync-worker (Docker target sync-worker)
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm version:bump -- patch   # только package.json
-pnpm release -- patch        # bump + commit + tag vX.Y.Z
-pnpm release -- patch --push # то же и push (remote public или origin)
-```
-
-Версия в UI = `package.json` (= тег `vX.Y.Z` без `v`). Git SHA показывается отдельно. Push тега запускает workflow **Release** → GitHub Release.
-
-## CI (GitHub Actions)
-
-- **CI** (`.github/workflows/ci.yml`): `pnpm lint`, `pnpm typecheck`, `pnpm test` на `push`/`pull_request` в `main` / `master`.
-- **Release** (`.github/workflows/release.yml`): GitHub Release при push тега `v*.*.*`, если версия в `package.json` совпадает с тегом.
-## Структура проекта
-
-```
-├── apps/sync-worker/    # отдельный процесс синхронизации (BullMQ)
-├── app/                 # Next.js App Router (страницы и app/api/*)
-├── components/          # Общие UI
-├── features/            # Домены (sprint, backlog, burndown, …)
-├── lib/                 # DB, snapshots, tracker API, sync, tenant, …
-├── hooks/
-├── database/            # init.sql + миграции (схема BEER_TRACKER_SCHEMA)
-└── docs/
-```
-
-## Безопасность
-
-- Пользовательские токены хранятся только в браузере (localStorage)
-- Токены передаются через HTTPS
-- Поддержка fallback на серверный токен
-- Приоритет: пользовательский токен > серверный токен
-- Сообщения об уязвимостях — [SECURITY.md](./SECURITY.md)
+| Документ | О чём |
+|----------|--------|
+| [Установка](./docs/INSTALL.md) | Docker, dev, env, sync, команды |
+| [Обзор проекта](./docs/PROJECT_OVERVIEW.md) | Что это, для кого, экраны |
+| [Issue trackers](./docs/ISSUE_TRACKERS.md) | Yandex Tracker и Jira |
+| [Возможности](./docs/CAPABILITIES.md) | Расширенный список функций |
+| [Медиа для README](./docs/media/README.md) | Слоты скринов / GIF |
+| [Индекс docs](./docs/DOCUMENTATION_INDEX.md) | Навигация по всей документации |
+| [API](./docs/API_DOCUMENTATION.md) | HTTP API |
+| [Sprint context / MCP](./docs/SPRINT_CONTEXT.md) | Planning graph и ретро для агентов |
+| [Архитектура](./ARCHITECTURE.md) | Данные, слои, паттерны клиента |
 
 ## Контрибьюция
 
-1. Коммиты по [DCO](https://developercertificate.org/) — см. [CONTRIBUTING.md](./CONTRIBUTING.md) (`git commit -s`).
-2. Изучите [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)
-3. Следуйте структуре проекта и используйте TypeScript
-4. Тестируйте изменения перед коммитом
+Коммиты с [DCO](https://developercertificate.org/) (`git commit -s`) — см. [CONTRIBUTING.md](./CONTRIBUTING.md).  
+Уязвимости — [SECURITY.md](./SECURITY.md).
 
 ## Лицензия
 
 [Apache License 2.0](./LICENSE). Атрибуция — [NOTICE](./NOTICE).
-
-## Поддержка
-
-Начните с [DOCUMENTATION_INDEX.md](./docs/DOCUMENTATION_INDEX.md) и при необходимости с [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md).

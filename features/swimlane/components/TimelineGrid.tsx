@@ -10,14 +10,21 @@ import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
 import { timelineDayDividerClass } from '@/features/sprint/utils/timelineColumnChrome';
 import {
+  buildHolidayHatchRanges,
   buildUnavailableHatchRanges,
   isInternalAvailabilityDayDivider,
+  isInternalHolidayDayDivider,
 } from '@/features/swimlane/utils/availabilityTimelineMarks';
 
 import { TimelineGridPartCell } from './TimelineGridPartCell';
 
 interface TimelineGridProps {
   developerId: string;
+  /**
+   * Последняя строка свимлейна: нижняя граница на всех колонках, включая паттерн
+   * выходного/отсутствия.
+   */
+  forceRowBorder?: boolean;
   hasTaskOverlaps?: boolean;
   /** Индексы дней (0..9), которые являются нерабочими/праздничными */
   holidayDayIndices?: Set<number>;
@@ -52,9 +59,12 @@ interface TimelineGridProps {
 }
 
 const DAY_COLUMN_CLASS = 'relative isolate flex h-full min-w-0';
+/** Как у колонки исполнителей: border-b внутри ячейки (box-shadow перекрывался фоном следующей строки). */
+const DAY_COLUMN_ROW_BORDER_CLASS = 'border-b border-gray-200 dark:border-gray-700';
 
 export function TimelineGrid({
   developerId,
+  forceRowBorder = false,
   isDraggingTask,
   isLinking = false,
   sprintStartDate,
@@ -74,13 +84,19 @@ export function TimelineGrid({
 }: TimelineGridProps) {
   const dayCount = Math.max(1, sprintTimelineWorkingDays);
   const hatchRanges = buildUnavailableHatchRanges(unavailableDayHatchKinds, dayCount);
+  const holidayRanges = buildHolidayHatchRanges(
+    holidayDayIndices,
+    unavailableDayHatchKinds,
+    dayCount
+  );
   const quickAddDurationCells = quickAddFootprint?.durationCells ?? 1;
   const quickAddSpan = quickAddFootprint?.span ?? 1;
+  const hasPatternRanges = hatchRanges.length > 0 || holidayRanges.length > 0;
 
   return (
     <div className="relative h-full w-full min-w-0 bg-white swimlane-lane-fill dark:bg-gray-800">
-      {hatchRanges.length > 0 ? (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {hasPatternRanges ? (
+        <div className="pointer-events-none absolute inset-0 z-0">
           {hatchRanges.map((range) => (
             <div
               key={`${range.startDay}-${range.kind}`}
@@ -93,6 +109,22 @@ export function TimelineGrid({
               <PlannerHatchOverlay heightPx={totalHeight} tone={range.kind} />
             </div>
           ))}
+          {holidayRanges.map((range) => (
+            <div
+              key={`weekend-${range.startDay}`}
+              className="absolute inset-y-0 overflow-hidden"
+              style={{
+                left: `${(range.startDay / dayCount) * 100}%`,
+                width: `${(range.daySpan / dayCount) * 100}%`,
+              }}
+            >
+              {/*
+                Без heightPx — фиксированный шаг тайла, как у кладбища дедлайнов.
+                Так узор не «сжимается» под высоту одной строки.
+              */}
+              <PlannerHatchOverlay tone="weekend" />
+            </div>
+          ))}
         </div>
       ) : null}
       <div
@@ -101,23 +133,31 @@ export function TimelineGrid({
       >
         {Array.from({ length: dayCount }, (_, dayIndex) => {
           const isHoliday = holidayDayIndices?.has(dayIndex) ?? false;
-          const hideDayDivider = isInternalAvailabilityDayDivider(
-            unavailableDayHatchKinds,
-            dayIndex,
-            dayCount
-          );
+          const hasAvailabilityHatch = unavailableDayHatchKinds?.has(dayIndex) ?? false;
+          const showHolidayHatch = isHoliday && !hasAvailabilityHatch;
+          const isPatternColumn = hasAvailabilityHatch || showHolidayHatch;
+          const hideDayDivider =
+            isInternalAvailabilityDayDivider(
+              unavailableDayHatchKinds,
+              dayIndex,
+              dayCount
+            ) ||
+            isInternalHolidayDayDivider(
+              holidayDayIndices,
+              unavailableDayHatchKinds,
+              dayIndex,
+              dayCount
+            );
           const dividerClass = hideDayDivider
             ? null
             : timelineDayDividerClass(dayIndex, dayCount);
-          const hasAvailabilityHatch = unavailableDayHatchKinds?.has(dayIndex) ?? false;
-          const showHolidayHatch = isHoliday && !hasAvailabilityHatch;
+          const hidePartDivider = isPatternColumn;
+          const showRowBorder = forceRowBorder || !isPatternColumn;
+          const columnClassName = showRowBorder
+            ? `${DAY_COLUMN_CLASS} ${DAY_COLUMN_ROW_BORDER_CLASS}`
+            : DAY_COLUMN_CLASS;
           return (
-            <div key={dayIndex} className={DAY_COLUMN_CLASS}>
-              {showHolidayHatch ? (
-                <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-                  <PlannerHatchOverlay />
-                </div>
-              ) : null}
+            <div key={dayIndex} className={columnClassName}>
               {dividerClass ? (
                 <div
                   className={`pointer-events-none absolute bottom-0 right-0 top-0 w-px ${dividerClass}`}
@@ -130,7 +170,7 @@ export function TimelineGrid({
                   dayIndex={dayIndex}
                   developerId={developerId}
                   hasTaskOverlaps={hasTaskOverlaps}
-                  hidePartDivider={hasAvailabilityHatch}
+                  hidePartDivider={hidePartDivider}
                   isDraggingTask={isDraggingTask}
                   isLinking={isLinking}
                   maxTaskLayers={maxTaskLayers}

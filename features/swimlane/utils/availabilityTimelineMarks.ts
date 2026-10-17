@@ -107,6 +107,69 @@ export function isInternalAvailabilityDayDivider(
   return left != null && right != null && left === right;
 }
 
+interface HolidayHatchRange {
+  daySpan: number;
+  startDay: number;
+}
+
+function isHolidayHatchDay(
+  dayIndex: number,
+  holidayDayIndices: ReadonlySet<number> | undefined,
+  unavailableKinds: ReadonlyMap<number, AvailabilityCardKind> | undefined
+): boolean {
+  return Boolean(
+    holidayDayIndices?.has(dayIndex) && !unavailableKinds?.has(dayIndex)
+  );
+}
+
+/** Непрерывные выходные/праздники без перекрытия отсутствием — одна полоса паттерна. */
+export function buildHolidayHatchRanges(
+  holidayDayIndices: ReadonlySet<number> | undefined,
+  unavailableKinds: ReadonlyMap<number, AvailabilityCardKind> | undefined,
+  dayCount: number
+): HolidayHatchRange[] {
+  if (!holidayDayIndices || holidayDayIndices.size === 0 || dayCount < 1) {
+    return [];
+  }
+  const ranges: HolidayHatchRange[] = [];
+  let dayIndex = 0;
+  while (dayIndex < dayCount) {
+    if (!isHolidayHatchDay(dayIndex, holidayDayIndices, unavailableKinds)) {
+      dayIndex += 1;
+      continue;
+    }
+    let daySpan = 1;
+    while (
+      dayIndex + daySpan < dayCount &&
+      isHolidayHatchDay(dayIndex + daySpan, holidayDayIndices, unavailableKinds)
+    ) {
+      daySpan += 1;
+    }
+    ranges.push({ daySpan, startDay: dayIndex });
+    dayIndex += daySpan;
+  }
+  return ranges;
+}
+
+/**
+ * Day-разделитель справа от dayIndex внутри сплошного блока выходных
+ * (оба дня праздник/выходной и без отсутствия).
+ */
+export function isInternalHolidayDayDivider(
+  holidayDayIndices: ReadonlySet<number> | undefined,
+  unavailableKinds: ReadonlyMap<number, AvailabilityCardKind> | undefined,
+  dayIndex: number,
+  dayCount: number
+): boolean {
+  if (dayIndex < 0 || dayIndex >= dayCount - 1) {
+    return false;
+  }
+  return (
+    isHolidayHatchDay(dayIndex, holidayDayIndices, unavailableKinds) &&
+    isHolidayHatchDay(dayIndex + 1, holidayDayIndices, unavailableKinds)
+  );
+}
+
 export function isoDateOnlyFromWorkingDayIndex(
   sprintStartDate: Date,
   dayIndex: number,

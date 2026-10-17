@@ -6,10 +6,12 @@
 
 ```
 beer-tracker/
-├── README.md                          # Быстрый старт, установка, настройка
+├── README.md                          # Посадочная: зачем, возможности, быстрый старт
 ├── CHANGELOG.md                       # Релиз-ноуты (en + ru)
 ├── docs/
 │   ├── DOCUMENTATION_INDEX.md         # Этот индекс
+│   ├── INSTALL.md                     # Установка, Docker, env, sync, команды
+│   ├── media/                         # Скрины/GIF для README (+ SVG-плейсхолдеры)
 │   ├── PROJECT_OVERVIEW.md            # Единый обзор: что / для кого / функции / стек
 │   ├── CAPABILITIES.md                # Список возможностей планера
 │   ├── API_DOCUMENTATION.md           # API, архитектура запросов
@@ -35,18 +37,20 @@ beer-tracker/
 
 ### Для новых разработчиков
 
-1. **[README.md](../README.md)** — установка (Docker Hub или исходники) и настройка
-2. **[PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)** — что это, для кого, функции, стек
-3. **[ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md)** — Yandex Tracker / Jira на инстансе
-4. **[STRUCTURE.md](./STRUCTURE.md)** — архитектура проекта
-5. **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** — работа с API
-6. **[API_BACKENDS.md](./API_BACKENDS.md)** — какой бэкенд у какого `/api` маршрута
+1. **[README.md](../README.md)** — что это и зачем (посадочная)
+2. **[INSTALL.md](./INSTALL.md)** — установка (Docker Hub или исходники) и env
+3. **[PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)** — что это, для кого, функции, стек
+4. **[ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md)** — Yandex Tracker / Jira на инстансе
+5. **[STRUCTURE.md](./STRUCTURE.md)** — архитектура проекта
+6. **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** — работа с API
+7. **[API_BACKENDS.md](./API_BACKENDS.md)** — какой бэкенд у какого `/api` маршрута
 
 ### Для пользователей
 
-1. **[PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)** — обзор продукта и возможностей
-2. **[CAPABILITIES.md](./CAPABILITIES.md)** — расширенный список функций
-3. **[AGENT_TESTING_GUIDE.md](./AGENT_TESTING_GUIDE.md)** — как использовать функции
+1. **[README.md](../README.md)** — посадочная и быстрый старт
+2. **[PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)** — обзор продукта и возможностей
+3. **[CAPABILITIES.md](./CAPABILITIES.md)** — расширенный список функций
+4. **[AGENT_TESTING_GUIDE.md](./AGENT_TESTING_GUIDE.md)** — как использовать функции
 
 ### Для тестировщиков
 
@@ -58,6 +62,8 @@ beer-tracker/
 
 | Документ | Описание | Аудитория |
 |----------|----------|-----------|
+| [INSTALL.md](./INSTALL.md) | Установка, Docker, env, sync, команды | Разработчики, DevOps |
+| [media/README.md](./media/README.md) | Слоты скринов README (только с живого планера) | Все |
 | [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) | Единый обзор продукта (что / для кого / функции) | Все |
 | [CAPABILITIES.md](./CAPABILITIES.md) | Детальный список возможностей | Все |
 | [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | API, архитектура запросов | Разработчики |
@@ -71,7 +77,7 @@ beer-tracker/
 | [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md) | Схема `beer_tracker`: каталог teams/staff и миграция для существующей БД | Разработчики, DevOps |
 | [STRUCTURE.md](./STRUCTURE.md) | Feature-based архитектура | Разработчики |
 | [FOLDER_NAMING.md](./FOLDER_NAMING.md) | Именование папок (kebab vs PascalCase для доменов) | Разработчики |
-| [README.md](./README.md) | Навигация по документации | Все |
+| [README.md](../README.md) | Посадочная страница репозитория | Все |
 
 ### 🔧 Специализированные руководства
 
@@ -105,10 +111,10 @@ beer-tracker/
 
 ### По техническим вопросам
 
+- **Установка / Docker / env** → [INSTALL.md](./INSTALL.md)
 - **API** → [API_DOCUMENTATION.md](./API_DOCUMENTATION.md), [API_BACKENDS.md](./API_BACKENDS.md), [SPRINT_CONTEXT.md](./SPRINT_CONTEXT.md), [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md), [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md)
-- **Архитектура** → [STRUCTURE.md](./STRUCTURE.md)
+- **Архитектура** → [STRUCTURE.md](./STRUCTURE.md), [ARCHITECTURE.md](../ARCHITECTURE.md)
 - **Именование папок (домены)** → [FOLDER_NAMING.md](./FOLDER_NAMING.md)
-
 - **База данных** → [API_DOCUMENTATION.md](./API_DOCUMENTATION.md#распределение-эндпоинтов-по-источникам-данных), [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md)
 - **Иконки** → [ICONS.md](./ICONS.md)
 - **Z-index и слои** → [ZINDEX.md](./ZINDEX.md)
@@ -120,9 +126,9 @@ beer-tracker/
 Документация обновляется по мере развития проекта. При добавлении нового документа:
 
 1. Добавьте его в этот индекс
-2. Добавьте ссылку в соответствующий раздел [README.md](../README.md), если документ стартовый
+2. Добавьте ссылку в [README.md](../README.md) или [INSTALL.md](./INSTALL.md), если документ стартовый для пользователей / установки
 3. Не описывайте deprecated-экраны (эпики, квартал) как текущие возможности
 
 ---
 
-**Последнее обновление:** сентябрь 2026
+**Последнее обновление:** октябрь 2026

@@ -1,3 +1,5 @@
+import { getPlannerNow } from '@/utils/plannerClock';
+
 import { isWeekend, countWorkingDays } from '../utils/dateUtils';
 
 interface BurndownIdealState {
@@ -81,7 +83,7 @@ export function formatBurndownChartDateLabel(date: Date): string {
 /** Подпись оси X для вертикали «сегодня», если этот день есть на графике. */
 export function resolveBurndownTodayAxisLabel(
   dates: readonly string[],
-  today = new Date()
+  today = getPlannerNow()
 ): string | null {
   const label = formatBurndownChartDateLabel(today);
   return dates.includes(label) ? label : null;

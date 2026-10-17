@@ -12,6 +12,7 @@ import type { StatusDuration } from '@/features/task/components/TaskTimeline/typ
 import type { Developer, Task, TaskPosition } from '@/types';
 
 import { OCCUPANCY_FACT_PHASE_GAP_PX } from '@/lib/planner-timeline';
+import { getPlannerNowMs } from '@/utils/plannerClock';
 
 import {
   buildMergedFactIntervalsForAssignee,
@@ -47,7 +48,7 @@ export function buildSwimlaneInProgressFactSegmentsForAssignee(
     tasksMap
   );
   if (perTaskMerged.length === 0) return [];
-  return mapMergedIntervalsToFactSegments(perTaskMerged, Date.now());
+  return mapMergedIntervalsToFactSegments(perTaskMerged, getPlannerNowMs());
 }
 
 /** Число горизонтальных дорожек (минимум 1, если есть сегменты) */

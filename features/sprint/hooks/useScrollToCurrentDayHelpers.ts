@@ -1,8 +1,9 @@
 import { DELAYS } from '@/utils/constants';
+import { getPlannerNow } from '@/utils/plannerClock';
 
 function isTodayOutsideSprintRange(sprintInfo: { startDate?: string; endDate?: string }): boolean {
   if (!sprintInfo.startDate || !sprintInfo.endDate) return false;
-  const today = new Date();
+  const today = getPlannerNow();
   today.setHours(0, 0, 0, 0);
   const startDate = new Date(sprintInfo.startDate);
   startDate.setHours(0, 0, 0, 0);

@@ -8,6 +8,7 @@ import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types'
 import type { OrganizationTrackerAdminFormState } from '@/lib/organizations/organizationTrackerAdminFormState';
 import type { AxiosError } from 'axios';
 
+import { beerTrackerApi } from '../axios';
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
 function validateTokenErrorResult(error: unknown): {
@@ -76,7 +77,17 @@ interface ProductSessionResponse {
   user: { email: string; emailVerified: boolean; id: string } | null;
 }
 
+/**
+ * Реальная продуктовая сессия. Всегда через {@link beerTrackerApi}, без demo override —
+ * иначе `/demo/planner` отравляет React Query key `product-session` и сносит tenant в localStorage.
+ */
 export async function fetchProductSession(): Promise<ProductSessionResponse> {
+  const { data } = await beerTrackerApi.get<ProductSessionResponse>('/auth/session');
+  return data;
+}
+
+/** Фикстурная сессия для `/demo/planner` (override / in-memory adapter). */
+export async function fetchDemoProductSession(): Promise<ProductSessionResponse> {
   const { data } = await getPlannerBeerTrackerApi().get<ProductSessionResponse>('/auth/session');
   return data;
 }

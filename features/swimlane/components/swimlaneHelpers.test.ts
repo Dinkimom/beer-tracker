@@ -21,6 +21,11 @@ describe('buildSwimlaneRootClassName', () => {
     expect(buildSwimlaneRootClassName(false)).toContain('swimlane-row-resizing:pointer-events-none');
     expect(buildSwimlaneRootClassName(false)).toContain('swimlane-lane-fill');
   });
+
+  it('keeps row fill and skips a full-width border-b for pattern columns', () => {
+    expect(buildSwimlaneRootClassName(false)).toContain('bg-white');
+    expect(buildSwimlaneRootClassName(false)).not.toContain('border-b');
+  });
 });
 
 describe('buildSwimlanePlacementQuickAddHandler', () => {

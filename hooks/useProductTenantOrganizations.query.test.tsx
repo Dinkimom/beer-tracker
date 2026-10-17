@@ -11,6 +11,7 @@ import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpCons
 import { useProductTenantOrganizations } from './useProductTenantOrganizations';
 
 vi.mock('@/lib/api/auth', () => ({
+  fetchDemoProductSession: vi.fn(),
   fetchProductSession: vi.fn(),
 }));
 
@@ -96,6 +97,27 @@ describe('useProductTenantOrganizations query sharing', () => {
     await waitFor(() => {
       expect(result.current.sessionLoading).toBe(false);
     });
+    expect(result.current.activeOrganizationId).toBe(orgId);
+    expect(localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)).toBe(orgId);
+  });
+
+  it('does not clear a stored tenant when signed in with an empty org list', async () => {
+    const orgId = '11111111-1111-4111-8111-111111111111';
+    localStorage.setItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY, orgId);
+    fetchProductSessionMock.mockResolvedValue({
+      organizations: [],
+      user: { email: 'demo@beer-tracker.local', emailVerified: true, id: 'demo-user' },
+    });
+
+    const wrapper = createWrapper();
+    const { result } = renderHook(() => useProductTenantOrganizations({ pollIntervalMs: 0 }), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.sessionLoading).toBe(false);
+    });
+    expect(result.current.signedIn).toBe(true);
     expect(result.current.activeOrganizationId).toBe(orgId);
     expect(localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)).toBe(orgId);
   });

@@ -20,8 +20,10 @@ interface SwimlaneLaneBandProps {
   accent: SwimlaneLaneBandAccent;
   children?: ReactNode;
   className?: string;
-  /** Стили заливки и содержимого. Верхняя граница остаётся на внешней рамке и не маскируется. */
-  contentStyle?: CSSProperties;
+  /**
+   * Стили внешней рамки (высота, позиция). Маску «дыр» по дням (выходные / отсутствие)
+   * тоже сюда — иначе `border-t` останется поверх штриховки.
+   */
   style?: CSSProperties;
 }
 
@@ -33,16 +35,13 @@ export function SwimlaneLaneBand({
   accent,
   children,
   className = '',
-  contentStyle,
   style,
 }: SwimlaneLaneBandProps) {
   // Не задаём position здесь: callers передают `absolute` через className.
   // `relative` + `absolute` в одном className — конфликт Tailwind (побеждает порядок в CSS).
   return (
     <div className={`${ACCENT_BORDER_CLASS[accent]} ${className}`.trim()} style={style}>
-      <div className={`absolute inset-0 ${ACCENT_FILL_CLASS[accent]}`} style={contentStyle}>
-        {children}
-      </div>
+      <div className={`absolute inset-0 ${ACCENT_FILL_CLASS[accent]}`}>{children}</div>
     </div>
   );
 }

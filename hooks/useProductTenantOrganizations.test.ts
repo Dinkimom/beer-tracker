@@ -117,18 +117,21 @@ describe('resolveActiveOrganizationId', () => {
 });
 
 describe('shouldSyncStoredOrganizationFromSession', () => {
-  it('does not sync an anonymous empty session over a stored tenant', () => {
+  it('does not sync an empty session over a stored tenant (anonymous or signed-in)', () => {
     expect(
       shouldSyncStoredOrganizationFromSession({ organizationCount: 0, signedIn: false })
     ).toBe(false);
-  });
-
-  it('syncs once the user is signed in or the session lists organizations', () => {
     expect(
       shouldSyncStoredOrganizationFromSession({ organizationCount: 0, signedIn: true })
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('syncs when the session lists organizations', () => {
     expect(
       shouldSyncStoredOrganizationFromSession({ organizationCount: 1, signedIn: false })
+    ).toBe(true);
+    expect(
+      shouldSyncStoredOrganizationFromSession({ organizationCount: 1, signedIn: true })
     ).toBe(true);
   });
 });
@@ -139,6 +142,16 @@ describe('resolveDisplayedActiveOrganizationId', () => {
       resolveDisplayedActiveOrganizationId({
         organizations: [],
         signedIn: false,
+        storedId: 'org-a',
+      })
+    ).toBe('org-a');
+  });
+
+  it('keeps the stored tenant when signed in but org list is empty (demo poison / glitch)', () => {
+    expect(
+      resolveDisplayedActiveOrganizationId({
+        organizations: [],
+        signedIn: true,
         storedId: 'org-a',
       })
     ).toBe('org-a');

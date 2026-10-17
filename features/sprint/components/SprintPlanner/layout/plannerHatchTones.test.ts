@@ -91,6 +91,15 @@ describe('plannerAvailabilityEmojiPattern', () => {
     expect(PLANNER_HATCH_TONES.shards.lightFill).toBeUndefined();
     expect(PLANNER_HATCH_TONES.shards.darkFill).toBeUndefined();
   });
+
+  it('uses the same scatter pattern for weekend columns', () => {
+    const weekend = plannerAvailabilityEmojiPattern('weekend');
+    const vacation = plannerAvailabilityEmojiPattern('vacation');
+    expect(weekend?.emojis).toEqual(['😴', '☕', '🏡']);
+    expect(weekend?.lightOpacity).toBe(vacation?.lightOpacity);
+    expect(weekend?.darkOpacity).toBe(vacation?.darkOpacity);
+    expect(PLANNER_HATCH_TONES.weekend.lightFill).toBeDefined();
+  });
 });
 
 describe('plannerEmojiPatternImage', () => {

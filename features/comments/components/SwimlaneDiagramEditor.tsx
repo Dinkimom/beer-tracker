@@ -104,12 +104,14 @@ export function SwimlaneDiagramEditor({
   return createPortal(
     <div
       aria-label={t('sprintPlanner.swimlane.quickAddMenu.diagramEditorTitle')}
-      className={`fixed inset-0 flex flex-col bg-black/70 p-4 ${ZIndex.class('modalBackdrop')}`}
+      className="fixed inset-0 flex flex-col bg-black/70 p-4"
       role="dialog"
+      style={{ zIndex: ZIndex.modalBackdrop }}
       onClick={onClose}
     >
       <div
-        className={`flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg bg-white dark:bg-gray-900 ${ZIndex.class('modal')}`}
+        className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg bg-white dark:bg-gray-900"
+        style={{ zIndex: ZIndex.modal }}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-200 px-4 py-2 dark:border-gray-700">

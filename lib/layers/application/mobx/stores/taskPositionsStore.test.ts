@@ -158,6 +158,26 @@ describe('TaskPositionsStore', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
+  it('параллельные loadSprint одного спринта делят один in-flight fetch', async () => {
+    let resolveFetch!: (value: TaskPosition[]) => void;
+    mockFetch.mockReturnValue(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      })
+    );
+
+    const store = new TaskPositionsStore();
+    const first = store.loadSprint(42);
+    const second = store.loadSprint(42);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    resolveFetch([pos('a', 1)]);
+    await Promise.all([first, second]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(store.positions.get('a')?.startDay).toBe(1);
+    expect(store.positionsSettledSprintId).toBe(42);
+  });
+
   it('хранит последние пять шагов плана и умеет undo/redo без персистентности', async () => {
     mockFetch.mockResolvedValue([]);
 

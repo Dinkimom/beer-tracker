@@ -125,9 +125,8 @@ export function DeveloperHeader({
 
   return wrapWithTextTooltip(
     <div
-      // Линия на 1px ниже ячейки — в том же пикселе, что border-b строки у дней.
-      // Свой border-b сидит внутри border-box и оказывается на пиксель выше.
-      className={`group relative sticky left-0 flex-shrink-0 self-stretch overflow-hidden border-r border-gray-200 bg-transparent swimlane-assignee-row-line dark:border-r-gray-600${frosted ? ' planner-pinned-lane-glass' : ''}`}
+      // border-b внутри ячейки (как у колонок дней): overflow-hidden иначе срезает box-shadow.
+      className={`group relative sticky left-0 flex-shrink-0 self-stretch overflow-hidden border-b border-r border-gray-200 bg-transparent dark:border-b-gray-700 dark:border-r-gray-600${frosted ? ' planner-pinned-lane-glass' : ''}`}
       style={{
         width,
         minWidth: width,

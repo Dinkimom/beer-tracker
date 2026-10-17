@@ -55,7 +55,7 @@ After substantive UI or i18n changes:
 1. Set language to **English** in Settings (or a clean profile) and reload.
 2. **Auth / entry:** `/login`, `/register`, `/auth-setup`, `/select-board` (with and without boards).
 3. **Planner:** open a board sprint — sidebar tabs, backlog, board, burndown; create a planner **comment** (note tool) and confirm default label/tooltip follow English.
-4. **Demo:** `/demo/planner` — with env unset, confirm unavailable copy; with env set, confirm loading overlay and no Russian-only chrome.
+4. **Demo:** `/demo/planner` — fixture-backed planner (no DEMO_* env); confirm loading overlay and no Russian-only chrome.
 5. **Smoke:** browser tab title / root description (metadata) is acceptable; no obvious Cyrillic in visible labels on the above routes.
 
 Remaining Russian in **code comments**, **API route handlers** (non-UI JSON errors), and **tests** is out of scope for this checklist. Third-party or Tracker-provided strings are not translated here.

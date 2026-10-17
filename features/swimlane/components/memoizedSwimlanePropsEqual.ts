@@ -42,6 +42,7 @@ export function memoizedSwimlanePropsEqual(
     prevProps.factHoveredTaskId === nextProps.factHoveredTaskId &&
     prevProps.cardShadowTaskId === nextProps.cardShadowTaskId &&
     prevProps.onFactSegmentHover === nextProps.onFactSegmentHover &&
-    prevProps.isPinned === nextProps.isPinned
+    prevProps.isPinned === nextProps.isPinned &&
+    prevProps.isLastRow === nextProps.isLastRow
   );
 }

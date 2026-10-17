@@ -1,13 +1,24 @@
 /**
- * Временно: подмена «сейчас» для проверки вёрстки текущего дня.
- * Вернуть `null` после просмотра.
+ * «Сейчас» для планера: день «сегодня», скролл к текущей колонке, fact-линия, burndown.
+ * На `/demo/planner` подменяется на фиксированную дату спринта-фикстуры.
  */
-const PLANNER_CLOCK_OVERRIDE: Date | null = null;
 
-/** Текущее время планера (с опциональной подменой для превью). */
+let plannerNowOverrideMs: number | null = null;
+
+/** Подмена часов планера (например демо: 16.10.2026). `null` — сброс. */
+export function setPlannerNowOverride(value: Date | null): void {
+  plannerNowOverrideMs = value == null ? null : value.getTime();
+}
+
+/** Текущее время планера (с опциональной подменой). */
 export function getPlannerNow(): Date {
-  if (PLANNER_CLOCK_OVERRIDE) {
-    return new Date(PLANNER_CLOCK_OVERRIDE.getTime());
+  if (plannerNowOverrideMs != null) {
+    return new Date(plannerNowOverrideMs);
   }
   return new Date();
+}
+
+/** То же, что {@link getPlannerNow}, в миллисекундах. */
+export function getPlannerNowMs(): number {
+  return plannerNowOverrideMs ?? Date.now();
 }

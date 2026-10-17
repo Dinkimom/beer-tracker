@@ -8,6 +8,7 @@ import {
   type StatusPhaseCell,
   statusDurationsToCells,
 } from '@/lib/planner-timeline';
+import { getPlannerNowMs } from '@/utils/plannerClock';
 
 export interface SegmentWithPhase {
   phase: StatusPhaseCell;
@@ -54,7 +55,10 @@ export function mergeFactTimelineHiddenDayIndices(
   return merged.size === 0 ? undefined : merged;
 }
 
-/** Маска таймлайна факта: скрытые дни прозрачные, штриховка дня под ними остаётся. */
+/**
+ * Маска таймлайна факта: скрытые дни прозрачные (и полосы, и `border-t` дорожки),
+ * штриховка дня на сетке под ними остаётся.
+ */
 export function factTimelineHolidayMask(
   holidayDayIndices: ReadonlySet<number> | undefined,
   totalParts: number,
@@ -146,7 +150,7 @@ export function getVisibleSwimlaneFactLayerHeightPx(
   segments: SwimlaneInProgressFactSegment[],
   sprintStartDate: Date,
   totalParts: number,
-  nowMs: number = Date.now()
+  nowMs: number = getPlannerNowMs()
 ): number {
   if (segments.length === 0) return 0;
   const nowCell = Math.min(
