@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.16.7] — 2026-10-17
+
+### English
+
+- README planner screenshots are retaken in light and dark. Fact timeline and collaboration images are real board captures, not broken placeholders.
+- The demo planner serves fixture changelogs and two presence viewers, so the fact bars and collaboration avatars render on `/demo/planner`.
+- Open-ended fact durations follow the planner clock, so the demo “today” does not stretch to the wall clock.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.16.7` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Скрины планера в README пересняты в светлой и тёмной теме. Таймлайн факта и совместная работа — кадры доски, а не битые плейсхолдеры.
+- Демо-планер отдаёт фикстурный changelog и двух зрителей presence, поэтому полосы факта и аватары видны на `/demo/planner`.
+- Незакрытые фазы факта считаются по часам планера, и демо-«сегодня» не тянется до настенных часов.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.16.7` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.16.6] — 2026-10-17
 
 ### English
