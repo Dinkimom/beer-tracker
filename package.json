@@ -1,6 +1,6 @@
 {
   "name": "beer-tracker",
-  "version": "1.16.5",
+  "version": "1.16.6",
   "private": true,
   "license": "Apache-2.0",
   "scripts": {
