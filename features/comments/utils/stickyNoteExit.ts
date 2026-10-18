@@ -6,7 +6,7 @@ import { stickyNoteTiltSign } from '@/features/comments/utils/stickyNoteTilt';
  */
 
 export const STICKY_NOTE_EXIT_MS = 320;
-export const STICKY_NOTE_EXIT_CLASS = 'sticky-note-exit';
+const STICKY_NOTE_EXIT_CLASS = 'sticky-note-exit';
 
 const exitingTaskIds = new Set<string>();
 let snapshot: ReadonlySet<string> = exitingTaskIds;
@@ -20,7 +20,7 @@ function emitStickyNoteExit(): void {
   }
 }
 
-export function stickyNoteExitDurationMs(): number {
+function stickyNoteExitDurationMs(): number {
   if (typeof globalThis.matchMedia !== 'function') {
     return 0;
   }
