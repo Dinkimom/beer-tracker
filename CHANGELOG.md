@@ -2,6 +2,30 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.17.0] — 2026-10-19
+
+### English
+
+- An agent plan patch shows proposed task moves on the swimlane and proposed goal text in the sidebar. Accept writes the change; reject drops that preview.
+- Sticky notes pick a color from swatches, sit at a slight tilt, and fade out on delete.
+- Retro cards show the note author and a compact comment thread.
+- Weekend columns share one hatch that stays aligned while the planner scrolls.
+- Sprint start no longer uses the old checklist panel; the remaining start checks stay with the goals tab.
+- MCP OAuth consent shows the connecting client's brand mark.
+- README landing is in English as well, with companies named before install.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.17.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Патч плана от агента показывает сдвиг задач на свимлейне и новый текст целей в сайдбаре. Принятие записывает правку, отказ убирает это превью.
+- Стикеры выбирают цвет свотчами, слегка наклонены и гаснут при удалении.
+- Карточки ретро показывают автора заметки и компактную ленту комментариев.
+- Колонки выходных делят одну штриховку, которая не съезжает при прокрутке планера.
+- Старт спринта больше не открывает старую панель чеклиста; оставшиеся проверки старта живут на вкладке целей.
+- Согласие MCP OAuth показывает марку клиента, который подключается.
+- Посадочная README есть и на английском, компании названы до установки.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.17.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.16.8] — 2026-10-17
 
 ### English
