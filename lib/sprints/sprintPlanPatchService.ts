@@ -1,9 +1,15 @@
 import type {
+  PlanPatchPositionPreview,
+  PlanPatchPreviewSourcePosition,
+} from '@/lib/sprints/sprintPlanPatchPositionPreview';
+import type {
   SprintPlanPatchApplyResult,
   SprintPlanPatchOnError,
   SprintPlanPatchOp,
   SprintPlanPatchProposeResult,
 } from '@/lib/sprints/sprintPlanPatchTypes';
+
+import { randomUUID } from 'crypto';
 
 import { ZodError } from 'zod';
 
@@ -19,10 +25,23 @@ import {
   persistProposedCreateNotes,
 } from '@/lib/sprints/sprintPlanPatchDraftNotes';
 import {
+  buildPlanPatchGoalPreviews,
+  planPatchGoalSources,
+} from '@/lib/sprints/sprintPlanPatchGoalPreview';
+import {
+  deletePlanPatchGoalPreviewsByProposal,
+  replacePlanPatchGoalPreviews,
+} from '@/lib/sprints/sprintPlanPatchGoalPreviewRepository';
+import {
   simulatePositionsAfterPatch,
   summarizeSprintPlanPatchOps,
 } from '@/lib/sprints/sprintPlanPatchHelpers';
 import { assertPlanPatchOpsFitPartsPerDay } from '@/lib/sprints/sprintPlanPatchPartsValidation';
+import { buildPlanPatchPositionPreviews } from '@/lib/sprints/sprintPlanPatchPositionPreview';
+import {
+  deletePlanPatchPositionPreviewsByProposal,
+  replacePlanPatchPositionPreviews,
+} from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
 import { assertPlanPatchTargetsExist } from '@/lib/sprints/sprintPlanPatchPreflight';
 import { parseSprintPlanPatchOps } from '@/lib/sprints/sprintPlanPatchSchema';
 import {
@@ -56,12 +75,16 @@ function parseOpsOrThrow(raw: unknown): SprintPlanPatchOp[] {
   }
 }
 
-function notifyPlanPatchComments(organizationId: string, sprintId: number): void {
+function notifyPlanPatchResource(
+  organizationId: string,
+  sprintId: number,
+  resources: Array<'comments' | 'goals' | 'positions'>
+): void {
   notifySprintRealtime(
     new Request('http://localhost/api/mcp'),
     organizationId,
     sprintId,
-    ['comments']
+    resources
   );
 }
 
@@ -75,13 +98,92 @@ async function persistDraftNotesForProposal(input: {
 }): Promise<string[]> {
   const draftNoteIds = await persistProposedCreateNotes(input);
   if (draftNoteIds.length > 0) {
-    notifyPlanPatchComments(input.organizationId, input.sprintId);
+    notifyPlanPatchResource(input.organizationId, input.sprintId, ['comments']);
   }
   return draftNoteIds;
 }
 
+function stampPreviewClientBrand(
+  previews: PlanPatchPositionPreview[],
+  clientBrand: PlanPatchPositionPreview['clientBrand']
+): PlanPatchPositionPreview[] {
+  if (!clientBrand) {
+    return previews;
+  }
+  const stamped: PlanPatchPositionPreview[] = [];
+  for (const preview of previews) {
+    stamped.push({ ...preview, clientBrand });
+  }
+  return stamped;
+}
+
+async function persistPositionPreviewsForProposal(input: {
+  clientBrand?: PlanPatchPositionPreview['clientBrand'];
+  current: readonly PlanPatchPreviewSourcePosition[];
+  expiresAt: Date;
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  proposalId: string;
+  sprintId: number;
+}): Promise<void> {
+  const touchesPositions = input.ops.some(
+    (op) => op.op === 'upsertPosition' || op.op === 'deletePosition'
+  );
+  if (!touchesPositions) {
+    return;
+  }
+  await replacePlanPatchPositionPreviews({
+    expiresAt: input.expiresAt,
+    organizationId: input.organizationId,
+    previews: stampPreviewClientBrand(
+      buildPlanPatchPositionPreviews({
+        current: input.current,
+        ops: input.ops,
+      }),
+      input.clientBrand
+    ),
+    proposalId: input.proposalId,
+    sprintId: input.sprintId,
+  });
+  notifyPlanPatchResource(input.organizationId, input.sprintId, ['positions']);
+}
+
+async function persistGoalPreviewsForProposal(input: {
+  clientBrand?: PlanPatchPositionPreview['clientBrand'];
+  expiresAt: Date;
+  goals: {
+    delivery: readonly { done: boolean; id: string; text: string }[];
+    discovery: readonly { done: boolean; id: string; text: string }[];
+  };
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  proposalId: string;
+  sprintId: number;
+}): Promise<void> {
+  const touchesGoals = input.ops.some(
+    (op) => op.op === 'createGoal' || op.op === 'updateGoal' || op.op === 'deleteGoal'
+  );
+  if (!touchesGoals) {
+    return;
+  }
+  await replacePlanPatchGoalPreviews({
+    expiresAt: input.expiresAt,
+    organizationId: input.organizationId,
+    previews: buildPlanPatchGoalPreviews({
+      clientBrand: input.clientBrand,
+      createId: randomUUID,
+      current: planPatchGoalSources(input.goals.delivery, input.goals.discovery),
+      ops: input.ops,
+    }),
+    proposalId: input.proposalId,
+    sprintId: input.sprintId,
+  });
+  notifyPlanPatchResource(input.organizationId, input.sprintId, ['goals']);
+}
+
 export async function proposeSprintPlanPatch(input: {
   actorUserId: string;
+  clientBrand?: PlanPatchPositionPreview['clientBrand'];
   ops: unknown;
   organizationId: string;
   /** When false, skip writing translucent createNote drafts (still returns applyToken). Default true. */
@@ -123,6 +225,7 @@ export async function proposeSprintPlanPatch(input: {
   const nowSec = Math.floor(Date.now() / 1000);
   const opsHash = hashSprintPlanPatchOps(ops);
   const expiresAt = new Date((nowSec + SPRINT_PLAN_PATCH_TTL_SEC) * 1000);
+  const proposalId = proposalIdFromOpsHash(opsHash);
   const draftNoteIds = persistNotes
     ? await persistDraftNotesForProposal({
         actorUserId: input.actorUserId,
@@ -133,6 +236,26 @@ export async function proposeSprintPlanPatch(input: {
         sprintId: input.sprintId,
       })
     : [];
+  if (persistNotes) {
+    await persistPositionPreviewsForProposal({
+      clientBrand: input.clientBrand,
+      current: current.positions,
+      expiresAt,
+      ops,
+      organizationId: input.organizationId,
+      proposalId,
+      sprintId: input.sprintId,
+    });
+    await persistGoalPreviewsForProposal({
+      clientBrand: input.clientBrand,
+      expiresAt,
+      goals: current.sprintGoals,
+      ops,
+      organizationId: input.organizationId,
+      proposalId,
+      sprintId: input.sprintId,
+    });
+  }
   const applyToken = signSprintPlanPatchToken({
     draftNoteIds,
     ops,
@@ -147,7 +270,7 @@ export async function proposeSprintPlanPatch(input: {
     expiresAt: expiresAt.toISOString(),
     ops,
     persistNotes,
-    proposalId: proposalIdFromOpsHash(opsHash),
+    proposalId,
     schedule,
     sprintId: input.sprintId,
     summary: summarizeSprintPlanPatchOps(ops),
@@ -247,6 +370,20 @@ export async function applySprintPlanPatch(input: {
     ops,
     sprintId: input.sprintId,
   });
+
+  if (!error) {
+    const proposalId = proposalIdFromOpsHash(hashSprintPlanPatchOps(ops));
+    await deletePlanPatchPositionPreviewsByProposal({
+      organizationId: input.organizationId,
+      proposalId,
+      sprintId: input.sprintId,
+    });
+    await deletePlanPatchGoalPreviewsByProposal({
+      organizationId: input.organizationId,
+      proposalId,
+      sprintId: input.sprintId,
+    });
+  }
 
   notifyAppliedPlanPatch({
     applied,

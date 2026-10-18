@@ -11,6 +11,11 @@ import type {
 } from '@/types';
 import type { SprintInfo } from '@/types/tracker';
 
+import {
+  normalizePlanPatchPositionPreview,
+  type PlanPatchPositionPreview,
+} from '@/lib/sprints/sprintPlanPatchPositionPreview';
+
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
 type SprintLinkAnchor = 'bottom' | 'left' | 'right' | 'top';
@@ -42,6 +47,22 @@ export async function fetchSprintPlanAnchors(sprintId: number): Promise<SprintPl
 /**
  * Получает позиции задач в спринте
  */
+export async function fetchPlanPatchPositionPreviews(
+  sprintId: number
+): Promise<PlanPatchPositionPreview[]> {
+  const { data }: { data: { planPatchPreviews?: unknown[] } } = await getPlannerBeerTrackerApi().get(
+    `/sprints/${sprintId}/positions`
+  );
+  const previews: PlanPatchPositionPreview[] = [];
+  for (const item of data.planPatchPreviews ?? []) {
+    const preview = normalizePlanPatchPositionPreview(item);
+    if (preview) {
+      previews.push(preview);
+    }
+  }
+  return previews;
+}
+
 export async function fetchSprintPositions(sprintId: number): Promise<TaskPosition[]> {
   try {
     const { data }: { data: SprintPositionsResponse } = await getPlannerBeerTrackerApi().get(

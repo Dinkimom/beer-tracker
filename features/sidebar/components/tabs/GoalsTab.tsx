@@ -7,20 +7,15 @@ import { Button } from '@/components/Button';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
-import { WORKING_DAYS } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { GoalsList } from '@/features/sidebar/components/GoalsList';
 import { SprintActions } from '@/features/sidebar/components/SprintActions';
-import { SprintStartChecklist } from '@/features/sidebar/components/SprintStartChecklist';
 import { submitStartSprint } from '@/features/sidebar/components/tabs/goalsTabStartSprintHelpers';
 import { useTaskSidebar } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { useGoalsTab } from '@/features/sidebar/hooks/useGoalsTab';
-import { SIDEBAR_INVALID_TAB_ENABLED } from '@/features/sidebar/hooks/useSidebarHeaderTabsHelpers';
 import { FinishSprintModal } from '@/features/sprint/components/FinishSprintModal';
 import { patchSprintInSprintsQueries } from '@/features/sprint/hooks/useSprints';
-import { calculateSprintStartChecks } from '@/features/sprint/utils/sprintStartChecks';
 import { patchSprintInfoInTasksQueries } from '@/features/task/hooks/useTasks';
-import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
 export function GoalsTab() {
   const { t } = useI18n();
@@ -34,14 +29,10 @@ export function GoalsTab() {
     discoveryGoalsLoading,
     discoveryUpdatingItems,
     goalsLoading,
-    goalTaskIds,
+    selectedSprintId = null,
     sprintInfo,
     sprints,
     goalsTasks: tasks,
-    developers = [],
-    qaTasksMap = new Map(),
-    taskPositions = null,
-    selectedSprintId = null,
     onCheckboxChangeDelivery,
     onCheckboxChangeDiscovery,
     onAddDeliveryGoal,
@@ -85,37 +76,10 @@ export function GoalsTab() {
   const canStartSprint = sprintInfo?.status === 'draft' || sprintInfo?.status === 'Draft';
   const canFinishSprint = sprintInfo?.status === 'in_progress' || sprintInfo?.status === 'In Progress';
 
-  const combinedChecklistItems = [
-    ...deliveryChecklistItems,
-    ...discoveryChecklistItems,
-  ];
-
-  const checks = calculateSprintStartChecks(
-    combinedChecklistItems,
-    tasks,
-    developers,
-    qaTasksMap,
-    goalTaskIds,
-    selectedSprintId,
-    false,
-    taskPositions,
-    resolveSprintTimelineWorkingDaysCount(
-      sprintInfo?.startDate,
-      sprintInfo?.endDate,
-      WORKING_DAYS
-    )
-  );
-
-  const { check1Passed, check2Passed, check3Passed, developerLoads, invalidTasks, loadNorms } =
-    checks;
-  const startChecksPassed =
-    check1Passed && check2Passed && (SIDEBAR_INVALID_TAB_ENABLED ? check3Passed : true);
-
   const handleStartSprintSubmit = async () => {
     if (!sprintInfo) return;
 
     await submitStartSprint({
-      allChecksPassed: startChecksPassed,
       confirm,
       onSprintStatusUpdated: handleSprintStatusUpdated,
       onTasksReload,
@@ -160,8 +124,10 @@ export function GoalsTab() {
                 deletingItems={deliveryGoalsTab.deletingItems}
                 editingId={deliveryGoalsTab.editingId}
                 editingText={deliveryGoalsTab.editingText}
+                goalType="delivery"
                 isAdding={deliveryGoalsTab.isAdding}
                 newGoalId={deliveryGoalsTab.newGoalId}
+                sprintId={selectedSprintId}
                 updatingItems={deliveryUpdatingItems}
                 onCancelEdit={deliveryGoalsTab.handleCancelEdit}
                 onCheckboxChange={onCheckboxChangeDelivery}
@@ -210,8 +176,10 @@ export function GoalsTab() {
                 deletingItems={discoveryGoalsTab.deletingItems}
                 editingId={discoveryGoalsTab.editingId}
                 editingText={discoveryGoalsTab.editingText}
+                goalType="discovery"
                 isAdding={discoveryGoalsTab.isAdding}
                 newGoalId={discoveryGoalsTab.newGoalId}
+                sprintId={selectedSprintId}
                 updatingItems={discoveryUpdatingItems}
                 onCancelEdit={discoveryGoalsTab.handleCancelEdit}
                 onCheckboxChange={onCheckboxChangeDiscovery}
@@ -235,22 +203,11 @@ export function GoalsTab() {
                 </Button>
               </div>
             )}
-            {canStartSprint && (
-              <SprintStartChecklist
-                check1Passed={check1Passed}
-                check2Passed={check2Passed}
-                check3Passed={check3Passed}
-                developerLoads={developerLoads}
-                invalidTasks={invalidTasks}
-                loadNorms={loadNorms}
-              />
-            )}
           </>
         )}
       </div>
 
       <SprintActions
-        allChecksPassed={startChecksPassed}
         canFinishSprint={canFinishSprint}
         canStartSprint={canStartSprint}
         isChangingStatus={isChangingStatus}

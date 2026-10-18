@@ -33,7 +33,7 @@ export function NotificationsBell() {
       >
         <svg
           aria-hidden
-          className="h-4 w-4 text-ds-text-muted"
+          className="h-4 w-4"
           fill="none"
           viewBox="0 0 24 24"
         >

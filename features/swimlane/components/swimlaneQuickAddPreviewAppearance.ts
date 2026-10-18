@@ -57,10 +57,14 @@ export function resolveSwimlaneQuickAddPreviewToolProps(
   return { iconName: 'plus', isImageTool: false };
 }
 
-export function resolveSwimlaneQuickAddPreviewClass(
-  kind: SwimlaneQuickAddPreviewKind
-): string {
-  return kind === 'task' ? QUICK_ADD_PREVIEW_TASK_CLASS : QUICK_ADD_PREVIEW_NOTE_CLASS;
+export function resolveSwimlaneQuickAddPreviewClass(kind: SwimlaneQuickAddPreviewKind): string {
+  if (kind === 'task') {
+    return QUICK_ADD_PREVIEW_TASK_CLASS;
+  }
+  if (kind === 'note') {
+    return `${QUICK_ADD_PREVIEW_NOTE_CLASS} sticky-note-paper`;
+  }
+  return QUICK_ADD_PREVIEW_NOTE_CLASS;
 }
 
 export function resolveSwimlaneQuickAddPreviewDurationCells(

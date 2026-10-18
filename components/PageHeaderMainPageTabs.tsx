@@ -43,7 +43,7 @@ export function PageHeaderMainPageTabs<T extends string>({
             <Button
               aria-current={isActive ? 'page' : undefined}
               aria-label={visibleLabel === item.label ? undefined : item.label}
-              className={`relative flex h-8 min-h-0 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap !rounded-md !border-0 !px-2.5 !py-0 text-sm shadow-none ${pageHeaderMainPageButtonClass(isActive)}`}
+              className={`relative flex h-8 min-h-0 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap !rounded-lg !px-2.5 !py-0 text-sm shadow-none ${pageHeaderMainPageButtonClass(isActive)}`}
               type="button"
               variant="ghost"
               onClick={() => onChange(item.id)}

@@ -23,6 +23,7 @@ import {
 } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionSwimlanePropsHelpers';
 import { Swimlane } from '@/features/swimlane/components/Swimlane';
 import { TaskArrows } from '@/features/swimlane/components/task-arrows';
+import { PlanPatchScheduleArrows } from '@/features/swimlane/components/task-arrows/PlanPatchScheduleArrows';
 import { SwimlaneXarrowRedrawProvider } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import { useSwimlanePinnedRowIdsStorage } from '@/hooks/useLocalStorage';
 import { taskLinksForOnboardingArrows } from '@/lib/plannerOnboarding/onboardingDemoLane';
@@ -327,6 +328,7 @@ export function SwimlanesSectionLanes({
               clipToAssigneeId={developer.id}
               clipToRow
             />
+            <PlanPatchScheduleArrows clipToAssigneeId={developer.id} />
           </div>
         ) : null}
       </div>
@@ -340,11 +342,12 @@ export function SwimlanesSectionLanes({
           active={pinnedRows.length > 0}
           redrawRef={pinnedFrameArrowRedrawRef}
         />
-        <div className="relative">
+        <div className="relative" data-planner-pattern-origin="">
           {orderedRows.map(renderLane)}
           <FeatureLaneAddRow participantsColumnWidth={section.participantsColumnWidth} />
         </div>
         {showArrows ? <TaskArrows {...taskArrowProps} /> : null}
+        <PlanPatchScheduleArrows />
       </SwimlaneXarrowRedrawProvider>
     </Xwrapper>
   );

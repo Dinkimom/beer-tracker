@@ -145,6 +145,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
             column={column}
             isFirst={index === 0}
             isLast={index === lastIndex}
+            sprintId={sprintId}
             onAddComment={boardApi.addComment}
             onAddNote={boardApi.addNote}
             onDelete={boardApi.removeColumn}

@@ -1,5 +1,7 @@
 /** Discriminated plan-patch ops for MCP propose → apply (v1). */
 
+import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+
 type SprintPlanPatchGoalType = 'delivery' | 'discovery';
 
 type SprintPlanPatchAnchor = 'bottom' | 'left' | 'right' | 'top';
@@ -20,7 +22,7 @@ interface SprintPlanPatchSegment {
 export type SprintPlanPatchOp =
   {
       assigneeId: string;
-      color?: 'blue' | 'gray' | 'green' | 'pink' | 'yellow';
+      color?: StickyNoteColor;
       day: number;
       height?: number;
       op: 'createNote';
@@ -41,7 +43,7 @@ export type SprintPlanPatchOp =
       taskId: string;
     } | {
       assigneeId?: string;
-      color?: 'blue' | 'gray' | 'green' | 'pink' | 'yellow';
+      color?: StickyNoteColor;
       commentId: string;
       day?: number | null;
       height?: number;

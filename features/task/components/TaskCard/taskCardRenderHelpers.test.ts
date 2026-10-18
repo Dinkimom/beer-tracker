@@ -96,7 +96,7 @@ describe('resolveTaskCardHoverGlowColor', () => {
         stickyNoteColor: 'yellow',
         task: {},
       })
-    ).toBe('#eab308');
+    ).toBe('#bd9d00');
   });
 });
 

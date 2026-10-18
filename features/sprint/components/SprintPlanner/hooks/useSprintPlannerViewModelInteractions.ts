@@ -47,7 +47,6 @@ type DevelopersManagement = ReturnType<typeof useDevelopersManagement>;
 type WorkflowScreens = ReturnType<typeof useSprintPlannerWorkflowScreens>;
 type SprintPlannerUi = ReturnType<typeof useRootStore>['sprintPlannerUi'];
 type GetQueueByBoardId = ReturnType<typeof useBoards>['getQueueByBoardId'];
-
 interface UseSprintPlannerViewModelInteractionsParams {
   allTasksForDrag: Task[];
   backlogTaskRef: React.MutableRefObject<{
@@ -267,9 +266,8 @@ export function useSprintPlannerViewModelInteractions({
     () => mergePlannerAndTrackerTaskLinks(taskLinks, trackerTaskLinks),
     [taskLinks, trackerTaskLinks]
   );
-
   const handlers = useSprintPlannerHandlers({
-    selectedSprintId,
+    comments, selectedSprintId,
     setComments,
     setSidebarOpen: sprintPlannerUi.setSidebarOpen,
     setTaskLinks,

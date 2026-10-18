@@ -14,14 +14,17 @@ import {
   defaultAgreementsColumn,
   isAcceptableRetroImageDataUrl,
   RETRO_COLUMN_TITLE_MAX_LENGTH,
+  RETRO_COMMENT_AUTHOR_ID_MAX_LENGTH,
   RETRO_COMMENT_AUTHOR_MAX_LENGTH,
   RETRO_COMMENT_MAX_LENGTH,
   RETRO_COMMENTS_MAX_COUNT,
   RETRO_NOTE_MAX_LENGTH,
+  retroCommentAvatarUrl,
   type RetroBoard,
   type RetroCard,
   type RetroCardComment,
   type RetroCardReaction,
+  type RetroCommentAuthor,
   type RetroColumn,
   type RetroColumnPreset,
   type RetroSprintOrderItem,
@@ -37,6 +40,7 @@ export {
   retroColumnLabel,
   type RetroBoard,
   type RetroCardComment,
+  type RetroCommentAuthor,
   type RetroColumn,
   type RetroColumnPreset,
   type RetroSprintOrderItem,
@@ -161,21 +165,26 @@ export function moveRetroColumn(
   return writeBoard(nextStore, { ...board, columns });
 }
 
+const RETRO_CARD_ID = /^card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function addRetroNote(
   store: RetroStore,
   sprintId: number,
   columnId: string,
-  text: string
+  text: string,
+  cardId?: string,
+  author?: RetroCommentAuthor
 ): RetroStore {
   const trimmed = text.trim().slice(0, RETRO_NOTE_MAX_LENGTH);
   if (!trimmed) return store;
   return appendCard(store, sprintId, columnId, {
+    ...cardAuthorFields(author),
     carriesToNext: false,
     color: DEFAULT_STICKY_NOTE_COLOR,
     columnId,
     createdAt: new Date().toISOString(),
     comments: [],
-    id: createRetroId('card'),
+    id: resolveRetroCardId(cardId),
     imageDataUrl: null,
     kind: 'note',
     originSprintId: null,
@@ -323,20 +332,40 @@ export function addRetroCardComment(
   ownerSprintId: number,
   cardId: string,
   text: string,
-  authorName: string
+  author: RetroCommentAuthor | string
 ): RetroStore {
   const trimmed = text.trim().slice(0, RETRO_COMMENT_MAX_LENGTH);
   if (!trimmed) return store;
   return mapOwnedCard(store, ownerSprintId, cardId, (card) => {
     if (card.comments.length >= RETRO_COMMENTS_MAX_COUNT) return card;
     const comment: RetroCardComment = {
-      authorName: authorName.trim().slice(0, RETRO_COMMENT_AUTHOR_MAX_LENGTH),
+      ...commentAuthorFields(author),
       createdAt: new Date().toISOString(),
       id: createRetroId('comment'),
       text: trimmed,
     };
     return { ...card, comments: [...card.comments, comment] };
   });
+}
+
+function cardAuthorFields(author?: RetroCommentAuthor): Pick<RetroCard, 'authorAvatarUrl' | 'authorId' | 'authorName'> {
+  if (!author?.name.trim()) return {};
+  return commentAuthorFields(author);
+}
+
+function commentAuthorFields(
+  author: RetroCommentAuthor | string
+): Pick<RetroCardComment, 'authorAvatarUrl' | 'authorId' | 'authorName'> {
+  if (typeof author === 'string') {
+    return { authorName: author.trim().slice(0, RETRO_COMMENT_AUTHOR_MAX_LENGTH) };
+  }
+  const authorAvatarUrl = retroCommentAvatarUrl(author.avatarUrl);
+  const authorId = author.userId?.trim().slice(0, RETRO_COMMENT_AUTHOR_ID_MAX_LENGTH);
+  return {
+    authorName: author.name.trim().slice(0, RETRO_COMMENT_AUTHOR_MAX_LENGTH),
+    ...(authorAvatarUrl ? { authorAvatarUrl } : {}),
+    ...(authorId ? { authorId } : {}),
+  };
 }
 
 export function deleteRetroCardComment(
@@ -512,4 +541,9 @@ function writeBoard(store: RetroStore, board: RetroBoard): RetroStore {
 
 function createRetroId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
+}
+
+function resolveRetroCardId(cardId: string | undefined): string {
+  if (cardId && RETRO_CARD_ID.test(cardId)) return cardId;
+  return createRetroId('card');
 }

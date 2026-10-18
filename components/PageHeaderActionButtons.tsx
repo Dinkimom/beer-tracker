@@ -35,7 +35,7 @@ export function PageHeaderActionButtons({
         onCanvas
         onClick={onSettingsOpen}
       >
-        <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" name="settings" />
+        <Icon className="h-4 w-4" name="settings" />
       </HeaderIconButton>
       {isChristmasPeriod ? (
         <PageHeaderChristmasThemeButton
@@ -52,7 +52,7 @@ export function PageHeaderActionButtons({
           onCanvas
           onClick={replayOnboarding}
         >
-          <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" name="circle-help" />
+          <Icon className="h-4 w-4" name="circle-help" />
         </HeaderIconButton>
       ) : null}
     </div>

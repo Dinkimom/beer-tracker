@@ -125,6 +125,12 @@ export interface SprintContextCalendarDay {
   day: number;
 }
 
+/** Saturday or Sunday inside the sprint window. These dates have no planner day index. */
+export interface SprintContextWeekendDay {
+  date: string;
+  weekday: 'saturday' | 'sunday';
+}
+
 export interface SprintContextAgendaItem {
   assigneeId: string;
   assigneeName?: string | null;
@@ -152,6 +158,8 @@ interface SprintContextMeta {
   sprintId: number;
   sprintWindow?: SprintContextSprintWindow;
   warnings?: string[];
+  /** Sat/Sun inside the sprint window. No day index — do not place positions on these dates. */
+  weekendDays?: SprintContextWeekendDay[];
 }
 
 export interface SprintContextCapacityOverlap {

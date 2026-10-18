@@ -9,6 +9,7 @@ import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilit
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
 import { timelineDayDividerClass } from '@/features/sprint/utils/timelineColumnChrome';
+import { TimelineWeekendHatch } from '@/features/swimlane/components/TimelineWeekendHatch';
 import {
   buildHolidayHatchRanges,
   buildUnavailableHatchRanges,
@@ -110,20 +111,12 @@ export function TimelineGrid({
             </div>
           ))}
           {holidayRanges.map((range) => (
-            <div
+            <TimelineWeekendHatch
               key={`weekend-${range.startDay}`}
-              className="absolute inset-y-0 overflow-hidden"
-              style={{
-                left: `${(range.startDay / dayCount) * 100}%`,
-                width: `${(range.daySpan / dayCount) * 100}%`,
-              }}
-            >
-              {/*
-                Без heightPx — фиксированный шаг тайла, как у кладбища дедлайнов.
-                Так узор не «сжимается» под высоту одной строки.
-              */}
-              <PlannerHatchOverlay tone="weekend" />
-            </div>
+              dayCount={dayCount}
+              daySpan={range.daySpan}
+              startDay={range.startDay}
+            />
           ))}
         </div>
       ) : null}

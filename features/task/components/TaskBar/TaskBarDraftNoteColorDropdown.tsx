@@ -7,15 +7,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
-import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
-import { getStickyNoteSwatchStyle } from '@/features/comments/utils/stickyNotePalette';
-import { FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses';
+import { StickyNoteColorSwatch } from '@/features/comments/components/StickyNoteColorSwatch';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
-import {
-  STICKY_NOTE_COLOR_LABEL_KEYS,
-  STICKY_NOTE_COLORS,
-} from '@/lib/comments/stickyNoteColor';
+import { STICKY_NOTE_COLOR_LABEL_KEYS } from '@/lib/comments/stickyNoteColor';
+
+import { StickyNoteColorSwatches } from './StickyNoteColorSwatches';
 
 interface TaskBarDraftNoteColorDropdownProps {
   value: StickyNoteColor;
@@ -75,50 +72,18 @@ export function TaskBarDraftNoteColorDropdown({
         }}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <span
-          aria-hidden
-          className="h-3 w-3 rounded-full border border-black/15 shadow-sm dark:border-white/20"
-          style={getStickyNoteSwatchStyle(value, isDark)}
-        />
+        <StickyNoteColorSwatch color={value} isDark={isDark} size={12} />
         <Icon className={`!h-3 !w-3 ${open ? 'rotate-180' : ''}`} name="chevron-down" />
       </Button>
       {open ? (
-        <div
-          aria-label={t('sprintPlanner.swimlane.placementToolbar.noteColorPopup')}
-          className={`absolute left-0 top-full mt-1 flex items-center gap-0.5 px-1.5 py-1.5 ${FLOATING_MENU_SHELL} ${OVERLAY_PANEL_ENTER}`}
-          role="radiogroup"
-        >
-          {STICKY_NOTE_COLORS.map((color) => {
-            const selected = color === value;
-            const label = t(STICKY_NOTE_COLOR_LABEL_KEYS[color]);
-            return (
-              <TextTooltip key={color} content={label}>
-              <button
-                aria-checked={selected}
-                aria-label={label}
-                className={`flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 ${
-                  selected
-                    ? 'bg-gray-200 hover:bg-gray-300 active:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500'
-                    : 'bg-transparent hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-gray-700/80 dark:active:bg-gray-600'
-                }`}
-                role="radio"
-                type="button"
-                onClick={() => {
-                  onChange(color);
-                  setOpen(false);
-                }}
-                onPointerDown={(event) => event.stopPropagation()}
-              >
-                <span
-                  aria-hidden
-                  className="h-4 w-4 rounded-full border border-black/15 shadow-sm dark:border-white/20"
-                  style={getStickyNoteSwatchStyle(color, isDark)}
-                />
-              </button>
-              </TextTooltip>
-            );
-          })}
-        </div>
+        <StickyNoteColorSwatches
+          className={`absolute left-0 top-full mt-1 ${OVERLAY_PANEL_ENTER}`}
+          value={value}
+          onChange={(color) => {
+            onChange(color);
+            setOpen(false);
+          }}
+        />
       ) : null}
     </div>
   );

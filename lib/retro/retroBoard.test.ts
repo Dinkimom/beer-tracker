@@ -107,6 +107,30 @@ describe('retro board mutations', () => {
     );
   });
 
+  it('keeps a caller-supplied card id and replaces an unsafe one', () => {
+    const supplied = 'card-11111111-1111-4111-8111-111111111111';
+    const withId = addRetroNote(emptyRetroStore(), 1, 'glad', 'Hello', supplied);
+    expect(resolveRetroBoard(withId, 1).cards[0]?.id).toBe(supplied);
+    const rejected = addRetroNote(emptyRetroStore(), 1, 'glad', 'Hello', '../nope');
+    expect(resolveRetroBoard(rejected, 1).cards[0]?.id).toMatch(
+      /^card-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    );
+  });
+
+  it('remembers who added a note and drops an unsafe avatar', () => {
+    const store = addRetroNote(emptyRetroStore(), 1, 'glad', 'Hello', undefined, {
+      avatarUrl: 'javascript:alert(1)',
+      name: ' Ada ',
+      userId: ' 42 ',
+    });
+    expect(resolveRetroBoard(store, 1).cards[0]).toMatchObject({
+      authorId: '42',
+      authorName: 'Ada',
+      text: 'Hello',
+    });
+    expect(resolveRetroBoard(store, 1).cards[0]?.authorAvatarUrl).toBeUndefined();
+  });
+
   it('converts a note into an agreement on this sprint and the next one only', () => {
     let store = addRetroNote(emptyRetroStore(), 1, 'glad', 'Ship smaller slices');
     const note = resolveRetroBoard(store, 1).cards[0];
@@ -201,6 +225,60 @@ describe('retro board mutations', () => {
     if (!note) return;
     store = addRetroCardComment(store, 1, note.id, 'x'.repeat(RETRO_COMMENT_MAX_LENGTH + 25), 'Ada');
     expect(resolveRetroBoard(store, 1).cards[0]?.comments[0]?.text).toHaveLength(RETRO_COMMENT_MAX_LENGTH);
+  });
+
+  it('keeps a safe comment avatar and drops an unsafe one', () => {
+    let store = addRetroNote(emptyRetroStore(), 1, 'glad', 'Demo');
+    const note = resolveRetroBoard(store, 1).cards[0];
+    if (!note) return;
+    store = addRetroCardComment(store, 1, note.id, 'Hi', {
+      avatarUrl: 'https://cdn.example/a.png',
+      name: ' Ada ',
+      userId: ' 42 ',
+    });
+    store = addRetroCardComment(store, 1, note.id, 'No', {
+      avatarUrl: 'javascript:alert(1)',
+      name: 'Bea',
+      userId: '7',
+    });
+    const comments = resolveRetroBoard(store, 1).cards[0]?.comments ?? [];
+    expect(comments[0]).toMatchObject({
+      authorAvatarUrl: 'https://cdn.example/a.png',
+      authorId: '42',
+      authorName: 'Ada',
+      text: 'Hi',
+    });
+    expect(comments[1]?.authorAvatarUrl).toBeUndefined();
+    expect(comments[1]?.authorId).toBe('7');
+
+    const parsed = parseRetroStore({
+      boards: {
+        1: {
+          columns: [{ id: 'glad', preset: 'glad', role: null, title: '' }],
+          cards: [
+            {
+              id: 'n1',
+              columnId: 'glad',
+              kind: 'note',
+              text: 'Demo',
+              comments: [
+                {
+                  id: 'c1',
+                  text: 'Saved',
+                  authorName: 'Ada',
+                  authorAvatarUrl: 'data:image/png;base64,aaaa',
+                  authorId: '42',
+                  createdAt: '2026-02-01T00:00:00.000Z',
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    const stored = parsed.boards['1']?.cards[0]?.comments[0];
+    expect(stored?.authorAvatarUrl).toBeUndefined();
+    expect(stored?.authorId).toBe('42');
   });
 
   it('repairs a stored board that lost the agreements column', () => {

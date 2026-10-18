@@ -80,7 +80,11 @@ export function TaskBarOpacityLayerChrome({
       )}
 
       {showResizeHandles ? (
-        <div className="task-bar-resize-handle-chrome">
+        <div
+          className={`task-bar-resize-handle-chrome${
+            cornerStyle === 'square' ? ' task-bar-resize-handle-chrome--tilted' : ''
+          }`}
+        >
           <TaskBarResizeHandle
             cornerStyle={cornerStyle}
             isDraftTask={isDraftTask}

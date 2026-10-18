@@ -31,8 +31,7 @@ beer-tracker/
 │   │   │   └── useGoalManagement.ts
 │   │   └── utils/
 │   │       ├── sprintMetrics.ts
-│   │       ├── sprintStartChecks.ts
-│   │       └── goalUtils.ts
+│   │       └── sprintStartChecks.ts
 │   │
 │   ├── task/                    # Домен: Задачи
 │   │   ├── components/

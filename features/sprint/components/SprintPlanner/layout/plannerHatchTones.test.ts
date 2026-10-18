@@ -121,7 +121,35 @@ describe('plannerEmojiPatternImage', () => {
     const image = plannerEmojiPatternImage(['🏖️', '🌴', '✈️'], 0.3, 164);
     const svg = decodeURIComponent(image);
     expect(svg).toContain(`height="${tile.tileHeightPx}"`);
-    expect(svg).toContain(`x="${Math.round(16 * tile.scale)}" y="${Math.round(34 * tile.scale)}"`);
+    expect(svg).toContain(`x="${Math.round(14 * tile.scale)}" y="${Math.round(32 * tile.scale)}"`);
     expect(svg).toContain('font-size="20"');
+    expect(emojiAnchorsStayApart(svg, tile.tileWidthPx, tile.tileHeightPx)).toBe(true);
   });
 });
+
+function emojiAnchorsStayApart(svg: string, tileWidth: number, tileHeight: number): boolean {
+  const anchors = [...svg.matchAll(/x="(\d+)" y="(\d+)" font-size="(\d+)"/g)].map((match) => ({
+    size: Number(match[3]),
+    x: Number(match[1]) + Number(match[3]) / 2,
+    y: Number(match[2]) - Number(match[3]) * 0.35,
+  }));
+  for (let i = 0; i < anchors.length; i += 1) {
+    for (let j = i + 1; j < anchors.length; j += 1) {
+      const left = anchors[i];
+      const right = anchors[j];
+      if (!left || !right) {
+        continue;
+      }
+      const dx = Math.abs(left.x - right.x);
+      const dy = Math.abs(left.y - right.y);
+      const distance = Math.hypot(
+        Math.min(dx, tileWidth - dx),
+        Math.min(dy, tileHeight - dy)
+      );
+      if (distance < (left.size + right.size) / 2) {
+        return false;
+      }
+    }
+  }
+  return anchors.length > 1;
+}

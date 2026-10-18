@@ -7,6 +7,7 @@ import {
   DEMO_DEV_ALICE,
   DEMO_DEV_BOB,
   DEMO_DEV_CAROL,
+  DEMO_DEV_DANA,
   DEMO_SPRINT_ID,
   DEMO_SPRINT_PREV_ID,
 } from './demoIds';
@@ -28,6 +29,9 @@ export function buildDemoRetroBoards(): Record<string, RetroBoard> {
           columnId: agreementsId,
           kind: 'agreement',
           text: 'Ship behind a feature flag',
+          authorName: DEMO_DEV_DISPLAY.dana.name,
+          authorId: DEMO_DEV_DANA,
+          authorAvatarUrl: DEMO_DEV_DISPLAY.dana.avatarUrl,
           color: 'yellow',
           comments: [],
           reactions: [],
@@ -47,6 +51,9 @@ export function buildDemoRetroBoards(): Record<string, RetroBoard> {
           columnId: gladId,
           kind: 'note',
           text: 'Pairing on the payment edge cases worked well',
+          authorName: DEMO_DEV_DISPLAY.alice.name,
+          authorId: DEMO_DEV_ALICE,
+          authorAvatarUrl: DEMO_DEV_DISPLAY.alice.avatarUrl,
           color: 'green',
           comments: [],
           reactions: [
@@ -64,6 +71,9 @@ export function buildDemoRetroBoards(): Record<string, RetroBoard> {
           columnId: sadId,
           kind: 'note',
           text: 'Flaky CI slowed the merge train',
+          authorName: DEMO_DEV_DISPLAY.bob.name,
+          authorId: DEMO_DEV_BOB,
+          authorAvatarUrl: DEMO_DEV_DISPLAY.bob.avatarUrl,
           color: 'pink',
           comments: [],
           reactions: [
@@ -80,6 +90,9 @@ export function buildDemoRetroBoards(): Record<string, RetroBoard> {
           columnId: discussId,
           kind: 'note',
           text: 'Do we need a dedicated QA lane next sprint?',
+          authorName: DEMO_DEV_DISPLAY.carol.name,
+          authorId: DEMO_DEV_CAROL,
+          authorAvatarUrl: DEMO_DEV_DISPLAY.carol.avatarUrl,
           color: 'blue',
           comments: [
             {

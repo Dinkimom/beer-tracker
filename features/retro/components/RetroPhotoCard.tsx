@@ -1,6 +1,6 @@
 'use client';
 
-import type { RetroVisibleCard } from '@/lib/retro/retroBoard';
+import type { RetroCommentAuthor, RetroVisibleCard } from '@/lib/retro/retroBoard';
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -16,7 +16,7 @@ import { retroIconButtonClass } from './retroUi';
 
 interface RetroPhotoCardProps {
   card: RetroVisibleCard;
-  onAddComment?: (ownerSprintId: number, cardId: string, text: string, authorName: string) => void;
+  onAddComment?: (ownerSprintId: number, cardId: string, text: string, author: RetroCommentAuthor) => void;
   onDelete: (cardId: string) => void;
   onDeleteComment?: (ownerSprintId: number, cardId: string, commentId: string) => void;
 }
@@ -59,7 +59,7 @@ export function RetroPhotoCard({
         <div className="flex justify-end px-1.5 pb-1.5">
           <RetroCardComments
             comments={card.comments}
-            onAdd={(text, authorName) => onAddComment(card.ownerSprintId, card.id, text, authorName)}
+            onAdd={(text, author) => onAddComment(card.ownerSprintId, card.id, text, author)}
             onDelete={(commentId) => onDeleteComment(card.ownerSprintId, card.id, commentId)}
           />
         </div>

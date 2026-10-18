@@ -78,7 +78,6 @@
     "features/sprint/hooks/useTaskOperations/hooks/useTaskSprintOperations.ts",
     "features/sprint/hooks/useTaskOperations/hooks/useTaskSprintOperationsMoveSuccessHelpers.ts",
     "features/sprint/hooks/useTaskOperations/hooks/useTaskStatusOperations.ts",
-    "features/sprint/utils/goalUtils.ts",
     "features/swimlane/components/DeveloperHeaderPoints.tsx",
     "features/swimlane/components/SwimlaneSegmentEditFrame.tsx",
     "features/swimlane/components/boardAvailabilityModalHelpers.ts",

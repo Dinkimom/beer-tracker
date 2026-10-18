@@ -7,6 +7,7 @@ import { GoalItemReadonlyOrDisplay } from './GoalItemReadonlyOrDisplay';
 
 interface GoalItemBodyProps {
   canEdit?: boolean;
+  dimmed?: boolean;
   editingText?: string;
   index?: number;
   isEditing?: boolean;
@@ -28,6 +29,7 @@ export function GoalItemBody({
   isEditing = false,
   editingText = '',
   canEdit = false,
+  dimmed = false,
   index,
   onStartEdit,
   onSaveEdit,
@@ -47,7 +49,7 @@ export function GoalItemBody({
         <input
           checked={item.checked}
           className="w-4 h-4 accent-blue-600 dark:accent-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
-          disabled={isUpdating}
+          disabled={isUpdating || dimmed}
           style={{ marginTop: 2 }}
           type="checkbox"
           onChange={(e) => onCheckboxChange!(e.target.checked)}

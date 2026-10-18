@@ -13,6 +13,7 @@ describe('getSwimlaneDragOverlayShellClass', () => {
   it('does not clip sticky-note corners with task-card rounding', () => {
     const shell = getSwimlaneDragOverlayShellClass(true);
     expect(shell).toContain('rounded-none');
+    expect(shell).toContain('overflow-visible');
     expect(shell).not.toContain('rounded-lg');
   });
 

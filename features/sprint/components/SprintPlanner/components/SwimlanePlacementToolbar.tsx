@@ -9,6 +9,8 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import { FLOATING_MENU_SHELL, FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
+import { usePlanPatchGoalPreviewDecisions } from '@/features/sprint/hooks/usePlanPatchGoalPreviewDecisions';
+import { usePlanPatchPreviewDecisions } from '@/features/swimlane/hooks/usePlanPatchPreviewDecisions';
 import {
   useSwimlaneBaselineLayoutModeStorage,
   useSwimlaneCalendarBusyVisibleStorage,
@@ -41,15 +43,21 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   onApproveAgentNotes,
   onRejectAgentNotes,
   pendingAgentNoteIds = [],
+  sprintId = null,
   variant = 'people',
 }: {
   onApproveAgentNotes?: (commentIds: readonly string[]) => void;
   onRejectAgentNotes?: (commentIds: readonly string[]) => void;
   pendingAgentNoteIds?: readonly string[];
+  sprintId?: number | null;
   variant?: 'features' | 'people';
 }) {
   const { t } = useI18n();
-  const { sprintPlannerUi } = useRootStore();
+  const { sprintPlannerUi, taskPositions } = useRootStore();
+  const positionPreviewCount = taskPositions.planPatchPreviews.size;
+  const positionBrand = taskPositions.planPatchPreviews.values().next().value?.clientBrand;
+  const planPatchDecisions = usePlanPatchPreviewDecisions(sprintId);
+  const goalDecisions = usePlanPatchGoalPreviewDecisions(sprintId);
   const objectStorageConfigured = useObjectStorageConfigured();
   const hidePersonBoundTools = variant === 'features';
   const tools = useMemo(
@@ -131,9 +139,20 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
         <SwimlanePlanDraftToolbar />
         {onApproveAgentNotes && onRejectAgentNotes ? (
           <SwimlaneAgentProposalToolbar
+            clientBrand={positionBrand ?? goalDecisions.clientBrand}
+            goalPreviewCount={goalDecisions.count}
             pendingCommentIds={pendingAgentNoteIds}
-            onApproveAll={onApproveAgentNotes}
-            onRejectAll={onRejectAgentNotes}
+            positionPreviewCount={positionPreviewCount}
+            onApproveAll={(commentIds) => {
+              onApproveAgentNotes(commentIds);
+              planPatchDecisions.approve().catch(() => undefined);
+              goalDecisions.approve().catch(() => undefined);
+            }}
+            onRejectAll={(commentIds) => {
+              onRejectAgentNotes(commentIds);
+              planPatchDecisions.reject().catch(() => undefined);
+              goalDecisions.reject().catch(() => undefined);
+            }}
           />
         ) : null}
         <div

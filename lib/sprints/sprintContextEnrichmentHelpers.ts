@@ -2,36 +2,80 @@ import type {
   SprintContextAgendaItem,
   SprintContextCalendarDay,
   SprintContextPosition,
+  SprintContextWeekendDay,
 } from '@/lib/sprints/sprintContextTypes';
 
+function parseUtcDay(value: string | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.slice(0, 10));
+  if (!match) {
+    return null;
+  }
+  return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+}
+
+function sprintWindowRange(
+  startDate: string | undefined,
+  endDate: string | undefined
+): { end: Date; start: Date } | null {
+  const start = parseUtcDay(startDate);
+  const end = parseUtcDay(endDate);
+  if (!start || !end || start > end) {
+    return null;
+  }
+  return { end, start };
+}
+
+function weekendWeekday(dow: number): SprintContextWeekendDay['weekday'] | null {
+  if (dow === 6) {
+    return 'saturday';
+  }
+  if (dow === 0) {
+    return 'sunday';
+  }
+  return null;
+}
 
 /** Build working-day index → YYYY-MM-DD for the sprint window (UTC date parts). */
 export function buildSprintContextCalendarDays(
   startDate: string | undefined,
   endDate: string | undefined
 ): SprintContextCalendarDay[] {
-  if (!startDate || !endDate) {
-    return [];
-  }
-  const startKey = startDate.slice(0, 10);
-  const endKey = endDate.slice(0, 10);
-  const startMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startKey);
-  const endMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(endKey);
-  if (!startMatch || !endMatch) {
-    return [];
-  }
-  const cursor = new Date(Date.UTC(Number(startMatch[1]), Number(startMatch[2]) - 1, Number(startMatch[3])));
-  const end = new Date(Date.UTC(Number(endMatch[1]), Number(endMatch[2]) - 1, Number(endMatch[3])));
-  if (cursor > end) {
+  const range = sprintWindowRange(startDate, endDate);
+  if (!range) {
     return [];
   }
   const days: SprintContextCalendarDay[] = [];
   let dayIndex = 0;
-  while (cursor <= end) {
+  const cursor = range.start;
+  while (cursor <= range.end) {
     const dow = cursor.getUTCDay();
     if (dow >= 1 && dow <= 5) {
       days.push({ date: cursor.toISOString().slice(0, 10), day: dayIndex });
       dayIndex += 1;
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return days;
+}
+
+/** Saturday and Sunday inside the sprint window. These dates are not planner day indices. */
+export function buildSprintContextWeekendDays(
+  startDate: string | undefined,
+  endDate: string | undefined
+): SprintContextWeekendDay[] {
+  const range = sprintWindowRange(startDate, endDate);
+  if (!range) {
+    return [];
+  }
+  const days: SprintContextWeekendDay[] = [];
+  const cursor = range.start;
+  while (cursor <= range.end) {
+    const weekday = weekendWeekday(cursor.getUTCDay());
+    if (weekday) {
+      days.push({ date: cursor.toISOString().slice(0, 10), weekday });
     }
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }

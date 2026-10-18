@@ -8,6 +8,8 @@ import React from 'react';
 
 import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useStickyNoteTilt } from '@/features/comments/hooks/useStickyNoteTilt';
+import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { useSwimlaneCardFieldsStorage } from '@/hooks/useLocalStorage';
 import { sprintCardPresenceHasChangingViewer, sprintCardPresenceIsLockedByRemote } from '@/lib/realtime/sprintCardPresence';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
@@ -141,6 +143,23 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
     widthPercent,
   });
   const isRemoteChanging = sprintCardPresenceHasChangingViewer(presenceViewers);
+  const tiltRef = useStickyNoteTilt(
+    variant === 'swimlane' && isSwimlaneCommentTask(task),
+    task.id
+  );
+  const setCardRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      tiltRef(node);
+      if (typeof ref === 'function') {
+        ref(node);
+        return;
+      }
+      if (ref) {
+        ref.current = node;
+      }
+    },
+    [ref, tiltRef]
+  );
 
   const {
     actualDuration,
@@ -154,7 +173,7 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
 
   return wrapWithTextTooltip(
     <div
-      ref={ref}
+      ref={setCardRef}
       className={`${visual.cardRootClassName}${isResizing ? ' select-none' : ''}${
         isRemoteChanging ? ' sprint-card-presence-changing' : ''
       }`}

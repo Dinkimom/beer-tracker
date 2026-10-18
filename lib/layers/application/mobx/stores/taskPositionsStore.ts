@@ -1,5 +1,6 @@
 import type { SprintPlanAnchor } from '@/lib/api/sprints';
 import type { GetTaskInfoFn } from '@/lib/layers/data/taskPositionsTypes';
+import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 import type { TaskPosition } from '@/types';
 
 import { action, computed, makeObservable, observable, runInAction } from 'mobx';
@@ -22,7 +23,7 @@ import {
   pendingUpdateForPosition,
   planHistoryAppliedPayload,
 } from './taskPositionsStoreHistory';
-import { fetchSprintPositionsBundle } from './taskPositionsStoreLoadHelpers';
+import { fetchSprintPositionsBundle, replacePlanPatchPreviews } from './taskPositionsStoreLoadHelpers';
 import {
   clearPlanDraft,
   commitPlanDraft as commitStoredPlanDraft,
@@ -72,6 +73,9 @@ export class TaskPositionsStore {
 
   /** taskId → план на момент перехода в работу */
   planAnchors = observable.map<string, SprintPlanAnchor>();
+
+  /** Предложения агента по позициям: перенос, длина, снятие с доски. */
+  planPatchPreviews = observable.map<string, PlanPatchPositionPreview>();
 
   undoStack: PlanHistoryStep[] = [];
 
@@ -123,6 +127,7 @@ export class TaskPositionsStore {
       canUndo: computed,
       loadSprint: action,
       planAnchors: observable,
+      planPatchPreviews: observable,
       positions: observable,
       positionsLoadPending: observable,
       positionsSettledSprintId: observable,
@@ -318,7 +323,7 @@ export class TaskPositionsStore {
       this.reconcileGeneration++;
       runInAction(() => {
         this.positions.clear();
-        this.planAnchors.clear();
+        this.planAnchors.clear(); this.planPatchPreviews.clear();
         this.draftTaskIds.clear();
         this.undoStack = [];
         this.redoStack = [];
@@ -348,7 +353,7 @@ export class TaskPositionsStore {
       if (sprintChanged) {
         this.undoStack = [];
         this.redoStack = [];
-        this.draftTaskIds.clear();
+        this.draftTaskIds.clear(); this.planPatchPreviews.clear();
       }
       this.positionsFetchInFlight++;
       this.positionsLoadPending = true;
@@ -367,7 +372,7 @@ export class TaskPositionsStore {
     draftKeep: Map<string, TaskPosition>
   ): Promise<void> {
     try {
-      const { anchors, positions: data } = await fetchSprintPositionsBundle(sprintId);
+      const { anchors, positions: data, previews } = await fetchSprintPositionsBundle(sprintId);
       if (myGen !== this.reconcileGeneration) return;
       runInAction(() => {
         this.positions.clear();
@@ -376,6 +381,7 @@ export class TaskPositionsStore {
         });
         restorePlanDraftPositions(this.positions, draftKeep);
         replacePlanAnchors(this.planAnchors, anchors);
+        replacePlanPatchPreviews(this.planPatchPreviews, previews);
       });
     } catch (error) {
       console.error('Error loading positions:', error);
@@ -577,7 +583,7 @@ export class TaskPositionsStore {
       return;
     }
     try {
-      const { anchors, positions: data } = await fetchSprintPositionsBundle(sprintId);
+      const { anchors, positions: data, previews } = await fetchSprintPositionsBundle(sprintId);
       if (this.sprintId !== sprintId) return;
       const pending = this.pendingUpdatesRef;
       const draftKeep = snapshotPlanDraftPositions(this.draftTaskIds, this.positions);
@@ -597,6 +603,7 @@ export class TaskPositionsStore {
           this.positions.set(taskId, position);
         });
         replacePlanAnchors(this.planAnchors, anchors);
+        replacePlanPatchPreviews(this.planPatchPreviews, previews);
       });
     } catch (error) {
       console.error('Error reconciling remote positions:', error);

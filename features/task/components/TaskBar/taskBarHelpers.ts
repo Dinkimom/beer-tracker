@@ -302,6 +302,25 @@ export function resolveTaskBarZIndex(params: {
   return ZIndex.stickyInContent;
 }
 
+export function taskBarHasPendingApprovalToolbar(input: {
+  planPatchToolbar: boolean;
+  showNoteToolbar: boolean;
+  swimlaneCommentId: string | null;
+}): boolean {
+  return input.planPatchToolbar || (input.showNoteToolbar && input.swimlaneCommentId != null);
+}
+
+/** Карточка с тулбаром под ней должна быть выше карточек следующих строк. Drag и меню остаются выше. */
+export function resolveVisibleTaskBarZIndex(input: {
+  pendingApprovalToolbar: boolean;
+  taskBarZIndex: number;
+}): number {
+  if (!input.pendingApprovalToolbar) {
+    return input.taskBarZIndex;
+  }
+  return Math.max(input.taskBarZIndex, ZIndex.agentPendingApproval);
+}
+
 /** Root style: при overlay-drag source полностью hidden, чтобы drop-preview был виден в слоте. */
 export function resolveTaskBarRootStyle(params: {
   hideSourceForOverlay: boolean;

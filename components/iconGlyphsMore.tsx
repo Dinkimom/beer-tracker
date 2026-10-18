@@ -28,20 +28,53 @@ export const iconGlyphsMore: Record<string, ReactNode> = {
       <path d="M6 20v-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </>
   ),
-  /** Три ряда в скруглённой карточке, как бэклог в Jira. */
+  /** Три строки в карточке. Контур, как у соседних вкладок шапки: заливка читалась темнее. */
   backlog: (
-    <path
-      clipRule="evenodd"
-      d="M5 2.75h14a2.25 2.25 0 0 1 2.25 2.25v14a2.25 2.25 0 0 1-2.25 2.25H5a2.25 2.25 0 0 1-2.25-2.25V5A2.25 2.25 0 0 1 5 2.75zM4.6 4.6h14.8v3.8H4.6zM4.6 10.1h14.8v3.8H4.6zM4.6 15.6h14.8v3.8H4.6z"
-      fill="currentColor"
-      fillRule="evenodd"
-    />
+    <>
+      <rect
+        fill="none"
+        height="18"
+        rx="2.5"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        width="18"
+        x="3"
+        y="3"
+      />
+      <path
+        d="M7 8h10M7 12h10M7 16h10"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </>
   ),
   /** Две сдвинутые плашки, как хронология в Jira. */
   timeline: (
     <>
-      <rect fill="none" height="7.5" rx="2.5" stroke="currentColor" strokeWidth="1.75" width="16.5" x="1.5" y="2.75" />
-      <rect fill="none" height="7.5" rx="2.5" stroke="currentColor" strokeWidth="1.75" width="16.5" x="6" y="13.75" />
+      <rect
+        fill="none"
+        height="7.5"
+        rx="2.5"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        width="16.5"
+        x="1.5"
+        y="2.75"
+      />
+      <rect
+        fill="none"
+        height="7.5"
+        rx="2.5"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        width="16.5"
+        x="6"
+        y="13.75"
+      />
     </>
   ),
   'trend-down': (

@@ -22,6 +22,8 @@ type AnnotationDeleteSurface = 'diagram' | 'photo' | 'sticky';
 interface SwimlaneCommentDeleteButtonProps {
   color?: StickyNoteColor | string | null;
   surface?: AnnotationDeleteSurface;
+  /** Крутить крестик тем же углом, что и лист. Крестик лежит вне бумаги. */
+  tilt?: boolean;
   onDelete: (e: MouseEvent) => void;
 }
 
@@ -43,11 +45,12 @@ export function SwimlaneCommentDeleteButton({
   color,
   onDelete,
   surface = 'sticky',
+  tilt = false,
 }: SwimlaneCommentDeleteButtonProps) {
   const { t } = useI18n();
   const isDark = useDocumentDarkClass();
   const paint = resolveDeleteButtonPaint(surface, color, isDark);
-  return (
+  const button = (
     <Button
       aria-label={t('comments.deleteAria')}
       className={getStickyNoteDeleteButtonClasses()}
@@ -70,5 +73,14 @@ export function SwimlaneCommentDeleteButton({
     >
       <Icon className="!h-2.5 !w-2.5" name="close" size="sm" />
     </Button>
+  );
+  if (!tilt) return button;
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 sticky-note-delete-tilt"
+      style={{ zIndex: ZIndex.popupContent }}
+    >
+      {button}
+    </div>
   );
 }

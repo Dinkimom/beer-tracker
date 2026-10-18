@@ -363,6 +363,7 @@ export function SprintPlannerView({
               {viewMode === 'compact' || viewMode === 'full' || viewMode === 'features' ? (
                 <SwimlanePlacementToolbar
                   pendingAgentNoteIds={selectPendingApprovalCommentIds(comments)}
+                  sprintId={selectedSprintId}
                   variant={viewMode === 'features' ? 'features' : 'people'}
                   onApproveAgentNotes={handlers.handleCommentApproveAll}
                   onRejectAgentNotes={handlers.handleCommentRejectAll}

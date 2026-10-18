@@ -34,9 +34,9 @@ describe('stickyNoteSurfaceClasses', () => {
     expect(getStickyNoteLocalDraftSurfaceClasses()).toContain('!rounded-none');
   });
 
-  it('renders sticky notes without drop shadow', () => {
-    expect(getStickyNoteLocalDraftSurfaceClasses()).toContain('shadow-none');
-    expect(getStickyNoteLocalDraftSurfaceClasses()).not.toContain('sticky-note-card');
+  it('renders sticky notes as paper sheets', () => {
+    expect(getStickyNoteLocalDraftSurfaceClasses()).toContain('sticky-note-paper');
+    expect(getStickyNoteLocalDraftSurfaceClasses()).not.toContain('shadow-none');
   });
 
   it('renders sticky notes flat without perspective skew', () => {

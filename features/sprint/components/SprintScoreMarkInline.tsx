@@ -38,8 +38,9 @@ export function clampSprintScoreMark(mark: number): number {
 
 const STATIC_SHELL =
   'inline-flex items-center bg-gray-100 dark:bg-gray-700/70';
+/** Кнопка в шапке планера: полупрозрачная заливка без кромки — это не поле ввода. */
 const BUTTON_SHELL =
-  `${STATIC_SHELL} cursor-pointer border-0 transition-all duration-200 hover:bg-gray-200 active:scale-[0.98] active:bg-gray-300 dark:hover:bg-gray-600 dark:active:bg-gray-500`;
+  'inline-flex items-center cursor-pointer border-0 bg-black/[0.05] transition-all duration-200 hover:bg-black/10 active:scale-[0.98] active:bg-black/[0.16] dark:bg-black/25 dark:hover:bg-black/40 dark:active:bg-black/50';
 
 export function SprintScoreMarkInline({
   ariaLabel,

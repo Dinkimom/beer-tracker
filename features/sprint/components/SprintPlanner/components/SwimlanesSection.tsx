@@ -36,6 +36,10 @@ import {
   buildSwimlaneInProgressFactSegmentsForAssignee,
   type SwimlaneInProgressFactSegment,
 } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
+import {
+  planPatchPreviewElementId,
+  revealPlanPatchElement,
+} from '@/features/swimlane/utils/planPatchPreviewFocus';
 import { isSwimlaneLinkingSessionActive } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
 import { useRootStore } from '@/lib/layers';
 import {
@@ -280,13 +284,21 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     (taskId: string | null) => {
       if (dragAndDrop.isDraggingTask || taskId == null) {
         sprintPlannerUi.setHoveredTaskId(null);
+        sprintPlannerUi.setPlanPatchFocusTaskId(null);
         syncCardShadowHover(null);
         return;
       }
       sprintPlannerUi.setHoveredTaskId(taskId);
       syncCardShadowHover(taskId);
+      const preview = positionsStore.planPatchPreviews.get(taskId);
+      if (preview && !preview.remove) {
+        sprintPlannerUi.setPlanPatchFocusTaskId(taskId);
+        revealPlanPatchElement(planPatchPreviewElementId(taskId));
+        return;
+      }
+      sprintPlannerUi.setPlanPatchFocusTaskId(null);
     },
-    [dragAndDrop.isDraggingTask, sprintPlannerUi, syncCardShadowHover]
+    [dragAndDrop.isDraggingTask, positionsStore, sprintPlannerUi, syncCardShadowHover]
   );
 
   const {

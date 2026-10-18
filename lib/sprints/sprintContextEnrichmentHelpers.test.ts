@@ -4,6 +4,7 @@ import {
   boardAffinityScore,
   buildSprintContextAgenda,
   buildSprintContextCalendarDays,
+  buildSprintContextWeekendDays,
   collectSprintContextWarnings,
   parseStaffUuidFromAssigneeId,
 } from './sprintContextEnrichmentHelpers';
@@ -22,6 +23,22 @@ describe('buildSprintContextCalendarDays', () => {
   it('skips weekends', () => {
     const days = buildSprintContextCalendarDays('2026-09-11', '2026-09-14');
     expect(days.map((d) => d.date)).toEqual(['2026-09-11', '2026-09-14']);
+  });
+});
+
+describe('buildSprintContextWeekendDays', () => {
+  it('lists Saturday and Sunday inside the sprint window', () => {
+    expect(buildSprintContextWeekendDays('2026-09-11', '2026-09-14')).toEqual([
+      { date: '2026-09-12', weekday: 'saturday' },
+      { date: '2026-09-13', weekday: 'sunday' },
+    ]);
+  });
+
+  it('includes a weekend that is the sprint start and returns none for a weekday-only window', () => {
+    expect(buildSprintContextWeekendDays('2026-10-18', '2026-10-19')).toEqual([
+      { date: '2026-10-18', weekday: 'sunday' },
+    ]);
+    expect(buildSprintContextWeekendDays('2026-09-07', '2026-09-11')).toEqual([]);
   });
 });
 

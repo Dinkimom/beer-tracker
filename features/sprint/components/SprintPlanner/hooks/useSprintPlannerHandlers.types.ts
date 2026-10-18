@@ -12,6 +12,7 @@ export interface UseSprintPlannerHandlersProps {
     getTask: (taskId: string) => Task | undefined;
     removeTask: (taskId: string) => void;
   } | null>;
+  comments: Comment[];
   developersManagement: {
     handleDragEnd: (activeId: string, overId: string) => void;
     sortedDevelopers: Developer[];

@@ -15,68 +15,82 @@ interface StickyNotePaint {
 
 const STICKY_NOTE_PAINT_LIGHT: Record<StickyNoteColor, StickyNotePaint> = {
   yellow: {
-    background: '#fef08a',
-    border: '#f3e27a',
+    background: '#ffe56a',
+    border: '#f4d454',
     text: '#422006',
-    swatch: '#fde047',
+    swatch: '#ffd84a',
   },
   pink: {
-    background: '#fbcfe8',
-    border: '#f3b7d6',
+    background: '#ffd4ea',
+    border: '#f5c0dc',
     text: '#500724',
-    swatch: '#f9a8d4',
+    swatch: '#ffc0e0',
   },
   green: {
-    background: '#bbf7d0',
-    border: '#9ee8b8',
+    background: '#c8f7d6',
+    border: '#aeeec4',
     text: '#052e16',
-    swatch: '#86efac',
+    swatch: '#a6efbe',
   },
   blue: {
-    background: '#bae6fd',
-    border: '#9ad6f5',
+    background: '#c5ecff',
+    border: '#aadff8',
     text: '#082f49',
-    swatch: '#7dd3fc',
+    swatch: '#96d8fb',
   },
   gray: {
-    background: '#e5e7eb',
-    border: '#d1d5db',
+    background: '#eef0f3',
+    border: '#e0e3e8',
     text: '#111827',
-    swatch: '#d1d5db',
+    swatch: '#d8dce2',
   },
 };
 
+/**
+ * Тёмная тема: тот же чистый оттенок, что у светлого листа, но ниже по светлоте.
+ * Насыщенность не снижаем — иначе жёлтый уходит в оливково-коричневый.
+ * Чернила тёмные на яркой краске и светлые там, где бумага сама тёмная.
+ */
 const STICKY_NOTE_PAINT_DARK: Record<StickyNoteColor, StickyNotePaint> = {
   yellow: {
-    background: '#a16207',
-    border: '#eab308',
-    text: '#fefce8',
-    swatch: '#ca8a04',
+    background: '#e0bb00',
+    border: '#bd9d00',
+    text: '#2a1604',
+    swatch: '#ffd500',
   },
   pink: {
-    background: '#be185d',
-    border: '#ec4899',
-    text: '#fdf2f8',
-    swatch: '#db2777',
+    background: '#b6206b',
+    border: '#981b59',
+    text: '#fff4f8',
+    swatch: '#d5207a',
   },
   green: {
-    background: '#15803d',
-    border: '#22c55e',
-    text: '#f0fdf4',
-    swatch: '#16a34a',
+    background: '#28c361',
+    border: '#22a552',
+    text: '#042e16',
+    swatch: '#2fda6e',
   },
   blue: {
-    background: '#0369a1',
-    border: '#0ea5e9',
-    text: '#f0f9ff',
-    swatch: '#0284c7',
+    background: '#14a7eb',
+    border: '#128fca',
+    text: '#062033',
+    swatch: '#2cb3f2',
   },
   gray: {
-    background: '#4b5563',
-    border: '#9ca3af',
-    text: '#f9fafb',
-    swatch: '#6b7280',
+    background: '#929baa',
+    border: '#7e899a',
+    text: '#111827',
+    swatch: '#a0aaba',
   },
+};
+
+/** Насыщенный оттенок для плюса и грипа: на светлой бумаге бледный swatch теряется. */
+const STICKY_NOTE_MARK: Record<StickyNoteColor, string> = {
+  yellow: '#a16207',
+  pink: '#be185d',
+  green: '#15803d',
+  blue: '#0369a1',
+  gray: '#4b5563',
 };
 
 interface StickyNoteResizeHandlePaint {
@@ -115,15 +129,9 @@ export function getStickyNoteSwatchStyle(color: StickyNoteColor, isDark = false)
   return { backgroundColor: paint.swatch };
 }
 
-/**
- * Плюс на превью: оттенок выбранного цвета, контрастный к бумаге.
- * Берём swatch соседней темы — на светлой бумаге тёмный чип, на тёмной светлый.
- */
-export function getStickyNoteGhostGlyphColor(
-  color?: StickyNoteColorInput,
-  isDark = false
-): string {
-  return getStickyNotePaint(color, !isDark).swatch;
+/** Плюс на превью: насыщенный оттенок листа, читаемый на светлой бумаге в обеих темах. */
+export function getStickyNoteGhostGlyphColor(color?: StickyNoteColorInput): string {
+  return STICKY_NOTE_MARK[parseStickyNoteColor(color)];
 }
 
 /** Превью постановки заметки: бумага выбранного цвета и пунктир той же толщины, что у карточки. */
@@ -138,7 +146,7 @@ export function getStickyNoteDashedGhostStyle(
     borderRadius: 0,
     borderStyle: 'dashed',
     borderWidth: 1,
-    color: getStickyNoteGhostGlyphColor(color, isDark),
+    color: isDark ? paint.text : getStickyNoteGhostGlyphColor(color),
   };
 }
 
@@ -165,17 +173,16 @@ function hexToRgba(hex: string, alpha: number): string {
 /**
  * Цвета рукоятки ресайза: та же палитра, что у карточки (без Tailwind JIT).
  * Фон — акцент бордера с прозрачностью, как /60 и /20 у карточек задач.
- * Линии грипа — заливка соседней темы, чтобы оттенок совпадал с заметкой и был контрастен.
+ * Линии грипа — насыщенный оттенок листа, чтобы они читались на светлой бумаге.
  */
 export function getStickyNoteResizeHandlePaint(
   color?: StickyNoteColorInput,
   isDark = false
 ): StickyNoteResizeHandlePaint {
   const paint = getStickyNotePaint(color, isDark);
-  const contrastFill = getStickyNotePaint(color, !isDark).background;
   return {
     activeBackground: hexToRgba(paint.border, 0.6),
     hoverBackground: hexToRgba(paint.border, 0.2),
-    line: contrastFill,
+    line: isDark ? paint.text : STICKY_NOTE_MARK[parseStickyNoteColor(color)],
   };
 }

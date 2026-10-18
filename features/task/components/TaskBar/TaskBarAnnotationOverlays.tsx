@@ -2,7 +2,7 @@
 
 import { StickyNoteReactions } from '@/features/comments/components/StickyNoteReactions';
 import { SwimlaneCommentDeleteButton } from '@/features/comments/components/SwimlaneCommentDeleteButton';
-import { SwimlaneStickyNotePin } from '@/features/comments/components/SwimlaneStickyNotePin';
+import { playStickyNoteExit } from '@/features/comments/utils/stickyNoteExit';
 
 function resolveAnnotationDeleteSurface(
   isDiagramCard: boolean,
@@ -25,7 +25,6 @@ interface TaskBarAnnotationOverlaysProps {
   showCommentDelete: boolean;
   showDraftNoteDelete?: boolean;
   showImageDelete: boolean;
-  showStickyNotePin: boolean;
   showStickyNoteReactions: boolean;
   stickyNoteColor?: string | null;
   swimlaneCommentId: string | null;
@@ -46,7 +45,6 @@ export function TaskBarAnnotationOverlays({
   showCommentDelete,
   showDraftNoteDelete = false,
   showImageDelete,
-  showStickyNotePin,
   showStickyNoteReactions,
   stickyNoteColor,
   swimlaneCommentId,
@@ -54,7 +52,6 @@ export function TaskBarAnnotationOverlays({
 }: TaskBarAnnotationOverlaysProps) {
   return (
     <>
-      {showStickyNotePin ? <SwimlaneStickyNotePin color={stickyNoteColor} /> : null}
       {showStickyNoteReactions ? (
         <StickyNoteReactions
           hideAddTrigger={isResizing || readOnly}
@@ -63,7 +60,19 @@ export function TaskBarAnnotationOverlays({
           onTaskHoverClear={onTaskHover ? () => onTaskHover(null) : undefined}
         />
       ) : null}
-      {showCommentDelete && swimlaneCommentId != null ? (
+      {showCommentDelete && swimlaneCommentId != null && !isDiagramCard && !isPhotoCard ? (
+        <SwimlaneCommentDeleteButton
+          color={stickyNoteColor}
+          surface="sticky"
+          tilt
+          onDelete={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onCommentDelete?.(swimlaneCommentId);
+          }}
+        />
+      ) : null}
+      {showCommentDelete && swimlaneCommentId != null && (isDiagramCard || isPhotoCard) ? (
         <SwimlaneCommentDeleteButton
           color={stickyNoteColor}
           surface={resolveAnnotationDeleteSurface(isDiagramCard, isPhotoCard)}
@@ -78,10 +87,13 @@ export function TaskBarAnnotationOverlays({
         <SwimlaneCommentDeleteButton
           color={stickyNoteColor}
           surface="sticky"
+          tilt
           onDelete={(event) => {
             event.preventDefault();
             event.stopPropagation();
-            onDeleteLocalImage?.(taskId);
+            playStickyNoteExit(taskId, () => {
+              onDeleteLocalImage?.(taskId);
+            });
           }}
         />
       ) : null}

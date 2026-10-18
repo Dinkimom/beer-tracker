@@ -39,6 +39,7 @@ async function handleMcp(request: NextRequest): Promise<Response> {
     sessionIdGenerator: undefined,
   });
   const server = createSprintContextMcpServer({
+    mcpClientId: auth.mcpClientId,
     organizationId: auth.ctx.organizationId,
     profile: auth.profile,
     userId: auth.ctx.userId,

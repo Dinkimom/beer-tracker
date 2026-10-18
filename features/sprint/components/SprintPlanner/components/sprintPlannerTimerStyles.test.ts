@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isSprintPlannerTimerActiveStatus,
   SPRINT_PLANNER_TIMER_POPOVER_CLASS,
+  sprintPlannerGlassIconButtonClassName,
   sprintPlannerTimerTriggerClassName,
 } from './sprintPlannerTimerStyles';
 
@@ -39,6 +40,9 @@ describe('sprintPlannerTimerStyles', () => {
     expect(open).toContain('bg-black/10');
     expect(open).not.toContain('bg-gray-100');
     const idle = sprintPlannerTimerTriggerClassName('idle', false, 'glass');
+    expect(idle).toBe(sprintPlannerGlassIconButtonClassName());
+    expect(idle).toContain('text-gray-500');
+    expect(idle).toContain('hover:text-gray-800');
     expect(idle).toContain('hover:bg-black/10');
     expect(idle).not.toContain('hover:bg-gray-100');
   });

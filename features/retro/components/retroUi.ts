@@ -16,12 +16,12 @@ export const retroFactsTableClass =
 export const retroFactsPairGridClass =
   'grid grid-cols-[minmax(0,1fr)_4.75rem_3.25rem] items-baseline gap-2';
 
-/** Колонка ретро: тот же glass-жёлоб, что у канбана. */
+/** Колонка ретро: тот же жёлоб, что у канбана, но фон прозрачнее — стекло читается. */
 export const retroListClass =
-  'kanban-column-glass flex max-h-full w-[280px] shrink-0 flex-col overflow-hidden rounded-xl border border-gray-200 text-gray-800 dark:border-white/10 dark:text-gray-100';
+  'retro-column-glass flex max-h-full w-[280px] shrink-0 flex-col overflow-hidden rounded-xl border border-gray-200 text-gray-800 dark:border-white/10 dark:text-gray-100';
 
 export const retroListDropClass =
-  'kanban-column-glass flex max-h-full w-[280px] shrink-0 flex-col overflow-hidden rounded-xl border border-blue-400/70 !bg-blue-500/[0.1] text-gray-800 dark:border-blue-400/50 dark:!bg-blue-500/15 dark:text-gray-100';
+  'retro-column-glass flex max-h-full w-[280px] shrink-0 flex-col overflow-hidden rounded-xl border border-blue-400/70 !bg-blue-500/[0.1] text-gray-800 dark:border-blue-400/50 dark:!bg-blue-500/15 dark:text-gray-100';
 
 /** Карточка на сером/glass-жёлобе — как канбан. */
 export const retroCardSurfaceClass =

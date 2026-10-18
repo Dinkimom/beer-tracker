@@ -12,7 +12,7 @@ import { getPreviewBorderColor, resolvePaletteStatusKey } from '@/utils/statusCo
 /** Оболочка превью DnD: у задач скругление, у заметок — прямые углы (без clip rounded-lg). */
 export function getSwimlaneDragOverlayShellClass(isStickyNote: boolean, isPhotoCard = false): string {
   const radiusClass = getSwimlaneCardRadiusClass(isPhotoCard, isStickyNote);
-  const overflowClass = isPhotoCard ? 'overflow-visible' : 'overflow-hidden';
+  const overflowClass = isPhotoCard || isStickyNote ? 'overflow-visible' : 'overflow-hidden';
   return `box-border h-full w-full min-w-0 ${overflowClass} ${radiusClass} shadow-xl`;
 }
 

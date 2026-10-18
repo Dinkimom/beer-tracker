@@ -17,7 +17,7 @@ export const Settings: Story = {
   args: {
     title: 'Настройки',
     type: 'button',
-    children: <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" name="settings" />,
+    children: <Icon className="h-4 w-4" name="settings" />,
   },
 };
 

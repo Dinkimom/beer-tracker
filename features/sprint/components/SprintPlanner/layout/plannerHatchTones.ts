@@ -46,20 +46,23 @@ interface EmojiPatternSlot {
   y: number;
 }
 
-/** Значки целиком помещаются в полосу одной карточки, шаг и поворот разные. */
+/**
+ * Две строки по три значка. y — базовая линия.
+ * Между глифами и на стыке повтора тайла остаётся зазор, поворот их не сводит.
+ */
 const EMOJI_PATTERN_SLOTS: readonly EmojiPatternSlot[] = [
-  { emojiIndex: 0, o: 1, rotate: -14, size: 20, x: 16, y: 34 },
-  { emojiIndex: 2, o: 0.68, rotate: 16, size: 15, x: 78, y: 64 },
-  { emojiIndex: 1, o: 0.9, rotate: 7, size: 18, x: 132, y: 30 },
-  { emojiIndex: 0, o: 0.52, rotate: -20, size: 14, x: 188, y: 68 },
-  { emojiIndex: 2, o: 0.84, rotate: 11, size: 17, x: 228, y: 38 },
-  { emojiIndex: 1, o: 0.62, rotate: -8, size: 16, x: 48, y: 50 },
+  { emojiIndex: 0, o: 1, rotate: -14, size: 20, x: 14, y: 32 },
+  { emojiIndex: 2, o: 0.68, rotate: 16, size: 15, x: 100, y: 32 },
+  { emojiIndex: 1, o: 0.9, rotate: 7, size: 18, x: 186, y: 32 },
+  { emojiIndex: 1, o: 0.62, rotate: -8, size: 16, x: 56, y: 66 },
+  { emojiIndex: 0, o: 0.52, rotate: -20, size: 14, x: 142, y: 66 },
+  { emojiIndex: 2, o: 0.84, rotate: 11, size: 17, x: 228, y: 66 },
 ];
 
 /** Череп и надгробие в колонке за концом недели, если карточка вылезла за сетку. */
 const OVERFLOW_GRAVE_EMOJIS = ['💀', '🪦'] as const;
 /** Выходной / нерабочий день на свимлейне — тот же scatter, что у отсутствий. */
-const WEEKEND_EMOJIS = ['😴', '☕', '🏡'] as const;
+export const WEEKEND_EMOJIS = ['😴', '☕', '🏡'] as const;
 
 interface EmojiPatternSpec {
   darkOpacity: number;

@@ -11,10 +11,12 @@ import {
   isAcceptableRetroImageDataUrl,
   RETRO_COLUMN_PRESETS,
   RETRO_COLUMN_TITLE_MAX_LENGTH,
+  RETRO_COMMENT_AUTHOR_ID_MAX_LENGTH,
   RETRO_COMMENT_AUTHOR_MAX_LENGTH,
   RETRO_COMMENT_MAX_LENGTH,
   RETRO_COMMENTS_MAX_COUNT,
   RETRO_NOTE_MAX_LENGTH,
+  retroCommentAvatarUrl,
   type RetroBoard,
   type RetroCard,
   type RetroCardComment,
@@ -106,12 +108,24 @@ function parseComment(raw: unknown): RetroCardComment | null {
   const id = readId(raw.id);
   const text = readBoundedString(raw.text, RETRO_COMMENT_MAX_LENGTH).trim();
   if (!id || !text) return null;
+  const authorAvatarUrl = retroCommentAvatarUrl(
+    typeof raw.authorAvatarUrl === 'string' ? raw.authorAvatarUrl : undefined
+  );
+  const authorId = readAuthorId(raw.authorId);
   return {
     authorName: readBoundedString(raw.authorName, RETRO_COMMENT_AUTHOR_MAX_LENGTH).trim(),
     createdAt: readCreatedAt(raw.createdAt),
     id,
     text,
+    ...(authorAvatarUrl ? { authorAvatarUrl } : {}),
+    ...(authorId ? { authorId } : {}),
   };
+}
+
+function readAuthorId(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim().slice(0, RETRO_COMMENT_AUTHOR_ID_MAX_LENGTH);
+  return trimmed || undefined;
 }
 
 function readComments(value: unknown): RetroCardComment[] {
@@ -165,6 +179,7 @@ function parseCard(raw: unknown): RetroCard | null {
   if (kind === 'image' && !imageDataUrl) return null;
   if (kind !== 'image' && !text.trim()) return null;
   return {
+    ...readCardAuthor(raw),
     carriesToNext: raw.carriesToNext === true && kind === 'agreement',
     color: readNoteColor(raw.color, kind),
     columnId,
@@ -176,6 +191,18 @@ function parseCard(raw: unknown): RetroCard | null {
     originSprintId: readSprintId(raw.originSprintId),
     reactions: kind === 'image' ? [] : readReactions(raw.reactions),
     text: kind === 'image' ? '' : text.trim(),
+  };
+}
+
+function readCardAuthor(raw: Record<string, unknown>): Pick<RetroCard, 'authorAvatarUrl' | 'authorId' | 'authorName'> {
+  const authorName = readBoundedString(raw.authorName, RETRO_COMMENT_AUTHOR_MAX_LENGTH).trim();
+  if (!authorName) return {};
+  const authorId = readAuthorId(raw.authorId);
+  const authorAvatarUrl = retroCommentAvatarUrl(typeof raw.authorAvatarUrl === 'string' ? raw.authorAvatarUrl : undefined);
+  return {
+    authorName,
+    ...(authorId ? { authorId } : {}),
+    ...(authorAvatarUrl ? { authorAvatarUrl } : {}),
   };
 }
 

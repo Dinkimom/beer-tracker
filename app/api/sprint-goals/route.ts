@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
 import { insertSprintGoal, listSprintGoals } from '@/lib/sprintGoals';
+import { listPlanPatchGoalPreviews } from '@/lib/sprints/sprintPlanPatchGoalPreviewRepository';
 
 /** GET: список целей по sprintId, goalType */
 export async function GET(request: NextRequest) {
@@ -39,11 +40,17 @@ export async function GET(request: NextRequest) {
 
     const checklistDone = checklistItems.filter((i) => i.checked).length;
     const checklistTotal = checklistItems.length;
+    const goalPreviews = await listPlanPatchGoalPreviews({
+      goalType,
+      organizationId,
+      sprintId,
+    });
 
     return NextResponse.json({
       checklistItems,
       checklistDone,
       checklistTotal,
+      goalPreviews,
     });
   } catch (error) {
     console.error('Error fetching sprint goals:', error);

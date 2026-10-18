@@ -22,6 +22,7 @@ import {
   upsertTaskPositionRecord,
 } from '@/lib/sprints';
 import { listPlanAnchorsForSprint } from '@/lib/sprints/planAnchorRepository';
+import { listPlanPatchPositionPreviews } from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
 import { resolveTrackerSprintBoardId } from '@/lib/trackerApi';
 import { TaskPositionSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
@@ -62,8 +63,9 @@ export async function GET(
       attachSegmentsToPositions(positions, segmentsByTask);
     }
     const planAnchors = await listPlanAnchorsForSprint({ organizationId, sprintId });
+    const planPatchPreviews = await listPlanPatchPositionPreviews({ organizationId, sprintId });
 
-    return NextResponse.json({ planAnchors, positions });
+    return NextResponse.json({ planAnchors, planPatchPreviews, positions });
   } catch (error) {
     return handleApiError(error, 'fetch positions', {
       forwardStatuses: TRACKER_UPSTREAM_FORWARD_STATUSES,

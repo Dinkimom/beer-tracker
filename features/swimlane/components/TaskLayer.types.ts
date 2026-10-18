@@ -31,6 +31,10 @@ export interface TaskLayerProps {
   layerHeight: number;
   linkingFromTaskId?: string | null;
   linkSourceEndCell?: number | null;
+  /** Дорожка, на которую агент предлагает поставить карточку. */
+  planPatchAssigneeId?: string;
+  planPatchSprintId?: number | null;
+  planPatchTasksMap?: Map<string, Task>;
   positionedTasks: Array<{ task: Task; position: TaskPosition }>;
   qaTasksMap?: Map<string, Task>;
   quickAddBoardId?: number | null;

@@ -5,10 +5,13 @@ import type { RetroSprintOrderItem, RetroStore } from '@/lib/retro/retroBoard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef } from 'react';
 
+import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { fetchRetroColumnTemplate } from '@/lib/api/retroColumnTemplate';
 import { saveRetroBoard } from '@/lib/api/sprints';
 import {
   type RetroBoard,
+  type RetroCommentAuthor,
   type RetroColumn,
   addRetroCardComment,
   addRetroColumn,
@@ -29,6 +32,8 @@ import {
 } from '@/lib/retro/retroBoard';
 import { mergeRetroBoards } from '@/lib/retro/retroBoardMerge';
 
+import { retroNoteAuthor } from '../retroNoteAuthor';
+
 import { loadRetroBoard } from './loadRetroBoard';
 import {
   commitRetroBoardSync,
@@ -47,6 +52,8 @@ export function useRetroBoard(
   organizationId: string | null
 ) {
   const queryClient = useQueryClient();
+  const { data: user } = useCurrentUser();
+  const { isDemoPlanner } = useDemoPlannerShell();
   const adjacent = useMemo(
     () => resolveAdjacentSprintIds(sprints, sprintId),
     [sprintId, sprints]
@@ -128,10 +135,12 @@ export function useRetroBoard(
     [commit, sprintId]
   );
   const addNote = useCallback(
-    (columnId: string, text: string) => {
-      commit((current) => addRetroNote(current, sprintId, columnId, text));
+    (columnId: string, text: string, cardId?: string) => {
+      commit((current) =>
+        addRetroNote(current, sprintId, columnId, text, cardId, retroNoteAuthor(user, isDemoPlanner))
+      );
     },
-    [commit, sprintId]
+    [commit, isDemoPlanner, sprintId, user]
   );
   const moveCard = useCallback(
     (cardId: string, columnId: string) => {
@@ -158,8 +167,8 @@ export function useRetroBoard(
     [commit]
   );
   const addComment = useCallback(
-    (ownerSprintId: number, cardId: string, text: string, authorName: string) => {
-      commit((current) => addRetroCardComment(current, ownerSprintId, cardId, text, authorName));
+    (ownerSprintId: number, cardId: string, text: string, author: RetroCommentAuthor) => {
+      commit((current) => addRetroCardComment(current, ownerSprintId, cardId, text, author));
     },
     [commit]
   );

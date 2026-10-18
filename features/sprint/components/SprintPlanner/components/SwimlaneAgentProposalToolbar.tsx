@@ -1,5 +1,6 @@
 'use client';
 
+import { McpOAuthClientMark } from '@/app/mcp/oauth/consent/McpOAuthClientMark';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -8,9 +9,13 @@ import {
   FLOATING_MENU_SHELL,
   FLOATING_TOOLBAR_GLASS,
 } from '@/features/context-menu/contextMenuClasses';
+import { mcpOAuthClientBrandName, type McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 interface SwimlaneAgentProposalToolbarProps {
+  clientBrand?: McpOAuthClientBrand;
+  goalPreviewCount?: number;
   pendingCommentIds: readonly string[];
+  positionPreviewCount?: number;
   onApproveAll: (commentIds: readonly string[]) => void;
   onRejectAll: (commentIds: readonly string[]) => void;
 }
@@ -18,14 +23,19 @@ interface SwimlaneAgentProposalToolbarProps {
 const ACTION_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !gap-1.5 !rounded-md !px-2 !py-0 text-xs font-medium`;
 
 export function SwimlaneAgentProposalToolbar({
+  clientBrand,
+  goalPreviewCount = 0,
   pendingCommentIds,
+  positionPreviewCount = 0,
   onApproveAll,
   onRejectAll,
 }: SwimlaneAgentProposalToolbarProps) {
   const { t } = useI18n();
-  if (pendingCommentIds.length === 0) {
+  if (pendingCommentIds.length === 0 && positionPreviewCount === 0 && goalPreviewCount === 0) {
     return null;
   }
+  const agentName = clientBrand ? mcpOAuthClientBrandName(clientBrand) : null;
+  const label = agentName ?? t('comments.agentDraft');
   return (
     <div
       aria-label={t('comments.agentProposalAria')}
@@ -36,8 +46,12 @@ export function SwimlaneAgentProposalToolbar({
       <span
         className={`${CONTEXT_MENU_GHOST_BUTTON_RESET} inline-flex h-6 items-center gap-1.5 px-2 text-xs font-medium text-gray-700 dark:text-gray-300`}
       >
-        <Icon className="h-3.5 w-3.5" name="sparkles" />
-        {t('comments.agentDraft')}
+        {clientBrand && agentName ? (
+          <McpOAuthClientMark brand={clientBrand} compact label={label} />
+        ) : (
+          <Icon className="h-3.5 w-3.5" name="sparkles" />
+        )}
+        {label}
       </span>
       <Button
         aria-label={t('comments.agentApproveAll')}

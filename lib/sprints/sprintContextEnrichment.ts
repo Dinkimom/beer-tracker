@@ -15,6 +15,7 @@ import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity'
 import {
   buildSprintContextAgenda,
   buildSprintContextCalendarDays,
+  buildSprintContextWeekendDays,
   collectSprintContextWarnings,
   parseStaffUuidFromAssigneeId,
 } from '@/lib/sprints/sprintContextEnrichmentHelpers';
@@ -304,6 +305,10 @@ export async function enrichSprintContextPayload(input: {
     input.payload.meta.sprintWindow?.startDate,
     input.payload.meta.sprintWindow?.endDate
   );
+  const weekendDays = buildSprintContextWeekendDays(
+    input.payload.meta.sprintWindow?.startDate,
+    input.payload.meta.sprintWindow?.endDate
+  );
   if (
     input.payload.meta.sprintWindow?.startDate &&
     input.payload.meta.sprintWindow?.endDate &&
@@ -332,6 +337,7 @@ export async function enrichSprintContextPayload(input: {
     meta: {
       ...input.payload.meta,
       ...(calendarDays.length > 0 ? { calendarDays } : {}),
+      ...(weekendDays.length > 0 ? { weekendDays } : {}),
       ...(warnings.length > 0 ? { warnings } : {}),
     },
     notes,

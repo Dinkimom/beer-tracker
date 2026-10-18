@@ -4,20 +4,6 @@ import toast from 'react-hot-toast';
 
 import { updateSprintStatus } from '@/lib/beerTrackerApi';
 
-function getStartSprintConfirmMessage(allChecksPassed: boolean, t: (key: string) => string): string {
-  if (allChecksPassed) {
-    return t('sidebar.goalsTab.startConfirmAllPassed');
-  }
-  return t('sidebar.goalsTab.startConfirmChecklistIncomplete');
-}
-
-function getStartSprintConfirmText(allChecksPassed: boolean, t: (key: string) => string): string {
-  if (allChecksPassed) {
-    return t('sidebar.goalsTab.startConfirm');
-  }
-  return t('sidebar.goalsTab.startConfirmAnyway');
-}
-
 function applyStartSprintResult(params: {
   onSprintStatusUpdated: (updatedSprint: SprintInfo) => void;
   onTasksReload?: () => void;
@@ -40,7 +26,6 @@ function applyStartSprintResult(params: {
 }
 
 export async function submitStartSprint(params: {
-  allChecksPassed: boolean;
   confirm: (
     message: string,
     options: {
@@ -55,10 +40,10 @@ export async function submitStartSprint(params: {
   sprintInfo: { id: number; version?: number };
   t: (key: string) => string;
 }): Promise<void> {
-  const confirmed = await params.confirm(getStartSprintConfirmMessage(params.allChecksPassed, params.t), {
+  const confirmed = await params.confirm(params.t('sidebar.goalsTab.startConfirmAllPassed'), {
     title: params.t('sidebar.goalsTab.startSprintTitle'),
-    variant: params.allChecksPassed ? 'default' : 'destructive',
-    confirmText: getStartSprintConfirmText(params.allChecksPassed, params.t),
+    variant: 'default',
+    confirmText: params.t('sidebar.goalsTab.startConfirm'),
   });
   if (!confirmed) {
     return;

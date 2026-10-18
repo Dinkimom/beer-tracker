@@ -2,6 +2,7 @@
  * API целей спринта (таблица sprint_goals в beer_tracker)
  */
 
+import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPreview';
 import type { ChecklistItem } from '@/types/tracker';
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
@@ -10,6 +11,7 @@ export interface SprintGoalsResponse {
   checklistDone: number;
   checklistItems: ChecklistItem[];
   checklistTotal: number;
+  goalPreviews?: PlanPatchGoalPreview[];
 }
 
 export async function fetchSprintGoals(

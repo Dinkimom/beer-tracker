@@ -10,7 +10,7 @@ import {
 } from './stickyNoteColor';
 
 describe('stickyNoteColor', () => {
-  it('lists the five supported note colors', () => {
+  it('lists the supported note colors', () => {
     expect(STICKY_NOTE_COLORS).toEqual(['yellow', 'pink', 'green', 'blue', 'gray']);
     expect(STICKY_NOTE_COLORS.every((color) => STICKY_NOTE_COLOR_LABEL_KEYS[color])).toBe(true);
   });
@@ -29,5 +29,6 @@ describe('stickyNoteColor', () => {
     expect(parseOptionalStickyNoteColor(null)).toBeNull();
     expect(parseOptionalStickyNoteColor('not-a-color')).toBeNull();
     expect(parseOptionalStickyNoteColor('gray')).toBe('gray');
+    expect(parseOptionalStickyNoteColor('fire')).toBeNull();
   });
 });

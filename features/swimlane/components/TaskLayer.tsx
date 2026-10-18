@@ -8,10 +8,18 @@ import type { TaskLayerProps } from './TaskLayer.types';
 
 import React, { useEffect, useState } from 'react';
 
+import { TaskLayerPlanPatchPreviews } from '@/features/swimlane/components/TaskLayerPlanPatchPreviews';
 import { TaskLayerPositionedTaskItem } from '@/features/swimlane/components/TaskLayerPositionedTaskItem';
 
 export function TaskLayer(props: TaskLayerProps) {
-  const { positionedTasks, segmentEditTaskId, ...rest } = props;
+  const {
+    planPatchAssigneeId,
+    planPatchSprintId,
+    planPatchTasksMap,
+    positionedTasks,
+    segmentEditTaskId,
+    ...rest
+  } = props;
   const [segmentEditDraftCells, setSegmentEditDraftCells] = useState<boolean[] | null>(null);
 
   useEffect(() => {
@@ -36,6 +44,20 @@ export function TaskLayer(props: TaskLayerProps) {
           task={task}
         />
       ))}
+      {planPatchAssigneeId && planPatchTasksMap ? (
+        <TaskLayerPlanPatchPreviews
+          assigneeId={planPatchAssigneeId}
+          developers={rest.developers}
+          globalNameFilter={rest.globalNameFilter}
+          hasTaskOverlaps={rest.hasTaskOverlaps}
+          layerHeight={rest.layerHeight}
+          sprintId={planPatchSprintId}
+          taskBandTotalHeight={rest.taskBandTotalHeight}
+          taskLayerMap={rest.taskLayerMap}
+          tasksMap={planPatchTasksMap}
+          timelineTotalParts={rest.timelineTotalParts}
+        />
+      ) : null}
     </div>
   );
 }

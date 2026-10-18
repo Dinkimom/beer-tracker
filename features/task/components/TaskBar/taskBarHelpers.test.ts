@@ -15,6 +15,7 @@ import {
   resolveTaskBarInstantGeometryClass,
   resolveTaskBarLongHoverExpand,
   resolveTaskBarZIndex,
+  resolveVisibleTaskBarZIndex,
   scaleTaskBarHeightByDuration,
   shouldCancelInlineEditorOnFocusOut,
   shouldCollapseTaskBarLongHoverExpand,
@@ -305,6 +306,34 @@ describe('resolveTaskBarZIndex', () => {
         ...idle,
         effectiveIsDragging: true,
         hideSourceForOverlay: true,
+      })
+    ).toBe(ZIndex.stickyInContent);
+  });
+});
+
+describe('resolveVisibleTaskBarZIndex', () => {
+  it('lifts a card with an agent toolbar above cards in the rows below', () => {
+    expect(
+      resolveVisibleTaskBarZIndex({
+        pendingApprovalToolbar: true,
+        taskBarZIndex: ZIndex.stickyInContent,
+      })
+    ).toBe(ZIndex.agentPendingApproval);
+    expect(ZIndex.agentPendingApproval).toBeGreaterThan(ZIndex.stickyNote);
+    expect(ZIndex.agentPendingApproval).toBeLessThan(ZIndex.plannerLaneGlass);
+  });
+
+  it('keeps drag and menus above the agent toolbar', () => {
+    expect(
+      resolveVisibleTaskBarZIndex({
+        pendingApprovalToolbar: true,
+        taskBarZIndex: ZIndex.dragPreview,
+      })
+    ).toBe(ZIndex.dragPreview);
+    expect(
+      resolveVisibleTaskBarZIndex({
+        pendingApprovalToolbar: false,
+        taskBarZIndex: ZIndex.stickyInContent,
       })
     ).toBe(ZIndex.stickyInContent);
   });

@@ -5,6 +5,8 @@ export const RETRO_COLUMN_TITLE_MAX_LENGTH = 40;
 export const RETRO_IMAGE_MAX_DATA_URL_CHARS = 450_000;
 export const RETRO_COMMENT_MAX_LENGTH = 1000;
 export const RETRO_COMMENT_AUTHOR_MAX_LENGTH = 120;
+export const RETRO_COMMENT_AUTHOR_ID_MAX_LENGTH = 64;
+export const RETRO_COMMENT_AVATAR_MAX_LENGTH = 2048;
 export const RETRO_COMMENTS_MAX_COUNT = 100;
 
 const RETRO_IMAGE_DATA_URL_PREFIXES = [
@@ -28,11 +30,35 @@ export const RETRO_COLUMN_PRESETS = [
 export type RetroCardKind = 'agreement' | 'image' | 'note';
 export type RetroColumnPreset = (typeof RETRO_COLUMN_PRESETS)[number];
 
+export interface RetroCommentAuthor {
+  avatarUrl?: string | null;
+  name: string;
+  userId?: string;
+}
+
 export interface RetroCardComment {
+  authorAvatarUrl?: string;
+  authorId?: string;
   authorName: string;
   createdAt: string;
   id: string;
   text: string;
+}
+
+/** Оставляет http(s) и корневой путь. javascript: и data: в доску не попадают. */
+export function retroCommentAvatarUrl(value: string | null | undefined): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > RETRO_COMMENT_AVATAR_MAX_LENGTH) return undefined;
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed;
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined;
+  return trimmed;
 }
 
 /** Один голос пользователя за emoji на карточке ретро. */
@@ -50,6 +76,9 @@ export interface RetroColumn {
 }
 
 export interface RetroCard {
+  authorAvatarUrl?: string;
+  authorId?: string;
+  authorName?: string;
   carriesToNext: boolean;
   color: StickyNoteColor | null;
   columnId: string;

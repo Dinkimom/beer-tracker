@@ -90,6 +90,8 @@ const BEER_TRACKER_TABLES = [
   'retro_column_templates',
   'sprint_feature_lanes', // доска «по фичам»: черновые строки и порядок
   'sprint_goals',
+  'plan_patch_position_previews',
+  'plan_patch_goal_previews',
   'sprint_plan_captures',
   'staff',
   'system_roles',

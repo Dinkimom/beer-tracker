@@ -21,3 +21,16 @@ export function resolveMcpOAuthClientBrand(input: {
   }
   return 'generic';
 }
+
+export function mcpOAuthClientBrandName(brand: McpOAuthClientBrand): string | null {
+  if (brand === 'cursor') {
+    return 'Cursor';
+  }
+  if (brand === 'claude') {
+    return 'Claude';
+  }
+  if (brand === 'openai') {
+    return 'OpenAI';
+  }
+  return null;
+}

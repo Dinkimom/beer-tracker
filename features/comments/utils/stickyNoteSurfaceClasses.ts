@@ -6,8 +6,8 @@
 
 const STICKY_NOTE_FONT_CLASS = 'font-excalifont';
 
-/** Форма: прямые углы, без 3D-наклона; в покое без тени (hover-акцент — через TaskCard). */
-const STICKY_NOTE_SHAPE_CLASS = '!rounded-none shadow-none';
+/** Форма листа: прямые углы. Волокно, свет и тень — класс .sticky-note-paper. */
+const STICKY_NOTE_SHAPE_CLASS = '!rounded-none sticky-note-paper';
 
 const STICKY_NOTE_PADDING_CLASS = '!px-4 !pb-1.5 !pt-2';
 

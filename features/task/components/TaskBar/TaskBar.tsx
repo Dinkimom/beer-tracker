@@ -9,7 +9,11 @@ import { observer } from 'mobx-react-lite';
 import React, { useRef, useState } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
+import { useStickyNoteExiting } from '@/features/comments/hooks/useStickyNoteExiting';
+import { stickyNoteExitClassName, stickyNoteExitStyle } from '@/features/comments/utils/stickyNoteExit';
 import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
+import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
@@ -26,7 +30,12 @@ import {
 import { TaskBarAnnotationOverlays } from './TaskBarAnnotationOverlays';
 import { TaskBarDraftSaveButton } from './TaskBarDraftSaveButton';
 import { TaskBarDragBridge } from './TaskBarDragBridge';
-import { resolveTaskBarRootStyle, shouldCancelInlineEditorOnFocusOut } from './taskBarHelpers';
+import {
+  resolveTaskBarRootStyle,
+  resolveVisibleTaskBarZIndex,
+  shouldCancelInlineEditorOnFocusOut,
+  taskBarHasPendingApprovalToolbar,
+} from './taskBarHelpers';
 import { TaskBarOpacityLayer } from './TaskBarOpacityLayer';
 import { TaskBarPendingApprovalToolbar } from './TaskBarPendingApprovalToolbar';
 import { useTaskBarDisplayState } from './useTaskBarDisplayState';
@@ -62,6 +71,8 @@ interface TaskBarProps {
   leftPercent: number;
   /** Обводка в режиме создания связи. */
   linkMode?: 'source' | 'target' | null;
+  /** Карточка предложения: та же задача, геометрия из превью, без перетаскивания. */
+  planPatchGhost?: boolean;
   qaTasksMap?: Map<string, Task>;
   quickAddMenu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & {
     title: string;
@@ -89,7 +100,7 @@ interface TaskBarProps {
   onClick?: (taskId: string) => void;
   onCommentApprove?: (commentId: string) => void;
   onCommentDelete?: (commentId: string) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
+  onCommentUpdate?: (commentId: string, text: string, color?: StickyNoteColor) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
   onDeleteLocalImage?: (taskId: string) => void;
@@ -117,6 +128,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
   htmlAnchorId = `task-${task.id}`,
   swimlaneSegmentSecondary = false,
   linkMode = null,
+  planPatchGhost = false,
   onResize,
   onClick,
   onCommentApprove,
@@ -142,7 +154,13 @@ const TaskBarSurface = observer(function TaskBarSurface({
   swimlaneDragActive,
   swimlaneTimelineTotalParts = WORKING_DAYS * getPartsPerDay(),
 }: TaskBarProps) {
-  const { sprintPlannerUi } = useRootStore();
+  const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
+  const planPatchChrome = resolvePlanPatchTaskBarChrome({
+    focusTaskId: sprintPlannerUi.planPatchFocusTaskId,
+    planPatchGhost,
+    preview: positionsStore.planPatchPreviews.get(task.id),
+    taskId: task.id,
+  });
   const isChooserDraft = isQuickAddChooserDraft(task);
   const resizeDisabled =
     disableResize || disableDragAndResize || isChooserDraft || isSwimlaneWidgetTask(task);
@@ -242,6 +260,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
     !isDiagramCard &&
     !isWidgetCard &&
     (task.localDraftKind === 'comment' || swimlaneCommentId != null);
+  const stickyNoteExiting = useStickyNoteExiting(task.id);
   const cornerStyle = resolveResizeHandleCornerStyle(
     isPhotoCard || isDiagramCard || isWidgetCard,
     isStickyNoteCard
@@ -251,7 +270,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
     showDraftNoteDelete,
     showImageDelete,
     showPendingApprovalToolbar,
-    showStickyNotePin,
     showStickyNoteReactions,
   } = resolveTaskBarAnnotationChrome({
       effectiveIsDragging,
@@ -281,23 +299,33 @@ const TaskBarSurface = observer(function TaskBarSurface({
   return (
     <DiagramNameEditContext.Provider value={onDiagramNameChange}>
     <div
-      className={getTaskBarRootClassName({
+      className={`${getTaskBarRootClassName({
         effectiveIsDragging,
         instantGeometryClass,
         interactionDisabled,
         isAnnotationCard: isStickyNoteCard || isPhotoCard || isDiagramCard || isWidgetCard,
         linkCursorClass,
         shouldExpandByLongHover,
-      })}
+      })}${stickyNoteExitClassName(isStickyNoteCard, stickyNoteExiting)}${planPatchChrome.ringClass}`}
       data-draggable-id={draggableId}
       data-task-id={task.id}
       {...onboardingDataset}
       id={htmlAnchorId}
-      style={resolveTaskBarRootStyle({
-        hideSourceForOverlay,
-        layoutStyle,
-        taskBarZIndex,
-      })}
+      style={{
+        ...resolveTaskBarRootStyle({
+          hideSourceForOverlay,
+          layoutStyle,
+          taskBarZIndex: resolveVisibleTaskBarZIndex({
+            pendingApprovalToolbar: taskBarHasPendingApprovalToolbar({
+              planPatchToolbar: planPatchChrome.toolbarPreview != null,
+              showNoteToolbar: showPendingApprovalToolbar,
+              swimlaneCommentId,
+            }),
+            taskBarZIndex,
+          }),
+        }),
+        ...stickyNoteExitStyle(isStickyNoteCard, stickyNoteExiting, task.id),
+      }}
       onBlur={(event) => {
         const next = event.relatedTarget;
         if (
@@ -325,7 +353,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
         disableResize={resizeDisabled || presenceBlocksMutations}
         dragActivationProps={dragActivationProps}
         effectiveIsDragging={effectiveIsDragging}
-        effectiveOpacity={effectiveOpacity}
+        effectiveOpacity={effectiveOpacity * planPatchChrome.opacityFactor}
         errorTooltip={errorTooltip}
         getPhotoClickSuppress={getPhotoClickSuppress}
         hasQATaskInSwimlane={hasQATaskInSwimlane}
@@ -391,7 +419,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
           showCommentDelete={showCommentDelete}
           showDraftNoteDelete={showDraftNoteDelete}
           showImageDelete={showImageDelete}
-          showStickyNotePin={showStickyNotePin}
           showStickyNoteReactions={showStickyNoteReactions}
           stickyNoteColor={task.stickyNoteColor}
           swimlaneCommentId={swimlaneCommentId}
@@ -401,6 +428,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
           onTaskHover={onTaskHover}
         />
       </TaskBarOpacityLayer>
+      <PlanPatchPendingToolbar preview={planPatchChrome.toolbarPreview} sprintId={selectedSprintId} />
       {showPendingApprovalToolbar && swimlaneCommentId != null ? (
         <TaskBarPendingApprovalToolbar
           commentId={swimlaneCommentId}

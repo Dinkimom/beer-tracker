@@ -32,14 +32,19 @@ describe('stickyNotePalette', () => {
   it('keeps the light-theme paper edge close to the fill instead of an ink outline', () => {
     const yellow = getStickyNotePaint('yellow');
     expect(yellow.border).not.toBe(yellow.text);
-    expect(yellow.border).toBe('#f3e27a');
-    expect(getStickyNotePaint('gray').border).toBe('#d1d5db');
+    expect(yellow.border).toBe('#f4d454');
+    expect(getStickyNotePaint('gray').border).toBe('#e0e3e8');
   });
 
-  it('uses a darker fill in dark mode', () => {
-    expect(getStickyNotePaint('yellow', true).background).not.toBe(
-      getStickyNotePaint('yellow', false).background
-    );
+  it('keeps dark-mode notes on deeper paper with light ink', () => {
+    const light = getStickyNotePaint('yellow', false);
+    const paper = getStickyNotePaint('yellow', true);
+    expect(paper.background).not.toBe(light.background);
+    expect(paper.background).toBe('#e0bb00');
+    expect(paper.text).toBe('#2a1604');
+    expect(paper.text).not.toBe(light.text);
+    expect(getStickyNotePaint('green', true).background).toBe('#28c361');
+    expect(getStickyNotePaint('pink', true).text).toBe('#fff4f8');
   });
 
   it('paints a dashed square ghost in the selected note color', () => {
@@ -61,27 +66,23 @@ describe('stickyNotePalette', () => {
     expect(pending.borderWidth).toBe(2);
   });
 
-  it('draws the plus in the selected hue instead of ink black or paper white', () => {
-    expect(getStickyNoteGhostGlyphColor('green', false)).toBe(
-      getStickyNotePaint('green', true).swatch
-    );
-    expect(getStickyNoteGhostGlyphColor('green', true)).toBe(
-      getStickyNotePaint('green', false).swatch
-    );
-    expect(getStickyNoteGhostGlyphColor('yellow', false)).not.toBe(
-      getStickyNoteGhostGlyphColor('green', false)
-    );
-    expect(getStickyNoteGhostGlyphColor('green', false)).not.toBe(
-      getStickyNotePaint('green', false).text
-    );
+  it('draws the plus in the selected hue instead of ink or the paper fill', () => {
+    expect(getStickyNoteGhostGlyphColor('green')).toBe('#15803d');
+    expect(getStickyNoteGhostGlyphColor('yellow')).toBe('#a16207');
+    expect(getStickyNoteGhostGlyphColor('yellow')).not.toBe(getStickyNoteGhostGlyphColor('green'));
+    expect(getStickyNoteGhostGlyphColor('green')).not.toBe(getStickyNotePaint('green').text);
+    expect(getStickyNoteGhostGlyphColor('green')).not.toBe(getStickyNotePaint('green').background);
   });
 
   it('paints resize handles from the same note palette', () => {
     const pink = getStickyNoteResizeHandlePaint('pink');
     const yellow = getStickyNoteResizeHandlePaint('yellow');
-    expect(pink.line).toBe(getStickyNotePaint('pink', true).background);
+    expect(pink.line).toBe(getStickyNoteGhostGlyphColor('pink'));
     expect(pink.activeBackground).not.toBe(yellow.activeBackground);
     expect(pink.hoverBackground).not.toBe(pink.activeBackground);
     expect(pink.activeBackground.startsWith('rgba(')).toBe(true);
+    expect(getStickyNoteResizeHandlePaint('yellow', true).line).toBe(
+      getStickyNotePaint('yellow', true).text
+    );
   });
 });

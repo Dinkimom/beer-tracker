@@ -112,6 +112,9 @@ export class SprintPlannerUiStore {
   /** Подсветка карточки после перехода из уведомления. */
   notificationFocusTaskId: string | null = null;
 
+  /** Пара «призрак предложения ↔ оригинал» при наведении. */
+  planPatchFocusTaskId: string | null = null;
+
   constructor() {
     this.sidebarOpen = getFromStorage(STORAGE_KEYS.SIDEBAR_OPEN, true);
     this.stickyNoteColor = parseStickyNoteColor(
@@ -142,6 +145,7 @@ export class SprintPlannerUiStore {
       linkingFromTaskId: observable,
       clearNotificationFocusTaskId: action.bound,
       notificationFocusTaskId: observable,
+      planPatchFocusTaskId: observable,
       resizingTaskId: observable,
       noteClipboard: observable,
       noteEditPreview: observable,
@@ -169,6 +173,7 @@ export class SprintPlannerUiStore {
       setLinkingFromTaskId: action.bound,
       setNoteEditPreview: action.bound,
       setNotificationFocusTaskId: action.bound,
+      setPlanPatchFocusTaskId: action.bound,
       setOpenCommentEditId: action.bound,
       setResizingTaskId: action.bound,
       setStickyNoteCardRowOverride: action.bound,
@@ -424,6 +429,10 @@ export class SprintPlannerUiStore {
     this.notificationFocusTaskId = id;
   }
 
+  setPlanPatchFocusTaskId(id: string | null): void {
+    this.planPatchFocusTaskId = id;
+  }
+
   clearNotificationFocusTaskId(): void {
     this.notificationFocusTaskId = null;
   }
@@ -432,6 +441,7 @@ export class SprintPlannerUiStore {
   clearTransientUiOnSprintChange(): void {
     this.globalNameFilter = '';
     this.notificationFocusTaskId = null;
+    this.planPatchFocusTaskId = null;
     this.segmentEditTaskId = null;
     this.linkingFromTaskId = null;
     this.contextMenu = null;

@@ -8,6 +8,7 @@
 import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { TransitionField } from '@/lib/beerTrackerApi';
+import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Comment, Task, TaskParent, TaskPosition } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
@@ -77,7 +78,7 @@ interface ModalsSectionProps {
   onCloseTransitionModal?: () => void;
   onCommentDelete?: (commentId: string) => void;
   onCommentParentChange?: (commentId: string, parent: TaskParent | null) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
+  onCommentUpdate?: (commentId: string, text: string, color?: StickyNoteColor) => void;
   onMoveToSprint: (taskId: string, sprintId: number) => Promise<void>;
   onParentChange?: (taskId: string, parent: TaskParent | null) => Promise<void>;
   onRemoveFromPlan?: (taskId: string) => void;
@@ -176,6 +177,7 @@ export const ModalsSection = observer(function ModalsSection({
           onAssigneeSelect={onAssigneeSelect}
           onCommentDelete={onCommentDelete}
           onCommentParentChange={onCommentParentChange}
+          onCommentUpdate={onCommentUpdate}
         />
       ) : null}
       {showContextMenu && contextMenu && annotationMenuVariant == null ? (

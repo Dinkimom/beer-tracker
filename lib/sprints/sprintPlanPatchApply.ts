@@ -379,6 +379,11 @@ export function collectRealtimeResources(ops: SprintPlanPatchOp[]): SprintRealti
       case 'deleteLink':
         set.add('links');
         break;
+      case 'createGoal':
+      case 'updateGoal':
+      case 'deleteGoal':
+        set.add('goals');
+        break;
       default:
         break;
     }

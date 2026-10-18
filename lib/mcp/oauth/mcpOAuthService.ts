@@ -29,6 +29,7 @@ import {
 import { mcpResourceUrl } from './metadata';
 import { verifyPkceS256 } from './pkce';
 import { clientAllowsRedirectUri } from './redirectUri';
+import { resolveMcpOAuthClientBrand, type McpOAuthClientBrand } from './resolveMcpOAuthClientBrand';
 import { generateOpaqueToken } from './tokenHash';
 
 export class McpOAuthError extends Error {
@@ -88,6 +89,14 @@ function clientRowToInfo(row: McpOAuthClientRow): RegisteredClientInfo {
 export async function getRegisteredClient(clientId: string): Promise<RegisteredClientInfo | null> {
   const row = await findMcpOAuthClient(clientId);
   return row ? clientRowToInfo(row) : null;
+}
+
+export async function resolveRegisteredMcpClientBrand(clientId: string): Promise<McpOAuthClientBrand> {
+  const client = await getRegisteredClient(clientId);
+  return resolveMcpOAuthClientBrand({
+    clientName: client?.client_name,
+    clientUri: client?.client_uri,
+  });
 }
 
 function parseRedirectUris(raw: Record<string, unknown>): string[] {

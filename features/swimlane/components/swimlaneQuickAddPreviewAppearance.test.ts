@@ -68,7 +68,9 @@ describe('resolveSwimlaneQuickAddPreviewClass', () => {
   it('keeps the rounded dashed slot for tasks and a square outline for notes and photos', () => {
     expect(resolveSwimlaneQuickAddPreviewClass('task')).toContain('rounded-lg');
     expect(resolveSwimlaneQuickAddPreviewClass('note')).not.toContain('rounded-lg');
+    expect(resolveSwimlaneQuickAddPreviewClass('note')).toContain('sticky-note-paper');
     expect(resolveSwimlaneQuickAddPreviewClass('image')).toContain('border-dashed');
+    expect(resolveSwimlaneQuickAddPreviewClass('image')).not.toContain('sticky-note-paper');
   });
 
   it('uses the same hairline dashed border as the draft card after click', () => {

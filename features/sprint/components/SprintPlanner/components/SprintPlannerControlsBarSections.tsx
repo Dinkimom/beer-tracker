@@ -6,6 +6,7 @@ import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
 import { Button } from '@/components/Button';
 import { CustomSelect } from '@/components/CustomSelect';
 import { Icon } from '@/components/Icon';
+import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   FLOATING_TOOLBAR_ITEM_IDLE,
@@ -20,6 +21,7 @@ import {
 } from './sprintPlannerControlsBarHelpers';
 import { SprintPlannerPresenceAvatars } from './SprintPlannerPresenceAvatars';
 import { SprintPlannerTimer } from './SprintPlannerTimer';
+import { sprintPlannerGlassIconButtonClassName } from './sprintPlannerTimerStyles';
 
 interface SprintPlannerControlsBarRightSectionProps {
   boardViewers: readonly SprintPresenceViewer[];
@@ -70,19 +72,21 @@ export function SprintPlannerControlsBarRightSection({
             onUndo={planHistory.undo}
           />
         )}
-        {onTasksReload ? (
-          <Button
-            aria-label={tasksReloadButtonTitle}
-            className={`!h-8 !w-8 !min-w-0 shrink-0 !justify-center !px-0 ${FLOATING_TOOLBAR_ITEM_IDLE}`}
-            disabled={isReloading || !selectedSprintId}
-            title={tasksReloadButtonTitle}
-            type="button"
-            variant="ghost"
-            onClick={() => onTasksReload({ showToast: true })}
-          >
-            <Icon className={`h-4 w-4 ${isReloading ? 'animate-spin' : ''}`} name="refresh" />
-          </Button>
-        ) : null}
+        {onTasksReload
+          ? wrapWithTextTooltip(
+              <button
+                aria-label={tasksReloadButtonTitle}
+                className={sprintPlannerGlassIconButtonClassName()}
+                disabled={isReloading || !selectedSprintId}
+                type="button"
+                onClick={() => onTasksReload({ showToast: true })}
+              >
+                <Icon className={`h-4 w-4 ${isReloading ? 'animate-spin' : ''}`} name="refresh" />
+              </button>,
+              tasksReloadButtonTitle,
+              { disabled: isReloading || !selectedSprintId }
+            )
+          : null}
         <CustomSelect<ControlsBarViewModeSelectValue>
           className="w-[148px] shrink-0 md:w-[165px]"
           options={[

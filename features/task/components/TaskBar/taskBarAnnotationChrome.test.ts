@@ -156,7 +156,6 @@ describe('resolveTaskBarAnnotationChrome', () => {
     ).toMatchObject({
       showCommentDelete: false,
       showPendingApprovalToolbar: true,
-      showStickyNotePin: false,
       showStickyNoteReactions: false,
     });
   });

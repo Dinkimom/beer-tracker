@@ -395,7 +395,7 @@ function SwimlaneComponent({
               isDraggingTask={isDraggingTask}
               layerHeight={layout.layerHeight}
               linkSourceEndCell={linkSourceEndCell}
-              linkingFromTaskId={linkingFromTaskId}
+              linkingFromTaskId={linkingFromTaskId} planPatchAssigneeId={developer.id} planPatchSprintId={selectedSprintId} planPatchTasksMap={tasksMap}
               positionedTasks={layout.positionedTasks}
               qaTasksMap={qaTasksMap}
               quickAddBoardId={quickAddBoardId}

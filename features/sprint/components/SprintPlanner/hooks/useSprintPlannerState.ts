@@ -107,6 +107,9 @@ export function useSprintPlannerState({
       bumpPlannerDiagramRemoteEpoch();
       reloadComments().catch(() => undefined);
     },
+    onGoals: () => {
+      queryClient.invalidateQueries({ queryKey: ['sprintGoals'] }).catch(() => undefined);
+    },
     onLinks: () => {
       reloadLinks().catch(() => undefined);
     },

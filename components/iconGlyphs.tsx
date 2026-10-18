@@ -21,6 +21,9 @@ export const iconGlyphs: Record<string, ReactNode> = {
   'arrow-left': (
     <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
   ),
+  'arrow-right': (
+    <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+  ),
   'undo': (
     <>
       <path d="M9 14 4 9l5-5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />

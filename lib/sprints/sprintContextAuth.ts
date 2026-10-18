@@ -34,7 +34,7 @@ export function mcpUnauthorizedResponse(request: Request): NextResponse {
  */
 export async function tryRequireSprintContextMcpAuth(
   request: Request
-): Promise<RequirePlannerTenantResult | null> {
+): Promise<(RequirePlannerTenantResult & { mcpClientId?: string }) | null> {
   const token = readSprintContextMcpToken(request);
   if (!token) {
     return null;
@@ -58,5 +58,5 @@ export async function tryRequireSprintContextMcpAuth(
     role: profile.orgRole,
     userId: profile.userId,
   };
-  return { ctx, profile };
+  return { ctx, mcpClientId: verified.clientId, profile };
 }

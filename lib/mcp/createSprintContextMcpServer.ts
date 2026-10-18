@@ -8,6 +8,7 @@ import { findUserById } from '@/lib/auth/userRepository';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { getIssueForOrganization } from '@/lib/mcp/getIssueForOrganization';
 import { getIssueSnapshotForOrganization } from '@/lib/mcp/getIssueSnapshotForOrganization';
+import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
 import { registerRetroBoardMcpTools } from '@/lib/mcp/registerRetroBoardMcpTools';
 import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
@@ -60,6 +61,7 @@ function plannerWriteDenied(profile: AccessProfile): string | null {
 }
 
 export function createSprintContextMcpServer(input: {
+  mcpClientId?: string;
   organizationId: string;
   profile: AccessProfile;
   userId: string;
@@ -161,7 +163,7 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_context',
     {
       description:
-        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + status/statusCategory/sprintHistory), capacity (tasks only; sticky notes do not reserve time), feature lanes, notes, links, goals, availability. Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
+        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + status/statusCategory/sprintHistory), capacity (tasks only; sticky notes do not reserve time), feature lanes, notes, links, goals, availability. Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. meta.calendarDays are working days only. meta.weekendDays are Sat/Sun in the sprint window with no day index — do not plan positions on those dates. Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
       inputSchema: {
         assigneeId: z
           .string()
@@ -204,7 +206,7 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_capacity',
     {
       description:
-        'Capacity analysis for a sprint: per-person load vs free parts (meta.partsPerDay from org settings), overlaps, gaps, overloaded days. Sticky notes do not reserve capacity — only task positions. Prefer this over raw positions when answering "who is overloaded / where is free capacity".',
+        'Capacity analysis for a sprint: per-person load vs free parts (meta.partsPerDay from org settings), overlaps, gaps, overloaded days. Sticky notes do not reserve capacity — only task positions. meta.weekendDays are Sat/Sun and are not capacity days — do not plan there. Prefer this over raw positions when answering "who is overloaded / where is free capacity".',
       inputSchema: {
         assigneeId: z
           .string()
@@ -229,7 +231,7 @@ export function createSprintContextMcpServer(input: {
         return toolJson({
           capacity: payload.capacity ?? buildSprintContextCapacity(payload),
           meta: {
-            calendarDays: payload.meta.calendarDays,
+            calendarDays: payload.meta.calendarDays, weekendDays: payload.meta.weekendDays,
             featureId: payload.meta.featureId,
             partsPerDay: payload.meta.partsPerDay,
             sprintId: payload.meta.sprintId,
@@ -430,7 +432,7 @@ export function createSprintContextMcpServer(input: {
     'propose_plan_patch',
     {
       description:
-        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). By default createNote writes draft sticky notes immediately (translucent until apply); set persistNotes=false for a pure dry-run (notes created only on apply). Notes do NOT reserve capacity. Preflight fails if updateNote/deleteNote/updateGoal/deleteGoal targets are missing. upsertPosition places tasks; set syncToTracker=true to also add the issue to the tracker sprint and assign. Returns summary, schedule, capacityPreview, warnings, persistNotes, draftNoteIds, applyToken (TTL 30m). Always call before apply_plan_patch. Part indices must be 0..meta.partsPerDay-1. Notes expose updatedAt/updatedBy/version — pass ifVersion on updateNote for optimistic lock.',
+        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). By default createNote writes draft sticky notes immediately (translucent until apply), and position ops draw translucent cards on the board until apply: a new placement, a date move, a duration change, or deletePosition (removal from the planner sprint, original card stays until apply). set persistNotes=false for a pure dry-run (notes and position cards created only on apply). Notes do NOT reserve capacity. Preflight fails if updateNote/deleteNote/updateGoal/deleteGoal targets are missing. upsertPosition places tasks; set syncToTracker=true to also add the issue to the tracker sprint and assign. Returns summary, schedule, capacityPreview, warnings, persistNotes, draftNoteIds, applyToken (TTL 30m). Always call before apply_plan_patch. Part indices must be 0..meta.partsPerDay-1. Notes expose updatedAt/updatedBy/version — pass ifVersion on updateNote for optimistic lock.',
       inputSchema: {
         ops: SprintPlanPatchOpsSchema.describe(
           '1–50 ops: upsertPosition|deletePosition|createNote|updateNote|deleteNote|upsertLink|deleteLink|upsertFeatureDraft|createGoal|updateGoal|deleteGoal'
@@ -439,7 +441,7 @@ export function createSprintContextMcpServer(input: {
           .boolean()
           .optional()
           .describe(
-            'Default true: write translucent createNote drafts now. false: dry-run only; createNote runs on apply.'
+            'Default true: write translucent createNote drafts and position-change cards now. false: dry-run only; those writes run on apply.'
           ),
         sprintId: z.number().int().positive().describe('Tracker sprint id'),
       },
@@ -450,8 +452,10 @@ export function createSprintContextMcpServer(input: {
         if (denied) {
           return toolError(new Error(denied));
         }
+        const clientBrand = input.mcpClientId ? await resolveRegisteredMcpClientBrand(input.mcpClientId) : undefined;
         const result = await proposeSprintPlanPatch({
           actorUserId: input.userId,
+          clientBrand,
           ops,
           organizationId: input.organizationId,
           persistNotes,

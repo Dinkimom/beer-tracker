@@ -82,6 +82,46 @@ CREATE TABLE public.sprint_plan_captures (
 
 COMMENT ON TABLE public.sprint_plan_captures IS 'Черновик плана до рабочего статуса и якорь на момент перехода в работу';
 
+CREATE TABLE public.plan_patch_position_previews (
+    organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
+    sprint_id INTEGER NOT NULL,
+    task_id VARCHAR(255) NOT NULL,
+    proposal_id VARCHAR(64) NOT NULL,
+    assignee_id VARCHAR(255) NOT NULL,
+    start_day INTEGER NOT NULL CHECK (start_day >= 0 AND start_day < 400),
+    start_part INTEGER NOT NULL CHECK (start_part >= 0 AND start_part < 4),
+    duration INTEGER NOT NULL CHECK (duration > 0),
+    remove BOOLEAN NOT NULL DEFAULT FALSE,
+    changes TEXT NOT NULL DEFAULT '',
+    client_brand VARCHAR(16) NOT NULL DEFAULT '',
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY (organization_id, sprint_id, task_id)
+);
+
+CREATE INDEX idx_plan_patch_position_previews_sprint
+    ON public.plan_patch_position_previews (organization_id, sprint_id);
+
+COMMENT ON TABLE public.plan_patch_position_previews IS 'Полупрозрачные карточки propose_plan_patch до apply';
+
+CREATE TABLE public.plan_patch_goal_previews (
+    organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
+    sprint_id INTEGER NOT NULL,
+    goal_id UUID NOT NULL,
+    proposal_id VARCHAR(64) NOT NULL,
+    goal_type VARCHAR(16) NOT NULL CHECK (goal_type IN ('delivery', 'discovery')),
+    action VARCHAR(16) NOT NULL CHECK (action IN ('create', 'update', 'delete')),
+    text TEXT NOT NULL,
+    done BOOLEAN NOT NULL DEFAULT FALSE,
+    client_brand VARCHAR(16) NOT NULL DEFAULT '',
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY (organization_id, sprint_id, goal_id)
+);
+
+CREATE INDEX idx_plan_patch_goal_previews_sprint
+    ON public.plan_patch_goal_previews (organization_id, sprint_id);
+
+COMMENT ON TABLE public.plan_patch_goal_previews IS 'Предложения propose_plan_patch по целям спринта до apply';
+
 CREATE TABLE public.task_links (
     id VARCHAR(255) PRIMARY KEY,
     organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,

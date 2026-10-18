@@ -20,7 +20,6 @@ export function resolveTaskBarAnnotationChrome(input: {
   showDraftNoteDelete: boolean;
   showImageDelete: boolean;
   showPendingApprovalToolbar: boolean;
-  showStickyNotePin: boolean;
   showStickyNoteReactions: boolean;
 } {
   const chromeIdle =
@@ -58,11 +57,6 @@ export function resolveTaskBarAnnotationChrome(input: {
       (input.hasCommentApprove === true || input.hasCommentDelete) &&
       chromeIdle &&
       !input.isLinkingSession,
-    showStickyNotePin:
-      input.isStickyNoteCard &&
-      !input.effectiveIsDragging &&
-      !input.quickAddSubmitting &&
-      !pendingApproval,
     showStickyNoteReactions:
       showSavedAnnotationReactions &&
       chromeIdle &&

@@ -4,7 +4,7 @@ import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
-import { getStickyNoteSwatchStyle } from '@/features/comments/utils/stickyNotePalette';
+import { StickyNoteColorSwatch } from '@/features/comments/components/StickyNoteColorSwatch';
 import { FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import {
@@ -47,11 +47,7 @@ export function SwimlanePlacementToolbarNoteColors({
             onClick={() => onChange(color)}
             onMouseDown={(event) => event.preventDefault()}
           >
-            <span
-              aria-hidden
-              className="h-4 w-4 rounded-full border border-black/15 shadow-sm dark:border-white/20"
-              style={getStickyNoteSwatchStyle(color, isDark)}
-            />
+            <StickyNoteColorSwatch color={color} isDark={isDark} />
           </button>
           </TextTooltip>
         );

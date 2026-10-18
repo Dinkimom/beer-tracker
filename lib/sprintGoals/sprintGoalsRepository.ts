@@ -22,6 +22,7 @@ export async function listSprintGoals(input: {
 }
 
 export async function insertSprintGoal(input: {
+  goalId?: string;
   goalType: string;
   organizationId: string;
   sprintId: number;
@@ -29,10 +30,10 @@ export async function insertSprintGoal(input: {
   text: string;
 }): Promise<SprintGoalRow> {
   const insert = await query(
-    `INSERT INTO sprint_goals (organization_id, sprint_id, team, text, goal_type, done)
-           VALUES ($1, $2, $3, $4, $5, false)
+    `INSERT INTO sprint_goals (id, organization_id, sprint_id, team, text, goal_type, done)
+           VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6, false)
            RETURNING id, text, done`,
-    [input.organizationId, input.sprintId, input.team ?? null, input.text, input.goalType]
+    [input.goalId ?? null, input.organizationId, input.sprintId, input.team ?? null, input.text, input.goalType]
   );
   return insert.rows[0] as SprintGoalRow;
 }

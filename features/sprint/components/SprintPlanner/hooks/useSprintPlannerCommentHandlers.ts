@@ -8,6 +8,10 @@ import type { Comment as CommentType, TaskParent } from '@/types';
 import { useCallback } from 'react';
 
 import {
+  playStickyNoteExit,
+  shouldAnimateStickyNoteDelete,
+} from '@/features/comments/utils/stickyNoteExit';
+import {
   commentCardRowLayoutToPersistPatch,
   toSwimlaneCommentTaskId,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
@@ -30,6 +34,7 @@ import {
 } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 
 interface UseSprintPlannerCommentHandlersProps {
+  comments: CommentType[];
   selectedSprintId: number | null;
   taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;
   deleteComment: (commentId: string) => Promise<void>;
@@ -149,6 +154,7 @@ function syncLinksOnCommentDelete(input: {
 }
 
 export function useSprintPlannerCommentHandlers({
+  comments,
   deleteComment,
   deleteLink,
   saveLink,
@@ -173,24 +179,41 @@ export function useSprintPlannerCommentHandlers({
 
   const handleCommentDelete = useCallback(
     (id: string, options?: { retargetLinksTo?: string }) => {
-      const linksSync = syncLinksOnCommentDelete({
-        commentTaskId: toSwimlaneCommentTaskId(id),
-        deleteLink,
-        retargetLinksTo: options?.retargetLinksTo,
-        saveLink,
-        selectedSprintId,
-        setTaskLinks,
-        taskLinks,
-      });
-      setComments((prev: CommentType[]) => prev.filter((c: CommentType) => c.id !== id));
-      if (selectedSprintId) {
-        deleteComment(id).catch((error) => {
-          console.error('Error deleting comment:', error);
+      const remove = () => {
+        const linksSync = syncLinksOnCommentDelete({
+          commentTaskId: toSwimlaneCommentTaskId(id),
+          deleteLink,
+          retargetLinksTo: options?.retargetLinksTo,
+          saveLink,
+          selectedSprintId,
+          setTaskLinks,
+          taskLinks,
         });
+        setComments((prev: CommentType[]) => prev.filter((c: CommentType) => c.id !== id));
+        if (selectedSprintId) {
+          deleteComment(id).catch((error) => {
+            console.error('Error deleting comment:', error);
+          });
+        }
+        return linksSync;
+      };
+      const comment = comments.find((item) => item.id === id);
+      if (!shouldAnimateStickyNoteDelete(comment, options?.retargetLinksTo)) {
+        return remove();
       }
-      return linksSync;
+      playStickyNoteExit(toSwimlaneCommentTaskId(id), remove);
+      return undefined;
     },
-    [deleteComment, deleteLink, saveLink, selectedSprintId, setComments, setTaskLinks, taskLinks]
+    [
+      comments,
+      deleteComment,
+      deleteLink,
+      saveLink,
+      selectedSprintId,
+      setComments,
+      setTaskLinks,
+      taskLinks,
+    ]
   );
 
   const handleCommentApprove = useCallback(

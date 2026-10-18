@@ -46,7 +46,7 @@ import {
 } from '@/lib/sprints/taskPositionsRepository';
 
 const DAY_LEGEND =
-  'Zero-based index of a working day within the sprint timeline (not a calendar weekday).';
+  'Zero-based index of a working day within the sprint timeline (not a calendar weekday). meta.weekendDays are Saturday and Sunday inside the sprint window; they have no day index and must not be used for positions.';
 
 function partLegend(partsPerDay: number): string {
   return `Time segment within a working day: 0 .. ${partsPerDay - 1} (meta.partsPerDay=${partsPerDay}; duration is counted in these parts).`;

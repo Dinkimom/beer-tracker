@@ -1,17 +1,11 @@
 'use client';
 
-import type { ChecklistItem } from '@/types/tracker';
+import type { SprintGoalsResponse } from '@/lib/api/sprintGoals';
 
 import { useQuery } from '@tanstack/react-query';
 
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { fetchSprintGoals } from '@/lib/api/sprintGoals';
-
-interface SprintGoalsData {
-  checklistDone: number;
-  checklistItems: ChecklistItem[];
-  checklistTotal: number;
-}
 
 /**
  * Хук для загрузки целей спринта из таблицы sprint_goals (Delivery или Discovery)
@@ -25,7 +19,7 @@ export function useSprintGoals(
     queryKey: forDemoPlanner
       ? (['sprintGoals', 'demo', sprintId, goalType] as const)
       : (['sprintGoals', sprintId, goalType] as const),
-    queryFn: async (): Promise<SprintGoalsData | null> => {
+    queryFn: async (): Promise<SprintGoalsResponse | null> => {
       if (sprintId == null) return null;
       return await fetchSprintGoals(sprintId, goalType);
     },

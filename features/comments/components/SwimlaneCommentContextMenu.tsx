@@ -1,5 +1,6 @@
 'use client';
 
+import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Task, TaskParent } from '@/types';
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -27,6 +28,7 @@ import {
   measureContextMenuLayoutSize,
   resolveContextMenuViewportPosition,
 } from '@/features/context-menu/utils/resolveContextMenuViewportPosition';
+import { StickyNoteColorSwatches } from '@/features/task/components/TaskBar/StickyNoteColorSwatches';
 import { useFollowAnchorRectByElementId } from '@/hooks/useFollowAnchorRect';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
 
@@ -53,6 +55,7 @@ interface SwimlaneCommentContextMenuProps {
   assigneeOptions?: ContextMenuAssigneeOptions | null;
   authorName?: string | null;
   boardId?: number | null;
+  noteColor?: StickyNoteColor;
   parentOptions?: TaskParent[];
   position: { x: number; y: number };
   task?: Task | null;
@@ -63,6 +66,7 @@ interface SwimlaneCommentContextMenuProps {
   onCopy?: () => void;
   onDelete: () => void;
   onEdit?: () => void;
+  onNoteColorChange?: (color: StickyNoteColor) => void;
   onParentSelect?: (parent: TaskParent | null) => void;
   onStartLinking?: () => void;
 }
@@ -76,12 +80,14 @@ export function SwimlaneCommentContextMenu({
   position,
   assigneeOptions = null,
   task = null,
+  noteColor,
   onAssigneeSelect,
   onClose,
   onConvertToTask,
   onCopy,
   onDelete,
   onEdit,
+  onNoteColorChange,
   onParentSelect,
   onStartLinking,
   variant = 'note',
@@ -149,6 +155,11 @@ export function SwimlaneCommentContextMenu({
         onAnimationEnd={overlay.onAnimationEnd}
         onClick={(e) => e.stopPropagation()}
       >
+        {renderContextMenuNoteColor({
+          noteColor,
+          variant,
+          onChange: onNoteColorChange,
+        })}
         {author ? (
           <>
             <div
@@ -250,6 +261,27 @@ export function SwimlaneCommentContextMenu({
           <span>{contextMenuDeleteLabel(t, variant)}</span>
         </Button>
       </div>
+    </>
+  );
+}
+
+function renderContextMenuNoteColor(input: {
+  noteColor?: StickyNoteColor;
+  variant: NonNullable<SwimlaneCommentContextMenuProps['variant']>;
+  onChange?: (color: StickyNoteColor) => void;
+}) {
+  if (input.variant !== 'note' || input.noteColor == null || input.onChange == null) {
+    return null;
+  }
+  return (
+    <>
+      <StickyNoteColorSwatches
+        className="!justify-start !pl-2.5"
+        framed={false}
+        value={input.noteColor}
+        onChange={input.onChange}
+      />
+      <div className={CONTEXT_MENU_SEPARATOR} role="separator" />
     </>
   );
 }

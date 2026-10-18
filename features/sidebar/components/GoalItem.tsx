@@ -8,6 +8,7 @@ import { GoalItemBody } from './GoalItemBody';
 
 interface GoalItemProps {
   canEdit?: boolean;
+  dimmed?: boolean;
   editingText?: string;
   index?: number;
   isEditing?: boolean;
@@ -28,10 +29,11 @@ export function GoalItem(props: GoalItemProps) {
     ? 'rounded-lg border border-black/10 bg-black/[0.05] p-3 -mx-0 dark:border-white/15 dark:bg-white/[0.06]'
     : '';
   const updatingClass = props.isUpdating ? 'opacity-50' : '';
+  const dimmedClass = props.dimmed ? 'opacity-65' : '';
 
   return (
     <div
-      className={`group flex items-start gap-2 py-2 px-0 rounded transition-all ${editingContainerClass} ${updatingClass}`}
+      className={`group flex items-start gap-2 py-2 px-0 rounded transition-all ${editingContainerClass} ${updatingClass} ${dimmedClass}`}
     >
       <GoalItemBody {...props} t={t} />
     </div>

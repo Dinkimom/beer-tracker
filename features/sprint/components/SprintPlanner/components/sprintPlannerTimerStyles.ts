@@ -12,6 +12,11 @@ export function isSprintPlannerTimerActiveStatus(status: SprintTimerStatus): boo
   return status === 'running' || status === 'paused';
 }
 
+/** Иконка на стекле шапки: в покое приглушена, на hover — вуаль и более тёмный знак. */
+export function sprintPlannerGlassIconButtonClassName(): string {
+  return `${TRIGGER_BASE} border-0 w-8 text-gray-500 ${GLASS_TRIGGER_HOVER} hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200`;
+}
+
 export function sprintPlannerTimerTriggerClassName(
   status: SprintTimerStatus,
   popoverOpen: boolean,
@@ -28,9 +33,7 @@ export function sprintPlannerTimerTriggerClassName(
       ? GLASS_TRIGGER_HOVER
       : 'hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-gray-700/70 dark:active:bg-gray-600';
   const idleHover =
-    surface === 'glass'
-      ? GLASS_TRIGGER_HOVER
-      : 'hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-gray-700/60 dark:active:bg-gray-600';
+    'hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-gray-700/60 dark:active:bg-gray-600';
 
   if (popoverOpen) {
     if (active) {
@@ -40,6 +43,9 @@ export function sprintPlannerTimerTriggerClassName(
   }
   if (active) {
     return `${TRIGGER_BASE} ${frame} px-2.5 text-gray-800 ${activeHover} dark:text-gray-100`;
+  }
+  if (surface === 'glass') {
+    return sprintPlannerGlassIconButtonClassName();
   }
   return `${TRIGGER_BASE} ${frame} w-8 text-gray-500 ${idleHover} hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200`;
 }

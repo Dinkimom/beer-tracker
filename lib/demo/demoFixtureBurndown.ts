@@ -72,5 +72,5 @@ export function buildDemoBurndownPayload(store: DemoFixtureState) {
 /** isdayoff-style string of zeros for the inclusive date range. */
 export function buildHolidayZeroString(date1: string, date2: string): string {
   const days = eachDayInclusive(date1, date2);
-  return '0'.repeat(Math.max(days.length, 1));
+  return '1'.repeat(Math.max(days.length, 1));
 }

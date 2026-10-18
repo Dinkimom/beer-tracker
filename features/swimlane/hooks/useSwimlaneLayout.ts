@@ -15,6 +15,7 @@ import {
   distributeBaselinesToLayers,
   distributeTasksToLayers,
 } from '@/features/swimlane/utils/layerUtils';
+import { mergePlanPatchPreviewLayers } from '@/features/swimlane/utils/planPatchPreviewLayers';
 import { buildSwimlaneOccupiedLayersByCell } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { resolveEffectiveSwimlaneReservedTaskLayersPreview } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
 import { useSprintBoardPresenceViewers } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
@@ -82,7 +83,7 @@ export function useSwimlaneLayout({
   taskPositions,
   tasksMap,
 }: UseSwimlaneLayoutProps) {
-  const { sprintPlannerUi } = useRootStore();
+  const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const subscribeCardLayout = useCallback(
     (onStoreChange: () => void) =>
       reaction(() => sprintPlannerUi.cardLayoutRevision, onStoreChange),
@@ -209,6 +210,20 @@ export function useSwimlaneLayout({
     packingBaselines,
     stickyNoteCardRowById
   );
+  mergePlanPatchPreviewLayers({
+    assigneeId: developerId,
+    occupants: positionedTasks.map(({ task, position }) => {
+      const vertical = taskVerticalLayoutById.get(task.id);
+      return {
+        layer: taskLayerMap.get(task.id) ?? 0,
+        layerShiftUp: vertical?.layerShiftUp,
+        position,
+        span: vertical?.span,
+      };
+    }),
+    previews: positionsStore.planPatchPreviews.values(),
+    taskLayerMap,
+  });
   const baselineLayerMap = distributeBaselinesToLayers(packingBaselines);
   const occupiedLayersByCell = buildSwimlaneOccupiedLayersByCell(
     positionedTasks.map(({ position }) => position),

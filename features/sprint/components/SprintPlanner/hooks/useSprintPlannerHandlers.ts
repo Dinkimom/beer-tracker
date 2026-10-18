@@ -15,6 +15,7 @@ import { useSprintPlannerTaskHandlers } from './useSprintPlannerTaskHandlers';
 import { useSprintPlannerUIHandlers } from './useSprintPlannerUIHandlers';
 
 export function useSprintPlannerHandlers({
+  comments,
   selectedSprintId,
   setComments,
   setSidebarOpen,
@@ -72,6 +73,7 @@ export function useSprintPlannerHandlers({
   });
 
   const commentHandlers = useSprintPlannerCommentHandlers({
+    comments,
     deleteComment,
     deleteLink,
     saveLink,

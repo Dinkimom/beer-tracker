@@ -8,6 +8,7 @@ import type { CSSProperties } from 'react';
 import { useMemo } from 'react';
 
 import { ZIndex } from '@/constants';
+import { useStickyNoteTilt } from '@/features/comments/hooks/useStickyNoteTilt';
 import {
   getStickyNoteDashedGhostStyle,
   getStickyNotePaint,
@@ -97,6 +98,10 @@ export function SwimlaneDropPreview({
   timelineTotalParts,
 }: SwimlaneDropPreviewProps) {
   const isDark = useDocumentDarkClass();
+  const tiltRef = useStickyNoteTilt(
+    activeTask != null && isSwimlaneCommentTask(activeTask),
+    activeTask?.id ?? ''
+  );
   const {
     baselineLayoutMode,
     currentCell,
@@ -206,11 +211,13 @@ export function SwimlaneDropPreview({
   const statusPaintClass = annotationPaint
     ? ''
     : `${colors.previewBorder} ${colors.highlight.bg} ${colors.highlightDark?.bg ?? ''}`;
+  const notePaperClass = isSwimlaneCommentTask(activeTask) ? 'sticky-note-paper' : '';
 
   return (
     <div
+      ref={tiltRef}
       aria-hidden
-      className={`swimlane-quick-add-preview-fade pointer-events-none absolute box-border border-2 border-dashed ${radiusClass} ${statusPaintClass}`}
+      className={`swimlane-quick-add-preview-fade pointer-events-none absolute box-border border-2 border-dashed ${radiusClass} ${statusPaintClass} ${notePaperClass}`}
       data-swimlane-drop-preview="slot"
       style={{
         ...box,

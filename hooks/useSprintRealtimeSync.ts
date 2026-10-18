@@ -25,6 +25,7 @@ interface SprintRealtimeTaskPayload {
 
 interface SprintRealtimeHandlers {
   onComments?: () => void;
+  onGoals?: () => void;
   onLinks?: () => void;
   onPositions?: () => void;
   onPresence?: (viewers: SprintPresenceViewer[]) => void;
@@ -54,6 +55,9 @@ function dispatchSprintRealtimeResources(
 ): void {
   if (resources.includes('positions')) {
     handlers.onPositions?.();
+  }
+  if (resources.includes('goals')) {
+    handlers.onGoals?.();
   }
   if (resources.includes('comments') || resources.includes('reactions')) {
     handlers.onComments?.();

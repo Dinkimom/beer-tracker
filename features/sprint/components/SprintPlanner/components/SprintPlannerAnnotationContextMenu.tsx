@@ -14,6 +14,7 @@ import {
   resolveSwimlaneAnnotationContextMenuVariant,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { buildContextMenuParentOptions } from '@/features/context-menu/utils/buildContextMenuParentOptions';
+import { parseStickyNoteColor, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import {
   commentToSwimlaneNoteClipboard,
   writeNoteTextToSystemClipboard,
@@ -31,6 +32,7 @@ interface SprintPlannerAnnotationContextMenuProps {
   onAssigneeSelect?: (task: Task, assigneeId: string) => void;
   onCommentDelete?: (commentId: string) => void;
   onCommentParentChange?: (commentId: string, parent: TaskParent | null) => void;
+  onCommentUpdate?: (commentId: string, text: string, color?: StickyNoteColor) => void;
 }
 
 export const SprintPlannerAnnotationContextMenu = observer(
@@ -42,6 +44,7 @@ export const SprintPlannerAnnotationContextMenu = observer(
     onAssigneeSelect,
     onCommentDelete,
     onCommentParentChange,
+    onCommentUpdate,
     showStartLinking,
     sprintTasks = [],
   }: SprintPlannerAnnotationContextMenuProps) {
@@ -66,6 +69,8 @@ export const SprintPlannerAnnotationContextMenu = observer(
       taskId,
       variant,
     });
+    const commentId = parseSwimlaneCommentTaskId(taskId);
+    const note = commentId ? comments.find((item) => item.id === commentId) : undefined;
     return (
       <SwimlaneCommentContextMenu
         anchorElementId={contextMenu.anchorElementId}
@@ -73,6 +78,7 @@ export const SprintPlannerAnnotationContextMenu = observer(
         assigneeOptions={assigneeOptions}
         authorName={contextMenu.task.stickyNoteAuthorName}
         boardId={boardId}
+        noteColor={variant === 'note' ? parseStickyNoteColor(note?.color ?? menuTask.stickyNoteColor) : undefined}
         parentOptions={parentOptions}
         position={contextMenu.position}
         task={menuTask}
@@ -83,6 +89,11 @@ export const SprintPlannerAnnotationContextMenu = observer(
         onCopy={actions.onCopy}
         onDelete={actions.onDelete}
         onEdit={actions.onEdit}
+        onNoteColorChange={
+          variant === 'note' && commentId && onCommentUpdate
+            ? (color) => onCommentUpdate(commentId, note?.text ?? menuTask.name, color)
+            : undefined
+        }
         onParentSelect={actions.onParentSelect}
         onStartLinking={actions.onStartLinking}
       />

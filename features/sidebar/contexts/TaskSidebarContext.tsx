@@ -80,7 +80,7 @@ export interface TaskSidebarContextValue {
   sprintInfo: { endDate?: string; id: number; startDate?: string; status: string; version?: number } | null;
   sprints: SprintListItem[];
   statusFilter: StatusFilter;
-  /** Позиции карточек (как в свимлейне) — для чеклиста запуска: те же SP/TP, что в заголовке строки */
+  /** Позиции карточек на свимлейне — вкладка багов скрывает уже разложенные задачи */
   taskPositions?: Map<string, TaskPosition> | null;
   viewMode?: LayoutViewMode;
   // Общие
