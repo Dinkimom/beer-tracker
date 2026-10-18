@@ -1,7 +1,19 @@
 export interface PlannerPatternOffsetNode {
   offsetLeft: number;
-  offsetParent: PlannerPatternOffsetNode | null;
+  /** `unknown`: у `HTMLElement` это `Element | null`, не наш интерфейс. */
+  offsetParent: unknown;
   offsetTop: number;
+}
+
+function nextOffsetParent(node: PlannerPatternOffsetNode): PlannerPatternOffsetNode | null {
+  const parent = node.offsetParent;
+  if (!parent || typeof parent !== 'object') {
+    return null;
+  }
+  if (!('offsetLeft' in parent) || !('offsetTop' in parent) || !('offsetParent' in parent)) {
+    return null;
+  }
+  return parent as PlannerPatternOffsetNode;
 }
 
 /**
@@ -24,7 +36,7 @@ export function plannerPatternOffsetWithin(
     seen.add(current);
     x += current.offsetLeft;
     y += current.offsetTop;
-    current = current.offsetParent;
+    current = nextOffsetParent(current);
   }
   if (current !== origin) {
     return { x: 0, y: 0 };

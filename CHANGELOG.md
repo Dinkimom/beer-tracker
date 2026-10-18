@@ -2,6 +2,18 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.17.1] — 2026-10-19
+
+### English
+
+- Planner pattern offset accepts a real DOM `offsetParent`, so the production build typechecks.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.17.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Сдвиг узора планера принимает настоящий DOM `offsetParent`, и продакшен-сборка проходит проверку типов.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.17.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.17.0] — 2026-10-19
 
 ### English
@@ -13,7 +25,7 @@ Notable changes to Beer Tracker, newest first. English first, then Russian.
 - Sprint start no longer uses the old checklist panel; the remaining start checks stay with the goals tab.
 - MCP OAuth consent shows the connecting client's brand mark.
 - README landing is in English as well, with companies named before install.
-- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.17.0` and `latest` (`linux/amd64`, `linux/arm64`).
+- Docker Hub images were not published for this tag; the production build failed typecheck. Images ship as `1.17.1`.
 
 ### Русский
 
@@ -24,7 +36,7 @@ Notable changes to Beer Tracker, newest first. English first, then Russian.
 - Старт спринта больше не открывает старую панель чеклиста; оставшиеся проверки старта живут на вкладке целей.
 - Согласие MCP OAuth показывает марку клиента, который подключается.
 - Посадочная README есть и на английском, компании названы до установки.
-- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.17.0` и `latest` (`linux/amd64`, `linux/arm64`).
+- Образы Docker Hub для этого тега не публиковались: продакшен-сборка не прошла проверку типов. Образы вышли как `1.17.1`.
 
 ## [1.16.8] — 2026-10-17
 

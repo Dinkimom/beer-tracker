@@ -26,6 +26,12 @@ describe('plannerPatternOffsetWithin', () => {
     expect(plannerPatternOffsetWithin(hatch, origin)).toEqual({ x: 268, y: 164 });
   });
 
+  it('returns zero when offsetParent is not an offset node', () => {
+    const origin = node(0, 0, null);
+    const hatch = { offsetLeft: 4, offsetTop: 5, offsetParent: { tag: 'element' } };
+    expect(plannerPatternOffsetWithin(hatch, origin)).toEqual({ x: 0, y: 0 });
+  });
+
   it('returns zero when the origin is not an offsetParent', () => {
     const origin = node(0, 0, null);
     const lost = node(10, 20, null);
