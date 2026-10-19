@@ -1,9 +1,9 @@
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
 
-export type PlanPatchPositionChange = 'duration' | 'schedule' | 'segments';
+type PlanPatchPositionChange = 'duration' | 'schedule' | 'segments';
 
-export interface PlanPatchPositionSegment {
+interface PlanPatchPositionSegment {
   duration: number;
   startDay: number;
   startPart: number;
@@ -71,7 +71,7 @@ function copySegments(
 }
 
 /** Пустой массив и отсутствие отрезков считаем одним состоянием «целая полоса». */
-export function normalizePlanPatchSegments(
+function normalizePlanPatchSegments(
   segments: readonly PlanPatchPositionSegment[] | undefined
 ): PlanPatchPositionSegment[] | null {
   if (!segments || segments.length === 0) {
@@ -84,7 +84,7 @@ export function normalizePlanPatchSegments(
   }));
 }
 
-export function planPatchSegmentsEqual(
+function planPatchSegmentsEqual(
   left: readonly PlanPatchPositionSegment[] | undefined,
   right: readonly PlanPatchPositionSegment[] | undefined
 ): boolean {

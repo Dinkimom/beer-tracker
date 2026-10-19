@@ -6,7 +6,7 @@ import {
 } from '@/lib/sprints/sprintContextTeamMembers';
 import { searchStaffInOrg } from '@/lib/staffTeams';
 
-export interface ResolvePersonMcpHit {
+interface ResolvePersonMcpHit {
   assigneeId: string;
   displayName: string;
   email: string | null;
