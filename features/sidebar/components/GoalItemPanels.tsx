@@ -28,11 +28,11 @@ export function GoalItemEditingPanel({
 }: GoalItemEditingPanelProps) {
   return (
     <div className="flex-1 flex flex-col gap-3 min-w-0 px-3 pt-1 pb-1">
-      <input
+      <textarea
         autoFocus
-        className={`w-full rounded-lg px-3 py-2 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500 ${glassLensControlClass()}`}
+        className={`w-full min-h-[4.5rem] resize-y rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500 ${glassLensControlClass()}`}
         placeholder={placeholder}
-        type="text"
+        rows={3}
         value={editingText}
         onChange={(e) => onTextChange(e.target.value)}
         onKeyDown={(e) => {

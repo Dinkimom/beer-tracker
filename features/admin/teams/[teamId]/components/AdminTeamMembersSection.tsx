@@ -2,6 +2,7 @@
 
 import type { CustomSelectOption } from "@/components/CustomSelect";
 import type { AdminTeamMember } from "@/features/admin/adminTeamCatalog";
+import type { AdminTeamMemberAddSource } from "@/features/admin/teams/[teamId]/components/AdminTeamMembersAddForm";
 
 import { useCallback, useState } from "react";
 
@@ -27,8 +28,11 @@ interface AdminTeamMembersSectionProps {
   addLoading: boolean;
   addRoleOptions: CustomSelectOption<string>[];
   addRoleSlug: string;
+  addSource: AdminTeamMemberAddSource;
   addStaffMeta: { displayName?: string; email?: string | null } | null;
   addStaffUid: string;
+  addTrackerMeta: { displayName?: string; email?: string | null } | null;
+  addTrackerUserId: string;
   memberBusyId: string | null;
   members: AdminTeamMember[];
   orgId: string;
@@ -38,8 +42,11 @@ interface AdminTeamMembersSectionProps {
   onRemoveMember: (staffId: string) => void;
   onUpdateMemberRole: (staffId: string, roleSlug: string | null) => void;
   setAddRoleSlug: (v: string) => void;
+  setAddSource: (v: AdminTeamMemberAddSource) => void;
   setAddStaffMeta: (v: { displayName?: string; email?: string | null } | null) => void;
   setAddStaffUid: (v: string) => void;
+  setAddTrackerMeta: (v: { displayName?: string; email?: string | null } | null) => void;
+  setAddTrackerUserId: (v: string) => void;
 }
 
 export function AdminTeamMembersSection({
@@ -47,8 +54,11 @@ export function AdminTeamMembersSection({
   addLoading,
   addRoleOptions,
   addRoleSlug,
+  addSource,
   addStaffMeta,
   addStaffUid,
+  addTrackerMeta,
+  addTrackerUserId,
   memberBusyId,
   members,
   onAddMember,
@@ -57,13 +67,24 @@ export function AdminTeamMembersSection({
   orgId,
   roleOptions,
   setAddRoleSlug,
+  setAddSource,
   setAddStaffMeta,
   setAddStaffUid,
+  setAddTrackerMeta,
+  setAddTrackerUserId,
   teamId,
 }: AdminTeamMembersSectionProps) {
   const { t } = useI18n();
   const [addOpen, setAddOpen] = useState(false);
   const closeAdd = useCallback(() => setAddOpen(false), []);
+  const modalTitle =
+    addSource === "tracker"
+      ? t("admin.teamMembers.addCreateTitle")
+      : t("admin.teamMembers.addFromRegistryTitle");
+  const modalDescription =
+    addSource === "tracker"
+      ? t("admin.teamMembers.addCreateHint")
+      : t("admin.teamMembers.addFromRegistryHint");
 
   return (
     <section className={cardShell}>
@@ -115,9 +136,9 @@ export function AdminTeamMembersSection({
       )}
       <AdminFormModal
         busy={addLoading}
-        description={t("admin.teamMembers.addFromRegistryHint")}
+        description={modalDescription}
         isOpen={addOpen}
-        title={t("admin.teamMembers.addFromRegistryTitle")}
+        title={modalTitle}
         onClose={closeAdd}
       >
         <AdminTeamMembersAddForm
@@ -125,12 +146,18 @@ export function AdminTeamMembersSection({
           addLoading={addLoading}
           addRoleOptions={addRoleOptions}
           addRoleSlug={addRoleSlug}
+          addSource={addSource}
           addStaffMeta={addStaffMeta}
           addStaffUid={addStaffUid}
+          addTrackerMeta={addTrackerMeta}
+          addTrackerUserId={addTrackerUserId}
           orgId={orgId}
           setAddRoleSlug={setAddRoleSlug}
+          setAddSource={setAddSource}
           setAddStaffMeta={setAddStaffMeta}
           setAddStaffUid={setAddStaffUid}
+          setAddTrackerMeta={setAddTrackerMeta}
+          setAddTrackerUserId={setAddTrackerUserId}
           teamId={teamId}
           onAddMember={async () => {
             const ok = await onAddMember();

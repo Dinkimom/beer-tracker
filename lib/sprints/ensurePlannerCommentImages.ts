@@ -155,6 +155,10 @@ async function ensureCommentsPendingApprovalColumns(schema: string): Promise<voi
       ADD COLUMN IF NOT EXISTS plan_patch_proposal_id VARCHAR(64)
   `);
   await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16) NOT NULL DEFAULT ''
+  `);
+  await query(`
     CREATE INDEX IF NOT EXISTS idx_comments_pending_approval
       ON ${schema}.comments (sprint_id)
       WHERE pending_approval = TRUE

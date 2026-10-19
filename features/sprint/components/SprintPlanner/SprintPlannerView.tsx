@@ -5,7 +5,7 @@ import { useLayoutEffect, useState } from 'react';
 
 import { ZIndex } from '@/constants';
 import { StickyNoteReactionsProvider } from '@/features/comments/StickyNoteReactionsProvider';
-import { isSwimlaneCommentTask, selectPendingApprovalCommentIds } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneCommentTask, selectPendingAgentProposalNotes } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
 import { AssigneeVelocityProvider } from '@/features/swimlane/hooks/useAssigneeVelocity';
@@ -361,7 +361,7 @@ export function SprintPlannerView({
               />
               {viewMode === 'compact' || viewMode === 'full' || viewMode === 'features' ? (
                 <SwimlanePlacementToolbar
-                  pendingAgentNoteIds={selectPendingApprovalCommentIds(comments)}
+                  pendingAgentNotes={selectPendingAgentProposalNotes(comments)}
                   sprintId={selectedSprintId}
                   variant={viewMode === 'features' ? 'features' : 'people'}
                   onApproveAgentNotes={handlers.handleCommentApproveAll}

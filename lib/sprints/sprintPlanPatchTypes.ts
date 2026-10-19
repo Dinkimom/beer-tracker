@@ -71,9 +71,47 @@ export type SprintPlanPatchOp =
 /** stop = halt on first failure (default); continue = apply remaining ops. */
 export type SprintPlanPatchOnError = 'continue' | 'stop';
 
+export interface SprintPlanPatchPositionGeometry {
+  assigneeId: string;
+  duration: number;
+  segments?: SprintPlanPatchSegment[];
+  startDay: number;
+  startPart: number;
+}
+
+export interface SprintPlanPatchPositionChange {
+  after: SprintPlanPatchPositionGeometry | null;
+  /** Calendar line after the patch. Null when the card is removed. Same shape as `schedule`. */
+  afterSchedule?: string | null;
+  before: SprintPlanPatchPositionGeometry | null;
+  /** Calendar line before the patch. Null when the card is new. Same shape as `scheduleBefore`. */
+  beforeSchedule?: string | null;
+  changes: Array<'duration' | 'schedule' | 'segments'>;
+  kind: 'add' | 'remove' | 'update';
+  taskId: string;
+}
+
+/** Before/after text for note and goal ops. Positions stay in positionChanges. */
+export interface SprintPlanPatchContentChange {
+  afterText: string | null;
+  beforeText: string | null;
+  goalType?: 'delivery' | 'discovery';
+  id?: string;
+  kind: 'create' | 'delete' | 'update';
+  op:
+    | 'createGoal'
+    | 'createNote'
+    | 'deleteGoal'
+    | 'deleteNote'
+    | 'updateGoal'
+    | 'updateNote';
+}
+
 export interface SprintPlanPatchProposeResult {
   applyToken: string;
   capacityPreview: { summary: string };
+  /** Before/after text for note and goal ops in this proposal. */
+  contentChanges?: SprintPlanPatchContentChange[];
   /** Sticky notes already written as pending (translucent in the planner) until apply. */
   draftNoteIds?: string[];
   expiresAt: string;
@@ -82,9 +120,17 @@ export interface SprintPlanPatchProposeResult {
   ops: SprintPlanPatchOp[];
   /** False when propose skipped writing createNote drafts. */
   persistNotes: boolean;
+  /**
+   * Structured before/after for position ops (rollback). Prefer this over parsing schedule lines.
+   */
+  positionChanges?: SprintPlanPatchPositionChange[];
   proposalId: string;
-  /** Calendar layout for upsertPosition ops after simulation (dates + partsPerDay). */
+  /** True when an unconfirmed proposal was discarded because replacePending=true. */
+  replacedPending?: boolean;
+  /** Calendar layout for upsertPosition/deletePosition tasks after simulation. */
   schedule: string[];
+  /** Calendar layout for the same tasks before the patch (rollback snapshot). */
+  scheduleBefore?: string[];
   sprintId: number;
   summary: string[];
   warnings?: string[];

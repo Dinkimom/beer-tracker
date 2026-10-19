@@ -8,7 +8,10 @@ import {
   SWIMLANE_VISIBILITY_LAYER_GROUPS,
   applyVisibilityLayerToggle,
   canQuickAddOnSwimlaneLane,
+  countPlacementToolbarExtras,
+  isAgentProposalToolbarVisible,
   isPlacementToolbarToolSelectable,
+  resolveAgentProposalClientBrand,
   placementToolbarLayerIconName,
   placementToolbarLayerLabelMessageKey,
   placementToolbarLayoutModeMessageKey,
@@ -29,18 +32,46 @@ import {
 } from './swimlanePlacementToolbar';
 
 describe('SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX', () => {
-  it('leaves room for the capsule plus a gap above the last swimlane row', () => {
+  it('always leaves room for the agent capsule above the placement tools', () => {
     expect(SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX).toBeGreaterThan(
-      SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX + SWIMLANE_PLACEMENT_TOOLBAR_HEIGHT_PX
+      SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX + SWIMLANE_PLACEMENT_TOOLBAR_HEIGHT_PX + 34
     );
+    expect(resolvePlacementToolbarScrollPadPx(0)).toBe(SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX);
   });
 
-  it('adds room for the compact agent proposal capsule above the placement tools', () => {
-    expect(resolvePlacementToolbarScrollPadPx(0)).toBe(SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX);
+  it('adds another slot when a plan draft capsule is stacked on top', () => {
+    expect(countPlacementToolbarExtras(0)).toBe(0);
+    expect(countPlacementToolbarExtras(2)).toBe(1);
     expect(resolvePlacementToolbarScrollPadPx(1)).toBeGreaterThan(
       SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX
     );
-    expect(resolvePlacementToolbarScrollPadPx(2)).toBeGreaterThan(resolvePlacementToolbarScrollPadPx(1));
+  });
+});
+
+describe('isAgentProposalToolbarVisible', () => {
+  it('shows the capsule for notes, position previews, and goal previews', () => {
+    expect(
+      isAgentProposalToolbarVisible({
+        goalPreviewCount: 0,
+        hasPendingAgentNote: false,
+        positionPreviewCount: 0,
+      })
+    ).toBe(false);
+    expect(
+      isAgentProposalToolbarVisible({
+        goalPreviewCount: 0,
+        hasPendingAgentNote: false,
+        positionPreviewCount: 1,
+      })
+    ).toBe(true);
+  });
+});
+
+describe('resolveAgentProposalClientBrand', () => {
+  it('keeps the first brand when an earlier proposal source is cleared', () => {
+    expect(resolveAgentProposalClientBrand([undefined, 'cursor', 'claude'])).toBe('cursor');
+    expect(resolveAgentProposalClientBrand([undefined, undefined, 'claude'])).toBe('claude');
+    expect(resolveAgentProposalClientBrand([undefined, undefined])).toBeUndefined();
   });
 });
 

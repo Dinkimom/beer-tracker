@@ -27,6 +27,7 @@ describe('persistProposedCreateNotes', () => {
   it('clears all pending plan-patch notes before writing a revised createNote set', async () => {
     const ids = await persistProposedCreateNotes({
       actorUserId: '11111111-1111-4111-8111-111111111111',
+      clientBrand: 'cursor',
       expiresAt: new Date('2030-01-01T00:00:00.000Z'),
       ops: [
         {
@@ -46,6 +47,7 @@ describe('persistProposedCreateNotes', () => {
     expect(insert).toHaveBeenCalledTimes(1);
     expect(insert).toHaveBeenCalledWith(
       expect.objectContaining({
+        clientBrand: 'cursor',
         planPatchProposalId: 'new-ops-hash',
         text: 'Revised',
       })

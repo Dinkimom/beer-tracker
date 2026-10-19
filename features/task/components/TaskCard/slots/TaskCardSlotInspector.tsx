@@ -7,6 +7,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { updateTaskCardCustomField, updateTaskCardFieldPlacement } from '@/lib/taskCard/taskCardSlotEdits';
 import { taskCardFieldPresentations } from '@/lib/taskCard/taskCardSlots';
 
+import { KeepWhenSlotHiddenToggle } from './KeepWhenSlotHiddenToggle';
 import { taskCardFieldLabel, taskCardPresentationLabel } from './taskCardSlotLabels';
 import { TaskCardSlotValueLabels } from './TaskCardSlotValueLabels';
 
@@ -78,6 +79,13 @@ function renderBuiltin(
           </button>
         ))}
       </div>
+      <KeepWhenSlotHiddenToggle
+        checked={placement.keepWhenSlotHidden === true}
+        t={t}
+        onChange={(keepWhenSlotHidden) => {
+          onChange(updateTaskCardFieldPlacement(layout, selectedField, { keepWhenSlotHidden }));
+        }}
+      />
     </div>
   );
 }
@@ -136,6 +144,13 @@ function renderCustom(
           </button>
         ))}
       </div>
+      <KeepWhenSlotHiddenToggle
+        checked={placement.keepWhenSlotHidden === true}
+        t={t}
+        onChange={(keepWhenSlotHidden) => {
+          onChange(updateTaskCardCustomField(layout, selectedId, { keepWhenSlotHidden }));
+        }}
+      />
       <TaskCardSlotValueLabels
         fieldId={placement.fieldId}
         fieldLabel={placement.label}

@@ -4,6 +4,7 @@ import type { SprintInfo, SprintListItem } from '@/types/tracker';
 import toast from 'react-hot-toast';
 
 import { updateSprintStatus } from '@/lib/beerTrackerApi';
+import { isSpCompleted } from '@/lib/sprints/sprintTaskCompletion';
 import { compareSprintNamesByNumberDesc } from '@/utils/sprintDisplayName';
 
 type FinishSprintMoveCandidate = Pick<
@@ -75,8 +76,13 @@ export function resolveFinishSprintDefaultMoveTarget(params: {
   return { moveTasksTo: 'sprint', selectedSprintId: nextSprint.id };
 }
 
+/**
+ * Завершённые для переноса при закрытии спринта: категория done по воркфлоу
+ * (statusTypeKey / mapStatus), включая Done и Won't be done.
+ * RC / readyStatusKey не считаются SP-done и переносятся дальше.
+ */
 export function isTaskClosedForSprintFinish(task: Task): boolean {
-  return (task.originalStatus ?? '').trim().toLowerCase() === 'closed';
+  return isSpCompleted(task);
 }
 
 export function getTasksToMoveOnSprintFinish(tasks: Task[], goalTaskIds: Set<string>): Task[] {

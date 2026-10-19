@@ -116,7 +116,7 @@ export function ContextMenuPlanItems({
           >
             <Icon
               className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400"
-              name="phase-segments"
+              name="scissors"
             />
             <span>{t('sprintPlanner.contextMenu.editSegments')}</span>
           </Button>

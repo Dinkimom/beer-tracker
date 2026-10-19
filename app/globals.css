@@ -1116,6 +1116,8 @@ textarea:focus-visible,
   border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
+/* Капсула под карточкой (агент, отрезки, draft-save): мягче, чем плавающая тулбар-капсула доски. */
+[data-card-floating-toolbar].floating-toolbar-glass,
 .agent-pending-approval.floating-toolbar-glass {
   --floating-menu-shadow:
     0 4px 12px rgba(15, 23, 42, 0.08),
@@ -1123,6 +1125,7 @@ textarea:focus-visible,
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
+.dark [data-card-floating-toolbar].floating-toolbar-glass,
 .dark .agent-pending-approval.floating-toolbar-glass {
   --floating-menu-shadow: 0 8px 16px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
@@ -1142,7 +1145,7 @@ textarea:focus-visible,
 }
 
 .dark .planner-pinned-lane .planner-pinned-lane-glass {
-  background-color: rgb(31 41 55 / 0.92) !important;
+  background-color: rgb(31 41 55 / 0.97) !important;
 }
 
 /* Нижняя линия ячейки исполнителя — в пикселе border-b строки.

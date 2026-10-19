@@ -6,10 +6,23 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { TextTooltip } from '@/components/TextTooltip';
 import { CARD_MARGIN, WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { cellsToSegments, PHASE_FOCUS_RING_SOURCE, phaseSegmentCellsDirty } from '@/lib/planner-timeline';
+import {
+  CARD_FLOATING_TOOLBAR_CANCEL_BUTTON_CLASS,
+  CARD_FLOATING_TOOLBAR_CONFIRM_BUTTON_CLASS,
+  CardFloatingToolbar,
+  handleCardFloatingToolbarActionClick,
+} from '@/features/context-menu/components/CardFloatingToolbar';
+import {
+  cellsToSegments,
+  insertSegmentGapAfter,
+  listSegmentGapBlocks,
+  listSegmentSplitPoints,
+  PHASE_FOCUS_RING_SOURCE,
+  phaseSegmentCellsDirty,
+  removeSegmentGapBlock,
+} from '@/lib/planner-timeline';
 
 interface SwimlaneSegmentEditFrameProps {
   cells: boolean[];
@@ -20,15 +33,35 @@ interface SwimlaneSegmentEditFrameProps {
   rangeStartCell: number;
   /** Знаменатель для процентов по ширине таймлайна */
   timelineTotalParts?: number;
-  totalCells: number;
   onCancel: () => void;
   onCellsChange: (next: boolean[]) => void;
   onSave: (segments: PhaseSegment[]) => void;
 }
 
+/** Цвет как у PHASE_FOCUS_RING_SOURCE (`ring-blue-500` / `dark:ring-blue-400`). */
+const RING_LINE =
+  'border-blue-500 dark:border-blue-400';
+const RING_LINE_HOVER =
+  'border-blue-600 dark:border-blue-300';
+const RING_HATCH =
+  'bg-[repeating-linear-gradient(-45deg,transparent,transparent_3px,rgb(59_130_246/0.28)_3px,rgb(59_130_246/0.28)_6px)] dark:bg-[repeating-linear-gradient(-45deg,transparent,transparent_3px,rgb(96_165_250/0.32)_3px,rgb(96_165_250/0.32)_6px)]';
+const RING_HATCH_HOVER =
+  'bg-[repeating-linear-gradient(-45deg,transparent,transparent_3px,rgb(59_130_246/0.42)_3px,rgb(59_130_246/0.42)_6px)] dark:bg-[repeating-linear-gradient(-45deg,transparent,transparent_3px,rgb(96_165_250/0.48)_3px,rgb(96_165_250/0.48)_6px)]';
+
+/** Hit-зона вокруг вертикального пунктира (добавить разрыв). */
+const SPLIT_HIT_CLASS =
+  'absolute top-0 bottom-0 z-[2] flex w-3.5 -translate-x-1/2 cursor-pointer items-stretch justify-center border-0 bg-transparent p-0 transition-colors duration-200 hover:bg-blue-500/15 dark:hover:bg-blue-400/20 active:bg-blue-500/25 dark:active:bg-blue-400/30';
+
+const SPLIT_LINE_CLASS = `pointer-events-none h-full w-0 border-l-2 border-dashed ${RING_LINE} transition-[border-color] duration-200`;
+
+const GAP_HIT_CLASS =
+  'absolute top-0 bottom-0 z-[1] cursor-pointer rounded-sm border-0 p-0 transition-colors duration-200 active:scale-[0.99]';
+
+const GAP_EDGE_LINE_CLASS = `pointer-events-none absolute top-0 bottom-0 w-0 border-l-2 border-dashed ${RING_LINE} transition-[border-color] duration-200`;
+
 /**
- * Режим редактирования отрезков на свимлейне: обводка вокруг полного диапазона (с зазорами)
- * и невидимые кнопки по ячейкам; карточки остаются под слоем.
+ * Режим редактирования отрезков: раздвижка сегментов разрывами
+ * (сумма рабочих ячеек не меняется); карточки остаются под слоем.
  */
 export function SwimlaneSegmentEditFrame({
   cells,
@@ -36,30 +69,39 @@ export function SwimlaneSegmentEditFrame({
   onCellsChange,
   rangeStartCell,
   timelineTotalParts = WORKING_DAYS * getPartsPerDay(),
-  totalCells,
   containerStyle,
   onSave,
   onCancel,
 }: SwimlaneSegmentEditFrameProps) {
   const { t } = useI18n();
-  const [hoveredCellIndex, setHoveredCellIndex] = useState<number | null>(null);
+  const [hoveredSplitAfter, setHoveredSplitAfter] = useState<number | null>(null);
+  const [hoveredGapStart, setHoveredGapStart] = useState<number | null>(null);
 
   const hasDraftChanges = useMemo(() => phaseSegmentCellsDirty(cells, initialCells), [cells, initialCells]);
+  const maxLength = Math.max(0, timelineTotalParts - rangeStartCell);
+  const canInsertGap = cells.length < maxLength;
+  const splitPoints = useMemo(() => listSegmentSplitPoints(cells), [cells]);
+  const gapBlocks = useMemo(() => listSegmentGapBlocks(cells), [cells]);
 
   const leftPercent = (rangeStartCell / timelineTotalParts) * 100;
-  const widthPercent = (totalCells / timelineTotalParts) * 100;
+  const widthPercent = (cells.length / timelineTotalParts) * 100;
   const barLeft = `calc(${leftPercent}% + ${CARD_MARGIN}px)`;
   const barWidth = `calc(${widthPercent}% - ${CARD_MARGIN * 2}px)`;
-  /** Как у PhaseSegmentInlineEditor / OccupancyLinkButton: левый край контейнера кнопки — правый край диапазона по сетке */
-  const cancelButtonContainerLeft = `calc(${leftPercent}% + ${widthPercent}%)`;
 
-  const toggle = useCallback(
-    (index: number) => {
-      const next = [...cells];
-      next[index] = !cells[index];
-      onCellsChange(next);
+  const handleInsertGap = useCallback(
+    (afterIndex: number) => {
+      const next = insertSegmentGapAfter(cells, afterIndex, maxLength);
+      if (next) onCellsChange(next);
     },
-    [cells, onCellsChange],
+    [cells, maxLength, onCellsChange]
+  );
+
+  const handleRemoveGap = useCallback(
+    (indexInGap: number) => {
+      const next = removeSegmentGapBlock(cells, indexInGap);
+      if (next) onCellsChange(next);
+    },
+    [cells, onCellsChange]
   );
 
   const handleConfirm = useCallback(() => {
@@ -73,77 +115,105 @@ export function SwimlaneSegmentEditFrame({
     onCancel();
   }, [onCancel]);
 
+  const cellLeftPercent = (cellOffset: number) =>
+    ((rangeStartCell + cellOffset) / timelineTotalParts) * 100;
+
   return (
     <div className="pointer-events-auto absolute left-0 right-0" style={containerStyle}>
-      <div
-        aria-hidden
-        className={`pointer-events-none absolute rounded-lg ${PHASE_FOCUS_RING_SOURCE}`}
-        style={{ left: barLeft, width: barWidth, top: 0, bottom: 0, zIndex: 0 }}
-      />
-      {/* Как в PhaseSegmentInlineEditor (занятость): скругление + overflow-hidden, сырые button без ghost — иначе «дырка» и лишний контраст ховера */}
-      <div
-        className="absolute z-[1] flex items-stretch overflow-hidden rounded-lg"
-        style={{ left: barLeft, width: barWidth, top: 0, bottom: 0 }}
-        onMouseLeave={() => setHoveredCellIndex(null)}
-      >
-        {cells.map((on, idx) => (
-          <TextTooltip
-            key={idx}
-            content={
-              on
-                ? t('sprintPlanner.occupancy.segmentCellDisable')
-                : t('sprintPlanner.occupancy.segmentCellEnable')
-            }
-          >
-          <button
-            aria-label={
-              on
-                ? t('sprintPlanner.occupancy.segmentCellDisable')
-                : t('sprintPlanner.occupancy.segmentCellEnable')
-            }
-            className={`min-h-0 min-w-0 flex-1 cursor-pointer rounded-sm border-0 transition-colors duration-200 ${
-              hoveredCellIndex === idx
-                ? 'bg-black/15 ring-1 ring-inset ring-black/25 active:bg-black/25 dark:bg-white/15 dark:ring-white/30 dark:active:bg-white/25'
-                : 'bg-transparent hover:bg-black/10 active:bg-black/20 dark:hover:bg-white/5 dark:active:bg-white/15'
-            }`}
-            type="button"
-            onClick={() => toggle(idx)}
-            onMouseEnter={() => setHoveredCellIndex(idx)}
-          />
-          </TextTooltip>
-        ))}
-      </div>
-      <div
-        className="pointer-events-auto absolute flex items-center justify-end gap-1 pl-1"
-        style={{
-          left: cancelButtonContainerLeft,
-          top: 0,
-          bottom: 0,
-          zIndex: 2,
-        }}
-      >
-        {hasDraftChanges ? (
+      {/* Обводка и тулбар — как у карточек (с CARD_MARGIN). */}
+      <div className="absolute" style={{ left: barLeft, width: barWidth, top: 0, bottom: 0 }}>
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 rounded-lg ${PHASE_FOCUS_RING_SOURCE}`}
+        />
+        <CardFloatingToolbar data-swimlane-segment-edit-toolbar="">
           <Button
             aria-label={t('sprintPlanner.occupancy.segmentEditorConfirmTitle')}
-            className="!h-6 !w-6 !min-h-0 !min-w-0 !justify-center !p-0 text-green-700/90 transition-colors duration-200 focus-visible:outline-none dark:text-green-400/90 !border-gray-200/60 !bg-gray-50/80 !shadow-none hover:!border-green-600/25 hover:!bg-green-500/[0.12] hover:!shadow-sm dark:!border-gray-600/45 dark:!bg-gray-800/45 dark:hover:!border-green-400/30 dark:hover:!bg-green-400/[0.12]"
+            className={CARD_FLOATING_TOOLBAR_CONFIRM_BUTTON_CLASS}
+            disabled={!hasDraftChanges}
             title={t('sprintPlanner.occupancy.segmentEditorConfirmTitle')}
             type="button"
-            variant="outline"
-            onClick={handleConfirm}
+            variant="ghost"
+            onClick={(event) =>
+              handleCardFloatingToolbarActionClick(
+                event,
+                hasDraftChanges ? handleConfirm : undefined
+              )
+            }
+            onPointerDown={(event) => event.stopPropagation()}
           >
             <Icon className="h-3.5 w-3.5" name="check" />
           </Button>
-        ) : null}
-        <Button
-          aria-label={t('sprintPlanner.occupancy.segmentEditorDiscardTitle')}
-          className="!h-6 !w-6 !min-h-0 !min-w-0 !justify-center !p-0 text-red-600/90 transition-colors duration-200 focus-visible:outline-none dark:text-red-400/90 !border-gray-200/60 !bg-gray-50/80 !shadow-none hover:!border-red-600/25 hover:!bg-red-500/[0.1] hover:!shadow-sm dark:!border-gray-600/45 dark:!bg-gray-800/45 dark:hover:!border-red-400/30 dark:hover:!bg-red-400/[0.1]"
-          title={t('sprintPlanner.occupancy.segmentEditorDiscardTitle')}
-          type="button"
-          variant="outline"
-          onClick={handleDiscard}
-        >
-          <Icon className="h-3.5 w-3.5" name="x" />
-        </Button>
+          <Button
+            aria-label={t('sprintPlanner.occupancy.segmentEditorDiscardTitle')}
+            className={CARD_FLOATING_TOOLBAR_CANCEL_BUTTON_CLASS}
+            title={t('sprintPlanner.occupancy.segmentEditorDiscardTitle')}
+            type="button"
+            variant="ghost"
+            onClick={(event) => handleCardFloatingToolbarActionClick(event, handleDiscard)}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
+            <Icon className="h-3.5 w-3.5" name="x" />
+          </Button>
+        </CardFloatingToolbar>
+      </div>
+      {/* Линии разрыва — по абсолютным границам ячеек сетки (без смещения CARD_MARGIN). */}
+      <div
+        className="absolute inset-0 z-[1]"
+        onMouseLeave={() => {
+          setHoveredSplitAfter(null);
+          setHoveredGapStart(null);
+        }}
+      >
+        {gapBlocks.map((gap) => {
+          const leftPct = cellLeftPercent(gap.startIndex);
+          const widthPct = (gap.length / timelineTotalParts) * 100;
+          const hovered = hoveredGapStart === gap.startIndex;
+          return (
+            <button
+              key={`gap-${gap.startIndex}`}
+              aria-label={t('sprintPlanner.occupancy.segmentGapRemove')}
+              className={`${GAP_HIT_CLASS} ${hovered ? RING_HATCH_HOVER : RING_HATCH}`}
+              style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+              type="button"
+              onClick={() => handleRemoveGap(gap.startIndex)}
+              onMouseEnter={() => setHoveredGapStart(gap.startIndex)}
+            >
+              <span
+                aria-hidden
+                className={`${GAP_EDGE_LINE_CLASS} left-0${hovered ? ` ${RING_LINE_HOVER}` : ''}`}
+              />
+              <span
+                aria-hidden
+                className={`${GAP_EDGE_LINE_CLASS} right-0 -translate-x-px${
+                  hovered ? ` ${RING_LINE_HOVER}` : ''
+                }`}
+              />
+            </button>
+          );
+        })}
+        {canInsertGap
+          ? splitPoints.map((afterIndex) => {
+              const leftPct = cellLeftPercent(afterIndex + 1);
+              const hovered = hoveredSplitAfter === afterIndex;
+              return (
+                <button
+                  key={`split-${afterIndex}`}
+                  aria-label={t('sprintPlanner.occupancy.segmentGapAdd')}
+                  className={SPLIT_HIT_CLASS}
+                  style={{ left: `${leftPct}%` }}
+                  type="button"
+                  onClick={() => handleInsertGap(afterIndex)}
+                  onMouseEnter={() => setHoveredSplitAfter(afterIndex)}
+                >
+                  <span
+                    aria-hidden
+                    className={`${SPLIT_LINE_CLASS}${hovered ? ` ${RING_LINE_HOVER}` : ''}`}
+                  />
+                </button>
+              );
+            })
+          : null}
       </div>
     </div>
   );

@@ -54,3 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_plan_patch_goal_previews_sprint
     ON plan_patch_goal_previews (organization_id, sprint_id);
 
 COMMENT ON TABLE plan_patch_goal_previews IS 'Предложения propose_plan_patch по целям спринта до apply';
+
+-- Brand on draft sticky notes from createNote (same propose).
+ALTER TABLE comments
+    ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16) NOT NULL DEFAULT '';

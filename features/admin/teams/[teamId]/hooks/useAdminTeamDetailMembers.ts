@@ -1,5 +1,6 @@
 import type { ConfirmDialogPromptOptions } from "@/components/ConfirmDialog";
 import type { AdminTeamMember } from "@/features/admin/adminTeamCatalog";
+import type { AdminTeamMemberAddSource } from "@/features/admin/teams/[teamId]/components/AdminTeamMembersAddForm";
 import type { Dispatch, SetStateAction } from "react";
 
 import { useCallback, useState } from "react";
@@ -12,12 +13,18 @@ import {
 } from "@/lib/api/admin/teams";
 import { readApiErrorMessage } from "@/lib/api/readApiError";
 
-import { addRegistryTeamMemberFlow } from "./useAdminTeamDetailMembersAddHelpers";
+import {
+  addRegistryTeamMemberFlow,
+  addTrackerTeamMemberFlow,
+} from "./useAdminTeamDetailMembersAddHelpers";
 import { inviteOnPremTeamMember } from "./useAdminTeamDetailMembersInviteHelpers";
 
 interface UseAdminTeamDetailMembersParams {
   addRoleSlug: string;
+  addSource: AdminTeamMemberAddSource;
   addStaffUid: string;
+  addTrackerMeta: { displayName?: string; email?: string | null } | null;
+  addTrackerUserId: string;
   members: AdminTeamMember[];
   orgId: string;
   setAddRoleSlug: Dispatch<SetStateAction<string>>;
@@ -28,6 +35,13 @@ interface UseAdminTeamDetailMembersParams {
     } | null>
   >;
   setAddStaffUid: Dispatch<SetStateAction<string>>;
+  setAddTrackerMeta: Dispatch<
+    SetStateAction<{
+      displayName?: string;
+      email?: string | null;
+    } | null>
+  >;
+  setAddTrackerUserId: Dispatch<SetStateAction<string>>;
   setMembers: Dispatch<SetStateAction<AdminTeamMember[]>>;
   teamId: string;
   confirmDestructive: (message: string, options?: ConfirmDialogPromptOptions) => Promise<boolean>;
@@ -35,13 +49,18 @@ interface UseAdminTeamDetailMembersParams {
 
 export function useAdminTeamDetailMembers({
   addRoleSlug,
+  addSource,
   addStaffUid,
+  addTrackerMeta,
+  addTrackerUserId,
   confirmDestructive,
   members,
   orgId,
   setAddRoleSlug,
   setAddStaffMeta,
   setAddStaffUid,
+  setAddTrackerMeta,
+  setAddTrackerUserId,
   setMembers,
   teamId,
 }: UseAdminTeamDetailMembersParams) {
@@ -54,6 +73,22 @@ export function useAdminTeamDetailMembers({
   const addMember = useCallback(async (): Promise<boolean> => {
     setAddLoading(true);
     try {
+      if (addSource === "tracker") {
+        return await addTrackerTeamMemberFlow({
+          addRoleSlug,
+          addTrackerMeta,
+          addTrackerUserId,
+          orgId,
+          setAddRoleSlug,
+          setAddStaffMeta,
+          setAddStaffUid,
+          setAddTrackerMeta,
+          setAddTrackerUserId,
+          setMembers,
+          t,
+          teamId,
+        });
+      }
       return await addRegistryTeamMemberFlow({
         addRoleSlug,
         addStaffUid,
@@ -61,6 +96,8 @@ export function useAdminTeamDetailMembers({
         setAddRoleSlug,
         setAddStaffMeta,
         setAddStaffUid,
+        setAddTrackerMeta,
+        setAddTrackerUserId,
         setMembers,
         t,
         teamId,
@@ -73,11 +110,16 @@ export function useAdminTeamDetailMembers({
     }
   }, [
     addRoleSlug,
+    addSource,
     addStaffUid,
+    addTrackerMeta,
+    addTrackerUserId,
     orgId,
     setAddRoleSlug,
     setAddStaffMeta,
     setAddStaffUid,
+    setAddTrackerMeta,
+    setAddTrackerUserId,
     setMembers,
     t,
     teamId,

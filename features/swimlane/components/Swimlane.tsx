@@ -77,7 +77,6 @@ function SwimlaneComponent({
   hoverConnectedTaskIds = null,
   hoveredTaskId = null,
   isDraggingTask = false,
-  isLastRow = false,
   isPinned = false,
   selectedTaskId = null,
   onTaskResize,
@@ -337,7 +336,6 @@ function SwimlaneComponent({
           />
           <TimelineGrid
             developerId={developer.id}
-            forceRowBorder={isLastRow}
             hasTaskOverlaps={quickAddBandLayout.hasTaskOverlaps}
             holidayDayIndices={holidayDayIndices}
             isDraggingTask={isDraggingTask}

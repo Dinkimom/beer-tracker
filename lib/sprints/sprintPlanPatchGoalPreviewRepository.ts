@@ -104,6 +104,33 @@ export async function listPlanPatchGoalPreviews(input: {
   return previews;
 }
 
+/** Short proposal id + row count for unexpired goal previews (if any). */
+export async function peekPlanPatchGoalPreviewProposal(input: {
+  organizationId: string;
+  sprintId: number;
+}): Promise<{ count: number; proposalId: string } | null> {
+  await ensurePlanPatchGoalPreviewSchema();
+  await query(
+    `DELETE FROM plan_patch_goal_previews
+     WHERE organization_id = $1::uuid AND sprint_id = $2 AND expires_at < CURRENT_TIMESTAMP`,
+    [input.organizationId, input.sprintId]
+  );
+  const result = await query<{ count: string; proposal_id: string }>(
+    `SELECT proposal_id, COUNT(*)::text AS count
+     FROM plan_patch_goal_previews
+     WHERE organization_id = $1::uuid AND sprint_id = $2
+     GROUP BY proposal_id
+     ORDER BY COUNT(*) DESC
+     LIMIT 1`,
+    [input.organizationId, input.sprintId]
+  );
+  const row = result.rows[0];
+  if (!row?.proposal_id) {
+    return null;
+  }
+  return { count: Number(row.count), proposalId: row.proposal_id };
+}
+
 export async function replacePlanPatchGoalPreviews(input: {
   expiresAt: Date;
   organizationId: string;

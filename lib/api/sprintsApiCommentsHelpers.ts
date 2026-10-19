@@ -9,6 +9,7 @@ import {
 import { parseCommentParent } from '@/lib/comments/commentParent';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { parseStickyNoteReactions } from '@/lib/comments/stickyNoteReaction';
+import { planPatchClientBrandFromUnknown } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
@@ -67,6 +68,7 @@ export function commentToSaveApiFields(comment: SaveCommentInput): {
 interface CommentFromApi {
   assignee_id: string;
   author_name?: string | null;
+  client_brand?: string | null;
   color?: string | null;
   created_at?: string | null;
   created_by?: string | null;
@@ -85,6 +87,31 @@ interface CommentFromApi {
   y: number | null;
 }
 
+function commentMediaUrls(
+  kind: ReturnType<typeof parsePlannerCommentKind>,
+  commentId: string,
+  sprintId: number | undefined
+): Pick<Comment, 'diagramUrl' | 'imageUrl'> {
+  if (sprintId == null) {
+    return {};
+  }
+  if (kind === 'image') {
+    return { imageUrl: plannerCommentImageUrl(sprintId, commentId) };
+  }
+  if (kind === 'diagram') {
+    return { diagramUrl: plannerCommentDiagramUrl(sprintId, commentId) };
+  }
+  return {};
+}
+
+function commentApprovalFields(comment: CommentFromApi): Pick<Comment, 'clientBrand' | 'pendingApproval'> {
+  const clientBrand = planPatchClientBrandFromUnknown(comment.client_brand);
+  return {
+    ...(comment.pending_approval === true ? { pendingApproval: true } : {}),
+    ...(clientBrand ? { clientBrand } : {}),
+  };
+}
+
 export function mapCommentFromApi(comment: CommentFromApi, sprintId?: number): Comment {
   const authorName = parseCommentAuthorName(comment.author_name);
   const createdBy = parseCommentAuthorName(comment.created_by);
@@ -99,12 +126,7 @@ export function mapCommentFromApi(comment: CommentFromApi, sprintId?: number): C
     imageFileId,
     ...(kind === 'text' ? {} : { kind }),
     ...(parent ? { parent } : {}),
-    ...(kind === 'image' && sprintId != null
-      ? { imageUrl: plannerCommentImageUrl(sprintId, comment.id) }
-      : {}),
-    ...(kind === 'diagram' && sprintId != null
-      ? { diagramUrl: plannerCommentDiagramUrl(sprintId, comment.id) }
-      : {}),
+    ...commentMediaUrls(kind, comment.id, sprintId),
     text: comment.text,
     x: comment.x ?? 0,
     y: comment.y ?? 0,
@@ -114,7 +136,7 @@ export function mapCommentFromApi(comment: CommentFromApi, sprintId?: number): C
     height: comment.height,
     createdAt: comment.created_at ?? undefined,
     ...(createdBy ? { createdBy } : {}),
-    ...(comment.pending_approval === true ? { pendingApproval: true } : {}),
+    ...commentApprovalFields(comment),
     ...(comment.reactions === undefined ? {} : { reactions: parseStickyNoteReactions(comment.reactions) }),
   };
 }

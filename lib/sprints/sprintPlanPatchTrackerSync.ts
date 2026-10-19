@@ -49,32 +49,56 @@ export function collectIssueNotInSprintWarnings(
   return warnings;
 }
 
-/** Agent-facing remediation when propose flagged issues missing from the tracker sprint. */
-export function buildIssueNotInSprintPlanPatchHints(
-  ops: readonly SprintPlanPatchOp[],
-  warnings: readonly string[]
-): string[] {
-  const missingIds = new Set<string>();
+function missingSprintTaskIds(warnings: readonly string[]): string[] {
+  const missingIds: string[] = [];
   for (const warning of warnings) {
     const match = /^issue_not_in_sprint:\s*(\S+)/.exec(warning);
     if (match?.[1]) {
-      missingIds.add(match[1]);
+      missingIds.push(match[1]);
     }
   }
-  if (missingIds.size === 0) {
-    return [];
-  }
-  const needsSync = [...missingIds].filter((taskId) =>
+  return missingIds;
+}
+
+function tasksNeedingTrackerSync(
+  ops: readonly SprintPlanPatchOp[],
+  taskIds: readonly string[]
+): string[] {
+  return taskIds.filter((taskId) =>
     ops.some(
       (op) => op.op === 'upsertPosition' && op.taskId.trim() === taskId && !op.syncToTracker
     )
   );
+}
+
+function hintForOffPlanner(taskIds: readonly string[]): string {
+  return `issue_not_in_sprint (${taskIds.join(', ')}): not on the planner yet. Re-propose those upsertPosition ops with syncToTracker:true to add the issue to the tracker sprint. You may set segments on the same op to place an already-split task in one step, then apply with the new applyToken.`;
+}
+
+function hintForOnPlanner(taskIds: readonly string[]): string {
+  return `issue_not_in_sprint (${taskIds.join(', ')}): already on the planner. The position change still applies without syncToTracker. Set syncToTracker=true on those upsertPosition ops only if you also want to add them to the Tracker sprint and assign.`;
+}
+
+/** Agent-facing remediation when propose flagged issues missing from the tracker sprint. */
+export function buildIssueNotInSprintPlanPatchHints(
+  ops: readonly SprintPlanPatchOp[],
+  warnings: readonly string[],
+  placedTaskIds?: ReadonlySet<string>
+): string[] {
+  const needsSync = tasksNeedingTrackerSync(ops, missingSprintTaskIds(warnings));
   if (needsSync.length === 0) {
     return [];
   }
-  return [
-    `issue_not_in_sprint (${needsSync.join(', ')}): re-propose those upsertPosition ops with syncToTracker:true to add the issue to the tracker sprint. You may set segments on the same op to place an already-split task in one step, then apply with the new applyToken.`,
-  ];
+  const onPlanner = needsSync.filter((taskId) => placedTaskIds?.has(taskId) === true);
+  const offPlanner = needsSync.filter((taskId) => !onPlanner.includes(taskId));
+  const hints: string[] = [];
+  if (offPlanner.length > 0) {
+    hints.push(hintForOffPlanner(offPlanner));
+  }
+  if (onPlanner.length > 0) {
+    hints.push(hintForOnPlanner(onPlanner));
+  }
+  return hints;
 }
 
 /** After BT position write: optionally add to tracker sprint and assign. Errors are returned, not thrown. */

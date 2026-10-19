@@ -19,6 +19,8 @@ import {
   collectSprintContextWarnings,
   parseStaffUuidFromAssigneeId,
 } from '@/lib/sprints/sprintContextEnrichmentHelpers';
+import { loadSprintContextHolidayDays } from '@/lib/sprints/sprintContextHolidays';
+import { loadOrgHolidayCountry } from '@/lib/sprints/sprintContextOrgHolidayCountry';
 import { buildPlanVsActual } from '@/lib/sprints/sprintContextPlanVsActual';
 import {
   loadSprintContextTeamMembers,
@@ -321,6 +323,15 @@ export async function enrichSprintContextPayload(input: {
     softWarnings.push('calendar_days_unavailable: could not map working days from sprint window');
   }
 
+  const holidayCountry = await loadOrgHolidayCountry(input.organizationId);
+  const { holidayDays, warning: holidaysWarning } = await loadSprintContextHolidayDays({
+    calendarDays,
+    country: holidayCountry,
+  });
+  if (holidaysWarning) {
+    softWarnings.push(holidaysWarning);
+  }
+
   const agenda = buildSprintContextAgenda(positions, calendarDays);
   const emptyPlan =
     positions.length === 0 &&
@@ -346,6 +357,8 @@ export async function enrichSprintContextPayload(input: {
     meta: {
       ...input.payload.meta,
       ...(calendarDays.length > 0 ? { calendarDays } : {}),
+      holidayCountry,
+      ...(holidayDays.length > 0 ? { holidayDays } : {}),
       ...(weekendDays.length > 0 ? { weekendDays } : {}),
       ...(warnings.length > 0 ? { warnings } : {}),
     },

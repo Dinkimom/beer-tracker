@@ -21,7 +21,6 @@ import {
   useEpicOccupancyRowFieldsStorage,
   useEpicOccupancyRowViewStorage,
   useEpicOccupancyTimelineSettingsStorage,
-  useHolidayCountryStorage,
   useKanbanGroupByStorage,
   useLinksDimOnHoverStorage,
   useOccupancyRowFieldsStorage,
@@ -40,6 +39,7 @@ import {
   useTrackerTokenStorage,
   useBoardViewModeStorage,
 } from '@/hooks/useLocalStorage';
+import { useOrgHolidayCountry } from '@/hooks/useOrgHolidayCountry';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import { getAppVersionLabel } from '@/lib/appVersion';
 import { validateToken } from '@/lib/beerTrackerApi';
@@ -71,7 +71,7 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
   const [syncEstimates, setSyncEstimates] = useDataSyncEstimatesStorage();
   const [syncAssignees, setSyncAssignees] = useDataSyncAssigneesStorage();
   const [showHolidays, setShowHolidays] = useShowHolidaysStorage();
-  const [holidayCountry, setHolidayCountry] = useHolidayCountryStorage();
+  const { holidayCountry, setHolidayCountry } = useOrgHolidayCountry();
   const [timelineSettings, setTimelineSettings] = useOccupancyTimelineSettingsStorage();
   const [occupancyTimelineScale, setOccupancyTimelineScale] = useOccupancyTimelineScaleStorage();
   const [occupancyRowView, setOccupancyRowView] = useOccupancyRowViewStorage();

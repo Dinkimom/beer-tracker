@@ -33,6 +33,7 @@ function asParent(parent: SprintPlanPatchCreateNoteOp['parent']): TaskParent | n
 
 export async function persistProposedCreateNotes(input: {
   actorUserId: string;
+  clientBrand?: string | null;
   expiresAt: Date;
   ops: SprintPlanPatchOp[];
   organizationId: string;
@@ -52,6 +53,7 @@ export async function persistProposedCreateNotes(input: {
     });
     await insertSprintComment({
       assigneeId: op.assigneeId,
+      clientBrand: input.clientBrand ?? '',
       color: op.color,
       commentId,
       createdBy: input.actorUserId,

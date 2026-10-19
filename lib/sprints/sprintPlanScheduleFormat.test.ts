@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  collectPositionPatchTaskIds,
   collectUpsertPositionTaskIds,
   formatSprintPlanSchedule,
 } from './sprintPlanScheduleFormat';
@@ -43,5 +44,17 @@ describe('collectUpsertPositionTaskIds', () => {
         { op: 'createNote' },
       ])
     ).toEqual(new Set(['A-1']));
+  });
+});
+
+describe('collectPositionPatchTaskIds', () => {
+  it('collects upsertPosition and deletePosition task ids', () => {
+    expect(
+      collectPositionPatchTaskIds([
+        { op: 'upsertPosition', taskId: 'A-1' },
+        { op: 'deletePosition', taskId: 'A-2' },
+        { op: 'createNote' },
+      ])
+    ).toEqual(new Set(['A-1', 'A-2']));
   });
 });

@@ -36,3 +36,32 @@ export async function postRegistryTeamMember(params: {
     return { ok: false, error: ax.response?.data?.error };
   }
 }
+
+export async function postTrackerTeamMember(params: {
+  addRoleSlug: string;
+  displayName?: string;
+  email?: string | null;
+  orgId: string;
+  teamId: string;
+  trackerUserId: string;
+}): Promise<{ error?: string; ok: boolean }> {
+  try {
+    const body: Record<string, unknown> = {
+      role_slug: params.addRoleSlug.trim() || null,
+      tracker_user_id: params.trackerUserId.trim(),
+    };
+    const displayName = params.displayName?.trim();
+    if (displayName) {
+      body.display_name = displayName;
+    }
+    const email = params.email?.trim();
+    if (email) {
+      body.email = email;
+    }
+    await postAdminTeamMember(params.orgId, params.teamId, body);
+    return { ok: true };
+  } catch (error) {
+    const ax = error as { response?: { data?: { error?: string } } };
+    return { ok: false, error: ax.response?.data?.error };
+  }
+}

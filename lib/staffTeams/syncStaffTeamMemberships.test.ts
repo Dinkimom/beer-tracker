@@ -50,4 +50,15 @@ describe('syncStaffTeamMemberships', () => {
     expect(removeTeamMember).toHaveBeenCalledWith('org', 'team-a', 'staff');
     expect(addTeamMember).toHaveBeenCalledWith('org', 'team-b', 'staff', null);
   });
+
+  it('passes role_slug when adding missing teams', async () => {
+    vi.mocked(findStaffById).mockResolvedValue({ id: 'staff' } as never);
+    vi.mocked(findTeamById).mockResolvedValue({ id: 'team-b' } as never);
+    vi.mocked(listTeamIdsForStaffInOrganization).mockResolvedValue([]);
+    vi.mocked(addTeamMember).mockResolvedValue({ team_id: 'team-b', staff_id: 'staff' } as never);
+
+    const result = await syncStaffTeamMemberships('org', 'staff', ['team-b'], 'frontend');
+    expect(result).toEqual({ ok: true });
+    expect(addTeamMember).toHaveBeenCalledWith('org', 'team-b', 'staff', 'frontend');
+  });
 });

@@ -132,6 +132,15 @@ export interface SprintContextWeekendDay {
   weekday: 'saturday' | 'sunday';
 }
 
+/**
+ * Public / production-calendar non-working weekday inside the sprint window.
+ * Keeps the same planner day index as meta.calendarDays (do not drop the column).
+ */
+export interface SprintContextHolidayDay {
+  date: string;
+  day: number;
+}
+
 export interface SprintContextAgendaItem {
   assigneeId: string;
   assigneeName?: string | null;
@@ -148,6 +157,13 @@ interface SprintContextMeta {
   boardId?: number;
   calendarDays?: SprintContextCalendarDay[];
   featureId?: string;
+  /** ISO country used for holidayDays / capacity (organizations.settings.planner.holidayCountry). */
+  holidayCountry?: string;
+  /**
+   * Non-working weekdays (public holidays / production-calendar transfers).
+   * Same day index as calendarDays; capacity treats them as unavailable for everyone.
+   */
+  holidayDays?: SprintContextHolidayDay[];
   legend: {
     day: string;
     part: string;

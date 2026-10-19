@@ -145,6 +145,43 @@ describe('buildSprintContextCapacity', () => {
     ]);
   });
 
+  it('treats meta.holidayDays as unavailable for everyone and shrinks free capacity', () => {
+    const report = buildSprintContextCapacity(
+      basePayload({
+        meta: {
+          legend: { day: 'd', part: 'p' },
+          organizationId: 'org-1',
+          partsPerDay: PARTS_PER_DAY,
+          schemaVersion: 2,
+          sprintId: 1,
+          calendarDays: [
+            { date: '2026-10-27', day: 0 },
+            { date: '2026-10-28', day: 1 },
+          ],
+          holidayDays: [{ date: '2026-10-28', day: 1 }],
+        },
+        positions: [
+          {
+            assigneeId: 'staff:a',
+            assigneeName: 'Ada',
+            duration: 1,
+            isQa: false,
+            plannedDuration: null,
+            plannedStartDay: null,
+            plannedStartPart: null,
+            startDay: 0,
+            startPart: 0,
+            taskId: 'T-1',
+          },
+        ],
+      })
+    );
+
+    expect(report.people[0]?.days[1]?.unavailable).toBe(true);
+    expect(report.people[0]?.totalMaxParts).toBe(PARTS_PER_DAY);
+    expect(report.people[0]?.gaps.every((gap) => gap.day !== 1)).toBe(true);
+  });
+
   it('skips feature-draft assignees', () => {
     const report = buildSprintContextCapacity(
       basePayload({

@@ -128,7 +128,66 @@ describe('summarizeSprintPlanPatchOps', () => {
         },
       ])
     ).toEqual([
-      'upsertPosition RND-1 → staff:a day 0 part 0 dur 2 (2 segments) +syncToTracker',
+      'upsertPosition RND-1: (none) → staff:a day 0 part 0 dur 2 (2 segments) +syncToTracker',
+    ]);
+  });
+
+  it('includes was → became when current positions are provided', () => {
+    expect(
+      summarizeSprintPlanPatchOps(
+        [
+          {
+            assigneeId: 'staff:b',
+            duration: 4,
+            op: 'upsertPosition',
+            startDay: 2,
+            startPart: 1,
+            taskId: 'RND-1',
+          },
+        ],
+        [
+          {
+            assigneeId: 'staff:a',
+            duration: 2,
+            isQa: false,
+            plannedDuration: null,
+            plannedStartDay: null,
+            plannedStartPart: null,
+            startDay: 0,
+            startPart: 0,
+            taskId: 'RND-1',
+          },
+        ]
+      )
+    ).toEqual([
+      'upsertPosition RND-1: staff:a day 0 part 0 dur 2 → staff:b day 2 part 1 dur 4',
+    ]);
+  });
+
+  it('shows note and goal text before the new text', () => {
+    expect(
+      summarizeSprintPlanPatchOps(
+        [
+          {
+            commentId: '11111111-1111-4111-8111-111111111111',
+            op: 'updateNote',
+            text: 'After',
+          },
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            op: 'updateGoal',
+            text: 'New goal',
+          },
+        ],
+        undefined,
+        {
+          goals: new Map([['22222222-2222-4222-8222-222222222222', 'Old goal']]),
+          notes: new Map([['11111111-1111-4111-8111-111111111111', 'Old note']]),
+        }
+      )
+    ).toEqual([
+      'updateNote 11111111-1111-4111-8111-111111111111: "Old note" → "After"',
+      'updateGoal 22222222-2222-4222-8222-222222222222: "Old goal" → "New goal"',
     ]);
   });
 });

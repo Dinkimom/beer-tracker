@@ -68,7 +68,7 @@ describe('resolveTaskCardSlots', () => {
     });
   });
 
-  it('drops the footer on a narrow card and the header row on a one-cell card', () => {
+  it('drops the footer on a narrow card and keeps the key on a one-cell card', () => {
     const layout = defaultTaskCardSlotLayout();
     expect(fieldsOf(layout, 'narrow').footer).toEqual([]);
     expect(fieldsOf(layout, 'narrow').footerEnd).toEqual([]);
@@ -81,8 +81,58 @@ describe('resolveTaskCardSlots', () => {
       eyebrow: [],
       footer: [],
       footerEnd: [],
-      titleLead: [],
+      titleLead: ['key:link'],
     });
+  });
+
+  it('hides the key on a one-cell card when keepWhenSlotHidden is off', () => {
+    const layout = updateTaskCardFieldPlacement(defaultTaskCardSlotLayout(), 'key', {
+      keepWhenSlotHidden: false,
+    });
+    expect(fieldsOf(layout, 'compact').titleLead).toEqual([]);
+  });
+
+  it('keeps a footer field on a narrow card when keepWhenSlotHidden is on', () => {
+    const layout = updateTaskCardFieldPlacement(defaultTaskCardSlotLayout(), 'status', {
+      keepWhenSlotHidden: true,
+    });
+    expect(fieldsOf(layout, 'narrow').footer).toEqual(['status:tag']);
+    expect(fieldsOf(layout, 'narrow').footerEnd).toEqual([]);
+  });
+
+  it('keeps a tracker field on a short card when keepWhenSlotHidden is on', () => {
+    const withCustomer = updateTaskCardCustomField(
+      addTaskCardCustomField(defaultTaskCardSlotLayout(), {
+        fieldId: 'customer',
+        label: 'Customer',
+      }),
+      'customer',
+      { keepWhenSlotHidden: true }
+    );
+    const resolved = resolveTaskCardSlots({
+      ...fullData,
+      customFieldValues: { customer: 'Northwind' },
+      density: 'narrow',
+      layout: withCustomer,
+    });
+    expect(resolved.footer).toContainEqual({
+      customFieldId: 'customer',
+      field: 'custom',
+      label: 'Customer',
+      presentation: 'text',
+    });
+  });
+
+  it('keeps keepWhenSlotHidden when the presentation changes', () => {
+    const layout = updateTaskCardFieldPlacement(
+      updateTaskCardFieldPlacement(defaultTaskCardSlotLayout(), 'key', { keepWhenSlotHidden: true }),
+      'key',
+      { presentation: 'text' }
+    );
+    const key = layout.placements.find((item) => item.field === 'key');
+    expect(key?.keepWhenSlotHidden).toBe(true);
+    expect(key?.presentation).toBe('text');
+    expect(fieldsOf(layout, 'compact').titleLead).toEqual(['key:text']);
   });
 
   it('hides a part only at the chosen width', () => {
@@ -165,7 +215,7 @@ describe('resolveTaskCardSlots', () => {
   it('shows the status footer on short cards for the short-card preset', () => {
     const layout = taskCardSlotPresetLayout('statusOnShortCards');
     expect(fieldsOf(layout, 'narrow').footer).toContain('status:tag');
-    expect(fieldsOf(layout, 'compact').titleLead).toEqual([]);
+    expect(fieldsOf(layout, 'compact').titleLead).toEqual(['key:link']);
     expect(fieldsOf(layout, 'compact').footer).toContain('status:tag');
   });
 
@@ -236,8 +286,16 @@ describe('normalizeTaskCardSlotLayout', () => {
       presentation: 'dot',
       slot: 'titleLead',
     });
+    expect(layout.placements.find((item) => item.field === 'key')?.keepWhenSlotHidden).toBe(true);
     expect(layout.placements.find((item) => item.field === 'parent')?.presentation).toBe('text');
     expect(layout.customPlacements).toEqual([]);
+  });
+
+  it('keeps an explicit keepWhenSlotHidden false for the key', () => {
+    const layout = normalizeTaskCardSlotLayout({
+      placements: [{ field: 'key', keepWhenSlotHidden: false, presentation: 'link', slot: 'titleLead' }],
+    });
+    expect(layout.placements.find((item) => item.field === 'key')?.keepWhenSlotHidden).toBe(false);
   });
 
   it('keeps an explicit hide rule over a legacy checkbox', () => {

@@ -126,6 +126,8 @@ export function AdminMembersPageClient({
           idPrefix="create-member"
           orgId={orgId}
           resetIdentityOnClear
+          roleOptions={page.roleOptions}
+          showRoleSelect
           submitLabel={t('admin.membersPage.inviteSubmit')}
           teamOptions={page.teamOptions}
           values={page.createValues}
@@ -149,6 +151,8 @@ export function AdminMembersPageClient({
           idPrefix={`edit-${page.editingId ?? 'member'}`}
           orgId={orgId}
           resetIdentityOnClear={false}
+          roleOptions={page.roleOptions}
+          showRoleSelect={false}
           submitLabel={t('common.save')}
           teamOptions={page.teamOptions}
           values={page.editValues}

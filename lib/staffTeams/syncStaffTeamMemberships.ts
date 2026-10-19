@@ -56,11 +56,12 @@ async function addMissingDesiredTeams(
   organizationId: string,
   staffId: string,
   desired: string[],
-  currentSet: Set<string>
+  currentSet: Set<string>,
+  roleSlug: string | null
 ): Promise<SyncStaffTeamMembershipsResult | null> {
   for (const teamId of desired) {
     if (currentSet.has(teamId)) continue;
-    const member = await addTeamMember(organizationId, teamId, staffId, null);
+    const member = await addTeamMember(organizationId, teamId, staffId, roleSlug);
     if (!member) {
       return { error: 'Не удалось добавить: команда или сотрудник не найдены', status: 404 };
     }
@@ -71,7 +72,8 @@ async function addMissingDesiredTeams(
 export async function syncStaffTeamMemberships(
   organizationId: string,
   staffId: string,
-  teamIds: string[]
+  teamIds: string[],
+  roleSlug?: string | null
 ): Promise<SyncStaffTeamMembershipsResult> {
   const staff = await findStaffById(organizationId, staffId);
   if (!staff) {
@@ -84,13 +86,16 @@ export async function syncStaffTeamMemberships(
     return teamsMissing;
   }
 
+  const normalizedRoleSlug =
+    roleSlug == null || roleSlug.trim() === '' ? null : roleSlug.trim();
   const current = await listTeamIdsForStaffInOrganization(organizationId, staffId);
   await removeTeamsNotInDesired(organizationId, staffId, current, new Set(desired));
   const addError = await addMissingDesiredTeams(
     organizationId,
     staffId,
     desired,
-    new Set(current)
+    new Set(current),
+    normalizedRoleSlug
   );
   if (addError) {
     return addError;

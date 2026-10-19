@@ -292,8 +292,6 @@ export function SwimlanesSectionLanes({
     onTaskHoverEnd,
   };
 
-  const lastRowId = orderedRows[orderedRows.length - 1]?.id;
-
   const renderLane = (developer: Developer) => {
     const laneProps = swimlanePropsById.get(developer.id);
     if (!laneProps) return null;
@@ -307,7 +305,6 @@ export function SwimlanesSectionLanes({
       >
         <Swimlane
           {...laneProps}
-          isLastRow={developer.id === lastRowId}
           isPinned={isPinned}
           onTogglePin={togglePinnedRow}
         />

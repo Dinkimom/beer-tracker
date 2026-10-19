@@ -436,6 +436,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
       <PlanPatchPendingToolbar preview={planPatchChrome.toolbarPreview} sprintId={selectedSprintId} />
       {showPendingApprovalToolbar && swimlaneCommentId != null ? (
         <TaskBarPendingApprovalToolbar
+          clientBrand={task.pendingApprovalClientBrand}
           commentId={swimlaneCommentId}
           onApprove={onCommentApprove}
           onReject={onCommentDelete}

@@ -3,29 +3,54 @@ import type { SwimlanePlacementTool } from '@/lib/layers';
 import type { SwimlaneBaselineLayoutMode } from '@/lib/swimlane/swimlaneBaselineLayoutMode';
 
 /** Отступ капсулы от нижнего края доски. */
-export const SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX = 10;
+export const SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX = 24;
 
 /** Высота капсулы: кнопка h-9 + py-1.5 + бордер. */
 export const SWIMLANE_PLACEMENT_TOOLBAR_HEIGHT_PX = 50;
 
-const SWIMLANE_PLACEMENT_TOOLBAR_CLEARANCE_PX = 8;
+/** Зазор над стеком капсул, чтобы последняя строка не прижималась к тулбару. */
+const SWIMLANE_PLACEMENT_TOOLBAR_CLEARANCE_PX = 24;
 
-/** Минимальный футер скролла, чтобы последняя строка уезжала над капсулой. */
+/** Компактная капсула агента: кнопка h-6 + py-1 + бордер и тень над боксом. */
+const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_HEIGHT_PX = 34;
+const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_SHADOW_PX = 16;
+const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_STACK_PX =
+  SWIMLANE_AGENT_PROPOSAL_TOOLBAR_HEIGHT_PX + 8 + SWIMLANE_AGENT_PROPOSAL_TOOLBAR_SHADOW_PX;
+
+/**
+ * Минимальный футер скролла. Место под капсулу агента заложено всегда:
+ * она появляется над инструментами и иначе садится на последнюю строку.
+ */
 export const SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX =
   SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX +
   SWIMLANE_PLACEMENT_TOOLBAR_HEIGHT_PX +
+  SWIMLANE_AGENT_PROPOSAL_TOOLBAR_STACK_PX +
   SWIMLANE_PLACEMENT_TOOLBAR_CLEARANCE_PX;
 
-/** Компактная капсула агента: кнопка h-6 + py-1 + бордер. */
-const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_HEIGHT_PX = 34;
-const SWIMLANE_AGENT_PROPOSAL_TOOLBAR_STACK_PX =
-  SWIMLANE_AGENT_PROPOSAL_TOOLBAR_HEIGHT_PX + 8;
+/** Капсула «Принять всё» видна и без заметок: превью позиций и целей спринта. */
+export function isAgentProposalToolbarVisible(input: {
+  goalPreviewCount: number;
+  hasPendingAgentNote: boolean;
+  positionPreviewCount: number;
+}): boolean {
+  return (
+    input.hasPendingAgentNote || input.positionPreviewCount > 0 || input.goalPreviewCount > 0
+  );
+}
 
-export function countPlacementToolbarExtras(
-  hasPendingAgentNote: boolean,
-  planDraftCount: number
-): number {
-  return (hasPendingAgentNote ? 1 : 0) + (planDraftCount > 0 ? 1 : 0);
+/** First known MCP brand across position / goal / note proposal sources. */
+export function resolveAgentProposalClientBrand<T>(brands: readonly (T | undefined)[]): T | undefined {
+  for (const brand of brands) {
+    if (brand) {
+      return brand;
+    }
+  }
+  return undefined;
+}
+
+/** Черновик плана — вторая капсула над уже заложенным местом агента. */
+export function countPlacementToolbarExtras(planDraftCount: number): number {
+  return planDraftCount > 0 ? 1 : 0;
 }
 
 export function resolvePlacementToolbarScrollPadPx(extraToolbarCount: number): number {

@@ -22,7 +22,7 @@ describe('buildSwimlaneRootClassName', () => {
     expect(buildSwimlaneRootClassName(false)).toContain('swimlane-lane-fill');
   });
 
-  it('keeps row fill and skips a full-width border-b for pattern columns', () => {
+  it('keeps row fill without a full-width border-b on the swimlane root', () => {
     expect(buildSwimlaneRootClassName(false)).toContain('bg-white');
     expect(buildSwimlaneRootClassName(false)).not.toContain('border-b');
   });

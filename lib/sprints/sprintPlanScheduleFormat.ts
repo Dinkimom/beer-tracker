@@ -142,3 +142,19 @@ export function collectUpsertPositionTaskIds(
   }
   return ids;
 }
+
+/** Task ids touched by upsertPosition or deletePosition. */
+export function collectPositionPatchTaskIds(
+  ops: Array<{ op: string; taskId?: string }>
+): Set<string> {
+  const ids = new Set<string>();
+  for (const op of ops) {
+    if (
+      (op.op === 'upsertPosition' || op.op === 'deletePosition') &&
+      typeof op.taskId === 'string'
+    ) {
+      ids.add(op.taskId);
+    }
+  }
+  return ids;
+}

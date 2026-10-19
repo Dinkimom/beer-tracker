@@ -191,7 +191,6 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
           initialCells={segmentEditRange.initialCells}
           rangeStartCell={segmentEditRange.rangeStartCell}
           timelineTotalParts={timelineTotalParts}
-          totalCells={segmentEditRange.totalCells}
           onCancel={onSegmentEditCancel}
           onCellsChange={props.setSegmentEditDraftCells}
           onSave={(segments) => {

@@ -56,7 +56,7 @@ export function usePlanPatchGoalPreviewDecisions(sprintId: number | null): {
   );
   return {
     approve,
-    clientBrand: previews[0]?.clientBrand,
+    clientBrand: previews.find((preview) => preview.clientBrand)?.clientBrand,
     count: previews.length,
     previews,
     reject,

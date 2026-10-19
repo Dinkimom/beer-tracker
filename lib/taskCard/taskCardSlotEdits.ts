@@ -8,6 +8,7 @@ import type {
   TaskCardSlotLayout,
 } from './taskCardSlots';
 
+import { keepWhenSlotHiddenSpread } from './taskCardSlotDensity';
 import { normalizeTaskCardSlotLayout, TASK_CARD_SLOT_IDS, taskCardFieldPresentations } from './taskCardSlots';
 import { mergeTaskCardValueLabel } from './taskCardValueLabels';
 
@@ -45,6 +46,7 @@ export function updateTaskCardCustomField(
   layout: TaskCardSlotLayout,
   fieldId: string,
   patch: {
+    keepWhenSlotHidden?: boolean;
     label?: string;
     presentation?: TaskCardCustomPresentation;
     slot?: TaskCardSlotId;
@@ -178,7 +180,7 @@ export function taskCardSlotItemChangesSlot(
 export function updateTaskCardFieldPlacement(
   layout: TaskCardSlotLayout,
   field: TaskCardFieldId,
-  patch: { presentation?: TaskCardPresentation; slot?: TaskCardSlotId }
+  patch: { keepWhenSlotHidden?: boolean; presentation?: TaskCardPresentation; slot?: TaskCardSlotId }
 ): TaskCardSlotLayout {
   const normalized = normalizeTaskCardSlotLayout(layout);
   return normalizeTaskCardSlotLayout({
@@ -199,24 +201,35 @@ function toggleHiddenFlag<T extends { hidden?: boolean }>(placement: T): T {
 
 function applyFieldPatch(
   placement: TaskCardFieldPlacement,
-  patch: { presentation?: TaskCardPresentation; slot?: TaskCardSlotId }
+  patch: { keepWhenSlotHidden?: boolean; presentation?: TaskCardPresentation; slot?: TaskCardSlotId }
 ): TaskCardFieldPlacement {
   const slot = patch.slot ?? placement.slot;
+  const keepSpread = keepWhenSlotHiddenSpread(
+    patch.keepWhenSlotHidden !== undefined ? patch.keepWhenSlotHidden : placement.keepWhenSlotHidden
+  );
   if (patch.presentation === 'hidden') {
     return {
       field: placement.field,
       hidden: true,
+      ...keepSpread,
       order: placement.order,
       presentation: shownPresentation(placement),
       slot,
     };
   }
   if (patch.presentation && isAllowedPresentation(placement.field, patch.presentation)) {
-    return { field: placement.field, order: placement.order, presentation: patch.presentation, slot };
+    return {
+      field: placement.field,
+      ...keepSpread,
+      order: placement.order,
+      presentation: patch.presentation,
+      slot,
+    };
   }
   return {
     field: placement.field,
     ...(placement.hidden ? { hidden: true } : {}),
+    ...keepSpread,
     order: placement.order,
     presentation: shownPresentation(placement),
     slot,
@@ -237,6 +250,7 @@ function finishCustomPlacement(
   placement: TaskCardCustomFieldPlacement,
   next: {
     hidden?: boolean;
+    keepWhenSlotHidden?: boolean;
     label: string;
     presentation: TaskCardCustomPresentation;
     slot: TaskCardSlotId;
@@ -246,6 +260,7 @@ function finishCustomPlacement(
   return {
     fieldId: placement.fieldId,
     ...(next.hidden ? { hidden: true } : {}),
+    ...keepWhenSlotHiddenSpread(next.keepWhenSlotHidden),
     label: next.label,
     order: placement.order,
     presentation: next.presentation,
@@ -258,6 +273,7 @@ function applyCustomFieldPatch(
   placement: TaskCardCustomFieldPlacement,
   fieldId: string,
   patch: {
+    keepWhenSlotHidden?: boolean;
     label?: string;
     presentation?: TaskCardCustomPresentation;
     slot?: TaskCardSlotId;
@@ -267,15 +283,31 @@ function applyCustomFieldPatch(
   const label = patch.label === undefined ? placement.label : normalizeCustomFieldLabel(patch.label, fieldId);
   const slot = patch.slot ?? placement.slot;
   const valueLabels = nextValueLabels(placement, patch);
+  const keepWhenSlotHidden =
+    patch.keepWhenSlotHidden !== undefined ? patch.keepWhenSlotHidden : placement.keepWhenSlotHidden;
   const shown = placement.presentation === 'hidden' ? 'text' : placement.presentation;
   if (patch.presentation === 'hidden') {
-    return finishCustomPlacement(placement, { hidden: true, label, presentation: shown, slot, valueLabels });
+    return finishCustomPlacement(placement, {
+      hidden: true,
+      keepWhenSlotHidden,
+      label,
+      presentation: shown,
+      slot,
+      valueLabels,
+    });
   }
   if (patch.presentation) {
-    return finishCustomPlacement(placement, { label, presentation: patch.presentation, slot, valueLabels });
+    return finishCustomPlacement(placement, {
+      keepWhenSlotHidden,
+      label,
+      presentation: patch.presentation,
+      slot,
+      valueLabels,
+    });
   }
   return finishCustomPlacement(placement, {
     ...(placement.hidden ? { hidden: true } : {}),
+    keepWhenSlotHidden,
     label,
     presentation: shown,
     slot,

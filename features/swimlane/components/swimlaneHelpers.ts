@@ -22,8 +22,7 @@ import { getVisibleSwimlaneFactLayerHeightPx } from '@/features/swimlane/utils/i
 
 export function buildSwimlaneRootClassName(sidebarClickEnabled: boolean): string {
   const interactive = sidebarClickEnabled ? 'cursor-pointer' : '';
-  // Без полного border-b: линия только у рабочих дней (и у последней строки целиком),
-  // чтобы паттерн выходного не резался горизонтальными границами.
+  // Нижняя линия строки — у колонок дней в TimelineGrid (border-b на каждой ячейке).
   return `group/swimlane relative bg-white swimlane-lane-fill dark:bg-gray-800 swimlane-row-resizing:pointer-events-none ${interactive}`;
 }
 

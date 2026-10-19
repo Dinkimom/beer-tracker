@@ -48,8 +48,14 @@ export function useAdminTeamDetailPage({
   const [editSaving, setEditSaving] = useState(false);
 
   const [members, setMembers] = useState<AdminTeamMember[]>(initialMembers);
+  const [addSource, setAddSource] = useState<"registry" | "tracker">("registry");
   const [addStaffUid, setAddStaffUid] = useState("");
   const [addStaffMeta, setAddStaffMeta] = useState<{
+    displayName?: string;
+    email?: string | null;
+  } | null>(null);
+  const [addTrackerUserId, setAddTrackerUserId] = useState("");
+  const [addTrackerMeta, setAddTrackerMeta] = useState<{
     displayName?: string;
     email?: string | null;
   } | null>(null);
@@ -181,19 +187,25 @@ export function useAdminTeamDetailPage({
     updateMemberRole,
   } = useAdminTeamDetailMembers({
     addRoleSlug,
+    addSource,
     addStaffUid,
+    addTrackerMeta,
+    addTrackerUserId,
     confirmDestructive,
     members,
     orgId,
     setAddRoleSlug,
     setAddStaffMeta,
     setAddStaffUid,
+    setAddTrackerMeta,
+    setAddTrackerUserId,
     setMembers,
     teamId: initialTeam.id,
   });
 
   const backHref = "/admin/teams";
-  const addCanAddMember = Boolean(addStaffUid.trim());
+  const addCanAddMember =
+    addSource === "tracker" ? Boolean(addTrackerUserId.trim()) : Boolean(addStaffUid.trim());
 
   return {
     addCanAddMember,
@@ -201,8 +213,11 @@ export function useAdminTeamDetailPage({
     addMember,
     addRoleOptions,
     addRoleSlug,
+    addSource,
     addStaffMeta,
     addStaffUid,
+    addTrackerMeta,
+    addTrackerUserId,
     backHref,
     boardOptions,
     boardSearchLoading,
@@ -223,8 +238,11 @@ export function useAdminTeamDetailPage({
     roleOptions,
     saveTeam,
     setAddRoleSlug,
+    setAddSource,
     setAddStaffMeta,
     setAddStaffUid,
+    setAddTrackerMeta,
+    setAddTrackerUserId,
     setEditBoard,
     setEditQueue,
     setEditTitle,

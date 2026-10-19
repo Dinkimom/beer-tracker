@@ -1,4 +1,5 @@
 import type { ConfirmDialogPromptOptions } from '@/components/ConfirmDialog';
+import type { CustomSelectOption } from '@/components/CustomSelect';
 import type { AdminMemberFormValues } from '@/features/admin/members/AdminMemberForm';
 import type { AdminMemberTeamOption } from '@/features/admin/members/AdminMemberTeamsMultiSelect';
 import type { RegistryEmployeeDirectoryRow } from '@/lib/organizations/organizationMembersRepository';
@@ -15,12 +16,14 @@ import {
   sortMembersByDisplayName,
 } from '@/features/admin/members/adminMemberDisplay';
 import { patchAdminOrganizationMemberRole } from '@/lib/api/admin/members';
+import { fetchAdminOrgRoleCatalog } from '@/lib/api/admin/roles';
 import { createAdminStaff, deleteAdminStaff, patchAdminStaff } from '@/lib/api/admin/staff';
 import { readApiErrorMessage } from '@/lib/api/readApiError';
 
 const EMPTY_FORM: AdminMemberFormValues = {
   displayName: '',
   email: '',
+  roleSlug: '',
   teamIds: [],
   trackerUserId: '',
 };
@@ -30,18 +33,29 @@ function valuesFromRow(row: RegistryEmployeeDirectoryRow): AdminMemberFormValues
   return {
     displayName: name === '—' ? '' : name,
     email: row.email?.trim() ?? '',
+    roleSlug: '',
     teamIds: row.teams.map((team) => team.team_id),
     trackerUserId: row.tracker_id?.trim() ?? '',
   };
 }
 
-function payloadFromValues(values: AdminMemberFormValues) {
-  return {
+function payloadFromValues(values: AdminMemberFormValues, includeRoleSlug: boolean) {
+  const payload: {
+    display_name: string;
+    email: string | null;
+    role_slug?: string | null;
+    team_ids: string[];
+    tracker_user_id: string | null;
+  } = {
     display_name: values.displayName.trim(),
     email: values.email.trim() || null,
     team_ids: values.teamIds,
     tracker_user_id: values.trackerUserId.trim() || null,
   };
+  if (includeRoleSlug && values.teamIds.length > 0) {
+    payload.role_slug = values.roleSlug.trim() || null;
+  }
+  return payload;
 }
 
 interface UseAdminMembersPageParams {
@@ -68,10 +82,38 @@ export function useAdminMembersPage({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState(EMPTY_FORM);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [roleOptions, setRoleOptions] = useState<CustomSelectOption<string>[]>([
+    { label: '', value: '' },
+  ]);
 
   useEffect(() => {
     setRows(initialRows);
   }, [initialRows]);
+
+  useEffect(() => {
+    if (!orgId) return;
+    let cancelled = false;
+
+    async function loadMemberRoleOptions() {
+      try {
+        const roles = await fetchAdminOrgRoleCatalog(orgId);
+        if (cancelled) return;
+        setRoleOptions([
+          { label: t('admin.teamDetail.noRole'), value: '' },
+          ...roles.map((role) => ({ label: role.title, value: role.slug })),
+        ]);
+      } catch {
+        if (!cancelled) {
+          setRoleOptions([{ label: t('admin.teamDetail.noRole'), value: '' }]);
+        }
+      }
+    }
+
+    void loadMemberRoleOptions();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId, t]);
 
   const sortedRows = useMemo(() => {
     const sorted = sortMembersByDisplayName(rows);
@@ -100,7 +142,7 @@ export function useAdminMembersPage({
       }
       setCreateSubmitting(true);
       try {
-        await createAdminStaff(orgId, payloadFromValues(createValues));
+        await createAdminStaff(orgId, payloadFromValues(createValues, true));
         toast.success(t('admin.membersPage.inviteCreatedSuccess'));
         setCreateValues(EMPTY_FORM);
         router.refresh();
@@ -121,7 +163,7 @@ export function useAdminMembersPage({
       if (!orgId || !editingId || !editValues.displayName.trim()) return;
       setBusyId(editingId);
       try {
-        await patchAdminStaff(orgId, editingId, payloadFromValues(editValues));
+        await patchAdminStaff(orgId, editingId, payloadFromValues(editValues, false));
         toast.success(t('admin.membersPage.updatedSuccess'));
         setEditingId(null);
         router.refresh();
@@ -198,6 +240,7 @@ export function useAdminMembersPage({
     hasAnyMembers: rows.length > 0,
     listQuery,
     removeMember,
+    roleOptions,
     setCreateValues,
     setEditValues,
     setListQuery,

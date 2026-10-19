@@ -10,6 +10,7 @@ import type {
 } from '@/lib/sprints/sprintContextTypes';
 
 import { DEFAULT_PLANNER_TIMELINE_SCALE } from '@/lib/plannerTimelineScale';
+import { holidayDayIndexSet } from '@/lib/sprints/sprintContextHolidays';
 
 function resolvePartsPerDay(partsPerDay: number | undefined): number {
   if (
@@ -94,6 +95,20 @@ function unavailableDaysForAssignee(
     }
   }
   return unavailable;
+}
+
+function mergeUnavailableDays(
+  personal: Set<number>,
+  shared: ReadonlySet<number>
+): Set<number> {
+  if (shared.size === 0) {
+    return personal;
+  }
+  const merged = new Set(personal);
+  for (const day of shared) {
+    merged.add(day);
+  }
+  return merged;
 }
 
 function collectCellsByKey(
@@ -324,6 +339,7 @@ export function buildSprintContextCapacity(
   payload: Pick<SprintContextPayload, 'availability' | 'meta' | 'positions'>
 ): SprintContextCapacityReport {
   const calendarDays = payload.meta.calendarDays ?? [];
+  const holidayDays = holidayDayIndexSet(payload.meta.holidayDays);
   const partsPerDay = resolvePartsPerDay(payload.meta.partsPerDay);
   const byAssignee = groupPositionsByAssignee(payload.positions);
   const people: SprintContextCapacityPerson[] = [];
@@ -336,10 +352,9 @@ export function buildSprintContextCapacity(
         calendarDays,
         partsPerDay,
         positions,
-        unavailableDays: unavailableDaysForAssignee(
-          assigneeId,
-          payload.availability,
-          calendarDays
+        unavailableDays: mergeUnavailableDays(
+          unavailableDaysForAssignee(assigneeId, payload.availability, calendarDays),
+          holidayDays
         ),
       })
     );

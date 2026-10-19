@@ -56,6 +56,14 @@ export const iconGlyphs: Record<string, ReactNode> = {
   'x': (
     <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
   ),
+  /** Разбиение фазы на отрезки (контекстное меню) */
+  scissors: (
+    <>
+      <circle cx="6" cy="6" r="3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <circle cx="6" cy="18" r="3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </>
+  ),
   /** Алиас к `x` — в UI часто семантически «закрыть» */
   close: (
     <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />

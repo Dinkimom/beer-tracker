@@ -341,10 +341,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   );
   const showAfterSprintRail = viewMode === 'full';
   const placementToolbarClearancePx = resolvePlacementToolbarScrollPadPx(
-    countPlacementToolbarExtras(
-      comments.some((comment) => comment.pendingApproval === true),
-      positionsStore.planDraftCount
-    )
+    countPlacementToolbarExtras(positionsStore.planDraftCount)
   );
 
   return (

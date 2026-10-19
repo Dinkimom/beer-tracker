@@ -21,6 +21,10 @@ import {
   collectRealtimeResources,
 } from '@/lib/sprints/sprintPlanPatchApply';
 import {
+  buildSprintPlanPatchContentChanges,
+  sprintGoalTexts,
+} from '@/lib/sprints/sprintPlanPatchContentChanges';
+import {
   confirmProposedCreateNotes,
   persistProposedCreateNotes,
 } from '@/lib/sprints/sprintPlanPatchDraftNotes';
@@ -34,9 +38,15 @@ import {
 } from '@/lib/sprints/sprintPlanPatchGoalPreviewRepository';
 import {
   simulatePositionsAfterPatch,
+  sprintPlanPatchSummaryLookups,
   summarizeSprintPlanPatchOps,
 } from '@/lib/sprints/sprintPlanPatchHelpers';
 import { assertPlanPatchOpsFitPartsPerDay } from '@/lib/sprints/sprintPlanPatchPartsValidation';
+import { applyPendingProposeGate } from '@/lib/sprints/sprintPlanPatchPendingView';
+import {
+  buildSprintPlanPatchPositionChanges,
+  labelSprintPlanPatchPositionChanges,
+} from '@/lib/sprints/sprintPlanPatchPositionChanges';
 import { buildPlanPatchPositionPreviews } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 import {
   deletePlanPatchPositionPreviewsByProposal,
@@ -57,6 +67,7 @@ import {
   loadSprintIssueKeySet,
 } from '@/lib/sprints/sprintPlanPatchTrackerSync';
 import {
+  collectPositionPatchTaskIds,
   collectUpsertPositionTaskIds,
   formatSprintPlanScheduleForTaskIds,
 } from '@/lib/sprints/sprintPlanScheduleFormat';
@@ -91,6 +102,7 @@ function notifyPlanPatchResource(
 
 async function persistDraftNotesForProposal(input: {
   actorUserId: string;
+  clientBrand?: PlanPatchPositionPreview['clientBrand'];
   expiresAt: Date;
   ops: SprintPlanPatchOp[];
   organizationId: string;
@@ -171,6 +183,47 @@ async function persistGoalPreviewsForProposal(input: {
   notifyPlanPatchResource(input.organizationId, input.sprintId, ['goals']);
 }
 
+async function persistProposeBoardDrafts(input: {
+  actorUserId: string;
+  clientBrand?: PlanPatchPositionPreview['clientBrand'];
+  current: Awaited<ReturnType<typeof loadSprintContextForOrganization>>;
+  expiresAt: Date;
+  ops: SprintPlanPatchOp[];
+  opsHash: string;
+  organizationId: string;
+  proposalId: string;
+  sprintId: number;
+}): Promise<string[]> {
+  const draftNoteIds = await persistDraftNotesForProposal({
+    actorUserId: input.actorUserId,
+    clientBrand: input.clientBrand,
+    expiresAt: input.expiresAt,
+    ops: input.ops,
+    organizationId: input.organizationId,
+    proposalId: input.opsHash,
+    sprintId: input.sprintId,
+  });
+  await persistPositionPreviewsForProposal({
+    clientBrand: input.clientBrand,
+    current: input.current.positions,
+    expiresAt: input.expiresAt,
+    ops: input.ops,
+    organizationId: input.organizationId,
+    proposalId: input.proposalId,
+    sprintId: input.sprintId,
+  });
+  await persistGoalPreviewsForProposal({
+    clientBrand: input.clientBrand,
+    expiresAt: input.expiresAt,
+    goals: input.current.sprintGoals,
+    ops: input.ops,
+    organizationId: input.organizationId,
+    proposalId: input.proposalId,
+    sprintId: input.sprintId,
+  });
+  return draftNoteIds;
+}
+
 export async function proposeSprintPlanPatch(input: {
   actorUserId: string;
   clientBrand?: PlanPatchPositionPreview['clientBrand'];
@@ -178,10 +231,16 @@ export async function proposeSprintPlanPatch(input: {
   organizationId: string;
   /** When false, skip writing translucent createNote drafts (still returns applyToken). Default true. */
   persistNotes?: boolean;
+  /**
+   * When true, discard an unconfirmed proposal on this sprint before writing the new one.
+   * Required if a different pending proposal already exists and persistNotes is true.
+   */
+  replacePending?: boolean;
   sprintId: number;
 }): Promise<SprintPlanPatchProposeResult> {
   const ops = parseOpsOrThrow(input.ops);
   const persistNotes = input.persistNotes !== false;
+  const replacePending = input.replacePending === true;
   const current = await loadSprintContextForOrganization({
     organizationId: input.organizationId,
     request: null,
@@ -196,12 +255,38 @@ export async function proposeSprintPlanPatch(input: {
     meta: current.meta,
     positions: simulated,
   }).summary;
+  const touchedTaskIds = collectPositionPatchTaskIds(ops);
+  const calendarDays = current.meta.calendarDays ?? [];
   const schedule = formatSprintPlanScheduleForTaskIds(
     simulated,
-    current.meta.calendarDays ?? [],
+    calendarDays,
     current.meta.partsPerDay,
-    collectUpsertPositionTaskIds(ops)
+    touchedTaskIds
   );
+  const scheduleBefore = formatSprintPlanScheduleForTaskIds(
+    current.positions,
+    calendarDays,
+    current.meta.partsPerDay,
+    touchedTaskIds
+  );
+  const positionChanges = labelSprintPlanPatchPositionChanges({
+    calendarDays,
+    changes: buildSprintPlanPatchPositionChanges({
+      current: current.positions,
+      ops,
+      simulated,
+    }),
+    current: current.positions,
+    partsPerDay: current.meta.partsPerDay,
+    simulated,
+  });
+  const goalTexts = sprintGoalTexts(current.sprintGoals);
+  const contentChanges = buildSprintPlanPatchContentChanges({
+    goals: goalTexts,
+    notes: current.notes,
+    ops,
+  });
+  const summaryLookups = sprintPlanPatchSummaryLookups(goalTexts, current.notes);
   const sprintIssues = await loadSprintIssueKeySet({
     organizationId: input.organizationId,
     sprintId: input.sprintId,
@@ -211,42 +296,37 @@ export async function proposeSprintPlanPatch(input: {
     ...(sprintIssues.warning ? [sprintIssues.warning] : []),
     ...collectIssueNotInSprintWarnings(ops, sprintIssues.keys),
   ];
-  const hints = buildIssueNotInSprintPlanPatchHints(ops, warnings);
+  const hints = buildIssueNotInSprintPlanPatchHints(
+    ops,
+    warnings,
+    new Set(current.positions.map((position) => position.taskId))
+  );
 
   const nowSec = Math.floor(Date.now() / 1000);
   const opsHash = hashSprintPlanPatchOps(ops);
   const expiresAt = new Date((nowSec + SPRINT_PLAN_PATCH_TTL_SEC) * 1000);
   const proposalId = proposalIdFromOpsHash(opsHash);
+  const replacedPending = await applyPendingProposeGate({
+    context: current,
+    persistNotes,
+    proposalId,
+    replacePending,
+    warnings,
+  });
+
   const draftNoteIds = persistNotes
-    ? await persistDraftNotesForProposal({
+    ? await persistProposeBoardDrafts({
         actorUserId: input.actorUserId,
+        clientBrand: input.clientBrand,
+        current,
         expiresAt,
         ops,
+        opsHash,
         organizationId: input.organizationId,
-        proposalId: opsHash,
+        proposalId,
         sprintId: input.sprintId,
       })
     : [];
-  if (persistNotes) {
-    await persistPositionPreviewsForProposal({
-      clientBrand: input.clientBrand,
-      current: current.positions,
-      expiresAt,
-      ops,
-      organizationId: input.organizationId,
-      proposalId,
-      sprintId: input.sprintId,
-    });
-    await persistGoalPreviewsForProposal({
-      clientBrand: input.clientBrand,
-      expiresAt,
-      goals: current.sprintGoals,
-      ops,
-      organizationId: input.organizationId,
-      proposalId,
-      sprintId: input.sprintId,
-    });
-  }
   const applyToken = signSprintPlanPatchToken({
     draftNoteIds,
     ops,
@@ -257,15 +337,19 @@ export async function proposeSprintPlanPatch(input: {
   return {
     applyToken,
     capacityPreview: { summary: capacityPreviewSummary },
+    ...(contentChanges.length > 0 ? { contentChanges } : {}),
     ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),
     expiresAt: expiresAt.toISOString(),
     ...(hints.length > 0 ? { hints } : {}),
     ops,
     persistNotes,
+    ...(positionChanges.length > 0 ? { positionChanges } : {}),
     proposalId,
+    ...(replacedPending ? { replacedPending: true } : {}),
     schedule,
+    ...(scheduleBefore.length > 0 ? { scheduleBefore } : {}),
     sprintId: input.sprintId,
-    summary: summarizeSprintPlanPatchOps(ops),
+    summary: summarizeSprintPlanPatchOps(ops, current.positions, summaryLookups),
     ...(warnings.length > 0 ? { warnings } : {}),
   };
 }

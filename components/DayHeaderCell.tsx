@@ -6,7 +6,8 @@ import type { Task } from '@/types';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { DayErrorIndicator } from '@/features/sprint/components/DayErrorIndicator';
-import { useHolidayCountryStorage, useShowHolidaysStorage } from '@/hooks/useLocalStorage';
+import { useShowHolidaysStorage } from '@/hooks/useLocalStorage';
+import { useOrgHolidayCountry } from '@/hooks/useOrgHolidayCountry';
 import { getHolidayForDate } from '@/lib/holidays';
 import { getPlannerNow } from '@/utils/plannerClock';
 
@@ -87,7 +88,7 @@ export function DayHeaderCellContent({
 }: DayHeaderCellContentProps) {
   const { t } = useI18n();
   const [showHolidaysStorage] = useShowHolidaysStorage();
-  const [holidayCountry] = useHolidayCountryStorage();
+  const { holidayCountry } = useOrgHolidayCountry();
   const showHolidays = showHolidayEmoji !== undefined ? showHolidayEmoji : showHolidaysStorage;
   const today = isToday(day);
   const past = isPastDay(day);

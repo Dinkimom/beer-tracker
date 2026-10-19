@@ -18,5 +18,5 @@ export function goalItemDisplayTextClassName(item: ChecklistItem, canInteract: b
   const interactClass = canInteract
     ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400'
     : '';
-  return `flex-1 text-sm leading-relaxed min-w-0 ${checkedClass} ${interactClass}`;
+  return `flex-1 text-sm leading-relaxed min-w-0 whitespace-pre-wrap ${checkedClass} ${interactClass}`;
 }

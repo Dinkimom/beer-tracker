@@ -8,6 +8,7 @@ interface AdminStaffWritePayload {
   avatar_url?: string | null;
   display_name: string;
   email: string | null;
+  role_slug?: string | null;
   team_ids?: string[];
   tracker_user_id: string | null;
 }

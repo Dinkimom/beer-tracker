@@ -116,27 +116,111 @@ export function simulatePositionsAfterPatch(
   return [...byTask.values()];
 }
 
-function summarizeOneOp(op: SprintPlanPatchOp): string {
+function formatPositionAnchor(
+  position: Pick<SprintContextPosition, 'assigneeId' | 'duration' | 'startDay' | 'startPart'>
+): string {
+  return `${position.assigneeId} day ${position.startDay} part ${position.startPart} dur ${position.duration}`;
+}
+
+function summarizeUpsertPosition(
+  op: Extract<SprintPlanPatchOp, { op: 'upsertPosition' }>,
+  currentByTask: ReadonlyMap<string, SprintContextPosition> | undefined
+): string {
+  let segmentsNote = '';
+  if (op.segments !== undefined) {
+    segmentsNote =
+      op.segments.length === 0 ? ' (clear segments)' : ` (${op.segments.length} segments)`;
+  }
+  const syncNote = op.syncToTracker ? ' +syncToTracker' : '';
+  const after = `${op.assigneeId} day ${op.startDay} part ${op.startPart} dur ${op.duration}`;
+  const before = currentByTask?.get(op.taskId);
+  const from = before ? formatPositionAnchor(before) : '(none)';
+  return `upsertPosition ${op.taskId}: ${from} → ${after}${segmentsNote}${syncNote}`;
+}
+
+function clipText(text: string): string {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length <= 80 ? flat : `${flat.slice(0, 79)}…`;
+}
+
+function quotedText(text: string | undefined): string {
+  return text ? `"${clipText(text)}"` : '(none)';
+}
+
+export interface SprintPlanPatchSummaryLookups {
+  goals?: ReadonlyMap<string, string>;
+  notes?: ReadonlyMap<string, string>;
+}
+
+function summarizeUpdateNote(
+  op: Extract<SprintPlanPatchOp, { op: 'updateNote' }>,
+  lookups: SprintPlanPatchSummaryLookups | undefined
+): string {
+  if (op.text == null) {
+    return `updateNote ${op.commentId}`;
+  }
+  return `updateNote ${op.commentId}: ${quotedText(lookups?.notes?.get(op.commentId))} → ${quotedText(op.text)}`;
+}
+
+function summarizeUpdateGoal(
+  op: Extract<SprintPlanPatchOp, { op: 'updateGoal' }>,
+  lookups: SprintPlanPatchSummaryLookups | undefined
+): string {
+  if (op.text == null) {
+    return `updateGoal ${op.id}`;
+  }
+  return `updateGoal ${op.id}: ${quotedText(lookups?.goals?.get(op.id))} → ${quotedText(op.text)}`;
+}
+
+function summarizeDeleteNote(
+  op: Extract<SprintPlanPatchOp, { op: 'deleteNote' }>,
+  lookups: SprintPlanPatchSummaryLookups | undefined
+): string {
+  const before = lookups?.notes?.get(op.commentId);
+  if (!before) {
+    return `deleteNote ${op.commentId}`;
+  }
+  return `deleteNote ${op.commentId}: ${quotedText(before)} → (removed)`;
+}
+
+function summarizeDeleteGoal(
+  op: Extract<SprintPlanPatchOp, { op: 'deleteGoal' }>,
+  lookups: SprintPlanPatchSummaryLookups | undefined
+): string {
+  const before = lookups?.goals?.get(op.id);
+  if (!before) {
+    return `deleteGoal ${op.id}`;
+  }
+  return `deleteGoal ${op.id}: ${quotedText(before)} → (removed)`;
+}
+
+function summarizeDeletePosition(
+  op: Extract<SprintPlanPatchOp, { op: 'deletePosition' }>,
+  currentByTask: ReadonlyMap<string, SprintContextPosition> | undefined
+): string {
+  const before = currentByTask?.get(op.taskId);
+  if (!before) {
+    return `deletePosition ${op.taskId}`;
+  }
+  return `deletePosition ${op.taskId}: ${formatPositionAnchor(before)} → (removed)`;
+}
+
+function summarizeOneOp(
+  op: SprintPlanPatchOp,
+  currentByTask: ReadonlyMap<string, SprintContextPosition> | undefined,
+  lookups: SprintPlanPatchSummaryLookups | undefined
+): string {
   switch (op.op) {
-    case 'upsertPosition': {
-      let segmentsNote = '';
-      if (op.segments !== undefined) {
-        segmentsNote =
-          op.segments.length === 0
-            ? ' (clear segments)'
-            : ` (${op.segments.length} segments)`;
-      }
-      const syncNote = op.syncToTracker ? ' +syncToTracker' : '';
-      return `upsertPosition ${op.taskId} → ${op.assigneeId} day ${op.startDay} part ${op.startPart} dur ${op.duration}${segmentsNote}${syncNote}`;
-    }
+    case 'upsertPosition':
+      return summarizeUpsertPosition(op, currentByTask);
     case 'deletePosition':
-      return `deletePosition ${op.taskId}`;
+      return summarizeDeletePosition(op, currentByTask);
     case 'createNote':
       return `createNote @${op.assigneeId} day ${op.day} part ${op.part}: ${op.text.slice(0, 60)}`;
     case 'updateNote':
-      return `updateNote ${op.commentId}`;
+      return summarizeUpdateNote(op, lookups);
     case 'deleteNote':
-      return `deleteNote ${op.commentId}`;
+      return summarizeDeleteNote(op, lookups);
     case 'upsertLink':
       return `upsertLink ${op.fromTaskId} → ${op.toTaskId}`;
     case 'deleteLink':
@@ -146,9 +230,9 @@ function summarizeOneOp(op: SprintPlanPatchOp): string {
     case 'createGoal':
       return `createGoal ${op.goalType}: ${op.text.slice(0, 60)}`;
     case 'updateGoal':
-      return `updateGoal ${op.id}`;
+      return summarizeUpdateGoal(op, lookups);
     case 'deleteGoal':
-      return `deleteGoal ${op.id}`;
+      return summarizeDeleteGoal(op, lookups);
     default: {
       const _exhaustive: never = op;
       return String(_exhaustive);
@@ -156,6 +240,24 @@ function summarizeOneOp(op: SprintPlanPatchOp): string {
   }
 }
 
-export function summarizeSprintPlanPatchOps(ops: SprintPlanPatchOp[]): string[] {
-  return ops.map(summarizeOneOp);
+export function sprintPlanPatchSummaryLookups(
+  goals: readonly { id: string; text: string }[],
+  notes: readonly { id: string; text: string }[]
+): SprintPlanPatchSummaryLookups {
+  return {
+    goals: new Map(goals.map((goal) => [goal.id, goal.text])),
+    notes: new Map(notes.map((note) => [note.id, note.text])),
+  };
+}
+
+export function summarizeSprintPlanPatchOps(
+  ops: SprintPlanPatchOp[],
+  currentPositions?: readonly SprintContextPosition[],
+  lookups?: SprintPlanPatchSummaryLookups
+): string[] {
+  const currentByTask =
+    currentPositions == null
+      ? undefined
+      : new Map(currentPositions.map((position) => [position.taskId, position]));
+  return ops.map((op) => summarizeOneOp(op, currentByTask, lookups));
 }

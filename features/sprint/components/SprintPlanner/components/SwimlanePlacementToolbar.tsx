@@ -1,6 +1,7 @@
 'use client';
 
 import type { SwimlanePlacementTool } from '@/lib/layers';
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -26,6 +27,7 @@ import {
   isPlacementToolbarToolSelectable,
   placementToolLayerToReveal,
   placementToolRequiresObjectStorage,
+  resolveAgentProposalClientBrand,
   resolvePlacementToolAfterLayerChange,
   resolvePlacementToolbarTools,
   toggleSwimlanePlacementTool,
@@ -42,22 +44,29 @@ import { useSwimlanePlacementToolbarKeyboard } from './useSwimlanePlacementToolb
 export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolbar({
   onApproveAgentNotes,
   onRejectAgentNotes,
-  pendingAgentNoteIds = [],
+  pendingAgentNotes = { ids: [] },
   sprintId = null,
   variant = 'people',
 }: {
   onApproveAgentNotes?: (commentIds: readonly string[]) => void;
   onRejectAgentNotes?: (commentIds: readonly string[]) => void;
-  pendingAgentNoteIds?: readonly string[];
+  pendingAgentNotes?: { clientBrand?: McpOAuthClientBrand; ids: readonly string[] };
   sprintId?: number | null;
   variant?: 'features' | 'people';
 }) {
   const { t } = useI18n();
   const { sprintPlannerUi, taskPositions } = useRootStore();
   const positionPreviewCount = taskPositions.planPatchPreviews.size;
-  const positionBrand = taskPositions.planPatchPreviews.values().next().value?.clientBrand;
+  const positionBrand = [...taskPositions.planPatchPreviews.values()].find(
+    (preview) => preview.clientBrand
+  )?.clientBrand;
   const planPatchDecisions = usePlanPatchPreviewDecisions(sprintId);
   const goalDecisions = usePlanPatchGoalPreviewDecisions(sprintId);
+  const agentClientBrand = resolveAgentProposalClientBrand([
+    positionBrand,
+    goalDecisions.clientBrand,
+    pendingAgentNotes.clientBrand,
+  ]);
   const objectStorageConfigured = useObjectStorageConfigured();
   const hidePersonBoundTools = variant === 'features';
   const tools = useMemo(
@@ -139,9 +148,9 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
         <SwimlanePlanDraftToolbar />
         {onApproveAgentNotes && onRejectAgentNotes ? (
           <SwimlaneAgentProposalToolbar
-            clientBrand={positionBrand ?? goalDecisions.clientBrand}
+            clientBrand={agentClientBrand}
             goalPreviewCount={goalDecisions.count}
-            pendingCommentIds={pendingAgentNoteIds}
+            pendingCommentIds={pendingAgentNotes.ids}
             positionPreviewCount={positionPreviewCount}
             onApproveAll={(commentIds) => {
               onApproveAgentNotes(commentIds);

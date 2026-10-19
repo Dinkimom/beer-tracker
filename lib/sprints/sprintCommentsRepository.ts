@@ -37,7 +37,8 @@ export const SPRINT_COMMENT_RETURNING = `
         deleted_by,
         pending_approval,
         pending_approval_expires_at,
-        plan_patch_proposal_id`;
+        plan_patch_proposal_id,
+        client_brand`;
 
 const COMMENT_RETURNING = SPRINT_COMMENT_RETURNING;
 
@@ -136,6 +137,7 @@ export async function insertSprintComment(input: {
   imageFileId?: string | null;
   kind?: 'diagram' | 'image' | 'text' | 'widget';
   parent?: TaskParent | null;
+  clientBrand?: string | null;
   pendingApproval?: boolean;
   pendingApprovalExpiresAt?: Date | string | null;
   planPatchProposalId?: string | null;
@@ -169,10 +171,10 @@ export function insertSprintCommentSql(): string {
   return `INSERT INTO comments (
              id, organization_id, sprint_id, assignee_id, text,
              position_x, position_y, day, part, width, height, color, created_by, kind, image_file_id, parent,
-             pending_approval, pending_approval_expires_at, plan_patch_proposal_id
+             pending_approval, pending_approval_expires_at, plan_patch_proposal_id, client_brand
            ) VALUES (
              COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb,
-             $17, $18, $19
+             $17, $18, $19, $20
            )
            ON CONFLICT (id) DO NOTHING
            RETURNING ${COMMENT_RETURNING}`;
@@ -192,6 +194,7 @@ function insertSprintCommentParams(
     width: number | undefined;
     x: number | null | undefined;
     y: number | null | undefined;
+    clientBrand?: string | null;
     parent?: TaskParent | null;
     pendingApproval?: boolean;
     pendingApprovalExpiresAt?: Date | string | null;
@@ -221,6 +224,7 @@ function insertSprintCommentParams(
     input.pendingApproval === true,
     input.pendingApprovalExpiresAt ?? null,
     input.planPatchProposalId ?? null,
+    input.clientBrand ?? '',
   ];
 }
 
@@ -419,6 +423,7 @@ export async function confirmPendingSprintComments(input: {
         SET pending_approval = FALSE,
             pending_approval_expires_at = NULL,
             plan_patch_proposal_id = NULL,
+            client_brand = '',
             updated_at = CURRENT_TIMESTAMP
       WHERE ${sprintTenantWhere()}
         AND id = ANY($2::uuid[])
@@ -451,6 +456,7 @@ export async function confirmAllPendingSprintComments(input: {
         SET pending_approval = FALSE,
             pending_approval_expires_at = NULL,
             plan_patch_proposal_id = NULL,
+            client_brand = '',
             updated_at = CURRENT_TIMESTAMP
       WHERE ${sprintTenantWhere()}
         AND pending_approval = TRUE`,

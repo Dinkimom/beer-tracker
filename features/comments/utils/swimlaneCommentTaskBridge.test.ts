@@ -24,6 +24,7 @@ import {
   isSwimlaneDiagramTask,
   parseSwimlaneCommentTaskId,
   resolveSwimlaneAnnotationContextMenuVariant,
+  selectPendingAgentProposalNotes,
   selectPendingApprovalCommentIds,
   stripSwimlaneCommentPositions,
   swimlanePositionToCommentPatch,
@@ -147,6 +148,13 @@ describe('swimlaneCommentTaskBridge', () => {
     expect(task.pendingApproval).toBe(true);
   });
 
+  it('projects MCP client brand onto the pending-approval toolbar', () => {
+    const task = commentToSwimlaneTask(
+      comment({ clientBrand: 'cursor', id: 'c1', pendingApproval: true, text: 'draft' })
+    );
+    expect(task.pendingApprovalClientBrand).toBe('cursor');
+  });
+
   it('collects ids of notes waiting for agent approval', () => {
     expect(
       selectPendingApprovalCommentIds([
@@ -154,6 +162,15 @@ describe('swimlaneCommentTaskBridge', () => {
         comment({ id: 'draft', pendingApproval: true, text: 'pending' }),
       ])
     ).toEqual(['draft']);
+  });
+
+  it('keeps MCP client brand from remaining pending notes', () => {
+    expect(
+      selectPendingAgentProposalNotes([
+        comment({ id: 'keep', text: 'saved' }),
+        comment({ clientBrand: 'cursor', id: 'draft', pendingApproval: true, text: 'pending' }),
+      ])
+    ).toEqual({ clientBrand: 'cursor', ids: ['draft'] });
   });
 
   it('projects a stored parent onto the swimlane card', () => {

@@ -7,6 +7,12 @@ export { OCCUPANCY_FACT_PHASE_GAP_PX } from './factPhaseGap';
 export { formatDuration } from './formatOccupancyDuration';
 export * from './occupancyErrorMessages';
 export * from './occupancyUtils';
+export {
+  insertSegmentGapAfter,
+  listSegmentGapBlocks,
+  listSegmentSplitPoints,
+  removeSegmentGapBlock,
+} from './segmentEditGapHelpers';
 export { PHASE_ROW_INSET_PX } from './phaseRowInset';
 export {
   getPhaseFocusRingClass,

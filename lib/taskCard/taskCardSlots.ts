@@ -1,6 +1,11 @@
 import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
 import type { Task } from '@/types';
 
+import {
+  applyTaskCardSlotDensity,
+  keepWhenSlotHiddenSpread,
+  readKeepWhenSlotHidden,
+} from './taskCardSlotDensity';
 import { readTaskCardValueLabels } from './taskCardValueLabels';
 
 /**
@@ -39,6 +44,11 @@ export interface TaskCardFieldPlacement {
   field: TaskCardFieldId;
   /** Скрыто глазом. Вид при этом сохраняется. */
   hidden?: boolean;
+  /**
+   * Оставлять поле, когда зона слота спрятана планом коротких карточек.
+   * Явное `false` — не оставлять (важно для ключа с default `true`).
+   */
+  keepWhenSlotHidden?: boolean;
   /** Порядок внутри слота. Меньше — левее. */
   order: number;
   presentation: TaskCardPresentation;
@@ -49,6 +59,8 @@ export interface TaskCardFieldPlacement {
 export interface TaskCardCustomFieldPlacement {
   fieldId: string;
   hidden?: boolean;
+  /** Как у встроенного поля: исключение из hideEyebrow / hideTitleLead / hideFooter. */
+  keepWhenSlotHidden?: boolean;
   label: string;
   /** Порядок внутри слота, общий со встроенными полями. */
   order: number;
@@ -108,11 +120,11 @@ const LOCAL_TITLE_FIELDS: readonly TaskCardFieldId[] = ['key', 'priority', 'type
 
 const DEFAULT_PLACEMENT_BY_FIELD: Record<
   TaskCardFieldId,
-  Pick<TaskCardFieldPlacement, 'presentation' | 'slot'>
+  Pick<TaskCardFieldPlacement, 'keepWhenSlotHidden' | 'presentation' | 'slot'>
 > = {
   assignee: { presentation: 'tag', slot: 'footerEnd' },
   estimate: { presentation: 'text', slot: 'footer' },
-  key: { presentation: 'link', slot: 'titleLead' },
+  key: { keepWhenSlotHidden: true, presentation: 'link', slot: 'titleLead' },
   parent: { presentation: 'text', slot: 'eyebrow' },
   priority: { presentation: 'icon', slot: 'titleLead' },
   severity: { presentation: 'tag', slot: 'footer' },
@@ -204,7 +216,7 @@ export function resolveTaskCardSlots(input: ResolveTaskCardSlotsInput): Resolved
     resolved[entry.slot].push(entry.item);
   }
 
-  return applyDensity(layout, input.density, resolved);
+  return applyTaskCardSlotDensity(layout, input.density, resolved);
 }
 
 export function layoutFromVisibility(
@@ -429,41 +441,6 @@ function fieldHasData(field: TaskCardFieldId, input: ResolveTaskCardSlotsInput):
   }
 }
 
-function applyDensity(
-  layout: TaskCardSlotLayout,
-  density: TaskCardDensity,
-  resolved: ResolvedTaskCardSlots
-): ResolvedTaskCardSlots {
-  const next = emptyTaskCardSlots();
-  for (const slot of TASK_CARD_SLOT_IDS) {
-    next[slot] = resolved[slot].filter(() => keepItemAtDensity(layout, density, slot));
-  }
-  return next;
-}
-
-function keepItemAtDensity(layout: TaskCardSlotLayout, density: TaskCardDensity, slot: TaskCardSlotId): boolean {
-  if (slot === 'eyebrow') {
-    return !partHidden(layout.hideEyebrow, density);
-  }
-  if (slot === 'titleLead') {
-    return !partHidden(layout.hideTitleLead, density);
-  }
-  if (slot === 'footer' || slot === 'footerEnd') {
-    return !partHidden(layout.hideFooter, density);
-  }
-  return true;
-}
-
-function partHidden(when: TaskCardHideWhen, density: TaskCardDensity): boolean {
-  if (when === 'never') {
-    return false;
-  }
-  if (when === 'one') {
-    return density === 'compact';
-  }
-  return density !== 'regular';
-}
-
 function readPlacement(stored: unknown[], fallback: TaskCardFieldPlacement): TaskCardFieldPlacement {
   const match = stored.find((entry) => isRecord(entry) && entry.field === fallback.field);
   if (!isRecord(match)) {
@@ -476,6 +453,7 @@ function readPlacement(stored: unknown[], fallback: TaskCardFieldPlacement): Tas
   return {
     field: fallback.field,
     ...(hidden ? { hidden: true } : {}),
+    ...keepWhenSlotHiddenSpread(readKeepWhenSlotHidden(match.keepWhenSlotHidden, fallback.keepWhenSlotHidden)),
     order: readFiniteOrder(match.order, fallback.order),
     presentation: storedPresentation === 'hidden' ? fallback.presentation : storedPresentation,
     slot: isSlot(match.slot) ? match.slot : fallback.slot,
@@ -513,6 +491,7 @@ function readOneCustomPlacement(
   return {
     fieldId,
     ...(hidden ? { hidden: true } : {}),
+    ...keepWhenSlotHiddenSpread(readKeepWhenSlotHidden(entry.keepWhenSlotHidden, undefined)),
     label: normalizeCustomFieldLabel(entry.label, fieldId),
     order: readFiniteOrder(entry.order, 1000 + existing.length),
     ...(valueLabels ? { valueLabels } : {}),

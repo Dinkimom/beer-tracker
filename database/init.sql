@@ -171,6 +171,7 @@ CREATE TABLE public.comments (
     pending_approval BOOLEAN NOT NULL DEFAULT FALSE,
     pending_approval_expires_at TIMESTAMP WITH TIME ZONE,
     plan_patch_proposal_id VARCHAR(64),
+    client_brand VARCHAR(16) NOT NULL DEFAULT '',
     updated_by UUID,
     version INTEGER NOT NULL DEFAULT 1,
     deleted_at TIMESTAMP WITH TIME ZONE,

@@ -21,11 +21,6 @@ import { TimelineGridPartCell } from './TimelineGridPartCell';
 
 interface TimelineGridProps {
   developerId: string;
-  /**
-   * Последняя строка свимлейна: нижняя граница на всех колонках, включая паттерн
-   * выходного/отсутствия.
-   */
-  forceRowBorder?: boolean;
   hasTaskOverlaps?: boolean;
   /** Индексы дней (0..9), которые являются нерабочими/праздничными */
   holidayDayIndices?: Set<number>;
@@ -65,7 +60,6 @@ const DAY_COLUMN_ROW_BORDER_CLASS = 'border-b border-gray-200 dark:border-gray-7
 
 export function TimelineGrid({
   developerId,
-  forceRowBorder = false,
   isDraggingTask,
   isLinking = false,
   sprintStartDate,
@@ -145,12 +139,11 @@ export function TimelineGrid({
             ? null
             : timelineDayDividerClass(dayIndex, dayCount);
           const hidePartDivider = isPatternColumn;
-          const showRowBorder = forceRowBorder || !isPatternColumn;
-          const columnClassName = showRowBorder
-            ? `${DAY_COLUMN_CLASS} ${DAY_COLUMN_ROW_BORDER_CLASS}`
-            : DAY_COLUMN_CLASS;
           return (
-            <div key={dayIndex} className={columnClassName}>
+            <div
+              key={dayIndex}
+              className={`${DAY_COLUMN_CLASS} ${DAY_COLUMN_ROW_BORDER_CLASS}`}
+            >
               {dividerClass ? (
                 <div
                   className={`pointer-events-none absolute bottom-0 right-0 top-0 w-px ${dividerClass}`}

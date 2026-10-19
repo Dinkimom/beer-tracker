@@ -227,7 +227,25 @@ function commentLocalDraftKind(
 export function selectPendingApprovalCommentIds(
   comments: readonly Pick<Comment, 'id' | 'pendingApproval'>[]
 ): string[] {
-  return comments.filter((comment) => comment.pendingApproval === true).map((comment) => comment.id);
+  return selectPendingAgentProposalNotes(comments).ids;
+}
+
+/** Pending MCP draft notes + first stamped client brand (for the agent toolbar). */
+export function selectPendingAgentProposalNotes(
+  comments: readonly Pick<Comment, 'clientBrand' | 'id' | 'pendingApproval'>[]
+): { clientBrand?: Comment['clientBrand']; ids: string[] } {
+  const ids: string[] = [];
+  let clientBrand: Comment['clientBrand'];
+  for (const comment of comments) {
+    if (comment.pendingApproval !== true) {
+      continue;
+    }
+    ids.push(comment.id);
+    if (!clientBrand && comment.clientBrand) {
+      clientBrand = comment.clientBrand;
+    }
+  }
+  return clientBrand ? { clientBrand, ids } : { ids };
 }
 
 export function commentToSwimlaneTask(comment: Comment): Task {
@@ -252,6 +270,7 @@ export function commentToSwimlaneTask(comment: Comment): Task {
     status: 'todo',
     storyPoints: 0,
     ...(comment.pendingApproval === true ? { pendingApproval: true } : {}),
+    ...(comment.clientBrand ? { pendingApprovalClientBrand: comment.clientBrand } : {}),
   };
 }
 

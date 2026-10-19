@@ -22,6 +22,7 @@ interface AdminStaffWriteInput {
   avatar_url?: string | null;
   display_name: string;
   email: string | null;
+  role_slug?: string | null;
   team_ids?: string[];
   tracker_user_id: string | null;
 }
@@ -29,12 +30,13 @@ interface AdminStaffWriteInput {
 async function applyStaffTeamIdsIfPresent(
   orgId: string,
   staffId: string,
-  teamIds: string[] | undefined
+  teamIds: string[] | undefined,
+  roleSlug?: string | null
 ): Promise<NextResponse | null> {
   if (teamIds === undefined) {
     return null;
   }
-  const synced = await syncStaffTeamMemberships(orgId, staffId, teamIds);
+  const synced = await syncStaffTeamMemberships(orgId, staffId, teamIds, roleSlug);
   if ('error' in synced) {
     return NextResponse.json({ error: synced.error }, { status: synced.status });
   }
@@ -148,7 +150,12 @@ export async function createStaffFromAdminPost(
       email: input.email,
       tracker_user_id: input.tracker_user_id,
     });
-    const teamsError = await applyStaffTeamIdsIfPresent(orgId, staff.id, input.team_ids);
+    const teamsError = await applyStaffTeamIdsIfPresent(
+      orgId,
+      staff.id,
+      input.team_ids,
+      input.role_slug
+    );
     if (teamsError) {
       return teamsError;
     }

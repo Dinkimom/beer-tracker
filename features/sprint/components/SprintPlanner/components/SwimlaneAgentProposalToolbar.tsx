@@ -11,6 +11,8 @@ import {
 } from '@/features/context-menu/contextMenuClasses';
 import { mcpOAuthClientBrandName, type McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
+import { isAgentProposalToolbarVisible } from '../utils/swimlanePlacementToolbar';
+
 interface SwimlaneAgentProposalToolbarProps {
   clientBrand?: McpOAuthClientBrand;
   goalPreviewCount?: number;
@@ -31,7 +33,13 @@ export function SwimlaneAgentProposalToolbar({
   onRejectAll,
 }: SwimlaneAgentProposalToolbarProps) {
   const { t } = useI18n();
-  if (pendingCommentIds.length === 0 && positionPreviewCount === 0 && goalPreviewCount === 0) {
+  if (
+    !isAgentProposalToolbarVisible({
+      goalPreviewCount,
+      hasPendingAgentNote: pendingCommentIds.length > 0,
+      positionPreviewCount,
+    })
+  ) {
     return null;
   }
   const agentName = clientBrand ? mcpOAuthClientBrandName(clientBrand) : null;

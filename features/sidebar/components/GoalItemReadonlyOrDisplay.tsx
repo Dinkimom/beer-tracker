@@ -26,7 +26,7 @@ function goalItemReadonlyTextClassName(item: ChecklistItem): string {
   const checkedClass = item.checked
     ? 'text-gray-500 dark:text-gray-400 line-through'
     : 'text-gray-900 dark:text-gray-100';
-  return `flex-1 text-sm leading-relaxed min-w-0 ${checkedClass}`;
+  return `flex-1 text-sm leading-relaxed min-w-0 whitespace-pre-wrap ${checkedClass}`;
 }
 
 interface GoalItemReadonlyOrDisplayProps {

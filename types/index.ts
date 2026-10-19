@@ -2,6 +2,7 @@ import type { ChecklistItem } from './tracker';
 import type { PlannerCommentKind } from '@/lib/comments/commentKind';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { StickyNoteReaction } from '@/lib/comments/stickyNoteReaction';
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { TaskStatus } from '@/utils/statusMapper';
 
 export type Team = 'Back' | 'DevOps' | 'QA' | 'Web';
@@ -109,6 +110,8 @@ export interface Task {
   parent?: TaskParent;
   /** MCP/agent draft waiting for apply — translucent until confirmed. */
   pendingApproval?: boolean;
+  /** MCP OAuth client brand for pending plan-patch drafts (Cursor / Claude / …). */
+  pendingApprovalClientBrand?: McpOAuthClientBrand;
   // Оригинальный ID задачи (для QA задач - ID дев задачи)
   position?: TaskPosition;
   priority?: string;
@@ -237,6 +240,8 @@ export interface Comment {
   assigneeId: string;
   /** Отображаемое имя автора заметки. */
   authorName?: string;
+  /** MCP OAuth client brand stamped on plan-patch draft notes. */
+  clientBrand?: McpOAuthClientBrand;
   /**
    * Стабильный ключ для React: задаётся при создании на клиенте и сохраняется при подстановке id с сервера,
    * чтобы карточка заметки не перемонтировалась после сохранения (попап не схлопывался).

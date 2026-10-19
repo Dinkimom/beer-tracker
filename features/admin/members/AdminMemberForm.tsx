@@ -1,9 +1,11 @@
+import type { CustomSelectOption } from '@/components/CustomSelect';
 import type { RegistryUserItem } from '@/lib/api/types';
 import type { FormEvent } from 'react';
 
 import { useCallback } from 'react';
 
 import { Button } from '@/components/Button';
+import { CustomSelect } from '@/components/CustomSelect';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { field, label } from '@/features/admin/adminUiTokens';
@@ -17,6 +19,7 @@ import { searchAdminOrgUsers } from '@/lib/api/admin/tracker';
 export interface AdminMemberFormValues {
   displayName: string;
   email: string;
+  roleSlug: string;
   teamIds: string[];
   trackerUserId: string;
 }
@@ -26,6 +29,8 @@ interface AdminMemberFormProps {
   idPrefix: string;
   orgId: string;
   resetIdentityOnClear: boolean;
+  roleOptions: CustomSelectOption<string>[];
+  showRoleSelect: boolean;
   submitLabel: string;
   teamOptions: AdminMemberTeamOption[];
   values: AdminMemberFormValues;
@@ -54,6 +59,8 @@ export function AdminMemberForm({
   onSubmit,
   orgId,
   resetIdentityOnClear,
+  roleOptions,
+  showRoleSelect,
   submitLabel,
   teamOptions,
   values,
@@ -81,7 +88,13 @@ export function AdminMemberForm({
             if (!user) {
               onChange(
                 resetIdentityOnClear
-                  ? { displayName: '', email: '', teamIds: values.teamIds, trackerUserId: '' }
+                  ? {
+                      displayName: '',
+                      email: '',
+                      roleSlug: values.roleSlug,
+                      teamIds: values.teamIds,
+                      trackerUserId: '',
+                    }
                   : { ...values, trackerUserId: '' }
               );
               return;
@@ -89,6 +102,7 @@ export function AdminMemberForm({
             onChange({
               displayName: user.displayName,
               email: user.email?.trim() ?? '',
+              roleSlug: values.roleSlug,
               teamIds: values.teamIds,
               trackerUserId: trackerId,
             });
@@ -116,8 +130,31 @@ export function AdminMemberForm({
         menuZIndex={ZIndex.modal + 1}
         options={teamOptions}
         selectedIds={values.teamIds}
-        onChange={(teamIds) => onChange({ ...values, teamIds })}
+        onChange={(teamIds) =>
+          onChange({
+            ...values,
+            roleSlug: teamIds.length > 0 ? values.roleSlug : '',
+            teamIds,
+          })
+        }
       />
+      {showRoleSelect && values.teamIds.length > 0 ? (
+        <div>
+          <span className={label}>{t('admin.membersPage.catalogTeamRoleLabel')}</span>
+          <CustomSelect
+            className="mt-1.5 w-full"
+            menuZIndex={ZIndex.modal + 1}
+            options={roleOptions}
+            selectedPrefix=""
+            title={t('admin.membersPage.catalogTeamRoleInviteTitle')}
+            value={values.roleSlug}
+            onChange={(roleSlug) => onChange({ ...values, roleSlug })}
+          />
+          <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+            {t('admin.membersPage.catalogTeamRoleHint')}
+          </p>
+        </div>
+      ) : null}
       <div className="flex flex-wrap justify-end gap-2">
         <Button disabled={busy} type="submit" variant="primary">
           {busy ? t('admin.membersPage.saving') : submitLabel}

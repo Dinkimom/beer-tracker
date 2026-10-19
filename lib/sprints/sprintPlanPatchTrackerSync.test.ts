@@ -66,6 +66,25 @@ describe('buildIssueNotInSprintPlanPatchHints', () => {
     expect(hints[0]).toContain('RND-1915');
   });
 
+  it('says a planner card still moves when the issue is missing from the tracker sprint', () => {
+    const hint = buildIssueNotInSprintPlanPatchHints(
+      [
+        {
+          assigneeId: 'staff:a',
+          duration: 1,
+          op: 'upsertPosition',
+          startDay: 0,
+          startPart: 0,
+          taskId: 'RND-1779',
+        },
+      ],
+      ['issue_not_in_sprint: RND-1779'],
+      new Set(['RND-1779'])
+    )[0];
+    expect(hint).toContain('already on the planner');
+    expect(hint).toContain('still applies without syncToTracker');
+  });
+
   it('skips hint when syncToTracker is already set', () => {
     expect(
       buildIssueNotInSprintPlanPatchHints(

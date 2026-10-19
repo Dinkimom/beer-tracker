@@ -26,14 +26,14 @@ interface GoalItemProps {
 export function GoalItem(props: GoalItemProps) {
   const { t } = useI18n();
   const editingContainerClass = props.isEditing
-    ? 'rounded-lg border border-black/10 bg-black/[0.05] p-3 -mx-0 dark:border-white/15 dark:bg-white/[0.06]'
+    ? 'rounded-lg bg-black/[0.05] p-3 -mx-0 dark:bg-white/[0.06]'
     : '';
   const updatingClass = props.isUpdating ? 'opacity-50' : '';
   const dimmedClass = props.dimmed ? 'opacity-65' : '';
 
   return (
     <div
-      className={`group flex items-start gap-2 py-2 px-0 rounded transition-all ${editingContainerClass} ${updatingClass} ${dimmedClass}`}
+      className={`group flex items-start gap-2 py-2 px-0 rounded ${editingContainerClass} ${updatingClass} ${dimmedClass}`}
     >
       <GoalItemBody {...props} t={t} />
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { useHolidayCountryStorage } from '@/hooks/useLocalStorage';
+import { useOrgHolidayCountry } from '@/hooks/useOrgHolidayCountry';
 import { fetchHolidayIsDayOffRange } from '@/lib/api/holidays';
 import { getWorkingDaysRange } from '@/utils/dateUtils';
 
@@ -35,7 +35,7 @@ export function useHolidayDays(
   workingDaysCount?: number
 ): Set<number> {
   const [holidayDayIndices, setHolidayDayIndices] = useState<Set<number>>(new Set());
-  const [holidayCountry] = useHolidayCountryStorage();
+  const { holidayCountry } = useOrgHolidayCountry();
 
   const { workingDays, date1, date2 } = useMemo(() => {
     if (!sprintStartDate) {
