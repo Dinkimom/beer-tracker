@@ -2,6 +2,18 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.17.4] — 2026-10-19
+
+### English
+
+- `YANDEX_OAUTH_CLIENT_ID` is runtime env on the app container (not a Docker build ARG); the «get token» link goes through `/api/auth/yandex/authorize` so the ClientID is not inlined into the client bundle.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.17.4` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- `YANDEX_OAUTH_CLIENT_ID` — runtime env контейнера app (не Docker build ARG); ссылка «получить токен» идёт через `/api/auth/yandex/authorize`, ClientID больше не вшивается в клиентский бандл.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.17.4` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.17.3] — 2026-10-19
 
 ### English
