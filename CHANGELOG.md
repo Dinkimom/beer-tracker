@@ -2,6 +2,28 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.17.3] — 2026-10-19
+
+### English
+
+- Org Settings picks a holiday calendar country; planner columns and capacity treat those weekdays as unavailable, and sprint context exposes `holidayCountry` / `holidayDays`.
+- A second `propose_plan_patch` does not silently replace an unconfirmed proposal — pass `replacePending=true` (or apply/reject first). `get_sprint_context` includes `pendingProposal` when one is on the board.
+- Propose returns clearer `positionChanges` and `contentChanges` (was→became) for moves, splits, notes, and goals.
+- Admin team membership can pick people from the tracker roster; members keep role and platform fields.
+- Short task cards can keep a slot visible when its row would otherwise hide; segment edit respects gaps between parts.
+- Draft plan-patch notes store an MCP client brand mark.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.17.3` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- В настройках организации выбирается страна календаря праздников; колонки планера и capacity считают эти будни недоступными, а контекст спринта отдаёт `holidayCountry` / `holidayDays`.
+- Второй `propose_plan_patch` не подменяет неподтверждённое предложение молча — нужен `replacePending=true` (или сначала apply/reject). В `get_sprint_context` появляется `pendingProposal`, если превью уже на доске.
+- Propose возвращает понятнее `positionChanges` и `contentChanges` (было→стало) для сдвигов, разрезов, заметок и целей.
+- В админке состав команды можно набирать из ростера трекера; у участников остаются роль и платформы.
+- На коротких карточках слот можно оставить видимым, даже если ряд скрыт правилами плотности; правка сегментов учитывает зазоры между частями.
+- Черновые заметки патча плана хранят марку MCP-клиента.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.17.3` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.17.2] — 2026-10-19
 
 ### English
