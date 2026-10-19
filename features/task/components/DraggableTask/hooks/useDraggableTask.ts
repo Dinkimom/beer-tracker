@@ -24,7 +24,6 @@ import {
 interface UseDraggableTaskProps {
   activeTaskDuration?: number | null;
   activeTaskId?: string | null;
-  sidebarWidth?: number;
   taskId: string;
   viewMode?: 'compact' | 'full';
 }
@@ -34,7 +33,6 @@ export function useDraggableTask({
   activeTaskId,
   activeTaskDuration,
   viewMode,
-  sidebarWidth,
 }: UseDraggableTaskProps) {
   const [boardViewMode] = useBoardViewModeStorage();
   const [assigneeColumnWidth] = useParticipantsColumnWidthStorage(DEFAULT_PARTICIPANTS_COLUMN_WIDTH);
@@ -120,12 +118,11 @@ export function useDraggableTask({
       isActiveTask,
       isDragging,
       participantsColumnWidth,
-      sidebarWidth,
       viewMode,
       widthPercent,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging, isActiveTask, activeTaskDuration, viewMode, sidebarWidth, participantsColumnWidth, resizeTrigger, widthPercent]);
+  }, [isDragging, isActiveTask, activeTaskDuration, viewMode, participantsColumnWidth, resizeTrigger, widthPercent]);
 
   useEffect(() => {
     if (!isDragging || !isActiveTask) {

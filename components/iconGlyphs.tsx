@@ -121,6 +121,29 @@ export const iconGlyphs: Record<string, ReactNode> = {
       <path d="M9.5 7v10M14.5 7v10" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
     </>
   ),
+  /** Постановка задачи на план (из бэклога спринта на свимлейн) */
+  'plan-add': (
+    <>
+      <rect
+        fill="none"
+        height="10"
+        rx="1.5"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        width="11"
+        x="2"
+        y="7"
+      />
+      {/* Плюс отдельно справа, центр по высоте карточки (y=12), зазор от правого края. */}
+      <path
+        d="M20 9v6M17 12h6"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </>
+  ),
   'trash': (
     <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
   ),

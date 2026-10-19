@@ -1,4 +1,5 @@
 import type { SprintPresenceGestureCardRow } from './sprintRealtimeTypes';
+import type { PhaseSegment } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
 
@@ -7,6 +8,17 @@ function cardRowsMatch(
   right: SprintPresenceGestureCardRow
 ): boolean {
   return left?.layerShiftUp === right.layerShiftUp && left.span === right.span;
+}
+
+interface PersistedPositionForResizeLatch {
+  duration: number;
+  segments?: PhaseSegment[] | null;
+  startDay: number;
+  startPart: number;
+}
+
+function orderedPlanSegments(segments: PhaseSegment[]): PhaseSegment[] {
+  return [...segments].sort((a, b) => segmentStartCell(a) - segmentStartCell(b));
 }
 
 /**
@@ -46,28 +58,73 @@ export function presenceCardRowMapsEqual(
 export interface PresencePositionPreviewLatch {
   assignee?: string;
   duration: number;
+  /** Индекс отрезка: превью duration/startCell относятся к нему, не к envelope позиции. */
+  planSegmentIndex?: number;
   startCell: number | null;
   taskId: string;
 }
 
-function persistedPositionMatchesPreview(
-  persisted: { duration: number; startDay: number; startPart: number } | undefined,
+function segmentStartCell(segment: { startDay: number; startPart: number }): number {
+  return segment.startDay * getPartsPerDay() + segment.startPart;
+}
+
+function persistedSegmentMatchesPreview(
+  persisted: PersistedPositionForResizeLatch,
   preview: PresencePositionPreviewLatch
 ): boolean {
-  if (!persisted || persisted.duration !== preview.duration) {
+  if (preview.planSegmentIndex == null || !persisted.segments?.length) {
+    return false;
+  }
+  const ordered = orderedPlanSegments(persisted.segments);
+  const segment = ordered[preview.planSegmentIndex];
+  // Индекс пропал после merge — позиция уже закоммичена, latch отпускаем.
+  if (!segment) {
+    return true;
+  }
+  const startMatches =
+    preview.startCell == null || segmentStartCell(segment) === preview.startCell;
+  if (segment.duration === preview.duration && startMatches) {
+    return true;
+  }
+  // Дотянули до соседа → merge в один отрезок длиннее превью сегмента.
+  // Иначе stale preview с planSegmentIndex снова ужмёт envelope.
+  if (ordered.length === 1 && persisted.duration !== preview.duration) {
+    return true;
+  }
+  return false;
+}
+
+function persistedEnvelopeMatchesPreview(
+  persisted: PersistedPositionForResizeLatch,
+  preview: PresencePositionPreviewLatch
+): boolean {
+  if (persisted.duration !== preview.duration) {
     return false;
   }
   if (preview.startCell == null) {
     return true;
   }
-  return persisted.startDay * getPartsPerDay() + persisted.startPart === preview.startCell;
+  return segmentStartCell(persisted) === preview.startCell;
+}
+
+function persistedPositionMatchesPreview(
+  persisted: PersistedPositionForResizeLatch | undefined,
+  preview: PresencePositionPreviewLatch
+): boolean {
+  if (!persisted) {
+    return false;
+  }
+  if (preview.planSegmentIndex != null) {
+    return persistedSegmentMatchesPreview(persisted, preview);
+  }
+  return persistedEnvelopeMatchesPreview(persisted, preview);
 }
 
 export function persistedPositionForPreviewLatch(
   live: PresencePositionPreviewLatch | null,
   previous: PresencePositionPreviewLatch | null,
-  positions: ReadonlyMap<string, { duration: number; startDay: number; startPart: number }>
-): { duration: number; startDay: number; startPart: number } | undefined {
+  positions: ReadonlyMap<string, PersistedPositionForResizeLatch>
+): PersistedPositionForResizeLatch | undefined {
   const taskId = live?.taskId ?? previous?.taskId;
   return taskId ? positions.get(taskId) : undefined;
 }
@@ -81,7 +138,7 @@ export function resolveRetainedLocalResizePreview(input: {
   latched: PresencePositionPreviewLatch | null;
   latchedEpoch: number;
   live: PresencePositionPreviewLatch | null;
-  persisted: { duration: number; startDay: number; startPart: number } | undefined;
+  persisted: PersistedPositionForResizeLatch | undefined;
 }): { epoch: number; preview: PresencePositionPreviewLatch | null } {
   if (input.discardEpoch !== input.latchedEpoch) {
     return { epoch: input.discardEpoch, preview: null };
@@ -96,7 +153,7 @@ export function resolveRetainedLocalResizePreview(input: {
 export function retainPresencePositionPreview(
   live: PresencePositionPreviewLatch | null,
   previous: PresencePositionPreviewLatch | null,
-  persisted: { duration: number; startDay: number; startPart: number } | undefined
+  persisted: PersistedPositionForResizeLatch | undefined
 ): PresencePositionPreviewLatch | null {
   if (live) {
     return live;
@@ -118,7 +175,8 @@ export function presencePositionPreviewEquals(
     left.taskId === right.taskId &&
     left.duration === right.duration &&
     left.startCell === right.startCell &&
-    left.assignee === right.assignee
+    left.assignee === right.assignee &&
+    left.planSegmentIndex === right.planSegmentIndex
   );
 }
 

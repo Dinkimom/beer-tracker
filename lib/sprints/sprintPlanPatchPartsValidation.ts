@@ -21,6 +21,27 @@ function assertPartFits(part: number, scale: PlannerTimelineScale, path: string)
   }
 }
 
+function assertUpsertPositionSegmentsEnvelope(
+  op: Extract<SprintPlanPatchOp, { op: 'upsertPosition' }>,
+  path: string
+): void {
+  if (!op.segments || op.segments.length === 0) {
+    return;
+  }
+  const first = op.segments[0]!;
+  const sum = op.segments.reduce((total, segment) => total + segment.duration, 0);
+  if (op.startDay !== first.startDay || op.startPart !== first.startPart) {
+    throw new Error(
+      `validation_failed: ${path} startDay/startPart must match segments[0] when splitting into segments`
+    );
+  }
+  if (op.duration !== sum) {
+    throw new Error(
+      `validation_failed: ${path} duration must equal the sum of segments[].duration (${sum})`
+    );
+  }
+}
+
 function assertUpsertPositionParts(
   op: Extract<SprintPlanPatchOp, { op: 'upsertPosition' }>,
   scale: PlannerTimelineScale,
@@ -34,6 +55,7 @@ function assertUpsertPositionParts(
       `${path}.segments[${segIndex}].startPart`
     );
   }
+  assertUpsertPositionSegmentsEnvelope(op, path);
 }
 
 function assertOneOpParts(op: SprintPlanPatchOp, scale: PlannerTimelineScale, path: string): void {

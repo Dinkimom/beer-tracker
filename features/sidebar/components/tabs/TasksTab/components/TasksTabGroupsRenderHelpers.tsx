@@ -60,7 +60,6 @@ interface RenderTasksTabGroupSectionParams {
   qaTasksMap: Map<string, Task>;
   selectedSprintId?: number | null;
   sidebarDropTargetActive: boolean;
-  sidebarWidth?: number;
   viewMode?: LayoutViewMode;
   visibleTaskOrdinalRef: { value: number };
   onAutoAddToSwimlane?: (task: Task) => void;
@@ -113,7 +112,6 @@ export function renderTasksTabGroupSection(
           renderDropSlot: params.renderDropSlot,
           selectedSprintId: params.selectedSprintId,
           sidebarDropTargetActive: params.sidebarDropTargetActive,
-          sidebarWidth: params.sidebarWidth,
           tasksInGroup,
           viewMode: params.viewMode,
           visibleTaskOrdinalRef: params.visibleTaskOrdinalRef,

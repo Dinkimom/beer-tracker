@@ -295,6 +295,44 @@ describe('remote presence previews', () => {
       )
     ).toBe(true);
   });
+
+  it('releases segment resize latch when that segment matches even if envelope duration differs', () => {
+    const live = { duration: 4, planSegmentIndex: 0, startCell: 0, taskId: 'BT-1' };
+    expect(
+      retainPresencePositionPreview(null, live, {
+        duration: 7,
+        segments: [
+          { duration: 4, startDay: 0, startPart: 0 },
+          { duration: 3, startDay: 2, startPart: 0 },
+        ],
+        startDay: 0,
+        startPart: 0,
+      })
+    ).toBeNull();
+    expect(
+      retainPresencePositionPreview(null, live, {
+        duration: 7,
+        segments: [
+          { duration: 2, startDay: 0, startPart: 0 },
+          { duration: 5, startDay: 2, startPart: 0 },
+        ],
+        startDay: 0,
+        startPart: 0,
+      })
+    ).toEqual(live);
+  });
+
+  it('releases segment resize latch after adjacent segments merge into a longer envelope', () => {
+    const live = { duration: 4, planSegmentIndex: 0, startCell: 0, taskId: 'BT-1' };
+    expect(
+      retainPresencePositionPreview(null, live, {
+        duration: 6,
+        segments: [{ duration: 6, startDay: 0, startPart: 0 }],
+        startDay: 0,
+        startPart: 0,
+      })
+    ).toBeNull();
+  });
 });
 
 describe('sprintPresenceGestureEquals', () => {

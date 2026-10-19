@@ -1,15 +1,23 @@
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
 
-type PlanPatchPositionChange = 'duration' | 'schedule';
+export type PlanPatchPositionChange = 'duration' | 'schedule' | 'segments';
 
-/** Карточка предложения на доске: новое место, перенос или снятие. */
+export interface PlanPatchPositionSegment {
+  duration: number;
+  startDay: number;
+  startPart: number;
+}
+
+/** Карточка предложения на доске: новое место, перенос, отрезки или снятие. */
 export interface PlanPatchPositionPreview {
   assigneeId: string;
   changes: PlanPatchPositionChange[];
   clientBrand?: McpOAuthClientBrand;
   duration: number;
   remove: boolean;
+  /** Предложенные отрезки; undefined — не трогать segments при approve. */
+  segments?: PlanPatchPositionSegment[];
   startDay: number;
   startPart: number;
   taskId: string;
@@ -18,6 +26,7 @@ export interface PlanPatchPositionPreview {
 export interface PlanPatchPreviewSourcePosition {
   assigneeId: string;
   duration: number;
+  segments?: PlanPatchPositionSegment[];
   startDay: number;
   startPart: number;
   taskId: string;
@@ -29,6 +38,7 @@ interface PlanPatchPreviewCaptionLabels {
   duration: string;
   remove: string;
   schedule: string;
+  segments: string;
 }
 
 type PositionPatchOp = Extract<SprintPlanPatchOp, { op: 'deletePosition' | 'upsertPosition' }>;
@@ -47,6 +57,59 @@ function finalPositionOps(ops: readonly SprintPlanPatchOp[]): Map<string, Positi
   return finals;
 }
 
+function copySegments(
+  segments: readonly PlanPatchPositionSegment[] | undefined
+): PlanPatchPositionSegment[] | undefined {
+  if (segments === undefined) {
+    return undefined;
+  }
+  return segments.map((segment) => ({
+    duration: segment.duration,
+    startDay: segment.startDay,
+    startPart: segment.startPart,
+  }));
+}
+
+/** Пустой массив и отсутствие отрезков считаем одним состоянием «целая полоса». */
+export function normalizePlanPatchSegments(
+  segments: readonly PlanPatchPositionSegment[] | undefined
+): PlanPatchPositionSegment[] | null {
+  if (!segments || segments.length === 0) {
+    return null;
+  }
+  return segments.map((segment) => ({
+    duration: segment.duration,
+    startDay: segment.startDay,
+    startPart: segment.startPart,
+  }));
+}
+
+export function planPatchSegmentsEqual(
+  left: readonly PlanPatchPositionSegment[] | undefined,
+  right: readonly PlanPatchPositionSegment[] | undefined
+): boolean {
+  const a = normalizePlanPatchSegments(left);
+  const b = normalizePlanPatchSegments(right);
+  if (a === null && b === null) {
+    return true;
+  }
+  if (a === null || b === null || a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index++) {
+    const leftSeg = a[index]!;
+    const rightSeg = b[index]!;
+    if (
+      leftSeg.startDay !== rightSeg.startDay ||
+      leftSeg.startPart !== rightSeg.startPart ||
+      leftSeg.duration !== rightSeg.duration
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function changesAgainstCurrent(
   current: PlanPatchPreviewSourcePosition,
   next: Extract<PositionPatchOp, { op: 'upsertPosition' }>
@@ -62,7 +125,20 @@ function changesAgainstCurrent(
   if (current.duration !== next.duration) {
     changes.push('duration');
   }
+  if (next.segments !== undefined && !planPatchSegmentsEqual(current.segments, next.segments)) {
+    changes.push('segments');
+  }
   return changes;
+}
+
+function withOptionalSegments(
+  preview: PlanPatchPositionPreview,
+  segments: readonly PlanPatchPositionSegment[] | undefined
+): PlanPatchPositionPreview {
+  if (segments === undefined) {
+    return preview;
+  }
+  return { ...preview, segments: copySegments(segments) };
 }
 
 function previewForOp(
@@ -81,32 +157,39 @@ function previewForOp(
       startDay: current.startDay,
       startPart: current.startPart,
       taskId: current.taskId,
+      ...(current.segments ? { segments: copySegments(current.segments) } : {}),
     };
   }
   if (!current) {
-    return {
-      assigneeId: op.assigneeId,
-      changes: [],
-      duration: op.duration,
-      remove: false,
-      startDay: op.startDay,
-      startPart: op.startPart,
-      taskId: op.taskId,
-    };
+    return withOptionalSegments(
+      {
+        assigneeId: op.assigneeId,
+        changes: [],
+        duration: op.duration,
+        remove: false,
+        startDay: op.startDay,
+        startPart: op.startPart,
+        taskId: op.taskId,
+      },
+      op.segments
+    );
   }
   const changes = changesAgainstCurrent(current, op);
   if (changes.length === 0) {
     return null;
   }
-  return {
-    assigneeId: op.assigneeId,
-    changes,
-    duration: op.duration,
-    remove: false,
-    startDay: op.startDay,
-    startPart: op.startPart,
-    taskId: op.taskId,
-  };
+  return withOptionalSegments(
+    {
+      assigneeId: op.assigneeId,
+      changes,
+      duration: op.duration,
+      remove: false,
+      startDay: op.startDay,
+      startPart: op.startPart,
+      taskId: op.taskId,
+    },
+    op.segments
+  );
 }
 
 /** Сравнивает итоговые position-ops с текущей доской. Последняя операция по задаче побеждает. */
@@ -135,6 +218,9 @@ export function planPatchChangeLabelOrder(
   }
   if (present.has('duration')) {
     ordered.push('duration');
+  }
+  if (present.has('segments')) {
+    ordered.push('segments');
   }
   return ordered;
 }
@@ -179,11 +265,52 @@ function readChangeList(value: unknown): PlanPatchPositionChange[] {
   }
   const changes: PlanPatchPositionChange[] = [];
   for (const item of value) {
-    if (item === 'schedule' || item === 'duration') {
+    if (item === 'schedule' || item === 'duration' || item === 'segments') {
       changes.push(item);
     }
   }
   return planPatchChangeLabelOrder(changes);
+}
+
+function readSegment(raw: unknown): PlanPatchPositionSegment | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const row = raw as Record<string, unknown>;
+  if (
+    typeof row.duration !== 'number' ||
+    !Number.isInteger(row.duration) ||
+    row.duration <= 0 ||
+    typeof row.startDay !== 'number' ||
+    !Number.isInteger(row.startDay) ||
+    typeof row.startPart !== 'number' ||
+    !Number.isInteger(row.startPart)
+  ) {
+    return null;
+  }
+  return {
+    duration: row.duration,
+    startDay: row.startDay,
+    startPart: row.startPart,
+  };
+}
+
+function readSegments(value: unknown): PlanPatchPositionSegment[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const segments: PlanPatchPositionSegment[] = [];
+  for (const item of value) {
+    const segment = readSegment(item);
+    if (!segment) {
+      return undefined;
+    }
+    segments.push(segment);
+  }
+  return segments;
 }
 
 function isPreviewGeometry(row: Record<string, unknown>): boolean {
@@ -211,12 +338,14 @@ export function normalizePlanPatchPositionPreview(raw: unknown): PlanPatchPositi
     return null;
   }
   const clientBrand = planPatchClientBrandFromUnknown(row.clientBrand);
+  const segments = readSegments(row.segments);
   return {
     assigneeId: row.assigneeId as string,
     changes: readChangeList(row.changes),
     ...(clientBrand ? { clientBrand } : {}),
     duration: row.duration as number,
     remove: row.remove === true,
+    ...(segments !== undefined ? { segments } : {}),
     startDay: row.startDay as number,
     startPart: row.startPart as number,
     taskId: row.taskId as string,

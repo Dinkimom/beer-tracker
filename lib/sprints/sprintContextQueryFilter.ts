@@ -9,6 +9,7 @@ import {
   filterPositionsByAssigneeId,
   filterPositionsByTaskIds,
 } from '@/lib/sprints/sprintContextFilter';
+import { stampCapacityWithTeamRoles } from '@/lib/sprints/sprintContextTeamMembers';
 
 /** Narrow an enriched sprint-context payload by assignee and/or task keys. */
 export function applySprintContextQueryFilters(
@@ -23,9 +24,13 @@ export function applySprintContextQueryFilters(
 
   let positions = payload.positions;
   let notes = payload.notes;
+  let teamMembers = payload.teamMembers;
   if (assigneeId) {
     positions = filterPositionsByAssigneeId(positions, assigneeId);
     notes = filterNotesByAssigneeId(notes, assigneeId);
+    if (teamMembers) {
+      teamMembers = teamMembers.filter((member) => member.assigneeId === assigneeId);
+    }
   }
   if (taskIds.length > 0) {
     positions = filterPositionsByTaskIds(positions, taskIds);
@@ -44,7 +49,11 @@ export function applySprintContextQueryFilters(
     notes,
     positions,
     taskLinks,
+    ...(teamMembers ? { teamMembers } : {}),
   };
-  next.capacity = buildSprintContextCapacity(next);
+  next.capacity = stampCapacityWithTeamRoles(
+    buildSprintContextCapacity(next),
+    teamMembers ?? []
+  );
   return next;
 }

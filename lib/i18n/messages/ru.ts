@@ -689,6 +689,7 @@ export const ruMessages = {
     reactionYou: 'Вы',
     linkOpenAria: 'Открыть {title}',
     agentDraft: 'Агент',
+    agentDetailsAria: 'Подробности предложения агента',
     agentApproveAria: 'Принять правку агента',
     agentRejectAria: 'Отклонить правку агента',
     agentProposalAria: 'Предложения агента',
@@ -1377,7 +1378,7 @@ export const ruMessages = {
       },
       planAnchor: 'План на старте работы',
       planPatch: {
-        add: 'Добавление в спринт',
+        add: 'Добавление в план',
         and: 'и',
         duration: 'Изменение продолжительности',
         goalAdd: 'Добавление цели',
@@ -1386,6 +1387,7 @@ export const ruMessages = {
         goalUpdateWas: 'Было: {from}',
         remove: 'Удаление из спринта',
         schedule: 'Перенос сроков',
+        segments: 'Разбиение на отрезки',
       },
       factTimeline: {
         closedAria: '{status}: закрыто',

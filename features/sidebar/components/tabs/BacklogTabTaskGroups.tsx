@@ -23,7 +23,6 @@ interface BacklogTabTaskGroupsProps {
   groupKeys: string[];
   isInitialBacklogLoad: boolean;
   selectedSprintId?: number | null;
-  sidebarWidth: number;
   viewMode?: LayoutViewMode;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onLoadMore: () => void;
@@ -39,7 +38,6 @@ export function BacklogTabTaskGroups({
   activeTaskId,
   activeTaskDuration,
   viewMode,
-  sidebarWidth,
   selectedSprintId,
   contextMenuBlurOtherCards,
   contextMenuTaskId,
@@ -77,7 +75,6 @@ export function BacklogTabTaskGroups({
                     contextMenuTaskId={contextMenuTaskId}
                     developers={backlogDevelopers}
                     selectedSprintId={selectedSprintId}
-                    sidebarWidth={sidebarWidth}
                     task={task}
                     viewMode={viewMode}
                     onContextMenu={onContextMenu ? (e) => onContextMenu(e, task, true) : undefined}

@@ -17,7 +17,6 @@ interface DraggableTaskProps {
   isQATask?: boolean;
   qaTasksMap?: Map<string, Task>;
   selectedSprintId?: number | null;
-  sidebarWidth?: number;
   slaBugBoardId?: number | null;
   slaBugCloseP4ActionsEnabled?: boolean;
   slaBugDemoteReason?: SlaBugDemoteReason;
@@ -38,7 +37,6 @@ export function DraggableTask({
   contextMenuBlurOtherCards = false,
   contextMenuTaskId = null,
   viewMode,
-  sidebarWidth,
   selectedSprintId,
   slaBugBoardId,
   slaBugCloseP4ActionsEnabled = false,
@@ -60,7 +58,6 @@ export function DraggableTask({
     activeTaskId,
     activeTaskDuration,
     viewMode,
-    sidebarWidth,
   });
 
   return (

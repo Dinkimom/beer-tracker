@@ -1,6 +1,10 @@
 import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 
-import { deleteTaskPosition, upsertTaskPositionRecord } from '@/lib/sprints/taskPositionsRepository';
+import {
+  deleteTaskPosition,
+  replaceTaskPositionSegments,
+  upsertTaskPositionRecord,
+} from '@/lib/sprints/taskPositionsRepository';
 
 import {
   deletePlanPatchPositionPreviews,
@@ -30,6 +34,14 @@ async function writePreview(input: {
     startPart: preview.startPart,
     taskId: preview.taskId,
   });
+  if (preview.segments !== undefined) {
+    await replaceTaskPositionSegments({
+      organizationId,
+      segments: preview.segments,
+      sprintId,
+      taskId: preview.taskId,
+    });
+  }
 }
 
 export async function approvePlanPatchPositionPreviews(input: {

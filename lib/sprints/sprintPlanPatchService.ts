@@ -52,6 +52,7 @@ import {
   verifySprintPlanPatchToken,
 } from '@/lib/sprints/sprintPlanPatchToken';
 import {
+  buildIssueNotInSprintPlanPatchHints,
   collectIssueNotInSprintWarnings,
   loadSprintIssueKeySet,
 } from '@/lib/sprints/sprintPlanPatchTrackerSync';
@@ -96,10 +97,9 @@ async function persistDraftNotesForProposal(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<string[]> {
+  // Даже без новых createNote: снятие старых pending при смене ops.
   const draftNoteIds = await persistProposedCreateNotes(input);
-  if (draftNoteIds.length > 0) {
-    notifyPlanPatchResource(input.organizationId, input.sprintId, ['comments']);
-  }
+  notifyPlanPatchResource(input.organizationId, input.sprintId, ['comments']);
   return draftNoteIds;
 }
 
@@ -126,12 +126,8 @@ async function persistPositionPreviewsForProposal(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<void> {
-  const touchesPositions = input.ops.some(
-    (op) => op.op === 'upsertPosition' || op.op === 'deletePosition'
-  );
-  if (!touchesPositions) {
-    return;
-  }
+  // Всегда replace (в т.ч. пустым списком): повторный propose без position-ops
+  // должен убрать превью предыдущего предложения.
   await replacePlanPatchPositionPreviews({
     expiresAt: input.expiresAt,
     organizationId: input.organizationId,
@@ -160,12 +156,6 @@ async function persistGoalPreviewsForProposal(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<void> {
-  const touchesGoals = input.ops.some(
-    (op) => op.op === 'createGoal' || op.op === 'updateGoal' || op.op === 'deleteGoal'
-  );
-  if (!touchesGoals) {
-    return;
-  }
   await replacePlanPatchGoalPreviews({
     expiresAt: input.expiresAt,
     organizationId: input.organizationId,
@@ -221,6 +211,7 @@ export async function proposeSprintPlanPatch(input: {
     ...(sprintIssues.warning ? [sprintIssues.warning] : []),
     ...collectIssueNotInSprintWarnings(ops, sprintIssues.keys),
   ];
+  const hints = buildIssueNotInSprintPlanPatchHints(ops, warnings);
 
   const nowSec = Math.floor(Date.now() / 1000);
   const opsHash = hashSprintPlanPatchOps(ops);
@@ -268,6 +259,7 @@ export async function proposeSprintPlanPatch(input: {
     capacityPreview: { summary: capacityPreviewSummary },
     ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),
     expiresAt: expiresAt.toISOString(),
+    ...(hints.length > 0 ? { hints } : {}),
     ops,
     persistNotes,
     proposalId,

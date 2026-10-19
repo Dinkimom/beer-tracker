@@ -53,8 +53,6 @@ interface DaysHeaderProps {
   holidayDayIndices?: Set<number>;
   participantsColumnWidth: number;
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
-  sidebarOpen?: boolean;
-  sidebarWidth: number;
   sprintStartDate: Date;
   /** Рабочих дней в таймлайне (длина спринта) */
   sprintTimelineWorkingDays?: number;
@@ -71,8 +69,6 @@ export function DaysHeader({
   sprintStartDate,
   sprintTimelineWorkingDays = WORKING_DAYS,
   viewMode,
-  sidebarWidth,
-  sidebarOpen,
   developers = [],
   developersManagement,
   errorDayDetails,
@@ -84,7 +80,6 @@ export function DaysHeader({
 }: DaysHeaderProps) {
   const { t } = useI18n();
   const featureColumn = useFeatureLaneColumnUi();
-  const actualSidebarWidth = sidebarOpen ? sidebarWidth : 0;
 
   const chromeSlot = usePlannerChromeSlot();
   const daysTrackRef = useRef<HTMLDivElement>(null);
@@ -106,7 +101,6 @@ export function DaysHeader({
   const containerWidth = sprintPlannerSwimlaneTimelineWidthCss(
     viewMode,
     participantsColumnWidth,
-    actualSidebarWidth,
     sprintTimelineWorkingDays
   );
 

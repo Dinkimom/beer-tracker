@@ -94,6 +94,7 @@ CREATE TABLE public.plan_patch_position_previews (
     remove BOOLEAN NOT NULL DEFAULT FALSE,
     changes TEXT NOT NULL DEFAULT '',
     client_brand VARCHAR(16) NOT NULL DEFAULT '',
+    segments JSONB,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     PRIMARY KEY (organization_id, sprint_id, task_id)
 );

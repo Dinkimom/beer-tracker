@@ -77,6 +77,8 @@ export interface SprintPlanPatchProposeResult {
   /** Sticky notes already written as pending (translucent in the planner) until apply. */
   draftNoteIds?: string[];
   expiresAt: string;
+  /** Actionable agent guidance (e.g. syncToTracker when issue_not_in_sprint). */
+  hints?: string[];
   ops: SprintPlanPatchOp[];
   /** False when propose skipped writing createNote drafts. */
   persistNotes: boolean;

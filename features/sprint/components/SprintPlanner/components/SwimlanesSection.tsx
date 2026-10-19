@@ -36,10 +36,6 @@ import {
   buildSwimlaneInProgressFactSegmentsForAssignee,
   type SwimlaneInProgressFactSegment,
 } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
-import {
-  planPatchPreviewElementId,
-  revealPlanPatchElement,
-} from '@/features/swimlane/utils/planPatchPreviewFocus';
 import { isSwimlaneLinkingSessionActive } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
 import { useRootStore } from '@/lib/layers';
 import {
@@ -84,7 +80,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     scrollContainerRef,
     showLinks = true,
     sidebarOpen,
-    sidebarWidth,
     sprintStartDate,
     sprintTimelineWorkingDays = WORKING_DAYS,
     swimlaneCalendarBusyEnabled = false,
@@ -293,7 +288,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
       const preview = positionsStore.planPatchPreviews.get(taskId);
       if (preview && !preview.remove) {
         sprintPlannerUi.setPlanPatchFocusTaskId(taskId);
-        revealPlanPatchElement(planPatchPreviewElementId(taskId));
         return;
       }
       sprintPlannerUi.setPlanPatchFocusTaskId(null);
@@ -324,13 +318,11 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     hoverConnectedTaskIds
   );
 
-  const sidebarEffectiveWidthPx = sidebarOpen ? sidebarWidth : 0;
   const timelineTotalCells = sprintTimelineWorkingDays * getPartsPerDay();
   const overflowCells = timelineOverflowCellCount(swimlanePositions.values(), timelineTotalCells);
   const overflowWidthCss = sprintPlannerOverflowTimelineWidthCss(
     viewMode,
     participantsColumnWidth,
-    sidebarEffectiveWidthPx,
     sprintTimelineWorkingDays,
     overflowCells,
     timelineTotalCells
@@ -339,13 +331,11 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   const swimlanesContentWidth = sprintPlannerDaysHeaderContentWidthCss(
     viewMode,
     participantsColumnWidth,
-    sidebarEffectiveWidthPx,
     sprintTimelineWorkingDays
   );
   const swimlanesRowWidth = sprintPlannerContentRowWidthCss(
     viewMode,
     participantsColumnWidth,
-    sidebarEffectiveWidthPx,
     sprintTimelineWorkingDays,
     overflowWidthCss
   );
@@ -395,8 +385,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
           participantsColumnWidth={participantsColumnWidth}
           removeParticipantFromTeam={removeParticipantFromTeam}
           scrollContainerRef={scrollContainerRef}
-          sidebarOpen={sidebarOpen}
-          sidebarWidth={sidebarWidth}
           sprintStartDate={sprintStartDate}
           sprintTimelineWorkingDays={sprintTimelineWorkingDays}
           viewMode={viewMode}

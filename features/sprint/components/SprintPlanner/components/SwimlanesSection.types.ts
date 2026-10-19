@@ -62,7 +62,6 @@ export interface SwimlanesSectionProps {
   selectedSprintId: number | null;
   showLinks?: boolean;
   sidebarOpen: boolean;
-  sidebarWidth: number;
   sprintStartDate: Date;
   sprintTimelineWorkingDays?: number;
   /** Показывать дорожку занятости из CalDAV */

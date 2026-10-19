@@ -91,8 +91,6 @@ export function buildSwimlanePropsForDeveloper(input: {
   taskLinks?: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
   segmentEditTaskId: string | null;
   selectedSprintId: number | null;
-  sidebarOpen: boolean;
-  sidebarWidth: number;
   sprintStartDate: Date;
   sprintTimelineWorkingDays: number;
   swimlaneFactChangelogsByTaskId?: Map<string, ChangelogEntry[]>;
@@ -157,8 +155,6 @@ export function buildSwimlanePropsForDeveloper(input: {
     segmentEditTaskId: input.segmentEditTaskId,
     selectedSprintId: input.selectedSprintId,
     selectedTaskId: null,
-    sidebarOpen: input.sidebarOpen,
-    sidebarWidth: input.sidebarWidth,
     sprintStartDate: input.sprintStartDate,
     sprintTimelineWorkingDays: input.sprintTimelineWorkingDays,
     swimlaneFactChangelogsByTaskId: input.swimlaneFactChangelogsByTaskId,

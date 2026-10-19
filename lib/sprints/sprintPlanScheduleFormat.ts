@@ -41,6 +41,47 @@ function formatDurationDays(durationParts: number, partsPerDay: number): string 
   return `${days}d`;
 }
 
+function formatCellSpan(
+  cells: Array<{ day: number; part: number }>,
+  dateByDay: Map<number, string>,
+  partsPerDay: number
+): string {
+  const first = cells[0]!;
+  const last = cells[cells.length - 1]!;
+  const start = formatSlot(first.day, first.part, dateByDay, partsPerDay);
+  const end = formatSlot(last.day, last.part, dateByDay, partsPerDay);
+  return first.day === last.day && first.part === last.part ? start : `${start} – ${end}`;
+}
+
+function formatSegmentRanges(
+  position: SprintContextPosition,
+  dateByDay: Map<number, string>,
+  partsPerDay: number
+): string | null {
+  const segments = position.segments;
+  if (!segments || segments.length <= 1) {
+    return null;
+  }
+  const ranges = segments.map((segment) => {
+    const cells = expandPositionOccupiedCells(
+      {
+        duration: segment.duration,
+        startDay: segment.startDay,
+        startPart: segment.startPart,
+      },
+      partsPerDay
+    );
+    if (cells.length === 0) {
+      return null;
+    }
+    return formatCellSpan(cells, dateByDay, partsPerDay);
+  });
+  if (ranges.some((range) => range == null)) {
+    return null;
+  }
+  return ranges.join(' | ');
+}
+
 function formatOnePosition(
   position: SprintContextPosition,
   dateByDay: Map<number, string>,
@@ -51,12 +92,8 @@ function formatOnePosition(
   if (cells.length === 0) {
     return `${position.taskId}  ${assignee}  (empty)`;
   }
-  const first = cells[0]!;
-  const last = cells[cells.length - 1]!;
-  const start = formatSlot(first.day, first.part, dateByDay, partsPerDay);
-  const end = formatSlot(last.day, last.part, dateByDay, partsPerDay);
-  const span =
-    first.day === last.day && first.part === last.part ? start : `${start} – ${end}`;
+  const segmented = formatSegmentRanges(position, dateByDay, partsPerDay);
+  const span = segmented ?? formatCellSpan(cells, dateByDay, partsPerDay);
   return `${position.taskId}  ${assignee}  ${span}  ${formatDurationDays(cells.length, partsPerDay)}`;
 }
 

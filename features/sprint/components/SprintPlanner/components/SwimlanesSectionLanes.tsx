@@ -24,6 +24,7 @@ import {
 import { Swimlane } from '@/features/swimlane/components/Swimlane';
 import { TaskArrows } from '@/features/swimlane/components/task-arrows';
 import { PlanPatchScheduleArrows } from '@/features/swimlane/components/task-arrows/PlanPatchScheduleArrows';
+import { PlanPatchSegmentArrows } from '@/features/swimlane/components/task-arrows/PlanPatchSegmentArrows';
 import { SwimlaneXarrowRedrawProvider } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import { useSwimlanePinnedRowIdsStorage } from '@/hooks/useLocalStorage';
 import { taskLinksForOnboardingArrows } from '@/lib/plannerOnboarding/onboardingDemoLane';
@@ -226,8 +227,6 @@ export function SwimlanesSectionLanes({
         quickAddSubmittingTaskId: section.quickAddSubmittingTaskId ?? null,
         segmentEditTaskId,
         selectedSprintId: section.selectedSprintId,
-        sidebarOpen: section.sidebarOpen,
-        sidebarWidth: section.sidebarWidth,
         sprintStartDate: section.sprintStartDate,
         sprintTimelineWorkingDays: section.sprintTimelineWorkingDays ?? WORKING_DAYS,
         swimlaneFactChangelogsByTaskId: section.taskChangelogsByTaskId,
@@ -329,6 +328,7 @@ export function SwimlanesSectionLanes({
               clipToRow
             />
             <PlanPatchScheduleArrows clipToAssigneeId={developer.id} />
+            <PlanPatchSegmentArrows clipToAssigneeId={developer.id} />
           </div>
         ) : null}
       </div>
@@ -348,6 +348,7 @@ export function SwimlanesSectionLanes({
         </div>
         {showArrows ? <TaskArrows {...taskArrowProps} /> : null}
         <PlanPatchScheduleArrows />
+        <PlanPatchSegmentArrows />
       </SwimlaneXarrowRedrawProvider>
     </Xwrapper>
   );

@@ -92,6 +92,15 @@ export function mergePlanPatchPreviewLayers(input: {
         startDay: preview.startDay,
         startPart: preview.startPart,
         taskId: preview.taskId,
+        ...(preview.segments !== undefined
+          ? {
+              segments: preview.segments.map((segment) => ({
+                duration: segment.duration,
+                startDay: segment.startDay,
+                startPart: segment.startPart,
+              })),
+            }
+          : {}),
       },
       taskId: preview.taskId,
     });

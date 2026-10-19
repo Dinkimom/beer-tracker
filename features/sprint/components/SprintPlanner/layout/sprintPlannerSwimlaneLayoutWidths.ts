@@ -7,23 +7,23 @@ export function sprintPlannerMaxTimelineWidthPx(workingDaysCount: number = WORKI
   return workingDaysCount * SPRINT_PLANNER_DAY_MAX_WIDTH_PX;
 }
 
-/** Выражение ширины области таймлайна без колонки участников: `calc(200vw - …)`. */
-export function sprintPlannerFullTimelineWidthExpr(
-  participantsColumnWidth: number,
-  sidebarEffectiveWidthPx: number
-): string {
-  return `calc(200vw - ${participantsColumnWidth}px - ${sidebarEffectiveWidthPx}px)`;
+/**
+ * Ширина области таймлайна без колонки участников: `calc(200vw - …)`.
+ * Сайдбар намеренно не вычитается: открытие панели не должно сжимать колонки дней —
+ * сужается только viewport доски, появляется/растёт горизонтальный скролл.
+ */
+export function sprintPlannerFullTimelineWidthExpr(participantsColumnWidth: number): string {
+  return `calc(200vw - ${participantsColumnWidth}px)`;
 }
 
 /** Ширина внутреннего таймлайна в строке свимлейна (ограничение по max px). */
 export function sprintPlannerSwimlaneTimelineWidthCss(
   viewMode: 'compact' | 'full',
   participantsColumnWidth: number,
-  sidebarEffectiveWidthPx: number,
   workingDaysCount: number = WORKING_DAYS
 ): string {
   if (viewMode !== 'full') return '100%';
-  const full = sprintPlannerFullTimelineWidthExpr(participantsColumnWidth, sidebarEffectiveWidthPx);
+  const full = sprintPlannerFullTimelineWidthExpr(participantsColumnWidth);
   return `min(${full}, ${sprintPlannerMaxTimelineWidthPx(workingDaysCount)}px)`;
 }
 
@@ -31,11 +31,10 @@ export function sprintPlannerSwimlaneTimelineWidthCss(
 export function sprintPlannerDaysHeaderContentWidthCss(
   viewMode: 'compact' | 'full',
   participantsColumnWidth: number,
-  sidebarEffectiveWidthPx: number,
   workingDaysCount: number = WORKING_DAYS
 ): string {
   if (viewMode !== 'full') return '100%';
-  const full = sprintPlannerFullTimelineWidthExpr(participantsColumnWidth, sidebarEffectiveWidthPx);
+  const full = sprintPlannerFullTimelineWidthExpr(participantsColumnWidth);
   return `calc(${participantsColumnWidth}px + min(${full}, ${sprintPlannerMaxTimelineWidthPx(workingDaysCount)}px))`;
 }
 
@@ -46,7 +45,6 @@ export function sprintPlannerDaysHeaderContentWidthCss(
 export function sprintPlannerOverflowTimelineWidthCss(
   viewMode: 'compact' | 'full',
   participantsColumnWidth: number,
-  sidebarEffectiveWidthPx: number,
   workingDaysCount: number,
   overflowCells: number,
   totalCells: number
@@ -55,7 +53,6 @@ export function sprintPlannerOverflowTimelineWidthCss(
   const timeline = sprintPlannerSwimlaneTimelineWidthCss(
     viewMode,
     participantsColumnWidth,
-    sidebarEffectiveWidthPx,
     workingDaysCount
   );
   return `calc(${overflowCells} * (${timeline}) / ${totalCells})`;
@@ -69,7 +66,6 @@ export function sprintPlannerOverflowTimelineWidthCss(
 export function sprintPlannerContentRowWidthCss(
   viewMode: 'compact' | 'full',
   participantsColumnWidth: number,
-  sidebarEffectiveWidthPx: number,
   workingDaysCount: number = WORKING_DAYS,
   overflowWidthCss: string | null = null
 ): string {
@@ -77,7 +73,6 @@ export function sprintPlannerContentRowWidthCss(
   const content = sprintPlannerDaysHeaderContentWidthCss(
     viewMode,
     participantsColumnWidth,
-    sidebarEffectiveWidthPx,
     workingDaysCount
   );
   if (!overflowWidthCss) return `max(100%, ${content})`;

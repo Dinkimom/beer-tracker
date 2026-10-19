@@ -4,11 +4,11 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { canUsePlanner } from '@/lib/access/orgAccess';
-import { findUserById } from '@/lib/auth/userRepository';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { getIssueForOrganization } from '@/lib/mcp/getIssueForOrganization';
 import { getIssueSnapshotForOrganization } from '@/lib/mcp/getIssueSnapshotForOrganization';
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
+import { registerIdentityMcpTools } from '@/lib/mcp/registerIdentityMcpTools';
 import { registerRetroBoardMcpTools } from '@/lib/mcp/registerRetroBoardMcpTools';
 import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
@@ -19,7 +19,6 @@ import {
   applySprintPlanPatch,
   proposeSprintPlanPatch,
 } from '@/lib/sprints/sprintPlanPatchService';
-import { searchStaffInOrg } from '@/lib/staffTeams';
 
 function toolError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
@@ -71,46 +70,7 @@ export function createSprintContextMcpServer(input: {
     version: '1.9.0',
   });
 
-  server.registerTool(
-    'whoami',
-    {
-      description:
-        'Current Beer Tracker MCP identity: product userId, email/displayName, orgRole, canUsePlanner, and optionally the linked tracker /myself.',
-      inputSchema: {
-        includeTracker: z
-          .boolean()
-          .optional()
-          .describe('When true, also call tracker getCurrentUser (/myself)'),
-      },
-    },
-    async ({ includeTracker }) => {
-      try {
-        const user = await findUserById(input.userId);
-        const payload: Record<string, unknown> = {
-          canUsePlanner: canUsePlanner(input.profile),
-          displayName: user?.display_name || null,
-          email: user?.email || null,
-          organizationId: input.organizationId,
-          orgRole: input.profile.orgRole,
-          userId: input.userId,
-        };
-        if (includeTracker) {
-          try {
-            const issueTracker = await getIssueTrackerProviderClientForOrganization(
-              input.organizationId
-            );
-            payload.trackerUser = await issueTracker.getCurrentUser();
-          } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            payload.trackerUserWarning = `tracker_myself_unavailable: ${message}`;
-          }
-        }
-        return toolJson(payload);
-      } catch (error) {
-        return toolError(error);
-      }
-    }
-  );
+  registerIdentityMcpTools(server, input);
 
   server.registerTool(
     'search_sprints',
@@ -163,7 +123,7 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_context',
     {
       description:
-        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + status/statusCategory/sprintHistory), capacity (tasks only; sticky notes do not reserve time), feature lanes, notes, links, goals, availability. Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. meta.calendarDays are working days only. meta.weekendDays are Sat/Sun in the sprint window with no day index — do not plan positions on those dates. Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
+        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + status/statusCategory/sprintHistory), capacity (tasks only; sticky notes do not reserve time), teamMembers (board roster with role=developer|tester|other, roleTitle, platforms), feature lanes, notes, links, goals, availability. Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. meta.calendarDays are working days only. meta.weekendDays are Sat/Sun in the sprint window with no day index — do not plan positions on those dates. Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
       inputSchema: {
         assigneeId: z
           .string()
@@ -206,7 +166,7 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_capacity',
     {
       description:
-        'Capacity analysis for a sprint: per-person load vs free parts (meta.partsPerDay from org settings), overlaps, gaps, overloaded days. Sticky notes do not reserve capacity — only task positions. meta.weekendDays are Sat/Sun and are not capacity days — do not plan there. Prefer this over raw positions when answering "who is overloaded / where is free capacity".',
+        'Capacity analysis for a sprint: per-person load vs free parts (meta.partsPerDay from org settings), overlaps, gaps, overloaded days; includes teamMembers roster with roles when board is known. Sticky notes do not reserve capacity — only task positions. meta.weekendDays are Sat/Sun and are not capacity days — do not plan there. Prefer this over raw positions when answering "who is overloaded / where is free capacity".',
       inputSchema: {
         assigneeId: z
           .string()
@@ -238,6 +198,9 @@ export function createSprintContextMcpServer(input: {
             sprintWindow: payload.meta.sprintWindow,
             warnings: payload.meta.warnings,
           },
+          ...(payload.teamMembers && payload.teamMembers.length > 0
+            ? { teamMembers: payload.teamMembers }
+            : {}),
         });
       } catch (error) {
         return toolError(error);
@@ -398,44 +361,13 @@ export function createSprintContextMcpServer(input: {
   );
 
   server.registerTool(
-    'resolve_person',
-    {
-      description:
-        'Resolve a person by name/email/tracker id fragment to staffUid + assigneeId (staff:uuid) for capacity/context matching. Query must be at least 2 characters.',
-      inputSchema: {
-        query: z
-          .string()
-          .min(2)
-          .describe('Substring of display name, email, or tracker user id'),
-      },
-    },
-    async ({ query: queryText }) => {
-      try {
-        const hits = await searchStaffInOrg(input.organizationId, queryText);
-        return toolJson({
-          hits: hits.map((hit) => ({
-            assigneeId: hit.staffUid ? `staff:${hit.staffUid}` : hit.trackerId,
-            displayName: hit.displayName,
-            email: hit.email ?? null,
-            staffUid: hit.staffUid ?? null,
-            trackerId: hit.trackerId,
-          })),
-          hint: 'Use assigneeId / staffUid when reading positions or capacity; trackerId is the issue-tracker user id.',
-        });
-      } catch (error) {
-        return toolError(error);
-      }
-    }
-  );
-
-  server.registerTool(
     'propose_plan_patch',
     {
       description:
-        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). By default createNote writes draft sticky notes immediately (translucent until apply), and position ops draw translucent cards on the board until apply: a new placement, a date move, a duration change, or deletePosition (removal from the planner sprint, original card stays until apply). set persistNotes=false for a pure dry-run (notes and position cards created only on apply). Notes do NOT reserve capacity. Preflight fails if updateNote/deleteNote/updateGoal/deleteGoal targets are missing. upsertPosition places tasks; set syncToTracker=true to also add the issue to the tracker sprint and assign. Returns summary, schedule, capacityPreview, warnings, persistNotes, draftNoteIds, applyToken (TTL 30m). Always call before apply_plan_patch. Part indices must be 0..meta.partsPerDay-1. Notes expose updatedAt/updatedBy/version — pass ifVersion on updateNote for optimistic lock.',
+        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). By default createNote writes draft sticky notes immediately (translucent until apply), and position ops draw translucent cards on the board until apply: a new placement, a date move, a duration change, segment split (upsertPosition.segments), or deletePosition (removal from the planner sprint, original card stays until apply). To ADD a task to the plan (including already split into gaps): one upsertPosition with startDay/startPart/duration and optional segments[{startDay,startPart,duration},…]; set syncToTracker=true when the issue is not yet on the tracker sprint (propose returns issue_not_in_sprint + hints — re-propose with syncToTracker, then apply). To only re-split a task already on the board: pass segments without syncToTracker. Envelope rules: startDay/startPart = segments[0]; duration = sum(segments[].duration); segments=[] clears the split. Calling propose again with different ops replaces previous pending drafts/previews for this sprint (use the latest applyToken). persistNotes=false for pure dry-run. Notes do NOT reserve capacity. Preflight fails if updateNote/deleteNote/updateGoal/deleteGoal targets are missing. Returns summary, schedule, capacityPreview, warnings, hints, persistNotes, draftNoteIds, applyToken (TTL 30m). Always call before apply_plan_patch. Part indices 0..meta.partsPerDay-1. Notes: updatedAt/updatedBy/version — pass ifVersion on updateNote for optimistic lock.',
       inputSchema: {
         ops: SprintPlanPatchOpsSchema.describe(
-          '1–50 ops: upsertPosition|deletePosition|createNote|updateNote|deleteNote|upsertLink|deleteLink|upsertFeatureDraft|createGoal|updateGoal|deleteGoal'
+          '1–50 ops: upsertPosition (optional segments[], syncToTracker)|deletePosition|createNote|updateNote|deleteNote|upsertLink|deleteLink|upsertFeatureDraft|createGoal|updateGoal|deleteGoal'
         ),
         persistNotes: z
           .boolean()
@@ -461,9 +393,13 @@ export function createSprintContextMcpServer(input: {
           persistNotes,
           sprintId,
         });
-        const hint = result.persistNotes
+        const reviewHint = result.persistNotes
           ? 'Review the translucent draft notes on the planner (and summary/capacityPreview), then call apply_plan_patch with the same ops + applyToken and confirm=true.'
           : 'Review summary/capacityPreview/schedule (no draft notes written). Call apply_plan_patch with the same ops + applyToken and confirm=true to write.';
+        const hint =
+          result.hints && result.hints.length > 0
+            ? `${result.hints.join(' ')} ${reviewHint}`
+            : reviewHint;
         return toolJson({
           ...result,
           hint,

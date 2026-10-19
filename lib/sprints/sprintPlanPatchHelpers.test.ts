@@ -109,4 +109,26 @@ describe('summarizeSprintPlanPatchOps', () => {
       ])
     ).toEqual(['createNote @staff:a day 2 part 1: Hello world']);
   });
+
+  it('notes segments and syncToTracker on upsertPosition', () => {
+    expect(
+      summarizeSprintPlanPatchOps([
+        {
+          assigneeId: 'staff:a',
+          duration: 2,
+          op: 'upsertPosition',
+          segments: [
+            { duration: 1, startDay: 0, startPart: 0 },
+            { duration: 1, startDay: 1, startPart: 0 },
+          ],
+          startDay: 0,
+          startPart: 0,
+          syncToTracker: true,
+          taskId: 'RND-1',
+        },
+      ])
+    ).toEqual([
+      'upsertPosition RND-1 → staff:a day 0 part 0 dur 2 (2 segments) +syncToTracker',
+    ]);
+  });
 });

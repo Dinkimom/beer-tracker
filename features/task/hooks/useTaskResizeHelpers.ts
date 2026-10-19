@@ -60,7 +60,12 @@ export function applyTaskResizePreviewToPositionedTasks<
   T extends { position: TaskPosition; task: { id: string } }
 >(
   positionedTasks: T[],
-  preview: { duration: number; startCell: number | null; taskId: string } | null,
+  preview: {
+    duration: number;
+    planSegmentIndex?: number;
+    startCell: number | null;
+    taskId: string;
+  } | null,
   totalCells: number
 ): T[] {
   if (!preview) {
@@ -76,6 +81,9 @@ export function applyTaskResizePreviewToPositionedTasks<
       {
         newDuration: preview.duration,
         ...(preview.startCell != null ? { newStartCell: preview.startCell } : {}),
+        ...(preview.planSegmentIndex != null
+          ? { planSegmentIndex: preview.planSegmentIndex }
+          : {}),
       },
       totalCells
     );

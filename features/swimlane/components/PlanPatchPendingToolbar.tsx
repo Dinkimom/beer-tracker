@@ -17,8 +17,12 @@ export function planPatchCaptionTone(
   if (preview.changes.includes('schedule')) {
     return { className: '', icon: 'arrow-right' };
   }
+  if (preview.changes.includes('segments')) {
+    return { className: '', icon: 'phase-segments' };
+  }
+  // New placement (incl. already split into segments) — from backlog onto the plan.
   if (preview.changes.length === 0) {
-    return { className: 'text-green-700 dark:text-green-400', icon: 'plus' };
+    return { className: 'text-green-700 dark:text-green-400', icon: 'plan-add' };
   }
   return { className: '', icon: null };
 }
@@ -41,6 +45,7 @@ export function PlanPatchPendingToolbar({
     duration: t('sprintPlanner.swimlane.planPatch.duration'),
     remove: t('sprintPlanner.swimlane.planPatch.remove'),
     schedule: t('sprintPlanner.swimlane.planPatch.schedule'),
+    segments: t('sprintPlanner.swimlane.planPatch.segments'),
   });
   const tone = planPatchCaptionTone(preview);
   return (

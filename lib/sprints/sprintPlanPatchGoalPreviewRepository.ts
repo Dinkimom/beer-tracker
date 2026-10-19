@@ -113,12 +113,12 @@ export async function replacePlanPatchGoalPreviews(input: {
 }): Promise<void> {
   await ensurePlanPatchGoalPreviewSchema();
   await runBeerTrackerTransaction(async (tx) => {
+    // Полная замена: повторный propose с другим opsHash убирает старые превью целей
+    // (createGoal каждый раз даёт новый goal_id — иначе они копятся).
     await tx(
       `DELETE FROM plan_patch_goal_previews
-       WHERE organization_id = $1::uuid
-         AND sprint_id = $2
-         AND (expires_at < CURRENT_TIMESTAMP OR proposal_id = $3)`,
-      [input.organizationId, input.sprintId, input.proposalId]
+       WHERE organization_id = $1::uuid AND sprint_id = $2`,
+      [input.organizationId, input.sprintId]
     );
     for (const preview of input.previews) {
       await tx(

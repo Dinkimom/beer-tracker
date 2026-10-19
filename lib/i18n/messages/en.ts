@@ -689,6 +689,7 @@ export const enMessages = {
     reactionYou: 'You',
     linkOpenAria: 'Open {title}',
     agentDraft: 'Agent',
+    agentDetailsAria: 'Agent proposal details',
     agentApproveAria: 'Approve agent change',
     agentRejectAria: 'Reject agent change',
     agentProposalAria: 'Agent proposals',
@@ -1377,7 +1378,7 @@ export const enMessages = {
       },
       planAnchor: 'Plan when work started',
       planPatch: {
-        add: 'Add to sprint',
+        add: 'Add to plan',
         and: 'and',
         duration: 'Change duration',
         goalAdd: 'Add goal',
@@ -1386,6 +1387,7 @@ export const enMessages = {
         goalUpdateWas: 'Was: {from}',
         remove: 'Remove from sprint',
         schedule: 'Move dates',
+        segments: 'Split into segments',
       },
       factTimeline: {
         closedAria: '{status}: closed',

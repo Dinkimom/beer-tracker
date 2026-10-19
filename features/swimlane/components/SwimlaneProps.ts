@@ -69,8 +69,6 @@ export interface SwimlaneProps {
   selectedTaskId?: string | null;
   /** Пользовательские стрелки видны. От этого зависит, уступает ли бейзлайн место связи. */
   showLinks?: boolean;
-  sidebarOpen?: boolean;
-  sidebarWidth?: number;
   sprintStartDate: Date;
   /** Рабочих дней в таймлайне (длина спринта) */
   sprintTimelineWorkingDays?: number;

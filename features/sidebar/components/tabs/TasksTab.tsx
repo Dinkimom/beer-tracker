@@ -52,7 +52,6 @@ export function TasksTab() {
     activeTaskId,
     activeTaskDuration,
     viewMode,
-    width: sidebarWidth,
     selectedBoardId,
     selectedSprintId,
     contextMenuBlurOtherCards,
@@ -98,7 +97,6 @@ export function TasksTab() {
           groupedTasks={groupedTasks}
           qaTasksMap={qaTasksMap}
           selectedSprintId={selectedSprintId}
-          sidebarWidth={sidebarWidth}
           viewMode={viewMode}
           onAutoAddToSwimlane={onAutoAddToSwimlane}
           onContextMenu={onContextMenu}

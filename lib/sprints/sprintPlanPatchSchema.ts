@@ -9,9 +9,19 @@ import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 const MAX_OPS = 50;
 
 const SegmentSchema = z.object({
-  duration: z.number().int().positive().max(MAX_PLANNER_DURATION_PARTS),
-  startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
-  startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
+  duration: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_PLANNER_DURATION_PARTS)
+    .describe('Length of this segment in parts'),
+  startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX).describe('Working-day index of segment start'),
+  startPart: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_PLANNER_PART_INDEX)
+    .describe('Part index within the day (0 .. partsPerDay-1)'),
 });
 
 const NoteParentSchema = z.object({
@@ -23,13 +33,39 @@ const NoteParentSchema = z.object({
 
 const UpsertPositionSchema = z.object({
   assigneeId: z.string().min(1).max(255),
-  duration: z.number().int().positive().max(MAX_PLANNER_DURATION_PARTS),
+  duration: z
+    .number()
+    .int()
+    .positive()
+    .max(MAX_PLANNER_DURATION_PARTS)
+    .describe('Envelope duration in parts; must equal sum(segments[].duration) when segments is set'),
   isQa: z.boolean().optional(),
   op: z.literal('upsertPosition'),
-  segments: z.array(SegmentSchema).max(100).optional(),
-  startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
-  startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
-  syncToTracker: z.boolean().optional(),
+  segments: z
+    .array(SegmentSchema)
+    .max(100)
+    .optional()
+    .describe(
+      'Split the task into non-contiguous bars. Omit to leave existing segments unchanged; [] clears the split. When set, startDay/startPart must match segments[0] and duration must equal the sum of segment durations.'
+    ),
+  startDay: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_PLANNER_DAY_INDEX)
+    .describe('Envelope start day; must match segments[0].startDay when segments is set'),
+  startPart: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_PLANNER_PART_INDEX)
+    .describe('Envelope start part; must match segments[0].startPart when segments is set'),
+  syncToTracker: z
+    .boolean()
+    .optional()
+    .describe(
+      'When true, also add the issue to the tracker sprint and assign it (Beer Tracker position is always written). Use for tasks not yet on the tracker sprint board — propose warns issue_not_in_sprint without this flag. Safe to combine with segments: one upsert places an already-split task and adds it to the sprint.'
+    ),
   taskId: z.string().min(1).max(255),
 });
 

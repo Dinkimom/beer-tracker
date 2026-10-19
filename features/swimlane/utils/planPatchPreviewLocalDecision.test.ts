@@ -57,4 +57,40 @@ describe('planPatchPreviewLocalDecision', () => {
     restorePlanPatchPreviewsLocally(positions, previews, snapshot);
     expect(positions.get('RND-2')).toEqual(current);
   });
+
+  it('applies segment splits onto the local position', () => {
+    const positions = new Map<string, TaskPosition>([
+      [
+        'RND-1',
+        {
+          assignee: 'dev-1',
+          duration: 4,
+          startDay: 0,
+          startPart: 0,
+          taskId: 'RND-1',
+        },
+      ],
+    ]);
+    const previews = new Map<string, PlanPatchPositionPreview>([
+      [
+        'RND-1',
+        preview({
+          changes: ['segments'],
+          duration: 3,
+          segments: [
+            { duration: 2, startDay: 0, startPart: 0 },
+            { duration: 1, startDay: 2, startPart: 0 },
+          ],
+          startDay: 0,
+          startPart: 0,
+        }),
+      ],
+    ]);
+    acceptPlanPatchPreviewsLocally(positions, previews, [...previews.values()]);
+    expect(positions.get('RND-1')?.segments).toEqual([
+      { duration: 2, startDay: 0, startPart: 0 },
+      { duration: 1, startDay: 2, startPart: 0 },
+    ]);
+    expect(positions.get('RND-1')?.duration).toBe(3);
+  });
 });

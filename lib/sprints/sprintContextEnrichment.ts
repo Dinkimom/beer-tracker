@@ -20,6 +20,10 @@ import {
   parseStaffUuidFromAssigneeId,
 } from '@/lib/sprints/sprintContextEnrichmentHelpers';
 import { buildPlanVsActual } from '@/lib/sprints/sprintContextPlanVsActual';
+import {
+  loadSprintContextTeamMembers,
+  stampCapacityWithTeamRoles,
+} from '@/lib/sprints/sprintContextTeamMembers';
 import { listStaff } from '@/lib/staffTeams';
 
 interface AssigneeInfo {
@@ -325,6 +329,11 @@ export async function enrichSprintContextPayload(input: {
     input.payload.sprintGoals.delivery.length === 0 &&
     input.payload.sprintGoals.discovery.length === 0;
 
+  const teamMembers = await loadSprintContextTeamMembers({
+    boardId: input.payload.meta.boardId,
+    organizationId: input.organizationId,
+  });
+
   const warnings = collectSprintContextWarnings({
     emptyPlan,
     softWarnings,
@@ -342,10 +351,14 @@ export async function enrichSprintContextPayload(input: {
     },
     notes,
     positions,
+    ...(teamMembers.length > 0 ? { teamMembers } : {}),
   };
 
   return {
     ...enrichedBase,
-    capacity: buildSprintContextCapacity(enrichedBase),
+    capacity: stampCapacityWithTeamRoles(
+      buildSprintContextCapacity(enrichedBase),
+      teamMembers
+    ),
   };
 }

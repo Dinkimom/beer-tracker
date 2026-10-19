@@ -61,7 +61,7 @@ function toSimPosition(
     startPart: op.startPart,
     taskId: op.taskId,
   };
-  if (op.segments) {
+  if (op.segments !== undefined) {
     position.segments = op.segments.map((segment) => ({
       duration: segment.duration,
       startDay: segment.startDay,
@@ -118,8 +118,17 @@ export function simulatePositionsAfterPatch(
 
 function summarizeOneOp(op: SprintPlanPatchOp): string {
   switch (op.op) {
-    case 'upsertPosition':
-      return `upsertPosition ${op.taskId} → ${op.assigneeId} day ${op.startDay} part ${op.startPart} dur ${op.duration}`;
+    case 'upsertPosition': {
+      let segmentsNote = '';
+      if (op.segments !== undefined) {
+        segmentsNote =
+          op.segments.length === 0
+            ? ' (clear segments)'
+            : ` (${op.segments.length} segments)`;
+      }
+      const syncNote = op.syncToTracker ? ' +syncToTracker' : '';
+      return `upsertPosition ${op.taskId} → ${op.assigneeId} day ${op.startDay} part ${op.startPart} dur ${op.duration}${segmentsNote}${syncNote}`;
+    }
     case 'deletePosition':
       return `deletePosition ${op.taskId}`;
     case 'createNote':

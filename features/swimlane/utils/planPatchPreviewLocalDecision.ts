@@ -21,7 +21,7 @@ function positionFromPreview(
   current: TaskPosition | undefined,
   preview: PlanPatchPositionPreview
 ): TaskPosition {
-  return {
+  const next: TaskPosition = {
     ...current,
     assignee: preview.assigneeId,
     duration: preview.duration,
@@ -29,6 +29,14 @@ function positionFromPreview(
     startPart: preview.startPart,
     taskId: preview.taskId,
   };
+  if (preview.segments !== undefined) {
+    next.segments = preview.segments.map((segment) => ({
+      duration: segment.duration,
+      startDay: segment.startDay,
+      startPart: segment.startPart,
+    }));
+  }
+  return next;
 }
 
 export function acceptPlanPatchPreviewsLocally(

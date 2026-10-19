@@ -50,13 +50,13 @@ Scope: `mcp:tools`.
 Tools:
 - `whoami(includeTracker?)` — текущий MCP-пользователь (userId, email, orgRole, canUsePlanner; опционально tracker `/myself`)
 - `search_sprints(query, boardId?, limit?)` — найти спринт по фрагменту имени («Sprint 31», «RND Team 1»)
-- `get_sprint_context(sprintId, featureId?, assigneeId?, taskIds?)` — planning graph по **числовому** sprintId (включая `capacity`, `meta.partsPerDay`, `planVsActual`, статусы / **`statusCategory`** / `sprintHistory`)
-- `get_sprint_capacity(sprintId, featureId?, assigneeId?)` — только capacity: overlaps / gaps / overloaded
+- `get_sprint_context(sprintId, featureId?, assigneeId?, taskIds?)` — planning graph по **числовому** sprintId (включая `capacity`, **`teamMembers`** с `role` / `roleTitle` / `platforms`, `meta.partsPerDay`, `planVsActual`, статусы / **`statusCategory`** / `sprintHistory`)
+- `get_sprint_capacity(sprintId, featureId?, assigneeId?)` — capacity (overlaps / gaps / overloaded) + roster `teamMembers` с ролями
 - `get_feature_context(sprintId, featureId)` — тот же graph, но `featureId` обязателен
 - `search_issues(boardId, query?, status?, statusType?, …)` — поиск задач на доске/бэклоге; фильтр «в работе» — через `statusCategory` / `statusType` с эвристиками
 - `get_issue(issueKey, includeComments?)` — живая задача: description, links, comments
 - `get_issue_snapshot(issueKey)` — снимок из выгрузки sync (`issue_snapshots`)
-- `resolve_person(query)` — имя/email → `staffUid` / `assigneeId` (`staff:uuid`)
+- `resolve_person(query)` — имя/email → `staffUid` / `assigneeId` + `role` / `roleTitle` / `platforms` (если человек в команде)
 - `propose_plan_patch(sprintId, ops, persistNotes?)` — dry-run; `schedule[]`, `warnings`, capacityPreview, `persistNotes`, applyToken
 - `apply_plan_patch(sprintId, ops, applyToken, confirm=true, onError?)` — запись после propose + confirm; `onError=stop|continue`; `schedule[]` после apply
 - `get_retro_board(sprintId)` — колонки и карточки ретро (без картинок); если доски ещё нет — шаблон орги без записи
@@ -69,7 +69,7 @@ Tools:
 ### Plan patch (write, не silent)
 
 1. Агент собирает `ops[]` (max 50) после research. Индексы `startPart` / `part` — `0 .. meta.partsPerDay-1` (из настроек орги).
-2. `propose_plan_patch` — валидация сетки + **preflight** (missing note/goal → `preflight_failed`) + preview capacity + `schedule` + HMAC `applyToken`. По умолчанию **`createNote` пишется сразу** как pending (полупрозрачные стикеры, TTL 30 мин). `persistNotes: false` — чистый dry-run без записи заметок (createNote только на apply). Заметки **не** резервируют capacity.
+2. `propose_plan_patch` — валидация сетки + **preflight** (missing note/goal → `preflight_failed`) + preview capacity + `schedule` + HMAC `applyToken`. По умолчанию **`createNote` пишется сразу** как pending (полупрозрачные стикеры, TTL 30 мин); position/goal превью тоже. Повторный propose с другими `ops` **заменяет** предыдущие pending-черновики и превью этого спринта — берите свежий `applyToken`. `persistNotes: false` — чистый dry-run без записи заметок (createNote только на apply). Заметки **не** резервируют capacity.
 3. Человек ревьюит заметки (если были) / `summary` / `schedule` / `capacityPreview` / `warnings`.
 4. `apply_plan_patch` с **теми же** `ops` + `applyToken` + `confirm: true`. `onError: stop` (default) — стоп на первой ошибке; `continue` — остальные ops применяются, ошибки в `applied[]`.
 
@@ -77,7 +77,11 @@ Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `
 
 **Резерв времени** — только задача через `upsertPosition` (start + duration в слотах). Sticky notes можно пересекать с задачами; они не занимают слоты в `capacity`.
 
-`upsertPosition.syncToTracker=true` — дополнительно `addIssueToSprint` + assign в Tracker/Jira (позиция в BT пишется всегда; ошибка sync — в `applied[].detail` / warning). Без флага — только планировщик BT; propose предупредит `issue_not_in_sprint: KEY`, если задачи нет на доске спринта.
+**Отрезки (segments):** `upsertPosition.segments: [{ startDay, startPart, duration }, …]` — разбить задачу на несколько полос с пропусками (как «Разбить на отрезки» в UI). Правила: `startDay`/`startPart` = `segments[0]`; `duration` = сумма `segments[].duration`; `segments: []` снимает разбиение. Capacity считает только занятые части отрезков. В `schedule` несколько диапазонов через ` | `.
+
+**Добавить задачу в план уже с отрезками:** один `upsertPosition` с `startDay`/`startPart`/`duration` + `segments` + при необходимости `syncToTracker:true`. Это тот же op, что и «положить на доску»; сегменты не требуют отдельного шага после apply.
+
+`upsertPosition.syncToTracker=true` — дополнительно `addIssueToSprint` + assign в Tracker/Jira (позиция в BT пишется всегда; ошибка sync — в `applied[].detail` / warning). Без флага — только планировщик BT; propose предупредит `issue_not_in_sprint: KEY` и вернёт `hints` с remediation (перепредложите с `syncToTracker:true`, можно вместе с `segments`), если задачи нет на доске спринта трекера.
 
 Notes: только `kind=text`; default `width=200` (2 части); `height` как у задачи. В context: `updatedAt` / `updatedBy` / `version`; soft-delete. `updateNote.ifVersion` — optimistic lock (иначе `version conflict`). Для `upsertLink` на заметку — `comment:{notes[].id}`.
 

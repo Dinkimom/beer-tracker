@@ -10,11 +10,17 @@ describe('planPatchCaptionTone', () => {
     });
   });
 
-  it('marks an add in green with a plus', () => {
+  it('marks an add (including with segments) in green with plan-add', () => {
     expect(planPatchCaptionTone({ changes: [], remove: false })).toEqual({
       className: 'text-green-700 dark:text-green-400',
-      icon: 'plus',
+      icon: 'plan-add',
     });
+  });
+
+  it('keeps split icon only when segments is an explicit change', () => {
+    expect(planPatchCaptionTone({ changes: ['segments'], remove: false }).icon).toBe(
+      'phase-segments'
+    );
   });
 
   it('marks a date move with an arrow', () => {

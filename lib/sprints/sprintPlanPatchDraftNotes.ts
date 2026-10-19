@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 
 import {
   confirmPendingSprintComments,
-  deletePendingSprintCommentsByProposalId,
+  deletePendingPlanPatchSprintComments,
   insertSprintComment,
 } from '@/lib/sprints/sprintCommentsRepository';
 import { resolvePlanPatchCreateNoteSize } from '@/lib/sprints/sprintPlanPatchNoteSize';
@@ -40,10 +40,8 @@ export async function persistProposedCreateNotes(input: {
   sprintId: number;
 }): Promise<string[]> {
   const notes = collectCreateNoteOps(input.ops);
-  await deletePendingSprintCommentsByProposalId({
-    proposalId: input.proposalId,
-    sprintId: input.sprintId,
-  });
+  // Снимаем прошлые draft createNote: proposal_id = opsHash, при правке ops хеш другой.
+  await deletePendingPlanPatchSprintComments({ sprintId: input.sprintId });
   const ids: string[] = [];
   for (const op of notes) {
     const commentId = randomUUID();

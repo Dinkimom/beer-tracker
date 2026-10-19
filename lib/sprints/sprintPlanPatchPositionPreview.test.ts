@@ -14,6 +14,7 @@ const LABELS = {
   duration: 'Change duration',
   remove: 'Remove from sprint',
   schedule: 'Move dates',
+  segments: 'Split into segments',
 };
 
 function placed(taskId: string, patch: Partial<PlanPatchPreviewSourcePosition> = {}): PlanPatchPreviewSourcePosition {
@@ -52,6 +53,41 @@ describe('buildPlanPatchPositionPreviews', () => {
         startDay: 0,
         startPart: 1,
         taskId: 'T-1',
+      },
+    ]);
+  });
+
+  it('draws a new placement already split into segments', () => {
+    const segments = [
+      { duration: 1, startDay: 0, startPart: 0 },
+      { duration: 1, startDay: 2, startPart: 1 },
+    ];
+    expect(
+      buildPlanPatchPositionPreviews({
+        current: [],
+        ops: [
+          {
+            assigneeId: 'dev-a',
+            duration: 2,
+            op: 'upsertPosition',
+            segments,
+            startDay: 0,
+            startPart: 0,
+            syncToTracker: true,
+            taskId: 'T-new',
+          },
+        ],
+      })
+    ).toEqual([
+      {
+        assigneeId: 'dev-a',
+        changes: [],
+        duration: 2,
+        remove: false,
+        segments,
+        startDay: 0,
+        startPart: 0,
+        taskId: 'T-new',
       },
     ]);
   });
@@ -145,6 +181,70 @@ describe('buildPlanPatchPositionPreviews', () => {
       })
     ).toEqual([]);
   });
+
+  it('labels a segment split when envelope stays the same', () => {
+    const previews = buildPlanPatchPositionPreviews({
+      current: [placed('T-1', { duration: 4, startDay: 0, startPart: 0 })],
+      ops: [
+        {
+          assigneeId: 'dev-a',
+          duration: 3,
+          op: 'upsertPosition',
+          segments: [
+            { duration: 2, startDay: 0, startPart: 0 },
+            { duration: 1, startDay: 1, startPart: 1 },
+          ],
+          startDay: 0,
+          startPart: 0,
+          taskId: 'T-1',
+        },
+      ],
+    });
+    expect(previews).toEqual([
+      {
+        assigneeId: 'dev-a',
+        changes: ['duration', 'segments'],
+        duration: 3,
+        remove: false,
+        segments: [
+          { duration: 2, startDay: 0, startPart: 0 },
+          { duration: 1, startDay: 1, startPart: 1 },
+        ],
+        startDay: 0,
+        startPart: 0,
+        taskId: 'T-1',
+      },
+    ]);
+  });
+
+  it('labels clearing segments back to a continuous bar', () => {
+    const previews = buildPlanPatchPositionPreviews({
+      current: [
+        placed('T-1', {
+          duration: 3,
+          segments: [
+            { duration: 2, startDay: 0, startPart: 0 },
+            { duration: 1, startDay: 1, startPart: 0 },
+          ],
+          startDay: 0,
+          startPart: 0,
+        }),
+      ],
+      ops: [
+        {
+          assigneeId: 'dev-a',
+          duration: 3,
+          op: 'upsertPosition',
+          segments: [],
+          startDay: 0,
+          startPart: 0,
+          taskId: 'T-1',
+        },
+      ],
+    });
+    expect(previews[0]?.changes).toEqual(['segments']);
+    expect(previews[0]?.segments).toEqual([]);
+  });
 });
 
 describe('planPatchPreviewCaptionText', () => {
@@ -157,6 +257,21 @@ describe('planPatchPreviewCaptionText', () => {
   it('uses the removal and add labels', () => {
     expect(planPatchPreviewCaptionText({ changes: [], remove: true }, LABELS)).toBe('Remove from sprint');
     expect(planPatchPreviewCaptionText({ changes: [], remove: false }, LABELS)).toBe('Agent');
+  });
+
+  it('keeps the add label when a new placement already has segments', () => {
+    expect(
+      planPatchPreviewCaptionText(
+        {
+          changes: [],
+          remove: false,
+        },
+        LABELS
+      )
+    ).toBe('Agent');
+    expect(
+      planPatchPreviewCaptionText({ changes: ['segments'], remove: false }, LABELS)
+    ).toBe('Split into segments');
   });
 
   it('joins three labels with a comma and a final and', () => {
@@ -173,13 +288,14 @@ describe('normalizePlanPatchPositionPreview', () => {
     expect(
       normalizePlanPatchPositionPreview({
         assigneeId: 'dev-a',
-        changes: ['duration', 'nope', 'schedule'],
+        changes: ['duration', 'nope', 'schedule', 'segments'],
         duration: 2,
         remove: false,
+        segments: [{ duration: 1, startDay: 0, startPart: 0 }],
         startDay: 0,
         startPart: 0,
         taskId: 'T-1',
       })?.changes
-    ).toEqual(['schedule', 'duration']);
+    ).toEqual(['schedule', 'duration', 'segments']);
   });
 });

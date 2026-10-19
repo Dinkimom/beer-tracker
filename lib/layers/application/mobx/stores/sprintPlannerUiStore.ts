@@ -276,7 +276,8 @@ export class SprintPlannerUiStore {
     if (
       current?.taskId === preview?.taskId &&
       current?.duration === preview?.duration &&
-      current?.startCell === preview?.startCell
+      current?.startCell === preview?.startCell &&
+      current?.planSegmentIndex === preview?.planSegmentIndex
     ) {
       return;
     }

@@ -2,7 +2,11 @@ import type { PlanPatchPositionPreview } from './sprintPlanPatchPositionPreview'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { deleteTaskPosition, upsertTaskPositionRecord } from '@/lib/sprints/taskPositionsRepository';
+import {
+  deleteTaskPosition,
+  replaceTaskPositionSegments,
+  upsertTaskPositionRecord,
+} from '@/lib/sprints/taskPositionsRepository';
 
 import {
   deletePlanPatchPositionPreviews,
@@ -12,6 +16,7 @@ import { approvePlanPatchPositionPreviews, rejectPlanPatchPositionPreviews } fro
 
 vi.mock('@/lib/sprints/taskPositionsRepository', () => ({
   deleteTaskPosition: vi.fn(),
+  replaceTaskPositionSegments: vi.fn(),
   upsertTaskPositionRecord: vi.fn(),
 }));
 
@@ -24,6 +29,7 @@ const list = vi.mocked(listPlanPatchPositionPreviews);
 const remove = vi.mocked(deletePlanPatchPositionPreviews);
 const upsert = vi.mocked(upsertTaskPositionRecord);
 const dropPosition = vi.mocked(deleteTaskPosition);
+const replaceSegments = vi.mocked(replaceTaskPositionSegments);
 
 const move: PlanPatchPositionPreview = {
   assigneeId: 'dev-1',
@@ -41,8 +47,10 @@ describe('plan patch preview actions', () => {
     remove.mockReset();
     upsert.mockReset();
     dropPosition.mockReset();
+    replaceSegments.mockReset();
     remove.mockResolvedValue(1);
     upsert.mockResolvedValue({ rows: [] });
+    replaceSegments.mockResolvedValue(undefined);
   });
 
   it('writes one placement and drops that preview', async () => {
@@ -72,5 +80,31 @@ describe('plan patch preview actions', () => {
     ).resolves.toBe(1);
     expect(upsert).not.toHaveBeenCalled();
     expect(list).not.toHaveBeenCalled();
+  });
+
+  it('writes segments when the preview carries a split', async () => {
+    list.mockResolvedValue([
+      {
+        ...move,
+        segments: [
+          { duration: 1, startDay: 3, startPart: 0 },
+          { duration: 1, startDay: 4, startPart: 0 },
+        ],
+      },
+    ]);
+    await approvePlanPatchPositionPreviews({
+      organizationId: 'org',
+      sprintId: 1221,
+      taskId: 'RND-1',
+    });
+    expect(replaceSegments).toHaveBeenCalledWith(
+      expect.objectContaining({
+        segments: [
+          { duration: 1, startDay: 3, startPart: 0 },
+          { duration: 1, startDay: 4, startPart: 0 },
+        ],
+        taskId: 'RND-1',
+      })
+    );
   });
 });

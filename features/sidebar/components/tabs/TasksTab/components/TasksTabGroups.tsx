@@ -29,7 +29,6 @@ interface TasksTabGroupsProps {
   groupKeys: string[];
   qaTasksMap: Map<string, Task>;
   selectedSprintId?: number | null;
-  sidebarWidth?: number;
   viewMode?: LayoutViewMode;
   onAutoAddToSwimlane?: (task: Task) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
@@ -47,7 +46,6 @@ export function TasksTabGroups({
   contextMenuBlurOtherCards = false,
   contextMenuTaskId = null,
   viewMode,
-  sidebarWidth,
   selectedSprintId,
   onAutoAddToSwimlane,
 }: TasksTabGroupsProps) {
@@ -114,7 +112,6 @@ export function TasksTabGroups({
             renderDropSlot,
             selectedSprintId,
             sidebarDropTargetActive,
-            sidebarWidth,
             t,
             viewMode,
             visibleTaskOrdinal,

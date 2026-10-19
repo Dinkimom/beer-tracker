@@ -3,7 +3,11 @@ import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPosi
 import { query, runBeerTrackerTransaction } from '@/lib/db';
 import { getBeerTrackerSchema } from '@/lib/env';
 
-import { planPatchChangeLabelOrder, planPatchClientBrandFromUnknown } from './sprintPlanPatchPositionPreview';
+import {
+  normalizePlanPatchPositionPreview,
+  planPatchChangeLabelOrder,
+  planPatchClientBrandFromUnknown,
+} from './sprintPlanPatchPositionPreview';
 
 interface PreviewRow {
   assignee_id: string;
@@ -11,6 +15,7 @@ interface PreviewRow {
   client_brand: string;
   duration: number;
   remove: boolean;
+  segments: unknown;
   start_day: number;
   start_part: number;
   task_id: string;
@@ -47,6 +52,7 @@ async function runEnsurePlanPatchPositionPreviewSchema(): Promise<void> {
         remove BOOLEAN NOT NULL DEFAULT FALSE,
         changes TEXT NOT NULL DEFAULT '',
         client_brand VARCHAR(16) NOT NULL DEFAULT '',
+        segments JSONB,
         expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
         PRIMARY KEY (organization_id, sprint_id, task_id)
       )
@@ -59,6 +65,10 @@ async function runEnsurePlanPatchPositionPreviewSchema(): Promise<void> {
       ALTER TABLE ${schema}.plan_patch_position_previews
         ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16) NOT NULL DEFAULT ''
     `);
+    await query(`
+      ALTER TABLE ${schema}.plan_patch_position_previews
+        ADD COLUMN IF NOT EXISTS segments JSONB
+    `);
     schemaEnsured = true;
   } catch (error) {
     schemaEnsurePromise = null;
@@ -69,21 +79,38 @@ async function runEnsurePlanPatchPositionPreviewSchema(): Promise<void> {
 function changesFromRow(value: string): PlanPatchPositionPreview['changes'] {
   const changes: PlanPatchPositionPreview['changes'] = [];
   for (const part of value.split(',')) {
-    if (part === 'schedule' || part === 'duration') {
+    if (part === 'schedule' || part === 'duration' || part === 'segments') {
       changes.push(part);
     }
   }
   return planPatchChangeLabelOrder(changes);
 }
 
+function segmentsFromRow(value: unknown): PlanPatchPositionPreview['segments'] {
+  if (value == null) {
+    return undefined;
+  }
+  const normalized = normalizePlanPatchPositionPreview({
+    assigneeId: 'x',
+    duration: 1,
+    segments: value,
+    startDay: 0,
+    startPart: 0,
+    taskId: 'x',
+  });
+  return normalized?.segments;
+}
+
 function previewFromRow(row: PreviewRow): PlanPatchPositionPreview {
   const clientBrand = planPatchClientBrandFromUnknown(row.client_brand);
+  const segments = segmentsFromRow(row.segments);
   return {
     assigneeId: row.assignee_id,
     changes: changesFromRow(row.changes),
     ...(clientBrand ? { clientBrand } : {}),
     duration: row.duration,
     remove: row.remove === true,
+    ...(segments !== undefined ? { segments } : {}),
     startDay: row.start_day,
     startPart: row.start_part,
     taskId: row.task_id,
@@ -101,7 +128,7 @@ export async function listPlanPatchPositionPreviews(input: {
     [input.organizationId, input.sprintId]
   );
   const result = await query<PreviewRow>(
-    `SELECT task_id, assignee_id, start_day, start_part, duration, remove, changes, client_brand
+    `SELECT task_id, assignee_id, start_day, start_part, duration, remove, changes, client_brand, segments
      FROM plan_patch_position_previews
      WHERE organization_id = $1::uuid AND sprint_id = $2`,
     [input.organizationId, input.sprintId]
@@ -118,20 +145,20 @@ export async function replacePlanPatchPositionPreviews(input: {
 }): Promise<void> {
   await ensurePlanPatchPositionPreviewSchema();
   await runBeerTrackerTransaction(async (tx) => {
+    // Полная замена: повторный propose с другим opsHash должен снять старые карточки
+    // (в т.ч. задачи, которых больше нет в ops), а не только строки с тем же proposal_id.
     await tx(
       `DELETE FROM plan_patch_position_previews
-       WHERE organization_id = $1::uuid
-         AND sprint_id = $2
-         AND (expires_at < CURRENT_TIMESTAMP OR proposal_id = $3)`,
-      [input.organizationId, input.sprintId, input.proposalId]
+       WHERE organization_id = $1::uuid AND sprint_id = $2`,
+      [input.organizationId, input.sprintId]
     );
     for (const preview of input.previews) {
       await tx(
         `INSERT INTO plan_patch_position_previews (
            organization_id, sprint_id, task_id, proposal_id, assignee_id,
-           start_day, start_part, duration, remove, changes, client_brand, expires_at
+           start_day, start_part, duration, remove, changes, client_brand, segments, expires_at
          )
-         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13)
          ON CONFLICT (organization_id, sprint_id, task_id) DO UPDATE
          SET proposal_id = EXCLUDED.proposal_id,
              assignee_id = EXCLUDED.assignee_id,
@@ -141,6 +168,7 @@ export async function replacePlanPatchPositionPreviews(input: {
              remove = EXCLUDED.remove,
              changes = EXCLUDED.changes,
              client_brand = EXCLUDED.client_brand,
+             segments = EXCLUDED.segments,
              expires_at = EXCLUDED.expires_at`,
         [
           input.organizationId,
@@ -154,6 +182,7 @@ export async function replacePlanPatchPositionPreviews(input: {
           preview.remove,
           preview.changes.join(','),
           preview.clientBrand ?? '',
+          preview.segments === undefined ? null : JSON.stringify(preview.segments),
           input.expiresAt.toISOString(),
         ]
       );

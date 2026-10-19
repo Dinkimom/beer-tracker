@@ -57,6 +57,10 @@ export function PlannerParticipantsColumnGlass({
         zIndex: ZIndex.plannerLaneGlass,
         ...style,
       }}
-    />
+    >
+      {/* Правый край на всю высоту плашки (в т.ч. пустой низ под строками).
+          Не border-r на стекле: floating-toolbar-glass задаёт border-color !important. */}
+      <div className="absolute inset-y-0 right-0 w-px bg-gray-200 dark:bg-gray-600" />
+    </div>
   );
 }

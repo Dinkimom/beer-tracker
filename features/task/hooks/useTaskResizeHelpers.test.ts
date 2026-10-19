@@ -47,4 +47,59 @@ describe('applyTaskResizePreviewToPositionedTasks', () => {
     );
     expect(next[1]).toBe(neighbor);
   });
+
+  it('keeps sibling plan segments when preview targets one segment', () => {
+    const segmented = {
+      position: {
+        assignee: 'dev-1',
+        duration: 5,
+        segments: [
+          { duration: 2, startDay: 0, startPart: 0 },
+          { duration: 3, startDay: 2, startPart: 0 },
+        ],
+        startDay: 0,
+        startPart: 0,
+        taskId: 't1',
+      },
+      task: { id: 't1' },
+    };
+
+    const next = applyTaskResizePreviewToPositionedTasks(
+      [segmented],
+      { duration: 4, planSegmentIndex: 0, startCell: 0, taskId: 't1' },
+      20
+    );
+
+    expect(next[0]?.position.segments).toEqual([
+      { duration: 4, startDay: 0, startPart: 0 },
+      { duration: 3, startDay: 2, startPart: 0 },
+    ]);
+    expect(next[0]?.position.duration).toBe(7);
+  });
+
+  it('clears segments when preview has no planSegmentIndex (legacy whole-card resize)', () => {
+    const segmented = {
+      position: {
+        assignee: 'dev-1',
+        duration: 5,
+        segments: [
+          { duration: 2, startDay: 0, startPart: 0 },
+          { duration: 3, startDay: 2, startPart: 0 },
+        ],
+        startDay: 0,
+        startPart: 0,
+        taskId: 't1',
+      },
+      task: { id: 't1' },
+    };
+
+    const next = applyTaskResizePreviewToPositionedTasks(
+      [segmented],
+      { duration: 4, startCell: 0, taskId: 't1' },
+      20
+    );
+
+    expect(next[0]?.position.segments).toEqual([]);
+    expect(next[0]?.position.duration).toBe(4);
+  });
 });

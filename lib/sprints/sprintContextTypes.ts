@@ -1,3 +1,4 @@
+import type { DomainRole, Platform } from '@/lib/roles/catalog';
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
 import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
 
@@ -182,6 +183,11 @@ export interface SprintContextCapacityPerson {
   days: SprintContextCapacityPersonDay[];
   gaps: Array<{ date?: string; day: number; part: number }>;
   overlaps: SprintContextCapacityOverlap[];
+  /** Платформы разработчика (web/back), если role=developer. */
+  platforms?: Platform[];
+  /** Доменная роль из team_members.role_slug. */
+  role?: DomainRole;
+  roleTitle?: string | null;
   totalLoadParts: number;
   totalMaxParts: number;
 }
@@ -193,9 +199,22 @@ export interface SprintContextCapacityReport {
     date?: string;
     day: number;
     loadParts: number;
+    role?: DomainRole;
+    roleTitle?: string | null;
   }>;
   people: SprintContextCapacityPerson[];
   summary: string;
+}
+
+/** Участник команды доски спринта (roster), с ролью из team_members. */
+export interface SprintContextTeamMember {
+  assigneeId: string;
+  assigneeName: string;
+  email?: string | null;
+  platforms?: Platform[];
+  role: DomainRole;
+  roleTitle?: string | null;
+  staffUid?: string;
 }
 
 export interface SprintContextPayload {
@@ -208,6 +227,8 @@ export interface SprintContextPayload {
   positions: SprintContextPosition[];
   sprintGoals: SprintContextGoals;
   taskLinks: SprintContextTaskLink[];
+  /** Состав команды доски (meta.boardId) с ролями; пусто если board неизвестен. */
+  teamMembers?: SprintContextTeamMember[];
 }
 
 export interface SprintContextSoftMeta {

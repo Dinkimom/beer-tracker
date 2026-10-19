@@ -391,8 +391,8 @@ async function deleteExpiredPendingSprintComments(input: {
   return result.rowCount ?? 0;
 }
 
-export async function deletePendingSprintCommentsByProposalId(input: {
-  proposalId: string;
+/** Удаляет все pending-заметки plan patch в спринте (повторный propose / смена ops). */
+export async function deletePendingPlanPatchSprintComments(input: {
   sprintId: number;
 }): Promise<number> {
   await ensurePlannerCommentImagesSchema();
@@ -400,8 +400,8 @@ export async function deletePendingSprintCommentsByProposalId(input: {
     `DELETE FROM comments
       WHERE ${sprintTenantWhere()}
         AND pending_approval = TRUE
-        AND plan_patch_proposal_id = $2`,
-    [...sprintTenantParams(input.sprintId), input.proposalId]
+        AND plan_patch_proposal_id IS NOT NULL`,
+    sprintTenantParams(input.sprintId)
   );
   return result.rowCount ?? 0;
 }

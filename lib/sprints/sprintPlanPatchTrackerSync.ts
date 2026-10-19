@@ -49,6 +49,34 @@ export function collectIssueNotInSprintWarnings(
   return warnings;
 }
 
+/** Agent-facing remediation when propose flagged issues missing from the tracker sprint. */
+export function buildIssueNotInSprintPlanPatchHints(
+  ops: readonly SprintPlanPatchOp[],
+  warnings: readonly string[]
+): string[] {
+  const missingIds = new Set<string>();
+  for (const warning of warnings) {
+    const match = /^issue_not_in_sprint:\s*(\S+)/.exec(warning);
+    if (match?.[1]) {
+      missingIds.add(match[1]);
+    }
+  }
+  if (missingIds.size === 0) {
+    return [];
+  }
+  const needsSync = [...missingIds].filter((taskId) =>
+    ops.some(
+      (op) => op.op === 'upsertPosition' && op.taskId.trim() === taskId && !op.syncToTracker
+    )
+  );
+  if (needsSync.length === 0) {
+    return [];
+  }
+  return [
+    `issue_not_in_sprint (${needsSync.join(', ')}): re-propose those upsertPosition ops with syncToTracker:true to add the issue to the tracker sprint. You may set segments on the same op to place an already-split task in one step, then apply with the new applyToken.`,
+  ];
+}
+
 /** After BT position write: optionally add to tracker sprint and assign. Errors are returned, not thrown. */
 export async function syncUpsertPositionToTracker(input: {
   assigneeId: string;

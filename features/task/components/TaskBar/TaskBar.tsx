@@ -73,6 +73,8 @@ interface TaskBarProps {
   linkMode?: 'source' | 'target' | null;
   /** Карточка предложения: та же задача, геометрия из превью, без перетаскивания. */
   planPatchGhost?: boolean;
+  /** Индекс отрезка плана при ресайзе сегментированной карточки. */
+  planSegmentIndex?: number;
   qaTasksMap?: Map<string, Task>;
   quickAddMenu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & {
     title: string;
@@ -129,6 +131,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
   swimlaneSegmentSecondary = false,
   linkMode = null,
   planPatchGhost = false,
+  planSegmentIndex,
   onResize,
   onClick,
   onCommentApprove,
@@ -159,6 +162,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
     focusTaskId: sprintPlannerUi.planPatchFocusTaskId,
     planPatchGhost,
     preview: positionsStore.planPatchPreviews.get(task.id),
+    suppressPlanPatchToolbar: swimlaneSegmentSecondary,
     taskId: task.id,
   });
   const isChooserDraft = isQuickAddChooserDraft(task);
@@ -211,6 +215,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
     isSelected,
     leftPercent,
     onResize,
+    planSegmentIndex,
     qaTasksMap,
     quickAddMenu,
     stickyNoteCardRowResize,

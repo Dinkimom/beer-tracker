@@ -230,7 +230,7 @@ export function SprintPlannerView({
             className="planner-board-frame relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header"
           >
           <div
-            className="absolute inset-0 flex min-h-0 flex-col"
+            className="absolute inset-0 flex min-h-0 flex-col overflow-hidden"
             style={{ zIndex: ZIndex.base }}
           >
               <SprintPlannerBoardViews
@@ -303,7 +303,6 @@ export function SprintPlannerView({
                   setTasks,
                   showLinks: swimlaneLinksVisible,
                   sidebarOpen,
-                  sidebarWidth,
                   sprintStartDate,
                   sprintTimelineWorkingDays,
                   swimlaneCalendarBusyEnabled,

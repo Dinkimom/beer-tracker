@@ -402,6 +402,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         isSelected={selectedTaskId === task.id}
         leftPercent={renderState.leftPercent}
         linkMode={linkMode}
+        planSegmentIndex={hasMultiplePlanSegments ? segIdx : undefined}
         qaTasksMap={qaTasksMap}
         quickAddMenu={quickAddMenu}
         quickAddSubmitting={renderState.isQuickAddSubmitting}

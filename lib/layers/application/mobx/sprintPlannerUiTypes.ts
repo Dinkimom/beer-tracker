@@ -53,6 +53,8 @@ export interface SprintPlannerNoteEditPreview {
 /** Превью горизонтального ресайза карточки до mouseup (пересчёт слоёв свимлейна). */
 export interface SprintPlannerTaskResizePreview {
   duration: number;
+  /** Индекс отрезка в getOrderedPlanSegments — иначе превью схлопывает siblings. */
+  planSegmentIndex?: number;
   startCell: number | null;
   taskId: string;
 }

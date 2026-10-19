@@ -86,8 +86,6 @@ function SwimlaneComponent({
   participantsColumnWidth,
   qaTasksMap,
   viewMode = 'full',
-  sidebarWidth = 0,
-  sidebarOpen = false,
   sprintStartDate,
   sprintTimelineWorkingDays = WORKING_DAYS,
   developers,
@@ -234,11 +232,9 @@ function SwimlaneComponent({
 
   const timelineTotalParts = sprintTimelineWorkingDays * getPartsPerDay();
 
-  const sidebarEffectiveWidthPx = sidebarOpen ? sidebarWidth : 0;
   const timelineWidth = sprintPlannerSwimlaneTimelineWidthCss(
     viewMode,
     participantsColumnWidth,
-    sidebarEffectiveWidthPx,
     sprintTimelineWorkingDays
   );
 

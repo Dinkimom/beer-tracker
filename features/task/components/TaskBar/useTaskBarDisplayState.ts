@@ -49,6 +49,7 @@ function publishTaskBarResizePreview(
     } | null) => void;
     setTaskResizePreview: (preview: {
       duration: number;
+      planSegmentIndex?: number;
       startCell: number | null;
       taskId: string;
     } | null) => void;
@@ -56,7 +57,8 @@ function publishTaskBarResizePreview(
   taskId: string,
   pairsHeightWithDuration: boolean,
   preview: { duration: number; startCell: number | null } | null,
-  discardLatch: boolean
+  discardLatch: boolean,
+  planSegmentIndex?: number
 ): void {
   if (preview == null) {
     if (discardLatch) {
@@ -69,7 +71,11 @@ function publishTaskBarResizePreview(
     }
     return;
   }
-  sprintPlannerUi.setTaskResizePreview({ ...preview, taskId });
+  sprintPlannerUi.setTaskResizePreview({
+    ...preview,
+    taskId,
+    ...(planSegmentIndex != null ? { planSegmentIndex } : {}),
+  });
   if (pairsHeightWithDuration) {
     sprintPlannerUi.setStickyNoteCardRowPreview({
       layerShiftUp: 0,
@@ -102,6 +108,8 @@ export function useTaskBarDisplayState(input: {
   isSelected?: boolean;
   leftPercent: number;
   onResize: (params: TaskResizeParams) => void;
+  /** Индекс отрезка плана — превью ресайза не должно схлопывать siblings. */
+  planSegmentIndex?: number;
   qaTasksMap?: Map<string, Task>;
   quickAddMenu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & {
     title: string;
@@ -155,10 +163,11 @@ export function useTaskBarDisplayState(input: {
         taskId,
         pairsHeightWithDuration,
         preview,
-        options?.discard ?? false
+        options?.discard ?? false,
+        input.planSegmentIndex
       );
     },
-    [pairsHeightWithDuration, sprintPlannerUi, taskId]
+    [input.planSegmentIndex, pairsHeightWithDuration, sprintPlannerUi, taskId]
   );
   const resize = useTaskBarResize({
     duration: input.duration,

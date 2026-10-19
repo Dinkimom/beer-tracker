@@ -26,19 +26,16 @@ type DraggableTaskViewMode = 'compact' | 'full' | undefined;
 function computePreviewWidthFromViewport(input: {
   activeTaskDuration: number;
   participantsColumnWidth: number;
-  sidebarWidth: number | undefined;
   viewMode: DraggableTaskViewMode;
 }): number {
   const widthPercent = getWidthPercent(input.activeTaskDuration);
   if (input.viewMode === 'full') {
     const vw = window.innerWidth;
-    const swimlaneWidth =
-      (200 * vw) / 100 - input.participantsColumnWidth - (input.sidebarWidth || 0) * 2;
+    const swimlaneWidth = (200 * vw) / 100 - input.participantsColumnWidth;
     return Math.max(0, (swimlaneWidth * widthPercent) / 100 - CARD_MARGIN * 2);
   }
 
-  const containerWidth =
-    window.innerWidth - (input.sidebarWidth || 0) - input.participantsColumnWidth;
+  const containerWidth = window.innerWidth - input.participantsColumnWidth;
   return Math.max(0, (containerWidth * widthPercent) / 100 - CARD_MARGIN * 2);
 }
 
@@ -60,7 +57,6 @@ export function computeDraggableTaskPreviewWidth(input: {
   isActiveTask: boolean;
   isDragging: boolean;
   participantsColumnWidth: number;
-  sidebarWidth: number | undefined;
   viewMode: 'compact' | 'full' | undefined;
   widthPercent: number;
 }): number | undefined {
@@ -72,7 +68,6 @@ export function computeDraggableTaskPreviewWidth(input: {
     return computePreviewWidthFromViewport({
       activeTaskDuration: input.activeTaskDuration,
       participantsColumnWidth: input.participantsColumnWidth,
-      sidebarWidth: input.sidebarWidth,
       viewMode: input.viewMode,
     });
   } catch (error) {

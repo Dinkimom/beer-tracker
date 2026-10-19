@@ -11,6 +11,8 @@ export function resolvePlanPatchTaskBarChrome(input: {
   focusTaskId: string | null;
   planPatchGhost?: boolean;
   preview: PlanPatchPositionPreview | undefined;
+  /** Secondary segment bar of a multi-segment ghost — hide approve toolbar. */
+  suppressPlanPatchToolbar?: boolean;
   taskId: string;
 }): { opacityFactor: number; ringClass: string; toolbarPreview: PlanPatchPositionPreview | null } {
   const preview = input.preview;
@@ -19,9 +21,11 @@ export function resolvePlanPatchTaskBarChrome(input: {
   const canRing = preview != null && removePreview == null && !addPreview;
   const focused = input.focusTaskId === input.taskId && canRing;
   const ringTone = focused ? PLAN_PATCH_FOCUS_RING_ON : PLAN_PATCH_FOCUS_RING_IDLE;
+  const ghostToolbar =
+    input.planPatchGhost && !input.suppressPlanPatchToolbar ? (preview ?? null) : null;
   return {
     opacityFactor: removePreview && !input.planPatchGhost ? 0.65 : 1,
     ringClass: canRing ? ` ${PLAN_PATCH_FOCUS_RING_MOTION} ${ringTone}` : '',
-    toolbarPreview: input.planPatchGhost ? preview ?? null : removePreview,
+    toolbarPreview: ghostToolbar ?? (input.suppressPlanPatchToolbar ? null : removePreview),
   };
 }

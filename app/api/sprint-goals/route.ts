@@ -1,3 +1,5 @@
+import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPreview';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
@@ -40,11 +42,17 @@ export async function GET(request: NextRequest) {
 
     const checklistDone = checklistItems.filter((i) => i.checked).length;
     const checklistTotal = checklistItems.length;
-    const goalPreviews = await listPlanPatchGoalPreviews({
-      goalType,
-      organizationId,
-      sprintId,
-    });
+    // Таблица превью создаётся на уже работающей БД. Сбой DDL не должен скрывать sprint_goals.
+    let goalPreviews: PlanPatchGoalPreview[] = [];
+    try {
+      goalPreviews = await listPlanPatchGoalPreviews({
+        goalType,
+        organizationId,
+        sprintId,
+      });
+    } catch (error) {
+      console.error('Error fetching plan patch goal previews:', error);
+    }
 
     return NextResponse.json({
       checklistItems,

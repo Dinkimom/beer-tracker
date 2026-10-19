@@ -2,18 +2,9 @@ export function planPatchPreviewElementId(taskId: string): string {
   return `plan-patch-preview-${taskId}`;
 }
 
-export function revealPlanPatchElement(elementId: string): void {
-  const node = document.getElementById(elementId);
-  if (!node) {
-    return;
-  }
-  const rect = node.getBoundingClientRect();
-  const outside =
-    rect.bottom <= 0 ||
-    rect.top >= window.innerHeight ||
-    rect.right <= 0 ||
-    rect.left >= window.innerWidth;
-  if (outside) {
-    node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  }
+/** DOM id отрезка ghost-превью (как `task-…-seg-N` у реальных полос). */
+export function planPatchPreviewSegmentHtmlAnchorId(taskId: string, segIdx: number): string {
+  return segIdx > 0
+    ? `${planPatchPreviewElementId(taskId)}-seg-${segIdx}`
+    : planPatchPreviewElementId(taskId);
 }

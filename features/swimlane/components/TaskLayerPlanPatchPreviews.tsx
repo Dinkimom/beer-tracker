@@ -1,5 +1,6 @@
 'use client';
 
+import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 import type { Developer, Task } from '@/types';
 
 import { observer } from 'mobx-react-lite';
@@ -8,9 +9,10 @@ import { useCallback } from 'react';
 import { getPartsPerDay } from '@/constants';
 import {
   planPatchPreviewElementId,
-  revealPlanPatchElement,
+  planPatchPreviewSegmentHtmlAnchorId,
 } from '@/features/swimlane/utils/planPatchPreviewFocus';
 import { planPatchPreviewLayerKey } from '@/features/swimlane/utils/planPatchPreviewLayers';
+import { getLeftPercentForSegmentStartCell, getWidthPercent } from '@/features/swimlane/utils/positionUtils';
 import { computeSwimlaneRowBandBox } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { TaskBar } from '@/features/task/components/TaskBar/TaskBar';
 import { useRootStore } from '@/lib/layers';
@@ -39,6 +41,30 @@ function taskForPlanPatchPreview(task: Task | undefined, taskId: string): Task {
   return { id: taskId, link: '', name: taskId, pendingApproval: true, team: 'Web' };
 }
 
+function previewBars(preview: PlanPatchPositionPreview): Array<{
+  duration: number;
+  key: string;
+  startDay: number;
+  startPart: number;
+}> {
+  if (preview.segments && preview.segments.length > 0) {
+    return preview.segments.map((segment, index) => ({
+      duration: segment.duration,
+      key: `${preview.taskId}:seg:${index}`,
+      startDay: segment.startDay,
+      startPart: segment.startPart,
+    }));
+  }
+  return [
+    {
+      duration: preview.duration,
+      key: preview.taskId,
+      startDay: preview.startDay,
+      startPart: preview.startPart,
+    },
+  ];
+}
+
 export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPreviews({
   assigneeId,
   developers,
@@ -54,14 +80,7 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
   const { sprintPlannerUi, taskPositions } = useRootStore();
   const onTaskHover = useCallback(
     (taskId: string | null) => {
-      if (taskId == null) {
-        sprintPlannerUi.setPlanPatchFocusTaskId(null);
-        return;
-      }
       sprintPlannerUi.setPlanPatchFocusTaskId(taskId);
-      if (document.getElementById(`task-${taskId}`)) {
-        revealPlanPatchElement(`task-${taskId}`);
-      }
     },
     [sprintPlannerUi]
   );
@@ -77,36 +96,45 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
   const partsPerDay = getPartsPerDay();
   return (
     <>
-      {cards.map((preview) => {
-        const startCell = preview.startDay * partsPerDay + preview.startPart;
-        return (
-          <TaskBar
-            key={preview.taskId}
-            developers={developers}
-            disableDragAndResize
-            draggableId={planPatchPreviewElementId(preview.taskId)}
-            duration={preview.duration}
-            globalNameFilter={globalNameFilter}
-            htmlAnchorId={planPatchPreviewElementId(preview.taskId)}
-            leftPercent={(startCell / timelineTotalParts) * 100}
-            planPatchGhost
-            requestArrowRedraw={noop}
-            selectedSprintId={sprintId}
-            style={computeSwimlaneRowBandBox(
-              hasTaskOverlaps,
-              taskLayerMap.get(planPatchPreviewLayerKey(preview.taskId)) ?? 0,
-              taskBandTotalHeight,
-              layerHeight
-            )}
-            swimlaneBarDurationParts={preview.duration}
-            swimlaneTimelineTotalParts={timelineTotalParts}
-            task={taskForPlanPatchPreview(tasksMap.get(preview.taskId), preview.taskId)}
-            widthPercent={(preview.duration / timelineTotalParts) * 100}
-            onResize={noop}
-            onTaskHover={onTaskHover}
-          />
-        );
-      })}
+      {cards.flatMap((preview) =>
+        previewBars(preview).map((bar, barIndex) => {
+          const startCell = bar.startDay * partsPerDay + bar.startPart;
+          const isPrimary = barIndex === 0;
+          const segmentAnchorId = planPatchPreviewSegmentHtmlAnchorId(preview.taskId, barIndex);
+          return (
+            <TaskBar
+              key={bar.key}
+              developers={developers}
+              disableDragAndResize
+              draggableId={
+                isPrimary
+                  ? planPatchPreviewElementId(preview.taskId)
+                  : `${planPatchPreviewElementId(preview.taskId)}:${barIndex}`
+              }
+              duration={bar.duration}
+              globalNameFilter={globalNameFilter}
+              htmlAnchorId={segmentAnchorId}
+              leftPercent={getLeftPercentForSegmentStartCell(startCell, timelineTotalParts)}
+              planPatchGhost
+              requestArrowRedraw={noop}
+              selectedSprintId={sprintId}
+              style={computeSwimlaneRowBandBox(
+                hasTaskOverlaps,
+                taskLayerMap.get(planPatchPreviewLayerKey(preview.taskId)) ?? 0,
+                taskBandTotalHeight,
+                layerHeight
+              )}
+              swimlaneBarDurationParts={bar.duration}
+              swimlaneSegmentSecondary={!isPrimary}
+              swimlaneTimelineTotalParts={timelineTotalParts}
+              task={taskForPlanPatchPreview(tasksMap.get(preview.taskId), preview.taskId)}
+              widthPercent={getWidthPercent(bar.duration, timelineTotalParts)}
+              onResize={noop}
+              onTaskHover={onTaskHover}
+            />
+          );
+        })
+      )}
     </>
   );
 });

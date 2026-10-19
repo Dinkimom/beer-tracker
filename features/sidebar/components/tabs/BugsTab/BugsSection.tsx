@@ -33,7 +33,6 @@ export function BugsSection({
     onContextMenu,
     selectedSprintId,
     viewMode,
-    width: sidebarWidth,
   } = useTaskSidebar();
   const [collapsed, setCollapsed] = useState(collapsedByDefault);
   const count = bugs.length;
@@ -76,7 +75,6 @@ export function BugsSection({
               contextMenuTaskId={contextMenuTaskId}
               developers={developers}
               selectedSprintId={selectedSprintId ?? undefined}
-              sidebarWidth={sidebarWidth}
               slaBugBoardId={boardId}
               slaBugCloseP4ActionsEnabled={bug.primaryLabel === 'close_p4'}
               slaBugDemoteReason={bug.demoteReason}

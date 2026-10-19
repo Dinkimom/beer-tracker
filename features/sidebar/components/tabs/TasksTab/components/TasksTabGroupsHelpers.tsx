@@ -14,7 +14,6 @@ interface RenderTasksTabGroupRowsParams {
   qaTasksMap: Map<string, Task>;
   selectedSprintId?: number | null;
   sidebarDropTargetActive: boolean;
-  sidebarWidth?: number;
   tasksInGroup: Task[];
   viewMode?: LayoutViewMode;
   visibleTaskOrdinalRef: { value: number };
@@ -35,7 +34,6 @@ function renderTasksTabTaskRow(params: {
   qaTasksMap: Map<string, Task>;
   registerTaskRowRef: (taskId: string, element: HTMLDivElement | null) => void;
   selectedSprintId?: number | null;
-  sidebarWidth?: number;
   task: Task;
   viewMode?: LayoutViewMode;
 }): ReactNode {
@@ -49,7 +47,6 @@ function renderTasksTabTaskRow(params: {
         developers={params.developers}
         qaTasksMap={params.qaTasksMap}
         selectedSprintId={params.selectedSprintId}
-        sidebarWidth={params.sidebarWidth}
         task={params.task}
         viewMode={params.viewMode}
         onAutoAddToSwimlane={params.onAutoAddToSwimlane}
@@ -85,7 +82,6 @@ export function renderTasksTabGroupRows(params: RenderTasksTabGroupRowsParams): 
       qaTasksMap: params.qaTasksMap,
       registerTaskRowRef: params.registerTaskRowRef,
       selectedSprintId: params.selectedSprintId,
-      sidebarWidth: params.sidebarWidth,
       task,
       viewMode: params.viewMode,
     });

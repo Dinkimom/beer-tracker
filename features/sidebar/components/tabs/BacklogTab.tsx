@@ -32,7 +32,6 @@ export function BacklogTab() {
     activeTaskId,
     activeTaskDuration,
     viewMode,
-    width: sidebarWidth,
     selectedSprintId,
     backlogTasks,
     backlogTotalCount,
@@ -90,7 +89,6 @@ export function BacklogTab() {
       groupedTasks={groupedTasks}
       isInitialBacklogLoad={isInitialBacklogLoad}
       selectedSprintId={selectedSprintId}
-      sidebarWidth={sidebarWidth}
       t={t}
       viewMode={viewMode}
       onContextMenu={onContextMenu}
