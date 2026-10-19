@@ -14,11 +14,6 @@ export const MAX_PLANNER_DAY_INDEX = 399;
 /** Верхняя граница длительности позиции в таймслотах (parts). */
 export const MAX_PLANNER_DURATION_PARTS = 400;
 
-// Yandex OAuth application client id (public). Register your own app at
-// https://oauth.yandex.ru/ with scopes tracker:read and tracker:write.
-// Env: YANDEX_OAUTH_CLIENT_ID (injected for client via next.config `env`).
-export const YANDEX_OAUTH_CLIENT_ID = (process.env.YANDEX_OAUTH_CLIENT_ID || '').trim();
-
 // Ширина колонки участников (аватар + имя без обрезки)
 export const DEVELOPER_COLUMN_WIDTH = 272;
 // Ширина двух колонок участников (для расчета ширины контента в режиме full)

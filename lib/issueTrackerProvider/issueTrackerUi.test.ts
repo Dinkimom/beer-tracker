@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { YANDEX_OAUTH_CLIENT_ID } from '@/constants';
+import { YANDEX_TRACKER_TOKEN_HELP_PATH } from '@/lib/yandexOAuth/authorizeUrl';
 
 import {
   isHttpUrlOnTrackerWebBase,
@@ -91,8 +91,7 @@ describe('issueTrackerUi', () => {
       issueTrackerTokenHelpUrl('jira-onprem', 'https://jira.example.com/jira/rest/api/2')
     ).toBe('https://jira.example.com/jira/secure/ViewProfile.jspa');
     expect(issueTrackerTokenHelpUrl('jira-onprem')).toBe('');
-    expect(issueTrackerTokenHelpUrl('tracker')).toContain('oauth.yandex.ru');
-    expect(issueTrackerTokenHelpUrl('tracker')).toContain(YANDEX_OAUTH_CLIENT_ID);
+    expect(issueTrackerTokenHelpUrl('tracker')).toBe(YANDEX_TRACKER_TOKEN_HELP_PATH);
   });
 
   it('derives the issue web base from the API URL instead of hardcoding Yandex', () => {

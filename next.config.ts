@@ -26,24 +26,13 @@ function readEmbeddedAppChangelogJson(): string {
   return JSON.stringify(selectAppChangelogReleases(parseAppChangelog(markdown), resolveAppVersion()));
 }
 
-function resolveYandexOauthClientId(): string {
-  return (
-    process.env.YANDEX_OAUTH_CLIENT_ID ??
-    // legacy name from earlier builds
-    process.env.NEXT_PUBLIC_YANDEX_OAUTH_CLIENT_ID ??
-    ""
-  ).trim();
-}
-
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: resolveAppVersion(),
     NEXT_PUBLIC_APP_CHANGELOG: readEmbeddedAppChangelogJson(),
-    // Public OAuth ClientID for Yandex Tracker authorize URL in the browser.
-    // Source env has no NEXT_PUBLIC_ prefix — domain name, not a Next convention.
-    YANDEX_OAUTH_CLIENT_ID: resolveYandexOauthClientId(),
-    // Atlassian 3LO Client ID/Secret are server-only runtime env (start/callback/refresh
-    // routes). Do not put them in `env` — that inlines empty values from image build.
+    // Yandex / Atlassian OAuth credentials are server-only runtime env
+    // (`/api/auth/yandex/authorize`, `/api/auth/atlassian/*`). Do not put them in
+    // `env` — that inlines values (or empties) from image build into the client bundle.
   },
   headers() {
     return [

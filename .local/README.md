@@ -29,8 +29,6 @@ bash .local/release/bump-k8s-image-tag.sh --dry-run
 глубина, что у `scripts/release/`). Образ можно переопределить через
 `HARBOR_IMAGE`.
 
-`harbor-build.sh` передаёт `YANDEX_OAUTH_CLIENT_ID` как Docker build-arg (из
-окружения или из `.env` репозитория). Значение вшивается в Next-бандл на
-`pnpm build` через `next.config.ts` — одного `values.yaml` в k8s для ссылки
-authorize в Harbor-образе недостаточно. Тот же id держите в values state-репо
-для синхронизации рантайма и документации.
+`YANDEX_OAUTH_CLIENT_ID` — runtime env пода (не Docker build-arg): задайте в
+`values.yaml` / secrets state-репо и перезапустите app. Ссылка «получить токен»
+идёт через `/api/auth/yandex/authorize`.

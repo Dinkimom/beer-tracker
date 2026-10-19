@@ -1,4 +1,4 @@
-import { YANDEX_OAUTH_CLIENT_ID } from '@/constants';
+import { YANDEX_TRACKER_TOKEN_HELP_PATH } from '@/lib/yandexOAuth/authorizeUrl';
 
 import {
   JIRA_EXTERNAL_ORG_ID_FALLBACK,
@@ -240,7 +240,8 @@ export function issueTrackerTokenHelpUrl(
     const base = jiraSiteBaseFromTrackerApiUrl(trackerApiUrl);
     return base ? `${base}${JIRA_PROFILE_TOKEN_PATH}` : '';
   }
-  return `https://oauth.yandex.ru/authorize?response_type=token&client_id=${YANDEX_OAUTH_CLIENT_ID}&scope=tracker:read+tracker:write`;
+  // Same-origin redirect; ClientID comes from runtime env on the server.
+  return YANDEX_TRACKER_TOKEN_HELP_PATH;
 }
 
 function trackerApiUrlOrigin(trackerApiUrl: string | undefined): string | null {

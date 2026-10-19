@@ -16,7 +16,7 @@ docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
 
 Приложение: [http://localhost:3000](http://localhost:3000). Postgres на хосте — порт 5433. Воркер синхронизации: добавьте `--profile exporter` (и при необходимости `--profile cron`). Другой тег: `BEER_TRACKER_TAG=latest`.
 
-`YANDEX_OAUTH_CLIENT_ID` вшивается в клиентский бандл при сборке образа. В опубликованных образах его нет: ссылка «получить токен» для Яндекс Трекера заработает после своей сборки с `--build-arg YANDEX_OAUTH_CLIENT_ID=...`. Для Jira этот аргумент не нужен.
+`YANDEX_OAUTH_CLIENT_ID` — runtime env контейнера app (как `ATLASSIAN_OAUTH_*`), не Docker build ARG. Задайте в `.env` и перезапустите; ссылка «получить токен» идёт через `/api/auth/yandex/authorize`. Для Jira эта переменная не нужна.
 
 ## Разработка из исходников
 
@@ -80,7 +80,7 @@ S3_KEY_PREFIX=local/
 ```bash
 # Тип трекера и URL API задаются на /register и в админке «Трекер».
 # Только для Яндекс Трекера — ClientID приложения с https://oauth.yandex.ru/
-# (scopes tracker:read + tracker:write):
+# (scopes tracker:read + tracker:write). Runtime env, рестарт после смены:
 YANDEX_OAUTH_CLIENT_ID=
 
 # Только для Jira Cloud — OAuth-приложение Atlassian (вход пользователей):

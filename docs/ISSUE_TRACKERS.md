@@ -44,8 +44,8 @@ URL API необязателен: по умолчанию `https://api.tracker.y
 YANDEX_OAUTH_CLIENT_ID=ваш_client_id
 ```
 
-Без `YANDEX_OAUTH_CLIENT_ID` ссылка «получить токен» в UI ведёт на authorize с пустым `client_id` и не работает.  
-В коде: `YANDEX_OAUTH_CLIENT_ID` в `constants/index.ts` (env пробрасывается в клиент через `next.config.ts`, без префикса `NEXT_PUBLIC_`).
+Это **runtime** env контейнера app (не Docker build ARG): задайте в `.env` / secrets и перезапустите. Без `YANDEX_OAUTH_CLIENT_ID` `/api/auth/yandex/authorize` отвечает 503, и ссылка «получить токен» не открывает Yandex OAuth.  
+В коде: `lib/yandexOAuth/` + роут `/api/auth/yandex/authorize` (ClientID не попадает в клиентский бандл).
 
 ### 2. Организация в админке
 
@@ -53,7 +53,7 @@ YANDEX_OAUTH_CLIENT_ID=ваш_client_id
 
 ### 3. Пользователь
 
-На `/auth-setup` или в настройках: OAuth-токен Яндекс ID (кнопка ведёт на `oauth.yandex.ru/authorize?…&client_id=…&scope=tracker:read+tracker:write`).
+На `/auth-setup` или в настройках: OAuth-токен Яндекс ID (кнопка ведёт на `/api/auth/yandex/authorize` → редирект на `oauth.yandex.ru/authorize?…&client_id=…&scope=tracker:read+tracker:write`).
 
 ---
 
@@ -86,7 +86,7 @@ ATLASSIAN_OAUTH_CLIENT_SECRET=…
    `read:project:jira`.
    Тот же набор задан в коде: `lib/atlassianOAuth/constants.ts` (`ATLASSIAN_OAUTH_SCOPES`).
 4. Client ID / Secret → runtime `.env` / secrets контейнера (`ATLASSIAN_OAUTH_*`), затем рестарт app.
-   Это **не** Docker build ARG (в отличие от `YANDEX_OAUTH_CLIENT_ID`): пустые значения на сборке образа не мешают, если задать их при запуске.
+   Это **не** Docker build ARG (как и `YANDEX_OAUTH_CLIENT_ID`): пустые значения на сборке образа не мешают, если задать их при запуске.
 
 После «Продолжить с Atlassian»: access + refresh + `cloudId` в браузере (localStorage).  
 REST пользователя: `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3` с `Bearer` (заголовок `X-Tracker-Cloud-Id` в запросах к Beer Tracker API).
