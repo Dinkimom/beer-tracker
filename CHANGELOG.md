@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.17.2] — 2026-10-19
+
+### English
+
+- A plan-patch preview draws each split segment of a task and the arrows between them. Accept writes the move; reject drops that preview.
+- Propose can place an already-split task and add it to the tracker sprint with `syncToTracker`, and returns a hint when the issue is not on the sprint yet.
+- Sprint context includes the board team roster with role, title, and platforms. MCP adds `whoami` and `resolve_person`.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.17.2` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Превью патча плана рисует каждый сегмент разрезанной задачи и стрелки между ними. Принятие записывает сдвиг, отказ убирает это превью.
+- Propose может поставить уже разрезанную задачу и добавить её в спринт трекера через `syncToTracker`, и возвращает подсказку, если задачи ещё нет в спринте.
+- Контекст спринта включает состав команды доски с ролью, должностью и платформами. В MCP появились `whoami` и `resolve_person`.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.17.2` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.17.1] — 2026-10-19
 
 ### English
