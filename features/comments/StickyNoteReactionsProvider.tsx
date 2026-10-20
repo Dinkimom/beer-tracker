@@ -4,6 +4,7 @@
  * Реакции на заметки свимлейна: локальный кэш + persist через API.
  */
 
+import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { StickyNoteReaction } from '@/lib/comments/stickyNoteReaction';
 import type { Comment } from '@/types';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
@@ -18,6 +19,7 @@ import {
   mergeStickyNoteReactionsByNoteId,
   rememberStickyNoteReactionEmoji,
   retainStickyNoteReactionOverlay,
+  stickyNoteColorSideEffectForReactionToggle,
   toggleStickyNoteReaction,
 } from '@/lib/comments/stickyNoteReaction';
 
@@ -36,11 +38,14 @@ interface StickyNoteReactionsProviderProps {
   children: ReactNode;
   comments?: Comment[];
   sprintId?: number | null;
+  /** Побочное действие тоггла (например ✅ → зелёная заметка). */
+  onPaintNoteColor?: (noteId: string, color: StickyNoteColor) => void;
 }
 
 export function StickyNoteReactionsProvider({
   children,
   comments,
+  onPaintNoteColor,
   sprintId = null,
 }: StickyNoteReactionsProviderProps) {
   const [cachedSprintId, setCachedSprintId] = useState(sprintId);
@@ -51,11 +56,19 @@ export function StickyNoteReactionsProvider({
     [comments]
   );
   const incomingRef = useRef(incoming);
+  const localByNoteIdRef = useRef(localByNoteId);
+  const onPaintNoteColorRef = useRef(onPaintNoteColor);
   const [inflightNoteIds, setInflightNoteIds] = useState<Set<string>>(() => new Set());
   const [incomingSnapshot, setIncomingSnapshot] = useState(incoming);
   useEffect(() => {
     incomingRef.current = incoming;
   }, [incoming]);
+  useEffect(() => {
+    localByNoteIdRef.current = localByNoteId;
+  }, [localByNoteId]);
+  useEffect(() => {
+    onPaintNoteColorRef.current = onPaintNoteColor;
+  }, [onPaintNoteColor]);
 
   if (cachedSprintId !== sprintId) {
     setCachedSprintId(sprintId);
@@ -76,6 +89,17 @@ export function StickyNoteReactionsProvider({
     (noteId: string, emoji: string) => {
       if (!isStickyNoteReactionEmoji(emoji)) {
         return;
+      }
+      const displayed = mergeStickyNoteReactionsByNoteId(
+        localByNoteIdRef.current,
+        incomingRef.current
+      );
+      const paintColor = stickyNoteColorSideEffectForReactionToggle(
+        displayed[noteId] ?? EMPTY_REACTIONS,
+        emoji
+      );
+      if (paintColor != null) {
+        onPaintNoteColorRef.current?.(noteId, paintColor);
       }
       setRecentEmojis((prev) => rememberStickyNoteReactionEmoji(prev, emoji));
       setInflightNoteIds((prev) => withNoteId(prev, noteId, true));

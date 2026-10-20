@@ -326,31 +326,39 @@ export async function createRelatedIssue(
   }
 }
 
-/** Live batch from Tracker/Jira — not stored in Beer Tracker DB. */
-export async function fetchIssueLinksBatch(issueKeys: string[]): Promise<
-  Array<{
-    direction: IssueTrackerIssueLink['direction'];
-    fromIssueKey: string;
-    id: string;
-    relationship: IssueTrackerIssueLink['relationship'];
-    relationshipLabel?: string;
-    toIssueKey: string;
-  }>
-> {
+/** Keep in sync with `ISSUE_LINKS_BATCH_MAX_KEYS` (API Zod + server normalize). */
+const ISSUE_LINKS_BATCH_MAX_KEYS = 80;
+
+interface IssueLinkBatchEdge {
+  direction: IssueTrackerIssueLink['direction'];
+  fromIssueKey: string;
+  id: string;
+  relationship: IssueTrackerIssueLink['relationship'];
+  relationshipLabel?: string;
+  toIssueKey: string;
+}
+
+async function fetchIssueLinksBatchChunk(issueKeys: string[]): Promise<IssueLinkBatchEdge[]> {
+  const { data } = await getPlannerBeerTrackerApi().post<{
+    links?: IssueLinkBatchEdge[];
+  }>('/issues/links/batch', { issueKeys });
+  return Array.isArray(data.links) ? data.links : [];
+}
+
+/** Live batch from Tracker/Jira — not stored in Beer Tracker DB. Chunks to API max. */
+export async function fetchIssueLinksBatch(issueKeys: string[]): Promise<IssueLinkBatchEdge[]> {
   if (issueKeys.length === 0) {
     return [];
   }
-  const { data } = await getPlannerBeerTrackerApi().post<{
-    links?: Array<{
-      direction: IssueTrackerIssueLink['direction'];
-      fromIssueKey: string;
-      id: string;
-      relationship: IssueTrackerIssueLink['relationship'];
-      relationshipLabel?: string;
-      toIssueKey: string;
-    }>;
-  }>('/issues/links/batch', { issueKeys });
-  return Array.isArray(data.links) ? data.links : [];
+  if (issueKeys.length <= ISSUE_LINKS_BATCH_MAX_KEYS) {
+    return fetchIssueLinksBatchChunk(issueKeys);
+  }
+  const chunks: string[][] = [];
+  for (let offset = 0; offset < issueKeys.length; offset += ISSUE_LINKS_BATCH_MAX_KEYS) {
+    chunks.push(issueKeys.slice(offset, offset + ISSUE_LINKS_BATCH_MAX_KEYS));
+  }
+  const results = await Promise.all(chunks.map((chunk) => fetchIssueLinksBatchChunk(chunk)));
+  return results.flat();
 }
 
 export async function createIssueLink(

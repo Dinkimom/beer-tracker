@@ -1,6 +1,6 @@
+import { isStickyNoteIssueKey } from '@/lib/comments/stickyNoteIssueKeys';
 import { resolveStickyNoteLinkHostname } from '@/lib/comments/stickyNoteLinks';
 
-const ISSUE_KEY_RE = /^[A-Za-z][A-Za-z0-9]*-(?:[A-Za-z0-9]+-)*\d+$/;
 const GENERIC_TLDS = new Set(['com', 'org', 'net', 'ru', 'io', 'dev', 'app']);
 const GENERIC_TITLE_WORDS = new Set([
   'github',
@@ -67,7 +67,7 @@ export function resolveStickyNoteLinkBadgeTitle(
 
 function extractIssueKeyFromPath(pathname: string): string | null {
   for (const segment of pathSegments(pathname)) {
-    if (ISSUE_KEY_RE.test(segment)) {
+    if (isStickyNoteIssueKey(segment)) {
       return segment;
     }
   }
@@ -104,7 +104,7 @@ function decodePathSegment(raw: string): string {
 }
 
 function composeIssueKeyTitle(fallback: string, title: string): string {
-  if (!ISSUE_KEY_RE.test(fallback)) {
+  if (!isStickyNoteIssueKey(fallback)) {
     return title;
   }
   if (title.toUpperCase().includes(fallback.toUpperCase())) {

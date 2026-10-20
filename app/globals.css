@@ -248,6 +248,36 @@ html.theme-changing * {
   animation: retro-card-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/* Карточка ретро лежит как магнит на доске: тот же картон, тот же состав тени в покое и при hover. */
+.retro-card-cardboard {
+  transition-property: box-shadow !important;
+  transition-duration: 0.2s !important;
+  transition-timing-function: ease-out !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 1px 1px rgb(0 0 0 / 0.06),
+    0 4px 8px -4px rgb(0 0 0 / 0.18);
+}
+
+.retro-card-cardboard:hover {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 3px 5px -2px rgb(0 0 0 / 0.08),
+    0 6px 12px -2px rgb(0 0 0 / 0.1);
+}
+
+.dark .retro-card-cardboard {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.4),
+    0 5px 10px -6px rgb(0 0 0 / 0.5);
+}
+
+.dark .retro-card-cardboard:hover {
+  box-shadow:
+    0 3px 5px -2px rgb(0 0 0 / 0.45),
+    0 8px 14px -4px rgb(0 0 0 / 0.55);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .retro-card-enter {
     animation: none;
@@ -785,26 +815,26 @@ html.dark .sprint-card-presence-changing::after {
   animation: sticky-note-reaction-bump 240ms ease-out;
 }
 
-/* Снятие листа: приподнять, довернуть в сторону наклона и растворить. */
+/* Снятие листа вниз: карточка уезжает вниз и растворяется, без доворота. */
 @keyframes sticky-note-exit {
   0% {
     opacity: 1;
-    transform: scale(1) rotate(0deg);
+    transform: translateY(0);
   }
   35% {
     opacity: 1;
-    transform: scale(1.04) rotate(calc(var(--sticky-note-exit-turn, 8deg) * 0.35));
+    transform: translateY(14%);
   }
   100% {
     opacity: 0;
-    transform: scale(0.82) rotate(var(--sticky-note-exit-turn, 8deg));
+    transform: translateY(108%);
   }
 }
 
 .sticky-note-exit {
-  animation: sticky-note-exit 320ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  animation: sticky-note-exit 420ms cubic-bezier(0.4, 0, 1, 1) forwards;
   pointer-events: none !important;
-  transform-origin: center center;
+  z-index: 36 !important;
 }
 
 .sticky-note-exit * {
@@ -819,6 +849,25 @@ html.dark .sprint-card-presence-changing::after {
     inset 0 1px 0 rgb(255 255 255 / 0.45),
     0 1px 1px rgb(0 0 0 / 0.04),
     0 8px 16px -10px rgb(0 0 0 / 0.22);
+}
+
+/* Смена цвета: лёгкий подскок масштаба (наклон листа сохраняем). */
+@keyframes sticky-note-color-pop {
+  0%,
+  100% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(1);
+  }
+  40% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(1.06);
+  }
+}
+
+.task-bar-item.sticky-note-color-pop {
+  z-index: 36 !important;
+}
+
+.task-bar-item.sticky-note-color-pop .sticky-note-paper {
+  animation: sticky-note-color-pop 320ms ease-out;
 }
 
 .sticky-note-paper::before,
@@ -871,6 +920,31 @@ html.dark .sprint-card-presence-changing::after {
   transition-timing-function: ease-out !important;
 }
 
+/* Исключение: смена цвета sticky-note. Правило выше режет transition-property
+   без background-color/color, поэтому для листа расширяем список с !important. */
+.sticky-note-paper.task-card-swimlane-hover-shadow {
+  transition-property: background-color, border-color, color, box-shadow, outline-color !important;
+  transition-duration: 0.28s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Карточка задачи в покое: тонкий картон, блик кромки и короткая тень.
+   Список теней совпадает с hover ниже (inset + две внешние), иначе
+   подъём не интерполируется и прыгает в конце transition 0.2s.
+   shadow-lg — выделенная карточка, её подъём не затираем. */
+.task-card-cardboard:not(.shadow-lg) {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 1px 1px rgb(0 0 0 / 0.06),
+    0 4px 8px -4px rgb(0 0 0 / 0.18);
+}
+
+.dark .task-card-cardboard:not(.shadow-lg) {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.4),
+    0 5px 10px -6px rgb(0 0 0 / 0.5);
+}
+
 /* Фото и схемы без hover-тени: та же плавная обводка меню. */
 .task-card-context-menu-frame:not(.task-card-swimlane-hover-shadow) {
   transition-property: border-color, outline-color !important;
@@ -886,6 +960,15 @@ html.dark .sprint-card-presence-changing::after {
   box-shadow:
     0 6px 12px -2px rgb(0 0 0 / 0.1),
     0 3px 5px -2px rgb(0 0 0 / 0.08);
+}
+
+/* Подъём картона: тот же блик и две внешние тени, что в покое, только выше. */
+.task-card-cardboard.task-card-swimlane-hover-shadow:hover,
+.task-bar-item:hover .task-card-cardboard.task-card-swimlane-hover-shadow {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 3px 5px -2px rgb(0 0 0 / 0.08),
+    0 6px 12px -2px rgb(0 0 0 / 0.1);
 }
 
 .dark .task-card-swimlane-hover-shadow:hover,
@@ -1617,8 +1700,14 @@ input[type="checkbox"]:disabled {
   .sprint-card-presence-reveal,
   .sticky-note-reaction-chip-enter,
   .sticky-note-reaction-chip-bump,
-  .sticky-note-exit {
+  .sticky-note-exit,
+  .task-bar-item.sticky-note-color-pop .sticky-note-paper {
     animation: none;
+  }
+
+  .sticky-note-paper.task-card-swimlane-hover-shadow {
+    transition-property: none !important;
+    transition-duration: 0s !important;
   }
 
   .resizable-sidebar-shell {

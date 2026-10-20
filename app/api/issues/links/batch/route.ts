@@ -3,13 +3,16 @@ import { z } from 'zod';
 
 import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
-import { listTrackerIssueLinkEdges } from '@/lib/issues/trackerIssueLinksRouteHelpers';
+import {
+  ISSUE_LINKS_BATCH_MAX_KEYS,
+  listTrackerIssueLinkEdges,
+} from '@/lib/issues/trackerIssueLinksRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { rejectUnsupportedIssueTrackerCapability } from '@/lib/issueTrackerProvider/issueTrackerCapabilityRoute';
 import { formatValidationError, validateRequest } from '@/lib/validation';
 
 const BatchIssueLinksSchema = z.object({
-  issueKeys: z.array(z.string().trim().min(1)).min(1).max(80),
+  issueKeys: z.array(z.string().trim().min(1)).min(1).max(ISSUE_LINKS_BATCH_MAX_KEYS),
 });
 
 /** Batch list from Tracker/Jira. One upstream search for cache misses; 30m in-memory cache. */

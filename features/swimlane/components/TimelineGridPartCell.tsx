@@ -51,6 +51,8 @@ export function TimelineGridPartCell(props: {
   partIndex: number;
   quickAddClipHeight?: number;
   quickAddDurationCells?: number;
+  /** Целый день (отсутствие): превью от начала дня; хит на остальных слотах — по одной клетке. */
+  quickAddSnapToDay?: boolean;
   quickAddSpan?: number;
   sprintStartDate: Date;
   taskAreaHeight: number;
@@ -76,6 +78,7 @@ export function TimelineGridPartCell(props: {
     partIndex,
     quickAddClipHeight,
     quickAddDurationCells = 1,
+    quickAddSnapToDay = false,
     quickAddSpan = 1,
     sprintStartDate,
     taskAreaHeight,
@@ -87,9 +90,13 @@ export function TimelineGridPartCell(props: {
 
   const cellId = `cell-${developerId}-${dayIndex}-${partIndex}`;
   const partsPerDay = getPartsPerDay();
-  const cellStart = dayIndex * partsPerDay + partIndex;
+  const dayStartCell = dayIndex * partsPerDay;
+  const cellStart = quickAddSnapToDay ? dayStartCell : dayStartCell + partIndex;
   const remainingCells = Math.max(1, dayCount * partsPerDay - cellStart);
-  const durationCells = Math.min(quickAddDurationCells, remainingCells);
+  const footprintCells = quickAddSnapToDay ? partsPerDay : quickAddDurationCells;
+  const durationCells = Math.min(footprintCells, remainingCells);
+  // На слотах после первого дня hit — одна клетка (иначе overflow упрётся в соседний stacking context).
+  const hitDurationCells = quickAddSnapToDay && partIndex !== 0 ? 1 : durationCells;
   const quickAddBand = resolveSwimlaneQuickAddLayerBand(
     collectOccupiedLayersForCellRange(occupiedLayersByCell, cellStart, durationCells),
     maxTaskLayers,
@@ -109,7 +116,7 @@ export function TimelineGridPartCell(props: {
       partIndex={partIndex}
       partStatus={partStatus}
       quickAddClipHeight={quickAddClipHeight}
-      quickAddDurationCells={durationCells}
+      quickAddDurationCells={hitDurationCells}
       quickAddLayer={quickAddBand?.layer ?? 0}
       quickAddLayerSpan={quickAddBand?.span ?? 1}
       taskAreaHeight={taskAreaHeight}

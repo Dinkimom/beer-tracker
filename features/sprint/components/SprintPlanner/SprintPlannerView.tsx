@@ -177,7 +177,7 @@ export function SprintPlannerView({
   return (
     <AssigneeVelocityProvider selectedSprintId={selectedSprintId} sprints={sprints}>
     <PlannerChromeSlotProvider slot={daysSlotEl}>
-    <StickyNoteReactionsProvider comments={comments} sprintId={selectedSprintId}>
+    <StickyNoteReactionsProvider comments={comments} sprintId={selectedSprintId} onPaintNoteColor={handlers.handlePaintNoteColorFromReaction}>
       <PlannerMobxSessionBridge />
       <SprintPlannerDndShell
         activeTask={activeTask}

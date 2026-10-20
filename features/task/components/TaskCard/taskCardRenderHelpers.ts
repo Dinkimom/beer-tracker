@@ -61,6 +61,18 @@ export function buildTaskCardHoverShadowClasses(
   return '';
 }
 
+/** Покой карточки задачи на доске. Заметки, фото и схемы сюда не входят. */
+export function buildTaskCardCardboardClass(input: {
+  hoverShadowClass: string;
+  isLocalCommentDraft: boolean;
+  isSwimlane: boolean;
+}): string {
+  if (!input.isSwimlane || input.isLocalCommentDraft || !input.hoverShadowClass) {
+    return '';
+  }
+  return 'task-card-cardboard';
+}
+
 /** Hex акцента для dark hover-glow: цвет бордера/статуса карточки. */
 export function resolveTaskCardHoverGlowColor(input: {
   isDark: boolean;

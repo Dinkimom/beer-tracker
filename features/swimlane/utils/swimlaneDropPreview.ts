@@ -4,7 +4,6 @@ import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCa
 import type { SwimlaneBaselineLayoutMode } from '@/lib/swimlane/swimlaneBaselineLayoutMode';
 import type { Task, TaskPosition } from '@/types';
 
-import { getPartsPerDay } from '@/constants';
 import {
   buildSwimlaneLayerPackingItems,
   calculateBaselines,
@@ -138,18 +137,12 @@ export function resolveSwimlaneDropPreviewSlot(input: {
   totalCells: number;
 }): SwimlaneDropPreviewSlot | null {
   const { lane, target } = input;
-  const startCell =
-    target.hoveredCell.day * getPartsPerDay() + target.hoveredCell.part;
   const dropped = resolveDroppedPosition(target, input.taskPositions, input.totalCells);
-  // Геометрический бэкдроп ячеек под курсором — всегда, даже если apply отказал (край таймлайна).
+  // Нет слота, если apply отказал (другая полоса для multi-segment и т.п.).
   if (!dropped) {
-    return {
-      durationCells: target.durationCells,
-      layer: 0,
-      span: 1,
-      startCell,
-    };
+    return null;
   }
+  const startCell = positionToStartCell(dropped);
   const droppedItem = { task: target.activeTask, position: dropped };
   const [activeItem] = buildSwimlaneLayerPackingItems(
     [droppedItem],
@@ -167,7 +160,7 @@ export function resolveSwimlaneDropPreviewSlot(input: {
   const before = countItemsPlacedBefore(
     lane.placed,
     activeItem.isQuickAddDraft,
-    positionToStartCell(dropped)
+    startCell
   );
   const placedActive = findSpannedLayerForItem(
     activeItem,

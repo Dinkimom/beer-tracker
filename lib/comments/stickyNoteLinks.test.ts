@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isStickyNoteJiraWebUrl,
   resolveStickyNoteFaviconSources,
   resolveStickyNoteFaviconUrl,
   resolveStickyNoteLinkHostname,
@@ -55,6 +56,29 @@ describe('splitStickyNoteTextByUrls', () => {
 describe('resolveStickyNoteLinkHostname', () => {
   it('drops a leading www', () => {
     expect(resolveStickyNoteLinkHostname('https://www.github.com/org/repo')).toBe('github.com');
+  });
+});
+
+describe('isStickyNoteJiraWebUrl', () => {
+  it('detects Atlassian Cloud and /browse/ issue urls', () => {
+    expect(isStickyNoteJiraWebUrl('https://acme.atlassian.net/browse/PROJ-12')).toBe(true);
+    expect(isStickyNoteJiraWebUrl('https://jira.example.com/jira/browse/PROJ-12')).toBe(true);
+    expect(isStickyNoteJiraWebUrl('https://github.com/org/repo')).toBe(false);
+  });
+
+  it('treats same-origin links as Jira when the org tracker is Jira', () => {
+    expect(
+      isStickyNoteJiraWebUrl('https://jira.example.com/secure/Dashboard.jspa', {
+        kind: 'jira-onprem',
+        webBaseUrl: 'https://jira.example.com',
+      })
+    ).toBe(true);
+    expect(
+      isStickyNoteJiraWebUrl('https://jira.example.com/secure/Dashboard.jspa', {
+        kind: 'tracker',
+        webBaseUrl: 'https://tracker.yandex.ru',
+      })
+    ).toBe(false);
   });
 });
 

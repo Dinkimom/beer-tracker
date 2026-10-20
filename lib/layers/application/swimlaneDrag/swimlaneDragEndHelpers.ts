@@ -5,12 +5,30 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { getPartsPerDay } from '@/constants';
 import { getPositionEffectiveDuration } from '@/lib/planner-timeline';
 import { isOnboardingDemoAssigneeId } from '@/lib/plannerOnboarding/onboardingDemoLane';
-import { moveSwimlanePlanSegmentToStartCell } from '@/lib/swimlane/swimlanePlanSegments';
+import {
+  clampSwimlaneStartCell,
+  swimlaneCellFromStartCell,
+} from '@/lib/swimlane/clampSwimlaneStartCell';
+import {
+  getOrderedPlanSegments,
+  moveSwimlanePlanSegmentToStartCell,
+} from '@/lib/swimlane/swimlanePlanSegments';
 
 import { extractAssigneeId, isValidCell } from './swimlaneDragCellUtils';
 import { calculateCellFromDragEvent } from './swimlaneDragPositionCalculation';
 import { getTaskDuration } from './swimlaneDragTaskDuration';
 import { resolveSidebarDropTargetFromDragEvent } from './swimlaneSidebarDropTarget';
+
+function clampFinalCellToDuration(
+  day: number,
+  part: number,
+  durationParts: number,
+  totalCells: number
+): { day: number; part: number } {
+  const partsPerDay = getPartsPerDay();
+  const start = clampSwimlaneStartCell(day * partsPerDay + part, durationParts, totalCells);
+  return swimlaneCellFromStartCell(start, partsPerDay);
+}
 
 function updateExistingMultiSegmentPosition(input: {
   assigneeId: string;
@@ -27,7 +45,12 @@ function updateExistingMultiSegmentPosition(input: {
   if (assigneeId !== existing.assignee || segmentIndex == null) {
     return;
   }
-  const newStart = day * getPartsPerDay() + part;
+  const segment = getOrderedPlanSegments(existing)[segmentIndex];
+  if (!segment) {
+    return;
+  }
+  const clamped = clampFinalCellToDuration(day, part, segment.duration, totalCells);
+  const newStart = clamped.day * getPartsPerDay() + clamped.part;
   const moved = moveSwimlanePlanSegmentToStartCell(existing, segmentIndex, newStart, totalCells);
   if (!moved) {
     return;
@@ -44,13 +67,14 @@ function updateExistingSingleSegmentPosition(input: {
   taskId: string;
   totalCells: number;
 }): void {
-  const { assigneeId, day, existing, onPositionUpdate, part, taskId, totalCells } = input;
-  const newStart = day * getPartsPerDay() + part;
+  const { assigneeId, existing, onPositionUpdate, taskId, totalCells } = input;
   const effectiveDuration = getPositionEffectiveDuration(existing);
-  const maxStart = totalCells - effectiveDuration;
-  if (newStart > maxStart) {
-    return;
-  }
+  const { day, part } = clampFinalCellToDuration(
+    input.day,
+    input.part,
+    effectiveDuration,
+    totalCells
+  );
 
   if (existing.segments?.length === 1) {
     const seg = existing.segments[0]!;
@@ -92,11 +116,12 @@ export function applySwimlaneDragEndPositionUpdate(params: {
   const existing = taskPositions.get(taskId);
   if (!existing) {
     const calculatedDuration = getTaskDuration(taskId, taskPositions, tasks);
+    const clamped = clampFinalCellToDuration(day, part, calculatedDuration, totalCells);
     onPositionUpdate(taskId, {
       taskId,
       assignee: assigneeId,
-      startDay: day,
-      startPart: part,
+      startDay: clamped.day,
+      startPart: clamped.part,
       duration: calculatedDuration,
     });
     return;

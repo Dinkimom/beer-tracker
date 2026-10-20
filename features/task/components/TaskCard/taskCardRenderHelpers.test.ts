@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildTaskCardCardboardClass,
   buildTaskCardHoverShadowClasses,
   buildTaskCardRootClassName,
   resolveTaskCardContextMenuBorderClasses,
@@ -55,6 +56,42 @@ describe('buildTaskCardHoverShadowClasses', () => {
     expect(buildTaskCardHoverShadowClasses(true, false, false, false, true)).toBe(
       'task-card-swimlane-hover-shadow'
     );
+  });
+});
+
+describe('buildTaskCardCardboardClass', () => {
+  it('rests a swimlane task card on a cardboard shadow', () => {
+    expect(
+      buildTaskCardCardboardClass({
+        hoverShadowClass: 'task-card-swimlane-hover-shadow',
+        isLocalCommentDraft: false,
+        isSwimlane: true,
+      })
+    ).toBe('task-card-cardboard');
+  });
+
+  it('leaves sticky notes, sidebar cards, and cards without a hover shadow flat', () => {
+    expect(
+      buildTaskCardCardboardClass({
+        hoverShadowClass: 'task-card-swimlane-hover-shadow',
+        isLocalCommentDraft: true,
+        isSwimlane: true,
+      })
+    ).toBe('');
+    expect(
+      buildTaskCardCardboardClass({
+        hoverShadowClass: 'task-card-swimlane-hover-shadow',
+        isLocalCommentDraft: false,
+        isSwimlane: false,
+      })
+    ).toBe('');
+    expect(
+      buildTaskCardCardboardClass({
+        hoverShadowClass: '',
+        isLocalCommentDraft: false,
+        isSwimlane: true,
+      })
+    ).toBe('');
   });
 });
 

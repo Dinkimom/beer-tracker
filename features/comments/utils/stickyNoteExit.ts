@@ -1,11 +1,9 @@
-import { stickyNoteTiltSign } from '@/features/comments/utils/stickyNoteTilt';
-
 /**
- * Снятие листа с доски: карточка остаётся на месте, пока играет CSS-анимация,
- * и только потом вызывающий код убирает её из списка.
+ * Снятие листа с доски вниз: карточка остаётся в списке, пока играет CSS-анимация,
+ * и только потом вызывающий код убирает её.
  */
 
-export const STICKY_NOTE_EXIT_MS = 320;
+export const STICKY_NOTE_EXIT_MS = 420;
 const STICKY_NOTE_EXIT_CLASS = 'sticky-note-exit';
 
 const exitingTaskIds = new Set<string>();
@@ -87,15 +85,4 @@ export function playStickyNoteExit(taskId: string, onDone: () => void): void {
 export function stickyNoteExitClassName(isStickyNote: boolean, exiting: boolean): string {
   if (!isStickyNote || !exiting) return '';
   return ` ${STICKY_NOTE_EXIT_CLASS}`;
-}
-
-export function stickyNoteExitStyle(
-  isStickyNote: boolean,
-  exiting: boolean,
-  taskId: string
-): Record<'--sticky-note-exit-turn', string> | Record<string, never> {
-  if (!isStickyNote || !exiting) return {};
-  return {
-    '--sticky-note-exit-turn': `${stickyNoteTiltSign(taskId) * 8}deg`,
-  };
 }

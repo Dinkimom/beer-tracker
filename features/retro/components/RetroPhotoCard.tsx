@@ -33,7 +33,7 @@ export function RetroPhotoCard({
 
   return (
     <article
-      className="group relative mx-2 overflow-hidden rounded-lg"
+      className="retro-card-cardboard group relative mx-2 overflow-hidden rounded-lg"
       style={{ ...getPhotoCardStyle(theme === 'dark'), borderRadius: 8 }}
     >
       <div className={getPhotoCardPaddingClass()}>

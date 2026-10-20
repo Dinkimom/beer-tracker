@@ -13,7 +13,8 @@ import {
 
 export type { TrackerIssueLinkEdge } from './trackerIssueLinksCache';
 
-const MAX_BATCH_ISSUE_KEYS = 80;
+/** Max issueKeys per POST /api/issues/links/batch. Client chunks larger lists. */
+export const ISSUE_LINKS_BATCH_MAX_KEYS = 80;
 const LIST_CONCURRENCY = 6;
 
 export function normalizeIssueKeysForLinkBatch(issueKeys: string[]): string[] {
@@ -26,7 +27,7 @@ export function normalizeIssueKeysForLinkBatch(issueKeys: string[]): string[] {
     }
     seen.add(key);
     out.push(key);
-    if (out.length >= MAX_BATCH_ISSUE_KEYS) {
+    if (out.length >= ISSUE_LINKS_BATCH_MAX_KEYS) {
       break;
     }
   }

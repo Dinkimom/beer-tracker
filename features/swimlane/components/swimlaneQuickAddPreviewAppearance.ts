@@ -1,7 +1,21 @@
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { SwimlanePlacementTool } from '@/lib/layers';
 
-export type SwimlaneQuickAddPreviewKind = 'diagram' | 'image' | 'note' | 'task';
+import { getPartsPerDay } from '@/constants';
+
+export type SwimlaneQuickAddPreviewKind =
+  | 'availability'
+  | 'diagram'
+  | 'image'
+  | 'note'
+  | 'task';
+
+interface SwimlaneQuickAddPlacementFootprint {
+  durationCells: number;
+  /** Отсутствие нельзя делить по слотам — превью и хит от начала дня на всю его ширину. */
+  snapToDay?: boolean;
+  span: number;
+}
 
 function isTwoByTwoPreviewKind(kind: SwimlaneQuickAddPreviewKind): boolean {
   return kind === 'diagram' || kind === 'image';
@@ -14,10 +28,14 @@ const QUICK_ADD_PREVIEW_NOTE_CLASS =
   'swimlane-quick-add-preview-fade pointer-events-none absolute flex items-center justify-center border border-dashed';
 
 export function resolveSwimlaneQuickAddPreviewKind(input: {
+  isAvailabilityTool?: boolean;
   isDiagramTool?: boolean;
   isImageTool: boolean;
   isNoteTool: boolean;
 }): SwimlaneQuickAddPreviewKind {
+  if (input.isAvailabilityTool) {
+    return 'availability';
+  }
   if (input.isImageTool) {
     return 'image';
   }
@@ -35,12 +53,13 @@ export function resolveSwimlaneQuickAddPreviewToolProps(
   stickyNoteColor: StickyNoteColor
 ): {
   iconName: string;
+  isAvailabilityTool?: boolean;
   isDiagramTool?: boolean;
   isImageTool: boolean;
   noteColor?: StickyNoteColor;
 } {
   if (tool === 'availability') {
-    return { iconName: 'calendar', isImageTool: false };
+    return { iconName: 'calendar', isAvailabilityTool: true, isImageTool: false };
   }
   if (tool === 'image') {
     return { iconName: 'image', isImageTool: true };
@@ -58,7 +77,7 @@ export function resolveSwimlaneQuickAddPreviewToolProps(
 }
 
 export function resolveSwimlaneQuickAddPreviewClass(kind: SwimlaneQuickAddPreviewKind): string {
-  if (kind === 'task') {
+  if (kind === 'task' || kind === 'availability') {
     return QUICK_ADD_PREVIEW_TASK_CLASS;
   }
   if (kind === 'note') {
@@ -71,18 +90,23 @@ export function resolveSwimlaneQuickAddPreviewDurationCells(
   kind: SwimlaneQuickAddPreviewKind,
   remainingCells: number
 ): number {
+  if (kind === 'availability') {
+    return Math.max(1, Math.min(getPartsPerDay(), remainingCells));
+  }
   if (!isTwoByTwoPreviewKind(kind)) {
     return 1;
   }
   return Math.max(1, Math.min(2, remainingCells));
 }
 
-export function resolveSwimlaneQuickAddPlacementFootprint(isImageTool: boolean): {
-  durationCells: number;
-  span: number;
-} {
-  if (isImageTool) {
+export function resolveSwimlaneQuickAddPlacementFootprint(
+  tool: SwimlanePlacementTool
+): SwimlaneQuickAddPlacementFootprint {
+  if (tool === 'image' || tool === 'diagram' || tool === 'tictactoe') {
     return { durationCells: 2, span: 2 };
+  }
+  if (tool === 'availability') {
+    return { durationCells: getPartsPerDay(), span: 1, snapToDay: true };
   }
   return { durationCells: 1, span: 1 };
 }

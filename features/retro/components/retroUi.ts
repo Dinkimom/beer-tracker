@@ -23,9 +23,9 @@ export const retroListClass =
 export const retroListDropClass =
   'retro-column-glass flex max-h-full w-[280px] shrink-0 flex-col overflow-hidden rounded-xl border border-blue-400/70 !bg-blue-500/[0.1] text-gray-800 dark:border-blue-400/50 dark:!bg-blue-500/15 dark:text-gray-100';
 
-/** Карточка на сером/glass-жёлобе — как канбан. */
+/** Карточка на сером/glass-жёлобе — как канбан, с тенью картона как на доске. */
 export const retroCardSurfaceClass =
-  'group relative mx-2 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-gray-900 dark:border-white/15 dark:bg-white/[0.08] dark:text-gray-100';
+  'retro-card-cardboard group relative mx-2 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-gray-900 dark:border-white/15 dark:bg-white/[0.08] dark:text-gray-100';
 
 export function retroCardDragId(ownerSprintId: number, cardId: string): string {
   return `retro-card:${ownerSprintId}:${cardId}`;

@@ -3,7 +3,14 @@
  * Быстрый ряд — как в Miro; полный пикер может поставить любой emoji.
  */
 
+import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+
 export const STICKY_NOTE_QUICK_REACTION_EMOJIS = ['➕', '👍', '❤️', '🔥', '✅', '🚀'] as const;
+
+/** Галка из быстрого ряда: побочное действие — покрасить заметку в зелёный. */
+export const STICKY_NOTE_CHECKMARK_REACTION_EMOJI = '✅';
+
+const STICKY_NOTE_CHECKMARK_PAINT_COLOR: StickyNoteColor = 'green';
 
 interface StickyNoteReactionUser {
   mine: boolean;
@@ -51,6 +58,24 @@ export function toggleStickyNoteReaction(
   return reactions.map((reaction) =>
     reaction.emoji === emoji ? withOwnStickyNoteReactionUser(reaction) : reaction
   );
+}
+
+/**
+ * Цвет заметки после тоггла реакции: при проставлении своей ✅ — green.
+ * Снятие галки цвет не откатывает.
+ */
+export function stickyNoteColorSideEffectForReactionToggle(
+  reactionsBefore: readonly StickyNoteReaction[],
+  emoji: string
+): StickyNoteColor | null {
+  if (emoji !== STICKY_NOTE_CHECKMARK_REACTION_EMOJI) {
+    return null;
+  }
+  const existing = reactionsBefore.find((reaction) => reaction.emoji === emoji);
+  if (existing != null && existing.mine) {
+    return null;
+  }
+  return STICKY_NOTE_CHECKMARK_PAINT_COLOR;
 }
 
 /** Имена в тултипе: свои голоса как «Вы», остальные — display name, в историческом порядке. */

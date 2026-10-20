@@ -3,11 +3,16 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { Icon } from '@/components/Icon';
+import { JiraToolIcon } from '@/components/JiraToolIcon';
 import { TextTooltip } from '@/components/TextTooltip';
+import { useTrackerWebUrlContext } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useStickyNoteLinkPreview } from '@/features/comments/hooks/useStickyNoteLinkPreview';
 import { resolveStickyNoteLinkBadgeTitle } from '@/lib/comments/stickyNoteLinkLabel';
-import { resolveStickyNoteFaviconSources } from '@/lib/comments/stickyNoteLinks';
+import {
+  isStickyNoteJiraWebUrl,
+  resolveStickyNoteFaviconSources,
+} from '@/lib/comments/stickyNoteLinks';
 
 const BADGE_CLASS =
   'pointer-events-auto mx-0.5 inline-flex h-[18px] max-w-[16rem] cursor-pointer items-center gap-1 align-middle rounded border border-black/15 bg-white/90 px-1 font-sans text-[10px] font-medium leading-none text-gray-800 hover:border-blue-400 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-white/20 dark:bg-gray-900/90 dark:text-gray-100 dark:hover:bg-gray-900';
@@ -21,10 +26,14 @@ interface StickyNoteLinkBadgeProps {
 
 export function StickyNoteLinkBadge({ href, isDragging }: StickyNoteLinkBadgeProps) {
   const { t } = useI18n();
+  const tracker = useTrackerWebUrlContext();
+  const isJiraLink = isStickyNoteJiraWebUrl(href, tracker);
   const { data } = useStickyNoteLinkPreview(href);
   const [faviconIndex, setFaviconIndex] = useState(0);
   const title = resolveStickyNoteLinkBadgeTitle(href, data?.title);
-  const faviconSources = resolveStickyNoteFaviconSources(href, data?.faviconUrl);
+  const faviconSources = isJiraLink
+    ? []
+    : resolveStickyNoteFaviconSources(href, data?.faviconUrl);
   const faviconUrl = faviconSources[faviconIndex] ?? null;
   const dragGuard = useStickyNoteLinkDragGuard(isDragging);
 
@@ -46,7 +55,9 @@ export function StickyNoteLinkBadge({ href, isDragging }: StickyNoteLinkBadgePro
         onMouseMove={dragGuard.onMouseMove}
         onPointerDown={dragGuard.onPointerDown}
       >
-        {faviconUrl ? (
+        {isJiraLink ? (
+          <JiraToolIcon className="h-3 w-3 shrink-0 text-[#2684FF]" />
+        ) : faviconUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={faviconUrl}

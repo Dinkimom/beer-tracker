@@ -134,6 +134,20 @@ describe('resolveSwimlaneQuickAddLayoutState', () => {
     expect(state.quickAddFootprint).toEqual({ durationCells: 2, span: 2 });
     expect(state.previewSpanLayers).toBe(2);
   });
+
+  it('uses a full-day snap footprint for absence', () => {
+    const state = resolveSwimlaneQuickAddLayoutState({
+      canQuickAddOnLane: true,
+      hoverPreview: { layer: 0, span: 1 },
+      isDraggingTask: false,
+      isLinking: false,
+      placementTool: 'availability',
+      tasks: [],
+    });
+    expect(state.quickAddFootprint.snapToDay).toBe(true);
+    expect(state.quickAddFootprint.span).toBe(1);
+    expect(state.quickAddFootprint.durationCells).toBeGreaterThan(1);
+  });
 });
 
 describe('resolveSwimlaneDropPreviewTarget', () => {

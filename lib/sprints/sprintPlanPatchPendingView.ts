@@ -19,13 +19,13 @@ import {
 import { listPlanPatchPositionPreviews } from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
 import { formatSprintPlanScheduleForTaskIds } from '@/lib/sprints/sprintPlanScheduleFormat';
 
-export interface PendingPlanPatchPositionLine {
+interface PendingPlanPatchPositionLine {
   afterSchedule: string | null;
   beforeSchedule: string | null;
   taskId: string;
 }
 
-export interface PendingPlanPatchGoalLine {
+interface PendingPlanPatchGoalLine {
   action: PlanPatchGoalPreview['action'];
   afterText: string | null;
   beforeText: string | null;

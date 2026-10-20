@@ -15,6 +15,7 @@ import { DndContext, DragOverlay, MouseSensor, PointerSensor, TouchSensor, useSe
 
 import { ZIndex, getPartsPerDay } from '@/constants';
 import { SWIMLANE_TASK_DRAG_ACTIVATION_DISTANCE_PX } from '@/features/swimlane/utils/swimlaneTaskDragActivation';
+import { createRestrictSwimlaneDragOverlayModifier } from '@/lib/layers/application/swimlaneDrag/swimlaneDragOverlayRestrict';
 
 import { sprintPlannerCollisionDetection } from './sprintPlannerCollisionDetection';
 import {
@@ -23,6 +24,8 @@ import {
   runDeveloperRowDragEndIfApplicable,
 } from './sprintPlannerDndHelpers';
 import { SprintPlannerDragOverlayPreview } from './SprintPlannerDragOverlayPreview';
+
+const SWIMLANE_DRAG_OVERLAY_MODIFIERS = [createRestrictSwimlaneDragOverlayModifier()];
 
 interface SprintPlannerDndShellProps {
   activeTask: Task | null;
@@ -108,6 +111,7 @@ export function SprintPlannerDndShell({
     <DndContext
       autoScroll={resolveSwimlanePlannerAutoScrollOptions(viewMode, scrollContainerRef)}
       collisionDetection={sprintPlannerCollisionDetection}
+      modifiers={SWIMLANE_DRAG_OVERLAY_MODIFIERS}
       sensors={taskDragSensors}
       onDragAbort={() => {
         dragAndDrop.resetDragState();

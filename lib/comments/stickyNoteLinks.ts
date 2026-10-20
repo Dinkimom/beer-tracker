@@ -1,3 +1,9 @@
+import {
+  isHttpUrlOnTrackerWebBase,
+  type TrackerWebUrlContext,
+} from '@/lib/issueTrackerProvider/issueTrackerUi';
+import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
+
 type StickyNoteTextSegment =
   | { href: string; raw: string; type: 'url' }
   | { type: 'text'; value: string };
@@ -5,12 +11,43 @@ type StickyNoteTextSegment =
 const URL_RE = /(?:https?:\/\/|www\.)[^\s<>"'`]+/gi;
 const MAX_HREF_LENGTH = 2048;
 const TRAILING_URL_PUNCTUATION = new Set([',', '.', ';', ':', '!', '?', ')', ']', '}', "'"]);
+const JIRA_BROWSE_PATH_RE = /\/browse\/[^/]+/i;
 
 export function resolveStickyNoteLinkHostname(href: string): string {
   try {
     return new URL(href).hostname.replace(/^www\./i, '');
   } catch {
     return href;
+  }
+}
+
+/** Ссылка на Jira Cloud / DC или на web-base организации с Jira. */
+export function isStickyNoteJiraWebUrl(
+  href: string,
+  tracker?: TrackerWebUrlContext | null
+): boolean {
+  try {
+    const url = new URL(href);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return false;
+    }
+    const host = url.hostname.replace(/^www\./i, '').toLowerCase();
+    if (host === 'atlassian.net' || host.endsWith('.atlassian.net')) {
+      return true;
+    }
+    if (JIRA_BROWSE_PATH_RE.test(url.pathname)) {
+      return true;
+    }
+    if (
+      tracker &&
+      isJiraProviderKind(tracker.kind) &&
+      isHttpUrlOnTrackerWebBase(href, tracker.webBaseUrl)
+    ) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
   }
 }
 

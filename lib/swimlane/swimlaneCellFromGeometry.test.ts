@@ -35,11 +35,17 @@ describe('calculateCellFromMouse', () => {
     expect(r).toEqual({ day: 5, part: 0 });
   });
 
-  it('параметр длительности задачи не ломает расчёт (API-совместимость)', () => {
-    const swimlaneRect = domRect(0, 1000);
-    const a = calculateCellFromMouse(100, swimlaneRect, 1, undefined);
-    const b = calculateCellFromMouse(100, swimlaneRect, 99, undefined);
-    expect(a).toEqual(b);
+  it('у правого края длинная карточка стартует так, чтобы целиком влезть в спринт', () => {
+    // 10 дней × 3 части = 30 ячеек на 900px → 30px/ячейка; курсор у последнего пикселя.
+    const swimlaneRect = domRect(0, 900);
+    const r = calculateCellFromMouse(899, swimlaneRect, 3, undefined, 10);
+    expect(r).toEqual({ day: 9, part: 0 });
+  });
+
+  it('курсор в зоне после спринта всё равно даёт maxStart по длительности', () => {
+    const swimlaneRect = domRect(0, 900);
+    const r = calculateCellFromMouse(1200, swimlaneRect, 2, undefined, 10);
+    expect(r).toEqual({ day: 9, part: 1 });
   });
 });
 

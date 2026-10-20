@@ -9,7 +9,9 @@ import {
   parseStickyNoteReactions,
   rememberStickyNoteReactionEmoji,
   retainStickyNoteReactionOverlay,
+  STICKY_NOTE_CHECKMARK_REACTION_EMOJI,
   STICKY_NOTE_QUICK_REACTION_EMOJIS,
+  stickyNoteColorSideEffectForReactionToggle,
   toggleStickyNoteReaction,
   type StickyNoteReaction,
 } from './stickyNoteReaction';
@@ -21,6 +23,27 @@ import {
 describe('stickyNoteReaction', () => {
   it('lists the Miro quick-reaction row', () => {
     expect(STICKY_NOTE_QUICK_REACTION_EMOJIS).toEqual(['➕', '👍', '❤️', '🔥', '✅', '🚀']);
+    expect(STICKY_NOTE_CHECKMARK_REACTION_EMOJI).toBe('✅');
+  });
+
+  it('paints the note green when placing a checkmark reaction', () => {
+    expect(stickyNoteColorSideEffectForReactionToggle([], '✅')).toBe('green');
+    expect(
+      stickyNoteColorSideEffectForReactionToggle(
+        [{ count: 2, emoji: '✅', mine: false, users: [{ mine: false, name: 'Ada' }] }],
+        '✅'
+      )
+    ).toBe('green');
+  });
+
+  it('does not change color when removing own checkmark or using other emoji', () => {
+    expect(
+      stickyNoteColorSideEffectForReactionToggle(
+        [{ count: 1, emoji: '✅', mine: true, users: [{ mine: true, name: '' }] }],
+        '✅'
+      )
+    ).toBeNull();
+    expect(stickyNoteColorSideEffectForReactionToggle([], '👍')).toBeNull();
   });
 
   it('accepts any compact emoji string', () => {

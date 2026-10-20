@@ -9,8 +9,10 @@ import { observer } from 'mobx-react-lite';
 import React, { useRef, useState } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
+import { useStickyNoteColorPop } from '@/features/comments/hooks/useStickyNoteColorPop';
 import { useStickyNoteExiting } from '@/features/comments/hooks/useStickyNoteExiting';
-import { stickyNoteExitClassName, stickyNoteExitStyle } from '@/features/comments/utils/stickyNoteExit';
+import { stickyNoteColorPopClassName } from '@/features/comments/utils/stickyNoteColorPop';
+import { stickyNoteExitClassName } from '@/features/comments/utils/stickyNoteExit';
 import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
 import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
@@ -266,6 +268,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
     !isWidgetCard &&
     (task.localDraftKind === 'comment' || swimlaneCommentId != null);
   const stickyNoteExiting = useStickyNoteExiting(task.id);
+  const stickyNoteColorPopping = useStickyNoteColorPop(task.id, isStickyNoteCard, task.stickyNoteColor);
   const cornerStyle = resolveResizeHandleCornerStyle(
     isPhotoCard || isDiagramCard || isWidgetCard,
     isStickyNoteCard
@@ -311,7 +314,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
         isAnnotationCard: isStickyNoteCard || isPhotoCard || isDiagramCard || isWidgetCard,
         linkCursorClass,
         shouldExpandByLongHover,
-      })}${stickyNoteExitClassName(isStickyNoteCard, stickyNoteExiting)}${planPatchChrome.ringClass}`}
+      })}${stickyNoteExitClassName(isStickyNoteCard, stickyNoteExiting)}${stickyNoteColorPopClassName(isStickyNoteCard, stickyNoteColorPopping)}${planPatchChrome.ringClass}`}
       data-draggable-id={draggableId}
       data-task-id={task.id}
       {...onboardingDataset}
@@ -329,7 +332,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
             taskBarZIndex,
           }),
         }),
-        ...stickyNoteExitStyle(isStickyNoteCard, stickyNoteExiting, task.id),
       }}
       onBlur={(event) => {
         const next = event.relatedTarget;

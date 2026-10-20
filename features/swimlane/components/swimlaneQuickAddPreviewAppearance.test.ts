@@ -29,6 +29,16 @@ describe('resolveSwimlaneQuickAddPreviewKind', () => {
       })
     ).toBe('diagram');
   });
+
+  it('marks the availability tool as a full-day ghost', () => {
+    expect(
+      resolveSwimlaneQuickAddPreviewKind({
+        isAvailabilityTool: true,
+        isImageTool: false,
+        isNoteTool: false,
+      })
+    ).toBe('availability');
+  });
 });
 
 describe('resolveSwimlaneQuickAddPreviewToolProps', () => {
@@ -62,6 +72,14 @@ describe('resolveSwimlaneQuickAddPreviewToolProps', () => {
       isImageTool: true,
     });
   });
+
+  it('marks the calendar tool as a full-day availability ghost', () => {
+    expect(resolveSwimlaneQuickAddPreviewToolProps('availability', 'yellow')).toEqual({
+      iconName: 'calendar',
+      isAvailabilityTool: true,
+      isImageTool: false,
+    });
+  });
 });
 
 describe('resolveSwimlaneQuickAddPreviewClass', () => {
@@ -89,18 +107,39 @@ describe('resolveSwimlaneQuickAddPreviewDurationCells', () => {
     expect(resolveSwimlaneQuickAddPreviewDurationCells('diagram', 8)).toBe(2);
     expect(resolveSwimlaneQuickAddPreviewDurationCells('diagram', 1)).toBe(1);
   });
+
+  it('spans a full planner day for absence when the sprint still has room', () => {
+    const partsPerDay = resolveSwimlaneQuickAddPlacementFootprint('availability').durationCells;
+    expect(resolveSwimlaneQuickAddPreviewDurationCells('availability', 8)).toBe(partsPerDay);
+    expect(resolveSwimlaneQuickAddPreviewDurationCells('availability', 1)).toBe(1);
+  });
 });
 
 describe('resolveSwimlaneQuickAddPlacementFootprint', () => {
   it('matches the 2x2 photo card and keeps a one-cell slot for other tools', () => {
-    expect(resolveSwimlaneQuickAddPlacementFootprint(true)).toEqual({
+    expect(resolveSwimlaneQuickAddPlacementFootprint('image')).toEqual({
       durationCells: 2,
       span: 2,
     });
-    expect(resolveSwimlaneQuickAddPlacementFootprint(false)).toEqual({
+    expect(resolveSwimlaneQuickAddPlacementFootprint('diagram')).toEqual({
+      durationCells: 2,
+      span: 2,
+    });
+    expect(resolveSwimlaneQuickAddPlacementFootprint('tictactoe')).toEqual({
+      durationCells: 2,
+      span: 2,
+    });
+    expect(resolveSwimlaneQuickAddPlacementFootprint('task')).toEqual({
       durationCells: 1,
       span: 1,
     });
+  });
+
+  it('spans the whole day for absence and snaps the ghost to day start', () => {
+    const footprint = resolveSwimlaneQuickAddPlacementFootprint('availability');
+    expect(footprint.span).toBe(1);
+    expect(footprint.snapToDay).toBe(true);
+    expect(footprint.durationCells).toBeGreaterThan(1);
   });
 });
 

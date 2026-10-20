@@ -33,6 +33,7 @@ interface TimelineGridProps {
   quickAddFootprint?: {
     durationCells: number;
     span: number;
+    snapToDay?: boolean;
   };
   sprintStartDate: Date;
   /** Рабочих дней в таймлайне */
@@ -85,6 +86,7 @@ export function TimelineGrid({
     dayCount
   );
   const quickAddDurationCells = quickAddFootprint?.durationCells ?? 1;
+  const quickAddSnapToDay = quickAddFootprint?.snapToDay === true;
   const quickAddSpan = quickAddFootprint?.span ?? 1;
   const hasPatternRanges = hatchRanges.length > 0 || holidayRanges.length > 0;
 
@@ -164,6 +166,7 @@ export function TimelineGrid({
                   partIndex={partIndex}
                   quickAddClipHeight={quickAddClipHeight}
                   quickAddDurationCells={quickAddDurationCells}
+                  quickAddSnapToDay={quickAddSnapToDay}
                   quickAddSpan={quickAddSpan}
                   sprintStartDate={sprintStartDate}
                   taskAreaHeight={taskAreaHeight}

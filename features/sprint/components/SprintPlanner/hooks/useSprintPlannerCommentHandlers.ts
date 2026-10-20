@@ -13,6 +13,7 @@ import {
 } from '@/features/comments/utils/stickyNoteExit';
 import {
   commentCardRowLayoutToPersistPatch,
+  parseSwimlaneCommentTaskId,
   toSwimlaneCommentTaskId,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
@@ -439,6 +440,19 @@ export function useSprintPlannerCommentHandlers({
     [setComments]
   );
 
+  const handlePaintNoteColorFromReaction = useCallback(
+    (noteId: string, color: StickyNoteColor) => {
+      const commentId = parseSwimlaneCommentTaskId(noteId);
+      if (commentId == null) {
+        return;
+      }
+      setComments((prev: CommentType[]) =>
+        prev.map((c: CommentType) => (c.id === commentId ? { ...c, color } : c))
+      );
+    },
+    [setComments]
+  );
+
   const handleCommentSizeUpdate = useCallback(
     (id: string, width: number, height: number) => {
       setComments((prev: CommentType[]) =>
@@ -483,6 +497,7 @@ export function useSprintPlannerCommentHandlers({
     handleCommentCardRowLayoutUpdate,
     handleCommentRejectAll,
     handleCommentSizeUpdate,
+    handlePaintNoteColorFromReaction,
     handleCommentUpdate,
   };
 }

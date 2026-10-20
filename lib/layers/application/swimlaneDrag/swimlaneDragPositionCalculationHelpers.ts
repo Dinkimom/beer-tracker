@@ -8,7 +8,7 @@ import { parseSwimlaneTaskDraggableId } from '@/lib/swimlane/swimlaneDragIds';
 
 import { extractCellFromId, isValidCell } from './swimlaneDragCellUtils';
 import { getDragOverlayLeftX, getSwimlanePlacementAnchorX } from './swimlaneDragMouseUtils';
-import { getTaskDuration } from './swimlaneDragTaskDuration';
+import { resolveActiveDragDurationParts } from './swimlaneDragTaskDuration';
 
 function escapeSelectorAttr(value: string): string {
   if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
@@ -71,13 +71,15 @@ function tryCellFromMousePosition(
   assigneeId: string,
   swimlaneElement: HTMLElement,
   mouseX: number,
+  draggableActiveId: string,
   taskId: string,
   taskPositions: Map<string, TaskPosition>,
   tasks: Task[],
   workingDaysCount: number
 ): CellPosition | null {
   try {
-    const taskDuration = getTaskDuration(taskId, taskPositions, tasks);
+    const taskDuration =
+      resolveActiveDragDurationParts(taskId, draggableActiveId, taskPositions, tasks) ?? 1;
     const swimlaneRect = swimlaneElement.getBoundingClientRect();
     const cell = calculateCellFromMouse(
       mouseX,
@@ -100,17 +102,27 @@ function tryResolveCellFromActiveElement(
   swimlaneElement: HTMLElement,
   draggableActiveId: string,
   taskPositions: Map<string, TaskPosition>,
+  tasks: Task[],
   workingDaysCount: number
 ): CellPosition | null {
-  const isTaskInPositions = taskPositions.has(parseSwimlaneTaskDraggableId(draggableActiveId).taskId);
+  const { taskId } = parseSwimlaneTaskDraggableId(draggableActiveId);
+  const isTaskInPositions = taskPositions.has(taskId);
   const activeElement = queryActiveDraggableElement(draggableActiveId);
   if (!isTaskInPositions || !activeElement || !swimlaneElement.contains(activeElement)) {
     return null;
   }
   try {
+    const taskDuration =
+      resolveActiveDragDurationParts(taskId, draggableActiveId, taskPositions, tasks) ?? 1;
     const cardRect = activeElement.getBoundingClientRect();
     const swimlaneRect = swimlaneElement.getBoundingClientRect();
-    const cell = calculateCellFromElement(cardRect, swimlaneRect, swimlaneElement, workingDaysCount);
+    const cell = calculateCellFromElement(
+      cardRect,
+      swimlaneRect,
+      swimlaneElement,
+      workingDaysCount,
+      taskDuration
+    );
     if (cell && isValidCell({ assigneeId, ...cell }, workingDaysCount)) {
       return { assigneeId, ...cell };
     }
@@ -194,6 +206,7 @@ function resolvePrimaryCellInSwimlane(input: {
       input.assigneeId,
       input.swimlaneElement,
       pointerX,
+      input.draggableActiveId,
       input.taskId,
       input.taskPositions,
       input.tasks,
@@ -211,6 +224,7 @@ function resolvePrimaryCellInSwimlane(input: {
       input.assigneeId,
       input.swimlaneElement,
       overlayLeft,
+      input.draggableActiveId,
       input.taskId,
       input.taskPositions,
       input.tasks,
@@ -226,6 +240,7 @@ function resolvePrimaryCellInSwimlane(input: {
     input.swimlaneElement,
     input.draggableActiveId,
     input.taskPositions,
+    input.tasks,
     input.workingDaysCount
   );
 }

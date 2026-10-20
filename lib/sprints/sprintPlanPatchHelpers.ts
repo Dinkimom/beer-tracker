@@ -147,7 +147,7 @@ function quotedText(text: string | undefined): string {
   return text ? `"${clipText(text)}"` : '(none)';
 }
 
-export interface SprintPlanPatchSummaryLookups {
+interface SprintPlanPatchSummaryLookups {
   goals?: ReadonlyMap<string, string>;
   notes?: ReadonlyMap<string, string>;
 }

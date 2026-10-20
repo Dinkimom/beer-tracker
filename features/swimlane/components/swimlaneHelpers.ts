@@ -181,7 +181,7 @@ export function resolveSwimlaneQuickAddLayoutState(input: {
   hideQuickAddPreview: boolean;
   hoverMinTaskLayers?: number;
   previewSpanLayers?: number;
-  quickAddFootprint: { durationCells: number; span: number };
+  quickAddFootprint: { durationCells: number; span: number; snapToDay?: boolean };
 } {
   const hasQuickAddDraftMode = resolveSwimlaneHasQuickAddDraftMode(
     input.tasks,
@@ -196,11 +196,7 @@ export function resolveSwimlaneQuickAddLayoutState(input: {
   return {
     hasQuickAddDraftMode,
     hideQuickAddPreview,
-    quickAddFootprint: resolveSwimlaneQuickAddPlacementFootprint(
-      input.placementTool === 'image' ||
-        input.placementTool === 'diagram' ||
-        input.placementTool === 'tictactoe'
-    ),
+    quickAddFootprint: resolveSwimlaneQuickAddPlacementFootprint(input.placementTool),
     ...resolveSwimlaneQuickAddRowGrowLayers({
       hideQuickAddPreview,
       hoverPreview: input.hoverPreview,

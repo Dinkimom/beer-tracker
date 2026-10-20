@@ -4,6 +4,7 @@ import { apiCache } from '@/lib/cache';
 
 import { invalidateCachedTrackerIssueLinks } from './trackerIssueLinksCache';
 import {
+  ISSUE_LINKS_BATCH_MAX_KEYS,
   listTrackerIssueLinkEdges,
   normalizeIssueKeysForLinkBatch,
   rememberHarvestedIssueLinks,
@@ -28,6 +29,8 @@ describe('trackerIssueLinksRouteHelpers', () => {
 
   it('normalizes and caps issue keys', () => {
     expect(normalizeIssueKeysForLinkBatch([' A-1 ', 'A-1', '', 'B-2'])).toEqual(['A-1', 'B-2']);
+    const many = Array.from({ length: ISSUE_LINKS_BATCH_MAX_KEYS + 5 }, (_, i) => `T-${i}`);
+    expect(normalizeIssueKeysForLinkBatch(many)).toHaveLength(ISSUE_LINKS_BATCH_MAX_KEYS);
   });
 
   it('maps a provider link to a from→to edge', () => {

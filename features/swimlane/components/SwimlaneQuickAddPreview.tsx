@@ -35,6 +35,7 @@ interface SwimlaneQuickAddPreviewProps {
   clipHeight: number;
   hasTaskOverlaps: boolean;
   iconName?: string;
+  isAvailabilityTool?: boolean;
   isDiagramTool?: boolean;
   isImageTool?: boolean;
   layerHeight: number;
@@ -76,6 +77,7 @@ export function SwimlaneQuickAddPreview({
   clipHeight,
   hasTaskOverlaps,
   iconName,
+  isAvailabilityTool = false,
   isDiagramTool = false,
   isImageTool = false,
   layerHeight,
@@ -86,6 +88,7 @@ export function SwimlaneQuickAddPreview({
 }: SwimlaneQuickAddPreviewProps) {
   const isDark = useDocumentDarkClass();
   const kind = resolveSwimlaneQuickAddPreviewKind({
+    isAvailabilityTool,
     isDiagramTool,
     isImageTool,
     isNoteTool: noteColor != null,

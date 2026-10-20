@@ -34,6 +34,7 @@ import {
   getTaskCardPaddingClasses,
 } from './taskCardLayoutHelpers';
 import {
+  buildTaskCardCardboardClass,
   buildTaskCardHoverShadowClasses,
   buildTaskCardRingClasses,
   buildTaskCardRootClassName,
@@ -194,6 +195,13 @@ function buildTaskCardRootVisualState(input: {
     input.task.pendingApproval === true
   );
   const radiusClass = getSwimlaneCardRadiusClass(input.isLocalImageCard, input.isLocalCommentDraft);
+  const hoverShadowClasses = buildTaskCardHoverShadowClasses(
+    input.effectiveIsLocalTask,
+    input.isDragging,
+    input.isResizing,
+    input.linkingActive,
+    input.isLocalCommentDraft
+  );
   const glowColor = resolveTaskCardHoverGlowColor({
     isDark: input.isDark,
     isLocalCommentDraft: input.isLocalCommentDraft,
@@ -216,13 +224,11 @@ function buildTaskCardRootVisualState(input: {
       contextMenuZClasses: input.isContextMenuOpen ? 'relative z-20' : '',
       cursorClass: input.cursorClass,
       dimmedClasses: input.dimmedByContextMenu ? getDimmedByContextMenuClasses(input.isSwimlane) : '',
-      hoverShadowClasses: buildTaskCardHoverShadowClasses(
-        input.effectiveIsLocalTask,
-        input.isDragging,
-        input.isResizing,
-        input.linkingActive,
-        input.isLocalCommentDraft
-      ),
+      hoverShadowClasses: `${hoverShadowClasses} ${buildTaskCardCardboardClass({
+        hoverShadowClass: hoverShadowClasses,
+        isLocalCommentDraft: input.isLocalCommentDraft,
+        isSwimlane: input.isSwimlane,
+      })}`.trim(),
       isResizing: input.isResizing,
       paddingClasses: input.paddingClasses,
       radiusClass,

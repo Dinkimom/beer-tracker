@@ -5,46 +5,50 @@
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 
+import { clampSwimlaneStartCell, swimlaneCellFromStartCell } from './clampSwimlaneStartCell';
+
 function cellFromRelativeX(
   relativeX: number,
   totalWidth: number,
-  workingDaysCount: number
+  workingDaysCount: number,
+  durationParts: number
 ): { day: number; part: number } | null {
   const maxDays = Math.max(1, workingDaysCount);
-  const totalCells = maxDays * getPartsPerDay();
+  const partsPerDay = getPartsPerDay();
+  const totalCells = maxDays * partsPerDay;
   if (totalWidth <= 0 || totalCells <= 0) return null;
   const cellWidth = totalWidth / totalCells;
   const rawIndex = Math.floor(relativeX / cellWidth);
-  const cellIndex = Math.max(0, Math.min(totalCells - 1, rawIndex));
-  const day = Math.floor(cellIndex / getPartsPerDay());
-  const part = cellIndex % getPartsPerDay();
-  return { day, part };
+  const cellIndex = clampSwimlaneStartCell(rawIndex, durationParts, totalCells);
+  return swimlaneCellFromStartCell(cellIndex, partsPerDay);
 }
 
 /**
  * Ячейка под курсором (clientX): `floor` — превью появляется при наведении на ячейку.
- * @param taskDuration зарезервировано под будущую логику (сейчас не используется); передаётся из DnD для стабильности API.
+ * `taskDuration` ограничивает старт так, чтобы карточка целиком оставалась в спринте.
  */
 export function calculateCellFromMouse(
   mouseX: number,
   swimlaneRect: DOMRect,
-  _taskDuration: number,
+  taskDuration: number,
   _swimlaneElement?: HTMLElement | null,
   workingDaysCount: number = WORKING_DAYS
 ): { day: number; part: number } | null {
   const relativeX = mouseX - swimlaneRect.left;
-  return cellFromRelativeX(relativeX, swimlaneRect.width, workingDaysCount);
+  return cellFromRelativeX(relativeX, swimlaneRect.width, workingDaysCount, taskDuration);
 }
 
 /**
  * Вычисляет позицию ячейки из левого края карточки относительно свимлейна.
+ * `taskDuration` — как у мыши: старт не дальше, чем позволяет длина карточки.
  */
 export function calculateCellFromElement(
   cardRect: DOMRect,
   swimlaneRect: DOMRect,
   _swimlaneElement?: HTMLElement | null,
-  workingDaysCount: number = WORKING_DAYS
+  workingDaysCount: number = WORKING_DAYS,
+  taskDuration: number = 1
 ): { day: number; part: number } | null {
   const cardLeftX = cardRect.left - swimlaneRect.left;
-  return cellFromRelativeX(cardLeftX, swimlaneRect.width, workingDaysCount);
+  return cellFromRelativeX(cardLeftX, swimlaneRect.width, workingDaysCount, taskDuration);
 }

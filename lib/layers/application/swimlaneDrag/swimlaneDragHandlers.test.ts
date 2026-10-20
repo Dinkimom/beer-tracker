@@ -426,6 +426,39 @@ describe('createSwimlaneDragEndHandler', () => {
     expect(onPositionUpdate).not.toHaveBeenCalled();
     expect(state.resetDragState).toHaveBeenCalled();
   });
+
+  it('clamps a wide card to the rightmost start that still fits in the sprint', () => {
+    mockCalculateCell.mockReturnValue({ assigneeId: 'dev1', day: 9, part: 2 });
+    const state = dragState();
+    const onPositionUpdate = vi.fn();
+    const handler = createSwimlaneDragEndHandler({
+      tasks: [task({ id: 't1' })],
+      taskPositions: new Map([
+        [
+          't1',
+          {
+            taskId: 't1',
+            assignee: 'dev1',
+            startDay: 0,
+            startPart: 0,
+            duration: 3,
+          },
+        ],
+      ]),
+      dragState: state,
+      onPositionDelete: vi.fn(),
+      onPositionUpdate,
+      updateXarrow: vi.fn(),
+    });
+    handler(dragEnd({}));
+    expect(onPositionUpdate).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({
+        startDay: 9,
+        startPart: 0,
+      })
+    );
+  });
 });
 
 describe('createSwimlaneDragStartHandler', () => {
