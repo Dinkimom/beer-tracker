@@ -2,6 +2,28 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.18.0] — 2026-10-20
+
+### English
+
+- New **Metrics** sprint tab: board dashboard by quarter with say/do, velocity, cycle time, carry-over and bug share, charts, a per-sprint table, team and period filters and CSV export. Facts for finished sprints are frozen in `sprint_metrics`; for an existing DB run `database/add-sprint-metrics.sql`. Also on `/demo/planner`.
+- Agent sessions: send the agent a request from the task card menu, the note menu or ✨ in the bottom toolbar. The chat supports `@` mentions of tasks and people, 💬 comments on draft items, «Ask to redo» and a session feed. New MCP tools `list_agent_sessions`, `get_agent_session`, `reply_agent_session`; `propose_plan_patch` accepts `sessionId`, `replies`, `draftMessage`, `intent`.
+- Plan drafts are private: card and goal previews, draft notes and the pending proposal are visible only to their owner, one pending draft per user per sprint. For an existing DB run `database/add-agent-sessions.sql`.
+- Optional local agent bridge (`pnpm agent-bridge`, settings in `.env.agent-bridge.local`) starts the CLI agent when a session is waiting for it; it may read and propose, never apply.
+- Jira: moving an issue into a sprint also sets the simple `field = value` conditions from the board JQL filter (e.g. Team), so the issue shows up on the board.
+- Softer sticky note palette in light and dark themes; note reactions are no longer covered by cards in the next row.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.18.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Новая вкладка спринтов **«Метрики»**: дашборд доски по кварталам — say/do, velocity, cycle time, перенос и доля багов, графики, таблица по спринтам, фильтры команды и периода, выгрузка CSV. Факты закончившихся спринтов замораживаются в `sprint_metrics`; для существующей БД — `database/add-sprint-metrics.sql`. Есть и на `/demo/planner`.
+- Сессии с агентом: просьба агенту из меню карточки задачи, меню заметки или кнопкой ✨ в нижнем тулбаре. В чате — `@`-упоминания задач и людей, 💬 к пунктам драфта, «Попросить переделать» и лента сессии. Новые MCP-тулы `list_agent_sessions`, `get_agent_session`, `reply_agent_session`; `propose_plan_patch` принимает `sessionId`, `replies`, `draftMessage`, `intent`.
+- Драфты плана приватны: превью карточек и целей, черновые заметки и неподтверждённый драфт видит только владелец, один драфт на пользователя в спринте. Для существующей БД — `database/add-agent-sessions.sql`.
+- Опциональный локальный мост агента (`pnpm agent-bridge`, настройки в `.env.agent-bridge.local`) запускает CLI-агента, когда сессия ждёт агента; только чтение и propose, без apply.
+- Jira: при переносе задачи в спринт проставляются простые условия `поле = значение` из JQL-фильтра доски (например, Team), чтобы задача была видна на доске.
+- Палитра заметок мягче в светлой и тёмной теме; реакции заметки больше не перекрываются карточками следующей строки.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.18.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.17.5] — 2026-10-20
 
 ### English
