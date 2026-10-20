@@ -2,7 +2,7 @@
 name: release-publish
 description: >-
   Bumps Beer Tracker semver, creates a GitHub Release on the public remote, and
-  publishes linux/arm64 Docker Hub images. Use when the user asks to release,
+  publishes multi-arch Docker Hub images. Use when the user asks to release,
   bump version, publish Docker images, push to Docker Hub, create a GitHub
   release, or run pnpm release for a new version.
 ---
@@ -42,7 +42,7 @@ Update pins to `VERSION`:
 
 1. `docker-compose.hub.yml` — default `${BEER_TRACKER_TAG:-VERSION}` for `app` and `sync-worker`, and the comment that mentions the pinned release.
 2. `README.md` — sentence that names the release tag (replace the previous pin).
-3. `CHANGELOG.md` — new top section `## [VERSION] — YYYY-MM-DD` (English then Russian), brief bullets for commits since the previous tag. Settings → version shows the latest product bullets from this file. Keep the Docker Hub publish line (`Docker Hub images` / `Образы Docker Hub`) and name `linux/arm64` only; that screen omits the line.
+3. `CHANGELOG.md` — new top section `## [VERSION] — YYYY-MM-DD` (English then Russian), brief bullets for commits since the previous tag. Settings → version shows the latest product bullets from this file. Keep the Docker Hub publish line (`Docker Hub images` / `Образы Docker Hub`); that screen omits it.
 
 Commit prep separately if needed:
 
@@ -88,11 +88,13 @@ Images:
 - `dinkimom/beer-tracker` (Dockerfile target `runner`)
 - `dinkimom/beer-tracker-sync-worker` (target `sync-worker`)
 
-Tags: `${VERSION}` and `latest`. Both are a single platform, `linux/arm64`. Do not build or push `linux/amd64` or `${VERSION}-amd64`.
+Tags: `${VERSION}`, `latest`, plus platform tags `${VERSION}-arm64` / `${VERSION}-amd64`.
+
+Platforms: `linux/arm64` and `linux/amd64`. Build **one platform at a time** (parallel multi-arch OOMs on this machine).
 
 Use builder `hub-push` (docker-container driver). Details and retry recipes: [docker-hub.md](docker-hub.md).
 
-After push, confirm each version tag is `linux/arm64` and has no `linux/amd64` manifest:
+After push, confirm both platforms on the version tag:
 
 ```bash
 docker buildx imagetools inspect "dinkimom/beer-tracker:${VERSION}"
@@ -105,12 +107,12 @@ Return:
 
 - New version and tag `vX.Y.Z`
 - GitHub Release URL
-- Hub repos + tags (`VERSION`, `latest`, `linux/arm64` only)
+- Hub repos + tags (`VERSION`, `latest`, amd64+arm64)
 - Any step that was skipped or needs a manual `docker login`
 
 ## Do not
 
 - Skip asking for bump type when it was not given.
 - Push release tags only to `origin` when `public` exists.
-- Build or push `linux/amd64`. Tags `VERSION` and `latest` are `linux/arm64` only; say that in the report and in the changelog line.
+- Publish `VERSION` / `latest` without `linux/amd64`. Cloud Run runs amd64 only; an arm64-only image fails there with `exec format error`.
 - Commit unrelated dirty files into the release commit.

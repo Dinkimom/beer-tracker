@@ -10,7 +10,7 @@ Notable changes to Beer Tracker, newest first. English first, then Russian.
 - Issue keys in sticky note text (e.g. `PROJ-12`) render as links.
 - A ✅ quick reaction paints the sticky note green; color changes play a short pop (respects reduced motion).
 - Issue links batch requests are split into chunks within the API limit, so large boards load all links.
-- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.17.5` and `latest` (`linux/arm64`).
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.17.5` and `latest` (`linux/amd64`, `linux/arm64`).
 
 ### Русский
 
@@ -18,7 +18,7 @@ Notable changes to Beer Tracker, newest first. English first, then Russian.
 - Ключи задач в тексте заметки (например, `PROJ-12`) становятся ссылками.
 - Быстрая реакция ✅ красит заметку в зелёный; смена цвета — с коротким подскоком (с учётом reduced motion).
 - Batch-запрос связей задач режется на чанки в пределах лимита API, на больших досках подгружаются все связи.
-- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.17.5` и `latest` (`linux/arm64`).
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.17.5` и `latest` (`linux/amd64`, `linux/arm64`).
 
 ## [1.17.4] — 2026-10-19
 

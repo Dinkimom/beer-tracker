@@ -277,7 +277,7 @@ Deprecated (не развивать): `feature-planner`, `quarterly-planning-v2`
 
 ## 10. Запуск и качество
 
-Готовые образы: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker) (теги `latest` и версия релиза, `linux/arm64`).
+Готовые образы: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker) (теги `latest` и версия релиза, `linux/amd64` + `linux/arm64`).
 
 ```bash
 cp env.example .env

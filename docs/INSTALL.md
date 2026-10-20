@@ -6,7 +6,7 @@
 
 ## Готовый образ (Docker Hub)
 
-Образы: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) — последняя публикация, платформа `linux/arm64`.
+Образы: [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker) и воркер [`dinkimom/beer-tracker-sync-worker`](https://hub.docker.com/r/dinkimom/beer-tracker-sync-worker). Тег [`latest`](https://hub.docker.com/r/dinkimom/beer-tracker/tags) — последняя публикация; в каждом теге есть `linux/amd64` и `linux/arm64`.
 
 ```bash
 cp env.example .env
