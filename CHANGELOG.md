@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.18.1] — 2026-10-21
+
+### English
+
+- Swimlane links: new setting «Links visible without hover» — all, important only (blockers and links drawn in the planner) or on hover only. Blockers that break the schedule always stay visible; hidden links show as a «+N» badge on the card.
+- Agent sessions: while the Claude CLI bridge works, the «Waiting for agent» bubble shows the current step and elapsed time. Agent replies are signed with the MCP client (Claude, Cursor…); for an existing DB run `database/add-agent-sessions.sql`. «End session» is now «Clear chat».
+- Agent bridge: CLI model is set by `AGENT_BRIDGE_MODEL` (default `sonnet`).
+- Task card opens for issues outside synced sprints: the API falls back to the live tracker issue when there is no snapshot.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.18.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Связи свимлейна: новая настройка «Какие связи видны без наведения» — все, только важные (блокировки и связи, нарисованные в планере) или только при наведении. Блокировки, нарушающие план, видны всегда; скрытые связи — бейдж «+N» на карточке.
+- Сессии с агентом: пока мост Claude CLI работает, пузырь «Ждёт агента» показывает текущий шаг и сколько прошло времени. Ответы агента подписаны клиентом MCP (Claude, Cursor…); для существующей БД — `database/add-agent-sessions.sql`. «Завершить сессию» стала «Очистить чат».
+- Мост агента: модель CLI задаётся `AGENT_BRIDGE_MODEL` (по умолчанию `sonnet`).
+- Карточка задачи открывается и для задач вне синкнутых спринтов: без снапшота API берёт живую задачу из трекера.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.18.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.18.0] — 2026-10-20
 
 ### English
