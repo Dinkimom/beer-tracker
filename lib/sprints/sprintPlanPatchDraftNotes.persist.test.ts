@@ -43,7 +43,11 @@ describe('persistProposedCreateNotes', () => {
       sprintId: 42,
     });
 
-    expect(clearPending).toHaveBeenCalledWith({ sprintId: 42 });
+    // Драфты приватны: снимаем только свои прошлые черновые заметки.
+    expect(clearPending).toHaveBeenCalledWith({
+      ownerId: '11111111-1111-4111-8111-111111111111',
+      sprintId: 42,
+    });
     expect(insert).toHaveBeenCalledTimes(1);
     expect(insert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -74,7 +78,10 @@ describe('persistProposedCreateNotes', () => {
       sprintId: 7,
     });
 
-    expect(clearPending).toHaveBeenCalledWith({ sprintId: 7 });
+    expect(clearPending).toHaveBeenCalledWith({
+      ownerId: '11111111-1111-4111-8111-111111111111',
+      sprintId: 7,
+    });
     expect(insert).not.toHaveBeenCalled();
     expect(ids).toEqual([]);
   });

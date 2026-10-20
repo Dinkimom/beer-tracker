@@ -63,7 +63,11 @@ export async function GET(
       attachSegmentsToPositions(positions, segmentsByTask);
     }
     const planAnchors = await listPlanAnchorsForSprint({ organizationId, sprintId });
-    const planPatchPreviews = await listPlanPatchPositionPreviews({ organizationId, sprintId });
+    const planPatchPreviews = await listPlanPatchPositionPreviews({
+      organizationId,
+      ownerId: tenantResult.ctx.userId,
+      sprintId,
+    });
 
     return NextResponse.json({ planAnchors, planPatchPreviews, positions });
   } catch (error) {

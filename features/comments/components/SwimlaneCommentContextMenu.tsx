@@ -60,6 +60,8 @@ interface SwimlaneCommentContextMenuProps {
   position: { x: number; y: number };
   task?: Task | null;
   variant?: 'diagram' | 'image' | 'note' | 'widget';
+  /** «Попросить агента» по заметке: её текст уходит агенту как контекст. */
+  onAskAgent?: () => void;
   onAssigneeSelect?: (assigneeId: string) => void;
   onClose: () => void;
   onConvertToTask?: () => void;
@@ -81,6 +83,7 @@ export function SwimlaneCommentContextMenu({
   assigneeOptions = null,
   task = null,
   noteColor,
+  onAskAgent,
   onAssigneeSelect,
   onClose,
   onConvertToTask,
@@ -197,6 +200,7 @@ export function SwimlaneCommentContextMenu({
                 <span>{t('sprintPlanner.contextMenu.convertNoteToTask')}</span>
               </Button>
             )}
+            {renderAskAgentRow(onAskAgent, t)}
             {onCopy ? (
               <Button
                 className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
@@ -336,5 +340,23 @@ function renderSwimlaneCommentParentSubmenu(input: {
       onSelect={input.onSelect}
       onToggle={input.onToggle}
     />
+  );
+}
+
+function renderAskAgentRow(onAskAgent: (() => void) | undefined, t: (key: string) => string) {
+  if (!onAskAgent) {
+    return null;
+  }
+  return (
+    <Button
+      className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
+      data-note-ask-agent=""
+      type="button"
+      variant="ghost"
+      onClick={onAskAgent}
+    >
+      <Icon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" name="sparkles" />
+      <span>{t('agentSession.menuAria')}</span>
+    </Button>
   );
 }

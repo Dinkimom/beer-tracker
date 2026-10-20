@@ -117,6 +117,7 @@ export function GoalsList({
                 {preview ? (
                   <GoalPlanPatchToolbar
                     preview={preview}
+                    sprintId={sprintId}
                     onApprove={(goalId) => {
                       decisions.approve(goalId).catch(() => undefined);
                     }}
@@ -166,6 +167,7 @@ export function GoalsList({
               />
               <GoalPlanPatchToolbar
                 preview={preview}
+                sprintId={sprintId}
                 onApprove={(goalId) => {
                   decisions.approve(goalId).catch(() => undefined);
                 }}

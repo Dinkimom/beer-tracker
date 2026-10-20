@@ -68,6 +68,8 @@ pool.on('error', (err) => {
 
 const BEER_TRACKER_TABLES = [
   'admins',
+  'agent_session_messages',
+  'agent_sessions',
   'analytics_events',
   'comment_reactions',
   'comments',

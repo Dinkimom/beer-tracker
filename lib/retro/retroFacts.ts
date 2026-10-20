@@ -142,7 +142,7 @@ interface StatusWalk {
   visits: StatusVisit[];
 }
 
-interface IssueRow {
+interface RetroFactIssueRow {
   added: boolean;
   closed: boolean;
   closedWithoutTransition: boolean;
@@ -383,7 +383,7 @@ function flowNumbersForClosed(
   closed: boolean,
   sprintStartMs: number,
   windowEndMs: number
-): Pick<IssueRow, 'codingDays' | 'cycleDays' | 'dwell' | 'waitingDays'> {
+): Pick<RetroFactIssueRow, 'codingDays' | 'cycleDays' | 'dwell' | 'waitingDays'> {
   if (!closed || !walk.hasStatusHistory) {
     return { codingDays: 0, cycleDays: null, dwell: {}, waitingDays: 0 };
   }
@@ -396,7 +396,12 @@ function flowNumbersForClosed(
   };
 }
 
-function analyzeIssue(issue: RetroFactIssue, sprint: RetroFactsSprint, windowEndMs: number): IssueRow {
+/** Разбор одной задачи: закрытие в окне спринта, cycle time, время ожидания по стадиям. */
+export function analyzeRetroFactIssue(
+  issue: RetroFactIssue,
+  sprint: RetroFactsSprint,
+  windowEndMs: number
+): RetroFactIssueRow {
   const planningCutMs = sprint.startMs + MS_PER_DAY;
   const membership = membershipOf(issue.createdAt, planningCutMs);
   const walk = walkStatuses(issue.changelog, windowEndMs);
@@ -423,7 +428,7 @@ function analyzeIssue(issue: RetroFactIssue, sprint: RetroFactsSprint, windowEnd
   };
 }
 
-function stageStats(rows: IssueRow[]): RetroFactsStageStat[] {
+function stageStats(rows: RetroFactIssueRow[]): RetroFactsStageStat[] {
   const stats: RetroFactsStageStat[] = [];
   for (const stage of RETRO_QUEUE_STAGES) {
     const values = rows
@@ -438,7 +443,7 @@ function stageStats(rows: IssueRow[]): RetroFactsStageStat[] {
   return stats;
 }
 
-function flowOf(rows: IssueRow[]): RetroFactsFlow | null {
+function flowOf(rows: RetroFactIssueRow[]): RetroFactsFlow | null {
   const population = rows.filter((row) => row.closed && !row.missingStatusHistory);
   if (population.length === 0) return null;
   const codingValues = population.map((row) => row.codingDays);
@@ -455,7 +460,7 @@ function flowOf(rows: IssueRow[]): RetroFactsFlow | null {
   };
 }
 
-function outliersOf(rows: IssueRow[], cycleTime: RetroDurationStat | null): RetroFactsOutlier[] {
+function outliersOf(rows: RetroFactIssueRow[], cycleTime: RetroDurationStat | null): RetroFactsOutlier[] {
   if (!cycleTime) return [];
   return rows
     .filter((row) => row.cycleDays != null && row.cycleDays > cycleTime.p90Days)
@@ -463,19 +468,23 @@ function outliersOf(rows: IssueRow[], cycleTime: RetroDurationStat | null): Retr
     .sort((left, right) => right.days - left.days);
 }
 
+/** Эпики и QA-подзадачи не входят в поставку спринта. */
+export function isRetroExcludedType(type: string | undefined): boolean {
+  return EXCLUDED_TYPES.has(normalizeStatusKey(type ?? ''));
+}
+
 export function selectRetroFactTasks(tasks: Task[]): Task[] {
   return tasks.filter((task) => {
     if (task.isLocalTask || task.localDraftKind) return false;
     if (task.id.startsWith('comment:')) return false;
     if (task.team === 'QA') return false;
-    const type = normalizeStatusKey(task.type ?? '');
-    return !EXCLUDED_TYPES.has(type);
+    return !isRetroExcludedType(task.type);
   });
 }
 
 export function computeRetroFacts(input: RetroFactsInput): RetroFacts {
   const windowEndMs = Math.min(input.sprint.endMs, input.nowMs);
-  const rows = input.issues.map((issue) => analyzeIssue(issue, input.sprint, windowEndMs));
+  const rows = input.issues.map((issue) => analyzeRetroFactIssue(issue, input.sprint, windowEndMs));
   const cycleValues = rows
     .map((row) => row.cycleDays)
     .filter((days): days is number => days != null);

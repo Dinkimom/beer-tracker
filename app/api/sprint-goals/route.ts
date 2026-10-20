@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
       goalPreviews = await listPlanPatchGoalPreviews({
         goalType,
         organizationId,
+        ownerId: tenantResult.ctx.userId,
         sprintId,
       });
     } catch (error) {

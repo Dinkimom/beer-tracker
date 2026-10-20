@@ -32,7 +32,7 @@ import { computeMainPagePlannerAccessDenied } from './mainPagePlannerAccessDenie
 import { useMainPageClientData } from './useMainPageClientData';
 import { usePlannerDocumentTitle } from './usePlannerDocumentTitle';
 
-const sprintTabParser = parseAsStringLiteral(['backlog', 'board', 'burndown', 'retro']).withDefault('board');
+const sprintTabParser = parseAsStringLiteral(['backlog', 'board', 'burndown', 'metrics', 'retro']).withDefault('board');
 
 /**
  * После первого подъёма MainPageClient в этой вкладке не показываем полноэкранный лоадер при remount
@@ -256,7 +256,8 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
                     activeTab === 'board' ||
                     activeTab === 'retro' ||
                     activeTab === 'backlog' ||
-                    activeTab === 'burndown'
+                    activeTab === 'burndown' ||
+                    activeTab === 'metrics'
                       ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
                       : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header'
                   }

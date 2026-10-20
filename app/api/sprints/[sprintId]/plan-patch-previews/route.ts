@@ -44,6 +44,7 @@ export async function POST(
     }
     const count = await approvePlanPatchPositionPreviews({
       organizationId: tenantResult.ctx.organizationId,
+      ownerId: tenantResult.ctx.userId,
       sprintId,
       taskId: parsed.data.taskId,
     });
@@ -74,6 +75,7 @@ export async function DELETE(
     const taskId = readTaskId(request);
     const count = await rejectPlanPatchPositionPreviews({
       organizationId: tenantResult.ctx.organizationId,
+      ownerId: tenantResult.ctx.userId,
       sprintId,
       taskId,
     });

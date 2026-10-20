@@ -21,6 +21,16 @@ import {
 } from '@/lib/comments/stickyNoteColor';
 
 /**
+ * Открытый чат агента и откуда его открыли: задача (меню карточки), заметка (меню заметки),
+ * спринт целиком (✨ в тулбаре) или просто текущая сессия (кнопка «Чат» на острове агента).
+ */
+export type AgentRequestTarget =
+  | { kind: 'note'; noteId: string; text: string }
+  | { kind: 'session' }
+  | { kind: 'sprint' }
+  | { kind: 'task'; task: Task };
+
+/**
  * UI-состояние планера спринта (MobX).
  * Сюда по мере рефакторинга переносим флаги из useState/пропсов.
  */
@@ -94,6 +104,9 @@ export class SprintPlannerUiStore {
   /** Модалка «учёт работ» по задаче. */
   accountWorkModal: Task | null = null;
 
+  /** Чат агента открыт (не null) и откуда: задача, заметка, спринт или текущая сессия. */
+  agentRequestTarget: AgentRequestTarget | null = null;
+
   /** Правый сайдер с информацией о задаче (контекстное меню → «Информация о задаче»). */
   taskInfoPanelTask: Task | null = null;
 
@@ -122,6 +135,7 @@ export class SprintPlannerUiStore {
     );
     makeObservable(this, {
       accountWorkModal: observable,
+      agentRequestTarget: observable.ref,
       clearNoteEditPreview: action.bound,
       cardLayoutRevision: observable,
       clearStickyNoteCardRowOverride: action.bound,
@@ -164,6 +178,7 @@ export class SprintPlannerUiStore {
       segmentEditTaskId: observable,
       sessionId: observable,
       setAccountWorkModal: action.bound,
+      setAgentRequestTarget: action.bound,
       setContextMenu: action.bound,
       setContextMenuTaskId: action.bound,
       setGlobalNameFilter: action.bound,
@@ -385,6 +400,10 @@ export class SprintPlannerUiStore {
     this.accountWorkModal = task;
   }
 
+  setAgentRequestTarget(target: AgentRequestTarget | null): void {
+    this.agentRequestTarget = target;
+  }
+
   openTaskInfoPanel(task: Task): void {
     this.taskInfoPanelTask = task;
     this.closeContextMenu();
@@ -462,6 +481,7 @@ export class SprintPlannerUiStore {
     this.localTaskResizeDiscardEpoch += 1;
     this.cardLayoutRevision += 1;
     this.accountWorkModal = null;
+    this.agentRequestTarget = null;
     this.taskInfoPanelTask = null;
     this.placementTool = 'cursor';
   }

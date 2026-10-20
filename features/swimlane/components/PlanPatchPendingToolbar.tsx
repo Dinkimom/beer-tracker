@@ -8,6 +8,8 @@ import { planPatchPreviewCaptionText } from '@/lib/sprints/sprintPlanPatchPositi
 
 import { usePlanPatchPreviewDecisions } from '../hooks/usePlanPatchPreviewDecisions';
 
+import { DraftItemCommentButton } from './DraftItemCommentButton';
+
 export function planPatchCaptionTone(
   preview: Pick<PlanPatchPositionPreview, 'changes' | 'remove'>
 ): { className: string; icon: string | null } {
@@ -52,6 +54,14 @@ export function PlanPatchPendingToolbar({
     <TaskBarPendingApprovalToolbar
       clientBrand={preview.clientBrand}
       commentId={preview.taskId}
+      extraAction={
+        <DraftItemCommentButton
+          sprintId={sprintId}
+          targetId={preview.taskId}
+          targetKind="position"
+          targetLabel={`${preview.taskId} · ${label}`}
+        />
+      }
       label={label}
       labelClassName={tone.className}
       labelIcon={tone.icon}

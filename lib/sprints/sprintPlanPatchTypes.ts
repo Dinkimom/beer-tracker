@@ -108,6 +108,8 @@ export interface SprintPlanPatchContentChange {
 }
 
 export interface SprintPlanPatchProposeResult {
+  /** Agent session the draft was recorded in (absent for dry-run). */
+  agentSession?: { draftVersion: number; repliesRecorded: number; sessionId: string };
   applyToken: string;
   capacityPreview: { summary: string };
   /** Before/after text for note and goal ops in this proposal. */

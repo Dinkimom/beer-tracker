@@ -2,7 +2,15 @@ import type { SprintTimerState } from './sprintTimerState';
 import type { Task } from '@/types';
 
 /** Ресурсы свимлейна, которые клиент перезапрашивает после события. */
-export type SprintRealtimeResource = 'comments' | 'goals' | 'links' | 'positions' | 'reactions' | 'retro' | 'tasks';
+export type SprintRealtimeResource =
+  | 'agentSessions'
+  | 'comments'
+  | 'goals'
+  | 'links'
+  | 'positions'
+  | 'reactions'
+  | 'retro'
+  | 'tasks';
 
 export interface SprintRealtimeIssueStatus {
   issueKey: string;

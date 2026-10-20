@@ -7,6 +7,7 @@ import { buildDemoBurndownPayload } from './demoFixtureBurndown';
 import { handleDemoMisc } from './demoFixtureRouterMisc';
 import { handleDemoPositions } from './demoFixtureRouterPositions';
 import { demoPlannerIntegrationRules } from './demoFixtureSeed';
+import { buildDemoBoardSprintMetrics } from './demoFixtureSprintMetrics';
 import {
   getDemoFixtureStore,
   replaceDemoFeatureLanes,
@@ -102,10 +103,13 @@ function handleAuthSession(): DemoFixtureResult {
   });
 }
 
-function handleBoards(path: string, method: string): DemoFixtureResult | null {
+function handleBoards(path: string, method: string, params: URLSearchParams): DemoFixtureResult | null {
   const store = getDemoFixtureStore();
   if (path === '/boards' && method === 'get') {
     return ok([store.board]);
+  }
+  if (path === `/boards/${DEMO_BOARD_ID}/sprint-metrics` && method === 'get') {
+    return ok(buildDemoBoardSprintMetrics(Number(params.get('quarters') ?? 4)));
   }
   const boardMatch = path.match(/^\/boards\/(\d+)$/);
   if (boardMatch && method === 'get') {
@@ -272,6 +276,14 @@ function handleSprintExtras(path: string, method: string): DemoFixtureResult | n
   return null;
 }
 
+/** В демо агента нет — сессий с ним тоже. */
+function handleAgentSessions(path: string, method: string): DemoFixtureResult | null {
+  if (matchSprintId(path, 'agent-sessions') != null) {
+    return ok(method === 'get' ? { draftSessionId: null, sessions: [] } : { ok: true });
+  }
+  return path.startsWith('/agent-sessions/') ? ok({ ok: true }) : null;
+}
+
 function handleTeamsAndRules(path: string, method: string): DemoFixtureResult | null {
   const store = getDemoFixtureStore();
   if (path === '/teams/members' && method === 'get') {
@@ -303,7 +315,7 @@ export function handleDemoFixtureRequest(config: InternalAxiosRequestConfig): De
   }
 
   const handlers: Array<() => DemoFixtureResult | null> = [
-    () => handleBoards(path, method),
+    () => handleBoards(path, method, params),
     () => handleSprintsList(path, method, params),
     () => handleTracker(path, method, params),
     () => handleBacklog(path, method, params),
@@ -315,6 +327,7 @@ export function handleDemoFixtureRequest(config: InternalAxiosRequestConfig): De
     () => handleFeatureLanes(path, method, body),
     () => handleSprintExtras(path, method),
     () => handleTeamsAndRules(path, method),
+    () => handleAgentSessions(path, method),
     () => handleDemoMisc(path, method, params),
   ];
 

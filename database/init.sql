@@ -96,7 +96,8 @@ CREATE TABLE public.plan_patch_position_previews (
     client_brand VARCHAR(16) NOT NULL DEFAULT '',
     segments JSONB,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    PRIMARY KEY (organization_id, sprint_id, task_id)
+    owner_id VARCHAR(255) NOT NULL DEFAULT '',
+    PRIMARY KEY (organization_id, sprint_id, owner_id, task_id)
 );
 
 CREATE INDEX idx_plan_patch_position_previews_sprint
@@ -115,13 +116,53 @@ CREATE TABLE public.plan_patch_goal_previews (
     done BOOLEAN NOT NULL DEFAULT FALSE,
     client_brand VARCHAR(16) NOT NULL DEFAULT '',
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    PRIMARY KEY (organization_id, sprint_id, goal_id)
+    owner_id VARCHAR(255) NOT NULL DEFAULT '',
+    PRIMARY KEY (organization_id, sprint_id, owner_id, goal_id)
 );
 
 CREATE INDEX idx_plan_patch_goal_previews_sprint
     ON public.plan_patch_goal_previews (organization_id, sprint_id);
 
 COMMENT ON TABLE public.plan_patch_goal_previews IS 'Предложения propose_plan_patch по целям спринта до apply';
+
+CREATE TABLE public.agent_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
+    sprint_id INTEGER NOT NULL,
+    owner_id VARCHAR(255) NOT NULL,
+    task_id VARCHAR(255),
+    title TEXT NOT NULL,
+    context JSONB NOT NULL DEFAULT '{}'::jsonb,
+    origin VARCHAR(16) NOT NULL CHECK (origin IN ('planner', 'agent')),
+    status VARCHAR(16) NOT NULL CHECK (status IN ('waiting_agent', 'waiting_user', 'closed')),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    closed_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX idx_agent_sessions_owner ON public.agent_sessions (organization_id, owner_id, status);
+CREATE INDEX idx_agent_sessions_sprint ON public.agent_sessions (organization_id, sprint_id);
+
+COMMENT ON TABLE public.agent_sessions IS 'Сессии работы с агентом: просьба из планера или чата, драфты и переписка; приватны владельцу';
+
+CREATE TABLE public.agent_session_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID NOT NULL REFERENCES public.agent_sessions (id) ON DELETE CASCADE,
+    author_kind VARCHAR(8) NOT NULL CHECK (author_kind IN ('user', 'agent')),
+    author_id VARCHAR(255),
+    kind VARCHAR(16) NOT NULL CHECK (kind IN ('request', 'comment', 'redo', 'message', 'draft', 'reply')),
+    text TEXT NOT NULL,
+    target_kind VARCHAR(16) CHECK (target_kind IN ('position', 'goal', 'note')),
+    target_id VARCHAR(255),
+    target_label TEXT,
+    proposal_id VARCHAR(64),
+    reply_to UUID REFERENCES public.agent_session_messages (id) ON DELETE CASCADE,
+    resolution VARCHAR(16) CHECK (resolution IN ('addressed', 'declined')),
+    mentions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_agent_session_messages_session ON public.agent_session_messages (session_id, created_at);
 
 CREATE TABLE public.task_links (
     id VARCHAR(255) PRIMARY KEY,
@@ -313,6 +354,23 @@ CREATE TRIGGER update_retro_boards_updated_at
     FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 COMMENT ON TABLE public.retro_boards IS 'Доска ретро спринта: колонки и карточки';
+
+CREATE TABLE public.sprint_metrics (
+    organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
+    board_id INTEGER NOT NULL,
+    sprint_id INTEGER NOT NULL,
+    sprint_name TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    open BOOLEAN NOT NULL,
+    frozen BOOLEAN NOT NULL,
+    formula_version INTEGER NOT NULL,
+    facts JSONB NOT NULL,
+    computed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (organization_id, board_id, sprint_id)
+);
+
+COMMENT ON TABLE public.sprint_metrics IS 'Факты по задачам спринта для дашборда метрик; закончившиеся спринты заморожены';
 
 CREATE TABLE public.retro_column_templates (
     organization_id UUID PRIMARY KEY REFERENCES public.organizations (id) ON DELETE CASCADE,

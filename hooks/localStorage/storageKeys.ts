@@ -21,6 +21,8 @@ export const STORAGE_KEYS = {
   THEME: 'beer-tracker-theme',
   LANGUAGE: 'beer-tracker-language',
   CHRISTMAS_THEME: 'beer-tracker-christmas-theme',
+  /** Звать локальный мост к Claude CLI (`pnpm agent-bridge`), когда сессия ждёт агента */
+  AGENT_BRIDGE_ENABLED: 'beer-tracker-agent-bridge-enabled',
   TRACKER_TOKEN: TRACKER_OAUTH_LOCAL_STORAGE_KEY,
   /** CalDAV Mail.ru (URL + app-password) по id исполнителя — только localStorage */
   DEVELOPER_CALDAV_CREDENTIALS: DEVELOPER_CALDAV_CREDENTIALS_STORAGE_KEY,

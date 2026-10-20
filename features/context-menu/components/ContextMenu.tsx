@@ -26,6 +26,7 @@ import {
 } from '@/features/context-menu/contextMenuClasses';
 import { resolveContextMenuQuickActionsAlignClass } from '@/features/context-menu/utils/resolveContextMenuViewportPosition';
 import { getPositionEffectiveDuration } from '@/features/sprint/utils/occupancyUtils';
+import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
 import { useFollowAnchorRectByElementId } from '@/hooks/useFollowAnchorRect';
 import { useThemeStorage } from '@/hooks/useLocalStorage';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
@@ -58,6 +59,8 @@ interface ContextMenuProps {
   task: Task;
   taskPositions?: Map<string, TaskPosition>;
   onAccountWork?: (task: Task) => void;
+  /** «Агенту»: окно с просьбой, которая уходит в чат агента вместе с контекстом задачи. */
+  onAskAgent?: (task: Task) => void;
   onAssigneeSelect?: (assigneeId: string) => void;
   onClose: () => void;
   onCloseByClickOutside?: () => void;
@@ -90,6 +93,7 @@ export function ContextMenu({
   onStartLinking,
   assigneeOptions = null,
   onAccountWork,
+  onAskAgent,
   onAssigneeSelect,
   onUpdateEstimate,
   onCloseByClickOutside,
@@ -101,6 +105,7 @@ export function ContextMenu({
   isKanbanView = false,
 }: ContextMenuProps) {
   const { t } = useI18n();
+  const agentAvailable = useAgentAvailable(currentSprintId);
   const tracker = useTrackerWebUrlContext();
   const { supportsRelatedIssues } = useIssueTrackerProviderCapabilities();
   useThemeStorage();
@@ -238,6 +243,26 @@ export function ContextMenu({
             </Button>
           ) : null}
           <ContextMenuCopyQuickActions task={task} tracker={tracker} />
+          {onAskAgent && agentAvailable && !isBacklogTask && currentSprintId !== null ? (
+            <Button
+              aria-label={t('agentSession.menuAria')}
+              className="inline-flex min-h-11 min-w-[52px] flex-col gap-0.5 border-0 bg-transparent px-1.5 py-1 text-gray-500 shadow-none hover:!bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:!bg-gray-700 dark:hover:text-gray-100"
+              data-context-menu-ask-agent=""
+              title={t('agentSession.menuAria')}
+              type="button"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAskAgent(task);
+                requestClose();
+              }}
+            >
+              <Icon className="h-4 w-4 shrink-0" name="sparkles" />
+              <span className="max-w-[4.5rem] truncate text-center text-[10px] font-medium leading-tight text-gray-500 dark:text-gray-400">
+                {t('agentSession.menuShort')}
+              </span>
+            </Button>
+          ) : null}
         </div>
 
         {showStatusSubmenu && (

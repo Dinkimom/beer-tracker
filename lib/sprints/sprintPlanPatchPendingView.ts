@@ -190,10 +190,12 @@ function goalLookup(
 export async function loadPendingPlanPatchView(input: {
   context: PendingPlanPatchContext;
   organizationId: string;
+  ownerId: string;
   sprintId: number;
 }): Promise<PendingPlanPatchView | null> {
   const snapshot = await loadPendingPlanPatchSnapshot({
     organizationId: input.organizationId,
+    ownerId: input.ownerId,
     sprintId: input.sprintId,
   });
   if (!snapshot) {
@@ -202,10 +204,12 @@ export async function loadPendingPlanPatchView(input: {
   const [positionPreviews, goalPreviews] = await Promise.all([
     listPlanPatchPositionPreviews({
       organizationId: input.organizationId,
+      ownerId: input.ownerId,
       sprintId: input.sprintId,
     }),
     listPlanPatchGoalPreviews({
       organizationId: input.organizationId,
+      ownerId: input.ownerId,
       sprintId: input.sprintId,
     }),
   ]);
@@ -224,6 +228,8 @@ export async function loadPendingPlanPatchView(input: {
 /** Returns whether an older proposal was discarded. Throws when replace is required. */
 export async function applyPendingProposeGate(input: {
   context: PendingPlanPatchContext;
+  /** Гейт по своему драфту: чужие приватные драфты не мешают. */
+  ownerId: string;
   persistNotes: boolean;
   proposalId: string;
   replacePending: boolean;
@@ -231,6 +237,7 @@ export async function applyPendingProposeGate(input: {
 }): Promise<boolean> {
   const pending = await loadPendingPlanPatchSnapshot({
     organizationId: input.context.meta.organizationId,
+    ownerId: input.ownerId,
     sprintId: input.context.meta.sprintId,
   });
   if (!pending) {
@@ -244,7 +251,7 @@ export async function applyPendingProposeGate(input: {
     return false;
   }
   if (!input.replacePending) {
-    throw new Error(await pendingProposalConflictMessage(pending, input.context));
+    throw new Error(await pendingProposalConflictMessage(pending, input.context, input.ownerId));
   }
   input.warnings.push(formatReplacedPendingWarning(pending));
   return true;
@@ -252,12 +259,14 @@ export async function applyPendingProposeGate(input: {
 
 async function pendingProposalConflictMessage(
   pending: PendingPlanPatchSnapshot,
-  context: PendingPlanPatchContext
+  context: PendingPlanPatchContext,
+  ownerId: string
 ): Promise<string> {
   try {
     const view = await loadPendingPlanPatchView({
       context,
       organizationId: context.meta.organizationId,
+      ownerId,
       sprintId: context.meta.sprintId,
     });
     return formatPendingProposalConflictError(

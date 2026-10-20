@@ -2,6 +2,7 @@ import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPosi
 
 import { query, runBeerTrackerTransaction } from '@/lib/db';
 import { getBeerTrackerSchema } from '@/lib/env';
+import { ensurePlanPatchPreviewOwnerColumn } from '@/lib/sprints/planPatchPreviewOwnerSchema';
 
 import {
   normalizePlanPatchPositionPreview,
@@ -54,7 +55,8 @@ async function runEnsurePlanPatchPositionPreviewSchema(): Promise<void> {
         client_brand VARCHAR(16) NOT NULL DEFAULT '',
         segments JSONB,
         expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-        PRIMARY KEY (organization_id, sprint_id, task_id)
+        owner_id VARCHAR(255) NOT NULL DEFAULT '',
+        PRIMARY KEY (organization_id, sprint_id, owner_id, task_id)
       )
     `);
     await query(`
@@ -69,6 +71,11 @@ async function runEnsurePlanPatchPositionPreviewSchema(): Promise<void> {
       ALTER TABLE ${schema}.plan_patch_position_previews
         ADD COLUMN IF NOT EXISTS segments JSONB
     `);
+    await ensurePlanPatchPreviewOwnerColumn({
+      keyColumn: 'task_id',
+      schema,
+      table: 'plan_patch_position_previews',
+    });
     schemaEnsured = true;
   } catch (error) {
     schemaEnsurePromise = null;
@@ -119,6 +126,8 @@ function previewFromRow(row: PreviewRow): PlanPatchPositionPreview {
 
 export async function listPlanPatchPositionPreviews(input: {
   organizationId: string;
+  /** Владелец драфта: драфты приватны, чужие не возвращаются. */
+  ownerId: string;
   sprintId: number;
 }): Promise<PlanPatchPositionPreview[]> {
   await ensurePlanPatchPositionPreviewSchema();
@@ -130,8 +139,8 @@ export async function listPlanPatchPositionPreviews(input: {
   const result = await query<PreviewRow>(
     `SELECT task_id, assignee_id, start_day, start_part, duration, remove, changes, client_brand, segments
      FROM plan_patch_position_previews
-     WHERE organization_id = $1::uuid AND sprint_id = $2`,
-    [input.organizationId, input.sprintId]
+     WHERE organization_id = $1::uuid AND sprint_id = $2 AND owner_id = $3`,
+    [input.organizationId, input.sprintId, input.ownerId]
   );
   return result.rows.map(previewFromRow);
 }
@@ -139,6 +148,7 @@ export async function listPlanPatchPositionPreviews(input: {
 /** Short proposal id + row count for unexpired position previews (if any). */
 export async function peekPlanPatchPositionPreviewProposal(input: {
   organizationId: string;
+  ownerId: string;
   sprintId: number;
 }): Promise<{ count: number; proposalId: string } | null> {
   await ensurePlanPatchPositionPreviewSchema();
@@ -150,11 +160,11 @@ export async function peekPlanPatchPositionPreviewProposal(input: {
   const result = await query<{ count: string; proposal_id: string }>(
     `SELECT proposal_id, COUNT(*)::text AS count
      FROM plan_patch_position_previews
-     WHERE organization_id = $1::uuid AND sprint_id = $2
+     WHERE organization_id = $1::uuid AND sprint_id = $2 AND owner_id = $3
      GROUP BY proposal_id
      ORDER BY COUNT(*) DESC
      LIMIT 1`,
-    [input.organizationId, input.sprintId]
+    [input.organizationId, input.sprintId, input.ownerId]
   );
   const row = result.rows[0];
   if (!row?.proposal_id) {
@@ -166,6 +176,7 @@ export async function peekPlanPatchPositionPreviewProposal(input: {
 export async function replacePlanPatchPositionPreviews(input: {
   expiresAt: Date;
   organizationId: string;
+  ownerId: string;
   previews: readonly PlanPatchPositionPreview[];
   proposalId: string;
   sprintId: number;
@@ -176,17 +187,17 @@ export async function replacePlanPatchPositionPreviews(input: {
     // (в т.ч. задачи, которых больше нет в ops), а не только строки с тем же proposal_id.
     await tx(
       `DELETE FROM plan_patch_position_previews
-       WHERE organization_id = $1::uuid AND sprint_id = $2`,
-      [input.organizationId, input.sprintId]
+       WHERE organization_id = $1::uuid AND sprint_id = $2 AND owner_id = $3`,
+      [input.organizationId, input.sprintId, input.ownerId]
     );
     for (const preview of input.previews) {
       await tx(
         `INSERT INTO plan_patch_position_previews (
            organization_id, sprint_id, task_id, proposal_id, assignee_id,
-           start_day, start_part, duration, remove, changes, client_brand, segments, expires_at
+           start_day, start_part, duration, remove, changes, client_brand, segments, expires_at, owner_id
          )
-         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13)
-         ON CONFLICT (organization_id, sprint_id, task_id) DO UPDATE
+         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $14)
+         ON CONFLICT (organization_id, sprint_id, owner_id, task_id) DO UPDATE
          SET proposal_id = EXCLUDED.proposal_id,
              assignee_id = EXCLUDED.assignee_id,
              start_day = EXCLUDED.start_day,
@@ -211,6 +222,7 @@ export async function replacePlanPatchPositionPreviews(input: {
           preview.clientBrand ?? '',
           preview.segments === undefined ? null : JSON.stringify(preview.segments),
           input.expiresAt.toISOString(),
+          input.ownerId,
         ]
       );
     }
@@ -219,6 +231,7 @@ export async function replacePlanPatchPositionPreviews(input: {
 
 export async function deletePlanPatchPositionPreviews(input: {
   organizationId: string;
+  ownerId: string;
   sprintId: number;
   taskId?: string;
 }): Promise<number> {
@@ -227,21 +240,23 @@ export async function deletePlanPatchPositionPreviews(input: {
     `DELETE FROM plan_patch_position_previews
      WHERE organization_id = $1::uuid
        AND sprint_id = $2
+       AND owner_id = $4
        AND ($3::text IS NULL OR task_id = $3)`,
-    [input.organizationId, input.sprintId, input.taskId ?? null]
+    [input.organizationId, input.sprintId, input.taskId ?? null, input.ownerId]
   );
   return result.rowCount ?? 0;
 }
 
 export async function deletePlanPatchPositionPreviewsByProposal(input: {
   organizationId: string;
+  ownerId: string;
   proposalId: string;
   sprintId: number;
 }): Promise<void> {
   await ensurePlanPatchPositionPreviewSchema();
   await query(
     `DELETE FROM plan_patch_position_previews
-     WHERE organization_id = $1::uuid AND sprint_id = $2 AND proposal_id = $3`,
-    [input.organizationId, input.sprintId, input.proposalId]
+     WHERE organization_id = $1::uuid AND sprint_id = $2 AND proposal_id = $3 AND owner_id = $4`,
+    [input.organizationId, input.sprintId, input.proposalId, input.ownerId]
   );
 }

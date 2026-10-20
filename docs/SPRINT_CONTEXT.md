@@ -57,7 +57,10 @@ Tools:
 - `get_issue(issueKey, includeComments?)` — живая задача: description, links, comments
 - `get_issue_snapshot(issueKey)` — снимок из выгрузки sync (`issue_snapshots`)
 - `resolve_person(query)` — имя/email → `staffUid` / `assigneeId` + `role` / `roleTitle` / `platforms` (если человек в команде)
-- `propose_plan_patch(sprintId, ops, persistNotes?)` — dry-run; `schedule[]`, `warnings`, capacityPreview, `persistNotes`, applyToken
+- `propose_plan_patch(sprintId, ops, persistNotes?, replacePending?, sessionId?, replies?, draftMessage?, intent?)` — dry-run; `schedule[]`, `warnings`, capacityPreview, `persistNotes`, applyToken; драфт записывается в сессию (`agentSession` в ответе)
+- `list_agent_sessions(status?, sprintId?)` — входящие агента: сессии, которые человек передал из планера
+- `get_agent_session(sessionId)` — переписка сессии, `openComments`, `fetchContext`
+- `reply_agent_session(sessionId, message?, replies?, close?)` — ответ без нового драфта
 - `apply_plan_patch(sprintId, ops, applyToken, confirm=true, onError?)` — запись после propose + confirm; `onError=stop|continue`; `schedule[]` после apply
 - `get_retro_board(sprintId)` — колонки и карточки ретро (без картинок); если доски ещё нет — шаблон орги без записи
 - `apply_retro_board(sprintId, ops, confirm=true)` — заметки/комментарии/колонки ретро (`addNote`, `moveCard`, `addComment`, `addColumn`, …); колонка по `columnId` или `columnPreset`
@@ -73,6 +76,23 @@ Tools:
 3. Человек ревьюит заметки (если были) / `summary` / `schedule` / `capacityPreview` / `warnings`.
 4. `apply_plan_patch` с **теми же** `ops` + `applyToken` + `confirm: true`. `onError: stop` (default) — стоп на первой ошибке; `continue` — остальные ops применяются, ошибки в `applied[]`.
 
+### Сессии с агентом и приватные драфты
+
+**Драфты приватны.** Превью карточек и целей, черновые заметки и `pendingProposal` видит только тот, от чьего имени работал агент (владелец драфта). У каждого пользователя в спринте свой драфт: «один неподтверждённый драфт» — на пользователя, а не на спринт. Принять или отклонить драфт может только владелец.
+
+**Сессия** — одна просьба и всё, что из неё вышло: версии драфта и переписка. Таблицы `agent_sessions` и `agent_session_messages`; для живой БД — `database/add-agent-sessions.sql` (там же владелец у превью).
+
+Как сессия появляется:
+- в планере «Агенту»: меню карточки задачи, меню заметки или кнопка ✨ в нижнем тулбаре (про спринт целиком). Поле ввода — как в чате: Enter отправляет, Shift+Enter переносит строку, `@` упоминает задачу или человека; упоминания уходят агенту с id (`mentions`);
+- агент вызвал `propose_plan_patch` без `sessionId` — сессия создаётся сама (заголовок из `intent`) или драфт идёт в сессию текущего драфта.
+
+Цикл:
+1. Человек оставляет просьбу и пишет агенту в чате «посмотри мои запросы в Beer Tracker» (фразу можно скопировать или открыть чат Claude / Cursor из планера).
+2. Агент: `list_agent_sessions` → `get_agent_session(id)` → `fetchContext`.
+3. План меняется через `propose_plan_patch(sessionId, replacePending: true, replies, draftMessage)`. `replies` — ответы на 💬 (`resolution: addressed | declined`), `draftMessage` — что делает эта версия. Сессия ждёт человека.
+4. Человек на доске: ✓/✗ по пунктам, 💬 к пункту, «Попросить переделать» (сессия снова ждёт агента), лента «Сессия» со всей перепиской.
+5. Без изменения плана агент отвечает `reply_agent_session`; `close: true` закрывает сессию.
+
 Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `deleteNote`, `upsertLink`, `deleteLink`, `upsertFeatureDraft`, `createGoal`, `updateGoal`, `deleteGoal`.
 
 **Резерв времени** — только задача через `upsertPosition` (start + duration в слотах). Sticky notes можно пересекать с задачами; они не занимают слоты в `capacity`.
@@ -84,6 +104,15 @@ Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `
 `upsertPosition.syncToTracker=true` — дополнительно `addIssueToSprint` + assign в Tracker/Jira (позиция в BT пишется всегда; ошибка sync — в `applied[].detail` / warning). Без флага — только планировщик BT; propose предупредит `issue_not_in_sprint: KEY` и вернёт `hints` с remediation (перепредложите с `syncToTracker:true`, можно вместе с `segments`), если задачи нет на доске спринта трекера.
 
 Notes: только `kind=text`; default `width=200` (2 части); `height` как у задачи. В context: `updatedAt` / `updatedBy` / `version`; soft-delete. `updateNote.ifVersion` — optimistic lock (иначе `version conflict`). Для `upsertLink` на заметку — `comment:{notes[].id}`.
+
+### Мост к Claude CLI (локально)
+
+Чтобы не носить фразу в чат: `pnpm agent-bridge` поднимает на `127.0.0.1:47821` мост, а планер зовёт его, когда сессия переходит в `waiting_agent` (просьба, сообщение, «Переделать»). Мост запускает `claude -p` по этой сессии: разрешены чтение, `propose_plan_patch` и `reply_agent_session`, `apply_*` запрещены. В простое мост ничего не делает.
+
+- Включить в планере: галка **«Сразу запускать в Claude CLI»** под полем ввода чата агента (флаг в localStorage; без него планер на localhost не ходит). Рядом — на связи ли мост.
+- Настройки — в `.env.agent-bridge.local` (пример: [`.env.agent-bridge.example`](../.env.agent-bridge.example)). CLI мост ищет в PATH, иначе берёт свежий из расширения Claude Code в VS Code / Cursor.
+- `AGENT_BRIDGE_TARGETS` — «адрес планера=MCP-сервер» через запятую: у каждого стенда свой MCP (локальный — имя из `claude mcp add`, прод через коннектор claude.ai — `claude_ai_BeerTracker`). Запросы с других Origin и Host мост отклоняет.
+- Логика: [`lib/agentSessions/agentBridge.ts`](../lib/agentSessions/agentBridge.ts), процесс: [`apps/agent-bridge/main.ts`](../apps/agent-bridge/main.ts).
 
 ### Cursor / Claude — только URL
 

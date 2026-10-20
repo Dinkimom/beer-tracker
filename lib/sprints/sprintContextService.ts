@@ -244,6 +244,7 @@ async function loadPositions(input: {
 async function loadNotesWithDiagramText(input: {
   organizationId: string;
   sprintId: number;
+  viewerUserId?: string;
 }): Promise<SprintContextNote[]> {
   const rows = await listSprintComments(input);
   const notes = rows.flatMap((row) => {
@@ -306,6 +307,8 @@ export async function buildSprintContext(input: {
   sprintId: number;
   /** Optional soft map taskKey → parentKey (tracker); expands feature scope. */
   taskIdToParentKey?: Record<string, string>;
+  /** Чей драфт показать: черновые заметки агента приватны. */
+  viewerUserId?: string;
 }): Promise<SprintContextPayload> {
   const { organizationId, sprintId } = input;
   const featureId = input.featureId?.trim() || undefined;
@@ -323,7 +326,7 @@ export async function buildSprintContext(input: {
   ] = await Promise.all([
     loadPositions({ organizationId, sprintId }),
     fetchFeatureLanes({ organizationId, sprintId }),
-    loadNotesWithDiagramText({ organizationId, sprintId }),
+    loadNotesWithDiagramText({ organizationId, sprintId, viewerUserId: input.viewerUserId }),
     listTaskLinksForSprint({ organizationId, sprintId }).then((rows) =>
       rows.flatMap((row) => {
         const rec = asRecord(row);

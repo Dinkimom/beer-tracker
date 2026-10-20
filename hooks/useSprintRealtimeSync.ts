@@ -24,6 +24,7 @@ interface SprintRealtimeTaskPayload {
 }
 
 interface SprintRealtimeHandlers {
+  onAgentSessions?: () => void;
   onComments?: () => void;
   onGoals?: () => void;
   onLinks?: () => void;
@@ -64,6 +65,9 @@ function dispatchSprintRealtimeResources(
   }
   if (resources.includes('links')) {
     handlers.onLinks?.();
+  }
+  if (resources.includes('agentSessions')) {
+    handlers.onAgentSessions?.();
   }
   if (resources.includes('tasks')) {
     handlers.onTasks?.(payload);

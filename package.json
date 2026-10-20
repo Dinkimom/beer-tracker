@@ -18,6 +18,7 @@
     "sync-worker": "tsx apps/sync-worker/main.ts",
     "sync-worker:build": "node apps/sync-worker/build.mjs",
     "mcp:sprint-context": "tsx apps/mcp-sprint-context/main.ts",
+    "agent-bridge": "tsx --env-file-if-exists=.env.agent-bridge.local apps/agent-bridge/main.ts",
     "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile cron --profile exporter up --build",
     "check:i18n": "tsx scripts/i18n/check-messages-parity.ts",
     "i18n:export": "tsx scripts/i18n/export-messages.ts",

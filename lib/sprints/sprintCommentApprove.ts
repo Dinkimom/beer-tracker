@@ -21,12 +21,14 @@ export async function approvePendingSprintComment(input: {
 }
 
 export function approveAllPendingSprintComments(input: {
+  ownerId: string;
   sprintId: number;
 }): Promise<number> {
   return confirmAllPendingSprintComments(input);
 }
 
 export function rejectAllPendingSprintComments(input: {
+  ownerId: string;
   sprintId: number;
 }): Promise<number> {
   return deleteAllPendingSprintComments(input);

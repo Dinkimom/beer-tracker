@@ -4,13 +4,16 @@ import type { SwimlanePlacementTool } from '@/lib/layers';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { observer } from 'mobx-react-lite';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import { FLOATING_MENU_SHELL, FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
+import { hrefWithSearchParams } from '@/features/sidebar/utils/hrefWithSearchParams';
 import { usePlanPatchGoalPreviewDecisions } from '@/features/sprint/hooks/usePlanPatchGoalPreviewDecisions';
+import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
 import { usePlanPatchPreviewDecisions } from '@/features/swimlane/hooks/usePlanPatchPreviewDecisions';
 import {
   useSwimlaneBaselineLayoutModeStorage,
@@ -22,8 +25,10 @@ import {
 } from '@/hooks/useLocalStorage';
 import { useRootStore } from '@/lib/layers';
 
+import { useAgentIslandChat } from '../hooks/useAgentIslandChat';
 import {
   SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX,
+  isAgentProposalToolbarVisible,
   isPlacementToolbarToolSelectable,
   placementToolLayerToReveal,
   placementToolRequiresObjectStorage,
@@ -34,6 +39,7 @@ import {
 } from '../utils/swimlanePlacementToolbar';
 
 import { SwimlaneAgentProposalToolbar } from './SwimlaneAgentProposalToolbar';
+import { SwimlanePlacementToolbarAgentButton } from './SwimlanePlacementToolbarAgentButton';
 import { SwimlanePlacementToolbarButton } from './SwimlanePlacementToolbarButton';
 import { SwimlanePlacementToolbarCardsTool } from './SwimlanePlacementToolbarCardsTool';
 import { SwimlanePlacementToolbarLayers } from './SwimlanePlacementToolbarLayers';
@@ -62,11 +68,18 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   )?.clientBrand;
   const planPatchDecisions = usePlanPatchPreviewDecisions(sprintId);
   const goalDecisions = usePlanPatchGoalPreviewDecisions(sprintId);
+  const agentAvailable = useAgentAvailable(sprintId);
   const agentClientBrand = resolveAgentProposalClientBrand([
     positionBrand,
     goalDecisions.clientBrand,
     pendingAgentNotes.clientBrand,
   ]);
+  const hasPendingAgentDraft = isAgentProposalToolbarVisible({
+    goalPreviewCount: goalDecisions.count,
+    hasPendingAgentNote: pendingAgentNotes.ids.length > 0,
+    positionPreviewCount,
+  });
+  const agentIsland = useAgentIslandChat(sprintId, hasPendingAgentDraft);
   const objectStorageConfigured = useObjectStorageConfigured();
   const hidePersonBoundTools = variant === 'features';
   const tools = useMemo(
@@ -87,6 +100,18 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   const [calendarVisible, setCalendarVisible] = useSwimlaneCalendarBusyVisibleStorage();
   const [baselineLayoutMode, setBaselineLayoutMode] = useSwimlaneBaselineLayoutModeStorage();
   const active = sprintPlannerUi.placementTool;
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const revealGoalsSidebar = useCallback(() => {
+    if (searchParams.get('sidebarTab') !== 'goals') {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('sidebarTab', 'goals');
+      router.replace(hrefWithSearchParams(pathname, params), { scroll: false });
+    }
+    sprintPlannerUi.setSidebarOpen(true);
+  }, [pathname, router, searchParams, sprintPlannerUi]);
 
   const applyPlacementTool = useCallback(
     (tool: SwimlanePlacementTool, options?: { toggle?: boolean }) => {
@@ -150,8 +175,11 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
           <SwimlaneAgentProposalToolbar
             clientBrand={agentClientBrand}
             goalPreviewCount={goalDecisions.count}
+            hasPendingDraft={hasPendingAgentDraft}
+            island={agentIsland}
             pendingCommentIds={pendingAgentNotes.ids}
             positionPreviewCount={positionPreviewCount}
+            sprintId={sprintId}
             onApproveAll={(commentIds) => {
               onApproveAgentNotes(commentIds);
               planPatchDecisions.approve().catch(() => undefined);
@@ -162,6 +190,7 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
               planPatchDecisions.reject().catch(() => undefined);
               goalDecisions.reject().catch(() => undefined);
             }}
+            onRevealGoals={revealGoalsSidebar}
           />
         ) : null}
         <div
@@ -226,6 +255,16 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
             onLinksVisibleChange={setLinksVisible}
             onNotesVisibleChange={setNotesVisible}
           />
+          {sprintId != null && agentAvailable ? (
+            <SwimlanePlacementToolbarAgentButton
+              newSession={agentIsland.sessions.active ? { selected: agentIsland.newSelected } : null}
+              onClick={
+                agentIsland.sessions.active
+                  ? agentIsland.toggleNewSession
+                  : () => sprintPlannerUi.setAgentRequestTarget({ kind: 'sprint' })
+              }
+            />
+          ) : null}
         </div>
       </div>
     </div>

@@ -14,14 +14,16 @@ export interface PendingPlanPatchSnapshot {
   proposalId: string | null;
 }
 
+/** Неподтверждённый драфт пользователя в спринте (драфты приватны: у каждого свой). */
 export async function loadPendingPlanPatchSnapshot(input: {
   organizationId: string;
+  ownerId: string;
   sprintId: number;
 }): Promise<PendingPlanPatchSnapshot | null> {
   const [positionPeek, goalPeek, draftNoteCount] = await Promise.all([
     peekPlanPatchPositionPreviewProposal(input),
     peekPlanPatchGoalPreviewProposal(input),
-    countPendingPlanPatchSprintComments({ sprintId: input.sprintId }),
+    countPendingPlanPatchSprintComments({ ownerId: input.ownerId, sprintId: input.sprintId }),
   ]);
 
   const positionPreviewCount = positionPeek?.count ?? 0;
@@ -32,7 +34,10 @@ export async function loadPendingPlanPatchSnapshot(input: {
 
   let proposalId = positionPeek?.proposalId ?? goalPeek?.proposalId ?? null;
   if (!proposalId && draftNoteCount > 0) {
-    const noteHash = await peekPendingPlanPatchCommentProposalId({ sprintId: input.sprintId });
+    const noteHash = await peekPendingPlanPatchCommentProposalId({
+      ownerId: input.ownerId,
+      sprintId: input.sprintId,
+    });
     proposalId = noteHash ? proposalIdFromOpsHash(noteHash) : null;
   }
 

@@ -1,6 +1,8 @@
 import { adminPlannerIntegrationRu } from './adminPlannerIntegration.ru';
+import { agentSessionRu } from './agentSession.ru';
 import { holidayCaptionsRu } from './holidays.ru';
 import { reactionKeywordsRu } from './reactionKeywords.ru';
+import { sprintMetricsRu } from './sprintMetrics.ru';
 
 export const ruMessages = {
   errors: {
@@ -104,6 +106,7 @@ export const ruMessages = {
       board: 'Доска',
       burndown: 'Диаграмма сгорания',
       burndownShort: 'Сгорание',
+      metrics: 'Метрики',
       retro: 'Ретро',
     },
     actions: {
@@ -617,6 +620,8 @@ export const ruMessages = {
   features: {
     title: 'Эпики (устарело)',
   },
+  agentSession: agentSessionRu,
+  sprintMetrics: sprintMetricsRu,
   burndown: {
     title: 'Диаграмма сгорания',
     metrics: {

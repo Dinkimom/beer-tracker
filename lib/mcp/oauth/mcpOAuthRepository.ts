@@ -329,3 +329,20 @@ export async function revokeMcpOAuthTokensForUser(userId: string): Promise<void>
     [userId]
   );
 }
+
+/** Живое подключение MCP у пользователя: неотозванный и непросроченный refresh-токен в организации. */
+export async function hasActiveMcpOAuthConnection(organizationId: string, userId: string): Promise<boolean> {
+  await ensureMcpOAuthTables();
+  const res = await query<{ connected: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1 FROM mcp_oauth_tokens
+       WHERE organization_id = $1::uuid
+         AND user_id = $2
+         AND token_type = 'refresh'
+         AND revoked_at IS NULL
+         AND expires_at > NOW()
+     ) AS connected`,
+    [organizationId, userId]
+  );
+  return res.rows[0]?.connected === true;
+}

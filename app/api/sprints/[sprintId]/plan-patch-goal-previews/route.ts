@@ -45,6 +45,7 @@ export async function POST(
     const count = await approvePlanPatchGoalPreviews({
       goalId: parsed.data.goalId,
       organizationId: tenantResult.ctx.organizationId,
+      ownerId: tenantResult.ctx.userId,
       sprintId,
     });
     if (parsed.data.goalId && count === 0) {
@@ -78,6 +79,7 @@ export async function DELETE(
     const count = await rejectPlanPatchGoalPreviews({
       goalId: parsed.data.goalId,
       organizationId: tenantResult.ctx.organizationId,
+      ownerId: tenantResult.ctx.userId,
       sprintId,
     });
     if (parsed.data.goalId && count === 0) {

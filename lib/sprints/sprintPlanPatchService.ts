@@ -1,6 +1,5 @@
 import type {
   PlanPatchPositionPreview,
-  PlanPatchPreviewSourcePosition,
 } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 import type {
   SprintPlanPatchApplyResult,
@@ -9,10 +8,9 @@ import type {
   SprintPlanPatchProposeResult,
 } from '@/lib/sprints/sprintPlanPatchTypes';
 
-import { randomUUID } from 'crypto';
-
 import { ZodError } from 'zod';
 
+import { parseAgentSessionReplies } from '@/lib/agentSessions/agentSession';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
@@ -26,15 +24,9 @@ import {
 } from '@/lib/sprints/sprintPlanPatchContentChanges';
 import {
   confirmProposedCreateNotes,
-  persistProposedCreateNotes,
 } from '@/lib/sprints/sprintPlanPatchDraftNotes';
 import {
-  buildPlanPatchGoalPreviews,
-  planPatchGoalSources,
-} from '@/lib/sprints/sprintPlanPatchGoalPreview';
-import {
   deletePlanPatchGoalPreviewsByProposal,
-  replacePlanPatchGoalPreviews,
 } from '@/lib/sprints/sprintPlanPatchGoalPreviewRepository';
 import {
   simulatePositionsAfterPatch,
@@ -43,14 +35,13 @@ import {
 } from '@/lib/sprints/sprintPlanPatchHelpers';
 import { assertPlanPatchOpsFitPartsPerDay } from '@/lib/sprints/sprintPlanPatchPartsValidation';
 import { applyPendingProposeGate } from '@/lib/sprints/sprintPlanPatchPendingView';
+import { persistDraftInSession } from '@/lib/sprints/sprintPlanPatchPersist';
 import {
   buildSprintPlanPatchPositionChanges,
   labelSprintPlanPatchPositionChanges,
 } from '@/lib/sprints/sprintPlanPatchPositionChanges';
-import { buildPlanPatchPositionPreviews } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 import {
   deletePlanPatchPositionPreviewsByProposal,
-  replacePlanPatchPositionPreviews,
 } from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
 import { assertPlanPatchTargetsExist } from '@/lib/sprints/sprintPlanPatchPreflight';
 import { parseSprintPlanPatchOps } from '@/lib/sprints/sprintPlanPatchSchema';
@@ -87,145 +78,16 @@ function parseOpsOrThrow(raw: unknown): SprintPlanPatchOp[] {
   }
 }
 
-function notifyPlanPatchResource(
-  organizationId: string,
-  sprintId: number,
-  resources: Array<'comments' | 'goals' | 'positions'>
-): void {
-  notifySprintRealtime(
-    new Request('http://localhost/api/mcp'),
-    organizationId,
-    sprintId,
-    resources
-  );
-}
-
-async function persistDraftNotesForProposal(input: {
-  actorUserId: string;
-  clientBrand?: PlanPatchPositionPreview['clientBrand'];
-  expiresAt: Date;
-  ops: SprintPlanPatchOp[];
-  organizationId: string;
-  proposalId: string;
-  sprintId: number;
-}): Promise<string[]> {
-  // Даже без новых createNote: снятие старых pending при смене ops.
-  const draftNoteIds = await persistProposedCreateNotes(input);
-  notifyPlanPatchResource(input.organizationId, input.sprintId, ['comments']);
-  return draftNoteIds;
-}
-
-function stampPreviewClientBrand(
-  previews: PlanPatchPositionPreview[],
-  clientBrand: PlanPatchPositionPreview['clientBrand']
-): PlanPatchPositionPreview[] {
-  if (!clientBrand) {
-    return previews;
-  }
-  const stamped: PlanPatchPositionPreview[] = [];
-  for (const preview of previews) {
-    stamped.push({ ...preview, clientBrand });
-  }
-  return stamped;
-}
-
-async function persistPositionPreviewsForProposal(input: {
-  clientBrand?: PlanPatchPositionPreview['clientBrand'];
-  current: readonly PlanPatchPreviewSourcePosition[];
-  expiresAt: Date;
-  ops: SprintPlanPatchOp[];
-  organizationId: string;
-  proposalId: string;
-  sprintId: number;
-}): Promise<void> {
-  // Всегда replace (в т.ч. пустым списком): повторный propose без position-ops
-  // должен убрать превью предыдущего предложения.
-  await replacePlanPatchPositionPreviews({
-    expiresAt: input.expiresAt,
-    organizationId: input.organizationId,
-    previews: stampPreviewClientBrand(
-      buildPlanPatchPositionPreviews({
-        current: input.current,
-        ops: input.ops,
-      }),
-      input.clientBrand
-    ),
-    proposalId: input.proposalId,
-    sprintId: input.sprintId,
-  });
-  notifyPlanPatchResource(input.organizationId, input.sprintId, ['positions']);
-}
-
-async function persistGoalPreviewsForProposal(input: {
-  clientBrand?: PlanPatchPositionPreview['clientBrand'];
-  expiresAt: Date;
-  goals: {
-    delivery: readonly { done: boolean; id: string; text: string }[];
-    discovery: readonly { done: boolean; id: string; text: string }[];
-  };
-  ops: SprintPlanPatchOp[];
-  organizationId: string;
-  proposalId: string;
-  sprintId: number;
-}): Promise<void> {
-  await replacePlanPatchGoalPreviews({
-    expiresAt: input.expiresAt,
-    organizationId: input.organizationId,
-    previews: buildPlanPatchGoalPreviews({
-      clientBrand: input.clientBrand,
-      createId: randomUUID,
-      current: planPatchGoalSources(input.goals.delivery, input.goals.discovery),
-      ops: input.ops,
-    }),
-    proposalId: input.proposalId,
-    sprintId: input.sprintId,
-  });
-  notifyPlanPatchResource(input.organizationId, input.sprintId, ['goals']);
-}
-
-async function persistProposeBoardDrafts(input: {
-  actorUserId: string;
-  clientBrand?: PlanPatchPositionPreview['clientBrand'];
-  current: Awaited<ReturnType<typeof loadSprintContextForOrganization>>;
-  expiresAt: Date;
-  ops: SprintPlanPatchOp[];
-  opsHash: string;
-  organizationId: string;
-  proposalId: string;
-  sprintId: number;
-}): Promise<string[]> {
-  const draftNoteIds = await persistDraftNotesForProposal({
-    actorUserId: input.actorUserId,
-    clientBrand: input.clientBrand,
-    expiresAt: input.expiresAt,
-    ops: input.ops,
-    organizationId: input.organizationId,
-    proposalId: input.opsHash,
-    sprintId: input.sprintId,
-  });
-  await persistPositionPreviewsForProposal({
-    clientBrand: input.clientBrand,
-    current: input.current.positions,
-    expiresAt: input.expiresAt,
-    ops: input.ops,
-    organizationId: input.organizationId,
-    proposalId: input.proposalId,
-    sprintId: input.sprintId,
-  });
-  await persistGoalPreviewsForProposal({
-    clientBrand: input.clientBrand,
-    expiresAt: input.expiresAt,
-    goals: input.current.sprintGoals,
-    ops: input.ops,
-    organizationId: input.organizationId,
-    proposalId: input.proposalId,
-    sprintId: input.sprintId,
-  });
-  return draftNoteIds;
-}
-
 export async function proposeSprintPlanPatch(input: {
   actorUserId: string;
+  /** Short agent note for the person: what this draft version changes (shown in the session). */
+  draftMessage?: string;
+  /** Session title when the agent starts a new session from chat (no sessionId, no current draft). */
+  intent?: string;
+  /** Agent answers to 💬 comments in the session: [{messageId, resolution, text}]. */
+  replies?: unknown;
+  /** Agent session this draft belongs to (from list_agent_sessions / get_agent_session). */
+  sessionId?: string;
   clientBrand?: PlanPatchPositionPreview['clientBrand'];
   ops: unknown;
   organizationId: string;
@@ -239,6 +101,7 @@ export async function proposeSprintPlanPatch(input: {
   sprintId: number;
 }): Promise<SprintPlanPatchProposeResult> {
   const ops = parseOpsOrThrow(input.ops);
+  const replies = parseAgentSessionReplies(input.replies);
   const persistNotes = input.persistNotes !== false;
   const replacePending = input.replacePending === true;
   const current = await loadSprintContextForOrganization({
@@ -246,6 +109,7 @@ export async function proposeSprintPlanPatch(input: {
     request: null,
     sprintId: input.sprintId,
     useStoredTracker: true,
+    viewerUserId: input.actorUserId,
   });
   assertPlanPatchOpsFitPartsPerDay(ops, current.meta.partsPerDay);
   await assertPlanPatchTargetsExist({ ops, sprintId: input.sprintId });
@@ -308,25 +172,32 @@ export async function proposeSprintPlanPatch(input: {
   const proposalId = proposalIdFromOpsHash(opsHash);
   const replacedPending = await applyPendingProposeGate({
     context: current,
+    ownerId: input.actorUserId,
     persistNotes,
     proposalId,
     replacePending,
     warnings,
   });
 
-  const draftNoteIds = persistNotes
-    ? await persistProposeBoardDrafts({
+  const summary = summarizeSprintPlanPatchOps(ops, current.positions, summaryLookups);
+  const { agentSession, draftNoteIds } = persistNotes
+    ? await persistDraftInSession({
         actorUserId: input.actorUserId,
         clientBrand: input.clientBrand,
         current,
+        draftMessage: input.draftMessage,
         expiresAt,
+        intent: input.intent,
         ops,
         opsHash,
         organizationId: input.organizationId,
         proposalId,
+        replies,
+        sessionId: input.sessionId,
         sprintId: input.sprintId,
+        summary,
       })
-    : [];
+    : { agentSession: undefined, draftNoteIds: [] };
   const applyToken = signSprintPlanPatchToken({
     draftNoteIds,
     ops,
@@ -340,6 +211,7 @@ export async function proposeSprintPlanPatch(input: {
     ...(contentChanges.length > 0 ? { contentChanges } : {}),
     ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),
     expiresAt: expiresAt.toISOString(),
+    ...(agentSession ? { agentSession } : {}),
     ...(hints.length > 0 ? { hints } : {}),
     ops,
     persistNotes,
@@ -349,7 +221,7 @@ export async function proposeSprintPlanPatch(input: {
     schedule,
     ...(scheduleBefore.length > 0 ? { scheduleBefore } : {}),
     sprintId: input.sprintId,
-    summary: summarizeSprintPlanPatchOps(ops, current.positions, summaryLookups),
+    summary,
     ...(warnings.length > 0 ? { warnings } : {}),
   };
 }
@@ -451,11 +323,13 @@ export async function applySprintPlanPatch(input: {
     const proposalId = proposalIdFromOpsHash(hashSprintPlanPatchOps(ops));
     await deletePlanPatchPositionPreviewsByProposal({
       organizationId: input.organizationId,
+      ownerId: input.actorUserId,
       proposalId,
       sprintId: input.sprintId,
     });
     await deletePlanPatchGoalPreviewsByProposal({
       organizationId: input.organizationId,
+      ownerId: input.actorUserId,
       proposalId,
       sprintId: input.sprintId,
     });
@@ -487,6 +361,7 @@ export async function applySprintPlanPatch(input: {
       request: null,
       sprintId: input.sprintId,
       useStoredTracker: true,
+      viewerUserId: input.actorUserId,
     });
     capacity = { summary: buildSprintContextCapacity(after).summary };
     schedule = formatSprintPlanScheduleForTaskIds(

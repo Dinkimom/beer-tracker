@@ -2,6 +2,7 @@ import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPrev
 
 import { query, runBeerTrackerTransaction } from '@/lib/db';
 import { getBeerTrackerSchema } from '@/lib/env';
+import { ensurePlanPatchPreviewOwnerColumn } from '@/lib/sprints/planPatchPreviewOwnerSchema';
 import { planPatchClientBrandFromUnknown } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 
 interface PreviewRow {
@@ -43,13 +44,19 @@ async function runEnsurePlanPatchGoalPreviewSchema(): Promise<void> {
         done BOOLEAN NOT NULL DEFAULT FALSE,
         client_brand VARCHAR(16) NOT NULL DEFAULT '',
         expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-        PRIMARY KEY (organization_id, sprint_id, goal_id)
+        owner_id VARCHAR(255) NOT NULL DEFAULT '',
+        PRIMARY KEY (organization_id, sprint_id, owner_id, goal_id)
       )
     `);
     await query(`
       CREATE INDEX IF NOT EXISTS idx_plan_patch_goal_previews_sprint
         ON ${schema}.plan_patch_goal_previews (organization_id, sprint_id)
     `);
+    await ensurePlanPatchPreviewOwnerColumn({
+      keyColumn: 'goal_id',
+      schema,
+      table: 'plan_patch_goal_previews',
+    });
     schemaEnsured = true;
   } catch (error) {
     schemaEnsurePromise = null;
@@ -78,6 +85,8 @@ function previewFromRow(row: PreviewRow): PlanPatchGoalPreview | null {
 export async function listPlanPatchGoalPreviews(input: {
   goalType?: string;
   organizationId: string;
+  /** Владелец драфта: драфты приватны, чужие не возвращаются. */
+  ownerId: string;
   sprintId: number;
 }): Promise<PlanPatchGoalPreview[]> {
   await ensurePlanPatchGoalPreviewSchema();
@@ -91,8 +100,9 @@ export async function listPlanPatchGoalPreviews(input: {
      FROM plan_patch_goal_previews
      WHERE organization_id = $1::uuid
        AND sprint_id = $2
+       AND owner_id = $4
        AND ($3::text IS NULL OR goal_type = $3)`,
-    [input.organizationId, input.sprintId, input.goalType ?? null]
+    [input.organizationId, input.sprintId, input.goalType ?? null, input.ownerId]
   );
   const previews: PlanPatchGoalPreview[] = [];
   for (const row of result.rows) {
@@ -107,6 +117,7 @@ export async function listPlanPatchGoalPreviews(input: {
 /** Short proposal id + row count for unexpired goal previews (if any). */
 export async function peekPlanPatchGoalPreviewProposal(input: {
   organizationId: string;
+  ownerId: string;
   sprintId: number;
 }): Promise<{ count: number; proposalId: string } | null> {
   await ensurePlanPatchGoalPreviewSchema();
@@ -118,11 +129,11 @@ export async function peekPlanPatchGoalPreviewProposal(input: {
   const result = await query<{ count: string; proposal_id: string }>(
     `SELECT proposal_id, COUNT(*)::text AS count
      FROM plan_patch_goal_previews
-     WHERE organization_id = $1::uuid AND sprint_id = $2
+     WHERE organization_id = $1::uuid AND sprint_id = $2 AND owner_id = $3
      GROUP BY proposal_id
      ORDER BY COUNT(*) DESC
      LIMIT 1`,
-    [input.organizationId, input.sprintId]
+    [input.organizationId, input.sprintId, input.ownerId]
   );
   const row = result.rows[0];
   if (!row?.proposal_id) {
@@ -134,6 +145,7 @@ export async function peekPlanPatchGoalPreviewProposal(input: {
 export async function replacePlanPatchGoalPreviews(input: {
   expiresAt: Date;
   organizationId: string;
+  ownerId: string;
   previews: readonly PlanPatchGoalPreview[];
   proposalId: string;
   sprintId: number;
@@ -144,17 +156,17 @@ export async function replacePlanPatchGoalPreviews(input: {
     // (createGoal каждый раз даёт новый goal_id — иначе они копятся).
     await tx(
       `DELETE FROM plan_patch_goal_previews
-       WHERE organization_id = $1::uuid AND sprint_id = $2`,
-      [input.organizationId, input.sprintId]
+       WHERE organization_id = $1::uuid AND sprint_id = $2 AND owner_id = $3`,
+      [input.organizationId, input.sprintId, input.ownerId]
     );
     for (const preview of input.previews) {
       await tx(
         `INSERT INTO plan_patch_goal_previews (
            organization_id, sprint_id, goal_id, proposal_id, goal_type,
-           action, text, done, client_brand, expires_at
+           action, text, done, client_brand, expires_at, owner_id
          )
-         VALUES ($1::uuid, $2, $3::uuid, $4, $5, $6, $7, $8, $9, $10)
-         ON CONFLICT (organization_id, sprint_id, goal_id) DO UPDATE
+         VALUES ($1::uuid, $2, $3::uuid, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (organization_id, sprint_id, owner_id, goal_id) DO UPDATE
          SET proposal_id = EXCLUDED.proposal_id,
              goal_type = EXCLUDED.goal_type,
              action = EXCLUDED.action,
@@ -173,6 +185,7 @@ export async function replacePlanPatchGoalPreviews(input: {
           preview.done,
           preview.clientBrand ?? '',
           input.expiresAt.toISOString(),
+          input.ownerId,
         ]
       );
     }
@@ -182,6 +195,7 @@ export async function replacePlanPatchGoalPreviews(input: {
 export async function deletePlanPatchGoalPreviews(input: {
   goalId?: string;
   organizationId: string;
+  ownerId: string;
   sprintId: number;
 }): Promise<number> {
   await ensurePlanPatchGoalPreviewSchema();
@@ -189,21 +203,23 @@ export async function deletePlanPatchGoalPreviews(input: {
     `DELETE FROM plan_patch_goal_previews
      WHERE organization_id = $1::uuid
        AND sprint_id = $2
+       AND owner_id = $4
        AND ($3::uuid IS NULL OR goal_id = $3::uuid)`,
-    [input.organizationId, input.sprintId, input.goalId ?? null]
+    [input.organizationId, input.sprintId, input.goalId ?? null, input.ownerId]
   );
   return result.rowCount ?? 0;
 }
 
 export async function deletePlanPatchGoalPreviewsByProposal(input: {
   organizationId: string;
+  ownerId: string;
   proposalId: string;
   sprintId: number;
 }): Promise<void> {
   await ensurePlanPatchGoalPreviewSchema();
   await query(
     `DELETE FROM plan_patch_goal_previews
-     WHERE organization_id = $1::uuid AND sprint_id = $2 AND proposal_id = $3`,
-    [input.organizationId, input.sprintId, input.proposalId]
+     WHERE organization_id = $1::uuid AND sprint_id = $2 AND proposal_id = $3 AND owner_id = $4`,
+    [input.organizationId, input.sprintId, input.proposalId, input.ownerId]
   );
 }

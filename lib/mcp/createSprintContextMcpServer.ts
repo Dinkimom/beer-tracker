@@ -1,24 +1,21 @@
 import type { AccessProfile } from '@/lib/access/orgAccess';
-import type { SprintContextPayload } from '@/lib/sprints/sprintContextTypes';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { canUsePlanner } from '@/lib/access/orgAccess';
+import { AgentSessionRepliesSchema } from '@/lib/agentSessions/agentSession';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { getIssueForOrganization } from '@/lib/mcp/getIssueForOrganization';
 import { getIssueSnapshotForOrganization } from '@/lib/mcp/getIssueSnapshotForOrganization';
+import { loadMcpSprintContext, withPendingProposal } from '@/lib/mcp/mcpSprintContextWithDraft';
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
+import { registerAgentSessionMcpTools } from '@/lib/mcp/registerAgentSessionMcpTools';
 import { registerIdentityMcpTools } from '@/lib/mcp/registerIdentityMcpTools';
 import { registerRetroBoardMcpTools } from '@/lib/mcp/registerRetroBoardMcpTools';
 import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
-import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
-import {
-  loadPendingPlanPatchView,
-  type PendingPlanPatchView,
-} from '@/lib/sprints/sprintPlanPatchPendingView';
 import { SprintPlanPatchOpsSchema } from '@/lib/sprints/sprintPlanPatchSchema';
 import {
   applySprintPlanPatch,
@@ -39,40 +36,6 @@ function toolJson(payload: unknown) {
   };
 }
 
-function loadContext(input: {
-  assigneeId?: string;
-  featureId?: string;
-  organizationId: string;
-  sprintId: number;
-  taskIds?: string[];
-}) {
-  return loadSprintContextForOrganization({
-    assigneeId: input.assigneeId,
-    featureId: input.featureId,
-    organizationId: input.organizationId,
-    request: null,
-    sprintId: input.sprintId,
-    taskIds: input.taskIds,
-    useStoredTracker: true,
-  });
-}
-
-async function withPendingProposal(
-  payload: SprintContextPayload
-): Promise<SprintContextPayload & { pendingProposal?: PendingPlanPatchView }> {
-  try {
-    const pendingProposal = await loadPendingPlanPatchView({
-      context: payload,
-      organizationId: payload.meta.organizationId,
-      sprintId: payload.meta.sprintId,
-    });
-    return pendingProposal ? { ...payload, pendingProposal } : payload;
-  } catch (error) {
-    console.warn('[sprint-context] pending proposal:', error);
-    return payload;
-  }
-}
-
 function plannerWriteDenied(profile: AccessProfile): string | null {
   if (canUsePlanner(profile)) {
     return null;
@@ -88,10 +51,11 @@ export function createSprintContextMcpServer(input: {
 }): McpServer {
   const server = new McpServer({
     name: 'beer-tracker-sprint-context',
-    version: '1.10.1',
+    version: '1.12.0',
   });
 
   registerIdentityMcpTools(server, input);
+  registerAgentSessionMcpTools(server, input);
 
   server.registerTool(
     'search_sprints',
@@ -144,7 +108,7 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_context',
     {
       description:
-        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + status/statusCategory/sprintHistory), capacity (tasks only; sticky notes do not reserve time), teamMembers (board roster with role=developer|tester|other, roleTitle, platforms), feature lanes, notes, links, goals, availability. positions and sprintGoals are the committed board. pendingProposal, when present, is an unconfirmed propose_plan_patch (translucent cards): positions[].beforeSchedule→afterSchedule and goals[].beforeText→afterText. Draft notes are notes[] with pendingApproval=true. Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. meta.calendarDays are Mon–Fri columns (day index). meta.weekendDays are Sat/Sun with no day index — do not plan there. meta.holidayCountry is the org Settings → Holiday calendar country; meta.holidayDays are that calendar’s non-working weekdays (same day index, unavailable in capacity). Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
+        'Read-only Beer Tracker planning graph for a sprint: positions (day/part + planVsActual + status/statusCategory/sprintHistory), capacity (tasks only; sticky notes do not reserve time), teamMembers (board roster with role=developer|tester|other, roleTitle, platforms), feature lanes, notes, links, goals, availability. positions and sprintGoals are the committed board. pendingProposal, when present, is an unconfirmed propose_plan_patch (translucent cards): positions[].beforeSchedule→afterSchedule and goals[].beforeText→afterText. Draft notes are notes[] with pendingApproval=true. Drafts are private: pendingProposal is only your own draft; agentSession is the session it belongs to (openComments = 💬 waiting for your reply — read them with get_agent_session). Prefer assigneeId/taskIds to keep the payload small. Filter “in work” via statusCategory (not-started|in-progress|paused|done), not raw statusType. meta.calendarDays are Mon–Fri columns (day index). meta.weekendDays are Sat/Sun with no day index — do not plan there. meta.holidayCountry is the org Settings → Holiday calendar country; meta.holidayDays are that calendar’s non-working weekdays (same day index, unavailable in capacity). Requires numeric tracker sprintId — call search_sprints first if only a name is known.',
       inputSchema: {
         assigneeId: z
           .string()
@@ -169,14 +133,15 @@ export function createSprintContextMcpServer(input: {
     },
     async ({ assigneeId, featureId, sprintId, taskIds }) => {
       try {
-        const payload = await loadContext({
+        const payload = await loadMcpSprintContext({
           assigneeId,
           featureId,
           organizationId: input.organizationId,
           sprintId,
           taskIds,
+          viewerUserId: input.userId,
         });
-        return toolJson(await withPendingProposal(payload));
+        return toolJson(await withPendingProposal(payload, input.userId));
       } catch (error) {
         return toolError(error);
       }
@@ -203,11 +168,12 @@ export function createSprintContextMcpServer(input: {
     },
     async ({ assigneeId, featureId, sprintId }) => {
       try {
-        const payload = await loadContext({
+        const payload = await loadMcpSprintContext({
           assigneeId,
           featureId,
           organizationId: input.organizationId,
           sprintId,
+          viewerUserId: input.userId,
         });
         return toolJson({
           capacity: payload.capacity ?? buildSprintContextCapacity(payload),
@@ -247,12 +213,13 @@ export function createSprintContextMcpServer(input: {
     },
     async ({ featureId, sprintId }) => {
       try {
-        const payload = await loadContext({
+        const payload = await loadMcpSprintContext({
           featureId,
           organizationId: input.organizationId,
           sprintId,
+          viewerUserId: input.userId,
         });
-        return toolJson(await withPendingProposal(payload));
+        return toolJson(await withPendingProposal(payload, input.userId));
       } catch (error) {
         return toolError(error);
       }
@@ -388,8 +355,18 @@ export function createSprintContextMcpServer(input: {
     'propose_plan_patch',
     {
       description:
-        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). By default createNote writes draft sticky notes immediately (translucent until apply), and position ops draw translucent cards on the board until apply: a new placement, a date move, a duration change, segment split (upsertPosition.segments), or deletePosition (removal from the planner sprint, original card stays until apply). To ADD a task to the plan (including already split into gaps): one upsertPosition with startDay/startPart/duration and optional segments[{startDay,startPart,duration},…]; set syncToTracker=true when the issue is not yet on the tracker sprint (propose returns issue_not_in_sprint + hints — re-propose with syncToTracker, then apply). If the hint says the issue is already on the planner, the move still applies without syncToTracker. To only re-split a task already on the board: pass segments without syncToTracker. Envelope rules: startDay/startPart = segments[0]; duration = sum(segments[].duration); segments=[] clears the split. A second propose with different ops does NOT silently replace an unconfirmed proposal — pass replacePending=true to discard it (or apply/reject first). The conflict error lists the pending positions, goals, and draft notes. Same ops re-propose is idempotent. persistNotes=false for pure dry-run (warns if a pending proposal is already on the board). Notes do NOT reserve capacity. Preflight fails if updateNote/deleteNote/updateGoal/deleteGoal targets are missing. Returns summary (was→became, including note/goal text), schedule + scheduleBefore, positionChanges[{taskId,kind,before,after,beforeSchedule,afterSchedule,changes}], contentChanges[{op,kind,beforeText,afterText}] for notes and goals, capacityPreview, warnings, hints, persistNotes, draftNoteIds, applyToken (TTL 30m). Read get_sprint_context.pendingProposal before a second propose — positions there stay the committed board. Always call before apply_plan_patch. Part indices 0..meta.partsPerDay-1. Notes: updatedAt/updatedBy/version — pass ifVersion on updateNote for optimistic lock.',
+        'Dry-run a Beer Tracker planning patch (positions, links, feature drafts, goals). By default createNote writes draft sticky notes immediately (translucent until apply), and position ops draw translucent cards on the board until apply: a new placement, a date move, a duration change, segment split (upsertPosition.segments), or deletePosition (removal from the planner sprint, original card stays until apply). To ADD a task to the plan (including already split into gaps): one upsertPosition with startDay/startPart/duration and optional segments[{startDay,startPart,duration},…]; set syncToTracker=true when the issue is not yet on the tracker sprint (propose returns issue_not_in_sprint + hints — re-propose with syncToTracker, then apply). If the hint says the issue is already on the planner, the move still applies without syncToTracker. To only re-split a task already on the board: pass segments without syncToTracker. Envelope rules: startDay/startPart = segments[0]; duration = sum(segments[].duration); segments=[] clears the split. A second propose with different ops does NOT silently replace an unconfirmed proposal — pass replacePending=true to discard it (or apply/reject first). The conflict error lists the pending positions, goals, and draft notes. Same ops re-propose is idempotent. persistNotes=false for pure dry-run (warns if a pending proposal is already on the board). Notes do NOT reserve capacity. Preflight fails if updateNote/deleteNote/updateGoal/deleteGoal targets are missing. Returns summary (was→became, including note/goal text), schedule + scheduleBefore, positionChanges[{taskId,kind,before,after,beforeSchedule,afterSchedule,changes}], contentChanges[{op,kind,beforeText,afterText}] for notes and goals, capacityPreview, warnings, hints, persistNotes, draftNoteIds, applyToken (TTL 30m). Read get_sprint_context.pendingProposal before a second propose — positions there stay the committed board. Pass sessionId when working on a session from list_agent_sessions; replies answer its openComments. Without sessionId the draft goes to the session of your current draft, or a new session titled by intent. Always call before apply_plan_patch. Part indices 0..meta.partsPerDay-1. Notes: updatedAt/updatedBy/version — pass ifVersion on updateNote for optimistic lock.',
       inputSchema: {
+        draftMessage: z
+          .string()
+          .max(2000)
+          .optional()
+          .describe('One or two sentences for the person: what this draft version does and why. Shown in the session.'),
+        intent: z
+          .string()
+          .max(300)
+          .optional()
+          .describe('What the person asked for, in their words — titles a new session when there is no sessionId and no current draft.'),
         ops: SprintPlanPatchOpsSchema.describe(
           '1–50 ops: upsertPosition (optional segments[], syncToTracker)|deletePosition|createNote|updateNote|deleteNote|upsertLink|deleteLink|upsertFeatureDraft|createGoal|updateGoal|deleteGoal'
         ),
@@ -399,16 +376,20 @@ export function createSprintContextMcpServer(input: {
           .describe(
             'Default true: write translucent createNote drafts and position-change cards now. false: dry-run only; those writes run on apply.'
           ),
+        replies: AgentSessionRepliesSchema.optional().describe(
+          'Answers to the session openComments: [{messageId, resolution: addressed|declined, text}] — what you changed or why not.'
+        ),
         replacePending: z
           .boolean()
           .optional()
           .describe(
             'Required when a different unconfirmed proposal is already on the board and persistNotes=true. true discards that pending draft/previews before writing this one.'
           ),
+        sessionId: z.string().uuid().optional().describe('Agent session id from list_agent_sessions / get_agent_session'),
         sprintId: z.number().int().positive().describe('Tracker sprint id'),
       },
     },
-    async ({ ops, persistNotes, replacePending, sprintId }) => {
+    async ({ draftMessage, intent, ops, persistNotes, replacePending, replies, sessionId, sprintId }) => {
       try {
         const denied = plannerWriteDenied(input.profile);
         if (denied) {
@@ -417,11 +398,15 @@ export function createSprintContextMcpServer(input: {
         const clientBrand = input.mcpClientId ? await resolveRegisteredMcpClientBrand(input.mcpClientId) : undefined;
         const result = await proposeSprintPlanPatch({
           actorUserId: input.userId,
+          draftMessage,
+          intent,
           clientBrand,
           ops,
           organizationId: input.organizationId,
           persistNotes,
           replacePending,
+          replies,
+          sessionId,
           sprintId,
         });
         const reviewHint = result.persistNotes

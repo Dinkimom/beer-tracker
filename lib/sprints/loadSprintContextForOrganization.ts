@@ -18,6 +18,8 @@ export async function loadSprintContextForOrganization(input: {
   sprintId: number;
   taskIds?: string[];
   useStoredTracker: boolean;
+  /** Пользователь, от чьего имени читаем: видит только свой драфт (черновые заметки). */
+  viewerUserId?: string;
 }): Promise<SprintContextPayload> {
   const [softMeta, taskIdToParentKey] = await Promise.all([
     softLoadSprintContextMeta({
@@ -41,6 +43,7 @@ export async function loadSprintContextForOrganization(input: {
     softMeta,
     sprintId: input.sprintId,
     taskIdToParentKey,
+    viewerUserId: input.viewerUserId,
   });
 
   const enriched = await enrichSprintContextPayload({

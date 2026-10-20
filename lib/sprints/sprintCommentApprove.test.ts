@@ -64,11 +64,11 @@ describe('batch pending comments', () => {
 
   it('confirms every pending note in the sprint', async () => {
     confirmAll.mockResolvedValue(3);
-    await expect(approveAllPendingSprintComments({ sprintId: 1152 })).resolves.toBe(3);
+    await expect(approveAllPendingSprintComments({ ownerId: 'user-1', sprintId: 1152 })).resolves.toBe(3);
   });
 
   it('deletes every pending note in the sprint', async () => {
     deleteAll.mockResolvedValue(2);
-    await expect(rejectAllPendingSprintComments({ sprintId: 1152 })).resolves.toBe(2);
+    await expect(rejectAllPendingSprintComments({ ownerId: 'user-1', sprintId: 1152 })).resolves.toBe(2);
   });
 });

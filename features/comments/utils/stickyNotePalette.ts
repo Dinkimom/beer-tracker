@@ -15,72 +15,72 @@ interface StickyNotePaint {
 
 const STICKY_NOTE_PAINT_LIGHT: Record<StickyNoteColor, StickyNotePaint> = {
   yellow: {
-    background: '#ffe56a',
-    border: '#f4d454',
+    background: '#fdf0b5',
+    border: '#f3e18f',
     text: '#422006',
-    swatch: '#ffd84a',
+    swatch: '#fbe07a',
   },
   pink: {
-    background: '#ffd4ea',
-    border: '#f5c0dc',
+    background: '#fde0ec',
+    border: '#f6cde0',
     text: '#500724',
-    swatch: '#ffc0e0',
+    swatch: '#f9c6dd',
   },
   green: {
-    background: '#c8f7d6',
-    border: '#aeeec4',
+    background: '#daf5e2',
+    border: '#c3ebcf',
     text: '#052e16',
-    swatch: '#a6efbe',
+    swatch: '#b2e8c4',
   },
   blue: {
-    background: '#c5ecff',
-    border: '#aadff8',
+    background: '#d9effb',
+    border: '#c0e2f5',
     text: '#082f49',
-    swatch: '#96d8fb',
+    swatch: '#aedcf6',
   },
   gray: {
-    background: '#eef0f3',
-    border: '#e0e3e8',
+    background: '#f2f3f5',
+    border: '#e3e5e9',
     text: '#111827',
-    swatch: '#d8dce2',
+    swatch: '#dadde3',
   },
 };
 
 /**
- * Тёмная тема: тот же чистый оттенок, что у светлого листа, но ниже по светлоте.
- * Насыщенность не снижаем — иначе жёлтый уходит в оливково-коричневый.
- * Чернила тёмные на яркой краске и светлые там, где бумага сама тёмная.
+ * Тёмная тема: тот же оттенок, что у светлого листа, ниже по светлоте.
+ * Насыщенность снижена против неона, но без серой примеси — иначе краска мутнеет.
+ * Чернила тёмные на светлой краске и светлые там, где бумага сама тёмная.
  */
 const STICKY_NOTE_PAINT_DARK: Record<StickyNoteColor, StickyNotePaint> = {
   yellow: {
-    background: '#e0bb00',
-    border: '#bd9d00',
+    background: '#d6b73a',
+    border: '#b99c2a',
     text: '#2a1604',
-    swatch: '#ffd500',
+    swatch: '#e6c440',
   },
   pink: {
-    background: '#b6206b',
-    border: '#981b59',
+    background: '#a64474',
+    border: '#8c3962',
     text: '#fff4f8',
-    swatch: '#d5207a',
+    swatch: '#bf4f86',
   },
   green: {
-    background: '#28c361',
-    border: '#22a552',
+    background: '#46ad6c',
+    border: '#3a925a',
     text: '#042e16',
-    swatch: '#2fda6e',
+    swatch: '#4fc279',
   },
   blue: {
-    background: '#14a7eb',
-    border: '#128fca',
+    background: '#3f9ccc',
+    border: '#3484ad',
     text: '#062033',
-    swatch: '#2cb3f2',
+    swatch: '#4aaee0',
   },
   gray: {
-    background: '#929baa',
-    border: '#7e899a',
+    background: '#959dab',
+    border: '#818a99',
     text: '#111827',
-    swatch: '#a0aaba',
+    swatch: '#a3abb8',
   },
 };
 

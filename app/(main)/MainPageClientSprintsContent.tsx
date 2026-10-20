@@ -18,6 +18,14 @@ const BurndownChart = dynamic(
   { ssr: false }
 );
 
+const SprintMetricsPage = dynamic(
+  () =>
+    import('@/features/sprint-metrics/components/SprintMetricsPage').then(
+      (mod) => mod.SprintMetricsPage
+    ),
+  { ssr: false }
+);
+
 const RetroPage = dynamic(
   () => import('@/features/retro/components/RetroPage').then((mod) => mod.RetroPage),
   { ssr: false }
@@ -111,6 +119,8 @@ export function MainPageClientSprintsContent({
           onSprintChange={onSprintChange}
         />
       )}
+
+      {activeTab === 'metrics' && <SprintMetricsPage boardId={selectedBoardId} />}
 
       {activeTab === 'retro' && (
         <RetroPage

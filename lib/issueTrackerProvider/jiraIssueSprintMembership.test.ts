@@ -11,6 +11,11 @@ vi.mock('./jiraIssues', () => ({
   fetchJiraIssue: vi.fn(),
 }));
 
+vi.mock('./jiraBoardFilterFields', () => ({
+  applyJiraBoardFilterFields: vi.fn(),
+}));
+
+import { applyJiraBoardFilterFields } from './jiraBoardFilterFields';
 import { fetchJiraIssue } from './jiraIssues';
 
 const API_BASE = 'https://jira.example.com/rest/api/2';
@@ -61,6 +66,7 @@ describe('addJiraIssueToSprint', () => {
       'https://jira.example.com/rest/agile/1.0/sprint/78804/issue',
       { issues: ['PROJ-1'] }
     );
+    expect(applyJiraBoardFilterFields).toHaveBeenCalledWith(expect.anything(), 'PROJ-1', 15116);
   });
 
   it('is a no-op when issue is already in the sprint', async () => {

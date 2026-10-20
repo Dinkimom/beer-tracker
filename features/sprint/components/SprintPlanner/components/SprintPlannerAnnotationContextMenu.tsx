@@ -23,6 +23,7 @@ import {
 import { useRootStore } from '@/lib/layers';
 
 interface SprintPlannerAnnotationContextMenuProps {
+  agentAvailable: boolean;
   assigneeOptions?: ContextMenuAssigneeOptions | null;
   boardId?: number | null;
   comments: Comment[];
@@ -37,6 +38,7 @@ interface SprintPlannerAnnotationContextMenuProps {
 
 export const SprintPlannerAnnotationContextMenu = observer(
   function SprintPlannerAnnotationContextMenu({
+    agentAvailable,
     assigneeOptions = null,
     boardId = null,
     contextMenu,
@@ -83,6 +85,18 @@ export const SprintPlannerAnnotationContextMenu = observer(
         position={contextMenu.position}
         task={menuTask}
         variant={variant}
+        onAskAgent={
+          agentAvailable && variant === 'note' && commentId
+            ? () => {
+                sprintPlannerUi.setAgentRequestTarget({
+                  kind: 'note',
+                  noteId: commentId,
+                  text: note?.text ?? menuTask.name,
+                });
+                sprintPlannerUi.closeContextMenu();
+              }
+            : undefined
+        }
         onAssigneeSelect={actions.onAssigneeSelect}
         onClose={sprintPlannerUi.closeContextMenu}
         onConvertToTask={actions.onConvertToTask}

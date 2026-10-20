@@ -1,7 +1,4 @@
-import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/types';
 import type { BurndownApiResponse } from '@/lib/sprints/sprintTrackerRouteJson';
-import type { TrackerIssue } from '@/types/tracker';
-import type { SprintInfo } from '@/types/tracker';
 
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -10,16 +7,10 @@ import {
   handleApiError,
 } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
-import { mergeTrackerIssuesByKey } from '@/lib/burndown/mergeTrackerIssuesByKey';
-import { stampBurndownIssueEstimates } from '@/lib/burndown/stampBurndownIssueEstimates';
+import { loadSprintBurndownSource } from '@/lib/burndown/loadSprintBurndownSource';
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
-import {
-  normalizeYandexIssue,
-  yandexIssueFromProviderIssue,
-} from '@/lib/issueTrackerProvider/yandexTrackerProvider';
 import { resolveParams } from '@/lib/nextjs-utils';
-import { queryIssueSnapshotsMatchingSprint } from '@/lib/snapshots';
 import {
   buildBurndownApiResponse,
   buildComputedBurndownApiResponse,
@@ -27,52 +18,10 @@ import {
   EMPTY_SPRINT_TIMELINE_TOTALS,
 } from '@/lib/sprints/sprintTrackerRouteJson';
 import { resolveTrackerTestingFlowMode } from '@/lib/sprints/testingFlowMode';
-import { getTeamByBoardId } from '@/lib/staffTeams';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
-
-function isRealTask(issue: TrackerIssue): boolean {
-  const team = (issue.functionalTeam ?? '').toLowerCase();
-  return !team.includes('qa') && !team.includes('tester');
-}
 
 const BURNDOWN_CACHE_TTL_ACTIVE = 10 * 60;
 const BURNDOWN_CACHE_TTL_ARCHIVED = 60 * 60;
-
-interface SprintIssuesBundle {
-  issues: TrackerIssue[];
-  sprintInfo: SprintInfo;
-}
-
-/**
- * Спринт — из Tracker. Задачи — объединение Tracker + issue_snapshots по ключу
- * (снимки с совпадением спринта в payload; при boardId — фильтр по functionalTeam = title команды в PG).
- */
-async function loadSprintInfoAndIssues(
-  issueTracker: IssueTrackerProviderClient,
-  organizationId: string,
-  sprintIdNum: number,
-  boardId: number | undefined
-): Promise<SprintIssuesBundle> {
-  const sprintInfo = await issueTracker.getSprint(sprintIdNum);
-
-  let functionalTeamExact: string | null = null;
-  if (boardId != null) {
-    const teamRow = await getTeamByBoardId(organizationId, boardId);
-    functionalTeamExact = teamRow?.title?.trim() || null;
-  }
-
-  const [fromTrackerProvider, fromSnapshots] = await Promise.all([
-    issueTracker.listSprintIssues(sprintIdNum),
-    queryIssueSnapshotsMatchingSprint(organizationId, {
-      functionalTeamExact,
-      sprintId: sprintInfo.id != null ? String(sprintInfo.id) : null,
-      sprintName: sprintInfo.name,
-    }),
-  ]);
-  const fromTracker = fromTrackerProvider.map(yandexIssueFromProviderIssue);
-  const issues = mergeTrackerIssuesByKey(fromTracker, fromSnapshots);
-  return { issues, sprintInfo };
-}
 
 async function computeBurndownPayload(
   request: NextRequest,
@@ -86,19 +35,19 @@ async function computeBurndownPayload(
   const testingFlowMode = resolveTrackerTestingFlowMode(integration);
 
   const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
-  const { sprintInfo, issues } = await loadSprintInfoAndIssues(
+  const { sprintInfo, issues, realIssues, burndownIssues } = await loadSprintBurndownSource({
+    boardId,
+    integration,
     issueTracker,
     organizationId,
-    sprintIdNum,
-    boardId
-  );
+    sprintId: sprintIdNum,
+  });
 
   const isArchived =
     sprintInfo.status === 'archived' || sprintInfo.status === 'released';
   const cacheTTL = isArchived ? BURNDOWN_CACHE_TTL_ARCHIVED : BURNDOWN_CACHE_TTL_ACTIVE;
 
-  const sprintIssueKeys = issues.filter(isRealTask).map((i) => i.key);
-  if (sprintIssueKeys.length === 0) {
+  if (realIssues.length === 0) {
     return {
       response: buildBurndownApiResponse({
         currentSP: 0,
@@ -124,18 +73,6 @@ async function computeBurndownPayload(
 
   const sprintName = sprintInfo.name ?? '';
   const sprintIdForMatch = sprintInfo.id != null ? String(sprintInfo.id) : undefined;
-
-  const issueByKey = new Map(
-    issues.map((issue) => [issue.key, normalizeYandexIssue(stampBurndownIssueEstimates(issue, integration))])
-  );
-  const ytrackerIssues = await issueTracker.getBurndownIssuesForKeys(
-    sprintIssueKeys,
-    {
-      sprintId: sprintIdForMatch,
-      sprintName,
-    },
-    issueByKey
-  );
 
   const sprintStartTime = new Date(sprintInfo.startDateTime).getTime();
   const sprintEndTime = new Date(sprintInfo.endDateTime).getTime();
@@ -164,7 +101,7 @@ async function computeBurndownPayload(
       sprintStartDate: startDate,
       sprintStartTime,
       testingFlowMode,
-      ytrackerIssues,
+      ytrackerIssues: burndownIssues,
     }),
   };
 }

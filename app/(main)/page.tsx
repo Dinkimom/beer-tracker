@@ -6,6 +6,7 @@ const TAB_TITLES: Record<string, string> = {
   backlog: "Бэклог",
   board: "Доска",
   burndown: "Диаграмма сгорания",
+  metrics: "Метрики",
   retro: "Ретро",
 };
 
@@ -14,11 +15,8 @@ interface PageProps {
 }
 
 function getTitleFromSearchParams(sp: { tab?: string } | null): string {
-  const tab =
-    sp?.tab === "backlog" || sp?.tab === "board" || sp?.tab === "burndown" || sp?.tab === "retro"
-      ? sp.tab
-      : "board";
-  return `Спринты · ${TAB_TITLES[tab] ?? "Доска"}`;
+  const tab = sp?.tab ?? "board";
+  return `Спринты · ${TAB_TITLES[tab] ?? TAB_TITLES.board}`;
 }
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {

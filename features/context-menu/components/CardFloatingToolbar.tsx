@@ -16,6 +16,8 @@ export const CARD_FLOATING_TOOLBAR_CONFIRM_BUTTON_CLASS = `${CARD_FLOATING_TOOLB
 
 export const CARD_FLOATING_TOOLBAR_CANCEL_BUTTON_CLASS = `${CARD_FLOATING_TOOLBAR_ICON_BUTTON} text-red-600/90 hover:!bg-red-500/[0.1] dark:text-red-400/90 dark:hover:!bg-red-400/[0.1]`;
 
+export const CARD_FLOATING_TOOLBAR_NEUTRAL_BUTTON_CLASS = `${CARD_FLOATING_TOOLBAR_ICON_BUTTON} text-gray-600 hover:!bg-gray-500/[0.12] dark:text-gray-300 dark:hover:!bg-white/[0.08]`;
+
 const BELOW_END_PLACEMENT =
   'pointer-events-auto absolute right-0 top-full mt-1 w-max max-w-none whitespace-nowrap';
 

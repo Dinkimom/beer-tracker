@@ -51,7 +51,7 @@ describe('plan patch goal preview actions', () => {
 
   it('inserts a created goal with the preview id and drops that preview', async () => {
     await expect(
-      approvePlanPatchGoalPreviews({ organizationId: 'org', sprintId: 7, goalId: created.goalId })
+      approvePlanPatchGoalPreviews({ organizationId: 'org', ownerId: 'user-1', sprintId: 7, goalId: created.goalId })
     ).resolves.toBe(1);
     expect(insert).toHaveBeenCalledWith({
       goalId: created.goalId,
@@ -63,6 +63,7 @@ describe('plan patch goal preview actions', () => {
     expect(remove).toHaveBeenCalledWith({
       goalId: created.goalId,
       organizationId: 'org',
+      ownerId: 'user-1',
       sprintId: 7,
     });
   });
@@ -71,7 +72,7 @@ describe('plan patch goal preview actions', () => {
     const updated: PlanPatchGoalPreview = { ...created, action: 'update', text: 'Next' };
     const removed: PlanPatchGoalPreview = { ...created, action: 'delete', goalId: '22222222-2222-4222-8222-222222222222' };
     list.mockResolvedValue([updated, removed]);
-    await approvePlanPatchGoalPreviews({ organizationId: 'org', sprintId: 7 });
+    await approvePlanPatchGoalPreviews({ organizationId: 'org', ownerId: 'user-1', sprintId: 7 });
     expect(update).toHaveBeenCalledWith({
       goalId: updated.goalId,
       organizationId: 'org',
@@ -82,7 +83,7 @@ describe('plan patch goal preview actions', () => {
   });
 
   it('rejects by deleting the preview without writing the goal', async () => {
-    await rejectPlanPatchGoalPreviews({ organizationId: 'org', sprintId: 7, goalId: created.goalId });
+    await rejectPlanPatchGoalPreviews({ organizationId: 'org', ownerId: 'user-1', sprintId: 7, goalId: created.goalId });
     expect(remove).toHaveBeenCalled();
     expect(insert).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();

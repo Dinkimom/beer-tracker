@@ -16,7 +16,7 @@ const SettingsModal = dynamic(
   { ssr: false }
 );
 
-export type SprintTab = 'backlog' | 'board' | 'burndown' | 'retro';
+export type SprintTab = 'backlog' | 'board' | 'burndown' | 'metrics' | 'retro';
 
 function buildSprintTabItems(t: (key: string) => string): Array<PageHeaderMainPageTabItem<SprintTab>> {
   return [
@@ -29,6 +29,7 @@ function buildSprintTabItems(t: (key: string) => string): Array<PageHeaderMainPa
       shortLabel: t('header.sprintTabs.burndownShort'),
     },
     { id: 'retro', icon: 'comment', label: t('header.sprintTabs.retro') },
+    { id: 'metrics', icon: 'bar-chart', label: t('header.sprintTabs.metrics') },
   ];
 }
 

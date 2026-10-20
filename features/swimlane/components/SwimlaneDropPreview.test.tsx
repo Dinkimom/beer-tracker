@@ -138,7 +138,7 @@ describe('SwimlaneDropPreview', () => {
     const { hover, view } = setup(1, 10, () => 5, note);
     hover('lane-0', 6);
     const marker = view.container.querySelector<HTMLElement>('[data-swimlane-drop-preview="new-layer"]');
-    expect(marker?.style.borderTopColor).toBe('rgb(255, 192, 224)');
+    expect(marker?.style.borderTopColor).toBe('rgb(249, 198, 221)');
   });
 
   it('never re-renders previews of lanes the pointer does not touch (30 lanes × 25 cards)', () => {

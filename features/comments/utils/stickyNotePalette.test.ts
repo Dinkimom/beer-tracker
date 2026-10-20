@@ -32,18 +32,18 @@ describe('stickyNotePalette', () => {
   it('keeps the light-theme paper edge close to the fill instead of an ink outline', () => {
     const yellow = getStickyNotePaint('yellow');
     expect(yellow.border).not.toBe(yellow.text);
-    expect(yellow.border).toBe('#f4d454');
-    expect(getStickyNotePaint('gray').border).toBe('#e0e3e8');
+    expect(yellow.border).toBe('#f3e18f');
+    expect(getStickyNotePaint('gray').border).toBe('#e3e5e9');
   });
 
   it('keeps dark-mode notes on deeper paper with light ink', () => {
     const light = getStickyNotePaint('yellow', false);
     const paper = getStickyNotePaint('yellow', true);
     expect(paper.background).not.toBe(light.background);
-    expect(paper.background).toBe('#e0bb00');
+    expect(paper.background).toBe('#d6b73a');
     expect(paper.text).toBe('#2a1604');
     expect(paper.text).not.toBe(light.text);
-    expect(getStickyNotePaint('green', true).background).toBe('#28c361');
+    expect(getStickyNotePaint('green', true).background).toBe('#46ad6c');
     expect(getStickyNotePaint('pink', true).text).toBe('#fff4f8');
   });
 

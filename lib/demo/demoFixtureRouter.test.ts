@@ -31,6 +31,23 @@ describe('handleDemoFixtureRequest', () => {
     resetDemoFixtureStore();
   });
 
+  it('returns multi-quarter sprint metrics history ending with the current sprint', () => {
+    const result = handleDemoFixtureRequest(
+      cfg('get', `/boards/${DEMO_BOARD_ID}/sprint-metrics`, { params: { quarters: 4 } })
+    );
+    expect(result.status).toBe(200);
+    const data = result.data as { pending: number; records: Array<{ open: boolean; sprintId: number }> };
+    expect(data.pending).toBe(0);
+    expect(data.records.length).toBeGreaterThan(15);
+    expect(data.records.at(-1)).toMatchObject({ open: true, sprintId: DEMO_SPRINT_ID });
+    expect(data.records.filter((record) => record.open)).toHaveLength(1);
+  });
+
+  it('returns no agent sessions', () => {
+    const result = handleDemoFixtureRequest(cfg('get', `/sprints/${DEMO_SPRINT_ID}/agent-sessions`));
+    expect(result).toEqual({ data: { draftSessionId: null, sessions: [] }, status: 200 });
+  });
+
   it('returns the demo board list', () => {
     const result = handleDemoFixtureRequest(cfg('get', '/boards'));
     expect(result.status).toBe(200);

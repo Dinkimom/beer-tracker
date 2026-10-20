@@ -37,6 +37,7 @@ describe('SprintPlannerUiStore', () => {
     store.setStickyNoteCardRowOverride('comment:1', { layerShiftUp: 0, span: 2 });
     store.setTaskResizePreview({ duration: 4, startCell: 2, taskId: 'comment:1' });
     store.setAccountWorkModal(task);
+    store.setAgentRequestTarget({ kind: 'task', task });
     store.openTaskInfoPanel(task);
     store.setNotificationFocusTaskId('DEV-100');
     store.setPlacementTool('diagram');
@@ -64,6 +65,7 @@ describe('SprintPlannerUiStore', () => {
     expect(store.stickyNoteCardRowPreview).toBeNull();
     expect(store.taskResizePreview).toBeNull();
     expect(store.accountWorkModal).toBeNull();
+    expect(store.agentRequestTarget).toBeNull();
     expect(store.taskInfoPanelTask).toBeNull();
     expect(store.sidebarOpen).toBe(sidebarBefore);
     expect(store.placementTool).toBe('cursor');

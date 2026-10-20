@@ -8,6 +8,7 @@ import { CALENDAR_BUSY_LANE_HEIGHT_PX } from '@/features/swimlane/components/Swi
 import {
   buildSwimlanePlacementQuickAddHandler,
   buildSwimlaneRootClassName,
+  orderSwimlaneTasksForPaint,
   resolveSwimlaneAvailabilityTimeline,
   resolveSwimlaneDropPreviewTarget,
   resolveSwimlaneHasQuickAddDraftMode,
@@ -312,5 +313,27 @@ describe('resolveSwimlaneSecondaryLaneLayout', () => {
 
     expect(layout.calendarBusyLaneVisible).toBe(false);
     expect(layout.laneLabels).toEqual([]);
+  });
+});
+
+describe('orderSwimlaneTasksForPaint', () => {
+  it('paints lower rows first so hanging note reactions stay above the next row', () => {
+    const items = [
+      { task: { id: 'top-a' } },
+      { task: { id: 'bottom' } },
+      { task: { id: 'middle' } },
+      { task: { id: 'top-b' } },
+    ];
+    const layers = new Map([
+      ['top-a', 0],
+      ['bottom', 2],
+      ['middle', 1],
+    ]);
+    expect(orderSwimlaneTasksForPaint(items, layers).map((item) => item.task.id)).toEqual([
+      'bottom',
+      'middle',
+      'top-a',
+      'top-b',
+    ]);
   });
 });

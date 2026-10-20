@@ -28,7 +28,10 @@ export async function POST(
     if (Number.isNaN(sprintId)) {
       return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
     }
-    const count = await approveAllPendingSprintComments({ sprintId });
+    const count = await approveAllPendingSprintComments({
+      ownerId: tenantResult.ctx.userId,
+      sprintId,
+    });
     notifySprintRealtime(request, tenantResult.ctx.organizationId, sprintId, ['comments']);
     return NextResponse.json({ count, ok: true });
   } catch (error) {
@@ -50,7 +53,10 @@ export async function DELETE(
     if (Number.isNaN(sprintId)) {
       return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
     }
-    const count = await rejectAllPendingSprintComments({ sprintId });
+    const count = await rejectAllPendingSprintComments({
+      ownerId: tenantResult.ctx.userId,
+      sprintId,
+    });
     notifySprintRealtime(request, tenantResult.ctx.organizationId, sprintId, ['comments']);
     return NextResponse.json({ count, ok: true });
   } catch (error) {

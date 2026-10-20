@@ -55,7 +55,11 @@ export async function GET(
       );
     }
 
-    const comments = await listSprintComments({ organizationId, sprintId });
+    const comments = await listSprintComments({
+      organizationId,
+      sprintId,
+      viewerUserId: tenantResult.ctx.userId,
+    });
     const commentsWithReactions = await attachCommentReactionSummaries({
       comments: comments as Array<{ id: string }>,
       organizationId,

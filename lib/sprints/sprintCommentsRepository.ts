@@ -79,6 +79,11 @@ export async function withCommentAuthors<T extends CommentRowWithCreator>(
 export async function listSprintComments(input: {
   organizationId: string;
   sprintId: number;
+  /**
+   * Кто смотрит: черновые заметки агента (pending_approval) приватны — видны только автору драфта.
+   * Без viewer черновики не возвращаются никому.
+   */
+  viewerUserId?: string;
 }): Promise<unknown[]> {
   await ensurePlannerCommentImagesSchema();
   await deleteExpiredPendingSprintComments({ sprintId: input.sprintId });
@@ -87,8 +92,9 @@ export async function listSprintComments(input: {
       FROM comments
       WHERE ${sprintTenantWhere()}
         AND deleted_at IS NULL
+        AND (pending_approval = FALSE OR LOWER(created_by::text) = LOWER($2))
       ORDER BY created_at`,
-    sprintTenantParams(input.sprintId)
+    [...sprintTenantParams(input.sprintId), input.viewerUserId ?? '']
   );
   return withCommentAuthors(result.rows as CommentRowWithCreator[]);
 }
@@ -395,8 +401,9 @@ async function deleteExpiredPendingSprintComments(input: {
   return result.rowCount ?? 0;
 }
 
-/** Удаляет все pending-заметки plan patch в спринте (повторный propose / смена ops). */
+/** Удаляет pending-заметки plan patch автора драфта в спринте (повторный propose / смена ops). */
 export async function deletePendingPlanPatchSprintComments(input: {
+  ownerId: string;
   sprintId: number;
 }): Promise<number> {
   await ensurePlannerCommentImagesSchema();
@@ -404,8 +411,9 @@ export async function deletePendingPlanPatchSprintComments(input: {
     `DELETE FROM comments
       WHERE ${sprintTenantWhere()}
         AND pending_approval = TRUE
-        AND plan_patch_proposal_id IS NOT NULL`,
-    sprintTenantParams(input.sprintId)
+        AND plan_patch_proposal_id IS NOT NULL
+        AND LOWER(created_by::text) = LOWER($2)`,
+    [...sprintTenantParams(input.sprintId), input.ownerId]
   );
   return result.rowCount ?? 0;
 }
@@ -448,6 +456,7 @@ export async function hasSprintComment(input: {
 }
 
 export async function confirmAllPendingSprintComments(input: {
+  ownerId: string;
   sprintId: number;
 }): Promise<number> {
   await ensurePlannerCommentImagesSchema();
@@ -459,21 +468,24 @@ export async function confirmAllPendingSprintComments(input: {
             client_brand = '',
             updated_at = CURRENT_TIMESTAMP
       WHERE ${sprintTenantWhere()}
-        AND pending_approval = TRUE`,
-    sprintTenantParams(input.sprintId)
+        AND pending_approval = TRUE
+        AND LOWER(created_by::text) = LOWER($2)`,
+    [...sprintTenantParams(input.sprintId), input.ownerId]
   );
   return result.rowCount ?? 0;
 }
 
 export async function deleteAllPendingSprintComments(input: {
+  ownerId: string;
   sprintId: number;
 }): Promise<number> {
   await ensurePlannerCommentImagesSchema();
   const result = await query(
     `DELETE FROM comments
       WHERE ${sprintTenantWhere()}
-        AND pending_approval = TRUE`,
-    sprintTenantParams(input.sprintId)
+        AND pending_approval = TRUE
+        AND LOWER(created_by::text) = LOWER($2)`,
+    [...sprintTenantParams(input.sprintId), input.ownerId]
   );
   return result.rowCount ?? 0;
 }

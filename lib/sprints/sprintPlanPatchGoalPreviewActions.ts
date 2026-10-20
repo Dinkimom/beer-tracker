@@ -38,6 +38,7 @@ async function writeGoalPreview(input: {
 export async function approvePlanPatchGoalPreviews(input: {
   goalId?: string;
   organizationId: string;
+  ownerId: string;
   sprintId: number;
 }): Promise<number> {
   const previews = await listPlanPatchGoalPreviews(input);
@@ -53,6 +54,7 @@ export async function approvePlanPatchGoalPreviews(input: {
     await deletePlanPatchGoalPreviews({
       goalId: preview.goalId,
       organizationId: input.organizationId,
+      ownerId: input.ownerId,
       sprintId: input.sprintId,
     });
   }
@@ -62,6 +64,7 @@ export async function approvePlanPatchGoalPreviews(input: {
 export function rejectPlanPatchGoalPreviews(input: {
   goalId?: string;
   organizationId: string;
+  ownerId: string;
   sprintId: number;
 }): Promise<number> {
   return deletePlanPatchGoalPreviews(input);

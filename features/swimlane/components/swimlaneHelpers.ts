@@ -274,3 +274,18 @@ export function buildSwimlanePlacementQuickAddHandler(input: {
     input.developerId
   );
 }
+
+/**
+ * Порядок отрисовки карточек: нижние строки раньше, верхние позже.
+ * Реакции заметки свисают за её нижний край. При равном z-index карточка
+ * следующей строки, отрисованная позже, иначе перекрыла бы их.
+ */
+export function orderSwimlaneTasksForPaint<T extends { task: { id: string } }>(
+  positionedTasks: T[],
+  taskLayerMap: Map<string, number>
+): T[] {
+  return positionedTasks
+    .map((item, index) => ({ index, item, layer: taskLayerMap.get(item.task.id) ?? 0 }))
+    .sort((a, b) => b.layer - a.layer || a.index - b.index)
+    .map(({ item }) => item);
+}

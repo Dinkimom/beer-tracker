@@ -18,7 +18,16 @@ import { SPRINT_REALTIME_CHANNEL_PREFIX } from './sprintRealtimeConstants';
 import { SPRINT_PRESENCE_FOCUS_STATES } from './sprintRealtimeTypes';
 import { parseSprintTimerState } from './sprintTimerState';
 
-const RESOURCES: ReadonlySet<string> = new Set(['comments', 'goals', 'links', 'positions', 'reactions', 'retro', 'tasks']);
+const RESOURCES: ReadonlySet<string> = new Set([
+  'agentSessions',
+  'comments',
+  'goals',
+  'links',
+  'positions',
+  'reactions',
+  'retro',
+  'tasks',
+]);
 
 export function sprintRealtimeChannel(organizationId: string, sprintId: number): string {
   return `${SPRINT_REALTIME_CHANNEL_PREFIX}${organizationId}:${sprintId}`;

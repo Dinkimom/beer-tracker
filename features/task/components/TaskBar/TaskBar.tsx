@@ -14,6 +14,7 @@ import { useStickyNoteExiting } from '@/features/comments/hooks/useStickyNoteExi
 import { stickyNoteColorPopClassName } from '@/features/comments/utils/stickyNoteColorPop';
 import { stickyNoteExitClassName } from '@/features/comments/utils/stickyNoteExit';
 import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { DraftItemCommentButton } from '@/features/swimlane/components/DraftItemCommentButton';
 import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
 import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
@@ -440,6 +441,14 @@ const TaskBarSurface = observer(function TaskBarSurface({
         <TaskBarPendingApprovalToolbar
           clientBrand={task.pendingApprovalClientBrand}
           commentId={swimlaneCommentId}
+          extraAction={
+            <DraftItemCommentButton
+              sprintId={selectedSprintId}
+              targetId={swimlaneCommentId}
+              targetKind="note"
+              targetLabel={task.name}
+            />
+          }
           onApprove={onCommentApprove}
           onReject={onCommentDelete}
         />

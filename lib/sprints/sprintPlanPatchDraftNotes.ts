@@ -42,7 +42,10 @@ export async function persistProposedCreateNotes(input: {
 }): Promise<string[]> {
   const notes = collectCreateNoteOps(input.ops);
   // Снимаем прошлые draft createNote: proposal_id = opsHash, при правке ops хеш другой.
-  await deletePendingPlanPatchSprintComments({ sprintId: input.sprintId });
+  await deletePendingPlanPatchSprintComments({
+    ownerId: input.actorUserId,
+    sprintId: input.sprintId,
+  });
   const ids: string[] = [];
   for (const op of notes) {
     const commentId = randomUUID();

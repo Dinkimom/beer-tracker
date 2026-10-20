@@ -15,6 +15,7 @@ import { BacklogPage } from '@/features/backlog/components/BacklogPage';
 import { useBoards } from '@/features/board/hooks/useBoards';
 import { BurndownChart } from '@/features/burndown/components/BurndownChart';
 import { RetroPage } from '@/features/retro/components/RetroPage';
+import { SprintMetricsPage } from '@/features/sprint-metrics/components/SprintMetricsPage';
 import { SprintPlanner } from '@/features/sprint/components/SprintPlanner';
 import { useSprintGoals } from '@/features/sprint/hooks/useSprintGoals';
 import { useSprints } from '@/features/sprint/hooks/useSprints';
@@ -268,6 +269,7 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
                   onSprintChange={handleSprintChange}
                 />
               )}
+              {activeTab === 'metrics' && <SprintMetricsPage boardId={activeBoardId} />}
               {activeTab === 'retro' && (
                 <RetroPage
                   boardId={activeBoardId}

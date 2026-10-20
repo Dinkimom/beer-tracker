@@ -5,6 +5,7 @@ import type {
 } from './types';
 import type { AxiosInstance } from 'axios';
 
+import { applyJiraBoardFilterFields } from './jiraBoardFilterFields';
 import {
   jiraAgileBacklogIssueUrl,
   jiraAgileSprintByIdUrl,
@@ -111,6 +112,9 @@ export async function addJiraIssueToSprint(
 
   const boardId = await getJiraSprintBoardId(api, sprintId);
   await moveJiraIssuesToSprint(api, sprintId, [key]);
+  if (boardId != null) {
+    await applyJiraBoardFilterFields(api, key, boardId);
+  }
 
   return sprintMembershipResult(
     [...currentIds, sprintId],
@@ -156,13 +160,18 @@ export async function replaceJiraIssueSprints(
   const currentIds = await loadIssueSprintIds(api, key);
   const nextIds = parseReplaceSprintIds(sprints);
 
-  if (nextIds.length === 0) {
+  const targetSprintId = nextIds.at(-1);
+  if (targetSprintId == null) {
     await moveJiraIssuesToBacklog(api, [key]);
   } else {
-    await moveJiraIssuesToSprint(api, nextIds[nextIds.length - 1]!, [key]);
+    await moveJiraIssuesToSprint(api, targetSprintId, [key]);
   }
 
   const affectedIds = uniqueNumbers([...currentIds, ...nextIds]);
   const boardIds = await Promise.all(affectedIds.map((id) => getJiraSprintBoardId(api, id)));
+  const targetBoardId = targetSprintId == null ? null : boardIds[affectedIds.indexOf(targetSprintId)];
+  if (targetBoardId != null) {
+    await applyJiraBoardFilterFields(api, key, targetBoardId);
+  }
   return sprintMembershipResult(affectedIds, boardIds);
 }

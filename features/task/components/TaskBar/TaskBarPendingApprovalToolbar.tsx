@@ -18,6 +18,8 @@ import {
 interface TaskBarPendingApprovalToolbarProps {
   clientBrand?: McpOAuthClientBrand;
   commentId: string;
+  /** Доп. действие перед ✓/✗ (например, комментарий агенту к пункту драфта). */
+  extraAction?: ReactNode;
   label?: string;
   labelClassName?: string;
   labelIcon?: string | null;
@@ -104,6 +106,7 @@ function renderCardCaption(input: {
 export function TaskBarPendingApprovalToolbar({
   clientBrand,
   commentId,
+  extraAction,
   label,
   labelClassName,
   labelIcon,
@@ -135,6 +138,7 @@ export function TaskBarPendingApprovalToolbar({
             labelClassName,
             labelIcon,
           })}
+      {extraAction}
       {onApprove ? (
         <Button
           aria-label={t('comments.agentApproveAria')}

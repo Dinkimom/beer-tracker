@@ -58,17 +58,21 @@ describe('plan patch preview actions', () => {
     await expect(
       approvePlanPatchPositionPreviews({
         organizationId: 'org',
+        ownerId: 'user-1',
         sprintId: 1221,
         taskId: 'RND-1',
       })
     ).resolves.toBe(1);
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ taskId: 'RND-1', startDay: 3 }));
     expect(remove).toHaveBeenCalledWith(expect.objectContaining({ taskId: 'RND-1' }));
+    // Драфты приватны: читаем и снимаем только превью владельца.
+    expect(list).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'user-1' }));
+    expect(remove).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'user-1' }));
   });
 
   it('deletes the board position for a removal preview', async () => {
     list.mockResolvedValue([{ ...move, remove: true, taskId: 'RND-2' }]);
-    await approvePlanPatchPositionPreviews({ organizationId: 'org', sprintId: 1221 });
+    await approvePlanPatchPositionPreviews({ organizationId: 'org', ownerId: 'user-1', sprintId: 1221 });
     expect(dropPosition).toHaveBeenCalledWith(expect.objectContaining({ taskId: 'RND-2' }));
     expect(upsert).not.toHaveBeenCalled();
   });
@@ -76,7 +80,7 @@ describe('plan patch preview actions', () => {
   it('rejects without writing a position', async () => {
     remove.mockResolvedValue(1);
     await expect(
-      rejectPlanPatchPositionPreviews({ organizationId: 'org', sprintId: 1221, taskId: 'RND-1' })
+      rejectPlanPatchPositionPreviews({ organizationId: 'org', ownerId: 'user-1', sprintId: 1221, taskId: 'RND-1' })
     ).resolves.toBe(1);
     expect(upsert).not.toHaveBeenCalled();
     expect(list).not.toHaveBeenCalled();
@@ -94,6 +98,7 @@ describe('plan patch preview actions', () => {
     ]);
     await approvePlanPatchPositionPreviews({
       organizationId: 'org',
+      ownerId: 'user-1',
       sprintId: 1221,
       taskId: 'RND-1',
     });

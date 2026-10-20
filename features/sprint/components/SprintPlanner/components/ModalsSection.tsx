@@ -20,6 +20,7 @@ import { getPartsPerDay } from '@/constants';
 import { resolveSwimlaneAnnotationContextMenuVariant } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { ContextMenu } from '@/features/context-menu/components/ContextMenu';
 import { buildContextMenuParentOptions } from '@/features/context-menu/utils/buildContextMenuParentOptions';
+import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useRootStore } from '@/lib/layers';
 import {
@@ -130,6 +131,7 @@ export const ModalsSection = observer(function ModalsSection({
   onTransitionSubmit,
 }: ModalsSectionProps) {
   const { sprintPlannerUi } = useRootStore();
+  const agentAvailable = useAgentAvailable(selectedSprintId);
   const contextMenu = sprintPlannerUi.contextMenu;
   const presenceLocked = useSprintCardPresenceLocked(contextMenu?.task.id ?? '');
   const accountWorkModal = sprintPlannerUi.accountWorkModal;
@@ -168,6 +170,7 @@ export const ModalsSection = observer(function ModalsSection({
     <>
       {showContextMenu && contextMenu && annotationMenuVariant ? (
         <SprintPlannerAnnotationContextMenu
+          agentAvailable={agentAvailable}
           assigneeOptions={assigneeOptions}
           boardId={boardId}
           comments={comments}
@@ -200,6 +203,7 @@ export const ModalsSection = observer(function ModalsSection({
               : taskPositions
           }
           onAccountWork={sprintPlannerUi.setAccountWorkModal}
+          onAskAgent={(task) => sprintPlannerUi.setAgentRequestTarget({ kind: 'task', task })}
           onAssigneeSelect={bindTaskAssigneeSelect(onAssigneeSelect, contextMenu.task)}
           onClose={sprintPlannerUi.closeContextMenu}
           onMoveToSprint={onMoveToSprint}

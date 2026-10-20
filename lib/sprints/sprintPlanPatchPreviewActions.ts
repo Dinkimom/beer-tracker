@@ -46,6 +46,7 @@ async function writePreview(input: {
 
 export async function approvePlanPatchPositionPreviews(input: {
   organizationId: string;
+  ownerId: string;
   sprintId: number;
   taskId?: string;
 }): Promise<number> {
@@ -57,6 +58,7 @@ export async function approvePlanPatchPositionPreviews(input: {
     await writePreview({ organizationId: input.organizationId, preview, sprintId: input.sprintId });
     await deletePlanPatchPositionPreviews({
       organizationId: input.organizationId,
+      ownerId: input.ownerId,
       sprintId: input.sprintId,
       taskId: preview.taskId,
     });
@@ -66,6 +68,7 @@ export async function approvePlanPatchPositionPreviews(input: {
 
 export function rejectPlanPatchPositionPreviews(input: {
   organizationId: string;
+  ownerId: string;
   sprintId: number;
   taskId?: string;
 }): Promise<number> {

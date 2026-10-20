@@ -1,6 +1,8 @@
 import { adminPlannerIntegrationEn } from './adminPlannerIntegration.en';
+import { agentSessionEn } from './agentSession.en';
 import { holidayCaptionsEn } from './holidays.en';
 import { reactionKeywordsEn } from './reactionKeywords.en';
+import { sprintMetricsEn } from './sprintMetrics.en';
 
 export const enMessages = {
   errors: {
@@ -104,6 +106,7 @@ export const enMessages = {
       board: 'Board',
       burndown: 'Burndown Chart',
       burndownShort: 'Burndown',
+      metrics: 'Metrics',
       retro: 'Retro',
     },
     actions: {
@@ -617,6 +620,8 @@ export const enMessages = {
   features: {
     title: 'Epics (deprecated)',
   },
+  agentSession: agentSessionEn,
+  sprintMetrics: sprintMetricsEn,
   burndown: {
     title: 'Burndown Chart',
     metrics: {

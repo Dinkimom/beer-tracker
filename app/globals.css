@@ -1213,6 +1213,89 @@ textarea:focus-visible,
   --floating-menu-shadow: 0 8px 16px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
+/* Переход стрелками «‹ 2 / 5 ›» на плашке драфта: кратко подсветить пункт, к которому прокрутили. */
+.agent-pending-approval[data-agent-pending-focus] {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: 2px;
+  transition: outline-color 0.2s ease;
+}
+
+/* Остров агента: чат раскрывается над строкой тулбара — растут высота (grid 0fr→1fr) и ширина. */
+[data-agent-proposal-toolbar][data-agent-island='open'] {
+  min-width: min(100vw - 2rem, 30rem);
+  animation: agent-island-widen 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-agent-proposal-toolbar][data-agent-island='closing'] {
+  animation: agent-island-narrow 180ms ease-in forwards;
+}
+
+.agent-island-chat-panel {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: agent-island-chat-open 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.agent-island-chat-panel[data-state='closed'] {
+  animation: agent-island-chat-close 180ms ease-in forwards;
+  pointer-events: none;
+}
+
+.agent-island-chat-panel > * {
+  min-height: 0;
+}
+
+.agent-island-chat-panel:not([data-settled]) > * {
+  overflow: hidden;
+}
+
+@keyframes agent-island-widen {
+  from {
+    min-width: 0;
+  }
+  to {
+    min-width: min(100vw - 2rem, 30rem);
+  }
+}
+
+@keyframes agent-island-narrow {
+  from {
+    min-width: min(100vw - 2rem, 30rem);
+  }
+  to {
+    min-width: 0;
+  }
+}
+
+@keyframes agent-island-chat-open {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+@keyframes agent-island-chat-close {
+  from {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-agent-proposal-toolbar][data-agent-island],
+  .agent-island-chat-panel {
+    animation: none;
+  }
+}
+
 /* Плотная заливка корня строки не должна закрывать стекло ячейки и таймлайна. */
 .planner-pinned-lane .swimlane-lane-fill {
   background-color: transparent !important;

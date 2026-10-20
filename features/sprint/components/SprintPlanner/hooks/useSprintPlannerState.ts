@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { applyPlanHistorySideEffects } from '@/features/sprint/components/SprintPlanner/utils/applyPlanHistorySideEffects';
 import { reconcileTasksAfterPlanHistoryStep } from '@/features/sprint/components/SprintPlanner/utils/reconcileTasksAfterPlanHistoryStep';
+import { AGENT_SESSIONS_QUERY_KEY } from '@/features/swimlane/hooks/useAgentSessions';
 import {
   patchSprintTaskStatusInQueries,
   patchSprintTasksQuery,
@@ -112,6 +113,11 @@ export function useSprintPlannerState({
     },
     onLinks: () => {
       reloadLinks().catch(() => undefined);
+    },
+    onAgentSessions: () => {
+      queryClient
+        .invalidateQueries({ queryKey: [AGENT_SESSIONS_QUERY_KEY] })
+        .catch(() => undefined);
     },
     onPositions: () => {
       if (selectedSprintId) {
