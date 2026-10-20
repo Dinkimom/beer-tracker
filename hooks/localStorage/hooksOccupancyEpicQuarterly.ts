@@ -350,6 +350,22 @@ export function useSwimlaneLinksVisibilityStorage(): [
 }
 
 /**
+ * Какие связи свимлейна видны без наведения: все, только важные (блокировки, планерные,
+ * нарушенные) или никакие. Остальные проявляются в hover-кластере карточки.
+ */
+export type SwimlaneLinksIdleMode = 'all' | 'hover' | 'important';
+
+export function useSwimlaneLinksIdleModeStorage(): [
+  SwimlaneLinksIdleMode,
+  (value: SwimlaneLinksIdleMode | ((prev: SwimlaneLinksIdleMode) => SwimlaneLinksIdleMode)) => void
+] {
+  return useLocalStorageBase<SwimlaneLinksIdleMode>(
+    STORAGE_KEYS.SWIMLANE_LINKS_IDLE_MODE,
+    'important'
+  );
+}
+
+/**
  * Показывать под свимлейном таймлайн факта «В работе» (отдельно от факта в занятости).
  */
 export function useSwimlaneFactTimelineVisibleStorage(): [

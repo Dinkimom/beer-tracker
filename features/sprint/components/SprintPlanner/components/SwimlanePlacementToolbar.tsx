@@ -13,7 +13,7 @@ import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredCo
 import { FLOATING_MENU_SHELL, FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import { hrefWithSearchParams } from '@/features/sidebar/utils/hrefWithSearchParams';
 import { usePlanPatchGoalPreviewDecisions } from '@/features/sprint/hooks/usePlanPatchGoalPreviewDecisions';
-import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
+import { useAgentAvailable, useAgentBrand } from '@/features/swimlane/hooks/useAgentSessions';
 import { usePlanPatchPreviewDecisions } from '@/features/swimlane/hooks/usePlanPatchPreviewDecisions';
 import {
   useSwimlaneBaselineLayoutModeStorage,
@@ -32,7 +32,6 @@ import {
   isPlacementToolbarToolSelectable,
   placementToolLayerToReveal,
   placementToolRequiresObjectStorage,
-  resolveAgentProposalClientBrand,
   resolvePlacementToolAfterLayerChange,
   resolvePlacementToolbarTools,
   toggleSwimlanePlacementTool,
@@ -63,23 +62,16 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   const { t } = useI18n();
   const { sprintPlannerUi, taskPositions } = useRootStore();
   const positionPreviewCount = taskPositions.planPatchPreviews.size;
-  const positionBrand = [...taskPositions.planPatchPreviews.values()].find(
-    (preview) => preview.clientBrand
-  )?.clientBrand;
   const planPatchDecisions = usePlanPatchPreviewDecisions(sprintId);
   const goalDecisions = usePlanPatchGoalPreviewDecisions(sprintId);
   const agentAvailable = useAgentAvailable(sprintId);
-  const agentClientBrand = resolveAgentProposalClientBrand([
-    positionBrand,
-    goalDecisions.clientBrand,
-    pendingAgentNotes.clientBrand,
-  ]);
+  const agentBrand = useAgentBrand(sprintId);
   const hasPendingAgentDraft = isAgentProposalToolbarVisible({
     goalPreviewCount: goalDecisions.count,
     hasPendingAgentNote: pendingAgentNotes.ids.length > 0,
     positionPreviewCount,
   });
-  const agentIsland = useAgentIslandChat(sprintId, hasPendingAgentDraft);
+  const agentIsland = useAgentIslandChat(sprintId);
   const objectStorageConfigured = useObjectStorageConfigured();
   const hidePersonBoundTools = variant === 'features';
   const tools = useMemo(
@@ -173,7 +165,6 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
         <SwimlanePlanDraftToolbar />
         {onApproveAgentNotes && onRejectAgentNotes ? (
           <SwimlaneAgentProposalToolbar
-            clientBrand={agentClientBrand}
             goalPreviewCount={goalDecisions.count}
             hasPendingDraft={hasPendingAgentDraft}
             island={agentIsland}
@@ -257,6 +248,7 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
           />
           {sprintId != null && agentAvailable ? (
             <SwimlanePlacementToolbarAgentButton
+              brand={agentBrand}
               newSession={agentIsland.sessions.active ? { selected: agentIsland.newSelected } : null}
               onClick={
                 agentIsland.sessions.active

@@ -159,6 +159,7 @@ CREATE TABLE public.agent_session_messages (
     reply_to UUID REFERENCES public.agent_session_messages (id) ON DELETE CASCADE,
     resolution VARCHAR(16) CHECK (resolution IN ('addressed', 'declined')),
     mentions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    client_brand VARCHAR(16),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

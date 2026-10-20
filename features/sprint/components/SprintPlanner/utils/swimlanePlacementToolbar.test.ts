@@ -11,7 +11,6 @@ import {
   countPlacementToolbarExtras,
   isAgentProposalToolbarVisible,
   isPlacementToolbarToolSelectable,
-  resolveAgentProposalClientBrand,
   placementToolbarLayerIconName,
   placementToolbarLayerLabelMessageKey,
   placementToolbarLayoutModeMessageKey,
@@ -64,14 +63,6 @@ describe('isAgentProposalToolbarVisible', () => {
         positionPreviewCount: 1,
       })
     ).toBe(true);
-  });
-});
-
-describe('resolveAgentProposalClientBrand', () => {
-  it('keeps the first brand when an earlier proposal source is cleared', () => {
-    expect(resolveAgentProposalClientBrand([undefined, 'cursor', 'claude'])).toBe('cursor');
-    expect(resolveAgentProposalClientBrand([undefined, undefined, 'claude'])).toBe('claude');
-    expect(resolveAgentProposalClientBrand([undefined, undefined])).toBeUndefined();
   });
 });
 

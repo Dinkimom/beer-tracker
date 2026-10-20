@@ -4,6 +4,7 @@ import type { PlanningGanttTab, SettingsPlanningTabProps } from './SettingsPlann
 import type {
   OccupancyTimelineScale,
   PlanningPhaseCardColorScheme,
+  SwimlaneLinksIdleMode,
 } from '@/hooks/useLocalStorage';
 
 import { useMemo, useState } from 'react';
@@ -12,7 +13,10 @@ import { Button } from '@/components/Button';
 import { CustomSelect } from '@/components/CustomSelect';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskCardDisplayDialog } from '@/features/task/components/TaskCard/slots/TaskCardDisplayDialog';
-import { usePlanningPhaseCardColorSchemeStorage } from '@/hooks/useLocalStorage';
+import {
+  usePlanningPhaseCardColorSchemeStorage,
+  useSwimlaneLinksIdleModeStorage,
+} from '@/hooks/useLocalStorage';
 
 import { OccupancySettingsSection } from '../components/OccupancySettingsSection';
 import { Toggle } from '../components/Toggle';
@@ -21,6 +25,7 @@ import { SettingsPlanningTabRowFieldsGrid } from './SettingsPlanningTabRowFields
 
 export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
   const [phaseCardColorScheme, setPhaseCardColorScheme] = usePlanningPhaseCardColorSchemeStorage();
+  const [linksIdleMode, setLinksIdleMode] = useSwimlaneLinksIdleModeStorage();
   const [cardDisplayOpen, setCardDisplayOpen] = useState(false);
   const { t } = useI18n();
   const ganttTabs = useMemo(
@@ -80,6 +85,27 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
           label={t('settings.planningTab.swimlaneLinks')}
           onChange={setSwimlaneLinksVisible}
         />
+        {swimlaneLinksVisible ? (
+          <div className="space-y-1.5">
+            <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('settings.planningTab.linksIdleMode')}
+            </span>
+            <CustomSelect<SwimlaneLinksIdleMode>
+              className="w-full max-w-md"
+              options={[
+                { label: t('settings.planningTab.linksIdleModeImportant'), value: 'important' },
+                { label: t('settings.planningTab.linksIdleModeAll'), value: 'all' },
+                { label: t('settings.planningTab.linksIdleModeHover'), value: 'hover' },
+              ]}
+              title={t('settings.planningTab.linksIdleMode')}
+              value={linksIdleMode}
+              onChange={setLinksIdleMode}
+            />
+            <p className="mt-1 max-w-md text-xs text-ds-text-muted">
+              {t('settings.planningTab.linksIdleModeHint')}
+            </p>
+          </div>
+        ) : null}
         <div className="space-y-1.5">
           <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {t('settings.planningTab.phaseColorScheme')}

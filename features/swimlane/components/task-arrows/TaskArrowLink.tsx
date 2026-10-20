@@ -7,6 +7,7 @@ import { useContext } from 'react';
 import Xarrow from 'react-xarrows';
 
 import { SwimlaneArrowRedrawGenerationContext } from '@/features/swimlane/SwimlaneArrowRedrawContext';
+import { isTaskLinkScheduleViolated } from '@/features/swimlane/utils/task-arrows/taskLinkIdleVisibility';
 import { ONBOARDING_DEMO_LINK_ID } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { resolveLinkArrowDrawTaskIds } from '@/utils/linkAnchors';
 
@@ -64,6 +65,7 @@ export function TaskArrowLink({
     fromTask,
     isHovered,
     isRelatedToHoveredTask: isRelatedToHoveredTask || isOnboardingDemoLink,
+    isScheduleViolated: isTaskLinkScheduleViolated(link, taskPositions),
     phaseCardColorScheme,
   });
 

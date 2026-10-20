@@ -38,7 +38,7 @@ function preventCardGesture(event: MouseEvent): void {
 
 function renderBrandMark(brand: McpOAuthClientBrand | undefined, caption: string): ReactNode {
   if (brand) {
-    return <McpOAuthClientMark brand={brand} compact label={caption} />;
+    return <McpOAuthClientMark brand={brand} label={caption} size="compact" />;
   }
   return <Icon className="h-3.5 w-3.5 shrink-0" name="sparkles" />;
 }

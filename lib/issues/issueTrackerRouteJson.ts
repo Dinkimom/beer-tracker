@@ -1,5 +1,6 @@
 import type { IssueTrackerIssue } from '@/lib/issueTrackerProvider';
 import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/types';
 import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task } from '@/types';
 
@@ -20,6 +21,22 @@ export function taskJsonFromSnapshotRow(
     return null;
   }
   return mapIssueSnapshotPayloadToTask(row.payload, trackerWeb, integration);
+}
+
+/** Снапшот, а если его нет (задача вне синкнутых спринтов) — живая задача из трекера. */
+export async function loadIssueTaskJson(input: {
+  integration?: TrackerIntegrationStored | null;
+  issueKey: string;
+  issueTracker: Pick<IssueTrackerProviderClient, 'getIssue' | 'mapIssueToTask'>;
+  snapshotRow: { payload: unknown } | null;
+  trackerWeb: TrackerWebUrlContext;
+}): Promise<Task | null> {
+  const fromSnapshot = taskJsonFromSnapshotRow(input.snapshotRow, input.trackerWeb, input.integration);
+  if (fromSnapshot) {
+    return fromSnapshot;
+  }
+  const issue = await input.issueTracker.getIssue(input.issueKey);
+  return issue ? input.issueTracker.mapIssueToTask(issue, input.integration) : null;
 }
 
 export function buildIssueSearchApiResponse(

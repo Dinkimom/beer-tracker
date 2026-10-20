@@ -28,6 +28,8 @@ export const STORAGE_KEYS = {
   DEVELOPER_CALDAV_CREDENTIALS: DEVELOPER_CALDAV_CREDENTIALS_STORAGE_KEY,
   OCCUPANCY_FACT_VISIBLE: 'beer-tracker-occupancy-fact-visible',
   SWIMLANE_LINKS_VISIBLE: 'beer-tracker-swimlane-links-visible',
+  /** Какие связи свимлейна видны без наведения (all / important / hover) */
+  SWIMLANE_LINKS_IDLE_MODE: 'beer-tracker-swimlane-links-idle-mode',
   /** Таймлайн факта «В работе» под строкой свимлейна (независимо от факта в занятости) */
   SWIMLANE_FACT_TIMELINE_VISIBLE: 'beer-tracker-swimlane-fact-timeline-visible',
   /** Дорожка занятости из CalDAV под строкой свимлейна */

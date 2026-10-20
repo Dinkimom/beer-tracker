@@ -54,7 +54,11 @@ CREATE TABLE IF NOT EXISTS agent_session_messages (
     reply_to UUID REFERENCES agent_session_messages (id) ON DELETE CASCADE,
     resolution VARCHAR(16) CHECK (resolution IN ('addressed', 'declined')),
     mentions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    client_brand VARCHAR(16),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_session_messages_session ON agent_session_messages (session_id, created_at);
+
+-- Каким клиентом MCP писал агент (Claude, Cursor…) — для подписи ответов в чате.
+ALTER TABLE agent_session_messages ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16);

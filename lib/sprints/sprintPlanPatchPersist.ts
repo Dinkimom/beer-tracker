@@ -193,6 +193,7 @@ export async function persistDraftInSession(
   });
   const draftNoteIds = await persistProposeBoardDrafts(input);
   const agentSession = await recordDraftInAgentSession({
+    clientBrand: input.clientBrand,
     message: input.draftMessage,
     organizationId: input.organizationId,
     proposalId: input.proposalId,

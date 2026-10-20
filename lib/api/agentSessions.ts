@@ -3,12 +3,15 @@ import type {
   AgentSessionCreatePayload,
   AgentSessionUserMessagePayload,
 } from '@/lib/agentSessions/agentSession';
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { getPlannerBeerTrackerApi } from '@/lib/plannerBeerTrackerApiOverride';
 
 export interface SprintAgentSessions {
   /** Есть ли агент, который заберёт просьбу (сейчас — подключён MCP); без него «Агенту» не показываем. */
   agentAvailable: boolean;
+  /** Каким клиентом MCP подключён агент (Claude, Cursor…); null — не подключён. */
+  agentBrand: McpOAuthClientBrand | null;
   /** Сессия, в которой лежит текущий драфт пользователя в спринте. */
   draftSessionId: string | null;
   sessions: AgentSession[];
@@ -20,6 +23,7 @@ export async function fetchSprintAgentSessions(sprintId: number): Promise<Sprint
   );
   return {
     agentAvailable: data.agentAvailable ?? false,
+    agentBrand: data.agentBrand ?? null,
     draftSessionId: data.draftSessionId ?? null,
     sessions: data.sessions ?? [],
   };

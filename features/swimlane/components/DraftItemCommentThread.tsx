@@ -4,6 +4,7 @@ import type { AgentMessageStatus } from './AgentMessageBubble';
 import type { AgentSessionItemComment } from '@/lib/agentSessions/agentSession';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { mcpOAuthClientBrandName } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { AgentMessageBubble } from './AgentMessageBubble';
 
@@ -53,7 +54,13 @@ export function DraftItemCommentThread({
               text={item.comment.text}
             />
             {item.replies.map((reply) => (
-              <AgentMessageBubble key={reply.id} caption={t('agentSession.agent')} from="agent" text={reply.text} />
+              <AgentMessageBubble
+                key={reply.id}
+                brand={reply.clientBrand}
+                caption={(reply.clientBrand && mcpOAuthClientBrandName(reply.clientBrand)) || t('agentSession.agent')}
+                from="agent"
+                text={reply.text}
+              />
             ))}
           </li>
         );

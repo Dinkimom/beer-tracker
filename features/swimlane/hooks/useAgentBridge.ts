@@ -23,7 +23,7 @@ export function useAgentBridge() {
     enabled,
     queryFn: () => fetchAgentBridgeHealth(AGENT_BRIDGE_DEFAULT_URL),
     queryKey: HEALTH_QUERY_KEY,
-    refetchInterval: (query) => (query.state.data?.running.length ? 3000 : 30_000),
+    refetchInterval: (query) => (query.state.data?.runs.length ? 2000 : 30_000),
     refetchIntervalInBackground: false,
     retry: false,
   });
@@ -41,7 +41,8 @@ export function useAgentBridge() {
     checking: enabled && health.isPending,
     enabled,
     run,
-    running: data?.running ?? [],
+    /** Идущие запуски: сессия, шаг агента, время старта. */
+    runs: data?.runs ?? [],
     setEnabled,
   };
 }

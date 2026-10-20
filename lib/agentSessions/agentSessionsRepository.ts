@@ -14,6 +14,7 @@ import type {
 import { STAFF_AUTHOR_DISPLAY_NAME_SQL } from '@/lib/comments/commentAuthor';
 import { query } from '@/lib/db';
 import { getBeerTrackerSchema } from '@/lib/env';
+import { planPatchClientBrandFromUnknown } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 
 type DbTimestamp = Date | string;
 
@@ -34,6 +35,7 @@ interface SessionRow {
 interface MessageRow {
   author_kind: string;
   author_name: string | null;
+  client_brand: string | null;
   created_at: DbTimestamp;
   id: string;
   kind: string;
@@ -116,6 +118,10 @@ async function runEnsureAgentSessionsSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS mentions JSONB NOT NULL DEFAULT '[]'::jsonb
     `);
     await query(`
+      ALTER TABLE ${schema}.agent_session_messages
+        ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16)
+    `);
+    await query(`
       CREATE INDEX IF NOT EXISTS idx_agent_session_messages_session
         ON ${schema}.agent_session_messages (session_id, created_at)
     `);
@@ -185,9 +191,11 @@ function parseMentions(value: unknown): AgentMention[] {
 }
 
 function messageFromRow(row: MessageRow): AgentSessionMessage {
+  const clientBrand = planPatchClientBrandFromUnknown(row.client_brand);
   return {
     authorKind: row.author_kind === 'agent' ? 'agent' : 'user',
     authorName: row.author_name,
+    ...(clientBrand ? { clientBrand } : {}),
     createdAt: toIso(row.created_at),
     id: row.id,
     kind: parseKind(row.kind),
@@ -229,7 +237,7 @@ async function loadMessages(sessionIds: readonly string[]): Promise<Map<string, 
     `SELECT DISTINCT ON (m.created_at, m.id)
             m.id::text AS id, m.session_id::text AS session_id, m.author_kind, m.kind, m.text,
             m.target_kind, m.target_id, m.target_label, m.mentions, m.proposal_id, m.reply_to::text AS reply_to,
-            m.resolution, m.created_at,
+            m.resolution, m.created_at, m.client_brand,
             ${STAFF_AUTHOR_DISPLAY_NAME_SQL} AS author_name
        FROM agent_session_messages m
        LEFT JOIN staff s
@@ -288,6 +296,8 @@ export async function createAgentSession(input: {
 export async function insertAgentSessionMessage(input: {
   authorId: string | null;
   authorKind: 'agent' | 'user';
+  /** Клиент MCP, которым писал агент. */
+  clientBrand?: string | null;
   kind: AgentSessionMessageKind;
   mentions?: readonly AgentMention[];
   proposalId?: string | null;
@@ -301,9 +311,9 @@ export async function insertAgentSessionMessage(input: {
   const result = await query<{ id: string }>(
     `INSERT INTO agent_session_messages (
        session_id, author_kind, author_id, kind, text, target_kind, target_id, target_label,
-       proposal_id, reply_to, resolution, mentions
+       proposal_id, reply_to, resolution, mentions, client_brand
      )
-     VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10::uuid, $11, $12::jsonb)
+     VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10::uuid, $11, $12::jsonb, $13)
      RETURNING id::text AS id`,
     [
       input.sessionId,
@@ -318,6 +328,7 @@ export async function insertAgentSessionMessage(input: {
       input.replyTo ?? null,
       input.resolution ?? null,
       JSON.stringify(input.mentions ?? []),
+      input.clientBrand ?? null,
     ]
   );
   await query(`UPDATE agent_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1::uuid`, [

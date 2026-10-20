@@ -22,47 +22,62 @@ function brandGlyph(className: string, path: string): ReactNode {
   );
 }
 
+type McpOAuthClientMarkSize = 'compact' | 'full' | 'toolbar';
+
+/** compact — в строку текста, toolbar — вместо иконки кнопки, full — экран согласия. */
+const SIZE: Record<McpOAuthClientMarkSize, { box: string; claudeIcon: string; icon: string; initial: string }> = {
+  compact: {
+    box: 'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px]',
+    claudeIcon: 'h-3 w-3',
+    icon: 'h-3 w-3',
+    initial: 'text-[9px]',
+  },
+  full: { box: MARK_CLASS, claudeIcon: 'h-9 w-9', icon: 'h-8 w-8', initial: 'text-xl' },
+  toolbar: {
+    box: 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md',
+    claudeIcon: 'h-4 w-4',
+    icon: 'h-4 w-4',
+    initial: 'text-[11px]',
+  },
+};
+
 export function McpOAuthClientMark({
   brand,
-  compact = false,
   label,
+  size = 'full',
 }: {
   brand: McpOAuthClientBrand;
-  compact?: boolean;
   label: string;
+  size?: McpOAuthClientMarkSize;
 }) {
-  const box = compact
-    ? 'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px]'
-    : MARK_CLASS;
-  const icon = compact ? 'h-3 w-3' : 'h-8 w-8';
-  const named = compact ? undefined : label;
+  const { box, claudeIcon, icon, initial: initialClass } = SIZE[size];
+  const inline = size !== 'full';
+  const named = inline ? undefined : label;
 
   if (brand === 'cursor') {
     return (
-      <span aria-hidden={compact || undefined} aria-label={named} className={`${box} bg-[#141414] text-white`}>
+      <span aria-hidden={inline || undefined} aria-label={named} className={`${box} bg-[#141414] text-white`}>
         {brandGlyph(icon, CURSOR_PATH)}
       </span>
     );
   }
 
   if (brand === 'claude') {
-    const claudeBox = compact
-      ? `${box} ring-1 ring-black/5 dark:ring-white/10`
-      : box;
+    const claudeBox = inline ? `${box} ring-1 ring-black/5 dark:ring-white/10` : box;
     return (
       <span
-        aria-hidden={compact || undefined}
+        aria-hidden={inline || undefined}
         aria-label={named}
-        className={`${claudeBox} bg-[#FAF9F5] text-[#D97757] dark:bg-[#2a211c]`}
+        className={`${claudeBox} bg-[#2a211c] text-[#D97757] dark:bg-[#FAF9F5]`}
       >
-        {brandGlyph(compact ? icon : 'h-9 w-9', CLAUDE_PATH)}
+        {brandGlyph(claudeIcon, CLAUDE_PATH)}
       </span>
     );
   }
 
   if (brand === 'openai') {
     return (
-      <span aria-hidden={compact || undefined} aria-label={named} className={`${box} bg-[#10A37F] text-white`}>
+      <span aria-hidden={inline || undefined} aria-label={named} className={`${box} bg-[#10A37F] text-white`}>
         {brandGlyph(icon, OPENAI_PATH)}
       </span>
     );
@@ -71,9 +86,9 @@ export function McpOAuthClientMark({
   const initial = (label.trim().charAt(0) || '?').toUpperCase();
   return (
     <span
-      aria-hidden={compact || undefined}
+      aria-hidden={inline || undefined}
       aria-label={named}
-      className={`${box} bg-gradient-to-br from-slate-600 to-slate-800 font-semibold text-white ${compact ? 'text-[9px]' : 'text-xl'}`}
+      className={`${box} bg-gradient-to-br from-slate-600 to-slate-800 font-semibold text-white ${initialClass}`}
     >
       {initial}
     </span>

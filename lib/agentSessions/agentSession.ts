@@ -1,4 +1,5 @@
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { z } from 'zod';
 
@@ -41,6 +42,8 @@ export interface AgentSessionTarget {
 export interface AgentSessionMessage {
   authorKind: 'agent' | 'user';
   authorName: string | null;
+  /** Каким клиентом MCP написал агент (Claude, Cursor…); у старых ответов и у человека — нет. */
+  clientBrand?: McpOAuthClientBrand;
   createdAt: string;
   id: string;
   kind: AgentSessionMessageKind;

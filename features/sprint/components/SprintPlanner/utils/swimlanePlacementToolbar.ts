@@ -38,16 +38,6 @@ export function isAgentProposalToolbarVisible(input: {
   );
 }
 
-/** First known MCP brand across position / goal / note proposal sources. */
-export function resolveAgentProposalClientBrand<T>(brands: readonly (T | undefined)[]): T | undefined {
-  for (const brand of brands) {
-    if (brand) {
-      return brand;
-    }
-  }
-  return undefined;
-}
-
 /** Черновик плана — вторая капсула над уже заложенным местом агента. */
 export function countPlacementToolbarExtras(planDraftCount: number): number {
   return planDraftCount > 0 ? 1 : 0;

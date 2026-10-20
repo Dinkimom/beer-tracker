@@ -259,6 +259,12 @@ export const ruMessages = {
     planningTab: {
       displaySection: 'Отображение',
       swimlaneLinks: 'Показывать связи',
+      linksIdleMode: 'Какие связи видны без наведения',
+      linksIdleModeImportant: 'Важные: блокировки и нарисованные в планере',
+      linksIdleModeAll: 'Все',
+      linksIdleModeHover: 'Только при наведении',
+      linksIdleModeHint:
+        'Остальные связи появляются при наведении на карточку, а счётчик на углу карточки показывает, сколько их скрыто. Нарушенные блокировки видны всегда.',
       phaseColorScheme: 'Схема раскраски фаз / карточек задач',
       phaseColorByStatus: 'По статусам',
       phaseColorMonochrome: 'Монохром',

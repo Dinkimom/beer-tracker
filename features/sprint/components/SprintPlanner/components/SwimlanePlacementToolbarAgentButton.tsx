@@ -1,5 +1,8 @@
 'use client';
 
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
+
+import { McpOAuthClientMark } from '@/app/mcp/oauth/consent/McpOAuthClientMark';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -15,11 +18,15 @@ import { PlannerShortcutTooltip } from './PlannerShortcutTooltip';
  * Агент в капсуле свимлейна. Без сессии — ✨ «Агенту»: просьба про спринт целиком. Есть
  * активная сессия — «Новая сессия» (нажата, пока пишем новую; повторно — назад к текущей):
  * ✨ сменил бы цель открытого чата и стёр набранное, а к текущей сессии ведёт «Чат» острова.
+ * Вместо ✨ — значок того, кто ответит (Claude, Cursor…), если он известен.
  */
 export function SwimlanePlacementToolbarAgentButton({
+  brand,
   newSession,
   onClick,
 }: {
+  /** Клиент агента; null — общий ✨. */
+  brand: McpOAuthClientBrand | null;
   /** `null` — сессии нет, кнопка открывает чат про спринт. */
   newSession: { selected: boolean } | null;
   onClick: () => void;
@@ -43,7 +50,11 @@ export function SwimlanePlacementToolbarAgentButton({
           variant="ghost"
           onClick={onClick}
         >
-          <Icon className="h-4 w-4 shrink-0" name={newSession ? 'comment-plus' : 'sparkles'} />
+          {!newSession && brand ? (
+            <McpOAuthClientMark brand={brand} label={label} size="toolbar" />
+          ) : (
+            <Icon className="h-4 w-4 shrink-0" name={newSession ? 'comment-plus' : 'sparkles'} />
+          )}
         </Button>
       </PlannerShortcutTooltip>
     </>

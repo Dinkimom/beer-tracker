@@ -330,19 +330,28 @@ export async function revokeMcpOAuthTokensForUser(userId: string): Promise<void>
   );
 }
 
-/** Живое подключение MCP у пользователя: неотозванный и непросроченный refresh-токен в организации. */
-export async function hasActiveMcpOAuthConnection(organizationId: string, userId: string): Promise<boolean> {
+/**
+ * Живое подключение MCP у пользователя: неотозванный и непросроченный refresh-токен в организации.
+ * Метаданные клиента самого свежего из них (по ним видно, Claude это или Cursor); null — подключения нет.
+ */
+export async function findActiveMcpOAuthClientMetadata(
+  organizationId: string,
+  userId: string
+): Promise<Record<string, unknown> | null> {
   await ensureMcpOAuthTables();
-  const res = await query<{ connected: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM mcp_oauth_tokens
-       WHERE organization_id = $1::uuid
-         AND user_id = $2
-         AND token_type = 'refresh'
-         AND revoked_at IS NULL
-         AND expires_at > NOW()
-     ) AS connected`,
+  const res = await query<{ metadata: unknown }>(
+    `SELECT c.metadata
+     FROM mcp_oauth_tokens t
+     JOIN mcp_oauth_clients c ON c.client_id = t.client_id
+     WHERE t.organization_id = $1::uuid
+       AND t.user_id = $2
+       AND t.token_type = 'refresh'
+       AND t.revoked_at IS NULL
+       AND t.expires_at > NOW()
+     ORDER BY t.created_at DESC
+     LIMIT 1`,
     [organizationId, userId]
   );
-  return res.rows[0]?.connected === true;
+  const row = res.rows[0];
+  return row ? parseMetadata(row.metadata) : null;
 }

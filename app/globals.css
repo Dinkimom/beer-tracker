@@ -1220,77 +1220,32 @@ textarea:focus-visible,
   transition: outline-color 0.2s ease;
 }
 
-/* Остров агента: чат раскрывается над строкой тулбара — растут высота (grid 0fr→1fr) и ширина. */
-[data-agent-proposal-toolbar][data-agent-island='open'] {
-  min-width: min(100vw - 2rem, 30rem);
-  animation: agent-island-widen 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-[data-agent-proposal-toolbar][data-agent-island='closing'] {
-  animation: agent-island-narrow 180ms ease-in forwards;
-}
-
+/* Остров агента: чат — отдельная карточка над строкой; всплывает к ней одним движением. */
 .agent-island-chat-panel {
-  display: grid;
-  grid-template-rows: 1fr;
-  animation: agent-island-chat-open 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: bottom center;
+  animation: agent-island-chat-enter 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .agent-island-chat-panel[data-state='closed'] {
-  animation: agent-island-chat-close 180ms ease-in forwards;
+  animation: agent-island-chat-exit 120ms ease-in forwards;
   pointer-events: none;
 }
 
-.agent-island-chat-panel > * {
-  min-height: 0;
-}
-
-.agent-island-chat-panel:not([data-settled]) > * {
-  overflow: hidden;
-}
-
-@keyframes agent-island-widen {
+@keyframes agent-island-chat-enter {
   from {
-    min-width: 0;
-  }
-  to {
-    min-width: min(100vw - 2rem, 30rem);
-  }
-}
-
-@keyframes agent-island-narrow {
-  from {
-    min-width: min(100vw - 2rem, 30rem);
-  }
-  to {
-    min-width: 0;
-  }
-}
-
-@keyframes agent-island-chat-open {
-  from {
-    grid-template-rows: 0fr;
     opacity: 0;
-  }
-  to {
-    grid-template-rows: 1fr;
-    opacity: 1;
+    transform: translateY(4px) scale(0.98);
   }
 }
 
-@keyframes agent-island-chat-close {
-  from {
-    grid-template-rows: 1fr;
-    opacity: 1;
-  }
+@keyframes agent-island-chat-exit {
   to {
-    grid-template-rows: 0fr;
     opacity: 0;
+    transform: translateY(4px) scale(0.98);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-agent-proposal-toolbar][data-agent-island],
   .agent-island-chat-panel {
     animation: none;
   }

@@ -9,6 +9,7 @@
  *   AGENT_BRIDGE_PORT        — порт на 127.0.0.1 (default 47821)
  *   AGENT_BRIDGE_CLAUDE_BIN  — путь к CLI (default: claude из PATH, иначе из расширения VS Code / Cursor)
  *   AGENT_BRIDGE_TIMEOUT_MIN — лимит одного запуска (default 10)
+ *   AGENT_BRIDGE_MODEL       — модель CLI (default sonnet; opus — дороже раза в два)
  *
  * `pnpm agent-bridge` читает их из `.env.agent-bridge.local` (пример — `.env.agent-bridge.example`).
  */
@@ -18,10 +19,14 @@ import { existsSync, readdirSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
 import { delimiter, join } from 'node:path';
+import { createInterface } from 'node:readline';
 
 import {
+  AGENT_BRIDGE_DEFAULT_MODEL,
   AGENT_BRIDGE_DEFAULT_PORT,
   agentBridgeClaudeArgs,
+  agentBridgeStepFromStreamLine,
+  type AgentBridgeStep,
   isAgentBridgeHostAllowed,
   isAgentSessionId,
   parseAgentBridgeTargets,
@@ -60,9 +65,16 @@ function resolveClaudeBin(): string {
 
 const claudeBin = resolveClaudeBin();
 const timeoutMs = (Number(process.env.AGENT_BRIDGE_TIMEOUT_MIN) || 10) * 60_000;
+const model = process.env.AGENT_BRIDGE_MODEL?.trim() || AGENT_BRIDGE_DEFAULT_MODEL;
 
-/** Сессия → нужен ли ещё один прогон после текущего (человек дописал, пока агент работал). */
-const running = new Map<string, boolean>();
+interface RunState {
+  /** Нужен ещё один прогон после текущего: человек дописал, пока агент работал. */
+  again: boolean;
+  startedAt: number;
+  step: AgentBridgeStep;
+}
+
+const running = new Map<string, RunState>();
 
 function log(sessionId: string, message: string) {
   process.stdout.write(`[${new Date().toLocaleTimeString()}] ${sessionId.slice(0, 8)} ${message}\n`);
@@ -70,23 +82,36 @@ function log(sessionId: string, message: string) {
 
 /** Сессия живёт на том стенде, откуда пришла просьба, — и MCP берём его. */
 function runSession(sessionId: string, mcpServer: string) {
-  running.set(sessionId, false);
+  const state: RunState = { again: false, startedAt: Date.now(), step: 'starting' };
+  running.set(sessionId, state);
   log(sessionId, `claude запущен (${mcpServer})`);
-  const child = spawn(claudeBin, agentBridgeClaudeArgs(sessionId, mcpServer), {
+  const child = spawn(claudeBin, agentBridgeClaudeArgs(sessionId, mcpServer, model), {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const timer = setTimeout(() => {
     log(sessionId, 'таймаут, останавливаю');
     child.kill('SIGTERM');
   }, timeoutMs);
-  child.stdout.on('data', (chunk: Buffer) => process.stdout.write(chunk));
+  // stream-json: по строке на событие. Шаг — для планера, в консоль — только смена шага.
+  createInterface({ input: child.stdout }).on('line', (line) => {
+    const step = agentBridgeStepFromStreamLine(line);
+    if (step && step !== state.step) {
+      state.step = step;
+      log(sessionId, step);
+    }
+  });
   child.stderr.on('data', (chunk: Buffer) => process.stderr.write(chunk));
+  let finished = false;
   const finish = (detail: string) => {
+    if (finished) {
+      return;
+    }
+    finished = true;
     clearTimeout(timer);
-    log(sessionId, detail);
-    const again = running.get(sessionId) === true;
+    const seconds = Math.round((Date.now() - state.startedAt) / 1000);
+    log(sessionId, `${detail} за ${seconds} с`);
     running.delete(sessionId);
-    if (again) {
+    if (state.again) {
       runSession(sessionId, mcpServer);
     }
   };
@@ -95,8 +120,9 @@ function runSession(sessionId: string, mcpServer: string) {
 }
 
 function requestRun(sessionId: string, mcpServer: string) {
-  if (running.has(sessionId)) {
-    running.set(sessionId, true);
+  const current = running.get(sessionId);
+  if (current) {
+    current.again = true;
     return;
   }
   runSession(sessionId, mcpServer);
@@ -142,7 +168,8 @@ async function handle(request: IncomingMessage, response: ServerResponse) {
     return;
   }
   if (request.method === 'GET' && request.url === '/health') {
-    send(response, 200, origin, { running: [...running.keys()] });
+    const runs = [...running].map(([sessionId, { startedAt, step }]) => ({ sessionId, startedAt, step }));
+    send(response, 200, origin, { runs });
     return;
   }
   if (request.method === 'POST' && request.url === '/run') {
@@ -175,7 +202,7 @@ server.listen(port, '127.0.0.1', () => {
     [
       `agent-bridge: http://127.0.0.1:${port}`,
       ...[...targets].map(([origin, mcpServer]) => `  ${origin} → MCP ${mcpServer}`),
-      `  CLI: ${claudeBin}`,
+      `  CLI: ${claudeBin}, модель ${model}`,
       '',
     ].join('\n')
   );

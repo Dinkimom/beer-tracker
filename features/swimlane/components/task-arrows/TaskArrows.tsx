@@ -1,5 +1,6 @@
 'use client';
 
+import type { SwimlaneLinksIdleMode } from '@/hooks/useLocalStorage';
 import type { Task, TaskLink, TaskPosition } from '@/types';
 
 import { observer } from 'mobx-react-lite';
@@ -23,10 +24,15 @@ import {
   partitionTaskArrowLinks,
   resolveVisibleTaskArrowLinks,
 } from '@/features/swimlane/utils/task-arrows/taskArrowsHelpers';
+import {
+  countHiddenIdleLinksByTaskId,
+  partitionIdleTaskLinks,
+} from '@/features/swimlane/utils/task-arrows/taskLinkIdleVisibility';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { DELAYS } from '@/utils/constants';
 import { resolveLinkArrowDrawTaskIds } from '@/utils/linkAnchors';
 
+import { HiddenTaskLinkBadges } from './HiddenTaskLinkBadges';
 import { LinkArrowDeleteHandles } from './LinkArrowDeleteHandles';
 import { SwimlaneLinkPreviewArrow } from './SwimlaneLinkPreviewArrow';
 import { TaskArrowLayer } from './TaskArrowLayer';
@@ -45,6 +51,8 @@ interface TaskArrowsProps {
    */
   clipToRow?: boolean;
   hoveredTaskId?: string | null;
+  /** Какие связи видны без наведения; остальные — в hover-кластере карточки. */
+  idleMode?: SwimlaneLinksIdleMode;
   /** Источник рисуемой связи (превью линии). */
   linkingFromTaskId?: string | null;
   /** Режим «Связь»: подсветка и превью без ховер-крестиков. */
@@ -73,6 +81,7 @@ export const TaskArrows = observer(function TaskArrows({
   qaTasksMap,
   activeTaskId = null,
   hoveredTaskId = null,
+  idleMode = 'all',
   linkingFromTaskId = null,
   linkingSessionActive = false,
   linkToolArmed = false,
@@ -153,6 +162,13 @@ export const TaskArrows = observer(function TaskArrows({
       hoveredTaskIdForArrows ?? null,
       taskPositions
     );
+  // В режиме «Связь» нужны все линии: их удаляют и к ним прицеливаются.
+  const idleLinks = partitionIdleTaskLinks(
+    regularLinks,
+    linkModeActive ? 'all' : idleMode,
+    taskPositions
+  );
+  const hiddenLinkCounts = countHiddenIdleLinksByTaskId(idleLinks.hidden);
 
   const previewTargetId =
     linkingFromTaskId != null && taskPositions
@@ -200,7 +216,7 @@ export const TaskArrows = observer(function TaskArrows({
       <TaskSegmentArrowLinks links={segmentArrowLinks} tasksMap={tasksMap} />
       {/* Один слой: related не remount'ятся — иначе CSS transition цвета не сработает. */}
       <TaskArrowLayer zIndex={ZIndex.contentOverlay}>
-        {[...regularLinks, ...hoveredTaskLinks].map((link) => (
+        {[...idleLinks.shown, ...hoveredTaskLinks].map((link) => (
           <TaskArrowLink key={link.id} {...linkProps} link={link} />
         ))}
       </TaskArrowLayer>
@@ -209,6 +225,7 @@ export const TaskArrows = observer(function TaskArrows({
           <TaskArrowLink {...linkProps} link={hoveredLink} />
         </TaskArrowLayer>
       )}
+      {hiddenLinkCounts.size > 0 ? <HiddenTaskLinkBadges counts={hiddenLinkCounts} /> : null}
       <TaskArrowLayer zIndex={ZIndex.arrowsHovered}>
         <TaskArrowRelationshipMarker links={hoveredTaskLinks} taskPositions={taskPositions} />
       </TaskArrowLayer>

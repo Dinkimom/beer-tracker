@@ -2,17 +2,26 @@
 
 import type { AgentSessionMessage, AgentSessionStatus } from '@/lib/agentSessions/agentSession';
 
-import { useLayoutEffect, useRef } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { AgentMessageBubble } from '@/features/swimlane/components/AgentMessageBubble';
+import { mcpOAuthClientBrandName } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 type Translate = (key: string, params?: Record<string, number | string>) => string;
 
+/** Кто написал: «Ты», клиент агента (Claude, Cursor…) или просто «Агент». */
+function messageAuthor(message: AgentSessionMessage, t: Translate): string {
+  if (message.authorKind === 'user') {
+    return t('agentSession.you');
+  }
+  return (message.clientBrand && mcpOAuthClientBrandName(message.clientBrand)) || t('agentSession.agent');
+}
+
 /** Подпись реплики: кто и что это (драфт vN, просьба переделать, 💬 или ответ к пункту). */
 function messageCaption(message: AgentSessionMessage, draftVersion: number, t: Translate): string {
-  const who = message.authorKind === 'agent' ? t('agentSession.agent') : t('agentSession.you');
+  const who = messageAuthor(message, t);
   if (message.kind === 'draft') {
     return `${who} · ${t('agentSession.kindDraft', { version: draftVersion })}`;
   }
@@ -35,12 +44,15 @@ function messageStatus(message: AgentSessionMessage, t: Translate) {
   };
 }
 
-/** Хвост ленты на месте следующей реплики: агент «печатает» или сессия завершена. */
-function conversationTail(status: AgentSessionStatus | undefined, t: Translate) {
+/**
+ * Хвост ленты на месте следующей реплики: агент «печатает» или сессия завершена.
+ * `waitingDetail` — что агент делает прямо сейчас (мост к Claude CLI), вместо «Ждёт агента».
+ */
+function conversationTail(status: AgentSessionStatus | undefined, waitingDetail: ReactNode, t: Translate) {
   if (status === 'waiting_agent') {
     return (
       <li className="flex" data-agent-session-tail="waiting">
-        <span className="inline-flex items-center gap-1.5 rounded-2xl rounded-bl-md bg-green-50 px-3 py-1.5 text-[12px] text-green-800 dark:bg-green-500/15 dark:text-green-200">
+        <span className="inline-flex items-center gap-1.5 px-1 text-[12px] text-gray-500 dark:text-gray-400">
           <span aria-hidden className="inline-flex gap-0.5">
             {[0, 150, 300].map((delay) => (
               <span
@@ -50,7 +62,7 @@ function conversationTail(status: AgentSessionStatus | undefined, t: Translate) 
               />
             ))}
           </span>
-          {t('agentSession.waiting')}
+          {waitingDetail ?? t('agentSession.waiting')}
         </span>
       </li>
     );
@@ -72,10 +84,12 @@ export function AgentSessionConversation({
   empty,
   messages,
   status,
+  waitingDetail,
 }: {
   empty: string;
   messages: readonly AgentSessionMessage[];
   status?: AgentSessionStatus;
+  waitingDetail?: ReactNode;
 }) {
   const { t } = useI18n();
   const listRef = useRef<HTMLOListElement>(null);
@@ -106,11 +120,18 @@ export function AgentSessionConversation({
     );
   }
   return (
-    <ol ref={listRef} className="max-h-[min(22rem,50vh)] space-y-2.5 overflow-y-auto pr-1" data-agent-session-conversation="">
+    // -mr-3 pr-3: скроллбар уходит в паддинг панели (p-3) и встаёт у её правой границы, а не поверх реплик.
+    <ol
+      ref={listRef}
+      className="-mr-3 max-h-[min(22rem,50vh)] space-y-2.5 overflow-y-auto pr-3"
+      data-agent-session-conversation=""
+    >
       {messages.map((message) => (
         <li key={message.id} data-agent-session-message={message.kind}>
           <AgentMessageBubble
+            brand={message.clientBrand}
             caption={messageCaption(message, versions.get(message.id) ?? 0, t)}
+            card={message.kind === 'draft'}
             from={message.authorKind}
             placeholder={t('agentSession.kindRedo')}
             status={messageStatus(message, t)}
@@ -118,7 +139,7 @@ export function AgentSessionConversation({
           />
         </li>
       ))}
-      {conversationTail(status, t)}
+      {conversationTail(status, waitingDetail, t)}
     </ol>
   );
 }

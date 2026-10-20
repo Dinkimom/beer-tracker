@@ -16,6 +16,7 @@ import {
   getAgentSession,
   listAgentSessions,
 } from '@/lib/agentSessions/agentSessionsRepository';
+import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
 
 function toolError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
@@ -63,7 +64,7 @@ export async function loadDraftAgentSessionSummary(input: {
 
 export function registerAgentSessionMcpTools(
   server: McpServer,
-  input: { organizationId: string; profile: AccessProfile; userId: string }
+  input: { mcpClientId?: string; organizationId: string; profile: AccessProfile; userId: string }
 ): void {
   server.registerTool(
     'list_agent_sessions',
@@ -162,7 +163,9 @@ export function registerAgentSessionMcpTools(
         if (!message?.trim() && !replies?.length && !close) {
           return toolError(new Error('validation_failed: pass message, replies or close'));
         }
+        const clientBrand = input.mcpClientId ? await resolveRegisteredMcpClientBrand(input.mcpClientId) : undefined;
         const session = await replyAgentSession({
+          clientBrand,
           close,
           message,
           organizationId: input.organizationId,

@@ -5,6 +5,7 @@ import type {
   AgentSessionCreatePayload,
   AgentSessionUserMessagePayload,
 } from '@/lib/agentSessions/agentSession';
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
@@ -28,7 +29,7 @@ import { useAgentBridge } from './useAgentBridge';
 /** Ключ для инвалидации из realtime (`agentSessions`). */
 export const AGENT_SESSIONS_QUERY_KEY = 'agentSessions';
 
-const EMPTY: SprintAgentSessions = { agentAvailable: false, draftSessionId: null, sessions: [] };
+const EMPTY: SprintAgentSessions = { agentAvailable: false, agentBrand: null, draftSessionId: null, sessions: [] };
 
 function upsertSession(data: SprintAgentSessions | undefined, session: AgentSession): SprintAgentSessions {
   const rest = (data?.sessions ?? []).filter((item) => item.id !== session.id);
@@ -60,6 +61,19 @@ function useSprintAgentSessionsQuery(sprintId: number | null | undefined) {
 /** Показывать ли «Агенту»: без агента просьба из планера никуда не уйдёт. */
 export function useAgentAvailable(sprintId: number | null | undefined): boolean {
   return useSprintAgentSessionsQuery(sprintId).data.agentAvailable;
+}
+
+/**
+ * Кто ответит на просьбу: мост на связи — Claude CLI, иначе клиент подключённого MCP.
+ * null — агента нет или клиент не опознан.
+ */
+export function useAgentBrand(sprintId: number | null | undefined): McpOAuthClientBrand | null {
+  const { agentBrand } = useSprintAgentSessionsQuery(sprintId).data;
+  const bridge = useAgentBridge();
+  if (bridge.alive) {
+    return 'claude';
+  }
+  return agentBrand === 'generic' ? null : agentBrand;
 }
 
 /**

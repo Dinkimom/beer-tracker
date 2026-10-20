@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
 import { getRouteParam } from '@/lib/api-utils';
-import { taskJsonFromSnapshotRow } from '@/lib/issues/issueTrackerRouteJson';
+import { loadIssueTaskJson } from '@/lib/issues/issueTrackerRouteJson';
+import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { findIssueSnapshot } from '@/lib/snapshots';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
 import { resolveTrackerWebUrlContextForOrganizationId } from '@/lib/trackerRequestConfig';
@@ -33,11 +34,16 @@ export async function GET(
       loadTrackerIntegrationForOrganization(organizationId),
       resolveTrackerWebUrlContextForOrganizationId(organizationId),
     ]);
-    if (!row) {
+    const task = await loadIssueTaskJson({
+      integration,
+      issueKey: issueKey.trim(),
+      issueTracker: await getIssueTrackerProviderClientFromRequest(request),
+      snapshotRow: row,
+      trackerWeb,
+    });
+    if (!task) {
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
     }
-
-    const task = taskJsonFromSnapshotRow(row, trackerWeb, integration);
     return NextResponse.json(task);
   } catch (error) {
     return handleApiError(error, 'fetch issue task');

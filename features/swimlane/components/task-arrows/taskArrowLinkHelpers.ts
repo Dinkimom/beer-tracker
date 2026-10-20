@@ -107,21 +107,28 @@ export function resolveTaskLinkArrowBodyProps(): {
   return { style: { transition: TASK_LINK_ARROW_COLOR_TRANSITION } };
 }
 
+/** Блокер по плану заканчивается позже старта заблокированной — видно всегда, без приглушения. */
+const TASK_LINK_ARROW_VIOLATED_HEX = '#f97316';
+
 export function resolveTaskArrowLinkColor(params: {
   canDelete: boolean;
   fromTask: Task | undefined;
   isHovered: boolean;
   isRelatedToHoveredTask: boolean;
+  isScheduleViolated?: boolean;
   phaseCardColorScheme: PlanningPhaseCardColorScheme;
 }): string {
-  const baseColor =
-    params.isHovered && params.canDelete
-      ? '#ef4444'
-      : getPhaseLinkArrowDefaultHex(
-          params.phaseCardColorScheme,
-          params.fromTask?.originalStatus,
-          params.fromTask?.statusColorKey
-        );
+  if (params.isHovered && params.canDelete) {
+    return '#ef4444';
+  }
+  if (params.isScheduleViolated) {
+    return TASK_LINK_ARROW_VIOLATED_HEX;
+  }
+  const baseColor = getPhaseLinkArrowDefaultHex(
+    params.phaseCardColorScheme,
+    params.fromTask?.originalStatus,
+    params.fromTask?.statusColorKey
+  );
   const emphasized = params.isHovered || params.isRelatedToHoveredTask;
   return resolveTaskLinkArrowPaintColor(baseColor, emphasized);
 }

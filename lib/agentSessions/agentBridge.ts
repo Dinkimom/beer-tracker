@@ -7,9 +7,95 @@ export const AGENT_BRIDGE_DEFAULT_PORT = 47821;
 
 export const AGENT_BRIDGE_DEFAULT_URL = `http://127.0.0.1:${AGENT_BRIDGE_DEFAULT_PORT}`;
 
+/** Что агент делает сейчас — по последнему событию из потока CLI. */
+export type AgentBridgeStep =
+  | 'connecting'
+  | 'drafting'
+  | 'reading'
+  | 'replying'
+  | 'searching'
+  | 'starting'
+  | 'studying'
+  | 'thinking';
+
+interface AgentBridgeRun {
+  sessionId: string;
+  /** Время старта по часам моста (та же машина, что и браузер). */
+  startedAt: number;
+  step: AgentBridgeStep;
+}
+
 interface AgentBridgeHealth {
-  /** Сессии, по которым сейчас работает CLI. */
-  running: string[];
+  /** Запуски CLI, которые идут сейчас. */
+  runs: AgentBridgeRun[];
+}
+
+const AGENT_BRIDGE_STEPS: readonly AgentBridgeStep[] = [
+  'connecting',
+  'drafting',
+  'reading',
+  'replying',
+  'searching',
+  'starting',
+  'studying',
+  'thinking',
+];
+
+const TOOL_STEPS: Readonly<Record<string, AgentBridgeStep>> = {
+  ToolSearch: 'connecting',
+  whoami: 'reading',
+  list_agent_sessions: 'reading',
+  get_agent_session: 'reading',
+  get_sprint_context: 'studying',
+  get_sprint_capacity: 'studying',
+  get_feature_context: 'studying',
+  get_retro_board: 'studying',
+  search_sprints: 'searching',
+  search_issues: 'searching',
+  get_issue: 'searching',
+  get_issue_snapshot: 'searching',
+  resolve_person: 'searching',
+  propose_plan_patch: 'drafting',
+  apply_retro_board: 'drafting',
+  reply_agent_session: 'replying',
+};
+
+function stepForTool(name: string): AgentBridgeStep {
+  const short = name.split('__').at(-1) ?? name;
+  return TOOL_STEPS[short] ?? 'thinking';
+}
+
+interface StreamContentBlock {
+  name?: unknown;
+  type?: unknown;
+}
+
+/**
+ * Строка `claude -p --output-format stream-json` → шаг агента. Шаг даёт только ответ модели:
+ * вызов тула — по имени тула, текст или размышление — «думает». Прочие события — null.
+ */
+export function agentBridgeStepFromStreamLine(line: string): AgentBridgeStep | null {
+  let event: { message?: { content?: unknown }; type?: unknown };
+  try {
+    event = JSON.parse(line) as typeof event;
+  } catch {
+    return null;
+  }
+  const content = event.type === 'assistant' ? event.message?.content : null;
+  if (!Array.isArray(content) || content.length === 0) {
+    return null;
+  }
+  const tool = (content as StreamContentBlock[]).findLast((block) => block.type === 'tool_use');
+  return typeof tool?.name === 'string' ? stepForTool(tool.name) : 'thinking';
+}
+
+function parseAgentBridgeRun(value: unknown): AgentBridgeRun | null {
+  const run = value as Partial<AgentBridgeRun> | null;
+  if (!run || !isAgentSessionId(run.sessionId) || typeof run.startedAt !== 'number') {
+    return null;
+  }
+  const step = AGENT_BRIDGE_STEPS.includes(run.step as AgentBridgeStep) ? (run.step as AgentBridgeStep) : 'thinking';
+  return { sessionId: run.sessionId, startedAt: run.startedAt, step };
 }
 
 const SESSION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -18,7 +104,10 @@ export function isAgentSessionId(value: unknown): value is string {
   return typeof value === 'string' && SESSION_ID_RE.test(value);
 }
 
-/** Только чтение и предложение. `apply_*` агенту не даём: применяет человек на доске. */
+/**
+ * Чтение, предложение плана и запись в ретро. План агенту не применяем: это делает человек на доске.
+ * У ретро шага «предложить» нет, поэтому `apply_retro_board` агент вызывает сам.
+ */
 const BRIDGE_ALLOWED_TOOLS = [
   'whoami',
   'search_sprints',
@@ -30,13 +119,14 @@ const BRIDGE_ALLOWED_TOOLS = [
   'search_issues',
   'resolve_person',
   'get_retro_board',
+  'apply_retro_board',
   'list_agent_sessions',
   'get_agent_session',
   'propose_plan_patch',
   'reply_agent_session',
 ] as const;
 
-const BRIDGE_DENIED_TOOLS = ['apply_plan_patch', 'apply_retro_board'] as const;
+const BRIDGE_DENIED_TOOLS = ['apply_plan_patch'] as const;
 
 function agentBridgePrompt(sessionId: string, mcpServer: string): string {
   return [
@@ -45,19 +135,36 @@ function agentBridgePrompt(sessionId: string, mcpServer: string): string {
     `Используй только тулы mcp__${mcpServer}__*.`,
     'Прочитай её через get_agent_session и подтяни fetchContext.',
     `Если план нужно менять — propose_plan_patch с sessionId ${sessionId}, replacePending: true, ответами на комментарии в replies и draftMessage.`,
+    'Если просят записать на доску ретро — get_retro_board, затем apply_retro_board с confirm: true; итог сообщи через reply_agent_session.',
     'Если менять нечего — ответь через reply_agent_session.',
     'План не применяй: решение принимает человек на доске.',
   ].join(' ');
 }
 
-/** Аргументы `claude` для одной сессии; `mcpServer` — имя сервера Beer Tracker в конфиге CLI. */
-export function agentBridgeClaudeArgs(sessionId: string, mcpServer: string): string[] {
+export const AGENT_BRIDGE_DEFAULT_MODEL = 'sonnet';
+
+/**
+ * Аргументы `claude` для одной сессии; `mcpServer` — имя сервера Beer Tracker в конфиге CLI.
+ * Из встроенных инструментов Claude Code — только `ToolSearch`: MCP-тулы в CLI отложенные и без него
+ * не подгружаются. Остальные инструменты и skills мосту не нужны, а их описания едут в контекст
+ * каждого шага (замер на whoami, Sonnet: ~140k → ~80k токенов за прогон).
+ */
+export function agentBridgeClaudeArgs(sessionId: string, mcpServer: string, model: string): string[] {
   const tool = (name: string) => `mcp__${mcpServer}__${name}`;
   return [
     '-p',
     agentBridgePrompt(sessionId, mcpServer),
+    '--model',
+    model,
+    '--tools',
+    'ToolSearch',
+    '--disable-slash-commands',
+    // Поток событий: мост видит каждый шаг агента и показывает его в планере.
+    '--output-format',
+    'stream-json',
+    '--verbose',
     '--allowedTools',
-    BRIDGE_ALLOWED_TOOLS.map(tool).join(','),
+    ['ToolSearch', ...BRIDGE_ALLOWED_TOOLS.map(tool)].join(','),
     '--disallowedTools',
     BRIDGE_DENIED_TOOLS.map(tool).join(','),
   ];
@@ -91,8 +198,9 @@ export async function fetchAgentBridgeHealth(baseUrl: string): Promise<AgentBrid
     if (!response.ok) {
       return null;
     }
-    const data = (await response.json()) as Partial<AgentBridgeHealth>;
-    return { running: Array.isArray(data.running) ? data.running.filter(isAgentSessionId) : [] };
+    const data = (await response.json()) as { runs?: unknown };
+    const runs = Array.isArray(data.runs) ? data.runs.map(parseAgentBridgeRun) : [];
+    return { runs: runs.filter((run): run is AgentBridgeRun => run != null) };
   } catch {
     return null;
   }

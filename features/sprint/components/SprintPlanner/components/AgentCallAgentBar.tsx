@@ -17,8 +17,8 @@ const BAR_CLASS =
 /**
  * Сессия ждёт агента, а он внешний: увидит её, когда человек ему напишет.
  * Полоска над полем ввода — фраза для чата и ссылки, открывающие чат с ней (фраза ещё и в буфере).
- * Если мост к Claude CLI на связи — вместо этого статус; агента он запускает сам при отправке,
- * кнопка — на случай, когда запуск не прошёл (мост поднялся уже после отправки).
+ * Если мост к Claude CLI на связи, агента он запускает сам при отправке; пока тот работает, полоски
+ * нет — ход работы в пузыре «Ждёт агента». Кнопка — на случай, когда запуск не прошёл.
  */
 export function AgentCallAgentBar({ sessionId }: { sessionId: string }) {
   const { t } = useI18n();
@@ -28,8 +28,7 @@ export function AgentCallAgentBar({ sessionId }: { sessionId: string }) {
   const linkHint = t('agentSession.linkHint');
 
   if (bridge.alive) {
-    const busy = bridge.running.includes(sessionId);
-    const run = () => {
+    const start = () => {
       bridge
         .run(sessionId)
         .then((accepted) => {
@@ -41,14 +40,10 @@ export function AgentCallAgentBar({ sessionId }: { sessionId: string }) {
     };
     return (
       <div className={BAR_CLASS} data-agent-call-bar="">
-        <span className="mr-auto min-w-0">
-          {busy ? t('agentSession.bridgeRunning') : t('agentSession.bridgeReady')}
-        </span>
-        {busy ? null : (
-          <button className={LINK_CLASS} type="button" onClick={run}>
-            {t('agentSession.bridgeRun')}
-          </button>
-        )}
+        <span className="mr-auto min-w-0">{t('agentSession.bridgeReady')}</span>
+        <button className={LINK_CLASS} type="button" onClick={start}>
+          {t('agentSession.bridgeRun')}
+        </button>
       </div>
     );
   }

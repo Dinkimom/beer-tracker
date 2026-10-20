@@ -259,6 +259,12 @@ export const enMessages = {
     planningTab: {
       displaySection: 'Display',
       swimlaneLinks: 'Show links',
+      linksIdleMode: 'Links visible without hover',
+      linksIdleModeImportant: 'Important: blockers and links drawn in the planner',
+      linksIdleModeAll: 'All',
+      linksIdleModeHover: 'Only on hover',
+      linksIdleModeHint:
+        'Other links appear when you hover a card; a counter on the card corner shows how many are hidden. Violated blockers are always shown.',
       phaseColorScheme: 'Phase / task card color scheme',
       phaseColorByStatus: 'By status',
       phaseColorMonochrome: 'Monochrome',

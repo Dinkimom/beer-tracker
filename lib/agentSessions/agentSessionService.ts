@@ -4,6 +4,7 @@ import type {
   AgentSessionReply,
   AgentSessionUserMessageInput,
 } from '@/lib/agentSessions/agentSession';
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import {
   agentSessionDraftVersion,
@@ -20,7 +21,8 @@ import {
   listAgentSessions,
   setAgentSessionStatus,
 } from '@/lib/agentSessions/agentSessionsRepository';
-import { hasActiveMcpOAuthConnection } from '@/lib/mcp/oauth/mcpOAuthRepository';
+import { findActiveMcpOAuthClientMetadata } from '@/lib/mcp/oauth/mcpOAuthRepository';
+import { resolveMcpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { loadPendingPlanPatchSnapshot } from '@/lib/sprints/sprintPlanPatchPending';
 
@@ -81,21 +83,35 @@ export async function listSprintAgentSessionsForOwner(input: {
   organizationId: string;
   ownerId: string;
   sprintId: number;
-}): Promise<{ agentAvailable: boolean; draftSessionId: string | null; sessions: AgentSession[] }> {
-  const [sessions, draftSessionId, agentAvailable] = await Promise.all([
+}): Promise<{
+  agentAvailable: boolean;
+  agentBrand: McpOAuthClientBrand | null;
+  draftSessionId: string | null;
+  sessions: AgentSession[];
+}> {
+  const [sessions, draftSessionId, agentBrand] = await Promise.all([
     listAgentSessions(input),
     findDraftSessionId(input),
-    isAgentAvailableForOwner(input),
+    findAgentBrandForOwner(input),
   ]);
-  return { agentAvailable, draftSessionId, sessions };
+  return { agentAvailable: agentBrand != null, agentBrand, draftSessionId, sessions };
 }
 
 /**
- * Есть ли кому забрать просьбу из планера. Пока агент только внешний — через MCP, поэтому
- * без подключённого MCP просьба повиснет в `waiting_agent`. Агенты по API организации — сюда же.
+ * Есть ли кому забрать просьбу из планера, и кто это (Claude, Cursor…). Пока агент только внешний —
+ * через MCP, поэтому без подключённого MCP просьба повиснет в `waiting_agent`. Агенты по API
+ * организации — сюда же.
  */
-function isAgentAvailableForOwner(input: { organizationId: string; ownerId: string }): Promise<boolean> {
-  return hasActiveMcpOAuthConnection(input.organizationId, input.ownerId);
+async function findAgentBrandForOwner(input: {
+  organizationId: string;
+  ownerId: string;
+}): Promise<McpOAuthClientBrand | null> {
+  const metadata = await findActiveMcpOAuthClientMetadata(input.organizationId, input.ownerId);
+  if (!metadata) {
+    return null;
+  }
+  const text = (value: unknown) => (typeof value === 'string' ? value : null);
+  return resolveMcpOAuthClientBrand({ clientName: text(metadata.client_name), clientUri: text(metadata.client_uri) });
 }
 
 /** «Агенту» в планере: новая сессия с просьбой, ждёт агента. */
@@ -188,7 +204,12 @@ export async function setUserAgentSessionStatus(input: {
   return requireSession(input);
 }
 
-async function insertReplies(sessionId: string, replies: readonly AgentSessionReply[], session: AgentSession) {
+async function insertReplies(
+  session: AgentSession,
+  replies: readonly AgentSessionReply[],
+  clientBrand: McpOAuthClientBrand | undefined
+) {
+  const sessionId = session.id;
   const commentIds = new Set(
     session.messages.filter((message) => message.kind === 'comment').map((message) => message.id)
   );
@@ -201,6 +222,7 @@ async function insertReplies(sessionId: string, replies: readonly AgentSessionRe
     await insertAgentSessionMessage({
       authorId: null,
       authorKind: 'agent',
+      clientBrand,
       kind: 'reply',
       replyTo: reply.messageId,
       resolution: reply.resolution,
@@ -259,6 +281,7 @@ export async function prepareDraftAgentSession(input: {
 
 /** После записи драфта: ответы на 💬, сообщение «драфт vN», сессия ждёт человека. */
 export async function recordDraftInAgentSession(input: {
+  clientBrand?: McpOAuthClientBrand;
   message?: string;
   organizationId: string;
   proposalId: string;
@@ -266,10 +289,11 @@ export async function recordDraftInAgentSession(input: {
   session: AgentSession;
   summary: string;
 }): Promise<{ draftVersion: number; repliesRecorded: number; sessionId: string }> {
-  const repliesRecorded = await insertReplies(input.session.id, input.replies, input.session);
+  const repliesRecorded = await insertReplies(input.session, input.replies, input.clientBrand);
   await insertAgentSessionMessage({
     authorId: null,
     authorKind: 'agent',
+    clientBrand: input.clientBrand,
     kind: 'draft',
     proposalId: input.proposalId,
     sessionId: input.session.id,
@@ -286,6 +310,7 @@ export async function recordDraftInAgentSession(input: {
 
 /** reply_agent_session: агент отвечает без нового драфта (уточнение, отказ, «готово»). */
 export async function replyAgentSession(input: {
+  clientBrand?: McpOAuthClientBrand;
   close?: boolean;
   message?: string;
   organizationId: string;
@@ -294,12 +319,13 @@ export async function replyAgentSession(input: {
   sessionId: string;
 }): Promise<AgentSession> {
   const session = await requireSession(input);
-  await insertReplies(session.id, input.replies, session);
+  await insertReplies(session, input.replies, input.clientBrand);
   const text = input.message?.trim();
   if (text) {
     await insertAgentSessionMessage({
       authorId: null,
       authorKind: 'agent',
+      clientBrand: input.clientBrand,
       kind: 'message',
       sessionId: session.id,
       text,

@@ -2,12 +2,9 @@
 
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
-import type { AnimationEvent } from 'react';
 
 import { useEffect, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
 
-import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentSessions } from '@/features/swimlane/hooks/useAgentSessions';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import { useRootStore } from '@/lib/layers';
@@ -30,16 +27,15 @@ interface ChatPanel {
 
 /**
  * Состояние острова агента: открыт ли чат и откуда, какая сессия в нём (текущая / новая /
- * только что созданная), действия — «Чат», новая сессия (в тулбаре), «↻ Переделать». Выбор сессии
- * сбрасывается при закрытии чата и смене его цели. Вызывать из observer-компонента.
+ * только что созданная), действия — «Чат», новая сессия (в тулбаре), 🗑 «Очистить чат». Выбор
+ * сессии сбрасывается при закрытии чата и смене его цели. Вызывать из observer-компонента.
  *
  * Панель чата живёт дольше `chatOpen` на время анимации сворачивания (`panel` + `panelState`).
  * Чат сворачивают Escape, клик мимо острова (`islandRef`) и смена режима в тулбаре инструментов.
- * Сессия закрывается ✕, а ещё сама: после «Принять всё», если агент ничего не ждёт,
+ * Сессия закрывается 🗑 «Очистить чат», а ещё сама: после «Принять всё», если агент ничего не ждёт,
  * и при старте новой (прежняя, если её драфт не висит на доске).
  */
-export function useAgentIslandChat(sprintId: number | null, hasPendingDraft: boolean) {
-  const { t } = useI18n();
+export function useAgentIslandChat(sprintId: number | null) {
   const { sprintPlannerUi } = useRootStore();
   const sessions = useAgentSessions(sprintId);
   const target = sprintPlannerUi.agentRequestTarget;
@@ -96,19 +92,11 @@ export function useAgentIslandChat(sprintId: number | null, hasPendingDraft: boo
   const selected = pick?.key === chatKey ? pick.value : null;
   const session =
     selected === 'new' ? null : (sessions.sessions.find((item) => item.id === selected) ?? sessions.active);
-  const redoSession = hasPendingDraft ? sessions.draftSession : null;
 
   const presence = useOverlayPresence(chatOpen);
   const [lastPanel, setLastPanel] = useState<ChatPanel | null>(null);
   if (chat && (lastPanel?.chat.key !== chat.key || lastPanel.session !== session)) {
     setLastPanel({ chat, session });
-  }
-  // Пока панель растёт или сжимается, содержимое обрезается; после — нет (иначе режется список @).
-  const [panelSettled, setPanelSettled] = useState(false);
-  const [settledFor, setSettledFor] = useState(chatOpen);
-  if (settledFor !== chatOpen) {
-    setSettledFor(chatOpen);
-    setPanelSettled(false);
   }
   let panel: ChatPanel | null = null;
   if (chat) {
@@ -124,23 +112,15 @@ export function useAgentIslandChat(sprintId: number | null, hasPendingDraft: boo
     islandRef,
     newSelected: chatOpen && selected === 'new',
     panel,
-    panelSettled,
     panelState: presence.state,
-    onPanelAnimationEnd: (event: AnimationEvent<HTMLElement>) => {
-      if (event.target === event.currentTarget) {
-        setPanelSettled(true);
-      }
-    },
-    redoSession,
     session,
     sessions,
-    /** ✕: завершить показанную сессию и свернуть чат. */
-    closeSession: () => {
+    /** 🗑: завершить показанную сессию — открытый чат остаётся, пустой, под новую просьбу. */
+    clearChat: () => {
       if (session) {
         sessions.close(session.id).catch(() => undefined);
       }
       setPick(null);
-      sprintPlannerUi.setAgentRequestTarget(null);
     },
     /**
      * После «Принять всё»: драфт решён; не закрываем, если человек уже написал агенту ещё.
@@ -156,20 +136,6 @@ export function useAgentIslandChat(sprintId: number | null, hasPendingDraft: boo
         setPick({ key: chatKey, value: draft.id });
       }
       sessions.close(draft.id).catch(() => undefined);
-    },
-    redo: () => {
-      if (!redoSession || sessions.posting) {
-        return;
-      }
-      sessions
-        .post({ kind: 'redo', mentions: [], sessionId: redoSession.id, text: '' })
-        .then(() => {
-          // Агент внешний: открываем чат с полоской «позови агента».
-          if (!chatOpen) {
-            openChat();
-          }
-        })
-        .catch(() => toast.error(t('agentSession.sendFailed')));
     },
     selectCreated: (sessionId: string | null) => {
       const previous = sessions.active;

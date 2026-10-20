@@ -26,7 +26,10 @@ import { TaskArrows } from '@/features/swimlane/components/task-arrows';
 import { PlanPatchScheduleArrows } from '@/features/swimlane/components/task-arrows/PlanPatchScheduleArrows';
 import { PlanPatchSegmentArrows } from '@/features/swimlane/components/task-arrows/PlanPatchSegmentArrows';
 import { SwimlaneXarrowRedrawProvider } from '@/features/swimlane/SwimlaneArrowRedrawContext';
-import { useSwimlanePinnedRowIdsStorage } from '@/hooks/useLocalStorage';
+import {
+  useSwimlaneLinksIdleModeStorage,
+  useSwimlanePinnedRowIdsStorage,
+} from '@/hooks/useLocalStorage';
 import { taskLinksForOnboardingArrows } from '@/lib/plannerOnboarding/onboardingDemoLane';
 
 function useStableElementRefMap() {
@@ -150,6 +153,7 @@ export function SwimlanesSectionLanes({
 
   const showLinks = section.showLinks !== false;
   const linksDimOnHover = section.linksDimOnHover !== false;
+  const [linksIdleMode] = useSwimlaneLinksIdleModeStorage();
   const arrowTaskLinks = taskLinksForOnboardingArrows(showLinks, section.filteredTaskLinks);
 
   const swimlanePropsById = useMemo(() => {
@@ -278,6 +282,7 @@ export function SwimlanesSectionLanes({
   const taskArrowProps = {
     activeTaskId: section.dragAndDrop.activeTaskId,
     hoveredTaskId,
+    idleMode: linksIdleMode,
     linkToolArmed,
     linkingFromTaskId,
     linkingSessionActive,
