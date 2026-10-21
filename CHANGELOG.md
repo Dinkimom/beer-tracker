@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.19.0] — 2026-10-21
+
+### English
+
+- Yandex Tracker sign-in via Yandex ID OAuth: «Sign in with Yandex ID» on `/auth-setup`, `/register` and the tracker tab in settings replaces pasting a token. The code is exchanged on the server (`/api/auth/yandex/start` → `/api/auth/yandex/callback`), the client secret never reaches the browser.
+- **Action required for Yandex Tracker instances:** set the new runtime env `YANDEX_OAUTH_CLIENT_SECRET` and use a Yandex ID app of type «user authorization» with Redirect URIs `{origin}/api/auth/yandex/callback` and `https://oauth.yandex.ru/verification_code`. Apps of type «API access» cannot change their Redirect URI — create a new one. See `docs/ISSUE_TRACKERS.md` → «Ветка A».
+- Admin → «Tracker»: the organization token for sync is still pasted manually; the «get token» link shows it on the Yandex page.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.19.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Вход в Яндекс Трекер через OAuth Яндекс ID: кнопка «Войти с Яндекс ID» на `/auth-setup`, `/register` и во вкладке трекера в настройках вместо ручной вставки токена. Код обменивается на сервере (`/api/auth/yandex/start` → `/api/auth/yandex/callback`), секрет приложения в браузер не попадает.
+- **Нужно действие для инстансов с Яндекс Трекером:** задайте новую runtime env `YANDEX_OAUTH_CLIENT_SECRET` и используйте приложение Яндекс ID типа «для авторизации пользователей» с Redirect URI `{origin}/api/auth/yandex/callback` и `https://oauth.yandex.ru/verification_code`. У приложений типа «для доступа к API» Redirect URI не меняется — создайте новое. Подробности — `docs/ISSUE_TRACKERS.md` → «Ветка A».
+- Админка «Трекер»: токен организации для синхронизации по-прежнему вставляется вручную, ссылка «получить токен» показывает его на странице Яндекса.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.19.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.18.1] — 2026-10-21
 
 ### English
