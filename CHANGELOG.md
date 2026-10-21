@@ -2,6 +2,18 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.21.1] — 2026-10-22
+
+### English
+
+- Swimlane fact timeline: tester-owned tasks in QA projects (AQA, MQA and similar) now show all work phases on the QA lane instead of only the close marker, including tasks estimated in story points. QA copies of developer tasks still show only the testing phases.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.21.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Таймлайн факта на свимлейне: собственные задачи тестировщика в QA-проектах (AQA, MQA и т.п.) на дорожке QA показывают все рабочие фазы, а не только маркер закрытия, в том числе задачи с оценкой в SP. QA-копии задач разработчиков по-прежнему показывают только фазы тестирования.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.21.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.21.0] — 2026-10-22
 
 ### English
