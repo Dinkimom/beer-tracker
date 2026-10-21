@@ -2,6 +2,32 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.20.0] — 2026-10-21
+
+### English
+
+- Swimlane: cards compare the plan with the plan when work started. Cost added after the start is hatched, and a corner badge marks a task moved earlier or later. Hover a moved task to see its original plan while the other cards dim.
+- Task cards: corner badges for planning errors, plan moves and hidden links (the «+N» link badge moved onto the card).
+- Dropping a card snaps its left edge to the nearest grid line, so where you grab the card no longer shifts the drop.
+- Agent: the ✨ button in the swimlane toolbar opens the session chat, or a new request about the sprint when there is no session. «New session» and «Clear chat» are in the chat header; the separate «Chat» button is gone.
+- Agent plan previews can sync to the tracker: approving one adds the issue to the tracker sprint, assigns it and updates other open tabs. **Action required for an existing DB:** run `database/add-plan-patch-previews.sql` (adds `plan_patch_position_previews.sync_to_tracker`).
+- Quick add searches the whole tracker, not only the board (Jira). Epic search stays within the board. Searching by an issue key prefix no longer fails when that key does not exist.
+- Agent bridge log shows total tokens and cost for each run.
+- Availability chips sit at the bottom of the card area, above the fact and calendar tracks.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.20.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Свимлейн: карточки сравнивают план с планом на старте работы. Стоимость, добавленная после старта, заштрихована, угловой значок показывает перенос раньше или позже. При наведении на перенесённую задачу виден исходный план, остальные карточки приглушаются.
+- Карточки задач: угловые значки ошибки планирования, переноса плана и скрытых связей (счётчик «+N» переехал на карточку).
+- При дропе левый край карточки снапается к ближайшей линии сетки: место захвата больше не сдвигает позицию.
+- Агент: кнопка ✨ в тулбаре свимлейна открывает чат сессии, а без сессии — новую просьбу про спринт. «Новая сессия» и «Очистить чат» — в шапке чата, отдельной кнопки «Чат» больше нет.
+- Превью плана от агента может синхронизироваться с трекером: при подтверждении задача добавляется в спринт трекера, назначается исполнитель, другие открытые вкладки обновляются. **Нужно действие для существующей БД:** выполните `database/add-plan-patch-previews.sql` (колонка `plan_patch_position_previews.sync_to_tracker`).
+- Быстрое добавление ищет задачи по всему трекеру, а не только на доске (Jira). Поиск эпика — по-прежнему в рамках доски. Поиск по префиксу ключа больше не падает, если такой задачи нет.
+- Лог моста агента показывает итоговые токены и стоимость прогона.
+- Чипы занятости стоят внизу зоны карточек, над дорожками факта и календаря.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.20.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.19.1] — 2026-10-21
 
 ### English
