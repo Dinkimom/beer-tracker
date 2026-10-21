@@ -22,6 +22,23 @@ export function plannerCommentCardRowHeightFromDurationParts(durationParts: numb
   return Math.max(1, Math.min(MAX_PLANNER_COMMENT_CARD_ROW_HEIGHT, parts));
 }
 
+/** Строки карточки на свимлейне: схема 1:1 с шириной, остальные — сохранённый height (1..10). */
+export function plannerCommentCardRowSpan(input: {
+  height: number;
+  kind: string;
+  width: number;
+}): number {
+  if (input.kind === 'diagram') {
+    return plannerCommentCardRowHeightFromDurationParts(
+      plannerCommentDurationPartsFromWidth(input.width)
+    );
+  }
+  if (!Number.isFinite(input.height) || input.height <= 0) {
+    return 1;
+  }
+  return input.height <= MAX_PLANNER_COMMENT_CARD_ROW_HEIGHT ? Math.max(1, Math.round(input.height)) : 1;
+}
+
 export function plannerCommentCardRowHeightFromWidth(width: number): number {
   return plannerCommentCardRowHeightFromDurationParts(
     plannerCommentDurationPartsFromWidth(width)

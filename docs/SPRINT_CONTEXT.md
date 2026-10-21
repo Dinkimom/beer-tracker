@@ -103,7 +103,7 @@ Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `
 
 `upsertPosition.syncToTracker=true` — дополнительно `addIssueToSprint` + assign в Tracker/Jira (позиция в BT пишется всегда; ошибка sync — в `applied[].detail` / warning). Без флага — только планировщик BT; propose предупредит `issue_not_in_sprint: KEY` и вернёт `hints` с remediation (перепредложите с `syncToTracker:true`, можно вместе с `segments`), если задачи нет на доске спринта трекера.
 
-Notes: только `kind=text`; default `width=200` (2 части); `height` как у задачи. В context: `updatedAt` / `updatedBy` / `version`; soft-delete. `updateNote.ifVersion` — optimistic lock (иначе `version conflict`). Для `upsertLink` на заметку — `comment:{notes[].id}`.
+Notes: только `kind=text`; `width` — длина в частях таймлайна от `(day, part)` (1..60, default 2; значения > 60 — legacy px/100); `height` — строки свимлейна (1 = карточка задачи, по умолчанию подбирается под текст). Заметки одного исполнителя, пересекающиеся по времени, свимлейн разносит по строкам (дорожка растёт) — propose предупреждает `note_overlap` и называет первый свободный слот. В context: `updatedAt` / `updatedBy` / `version`; soft-delete. `updateNote.ifVersion` — optimistic lock (иначе `version conflict`). Для `upsertLink` на заметку — `comment:{notes[].id}`.
 
 ### Мост к Claude CLI (локально)
 
@@ -162,7 +162,7 @@ curl -sS \
 | `agenda` | Sorted timeline view: day/part/date + task + assignee name + summary |
 | `capacity` | Per-person load vs free parts (**tasks only**; notes ignored), overlaps, gaps, overloaded |
 | `featureLanes` | `draftRows`, `orderIds`, `hiddenIds` |
-| `notes` | Notes / diagrams / images; `updatedAt` / `updatedBy` / `version`; do **not** block capacity |
+| `notes` | Notes / diagrams / images; `width` (части), `height` (строки), `color` (у текстовых); `updatedAt` / `updatedBy` / `version`; do **not** block capacity |
 | `taskLinks` | Arrows |
 | `sprintGoals` | `{ delivery: [], discovery: [] }` |
 | `availability` | Board events overlapping sprint window when known |

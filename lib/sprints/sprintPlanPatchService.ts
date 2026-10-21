@@ -33,6 +33,7 @@ import {
   sprintPlanPatchSummaryLookups,
   summarizeSprintPlanPatchOps,
 } from '@/lib/sprints/sprintPlanPatchHelpers';
+import { buildNoteOverlapHints, collectNoteOverlapWarnings } from '@/lib/sprints/sprintPlanPatchNoteOverlap';
 import { assertPlanPatchOpsFitPartsPerDay } from '@/lib/sprints/sprintPlanPatchPartsValidation';
 import { applyPendingProposeGate } from '@/lib/sprints/sprintPlanPatchPendingView';
 import { persistDraftInSession } from '@/lib/sprints/sprintPlanPatchPersist';
@@ -160,11 +161,21 @@ export async function proposeSprintPlanPatch(input: {
     ...(sprintIssues.warning ? [sprintIssues.warning] : []),
     ...collectIssueNotInSprintWarnings(ops, sprintIssues.keys),
   ];
-  const hints = buildIssueNotInSprintPlanPatchHints(
+  const noteOverlapWarnings = collectNoteOverlapWarnings({
+    dayCount: calendarDays.length,
+    notes: current.notes,
     ops,
-    warnings,
-    new Set(current.positions.map((position) => position.taskId))
-  );
+    partsPerDay: current.meta.partsPerDay,
+  });
+  warnings.push(...noteOverlapWarnings);
+  const hints = [
+    ...buildIssueNotInSprintPlanPatchHints(
+      ops,
+      warnings,
+      new Set(current.positions.map((position) => position.taskId))
+    ),
+    ...buildNoteOverlapHints(noteOverlapWarnings),
+  ];
 
   const nowSec = Math.floor(Date.now() / 1000);
   const opsHash = hashSprintPlanPatchOps(ops);

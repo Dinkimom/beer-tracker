@@ -74,16 +74,21 @@ const DeletePositionSchema = z.object({
   taskId: z.string().min(1).max(255),
 });
 
+const NOTE_WIDTH_DESCRIPTION =
+  'Card length on the timeline in parts from (day, part), 1..60 (default 2). Values > 60 are legacy px (/100).';
+const NOTE_HEIGHT_DESCRIPTION =
+  'Card height in swimlane rows, 1 = one task card. Omit on createNote to fit the text.';
+
 const CreateNoteSchema = z.object({
   assigneeId: z.string().min(1).max(255),
-  color: z.enum(STICKY_NOTE_COLORS).optional(),
+  color: z.enum(STICKY_NOTE_COLORS).optional().describe('Sticky color (default yellow)'),
   day: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
-  height: z.number().int().min(1).max(10).optional(),
+  height: z.number().int().min(1).max(10).optional().describe(NOTE_HEIGHT_DESCRIPTION),
   op: z.literal('createNote'),
   parent: NoteParentSchema.nullable().optional(),
   part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
   text: z.string().min(1).max(PLANNER_COMMENT_TEXT_MAX_LENGTH),
-  width: z.number().int().positive().max(2000).optional(),
+  width: z.number().int().positive().max(2000).optional().describe(NOTE_WIDTH_DESCRIPTION),
 });
 
 const UpdateNoteSchema = z.object({
@@ -91,13 +96,13 @@ const UpdateNoteSchema = z.object({
   color: z.enum(STICKY_NOTE_COLORS).optional(),
   commentId: z.string().uuid(),
   day: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX).nullable().optional(),
-  height: z.number().int().min(1).max(10).optional(),
+  height: z.number().int().min(1).max(10).optional().describe(NOTE_HEIGHT_DESCRIPTION),
   ifVersion: z.number().int().positive().optional(),
   op: z.literal('updateNote'),
   parent: NoteParentSchema.nullable().optional(),
   part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX).nullable().optional(),
   text: z.string().min(1).max(PLANNER_COMMENT_TEXT_MAX_LENGTH).optional(),
-  width: z.number().int().positive().max(2000).optional(),
+  width: z.number().int().positive().max(2000).optional().describe(NOTE_WIDTH_DESCRIPTION),
 });
 
 const DeleteNoteSchema = z.object({

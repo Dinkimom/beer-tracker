@@ -15,7 +15,7 @@ function basePayload(
   return {
     availability: [],
     meta: {
-      legend: { day: 'd', part: 'p' },
+      legend: { day: 'd', note: 'n', part: 'p' },
       organizationId: 'org-1',
       partsPerDay: PARTS_PER_DAY,
       schemaVersion: 2,
@@ -149,7 +149,7 @@ describe('buildSprintContextCapacity', () => {
     const report = buildSprintContextCapacity(
       basePayload({
         meta: {
-          legend: { day: 'd', part: 'p' },
+          legend: { day: 'd', note: 'n', part: 'p' },
           organizationId: 'org-1',
           partsPerDay: PARTS_PER_DAY,
           schemaVersion: 2,
@@ -207,7 +207,7 @@ describe('buildSprintContextCapacity', () => {
     const report = buildSprintContextCapacity(
       basePayload({
         meta: {
-          legend: { day: 'd', part: 'p' },
+          legend: { day: 'd', note: 'n', part: 'p' },
           organizationId: 'org-1',
           partsPerDay: 2,
           schemaVersion: 2,

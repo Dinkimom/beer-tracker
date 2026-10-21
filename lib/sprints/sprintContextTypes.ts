@@ -1,3 +1,4 @@
+import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { DomainRole, Platform } from '@/lib/roles/catalog';
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
 import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
@@ -69,8 +70,12 @@ export interface SprintContextNote {
   assigneeId: string;
   assigneeName?: string | null;
   authorName: string | null;
+  /** Sticky color as rendered (text notes only; unset color renders yellow). */
+  color?: StickyNoteColor;
   day: number | null;
   diagramText?: string[];
+  /** Card height on the swimlane in rows (1 = one task card). */
+  height: number;
   id: string;
   kind: 'diagram' | 'image' | 'text' | 'widget';
   parent?: SprintContextNoteParent;
@@ -83,6 +88,8 @@ export interface SprintContextNote {
   updatedBy?: string | null;
   /** Optimistic concurrency token for updateNote.ifVersion. */
   version?: number;
+  /** Card length on the timeline in parts (same unit as position duration). */
+  width: number;
 }
 
 export interface SprintContextTaskLink {
@@ -166,6 +173,7 @@ interface SprintContextMeta {
   holidayDays?: SprintContextHolidayDay[];
   legend: {
     day: string;
+    note: string;
     part: string;
   };
   organizationId: string;
