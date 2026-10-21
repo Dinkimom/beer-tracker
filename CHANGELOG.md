@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.19.1] — 2026-10-21
+
+### English
+
+- Sprint context for agents: notes carry `width` (timeline parts), `height` (swimlane rows) and `color`. `propose_plan_patch` warns `note_overlap` when one assignee's notes overlap in time and names the first free slot.
+- Docker Hub images are now built in GitHub Actions on native amd64 and arm64 runners when a release tag is pushed (workflow `docker-hub.yml`, no QEMU emulation). Re-publish an existing version via Run workflow.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.19.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Контекст спринта для агентов: у заметок есть `width` (части таймлайна), `height` (строки свимлейна) и `color`. `propose_plan_patch` предупреждает `note_overlap`, если заметки одного исполнителя пересекаются по времени, и называет первый свободный слот.
+- Образы Docker Hub теперь собираются в GitHub Actions на нативных раннерах amd64 и arm64 при пуше тега релиза (workflow `docker-hub.yml`, без эмуляции QEMU). Перевыпустить существующую версию — через Run workflow.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.19.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.19.0] — 2026-10-21
 
 ### English
