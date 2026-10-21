@@ -2,6 +2,32 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.21.0] — 2026-10-22
+
+### English
+
+- Plan a task in another sprint: «Plan…» in the task menu opens the target sprint and puts the card on the first day of the lane as a draft. Drag it into place, then confirm or cancel in the move toolbar; the planner returns to the original sprint. Sticky notes can move to another sprint the same way.
+- Context menus, submenus, selects and the sprint list share one glass style; the selected item shows a check mark.
+- Assignee picker groups people by platform, marks suitable assignees and shows load as «N of M».
+- Toasts match the glass menus, and all toast texts are translated.
+- Sticky notes render inline **bold**, *italic*, ~~strike~~ and `code` on the swimlane and in retro cards.
+- A «+Nd» badge marks cost that grew after work started.
+- Tic-tac-toe strikes through the winning line and shows a result banner.
+- Submenus and context menus stay on screen near the viewport edges.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.21.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Запланировать задачу в другом спринте: «Запланировать…» в меню задачи открывает целевой спринт и ставит карточку черновиком в первый день дорожки. Перетащите её на место и подтвердите или отмените в панели переноса — планер вернётся в исходный спринт. Заметки переносятся в другой спринт так же.
+- Контекстные меню, сабменю, селекты и список спринтов — в едином стеклянном стиле, выбранный пункт отмечен галочкой.
+- Выбор исполнителя группирует людей по платформе, отмечает подходящих и показывает загрузку «N из M».
+- Тосты оформлены как стеклянные меню, все тексты тостов переведены.
+- Заметки поддерживают инлайн **жирный**, *курсив*, ~~зачёркнутый~~ и `код` на свимлейне и в карточках ретро.
+- Значок «+Nд» отмечает стоимость, выросшую после старта работы.
+- Крестики-нолики зачёркивают выигрышную линию и показывают плашку итога.
+- Сабменю и контекстные меню не уходят за край экрана.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.21.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.20.0] — 2026-10-21
 
 ### English
