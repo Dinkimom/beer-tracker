@@ -81,3 +81,35 @@ describe('buildSwimlaneInProgressFactSegmentsForAssignee closing statuses', () =
     expect(segments.map((segment) => segment.statusKey)).toEqual(['inprogress']);
   });
 });
+
+describe('buildSwimlaneInProgressFactSegmentsForAssignee tester swimlane', () => {
+  const history = [duration('inprogress', 'In Progress'), duration('done', 'Done')];
+
+  it('shows work phases of a tester-owned SP task (AQA/MQA) without readyfortest/intesting', () => {
+    const issue = task({ id: 'AQA-363', storyPoints: 2, team: 'QA' });
+    const segments = buildSwimlaneInProgressFactSegmentsForAssignee(
+      'dev-1',
+      'tester',
+      new Map([[issue.id, position(issue.id)]]),
+      new Map([[issue.id, history]]),
+      new Map([[issue.id, issue]])
+    );
+    expect(segments.map((segment) => segment.statusKey).sort()).toEqual(['closed', 'inprogress']);
+  });
+
+  it('hides dev phases on the QA copy of a developer task', () => {
+    const dev = task({ id: 'WEB-1', qaEngineer: 'dev-1', storyPoints: 3, testPoints: 1 });
+    const qa = task({ id: 'qa-web-1', originalTaskId: dev.id, storyPoints: 0, team: 'QA', testPoints: 1 });
+    const segments = buildSwimlaneInProgressFactSegmentsForAssignee(
+      'dev-1',
+      'tester',
+      new Map([[qa.id, position(qa.id)]]),
+      new Map([[qa.id, history]]),
+      new Map([
+        [dev.id, dev],
+        [qa.id, qa],
+      ])
+    );
+    expect(segments.map((segment) => segment.statusKey)).toEqual(['closed']);
+  });
+});

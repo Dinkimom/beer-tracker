@@ -105,11 +105,12 @@ function devOriginRequiresTestingFunnelOnlyOnQaSwimlane(dev: Task): boolean {
 }
 
 function isPureQaCardForFactTimeline(task: Task, tasksMap: Map<string, Task>): boolean {
+  const devId = task.originalTaskId;
+  // Собственная задача тестировщика (AQA/MQA и т.п., в т.ч. в SP), а не QA-копия dev-задачи
+  if (!devId) return true;
   const noSp = task.storyPoints == null || task.storyPoints === 0;
   const hasTp = task.testPoints != null && task.testPoints > 0;
   if (!noSp || !hasTp) return false;
-  const devId = task.originalTaskId;
-  if (!devId) return true;
   const dev = tasksMap.get(devId);
   if (!dev) return false;
   if (devOriginRequiresTestingFunnelOnlyOnQaSwimlane(dev)) return false;
