@@ -10,6 +10,7 @@ description: >-
 # Release + Docker Hub publish
 
 End-to-end release for this repo: version bump → GitHub Release → Hub images.
+Both GitHub Release and Hub images are built by CI from the pushed tag.
 
 ## 1. Ask for bump type (required)
 
@@ -30,7 +31,7 @@ After the choice, compute the next version from `package.json` and state it once
 - Branch: work on the public-facing branch (usually `public-v1` tracking `public/main`).
 - Remote for release: `public` → `Dinkimom/beer-tracker` (not `origin` unless user says so).
 - Working tree should be clean, or only contain intentional release-prep edits.
-- Docker Desktop running; Hub login under `dinkimom` (`docker login` if push fails with `insufficient_scope`).
+- Repo secrets `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` on `Dinkimom/beer-tracker` (Hub images are published by CI). Local Docker is needed only for the fallback in [docker-hub.md](docker-hub.md).
 - Shell needs unrestricted permissions for git push, Docker socket, and Hub (`required_permissions: ["all"]`).
 - Align pnpm with `packageManager` via `corepack prepare pnpm@<version> --activate` if hooks fail with `ERR_PNPM_BAD_PM_VERSION`.
 
@@ -81,20 +82,26 @@ curl -sS -H 'Accept: application/vnd.github+json' \
   "https://api.github.com/repos/Dinkimom/beer-tracker/releases/tags/v${VERSION}"
 ```
 
-## 5. Publish Docker Hub images
+## 5. Publish Docker Hub images (CI)
 
-Images:
+Workflow `.github/workflows/docker-hub.yml` starts on the same tag push. It builds each platform natively
+(amd64 on `ubuntu-latest`, arm64 on `ubuntu-24.04-arm`, no QEMU) and publishes:
 
 - `dinkimom/beer-tracker` (Dockerfile target `runner`)
 - `dinkimom/beer-tracker-sync-worker` (target `sync-worker`)
 
-Tags: `${VERSION}`, `latest`, plus platform tags `${VERSION}-arm64` / `${VERSION}-amd64`.
+Tags: `${VERSION}-amd64`, `${VERSION}-arm64`, then `${VERSION}` and `latest` (manifest of both).
 
-Platforms: `linux/arm64` and `linux/amd64`. Build **one platform at a time** (parallel multi-arch OOMs on this machine).
+Watch the run: `gh run list --repo Dinkimom/beer-tracker --workflow docker-hub.yml --limit 1`.
 
-Use builder `hub-push` (docker-container driver). Details and retry recipes: [docker-hub.md](docker-hub.md).
+Re-publish an existing version (failed run, missing platform): Actions → Docker Hub → Run workflow
+with `version=X.Y.Z` (uncheck `latest` for an older version), or
+`gh workflow run docker-hub.yml --repo Dinkimom/beer-tracker -f version=X.Y.Z -f latest=true`.
 
-After push, confirm both platforms on the version tag:
+Do not build locally unless CI is unavailable: amd64 under QEMU on Apple Silicon is slow and OOMs.
+Local fallback recipe: [docker-hub.md](docker-hub.md).
+
+After the run, confirm both platforms on the version tag:
 
 ```bash
 docker buildx imagetools inspect "dinkimom/beer-tracker:${VERSION}"
@@ -108,7 +115,8 @@ Return:
 - New version and tag `vX.Y.Z`
 - GitHub Release URL
 - Hub repos + tags (`VERSION`, `latest`, amd64+arm64)
-- Any step that was skipped or needs a manual `docker login`
+- Docker Hub workflow run URL and result
+- Any step that was skipped (e.g. missing Hub secrets)
 
 ## Do not
 

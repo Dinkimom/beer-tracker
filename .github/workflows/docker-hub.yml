@@ -1,0 +1,179 @@
+name: Docker Hub
+
+# Publishes multi-arch images when a semver tag is pushed (same trigger as release.yml):
+#   dinkimom/beer-tracker              (Dockerfile target `runner`)
+#   dinkimom/beer-tracker-sync-worker  (Dockerfile target `sync-worker`)
+# Each platform builds natively (no QEMU): amd64 on ubuntu-latest, arm64 on ubuntu-24.04-arm.
+# Tags: VERSION-amd64, VERSION-arm64, then VERSION and latest (manifest of both).
+#
+# Manual run (re-publish an existing tag): Actions → Docker Hub → Run workflow, version=1.19.0.
+# Secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (Hub access token with Read & Write).
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Existing release version without "v" (e.g. 1.19.0)'
+        required: true
+        type: string
+      latest:
+        description: 'Also move the latest tag'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-hub-${{ github.event.inputs.version || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      ref: ${{ steps.version.outputs.ref }}
+      latest: ${{ steps.version.outputs.latest }}
+    steps:
+      - name: Resolve version and ref
+        id: version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_LATEST: ${{ github.event.inputs.latest }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            VERSION="${INPUT_VERSION#v}"
+            LATEST="${INPUT_LATEST}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+            LATEST="true"
+          fi
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Not a semver version: ${VERSION}" >&2
+            exit 1
+          fi
+          {
+            echo "version=${VERSION}"
+            echo "ref=refs/tags/v${VERSION}"
+            echo "latest=${LATEST}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.version.outputs.ref }}
+
+      - name: Verify tag matches package.json
+        env:
+          EXPECTED: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          ACTUAL="$(node -p "require('./package.json').version")"
+          if [[ "${ACTUAL}" != "${EXPECTED}" ]]; then
+            echo "package.json version (${ACTUAL}) != v${EXPECTED}" >&2
+            exit 1
+          fi
+          echo "OK: v${EXPECTED} == package.json ${ACTUAL}"
+
+  build:
+    name: Build ${{ matrix.target }} (${{ matrix.arch }})
+    needs: resolve
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [runner, sync-worker]
+        arch: [amd64, arm64]
+        include:
+          - target: runner
+            image: dinkimom/beer-tracker
+          - target: sync-worker
+            image: dinkimom/beer-tracker-sync-worker
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.ref }}
+
+      - name: Short commit SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short=7 HEAD)" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.image }}:${{ needs.resolve.outputs.version }}-${{ matrix.arch }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: ${{ matrix.target }}
+          platforms: linux/${{ matrix.arch }}
+          build-args: |
+            GIT_SHA=${{ steps.sha.outputs.short }}
+            APP_VERSION=${{ needs.resolve.outputs.version }}
+          tags: ${{ matrix.image }}:${{ needs.resolve.outputs.version }}-${{ matrix.arch }}
+          push: true
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=${{ matrix.target }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}-${{ matrix.arch }}
+
+  manifest:
+    name: Publish ${{ matrix.image }}
+    needs: [resolve, build]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: [dinkimom/beer-tracker, dinkimom/beer-tracker-sync-worker]
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create multi-arch tags
+        env:
+          IMAGE: ${{ matrix.image }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          LATEST: ${{ needs.resolve.outputs.latest }}
+        run: |
+          set -euo pipefail
+          tags=(-t "${IMAGE}:${VERSION}")
+          if [[ "${LATEST}" == "true" ]]; then
+            tags+=(-t "${IMAGE}:latest")
+          fi
+          docker buildx imagetools create "${tags[@]}" \
+            "${IMAGE}:${VERSION}-amd64" \
+            "${IMAGE}:${VERSION}-arm64"
+
+      - name: Verify both platforms
+        env:
+          IMAGE: ${{ matrix.image }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "${IMAGE}:${VERSION}" | tee inspect.txt
+          grep -q 'linux/amd64' inspect.txt
+          grep -q 'linux/arm64' inspect.txt

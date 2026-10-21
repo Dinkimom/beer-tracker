@@ -1,4 +1,8 @@
-# Docker Hub publish (Beer Tracker)
+# Docker Hub publish (Beer Tracker) — local fallback
+
+Normally images are published by CI (`.github/workflows/docker-hub.yml`, native amd64/arm64 runners).
+Use this recipe only when CI is unavailable. On Apple Silicon amd64 builds under QEMU: slow, and the
+Next build OOMs with the default Docker Desktop memory (8 GB) while other containers run.
 
 Every tag needs `linux/amd64` and `linux/arm64`. Cloud Run runs amd64 only: an arm64-only image fails to start with `exec format error`.
 
