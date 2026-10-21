@@ -9,7 +9,7 @@ import { IssueSearchQuerySchema, formatValidationError, validateRequest } from '
 
 /**
  * GET /api/issues/search?q={query}&boardId={boardId}
- * Поиск задач на доске в Tracker по ключу или названию.
+ * Поиск задач в трекере по ключу или названию; родителей (parentCandidates) — в рамках доски.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -41,11 +41,15 @@ export async function GET(request: NextRequest) {
     }
 
     const { boardId } = validation.data;
+    const parentCandidates = Boolean(validation.data.parentCandidates);
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
 
     const [issues, integration] = await Promise.all([
+      // Быстрое добавление ищет по всему трекеру: задача может быть ещё не на доске.
+      // Родителя (эпик) по-прежнему ищем в рамках доски.
       issueTracker.searchIssuesOnBoard(boardId, q, {
-        parentCandidates: Boolean(validation.data.parentCandidates),
+        anyBoard: !parentCandidates,
+        parentCandidates,
       }),
       loadTrackerIntegrationForOrganization(organizationId),
     ]);

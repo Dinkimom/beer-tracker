@@ -229,4 +229,11 @@ describe('SprintPlannerUiStore', () => {
     expect(store.contextMenu).toBeNull();
     expect(store.contextMenuTaskId).toBeNull();
   });
+
+  it('setHiddenLinkCounts заменяет счётчики скрытых связей и убирает пропавшие задачи', () => {
+    const store = new SprintPlannerUiStore();
+    store.setHiddenLinkCounts(new Map([['a', 2], ['b', 1]]));
+    store.setHiddenLinkCounts(new Map([['a', 3]]));
+    expect([...store.hiddenLinkCountByTaskId]).toEqual([['a', 3]]);
+  });
 });

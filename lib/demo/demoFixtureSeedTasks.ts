@@ -1,6 +1,12 @@
 import type { Developer, Task } from '@/types';
 
-import { DEMO_DEV_ALICE, DEMO_DEV_BOB, DEMO_DEV_CAROL, DEMO_DEV_DANA } from './demoIds';
+import {
+  DEMO_DEV_ALICE,
+  DEMO_DEV_BOB,
+  DEMO_DEV_CAROL,
+  DEMO_DEV_DANA,
+  DEMO_DEV_ERIN,
+} from './demoIds';
 
 function task(partial: Omit<Task, 'link' | 'team'> & { link?: string; team?: Task['team'] }): Task {
   return {
@@ -16,6 +22,7 @@ export const DEMO_DEV_DISPLAY = {
   bob: { name: 'Guido van Rossum', avatarUrl: '/demo/avatars/guido.jpg' },
   carol: { name: 'Margaret Hamilton', avatarUrl: '/demo/avatars/margaret.jpg' },
   dana: { name: 'John Carmack', avatarUrl: '/demo/avatars/carmack.jpg' },
+  erin: { name: 'Ken Thompson', avatarUrl: null },
 } as const;
 
 export function buildDemoDevelopers(): Developer[] {
@@ -55,6 +62,15 @@ export function buildDemoDevelopers(): Developer[] {
       roleTitle: 'Mobile',
       platforms: ['web'],
       email: 'carmack@demo.local',
+    },
+    {
+      id: DEMO_DEV_ERIN,
+      name: DEMO_DEV_DISPLAY.erin.name,
+      avatarUrl: DEMO_DEV_DISPLAY.erin.avatarUrl,
+      role: 'developer',
+      roleTitle: 'Backend',
+      platforms: ['back'],
+      email: 'ken@demo.local',
     },
   ];
 }
@@ -193,6 +209,69 @@ export function buildDemoSprintTasks(): Task[] {
       type: 'task',
       team: 'Web',
       parent: parentStory,
+      priority: 'normal',
+    }),
+    task({
+      id: 'DEMO-109',
+      name: 'Payments webhook: signature check',
+      assignee: DEMO_DEV_ERIN,
+      assigneeName: DEMO_DEV_DISPLAY.erin.name,
+      status: 'done',
+      originalStatus: 'closed',
+      originalStatusDisplay: 'Closed',
+      statusTypeKey: 'done',
+      storyPoints: 2,
+      testPoints: 1,
+      type: 'task',
+      team: 'Back',
+      parent: parentStory,
+      priority: 'normal',
+      resolvedAt: '2026-10-14T16:00:00.000Z',
+    }),
+    task({
+      id: 'DEMO-110',
+      name: 'Refunds API: partial refunds',
+      assignee: DEMO_DEV_ERIN,
+      assigneeName: DEMO_DEV_DISPLAY.erin.name,
+      status: 'in-progress',
+      originalStatus: 'inProgress',
+      originalStatusDisplay: 'In progress',
+      statusTypeKey: 'inProgress',
+      storyPoints: 5,
+      testPoints: 2,
+      type: 'task',
+      team: 'Back',
+      parent: parentStory,
+      priority: 'major',
+    }),
+    task({
+      id: 'DEMO-112',
+      name: 'Chargeback notifications',
+      assignee: DEMO_DEV_ERIN,
+      assigneeName: DEMO_DEV_DISPLAY.erin.name,
+      status: 'paused',
+      originalStatus: 'needInfo',
+      originalStatusDisplay: 'Need info',
+      statusTypeKey: 'paused',
+      storyPoints: 2,
+      testPoints: 1,
+      type: 'task',
+      team: 'Back',
+      priority: 'normal',
+    }),
+    task({
+      id: 'DEMO-111',
+      name: 'Payouts report export',
+      assignee: DEMO_DEV_ERIN,
+      assigneeName: DEMO_DEV_DISPLAY.erin.name,
+      status: 'todo',
+      originalStatus: 'open',
+      originalStatusDisplay: 'Open',
+      statusTypeKey: 'new',
+      storyPoints: 3,
+      testPoints: 1,
+      type: 'task',
+      team: 'Back',
       priority: 'normal',
     }),
   ];

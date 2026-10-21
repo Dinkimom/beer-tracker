@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
   agentBridgeClaudeArgs,
   agentBridgeStepFromStreamLine,
+  agentBridgeTallyUsage,
+  agentBridgeUsageTotal,
+  EMPTY_AGENT_BRIDGE_USAGE_TALLY,
+  tallyAgentBridgeUsage,
   isAgentBridgeHostAllowed,
   isAgentSessionId,
   parseAgentBridgeTargets,
@@ -66,5 +70,33 @@ describe('agentBridge', () => {
     expect(agentBridgeStepFromStreamLine(assistant([{ text: 'Готово', type: 'text' }]))).toBe('thinking');
     expect(agentBridgeStepFromStreamLine(JSON.stringify({ subtype: 'init', type: 'system' }))).toBeNull();
     expect(agentBridgeStepFromStreamLine('not json')).toBeNull();
+  });
+
+  it('tallies tokens per model turn, then takes the final result', () => {
+    const turn = (id: string, usage: Record<string, number>) =>
+      JSON.stringify({ message: { content: [{ type: 'text' }], id, usage }, type: 'assistant' });
+    const lines = [
+      JSON.stringify({ subtype: 'init', type: 'system' }),
+      turn('msg_1', { cache_creation_input_tokens: 3000, cache_read_input_tokens: 600, input_tokens: 2, output_tokens: 2 }),
+      // CLI повторяет usage хода на каждый блок контента — не удваиваем.
+      turn('msg_1', { cache_creation_input_tokens: 3000, cache_read_input_tokens: 600, input_tokens: 2, output_tokens: 2 }),
+      turn('msg_2', { cache_creation_input_tokens: 100, cache_read_input_tokens: 3600, input_tokens: 1, output_tokens: 5 }),
+      'not json',
+    ];
+    const live = lines.reduce(tallyAgentBridgeUsage, EMPTY_AGENT_BRIDGE_USAGE_TALLY);
+    expect(agentBridgeTallyUsage(live)).toEqual({ cacheRead: 4200, cacheWrite: 3100, costUsd: null, input: 3, output: 7 });
+
+    const result = JSON.stringify({
+      modelUsage: {
+        'claude-haiku': { cacheCreationInputTokens: 0, cacheReadInputTokens: 0, inputTokens: 300, outputTokens: 20 },
+        'claude-sonnet': { cacheCreationInputTokens: 3100, cacheReadInputTokens: 4200, inputTokens: 3, outputTokens: 120 },
+      },
+      total_cost_usd: 0.0123,
+      type: 'result',
+      usage: { input_tokens: 3, output_tokens: 120 },
+    });
+    const done = agentBridgeTallyUsage(tallyAgentBridgeUsage(live, result));
+    expect(done).toEqual({ cacheRead: 4200, cacheWrite: 3100, costUsd: 0.0123, input: 303, output: 140 });
+    expect(agentBridgeUsageTotal(done)).toBe(7743);
   });
 });

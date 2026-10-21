@@ -4,11 +4,8 @@ export function swimlaneFactMarkerOpacityClass(
   isDimmedByFactHover: boolean
 ): string {
   const base = 'fact-timeline-marker-opacity';
-  if (isFactHovered) {
-    return `${base} opacity-100`;
+  if (isDimmedByFactHover && !isFactHovered) {
+    return `${base} opacity-40`;
   }
-  if (isDimmedByFactHover) {
-    return `${base} opacity-35`;
-  }
-  return `${base} opacity-60 hover:opacity-100`;
+  return `${base} opacity-100`;
 }

@@ -9,8 +9,9 @@ import { SwimlaneAvailabilityChip } from './SwimlaneAvailabilityChip';
 
 interface SwimlaneAvailabilityChipsProps {
   dayCount: number;
-  mainAreaHeight: number;
   segments: AvailabilitySegment[];
+  /** Высота зоны карточек: чип стоит внизу ячейки занятости, над дорожками факта и календаря */
+  taskBandHeight: number;
   onChipClick: (eventId: string) => void;
 }
 
@@ -19,8 +20,8 @@ const CHIP_BOTTOM_GAP_PX = 4;
 
 export function SwimlaneAvailabilityChips({
   dayCount,
-  mainAreaHeight,
   segments,
+  taskBandHeight,
   onChipClick,
 }: SwimlaneAvailabilityChipsProps) {
   const { t } = useI18n();
@@ -28,7 +29,7 @@ export function SwimlaneAvailabilityChips({
     return null;
   }
 
-  const topPx = Math.max(4, mainAreaHeight - CHIP_HEIGHT_PX - CHIP_BOTTOM_GAP_PX);
+  const topPx = Math.max(4, taskBandHeight - CHIP_HEIGHT_PX - CHIP_BOTTOM_GAP_PX);
   const dayWidthPercent = 100 / dayCount;
 
   return (

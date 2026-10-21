@@ -22,16 +22,17 @@ import { AgentCallAgentBar } from './AgentCallAgentBar';
 import { AgentSessionConversation } from './AgentSessionConversation';
 
 /** Квадратная иконочная кнопка: без горизонтальных отступов, иначе svg сжимается в 24px. */
-const CLEAR_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !w-6 shrink-0 !rounded-md !p-0 text-gray-500 hover:!bg-gray-500/[0.12] hover:text-gray-700 dark:text-gray-400 dark:hover:!bg-white/[0.08] dark:hover:text-gray-200`;
+const HEADER_ICON_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !w-6 shrink-0 !rounded-md !p-0 text-gray-500 hover:!bg-gray-500/[0.12] hover:text-gray-700 dark:text-gray-400 dark:hover:!bg-white/[0.08] dark:hover:text-gray-200`;
 
 /**
  * Чат сессии с агентом — верхняя часть острова агента над тулбаром инструментов: заголовок
  * с 🗑 «Очистить чат» (завершает сессию), лента (просьбы, драфты, 💬, ответы, статус в конце), полоска «позови агента» и поле ввода.
- * Какую сессию показать, решает остров («Новая» в тулбаре, «Очистить чат» здесь же через `onClear`);
- * `session` null — пишем новую: первое сообщение её создаёт.
+ * Какую сессию показать, решает остров («Новая сессия» и «Очистить чат» в шапке — через `newSession`
+ * и `onClear`); `session` null — пишем новую: первое сообщение её создаёт.
  */
 export function AgentSessionChat({
   autoFocus = false,
+  newSession = null,
   origin = {},
   session,
   sprintId,
@@ -39,6 +40,8 @@ export function AgentSessionChat({
   onCreated,
 }: {
   autoFocus?: boolean;
+  /** Есть активная сессия: «Новая сессия», нажата — пишем новую, повторно — назад к текущей. */
+  newSession?: { selected: boolean; onToggle: () => void } | null;
   origin?: AgentSessionChatOrigin;
   session: AgentSession | null;
   sprintId: number;
@@ -91,10 +94,23 @@ export function AgentSessionChat({
         >
           {session?.title ?? t('agentSession.newSessionTitle')}
         </h3>
+        {newSession ? (
+          <Button
+            aria-label={newSession.selected ? t('agentSession.backToSession') : t('agentSession.newSession')}
+            className={HEADER_ICON_CLASS}
+            data-agent-session-new=""
+            title={newSession.selected ? t('agentSession.backToSession') : t('agentSession.newSession')}
+            type="button"
+            variant="ghost"
+            onClick={newSession.onToggle}
+          >
+            <Icon className="h-3.5 w-3.5" name={newSession.selected ? 'arrow-left' : 'comment-plus'} />
+          </Button>
+        ) : null}
         {session && session.status !== 'closed' ? (
           <Button
             aria-label={t('agentSession.clearChat')}
-            className={CLEAR_CLASS}
+            className={HEADER_ICON_CLASS}
             data-agent-session-clear=""
             title={t('agentSession.clearChatHint')}
             type="button"
@@ -107,6 +123,7 @@ export function AgentSessionChat({
       </div>
 
       <AgentSessionConversation
+        key={session?.id ?? 'new'}
         empty={sessions.draftSession ? t('agentSession.queuedHint') : t('agentSession.emptyChat')}
         messages={session?.messages ?? []}
         status={session?.status}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateCellFromElement, calculateCellFromMouse } from './swimlaneCellFromGeometry';
+import { calculateCellFromCardLeft, calculateCellFromElement, calculateCellFromMouse } from './swimlaneCellFromGeometry';
 
 function domRect(left: number, width: number): DOMRect {
   return {
@@ -57,12 +57,31 @@ describe('calculateCellFromElement', () => {
     expect(r).toEqual({ day: 0, part: 0 });
   });
 
-  it('совпадает с мышью при тех же относительных координатах', () => {
-    const swimlaneRect = domRect(100, 1000);
-    const mouseX = 250;
-    const cardRect = domRect(mouseX, 40);
-    const fromMouse = calculateCellFromMouse(mouseX, swimlaneRect, 1, undefined);
-    const fromEl = calculateCellFromElement(cardRect, swimlaneRect, undefined);
-    expect(fromEl).toEqual(fromMouse);
+  it('снапает левый край к ближайшей линии сетки, а не к ячейке под ним', () => {
+    // 30 ячеек на 900px → 30px/ячейка.
+    const swimlaneRect = domRect(0, 900);
+    expect(calculateCellFromElement(domRect(40, 60), swimlaneRect, undefined, 10)).toEqual({ day: 0, part: 1 });
+    expect(calculateCellFromElement(domRect(50, 60), swimlaneRect, undefined, 10)).toEqual({ day: 0, part: 2 });
+  });
+});
+
+describe('calculateCellFromCardLeft', () => {
+  it('карточка чуть левее таймлайна стартует с day 0, part 0', () => {
+    const r = calculateCellFromCardLeft(90, domRect(100, 900), 2, 10);
+    expect(r).toEqual({ day: 0, part: 0 });
+  });
+
+  it('у правого края старт ограничен длительностью карточки', () => {
+    const r = calculateCellFromCardLeft(880, domRect(0, 900), 3, 10);
+    expect(r).toEqual({ day: 9, part: 0 });
+  });
+
+  it('старт берётся от левого края карточки, а не от курсора в её конце', () => {
+    const swimlaneRect = domRect(0, 900);
+    const cardLeft = 300;
+    const fromCard = calculateCellFromCardLeft(cardLeft, swimlaneRect, 3, 10);
+    const fromPointerAtCardEnd = calculateCellFromMouse(cardLeft + 85, swimlaneRect, 3, undefined, 10);
+    expect(fromCard).toEqual({ day: 3, part: 1 });
+    expect(fromPointerAtCardEnd).not.toEqual(fromCard);
   });
 });

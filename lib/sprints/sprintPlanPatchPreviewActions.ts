@@ -1,5 +1,6 @@
 import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 
+import { syncUpsertPositionToTracker } from '@/lib/sprints/sprintPlanPatchTrackerSync';
 import {
   deleteTaskPosition,
   replaceTaskPositionSegments,
@@ -41,6 +42,18 @@ async function writePreview(input: {
       sprintId,
       taskId: preview.taskId,
     });
+  }
+  if (!preview.syncToTracker) {
+    return;
+  }
+  const sync = await syncUpsertPositionToTracker({
+    assigneeId: preview.assigneeId,
+    organizationId,
+    sprintId,
+    taskId: preview.taskId,
+  });
+  if (sync.warning) {
+    console.warn(`[plan-patch-previews] approve ${preview.taskId}: ${sync.warning}`);
   }
 }
 

@@ -13,7 +13,6 @@ import {
   FLOATING_TOOLBAR_GLASS,
 } from '@/features/context-menu/contextMenuClasses';
 
-import { AgentIslandChatToggle } from './AgentIslandChatToggle';
 import { AgentPendingNavigator } from './AgentPendingNavigator';
 import { AgentSessionChat } from './AgentSessionChat';
 
@@ -21,7 +20,7 @@ interface SwimlaneAgentProposalToolbarProps {
   goalPreviewCount?: number;
   /** Драфт агента ждёт решения на доске. */
   hasPendingDraft: boolean;
-  /** Состояние чата; живёт в тулбаре — там же кнопка новой сессии. */
+  /** Состояние чата; открывает его ✨ в тулбаре инструментов. */
   island: AgentIslandChat;
   pendingCommentIds: readonly string[];
   positionPreviewCount?: number;
@@ -34,16 +33,12 @@ interface SwimlaneAgentProposalToolbarProps {
 
 const ACTION_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !gap-1.5 !rounded-md !px-2 !py-0 text-xs font-medium`;
 
-const CHAT_TOGGLE_CLASS = `${ACTION_CLASS} text-gray-700 hover:!bg-gray-500/[0.12] dark:text-gray-200 dark:hover:!bg-white/[0.08]`;
-
 const SHELL_CLASS = `!rounded-xl ${FLOATING_MENU_SHELL} ${FLOATING_TOOLBAR_GLASS}`;
 
 /**
- * Остров агента над тулбаром инструментов. Строка: агент, «‹ 1/2 ›» и рядом ✓ / ✗ по драфту, «Чат».
- * Новая сессия — кнопкой в тулбаре. Клик мимо острова или смена режима в тулбаре
- * сворачивают чат. Развёрнут — над строкой отдельная карточка чата сессии; строка не меняется,
- * «Чат» только становится нажатым. Открывается «Чатом», «Агенту» в меню
- * задачи / заметки и кнопкой агента в тулбаре; виден, пока есть активная сессия, драфт или открыт чат.
+ * Остров агента над тулбаром инструментов: карточка чата и строка ревью драфта «‹ 1/2 › ✓ ✗».
+ * Строка — только пока драфт ждёт решения на доске. Чат открывают ✨ в тулбаре и «Агенту» в меню
+ * задачи / заметки; сворачивают ✨, клик мимо острова и смена режима в тулбаре.
  */
 export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentProposalToolbar({
   goalPreviewCount = 0,
@@ -57,11 +52,9 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
   onRevealGoals,
 }: SwimlaneAgentProposalToolbarProps) {
   const { t } = useI18n();
-  const { chatOpen, panel, sessions } = island;
+  const { panel, sessions } = island;
 
-  // Без открытого чата остров виден, пока есть активная сессия или драфт: его «Чат» — путь
-  // к текущей сессии (кнопка в тулбаре при сессии создаёт новую).
-  if (!panel && !hasPendingDraft && !sessions.active) {
+  if (!panel && !hasPendingDraft) {
     return null;
   }
   const pendingTotal = positionPreviewCount + goalPreviewCount + pendingCommentIds.length;
@@ -80,6 +73,9 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
             <AgentSessionChat
               key={panel.chat.key}
               autoFocus
+              newSession={
+                sessions.active ? { selected: island.newSelected, onToggle: island.toggleNewSession } : null
+              }
               origin={panel.chat.origin}
               session={panel.session}
               sprintId={sprintId}
@@ -89,46 +85,37 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
           </div>
         </div>
       ) : null}
-      <div className={`flex items-center justify-center gap-0.5 px-1 py-1 ${SHELL_CLASS}`} role="toolbar">
-        <AgentPendingNavigator
-          total={pendingTotal}
-          onRevealHidden={goalPreviewCount > 0 ? onRevealGoals : undefined}
-        />
-        {hasPendingDraft ? (
-          <>
-            <Button
-              aria-label={t('comments.agentApproveAll')}
-              className={`${ACTION_CLASS} text-green-700 hover:!bg-green-500/[0.12] dark:text-green-400 dark:hover:!bg-green-400/[0.12]`}
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                onApproveAll(pendingCommentIds);
-                island.finishDraftSession();
-              }}
-            >
-              <Icon className="h-3.5 w-3.5" name="check" />
-              <span>{t('comments.agentApproveAll')}</span>
-            </Button>
-            <Button
-              aria-label={t('comments.agentRejectAll')}
-              className={`${ACTION_CLASS} text-red-600 hover:!bg-red-500/[0.1] dark:text-red-400 dark:hover:!bg-red-400/[0.1]`}
-              type="button"
-              variant="ghost"
-              onClick={() => onRejectAll(pendingCommentIds)}
-            >
-              <Icon className="h-3.5 w-3.5" name="x" />
-              <span>{t('comments.agentRejectAll')}</span>
-            </Button>
-          </>
-        ) : null}
-        <AgentIslandChatToggle
-          className={CHAT_TOGGLE_CLASS}
-          open={chatOpen}
-          openComments={sessions.openComments}
-          status={sessions.active?.status}
-          onToggle={island.toggleChat}
-        />
-      </div>
+      {hasPendingDraft ? (
+        <div className={`flex items-center justify-center gap-0.5 px-1 py-1 ${SHELL_CLASS}`} role="toolbar">
+          <AgentPendingNavigator
+            total={pendingTotal}
+            onRevealHidden={goalPreviewCount > 0 ? onRevealGoals : undefined}
+          />
+          <Button
+            aria-label={t('comments.agentApproveAll')}
+            className={`${ACTION_CLASS} text-green-700 hover:!bg-green-500/[0.12] dark:text-green-400 dark:hover:!bg-green-400/[0.12]`}
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              onApproveAll(pendingCommentIds);
+              island.finishDraftSession();
+            }}
+          >
+            <Icon className="h-3.5 w-3.5" name="check" />
+            <span>{t('comments.agentApproveAll')}</span>
+          </Button>
+          <Button
+            aria-label={t('comments.agentRejectAll')}
+            className={`${ACTION_CLASS} text-red-600 hover:!bg-red-500/[0.1] dark:text-red-400 dark:hover:!bg-red-400/[0.1]`}
+            type="button"
+            variant="ghost"
+            onClick={() => onRejectAll(pendingCommentIds)}
+          >
+            <Icon className="h-3.5 w-3.5" name="x" />
+            <span>{t('comments.agentRejectAll')}</span>
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 });

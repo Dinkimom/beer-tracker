@@ -15,6 +15,10 @@ describe('resolveTaskLinkArrowHeadProps', () => {
       style: { transition: 'stroke 0.2s ease, fill 0.2s ease' },
     });
   });
+
+  it('skips the color transition on the first frame so a fresh arrow does not fade from a stale color', () => {
+    expect(resolveTaskLinkArrowHeadProps('#f97316', false).style).toEqual({ transition: 'none' });
+  });
 });
 
 describe('TASK_LINK_ARROW_HEAD_SHAPE', () => {

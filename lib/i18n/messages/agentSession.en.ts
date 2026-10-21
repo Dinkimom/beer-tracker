@@ -9,7 +9,6 @@ export const agentSessionEn = {
   submit: 'Send to agent',
   submitFailed: 'Could not send the request',
   sendFailed: 'Could not send the message',
-  chatButton: 'Chat',
   chatAria: 'Chat with the agent',
   newSessionTitle: 'New request for the agent',
   newSession: 'New session',

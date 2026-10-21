@@ -20,44 +20,27 @@ export function isClosedFactPhase(phase: StatusPhaseCell): boolean {
   return phase.statusKey.toLowerCase().replace(/\s+/g, '') === 'closed';
 }
 
-/** Стабильный id DOM для SVG-стрелок (только [a-zA-Z0-9_-]) */
-export function swimlaneFactBarElementId(
-  layerId: string,
-  seg: Pick<SwimlaneInProgressFactSegment, 'endTimeMs' | 'startTimeMs' | 'taskId'>
-): string {
-  const safe = layerId.replace(/[^a-zA-Z0-9_-]/g, '_');
-  return `factbar_${safe}_${seg.taskId}_${seg.startTimeMs}_${seg.endTimeMs}`;
-}
-
-export function hexToRgbaArrow(hex: string, opacity: number): string {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return hex;
-  const r = parseInt(result[1], 16);
-  const g = parseInt(result[2], 16);
-  const b = parseInt(result[3], 16);
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-}
-
 /**
- * Дни, в которых таймлайн факта не рисуется: выходные и дни с событием занятости
- * (отпуск, дежурство, больничный и т.п.).
+ * Как фаза дорожки стыкуется с предыдущей:
+ * `none` — начало дорожки или другая задача, `joined` — встык с фазой той же задачи,
+ * `paused` — та же задача после паузы (между фазами рисуется тонкая связка).
  */
-export function mergeFactTimelineHiddenDayIndices(
-  holidayDayIndices: ReadonlySet<number> | undefined,
-  availabilityDayIndices: Iterable<number> | undefined
-): Set<number> | undefined {
-  const merged = new Set<number>(holidayDayIndices ?? []);
-  if (availabilityDayIndices) {
-    for (const dayIndex of availabilityDayIndices) {
-      if (dayIndex >= 0) merged.add(dayIndex);
-    }
-  }
-  return merged.size === 0 ? undefined : merged;
+export type FactLaneLinkToPrev = 'joined' | 'none' | 'paused';
+
+/** Зазор между фазами одной задачи (в ячейках), который ещё считается стыком. */
+const FACT_PHASE_JOIN_EPSILON_CELLS = 0.05;
+
+export function resolveFactLaneLinksToPrev(laneItems: SegmentWithPhase[]): FactLaneLinkToPrev[] {
+  return laneItems.map((item, idx) => {
+    const prev = laneItems[idx - 1];
+    if (!prev || prev.seg.taskId !== item.seg.taskId) return 'none';
+    const gapCells = item.phase.startCell - prev.phase.endCell;
+    return gapCells <= FACT_PHASE_JOIN_EPSILON_CELLS ? 'joined' : 'paused';
+  });
 }
 
 /**
- * Маска таймлайна факта: скрытые дни прозрачные (и полосы, и `border-t` дорожки),
- * штриховка дня на сетке под ними остаётся.
+ * Маска слоя по нерабочим дням: в эти дни слой прозрачный, штриховка дня на сетке под ним видна.
  */
 export function factTimelineHolidayMask(
   holidayDayIndices: ReadonlySet<number> | undefined,

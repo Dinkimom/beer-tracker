@@ -4,19 +4,12 @@ import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/me
 import type { Developer, Task } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
-import { useLayoutEffect } from 'react';
-import Xarrow from 'react-xarrows';
-
-import { usePhaseCardColorScheme } from '@/components/PhaseCardColorSchemeContext';
-import { ZIndex, getPartsPerDay } from '@/constants';
+import { ZIndex } from '@/constants';
 import { SwimlaneLaneBand } from '@/features/swimlane/components/SwimlaneLaneBand';
-import { buildArrowPairsForSameTask } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactArrowHelpers';
 import { SWIMLANE_FACT_ROW_RIGHT_INSET_PX } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
 import {
   buildLanes,
   buildWithPhases,
-  factTimelineHolidayMask,
-  hexToRgbaArrow,
 } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
 import {
   getSwimlaneInProgressFactLayerHeightFromLaneCount,
@@ -30,7 +23,6 @@ import {
   PHASE_ROW_INSET_PX,
 } from '@/lib/planner-timeline';
 import { getPlannerNow } from '@/utils/plannerClock';
-import { getPhaseLinkArrowDefaultHex } from '@/utils/statusColors';
 
 import { SwimlaneFactLaneFlexRow } from './SwimlaneFactLaneFlexRow';
 
@@ -41,8 +33,6 @@ interface SwimlaneInProgressFactLayerProps {
   developerMap: Map<string, Developer>;
   /** Подсветка колбасы факта по hover карточки/факта конкретной задачи */
   factHoveredTaskId?: string | null;
-  /** Индексы дней (выходные / события занятости), в которых факт не рисуется */
-  holidayDayIndices?: Set<number>;
   layerId: string;
   segments: SwimlaneInProgressFactSegment[];
   sprintStartDate: Date;
@@ -53,12 +43,11 @@ interface SwimlaneInProgressFactLayerProps {
   totalParts: number;
   /** Подсветка карточки задачи при наведении на соответствующую колбасу факта */
   onFactSegmentHover?: (taskId: string | null) => void;
-  requestArrowRedraw: () => void;
 }
 
 /**
  * Таймлайн факта (в работе, ревью, дефект, воронка теста, закрыто): отдельная полоса на задачу; при пересечении — вторая дорожка.
- * Закрытие — маркер с галочкой, как в занятости. Соседние по времени фазы одной задачи — линии слева направо.
+ * Фазы одной задачи — одна плоская колбаса: встык через шов, после паузы — через тонкую связку; закрытие — квадрат с галочкой в конце.
  */
 export function SwimlaneInProgressFactLayer({
   assigneeRole,
@@ -68,15 +57,12 @@ export function SwimlaneInProgressFactLayer({
   layerId,
   onFactSegmentHover,
   factHoveredTaskId = null,
-  holidayDayIndices,
-  requestArrowRedraw,
   segments,
   sprintStartDate,
   swimlaneRowTaskIds,
   tasksMap,
   totalParts,
 }: SwimlaneInProgressFactLayerProps) {
-  const phaseCardColorScheme = usePhaseCardColorScheme();
   const toCell = (d: Date) => dateTimeToFractionalCellInRange(sprintStartDate, d, totalParts);
   const nowCell = Math.min(toCell(getPlannerNow()), totalParts);
   const timelineStartCell = 0;
@@ -97,31 +83,15 @@ export function SwimlaneInProgressFactLayer({
   const laneRowHeight = SWIMLANE_IN_PROGRESS_LANE_ROW_HEIGHT;
   const laneStackGap = OCCUPANCY_FACT_PHASE_GAP_PX;
 
-  const arrowPairs =
-    withPhases.length === 0 ? [] : buildArrowPairsForSameTask(withPhases, layerId);
-  const arrowPairsKey = arrowPairs.map((p) => `${p.from}->${p.to}`).join('|');
-
-  useLayoutEffect(() => {
-    if (arrowPairsKey.length === 0) return;
-    const id = requestAnimationFrame(() => requestArrowRedraw());
-    return () => cancelAnimationFrame(id);
-  }, [arrowPairsKey, requestArrowRedraw, segments, layerId, withPhases.length]);
-
-  const holidayMask = factTimelineHolidayMask(holidayDayIndices, totalParts, getPartsPerDay());
-
   if (segments.length === 0 || spanCells <= 0 || lanes.length === 0) {
     return null;
   }
-
-  const dayHoleMaskStyle = holidayMask
-    ? { maskImage: holidayMask, WebkitMaskImage: holidayMask }
-    : undefined;
 
   return (
     <SwimlaneLaneBand
       accent="fact"
       className="absolute bottom-0 left-0 right-0 z-[1] pointer-events-none"
-      style={{ height: totalLayerHeight, ...dayHoleMaskStyle }}
+      style={{ height: totalLayerHeight }}
     >
       <div
         className="absolute flex pointer-events-none"
@@ -133,40 +103,6 @@ export function SwimlaneInProgressFactLayer({
         }}
       >
         <div className="relative flex-1 min-w-0">
-          {arrowPairs.length > 0 && (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 overflow-visible"
-              style={{ zIndex: ZIndex.base }}
-            >
-              {arrowPairs.map((pair) => {
-                const task = tasksMap.get(pair.taskId);
-                const hex = getPhaseLinkArrowDefaultHex(
-                  phaseCardColorScheme,
-                  task?.originalStatus,
-                  task?.statusColorKey
-                );
-                return (
-                  <Xarrow
-                    key={`${pair.from}->${pair.to}`}
-                    animateDrawing={false}
-                    color={hexToRgbaArrow(hex, 0.55)}
-                    curveness={0}
-                    dashness={false}
-                    end={pair.to}
-                    endAnchor="left"
-                    path="grid"
-                    showHead={false}
-                    showTail={false}
-                    start={pair.from}
-                    startAnchor="right"
-                    strokeWidth={2}
-                  />
-                );
-              })}
-            </div>
-          )}
-
           {lanes.map((laneItems, laneIndex) => (
             <div
               key={`${layerId}-lane-${laneIndex}`}

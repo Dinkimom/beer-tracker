@@ -27,6 +27,11 @@ export function AgentCallAgentBar({ sessionId }: { sessionId: string }) {
   const prompt = t('agentSession.agentPrompt');
   const linkHint = t('agentSession.linkHint');
 
+  // Мост включён, но /health ещё не ответил: не мигаем ссылками на внешние чаты до ответа.
+  if (bridge.checking) {
+    return null;
+  }
+
   if (bridge.alive) {
     const start = () => {
       bridge

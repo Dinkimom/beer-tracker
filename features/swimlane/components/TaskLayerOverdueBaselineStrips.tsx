@@ -16,7 +16,7 @@ import {
 
 import { TaskLayerOverdueBaselineChip } from './TaskLayerOverdueBaselineChip';
 
-const OVERDUE_BASELINE_LINE_PX = 3;
+const OVERDUE_BASELINE_LINE_PX = 2.5;
 
 interface TaskLayerOverdueBaselineStripsProps {
   activeTaskDuration: number | null;
@@ -92,7 +92,7 @@ export function TaskLayerOverdueBaselineStrips({
         return (
           <div
             key={`baseline-${taskId}-${stripIdx}-${baselineStart}-${currentCell}`}
-            className="absolute pointer-events-none rounded-full bg-red-400 transition-opacity duration-200 dark:bg-red-400/80"
+            className="absolute pointer-events-none rounded-r-full bg-red-400 transition-opacity duration-200 dark:bg-red-400/60"
             style={{
               height: `${OVERDUE_BASELINE_LINE_PX}px`,
               opacity: baselineOpacity,

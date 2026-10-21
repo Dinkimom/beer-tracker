@@ -9,6 +9,7 @@ import {
 } from './jiraIssues';
 import {
   appendJiraJqlAnd,
+  buildJiraIssueKeyPrefixClause,
   buildJiraIssueSearchJql,
   buildJiraIssueSearchTextClause,
 } from './jiraIssueSearchJql';
@@ -54,7 +55,7 @@ async function fetchAgileBoardIssues(
   }
 }
 
-function fetchJqlBoardIssues(api: AxiosInstance, jql: string): Promise<TrackerIssue[]> {
+function fetchJqlIssues(api: AxiosInstance, jql: string): Promise<TrackerIssue[]> {
   return fetchJiraIssueSearchPage((startAt, maxResults) =>
     postJiraIssueSearch(api, {
       fields: JIRA_SEARCH_ISSUE_FIELDS,
@@ -138,17 +139,45 @@ async function searchJiraBoardIssues(
 
   const projectKey = await fetchJiraBoardProjectKey(api, boardId);
   const jql = buildJiraIssueSearchJql(boardId, queryText, { extraAnd: typeClause, projectKey });
+  return fetchJqlIssuesOrEmptyOnBadRequest(api, jql);
+}
+
+async function fetchJqlIssuesOrEmptyOnBadRequest(
+  api: AxiosInstance,
+  jql: string
+): Promise<TrackerIssue[]> {
   try {
-    return await fetchJqlBoardIssues(api, jql);
+    return await fetchJqlIssues(api, jql);
   } catch (error) {
     if (isHttpBadRequest(error)) {
+      console.warn('[jira] issue search rejected JQL', { jql });
       return [];
     }
     throw error;
   }
 }
 
-/** Поиск задач на доске (первая страница, до 20 результатов). */
+/** Сначала совпадения по ключу, потом по названию: иначе ключи тонут в задачах, где ключ упомянут в summary. */
+async function searchJiraIssuesAnywhere(
+  api: AxiosInstance,
+  queryText: string,
+  textClause: string
+): Promise<TrackerIssue[]> {
+  const keyClause = buildJiraIssueKeyPrefixClause(queryText);
+  if (!keyClause) {
+    return fetchJqlIssuesOrEmptyOnBadRequest(api, textClause);
+  }
+  const byKey = await fetchJqlIssuesOrEmptyOnBadRequest(api, `${keyClause} ORDER BY key ASC`);
+  if (byKey.length >= JIRA_BOARD_ISSUE_SEARCH_MAX) {
+    return byKey;
+  }
+  const bySummary = await fetchJqlIssuesOrEmptyOnBadRequest(api, textClause);
+  const seen = new Set(byKey.map((issue) => issue.key));
+  const rest = bySummary.filter((issue) => !seen.has(issue.key));
+  return [...byKey, ...rest].slice(0, JIRA_BOARD_ISSUE_SEARCH_MAX);
+}
+
+/** Поиск задач на доске или, с `anyBoard`, по всему трекеру (первая страница, до 20 результатов). */
 export async function searchJiraIssuesOnBoard(
   api: AxiosInstance,
   boardId: number,
@@ -158,6 +187,10 @@ export async function searchJiraIssuesOnBoard(
   const textClause = buildJiraIssueSearchTextClause(queryText);
   if (!textClause) {
     return [];
+  }
+
+  if (options?.anyBoard && !options.parentCandidates) {
+    return searchJiraIssuesAnywhere(api, queryText, textClause);
   }
 
   const typeClause = options?.parentCandidates ? await fetchJiraParentCandidateTypeClause(api) : '';

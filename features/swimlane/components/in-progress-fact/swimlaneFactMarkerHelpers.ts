@@ -1,13 +1,13 @@
 import type { StatusColorGroup } from '@/utils/statusColors';
 
+/**
+ * Заливка факта: светлая палитра карточек как есть; в тёмной `bg-*-900` приглушаем по насыщенности,
+ * чтобы факт был тише карточек плана (opacity не используем — через неё просвечивает сетка).
+ */
 export function combineStatusBgClass(statusColors: StatusColorGroup): string {
-  return statusColors.bgDark ? `${statusColors.bg} ${statusColors.bgDark}` : statusColors.bg;
-}
-
-export function combineStatusBorderClass(statusColors: StatusColorGroup): string {
-  return statusColors.borderDark
-    ? `${statusColors.border} ${statusColors.borderDark}`
-    : statusColors.border;
+  return statusColors.bgDark
+    ? `${statusColors.bg} ${statusColors.bgDark} dark:saturate-[0.55]`
+    : statusColors.bg;
 }
 
 export function factSegmentPointerHoverHandlers(

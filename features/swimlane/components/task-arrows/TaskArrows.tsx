@@ -10,6 +10,7 @@ import { useXarrow } from 'react-xarrows';
 import { usePhaseCardColorScheme } from '@/components/PhaseCardColorSchemeContext';
 import { ZIndex } from '@/constants';
 import { useLinkPreviewCursor } from '@/features/swimlane/hooks/useLinkPreviewCursor';
+import { usePublishHiddenLinkCounts } from '@/features/swimlane/hooks/usePublishHiddenLinkCounts';
 import { SwimlaneArrowRedrawContext } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import {
   resolveSwimlaneLinkPreviewTargetId,
@@ -32,7 +33,6 @@ import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { DELAYS } from '@/utils/constants';
 import { resolveLinkArrowDrawTaskIds } from '@/utils/linkAnchors';
 
-import { HiddenTaskLinkBadges } from './HiddenTaskLinkBadges';
 import { LinkArrowDeleteHandles } from './LinkArrowDeleteHandles';
 import { SwimlaneLinkPreviewArrow } from './SwimlaneLinkPreviewArrow';
 import { TaskArrowLayer } from './TaskArrowLayer';
@@ -168,7 +168,8 @@ export const TaskArrows = observer(function TaskArrows({
     linkModeActive ? 'all' : idleMode,
     taskPositions
   );
-  const hiddenLinkCounts = countHiddenIdleLinksByTaskId(idleLinks.hidden);
+  // Копии слоя для закреплённых строк (clipToRow) видят только часть связей — счётчики публикует основной.
+  usePublishHiddenLinkCounts(countHiddenIdleLinksByTaskId(idleLinks.hidden), !clipToRow);
 
   const previewTargetId =
     linkingFromTaskId != null && taskPositions
@@ -225,7 +226,6 @@ export const TaskArrows = observer(function TaskArrows({
           <TaskArrowLink {...linkProps} link={hoveredLink} />
         </TaskArrowLayer>
       )}
-      {hiddenLinkCounts.size > 0 ? <HiddenTaskLinkBadges counts={hiddenLinkCounts} /> : null}
       <TaskArrowLayer zIndex={ZIndex.arrowsHovered}>
         <TaskArrowRelationshipMarker links={hoveredTaskLinks} taskPositions={taskPositions} />
       </TaskArrowLayer>

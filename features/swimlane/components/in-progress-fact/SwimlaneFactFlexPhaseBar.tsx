@@ -10,17 +10,12 @@ import { useMemo } from 'react';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import {
-  SWIMLANE_FACT_MIN_GAP_PX,
-  SWIMLANE_FACT_THREE_HOURS_MS,
-  SWIMLANE_FACT_VERY_SHORT_PHASE_MS,
-} from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
+import { SWIMLANE_FACT_MIN_GAP_PX } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
 import { mergeIssueDataForSwimlaneFactTooltip } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import { getStatusColors } from '@/utils/statusColors';
 
 import {
   combineStatusBgClass,
-  combineStatusBorderClass,
   factSegmentPointerHoverHandlers,
   resolveFactMarkerHoverState,
 } from './swimlaneFactMarkerHelpers';
@@ -30,31 +25,35 @@ import { formatFactTimelineDuration } from './SwimlaneFactPhaseTooltipHelpers';
 
 export function SwimlaneFactFlexPhaseBar({
   assigneeRole,
-  barDomId,
   changelogsByTaskId,
   commentsByTaskId,
   developerMap,
   hideTaskSummary,
+  isNowEdge,
   laneRowHeight,
   layerId,
   onFactSegmentHover,
   phase,
   seg,
+  shapeClassName,
   tasksMap,
   widthInSpan,
   factHoveredTaskId = null,
 }: {
   assigneeRole: Developer['role'];
-  barDomId: string;
   changelogsByTaskId: Map<string, ChangelogEntry[]>;
   commentsByTaskId: Map<string, IssueComment[]>;
   developerMap: Map<string, Developer>;
   hideTaskSummary: boolean;
+  /** Фаза идёт сейчас: справа кромка «сейчас» вместо скругления */
+  isNowEdge: boolean;
   laneRowHeight: number;
   layerId: string;
   onFactSegmentHover?: (taskId: string | null) => void;
   phase: StatusPhaseCell;
   seg: SwimlaneInProgressFactSegment;
+  /** Скругления и отступ слева по месту фазы в колбасе задачи */
+  shapeClassName: string;
   tasksMap: Map<string, Task>;
   widthInSpan: number;
   factHoveredTaskId?: string | null;
@@ -74,14 +73,12 @@ export function SwimlaneFactFlexPhaseBar({
   const { t } = useI18n();
   const statusColors = getStatusColors(phase.statusKey);
   const bgClass = combineStatusBgClass(statusColors);
-  const borderClass = combineStatusBorderClass(statusColors);
+  const textClass = `${statusColors.text} ${statusColors.textDark ?? ''}`;
 
   const verticalInset = 1;
   const barHeight = Math.max(SWIMLANE_FACT_MIN_GAP_PX, laneRowHeight - verticalInset * 2);
-  const isVeryShort = phase.durationMs <= SWIMLANE_FACT_VERY_SHORT_PHASE_MS;
-  const minBarWidth = isVeryShort ? SWIMLANE_FACT_MIN_GAP_PX : 2;
-  const showText = phase.durationMs >= SWIMLANE_FACT_THREE_HOURS_MS;
   const durationStr = formatFactTimelineDuration(phase.durationMs, t);
+  const statusName = phase.statusName.trim() || phase.statusKey;
 
   const statusTooltipId = `${layerId}-${seg.taskId}-${phase.startCell}-${phase.endCell}`;
   const { isDimmedByFactHover, isFactHovered } = resolveFactMarkerHoverState(
@@ -110,24 +107,20 @@ export function SwimlaneFactFlexPhaseBar({
       singleInGroupId={statusTooltipId}
     >
       <div
-        className={`flex shrink-0 items-center justify-center rounded-md overflow-hidden border-2 pointer-events-auto cursor-pointer box-border ${bgClass} ${borderClass} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
-        id={barDomId}
+        className={`@container flex shrink-0 items-center overflow-hidden pointer-events-auto cursor-pointer box-border ${bgClass} ${textClass} ${shapeClassName} ${isNowEdge ? 'shadow-[inset_-2px_0_0_currentColor]' : ''} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
         style={{
           flex: `${widthInSpan} 0 0`,
-          minWidth: minBarWidth,
+          minWidth: SWIMLANE_FACT_MIN_GAP_PX,
           height: barHeight,
           zIndex: ZIndex.contentOverlay,
         }}
         onPointerEnter={pointerHoverHandlers.onPointerEnter}
         onPointerLeave={pointerHoverHandlers.onPointerLeave}
       >
-        {showText && (
-          <span
-            className={`text-[9px] font-medium px-1 truncate max-w-full text-center leading-tight ${statusColors.text} ${statusColors.textDark ?? ''}`}
-          >
-            {durationStr}
-          </span>
-        )}
+        <span className="hidden @min-[36px]:block min-w-0 truncate px-1.5 text-[10px] font-medium leading-[14px] tabular-nums">
+          <span className="hidden @min-[112px]:inline">{statusName} · </span>
+          {durationStr}
+        </span>
       </div>
     </TextTooltip>
   );

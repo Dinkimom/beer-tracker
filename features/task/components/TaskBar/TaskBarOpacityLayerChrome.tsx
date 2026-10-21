@@ -5,15 +5,9 @@ import type { Task } from '@/types';
 
 import React from 'react';
 
-import { Icon } from '@/components/Icon';
-import { TextTooltip } from '@/components/TextTooltip';
-import { ZIndex } from '@/constants';
-import { useI18n } from '@/contexts/LanguageContext';
-import { TaskCardSwimlaneSegmentBadge } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneSegmentBadge';
-
-import { TaskBarQACreateButton } from './components/TaskBarQACreateButton';
 import { TaskBarResizeHandle } from './components/TaskBarResizeHandle';
 import { TaskBarVerticalResizeHandle } from './components/TaskBarVerticalResizeHandle';
+import { TaskBarCornerBadges } from './TaskBarCornerBadges';
 
 interface TaskBarOpacityLayerChromeProps {
   cornerStyle?: ResizeHandleCornerStyle;
@@ -26,6 +20,8 @@ interface TaskBarOpacityLayerChromeProps {
   isInError: boolean;
   isQATask: boolean;
   isSelected: boolean;
+  /** Значок переноса относительно плана на старте — в одном ряду с номером сегмента. */
+  planAnchorMoved?: 'earlier' | 'later' | null;
   resize: {
     handleResizeStart: (e: React.MouseEvent, side: 'left' | 'right') => void;
     isResizing: boolean;
@@ -55,6 +51,7 @@ export function TaskBarOpacityLayerChrome({
   isQATask,
   isSelected,
   onCreateQATask,
+  planAnchorMoved = null,
   resize,
   showVerticalResize = false,
   swimlaneSegmentBadge,
@@ -62,22 +59,10 @@ export function TaskBarOpacityLayerChrome({
   task,
   verticalResize,
 }: TaskBarOpacityLayerChromeProps) {
-  const { t } = useI18n();
   const showResizeHandles = !isSelected && !disableResize && !interactionDisabled;
 
   return (
     <>
-      {!swimlaneSegmentSecondary && (
-        <TaskBarQACreateButton
-          hasQATaskInSwimlane={hasQATaskInSwimlane}
-          isDragging={effectiveIsDragging}
-          isInError={isInError}
-          isQATask={isQATask}
-          isSelected={isSelected}
-          task={task}
-          onCreateQATask={onCreateQATask}
-        />
-      )}
 
       {showResizeHandles ? (
         <div
@@ -127,29 +112,21 @@ export function TaskBarOpacityLayerChrome({
         </div>
       ) : null}
 
-      {isInError && !swimlaneSegmentSecondary && (
-        <span
-          className="absolute -right-1.5 -top-1.5"
-          style={{ zIndex: ZIndex.value('dropdown') }}
-        >
-          <TextTooltip content={errorTooltip || t('task.taskBar.planningError')}>
-            <span
-              className={`task-card-swimlane-corner-badge inline-flex h-5 w-5 shrink-0 cursor-default items-center justify-center rounded-md border border-red-300/90 bg-red-50 text-red-600 shadow-sm hover:scale-110 dark:border-gray-800 dark:bg-red-400 dark:text-white ${
-                interactionDisabled ? 'pointer-events-none' : 'pointer-events-auto'
-              }`}
-            >
-              <Icon className="h-3 w-3 shrink-0" name="exclamation" />
-            </span>
-          </TextTooltip>
-        </span>
-      )}
 
-      {swimlaneSegmentBadge ? (
-        <TaskCardSwimlaneSegmentBadge
-          interactionDisabled={interactionDisabled}
-          swimlaneSegmentBadge={swimlaneSegmentBadge}
-        />
-      ) : null}
+      <TaskBarCornerBadges
+        effectiveIsDragging={effectiveIsDragging}
+        errorTooltip={errorTooltip}
+        hasQATaskInSwimlane={hasQATaskInSwimlane}
+        interactionDisabled={interactionDisabled}
+        isInError={isInError}
+        isQATask={isQATask}
+        isSelected={isSelected}
+        planAnchorMoved={planAnchorMoved}
+        swimlaneSegmentBadge={swimlaneSegmentBadge}
+        swimlaneSegmentSecondary={swimlaneSegmentSecondary}
+        task={task}
+        onCreateQATask={onCreateQATask}
+      />
     </>
   );
 }

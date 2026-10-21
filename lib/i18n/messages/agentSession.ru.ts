@@ -9,7 +9,6 @@ export const agentSessionRu = {
   submit: 'Отправить агенту',
   submitFailed: 'Не удалось отправить запрос',
   sendFailed: 'Не удалось отправить сообщение',
-  chatButton: 'Чат',
   chatAria: 'Чат с агентом',
   newSessionTitle: 'Новая просьба агенту',
   newSession: 'Новая сессия',

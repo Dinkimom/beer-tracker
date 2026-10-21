@@ -88,7 +88,19 @@ export function resolveTaskLinkArrowPaintColor(
   return mixHexColors(baseHex, toward, mix);
 }
 
-export function resolveTaskLinkArrowHeadProps(color: string): {
+/**
+ * `animateColor: false` — первый кадр стрелки. Xarrow подставляет цвет через layout-effect,
+ * а до него рисует цвет из общего модульного кэша (последней смонтированной стрелки);
+ * с transition это виделось как переход «статус → свой цвет».
+ */
+function resolveTaskLinkArrowColorTransition(animateColor: boolean): string {
+  return animateColor ? TASK_LINK_ARROW_COLOR_TRANSITION : 'none';
+}
+
+export function resolveTaskLinkArrowHeadProps(
+  color: string,
+  animateColor = true
+): {
   fill: 'none';
   stroke: string;
   style: { transition: string };
@@ -96,15 +108,15 @@ export function resolveTaskLinkArrowHeadProps(color: string): {
   return {
     fill: 'none',
     stroke: color,
-    style: { transition: TASK_LINK_ARROW_COLOR_TRANSITION },
+    style: { transition: resolveTaskLinkArrowColorTransition(animateColor) },
   };
 }
 
 /** Плавная смена цвета тела стрелки при hover-кластере. */
-export function resolveTaskLinkArrowBodyProps(): {
+export function resolveTaskLinkArrowBodyProps(animateColor = true): {
   style: { transition: string };
 } {
-  return { style: { transition: TASK_LINK_ARROW_COLOR_TRANSITION } };
+  return { style: { transition: resolveTaskLinkArrowColorTransition(animateColor) } };
 }
 
 /** Блокер по плану заканчивается позже старта заблокированной — видно всегда, без приглушения. */

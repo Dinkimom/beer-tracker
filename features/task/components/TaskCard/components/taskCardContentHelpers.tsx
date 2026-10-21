@@ -36,9 +36,10 @@ export function resolveTaskCardDisplayId(task: Task): string {
 /** Extra space so glyph descenders are not clipped by the overflow box. */
 const TASK_CARD_TITLE_DESCENDER_RESERVE_PX = 2;
 const TASK_CARD_TITLE_FIT_EPSILON_PX = 0.5;
-const TITLE_LINE_CLAMP_PROBE_MAX = 8;
+/** Высокая заметка (до 10 строк свимлейна) вмещает десятки строк текста — не резать на 8. */
+const TITLE_LINE_CLAMP_PROBE_MAX = 64;
 /** Probe far above any card so truncated titles still overflow the wrapper. */
-const TITLE_OVERFLOW_UNCLAMP_PROBE_LINES = 32;
+const TITLE_OVERFLOW_UNCLAMP_PROBE_LINES = 128;
 
 export const TASK_CARD_TITLE_DATA_ATTR = 'data-task-card-title';
 export const TASK_CARD_TITLE_OVERFLOW_DATA_ATTR = 'data-task-card-title-overflows';

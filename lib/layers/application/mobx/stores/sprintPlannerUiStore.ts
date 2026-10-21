@@ -44,6 +44,9 @@ export class SprintPlannerUiStore {
   /** Подсветка связей / затемнение при hover по карточке. */
   hoveredTaskId: string | null = null;
 
+  /** Связи, скрытые в покое (режим «Важные» / «При наведении»): счётчик в правой рейке карточки. */
+  hiddenLinkCountByTaskId = new Map<string, number>();
+
   /** Drag вне dnd-kit свимлейна (канбан, occupancy) — presence «изменяет». */
   boardDraggingTaskId: string | null = null;
 
@@ -156,6 +159,8 @@ export class SprintPlannerUiStore {
       boardDraggingTaskId: observable,
       occupancyPresencePreview: observable,
       hoveredTaskId: observable,
+      hiddenLinkCountByTaskId: observable,
+      setHiddenLinkCounts: action.bound,
       linkingFromTaskId: observable,
       clearNotificationFocusTaskId: action.bound,
       notificationFocusTaskId: observable,
@@ -215,6 +220,18 @@ export class SprintPlannerUiStore {
 
   resetSession(): void {
     this.sessionId = uuid();
+  }
+
+  /** Точечно: карточки перерисовываются только там, где счётчик поменялся. */
+  setHiddenLinkCounts(counts: ReadonlyMap<string, number>): void {
+    for (const taskId of [...this.hiddenLinkCountByTaskId.keys()]) {
+      if (!counts.has(taskId)) this.hiddenLinkCountByTaskId.delete(taskId);
+    }
+    for (const [taskId, count] of counts) {
+      if (this.hiddenLinkCountByTaskId.get(taskId) !== count) {
+        this.hiddenLinkCountByTaskId.set(taskId, count);
+      }
+    }
   }
 
   setHoveredTaskId(id: string | null): void {

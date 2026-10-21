@@ -7,7 +7,6 @@ import { CARD_MARGIN, ZIndex } from '@/constants';
 import {
   buildSwimlaneOverdueBaselineStripHorizontalStyle,
   SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX,
-  SWIMLANE_OVERDUE_BASELINE_JOIN_PX,
   buildSwimlaneTaskBarHorizontalStyle,
   buildTaskBarLayoutStyle,
   resolveTaskBarContentLayout,
@@ -29,7 +28,7 @@ function resolveHorizontalBarEdgesPx(params: {
 }): { leftPx: number; rightPx: number } {
   const leftMatch = params.style.left.match(/^calc\(([\d.]+)% - (\d+)px\)$/);
   const leftPlusMatch = params.style.left.match(/^calc\(([\d.]+)% \+ (\d+)px\)$/);
-  const widthMatch = params.style.width.match(/^calc\(([\d.]+)%(?: ([+-]) (\d+)px)?\)$/);
+  const widthMatch = params.style.width.match(/^(?:calc\()?([\d.]+)%(?: ([+-]) (\d+)px\))?$/);
 
   if (!widthMatch) {
     throw new Error(`Unexpected width: ${params.style.width}`);
@@ -57,7 +56,7 @@ function resolveHorizontalBarEdgesPx(params: {
 }
 
 describe('buildSwimlaneOverdueBaselineStripHorizontalStyle', () => {
-  it('tucks under the task bar so the cut sits behind the card radius', () => {
+  it('starts flush with the task bar right edge, not under the card', () => {
     const timelineTotalParts = 30;
     const startCell = 10;
     const durationCells = 5;
@@ -84,11 +83,11 @@ describe('buildSwimlaneOverdueBaselineStripHorizontalStyle', () => {
       style: baseline as { left: string; width: string },
     });
 
-    expect(baselineEdges.leftPx).toBeCloseTo(taskBarEdges.rightPx - SWIMLANE_OVERDUE_BASELINE_JOIN_PX, 5);
+    expect(baselineEdges.leftPx).toBeCloseTo(taskBarEdges.rightPx, 5);
     expect(baseline.left).toBe(
-      `calc(${(endCell / timelineTotalParts) * 100}% - ${CARD_MARGIN + SWIMLANE_OVERDUE_BASELINE_JOIN_PX}px)`
+      `calc(${(endCell / timelineTotalParts) * 100}% - ${CARD_MARGIN}px)`
     );
-    expect(baseline.width).toBe(`calc(13.333333333333334% + ${SWIMLANE_OVERDUE_BASELINE_JOIN_PX}px)`);
+    expect(baseline.width).toBe('13.333333333333334%');
   });
 
   it('ends on the same grid line as a task bar with the same end cell', () => {

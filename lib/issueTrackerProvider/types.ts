@@ -317,6 +317,8 @@ interface IssueTrackerListIssuesByQueryResult {
 }
 
 export interface IssueTrackerIssueSearchOptions {
+  /** Искать по всему трекеру, а не только среди задач доски (Jira). */
+  anyBoard?: boolean;
   parentCandidates?: boolean;
 }
 

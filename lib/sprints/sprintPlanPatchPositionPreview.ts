@@ -20,6 +20,8 @@ export interface PlanPatchPositionPreview {
   segments?: PlanPatchPositionSegment[];
   startDay: number;
   startPart: number;
+  /** Approve добавляет задачу в спринт трекера и назначает исполнителя (как apply). */
+  syncToTracker?: boolean;
   taskId: string;
 }
 
@@ -131,14 +133,15 @@ function changesAgainstCurrent(
   return changes;
 }
 
-function withOptionalSegments(
+function withUpsertExtras(
   preview: PlanPatchPositionPreview,
-  segments: readonly PlanPatchPositionSegment[] | undefined
+  op: Extract<PositionPatchOp, { op: 'upsertPosition' }>
 ): PlanPatchPositionPreview {
-  if (segments === undefined) {
-    return preview;
-  }
-  return { ...preview, segments: copySegments(segments) };
+  return {
+    ...preview,
+    ...(op.segments !== undefined ? { segments: copySegments(op.segments) } : {}),
+    ...(op.syncToTracker ? { syncToTracker: true } : {}),
+  };
 }
 
 function previewForOp(
@@ -161,7 +164,7 @@ function previewForOp(
     };
   }
   if (!current) {
-    return withOptionalSegments(
+    return withUpsertExtras(
       {
         assigneeId: op.assigneeId,
         changes: [],
@@ -171,14 +174,14 @@ function previewForOp(
         startPart: op.startPart,
         taskId: op.taskId,
       },
-      op.segments
+      op
     );
   }
   const changes = changesAgainstCurrent(current, op);
-  if (changes.length === 0) {
+  if (changes.length === 0 && !op.syncToTracker) {
     return null;
   }
-  return withOptionalSegments(
+  return withUpsertExtras(
     {
       assigneeId: op.assigneeId,
       changes,
@@ -188,7 +191,7 @@ function previewForOp(
       startPart: op.startPart,
       taskId: op.taskId,
     },
-    op.segments
+    op
   );
 }
 
@@ -348,6 +351,7 @@ export function normalizePlanPatchPositionPreview(raw: unknown): PlanPatchPositi
     ...(segments !== undefined ? { segments } : {}),
     startDay: row.startDay as number,
     startPart: row.startPart as number,
+    ...(row.syncToTracker === true ? { syncToTracker: true } : {}),
     taskId: row.taskId as string,
   };
 }

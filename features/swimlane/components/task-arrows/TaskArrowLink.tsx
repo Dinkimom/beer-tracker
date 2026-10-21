@@ -6,6 +6,7 @@ import type { Task, TaskLink, TaskPosition } from '@/types';
 import { useContext } from 'react';
 import Xarrow from 'react-xarrows';
 
+import { useArrowColorTransitionReady } from '@/features/swimlane/hooks/useArrowColorTransitionReady';
 import { SwimlaneArrowRedrawGenerationContext } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import { isTaskLinkScheduleViolated } from '@/features/swimlane/utils/task-arrows/taskLinkIdleVisibility';
 import { ONBOARDING_DEMO_LINK_ID } from '@/lib/plannerOnboarding/onboardingDemoLane';
@@ -49,6 +50,7 @@ export function TaskArrowLink({
   tasksMap,
 }: TaskArrowLinkProps) {
   const redrawGeneration = useContext(SwimlaneArrowRedrawGenerationContext);
+  const animateColor = useArrowColorTransitionReady();
   const isHovered = hoveredLinkId === link.id;
   const isRelatedToHoveredTask = isTaskArrowLinkRelatedToHoveredTask(
     hoveredTaskIdForArrows,
@@ -101,8 +103,8 @@ export function TaskArrowLink({
     >
       <Xarrow
         animateDrawing={false}
-        arrowBodyProps={resolveOnboardingArrowBodyProps(isOnboardingDemoLink)}
-        arrowHeadProps={resolveOnboardingArrowHeadProps(arrowColor, isOnboardingDemoLink)}
+        arrowBodyProps={resolveOnboardingArrowBodyProps(isOnboardingDemoLink, animateColor)}
+        arrowHeadProps={resolveOnboardingArrowHeadProps(arrowColor, isOnboardingDemoLink, animateColor)}
         color={arrowColor}
         dashness={false}
         end={`task-${endTaskId}`}
@@ -119,16 +121,16 @@ export function TaskArrowLink({
   );
 }
 
-function resolveOnboardingArrowBodyProps(demo: boolean) {
-  const props = resolveTaskLinkArrowBodyProps();
+function resolveOnboardingArrowBodyProps(demo: boolean, animateColor: boolean) {
+  const props = resolveTaskLinkArrowBodyProps(animateColor);
   if (!demo) {
     return props;
   }
   return { ...props, className: 'onboarding-demo-link-body', pathLength: 1 };
 }
 
-function resolveOnboardingArrowHeadProps(color: string, demo: boolean) {
-  const props = resolveTaskLinkArrowHeadProps(color);
+function resolveOnboardingArrowHeadProps(color: string, demo: boolean, animateColor: boolean) {
+  const props = resolveTaskLinkArrowHeadProps(color, animateColor);
   if (!demo) {
     return props;
   }

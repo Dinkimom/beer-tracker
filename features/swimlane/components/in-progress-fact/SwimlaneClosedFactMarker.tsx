@@ -17,7 +17,6 @@ import { getStatusColors } from '@/utils/statusColors';
 
 import {
   combineStatusBgClass,
-  combineStatusBorderClass,
   factSegmentPointerHoverHandlers,
   resolveFactMarkerHoverState,
 } from './swimlaneFactMarkerHelpers';
@@ -26,7 +25,6 @@ import { SwimlaneFactPhaseTooltip } from './SwimlaneFactPhaseTooltip';
 
 export function SwimlaneClosedFactMarker({
   assigneeRole,
-  barDomId,
   changelogsByTaskId,
   commentsByTaskId,
   developerMap,
@@ -36,11 +34,11 @@ export function SwimlaneClosedFactMarker({
   onFactSegmentHover,
   phase,
   seg,
+  shapeClassName,
   tasksMap,
   factHoveredTaskId = null,
 }: {
   assigneeRole: Developer['role'];
-  barDomId: string;
   changelogsByTaskId: Map<string, ChangelogEntry[]>;
   commentsByTaskId: Map<string, IssueComment[]>;
   developerMap: Map<string, Developer>;
@@ -50,6 +48,8 @@ export function SwimlaneClosedFactMarker({
   onFactSegmentHover?: (taskId: string | null) => void;
   phase: StatusPhaseCell;
   seg: SwimlaneInProgressFactSegment;
+  /** Скругления и отступ слева по месту маркера в колбасе задачи */
+  shapeClassName: string;
   tasksMap: Map<string, Task>;
   factHoveredTaskId?: string | null;
 }) {
@@ -71,7 +71,6 @@ export function SwimlaneClosedFactMarker({
   const barHeight = Math.max(SWIMLANE_FACT_MIN_GAP_PX, laneRowHeight - verticalInset * 2);
   const markerSize = barHeight;
   const bgClass = combineStatusBgClass(statusColors);
-  const borderClass = combineStatusBorderClass(statusColors);
   const statusTooltipId = `${layerId}-closed-${seg.taskId}-${phase.startCell}-${phase.endCell}`;
   const { isDimmedByFactHover, isFactHovered } = resolveFactMarkerHoverState(
     factHoveredTaskId,
@@ -81,7 +80,7 @@ export function SwimlaneClosedFactMarker({
 
   return (
     <div
-      className="pointer-events-none flex shrink-0 items-center justify-center self-center"
+      className={`pointer-events-none flex shrink-0 items-center justify-center self-center overflow-hidden ${shapeClassName}`}
       style={{ width: markerSize, zIndex: ZIndex.contentOverlay }}
     >
       <TextTooltip
@@ -106,8 +105,7 @@ export function SwimlaneClosedFactMarker({
           aria-label={t('sprintPlanner.swimlane.factTimeline.closedAria', {
             status: phase.statusKey,
           })}
-          className={`pointer-events-auto flex shrink-0 items-center justify-center rounded-md overflow-hidden border-2 shadow-sm cursor-pointer box-border ${bgClass} ${borderClass} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
-          id={barDomId}
+          className={`pointer-events-auto flex shrink-0 items-center justify-center overflow-hidden cursor-pointer box-border ${bgClass} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
           role="img"
           style={{
             width: markerSize,

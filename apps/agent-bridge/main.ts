@@ -27,9 +27,14 @@ import {
   agentBridgeClaudeArgs,
   agentBridgeStepFromStreamLine,
   type AgentBridgeStep,
+  agentBridgeTallyUsage,
+  agentBridgeUsageTotal,
+  type AgentBridgeUsageTally,
+  EMPTY_AGENT_BRIDGE_USAGE_TALLY,
   isAgentBridgeHostAllowed,
   isAgentSessionId,
   parseAgentBridgeTargets,
+  tallyAgentBridgeUsage,
 } from '@/lib/agentSessions/agentBridge';
 
 const port = Number(process.env.AGENT_BRIDGE_PORT) || AGENT_BRIDGE_DEFAULT_PORT;
@@ -72,6 +77,7 @@ interface RunState {
   again: boolean;
   startedAt: number;
   step: AgentBridgeStep;
+  usage: AgentBridgeUsageTally;
 }
 
 const running = new Map<string, RunState>();
@@ -82,7 +88,12 @@ function log(sessionId: string, message: string) {
 
 /** Сессия живёт на том стенде, откуда пришла просьба, — и MCP берём его. */
 function runSession(sessionId: string, mcpServer: string) {
-  const state: RunState = { again: false, startedAt: Date.now(), step: 'starting' };
+  const state: RunState = {
+    again: false,
+    startedAt: Date.now(),
+    step: 'starting',
+    usage: EMPTY_AGENT_BRIDGE_USAGE_TALLY,
+  };
   running.set(sessionId, state);
   log(sessionId, `claude запущен (${mcpServer})`);
   const child = spawn(claudeBin, agentBridgeClaudeArgs(sessionId, mcpServer, model), {
@@ -92,8 +103,9 @@ function runSession(sessionId: string, mcpServer: string) {
     log(sessionId, 'таймаут, останавливаю');
     child.kill('SIGTERM');
   }, timeoutMs);
-  // stream-json: по строке на событие. Шаг — для планера, в консоль — только смена шага.
+  // stream-json: по строке на событие. Шаг — для планера, в консоль — смена шага и токены в конце.
   createInterface({ input: child.stdout }).on('line', (line) => {
+    state.usage = tallyAgentBridgeUsage(state.usage, line);
     const step = agentBridgeStepFromStreamLine(line);
     if (step && step !== state.step) {
       state.step = step;
@@ -109,7 +121,9 @@ function runSession(sessionId: string, mcpServer: string) {
     finished = true;
     clearTimeout(timer);
     const seconds = Math.round((Date.now() - state.startedAt) / 1000);
-    log(sessionId, `${detail} за ${seconds} с`);
+    const usage = agentBridgeTallyUsage(state.usage);
+    const cost = usage.costUsd == null ? '' : `, $${usage.costUsd.toFixed(3)}`;
+    log(sessionId, `${detail} за ${seconds} с, ${agentBridgeUsageTotal(usage)} токенов${cost}`);
     running.delete(sessionId);
     if (state.again) {
       runSession(sessionId, mcpServer);

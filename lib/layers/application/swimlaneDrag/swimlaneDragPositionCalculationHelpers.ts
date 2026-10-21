@@ -3,7 +3,7 @@ import type { Task, TaskPosition } from '@/types';
 import type { DragEndEvent, DragMoveEvent } from '@dnd-kit/core';
 import type { MutableRefObject } from 'react';
 
-import { calculateCellFromElement, calculateCellFromMouse } from '@/lib/swimlane/swimlaneCellFromGeometry';
+import { calculateCellFromCardLeft, calculateCellFromElement, calculateCellFromMouse } from '@/lib/swimlane/swimlaneCellFromGeometry';
 import { parseSwimlaneTaskDraggableId } from '@/lib/swimlane/swimlaneDragIds';
 
 import { extractCellFromId, isValidCell } from './swimlaneDragCellUtils';
@@ -67,32 +67,33 @@ function resolveCellFromOverId(overId: string, workingDaysCount: number): CellPo
   return cellFromId && isValidCell(cellFromId, workingDaysCount) ? cellFromId : null;
 }
 
-function tryCellFromMousePosition(
-  assigneeId: string,
-  swimlaneElement: HTMLElement,
-  mouseX: number,
-  draggableActiveId: string,
-  taskId: string,
-  taskPositions: Map<string, TaskPosition>,
-  tasks: Task[],
-  workingDaysCount: number
+function tryCellFromAnchorX(
+  anchor: 'cardLeft' | 'pointer',
+  anchorX: number,
+  input: {
+    assigneeId: string;
+    draggableActiveId: string;
+    swimlaneElement: HTMLElement;
+    taskId: string;
+    taskPositions: Map<string, TaskPosition>;
+    tasks: Task[];
+    workingDaysCount: number;
+  }
 ): CellPosition | null {
+  const { assigneeId, workingDaysCount } = input;
   try {
     const taskDuration =
-      resolveActiveDragDurationParts(taskId, draggableActiveId, taskPositions, tasks) ?? 1;
-    const swimlaneRect = swimlaneElement.getBoundingClientRect();
-    const cell = calculateCellFromMouse(
-      mouseX,
-      swimlaneRect,
-      taskDuration,
-      swimlaneElement,
-      workingDaysCount
-    );
+      resolveActiveDragDurationParts(input.taskId, input.draggableActiveId, input.taskPositions, input.tasks) ?? 1;
+    const swimlaneRect = input.swimlaneElement.getBoundingClientRect();
+    const cell =
+      anchor === 'cardLeft'
+        ? calculateCellFromCardLeft(anchorX, swimlaneRect, taskDuration, workingDaysCount)
+        : calculateCellFromMouse(anchorX, swimlaneRect, taskDuration, input.swimlaneElement, workingDaysCount);
     if (cell && isValidCell({ assigneeId, ...cell }, workingDaysCount)) {
       return { assigneeId, ...cell };
     }
   } catch (error) {
-    console.warn('Error calculating cell from mouse:', error);
+    console.warn('Error calculating cell from anchor X:', error);
   }
   return null;
 }
@@ -199,43 +200,16 @@ function resolvePrimaryCellInSwimlane(input: {
   tasks: Task[];
   workingDaysCount: number;
 }): CellPosition | null {
-  // Сначала курсор: превью = ячейка под указателем («наведение на ячейку»).
-  const pointerX = resolvePointerClientX(input.mousePositionRef, input.event);
-  if (pointerX != null) {
-    const fromPointer = tryCellFromMousePosition(
-      input.assigneeId,
-      input.swimlaneElement,
-      pointerX,
-      input.draggableActiveId,
-      input.taskId,
-      input.taskPositions,
-      input.tasks,
-      input.workingDaysCount
-    );
-    if (fromPointer) {
-      return fromPointer;
-    }
-  }
-
-  // Fallback: левый край overlay (клик без move / нет mousePositionRef).
+  // Сначала левый край карточки (DragOverlay): позиция не зависит от точки захвата.
   const overlayLeft = getDragOverlayLeftX(input.event);
   if (overlayLeft != null) {
-    const fromOverlay = tryCellFromMousePosition(
-      input.assigneeId,
-      input.swimlaneElement,
-      overlayLeft,
-      input.draggableActiveId,
-      input.taskId,
-      input.taskPositions,
-      input.tasks,
-      input.workingDaysCount
-    );
-    if (fromOverlay) {
-      return fromOverlay;
+    const fromCard = tryCellFromAnchorX('cardLeft', overlayLeft, input);
+    if (fromCard) {
+      return fromCard;
     }
   }
 
-  return tryResolveCellFromActiveElement(
+  const fromElement = tryResolveCellFromActiveElement(
     input.assigneeId,
     input.swimlaneElement,
     input.draggableActiveId,
@@ -243,6 +217,13 @@ function resolvePrimaryCellInSwimlane(input: {
     input.tasks,
     input.workingDaysCount
   );
+  if (fromElement) {
+    return fromElement;
+  }
+
+  // Fallback: курсор (нет rect у active).
+  const pointerX = resolvePointerClientX(input.mousePositionRef, input.event);
+  return pointerX == null ? null : tryCellFromAnchorX('pointer', pointerX, input);
 }
 
 function resolveFallbackCellInSwimlane(input: {

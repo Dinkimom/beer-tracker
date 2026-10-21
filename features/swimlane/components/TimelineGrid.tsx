@@ -28,6 +28,11 @@ interface TimelineGridProps {
   isLinking?: boolean;
   maxTaskLayers?: number;
   occupiedLayersByCell?: Map<number, Set<number>>;
+  /**
+   * Высота подложки нерабочих дней и занятости (px). Задаётся по зоне карточек,
+   * чтобы дорожки факта и календаря под ней шли отдельными строками; без неё — на всю высоту.
+   */
+  patternHeight?: number;
   /** Высота строки карточек — чтобы «+» не вылезал в соседний свимлейн */
   quickAddClipHeight?: number;
   quickAddFootprint?: {
@@ -68,6 +73,7 @@ export function TimelineGrid({
   maxTaskLayers = 1,
   occupiedLayersByCell,
   hasTaskOverlaps,
+  patternHeight,
   quickAddClipHeight,
   quickAddFootprint,
   taskAreaHeight,
@@ -93,7 +99,10 @@ export function TimelineGrid({
   return (
     <div className="relative h-full w-full min-w-0 bg-white swimlane-lane-fill dark:bg-gray-800">
       {hasPatternRanges ? (
-        <div className="pointer-events-none absolute inset-0 z-0">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-0"
+          style={{ height: patternHeight ?? '100%' }}
+        >
           {hatchRanges.map((range) => (
             <div
               key={`${range.startDay}-${range.kind}`}
@@ -103,7 +112,7 @@ export function TimelineGrid({
                 width: `${(range.daySpan / dayCount) * 100}%`,
               }}
             >
-              <PlannerHatchOverlay heightPx={totalHeight} tone={range.kind} />
+              <PlannerHatchOverlay heightPx={patternHeight ?? totalHeight} tone={range.kind} />
             </div>
           ))}
           {holidayRanges.map((range) => (

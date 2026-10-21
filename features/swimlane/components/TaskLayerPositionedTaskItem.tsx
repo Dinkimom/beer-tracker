@@ -13,7 +13,6 @@ import { SwimlaneLinkingSourceFrame } from '@/features/swimlane/components/Swiml
 import { SwimlaneLinkingTargetOutline } from '@/features/swimlane/components/SwimlaneLinkingTargetOutline';
 import { SwimlaneSegmentEditFrame } from '@/features/swimlane/components/SwimlaneSegmentEditFrame';
 import { extendLastPlanSegmentToCell } from '@/features/swimlane/utils/overdueBaselineSummary';
-import { isPlanAnchorGhostTask } from '@/features/swimlane/utils/planAnchorGhost';
 import {
   computeSwimlaneLinkAlreadyExists,
   computeSwimlaneValidLinkTargetByTime,
@@ -25,7 +24,7 @@ import { useRootStore } from '@/lib/layers';
 import { getSegmentEditorRangeAndCells } from '@/lib/planner-timeline';
 
 import { TaskLayerOverdueBaselineStrips } from './TaskLayerOverdueBaselineStrips';
-import { TaskLayerPlanAnchorGhost } from './TaskLayerPlanAnchorGhost';
+import { TaskLayerPlanAnchorMarks } from './TaskLayerPlanAnchorMarks';
 import { TaskLayerPlanSegmentItem } from './TaskLayerPlanSegmentItem';
 import {
   resolveTaskLayerBaselineCenterOffsetPx,
@@ -58,8 +57,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     timelineTotalParts,
   } = props;
 
-  const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
-  const planAnchor = positionsStore.planAnchors.get(task.id) ?? null;
+  const { sprintPlannerUi } = useRootStore();
 
   const {
     baselineHeight,
@@ -121,13 +119,12 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
 
   return (
     <React.Fragment>
-      {!isDraggingThisTask && planAnchor && isPlanAnchorGhostTask(task) && (
-        <TaskLayerPlanAnchorGhost
-          anchor={planAnchor}
-          baselineHeight={baselineHeight}
-          baselineTop={baselineTop}
-          holidayDayIndices={props.holidayDayIndices}
+      {!isDraggingThisTask && (
+        <TaskLayerPlanAnchorMarks
+          focused={hoveredTaskId === task.id}
           position={position}
+          rowBandStyle={swimlaneRowBandStyle}
+          task={task}
           timelineTotalParts={timelineTotalParts}
         />
       )}

@@ -57,6 +57,36 @@ describe('buildPlanPatchPositionPreviews', () => {
     ]);
   });
 
+  it('keeps syncToTracker so approve adds the issue to the tracker sprint', () => {
+    const previews = buildPlanPatchPositionPreviews({
+      current: [placed('same')],
+      ops: [
+        {
+          assigneeId: 'dev-a',
+          duration: 2,
+          op: 'upsertPosition',
+          startDay: 0,
+          startPart: 0,
+          syncToTracker: true,
+          taskId: 'T-1',
+        },
+        {
+          assigneeId: 'dev-a',
+          duration: 3,
+          op: 'upsertPosition',
+          startDay: 1,
+          startPart: 0,
+          syncToTracker: true,
+          taskId: 'same',
+        },
+      ],
+    });
+    expect(previews.map((preview) => [preview.taskId, preview.syncToTracker])).toEqual([
+      ['T-1', true],
+      ['same', true],
+    ]);
+  });
+
   it('draws a new placement already split into segments', () => {
     const segments = [
       { duration: 1, startDay: 0, startPart: 0 },
@@ -87,6 +117,7 @@ describe('buildPlanPatchPositionPreviews', () => {
         segments,
         startDay: 0,
         startPart: 0,
+        syncToTracker: true,
         taskId: 'T-new',
       },
     ]);

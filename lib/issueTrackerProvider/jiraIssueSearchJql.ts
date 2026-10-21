@@ -2,12 +2,21 @@ function escapeJiraJqlString(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-function looksLikeExactIssueKey(query: string): boolean {
-  return /^[A-Z][A-Z0-9]+-\d+$/i.test(query.trim());
-}
-
 function looksLikeIssueKeyPrefix(query: string): boolean {
   return /^[A-Z][A-Z0-9]*-/i.test(query.trim());
+}
+
+/**
+ * `key ~ "PROJ-67*"` для запросов, похожих на ключ; '' для обычного текста.
+ * Находит и PROJ-67, и PROJ-670…; `key =` терял префикс и ронял Agile-запрос с 400,
+ * если такой задачи нет.
+ */
+export function buildJiraIssueKeyPrefixClause(queryText: string): string {
+  const trimmed = queryText.trim();
+  if (!looksLikeIssueKeyPrefix(trimmed)) {
+    return '';
+  }
+  return `key ~ "${escapeJiraJqlString(trimmed.toUpperCase())}*"`;
 }
 
 /** Summary/key фильтр без scope доски (для Agile /board/{id}/issue?jql=). */
@@ -16,14 +25,9 @@ export function buildJiraIssueSearchTextClause(queryText: string): string {
   if (!trimmed) {
     return '';
   }
-  const escaped = escapeJiraJqlString(trimmed);
-  const clauses: string[] = [`summary ~ "${escaped}*"`];
-  if (looksLikeExactIssueKey(trimmed)) {
-    clauses.push(`key = "${escapeJiraJqlString(trimmed.toUpperCase())}"`);
-  } else if (looksLikeIssueKeyPrefix(trimmed)) {
-    clauses.push(`key ~ "${escapeJiraJqlString(trimmed.toUpperCase())}*"`);
-  }
-  return clauses.length === 1 ? clauses[0]! : `(${clauses.join(' OR ')})`;
+  const summaryClause = `summary ~ "${escapeJiraJqlString(trimmed)}*"`;
+  const keyClause = buildJiraIssueKeyPrefixClause(trimmed);
+  return keyClause ? `(${summaryClause} OR ${keyClause})` : summaryClause;
 }
 
 export function appendJiraJqlAnd(base: string, extra?: string): string {

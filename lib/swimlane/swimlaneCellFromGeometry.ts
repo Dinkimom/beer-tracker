@@ -11,14 +11,15 @@ function cellFromRelativeX(
   relativeX: number,
   totalWidth: number,
   workingDaysCount: number,
-  durationParts: number
+  durationParts: number,
+  snap: 'floor' | 'round' = 'floor'
 ): { day: number; part: number } | null {
   const maxDays = Math.max(1, workingDaysCount);
   const partsPerDay = getPartsPerDay();
   const totalCells = maxDays * partsPerDay;
   if (totalWidth <= 0 || totalCells <= 0) return null;
   const cellWidth = totalWidth / totalCells;
-  const rawIndex = Math.floor(relativeX / cellWidth);
+  const rawIndex = snap === 'round' ? Math.round(relativeX / cellWidth) : Math.floor(relativeX / cellWidth);
   const cellIndex = clampSwimlaneStartCell(rawIndex, durationParts, totalCells);
   return swimlaneCellFromStartCell(cellIndex, partsPerDay);
 }
@@ -39,9 +40,21 @@ export function calculateCellFromMouse(
 }
 
 /**
- * Вычисляет позицию ячейки из левого края карточки относительно свимлейна.
+ * Ячейка по левому краю карточки (clientX): `round` — старт снапается к ближайшей линии сетки,
+ * чтобы точка захвата карточки не влияла на позицию дропа.
  * `taskDuration` — как у мыши: старт не дальше, чем позволяет длина карточки.
  */
+export function calculateCellFromCardLeft(
+  cardLeftX: number,
+  swimlaneRect: DOMRect,
+  taskDuration: number,
+  workingDaysCount: number = WORKING_DAYS
+): { day: number; part: number } | null {
+  const relativeX = cardLeftX - swimlaneRect.left;
+  return cellFromRelativeX(relativeX, swimlaneRect.width, workingDaysCount, taskDuration, 'round');
+}
+
+/** Вычисляет позицию ячейки из левого края карточки относительно свимлейна (см. `calculateCellFromCardLeft`). */
 export function calculateCellFromElement(
   cardRect: DOMRect,
   swimlaneRect: DOMRect,
@@ -49,6 +62,5 @@ export function calculateCellFromElement(
   workingDaysCount: number = WORKING_DAYS,
   taskDuration: number = 1
 ): { day: number; part: number } | null {
-  const cardLeftX = cardRect.left - swimlaneRect.left;
-  return cellFromRelativeX(cardLeftX, swimlaneRect.width, workingDaysCount, taskDuration);
+  return calculateCellFromCardLeft(cardRect.left, swimlaneRect, taskDuration, workingDaysCount);
 }

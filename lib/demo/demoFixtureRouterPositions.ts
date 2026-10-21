@@ -50,7 +50,7 @@ function handlePositionsCrud(
   body: unknown
 ): DemoFixtureResult | null {
   const store = getDemoFixtureStore();
-  if (method === 'get') return ok({ positions: store.positions });
+  if (method === 'get') return ok({ planAnchors: store.planAnchors, positions: store.positions });
   if (method === 'post') {
     applyPositionBody(body);
     return ok({ success: true });

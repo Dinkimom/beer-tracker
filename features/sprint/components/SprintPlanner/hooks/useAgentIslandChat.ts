@@ -27,7 +27,7 @@ interface ChatPanel {
 
 /**
  * Состояние острова агента: открыт ли чат и откуда, какая сессия в нём (текущая / новая /
- * только что созданная), действия — «Чат», новая сессия (в тулбаре), 🗑 «Очистить чат». Выбор
+ * только что созданная), действия — ✨ в тулбаре, новая сессия и 🗑 «Очистить чат» в шапке чата. Выбор
  * сессии сбрасывается при закрытии чата и смене его цели. Вызывать из observer-компонента.
  *
  * Панель чата живёт дольше `chatOpen` на время анимации сворачивания (`panel` + `panelState`).
@@ -105,8 +105,6 @@ export function useAgentIslandChat(sprintId: number | null) {
     panel = lastPanel;
   }
 
-  const openChat = () => sprintPlannerUi.setAgentRequestTarget({ kind: 'session' });
-
   return {
     chatOpen,
     islandRef,
@@ -144,18 +142,13 @@ export function useAgentIslandChat(sprintId: number | null) {
       }
       setPick(sessionId ? { key: chatKey, value: sessionId } : null);
     },
+    /** ✨ в тулбаре: без сессии — новая просьба про спринт, с сессией — её чат. */
     toggleChat: () => {
       setPick(null);
-      if (chatOpen) {
-        sprintPlannerUi.setAgentRequestTarget(null);
-      } else {
-        openChat();
-      }
+      sprintPlannerUi.setAgentRequestTarget(chatOpen ? null : { kind: sessions.active ? 'session' : 'sprint' });
     },
+    /** Шапка чата: начать новую сессию; повторно — назад к текущей. */
     toggleNewSession: () => {
-      if (!chatOpen) {
-        openChat();
-      }
       setPick(selected === 'new' ? null : { key: chatKey, value: 'new' });
     },
   };

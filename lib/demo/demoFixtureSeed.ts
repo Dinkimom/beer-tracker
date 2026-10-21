@@ -1,3 +1,4 @@
+import type { SprintPlanAnchor } from '@/lib/api/sprints';
 import type { BoardListItem, SprintScoreResponse } from '@/lib/api/types';
 import type { RetroBoard } from '@/lib/retro/retroBoardShared';
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
@@ -25,6 +26,7 @@ import {
   DEMO_DEV_BOB,
   DEMO_DEV_CAROL,
   DEMO_DEV_DANA,
+  DEMO_DEV_ERIN,
   DEMO_ORG_ID,
   DEMO_SPRINT_ID,
   DEMO_SPRINT_PREV_ID,
@@ -102,6 +104,7 @@ export interface DemoFixtureState {
     to_task_id: string;
   }>;
   orgId: string;
+  planAnchors: SprintPlanAnchor[];
   positions: DemoPositionRow[];
   retroBoards: Record<string, RetroBoard>;
   score: SprintScoreResponse;
@@ -183,6 +186,61 @@ function buildDemoPositions(): DemoPositionRow[] {
       planned_start_part: 0,
       planned_duration: 6,
     },
+    {
+      task_id: 'DEMO-109',
+      assignee_id: DEMO_DEV_ERIN,
+      start_day: 0,
+      start_part: 0,
+      duration: 6,
+      planned_start_day: 0,
+      planned_start_part: 0,
+      planned_duration: 6,
+    },
+    {
+      task_id: 'DEMO-110',
+      assignee_id: DEMO_DEV_ERIN,
+      start_day: 3,
+      start_part: 0,
+      duration: 12,
+      planned_start_day: 3,
+      planned_start_part: 0,
+      planned_duration: 12,
+    },
+    {
+      task_id: 'DEMO-112',
+      assignee_id: DEMO_DEV_ERIN,
+      start_day: 8,
+      start_part: 0,
+      duration: 3,
+      planned_start_day: 8,
+      planned_start_part: 0,
+      planned_duration: 3,
+    },
+  ];
+}
+
+/**
+ * План на старте работы для задач Ken Thompson — все варианты расхождения:
+ * DEMO-109 сделали на день быстрее (стоимость снята), DEMO-110 оценили в день, а делают четыре
+ * (стоимость добавлена), DEMO-112 поставили на паузу и перенесли без переоценки.
+ * DEMO-111 не размещена на доске и без якоря — ещё не в работе.
+ */
+function buildDemoPlanAnchors(): SprintPlanAnchor[] {
+  const anchor = (
+    taskId: string,
+    anchoredAt: string,
+    geometry: Pick<SprintPlanAnchor, 'duration' | 'startDay' | 'startPart'>
+  ): SprintPlanAnchor => ({
+    anchoredAt,
+    assigneeId: DEMO_DEV_ERIN,
+    segments: null,
+    taskId,
+    ...geometry,
+  });
+  return [
+    anchor('DEMO-109', `${SPRINT_START}T06:00:00.000Z`, { duration: 9, startDay: 0, startPart: 0 }),
+    anchor('DEMO-110', '2026-10-16T06:00:00.000Z', { duration: 3, startDay: 3, startPart: 0 }),
+    anchor('DEMO-112', `${SPRINT_START}T07:00:00.000Z`, { duration: 3, startDay: 6, startPart: 1 }),
   ];
 }
 
@@ -261,12 +319,19 @@ function buildDemoAssigneeVelocity(): AssigneeVelocityResponse {
       spSprintCount: 3,
       tpSprintCount: 3,
     },
+    [DEMO_DEV_ERIN]: {
+      averageSp: 6,
+      averageTp: 2,
+      spSprintCount: 3,
+      tpSprintCount: 3,
+    },
   };
   const byName: AssigneeVelocityResponse['byName'] = {
     [assigneeVelocityNameKey(DEMO_DEV_DISPLAY.alice.name)]: byAssignee[DEMO_DEV_ALICE]!,
     [assigneeVelocityNameKey(DEMO_DEV_DISPLAY.bob.name)]: byAssignee[DEMO_DEV_BOB]!,
     [assigneeVelocityNameKey(DEMO_DEV_DISPLAY.carol.name)]: byAssignee[DEMO_DEV_CAROL]!,
     [assigneeVelocityNameKey(DEMO_DEV_DISPLAY.dana.name)]: byAssignee[DEMO_DEV_DANA]!,
+    [assigneeVelocityNameKey(DEMO_DEV_DISPLAY.erin.name)]: byAssignee[DEMO_DEV_ERIN]!,
   };
   return { byAssignee, byName, sprintCount: 3 };
 }
@@ -316,6 +381,7 @@ export function createDemoFixtureSeed(): DemoFixtureState {
     developers: buildDemoDevelopers(),
     tasks: buildDemoSprintTasks(),
     backlogTasks: buildDemoBacklogTasks(),
+    planAnchors: buildDemoPlanAnchors(),
     positions: buildDemoPositions(),
     links: [
       { id: 'link-1', from_task_id: 'DEMO-101', to_task_id: 'DEMO-103' },

@@ -1391,7 +1391,10 @@ export const enMessages = {
         calendar: 'Calendar',
         fact: 'Fact',
       },
+      planAnchorCostAdded: 'Cost added after work started',
       planAnchor: 'Plan when work started',
+      planAnchorMovedEarlier: 'Moved earlier than planned when work started',
+      planAnchorMovedLater: 'Moved later than planned when work started',
       planPatch: {
         add: 'Add to plan',
         and: 'and',
@@ -1723,6 +1726,7 @@ export const enMessages = {
       resizeLeftTitle: 'Change position and duration (drag left)',
       resizeTopTitle: 'Change note height (drag up)',
       resizeBottomTitle: 'Change note height (drag down)',
+      hiddenLinksTooltip: 'Hidden links: {count}',
       addQaTaskTitle: 'Add testing task',
       planningError: 'Planning error',
     },

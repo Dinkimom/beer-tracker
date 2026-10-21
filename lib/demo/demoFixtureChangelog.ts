@@ -66,5 +66,16 @@ export function buildDemoIssueChangelogs(): Record<string, IssueChangelogWithCom
       statusChange('demo-107-1', '2026-10-13T07:00:00.000Z', OPEN, IN_PROGRESS),
       statusChange('demo-107-2', '2026-10-15T10:00:00.000Z', IN_PROGRESS, IN_REVIEW),
     ]),
+    'DEMO-109': pack([
+      statusChange('demo-109-1', '2026-10-13T06:00:00.000Z', OPEN, IN_PROGRESS),
+      statusChange('demo-109-2', '2026-10-14T16:00:00.000Z', IN_PROGRESS, CLOSED),
+    ]),
+    'DEMO-110': pack([
+      statusChange('demo-110-1', '2026-10-16T06:00:00.000Z', OPEN, IN_PROGRESS),
+    ]),
+    'DEMO-112': pack([
+      statusChange('demo-112-1', '2026-10-13T07:00:00.000Z', OPEN, IN_PROGRESS),
+      statusChange('demo-112-2', '2026-10-14T09:00:00.000Z', IN_PROGRESS, BLOCKED),
+    ]),
   };
 }

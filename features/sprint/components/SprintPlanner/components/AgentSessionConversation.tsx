@@ -2,7 +2,7 @@
 
 import type { AgentSessionMessage, AgentSessionStatus } from '@/lib/agentSessions/agentSession';
 
-import { type ReactNode, useLayoutEffect, useRef } from 'react';
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -51,7 +51,7 @@ function messageStatus(message: AgentSessionMessage, t: Translate) {
 function conversationTail(status: AgentSessionStatus | undefined, waitingDetail: ReactNode, t: Translate) {
   if (status === 'waiting_agent') {
     return (
-      <li className="flex" data-agent-session-tail="waiting">
+      <li className="agent-chat-enter flex" data-agent-session-tail="waiting">
         <span className="inline-flex items-center gap-1.5 px-1 text-[12px] text-gray-500 dark:text-gray-400">
           <span aria-hidden className="inline-flex gap-0.5">
             {[0, 150, 300].map((delay) => (
@@ -69,7 +69,7 @@ function conversationTail(status: AgentSessionStatus | undefined, waitingDetail:
   }
   if (status === 'closed') {
     return (
-      <li className="flex items-center gap-2 text-[11px] text-gray-400 dark:text-gray-500" data-agent-session-tail="closed">
+      <li className="agent-chat-enter flex items-center gap-2 text-[11px] text-gray-400 dark:text-gray-500" data-agent-session-tail="closed">
         <span aria-hidden className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
         {t('agentSession.statusClosed')}
         <span aria-hidden className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
@@ -79,7 +79,11 @@ function conversationTail(status: AgentSessionStatus | undefined, waitingDetail:
   return null;
 }
 
-/** Лента сессии сверху вниз; прокручена к последнему сообщению, в конце — статус сессии. */
+/**
+ * Лента сессии сверху вниз; прокручена к последнему сообщению, в конце — статус сессии.
+ * Реплики, пришедшие после открытия, и статус въезжают плавно, лента доезжает до них прокруткой —
+ * ответ агента на месте «печатает…» не выскакивает рывком. Ленту другой сессии монтируют заново (`key`).
+ */
 export function AgentSessionConversation({
   empty,
   messages,
@@ -93,6 +97,8 @@ export function AgentSessionConversation({
 }) {
   const { t } = useI18n();
   const listRef = useRef<HTMLOListElement>(null);
+  const scrolledRef = useRef(false);
+  const [initialIds] = useState(() => new Set(messages.map((message) => message.id)));
   let draftVersion = 0;
   const versions = new Map<string, number>();
   for (const message of messages) {
@@ -104,9 +110,12 @@ export function AgentSessionConversation({
 
   useLayoutEffect(() => {
     const list = listRef.current;
-    if (list) {
-      list.scrollTop = list.scrollHeight;
+    if (!list) {
+      return;
     }
+    // При открытии — сразу вниз, дальше — плавно к новой реплике.
+    list.scrollTo({ behavior: scrolledRef.current ? 'smooth' : 'auto', top: list.scrollHeight });
+    scrolledRef.current = true;
   }, [messages.length, status]);
 
   if (messages.length === 0) {
@@ -127,7 +136,11 @@ export function AgentSessionConversation({
       data-agent-session-conversation=""
     >
       {messages.map((message) => (
-        <li key={message.id} data-agent-session-message={message.kind}>
+        <li
+          key={message.id}
+          className={initialIds.has(message.id) ? undefined : 'agent-chat-enter'}
+          data-agent-session-message={message.kind}
+        >
           <AgentMessageBubble
             brand={message.clientBrand}
             caption={messageCaption(message, versions.get(message.id) ?? 0, t)}

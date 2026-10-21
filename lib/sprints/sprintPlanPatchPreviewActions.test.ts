@@ -13,11 +13,16 @@ import {
   listPlanPatchPositionPreviews,
 } from './sprintPlanPatchPositionPreviewRepository';
 import { approvePlanPatchPositionPreviews, rejectPlanPatchPositionPreviews } from './sprintPlanPatchPreviewActions';
+import { syncUpsertPositionToTracker } from './sprintPlanPatchTrackerSync';
 
 vi.mock('@/lib/sprints/taskPositionsRepository', () => ({
   deleteTaskPosition: vi.fn(),
   replaceTaskPositionSegments: vi.fn(),
   upsertTaskPositionRecord: vi.fn(),
+}));
+
+vi.mock('@/lib/sprints/sprintPlanPatchTrackerSync', () => ({
+  syncUpsertPositionToTracker: vi.fn(),
 }));
 
 vi.mock('./sprintPlanPatchPositionPreviewRepository', () => ({
@@ -30,6 +35,7 @@ const remove = vi.mocked(deletePlanPatchPositionPreviews);
 const upsert = vi.mocked(upsertTaskPositionRecord);
 const dropPosition = vi.mocked(deleteTaskPosition);
 const replaceSegments = vi.mocked(replaceTaskPositionSegments);
+const syncTracker = vi.mocked(syncUpsertPositionToTracker);
 
 const move: PlanPatchPositionPreview = {
   assigneeId: 'dev-1',
@@ -48,6 +54,8 @@ describe('plan patch preview actions', () => {
     upsert.mockReset();
     dropPosition.mockReset();
     replaceSegments.mockReset();
+    syncTracker.mockReset();
+    syncTracker.mockResolvedValue({});
     remove.mockResolvedValue(1);
     upsert.mockResolvedValue({ rows: [] });
     replaceSegments.mockResolvedValue(undefined);
@@ -68,6 +76,24 @@ describe('plan patch preview actions', () => {
     // Драфты приватны: читаем и снимаем только превью владельца.
     expect(list).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'user-1' }));
     expect(remove).toHaveBeenCalledWith(expect.objectContaining({ ownerId: 'user-1' }));
+    expect(syncTracker).not.toHaveBeenCalled();
+  });
+
+  it('adds the issue to the tracker sprint when the preview asks for it', async () => {
+    list.mockResolvedValue([{ ...move, syncToTracker: true }]);
+    await approvePlanPatchPositionPreviews({
+      organizationId: 'org',
+      ownerId: 'user-1',
+      sprintId: 1221,
+      taskId: 'RND-1',
+    });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ taskId: 'RND-1' }));
+    expect(syncTracker).toHaveBeenCalledWith({
+      assigneeId: 'dev-1',
+      organizationId: 'org',
+      sprintId: 1221,
+      taskId: 'RND-1',
+    });
   });
 
   it('deletes the board position for a removal preview', async () => {

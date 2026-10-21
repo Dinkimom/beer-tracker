@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS plan_patch_position_previews (
 ALTER TABLE plan_patch_position_previews
     ADD COLUMN IF NOT EXISTS segments JSONB;
 
+ALTER TABLE plan_patch_position_previews
+    ADD COLUMN IF NOT EXISTS sync_to_tracker BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE INDEX IF NOT EXISTS idx_plan_patch_position_previews_sprint
     ON plan_patch_position_previews (organization_id, sprint_id);
 

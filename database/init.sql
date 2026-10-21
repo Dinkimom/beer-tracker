@@ -95,6 +95,7 @@ CREATE TABLE public.plan_patch_position_previews (
     changes TEXT NOT NULL DEFAULT '',
     client_brand VARCHAR(16) NOT NULL DEFAULT '',
     segments JSONB,
+    sync_to_tracker BOOLEAN NOT NULL DEFAULT FALSE,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     owner_id VARCHAR(255) NOT NULL DEFAULT '',
     PRIMARY KEY (organization_id, sprint_id, owner_id, task_id)

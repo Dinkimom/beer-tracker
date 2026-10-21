@@ -1,5 +1,6 @@
 'use client';
 
+import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -74,6 +75,8 @@ interface TaskBarProps {
   leftPercent: number;
   /** Обводка в режиме создания связи. */
   linkMode?: 'source' | 'target' | null;
+  /** Штриховка стоимости и засечка срока относительно плана на старте работы. */
+  planAnchorOverlay?: SegmentPlanAnchorOverlay | null;
   /** Карточка предложения: та же задача, геометрия из превью, без перетаскивания. */
   planPatchGhost?: boolean;
   /** Индекс отрезка плана при ресайзе сегментированной карточки. */
@@ -135,6 +138,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
   linkMode = null,
   planPatchGhost = false,
   planSegmentIndex,
+  planAnchorOverlay,
   onResize,
   onClick,
   onCommentApprove,
@@ -377,7 +381,9 @@ const TaskBarSurface = observer(function TaskBarSurface({
         isQATask={isQATask}
         isSelected={isSelected}
         linkMode={linkMode}
+        longHoverExpanded={isExpandedByLongHover}
         longHoverTimeoutRef={longHoverTimeoutRef}
+        planAnchorOverlay={planAnchorOverlay}
         previewBorder={isDraftTask ? undefined : previewBorder}
         quickAddSubmitting={quickAddSubmitting}
         resize={{ ...resize, isResizing: isAnyResizing }}

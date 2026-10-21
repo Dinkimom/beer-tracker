@@ -114,11 +114,12 @@ describe('resolveTaskCardFittedLineCount', () => {
 describe('resolveTaskCardTitleProbeMaxLines', () => {
   it('probes one extra line above the height estimate, capped', () => {
     expect(resolveTaskCardTitleProbeMaxLines(50, 12)).toBe(6);
-    expect(resolveTaskCardTitleProbeMaxLines(200, 12)).toBe(8);
+    expect(resolveTaskCardTitleProbeMaxLines(200, 12)).toBe(18);
+    expect(resolveTaskCardTitleProbeMaxLines(2000, 12)).toBe(64);
   });
 
   it('falls back to the probe cap when line height is unknown', () => {
-    expect(resolveTaskCardTitleProbeMaxLines(50, Number.NaN)).toBe(8);
+    expect(resolveTaskCardTitleProbeMaxLines(50, Number.NaN)).toBe(64);
   });
 });
 

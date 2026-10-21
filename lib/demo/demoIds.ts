@@ -8,6 +8,8 @@ export const DEMO_DEV_ALICE = 'demo-alice';
 export const DEMO_DEV_BOB = 'demo-bob';
 export const DEMO_DEV_CAROL = 'demo-carol';
 export const DEMO_DEV_DANA = 'demo-dana';
+/** Исполнитель, чьи задачи съехали относительно плана на старте работы. */
+export const DEMO_DEV_ERIN = 'demo-erin';
 
 /**
  * «Сегодня» в демо: четверг 16.10.2026 — середина спринта 13–24.10.

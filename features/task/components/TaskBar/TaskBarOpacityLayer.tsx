@@ -1,6 +1,7 @@
 'use client';
 
 import type { ResizeHandleCornerStyle } from './components/taskBarResizeHandleHelpers';
+import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
 import type { Developer, Task, TaskPosition } from '@/types';
 import type { DraggableAttributes } from '@dnd-kit/core';
 
@@ -18,6 +19,7 @@ import {
   runTaskBarMouseOut,
   runTaskBarMouseOver,
 } from './taskBarOpacityLayerHandlers';
+import { TaskBarPlanAnchorOverlay } from './TaskBarPlanAnchorOverlay';
 
 interface TaskBarOpacityLayerProps {
   assigneeName?: string;
@@ -52,7 +54,11 @@ interface TaskBarOpacityLayerProps {
   isQATask: boolean;
   isSelected: boolean;
   linkMode?: 'source' | 'target' | null;
+  /** Карточка раскрыта по долгому hover: ширина не равна длине, штриховку не рисуем. */
+  longHoverExpanded: boolean;
   longHoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  /** Штриховка добавленной стоимости и значок переноса относительно плана на старте работы. */
+  planAnchorOverlay?: SegmentPlanAnchorOverlay | null;
   previewBorder?: string;
   quickAddSubmitting: boolean;
   resize: {
@@ -118,6 +124,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
     isNotificationFocused = false,
     isQATask,
     isSelected,
+    longHoverExpanded,
     longHoverTimeoutRef,
     onClick,
     onContextMenu,
@@ -136,6 +143,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
     setIsExpandedByLongHover,
     setNodeRef,
     swimlaneBarDurationParts,
+    planAnchorOverlay,
     swimlaneSegmentBadge,
     swimlaneSegmentSecondary,
     task,
@@ -239,7 +247,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
 
   return (
     <div
-      className="task-bar-opacity-layer relative h-full min-h-0 w-full min-w-0 overflow-visible"
+      className="task-bar-opacity-layer group/taskbar relative h-full min-h-0 w-full min-w-0 overflow-visible"
       style={{
         opacity: hideSourceForOverlay ? 0 : effectiveOpacity,
         transition: hideSourceForOverlay ? 'none' : 'opacity 0.2s ease',
@@ -312,6 +320,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
         isInError={isInError}
         isQATask={isQATask}
         isSelected={isSelected}
+        planAnchorMoved={planAnchorOverlay?.moved ?? null}
         resize={resize}
         showVerticalResize={props.showVerticalResize}
         swimlaneSegmentBadge={swimlaneSegmentBadge}
@@ -319,6 +328,13 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
         task={task}
         verticalResize={props.verticalResize}
         onCreateQATask={onCreateQATask}
+      />
+      <TaskBarPlanAnchorOverlay
+        duration={currentDurationParts}
+        hidden={effectiveIsDragging || longHoverExpanded}
+        overlay={planAnchorOverlay}
+        resizePreviewDuration={resize.resizePreviewDuration}
+        resizing={resize.isResizing}
       />
       {children}
     </div>

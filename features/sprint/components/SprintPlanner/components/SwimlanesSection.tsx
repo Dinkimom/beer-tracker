@@ -36,6 +36,7 @@ import {
   buildSwimlaneInProgressFactSegmentsForAssignee,
   type SwimlaneInProgressFactSegment,
 } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
+import { resolvePlanAnchorFocusTaskId } from '@/features/swimlane/utils/planAnchorShift';
 import { isSwimlaneLinkingSessionActive } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
 import { useRootStore } from '@/lib/layers';
 import {
@@ -311,7 +312,17 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   });
 
   const hoverDimSuspended = linkingSessionActive || dragAndDrop.isDraggingTask;
-  const effectiveFactHoveredTaskId = swimlaneHoverValueWhileIdle(hoverDimSuspended, factHoveredTaskId);
+  const planAnchorFocusTaskId = resolvePlanAnchorFocusTaskId({
+    anchors: positionsStore.planAnchors,
+    hoveredTaskId,
+    partsPerDay: getPartsPerDay(),
+    positions: swimlanePositions,
+    tasks: tasksMap,
+  });
+  const effectiveFactHoveredTaskId = swimlaneHoverValueWhileIdle(
+    hoverDimSuspended,
+    factHoveredTaskId ?? planAnchorFocusTaskId
+  );
   const effectiveCardShadowTaskId = swimlaneHoverValueWhileIdle(hoverDimSuspended, cardShadowTaskId);
   const effectiveHoverConnectedTaskIds = swimlaneHoverValueWhileIdle(
     hoverDimSuspended,

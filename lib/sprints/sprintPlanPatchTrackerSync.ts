@@ -1,7 +1,10 @@
 import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
 
+import { invalidateCache } from '@/lib/cache';
+import { completeIssueSprintMembershipChange } from '@/lib/issues/issueSprintMembershipRealtime';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { resolvePlannerAssigneeIdForTrackerSync } from '@/lib/staffTeams/resolvePlannerAssigneeForTrackerSync';
+import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
 
 /** Soft: keys currently on the tracker sprint board (best-effort). */
 export async function loadSprintIssueKeySet(input: {
@@ -112,18 +115,33 @@ export async function syncUpsertPositionToTracker(input: {
     const issueTracker = await getIssueTrackerProviderClientForOrganization(
       input.organizationId
     );
-    await issueTracker.addIssueToSprint(input.taskId, input.sprintId);
+    const membership = await issueTracker.addIssueToSprint(input.taskId, input.sprintId);
     const trackerAssigneeId = await resolvePlannerAssigneeIdForTrackerSync(
       input.organizationId,
       input.assigneeId
     );
+    if (trackerAssigneeId) {
+      await issueTracker.updateIssue(input.taskId, { assigneeId: trackerAssigneeId });
+    }
+    for (const boardId of membership.backlogBoardIds) {
+      invalidateCache.backlog(boardId);
+    }
+    // Без client id: событие получают все вкладки, включая ту, что подтвердила превью.
+    await completeIssueSprintMembershipChange({
+      addedSprintIds: [input.sprintId],
+      issueKey: input.taskId,
+      issueTracker,
+      removedSprintIds: membership.affectedSprintIds.filter((id) => id !== input.sprintId),
+      request: new Request('http://localhost/api/mcp', {
+        headers: { [TENANT_ORG_HEADER]: input.organizationId },
+      }),
+    });
     if (!trackerAssigneeId) {
       return {
         detail: `tracker sync: added ${input.taskId} to sprint ${input.sprintId}`,
         warning: `tracker_assignee_unresolved: ${input.assigneeId}`,
       };
     }
-    await issueTracker.updateIssue(input.taskId, { assigneeId: trackerAssigneeId });
     return {
       detail: `tracker sync: added ${input.taskId} to sprint ${input.sprintId}, assigned ${trackerAssigneeId}`,
     };

@@ -37,7 +37,6 @@ import { TimelineGrid } from '@/features/swimlane/components/TimelineGrid';
 import { useSwimlaneAvailabilityUi } from '@/features/swimlane/hooks/useSwimlaneAvailabilityUi';
 import { useSwimlaneLayout } from '@/features/swimlane/hooks/useSwimlaneLayout';
 import { useSwimlaneQuickAddHoverImagePaste } from '@/features/swimlane/hooks/useSwimlaneQuickAddHoverImagePaste';
-import { mergeFactTimelineHiddenDayIndices } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
 import { resolveSwimlaneQuickAddBandLayout } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { resolveSwimlaneOneCardHeightPx } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
 import { useSwimlaneCardReservesEyebrow } from '@/hooks/useLocalStorage';
@@ -253,10 +252,6 @@ function SwimlaneComponent({
       }),
     [developer.id, developerAvailability, sprintStartDate, sprintTimelineWorkingDays]
   );
-  const factHiddenDayIndices = useMemo(
-    () => mergeFactTimelineHiddenDayIndices(holidayDayIndices, unavailableDayHatchKinds.keys()),
-    [holidayDayIndices, unavailableDayHatchKinds]
-  );
   const {
     calendarBusyLaneVisible,
     laneLabels,
@@ -342,6 +337,7 @@ function SwimlaneComponent({
             isLinking={linkingFromTaskId != null}
             maxTaskLayers={layout.maxTaskLayers}
             occupiedLayersByCell={layout.occupiedLayersByCell}
+            patternHeight={layout.totalHeight}
             quickAddClipHeight={layout.totalHeight}
             quickAddFootprint={quickAddFootprint}
             sprintStartDate={sprintStartDate}
@@ -474,9 +470,7 @@ function SwimlaneComponent({
                 commentsByTaskId={swimlaneFactCommentsByTaskId ?? EMPTY_SWIMLANE_FACT_COMMENTS}
                 developerMap={swimlaneFactDeveloperMap ?? EMPTY_SWIMLANE_FACT_DEVELOPERS}
                 factHoveredTaskId={factBarFocusTaskId}
-                holidayDayIndices={factHiddenDayIndices}
                 layerId={`swimlane-fact-${developer.id}`}
-                requestArrowRedraw={requestArrowRedraw}
                 segments={swimlaneInProgressDurations}
                 sprintStartDate={sprintStartDate}
                 swimlaneRowTaskIds={swimlaneRowTaskIds}
@@ -496,8 +490,8 @@ function SwimlaneComponent({
 
           <SwimlaneAvailabilityChips
             dayCount={sprintTimelineWorkingDays}
-            mainAreaHeight={mainAreaHeight}
             segments={availabilitySegments}
+            taskBandHeight={layout.totalHeight}
             onChipClick={openAvailabilityUpsertForEventId}
           />
           <SwimlaneAvailabilityPopoverGate

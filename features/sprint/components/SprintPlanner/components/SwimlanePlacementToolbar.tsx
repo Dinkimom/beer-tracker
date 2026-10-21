@@ -249,12 +249,10 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
           {sprintId != null && agentAvailable ? (
             <SwimlanePlacementToolbarAgentButton
               brand={agentBrand}
-              newSession={agentIsland.sessions.active ? { selected: agentIsland.newSelected } : null}
-              onClick={
-                agentIsland.sessions.active
-                  ? agentIsland.toggleNewSession
-                  : () => sprintPlannerUi.setAgentRequestTarget({ kind: 'sprint' })
-              }
+              open={agentIsland.chatOpen}
+              openComments={agentIsland.sessions.openComments}
+              status={agentIsland.sessions.active?.status}
+              onClick={agentIsland.toggleChat}
             />
           ) : null}
         </div>

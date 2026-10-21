@@ -76,6 +76,47 @@ describe('searchJiraIssuesOnBoard', () => {
     await expect(searchJiraIssuesOnBoard(apiWith({ get, post }), 15116, 'тест')).resolves.toEqual([]);
   });
 
+  it('searches the whole tracker by summary when anyBoard is set', async () => {
+    const get = vi.fn();
+    const post = vi.fn().mockResolvedValue({
+      data: { issues: [{ fields: { summary: 'Other board' }, key: 'BRZ-7' }] },
+    });
+    const issues = await searchJiraIssuesOnBoard(apiWith({ get, post }), 15116, 'тест', {
+      anyBoard: true,
+    });
+    expect(get).not.toHaveBeenCalled();
+    expect(post).toHaveBeenCalledWith('/search', {
+      fields: ['*all'],
+      jql: 'summary ~ "тест*"',
+      maxResults: 20,
+      startAt: 0,
+    });
+    expect(issues).toEqual([expect.objectContaining({ key: 'BRZ-7' })]);
+  });
+
+  it('puts key matches before summary mentions when anyBoard is set', async () => {
+    const post = vi.fn((_url: string, body: { jql: string }) =>
+      Promise.resolve({
+        data: {
+          issues: body.jql.startsWith('key ~')
+            ? [{ fields: { summary: 'Own key' }, key: 'BRZ-1' }]
+            : [
+                { fields: { summary: 'Mentions BRZ-1' }, key: 'MQA-9' },
+                { fields: { summary: 'Own key' }, key: 'BRZ-1' },
+              ],
+        },
+      })
+    );
+    const issues = await searchJiraIssuesOnBoard(apiWith({ post }), 15116, 'brz-1', {
+      anyBoard: true,
+    });
+    expect(post.mock.calls.map(([, body]) => body.jql)).toEqual([
+      'key ~ "BRZ-1*" ORDER BY key ASC',
+      '(summary ~ "brz-1*" OR key ~ "BRZ-1*")',
+    ]);
+    expect(issues.map((issue) => issue.key)).toEqual(['BRZ-1', 'MQA-9']);
+  });
+
   it('returns empty for blank query', async () => {
     const get = vi.fn();
     await expect(searchJiraIssuesOnBoard(apiWith({ get }), 15116, '  ')).resolves.toEqual([]);

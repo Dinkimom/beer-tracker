@@ -155,4 +155,14 @@ describe('handleDemoFixtureRequest', () => {
       })
     );
   });
+
+  it('serves plan anchors with positions for the delayed demo assignee', () => {
+    const result = handleDemoFixtureRequest(cfg('get', `/sprints/${DEMO_SPRINT_ID}/positions`));
+    const data = result.data as { planAnchors: Array<{ taskId: string }> };
+    expect(data.planAnchors.map((anchor) => anchor.taskId)).toEqual([
+      'DEMO-109',
+      'DEMO-110',
+      'DEMO-112',
+    ]);
+  });
 });

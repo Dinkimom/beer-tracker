@@ -1391,7 +1391,10 @@ export const ruMessages = {
         calendar: 'Календарь',
         fact: 'Факт',
       },
+      planAnchorCostAdded: 'Стоимость, добавленная после старта работы',
       planAnchor: 'План на старте работы',
+      planAnchorMovedEarlier: 'Перенесена раньше относительно плана на старте работы',
+      planAnchorMovedLater: 'Перенесена позже относительно плана на старте работы',
       planPatch: {
         add: 'Добавление в план',
         and: 'и',
@@ -1723,6 +1726,7 @@ export const ruMessages = {
       resizeLeftTitle: 'Изменить позицию и длительность задачи (перетащите влево)',
       resizeTopTitle: 'Изменить высоту заметки (перетащите вверх)',
       resizeBottomTitle: 'Изменить высоту заметки (перетащите вниз)',
+      hiddenLinksTooltip: 'Скрытых связей: {count}',
       addQaTaskTitle: 'Добавить задачу тестирования',
       planningError: 'Ошибка планирования',
     },

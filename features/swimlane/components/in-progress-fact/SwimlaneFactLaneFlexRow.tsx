@@ -6,13 +6,36 @@ import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 import type { ReactNode } from 'react';
 
 import {
+  type FactLaneLinkToPrev,
   isClosedFactPhase,
-  swimlaneFactBarElementId,
+  resolveFactLaneLinksToPrev,
 } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
-import { OCCUPANCY_FACT_PHASE_GAP_PX } from '@/lib/planner-timeline';
 
 import { SwimlaneClosedFactMarker } from './SwimlaneClosedFactMarker';
 import { SwimlaneFactFlexPhaseBar } from './SwimlaneFactFlexPhaseBar';
+import { resolveFactMarkerHoverState } from './swimlaneFactMarkerHelpers';
+import { swimlaneFactMarkerOpacityClass } from './swimlaneFactMarkerOpacityClass';
+
+/**
+ * Форма фазы внутри колбасы задачи: скругляются только внешние концы,
+ * между фазами одной задачи — 1px шов, между разными задачами — 4px.
+ * Фаза, которая идёт сейчас, обрывается квадратным краем.
+ */
+function factPhaseShapeClassName(
+  linkToPrev: FactLaneLinkToPrev,
+  linkToNext: FactLaneLinkToPrev | undefined,
+  touchesPrev: boolean,
+  isNowEdge: boolean
+): string {
+  const classes: string[] = [];
+  if (linkToPrev === 'joined') classes.push('ml-px');
+  else {
+    classes.push('rounded-l-sm');
+    if (linkToPrev === 'none' && touchesPrev) classes.push('ml-1');
+  }
+  if (linkToNext !== 'joined' && !isNowEdge) classes.push('rounded-r-sm');
+  return classes.join(' ');
+}
 
 export function SwimlaneFactLaneFlexRow({
   assigneeRole,
@@ -46,6 +69,7 @@ export function SwimlaneFactLaneFlexRow({
   if (spanCells <= 0 || laneItems.length === 0) return null;
 
   const flexNodes: ReactNode[] = [];
+  const linksToPrev = resolveFactLaneLinksToPrev(laneItems);
   let accounted = 0;
 
   laneItems.forEach((item, idx) => {
@@ -54,15 +78,34 @@ export function SwimlaneFactLaneFlexRow({
     const prevEnd =
       idx === 0 ? 0 : laneItems[idx - 1]!.phase.endCell - timelineStartCell;
     const spacerCells = Math.max(0, leftInSpan - prevEnd);
+    const linkToPrev = linksToPrev[idx]!;
+    const linkToNext = linksToPrev[idx + 1];
+    const isNowEdge = linkToNext !== 'joined' && seg.endTime == null;
+    const shapeClassName = factPhaseShapeClassName(
+      linkToPrev,
+      linkToNext,
+      idx > 0 && spacerCells <= 0,
+      isNowEdge
+    );
     accounted += spacerCells;
     if (spacerCells > 0) {
+      const { isDimmedByFactHover, isFactHovered } = resolveFactMarkerHoverState(
+        factHoveredTaskId,
+        seg.taskId
+      );
       flexNodes.push(
         <div
           key={`${layerId}-sp-${seg.taskId}-${phase.startCell}`}
           aria-hidden
-          className="min-w-0"
+          className="flex min-w-0 items-center"
           style={{ flex: `${spacerCells} 0 0` }}
-        />
+        >
+          {linkToPrev === 'paused' && (
+            <div
+              className={`h-px w-full bg-gray-300 dark:bg-gray-600 ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
+            />
+          )}
+        </div>
       );
     }
     if (isClosedFactPhase(phase)) {
@@ -70,7 +113,6 @@ export function SwimlaneFactLaneFlexRow({
         <SwimlaneClosedFactMarker
           key={`${layerId}-closed-${seg.taskId}-${phase.startCell}-${phase.endCell}`}
           assigneeRole={assigneeRole}
-          barDomId={swimlaneFactBarElementId(layerId, seg)}
           changelogsByTaskId={changelogsByTaskId}
           commentsByTaskId={commentsByTaskId}
           developerMap={developerMap}
@@ -80,6 +122,7 @@ export function SwimlaneFactLaneFlexRow({
           layerId={layerId}
           phase={phase}
           seg={seg}
+          shapeClassName={shapeClassName}
           tasksMap={tasksMap}
           onFactSegmentHover={onFactSegmentHover}
         />
@@ -92,16 +135,17 @@ export function SwimlaneFactLaneFlexRow({
       <SwimlaneFactFlexPhaseBar
         key={`${layerId}-bar-${seg.taskId}-${phase.startCell}-${phase.endCell}`}
         assigneeRole={assigneeRole}
-        barDomId={swimlaneFactBarElementId(layerId, seg)}
         changelogsByTaskId={changelogsByTaskId}
         commentsByTaskId={commentsByTaskId}
         developerMap={developerMap}
         factHoveredTaskId={factHoveredTaskId}
         hideTaskSummary={swimlaneRowTaskIds.has(seg.taskId)}
+        isNowEdge={isNowEdge}
         laneRowHeight={laneRowHeight}
         layerId={layerId}
         phase={phase}
         seg={seg}
+        shapeClassName={shapeClassName}
         tasksMap={tasksMap}
         widthInSpan={widthInSpan}
         onFactSegmentHover={onFactSegmentHover}
@@ -122,10 +166,7 @@ export function SwimlaneFactLaneFlexRow({
   }
 
   return (
-    <div
-      className="relative flex flex-1 min-w-0 items-center"
-      style={{ gap: OCCUPANCY_FACT_PHASE_GAP_PX }}
-    >
+    <div className="relative flex flex-1 min-w-0 items-center">
       {flexNodes}
     </div>
   );

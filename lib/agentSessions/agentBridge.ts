@@ -89,6 +89,93 @@ export function agentBridgeStepFromStreamLine(line: string): AgentBridgeStep | n
   return typeof tool?.name === 'string' ? stepForTool(tool.name) : 'thinking';
 }
 
+/** Токены прогона CLI для лога моста; `costUsd` — условная цена по прайсу API, есть только в итоге. */
+interface AgentBridgeUsage {
+  cacheRead: number;
+  cacheWrite: number;
+  costUsd: number | null;
+  input: number;
+  output: number;
+}
+
+const EMPTY_USAGE: AgentBridgeUsage = { cacheRead: 0, cacheWrite: 0, costUsd: null, input: 0, output: 0 };
+
+function count(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+export function agentBridgeUsageTotal(usage: AgentBridgeUsage): number {
+  return usage.input + usage.cacheRead + usage.cacheWrite + usage.output;
+}
+
+function addUsage(a: AgentBridgeUsage, b: AgentBridgeUsage): AgentBridgeUsage {
+  return {
+    cacheRead: a.cacheRead + b.cacheRead,
+    cacheWrite: a.cacheWrite + b.cacheWrite,
+    costUsd: a.costUsd ?? b.costUsd,
+    input: a.input + b.input,
+    output: a.output + b.output,
+  };
+}
+
+/** `usage` хода модели в формате API. */
+function usageFromApi(raw: Record<string, unknown>): AgentBridgeUsage {
+  return {
+    cacheRead: count(raw.cache_read_input_tokens),
+    cacheWrite: count(raw.cache_creation_input_tokens),
+    costUsd: null,
+    input: count(raw.input_tokens),
+    output: count(raw.output_tokens),
+  };
+}
+
+/** Итог прогона: `modelUsage` по всем моделям (CLI зовёт и вспомогательную), цена — `total_cost_usd`. */
+function usageFromResult(event: Record<string, unknown>): AgentBridgeUsage {
+  const models = Object.values((event.modelUsage ?? {}) as Record<string, Record<string, unknown>>);
+  const total = models.reduce<AgentBridgeUsage>(
+    (sum, model) =>
+      addUsage(sum, {
+        cacheRead: count(model.cacheReadInputTokens),
+        cacheWrite: count(model.cacheCreationInputTokens),
+        costUsd: null,
+        input: count(model.inputTokens),
+        output: count(model.outputTokens),
+      }),
+    EMPTY_USAGE
+  );
+  const usage = agentBridgeUsageTotal(total) > 0 ? total : usageFromApi((event.usage ?? {}) as Record<string, unknown>);
+  return { ...usage, costUsd: typeof event.total_cost_usd === 'number' ? event.total_cost_usd : null };
+}
+
+/** Подсчёт токенов по потоку CLI: ходы модели по id сообщения (CLI повторяет usage на каждый блок), затем итог. */
+export interface AgentBridgeUsageTally {
+  final: AgentBridgeUsage | null;
+  turns: Readonly<Record<string, AgentBridgeUsage>>;
+}
+
+export const EMPTY_AGENT_BRIDGE_USAGE_TALLY: AgentBridgeUsageTally = { final: null, turns: {} };
+
+export function tallyAgentBridgeUsage(tally: AgentBridgeUsageTally, line: string): AgentBridgeUsageTally {
+  let event: Record<string, unknown> & { message?: { id?: unknown; usage?: unknown }; type?: unknown };
+  try {
+    event = JSON.parse(line) as typeof event;
+  } catch {
+    return tally;
+  }
+  if (event.type === 'result') {
+    return { ...tally, final: usageFromResult(event) };
+  }
+  const { id, usage } = event.message ?? {};
+  if (event.type !== 'assistant' || typeof id !== 'string' || !usage || typeof usage !== 'object') {
+    return tally;
+  }
+  return { ...tally, turns: { ...tally.turns, [id]: usageFromApi(usage as Record<string, unknown>) } };
+}
+
+export function agentBridgeTallyUsage(tally: AgentBridgeUsageTally): AgentBridgeUsage {
+  return tally.final ?? Object.values(tally.turns).reduce(addUsage, EMPTY_USAGE);
+}
+
 function parseAgentBridgeRun(value: unknown): AgentBridgeRun | null {
   const run = value as Partial<AgentBridgeRun> | null;
   if (!run || !isAgentSessionId(run.sessionId) || typeof run.startedAt !== 'number') {

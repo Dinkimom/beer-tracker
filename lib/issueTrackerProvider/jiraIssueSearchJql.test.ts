@@ -16,9 +16,12 @@ describe('buildJiraIssueSearchTextClause', () => {
     expect(buildJiraIssueSearchTextClause('редиз')).toBe('summary ~ "редиз*"');
   });
 
-  it('adds exact key match for full issue keys', () => {
+  it('matches full issue keys as a key prefix so longer keys are found too', () => {
     expect(buildJiraIssueSearchTextClause('PROJ-1')).toBe(
-      '(summary ~ "PROJ-1*" OR key = "PROJ-1")'
+      '(summary ~ "PROJ-1*" OR key ~ "PROJ-1*")'
+    );
+    expect(buildJiraIssueSearchTextClause('proj-67')).toBe(
+      '(summary ~ "proj-67*" OR key ~ "PROJ-67*")'
     );
   });
 
@@ -35,7 +38,7 @@ describe('buildJiraIssueSearchJql', () => {
       'board = 15116 AND summary ~ "редиз*"'
     );
     expect(buildJiraIssueSearchJql(15116, 'PROJ-1')).toBe(
-      'board = 15116 AND (summary ~ "PROJ-1*" OR key = "PROJ-1")'
+      'board = 15116 AND (summary ~ "PROJ-1*" OR key ~ "PROJ-1*")'
     );
   });
 

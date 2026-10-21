@@ -19,6 +19,7 @@ interface PreviewRow {
   segments: unknown;
   start_day: number;
   start_part: number;
+  sync_to_tracker: boolean;
   task_id: string;
 }
 
@@ -54,6 +55,7 @@ async function runEnsurePlanPatchPositionPreviewSchema(): Promise<void> {
         changes TEXT NOT NULL DEFAULT '',
         client_brand VARCHAR(16) NOT NULL DEFAULT '',
         segments JSONB,
+        sync_to_tracker BOOLEAN NOT NULL DEFAULT FALSE,
         expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
         owner_id VARCHAR(255) NOT NULL DEFAULT '',
         PRIMARY KEY (organization_id, sprint_id, owner_id, task_id)
@@ -70,6 +72,10 @@ async function runEnsurePlanPatchPositionPreviewSchema(): Promise<void> {
     await query(`
       ALTER TABLE ${schema}.plan_patch_position_previews
         ADD COLUMN IF NOT EXISTS segments JSONB
+    `);
+    await query(`
+      ALTER TABLE ${schema}.plan_patch_position_previews
+        ADD COLUMN IF NOT EXISTS sync_to_tracker BOOLEAN NOT NULL DEFAULT FALSE
     `);
     await ensurePlanPatchPreviewOwnerColumn({
       keyColumn: 'task_id',
@@ -120,6 +126,7 @@ function previewFromRow(row: PreviewRow): PlanPatchPositionPreview {
     ...(segments !== undefined ? { segments } : {}),
     startDay: row.start_day,
     startPart: row.start_part,
+    ...(row.sync_to_tracker === true ? { syncToTracker: true } : {}),
     taskId: row.task_id,
   };
 }
@@ -137,7 +144,8 @@ export async function listPlanPatchPositionPreviews(input: {
     [input.organizationId, input.sprintId]
   );
   const result = await query<PreviewRow>(
-    `SELECT task_id, assignee_id, start_day, start_part, duration, remove, changes, client_brand, segments
+    `SELECT task_id, assignee_id, start_day, start_part, duration, remove, changes, client_brand, segments,
+            sync_to_tracker
      FROM plan_patch_position_previews
      WHERE organization_id = $1::uuid AND sprint_id = $2 AND owner_id = $3`,
     [input.organizationId, input.sprintId, input.ownerId]
@@ -194,9 +202,10 @@ export async function replacePlanPatchPositionPreviews(input: {
       await tx(
         `INSERT INTO plan_patch_position_previews (
            organization_id, sprint_id, task_id, proposal_id, assignee_id,
-           start_day, start_part, duration, remove, changes, client_brand, segments, expires_at, owner_id
+           start_day, start_part, duration, remove, changes, client_brand, segments, expires_at, owner_id,
+           sync_to_tracker
          )
-         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $14)
+         VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $14, $15)
          ON CONFLICT (organization_id, sprint_id, owner_id, task_id) DO UPDATE
          SET proposal_id = EXCLUDED.proposal_id,
              assignee_id = EXCLUDED.assignee_id,
@@ -207,6 +216,7 @@ export async function replacePlanPatchPositionPreviews(input: {
              changes = EXCLUDED.changes,
              client_brand = EXCLUDED.client_brand,
              segments = EXCLUDED.segments,
+             sync_to_tracker = EXCLUDED.sync_to_tracker,
              expires_at = EXCLUDED.expires_at`,
         [
           input.organizationId,
@@ -223,6 +233,7 @@ export async function replacePlanPatchPositionPreviews(input: {
           preview.segments === undefined ? null : JSON.stringify(preview.segments),
           input.expiresAt.toISOString(),
           input.ownerId,
+          preview.syncToTracker === true,
         ]
       );
     }

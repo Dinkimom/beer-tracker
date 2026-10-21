@@ -127,9 +127,6 @@ export function buildSwimlaneTaskBarHorizontalStyle(params: {
   };
 }
 
-/** Насколько полоса заходит под карточку, чтобы квадратный срез не торчал у скругления. */
-export const SWIMLANE_OVERDUE_BASELINE_JOIN_PX = 8;
-
 /** Правый край чипа «Отстаёт» внутри поля ячейки. Линия заканчивается здесь же. */
 export const SWIMLANE_OVERDUE_BASELINE_CHIP_END_INSET_PX = 4;
 
@@ -146,14 +143,11 @@ export function buildSwimlaneOverdueBaselineStripHorizontalStyle(params: {
 }): Pick<CSSProperties, 'left' | 'width'> {
   const startPercent = (params.startCell / params.timelineTotalParts) * 100;
   const widthPercent = (params.durationCells / params.timelineTotalParts) * 100;
-  const joinPx = CARD_MARGIN + SWIMLANE_OVERDUE_BASELINE_JOIN_PX;
-  const widthExtraPx = SWIMLANE_OVERDUE_BASELINE_JOIN_PX - (params.endInsetPx ?? 0);
-  const width =
-    widthExtraPx === 0
-      ? `${widthPercent}%`
-      : `calc(${widthPercent}% ${widthExtraPx > 0 ? '+' : '-'} ${Math.abs(widthExtraPx)}px)`;
+  const endInsetPx = params.endInsetPx ?? 0;
+  const width = endInsetPx === 0 ? `${widthPercent}%` : `calc(${widthPercent}% - ${endInsetPx}px)`;
   return {
-    left: `calc(${startPercent}% - ${joinPx}px)`,
+    // Встык к правому краю карточки, без нахлёста: под полупрозрачной карточкой хвост был бы виден.
+    left: `calc(${startPercent}% - ${CARD_MARGIN}px)`,
     width,
   };
 }
