@@ -11,6 +11,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import {
   CONTEXT_MENU_GHOST_BUTTON_RESET,
   CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
+  glassLensControlClass,
 } from '@/features/context-menu/contextMenuClasses';
 
 import { QuickAddIssueSearchResults } from './QuickAddIssueSearchResults';
@@ -20,8 +21,7 @@ import {
   resolveExistingIssueToSubmit,
 } from './quickAddMenuKeyboard';
 
-const SEARCH_INPUT_CLASS =
-  'w-full rounded-md border border-gray-200 bg-white py-1.5 pl-2.5 pr-8 text-sm text-gray-900 outline-none placeholder:text-gray-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400 dark:focus:border-blue-400';
+const SEARCH_INPUT_CLASS = `h-9 w-full rounded-lg pl-2.5 pr-8 text-sm text-gray-900 outline-none placeholder:text-gray-500 dark:text-gray-100 dark:placeholder:text-gray-400 ${glassLensControlClass()}`;
 
 interface QuickAddMenuExistingPanelProps {
   isSearching: boolean;

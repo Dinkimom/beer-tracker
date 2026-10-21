@@ -124,7 +124,9 @@ export function AgentSessionChat({
 
       <AgentSessionConversation
         key={session?.id ?? 'new'}
-        empty={sessions.draftSession ? t('agentSession.queuedHint') : t('agentSession.emptyChat')}
+        {...(sessions.draftSession
+          ? { empty: t('agentSession.queuedHint') }
+          : { empty: t('agentSession.emptyChat'), emptyTitle: t('agentSession.emptyChatTitle') })}
         messages={session?.messages ?? []}
         status={session?.status}
         waitingDetail={

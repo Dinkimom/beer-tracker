@@ -7,18 +7,13 @@ import { Button } from '@/components/Button';
 import { CopyFeedbackGlyph } from '@/components/CopyFeedbackGlyph';
 import { useI18n } from '@/contexts/LanguageContext';
 import { ContextMenuGitlabLogoIcon } from '@/features/context-menu/components/ContextMenuGitlabLogoIcon';
+import { MENU_QUICK_ACTION, MENU_QUICK_ACTION_LABEL } from '@/features/context-menu/contextMenuClasses';
 import {
   getTaskMergeRequestUrl,
   getTaskTrackerDisplayKey,
   getTaskTrackerIssueUrl,
 } from '@/features/task/utils/taskUtils';
 import { useCopyFeedback } from '@/hooks/useCopyFeedback';
-
-const QUICK_ACTION_BUTTON_CLASS =
-  'inline-flex min-h-11 min-w-[52px] flex-col gap-0.5 border-0 bg-transparent px-1.5 py-1 text-gray-500 shadow-none hover:!bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:!bg-gray-700 dark:hover:text-gray-100';
-
-const QUICK_ACTION_LABEL_CLASS =
-  'max-w-[4.5rem] truncate text-center text-[10px] font-medium leading-tight text-gray-500 dark:text-gray-400';
 
 interface ContextMenuCopyQuickActionsProps {
   task: Task;
@@ -36,7 +31,7 @@ export function ContextMenuCopyQuickActions({ task, tracker }: ContextMenuCopyQu
     <>
       <Button
         aria-label={t('sprintPlanner.contextMenu.copyKey')}
-        className={QUICK_ACTION_BUTTON_CLASS}
+        className={MENU_QUICK_ACTION}
         title={t('sprintPlanner.contextMenu.copyKey')}
         type="button"
         variant="ghost"
@@ -46,7 +41,7 @@ export function ContextMenuCopyQuickActions({ task, tracker }: ContextMenuCopyQu
         }}
       >
         <CopyFeedbackGlyph copied={keyCopyFeedback.copied} idleName="copy" />
-        <span className={QUICK_ACTION_LABEL_CLASS}>{t('sprintPlanner.contextMenu.copyKeyShort')}</span>
+        <span className={MENU_QUICK_ACTION_LABEL}>{t('sprintPlanner.contextMenu.copyKeyShort')}</span>
       </Button>
       <Button
         aria-label={
@@ -54,7 +49,7 @@ export function ContextMenuCopyQuickActions({ task, tracker }: ContextMenuCopyQu
             ? t('sprintPlanner.contextMenu.copyMr')
             : t('sprintPlanner.contextMenu.copyMrMissing')
         }
-        className={`${QUICK_ACTION_BUTTON_CLASS} disabled:opacity-40`}
+        className={`${MENU_QUICK_ACTION} disabled:!opacity-40`}
         disabled={!mergeRequestUrl}
         title={
           mergeRequestUrl
@@ -77,11 +72,11 @@ export function ContextMenuCopyQuickActions({ task, tracker }: ContextMenuCopyQu
             <ContextMenuGitlabLogoIcon className="h-full w-full scale-125 transform-gpu text-current" />
           }
         />
-        <span className={QUICK_ACTION_LABEL_CLASS}>{t('sprintPlanner.contextMenu.copyMrShort')}</span>
+        <span className={MENU_QUICK_ACTION_LABEL}>{t('sprintPlanner.contextMenu.copyMrShort')}</span>
       </Button>
       <Button
         aria-label={t('sprintPlanner.contextMenu.copyLinkAria')}
-        className={QUICK_ACTION_BUTTON_CLASS}
+        className={MENU_QUICK_ACTION}
         title={t('sprintPlanner.contextMenu.copyLink')}
         type="button"
         variant="ghost"
@@ -91,7 +86,7 @@ export function ContextMenuCopyQuickActions({ task, tracker }: ContextMenuCopyQu
         }}
       >
         <CopyFeedbackGlyph copied={linkCopyFeedback.copied} idleName="link" />
-        <span className={QUICK_ACTION_LABEL_CLASS}>{t('sprintPlanner.contextMenu.copyLinkShort')}</span>
+        <span className={MENU_QUICK_ACTION_LABEL}>{t('sprintPlanner.contextMenu.copyLinkShort')}</span>
       </Button>
     </>
   );

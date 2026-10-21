@@ -20,7 +20,7 @@ export async function executeMoveToSprint(input: {
   setTasks: StateUpdater<Task[]>;
   snapshot: SprintOperationSnapshot;
   sprintId: number;
-  sprintName: string;
+  successMessage: string;
   taskId: string;
   updateXarrow?: () => void;
 }): Promise<void> {
@@ -51,7 +51,7 @@ export async function executeMoveToSprint(input: {
       shouldRemoveFromCurrent,
       snapshot: input.snapshot,
       sprintId: input.sprintId,
-      sprintName: input.sprintName,
+      successMessage: input.successMessage,
       taskId: input.taskId,
     });
   } catch (error) {

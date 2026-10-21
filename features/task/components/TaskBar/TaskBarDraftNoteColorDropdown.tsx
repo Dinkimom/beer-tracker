@@ -61,7 +61,7 @@ export function TaskBarDraftNoteColorDropdown({
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={t('comments.colorLabel')}
-        className="!h-6 !min-h-0 !gap-1 !px-2 !py-0 !text-[11px] shadow-sm"
+        className="!h-6 !min-h-0 !gap-1 !px-2 !py-0 !text-[11px]"
         title={colorLabel}
         type="button"
         variant="outline"

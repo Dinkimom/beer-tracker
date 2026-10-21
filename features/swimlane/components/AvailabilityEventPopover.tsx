@@ -11,7 +11,12 @@ import { IsoDateRangePickerField } from '@/components/IsoDateRangePickerField';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses';
+import {
+  CONTEXT_MENU_DIVIDER_COLOR,
+  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
+  FLOATING_MENU_GLASS_SHELL,
+  glassLensControlClass,
+} from '@/features/context-menu/contextMenuClasses';
 import { resolveAvailabilityDayRange } from '@/features/swimlane/utils/availabilitySegments';
 import { QuickAddMenuCloseButton } from '@/features/task/components/TaskBar/components/quickAddMenu/QuickAddMenuCloseButton';
 
@@ -30,7 +35,10 @@ const TECH_SPRINT_TYPES: { label: string; value: TechSprintType }[] = [
 
 const POPOVER_WIDTH_PX = 340;
 const NESTED_PICKER_Z_INDEX = ZIndex.modalNested;
-const PILL_CLASS = '!h-8 !px-3 text-xs';
+const PILL_CLASS = '!h-8 !rounded-lg !px-3 text-xs';
+/** Переключатель на стекле: линза, выбранный — синяя вуаль (как чипы фильтров сайдбара). */
+const CHOICE_PILL_CLASS = `${PILL_CLASS} font-medium`;
+const GHOST_PILL_CLASS = `${PILL_CLASS} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER}`;
 const DELETE_ARM_SECONDS = 3;
 
 interface AvailabilityEventValues {
@@ -188,7 +196,7 @@ export function AvailabilityEventPopover({
         <Popover.Content
           align="start"
           avoidCollisions
-          className={`${FLOATING_MENU_SHELL} font-sans outline-none ${OVERLAY_FLOATING_ANIMATION}`}
+          className={`relative font-sans outline-none ${FLOATING_MENU_GLASS_SHELL} ${OVERLAY_FLOATING_ANIMATION}`}
           collisionPadding={8}
           data-swimlane-availability-popover="true"
           side="bottom"
@@ -224,9 +232,9 @@ export function AvailabilityEventPopover({
                   <Button
                     key={item.value}
                     aria-pressed={eventType === item.value}
-                    className={PILL_CLASS}
+                    className={`${CHOICE_PILL_CLASS} ${glassLensControlClass(eventType === item.value)}`}
                     disabled={submitting}
-                    variant={eventType === item.value ? 'accent' : 'outline'}
+                    variant="outline"
                     onClick={() => setEventType(item.value)}
                   >
                     {t(item.messageKey)}
@@ -245,9 +253,9 @@ export function AvailabilityEventPopover({
                     <Button
                       key={item.value}
                       aria-pressed={techSprintSubtype === item.value}
-                      className={PILL_CLASS}
+                      className={`${CHOICE_PILL_CLASS} ${glassLensControlClass(techSprintSubtype === item.value)}`}
                       disabled={submitting}
-                      variant={techSprintSubtype === item.value ? 'accent' : 'outline'}
+                      variant="outline"
                       onClick={() => setTechSprintSubtype(item.value)}
                     >
                       {item.label}
@@ -267,6 +275,7 @@ export function AvailabilityEventPopover({
                 endDate={endDate}
                 placeholder={t('sprintPlanner.swimlane.availability.periodPlaceholder')}
                 startDate={startDate}
+                surface="glass"
                 onChange={(next) => {
                   setStartDate(next.startDate);
                   setEndDate(next.endDate);
@@ -278,7 +287,7 @@ export function AvailabilityEventPopover({
             </label>
           </div>
 
-          <div className="flex items-center justify-between gap-2 border-t border-gray-200 px-3 py-2 dark:border-gray-700">
+          <div className={`flex items-center justify-between gap-2 border-t px-3 py-2 ${CONTEXT_MENU_DIVIDER_COLOR}`}>
             {onDelete && deleteArmed ? (
               <Button
                 key="delete-confirm"
@@ -303,7 +312,7 @@ export function AvailabilityEventPopover({
             {onDelete && !deleteArmed ? (
               <Button
                 key="delete"
-                className={`${PILL_CLASS} text-red-600 hover:!bg-red-50 motion-safe:animate-[overlay-fade-enter_150ms_ease-out] dark:text-red-400 dark:hover:!bg-red-950/40`}
+                className={`${PILL_CLASS} text-red-600 hover:!bg-red-500/[0.08] active:!bg-red-500/[0.14] motion-safe:animate-[overlay-fade-enter_150ms_ease-out] dark:text-red-400 dark:hover:!bg-red-400/[0.12] dark:active:!bg-red-400/[0.18]`}
                 disabled={submitting}
                 variant="ghost"
                 onClick={() => {
@@ -315,7 +324,7 @@ export function AvailabilityEventPopover({
             ) : null}
             {onDelete ? null : <span />}
             <div className="flex items-center gap-1.5">
-              <Button className={PILL_CLASS} disabled={submitting} variant="ghost" onClick={requestClose}>
+              <Button className={GHOST_PILL_CLASS} disabled={submitting} variant="ghost" onClick={requestClose}>
                 {t('common.cancel')}
               </Button>
               <Button

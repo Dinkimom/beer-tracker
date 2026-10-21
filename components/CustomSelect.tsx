@@ -153,12 +153,18 @@ export function CustomSelect<T extends string>({
       ? `${glassLensControlClass()} ${className ?? ''}`.trim()
       : className;
   const contentZIndex = menuZIndex ?? ZIndex.modal + 1;
-  const popoverStyle = customSelectPopoverStyle(
+  const menuSurface = isIconTrigger ? 'solid' : surface;
+  const baseMenuStyle = customSelectPopoverStyle(
     menuFitContent,
     contentZIndex,
     popoverWidth,
     popoverMinWidth
   );
+  // Стеклянные строки шире (поле панели + галочка): меню не уже триггера, но по контенту, без обрезки.
+  const popoverStyle =
+    menuSurface === 'glass'
+      ? { ...baseMenuStyle, maxWidth: 'min(100vw - 16px, 20rem)', width: 'max-content' as const }
+      : baseMenuStyle;
 
   return (
     <Popover.Root modal={false} open={isOpen && !disabled} onOpenChange={handleOpenChange}>
@@ -187,6 +193,7 @@ export function CustomSelect<T extends string>({
         searchQuery={searchQuery}
         searchable={searchable}
         setSearchQuery={setSearchQuery}
+        surface={menuSurface}
         value={value}
         onCloseAutoFocus={(event) => {
           // Не возвращать фокус на триггер после закрытия (как у других поповеров в проекте).

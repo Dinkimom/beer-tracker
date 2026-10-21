@@ -38,8 +38,8 @@ describe('calculateSubmenuPosition', () => {
 
     const { left, top } = calculateSubmenuPosition(menuRect, buttonRect, subMenuRect, parentRect);
 
-    expect(left).toBe(222);
-    expect(top).toBe(0);
+    expect(left).toBe(224);
+    expect(top).toBe(-5);
   });
 
   it('flips to the left when there is not enough room on the right', () => {
@@ -52,7 +52,7 @@ describe('calculateSubmenuPosition', () => {
 
     const { left } = calculateSubmenuPosition(menuRect, buttonRect, subMenuRect, parentRect);
 
-    expect(left).toBe(-242);
+    expect(left).toBe(-244);
   });
 
   it('clamps to the viewport when flipped submenu would overflow the left edge', () => {

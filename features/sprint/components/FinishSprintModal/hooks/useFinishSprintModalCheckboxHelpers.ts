@@ -40,6 +40,6 @@ export function mapFinishSprintCheckboxItems(
   return items.map((it) => (it.id === itemId ? { ...it, checked } : it));
 }
 
-export function notifyFinishSprintCheckboxFailure(): void {
-  toast.error('Не удалось обновить цель');
+export function notifyFinishSprintCheckboxFailure(t: (key: string) => string): void {
+  toast.error(t('sprint.finish.goalUpdateFailed'));
 }

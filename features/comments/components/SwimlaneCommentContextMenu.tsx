@@ -2,10 +2,10 @@
 
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Task, TaskParent } from '@/types';
+import type { SprintListItem } from '@/types/tracker';
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
-import { Button } from '@/components/Button';
 import { CardLinkIcon } from '@/components/CardLinkIcon';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
@@ -15,14 +15,15 @@ import {
   AssigneeSubmenu,
   type ContextMenuAssigneeOptions,
 } from '@/features/context-menu/components/AssigneeSubmenu';
+import { ContextMenuGroup } from '@/features/context-menu/components/ContextMenuGroup';
+import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
 import { ParentSubmenu } from '@/features/context-menu/components/ParentSubmenu';
+import { SprintSubmenu } from '@/features/context-menu/components/SprintSubmenu';
 import {
-  CONTEXT_MENU_GHOST_BUTTON_RESET,
-  CONTEXT_MENU_ITEM_ROW,
-  CONTEXT_MENU_ITEM_ROW_DESTRUCTIVE,
-  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
-  CONTEXT_MENU_SEPARATOR,
-  FLOATING_MENU_SHELL,
+  FLOATING_MENU_GLASS_SHELL,
+  MENU_PANEL_PADDING,
+  MENU_ROW_ICON,
+  MENU_SECTION_LABEL,
 } from '@/features/context-menu/contextMenuClasses';
 import {
   measureContextMenuLayoutSize,
@@ -55,9 +56,11 @@ interface SwimlaneCommentContextMenuProps {
   assigneeOptions?: ContextMenuAssigneeOptions | null;
   authorName?: string | null;
   boardId?: number | null;
+  currentSprintId?: number | null;
   noteColor?: StickyNoteColor;
   parentOptions?: TaskParent[];
   position: { x: number; y: number };
+  sprints?: SprintListItem[];
   task?: Task | null;
   variant?: 'diagram' | 'image' | 'note' | 'widget';
   /** «Попросить агента» по заметке: её текст уходит агенту как контекст. */
@@ -68,6 +71,8 @@ interface SwimlaneCommentContextMenuProps {
   onCopy?: () => void;
   onDelete: () => void;
   onEdit?: () => void;
+  /** Перенос в другой спринт: сразу с выбором места на его доске, без бэклога. */
+  onMoveToSprint?: (sprintId: number) => void;
   onNoteColorChange?: (color: StickyNoteColor) => void;
   onParentSelect?: (parent: TaskParent | null) => void;
   onStartLinking?: () => void;
@@ -78,8 +83,10 @@ export function SwimlaneCommentContextMenu({
   anchorRect = null,
   authorName = null,
   boardId = null,
+  currentSprintId = null,
   parentOptions = [],
   position,
+  sprints = [],
   assigneeOptions = null,
   task = null,
   noteColor,
@@ -90,6 +97,7 @@ export function SwimlaneCommentContextMenu({
   onCopy,
   onDelete,
   onEdit,
+  onMoveToSprint,
   onNoteColorChange,
   onParentSelect,
   onStartLinking,
@@ -101,10 +109,12 @@ export function SwimlaneCommentContextMenu({
   const hidesComposer = isImage || variant === 'widget';
   const author = authorName?.trim();
   const showLink = onStartLinking != null;
-  const showNoteActions = !hidesComposer;
   const menuRef = useRef<HTMLDivElement>(null);
   const [isParentMenuOpen, setIsParentMenuOpen] = useState(false);
   const [isAssigneeMenuOpen, setIsAssigneeMenuOpen] = useState(false);
+  const [isSprintMenuOpen, setIsSprintMenuOpen] = useState(false);
+  const sprintButtonRef = useRef<HTMLButtonElement>(null);
+  const showSprint = onMoveToSprint != null;
   const showParent = onParentSelect != null && task != null;
   const showAssignee = onAssigneeSelect != null && assigneeOptions != null && task != null;
   const liveAnchorRect = useFollowAnchorRectByElementId(anchorElementId);
@@ -148,7 +158,7 @@ export function SwimlaneCommentContextMenu({
       />
       <div
         ref={menuRef}
-        className={`fixed w-max min-w-[220px] max-w-[min(20rem,calc(100vw-2rem))] overflow-visible py-1 ${FLOATING_MENU_SHELL} ${OVERLAY_PANEL_ENTER}`}
+        className={`menu-groups fixed flex w-max min-w-[240px] max-w-[min(20rem,calc(100vw-2rem))] flex-col overflow-visible ${MENU_PANEL_PADDING} ${FLOATING_MENU_GLASS_SHELL} ${OVERLAY_PANEL_ENTER}`}
         data-state={overlay.state}
         style={{
           left: `${position.x}px`,
@@ -158,112 +168,124 @@ export function SwimlaneCommentContextMenu({
         onAnimationEnd={overlay.onAnimationEnd}
         onClick={(e) => e.stopPropagation()}
       >
-        {renderContextMenuNoteColor({
-          noteColor,
-          variant,
-          onChange: onNoteColorChange,
-        })}
-        {author ? (
-          <>
+        <ContextMenuGroup>
+          {renderContextMenuNoteColor({
+            noteColor,
+            variant,
+            onChange: onNoteColorChange,
+          })}
+        </ContextMenuGroup>
+        <ContextMenuGroup>
+          {author ? (
             <div
               aria-label={t('comments.authorAria', { name: author })}
-              className="px-4 py-2 text-xs font-medium text-gray-500 dark:text-gray-400"
+              className={`${MENU_SECTION_LABEL} truncate`}
             >
               {t('sprintPlanner.contextMenu.imageAuthor', { name: author })}
             </div>
-            {isImage || variant === 'widget' ? <div className={CONTEXT_MENU_SEPARATOR} role="separator" /> : null}
-          </>
-        ) : null}
-        {hidesComposer ? null : (
-          <>
-            <Button
-              className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-              type="button"
-              variant="ghost"
-              onClick={onEdit}
-            >
-              <Icon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" name="edit" />
-              <span>
-                {isDiagram
-                  ? t('sprintPlanner.contextMenu.editDiagram')
-                  : t('sprintPlanner.contextMenu.editNote')}
-              </span>
-            </Button>
-            {isDiagram ? null : (
-              <Button
-                className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-                type="button"
-                variant="ghost"
-                onClick={onConvertToTask}
-              >
-                <Icon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" name="file-text" />
-                <span>{t('sprintPlanner.contextMenu.convertNoteToTask')}</span>
-              </Button>
-            )}
-            {renderAskAgentRow(onAskAgent, t)}
-            {onCopy ? (
-              <Button
-                className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-                type="button"
-                variant="ghost"
-                onClick={onCopy}
-              >
-                <Icon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" name="copy" />
-                <span>{t('sprintPlanner.contextMenu.copyNote')}</span>
-              </Button>
-            ) : null}
-          </>
-        )}
-        {renderSwimlaneCommentAssigneeSubmenu({
-          assigneeOptions,
-          isOpen: isAssigneeMenuOpen,
-          onClose: requestClose,
-          onSelect: onAssigneeSelect,
-          onToggle: () => {
-            setIsParentMenuOpen(false);
-            setIsAssigneeMenuOpen((open) => !open);
-          },
-          show: showAssignee,
-          task,
-        })}
-        {renderSwimlaneCommentParentSubmenu({
-          boardId,
-          isOpen: isParentMenuOpen,
-          onSelect: onParentSelect,
-          onToggle: () => {
-            setIsAssigneeMenuOpen(false);
-            setIsParentMenuOpen((open) => !open);
-          },
-          parentOptions,
-          show: showParent,
-          task,
-        })}
-        {showLink ? (
-          <Button
-            className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              onStartLinking?.();
-              requestClose();
-            }}
-          >
-            <CardLinkIcon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
-            <span>{t('sprintPlanner.contextMenu.linkCards')}</span>
-          </Button>
-        ) : null}
-        {showNoteActions || showLink || showParent || showAssignee ? (
-          <div className={CONTEXT_MENU_SEPARATOR} role="separator" />
-        ) : null}
-        <Button
-          className={`${CONTEXT_MENU_ITEM_ROW_DESTRUCTIVE} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-          type="button"
-          variant="ghost"
-          onClick={onDelete}
-        >
-          <Icon className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" name="trash" />
-          <span>{contextMenuDeleteLabel(t, variant)}</span>
-        </Button>
+          ) : null}
+          {hidesComposer ? null : (
+            <>
+              <ContextMenuRow
+                icon={<Icon className={MENU_ROW_ICON} name="edit" />}
+                label={
+                  isDiagram
+                    ? t('sprintPlanner.contextMenu.editDiagram')
+                    : t('sprintPlanner.contextMenu.editNote')
+                }
+                onClick={onEdit}
+              />
+              {isDiagram ? null : (
+                <ContextMenuRow
+                  icon={<Icon className={MENU_ROW_ICON} name="file-text" />}
+                  label={t('sprintPlanner.contextMenu.convertNoteToTask')}
+                  onClick={onConvertToTask}
+                />
+              )}
+              {onAskAgent ? (
+                <ContextMenuRow
+                  data-note-ask-agent=""
+                  icon={<Icon className={MENU_ROW_ICON} name="sparkles" />}
+                  label={t('agentSession.menuAria')}
+                  onClick={onAskAgent}
+                />
+              ) : null}
+              {onCopy ? (
+                <ContextMenuRow
+                  icon={<Icon className={MENU_ROW_ICON} name="copy" />}
+                  label={t('sprintPlanner.contextMenu.copyNote')}
+                  onClick={onCopy}
+                />
+              ) : null}
+            </>
+          )}
+        </ContextMenuGroup>
+        <ContextMenuGroup>
+          {renderSwimlaneCommentAssigneeSubmenu({
+            assigneeOptions,
+            isOpen: isAssigneeMenuOpen,
+            onClose: requestClose,
+            onSelect: onAssigneeSelect,
+            onToggle: () => {
+              setIsParentMenuOpen(false);
+              setIsSprintMenuOpen(false);
+              setIsAssigneeMenuOpen((open) => !open);
+            },
+            show: showAssignee,
+            task,
+          })}
+          {renderSwimlaneCommentParentSubmenu({
+            boardId,
+            isOpen: isParentMenuOpen,
+            onSelect: onParentSelect,
+            onToggle: () => {
+              setIsAssigneeMenuOpen(false);
+              setIsSprintMenuOpen(false);
+              setIsParentMenuOpen((open) => !open);
+            },
+            parentOptions,
+            show: showParent,
+            task,
+          })}
+          {showSprint ? (
+            <SprintSubmenu
+              buttonRef={sprintButtonRef}
+              currentSprintId={currentSprintId}
+              isBacklogTask={false}
+              isLoading={false}
+              isOpen={isSprintMenuOpen}
+              menuRef={menuRef}
+              sprints={sprints}
+              onSelect={(sprintId) => {
+                onMoveToSprint?.(sprintId);
+                requestClose();
+              }}
+              onToggle={() => {
+                setIsAssigneeMenuOpen(false);
+                setIsParentMenuOpen(false);
+                setIsSprintMenuOpen((open) => !open);
+              }}
+            />
+          ) : null}
+          {showLink ? (
+            <ContextMenuRow
+              icon={<CardLinkIcon className={MENU_ROW_ICON} />}
+              label={t('sprintPlanner.contextMenu.linkCards')}
+              onClick={() => {
+                onStartLinking?.();
+                requestClose();
+              }}
+            />
+          ) : null}
+        </ContextMenuGroup>
+        <ContextMenuGroup>
+          <ContextMenuRow
+            destructive
+            icon={<Icon className="h-4 w-4 shrink-0" name="trash" />}
+            label={contextMenuDeleteLabel(t, variant)}
+            onClick={onDelete}
+          />
+        </ContextMenuGroup>
       </div>
     </>
   );
@@ -278,15 +300,12 @@ function renderContextMenuNoteColor(input: {
     return null;
   }
   return (
-    <>
-      <StickyNoteColorSwatches
-        className="!justify-start !pl-2.5"
-        framed={false}
-        value={input.noteColor}
-        onChange={input.onChange}
-      />
-      <div className={CONTEXT_MENU_SEPARATOR} role="separator" />
-    </>
+    <StickyNoteColorSwatches
+      className="!justify-start !px-1"
+      framed={false}
+      value={input.noteColor}
+      onChange={input.onChange}
+    />
   );
 }
 
@@ -340,23 +359,5 @@ function renderSwimlaneCommentParentSubmenu(input: {
       onSelect={input.onSelect}
       onToggle={input.onToggle}
     />
-  );
-}
-
-function renderAskAgentRow(onAskAgent: (() => void) | undefined, t: (key: string) => string) {
-  if (!onAskAgent) {
-    return null;
-  }
-  return (
-    <Button
-      className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-      data-note-ask-agent=""
-      type="button"
-      variant="ghost"
-      onClick={onAskAgent}
-    >
-      <Icon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" name="sparkles" />
-      <span>{t('agentSession.menuAria')}</span>
-    </Button>
   );
 }

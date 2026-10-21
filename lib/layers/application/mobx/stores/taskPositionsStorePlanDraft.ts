@@ -57,7 +57,15 @@ export function restorePlanDraftPositions(
   });
 }
 
-export function replacePlanDraft(state: PlanDraftState, positions: readonly TaskPosition[]): void {
+/**
+ * `taskIdsWithoutPosition` — задачи черновика, которых ещё нет на доске:
+ * их постановка на доску тоже не записывается до сохранения.
+ */
+export function replacePlanDraft(
+  state: PlanDraftState,
+  positions: readonly TaskPosition[],
+  taskIdsWithoutPosition: readonly string[] = []
+): void {
   runInAction(() => {
     for (const taskId of state.draftTaskIds) {
       state.positions.delete(taskId);
@@ -68,6 +76,9 @@ export function replacePlanDraft(state: PlanDraftState, positions: readonly Task
       const stored = stripPositionSource(position);
       state.positions.set(stored.taskId, stored);
       state.draftTaskIds.add(stored.taskId);
+    }
+    for (const taskId of taskIdsWithoutPosition) {
+      state.draftTaskIds.add(taskId);
     }
   });
 }

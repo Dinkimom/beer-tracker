@@ -2,7 +2,7 @@ const CONTEXT_MENU_VIEWPORT_PAD_PX = 8;
 const CONTEXT_MENU_ANCHOR_GAP_PX = 8;
 
 /** С какой стороны якоря стоит меню: кнопки шапки прижимаем к карточке. */
-export type ContextMenuAnchorSide = 'left' | 'right';
+type ContextMenuAnchorSide = 'left' | 'right';
 
 /**
  * Размер меню без CSS transform.
@@ -21,12 +21,6 @@ export function resolveContextMenuFollowAnchorId(anchoredEl: HTMLElement | null)
   const taskBarRoot = anchoredEl?.closest<HTMLElement>('[data-draggable-id][data-task-id]');
   const id = taskBarRoot?.id?.trim();
   return id || undefined;
-}
-
-export function resolveContextMenuQuickActionsAlignClass(
-  anchorSide: ContextMenuAnchorSide
-): 'justify-end' | 'justify-start' {
-  return anchorSide === 'left' ? 'justify-end' : 'justify-start';
 }
 
 export function resolveContextMenuViewportPosition(input: {

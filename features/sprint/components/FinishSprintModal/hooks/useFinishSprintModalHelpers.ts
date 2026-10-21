@@ -96,11 +96,12 @@ export function validateFinishSprintSubmit(params: {
   moveTasksTo: MoveTasksTo;
   selectedSprintId: number | null;
   sprintInfo: { id: number; status: string; version?: number } | null;
+  t: (key: string) => string;
 }): boolean {
   if (!params.sprintInfo) return false;
 
   if (params.moveTasksTo === 'sprint' && !params.selectedSprintId) {
-    toast.error('Необходимо выбрать спринт для переноса задач');
+    toast.error(params.t('sprint.finish.selectTargetSprint'));
     return false;
   }
 
@@ -111,16 +112,17 @@ export async function archiveSprintOnFinish(params: {
   onSprintStatusChange?: (updatedSprint: SprintInfo) => void;
   onTasksReload?: () => void;
   sprintInfo: { id: number; status: string; version?: number };
+  t: (key: string) => string;
 }): Promise<boolean> {
   const result = await updateSprintStatus(params.sprintInfo.id, 'archived', params.sprintInfo.version);
 
   const closed = result.sprint?.status === 'archived' || result.sprint?.status === 'released';
   if (!result.success || !closed) {
-    toast.error(result.error || 'Не удалось завершить спринт');
+    toast.error(result.error || params.t('sprint.finish.failed'));
     return false;
   }
 
-  toast.success('Спринт закрыт');
+  toast.success(params.t('sprint.finish.closed'));
 
   if (result.sprint && params.onSprintStatusChange) {
     params.onSprintStatusChange(result.sprint);

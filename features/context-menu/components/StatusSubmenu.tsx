@@ -4,16 +4,16 @@ import type { Task } from '@/types';
 
 import { useRef, useEffect, useState } from 'react';
 
-import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
 import {
-  CONTEXT_MENU_GHOST_BUTTON_RESET,
-  CONTEXT_MENU_ITEM_ROW_ACTIVE,
-  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
-  CONTEXT_MENU_ITEM_ROW_SUBMENU,
+  FLOATING_MENU_GLASS_SHELL,
+  MENU_PANEL_PADDING,
+  MENU_ROW_ICON,
+  MENU_ROW_STACK,
 } from '@/features/context-menu/contextMenuClasses';
 import { calculateSubmenuPosition } from '@/features/context-menu/utils/submenuPositioning';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
@@ -130,7 +130,11 @@ export function StatusSubmenu({
 
         const menuRect = menuElement.getBoundingClientRect();
         const buttonRect = buttonRef.current.getBoundingClientRect();
-        const subMenuRect = statusMenuRef.current.getBoundingClientRect();
+        // offset*: getBoundingClientRect меньше на время enter-анимации (scale 0.96)
+        const subMenuRect = DOMRect.fromRect({
+          height: statusMenuRef.current.offsetHeight,
+          width: statusMenuRef.current.offsetWidth,
+        });
         const statusMenuParent = statusMenuRef.current.parentElement;
         if (!statusMenuParent) return;
         const parentRect = statusMenuParent.getBoundingClientRect();
@@ -152,48 +156,33 @@ export function StatusSubmenu({
 
   return (
     <div className="relative">
-      <Button
+      <ContextMenuRow
         ref={buttonRef}
-        className={`${CONTEXT_MENU_ITEM_ROW_SUBMENU} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${
-          isOpen ? CONTEXT_MENU_ITEM_ROW_ACTIVE : ''
-        } ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
         disabled={isLoading}
-        type="button"
-        variant="ghost"
+        icon={<Icon aria-hidden className={MENU_ROW_ICON} name="refresh" />}
+        label={t('sprintPlanner.contextMenu.changeStatus')}
+        submenuOpen={isOpen}
+        value={task.originalStatusDisplay || task.originalStatus}
         onClick={onToggle}
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Icon
-            aria-hidden
-            className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400"
-            name="refresh"
-          />
-          <span className="min-w-0 truncate font-medium">{t('sprintPlanner.contextMenu.changeStatus')}</span>
-        </div>
-        <Icon
-          aria-hidden
-          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
-            isOpen ? 'rotate-90' : ''
-          }`}
-          name="chevron-right"
-        />
-      </Button>
+      />
       {overlay.mounted ? (
         <div
           ref={statusMenuRef}
-          className={`absolute bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl py-1.5 px-1 min-w-[220px] max-w-[min(280px,calc(100vw-40px))] max-h-[400px] overflow-y-auto ${ZIndex.class('submenu')} ${OVERLAY_PANEL_ENTER}`}
+          className={`absolute w-max min-w-[220px] max-w-[min(280px,calc(100vw-40px))] ${FLOATING_MENU_GLASS_SHELL} ${ZIndex.class('submenu')} ${OVERLAY_PANEL_ENTER}`}
           data-state={overlay.state}
           data-submenu="true"
           onAnimationEnd={overlay.onAnimationEnd}
         >
-          <StatusSubmenuTransitionList
-            isLoading={isLoading}
-            isLoadingTransitions={isLoadingTransitions}
-            pendingTransitionId={pendingTransitionId}
-            statusTransitions={statusTransitions}
-            task={task}
-            onSelect={onSelect}
-          />
+          <div className={`max-h-[400px] overflow-y-auto ${MENU_PANEL_PADDING} ${MENU_ROW_STACK}`}>
+            <StatusSubmenuTransitionList
+              isLoading={isLoading}
+              isLoadingTransitions={isLoadingTransitions}
+              pendingTransitionId={pendingTransitionId}
+              statusTransitions={statusTransitions}
+              task={task}
+              onSelect={onSelect}
+            />
+          </div>
         </div>
       ) : null}
     </div>

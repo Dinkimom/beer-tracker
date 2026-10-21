@@ -172,9 +172,9 @@ export class TaskPositionsStore {
   }
 
   /** Показать черновик на доске, не записывая его. Предыдущий черновик снимается. */
-  stagePlanDraft(positions: readonly TaskPosition[]): void {
+  stagePlanDraft(positions: readonly TaskPosition[], taskIdsWithoutPosition?: readonly string[]): void {
     this.bumpReconcileGeneration();
-    replacePlanDraft(this.planDraftState(), positions);
+    replacePlanDraft(this.planDraftState(), positions, taskIdsWithoutPosition);
   }
 
   discardPlanDraft(): void {

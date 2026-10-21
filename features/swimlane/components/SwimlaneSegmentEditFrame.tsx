@@ -6,7 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { CARD_MARGIN, WORKING_DAYS, getPartsPerDay } from '@/constants';
+import { CARD_MARGIN, WORKING_DAYS, ZIndex, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   CARD_FLOATING_TOOLBAR_CANCEL_BUTTON_CLASS,
@@ -119,102 +119,111 @@ export function SwimlaneSegmentEditFrame({
     ((rangeStartCell + cellOffset) / timelineTotalParts) * 100;
 
   return (
-    <div className="pointer-events-auto absolute left-0 right-0" style={containerStyle}>
-      {/* Обводка и тулбар — как у карточек (с CARD_MARGIN). */}
-      <div className="absolute" style={{ left: barLeft, width: barWidth, top: 0, bottom: 0 }}>
-        <div
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 rounded-lg ${PHASE_FOCUS_RING_SOURCE}`}
-        />
-        <CardFloatingToolbar data-swimlane-segment-edit-toolbar="">
-          <Button
-            aria-label={t('sprintPlanner.occupancy.segmentEditorConfirmTitle')}
-            className={CARD_FLOATING_TOOLBAR_CONFIRM_BUTTON_CLASS}
-            disabled={!hasDraftChanges}
-            title={t('sprintPlanner.occupancy.segmentEditorConfirmTitle')}
-            type="button"
-            variant="ghost"
-            onClick={(event) =>
-              handleCardFloatingToolbarActionClick(
-                event,
-                hasDraftChanges ? handleConfirm : undefined
-              )
-            }
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <Icon className="h-3.5 w-3.5" name="check" />
-          </Button>
-          <Button
-            aria-label={t('sprintPlanner.occupancy.segmentEditorDiscardTitle')}
-            className={CARD_FLOATING_TOOLBAR_CANCEL_BUTTON_CLASS}
-            title={t('sprintPlanner.occupancy.segmentEditorDiscardTitle')}
-            type="button"
-            variant="ghost"
-            onClick={(event) => handleCardFloatingToolbarActionClick(event, handleDiscard)}
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <Icon className="h-3.5 w-3.5" name="x" />
-          </Button>
-        </CardFloatingToolbar>
-      </div>
-      {/* Линии разрыва — по абсолютным границам ячеек сетки (без смещения CARD_MARGIN). */}
+    <>
+      {/* Обводка — под карточками (кольцо снаружи их границ), чтобы не перекрывать значки отрезков. */}
       <div
-        className="absolute inset-0 z-[1]"
-        onMouseLeave={() => {
-          setHoveredSplitAfter(null);
-          setHoveredGapStart(null);
-        }}
+        aria-hidden
+        className="pointer-events-none absolute left-0 right-0"
+        style={{ ...containerStyle, zIndex: ZIndex.stickyInContent - 1 }}
       >
-        {gapBlocks.map((gap) => {
-          const leftPct = cellLeftPercent(gap.startIndex);
-          const widthPct = (gap.length / timelineTotalParts) * 100;
-          const hovered = hoveredGapStart === gap.startIndex;
-          return (
-            <button
-              key={`gap-${gap.startIndex}`}
-              aria-label={t('sprintPlanner.occupancy.segmentGapRemove')}
-              className={`${GAP_HIT_CLASS} ${hovered ? RING_HATCH_HOVER : RING_HATCH}`}
-              style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-              type="button"
-              onClick={() => handleRemoveGap(gap.startIndex)}
-              onMouseEnter={() => setHoveredGapStart(gap.startIndex)}
-            >
-              <span
-                aria-hidden
-                className={`${GAP_EDGE_LINE_CLASS} left-0${hovered ? ` ${RING_LINE_HOVER}` : ''}`}
-              />
-              <span
-                aria-hidden
-                className={`${GAP_EDGE_LINE_CLASS} right-0 -translate-x-px${
-                  hovered ? ` ${RING_LINE_HOVER}` : ''
-                }`}
-              />
-            </button>
-          );
-        })}
-        {canInsertGap
-          ? splitPoints.map((afterIndex) => {
-              const leftPct = cellLeftPercent(afterIndex + 1);
-              const hovered = hoveredSplitAfter === afterIndex;
-              return (
-                <button
-                  key={`split-${afterIndex}`}
-                  aria-label={t('sprintPlanner.occupancy.segmentGapAdd')}
-                  className={SPLIT_HIT_CLASS}
-                  style={{ left: `${leftPct}%` }}
-                  type="button"
-                  onClick={() => handleInsertGap(afterIndex)}
-                  onMouseEnter={() => setHoveredSplitAfter(afterIndex)}
-                >
-                  <span
-                    aria-hidden
-                    className={`${SPLIT_LINE_CLASS}${hovered ? ` ${RING_LINE_HOVER}` : ''}`}
-                  />
-                </button>
-              );
-            })
-          : null}
+        <div
+          className={`absolute rounded-lg ${PHASE_FOCUS_RING_SOURCE}`}
+          style={{ left: barLeft, width: barWidth, top: 0, bottom: 0 }}
+        />
       </div>
-    </div>
+      <div className="pointer-events-auto absolute left-0 right-0" style={containerStyle}>
+        {/* Тулбар — как у карточек (с CARD_MARGIN). */}
+        <div className="absolute" style={{ left: barLeft, width: barWidth, top: 0, bottom: 0 }}>
+          <CardFloatingToolbar data-swimlane-segment-edit-toolbar="">
+            <Button
+              aria-label={t('sprintPlanner.occupancy.segmentEditorConfirmTitle')}
+              className={CARD_FLOATING_TOOLBAR_CONFIRM_BUTTON_CLASS}
+              disabled={!hasDraftChanges}
+              title={t('sprintPlanner.occupancy.segmentEditorConfirmTitle')}
+              type="button"
+              variant="ghost"
+              onClick={(event) =>
+                handleCardFloatingToolbarActionClick(
+                  event,
+                  hasDraftChanges ? handleConfirm : undefined
+                )
+              }
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <Icon className="h-3.5 w-3.5" name="check" />
+            </Button>
+            <Button
+              aria-label={t('sprintPlanner.occupancy.segmentEditorDiscardTitle')}
+              className={CARD_FLOATING_TOOLBAR_CANCEL_BUTTON_CLASS}
+              title={t('sprintPlanner.occupancy.segmentEditorDiscardTitle')}
+              type="button"
+              variant="ghost"
+              onClick={(event) => handleCardFloatingToolbarActionClick(event, handleDiscard)}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <Icon className="h-3.5 w-3.5" name="x" />
+            </Button>
+          </CardFloatingToolbar>
+        </div>
+        {/* Линии разрыва — по абсолютным границам ячеек сетки (без смещения CARD_MARGIN). */}
+        <div
+          className="absolute inset-0 z-[1]"
+          onMouseLeave={() => {
+            setHoveredSplitAfter(null);
+            setHoveredGapStart(null);
+          }}
+        >
+          {gapBlocks.map((gap) => {
+            const leftPct = cellLeftPercent(gap.startIndex);
+            const widthPct = (gap.length / timelineTotalParts) * 100;
+            const hovered = hoveredGapStart === gap.startIndex;
+            return (
+              <button
+                key={`gap-${gap.startIndex}`}
+                aria-label={t('sprintPlanner.occupancy.segmentGapRemove')}
+                className={`${GAP_HIT_CLASS} ${hovered ? RING_HATCH_HOVER : RING_HATCH}`}
+                style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                type="button"
+                onClick={() => handleRemoveGap(gap.startIndex)}
+                onMouseEnter={() => setHoveredGapStart(gap.startIndex)}
+              >
+                <span
+                  aria-hidden
+                  className={`${GAP_EDGE_LINE_CLASS} left-0${hovered ? ` ${RING_LINE_HOVER}` : ''}`}
+                />
+                <span
+                  aria-hidden
+                  className={`${GAP_EDGE_LINE_CLASS} right-0 -translate-x-px${
+                    hovered ? ` ${RING_LINE_HOVER}` : ''
+                  }`}
+                />
+              </button>
+            );
+          })}
+          {canInsertGap
+            ? splitPoints.map((afterIndex) => {
+                const leftPct = cellLeftPercent(afterIndex + 1);
+                const hovered = hoveredSplitAfter === afterIndex;
+                return (
+                  <button
+                    key={`split-${afterIndex}`}
+                    aria-label={t('sprintPlanner.occupancy.segmentGapAdd')}
+                    className={SPLIT_HIT_CLASS}
+                    style={{ left: `${leftPct}%` }}
+                    type="button"
+                    onClick={() => handleInsertGap(afterIndex)}
+                    onMouseEnter={() => setHoveredSplitAfter(afterIndex)}
+                  >
+                    <span
+                      aria-hidden
+                      className={`${SPLIT_LINE_CLASS}${hovered ? ` ${RING_LINE_HOVER}` : ''}`}
+                    />
+                  </button>
+                );
+              })
+            : null}
+        </div>
+      </div>
+    </>
   );
 }

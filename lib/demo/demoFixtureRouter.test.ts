@@ -105,6 +105,31 @@ describe('handleDemoFixtureRequest', () => {
     );
   });
 
+  it('keeps created, updated and deleted sticky notes in memory', () => {
+    const url = `/sprints/${DEMO_SPRINT_ID}/comments`;
+    const created = handleDemoFixtureRequest(
+      cfg('post', url, {
+        data: { assigneeId: DEMO_DEV_ALICE, day: 1, height: 2, kind: 'widget', part: 0, text: 'board', width: 2 },
+      })
+    );
+    const id = (created.data as { comment: { id: string } }).comment.id;
+    expect(id).toMatch(/^demo-comment-/);
+
+    handleDemoFixtureRequest(cfg('put', `${url}?commentId=${id}`, { data: { text: 'next move' } }));
+    const listed = handleDemoFixtureRequest(cfg('get', url)).data as {
+      comments: Array<{ id: string; kind?: string; text: string; width: number }>;
+    };
+    expect(listed.comments.find((c) => c.id === id)).toEqual(
+      expect.objectContaining({ kind: 'widget', text: 'next move', width: 2 })
+    );
+
+    expect(handleDemoFixtureRequest(cfg('put', `${url}?commentId=missing`, { data: {} })).status).toBe(404);
+
+    handleDemoFixtureRequest(cfg('delete', `${url}?commentId=${id}`));
+    const afterDelete = handleDemoFixtureRequest(cfg('get', url)).data as { comments: Array<{ id: string }> };
+    expect(afterDelete.comments.some((c) => c.id === id)).toBe(false);
+  });
+
   it('returns seeded sticky notes and Carol vacation on sprint start days', () => {
     const comments = handleDemoFixtureRequest(cfg('get', `/sprints/${DEMO_SPRINT_ID}/comments`));
     expect(comments.status).toBe(200);

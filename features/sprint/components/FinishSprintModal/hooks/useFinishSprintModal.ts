@@ -8,6 +8,8 @@ import type { ChecklistItem, SprintInfo, SprintListItem } from '@/types/tracker'
 import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
+import { useI18n } from '@/contexts/LanguageContext';
+
 import {
   canUpdateFinishSprintCheckbox,
   findFinishSprintChecklistItem,
@@ -56,6 +58,7 @@ export function useFinishSprintModal({
   const [moveTasksTo, setMoveTasksTo] = useState<MoveTasksTo>('backlog');
   const [selectedSprintId, setSelectedSprintId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -81,12 +84,12 @@ export function useFinishSprintModal({
       const success = await updateFinishSprintGoalCheckbox(item!, checked);
       if (!success) {
         setChecklistItems(prev => mapFinishSprintCheckboxItems(prev, itemId, !checked));
-        notifyFinishSprintCheckboxFailure();
+        notifyFinishSprintCheckboxFailure(t);
       }
     } catch (err) {
       console.error('Failed to update checkbox:', err);
       setChecklistItems(prev => mapFinishSprintCheckboxItems(prev, itemId, !checked));
-      notifyFinishSprintCheckboxFailure();
+      notifyFinishSprintCheckboxFailure(t);
     } finally {
       setUpdatingItems(prev => {
         const next = new Set(prev);
@@ -94,13 +97,14 @@ export function useFinishSprintModal({
         return next;
       });
     }
-  }, [checklistItems, updatingItems]);
+  }, [checklistItems, updatingItems, t]);
 
   const handleSubmit = useCallback(async () => {
     if (!validateFinishSprintSubmit({
       moveTasksTo,
       selectedSprintId,
       sprintInfo,
+      t,
     })) {
       return;
     }
@@ -120,11 +124,12 @@ export function useFinishSprintModal({
         onSprintStatusChange,
         onTasksReload,
         sprintInfo: sprintInfo!,
+        t,
       });
       if (!archived) return;
     } catch (error) {
       console.error('Failed to finish sprint:', error);
-      toast.error('Не удалось завершить спринт');
+      toast.error(t('sprint.finish.failed'));
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +141,7 @@ export function useFinishSprintModal({
     goalTasks,
     onSprintStatusChange,
     onTasksReload,
+    t,
   ]);
 
   return {

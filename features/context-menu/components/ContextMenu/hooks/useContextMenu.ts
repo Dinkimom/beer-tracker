@@ -9,9 +9,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { useConfirmDialog } from '@/components/ConfirmDialog';
+import { useI18n } from '@/contexts/LanguageContext';
 import { resolveTaskParentForMenu } from '@/features/context-menu/utils/buildContextMenuParentOptions';
 import {
-  type ContextMenuAnchorSide,
   measureContextMenuLayoutSize,
   resolveContextMenuViewportPosition,
 } from '@/features/context-menu/utils/resolveContextMenuViewportPosition';
@@ -36,6 +36,8 @@ interface UseContextMenuProps {
   onCloseByClickOutside?: () => void;
   onMoveToSprint: (taskId: string, sprintId: number) => Promise<void>;
   onParentChange?: (taskId: string, parent: TaskParent | null) => Promise<void>;
+  /** «Запланировать…» в подменю спринта: выбрать место на доске целевого спринта. */
+  onPlanInSprint?: (taskId: string, sprintId: number) => void;
   onRemoveFromPlan?: (taskId: string) => void;
   onRemoveFromSprint: (taskId: string) => Promise<void>;
   onStatusChange: (taskId: string, transitionId: string, targetStatusKey?: string, targetStatusDisplay?: string, screenId?: string) => Promise<void>;
@@ -53,6 +55,7 @@ export function useContextMenu({
   onStatusChange,
   onMoveToSprint,
   onParentChange,
+  onPlanInSprint,
   onRemoveFromPlan,
   onRemoveFromSprint,
   isBacklogTask = false,
@@ -68,8 +71,8 @@ export function useContextMenu({
   const [isEstimateMenuOpen, setIsEstimateMenuOpen] = useState(false);
   const [isParentMenuOpen, setIsParentMenuOpen] = useState(false);
   const [isAssigneeMenuOpen, setIsAssigneeMenuOpen] = useState(false);
-  const [anchorSide, setAnchorSide] = useState<ContextMenuAnchorSide>('right');
   const { confirm, confirmWithAction, DialogComponent } = useConfirmDialog();
+  const { t } = useI18n();
 
   // Перенос/удаление из спринта: для синтетической QA-строки с привязкой к dev и ненулевым объёмом
   // двигаем dev-задачу в трекере; при 0 SP и TP≤0 — саму QA-задачу (отдельная фаза «чисто QA»).
@@ -79,6 +82,7 @@ export function useContextMenu({
     task.team === 'QA' && task.originalTaskId && (sp > 0 || tp > 0)
       ? task.originalTaskId
       : task.id;
+  const canPlanInSprint = Boolean(onPlanInSprint) && !isBacklogTask;
 
   const closeOtherSubmenus = (keep: 'assignee' | 'estimate' | 'parent' | 'sprint' | 'status') => {
     if (keep !== 'status') setIsStatusMenuOpen(false);
@@ -212,7 +216,6 @@ export function useContextMenu({
       });
       el.style.left = `${next.left}px`;
       el.style.top = `${next.top}px`;
-      setAnchorSide((prev) => (prev === next.anchorSide ? prev : next.anchorSide));
     };
 
     apply();
@@ -242,22 +245,23 @@ export function useContextMenu({
     }
   };
 
+  // Без выбора «бэклог / запланировать» в подменю клик по спринту подтверждаем диалогом.
   const handleSprintSelect = async (sprintId: number) => {
     if (isLoading || sprintId === currentSprintId) return;
 
-    const targetSprint = sprints.find((s) => s.id === sprintId);
-    const sprintName = targetSprint?.name || `спринт ${sprintId}`;
-
-    const confirmed = await confirm(
-      `Вы уверены, что хотите перенести задачу "${taskIdForActions}" в спринт "${sprintName}"?`,
-      {
-        title: 'Перенос задачи в спринт',
-        variant: 'default',
+    if (!canPlanInSprint) {
+      const targetSprint = sprints.find((s) => s.id === sprintId);
+      const sprintName = targetSprint?.name || t('sprint.fallbackName', { id: sprintId });
+      const confirmed = await confirm(
+        t('sprintPlanner.contextMenu.moveToSprintConfirm', { key: taskIdForActions, sprintName }),
+        {
+          title: t('sprintPlanner.contextMenu.moveToSprintConfirmTitle'),
+          variant: 'default',
+        }
+      );
+      if (!confirmed) {
+        return;
       }
-    );
-
-    if (!confirmed) {
-      return;
     }
 
     setIsSprintMenuOpen(false);
@@ -267,8 +271,15 @@ export function useContextMenu({
       await onMoveToSprint(taskIdForActions, sprintId);
     } catch (error) {
       console.error('Failed to move task to sprint:', error);
-      toast.error('Не удалось перенести задачу в спринт. Попробуйте ещё раз.');
+      toast.error(t('sprintPlanner.contextMenu.moveToSprintFailed'));
     }
+  };
+
+  const handleSprintPlan = (sprintId: number) => {
+    if (isLoading || !onPlanInSprint || sprintId === currentSprintId) return;
+    setIsSprintMenuOpen(false);
+    onClose();
+    onPlanInSprint(taskIdForActions, sprintId);
   };
 
   const handleParentSelect = async (parent: TaskParent | null) => {
@@ -303,14 +314,14 @@ export function useContextMenu({
     }
 
     const confirmed = await confirmWithAction(
-      `Вы уверены, что хотите убрать задачу "${taskIdForActions}" из текущего спринта?`,
+      t('sprintPlanner.contextMenu.removeFromSprintConfirm', { key: taskIdForActions }),
       async () => {
         await onRemoveFromSprint(taskIdForActions);
       },
       {
-        title: 'Удаление задачи из спринта',
-        confirmText: 'Убрать',
-        loadingText: 'Убираем...',
+        title: t('sprintPlanner.contextMenu.removeFromSprintConfirmTitle'),
+        confirmText: t('sprintPlanner.contextMenu.removeFromSprintConfirmAction'),
+        loadingText: t('sprintPlanner.contextMenu.removeFromSprintConfirmLoading'),
         variant: 'default',
       }
     );
@@ -332,7 +343,6 @@ export function useContextMenu({
 
   return {
     menuRef,
-    anchorSide,
     statusButtonRef,
     sprintButtonRef,
     estimateButtonRef,
@@ -352,6 +362,7 @@ export function useContextMenu({
     handleParentMenuToggle,
     handleAssigneeMenuToggle,
     handleStatusSelect,
+    handleSprintPlan: canPlanInSprint ? handleSprintPlan : undefined,
     handleSprintSelect,
     handleParentSelect,
     handleRemoveFromPlan,

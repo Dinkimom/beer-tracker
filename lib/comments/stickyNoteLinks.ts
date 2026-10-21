@@ -10,7 +10,21 @@ type StickyNoteTextSegment =
 
 const URL_RE = /(?:https?:\/\/|www\.)[^\s<>"'`]+/gi;
 const MAX_HREF_LENGTH = 2048;
-const TRAILING_URL_PUNCTUATION = new Set([',', '.', ';', ':', '!', '?', ')', ']', '}', "'"]);
+/** `*` и `~` — закрывающие маркеры `**жирного**` / `~~зачёркнутого~~` вокруг ссылки. */
+const TRAILING_URL_PUNCTUATION = new Set([
+  ',',
+  '.',
+  ';',
+  ':',
+  '!',
+  '?',
+  ')',
+  ']',
+  '}',
+  "'",
+  '*',
+  '~',
+]);
 const JIRA_BROWSE_PATH_RE = /\/browse\/[^/]+/i;
 
 export function resolveStickyNoteLinkHostname(href: string): string {

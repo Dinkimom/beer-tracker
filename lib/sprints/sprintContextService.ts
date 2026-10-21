@@ -54,7 +54,7 @@ const DAY_LEGEND =
   'Zero-based index of a working day within the sprint timeline (not a calendar weekday). meta.weekendDays are Saturday and Sunday inside the sprint window; they have no day index and must not be used for positions.';
 
 const NOTE_LEGEND =
-  'notes[].width = card length in parts from (day, part), same unit as position duration; notes[].height = card height in rows (1 = one task card); notes[].color = sticky color (text notes). Cards of one assignee that overlap in time do not cover each other: the swimlane stacks them into extra rows, so the lane grows taller. Keep notes of one assignee apart in time to keep the lane compact.';
+  'notes[].width = card length in parts from (day, part), same unit as position duration; notes[].height = card height in rows (1 = one task card); notes[].color = sticky color (text notes); notes[].text is markdown (headings, - [ ]/- [x] checklists, bullets, **bold**, *italic*, ~~strike~~, `code`), - [x] = done. Cards of one assignee that overlap in time do not cover each other: the swimlane stacks them into extra rows, so the lane grows taller. Keep notes of one assignee apart in time to keep the lane compact.';
 
 function partLegend(partsPerDay: number): string {
   return `Time segment within a working day: 0 .. ${partsPerDay - 1} (meta.partsPerDay=${partsPerDay}; duration is counted in these parts).`;

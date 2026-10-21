@@ -90,6 +90,7 @@ export function SprintPlannerView({
   isDragFromSidebar,
   kanbanGroupBy,
   linksDimOnHover,
+  movePlacement,
   occupancyOldTmLayout,
   occupancyRowFields,
   occupancyStatusFilter,
@@ -218,13 +219,7 @@ export function SprintPlannerView({
           tasksLoading={tasksLoading}
           viewMode={viewMode}
         >
-        <div
-          className="relative flex min-h-0 flex-1 gap-3 overflow-hidden"
-          style={{
-            width: '100%',
-            height: '100%',
-          }}
-        >
+        <div className="relative flex h-full min-h-0 w-full flex-1 gap-3 overflow-hidden">
           <div
             ref={setBoardFrameEl}
             className="planner-board-frame relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header"
@@ -361,6 +356,7 @@ export function SprintPlannerView({
               />
               {viewMode === 'compact' || viewMode === 'full' || viewMode === 'features' ? (
                 <SwimlanePlacementToolbar
+                  movePlacement={movePlacement.toolbar}
                   pendingAgentNotes={selectPendingAgentProposalNotes(comments)}
                   sprintId={selectedSprintId}
                   variant={viewMode === 'features' ? 'features' : 'people'}
@@ -463,6 +459,7 @@ export function SprintPlannerView({
         }}
         boardId={boardIdForPlannerData}
         comments={comments}
+        movePlacement={movePlacement}
         selectedSprintId={selectedSprintId}
         showStartLinking={
           (viewMode === 'full' || viewMode === 'compact' || viewMode === 'features') &&

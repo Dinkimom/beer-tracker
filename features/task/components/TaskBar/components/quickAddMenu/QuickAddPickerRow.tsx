@@ -9,12 +9,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import { ExcalidrawMark } from '@/features/comments/components/ExcalidrawMark';
 import { StickyNoteToolIcon } from '@/features/comments/components/StickyNoteToolIcon';
-import {
-  CONTEXT_MENU_GHOST_BUTTON_RESET,
-  CONTEXT_MENU_ITEM_ROW,
-  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
-  CONTEXT_MENU_SEPARATOR,
-} from '@/features/context-menu/contextMenuClasses';
+import { MENU_ROW, MENU_SEPARATOR } from '@/features/context-menu/contextMenuClasses';
 
 import {
   quickAddModeIconName,
@@ -33,7 +28,7 @@ function resolveQuickAddPickerGlyph(id: QuickAddMode) {
     return <IssueTypeIcon className="h-4 w-4" type="draft" />;
   }
   if (id === 'new') {
-    return <Icon className="h-6 w-6" name="issue-task" />;
+    return <Icon className="h-5 w-5" name="issue-task" />;
   }
   return <Icon className="h-4 w-4" name={quickAddModeIconName(id)} />;
 }
@@ -54,7 +49,7 @@ export function QuickAddPickerRow({
   const { t } = useI18n();
   const objectStorageConfigured = useObjectStorageConfigured();
   if (item.kind === 'separator') {
-    return <div className={CONTEXT_MENU_SEPARATOR} role="separator" />;
+    return <div className={MENU_SEPARATOR} role="separator" />;
   }
   const id = item.mode;
   const needsObjectStorage = quickAddModeRequiresObjectStorage(id);
@@ -63,7 +58,7 @@ export function QuickAddPickerRow({
   const storageHint = t('sprintPlanner.swimlane.placementToolbar.objectStorageRequired');
   return (
     <Button
-      className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
+      className={MENU_ROW}
       data-quick-add-mode={id}
       disabled={rowDisabled}
       role="menuitem"
@@ -72,12 +67,10 @@ export function QuickAddPickerRow({
       variant="ghost"
       onClick={() => onSelect(id)}
     >
-      <span className="inline-flex min-w-0 flex-1 items-center gap-2">
-        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-gray-500 dark:text-gray-400">
-          {resolveQuickAddPickerGlyph(id)}
-        </span>
-        <span>{t(labelKey ?? quickAddModeMessageKey(id))}</span>
+      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-gray-500 dark:text-gray-400">
+        {resolveQuickAddPickerGlyph(id)}
       </span>
+      <span className="min-w-0 flex-1 truncate">{t(labelKey ?? quickAddModeMessageKey(id))}</span>
     </Button>
   );
 }

@@ -13,18 +13,19 @@ import {
   useTrackerWebUrlContext,
 } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
+import { ContextMenuGroup } from '@/features/context-menu/components/ContextMenuGroup';
+import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
 import { SprintSubmenu } from '@/features/context-menu/components/SprintSubmenu';
 import { StatusSubmenu } from '@/features/context-menu/components/StatusSubmenu';
 import {
-  CONTEXT_MENU_GHOST_BUTTON_RESET,
-  CONTEXT_MENU_ITEM_ROW,
-  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
-  CONTEXT_MENU_SEPARATOR,
   FLOATING_MENU_FIT_BODY,
   FLOATING_MENU_FIT_WIDTH,
-  FLOATING_MENU_SHELL,
+  FLOATING_MENU_GLASS_SHELL,
+  MENU_PANEL_PADDING,
+  MENU_QUICK_ACTION,
+  MENU_QUICK_ACTION_LABEL,
+  MENU_ROW_ICON,
 } from '@/features/context-menu/contextMenuClasses';
-import { resolveContextMenuQuickActionsAlignClass } from '@/features/context-menu/utils/resolveContextMenuViewportPosition';
 import { getPositionEffectiveDuration } from '@/features/sprint/utils/occupancyUtils';
 import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
 import { useFollowAnchorRectByElementId } from '@/hooks/useFollowAnchorRect';
@@ -67,6 +68,7 @@ interface ContextMenuProps {
   onMoveToSprint: (taskId: string, sprintId: number) => Promise<void>;
   onOpenTaskInfo?: (task: Task) => void;
   onParentChange?: (taskId: string, parent: TaskParent | null) => Promise<void>;
+  onPlanInSprint?: (taskId: string, sprintId: number) => void;
   onRemoveFromPlan?: (taskId: string) => void;
   onRemoveFromSprint: (taskId: string) => Promise<void>;
   onSplitPhaseIntoSegments?: (task: Task) => void;
@@ -87,6 +89,7 @@ export function ContextMenu({
   onStatusChange,
   onMoveToSprint,
   onParentChange,
+  onPlanInSprint,
   onRemoveFromPlan,
   onRemoveFromSprint,
   onSplitPhaseIntoSegments,
@@ -131,11 +134,8 @@ export function ContextMenu({
     !isKanbanView &&
     effectiveDuration > 1;
 
-  const showPlanItems = showEstimate || showParent || showSplitPhase;
-
   const {
     menuRef,
-    anchorSide,
     statusButtonRef,
     sprintButtonRef,
     estimateButtonRef,
@@ -155,6 +155,7 @@ export function ContextMenu({
     handleParentMenuToggle,
     handleAssigneeMenuToggle,
     handleStatusSelect,
+    handleSprintPlan,
     handleSprintSelect,
     handleParentSelect,
     handleRemoveFromPlan,
@@ -170,6 +171,7 @@ export function ContextMenu({
     onStatusChange,
     onMoveToSprint,
     onParentChange,
+    onPlanInSprint,
     onRemoveFromPlan,
     onRemoveFromSprint,
     onCloseByClickOutside,
@@ -184,9 +186,6 @@ export function ContextMenu({
     Boolean(onAccountWork) &&
     !isGeneratedQaTask;
   const sprintSectionVisible = availableSprints.length > 0;
-
-  const hasItemsAboveActions =
-    showStatusSubmenu || showAccountWork || sprintSectionVisible || showPlanItems;
 
   const taskDuration = taskPosition ? getPositionEffectiveDuration(taskPosition) : 0;
   const suggestedEstimate = timeslotsToStoryPoints(taskDuration);
@@ -207,7 +206,7 @@ export function ContextMenu({
       />
       <div
         ref={menuRef}
-        className={`fixed overflow-visible ${FLOATING_MENU_FIT_WIDTH} ${FLOATING_MENU_SHELL} ${OVERLAY_PANEL_ENTER}`}
+        className={`fixed overflow-visible ${FLOATING_MENU_FIT_WIDTH} ${FLOATING_MENU_GLASS_SHELL} ${OVERLAY_PANEL_ENTER}`}
         data-onboarding-context-menu={task.id === ONBOARDING_SAMPLE_TASK_ID ? '' : undefined}
         data-state={overlay.state}
         style={{
@@ -218,150 +217,132 @@ export function ContextMenu({
         onAnimationEnd={overlay.onAnimationEnd}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={FLOATING_MENU_FIT_BODY}>
-          <div
+        <div className={`menu-groups ${FLOATING_MENU_FIT_BODY} ${MENU_PANEL_PADDING}`}>
+          <ContextMenuGroup
             aria-label={t('sprintPlanner.contextMenu.quickActions')}
-            className={`flex w-full items-stretch gap-1 border-b border-gray-100 px-2 py-2 dark:border-gray-700 ${resolveContextMenuQuickActionsAlignClass(anchorSide)}`}
-            role="group"
+            className="grid auto-cols-fr grid-flow-col gap-0.5"
           >
-          {onOpenTaskInfo ? (
-            <Button
-              aria-label={t('sprintPlanner.contextMenu.taskInfo')}
-              className="inline-flex min-h-11 min-w-[52px] flex-col gap-0.5 border-0 bg-transparent px-1.5 py-1 text-gray-500 shadow-none hover:!bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:!bg-gray-700 dark:hover:text-gray-100"
-              title={t('sprintPlanner.contextMenu.taskInfo')}
-              type="button"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenTaskInfo(task);
-              }}
-            >
-              <Icon className="h-4 w-4 shrink-0" name="circle-info" />
-              <span className="max-w-[4.5rem] truncate text-center text-[10px] font-medium leading-tight text-gray-500 dark:text-gray-400">
-                {t('sprintPlanner.contextMenu.taskInfoShort')}
-              </span>
-            </Button>
-          ) : null}
-          <ContextMenuCopyQuickActions task={task} tracker={tracker} />
-          {onAskAgent && agentAvailable && !isBacklogTask && currentSprintId !== null ? (
-            <Button
-              aria-label={t('agentSession.menuAria')}
-              className="inline-flex min-h-11 min-w-[52px] flex-col gap-0.5 border-0 bg-transparent px-1.5 py-1 text-gray-500 shadow-none hover:!bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:!bg-gray-700 dark:hover:text-gray-100"
-              data-context-menu-ask-agent=""
-              title={t('agentSession.menuAria')}
-              type="button"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAskAgent(task);
-                requestClose();
-              }}
-            >
-              <Icon className="h-4 w-4 shrink-0" name="sparkles" />
-              <span className="max-w-[4.5rem] truncate text-center text-[10px] font-medium leading-tight text-gray-500 dark:text-gray-400">
-                {t('agentSession.menuShort')}
-              </span>
-            </Button>
-          ) : null}
-        </div>
-
-        {showStatusSubmenu && (
-          <StatusSubmenu
-            buttonRef={statusButtonRef}
-            isLoading={isLoading}
-            isOpen={isStatusMenuOpen}
-            menuRef={menuRef}
-            pendingTransitionId={pendingTransitionId}
-            task={task}
-            taskIdForActions={taskIdForActions}
-            onSelect={handleStatusSelect}
-            onToggle={handleStatusMenuToggle}
-          />
-        )}
-
-        {showAccountWork && (
-          <>
-            {showStatusSubmenu && <div className={CONTEXT_MENU_SEPARATOR} role="separator" />}
-            <Button
-              className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-              disabled={isLoading}
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                onAccountWork?.(task);
-                requestClose();
-              }}
-            >
-              <Icon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" name="check-circle" />
-              <span>{t('sprintPlanner.contextMenu.accountWork')}</span>
-            </Button>
-          </>
-        )}
-
-        {sprintSectionVisible && (
-          <>
-            {showStatusSubmenu && !showAccountWork ? (
-              <div className={CONTEXT_MENU_SEPARATOR} role="separator" />
+            {onOpenTaskInfo ? (
+              <Button
+                aria-label={t('sprintPlanner.contextMenu.taskInfo')}
+                className={MENU_QUICK_ACTION}
+                title={t('sprintPlanner.contextMenu.taskInfo')}
+                type="button"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenTaskInfo(task);
+                }}
+              >
+                <Icon className="h-4 w-4 shrink-0" name="circle-info" />
+                <span className={MENU_QUICK_ACTION_LABEL}>{t('sprintPlanner.contextMenu.taskInfoShort')}</span>
+              </Button>
             ) : null}
-            <SprintSubmenu
-              buttonRef={sprintButtonRef}
-              currentSprintId={currentSprintId}
-              isBacklogTask={isBacklogTask || false}
-              isLoading={isLoading}
-              isOpen={isSprintMenuOpen}
-              menuRef={menuRef}
-              sprints={sprints}
-              onSelect={handleSprintSelect}
-              onToggle={handleSprintMenuToggle}
-            />
-          </>
-        )}
+            <ContextMenuCopyQuickActions task={task} tracker={tracker} />
+            {onAskAgent && agentAvailable && !isBacklogTask && currentSprintId !== null ? (
+              <Button
+                aria-label={t('agentSession.menuAria')}
+                className={MENU_QUICK_ACTION}
+                data-context-menu-ask-agent=""
+                title={t('agentSession.menuAria')}
+                type="button"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAskAgent(task);
+                  requestClose();
+                }}
+              >
+                <Icon className="h-4 w-4 shrink-0" name="sparkles" />
+                <span className={MENU_QUICK_ACTION_LABEL}>{t('agentSession.menuShort')}</span>
+              </Button>
+            ) : null}
+          </ContextMenuGroup>
 
-        <ContextMenuPlanItems
-          boardId={boardId}
-          estimateButtonRef={estimateButtonRef}
-          hasItemsAbove={showStatusSubmenu || showAccountWork || sprintSectionVisible}
-          isEstimateMenuOpen={isEstimateMenuOpen}
-          isLoading={isLoading}
-          isParentMenuOpen={isParentMenuOpen}
-          menuRef={menuRef}
-          parentOptions={parentOptions}
-          showEstimate={showEstimate}
-          showParent={showParent}
-          showSplitPhase={showSplitPhase}
-          suggestedEstimate={suggestedEstimate}
-          task={task}
-          onClose={requestClose}
-          onEstimateToggle={handleEstimateMenuToggle}
-          onParentSelect={handleParentSelect}
-          onParentToggle={handleParentMenuToggle}
-          onSplitPhaseIntoSegments={onSplitPhaseIntoSegments}
-          onUpdateEstimate={onUpdateEstimate}
-        />
+          <ContextMenuGroup>
+            {showStatusSubmenu ? (
+              <StatusSubmenu
+                buttonRef={statusButtonRef}
+                isLoading={isLoading}
+                isOpen={isStatusMenuOpen}
+                menuRef={menuRef}
+                pendingTransitionId={pendingTransitionId}
+                task={task}
+                taskIdForActions={taskIdForActions}
+                onSelect={handleStatusSelect}
+                onToggle={handleStatusMenuToggle}
+              />
+            ) : null}
+            {showAccountWork ? (
+              <ContextMenuRow
+                disabled={isLoading}
+                icon={<Icon className={MENU_ROW_ICON} name="check-circle" />}
+                label={t('sprintPlanner.contextMenu.accountWork')}
+                onClick={() => {
+                  onAccountWork?.(task);
+                  requestClose();
+                }}
+              />
+            ) : null}
+            {sprintSectionVisible ? (
+              <SprintSubmenu
+                buttonRef={sprintButtonRef}
+                currentSprintId={currentSprintId}
+                isBacklogTask={isBacklogTask || false}
+                isLoading={isLoading}
+                isOpen={isSprintMenuOpen}
+                menuRef={menuRef}
+                sprints={sprints}
+                onPlan={handleSprintPlan}
+                onSelect={handleSprintSelect}
+                onToggle={handleSprintMenuToggle}
+              />
+            ) : null}
+          </ContextMenuGroup>
 
-        <ContextMenuActions
-          assigneeOptions={assigneeOptions}
-          currentSprintId={currentSprintId}
-          hasPosition={!!taskPositions?.has(task.id)}
-          hasSubmenusAboveActions={hasItemsAboveActions}
-          hideRemoveFromPlan={hideRemoveFromPlan}
-          isAssigneeMenuOpen={isAssigneeMenuOpen}
-          isBacklogTask={isBacklogTask}
-          isKanbanView={isKanbanView}
-          isLoading={isLoading}
-          selectedAssigneeId={
-            (task.team === 'QA' ? task.qaEngineer : task.assignee) ||
-            taskPositions?.get(task.id)?.assignee ||
-            ''
-          }
-          task={task}
-          onAssigneeSelect={onAssigneeSelect}
-          onAssigneeToggle={handleAssigneeMenuToggle}
-          onClose={requestClose}
-          onRemoveFromPlan={handleRemoveFromPlan}
-          onRemoveFromSprint={handleRemoveFromSprint}
-          onStartLinking={onStartLinking}
-        />
+          <ContextMenuPlanItems
+            boardId={boardId}
+            estimateButtonRef={estimateButtonRef}
+            isEstimateMenuOpen={isEstimateMenuOpen}
+            isLoading={isLoading}
+            isParentMenuOpen={isParentMenuOpen}
+            menuRef={menuRef}
+            parentOptions={parentOptions}
+            showEstimate={showEstimate}
+            showParent={showParent}
+            showSplitPhase={showSplitPhase}
+            suggestedEstimate={suggestedEstimate}
+            task={task}
+            onClose={requestClose}
+            onEstimateToggle={handleEstimateMenuToggle}
+            onParentSelect={handleParentSelect}
+            onParentToggle={handleParentMenuToggle}
+            onSplitPhaseIntoSegments={onSplitPhaseIntoSegments}
+            onUpdateEstimate={onUpdateEstimate}
+          />
+
+          <ContextMenuActions
+            assigneeOptions={assigneeOptions}
+            currentSprintId={currentSprintId}
+            hasPosition={!!taskPositions?.has(task.id)}
+            hideRemoveFromPlan={hideRemoveFromPlan}
+            isAssigneeMenuOpen={isAssigneeMenuOpen}
+            isBacklogTask={isBacklogTask}
+            isKanbanView={isKanbanView}
+            isLoading={isLoading}
+            selectedAssigneeId={
+              (task.team === 'QA' ? task.qaEngineer : task.assignee) ||
+              taskPositions?.get(task.id)?.assignee ||
+              ''
+            }
+            task={task}
+            onAssigneeSelect={onAssigneeSelect}
+            onAssigneeToggle={handleAssigneeMenuToggle}
+            onClose={requestClose}
+            onRemoveFromPlan={handleRemoveFromPlan}
+            onRemoveFromSprint={handleRemoveFromSprint}
+            onStartLinking={onStartLinking}
+          />
         </div>
       </div>
       {DialogComponent}

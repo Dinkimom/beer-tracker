@@ -4,6 +4,7 @@ import type { InternalAxiosRequestConfig } from 'axios';
 import { defaultRetroColumnTemplate } from '@/lib/retro/retroBoard';
 
 import { buildDemoBurndownPayload } from './demoFixtureBurndown';
+import { handleDemoComments } from './demoFixtureRouterComments';
 import { handleDemoMisc } from './demoFixtureRouterMisc';
 import { handleDemoPositions } from './demoFixtureRouterPositions';
 import { demoPlannerIntegrationRules } from './demoFixtureSeed';
@@ -217,17 +218,6 @@ function handleLinks(path: string, method: string): DemoFixtureResult | null {
   return null;
 }
 
-function handleComments(path: string, method: string): DemoFixtureResult | null {
-  const store = getDemoFixtureStore();
-  if (path.match(/^\/sprints\/\d+\/comments$/) && method === 'get') {
-    return ok({ comments: store.comments });
-  }
-  if (path.includes('/comments')) {
-    return ok({ success: true, comment: { id: `demo-comment-${Date.now()}` } });
-  }
-  return null;
-}
-
 function handleRetro(path: string, method: string, body: unknown): DemoFixtureResult | null {
   const sprintId = matchSprintId(path, 'retro');
   if (sprintId == null) return null;
@@ -322,7 +312,7 @@ export function handleDemoFixtureRequest(config: InternalAxiosRequestConfig): De
     () => handleSprintGoals(path, method, params, body),
     () => handleDemoPositions(path, method, params, body),
     () => handleLinks(path, method),
-    () => handleComments(path, method),
+    () => handleDemoComments(path, method, params, body),
     () => handleRetro(path, method, body),
     () => handleFeatureLanes(path, method, body),
     () => handleSprintExtras(path, method),

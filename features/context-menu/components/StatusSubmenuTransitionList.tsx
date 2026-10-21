@@ -5,6 +5,7 @@ import type { Task } from '@/types';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { MENU_ROW, MENU_ROW_CHECK } from '@/features/context-menu/contextMenuClasses';
 import { resolveTransitionStatusColorClasses } from '@/features/task/utils/transitionStatusColors';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
@@ -39,18 +40,16 @@ export function StatusSubmenuTransitionList({
 
   if (isLoadingTransitions) {
     return (
-      <div className="px-4 py-8 flex flex-col items-center justify-center gap-2">
-        <Icon className="animate-spin h-6 w-6 text-gray-400" name="spinner" />
-        <span className="text-xs text-gray-500 dark:text-gray-400">
-          {t('task.statusSelect.loadingTransitions')}
-        </span>
+      <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+        <Icon className="h-4 w-4 shrink-0 animate-spin" name="spinner" />
+        {t('task.statusSelect.loadingTransitions')}
       </div>
     );
   }
 
   if (statusTransitions.length === 0) {
     return (
-      <div className="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400">
+      <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
         {t('task.statusSelect.noTransitions')}
       </div>
     );
@@ -68,46 +67,37 @@ export function StatusSubmenuTransitionList({
           statusId && statusId !== targetStatus ? [statusId] : undefined
         );
         const isSelected = targetStatus.toLowerCase() === task.originalStatus?.toLowerCase();
-        const selectedRing = isSelected
-          ? 'ring-1 ring-blue-500 dark:ring-blue-400'
-          : '';
         const isPending = pendingTransitionId === transition.id;
 
         return (
-          <div
+          <Button
             key={transition.id}
-            className={`mb-1 rounded-md border last:mb-0 ${statusColors.bg} ${statusColors.border} ${selectedRing}`}
+            aria-current={isSelected || undefined}
+            className={`${MENU_ROW} ${isPending ? '!opacity-100' : ''}`}
+            disabled={isLoading}
+            type="button"
+            variant="ghost"
+            onClick={() =>
+              onSelect(
+                transition.id,
+                transition.to?.key,
+                transition.to?.display,
+                transition.screen?.id
+              )
+            }
           >
-            <Button
-              className={`flex w-full items-center gap-1.5 rounded-[inherit] border-0 bg-transparent !px-2 !py-1 text-left !text-xs font-medium leading-4 shadow-none hover:!bg-black/[0.06] active:!bg-black/10 dark:hover:!bg-white/[0.1] dark:active:!bg-white/[0.16] ${statusColors.text} ${
-                isPending ? '!opacity-100' : ''
-              }`}
-              disabled={isLoading}
-              type="button"
-              variant="ghost"
-              onClick={() =>
-                onSelect(
-                  transition.id,
-                  transition.to?.key,
-                  transition.to?.display,
-                  transition.screen?.id
-                )
-              }
-            >
-              <span className="min-w-0 flex-1 truncate">
+            <span className="min-w-0 flex-1">
+              <span
+                className={`inline-block max-w-full truncate rounded border px-1.5 text-xs font-medium leading-5 ${statusColors.bg} ${statusColors.border} ${statusColors.text}`}
+              >
                 {transition.to?.display || transition.display}
               </span>
-              {isPending ? (
-                <Icon
-                  className={`h-3.5 w-3.5 shrink-0 animate-spin ${statusColors.text}`}
-                  name="spinner"
-                />
-              ) : null}
-              {!isPending && isSelected ? (
-                <Icon className={`h-3.5 w-3.5 shrink-0 ${statusColors.text}`} name="check" />
-              ) : null}
-            </Button>
-          </div>
+            </span>
+            {isPending ? (
+              <Icon className="h-4 w-4 shrink-0 animate-spin text-gray-400" name="spinner" />
+            ) : null}
+            {!isPending && isSelected ? <Icon className={MENU_ROW_CHECK} name="check" /> : null}
+          </Button>
         );
       })}
     </>

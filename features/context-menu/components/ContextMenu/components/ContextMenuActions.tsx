@@ -5,25 +5,18 @@
 import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
 import type { Task } from '@/types';
 
-import { Button } from '@/components/Button';
 import { CardLinkIcon } from '@/components/CardLinkIcon';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { AssigneeSubmenu } from '@/features/context-menu/components/AssigneeSubmenu';
-import {
-  CONTEXT_MENU_GHOST_BUTTON_RESET,
-  CONTEXT_MENU_ITEM_ROW,
-  CONTEXT_MENU_ITEM_ROW_DESTRUCTIVE,
-  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
-  CONTEXT_MENU_SEPARATOR,
-} from '@/features/context-menu/contextMenuClasses';
+import { ContextMenuGroup } from '@/features/context-menu/components/ContextMenuGroup';
+import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
+import { MENU_ROW_ICON } from '@/features/context-menu/contextMenuClasses';
 
 interface ContextMenuActionsProps {
   assigneeOptions?: ContextMenuAssigneeOptions | null;
   currentSprintId: number | null;
   hasPosition: boolean;
-  /** Между шапкой меню и действиями уже есть строки подменю — нужен разделитель */
-  hasSubmenusAboveActions: boolean;
   hideRemoveFromPlan?: boolean;
   isAssigneeMenuOpen: boolean;
   isBacklogTask: boolean;
@@ -43,7 +36,6 @@ export function ContextMenuActions({
   assigneeOptions = null,
   currentSprintId,
   hasPosition,
-  hasSubmenusAboveActions,
   hideRemoveFromPlan = false,
   isAssigneeMenuOpen,
   isLoading,
@@ -60,102 +52,60 @@ export function ContextMenuActions({
 }: ContextMenuActionsProps) {
   const { t } = useI18n();
 
-  const showChangeAssignee = !isBacklogTask && Boolean(assigneeOptions) && Boolean(onAssigneeSelect);
-
-  const showStartLinking =
-    hasPosition && !isBacklogTask && !isKanbanView && Boolean(onStartLinking);
-
   const showRemoveFromPlan =
-    !hideRemoveFromPlan &&
-    !isBacklogTask &&
-    !isKanbanView &&
-    currentSprintId !== null &&
-    onRemoveFromPlan;
-
-  const showRemoveFromSprint = !isBacklogTask && currentSprintId !== null;
-
-  if (!showChangeAssignee && !showStartLinking && !showRemoveFromPlan && !showRemoveFromSprint) {
-    return null;
-  }
-
-  const hasRegularActions = showChangeAssignee || showStartLinking;
-  const hasDestructiveActions = showRemoveFromPlan || showRemoveFromSprint;
-  const showSeparatorBeforeRegular = hasRegularActions && hasSubmenusAboveActions;
-  const showSeparatorBeforeDestructive =
-    hasDestructiveActions && (hasRegularActions || hasSubmenusAboveActions);
+    !hideRemoveFromPlan && !isBacklogTask && !isKanbanView && currentSprintId !== null;
+  const canStartLinking = hasPosition && !isBacklogTask && !isKanbanView;
 
   return (
     <>
-      {hasRegularActions && (
-        <>
-          {showSeparatorBeforeRegular && <div className={CONTEXT_MENU_SEPARATOR} role="separator" />}
-          {showChangeAssignee && assigneeOptions && onAssigneeSelect ? (
-            <AssigneeSubmenu
-              isLoading={isLoading}
-              isOpen={isAssigneeMenuOpen}
-              options={assigneeOptions}
-              selectedAssigneeId={selectedAssigneeId}
-              task={task}
-              onSelect={(assigneeId) => {
-                onAssigneeSelect(assigneeId);
-                onClose();
-              }}
-              onToggle={onAssigneeToggle}
-            />
-          ) : null}
+      <ContextMenuGroup>
+        {!isBacklogTask && assigneeOptions && onAssigneeSelect ? (
+          <AssigneeSubmenu
+            isLoading={isLoading}
+            isOpen={isAssigneeMenuOpen}
+            options={assigneeOptions}
+            selectedAssigneeId={selectedAssigneeId}
+            task={task}
+            onSelect={(assigneeId) => {
+              onAssigneeSelect(assigneeId);
+              onClose();
+            }}
+            onToggle={onAssigneeToggle}
+          />
+        ) : null}
+        {canStartLinking && onStartLinking ? (
+          <ContextMenuRow
+            disabled={isLoading}
+            icon={<CardLinkIcon className={MENU_ROW_ICON} />}
+            label={t('sprintPlanner.contextMenu.linkCards')}
+            onClick={() => {
+              onStartLinking(task);
+              onClose();
+            }}
+          />
+        ) : null}
+      </ContextMenuGroup>
 
-          {showStartLinking && (
-            <Button
-              className={`${CONTEXT_MENU_ITEM_ROW} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-              disabled={isLoading}
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                onStartLinking?.(task);
-                onClose();
-              }}
-            >
-              <CardLinkIcon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" />
-              <span>{t('sprintPlanner.contextMenu.linkCards')}</span>
-            </Button>
-          )}
-        </>
-      )}
-
-      {hasDestructiveActions && (
-        <>
-          {showSeparatorBeforeDestructive && (
-            <div className={CONTEXT_MENU_SEPARATOR} role="separator" />
-          )}
-          {showRemoveFromPlan && (
-            <Button
-              className={`${CONTEXT_MENU_ITEM_ROW_DESTRUCTIVE} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-              disabled={isLoading}
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                onRemoveFromPlan?.();
-              }}
-            >
-              <Icon className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" name="circle-x" />
-              <span>{t('sprintPlanner.contextMenu.removeFromPlan')}</span>
-            </Button>
-          )}
-
-          {showRemoveFromSprint && (
-            <Button
-              className={`${CONTEXT_MENU_ITEM_ROW_DESTRUCTIVE} ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
-              disabled={isLoading}
-              type="button"
-              variant="ghost"
-              onClick={onRemoveFromSprint}
-            >
-              <Icon className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" name="trash" />
-              <span>{t('sprintPlanner.contextMenu.removeFromSprint')}</span>
-            </Button>
-          )}
-        </>
-      )}
+      <ContextMenuGroup>
+        {showRemoveFromPlan && onRemoveFromPlan ? (
+          <ContextMenuRow
+            destructive
+            disabled={isLoading}
+            icon={<Icon className="h-4 w-4 shrink-0" name="circle-x" />}
+            label={t('sprintPlanner.contextMenu.removeFromPlan')}
+            onClick={() => onRemoveFromPlan()}
+          />
+        ) : null}
+        {!isBacklogTask && currentSprintId !== null ? (
+          <ContextMenuRow
+            destructive
+            disabled={isLoading}
+            icon={<Icon className="h-4 w-4 shrink-0" name="trash" />}
+            label={t('sprintPlanner.contextMenu.removeFromSprint')}
+            onClick={onRemoveFromSprint}
+          />
+        ) : null}
+      </ContextMenuGroup>
     </>
   );
 }

@@ -1,46 +1,46 @@
 import type { CSSProperties } from 'react';
 
 interface TicTacToeCardPaint {
-  board: string;
   border: string;
-  cell: string;
-  cellWin: string;
+  grid: string;
   o: string;
+  surface: string;
+  text: string;
   x: string;
 }
 
 const TIC_TAC_TOE_PAINT_LIGHT: TicTacToeCardPaint = {
-  board: '#d5dbe3',
-  border: '#c3cad3',
-  cell: '#f7f8fa',
-  cellWin: '#e4edf8',
-  o: '#be123c',
-  x: '#1d4ed8',
+  border: '#dfe3e8',
+  grid: '#c9d0d9',
+  o: '#e11d48',
+  surface: '#fbfcfd',
+  text: '#334155',
+  x: '#2563eb',
 };
 
 const TIC_TAC_TOE_PAINT_DARK: TicTacToeCardPaint = {
-  board: '#12161e',
-  border: '#465062',
-  cell: '#2c3544',
-  cellWin: '#3c4e68',
-  o: '#ff9aaf',
-  x: '#8eb6ff',
+  border: '#3b4453',
+  grid: '#4b5566',
+  o: '#fb7185',
+  surface: '#242b37',
+  text: '#d6dde6',
+  x: '#7aa7ff',
 };
 
 export function getTicTacToeCardPaint(isDark = false): TicTacToeCardPaint {
   return isDark ? TIC_TAC_TOE_PAINT_DARK : TIC_TAC_TOE_PAINT_LIGHT;
 }
 
-/** Плоская доска: фон карточки — это линии сетки, без тени фото. */
+/** Плоский лист бумаги с сеткой «#»: без тени, чтобы не ложиться на задачу выше. */
 export function getTicTacToeCardStyle(isDark = false): CSSProperties {
   const paint = getTicTacToeCardPaint(isDark);
   return {
-    backgroundColor: paint.board,
+    backgroundColor: paint.surface,
     borderColor: paint.border,
     borderRadius: 0,
     borderStyle: 'solid',
     borderWidth: 1,
     boxShadow: 'none',
-    color: isDark ? '#e7ebf0' : '#1c2430',
+    color: paint.text,
   };
 }

@@ -5,6 +5,7 @@ import { ZodError, z } from 'zod';
 import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS, MAX_PLANNER_PART_INDEX } from '@/constants';
 import { PLANNER_COMMENT_TEXT_MAX_LENGTH } from '@/lib/comments/excalidrawCommentPayload';
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
+import { PLANNER_NOTE_TEXT_FORMAT_DESCRIPTION } from '@/lib/comments/stickyNoteInlineFormat';
 
 const MAX_OPS = 50;
 
@@ -87,7 +88,7 @@ const CreateNoteSchema = z.object({
   op: z.literal('createNote'),
   parent: NoteParentSchema.nullable().optional(),
   part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
-  text: z.string().min(1).max(PLANNER_COMMENT_TEXT_MAX_LENGTH),
+  text: z.string().min(1).max(PLANNER_COMMENT_TEXT_MAX_LENGTH).describe(PLANNER_NOTE_TEXT_FORMAT_DESCRIPTION),
   width: z.number().int().positive().max(2000).optional().describe(NOTE_WIDTH_DESCRIPTION),
 });
 
@@ -101,7 +102,12 @@ const UpdateNoteSchema = z.object({
   op: z.literal('updateNote'),
   parent: NoteParentSchema.nullable().optional(),
   part: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX).nullable().optional(),
-  text: z.string().min(1).max(PLANNER_COMMENT_TEXT_MAX_LENGTH).optional(),
+  text: z
+    .string()
+    .min(1)
+    .max(PLANNER_COMMENT_TEXT_MAX_LENGTH)
+    .optional()
+    .describe(PLANNER_NOTE_TEXT_FORMAT_DESCRIPTION),
   width: z.number().int().positive().max(2000).optional().describe(NOTE_WIDTH_DESCRIPTION),
 });
 

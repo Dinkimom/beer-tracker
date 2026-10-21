@@ -42,3 +42,16 @@ export function removeDemoPosition(taskId: string, isQa?: boolean): void {
     return Boolean(p.is_qa) !== isQa;
   });
 }
+
+export function upsertDemoComment(row: DemoFixtureState['comments'][number]): void {
+  const idx = state.comments.findIndex((c) => c.id === row.id);
+  if (idx >= 0) {
+    state.comments[idx] = row;
+  } else {
+    state.comments.push(row);
+  }
+}
+
+export function removeDemoComment(commentId: string): void {
+  state.comments = state.comments.filter((c) => c.id !== commentId);
+}

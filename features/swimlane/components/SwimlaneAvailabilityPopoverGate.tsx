@@ -5,6 +5,7 @@ import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { useI18n } from '@/contexts/LanguageContext';
 import { AvailabilityEventPopover } from '@/features/swimlane/components/AvailabilityEventPopover';
 import {
   deleteBoardAvailabilityEventAndPatchCache,
@@ -35,6 +36,7 @@ export function SwimlaneAvailabilityPopoverGate({
   onClose,
 }: SwimlaneAvailabilityPopoverGateProps) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
 
   if (!popover) {
     return null;
@@ -65,6 +67,7 @@ export function SwimlaneAvailabilityPopoverGate({
                 eventId: editing.id,
                 memberId: popover.memberId,
                 patchBoardEventsCache: patchCache,
+                t,
               })
           : undefined
       }
@@ -79,6 +82,7 @@ export function SwimlaneAvailabilityPopoverGate({
           patchBoardEventsCache: patchCache,
           sprintId: popover.sprintId,
           startDate,
+          t,
           techSprintSubtype,
         });
       }}

@@ -11,14 +11,19 @@ import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
 import {
-  CONTEXT_MENU_GHOST_BUTTON_RESET,
-  CONTEXT_MENU_ITEM_ROW_ACTIVE,
+  CONTEXT_MENU_DIVIDER_COLOR,
   CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
-  CONTEXT_MENU_ITEM_ROW_SUBMENU,
+  FLOATING_MENU_GLASS_SHELL,
+  FLOATING_TOOLBAR_ITEM_ON,
+  MENU_ROW_ICON,
+  MENU_SECTION_LABEL,
+  MENU_SUBMENU_ALIGN_INSET_PX,
 } from '@/features/context-menu/contextMenuClasses';
 import { useDataSyncEstimatesStorage } from '@/hooks/useLocalStorage';
 import { updateIssueWork } from '@/lib/beerTrackerApi';
+import { formatPointsForDisplay } from '@/lib/pointsUtils';
 
 interface EstimateSubmenuProps {
   buttonRef: React.RefObject<HTMLButtonElement | null>;
@@ -36,10 +41,12 @@ interface EstimateSubmenuProps {
 const ESTIMATE_OPTIONS = [0, ...Array.from({ length: 21 }, (_, i) => i + 1)];
 /** Фиксированная ширина колонки (только min раньше давал рост flex-ряда) */
 const COLUMN_WIDTH = 76;
-/** Два столбца фиксированной ширины (разделитель — border-r первого столбца, внутри box-border) */
-const SUBMENU_WIDTH_DOUBLE = COLUMN_WIDTH * 2;
-const SUBMENU_WIDTH_SINGLE = COLUMN_WIDTH;
+/** Поле `p-1` с двух сторон + кромка панели. */
+const SUBMENU_CHROME_PX = MENU_SUBMENU_ALIGN_INSET_PX * 2;
+const SUBMENU_WIDTH_DOUBLE = COLUMN_WIDTH * 2 + SUBMENU_CHROME_PX;
+const SUBMENU_WIDTH_SINGLE = COLUMN_WIDTH + SUBMENU_CHROME_PX;
 const SUBMENU_HEIGHT = 320;
+const SUBMENU_GAP = 4;
 
 export function EstimateSubmenu({
   task,
@@ -61,6 +68,9 @@ export function EstimateSubmenu({
   const currentSP = task.storyPoints ?? 0;
   const currentTP = task.testPoints ?? 0;
   const submenuWidth = hideTestPoints ? SUBMENU_WIDTH_SINGLE : SUBMENU_WIDTH_DOUBLE;
+  const estimateValue = hideTestPoints
+    ? `${formatPointsForDisplay(currentSP)} sp`
+    : `${formatPointsForDisplay(currentSP)} sp · ${formatPointsForDisplay(currentTP)} tp`;
 
   const updatePosition = useCallback(() => {
     if (!buttonRef.current || !menuRef.current) return;
@@ -70,11 +80,11 @@ export function EstimateSubmenu({
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    let left = menuRect.right + 4;
-    let top = buttonRect.top;
+    let left = menuRect.right + SUBMENU_GAP;
+    let top = buttonRect.top - MENU_SUBMENU_ALIGN_INSET_PX;
 
     if (left + submenuWidth > viewportWidth - 10) {
-      left = menuRect.left - submenuWidth - 4;
+      left = menuRect.left - submenuWidth - SUBMENU_GAP;
     }
     if (top + SUBMENU_HEIGHT > viewportHeight - 10) {
       top = viewportHeight - SUBMENU_HEIGHT - 10;
@@ -166,15 +176,13 @@ export function EstimateSubmenu({
       <div
         key={label}
         aria-label={ariaLabel}
-        className="flex shrink-0 flex-col border-r border-gray-200 last:border-r-0 dark:border-gray-600"
+        className={`flex shrink-0 flex-col px-0.5 [&+&]:border-l ${CONTEXT_MENU_DIVIDER_COLOR}`}
         role="group"
         style={{ width: COLUMN_WIDTH }}
       >
-        <div className="px-2 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
-          {label}
-        </div>
+        <div className={`${MENU_SECTION_LABEL} text-center`}>{label}</div>
         <div
-          className="overflow-y-auto overscroll-contain flex-1 py-1 scrollbar-thin-custom"
+          className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin-custom"
           style={{ maxHeight: SUBMENU_HEIGHT - 32 }}
           onWheel={handleScroll}
         >
@@ -186,10 +194,10 @@ export function EstimateSubmenu({
               <Button
                 key={value}
                 aria-pressed={isCurrent}
-                className={`flex h-auto min-h-0 w-full items-center justify-between gap-1 rounded-none px-2 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${CONTEXT_MENU_GHOST_BUTTON_RESET} ${
+                className={`!flex h-7 w-full !items-center !justify-between gap-1 !rounded-md border-0 bg-transparent !px-2 !py-0 text-sm tabular-nums shadow-none active:!scale-100 disabled:cursor-not-allowed disabled:opacity-50 ${
                   isCurrent
-                    ? 'bg-blue-50 font-medium text-blue-700 hover:!bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:!bg-blue-900/40'
-                    : 'text-gray-700 hover:!bg-gray-50 dark:text-gray-300 dark:hover:!bg-gray-700'
+                    ? `!font-medium ${FLOATING_TOOLBAR_ITEM_ON}`
+                    : `!font-normal text-gray-800 dark:text-gray-100 ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER}`
                 }`}
                 disabled={isLoading || isUpdating}
                 title={
@@ -204,13 +212,13 @@ export function EstimateSubmenu({
                 <span>{value}</span>
                 {isSuggested && !isCurrent && (
                   <TextTooltip content={t('sprintPlanner.contextMenu.estimateRecommended')}>
-                  <span className="truncate rounded bg-blue-100 px-1 text-[10px] text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                    {t('sprintPlanner.contextMenu.estimateRecommendedShort')}
-                  </span>
+                    <span className="truncate rounded bg-blue-500/10 px-1 text-[10px] font-medium leading-4 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">
+                      {t('sprintPlanner.contextMenu.estimateRecommendedShort')}
+                    </span>
                   </TextTooltip>
                 )}
                 {isCurrent && (
-                  <Icon aria-hidden className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" name="check" />
+                  <Icon aria-hidden className="h-3.5 w-3.5 shrink-0" name="check" />
                 )}
               </Button>
             );
@@ -235,7 +243,7 @@ export function EstimateSubmenu({
         }}
       >
         <div
-          className={`flex shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white py-0 shadow-2xl dark:border-gray-700 dark:bg-gray-800 ${OVERLAY_PANEL_ENTER}`}
+          className={`relative flex shrink-0 overflow-hidden p-1 ${FLOATING_MENU_GLASS_SHELL} ${OVERLAY_PANEL_ENTER}`}
           style={{
             maxHeight: SUBMENU_HEIGHT,
             width: submenuWidth,
@@ -247,7 +255,7 @@ export function EstimateSubmenu({
         </div>
         {isUpdating && (
           <div
-            className="absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex items-center justify-center rounded-lg"
+            className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/60 dark:bg-gray-900/50"
             style={{ zIndex: 1 }}
           >
             <Icon className="animate-spin h-6 w-6 text-blue-600 dark:text-blue-400" name="spinner" />
@@ -260,27 +268,15 @@ export function EstimateSubmenu({
 
   return (
     <div className="relative">
-      <Button
+      <ContextMenuRow
         ref={buttonRef}
-        className={`${CONTEXT_MENU_ITEM_ROW_SUBMENU} ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${
-          isOpen ? CONTEXT_MENU_ITEM_ROW_ACTIVE : ''
-        } ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
         disabled={isLoading}
-        type="button"
-        variant="ghost"
+        icon={<Icon aria-hidden className={MENU_ROW_ICON} name="edit" />}
+        label={t('sprintPlanner.contextMenu.changeEstimate')}
+        submenuOpen={isOpen}
+        value={estimateValue}
         onClick={onToggle}
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Icon className="h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" name="edit" />
-          <span className="min-w-0 truncate font-medium">{t('sprintPlanner.contextMenu.changeEstimate')}</span>
-        </div>
-        <Icon
-          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
-            isOpen ? 'rotate-90' : ''
-          }`}
-          name="chevron-right"
-        />
-      </Button>
+      />
 
       {renderSubmenu()}
     </div>

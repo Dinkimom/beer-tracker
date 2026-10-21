@@ -12,7 +12,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
-import { FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses';
+import { FLOATING_MENU_GLASS_SHELL } from '@/features/context-menu/contextMenuClasses';
 import { FeatureLaneConvertNewPanel } from '@/features/sprint/components/SprintPlanner/feature-lanes/FeatureLaneConvertNewPanel';
 import { QUICK_ADD_KIND_PICKER_WIDTH_PX, QUICK_ADD_MENU_MIN_WIDTH_PX } from '@/hooks/useFollowAnchorRect';
 
@@ -135,7 +135,7 @@ export function QuickAddMenuConvert({
         <Popover.Content
           align={contentAlign}
           avoidCollisions
-          className={`${FLOATING_MENU_SHELL} overflow-hidden font-sans outline-none ${OVERLAY_FLOATING_ANIMATION}`}
+          className={`relative overflow-hidden font-sans outline-none ${FLOATING_MENU_GLASS_SHELL} ${OVERLAY_FLOATING_ANIMATION}`}
           collisionPadding={8}
           side="top"
           sideOffset={6}

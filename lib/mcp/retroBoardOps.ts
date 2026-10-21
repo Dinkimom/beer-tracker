@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { STICKY_NOTE_INLINE_FORMAT_DESCRIPTION } from '@/lib/comments/stickyNoteInlineFormat';
 import {
   RETRO_COLUMN_PRESETS,
   RETRO_COLUMN_TITLE_MAX_LENGTH,
@@ -15,12 +16,12 @@ const RetroBoardOpSchema = z.discriminatedUnion('op', [
     columnId: columnIdField,
     columnPreset: columnPresetField,
     op: z.literal('addNote'),
-    text: z.string().trim().min(1).max(RETRO_NOTE_MAX_LENGTH),
+    text: z.string().trim().min(1).max(RETRO_NOTE_MAX_LENGTH).describe(STICKY_NOTE_INLINE_FORMAT_DESCRIPTION),
   }),
   z.object({
     cardId: z.string().min(1).max(120),
     op: z.literal('updateNote'),
-    text: z.string().trim().min(1).max(RETRO_NOTE_MAX_LENGTH),
+    text: z.string().trim().min(1).max(RETRO_NOTE_MAX_LENGTH).describe(STICKY_NOTE_INLINE_FORMAT_DESCRIPTION),
   }),
   z.object({
     cardId: z.string().min(1).max(120),

@@ -77,6 +77,7 @@ describe('finish sprint task transfer', () => {
 
 describe('validateFinishSprintSubmit', () => {
   const sprintInfo = { id: 1, status: 'in_progress' };
+  const t = (key: string) => key;
 
   beforeEach(() => {
     toastErrorMock.mockReset();
@@ -87,6 +88,7 @@ describe('validateFinishSprintSubmit', () => {
       moveTasksTo: 'backlog',
       selectedSprintId: null,
       sprintInfo: null,
+      t,
     })).toBe(false);
     expect(toastErrorMock).not.toHaveBeenCalled();
   });
@@ -96,8 +98,9 @@ describe('validateFinishSprintSubmit', () => {
       moveTasksTo: 'sprint',
       selectedSprintId: null,
       sprintInfo,
+      t,
     })).toBe(false);
-    expect(toastErrorMock).toHaveBeenCalledWith('Необходимо выбрать спринт для переноса задач');
+    expect(toastErrorMock).toHaveBeenCalledWith('sprint.finish.selectTargetSprint');
   });
 
   it('allows backlog transfer without a selected sprint', () => {
@@ -105,6 +108,7 @@ describe('validateFinishSprintSubmit', () => {
       moveTasksTo: 'backlog',
       selectedSprintId: null,
       sprintInfo,
+      t,
     })).toBe(true);
     expect(toastErrorMock).not.toHaveBeenCalled();
   });

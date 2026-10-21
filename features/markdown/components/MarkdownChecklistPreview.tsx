@@ -7,9 +7,9 @@ import {
 } from '@/lib/markdown/markdownChecklist';
 
 const MARKDOWN_HEADING_CLASS_CARD: Record<number, string> = {
-  1: 'mb-1 mt-1 text-xs font-semibold',
-  2: 'mb-0.5 mt-1.5 text-xs font-semibold',
-  3: 'mb-0.5 mt-1 text-xs font-medium',
+  1: 'mb-1 mt-1 text-base font-bold leading-tight',
+  2: 'mb-0.5 mt-1.5 text-sm font-semibold leading-snug',
+  3: 'mb-0.5 mt-1 text-xs font-semibold',
 };
 
 const CARD_LINE_ITEM_CLASS = 'py-0.5';

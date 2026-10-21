@@ -44,6 +44,7 @@ export async function submitBoardAvailabilityEvent(args: {
   setItems?: (updater: (prev: BoardAvailabilityEvent[]) => BoardAvailabilityEvent[]) => void;
   sprintId?: number;
   startDate: string;
+  t: (key: string) => string;
   techSprintSubtype?: TechSprintType;
 }): Promise<void> {
   const techSprintFields =
@@ -63,7 +64,7 @@ export async function submitBoardAvailabilityEvent(args: {
         ...techSprintFields,
       });
       applyAvailabilityEventUpsert(updated, true, args.setItems, args.patchBoardEventsCache);
-      toast.success('Событие обновлено');
+      toast.success(args.t('sprintPlanner.swimlane.availability.updated'));
       return;
     }
 
@@ -78,10 +79,10 @@ export async function submitBoardAvailabilityEvent(args: {
       ...techSprintFields,
     });
     applyAvailabilityEventUpsert(created, false, args.setItems, args.patchBoardEventsCache);
-    toast.success('Событие добавлено');
+    toast.success(args.t('sprintPlanner.swimlane.availability.created'));
   } catch (error) {
     console.error(error);
-    toast.error(args.editing ? 'Не удалось обновить событие' : 'Не удалось добавить событие');
+    toast.error(args.t(args.editing ? 'sprintPlanner.swimlane.availability.updateFailed' : 'sprintPlanner.swimlane.availability.createFailed'));
     throw error;
   }
 }
@@ -98,6 +99,7 @@ export async function deleteBoardAvailabilityEventAndPatchCache(args: {
   eventId: string;
   memberId: string;
   patchBoardEventsCache: (patch: (prev: BoardAvailabilityEvent[]) => BoardAvailabilityEvent[]) => void;
+  t: (key: string) => string;
 }): Promise<void> {
   try {
     await deleteBoardAvailabilityEvent({
@@ -107,9 +109,9 @@ export async function deleteBoardAvailabilityEventAndPatchCache(args: {
     });
   } catch (error) {
     console.error(error);
-    toast.error('Не удалось удалить событие');
+    toast.error(args.t('sprintPlanner.swimlane.availability.deleteFailed'));
     throw error;
   }
   args.patchBoardEventsCache((prev) => removeAvailabilityEventById(prev, args.eventId));
-  toast.success('Событие удалено');
+  toast.success(args.t('sprintPlanner.swimlane.availability.deleted'));
 }

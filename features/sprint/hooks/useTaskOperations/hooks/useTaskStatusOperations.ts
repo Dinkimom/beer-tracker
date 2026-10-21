@@ -7,6 +7,7 @@ import type { Task } from '@/types';
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 
+import { useI18n } from '@/contexts/LanguageContext';
 import { mergeTransitionExtraFieldsIntoTask } from '@/features/sprint/utils/mergeTransitionFieldsIntoTask';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
@@ -36,6 +37,7 @@ export function useTaskStatusOperations({
   tasks,
   setTasks,
 }: UseTaskStatusOperationsProps) {
+  const { t } = useI18n();
   const { activeOrganizationId } = useProductTenantOrganizations({ pollIntervalMs: 0 });
   const { data: plannerRules } = usePlannerIntegrationRules(activeOrganizationId);
 
@@ -108,7 +110,7 @@ export function useTaskStatusOperations({
           transitionId,
         });
 
-        toast.success('Статус изменен');
+        toast.success(t('sprint.taskToast.statusChanged'));
       } catch (error) {
         console.error('Error changing status:', error);
         setTasks((prev) =>
@@ -120,7 +122,7 @@ export function useTaskStatusOperations({
         }
       }
     },
-    [tasks, setTasks, plannerRules]
+    [tasks, setTasks, plannerRules, t]
   );
 
   return {

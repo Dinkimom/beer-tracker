@@ -11,7 +11,15 @@ import { Icon } from '@/components/Icon';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
+import {
+  CONTEXT_MENU_SEPARATOR,
+  FLOATING_MENU_GLASS_SHELL,
+  glassLensControlClass,
+  MENU_PANEL_PADDING,
+  MENU_ROW,
+  MENU_ROW_CHECK,
+  MENU_ROW_STACK,
+} from '@/features/context-menu/contextMenuClasses';
 import {
   compareSprintNamesByNumberDesc,
 } from '@/utils/sprintDisplayName';
@@ -46,6 +54,41 @@ function sprintSelectorTriggerClassName(
   return `${layout} ${chrome} ${className ?? ''}`;
 }
 
+const SOLID_ROW_CLASS =
+  'h-auto min-h-0 w-full !justify-start cursor-pointer !rounded-none border-b border-gray-100 !px-2.5 !py-2.5 text-left shadow-none last:border-b-0 dark:border-gray-700';
+
+/**
+ * Список спринтов. Стекло — как меню задачи: подложка в `::before`, поэтому скроллит
+ * внутренний блок, а «Создать спринт» стоит над ним отдельной строкой (sticky-шапка
+ * на стекле пропускала бы строки под собой). Выбранный — галочкой, а не заливкой.
+ */
+const SPRINT_MENU_CLASSES = {
+  glass: {
+    body: 'flex min-h-0 flex-1 flex-col',
+    content: `relative flex max-h-[600px] flex-col overflow-hidden outline-none ${FLOATING_MENU_GLASS_SHELL}`,
+    createButton: `${MENU_ROW} !font-medium !text-blue-700 dark:!text-blue-300`,
+    createWrap: `shrink-0 ${MENU_PANEL_PADDING}`,
+    list: `min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin-custom ${MENU_PANEL_PADDING} ${MENU_ROW_STACK}`,
+    row: () => `${MENU_ROW} whitespace-nowrap`,
+  },
+  solid: {
+    body: 'flex flex-col',
+    content:
+      'max-h-[600px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg outline-none dark:border-gray-700 dark:bg-gray-800',
+    createButton:
+      'h-auto min-h-0 w-full !justify-start cursor-pointer !rounded-none !px-2.5 !py-2.5 text-left shadow-none !text-sm !font-medium !text-blue-700 hover:!bg-gray-50 dark:!text-blue-300 dark:hover:!bg-gray-700',
+    createWrap:
+      'sticky top-0 z-10 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
+    list: 'contents',
+    row: (isSelected: boolean) =>
+      `${SOLID_ROW_CLASS} ${
+        isSelected
+          ? '!border-blue-100 !bg-blue-50 dark:!border-blue-800 dark:!bg-blue-900/30'
+          : 'hover:!bg-gray-50 dark:hover:!bg-gray-700'
+      }`,
+  },
+} as const;
+
 interface SprintSelectorProps {
   className?: string;
   /** true — поповер поверх модалки (z-index выше modal) */
@@ -54,7 +97,7 @@ interface SprintSelectorProps {
   selectedSprintId: number | null;
   sprints: SprintListItem[];
   sprintsLoading?: boolean;
-  /** На стеклянной плашке триггер — линза. Список спринтов остаётся плотным. */
+  /** На стеклянной плашке триггер — линза, список — стеклянное меню. */
   surface?: 'glass' | 'solid';
   /** Открыть флоу создания спринта (закрывает поповер). Без колбэка — строки create нет. */
   onCreateSprint?: () => void;
@@ -74,6 +117,8 @@ export function SprintSelector({
 }: SprintSelectorProps) {
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
+  const isGlass = surface === 'glass';
+  const menu = SPRINT_MENU_CLASSES[surface];
 
   const sortedSprints = [...sprints].sort((a, b) =>
     compareSprintNamesByNumberDesc(a.name, b.name)
@@ -165,61 +210,61 @@ export function SprintSelector({
       <Popover.Portal>
         <Popover.Content
           align="start"
-          className={`max-h-[600px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg outline-none dark:border-gray-700 dark:bg-gray-800 ${OVERLAY_FLOATING_ANIMATION} ${inModal ? 'z-[2010]' : ZIndex.class('dropdownContent')}`}
+          className={`${menu.content} ${OVERLAY_FLOATING_ANIMATION} ${inModal ? 'z-[2010]' : ZIndex.class('dropdownContent')}`}
           side="bottom"
           sideOffset={4}
           style={{
-            width: 'var(--radix-popover-trigger-width)',
+            // На стекле строки шире (поле панели + галочка): не уже триггера, но по контенту.
+            width: isGlass ? 'max-content' : 'var(--radix-popover-trigger-width)',
             minWidth: 'var(--radix-popover-trigger-width)',
             maxWidth: 'min(100vw - 16px, 24rem)',
             zIndex: inModal ? 2010 : ZIndex.dropdownContent,
           }}
         >
-          <div className="flex flex-col">
+          <div className={menu.body}>
             {canCreateSprint ? (
-              <div className="sticky top-0 z-10 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                <Button
-                  className="h-auto min-h-0 w-full !justify-start cursor-pointer !rounded-none !px-2.5 !py-2.5 text-left shadow-none hover:!bg-gray-50 dark:hover:!bg-gray-700"
-                  type="button"
-                  variant="ghost"
-                  onClick={handleCreateSprint}
-                >
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-blue-700 dark:text-blue-300">
+              <div className={menu.createWrap}>
+                <Button className={menu.createButton} type="button" variant="ghost" onClick={handleCreateSprint}>
+                  <span className="flex items-center gap-1.5">
                     <Icon className="h-4 w-4 shrink-0" name="plus" />
                     {t('sprint.selector.create')}
                   </span>
                 </Button>
               </div>
             ) : null}
-            {sortedSprints.length === 0 ? (
-              <div className="px-2 py-2 text-sm text-gray-500 dark:text-gray-400">
-                {t('sprint.selector.empty')}
-              </div>
-            ) : (
-              sortedSprints.map((sprint) => {
-                const isSelected = sprint.id === selectedSprintId;
-                return (
-                  <Button
-                    key={sprint.id}
-                    className={`h-auto min-h-0 w-full !justify-start cursor-pointer !rounded-none border-b border-gray-100 !px-2.5 !py-2.5 text-left shadow-none last:border-b-0 dark:border-gray-700 ${
-                      isSelected
-                        ? '!border-blue-100 !bg-blue-50 dark:!border-blue-800 dark:!bg-blue-900/30'
-                        : 'hover:!bg-gray-50 dark:hover:!bg-gray-700'
-                    }`}
-                    type="button"
-                    variant="ghost"
-                    onClick={() => handleSelect(sprint.id)}
-                  >
-                    <SprintSelectorOptionLabel
-                      dateClassName={sprintSelectorItemDateClass(isSelected)}
-                      formatDate={formatDate}
-                      sprint={sprint}
-                      titleClassName={sprintSelectorItemTitleClass(isSelected)}
-                    />
-                  </Button>
-                );
-              })
-            )}
+            {canCreateSprint && isGlass ? <div className={CONTEXT_MENU_SEPARATOR} role="separator" /> : null}
+            <div className={menu.list}>
+              {sortedSprints.length === 0 ? (
+                <div className="px-2 py-2 text-sm text-gray-500 dark:text-gray-400">
+                  {t('sprint.selector.empty')}
+                </div>
+              ) : (
+                sortedSprints.map((sprint) => {
+                  const isSelected = sprint.id === selectedSprintId;
+                  const highlightSelected = isSelected && !isGlass;
+                  return (
+                    <Button
+                      key={sprint.id}
+                      aria-current={isSelected || undefined}
+                      className={menu.row(isSelected)}
+                      type="button"
+                      variant="ghost"
+                      onClick={() => handleSelect(sprint.id)}
+                    >
+                      <SprintSelectorOptionLabel
+                        dateClassName={sprintSelectorItemDateClass(highlightSelected)}
+                        formatDate={formatDate}
+                        sprint={sprint}
+                        titleClassName={sprintSelectorItemTitleClass(highlightSelected)}
+                      />
+                      {isSelected && isGlass ? (
+                        <Icon className={`ml-auto ${MENU_ROW_CHECK}`} name="check" />
+                      ) : null}
+                    </Button>
+                  );
+                })
+              )}
+            </div>
           </div>
         </Popover.Content>
       </Popover.Portal>

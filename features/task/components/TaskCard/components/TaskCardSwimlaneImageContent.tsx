@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 
+import { Icon } from '@/components/Icon';
 import { usePlannerRemoteMediaEnabled } from '@/contexts/PlannerRemoteMediaContext';
 import {
   getPhotoCardCaptionClass,
@@ -11,6 +12,7 @@ import {
 } from '@/features/task/utils/photoCardSurface';
 import { resolveDeferredPlannerMediaUrl } from '@/features/task/utils/plannerRemoteMedia';
 
+import { PhotoCardImage } from './PhotoCardImage';
 import { useTaskCardSwimlaneImageDraft } from './TaskCardSwimlaneImageDraftContext';
 import { TaskCardSwimlaneImageDraftEditor } from './TaskCardSwimlaneImageDraftEditor';
 
@@ -30,22 +32,17 @@ function renderPhotoCardWellBody(params: {
   imageUrl?: string;
 }): ReactNode {
   if (params.displayUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        alt=""
-        className="pointer-events-none h-full w-full object-contain"
-        decoding="async"
-        fetchPriority="low"
-        loading="lazy"
-        src={params.displayUrl}
-      />
-    );
+    return <PhotoCardImage className="pointer-events-none" lazy src={params.displayUrl} />;
   }
   if (params.imageUrl) {
     return null;
   }
-  return <div className={getPhotoCardEmptySlotClass()}>{params.emptyLabel}</div>;
+  return (
+    <div className={getPhotoCardEmptySlotClass()}>
+      <Icon className="h-5 w-5" name="image" />
+      <span>{params.emptyLabel}</span>
+    </div>
+  );
 }
 
 export function TaskCardSwimlaneImageContent({

@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { Icon } from '@/components/Icon';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
+import { MENU_ROW, MENU_ROW_OPEN, MENU_ROW_STACK } from '@/features/context-menu/contextMenuClasses';
 
 import {
   isClosedQuickAddIssue,
@@ -28,13 +29,9 @@ function renderHighlightedText(text: string, query: string): ReactNode {
   );
 }
 
+/** Строка как у меню задачи; активная (стрелки/ховер) — фон «открыто», без отдельного ховера. */
 function resultRowClass(isActive: boolean): string {
-  const base =
-    'flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-sm transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50';
-  if (isActive) {
-    return `${base} bg-gray-100 dark:bg-gray-700`;
-  }
-    return `${base} hover:bg-gray-50 active:bg-gray-100 dark:hover:bg-gray-700/70 dark:active:bg-gray-600`;
+  return isActive ? `${MENU_ROW} ${MENU_ROW_OPEN}` : MENU_ROW;
 }
 
 interface QuickAddIssueSearchResultsProps {
@@ -87,7 +84,12 @@ export function QuickAddIssueSearchResults({
   }
 
   return (
-    <ul aria-label={t('sprintPlanner.swimlane.quickAddMenu.searchResults')} id={listId} role="listbox">
+    <ul
+      aria-label={t('sprintPlanner.swimlane.quickAddMenu.searchResults')}
+      className={MENU_ROW_STACK}
+      id={listId}
+      role="listbox"
+    >
       {visibleResults.map((item, index) => {
         const isActive = index === activeIndex;
         const isClosed = isClosedQuickAddIssue(item.task);
@@ -104,17 +106,17 @@ export function QuickAddIssueSearchResults({
               onMouseEnter={() => onActiveIndexChange(index)}
             >
               <OverflowTooltip content={item.key}>
-              <span className="w-[4.75rem] shrink-0 truncate text-xs tabular-nums text-gray-600 dark:text-gray-300">
+              <span className="w-[4.75rem] shrink-0 truncate text-xs tabular-nums text-gray-500 dark:text-gray-400">
                 {renderHighlightedText(item.key, searchQuery)}
               </span>
               </OverflowTooltip>
               <OverflowTooltip content={item.summary}>
-              <span className="min-w-0 flex-1 truncate font-medium text-gray-900 dark:text-gray-100">
+              <span className="min-w-0 flex-1 truncate text-gray-900 dark:text-gray-100">
                 {renderHighlightedText(item.summary, searchQuery)}
               </span>
               </OverflowTooltip>
               {isClosed ? (
-                <span className="shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-600 dark:text-gray-200">
+                <span className="shrink-0 rounded bg-black/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-white/10 dark:text-gray-300">
                   {t('sprintPlanner.swimlane.quickAddMenu.closedIssue')}
                 </span>
               ) : null}

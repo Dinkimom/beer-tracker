@@ -5,6 +5,7 @@ import type { QuickAddMode, QuickAddPickerItem } from './types';
 import { useLayoutEffect, useRef, type KeyboardEvent } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { MENU_PANEL_PADDING, MENU_ROW_STACK } from '@/features/context-menu/contextMenuClasses';
 
 import { QuickAddMenuCloseButton } from './QuickAddMenuCloseButton';
 import {
@@ -71,7 +72,7 @@ export function QuickAddMenuKindPicker({
       <div
         ref={menuRef}
         aria-label={heading}
-        className="pt-1"
+        className={`${MENU_PANEL_PADDING} ${MENU_ROW_STACK}`}
         role="menu"
         onKeyDown={handleMenuKeyDown}
       >

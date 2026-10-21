@@ -146,6 +146,54 @@ function positionFromCell(task: Task, assigneeId: string, startCell: number, dur
   };
 }
 
+/** Позиция без бейзлайна: на доске нет «плана», от которого карточка отстаёт. */
+export function withoutPlanBaseline(position: TaskPosition): TaskPosition {
+  const { plannedDuration: _duration, plannedStartDay: _day, plannedStartPart: _part, ...rest } =
+    position;
+  return rest;
+}
+
+export function hasPlanBaseline(position: TaskPosition): boolean {
+  return (
+    position.plannedDuration != null ||
+    position.plannedStartDay != null ||
+    position.plannedStartPart != null
+  );
+}
+
+/** Бейзлайн там, где карточка стоит сейчас. */
+export function withPlanBaselineAtPosition(position: TaskPosition): TaskPosition {
+  return {
+    ...position,
+    plannedDuration: position.duration,
+    plannedStartDay: position.startDay,
+    plannedStartPart: position.startPart,
+  };
+}
+
+/**
+ * Карточка задачи, перенесённой из другого спринта: первый день на дорожке исполнителя.
+ * Пересечения с другими карточками не обходим — место выберут перетаскиванием.
+ * Длительность: исходная карточка, затем оценка, затем один день.
+ * Бейзлайна нет, пока перенос не сохранят.
+ */
+export function buildMovedTaskDraftPosition(input: {
+  developers: ReadonlyArray<Pick<Developer, 'id' | 'name'>>;
+  sourceDuration: number | null;
+  task: Task;
+}): TaskPosition | null {
+  const { task } = input;
+  if (!task.assignee) {
+    return null;
+  }
+  const laneId = resolvePlanLaneId(task.assignee, task.assigneeName, input.developers);
+  if (laneId == null) {
+    return null;
+  }
+  const duration = input.sourceDuration ?? assigneePlanDuration(task) ?? getPartsPerDay();
+  return withoutPlanBaseline(positionFromCell(task, laneId, 0, duration));
+}
+
 /**
  * Раскладывает незапланированные задачи выбранных исполнителей
  * в свободные ячейки, не двигая уже сохранённые карточки.

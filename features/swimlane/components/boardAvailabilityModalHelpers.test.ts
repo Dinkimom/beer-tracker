@@ -20,6 +20,7 @@ vi.mock('@/lib/beerTrackerApi', () => ({
 const deleteBoardAvailabilityEventMock = vi.mocked(deleteBoardAvailabilityEvent);
 const toastSuccessMock = vi.mocked(toast.success);
 const toastErrorMock = vi.mocked(toast.error);
+const t = (key: string) => key;
 
 const existingEvent: BoardAvailabilityEvent = {
   endDate: '2026-09-10',
@@ -50,6 +51,7 @@ describe('deleteBoardAvailabilityEventAndPatchCache', () => {
       eventId: 'evt-1',
       memberId: 'dev-1',
       patchBoardEventsCache,
+      t,
     });
 
     expect(deleteBoardAvailabilityEventMock).toHaveBeenCalledWith({
@@ -58,7 +60,7 @@ describe('deleteBoardAvailabilityEventAndPatchCache', () => {
       memberId: 'dev-1',
     });
     expect(patchBoardEventsCache).toHaveBeenCalledTimes(1);
-    expect(toastSuccessMock).toHaveBeenCalledWith('Событие удалено');
+    expect(toastSuccessMock).toHaveBeenCalledWith('sprintPlanner.swimlane.availability.deleted');
   });
 
   it('shows an error and rethrows when delete fails', async () => {
@@ -73,11 +75,12 @@ describe('deleteBoardAvailabilityEventAndPatchCache', () => {
         eventId: 'evt-1',
         memberId: 'dev-1',
         patchBoardEventsCache,
+        t,
       })
     ).rejects.toThrow(error);
 
     expect(patchBoardEventsCache).not.toHaveBeenCalled();
-    expect(toastErrorMock).toHaveBeenCalledWith('Не удалось удалить событие');
+    expect(toastErrorMock).toHaveBeenCalledWith('sprintPlanner.swimlane.availability.deleteFailed');
     consoleError.mockRestore();
   });
 });

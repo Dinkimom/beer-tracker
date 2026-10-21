@@ -4,9 +4,9 @@ import { useId, type RefObject } from 'react';
 
 import { Button } from '@/components/Button';
 import { CustomSelect, type CustomSelectOption } from '@/components/CustomSelect';
-import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatQuickAddQueueLabel } from '@/features/board/quickAddQueueOptions';
+import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 
 import { QuickAddIssueTypeSelect } from '../QuickAddIssueTypeSelect';
 
@@ -14,13 +14,13 @@ import { QuickAddMenuAssigneeField } from './QuickAddMenuAssigneeField';
 import { isQuickAddSubmitKey } from './quickAddMenuKeyboard';
 import { QuickAddQueueBadge } from './QuickAddQueueBadge';
 
-const TITLE_FIELD_CLASS =
-  'flex items-start rounded-md border border-gray-200 bg-white focus-within:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:focus-within:border-blue-400';
+/** Поле-линза на стекле; в фокусе меняется кромка (`focus-within`, т.к. фокус у textarea внутри). */
+const TITLE_FIELD_CLASS = `flex items-start rounded-lg ${glassLensControlClass()} focus-within:!border-blue-500 dark:focus-within:!border-blue-400 dark:focus-within:!bg-gray-900`;
 
 const TITLE_TEXTAREA_CLASS =
   'min-h-[4.5rem] min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm leading-6 text-gray-900 outline-none placeholder:text-gray-500 dark:text-gray-100 dark:placeholder:text-gray-400';
 
-const SELECT_TRIGGER_CLASS = 'min-w-0 flex-1 !h-9 !px-3.5';
+const SELECT_TRIGGER_CLASS = 'min-w-0 flex-1 !h-9 !rounded-lg !px-3';
 
 interface QuickAddMenuNewPanelProps {
   assigneeId?: string;
@@ -81,7 +81,7 @@ export function QuickAddMenuNewPanel({
   const titleInputId = useId();
   const placeholder = t('sprintPlanner.swimlane.quickAddMenu.titlePlaceholder');
 
-  const renderQueueOption = (option: CustomSelectOption<string>, ctx: { isSelected: boolean }) => {
+  const renderQueueOption = (option: CustomSelectOption<string>) => {
     const name = queueNamesByKey.get(option.value) ?? option.value;
     return (
       <span className="flex min-w-0 items-center gap-2">
@@ -89,9 +89,6 @@ export function QuickAddMenuNewPanel({
         <span className="min-w-0 truncate font-medium">
           {formatQuickAddQueueLabel(option.value, name)}
         </span>
-        {ctx.isSelected ? (
-          <Icon aria-hidden className="ml-auto h-3.5 w-3.5 shrink-0 text-gray-500 dark:text-gray-400" name="check" />
-        ) : null}
       </span>
     );
   };
@@ -167,6 +164,7 @@ export function QuickAddMenuNewPanel({
           searchPlaceholder={t('sprintPlanner.swimlane.quickAddMenu.queueSearchPlaceholder')}
           searchable
           size="compact"
+          surface="glass"
           title={t('sprintPlanner.swimlane.quickAddMenu.queueTitle')}
           value={queueKey}
           onChange={onQueueChange}
@@ -193,13 +191,14 @@ export function QuickAddMenuNewPanel({
           searchPlaceholder={t('sprintPlanner.swimlane.quickAddMenu.parentSearchPlaceholder')}
           searchable
           size="compact"
+          surface="glass"
           title={t('sprintPlanner.swimlane.quickAddMenu.parentTitle')}
           value={parentKey}
           onChange={onParentChange}
           onSearchQueryChange={onParentSearchQueryChange}
         />
         <Button
-          className="!h-9 !min-h-0 shrink-0 !px-3.5 !py-0"
+          className="!h-9 !min-h-0 shrink-0 !rounded-lg !px-3.5 !py-0"
           disabled={!canCreate}
           type="button"
           variant={canCreate ? 'primary' : 'outline'}

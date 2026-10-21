@@ -4,6 +4,7 @@ import type { RetroCommentAuthor, RetroVisibleCard } from '@/lib/retro/retroBoar
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { PhotoCardImage } from '@/features/task/components/TaskCard/components/PhotoCardImage';
 import {
   getPhotoCardPaddingClass,
   getPhotoCardStyle,
@@ -39,12 +40,7 @@ export function RetroPhotoCard({
       <div className={getPhotoCardPaddingClass()}>
         <div className={`${getPhotoCardWellClass()} h-36`}>
           {/* Local retro images are data URLs kept in this browser. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt={t('retro.imageAlt')}
-            className="h-full w-full object-contain"
-            src={card.imageDataUrl}
-          />
+          <PhotoCardImage alt={t('retro.imageAlt')} src={card.imageDataUrl} />
         </div>
       </div>
       <button

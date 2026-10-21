@@ -7,6 +7,7 @@ import type { Task, TaskLink, TaskPosition } from '@/types';
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 
+import { useI18n } from '@/contexts/LanguageContext';
 import { removeIssueFromSprint } from '@/lib/beerTrackerApi';
 
 import { findTaskById, getActualTaskId } from '../utils/taskUtils';
@@ -47,6 +48,7 @@ export function useTaskSprintOperations({
   onTasksReload,
   updateXarrow,
 }: UseTaskSprintOperationsProps) {
+  const { t } = useI18n();
   const moveToSprint = useCallback(
     async (taskId: string, sprintId: number, options?: { notify?: boolean }): Promise<void> => {
       const snapshot = collectSprintOperationSnapshot({
@@ -58,7 +60,7 @@ export function useTaskSprintOperations({
         getActualTaskId,
       });
       const targetSprint = sprints.find((s) => s.id === sprintId);
-      const sprintName = targetSprint?.name || `спринт ${sprintId}`;
+      const sprintName = targetSprint?.name || t('sprint.fallbackName', { id: sprintId });
 
       await executeMoveToSprint({
         deleteLink,
@@ -71,7 +73,7 @@ export function useTaskSprintOperations({
         setTasks,
         snapshot,
         sprintId,
-        sprintName,
+        successMessage: t('sprint.taskToast.movedToSprint', { sprintName }),
         taskId,
         updateXarrow,
       });
@@ -89,6 +91,7 @@ export function useTaskSprintOperations({
       deleteLink,
       onTasksReload,
       updateXarrow,
+      t,
     ]
   );
 
@@ -136,11 +139,11 @@ export function useTaskSprintOperations({
         });
 
         if (options?.notify !== false) {
-          toast.success('Задача убрана в бэклог');
+          toast.success(t('sprint.taskToast.removedToBacklog'));
         }
       } catch (error) {
         console.error('Error removing task from sprint:', error);
-        toast.error('Не удалось убрать задачу из спринта');
+        toast.error(t('sprint.taskToast.removeFromSprintFailed'));
         throw error;
       }
     },
@@ -155,6 +158,7 @@ export function useTaskSprintOperations({
       deletePosition,
       deleteLink,
       updateXarrow,
+      t,
     ]
   );
 

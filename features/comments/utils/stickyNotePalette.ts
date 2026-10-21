@@ -124,11 +124,6 @@ export function getStickyNoteCardStyle(
   };
 }
 
-export function getStickyNoteSwatchStyle(color: StickyNoteColor, isDark = false): CSSProperties {
-  const paint = getStickyNotePaint(color, isDark);
-  return { backgroundColor: paint.swatch };
-}
-
 /** Плюс на превью: насыщенный оттенок листа, читаемый на светлой бумаге в обеих темах. */
 export function getStickyNoteGhostGlyphColor(color?: StickyNoteColorInput): string {
   return STICKY_NOTE_MARK[parseStickyNoteColor(color)];

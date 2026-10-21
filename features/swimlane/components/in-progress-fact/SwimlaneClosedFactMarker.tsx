@@ -16,8 +16,8 @@ import { mergeIssueDataForSwimlaneFactTooltip } from '@/features/swimlane/utils/
 import { getStatusColors } from '@/utils/statusColors';
 
 import {
-  combineStatusBgClass,
   factSegmentPointerHoverHandlers,
+  factStatusSurfaceClass,
   resolveFactMarkerHoverState,
 } from './swimlaneFactMarkerHelpers';
 import { swimlaneFactMarkerOpacityClass } from './swimlaneFactMarkerOpacityClass';
@@ -67,10 +67,9 @@ export function SwimlaneClosedFactMarker({
 
   const { t } = useI18n();
   const statusColors = getStatusColors(phase.statusKey);
-  const verticalInset = 1;
-  const barHeight = Math.max(SWIMLANE_FACT_MIN_GAP_PX, laneRowHeight - verticalInset * 2);
-  const markerSize = barHeight;
-  const bgClass = combineStatusBgClass(statusColors);
+  const verticalInset = 3;
+  const markerSize = Math.max(SWIMLANE_FACT_MIN_GAP_PX, laneRowHeight - verticalInset * 2);
+  const surfaceClass = factStatusSurfaceClass(statusColors);
   const statusTooltipId = `${layerId}-closed-${seg.taskId}-${phase.startCell}-${phase.endCell}`;
   const { isDimmedByFactHover, isFactHovered } = resolveFactMarkerHoverState(
     factHoveredTaskId,
@@ -105,7 +104,7 @@ export function SwimlaneClosedFactMarker({
           aria-label={t('sprintPlanner.swimlane.factTimeline.closedAria', {
             status: phase.statusKey,
           })}
-          className={`pointer-events-auto flex shrink-0 items-center justify-center overflow-hidden cursor-pointer box-border ${bgClass} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
+          className={`pointer-events-auto flex shrink-0 items-center justify-center overflow-hidden cursor-pointer box-border rounded-full ${surfaceClass} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
           role="img"
           style={{
             width: markerSize,
@@ -115,9 +114,8 @@ export function SwimlaneClosedFactMarker({
           onPointerLeave={pointerHoverHandlers.onPointerLeave}
         >
           <Icon
-            className={`shrink-0 ${statusColors.text} ${statusColors.textDark ?? ''}`}
+            className={`h-2.5 w-2.5 shrink-0 ${statusColors.text} ${statusColors.textDark ?? ''}`}
             name="check"
-            size="sm"
           />
         </div>
       </TextTooltip>

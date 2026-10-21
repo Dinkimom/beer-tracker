@@ -3,6 +3,7 @@
 import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
 import type { SprintPlannerContextMenuState } from '@/lib/layers/application/mobx/sprintPlannerUiTypes';
 import type { Comment, Task, TaskParent } from '@/types';
+import type { SprintListItem } from '@/types/tracker';
 
 import { observer } from 'mobx-react-lite';
 import toast from 'react-hot-toast';
@@ -28,12 +29,16 @@ interface SprintPlannerAnnotationContextMenuProps {
   boardId?: number | null;
   comments: Comment[];
   contextMenu: SprintPlannerContextMenuState;
+  selectedSprintId?: number | null;
   showStartLinking: boolean;
+  sprints?: SprintListItem[];
   sprintTasks?: Task[];
   onAssigneeSelect?: (task: Task, assigneeId: string) => void;
   onCommentDelete?: (commentId: string) => void;
   onCommentParentChange?: (commentId: string, parent: TaskParent | null) => void;
   onCommentUpdate?: (commentId: string, text: string, color?: StickyNoteColor) => void;
+  /** Перенос заметки в другой спринт с выбором места на его доске. */
+  onPlanCommentInSprint?: (commentId: string, sprintId: number) => void;
 }
 
 export const SprintPlannerAnnotationContextMenu = observer(
@@ -47,7 +52,10 @@ export const SprintPlannerAnnotationContextMenu = observer(
     onCommentDelete,
     onCommentParentChange,
     onCommentUpdate,
+    onPlanCommentInSprint,
+    selectedSprintId = null,
     showStartLinking,
+    sprints = [],
     sprintTasks = [],
   }: SprintPlannerAnnotationContextMenuProps) {
     const { t } = useI18n();
@@ -80,9 +88,11 @@ export const SprintPlannerAnnotationContextMenu = observer(
         assigneeOptions={assigneeOptions}
         authorName={contextMenu.task.stickyNoteAuthorName}
         boardId={boardId}
+        currentSprintId={selectedSprintId}
         noteColor={variant === 'note' ? parseStickyNoteColor(note?.color ?? menuTask.stickyNoteColor) : undefined}
         parentOptions={parentOptions}
         position={contextMenu.position}
+        sprints={sprints}
         task={menuTask}
         variant={variant}
         onAskAgent={
@@ -103,6 +113,11 @@ export const SprintPlannerAnnotationContextMenu = observer(
         onCopy={actions.onCopy}
         onDelete={actions.onDelete}
         onEdit={actions.onEdit}
+        onMoveToSprint={
+          variant === 'note' && commentId && onPlanCommentInSprint
+            ? (sprintId) => onPlanCommentInSprint(commentId, sprintId)
+            : undefined
+        }
         onNoteColorChange={
           variant === 'note' && commentId && onCommentUpdate
             ? (color) => onCommentUpdate(commentId, note?.text ?? menuTask.name, color)

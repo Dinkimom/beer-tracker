@@ -17,6 +17,8 @@ import {
   getPhotoCardWellClass,
 } from '@/features/task/utils/photoCardSurface';
 
+import { PhotoCardImage } from './PhotoCardImage';
+
 const CROP_BUTTON_CLASS =
   'absolute left-1 top-1 z-10 !h-6 !w-6 !min-h-0 !min-w-0 !justify-center !rounded-md !border-0 !bg-white/90 !p-0 text-gray-700 shadow-sm hover:!bg-white dark:!bg-gray-800/90 dark:text-gray-200';
 
@@ -77,11 +79,13 @@ export function TaskCardSwimlaneImageDraftEditor({
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      <div className="relative flex min-h-0 flex-1 flex-col bg-black">
+      <div className="relative flex min-h-0 flex-1 flex-col">
         <label
           className={`${getPhotoCardWellClass()} h-full ${
             isDragOver ? 'ring-2 ring-inset ring-blue-400' : ''
-          } cursor-pointer`}
+          } cursor-pointer transition-colors ${
+            draft.imageUrl ? '' : 'hover:bg-[#dcd9d2] dark:hover:bg-[#24282d]'
+          }`}
           htmlFor={fileInputId}
           onDragLeave={() => setIsDragOver(false)}
           onDragOver={(event) => {
@@ -93,12 +97,11 @@ export function TaskCardSwimlaneImageDraftEditor({
           onPointerDown={(event) => event.stopPropagation()}
         >
           {draft.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img alt="" className="h-full w-full object-contain" src={draft.imageUrl} />
+            <PhotoCardImage src={draft.imageUrl} />
           ) : (
             <div className={getPhotoCardEmptySlotClass()}>
               <span className="flex flex-col items-center gap-1 px-1">
-                <Icon className="h-5 w-5 text-white/80" name="image" />
+                <Icon className="h-5 w-5" name="image" />
                 <span>{t('sprintPlanner.swimlane.quickAddMenu.imageDropHint')}</span>
               </span>
             </div>

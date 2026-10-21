@@ -17,24 +17,12 @@ import { resolveFactMarkerHoverState } from './swimlaneFactMarkerHelpers';
 import { swimlaneFactMarkerOpacityClass } from './swimlaneFactMarkerOpacityClass';
 
 /**
- * Форма фазы внутри колбасы задачи: скругляются только внешние концы,
- * между фазами одной задачи — 1px шов, между разными задачами — 4px.
- * Фаза, которая идёт сейчас, обрывается квадратным краем.
+ * Форма фазы: каждая фаза — отдельная пилюля; между фазами одной задачи 2px,
+ * между разными задачами — 4px. Фаза, которая идёт сейчас, справа не скругляется, а затухает.
  */
-function factPhaseShapeClassName(
-  linkToPrev: FactLaneLinkToPrev,
-  linkToNext: FactLaneLinkToPrev | undefined,
-  touchesPrev: boolean,
-  isNowEdge: boolean
-): string {
-  const classes: string[] = [];
-  if (linkToPrev === 'joined') classes.push('ml-px');
-  else {
-    classes.push('rounded-l-sm');
-    if (linkToPrev === 'none' && touchesPrev) classes.push('ml-1');
-  }
-  if (linkToNext !== 'joined' && !isNowEdge) classes.push('rounded-r-sm');
-  return classes.join(' ');
+function factPhaseShapeClassName(linkToPrev: FactLaneLinkToPrev, touchesPrev: boolean): string {
+  if (linkToPrev === 'joined') return 'rounded-full ml-0.5';
+  return linkToPrev === 'none' && touchesPrev ? 'rounded-full ml-1' : 'rounded-full';
 }
 
 export function SwimlaneFactLaneFlexRow({
@@ -81,12 +69,7 @@ export function SwimlaneFactLaneFlexRow({
     const linkToPrev = linksToPrev[idx]!;
     const linkToNext = linksToPrev[idx + 1];
     const isNowEdge = linkToNext !== 'joined' && seg.endTime == null;
-    const shapeClassName = factPhaseShapeClassName(
-      linkToPrev,
-      linkToNext,
-      idx > 0 && spacerCells <= 0,
-      isNowEdge
-    );
+    const shapeClassName = factPhaseShapeClassName(linkToPrev, idx > 0 && spacerCells <= 0);
     accounted += spacerCells;
     if (spacerCells > 0) {
       const { isDimmedByFactHover, isFactHovered } = resolveFactMarkerHoverState(

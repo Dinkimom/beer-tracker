@@ -11,13 +11,21 @@
   --ds-canvas: #f3f4f6;
   --ds-text-muted: #6b7280;
   --ds-surface-header: #ffffff;
-  --toast-bg: #ffffff;
-  --toast-fg: #363636;
+  /* Тосты (`components/AppToaster.tsx`): стекло как у `.floating-menu-glass` */
+  --toast-bg: rgba(255, 255, 255, 0.82);
+  --toast-fg: #1f2937;
+  --toast-border: rgba(15, 23, 42, 0.12);
+  --toast-shadow: 0 10px 28px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06);
+  --toast-backdrop: blur(28px) saturate(1);
+  --toast-success: #10b981;
+  --toast-error: #ef4444;
+  --toast-icon-fg: #ffffff;
   /* Z-index уровни (см. constants/zIndex.ts) */
   --z-dropdown: 100;
   --z-dropdown-content: 110;
   --z-dropdown-nested: 120;
-  --z-tooltip: 1000;
+  --z-tooltip: 2500; /* = ZIndex.tooltip: выше контекстного меню и модалок */
+  --z-toast: 2600; /* = ZIndex.toast */
   --z-overlay: 1100;
   --z-drag-preview: 1200;
   --z-side-panel: 1300;
@@ -66,8 +74,14 @@
   --ds-canvas: #151e2e;
   --ds-text-muted: #9ca3af;
   --ds-surface-header: #1f2937;
-  --toast-bg: #1e293b;
-  --toast-fg: #f1f5f9;
+  --toast-bg: rgb(31 41 55 / 0.88);
+  --toast-fg: #f3f4f6;
+  --toast-border: rgba(255, 255, 255, 0.15);
+  --toast-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --toast-backdrop: blur(24px) saturate(1.5);
+  --toast-success: #34d399;
+  --toast-error: #f87171;
+  --toast-icon-fg: #1f2937;
 }
 
 html {
@@ -1200,6 +1214,63 @@ textarea:focus-visible,
   border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
+/*
+ * Меню и подменю поверх доски (`FLOATING_MENU_GLASS_SHELL`): стекло тулбаров, плотнее под список текста.
+ * Заливка и blur на ::before, а не на самом меню: backdrop-filter делает элемент backdrop root,
+ * и вложенное подменю (absolute внутри меню) за его краем просвечивало бы доску без размытия.
+ * Хост positioned; скролл — во внутреннем блоке, иначе подложка уезжает вместе с контентом.
+ */
+.floating-menu-glass {
+  --floating-menu-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.12),
+    0 2px 6px rgba(15, 23, 42, 0.06);
+  isolation: isolate;
+  background-color: transparent !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.floating-menu-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(28px) saturate(1);
+  backdrop-filter: blur(28px) saturate(1);
+}
+
+.dark .floating-menu-glass {
+  --floating-menu-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.dark .floating-menu-glass::before {
+  background-color: rgb(31 41 55 / 0.88);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+}
+
+/* Группы пунктов меню задачи (`data-menu-group`): линия только между отрисованными группами,
+   на всю ширину панели сквозь её поле `p-1`. Пустая группа не рендерится — лишней линии нет. */
+.menu-groups > [data-menu-group] ~ [data-menu-group] {
+  margin: 4px -4px 0;
+  padding: 4px 4px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dark .menu-groups > [data-menu-group] ~ [data-menu-group] {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* `both` у enter держит opacity из анимации и после её конца: меню остаётся backdrop root,
+   и ::before показывает доску без размытия. После появления анимация не должна действовать. */
+.floating-menu-glass.overlay-panel:not([data-state='closed']),
+.floating-menu-glass.overlay-float:not([data-state='closed']) {
+  animation-fill-mode: backwards;
+}
+
 /* Капсула под карточкой (агент, отрезки, draft-save): мягче, чем плавающая тулбар-капсула доски. */
 [data-card-floating-toolbar].floating-toolbar-glass,
 .agent-pending-approval.floating-toolbar-glass {
@@ -1639,7 +1710,7 @@ input[type="checkbox"]:disabled {
 }
 
 /* Radix ставит контент во fixed-обёртку и копирует z-index с потомка.
-   Пока класс z-[1000] не сгенерирован, обёртка остаётся auto и уходит под планер. */
+   Пока класс z-[2500] не сгенерирован, обёртка остаётся auto и уходит под планер. */
 [data-radix-popper-content-wrapper]:has(> .overlay-tooltip) {
   z-index: var(--z-tooltip);
 }

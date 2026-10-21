@@ -7,7 +7,7 @@ describe('getTicTacToeCardStyle', () => {
     const style = getTicTacToeCardStyle(true);
     expect(style.boxShadow).toBe('none');
     expect(style.borderRadius).toBe(0);
-    expect(style.backgroundColor).toBe(getTicTacToeCardPaint(true).board);
-    expect(getTicTacToeCardPaint(false).cell).not.toBe(getTicTacToeCardPaint(true).cell);
+    expect(style.backgroundColor).toBe(getTicTacToeCardPaint(true).surface);
+    expect(getTicTacToeCardPaint(false).surface).not.toBe(getTicTacToeCardPaint(true).surface);
   });
 });

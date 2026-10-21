@@ -17,10 +17,10 @@ import {
 } from './photoCardSurface';
 
 describe('getPhotoCardCaptionClass', () => {
-  it('keeps the caption in the polaroid footer with the UI sans font', () => {
+  it('keeps the caption in the polaroid footer in the sticky-note marker font', () => {
     const className = getPhotoCardCaptionClass();
-    expect(className).toContain('font-sans');
-    expect(className).not.toContain('font-excalifont');
+    expect(className).toContain('font-excalifont');
+    expect(className).not.toContain('font-sans');
     expect(className).not.toContain('absolute');
     expect(className).toContain('mt-2');
     expect(className).toContain('mb-3');
@@ -87,16 +87,17 @@ describe('getPhotoCardSurfaceClasses', () => {
 });
 
 describe('getPhotoCardWellClass', () => {
-  it('uses a flat black well without a sheen overlay', () => {
+  it('uses a flat mat-toned well without a sheen overlay', () => {
     expect(getPhotoCardWellClass()).toContain('overflow-hidden');
-    expect(getPhotoCardWellClass()).toContain('bg-black');
+    expect(getPhotoCardWellClass()).not.toContain('bg-black');
     expect(getPhotoCardWellClass()).not.toContain('after:shadow');
   });
 });
 
 describe('getPhotoCardEmptySlotClass', () => {
-  it('keeps empty-slot copy readable on the dark well', () => {
-    expect(getPhotoCardEmptySlotClass()).toContain('text-white/80');
+  it('mutes empty-slot copy in the caption ink on the mat well', () => {
+    expect(getPhotoCardEmptySlotClass()).toContain('text-[#4a4f54]/70');
+    expect(getPhotoCardEmptySlotClass()).not.toContain('text-white');
   });
 });
 

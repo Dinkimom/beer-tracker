@@ -5,17 +5,20 @@ import type { Task, TaskParent } from '@/types';
 import * as Popover from '@radix-ui/react-popover';
 import { useId, useRef } from 'react';
 
-import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
 import { ParentSubmenuOptionsList } from '@/features/context-menu/components/ParentSubmenuOptionsList';
 import {
-  CONTEXT_MENU_GHOST_BUTTON_RESET,
-  CONTEXT_MENU_ITEM_ROW_ACTIVE,
-  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
-  CONTEXT_MENU_ITEM_ROW_SUBMENU,
+  FLOATING_MENU_GLASS_SHELL,
+  MENU_PANEL_PADDING,
+  MENU_ROW_ICON,
+  MENU_SEPARATOR,
+  MENU_SUBMENU_ALIGN_INSET_PX,
+  MENU_SUBMENU_SIDE_OFFSET_PX,
+  glassLensControlClass,
 } from '@/features/context-menu/contextMenuClasses';
 import { useContextMenuParentSearch } from '@/features/context-menu/hooks/useContextMenuParentSearch';
 import {
@@ -57,9 +60,8 @@ export function ParentSubmenu({
       parentOptions,
     });
 
-  const formattedLabel = resolveContextMenuCurrentParentLabel(task, parentOptions);
   const currentLabel = currentParent
-    ? formattedLabel
+    ? resolveContextMenuCurrentParentLabel(task, parentOptions)
     : t('sprintPlanner.contextMenu.parentNone');
 
   const trimmedQuery = searchQuery.trim();
@@ -76,46 +78,23 @@ export function ParentSubmenu({
       }}
     >
       <Popover.Trigger asChild>
-        <Button
-          className={`${CONTEXT_MENU_ITEM_ROW_SUBMENU} !items-start ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${
-            isOpen ? CONTEXT_MENU_ITEM_ROW_ACTIVE : ''
-          } ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
+        <ContextMenuRow
           disabled={isLoading}
-          type="button"
-          variant="ghost"
-        >
-          <div className="flex min-w-0 flex-1 items-start gap-2">
-            <Icon
-              aria-hidden
-              className="mt-0.5 h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400"
-              name="issue-story"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium leading-5">
-                {t('sprintPlanner.contextMenu.parentIssue')}
-              </span>
-              <span className="mt-0.5 block truncate text-xs font-normal leading-4 text-gray-500 dark:text-gray-400">
-                {currentLabel}
-              </span>
-            </span>
-          </div>
-          <Icon
-            aria-hidden
-            className={`mt-0.5 h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
-              isOpen ? 'rotate-90' : ''
-            }`}
-            name="chevron-right"
-          />
-        </Button>
+          icon={<Icon aria-hidden className={MENU_ROW_ICON} name="issue-story" />}
+          label={t('sprintPlanner.contextMenu.parentIssue')}
+          submenuOpen={isOpen}
+          value={currentParent?.key ?? currentLabel}
+        />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
           align="start"
-          className={`flex max-h-[320px] min-w-[260px] max-w-[min(320px,calc(100vw-40px))] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white py-1.5 shadow-2xl outline-none dark:border-gray-700 dark:bg-gray-800 ${ZIndex.class('submenu')} ${OVERLAY_FLOATING_ANIMATION}`}
+          alignOffset={-MENU_SUBMENU_ALIGN_INSET_PX}
+          className={`relative flex max-h-[320px] w-[300px] max-w-[calc(100vw-40px)] flex-col overflow-hidden outline-none ${MENU_PANEL_PADDING} ${FLOATING_MENU_GLASS_SHELL} ${ZIndex.class('submenu')} ${OVERLAY_FLOATING_ANIMATION}`}
           collisionPadding={10}
           data-submenu="true"
           side="right"
-          sideOffset={2}
+          sideOffset={MENU_SUBMENU_SIDE_OFFSET_PX}
           style={{
             maxHeight: `min(${PARENT_SUBMENU_MAX_HEIGHT_PX}px, calc(100vh - 20px))`,
             // Radix копирует computed z-index на портал-обёртку. Класс из ZIndex.class
@@ -129,10 +108,10 @@ export function ParentSubmenu({
             searchInputRef.current?.focus();
           }}
         >
-          <div className="shrink-0 border-b border-gray-100 px-2 pb-1.5 pt-0.5 dark:border-gray-700">
+          <div className="shrink-0">
             <input
               ref={searchInputRef}
-              className="w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-900 outline-none placeholder:text-gray-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
+              className={`h-8 w-full rounded-md px-2 text-sm text-gray-900 outline-none placeholder:text-gray-500 dark:text-gray-100 dark:placeholder:text-gray-400 ${glassLensControlClass()}`}
               disabled={isLoading}
               id={searchInputId}
               placeholder={t('sprintPlanner.contextMenu.parentSearchPlaceholder')}
@@ -142,6 +121,7 @@ export function ParentSubmenu({
               onKeyDown={(e) => e.stopPropagation()}
             />
           </div>
+          <div className={MENU_SEPARATOR} role="separator" />
           <div
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin-custom"
             style={{ maxHeight: 'min(272px, calc(100vh - 68px))' }}

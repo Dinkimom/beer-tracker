@@ -88,6 +88,18 @@ export function insertStickyNoteMentionToken(input: {
   };
 }
 
+/** `[start, end)` of each `@[Name](id)` token in `text`. */
+export function findStickyNoteMentionTokenRanges(text: string): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
+  MENTION_TOKEN_RE.lastIndex = 0;
+  let match = MENTION_TOKEN_RE.exec(text);
+  while (match) {
+    ranges.push([match.index, match.index + match[0].length]);
+    match = MENTION_TOKEN_RE.exec(text);
+  }
+  return ranges;
+}
+
 export function splitStickyNoteTextByMentions(text: string): StickyNoteTextWithMentionSegment[] {
   const segments: StickyNoteTextWithMentionSegment[] = [];
   let lastIndex = 0;

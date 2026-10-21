@@ -20,10 +20,10 @@ async function finalizeMoveToSprintSuccess(input: {
   shouldRemoveFromCurrent: boolean;
   snapshot: SprintOperationSnapshot;
   sprintId: number;
-  sprintName: string;
+  successMessage: string;
 }): Promise<void> {
   if (input.notify !== false) {
-    toast.success(`Задача перенесена в спринт ${input.sprintName}`);
+    toast.success(input.successMessage);
   }
 
   if (input.selectedSprintId === input.sprintId && input.onTasksReload) {
@@ -54,7 +54,7 @@ export async function submitMoveToSprint(input: {
   shouldRemoveFromCurrent: boolean;
   snapshot: SprintOperationSnapshot;
   sprintId: number;
-  sprintName: string;
+  successMessage: string;
   taskId: string;
 }): Promise<void> {
   const success = await addIssueToSprint(input.taskId, input.sprintId);

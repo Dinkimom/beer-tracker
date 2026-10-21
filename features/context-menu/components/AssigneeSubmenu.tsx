@@ -7,19 +7,23 @@ import type { QuarterlyAvailability } from '@/types/quarterly';
 import * as Popover from '@radix-ui/react-popover';
 import { useMemo } from 'react';
 
-import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { AssigneeSubmenuOptionsList } from '@/features/context-menu/components/AssigneeSubmenuOptionsList';
+import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
 import {
-  CONTEXT_MENU_GHOST_BUTTON_RESET,
-  CONTEXT_MENU_ITEM_ROW_ACTIVE,
-  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
-  CONTEXT_MENU_ITEM_ROW_SUBMENU,
+  FLOATING_MENU_GLASS_SHELL,
+  MENU_PANEL_PADDING,
+  MENU_ROW_ICON,
+  MENU_SUBMENU_ALIGN_INSET_PX,
+  MENU_SUBMENU_SIDE_OFFSET_PX,
 } from '@/features/context-menu/contextMenuClasses';
-import { AssigneePickerList } from '@/features/sprint/components/SprintPlanner/occupancy/AssigneePickerList';
-import { buildAssigneePickerAvailabilityLines } from '@/features/sprint/components/SprintPlanner/occupancy/buildAssigneePickerAvailabilityLines';
+import {
+  buildAssigneeAvailabilitySegments,
+  groupAssigneesByPlatform,
+} from '@/features/context-menu/utils/assigneePickerOptions';
 import { getDevelopersForTaskSorted } from '@/features/sprint/utils/getDevelopersForTask';
 
 export interface ContextMenuAssigneeOptions {
@@ -55,9 +59,10 @@ export function AssigneeSubmenu({
     () => getDevelopersForTaskSorted(options.developers, task),
     [options.developers, task]
   );
-  const developerAvailabilityById = useMemo(
+  const groups = useMemo(() => groupAssigneesByPlatform(developers, task.team), [developers, task.team]);
+  const availabilityById = useMemo(
     () =>
-      buildAssigneePickerAvailabilityLines({
+      buildAssigneeAvailabilitySegments({
         availability: options.availability,
         developers,
         sprintStartDate: options.sprintStartDate,
@@ -77,49 +82,24 @@ export function AssigneeSubmenu({
       }}
     >
       <Popover.Trigger asChild>
-        <Button
-          className={`${CONTEXT_MENU_ITEM_ROW_SUBMENU} !items-start ${CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER} ${
-            isOpen ? CONTEXT_MENU_ITEM_ROW_ACTIVE : ''
-          } ${CONTEXT_MENU_GHOST_BUTTON_RESET}`}
+        <ContextMenuRow
           disabled={isLoading}
-          type="button"
-          variant="ghost"
-        >
-          <div className="flex min-w-0 flex-1 items-start gap-2">
-            <Icon
-              aria-hidden
-              className="mt-0.5 h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400"
-              name="user"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium leading-5">
-                {t('sprintPlanner.contextMenu.changeAssignee')}
-              </span>
-              {currentName ? (
-                <span className="mt-0.5 block truncate text-xs font-normal leading-4 text-gray-500 dark:text-gray-400">
-                  {currentName}
-                </span>
-              ) : null}
-            </span>
-          </div>
-          <Icon
-            aria-hidden
-            className={`mt-0.5 h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
-              isOpen ? 'rotate-90' : ''
-            }`}
-            name="chevron-right"
-          />
-        </Button>
+          icon={<Icon aria-hidden className={MENU_ROW_ICON} name="user" />}
+          label={t('sprintPlanner.contextMenu.changeAssignee')}
+          submenuOpen={isOpen}
+          value={currentName}
+        />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
           align="start"
-          className={`flex w-max min-w-[260px] max-w-[min(320px,calc(100vw-40px))] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl outline-none dark:border-gray-700 dark:bg-gray-800 ${ZIndex.class('submenu')} ${OVERLAY_FLOATING_ANIMATION}`}
+          alignOffset={-MENU_SUBMENU_ALIGN_INSET_PX}
+          className={`relative flex w-[320px] max-w-[calc(100vw-40px)] flex-col overflow-hidden outline-none ${FLOATING_MENU_GLASS_SHELL} ${ZIndex.class('submenu')} ${OVERLAY_FLOATING_ANIMATION}`}
           collisionPadding={10}
           data-submenu="true"
           role="listbox"
           side="right"
-          sideOffset={2}
+          sideOffset={MENU_SUBMENU_SIDE_OFFSET_PX}
           style={{
             maxHeight: `min(${ASSIGNEE_SUBMENU_MAX_HEIGHT_PX}px, calc(100vh - 20px))`,
             // Radix копирует computed z-index на портал-обёртку. Класс из ZIndex.class
@@ -131,15 +111,15 @@ export function AssigneeSubmenu({
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <div
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 scrollbar-thin-custom"
+            className={`min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin-custom ${MENU_PANEL_PADDING}`}
             style={{ maxHeight: `min(${ASSIGNEE_SUBMENU_MAX_HEIGHT_PX}px, calc(100vh - 20px))` }}
           >
-            <AssigneePickerList
+            <AssigneeSubmenuOptionsList
               assigneePointsStats={options.assigneePointsStats}
-              developerAvailabilityById={developerAvailabilityById}
-              developers={developers}
+              availabilityById={availabilityById}
+              groups={groups}
+              isQaTask={task.team === 'QA'}
               selectedAssigneeId={selectedAssigneeId}
-              task={task}
               onSelect={onSelect}
             />
           </div>

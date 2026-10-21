@@ -7,6 +7,8 @@ import type { Task } from '@/types';
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 
+import { useI18n } from '@/contexts/LanguageContext';
+
 import {
   runAccountWorkWithRollback,
   type AccountWorkData,
@@ -20,6 +22,7 @@ interface UseAccountWorkProps {
 }
 
 export function useAccountWork({ tasks, selectedSprintId, setTasks, onTasksReload }: UseAccountWorkProps) {
+  const { t } = useI18n();
   const handleAccountWork = useCallback(
     async (accountWorkModal: Task, data: AccountWorkData) => {
       if (!selectedSprintId) return;
@@ -32,13 +35,13 @@ export function useAccountWork({ tasks, selectedSprintId, setTasks, onTasksReloa
           setTasks,
           tasks,
         });
-        toast.success('Работа учтена');
+        toast.success(t('sprint.taskToast.workLogged'));
       } catch (error) {
         console.error('Error accounting work:', error);
         throw error;
       }
     },
-    [tasks, selectedSprintId, setTasks, onTasksReload]
+    [tasks, selectedSprintId, setTasks, onTasksReload, t]
   );
 
   return { handleAccountWork };

@@ -7,7 +7,7 @@ import { useLayoutEffect, useRef } from 'react';
 
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
-import { FLOATING_MENU_SHELL } from '@/features/context-menu/contextMenuClasses';
+import { FLOATING_MENU_GLASS_SHELL } from '@/features/context-menu/contextMenuClasses';
 import { isPlannerImageCropperOpen } from '@/features/task/utils/cropPlannerImage';
 import {
   QUICK_ADD_MENU_MIN_WIDTH_PX,
@@ -25,6 +25,7 @@ interface QuickAddAnchoredPopoverProps {
 /**
  * Popover меню quick-add, привязанный к драфтовой карточке.
  * Якорь совпадает с карточкой: меню открывается снизу и переезжает вверх, только если снизу не хватает места.
+ * Стекло как у меню задачи: подложка в `::before`, поэтому скроллит внутренний блок, а не оболочка.
  */
 export function QuickAddAnchoredPopover({
   allowAutoFocus = false,
@@ -57,14 +58,13 @@ export function QuickAddAnchoredPopover({
         <Popover.Content
           align="start"
           avoidCollisions
-          className={`${FLOATING_MENU_SHELL} overflow-hidden font-sans outline-none ${OVERLAY_FLOATING_ANIMATION}`}
+          className={`relative flex flex-col overflow-hidden font-sans outline-none ${FLOATING_MENU_GLASS_SHELL} ${OVERLAY_FLOATING_ANIMATION}`}
           collisionPadding={8}
           side={collision.side}
           sideOffset={6}
           style={{
             maxHeight: collision.maxHeight,
             minWidth: panelWidth,
-            overflowY: 'auto',
             width: panelWidth,
             zIndex: ZIndex.popupContent,
           }}
@@ -87,7 +87,9 @@ export function QuickAddAnchoredPopover({
           }}
           onPointerDown={(event) => event.stopPropagation()}
         >
-          {children}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin-custom">
+            {children}
+          </div>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

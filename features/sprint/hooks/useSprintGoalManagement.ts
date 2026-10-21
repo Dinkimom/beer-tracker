@@ -4,6 +4,7 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { useState } from 'react';
 
+import { useI18n } from '@/contexts/LanguageContext';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { useBoards } from '@/features/board/hooks/useBoards';
 
@@ -34,6 +35,7 @@ export function useSprintGoalManagement({
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const { getTeamByBoardId } = useBoards();
   const forDemoPlanner = useDemoPlannerBoardsQueryScope();
+  const { t } = useI18n();
 
   const queryKey = forDemoPlanner
     ? (['sprintGoals', 'demo', sprintId, goalType] as const)
@@ -135,6 +137,7 @@ export function useSprintGoalManagement({
         queryClient,
         queryKey,
         sprintId,
+        t,
       });
     } finally {
       setUpdatingItems((prev) => {

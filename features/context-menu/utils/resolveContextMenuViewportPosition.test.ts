@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import {
   measureContextMenuLayoutSize,
   resolveContextMenuFollowAnchorId,
-  resolveContextMenuQuickActionsAlignClass,
   resolveContextMenuViewportPosition,
 } from './resolveContextMenuViewportPosition';
 
@@ -61,11 +60,6 @@ describe('resolveContextMenuViewportPosition', () => {
         viewportWidth: 1200,
       })
     ).toEqual({ anchorSide: 'right', left: 80, top: 60 });
-  });
-
-  it('packs quick-action buttons toward the card', () => {
-    expect(resolveContextMenuQuickActionsAlignClass('right')).toBe('justify-start');
-    expect(resolveContextMenuQuickActionsAlignClass('left')).toBe('justify-end');
   });
 });
 

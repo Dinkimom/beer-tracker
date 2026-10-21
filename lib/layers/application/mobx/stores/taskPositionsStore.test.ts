@@ -353,4 +353,20 @@ describe('TaskPositionsStore', () => {
     expect(store.positions.has('saved')).toBe(true);
     expect(mockDelete).not.toHaveBeenCalled();
   });
+
+  it('задача черновика без позиции не записывается при постановке на доску', async () => {
+    mockFetch.mockResolvedValue([pos('saved', 0)]);
+    const store = new TaskPositionsStore();
+    await store.loadSprint(42);
+
+    store.stagePlanDraft([], ['moved']);
+    expect(store.draftTaskIds.has('moved')).toBe(true);
+    expect(store.planDraftCount).toBe(0);
+
+    await store.savePosition(pos('moved', 2), false, undefined, true);
+    expect(store.positions.get('moved')?.startDay).toBe(2);
+    expect(store.planDraftCount).toBe(1);
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(mockSaveBatch).not.toHaveBeenCalled();
+  });
 });

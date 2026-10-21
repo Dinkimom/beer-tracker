@@ -52,6 +52,11 @@ interface ModalsSectionProps {
   boardId?: number | null;
   comments?: Comment[];
   DialogComponent: React.ReactNode;
+  /** Перенос задачи или заметки в другой спринт с выбором места на его доске. */
+  movePlacement?: {
+    handlePlanCommentInSprint: (commentId: string, sprintId: number) => void;
+    handlePlanInSprint: (taskId: string, sprintId: number) => void;
+  };
   selectedSprintId: number | null;
   showStartLinking?: boolean;
   sprints: SprintListItem[];
@@ -119,6 +124,7 @@ export const ModalsSection = observer(function ModalsSection({
   onCommentParentChange,
   onCommentUpdate,
   onParentChange,
+  movePlacement,
   onRemoveFromPlan,
   onRemoveFromSprint,
   showStartLinking = false,
@@ -175,12 +181,15 @@ export const ModalsSection = observer(function ModalsSection({
           boardId={boardId}
           comments={comments}
           contextMenu={contextMenu}
+          selectedSprintId={selectedSprintId}
           showStartLinking={showStartLinking}
           sprintTasks={sprintTasks}
+          sprints={sprints}
           onAssigneeSelect={onAssigneeSelect}
           onCommentDelete={onCommentDelete}
           onCommentParentChange={onCommentParentChange}
           onCommentUpdate={onCommentUpdate}
+          onPlanCommentInSprint={movePlacement?.handlePlanCommentInSprint}
         />
       ) : null}
       {showContextMenu && contextMenu && annotationMenuVariant == null ? (
@@ -209,6 +218,7 @@ export const ModalsSection = observer(function ModalsSection({
           onMoveToSprint={onMoveToSprint}
           onOpenTaskInfo={sprintPlannerUi.openTaskInfoPanel}
           onParentChange={onParentChange}
+          onPlanInSprint={movePlacement?.handlePlanInSprint}
           onRemoveFromPlan={onRemoveFromPlan}
           onRemoveFromSprint={onRemoveFromSprint}
           onSplitPhaseIntoSegments={

@@ -2,8 +2,10 @@
  * Утилита для позиционирования подменю в контекстном меню
  */
 
+import { MENU_SUBMENU_ALIGN_INSET_PX } from '@/features/context-menu/contextMenuClasses';
+
 const VIEWPORT_PADDING = 10;
-const SUBMENU_GAP = 2;
+const SUBMENU_GAP = 4;
 
 export function calculateSubmenuPosition(
   menuRect: DOMRect,
@@ -14,17 +16,17 @@ export function calculateSubmenuPosition(
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
 
-  // Вычисляем позицию кнопки относительно родительского div
-  const buttonTopRelativeToParent = buttonRect.top - parentRect.top;
+  // Первая строка подменю вровень с кнопкой: поднимаем на поле панели + кромку
+  const buttonTopRelativeToParent = buttonRect.top - parentRect.top - MENU_SUBMENU_ALIGN_INSET_PX;
 
-  // Уменьшаем отступ для более плотного прилегания
-  let left = menuRect.width + SUBMENU_GAP;
+  // От кромки меню, а не от родителя: строка стоит внутри поля панели
+  let left = menuRect.right - parentRect.left + SUBMENU_GAP;
   let top = buttonTopRelativeToParent;
 
   // Проверяем, помещается ли справа
   if (menuRect.right + subMenuRect.width + SUBMENU_GAP > viewportWidth - VIEWPORT_PADDING) {
     // Показываем слева от контекстного меню
-    left = -subMenuRect.width - SUBMENU_GAP;
+    left = menuRect.left - parentRect.left - subMenuRect.width - SUBMENU_GAP;
     // Не допускаем выход за левый край viewport
     const subMenuLeftEdge = parentRect.left + left;
     if (subMenuLeftEdge < VIEWPORT_PADDING) {

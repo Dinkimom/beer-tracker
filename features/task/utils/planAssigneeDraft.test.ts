@@ -4,8 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildAssigneePlanDraft,
+  buildMovedTaskDraftPosition,
+  hasPlanBaseline,
   stampPlanDraftTasksMap,
   taskWithPlanDraftFlag,
+  withoutPlanBaseline,
+  withPlanBaselineAtPosition,
 } from './planAssigneeDraft';
 
 function task(overrides: Partial<Task> & Pick<Task, 'id'>): Task {
@@ -193,6 +197,69 @@ describe('buildAssigneePlanDraft', () => {
       tasks: [task({ assignee: 'qa-1', id: 'qa', storyPoints: 0, team: 'QA', testPoints: 2 })],
     });
     expect(placed[0]).toMatchObject({ duration: 2, startDay: 1, startPart: 0 });
+  });
+});
+
+describe('buildMovedTaskDraftPosition', () => {
+  it('ставит в первый день исполнителя, даже поверх занятого места', () => {
+    expect(
+      buildMovedTaskDraftPosition({
+        developers,
+        sourceDuration: 5,
+        task: task({ assignee: 'dev-1', id: 'moved' }),
+      })
+    ).toMatchObject({ assignee: 'dev-1', duration: 5, startDay: 0, startPart: 0, taskId: 'moved' });
+  });
+
+  it('ставит без бейзлайна', () => {
+    const placed = buildMovedTaskDraftPosition({
+      developers,
+      sourceDuration: 2,
+      task: task({ assignee: 'dev-1', id: 'moved' }),
+    });
+    expect(placed && hasPlanBaseline(placed)).toBe(false);
+  });
+
+  it('без исходной карточки берёт оценку, а без оценки — один день', () => {
+    expect(
+      buildMovedTaskDraftPosition({
+        developers,
+        sourceDuration: null,
+        task: task({ assignee: 'dev-1', id: 'sp', storyPoints: 2 }),
+      })?.duration
+    ).toBe(2);
+    expect(
+      buildMovedTaskDraftPosition({
+        developers,
+        sourceDuration: null,
+        task: task({ assignee: 'dev-1', id: 'bare', storyPoints: 0 }),
+      })?.duration
+    ).toBe(3);
+  });
+
+  it('без исполнителя или дорожки карточку не ставит', () => {
+    expect(
+      buildMovedTaskDraftPosition({ developers, sourceDuration: 2, task: task({ id: 'none' }) })
+    ).toBeNull();
+    expect(
+      buildMovedTaskDraftPosition({
+        developers,
+        sourceDuration: 2,
+        task: task({ assignee: 'ghost', id: 'ghost' }),
+      })
+    ).toBeNull();
+  });
+});
+
+describe('бейзлайн перенесённой задачи', () => {
+  it('снимается и ставится в текущее место', () => {
+    const moved = { ...position('t', 3, 2), plannedDuration: 1, plannedStartDay: 0, plannedStartPart: 0 };
+    expect(hasPlanBaseline(withoutPlanBaseline(moved))).toBe(false);
+    expect(withPlanBaselineAtPosition(withoutPlanBaseline(moved))).toMatchObject({
+      plannedDuration: 2,
+      plannedStartDay: 3,
+      plannedStartPart: 0,
+    });
   });
 });
 

@@ -61,12 +61,25 @@ export function useSprintPlannerState({
   sprintEndDate = null,
 }: UseSprintPlannerStateProps) {
   const queryClient = useQueryClient();
-  const { taskPositions: positionsStore } = useRootStore();
+  const { sprintMovePlacement, taskPositions: positionsStore } = useRootStore();
   const [syncEstimates] = useDataSyncEstimatesStorage();
   const forDemoPlanner = useDemoPlannerBoardsQueryScope();
   const tasksQuery = useTasks(selectedSprintId, selectedBoardId);
 
-  const tasks = tasksQuery.data?.tasks ?? [];
+  const queryTasks = tasksQuery.data?.tasks;
+  // Задача, которую переносят сюда с выбором места: в трекере она ещё в старом спринте.
+  const moveSession = sprintMovePlacement.session;
+  const movingTask =
+    moveSession?.kind === 'task' && moveSession.targetSprintId === selectedSprintId
+      ? moveSession.task
+      : null;
+  const tasks = useMemo(() => {
+    const list = queryTasks ?? [];
+    if (!movingTask || list.some((task) => task.id === movingTask.id)) {
+      return list;
+    }
+    return [...list, movingTask];
+  }, [movingTask, queryTasks]);
   const developers = useMemo(
     () => tasksQuery.data?.developers ?? [],
     [tasksQuery.data?.developers],

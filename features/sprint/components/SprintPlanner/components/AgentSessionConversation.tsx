@@ -86,11 +86,13 @@ function conversationTail(status: AgentSessionStatus | undefined, waitingDetail:
  */
 export function AgentSessionConversation({
   empty,
+  emptyTitle,
   messages,
   status,
   waitingDetail,
 }: {
   empty: string;
+  emptyTitle?: string;
   messages: readonly AgentSessionMessage[];
   status?: AgentSessionStatus;
   waitingDetail?: ReactNode;
@@ -124,7 +126,10 @@ export function AgentSessionConversation({
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-green-600/10 text-green-700 dark:bg-green-400/15 dark:text-green-300">
           <Icon className="h-4 w-4" name="sparkles" />
         </span>
-        <p className="max-w-[18rem] text-balance text-xs leading-relaxed text-gray-500 dark:text-gray-400">{empty}</p>
+        {emptyTitle ? (
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{emptyTitle}</p>
+        ) : null}
+        <p className="max-w-[20rem] text-pretty text-xs leading-relaxed text-gray-500 dark:text-gray-400">{empty}</p>
       </div>
     );
   }

@@ -122,6 +122,7 @@ export async function runDeleteGoalUpdate(input: {
   queryClient: QueryClient | null;
   queryKey: SprintGoalsQueryKey;
   sprintId: number | null;
+  t: (key: string) => string;
 }): Promise<void> {
   if (input.isTempId) return;
 
@@ -139,6 +140,7 @@ export async function runDeleteGoalUpdate(input: {
       queryClient: input.queryClient,
       resultSuccess: result.success,
       sprintId: input.sprintId,
+      t: input.t,
     });
   } catch (err) {
     restoreGoalsOnFailure(input.queryClient, input.queryKey, prevGoalsData, err, 'Failed to delete goal:');

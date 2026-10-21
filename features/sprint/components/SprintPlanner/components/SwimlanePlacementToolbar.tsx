@@ -37,6 +37,7 @@ import {
   toggleSwimlanePlacementTool,
 } from '../utils/swimlanePlacementToolbar';
 
+import { SprintMovePlacementToolbar } from './SprintMovePlacementToolbar';
 import { SwimlaneAgentProposalToolbar } from './SwimlaneAgentProposalToolbar';
 import { SwimlanePlacementToolbarAgentButton } from './SwimlanePlacementToolbarAgentButton';
 import { SwimlanePlacementToolbarButton } from './SwimlanePlacementToolbarButton';
@@ -47,12 +48,15 @@ import { SwimlanePlanDraftToolbar } from './SwimlanePlanDraftToolbar';
 import { useSwimlanePlacementToolbarKeyboard } from './useSwimlanePlacementToolbarKeyboard';
 
 export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolbar({
+  movePlacement,
   onApproveAgentNotes,
   onRejectAgentNotes,
   pendingAgentNotes = { ids: [] },
   sprintId = null,
   variant = 'people',
 }: {
+  /** Перенос задачи сюда из другого спринта с выбором места. */
+  movePlacement?: { onCancel: () => void; onConfirm: () => void; onFocusCard: () => void };
   onApproveAgentNotes?: (commentIds: readonly string[]) => void;
   onRejectAgentNotes?: (commentIds: readonly string[]) => void;
   pendingAgentNotes?: { clientBrand?: McpOAuthClientBrand; ids: readonly string[] };
@@ -60,7 +64,7 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   variant?: 'features' | 'people';
 }) {
   const { t } = useI18n();
-  const { sprintPlannerUi, taskPositions } = useRootStore();
+  const { sprintMovePlacement, sprintPlannerUi, taskPositions } = useRootStore();
   const positionPreviewCount = taskPositions.planPatchPreviews.size;
   const planPatchDecisions = usePlanPatchPreviewDecisions(sprintId);
   const goalDecisions = usePlanPatchGoalPreviewDecisions(sprintId);
@@ -162,7 +166,15 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
       style={{ bottom: SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX }}
     >
       <div className="flex flex-col items-center gap-2">
-        <SwimlanePlanDraftToolbar />
+        {movePlacement && sprintMovePlacement.session ? (
+          <SprintMovePlacementToolbar
+            onCancel={movePlacement.onCancel}
+            onConfirm={movePlacement.onConfirm}
+            onFocusCard={movePlacement.onFocusCard}
+          />
+        ) : (
+          <SwimlanePlanDraftToolbar />
+        )}
         {onApproveAgentNotes && onRejectAgentNotes ? (
           <SwimlaneAgentProposalToolbar
             goalPreviewCount={goalDecisions.count}

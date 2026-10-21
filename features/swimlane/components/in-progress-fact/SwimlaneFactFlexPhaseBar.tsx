@@ -15,8 +15,8 @@ import { mergeIssueDataForSwimlaneFactTooltip } from '@/features/swimlane/utils/
 import { getStatusColors } from '@/utils/statusColors';
 
 import {
-  combineStatusBgClass,
   factSegmentPointerHoverHandlers,
+  factStatusSurfaceClass,
   resolveFactMarkerHoverState,
 } from './swimlaneFactMarkerHelpers';
 import { swimlaneFactMarkerOpacityClass } from './swimlaneFactMarkerOpacityClass';
@@ -45,7 +45,7 @@ export function SwimlaneFactFlexPhaseBar({
   commentsByTaskId: Map<string, IssueComment[]>;
   developerMap: Map<string, Developer>;
   hideTaskSummary: boolean;
-  /** Фаза идёт сейчас: справа кромка «сейчас» вместо скругления */
+  /** Фаза идёт сейчас: справа без скругления, длинное затухание — «ещё в процессе» */
   isNowEdge: boolean;
   laneRowHeight: number;
   layerId: string;
@@ -71,11 +71,9 @@ export function SwimlaneFactFlexPhaseBar({
   );
 
   const { t } = useI18n();
-  const statusColors = getStatusColors(phase.statusKey);
-  const bgClass = combineStatusBgClass(statusColors);
-  const textClass = `${statusColors.text} ${statusColors.textDark ?? ''}`;
+  const surfaceClass = factStatusSurfaceClass(getStatusColors(phase.statusKey));
 
-  const verticalInset = 1;
+  const verticalInset = 3;
   const barHeight = Math.max(SWIMLANE_FACT_MIN_GAP_PX, laneRowHeight - verticalInset * 2);
   const durationStr = formatFactTimelineDuration(phase.durationMs, t);
   const statusName = phase.statusName.trim() || phase.statusKey;
@@ -107,7 +105,7 @@ export function SwimlaneFactFlexPhaseBar({
       singleInGroupId={statusTooltipId}
     >
       <div
-        className={`@container flex shrink-0 items-center overflow-hidden pointer-events-auto cursor-pointer box-border ${bgClass} ${textClass} ${shapeClassName} ${isNowEdge ? 'shadow-[inset_-2px_0_0_currentColor]' : ''} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
+        className={`@container flex shrink-0 items-center overflow-hidden pointer-events-auto cursor-pointer box-border ${surfaceClass} ${shapeClassName} ${isNowEdge ? 'rounded-r-none border-r-0 [mask-image:linear-gradient(to_right,black_calc(100%-20px),rgb(0_0_0/0.8)_calc(100%-8px),transparent)]' : ''} ${swimlaneFactMarkerOpacityClass(isFactHovered, isDimmedByFactHover)}`}
         style={{
           flex: `${widthInSpan} 0 0`,
           minWidth: SWIMLANE_FACT_MIN_GAP_PX,
@@ -117,7 +115,7 @@ export function SwimlaneFactFlexPhaseBar({
         onPointerEnter={pointerHoverHandlers.onPointerEnter}
         onPointerLeave={pointerHoverHandlers.onPointerLeave}
       >
-        <span className="hidden @min-[36px]:block min-w-0 truncate px-1.5 text-[10px] font-medium leading-[14px] tabular-nums">
+        <span className="hidden @min-[36px]:block min-w-0 truncate px-2 text-[10px] font-medium leading-[14px] tabular-nums">
           <span className="hidden @min-[112px]:inline">{statusName} · </span>
           {durationStr}
         </span>

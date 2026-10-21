@@ -94,17 +94,21 @@ export function getPhotoCardPaddingClass(_hasFooter = false): string {
   return '!p-2.5';
 }
 
-/** Нижний отступ выше компактной рукоятки ресайза (h-4), чтобы подпись не перехватывала жест. */
+/**
+ * Подпись маркером на полях полароида — тот же рукописный шрифт, что у заметок.
+ * Нижний отступ выше компактной рукоятки ресайза (h-4), чтобы подпись не перехватывала жест.
+ */
 export function getPhotoCardCaptionClass(): string {
-  return 'mt-2 mb-3 block w-full shrink-0 truncate px-0.5 text-center font-sans text-[10px] font-medium leading-tight tracking-wide';
+  return 'mt-2 mb-3 block w-full shrink-0 truncate px-0.5 text-center font-excalifont text-xs leading-tight';
 }
 
+/** Колодец в тон паспарту, чуть темнее листа: пустой слот и поля вокруг фото не чернеют. */
 export function getPhotoCardWellClass(): string {
-  return 'relative min-h-0 flex-1 overflow-hidden bg-black';
+  return 'relative min-h-0 flex-1 overflow-hidden bg-[#e6e4de] shadow-[inset_0_0_0_1px_rgba(20,24,28,0.06)] dark:bg-[#1d2024] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]';
 }
 
 export function getPhotoCardEmptySlotClass(): string {
-  return 'flex h-full w-full items-center justify-center px-1 text-center font-sans text-[10px] leading-tight text-white/80';
+  return 'flex h-full w-full flex-col items-center justify-center gap-1 px-2 text-center font-sans text-[10px] leading-tight text-[#4a4f54]/70 dark:text-[#d8dce0]/60';
 }
 
 /** Колодец схемы без чёрного паспарту — фон задаётся цветом сцены. */

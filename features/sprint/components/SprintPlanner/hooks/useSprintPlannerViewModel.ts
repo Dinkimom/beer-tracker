@@ -29,6 +29,7 @@ import { useDevelopersManagement } from '../../../hooks/useDevelopersManagement'
 import { usePlannerNotificationFocus } from '../../../hooks/usePlannerNotificationFocus';
 import { useScrollToCurrentDay } from '../../../hooks/useScrollToCurrentDay';
 
+import { useSprintMovePlacement } from './useSprintMovePlacement';
 import { useSprintPlannerIntegrationRulesInvalidation } from './useSprintPlannerIntegrationRulesInvalidation';
 import { useSprintPlannerLocalPreferences } from './useSprintPlannerLocalPreferences';
 import { useSprintPlannerMembersSync } from './useSprintPlannerMembersSync';
@@ -330,6 +331,20 @@ export function useSprintPlannerViewModel({
     filteredTaskPositions,
     tasksByAssignee
   );
+  const movePlacement = useSprintMovePlacement({
+    comments,
+    developers: developersManagement.sortedDevelopers,
+    scrollContainerRef,
+    selectedSprintId,
+    sprints,
+    taskLinks,
+    taskPositions,
+    tasksLoading,
+    tasksMap,
+    viewMode,
+    onSprintChange,
+    setViewMode,
+  });
   const { handleRemoveParticipantFromTeam } = useSprintPlannerMembersSync({
     boardIdForPlannerData,
     confirmWithAction,
@@ -416,6 +431,7 @@ export function useSprintPlannerViewModel({
     handleRemoveParticipantFromTeam,
     kanbanGroupBy,
     linksDimOnHover,
+    movePlacement,
     occupancyOldTmLayout,
     occupancyRowFields,
     occupancyStatusFilter,

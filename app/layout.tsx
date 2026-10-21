@@ -4,9 +4,9 @@ import { Caveat, Geist, Geist_Mono, Ruslan_Display } from "next/font/google";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import { Toaster } from "react-hot-toast";
 
 import { AnalyticsCollector } from "@/components/AnalyticsCollector";
+import { AppToaster } from "@/components/AppToaster";
 import { AuthGuard } from "@/components/AuthGuard";
 import { DisableContextMenu } from "@/components/DisableContextMenu";
 import { PwaServiceWorkerRegistrar } from "@/components/PwaServiceWorkerRegistrar";
@@ -138,30 +138,7 @@ export default function RootLayout({
                     <AuthGuard>
                       <AnalyticsCollector />
                       {children}
-                      <Toaster
-                        position="top-center"
-                        toastOptions={{
-                          duration: 4000,
-                          style: {
-                            background: 'var(--toast-bg)',
-                            color: 'var(--toast-fg)',
-                          },
-                          success: {
-                            duration: 3000,
-                            iconTheme: {
-                              primary: "#10b981",
-                              secondary: "#fff",
-                            },
-                          },
-                          error: {
-                            duration: 5000,
-                            iconTheme: {
-                              primary: "#ef4444",
-                              secondary: "#fff",
-                            },
-                          },
-                        }}
-                      />
+                      <AppToaster />
                     </AuthGuard>
                   </ObjectStorageConfiguredProvider>
                 </IssueTrackerProviderKindProvider>

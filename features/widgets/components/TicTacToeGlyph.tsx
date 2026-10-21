@@ -2,22 +2,22 @@ interface TicTacToeGlyphProps {
   mark: 'o' | 'x';
 }
 
-/** Крупный знак в клетке партии. */
+/** Крупный знак в клетке партии: X и O одного оптического веса. */
 export function TicTacToeGlyph({ mark }: TicTacToeGlyphProps) {
   if (mark === 'o') {
     return (
-      <svg aria-hidden className="h-[64%] w-[64%]" fill="none" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="7.2" stroke="currentColor" strokeWidth="2.6" />
+      <svg aria-hidden className="h-[58%] w-[58%]" fill="none" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="3" />
       </svg>
     );
   }
   return (
-    <svg aria-hidden className="h-[64%] w-[64%]" fill="none" viewBox="0 0 24 24">
+    <svg aria-hidden className="h-[58%] w-[58%]" fill="none" viewBox="0 0 24 24">
       <path
-        d="M6.2 6.2l11.6 11.6M17.8 6.2L6.2 17.8"
+        d="M5 5l14 14M19 5L5 19"
         stroke="currentColor"
         strokeLinecap="round"
-        strokeWidth="2.6"
+        strokeWidth="3"
       />
     </svg>
   );

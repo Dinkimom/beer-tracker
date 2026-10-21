@@ -55,13 +55,14 @@ export function handleDeleteGoalResult(input: {
   queryClient: QueryClient | null;
   resultSuccess: boolean;
   sprintId: number | null;
+  t: (key: string) => string;
 }): void {
   if (input.resultSuccess || input.notFound) {
     invalidateSprintScoreQuery(input.queryClient, input.sprintId, input.forDemoPlanner);
     if (!input.queryClient) input.onGoalsUpdate?.();
     return;
   }
-  toast.error('Не удалось удалить цель на сервере, она убрана только локально');
+  toast.error(input.t('sidebar.goalsTab.deleteGoalServerFailed'));
 }
 
 export function restoreGoalsOnFailure(

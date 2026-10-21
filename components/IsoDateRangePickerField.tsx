@@ -7,6 +7,11 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
+import {
+  CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
+  FLOATING_MENU_GLASS_SHELL,
+  glassLensControlClass,
+} from '@/features/context-menu/contextMenuClasses';
 import { formatIsoDateRuNumericUtc, pad2, parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 
 import {
@@ -28,6 +33,8 @@ interface IsoDateRangePickerFieldProps {
   endDate: string;
   placeholder?: string;
   startDate: string;
+  /** На стеклянной плашке: триггер — линза, календарь — стеклянная оболочка меню. */
+  surface?: 'glass' | 'solid';
   onChange: (range: { endDate: string; startDate: string }) => void;
 }
 
@@ -37,9 +44,12 @@ export function IsoDateRangePickerField({
   endDate,
   placeholder = 'Выберите период',
   startDate,
+  surface = 'solid',
   onChange,
 }: IsoDateRangePickerFieldProps) {
   const [open, setOpen] = useState(false);
+  const isGlass = surface === 'glass';
+  const navButtonClass = `!h-8 !w-8 !min-w-0 shrink-0 !p-0 ${isGlass ? CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER : ''}`;
   const nowUtc = useMemo(() => {
     const t = new Date();
     return { m: t.getUTCMonth() + 1, y: t.getUTCFullYear() };
@@ -126,7 +136,7 @@ export function IsoDateRangePickerField({
       <Popover.Trigger asChild>
         <Button
           aria-expanded={open}
-          className="w-full !h-10 !min-h-10 !justify-between !gap-2 !px-3 font-normal"
+          className={`w-full !h-10 !min-h-10 !justify-between !gap-2 !px-3 font-normal ${isGlass ? `!rounded-lg ${glassLensControlClass()}` : ''}`}
           disabled={disabled}
           type="button"
           variant="outline"
@@ -146,7 +156,7 @@ export function IsoDateRangePickerField({
       <Popover.Portal>
         <Popover.Content
           align="start"
-          className={`w-[min(100vw-2rem,288px)] rounded-lg border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-600 dark:bg-gray-800 ${OVERLAY_FLOATING_ANIMATION}`}
+          className={`w-[min(100vw-2rem,288px)] p-2 ${isGlass ? `relative ${FLOATING_MENU_GLASS_SHELL}` : 'rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800'} ${OVERLAY_FLOATING_ANIMATION}`}
           side="bottom"
           sideOffset={6}
           style={{ zIndex: contentZIndex }}
@@ -155,7 +165,7 @@ export function IsoDateRangePickerField({
           <div className="mb-2 flex items-center justify-between gap-1 px-0.5">
             <Button
               aria-label="Предыдущий месяц"
-              className="!h-8 !w-8 !min-w-0 shrink-0 !p-0"
+              className={navButtonClass}
               type="button"
               variant="ghost"
               onClick={goPrevMonth}
@@ -167,7 +177,7 @@ export function IsoDateRangePickerField({
             </span>
             <Button
               aria-label="Следующий месяц"
-              className="!h-8 !w-8 !min-w-0 shrink-0 !p-0"
+              className={navButtonClass}
               type="button"
               variant="ghost"
               onClick={goNextMonth}
