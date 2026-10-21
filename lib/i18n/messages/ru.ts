@@ -247,6 +247,7 @@ export const ruMessages = {
       validating: 'Проверка...',
       save: 'Сохранить',
       tokenSaved: 'Токен сохранён',
+      yandexConnected: 'Яндекс ID подключён',
       getTokenLink: {
         jira: 'Создайте API-токен в аккаунте Atlassian',
         'yandex-tracker': 'Получить токен в настройках Яндекс ID',
@@ -731,13 +732,14 @@ export const ruMessages = {
       onboardingTitle: 'Первичная настройка компании',
       onboardingTagline: {
         tracker:
-          'Создайте первую организацию. Подключите токен администратора Яндекс Трекера.',
+          'Создайте первую организацию. Войдите через Яндекс ID от имени администратора Яндекс Трекера.',
         'jira-onprem':
           'Создайте первую организацию. Укажите персональный токен доступа администратора, который подключает Jira.',
         'jira-cloud':
           'Создайте первую организацию. Нажмите «Продолжить с Atlassian» от имени администратора, который связывает Jira.',
       },
       atlassianConnectedSite: 'Atlassian подключён: {site}',
+      yandexConnected: 'Яндекс ID подключён',
       atlassianRequired: 'Сначала нажмите «Продолжить с Atlassian», чтобы подключить сайт Jira Cloud.',
       onboardingSubmit: 'Создать администратора и организацию',
       closedTitle: 'Регистрация закрыта',
@@ -2512,13 +2514,15 @@ export const ruMessages = {
       registerOrganizationAction: 'Зарегистрировать организацию',
       infoMessage: {
         tracker:
-          'Для работы нужен OAuth токен. Он хранится только в вашем браузере и никуда не передаётся.',
+          'Вход через Яндекс ID. Токен хранится только в вашем браузере.',
         'jira-onprem':
           'Для работы нужен персональный токен доступа. Он хранится в браузере и уходит только на этот инстанс.',
         'jira-cloud': 'Авторизационные данные хранятся только в вашем браузере',
       },
       atlassianConnectButton: 'Продолжить с Atlassian',
       atlassianConnectedHint: 'Atlassian подключён — выполняем вход…',
+      yandexConnectButton: 'Войти с Яндекс ID',
+      yandexConnectedHint: 'Яндекс ID подключён — выполняем вход…',
       jiraCloudEmailLabel: 'Email Atlassian-аккаунта',
       jiraCloudEmailPlaceholder: 'you@example.com',
       jiraCloudEmailHint:

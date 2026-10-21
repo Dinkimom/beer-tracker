@@ -1,31 +1,46 @@
 'use client';
 
 import { AtlassianLogoIcon } from '@/components/AtlassianLogoIcon';
+import { YandexLogoIcon } from '@/components/YandexLogoIcon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { JIRA_CLOUD_OAUTH_START_PATH } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import { YANDEX_OAUTH_START_PATH } from '@/lib/yandexOAuth/constants';
 
-interface AtlassianOAuthConnectButtonProps {
+/** Провайдеры с входом пользователя через OAuth-редирект. */
+export type TrackerOAuthProviderKind = 'jira-cloud' | 'tracker';
+
+interface TrackerOAuthConnectButtonProps {
   className?: string;
   disabled?: boolean;
+  provider: TrackerOAuthProviderKind;
   /** Path to return to after OAuth (must start with `/`). */
   returnPath: string;
 }
 
-/** Как `Button` secondary — единый вид на auth/register/admin. */
+/** Как `Button` secondary — единый вид на auth/register/settings. */
 const buttonClassName =
   'inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-900 dark:bg-gray-700 dark:text-white';
 
-export function AtlassianOAuthConnectButton({
+export function TrackerOAuthConnectButton({
   className = '',
   disabled = false,
+  provider,
   returnPath,
-}: AtlassianOAuthConnectButtonProps) {
+}: TrackerOAuthConnectButtonProps) {
   const { t } = useI18n();
-  const href = `${JIRA_CLOUD_OAUTH_START_PATH}?return=${encodeURIComponent(returnPath)}`;
+  const isYandex = provider === 'tracker';
+  const startPath = isYandex ? YANDEX_OAUTH_START_PATH : JIRA_CLOUD_OAUTH_START_PATH;
+  const href = `${startPath}?return=${encodeURIComponent(returnPath)}`;
   const label = (
     <>
-      <AtlassianLogoIcon className="h-5 w-5 shrink-0" />
-      <span>{t('auth.setup.atlassianConnectButton')}</span>
+      {isYandex ? (
+        <YandexLogoIcon className="h-5 w-5 shrink-0" />
+      ) : (
+        <AtlassianLogoIcon className="h-5 w-5 shrink-0" />
+      )}
+      <span>
+        {isYandex ? t('auth.setup.yandexConnectButton') : t('auth.setup.atlassianConnectButton')}
+      </span>
     </>
   );
   if (disabled) {

@@ -2,7 +2,6 @@
 
 import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 
-import { AtlassianOAuthConnectButton } from '@/components/AtlassianOAuthConnectButton';
 import {
   AuthBackground,
   AuthCard,
@@ -12,6 +11,7 @@ import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { IssueTrackerConnectionFields } from '@/components/IssueTrackerConnectionFields';
 import { PasswordInput } from '@/components/PasswordInput';
+import { TrackerOAuthConnectButton } from '@/components/TrackerOAuthConnectButton';
 import {
   useIssueTrackerProviderKind,
   useIssueTrackerTokenHelpUrl,
@@ -28,11 +28,12 @@ import { RegisterFormSignInFooter } from './RegisterFormSignInFooter';
 
 interface RegisterFormFieldsProps {
   atlassianConnected: boolean;
-  atlassianReturnPath: string;
   /** Сайт Jira Cloud из OAuth (`https://acme.atlassian.net`). */
   atlassianSiteUrl: string;
   error: string;
   loading: boolean;
+  /** Return path after Atlassian / Yandex ID OAuth (keeps typed form fields). */
+  oauthReturnPath: string;
   onboardingMode: boolean;
   organizationName: string;
   signInHref: string;
@@ -50,9 +51,9 @@ interface RegisterFormFieldsProps {
 export function RegisterFormFields({
   atlassianConnected,
   atlassianSiteUrl,
-  atlassianReturnPath,
   error,
   loading,
+  oauthReturnPath,
   onboardingMode,
   organizationName,
   signInHref,
@@ -70,6 +71,7 @@ export function RegisterFormFields({
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
   const tokenHelpUrl = useIssueTrackerTokenHelpUrl();
   const isJiraCloud = issueTrackerProviderKind === 'jira-cloud';
+  const isYandex = issueTrackerProviderKind === 'tracker';
   const showTrackerOrgId = issueTrackerRequiresExternalOrgId(issueTrackerProviderKind);
   const title = onboardingMode
     ? t('productAuth.register.onboardingTitle')
@@ -148,10 +150,20 @@ export function RegisterFormFields({
                   })}
                 </p>
               ) : (
-                <AtlassianOAuthConnectButton returnPath={atlassianReturnPath} />
+                <TrackerOAuthConnectButton provider="jira-cloud" returnPath={oauthReturnPath} />
               )}
             </div>
-          ) : (
+          ) : null}
+          {isYandex ? (
+            token.trim() ? (
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                {t('productAuth.register.yandexConnected')}
+              </p>
+            ) : (
+              <TrackerOAuthConnectButton provider="tracker" returnPath={oauthReturnPath} />
+            )
+          ) : null}
+          {isJiraCloud || isYandex ? null : (
             <div>
               <label
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -204,7 +216,7 @@ export function RegisterFormFields({
           ) : null}
           <Button
             className="w-full"
-            disabled={loading || (isJiraCloud && !token.trim())}
+            disabled={loading || ((isJiraCloud || isYandex) && !token.trim())}
             type="submit"
             variant="primary"
           >

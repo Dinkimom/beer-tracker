@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 
-import { buildYandexTrackerAuthorizeUrl } from '@/lib/yandexOAuth/authorizeUrl';
+import { buildYandexTrackerTokenHelpUrl } from '@/lib/yandexOAuth/authorizeUrl';
 import { assertYandexOauthConfigured } from '@/lib/yandexOAuth/env';
 
 /**
  * GET /api/auth/yandex/authorize
- * Redirects to Yandex OAuth (implicit token) using runtime YANDEX_OAUTH_CLIENT_ID.
+ * Admin «get token» link: implicit flow, Yandex shows the token to paste as the org sync token.
+ * User sign-in goes through `/api/auth/yandex/start` instead.
  */
 export function GET() {
   const configured = assertYandexOauthConfigured();
@@ -13,5 +14,5 @@ export function GET() {
     return NextResponse.json({ error: configured.error }, { status: 503 });
   }
 
-  return NextResponse.redirect(buildYandexTrackerAuthorizeUrl(configured.clientId));
+  return NextResponse.redirect(buildYandexTrackerTokenHelpUrl(configured.clientId));
 }

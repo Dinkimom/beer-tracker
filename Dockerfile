@@ -33,7 +33,7 @@ FROM base AS builder
 ARG NODE_OPTIONS="--max-old-space-size=4096"
 ARG GIT_SHA=""
 ARG APP_VERSION=""
-# YANDEX_OAUTH_CLIENT_ID is runtime-only on the app container (not a build ARG).
+# YANDEX_OAUTH_CLIENT_ID / YANDEX_OAUTH_CLIENT_SECRET are runtime-only on the app container (not a build ARG).
 ENV NODE_OPTIONS=$NODE_OPTIONS \
     NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production \

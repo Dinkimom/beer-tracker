@@ -16,7 +16,7 @@ import {
 import { translateIssueTrackerProviderMessage } from '@/lib/issueTrackerProvider/issueTrackerUi';
 
 import { AuthSetupBrandHeader } from './AuthSetupBrandHeader';
-import { AuthSetupJiraCloudSection } from './AuthSetupJiraCloudSection';
+import { AuthSetupOAuthSection } from './AuthSetupOAuthSection';
 import { type OnPremGateState } from './authSetupPageHelpers';
 import { AuthSetupTokenPasteSection } from './AuthSetupTokenPasteSection';
 
@@ -24,10 +24,11 @@ type TranslateFn = ReturnType<typeof useI18n>['t'];
 type ProductTenant = ReturnType<typeof useProductTenantOrganizations>;
 
 interface AuthSetupCardInnerProps {
-  atlassianConnected: boolean;
   error: string;
   isLoading: boolean;
   localToken: string;
+  /** Токен получен через OAuth-редирект (Atlassian / Яндекс ID), идёт автовход. */
+  oauthConnected: boolean;
   premGate: OnPremGateState;
   productTenant: ProductTenant;
   showAuthSetupSpinner: boolean;
@@ -38,10 +39,10 @@ interface AuthSetupCardInnerProps {
 }
 
 export function AuthSetupCardInner({
-  atlassianConnected,
   error,
   isLoading,
   localToken,
+  oauthConnected,
   premGate,
   onSubmit,
   onTokenChange,
@@ -52,7 +53,10 @@ export function AuthSetupCardInner({
 }: AuthSetupCardInnerProps): ReactNode {
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
   const tokenHelpUrl = useIssueTrackerTokenHelpUrl();
-  const isJiraCloud = issueTrackerProviderKind === 'jira-cloud';
+  const oauthProvider =
+    issueTrackerProviderKind === 'jira-cloud' || issueTrackerProviderKind === 'tracker'
+      ? issueTrackerProviderKind
+      : null;
 
   if (showAuthSetupSpinner) {
     return (
@@ -90,11 +94,12 @@ export function AuthSetupCardInner({
           {t('auth.setup.setupLoadError')}
         </div>
       ) : null}
-      {isJiraCloud ? (
-        <AuthSetupJiraCloudSection
-          atlassianConnected={atlassianConnected}
+      {oauthProvider ? (
+        <AuthSetupOAuthSection
           error={error}
           isLoading={isLoading}
+          oauthConnected={oauthConnected}
+          provider={oauthProvider}
           t={t}
         />
       ) : (
@@ -137,7 +142,7 @@ export function AuthSetupCardInner({
         </form>
       )}
       {/* Jira Cloud: Connect / auto-login only — admin entry elsewhere. Hide while validating. */}
-      {productTenant.signedIn && !isJiraCloud && !isLoading ? (
+      {productTenant.signedIn && issueTrackerProviderKind !== 'jira-cloud' && !isLoading ? (
         <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           {t('auth.setup.adminLoginHint')}{' '}
           <Link className={authTextLinkClassName} href="/admin">

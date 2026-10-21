@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { YANDEX_TRACKER_TOKEN_HELP_PATH } from '@/lib/yandexOAuth/authorizeUrl';
+import { YANDEX_TRACKER_TOKEN_HELP_PATH } from '@/lib/yandexOAuth/constants';
 
 import {
   isHttpUrlOnTrackerWebBase,

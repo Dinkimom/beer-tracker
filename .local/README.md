@@ -29,6 +29,6 @@ bash .local/release/bump-k8s-image-tag.sh --dry-run
 глубина, что у `scripts/release/`). Образ можно переопределить через
 `HARBOR_IMAGE`.
 
-`YANDEX_OAUTH_CLIENT_ID` — runtime env пода (не Docker build-arg): задайте в
-`values.yaml` / secrets state-репо и перезапустите app. Ссылка «получить токен»
-идёт через `/api/auth/yandex/authorize`.
+`YANDEX_OAUTH_CLIENT_ID` и `YANDEX_OAUTH_CLIENT_SECRET` — runtime env пода (не
+Docker build-arg): задайте в `values.yaml` / secrets state-репо и перезапустите app.
+Вход пользователей — `/api/auth/yandex/start` → `/api/auth/yandex/callback`.

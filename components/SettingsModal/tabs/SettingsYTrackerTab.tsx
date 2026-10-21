@@ -3,12 +3,22 @@
 import { Button } from '@/components/Button';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
+import { TrackerOAuthConnectButton } from '@/components/TrackerOAuthConnectButton';
 import {
   useIssueTrackerProviderKind,
   useIssueTrackerTokenHelpUrl,
 } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { translateIssueTrackerProviderMessage } from '@/lib/issueTrackerProvider/issueTrackerUi';
+
+/** После Яндекс ID OAuth `/auth-setup` проверяет токен и возвращает на текущую страницу. */
+function yandexReconnectReturnPath(): string {
+  if (typeof window === 'undefined') {
+    return '/auth-setup';
+  }
+  const current = `${window.location.pathname}${window.location.search}`;
+  return `/auth-setup?next=${encodeURIComponent(current)}`;
+}
 
 function yTrackerOAuthTokenInputBorderClass(
   error: string,
@@ -49,6 +59,24 @@ export function SettingsYTrackerTab({
   const { t } = useI18n();
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
   const tokenHelpUrl = useIssueTrackerTokenHelpUrl();
+  if (issueTrackerProviderKind === 'tracker') {
+    return (
+      <div className="space-y-4" role="tabpanel">
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+          <p className="text-sm text-blue-800 dark:text-blue-200">
+            {t('settings.yTrackerTab.browserOnlyNote')}
+          </p>
+        </div>
+        {token ? (
+          <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+            <Icon className="w-4 h-4" name="check-circle" />
+            {t('settings.yTrackerTab.yandexConnected')}
+          </p>
+        ) : null}
+        <TrackerOAuthConnectButton provider="tracker" returnPath={yandexReconnectReturnPath()} />
+      </div>
+    );
+  }
   return (
     <div className="space-y-4" role="tabpanel">
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">

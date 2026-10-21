@@ -17,6 +17,7 @@ import { readApiErrorMessage } from '@/lib/api/readApiError';
 import { useAtlassianOAuthClientTokenState } from '@/lib/atlassianOAuth/authSetupTokenState';
 import { sanitizeAtlassianOAuthReturnPath } from '@/lib/atlassianOAuth/oauthCookies';
 import { validateToken } from '@/lib/beerTrackerApi';
+import { useYandexOAuthClientTokenState } from '@/lib/yandexOAuth/clientTokenState';
 
 import { AuthSetupCardInner } from './AuthSetupCardInner';
 import {
@@ -36,6 +37,7 @@ export default function AuthSetupPage() {
   const productTenant = useProductTenantOrganizations({ pollIntervalMs: 0 });
   const providerKind = useIssueTrackerProviderKind();
   const oauthState = useAtlassianOAuthClientTokenState();
+  const yandexOAuth = useYandexOAuthClientTokenState();
 
   const [localToken, setLocalToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -51,9 +53,13 @@ export default function AuthSetupPage() {
   const cloudId = oauthState.cloudId;
   const refreshToken = oauthState.refreshToken;
   const expiresAt = oauthState.expiresAt;
-  const atlassianConnected = oauthState.atlassianConnected;
-  const tokenForAuth = (localToken.trim() || oauthState.token).trim();
-  const displayError = error || oauthState.error;
+  const oauthConnected =
+    providerKind === 'jira-cloud'
+      ? oauthState.atlassianConnected
+      : providerKind === 'tracker' && yandexOAuth.token !== '';
+  const oauthHydrated = oauthState.oauthHydrated && yandexOAuth.oauthHydrated;
+  const tokenForAuth = (localToken.trim() || oauthState.token || yandexOAuth.token).trim();
+  const displayError = error || oauthState.error || yandexOAuth.error;
 
   const showAuthSetupSpinner = shouldShowAuthSetupSpinner({
     onPremGate,
@@ -77,10 +83,7 @@ export default function AuthSetupPage() {
   }, [onPremGate.firstRun, onPremGate.loading, router]);
 
   useEffect(() => {
-    if (!oauthState.oauthHydrated) {
-      return;
-    }
-    if (providerKind !== 'jira-cloud' || !atlassianConnected) {
+    if (!oauthHydrated || !oauthConnected) {
       return;
     }
     if (autoLoginStarted.current || isLoading || showAuthSetupSpinner) {
@@ -93,7 +96,7 @@ export default function AuthSetupPage() {
       activeOrganizationId: productTenant.activeOrganizationId,
       onPremGate,
     });
-    if (!orgId || !tokenForAuth || !cloudId.trim()) {
+    if (!orgId || !tokenForAuth || (providerKind === 'jira-cloud' && !cloudId.trim())) {
       return;
     }
     autoLoginStarted.current = true;
@@ -103,7 +106,7 @@ export default function AuthSetupPage() {
       setError('');
       try {
         const result = await validateToken(tokenForAuth, {
-          cloudId,
+          cloudId: cloudId || undefined,
           organizationId: orgId,
         });
         if (!result.valid) {
@@ -140,11 +143,11 @@ export default function AuthSetupPage() {
     };
     void run();
   }, [
-    atlassianConnected,
     cloudId,
     expiresAt,
     isLoading,
-    oauthState.oauthHydrated,
+    oauthConnected,
+    oauthHydrated,
     onPremGate,
     postAuthPath,
     productTenant.activeOrganizationId,
@@ -226,14 +229,14 @@ export default function AuthSetupPage() {
     <AuthBackground>
       <AuthCard>
         <AuthSetupCardInner
-          atlassianConnected={atlassianConnected}
           error={displayError}
           isLoading={isLoading}
           localToken={localToken || oauthState.token}
+          oauthConnected={oauthConnected}
           premGate={onPremGate}
           productTenant={productTenant}
           setError={setError}
-          showAuthSetupSpinner={showAuthSetupSpinner || !oauthState.oauthHydrated}
+          showAuthSetupSpinner={showAuthSetupSpinner || !oauthHydrated}
           t={t}
           onSubmit={handleSubmit}
           onTokenChange={setLocalToken}

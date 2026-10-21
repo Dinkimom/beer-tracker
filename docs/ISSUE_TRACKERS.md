@@ -32,28 +32,33 @@ Beer Tracker — **надстройка** над внешней системой
 
 URL API необязателен: по умолчанию `https://api.tracker.yandex.net/v3`.
 
-### 1. OAuth-приложение Яндекс ID (обязательно для кнопки «получить токен»)
+### 1. OAuth-приложение Яндекс ID (обязательно)
 
-Пользовательский OAuth-токен Tracker выдаётся через **приложение на [oauth.yandex.ru](https://oauth.yandex.ru/)**. Это не «настройка Трекера» и не секрет сервера — публичный **ClientID**.
+Пользователи входят кнопкой **«Войти с Яндекс ID»** (OAuth 2.0 authorization code). Нужно **приложение на [oauth.yandex.ru](https://oauth.yandex.ru/)**.
 
-1. Создайте приложение на https://oauth.yandex.ru/
+1. Создайте веб-приложение на https://oauth.yandex.ru/
 2. В правах доступа включите **Яндекс Трекер**: `tracker:read` и `tracker:write`
-3. Скопируйте **ClientID** в `.env`:
+3. Redirect URI — оба:
+   - `{your-origin}/api/auth/yandex/callback` — вход пользователей (должен совпадать точно, с учётом схемы и хоста за прокси);
+   - `https://oauth.yandex.ru/verification_code` — ссылка «получить токен» в админке (токен организации для синхронизации).
+4. Скопируйте **ClientID** и **Client secret** в `.env`:
 
 ```bash
 YANDEX_OAUTH_CLIENT_ID=ваш_client_id
+YANDEX_OAUTH_CLIENT_SECRET=ваш_client_secret
 ```
 
-Это **runtime** env контейнера app (не Docker build ARG): задайте в `.env` / secrets и перезапустите. Без `YANDEX_OAUTH_CLIENT_ID` `/api/auth/yandex/authorize` отвечает 503, и ссылка «получить токен» не открывает Yandex OAuth.  
-В коде: `lib/yandexOAuth/` + роут `/api/auth/yandex/authorize` (ClientID не попадает в клиентский бандл).
+Это **runtime** env контейнера app (не Docker build ARG): задайте в `.env` / secrets и перезапустите. Без них `/api/auth/yandex/start` и `/api/auth/yandex/authorize` отвечают 503, и вход через Яндекс ID не работает.  
+В коде: `lib/yandexOAuth/` + роуты `/api/auth/yandex/start`, `/api/auth/yandex/callback` (обмен кода на токен на сервере, секрет не попадает в браузер) и `/api/auth/yandex/authorize` (implicit flow для ссылки в админке).
 
 ### 2. Организация в админке
 
-- **Cloud Organization ID** (org id Яндекс 360 / Cloud для API Трекера) и OAuth-токен организации — в админке «Трекер», не в env. Токен хранится в БД в зашифрованном виде.
+- **Cloud Organization ID** (org id Яндекс 360 / Cloud для API Трекера) и OAuth-токен организации — в админке «Трекер», не в env. Токен для синхронизации вставляется вручную (как API-токен у Jira); ссылка «получить токен» ведёт на `/api/auth/yandex/authorize` → Яндекс показывает токен для копирования. Токен хранится в БД в зашифрованном виде.
+- На `/register` токен организации берётся из входа администратора через Яндекс ID.
 
 ### 3. Пользователь
 
-На `/auth-setup` или в настройках: OAuth-токен Яндекс ID (кнопка ведёт на `/api/auth/yandex/authorize` → редирект на `oauth.yandex.ru/authorize?…&client_id=…&scope=tracker:read+tracker:write`).
+На `/auth-setup` — кнопка «Войти с Яндекс ID»: `/api/auth/yandex/start` → `oauth.yandex.ru/authorize?response_type=code…` → `/api/auth/yandex/callback` (обмен кода) → `/auth-setup#yandex_oauth=…` → автовход. В настройках, вкладка трекера — та же кнопка для переподключения. Ручной вставки пользовательского токена нет.
 
 ---
 
@@ -73,7 +78,7 @@ ATLASSIAN_OAUTH_CLIENT_ID=…
 ATLASSIAN_OAUTH_CLIENT_SECRET=…
 ```
 
-- **Не нужен** `YANDEX_OAUTH_CLIENT_ID` — это только для ветки A.
+- **Не нужны** `YANDEX_OAUTH_*` — это только для ветки A.
 
 ### 1. OAuth-приложение Atlassian (пользовательский вход)
 
@@ -86,7 +91,7 @@ ATLASSIAN_OAUTH_CLIENT_SECRET=…
    `read:project:jira`.
    Тот же набор задан в коде: `lib/atlassianOAuth/constants.ts` (`ATLASSIAN_OAUTH_SCOPES`).
 4. Client ID / Secret → runtime `.env` / secrets контейнера (`ATLASSIAN_OAUTH_*`), затем рестарт app.
-   Это **не** Docker build ARG (как и `YANDEX_OAUTH_CLIENT_ID`): пустые значения на сборке образа не мешают, если задать их при запуске.
+   Это **не** Docker build ARG (как и `YANDEX_OAUTH_*`): пустые значения на сборке образа не мешают, если задать их при запуске.
 
 После «Продолжить с Atlassian»: access + refresh + `cloudId` в браузере (localStorage).  
 REST пользователя: `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3` с `Bearer` (заголовок `X-Tracker-Cloud-Id` в запросах к Beer Tracker API).
@@ -108,7 +113,7 @@ Site REST (`https://your-site.atlassian.net/rest/api/3`) и ссылки `/brows
 
 URL API в настройках организации: `https://jira.example.com/rest/api/2`.
 
-- **Не нужен** `YANDEX_OAUTH_CLIENT_ID`.
+- **Не нужны** `YANDEX_OAUTH_*`.
 - Auth: **personal access token (PAT)** в профиле Jira  
   Обычно: `{site}/secure/ViewProfile.jspa` → Personal Access Tokens (точный путь зависит от версии).
 - Org-поля подключения — в админке.
@@ -125,9 +130,9 @@ URL API в настройках организации: `https://jira.example.co
 
 ## Где настраивать
 
-1. **Инстанс** — `.env`: только OAuth-приложения (ветка A: `YANDEX_OAUTH_CLIENT_ID`; ветка B: `ATLASSIAN_OAUTH_*`).
+1. **Инстанс** — `.env`: только OAuth-приложения (ветка A: `YANDEX_OAUTH_*`; ветка B: `ATLASSIAN_OAUTH_*`).
 2. **Организация** — `/register` и админка «Трекер»: тип трекера, URL API, учётка (ветка B: email + API-токен).
-3. **Пользователь** — `/auth-setup` или `/register` (ветка B: OAuth; вкладка токена в настройках скрыта). Для Yandex / Jira on-prem — также вкладка трекера в настройках.
+3. **Пользователь** — `/auth-setup` или `/register` (ветки A и B: OAuth; у B вкладка токена в настройках скрыта, у A там кнопка переподключения Яндекс ID). Для Jira on-prem — также вкладка трекера в настройках.
 
 Поля env: [`env.example`](../env.example).  
 Инженерия адаптеров / контракты Yandex: [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md), [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md).

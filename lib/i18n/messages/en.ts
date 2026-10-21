@@ -247,6 +247,7 @@ export const enMessages = {
       validating: 'Validating…',
       save: 'Save',
       tokenSaved: 'Token saved',
+      yandexConnected: 'Yandex ID connected',
       getTokenLink: {
         jira: 'Create an API token in your Atlassian account',
         'yandex-tracker': 'Get a token in Yandex ID settings',
@@ -731,13 +732,14 @@ export const enMessages = {
       onboardingTitle: 'Company setup',
       onboardingTagline: {
         tracker:
-          'Create the first organization. Connect with a Yandex Tracker token of the administrator.',
+          'Create the first organization. Sign in with Yandex ID as the Yandex Tracker administrator.',
         'jira-onprem':
           'Create the first organization. Enter the Jira personal access token of the administrator who connects the site.',
         'jira-cloud':
           'Create the first organization. Continue with Atlassian as the administrator who links Jira.',
       },
       atlassianConnectedSite: 'Atlassian connected: {site}',
+      yandexConnected: 'Yandex ID connected',
       atlassianRequired: 'Click “Continue with Atlassian” first to connect your Jira Cloud site.',
       onboardingSubmit: 'Create organization and administrator',
       closedTitle: 'Registration is closed',
@@ -2509,13 +2511,15 @@ export const enMessages = {
       registerOrganizationAction: 'Register organization',
       infoMessage: {
         tracker:
-          'OAuth token is required. It is stored only in your browser and is never sent elsewhere.',
+          'Sign in with Yandex ID. The token is stored only in your browser.',
         'jira-onprem':
           'A personal access token is required. It stays in your browser and is only sent to this instance.',
         'jira-cloud': 'Authorization credentials are stored only in your browser',
       },
       atlassianConnectButton: 'Continue with Atlassian',
       atlassianConnectedHint: 'Atlassian connected — signing you in…',
+      yandexConnectButton: 'Sign in with Yandex ID',
+      yandexConnectedHint: 'Yandex ID connected — signing you in…',
       jiraCloudEmailLabel: 'Atlassian account email',
       jiraCloudEmailPlaceholder: 'you@example.com',
       jiraCloudEmailHint:

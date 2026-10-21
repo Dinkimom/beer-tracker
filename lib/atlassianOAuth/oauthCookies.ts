@@ -51,18 +51,42 @@ export function readCookieValue(request: Request, name: string): string {
   return '';
 }
 
+/** Short-lived state + return-path cookies of an OAuth redirect flow (Atlassian, Yandex ID). */
+interface OAuthFlowCookieNames {
+  returnPath: string;
+  state: string;
+}
+
+const ATLASSIAN_OAUTH_COOKIE_NAMES: OAuthFlowCookieNames = {
+  returnPath: ATLASSIAN_OAUTH_RETURN_COOKIE,
+  state: ATLASSIAN_OAUTH_STATE_COOKIE,
+};
+
+export function setOAuthFlowCookies(
+  res: Response,
+  names: OAuthFlowCookieNames,
+  state: string,
+  returnPath: string
+): void {
+  appendCookie(res, names.state, state, COOKIE_MAX_AGE_SEC);
+  appendCookie(res, names.returnPath, returnPath, COOKIE_MAX_AGE_SEC);
+}
+
+export function clearOAuthFlowCookies(res: Response, names: OAuthFlowCookieNames): void {
+  clearCookie(res, names.state);
+  clearCookie(res, names.returnPath);
+}
+
 export function setAtlassianOAuthStartCookies(
   res: Response,
   state: string,
   returnPath: string
 ): void {
-  appendCookie(res, ATLASSIAN_OAUTH_STATE_COOKIE, state, COOKIE_MAX_AGE_SEC);
-  appendCookie(res, ATLASSIAN_OAUTH_RETURN_COOKIE, returnPath, COOKIE_MAX_AGE_SEC);
+  setOAuthFlowCookies(res, ATLASSIAN_OAUTH_COOKIE_NAMES, state, returnPath);
 }
 
 export function clearAtlassianOAuthCookies(res: Response): void {
-  clearCookie(res, ATLASSIAN_OAUTH_STATE_COOKIE);
-  clearCookie(res, ATLASSIAN_OAUTH_RETURN_COOKIE);
+  clearOAuthFlowCookies(res, ATLASSIAN_OAUTH_COOKIE_NAMES);
 }
 
 export function sanitizeAtlassianOAuthReturnPath(raw: string | null | undefined): string {
