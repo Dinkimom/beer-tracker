@@ -2,6 +2,30 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.23.0] — 2026-10-23
+
+### English
+
+- The MCP sprint context now includes `unplannedTasks`: tracker issues in the sprint that are not yet on the board, so the agent sees the sprint backlog and can place it. The usual `featureId`, `assigneeId` and `taskIds` filters apply.
+- Jira: sprint issues are no longer lost when issue types have localized names («Баг», «Задача»); only epics are left out. This fixes sprint membership, plan-vs-actual and false `issue_not_in_sprint` warnings for the agent.
+- Agent chat: new replies type out word by word; answer buttons appear when the text is done.
+- You can see what an external agent (claude.ai, Cursor…) is doing: the chat shows its current step from its MCP calls instead of «Waiting for the agent». If it goes quiet for more than 3 minutes, the chat suggests nudging it.
+- When the agent replies while the chat is collapsed, a «Claude replied» toast opens the chat and the ✨ dot pulses. In a background tab the toast waits until you come back.
+- Accepting a draft no longer closes the agent session, so you can keep the conversation going.
+- No operator action needed: new `agent_sessions` columns are added automatically on start.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.23.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Контекст спринта в MCP отдаёт `unplannedTasks` — задачи спринта в трекере, которых ещё нет на доске: агент видит бэклог спринта и может его разложить. Работают обычные фильтры `featureId`, `assigneeId` и `taskIds`.
+- Jira: задачи спринта больше не теряются, если типы задач названы по-русски («Баг», «Задача»); отсекаются только эпики. Это чинит принадлежность к спринту, план против факта и ложные предупреждения `issue_not_in_sprint` у агента.
+- Чат с агентом: новые ответы «допечатываются» по словам, кнопки вариантов появляются после текста.
+- Видно, что делает внешний агент (claude.ai, Cursor…): вместо «Ждёт агента» чат показывает его текущий шаг по вызовам MCP. Если агент затих больше чем на 3 минуты, чат подскажет напомнить ему.
+- Ответ агента при свёрнутом чате: тост «Claude ответил» открывает чат, точка на ✨ пульсирует. В фоновой вкладке тост дождётся возвращения.
+- После «Принять всё» сессия с агентом не закрывается — разговор можно продолжить.
+- Действий от операторов не нужно: новые колонки `agent_sessions` добавляются автоматически при старте.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.23.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.22.1] — 2026-10-22
 
 ### English
