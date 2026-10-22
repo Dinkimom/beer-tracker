@@ -2,6 +2,34 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.22.1] — 2026-10-22
+
+### English
+
+- Status changes respond right away: the card shows a pending state, then recolors with a highlight on success, or shakes and rolls back with an error toast on failure.
+- Cards leaving the board (moved to another sprint, to the backlog or off the plan) now animate out instead of disappearing.
+- Swimlane segment editor: click the card to split it, drag a break to move it or change its length; a hint explains the controls.
+- Task resize handles give a small nudge as the edge snaps to the next grid cell.
+- Each person on the board gets their own presence color, used for avatars and for outlining cards they are dragging.
+- Copy actions in the context menu confirm with «Copied» on the button itself.
+- The active sprint's tasks refresh quietly every minute, so status changes made outside the planner show up without reloading; your unsaved edits are never overwritten.
+- Jira: the field catalog, board filter and sprint board are cached, and moving a task to a sprint or changing its status sends requests in parallel, so these actions are noticeably faster.
+- Demo planner: status workflow and moving tasks between sprints work on fixtures.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.22.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Смена статуса откликается сразу: карточка показывает «в процессе», затем перекрашивается с подсветкой или, при ошибке, встряхивается, откатывается и показывает тост.
+- Карточка, уходящая с доски (в другой спринт, в бэклог или с плана), исчезает с анимацией, а не мгновенно.
+- Редактор сегментов свимлейна: клик по карточке разрезает её, разрыв можно перетаскивать и менять его длину; в шапке есть подсказка.
+- Рукоятки ресайза задач слегка «щёлкают» при переходе кромки на следующую ячейку сетки.
+- У каждого участника доски свой цвет присутствия — на аватарах и в обводке карточки, которую он тянет.
+- Копирование из контекстного меню подтверждается надписью «Готово» прямо на кнопке.
+- Задачи активного спринта тихо обновляются раз в минуту — смена статуса вне планера видна без перезагрузки; несохранённые правки не затираются.
+- Jira: каталог полей, фильтр доски и доска спринта кэшируются, а перенос в спринт и смена статуса шлют запросы параллельно — эти действия заметно быстрее.
+- Демо-планер: workflow статусов и перенос задач между спринтами работают на фикстурах.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.22.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.22.0] — 2026-10-22
 
 ### English
