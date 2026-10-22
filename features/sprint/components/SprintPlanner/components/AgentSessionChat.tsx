@@ -1,11 +1,7 @@
 'use client';
 
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
-import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
-
-import { useState } from 'react';
-import toast from 'react-hot-toast';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -13,13 +9,15 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { CONTEXT_MENU_GHOST_BUTTON_RESET } from '@/features/context-menu/contextMenuClasses';
 import { AgentComposer } from '@/features/swimlane/components/AgentComposer';
 import { useAgentBridge } from '@/features/swimlane/hooks/useAgentBridge';
-import { useAgentSessions } from '@/features/swimlane/hooks/useAgentSessions';
-import { collectUsedAgentMentions, mergeAgentMentions } from '@/lib/agentSessions/agentMentions';
+
+import { useAgentChatDraft } from '../hooks/useAgentChatDraft';
 
 import { AgentBridgeProgress } from './AgentBridgeProgress';
 import { AgentBridgeToggle } from './AgentBridgeToggle';
 import { AgentCallAgentBar } from './AgentCallAgentBar';
 import { AgentSessionConversation } from './AgentSessionConversation';
+import { AgentSkillForm } from './AgentSkillForm';
+import { AgentSkillPicker } from './AgentSkillPicker';
 
 /** Квадратная иконочная кнопка: без горизонтальных отступов, иначе svg сжимается в 24px. */
 const HEADER_ICON_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !w-6 shrink-0 !rounded-md !p-0 text-gray-500 hover:!bg-gray-500/[0.12] hover:text-gray-700 dark:text-gray-400 dark:hover:!bg-white/[0.08] dark:hover:text-gray-200`;
@@ -27,6 +25,9 @@ const HEADER_ICON_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !w-6
 /**
  * Чат сессии с агентом — верхняя часть острова агента над тулбаром инструментов: заголовок
  * с 🗑 «Очистить чат» (завершает сессию), лента (просьбы, драфты, 💬, ответы, статус в конце), полоска «позови агента» и поле ввода.
+ * Скилл (готовый сценарий с параметрами) — карточкой в пустом чате или «/» в поле ввода в любой момент:
+ * вызов дописывается в текущую сессию, текст — необязательное уточнение.
+ * На вопрос агента с вариантами отвечают кнопкой — она уходит обычной репликой.
  * Какую сессию показать, решает остров («Новая сессия» и «Очистить чат» в шапке — через `newSession`
  * и `onClear`); `session` null — пишем новую: первое сообщение её создаёт.
  */
@@ -49,41 +50,10 @@ export function AgentSessionChat({
   onCreated: (sessionId: string | null) => void;
 }) {
   const { t } = useI18n();
-  const sessions = useAgentSessions(sprintId);
   const bridge = useAgentBridge();
   // Агент работает над этой сессией в Claude CLI — шаг и время показываем в пузыре «Ждёт агента».
   const bridgeRun = session ? bridge.runs.find((run) => run.sessionId === session.id) : undefined;
-  const [text, setText] = useState('');
-  const [mentions, setMentions] = useState<AgentMention[]>([]);
-  const busy = sessions.creating || sessions.posting;
-  const context = origin.mentions ?? [];
-
-  const reset = () => {
-    setText('');
-    setMentions([]);
-  };
-
-  const send = () => {
-    const request = text.trim();
-    if (busy || !request) {
-      return;
-    }
-    const used = mergeAgentMentions(context, collectUsedAgentMentions(request, mentions));
-    if (session) {
-      sessions
-        .post({ kind: 'message', mentions: used, sessionId: session.id, text: request })
-        .then(reset)
-        .catch(() => toast.error(t('agentSession.sendFailed')));
-      return;
-    }
-    sessions
-      .create({ context: origin.context ?? {}, mentions: used, taskId: origin.taskId, text: request })
-      .then((created) => {
-        reset();
-        onCreated(created?.id ?? null);
-      })
-      .catch(() => toast.error(t('agentSession.submitFailed')));
-  };
+  const draft = useAgentChatDraft({ onCreated, origin, session, sprintId });
 
   return (
     <div className="flex flex-col gap-2.5" data-agent-session-chat="">
@@ -124,7 +94,7 @@ export function AgentSessionChat({
 
       <AgentSessionConversation
         key={session?.id ?? 'new'}
-        {...(sessions.draftSession
+        {...(draft.hasDraftSession
           ? { empty: t('agentSession.queuedHint') }
           : { empty: t('agentSession.emptyChat'), emptyTitle: t('agentSession.emptyChatTitle') })}
         messages={session?.messages ?? []}
@@ -132,21 +102,27 @@ export function AgentSessionChat({
         waitingDetail={
           bridgeRun ? <AgentBridgeProgress startedAt={bridgeRun.startedAt} step={bridgeRun.step} /> : undefined
         }
+        onPickOption={draft.pickOption}
       />
+
+      {draft.showSkillPicker ? <AgentSkillPicker onPick={draft.setSkill} /> : null}
 
       {session?.status === 'waiting_agent' && !bridgeRun ? <AgentCallAgentBar sessionId={session.id} /> : null}
 
       <AgentComposer
+        allowEmpty={draft.skill != null}
         autoFocus={autoFocus}
-        context={context}
-        disabled={busy}
-        mentions={mentions}
-        placeholder={session ? t('agentSession.chatPlaceholder') : t('agentSession.requestPlaceholder')}
+        context={draft.context}
+        disabled={draft.busy}
+        header={<AgentSkillForm value={draft.skill} onChange={draft.setSkill} onRemove={() => draft.setSkill(null)} />}
+        mentions={draft.mentions}
+        placeholder={draft.placeholder}
         sprintId={sprintId}
-        text={text}
-        onMentionsChange={setMentions}
-        onSubmit={send}
-        onTextChange={setText}
+        text={draft.text}
+        onMentionsChange={draft.setMentions}
+        onSkillPick={draft.setSkill}
+        onSubmit={draft.send}
+        onTextChange={draft.setText}
       />
 
       <AgentBridgeToggle />

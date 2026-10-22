@@ -5,6 +5,8 @@ export const agentSessionEn = {
   requestPlaceholder: 'Ask the agent or have it adjust the plan…',
   chatPlaceholder: 'Message the agent…',
   composerHint: '@ — task or person · Enter — send · Shift+Enter — new line',
+  composerHintWithSkills: '/ — scenario · @ — task or person · Enter — send',
+  skillsAria: 'Agent scenarios',
   mentionsAria: 'Mention a task or a person',
   submit: 'Send to agent',
   submitFailed: 'Could not send the request',
@@ -64,4 +66,30 @@ export const agentSessionEn = {
   },
   bridgeRunFailed: 'Bridge did not accept the run',
   collapseChat: 'Collapse chat',
+  skillsTitle: 'Or pick a scenario',
+  skillRemove: 'Remove scenario',
+  skillNotePlaceholder: 'A note for the agent — optional…',
+  skills: {
+    balance_load: {
+      title: 'Balance the load',
+      description: 'Fix overload — a draft that moves tasks',
+      params: { reassign: { label: 'Reassign', choices: { yes: 'To other people', no: 'Only shift in time' } } },
+    },
+    place_tasks: {
+      title: 'Place tasks',
+      description: 'Put unplaced tasks on the board',
+      params: { order: { label: 'Order', choices: { priority: 'By priority', dependencies: 'By links' } } },
+    },
+    sprint_risks: {
+      title: 'Sprint risks',
+      description: 'What may slip — a text answer',
+      params: { detail: { label: 'Answer', choices: { short: 'Short', detailed: 'Detailed' } } },
+    },
+    sprint_goals: {
+      title: 'Suggest goals',
+      description: 'Sprint goals from its tasks',
+      params: { goalType: { label: 'Goals', choices: { delivery: 'Delivery', mixed: 'Delivery and discovery' } } },
+    },
+  },
+  optionsAria: 'Answer options',
 };

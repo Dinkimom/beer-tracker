@@ -1,9 +1,11 @@
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
+import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { z } from 'zod';
 
 import { AgentMentionsSchema } from '@/lib/agentSessions/agentMentions';
+import { AgentSessionSkillSchema, buildAgentSkillAgentView } from '@/lib/agentSessions/agentSkills';
 
 /**
  * Сессия работы с агентом: одна просьба и всё, что из неё вышло — драфты v1, v2, … и переписка.
@@ -49,10 +51,14 @@ export interface AgentSessionMessage {
   kind: AgentSessionMessageKind;
   /** Задачи, люди и заметки, упомянутые через «@» (и контекст, из которого открыли окно). */
   mentions: AgentMention[];
+  /** Варианты ответа под репликой агента: человек отвечает кнопкой. */
+  options: string[];
   /** Версия драфта (short proposal id), к которой относится сообщение. */
   proposalId: string | null;
   replyTo: string | null;
   resolution: AgentSessionResolution | null;
+  /** Скилл, вызванный этой репликой человека («/» в чате или сценарий в новой сессии). */
+  skill: AgentSessionSkill | null;
   target: AgentSessionTarget | null;
   text: string;
 }
@@ -93,8 +99,11 @@ export const AgentSessionCreateSchema = z.object({
     })
     .default({}),
   mentions: AgentMentionsSchema.default([]),
+  skill: AgentSessionSkillSchema.optional(),
   taskId: z.string().trim().min(1).max(255).optional(),
   text: z.string().trim().min(1).max(AGENT_SESSION_TEXT_MAX),
+  /** Заголовок сессии; по умолчанию — текст просьбы (для скилла — его название). */
+  title: optionalLabel,
 });
 
 export type AgentSessionCreateInput = z.infer<typeof AgentSessionCreateSchema>;
@@ -113,12 +122,16 @@ export const AgentSessionUserMessageSchema = z
   .object({
     kind: z.enum(['comment', 'message', 'redo']),
     mentions: AgentSessionMentionsDefault,
+    skill: AgentSessionSkillSchema.optional(),
     target: TargetSchema.optional(),
     text: z.string().trim().max(AGENT_SESSION_TEXT_MAX),
   })
   .superRefine((value, ctx) => {
     if (value.kind === 'comment' && !value.target) {
       ctx.addIssue({ code: 'custom', message: 'target is required', path: ['target'] });
+    }
+    if (value.skill && value.kind !== 'message') {
+      ctx.addIssue({ code: 'custom', message: 'skill goes with a message', path: ['skill'] });
     }
     if (value.kind !== 'redo' && !value.text) {
       ctx.addIssue({ code: 'custom', message: 'text is required', path: ['text'] });
@@ -210,6 +223,23 @@ export function countOpenAgentSessionComments(messages: readonly AgentSessionMes
   return count;
 }
 
+/**
+ * Скилл, который агент ещё не отработал: у последней реплики человека со скиллом
+ * после последнего ответа агента. null — такой нет.
+ */
+export function pendingAgentSessionSkill(messages: readonly AgentSessionMessage[]): AgentSessionSkill | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.authorKind === 'agent') {
+      return null;
+    }
+    if (message?.skill) {
+      return message.skill;
+    }
+  }
+  return null;
+}
+
 export function agentSessionDraftVersion(messages: readonly AgentSessionMessage[]): number {
   return messages.filter((message) => message.kind === 'draft').length;
 }
@@ -221,7 +251,7 @@ function fetchContextCall(session: Pick<AgentSession, 'sprintId' | 'taskId'>): s
 }
 
 const SESSION_HINT =
-  'A work session with a person. Read conversation top to bottom: kind=request is what they asked (mentions = tasks/people/notes they pointed at: task id → taskIds, person id → assigneeId, note id → notes[].id), comment = their remark on one item of your draft (target), redo = "redo the draft", draft = a version you proposed. Start with fetchContext. To change the plan: propose_plan_patch(sessionId, replacePending: true, replies: [...]) — replies answer openComments (resolution addressed|declined + what you did). To answer without a new draft: reply_agent_session. Never apply_plan_patch for the person — they accept the draft on the board.';
+  'A work session with a person. Read conversation top to bottom: kind=request is what they asked (mentions = tasks/people/notes they pointed at: task id → taskIds, person id → assigneeId, note id → notes[].id), comment = their remark on one item of your draft (target), redo = "redo the draft", draft = a version you proposed. Start with fetchContext. To change the plan: propose_plan_patch(sessionId, replacePending: true, replies: [...]) — replies answer openComments (resolution addressed|declined + what you did). To answer without a new draft: reply_agent_session. skill = a preset the person invoked in the planner (top-level skill = the one waiting for you; each conversation item keeps its own): follow skill.instructions (output draft → propose_plan_patch, reply → reply_agent_session). When a real choice belongs to the person (two ways to fix a conflict, what to drop), ask with reply_agent_session(message, options: 2–5 short answers) — their pick comes back as the next message. Never apply_plan_patch for the person — they accept the draft on the board.';
 
 interface AgentSessionAgentView {
   context: AgentSessionContext;
@@ -231,8 +261,10 @@ interface AgentSessionAgentView {
     id: string;
     kind: AgentSessionMessageKind;
     mentions?: AgentMention[];
+    options?: string[];
     replyTo?: string;
     resolution?: AgentSessionResolution;
+    skill?: ReturnType<typeof buildAgentSkillAgentView>;
     target?: AgentSessionTarget;
     text: string;
   }>;
@@ -242,6 +274,7 @@ interface AgentSessionAgentView {
   id: string;
   /** id сообщений-💬 без ответа агента. */
   openComments: string[];
+  skill?: ReturnType<typeof buildAgentSkillAgentView>;
   sprintId: number;
   status: AgentSessionStatus;
   taskId: string | null;
@@ -249,6 +282,7 @@ interface AgentSessionAgentView {
 }
 
 export function buildAgentSessionAgentView(session: AgentSession): AgentSessionAgentView {
+  const pendingSkill = pendingAgentSessionSkill(session.messages);
   const openComments: string[] = [];
   for (const group of groupAgentSessionItemComments(session.messages).values()) {
     for (const item of group) {
@@ -265,8 +299,10 @@ export function buildAgentSessionAgentView(session: AgentSession): AgentSessionA
       id: message.id,
       kind: message.kind,
       ...(message.mentions.length > 0 ? { mentions: message.mentions } : {}),
+      ...(message.options.length > 0 ? { options: message.options } : {}),
       ...(message.replyTo ? { replyTo: message.replyTo } : {}),
       ...(message.resolution ? { resolution: message.resolution } : {}),
+      ...(message.skill ? { skill: buildAgentSkillAgentView(message.skill) } : {}),
       ...(message.target ? { target: message.target } : {}),
       text: message.text,
     })),
@@ -275,6 +311,7 @@ export function buildAgentSessionAgentView(session: AgentSession): AgentSessionA
     hint: SESSION_HINT,
     id: session.id,
     openComments,
+    ...(pendingSkill ? { skill: buildAgentSkillAgentView(pendingSkill) } : {}),
     sprintId: session.sprintId,
     status: session.status,
     taskId: session.taskId,
@@ -284,12 +321,14 @@ export function buildAgentSessionAgentView(session: AgentSession): AgentSessionA
 
 /** Строка входящих агента: без переписки, только что и где. */
 export function summarizeAgentSessionForAgent(session: AgentSession) {
+  const pendingSkill = pendingAgentSessionSkill(session.messages);
   return {
     context: session.context,
     draftVersion: agentSessionDraftVersion(session.messages),
     id: session.id,
     lastMessage: session.messages.at(-1)?.text ?? '',
     openComments: countOpenAgentSessionComments(session.messages),
+    ...(pendingSkill ? { skill: pendingSkill.id } : {}),
     sprintId: session.sprintId,
     status: session.status,
     taskId: session.taskId,

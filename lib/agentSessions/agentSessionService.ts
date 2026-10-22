@@ -129,7 +129,7 @@ export async function createPlannerAgentSession(input: {
     sprintId: input.sprintId,
     status: 'waiting_agent',
     taskId: input.request.taskId ?? null,
-    title: agentSessionTitleFromIntent(input.request.text, input.request.text),
+    title: agentSessionTitleFromIntent(input.request.title, input.request.text),
   });
   await insertAgentSessionMessage({
     authorId: input.ownerId,
@@ -137,6 +137,7 @@ export async function createPlannerAgentSession(input: {
     kind: 'request',
     mentions: input.request.mentions,
     sessionId,
+    skill: input.request.skill ?? null,
     text: input.request.text,
   });
   notifySession(input.organizationId, input.sprintId);
@@ -163,6 +164,7 @@ export async function postUserAgentSessionMessage(input: {
     mentions: input.message.mentions,
     proposalId: pending?.proposalId ?? null,
     sessionId: session.id,
+    skill: input.message.skill ?? null,
     target: input.message.target,
     text: input.message.text,
   });
@@ -313,6 +315,7 @@ export async function replyAgentSession(input: {
   clientBrand?: McpOAuthClientBrand;
   close?: boolean;
   message?: string;
+  options?: readonly string[];
   organizationId: string;
   ownerId: string;
   replies: readonly AgentSessionReply[];
@@ -327,6 +330,7 @@ export async function replyAgentSession(input: {
       authorKind: 'agent',
       clientBrand: input.clientBrand,
       kind: 'message',
+      options: input.options,
       sessionId: session.id,
       text,
     });

@@ -1,11 +1,13 @@
 import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
 
+import { attachCommentReactionSummaries } from '@/lib/comments/commentReactionsRepository';
 import { extractExcalidrawSceneText } from '@/lib/comments/excalidrawSceneText';
 import {
   plannerCommentCardRowSpan,
   plannerCommentDurationPartsFromWidth,
 } from '@/lib/comments/plannerCommentCardRow';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import { groupReactionsForAgent } from '@/lib/comments/stickyNoteReaction';
 import { findOrganizationById } from '@/lib/organizations';
 import {
   commentIdSetFromRecords,
@@ -54,7 +56,7 @@ const DAY_LEGEND =
   'Zero-based index of a working day within the sprint timeline (not a calendar weekday). meta.weekendDays are Saturday and Sunday inside the sprint window; they have no day index and must not be used for positions.';
 
 const NOTE_LEGEND =
-  'notes[].width = card length in parts from (day, part), same unit as position duration; notes[].height = card height in rows (1 = one task card); notes[].color = sticky color (text notes); notes[].text is markdown (headings, - [ ]/- [x] checklists, bullets, **bold**, *italic*, ~~strike~~, `code`), - [x] = done. Cards of one assignee that overlap in time do not cover each other: the swimlane stacks them into extra rows, so the lane grows taller. Keep notes of one assignee apart in time to keep the lane compact.';
+  'notes[].width = card length in parts from (day, part), same unit as position duration; notes[].height = card height in rows (1 = one task card); notes[].color = sticky color (text notes); notes[].text is markdown (headings, - [ ]/- [x] checklists, bullets, **bold**, *italic*, ~~strike~~, `code`), - [x] = done. notes[].authorName = who created the note; notes[].reactions = [{emoji, count, by: names}] — ✅ means people marked the note done (the card also turns green). Cards of one assignee that overlap in time do not cover each other: the swimlane stacks them into extra rows, so the lane grows taller. Keep notes of one assignee apart in time to keep the lane compact.';
 
 function partLegend(partsPerDay: number): string {
   return `Time segment within a working day: 0 .. ${partsPerDay - 1} (meta.partsPerDay=${partsPerDay}; duration is counted in these parts).`;
@@ -256,6 +258,27 @@ async function loadPositions(input: {
   return positions.map((row) => mapPosition(row as Record<string, unknown>));
 }
 
+/** Реакции на заметки: кто какой emoji поставил (нет реакций — поля нет). */
+async function attachNoteReactions(
+  notes: SprintContextNote[],
+  input: { organizationId: string; viewerUserId?: string }
+): Promise<SprintContextNote[]> {
+  const summaries = await attachCommentReactionSummaries({
+    comments: notes.map((note) => ({ id: note.id })),
+    organizationId: input.organizationId,
+    userId: input.viewerUserId ?? '',
+  });
+  const reactionsById = new Map(summaries.map((summary) => [summary.id, summary.reactions]));
+  return notes.map((note) => {
+    const votes = (reactionsById.get(note.id) ?? []).flatMap((reaction) =>
+      reaction.users.length > 0
+        ? reaction.users.map((user) => ({ emoji: reaction.emoji, name: user.name }))
+        : Array.from({ length: reaction.count }, () => ({ emoji: reaction.emoji, name: '' }))
+    );
+    return votes.length > 0 ? { ...note, reactions: groupReactionsForAgent(votes) } : note;
+  });
+}
+
 async function loadNotesWithDiagramText(input: {
   organizationId: string;
   sprintId: number;
@@ -291,7 +314,7 @@ async function loadNotesWithDiagramText(input: {
     })
   );
 
-  return notes;
+  return attachNoteReactions(notes, input);
 }
 
 async function loadAvailability(input: {

@@ -351,7 +351,7 @@ describe('useDebouncedApiSync', () => {
         deleteFn,
         fetchFn,
         getId: (x) => x.id,
-        getInflightItems: () => inflight,
+        loadSharedItems: () => inflight,
         saveFn,
         toApiFormat: (x) => x,
       })
@@ -370,5 +370,81 @@ describe('useDebouncedApiSync', () => {
 
     expect(result.current[0]).toEqual([{ id: 'from-prefetch', v: 3 }]);
     expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('takes the shared prefetch it joined so a returning sprint does not reuse a stale snapshot', async () => {
+    const box: { settled: Row[] | undefined } = { settled: undefined };
+    const fetchFn = vi.fn().mockResolvedValue([] as Row[]);
+    const deleteFn = vi.fn().mockResolvedValue(true);
+    const saveFn = vi.fn().mockResolvedValue(true);
+    const loadSharedItems = vi.fn(() => {
+      box.settled = [{ id: 'fresh', v: 1 }];
+      return Promise.resolve(box.settled);
+    });
+    const getInitialItems = (): Row[] | undefined => {
+      const taken = box.settled;
+      box.settled = undefined;
+      return taken;
+    };
+
+    const { result } = renderHook(() =>
+      useDebouncedApiSync<Row, string, Row>({
+        sprintId: 13,
+        debounceDelay: 5_000,
+        deleteFn,
+        fetchFn,
+        getId: (x) => x.id,
+        getInitialItems,
+        loadSharedItems,
+        saveFn,
+        toApiFormat: (x) => x,
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current[0]).toEqual([{ id: 'fresh', v: 1 }]);
+    });
+    expect(box.settled).toBeUndefined();
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('ignores a late response for a sprint the board already left', async () => {
+    const resolvers = new Map<number, (rows: Row[]) => void>();
+    const fetchFn = vi.fn(
+      (sprintId: number) =>
+        new Promise<Row[]>((resolve) => {
+          resolvers.set(sprintId, resolve);
+        })
+    );
+    const deleteFn = vi.fn().mockResolvedValue(true);
+    const saveFn = vi.fn().mockResolvedValue(true);
+
+    const { result, rerender } = renderHook(
+      ({ sprintId }) =>
+        useDebouncedApiSync<Row, string, Row>({
+          sprintId,
+          debounceDelay: 5_000,
+          deleteFn,
+          fetchFn,
+          getId: (x) => x.id,
+          saveFn,
+          toApiFormat: (x) => x,
+        }),
+      { initialProps: { sprintId: 20 } }
+    );
+
+    rerender({ sprintId: 21 });
+
+    await act(async () => {
+      resolvers.get(21)?.([{ id: 'b', v: 21 }]);
+      await Promise.resolve();
+    });
+    expect(result.current[0]).toEqual([{ id: 'b', v: 21 }]);
+
+    await act(async () => {
+      resolvers.get(20)?.([{ id: 'a', v: 20 }]);
+      await Promise.resolve();
+    });
+    expect(result.current[0]).toEqual([{ id: 'b', v: 21 }]);
   });
 });

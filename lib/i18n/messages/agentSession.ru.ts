@@ -5,6 +5,8 @@ export const agentSessionRu = {
   requestPlaceholder: 'Спроси агента или попроси поправить план…',
   chatPlaceholder: 'Напиши агенту…',
   composerHint: '@ — задача или человек · Enter — отправить · Shift+Enter — новая строка',
+  composerHintWithSkills: '/ — сценарий · @ — задача или человек · Enter — отправить',
+  skillsAria: 'Сценарии агента',
   mentionsAria: 'Упомянуть задачу или человека',
   submit: 'Отправить агенту',
   submitFailed: 'Не удалось отправить запрос',
@@ -64,4 +66,30 @@ export const agentSessionRu = {
     replying: 'Пишет ответ',
   },
   bridgeRunFailed: 'Мост не принял запуск',
+  skillsTitle: 'Или выбери сценарий',
+  skillRemove: 'Убрать сценарий',
+  skillNotePlaceholder: 'Уточнение для агента — можно не писать…',
+  skills: {
+    balance_load: {
+      title: 'Выровнять загрузку',
+      description: 'Снять перегруз — драфт с перестановками',
+      params: { reassign: { label: 'Переназначать', choices: { yes: 'Можно на других', no: 'Только сдвигать' } } },
+    },
+    place_tasks: {
+      title: 'Разложить задачи',
+      description: 'Поставить на доску задачи без места',
+      params: { order: { label: 'Порядок', choices: { priority: 'По приоритету', dependencies: 'По связям' } } },
+    },
+    sprint_risks: {
+      title: 'Риски спринта',
+      description: 'Что может сорваться — ответ текстом',
+      params: { detail: { label: 'Ответ', choices: { short: 'Кратко', detailed: 'Подробно' } } },
+    },
+    sprint_goals: {
+      title: 'Предложить цели',
+      description: 'Цели спринта по его задачам',
+      params: { goalType: { label: 'Цели', choices: { delivery: 'Delivery', mixed: 'Delivery и discovery' } } },
+    },
+  },
+  optionsAria: 'Варианты ответа',
 };

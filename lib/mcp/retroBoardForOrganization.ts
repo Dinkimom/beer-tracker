@@ -1,6 +1,8 @@
+import type { AgentReactionView } from '@/lib/comments/stickyNoteReaction';
 import type { RetroBoardOp } from '@/lib/mcp/retroBoardOps';
 import type { RetroBoard, RetroColumnPreset } from '@/lib/retro/retroBoardShared';
 
+import { groupReactionsForAgent } from '@/lib/comments/stickyNoteReaction';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
   addRetroCardComment,
@@ -15,7 +17,6 @@ import {
   renameRetroColumn,
   resolveRetroBoard,
   retroStoreFromBoards,
-  uniqueRetroReactionEmojis,
   updateRetroCardText,
 } from '@/lib/retro/retroBoard';
 import { fetchRetroBoard, upsertRetroBoard } from '@/lib/retro/retroBoardRepository';
@@ -23,12 +24,14 @@ import { readRetroColumnTemplate } from '@/lib/retro/retroColumnTemplateReposito
 
 interface McpRetroBoardView {
   cards: Array<{
+    /** Кто завёл карточку; у старых карточек — нет. */
+    authorName?: string;
     cardId: string;
     columnId: string;
     comments: Array<{ authorName: string; commentId: string; createdAt: string; text: string }>;
     createdAt: string;
     kind: string;
-    reactions: string[];
+    reactions: AgentReactionView[];
     text: string;
   }>;
   columns: Array<{
@@ -53,6 +56,7 @@ function toMcpView(board: RetroBoard): McpRetroBoardView {
     cards: board.cards
       .filter((card) => card.kind !== 'image')
       .map((card) => ({
+        ...(card.authorName ? { authorName: card.authorName } : {}),
         cardId: card.id,
         columnId: card.columnId,
         comments: card.comments.map((comment) => ({
@@ -63,7 +67,7 @@ function toMcpView(board: RetroBoard): McpRetroBoardView {
         })),
         createdAt: card.createdAt,
         kind: card.kind,
-        reactions: uniqueRetroReactionEmojis(card.reactions),
+        reactions: groupReactionsForAgent(card.reactions.map((vote) => ({ emoji: vote.emoji, name: vote.userName }))),
         text: card.text,
       })),
     columns: board.columns.map((column) => ({

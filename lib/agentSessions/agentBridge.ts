@@ -223,7 +223,9 @@ function agentBridgePrompt(sessionId: string, mcpServer: string): string {
     'Прочитай её через get_agent_session и подтяни fetchContext.',
     `Если план нужно менять — propose_plan_patch с sessionId ${sessionId}, replacePending: true, ответами на комментарии в replies и draftMessage.`,
     'Если просят записать на доску ретро — get_retro_board, затем apply_retro_board с confirm: true; итог сообщи через reply_agent_session.',
+    'Если в сессии есть skill — следуй skill.instructions.',
     'Если менять нечего — ответь через reply_agent_session.',
+    'Если решить может только человек — спроси через reply_agent_session с options: короткие варианты-кнопки.',
     'План не применяй: решение принимает человек на доске.',
   ].join(' ');
 }

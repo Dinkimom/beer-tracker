@@ -243,3 +243,27 @@ function parseStickyNoteReactionUser(value: unknown): StickyNoteReactionUser | n
   }
   return { mine: record.mine === true, name: record.name.trim() };
 }
+
+/** Реакции в MCP: какой emoji, сколько и кто поставил (имена; у неопознанных имени нет). */
+export interface AgentReactionView {
+  by: string[];
+  count: number;
+  emoji: string;
+}
+
+/** Голоса «кто — какой emoji» → по emoji в порядке первого появления. */
+export function groupReactionsForAgent(
+  votes: ReadonlyArray<{ emoji: string; name: string }>
+): AgentReactionView[] {
+  const byEmoji = new Map<string, AgentReactionView>();
+  for (const vote of votes) {
+    const view = byEmoji.get(vote.emoji) ?? { by: [], count: 0, emoji: vote.emoji };
+    view.count += 1;
+    const name = vote.name.trim();
+    if (name) {
+      view.by.push(name);
+    }
+    byEmoji.set(vote.emoji, view);
+  }
+  return [...byEmoji.values()];
+}

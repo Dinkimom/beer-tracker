@@ -342,7 +342,24 @@ export function normalizeJiraIssue(issue: TrackerIssue): IssueTrackerIssue {
   };
 }
 
-/** Resolves Start date / due custom fields via `/field`, then normalizes. */
+/**
+ * REST v3 (`/issue`, `/search/jql`) has no `sprint` / `closedSprints` — only the Agile API does.
+ * There sprints live in the site-specific Sprint custom field resolved from `/field`.
+ */
+function applyJiraSprintCustomFieldToTrackerIssue(
+  issue: TrackerIssue,
+  sprintFieldId: string | undefined
+): TrackerIssue {
+  if (issue.sprint || !sprintFieldId) {
+    return issue;
+  }
+  const sprint = mapJiraSprintField({
+    sprint: (issue as unknown as Record<string, unknown>)[sprintFieldId],
+  });
+  return sprint ? { ...issue, sprint } : issue;
+}
+
+/** Resolves Start date / due / Sprint custom fields via `/field`, then normalizes. */
 export async function normalizeJiraIssuesWithSchedule(
   api: AxiosInstance,
   issues: TrackerIssue[]
@@ -352,7 +369,12 @@ export async function normalizeJiraIssuesWithSchedule(
   }
   const refs = await loadJiraScheduleFieldRefsFromCatalog(api);
   return issues.map((issue) =>
-    normalizeJiraIssue(applyJiraScheduleFieldRefsToTrackerIssue(issue, refs))
+    normalizeJiraIssue(
+      applyJiraSprintCustomFieldToTrackerIssue(
+        applyJiraScheduleFieldRefsToTrackerIssue(issue, refs),
+        refs.sprintFieldId
+      )
+    )
   );
 }
 

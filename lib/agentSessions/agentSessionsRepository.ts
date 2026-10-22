@@ -10,7 +10,9 @@ import type {
   AgentSessionTarget,
   AgentSessionTargetKind,
 } from '@/lib/agentSessions/agentSession';
+import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 
+import { parseAgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 import { STAFF_AUTHOR_DISPLAY_NAME_SQL } from '@/lib/comments/commentAuthor';
 import { query } from '@/lib/db';
 import { getBeerTrackerSchema } from '@/lib/env';
@@ -40,10 +42,13 @@ interface MessageRow {
   id: string;
   kind: string;
   mentions: unknown;
+  options: unknown;
   proposal_id: string | null;
   reply_to: string | null;
   resolution: string | null;
   session_id: string;
+  skill_id: string | null;
+  skill_params: unknown;
   target_id: string | null;
   target_kind: string | null;
   target_label: string | null;
@@ -122,6 +127,12 @@ async function runEnsureAgentSessionsSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16)
     `);
     await query(`
+      ALTER TABLE ${schema}.agent_session_messages
+        ADD COLUMN IF NOT EXISTS options JSONB NOT NULL DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS skill_id VARCHAR(32),
+        ADD COLUMN IF NOT EXISTS skill_params JSONB NOT NULL DEFAULT '{}'::jsonb
+    `);
+    await query(`
       CREATE INDEX IF NOT EXISTS idx_agent_session_messages_session
         ON ${schema}.agent_session_messages (session_id, created_at)
     `);
@@ -190,6 +201,10 @@ function parseMentions(value: unknown): AgentMention[] {
   });
 }
 
+function parseOptions(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item !== '') : [];
+}
+
 function messageFromRow(row: MessageRow): AgentSessionMessage {
   const clientBrand = planPatchClientBrandFromUnknown(row.client_brand);
   return {
@@ -200,9 +215,11 @@ function messageFromRow(row: MessageRow): AgentSessionMessage {
     id: row.id,
     kind: parseKind(row.kind),
     mentions: parseMentions(row.mentions),
+    options: parseOptions(row.options),
     proposalId: row.proposal_id,
     replyTo: row.reply_to,
     resolution: parseResolution(row.resolution),
+    skill: parseAgentSessionSkill(row.skill_id, row.skill_params),
     target: parseTarget(row),
     text: row.text,
   };
@@ -236,8 +253,8 @@ async function loadMessages(sessionIds: readonly string[]): Promise<Map<string, 
   const result = await query<MessageRow>(
     `SELECT DISTINCT ON (m.created_at, m.id)
             m.id::text AS id, m.session_id::text AS session_id, m.author_kind, m.kind, m.text,
-            m.target_kind, m.target_id, m.target_label, m.mentions, m.proposal_id, m.reply_to::text AS reply_to,
-            m.resolution, m.created_at, m.client_brand,
+            m.target_kind, m.target_id, m.target_label, m.mentions, m.options, m.proposal_id, m.reply_to::text AS reply_to,
+            m.resolution, m.created_at, m.client_brand, m.skill_id, m.skill_params,
             ${STAFF_AUTHOR_DISPLAY_NAME_SQL} AS author_name
        FROM agent_session_messages m
        LEFT JOIN staff s
@@ -300,10 +317,12 @@ export async function insertAgentSessionMessage(input: {
   clientBrand?: string | null;
   kind: AgentSessionMessageKind;
   mentions?: readonly AgentMention[];
+  options?: readonly string[];
   proposalId?: string | null;
   replyTo?: string | null;
   resolution?: AgentSessionResolution | null;
   sessionId: string;
+  skill?: AgentSessionSkill | null;
   target?: { id: string; kind: AgentSessionTargetKind; label?: string | null } | null;
   text: string;
 }): Promise<string> {
@@ -311,9 +330,12 @@ export async function insertAgentSessionMessage(input: {
   const result = await query<{ id: string }>(
     `INSERT INTO agent_session_messages (
        session_id, author_kind, author_id, kind, text, target_kind, target_id, target_label,
-       proposal_id, reply_to, resolution, mentions, client_brand
+       proposal_id, reply_to, resolution, mentions, client_brand, options,
+       skill_id, skill_params
      )
-     VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10::uuid, $11, $12::jsonb, $13)
+     VALUES (
+       $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10::uuid, $11, $12::jsonb, $13, $14::jsonb, $15, $16::jsonb
+     )
      RETURNING id::text AS id`,
     [
       input.sessionId,
@@ -329,6 +351,9 @@ export async function insertAgentSessionMessage(input: {
       input.resolution ?? null,
       JSON.stringify(input.mentions ?? []),
       input.clientBrand ?? null,
+      JSON.stringify(input.options ?? []),
+      input.skill?.id ?? null,
+      JSON.stringify(input.skill?.params ?? {}),
     ]
   );
   await query(`UPDATE agent_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1::uuid`, [

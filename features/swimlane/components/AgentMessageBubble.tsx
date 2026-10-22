@@ -90,9 +90,9 @@ export function AgentMessageBubble({
           ) : null}
         </div>
       ) : null}
-      <p className={`whitespace-pre-wrap break-words ${bodyClassFor(fromAgent, card)} ${text ? '' : 'italic opacity-80'}`}>
+      <div className={`break-words ${bodyClassFor(fromAgent, card)} ${text ? '' : 'italic opacity-80'}`}>
         {text ? <AgentMessageText surface={fromAgent ? 'plain' : 'bubble'} text={text} /> : placeholder}
-      </p>
+      </div>
       {footer}
     </div>
   );

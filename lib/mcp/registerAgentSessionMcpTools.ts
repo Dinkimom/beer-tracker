@@ -16,6 +16,7 @@ import {
   getAgentSession,
   listAgentSessions,
 } from '@/lib/agentSessions/agentSessionsRepository';
+import { AgentReplyOptionsSchema } from '@/lib/agentSessions/agentSkills';
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
 
 function toolError(error: unknown) {
@@ -145,17 +146,20 @@ export function registerAgentSessionMcpTools(
     'reply_agent_session',
     {
       description:
-        'Answer in a session without a new draft: a clarifying question, an explanation, "done" for a non-plan request, or replies to 💬 you decline. For plan changes use propose_plan_patch(sessionId, replies) instead. close=true when the request is fully done and nothing is left on the board. The session then waits for the person.',
+        'Answer in a session without a new draft: a clarifying question, an explanation, "done" for a non-plan request, or replies to 💬 you decline. For plan changes use propose_plan_patch(sessionId, replies) instead. close=true when the request is fully done and nothing is left on the board. options = 2–5 short answers the person picks with one click (a fork only they can decide); the pick comes back as their next message. The session then waits for the person.',
       inputSchema: {
         close: z.boolean().optional().describe('Close the session (request done)'),
         message: z.string().max(2000).optional().describe('Text for the person'),
+        options: AgentReplyOptionsSchema.optional().describe(
+          'Answer buttons under message, e.g. ["Move RND-12 to Masha", "Postpone to next sprint"]. Needs message; not with close'
+        ),
         replies: AgentSessionRepliesSchema.optional().describe(
           'Answers to openComments: [{messageId, resolution: addressed|declined, text}]'
         ),
         sessionId: z.string().uuid().describe('Session id'),
       },
     },
-    async ({ close, message, replies, sessionId }) => {
+    async ({ close, message, options, replies, sessionId }) => {
       try {
         if (!canUsePlanner(input.profile)) {
           return toolError(new Error('forbidden: planner write requires organization admin or team membership'));
@@ -163,11 +167,15 @@ export function registerAgentSessionMcpTools(
         if (!message?.trim() && !replies?.length && !close) {
           return toolError(new Error('validation_failed: pass message, replies or close'));
         }
+        if (options?.length && (!message?.trim() || close)) {
+          return toolError(new Error('validation_failed: options need a message and an open session (no close)'));
+        }
         const clientBrand = input.mcpClientId ? await resolveRegisteredMcpClientBrand(input.mcpClientId) : undefined;
         const session = await replyAgentSession({
           clientBrand,
           close,
           message,
+          options,
           organizationId: input.organizationId,
           ownerId: input.userId,
           replies: replies ?? [],

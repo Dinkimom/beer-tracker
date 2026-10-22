@@ -7,7 +7,12 @@ import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { AgentMessageBubble } from '@/features/swimlane/components/AgentMessageBubble';
+import { chosenAgentReplyOption } from '@/lib/agentSessions/agentSkills';
 import { mcpOAuthClientBrandName } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
+
+import { agentSkillCaption } from '../utils/agentSkillCaption';
+
+import { AgentReplyOptions } from './AgentReplyOptions';
 
 type Translate = (key: string, params?: Record<string, number | string>) => string;
 
@@ -19,9 +24,12 @@ function messageAuthor(message: AgentSessionMessage, t: Translate): string {
   return (message.clientBrand && mcpOAuthClientBrandName(message.clientBrand)) || t('agentSession.agent');
 }
 
-/** Подпись реплики: кто и что это (драфт vN, просьба переделать, 💬 или ответ к пункту). */
+/** Подпись реплики: кто и что это (скилл, драфт vN, просьба переделать, 💬 или ответ к пункту). */
 function messageCaption(message: AgentSessionMessage, draftVersion: number, t: Translate): string {
   const who = messageAuthor(message, t);
+  if (message.skill) {
+    return `${who} · ${agentSkillCaption(message.skill, t)}`;
+  }
   if (message.kind === 'draft') {
     return `${who} · ${t('agentSession.kindDraft', { version: draftVersion })}`;
   }
@@ -79,6 +87,41 @@ function conversationTail(status: AgentSessionStatus | undefined, waitingDetail:
   return null;
 }
 
+/** Кнопки под вопросом агента: активны, только пока это последняя реплика и сессия ждёт человека. */
+function replyOptionsFor(
+  messages: readonly AgentSessionMessage[],
+  index: number,
+  status: AgentSessionStatus | undefined,
+  onPickOption: ((option: string) => void) | undefined
+): ReactNode {
+  const message = messages[index];
+  if (!message || message.authorKind !== 'agent' || message.options.length === 0) {
+    return undefined;
+  }
+  const isLast = index === messages.length - 1;
+  const answer = messages.slice(index + 1).find((item) => item.authorKind === 'user');
+  return (
+    <AgentReplyOptions
+      chosen={chosenAgentReplyOption(message.options, answer?.text)}
+      options={message.options}
+      onPick={isLast && status === 'waiting_user' ? onPickOption : undefined}
+    />
+  );
+}
+
+interface ScrollEdges {
+  bottom: boolean;
+  top: boolean;
+}
+
+/** Есть ли что прокрутить выше и ниже видимой части (зазор в 1px — дробные пиксели при зуме). */
+function readScrollEdges(list: HTMLElement): ScrollEdges {
+  return {
+    bottom: list.scrollTop + list.clientHeight < list.scrollHeight - 1,
+    top: list.scrollTop > 1,
+  };
+}
+
 /**
  * Лента сессии сверху вниз; прокручена к последнему сообщению, в конце — статус сессии.
  * Реплики, пришедшие после открытия, и статус въезжают плавно, лента доезжает до них прокруткой —
@@ -90,16 +133,28 @@ export function AgentSessionConversation({
   messages,
   status,
   waitingDetail,
+  onPickOption,
 }: {
   empty: string;
   emptyTitle?: string;
   messages: readonly AgentSessionMessage[];
   status?: AgentSessionStatus;
   waitingDetail?: ReactNode;
+  /** Ответ кнопкой на последний вопрос агента. */
+  onPickOption?: (option: string) => void;
 }) {
   const { t } = useI18n();
   const listRef = useRef<HTMLOListElement>(null);
   const scrolledRef = useRef(false);
+  const [edges, setEdges] = useState<ScrollEdges>({ bottom: false, top: false });
+  const syncEdges = () => {
+    const list = listRef.current;
+    if (!list) {
+      return;
+    }
+    const next = readScrollEdges(list);
+    setEdges((prev) => (prev.top === next.top && prev.bottom === next.bottom ? prev : next));
+  };
   const [initialIds] = useState(() => new Set(messages.map((message) => message.id)));
   let draftVersion = 0;
   const versions = new Map<string, number>();
@@ -118,6 +173,9 @@ export function AgentSessionConversation({
     // При открытии — сразу вниз, дальше — плавно к новой реплике.
     list.scrollTo({ behavior: scrolledRef.current ? 'smooth' : 'auto', top: list.scrollHeight });
     scrolledRef.current = true;
+    // Плавная прокрутка доедет сама и обновит края через onScroll; здесь — для мгновенной и без прокрутки.
+    const next = readScrollEdges(list);
+    setEdges((prev) => (prev.top === next.top && prev.bottom === next.bottom ? prev : next));
   }, [messages.length, status]);
 
   if (messages.length === 0) {
@@ -137,10 +195,13 @@ export function AgentSessionConversation({
     // -mr-3 pr-3: скроллбар уходит в паддинг панели (p-3) и встаёт у её правой границы, а не поверх реплик.
     <ol
       ref={listRef}
-      className="-mr-3 max-h-[min(22rem,50vh)] space-y-2.5 overflow-y-auto pr-3"
+      className="agent-chat-scroll -mr-3 max-h-[min(22rem,50vh)] space-y-2.5 overflow-y-auto pr-3"
       data-agent-session-conversation=""
+      data-fade-bottom={edges.bottom ? '' : undefined}
+      data-fade-top={edges.top ? '' : undefined}
+      onScroll={syncEdges}
     >
-      {messages.map((message) => (
+      {messages.map((message, index) => (
         <li
           key={message.id}
           className={initialIds.has(message.id) ? undefined : 'agent-chat-enter'}
@@ -150,6 +211,7 @@ export function AgentSessionConversation({
             brand={message.clientBrand}
             caption={messageCaption(message, versions.get(message.id) ?? 0, t)}
             card={message.kind === 'draft'}
+            footer={replyOptionsFor(messages, index, status, onPickOption)}
             from={message.authorKind}
             placeholder={t('agentSession.kindRedo')}
             status={messageStatus(message, t)}

@@ -12,6 +12,7 @@ import {
   draftSessionConflict,
   groupAgentSessionItemComments,
   parseAgentSessionReplies,
+  pendingAgentSessionSkill,
   statusAfterUserMessage,
   summarizeAgentSessionForAgent,
   waitingForDraftSessionId,
@@ -27,9 +28,11 @@ function message(overrides: Partial<AgentSessionMessage>): AgentSessionMessage {
     id: `00000000-0000-4000-8000-${String(seq).padStart(12, '0')}`,
     kind: 'message',
     mentions: [],
+    options: [],
     proposalId: null,
     replyTo: null,
     resolution: null,
+    skill: null,
     target: null,
     text: 'text',
     ...overrides,
@@ -60,6 +63,15 @@ describe('AgentSessionUserMessageSchema', () => {
     expect(AgentSessionUserMessageSchema.safeParse({ kind: 'comment', text: 'x' }).success).toBe(false);
     expect(AgentSessionUserMessageSchema.safeParse({ kind: 'comment', target, text: '' }).success).toBe(false);
     expect(AgentSessionUserMessageSchema.safeParse({ kind: 'comment', target, text: 'x' }).success).toBe(true);
+  });
+
+  it('takes a skill only with a message', () => {
+    const skill = { id: 'sprint_risks', params: {} };
+    expect(AgentSessionUserMessageSchema.parse({ kind: 'message', skill, text: 'Риски' }).skill).toEqual({
+      id: 'sprint_risks',
+      params: { detail: 'short' },
+    });
+    expect(AgentSessionUserMessageSchema.safeParse({ kind: 'redo', skill, text: '' }).success).toBe(false);
   });
 
   it('allows a redo without text', () => {
@@ -114,6 +126,30 @@ describe('agent views', () => {
       ['user', 'comment'],
     ]);
     expect(view.conversation[2]?.target).toEqual(target);
+  });
+
+  it('passes the skill instructions and answer options to the agent', () => {
+    const request = message({
+      kind: 'request',
+      skill: { id: 'balance_load', params: { reassign: 'no' } },
+      text: 'Выровнять загрузку',
+    });
+    const question = message({ authorKind: 'agent', options: ['Отдать Маше', 'Сдвинуть'], text: 'Как быть?' });
+    const view = buildAgentSessionAgentView(session([request, question]));
+    expect(view.conversation[0]?.skill).toMatchObject({ id: 'balance_load', output: 'draft' });
+    expect(view.conversation[0]?.skill?.instructions).toContain('only shift tasks in time');
+    expect(view.conversation[1]?.options).toEqual(['Отдать Маше', 'Сдвинуть']);
+    // Агент уже ответил на скилл — наверху его нет.
+    expect(view.skill).toBeUndefined();
+  });
+
+  it('puts a skill invoked mid-session on top until the agent answers', () => {
+    const risks = message({ kind: 'message', skill: { id: 'sprint_risks', params: { detail: 'short' } }, text: 'Риски' });
+    const messages = [message({ kind: 'request' }), message({ authorKind: 'agent', kind: 'draft' }), risks];
+    expect(pendingAgentSessionSkill(messages)).toEqual(risks.skill);
+    expect(pendingAgentSessionSkill([...messages, message({ kind: 'message', text: 'и ещё' })])).toEqual(risks.skill);
+    expect(pendingAgentSessionSkill([...messages, message({ authorKind: 'agent' })])).toBeNull();
+    expect(summarizeAgentSessionForAgent(session(messages)).skill).toBe('sprint_risks');
   });
 
   it('summarizes a session for the inbox', () => {

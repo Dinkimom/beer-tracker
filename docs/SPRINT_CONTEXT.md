@@ -59,10 +59,10 @@ Tools:
 - `resolve_person(query)` — имя/email → `staffUid` / `assigneeId` + `role` / `roleTitle` / `platforms` (если человек в команде)
 - `propose_plan_patch(sprintId, ops, persistNotes?, replacePending?, sessionId?, replies?, draftMessage?, intent?)` — dry-run; `schedule[]`, `warnings`, capacityPreview, `persistNotes`, applyToken; драфт записывается в сессию (`agentSession` в ответе)
 - `list_agent_sessions(status?, sprintId?)` — входящие агента: сессии, которые человек передал из планера
-- `get_agent_session(sessionId)` — переписка сессии, `openComments`, `fetchContext`
-- `reply_agent_session(sessionId, message?, replies?, close?)` — ответ без нового драфта
+- `get_agent_session(sessionId)` — переписка сессии, `openComments`, `fetchContext`; `skill` — сценарий, вызванный в планере и ещё не отработанный (инструкция с параметрами, `lib/agentSessions/agentSkills.ts`); у реплик переписки — свой `skill`
+- `reply_agent_session(sessionId, message?, replies?, close?, options?)` — ответ без нового драфта; `options` — 2–5 вариантов-кнопок под вопросом, выбор приходит следующей репликой человека
 - `apply_plan_patch(sprintId, ops, applyToken, confirm=true, onError?)` — запись после propose + confirm; `onError=stop|continue`; `schedule[]` после apply
-- `get_retro_board(sprintId)` — колонки и карточки ретро (без картинок); если доски ещё нет — шаблон орги без записи
+- `get_retro_board(sprintId)` — колонки и карточки ретро (без картинок): `authorName` — кто завёл, `reactions[{emoji, count, by}]` — кто какой emoji поставил (✅ — отметили сделанным); если доски ещё нет — шаблон орги без записи
 - `apply_retro_board(sprintId, ops, confirm=true)` — заметки/комментарии/колонки ретро (`addNote`, `moveCard`, `addComment`, `addColumn`, …); колонка по `columnId` или `columnPreset`
 
 **Статусы:** `statusType` — сырая категория трекера (у Jira «Ready for development» часто ошибочно `inProgress`). Для фильтров «что уже в работе» используйте **`statusCategory`**: not-started | `in-progress` | `paused` | `done` (имя статуса важнее категории; `readyfordevelopment` → not-started bucket).
@@ -103,7 +103,7 @@ Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `
 
 `upsertPosition.syncToTracker=true` — дополнительно `addIssueToSprint` + assign в Tracker/Jira (позиция в BT пишется всегда; ошибка sync — в `applied[].detail` / warning). Без флага — только планировщик BT; propose предупредит `issue_not_in_sprint: KEY` и вернёт `hints` с remediation (перепредложите с `syncToTracker:true`, можно вместе с `segments`), если задачи нет на доске спринта трекера.
 
-Notes: только `kind=text`; `width` — длина в частях таймлайна от `(day, part)` (1..60, default 2; значения > 60 — legacy px/100); `height` — строки свимлейна (1 = карточка задачи, по умолчанию подбирается под текст). Заметки одного исполнителя, пересекающиеся по времени, свимлейн разносит по строкам (дорожка растёт) — propose предупреждает `note_overlap` и называет первый свободный слот. В context: `updatedAt` / `updatedBy` / `version`; soft-delete. `updateNote.ifVersion` — optimistic lock (иначе `version conflict`). Для `upsertLink` на заметку — `comment:{notes[].id}`.
+Notes: только `kind=text`; `width` — длина в частях таймлайна от `(day, part)` (1..60, default 2; значения > 60 — legacy px/100); `height` — строки свимлейна (1 = карточка задачи, по умолчанию подбирается под текст). Заметки одного исполнителя, пересекающиеся по времени, свимлейн разносит по строкам (дорожка растёт) — propose предупреждает `note_overlap` и называет первый свободный слот. В context: `authorName` (кто завёл), `reactions[{emoji, count, by}]` (кто какой emoji поставил; ✅ — отметили сделанным, заметка зеленеет), `updatedAt` / `updatedBy` / `version`; soft-delete. `updateNote.ifVersion` — optimistic lock (иначе `version conflict`). Для `upsertLink` на заметку — `comment:{notes[].id}`.
 
 ### Мост к Claude CLI (локально)
 

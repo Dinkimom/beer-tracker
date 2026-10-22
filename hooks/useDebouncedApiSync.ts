@@ -21,10 +21,14 @@ interface UseDebouncedApiSyncOptions<T, TId, TApiData> {
   deleteFn: (sprintId: number, id: TId) => Promise<boolean | void>;
   fetchFn: (sprintId: number) => Promise<T[]>;
   getId: (item: T) => TId;
-  /** In-flight префетч того же списка (см. sprintBoardListPrefetch), чтобы не уехать в пустой fetch. */
-  getInflightItems?: (sprintId: number) => Promise<T[]> | undefined;
   /** Снимок с префетча до монтирования планера (см. sprintBoardListPrefetch). */
   getInitialItems?: (sprintId: number) => T[] | undefined;
+  /**
+   * Общий префетч списка (см. sprintBoardListPrefetch): присоединиться к in-flight или начать его.
+   * Иначе гейт доски грузит тот же список вторым запросом и оставляет снимок, который никто не забрал;
+   * при возврате на спринт планер взял бы этот устаревший снимок.
+   */
+  loadSharedItems?: (sprintId: number) => Promise<T[]>;
   /**
    * Снимок с сервера при pending: подмешать поля, которые правит другой клиент (например reactions).
    */
@@ -193,8 +197,8 @@ function applyLatePrefetchIfEmpty<T>(
 
 async function loadSyncedItems<T>(options: {
   fetchFn: (sprintId: number) => Promise<T[]>;
-  getInflightItems?: (sprintId: number) => Promise<T[]> | undefined;
   getInitialItems?: (sprintId: number) => T[] | undefined;
+  loadSharedItems?: (sprintId: number) => Promise<T[]>;
   setItems: (items: T[]) => void;
   sprintId: number;
 }): Promise<void> {
@@ -204,10 +208,10 @@ async function loadSyncedItems<T>(options: {
     return;
   }
 
-  const inflight = options.getInflightItems?.(options.sprintId);
-  if (inflight) {
+  const shared = options.loadSharedItems?.(options.sprintId);
+  if (shared) {
     try {
-      const data = await inflight;
+      const data = await shared;
       const taken = options.getInitialItems?.(options.sprintId);
       options.setItems(taken ?? data);
       return;
@@ -245,7 +249,7 @@ export function useDebouncedApiSync<T, TId, TApiData>({
   mergeRemotePendingItem,
   mergeSavedItem,
   getInitialItems,
-  getInflightItems,
+  loadSharedItems,
   debounceDelay = DELAYS.DEBOUNCE,
 }: UseDebouncedApiSyncOptions<T, TId, TApiData>) {
   const [items, setItems] = useState<T[]>(() => []);
@@ -254,6 +258,8 @@ export function useDebouncedApiSync<T, TId, TApiData>({
   const pendingDeletesRef = useRef<Set<TId>>(new Set());
   const itemsRef = useRef(items);
   const loadedSprintIdRef = useRef<number | null>(null);
+  /** Поколение загрузки: ответ ушедшего спринта (A→B→A) не перетирает список текущего. */
+  const loadGenerationRef = useRef(0);
 
   const applySavedReplacements = useCallback(
     (replacements: Array<{ item: T; result: T }>) => {
@@ -271,6 +277,7 @@ export function useDebouncedApiSync<T, TId, TApiData>({
   useEffect(() => {
     if (!isValidSprintId(sprintId)) {
       loadedSprintIdRef.current = null;
+      loadGenerationRef.current += 1;
       const timeoutId = setTimeout(() => {
         setItems([]);
       }, 0);
@@ -282,15 +289,21 @@ export function useDebouncedApiSync<T, TId, TApiData>({
       return;
     }
     loadedSprintIdRef.current = sprintId;
+    loadGenerationRef.current += 1;
+    const generation = loadGenerationRef.current;
 
     loadSyncedItems({
       fetchFn,
-      getInflightItems,
       getInitialItems,
-      setItems,
+      loadSharedItems,
+      setItems: (loaded) => {
+        if (loadGenerationRef.current === generation) {
+          setItems(loaded);
+        }
+      },
       sprintId,
     });
-  }, [sprintId, fetchFn, getInitialItems, getInflightItems]);
+  }, [sprintId, fetchFn, getInitialItems, loadSharedItems]);
 
   // Сохранение одного элемента
   const saveItem = useCallback(

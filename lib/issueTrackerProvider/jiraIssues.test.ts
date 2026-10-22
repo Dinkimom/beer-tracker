@@ -1,7 +1,7 @@
 import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { TrackerIssue } from '@/types/tracker';
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { mapTrackerIssueToTask } from '@/lib/trackerApi/issues';
 
@@ -13,6 +13,7 @@ import {
   normalizeJiraIssue,
   searchJiraIssuesInSprint,
 } from './jiraIssues';
+import { clearJiraScheduleFieldRefsCacheForTests } from './jiraScheduleFields';
 
 const TRACKER_WEB: TrackerWebUrlContext = { kind: 'jira-onprem', webBaseUrl: 'https://jira.example.com' };
 
@@ -257,6 +258,10 @@ describe('searchJiraIssuesInSprint', () => {
 });
 
 describe('fetchJiraIssue', () => {
+  beforeEach(() => {
+    clearJiraScheduleFieldRefsCacheForTests();
+  });
+
   it('GETs /issue/{key} and maps Start date via the field catalog', async () => {
     const get = vi.fn((url: string) => {
       if (url === '/field') {
@@ -295,6 +300,43 @@ describe('fetchJiraIssue', () => {
     );
     expect(get).toHaveBeenCalledWith('/issue/PROJ-1');
     expect(get).toHaveBeenCalledWith('/field');
+  });
+
+  it('reads REST v3 sprints from the gh-sprint custom field resolved via /field', async () => {
+    const get = vi.fn((url: string) => {
+      if (url === '/field') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'customfield_10020',
+              name: 'Sprint',
+              schema: { custom: 'com.pyxis.greenhopper.jira:gh-sprint', type: 'array' },
+            },
+          ],
+        });
+      }
+      return Promise.resolve({
+        data: {
+          fields: {
+            customfield_10020: [
+              { boardId: 12, id: 501, name: 'RND 41', state: 'closed' },
+              { boardId: 12, id: 502, name: 'RND 42', state: 'active' },
+            ],
+            summary: 'Fix login',
+          },
+          key: 'RND-1494',
+        },
+      });
+    });
+    await expect(fetchJiraIssue(apiWith({ get }), 'RND-1494')).resolves.toEqual(
+      expect.objectContaining({
+        key: 'RND-1494',
+        sprint: [
+          { display: 'RND 41', id: '501' },
+          { display: 'RND 42', id: '502' },
+        ],
+      })
+    );
   });
 
   it('returns null for 404', async () => {

@@ -16,6 +16,9 @@ const END_DATE_NAMES = new Set([
   'целевое окончание',
 ]);
 
+/** Jira Software Sprint custom field; REST v3 returns sprints only under its `customfield_*` id. */
+const JIRA_SPRINT_FIELD_SCHEMA = 'com.pyxis.greenhopper.jira:gh-sprint';
+
 interface JiraDateFieldRef {
   id: string;
   schemaType?: string;
@@ -24,6 +27,8 @@ interface JiraDateFieldRef {
 interface JiraScheduleFieldRefs {
   due: JiraDateFieldRef;
   dueResolved: boolean;
+  /** Catalog-only: Sprint custom field id (e.g. `customfield_10020`, differs per site). */
+  sprintFieldId?: string;
   start: JiraDateFieldRef | null;
 }
 
@@ -156,16 +161,28 @@ function catalogFieldId(row: Record<string, unknown>): string {
   return '';
 }
 
+function isJiraSprintCatalogRow(row: Record<string, unknown>): boolean {
+  return asRecord(row.schema)?.custom === JIRA_SPRINT_FIELD_SCHEMA;
+}
+
 export function pickJiraScheduleFieldsFromCatalog(catalog: unknown[]): JiraScheduleFieldRefs {
   const named: JiraNamedDateField[] = [];
+  let sprintFieldId = '';
   for (const raw of catalog) {
     const row = asRecord(raw);
-    const field = row ? readNamedDateField(catalogFieldId(row), raw) : null;
+    if (!row) {
+      continue;
+    }
+    if (!sprintFieldId && isJiraSprintCatalogRow(row)) {
+      sprintFieldId = catalogFieldId(row);
+    }
+    const field = readNamedDateField(catalogFieldId(row), raw);
     if (field) {
       named.push(field);
     }
   }
-  return collectNamedDateFields(named);
+  const refs = collectNamedDateFields(named);
+  return sprintFieldId ? { ...refs, sprintFieldId } : refs;
 }
 
 export function jiraDateFieldValue(isoDate: string, schemaType: string | undefined): string {

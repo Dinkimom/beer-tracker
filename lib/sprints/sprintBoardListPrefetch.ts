@@ -24,13 +24,6 @@ export function takePrefetchedSprintBoardList<T>(
   return entry.data as T[];
 }
 
-export function getInflightSprintBoardList<T>(
-  sprintId: number,
-  kind: SprintBoardListKind
-): Promise<T[]> | undefined {
-  return inflightCache.get(cacheKey(sprintId, kind)) as Promise<T[]> | undefined;
-}
-
 export function isSprintBoardListPrefetchSettled(
   sprintId: number,
   kind: SprintBoardListKind

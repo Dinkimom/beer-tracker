@@ -72,6 +72,14 @@ describe('pickJiraScheduleFieldsFromCatalog', () => {
       start: { id: 'customfield_10015', schemaType: 'date' },
     });
   });
+
+  it('resolves the Sprint custom field id by gh-sprint schema', () => {
+    expect(
+      pickJiraScheduleFieldsFromCatalog([
+        { id: 'customfield_10020', name: 'Спринт', schema: { custom: 'com.pyxis.greenhopper.jira:gh-sprint', type: 'array' } },
+      ]).sprintFieldId
+    ).toBe('customfield_10020');
+  });
 });
 
 describe('applyJiraScheduleFieldRefsToTrackerIssue', () => {

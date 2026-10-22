@@ -1,4 +1,5 @@
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import type { AgentReactionView } from '@/lib/comments/stickyNoteReaction';
 import type { DomainRole, Platform } from '@/lib/roles/catalog';
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
 import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
@@ -81,6 +82,8 @@ export interface SprintContextNote {
   parent?: SprintContextNoteParent;
   part: number | null;
   pendingApproval?: boolean;
+  /** Кто какой emoji поставил на заметку (только если реакции есть); ✅ — отметили сделанным. */
+  reactions?: AgentReactionView[];
   /** Board card id for upsertLink (`comment:{id}`). */
   taskId?: string;
   text: string;

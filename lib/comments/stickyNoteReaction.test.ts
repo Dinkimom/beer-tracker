@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   commentReactionsByNoteId,
   formatStickyNoteReactionTooltip,
+  groupReactionsForAgent,
   hydrateStickyNoteReactionUsers,
   isStickyNoteReactionEmoji,
   mergeStickyNoteReactionsByNoteId,
@@ -284,5 +285,21 @@ describe('stickyNoteReactionCatalog', () => {
       recentEmojis: [],
     });
     expect(found).toEqual(['🚀']);
+  });
+});
+
+describe('groupReactionsForAgent', () => {
+  it('groups votes by emoji in order of first appearance and keeps who voted', () => {
+    expect(
+      groupReactionsForAgent([
+        { emoji: '✅', name: 'Маша' },
+        { emoji: '👍', name: 'Петя' },
+        { emoji: '✅', name: ' Петя ' },
+        { emoji: '✅', name: '' },
+      ])
+    ).toEqual([
+      { by: ['Маша', 'Петя'], count: 3, emoji: '✅' },
+      { by: ['Петя'], count: 1, emoji: '👍' },
+    ]);
   });
 });

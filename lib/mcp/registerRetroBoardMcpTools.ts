@@ -44,7 +44,7 @@ export function registerRetroBoardMcpTools(
     'get_retro_board',
     {
       description:
-        'Read the sprint retrospective board: columns (id/preset/title) and cards (notes/agreements + comments). Image cards omitted. If no board saved yet, returns the org template columns (createdFromTemplate=true) without writing.',
+        'Read the sprint retrospective board: columns (id/preset/title) and cards (notes/agreements + comments). Each card: authorName (who created it) and reactions [{emoji, count, by: names}]; ✅ on a card = people marked it done (an agreement fulfilled, an item handled). Image cards omitted. If no board saved yet, returns the org template columns (createdFromTemplate=true) without writing.',
       inputSchema: {
         sprintId: z.number().int().positive().describe('Tracker sprint id'),
       },

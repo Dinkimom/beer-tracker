@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   clearSprintBoardListPrefetchForTests,
-  getInflightSprintBoardList,
   isSprintBoardListPrefetchSettled,
   prefetchSprintBoardList,
   takePrefetchedSprintBoardList,
@@ -42,24 +41,5 @@ describe('sprintBoardListPrefetch', () => {
     expect(takePrefetchedSprintBoardList(1, 'links')).toEqual([{ id: 'link-1' }]);
     expect(takePrefetchedSprintBoardList(2, 'comments')).toEqual([{ id: 'comment-2' }]);
     expect(takePrefetchedSprintBoardList(2, 'links')).toBeUndefined();
-  });
-
-  it('exposes the in-flight prefetch promise until it settles', async () => {
-    let resolveFetch = (_value: Array<{ id: string }>): void => undefined;
-    const fetchFn = vi.fn(
-      () =>
-        new Promise<Array<{ id: string }>>((resolve) => {
-          resolveFetch = resolve;
-        })
-    );
-
-    const prefetchPromise = prefetchSprintBoardList(7, 'links', fetchFn);
-    const inflight = getInflightSprintBoardList<{ id: string }>(7, 'links');
-    expect(inflight).toBe(prefetchPromise);
-
-    resolveFetch([{ id: 'link-7' }]);
-    await expect(prefetchPromise).resolves.toEqual([{ id: 'link-7' }]);
-    expect(getInflightSprintBoardList(7, 'links')).toBeUndefined();
-    expect(isSprintBoardListPrefetchSettled(7, 'links')).toBe(true);
   });
 });

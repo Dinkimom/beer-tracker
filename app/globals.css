@@ -1323,6 +1323,38 @@ textarea:focus-visible,
   }
 }
 
+/*
+ * Лента чата агента в стеклянной карточке: край прокрутки растворяется, а не режется линией.
+ * Маска — только с той стороны, где ещё есть что прокрутить (data-fade-*), чтобы крайняя реплика в покое
+ * была чёткой. Маска режет и полосу прокрутки — на краях она так же уходит в прозрачность.
+ */
+.agent-chat-scroll {
+  --agent-chat-fade-top: 0px;
+  --agent-chat-fade-bottom: 0px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--agent-chat-fade-top),
+    #000 calc(100% - var(--agent-chat-fade-bottom)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--agent-chat-fade-top),
+    #000 calc(100% - var(--agent-chat-fade-bottom)),
+    transparent 100%
+  );
+}
+
+.agent-chat-scroll[data-fade-top] {
+  --agent-chat-fade-top: 28px;
+}
+
+.agent-chat-scroll[data-fade-bottom] {
+  --agent-chat-fade-bottom: 20px;
+}
+
 /* Новая реплика и статус в ленте сессии с агентом: въезжают, а не выскакивают. */
 .agent-chat-enter {
   animation: agent-chat-enter 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;

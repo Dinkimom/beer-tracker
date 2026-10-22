@@ -29,7 +29,7 @@ import {
 } from '@/lib/beerTrackerApi';
 import { isValidSprintId } from '@/lib/layers/data/mappers/taskPositionToApi';
 import {
-  getInflightSprintBoardList,
+  prefetchSprintBoardList,
   takePrefetchedSprintBoardList,
 } from '@/lib/sprints/sprintBoardListPrefetch';
 import { DELAYS } from '@/utils/constants';
@@ -47,16 +47,16 @@ function takePrefetchedSprintLinks(sprintId: number): TaskLink[] | undefined {
   return takePrefetchedSprintBoardList(sprintId, 'links');
 }
 
-function getInflightSprintLinks(sprintId: number): Promise<TaskLink[]> | undefined {
-  return getInflightSprintBoardList(sprintId, 'links');
+function loadSharedSprintLinks(sprintId: number): Promise<TaskLink[]> {
+  return prefetchSprintBoardList(sprintId, 'links', fetchSprintLinks);
 }
 
 function takePrefetchedSprintComments(sprintId: number): Comment[] | undefined {
   return takePrefetchedSprintBoardList(sprintId, 'comments');
 }
 
-function getInflightSprintComments(sprintId: number): Promise<Comment[]> | undefined {
-  return getInflightSprintBoardList(sprintId, 'comments');
+function loadSharedSprintComments(sprintId: number): Promise<Comment[]> {
+  return prefetchSprintBoardList(sprintId, 'comments', fetchSprintComments);
 }
 
 // ==================== Хуки для связей ====================
@@ -87,7 +87,7 @@ export function useTaskLinksApi(
     deleteFn: deleteTaskLink,
     getId: (link) => link.id,
     getInitialItems: takePrefetchedSprintLinks,
-    getInflightItems: getInflightSprintLinks,
+    loadSharedItems: loadSharedSprintLinks,
     toApiFormat: (link) => ({
       id: link.id,
       fromTaskId: link.fromTaskId,
@@ -174,7 +174,7 @@ export function useCommentsApi(
     deleteFn: apiDeleteComment,
     getId: (comment) => comment.id,
     getInitialItems: takePrefetchedSprintComments,
-    getInflightItems: getInflightSprintComments,
+    loadSharedItems: loadSharedSprintComments,
     toApiFormat: (comment, isUpdate) =>
       commentToSaveApiFields({
         id: isUpdate && comment.id ? comment.id : comment.id ?? '',

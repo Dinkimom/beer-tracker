@@ -1,7 +1,8 @@
 'use client';
 
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
-import type { KeyboardEvent } from 'react';
+import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
+import type { KeyboardEvent, ReactNode } from 'react';
 
 import { useLayoutEffect, useRef } from 'react';
 
@@ -10,26 +11,31 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { AGENT_SESSION_TEXT_MAX } from '@/lib/agentSessions/agentSession';
 
 import { useAgentComposerMentions } from '../hooks/useAgentComposerMentions';
+import { useAgentComposerSkills } from '../hooks/useAgentComposerSkills';
 import { useAgentMentionCandidates } from '../hooks/useAgentMentionCandidates';
 
 import { AGENT_MENTION_ICON, AgentMentionList } from './AgentMentionList';
+import { AgentSkillCommandList } from './AgentSkillCommandList';
 
 const MAX_HEIGHT_PX = 220;
 
 /**
  * Поле просьбы агенту, как в чате: растёт по тексту, Enter — отправить, Shift+Enter — новая строка,
- * «@» — упомянуть задачу или человека. `context` — неснимаемые плашки того, откуда открыли (задача, заметка).
+ * «@» — упомянуть задачу или человека, «/» в начале — вызвать скилл (если есть `onSkillPick`). `context` — неснимаемые плашки того, откуда открыли (задача, заметка);
+ * `header` — над ними (выбранный скилл с параметрами).
  */
 export function AgentComposer({
   allowEmpty = false,
   autoFocus = false,
   context = [],
   disabled = false,
+  header,
   mentions,
   placeholder,
   sprintId,
   text,
   onMentionsChange,
+  onSkillPick,
   onSubmit,
   onTextChange,
 }: {
@@ -38,12 +44,15 @@ export function AgentComposer({
   autoFocus?: boolean;
   context?: readonly AgentMention[];
   disabled?: boolean;
+  header?: ReactNode;
   mentions: readonly AgentMention[];
   placeholder: string;
   /** Спринт, из задач и людей которого предлагаем «@». */
   sprintId: number | null | undefined;
   text: string;
   onMentionsChange: (mentions: AgentMention[]) => void;
+  /** «/» в начале поля открывает список скиллов. */
+  onSkillPick?: (skill: AgentSessionSkill) => void;
   onSubmit: () => void;
   onTextChange: (text: string) => void;
 }) {
@@ -58,6 +67,7 @@ export function AgentComposer({
     text,
     textareaRef,
   });
+  const skills = useAgentComposerSkills({ onSkillPick, onTextChange, text });
   const canSubmit = !disabled && (allowEmpty || text.trim().length > 0);
 
   useLayoutEffect(() => {
@@ -70,7 +80,7 @@ export function AgentComposer({
   }, [text]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (popup.handleKeyDown(event)) {
+    if (skills.handleKeyDown(event) || popup.handleKeyDown(event)) {
       return;
     }
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -86,6 +96,14 @@ export function AgentComposer({
       className="relative rounded-xl border border-gray-300 bg-white transition-colors focus-within:border-blue-500 dark:border-gray-600 dark:bg-gray-900/40 dark:focus-within:border-blue-400"
       data-agent-composer=""
     >
+      {skills.isOpen ? (
+        <AgentSkillCommandList
+          activeIndex={skills.activeIndex}
+          options={skills.options}
+          onHover={skills.setActiveIndex}
+          onSelect={skills.select}
+        />
+      ) : null}
       {popup.isOpen ? (
         <AgentMentionList
           activeIndex={popup.activeIndex}
@@ -94,6 +112,7 @@ export function AgentComposer({
           onSelect={popup.select}
         />
       ) : null}
+      {header}
       {context.length > 0 ? (
         <div className="flex flex-wrap gap-1 px-3 pt-2.5">
           {context.map((item) => (
@@ -127,7 +146,7 @@ export function AgentComposer({
       />
       <div className="flex items-center gap-2 px-3 pb-2">
         <span className="min-w-0 flex-1 truncate text-[11px] text-gray-400 dark:text-gray-500">
-          {t('agentSession.composerHint')}
+          {onSkillPick ? t('agentSession.composerHintWithSkills') : t('agentSession.composerHint')}
         </span>
         <button
           aria-label={t('agentSession.submit')}
