@@ -2,6 +2,7 @@
 
 import { StickyNoteTextContent } from '@/features/comments/components/StickyNoteTextContent';
 import {
+  parseMarkdownBulletLine,
   parseMarkdownCheckboxLine,
   toggleMarkdownCheckboxAtLine,
 } from '@/lib/markdown/markdownChecklist';
@@ -42,20 +43,6 @@ function parseMarkdownHeadingLine(line: string): { level: number; text: string }
   }
 
   return { level, text: line.slice(level + 1) };
-}
-
-function parseMarkdownBulletLine(line: string): string | null {
-  const trimmed = line.trimStart();
-  if (trimmed.startsWith('- ')) {
-    return trimmed.slice(2);
-  }
-  if (trimmed.startsWith('* ')) {
-    return trimmed.slice(2);
-  }
-  if (trimmed.startsWith('+ ')) {
-    return trimmed.slice(2);
-  }
-  return null;
 }
 
 function stopCardPointerBubble(event: React.SyntheticEvent) {

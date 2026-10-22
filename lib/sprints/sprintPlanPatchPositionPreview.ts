@@ -211,6 +211,33 @@ export function buildPlanPatchPositionPreviews(input: {
   return previews;
 }
 
+/**
+ * Пользователь перетащил карточку предложения: пересчитываем changes против доски.
+ * null — новое место совпало с текущим, предложение больше ничего не меняет.
+ */
+export function movePlanPatchPositionPreview(input: {
+  current: PlanPatchPreviewSourcePosition | undefined;
+  next: Omit<PlanPatchPreviewSourcePosition, 'taskId'>;
+  preview: PlanPatchPositionPreview;
+}): PlanPatchPositionPreview | null {
+  const { current, next, preview } = input;
+  const keepSegments = preview.segments !== undefined || (next.segments?.length ?? 0) > 1;
+  const moved = previewForOp(current, {
+    assigneeId: next.assigneeId,
+    duration: next.duration,
+    op: 'upsertPosition',
+    ...(keepSegments ? { segments: copySegments(next.segments) ?? [] } : {}),
+    startDay: next.startDay,
+    startPart: next.startPart,
+    ...(preview.syncToTracker ? { syncToTracker: true } : {}),
+    taskId: preview.taskId,
+  });
+  if (!moved) {
+    return null;
+  }
+  return preview.clientBrand ? { ...moved, clientBrand: preview.clientBrand } : moved;
+}
+
 export function planPatchChangeLabelOrder(
   changes: readonly PlanPatchPositionChange[]
 ): PlanPatchPositionChange[] {

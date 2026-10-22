@@ -8,6 +8,7 @@ export const agentSessionRu = {
   composerHintWithSkills: '/ — сценарий · @ — задача или человек · Enter — отправить',
   skillsAria: 'Сценарии агента',
   mentionsAria: 'Упомянуть задачу или человека',
+  contextRemove: 'Убрать из контекста: {label}',
   submit: 'Отправить агенту',
   submitFailed: 'Не удалось отправить запрос',
   sendFailed: 'Не удалось отправить сообщение',

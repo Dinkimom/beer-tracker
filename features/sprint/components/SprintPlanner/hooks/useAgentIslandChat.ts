@@ -3,7 +3,7 @@
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAgentSessions } from '@/features/swimlane/hooks/useAgentSessions';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
@@ -13,13 +13,11 @@ import { resolveAgentChatOrigin } from '../utils/agentChatOrigin';
 
 import { useAgentReplyNotice } from './useAgentReplyNotice';
 
-const ASK_AGENT_SELECTOR = '[data-swimlane-ask-agent]';
+/** ✨ в тулбаре и контекстное меню («Попросить агента» добавляет плашку) — клик по ним не сворачивает чат. */
+const KEEP_CHAT_OPEN_SELECTOR = '[data-swimlane-ask-agent], [data-planner-context-menu]';
 
-/** Какую сессию показывает чат: 'new' — пишем новую, id — только что созданная; `key` — цель чата. */
-interface ChatSessionPick {
-  key: string;
-  value: string;
-}
+/** Один чат на остров: смена задачи или заметки, с которой позвали агента, его не пересоздаёт. */
+const CHAT_KEY = 'chat';
 
 /** Что рисует панель чата; при сворачивании — последний открытый, пока идёт анимация. */
 interface ChatPanel {
@@ -30,10 +28,13 @@ interface ChatPanel {
 /**
  * Состояние острова агента: открыт ли чат и откуда, какая сессия в нём (текущая / новая /
  * только что созданная), действия — ✨ в тулбаре, новая сессия и 🗑 «Очистить чат» в шапке чата. Выбор
- * сессии сбрасывается при закрытии чата и смене его цели. Вызывать из observer-компонента.
+ * сессии сбрасывается при закрытии чата. Плашки контекста — `sprintPlannerUi.agentChatContext`:
+ * «Попросить агента» с карточки или заметки добавляет плашку в открытый чат, не теряя набранный текст.
+ * Вызывать из observer-компонента.
  *
  * Панель чата живёт дольше `chatOpen` на время анимации сворачивания (`panel` + `panelState`).
- * Чат сворачивают Escape, клик мимо острова (`islandRef`) и смена режима в тулбаре инструментов.
+ * Чат сворачивают Escape, клик основной кнопкой мимо острова (`islandRef`; правый клик и контекстное
+ * меню — нет) и смена режима в тулбаре инструментов.
  * Сессия закрывается 🗑 «Очистить чат» и сама при старте новой (прежняя, если её драфт не висит
  * на доске). После «Принять всё» сессия остаётся: в ней можно продолжить разговор с агентом.
  */
@@ -42,7 +43,8 @@ export function useAgentIslandChat(sprintId: number | null) {
   const sessions = useAgentSessions(sprintId);
   const target = sprintPlannerUi.agentRequestTarget;
   const chatOpen = target != null && sprintId != null;
-  const [pick, setPick] = useState<ChatSessionPick | null>(null);
+  /** Какую сессию показывает чат: 'new' — пишем новую, id — только что созданная; null — активная. */
+  const [pick, setPick] = useState<string | null>(null);
   const islandRef = useRef<HTMLDivElement>(null);
   const placementTool = sprintPlannerUi.placementTool;
   const placementToolRef = useRef(placementTool);
@@ -66,8 +68,13 @@ export function useAgentIslandChat(sprintId: number | null) {
     };
     const onPointerDown = (event: PointerEvent) => {
       const node = event.target;
-      // ✨ в тулбаре сам открывает чат — не сворачиваем, чтобы не мигал.
-      if (!(node instanceof Element) || islandRef.current?.contains(node) || node.closest(ASK_AGENT_SELECTOR)) {
+      // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
+      if (
+        event.button !== 0 ||
+        !(node instanceof Element) ||
+        islandRef.current?.contains(node) ||
+        node.closest(KEEP_CHAT_OPEN_SELECTOR)
+      ) {
         return;
       }
       collapse();
@@ -89,9 +96,11 @@ export function useAgentIslandChat(sprintId: number | null) {
     sprintPlannerUi.setAgentRequestTarget(null);
   }, [placementTool, sprintPlannerUi]);
 
-  const chat = chatOpen ? resolveAgentChatOrigin(target, undefined) : null;
-  const chatKey = chat?.key ?? 'session';
-  const selected = pick?.key === chatKey ? pick.value : null;
+  const contextItems = sprintPlannerUi.agentChatContext;
+  // Ссылка меняется только с плашками (observable.ref): по ней обновляется панель ниже.
+  const origin = useMemo(() => resolveAgentChatOrigin(contextItems, undefined), [contextItems]);
+  const chat = chatOpen ? { key: CHAT_KEY, origin } : null;
+  const selected = pick;
   const session =
     selected === 'new' ? null : (sessions.sessions.find((item) => item.id === selected) ?? sessions.active);
 
@@ -105,7 +114,7 @@ export function useAgentIslandChat(sprintId: number | null) {
 
   const presence = useOverlayPresence(chatOpen);
   const [lastPanel, setLastPanel] = useState<ChatPanel | null>(null);
-  if (chat && (lastPanel?.chat.key !== chat.key || lastPanel.session !== session)) {
+  if (chat && (lastPanel?.chat.origin !== origin || lastPanel.session !== session)) {
     setLastPanel({ chat, session });
   }
   let panel: ChatPanel | null = null;
@@ -125,6 +134,9 @@ export function useAgentIslandChat(sprintId: number | null) {
     sessions,
     /** Агент ответил, пока чат был свёрнут: ✨ в тулбаре это показывает. */
     unreadReply,
+    /** Плашки контекста: снять одну крестиком; реплика ушла — очистить все. */
+    clearContext: sprintPlannerUi.clearAgentChatContext,
+    removeContext: sprintPlannerUi.removeAgentChatContext,
     /** 🗑: завершить показанную сессию — открытый чат остаётся, пустой, под новую просьбу. */
     clearChat: () => {
       if (session) {
@@ -137,7 +149,7 @@ export function useAgentIslandChat(sprintId: number | null) {
       if (previous && previous.id !== sessionId && previous.id !== sessions.draftSession?.id) {
         sessions.close(previous.id).catch(() => undefined);
       }
-      setPick(sessionId ? { key: chatKey, value: sessionId } : null);
+      setPick(sessionId);
     },
     /** ✨ в тулбаре: без сессии — новая просьба про спринт, с сессией — её чат. */
     toggleChat: () => {
@@ -146,7 +158,7 @@ export function useAgentIslandChat(sprintId: number | null) {
     },
     /** Шапка чата: начать новую сессию; повторно — назад к текущей. */
     toggleNewSession: () => {
-      setPick(selected === 'new' ? null : { key: chatKey, value: 'new' });
+      setPick(selected === 'new' ? null : 'new');
     },
   };
 }

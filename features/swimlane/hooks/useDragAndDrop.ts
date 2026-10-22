@@ -13,9 +13,12 @@ import { useDragEnd } from './useDragAndDrop/hooks/useDragEnd';
 import { useDragOver } from './useDragAndDrop/hooks/useDragOver';
 import { useDragStart } from './useDragAndDrop/hooks/useDragStart';
 import { useDragState } from './useDragAndDrop/hooks/useDragState';
+import { usePlanPatchPreviewDrag } from './usePlanPatchPreviewDrag';
 
 interface UseDragAndDropProps {
   dragContextRef?: DragContextRef | null;
+  /** Спринт для перетаскивания карточек предложений агента (см. usePlanPatchPreviewDrag). */
+  planPatchSprintId?: number | null;
   /** Рабочих дней в таймлайне свимлейна (длина спринта) */
   swimlaneTimelineWorkingDays?: number;
   taskPositions: Map<string, TaskPosition>;
@@ -28,14 +31,25 @@ interface UseDragAndDropProps {
 
 export function useDragAndDrop({
   tasks,
-  taskPositions,
-  onPositionUpdate,
-  onPositionDelete,
+  taskPositions: boardTaskPositions,
+  onPositionUpdate: onBoardPositionUpdate,
+  onPositionDelete: onBoardPositionDelete,
   updateXarrow,
   onBacklogTaskDrop,
   dragContextRef,
+  planPatchSprintId,
   swimlaneTimelineWorkingDays,
 }: UseDragAndDropProps) {
+  const {
+    dragPositions: taskPositions,
+    handlePositionDelete: onPositionDelete,
+    handlePositionUpdate: onPositionUpdate,
+  } = usePlanPatchPreviewDrag({
+    onPositionDelete: onBoardPositionDelete,
+    onPositionUpdate: onBoardPositionUpdate,
+    positions: boardTaskPositions,
+    sprintId: planPatchSprintId,
+  });
   const { dragUi, dragStateApi, hoverStore, sidebarDropPointerStore } =
     useDragState(taskPositions.size);
 

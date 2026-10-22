@@ -38,7 +38,9 @@ export const SPRINT_COMMENT_RETURNING = `
         pending_approval,
         pending_approval_expires_at,
         plan_patch_proposal_id,
-        client_brand`;
+        client_brand,
+        replaces_comment_id,
+        replace_action`;
 
 const COMMENT_RETURNING = SPRINT_COMMENT_RETURNING;
 

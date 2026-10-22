@@ -84,6 +84,9 @@ export interface SprintContextNote {
   pendingApproval?: boolean;
   /** Кто какой emoji поставил на заметку (только если реакции есть); ✅ — отметили сделанным. */
   reactions?: AgentReactionView[];
+  /** Черновик — не новая заметка, а правка (update) или удаление (delete) заметки replacesNoteId. */
+  replaceAction?: 'delete' | 'update';
+  replacesNoteId?: string;
   /** Board card id for upsertLink (`comment:{id}`). */
   taskId?: string;
   text: string;

@@ -18,6 +18,7 @@ import { useSwimlaneCardFieldsStorage } from '@/hooks/useLocalStorage';
 import { sprintCardPresenceChangingViewer, sprintCardPresenceIsLockedByRemote } from '@/lib/realtime/sprintCardPresence';
 import { SPRINT_PRESENCE_COLOR_CSS_VAR, sprintPresenceViewerColor } from '@/lib/realtime/sprintPresenceColor';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
+import { getStatusColors, resolvePaletteStatusKey } from '@/utils/statusColors';
 
 import { SprintCardPresenceAvatars } from './SprintCardPresenceAvatars';
 import { useSprintCardPresenceViewers, useSprintPresenceColorSlots } from './SprintCardPresenceContext';
@@ -191,6 +192,14 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
         ...(remoteChangingViewer
           ? ({
               [SPRINT_PRESENCE_COLOR_CSS_VAR]: sprintPresenceViewerColor(presenceColorSlots, remoteChangingViewer),
+            } as React.CSSProperties)
+          : {}),
+        ...(statusTransitionPhase === 'applied'
+          ? ({
+              // Кольцо «переход принят» в цвет нового статуса (globals.css).
+              '--task-status-accent': getStatusColors(
+                resolvePaletteStatusKey(task.originalStatus, task.statusColorKey)
+              ).arrow.default,
             } as React.CSSProperties)
           : {}),
         ...style,

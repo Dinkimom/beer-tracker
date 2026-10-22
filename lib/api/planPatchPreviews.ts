@@ -1,3 +1,5 @@
+import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
+
 import { getPlannerBeerTrackerApi } from '@/lib/plannerBeerTrackerApiOverride';
 
 export async function approvePlanPatchPositionPreview(
@@ -27,6 +29,27 @@ export async function rejectPlanPatchPositionPreview(
     return true;
   } catch (error) {
     console.error(`Failed to reject plan patch preview in sprint ${sprintId}:`, error);
+    return false;
+  }
+}
+
+export async function movePlanPatchPositionPreview(
+  sprintId: number,
+  preview: PlanPatchPositionPreview
+): Promise<boolean> {
+  try {
+    await getPlannerBeerTrackerApi().patch(`/sprints/${sprintId}/plan-patch-previews`, {
+      assigneeId: preview.assigneeId,
+      changes: preview.changes,
+      duration: preview.duration,
+      ...(preview.segments !== undefined ? { segments: preview.segments } : {}),
+      startDay: preview.startDay,
+      startPart: preview.startPart,
+      taskId: preview.taskId,
+    });
+    return true;
+  } catch (error) {
+    console.error(`Failed to move plan patch preview in sprint ${sprintId}:`, error);
     return false;
   }
 }

@@ -11,9 +11,12 @@ import { getPartsPerDay } from '@/constants';
 import {
   planPatchPreviewElementId,
   planPatchPreviewSegmentHtmlAnchorId,
+  planPatchPreviewTaskQueryKey,
+  taskForPlanPatchPreview,
 } from '@/features/swimlane/utils/planPatchPreviewFocus';
 import { planPatchPreviewLayerKey } from '@/features/swimlane/utils/planPatchPreviewLayers';
 import { getLeftPercentForSegmentStartCell, getWidthPercent } from '@/features/swimlane/utils/positionUtils';
+import { swimlaneTaskDraggableId } from '@/features/swimlane/utils/swimlaneDragIds';
 import { computeSwimlaneRowBandBox } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { TaskBar } from '@/features/task/components/TaskBar/TaskBar';
 import { getTaskByKey } from '@/lib/api/issues';
@@ -36,13 +39,6 @@ function noop(): void {
   return undefined;
 }
 
-function taskForPlanPatchPreview(task: Task | undefined, taskId: string): Task {
-  if (task) {
-    return { ...task, pendingApproval: true };
-  }
-  return { id: taskId, link: '', name: taskId, pendingApproval: true, team: 'Web' };
-}
-
 /** Задачи из предложения, которых ещё нет в спринте: подтягиваем карточку по ключу. */
 function useMissingPreviewTasks(
   taskIds: readonly string[],
@@ -52,7 +48,7 @@ function useMissingPreviewTasks(
   const results = useQueries({
     queries: missing.map((taskId) => ({
       queryFn: () => getTaskByKey(taskId),
-      queryKey: ['plan-patch-preview-task', taskId],
+      queryKey: planPatchPreviewTaskQueryKey(taskId),
       staleTime: 5 * 60 * 1000,
     })),
   });
@@ -119,8 +115,10 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
   const partsPerDay = getPartsPerDay();
   return (
     <>
-      {cards.flatMap((preview) =>
-        previewBars(preview).map((bar, barIndex) => {
+      {cards.flatMap((preview) => {
+        const bars = previewBars(preview);
+        const previewElementId = planPatchPreviewElementId(preview.taskId);
+        return bars.map((bar, barIndex) => {
           const startCell = bar.startDay * partsPerDay + bar.startPart;
           const isPrimary = barIndex === 0;
           const segmentAnchorId = planPatchPreviewSegmentHtmlAnchorId(preview.taskId, barIndex);
@@ -128,11 +126,10 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
             <TaskBar
               key={bar.key}
               developers={developers}
-              disableDragAndResize
+              // Как у реальной полосы: отрезки тащатся по одному (`id::index`), сброс двигает предложение.
+              disableResize
               draggableId={
-                isPrimary
-                  ? planPatchPreviewElementId(preview.taskId)
-                  : `${planPatchPreviewElementId(preview.taskId)}:${barIndex}`
+                bars.length > 1 ? swimlaneTaskDraggableId(previewElementId, barIndex) : previewElementId
               }
               duration={bar.duration}
               globalNameFilter={globalNameFilter}
@@ -159,8 +156,8 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
               onTaskHover={onTaskHover}
             />
           );
-        })
-      )}
+        });
+      })}
     </>
   );
 });

@@ -8,6 +8,8 @@ import type { DraggableAttributes } from '@dnd-kit/core';
 import React, { useCallback, useMemo } from 'react';
 
 import { Icon } from '@/components/Icon';
+import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 
 import { getQuickAddSubmittingOverlayRadiusClass } from './components/taskBarResizeHandleHelpers';
 import { TaskBarDragSourceGhost } from './TaskBarDragSourceGhost';
@@ -20,6 +22,7 @@ import {
   runTaskBarMouseOver,
 } from './taskBarOpacityLayerHandlers';
 import { TaskBarPlanAnchorOverlay } from './TaskBarPlanAnchorOverlay';
+import { useTaskBarResizeSquash } from './useTaskBarResizeSquash';
 
 interface TaskBarOpacityLayerProps {
   assigneeName?: string;
@@ -65,6 +68,7 @@ interface TaskBarOpacityLayerProps {
     isResizing: boolean;
     resizePreviewDuration: number | null;
     resizeSide: 'left' | 'right' | null;
+    resizeStartDuration: number | null;
   };
   selectedSprintId?: number | null;
   setClickStartPos: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
@@ -153,6 +157,18 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   const isContextMenuOpenForThis = contextMenuTaskId === task.id;
   const isCommentCard = task.localDraftKind === 'comment';
   const cardElementRef = React.useRef<HTMLElement | null>(null);
+  const layerRef = React.useRef<HTMLDivElement | null>(null);
+  // У заметок упругой деформации нет: бумажка не резиновая.
+  const isStickyNote =
+    (isCommentCard || parseSwimlaneCommentTaskId(task.id) != null) &&
+    !isSwimlaneImageTask(task) &&
+    !isSwimlaneDiagramTask(task) &&
+    !isSwimlaneWidgetTask(task);
+  useTaskBarResizeSquash(layerRef, {
+    enabled: !isStickyNote,
+    resizePreviewDuration: resize.resizePreviewDuration,
+    resizeStartDuration: resize.resizeStartDuration,
+  });
 
   const longHoverEnterInput = useMemo(
     () => ({
@@ -246,6 +262,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
 
   return (
     <div
+      ref={layerRef}
       className="task-bar-opacity-layer group/taskbar relative h-full min-h-0 w-full min-w-0 overflow-visible"
       style={{
         opacity: hideSourceForOverlay ? 0 : effectiveOpacity,

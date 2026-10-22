@@ -7,6 +7,7 @@ import type { Comment as CommentType, TaskParent } from '@/types';
 
 import { useCallback } from 'react';
 
+import { approveCommentDraftsLocally } from '@/features/comments/utils/approveCommentDrafts';
 import {
   playStickyNoteExit,
   shouldAnimateStickyNoteDelete,
@@ -58,32 +59,6 @@ function applyParentToComment(comment: CommentType, parent: TaskParent | null): 
     return { ...comment, parent: undefined };
   }
   return { ...comment, parent };
-}
-
-function withCommentPendingApproval(
-  comments: CommentType[],
-  commentId: string,
-  pending: boolean
-): CommentType[] {
-  return comments.map((comment) => {
-    if (comment.id !== commentId) {
-      return comment;
-    }
-    return pending ? { ...comment, pendingApproval: true } : { ...comment, pendingApproval: undefined };
-  });
-}
-
-function withCommentsPendingApproval(
-  comments: CommentType[],
-  commentIds: ReadonlySet<string>,
-  pending: boolean
-): CommentType[] {
-  return comments.map((comment) => {
-    if (!commentIds.has(comment.id)) {
-      return comment;
-    }
-    return pending ? { ...comment, pendingApproval: true } : { ...comment, pendingApproval: undefined };
-  });
 }
 
 function collectLinksTouchingCommentIds(
@@ -217,48 +192,49 @@ export function useSprintPlannerCommentHandlers({
     ]
   );
 
-  const handleCommentApprove = useCallback(
-    (id: string) => {
-      setComments((prev: CommentType[]) => withCommentPendingApproval(prev, id, false));
+  /** Принять черновики сразу на доске; сервер не принял — вернуть, как было до нажатия. */
+  const approveDrafts = useCallback(
+    (commentIds: readonly string[], request: (sprintId: number) => Promise<boolean>) => {
+      let before: CommentType[] | null = null;
+      setComments((prev: CommentType[]) => {
+        before = prev;
+        return approveCommentDraftsLocally(prev, new Set(commentIds));
+      });
       if (!selectedSprintId) {
         return;
       }
-      approveSprintComment(selectedSprintId, id)
+      const revert = () => {
+        const snapshot = before;
+        if (snapshot) {
+          setComments(() => snapshot);
+        }
+      };
+      request(selectedSprintId)
         .then((ok) => {
           if (!ok) {
-            setComments((prev: CommentType[]) => withCommentPendingApproval(prev, id, true));
+            revert();
           }
         })
         .catch((error) => {
-          console.error('Error approving comment:', error);
-          setComments((prev: CommentType[]) => withCommentPendingApproval(prev, id, true));
+          console.error('Error approving agent drafts:', error);
+          revert();
         });
     },
     [selectedSprintId, setComments]
   );
 
+  const handleCommentApprove = useCallback(
+    (id: string) => approveDrafts([id], (sprintId) => approveSprintComment(sprintId, id)),
+    [approveDrafts]
+  );
+
   const handleCommentApproveAll = useCallback(
     (commentIds: readonly string[]) => {
-      if (commentIds.length === 0) {
-        return;
+      if (commentIds.length > 0) {
+        approveDrafts(commentIds, approveAllPendingSprintComments);
       }
-      const idSet = new Set(commentIds);
-      setComments((prev: CommentType[]) => withCommentsPendingApproval(prev, idSet, false));
-      if (!selectedSprintId) {
-        return;
-      }
-      approveAllPendingSprintComments(selectedSprintId)
-        .then((ok) => {
-          if (!ok) {
-            setComments((prev: CommentType[]) => withCommentsPendingApproval(prev, idSet, true));
-          }
-        })
-        .catch((error) => {
-          console.error('Error approving pending comments:', error);
-          setComments((prev: CommentType[]) => withCommentsPendingApproval(prev, idSet, true));
-        });
     },
-    [selectedSprintId, setComments]
+    [approveDrafts]
   );
 
   const handleCommentRejectAll = useCallback(

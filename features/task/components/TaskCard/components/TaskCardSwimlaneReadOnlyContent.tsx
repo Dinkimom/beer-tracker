@@ -52,7 +52,9 @@ export function TaskCardSwimlaneReadOnlyContent({
   titleLeadItems = [],
 }: TaskCardSwimlaneReadOnlyContentProps) {
   const isCommentCard = task.localDraftKind === 'comment';
-  const titleFontClass = isCommentCard ? getStickyNoteTextClass() : 'font-bold';
+  // Драфт агента удаляет заметку — зачёркиваем, пока его не примут или не отклонят.
+  const strikeClass = task.pendingDelete === true ? ' line-through' : '';
+  const titleFontClass = `${isCommentCard ? getStickyNoteTextClass() : 'font-bold'}${strikeClass}`;
   const resolvedTitle = resolveTaskCardTitleText(task, t);
   const slotItemContext: TaskCardSlotItemContext = {
     ...slotContext,
@@ -80,7 +82,7 @@ export function TaskCardSwimlaneReadOnlyContent({
       return (
         <div
           ref={textRef}
-          className={`${textSize} ${lineHeightClass} ${teamTextColor} ${getStickyNoteMarkdownLayoutClass()}`}
+          className={`${textSize} ${lineHeightClass} ${teamTextColor} ${getStickyNoteMarkdownLayoutClass()}${strikeClass}`}
           data-sticky-note-markdown="true"
           {...{ [STICKY_NOTE_CONTENT_DATA_ATTR]: '' }}
         >

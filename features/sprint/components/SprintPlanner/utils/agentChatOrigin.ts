@@ -1,43 +1,52 @@
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentSessionContext } from '@/lib/agentSessions/agentSession';
-import type { AgentRequestTarget } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
+import type { AgentChatContextItem } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { formatStickyNoteTextForPreview } from '@/lib/comments/stickyNoteMentions';
+import { agentChatContextKey } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
-/** С чем создать сессию, если её ещё нет: задача / заметка / спринт, откуда открыли чат. */
+/** Плашка контекста над полем ввода: что уйдёт агенту упоминанием и ключ, по которому её снимают. */
+interface AgentChatContextChip {
+  key: string;
+  mention: AgentMention;
+}
+
+/** Контекст следующей реплики и данные новой сессии, если её ещё нет. */
 export interface AgentSessionChatOrigin {
+  chips?: AgentChatContextChip[];
   context?: AgentSessionContext;
-  /** Неснимаемые плашки контекста над полем ввода; уходят агенту упоминаниями. */
-  mentions?: AgentMention[];
   taskId?: string;
 }
 
+function chipOf(item: AgentChatContextItem): AgentChatContextChip {
+  const key = agentChatContextKey(item);
+  if (item.kind === 'task') {
+    // Ключ трекера, не id карточки: у QA-карточки id свой, а агент ищет задачу по ключу.
+    const taskKey = getTaskTrackerDisplayKey(item.task);
+    return { key, mention: { id: taskKey, kind: 'task', label: taskKey } };
+  }
+  const label = formatStickyNoteTextForPreview(item.text, 60) || '…';
+  return { key, mention: { id: item.noteId, kind: 'note', label } };
+}
+
 /**
- * Откуда открыли чат агента: плашка контекста, данные для новой сессии и ключ,
- * по которому чат сбрасывает черновик при смене цели.
+ * Плашки, приложенные к следующей реплике (задачи и заметки, с которых звали агента).
+ * Новая сессия привязывается к задаче, только если она одна: так её видно во входящих агента.
  */
 export function resolveAgentChatOrigin(
-  target: AgentRequestTarget,
+  items: readonly AgentChatContextItem[],
   sprintName: string | undefined
-): { key: string; origin: AgentSessionChatOrigin } {
-  if (target.kind === 'task') {
-    const key = getTaskTrackerDisplayKey(target.task);
-    return {
-      key: `task:${target.task.id}`,
-      origin: {
-        context: { assigneeName: target.task.assigneeName, sprintName, summary: target.task.name, taskKey: key },
-        mentions: [{ id: target.task.id, kind: 'task', label: key }],
-        taskId: target.task.id,
-      },
-    };
+): AgentSessionChatOrigin {
+  const tasks = items.filter((item) => item.kind === 'task');
+  const only = tasks.length === 1 ? tasks[0] : undefined;
+  if (!only) {
+    return { chips: items.map(chipOf), context: { sprintName } };
   }
-  if (target.kind === 'note') {
-    const label = formatStickyNoteTextForPreview(target.text, 60) || '…';
-    return {
-      key: `note:${target.noteId}`,
-      origin: { context: { sprintName }, mentions: [{ id: target.noteId, kind: 'note', label }] },
-    };
-  }
-  return { key: target.kind, origin: { context: { sprintName } } };
+  const taskKey = getTaskTrackerDisplayKey(only.task);
+  return {
+    chips: items.map(chipOf),
+    context: { assigneeName: only.task.assigneeName, sprintName, summary: only.task.name, taskKey },
+    taskId: taskKey,
+  };
 }

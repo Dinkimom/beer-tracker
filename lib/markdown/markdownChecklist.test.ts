@@ -4,6 +4,7 @@ import {
   collectMarkdownCheckboxLineIndices,
   countMarkdownChecklistProgress,
   isMarkdownCheckboxLine,
+  parseMarkdownBulletLine,
   stickyNoteUsesMarkdownLayout,
   toggleMarkdownCheckboxAtLine,
 } from './markdownChecklist';
@@ -48,6 +49,17 @@ describe('markdownChecklist', () => {
     expect(stickyNoteUsesMarkdownLayout('[ ] item')).toBe(true);
     expect(stickyNoteUsesMarkdownLayout('[] item')).toBe(true);
     expect(stickyNoteUsesMarkdownLayout('## Blockers')).toBe(true);
+    expect(stickyNoteUsesMarkdownLayout('**Title**\n- first\n- second')).toBe(true);
+    expect(stickyNoteUsesMarkdownLayout('* item')).toBe(true);
     expect(stickyNoteUsesMarkdownLayout('Plain note with @mention')).toBe(false);
+    expect(stickyNoteUsesMarkdownLayout('-not a bullet')).toBe(false);
+  });
+
+  it('parses bullet lines', () => {
+    expect(parseMarkdownBulletLine('- item')).toBe('item');
+    expect(parseMarkdownBulletLine('  + nested')).toBe('nested');
+    expect(parseMarkdownBulletLine('* star')).toBe('star');
+    expect(parseMarkdownBulletLine('-no space')).toBeNull();
+    expect(parseMarkdownBulletLine('plain')).toBeNull();
   });
 });

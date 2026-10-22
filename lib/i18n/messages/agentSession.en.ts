@@ -8,6 +8,7 @@ export const agentSessionEn = {
   composerHintWithSkills: '/ — scenario · @ — task or person · Enter — send',
   skillsAria: 'Agent scenarios',
   mentionsAria: 'Mention a task or a person',
+  contextRemove: 'Remove from context: {label}',
   submit: 'Send to agent',
   submitFailed: 'Could not send the request',
   sendFailed: 'Could not send the message',

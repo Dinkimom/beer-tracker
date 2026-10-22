@@ -138,7 +138,9 @@ CREATE TABLE public.agent_sessions (
     status VARCHAR(16) NOT NULL CHECK (status IN ('waiting_agent', 'waiting_user', 'closed')),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    closed_at TIMESTAMP WITH TIME ZONE
+    closed_at TIMESTAMP WITH TIME ZONE,
+    agent_step VARCHAR(16),
+    agent_step_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX idx_agent_sessions_owner ON public.agent_sessions (organization_id, owner_id, status);
@@ -215,6 +217,8 @@ CREATE TABLE public.comments (
     pending_approval_expires_at TIMESTAMP WITH TIME ZONE,
     plan_patch_proposal_id VARCHAR(64),
     client_brand VARCHAR(16) NOT NULL DEFAULT '',
+    replaces_comment_id UUID,
+    replace_action VARCHAR(8),
     updated_by UUID,
     version INTEGER NOT NULL DEFAULT 1,
     deleted_at TIMESTAMP WITH TIME ZONE,

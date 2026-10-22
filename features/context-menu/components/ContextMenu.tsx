@@ -194,6 +194,7 @@ export function ContextMenu({
       <div
         aria-hidden
         className="fixed inset-0 bg-transparent"
+        data-planner-context-menu=""
         style={{ zIndex: ZIndex.contextMenu - 1 }}
         onClick={(e) => {
           e.stopPropagation();
@@ -207,6 +208,7 @@ export function ContextMenu({
         ref={menuRef}
         className={`fixed overflow-visible ${FLOATING_MENU_FIT_WIDTH} ${FLOATING_MENU_GLASS_SHELL} ${OVERLAY_PANEL_ENTER}`}
         data-onboarding-context-menu={task.id === ONBOARDING_SAMPLE_TASK_ID ? '' : undefined}
+        data-planner-context-menu=""
         data-state={overlay.state}
         style={{
           left: `${position.x}px`,

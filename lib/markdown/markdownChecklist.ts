@@ -101,9 +101,23 @@ function stickyNoteHasCheckboxLines(text: string): boolean {
   return text.split('\n').some((line) => isMarkdownCheckboxLine(line));
 }
 
-/** Sticky-note body uses markdown layout (headings and/or checklists). */
+const MARKDOWN_BULLET_MARKERS = ['- ', '* ', '+ '] as const;
+
+/** Текст пункта маркированного списка (`- `, `* `, `+ `) или `null`, если строка не пункт. */
+export function parseMarkdownBulletLine(line: string): string | null {
+  const trimmed = line.trimStart();
+  const marker = MARKDOWN_BULLET_MARKERS.find((candidate) => trimmed.startsWith(candidate));
+  return marker ? trimmed.slice(marker.length) : null;
+}
+
+/** Sticky-note body uses markdown layout (headings, checklists and/or bullet lists). */
 export function stickyNoteUsesMarkdownLayout(text: string): boolean {
-  return stickyNoteHasCheckboxLines(text) || text.split('\n').some((line) => isMarkdownHeadingLine(line));
+  return (
+    stickyNoteHasCheckboxLines(text)
+    || text
+      .split('\n')
+      .some((line) => isMarkdownHeadingLine(line) || parseMarkdownBulletLine(line) != null)
+  );
 }
 
 function isMarkdownHeadingLine(line: string): boolean {

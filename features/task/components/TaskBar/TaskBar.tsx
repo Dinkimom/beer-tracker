@@ -42,6 +42,7 @@ import {
 } from './taskBarHelpers';
 import { TaskBarOpacityLayer } from './TaskBarOpacityLayer';
 import { TaskBarPendingApprovalToolbar } from './TaskBarPendingApprovalToolbar';
+import { usePlanPatchNoteFocus } from './usePlanPatchNoteFocus';
 import { useTaskBarDisplayState } from './useTaskBarDisplayState';
 import { useTaskBarLifecycle } from './useTaskBarLifecycle';
 import { useTaskBarPhotoCardInteractions } from './useTaskBarPhotoCardInteractions';
@@ -165,8 +166,10 @@ const TaskBarSurface = observer(function TaskBarSurface({
   swimlaneTimelineTotalParts = WORKING_DAYS * getPartsPerDay(),
 }: TaskBarProps) {
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
+  const noteFocus = usePlanPatchNoteFocus(task, onTaskHover);
   const planPatchChrome = resolvePlanPatchTaskBarChrome({
     focusTaskId: sprintPlannerUi.planPatchFocusTaskId,
+    noteFocused: noteFocus.focused,
     planPatchGhost,
     preview: positionsStore.planPatchPreviews.get(task.id),
     suppressPlanPatchToolbar: swimlaneSegmentSecondary,
@@ -421,7 +424,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
             : undefined
         }
         onPhotoGestureStart={beginPhotoGesture}
-        onTaskHover={onTaskHover}
+        onTaskHover={noteFocus.hover}
       >
         <TaskBarAnnotationOverlays
           isDiagramCard={isDiagramCard}
@@ -437,7 +440,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
           taskId={task.id}
           onCommentDelete={onCommentDelete}
           onDeleteLocalImage={onDeleteLocalImage}
-          onTaskHover={onTaskHover}
+          onTaskHover={noteFocus.hover}
         />
       </TaskBarOpacityLayer>
       <PlanPatchPendingToolbar preview={planPatchChrome.toolbarPreview} sprintId={selectedSprintId} />

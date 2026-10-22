@@ -80,6 +80,8 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
               session={panel.session}
               sprintId={sprintId}
               onClear={island.clearChat}
+              onContextRemove={island.removeContext}
+              onContextSent={island.clearContext}
               onCreated={island.selectCreated}
             />
           </div>

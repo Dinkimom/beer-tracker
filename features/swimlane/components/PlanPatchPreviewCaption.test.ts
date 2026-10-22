@@ -59,4 +59,17 @@ describe('resolvePlanPatchTaskBarChrome', () => {
     });
     expect(chrome.ringClass).toBe('');
   });
+
+  it('rings a note and its replacement draft while the draft is hovered', () => {
+    const chrome = resolvePlanPatchTaskBarChrome({
+      focusTaskId: null,
+      noteFocused: true,
+      preview: undefined,
+      taskId: 'comment:n-1',
+    });
+    expect(chrome.ringClass).toBe(' sticky-note-focus-ring');
+    expect(
+      resolvePlanPatchTaskBarChrome({ focusTaskId: null, preview: undefined, taskId: 'comment:n-1' }).ringClass
+    ).toBe('');
+  });
 });

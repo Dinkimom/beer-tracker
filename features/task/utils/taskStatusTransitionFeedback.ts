@@ -5,7 +5,7 @@
 
 export type TaskStatusTransitionPhase = 'applied' | 'failed' | 'pending';
 
-export const TASK_STATUS_TRANSITION_APPLIED_MS = 1000;
+export const TASK_STATUS_TRANSITION_APPLIED_MS = 700;
 export const TASK_STATUS_TRANSITION_FAILED_MS = 600;
 
 const phaseByTaskId = new Map<string, TaskStatusTransitionPhase>();

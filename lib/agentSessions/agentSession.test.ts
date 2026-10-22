@@ -129,6 +129,14 @@ describe('agent views', () => {
     expect(view.conversation[2]?.target).toEqual(target);
   });
 
+  it('adds tasks mentioned after the last agent reply to the call to start with', () => {
+    const request = message({ kind: 'request', text: 'Разбей под ревью' });
+    const reply = message({ authorKind: 'agent', kind: 'reply', text: 'Готово' });
+    const followUp = message({ mentions: [{ id: 'RND-1914', kind: 'task', label: 'RND-1914' }], text: 'А эту?' });
+    const view = buildAgentSessionAgentView(session([request, reply, followUp]));
+    expect(view.fetchContext).toBe('get_sprint_context(sprintId: 1221, taskIds: ["RND-1779","RND-1914"])');
+  });
+
   it('passes the skill instructions and answer options to the agent', () => {
     const request = message({
       kind: 'request',

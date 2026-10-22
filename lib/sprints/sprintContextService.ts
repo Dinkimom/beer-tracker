@@ -139,6 +139,16 @@ function readAuthorName(row: Record<string, unknown>): string | null {
   return null;
 }
 
+/** Черновик драфта; копия-замена ещё и ссылается на заметку, которую правит или удаляет. */
+function markPendingNote(note: SprintContextNote, row: Record<string, unknown>): void {
+  note.pendingApproval = true;
+  const replaces = asString(row.replaces_comment_id, '');
+  if (replaces) {
+    note.replacesNoteId = replaces;
+    note.replaceAction = row.replace_action === 'delete' ? 'delete' : 'update';
+  }
+}
+
 function mapCommentRow(row: Record<string, unknown>): SprintContextNote {
   const parent = parseNoteParentFromRow(row.parent);
   const kind = mapCommentKind(row.kind);
@@ -162,7 +172,7 @@ function mapCommentRow(row: Record<string, unknown>): SprintContextNote {
     note.parent = parent;
   }
   if (row.pending_approval === true || row.pendingApproval === true) {
-    note.pendingApproval = true;
+    markPendingNote(note, row);
   }
   const updatedAt = row.updated_at ?? row.updatedAt;
   if (updatedAt instanceof Date) {

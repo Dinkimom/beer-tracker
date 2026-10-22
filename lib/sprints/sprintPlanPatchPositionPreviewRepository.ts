@@ -240,6 +240,45 @@ export async function replacePlanPatchPositionPreviews(input: {
   });
 }
 
+/** Пользователь сдвинул карточку: новая геометрия, proposal/срок жизни не трогаем. */
+export async function updatePlanPatchPositionPreviewGeometry(input: {
+  organizationId: string;
+  ownerId: string;
+  preview: PlanPatchPositionPreview;
+  sprintId: number;
+}): Promise<number> {
+  await ensurePlanPatchPositionPreviewSchema();
+  const { preview } = input;
+  const result = await query(
+    `UPDATE plan_patch_position_previews
+     SET assignee_id = $5,
+         start_day = $6,
+         start_part = $7,
+         duration = $8,
+         changes = $9,
+         segments = $10::jsonb
+     WHERE organization_id = $1::uuid
+       AND sprint_id = $2
+       AND owner_id = $3
+       AND task_id = $4
+       AND remove = FALSE
+       AND expires_at >= CURRENT_TIMESTAMP`,
+    [
+      input.organizationId,
+      input.sprintId,
+      input.ownerId,
+      preview.taskId,
+      preview.assigneeId,
+      preview.startDay,
+      preview.startPart,
+      preview.duration,
+      preview.changes.join(','),
+      preview.segments === undefined ? null : JSON.stringify(preview.segments),
+    ]
+  );
+  return result.rowCount ?? 0;
+}
+
 export async function deletePlanPatchPositionPreviews(input: {
   organizationId: string;
   ownerId: string;

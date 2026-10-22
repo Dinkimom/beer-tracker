@@ -13,6 +13,7 @@ import { ZodError } from 'zod';
 import { parseAgentSessionReplies } from '@/lib/agentSessions/agentSession';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
+import { deletePendingCommentReplacements } from '@/lib/sprints/sprintCommentReplacements';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
 import {
   applySprintPlanPatchOps,
@@ -331,6 +332,7 @@ export async function applySprintPlanPatch(input: {
   });
 
   if (!error) {
+    await deletePendingCommentReplacements({ ownerId: input.actorUserId, sprintId: input.sprintId });
     const proposalId = proposalIdFromOpsHash(hashSprintPlanPatchOps(ops));
     await deletePlanPatchPositionPreviewsByProposal({
       organizationId: input.organizationId,

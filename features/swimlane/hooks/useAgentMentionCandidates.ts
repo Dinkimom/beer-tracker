@@ -33,7 +33,8 @@ export function useAgentMentionCandidates(sprintId: number | null | undefined): 
         continue;
       }
       seen.add(label);
-      taskCandidates.push({ hint: task.name, id: task.id, kind: 'task', label });
+      // id — ключ трекера: агент передаёт его в taskIds (у QA-карточки id карточки другой).
+      taskCandidates.push({ hint: task.name, id: label, kind: 'task', label });
     }
     return [...people, ...taskCandidates];
   }, [developers, tasks]);

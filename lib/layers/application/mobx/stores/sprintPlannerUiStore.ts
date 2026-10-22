@@ -24,11 +24,19 @@ import {
  * Открытый чат агента и откуда его открыли: задача (меню карточки), заметка (меню заметки),
  * спринт целиком (✨ в тулбаре) или просто текущая сессия (кнопка «Чат» на острове агента).
  */
-export type AgentRequestTarget =
+type AgentRequestTarget =
   | { kind: 'note'; noteId: string; text: string }
   | { kind: 'session' }
   | { kind: 'sprint' }
   | { kind: 'task'; task: Task };
+
+/** Задача или заметка, приложенная к следующей реплике агенту (плашка над полем ввода). */
+export type AgentChatContextItem = Extract<AgentRequestTarget, { kind: 'note' | 'task' }>;
+
+/** Одна задача или заметка — одна плашка. */
+export function agentChatContextKey(item: AgentChatContextItem): string {
+  return item.kind === 'task' ? `task:${item.task.id}` : `note:${item.noteId}`;
+}
 
 /**
  * UI-состояние планера спринта (MobX).
@@ -110,6 +118,12 @@ export class SprintPlannerUiStore {
   /** Чат агента открыт (не null) и откуда: задача, заметка, спринт или текущая сессия. */
   agentRequestTarget: AgentRequestTarget | null = null;
 
+  /**
+   * Плашки контекста следующей реплики агенту: каждое «Попросить агента» с карточки или заметки
+   * добавляет свою. Живут до отправки (или смены спринта) — сворачивание чата их не сбрасывает.
+   */
+  agentChatContext: readonly AgentChatContextItem[] = [];
+
   /** Правый сайдер с информацией о задаче (контекстное меню → «Информация о задаче»). */
   taskInfoPanelTask: Task | null = null;
 
@@ -131,6 +145,9 @@ export class SprintPlannerUiStore {
   /** Пара «призрак предложения ↔ оригинал» при наведении. */
   planPatchFocusTaskId: string | null = null;
 
+  /** Наведение на черновик-замену заметки: swimlane-id оригинала — он и копия в кольце фокуса. */
+  planPatchNoteFocusTaskId: string | null = null;
+
   constructor() {
     this.sidebarOpen = getFromStorage(STORAGE_KEYS.SIDEBAR_OPEN, true);
     this.stickyNoteColor = parseStickyNoteColor(
@@ -138,7 +155,9 @@ export class SprintPlannerUiStore {
     );
     makeObservable(this, {
       accountWorkModal: observable,
+      agentChatContext: observable.ref,
       agentRequestTarget: observable.ref,
+      clearAgentChatContext: action.bound,
       clearNoteEditPreview: action.bound,
       cardLayoutRevision: observable,
       clearStickyNoteCardRowOverride: action.bound,
@@ -147,6 +166,7 @@ export class SprintPlannerUiStore {
       clearTaskResizePreview: action.bound,
       discardLocalTaskResizePreview: action.bound,
       clearTransientUiOnSprintChange: action.bound,
+      removeAgentChatContext: action.bound,
       closeContextMenu: action.bound,
       closeDiagramEditor: action.bound,
       closePhotoLightbox: action.bound,
@@ -165,6 +185,7 @@ export class SprintPlannerUiStore {
       clearNotificationFocusTaskId: action.bound,
       notificationFocusTaskId: observable,
       planPatchFocusTaskId: observable,
+      planPatchNoteFocusTaskId: observable,
       resizingTaskId: observable,
       noteClipboard: observable,
       noteEditPreview: observable,
@@ -194,6 +215,7 @@ export class SprintPlannerUiStore {
       setNoteEditPreview: action.bound,
       setNotificationFocusTaskId: action.bound,
       setPlanPatchFocusTaskId: action.bound,
+      setPlanPatchNoteFocusTaskId: action.bound,
       setOpenCommentEditId: action.bound,
       setResizingTaskId: action.bound,
       setStickyNoteCardRowOverride: action.bound,
@@ -419,6 +441,21 @@ export class SprintPlannerUiStore {
 
   setAgentRequestTarget(target: AgentRequestTarget | null): void {
     this.agentRequestTarget = target;
+    if (target?.kind !== 'task' && target?.kind !== 'note') {
+      return;
+    }
+    const key = agentChatContextKey(target);
+    if (!this.agentChatContext.some((item) => agentChatContextKey(item) === key)) {
+      this.agentChatContext = [...this.agentChatContext, target];
+    }
+  }
+
+  removeAgentChatContext(key: string): void {
+    this.agentChatContext = this.agentChatContext.filter((item) => agentChatContextKey(item) !== key);
+  }
+
+  clearAgentChatContext(): void {
+    this.agentChatContext = [];
   }
 
   openTaskInfoPanel(task: Task): void {
@@ -470,15 +507,21 @@ export class SprintPlannerUiStore {
     this.planPatchFocusTaskId = id;
   }
 
+  setPlanPatchNoteFocusTaskId(id: string | null): void {
+    this.planPatchNoteFocusTaskId = id;
+  }
+
   clearNotificationFocusTaskId(): void {
     this.notificationFocusTaskId = null;
   }
 
   /** Сброс преходящего UI при смене спринта (поиск, меню, редактор сегментов). */
   clearTransientUiOnSprintChange(): void {
+    this.agentChatContext = [];
     this.globalNameFilter = '';
     this.notificationFocusTaskId = null;
     this.planPatchFocusTaskId = null;
+    this.planPatchNoteFocusTaskId = null;
     this.segmentEditTaskId = null;
     this.linkingFromTaskId = null;
     this.contextMenu = null;

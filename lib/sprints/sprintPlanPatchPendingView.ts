@@ -35,7 +35,7 @@ interface PendingPlanPatchGoalLine {
 
 /** Unconfirmed proposal, in the same calendar language as propose_plan_patch. */
 export interface PendingPlanPatchView {
-  draftNotes: Array<{ id: string; text: string }>;
+  draftNotes: Array<{ id: string; replaceAction?: 'delete' | 'update'; replacesNoteId?: string; text: string }>;
   goals: PendingPlanPatchGoalLine[];
   hint: string;
   positions: PendingPlanPatchPositionLine[];
@@ -48,7 +48,7 @@ type PendingPlanPatchContext = Pick<
 >;
 
 const PENDING_HINT =
-  'Unconfirmed proposal. positions and sprintGoals in this payload are the committed board. Draft notes are notes[] with pendingApproval=true. propose_plan_patch with replacePending=true discards this proposal; apply_plan_patch keeps it.';
+  'Unconfirmed proposal. positions and sprintGoals in this payload are the committed board. Draft notes are notes[] with pendingApproval=true; one with replacesNoteId is your updateNote/deleteNote of that note, shown as a copy next to it until the person accepts it. propose_plan_patch with replacePending=true discards this proposal; apply_plan_patch keeps it.';
 
 function scheduleLine(
   positions: readonly SprintContextPosition[],
@@ -139,7 +139,8 @@ export function pendingPlanPatchViewLines(view: PendingPlanPatchView): string[] 
     lines.push(`goal ${goal.action} ${goal.goalType} ${goal.id}: ${from} → ${to}`);
   }
   for (const note of view.draftNotes) {
-    lines.push(`draft note ${note.id}: "${clip(note.text)}"`);
+    const of = note.replacesNoteId ? ` (${note.replaceAction ?? 'update'} of ${note.replacesNoteId})` : '';
+    lines.push(`draft note ${note.id}${of}: "${clip(note.text)}"`);
   }
   return lines;
 }
@@ -156,7 +157,11 @@ export function buildPendingPlanPatchView(input: {
 }): PendingPlanPatchView | null {
   const draftNotes = input.notes
     .filter((note) => note.pendingApproval === true)
-    .map((note) => ({ id: note.id, text: note.text }));
+    .map((note) => ({
+      id: note.id,
+      ...(note.replacesNoteId ? { replaceAction: note.replaceAction, replacesNoteId: note.replacesNoteId } : {}),
+      text: note.text,
+    }));
   const positions = input.positionPreviews.map((preview) =>
     positionLine(preview, {
       calendarDays: input.calendarDays,

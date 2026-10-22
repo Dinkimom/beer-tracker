@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPlanPatchPositionPreviews,
   joinPlanPatchChangeLabels,
+  movePlanPatchPositionPreview,
   normalizePlanPatchPositionPreview,
   planPatchPreviewCaptionText,
   type PlanPatchPreviewSourcePosition,
@@ -328,5 +329,75 @@ describe('normalizePlanPatchPositionPreview', () => {
         taskId: 'T-1',
       })?.changes
     ).toEqual(['schedule', 'duration', 'segments']);
+  });
+});
+
+describe('movePlanPatchPositionPreview', () => {
+  const movePreview = {
+    assigneeId: 'dev-b',
+    changes: ['schedule' as const],
+    clientBrand: 'claude' as const,
+    duration: 3,
+    remove: false,
+    startDay: 4,
+    startPart: 0,
+    taskId: 'T-1',
+  };
+
+  it('recomputes changes against the board and keeps the client brand', () => {
+    expect(
+      movePlanPatchPositionPreview({
+        current: placed('T-1'),
+        next: { assigneeId: 'dev-a', duration: 3, startDay: 2, startPart: 1 },
+        preview: movePreview,
+      })
+    ).toEqual({
+      ...movePreview,
+      assigneeId: 'dev-a',
+      startDay: 2,
+      startPart: 1,
+    });
+  });
+
+  it('returns null when the card lands back on the current placement', () => {
+    expect(
+      movePlanPatchPositionPreview({
+        current: placed('T-1'),
+        next: { assigneeId: 'dev-a', duration: 3, startDay: 1, startPart: 0 },
+        preview: movePreview,
+      })
+    ).toBeNull();
+  });
+
+  it('keeps a new placement with no changes and carries segments and tracker sync', () => {
+    expect(
+      movePlanPatchPositionPreview({
+        current: undefined,
+        next: {
+          assigneeId: 'dev-a',
+          duration: 2,
+          segments: [{ duration: 2, startDay: 5, startPart: 0 }],
+          startDay: 5,
+          startPart: 0,
+        },
+        preview: {
+          ...movePreview,
+          changes: [],
+          segments: [{ duration: 2, startDay: 3, startPart: 0 }],
+          syncToTracker: true,
+        },
+      })
+    ).toEqual({
+      assigneeId: 'dev-a',
+      changes: [],
+      clientBrand: 'claude',
+      duration: 2,
+      remove: false,
+      segments: [{ duration: 2, startDay: 5, startPart: 0 }],
+      startDay: 5,
+      startPart: 0,
+      syncToTracker: true,
+      taskId: 'T-1',
+    });
   });
 });

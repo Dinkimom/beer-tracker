@@ -47,6 +47,19 @@ export function useTaskBarLifecycle({
     shouldExpandByLongHover,
   ]);
 
+  // Стрелки связей догоняют карточку после анимации left/width (ресайз, long-hover).
+  useEffect(() => {
+    const element = document.getElementById(htmlAnchorId);
+    if (!element) return;
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (event.target === element && (event.propertyName === 'width' || event.propertyName === 'left')) {
+        requestArrowRedraw();
+      }
+    };
+    element.addEventListener('transitionend', onTransitionEnd);
+    return () => element.removeEventListener('transitionend', onTransitionEnd);
+  }, [htmlAnchorId, requestArrowRedraw]);
+
   useEffect(() => {
     if (!effectiveIsDragging && !isLinking) return;
     if (longHoverTimeoutRef.current) {

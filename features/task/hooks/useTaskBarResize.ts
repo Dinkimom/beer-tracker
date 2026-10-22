@@ -33,6 +33,8 @@ export function useTaskBarResize({
   const [resizePreviewDuration, setResizePreviewDuration] = useState<number | null>(null);
   const [resizePreviewStartCell, setResizePreviewStartCell] = useState<number | null>(null);
   const [resizeSide, setResizeSide] = useState<'left' | 'right' | null>(null);
+  /** Длина на момент нажатия: во время жеста раскладка уже идёт по превью. */
+  const [resizeStartDuration, setResizeStartDuration] = useState<number | null>(null);
 
   useEffect(() => {
     if (isResizing) {
@@ -57,6 +59,7 @@ export function useTaskBarResize({
 
     setIsResizing(true);
     setResizeSide(side);
+    setResizeStartDuration(duration);
     onResizeSessionChange?.(true);
 
     const containerRect = container.getBoundingClientRect();
@@ -156,6 +159,7 @@ export function useTaskBarResize({
     resizePreviewDuration,
     resizePreviewStartCell,
     resizeSide,
+    resizeStartDuration,
     handleResizeStart,
   };
 }

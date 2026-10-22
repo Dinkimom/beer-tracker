@@ -271,6 +271,10 @@ export function commentToSwimlaneTask(comment: Comment): Task {
     storyPoints: 0,
     ...(comment.pendingApproval === true ? { pendingApproval: true } : {}),
     ...(comment.clientBrand ? { pendingApprovalClientBrand: comment.clientBrand } : {}),
+    ...(comment.pendingApproval === true && comment.replaceAction === 'delete' ? { pendingDelete: true } : {}),
+    ...(comment.pendingApproval === true && comment.replacesCommentId
+      ? { pendingReplacesTaskId: toSwimlaneCommentTaskId(comment.replacesCommentId) }
+      : {}),
   };
 }
 

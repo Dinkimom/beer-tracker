@@ -112,6 +112,10 @@ export interface Task {
   pendingApproval?: boolean;
   /** MCP OAuth client brand for pending plan-patch drafts (Cursor / Claude / …). */
   pendingApprovalClientBrand?: McpOAuthClientBrand;
+  /** Черновик агента удаляет эту заметку: карточка зачёркнута, пока его не примут. */
+  pendingDelete?: boolean;
+  /** Черновик-замена: swimlane-id заметки, которую он правит (наведение подсвечивает её). */
+  pendingReplacesTaskId?: string;
   // Оригинальный ID задачи (для QA задач - ID дев задачи)
   position?: TaskPosition;
   priority?: string;
@@ -269,6 +273,10 @@ export interface Comment {
   pendingApproval?: boolean;
   /** Агрегированные реакции на заметку (с точки зрения текущего пользователя). */
   reactions?: StickyNoteReaction[];
+  /** Черновик-замена: что сделать с `replacesCommentId`, если его примут. */
+  replaceAction?: 'delete' | 'update';
+  /** Черновик-замена правит или удаляет эту заметку (копия с новым содержимым рядом с оригиналом). */
+  replacesCommentId?: string;
   /**
    * Строка свимлейна в режиме «по фичам». Не пишется в API:
    * `assigneeId` остаётся человеком (аватар), сюда кладётся id строки фичи.

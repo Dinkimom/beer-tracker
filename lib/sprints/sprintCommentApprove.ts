@@ -1,3 +1,4 @@
+import { applyPendingCommentReplacements } from '@/lib/sprints/sprintCommentReplacements';
 import {
   confirmAllPendingSprintComments,
   confirmPendingSprintComments,
@@ -9,6 +10,11 @@ export async function approvePendingSprintComment(input: {
   commentId: string;
   sprintId: number;
 }): Promise<'not_found' | 'ok'> {
+  // Черновик-замена: принять — значит перенести правку в оригинал, а копию убрать.
+  const replaced = await applyPendingCommentReplacements({ commentIds: [input.commentId], sprintId: input.sprintId });
+  if (replaced > 0) {
+    return 'ok';
+  }
   const count = await confirmPendingSprintComments({
     commentIds: [input.commentId],
     sprintId: input.sprintId,
@@ -20,11 +26,12 @@ export async function approvePendingSprintComment(input: {
   return alreadyConfirmed ? 'ok' : 'not_found';
 }
 
-export function approveAllPendingSprintComments(input: {
+export async function approveAllPendingSprintComments(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<number> {
-  return confirmAllPendingSprintComments(input);
+  const replaced = await applyPendingCommentReplacements(input);
+  return replaced + (await confirmAllPendingSprintComments(input));
 }
 
 export function rejectAllPendingSprintComments(input: {

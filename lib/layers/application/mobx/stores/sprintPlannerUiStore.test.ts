@@ -236,4 +236,22 @@ describe('SprintPlannerUiStore', () => {
     store.setHiddenLinkCounts(new Map([['a', 3]]));
     expect([...store.hiddenLinkCountByTaskId]).toEqual([['a', 3]]);
   });
+
+  it('копит плашки контекста агента без дублей, снимает их и сбрасывает при смене спринта', () => {
+    const store = new SprintPlannerUiStore();
+    const task = minimalTask();
+
+    store.setAgentRequestTarget({ kind: 'task', task });
+    store.setAgentRequestTarget(null);
+    store.setAgentRequestTarget({ kind: 'note', noteId: 'n-1', text: 'Заметка' });
+    store.setAgentRequestTarget({ kind: 'task', task });
+    store.setAgentRequestTarget({ kind: 'sprint' });
+    expect(store.agentChatContext.map((item) => item.kind)).toEqual(['task', 'note']);
+
+    store.removeAgentChatContext('task:task-1');
+    expect(store.agentChatContext.map((item) => item.kind)).toEqual(['note']);
+
+    store.clearTransientUiOnSprintChange();
+    expect(store.agentChatContext).toEqual([]);
+  });
 });

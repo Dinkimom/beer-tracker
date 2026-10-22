@@ -247,14 +247,32 @@ export function agentSessionDraftVersion(messages: readonly AgentSessionMessage[
   return messages.filter((message) => message.kind === 'draft').length;
 }
 
-function fetchContextCall(session: Pick<AgentSession, 'sprintId' | 'taskId'>): string {
-  return session.taskId
-    ? `get_sprint_context(sprintId: ${session.sprintId}, taskIds: ["${session.taskId}"])`
+/**
+ * Задачи, о которых сейчас речь: задача сессии и упомянутые в репликах человека после последнего
+ * ответа агента (чат, открытый с карточки, дописывает в уже идущую сессию — задача только в mentions).
+ */
+function pendingTaskKeys(session: Pick<AgentSession, 'messages' | 'taskId'>): string[] {
+  const keys = new Set(session.taskId ? [session.taskId] : []);
+  const lastAgent = session.messages.findLastIndex((message) => message.authorKind === 'agent');
+  for (const message of session.messages.slice(lastAgent + 1)) {
+    for (const mention of message.mentions) {
+      if (mention.kind === 'task') {
+        keys.add(mention.id);
+      }
+    }
+  }
+  return [...keys];
+}
+
+function fetchContextCall(session: Pick<AgentSession, 'messages' | 'sprintId' | 'taskId'>): string {
+  const keys = pendingTaskKeys(session);
+  return keys.length > 0
+    ? `get_sprint_context(sprintId: ${session.sprintId}, taskIds: ${JSON.stringify(keys)})`
     : `get_sprint_context(sprintId: ${session.sprintId})`;
 }
 
 const SESSION_HINT =
-  'A work session with a person. Read conversation top to bottom: kind=request is what they asked (mentions = tasks/people/notes they pointed at: task id → taskIds, person id → assigneeId, note id → notes[].id), comment = their remark on one item of your draft (target), redo = "redo the draft", draft = a version you proposed. Start with fetchContext. To change the plan: propose_plan_patch(sessionId, replacePending: true, replies: [...]) — replies answer openComments (resolution addressed|declined + what you did). To answer without a new draft: reply_agent_session. skill = a preset the person invoked in the planner (top-level skill = the one waiting for you; each conversation item keeps its own): follow skill.instructions (output draft → propose_plan_patch, reply → reply_agent_session). When a real choice belongs to the person (two ways to fix a conflict, what to drop), ask with reply_agent_session(message, options: 2–5 short answers) — their pick comes back as the next message. Never apply_plan_patch for the person — they accept the draft on the board.';
+  'A work session with a person. Read conversation top to bottom: kind=request is what they asked, kind=message is a follow-up — any of their messages may carry mentions = tasks/people/notes they pointed at (task id → taskIds, person id → assigneeId, note id → notes[].id); the latest unanswered message is what to do now, comment = their remark on one item of your draft (target), redo = "redo the draft", draft = a version you proposed. Start with fetchContext. To change the plan: propose_plan_patch(sessionId, replacePending: true, replies: [...]) — replies answer openComments (resolution addressed|declined + what you did). To answer without a new draft: reply_agent_session. skill = a preset the person invoked in the planner (top-level skill = the one waiting for you; each conversation item keeps its own): follow skill.instructions (output draft → propose_plan_patch, reply → reply_agent_session). When a real choice belongs to the person (two ways to fix a conflict, what to drop), ask with reply_agent_session(message, options: 2–5 short answers) — their pick comes back as the next message. Never apply_plan_patch for the person — they accept the draft on the board.';
 
 interface AgentSessionAgentView {
   context: AgentSessionContext;

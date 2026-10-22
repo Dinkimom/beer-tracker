@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { requireTenantContext } from '@/lib/api-tenant';
 import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
+import { normalizePlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
+import { updatePlanPatchPositionPreviewGeometry } from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
 import {
   approvePlanPatchPositionPreviews,
   rejectPlanPatchPositionPreviews,
@@ -11,6 +13,24 @@ import {
 
 const BodySchema = z.object({
   taskId: z.string().trim().min(1).max(255).optional(),
+});
+
+const MoveBodySchema = z.object({
+  assigneeId: z.string().trim().min(1).max(255),
+  changes: z.array(z.enum(['duration', 'schedule', 'segments'])),
+  duration: z.number().int().positive(),
+  segments: z
+    .array(
+      z.object({
+        duration: z.number().int().positive(),
+        startDay: z.number().int().min(0),
+        startPart: z.number().int().min(0),
+      })
+    )
+    .optional(),
+  startDay: z.number().int().min(0),
+  startPart: z.number().int().min(0),
+  taskId: z.string().trim().min(1).max(255),
 });
 
 async function readSprintId(
@@ -87,5 +107,42 @@ export async function DELETE(
   } catch (error) {
     console.error('Error rejecting plan patch previews:', error);
     return NextResponse.json({ error: 'Failed to reject plan patch previews' }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
+) {
+  try {
+    const tenantResult = await requireTenantContext(request);
+    if (!('ctx' in tenantResult)) {
+      return tenantResult.response;
+    }
+    const sprintId = await readSprintId(params);
+    if (Number.isNaN(sprintId)) {
+      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
+    }
+    const parsed = MoveBodySchema.safeParse(await request.json().catch(() => ({})));
+    const preview = parsed.success
+      ? normalizePlanPatchPositionPreview({ ...parsed.data, remove: false })
+      : null;
+    if (!preview) {
+      return NextResponse.json({ error: 'Invalid preview' }, { status: 400 });
+    }
+    const count = await updatePlanPatchPositionPreviewGeometry({
+      organizationId: tenantResult.ctx.organizationId,
+      ownerId: tenantResult.ctx.userId,
+      preview,
+      sprintId,
+    });
+    if (count === 0) {
+      return NextResponse.json({ error: 'Preview not found' }, { status: 404 });
+    }
+    notifySprintRealtime(request, tenantResult.ctx.organizationId, sprintId, ['positions']);
+    return NextResponse.json({ count, ok: true });
+  } catch (error) {
+    console.error('Error moving plan patch preview:', error);
+    return NextResponse.json({ error: 'Failed to move plan patch preview' }, { status: 500 });
   }
 }

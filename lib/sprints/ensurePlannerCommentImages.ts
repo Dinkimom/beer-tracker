@@ -158,6 +158,12 @@ async function ensureCommentsPendingApprovalColumns(schema: string): Promise<voi
     ALTER TABLE ${schema}.comments
       ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16) NOT NULL DEFAULT ''
   `);
+  // Черновик-замена: правка или удаление заметки из драфта агента (см. sprintCommentReplacements).
+  await query(`
+    ALTER TABLE ${schema}.comments
+      ADD COLUMN IF NOT EXISTS replaces_comment_id UUID,
+      ADD COLUMN IF NOT EXISTS replace_action VARCHAR(8)
+  `);
   await query(`
     CREATE INDEX IF NOT EXISTS idx_comments_pending_approval
       ON ${schema}.comments (sprint_id)

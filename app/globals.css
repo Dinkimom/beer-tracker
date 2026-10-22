@@ -1185,57 +1185,57 @@ html.dark .sprint-card-presence-changing::after {
   animation: task-status-tag-pending 0.5s ease-in-out infinite alternate;
 }
 
-/* Трекер принял переход: карточка «подпрыгивает» со вспышкой, от неё расходится
-   кольцо, новый статус-тег проявляется слева направо. */
+/* Трекер принял переход: карточка слегка «подпрыгивает», от неё расходится
+   тонкое кольцо в цвет нового статуса (--task-status-accent из TaskCard),
+   новый статус-тег проявляется слева направо. Кольцо живёт на ::after, чтобы
+   не перебивать собственную тень карточки — иначе она резко возвращается в конце. */
 @keyframes task-status-transition-applied-ring {
   from {
-    box-shadow: 0 0 0 0 rgb(59 130 246 / 0.85);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--task-status-accent, #3b82f6) 60%, transparent);
   }
   to {
-    box-shadow: 0 0 0 16px rgb(59 130 246 / 0);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--task-status-accent, #3b82f6) 0%, transparent);
   }
 }
 
 @keyframes task-status-transition-applied-pop {
   0% {
-    filter: brightness(1);
     transform: scale(1);
   }
   35% {
-    filter: brightness(1.18);
-    transform: scale(1.06);
+    transform: scale(1.03);
   }
   100% {
-    filter: brightness(1);
     transform: scale(1);
   }
 }
 
 /* Тег стоит в строке с overflow: hidden / truncate — анимация не выходит за его
-   собственные границы: проявление через clip-path и вспышка яркости, без scale > 1. */
+   собственные границы: проявление через clip-path, без scale > 1. */
 @keyframes task-status-tag-reveal {
-  0% {
+  from {
     clip-path: inset(0 100% 0 0 round 6px);
-    filter: brightness(1.4) saturate(1.3);
   }
-  55% {
+  to {
     clip-path: inset(0 0 0 0 round 6px);
-    filter: brightness(1.4) saturate(1.3);
-  }
-  100% {
-    clip-path: inset(0 0 0 0 round 6px);
-    filter: brightness(1) saturate(1);
   }
 }
 
 .task-card-context-menu-frame.task-status-transition-applied {
-  animation:
-    task-status-transition-applied-ring 1s ease-out,
-    task-status-transition-applied-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: task-status-transition-applied-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.task-card-context-menu-frame.task-status-transition-applied::after {
+  animation: task-status-transition-applied-ring 0.7s ease-out forwards;
+  border-radius: inherit;
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
 }
 
 .task-status-transition-applied [data-status-tag] {
-  animation: task-status-tag-reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: task-status-tag-reveal 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Трекер отказал: карточка трясётся с красной вспышкой и плавно возвращает прежний цвет. */
@@ -1339,6 +1339,23 @@ html.dark .sprint-card-presence-changing::after {
   box-shadow:
     0 8px 16px -4px color-mix(in srgb, var(--task-card-glow-color, #a3a3a3) 40%, transparent),
     0 3px 6px -2px color-mix(in srgb, var(--task-card-glow-color, #a3a3a3) 24%, transparent);
+}
+
+/* Заметка и её черновик-замена от агента под курсором: кольцо фокуса на самом листе —
+   он повёрнут (--sticky-note-tilt) и с прямыми углами. Цвета — как у кольца превью задач. */
+.task-bar-item.sticky-note-focus-ring .sticky-note-paper,
+.task-bar-item.sticky-note-focus-ring .sticky-note-paper.task-card-swimlane-hover-shadow {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    0 0 0 1px white,
+    0 0 0 3px rgb(14 165 233 / 0.8);
+}
+
+.dark .task-bar-item.sticky-note-focus-ring .sticky-note-paper,
+.dark .task-bar-item.sticky-note-focus-ring .sticky-note-paper.task-card-swimlane-hover-shadow {
+  box-shadow:
+    0 0 0 1px #111827,
+    0 0 0 3px #38bdf8;
 }
 
 /* Исключение: плавное масштабирование и смена цвета бейджа / кнопки на карточке */

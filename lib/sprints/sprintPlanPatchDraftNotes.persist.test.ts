@@ -7,6 +7,10 @@ import {
 
 import { persistProposedCreateNotes } from './sprintPlanPatchDraftNotes';
 
+vi.mock('@/lib/sprints/sprintCommentReplacements', () => ({
+  insertPendingCommentReplacements: vi.fn(() => Promise.resolve([])),
+}));
+
 vi.mock('@/lib/sprints/sprintCommentsRepository', () => ({
   confirmPendingSprintComments: vi.fn(),
   deletePendingPlanPatchSprintComments: vi.fn(),

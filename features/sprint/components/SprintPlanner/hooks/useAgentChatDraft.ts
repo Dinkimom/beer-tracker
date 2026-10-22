@@ -26,19 +26,26 @@ function composerPlaceholder(
 }
 
 /**
- * Черновик чата с агентом: текст, «@»-упоминания и скилл. `send` дописывает реплику в `session`
- * или создаёт новую сессию; со скиллом текст необязателен — репликой станет его название;
+ * Черновик чата с агентом: текст, «@»-упоминания, скилл и плашки контекста (`origin.chips`).
+ * `send` дописывает реплику в `session` или создаёт новую сессию; плашки уходят с репликой
+ * и очищаются (`onContextSent`). Со скиллом текст необязателен — репликой станет его название;
  * `pickOption` отвечает на вопрос агента выбранным вариантом.
  */
 export function useAgentChatDraft({
   origin,
   session,
   sprintId,
+  onContextRemove,
+  onContextSent,
   onCreated,
 }: {
   origin: AgentSessionChatOrigin;
   session: AgentSession | null;
   sprintId: number;
+  /** Снять плашку контекста по её ключу. */
+  onContextRemove: (key: string) => void;
+  /** Реплика ушла — плашки контекста больше не нужны. */
+  onContextSent: () => void;
   onCreated: (sessionId: string | null) => void;
 }) {
   const { t } = useI18n();
@@ -47,12 +54,14 @@ export function useAgentChatDraft({
   const [mentions, setMentions] = useState<AgentMention[]>([]);
   const [skill, setSkill] = useState<AgentSessionSkill | null>(null);
   const busy = sessions.creating || sessions.posting;
-  const context = origin.mentions ?? [];
+  const chips = origin.chips ?? [];
+  const context = chips.map((chip) => chip.mention);
 
   const reset = () => {
     setText('');
     setMentions([]);
     setSkill(null);
+    onContextSent();
   };
 
   const send = () => {
@@ -97,6 +106,12 @@ export function useAgentChatDraft({
     pickOption,
     placeholder: composerPlaceholder(session, skill, t),
     send,
+    removeContext: (item: AgentMention) => {
+      const chip = chips.find((candidate) => candidate.mention === item);
+      if (chip) {
+        onContextRemove(chip.key);
+      }
+    },
     setMentions,
     setSkill,
     setText,

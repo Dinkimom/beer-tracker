@@ -81,6 +81,8 @@ interface CommentFromApi {
   part: number | null;
   pending_approval?: boolean | null;
   reactions?: unknown;
+  replace_action?: string | null;
+  replaces_comment_id?: string | null;
   text: string;
   width: number;
   x: number | null;
@@ -104,11 +106,16 @@ function commentMediaUrls(
   return {};
 }
 
-function commentApprovalFields(comment: CommentFromApi): Pick<Comment, 'clientBrand' | 'pendingApproval'> {
+function commentApprovalFields(
+  comment: CommentFromApi
+): Pick<Comment, 'clientBrand' | 'pendingApproval' | 'replaceAction' | 'replacesCommentId'> {
   const clientBrand = planPatchClientBrandFromUnknown(comment.client_brand);
+  const replaces = comment.pending_approval === true ? comment.replaces_comment_id : null;
+  const replaceAction = comment.replace_action === 'delete' ? 'delete' : 'update';
   return {
     ...(comment.pending_approval === true ? { pendingApproval: true } : {}),
     ...(clientBrand ? { clientBrand } : {}),
+    ...(replaces ? { replaceAction, replacesCommentId: replaces } : {}),
   };
 }
 

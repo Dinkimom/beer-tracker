@@ -3,6 +3,7 @@ import type { TaskParent } from '@/types';
 
 import { randomUUID } from 'crypto';
 
+import { insertPendingCommentReplacements } from '@/lib/sprints/sprintCommentReplacements';
 import {
   confirmPendingSprintComments,
   deletePendingPlanPatchSprintComments,
@@ -77,6 +78,16 @@ export async function persistProposedCreateNotes(input: {
     });
     ids.push(commentId);
   }
+  // updateNote / deleteNote — копии-замены рядом с оригиналом. В applyToken их не кладём:
+  // apply_plan_patch применяет эти op сам (с ifVersion), копии он просто убирает.
+  await insertPendingCommentReplacements({
+    actorUserId: input.actorUserId,
+    clientBrand: input.clientBrand,
+    expiresAt: input.expiresAt,
+    ops: input.ops,
+    proposalId: input.proposalId,
+    sprintId: input.sprintId,
+  });
   return ids;
 }
 

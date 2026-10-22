@@ -336,7 +336,6 @@ export function useSprintPlannerViewModelInteractions({
     viewMode,
   });
 
-  const handlePositionUpdateWithComments = featureLaneDrag.handlePositionUpdate;
 
   const timelineTotalCells = sprintTimelineWorkingDays * getPartsPerDay();
   const handleTaskResizeWithComments = useCallback(
@@ -384,8 +383,9 @@ export function useSprintPlannerViewModelInteractions({
   const dragAndDrop = useDragAndDrop({
     tasks: allTasksForDragWithComments,
     taskPositions: filteredTaskPositionsWithComments,
-    onPositionUpdate: handlePositionUpdateWithComments,
+    onPositionUpdate: featureLaneDrag.handlePositionUpdate,
     onPositionDelete: handlers.handlePositionDelete,
+    planPatchSprintId: selectedSprintId,
     updateXarrow: debouncedUpdateXarrow,
     onBacklogTaskDrop: featureLaneDrag.handleBacklogTaskDrop,
     dragContextRef,
@@ -468,12 +468,12 @@ export function useSprintPlannerViewModelInteractions({
     () => ({
       ...handlers,
       handleCommentDelete,
-      handlePositionUpdate: handlePositionUpdateWithComments,
+      handlePositionUpdate: featureLaneDrag.handlePositionUpdate,
       handleTaskResize: handleTaskResizeWithComments,
     }),
     [
       handleCommentDelete,
-      handlePositionUpdateWithComments,
+      featureLaneDrag.handlePositionUpdate,
       handleTaskResizeWithComments,
       handlers,
     ]

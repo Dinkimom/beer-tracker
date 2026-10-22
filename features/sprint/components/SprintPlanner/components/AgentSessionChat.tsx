@@ -39,6 +39,8 @@ export function AgentSessionChat({
   session,
   sprintId,
   onClear,
+  onContextRemove,
+  onContextSent,
   onCreated,
 }: {
   autoFocus?: boolean;
@@ -48,6 +50,8 @@ export function AgentSessionChat({
   session: AgentSession | null;
   sprintId: number;
   onClear: () => void;
+  onContextRemove: (key: string) => void;
+  onContextSent: () => void;
   onCreated: (sessionId: string | null) => void;
 }) {
   const { t } = useI18n();
@@ -56,7 +60,7 @@ export function AgentSessionChat({
   const bridgeRun = session ? bridge.runs.find((run) => run.sessionId === session.id) : undefined;
   // Внешний агент (claude.ai, Cursor…): что он делает — по его вызовам MCP; затих — снова зовём.
   const { progress, silentStep } = useAgentWaitProgress(session, bridgeRun);
-  const draft = useAgentChatDraft({ onCreated, origin, session, sprintId });
+  const draft = useAgentChatDraft({ onContextRemove, onContextSent, onCreated, origin, session, sprintId });
 
   return (
     <div className="flex flex-col gap-2.5" data-agent-session-chat="">
@@ -124,6 +128,7 @@ export function AgentSessionChat({
         placeholder={draft.placeholder}
         sprintId={sprintId}
         text={draft.text}
+        onContextRemove={draft.removeContext}
         onMentionsChange={draft.setMentions}
         onSkillPick={draft.setSkill}
         onSubmit={draft.send}

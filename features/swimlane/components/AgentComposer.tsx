@@ -21,7 +21,7 @@ const MAX_HEIGHT_PX = 220;
 
 /**
  * Поле просьбы агенту, как в чате: растёт по тексту, Enter — отправить, Shift+Enter — новая строка,
- * «@» — упомянуть задачу или человека, «/» в начале — вызвать скилл (если есть `onSkillPick`). `context` — неснимаемые плашки того, откуда открыли (задача, заметка);
+ * «@» — упомянуть задачу или человека, «/» в начале — вызвать скилл (если есть `onSkillPick`). `context` — плашки того, откуда открыли (задача, заметка), с `onContextRemove` снимаются крестиком;
  * `header` — над ними (выбранный скилл с параметрами).
  */
 export function AgentComposer({
@@ -34,6 +34,7 @@ export function AgentComposer({
   placeholder,
   sprintId,
   text,
+  onContextRemove,
   onMentionsChange,
   onSkillPick,
   onSubmit,
@@ -50,6 +51,8 @@ export function AgentComposer({
   /** Спринт, из задач и людей которого предлагаем «@». */
   sprintId: number | null | undefined;
   text: string;
+  /** Снять плашку контекста; нет — плашки неснимаемые. */
+  onContextRemove?: (item: AgentMention) => void;
   onMentionsChange: (mentions: AgentMention[]) => void;
   /** «/» в начале поля открывает список скиллов. */
   onSkillPick?: (skill: AgentSessionSkill) => void;
@@ -122,6 +125,17 @@ export function AgentComposer({
             >
               <Icon className="h-3 w-3 shrink-0" name={AGENT_MENTION_ICON[item.kind]} />
               <span className="truncate">{item.label}</span>
+              {onContextRemove ? (
+                <button
+                  aria-label={t('agentSession.contextRemove', { label: item.label })}
+                  className="-mr-0.5 inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded text-gray-500 transition-all duration-200 hover:bg-gray-500/[0.15] hover:text-gray-800 active:scale-[0.98] active:bg-gray-500/[0.25] dark:text-gray-400 dark:hover:bg-white/[0.12] dark:hover:text-gray-100"
+                  data-agent-context-remove=""
+                  type="button"
+                  onClick={() => onContextRemove(item)}
+                >
+                  <Icon className="h-3 w-3" name="x" />
+                </button>
+              ) : null}
             </span>
           ))}
         </div>
