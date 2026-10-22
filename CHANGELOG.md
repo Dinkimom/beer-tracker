@@ -2,6 +2,30 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.22.0] — 2026-10-22
+
+### English
+
+- Agent skills in the planner chat: type «/» to pick a ready-made scenario (balance load, place tasks, sprint goals, sprint risks) and set its options; the agent gets the instructions with the session.
+- The agent can ask a question with 2–5 answer buttons; your pick is sent as the next message.
+- Agent replies render as Markdown (tables, lists, checklists); task keys and links stay clickable.
+- The agent sees who created each sticky note and retro card and who reacted with which emoji (✅ = marked done).
+- Jira: a task's sprint is read from the site's Sprint custom field, so sprints show up for issues loaded through REST v3.
+- Planner links and comments no longer load twice when a sprint opens, and switching sprints quickly no longer shows another sprint's list.
+- New columns in `agent_session_messages` are added automatically on first use; no manual migration needed.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.22.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Скиллы агента в чате планера: «/» открывает готовые сценарии (выровнять загрузку, расставить задачи, цели спринта, риски спринта) с параметрами; агент получает инструкцию вместе с сессией.
+- Агент может задать вопрос с 2–5 кнопками-вариантами; выбор уходит следующей репликой.
+- Ответы агента отображаются как Markdown (таблицы, списки, чекбоксы); ключи задач и ссылки кликабельны.
+- Агент видит автора заметок и карточек ретро и кто какой emoji поставил (✅ — отмечено сделанным).
+- Jira: спринт задачи берётся из Sprint custom field сайта — спринты видны и у задач, загруженных через REST v3.
+- Связи и комментарии планера больше не грузятся дважды при открытии спринта, а при быстром переключении спринтов не подменяются списком другого спринта.
+- Новые колонки в `agent_session_messages` добавляются автоматически при первом обращении, ручная миграция не нужна.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.22.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.21.1] — 2026-10-22
 
 ### English
