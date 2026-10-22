@@ -2,6 +2,30 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.23.1] — 2026-10-23
+
+### English
+
+- The agent can now edit and delete notes in its draft. The proposed version sits semi-transparent next to the original: Accept applies the edit (or removes the note), Reject drops the proposal.
+- Agent proposal cards on the swimlane can be dragged and resized. This moves the proposal itself, not the task's position on the board.
+- Focusing a note from the draft highlights it on the board.
+- Resizing a card gives it a springy squash and stretch while you drag, with a little bounce on release.
+- Agent chat: context chips (task, note) can be removed with ×. Tasks you mention in follow-up messages are now included in the agent's context for an ongoing session.
+- Bullet lists (`-`, `*`, `+`) in notes render as markdown.
+- No operator action needed: new `comments` and `agent_sessions` columns are added automatically on start. Migration files `database/add-comment-replacements.sql` and `database/add-agent-session-activity.sql` are available for manual setups.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.23.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Агент может править и удалять заметки в драфте. Предложенная версия висит полупрозрачно рядом с оригиналом: «Принять» переносит правку (или удаляет заметку), «Отклонить» убирает предложение.
+- Карточки-предложения агента на свимлейне можно перетаскивать и ресайзить — двигается само предложение, а не позиция задачи на доске.
+- Фокус на заметке из драфта подсвечивает её на доске.
+- При ресайзе карточка упруго сжимается и растягивается за рукой и слегка пружинит после отпускания.
+- Чат с агентом: плашки контекста (задача, заметка) снимаются крестиком. Задачи, упомянутые в новых репликах, попадают в контекст агента и в уже идущей сессии.
+- Маркированные списки (`-`, `*`, `+`) в заметках отображаются как markdown.
+- Действий от операторов не нужно: новые колонки `comments` и `agent_sessions` добавляются автоматически при старте. Для ручной установки есть миграции `database/add-comment-replacements.sql` и `database/add-agent-session-activity.sql`.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.23.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.23.0] — 2026-10-23
 
 ### English
