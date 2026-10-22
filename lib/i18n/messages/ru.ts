@@ -426,7 +426,7 @@ export const ruMessages = {
       movedToSprint: 'Задача перенесена в спринт {sprintName}',
       removeFromSprintFailed: 'Не удалось убрать задачу из спринта',
       removedToBacklog: 'Задача убрана в бэклог',
-      statusChanged: 'Статус изменен',
+      statusChangeFailed: 'Не удалось сменить статус {key}',
       workLogged: 'Работа учтена',
     },
     status: {
@@ -1248,6 +1248,7 @@ export const ruMessages = {
       copyMrMissing: 'Ссылка на merge request отсутствует',
       copyMrShort: 'MR',
       copyNote: 'Копировать заметку',
+      copiedShort: 'Готово',
       deleteDiagram: 'Удалить схему',
       deleteDiagramConfirm: 'Схема будет удалена со свимлейна. Это действие нельзя отменить.',
       deleteCard: 'Удалить карточку',
@@ -1427,6 +1428,7 @@ export const ruMessages = {
       planAnchor: 'План на старте работы',
       planAnchorMovedEarlier: 'Перенесена раньше относительно плана на старте работы',
       planAnchorMovedLater: 'Перенесена позже относительно плана на старте работы',
+      planAnchorShort: 'Было',
       planPatch: {
         add: 'Добавление в план',
         and: 'и',
@@ -1672,8 +1674,11 @@ export const ruMessages = {
       emptyCellHint: 'Клик — добавить фазу',
       segmentEditorConfirmTitle: 'Подтвердить',
       segmentEditorDiscardTitle: 'Отменить',
-      segmentGapAdd: 'Добавить разрыв (сдвинуть остальное вправо)',
-      segmentGapRemove: 'Убрать разрыв',
+      segmentEditorHint: 'Клик по карточке — разрезать · разрыв можно тянуть',
+      segmentGapAdd: 'Разрезать здесь (остальное сдвинется вправо)',
+      segmentGapLength: '+{days} д',
+      segmentGapMove: 'Тяните — сдвинуть разрыв, клик — убрать',
+      segmentGapResize: 'Тяните — изменить длину разрыва',
       assigneeFilter: {
         all: 'Все исполнители',
         one: '1 исполнитель',

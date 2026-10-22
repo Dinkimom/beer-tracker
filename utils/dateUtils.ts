@@ -148,6 +148,16 @@ function getDateForDayIndex(sprintStartDate: Date, dayIndex: number): Date {
   return dayDate;
 }
 
+/** Та же календарная дата, что у часов планера (`getPlannerNow`). */
+export function isPlannerToday(date: Date): boolean {
+  const today = getPlannerNow();
+  return (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  );
+}
+
 export function isTodaySprintFirstWeekMonday(
   sprintStartDateStr: string,
   now: Date = new Date()

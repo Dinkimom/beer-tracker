@@ -19,7 +19,6 @@ import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { plannerCommentCardRowHeightFromDurationParts } from '@/lib/comments/plannerCommentCardRow';
 import { useRootStore } from '@/lib/layers';
 import { sprintCardPresenceBlocksNewGestures } from '@/lib/realtime/sprintCardPresence';
-import { getPreviewBorderColor, resolvePaletteStatusKey } from '@/utils/statusColors';
 
 import { useTaskBarDragBind } from './TaskBarDragBridge';
 import {
@@ -277,11 +276,6 @@ export function useTaskBarDisplayState(input: {
     taskPositions: input.taskPositions,
   });
 
-  const previewBorder = getPreviewBorderColor(
-    resolvePaletteStatusKey(input.task.originalStatus, input.task.statusColorKey),
-    isQATask
-  );
-
   const effectiveOpacity = resolveTaskBarEffectiveOpacity({
     contextMenuBlurOtherCards: input.contextMenuBlurOtherCards ?? false,
     contextMenuTaskId: input.contextMenuTaskId ?? null,
@@ -336,7 +330,6 @@ export function useTaskBarDisplayState(input: {
     isStickyNoteCard,
     layoutStyle,
     presenceLocked,
-    previewBorder,
     resize,
     setNodeRef,
     shouldExpandByLongHover,

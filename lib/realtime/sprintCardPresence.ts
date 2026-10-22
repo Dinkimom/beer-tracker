@@ -70,10 +70,17 @@ export function sprintCardPresenceViewers(
   return collapseSprintPresenceViewers(focused);
 }
 
+/** Кто сейчас меняет карточку — его цветом рисуется обводка. */
+export function sprintCardPresenceChangingViewer(
+  viewers: readonly SprintPresenceViewer[]
+): SprintPresenceViewer | null {
+  return viewers.find((viewer) => isSprintPresenceMutatingFocusState(viewer.focus?.state)) ?? null;
+}
+
 export function sprintCardPresenceHasChangingViewer(
   viewers: readonly SprintPresenceViewer[]
 ): boolean {
-  return viewers.some((viewer) => isSprintPresenceMutatingFocusState(viewer.focus?.state));
+  return sprintCardPresenceChangingViewer(viewers) != null;
 }
 
 /** Чужой drag / resize / редактор — блокируем новые жесты. Свою вкладку не учитываем даже в dev. */

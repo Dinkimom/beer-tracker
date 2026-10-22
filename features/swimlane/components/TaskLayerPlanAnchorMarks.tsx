@@ -66,8 +66,9 @@ export const TaskLayerPlanAnchorMarks = observer(function TaskLayerPlanAnchorMar
       }}
     >
       {index === 0 && (
-        <span className="absolute left-1.5 top-1 whitespace-nowrap rounded bg-amber-500 px-1 py-0.5 text-[10px] font-medium leading-none text-white dark:bg-amber-400 dark:text-gray-900">
-          {ghostLabel}
+        // Контур бывает в полдня шириной: видна короткая метка, и та обрезается по контуру.
+        <span className="absolute left-1 top-1 max-w-[calc(100%-0.5rem)] truncate rounded bg-amber-500 px-1 py-0.5 text-[10px] font-medium leading-none text-white dark:bg-amber-400 dark:text-gray-900">
+          {t('sprintPlanner.swimlane.planAnchorShort')}
         </span>
       )}
     </div>

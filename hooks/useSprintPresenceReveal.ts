@@ -24,22 +24,24 @@ function clearHighlighted(element: HTMLElement | null): void {
 export function useSprintPresenceReveal(input: {
   setViewMode: (value: BoardViewMode | ((prev: BoardViewMode) => BoardViewMode)) => void;
   viewMode: BoardViewMode;
-}): (viewer: SprintPresenceViewer) => void {
+}): (viewer: SprintPresenceViewer, color?: string) => void {
   const [revealNonce, setRevealNonce] = useState(0);
-  const pendingRef = useRef<{ boardView?: SprintPresenceBoardView; targetId: string | null } | null>(
-    null
-  );
+  const pendingRef = useRef<{
+    boardView?: SprintPresenceBoardView;
+    color?: string;
+    targetId: string | null;
+  } | null>(null);
   const highlightedRef = useRef<HTMLElement | null>(null);
   const highlightTimerRef = useRef<number | null>(null);
 
   const revealViewer = useCallback(
-    (viewer: SprintPresenceViewer) => {
+    (viewer: SprintPresenceViewer, color?: string) => {
       const boardView = viewer.boardView;
       const targetId = viewer.focus?.targetId ?? null;
       if (!boardView && !targetId) {
         return;
       }
-      pendingRef.current = { boardView, targetId };
+      pendingRef.current = { boardView, color, targetId };
       if (boardView) {
         applySprintPresenceBoardView(boardView, input.setViewMode);
       }
@@ -60,12 +62,12 @@ export function useSprintPresenceReveal(input: {
       pendingRef.current = null;
       return;
     }
-    const targetId = pending.targetId;
+    const { color, targetId } = pending;
     let cancelled = false;
     const startedAt = Date.now();
     const highlight = (element: HTMLElement) => {
       clearHighlighted(highlightedRef.current);
-      revealSprintPresenceTargetElement(element);
+      revealSprintPresenceTargetElement(element, color);
       highlightedRef.current = element;
       if (highlightTimerRef.current) {
         window.clearTimeout(highlightTimerRef.current);

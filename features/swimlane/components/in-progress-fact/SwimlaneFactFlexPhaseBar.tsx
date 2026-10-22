@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { FLOATING_TOOLTIP_GLASS_SHELL } from '@/features/context-menu/contextMenuClasses';
 import { SWIMLANE_FACT_MIN_GAP_PX } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
 import { mergeIssueDataForSwimlaneFactTooltip } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import { getStatusColors } from '@/utils/statusColors';
@@ -99,7 +100,7 @@ export function SwimlaneFactFlexPhaseBar({
           tasksMap={tasksMap}
         />
       }
-      contentClassName="!bg-white dark:!bg-gray-800 !text-gray-900 dark:!text-gray-100 !p-0 !shadow-xl !border !border-gray-200 dark:!border-gray-700 !rounded-lg"
+      contentClassName={FLOATING_TOOLTIP_GLASS_SHELL}
       delayDuration={200}
       side="bottom"
       singleInGroupId={statusTooltipId}

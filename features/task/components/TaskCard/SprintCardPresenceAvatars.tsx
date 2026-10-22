@@ -1,7 +1,7 @@
 'use client';
 
 import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
-import type { AnimationEvent } from 'react';
+import type { AnimationEvent, CSSProperties } from 'react';
 
 import { useCallback, useState } from 'react';
 
@@ -11,9 +11,10 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { mergeSprintCardPresenceAvatarSlots, nextSprintCardPresenceAvatarState } from '@/lib/realtime/sprintCardPresence';
 import { sprintPresenceDisplayName, sprintPresenceViewerReactKey } from '@/lib/realtime/sprintPresenceCollapse';
+import { SPRINT_PRESENCE_COLOR_CSS_VAR, sprintPresenceViewerColor } from '@/lib/realtime/sprintPresenceColor';
 import { getInitials } from '@/utils/displayUtils';
 
-import { useSprintCardPresenceViewers } from './SprintCardPresenceContext';
+import { useSprintCardPresenceViewers, useSprintPresenceColorSlots } from './SprintCardPresenceContext';
 
 const MAX_VISIBLE = 3;
 const PRESENCE_EXIT_ANIMATION = 'sprint-card-presence-exit';
@@ -21,6 +22,8 @@ const PRESENCE_EXIT_ANIMATION = 'sprint-card-presence-exit';
 const AVATAR_SLOT_CLASS = 'sprint-card-presence-avatar inline-flex rounded-full';
 
 const AVATAR_RING_CLASS = 'ring-2 ring-white dark:ring-gray-800';
+
+const AVATAR_PRESENCE_RING_CLASS = 'ring-2 ring-[var(--sprint-presence-color)]';
 
 const CARD_PRESENCE_TOOLTIP_KEYS = {
   dragging: 'sprintPlanner.presence.cardDragging',
@@ -98,6 +101,7 @@ function useExitingSprintCardPresenceViewers(live: readonly SprintPresenceViewer
 export function SprintCardPresenceAvatars({ taskId }: { taskId: string }) {
   const { t } = useI18n();
   const viewers = useSprintCardPresenceViewers(taskId);
+  const colorSlots = useSprintPresenceColorSlots();
   const { exiting, onExitAnimationEnd, orderKeys } = useExitingSprintCardPresenceViewers(viewers);
   const liveShown = viewers.slice(0, MAX_VISIBLE);
   const slots = mergeSprintCardPresenceAvatarSlots({
@@ -125,11 +129,14 @@ export function SprintCardPresenceAvatars({ taskId }: { taskId: string }) {
         const avatar = (
           <Avatar
             avatarUrl={viewer.avatarUrl}
-            className={AVATAR_RING_CLASS}
+            className={AVATAR_PRESENCE_RING_CLASS}
             initials={getInitials(name)}
             size="sm"
           />
         );
+        const colorStyle = {
+          [SPRINT_PRESENCE_COLOR_CSS_VAR]: sprintPresenceViewerColor(colorSlots, viewer),
+        } as CSSProperties;
         return (
           <span
             key={key}
@@ -138,6 +145,7 @@ export function SprintCardPresenceAvatars({ taskId }: { taskId: string }) {
                 ? 'sprint-card-presence-avatar-exit inline-flex rounded-full'
                 : `${AVATAR_SLOT_CLASS} pointer-events-auto`
             }
+            style={colorStyle}
             onAnimationEnd={(event) =>
               handlePresenceExitAnimationEnd(event, isExiting, key, onExitAnimationEnd)
             }

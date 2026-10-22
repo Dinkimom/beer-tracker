@@ -348,13 +348,14 @@ export async function fetchSprintTasks(
   sprintId: number,
   boardId?: number,
   statusFilter?: 'active' | 'all' | 'completed',
-  options?: { refresh?: boolean }
+  options?: { refresh?: boolean; skipSnapshots?: boolean }
 ): Promise<SprintTasksResponse> {
   try {
     const params = new URLSearchParams({ sprintId: String(sprintId) });
     if (boardId != null) params.set('boardId', String(boardId));
     if (statusFilter && statusFilter !== 'all') params.set('statusFilter', statusFilter);
     if (options?.refresh) params.set('refresh', '1');
+    if (options?.skipSnapshots) params.set('skipSnapshots', '1');
     const { data } = await getPlannerBeerTrackerApi().get(`/tracker?${params.toString()}`);
     return data;
   } catch (error) {

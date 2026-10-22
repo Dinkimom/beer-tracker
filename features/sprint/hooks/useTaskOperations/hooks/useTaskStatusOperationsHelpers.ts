@@ -1,5 +1,5 @@
 
-import { getIssueTransitions, changeIssueStatus } from '@/lib/beerTrackerApi';
+import { changeIssueStatus, getRecentIssueTransitions } from '@/lib/beerTrackerApi';
 
 interface TransitionToMeta {
   display?: string;
@@ -20,7 +20,7 @@ export async function resolveStatusTransitionTargetKey(
   let transitionData: { to?: TransitionToMeta } | null = null;
 
   try {
-    const transitions = await getIssueTransitions(trackerIssueKey);
+    const transitions = await getRecentIssueTransitions(trackerIssueKey);
     transitionData = Array.isArray(transitions)
       ? transitions.find(
           (t: { id?: string; key?: string; to?: TransitionToMeta }) =>

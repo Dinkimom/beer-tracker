@@ -10,6 +10,7 @@ import {
   DEMO_DEV_CAROL,
   DEMO_ORG_ID,
   DEMO_SPRINT_ID,
+  DEMO_SPRINT_NEXT_ID,
 } from './demoIds';
 
 function cfg(
@@ -189,5 +190,69 @@ describe('handleDemoFixtureRequest', () => {
       'DEMO-110',
       'DEMO-112',
     ]);
+  });
+
+  it('offers workflow transitions and applies the chosen one to the sprint tasks', () => {
+    const transitions = handleDemoFixtureRequest(cfg('get', '/issues/DEMO-101/transitions'))
+      .data as Array<{ id: string; to: { key: string } }>;
+    expect(transitions.map((t) => t.to.key)).toEqual(['inReview', 'blocked', 'needInfo', 'open']);
+
+    const toReview = transitions.find((t) => t.to.key === 'inReview');
+    const patched = handleDemoFixtureRequest(
+      cfg('patch', '/issues/DEMO-101/status', { data: JSON.stringify({ transitionId: toReview?.id }) })
+    );
+    expect(patched.status).toBe(200);
+
+    const tracker = handleDemoFixtureRequest(cfg('get', '/tracker'))
+      .data as { tasks: Array<{ id: string; originalStatus?: string; status?: string }> };
+    expect(tracker.tasks.find((t) => t.id === 'DEMO-101')).toEqual(
+      expect.objectContaining({ originalStatus: 'inReview', status: 'in-progress' })
+    );
+  });
+
+  it('rejects a transition that is not available from the current status', () => {
+    const result = handleDemoFixtureRequest(
+      cfg('patch', '/issues/DEMO-101/status', { data: { transitionId: 'demo-to-closed' } })
+    );
+    expect(result.status).toBe(409);
+  });
+
+  it('returns no required fields for demo transitions', () => {
+    const result = handleDemoFixtureRequest(cfg('get', '/issues/DEMO-101/transitions/demo-to-inReview/fields'));
+    expect(result.data).toEqual({ fields: [] });
+  });
+
+  it('moves a task to the next sprint and back to the backlog', () => {
+    const trackerTaskIds = (sprintId: number) =>
+      (
+        handleDemoFixtureRequest(cfg('get', '/tracker', { params: { sprintId } })).data as {
+          tasks: Array<{ id: string }>;
+        }
+      ).tasks.map((t) => t.id);
+    const backlogTaskIds = () =>
+      (handleDemoFixtureRequest(cfg('get', '/backlog')).data as { tasks: Array<{ id: string }> }).tasks.map(
+        (t) => t.id
+      );
+
+    expect(trackerTaskIds(DEMO_SPRINT_NEXT_ID)).toEqual([]);
+
+    const moved = handleDemoFixtureRequest(
+      cfg('post', '/issues/DEMO-101/sprint', { data: JSON.stringify({ sprintId: DEMO_SPRINT_NEXT_ID }) })
+    );
+    expect(moved.status).toBe(200);
+    expect(trackerTaskIds(DEMO_SPRINT_NEXT_ID)).toEqual(['DEMO-101']);
+    expect(trackerTaskIds(DEMO_SPRINT_ID)).not.toContain('DEMO-101');
+
+    handleDemoFixtureRequest(cfg('delete', `/issues/DEMO-101/sprint?sprintId=${DEMO_SPRINT_NEXT_ID}`));
+    expect(trackerTaskIds(DEMO_SPRINT_NEXT_ID)).toEqual([]);
+    expect(backlogTaskIds()).toContain('DEMO-101');
+  });
+
+  it('lists the next sprint as a draft move target', () => {
+    const sprints = handleDemoFixtureRequest(cfg('get', '/sprints')).data as Array<{
+      id: number;
+      status: string;
+    }>;
+    expect(sprints.find((s) => s.id === DEMO_SPRINT_NEXT_ID)?.status).toBe('draft');
   });
 });

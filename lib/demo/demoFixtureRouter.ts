@@ -5,15 +5,18 @@ import { defaultRetroColumnTemplate } from '@/lib/retro/retroBoard';
 
 import { buildDemoBurndownPayload } from './demoFixtureBurndown';
 import { handleDemoComments } from './demoFixtureRouterComments';
+import { handleDemoIssueSprint } from './demoFixtureRouterIssueSprint';
 import { handleDemoMisc } from './demoFixtureRouterMisc';
 import { handleDemoPositions } from './demoFixtureRouterPositions';
 import { demoPlannerIntegrationRules } from './demoFixtureSeed';
 import { buildDemoBoardSprintMetrics } from './demoFixtureSprintMetrics';
 import {
   getDemoFixtureStore,
+  getDemoSprintTasks,
   replaceDemoFeatureLanes,
   replaceDemoRetroBoard,
 } from './demoFixtureStore';
+import { handleDemoWorkflow } from './demoFixtureWorkflow';
 import { DEMO_BOARD_ID, DEMO_ORG_ID, DEMO_SPRINT_ID } from './demoIds';
 
 function parseBody(config: InternalAxiosRequestConfig): unknown {
@@ -153,7 +156,7 @@ function handleTracker(path: string, method: string, params: URLSearchParams): D
           version: sprint.version,
         }
       : store.sprintInfo,
-    tasks: store.tasks,
+    tasks: getDemoSprintTasks(sprintId),
   });
 }
 
@@ -318,6 +321,8 @@ export function handleDemoFixtureRequest(config: InternalAxiosRequestConfig): De
     () => handleSprintExtras(path, method),
     () => handleTeamsAndRules(path, method),
     () => handleAgentSessions(path, method),
+    () => handleDemoWorkflow(path, method, body),
+    () => handleDemoIssueSprint(path, method, body),
     () => handleDemoMisc(path, method, params),
   ];
 

@@ -29,7 +29,6 @@ interface StatusSubmenuProps {
   isOpen: boolean;
   menuRef: React.RefObject<HTMLDivElement | null>;
   /** id перехода, по которому идёт запрос (лоадер на кнопке) */
-  pendingTransitionId?: string | null;
   task: Task;
   taskIdForActions: string;
   onSelect: (transitionId: string, targetStatusKey?: string, targetStatusDisplay?: string, screenId?: string) => void;
@@ -43,7 +42,6 @@ export function StatusSubmenu({
   menuRef,
   buttonRef,
   isLoading,
-  pendingTransitionId = null,
   onToggle,
   onSelect,
 }: StatusSubmenuProps) {
@@ -177,7 +175,6 @@ export function StatusSubmenu({
             <StatusSubmenuTransitionList
               isLoading={isLoading}
               isLoadingTransitions={isLoadingTransitions}
-              pendingTransitionId={pendingTransitionId}
               statusTransitions={statusTransitions}
               task={task}
               onSelect={onSelect}

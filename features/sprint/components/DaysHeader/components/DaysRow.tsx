@@ -6,8 +6,11 @@ import type { Task } from '@/types';
 import { DayHeaderCellContent } from '@/components/DayHeaderCell';
 import { WORKING_DAYS } from '@/constants';
 import { getDayDate } from '@/features/sprint/utils/occupancyUtils';
-import { timelineDayDividerClass } from '@/features/sprint/utils/timelineColumnChrome';
-import { getDayStatus } from '@/utils/dateUtils';
+import {
+  TIMELINE_TODAY_COLUMN_TINT_CLASS,
+  timelineDayDividerClass,
+} from '@/features/sprint/utils/timelineColumnChrome';
+import { getDayStatus, isPlannerToday } from '@/utils/dateUtils';
 
 type DayStatus = ReturnType<typeof getDayStatus>;
 
@@ -138,19 +141,23 @@ export function DaysRow({
         const details = errorDayDetails?.get(dayIndex);
         const isHoliday = holidayDayIndices?.has(dayIndex);
         const dividerClass = timelineDayDividerClass(dayIndex, dayCount);
+        const isToday = isPlannerToday(dayDate);
         return (
           <div
             key={dayIndex}
-            className="relative flex h-full min-h-0 min-w-0 items-center justify-center overflow-hidden py-1 text-center"
+            className="relative flex h-full min-h-0 min-w-0 items-center justify-start overflow-hidden px-3 py-1"
             data-onboarding-day={dayIndex}
             data-onboarding-today={status === 'today' ? 'true' : undefined}
           >
+            {isToday ? (
+              <div className={TIMELINE_TODAY_COLUMN_TINT_CLASS} />
+            ) : null}
             {dividerClass ? (
               <div
                 className={`pointer-events-none absolute bottom-0 right-0 top-0 w-px ${dividerClass}`}
               />
             ) : null}
-            <div className="relative z-[2]">
+            <div className="relative z-[2] flex min-w-0">
               <DayHeaderCellContent
                 day={dayDate}
                 errorDetails={details}

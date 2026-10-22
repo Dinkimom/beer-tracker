@@ -47,10 +47,12 @@ export async function PATCH(
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
 
-    const issue = await issueTracker.getIssue(issueKey);
+    // Переход не меняет спринты задачи: читаем их параллельно, чтобы не ждать лишний round-trip.
+    const [issue] = await Promise.all([
+      issueTracker.getIssue(issueKey).catch(() => null),
+      issueTracker.transitionIssue(issueKey, String(transitionId), transitionBody),
+    ]);
     const sprintIds = sprintIdsFromIssueSprint(issue?.sprint);
-
-    await issueTracker.transitionIssue(issueKey, String(transitionId), transitionBody);
 
     completeIssueStatusChange({
       issueKey,

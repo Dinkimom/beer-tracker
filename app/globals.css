@@ -20,6 +20,15 @@
   --toast-success: #10b981;
   --toast-error: #ef4444;
   --toast-icon-fg: #ffffff;
+  /* Цвет участника присутствия (`lib/realtime/sprintPresenceColor.ts`) */
+  --presence-color-1: #2563eb;
+  --presence-color-2: #059669;
+  --presence-color-3: #7c3aed;
+  --presence-color-4: #e11d48;
+  --presence-color-5: #d97706;
+  --presence-color-6: #0891b2;
+  --presence-color-7: #c026d3;
+  --presence-color-8: #65a30d;
   /* Z-index уровни (см. constants/zIndex.ts) */
   --z-dropdown: 100;
   --z-dropdown-content: 110;
@@ -82,6 +91,14 @@
   --toast-success: #34d399;
   --toast-error: #f87171;
   --toast-icon-fg: #1f2937;
+  --presence-color-1: #60a5fa;
+  --presence-color-2: #34d399;
+  --presence-color-3: #a78bfa;
+  --presence-color-4: #fb7185;
+  --presence-color-5: #fbbf24;
+  --presence-color-6: #22d3ee;
+  --presence-color-7: #e879f9;
+  --presence-color-8: #a3e635;
 }
 
 html {
@@ -634,8 +651,27 @@ html.theme-changing * {
   animation: theme-toggle-sun-in 280ms ease forwards;
 }
 
+/* Галка «скопировано» (CopyFeedbackGlyph) прорисовывается штрихом; длина пути check ≈ 20. */
+@keyframes copy-feedback-check-draw {
+  from {
+    stroke-dashoffset: 20;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.copy-feedback-check-draw path {
+  animation: copy-feedback-check-draw 0.32s 0.06s cubic-bezier(0.65, 0, 0.35, 1) both;
+  stroke-dasharray: 20;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .icon-action-motion,
+  .copy-feedback-check-draw path,
+  .task-bar-resize-handle-visual--active .task-bar-resize-grip-line,
+  .task-bar-resize-handle-visual--active .task-bar-resize-grip-line--vertical,
+  .task-bar-resize-handle-visual--active .task-bar-resize-handle-bg,
   .icon-action-motion svg path,
   .icon-action-motion svg rect,
   .theme-toggle-icon--play .theme-toggle-icon__glyph {
@@ -672,6 +708,61 @@ html.theme-changing * {
 .task-bar-resize-handle-visual.task-bar-resize-handle-visual--active {
   transition-delay: 0s !important;
   transition-duration: 0.1s !important;
+}
+
+/* Хват за рукоятку: полоски грипа коротко сжимаются и утолщаются, подложка темнеет как при нажатии.
+   Зажатое состояние — обычный стиль (scale по ширине), анимация — только импульс поверх него:
+   при отпускании полоски плавно возвращаются через transition-all, а не откатываются рывком.
+   По высоте не растягиваем — полоски стоят с зазором 2px и слиплись бы в одну линию.
+   Tailwind v4: масштаб — свойство `scale`. */
+@keyframes task-bar-resize-grip-grab {
+  0% {
+    scale: 1 1;
+  }
+  40% {
+    scale: 1.7 0.75;
+  }
+  100% {
+    scale: 1.5 1;
+  }
+}
+
+@keyframes task-bar-resize-handle-press {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  35% {
+    filter: brightness(0.86);
+  }
+}
+
+.task-bar-resize-handle-visual--active .task-bar-resize-grip-line {
+  animation: task-bar-resize-grip-grab 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+  scale: 1.5 1;
+}
+
+.task-bar-resize-handle-visual--active .task-bar-resize-handle-bg {
+  animation: task-bar-resize-handle-press 0.26s ease-out;
+}
+
+/* Нижняя рукоятка заметки: полоски горизонтальные и стоят в ряд с зазором 1px —
+   утолщаем по высоте, по длине только короткое сжатие. */
+@keyframes task-bar-resize-grip-grab-vertical {
+  0% {
+    scale: 1 1;
+  }
+  40% {
+    scale: 0.75 1.7;
+  }
+  100% {
+    scale: 1 1.5;
+  }
+}
+
+.task-bar-resize-handle-visual--active .task-bar-resize-grip-line--vertical {
+  animation: task-bar-resize-grip-grab-vertical 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+  scale: 1 1.5;
 }
 
 /* Слой рукояток поверх контента карточки (фото/заметка); hit-area — pointer-events в .task-bar-resize-handle-hit */
@@ -758,7 +849,7 @@ html.theme-changing * {
    Псевдоэлемент сдвинут на 3px наружу: радиус больше радиуса карточки на этот зазор,
    иначе углы обводки острее, чем у самой карточки. */
 .sprint-card-presence-changing::after {
-  border: 2px solid #f59e0b;
+  border: 2px solid var(--sprint-presence-color, #f59e0b);
   border-radius: inherit;
   content: '';
   inset: -3px;
@@ -779,15 +870,16 @@ html.theme-changing * {
 }
 
 html.dark .sprint-card-presence-changing::after {
-  border-color: #fbbf24;
+  border-color: var(--sprint-presence-color, #fbbf24);
 }
 
+/* Вспышка цветом участника, к которому перешли из шапки */
 @keyframes sprint-card-presence-reveal {
   from {
-    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.65);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sprint-presence-color, #3b82f6) 65%, transparent);
   }
   to {
-    box-shadow: 0 0 0 0 rgb(59 130 246 / 0);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--sprint-presence-color, #3b82f6) 0%, transparent);
   }
 }
 
@@ -853,6 +945,93 @@ html.dark .sprint-card-presence-changing::after {
 
 .sticky-note-exit * {
   pointer-events: none !important;
+}
+
+/* Уход карточки с доски (taskBoardExit): карточку «берут» — подъём с тенью,
+   затем она улетает: в другой спринт — вверх к селектору спринта, в бэклог —
+   вправо к сайдбару, при снятии с плана — сжимается на месте. */
+@keyframes task-board-exit-sprint {
+  0% {
+    filter: drop-shadow(0 0 0 rgb(15 23 42 / 0));
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  22% {
+    filter: drop-shadow(0 14px 18px rgb(15 23 42 / 0.35));
+    opacity: 1;
+    transform: translate(0, -10px) scale(1.07);
+  }
+  100% {
+    filter: drop-shadow(0 14px 18px rgb(15 23 42 / 0));
+    opacity: 0;
+    transform: translate(0, -160px) scale(0.6);
+  }
+}
+
+@keyframes task-board-exit-backlog {
+  0% {
+    filter: drop-shadow(0 0 0 rgb(15 23 42 / 0));
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  22% {
+    filter: drop-shadow(0 14px 18px rgb(15 23 42 / 0.35));
+    opacity: 1;
+    transform: translate(0, -10px) scale(1.07) rotate(-2deg);
+  }
+  100% {
+    filter: drop-shadow(0 14px 18px rgb(15 23 42 / 0));
+    opacity: 0;
+    transform: translate(240px, 40px) scale(0.6) rotate(6deg);
+  }
+}
+
+@keyframes task-board-exit-plan {
+  0% {
+    filter: drop-shadow(0 0 0 rgb(15 23 42 / 0));
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    filter: drop-shadow(0 14px 18px rgb(15 23 42 / 0.35));
+    opacity: 1;
+    transform: scale(1.08) rotate(-2deg);
+  }
+  100% {
+    filter: drop-shadow(0 0 0 rgb(15 23 42 / 0));
+    opacity: 0;
+    transform: scale(0.3) rotate(4deg);
+  }
+}
+
+.task-board-exit {
+  pointer-events: none !important;
+  z-index: 36 !important;
+}
+
+.task-board-exit * {
+  pointer-events: none !important;
+}
+
+/* На свимлейне уезжает вся обёртка TaskBar вместе с рукоятками, а не только карточка. */
+.task-bar-item:has(.task-board-exit) {
+  pointer-events: none !important;
+  z-index: 36 !important;
+}
+
+.task-board-exit-sprint:not(.task-bar-item .task-board-exit),
+.task-bar-item:has(.task-board-exit-sprint) {
+  animation: task-board-exit-sprint 620ms cubic-bezier(0.5, 0, 0.75, 0.2) forwards;
+}
+
+.task-board-exit-backlog:not(.task-bar-item .task-board-exit),
+.task-bar-item:has(.task-board-exit-backlog) {
+  animation: task-board-exit-backlog 620ms cubic-bezier(0.5, 0, 0.75, 0.2) forwards;
+}
+
+.task-board-exit-plan:not(.task-bar-item .task-board-exit),
+.task-bar-item:has(.task-board-exit-plan) {
+  animation: task-board-exit-plan 620ms cubic-bezier(0.5, 0, 0.75, 0.2) forwards;
 }
 
 /* Лист стикера: волокно поверх заливки, верхний свет и тень, которой лист лежит на доске. */
@@ -942,6 +1121,153 @@ html.dark .sprint-card-presence-changing::after {
   transition-timing-function: ease-out !important;
 }
 
+/* Смена статуса задачи (taskStatusTransitionFeedback): на время перехода разрешаем
+   плавную перекраску — правило выше режет transition-property без background-color.
+   Селектор из двух классов, чтобы перебить его !important независимо от порядка. */
+.task-card-context-menu-frame.task-status-transition,
+.task-status-transition [data-status-tag] {
+  transition-property: background-color, border-color, color, box-shadow, outline-color !important;
+  transition-duration: 0.6s !important;
+  transition-timing-function: ease-out !important;
+}
+
+/* Ждём трекер: по карточке бежит яркий блик, карточка «дышит», статус-тег мигает. */
+@keyframes task-status-transition-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+@keyframes task-status-transition-breathe {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.72;
+  }
+}
+
+@keyframes task-status-tag-pending {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0.35;
+    transform: scale(0.94);
+  }
+}
+
+.task-card-context-menu-frame.task-status-transition-pending {
+  animation: task-status-transition-breathe 0.6s ease-in-out infinite alternate;
+}
+
+.task-card-context-menu-frame.task-status-transition-pending::before {
+  animation: task-status-transition-shimmer 0.9s linear infinite;
+  background: linear-gradient(105deg, transparent 25%, rgb(255 255 255 / 0.85) 50%, transparent 75%);
+  background-size: 220% 100%;
+  border-radius: inherit;
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 5;
+}
+
+.dark .task-card-context-menu-frame.task-status-transition-pending::before {
+  background-image: linear-gradient(105deg, transparent 25%, rgb(255 255 255 / 0.28) 50%, transparent 75%);
+}
+
+.task-status-transition-pending [data-status-tag] {
+  animation: task-status-tag-pending 0.5s ease-in-out infinite alternate;
+}
+
+/* Трекер принял переход: карточка «подпрыгивает» со вспышкой, от неё расходится
+   кольцо, новый статус-тег проявляется слева направо. */
+@keyframes task-status-transition-applied-ring {
+  from {
+    box-shadow: 0 0 0 0 rgb(59 130 246 / 0.85);
+  }
+  to {
+    box-shadow: 0 0 0 16px rgb(59 130 246 / 0);
+  }
+}
+
+@keyframes task-status-transition-applied-pop {
+  0% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  35% {
+    filter: brightness(1.18);
+    transform: scale(1.06);
+  }
+  100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+}
+
+/* Тег стоит в строке с overflow: hidden / truncate — анимация не выходит за его
+   собственные границы: проявление через clip-path и вспышка яркости, без scale > 1. */
+@keyframes task-status-tag-reveal {
+  0% {
+    clip-path: inset(0 100% 0 0 round 6px);
+    filter: brightness(1.4) saturate(1.3);
+  }
+  55% {
+    clip-path: inset(0 0 0 0 round 6px);
+    filter: brightness(1.4) saturate(1.3);
+  }
+  100% {
+    clip-path: inset(0 0 0 0 round 6px);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+.task-card-context-menu-frame.task-status-transition-applied {
+  animation:
+    task-status-transition-applied-ring 1s ease-out,
+    task-status-transition-applied-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.task-status-transition-applied [data-status-tag] {
+  animation: task-status-tag-reveal 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Трекер отказал: карточка трясётся с красной вспышкой и плавно возвращает прежний цвет. */
+@keyframes task-status-transition-failed {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(239 68 68 / 0);
+    transform: translateX(0);
+  }
+  15% {
+    box-shadow: 0 0 0 5px rgb(239 68 68 / 0.7);
+    transform: translateX(-9px);
+  }
+  30% {
+    transform: translateX(8px);
+  }
+  45% {
+    transform: translateX(-6px);
+  }
+  60% {
+    box-shadow: 0 0 0 5px rgb(239 68 68 / 0.5);
+    transform: translateX(4px);
+  }
+  80% {
+    transform: translateX(-2px);
+  }
+}
+
+.task-card-context-menu-frame.task-status-transition-failed {
+  animation: task-status-transition-failed 0.6s ease-in-out;
+}
+
 /* Карточка задачи в покое: тонкий картон, блик кромки и короткая тень.
    Список теней совпадает с hover ниже (inset + две внешние), иначе
    подъём не интерполируется и прыгает в конце transition 0.2s.
@@ -968,8 +1294,10 @@ html.dark .sprint-card-presence-changing::after {
 
 /* :hover на самой карточке + hover родителя (.task-bar-item): рукоятки ресайза —
    сиблинги карточки, без parent-hover подсветка пропадала бы на краю. */
+/* task-card-resizing: пока тянут рукоятку, курсор уходит с карточки — подъём держим. */
 .task-card-swimlane-hover-shadow:hover,
-.task-bar-item:hover .task-card-swimlane-hover-shadow {
+.task-bar-item:hover .task-card-swimlane-hover-shadow,
+.task-card-swimlane-hover-shadow.task-card-resizing {
   /* Между shadow-md и shadow-lg */
   box-shadow:
     0 6px 12px -2px rgb(0 0 0 / 0.1),
@@ -978,7 +1306,8 @@ html.dark .sprint-card-presence-changing::after {
 
 /* Подъём картона: тот же блик и две внешние тени, что в покое, только выше. */
 .task-card-cardboard.task-card-swimlane-hover-shadow:hover,
-.task-bar-item:hover .task-card-cardboard.task-card-swimlane-hover-shadow {
+.task-bar-item:hover .task-card-cardboard.task-card-swimlane-hover-shadow,
+.task-card-cardboard.task-card-swimlane-hover-shadow.task-card-resizing {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.7),
     0 3px 5px -2px rgb(0 0 0 / 0.08),
@@ -986,7 +1315,8 @@ html.dark .sprint-card-presence-changing::after {
 }
 
 .dark .task-card-swimlane-hover-shadow:hover,
-.dark .task-bar-item:hover .task-card-swimlane-hover-shadow {
+.dark .task-bar-item:hover .task-card-swimlane-hover-shadow,
+.dark .task-card-swimlane-hover-shadow.task-card-resizing {
   /* Та же геометрия, тень в цвет акцента */
   box-shadow:
     0 6px 12px -2px color-mix(in srgb, var(--task-card-glow-color, #a3a3a3) 34%, transparent),
@@ -995,7 +1325,8 @@ html.dark .sprint-card-presence-changing::after {
 
 /* Hover поднимает лист, не стирая блик кромки бумаги. */
 .sticky-note-paper.task-card-swimlane-hover-shadow:hover,
-.task-bar-item:hover .sticky-note-paper.task-card-swimlane-hover-shadow {
+.task-bar-item:hover .sticky-note-paper.task-card-swimlane-hover-shadow,
+.sticky-note-paper.task-card-swimlane-hover-shadow.task-card-resizing {
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.55),
     0 8px 16px -4px rgb(0 0 0 / 0.16),
@@ -1003,7 +1334,8 @@ html.dark .sprint-card-presence-changing::after {
 }
 
 .dark .sticky-note-paper.task-card-swimlane-hover-shadow:hover,
-.dark .task-bar-item:hover .sticky-note-paper.task-card-swimlane-hover-shadow {
+.dark .task-bar-item:hover .sticky-note-paper.task-card-swimlane-hover-shadow,
+.dark .sticky-note-paper.task-card-swimlane-hover-shadow.task-card-resizing {
   box-shadow:
     0 8px 16px -4px color-mix(in srgb, var(--task-card-glow-color, #a3a3a3) 40%, transparent),
     0 3px 6px -2px color-mix(in srgb, var(--task-card-glow-color, #a3a3a3) 24%, transparent);
@@ -1267,7 +1599,8 @@ textarea:focus-visible,
 /* `both` у enter держит opacity из анимации и после её конца: меню остаётся backdrop root,
    и ::before показывает доску без размытия. После появления анимация не должна действовать. */
 .floating-menu-glass.overlay-panel:not([data-state='closed']),
-.floating-menu-glass.overlay-float:not([data-state='closed']) {
+.floating-menu-glass.overlay-float:not([data-state='closed']),
+.floating-menu-glass.overlay-tooltip:not([data-state='closed']) {
   animation-fill-mode: backwards;
 }
 
@@ -1861,7 +2194,16 @@ input[type="checkbox"]:disabled {
   .sticky-note-reaction-chip-enter,
   .sticky-note-reaction-chip-bump,
   .sticky-note-exit,
-  .task-bar-item.sticky-note-color-pop .sticky-note-paper {
+  .task-bar-item.sticky-note-color-pop .sticky-note-paper,
+  .task-board-exit-sprint,
+  .task-board-exit-backlog,
+  .task-board-exit-plan,
+  .task-bar-item:has(.task-board-exit),
+  .task-card-context-menu-frame.task-status-transition-pending,
+  .task-card-context-menu-frame.task-status-transition-pending::before,
+  .task-card-context-menu-frame.task-status-transition-applied,
+  .task-card-context-menu-frame.task-status-transition-failed,
+  .task-status-transition [data-status-tag] {
     animation: none;
   }
 

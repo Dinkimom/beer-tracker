@@ -9,6 +9,11 @@ import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import { mergeTransitionExtraFieldsIntoTask } from '@/features/sprint/utils/mergeTransitionFieldsIntoTask';
+import {
+  clearTaskStatusTransition,
+  markTaskStatusTransitionPending,
+  settleTaskStatusTransition,
+} from '@/features/task/utils/taskStatusTransitionFeedback';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
@@ -55,6 +60,7 @@ export function useTaskStatusOperations({
       }
 
       const trackerIssueKey = getTaskTrackerDisplayKey(currentTask);
+      markTaskStatusTransitionPending(currentTask.id);
 
       const { finalTargetStatusKey, transitionData } = await resolveStatusTransitionTargetKey(
         trackerIssueKey,
@@ -64,6 +70,8 @@ export function useTaskStatusOperations({
 
       if (!finalTargetStatusKey) {
         console.error('Cannot determine target status for transition:', transitionId);
+        settleTaskStatusTransition(currentTask.id, 'failed');
+        toast.error(t('sprint.taskToast.statusChangeFailed', { key: trackerIssueKey }));
         return;
       }
 
@@ -110,7 +118,8 @@ export function useTaskStatusOperations({
           transitionId,
         });
 
-        toast.success(t('sprint.taskToast.statusChanged'));
+        // Отклик — перекраска карточки с подсветкой, без тоста.
+        settleTaskStatusTransition(currentTask.id, 'applied');
       } catch (error) {
         console.error('Error changing status:', error);
         setTasks((prev) =>
@@ -118,8 +127,11 @@ export function useTaskStatusOperations({
         );
         // Let the transition modal recover (open form for Tracker-required fields).
         if (isTransitionRequiresFieldsError(error)) {
+          clearTaskStatusTransition(currentTask.id);
           throw error;
         }
+        settleTaskStatusTransition(currentTask.id, 'failed');
+        toast.error(t('sprint.taskToast.statusChangeFailed', { key: trackerIssueKey }));
       }
     },
     [tasks, setTasks, plannerRules, t]

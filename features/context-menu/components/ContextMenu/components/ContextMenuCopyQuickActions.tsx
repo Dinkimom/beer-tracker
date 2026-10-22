@@ -3,17 +3,16 @@
 import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { Task } from '@/types';
 
-import { Button } from '@/components/Button';
-import { CopyFeedbackGlyph } from '@/components/CopyFeedbackGlyph';
 import { useI18n } from '@/contexts/LanguageContext';
 import { ContextMenuGitlabLogoIcon } from '@/features/context-menu/components/ContextMenuGitlabLogoIcon';
-import { MENU_QUICK_ACTION, MENU_QUICK_ACTION_LABEL } from '@/features/context-menu/contextMenuClasses';
 import {
   getTaskMergeRequestUrl,
   getTaskTrackerDisplayKey,
   getTaskTrackerIssueUrl,
 } from '@/features/task/utils/taskUtils';
-import { useCopyFeedback } from '@/hooks/useCopyFeedback';
+import { issueTrackerI18nParams } from '@/lib/issueTrackerProvider/issueTrackerUi';
+
+import { ContextMenuCopyQuickAction } from './ContextMenuCopyQuickAction';
 
 interface ContextMenuCopyQuickActionsProps {
   task: Task;
@@ -22,72 +21,33 @@ interface ContextMenuCopyQuickActionsProps {
 
 export function ContextMenuCopyQuickActions({ task, tracker }: ContextMenuCopyQuickActionsProps) {
   const { t } = useI18n();
-  const keyCopyFeedback = useCopyFeedback();
-  const mrCopyFeedback = useCopyFeedback();
-  const linkCopyFeedback = useCopyFeedback();
-  const mergeRequestUrl = getTaskMergeRequestUrl(task);
 
   return (
     <>
-      <Button
-        aria-label={t('sprintPlanner.contextMenu.copyKey')}
-        className={MENU_QUICK_ACTION}
+      <ContextMenuCopyQuickAction
+        ariaLabel={t('sprintPlanner.contextMenu.copyKey')}
+        idleName="copy"
+        label={t('sprintPlanner.contextMenu.copyKeyShort')}
         title={t('sprintPlanner.contextMenu.copyKey')}
-        type="button"
-        variant="ghost"
-        onClick={(e) => {
-          e.stopPropagation();
-          keyCopyFeedback.copy(getTaskTrackerDisplayKey(task)).catch(() => undefined);
-        }}
-      >
-        <CopyFeedbackGlyph copied={keyCopyFeedback.copied} idleName="copy" />
-        <span className={MENU_QUICK_ACTION_LABEL}>{t('sprintPlanner.contextMenu.copyKeyShort')}</span>
-      </Button>
-      <Button
-        aria-label={
-          mergeRequestUrl
-            ? t('sprintPlanner.contextMenu.copyMr')
-            : t('sprintPlanner.contextMenu.copyMrMissing')
+        value={getTaskTrackerDisplayKey(task)}
+      />
+      <ContextMenuCopyQuickAction
+        ariaLabel={t('sprintPlanner.contextMenu.copyMr')}
+        idle={
+          <ContextMenuGitlabLogoIcon className="h-full w-full scale-125 transform-gpu text-current" />
         }
-        className={`${MENU_QUICK_ACTION} disabled:!opacity-40`}
-        disabled={!mergeRequestUrl}
-        title={
-          mergeRequestUrl
-            ? t('sprintPlanner.contextMenu.copyMr')
-            : t('sprintPlanner.contextMenu.copyMrMissing')
-        }
-        type="button"
-        variant="ghost"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!mergeRequestUrl) {
-            return;
-          }
-          mrCopyFeedback.copy(mergeRequestUrl).catch(() => undefined);
-        }}
-      >
-        <CopyFeedbackGlyph
-          copied={mrCopyFeedback.copied}
-          idle={
-            <ContextMenuGitlabLogoIcon className="h-full w-full scale-125 transform-gpu text-current" />
-          }
-        />
-        <span className={MENU_QUICK_ACTION_LABEL}>{t('sprintPlanner.contextMenu.copyMrShort')}</span>
-      </Button>
-      <Button
-        aria-label={t('sprintPlanner.contextMenu.copyLinkAria')}
-        className={MENU_QUICK_ACTION}
+        label={t('sprintPlanner.contextMenu.copyMrShort')}
+        missingTitle={t('sprintPlanner.contextMenu.copyMrMissing')}
+        title={t('sprintPlanner.contextMenu.copyMr')}
+        value={getTaskMergeRequestUrl(task) ?? null}
+      />
+      <ContextMenuCopyQuickAction
+        ariaLabel={t('sprintPlanner.contextMenu.copyLinkAria', { ...issueTrackerI18nParams(t, tracker.kind) })}
+        idleName="link"
+        label={t('sprintPlanner.contextMenu.copyLinkShort')}
         title={t('sprintPlanner.contextMenu.copyLink')}
-        type="button"
-        variant="ghost"
-        onClick={(e) => {
-          e.stopPropagation();
-          linkCopyFeedback.copy(getTaskTrackerIssueUrl(task, tracker)).catch(() => undefined);
-        }}
-      >
-        <CopyFeedbackGlyph copied={linkCopyFeedback.copied} idleName="link" />
-        <span className={MENU_QUICK_ACTION_LABEL}>{t('sprintPlanner.contextMenu.copyLinkShort')}</span>
-      </Button>
+        value={getTaskTrackerIssueUrl(task, tracker)}
+      />
     </>
   );
 }

@@ -34,6 +34,8 @@ interface DroppableCellProps {
   hasTaskOverlaps?: boolean;
   /** Скрыть part-разделитель (внутри интервала занятости). */
   hidePartDivider?: boolean;
+  /** Part-разделители видны только во время перетаскивания: в покое доска без мелкой сетки. */
+  partDividerVisible?: boolean;
   partIndex: number;
   partStatus: 'current' | 'future' | 'past';
   /** Не даёт превью «+» вылезти за высоту строки (фото/новый слой) */
@@ -53,6 +55,7 @@ interface DroppableCellProps {
 
 export function DroppableCell({
   hidePartDivider = false,
+  partDividerVisible = true,
   partIndex,
   partStatus,
   taskAreaHeight,
@@ -91,7 +94,13 @@ export function DroppableCell({
   return (
     <div
       className={`relative z-[1] flex-1 overflow-visible pointer-events-auto ${
-        showPartDivider ? 'border-r border-gray-200/50 dark:border-gray-600/50' : ''
+        showPartDivider
+          ? `border-r transition-colors duration-200 ${
+              partDividerVisible
+                ? 'border-gray-200/70 dark:border-gray-600/50'
+                : 'border-transparent'
+            }`
+          : ''
       } ${onQuickAddClick ? 'cursor-pointer' : ''}`}
       data-current-cell={partStatus === 'current' ? 'true' : undefined}
       style={{ height: `${totalHeight}px`, minHeight: `${totalHeight}px` }}

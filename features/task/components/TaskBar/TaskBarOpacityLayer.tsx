@@ -59,7 +59,6 @@ interface TaskBarOpacityLayerProps {
   longHoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   /** Штриховка добавленной стоимости и значок переноса относительно плана на старте работы. */
   planAnchorOverlay?: SegmentPlanAnchorOverlay | null;
-  previewBorder?: string;
   quickAddSubmitting: boolean;
   resize: {
     handleResizeStart: (e: React.MouseEvent, side: 'left' | 'right') => void;
@@ -78,6 +77,7 @@ interface TaskBarOpacityLayerProps {
   taskPositions?: Map<string, TaskPosition>;
   transform: { x: number; y: number; scaleX: number; scaleY: number } | null;
   verticalResize?: {
+    cardRowLayout?: { span: number };
     handleResizeStart: (e: React.MouseEvent, side: 'bottom' | 'top') => void;
     isResizing: boolean;
     resizeSide: 'bottom' | 'top' | null;
@@ -134,7 +134,6 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
     onCommentUpdate,
     getPhotoClickSuppress,
     onTaskHover,
-    previewBorder,
     quickAddSubmitting,
     resize,
     selectedSprintId,
@@ -295,7 +294,6 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
         isQATask={isQATask}
         isSelected={isSelected}
         linkMode={linkMode}
-        previewBorder={previewBorder}
         resize={resize}
         selectedSprintId={selectedSprintId}
         setClickStartPos={setClickStartPos}

@@ -244,15 +244,6 @@ export function getQaStripedStyles(
 }
 
 /**
- * Цвет превью границы при расширении — та же палитра, что у карточки.
- * Второй аргумент оставлен для совместимости вызовов: отдельного QA-маппинга нет.
- */
-export function getPreviewBorderColor(status: string | undefined, _isQATask: boolean): string {
-  if (!status) return DEFAULT_COLORS.previewBorder;
-  return getStatusColors(status).previewBorder;
-}
-
-/**
  * Цвета рукоятки ресайза (свимлейн, занятость).
  * `scheme === 'monochrome'` — как у бэклога; иначе ключ палитры карточки (`statusColorKey` или статус).
  * Второй аргумент оставлен для совместимости вызовов: отдельного QA-маппинга нет.

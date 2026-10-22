@@ -426,7 +426,7 @@ export const enMessages = {
       movedToSprint: 'Task moved to sprint {sprintName}',
       removeFromSprintFailed: 'Could not remove the task from the sprint',
       removedToBacklog: 'Task moved to the backlog',
-      statusChanged: 'Status changed',
+      statusChangeFailed: 'Could not change the status of {key}',
       workLogged: 'Work logged',
     },
     status: {
@@ -1246,6 +1246,7 @@ export const enMessages = {
       copyMrMissing: 'Merge request link is missing',
       copyMrShort: 'MR',
       copyNote: 'Copy note',
+      copiedShort: 'Copied',
       deleteDiagram: 'Delete diagram',
       deleteDiagramConfirm: 'The diagram will be removed from the swimlane. This cannot be undone.',
       deleteCard: 'Delete card',
@@ -1427,6 +1428,7 @@ export const enMessages = {
       planAnchor: 'Plan when work started',
       planAnchorMovedEarlier: 'Moved earlier than planned when work started',
       planAnchorMovedLater: 'Moved later than planned when work started',
+      planAnchorShort: 'Before',
       planPatch: {
         add: 'Add to plan',
         and: 'and',
@@ -1672,8 +1674,11 @@ export const enMessages = {
       emptyCellHint: 'Click — add phase',
       segmentEditorConfirmTitle: 'Confirm',
       segmentEditorDiscardTitle: 'Cancel',
-      segmentGapAdd: 'Add a break (shift the rest right)',
-      segmentGapRemove: 'Remove this break',
+      segmentEditorHint: 'Click the card to split · drag a break to adjust',
+      segmentGapAdd: 'Split here (shift the rest right)',
+      segmentGapLength: '+{days} d',
+      segmentGapMove: 'Drag to move the break, click to remove',
+      segmentGapResize: 'Drag to change the break length',
       assigneeFilter: {
         all: 'All assignees',
         one: '1 assignee',

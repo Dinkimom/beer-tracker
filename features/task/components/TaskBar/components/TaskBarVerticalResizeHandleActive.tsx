@@ -19,6 +19,7 @@ import {
   type ResizeHandleCornerStyle,
   type TaskBarResizeHandleInlinePaint,
 } from './taskBarResizeHandleHelpers';
+import { useResizeGripStepNudge } from './useResizeGripStepNudge';
 
 type ResizeHandleColors = ReturnType<typeof getResizeHandleColors>;
 
@@ -29,6 +30,8 @@ interface TaskBarVerticalResizeHandleActiveProps {
   isActive: boolean;
   paint?: TaskBarResizeHandleInlinePaint;
   resizeHandleColors: ResizeHandleColors;
+  /** Высота заметки в строках во время жеста — толчок грипа на каждой смене. */
+  resizeStep?: number | null;
   side: 'bottom' | 'top';
   title: string;
   visualVisibilityClass?: string;
@@ -43,10 +46,12 @@ export function TaskBarVerticalResizeHandleActive({
   onMouseDown,
   paint,
   resizeHandleColors,
+  resizeStep = null,
   side,
   title,
   visualVisibilityClass: visualVisibilityClassOverride,
 }: TaskBarVerticalResizeHandleActiveProps) {
+  const gripRef = useResizeGripStepNudge(resizeStep, 'y', side === 'bottom' ? 1 : -1);
   const edgeClass = getResizeHandleVerticalEdgeClass(side);
   const visualVisibilityClass =
     visualVisibilityClassOverride ?? getResizeHandleVisualVisibilityClass(isActive);
@@ -84,17 +89,18 @@ export function TaskBarVerticalResizeHandleActive({
           className={`absolute inset-0 ${RESIZE_HANDLE_VISUAL_TRANSITION_CLASS} ${visualVisibilityClass}`}
         >
           <div
-            className={`absolute ${backdropInsetClass} ${getResizeHandleRoundedClass(side === 'top' ? 'left' : 'right', cornerStyle)} transition-all ${backgroundClass}`}
+            className={`task-bar-resize-handle-bg absolute ${backdropInsetClass} ${getResizeHandleRoundedClass(side === 'top' ? 'left' : 'right', cornerStyle)} transition-all ${backgroundClass}`}
             style={paint ? { backgroundColor: paint.background } : undefined}
           />
 
           <div
+            ref={gripRef}
             className={`absolute left-1/2 -translate-x-1/2 ${getResizeHandleVerticalGripOffsetClass(side, cornerStyle)} flex flex-row gap-px`}
           >
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`h-0.5 ${gripLineSizeClass} rounded transition-all ${gripLineClass}`}
+                className={`task-bar-resize-grip-line--vertical h-0.5 ${gripLineSizeClass} rounded transition-all ${gripLineClass}`}
                 style={paint ? { backgroundColor: paint.line } : undefined}
               />
             ))}

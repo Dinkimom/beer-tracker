@@ -55,23 +55,23 @@ export function SwimlaneFactPhaseTooltip({
   const phaseComments = collectCommentsInPhaseWindow(issueComments, phaseStartMs, phaseEndMs);
 
   return (
-    <div className="p-3 min-w-[280px] max-w-[400px] max-h-[min(70vh,480px)] overflow-y-auto">
-      <div
-        className={`flex items-center justify-between ${hideTaskSummary ? 'mb-2' : 'mb-3'}`}
-      >
-        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-          {phase.statusName.trim() || phase.statusKey}
-        </h3>
-        {!isClosedStatus && (
-          <span className="text-sm font-bold text-gray-600 dark:text-gray-400">{durationStr}</span>
+    <div className="min-w-[280px] max-w-[400px] max-h-[min(70vh,480px)] overflow-y-auto">
+      <div className="px-3 pt-2.5 pb-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {phase.statusName.trim() || phase.statusKey}
+          </h3>
+          {!isClosedStatus && (
+            <span className="shrink-0 text-xs tabular-nums text-ds-text-muted">{durationStr}</span>
+          )}
+        </div>
+
+        {!hideTaskSummary && (
+          <p className="mt-1 text-xs leading-snug break-words text-gray-600 dark:text-gray-300">
+            {formatFactPhaseTaskLine(taskId, tasksMap)}
+          </p>
         )}
       </div>
-
-      {!hideTaskSummary && (
-        <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 break-words leading-snug">
-          {formatFactPhaseTaskLine(taskId, tasksMap)}
-        </p>
-      )}
 
       <SwimlaneFactPhaseTransitions developerMap={developerMap} transitions={transitions} />
 

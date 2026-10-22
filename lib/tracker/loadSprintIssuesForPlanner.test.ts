@@ -94,6 +94,34 @@ describe('loadSprintIssuesForPlanner', () => {
     expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], undefined);
   });
 
+  it('skipSnapshots: serves in-memory cache when present', async () => {
+    const deps = createDeps();
+    deps.getCached.mockReturnValue([issue('MEM-1')]);
+
+    const result = await loadSprintIssuesForPlanner({ ...baseParams, skipSnapshots: true }, deps);
+
+    expect(result).toEqual([issue('MEM-1')]);
+    expect(deps.querySnapshots).not.toHaveBeenCalled();
+    expect(deps.fetchFromTracker).not.toHaveBeenCalled();
+  });
+
+  it('skipSnapshots: goes to Tracker instead of a PG snapshot on cache miss', async () => {
+    const deps = createDeps();
+
+    const result = await loadSprintIssuesForPlanner({ ...baseParams, skipSnapshots: true }, deps);
+
+    expect(result).toEqual([issue('TR-1')]);
+    expect(deps.querySnapshots).not.toHaveBeenCalled();
+    expect(deps.scheduleTrackerRefresh).not.toHaveBeenCalled();
+    expect(deps.fetchFromTracker).toHaveBeenCalledWith(
+      baseParams.issueTracker,
+      1974,
+      { forceRefresh: false },
+      baseParams.organizationId
+    );
+    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], undefined);
+  });
+
   it('forwards known sprint status to Tracker fallback', async () => {
     const deps = createDeps();
     deps.querySnapshots.mockResolvedValue([]);

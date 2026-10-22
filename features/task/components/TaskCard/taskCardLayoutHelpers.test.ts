@@ -18,18 +18,12 @@ describe('getSidebarOpacityGroupClasses', () => {
 
 describe('getTaskCardBorderClasses', () => {
   it('uses a hairline border so swimlane cards match the 1px chrome', () => {
-    expect(getTaskCardBorderClasses(undefined, false, false)).toBe('border');
+    expect(getTaskCardBorderClasses(false)).toBe('border');
   });
 
   it('keeps local drafts dashed at the same weight', () => {
-    expect(getTaskCardBorderClasses(undefined, false, true)).toBe(
+    expect(getTaskCardBorderClasses(true)).toBe(
       'border border-dashed border-blue-300 dark:border-blue-700'
-    );
-  });
-
-  it('keeps the resize preview dashed at the same weight', () => {
-    expect(getTaskCardBorderClasses('border-green-500', true, false)).toBe(
-      'border border-dashed border-green-500'
     );
   });
 });

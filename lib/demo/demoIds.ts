@@ -3,6 +3,8 @@ export const DEMO_ORG_ID = 'a0000000-0000-4000-8000-000000000042';
 export const DEMO_BOARD_ID = 42;
 export const DEMO_SPRINT_PREV_ID = 101;
 export const DEMO_SPRINT_ID = 102;
+/** Следующий спринт (draft): куда можно перенести задачу из меню. */
+export const DEMO_SPRINT_NEXT_ID = 103;
 
 export const DEMO_DEV_ALICE = 'demo-alice';
 export const DEMO_DEV_BOB = 'demo-bob';

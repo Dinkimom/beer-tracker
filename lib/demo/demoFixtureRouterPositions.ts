@@ -2,10 +2,12 @@ import type { DemoFixtureResult } from './demoFixtureRouterTypes';
 
 import {
   getDemoFixtureStore,
+  getDemoSprintTasks,
   removeDemoPosition,
   replaceDemoPositions,
   upsertDemoPosition,
 } from './demoFixtureStore';
+import { DEMO_SPRINT_NEXT_ID } from './demoIds';
 
 function ok(data: unknown, status = 200): DemoFixtureResult {
   return { data, status };
@@ -44,13 +46,23 @@ function handlePositionsAliases(path: string, method: string): DemoFixtureResult
   return null;
 }
 
+/** Позиции общие на фикстуру; следующему спринту отдаём только его задачи и без якорей плана. */
+function readSprintPositions(sprintId: number): DemoFixtureResult {
+  const store = getDemoFixtureStore();
+  if (sprintId !== DEMO_SPRINT_NEXT_ID) {
+    return ok({ planAnchors: store.planAnchors, positions: store.positions });
+  }
+  const taskIds = new Set(getDemoSprintTasks(sprintId).map((t) => t.id));
+  return ok({ planAnchors: [], positions: store.positions.filter((p) => taskIds.has(p.task_id)) });
+}
+
 function handlePositionsCrud(
+  sprintId: number,
   method: string,
   params: URLSearchParams,
   body: unknown
 ): DemoFixtureResult | null {
-  const store = getDemoFixtureStore();
-  if (method === 'get') return ok({ planAnchors: store.planAnchors, positions: store.positions });
+  if (method === 'get') return readSprintPositions(sprintId);
   if (method === 'post') {
     applyPositionBody(body);
     return ok({ success: true });
@@ -76,5 +88,5 @@ export function handleDemoPositions(
 
   const sprintId = matchSprintId(path, 'positions');
   if (sprintId == null) return null;
-  return handlePositionsCrud(method, params, body);
+  return handlePositionsCrud(sprintId, method, params, body);
 }

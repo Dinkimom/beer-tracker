@@ -1,7 +1,7 @@
 import type { TrackerIssue } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
-import { extractTrackerMetadataArray } from '@/lib/trackerIntegration/fetchTrackerOrgMetadataHelpers';
+import { clearJiraFieldCatalogCacheForTests, loadJiraFieldCatalog } from './jiraFieldCatalog';
 
 const START_DATE_NAMES = new Set(['start date', 'дата начала']);
 const TARGET_START_NAMES = new Set(['target start', 'целевое начало']);
@@ -241,8 +241,7 @@ async function fetchJiraScheduleFieldRefsFromCatalog(
   cacheKey: string
 ): Promise<JiraScheduleFieldRefs> {
   try {
-    const { data } = await api.get<unknown>('/field');
-    return pickJiraScheduleFieldsFromCatalog(extractTrackerMetadataArray(data));
+    return pickJiraScheduleFieldsFromCatalog(await loadJiraFieldCatalog(api));
   } catch {
     scheduleRefsByBaseUrl.delete(cacheKey);
     return DEFAULT_SCHEDULE_REFS;
@@ -265,6 +264,7 @@ export function loadJiraScheduleFieldRefsFromCatalog(
 /** Vitest: process-wide `/field` cache must not leak between cases. */
 export function clearJiraScheduleFieldRefsCacheForTests(): void {
   scheduleRefsByBaseUrl.clear();
+  clearJiraFieldCatalogCacheForTests();
 }
 
 /** `string` → write date; `null` → clear field; `undefined` → leave unchanged. */

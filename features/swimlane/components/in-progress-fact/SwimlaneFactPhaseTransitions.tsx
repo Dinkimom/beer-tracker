@@ -6,6 +6,7 @@ import type { Developer } from '@/types';
 import { Avatar } from '@/components/Avatar';
 import { StatusTag } from '@/components/StatusTag';
 import { useI18n } from '@/contexts/LanguageContext';
+import { CONTEXT_MENU_DIVIDER_COLOR } from '@/features/context-menu/contextMenuClasses';
 import { getInitials } from '@/utils/displayUtils';
 
 import {
@@ -27,7 +28,7 @@ export function SwimlaneFactPhaseTransitions({
   if (transitions.length === 0) return null;
 
   return (
-    <div className="mb-3 space-y-3">
+    <div className={`space-y-2.5 border-t px-3 py-2.5 ${CONTEXT_MENU_DIVIDER_COLOR}`}>
       {transitions.map((transition, idx) => {
         const author = transition.entry.createdBy;
         const authorId = author?.id;
@@ -39,25 +40,25 @@ export function SwimlaneFactPhaseTransitions({
             <Avatar
               avatarUrl={developer?.avatarUrl}
               initials={getInitials(authorName)}
-              size="lg"
+              size="md"
             />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <div className="mb-1 flex items-baseline gap-2">
+                <span className="min-w-0 truncate text-xs font-medium text-gray-900 dark:text-gray-100">
                   {authorName}
                 </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
+                <span className="ml-auto shrink-0 text-[11px] tabular-nums text-ds-text-muted">
                   {formatFactPhaseDateTime(transition.timestamp, dateLocale)}
                 </span>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {transition.fromStatusKey ? (
                   <>
                     <StatusTag
                       label={transition.fromStatusName ?? undefined}
                       status={transition.fromStatusKey}
                     />
-                    <span className="text-gray-400 dark:text-gray-500">→</span>
+                    <span aria-hidden className="text-xs text-gray-400 dark:text-gray-500">→</span>
                   </>
                 ) : null}
                 <StatusTag label={transition.toStatusName} status={transition.toStatusKey} />

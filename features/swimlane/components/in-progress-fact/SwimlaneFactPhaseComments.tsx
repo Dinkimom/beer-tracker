@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 
 import { Avatar } from '@/components/Avatar';
 import { useI18n } from '@/contexts/LanguageContext';
+import { CONTEXT_MENU_DIVIDER_COLOR } from '@/features/context-menu/contextMenuClasses';
 import { getInitials } from '@/utils/displayUtils';
 
 import {
@@ -28,8 +29,8 @@ export function SwimlaneFactPhaseComments({
   if (comments.length === 0) return null;
 
   return (
-    <div>
-      <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">
+    <div className={`border-t px-3 py-2.5 ${CONTEXT_MENU_DIVIDER_COLOR}`}>
+      <div className="mb-1.5 text-xs text-ds-text-muted">
         {t('sprintPlanner.swimlane.factTimeline.comments')}
       </div>
       <ul className="space-y-2.5">
@@ -40,7 +41,7 @@ export function SwimlaneFactPhaseComments({
           return (
             <li
               key={`${comment.id}-${comment.createdAt}`}
-              className="border-t border-gray-100 dark:border-gray-700 pt-2 first:border-t-0 first:pt-0"
+              className={`border-t pt-2 first:border-t-0 first:pt-0 ${CONTEXT_MENU_DIVIDER_COLOR}`}
             >
               <div className="flex items-start gap-2 mb-1">
                 <Avatar
@@ -49,11 +50,11 @@ export function SwimlaneFactPhaseComments({
                   size="md"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex flex-wrap items-baseline gap-2">
                     <span className="text-xs font-medium text-gray-900 dark:text-gray-100">
                       {authorName}
                     </span>
-                    <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                    <span className="text-[11px] tabular-nums text-ds-text-muted">
                       {formatFactPhaseDateTime(comment.createdAt, dateLocale)}
                     </span>
                   </div>

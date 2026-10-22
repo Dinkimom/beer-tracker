@@ -289,12 +289,15 @@ export async function applyJiraOffScreenRequiredFields(
   if (pending.length === 0) {
     return input;
   }
-  const requiredIds = await fetchJiraValidatorRequiredFieldIds(api, issueKey, transitionId);
+  const [requiredIds, screenFieldIds] = await Promise.all([
+    fetchJiraValidatorRequiredFieldIds(api, issueKey, transitionId),
+    // Экран нужен только при обязательных полях; его ошибка не должна ронять обычный переход.
+    fetchJiraTransitionScreenFieldIds(api, issueKey, transitionId).catch(() => new Set<string>()),
+  ]);
   const requiredPending = pending.filter((fieldId) => requiredIds.includes(fieldId));
   if (requiredPending.length === 0) {
     return input;
   }
-  const screenFieldIds = await fetchJiraTransitionScreenFieldIds(api, issueKey, transitionId);
   const offScreen = requiredPending.filter((fieldId) => !screenFieldIds.has(fieldId));
   if (offScreen.length === 0) {
     return input;

@@ -7,7 +7,6 @@ import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { getSwimlaneCardRadiusClass } from '@/features/task/components/TaskCard/taskCardLayoutHelpers';
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
-import { getPreviewBorderColor, resolvePaletteStatusKey } from '@/utils/statusColors';
 
 /** Оболочка превью DnD: у задач скругление, у заметок — прямые углы (без clip rounded-lg). */
 export function getSwimlaneDragOverlayShellClass(isStickyNote: boolean, isPhotoCard = false): string {
@@ -58,10 +57,6 @@ export function SprintPlannerDragOverlayPreview({
         developers={developers}
         isDragging
         isQATask={isEffectivelyQaTask(activeTask)}
-        previewBorder={getPreviewBorderColor(
-          resolvePaletteStatusKey(activeTask.originalStatus, activeTask.statusColorKey),
-          isEffectivelyQaTask(activeTask)
-        )}
         swimlaneBarDurationParts={activeTaskDuration ?? undefined}
         task={activeTask}
         variant="swimlane"

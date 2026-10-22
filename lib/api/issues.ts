@@ -114,14 +114,34 @@ export async function updateIssueFields(
   }
 }
 
-export async function getIssueTransitions(issueKey: string): Promise<TransitionItem[]> {
+/** Свежий ответ переходов: меню статуса только что его загрузило, смена статуса переиспользует. */
+const RECENT_TRANSITIONS_MAX_AGE_MS = 15_000;
+const recentTransitionsByIssueKey = new Map<string, { at: number; list: Promise<TransitionItem[]> }>();
+
+async function requestIssueTransitions(issueKey: string): Promise<TransitionItem[]> {
   try {
     const { data } = await getPlannerBeerTrackerApi().get(`/issues/${issueKey}/transitions`);
     return data;
   } catch (error) {
+    recentTransitionsByIssueKey.delete(issueKey);
     console.error(`Failed to fetch transitions for ${issueKey}:`, error);
     return [];
   }
+}
+
+export function getIssueTransitions(issueKey: string): Promise<TransitionItem[]> {
+  const list = requestIssueTransitions(issueKey);
+  recentTransitionsByIssueKey.set(issueKey, { at: Date.now(), list });
+  return list;
+}
+
+/** Переходы, загруженные не дольше 15 с назад (или ещё в полёте); иначе — новый запрос. */
+export function getRecentIssueTransitions(issueKey: string): Promise<TransitionItem[]> {
+  const recent = recentTransitionsByIssueKey.get(issueKey);
+  if (recent && Date.now() - recent.at < RECENT_TRANSITIONS_MAX_AGE_MS) {
+    return recent.list;
+  }
+  return getIssueTransitions(issueKey);
 }
 
 export async function searchUsers(query: string): Promise<RegistryUserItem[]> {
@@ -210,6 +230,8 @@ export async function changeIssueStatus(
   targetStatusKey?: string,
   targetStatusDisplay?: string
 ): Promise<boolean> {
+  // После перехода список доступных переходов другой.
+  recentTransitionsByIssueKey.delete(issueKey);
   try {
     const body: Record<string, unknown> = { transitionId };
     if (resolution !== undefined) body.resolution = resolution;

@@ -52,6 +52,9 @@ RUN echo "Starting Next.js build..." && \
     echo "Build completed successfully"
 
 # --- Development (hot reload; use with docker-compose.dev.yml) ---
+# Зависимостей в образе нет: node_modules — именованный том, его ставит
+# docker-entrypoint-dev.sh при старте (и при смене lockfile) из тома pnpm store.
+# Иначе каждая правка lockfile пересобирала бы образ с полной установкой впустую.
 FROM base AS dev
 ENV NODE_ENV=development \
     NEXT_TELEMETRY_DISABLED=1 \
@@ -59,9 +62,6 @@ ENV NODE_ENV=development \
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-COPY package.json pnpm-lock.yaml ./
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile && pnpm store prune
 COPY docker-entrypoint-dev.sh /usr/local/bin/docker-entrypoint-dev.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint-dev.sh
 WORKDIR /app

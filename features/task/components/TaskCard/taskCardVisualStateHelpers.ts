@@ -198,7 +198,6 @@ function buildTaskCardRootVisualState(input: {
   const hoverShadowClasses = buildTaskCardHoverShadowClasses(
     input.effectiveIsLocalTask,
     input.isDragging,
-    input.isResizing,
     input.linkingActive,
     input.isLocalCommentDraft
   );
@@ -259,7 +258,6 @@ export function buildTaskCardVisualState(input: {
   linkMode?: 'source' | 'target' | null;
   linkingActive?: boolean;
   phaseCardColorScheme: PlanningPhaseCardColorScheme;
-  previewBorder?: string;
   resizePreviewDuration?: number | null;
   showExtraSplit: boolean;
   statusForCardColors: string | undefined;
@@ -296,8 +294,6 @@ export function buildTaskCardVisualState(input: {
     linkingActive: input.linkingActive,
   });
   const borderClasses = getTaskCardBorderClasses(
-    input.previewBorder,
-    input.isResizing,
     effectiveIsLocalTask,
     isLocalCommentDraft,
     isLocalPhotoOrDiagramCard

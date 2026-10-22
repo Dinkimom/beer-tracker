@@ -3,7 +3,8 @@ set -e
 cd /app
 
 # Не кладём store на bind-mount `.:/app` (.pnpm-store на хосте): app и worker
-# иначе гоняются за одними файлами.
+# иначе гоняются за одними файлами. У app это именованный том (docker-compose.dev.yml):
+# пакеты переживают пересоздание контейнера, и смена lockfile качает только новые.
 export PNPM_STORE_DIR="${PNPM_STORE_DIR:-/root/.local/share/pnpm/store}"
 
 # `.env` для `pnpm dev` часто содержит POSTGRES_HOST=localhost и порт 5433 (проброс compose db)
@@ -37,7 +38,7 @@ install_node_modules() {
   fi
   echo "[docker-entrypoint-dev] pnpm install (fresh volume or lockfile changed)..."
   # Docker без TTY: иначе pnpm прерывается при пересборке node_modules (remove modules dir).
-  CI=true pnpm install --frozen-lockfile
+  CI=true pnpm install --frozen-lockfile --store-dir "$PNPM_STORE_DIR"
   cp /app/pnpm-lock.yaml "$STAMP"
 }
 

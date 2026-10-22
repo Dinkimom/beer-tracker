@@ -65,7 +65,6 @@ export function useContextMenu({
   const sprintButtonRef = useRef<HTMLButtonElement>(null);
   const estimateButtonRef = useRef<HTMLButtonElement>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingTransitionId, setPendingTransitionId] = useState<string | null>(null);
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
   const [isSprintMenuOpen, setIsSprintMenuOpen] = useState(false);
   const [isEstimateMenuOpen, setIsEstimateMenuOpen] = useState(false);
@@ -223,7 +222,8 @@ export function useContextMenu({
     return () => cancelAnimationFrame(raf);
   }, [position, anchorRect]);
 
-  const handleStatusSelect = async (
+  // Меню закрываем сразу: ход перехода показывает сама карточка (taskStatusTransitionFeedback).
+  const handleStatusSelect = (
     transitionId: string,
     targetStatusKey?: string,
     targetStatusDisplay?: string,
@@ -231,18 +231,13 @@ export function useContextMenu({
   ) => {
     if (isLoading) return;
 
-    setIsLoading(true);
-    setPendingTransitionId(transitionId);
-
-    try {
-      await onStatusChange(taskIdForActions, transitionId, targetStatusKey, targetStatusDisplay, screenId);
-      setIsStatusMenuOpen(false);
-      onClose();
-    } catch (error) {
-      console.error('Failed to change status:', error);
-      setIsLoading(false);
-      setPendingTransitionId(null);
-    }
+    setIsStatusMenuOpen(false);
+    onClose();
+    onStatusChange(taskIdForActions, transitionId, targetStatusKey, targetStatusDisplay, screenId).catch(
+      (error: unknown) => {
+        console.error('Failed to change status:', error);
+      }
+    );
   };
 
   // Без выбора «бэклог / запланировать» в подменю клик по спринту подтверждаем диалогом.
@@ -347,7 +342,6 @@ export function useContextMenu({
     sprintButtonRef,
     estimateButtonRef,
     isLoading,
-    pendingTransitionId,
     isStatusMenuOpen,
     isSprintMenuOpen,
     isEstimateMenuOpen,

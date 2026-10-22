@@ -28,6 +28,8 @@ interface TaskBarResizeHandleProps {
   isResizing: boolean;
   originalStatus?: string;
   resizeSide: 'left' | 'right' | null;
+  /** Длительность в ячейках во время жеста (толчок грипа на шаге сетки). */
+  resizeStep?: number | null;
   side: 'left' | 'right';
   statusColorKey?: string;
   stickyNoteColor?: string | null;
@@ -42,6 +44,7 @@ export function TaskBarResizeHandle({
   onMouseDown,
   originalStatus,
   resizeSide,
+  resizeStep = null,
   side,
   statusColorKey,
   stickyNoteColor,
@@ -72,6 +75,7 @@ export function TaskBarResizeHandle({
       isActive={isActive}
       paint={paint}
       resizeHandleColors={resizeHandleColors}
+      resizeStep={isActive ? resizeStep : null}
       side={side}
       title={resolveTaskBarResizeHandleTitle(side, t)}
       onMouseDown={onMouseDown}

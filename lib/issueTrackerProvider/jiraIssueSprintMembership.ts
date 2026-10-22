@@ -5,17 +5,19 @@ import type {
 } from './types';
 import type { AxiosInstance } from 'axios';
 
+import { apiCache } from '@/lib/cache';
+
 import { applyJiraBoardFilterFields } from './jiraBoardFilterFields';
 import {
   jiraAgileBacklogIssueUrl,
   jiraAgileSprintByIdUrl,
   jiraAgileSprintIssuesUrl,
 } from './jiraCatalog';
+import { jiraApiBaseUrl } from './jiraFieldCatalog';
 import { fetchJiraIssue } from './jiraIssues';
 
-function jiraRestBaseUrl(api: AxiosInstance): string {
-  return typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
-}
+/** `originBoardId` спринта не меняется — кэшируем, чтобы не платить GET на каждый перенос. */
+const SPRINT_BOARD_ID_TTL_SECONDS = 60 * 60;
 
 function uniqueNumbers(values: Array<number | null | undefined>): number[] {
   const seen = new Set<number>();
@@ -54,11 +56,11 @@ export function currentJiraSprintIdsFromIssue(issue: IssueTrackerIssue | null): 
   return uniqueNumbers(rows.map((row) => parsePositiveSprintId(typeof row === 'object' ? row.id : row)));
 }
 
-async function getJiraSprintBoardId(api: AxiosInstance, sprintId: number): Promise<number | null> {
-  const baseUrl = jiraRestBaseUrl(api);
-  if (!baseUrl) {
-    return null;
-  }
+async function requestJiraSprintBoardId(
+  api: AxiosInstance,
+  baseUrl: string,
+  sprintId: number
+): Promise<number | null> {
   try {
     const { data } = await api.get<unknown>(jiraAgileSprintByIdUrl(baseUrl, sprintId));
     if (!data || typeof data !== 'object') {
@@ -70,12 +72,42 @@ async function getJiraSprintBoardId(api: AxiosInstance, sprintId: number): Promi
   }
 }
 
+async function getJiraSprintBoardId(api: AxiosInstance, sprintId: number): Promise<number | null> {
+  const baseUrl = jiraApiBaseUrl(api);
+  if (!baseUrl) {
+    return null;
+  }
+  const cacheKey = `jira:sprint-board:${baseUrl}:${sprintId}`;
+  const cached = apiCache.get<number>(cacheKey);
+  if (cached != null) {
+    return cached;
+  }
+  const boardId = await requestJiraSprintBoardId(api, baseUrl, sprintId);
+  if (boardId != null) {
+    apiCache.set(cacheKey, boardId, SPRINT_BOARD_ID_TTL_SECONDS);
+  }
+  return boardId;
+}
+
+/** Поля из фильтра доски не зависят от переноса — пишем их параллельно с ним. */
+async function moveJiraIssueWithBoardFields(
+  api: AxiosInstance,
+  issueKey: string,
+  move: Promise<void>,
+  boardId: number | null
+): Promise<void> {
+  await Promise.all([
+    move,
+    boardId == null ? undefined : applyJiraBoardFilterFields(api, issueKey, boardId),
+  ]);
+}
+
 async function moveJiraIssuesToSprint(
   api: AxiosInstance,
   sprintId: number,
   issueKeys: string[]
 ): Promise<void> {
-  const baseUrl = jiraRestBaseUrl(api);
+  const baseUrl = jiraApiBaseUrl(api);
   if (!baseUrl || issueKeys.length === 0) {
     return;
   }
@@ -83,7 +115,7 @@ async function moveJiraIssuesToSprint(
 }
 
 async function moveJiraIssuesToBacklog(api: AxiosInstance, issueKeys: string[]): Promise<void> {
-  const baseUrl = jiraRestBaseUrl(api);
+  const baseUrl = jiraApiBaseUrl(api);
   if (!baseUrl || issueKeys.length === 0) {
     return;
   }
@@ -105,16 +137,15 @@ export async function addJiraIssueToSprint(
     throw new Error('Jira addIssueToSprint requires issue key and positive sprint id');
   }
 
-  const currentIds = await loadIssueSprintIds(api, key);
+  const [currentIds, boardId] = await Promise.all([
+    loadIssueSprintIds(api, key),
+    getJiraSprintBoardId(api, sprintId),
+  ]);
   if (currentIds.includes(sprintId)) {
     return sprintMembershipResult([], []);
   }
 
-  const boardId = await getJiraSprintBoardId(api, sprintId);
-  await moveJiraIssuesToSprint(api, sprintId, [key]);
-  if (boardId != null) {
-    await applyJiraBoardFilterFields(api, key, boardId);
-  }
+  await moveJiraIssueWithBoardFields(api, key, moveJiraIssuesToSprint(api, sprintId, [key]), boardId);
 
   return sprintMembershipResult(
     [...currentIds, sprintId],
@@ -133,8 +164,10 @@ export async function removeJiraIssueFromSprint(
     throw new Error('Jira removeIssueFromSprint requires issue key and sprint id');
   }
 
-  const currentIds = await loadIssueSprintIds(api, key);
-  const boardId = await getJiraSprintBoardId(api, sprintId);
+  const [currentIds, boardId] = await Promise.all([
+    loadIssueSprintIds(api, key),
+    getJiraSprintBoardId(api, sprintId),
+  ]);
   await moveJiraIssuesToBacklog(api, [key]);
 
   return sprintMembershipResult(
@@ -157,21 +190,21 @@ export async function replaceJiraIssueSprints(
     throw new Error('Jira replaceIssueSprints requires issue key');
   }
 
-  const currentIds = await loadIssueSprintIds(api, key);
   const nextIds = parseReplaceSprintIds(sprints);
-
   const targetSprintId = nextIds.at(-1);
-  if (targetSprintId == null) {
-    await moveJiraIssuesToBacklog(api, [key]);
-  } else {
-    await moveJiraIssuesToSprint(api, targetSprintId, [key]);
-  }
+  const [currentIds, targetBoardId] = await Promise.all([
+    loadIssueSprintIds(api, key),
+    targetSprintId == null ? null : getJiraSprintBoardId(api, targetSprintId),
+  ]);
 
+  const move =
+    targetSprintId == null
+      ? moveJiraIssuesToBacklog(api, [key])
+      : moveJiraIssuesToSprint(api, targetSprintId, [key]);
   const affectedIds = uniqueNumbers([...currentIds, ...nextIds]);
-  const boardIds = await Promise.all(affectedIds.map((id) => getJiraSprintBoardId(api, id)));
-  const targetBoardId = targetSprintId == null ? null : boardIds[affectedIds.indexOf(targetSprintId)];
-  if (targetBoardId != null) {
-    await applyJiraBoardFilterFields(api, key, targetBoardId);
-  }
+  const [, boardIds] = await Promise.all([
+    moveJiraIssueWithBoardFields(api, key, move, targetBoardId),
+    Promise.all(affectedIds.map((id) => getJiraSprintBoardId(api, id))),
+  ]);
   return sprintMembershipResult(affectedIds, boardIds);
 }

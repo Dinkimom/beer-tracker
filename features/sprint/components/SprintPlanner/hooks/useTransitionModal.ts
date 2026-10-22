@@ -5,8 +5,17 @@ import type { Task } from '@/types';
 import { useCallback, useState } from 'react';
 
 import { findTaskById } from '@/features/sprint/hooks/useTaskOperations/utils/taskUtils';
+import {
+  clearTaskStatusTransition,
+  markTaskStatusTransitionPending,
+} from '@/features/task/utils/taskStatusTransitionFeedback';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
-import { fetchScreenFields, getTransitionFields, type TransitionField } from '@/lib/beerTrackerApi';
+import {
+  fetchScreenFields,
+  getRecentIssueTransitions,
+  getTransitionFields,
+  type TransitionField,
+} from '@/lib/beerTrackerApi';
 import {
   isTransitionRequiresFieldsError,
   transitionFieldsFromErrorMessages,
@@ -71,6 +80,7 @@ export function useTransitionModal({
       taskId: string;
       transitionId: string;
     }) => {
+      clearTaskStatusTransition(args.task.id);
       setTransitionModal(args);
     },
     []
@@ -89,6 +99,8 @@ export function useTransitionModal({
         console.error('Task not found:', taskId);
         return;
       }
+      // Карточка откликается сразу, пока грузятся поля перехода.
+      markTaskStatusTransitionPending(task.id);
       const finalTargetStatusKey = targetStatusKey || '';
 
       const typeKey = task.type ?? 'task';
@@ -100,12 +112,16 @@ export function useTransitionModal({
       );
 
       const trackerIssueKey = getTaskTrackerDisplayKey(task);
+      // changeStatus ниже ждёт список переходов — грузим его параллельно с полями перехода.
+      void getRecentIssueTransitions(trackerIssueKey);
 
-      const fetched = await loadTransitionModalFields({
-        screenId,
-        trackerIssueKey,
-        transitionId,
-      });
+      let fetched: TransitionField[];
+      try {
+        fetched = await loadTransitionModalFields({ screenId, trackerIssueKey, transitionId });
+      } catch (error) {
+        clearTaskStatusTransition(task.id);
+        throw error;
+      }
       const fields = pickTransitionFields(fetched, cached);
 
       if (shouldOpenTransitionFieldsModal(fields)) {
@@ -130,6 +146,7 @@ export function useTransitionModal({
         const fromError = transitionFieldsFromErrorMessages(error.errorMessages);
         const recovered = mergeTransitionFieldsById(fields, fromError);
         if (!shouldOpenTransitionFieldsModal(recovered)) {
+          clearTaskStatusTransition(task.id);
           throw error;
         }
         openTransitionModal({

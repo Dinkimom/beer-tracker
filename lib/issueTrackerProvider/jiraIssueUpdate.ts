@@ -1,10 +1,9 @@
 import type { IssueTrackerIssuePatch, IssueTrackerProviderKind } from './types';
 import type { AxiosInstance } from 'axios';
 
-import { extractTrackerMetadataArray } from '@/lib/trackerIntegration/fetchTrackerOrgMetadataHelpers';
-
 import { splitIssueTrackerIssuePatch } from './issueTrackerIssuePatch';
 import { jiraAgileIssueEstimationUrl, jiraAgileIssueUrl } from './jiraCatalog';
+import { loadJiraFieldCatalog } from './jiraFieldCatalog';
 import { putJiraIssueParent } from './jiraIssueParent';
 import { applyJiraScheduleFields } from './jiraScheduleFields';
 import { jiraUserSearchRequestParams } from './jiraUserSearch';
@@ -173,11 +172,6 @@ async function loadEstimationBoardId(api: AxiosInstance, issueKey: string): Prom
   return readBoardIdFromGet(api, jiraIssuePath(issueKey), {
     params: { fields: 'sprint,closedSprints' },
   });
-}
-
-async function fetchJiraFieldCatalog(api: AxiosInstance): Promise<unknown[]> {
-  const { data } = await api.get<unknown>('/field');
-  return extractTrackerMetadataArray(data);
 }
 
 async function putJiraAgileEstimation(
@@ -379,6 +373,12 @@ async function lookupJiraUserIdentity(
   id: string,
   kind: IssueTrackerProviderKind
 ): Promise<{ accountId?: string; email?: string; key?: string; name?: string } | null> {
+  if (kind === 'jira-cloud') {
+    // Cloud (GDPR): username/key в /user не поддерживаются — только accountId и поиск.
+    return (
+      (await readJiraUser(api, { accountId: id })) ?? (await searchJiraUserIdentity(api, id, kind))
+    );
+  }
   return (
     (await readJiraUser(api, { username: id })) ??
     (await readJiraUser(api, { key: id })) ??
@@ -414,6 +414,10 @@ async function putJiraIssueAssignee(
     await api.put(`${jiraIssuePath(issueKey)}/assignee`, { name: null });
     return;
   }
+  if (kind === 'jira-cloud' && looksLikeJiraAccountId(id)) {
+    await api.put(`${jiraIssuePath(issueKey)}/assignee`, { accountId: id });
+    return;
+  }
   const user = await lookupJiraUserIdentity(api, id, kind);
   await api.put(
     `${jiraIssuePath(issueKey)}/assignee`,
@@ -436,7 +440,7 @@ async function updateJiraStoryPoints(
       // Story Points often is not on the issue edit screen — field PUT is the fallback.
     }
   }
-  const fieldId = pickJiraStoryPointsFieldId(await fetchJiraFieldCatalog(api));
+  const fieldId = pickJiraStoryPointsFieldId(await loadJiraFieldCatalog(api));
   if (!fieldId) {
     throw new Error('Jira Story Points field is not available for this issue');
   }
@@ -448,7 +452,7 @@ async function assignTestPointsField(
   fields: Record<string, unknown>,
   testPoints: unknown
 ): Promise<void> {
-  const fieldId = pickJiraNamedNumberFieldId(await fetchJiraFieldCatalog(api), TEST_POINTS_FIELD_NAMES);
+  const fieldId = pickJiraNamedNumberFieldId(await loadJiraFieldCatalog(api), TEST_POINTS_FIELD_NAMES);
   if (!fieldId) {
     throw new Error('Jira Test Points field is not available for this issue');
   }

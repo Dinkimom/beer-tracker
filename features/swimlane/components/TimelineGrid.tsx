@@ -8,7 +8,11 @@ import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilit
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
-import { timelineDayDividerClass } from '@/features/sprint/utils/timelineColumnChrome';
+import { getDayDate } from '@/features/sprint/utils/occupancyUtils';
+import {
+  TIMELINE_TODAY_COLUMN_TINT_CLASS,
+  timelineDayDividerClass,
+} from '@/features/sprint/utils/timelineColumnChrome';
 import { TimelineWeekendHatch } from '@/features/swimlane/components/TimelineWeekendHatch';
 import {
   buildHolidayHatchRanges,
@@ -16,6 +20,7 @@ import {
   isInternalAvailabilityDayDivider,
   isInternalHolidayDayDivider,
 } from '@/features/swimlane/utils/availabilityTimelineMarks';
+import { isPlannerToday } from '@/utils/dateUtils';
 
 import { TimelineGridPartCell } from './TimelineGridPartCell';
 
@@ -28,6 +33,8 @@ interface TimelineGridProps {
   isLinking?: boolean;
   maxTaskLayers?: number;
   occupiedLayersByCell?: Map<number, Set<number>>;
+  /** Разделители частей дня: только при перетаскивании или ресайзе карточки этой строки */
+  partDividersVisible?: boolean;
   /**
    * Высота подложки нерабочих дней и занятости (px). Задаётся по зоне карточек,
    * чтобы дорожки факта и календаря под ней шли отдельными строками; без неё — на всю высоту.
@@ -73,6 +80,7 @@ export function TimelineGrid({
   maxTaskLayers = 1,
   occupiedLayersByCell,
   hasTaskOverlaps,
+  partDividersVisible = false,
   patternHeight,
   quickAddClipHeight,
   quickAddFootprint,
@@ -95,6 +103,9 @@ export function TimelineGrid({
   const quickAddSnapToDay = quickAddFootprint?.snapToDay === true;
   const quickAddSpan = quickAddFootprint?.span ?? 1;
   const hasPatternRanges = hatchRanges.length > 0 || holidayRanges.length > 0;
+  const todayDayIndex = Array.from({ length: dayCount }, (_, dayIndex) =>
+    getDayDate(sprintStartDate, dayIndex, dayCount)
+  ).findIndex(isPlannerToday);
 
   return (
     <div className="relative h-full w-full min-w-0 bg-white swimlane-lane-fill dark:bg-gray-800">
@@ -155,6 +166,9 @@ export function TimelineGrid({
               key={dayIndex}
               className={`${DAY_COLUMN_CLASS} ${DAY_COLUMN_ROW_BORDER_CLASS}`}
             >
+              {dayIndex === todayDayIndex ? (
+                <div className={TIMELINE_TODAY_COLUMN_TINT_CLASS} />
+              ) : null}
               {dividerClass ? (
                 <div
                   className={`pointer-events-none absolute bottom-0 right-0 top-0 w-px ${dividerClass}`}
@@ -172,6 +186,7 @@ export function TimelineGrid({
                   isLinking={isLinking}
                   maxTaskLayers={maxTaskLayers}
                   occupiedLayersByCell={occupiedLayersByCell}
+                  partDividerVisible={partDividersVisible}
                   partIndex={partIndex}
                   quickAddClipHeight={quickAddClipHeight}
                   quickAddDurationCells={quickAddDurationCells}

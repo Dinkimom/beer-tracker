@@ -26,7 +26,6 @@ export function useTaskCardVisualState(input: {
   isNotificationFocused?: boolean;
   linkMode?: 'source' | 'target' | null;
   linkingActive?: boolean;
-  previewBorder?: string;
   resizePreviewDuration?: number | null;
   swimlaneBarDurationParts?: number;
   swimlaneCardFields?: SwimlaneCardFieldsVisibility;
@@ -66,7 +65,6 @@ export function useTaskCardVisualState(input: {
     linkMode: input.linkMode,
     linkingActive: input.linkingActive,
     phaseCardColorScheme,
-    previewBorder: input.previewBorder,
     resizePreviewDuration: input.resizePreviewDuration,
     showExtraSplit: barMetrics.showExtraSplit,
     statusForCardColors,

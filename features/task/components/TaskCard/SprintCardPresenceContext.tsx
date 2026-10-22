@@ -2,15 +2,24 @@
 
 import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 
 import {
   sprintCardPresenceLocksTarget,
   sprintCardPresenceViewers,
 } from '@/lib/realtime/sprintCardPresence';
+import { sprintPresenceColorSlots } from '@/lib/realtime/sprintPresenceColor';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
 
-const SprintCardPresenceContext = createContext<readonly SprintPresenceViewer[]>([]);
+interface SprintCardPresenceValue {
+  /** Слоты палитры по всей доске (вместе со своей вкладкой) — как в шапке. */
+  colorSlots: ReadonlyMap<string, number>;
+  viewers: readonly SprintPresenceViewer[];
+}
+
+const EMPTY_PRESENCE: SprintCardPresenceValue = { colorSlots: new Map(), viewers: [] };
+
+const SprintCardPresenceContext = createContext<SprintCardPresenceValue>(EMPTY_PRESENCE);
 
 export function SprintCardPresenceProvider({
   children,
@@ -19,15 +28,23 @@ export function SprintCardPresenceProvider({
   children: React.ReactNode;
   viewers: readonly SprintPresenceViewer[];
 }) {
-  return <SprintCardPresenceContext.Provider value={viewers}>{children}</SprintCardPresenceContext.Provider>;
+  const value = useMemo(
+    () => ({ colorSlots: sprintPresenceColorSlots(viewers), viewers }),
+    [viewers]
+  );
+  return <SprintCardPresenceContext.Provider value={value}>{children}</SprintCardPresenceContext.Provider>;
 }
 
 export function useSprintBoardPresenceViewers(): readonly SprintPresenceViewer[] {
-  return useContext(SprintCardPresenceContext);
+  return useContext(SprintCardPresenceContext).viewers;
+}
+
+export function useSprintPresenceColorSlots(): ReadonlyMap<string, number> {
+  return useContext(SprintCardPresenceContext).colorSlots;
 }
 
 export function useSprintCardPresenceViewers(targetId: string): SprintPresenceViewer[] {
-  const viewers = useContext(SprintCardPresenceContext);
+  const { viewers } = useContext(SprintCardPresenceContext);
   if (viewers.length === 0) {
     return [];
   }
@@ -35,6 +52,6 @@ export function useSprintCardPresenceViewers(targetId: string): SprintPresenceVi
 }
 
 export function useSprintCardPresenceLocked(targetId: string): boolean {
-  const viewers = useContext(SprintCardPresenceContext);
+  const { viewers } = useContext(SprintCardPresenceContext);
   return sprintCardPresenceLocksTarget(viewers, targetId, getBrowserRealtimeClientId() || null);
 }

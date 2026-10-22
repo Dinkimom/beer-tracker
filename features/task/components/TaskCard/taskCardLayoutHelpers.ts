@@ -45,8 +45,6 @@ export function getSwimlaneCardRadiusClass(isPhotoCard: boolean, isStickyNote: b
 }
 
 export function getTaskCardBorderClasses(
-  previewBorder: string | undefined,
-  isResizing: boolean,
   isLocalTask: boolean,
   isLocalCommentDraft = false,
   isLocalImageCard = false
@@ -58,7 +56,6 @@ export function getTaskCardBorderClasses(
     return getStickyNoteLocalDraftBorderClasses();
   }
   if (isLocalTask) return 'border border-dashed border-blue-300 dark:border-blue-700';
-  if (previewBorder && isResizing) return `border border-dashed ${previewBorder}`;
   return 'border';
 }
 

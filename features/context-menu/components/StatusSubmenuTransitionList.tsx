@@ -14,7 +14,6 @@ import { type TransitionItem } from '@/lib/beerTrackerApi';
 interface StatusSubmenuTransitionListProps {
   isLoading: boolean;
   isLoadingTransitions: boolean;
-  pendingTransitionId?: string | null;
   statusTransitions: TransitionItem[];
   task: Task;
   onSelect: (
@@ -28,7 +27,6 @@ interface StatusSubmenuTransitionListProps {
 export function StatusSubmenuTransitionList({
   isLoading,
   isLoadingTransitions,
-  pendingTransitionId = null,
   statusTransitions,
   task,
   onSelect,
@@ -67,13 +65,12 @@ export function StatusSubmenuTransitionList({
           statusId && statusId !== targetStatus ? [statusId] : undefined
         );
         const isSelected = targetStatus.toLowerCase() === task.originalStatus?.toLowerCase();
-        const isPending = pendingTransitionId === transition.id;
 
         return (
           <Button
             key={transition.id}
             aria-current={isSelected || undefined}
-            className={`${MENU_ROW} ${isPending ? '!opacity-100' : ''}`}
+            className={MENU_ROW}
             disabled={isLoading}
             type="button"
             variant="ghost"
@@ -93,10 +90,7 @@ export function StatusSubmenuTransitionList({
                 {transition.to?.display || transition.display}
               </span>
             </span>
-            {isPending ? (
-              <Icon className="h-4 w-4 shrink-0 animate-spin text-gray-400" name="spinner" />
-            ) : null}
-            {!isPending && isSelected ? <Icon className={MENU_ROW_CHECK} name="check" /> : null}
+            {isSelected ? <Icon className={MENU_ROW_CHECK} name="check" /> : null}
           </Button>
         );
       })}

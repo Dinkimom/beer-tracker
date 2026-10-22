@@ -1,6 +1,8 @@
 /**
  * Задачи спринта для GET /api/tracker: память → issue_snapshots → Tracker.
  * На холодной доске in-memory кэш пуст; снимок PG закрывает TTFB без живого поиска.
+ * `skipSnapshots` (фоновое обновление планера): память → Tracker, без снимка PG,
+ * который может отставать от уже показанных клиенту данных.
  */
 
 import type { IssueTrackerProviderClient, IssueTrackerSprintIssuesOptions } from '@/lib/issueTrackerProvider/types';
@@ -20,6 +22,7 @@ interface LoadSprintIssuesForPlannerParams {
   forceRefresh: boolean;
   issueTracker: IssueTrackerProviderClient;
   organizationId: string;
+  skipSnapshots?: boolean;
   sprintId: number;
   sprintStatus?: string;
 }
@@ -140,6 +143,8 @@ export async function loadSprintIssuesForPlanner(
     if (cached) {
       return cached;
     }
+  }
+  if (!params.forceRefresh && !params.skipSnapshots) {
     const fromPg = await loadSprintIssuesFromSnapshots(params, deps);
     if (fromPg.length > 0) {
       deps.setCached(params.sprintId, fromPg, params.sprintStatus);

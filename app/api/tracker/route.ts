@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
     const statusFilter = getQueryParam(request, 'statusFilter');
     const refreshParam = getQueryParam(request, 'refresh');
     const forceRefresh = refreshParam === '1' || refreshParam === 'true';
+    const skipSnapshots = getQueryParam(request, 'skipSnapshots') === '1';
 
     const validation = validateRequest(SprintIdQuerySchema, { sprintId });
     if (!validation.success) {
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
         forceRefresh,
         issueTracker,
         organizationId,
+        skipSnapshots,
         sprintId: sprintIdNum,
         sprintStatus: sprintInfo?.status,
       }),

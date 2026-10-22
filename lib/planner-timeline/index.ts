@@ -11,7 +11,10 @@ export {
   insertSegmentGapAfter,
   listSegmentGapBlocks,
   listSegmentSplitPoints,
+  moveSegmentGap,
+  nearestSegmentSplitPoint,
   removeSegmentGapBlock,
+  resizeSegmentGap,
 } from './segmentEditGapHelpers';
 export { PHASE_ROW_INSET_PX } from './phaseRowInset';
 export {

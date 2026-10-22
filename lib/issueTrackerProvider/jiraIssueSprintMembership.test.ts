@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { clearJiraFieldCatalogCacheForTests } from './jiraFieldCatalog';
 import {
   addJiraIssueToSprint,
   currentJiraSprintIdsFromIssue,
@@ -30,6 +31,10 @@ function apiWith(methods: {
     post: methods.post ?? vi.fn(),
   } as never;
 }
+
+afterEach(() => {
+  clearJiraFieldCatalogCacheForTests();
+});
 
 describe('currentJiraSprintIdsFromIssue', () => {
   it('reads sprint ids from issue payload', () => {
@@ -84,6 +89,27 @@ describe('addJiraIssueToSprint', () => {
       backlogBoardIds: [],
     });
     expect(post).not.toHaveBeenCalled();
+  });
+});
+
+describe('getJiraSprintBoardId cache', () => {
+  it('reads sprint originBoardId once across moves', async () => {
+    vi.mocked(fetchJiraIssue).mockResolvedValue({
+      id: '1',
+      key: 'PROJ-1',
+      provider: 'jira',
+      sprint: [],
+      summary: 'Task',
+    });
+    const get = vi.fn().mockResolvedValue({ data: { originBoardId: 15116 } });
+    const post = vi.fn().mockResolvedValue({ data: {} });
+
+    await addJiraIssueToSprint(apiWith({ get, post }), 'PROJ-1', 78804);
+    await addJiraIssueToSprint(apiWith({ get, post }), 'PROJ-1', 78804);
+
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledTimes(2);
+    vi.mocked(fetchJiraIssue).mockReset();
   });
 });
 

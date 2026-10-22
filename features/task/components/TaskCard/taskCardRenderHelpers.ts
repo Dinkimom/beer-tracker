@@ -49,13 +49,13 @@ export function buildTaskCardRootClassName(params: {
 export function buildTaskCardHoverShadowClasses(
   effectiveIsLocalTask: boolean,
   isDragging: boolean,
-  isResizing: boolean,
   linkingActive = false,
   /** Sticky notes are local drafts but still get the same hover accent as tasks. */
   isStickyNote = false
 ): string {
+  // Ресайз не гасит тень: карточка остаётся приподнятой (`task-card-resizing` в globals.css).
   const suppressAccent = effectiveIsLocalTask && !isStickyNote;
-  if (!isResizing && !isDragging && !suppressAccent && !linkingActive) {
+  if (!isDragging && !suppressAccent && !linkingActive) {
     return 'task-card-swimlane-hover-shadow';
   }
   return '';

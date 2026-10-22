@@ -8,6 +8,7 @@ import type { UseSprintPlannerHandlersProps } from './useSprintPlannerHandlers.t
 import { useCallback } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { playTaskBoardExit } from '@/features/task/utils/taskBoardExit';
 import { parseTrackerOverlayLinkId } from '@/lib/planner/trackerLinkOverlay';
 
 import { useSprintPlannerCommentHandlers } from './useSprintPlannerCommentHandlers';
@@ -172,21 +173,24 @@ export function useSprintPlannerHandlers({
   // Удалить из плана — убрать позицию и связи, задача остаётся в спринте
   const handleRemoveFromPlan = useCallback(
     (taskId: string) => {
-      taskHandlers.handlePositionDelete(taskId);
-      const linksToDelete = filteredTaskLinks.filter(
-        (link) => link.fromTaskId === taskId || link.toTaskId === taskId
-      );
-      setTaskLinks((prev) =>
-        prev.filter((link) => link.fromTaskId !== taskId && link.toTaskId !== taskId)
-      );
-      if (selectedSprintId) {
-        linksToDelete.forEach((link) => {
-          deleteLink(link.id).catch((error) => {
-            console.error('Error deleting link:', error);
+      // Карточка сначала «снимается» с доски, позиция и связи уходят после анимации.
+      void playTaskBoardExit([taskId], 'plan', () => {
+        taskHandlers.handlePositionDelete(taskId);
+        const linksToDelete = filteredTaskLinks.filter(
+          (link) => link.fromTaskId === taskId || link.toTaskId === taskId
+        );
+        setTaskLinks((prev) =>
+          prev.filter((link) => link.fromTaskId !== taskId && link.toTaskId !== taskId)
+        );
+        if (selectedSprintId) {
+          linksToDelete.forEach((link) => {
+            deleteLink(link.id).catch((error) => {
+              console.error('Error deleting link:', error);
+            });
           });
-        });
-      }
-      debouncedUpdateXarrow();
+        }
+        debouncedUpdateXarrow();
+      });
     },
     [
       taskHandlers,

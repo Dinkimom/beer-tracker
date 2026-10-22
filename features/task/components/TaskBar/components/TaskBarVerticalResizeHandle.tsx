@@ -20,6 +20,8 @@ interface TaskBarVerticalResizeHandleProps {
   isResizing: boolean;
   originalStatus?: string;
   resizeSide: 'bottom' | 'top' | null;
+  /** Высота заметки в строках во время жеста (толчок грипа на шаге). */
+  resizeStep?: number | null;
   side: 'bottom' | 'top';
   statusColorKey?: string;
   stickyNoteColor?: string | null;
@@ -34,6 +36,7 @@ export function TaskBarVerticalResizeHandle({
   onMouseDown,
   originalStatus,
   resizeSide,
+  resizeStep = null,
   side,
   statusColorKey,
   stickyNoteColor,
@@ -64,6 +67,7 @@ export function TaskBarVerticalResizeHandle({
       isActive={isActive}
       paint={paint}
       resizeHandleColors={resizeHandleColors}
+      resizeStep={isActive ? resizeStep : null}
       side={side}
       title={resolveTaskBarVerticalResizeHandleTitle(side, t)}
       onMouseDown={onMouseDown}

@@ -10,12 +10,17 @@ import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useStickyNoteTilt } from '@/features/comments/hooks/useStickyNoteTilt';
 import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { useTaskBoardExit } from '@/features/task/hooks/useTaskBoardExit';
+import { useTaskStatusTransitionPhase } from '@/features/task/hooks/useTaskStatusTransitionPhase';
+import { taskBoardExitClassName } from '@/features/task/utils/taskBoardExit';
+import { taskStatusTransitionClassName } from '@/features/task/utils/taskStatusTransitionFeedback';
 import { useSwimlaneCardFieldsStorage } from '@/hooks/useLocalStorage';
-import { sprintCardPresenceHasChangingViewer, sprintCardPresenceIsLockedByRemote } from '@/lib/realtime/sprintCardPresence';
+import { sprintCardPresenceChangingViewer, sprintCardPresenceIsLockedByRemote } from '@/lib/realtime/sprintCardPresence';
+import { SPRINT_PRESENCE_COLOR_CSS_VAR, sprintPresenceViewerColor } from '@/lib/realtime/sprintPresenceColor';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
 
 import { SprintCardPresenceAvatars } from './SprintCardPresenceAvatars';
-import { useSprintCardPresenceViewers } from './SprintCardPresenceContext';
+import { useSprintCardPresenceViewers, useSprintPresenceColorSlots } from './SprintCardPresenceContext';
 import { renderTaskCardBody, renderTaskCardChrome } from './taskCardContentHelpers';
 import { useTaskCardVisualState } from './useTaskCardVisualState';
 
@@ -41,7 +46,6 @@ interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onCo
   layoutDuration?: number;
   linkingActive?: boolean;
   linkMode?: 'source' | 'target' | null;
-  previewBorder?: string;
   releaseGitlabChecks?: {
     approvalsDone: number | null;
     approvalsRequired: number;
@@ -96,7 +100,6 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
   slaBugCloseP4ActionsEnabled = false,
   slaBugDemoteReason,
   slaBugSignalLabel,
-  previewBorder,
   className = '',
   style,
   onMouseDown,
@@ -133,7 +136,6 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
     isNotificationFocused,
     linkMode,
     linkingActive,
-    previewBorder,
     resizePreviewDuration,
     swimlaneBarDurationParts,
     swimlaneCardFields: variant === 'swimlane' ? (swimlaneCardFields as SwimlaneCardFieldsVisibility) : undefined,
@@ -142,7 +144,11 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
     variant,
     widthPercent,
   });
-  const isRemoteChanging = sprintCardPresenceHasChangingViewer(presenceViewers);
+  const presenceColorSlots = useSprintPresenceColorSlots();
+  const remoteChangingViewer = sprintCardPresenceChangingViewer(presenceViewers);
+  const isRemoteChanging = remoteChangingViewer != null;
+  const statusTransitionPhase = useTaskStatusTransitionPhase(task.id, task.originalTaskId);
+  const boardExit = useTaskBoardExit(task.id, task.originalTaskId);
   const tiltRef = useStickyNoteTilt(
     variant === 'swimlane' && isSwimlaneCommentTask(task),
     task.id
@@ -174,13 +180,21 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
   return wrapWithTextTooltip(
     <div
       ref={setCardRef}
-      className={`${visual.cardRootClassName}${isResizing ? ' select-none' : ''}${
+      className={`${visual.cardRootClassName}${isResizing ? ' select-none task-card-resizing' : ''}${
         isRemoteChanging ? ' sprint-card-presence-changing' : ''
-      }`}
+      }${taskStatusTransitionClassName(statusTransitionPhase)}${taskBoardExitClassName(boardExit)}`}
       data-context-menu-source="task-card"
       data-hide-status-tag={hideStatusTag ? '' : undefined}
       data-task-id={task.id}
-      style={{ ...visual.cardRootStyle, ...style }}
+      style={{
+        ...visual.cardRootStyle,
+        ...(remoteChangingViewer
+          ? ({
+              [SPRINT_PRESENCE_COLOR_CSS_VAR]: sprintPresenceViewerColor(presenceColorSlots, remoteChangingViewer),
+            } as React.CSSProperties)
+          : {}),
+        ...style,
+      }}
       onContextMenu={(e) => {
         if (effectiveIsLocalTask || (isPresenceLocked && !isDragging && !isResizing)) {
           e.preventDefault();
@@ -196,7 +210,7 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
       {...restProps}
-      aria-busy={isRemoteChanging || undefined}
+      aria-busy={isRemoteChanging || statusTransitionPhase === 'pending' || undefined}
       aria-disabled={isPresenceLocked || undefined}
     >
       {renderTaskCardChrome({

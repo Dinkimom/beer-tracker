@@ -1,6 +1,8 @@
 import type { DemoFixtureState } from './demoFixtureSeed';
+import type { Task } from '@/types';
 
 import { createDemoFixtureSeed } from './demoFixtureSeed';
+import { DEMO_SPRINT_NEXT_ID } from './demoIds';
 
 let state: DemoFixtureState = createDemoFixtureSeed();
 
@@ -10,6 +12,34 @@ export function getDemoFixtureStore(): DemoFixtureState {
 
 export function resetDemoFixtureStore(): void {
   state = createDemoFixtureSeed();
+}
+
+/** Задачи спринта. Прошлый (архивный) спринт по-прежнему показывает задачи текущего. */
+export function getDemoSprintTasks(sprintId: number): Task[] {
+  return sprintId === DEMO_SPRINT_NEXT_ID ? state.nextSprintTasks : state.tasks;
+}
+
+/**
+ * Перенести задачу в спринт (`sprintId`) или в бэклог (`null`).
+ * Возвращает false, если задачи нет в фикстуре.
+ */
+export function moveDemoIssueToSprint(issueKey: string, sprintId: number | null): boolean {
+  const issue = [...state.tasks, ...state.nextSprintTasks, ...state.backlogTasks].find(
+    (t) => t.id === issueKey
+  );
+  if (!issue) return false;
+  const without = (list: Task[]) => list.filter((t) => t.id !== issueKey);
+  state.tasks = without(state.tasks);
+  state.nextSprintTasks = without(state.nextSprintTasks);
+  state.backlogTasks = without(state.backlogTasks);
+  if (sprintId == null) {
+    state.backlogTasks = [...state.backlogTasks, issue];
+  } else if (sprintId === DEMO_SPRINT_NEXT_ID) {
+    state.nextSprintTasks = [...state.nextSprintTasks, issue];
+  } else {
+    state.tasks = [...state.tasks, issue];
+  }
+  return true;
 }
 
 export function replaceDemoRetroBoard(sprintId: number, board: DemoFixtureState['retroBoards'][string]): void {

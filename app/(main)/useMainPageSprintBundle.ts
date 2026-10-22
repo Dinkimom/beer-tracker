@@ -5,6 +5,7 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 import { useSprintGoals } from '@/features/sprint/hooks/useSprintGoals';
 import { useSprints } from '@/features/sprint/hooks/useSprints';
+import { useSprintTasksBackgroundRefresh } from '@/features/task/hooks/useSprintTasksBackgroundRefresh';
 import { useReloadTasks } from '@/features/task/hooks/useTaskMutations';
 import { useTasks } from '@/features/task/hooks/useTasks';
 import { useSprintBoardListsGateReady } from '@/hooks/useSprintBoardListsGateReady';
@@ -67,6 +68,11 @@ export function useMainPageSprintBundle({
     isPending: tasksPending,
     error: tasksError,
   } = useTasks(sprintId, boardId);
+  const sprintInfo = resolvePlannerSprintInfo(
+    tasksData?.sprintInfo,
+    sprints.find((sprint) => sprint.id === sprintId)
+  );
+  useSprintTasksBackgroundRefresh(sprintId, boardId, sprintInfo?.status);
 
   const { delivery, discovery } = useMainPageSprintGoals(selectedSprintId, true);
   const reloadTasksMutation = useReloadTasks(selectedSprintId, selectedBoardId);
@@ -96,9 +102,6 @@ export function useMainPageSprintBundle({
     tasksError,
     tasksLoading,
     tasksPending,
-    sprintInfo: resolvePlannerSprintInfo(
-      tasksData?.sprintInfo,
-      sprints.find((sprint) => sprint.id === sprintId)
-    ),
+    sprintInfo,
   };
 }

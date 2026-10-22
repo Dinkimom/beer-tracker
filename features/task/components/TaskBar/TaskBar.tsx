@@ -196,7 +196,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
     isQATask,
     layoutStyle,
     presenceLocked,
-    previewBorder,
     resize,
     setNodeRef,
     shouldExpandByLongHover,
@@ -384,7 +383,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
         longHoverExpanded={isExpandedByLongHover}
         longHoverTimeoutRef={longHoverTimeoutRef}
         planAnchorOverlay={planAnchorOverlay}
-        previewBorder={isDraftTask ? undefined : previewBorder}
         quickAddSubmitting={quickAddSubmitting}
         resize={{ ...resize, isResizing: isAnyResizing }}
         selectedSprintId={selectedSprintId}

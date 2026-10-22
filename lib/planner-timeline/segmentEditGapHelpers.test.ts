@@ -4,7 +4,10 @@ import {
   insertSegmentGapAfter,
   listSegmentGapBlocks,
   listSegmentSplitPoints,
+  moveSegmentGap,
+  nearestSegmentSplitPoint,
   removeSegmentGapBlock,
+  resizeSegmentGap,
   segmentEditWorkCellCount,
 } from './segmentEditGapHelpers';
 
@@ -50,5 +53,69 @@ describe('removeSegmentGapBlock', () => {
 
   it('rejects on-cell index', () => {
     expect(removeSegmentGapBlock([true, false, true], 0)).toBeNull();
+  });
+});
+
+describe('resizeSegmentGap', () => {
+  it('widens the gap and shifts the tail', () => {
+    const input = [true, true, false, true];
+    const next = resizeSegmentGap(input, 2, 3, 10);
+    expect(next).toEqual([true, true, false, false, false, true]);
+    expect(segmentEditWorkCellCount(next!)).toBe(segmentEditWorkCellCount(input));
+  });
+
+  it('narrows the gap down to minLength', () => {
+    expect(resizeSegmentGap([true, false, false, false, true], 1, 0, 10)).toEqual([
+      true,
+      false,
+      true,
+    ]);
+  });
+
+  it('clamps to maxLength', () => {
+    expect(resizeSegmentGap([true, false, true], 1, 10, 5)).toEqual([
+      true,
+      false,
+      false,
+      false,
+      true,
+    ]);
+  });
+
+  it('returns null when nothing changes or index is not a gap start', () => {
+    expect(resizeSegmentGap([true, false, true], 1, 1, 10)).toBeNull();
+    expect(resizeSegmentGap([true, false, false, true], 2, 3, 10)).toBeNull();
+    expect(resizeSegmentGap([true, false, true], 0, 3, 10)).toBeNull();
+  });
+});
+
+describe('moveSegmentGap', () => {
+  it('moves the gap right, keeping one cell in the next segment', () => {
+    const input = [true, false, true, true, true];
+    expect(moveSegmentGap(input, 1, 1)).toEqual([true, true, false, true, true]);
+    expect(moveSegmentGap(input, 1, 10)).toEqual([true, true, true, false, true]);
+  });
+
+  it('moves the gap left, keeping one cell in the previous segment', () => {
+    const input = [true, true, true, false, false, true];
+    expect(moveSegmentGap(input, 3, -10)).toEqual([true, false, false, true, true, true]);
+  });
+
+  it('returns null when the gap cannot move', () => {
+    expect(moveSegmentGap([true, false, true], 1, 1)).toBeNull();
+    expect(moveSegmentGap([true, false, true, true], 1, 0)).toBeNull();
+  });
+});
+
+describe('nearestSegmentSplitPoint', () => {
+  it('picks the closest boundary', () => {
+    expect(nearestSegmentSplitPoint([0, 1, 2], 1.4)).toBe(0);
+    expect(nearestSegmentSplitPoint([0, 1, 2], 2.6)).toBe(2);
+    expect(nearestSegmentSplitPoint([], 1)).toBeNull();
+  });
+
+  it('ignores boundaries farther than maxDistance', () => {
+    expect(nearestSegmentSplitPoint([0], 3, 1)).toBeNull();
+    expect(nearestSegmentSplitPoint([0], 1.8, 1)).toBe(0);
   });
 });

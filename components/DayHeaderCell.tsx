@@ -9,28 +9,34 @@ import { DayErrorIndicator } from '@/features/sprint/components/DayErrorIndicato
 import { useShowHolidaysStorage } from '@/hooks/useLocalStorage';
 import { useOrgHolidayCountry } from '@/hooks/useOrgHolidayCountry';
 import { getHolidayForDate } from '@/lib/holidays';
+import { isPlannerToday } from '@/utils/dateUtils';
 import { getPlannerNow } from '@/utils/plannerClock';
 
 /**
  * Общий компонент ячейки дня для заголовка таймлайна (свимлейн и занятость).
- * День и дата в одну строку, единая высота строки.
+ * У всех дней одна структура: «Чт 15.10» у левого края колонки; «сегодня» — синий текст (колонку подсвечивает родитель).
  */
 
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+
+type DayTone = 'future' | 'past' | 'today';
+
+const WEEKDAY_TONE_CLASS: Record<DayTone, string> = {
+  future: 'text-gray-500 dark:text-gray-400',
+  past: 'text-gray-400 dark:text-gray-500',
+  today: 'text-blue-600 dark:text-blue-400',
+};
+
+const NUMBER_TONE_CLASS: Record<DayTone, string> = {
+  future: 'text-gray-900 dark:text-gray-100',
+  past: 'text-gray-400 dark:text-gray-500',
+  today: 'text-blue-600 dark:text-blue-400',
+};
 
 function formatDateDDMM(date: Date): string {
   const day = date.getDate().toString().padStart(2, '0');
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   return `${day}.${month}`;
-}
-
-function isToday(date: Date): boolean {
-  const today = getPlannerNow();
-  return (
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate()
-  );
 }
 
 function isPastDay(date: Date): boolean {
@@ -41,14 +47,9 @@ function isPastDay(date: Date): boolean {
   return d.getTime() < today.getTime();
 }
 
-function dayHeaderTextClasses(today: boolean, past: boolean): string {
-  if (today) {
-    return 'font-semibold text-blue-600 dark:text-blue-400';
-  }
-  if (past) {
-    return 'font-medium text-gray-400 dark:text-gray-500';
-  }
-  return 'font-medium text-gray-700 dark:text-gray-300';
+function dayTone(date: Date): DayTone {
+  if (isPlannerToday(date)) return 'today';
+  return isPastDay(date) ? 'past' : 'future';
 }
 
 interface DayHeaderCellContentProps {
@@ -72,7 +73,7 @@ interface DayHeaderCellContentProps {
 }
 
 /**
- * Содержимое ячейки дня: «Пн 26.01» в одну строку, индикатор «сегодня».
+ * Содержимое ячейки дня: «Пн 26.01», сегодня — синим.
  * Родитель задаёт обёртку (th) и высоту.
  */
 export function DayHeaderCellContent({
@@ -90,9 +91,7 @@ export function DayHeaderCellContent({
   const [showHolidaysStorage] = useShowHolidaysStorage();
   const { holidayCountry } = useOrgHolidayCountry();
   const showHolidays = showHolidayEmoji !== undefined ? showHolidayEmoji : showHolidaysStorage;
-  const today = isToday(day);
-  const past = isPastDay(day);
-  const textClasses = dayHeaderTextClasses(today, past);
+  const tone = dayTone(day);
 
   const holiday =
     showHolidays && holidayCountry === 'ru' ? getHolidayForDate(day) : null;
@@ -100,27 +99,39 @@ export function DayHeaderCellContent({
   const dayLabel = t(`common.weekdays.${WEEKDAY_KEYS[day.getDay()]}`);
   const nonWorkingLabel = t('common.nonWorkingDay');
 
-  const dateLine = multiline ? (
-    <span className="flex flex-col leading-tight text-center">
-      <span>{dayLabel}</span>
-      <span>{formatDateDDMM(day)}</span>
+  const weekday = (
+    <span className={`font-normal ${WEEKDAY_TONE_CLASS[tone]}`}>{dayLabel}</span>
+  );
+  const dayNumber = (
+    <span
+      className={`font-semibold tabular-nums ${NUMBER_TONE_CLASS[tone]}`}
+    >
+      {formatDateDDMM(day)}
+    </span>
+  );
+  const nonWorkingCaption = nonWorking ? (
+    <span className="min-w-0 truncate text-xs font-normal text-gray-400 dark:text-gray-500">
+      {nonWorkingLabel}
+    </span>
+  ) : null;
+
+  const dateBlock = multiline ? (
+    <span className="inline-flex min-w-0 flex-col items-center gap-0.5">
+      {weekday}
+      {dayNumber}
+      {nonWorkingCaption}
     </span>
   ) : (
-    <span>
-      {dayLabel} {formatDateDDMM(day)}
-    </span>
+    <>
+      {weekday}
+      {dayNumber}
+      {nonWorkingCaption}
+    </>
   );
 
   return (
-    <span className={`text-xs inline-flex items-center justify-center gap-1 ${textClasses}`}>
-      <span className="inline-flex min-w-0 flex-col items-center gap-0.5">
-        {dateLine}
-        {nonWorking ? (
-          <span className="max-w-full truncate text-[10px] font-normal leading-none text-gray-400 dark:text-gray-500">
-            {nonWorkingLabel}
-          </span>
-        ) : null}
-      </span>
+    <span className="inline-flex min-w-0 items-center gap-1.5 text-[13px] leading-none">
+      {dateBlock}
       {holiday && (
         <TextTooltip content={holidayCaption} delayDuration={150} side="bottom">
           <span

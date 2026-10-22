@@ -29,6 +29,7 @@ import {
   DEMO_DEV_ERIN,
   DEMO_ORG_ID,
   DEMO_SPRINT_ID,
+  DEMO_SPRINT_NEXT_ID,
   DEMO_SPRINT_PREV_ID,
 } from './demoIds';
 
@@ -40,6 +41,8 @@ const SPRINT_START = '2026-10-13';
 const SPRINT_END = '2026-10-24';
 const PREV_START = '2026-09-29';
 const PREV_END = '2026-10-10';
+const NEXT_START = '2026-10-27';
+const NEXT_END = '2026-11-07';
 
 function sprintListItem(opts: {
   archived: boolean;
@@ -103,6 +106,8 @@ export interface DemoFixtureState {
     id: string;
     to_task_id: string;
   }>;
+  /** Задачи следующего спринта (draft); туда переносят из меню «Спринт». */
+  nextSprintTasks: Task[];
   orgId: string;
   planAnchors: SprintPlanAnchor[];
   positions: DemoPositionRow[];
@@ -377,10 +382,19 @@ export function createDemoFixtureSeed(): DemoFixtureState {
         status: 'in_progress',
         archived: false,
       }),
+      sprintListItem({
+        id: DEMO_SPRINT_NEXT_ID,
+        name: 'Sprint 16 — Payments',
+        startDate: NEXT_START,
+        endDate: NEXT_END,
+        status: 'draft',
+        archived: false,
+      }),
     ],
     developers: buildDemoDevelopers(),
     tasks: buildDemoSprintTasks(),
     backlogTasks: buildDemoBacklogTasks(),
+    nextSprintTasks: [],
     planAnchors: buildDemoPlanAnchors(),
     positions: buildDemoPositions(),
     links: [

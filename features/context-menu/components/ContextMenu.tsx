@@ -140,7 +140,6 @@ export function ContextMenu({
     sprintButtonRef,
     estimateButtonRef,
     isLoading,
-    pendingTransitionId,
     isStatusMenuOpen,
     isSprintMenuOpen,
     isEstimateMenuOpen,
@@ -266,7 +265,6 @@ export function ContextMenu({
                 isLoading={isLoading}
                 isOpen={isStatusMenuOpen}
                 menuRef={menuRef}
-                pendingTransitionId={pendingTransitionId}
                 task={task}
                 taskIdForActions={taskIdForActions}
                 onSelect={handleStatusSelect}

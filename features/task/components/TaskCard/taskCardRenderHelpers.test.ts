@@ -45,15 +45,22 @@ describe('buildTaskCardRootClassName', () => {
 
 describe('buildTaskCardHoverShadowClasses', () => {
   it('skips hover shadow while linking', () => {
-    expect(buildTaskCardHoverShadowClasses(false, false, false, true)).toBe('');
-    expect(buildTaskCardHoverShadowClasses(false, false, false, false)).toBe(
+    expect(buildTaskCardHoverShadowClasses(false, false, true)).toBe('');
+    expect(buildTaskCardHoverShadowClasses(false, false, false)).toBe(
       'task-card-swimlane-hover-shadow'
     );
   });
 
   it('skips hover shadow for local draft tasks but keeps it for sticky notes', () => {
-    expect(buildTaskCardHoverShadowClasses(true, false, false, false)).toBe('');
-    expect(buildTaskCardHoverShadowClasses(true, false, false, false, true)).toBe(
+    expect(buildTaskCardHoverShadowClasses(true, false, false)).toBe('');
+    expect(buildTaskCardHoverShadowClasses(true, false, false, true)).toBe(
+      'task-card-swimlane-hover-shadow'
+    );
+  });
+
+  it('drops the shadow only while dragging (resize keeps the card lifted)', () => {
+    expect(buildTaskCardHoverShadowClasses(false, true, false)).toBe('');
+    expect(buildTaskCardHoverShadowClasses(false, false, false)).toBe(
       'task-card-swimlane-hover-shadow'
     );
   });

@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   applyJiraBoardFilterFields,
   buildJiraBoardFilterFieldUpdates,
   parseJiraBoardFilterEqualityClauses,
 } from './jiraBoardFilterFields';
+import { clearJiraFieldCatalogCacheForTests } from './jiraFieldCatalog';
 
 const TEAM_ID = '3f2a6b1c-1111-2222-3333-444455556666';
 
@@ -30,6 +31,10 @@ const FIELD_CATALOG = [
     schema: { custom: 'com.atlassian.jira.plugin.system.customfieldtypes:select', type: 'option' },
   },
 ];
+
+afterEach(() => {
+  clearJiraFieldCatalogCacheForTests();
+});
 
 describe('parseJiraBoardFilterEqualityClauses', () => {
   it('reads AND-joined equality clauses and drops ORDER BY', () => {
@@ -110,6 +115,24 @@ describe('applyJiraBoardFilterFields', () => {
     );
     expect(get).toHaveBeenNthCalledWith(2, '/filter/12345');
     expect(put).toHaveBeenCalledWith('/issue/PROJ-1', {
+      update: { customfield_10001: [{ set: TEAM_ID }] },
+    });
+  });
+
+  it('reuses cached board filter and field catalog on the next move', async () => {
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { filter: { id: '12345' } } })
+      .mockResolvedValueOnce({ data: { jql: `project = PROJ AND Team = ${TEAM_ID}` } })
+      .mockResolvedValueOnce({ data: FIELD_CATALOG });
+    const put = vi.fn().mockResolvedValue({ data: {} });
+    const api = { defaults: { baseURL: 'https://jira.example.com/rest/api/2' }, get, put } as never;
+
+    await applyJiraBoardFilterFields(api, 'PROJ-1', 15116);
+    await applyJiraBoardFilterFields(api, 'PROJ-2', 15116);
+
+    expect(get).toHaveBeenCalledTimes(3);
+    expect(put).toHaveBeenLastCalledWith('/issue/PROJ-2', {
       update: { customfield_10001: [{ set: TEAM_ID }] },
     });
   });

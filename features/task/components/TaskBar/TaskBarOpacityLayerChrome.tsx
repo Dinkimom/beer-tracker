@@ -25,6 +25,7 @@ interface TaskBarOpacityLayerChromeProps {
   resize: {
     handleResizeStart: (e: React.MouseEvent, side: 'left' | 'right') => void;
     isResizing: boolean;
+    resizePreviewDuration: number | null;
     resizeSide: 'left' | 'right' | null;
   };
   showVerticalResize?: boolean;
@@ -32,6 +33,8 @@ interface TaskBarOpacityLayerChromeProps {
   swimlaneSegmentSecondary: boolean;
   task: Task;
   verticalResize?: {
+    /** Раскладка заметки в строках (span меняется по шагам жеста). */
+    cardRowLayout?: { span: number };
     handleResizeStart: (e: React.MouseEvent, side: 'bottom' | 'top') => void;
     isResizing: boolean;
     resizeSide: 'bottom' | 'top' | null;
@@ -77,6 +80,7 @@ export function TaskBarOpacityLayerChrome({
             isResizing={resize.isResizing}
             originalStatus={task.originalStatus}
             resizeSide={resize.resizeSide}
+            resizeStep={resize.resizePreviewDuration}
             side="right"
             statusColorKey={task.statusColorKey}
             stickyNoteColor={cornerStyle === 'square' ? task.stickyNoteColor : undefined}
@@ -89,6 +93,7 @@ export function TaskBarOpacityLayerChrome({
             isResizing={resize.isResizing}
             originalStatus={task.originalStatus}
             resizeSide={resize.resizeSide}
+            resizeStep={resize.resizePreviewDuration}
             side="left"
             statusColorKey={task.statusColorKey}
             stickyNoteColor={cornerStyle === 'square' ? task.stickyNoteColor : undefined}
@@ -103,6 +108,7 @@ export function TaskBarOpacityLayerChrome({
               isResizing={verticalResize.isResizing}
               originalStatus={task.originalStatus}
               resizeSide={verticalResize.resizeSide}
+              resizeStep={verticalResize.isResizing ? verticalResize.cardRowLayout?.span : null}
               side="bottom"
               statusColorKey={task.statusColorKey}
               stickyNoteColor={task.stickyNoteColor}

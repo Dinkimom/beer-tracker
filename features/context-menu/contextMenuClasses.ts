@@ -55,6 +55,12 @@ export function glassLensControlClass(selected = false): string {
 export const FLOATING_MENU_GLASS_SHELL = `${FLOATING_MENU_SHELL} floating-menu-glass`;
 
 /**
+ * Богатый тултип поверх доски (`contentClassName` у `TextTooltip`): то же стекло, что у меню,
+ * вместо тёмной плашки короткой подсказки. `relative` — хост для подложки `::before`.
+ */
+export const FLOATING_TOOLTIP_GLASS_SHELL = `${FLOATING_MENU_GLASS_SHELL} relative !rounded-lg !p-0 !font-normal !text-gray-900 dark:!text-gray-100`;
+
+/**
  * Ширина по контенту. У `fixed` + `w-max` + `max-w-[20rem]` доступная ширина =
  * `viewport - left`: справа от карточки меню растягивается до max-w, слева — нет.
  */

@@ -8,6 +8,7 @@ import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { playTaskBoardExit } from '@/features/task/utils/taskBoardExit';
 import { removeIssueFromSprint } from '@/lib/beerTrackerApi';
 
 import { findTaskById, getActualTaskId } from '../utils/taskUtils';
@@ -128,14 +129,17 @@ export function useTaskSprintOperations({
         });
 
         // UI обновляем в конце — иначе задача пропадает со свимлейна
-        // ещё при открытом диалоге подтверждения с лоадером.
-        applyOptimisticTaskRemoval({
-          actualTaskId: snapshot.actualTaskId,
-          setTaskLinks,
-          setTaskPositions,
-          setTasks,
-          taskId,
-          updateXarrow,
+        // ещё при открытом диалоге подтверждения с лоадером. Анимацию не ждём:
+        // диалог закрывается, и уход карточки в бэклог виден на доске.
+        void playTaskBoardExit([taskId, snapshot.actualTaskId], 'backlog', () => {
+          applyOptimisticTaskRemoval({
+            actualTaskId: snapshot.actualTaskId,
+            setTaskLinks,
+            setTaskPositions,
+            setTasks,
+            taskId,
+            updateXarrow,
+          });
         });
 
         if (options?.notify !== false) {

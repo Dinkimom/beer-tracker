@@ -37,6 +37,8 @@ features/ / components/ / hooks/
 | Списки спринтов по доске | `['sprints', boardId]` | `useSprints` и т.п. |
 | Доски | см. `useBoards` | |
 
+**Фоновое обновление:** на основной странице [`useSprintTasksBackgroundRefresh`](./features/task/hooks/useSprintTasksBackgroundRefresh.ts) раз в минуту (только при видимой вкладке, не для archived/released) запрашивает `/api/tracker?skipSnapshots=1`: серверный in-memory кэш или живой Tracker, без снимка PG. Ответ кладётся в кэш, только если `dataUpdateCount` не изменился за время запроса и нет активных мутаций — оптимистичные правки не откатываются.
+
 Источник правды по составу задач с трекера — **кэш Query**. Инвалидация и `setQueryData` должны использовать **тот же ключ**, что и `useTasks` (см. `sprintTasksQueryKey` в `features/task/hooks/useTasks.ts`).
 
 ### Два кэша списка задач: `useTasks` и `useOccupancyTasks`

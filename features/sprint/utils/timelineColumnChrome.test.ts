@@ -9,7 +9,7 @@ describe('timelineDayDividerClass', () => {
 
   it('uses the same grid color on every day, including a day off', () => {
     expect(timelineDayDividerClass(0, 5)).toBe(timelineDayDividerClass(2, 5));
-    expect(timelineDayDividerClass(0, 5)).toContain('bg-gray-200');
+    expect(timelineDayDividerClass(0, 5)).toContain('bg-gray-300/80');
     expect(timelineDayDividerClass(0, 5)).toContain('dark:bg-gray-600');
   });
 });

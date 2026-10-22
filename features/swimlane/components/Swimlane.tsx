@@ -270,6 +270,9 @@ function SwimlaneComponent({
     () => new Set(layout.positionedTasks.map(({ task }) => task.id)),
     [layout.positionedTasks]
   );
+  const resizingTaskId = sprintPlannerUi.resizingTaskId;
+  const partDividersVisible =
+    isDraggingTask || (resizingTaskId != null && swimlaneRowTaskIds.has(resizingTaskId));
   const factBarFocusTaskId = resolveFactBarFocusTaskId(factHoveredTaskId, cardShadowTaskId);
   if (hideQuickAddPreview && quickAddHoverPreview != null) {
     setQuickAddHoverPreview(null);
@@ -337,6 +340,7 @@ function SwimlaneComponent({
             isLinking={linkingFromTaskId != null}
             maxTaskLayers={layout.maxTaskLayers}
             occupiedLayersByCell={layout.occupiedLayersByCell}
+            partDividersVisible={partDividersVisible}
             patternHeight={layout.totalHeight}
             quickAddClipHeight={layout.totalHeight}
             quickAddFootprint={quickAddFootprint}

@@ -4,9 +4,10 @@
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile cron --profile exporter up --build
 #
 # node_modules и .next — в именованных томах, чтобы не затирались bind-mount'ом
-# и не требовали pnpm на хосте. Первый старт: только app ставит зависимости
-# (DOCKER_DEV_INSTALL_NODE_MODULES); sync-worker ждёт stamp, иначе параллельный
-# pnpm install в общий том даёт ERR_PNPM_ENOENT.
+# и не требовали pnpm на хосте. Образ dev зависимостей не содержит: их ставит
+# только app при старте (DOCKER_DEV_INSTALL_NODE_MODULES) — на чистом томе или
+# после смены lockfile; пакеты берутся из тома pnpm store, без повторной загрузки.
+# sync-worker ждёт stamp, иначе параллельный pnpm install в общий том даёт ERR_PNPM_ENOENT.
 # sync-worker: `tsx watch` — иначе процесс не подхватывает правки в lib/sync.
 #
 # На macOS/Windows с Docker Desktop при «залипании» HMR можно усилить polling
@@ -32,6 +33,7 @@ services:
       - .:/app
       - beer_tracker_node_modules:/app/node_modules
       - beer_tracker_next:/app/.next
+      - beer_tracker_pnpm_store:/root/.local/share/pnpm/store
 
   sync-worker:
     build:
@@ -72,3 +74,4 @@ services:
 volumes:
   beer_tracker_node_modules:
   beer_tracker_next:
+  beer_tracker_pnpm_store:

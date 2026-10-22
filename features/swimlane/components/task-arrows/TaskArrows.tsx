@@ -29,6 +29,7 @@ import {
   countHiddenIdleLinksByTaskId,
   partitionIdleTaskLinks,
 } from '@/features/swimlane/utils/task-arrows/taskLinkIdleVisibility';
+import { useTaskBoardExitingTaskIds } from '@/features/task/hooks/useTaskBoardExit';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { DELAYS } from '@/utils/constants';
 import { resolveLinkArrowDrawTaskIds } from '@/utils/linkAnchors';
@@ -106,6 +107,8 @@ export const TaskArrows = observer(function TaskArrows({
   const visibleAssigneesSignature = getSwimlaneVisibleAssigneesSignature(visibleDeveloperIds);
 
   const tasksMap = buildTasksMapById(tasks);
+  // Карточка улетает анимацией (перенос, «убрать из плана») — её связи не тянем следом.
+  const exitingTaskIds = useTaskBoardExitingTaskIds();
   const visibleLinks = resolveVisibleTaskArrowLinks({
     activeTaskId,
     clipToAssigneeId,
@@ -116,7 +119,7 @@ export const TaskArrows = observer(function TaskArrows({
     taskPositions,
     tasksMap,
     visibleDeveloperIds,
-  });
+  }).filter((link) => !exitingTaskIds.has(link.fromTaskId) && !exitingTaskIds.has(link.toTaskId));
 
   const visibleLinkIdsKey = visibleLinks.map((link) => link.id).join('|');
   useEffect(() => {
@@ -139,11 +142,11 @@ export const TaskArrows = observer(function TaskArrows({
   const handleDeleteLink = bindLinkDeleteHandler(onDeleteLink, () => setHoveredLinkId(null));
 
   const excludeSegmentArrowTaskIds = useMemo(() => {
-    const ids = new Set<string>();
+    const ids = new Set<string>(exitingTaskIds);
     if (activeTaskId) ids.add(activeTaskId);
     if (segmentEditTaskId) ids.add(segmentEditTaskId);
     return ids.size > 0 ? ids : null;
-  }, [activeTaskId, segmentEditTaskId]);
+  }, [activeTaskId, exitingTaskIds, segmentEditTaskId]);
 
   const clipAssigneeSet =
     clipToRow && clipToAssigneeId ? new Set([clipToAssigneeId]) : null;

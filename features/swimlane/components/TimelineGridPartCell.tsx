@@ -48,6 +48,8 @@ export function TimelineGridPartCell(props: {
   isLinking?: boolean;
   maxTaskLayers?: number;
   occupiedLayersByCell?: Map<number, Set<number>>;
+  /** Разделители частей дня: при перетаскивании и ресайзе карточки в этой строке */
+  partDividerVisible: boolean;
   partIndex: number;
   quickAddClipHeight?: number;
   quickAddDurationCells?: number;
@@ -75,6 +77,7 @@ export function TimelineGridPartCell(props: {
     isLinking = false,
     maxTaskLayers = 1,
     occupiedLayersByCell,
+    partDividerVisible,
     partIndex,
     quickAddClipHeight,
     quickAddDurationCells = 1,
@@ -113,6 +116,7 @@ export function TimelineGridPartCell(props: {
       key={`${cellId}-${isQuickAddEnabled ? 'add' : 'idle'}`}
       hasTaskOverlaps={hasTaskOverlaps}
       hidePartDivider={hidePartDivider}
+      partDividerVisible={partDividerVisible}
       partIndex={partIndex}
       partStatus={partStatus}
       quickAddClipHeight={quickAddClipHeight}

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   canonicalPaletteKey,
   getPhaseDividerClasses,
-  getPreviewBorderColor,
   getQAStripedPattern,
   getQaStripedStyles,
   getResizeHandleColors,
@@ -135,7 +134,6 @@ describe('resolveResizeHandleHoverBgClass / getResizeHandleColors', () => {
     expect(qaHandle.bg).toBe(devHandle.bg);
     expect(qaHandle.bg).not.toBe(getStatusColors('backlog').resizeHandle.bg);
 
-    expect(getPreviewBorderColor('review', true)).toBe(getStatusColors('review').previewBorder);
     expect(getPhaseDividerClasses('inreview', true)).toBe('bg-pink-300 dark:bg-pink-700');
   });
 });

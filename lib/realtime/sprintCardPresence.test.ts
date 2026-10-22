@@ -8,6 +8,7 @@ import {
   nextSprintCardPresenceExitingViewers,
   resolveSprintCardPresenceFocus,
   sprintCardPresenceBlocksNewGestures,
+  sprintCardPresenceChangingViewer,
   sprintCardPresenceHasChangingViewer,
   sprintCardPresenceIsLockedByRemote,
   sprintCardPresenceLocksTarget,
@@ -143,6 +144,18 @@ describe('sprintCardPresence', () => {
     expect(sprintCardPresencePublishDelayMs('linking:BT-1')).toBe(0);
     expect(sprintCardPresencePublishDelayMs('viewing:BT-1')).toBe(SPRINT_CARD_PRESENCE_VIEWING_DEBOUNCE_MS);
     expect(sprintCardPresencePublishDelayMs('')).toBe(SPRINT_CARD_PRESENCE_VIEWING_DEBOUNCE_MS);
+  });
+
+  it('returns the viewer who is changing the card', () => {
+    const bob = {
+      ...ada,
+      clientId: 'tab-c',
+      displayName: 'Bob',
+      focus: { state: 'resizing' as const, targetId: 'BT-1' },
+      userId: 'u2',
+    };
+    expect(sprintCardPresenceChangingViewer([ada])).toBeNull();
+    expect(sprintCardPresenceChangingViewer([ada, bob])).toBe(bob);
   });
 
   it('treats dragging focus as a changing presence on the card', () => {

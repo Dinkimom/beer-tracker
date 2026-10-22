@@ -219,9 +219,13 @@ export async function fetchJiraTransitionFields(
   if (!key || !id) {
     return [];
   }
-  const { data } = await api.get<unknown>(jiraIssueTransitionsPath(key), {
-    params: { expand: 'transitions.fields' },
-  });
+  // Workflow validators не зависят от экрана перехода — грузим их параллельно.
+  const [{ data }, requiredIds] = await Promise.all([
+    api.get<unknown>(jiraIssueTransitionsPath(key), {
+      params: { expand: 'transitions.fields' },
+    }),
+    fetchJiraValidatorRequiredFieldIds(api, key, id),
+  ]);
   const match = extractJiraTransitionRows(data).find((row) => {
     if (!row || typeof row !== 'object') {
       return false;
@@ -232,16 +236,15 @@ export async function fetchJiraTransitionFields(
     return [];
   }
   const screenFields = mapJiraTransitionFields((match as JiraTransitionRaw).fields);
-  return appendOffScreenRequiredFields(api, key, id, screenFields);
+  return appendOffScreenRequiredFields(api, key, requiredIds, screenFields);
 }
 
 async function appendOffScreenRequiredFields(
   api: AxiosInstance,
   issueKey: string,
-  transitionId: string,
+  requiredIds: string[],
   screenFields: IssueTrackerScreenField[]
 ): Promise<IssueTrackerScreenField[]> {
-  const requiredIds = await fetchJiraValidatorRequiredFieldIds(api, issueKey, transitionId);
   const screenIds = new Set(screenFields.map((field) => field.id));
   const withRequiredFlag = screenFields.map((field) =>
     requiredIds.includes(field.id) ? { ...field, required: true } : field

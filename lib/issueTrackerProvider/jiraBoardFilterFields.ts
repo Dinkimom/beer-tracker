@@ -1,9 +1,10 @@
 import type { AxiosInstance } from 'axios';
 
-import { extractTrackerMetadataArray } from '@/lib/trackerIntegration/fetchTrackerOrgMetadataHelpers';
+import { apiCache } from '@/lib/cache';
 
 import { axiosErrorStatusAndDetails } from './jiraAgileAuthError';
 import { jiraAgileBoardConfigurationUrl } from './jiraBoardParams';
+import { jiraApiBaseUrl, loadJiraFieldCatalog } from './jiraFieldCatalog';
 
 /**
  * В Jira задача попадает на доску по JQL-фильтру доски, а не по полю «доска».
@@ -35,6 +36,7 @@ const JQL_OPERATOR = /^(?:!=|!~|>=|<=|=|~|>|<)/;
 const JQL_WORD_STOP = /[\s"'(),=!~<>]/;
 const JQL_EMPTY_VALUES = new Set(['empty', 'null']);
 const SETTABLE_SYSTEM_FIELDS = new Set(['components', 'fixVersions', 'labels']);
+const BOARD_FILTER_JQL_TTL_SECONDS = 10 * 60;
 
 function readQuotedJqlString(jql: string, start: number): { end: number; text: string } {
   const quote = jql[start];
@@ -293,11 +295,11 @@ function readFilterId(data: unknown): string | null {
   return /^\d+$/.test(id) ? id : null;
 }
 
-async function fetchJiraBoardFilterJql(api: AxiosInstance, boardId: number): Promise<string | null> {
-  const baseUrl = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
-  if (!baseUrl) {
-    return null;
-  }
+async function requestJiraBoardFilterJql(
+  api: AxiosInstance,
+  baseUrl: string,
+  boardId: number
+): Promise<string | null> {
   const { data: config } = await api.get<unknown>(jiraAgileBoardConfigurationUrl(baseUrl, boardId));
   const filterId = readFilterId(config);
   if (!filterId) {
@@ -305,6 +307,22 @@ async function fetchJiraBoardFilterJql(api: AxiosInstance, boardId: number): Pro
   }
   const { data: filter } = await api.get<{ jql?: unknown }>(`/filter/${filterId}`);
   return typeof filter?.jql === 'string' && filter.jql.trim() ? filter.jql : null;
+}
+
+/** Фильтр доски меняют редко: два round-trip'а (configuration + filter) кэшируем на 10 минут. */
+async function fetchJiraBoardFilterJql(api: AxiosInstance, boardId: number): Promise<string | null> {
+  const baseUrl = jiraApiBaseUrl(api);
+  if (!baseUrl) {
+    return null;
+  }
+  const cacheKey = `jira:board-filter-jql:${baseUrl}:${boardId}`;
+  const cached = apiCache.get<{ jql: string | null }>(cacheKey);
+  if (cached) {
+    return cached.jql;
+  }
+  const jql = await requestJiraBoardFilterJql(api, baseUrl, boardId);
+  apiCache.set(cacheKey, { jql }, BOARD_FILTER_JQL_TTL_SECONDS);
+  return jql;
 }
 
 /**
@@ -321,8 +339,7 @@ export async function applyJiraBoardFilterFields(
     if (!jql || parseJiraBoardFilterEqualityClauses(jql).length === 0) {
       return;
     }
-    const { data } = await api.get<unknown>('/field');
-    const updates = buildJiraBoardFilterFieldUpdates(jql, extractTrackerMetadataArray(data));
+    const updates = buildJiraBoardFilterFieldUpdates(jql, await loadJiraFieldCatalog(api));
     const results = await Promise.allSettled(
       updates.map(({ fieldId, operation }) =>
         api.put(`/issue/${encodeURIComponent(issueKey)}`, { update: { [fieldId]: [operation] } })

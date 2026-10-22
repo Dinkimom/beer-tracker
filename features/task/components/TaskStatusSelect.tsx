@@ -10,6 +10,8 @@ import { Icon } from '@/components/Icon';
 import { StatusTag } from '@/components/StatusTag';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useTaskStatusTransitionPhase } from '@/features/task/hooks/useTaskStatusTransitionPhase';
+import { taskStatusTransitionClassName } from '@/features/task/utils/taskStatusTransitionFeedback';
 import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 import { getIssueTransitions, type TransitionItem } from '@/lib/beerTrackerApi';
 
@@ -50,6 +52,8 @@ export function TaskStatusSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  // Тег статуса откликается на переход так же, как на карточке.
+  const statusTransitionPhase = useTaskStatusTransitionPhase(task.id, task.originalTaskId);
 
   const loadTransitions = useCallback(async () => {
     if (loadedForTaskIdRef.current === task.id) return;
@@ -126,7 +130,10 @@ export function TaskStatusSelect({
   }
 
   return (
-    <div ref={containerRef} className={`relative min-w-0 max-w-full ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative min-w-0 max-w-full ${className}${taskStatusTransitionClassName(statusTransitionPhase)}`}
+    >
       <Button
         ref={buttonRef}
         className={`!h-auto !min-h-0 min-w-0 !justify-between !gap-1 !rounded-md !px-1.5 !py-1 hover:!border-gray-400 focus-visible:!border-blue-500 focus-visible:!ring-2 focus-visible:!ring-blue-500 dark:hover:!border-gray-500 ${

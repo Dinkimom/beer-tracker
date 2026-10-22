@@ -34,7 +34,6 @@ interface TaskBarOpacityLayerCardProps {
   isQATask: boolean;
   isSelected: boolean;
   linkMode?: 'source' | 'target' | null;
-  previewBorder?: string;
   resize: {
     isResizing: boolean;
     resizePreviewDuration: number | null;
@@ -79,7 +78,6 @@ export function TaskBarOpacityLayerCard({
   onCommentUpdate,
   onPhotoGestureStart,
   getPhotoClickSuppress,
-  previewBorder,
   resize,
   selectedSprintId,
   setClickStartPos,
@@ -115,7 +113,6 @@ export function TaskBarOpacityLayerCard({
       layoutDuration={contentDurationParts}
       linkMode={linkMode}
       linkingActive={isLinking}
-      previewBorder={isDraftTask ? undefined : previewBorder}
       resizePreviewDuration={resize.resizePreviewDuration}
       swimlaneBarDurationParts={swimlaneBarDurationParts}
       task={task}

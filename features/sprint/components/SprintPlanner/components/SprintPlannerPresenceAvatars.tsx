@@ -1,6 +1,7 @@
 'use client';
 
 import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
+import type { CSSProperties } from 'react';
 
 import { Avatar } from '@/components/Avatar';
 import { TextTooltip } from '@/components/TextTooltip';
@@ -17,6 +18,11 @@ import {
   sprintPresenceDisplayName,
   sprintPresenceViewerReactKey,
 } from '@/lib/realtime/sprintPresenceCollapse';
+import {
+  SPRINT_PRESENCE_COLOR_CSS_VAR,
+  sprintPresenceColorSlots,
+  sprintPresenceViewerColor,
+} from '@/lib/realtime/sprintPresenceColor';
 import { getInitials } from '@/utils/displayUtils';
 
 const MAX_VISIBLE_AVATARS = 4;
@@ -58,12 +64,14 @@ export function shouldShowSprintPresenceAvatars(viewers: readonly SprintPresence
 const AVATAR_SLOT_CLASS =
   'sprint-presence-avatar group/slot relative z-0 inline-flex -ml-2 transition-all duration-200 first:ml-0 hover:z-20 hover:scale-110 hover:shadow-md group-hover/presence:-ml-0.5 first:group-hover/presence:ml-0';
 
-const AVATAR_RING_CLASS =
-  'ring-2 ring-white group-hover/slot:ring-blue-600 dark:ring-gray-800 dark:group-hover/slot:ring-blue-400';
+const AVATAR_RING_CLASS = 'ring-2 ring-white dark:ring-gray-800';
+
+/** Кольцо цветом участника: тем же цветом его обводка на карточке и вспышка перехода. */
+const AVATAR_PRESENCE_RING_CLASS = 'ring-2 ring-[var(--sprint-presence-color)]';
 
 interface SprintPlannerPresenceAvatarsProps {
   viewers: readonly SprintPresenceViewer[];
-  onRevealViewer?: (viewer: SprintPresenceViewer) => void;
+  onRevealViewer?: (viewer: SprintPresenceViewer, color: string) => void;
 }
 
 export function SprintPlannerPresenceAvatars({
@@ -78,6 +86,7 @@ export function SprintPlannerPresenceAvatars({
   const anonymousLabel = t('sprintPlanner.presence.anonymous');
   const names = uniqueViewers.map((viewer) => sprintPresenceLabelName(viewer, anonymousLabel));
   const { extra, shown } = splitSprintPresenceAvatars(uniqueViewers);
+  const colorSlots = sprintPresenceColorSlots(uniqueViewers);
   const extraNames = extra.map((viewer) => sprintPresenceLabelName(viewer, anonymousLabel)).join(', ');
 
   return (
@@ -97,10 +106,12 @@ export function SprintPlannerPresenceAvatars({
         });
         const canReveal = Boolean(onRevealViewer) && canRevealSprintPresenceViewer(viewer);
         const idleClass = idle ? 'opacity-40' : 'opacity-100';
+        const color = sprintPresenceViewerColor(colorSlots, viewer);
+        const colorStyle = { [SPRINT_PRESENCE_COLOR_CSS_VAR]: color } as CSSProperties;
         const avatar = (
           <Avatar
             avatarUrl={viewer.avatarUrl}
-            className={AVATAR_RING_CLASS}
+            className={AVATAR_PRESENCE_RING_CLASS}
             initials={getInitials(name)}
             size="md"
           />
@@ -111,13 +122,16 @@ export function SprintPlannerPresenceAvatars({
               <button
                 aria-label={t('sprintPlanner.presence.revealAria', { name })}
                 className={`${AVATAR_SLOT_CLASS} ${idleClass} cursor-pointer border-0 bg-transparent p-0 active:scale-[0.98]`}
+                style={colorStyle}
                 type="button"
-                onClick={() => onRevealViewer?.(viewer)}
+                onClick={() => onRevealViewer?.(viewer, color)}
               >
                 {avatar}
               </button>
             ) : (
-              <span className={`${AVATAR_SLOT_CLASS} ${idleClass} cursor-default`}>{avatar}</span>
+              <span className={`${AVATAR_SLOT_CLASS} ${idleClass} cursor-default`} style={colorStyle}>
+                {avatar}
+              </span>
             )}
           </TextTooltip>
         );

@@ -6,6 +6,7 @@ import type { GitLabFactEvent } from '@/lib/gitlab/mergeRequestFactTypes';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { FLOATING_TOOLTIP_GLASS_SHELL } from '@/features/context-menu/contextMenuClasses';
 import { GITLAB_FACT_CHIP_SIZE_PX } from '@/features/gitlab/utils/gitlabFactTimelineLayoutHelpers';
 
 function eventGlyph(kind: GitLabFactEvent['kind']): string {
@@ -118,7 +119,7 @@ export function GitlabFactTimelineMarker({
           </ul>
         </div>
       }
-      contentClassName="!bg-white dark:!bg-gray-800 !p-0 !shadow-2xl !border !border-gray-200 dark:!border-gray-700 !rounded-lg !overflow-hidden"
+      contentClassName={FLOATING_TOOLTIP_GLASS_SHELL}
       delayDuration={150}
       interactive
       side="top"

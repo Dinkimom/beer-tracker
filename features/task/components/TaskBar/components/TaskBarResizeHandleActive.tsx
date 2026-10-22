@@ -18,6 +18,7 @@ import {
   type ResizeHandleCornerStyle,
   type TaskBarResizeHandleInlinePaint,
 } from './taskBarResizeHandleHelpers';
+import { useResizeGripStepNudge } from './useResizeGripStepNudge';
 
 type ResizeHandleColors = ReturnType<typeof getResizeHandleColors>;
 
@@ -28,6 +29,8 @@ interface TaskBarResizeHandleActiveProps {
   isActive: boolean;
   paint?: TaskBarResizeHandleInlinePaint;
   resizeHandleColors: ResizeHandleColors;
+  /** Текущий шаг жеста (длительность в ячейках) — толчок грипа на каждой смене. */
+  resizeStep?: number | null;
   side: 'left' | 'right';
   title: string;
   onMouseDown: (e: React.MouseEvent) => void;
@@ -41,9 +44,11 @@ export function TaskBarResizeHandleActive({
   onMouseDown,
   paint,
   resizeHandleColors,
+  resizeStep = null,
   side,
   title,
 }: TaskBarResizeHandleActiveProps) {
+  const gripRef = useResizeGripStepNudge(resizeStep, 'x', side === 'right' ? 1 : -1);
   const edgeClass = getResizeHandleEdgeClass(side);
   const visualVisibilityClass = getResizeHandleVisualVisibilityClass(isActive);
   const backgroundClass = paint
@@ -79,17 +84,18 @@ export function TaskBarResizeHandleActive({
           className={`absolute inset-0 ${RESIZE_HANDLE_VISUAL_TRANSITION_CLASS} ${visualVisibilityClass}`}
         >
           <div
-            className={`absolute inset-0 ${getResizeHandleRoundedClass(side, cornerStyle)} transition-all ${backgroundClass}`}
+            className={`task-bar-resize-handle-bg absolute inset-0 ${getResizeHandleRoundedClass(side, cornerStyle)} transition-all ${backgroundClass}`}
             style={paint ? { backgroundColor: paint.background } : undefined}
           />
 
           <div
+            ref={gripRef}
             className={`absolute ${getResizeHandleGripOffsetClass(side)} top-1/2 -translate-y-1/2 flex flex-col gap-0.5`}
           >
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`w-0.5 h-3 rounded transition-all ${gripLineClass}`}
+                className={`task-bar-resize-grip-line w-0.5 h-3 rounded transition-all ${gripLineClass}`}
                 style={paint ? { backgroundColor: paint.line } : undefined}
               />
             ))}

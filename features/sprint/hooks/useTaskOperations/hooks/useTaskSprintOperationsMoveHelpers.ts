@@ -1,5 +1,7 @@
 import type { Task, TaskLink, TaskPosition } from '@/types';
 
+import { playTaskBoardExit } from '@/features/task/utils/taskBoardExit';
+
 import {
   applyOptimisticTaskRemoval,
   type SprintOperationSnapshot,
@@ -27,16 +29,19 @@ export async function executeMoveToSprint(input: {
   const shouldRemoveFromCurrent =
     input.selectedSprintId != null && input.selectedSprintId !== input.sprintId;
 
-  if (shouldRemoveFromCurrent) {
-    applyOptimisticTaskRemoval({
-      actualTaskId: input.snapshot.actualTaskId,
-      setTaskLinks: input.setTaskLinks,
-      setTaskPositions: input.setTaskPositions,
-      setTasks: input.setTasks,
-      taskId: input.taskId,
-      updateXarrow: input.updateXarrow,
-    });
-  }
+  // Карточка уезжает параллельно с запросом и пропадает из списка после анимации.
+  const removedFromBoard = shouldRemoveFromCurrent
+    ? playTaskBoardExit([input.taskId, input.snapshot.actualTaskId], 'sprint', () => {
+        applyOptimisticTaskRemoval({
+          actualTaskId: input.snapshot.actualTaskId,
+          setTaskLinks: input.setTaskLinks,
+          setTaskPositions: input.setTaskPositions,
+          setTasks: input.setTasks,
+          taskId: input.taskId,
+          updateXarrow: input.updateXarrow,
+        });
+      })
+    : Promise.resolve();
 
   try {
     await submitMoveToSprint({
@@ -55,6 +60,8 @@ export async function executeMoveToSprint(input: {
       taskId: input.taskId,
     });
   } catch (error) {
+    // Откат только после удаления — иначе отложенное удаление снова скроет карточку.
+    await removedFromBoard;
     rollbackMoveToSprintOnError({
       error,
       setTaskLinks: input.setTaskLinks,

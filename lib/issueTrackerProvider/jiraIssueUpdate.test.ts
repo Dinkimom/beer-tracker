@@ -171,6 +171,34 @@ describe('updateJiraIssue', () => {
     expect(put).not.toHaveBeenCalledWith('/issue/PROJ-1', expect.anything());
   });
 
+  it('Jira Cloud: PUTs accountId directly without user lookups', async () => {
+    const get = vi.fn();
+    const put = vi.fn().mockResolvedValue({ data: undefined });
+    await updateJiraIssue(
+      apiWith({ get, put }),
+      'PROJ-1',
+      { assigneeId: '712020:0f1e2d3c-aaaa-bbbb-cccc-111122223333' },
+      'jira-cloud'
+    );
+    expect(get).not.toHaveBeenCalled();
+    expect(put).toHaveBeenCalledWith('/issue/PROJ-1/assignee', {
+      accountId: '712020:0f1e2d3c-aaaa-bbbb-cccc-111122223333',
+    });
+  });
+
+  it('Jira Cloud: skips username/key lookups for non-accountId values', async () => {
+    const get = vi.fn((url: string) =>
+      url === '/user/search'
+        ? Promise.resolve({ data: [{ accountId: 'acc-1', emailAddress: 'jane@example.com' }] })
+        : Promise.reject(new Error('404'))
+    );
+    const put = vi.fn().mockResolvedValue({ data: undefined });
+    await updateJiraIssue(apiWith({ get, put }), 'PROJ-1', { assigneeId: 'jane@example.com' }, 'jira-cloud');
+    expect(get).not.toHaveBeenCalledWith('/user', { params: { username: 'jane@example.com' } });
+    expect(get).not.toHaveBeenCalledWith('/user', { params: { key: 'jane@example.com' } });
+    expect(put).toHaveBeenCalledWith('/issue/PROJ-1/assignee', { accountId: 'acc-1' });
+  });
+
   it('resolves corp email via /user/search to Jira username', async () => {
     const get = vi.fn((url: string) => {
       if (url === '/user/search') {
