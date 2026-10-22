@@ -8,6 +8,7 @@ import {
   filterNotesByAssigneeId,
   filterPositionsByAssigneeId,
   filterPositionsByTaskIds,
+  filterUnplannedTasks,
 } from '@/lib/sprints/sprintContextFilter';
 import { stampCapacityWithTeamRoles } from '@/lib/sprints/sprintContextTeamMembers';
 
@@ -50,6 +51,9 @@ export function applySprintContextQueryFilters(
     positions,
     taskLinks,
     ...(teamMembers ? { teamMembers } : {}),
+    ...(payload.unplannedTasks
+      ? { unplannedTasks: filterUnplannedTasks(payload.unplannedTasks, { assigneeId, taskIds }) }
+      : {}),
   };
   next.capacity = stampCapacityWithTeamRoles(
     buildSprintContextCapacity(next),

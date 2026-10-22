@@ -98,7 +98,6 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
             variant="ghost"
             onClick={() => {
               onApproveAll(pendingCommentIds);
-              island.finishDraftSession();
             }}
           >
             <Icon className="h-3.5 w-3.5" name="check" />

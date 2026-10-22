@@ -244,6 +244,24 @@ export interface SprintContextTeamMember {
   staffUid?: string;
 }
 
+/** Задача спринта в трекере без позиции на доске (бэклог спринта в планере). */
+export interface SprintContextUnplannedTask {
+  /** Id пользователя трекера — тот же формат, что у positions[].assigneeId и teamMembers. */
+  assigneeId?: string | null;
+  assigneeName?: string | null;
+  issueType?: string | null;
+  parentKey?: string | null;
+  priority?: string | null;
+  qaEngineerName?: string | null;
+  status?: string | null;
+  statusCategory?: string | null;
+  statusDisplay?: string | null;
+  storyPoints?: number | null;
+  summary: string;
+  taskId: string;
+  testPoints?: number | null;
+}
+
 export interface SprintContextPayload {
   agenda: SprintContextAgendaItem[];
   availability: SprintContextAvailabilityEvent[];
@@ -256,6 +274,8 @@ export interface SprintContextPayload {
   taskLinks: SprintContextTaskLink[];
   /** Состав команды доски (meta.boardId) с ролями; пусто если board неизвестен. */
   teamMembers?: SprintContextTeamMember[];
+  /** Задачи спринта из трекера, которых нет в positions; без трекера поля нет. */
+  unplannedTasks?: SprintContextUnplannedTask[];
 }
 
 export interface SprintContextSoftMeta {

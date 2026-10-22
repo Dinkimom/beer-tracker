@@ -55,7 +55,7 @@ function useSprintAgentSessionsQuery(sprintId: number | null | undefined) {
     queryKey,
     staleTime: 1000 * 60,
   });
-  return { data: query.data ?? EMPTY, queryKey };
+  return { data: query.data ?? EMPTY, loaded: query.isSuccess, queryKey };
 }
 
 /** Показывать ли «Агенту»: без агента просьба из планера никуда не уйдёт. */
@@ -82,7 +82,7 @@ export function useAgentBrand(sprintId: number | null | undefined): McpOAuthClie
  */
 export function useAgentSessions(sprintId: number | null | undefined) {
   const queryClient = useQueryClient();
-  const { data, queryKey } = useSprintAgentSessionsQuery(sprintId);
+  const { data, loaded, queryKey } = useSprintAgentSessionsQuery(sprintId);
   const bridge = useAgentBridge();
   const { draftSessionId, sessions } = data;
   const active = useMemo(
@@ -164,6 +164,8 @@ export function useAgentSessions(sprintId: number | null | undefined) {
     close: close.mutateAsync,
     create: create.mutateAsync,
     creating: create.isPending,
+    /** Сессии спринта уже пришли с сервера (до этого — пустой список-заглушка). */
+    loaded,
     post: post.mutateAsync,
     posting: post.isPending,
     sessions,

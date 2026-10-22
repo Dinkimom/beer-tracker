@@ -3,6 +3,7 @@ import type {
   SprintContextPayload,
   SprintContextPosition,
   SprintContextSoftMeta,
+  SprintContextUnplannedTask,
 } from '@/lib/sprints/sprintContextTypes';
 import type { NextRequest } from 'next/server';
 
@@ -19,6 +20,7 @@ import {
   collectSprintContextWarnings,
   parseStaffUuidFromAssigneeId,
 } from '@/lib/sprints/sprintContextEnrichmentHelpers';
+import { resolveFeatureScopeTaskIds } from '@/lib/sprints/sprintContextFilter';
 import { loadSprintContextHolidayDays } from '@/lib/sprints/sprintContextHolidays';
 import { loadOrgHolidayCountry } from '@/lib/sprints/sprintContextOrgHolidayCountry';
 import { buildPlanVsActual } from '@/lib/sprints/sprintContextPlanVsActual';
@@ -34,16 +36,21 @@ interface AssigneeInfo {
 }
 
 interface IssueInfo {
+  assigneeDisplay: string | null;
+  assigneeTrackerId: string | null;
   createdAt: string | null;
   inSprint: boolean;
   issueType: string | null;
   parentKey: string | null;
   priority: string | null;
+  qaEngineerDisplay: string | null;
   sprintHistory: Array<{ name: string; sprintId: string }>;
   statusDisplay: string | null;
   statusKey: string | null;
   statusTypeKey: string | null;
+  storyPoints: number | null;
   summary: string;
+  testPoints: number | null;
 }
 
 function buildAssigneeLookup(staffRows: Array<{
@@ -127,16 +134,21 @@ function mapSprintHistory(
 
 function mapIssueInfo(issue: IssueTrackerIssue, inSprint: boolean): IssueInfo {
   return {
+    assigneeDisplay: issue.assignee?.display?.trim() || null,
+    assigneeTrackerId: issue.assignee?.id?.trim() || null,
     createdAt: issue.createdAt?.trim() || null,
     inSprint,
     issueType: issueTypeLabel(issue),
     parentKey: issue.parent?.key?.trim() || null,
     priority: issue.priority?.display?.trim() || issue.priority?.key?.trim() || null,
+    qaEngineerDisplay: issue.qaEngineer?.display?.trim() || null,
     sprintHistory: mapSprintHistory(issue.sprint),
     statusDisplay: issue.status?.display?.trim() || null,
     statusKey: issue.status?.key?.trim() || null,
     statusTypeKey: issue.statusType?.key?.trim() || null,
+    storyPoints: issue.storyPoints ?? null,
     summary: issue.summary?.trim() || issue.key,
+    testPoints: issue.testPoints ?? null,
   };
 }
 
@@ -253,8 +265,64 @@ function enrichPosition(
   return { position: next, unresolved: !assignee };
 }
 
+function toUnplannedTask(
+  taskId: string,
+  issue: IssueInfo,
+  lookup: ReturnType<typeof buildAssigneeLookup>
+): SprintContextUnplannedTask {
+  const staff = issue.assigneeTrackerId ? lookup.byTrackerId.get(issue.assigneeTrackerId) : undefined;
+  return {
+    assigneeId: issue.assigneeTrackerId,
+    assigneeName: staff?.name ?? issue.assigneeDisplay,
+    issueType: issue.issueType,
+    parentKey: issue.parentKey,
+    priority: issue.priority,
+    qaEngineerName: issue.qaEngineerDisplay,
+    status: issue.statusKey,
+    statusCategory: resolveMcpIssueStatusCategory({
+      statusKey: issue.statusKey,
+      statusTypeKey: issue.statusTypeKey,
+    }),
+    statusDisplay: issue.statusDisplay,
+    storyPoints: issue.storyPoints,
+    summary: issue.summary,
+    taskId,
+    testPoints: issue.testPoints,
+  };
+}
+
 /**
- * Attach assignee names, issue summaries, calendarDays, agenda, warnings.
+ * Задачи спринта в трекере без позиции на доске (с учётом featureId-скоупа).
+ * Трекер не ответил — undefined: пустой список выдавал бы себя за «бэклог пуст».
+ */
+function buildUnplannedTasks(
+  payload: SprintContextPayload,
+  issues: { issuesByKey: Map<string, IssueInfo>; loaded: boolean },
+  lookup: ReturnType<typeof buildAssigneeLookup>
+): SprintContextUnplannedTask[] | undefined {
+  if (!issues.loaded) {
+    return undefined;
+  }
+  const positioned = new Set(payload.positions.map((position) => position.taskId));
+  const featureId = payload.meta.featureId;
+  const featureScope = featureId
+    ? resolveFeatureScopeTaskIds(payload.featureLanes, featureId)
+    : null;
+  const tasks: SprintContextUnplannedTask[] = [];
+  for (const [taskId, issue] of issues.issuesByKey) {
+    if (!issue.inSprint || positioned.has(taskId)) {
+      continue;
+    }
+    if (featureScope && !featureScope.has(taskId) && issue.parentKey !== featureId) {
+      continue;
+    }
+    tasks.push(toUnplannedTask(taskId, issue, lookup));
+  }
+  return tasks.sort((a, b) => a.taskId.localeCompare(b.taskId));
+}
+
+/**
+ * Attach assignee names, issue summaries, unplanned sprint tasks, calendarDays, agenda, warnings.
  */
 export async function enrichSprintContextPayload(input: {
   organizationId: string;
@@ -365,6 +433,11 @@ export async function enrichSprintContextPayload(input: {
     notes,
     positions,
     ...(teamMembers.length > 0 ? { teamMembers } : {}),
+    unplannedTasks: buildUnplannedTasks(
+      input.payload,
+      { issuesByKey, loaded: trackerIssuesLoaded },
+      lookup
+    ),
   };
 
   return {

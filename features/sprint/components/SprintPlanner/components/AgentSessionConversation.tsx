@@ -2,7 +2,7 @@
 
 import type { AgentSessionMessage, AgentSessionStatus } from '@/lib/agentSessions/agentSession';
 
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -156,6 +156,13 @@ export function AgentSessionConversation({
     setEdges((prev) => (prev.top === next.top && prev.bottom === next.bottom ? prev : next));
   };
   const [initialIds] = useState(() => new Set(messages.map((message) => message.id)));
+  // Пока ответ «печатается», лента держится внизу — если человек сам не отмотал вверх.
+  const followTyping = useCallback(() => {
+    const list = listRef.current;
+    if (list && list.scrollHeight - list.scrollTop - list.clientHeight < 64) {
+      list.scrollTop = list.scrollHeight;
+    }
+  }, []);
   let draftVersion = 0;
   const versions = new Map<string, number>();
   for (const message of messages) {
@@ -216,6 +223,8 @@ export function AgentSessionConversation({
             placeholder={t('agentSession.kindRedo')}
             status={messageStatus(message, t)}
             text={message.text}
+            typewriter={message.authorKind === 'agent' && !initialIds.has(message.id)}
+            onTextGrow={followTyping}
           />
         </li>
       ))}

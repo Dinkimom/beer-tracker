@@ -24,7 +24,7 @@ import {
 } from './jiraIssueLinks';
 import { listJiraIssuesForBoard, listJiraIssuesForQueue, listJiraIssuesUpdatedInRange } from './jiraIssueList';
 import { fetchJiraIssue, normalizeJiraIssuesWithSchedule } from './jiraIssues';
-import { searchJiraIssuesOnBoard } from './jiraIssueSearch';
+import { isJiraEpicIssueTypeKey, searchJiraIssuesOnBoard } from './jiraIssueSearch';
 import {
   addJiraIssueToSprint,
   removeJiraIssueFromSprint,
@@ -154,7 +154,8 @@ function createJiraProviderClientWithApi(
     getSprint: (sprintId) => fetchJiraSprintInfo(api, sprintId),
     getTasksInSprintWithParents: async (sprintId, options) => {
       const issues = await loadJiraSprintIssues(api, sprintId, options);
-      return issues.filter((issue) => issue.type?.key === 'task' || issue.type?.key === 'bug');
+      // Ключ типа в Jira — имя проекта («баг», «задача»), не task/bug: отсекаем только эпики.
+      return issues.filter((issue) => !isJiraEpicIssueTypeKey(issue.type?.key));
     },
     getTransitionFields: (issueKey: string, transitionId: string) =>
       fetchJiraTransitionFields(api, issueKey, transitionId),

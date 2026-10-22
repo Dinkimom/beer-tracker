@@ -11,6 +11,8 @@ import { useRootStore } from '@/lib/layers';
 
 import { resolveAgentChatOrigin } from '../utils/agentChatOrigin';
 
+import { useAgentReplyNotice } from './useAgentReplyNotice';
+
 const ASK_AGENT_SELECTOR = '[data-swimlane-ask-agent]';
 
 /** Какую сессию показывает чат: 'new' — пишем новую, id — только что созданная; `key` — цель чата. */
@@ -32,8 +34,8 @@ interface ChatPanel {
  *
  * Панель чата живёт дольше `chatOpen` на время анимации сворачивания (`panel` + `panelState`).
  * Чат сворачивают Escape, клик мимо острова (`islandRef`) и смена режима в тулбаре инструментов.
- * Сессия закрывается 🗑 «Очистить чат», а ещё сама: после «Принять всё», если агент ничего не ждёт,
- * и при старте новой (прежняя, если её драфт не висит на доске).
+ * Сессия закрывается 🗑 «Очистить чат» и сама при старте новой (прежняя, если её драфт не висит
+ * на доске). После «Принять всё» сессия остаётся: в ней можно продолжить разговор с агентом.
  */
 export function useAgentIslandChat(sprintId: number | null) {
   const { sprintPlannerUi } = useRootStore();
@@ -93,6 +95,14 @@ export function useAgentIslandChat(sprintId: number | null) {
   const session =
     selected === 'new' ? null : (sessions.sessions.find((item) => item.id === selected) ?? sessions.active);
 
+  const unreadReply = useAgentReplyNotice({
+    chatOpen,
+    loaded: sessions.loaded,
+    sessions: sessions.sessions,
+    sprintId,
+    onOpen: () => sprintPlannerUi.setAgentRequestTarget({ kind: sessions.active ? 'session' : 'sprint' }),
+  });
+
   const presence = useOverlayPresence(chatOpen);
   const [lastPanel, setLastPanel] = useState<ChatPanel | null>(null);
   if (chat && (lastPanel?.chat.key !== chat.key || lastPanel.session !== session)) {
@@ -113,27 +123,14 @@ export function useAgentIslandChat(sprintId: number | null) {
     panelState: presence.state,
     session,
     sessions,
+    /** Агент ответил, пока чат был свёрнут: ✨ в тулбаре это показывает. */
+    unreadReply,
     /** 🗑: завершить показанную сессию — открытый чат остаётся, пустой, под новую просьбу. */
     clearChat: () => {
       if (session) {
         sessions.close(session.id).catch(() => undefined);
       }
       setPick(null);
-    },
-    /**
-     * После «Принять всё»: драфт решён; не закрываем, если человек уже написал агенту ещё.
-     * Закрытая сессия перестаёт быть активной — открытый чат держим на ней, иначе переписка
-     * пропала бы и на её месте встала пустая «новая просьба».
-     */
-    finishDraftSession: () => {
-      const draft = sessions.draftSession;
-      if (draft?.status !== 'waiting_user') {
-        return;
-      }
-      if (chatOpen) {
-        setPick({ key: chatKey, value: draft.id });
-      }
-      sessions.close(draft.id).catch(() => undefined);
     },
     selectCreated: (sessionId: string | null) => {
       const previous = sessions.active;

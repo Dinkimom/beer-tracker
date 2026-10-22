@@ -11,6 +11,7 @@ import { AgentComposer } from '@/features/swimlane/components/AgentComposer';
 import { useAgentBridge } from '@/features/swimlane/hooks/useAgentBridge';
 
 import { useAgentChatDraft } from '../hooks/useAgentChatDraft';
+import { useAgentWaitProgress } from '../hooks/useAgentWaitProgress';
 
 import { AgentBridgeProgress } from './AgentBridgeProgress';
 import { AgentBridgeToggle } from './AgentBridgeToggle';
@@ -53,6 +54,8 @@ export function AgentSessionChat({
   const bridge = useAgentBridge();
   // Агент работает над этой сессией в Claude CLI — шаг и время показываем в пузыре «Ждёт агента».
   const bridgeRun = session ? bridge.runs.find((run) => run.sessionId === session.id) : undefined;
+  // Внешний агент (claude.ai, Cursor…): что он делает — по его вызовам MCP; затих — снова зовём.
+  const { progress, silentStep } = useAgentWaitProgress(session, bridgeRun);
   const draft = useAgentChatDraft({ onCreated, origin, session, sprintId });
 
   return (
@@ -100,14 +103,16 @@ export function AgentSessionChat({
         messages={session?.messages ?? []}
         status={session?.status}
         waitingDetail={
-          bridgeRun ? <AgentBridgeProgress startedAt={bridgeRun.startedAt} step={bridgeRun.step} /> : undefined
+          progress ? <AgentBridgeProgress startedAt={progress.startedAt} step={progress.step} /> : undefined
         }
         onPickOption={draft.pickOption}
       />
 
       {draft.showSkillPicker ? <AgentSkillPicker onPick={draft.setSkill} /> : null}
 
-      {session?.status === 'waiting_agent' && !bridgeRun ? <AgentCallAgentBar sessionId={session.id} /> : null}
+      {session?.status === 'waiting_agent' && !progress ? (
+        <AgentCallAgentBar sessionId={session.id} silentStep={silentStep} />
+      ) : null}
 
       <AgentComposer
         allowEmpty={draft.skill != null}

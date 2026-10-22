@@ -60,7 +60,8 @@ const TOOL_STEPS: Readonly<Record<string, AgentBridgeStep>> = {
   reply_agent_session: 'replying',
 };
 
-function stepForTool(name: string): AgentBridgeStep {
+/** Шаг агента по вызванному тулу MCP (с префиксом клиента `mcp__server__tool` или без). */
+export function agentStepForTool(name: string): AgentBridgeStep {
   const short = name.split('__').at(-1) ?? name;
   return TOOL_STEPS[short] ?? 'thinking';
 }
@@ -86,7 +87,7 @@ export function agentBridgeStepFromStreamLine(line: string): AgentBridgeStep | n
     return null;
   }
   const tool = (content as StreamContentBlock[]).findLast((block) => block.type === 'tool_use');
-  return typeof tool?.name === 'string' ? stepForTool(tool.name) : 'thinking';
+  return typeof tool?.name === 'string' ? agentStepForTool(tool.name) : 'thinking';
 }
 
 /** Токены прогона CLI для лога моста; `costUsd` — условная цена по прайсу API, есть только в итоге. */
@@ -176,13 +177,17 @@ export function agentBridgeTallyUsage(tally: AgentBridgeUsageTally): AgentBridge
   return tally.final ?? Object.values(tally.turns).reduce(addUsage, EMPTY_USAGE);
 }
 
+/** Шаг из внешних данных (ответ моста, строка БД); незнакомый — «думает». */
+export function parseAgentBridgeStep(value: unknown): AgentBridgeStep {
+  return AGENT_BRIDGE_STEPS.includes(value as AgentBridgeStep) ? (value as AgentBridgeStep) : 'thinking';
+}
+
 function parseAgentBridgeRun(value: unknown): AgentBridgeRun | null {
   const run = value as Partial<AgentBridgeRun> | null;
   if (!run || !isAgentSessionId(run.sessionId) || typeof run.startedAt !== 'number') {
     return null;
   }
-  const step = AGENT_BRIDGE_STEPS.includes(run.step as AgentBridgeStep) ? (run.step as AgentBridgeStep) : 'thinking';
-  return { sessionId: run.sessionId, startedAt: run.startedAt, step };
+  return { sessionId: run.sessionId, startedAt: run.startedAt, step: parseAgentBridgeStep(run.step) };
 }
 
 const SESSION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

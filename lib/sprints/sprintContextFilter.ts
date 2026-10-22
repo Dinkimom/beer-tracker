@@ -2,6 +2,7 @@ import type {
   SprintContextNote,
   SprintContextPosition,
   SprintContextTaskLink,
+  SprintContextUnplannedTask,
 } from '@/lib/sprints/sprintContextTypes';
 
 import { parseCommentParent } from '@/lib/comments/commentParent';
@@ -98,6 +99,20 @@ export function filterNotesByAssigneeId(
     return notes;
   }
   return notes.filter((note) => ids.has(note.assigneeId.trim()));
+}
+
+/** Бэклог спринта по исполнителю/задачам; без исполнителя при фильтре по assigneeId — мимо. */
+export function filterUnplannedTasks(
+  tasks: SprintContextUnplannedTask[],
+  filters: { assigneeId?: string; taskIds: readonly string[] }
+): SprintContextUnplannedTask[] {
+  const ids = filters.assigneeId ? assigneeMatchIds(filters.assigneeId) : new Set<string>();
+  const taskIds = new Set(filters.taskIds);
+  return tasks.filter(
+    (task) =>
+      (ids.size === 0 || ids.has(task.assigneeId?.trim() ?? '')) &&
+      (taskIds.size === 0 || taskIds.has(task.taskId))
+  );
 }
 
 export function filterPositionsByTaskIds(

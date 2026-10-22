@@ -1,3 +1,4 @@
+import type { AgentBridgeStep } from '@/lib/agentSessions/agentBridge';
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type {
   AgentSession,
@@ -12,6 +13,7 @@ import type {
 } from '@/lib/agentSessions/agentSession';
 import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 
+import { parseAgentBridgeStep } from '@/lib/agentSessions/agentBridge';
 import { parseAgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 import { STAFF_AUTHOR_DISPLAY_NAME_SQL } from '@/lib/comments/commentAuthor';
 import { query } from '@/lib/db';
@@ -21,6 +23,8 @@ import { planPatchClientBrandFromUnknown } from '@/lib/sprints/sprintPlanPatchPo
 type DbTimestamp = Date | string;
 
 interface SessionRow {
+  agent_step: string | null;
+  agent_step_at: DbTimestamp | null;
   closed_at: DbTimestamp | null;
   context: unknown;
   created_at: DbTimestamp;
@@ -58,6 +62,9 @@ interface MessageRow {
 /** Закрытые сессии ещё неделю видны в планере: успеть прочитать ответы агента. */
 const CLOSED_VISIBLE_DAYS = 7;
 
+/** Тот же шаг агента пишем не чаще: каждый вызов тула — это ещё и перезапрос сессий в планере. */
+const ACTIVITY_THROTTLE_SECONDS = 20;
+
 let schemaEnsured = false;
 let schemaEnsurePromise: Promise<void> | null = null;
 
@@ -91,6 +98,11 @@ async function runEnsureAgentSessionsSchema(): Promise<void> {
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
         closed_at TIMESTAMP WITH TIME ZONE
       )
+    `);
+    await query(`
+      ALTER TABLE ${schema}.agent_sessions
+        ADD COLUMN IF NOT EXISTS agent_step VARCHAR(16),
+        ADD COLUMN IF NOT EXISTS agent_step_at TIMESTAMP WITH TIME ZONE
     `);
     await query(`
       CREATE INDEX IF NOT EXISTS idx_agent_sessions_owner
@@ -227,6 +239,10 @@ function messageFromRow(row: MessageRow): AgentSessionMessage {
 
 function sessionFromRow(row: SessionRow, messages: AgentSessionMessage[]): AgentSession {
   return {
+    agentActivity:
+      row.agent_step && row.agent_step_at
+        ? { at: toIso(row.agent_step_at), step: parseAgentBridgeStep(row.agent_step) }
+        : null,
     closedAt: toIsoOrNull(row.closed_at),
     context: parseContext(row.context),
     createdAt: toIso(row.created_at),
@@ -243,7 +259,7 @@ function sessionFromRow(row: SessionRow, messages: AgentSessionMessage[]): Agent
 }
 
 const SESSION_COLUMNS = `s.id::text AS id, s.sprint_id, s.owner_id, s.task_id, s.title, s.context,
-       s.origin, s.status, s.created_at, s.updated_at, s.closed_at`;
+       s.origin, s.status, s.created_at, s.updated_at, s.closed_at, s.agent_step, s.agent_step_at`;
 
 async function loadMessages(sessionIds: readonly string[]): Promise<Map<string, AgentSessionMessage[]>> {
   const bySession = new Map<string, AgentSessionMessage[]>();
@@ -480,4 +496,32 @@ export async function deleteOwnAgentSessionMessage(input: {
     [input.messageId, input.sessionId, input.authorId]
   );
   return (result.rowCount ?? 0) > 0;
+}
+
+/**
+ * Агент вызвал тул MCP: шаг — в ждущие его сессии владельца (одну, если тул про сессию;
+ * сессии спринта, если про спринт). Возвращает спринты, где шаг записался — их планеру и пнуть.
+ */
+export async function touchAgentSessionActivity(input: {
+  organizationId: string;
+  ownerId: string;
+  sessionId: string | null;
+  sprintId: number | null;
+  step: AgentBridgeStep;
+}): Promise<number[]> {
+  await ensureAgentSessionsSchema();
+  const result = await query<{ sprint_id: number }>(
+    `UPDATE agent_sessions s
+        SET agent_step = $5::varchar, agent_step_at = CURRENT_TIMESTAMP
+      WHERE s.organization_id = $1::uuid
+        AND LOWER(s.owner_id) = LOWER($2)
+        AND s.status = 'waiting_agent'
+        AND ($3::uuid IS NULL OR s.id = $3::uuid)
+        AND ($4::int IS NULL OR s.sprint_id = $4)
+        AND (s.agent_step IS DISTINCT FROM $5::varchar
+             OR s.agent_step_at < CURRENT_TIMESTAMP - make_interval(secs => $6))
+      RETURNING s.sprint_id`,
+    [input.organizationId, input.ownerId, input.sessionId, input.sprintId, input.step, ACTIVITY_THROTTLE_SECONDS]
+  );
+  return [...new Set(result.rows.map((row) => row.sprint_id))];
 }

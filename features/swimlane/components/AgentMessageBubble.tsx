@@ -3,8 +3,11 @@
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { ReactNode } from 'react';
 
+import { useLayoutEffect } from 'react';
+
 import { McpOAuthClientMark } from '@/app/mcp/oauth/consent/McpOAuthClientMark';
 import { Icon } from '@/components/Icon';
+import { useTypewriterText } from '@/hooks/useTypewriterText';
 
 import { AgentMessageText } from './AgentMessageText';
 
@@ -46,6 +49,35 @@ function agentMark(brand: McpOAuthClientBrand | undefined, label: string): React
   return <Icon className="h-3.5 w-3.5 shrink-0 text-green-600 dark:text-green-400" name="sparkles" />;
 }
 
+/** Строка над репликой: значок агента, подпись и статус пункта. */
+function captionRow({
+  brand,
+  caption,
+  fromAgent,
+  status,
+}: {
+  brand: McpOAuthClientBrand | undefined;
+  caption: string | undefined;
+  fromAgent: boolean;
+  status: { label: string; tone: AgentMessageStatus } | undefined;
+}): ReactNode {
+  if (!caption && !status) {
+    return null;
+  }
+  return (
+    <div className="flex max-w-full items-center gap-1.5 px-1 text-[11px] text-gray-500 dark:text-gray-400">
+      {fromAgent ? agentMark(brand, caption ?? '') : null}
+      {caption ? <span className={`min-w-0 truncate ${fromAgent ? 'font-medium' : ''}`}>{caption}</span> : null}
+      {status ? (
+        <span className={`inline-flex shrink-0 items-center gap-0.5 ${STATUS_CLASS[status.tone]}`}>
+          <Icon className="h-3 w-3" name={STATUS_ICON[status.tone]} />
+          {status.label}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 /**
  * Одна реплика переписки с агентом — одинаково в ленте сессии и 💬 у пункта, как в AI-чатах:
  * свои сообщения синим пузырём справа, ответ агента — текстом на всю ширину (длинные ответы так
@@ -60,6 +92,8 @@ export function AgentMessageBubble({
   placeholder,
   status,
   text,
+  typewriter = false,
+  onTextGrow,
 }: {
   /** Каким клиентом писал агент; нет — общий значок агента. */
   brand?: McpOAuthClientBrand;
@@ -74,26 +108,23 @@ export function AgentMessageBubble({
   placeholder?: string;
   status?: { label: string; tone: AgentMessageStatus };
   text: string;
+  /** Только что пришедший ответ: «допечатать» текст, footer — после печати. */
+  typewriter?: boolean;
+  /** Текст подрос при печати — ленте доехать за ним. */
+  onTextGrow?: () => void;
 }) {
   const fromAgent = from === 'agent';
+  const { done, shown } = useTypewriterText(text, typewriter);
+  useLayoutEffect(() => {
+    onTextGrow?.();
+  }, [onTextGrow, shown.length]);
   return (
     <div className={`flex flex-col gap-1 ${fromAgent ? 'items-start' : 'items-end'}`} data-agent-message={from}>
-      {caption || status ? (
-        <div className="flex max-w-full items-center gap-1.5 px-1 text-[11px] text-gray-500 dark:text-gray-400">
-          {fromAgent ? agentMark(brand, caption ?? '') : null}
-          {caption ? <span className={`min-w-0 truncate ${fromAgent ? 'font-medium' : ''}`}>{caption}</span> : null}
-          {status ? (
-            <span className={`inline-flex shrink-0 items-center gap-0.5 ${STATUS_CLASS[status.tone]}`}>
-              <Icon className="h-3 w-3" name={STATUS_ICON[status.tone]} />
-              {status.label}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+      {captionRow({ brand, caption, fromAgent, status })}
       <div className={`break-words ${bodyClassFor(fromAgent, card)} ${text ? '' : 'italic opacity-80'}`}>
-        {text ? <AgentMessageText surface={fromAgent ? 'plain' : 'bubble'} text={text} /> : placeholder}
+        {text ? <AgentMessageText surface={fromAgent ? 'plain' : 'bubble'} text={shown} /> : placeholder}
       </div>
-      {footer}
+      {done ? footer : null}
     </div>
   );
 }

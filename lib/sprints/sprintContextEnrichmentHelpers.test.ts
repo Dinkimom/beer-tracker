@@ -100,7 +100,7 @@ describe('collectSprintContextWarnings', () => {
       })
     ).toEqual([
       'tracker_sprint_unavailable: x',
-      'empty_plan: no positions, notes, links, or goals in Beer Tracker for this sprint',
+      'empty_plan: no positions, notes, links, or goals in Beer Tracker for this sprint (tracker issues not yet placed are in unplannedTasks)',
       'unresolved_assignees: staff:1, staff:2',
     ]);
   });

@@ -43,6 +43,7 @@ const target = { id: 'RND-1779', kind: 'position' as const, label: 'RND-1779 · 
 
 function session(messages: AgentSessionMessage[]): AgentSession {
   return {
+    agentActivity: null,
     closedAt: null,
     context: { taskKey: 'RND-1779' },
     createdAt: '2026-10-20T10:00:00.000Z',

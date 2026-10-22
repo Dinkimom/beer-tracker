@@ -133,7 +133,9 @@ export function collectSprintContextWarnings(input: {
 }): string[] {
   const warnings = [...input.softWarnings];
   if (input.emptyPlan) {
-    warnings.push('empty_plan: no positions, notes, links, or goals in Beer Tracker for this sprint');
+    warnings.push(
+      'empty_plan: no positions, notes, links, or goals in Beer Tracker for this sprint (tracker issues not yet placed are in unplannedTasks)'
+    );
   }
   if (input.unresolvedAssigneeIds.length > 0) {
     warnings.push(

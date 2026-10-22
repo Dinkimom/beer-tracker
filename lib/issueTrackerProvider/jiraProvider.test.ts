@@ -1,3 +1,5 @@
+import type * as JiraIssueSearch from './jiraIssueSearch';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { UnsupportedIssueTrackerOperationError } from './errors';
@@ -7,6 +9,7 @@ import {
   createJiraUnsupportedProviderClient,
   jiraTrackerProvider,
 } from './jiraProvider';
+import { loadJiraSprintIssues } from './jiraSprintIssueLoad';
 
 vi.mock('./jiraMyself', () => ({
   fetchJiraCurrentUser: vi.fn(() =>
@@ -211,7 +214,9 @@ vi.mock('./jiraQueues', () => ({
   ),
 }));
 
-vi.mock('./jiraIssueSearch', () => ({
+vi.mock('./jiraIssueSearch', async (importOriginal) => ({
+  isJiraEpicIssueTypeKey: (await importOriginal<typeof JiraIssueSearch>())
+    .isJiraEpicIssueTypeKey,
   searchJiraIssuesOnBoard: vi.fn((_api: unknown, boardId: number, query: string) =>
     Promise.resolve(
       query.trim()
@@ -410,6 +415,31 @@ describe('jiraTrackerProvider skeleton', () => {
       'updateIssue',
       'updateSprintStatus',
     ]);
+  });
+
+  it('getTasksInSprintWithParents keeps localized task types and drops epics', async () => {
+    const client = createJiraProviderClient({
+      apiToken: 'token',
+      email: 'user@example.com',
+      kind: 'jira-cloud',
+      webBaseUrl: 'https://example.atlassian.net',
+    });
+    const issue = (key: string, typeKey: string) => ({
+      id: key,
+      key,
+      provider: 'jira' as const,
+      self: '',
+      summary: key,
+      type: { key: typeKey },
+    });
+    vi.mocked(loadJiraSprintIssues).mockResolvedValueOnce([
+      issue('PROJ-1', 'баг'),
+      issue('PROJ-2', 'задача'),
+      issue('PROJ-3', 'эпик'),
+      issue('PROJ-4', 'story'),
+    ]);
+    const issues = await client.getTasksInSprintWithParents(78804);
+    expect(issues.map((row) => row.key)).toEqual(['PROJ-1', 'PROJ-2', 'PROJ-4']);
   });
 
   it('uses the same unsupported client from factory helper', async () => {

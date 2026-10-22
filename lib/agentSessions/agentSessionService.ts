@@ -6,6 +6,7 @@ import type {
 } from '@/lib/agentSessions/agentSession';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
+import { agentMcpToolCallsFromBody } from '@/lib/agentSessions/agentActivity';
 import {
   agentSessionDraftVersion,
   agentSessionTitleFromIntent,
@@ -20,6 +21,7 @@ import {
   insertAgentSessionMessage,
   listAgentSessions,
   setAgentSessionStatus,
+  touchAgentSessionActivity,
 } from '@/lib/agentSessions/agentSessionsRepository';
 import { findActiveMcpOAuthClientMetadata } from '@/lib/mcp/oauth/mcpOAuthRepository';
 import { resolveMcpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
@@ -338,4 +340,29 @@ export async function replyAgentSession(input: {
   await setAgentSessionStatus({ sessionId: session.id, status: input.close ? 'closed' : 'waiting_user' });
   notifySession(input.organizationId, session.sprintId);
   return requireSession(input);
+}
+
+/**
+ * Тело запроса к /api/mcp: вызовы тулов → шаг агента в ждущих его сессиях и пинок планеру.
+ * Так видно, что внешний агент (claude.ai, Cursor…) забрал просьбу и что он делает.
+ */
+export async function recordAgentMcpActivity(input: {
+  body: unknown;
+  organizationId: string;
+  ownerId: string;
+}): Promise<void> {
+  const sprintIds = new Set<number>();
+  for (const call of agentMcpToolCallsFromBody(input.body)) {
+    const touched = await touchAgentSessionActivity({
+      organizationId: input.organizationId,
+      ownerId: input.ownerId,
+      ...call,
+    });
+    for (const sprintId of touched) {
+      sprintIds.add(sprintId);
+    }
+  }
+  for (const sprintId of sprintIds) {
+    notifySession(input.organizationId, sprintId);
+  }
 }

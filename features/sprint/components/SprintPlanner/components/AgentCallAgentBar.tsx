@@ -1,5 +1,7 @@
 'use client';
 
+import type { AgentBridgeStep } from '@/lib/agentSessions/agentBridge';
+
 import toast from 'react-hot-toast';
 
 import { CopyFeedbackGlyph } from '@/components/CopyFeedbackGlyph';
@@ -19,8 +21,9 @@ const BAR_CLASS =
  * Полоска над полем ввода — фраза для чата и ссылки, открывающие чат с ней (фраза ещё и в буфере).
  * Если мост к Claude CLI на связи, агента он запускает сам при отправке; пока тот работает, полоски
  * нет — ход работы в пузыре «Ждёт агента». Кнопка — на случай, когда запуск не прошёл.
+ * `silentStep` — агент забрал просьбу, но давно не вызывал MCP: зовём снова, с шагом, где он затих.
  */
-export function AgentCallAgentBar({ sessionId }: { sessionId: string }) {
+export function AgentCallAgentBar({ sessionId, silentStep }: { sessionId: string; silentStep?: AgentBridgeStep }) {
   const { t } = useI18n();
   const { copied, copy } = useCopyFeedback();
   const bridge = useAgentBridge();
@@ -68,7 +71,11 @@ export function AgentCallAgentBar({ sessionId }: { sessionId: string }) {
 
   return (
     <div className={BAR_CLASS} data-agent-call-bar="">
-      <span className="mr-auto min-w-0">{t('agentSession.callAgentHint')}</span>
+      <span className="mr-auto min-w-0">
+        {silentStep
+          ? t('agentSession.agentSilentHint', { step: t(`agentSession.bridgeStep.${silentStep}`) })
+          : t('agentSession.callAgentHint')}
+      </span>
       <button className={LINK_CLASS} title={prompt} type="button" onClick={() => copy(prompt).catch(() => undefined)}>
         <CopyFeedbackGlyph className="h-3 w-3" copied={copied} idleName="copy" />
         {copied ? t('agentSession.copied') : t('agentSession.copyPhrase')}

@@ -24,7 +24,8 @@ const DOT_CLASS: Record<AgentSessionStatus, string> = {
 /**
  * Агент в капсуле свимлейна — единственный вход в чат: открывает и сворачивает его, открыт —
  * нажата. Без сессии чат пишет новую просьбу про спринт, с сессией — показывает её; новая сессия —
- * в шапке чата. Точка — чья очередь в активной сессии, число — 💬 без ответа агента.
+ * в шапке чата. Точка — чья очередь в активной сессии (пульсирует — непрочитанный ответ агента),
+ * число — 💬 без ответа агента.
  * Вместо ✨ — значок того, кто ответит (Claude, Cursor…), если он известен.
  */
 export function SwimlanePlacementToolbarAgentButton({
@@ -32,6 +33,7 @@ export function SwimlanePlacementToolbarAgentButton({
   open,
   openComments,
   status,
+  unread = false,
   onClick,
 }: {
   /** Клиент агента; null — общий ✨. */
@@ -40,6 +42,8 @@ export function SwimlanePlacementToolbarAgentButton({
   openComments: number;
   /** Статус активной сессии; нет — сессии нет. */
   status?: AgentSessionStatus;
+  /** Агент ответил, пока чат был свёрнут. */
+  unread?: boolean;
   onClick: () => void;
 }) {
   const { t } = useI18n();
@@ -67,10 +71,12 @@ export function SwimlanePlacementToolbarAgentButton({
             <Icon className="h-4 w-4 shrink-0" name="sparkles" />
           )}
           {status && openComments === 0 ? (
-            <span
-              aria-hidden
-              className={`absolute right-1 top-1 h-2 w-2 rounded-full ring-2 ring-white dark:ring-gray-800 ${DOT_CLASS[status]}`}
-            />
+            <span aria-hidden className="absolute right-1 top-1 flex h-2 w-2">
+              {unread ? (
+                <span className={`absolute inset-0 rounded-full opacity-75 motion-safe:animate-ping ${DOT_CLASS[status]}`} />
+              ) : null}
+              <span className={`relative h-2 w-2 rounded-full ring-2 ring-white dark:ring-gray-800 ${DOT_CLASS[status]}`} />
+            </span>
           ) : null}
           {openComments > 0 ? (
             <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-blue-600 px-1 text-[10px] font-semibold leading-4 text-white">

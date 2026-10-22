@@ -1,3 +1,4 @@
+import type { AgentSessionActivity } from '@/lib/agentSessions/agentActivity';
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
@@ -64,6 +65,8 @@ export interface AgentSessionMessage {
 }
 
 export interface AgentSession {
+  /** Последний вызов MCP агентом, пока сессия ждала его; null — не было. */
+  agentActivity: AgentSessionActivity | null;
   closedAt: string | null;
   context: AgentSessionContext;
   createdAt: string;

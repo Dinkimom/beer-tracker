@@ -1,6 +1,7 @@
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { recordAgentMcpActivity } from '@/lib/agentSessions/agentSessionService';
 import { createSprintContextMcpServer } from '@/lib/mcp/createSprintContextMcpServer';
 import { MCP_OAUTH_CORS_HEADERS } from '@/lib/mcp/oauth/constants';
 import {
@@ -32,6 +33,17 @@ async function handleMcp(request: NextRequest): Promise<Response> {
   const auth = await tryRequireSprintContextMcpAuth(request);
   if (!auth || !('ctx' in auth)) {
     return auth && 'response' in auth ? auth.response : mcpUnauthorizedResponse(request);
+  }
+
+  if (request.method === 'POST') {
+    // Шаг агента для планера — в фоне: вызов тула не ждёт записи.
+    request
+      .clone()
+      .json()
+      .then((body: unknown) =>
+        recordAgentMcpActivity({ body, organizationId: auth.ctx.organizationId, ownerId: auth.ctx.userId })
+      )
+      .catch((error: unknown) => console.warn('[mcp] agent activity:', error));
   }
 
   const transport = new WebStandardStreamableHTTPServerTransport({

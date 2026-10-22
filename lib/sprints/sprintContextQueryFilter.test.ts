@@ -67,6 +67,10 @@ function payload(): SprintContextPayload {
     ],
     sprintGoals: { delivery: [], discovery: [] },
     taskLinks: [],
+    unplannedTasks: [
+      { assigneeId: 'staff:a', summary: 'backlog a', taskId: 'T-3' },
+      { assigneeId: null, summary: 'unassigned', taskId: 'T-4' },
+    ],
   };
 }
 
@@ -77,10 +81,18 @@ describe('applySprintContextQueryFilters', () => {
     expect(next.notes.map((n) => n.id)).toEqual(['n1']);
     expect(next.capacity?.people).toHaveLength(1);
     expect(next.capacity?.people[0]?.assigneeId).toBe('staff:a');
+    expect(next.unplannedTasks?.map((t) => t.taskId)).toEqual(['T-3']);
   });
 
   it('filters by taskIds', () => {
     const next = applySprintContextQueryFilters(payload(), { taskIds: ['T-2'] });
     expect(next.positions.map((p) => p.taskId)).toEqual(['T-2']);
+    expect(next.unplannedTasks).toEqual([]);
+  });
+
+  it('keeps unplanned tasks matching taskIds', () => {
+    const next = applySprintContextQueryFilters(payload(), { taskIds: ['T-4'] });
+    expect(next.positions).toEqual([]);
+    expect(next.unplannedTasks?.map((t) => t.taskId)).toEqual(['T-4']);
   });
 });
