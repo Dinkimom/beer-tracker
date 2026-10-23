@@ -2,6 +2,28 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.24.0] — 2026-10-23
+
+### English
+
+- Manual swimlane layout: a new «Auto-arrange» toggle in the layers menu. Turn it off to place tasks and notes on any row by dragging; manual layers are saved per sprint and shared with the team.
+- Notes get a WYSIWYG editor: headings, bullet lists, checkboxes and mentions are edited in place, while the note is still stored as plain markdown that the agent and checkboxes on the board keep reading.
+- A note can be expanded into a focused editor and sent back to the board.
+- Saving a note now plays a short «stick to the board» animation instead of a toast.
+- Hovering the board is calmer: linked-task highlighting and the «+» in empty cells appear only after the cursor rests for a moment.
+- No operator action needed: the new `swimlane_card_layers` table is created automatically on first use. Migration file `database/add-swimlane-card-layers.sql` is available for manual setups.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.24.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Ручная раскладка свимлейна: в меню слоёв появился переключатель «Автосортировка». Выключите его — и задачи с заметками можно расставлять по строкам перетаскиванием; ручные слои сохраняются в спринте и видны всей команде.
+- WYSIWYG-редактор заметок: заголовки, списки, чекбоксы и упоминания правятся прямо в тексте, а заметка по-прежнему хранится как markdown, который читают агент и чекбоксы на доске.
+- Заметку можно развернуть в отдельный редактор и вернуть на доску.
+- Сохранение заметки сопровождается короткой анимацией «приклеивания» вместо тоста.
+- Доска спокойнее реагирует на курсор: подсветка связанных задач и «+» в пустых ячейках появляются, только когда курсор задержался.
+- Действий от операторов не нужно: новая таблица `swimlane_card_layers` создаётся автоматически при первом обращении. Для ручной установки есть миграция `database/add-swimlane-card-layers.sql`.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.24.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.23.1] — 2026-10-23
 
 ### English

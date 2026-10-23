@@ -18,7 +18,7 @@
 <p align="center">
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" /></a>
   <a href="https://hub.docker.com/r/dinkimom/beer-tracker"><img alt="Docker Hub" src="https://img.shields.io/badge/docker-dinkimom%2Fbeer--tracker-2496ED?logo=docker&logoColor=white" /></a>
-  <a href="./CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-1.23.1-informational" /></a>
+  <a href="./CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-1.24.0-informational" /></a>
 </p>
 
 <p align="center">
@@ -133,7 +133,7 @@ cp env.example .env
 docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
 ```
 
-Откройте [http://localhost:3000](http://localhost:3000) и подключите трекер. Опубликованные образы — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker), тег `1.23.1`.
+Откройте [http://localhost:3000](http://localhost:3000) и подключите трекер. Опубликованные образы — [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker), тег `1.24.0`.
 
 Установка, S3, sync и разработка из исходников — [docs/INSTALL.md](./docs/INSTALL.md). Провайдер на организацию — [docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md).
 
