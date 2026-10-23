@@ -5,12 +5,7 @@ import type { ResolvedTaskCardSlotItem } from '@/lib/taskCard/taskCardSlots';
 import type { Developer, Task } from '@/types';
 import type { KeyboardEvent } from 'react';
 
-import { useMemo } from 'react';
-
-import { getStickyNoteContentLayoutClass } from '@/features/comments/utils/stickyNoteSurfaceClasses';
-import { CommentMentionSelector } from '@/features/task/components/TaskBar/components/quickAddMenu/CommentMentionSelector';
-import { useCommentMentionAutocomplete } from '@/features/task/components/TaskBar/components/quickAddMenu/hooks/useCommentMentionAutocomplete';
-import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
+import { StickyNoteRichEditor } from '@/features/comments/components/StickyNoteRichEditor';
 
 import { TaskCardSlotItems } from '../slots/TaskCardSlotItems';
 
@@ -69,36 +64,23 @@ export function TaskCardSwimlaneInlineEditor({
   onTitleChange,
 }: TaskCardSwimlaneInlineEditorProps) {
   const isCommentCard = task.localDraftKind === 'comment';
-  const mentionCandidates = useMemo(
-    () =>
-      isCommentCard
-        ? developers.filter((developer) => !isTeamSwimlaneAssigneeId(developer.id))
-        : [],
-    [developers, isCommentCard]
-  );
-  const mention = useCommentMentionAutocomplete({
-    developers: mentionCandidates,
-    text: inlineTitleEditor.value,
-    textareaRef: titleInputRef,
-    onTextChange: (value) => {
-      const textarea = titleInputRef.current;
-      const caret = textarea?.selectionStart ?? value.length;
-      onTitleChange(value, {
-        start: caret,
-        end: textarea?.selectionEnd ?? caret,
-      });
-    },
-  });
+  if (isCommentCard) {
+    return (
+      <StickyNoteRichEditor
+        className={`${textSize} ${lineHeightClass} ${teamTextColor}`}
+        developers={developers}
+        placeholder={inlineTitleEditor.placeholder}
+        value={inlineTitleEditor.value}
+        onCancel={inlineTitleEditor.onCancel}
+        onChange={inlineTitleEditor.onChange}
+        onSubmit={inlineTitleEditor.onSubmit}
+      />
+    );
+  }
 
   return (
-    <div
-      className={`${textSize} ${lineHeightClass} ${teamTextColor} ${
-        isCommentCard
-          ? getStickyNoteContentLayoutClass()
-          : 'flex min-h-0 w-full flex-col'}
-      }`}
-    >
-      {!isCommentCard && titleLeadItems.length > 0 && slotContext ? (
+    <div className={`${textSize} ${lineHeightClass} ${teamTextColor} flex min-h-0 w-full flex-col`}>
+      {titleLeadItems.length > 0 && slotContext ? (
         <div className="mb-0.5 shrink-0">
           <TaskCardSlotItems context={slotContext} items={titleLeadItems} task={task} />
         </div>
@@ -106,42 +88,29 @@ export function TaskCardSwimlaneInlineEditor({
       <textarea
         ref={titleInputRef}
         aria-label={inlineTitleEditor.placeholder}
-        className={`${titleEditorClassName}${isCommentCard ? ' placeholder:opacity-50' : ''}`}
+        className={titleEditorClassName}
         placeholder={inlineTitleEditor.placeholder}
         rows={1}
-        spellCheck={isCommentCard ? false : undefined}
         value={inlineTitleEditor.value}
         onChange={(event) => {
-          mention.handleTextareaChange(
-            event.target.value,
-            event.target.selectionStart ?? event.target.value.length
-          );
+          const caret = event.target.selectionStart ?? event.target.value.length;
+          onTitleChange(event.target.value, {
+            start: caret,
+            end: event.target.selectionEnd ?? caret,
+          });
         }}
-        onClick={mention.syncCaretFromTextarea}
         onKeyDown={(event) => {
           handleInlineNoteEditorKeyDown({
             event,
-            mentionKeyHandled: mention.handleKeyDown(event),
+            mentionKeyHandled: false,
             onCancel: inlineTitleEditor.onCancel,
             onSubmit: inlineTitleEditor.onSubmit,
           });
         }}
-        onKeyUp={(event) => {
-          event.stopPropagation();
-          mention.syncCaretFromTextarea();
-        }}
+        onKeyUp={(event) => event.stopPropagation()}
         onMouseDown={(event) => event.stopPropagation()}
         onPointerDown={(event) => event.stopPropagation()}
-        onSelect={mention.syncCaretFromTextarea}
       />
-      {mention.isOpen ? (
-        <CommentMentionSelector
-          activeIndex={mention.activeIndex}
-          anchorRef={titleInputRef}
-          candidates={mention.candidates}
-          onSelect={mention.selectDeveloper}
-        />
-      ) : null}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   removeDemoPosition,
   replaceDemoPositions,
   upsertDemoPosition,
+  writeDemoLaneLayers,
 } from './demoFixtureStore';
 import { DEMO_SPRINT_NEXT_ID } from './demoIds';
 
@@ -35,6 +36,30 @@ function applyPositionBody(body: unknown): void {
   });
 }
 
+function demoLaneLayers(): Array<{ cardId: string; layer: number; rev: number }> {
+  return Object.entries(getDemoFixtureStore().laneLayers).map(([cardId, layer]) => ({
+    cardId,
+    layer,
+    rev: 0,
+  }));
+}
+
+function handleLaneLayersWrite(path: string, method: string, body: unknown): DemoFixtureResult | null {
+  if (!path.match(/^\/sprints\/\d+\/lane-layers$/) || method !== 'put') {
+    return null;
+  }
+  const layers = (body as { layers?: unknown } | undefined)?.layers;
+  if (Array.isArray(layers)) {
+    writeDemoLaneLayers(
+      layers.filter(
+        (item): item is { cardId: string; layer: number | null } =>
+          typeof item?.cardId === 'string' && (item.layer === null || typeof item.layer === 'number')
+      )
+    );
+  }
+  return ok({ success: true });
+}
+
 function handlePositionsAliases(path: string, method: string): DemoFixtureResult | null {
   if (path.match(/^\/sprints\/\d+\/positions\/batch$/) && method === 'post') {
     return ok({ success: true });
@@ -50,10 +75,14 @@ function handlePositionsAliases(path: string, method: string): DemoFixtureResult
 function readSprintPositions(sprintId: number): DemoFixtureResult {
   const store = getDemoFixtureStore();
   if (sprintId !== DEMO_SPRINT_NEXT_ID) {
-    return ok({ planAnchors: store.planAnchors, positions: store.positions });
+    return ok({ laneLayers: demoLaneLayers(), planAnchors: store.planAnchors, positions: store.positions });
   }
   const taskIds = new Set(getDemoSprintTasks(sprintId).map((t) => t.id));
-  return ok({ planAnchors: [], positions: store.positions.filter((p) => taskIds.has(p.task_id)) });
+  return ok({
+    laneLayers: demoLaneLayers(),
+    planAnchors: [],
+    positions: store.positions.filter((p) => taskIds.has(p.task_id)),
+  });
 }
 
 function handlePositionsCrud(
@@ -83,7 +112,7 @@ export function handleDemoPositions(
   params: URLSearchParams,
   body: unknown
 ): DemoFixtureResult | null {
-  const alias = handlePositionsAliases(path, method);
+  const alias = handlePositionsAliases(path, method) ?? handleLaneLayersWrite(path, method, body);
   if (alias) return alias;
 
   const sprintId = matchSprintId(path, 'positions');

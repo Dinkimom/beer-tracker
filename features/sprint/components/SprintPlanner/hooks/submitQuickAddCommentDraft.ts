@@ -1,10 +1,11 @@
 import type { Comment, Task, TaskParent, TaskPosition } from '@/types';
 
-import toast from 'react-hot-toast';
-
+import { playStickyNoteSaveMotion } from '@/features/comments/utils/stickyNoteSaveMotion';
+import { createIdKeepingStickyNoteTilt } from '@/features/comments/utils/stickyNoteTilt';
 import {
   commentSizeFromDraftPosition,
   parseSwimlaneCommentTaskId,
+  toSwimlaneCommentTaskId,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { resolveAnnotationPersistFromLaneDraft } from '@/features/swimlane/utils/featureSwimlaneRows';
 import { parseStickyNoteColor, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -63,7 +64,7 @@ interface SubmitQuickAddCommentDraftInput {
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }
 
-type SubmitQuickAddCommentDraftResult = 'created' | 'noop' | 'updated';
+type SubmitQuickAddCommentDraftResult = 'created' | 'noop' | 'unchanged' | 'updated';
 
 function resolveCommentText(
   draftTitle: string | undefined,
@@ -73,12 +74,18 @@ function resolveCommentText(
   return draftTitle?.trim() || fallbackText?.trim() || defaultNote;
 }
 
-function updateSavedSwimlaneComment(input: SubmitQuickAddCommentDraftInput, commentId: string): 'updated' {
+function updateSavedSwimlaneComment(
+  input: SubmitQuickAddCommentDraftInput,
+  commentId: string
+): 'unchanged' | 'updated' {
   const savedComment = input.comments.find((comment) => comment.id === commentId);
   const text = resolveCommentText(input.draftTitle, savedComment?.text, input.defaultNote);
-  input.onCommentUpdate(commentId, text, parseStickyNoteColor(input.color ?? savedComment?.color));
+  const color = parseStickyNoteColor(input.color ?? savedComment?.color);
+  input.onCommentUpdate(commentId, text, color);
   input.closeNoteComposer();
-  return 'updated';
+  const changed =
+    savedComment == null || savedComment.text !== text || parseStickyNoteColor(savedComment.color) !== color;
+  return changed ? 'updated' : 'unchanged';
 }
 
 function createSwimlaneCommentFromDraft(input: SubmitQuickAddCommentDraftInput): 'created' | 'noop' {
@@ -91,7 +98,7 @@ function createSwimlaneCommentFromDraft(input: SubmitQuickAddCommentDraftInput):
   if (!text) {
     return 'noop';
   }
-  const newId = crypto.randomUUID();
+  const newId = createIdKeepingStickyNoteTilt(input.taskId, toSwimlaneCommentTaskId);
   const { height, width, y } = commentSizeFromDraftPosition(
     draftPosition.duration,
     input.cardRowLayout
@@ -100,6 +107,7 @@ function createSwimlaneCommentFromDraft(input: SubmitQuickAddCommentDraftInput):
   const assigneeId = input.persistAssigneeId ?? persist.assigneeId;
   const parent =
     input.persistParent !== undefined ? input.persistParent ?? undefined : persist.parent;
+  playStickyNoteSaveMotion(toSwimlaneCommentTaskId(newId), 'stick');
   input.onCommentCreate({
     id: newId,
     clientInstanceId: newId,
@@ -136,21 +144,15 @@ export function submitQuickAddCommentDraft(
 
 interface CompleteQuickAddCommentDraftInput extends SubmitQuickAddCommentDraftInput {
   cardRowUi?: DraftCommentCardRowUi;
-  createdMessage: string;
-  updatedMessage: string;
 }
 
-/** Сохраняет заметку и показывает toast об обновлении или создании. */
+/** Сохраняет заметку; правка отзывается «прижатием» листа (новая заметка «приклеивается» сама). */
 export function completeQuickAddCommentDraft(input: CompleteQuickAddCommentDraftInput): void {
   const cardRowLayout =
     input.cardRowLayout ??
     (input.cardRowUi ? consumeDraftCommentCardRowLayout(input.taskId, input.cardRowUi) : null);
   const result = submitQuickAddCommentDraft({ ...input, cardRowLayout });
   if (result === 'updated') {
-    toast.success(input.updatedMessage);
-    return;
-  }
-  if (result === 'created') {
-    toast.success(input.createdMessage);
+    playStickyNoteSaveMotion(input.taskId, 'press');
   }
 }

@@ -34,7 +34,7 @@ function emptyDragUi(): DragUiSnapshot {
   };
 }
 
-export function useDragState(taskPositionsSize: number): {
+export function useDragState(taskPositionsSize: number, manualLayers = false): {
   dragUi: DragUiSnapshot;
   dragStateApi: SwimlaneDragStateApi;
   hoverStore: SwimlaneDragHoverStore;
@@ -45,6 +45,10 @@ export function useDragState(taskPositionsSize: number): {
   const [hoverStore] = useState(() => new SwimlaneDragHoverStore());
   const [sidebarDropPointerStore] = useState(() => new SwimlaneSidebarDropPointerStore());
   const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
+  const manualLayersRef = useRef(manualLayers);
+  useEffect(() => {
+    manualLayersRef.current = manualLayers;
+  }, [manualLayers]);
 
   const resetDragState = useCallback(() => {
     hoverStore.reset();
@@ -115,6 +119,9 @@ export function useDragState(taskPositionsSize: number): {
       },
       get isSidebarDropTarget() {
         return snapshotRef.current.isSidebarDropTarget;
+      },
+      get manualLayers() {
+        return manualLayersRef.current;
       },
       get sidebarDropPointerY() {
         return sidebarDropPointerStore.getLatest();

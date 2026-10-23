@@ -20,7 +20,7 @@ export function isValidCell(
 export function areCellPositionsEqual(a: CellPosition | null, b: CellPosition | null): boolean {
   if (a === b) return true;
   if (a === null || b === null) return false;
-  return a.assigneeId === b.assigneeId && a.day === b.day && a.part === b.part;
+  return a.assigneeId === b.assigneeId && a.day === b.day && a.part === b.part && a.layer === b.layer;
 }
 
 /**

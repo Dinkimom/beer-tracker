@@ -7,11 +7,17 @@ import { getPartsPerDay } from '@/constants';
 import { positionToStartCell } from '@/lib/planner-timeline';
 import { resolveSwimlaneBaselinesForLayerPacking } from '@/lib/swimlane/swimlaneBaselineLayoutMode';
 
-import { buildSwimlaneTaskVerticalLayoutById, calculateBaselines, distributeTasksToLayers } from './layerUtils';
+import {
+  buildSwimlaneLayerPackingItems,
+  calculateBaselines,
+  distributeTasksToLayers,
+  placeSwimlaneLayerItems,
+} from './layerUtils';
 import {
   buildSwimlaneDropPreviewLaneModel,
   resolveSwimlaneDropPreviewSlot,
 } from './swimlaneDropPreview';
+import { resolveSwimlaneCardDropInLane } from './swimlaneLaneLayoutRegistry';
 
 const TOTAL_CELLS = 10 * getPartsPerDay();
 
@@ -45,18 +51,21 @@ function position(taskId: string, assignee: string, startCell: number, duration:
 function resolve(input: {
   activeDraggableId?: string;
   activeTask: Task;
+  autoArrange?: boolean;
   baselineLayoutMode?: SwimlaneBaselineLayoutMode;
   currentCell?: number;
   durationCells: number;
   lane?: ReturnType<typeof buildSwimlaneDropPreviewLaneModel>;
   laneTasks: LaneTask[];
   startCell: number;
+  targetTopLayer?: number;
   taskPositions: Map<string, TaskPosition>;
 }) {
   const lane =
     input.lane ??
     buildSwimlaneDropPreviewLaneModel({
       activeTaskId: input.activeTask.id,
+      autoArrange: input.autoArrange ?? true,
       baselineLayoutMode: input.baselineLayoutMode ?? 'compact',
       currentCell: input.currentCell ?? 0,
       laneTasks: input.laneTasks,
@@ -70,6 +79,7 @@ function resolve(input: {
       hoveredCell: {
         assigneeId: 'dev-b',
         day: Math.floor(input.startCell / getPartsPerDay()),
+        layer: input.targetTopLayer,
         part: input.startCell % getPartsPerDay(),
       },
     },
@@ -78,27 +88,39 @@ function resolve(input: {
   });
 }
 
-/** Полная раскладка строки после drop — эталон, с которым сверяется инкрементальный расчёт. */
-function layerAfterFullRelayout(input: {
+/**
+ * Раскладка строки после drop, когда drag-end записал слои всей строки ручными.
+ * Эталон для превью: доска должна показать карточку там же, где превью.
+ */
+function layoutAfterDrop(input: {
   activeTask: Task;
   baselineLayoutMode: SwimlaneBaselineLayoutMode;
   currentCell: number;
   duration: number;
+  lanePlaced: ReturnType<typeof placeSwimlaneLayerItems>;
   laneTasks: LaneTask[];
   startCell: number;
-}): number | undefined {
+  targetTopLayer: number;
+}): Map<string, number> {
   const dropped = { task: input.activeTask, position: position(input.activeTask.id, 'dev-b', input.startCell, input.duration) };
-  const afterDrop = [
-    ...input.laneTasks.filter(({ task: t }) => t.id !== input.activeTask.id),
-    dropped,
-  ].sort((a, b) => positionToStartCell(a.position) - positionToStartCell(b.position));
+  const afterDrop = [...input.laneTasks, dropped];
   const baselines = resolveSwimlaneBaselinesForLayerPacking(
     calculateBaselines(afterDrop, input.currentCell),
     input.baselineLayoutMode
   );
-  const layer = distributeTasksToLayers(afterDrop, baselines).get(input.activeTask.id);
-  const shift = buildSwimlaneTaskVerticalLayoutById([dropped]).get(input.activeTask.id)?.layerShiftUp ?? 0;
-  return layer == null ? undefined : Math.max(0, layer - shift);
+  const [item] = buildSwimlaneLayerPackingItems(
+    [dropped],
+    resolveSwimlaneBaselinesForLayerPacking(calculateBaselines([dropped], input.currentCell), input.baselineLayoutMode)
+  );
+  const { writes } = resolveSwimlaneCardDropInLane({
+    cardId: input.activeTask.id,
+    item,
+    placed: input.lanePlaced,
+    position: dropped.position,
+    targetTopLayer: input.targetTopLayer,
+  });
+  const manual = new Map(writes.map(({ cardId, layer }, index) => [cardId, { layer: layer ?? 0, rev: index }]));
+  return distributeTasksToLayers(afterDrop, baselines, undefined, manual);
 }
 
 function seededRandom(seed: number) {
@@ -144,19 +166,62 @@ describe('resolveSwimlaneDropPreviewSlot', () => {
       startCell: 4,
       taskPositions: positionsOf(laneTasks, ['a', position('a', 'dev-a', 0, 2)]),
     });
-    expect(slot).toEqual({ durationCells: 2, layer: 0, span: 1, startCell: 4 });
+    expect(slot).toEqual({ durationCells: 2, layer: 0, pushesCards: false, span: 1, startCell: 4 });
   });
 
-  it('stacks below a card that overlaps the target range', () => {
+  it('auto-arrange: on equal start follows the position map order, not «new goes last»', () => {
+    const note = { task: task('comment:n', { localDraftKind: 'comment' }), position: position('comment:n', 'dev-b', 4, 2) };
+    const active = task('a');
+    // «a» в карте позиций раньше заметки (задачи идут до заметок) — значит, и в укладке раньше.
+    const taskPositions = new Map<string, TaskPosition>([
+      ['a', position('a', 'dev-b', 0, 2)],
+      ['comment:n', note.position],
+    ]);
+    const slot = resolve({ activeTask: active, durationCells: 2, laneTasks: [note], startCell: 4, taskPositions });
+    expect(slot?.layer).toBe(0);
+  });
+
+  it('stacks below an overlapping card with auto-arrange', () => {
     const laneTasks = [{ task: task('b'), position: position('b', 'dev-b', 0, 4) }];
     const slot = resolve({
       activeTask: task('a'),
       durationCells: 2,
       laneTasks,
       startCell: 2,
+      targetTopLayer: 0,
       taskPositions: positionsOf(laneTasks, ['a', position('a', 'dev-a', 0, 2)]),
     });
     expect(slot?.layer).toBe(1);
+    expect(slot?.pushesCards).toBe(false);
+  });
+
+  it('manual: takes the hovered layer of an overlapping card (the card moves down)', () => {
+    const laneTasks = [{ task: task('b'), position: position('b', 'dev-b', 0, 4) }];
+    const slot = resolve({
+      activeTask: task('a'),
+      autoArrange: false,
+      durationCells: 2,
+      laneTasks,
+      startCell: 2,
+      taskPositions: positionsOf(laneTasks, ['a', position('a', 'dev-a', 0, 2)]),
+    });
+    expect(slot?.layer).toBe(0);
+    expect(slot?.pushesCards).toBe(true);
+  });
+
+  it('manual: drops below an overlapping card when aimed under it', () => {
+    const laneTasks = [{ task: task('b'), position: position('b', 'dev-b', 0, 4) }];
+    const slot = resolve({
+      activeTask: task('a'),
+      autoArrange: false,
+      durationCells: 2,
+      laneTasks,
+      startCell: 2,
+      targetTopLayer: 3,
+      taskPositions: positionsOf(laneTasks, ['a', position('a', 'dev-a', 0, 2)]),
+    });
+    expect(slot?.layer).toBe(1);
+    expect(slot?.pushesCards).toBe(false);
   });
 
   it('ignores the dragged card own slot when moving inside its lane', () => {
@@ -183,6 +248,7 @@ describe('resolveSwimlaneDropPreviewSlot', () => {
     expect(slot).toEqual({
       durationCells: 3,
       layer: 0,
+      pushesCards: false,
       span: 1,
       startCell: TOTAL_CELLS - 3,
     });
@@ -211,7 +277,7 @@ describe('resolveSwimlaneDropPreviewSlot', () => {
     ['compact', 0],
     ['noOverlap', 18],
   ] as const)(
-    'matches a full relayout for every cell of random dense lanes (%s baselines)',
+    'auto-arrange: matches a full relayout for every cell of random dense lanes (%s baselines)',
     (baselineLayoutMode, currentCell) => {
       for (let seed = 1; seed <= 12; seed++) {
         const laneTasks = randomLane(seed, 30);
@@ -219,19 +285,102 @@ describe('resolveSwimlaneDropPreviewSlot', () => {
         const taskPositions = positionsOf(laneTasks, [active.id, position(active.id, 'dev-a', 0, 3)]);
         const lane = buildSwimlaneDropPreviewLaneModel({
           activeTaskId: active.id,
+          autoArrange: true,
           baselineLayoutMode,
           currentCell,
           laneTasks,
         });
         for (let start = 0; start <= TOTAL_CELLS - 3; start++) {
           const slot = resolve({ activeTask: active, durationCells: 3, lane, laneTasks, startCell: start, taskPositions });
-          expect(slot?.layer).toBe(
-            layerAfterFullRelayout({ activeTask: active, baselineLayoutMode, currentCell, duration: 3, laneTasks, startCell: start })
+          const dropped = { task: active, position: position(active.id, 'dev-b', start, 3) };
+          // Как на доске: порядок ключей карты позиций, затем стабильная сортировка по старту.
+          const byId = new Map([...laneTasks, dropped].map((entry) => [entry.task.id, entry]));
+          const afterDrop = [...taskPositions.keys()]
+            .map((id) => byId.get(id))
+            .filter((entry): entry is LaneTask => entry != null)
+            .sort((a, b) => positionToStartCell(a.position) - positionToStartCell(b.position));
+          const baselines = resolveSwimlaneBaselinesForLayerPacking(
+            calculateBaselines(afterDrop, currentCell),
+            baselineLayoutMode
           );
+          expect(slot?.layer).toBe(distributeTasksToLayers(afterDrop, baselines).get(active.id));
         }
       }
     }
   );
+
+  it.each([
+    ['compact', 0],
+    ['noOverlap', 18],
+  ] as const)(
+    'manual: matches the board after drop for every cell and target layer of random dense lanes (%s baselines)',
+    (baselineLayoutMode, currentCell) => {
+      for (let seed = 1; seed <= 6; seed++) {
+        const laneTasks = randomLane(seed, 30);
+        const active = task(`active-${seed}`, { status: 'in-progress' });
+        const taskPositions = positionsOf(laneTasks, [active.id, position(active.id, 'dev-a', 0, 3)]);
+        const lanePlaced = placeSwimlaneLayerItems(
+          laneTasks,
+          resolveSwimlaneBaselinesForLayerPacking(calculateBaselines(laneTasks, currentCell), baselineLayoutMode)
+        );
+        const lane = buildSwimlaneDropPreviewLaneModel({
+          activeTaskId: active.id,
+          baselineLayoutMode,
+          currentCell,
+          laneTasks,
+          placed: lanePlaced,
+        });
+        for (let start = 0; start <= TOTAL_CELLS - 3; start += 3) {
+          for (const targetTopLayer of [0, 0.5, 2, 2.5, 5]) {
+            const slot = resolve({ activeTask: active, durationCells: 3, lane, laneTasks, startCell: start, targetTopLayer, taskPositions });
+            expect(slot).not.toBeNull();
+            // Нижняя половина ряда — под соседом: не дальше следующего ряда.
+            expect(slot!.layer).toBeLessThanOrEqual(Math.floor(targetTopLayer) + 1);
+            const after = layoutAfterDrop({
+              activeTask: active,
+              baselineLayoutMode,
+              currentCell,
+              duration: 3,
+              lanePlaced,
+              laneTasks,
+              startCell: start,
+              targetTopLayer,
+            });
+            expect(after.get(active.id)).toBe(slot!.layer);
+          }
+        }
+      }
+    }
+  );
+
+  it('uses the layout the board already shows, including manual layers', () => {
+    const laneTasks = [
+      { task: task('b'), position: position('b', 'dev-b', 0, 4) },
+      { task: task('c'), position: position('c', 'dev-b', 0, 4) },
+    ];
+    // Вручную «c» на слое 0, «b» на слое 2: пустой слой 1 схлопнут, «a» встаёт между ними.
+    const placed = placeSwimlaneLayerItems(laneTasks, [], undefined, new Map([
+      ['b', { layer: 2, rev: 0 }],
+      ['c', { layer: 0, rev: 0 }],
+    ]));
+    const lane = buildSwimlaneDropPreviewLaneModel({
+      activeTaskId: 'a',
+      baselineLayoutMode: 'compact',
+      currentCell: 0,
+      laneTasks,
+      placed,
+    });
+    const slot = resolve({
+      activeTask: task('a'),
+      durationCells: 2,
+      lane,
+      laneTasks,
+      startCell: 1,
+      targetTopLayer: 1,
+      taskPositions: positionsOf(laneTasks, ['a', position('a', 'dev-a', 0, 2)]),
+    });
+    expect(slot?.layer).toBe(1);
+  });
 
   describe('load', () => {
     const CARDS = 200;

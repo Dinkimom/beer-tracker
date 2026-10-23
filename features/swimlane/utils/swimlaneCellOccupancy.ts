@@ -1,8 +1,12 @@
+import type { PlacedSwimlaneLayerItem } from '@/features/swimlane/utils/layerUtils';
 import type { TaskPosition } from '@/types';
 
+import { getPartsPerDay } from '@/constants';
+import {
+  placeSwimlaneLayerItemInAutoLane,
+  placeSwimlaneLayerItemInLane,
+} from '@/features/swimlane/utils/layerUtils';
 import { getPositionSegmentRanges } from '@/lib/planner-timeline';
-
-const EMPTY_OCCUPIED_LAYERS: ReadonlySet<number> = new Set();
 
 /** Параметры позиционирования «+» в ячейке (stacked-слои при заранее расширенной строке). */
 export function resolveSwimlaneQuickAddBandLayout(params: {
@@ -29,52 +33,6 @@ function addCellRangeToOccupied(
   }
 }
 
-function addCellRangeLayer(
-  occupiedLayersByCell: Map<number, Set<number>>,
-  startCell: number,
-  endCell: number,
-  layer: number
-): void {
-  for (let cell = startCell; cell < endCell; cell++) {
-    const layers = occupiedLayersByCell.get(cell);
-    if (layers) {
-      layers.add(layer);
-      continue;
-    }
-    occupiedLayersByCell.set(cell, new Set([layer]));
-  }
-}
-
-function addCellRangeLayerSpan(
-  occupiedLayersByCell: Map<number, Set<number>>,
-  startCell: number,
-  endCell: number,
-  layer: number,
-  span: number
-): void {
-  const lastLayer = layer + Math.max(1, span);
-  for (let occupiedLayer = layer; occupiedLayer < lastLayer; occupiedLayer++) {
-    addCellRangeLayer(occupiedLayersByCell, startCell, endCell, occupiedLayer);
-  }
-}
-
-function occupyTaskLayerCells(
-  occupiedLayersByCell: Map<number, Set<number>>,
-  taskId: string,
-  startCell: number,
-  endCell: number,
-  taskLayerMap: Map<string, number>,
-  taskVerticalLayoutById?: Map<string, { layerShiftUp: number; span: number }>,
-  taskLayerSpanById?: Map<string, number>
-): void {
-  const layer = taskLayerMap.get(taskId) ?? 0;
-  const layout = taskVerticalLayoutById?.get(taskId);
-  const span = Math.max(1, layout?.span ?? taskLayerSpanById?.get(taskId) ?? 1);
-  const layerShiftUp = Math.max(0, layout?.layerShiftUp ?? 0);
-  const startLayer = layer - layerShiftUp;
-  addCellRangeLayerSpan(occupiedLayersByCell, startCell, endCell, startLayer, span);
-}
-
 /** Индексы ячеек (day * getPartsPerDay() + part), занятых задачами в строке свимлейна. */
 export function buildSwimlaneOccupiedCellIndices(
   positions: Iterable<TaskPosition>
@@ -86,42 +44,6 @@ export function buildSwimlaneOccupiedCellIndices(
     }
   }
   return occupied;
-}
-
-/** Слои карточек и overdue-бейзлайнов в каждой ячейке (day * getPartsPerDay() + part). */
-export function buildSwimlaneOccupiedLayersByCell(
-  positions: Iterable<TaskPosition>,
-  taskLayerMap: Map<string, number>,
-  taskLayerSpanById?: Map<string, number>,
-  baselines?: Iterable<{ end: number; start: number; taskId: string }>,
-  taskVerticalLayoutById?: Map<string, { layerShiftUp: number; span: number }>
-): Map<number, Set<number>> {
-  const occupiedLayersByCell = new Map<number, Set<number>>();
-  for (const position of positions) {
-    for (const { startCell, endCell } of getPositionSegmentRanges(position)) {
-      occupyTaskLayerCells(
-        occupiedLayersByCell,
-        position.taskId,
-        startCell,
-        endCell,
-        taskLayerMap,
-        taskVerticalLayoutById,
-        taskLayerSpanById
-      );
-    }
-  }
-  for (const baseline of baselines ?? []) {
-    occupyTaskLayerCells(
-      occupiedLayersByCell,
-      baseline.taskId,
-      baseline.start,
-      baseline.end,
-      taskLayerMap,
-      taskVerticalLayoutById,
-      taskLayerSpanById
-    );
-  }
-  return occupiedLayersByCell;
 }
 
 /**
@@ -147,55 +69,37 @@ export function clampSwimlaneQuickAddBandBox(
 }
 
 /**
- * Свободный вертикальный слот под кнопку «+».
- * Высота слота = span карточки (фото — две строки). Если текущие слои заняты — null.
+ * Слот под кнопку «+»: тот же слой, который займёт черновик (и потом сохранённая карточка).
+ * В ручном режиме — первое свободное место; при автосортировке — место по жадной укладке. Высота слота = span карточки (фото — две строки).
  * Старт может быть на любом уже видимом слое; span может уйти ниже строки — она вырастет.
+ * Если подходящий слой выше видимых — null.
  */
-export function resolveSwimlaneQuickAddLayerBand(
-  occupiedLayers: ReadonlySet<number> | undefined,
-  maxTaskLayers: number,
-  span = 1
-): { layer: number; span: number } | null {
-  const needed = Math.max(1, span);
-  const occupied = occupiedLayers ?? EMPTY_OCCUPIED_LAYERS;
-  const lastStart = Math.max(0, maxTaskLayers - 1);
-  for (let layer = 0; layer <= lastStart; layer++) {
-    if (isLayerRangeFree(occupied, layer, needed)) {
-      return { layer, span: needed };
-    }
-  }
-  return null;
-}
-
-function isLayerRangeFree(
-  occupied: ReadonlySet<number>,
-  startLayer: number,
-  span: number
-): boolean {
-  for (let offset = 0; offset < span; offset++) {
-    if (occupied.has(startLayer + offset)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/** Объединяет занятые слои на ширине постановки (фото занимает две клетки). */
-export function collectOccupiedLayersForCellRange(
-  occupiedLayersByCell: Map<number, Set<number>> | undefined,
-  startCell: number,
-  durationCells: number
-): Set<number> {
-  const union = new Set<number>();
-  const lastCell = startCell + Math.max(1, durationCells);
-  for (let cell = startCell; cell < lastCell; cell++) {
-    const layers = occupiedLayersByCell?.get(cell);
-    if (!layers) {
-      continue;
-    }
-    for (const layer of layers) {
-      union.add(layer);
-    }
-  }
-  return union;
+export function resolveSwimlaneQuickAddLayerBand(input: {
+  /** Автосортировка: слот там, куда жадная укладка поставит черновик (может подвинуть соседей). */
+  autoArrange?: boolean;
+  durationCells: number;
+  lane: readonly PlacedSwimlaneLayerItem[] | undefined;
+  maxTaskLayers: number;
+  span?: number;
+  startCell: number;
+}): { layer: number; span: number } | null {
+  const span = Math.max(1, input.span ?? 1);
+  const partsPerDay = getPartsPerDay();
+  const place = input.autoArrange ? placeSwimlaneLayerItemInAutoLane : placeSwimlaneLayerItemInLane;
+  const { layer } = place(input.lane ?? [], {
+    baseline: null,
+    id: '',
+    isQuickAddDraft: true,
+    layerShiftUp: 0,
+    position: {
+      assignee: '',
+      duration: Math.max(1, input.durationCells),
+      startDay: Math.floor(input.startCell / partsPerDay),
+      startPart: input.startCell % partsPerDay,
+      taskId: '',
+    },
+    span,
+    startCell: input.startCell,
+  });
+  return layer <= Math.max(0, input.maxTaskLayers - 1) ? { layer, span } : null;
 }

@@ -97,6 +97,7 @@ const BEER_TRACKER_TABLES = [
   'sprint_plan_captures',
   'staff',
   'system_roles',
+  'swimlane_card_layers',
   'sync_runs',
   'task_links',
   'task_position_segments',

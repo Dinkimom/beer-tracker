@@ -6,7 +6,6 @@ import type { Comment } from '@/types';
 import { useEffect } from 'react';
 
 import { getPartsPerDay } from '@/constants';
-import { useI18n } from '@/contexts/LanguageContext';
 import { pasteNoteAtSwimlaneCell } from '@/features/sprint/components/SprintPlanner/hooks/pasteQuickAddNoteDraft';
 import { fileFromClipboardData } from '@/features/task/utils/localPlannerImageFile';
 import { useSwimlaneNotesVisibleStorage } from '@/hooks/useLocalStorage';
@@ -54,14 +53,12 @@ export function applyHoveredCellImagePaste(input: {
 
 function createHoveredNotePasteHandler(
   clipboard: SwimlaneNoteClipboard,
-  createdMessage: string,
   onCommentCreate: (comment: Comment) => void
 ): (payload: { assigneeId: string; day: number; part: number }) => void {
   return (payload) => {
     pasteNoteAtSwimlaneCell({
       ...payload,
       clipboard,
-      createdMessage,
       onCommentCreate,
     });
   };
@@ -88,13 +85,11 @@ export function useSwimlaneQuickAddHoverImagePaste(input: {
     onCommentCreate,
     onCreateTaskInCell,
   } = input;
-  const { t } = useI18n();
   const [notesVisible] = useSwimlaneNotesVisibleStorage();
-  const createdMessage = t('sprintPlanner.swimlane.quickAddMenu.createCommentSuccess');
   useEffect(() => {
     const pasteNote =
       notesVisible && noteClipboard && onCommentCreate
-        ? createHoveredNotePasteHandler(noteClipboard, createdMessage, onCommentCreate)
+        ? createHoveredNotePasteHandler(noteClipboard, onCommentCreate)
         : undefined;
     if (!enabled || cellIndex == null || (!onCreateTaskInCell && !pasteNote)) {
       return;
@@ -116,7 +111,6 @@ export function useSwimlaneQuickAddHoverImagePaste(input: {
   }, [
     assigneeId,
     cellIndex,
-    createdMessage,
     enabled,
     noteClipboard,
     notesVisible,

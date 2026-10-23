@@ -50,7 +50,6 @@ export function useSprintPlannerQuickAddNoteActions({
         closeNoteComposer,
         comments,
         color,
-        createdMessage: t('sprintPlanner.swimlane.quickAddMenu.createCommentSuccess'),
         defaultNote: t('comments.defaultNote'),
         draftTitle,
         onCommentCreate,
@@ -60,7 +59,6 @@ export function useSprintPlannerQuickAddNoteActions({
         taskId,
         taskPositions,
         tasks,
-        updatedMessage: t('sprintPlanner.swimlane.quickAddMenu.updateCommentSuccess'),
       });
     },
     [
@@ -85,7 +83,6 @@ export function useSprintPlannerQuickAddNoteActions({
       }
       pasteQuickAddNoteDraft({
         clipboard,
-        createdMessage: t('sprintPlanner.swimlane.quickAddMenu.createCommentSuccess'),
         onCommentCreate,
         setTaskPositions,
         setTasks,
@@ -94,7 +91,7 @@ export function useSprintPlannerQuickAddNoteActions({
         tasks,
       });
     },
-    [onCommentCreate, setTaskPositions, setTasks, sprintPlannerUi, t, taskPositions, tasks]
+    [onCommentCreate, setTaskPositions, setTasks, sprintPlannerUi, taskPositions, tasks]
   );
 
   return { handlePasteQuickAddNote, handleSubmitQuickAddCommentDraft };

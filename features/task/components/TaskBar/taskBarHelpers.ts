@@ -1,7 +1,7 @@
 import type { Task, TaskPosition } from '@/types';
 import type { DraggableAttributes } from '@dnd-kit/core';
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, FocusEvent } from 'react';
 
 import { CARD_MARGIN, ZIndex } from '@/constants';
 import { SWIMLANE_TASK_ROW_VERTICAL_INSET_PX } from '@/features/swimlane/utils/taskLayerTaskLayout';
@@ -389,6 +389,25 @@ export function shouldCancelInlineEditorOnFocusOut<T>(params: {
     return true;
   }
   return !root.contains(next);
+}
+
+/** Фокус ушёл из карточки — отменить инлайн-редактор (кроме заметок: их черновик живёт). */
+export function cancelInlineEditorOnFocusOut(
+  event: FocusEvent<HTMLElement>,
+  onCancel: (() => void) | undefined,
+  persistDraft: boolean
+): void {
+  const next = event.relatedTarget;
+  if (
+    onCancel &&
+    shouldCancelInlineEditorOnFocusOut({
+      currentTarget: event.currentTarget,
+      persistDraft,
+      relatedTarget: next instanceof Node ? next : null,
+    })
+  ) {
+    onCancel();
+  }
 }
 
 export function isDimmedByContextMenuElsewhere(params: {

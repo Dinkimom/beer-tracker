@@ -13,9 +13,9 @@ import {
   buildSwimlaneTaskLayerSpanById,
   calculateBaselines,
   distributeBaselinesToLayers,
-  distributeTasksToLayers,
+  placeSwimlaneLayerItems,
+  swimlaneLayerMapFromPlaced,
 } from '@/features/swimlane/utils/layerUtils';
-import { buildSwimlaneOccupiedLayersByCell } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { buildSwimlaneSegmentArrowLinks } from '@/features/swimlane/utils/task-arrows/swimlaneSegmentArrowHelpers';
 import { mergeTaskLinksWithDevQa } from '@/features/swimlane/utils/task-arrows/taskArrowsHelpers';
 import { calculateCellFromMouse } from '@/lib/swimlane/swimlaneCellFromGeometry';
@@ -54,14 +54,10 @@ export function recomputeSwimlaneLayouts(sprint: PlannerHotPathSprint): number {
     fingerprint += computeSwimlanePointTotals(positionedTasks).totalSP;
     const baselines = calculateBaselines(positionedTasks, sprint.currentCell);
     const taskLayerSpanById = buildSwimlaneTaskLayerSpanById(positionedTasks);
-    const taskLayerMap = distributeTasksToLayers(positionedTasks, baselines);
+    const placedLayerItems = placeSwimlaneLayerItems(positionedTasks, baselines);
+    const taskLayerMap = swimlaneLayerMapFromPlaced(placedLayerItems);
     const baselineLayerMap = distributeBaselinesToLayers(baselines);
-    fingerprint += buildSwimlaneOccupiedLayersByCell(
-      positionedTasks.map(({ position }) => position),
-      taskLayerMap,
-      taskLayerSpanById,
-      baselines
-    ).size;
+    fingerprint += placedLayerItems.length;
     fingerprint += computeSwimlaneLayoutDimensions({
       baselineLayerMap,
       showParent: false,

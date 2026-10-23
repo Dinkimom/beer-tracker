@@ -12,7 +12,7 @@ import { getInitials } from '@/utils/displayUtils';
 
 interface CommentMentionSelectorProps {
   activeIndex: number;
-  anchorRef: RefObject<HTMLTextAreaElement | null>;
+  anchorRef: RefObject<HTMLElement | null>;
   candidates: readonly Developer[];
   onSelect: (developer: Developer) => void;
 }
@@ -24,7 +24,7 @@ interface MentionSelectorPosition {
 }
 
 function resolveMentionSelectorPosition(
-  anchor: HTMLTextAreaElement | null
+  anchor: HTMLElement | null
 ): MentionSelectorPosition | null {
   if (!anchor) {
     return null;

@@ -300,3 +300,91 @@ describe('resolveSwimlaneCardLayerSpan', () => {
     ).toBe(1);
   });
 });
+
+describe('distributeTasksToLayers with manual layers', () => {
+  const card = (id: string, startPart: number, duration: number) => ({
+    task: { id, status: 'todo' } as never,
+    position: position(id, 0, startPart, duration),
+  });
+
+  it('keeps each card on its manual layer instead of floating up', () => {
+    const layerMap = distributeTasksToLayers([card('a', 0, 2), card('b', 4, 2)], [], undefined, new Map([
+      ['a', { layer: 1, rev: 1 }],
+      ['b', { layer: 0, rev: 1 }],
+    ]));
+    expect(layerMap.get('a')).toBe(1);
+    expect(layerMap.get('b')).toBe(0);
+  });
+
+  it('keeps the most recently edited card in place and pushes the overlapping one down', () => {
+    const tasks = [card('old', 0, 3), card('moved', 1, 2)];
+    const layerMap = distributeTasksToLayers(tasks, [], undefined, new Map([
+      ['moved', { layer: 0, rev: 2 }],
+      ['old', { layer: 0, rev: 1 }],
+    ]));
+    expect(layerMap.get('moved')).toBe(0);
+    expect(layerMap.get('old')).toBe(1);
+  });
+
+  it('cascades the push so cards below keep their order', () => {
+    // «note» растянули на 2 ряда: «b» под ней и «c» под «b» уезжают вниз по очереди.
+    const tasks = [card('comment:note', 0, 2), card('b', 0, 2), card('c', 0, 2)];
+    const layerMap = distributeTasksToLayers(
+      tasks,
+      [],
+      new Map([['comment:note', { layerShiftUp: 0, span: 2 }]]),
+      new Map([
+        ['b', { layer: 1, rev: 1 }],
+        ['c', { layer: 2, rev: 1 }],
+        ['comment:note', { layer: 0, rev: 5 }],
+      ])
+    );
+    expect(layerMap.get('comment:note')).toBe(0);
+    expect(layerMap.get('b')).toBe(2);
+    expect(layerMap.get('c')).toBe(3);
+  });
+
+  it('packs cards without a manual layer into the gaps around manual ones', () => {
+    const layerMap = distributeTasksToLayers([card('auto', 0, 2), card('pinned', 0, 2)], [], undefined, new Map([
+      ['pinned', { layer: 0, rev: 1 }],
+    ]));
+    expect(layerMap.get('pinned')).toBe(0);
+    expect(layerMap.get('auto')).toBe(1);
+  });
+
+  it('places a newly seen card into the free gap instead of pushing earlier-seen ones', () => {
+    // Без порядка появления «new» (раньше по старту) забрала бы слой 0 у «late».
+    const tasks = [card('new', 1, 2), card('late', 2, 2)];
+    expect(distributeTasksToLayers(tasks).get('late')).toBe(1);
+    const seen = new Map([['late', 0]]);
+    const layerMap = distributeTasksToLayers(tasks, [], undefined, undefined, seen);
+    expect(layerMap.get('late')).toBe(0);
+    expect(layerMap.get('new')).toBe(1);
+  });
+});
+
+describe('collapsing empty rows', () => {
+  const card = (id: string, startPart: number, duration: number) => ({
+    task: { id, status: 'todo' } as never,
+    position: position(id, 0, startPart, duration),
+  });
+
+  it('lifts cards once a whole row in between is empty', () => {
+    const layerMap = distributeTasksToLayers([card('a', 0, 2), card('b', 0, 2)], [], undefined, new Map([
+      ['a', { layer: 0, rev: 1 }],
+      ['b', { layer: 3, rev: 1 }],
+    ]));
+    expect(layerMap.get('b')).toBe(1);
+  });
+
+  it('keeps a card below a row that still has another card in it', () => {
+    const layerMap = distributeTasksToLayers([card('a', 0, 2), card('top-right', 6, 2), card('b', 1, 2)], [], undefined, new Map([
+      ['a', { layer: 1, rev: 1 }],
+      ['top-right', { layer: 0, rev: 1 }],
+      ['b', { layer: 2, rev: 1 }],
+    ]));
+    expect(layerMap.get('top-right')).toBe(0);
+    expect(layerMap.get('a')).toBe(1);
+    expect(layerMap.get('b')).toBe(2);
+  });
+});

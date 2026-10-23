@@ -23,9 +23,21 @@ function envelopeOfRanges(
  * Прямое пересечение сегментов — всегда конфликт; у задачи с несколькими
  * сегментами занят весь диапазон от первого до последнего (включая промежутки).
  */
+/** Позиции неизменяемы в рамках раскладки: диапазоны считаем один раз на объект. */
+const segmentRangesByPosition = new WeakMap<TaskPosition, Array<{ endCell: number; startCell: number }>>();
+
+function cachedSegmentRanges(position: TaskPosition): Array<{ endCell: number; startCell: number }> {
+  let ranges = segmentRangesByPosition.get(position);
+  if (!ranges) {
+    ranges = getPositionSegmentRanges(position);
+    segmentRangesByPosition.set(position, ranges);
+  }
+  return ranges;
+}
+
 export function taskPositionsIntersectInTime(a: TaskPosition, b: TaskPosition): boolean {
-  const ra = getPositionSegmentRanges(a);
-  const rb = getPositionSegmentRanges(b);
+  const ra = cachedSegmentRanges(a);
+  const rb = cachedSegmentRanges(b);
   if (ra.some((ia) => rb.some((ib) => rangesIntersectCells(ia, ib)))) {
     return true;
   }
@@ -46,7 +58,7 @@ function positionRangesConflictWithInterval(
   position: TaskPosition,
   interval: { endCell: number; startCell: number }
 ): boolean {
-  const ranges = getPositionSegmentRanges(position);
+  const ranges = cachedSegmentRanges(position);
   if (ranges.some((r) => rangesIntersectCells(r, interval))) {
     return true;
   }
@@ -147,18 +159,19 @@ export interface PlacedSpannedLayerItem<T> {
 }
 
 /**
- * Первый слой, где `item` не пересекается по времени и по вертикали с `placed`.
+ * Первый слой не ниже `minLayer`, где `item` не пересекается по времени и по вертикали с `placed`.
  * Конфликт по времени считается один раз на пару, перебор слоёв — только по конфликтующим.
  */
 export function findSpannedLayerForItem<T extends { layerShiftUp?: number; span: number }>(
   item: T,
   placed: ReadonlyArray<PlacedSpannedLayerItem<T>>,
-  hasTimeConflict: (item: T, other: T) => boolean
+  hasTimeConflict: (item: T, other: T) => boolean,
+  minLayer = 0
 ): PlacedSpannedLayerItem<T> {
   const span = Math.max(1, item.span);
   const layerShiftUp = Math.max(0, item.layerShiftUp ?? 0);
   const conflicting = placed.filter((other) => hasTimeConflict(item, other.item));
-  let layer = 0;
+  let layer = Math.max(0, minLayer);
   while (
     conflicting.some((other) =>
       verticalLayerRangesOverlap(

@@ -3,6 +3,7 @@
 import { useState, type PointerEvent } from 'react';
 
 import { SwimlanePinButton } from '@/features/swimlane/components/SwimlanePinButton';
+import { SWIMLANE_GROUP_HOVER_REVEAL_CLASS } from '@/features/swimlane/utils/swimlaneHoverMotion';
 
 interface SwimlanePinControlProps {
   assigneeId: string;
@@ -20,7 +21,7 @@ export function resolveSwimlanePinControlVisibilityClass(isPinned: boolean): str
   if (isPinned) {
     return 'opacity-100';
   }
-  return 'opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100 swimlane-row-resizing:!opacity-0';
+  return `${SWIMLANE_GROUP_HOVER_REVEAL_CLASS} has-[:focus-visible]:opacity-100 swimlane-row-resizing:!opacity-0`;
 }
 
 export function rectContainsPointer(

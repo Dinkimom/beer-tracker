@@ -37,3 +37,26 @@ export function resolveStickyNoteTiltDegrees(
     STICKY_NOTE_TILT_SQUARE_DEG * squareness * stickyNoteSizeEase(longSide) * stickyNoteTiltSign(cardId);
   return Math.round(degrees * 100) / 100;
 }
+
+const KEEP_TILT_MAX_ATTEMPTS = 16;
+
+/**
+ * Id новой заметки с тем же знаком наклона, что у карточки-источника (черновика).
+ * Иначе при сохранении лист в половине случаев переваливается на другую сторону.
+ */
+export function createIdKeepingStickyNoteTilt(
+  sourceCardId: string,
+  toCardId: (id: string) => string,
+  createId: () => string = () => crypto.randomUUID()
+): string {
+  const sign = stickyNoteTiltSign(sourceCardId);
+  let id = createId();
+  for (
+    let attempt = 1;
+    attempt < KEEP_TILT_MAX_ATTEMPTS && stickyNoteTiltSign(toCardId(id)) !== sign;
+    attempt++
+  ) {
+    id = createId();
+  }
+  return id;
+}

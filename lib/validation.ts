@@ -8,6 +8,7 @@ import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS, MAX_PLANNER_PART_IND
 import { PLANNER_COMMENT_TEXT_MAX_LENGTH } from '@/lib/comments/excalidrawCommentPayload';
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 import { MAX_STICKY_NOTE_REACTION_EMOJI_LENGTH } from '@/lib/comments/stickyNoteReaction';
+import { MAX_SWIMLANE_CARD_LAYER } from '@/lib/swimlane/swimlaneCardLayers';
 const PhaseSegmentSchema = z.object({
   startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
   startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),
@@ -39,6 +40,19 @@ export const TaskPositionSchema = z.object({
    * Если undefined/true — поведение по умолчанию (синхронизируем).
    */
   syncAssignee: z.boolean().optional(),
+});
+
+/** Ручные слои карточек свимлейна; `layer: null` — вернуть карточку в авторасстановку. */
+export const SwimlaneCardLayersSchema = z.object({
+  layers: z
+    .array(
+      z.object({
+        cardId: z.string().min(1).max(255),
+        layer: z.number().int().min(0).max(MAX_SWIMLANE_CARD_LAYER - 1).nullable(),
+      })
+    )
+    .min(1)
+    .max(1000),
 });
 
 export const TaskLinkSchema = z.object({

@@ -1,3 +1,4 @@
+import type { LaneLayerHistoryEntry } from './swimlaneLaneLayersStore';
 import type { Comment, TaskParent, TaskPosition } from '@/types';
 
 /** Layout/parent fields of a sticky note needed to restore a move. */
@@ -27,6 +28,8 @@ export interface PlanHistoryStep {
   after: Map<string, PositionHistoryValue>;
   before: Map<string, PositionHistoryValue>;
   comments?: Map<string, CommentHistoryEntry>;
+  /** Ручные слои карточек: cardId → до/после. */
+  laneLayers?: Map<string, LaneLayerHistoryEntry>;
   taskParents?: Map<string, TaskParentHistoryEntry>;
 }
 
@@ -94,6 +97,20 @@ function commentEntriesHaveChange(
   }
   for (const entry of comments.values()) {
     if (!commentHistorySlicesEqual(entry.before, entry.after)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function laneLayerEntriesHaveChange(
+  laneLayers: ReadonlyMap<string, LaneLayerHistoryEntry> | undefined
+): boolean {
+  if (!laneLayers) {
+    return false;
+  }
+  for (const entry of laneLayers.values()) {
+    if (entry.before !== entry.after) {
       return true;
     }
   }

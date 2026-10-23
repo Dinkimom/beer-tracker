@@ -1,4 +1,4 @@
-import type { DragContextRef, SwimlaneDragStateApi } from './swimlaneDragTypes';
+import type { CellPosition, DragContextRef, SwimlaneDragStateApi } from './swimlaneDragTypes';
 import type { Task, TaskPosition } from '@/types';
 import type { DragEndEvent } from '@dnd-kit/core';
 
@@ -170,6 +170,7 @@ export function handleSwimlaneBacklogDrop(input: {
   dragState: SwimlaneDragStateApi;
   event: DragEndEvent;
   onBacklogTaskDrop: (taskId: string, assigneeId: string, day: number, part: number) => void;
+  onLaneLayerDrop?: (input: { position: TaskPosition; targetTopLayer: number; taskId: string }) => void;
   overId: string;
   taskId: string;
   taskPositions: Map<string, TaskPosition>;
@@ -188,10 +189,24 @@ export function handleSwimlaneBacklogDrop(input: {
     input.taskPositions,
     input.tasks,
     input.dragState.mousePositionRef,
-    input.workingDaysCount
+    input.workingDaysCount,
+    { manualLayers: input.dragState.manualLayers }
   );
 
   if (cell && isValidCell(cell, input.workingDaysCount)) {
+    if (cell.layer != null) {
+      input.onLaneLayerDrop?.({
+        position: {
+          assignee: cell.assigneeId,
+          duration: getTaskDuration(input.taskId, input.taskPositions, input.tasks),
+          startDay: cell.day,
+          startPart: cell.part,
+          taskId: input.taskId,
+        },
+        targetTopLayer: cell.layer,
+        taskId: input.taskId,
+      });
+    }
     input.onBacklogTaskDrop(input.taskId, cell.assigneeId, cell.day, cell.part);
   } else {
     input.onBacklogTaskDrop(input.taskId, assigneeId, 0, 0);
@@ -209,14 +224,15 @@ export function resolveSwimlaneDragFinalCell(input: {
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
   workingDaysCount: number;
-}): { assigneeId: string; day: number; part: number } | null {
+}): CellPosition | null {
   const cell = calculateCellFromDragEvent(
     input.event,
     input.activeId,
     input.taskPositions,
     input.tasks,
     input.dragState.mousePositionRef,
-    input.workingDaysCount
+    input.workingDaysCount,
+    { manualLayers: input.dragState.manualLayers }
   );
 
   const finalCell =

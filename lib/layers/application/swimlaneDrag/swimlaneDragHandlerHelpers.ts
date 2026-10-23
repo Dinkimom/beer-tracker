@@ -37,7 +37,8 @@ export function applySwimlaneDragOverCell(
     taskPositions,
     tasks,
     dragState.mousePositionRef,
-    workingDaysCount
+    workingDaysCount,
+    { manualLayers: dragState.manualLayers }
   );
   if (!cell) {
     dragState.setHoveredCell(null);

@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { getPartsPerDay } from '@/constants';
 import { SwimlaneDragHoverContext } from '@/features/swimlane/hooks/useSwimlaneDragHover';
+import { placeSwimlaneLayerItems } from '@/features/swimlane/utils/layerUtils';
 import { SwimlaneDragHoverStore } from '@/lib/layers/application/swimlaneDrag';
 
 import { SwimlaneDropPreview } from './SwimlaneDropPreview';
@@ -80,8 +81,10 @@ function setup(
               dropDisabled={false}
               isDraggingTask
               layout={{
+                autoArrange: false,
                 baselineLayoutMode: 'compact',
                 currentCell: 0,
+                placedLayerItems: placeSwimlaneLayerItems(laneTasks),
                 positionedTasks: laneTasks,
                 stickyNoteCardRowById: EMPTY_CARD_ROWS,
                 taskBandVisualHeight: 400,
@@ -95,7 +98,7 @@ function setup(
       ))}
     </SwimlaneDragHoverContext.Provider>
   );
-  const hover = (assigneeId: string | null, cellIndex = 0) => {
+  const hover = (assigneeId: string | null, cellIndex = 0, layer?: number) => {
     act(() => {
       store.set(
         assigneeId == null
@@ -103,6 +106,7 @@ function setup(
           : {
               assigneeId,
               day: Math.floor(cellIndex / getPartsPerDay()),
+              layer,
               part: cellIndex % getPartsPerDay(),
             }
       );
@@ -126,17 +130,24 @@ describe('SwimlaneDropPreview', () => {
     expect(view.container.querySelector('[data-swimlane-drop-preview]')).toBeNull();
   });
 
-  it('switches to the new-layer line when every visible layer is taken', () => {
+  it('switches to the new-layer line when dropped below every visible layer', () => {
     const { hover, view } = setup(1, 10, () => 5);
-    hover('lane-0', 6);
+    hover('lane-0', 6, 10);
     const marker = view.container.querySelector('[data-swimlane-drop-preview]');
     expect(marker?.getAttribute('data-swimlane-drop-preview')).toBe('new-layer');
+  });
+
+  it('draws an insert line between layers when the drop pushes cards down', () => {
+    const { hover, view } = setup(1, 2, () => 5);
+    hover('lane-0', 6, 1);
+    const marker = view.container.querySelector<HTMLElement>('[data-swimlane-drop-preview]');
+    expect(marker?.getAttribute('data-swimlane-drop-preview')).toBe('insert');
   });
 
   it('paints the new-layer line in the sticky note color', () => {
     const note: Task = { ...task('active'), localDraftKind: 'comment', stickyNoteColor: 'pink' };
     const { hover, view } = setup(1, 10, () => 5, note);
-    hover('lane-0', 6);
+    hover('lane-0', 6, 10);
     const marker = view.container.querySelector<HTMLElement>('[data-swimlane-drop-preview="new-layer"]');
     expect(marker?.style.borderTopColor).toBe('rgb(249, 198, 221)');
   });

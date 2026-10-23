@@ -149,7 +149,7 @@ export function TaskCardContent({
   const isChooserDraft = isQuickAddChooserDraft(task);
   const titleFontClass =
     isCommentCard ? getStickyNoteTextClass() : 'font-bold';
-  const titleEditorClassName = `pointer-events-auto block w-full min-w-0 resize-none overflow-y-auto bg-transparent outline-none ${titleFontClass} ${textSize} ${lineHeightClass} ${teamTextColor}${isCommentCard ? ' text-center' : ''}`;
+  const titleEditorClassName = `pointer-events-auto block w-full min-w-0 resize-none overflow-y-auto bg-transparent outline-none ${titleFontClass} ${textSize} ${lineHeightClass} ${teamTextColor}`;
 
   let contentEl: React.ReactNode;
   if (isChooserDraft) {

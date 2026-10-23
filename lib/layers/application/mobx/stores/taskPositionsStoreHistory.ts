@@ -1,9 +1,11 @@
+import type { LaneLayerHistoryEntry } from './swimlaneLaneLayersStore';
 import type { GetTaskInfoFn } from '@/lib/layers/data/taskPositionsTypes';
 import type { TaskPosition } from '@/types';
 
 import { stripPositionSource } from '@/lib/layers/data/mappers/taskPositionToApi';
 
 import {
+  laneLayerEntriesHaveChange,
   planHistorySideEffectsHaveChange,
   resolveAppliedComments,
   resolveAppliedTaskParents,
@@ -29,10 +31,24 @@ export function historyStepHasChange(step: PlanHistoryStep): boolean {
       return true;
     }
   }
-  return planHistorySideEffectsHaveChange({
-    comments: step.comments,
-    taskParents: step.taskParents,
-  });
+  return (
+    laneLayerEntriesHaveChange(step.laneLayers) ||
+    planHistorySideEffectsHaveChange({
+      comments: step.comments,
+      taskParents: step.taskParents,
+    })
+  );
+}
+
+/** Слой, заданный в том же обработчике (дроп), откатывается одним шагом с позицией. */
+export function withStagedLaneLayers(
+  step: PlanHistoryStep,
+  staged: ReadonlyMap<string, LaneLayerHistoryEntry> | undefined
+): PlanHistoryStep {
+  if (!staged) {
+    return step;
+  }
+  return { ...step, laneLayers: new Map([...(step.laneLayers ?? []), ...staged]) };
 }
 
 function withSideEffects(

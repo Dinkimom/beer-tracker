@@ -2,6 +2,8 @@ import type { Comment, Task, TaskPosition } from '@/types';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { getStickyNoteSaveMotionSnapshot } from '@/features/comments/utils/stickyNoteSaveMotion';
+
 import { completeQuickAddCommentDraft, submitQuickAddCommentDraft } from './submitQuickAddCommentDraft';
 
 function comment(partial?: Partial<Comment>): Comment {
@@ -249,7 +251,6 @@ describe('submitQuickAddCommentDraft', () => {
       cardRowUi,
       closeNoteComposer: vi.fn(),
       comments: [],
-      createdMessage: 'created',
       defaultNote: 'Note',
       onCommentCreate,
       onCommentUpdate: vi.fn(),
@@ -258,11 +259,85 @@ describe('submitQuickAddCommentDraft', () => {
       taskId: 'local-task-1',
       taskPositions: new Map([['local-task-1', draftPosition]]),
       tasks: [draftTask],
-      updatedMessage: 'updated',
     });
 
     expect(onCommentCreate).toHaveBeenCalledWith(expect.objectContaining({ height: 4, width: 2 }));
     expect(cardRowUi.clearStickyNoteCardRowOverride).toHaveBeenCalledWith('local-task-1');
     expect(cardRowUi.clearStickyNoteCardRowPreview).not.toHaveBeenCalled();
+  });
+});
+
+describe('completeQuickAddCommentDraft save motion', () => {
+  function completeEdit(text: string, color: 'pink' | 'yellow') {
+    completeQuickAddCommentDraft({
+      closeNoteComposer: vi.fn(),
+      comments: [comment({ color: 'yellow', id: 'c-motion', text: 'old' })],
+      color,
+      defaultNote: 'Note',
+      draftTitle: text,
+      onCommentCreate: vi.fn(),
+      onCommentUpdate: vi.fn(),
+      setTaskPositions: vi.fn(),
+      setTasks: vi.fn(),
+      taskId: 'comment:c-motion',
+      taskPositions: new Map(),
+      tasks: [],
+    });
+  }
+
+  it('presses the note when its text changed', () => {
+    completeEdit('new text', 'yellow');
+    expect(getStickyNoteSaveMotionSnapshot().get('comment:c-motion')).toBe('press');
+  });
+
+  it('stays still when nothing changed', () => {
+    const before = getStickyNoteSaveMotionSnapshot();
+    expect(
+      submitQuickAddCommentDraft({
+        closeNoteComposer: vi.fn(),
+        comments: [comment({ color: 'yellow', id: 'c-still', text: 'old' })],
+        color: 'yellow',
+        defaultNote: 'Note',
+        draftTitle: 'old',
+        onCommentCreate: vi.fn(),
+        onCommentUpdate: vi.fn(),
+        setTaskPositions: vi.fn(),
+        setTasks: vi.fn(),
+        taskId: 'comment:c-still',
+        taskPositions: new Map(),
+        tasks: [],
+      })
+    ).toBe('unchanged');
+    expect(getStickyNoteSaveMotionSnapshot().has('comment:c-still')).toBe(false);
+    expect(getStickyNoteSaveMotionSnapshot().size).toBe(before.size);
+  });
+
+  it('sticks a newly created note by its future card id', () => {
+    const onCommentCreate = vi.fn();
+    const draftTask = {
+      id: 'local-motion',
+      isLocalTask: true,
+      localDraftKind: 'comment',
+      link: '#',
+      name: 'fresh',
+      status: 'todo',
+      team: 'Back',
+    } as Task;
+    completeQuickAddCommentDraft({
+      closeNoteComposer: vi.fn(),
+      comments: [],
+      defaultNote: 'Note',
+      onCommentCreate,
+      onCommentUpdate: vi.fn(),
+      setTaskPositions: vi.fn(),
+      setTasks: vi.fn(),
+      taskId: 'local-motion',
+      taskPositions: new Map([
+        ['local-motion', { assignee: 'dev-1', duration: 1, startDay: 0, startPart: 0, taskId: 'local-motion' }],
+      ]),
+      tasks: [draftTask],
+    });
+    const created = onCommentCreate.mock.calls[0]?.[0] as Comment;
+    expect(getStickyNoteSaveMotionSnapshot().get(`comment:${created.id}`)).toBe('stick');
   });
 });

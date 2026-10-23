@@ -7,6 +7,7 @@ import type { Task, TaskPosition } from '@/types';
 
 import { useMemo } from 'react';
 
+import { useSwimlaneAutoArrangeStorage } from '@/hooks/useLocalStorage';
 import { resolveActiveDragDurationParts } from '@/lib/layers/application/swimlaneDrag';
 
 import { useDragEnd } from './useDragAndDrop/hooks/useDragEnd';
@@ -14,6 +15,7 @@ import { useDragOver } from './useDragAndDrop/hooks/useDragOver';
 import { useDragStart } from './useDragAndDrop/hooks/useDragStart';
 import { useDragState } from './useDragAndDrop/hooks/useDragState';
 import { usePlanPatchPreviewDrag } from './usePlanPatchPreviewDrag';
+import { useSwimlaneLaneLayerActions } from './useSwimlaneLaneLayerActions';
 
 interface UseDragAndDropProps {
   dragContextRef?: DragContextRef | null;
@@ -50,8 +52,11 @@ export function useDragAndDrop({
     positions: boardTaskPositions,
     sprintId: planPatchSprintId,
   });
+  const [autoArrange] = useSwimlaneAutoArrangeStorage();
   const { dragUi, dragStateApi, hoverStore, sidebarDropPointerStore } =
-    useDragState(taskPositions.size);
+    useDragState(taskPositions.size, !autoArrange);
+  // Ручной слой после дропа: по раскладке строки, как превью (см. useSwimlaneLaneLayerActions).
+  const { handleLaneLayerDrop: onLaneLayerDrop } = useSwimlaneLaneLayerActions();
 
   const { handleDragStart } = useDragStart({
     tasks,
@@ -71,6 +76,7 @@ export function useDragAndDrop({
     tasks,
     taskPositions,
     onBacklogTaskDrop,
+    onLaneLayerDrop,
     onPositionDelete,
     onPositionUpdate,
     updateXarrow,

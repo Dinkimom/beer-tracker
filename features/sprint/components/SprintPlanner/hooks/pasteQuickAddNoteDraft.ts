@@ -1,13 +1,13 @@
 import type { SwimlaneNoteClipboard } from '@/lib/comments/swimlaneNoteClipboard';
 import type { Comment, Task, TaskParent, TaskPosition } from '@/types';
 
-import toast from 'react-hot-toast';
-
+import { playStickyNoteSaveMotion } from '@/features/comments/utils/stickyNoteSaveMotion';
+import { createIdKeepingStickyNoteTilt } from '@/features/comments/utils/stickyNoteTilt';
+import { toSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { resolveAnnotationPersistFromLaneDraft } from '@/features/swimlane/utils/featureSwimlaneRows';
 
 interface PasteQuickAddNoteDraftInput {
   clipboard: SwimlaneNoteClipboard;
-  createdMessage: string;
   taskId: string;
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
@@ -22,13 +22,17 @@ interface PasteQuickAddNoteDraftInput {
 export function pasteNoteAtSwimlaneCell(input: {
   assigneeId: string;
   clipboard: SwimlaneNoteClipboard;
-  createdMessage: string;
   day: number;
+  /** Черновик, на месте которого встаёт заметка: наклон листа сохраняется. */
+  draftTaskId?: string;
   parent?: TaskParent;
   part: number;
   onCommentCreate: (comment: Comment) => void;
 }): void {
-  const newId = crypto.randomUUID();
+  const newId = input.draftTaskId
+    ? createIdKeepingStickyNoteTilt(input.draftTaskId, toSwimlaneCommentTaskId)
+    : crypto.randomUUID();
+  playStickyNoteSaveMotion(toSwimlaneCommentTaskId(newId), 'stick');
   input.onCommentCreate({
     id: newId,
     clientInstanceId: newId,
@@ -44,7 +48,6 @@ export function pasteNoteAtSwimlaneCell(input: {
     height: input.clipboard.height,
     ...(input.parent ? { parent: input.parent } : {}),
   });
-  toast.success(input.createdMessage);
 }
 
 export function pasteQuickAddNoteDraft(input: PasteQuickAddNoteDraftInput): 'created' | 'noop' {
@@ -57,8 +60,8 @@ export function pasteQuickAddNoteDraft(input: PasteQuickAddNoteDraftInput): 'cre
   pasteNoteAtSwimlaneCell({
     assigneeId: persist.assigneeId,
     clipboard: input.clipboard,
-    createdMessage: input.createdMessage,
     day: draftPosition.startDay,
+    draftTaskId: input.taskId,
     onCommentCreate: input.onCommentCreate,
     parent: persist.parent,
     part: draftPosition.startPart,

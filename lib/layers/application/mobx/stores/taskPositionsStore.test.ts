@@ -15,6 +15,7 @@ vi.mock('@/lib/beerTrackerApi', async (importOriginal) => {
   const actual = await importOriginal();
   return Object.assign({}, actual, {
     fetchPlanPatchPositionPreviews: vi.fn().mockResolvedValue([]),
+    fetchSprintLaneLayers: vi.fn().mockResolvedValue([]),
     fetchSprintPlanAnchors: vi.fn().mockResolvedValue([]),
     fetchSprintPositions: vi.fn(),
     deleteTaskPosition: vi.fn().mockResolvedValue(true),

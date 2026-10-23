@@ -1,11 +1,9 @@
+import type { PlacedSwimlaneLayerItem } from '@/features/swimlane/utils/layerUtils';
 import type { MouseEvent } from 'react';
 
 import { getPartsPerDay } from '@/constants';
 import { DroppableCell } from '@/features/swimlane/components/DroppableCell';
-import {
-  collectOccupiedLayersForCellRange,
-  resolveSwimlaneQuickAddLayerBand,
-} from '@/features/swimlane/utils/swimlaneCellOccupancy';
+import { resolveSwimlaneQuickAddLayerBand } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { getPartStatus } from '@/utils/dateUtils';
 
 function createQuickAddHoverHandler(
@@ -39,6 +37,7 @@ function createQuickAddTaskHandler(
 }
 
 export function TimelineGridPartCell(props: {
+  autoArrange?: boolean;
   dayCount: number;
   dayIndex: number;
   developerId: string;
@@ -47,10 +46,10 @@ export function TimelineGridPartCell(props: {
   isDraggingTask: boolean;
   isLinking?: boolean;
   maxTaskLayers?: number;
-  occupiedLayersByCell?: Map<number, Set<number>>;
   /** Разделители частей дня: при перетаскивании и ресайзе карточки в этой строке */
   partDividerVisible: boolean;
   partIndex: number;
+  placedLayerItems?: readonly PlacedSwimlaneLayerItem[];
   quickAddClipHeight?: number;
   quickAddDurationCells?: number;
   /** Целый день (отсутствие): превью от начала дня; хит на остальных слотах — по одной клетке. */
@@ -68,6 +67,7 @@ export function TimelineGridPartCell(props: {
   onQuickAddTask?: (payload: { assigneeId: string; day: number; part: number }) => void;
 }) {
   const {
+    autoArrange = false,
     dayCount,
     dayIndex,
     developerId,
@@ -76,9 +76,9 @@ export function TimelineGridPartCell(props: {
     isDraggingTask,
     isLinking = false,
     maxTaskLayers = 1,
-    occupiedLayersByCell,
     partDividerVisible,
     partIndex,
+    placedLayerItems,
     quickAddClipHeight,
     quickAddDurationCells = 1,
     quickAddSnapToDay = false,
@@ -100,11 +100,14 @@ export function TimelineGridPartCell(props: {
   const durationCells = Math.min(footprintCells, remainingCells);
   // На слотах после первого дня hit — одна клетка (иначе overflow упрётся в соседний stacking context).
   const hitDurationCells = quickAddSnapToDay && partIndex !== 0 ? 1 : durationCells;
-  const quickAddBand = resolveSwimlaneQuickAddLayerBand(
-    collectOccupiedLayersForCellRange(occupiedLayersByCell, cellStart, durationCells),
+  const quickAddBand = resolveSwimlaneQuickAddLayerBand({
+    autoArrange,
+    durationCells,
+    lane: placedLayerItems,
     maxTaskLayers,
-    quickAddSpan
-  );
+    span: quickAddSpan,
+    startCell: cellStart,
+  });
   const partStatus = getPartStatus(dayIndex, partIndex, sprintStartDate, dayCount);
   // Key stays stable across drag so cells are not remounted when + is suppressed.
   const isQuickAddEnabled = Boolean(onQuickAddTask);

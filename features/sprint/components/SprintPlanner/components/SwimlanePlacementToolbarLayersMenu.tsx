@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { CardLinkIcon } from '@/components/CardLinkIcon';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
+import { ToggleTrack } from '@/components/ToggleTrack';
 import { useI18n } from '@/contexts/LanguageContext';
 import { StickyNoteToolIcon } from '@/features/comments/components/StickyNoteToolIcon';
 import {
@@ -29,6 +30,7 @@ import { SwimlanePlacementToolbarLayersLayoutMode } from './SwimlanePlacementToo
 
 interface SwimlanePlacementToolbarLayersMenuProps {
   animationState: 'closed' | 'open';
+  autoArrange: boolean;
   baselineLayoutMode: SwimlaneBaselineLayoutMode;
   calendarVisible: boolean;
   factVisible: boolean;
@@ -37,6 +39,7 @@ interface SwimlanePlacementToolbarLayersMenuProps {
   notesVisible: boolean;
   personBoundLayersAvailable?: boolean;
   onAnimationEnd: (event: AnimationEvent<HTMLElement>) => void;
+  onAutoArrangeChange: (autoArrange: boolean) => void;
   onBaselineLayoutModeChange: (mode: SwimlaneBaselineLayoutMode) => void;
   onOpenTaskCards: () => void;
   onToggleLayer: (layer: SwimlaneVisibilityLayer) => void;
@@ -54,6 +57,7 @@ function layerGlyph(layer: SwimlaneVisibilityLayer): ReactNode {
 
 export function SwimlanePlacementToolbarLayersMenu({
   animationState,
+  autoArrange,
   baselineLayoutMode,
   calendarVisible,
   factVisible,
@@ -62,6 +66,7 @@ export function SwimlanePlacementToolbarLayersMenu({
   notesVisible,
   personBoundLayersAvailable = true,
   onAnimationEnd,
+  onAutoArrangeChange,
   onBaselineLayoutModeChange,
   onOpenTaskCards,
   onToggleLayer,
@@ -91,6 +96,21 @@ export function SwimlanePlacementToolbarLayersMenu({
         mode={baselineLayoutMode}
         onChange={onBaselineLayoutModeChange}
       />
+      <Button
+        aria-checked={autoArrange}
+        className={`!h-9 !min-h-0 w-full !justify-start !gap-2 !rounded-none !px-3 !py-0 text-sm font-medium ${CONTEXT_MENU_GHOST_BUTTON_RESET} text-gray-700 hover:!bg-gray-50 dark:text-gray-200 dark:hover:!bg-gray-700`}
+        role="menuitemcheckbox"
+        title={t('sprintPlanner.swimlane.placementToolbar.autoArrangeHint')}
+        type="button"
+        variant="ghost"
+        onClick={() => onAutoArrangeChange(!autoArrange)}
+      >
+        <Icon aria-hidden className="h-4 w-4 shrink-0" name="list-ordered" />
+        <span className="min-w-0 flex-1 truncate text-left">
+          {t('sprintPlanner.swimlane.placementToolbar.autoArrange')}
+        </span>
+        <ToggleTrack checked={autoArrange} />
+      </Button>
       <Button
         className={`!h-9 !min-h-0 w-full !justify-between !gap-2 !rounded-none !px-3 !py-0 text-sm font-medium ${CONTEXT_MENU_GHOST_BUTTON_RESET} text-gray-700 hover:!bg-gray-50 dark:text-gray-200 dark:hover:!bg-gray-700`}
         role="menuitem"

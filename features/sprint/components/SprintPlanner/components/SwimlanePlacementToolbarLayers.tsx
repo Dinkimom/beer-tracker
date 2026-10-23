@@ -12,7 +12,9 @@ import {
   FLOATING_TOOLBAR_ITEM_IDLE,
   FLOATING_TOOLBAR_ITEM_ON,
 } from '@/features/context-menu/contextMenuClasses';
+import { useSwimlaneLaneLayerActions } from '@/features/swimlane/hooks/useSwimlaneLaneLayerActions';
 import { TaskCardDisplayDialog } from '@/features/task/components/TaskCard/slots/TaskCardDisplayDialog';
+import { useSwimlaneAutoArrangeStorage } from '@/hooks/useLocalStorage';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 import { usePlannerOnboardingChrome } from '../onboarding/plannerOnboardingChrome';
@@ -60,6 +62,15 @@ export function SwimlanePlacementToolbarLayers({
   const rootRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [taskCardsOpen, setTaskCardsOpen] = useState(false);
+  const { freezeSwimlaneLayout } = useSwimlaneLaneLayerActions();
+  const [autoArrange, setAutoArrange] = useSwimlaneAutoArrangeStorage();
+  const changeAutoArrange = (next: boolean) => {
+    // Выключили — карточки остаются там, где их поставила автосортировка.
+    if (!next) {
+      freezeSwimlaneLayout();
+    }
+    setAutoArrange(next);
+  };
   const overlay = useOverlayPresence(menuOpen);
   const label = t('sprintPlanner.swimlane.placementToolbar.layers');
 
@@ -136,6 +147,7 @@ export function SwimlanePlacementToolbarLayers({
         {overlay.mounted ? (
           <SwimlanePlacementToolbarLayersMenu
             animationState={overlay.state}
+            autoArrange={autoArrange}
             baselineLayoutMode={baselineLayoutMode}
             calendarVisible={calendarVisible}
             factVisible={factVisible}
@@ -144,6 +156,7 @@ export function SwimlanePlacementToolbarLayers({
             notesVisible={notesVisible}
             personBoundLayersAvailable={personBoundLayersAvailable}
             onAnimationEnd={overlay.onAnimationEnd}
+            onAutoArrangeChange={changeAutoArrange}
             onBaselineLayoutModeChange={onBaselineLayoutModeChange}
             onOpenTaskCards={() => {
               setMenuOpen(false);

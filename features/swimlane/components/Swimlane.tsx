@@ -35,6 +35,7 @@ import {
 import { TaskLayer } from '@/features/swimlane/components/TaskLayer';
 import { TimelineGrid } from '@/features/swimlane/components/TimelineGrid';
 import { useSwimlaneAvailabilityUi } from '@/features/swimlane/hooks/useSwimlaneAvailabilityUi';
+import { useSwimlaneLaneLayerRegistration } from '@/features/swimlane/hooks/useSwimlaneLaneLayerRegistration';
 import { useSwimlaneLayout } from '@/features/swimlane/hooks/useSwimlaneLayout';
 import { useSwimlaneQuickAddHoverImagePaste } from '@/features/swimlane/hooks/useSwimlaneQuickAddHoverImagePaste';
 import { resolveSwimlaneQuickAddBandLayout } from '@/features/swimlane/utils/swimlaneCellOccupancy';
@@ -228,6 +229,7 @@ function SwimlaneComponent({
     [layout.hasTaskOverlaps, layout.layerHeight, layout.maxTaskLayers, reserveEyebrow]
   );
 
+  const laneLayerAttributes = useSwimlaneLaneLayerRegistration(developer.id, layout, quickAddBandLayout);
   const timelineTotalParts = sprintTimelineWorkingDays * getPartsPerDay();
 
   const timelineWidth = sprintPlannerSwimlaneTimelineWidthCss(
@@ -320,6 +322,7 @@ function SwimlaneComponent({
           className={`relative flex ${isPinned ? 'planner-pinned-lane-glass' : 'bg-white swimlane-lane-fill dark:bg-gray-800'}`}
           data-swimlane={developer.id}
           data-team-swimlane={isTeamLane ? 'true' : undefined}
+          {...laneLayerAttributes}
           style={{
             width: timelineWidth,
             minWidth: viewMode === 'full' ? timelineWidth : undefined,
@@ -333,15 +336,16 @@ function SwimlaneComponent({
             taskBandMeasureRef={rowReservedHeight.taskBandMeasureRef}
           />
           <TimelineGrid
+            autoArrange={layout.autoArrange}
             developerId={developer.id}
             hasTaskOverlaps={quickAddBandLayout.hasTaskOverlaps}
             holidayDayIndices={holidayDayIndices}
             isDraggingTask={isDraggingTask}
             isLinking={linkingFromTaskId != null}
             maxTaskLayers={layout.maxTaskLayers}
-            occupiedLayersByCell={layout.occupiedLayersByCell}
             partDividersVisible={partDividersVisible}
             patternHeight={layout.totalHeight}
+            placedLayerItems={layout.placedLayerItems}
             quickAddClipHeight={layout.totalHeight}
             quickAddFootprint={quickAddFootprint}
             sprintStartDate={sprintStartDate}

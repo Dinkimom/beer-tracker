@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { isSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
   sprintPlannerContentRowWidthCss,
   sprintPlannerDaysHeaderContentWidthCss,
@@ -32,12 +33,14 @@ import { useHolidayDays } from '@/features/sprint/hooks/useHolidayDays';
 import { useSwimlaneCalendarBusyByDeveloper } from '@/features/sprint/hooks/useSwimlaneCalendarBusy';
 import { buildAssigneeUnavailableDays, getOccupancyErrorDays, getOccupancyErrorDetailsByDay, getOccupancyErrorReasons, getOccupancyErrorTaskIds } from '@/features/sprint/utils/occupancyValidation';
 import { useCardShadowFactFocusTaskId } from '@/features/swimlane/components/in-progress-fact/useCardShadowFactFocusTaskId';
+import { useSwimlaneTaskHoverIntent } from '@/features/swimlane/hooks/useSwimlaneTaskHoverIntent';
 import {
   buildSwimlaneInProgressFactSegmentsForAssignee,
   type SwimlaneInProgressFactSegment,
 } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import { resolvePlanAnchorFocusTaskId } from '@/features/swimlane/utils/planAnchorShift';
 import { isSwimlaneLinkingSessionActive } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
+import { isSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
 import { useRootStore } from '@/lib/layers';
 import {
   insertOnboardingAssigneeRow,
@@ -276,7 +279,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     [hoveredTaskId, filteredTaskLinks, qaTasksMap, swimlanePositions]
   );
 
-  const handleTaskHover = useCallback(
+  const applyTaskHover = useCallback(
     (taskId: string | null) => {
       if (dragAndDrop.isDraggingTask || taskId == null) {
         sprintPlannerUi.setHoveredTaskId(null);
@@ -294,6 +297,28 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
       sprintPlannerUi.setPlanPatchFocusTaskId(null);
     },
     [dragAndDrop.isDraggingTask, positionsStore, sprintPlannerUi, syncCardShadowHover]
+  );
+  const getHoveredTaskId = useCallback(() => sprintPlannerUi.hoveredTaskId, [sprintPlannerUi]);
+  const scheduleTaskHover = useSwimlaneTaskHoverIntent(getHoveredTaskId, applyTaskHover);
+  const laneTasksMap = laneSection.tasksMap;
+  /** Заметки, фото и схемы откликаются на каждый hover сразу; задачи — через hover-intent. */
+  const isAnnotationHoverTarget = useCallback(
+    (taskId: string | null) => {
+      if (taskId == null) return false;
+      if (isSwimlaneCommentTaskId(taskId) || isSwimlaneImageTaskId(taskId)) return true;
+      const kind = laneTasksMap.get(taskId)?.localDraftKind;
+      return kind === 'comment' || kind === 'diagram' || kind === 'image' || kind === 'widget';
+    },
+    [laneTasksMap]
+  );
+  const handleTaskHover = useCallback(
+    (taskId: string | null) =>
+      scheduleTaskHover(
+        taskId,
+        dragAndDrop.isDraggingTask ||
+          isAnnotationHoverTarget(taskId ?? sprintPlannerUi.hoveredTaskId)
+      ),
+    [dragAndDrop.isDraggingTask, isAnnotationHoverTarget, scheduleTaskHover, sprintPlannerUi]
   );
 
   const {

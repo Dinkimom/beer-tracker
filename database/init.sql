@@ -82,6 +82,18 @@ CREATE TABLE public.sprint_plan_captures (
 
 COMMENT ON TABLE public.sprint_plan_captures IS 'Черновик плана до рабочего статуса и якорь на момент перехода в работу';
 
+-- Ручная раскладка свимлейна: слой карточки (задачи или заметки `comment:<id>`) в строке.
+CREATE TABLE public.swimlane_card_layers (
+    organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
+    sprint_id INTEGER NOT NULL,
+    card_id VARCHAR(255) NOT NULL,
+    layer INTEGER NOT NULL CHECK (layer >= 0 AND layer < 50),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (organization_id, sprint_id, card_id)
+);
+
+COMMENT ON TABLE public.swimlane_card_layers IS 'Слой карточки в строке свимлейна, заданный вручную';
+
 CREATE TABLE public.plan_patch_position_previews (
     organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
     sprint_id INTEGER NOT NULL,

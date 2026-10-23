@@ -322,6 +322,7 @@ export function useSprintPlannerCommentHandlers({
           comments: new Map([[id, { after: historyAfter, before: historyBefore }]]),
         });
       }
+      positionsStore.laneLayers.touch(toSwimlaneCommentTaskId(id));
     },
     [positionsStore, setComments]
   );
@@ -401,6 +402,7 @@ export function useSprintPlannerCommentHandlers({
           comments: new Map([[commentId, { after: historyAfter, before: historyBefore }]]),
         });
       }
+      positionsStore.laneLayers.touch(toSwimlaneCommentTaskId(commentId));
     },
     [positionsStore, setComments]
   );
@@ -434,8 +436,9 @@ export function useSprintPlannerCommentHandlers({
       setComments((prev: CommentType[]) =>
         prev.map((c: CommentType) => (c.id === id ? { ...c, width, height } : c))
       );
+      positionsStore.laneLayers.touch(toSwimlaneCommentTaskId(id));
     },
-    [setComments]
+    [positionsStore, setComments]
   );
 
   const handleCommentCardRowLayoutUpdate = useCallback(
@@ -446,8 +449,10 @@ export function useSprintPlannerCommentHandlers({
           c.id === id ? { ...c, height: patch.height, y: patch.y } : c
         )
       );
+      // Растянутая заметка остаётся на месте, мешающие соседи сдвигаются вниз.
+      positionsStore.laneLayers.touch(toSwimlaneCommentTaskId(id));
     },
-    [setComments]
+    [positionsStore, setComments]
   );
 
   const handleCommentsLeftSprint = useCallback((commentIds: string[]) => {

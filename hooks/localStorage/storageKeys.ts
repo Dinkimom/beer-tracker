@@ -87,6 +87,8 @@ export const STORAGE_KEYS = {
    * Тот же ключ, что раньше был boolean «показывать просрочку».
    */
   SWIMLANE_BASELINE_LAYOUT_MODE: 'beer-tracker-swimlane-overdue-visible',
+  /** Автосортировка карточек в строках свимлейна; выключена — ручные слои. */
+  SWIMLANE_AUTO_ARRANGE: 'beer-tracker-swimlane-auto-arrange',
   KANBAN_GROUP_BY: 'beer-tracker-kanban-group-by',
   SIDEBAR_TABS: 'beer-tracker-sidebar-tabs',
   /** Глобальные настройки синхронизации данных с трекером */

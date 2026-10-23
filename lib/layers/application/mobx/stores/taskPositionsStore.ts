@@ -16,14 +16,21 @@ import {
   type PositionHistoryOptions,
   type PositionHistoryValue,
 } from './planHistoryTypes';
+import { SwimlaneLaneLayersStore } from './swimlaneLaneLayersStore';
 import {
   historyStepForMap,
   historyStepForTask,
   historyStepHasChange,
   pendingUpdateForPosition,
   planHistoryAppliedPayload,
+  withStagedLaneLayers,
 } from './taskPositionsStoreHistory';
-import { fetchSprintPositionsBundle, replacePlanPatchPreviews } from './taskPositionsStoreLoadHelpers';
+import {
+  fetchSprintPositionsBundle,
+  mergeRemotePositions,
+  replacePlanAnchors,
+  replacePlanPatchPreviews,
+} from './taskPositionsStoreLoadHelpers';
 import {
   clearPlanDraft,
   commitPlanDraft as commitStoredPlanDraft,
@@ -48,16 +55,6 @@ export {
 } from './planHistoryTypes';
 interface PendingUpdate { devTaskKey?: string; isQa: boolean; position: TaskPosition }
 
-function replacePlanAnchors(
-  target: Map<string, SprintPlanAnchor>,
-  anchors: SprintPlanAnchor[]
-): void {
-  target.clear();
-  for (const anchor of anchors) {
-    target.set(anchor.taskId, anchor);
-  }
-}
-
 const MAX_PLAN_HISTORY_STEPS = 5;
 
 /**
@@ -76,6 +73,12 @@ export class TaskPositionsStore {
 
   /** Предложения агента по позициям: перенос, длина, снятие с доски. */
   planPatchPreviews = observable.map<string, PlanPatchPositionPreview>();
+
+  /** Ручные слои карточек в строках свимлейна. */
+  readonly laneLayers = new SwimlaneLaneLayersStore(
+    () => this.sprintId,
+    (laneLayers) => this.recordHistoryStep({ after: new Map(), before: new Map(), laneLayers })
+  );
 
   undoStack: PlanHistoryStep[] = [];
 
@@ -186,11 +189,12 @@ export class TaskPositionsStore {
     return commitStoredPlanDraft(this.planDraftState());
   }
 
-  private recordHistoryStep(step: PlanHistoryStep): void {
+  private recordHistoryStep(input: PlanHistoryStep): void {
     if (this.isApplyingHistory) {
       return;
     }
 
+    const step = withStagedLaneLayers(input, this.laneLayers.takeStagedHistory());
     if (!historyStepHasChange(step)) {
       return;
     }
@@ -279,28 +283,29 @@ export class TaskPositionsStore {
     });
   }
 
+  /** Применить шаг истории в сторону `direction` (undo → before, redo → after). */
+  private applyHistoryStep(step: PlanHistoryStep, direction: 'after' | 'before'): void {
+    const values = step[direction];
+    this.isApplyingHistory = true;
+    this.applyHistoryValues(values);
+    this.laneLayers.applyHistory(step.laneLayers, direction);
+    this.isApplyingHistory = false;
+    this.notifyPlanHistoryApplied(values, step, direction);
+    this.syncHistoryStepValues(values).catch(() => undefined);
+  }
+
   undo(): void {
     const step = this.undoStack.pop();
     if (!step) return;
-
-    this.isApplyingHistory = true;
-    this.applyHistoryValues(step.before);
-    this.isApplyingHistory = false;
-    this.notifyPlanHistoryApplied(step.before, step, 'before');
+    this.applyHistoryStep(step, 'before');
     this.redoStack.push(step);
-    this.syncHistoryStepValues(step.before).catch(() => undefined);
   }
 
   redo(): void {
     const step = this.redoStack.pop();
     if (!step) return;
-
-    this.isApplyingHistory = true;
-    this.applyHistoryValues(step.after);
-    this.isApplyingHistory = false;
-    this.notifyPlanHistoryApplied(step.after, step, 'after');
+    this.applyHistoryStep(step, 'after');
     this.undoStack.push(step);
-    this.syncHistoryStepValues(step.after).catch(() => undefined);
   }
 
   setOnPlanHistoryApplied(handler?: (payload: PlanHistoryAppliedPayload) => void): void {
@@ -323,7 +328,7 @@ export class TaskPositionsStore {
       this.reconcileGeneration++;
       runInAction(() => {
         this.positions.clear();
-        this.planAnchors.clear(); this.planPatchPreviews.clear();
+        this.planAnchors.clear(); this.planPatchPreviews.clear(); this.laneLayers.clear();
         this.draftTaskIds.clear();
         this.undoStack = [];
         this.redoStack = [];
@@ -353,7 +358,7 @@ export class TaskPositionsStore {
       if (sprintChanged) {
         this.undoStack = [];
         this.redoStack = [];
-        this.draftTaskIds.clear(); this.planPatchPreviews.clear();
+        this.draftTaskIds.clear(); this.planPatchPreviews.clear(); this.laneLayers.clear();
       }
       this.positionsFetchInFlight++;
       this.positionsLoadPending = true;
@@ -372,7 +377,7 @@ export class TaskPositionsStore {
     draftKeep: Map<string, TaskPosition>
   ): Promise<void> {
     try {
-      const { anchors, positions: data, previews } = await fetchSprintPositionsBundle(sprintId);
+      const { anchors, laneLayers, positions: data, previews } = await fetchSprintPositionsBundle(sprintId);
       if (myGen !== this.reconcileGeneration) return;
       runInAction(() => {
         this.positions.clear();
@@ -382,6 +387,7 @@ export class TaskPositionsStore {
         restorePlanDraftPositions(this.positions, draftKeep);
         replacePlanAnchors(this.planAnchors, anchors);
         replacePlanPatchPreviews(this.planPatchPreviews, previews);
+        this.laneLayers.replaceFromServer(laneLayers);
       });
     } catch (error) {
       console.error('Error loading positions:', error);
@@ -425,6 +431,7 @@ export class TaskPositionsStore {
     runInAction(() => {
       this.positions.set(position.taskId, stripPositionSource(position));
     });
+    this.laneLayers.touch(position.taskId);
 
     if (immediate) {
       this.pendingUpdatesRef.delete(position.taskId);
@@ -532,6 +539,7 @@ export class TaskPositionsStore {
     if (changed.size === 0) {
       return;
     }
+    for (const taskId of changed.keys()) this.laneLayers.touch(taskId);
 
     let queuedPersist = false;
     changed.forEach((pos) => {
@@ -583,27 +591,19 @@ export class TaskPositionsStore {
       return;
     }
     try {
-      const { anchors, positions: data, previews } = await fetchSprintPositionsBundle(sprintId);
+      const { anchors, laneLayers, positions: data, previews } = await fetchSprintPositionsBundle(sprintId);
       if (this.sprintId !== sprintId) return;
       const pending = this.pendingUpdatesRef;
       const draftKeep = snapshotPlanDraftPositions(this.draftTaskIds, this.positions);
       runInAction(() => {
-        const next = new Map<string, TaskPosition>();
-        for (const position of data) {
-          if (!pending.has(position.taskId)) next.set(position.taskId, position);
-        }
-        for (const [taskId, update] of pending) {
-          next.set(taskId, stripPositionSource(update.position));
-        }
-        draftKeep.forEach((position, taskId) => {
-          next.set(taskId, position);
-        });
+        const next = mergeRemotePositions(data, pending, draftKeep);
         this.positions.clear();
         next.forEach((position, taskId) => {
           this.positions.set(taskId, position);
         });
         replacePlanAnchors(this.planAnchors, anchors);
         replacePlanPatchPreviews(this.planPatchPreviews, previews);
+        this.laneLayers.replaceFromServer(laneLayers);
       });
     } catch (error) {
       console.error('Error reconciling remote positions:', error);

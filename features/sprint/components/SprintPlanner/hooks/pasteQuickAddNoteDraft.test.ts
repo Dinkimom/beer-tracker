@@ -4,10 +4,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { pasteNoteAtSwimlaneCell, pasteQuickAddNoteDraft } from './pasteQuickAddNoteDraft';
 
-vi.mock('react-hot-toast', () => ({
-  default: { success: vi.fn() },
-}));
-
 describe('pasteQuickAddNoteDraft', () => {
   it('creates a note from the clipboard at the draft cell and drops the draft', () => {
     const onCommentCreate = vi.fn();
@@ -31,7 +27,6 @@ describe('pasteQuickAddNoteDraft', () => {
 
     const result = pasteQuickAddNoteDraft({
       clipboard: { color: 'green', height: 3, text: 'Copied', width: 4 },
-      createdMessage: 'pasted',
       onCommentCreate,
       setTaskPositions,
       setTasks,
@@ -63,7 +58,6 @@ describe('pasteQuickAddNoteDraft', () => {
     pasteNoteAtSwimlaneCell({
       assigneeId: 'dev-3',
       clipboard: { color: 'yellow', height: 2, text: 'Copied', width: 2 },
-      createdMessage: 'pasted',
       day: 1,
       onCommentCreate,
       part: 0,
@@ -83,8 +77,7 @@ describe('pasteQuickAddNoteDraft', () => {
     expect(
       pasteQuickAddNoteDraft({
         clipboard: { color: 'yellow', height: 2, text: 'Copied', width: 2 },
-        createdMessage: 'pasted',
-        onCommentCreate: vi.fn(),
+          onCommentCreate: vi.fn(),
         setTaskPositions: vi.fn(),
         setTasks: vi.fn(),
         taskId: 'local-task-1',

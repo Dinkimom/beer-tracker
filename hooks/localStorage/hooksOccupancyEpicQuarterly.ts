@@ -221,6 +221,11 @@ export function useSwimlaneBaselineLayoutModeStorage(): [
   return [mode, setMode];
 }
 
+/** Автосортировка карточек в строках свимлейна (по умолчанию включена). Выключена — ручные слои. */
+export function useSwimlaneAutoArrangeStorage(): [boolean, (value: boolean | ((prev: boolean) => boolean)) => void] {
+  return useLocalStorageBase<boolean>(STORAGE_KEYS.SWIMLANE_AUTO_ARRANGE, true);
+}
+
 /** Вид строк занятости эпика. */
 export function useEpicOccupancyRowViewStorage(): [
   OccupancyRowView,

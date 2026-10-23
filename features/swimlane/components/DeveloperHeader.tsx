@@ -5,6 +5,7 @@ import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { DEVELOPER_COLUMN_WIDTH, ZIndex } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
+import { SWIMLANE_GROUP_HOVER_REVEAL_CLASS } from '@/features/swimlane/utils/swimlaneHoverMotion';
 import { getInitials } from '@/utils/displayUtils';
 
 import {
@@ -143,7 +144,7 @@ export function DeveloperHeader({
         <div className="absolute top-2 right-2 z-10 flex h-6 items-center gap-0.5 leading-none">
           {persistentActions}
           {actions ? (
-            <div className="opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100">
+            <div className={`${SWIMLANE_GROUP_HOVER_REVEAL_CLASS} has-[:focus-visible]:opacity-100`}>
               {actions}
             </div>
           ) : null}

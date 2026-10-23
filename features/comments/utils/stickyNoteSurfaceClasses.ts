@@ -4,6 +4,8 @@
  * знать все bg-*-200 заранее.
  */
 
+import { stickyNoteUsesMarkdownLayout } from '@/lib/markdown/markdownChecklist';
+
 const STICKY_NOTE_FONT_CLASS = 'font-excalifont';
 
 /** Форма листа: прямые углы. Волокно, свет и тень — класс .sticky-note-paper. */
@@ -47,6 +49,23 @@ export function getStickyNoteContentLayoutClass(): string {
 /** Контейнер markdown-тела заметки: сверху слева, скролл, отступ от рукояток ресайза. */
 export function getStickyNoteMarkdownLayoutClass(): string {
   return 'pointer-events-auto flex h-full w-full min-h-0 flex-col justify-start overflow-y-auto px-0.5 pt-0.5 text-left';
+}
+
+/**
+ * Раскладка редактора заметки — та же, что у просмотра: markdown сверху слева
+ * (textarea на всю высоту и скроллит сама), обычный текст по центру.
+ */
+export function getStickyNoteEditorLayoutClasses(text: string): {
+  container: string;
+  textareaAlign: string;
+} {
+  if (stickyNoteUsesMarkdownLayout(text)) {
+    return {
+      container: 'flex h-full w-full min-h-0 flex-col justify-start px-0.5 pt-0.5 text-left',
+      textareaAlign: 'text-left',
+    };
+  }
+  return { container: getStickyNoteContentLayoutClass(), textareaAlign: 'text-center' };
 }
 
 /** Размер текста заметки: одинаковый при любой ширине карточки. */

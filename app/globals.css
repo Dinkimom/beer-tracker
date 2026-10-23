@@ -117,10 +117,11 @@ html.theme-changing * {
   transition-duration: 0s !important;
 }
 
-/* Исключение: плавное затемнение карточек при hover связей в свимлейне */
+/* Исключение: плавное затемнение карточек при hover связей в свимлейне.
+   Те же 0.2s, что у тени карточки и маркеров факта; hover-intent — в useSwimlaneTaskHoverIntent. */
 .task-bar-opacity-layer {
   transition-property: opacity !important;
-  transition-duration: 0.5s !important;
+  transition-duration: 0.2s !important;
   transition-timing-function: ease !important;
 }
 
@@ -690,7 +691,8 @@ html.theme-changing * {
 
 /* Исключение: появление/исчезновение рукояток ресайза TaskBar (сброс transitions при theme-changing иначе гасит Tailwind).
    Не удлинять hide: при проходе по плотной строке вспышки стали бы длиннее.
-   Hover-intent: delay только на появление, чтобы краткий заход на край карточки не подсвечивал грип. */
+   Hover-intent: delay только на появление, чтобы краткий заход на край карточки не подсвечивал грип.
+   Тайминги общие для доски: features/swimlane/utils/swimlaneHoverMotion.ts. */
 .task-bar-resize-handle-visual {
   transition-property: opacity !important;
   transition-duration: 0.1s !important;
@@ -699,8 +701,8 @@ html.theme-changing * {
 }
 
 .group\/resize-handle:hover .task-bar-resize-handle-visual {
-  transition-duration: 0.22s !important;
-  transition-delay: 0.16s !important;
+  transition-duration: 0.2s !important;
+  transition-delay: 0.15s !important;
 }
 
 /* Ресайз уже начат: не ждать hover-intent, грип должен остаться видимым сразу. */
@@ -1035,6 +1037,129 @@ html.dark .sprint-card-presence-changing::after {
 }
 
 /* Лист стикера: волокно поверх заливки, верхний свет и тень, которой лист лежит на доске. */
+/* WYSIWYG-редактор заметки: та же типографика, что у просмотра (MarkdownChecklistPreview, variant card). */
+/* contenteditable наследует курсор от карточки (grab) — у textarea браузер ставил text сам. */
+.sticky-note-rich-editor,
+.sticky-note-rich-editor .ProseMirror {
+  cursor: text;
+}
+
+.sticky-note-rich-editor .ProseMirror {
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sticky-note-rich-editor[data-layout='markdown'] {
+  line-height: 1.5;
+}
+
+.sticky-note-rich-editor[data-layout='markdown'] .ProseMirror p {
+  padding: 0.125rem 0;
+}
+
+.sticky-note-rich-editor h1 {
+  margin: 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.sticky-note-rich-editor h2 {
+  margin: 0.375rem 0 0.125rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.375;
+}
+
+.sticky-note-rich-editor h3 {
+  margin: 0.25rem 0 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sticky-note-rich-editor ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sticky-note-rich-editor ul:not([data-type='taskList']) > li {
+  display: flex;
+  gap: 0.375rem;
+  padding-left: 0.125rem;
+}
+
+.sticky-note-rich-editor ul:not([data-type='taskList']) > li::before {
+  content: '•';
+  padding: 0.125rem 0;
+  color: rgb(156 163 175);
+  user-select: none;
+}
+
+.sticky-note-rich-editor li > p {
+  flex: 1;
+  min-width: 0;
+}
+
+.sticky-note-rich-editor ul[data-type='taskList'] > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+}
+
+.sticky-note-rich-editor ul[data-type='taskList'] > li > label {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+  user-select: none;
+}
+
+.sticky-note-rich-editor ul[data-type='taskList'] > li > label input {
+  width: 0.875rem;
+  height: 0.875rem;
+  cursor: pointer;
+  accent-color: rgb(37 99 235);
+}
+
+.sticky-note-rich-editor ul[data-type='taskList'] > li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.sticky-note-rich-editor ul[data-type='taskList'] > li[data-checked='true'] > div {
+  color: rgb(107 114 128);
+  text-decoration: line-through;
+}
+
+.sticky-note-rich-editor code {
+  padding: 0 0.125rem;
+  border-radius: 0.125rem;
+  background: rgb(0 0 0 / 0.06);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.92em;
+}
+
+.sticky-note-rich-editor [data-note-mention] {
+  font-weight: 500;
+  color: rgb(29 78 216);
+}
+
+.dark .sticky-note-rich-editor ul[data-type='taskList'] > li > label input {
+  accent-color: rgb(59 130 246);
+}
+
+.dark .sticky-note-rich-editor ul[data-type='taskList'] > li[data-checked='true'] > div {
+  color: rgb(156 163 175);
+}
+
+.dark .sticky-note-rich-editor code {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.dark .sticky-note-rich-editor [data-note-mention] {
+  color: rgb(147 197 253);
+}
+
 .sticky-note-paper {
   isolation: isolate;
   transform: rotate(var(--sticky-note-tilt, 0deg));
@@ -1061,6 +1186,106 @@ html.dark .sprint-card-presence-changing::after {
 
 .task-bar-item.sticky-note-color-pop .sticky-note-paper {
   animation: sticky-note-color-pop 320ms ease-out;
+}
+
+/*
+ * Отклик на сохранение вместо toast (stickyNoteSaveMotion.ts).
+ * Правка: лист прижимают к доске — чуть меньше, тень плотнее — и он отпружинивает.
+ */
+@keyframes sticky-note-save-press {
+  0%,
+  100% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(1);
+  }
+  40% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(0.965);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.45),
+      0 1px 1px rgb(0 0 0 / 0.08),
+      0 2px 4px -2px rgb(0 0 0 / 0.28);
+  }
+  75% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(1.01);
+  }
+}
+
+/* Новая заметка: стартует ровно как черновик (тот же масштаб и наклон — id подобран
+   createIdKeepingStickyNoteTilt), плотно прижимается к доске и отпружинивает. */
+@keyframes sticky-note-save-stick {
+  0%,
+  100% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(1);
+  }
+  35% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(0.95);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.45),
+      0 1px 1px rgb(0 0 0 / 0.1),
+      0 1px 3px -1px rgb(0 0 0 / 0.32);
+  }
+  70% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(1.015);
+  }
+}
+
+/* Черновик заметки ложится на доску: из-под курсора, чуть мельче и ровнее, с лёгким перелётом. */
+@keyframes sticky-note-place {
+  0% {
+    opacity: 0;
+    transform: rotate(calc(var(--sticky-note-tilt, 0deg) * 0.3)) scale(0.86);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.45),
+      0 1px 1px rgb(0 0 0 / 0.02),
+      0 2px 4px -2px rgb(0 0 0 / 0.12);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(1.025);
+  }
+  100% {
+    transform: rotate(var(--sticky-note-tilt, 0deg)) scale(1);
+  }
+}
+
+/* Без движения: короткая подсветка рамки. */
+@keyframes sticky-note-save-flash {
+  0% {
+    outline-color: rgb(59 130 246 / 0.55);
+  }
+  100% {
+    outline-color: rgb(59 130 246 / 0);
+  }
+}
+
+.task-bar-item.sticky-note-save-press,
+.task-bar-item.sticky-note-save-stick {
+  z-index: 36 !important;
+}
+
+.task-bar-item.sticky-note-save-press .sticky-note-paper {
+  animation: sticky-note-save-press 280ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+/* Кривая задаётся на каждый отрезок между keyframes: easeOutCubic без рывка в начале отрезка. */
+.task-bar-item.sticky-note-save-stick .sticky-note-paper {
+  animation: sticky-note-save-stick 380ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.task-bar-item.sticky-note-place .sticky-note-paper {
+  animation: sticky-note-place 260ms cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-bar-item.sticky-note-place .sticky-note-paper {
+    animation: none;
+  }
+
+  .task-bar-item.sticky-note-save-press .sticky-note-paper,
+  .task-bar-item.sticky-note-save-stick .sticky-note-paper {
+    outline: 2px solid transparent;
+    outline-offset: 1px;
+    animation: sticky-note-save-flash 600ms ease-out;
+  }
 }
 
 .sticky-note-paper::before,

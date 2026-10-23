@@ -12,8 +12,10 @@ import React, { useRef, useState } from 'react';
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useStickyNoteColorPop } from '@/features/comments/hooks/useStickyNoteColorPop';
 import { useStickyNoteExiting } from '@/features/comments/hooks/useStickyNoteExiting';
+import { useStickyNoteSaveMotion } from '@/features/comments/hooks/useStickyNoteSaveMotion';
 import { stickyNoteColorPopClassName } from '@/features/comments/utils/stickyNoteColorPop';
 import { stickyNoteExitClassName } from '@/features/comments/utils/stickyNoteExit';
+import { finishStickyNoteSaveMotion, stickyNoteSaveMotionClassName } from '@/features/comments/utils/stickyNoteSaveMotion';
 import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { DraftItemCommentButton } from '@/features/swimlane/components/DraftItemCommentButton';
 import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
@@ -35,9 +37,9 @@ import { TaskBarAnnotationOverlays } from './TaskBarAnnotationOverlays';
 import { TaskBarDraftSaveButton } from './TaskBarDraftSaveButton';
 import { TaskBarDragBridge } from './TaskBarDragBridge';
 import {
+  cancelInlineEditorOnFocusOut,
   resolveTaskBarRootStyle,
   resolveVisibleTaskBarZIndex,
-  shouldCancelInlineEditorOnFocusOut,
   taskBarHasPendingApprovalToolbar,
 } from './taskBarHelpers';
 import { TaskBarOpacityLayer } from './TaskBarOpacityLayer';
@@ -45,6 +47,7 @@ import { TaskBarPendingApprovalToolbar } from './TaskBarPendingApprovalToolbar';
 import { usePlanPatchNoteFocus } from './usePlanPatchNoteFocus';
 import { useTaskBarDisplayState } from './useTaskBarDisplayState';
 import { useTaskBarLifecycle } from './useTaskBarLifecycle';
+import { useTaskBarNoteFocus } from './useTaskBarNoteFocus';
 import { useTaskBarPhotoCardInteractions } from './useTaskBarPhotoCardInteractions';
 
 interface TaskBarProps {
@@ -276,6 +279,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
     (task.localDraftKind === 'comment' || swimlaneCommentId != null);
   const stickyNoteExiting = useStickyNoteExiting(task.id);
   const stickyNoteColorPopping = useStickyNoteColorPop(task.id, isStickyNoteCard, task.stickyNoteColor);
+  const stickyNoteSaveMotion = useStickyNoteSaveMotion(task.id);
   const cornerStyle = resolveResizeHandleCornerStyle(
     isPhotoCard || isDiagramCard || isWidgetCard,
     isStickyNoteCard
@@ -304,6 +308,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
       quickAddSubmitting,
       swimlaneCommentId,
     });
+  const noteFocusMode = useTaskBarNoteFocus({ developers, inlineTitleEditor, isStickyNoteCard });
   const onDiagramNameChange = resolveDiagramNameChangeHandler({
     commentId: swimlaneCommentId,
     isDiagramCard,
@@ -314,6 +319,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
   return (
     <DiagramNameEditContext.Provider value={onDiagramNameChange}>
     <div
+      ref={noteFocusMode.rootRef}
       className={`${getTaskBarRootClassName({
         effectiveIsDragging,
         instantGeometryClass,
@@ -321,11 +327,12 @@ const TaskBarSurface = observer(function TaskBarSurface({
         isAnnotationCard: isStickyNoteCard || isPhotoCard || isDiagramCard || isWidgetCard,
         linkCursorClass,
         shouldExpandByLongHover,
-      })}${stickyNoteExitClassName(isStickyNoteCard, stickyNoteExiting)}${stickyNoteColorPopClassName(isStickyNoteCard, stickyNoteColorPopping)}${planPatchChrome.ringClass}`}
+      })}${stickyNoteExitClassName(isStickyNoteCard, stickyNoteExiting)}${stickyNoteColorPopClassName(isStickyNoteCard, stickyNoteColorPopping)}${stickyNoteSaveMotionClassName(isStickyNoteCard, stickyNoteSaveMotion)}${planPatchChrome.ringClass}`}
       data-draggable-id={draggableId}
       data-task-id={task.id}
       {...onboardingDataset}
       id={htmlAnchorId}
+
       style={{
         ...resolveTaskBarRootStyle({
           hideSourceForOverlay,
@@ -339,20 +346,10 @@ const TaskBarSurface = observer(function TaskBarSurface({
             taskBarZIndex,
           }),
         }),
+        ...noteFocusMode.rootStyle,
       }}
-      onBlur={(event) => {
-        const next = event.relatedTarget;
-        if (
-          inlineTitleEditor?.onCancel &&
-          shouldCancelInlineEditorOnFocusOut({
-            currentTarget: event.currentTarget,
-            persistDraft: isStickyNoteCard,
-            relatedTarget: next instanceof Node ? next : null,
-          })
-        ) {
-          inlineTitleEditor.onCancel();
-        }
-      }}
+      onAnimationEnd={(event) => finishStickyNoteSaveMotion(task.id, event.animationName)}
+      onBlur={(event) => cancelInlineEditorOnFocusOut(event, inlineTitleEditor?.onCancel, isStickyNoteCard)}
     >
       <TaskBarOpacityLayer
         assigneeName={assigneeName}
@@ -460,7 +457,8 @@ const TaskBarSurface = observer(function TaskBarSurface({
           onReject={onCommentDelete}
         />
       ) : null}
-      <TaskBarDraftSaveButton noteEditor={inlineTitleEditor} />
+      <TaskBarDraftSaveButton noteEditor={inlineTitleEditor} onNoteExpand={noteFocusMode.onNoteExpand} />
+      {noteFocusMode.focusEditor}
       {quickAddMenu && !quickAddSubmitting ? (
         <SwimlaneQuickAddMenu
           key={htmlAnchorId}

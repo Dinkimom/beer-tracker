@@ -5,6 +5,7 @@
  */
 
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
+import type { PlacedSwimlaneLayerItem } from '@/features/swimlane/utils/layerUtils';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
@@ -25,6 +26,8 @@ import { isPlannerToday } from '@/utils/dateUtils';
 import { TimelineGridPartCell } from './TimelineGridPartCell';
 
 interface TimelineGridProps {
+  /** Автосортировка карточек: «+» показывает слот жадной укладки. */
+  autoArrange?: boolean;
   developerId: string;
   hasTaskOverlaps?: boolean;
   /** Индексы дней (0..9), которые являются нерабочими/праздничными */
@@ -32,7 +35,6 @@ interface TimelineGridProps {
   isDraggingTask: boolean;
   isLinking?: boolean;
   maxTaskLayers?: number;
-  occupiedLayersByCell?: Map<number, Set<number>>;
   /** Разделители частей дня: только при перетаскивании или ресайзе карточки этой строки */
   partDividersVisible?: boolean;
   /**
@@ -40,6 +42,8 @@ interface TimelineGridProps {
    * чтобы дорожки факта и календаря под ней шли отдельными строками; без неё — на всю высоту.
    */
   patternHeight?: number;
+  /** Уложенные карточки дорожки: по ним «+» ищет слой будущего черновика. */
+  placedLayerItems?: readonly PlacedSwimlaneLayerItem[];
   /** Высота строки карточек — чтобы «+» не вылезал в соседний свимлейн */
   quickAddClipHeight?: number;
   quickAddFootprint?: {
@@ -72,13 +76,14 @@ const DAY_COLUMN_CLASS = 'relative isolate flex h-full min-w-0';
 const DAY_COLUMN_ROW_BORDER_CLASS = 'border-b border-gray-200 dark:border-gray-700';
 
 export function TimelineGrid({
+  autoArrange = false,
   developerId,
   isDraggingTask,
   isLinking = false,
   sprintStartDate,
   sprintTimelineWorkingDays = WORKING_DAYS,
   maxTaskLayers = 1,
-  occupiedLayersByCell,
+  placedLayerItems,
   hasTaskOverlaps,
   partDividersVisible = false,
   patternHeight,
@@ -177,6 +182,7 @@ export function TimelineGrid({
               {Array.from({ length: getPartsPerDay() }, (_, partIndex) => (
                 <TimelineGridPartCell
                   key={`${developerId}-${dayIndex}-${partIndex}`}
+                  autoArrange={autoArrange}
                   dayCount={dayCount}
                   dayIndex={dayIndex}
                   developerId={developerId}
@@ -185,9 +191,9 @@ export function TimelineGrid({
                   isDraggingTask={isDraggingTask}
                   isLinking={isLinking}
                   maxTaskLayers={maxTaskLayers}
-                  occupiedLayersByCell={occupiedLayersByCell}
                   partDividerVisible={partDividersVisible}
                   partIndex={partIndex}
+                  placedLayerItems={placedLayerItems}
                   quickAddClipHeight={quickAddClipHeight}
                   quickAddDurationCells={quickAddDurationCells}
                   quickAddSnapToDay={quickAddSnapToDay}

@@ -18,6 +18,7 @@ import {
   isFeatureLaneActionableRowId,
   isFeatureLaneDraftRowId,
 } from '@/features/swimlane/utils/featureSwimlaneRows';
+import { SWIMLANE_GROUP_HOVER_REVEAL_CLASS } from '@/features/swimlane/utils/swimlaneHoverMotion';
 import { useQuickAddIssueSearch } from '@/features/task/components/TaskBar/components/quickAddMenu/hooks/useQuickAddIssueSearch';
 import { QuickAddMenuExistingPanel } from '@/features/task/components/TaskBar/components/quickAddMenu/QuickAddMenuExistingPanel';
 import { QuickAddMenuHeader } from '@/features/task/components/TaskBar/components/quickAddMenu/QuickAddMenuHeader';
@@ -165,7 +166,7 @@ export function FeatureLaneDraftRowActions({ rowId }: FeatureLaneDraftRowActions
   const panelWidth = featureLaneRowMenuWidthPx(step);
 
   return (
-    <div className="flex h-6 w-6 shrink-0 items-center justify-center leading-none opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100 has-[[data-state=open]]:opacity-100">
+    <div className={`flex h-6 w-6 shrink-0 items-center justify-center leading-none ${SWIMLANE_GROUP_HOVER_REVEAL_CLASS} has-[:focus-visible]:opacity-100 has-[[data-state=open]]:opacity-100`}>
       <Popover.Root modal={false} open={open} onOpenChange={handleOpenChange}>
         <Popover.Trigger asChild>
           <Button

@@ -4,6 +4,7 @@ import type { Comment, Developer, Task, TaskParent, TaskPosition } from '@/types
 
 import toast from 'react-hot-toast';
 
+import { playStickyNoteSaveMotion } from '@/features/comments/utils/stickyNoteSaveMotion';
 import {
   createLocalPlannerImageObjectUrl,
   prepareLocalPlannerImageFile,
@@ -100,6 +101,9 @@ export function createQuickAddDraftInSwimlaneCell(
     });
     return next;
   }, { recordHistory: true });
+  if (kind === 'comment') {
+    playStickyNoteSaveMotion(draftTaskId, 'place');
+  }
   input.onCreated?.(draftTaskId, kind);
   return draftTaskId;
 }

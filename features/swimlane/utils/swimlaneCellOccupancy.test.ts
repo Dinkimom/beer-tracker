@@ -1,12 +1,11 @@
-import type { TaskPosition } from '@/types';
+import type { Task, TaskPosition } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
+import { distributeTasksToLayers, placeSwimlaneLayerItems } from './layerUtils';
 import {
   buildSwimlaneOccupiedCellIndices,
-  buildSwimlaneOccupiedLayersByCell,
   clampSwimlaneQuickAddBandBox,
-  collectOccupiedLayersForCellRange,
   resolveSwimlaneQuickAddBandLayout,
   resolveSwimlaneQuickAddLayerBand,
 } from './swimlaneCellOccupancy';
@@ -54,82 +53,6 @@ describe('buildSwimlaneOccupiedCellIndices', () => {
   });
 });
 
-describe('buildSwimlaneOccupiedLayersByCell', () => {
-  it('records the stacked layer of each card in overlapping cells', () => {
-    const positions: TaskPosition[] = [
-      {
-        taskId: 'a',
-        assignee: 'dev-1',
-        startDay: 0,
-        startPart: 0,
-        duration: 2,
-      },
-      {
-        taskId: 'b',
-        assignee: 'dev-1',
-        startDay: 0,
-        startPart: 1,
-        duration: 1,
-      },
-    ];
-    const occupied = buildSwimlaneOccupiedLayersByCell(
-      positions,
-      new Map([
-        ['a', 0],
-        ['b', 1],
-      ])
-    );
-
-    expect(occupied.get(0)).toEqual(new Set([0]));
-    expect(occupied.get(1)).toEqual(new Set([0, 1]));
-  });
-
-  it('marks every vertical layer spanned by a photo card', () => {
-    const positions: TaskPosition[] = [
-      {
-        taskId: 'local-image:1',
-        assignee: 'dev-1',
-        startDay: 0,
-        startPart: 0,
-        duration: 2,
-      },
-    ];
-    const occupied = buildSwimlaneOccupiedLayersByCell(
-      positions,
-      new Map([['local-image:1', 1]]),
-      new Map([['local-image:1', 2]])
-    );
-
-    expect(occupied.get(0)).toEqual(new Set([1, 2]));
-    expect(occupied.get(1)).toEqual(new Set([1, 2]));
-  });
-
-  it('marks overdue baseline cells as occupied on the same layer as the card', () => {
-    const positions: TaskPosition[] = [
-      {
-        taskId: 'overdue',
-        assignee: 'dev-1',
-        startDay: 0,
-        startPart: 0,
-        duration: 2,
-      },
-    ];
-    const occupied = buildSwimlaneOccupiedLayersByCell(
-      positions,
-      new Map([['overdue', 0]]),
-      undefined,
-      [{ end: 5, start: 2, taskId: 'overdue' }]
-    );
-
-    expect(occupied.get(0)).toEqual(new Set([0]));
-    expect(occupied.get(1)).toEqual(new Set([0]));
-    expect(occupied.get(2)).toEqual(new Set([0]));
-    expect(occupied.get(3)).toEqual(new Set([0]));
-    expect(occupied.get(4)).toEqual(new Set([0]));
-    expect(occupied.get(5)).toBeUndefined();
-  });
-});
-
 describe('resolveSwimlaneQuickAddBandLayout', () => {
   it('uses stacked band math when the row is reserved taller than content', () => {
     expect(
@@ -162,64 +85,112 @@ describe('resolveSwimlaneQuickAddBandLayout', () => {
   });
 });
 
+function lanePosition(taskId: string, startPart: number, duration: number): TaskPosition {
+  return { taskId, assignee: 'dev-1', startDay: 0, startPart, duration };
+}
+
+function laneTask(id: string, extra: Partial<Task> = {}): Task {
+  return { id, link: '', name: id, status: 'todo', ...extra } as Task;
+}
+
+function lane(
+  entries: Array<{ duration: number; id: string; startPart: number; task?: Partial<Task> }>,
+  baselines: Array<{ end: number; start: number; taskId: string }> = []
+) {
+  return placeSwimlaneLayerItems(
+    entries.map(({ duration, id, startPart, task }) => ({
+      task: laneTask(id, task),
+      position: lanePosition(id, startPart, duration),
+    })),
+    baselines
+  );
+}
+
 describe('resolveSwimlaneQuickAddLayerBand', () => {
   it('uses a single card slot in an empty cell, even when the row is taller', () => {
-    expect(resolveSwimlaneQuickAddLayerBand(undefined, 2)).toEqual({ layer: 0, span: 1 });
-    expect(resolveSwimlaneQuickAddLayerBand(new Set(), 1)).toEqual({ layer: 0, span: 1 });
+    expect(
+      resolveSwimlaneQuickAddLayerBand({ durationCells: 1, lane: undefined, maxTaskLayers: 2, startCell: 0 })
+    ).toEqual({ layer: 0, span: 1 });
   });
 
-  it('uses remaining vertical layers when a shorter card is in a tall row', () => {
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([0]), 2)).toEqual({ layer: 1, span: 1 });
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([1]), 2)).toEqual({ layer: 0, span: 1 });
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([0]), 3)).toEqual({ layer: 1, span: 1 });
+  it('stacks above a card that already covers the cell', () => {
+    const placed = lane([{ id: 'a', startPart: 0, duration: 2 }]);
+    expect(
+      resolveSwimlaneQuickAddLayerBand({ durationCells: 1, lane: placed, maxTaskLayers: 2, startCell: 1 })
+    ).toEqual({ layer: 1, span: 1 });
   });
 
-  it('returns null when every row layer is occupied', () => {
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([0]), 1)).toBeNull();
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([0, 1]), 2)).toBeNull();
+  it('returns null when the slot is above the visible row layers', () => {
+    const placed = lane([{ id: 'a', startPart: 0, duration: 2 }]);
+    expect(
+      resolveSwimlaneQuickAddLayerBand({ durationCells: 1, lane: placed, maxTaskLayers: 1, startCell: 1 })
+    ).toBeNull();
   });
 
-  it('keeps the add control off an overdue baseline in a tall row', () => {
-    const occupied = buildSwimlaneOccupiedLayersByCell(
-      [
-        {
-          taskId: 'overdue',
-          assignee: 'dev-1',
-          startDay: 0,
-          startPart: 0,
-          duration: 2,
-        },
-      ],
-      new Map([['overdue', 0]]),
-      undefined,
+  it('keeps the add control off an overdue baseline', () => {
+    const placed = lane(
+      [{ id: 'overdue', startPart: 0, duration: 2 }],
       [{ end: 5, start: 2, taskId: 'overdue' }]
     );
-
-    expect(resolveSwimlaneQuickAddLayerBand(occupied.get(3), 3)).toEqual({ layer: 1, span: 1 });
-    expect(resolveSwimlaneQuickAddLayerBand(occupied.get(3), 1)).toBeNull();
+    expect(
+      resolveSwimlaneQuickAddLayerBand({ durationCells: 1, lane: placed, maxTaskLayers: 3, startCell: 3 })
+    ).toEqual({ layer: 1, span: 1 });
+    expect(
+      resolveSwimlaneQuickAddLayerBand({ durationCells: 1, lane: placed, maxTaskLayers: 1, startCell: 3 })
+    ).toBeNull();
   });
 
   it('needs two free stacked layers for a photo footprint', () => {
-    expect(resolveSwimlaneQuickAddLayerBand(undefined, 1, 2)).toEqual({ layer: 0, span: 2 });
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([0]), 2, 2)).toEqual({ layer: 1, span: 2 });
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([1]), 3, 2)).toEqual({ layer: 2, span: 2 });
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([2]), 3, 2)).toEqual({ layer: 0, span: 2 });
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([0, 1]), 2, 2)).toBeNull();
-    expect(resolveSwimlaneQuickAddLayerBand(new Set([0, 1]), 4, 2)).toEqual({
-      layer: 2,
-      span: 2,
-    });
+    expect(
+      resolveSwimlaneQuickAddLayerBand({ durationCells: 2, lane: undefined, maxTaskLayers: 1, span: 2, startCell: 0 })
+    ).toEqual({ layer: 0, span: 2 });
+    const placed = lane([{ id: 'a', startPart: 0, duration: 2 }]);
+    expect(
+      resolveSwimlaneQuickAddLayerBand({ durationCells: 2, lane: placed, maxTaskLayers: 2, span: 2, startCell: 1 })
+    ).toEqual({ layer: 1, span: 2 });
   });
-});
 
-describe('collectOccupiedLayersForCellRange', () => {
-  it('unions layers across the photo width so the plus cannot sit on a neighbor card', () => {
-    const occupied = new Map<number, Set<number>>([
-      [4, new Set([0])],
-      [5, new Set([1])],
-    ]);
-    expect(collectOccupiedLayersForCellRange(occupied, 4, 2)).toEqual(new Set([0, 1]));
-    expect(collectOccupiedLayersForCellRange(occupied, 4, 1)).toEqual(new Set([0]));
+  it('auto-arrange: shows the slot the greedy packing gives the draft', () => {
+    // «a» начинается позже: при автосортировке новая заметка укладывается раньше и забирает слой 0.
+    const placed = lane([{ id: 'a', startPart: 2, duration: 2 }]);
+    expect(
+      resolveSwimlaneQuickAddLayerBand({ autoArrange: true, durationCells: 2, lane: placed, maxTaskLayers: 2, startCell: 1 })
+    ).toEqual({ layer: 0, span: 1 });
+    const draft = {
+      task: laneTask('draft', { isLocalTask: true, localDraftKind: 'comment' }),
+      position: lanePosition('draft', 1, 2),
+    };
+    const a = { task: laneTask('a'), position: lanePosition('a', 2, 2) };
+    expect(distributeTasksToLayers([draft, a]).get('draft')).toBe(0);
+  });
+
+  it('takes the free gap and the draft and the saved card land there too', () => {
+    // «a» начинается позже, но уже стоит на доске: новая двухчастная заметка не вытесняет её.
+    const a = { task: laneTask('a'), position: lanePosition('a', 2, 2) };
+    const placed = lane([{ id: 'a', startPart: 2, duration: 2 }]);
+    const band = resolveSwimlaneQuickAddLayerBand({
+      durationCells: 2,
+      lane: placed,
+      maxTaskLayers: 2,
+      startCell: 1,
+    });
+    const draft = {
+      task: laneTask('draft', { isLocalTask: true, localDraftKind: 'comment' }),
+      position: lanePosition('draft', 1, 2),
+    };
+    const saved = {
+      task: laneTask('comment:x', { localDraftKind: 'comment' }),
+      position: lanePosition('comment:x', 1, 2),
+    };
+    const seen = new Map([['a', 0], ['draft', 1], ['comment:x', 2]]);
+    const draftLayers = distributeTasksToLayers([draft, a], [], undefined, undefined, seen);
+    const savedLayers = distributeTasksToLayers([saved, a], [], undefined, undefined, seen);
+
+    expect(band).toEqual({ layer: 1, span: 1 });
+    expect(draftLayers.get('draft')).toBe(1);
+    expect(savedLayers.get('comment:x')).toBe(1);
+    expect(draftLayers.get('a')).toBe(0);
+    expect(savedLayers.get('a')).toBe(0);
   });
 });
 

@@ -15,6 +15,11 @@ import {
   normalizePlanPatchPositionPreview,
   type PlanPatchPositionPreview,
 } from '@/lib/sprints/sprintPlanPatchPositionPreview';
+import {
+  normalizeSwimlaneCardLayer,
+  type SwimlaneCardLayer,
+  type SwimlaneCardLayerWrite,
+} from '@/lib/swimlane/swimlaneCardLayers';
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
@@ -61,6 +66,31 @@ export async function fetchPlanPatchPositionPreviews(
     }
   }
   return previews;
+}
+
+/** Ручные слои карточек свимлейна (приходят вместе с позициями). */
+export async function fetchSprintLaneLayers(sprintId: number): Promise<SwimlaneCardLayer[]> {
+  const { data }: { data: { laneLayers?: unknown[] } } = await getPlannerBeerTrackerApi().get(
+    `/sprints/${sprintId}/positions`
+  );
+  const layers: SwimlaneCardLayer[] = [];
+  for (const item of data.laneLayers ?? []) {
+    const layer = normalizeSwimlaneCardLayer(item);
+    if (layer) {
+      layers.push(layer);
+    }
+  }
+  return layers;
+}
+
+export async function saveSprintLaneLayers(
+  sprintId: number,
+  layers: readonly SwimlaneCardLayerWrite[]
+): Promise<void> {
+  if (layers.length === 0) {
+    return;
+  }
+  await getPlannerBeerTrackerApi().put(`/sprints/${sprintId}/lane-layers`, { layers });
 }
 
 export async function fetchSprintPositions(sprintId: number): Promise<TaskPosition[]> {

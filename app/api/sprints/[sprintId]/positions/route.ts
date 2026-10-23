@@ -23,6 +23,7 @@ import {
 } from '@/lib/sprints';
 import { listPlanAnchorsForSprint } from '@/lib/sprints/planAnchorRepository';
 import { listPlanPatchPositionPreviews } from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
+import { listSwimlaneCardLayers } from '@/lib/sprints/swimlaneCardLayersRepository';
 import { resolveTrackerSprintBoardId } from '@/lib/trackerApi';
 import { TaskPositionSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
@@ -69,7 +70,9 @@ export async function GET(
       sprintId,
     });
 
-    return NextResponse.json({ planAnchors, planPatchPreviews, positions });
+    const laneLayers = await listSwimlaneCardLayers({ organizationId, sprintId });
+
+    return NextResponse.json({ laneLayers, planAnchors, planPatchPreviews, positions });
   } catch (error) {
     return handleApiError(error, 'fetch positions', {
       forwardStatuses: TRACKER_UPSTREAM_FORWARD_STATUSES,

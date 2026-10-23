@@ -2,6 +2,7 @@
 
 import { RESIZE_HANDLE_TOOLTIP_DELAY_MS, TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
+import { SWIMLANE_GROUP_HOVER_REVEAL_CLASS } from '@/features/swimlane/utils/swimlaneHoverMotion';
 
 interface SwimlaneRowBorderResizeHandleProps {
   isBorderHovered: boolean;
@@ -15,7 +16,7 @@ export function resolveSwimlaneRowResizeHandleShellClass(isActive: boolean): str
   if (isActive) {
     return 'pointer-events-auto opacity-100';
   }
-  return 'pointer-events-auto opacity-0 group-hover:opacity-100';
+  return `pointer-events-auto ${SWIMLANE_GROUP_HOVER_REVEAL_CLASS}`;
 }
 
 /** Одна высота подсветки на колонке исполнителя и между строками. */

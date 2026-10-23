@@ -101,6 +101,8 @@ export interface DemoFixtureState {
     delivery: ChecklistItem[];
     discovery: ChecklistItem[];
   };
+  /** Ручные слои карточек свимлейна: cardId → слой. */
+  laneLayers: Record<string, number>;
   links: Array<{
     from_task_id: string;
     id: string;
@@ -395,6 +397,7 @@ export function createDemoFixtureSeed(): DemoFixtureState {
     tasks: buildDemoSprintTasks(),
     backlogTasks: buildDemoBacklogTasks(),
     nextSprintTasks: [],
+    laneLayers: {},
     planAnchors: buildDemoPlanAnchors(),
     positions: buildDemoPositions(),
     links: [

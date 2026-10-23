@@ -5,23 +5,25 @@
 import type { Task, TaskPosition } from '@/types';
 
 import { reaction } from 'mobx';
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import {
+  buildSwimlaneLayerPackingItems,
   buildSwimlaneTaskLayerSpanById,
   buildSwimlaneTaskVerticalLayoutById,
   calculateBaselines,
   distributeBaselinesToLayers,
-  distributeTasksToLayers,
+  placeSwimlaneLayerItems,
+  swimlaneLayerMapFromPlaced,
 } from '@/features/swimlane/utils/layerUtils';
 import { mergePlanPatchPreviewLayers } from '@/features/swimlane/utils/planPatchPreviewLayers';
-import { buildSwimlaneOccupiedLayersByCell } from '@/features/swimlane/utils/swimlaneCellOccupancy';
 import { resolveEffectiveSwimlaneReservedTaskLayersPreview } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
 import { useSprintBoardPresenceViewers } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { applyTaskResizePreviewToPositionedTasks } from '@/features/task/hooks/useTaskResizeHelpers';
 import { buildEffectiveStickyNoteCardRowById, mergeStickyNoteCardRowOverrideMaps, type StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import {
+  useSwimlaneAutoArrangeStorage,
   useSwimlaneBaselineLayoutModeStorage,
   useSwimlaneCardReservesEyebrow,
 } from '@/hooks/useLocalStorage';
@@ -133,6 +135,7 @@ export function useSwimlaneLayout({
   );
   const reserveEyebrow = useSwimlaneCardReservesEyebrow();
   const [baselineLayoutMode] = useSwimlaneBaselineLayoutModeStorage();
+  const [autoArrange] = useSwimlaneAutoArrangeStorage();
 
   // Нельзя useMemo([taskPositions, …]): taskPositions — тот же observable.map, при DnD мутирует на месте,
   // ссылка не меняется — positionedTasks оставался со старыми координатами (занятость жила отдельным путём).
@@ -205,11 +208,55 @@ export function useSwimlaneLayout({
     positionedTasks,
     stickyNoteCardRowById
   );
-  const taskLayerMap = distributeTasksToLayers(
-    positionedTasks,
-    packingBaselines,
-    stickyNoteCardRowById
-  );
+  const storedManualLayers = positionsStore.laneLayers.layers;
+  const busyManualLayer = localBusyTaskId ? storedManualLayers.get(localBusyTaskId) : undefined;
+  // Карточка под жестом (ресайз) уже «новейшая»: превью конфликта совпадает с итогом после touch.
+  const manualLayers =
+    busyManualLayer && localBusyTaskId
+      ? new Map(storedManualLayers).set(localBusyTaskId, { ...busyManualLayer, rev: Number.POSITIVE_INFINITY })
+      : storedManualLayers;
+  const placedLayerItems = autoArrange
+    ? placeSwimlaneLayerItems(positionedTasks, packingBaselines, stickyNoteCardRowById)
+    : placeSwimlaneLayerItems(
+        positionedTasks,
+        packingBaselines,
+        stickyNoteCardRowById,
+        manualLayers,
+        positionsStore.laneLayers.autoOrderFor(positionedTasks.map(({ task }) => task.id))
+      );
+  // Ручной режим: доска показывает слои, которые надо запомнить — соседей, сдвинутых правленной
+  // карточкой, и новые карточки без слоя (из синка, от агента). Пишем после жеста, иначе при
+  // следующей правке они вернулись бы на прежние места или уступили бы место.
+  const persistShownManualLayers = !autoArrange && localBusyTaskId == null;
+  useEffect(() => {
+    if (!persistShownManualLayers) {
+      return;
+    }
+    const writes = placedLayerItems
+      .filter(({ item, layer }) => {
+        if (item.id.startsWith('local-')) {
+          return false;
+        }
+        return storedManualLayers.get(item.id)?.layer !== layer;
+      })
+      .map(({ item, layer }) => ({ cardId: item.id, layer }));
+    if (writes.length > 0) {
+      positionsStore.laneLayers.set(writes);
+    }
+  });
+  const computeAutoLayerItems = () =>
+    placeSwimlaneLayerItems(positionedTasks, packingBaselines, stickyNoteCardRowById);
+  /** Карточка на новой позиции в этой строке — с её бейзлайном и высотой, как в раскладке. */
+  const packLaneItem = (taskId: string, position: TaskPosition) => {
+    const task = tasksMap.get(taskId);
+    if (!task) {
+      return null;
+    }
+    const moved = [{ position, task }];
+    const baselines = resolveSwimlaneBaselinesForLayerPacking(calculateBaselines(moved, currentCell), baselineLayoutMode);
+    return buildSwimlaneLayerPackingItems(moved, baselines, stickyNoteCardRowById)[0] ?? null;
+  };
+  const taskLayerMap = swimlaneLayerMapFromPlaced(placedLayerItems);
   mergePlanPatchPreviewLayers({
     assigneeId: developerId,
     occupants: positionedTasks.map(({ task, position }) => {
@@ -225,13 +272,6 @@ export function useSwimlaneLayout({
     taskLayerMap,
   });
   const baselineLayerMap = distributeBaselinesToLayers(packingBaselines);
-  const occupiedLayersByCell = buildSwimlaneOccupiedLayersByCell(
-    positionedTasks.map(({ position }) => position),
-    taskLayerMap,
-    taskLayerSpanById,
-    packingBaselines,
-    taskVerticalLayoutById
-  );
   const layoutInputBase = {
     baselineLayerMap,
     showParent: reserveEyebrow,
@@ -304,6 +344,9 @@ export function useSwimlaneLayout({
     taskBandVisualHeight,
     baselineLayerHeight,
     baselineLayoutMode,
-    occupiedLayersByCell,
+    autoArrange,
+    computeAutoLayerItems,
+    packLaneItem,
+    placedLayerItems,
   };
 }

@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { resolveStickyNoteTiltDegrees, stickyNoteTiltSign } from './stickyNoteTilt';
+import {
+  createIdKeepingStickyNoteTilt,
+  resolveStickyNoteTiltDegrees,
+  stickyNoteTiltSign,
+} from './stickyNoteTilt';
 
 const LEFT_ID = 'note-left';
 const RIGHT_ID = 'note-right';
@@ -38,5 +42,27 @@ describe('resolveStickyNoteTiltDegrees', () => {
     expect(resolveStickyNoteTiltDegrees(0, 40, LEFT_ID)).toBe(0);
     expect(resolveStickyNoteTiltDegrees(40, -10, LEFT_ID)).toBe(0);
     expect(resolveStickyNoteTiltDegrees(80, 80, '')).toBe(0);
+  });
+});
+
+describe('createIdKeepingStickyNoteTilt', () => {
+  const toCardId = (id: string) => `comment:${id}`;
+
+  it('skips ids whose card would tilt to the other side', () => {
+    const candidates = ['b', 'd', 'a', 'c'];
+    const sign = stickyNoteTiltSign(LEFT_ID);
+    const expected = candidates.find((id) => stickyNoteTiltSign(toCardId(id)) === sign);
+    let index = 0;
+    const id = createIdKeepingStickyNoteTilt(LEFT_ID, toCardId, () => candidates[index++]);
+    expect(id).toBe(expected);
+    expect(stickyNoteTiltSign(toCardId(id))).toBe(sign);
+  });
+
+  it('gives up after a bounded number of attempts', () => {
+    const createId = vi.fn(() => 'same');
+    const sign = stickyNoteTiltSign(toCardId('same'));
+    const source = sign === stickyNoteTiltSign(LEFT_ID) ? RIGHT_ID : LEFT_ID;
+    expect(createIdKeepingStickyNoteTilt(source, toCardId, createId)).toBe('same');
+    expect(createId).toHaveBeenCalledTimes(16);
   });
 });

@@ -50,6 +50,18 @@ export function replaceDemoPositions(rows: DemoFixtureState['positions']): void 
   state.positions = rows;
 }
 
+export function writeDemoLaneLayers(layers: ReadonlyArray<{ cardId: string; layer: number | null }>): void {
+  const next = { ...state.laneLayers };
+  for (const { cardId, layer } of layers) {
+    if (layer == null) {
+      delete next[cardId];
+    } else {
+      next[cardId] = layer;
+    }
+  }
+  state.laneLayers = next;
+}
+
 export function replaceDemoFeatureLanes(lanes: DemoFixtureState['featureLanes']): void {
   state.featureLanes = lanes;
 }

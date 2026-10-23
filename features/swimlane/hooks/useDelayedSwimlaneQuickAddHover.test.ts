@@ -1,17 +1,53 @@
 /** @vitest-environment jsdom */
 
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { SWIMLANE_HOVER_INTENT_MS } from '@/features/swimlane/utils/swimlaneHoverMotion';
 
 import { useDelayedSwimlaneQuickAddHover } from './useDelayedSwimlaneQuickAddHover';
 
+function enterAndWait(hover: { onPointerEnter: () => void }): void {
+  act(() => {
+    hover.onPointerEnter();
+    vi.advanceTimersByTime(SWIMLANE_HOVER_INTENT_MS);
+  });
+}
+
 describe('useDelayedSwimlaneQuickAddHover', () => {
-  it('shows hover immediately and clears it when the pointer leaves', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('does not show the plus when the pointer only passes through the cell', () => {
     const onHoverChange = vi.fn();
     const { result } = renderHook(() => useDelayedSwimlaneQuickAddHover(true, onHoverChange));
 
     act(() => {
       result.current.onPointerEnter();
+      vi.advanceTimersByTime(SWIMLANE_HOVER_INTENT_MS - 1);
+      result.current.onPointerLeave();
+      vi.advanceTimersByTime(SWIMLANE_HOVER_INTENT_MS);
+    });
+    expect(result.current.isHovered).toBe(false);
+    expect(onHoverChange).not.toHaveBeenCalled();
+  });
+
+  it('shows hover after the intent delay and clears it when the pointer leaves', () => {
+    const onHoverChange = vi.fn();
+    const { result } = renderHook(() => useDelayedSwimlaneQuickAddHover(true, onHoverChange));
+
+    act(() => {
+      result.current.onPointerEnter();
+    });
+    expect(result.current.isHovered).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(SWIMLANE_HOVER_INTENT_MS);
     });
     expect(result.current.isHovered).toBe(true);
     expect(onHoverChange).toHaveBeenCalledTimes(1);
@@ -31,16 +67,12 @@ describe('useDelayedSwimlaneQuickAddHover', () => {
       { initialProps: { enabled: false } }
     );
 
-    act(() => {
-      result.current.onPointerEnter();
-    });
+    enterAndWait(result.current);
     expect(result.current.isHovered).toBe(false);
     expect(onHoverChange).not.toHaveBeenCalled();
 
     rerender({ enabled: true });
-    act(() => {
-      result.current.onPointerEnter();
-    });
+    enterAndWait(result.current);
     expect(result.current.isHovered).toBe(true);
     expect(onHoverChange).toHaveBeenCalledWith(true);
   });
@@ -52,9 +84,7 @@ describe('useDelayedSwimlaneQuickAddHover', () => {
       { initialProps: { enabled: true } }
     );
 
-    act(() => {
-      result.current.onPointerEnter();
-    });
+    enterAndWait(result.current);
     expect(onHoverChange).toHaveBeenLastCalledWith(true);
 
     rerender({ enabled: false });
@@ -72,9 +102,7 @@ describe('useDelayedSwimlaneQuickAddHover', () => {
       { initialProps: { enabled: true, onHoverChange } }
     );
 
-    act(() => {
-      result.current.onPointerEnter();
-    });
+    enterAndWait(result.current);
     expect(onHoverChange).toHaveBeenLastCalledWith(true);
 
     rerender({ enabled: false, onHoverChange: undefined });
@@ -87,9 +115,7 @@ describe('useDelayedSwimlaneQuickAddHover', () => {
       useDelayedSwimlaneQuickAddHover(true, onHoverChange)
     );
 
-    act(() => {
-      result.current.onPointerEnter();
-    });
+    enterAndWait(result.current);
     expect(onHoverChange).toHaveBeenLastCalledWith(true);
 
     unmount();

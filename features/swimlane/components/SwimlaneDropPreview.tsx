@@ -1,5 +1,6 @@
 'use client';
 
+import type { PlacedSwimlaneLayerItem } from '@/features/swimlane/utils/layerUtils';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { SwimlaneBaselineLayoutMode } from '@/lib/swimlane/swimlaneBaselineLayoutMode';
 import type { Task, TaskPosition } from '@/types';
@@ -23,6 +24,7 @@ import {
 } from '@/features/swimlane/utils/swimlaneDropPreview';
 import {
   computeSwimlaneRowBandBox,
+  SWIMLANE_STACKED_LAYER_GAP_PX,
   SWIMLANE_TASK_ROW_VERTICAL_INSET_PX,
 } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { buildSwimlaneTaskBarHorizontalStyle } from '@/features/task/components/TaskBar/taskBarHelpers';
@@ -45,8 +47,10 @@ interface SwimlaneDropPreviewProps {
   dropDisabled: boolean;
   isDraggingTask: boolean;
   layout: {
+    autoArrange: boolean;
     baselineLayoutMode: SwimlaneBaselineLayoutMode;
     currentCell: number;
+    placedLayerItems: readonly PlacedSwimlaneLayerItem[];
     positionedTasks: Array<{ position: TaskPosition; task: Task }>;
     stickyNoteCardRowById: ReadonlyMap<string, StickyNoteCardRowLayout>;
     taskBandVisualHeight: number;
@@ -69,6 +73,12 @@ function resolveAnnotationPaint(task: Task, isDark: boolean): CSSProperties | nu
   return null;
 }
 
+/** Черта вставки — посередине зазора над слоем, куда встанет карточка. */
+function resolveInsertLineTop(slotTop: number, layer: number): number {
+  const gap = layer === 0 ? SWIMLANE_TASK_ROW_VERTICAL_INSET_PX : SWIMLANE_STACKED_LAYER_GAP_PX;
+  return Math.max(0, slotTop - (gap + NEW_LAYER_LINE_PX) / 2);
+}
+
 /** Линия тонкая: бумага заметки на ней теряется, поэтому берём насыщенный swatch. */
 function resolveAnnotationLineColor(
   task: Task,
@@ -82,7 +92,8 @@ function resolveAnnotationLineColor(
 }
 
 /**
- * Слот карточки там, где она окажется после drop; если нужен новый слой — линия у нижнего края строки.
+ * Слот карточки там, где она окажется после drop. Черта — если нужен новый слой у нижнего края
+ * строки или карточка встанет, только сдвинув соседей вниз (между слоями).
  * Единственный подписчик hover-ячейки в строке: курсор перерисовывает только этот узел, не Swimlane.
  */
 export function SwimlaneDropPreview({
@@ -103,8 +114,10 @@ export function SwimlaneDropPreview({
     activeTask?.id ?? ''
   );
   const {
+    autoArrange,
     baselineLayoutMode,
     currentCell,
+    placedLayerItems,
     positionedTasks: laneTasks,
     stickyNoteCardRowById,
     taskBandVisualHeight: taskAreaHeight,
@@ -121,13 +134,15 @@ export function SwimlaneDropPreview({
       hasHover && activeTaskId != null
         ? buildSwimlaneDropPreviewLaneModel({
             activeTaskId,
+            autoArrange,
             baselineLayoutMode,
             currentCell,
             laneTasks,
+            placed: placedLayerItems,
             stickyNoteCardRowById,
           })
         : null,
-    [activeTaskId, baselineLayoutMode, currentCell, hasHover, laneTasks, stickyNoteCardRowById]
+    [activeTaskId, autoArrange, baselineLayoutMode, currentCell, hasHover, laneTasks, placedLayerItems, stickyNoteCardRowById]
   );
   const slot = useMemo(() => {
     const target = resolveSwimlaneDropPreviewTarget({
@@ -185,19 +200,25 @@ export function SwimlaneDropPreview({
   );
   const annotationPaint = resolveAnnotationPaint(activeTask, isDark);
 
-  if (!box) {
+  // Черта вместо слота: новый слой под строкой или вставка с раздвиганием соседей.
+  const lineTop = !box
+    ? clipHeight - (SWIMLANE_TASK_ROW_VERTICAL_INSET_PX + NEW_LAYER_LINE_PX) / 2
+    : slot.pushesCards
+      ? resolveInsertLineTop(Number.parseFloat(box.top), slot.layer)
+      : null;
+  if (lineTop != null) {
     const lineColor = resolveAnnotationLineColor(activeTask, annotationPaint, isDark);
     return (
       <div
         aria-hidden
         className={`swimlane-quick-add-preview-fade pointer-events-none absolute h-0 ${lineColor ? '' : colors.previewBorder}`}
-        data-swimlane-drop-preview="new-layer"
+        data-swimlane-drop-preview={box ? 'insert' : 'new-layer'}
         style={{
           ...horizontal,
           borderTopColor: lineColor,
           borderTopWidth: NEW_LAYER_LINE_PX,
           boxSizing: 'border-box',
-          top: clipHeight - (SWIMLANE_TASK_ROW_VERTICAL_INSET_PX + NEW_LAYER_LINE_PX) / 2,
+          top: lineTop,
           zIndex: ZIndex.stickyElevated,
         }}
       />

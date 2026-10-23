@@ -118,6 +118,11 @@ interface SwimlaneDragEndHandlerParams {
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
   onBacklogTaskDrop?: (taskId: string, assigneeId: string, day: number, part: number) => void;
+  /**
+   * Ручной слой после дропа: вызывается до `onPositionUpdate`, чтобы слой и позиция
+   * попали в один шаг истории. `targetTopLayer` — слой под верхним краем карточки.
+   */
+  onLaneLayerDrop?: (input: { position: TaskPosition; targetTopLayer: number; taskId: string }) => void;
   onPositionDelete: (taskId: string) => void;
   onPositionUpdate: (taskId: string, position: TaskPosition) => void;
   updateXarrow: () => void;
@@ -154,6 +159,7 @@ function tryHandleSwimlaneDragEndDrop(
       dragState: params.dragState,
       event,
       onBacklogTaskDrop: params.onBacklogTaskDrop,
+      onLaneLayerDrop: params.onLaneLayerDrop,
       overId,
       taskId,
       taskPositions: params.taskPositions,
@@ -200,15 +206,25 @@ function processSwimlaneDragEndEvent(
   if (!finalCell) {
     return;
   }
+  let dropped: TaskPosition | null = null;
   applySwimlaneDragEndPositionUpdate({
     finalCell,
-    onPositionUpdate: params.onPositionUpdate,
+    onPositionUpdate: (_id, position) => {
+      dropped = position;
+    },
     segmentIndex,
     taskId,
     taskPositions: params.taskPositions,
     tasks: params.tasks,
     totalCells: params.totalCells,
   });
+  if (!dropped) {
+    return;
+  }
+  if (finalCell.layer != null) {
+    params.onLaneLayerDrop?.({ position: dropped, targetTopLayer: finalCell.layer, taskId });
+  }
+  params.onPositionUpdate(taskId, dropped);
   requestAnimationFrame(() => {
     params.updateXarrow();
   });
