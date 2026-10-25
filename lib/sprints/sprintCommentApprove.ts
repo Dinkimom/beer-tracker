@@ -4,7 +4,7 @@ import {
   confirmPendingSprintComments,
   deleteAllPendingSprintComments,
   hasConfirmedSprintComment,
-} from '@/lib/sprints/sprintCommentsRepository';
+} from '@/lib/sprints/sprintPendingCommentsRepository';
 
 /**
  * Принять один черновик агента. Как «Принять всё», только автор драфта (`ownerId`) может его

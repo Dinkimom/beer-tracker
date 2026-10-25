@@ -68,7 +68,7 @@ export type SprintPlanPatchOp =
       op: 'upsertFeatureDraft';
     } | { commentId: string; op: 'deleteNote' } | { done?: boolean; id: string; op: 'updateGoal'; text?: string } | { goalType: SprintPlanPatchGoalType; op: 'createGoal'; text: string } | { id: string; op: 'deleteGoal' } | { linkId: string; op: 'deleteLink' } | { op: 'deletePosition'; taskId: string };
 
-/** stop = halt on first failure (default); continue = apply remaining ops. */
+/** stop = roll back the whole patch on the first failure (default); continue = skip failed ops, apply the rest. */
 export type SprintPlanPatchOnError = 'continue' | 'stop';
 
 export interface SprintPlanPatchPositionGeometry {
@@ -152,6 +152,8 @@ export interface SprintPlanPatchApplyResult {
   error?: string;
   ok: boolean;
   onError?: SprintPlanPatchOnError;
+  /** onError=stop and an op failed: the whole patch was rolled back, nothing from it is applied. */
+  rolledBack?: boolean;
   /** Calendar layout for upsertPosition ops after apply. */
   schedule?: string[];
   sprintId: number;

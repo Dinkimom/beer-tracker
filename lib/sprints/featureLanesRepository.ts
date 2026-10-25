@@ -1,13 +1,18 @@
+import type { BeerTrackerTransactionQuery } from '@/lib/db';
+
 import { query } from '@/lib/db';
 
 import { parseFeatureLanesDocument, type FeatureLanesDocument } from './featureLanesDocument';
 import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
 
-export async function fetchFeatureLanes(input: {
-  organizationId: string;
-  sprintId: number;
-}): Promise<FeatureLanesDocument | null> {
-  const result = await query(
+export async function fetchFeatureLanes(
+  input: {
+    organizationId: string;
+    sprintId: number;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<FeatureLanesDocument | null> {
+  const result = await run(
     `SELECT draft_rows as "draftRows", hidden_ids as "hiddenIds", order_ids as "orderIds"
        FROM sprint_feature_lanes
        WHERE ${sprintTenantWhere()}`,
@@ -29,13 +34,16 @@ export function upsertFeatureLanesSql(): string {
                          updated_at = CURRENT_TIMESTAMP`;
 }
 
-export async function upsertFeatureLanes(input: {
-  lanes: FeatureLanesDocument;
-  organizationId: string;
-  sprintId: number;
-}): Promise<void> {
+export async function upsertFeatureLanes(
+  input: {
+    lanes: FeatureLanesDocument;
+    organizationId: string;
+    sprintId: number;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<void> {
   const lanes = parseFeatureLanesDocument(input.lanes);
-  await query(upsertFeatureLanesSql(), [
+  await run(upsertFeatureLanesSql(), [
     input.organizationId,
     input.sprintId,
     JSON.stringify(lanes.draftRows),

@@ -1,14 +1,15 @@
+import type { BeerTrackerTransactionQuery } from '@/lib/db';
 import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
 import type { TaskParent } from '@/types';
 
 import { randomUUID } from 'crypto';
 
 import { insertPendingCommentReplacements } from '@/lib/sprints/sprintCommentReplacements';
+import { insertSprintComment } from '@/lib/sprints/sprintCommentsRepository';
 import {
   confirmPendingSprintComments,
   deletePendingPlanPatchSprintComments,
-  insertSprintComment,
-} from '@/lib/sprints/sprintCommentsRepository';
+} from '@/lib/sprints/sprintPendingCommentsRepository';
 import { resolvePlanPatchCreateNoteSize } from '@/lib/sprints/sprintPlanPatchNoteSize';
 
 type SprintPlanPatchCreateNoteOp = Extract<SprintPlanPatchOp, { op: 'createNote' }>;
@@ -91,12 +92,18 @@ export async function persistProposedCreateNotes(input: {
   return ids;
 }
 
-export function confirmProposedCreateNotes(input: {
-  commentIds: readonly string[];
-  sprintId: number;
-}): Promise<number> {
-  return confirmPendingSprintComments({
-    commentIds: input.commentIds,
-    sprintId: input.sprintId,
-  });
+export function confirmProposedCreateNotes(
+  input: {
+    commentIds: readonly string[];
+    sprintId: number;
+  },
+  tx?: BeerTrackerTransactionQuery
+): Promise<number> {
+  return confirmPendingSprintComments(
+    {
+      commentIds: input.commentIds,
+      sprintId: input.sprintId,
+    },
+    tx
+  );
 }

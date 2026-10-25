@@ -6,7 +6,7 @@ import {
   confirmPendingSprintComments,
   deleteAllPendingSprintComments,
   hasConfirmedSprintComment,
-} from '@/lib/sprints/sprintCommentsRepository';
+} from '@/lib/sprints/sprintPendingCommentsRepository';
 
 import {
   approveAllPendingSprintComments,
@@ -18,7 +18,7 @@ vi.mock('@/lib/sprints/sprintCommentReplacements', () => ({
   applyPendingCommentReplacements: vi.fn(),
 }));
 
-vi.mock('@/lib/sprints/sprintCommentsRepository', () => ({
+vi.mock('@/lib/sprints/sprintPendingCommentsRepository', () => ({
   confirmAllPendingSprintComments: vi.fn(),
   confirmPendingSprintComments: vi.fn(),
   deleteAllPendingSprintComments: vi.fn(),

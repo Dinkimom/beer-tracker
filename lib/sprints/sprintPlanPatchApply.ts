@@ -1,3 +1,4 @@
+import type { BeerTrackerTransactionQuery } from '@/lib/db';
 import type { SprintRealtimeResource } from '@/lib/realtime/sprintRealtimeTypes';
 import type {
   SprintPlanPatchApplyOpResult,
@@ -46,12 +47,22 @@ function asParent(
   return result;
 }
 
+/** Синк позиции в трекер: выполняется после коммита транзакции, его нельзя откатить. */
+export interface PlanPatchTrackerSyncRequest {
+  assigneeId: string;
+  index: number;
+  taskId: string;
+}
+
 async function applyUpsertPosition(input: {
+  index: number;
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'upsertPosition' }>;
   sprintId: number;
+  trackerSyncs: PlanPatchTrackerSyncRequest[];
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
-  const { op, organizationId, sprintId } = input;
+  const { op, organizationId, sprintId, tx } = input;
   await upsertTaskPositionRecord({
     assigneeId: op.assigneeId,
     duration: op.duration,
@@ -64,32 +75,42 @@ async function applyUpsertPosition(input: {
     startDay: op.startDay,
     startPart: op.startPart,
     taskId: op.taskId,
-  });
+  }, tx);
   if (op.segments !== undefined) {
-    await replaceTaskPositionSegments({
-      organizationId,
-      segments: op.segments,
-      sprintId,
-      taskId: op.taskId,
+    await replaceTaskPositionSegments(
+      {
+        organizationId,
+        segments: op.segments,
+        sprintId,
+        taskId: op.taskId,
+      },
+      tx
+    );
+  }
+  if (op.syncToTracker) {
+    input.trackerSyncs.push({ assigneeId: op.assigneeId, index: input.index, taskId: op.taskId });
+  }
+  return `position ${op.taskId}`;
+}
+
+/** Синк в трекер после коммита: детали и предупреждения дописываются к результату операции. */
+export async function runPlanPatchTrackerSyncs(input: {
+  applied: SprintPlanPatchApplyOpResult[];
+  organizationId: string;
+  sprintId: number;
+  trackerSyncs: readonly PlanPatchTrackerSyncRequest[];
+}): Promise<void> {
+  for (const request of input.trackerSyncs) {
+    const row = input.applied.find((item) => item.index === request.index);
+    if (!row?.ok) continue;
+    const sync = await syncUpsertPositionToTracker({
+      assigneeId: request.assigneeId,
+      organizationId: input.organizationId,
+      sprintId: input.sprintId,
+      taskId: request.taskId,
     });
+    row.detail = [row.detail, sync.detail, sync.warning].filter(Boolean).join('; ');
   }
-  if (!op.syncToTracker) {
-    return `position ${op.taskId}`;
-  }
-  const sync = await syncUpsertPositionToTracker({
-    assigneeId: op.assigneeId,
-    organizationId,
-    sprintId,
-    taskId: op.taskId,
-  });
-  const parts = [`position ${op.taskId}`];
-  if (sync.detail) {
-    parts.push(sync.detail);
-  }
-  if (sync.warning) {
-    parts.push(sync.warning);
-  }
-  return parts.join('; ');
 }
 
 async function applyCreateNote(input: {
@@ -97,6 +118,7 @@ async function applyCreateNote(input: {
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'createNote' }>;
   sprintId: number;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
   const { op, organizationId, sprintId } = input;
   const size = resolvePlanPatchCreateNoteSize({
@@ -120,7 +142,7 @@ async function applyCreateNote(input: {
     width: size.width,
     x: null,
     y: null,
-  });
+  }, input.tx);
   const id =
     inserted && typeof inserted === 'object' && 'id' in inserted
       ? String((inserted as { id: unknown }).id)
@@ -133,6 +155,7 @@ async function applyUpdateNote(input: {
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'updateNote' }>;
   sprintId: number;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
   const { op, organizationId, sprintId } = input;
   const parentProvided = op.parent !== undefined;
@@ -153,7 +176,7 @@ async function applyUpdateNote(input: {
     width: op.width,
     x: undefined,
     y: undefined,
-  });
+  }, input.tx);
   if (conflict) {
     throw new Error(`note ${op.commentId} version conflict`);
   }
@@ -168,13 +191,14 @@ async function applyDeleteNote(input: {
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'deleteNote' }>;
   sprintId: number;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
   const { ok } = await deleteSprintComment({
     actorUserId: input.actorUserId,
     commentId: input.op.commentId,
     organizationId: input.organizationId,
     sprintId: input.sprintId,
-  });
+  }, input.tx);
   if (!ok) {
     throw new Error(`note ${input.op.commentId} not found`);
   }
@@ -185,11 +209,12 @@ async function applyUpsertFeatureDraft(input: {
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'upsertFeatureDraft' }>;
   sprintId: number;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
   const existing = await fetchFeatureLanes({
     organizationId: input.organizationId,
     sprintId: input.sprintId,
-  });
+  }, input.tx);
   const lanes = mergeFeatureDraftIntoDocument(existing, {
     id: input.op.id,
     name: input.op.name,
@@ -199,7 +224,7 @@ async function applyUpsertFeatureDraft(input: {
     lanes,
     organizationId: input.organizationId,
     sprintId: input.sprintId,
-  });
+  }, input.tx);
   return `featureDraft ${input.op.id}`;
 }
 
@@ -207,19 +232,21 @@ async function applyCreateGoal(input: {
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'createGoal' }>;
   sprintId: number;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
   const row = await insertSprintGoal({
     goalType: input.op.goalType,
     organizationId: input.organizationId,
     sprintId: input.sprintId,
     text: input.op.text,
-  });
+  }, input.tx);
   return `goal ${row.id}`;
 }
 
 async function applyUpdateGoal(input: {
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'updateGoal' }>;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
   const updateFields: string[] = [];
   const updateValues: Array<boolean | string> = [];
@@ -237,7 +264,7 @@ async function applyUpdateGoal(input: {
     organizationId: input.organizationId,
     updateFields,
     updateValues,
-  });
+  }, input.tx);
   if (!row) {
     throw new Error(`goal ${input.op.id} not found`);
   }
@@ -258,6 +285,7 @@ function applyCreateNoteOrDraft(input: {
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'createNote' }>;
   sprintId: number;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
   if (input.draftNoteId) {
     return Promise.resolve(`note ${input.draftNoteId}`);
@@ -267,6 +295,7 @@ function applyCreateNoteOrDraft(input: {
     organizationId: input.organizationId,
     op: input.op,
     sprintId: input.sprintId,
+    tx: input.tx,
   });
 }
 
@@ -275,6 +304,7 @@ async function applyUpsertLink(input: {
   organizationId: string;
   op: Extract<SprintPlanPatchOp, { op: 'upsertLink' }>;
   sprintId: number;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
   const endpoints = resolvePlannerLinkEndpoints(
     { fromTaskId: input.op.fromTaskId, toTaskId: input.op.toTaskId },
@@ -291,24 +321,36 @@ async function applyUpsertLink(input: {
     sprintId: input.sprintId,
     toAnchor: input.op.toAnchor,
     toTaskId: endpoints.toTaskId,
-  });
+  }, input.tx);
   return `link ${input.op.id}`;
 }
 
-async function applyOneOp(input: {
+interface ApplyOpContext {
   actorUserId: string;
   commentIds?: ReadonlySet<string>;
   draftNoteId?: string;
-  organizationId: string;
+  index: number;
   op: SprintPlanPatchOp;
+  organizationId: string;
   sprintId: number;
-}): Promise<string> {
-  const { op, organizationId, sprintId } = input;
+  trackerSyncs: PlanPatchTrackerSyncRequest[];
+  tx: BeerTrackerTransactionQuery;
+}
+
+async function applyOneOp(input: ApplyOpContext): Promise<string> {
+  const { op, organizationId, sprintId, tx } = input;
   switch (op.op) {
     case 'upsertPosition':
-      return applyUpsertPosition({ organizationId, op, sprintId });
+      return applyUpsertPosition({
+        index: input.index,
+        organizationId,
+        op,
+        sprintId,
+        trackerSyncs: input.trackerSyncs,
+        tx,
+      });
     case 'deletePosition':
-      await deleteTaskPosition({ organizationId, sprintId, taskId: op.taskId });
+      await deleteTaskPosition({ organizationId, sprintId, taskId: op.taskId }, tx);
       return `position ${op.taskId}`;
     case 'createNote':
       return applyCreateNoteOrDraft({
@@ -317,39 +359,25 @@ async function applyOneOp(input: {
         organizationId,
         op,
         sprintId,
+        tx,
       });
     case 'updateNote':
-      return applyUpdateNote({
-        actorUserId: input.actorUserId,
-        organizationId,
-        op,
-        sprintId,
-      });
+      return applyUpdateNote({ actorUserId: input.actorUserId, organizationId, op, sprintId, tx });
     case 'deleteNote':
-      return applyDeleteNote({
-        actorUserId: input.actorUserId,
-        organizationId,
-        op,
-        sprintId,
-      });
+      return applyDeleteNote({ actorUserId: input.actorUserId, organizationId, op, sprintId, tx });
     case 'upsertLink':
-      return applyUpsertLink({
-        commentIds: input.commentIds,
-        organizationId,
-        op,
-        sprintId,
-      });
+      return applyUpsertLink({ commentIds: input.commentIds, organizationId, op, sprintId, tx });
     case 'deleteLink':
-      await deleteTaskLink({ linkId: op.linkId, organizationId, sprintId });
+      await deleteTaskLink({ linkId: op.linkId, organizationId, sprintId }, tx);
       return `link ${op.linkId}`;
     case 'upsertFeatureDraft':
-      return applyUpsertFeatureDraft({ organizationId, op, sprintId });
+      return applyUpsertFeatureDraft({ organizationId, op, sprintId, tx });
     case 'createGoal':
-      return applyCreateGoal({ organizationId, op, sprintId });
+      return applyCreateGoal({ organizationId, op, sprintId, tx });
     case 'updateGoal':
-      return applyUpdateGoal({ organizationId, op });
+      return applyUpdateGoal({ organizationId, op, tx });
     case 'deleteGoal': {
-      const deleted = await deleteSprintGoal({ goalId: op.id, organizationId });
+      const deleted = await deleteSprintGoal({ goalId: op.id, organizationId }, tx);
       if (!deleted) {
         throw new Error(`goal ${op.id} not found`);
       }
@@ -399,37 +427,27 @@ async function collectCommentIdsForLinkOps(input: {
   draftNoteIds: readonly string[];
   ops: SprintPlanPatchOp[];
   sprintId: number;
+  tx: BeerTrackerTransactionQuery;
 }): Promise<ReadonlySet<string> | undefined> {
   if (!input.ops.some((op) => op.op === 'upsertLink')) {
     return undefined;
   }
   const commentIds = new Set(input.draftNoteIds);
-  for (const id of await listSprintCommentIds({ sprintId: input.sprintId })) {
+  for (const id of await listSprintCommentIds({ sprintId: input.sprintId }, input.tx)) {
     commentIds.add(id);
   }
   return commentIds;
 }
 
-async function applyIndexedOp(input: {
-  actorUserId: string;
-  commentIds?: ReadonlySet<string>;
-  draftNoteId?: string;
-  index: number;
-  organizationId: string;
-  op: SprintPlanPatchOp;
-  sprintId: number;
-}): Promise<SprintPlanPatchApplyOpResult> {
+/** Операция в своём savepoint: ошибка откатывает только её, транзакция остаётся живой. */
+async function applyIndexedOp(input: ApplyOpContext): Promise<SprintPlanPatchApplyOpResult> {
+  await input.tx('SAVEPOINT plan_patch_op');
   try {
-    const detail = await applyOneOp({
-      actorUserId: input.actorUserId,
-      commentIds: input.commentIds,
-      draftNoteId: input.draftNoteId,
-      organizationId: input.organizationId,
-      op: input.op,
-      sprintId: input.sprintId,
-    });
+    const detail = await applyOneOp(input);
+    await input.tx('RELEASE SAVEPOINT plan_patch_op');
     return { detail, index: input.index, ok: true, op: input.op.op };
   } catch (error) {
+    await input.tx('ROLLBACK TO SAVEPOINT plan_patch_op');
     const message = error instanceof Error ? error.message : String(error);
     return { error: message, index: input.index, ok: false, op: input.op.op };
   }
@@ -445,11 +463,16 @@ function summarizeApplyFailures(
   }
   if (onError === 'stop') {
     const first = failed[0]!;
-    return `stopped at op[${first.index}] ${first.op}: ${first.error ?? 'unknown'}`;
+    return `stopped at op[${first.index}] ${first.op}: ${first.error ?? 'unknown'}; nothing applied (rolled back)`;
   }
   return `continued with ${failed.length} failed op(s)`;
 }
 
+/**
+ * Применяет операции внутри транзакции `tx`. При `onError='stop'` первая ошибка прерывает цикл —
+ * откатить уже выполненное должен вызывающий (бросить из транзакции). Синк в трекер не выполняется:
+ * запросы на него возвращаются в `trackerSyncs` для запуска после коммита.
+ */
 export async function applySprintPlanPatchOps(input: {
   actorUserId: string;
   draftNoteIds?: readonly string[];
@@ -457,8 +480,14 @@ export async function applySprintPlanPatchOps(input: {
   organizationId: string;
   ops: SprintPlanPatchOp[];
   sprintId: number;
-}): Promise<{ applied: SprintPlanPatchApplyOpResult[]; error?: string }> {
+  tx: BeerTrackerTransactionQuery;
+}): Promise<{
+  applied: SprintPlanPatchApplyOpResult[];
+  error?: string;
+  trackerSyncs: PlanPatchTrackerSyncRequest[];
+}> {
   const applied: SprintPlanPatchApplyOpResult[] = [];
+  const trackerSyncs: PlanPatchTrackerSyncRequest[] = [];
   const draftCursor = { index: 0 };
   const draftNoteIds = input.draftNoteIds ?? [];
   const onError = input.onError ?? 'stop';
@@ -466,6 +495,7 @@ export async function applySprintPlanPatchOps(input: {
     draftNoteIds,
     ops: input.ops,
     sprintId: input.sprintId,
+    tx: input.tx,
   });
   for (let index = 0; index < input.ops.length; index++) {
     const op = input.ops[index]!;
@@ -477,11 +507,13 @@ export async function applySprintPlanPatchOps(input: {
       organizationId: input.organizationId,
       op,
       sprintId: input.sprintId,
+      trackerSyncs,
+      tx: input.tx,
     });
     applied.push(row);
     if (!row.ok && onError === 'stop') {
-      return { applied, error: summarizeApplyFailures(applied, onError) };
+      break;
     }
   }
-  return { applied, error: summarizeApplyFailures(applied, onError) };
+  return { applied, error: summarizeApplyFailures(applied, onError), trackerSyncs };
 }

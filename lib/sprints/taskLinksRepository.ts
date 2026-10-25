@@ -1,3 +1,5 @@
+import type { BeerTrackerTransactionQuery } from '@/lib/db';
+
 import { query, runBeerTrackerTransaction } from '@/lib/db';
 
 import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
@@ -33,16 +35,19 @@ export function upsertTaskLinkSql(): string {
            RETURNING *`;
 }
 
-export async function upsertTaskLink(input: {
-  fromAnchor: string | null | undefined;
-  fromTaskId: string;
-  linkId: string;
-  organizationId: string;
-  sprintId: number;
-  toAnchor: string | null | undefined;
-  toTaskId: string;
-}): Promise<unknown> {
-  const result = await query(upsertTaskLinkSql(), [
+export async function upsertTaskLink(
+  input: {
+    fromAnchor: string | null | undefined;
+    fromTaskId: string;
+    linkId: string;
+    organizationId: string;
+    sprintId: number;
+    toAnchor: string | null | undefined;
+    toTaskId: string;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<unknown> {
+  const result = await run(upsertTaskLinkSql(), [
     input.linkId,
     input.organizationId,
     input.sprintId,
@@ -54,12 +59,15 @@ export async function upsertTaskLink(input: {
   return result.rows[0];
 }
 
-export async function deleteTaskLink(input: {
-  linkId: string;
-  organizationId: string;
-  sprintId: number;
-}): Promise<void> {
-  await query('DELETE FROM task_links WHERE sprint_id = $1 AND id = $2', [
+export async function deleteTaskLink(
+  input: {
+    linkId: string;
+    organizationId: string;
+    sprintId: number;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<void> {
+  await run('DELETE FROM task_links WHERE sprint_id = $1 AND id = $2', [
     input.sprintId,
     input.linkId,
   ]);

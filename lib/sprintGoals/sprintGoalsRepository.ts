@@ -1,3 +1,5 @@
+import type { BeerTrackerTransactionQuery } from '@/lib/db';
+
 import { query } from '@/lib/db';
 
 interface SprintGoalRow {
@@ -21,15 +23,18 @@ export async function listSprintGoals(input: {
   return result.rows as SprintGoalRow[];
 }
 
-export async function insertSprintGoal(input: {
-  goalId?: string;
-  goalType: string;
-  organizationId: string;
-  sprintId: number;
-  team?: string | null;
-  text: string;
-}): Promise<SprintGoalRow> {
-  const insert = await query(
+export async function insertSprintGoal(
+  input: {
+    goalId?: string;
+    goalType: string;
+    organizationId: string;
+    sprintId: number;
+    team?: string | null;
+    text: string;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<SprintGoalRow> {
+  const insert = await run(
     `INSERT INTO sprint_goals (id, organization_id, sprint_id, team, text, goal_type, done)
            VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6, false)
            RETURNING id, text, done`,
@@ -38,15 +43,18 @@ export async function insertSprintGoal(input: {
   return insert.rows[0] as SprintGoalRow;
 }
 
-export async function updateSprintGoal(input: {
-  goalId: string;
-  organizationId: string;
-  updateFields: string[];
-  updateValues: Array<boolean | number | string | null | undefined>;
-}): Promise<SprintGoalRow | null> {
+export async function updateSprintGoal(
+  input: {
+    goalId: string;
+    organizationId: string;
+    updateFields: string[];
+    updateValues: Array<boolean | number | string | null | undefined>;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<SprintGoalRow | null> {
   const { goalId, updateFields, updateValues } = input;
   const paramIndex = updateValues.length + 1;
-  const result = await query(
+  const result = await run(
     `UPDATE sprint_goals
        SET ${updateFields.join(', ')}
        WHERE id = $${paramIndex}
@@ -56,11 +64,14 @@ export async function updateSprintGoal(input: {
   return (result.rows[0] as SprintGoalRow | undefined) ?? null;
 }
 
-export async function deleteSprintGoal(input: {
-  goalId: string;
-  organizationId: string;
-}): Promise<boolean> {
-  const result = await query('DELETE FROM sprint_goals WHERE id = $1 RETURNING id', [input.goalId]);
+export async function deleteSprintGoal(
+  input: {
+    goalId: string;
+    organizationId: string;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<boolean> {
+  const result = await run('DELETE FROM sprint_goals WHERE id = $1 RETURNING id', [input.goalId]);
   return result.rows.length > 0;
 }
 

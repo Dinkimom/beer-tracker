@@ -5,13 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { query, runBeerTrackerTransaction } from '@/lib/db';
 
 import {
-  confirmPendingSprintComments,
-  deleteAllPendingSprintComments,
   deleteSprintComment,
   deleteSprintCommentLinksSql,
   listSprintComments,
   softDeleteSprintCommentSql,
 } from './sprintCommentsRepository';
+import {
+  confirmPendingSprintComments,
+  deleteAllPendingSprintComments,
+} from './sprintPendingCommentsRepository';
 
 vi.mock('@/lib/db', () => ({ query: vi.fn(), runBeerTrackerTransaction: vi.fn() }));
 vi.mock('./ensurePlannerCommentImages', () => ({

@@ -11,13 +11,21 @@ import type {
 import { ZodError } from 'zod';
 
 import { parseAgentSessionReplies } from '@/lib/agentSessions/agentSession';
+import { runBeerTrackerTransaction } from '@/lib/db';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
+import { ensurePlannerCommentImagesSchema } from '@/lib/sprints/ensurePlannerCommentImages';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
 import { deletePendingCommentReplacements } from '@/lib/sprints/sprintCommentReplacements';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
 import {
+  claimPlanPatchApplyToken,
+  ensurePlanPatchAppliedTokensSchema,
+} from '@/lib/sprints/sprintPlanPatchAppliedTokenRepository';
+import {
   applySprintPlanPatchOps,
   collectRealtimeResources,
+  runPlanPatchTrackerSyncs,
+  type PlanPatchTrackerSyncRequest,
 } from '@/lib/sprints/sprintPlanPatchApply';
 import {
   buildSprintPlanPatchContentChanges,
@@ -238,6 +246,70 @@ export async function proposeSprintPlanPatch(input: {
   };
 }
 
+/** `onError='stop'` с ошибкой: бросаем из транзакции, чтобы откатить уже выполненные операции. */
+class PlanPatchStopped extends Error {
+  constructor(
+    readonly applied: SprintPlanPatchApplyResult['applied'],
+    readonly summary: string
+  ) {
+    super(summary);
+  }
+}
+
+type AtomicApplyOutcome =
+  {
+      applied: SprintPlanPatchApplyResult['applied'];
+      error?: string;
+      kind: 'committed';
+      trackerSyncs: PlanPatchTrackerSyncRequest[];
+    } | { applied: SprintPlanPatchApplyResult['applied']; error: string; kind: 'rolled_back' } | { kind: 'already_applied' };
+
+/**
+ * Одна транзакция: захват токена → подтверждение черновых заметок → операции.
+ * `stop` с ошибкой откатывает всё (и освобождает токен для повтора); `continue` коммитит удачные.
+ */
+async function applyVerifiedPlanPatchAtomically(input: {
+  actorUserId: string;
+  applyToken: string;
+  draftNoteIds: string[];
+  expiresAtSec: number;
+  onError: SprintPlanPatchOnError;
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  sprintId: number;
+}): Promise<AtomicApplyOutcome> {
+  // DDL ensure — до транзакции: ALTER TABLE ждал бы блокировок, которые держит она сама.
+  await ensurePlannerCommentImagesSchema();
+  await ensurePlanPatchAppliedTokensSchema();
+  try {
+    return await runBeerTrackerTransaction(async (tx): Promise<AtomicApplyOutcome> => {
+      const claimed = await claimPlanPatchApplyToken(
+        {
+          applyToken: input.applyToken,
+          expiresAtSec: input.expiresAtSec,
+          organizationId: input.organizationId,
+          sprintId: input.sprintId,
+        },
+        tx
+      );
+      if (!claimed) {
+        return { kind: 'already_applied' };
+      }
+      await confirmProposedCreateNotes({ commentIds: input.draftNoteIds, sprintId: input.sprintId }, tx);
+      const result = await applySprintPlanPatchOps({ ...input, tx });
+      if (result.error && input.onError === 'stop') {
+        throw new PlanPatchStopped(result.applied, result.error);
+      }
+      return { ...result, kind: 'committed' };
+    });
+  } catch (error) {
+    if (error instanceof PlanPatchStopped) {
+      return { applied: error.applied, error: error.summary, kind: 'rolled_back' };
+    }
+    throw error;
+  }
+}
+
 function applyPatchRejected(
   sprintId: number,
   error: string,
@@ -276,6 +348,54 @@ function notifyAppliedPlanPatch(input: {
     input.sprintId,
     resources
   );
+}
+
+/** После успешного применения убирает превью и замены черновиков этого предложения. */
+async function clearAppliedProposalPreviews(input: {
+  actorUserId: string;
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  sprintId: number;
+}): Promise<void> {
+  await deletePendingCommentReplacements({ ownerId: input.actorUserId, sprintId: input.sprintId });
+  const proposalId = proposalIdFromOpsHash(hashSprintPlanPatchOps(input.ops));
+  const scope = {
+    organizationId: input.organizationId,
+    ownerId: input.actorUserId,
+    proposalId,
+    sprintId: input.sprintId,
+  };
+  await deletePlanPatchPositionPreviewsByProposal(scope);
+  await deletePlanPatchGoalPreviewsByProposal(scope);
+}
+
+/** Ёмкость и раскладка после применения — для ответа агенту; сбой не валит применение. */
+async function loadAppliedPlanPatchSummary(input: {
+  actorUserId: string;
+  ops: SprintPlanPatchOp[];
+  organizationId: string;
+  sprintId: number;
+}): Promise<{ capacity?: { summary: string }; schedule?: string[] }> {
+  try {
+    const after = await loadSprintContextForOrganization({
+      organizationId: input.organizationId,
+      request: null,
+      sprintId: input.sprintId,
+      useStoredTracker: true,
+      viewerUserId: input.actorUserId,
+    });
+    const capacity = { summary: buildSprintContextCapacity(after).summary };
+    const schedule = formatSprintPlanScheduleForTaskIds(
+      after.positions,
+      after.meta.calendarDays ?? [],
+      after.meta.partsPerDay,
+      collectUpsertPositionTaskIds(input.ops)
+    );
+    return { capacity, schedule };
+  } catch (capacityError) {
+    console.warn('[sprint-plan-patch] capacity after apply:', capacityError);
+  }
+  return {};
 }
 
 export async function applySprintPlanPatch(input: {
@@ -317,35 +437,36 @@ export async function applySprintPlanPatch(input: {
     return applyPatchRejected(input.sprintId, verified.error, onError);
   }
 
-  await confirmProposedCreateNotes({
-    commentIds: verified.draftNoteIds,
+  const outcome = await applyVerifiedPlanPatchAtomically({
+    actorUserId: input.actorUserId,
+    applyToken: input.applyToken,
+    draftNoteIds: verified.draftNoteIds,
+    expiresAtSec: verified.exp,
+    onError,
+    ops,
+    organizationId: input.organizationId,
     sprintId: input.sprintId,
   });
-
-  const { applied, error } = await applySprintPlanPatchOps({
-    actorUserId: input.actorUserId,
-    draftNoteIds: verified.draftNoteIds,
-    onError,
+  if (outcome.kind === 'already_applied') {
+    return applyPatchRejected(
+      input.sprintId,
+      'already_applied: this applyToken was used; call propose_plan_patch for a new one',
+      onError
+    );
+  }
+  const { applied, error } = outcome;
+  if (outcome.kind === 'rolled_back') {
+    return { applied, error, ok: false, onError, rolledBack: true, sprintId: input.sprintId };
+  }
+  await runPlanPatchTrackerSyncs({
+    applied,
     organizationId: input.organizationId,
-    ops,
     sprintId: input.sprintId,
+    trackerSyncs: outcome.trackerSyncs,
   });
 
   if (!error) {
-    await deletePendingCommentReplacements({ ownerId: input.actorUserId, sprintId: input.sprintId });
-    const proposalId = proposalIdFromOpsHash(hashSprintPlanPatchOps(ops));
-    await deletePlanPatchPositionPreviewsByProposal({
-      organizationId: input.organizationId,
-      ownerId: input.actorUserId,
-      proposalId,
-      sprintId: input.sprintId,
-    });
-    await deletePlanPatchGoalPreviewsByProposal({
-      organizationId: input.organizationId,
-      ownerId: input.actorUserId,
-      proposalId,
-      sprintId: input.sprintId,
-    });
+    await clearAppliedProposalPreviews({ ...input, ops });
   }
 
   notifyAppliedPlanPatch({
@@ -357,42 +478,9 @@ export async function applySprintPlanPatch(input: {
   });
 
   if (error) {
-    return {
-      applied,
-      error,
-      ok: false,
-      onError,
-      sprintId: input.sprintId,
-    };
+    return { applied, error, ok: false, onError, sprintId: input.sprintId };
   }
 
-  let capacity: { summary: string } | undefined;
-  let schedule: string[] | undefined;
-  try {
-    const after = await loadSprintContextForOrganization({
-      organizationId: input.organizationId,
-      request: null,
-      sprintId: input.sprintId,
-      useStoredTracker: true,
-      viewerUserId: input.actorUserId,
-    });
-    capacity = { summary: buildSprintContextCapacity(after).summary };
-    schedule = formatSprintPlanScheduleForTaskIds(
-      after.positions,
-      after.meta.calendarDays ?? [],
-      after.meta.partsPerDay,
-      collectUpsertPositionTaskIds(ops)
-    );
-  } catch (capacityError) {
-    console.warn('[sprint-plan-patch] capacity after apply:', capacityError);
-  }
-
-  return {
-    applied,
-    ...(capacity ? { capacity } : {}),
-    ok: true,
-    onError,
-    ...(schedule ? { schedule } : {}),
-    sprintId: input.sprintId,
-  };
+  const summary = await loadAppliedPlanPatchSummary({ ...input, ops });
+  return { applied, ...summary, ok: true, onError, sprintId: input.sprintId };
 }

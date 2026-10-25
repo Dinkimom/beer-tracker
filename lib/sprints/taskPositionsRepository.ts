@@ -1,3 +1,4 @@
+import type { BeerTrackerTransactionQuery } from '@/lib/db';
 import type { QueryParams } from '@/types';
 
 import { query } from '@/lib/db';
@@ -99,19 +100,22 @@ export function attachSegmentsToPositions(
   }
 }
 
-export function upsertTaskPositionRecord(input: {
-  assigneeId: string;
-  duration: number;
-  isQa: boolean | undefined;
-  organizationId: string;
-  plannedDuration: number | null | undefined;
-  plannedStartDay: number | null | undefined;
-  plannedStartPart: number | null | undefined;
-  sprintId: number;
-  startDay: number;
-  startPart: number;
-  taskId: string;
-}): Promise<{ rows: unknown[] }> {
+export function upsertTaskPositionRecord(
+  input: {
+    assigneeId: string;
+    duration: number;
+    isQa: boolean | undefined;
+    organizationId: string;
+    plannedDuration: number | null | undefined;
+    plannedStartDay: number | null | undefined;
+    plannedStartPart: number | null | undefined;
+    sprintId: number;
+    startDay: number;
+    startPart: number;
+    taskId: string;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<{ rows: unknown[] }> {
   const {
     organizationId,
     sprintId,
@@ -126,7 +130,7 @@ export function upsertTaskPositionRecord(input: {
     isQa,
   } = input;
 
-  return query(buildTaskPositionsUpsertSql(), [
+  return run(buildTaskPositionsUpsertSql(), [
     organizationId,
     sprintId,
     taskId,
@@ -245,12 +249,15 @@ export function updateTaskPositionRecord(input: {
   );
 }
 
-export async function deleteTaskPosition(input: {
-  organizationId: string;
-  sprintId: number;
-  taskId: string;
-}): Promise<void> {
-  await query('DELETE FROM task_positions WHERE sprint_id = $1 AND task_id = $2', [
+export async function deleteTaskPosition(
+  input: {
+    organizationId: string;
+    sprintId: number;
+    taskId: string;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<void> {
+  await run('DELETE FROM task_positions WHERE sprint_id = $1 AND task_id = $2', [
     input.sprintId,
     input.taskId,
   ]);

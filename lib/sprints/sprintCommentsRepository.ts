@@ -1,3 +1,4 @@
+import type { BeerTrackerTransactionQuery } from '@/lib/db';
 import type { QueryParams, TaskParent } from '@/types';
 
 import {
@@ -102,9 +103,14 @@ export async function listSprintComments(input: {
   return withCommentAuthors(result.rows as CommentRowWithCreator[]);
 }
 
-export async function listSprintCommentIds(input: { sprintId: number }): Promise<string[]> {
+export async function listSprintCommentIds(
+  input: {
+   sprintId: number
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<string[]> {
   await ensurePlannerCommentImagesSchema();
-  const result = await query(
+  const result = await run(
     `SELECT id FROM comments
       WHERE ${sprintTenantWhere()}
         AND deleted_at IS NULL`,
@@ -113,12 +119,15 @@ export async function listSprintCommentIds(input: { sprintId: number }): Promise
   return result.rows.map((row) => String((row as { id: string }).id));
 }
 
-export async function sprintCommentExists(input: {
-  commentId: string;
-  sprintId: number;
-}): Promise<boolean> {
+export async function sprintCommentExists(
+  input: {
+    commentId: string;
+    sprintId: number;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<boolean> {
   await ensurePlannerCommentImagesSchema();
-  const result = await query(
+  const result = await run(
     `SELECT 1 FROM comments
       WHERE ${sprintTenantWhere()}
         AND id = $2
@@ -129,33 +138,36 @@ export async function sprintCommentExists(input: {
   return result.rows.length > 0;
 }
 
-export async function insertSprintComment(input: {
-  assigneeId: string;
-  color?: string | null;
-  commentId: string | undefined;
-  createdBy?: string | null;
-  day: number | null | undefined;
-  height: number | undefined;
-  organizationId: string;
-  part: number | null | undefined;
-  sprintId: number;
-  text: string;
-  width: number | undefined;
-  x: number | null | undefined;
-  y: number | null | undefined;
-  imageFileId?: string | null;
-  kind?: 'diagram' | 'image' | 'text' | 'widget';
-  parent?: TaskParent | null;
-  clientBrand?: string | null;
-  pendingApproval?: boolean;
-  pendingApprovalExpiresAt?: Date | string | null;
-  planPatchProposalId?: string | null;
-}): Promise<unknown> {
+export async function insertSprintComment(
+  input: {
+    assigneeId: string;
+    color?: string | null;
+    commentId: string | undefined;
+    createdBy?: string | null;
+    day: number | null | undefined;
+    height: number | undefined;
+    organizationId: string;
+    part: number | null | undefined;
+    sprintId: number;
+    text: string;
+    width: number | undefined;
+    x: number | null | undefined;
+    y: number | null | undefined;
+    imageFileId?: string | null;
+    kind?: 'diagram' | 'image' | 'text' | 'widget';
+    parent?: TaskParent | null;
+    clientBrand?: string | null;
+    pendingApproval?: boolean;
+    pendingApprovalExpiresAt?: Date | string | null;
+    planPatchProposalId?: string | null;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<unknown> {
   await ensurePlannerCommentImagesSchema();
   const color = input.color ?? DEFAULT_STICKY_NOTE_COLOR;
   const kind = input.kind ?? 'text';
   const imageFileId = input.imageFileId ?? null;
-  const result = await query(
+  const result = await run(
     insertSprintCommentSql(),
     insertSprintCommentParams(input, color, kind, imageFileId)
   );
@@ -163,11 +175,14 @@ export async function insertSprintComment(input: {
   const row =
     inserted ??
     (input.commentId
-      ? await loadSprintCommentRow({
-          commentId: input.commentId,
-          organizationId: input.organizationId,
-          sprintId: input.sprintId,
-        })
+      ? await loadSprintCommentRow(
+          {
+            commentId: input.commentId,
+            organizationId: input.organizationId,
+            sprintId: input.sprintId,
+          },
+          run
+        )
       : undefined);
   if (!row) {
     return undefined;
@@ -237,12 +252,15 @@ function insertSprintCommentParams(
   ];
 }
 
-async function loadSprintCommentRow(input: {
-  commentId: string;
-  organizationId: string;
-  sprintId: number;
-}): Promise<CommentRowWithCreator | undefined> {
-  const result = await query(
+async function loadSprintCommentRow(
+  input: {
+    commentId: string;
+    organizationId: string;
+    sprintId: number;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<CommentRowWithCreator | undefined> {
+  const result = await run(
     `SELECT ${COMMENT_RETURNING}
        FROM comments
       WHERE ${sprintTenantWhere()}
@@ -323,26 +341,29 @@ function updateSprintCommentParams(input: {
   ] as QueryParams;
 }
 
-export async function updateSprintComment(input: {
-  assigneeId: unknown;
-  color: unknown;
-  commentId: string;
-  day: unknown;
-  height: unknown;
-  ifVersion?: number | null;
-  organizationId: string;
-  parent?: TaskParent | null;
-  parentProvided?: boolean;
-  part: unknown;
-  sprintId: number;
-  text: unknown;
-  updatedBy?: string | null;
-  width: unknown;
-  x: unknown;
-  y: unknown;
-}): Promise<{ conflict?: boolean; row: unknown | null }> {
+export async function updateSprintComment(
+  input: {
+    assigneeId: unknown;
+    color: unknown;
+    commentId: string;
+    day: unknown;
+    height: unknown;
+    ifVersion?: number | null;
+    organizationId: string;
+    parent?: TaskParent | null;
+    parentProvided?: boolean;
+    part: unknown;
+    sprintId: number;
+    text: unknown;
+    updatedBy?: string | null;
+    width: unknown;
+    x: unknown;
+    y: unknown;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<{ conflict?: boolean; row: unknown | null }> {
   await ensurePlannerCommentImagesSchema();
-  const result = await query(
+  const result = await run(
     updateSprintCommentSql(),
     updateSprintCommentParams({
       ...input,
@@ -353,10 +374,13 @@ export async function updateSprintComment(input: {
   const row = (result.rows[0] as CommentRowWithCreator | undefined) ?? null;
   if (!row) {
     if (input.ifVersion != null) {
-      const stillThere = await sprintCommentExists({
-        commentId: input.commentId,
-        sprintId: input.sprintId,
-      });
+      const stillThere = await sprintCommentExists(
+        {
+          commentId: input.commentId,
+          sprintId: input.sprintId,
+        },
+        run
+      );
       if (stillThere) {
         return { conflict: true, row: null };
       }
@@ -398,28 +422,40 @@ export function softDeleteSprintCommentSql(): string {
  * только связи с участием заметки). Файлы фото/схемы в S3 и planner_files не трогаем: строка
  * остаётся с deleted_at.
  */
-export async function deleteSprintComment(input: {
-  actorUserId?: string | null;
-  commentId: string;
-  organizationId: string;
-  sprintId: number;
-}): Promise<{ ok: boolean }> {
+async function softDeleteSprintCommentWithLinks(
+  input: { actorUserId?: string | null; commentId: string; sprintId: number },
+  tx: BeerTrackerTransactionQuery
+): Promise<{ ok: boolean }> {
+  const result = await tx(softDeleteSprintCommentSql(), [
+    input.sprintId,
+    input.commentId,
+    input.actorUserId ?? null,
+  ]);
+  if ((result.rowCount ?? 0) === 0) {
+    return { ok: false };
+  }
+  await tx(deleteSprintCommentLinksSql(), [
+    input.sprintId,
+    sprintCommentLinkEndpoints([input.commentId]),
+  ]);
+  return { ok: true };
+}
+
+/** Мягко удаляет заметку и её стрелки — в своей транзакции или во внешней (`tx`). */
+export async function deleteSprintComment(
+  input: {
+    actorUserId?: string | null;
+    commentId: string;
+    organizationId: string;
+    sprintId: number;
+  },
+  tx?: BeerTrackerTransactionQuery
+): Promise<{ ok: boolean }> {
   await ensurePlannerCommentImagesSchema();
-  return runBeerTrackerTransaction(async (tx) => {
-    const result = await tx(softDeleteSprintCommentSql(), [
-      input.sprintId,
-      input.commentId,
-      input.actorUserId ?? null,
-    ]);
-    if ((result.rowCount ?? 0) === 0) {
-      return { ok: false };
-    }
-    await tx(deleteSprintCommentLinksSql(), [
-      input.sprintId,
-      sprintCommentLinkEndpoints([input.commentId]),
-    ]);
-    return { ok: true };
-  });
+  if (tx) {
+    return softDeleteSprintCommentWithLinks(input, tx);
+  }
+  return runBeerTrackerTransaction((own) => softDeleteSprintCommentWithLinks(input, own));
 }
 
 async function deleteExpiredPendingSprintComments(input: {
@@ -432,101 +468,6 @@ async function deleteExpiredPendingSprintComments(input: {
         AND pending_approval_expires_at IS NOT NULL
         AND pending_approval_expires_at < CURRENT_TIMESTAMP`,
     sprintTenantParams(input.sprintId)
-  );
-  return result.rowCount ?? 0;
-}
-
-/** Удаляет pending-заметки plan patch автора драфта в спринте (повторный propose / смена ops). */
-export async function deletePendingPlanPatchSprintComments(input: {
-  ownerId: string;
-  sprintId: number;
-}): Promise<number> {
-  await ensurePlannerCommentImagesSchema();
-  const result = await query(
-    `DELETE FROM comments
-      WHERE ${sprintTenantWhere()}
-        AND pending_approval = TRUE
-        AND plan_patch_proposal_id IS NOT NULL
-        AND LOWER(created_by::text) = LOWER($2)`,
-    [...sprintTenantParams(input.sprintId), input.ownerId]
-  );
-  return result.rowCount ?? 0;
-}
-
-/** `ownerId` — только черновики этого автора (✓ на доске); без него — системное подтверждение. */
-export async function confirmPendingSprintComments(input: {
-  commentIds: readonly string[];
-  ownerId?: string;
-  sprintId: number;
-}): Promise<number> {
-  if (input.commentIds.length === 0) {
-    return 0;
-  }
-  await ensurePlannerCommentImagesSchema();
-  const result = await query(
-    `UPDATE comments
-        SET pending_approval = FALSE,
-            pending_approval_expires_at = NULL,
-            plan_patch_proposal_id = NULL,
-            client_brand = '',
-            updated_at = CURRENT_TIMESTAMP
-      WHERE ${sprintTenantWhere()}
-        AND id = ANY($2::uuid[])
-        AND pending_approval = TRUE
-        AND ($3::text IS NULL OR LOWER(created_by::text) = LOWER($3))`,
-    [...sprintTenantParams(input.sprintId), [...input.commentIds], input.ownerId ?? null]
-  );
-  return result.rowCount ?? 0;
-}
-
-/** Обычная (не черновая) заметка спринта существует. */
-export async function hasConfirmedSprintComment(input: {
-  commentId: string;
-  sprintId: number;
-}): Promise<boolean> {
-  const result = await query(
-    `SELECT 1 FROM comments
-      WHERE ${sprintTenantWhere()}
-        AND id = $2::uuid
-        AND pending_approval = FALSE
-        AND deleted_at IS NULL
-      LIMIT 1`,
-    [...sprintTenantParams(input.sprintId), input.commentId]
-  );
-  return (result.rowCount ?? 0) > 0;
-}
-
-export async function confirmAllPendingSprintComments(input: {
-  ownerId: string;
-  sprintId: number;
-}): Promise<number> {
-  await ensurePlannerCommentImagesSchema();
-  const result = await query(
-    `UPDATE comments
-        SET pending_approval = FALSE,
-            pending_approval_expires_at = NULL,
-            plan_patch_proposal_id = NULL,
-            client_brand = '',
-            updated_at = CURRENT_TIMESTAMP
-      WHERE ${sprintTenantWhere()}
-        AND pending_approval = TRUE
-        AND LOWER(created_by::text) = LOWER($2)`,
-    [...sprintTenantParams(input.sprintId), input.ownerId]
-  );
-  return result.rowCount ?? 0;
-}
-
-export async function deleteAllPendingSprintComments(input: {
-  ownerId: string;
-  sprintId: number;
-}): Promise<number> {
-  await ensurePlannerCommentImagesSchema();
-  const result = await query(
-    `DELETE FROM comments
-      WHERE ${sprintTenantWhere()}
-        AND pending_approval = TRUE
-        AND LOWER(created_by::text) = LOWER($2)`,
-    [...sprintTenantParams(input.sprintId), input.ownerId]
   );
   return result.rowCount ?? 0;
 }

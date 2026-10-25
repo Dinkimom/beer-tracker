@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  deletePendingPlanPatchSprintComments,
-  insertSprintComment,
-} from '@/lib/sprints/sprintCommentsRepository';
+import { insertSprintComment } from '@/lib/sprints/sprintCommentsRepository';
+import { deletePendingPlanPatchSprintComments } from '@/lib/sprints/sprintPendingCommentsRepository';
 
 import { persistProposedCreateNotes } from './sprintPlanPatchDraftNotes';
 
@@ -12,9 +10,12 @@ vi.mock('@/lib/sprints/sprintCommentReplacements', () => ({
 }));
 
 vi.mock('@/lib/sprints/sprintCommentsRepository', () => ({
+  insertSprintComment: vi.fn(),
+}));
+
+vi.mock('@/lib/sprints/sprintPendingCommentsRepository', () => ({
   confirmPendingSprintComments: vi.fn(),
   deletePendingPlanPatchSprintComments: vi.fn(),
-  insertSprintComment: vi.fn(),
 }));
 
 const clearPending = vi.mocked(deletePendingPlanPatchSprintComments);

@@ -430,7 +430,7 @@ export function createSprintContextMcpServer(input: {
     'apply_plan_patch',
     {
       description:
-        'Apply a previously proposed plan patch. Requires confirm=true and the applyToken from propose_plan_patch (same ops). Confirms draft notes (if any) and writes remaining ops. onError=stop (default) halts on first failure; onError=continue applies remaining ops and reports per-op errors. upsertPosition with syncToTracker=true adds the issue to the tracker sprint and assigns (BT position is always written even if tracker sync fails). Returns schedule + capacity. Not silent — refuse without confirm.',
+        'Apply a previously proposed plan patch. Requires confirm=true and the applyToken from propose_plan_patch (same ops). The patch is applied in one transaction: draft notes are confirmed and ops written together. onError=stop (default): any failed op rolls back the whole patch (rolledBack=true, nothing applied; the token stays usable for a retry). onError=continue: a failed op is skipped, the rest are applied and per-op errors reported. Each applyToken works once: a repeat returns already_applied — propose again for a new token. upsertPosition with syncToTracker=true adds the issue to the tracker sprint and assigns after the patch is saved (a tracker failure is a warning on that op; the BT position stays). Returns schedule + capacity. Not silent — refuse without confirm.',
       inputSchema: {
         applyToken: z.string().min(1).describe('Token from propose_plan_patch'),
         confirm: z
@@ -439,7 +439,7 @@ export function createSprintContextMcpServer(input: {
         onError: z
           .enum(['continue', 'stop'])
           .optional()
-          .describe('stop (default): halt on first failed op. continue: apply remaining ops.'),
+          .describe('stop (default): roll back the whole patch on the first failed op. continue: skip failed ops, apply the rest.'),
         ops: SprintPlanPatchOpsSchema.describe('Exact ops array from propose_plan_patch'),
         sprintId: z.number().int().positive().describe('Tracker sprint id'),
       },

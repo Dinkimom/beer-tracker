@@ -118,6 +118,17 @@ CREATE INDEX idx_plan_patch_position_previews_sprint
 
 COMMENT ON TABLE public.plan_patch_position_previews IS 'Полупрозрачные карточки propose_plan_patch до apply';
 
+CREATE TABLE public.plan_patch_applied_tokens (
+    organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
+    token_hash CHAR(64) NOT NULL,
+    sprint_id INTEGER NOT NULL,
+    applied_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY (organization_id, token_hash)
+);
+
+COMMENT ON TABLE public.plan_patch_applied_tokens IS 'Применённые токены apply_plan_patch (sha256 токена); строки старше expires_at удаляются при следующем применении';
+
 CREATE TABLE public.plan_patch_goal_previews (
     organization_id UUID NOT NULL REFERENCES public.organizations (id) ON DELETE CASCADE,
     sprint_id INTEGER NOT NULL,

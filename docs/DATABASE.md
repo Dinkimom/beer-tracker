@@ -24,6 +24,7 @@ PostgreSQL 16 (`postgres:16-alpine` в `docker-compose.yml`). Как схема 
 |--------|-------------------|
 | `lib/sprints/ensurePlannerCommentImages.ts` | `planner_files`; `comments.kind` (CHECK с `widget`), `image_file_id`, `parent`, `pending_approval*`, `plan_patch_proposal_id`, `client_brand`, `replaces_comment_id`, `replace_action`, `updated_by`, `version`, `deleted_*`; удаляет BYTEA-колонку `planner_files.data` вместе с данными |
 | `lib/sprints/sprintPlanPatchPositionPreviewRepository.ts`, `sprintPlanPatchGoalPreviewRepository.ts`, `planPatchPreviewOwnerSchema.ts` | `plan_patch_position_previews`, `plan_patch_goal_previews`, `owner_id` в PK |
+| `lib/sprints/sprintPlanPatchAppliedTokenRepository.ts` | `plan_patch_applied_tokens` |
 | `lib/agentSessions/agentSessionsRepository.ts` | `agent_sessions`, `agent_session_messages` (включая `options`, `skill_id`, `skill_params`) |
 | `lib/sprints/swimlaneCardLayersRepository.ts` | `swimlane_card_layers` |
 | `lib/sprintMetrics/sprintMetricsRepository.ts` | `sprint_metrics` |
@@ -129,6 +130,7 @@ docker compose exec -T db psql -U postgres -d beer_tracker -v ON_ERROR_STOP=1 -v
 | 2026-10-23 | v1.23.1 | `add-agent-session-activity.sql` | `agent_sessions.agent_step*` | да | да |
 | 2026-10-23 | v1.23.1 | `add-comment-replacements.sql` | `comments.replaces_comment_id`, `replace_action` | да | да |
 | 2026-10-23 | v1.24.0 | `add-swimlane-card-layers.sql` | `swimlane_card_layers` | да | да |
+| 2026-10-25 | — | `add-plan-patch-applied-tokens.sql` | `plan_patch_applied_tokens` (одноразовый токен apply) | да | да |
 
 `add-plan-patch-previews.sql` запускать до `add-agent-sessions.sql`: второй перестраивает PK таблиц превью.
 
@@ -169,6 +171,7 @@ docker compose exec -T db psql -U postgres -d beer_tracker -v ON_ERROR_STOP=1 -v
 
 **Агент и предложения плана**
 - `plan_patch_position_previews` / `plan_patch_goal_previews` — превью `propose_plan_patch` до apply.
+- `plan_patch_applied_tokens` — применённые токены `apply_plan_patch`: повтор того же токена отвергается.
 - `agent_sessions` / `agent_session_messages` — сессии и переписка с агентом.
 
 **Ретро и метрики**
