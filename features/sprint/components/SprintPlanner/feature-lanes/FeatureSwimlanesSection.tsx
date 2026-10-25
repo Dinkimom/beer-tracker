@@ -125,7 +125,7 @@ export function FeatureSwimlanesSection({
     onRemoveBoardRow: rowManagement.removeBoardRow,
     onRemoveDraftRow: rowManagement.removeDraftRow,
     onRemoveFromSprint,
-    onTransferDraftRow: rowManagement.transferDraftRowToSprint,
+    resolveTransferRow: rowManagement.resolveTransferRow,
     selectedSprintId: props.selectedSprintId,
     sprints,
     tasks: tasksForLanes,

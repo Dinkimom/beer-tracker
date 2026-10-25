@@ -24,18 +24,21 @@ export async function POST(
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }
-    await moveSprintCommentsToSprint({
+    const moved = await moveSprintCommentsToSprint({
       commentIds: parsed.value.commentIds,
       fromSprintId,
       organizationId: tenantResult.ctx.organizationId,
       toSprintId: parsed.value.targetSprintId,
     });
+    if (moved === 0) {
+      return NextResponse.json({ error: 'Comments not found', moved }, { status: 404 });
+    }
     notifySprintRealtimeForSprintIds(
       request,
       [fromSprintId, parsed.value.targetSprintId],
-      ['comments']
+      ['comments', 'links']
     );
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ moved, success: true });
   } catch (error) {
     console.error('Error moving sprint comments:', error);
     return NextResponse.json({ error: 'Failed to move comments' }, { status: 500 });

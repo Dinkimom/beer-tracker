@@ -121,6 +121,33 @@ export function ensureFeatureLanesSessionLoaded(sprintId: number): void {
   inflightLoad.set(sprintId, load);
 }
 
+/**
+ * Документ спринта записали в обход этой сессии (перенос фичи из другого спринта, соседняя вкладка).
+ * Принимаем, только если сессия загружена и без несохранённых правок — иначе её дебаунс-сохранение
+ * всё равно перезапишет документ целиком.
+ */
+export function applyRemoteFeatureLanesSession(
+  sprintId: number,
+  document: FeatureLanesDocument
+): void {
+  const slot = slots.get(sprintId);
+  if (!slot?.loaded || slot.dirty) {
+    return;
+  }
+  slot.document = document;
+  emit(slot);
+}
+
+/** Realtime `featureLanes`: перечитать документ, если сессия чистая. */
+export async function reloadFeatureLanesSession(sprintId: number): Promise<void> {
+  const slot = slots.get(sprintId);
+  if (!slot?.loaded || slot.dirty) {
+    return;
+  }
+  const document = await fetchFeatureLanes(sprintId);
+  applyRemoteFeatureLanesSession(sprintId, document ?? emptyFeatureLanesDocument());
+}
+
 export function resetFeatureLanesSessionForTests(): void {
   for (const slot of slots.values()) {
     if (slot.saveTimer) {

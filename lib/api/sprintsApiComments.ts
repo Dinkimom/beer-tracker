@@ -180,6 +180,15 @@ export async function fetchSprintCommentDiagram(
   }
 }
 
+/** Сервер возвращает реальное число перенесённых заметок; частичный перенос — не успех. */
+function isEveryCommentMoved(moved: number | undefined, commentIds: readonly string[]): boolean {
+  if (typeof moved !== 'number') {
+    return true;
+  }
+  return moved >= new Set(commentIds).size;
+}
+
+/** Переносит заметки (и их стрелки) в другой спринт; `false` — если перенеслись не все. */
 export async function moveSprintComments(
   sprintId: number,
   targetSprintId: number,
@@ -189,11 +198,11 @@ export async function moveSprintComments(
     return true;
   }
   try {
-    await getPlannerBeerTrackerApi().post(`/sprints/${sprintId}/comments/move`, {
-      commentIds,
-      targetSprintId,
-    });
-    return true;
+    const { data } = await getPlannerBeerTrackerApi().post<{ moved?: number }>(
+      `/sprints/${sprintId}/comments/move`,
+      { commentIds, targetSprintId }
+    );
+    return isEveryCommentMoved(data?.moved, commentIds);
   } catch (error) {
     console.error(`Failed to move comments from sprint ${sprintId} to ${targetSprintId}:`, error);
     return false;

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  appendFeatureLaneDraftRow,
   emptyFeatureLanesDocument,
   isFeatureLaneDraftRowId,
   parseFeatureLanesDocument,
@@ -10,6 +9,7 @@ import {
   replaceFeatureLaneDraftRow,
   mergePreservedFeatureLaneIssueKeys,
   setFeatureLaneDraftIssueParent,
+  transferFeatureLaneRowToDocument,
 } from './featureLanesDocument';
 
 describe('isFeatureLaneDraftRowId', () => {
@@ -128,31 +128,64 @@ describe('pinFeatureLaneTrackerRow', () => {
   });
 });
 
-describe('appendFeatureLaneDraftRow', () => {
-  it('добавляет черновик в конец порядка', () => {
+describe('transferFeatureLaneRowToDocument', () => {
+  it('добавляет черновик с issueKeys в конец пользовательского порядка', () => {
     const current = {
       draftRows: [{ id: 'feature-draft:1', name: 'Уже есть' }],
       hiddenIds: ['hidden'],
       orderIds: ['feature-draft:1'],
     };
-    expect(appendFeatureLaneDraftRow(current, { id: '  feature-draft:2  ', name: '  Новая  ' })).toEqual({
+    expect(
+      transferFeatureLaneRowToDocument(current, {
+        id: '  feature-draft:2  ',
+        issueKeys: ['T-1', ' ', 'T-2'],
+        name: '  Новая  ',
+      })
+    ).toEqual({
       draftRows: [
         { id: 'feature-draft:1', name: 'Уже есть' },
-        { id: 'feature-draft:2', name: 'Новая' },
+        { id: 'feature-draft:2', issueKeys: ['T-1', 'T-2'], name: 'Новая' },
       ],
       hiddenIds: ['hidden'],
       orderIds: ['feature-draft:1', 'feature-draft:2'],
     });
   });
 
-  it('не дублирует строку и не принимает ключ Трекера', () => {
+  it('закрепляет строку Трекера без issueKeys и не трогает пустой порядок', () => {
+    const current = emptyFeatureLanesDocument();
+    expect(
+      transferFeatureLaneRowToDocument(current, { id: 'ST-9', issueKeys: ['T-1'], name: 'Стори' })
+    ).toEqual({ draftRows: [{ id: 'ST-9', name: 'Стори' }], hiddenIds: [], orderIds: [] });
+  });
+
+  it('дописывает ключи к уже существующему черновику и снимает скрытие', () => {
     const current = {
-      draftRows: [{ id: 'feature-draft:1', name: 'Черновик' }],
-      hiddenIds: [],
-      orderIds: ['feature-draft:1'],
+      draftRows: [{ id: 'feature-draft:1', issueKeys: ['T-1'], name: 'Там' }],
+      hiddenIds: ['feature-draft:1'],
+      orderIds: [],
     };
-    expect(appendFeatureLaneDraftRow(current, { id: 'feature-draft:1', name: 'Другое' })).toBe(current);
-    expect(appendFeatureLaneDraftRow(current, { id: 'ST-9', name: 'Стори' })).toBe(current);
+    expect(
+      transferFeatureLaneRowToDocument(current, {
+        id: 'feature-draft:1',
+        issueKeys: ['T-1', 'T-3'],
+        name: 'Здесь',
+      })
+    ).toEqual({
+      draftRows: [{ id: 'feature-draft:1', issueKeys: ['T-1', 'T-3'], name: 'Там' }],
+      hiddenIds: [],
+      orderIds: [],
+    });
+  });
+
+  it('возвращает тот же документ, если менять нечего', () => {
+    const current = {
+      draftRows: [{ id: 'ST-9', name: 'Стори' }],
+      hiddenIds: [],
+      orderIds: ['ST-9'],
+    };
+    expect(transferFeatureLaneRowToDocument(current, { id: 'ST-9', name: 'Стори' })).toBe(current);
+    expect(transferFeatureLaneRowToDocument(current, { id: ' ', name: 'x' })).toBe(current);
+    expect(transferFeatureLaneRowToDocument(current, { id: 'ST-1', name: ' ' })).toBe(current);
   });
 });
 

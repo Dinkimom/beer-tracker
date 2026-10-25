@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
 import { resolveParams } from '@/lib/nextjs-utils';
+import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { fetchFeatureLanes, mergePreservedFeatureLaneIssueKeys, upsertFeatureLanes } from '@/lib/sprints';
 import { FeatureLanesDocumentSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
@@ -67,6 +68,7 @@ export async function PUT(
       organizationId: tenantResult.ctx.organizationId,
       sprintId,
     });
+    notifySprintRealtime(request, tenantResult.ctx.organizationId, sprintId, ['featureLanes']);
     return NextResponse.json({ lanes, success: true });
   } catch (error) {
     console.error('[PUT /feature-lanes] Error:', error);

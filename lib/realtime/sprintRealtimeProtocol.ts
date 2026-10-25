@@ -21,6 +21,7 @@ import { parseSprintTimerState } from './sprintTimerState';
 const RESOURCES: ReadonlySet<string> = new Set([
   'agentSessions',
   'comments',
+  'featureLanes',
   'goals',
   'links',
   'positions',

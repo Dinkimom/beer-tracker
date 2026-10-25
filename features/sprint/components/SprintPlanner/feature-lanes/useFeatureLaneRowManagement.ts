@@ -17,9 +17,7 @@ import {
   type FeatureLaneBoardLabels,
   type FeatureSwimlaneRowMeta,
 } from '@/features/swimlane/utils/featureSwimlaneRows';
-import { fetchFeatureLanes, saveFeatureLanes } from '@/lib/api/sprints';
 import {
-  appendFeatureLaneDraftRow,
   emptyFeatureLanesDocument,
   pinFeatureLaneTrackerRow,
   renameFeatureLaneDraftRow,
@@ -27,6 +25,8 @@ import {
   type FeatureLanesDocument,
 } from '@/lib/sprints/featureLanesDocument';
 import { TEAM_SWIMLANE_ASSIGNEE_ID } from '@/lib/swimlane/teamSwimlaneAssignee';
+
+import { resolveFeatureLaneTransferRow } from './submitFeatureLaneRowSprintChange';
 
 function draftRowsToDevelopers(lanes: FeatureLanesDocument | undefined): Developer[] {
   return (lanes?.draftRows ?? []).map((row) => ({
@@ -211,20 +211,9 @@ export function useFeatureLaneRowManagement(input: {
     [removeBoardRow]
   );
 
-  const transferDraftRowToSprint = useCallback(
-    async (rowId: string, targetSprintId: number) => {
-      const row = (lanes?.draftRows ?? []).find((item) => item.id === rowId);
-      if (!row || !isFeatureLaneDraftRowId(rowId)) {
-        throw new Error('Draft row not found');
-      }
-      const current = (await fetchFeatureLanes(targetSprintId)) ?? emptyFeatureLanesDocument();
-      const next = appendFeatureLaneDraftRow(current, row);
-      if (next === current) {
-        return;
-      }
-      await saveFeatureLanes(targetSprintId, next);
-    },
-    [lanes]
+  const resolveTransferRow = useCallback(
+    (rowId: string) => resolveFeatureLaneTransferRow(rowId, lanes, rowMetaById),
+    [lanes, rowMetaById]
   );
 
   const developersManagement = useMemo(
@@ -259,8 +248,8 @@ export function useFeatureLaneRowManagement(input: {
     removeDraftRow,
     renameDraftRow,
     replaceDraftRow,
+    resolveTransferRow,
     rowMetaById,
     rowTitleById,
-    transferDraftRowToSprint,
   };
 }

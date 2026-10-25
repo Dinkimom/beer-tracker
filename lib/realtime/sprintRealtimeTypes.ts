@@ -5,6 +5,7 @@ import type { Task } from '@/types';
 export type SprintRealtimeResource =
   | 'agentSessions'
   | 'comments'
+  | 'featureLanes'
   | 'goals'
   | 'links'
   | 'positions'

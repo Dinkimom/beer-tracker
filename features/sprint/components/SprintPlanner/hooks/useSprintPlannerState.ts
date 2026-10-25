@@ -26,6 +26,7 @@ import {
   upsertSprintTaskInQueries,
   useTasks,
 } from '@/features/task/hooks/useTasks';
+import { reloadFeatureLanesSession } from '@/hooks/featureLanesSessionStore';
 import {
   useCommentsApi,
   useFeatureLanesApi,
@@ -126,6 +127,11 @@ export function useSprintPlannerState({
     },
     onLinks: () => {
       reloadLinks().catch(() => undefined);
+    },
+    onFeatureLanes: () => {
+      if (selectedSprintId) {
+        reloadFeatureLanesSession(selectedSprintId).catch(() => undefined);
+      }
     },
     onAgentSessions: () => {
       queryClient

@@ -32,6 +32,10 @@ describe('sprintRealtimeProtocol', () => {
       ...event,
       resources: ['retro'],
     });
+    expect(parseSprintRealtimeMessage({ ...event, resources: ['featureLanes'] })).toEqual({
+      ...event,
+      resources: ['featureLanes'],
+    });
   });
 
   it('parses a presence snapshot including an empty viewer list', () => {

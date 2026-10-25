@@ -109,23 +109,73 @@ export function pinFeatureLaneTrackerRow(
   };
 }
 
-/** Добавляет черновую строку фичи в документ другого спринта, без дублей. */
-export function appendFeatureLaneDraftRow(
-  document: FeatureLanesDocument,
-  row: { id: string; name: string }
-): FeatureLanesDocument {
+export interface FeatureLaneTransferRow {
+  id: string;
+  /** Только у черновика: задачи, которые висят на нём без родителя в Трекере. */
+  issueKeys?: readonly string[];
+  name: string;
+}
+
+function mergeTransferredDraftRow(
+  rows: FeatureLaneDraftRow[],
+  row: FeatureLaneDraftRow
+): FeatureLaneDraftRow[] {
+  const existing = rows.find((item) => item.id === row.id);
+  if (!existing) {
+    return [...rows, row];
+  }
+  if (!row.issueKeys?.length) {
+    return rows;
+  }
+  const current = existing.issueKeys ?? [];
+  const added = row.issueKeys.filter((key) => !current.includes(key));
+  if (added.length === 0) {
+    return rows;
+  }
+  return rows.map((item) =>
+    item.id === row.id ? { ...item, issueKeys: [...current, ...added] } : item
+  );
+}
+
+function normalizeTransferRow(row: FeatureLaneTransferRow): FeatureLaneDraftRow | null {
   const id = row.id.trim();
   const name = row.name.trim();
-  if (!id || !name || !isFeatureLaneDraftRowId(id)) {
+  if (!id || !name) {
+    return null;
+  }
+  const issueKeys = isFeatureLaneDraftRowId(id) ? readStringList(row.issueKeys) : [];
+  return issueKeys.length > 0 ? { id, issueKeys, name } : { id, name };
+}
+
+/**
+ * Кладёт строку фичи в документ другого спринта при переносе.
+ * Строку Трекера закрепляет (иначе заметки без задач в целевом спринте не на чем рисовать),
+ * у черновика сохраняет `issueKeys`. Пользовательский порядок: строка встаёт в конец,
+ * скрытой не остаётся. Без изменений возвращает тот же объект.
+ */
+export function transferFeatureLaneRowToDocument(
+  document: FeatureLanesDocument,
+  row: FeatureLaneTransferRow
+): FeatureLanesDocument {
+  const normalized = normalizeTransferRow(row);
+  if (!normalized) {
     return document;
   }
-  if (document.draftRows.some((item) => item.id === id)) {
+  const { id } = normalized;
+  const draftRows = mergeTransferredDraftRow(document.draftRows, normalized);
+  const hiddenIds = document.hiddenIds.filter((item) => item !== id);
+  const appendToOrder = document.orderIds.length > 0 && !document.orderIds.includes(id);
+  if (
+    draftRows === document.draftRows &&
+    hiddenIds.length === document.hiddenIds.length &&
+    !appendToOrder
+  ) {
     return document;
   }
   return {
-    draftRows: [...document.draftRows, { id, name }],
-    hiddenIds: document.hiddenIds,
-    orderIds: document.orderIds.includes(id) ? document.orderIds : [...document.orderIds, id],
+    draftRows,
+    hiddenIds,
+    orderIds: appendToOrder ? [...document.orderIds, id] : document.orderIds,
   };
 }
 

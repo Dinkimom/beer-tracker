@@ -11,10 +11,12 @@ vi.mock('@/lib/beerTrackerApi', () => ({
 }));
 
 import {
+  applyRemoteFeatureLanesSession,
   ensureFeatureLanesSessionLoaded,
   getFeatureLanesSession,
   getFeatureLanesSessionLoaded,
   patchFeatureLanesSession,
+  reloadFeatureLanesSession,
   resetFeatureLanesSessionForTests,
   subscribeFeatureLanesSession,
 } from './featureLanesSessionStore';
@@ -84,5 +86,40 @@ describe('featureLanesSessionStore', () => {
     expect(getFeatureLanesSessionLoaded(4)).toBe(true);
     expect(seenLoaded.at(-1)).toBe(true);
     unsubscribe();
+  });
+
+  it('принимает документ, записанный в обход сессии, только если сессия загружена и чистая', async () => {
+    const remote = {
+      ...emptyFeatureLanesDocument(),
+      draftRows: [{ id: 'ST-9', name: 'Стори' }],
+    };
+    applyRemoteFeatureLanesSession(4, remote);
+    expect(getFeatureLanesSession(4)).toBeUndefined();
+
+    fetchFeatureLanes.mockResolvedValue(emptyFeatureLanesDocument());
+    ensureFeatureLanesSessionLoaded(4);
+    await vi.waitFor(() => expect(getFeatureLanesSessionLoaded(4)).toBe(true));
+    applyRemoteFeatureLanesSession(4, remote);
+    expect(getFeatureLanesSession(4)).toBe(remote);
+
+    patchFeatureLanesSession(4, () => emptyFeatureLanesDocument());
+    applyRemoteFeatureLanesSession(4, remote);
+    expect(getFeatureLanesSession(4)?.draftRows).toEqual([]);
+  });
+
+  it('перечитывает документ по realtime, если локальных правок нет', async () => {
+    fetchFeatureLanes.mockResolvedValue(emptyFeatureLanesDocument());
+    ensureFeatureLanesSessionLoaded(4);
+    await vi.waitFor(() => expect(getFeatureLanesSessionLoaded(4)).toBe(true));
+    fetchFeatureLanes.mockResolvedValue({
+      ...emptyFeatureLanesDocument(),
+      draftRows: [{ id: 'ST-9', name: 'Стори' }],
+    });
+    await reloadFeatureLanesSession(4);
+    expect(getFeatureLanesSession(4)?.draftRows).toEqual([{ id: 'ST-9', name: 'Стори' }]);
+
+    fetchFeatureLanes.mockClear();
+    await reloadFeatureLanesSession(99);
+    expect(fetchFeatureLanes).not.toHaveBeenCalled();
   });
 });

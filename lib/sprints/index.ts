@@ -4,6 +4,7 @@ export * from './occupancyTaskOrderRepository';
 export * from './sprintBatchHelpers';
 export * from './sprintCommentDiagramsRepository';
 export * from './sprintCommentImagesRepository';
+export * from './sprintCommentsMoveRepository';
 export * from './sprintCommentsRepository';
 export * from './sprintContextAuth';
 export * from './sprintContextEnrichment';

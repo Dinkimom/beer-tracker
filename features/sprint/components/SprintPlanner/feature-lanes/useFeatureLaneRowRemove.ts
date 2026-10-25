@@ -1,3 +1,7 @@
+import type {
+  FeatureLaneTransferRow,
+  FeatureLanesDocument,
+} from '@/lib/sprints/featureLanesDocument';
 import type { Comment, Task } from '@/types';
 
 import { useCallback, useRef } from 'react';
@@ -6,7 +10,8 @@ import toast from 'react-hot-toast';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { useI18n } from '@/contexts/LanguageContext';
 import { isFeatureLaneDraftRowId } from '@/features/swimlane/utils/featureSwimlaneRows';
-import { moveSprintComments } from '@/lib/api/sprints';
+import { applyRemoteFeatureLanesSession } from '@/hooks/featureLanesSessionStore';
+import { fetchFeatureLanes, moveSprintComments, saveFeatureLanes } from '@/lib/api/sprints';
 import { formatSprintListItemDisplayName } from '@/utils/sprintDisplayName';
 
 import { submitDeletedFeatureLaneDraft } from './submitDeletedFeatureLaneDraft';
@@ -14,6 +19,12 @@ import {
   submitMovedFeatureLane,
   submitRemovedFeatureLane,
 } from './submitFeatureLaneRowSprintChange';
+
+/** Пишем документ целевого спринта и обновляем его кэш в этой вкладке, если он уже открывался. */
+async function saveTargetFeatureLanes(sprintId: number, lanes: FeatureLanesDocument): Promise<void> {
+  await saveFeatureLanes(sprintId, lanes);
+  applyRemoteFeatureLanesSession(sprintId, lanes);
+}
 
 function ignoreCommentDelete(_commentId: string): void {
   return;
@@ -40,7 +51,7 @@ interface UseFeatureLaneRowRemoveInput {
   onRemoveBoardRow: (rowId: string) => void;
   onRemoveDraftRow: (rowId: string) => void;
   onRemoveFromSprint?: (taskId: string, options?: { notify?: boolean }) => Promise<void>;
-  onTransferDraftRow?: (rowId: string, targetSprintId: number) => Promise<void>;
+  resolveTransferRow: (rowId: string) => FeatureLaneTransferRow;
 }
 
 export function useFeatureLaneRowRemove(input: UseFeatureLaneRowRemoveInput) {
@@ -57,7 +68,7 @@ export function useFeatureLaneRowRemove(input: UseFeatureLaneRowRemoveInput) {
     onRemoveBoardRow,
     onRemoveDraftRow,
     onRemoveFromSprint,
-    onTransferDraftRow,
+    resolveTransferRow,
     selectedSprintId,
     sprints,
     tasks,
@@ -166,7 +177,7 @@ export function useFeatureLaneRowRemove(input: UseFeatureLaneRowRemoveInput) {
       if (busyRef.current) {
         return;
       }
-      if (isDraftRow ? !onTransferDraftRow : !onMoveToSprint) {
+      if (!isDraftRow && !onMoveToSprint) {
         return;
       }
       const targetSprint = sprints.find((sprint) => sprint.id === sprintId);
@@ -195,12 +206,14 @@ export function useFeatureLaneRowRemove(input: UseFeatureLaneRowRemoveInput) {
             onMoveToSprint
               ? onMoveToSprint(taskId, nextSprintId, { notify: false })
               : Promise.resolve(),
+          onLoadLanes: fetchFeatureLanes,
           onRemoveBoardRow,
-          onTransferDraftRow,
+          onSaveLanes: saveTargetFeatureLanes,
           rowId,
           sprintId: selectedSprintId,
           targetSprintId: sprintId,
           tasks,
+          transferRow: resolveTransferRow(rowId),
         });
         if (!result.ok) {
           toast.error(result.error);
@@ -218,7 +231,7 @@ export function useFeatureLaneRowRemove(input: UseFeatureLaneRowRemoveInput) {
       onCommentsLeftSprint,
       onMoveToSprint,
       onRemoveBoardRow,
-      onTransferDraftRow,
+      resolveTransferRow,
       selectedSprintId,
       sprints,
       t,
