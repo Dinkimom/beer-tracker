@@ -6,8 +6,8 @@ import type { TimeInterval } from '../types';
 import type { Task, TaskPosition, TaskLink, Developer } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
+import { placeQaPhase } from '@/features/qa/utils/qaTaskPlacement';
 
-import { findQATaskPlacement } from '../utils/intervalUtils';
 import { getQALinkAnchors } from '../utils/linkUtils';
 
 function ensureQaLinkForPlacedTask(
@@ -41,38 +41,28 @@ function placeNewQaTask(
   qaTask: Task,
   developers: Developer[],
   occupiedIntervals: Map<string, TimeInterval[]>,
-  currentCell: number
+  currentCell: number,
+  totalCells: number
 ): { link: TaskLink; position: TaskPosition } | null {
   const qaEngineerId = qaTask.assignee;
   if (!qaEngineerId) {
     return null;
   }
 
-  const qaTaskDuration = qaTask.testPoints || 1;
-  const devTaskEndCell =
-    devPosition.startDay * getPartsPerDay() + devPosition.startPart + devPosition.duration;
-  const minStartCell = Math.max(devTaskEndCell, currentCell);
   const qaEngineerIntervals = occupiedIntervals.get(qaEngineerId) || [];
-  const targetStartCell = findQATaskPlacement(qaEngineerIntervals, qaTaskDuration, minStartCell);
-
-  if (targetStartCell === null) {
+  const qaPosition = placeQaPhase({
+    devPosition,
+    laneIntervals: qaEngineerIntervals,
+    minStartCell: currentCell,
+    qaTask,
+    totalCells,
+  });
+  if (!qaPosition) {
     return null;
   }
 
-  const targetDay = Math.floor(targetStartCell / getPartsPerDay());
-  const targetPart = targetStartCell % getPartsPerDay();
-  const qaPosition: TaskPosition = {
-    taskId: qaTask.id,
-    assignee: qaEngineerId,
-    startDay: targetDay,
-    startPart: targetPart,
-    duration: qaTaskDuration,
-    plannedStartDay: targetDay,
-    plannedStartPart: targetPart,
-    plannedDuration: qaTaskDuration,
-  };
-
-  qaEngineerIntervals.push({ start: targetStartCell, end: targetStartCell + qaTaskDuration });
+  const targetStartCell = qaPosition.startDay * getPartsPerDay() + qaPosition.startPart;
+  qaEngineerIntervals.push({ start: targetStartCell, end: targetStartCell + qaPosition.duration });
   occupiedIntervals.set(qaEngineerId, qaEngineerIntervals);
 
   const anchors = getQALinkAnchors(devTask, devPosition, qaTask, qaPosition, developers);
@@ -96,7 +86,8 @@ export function placeQaTaskForDevTask(
   newPositions: Map<string, TaskPosition>,
   newLinks: TaskLink[],
   occupiedIntervals: Map<string, TimeInterval[]>,
-  currentCell: number
+  currentCell: number,
+  totalCells: number
 ): void {
   const existingQaPosition = newPositions.get(qaTask.id);
   if (existingQaPosition) {
@@ -120,7 +111,8 @@ export function placeQaTaskForDevTask(
     qaTask,
     developers,
     occupiedIntervals,
-    currentCell
+    currentCell,
+    totalCells
   );
   if (!placement) {
     return;

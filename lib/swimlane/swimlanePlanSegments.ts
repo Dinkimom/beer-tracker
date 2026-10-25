@@ -1,6 +1,6 @@
 import type { PhaseSegment, TaskPosition } from '@/types';
 
-import { WORKING_DAYS, getPartsPerDay } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { mergeAdjacentSegments } from '@/lib/planner-timeline';
 
 function rangesOverlap(
@@ -87,7 +87,7 @@ export function moveSwimlanePlanSegmentToStartCell(
   position: TaskPosition,
   segmentIndex: number,
   newStartCell: number,
-  totalCells: number = WORKING_DAYS * getPartsPerDay()
+  totalCells: number
 ): TaskPosition | null {
   if (!position.segments?.length) return null;
   const ordered = getOrderedPlanSegments(position);

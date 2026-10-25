@@ -1,74 +1,57 @@
 /**
- * Утилиты для размещения QA задач на swimlane
+ * Размещение QA-фазы на свимлейне: одно правило для кнопки «+QA», пикера QA и авторасстановки.
  */
 
+import type { TimeInterval } from '@/features/task/utils/autoAssignTasks/types';
 import type { Task, TaskPosition } from '@/types';
 import type { Developer } from '@/types';
 
-import { WORKING_DAYS, getPartsPerDay } from '@/constants';
+import { getPartsPerDay } from '@/constants';
+import { findFirstFreeCell } from '@/features/task/utils/autoAssignTasks/utils/intervalUtils';
+import { positionToEndCell } from '@/lib/planner-timeline';
+import { getTaskPoints, storyPointsToTimeslots } from '@/lib/pointsUtils';
 import { getQALinkAnchors } from '@/utils/linkAnchors';
 
+/** Длина QA-фазы: тест-поинты через шкалу организации, как SP у dev-фазы. */
+export function qaPhaseDurationSlots(qaTask: Task): number {
+  return Math.max(1, storyPointsToTimeslots(getTaskPoints(qaTask)));
+}
+
 /**
- * Размещает QA задачу на swimlane после задачи разработки
+ * Позиция QA-фазы или null, если её нельзя поставить.
+ * - длина — `qaPhaseDurationSlots`;
+ * - старт не раньше конца последнего отрезка dev-карточки (и не раньше `minStartCell`);
+ * - первое свободное окно в строке QA (`laneIntervals`);
+ * - карточка целиком внутри спринта (`totalCells`), иначе null.
  */
-export function calculateQATaskPosition(
-  qaTask: Task,
-  devTask: Task,
-  devTaskPosition: TaskPosition,
-  taskPositions: Map<string, TaskPosition>,
-  allTasks: Task[]
-): TaskPosition {
-  // Вычисляем позицию для QA задачи - после задачи разработки
-  const devTaskEndCell = (devTaskPosition.startDay * getPartsPerDay() + devTaskPosition.startPart) + devTaskPosition.duration;
-  const qaTaskDuration = qaTask.testPoints || 1;
-
-  // Находим все задачи QA инженера (используем assignee из QA задачи)
-  const qaEngineerId = qaTask.assignee;
-  if (!qaEngineerId) {
-    throw new Error('QA задача не имеет assignee');
+export function placeQaPhase(input: {
+  devPosition: TaskPosition;
+  laneIntervals: readonly TimeInterval[];
+  minStartCell?: number;
+  qaTask: Task;
+  totalCells: number;
+}): TaskPosition | null {
+  const assignee = input.qaTask.assignee;
+  if (!assignee) {
+    return null;
   }
-
-  const qaEngineerTasks = Array.from(taskPositions.entries())
-    .filter(([taskId]) => {
-      const task = allTasks.find(t => t.id === taskId);
-      return task && task.assignee === qaEngineerId && task.team === 'QA';
-    })
-    .map(([taskId, pos]) => ({
-      taskId,
-      position: pos,
-      endCell: (pos.startDay * getPartsPerDay() + pos.startPart) + pos.duration,
-    }))
-    .sort((a, b) => a.endCell - b.endCell);
-
-  // Вычисляем позицию после всех существующих задач QA или после задачи разработки
-  let targetStartCell = devTaskEndCell;
-  if (qaEngineerTasks.length > 0) {
-    const lastQATaskEnd = qaEngineerTasks[qaEngineerTasks.length - 1].endCell;
-    targetStartCell = Math.max(devTaskEndCell, lastQATaskEnd);
+  const duration = qaPhaseDurationSlots(input.qaTask);
+  const minStart = Math.max(positionToEndCell(input.devPosition), input.minStartCell ?? 0);
+  const startCell = findFirstFreeCell(input.laneIntervals, duration, minStart, input.totalCells);
+  if (startCell === null) {
+    return null;
   }
-
-  // Проверяем границы
-  const maxStart = WORKING_DAYS * getPartsPerDay() - qaTaskDuration;
-  if (targetStartCell > maxStart) {
-    targetStartCell = maxStart;
-  }
-
-  if (targetStartCell < 0) {
-    targetStartCell = 0;
-  }
-
-  const targetDay = Math.floor(targetStartCell / getPartsPerDay());
-  const targetPart = targetStartCell % getPartsPerDay();
-
+  const startDay = Math.floor(startCell / getPartsPerDay());
+  const startPart = startCell % getPartsPerDay();
   return {
-    taskId: qaTask.id,
-    assignee: qaEngineerId,
-    startDay: targetDay,
-    startPart: targetPart,
-    duration: qaTaskDuration,
-    plannedStartDay: targetDay,
-    plannedStartPart: targetPart,
-    plannedDuration: qaTaskDuration,
+    taskId: input.qaTask.id,
+    assignee,
+    startDay,
+    startPart,
+    duration,
+    plannedStartDay: startDay,
+    plannedStartPart: startPart,
+    plannedDuration: duration,
   };
 }
 

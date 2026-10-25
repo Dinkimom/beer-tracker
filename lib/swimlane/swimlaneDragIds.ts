@@ -19,6 +19,14 @@ export function isActiveSwimlaneTaskDrag(active: {
   );
 }
 
+/**
+ * Карточка, которую нельзя снять с плана броском в сайдбар (заметка, фото и т.п.),
+ * несёт в `data` флаг `sidebarDrop: false`. Нет флага — сайдбар разрешён.
+ */
+export function isActiveSidebarDropBlocked(active: { data?: { current?: unknown } }): boolean {
+  return (active.data?.current as { sidebarDrop?: boolean } | undefined)?.sidebarDrop === false;
+}
+
 export function isActiveDeveloperRowDrag(active: {
   data?: { current?: unknown };
 }): boolean {

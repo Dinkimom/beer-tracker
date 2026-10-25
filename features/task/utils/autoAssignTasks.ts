@@ -22,7 +22,8 @@ export function autoAssignTasks(
   existingPositions: Map<string, TaskPosition>,
   qaTasksMap: Map<string, Task>, // Словарь QA задач: ключ - оригинальный ID dev задачи
   existingLinks: TaskLink[], // Существующие связи
-  currentCell: number = 0 // Текущая позиция в спринте (в ячейках)
+  currentCell: number, // Текущая позиция в спринте (в ячейках)
+  totalCells: number // Ячеек в таймлайне спринта: карточки не выходят за его конец
 ): AutoAssignResult {
   const newPositions = new Map<string, TaskPosition>(existingPositions);
 
@@ -54,7 +55,8 @@ export function autoAssignTasks(
     developers,
     occupiedIntervals,
     devWorkload,
-    currentCell
+    currentCell,
+    totalCells
   );
 
   // Объединяем новые позиции dev задач с существующими
@@ -80,7 +82,8 @@ export function autoAssignTasks(
     newPositions,
     existingLinks,
     occupiedIntervals,
-    currentCell
+    currentCell,
+    totalCells
   );
 
   return {

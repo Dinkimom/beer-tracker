@@ -22,9 +22,11 @@ interface UseDragOverProps {
   swimlaneTimelineWorkingDays?: number;
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
+  canDropOnSidebar?: (taskId: string) => boolean;
 }
 
 export function useDragOver({
+  canDropOnSidebar,
   dragContextRef,
   dragState,
   swimlaneTimelineWorkingDays,
@@ -34,13 +36,14 @@ export function useDragOver({
   const lastEventRef = useRef<DragMoveEvent | null>(null);
   const handlerParams = useMemo(
     () => ({
+      canDropOnSidebar,
       dragContextRef,
       dragState,
       swimlaneTimelineWorkingDays,
       taskPositions,
       tasks,
     }),
-    [dragContextRef, dragState, swimlaneTimelineWorkingDays, taskPositions, tasks]
+    [canDropOnSidebar, dragContextRef, dragState, swimlaneTimelineWorkingDays, taskPositions, tasks]
   );
 
   const handleDragOver = useMemo(() => {

@@ -15,6 +15,8 @@ interface AutoAddToSwimlaneParams {
   filteredTaskPositions: Map<string, TaskPosition>;
   selectedSprintId: number;
   task: Task;
+  /** Ячеек в таймлайне спринта. */
+  timelineTotalCells: number;
   debouncedUpdateXarrow: () => void;
   savePosition: (
     position: TaskPosition,
@@ -68,7 +70,7 @@ export function runAutoAddToSwimlane(params: AutoAddToSwimlaneParams): void {
   const duration = Math.max(1, storyPointsToTimeslots(estimatedSP));
   const occupiedIntervals = calculateOccupiedIntervals(filteredTaskPositions, developerIds);
   const intervals = occupiedIntervals.get(assigneeId) ?? [];
-  const startCell = findNextAvailableCell(intervals, duration, 0);
+  const startCell = findNextAvailableCell(intervals, duration, 0, params.timelineTotalCells);
   if (startCell === null) return;
 
   const startDay = Math.floor(startCell / getPartsPerDay());

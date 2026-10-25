@@ -22,7 +22,8 @@ export function placeQATasks(
   existingPositions: Map<string, TaskPosition>,
   existingLinks: TaskLink[],
   occupiedIntervals: Map<string, TimeInterval[]>,
-  currentCell: number
+  currentCell: number,
+  totalCells: number
 ): QATaskPlacementResult {
   const newPositions = new Map<string, TaskPosition>(existingPositions);
   const newLinks: TaskLink[] = [...existingLinks];
@@ -41,7 +42,8 @@ export function placeQATasks(
       newPositions,
       newLinks,
       occupiedIntervals,
-      currentCell
+      currentCell,
+      totalCells
     );
   });
 

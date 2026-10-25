@@ -16,7 +16,10 @@ import type {
 
 import { closestCenter } from '@dnd-kit/core';
 
-import { isActiveDeveloperRowDrag } from '@/features/swimlane/utils/swimlaneDragIds';
+import {
+  isActiveDeveloperRowDrag,
+  isActiveSidebarDropBlocked,
+} from '@/features/swimlane/utils/swimlaneDragIds';
 
 export const SIDEBAR_UNASSIGNED_DROPPABLE_ID = 'sidebar-unassigned';
 
@@ -155,7 +158,7 @@ export const sprintPlannerCollisionDetection: CollisionDetection = (args) => {
     }
   }
 
-  if (sidebarContainer) {
+  if (sidebarContainer && !isActiveSidebarDropBlocked(args.active)) {
     const sidebarRect = args.droppableRects.get(SIDEBAR_UNASSIGNED_DROPPABLE_ID);
     if (sidebarRect && pointerIsInsideRect(pointerX, pointerY, sidebarRect)) {
       return [collisionFor(SIDEBAR_UNASSIGNED_DROPPABLE_ID, sidebarContainer, 0)];

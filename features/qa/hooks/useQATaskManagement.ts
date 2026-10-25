@@ -8,22 +8,18 @@ import type { Developer } from '@/types';
 import { useCallback } from 'react';
 
 import { getPartsPerDay } from '@/constants';
-import {
-  calculateOccupiedIntervals,
-  findQATaskPlacement,
-} from '@/features/task/utils/autoAssignTasks/utils/intervalUtils';
-import { getTaskPoints } from '@/features/task/utils/taskUtils';
-import { storyPointsToTimeslots } from '@/lib/pointsUtils';
+import { calculateOccupiedIntervals } from '@/features/task/utils/autoAssignTasks/utils/intervalUtils';
 import { DELAYS } from '@/utils/constants';
 
-import { calculateQATaskPosition, calculateQATaskLinkAnchors } from '../utils/qaTaskPlacement';
+import { calculateQATaskLinkAnchors, placeQaPhase } from '../utils/qaTaskPlacement';
 
 interface UseQATaskManagementProps {
-  allTasksForDrag: Task[];
   filteredTaskLinks: TaskLink[];
   filteredTaskPositions: Map<string, TaskPosition>;
   selectedSprintId: number | null;
   sortedDevelopers: Developer[];
+  /** Рабочие дни таймлайна спринта: QA-фаза не выходит за последний слот. */
+  sprintTimelineWorkingDays: number;
   taskPositions: Map<string, TaskPosition>;
   saveLink: (link: TaskLink) => Promise<void>;
   /** Персист фазы QA (кнопка + на dev-карточке и др.) */
@@ -34,7 +30,10 @@ interface UseQATaskManagementProps {
     immediate?: boolean
   ) => Promise<void>;
   setTaskLinks: (updater: (prev: TaskLink[]) => TaskLink[]) => void;
-  setTaskPositions: (updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>) => void;
+  setTaskPositions: (
+    updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>,
+    options?: { recordHistory?: boolean }
+  ) => void;
   updateXarrow: () => void;
 }
 
@@ -45,79 +44,54 @@ export function useQATaskManagement({
   taskPositions,
   filteredTaskPositions,
   filteredTaskLinks,
-  allTasksForDrag,
   sortedDevelopers,
   selectedSprintId,
   savePosition,
+  sprintTimelineWorkingDays,
   setTaskPositions,
   setTaskLinks,
   saveLink,
   updateXarrow,
 }: UseQATaskManagementProps) {
-  /**
-   * Размещает QA-фазу в ближайшем свободном слоте строки выбранного QA (от начала спринта).
-   * Используется при быстром добавлении QA после выбора qaEngineer в пикере.
-   */
-  const placeQATaskAtNearestFreeSlot = useCallback(
-    (qaTask: Task, devTask: Task, devTaskPosition: TaskPosition): boolean => {
+  const timelineTotalCells = Math.max(1, sprintTimelineWorkingDays) * getPartsPerDay();
+
+  /** Ставит QA-фазу по `placeQaPhase`, сохраняет её (с историей) и связывает с dev. */
+  const commitQaPhasePlacement = useCallback(
+    (qaTask: Task, devTask: Task, devTaskPosition: TaskPosition, source: string): boolean => {
       const qaEngineerId = qaTask.assignee;
       if (!qaEngineerId) {
         console.warn('QA задача не имеет assignee', qaTask);
         return false;
       }
-
       if (taskPositions.has(qaTask.id)) {
         return false;
       }
 
-      const developerIds = sortedDevelopers.map((d) => d.id);
-      if (!developerIds.includes(qaEngineerId)) {
-        console.warn('Исполнитель QA не в списке участников спринта', qaEngineerId);
+      const laneIntervals =
+        calculateOccupiedIntervals(filteredTaskPositions, [qaEngineerId]).get(qaEngineerId) ?? [];
+      const qaTaskPosition = placeQaPhase({
+        devPosition: devTaskPosition,
+        laneIntervals,
+        qaTask,
+        totalCells: timelineTotalCells,
+      });
+      if (!qaTaskPosition) {
+        console.warn('Нет свободного места для QA-фазы в спринте после dev', qaTask.id);
         return false;
       }
-
-      const duration = Math.max(1, storyPointsToTimeslots(getTaskPoints(qaTask)));
-      const devTaskEndCell =
-        devTaskPosition.startDay * getPartsPerDay() +
-        devTaskPosition.startPart +
-        devTaskPosition.duration;
-
-      const occupiedIntervals = calculateOccupiedIntervals(filteredTaskPositions, developerIds);
-      const intervals = occupiedIntervals.get(qaEngineerId) ?? [];
-      // Не раньше окончания dev-карточки на таймлайне (учёт длительности разработки)
-      const startCell = findQATaskPlacement(intervals, duration, devTaskEndCell);
-      if (startCell === null) {
-        console.warn('Нет свободного места для QA-фазы у выбранного исполнителя после dev', qaTask.id);
-        return false;
-      }
-
-      const startDay = Math.floor(startCell / getPartsPerDay());
-      const startPart = startCell % getPartsPerDay();
-
-      const qaTaskPosition: TaskPosition = {
-        taskId: qaTask.id,
-        assignee: qaEngineerId,
-        startDay,
-        startPart,
-        duration,
-        plannedStartDay: startDay,
-        plannedStartPart: startPart,
-        plannedDuration: duration,
-      };
 
       setTaskPositions((prev) => {
         const newPositions = new Map(prev);
         newPositions.set(qaTask.id, qaTaskPosition);
         return newPositions;
-      });
+      }, { recordHistory: true });
 
       if (selectedSprintId && savePosition) {
-        const posWithSource = {
-          ...qaTaskPosition,
-          __source: 'useQATaskManagement.placeQATaskAtNearestFreeSlot',
-        } as TaskPosition & { __source: string };
+        const posWithSource = { ...qaTaskPosition, __source: source } as TaskPosition & {
+          __source: string;
+        };
         savePosition(posWithSource, true, devTask.id).catch((err) => {
-          console.error('Error saving QA position (nearest free slot):', err);
+          console.error('Error saving QA position:', err);
         });
       }
 
@@ -129,6 +103,7 @@ export function useQATaskManagement({
         sortedDevelopers
       );
 
+      // Связь — после того как позиции обновятся
       setTimeout(() => {
         const existingLink = filteredTaskLinks.find(
           (link: TaskLink) => link.fromTaskId === devTask.id && link.toTaskId === qaTask.id
@@ -158,107 +133,38 @@ export function useQATaskManagement({
     },
     [
       filteredTaskPositions,
+      filteredTaskLinks,
       sortedDevelopers,
       selectedSprintId,
       taskPositions,
+      timelineTotalCells,
       setTaskPositions,
       setTaskLinks,
       saveLink,
       savePosition,
       updateXarrow,
-      filteredTaskLinks,
     ]
   );
 
   /**
-   * Размещает QA задачу в swimlane
+   * Размещает QA-фазу после выбора qaEngineer в пикере (быстрое добавление QA).
+   * false — исполнитель не на доске или места в спринте нет.
    */
-  const placeQATaskInSwimlane = useCallback(
-    (qaTask: Task, devTask: Task, devTaskPosition: TaskPosition) => {
+  const placeQATaskAtNearestFreeSlot = useCallback(
+    (qaTask: Task, devTask: Task, devTaskPosition: TaskPosition): boolean => {
       const qaEngineerId = qaTask.assignee;
-      if (!qaEngineerId) {
-        console.warn('QA задача не имеет assignee', qaTask);
-        return;
+      if (qaEngineerId && !sortedDevelopers.some((d) => d.id === qaEngineerId)) {
+        console.warn('Исполнитель QA не в списке участников спринта', qaEngineerId);
+        return false;
       }
-
-      try {
-        // Вычисляем позицию для QA задачи используя утилиту
-        const qaTaskPosition = calculateQATaskPosition(
-          qaTask,
-          devTask,
-          devTaskPosition,
-          filteredTaskPositions,
-          allTasksForDrag
-        );
-
-        setTaskPositions((prev) => {
-          const newPositions = new Map(prev);
-          newPositions.set(qaTask.id, qaTaskPosition);
-          return newPositions;
-        });
-
-        if (selectedSprintId && savePosition) {
-          const posWithSource = {
-            ...qaTaskPosition,
-            __source: 'useQATaskManagement.placeQATaskInSwimlane',
-          } as TaskPosition & { __source: string };
-          savePosition(posWithSource, true, devTask.id).catch((err) => {
-            console.error('Error saving QA position (quick add / place):', err);
-          });
-        }
-
-        // Вычисляем якоря для связи используя утилиту
-        const anchors = calculateQATaskLinkAnchors(
-          devTask,
-          devTaskPosition,
-          qaTask,
-          qaTaskPosition,
-          sortedDevelopers
-        );
-
-        // Создаем связь между задачами после небольшой задержки, чтобы позиции обновились
-        setTimeout(() => {
-          // Проверяем, нет ли уже такой связи
-          const existingLink = filteredTaskLinks.find(
-            (link: TaskLink) => link.fromTaskId === devTask.id && link.toTaskId === qaTask.id
-          );
-
-          if (!existingLink) {
-            const newLink: TaskLink = {
-              id: `link-qa-${devTask.id}-${qaTask.id}-${Date.now()}`,
-              fromTaskId: devTask.id,
-              toTaskId: qaTask.id,
-              fromAnchor: anchors.fromAnchor,
-              toAnchor: anchors.toAnchor,
-            };
-
-            setTaskLinks((prev) => [...prev, newLink]);
-            // Сохраняем связь через API (асинхронно)
-            if (selectedSprintId) {
-              saveLink(newLink).catch((error) => {
-                console.error('Error saving link:', error);
-              });
-            }
-          }
-
-          updateXarrow();
-        }, DELAYS.POSITIONING);
-      } catch (error) {
-        console.error('Error placing QA task:', error);
-      }
+      return commitQaPhasePlacement(
+        qaTask,
+        devTask,
+        devTaskPosition,
+        'useQATaskManagement.placeQATaskAtNearestFreeSlot'
+      );
     },
-    [
-      filteredTaskPositions,
-      allTasksForDrag,
-      sortedDevelopers,
-      selectedSprintId,
-      setTaskPositions,
-      setTaskLinks,
-      saveLink,
-      updateXarrow,
-      filteredTaskLinks,
-      savePosition,
-    ]
+    [commitQaPhasePlacement, sortedDevelopers]
   );
 
   /**
@@ -291,13 +197,17 @@ export function useQATaskManagement({
       }
 
       // Размещаем QA задачу в swimlane (она автоматически удалится из сайдбара)
-      placeQATaskInSwimlane(qaTask, devTask, devTaskPosition);
+      commitQaPhasePlacement(
+        qaTask,
+        devTask,
+        devTaskPosition,
+        'useQATaskManagement.createQATask'
+      );
     },
-    [taskPositions, filteredTaskPositions, placeQATaskInSwimlane]
+    [taskPositions, filteredTaskPositions, commitQaPhasePlacement]
   );
 
   return {
-    placeQATaskInSwimlane,
     placeQATaskAtNearestFreeSlot,
     createQATask,
   };

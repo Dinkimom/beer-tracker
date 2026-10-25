@@ -116,6 +116,7 @@ export function useSprintPlannerUIHandlers({
     setTaskLinks,
     setTaskPositions,
     sprintStartDate,
+    sprintTimelineWorkingDays,
     taskPositions,
     tasksMap,
     confirm,

@@ -7,6 +7,7 @@ import type { Task, TaskPosition } from '@/types';
 
 import { useMemo } from 'react';
 
+import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar';
 import { useSwimlaneAutoArrangeStorage } from '@/hooks/useLocalStorage';
 import { resolveActiveDragDurationParts } from '@/lib/layers/application/swimlaneDrag';
 
@@ -64,7 +65,17 @@ export function useDragAndDrop({
     dragState: dragStateApi,
   });
 
+  // Только работа из трекера снимается с плана броском в сайдбар.
+  const canDropOnSidebar = useMemo(() => {
+    const tasksById = new Map(tasks.map((task) => [task.id, task]));
+    return (taskId: string) => {
+      const task = tasksById.get(taskId);
+      return !task || canDropTaskOnSidebar(task);
+    };
+  }, [tasks]);
+
   const { handleDragOver } = useDragOver({
+    canDropOnSidebar,
     tasks,
     taskPositions,
     dragState: dragStateApi,
@@ -73,6 +84,7 @@ export function useDragAndDrop({
   });
 
   const { handleDragEnd } = useDragEnd({
+    canDropOnSidebar,
     tasks,
     taskPositions,
     onBacklogTaskDrop,

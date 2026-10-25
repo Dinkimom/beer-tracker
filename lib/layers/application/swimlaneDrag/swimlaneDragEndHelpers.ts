@@ -193,24 +193,24 @@ export function handleSwimlaneBacklogDrop(input: {
     { manualLayers: input.dragState.manualLayers }
   );
 
-  if (cell && isValidCell(cell, input.workingDaysCount)) {
-    if (cell.layer != null) {
-      input.onLaneLayerDrop?.({
-        position: {
-          assignee: cell.assigneeId,
-          duration: getTaskDuration(input.taskId, input.taskPositions, input.tasks),
-          startDay: cell.day,
-          startPart: cell.part,
-          taskId: input.taskId,
-        },
-        targetTopLayer: cell.layer,
-        taskId: input.taskId,
-      });
-    }
-    input.onBacklogTaskDrop(input.taskId, cell.assigneeId, cell.day, cell.part);
-  } else {
-    input.onBacklogTaskDrop(input.taskId, assigneeId, 0, 0);
+  // Ячейку не определили — дроп отменяется (раньше задача молча вставала в 0,0).
+  if (!cell || !isValidCell(cell, input.workingDaysCount)) {
+    return;
   }
+  if (cell.layer != null) {
+    input.onLaneLayerDrop?.({
+      position: {
+        assignee: cell.assigneeId,
+        duration: getTaskDuration(input.taskId, input.taskPositions, input.tasks),
+        startDay: cell.day,
+        startPart: cell.part,
+        taskId: input.taskId,
+      },
+      targetTopLayer: cell.layer,
+      taskId: input.taskId,
+    });
+  }
+  input.onBacklogTaskDrop(input.taskId, cell.assigneeId, cell.day, cell.part);
 
   requestAnimationFrame(() => {
     input.updateXarrow();

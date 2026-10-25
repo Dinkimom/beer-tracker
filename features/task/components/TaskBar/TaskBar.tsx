@@ -22,6 +22,7 @@ import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatc
 import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
+import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar';
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 import { useRootStore } from '@/lib/layers';
 
@@ -507,6 +508,7 @@ export function TaskBar(props: TaskBarProps) {
     <TaskBarDragBridge
       draggableId={draggableId}
       interactionDisabled={Boolean(props.interactionDisabled || props.disableDragAndResize)}
+      sidebarDropAllowed={canDropTaskOnSidebar(props.task)}
       taskId={props.task.id}
     >
       <TaskBarSurface {...props} draggableId={draggableId} />

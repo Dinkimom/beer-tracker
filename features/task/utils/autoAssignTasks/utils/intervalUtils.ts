@@ -3,8 +3,9 @@
  */
 
 import type { TimeInterval } from '../types';
+import type { TaskPosition } from '@/types';
 
-import { WORKING_DAYS, getPartsPerDay } from '@/constants';
+import { getPositionSegmentRanges } from '@/lib/planner-timeline';
 
 import {
   findPlacementAfterLastInterval,
@@ -19,10 +20,11 @@ export function intervalsIntersect(a: TimeInterval, b: TimeInterval): boolean {
 }
 
 /**
- * Вычисляет занятые интервалы для каждого разработчика на основе позиций задач
+ * Вычисляет занятые интервалы для каждого разработчика на основе позиций задач.
+ * У позиции с отрезками занято каждое окно отдельно: пробелы между ними свободны.
  */
 export function calculateOccupiedIntervals(
-  positions: Map<string, { assignee: string; startDay: number; startPart: number; duration: number }>,
+  positions: Map<string, TaskPosition>,
   developerIds: string[]
 ): Map<string, TimeInterval[]> {
   const occupiedIntervals = new Map<string, TimeInterval[]>();
@@ -33,9 +35,9 @@ export function calculateOccupiedIntervals(
 
   positions.forEach((position) => {
     const intervals = occupiedIntervals.get(position.assignee) || [];
-    const startCell = position.startDay * getPartsPerDay() + position.startPart;
-    const endCell = startCell + position.duration;
-    intervals.push({ start: startCell, end: endCell });
+    for (const range of getPositionSegmentRanges(position)) {
+      intervals.push({ start: range.startCell, end: range.endCell });
+    }
     occupiedIntervals.set(position.assignee, intervals);
   });
 
@@ -50,8 +52,8 @@ export function calculateOccupiedIntervals(
 export function findNextAvailableCell(
   intervals: TimeInterval[],
   taskDuration: number,
-  currentCell: number = 0,
-  maxEndCell: number = WORKING_DAYS * getPartsPerDay()
+  currentCell: number,
+  maxEndCell: number
 ): number | null {
   const minStartCell = Math.max(0, currentCell);
 
@@ -84,40 +86,21 @@ export function findNextAvailableCell(
 }
 
 /**
- * Находит свободное место для QA задачи после dev задачи
+ * Первое свободное окно длиной `taskDuration` не раньше `minStartCell`
+ * (зазоры между занятыми интервалами тоже подходят). null — не помещается до `maxEndCell`.
  */
-export function findQATaskPlacement(
-  intervals: TimeInterval[],
+export function findFirstFreeCell(
+  intervals: readonly TimeInterval[],
   taskDuration: number,
-  minStartCell: number
+  minStartCell: number,
+  maxEndCell: number
 ): number | null {
-  const maxEndCell = WORKING_DAYS * getPartsPerDay();
-
-  if (minStartCell + taskDuration > maxEndCell) {
-    return null;
+  let candidate = Math.max(0, minStartCell);
+  const sorted = [...intervals].sort((a, b) => a.start - b.start);
+  for (const interval of sorted) {
+    if (interval.end <= candidate) continue;
+    if (candidate + taskDuration <= interval.start) break;
+    candidate = interval.end;
   }
-
-  const relevantIntervals = intervals.filter((interval) => interval.end > minStartCell);
-
-  if (relevantIntervals.length === 0) {
-    return minStartCell;
-  }
-
-  const sorted = [...relevantIntervals].sort((a, b) => a.start - b.start);
-
-  if (minStartCell + taskDuration <= sorted[0].start) {
-    return minStartCell;
-  }
-
-  const afterLast = findPlacementAfterLastInterval(
-    sorted,
-    taskDuration,
-    minStartCell,
-    maxEndCell
-  );
-  if (afterLast != null) {
-    return afterLast;
-  }
-
-  return findPlacementBetweenIntervals(sorted, taskDuration, minStartCell);
+  return candidate + taskDuration <= maxEndCell ? candidate : null;
 }

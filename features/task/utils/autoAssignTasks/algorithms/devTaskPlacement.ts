@@ -6,6 +6,7 @@ import type { TimeInterval } from '../types';
 import type { Task, TaskPosition, Developer } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
+import { storyPointsToTimeslots } from '@/lib/pointsUtils';
 
 import { getTaskPoints } from '../../taskUtils';
 import { findNextAvailableCell } from '../utils/intervalUtils';
@@ -18,7 +19,8 @@ export function placeDevTasks(
   developers: Developer[],
   occupiedIntervals: Map<string, TimeInterval[]>,
   devWorkload: Map<string, number>,
-  currentCell: number
+  currentCell: number,
+  totalCells: number
 ): Map<string, TaskPosition> {
   const newPositions = new Map<string, TaskPosition>();
 
@@ -34,11 +36,12 @@ export function placeDevTasks(
     }
 
     const taskPoints = getTaskPoints(task);
-    const taskDuration = taskPoints; // Длительность в частях дня = story points
+    // Длительность в таймслотах — SP через шкалу организации
+    const taskDuration = Math.max(1, storyPointsToTimeslots(taskPoints));
 
     // Размещаем задачу у выбранного участника
     const intervals = occupiedIntervals.get(bestDeveloper.id) || [];
-    const startCell = findNextAvailableCell(intervals, taskDuration, currentCell);
+    const startCell = findNextAvailableCell(intervals, taskDuration, currentCell, totalCells);
 
     // Проверяем, что задача поместится
     if (startCell === null) {

@@ -33,6 +33,7 @@ interface UseSprintPlannerAutoAssignHandlersProps {
   resetDragStateRef: MutableRefObject<(() => void) | null>;
   selectedSprintId: number | null;
   sprintStartDate: Date;
+  sprintTimelineWorkingDays: number;
   taskPositions: Map<string, TaskPosition>;
   tasksMap: Map<string, Task>;
   confirm: (message: string, options?: {
@@ -64,6 +65,7 @@ export function useSprintPlannerAutoAssignHandlers({
   setTaskLinks,
   setTaskPositions,
   sprintStartDate,
+  sprintTimelineWorkingDays,
   taskPositions,
   tasksMap,
   confirm,
@@ -85,14 +87,16 @@ export function useSprintPlannerAutoAssignHandlers({
     setTaskPositions(() => new Map());
     setTaskLinks(() => []);
 
-    const currentCell = getCurrentSprintCell(sprintStartDate, getPartsPerDay());
+    const partsPerDay = getPartsPerDay();
+    const currentCell = getCurrentSprintCell(sprintStartDate, partsPerDay, sprintTimelineWorkingDays);
     const result = autoAssignTasks(
       allTasksForDrag,
       developersManagement.sortedDevelopers,
       new Map(),
       qaTasksMap,
       [],
-      currentCell
+      currentCell,
+      Math.max(1, sprintTimelineWorkingDays) * partsPerDay
     );
 
     setTaskPositions(() => result.positions);
@@ -135,6 +139,7 @@ export function useSprintPlannerAutoAssignHandlers({
     setTaskPositions,
     setTaskLinks,
     sprintStartDate,
+    sprintTimelineWorkingDays,
     allTasksForDrag,
     developersManagement.sortedDevelopers,
     qaTasksMap,

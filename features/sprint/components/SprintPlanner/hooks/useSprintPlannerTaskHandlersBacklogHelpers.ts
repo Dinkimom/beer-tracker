@@ -1,27 +1,43 @@
 import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { Task, TaskPosition } from '@/types';
 
+import { getPartsPerDay } from '@/constants';
 import { getTaskPoints } from '@/features/task/utils/taskUtils';
 import { addIssueToSprint } from '@/lib/beerTrackerApi';
 import { storyPointsToTimeslots } from '@/lib/pointsUtils';
+import {
+  clampSwimlaneStartCell,
+  swimlaneCellFromStartCell,
+} from '@/lib/swimlane/clampSwimlaneStartCell';
 import { DELAYS } from '@/utils/constants';
 
+/**
+ * Позиция задачи из бэклога: длина — SP через шкалу; старт сдвигается влево,
+ * чтобы карточка целиком осталась в спринте (`totalCells`).
+ */
 export function buildBacklogDropPosition(
   taskId: string,
   assigneeId: string,
   day: number,
   part: number,
-  sidebarTask: Task
+  sidebarTask: Task,
+  totalCells: number
 ): TaskPosition {
-  const calculatedDuration = Math.max(1, storyPointsToTimeslots(getTaskPoints(sidebarTask)));
+  const partsPerDay = getPartsPerDay();
+  const calculatedDuration = Math.min(
+    Math.max(1, storyPointsToTimeslots(getTaskPoints(sidebarTask))),
+    Math.max(1, totalCells)
+  );
+  const startCell = clampSwimlaneStartCell(day * partsPerDay + part, calculatedDuration, totalCells);
+  const { day: startDay, part: startPart } = swimlaneCellFromStartCell(startCell, partsPerDay);
   return {
     taskId,
     assignee: assigneeId,
-    startDay: day,
-    startPart: part,
+    startDay,
+    startPart,
     duration: calculatedDuration,
-    plannedStartDay: day,
-    plannedStartPart: part,
+    plannedStartDay: startDay,
+    plannedStartPart: startPart,
     plannedDuration: calculatedDuration,
   };
 }
@@ -43,13 +59,6 @@ export function finalizeBacklogTaskDrop(input: {
 
 export function applyBacklogTaskDropToState(input: {
   assigneeId: string;
-  buildBacklogDropPosition: (
-    taskId: string,
-    assigneeId: string,
-    day: number,
-    part: number,
-    sidebarTask: Task
-  ) => TaskPosition;
   day: number;
   historyOptions?: PositionHistoryOptions;
   part: number;
@@ -65,16 +74,18 @@ export function applyBacklogTaskDropToState(input: {
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
   sidebarTask: Task;
   taskId: string;
+  totalCells: number;
 }): void {
   input.setTasks((prev) => (prev.find((t) => t.id === input.taskId) ? prev : [...prev, input.sidebarTask]));
 
   const isQa = input.sidebarTask.team === 'QA';
-  const position = input.buildBacklogDropPosition(
+  const position = buildBacklogDropPosition(
     input.taskId,
     input.assigneeId,
     input.day,
     input.part,
-    input.sidebarTask
+    input.sidebarTask,
+    input.totalCells
   );
   input.setTaskPositions((prev) => {
     const newPositions = new Map(prev);

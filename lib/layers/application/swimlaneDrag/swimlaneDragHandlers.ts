@@ -70,6 +70,7 @@ function clearHoveredCellIfNeeded(dragState: SwimlaneDragStateApi): void {
 function processSwimlaneDragOverEvent(
   event: DragMoveEvent,
   params: {
+    canDropOnSidebar?: (taskId: string) => boolean;
     dragContextRef?: DragContextRef | null;
     dragState: SwimlaneDragStateApi;
     taskPositions: Map<string, TaskPosition>;
@@ -89,7 +90,8 @@ function processSwimlaneDragOverEvent(
     return;
   }
 
-  if (updateSidebarDropPreview(event, dragState, dragContextRef)) {
+  const sidebarDropAllowed = params.canDropOnSidebar?.(activeTaskId) ?? true;
+  if (updateSidebarDropPreview(event, dragState, dragContextRef, sidebarDropAllowed)) {
     clearHoveredCellIfNeeded(dragState);
     return;
   }
@@ -98,6 +100,7 @@ function processSwimlaneDragOverEvent(
 }
 
 export function createSwimlaneDragOverHandler(params: {
+  canDropOnSidebar?: (taskId: string) => boolean;
   dragContextRef?: DragContextRef | null;
   dragState: SwimlaneDragStateApi;
   swimlaneTimelineWorkingDays?: number;
@@ -117,6 +120,11 @@ interface SwimlaneDragEndHandlerParams {
   swimlaneTimelineWorkingDays?: number;
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
+  /**
+   * false — карточку нельзя снять с плана в сайдбар (заметка, фото, черновик):
+   * бросок над сайдбаром отменяется, карточка остаётся на месте. Нет колбэка — можно всем.
+   */
+  canDropOnSidebar?: (taskId: string) => boolean;
   onBacklogTaskDrop?: (taskId: string, assigneeId: string, day: number, part: number) => void;
   /**
    * Ручной слой после дропа: вызывается до `onPositionUpdate`, чтобы слой и позиция
@@ -144,6 +152,10 @@ function tryHandleSwimlaneDragEndDrop(
   overId: string
 ): boolean {
   if (isSwimlaneSidebarDropTarget(event, params.dragState, params.dragContextRef)) {
+    if (params.canDropOnSidebar && !params.canDropOnSidebar(taskId)) {
+      // Как бросок мимо: без удаления позиции и шага истории.
+      return true;
+    }
     handleSwimlaneSidebarDrop({
       dragState: params.dragState,
       onPositionDelete: params.onPositionDelete,

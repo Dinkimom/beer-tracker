@@ -5,10 +5,15 @@ import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core'
 import { calculateCellFromDragEvent } from './swimlaneDragPositionCalculation';
 import { resolveSidebarDropTargetFromDragEvent } from './swimlaneSidebarDropTarget';
 
+/**
+ * Превью дропа в сайдбар. true — курсор над сайдбаром (ячейку свимлейна не считаем).
+ * Для карточки, которую нельзя снять с плана (`sidebarDropAllowed === false`), подсветки нет.
+ */
 export function updateSidebarDropPreview(
   event: DragMoveEvent,
   dragState: SwimlaneDragStateApi,
-  dragContextRef?: DragContextRef | null
+  dragContextRef?: DragContextRef | null,
+  sidebarDropAllowed = true
 ): boolean {
   const ctx = dragContextRef?.current ?? null;
   const targetingSidebar = resolveSidebarDropTargetFromDragEvent(
@@ -17,9 +22,10 @@ export function updateSidebarDropPreview(
     ctx
   );
   const pointerY = dragState.mousePositionRef.current?.y ?? null;
+  const active = targetingSidebar && sidebarDropAllowed;
   dragState.setSidebarDropPreview({
-    active: targetingSidebar,
-    pointerY: targetingSidebar ? pointerY : null,
+    active,
+    pointerY: active ? pointerY : null,
   });
   return targetingSidebar;
 }

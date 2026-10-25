@@ -18,6 +18,7 @@ interface UseDragEndProps {
   swimlaneTimelineWorkingDays?: number;
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
+  canDropOnSidebar?: (taskId: string) => boolean;
   onBacklogTaskDrop?: (taskId: string, assigneeId: string, day: number, part: number) => void;
   onLaneLayerDrop?: (input: { position: TaskPosition; targetTopLayer: number; taskId: string }) => void;
   onPositionDelete: (taskId: string) => void;

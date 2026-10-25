@@ -46,6 +46,7 @@ describe('pickSwimlaneDroppableByPointer', () => {
 describe('sprintPlannerCollisionDetection', () => {
   function makeArgs(input: {
     kind?: string;
+    sidebarDrop?: boolean;
     pointerX: number;
     pointerY: number;
   }) {
@@ -79,7 +80,12 @@ describe('sprintPlannerCollisionDetection', () => {
     return {
       active: {
         id: 'TASK-1',
-        data: { current: input.kind ? { kind: input.kind } : { kind: 'swimlane-task' } },
+        data: {
+          current: {
+            kind: input.kind ?? 'swimlane-task',
+            ...(input.sidebarDrop === undefined ? {} : { sidebarDrop: input.sidebarDrop }),
+          },
+        },
         rect: { current: { initial: null, translated: null } },
       },
       collisionRect: rect(input.pointerY - 10, input.pointerY + 10, input.pointerX - 10, input.pointerX + 10),
@@ -108,5 +114,12 @@ describe('sprintPlannerCollisionDetection', () => {
       makeArgs({ pointerX: 700, pointerY: 150 })
     );
     expect(collisions.map((c) => c.id)).toEqual(['swimlane-b']);
+  });
+
+  it('never targets the sidebar for a card that cannot be dropped there', () => {
+    const collisions = sprintPlannerCollisionDetection(
+      makeArgs({ pointerX: 900, pointerY: 400, sidebarDrop: false })
+    );
+    expect(collisions.map((c) => c.id)).not.toContain(SIDEBAR_UNASSIGNED_DROPPABLE_ID);
   });
 });

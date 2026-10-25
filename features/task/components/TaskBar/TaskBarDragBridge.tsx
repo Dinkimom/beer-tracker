@@ -36,6 +36,8 @@ interface TaskBarDragBridgeProps {
   children: ReactNode;
   draggableId: string;
   interactionDisabled: boolean;
+  /** false — заметка/фото/черновик: сайдбар не подсвечивается и не принимает карточку. */
+  sidebarDropAllowed: boolean;
   taskId: string;
 }
 
@@ -43,6 +45,7 @@ export function TaskBarDragBridge({
   children,
   draggableId,
   interactionDisabled,
+  sidebarDropAllowed,
   taskId,
 }: TaskBarDragBridgeProps) {
   const [ownDragActive, setOwnDragActive] = useState(false);
@@ -53,7 +56,7 @@ export function TaskBarDragBridge({
       interactionDisabled ||
       sprintCardPresenceBlocksNewGestures(presenceLocked, ownDragActive) ||
       isOnboardingSampleTaskId(taskId),
-    data: { kind: SWIMLANE_TASK_DRAG_DATA_KIND },
+    data: { kind: SWIMLANE_TASK_DRAG_DATA_KIND, sidebarDrop: sidebarDropAllowed },
   });
 
   useEffect(() => {

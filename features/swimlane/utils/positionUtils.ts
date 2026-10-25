@@ -57,8 +57,8 @@ export function resizeSwimlanePlanSegment(
   position: TaskPosition,
   segmentIndex: number,
   newDuration: number,
-  newStartCell?: number,
-  totalCells: number = WORKING_DAYS * getPartsPerDay()
+  newStartCell: number | undefined,
+  totalCells: number
 ): TaskPosition | null {
   if (!position.segments?.length) return null;
   const ordered = getOrderedPlanSegments(position);

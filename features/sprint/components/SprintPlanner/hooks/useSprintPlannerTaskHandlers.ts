@@ -19,7 +19,6 @@ import { handleTaskResizeAfterResize } from './sprintPlannerTaskHandlersResizeHe
 import { runAutoAddToSwimlane } from './useSprintPlannerTaskHandlersAutoAddHelpers';
 import {
   applyBacklogTaskDropToState,
-  buildBacklogDropPosition,
   finalizeBacklogTaskDrop,
 } from './useSprintPlannerTaskHandlersBacklogHelpers';
 
@@ -127,7 +126,6 @@ export function useSprintPlannerTaskHandlers({
 
       applyBacklogTaskDropToState({
         assigneeId,
-        buildBacklogDropPosition,
         day,
         historyOptions,
         part,
@@ -136,6 +134,7 @@ export function useSprintPlannerTaskHandlers({
         setTasks,
         sidebarTask,
         taskId,
+        totalCells: timelineTotalCells,
       });
 
       finalizeBacklogTaskDrop({
@@ -145,7 +144,7 @@ export function useSprintPlannerTaskHandlers({
         taskId,
       });
     },
-    [selectedSprintId, setTasks, setTaskPositions, savePosition, debouncedUpdateXarrow, backlogTaskRef, slaBugsTasks]
+    [selectedSprintId, setTasks, setTaskPositions, savePosition, debouncedUpdateXarrow, backlogTaskRef, slaBugsTasks, timelineTotalCells]
   );
 
   // Обработчик обновления позиции задачи при перетаскивании
@@ -247,11 +246,13 @@ export function useSprintPlannerTaskHandlers({
         setTaskPositions,
         savePosition,
         debouncedUpdateXarrow,
+        timelineTotalCells,
       });
     },
     [
       selectedSprintId,
       filteredTaskPositions,
+      timelineTotalCells,
       developers,
       setTaskPositions,
       savePosition,
