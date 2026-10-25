@@ -28,7 +28,6 @@
 | Changelog задачи | `/issues/[issueKey]/changelog` | Кэш `issue_changelog_events`, при промахе — Tracker (changelog / comments) с записью в кэш |
 | Changelog batch | `/issues/changelog` | Только кэш `issue_changelog_events` |
 | Статусы родителей | `/issues/parent-statuses` | `issue_snapshots` (batch) + tenant |
-| SLA-баги | `/boards/[boardId]/sla-bugs`, `/issues/[issueKey]/sla-bug-close-action`, `/issues/[issueKey]/hd-weekly-heatmap` | Tracker + PostgreSQL (команда доски, счётчики HD); heatmap — только PostgreSQL |
 | Бэклог | `/backlog` | `issue_snapshots` + `teams`/`staff`/`team_members` (мердж разработчиков) + tenant |
 | Доски | `/boards` | PostgreSQL `teams` (доски команд, видимые профилю) |
 | Параметры доски | `/boards/[boardId]` | Tracker (серверный кэш) |

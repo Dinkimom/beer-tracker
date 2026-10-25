@@ -11,7 +11,7 @@
 
 **Beer Tracker** (в UI — «Трекер» / Sprint Manager) — веб-приложение для **планирования спринтов поверх внешнего issue tracker**: **Яндекс Трекер** или **Jira** (Cloud / Data Center). Провайдер выбирается на организацию и хранится в БД — см. [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md).
 
-Оно **не заменяет** трекер как систему учёта задач. Задачи, статусы, спринты и доски живут во внешнем трекере; приложение даёт визуальный планер (свимлейн, бэклог, burndown, ретро, метрики, цели, SLA-баги) с сохранением позиций, заметок и планов в собственной PostgreSQL, а также MCP-доступ для внешнего агента (Claude, Cursor…), который предлагает правки плана.
+Оно **не заменяет** трекер как систему учёта задач. Задачи, статусы, спринты и доски живут во внешнем трекере; приложение даёт визуальный планер (свимлейн, бэклог, burndown, ретро, метрики, цели) с сохранением позиций, заметок и планов в собственной PostgreSQL, а также MCP-доступ для внешнего агента (Claude, Cursor…), который предлагает правки плана.
 
 ---
 
@@ -101,15 +101,6 @@
 | **Дейли** | Заметки по дням спринта (хранятся только в браузере) |
 | **Метрики** | Объём по статусам и исполнителям |
 | **Бэклог** | Задачи вне спринта (в контексте сайдбара) |
-| **Баги** | Очередь открытых **SLA-багов** команды доски |
-
-#### Вкладка «Баги» (SLA)
-
-- Открытые bug P0–P4 продуктовой команды доски; уже стоящие на свимлейне скрываются
-- Секции: **Брать сейчас** → **Разобрать** → **Следить** → **Обычные**
-- Сигналы риска на карточках, метрики SLA, heatmap обращений HD (overseer)
-- Сводка и графики по приоритетам  
-Подробнее: [SLA_BUGS_TAB.md](./SLA_BUGS_TAB.md), [SLA_BUGS_SIGNALS.md](./SLA_BUGS_SIGNALS.md).
 
 ---
 
@@ -259,7 +250,7 @@ features/ / components/ / hooks/
         → lib/<domain>/        (repositories, оркестрация, SQL)
 ```
 
-**Feature-домены** (`features/`): `sprint`, `swimlane`, `task`, `sidebar`, `comments`, `backlog`, `burndown`, `retro`, `sprint-metrics`, `sla-bugs`, `context-menu`, `notifications`, `account`, `board`, `qa`, `admin`, `widgets`, …
+**Feature-домены** (`features/`): `sprint`, `swimlane`, `task`, `sidebar`, `comments`, `backlog`, `burndown`, `retro`, `sprint-metrics`, `context-menu`, `notifications`, `account`, `board`, `qa`, `admin`, `widgets`, …
 
 **Состояние планера:**
 
@@ -278,13 +269,12 @@ features/ / components/ / hooks/
 | `/api/sprints` | Спринты |
 | `/api/tracker` | Задачи спринта |
 | `/api/backlog` | Бэклог |
-| `/api/issues/[issueKey]` | Задача, heatmap HD и др. |
+| `/api/issues/[issueKey]` | Задача, переходы, связи и др. |
 | `/api/features` | Фичи (deprecated) |
 | `/api/quarterly-plans/availability/board-events` | События доступности (URL исторический) |
 | `/api/sprint-goals` | Цели спринта |
 | `/api/sprints/[sprintId]/sprint-context` | Контекст спринта для агента |
 | `/api/mcp` | Удалённый MCP-сервер |
-| `/api/boards/[boardId]/sla-bugs` | SLA-баги |
 | `/api/teams/members` | Участники |
 | `/api/admin/*`, `/api/auth/*` | Админка и сессии |
 | `/api/internal/sync/tick` | Cron incremental sync |
@@ -358,7 +348,6 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm lint:unused
 | Детальный список UI-функций | [CAPABILITIES.md](./CAPABILITIES.md) |
 | Индекс всей документации | [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md) |
 | Product / tech steering | [steering/product.md](./steering/product.md), [steering/tech.md](./steering/tech.md) |
-| SLA-баги | [SLA_BUGS_TAB.md](./SLA_BUGS_TAB.md) |
 | Фазы / сегменты | [PHASE_SEGMENTS_FEATURE.md](./PHASE_SEGMENTS_FEATURE.md) |
 | Контекст спринта / MCP | [SPRINT_CONTEXT.md](./SPRINT_CONTEXT.md) |
 | Быстрый старт | [README.md](../README.md) |

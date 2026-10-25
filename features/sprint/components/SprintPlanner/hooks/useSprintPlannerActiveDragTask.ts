@@ -18,14 +18,12 @@ interface UseSprintPlannerActiveDragTaskParams {
     getTask: (taskId: string) => Task | undefined;
     removeTask: (taskId: string) => void;
   } | null>;
-  slaBugsTasks: Task[] | undefined;
 }
 
 export function useSprintPlannerActiveDragTask({
   activeTaskId,
   allTasksForDrag,
   backlogTaskRef,
-  slaBugsTasks,
 }: UseSprintPlannerActiveDragTaskParams) {
   const noteEditPreview = useRootStore().sprintPlannerUi.noteEditPreview;
   const queryClient = useQueryClient();
@@ -45,8 +43,7 @@ export function useSprintPlannerActiveDragTask({
       // Backlog ref is wired by SidebarSection after mount; same resolution as pre-refactor SprintPlanner.
       // eslint-disable-next-line react-hooks/refs -- drag overlay must resolve backlog tasks by id
       backlogTaskRef.current?.getTask(activeTaskId) ??
-      slaBugsTasks?.find((t) => t.id === activeTaskId) ??
       null;
     return task ? resolveTaskWithNoteEditPreview(task, noteEditPreview) : null;
-  }, [activeTaskId, allTasksForDrag, backlogTaskRef, noteEditPreview, queryClient, slaBugsTasks]);
+  }, [activeTaskId, allTasksForDrag, backlogTaskRef, noteEditPreview, queryClient]);
 }

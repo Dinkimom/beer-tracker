@@ -8,7 +8,6 @@ import { useDroppable } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
 import {
   collectBacklogFilterPeople,
   filterTasksByAssignees,
@@ -29,12 +28,10 @@ import { TaskSidebarContext } from '@/features/sidebar/contexts/TaskSidebarConte
 import { useBacklogManagement } from '@/features/sidebar/hooks/useBacklogManagement';
 import { useSidebarHeaderTabs } from '@/features/sidebar/hooks/useSidebarHeaderTabs';
 import { useSidebarTabsState } from '@/features/sidebar/hooks/useSidebarTabsState';
-import { useSlaBugs } from '@/features/sla-bugs/hooks/useSlaBugs';
 import { useSprintGoalManagement } from '@/features/sprint/hooks/useSprintGoalManagement';
 import { collectInvalidSprintDevTasks } from '@/features/sprint/utils/sprintStartChecks';
 import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
 import { useTaskGrouping } from '@/features/task/hooks/useTaskGrouping';
-import { filterTasksNotOnSwimlane } from '@/features/task/utils/filterTasksNotOnSwimlane';
 import { useSidebarGroupByStorage, useSidebarStatusFilterStorage, useSidebarTabsSettingsStorage } from '@/hooks/useLocalStorage';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
 
@@ -139,7 +136,6 @@ export function TaskSidebar({
   onAutoAddToSwimlane,
   sidebarDropTargetActive = false,
 }: TaskSidebarProps) {
-  const { supportsSlaBugs } = useIssueTrackerProviderCapabilities();
   const { setNodeRef, isOver } = useDroppable({
     id: 'sidebar-unassigned',
   });
@@ -243,15 +239,6 @@ export function TaskSidebar({
     developers: developersForGrouping,
     sortedDevelopers: developersManagement?.sortedDevelopers,
   });
-  const { data: slaBugsData } = useSlaBugs(
-    selectedBoardId,
-    supportsSlaBugs && mainTab === 'bugs'
-  );
-  const bugsTasksCount = filterTasksNotOnSwimlane(
-    slaBugsData?.tasks ?? [],
-    taskPositions,
-    selectedSprintId
-  ).length;
 
   const contextValue: TaskSidebarContextValue = buildTaskSidebarContextValue({
     activeTab,
@@ -325,7 +312,6 @@ export function TaskSidebar({
     hideBacklogTab,
     hideTasksTab,
     invalidTasksCount: invalidTasks.length,
-    bugsTasksCount,
     sidebarTabsSettings,
     sprintInfo: resolveSidebarHeaderSprintInfo(sprintInfo),
   });

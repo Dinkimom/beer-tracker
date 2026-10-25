@@ -60,7 +60,6 @@ export function useFeatureLanePlannerDrag(input: {
   } | null>;
   handlers: FeatureLanePlannerDragHandlers;
   selectedSprintId: number | null;
-  slaBugsTasks: Task[] | undefined;
   taskPositions: Map<string, TaskPosition>;
   tasksMap: Map<string, Task>;
   viewMode: BoardViewMode;
@@ -150,7 +149,6 @@ export function useFeatureLanePlannerDrag(input: {
       const sidebarTask = overlayFeatureLaneDraftParents(
         [
           input.backlogTaskRef.current?.getTask(taskId) ??
-            input.slaBugsTasks?.find((item) => item.id === taskId) ??
             tasksMapForLanes.get(taskId),
         ].filter((task): task is Task => Boolean(task)),
         featureLanes
@@ -167,7 +165,7 @@ export function useFeatureLanePlannerDrag(input: {
         onParentChange: input.handlers.handleParentChange,
       });
     },
-    [featureLanes, input.backlogTaskRef, input.handlers, input.slaBugsTasks, input.viewMode, projection, t, tasksMapForLanes]
+    [featureLanes, input.backlogTaskRef, input.handlers, input.viewMode, projection, t, tasksMapForLanes]
   );
 
   return { handleBacklogTaskDrop, handlePositionUpdate };

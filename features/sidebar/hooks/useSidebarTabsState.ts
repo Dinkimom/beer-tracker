@@ -5,14 +5,12 @@ import type { SidebarTasksTab } from '@/types';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
-import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
 import { hrefWithSearchParams } from '@/features/sidebar/utils/hrefWithSearchParams';
 
 import { resolveHiddenSidebarTabFallback } from './useSidebarHeaderTabsHelpers';
 
 export type SidebarMainTab =
   | 'backlog'
-  | 'bugs'
   | 'daily'
   | 'goals'
   | 'invalid'
@@ -30,7 +28,6 @@ function getMainTabFromSearchParams(
   const tabParam = searchParams.get('sidebarTab');
   if (
     tabParam === 'backlog' ||
-    tabParam === 'bugs' ||
     tabParam === 'daily' ||
     tabParam === 'goals' ||
     tabParam === 'invalid' ||
@@ -59,7 +56,6 @@ export function useSidebarTabsState({
   hideBacklogTab = false,
   hideTasksTab = false,
 }: UseSidebarTabsStateProps = {}) {
-  const { supportsSlaBugs } = useIssueTrackerProviderCapabilities();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -81,7 +77,6 @@ export function useSidebarTabsState({
 
   useEffect(() => {
     const fallbackTab = resolveHiddenSidebarTabFallback({
-      bugsTabEnabled: supportsSlaBugs,
       hideBacklogTab,
       hideTasksTab,
       mainTab,
@@ -94,7 +89,7 @@ export function useSidebarTabsState({
     params.set('sidebarTab', fallbackTab);
     router.replace(hrefWithSearchParams(pathname, params), { scroll: false });
     startTransition(() => setMainTabState(fallbackTab));
-  }, [hideTasksTab, hideBacklogTab, mainTab, pathname, router, searchParams, supportsSlaBugs]);
+  }, [hideTasksTab, hideBacklogTab, mainTab, pathname, router, searchParams]);
 
   useEffect(() => {
     if (isUserChangingTabRef.current) {

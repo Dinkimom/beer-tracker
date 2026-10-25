@@ -29,7 +29,6 @@ describe('issueTrackerUi', () => {
       supportsQueryLanguageSearch: false,
       supportsRelatedIssues: false,
       supportsScreenCatalog: false,
-      supportsSlaBugs: false,
     });
     expect(issueTrackerProviderCapabilities('tracker')).toEqual({
       supportsChecklists: true,
@@ -39,7 +38,6 @@ describe('issueTrackerUi', () => {
       supportsQueryLanguageSearch: true,
       supportsRelatedIssues: true,
       supportsScreenCatalog: true,
-      supportsSlaBugs: true,
     });
   });
 

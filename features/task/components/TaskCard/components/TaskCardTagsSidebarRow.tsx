@@ -1,6 +1,5 @@
 'use client';
 
-import type { SlaBugDemoteReason, SlaBugLabelKey } from '@/lib/slaBugs';
 import type { Task } from '@/types';
 
 import { StatusTag } from '@/components/StatusTag';
@@ -9,18 +8,14 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { getIncidentSeverityTagClasses } from '@/features/task/utils/incidentSeverityBadgeClasses';
 import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
-import { SlaBugSignalTag } from './SlaBugSignalTag';
 
 interface TaskCardTagsSidebarRowProps {
   dangerousReleaseColorClasses: string;
   dangerousReleaseValue: string | undefined;
   hideTestPoints: boolean;
-  inlineLayout: boolean;
   showDangerousReleaseInsteadOfStatus: boolean;
   showStoryPoints: boolean;
   showTestPoints: boolean;
-  slaBugDemoteReason?: SlaBugDemoteReason;
-  slaBugSignalLabel?: SlaBugLabelKey;
   spText: string;
   tagTextSize: string;
   task: Task;
@@ -31,24 +26,17 @@ export function TaskCardTagsSidebarRow({
   dangerousReleaseColorClasses,
   dangerousReleaseValue,
   hideTestPoints,
-  inlineLayout,
   showStoryPoints,
   showTestPoints,
   showDangerousReleaseInsteadOfStatus,
-  slaBugDemoteReason,
-  slaBugSignalLabel,
   spText,
   tagTextSize,
   task,
   tpText,
 }: TaskCardTagsSidebarRowProps) {
   const { t } = useI18n();
-  const tagsRowClass = inlineLayout
-    ? 'flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0'
-    : 'flex items-center gap-2 min-w-0 overflow-hidden';
-
   return (
-    <div className={tagsRowClass}>
+    <div className="flex items-center gap-2 min-w-0 overflow-hidden">
       {showDangerousReleaseInsteadOfStatus ? (
         <span
           className={`text-[12px] font-semibold leading-none whitespace-nowrap px-1.5 py-0.5 rounded shrink-0 border ${dangerousReleaseColorClasses}`}
@@ -77,23 +65,6 @@ export function TaskCardTagsSidebarRow({
           <>
             {showStoryPoints ? <span className="mx-1">·</span> : null}
             <span>{tpText}</span>
-          </>
-        ) : null}
-        {slaBugSignalLabel ? (
-          <>
-            {showStoryPoints || (showTestPoints && !hideTestPoints) ? (
-              <span className="mx-1">·</span>
-            ) : null}
-            <SlaBugSignalTag
-              createdAt={task.createdAt}
-              demoteReason={slaBugDemoteReason}
-              hdCount={task.hdCount}
-              incidentSeverity={task.incidentSeverity}
-              issueKey={task.id}
-              label={slaBugSignalLabel}
-              lastHdAt={task.lastHdAt}
-              slaDeadline={task.slaDeadline}
-            />
           </>
         ) : null}
       </div>

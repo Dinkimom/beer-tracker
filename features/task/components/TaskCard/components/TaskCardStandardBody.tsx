@@ -2,7 +2,6 @@ import type {
   PlanningPhaseCardColorScheme,
   SwimlaneCardFieldsVisibility,
 } from '@/hooks/useLocalStorage';
-import type { SlaBugDemoteReason, SlaBugLabelKey } from '@/lib/slaBugs';
 import type { Developer, Task, TaskCardVariant, TaskPosition } from '@/types';
 
 import React from 'react';
@@ -13,7 +12,7 @@ import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 import { TaskCardBody } from './TaskCardBody';
 import { TaskCardExtraSplitOverlay } from './TaskCardExtraSplitOverlay';
 import { TaskCardSprintBadges } from './TaskCardSprintBadges';
-import { TaskCardStandardBodyTags } from './TaskCardStandardBodyTags';
+import { TaskCardTags } from './TaskCardTags';
 
 interface TaskCardStandardBodyProps {
   actualDuration: number;
@@ -47,10 +46,6 @@ interface TaskCardStandardBodyProps {
   rightPercent: number;
   showDangerousReleaseInsteadOfStatus?: boolean;
   showExtraSplit: boolean;
-  slaBugBoardId?: number | null;
-  slaBugCloseP4ActionsEnabled?: boolean;
-  slaBugDemoteReason?: SlaBugDemoteReason;
-  slaBugSignalLabel?: SlaBugLabelKey;
   sprintBadge?: { display: string; id: string } | null;
   swimlaneCardFields: SwimlaneCardFieldsVisibility | undefined;
   task: Task;
@@ -89,16 +84,8 @@ export function TaskCardStandardBody({
   taskPosition,
   sprintBadge,
   showDangerousReleaseInsteadOfStatus = false,
-  slaBugBoardId,
-  slaBugCloseP4ActionsEnabled = false,
-  slaBugDemoteReason,
-  slaBugSignalLabel,
   children,
 }: TaskCardStandardBodyProps) {
-  const showCloseP4Actions =
-    variant === 'sidebar' &&
-    slaBugCloseP4ActionsEnabled &&
-    slaBugSignalLabel === 'close_p4';
   const estimateMapping = useTaskCardEstimateMapping();
   const showTpLabels = isQATask && task.hideTestPointsByIntegration !== true;
   const showPointsLabel = resolveTaskCardEstimateVisibility({
@@ -149,15 +136,11 @@ export function TaskCardStandardBody({
         />
       </div>
 
-      <TaskCardStandardBodyTags
-        actualDuration={actualDuration}
+      <TaskCardTags
+        displayDuration={actualDuration}
         releaseGitlabChecks={releaseGitlabChecks}
         releaseGitlabChecksLoading={releaseGitlabChecksLoading}
-        showCloseP4Actions={showCloseP4Actions}
         showDangerousReleaseInsteadOfStatus={showDangerousReleaseInsteadOfStatus}
-        slaBugBoardId={slaBugBoardId}
-        slaBugDemoteReason={slaBugDemoteReason}
-        slaBugSignalLabel={slaBugSignalLabel}
         task={task}
         taskPosition={taskPosition}
         variant={variant}

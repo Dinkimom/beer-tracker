@@ -1,5 +1,4 @@
 import type { PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
-import type { SlaBugDemoteReason, SlaBugLabelKey } from '@/lib/slaBugs';
 import type { Developer, Task, TaskCardVariant, TaskPosition } from '@/types';
 
 import React from 'react';
@@ -31,8 +30,6 @@ interface TaskCardSidebarResizedSplitProps {
   rightPercent: number;
   showExtraSplit: boolean;
   showQaStripedLeftOverlay: boolean;
-  slaBugDemoteReason?: SlaBugDemoteReason;
-  slaBugSignalLabel?: SlaBugLabelKey;
   sprintBadge?: { display: string; id: string } | null;
   task: Task;
   taskPosition?: TaskPosition;
@@ -58,8 +55,6 @@ export function TaskCardSidebarResizedSplit({
   qaRightBgColor,
   isDark,
   showExtraSplit,
-  slaBugDemoteReason,
-  slaBugSignalLabel,
   extraSP,
   isQATask,
   children,
@@ -104,8 +99,6 @@ export function TaskCardSidebarResizedSplit({
 
           <TaskCardTags
             displayDuration={estimatedTimeslots}
-            slaBugDemoteReason={slaBugDemoteReason}
-            slaBugSignalLabel={slaBugSignalLabel}
             task={task}
             taskPosition={taskPosition}
             variant={variant}

@@ -4,7 +4,6 @@ import type { SidebarMainTab } from './useSidebarTabsState';
 import type { SidebarTabSettings } from '@/hooks/useLocalStorage';
 import type { ReactNode } from 'react';
 
-import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { isSidebarHeaderTabVisible, sidebarTabBadgeForId } from './useSidebarHeaderTabsHelpers';
@@ -23,7 +22,6 @@ const SIDEBAR_HEADER_TAB_IDS = new Set<SidebarMainTab>([
   'daily',
   'metrics',
   'backlog',
-  'bugs',
 ]);
 
 const DEFAULT_SIDEBAR_ORDER: SidebarMainTab[] = [
@@ -32,7 +30,6 @@ const DEFAULT_SIDEBAR_ORDER: SidebarMainTab[] = [
   'goals',
   'daily',
   'metrics',
-  'bugs',
   'backlog',
 ];
 
@@ -43,15 +40,11 @@ function sidebarTabTitle(
   if (tabId === 'metrics') {
     return t('sidebar.tabTitles.metrics');
   }
-  if (tabId === 'bugs') {
-    return t('sidebar.tabTitles.bugs');
-  }
   return undefined;
 }
 
 interface UseSidebarHeaderTabsProps {
   allTasksCount: number;
-  bugsTasksCount: number;
   checklistDone: number;
   checklistTotal: number;
   hideBacklogTab?: boolean;
@@ -82,12 +75,10 @@ export function useSidebarHeaderTabs({
   hideBacklogTab = false,
   hideTasksTab = false,
   invalidTasksCount,
-  bugsTasksCount,
   sidebarTabsSettings,
   sprintInfo,
 }: UseSidebarHeaderTabsProps): SidebarHeaderTab[] {
   const { t } = useI18n();
-  const { supportsSlaBugs } = useIssueTrackerProviderCapabilities();
   const configuredSidebarIds = resolveConfiguredSidebarIds(sidebarTabsSettings);
 
   const visibilityMap = new Map(
@@ -106,7 +97,6 @@ export function useSidebarHeaderTabs({
     })
     .filter((tab) =>
       isSidebarHeaderTabVisible({
-        bugsTabEnabled: supportsSlaBugs,
         hideBacklogTab,
         hideTasksTab,
         sprintInfo,
@@ -122,7 +112,6 @@ export function useSidebarHeaderTabs({
         checklistDone,
         checklistTotal,
         invalidTasksCount,
-        bugsTasksCount,
       }),
       title: sidebarTabTitle(tab.id, t),
     }));

@@ -32,34 +32,18 @@ describe('mapIssueTrackerIssueToTask', () => {
     expect(task.customFieldValues).toEqual({ CustomStoryPoints: '8' });
   });
 
-  it('reads SLA and resolvedAt from customFields, not from raw', () => {
+  it('reads resolvedAt from customFields, not from raw', () => {
     const task = mapIssueTrackerIssueToTask({
       customFields: {
-        HD_count: 3,
-        HD_growth24h: 1,
-        HD_growth7d: 2,
-        key_client: true,
-        lastHDAt: '2026-03-09T08:00:00.000+0000',
         resolvedAt: '2026-03-11T09:00:00.000+0000',
-        slaDeadline: '2026-03-15T00:00:00.000+0000',
-        sup_priority: true,
       },
       id: 'BT-1',
       key: 'BT-1',
       provider: 'yandex-tracker',
-      raw: { HD_count: 99, key: 'BT-1', resolvedAt: 'ignored' },
-      summary: 'SLA bug',
+      raw: { key: 'BT-1', resolvedAt: 'ignored' },
+      summary: 'Bug',
     }, TRACKER_WEB);
-    expect(task).toMatchObject({
-      hdCount: 3,
-      hdGrowth24h: 1,
-      hdGrowth7d: 2,
-      keyClient: true,
-      lastHdAt: '2026-03-09T08:00:00.000+0000',
-      resolvedAt: '2026-03-11T09:00:00.000+0000',
-      slaDeadline: '2026-03-15T00:00:00.000+0000',
-      supPriority: true,
-    });
+    expect(task.resolvedAt).toBe('2026-03-11T09:00:00.000+0000');
   });
 
   it('reads custom estimate fields from customFields for integration mapping', () => {

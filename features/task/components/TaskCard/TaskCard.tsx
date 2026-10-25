@@ -1,7 +1,6 @@
 'use client';
 
 import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
-import type { SlaBugDemoteReason, SlaBugLabelKey } from '@/lib/slaBugs';
 import type { Task, Developer, TaskCardVariant, TaskPosition } from '@/types';
 
 import React from 'react';
@@ -57,10 +56,6 @@ interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onCo
   resizePreviewDuration?: number | null;
   selectedSprintId?: number | null;
   showDangerousReleaseInsteadOfStatus?: boolean;
-  slaBugBoardId?: number | null;
-  slaBugCloseP4ActionsEnabled?: boolean;
-  slaBugDemoteReason?: SlaBugDemoteReason;
-  slaBugSignalLabel?: SlaBugLabelKey;
   sprintBadge?: { display: string; id: string } | null;
   swimlaneBarDurationParts?: number;
   task: Task;
@@ -97,10 +92,6 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
   sprintBadge,
   showDangerousReleaseInsteadOfStatus = false,
   hideStatusTag = false,
-  slaBugBoardId,
-  slaBugCloseP4ActionsEnabled = false,
-  slaBugDemoteReason,
-  slaBugSignalLabel,
   className = '',
   style,
   onMouseDown,
@@ -259,10 +250,6 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
         rightPercent,
         showDangerousReleaseInsteadOfStatus,
         showExtraSplit,
-        slaBugBoardId,
-        slaBugCloseP4ActionsEnabled,
-        slaBugDemoteReason,
-        slaBugSignalLabel,
         sprintBadge,
         task,
         taskPosition,

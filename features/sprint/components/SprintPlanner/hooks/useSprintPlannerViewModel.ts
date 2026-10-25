@@ -12,7 +12,6 @@ import { useXarrow } from 'react-xarrows';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { useBoards } from '@/features/board/hooks/useBoards';
-import { useSlaBugs } from '@/features/sla-bugs/hooks/useSlaBugs';
 import { useSprintPlannerTrackerLinkHandlers } from '@/features/sprint/hooks/useSprintPlannerTrackerLinkHandlers';
 import { computeAssigneePointsStats } from '@/features/sprint/utils/assigneePointsStats';
 import { useDebouncedCallback } from '@/hooks/usePerformance';
@@ -231,8 +230,6 @@ export function useSprintPlannerViewModel({
     removeTask: (taskId: string) => void;
   } | null>(null);
 
-  const { data: slaBugsData } = useSlaBugs(boardIdForPlannerData, false);
-  const slaBugsTasks = slaBugsData?.tasks;
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -347,7 +344,6 @@ export function useSprintPlannerViewModel({
     setTaskLinks,
     setTaskPositions,
     setTasks,
-    slaBugsTasks,
     sprintPlannerUi,
     sprintStartDate,
     sprintTimelineWorkingDays,

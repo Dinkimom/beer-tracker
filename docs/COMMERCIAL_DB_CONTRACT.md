@@ -54,8 +54,6 @@ BEER_TRACKER_SCHEMA=beer_tracker ./scripts/db/psql-with-schema.sh -f database/ad
 
 `DB_CONTRACT_MODE=compatibility` к каталогу staff/teams не относится. Он включает только preflight на старте (`lib/dbContractPreflight.ts`): наличие схем `overseer` / `public`, таблиц `overseer.teams`, `staff_teams`, `staff_roles`, `roles`, `public.registry_employees`, их ключевых колонок и прав на чтение. При `DB_CONTRACT_PREFLIGHT_STRICT=true` несоответствие роняет старт, иначе пишется warning. Отчёт: `GET /api/internal/db-contract/status` с `SYNC_CRON_SECRET`.
 
-Отдельно от режима HD-метрики вкладки «Баги» читают `overseer.mv_ytracker_hd_count_changelog_events` (`lib/overseer/hdCountRead.ts`, `hdWeeklyHeatmapRead.ts`).
-
 ## 5) Права
 
 Техпользователю приложения: `USAGE` + `SELECT, INSERT, UPDATE, DELETE` на объекты схемы `BEER_TRACKER_SCHEMA`, `USAGE, SELECT` на sequence.

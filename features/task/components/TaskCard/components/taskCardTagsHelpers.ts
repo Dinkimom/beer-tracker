@@ -38,18 +38,13 @@ function gitlabTriStateLabel(value: boolean | null | undefined, t: Translate): s
 
 export function resolveContainerClass({
   containerPadding,
-  inlineLayout,
   isReleaseSidebarCard,
 }: {
   containerPadding: string;
-  inlineLayout: boolean;
   isReleaseSidebarCard: boolean;
 }): string {
   if (isReleaseSidebarCard) {
     return 'mt-1.5 flex min-w-0 flex-col gap-2 overflow-hidden';
-  }
-  if (inlineLayout) {
-    return 'flex min-w-0 flex-col gap-1.5 overflow-hidden';
   }
   return `absolute ${containerPadding} flex min-w-0 flex-col gap-1.5 overflow-hidden ${ZIndex.class('stickyElevated')} pointer-events-none`;
 }

@@ -51,7 +51,6 @@ beer-tracker/
 | `burndown/` | Вкладка «Диаграмма сгорания» |
 | `retro/` | Вкладка «Ретро»: доска ретроспективы и факты спринта |
 | `sprint-metrics/` | Вкладка «Метрики»: дашборд доски по кварталу |
-| `sla-bugs/` | Хуки вкладки «Баги» (UI — `features/sidebar/components/tabs/BugsTab/`) |
 | `context-menu/` | Контекстное меню карточки и сабменю |
 | `notifications/` | Колокольчик и панель уведомлений |
 | `board/` | Выбор доски, параметры доски |
@@ -76,7 +75,6 @@ beer-tracker/
 | `lib/realtime/` | SSE-канал спринта, присутствие, таймер |
 | `lib/organizations/`, `lib/staffTeams/`, `lib/admin/`, `lib/roles/`, `lib/access/`, `lib/auth/` | Мультиарендность, команды, админка, роли, сессии |
 | `lib/calendar/`, `lib/holidays/` | CalDAV-занятость, производственный календарь |
-| `lib/slaBugs/`, `lib/overseer/` | SLA-баги и данные обращений HD |
 | `lib/notifications/`, `lib/storage/` | Уведомления, объектное хранилище (S3) |
 | `lib/boardAvailability/` | События доступности доски (отпуска, техспринты, больничные, дежурства) |
 | `lib/i18n/` | Словари ru/en (`lib/i18n/messages/`) |

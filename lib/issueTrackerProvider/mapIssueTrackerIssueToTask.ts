@@ -4,7 +4,6 @@ import type { TrackerIntegrationStored } from '@/lib/trackerIntegration';
 import type { Task } from '@/types';
 import type { TrackerIssue } from '@/types/tracker';
 
-import { parseSlaBugFieldsFromIssue } from '@/lib/slaBugs/parseSlaBugFields';
 import { applyTrackerIntegrationToTask } from '@/lib/trackerIntegration';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
@@ -212,7 +211,6 @@ function mapIssueTrackerIssueToTaskBase(
   const statusId = issue.status?.id?.trim();
   const statusDisplay = trackerStatusDisplayName(issue.status?.display, statusKey);
   const appStatusKey = issue.statusType?.key || statusKey;
-  const sla = parseSlaBugFieldsFromIssue(fieldBag);
   return {
     id: issue.key,
     name: issue.summary,
@@ -243,13 +241,6 @@ function mapIssueTrackerIssueToTaskBase(
     sprints: mapSprints(issue.sprint),
     incidentSeverity: parseIncidentSeverity(issue.incidentSeverity),
     dangerousRelease: parseDangerousRelease(issue.dangerousRelease),
-    hdCount: sla.hdCount,
-    hdGrowth24h: sla.hdGrowth24h,
-    hdGrowth7d: sla.hdGrowth7d,
-    keyClient: sla.keyClient,
-    supPriority: sla.supPriority,
-    slaDeadline: sla.slaDeadline,
-    lastHdAt: sla.lastHdAt,
     trackerTags: readIssueTagTokens(fieldBag),
     updatedAt: issue.updatedAt,
     resolvedAt: resolvedAtFromCustomFields(issue.customFields),

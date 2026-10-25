@@ -70,12 +70,6 @@ export interface Task {
   excalidrawSceneText?: string;
   // Флаг для задач бэклога
   functionalTeam?: string;
-  /** Число обращений в HD (SLA-баги). */
-  hdCount?: number;
-  /** Рост HD_count за 7 дней. */
-  hdGrowth7d?: number;
-  /** Рост HD_count за 24 часа. */
-  hdGrowth24h?: number;
   /** В standalone_qa_tasks режимe в UI скрываем TP и работаем только со SP. */
   hideTestPointsByIntegration?: boolean;
   id: string;
@@ -85,10 +79,6 @@ export interface Task {
   incidentSeverity?: string;
   isBacklogTask?: boolean;
   isLocalTask?: boolean;
-  /** Ключевой клиент (SLA-баги). */
-  keyClient?: boolean;
-  /** Дата последнего обращения в HD (для SLA-багов). */
-  lastHdAt?: string;
   link: string;
   linkedTaskIds?: string[];
   /** Вид локального черновика quick-add: задача, поиск в трекере, заметка, схема или картинка. */
@@ -127,8 +117,6 @@ export interface Task {
   qaEngineerName?: string;
   /** Дата закрытия (resolved) в Tracker. */
   resolvedAt?: string;
-  /** Дедлайн SLA. */
-  slaDeadline?: string;
   // Этап
   sprints?: Array<{
     display: string;
@@ -156,8 +144,6 @@ export interface Task {
   stickyNoteColor?: StickyNoteColor;
   // Описание задачи (для целей спринта)
   storyPoints?: number;
-  /** Пуш приоритета от поддержки. */
-  supPriority?: boolean;
   // Test Points (TP) - отдельная оценка для тестирования
   team: Team;
   /** Совпала цепочка правил «только тестирование» из trackerIntegration.testingFlow (embedded) */

@@ -51,10 +51,6 @@ const EMPTY_PREFIX_HANDLERS: Array<{
       documentTypes: [],
     },
   },
-  {
-    match: (p) => p.startsWith('/sla-bugs') || p.startsWith('/hd-weekly'),
-    response: { bugs: [], weeks: [] },
-  },
   { match: (p) => p.startsWith('/queues/'), response: { types: [], key: 'DEMO', name: 'Demo' } },
   { match: (p) => p.startsWith('/screens/'), response: { fields: [] } },
 ];

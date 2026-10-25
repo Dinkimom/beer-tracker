@@ -317,7 +317,7 @@ Routes:
 
 `UnsupportedIssueTrackerOperationError` — реализовано (см. Jira Adapter).
 
-Capabilities есть: `IssueTrackerProviderCapabilities` / `issueTrackerProviderCapabilities(kind)` в `lib/issueTrackerProvider/issueTrackerUi.ts` — `supportsChecklists`, `supportsFieldCatalog`, `supportsIssueChildren`, `supportsIssueLinks`, `supportsQueryLanguageSearch`, `supportsRelatedIssues`, `supportsScreenCatalog`, `supportsSlaBugs`. Отказ в роуте по capability — `rejectUnsupportedIssueTrackerCapability` (`lib/issueTrackerProvider/issueTrackerCapabilityRoute.ts`).
+Capabilities есть: `IssueTrackerProviderCapabilities` / `issueTrackerProviderCapabilities(kind)` в `lib/issueTrackerProvider/issueTrackerUi.ts` — `supportsChecklists`, `supportsFieldCatalog`, `supportsIssueChildren`, `supportsIssueLinks`, `supportsQueryLanguageSearch`, `supportsRelatedIssues`, `supportsScreenCatalog`. Отказ в роуте по capability — `rejectUnsupportedIssueTrackerCapability` (`lib/issueTrackerProvider/issueTrackerCapabilityRoute.ts`).
 
 Route должен либо использовать capability, либо доверять adapter-у и отдавать понятную ошибку через `handleApiError`.
 

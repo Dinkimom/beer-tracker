@@ -419,47 +419,6 @@ export async function fetchIssueChecklist(
 
 const ISSUE_SEARCH_ON_BOARD_PER_PAGE = 20;
 
-function escapeTrackerQueryQuotedValue(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
-
-/** Значение поля Tracker «Продуктовая команда» / bizErpTeam из slug команды в БД. */
-export function toTrackerProductTeamValue(teamSlug: string): string {
-  const slug = teamSlug.trim();
-  if (!slug) {
-    return '';
-  }
-  return slug.startsWith('team-') ? slug : `team-${slug}`;
-}
-
-/** Query language: открытые баги продуктовой команды (поле «Продуктовая команда» / bizErpTeam). */
-export function buildSlaBugsQueryForProductTeam(productTeamSlug: string): string {
-  return `${buildProductTeamBugBaseQuery(productTeamSlug)} AND Status: !closed`;
-}
-
-function buildProductTeamBugBaseQuery(productTeamSlug: string): string {
-  const value = toTrackerProductTeamValue(productTeamSlug);
-  const escaped = escapeTrackerQueryQuotedValue(value);
-  return `"Продуктовая команда": "${escaped}" AND Type: bug`;
-}
-
-/** Дата для query language Tracker (YYYY-MM-DD). */
-function formatTrackerQueryDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-/** Баги команды, созданные начиная с даты (включительно). */
-export function buildSlaBugsArrivedSinceQuery(productTeamSlug: string, since: Date): string {
-  const date = formatTrackerQueryDate(since);
-  return `${buildProductTeamBugBaseQuery(productTeamSlug)} AND Created: >= "${date}"`;
-}
-
-/** Баги команды, закрытые (resolved) начиная с даты (включительно). */
-export function buildSlaBugsClosedSinceQuery(productTeamSlug: string, since: Date): string {
-  const date = formatTrackerQueryDate(since);
-  return `${buildProductTeamBugBaseQuery(productTeamSlug)} AND Status: closed AND Resolved: >= "${date}"`;
-}
-
 interface FetchIssuesByQueryCheckpoint {
   page: number;
   totalIssues: number;

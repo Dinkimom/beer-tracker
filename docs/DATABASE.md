@@ -193,7 +193,6 @@ docker compose exec -T db psql -U postgres -d beer_tracker -v ON_ERROR_STOP=1 -v
 
 **Внешние таблицы (не создаются приложением)**
 - `overseer.teams`, `overseer.staff_teams`, `overseer.staff_roles`, `overseer.roles`, `public.registry_employees` — проверяются preflight при `DB_CONTRACT_MODE=compatibility`; источник разового копирования в `add-staff-teams.sql`.
-- `overseer.mv_ytracker_hd_count_changelog_events` — читают `lib/overseer/hdCountRead.ts` и `hdWeeklyHeatmapRead.ts`.
 
 ## Известные проблемы
 

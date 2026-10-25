@@ -4,7 +4,6 @@ import type { SprintObject, TrackerIssue } from '@/types/tracker';
 
 import { customFieldDisplayMap } from '@/lib/issueTrackerProvider/customFieldDisplayValue';
 import { issueTrackerIssueWebUrlFromBase } from '@/lib/issueTrackerProvider/issueTrackerUi';
-import { parseSlaBugFieldsFromIssue } from '@/lib/slaBugs/parseSlaBugFields';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
@@ -220,7 +219,6 @@ export function mapTrackerIssueToTaskBase(
   const statusDisplay = trackerStatusDisplayName(issue.status?.display, statusKey);
   const team = mapTeam(issue.functionalTeam);
   const sprints = normalizeSprintField(issue.sprint);
-  const slaFields = parseSlaBugFieldsFromIssue(issue);
   const queueFields = mapTrackerIssueQueue(issue);
 
   return {
@@ -255,13 +253,6 @@ export function mapTrackerIssueToTaskBase(
       (issue as { incidentSeverity?: string | { display?: string; key?: string } }).incidentSeverity
     ),
     dangerousRelease: parseDangerousRelease(issue.dangerousRelease),
-    hdCount: slaFields.hdCount,
-    hdGrowth24h: slaFields.hdGrowth24h,
-    hdGrowth7d: slaFields.hdGrowth7d,
-    keyClient: slaFields.keyClient,
-    supPriority: slaFields.supPriority,
-    slaDeadline: slaFields.slaDeadline,
-    lastHdAt: slaFields.lastHdAt,
     trackerTags: readIssueTagTokens(issue),
     updatedAt: issue.updatedAt,
     resolvedAt: issue.resolvedAt,
@@ -272,9 +263,6 @@ export function mapTrackerIssueToTaskBase(
 }
 
 const TRACKER_ISSUE_MAPPED_KEYS = new Set([
-  'HD_count',
-  'HD_growth24h',
-  'HD_growth7d',
   'MergeRequestLink',
   'assignee',
   'bizErpTeam',
@@ -290,15 +278,12 @@ const TRACKER_ISSUE_MAPPED_KEYS = new Set([
   'id',
   'incidentSeverity',
   'key',
-  'key_client',
-  'lastHDAt',
   'parent',
   'priority',
   'qaEngineer',
   'queue',
   'resolvedAt',
   'self',
-  'slaDeadline',
   'sprint',
   'stage',
   'start',
@@ -306,7 +291,6 @@ const TRACKER_ISSUE_MAPPED_KEYS = new Set([
   'statusType',
   'storyPoints',
   'summary',
-  'sup_priority',
   'tags',
   'testPoints',
   'type',

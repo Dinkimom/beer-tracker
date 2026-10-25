@@ -6,7 +6,6 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
-import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { SIDEBAR_INVALID_TAB_ENABLED } from '@/features/sidebar/hooks/useSidebarHeaderTabsHelpers';
 import { useSidebarTabsSettingsStorage } from '@/hooks/useLocalStorage';
@@ -19,31 +18,19 @@ const ALL_SIDEBAR_TAB_IDS = [
   'goals',
   'daily',
   'metrics',
-  'bugs',
   'backlog',
 ] as const satisfies ReadonlyArray<SidebarTabSettings['id']>;
 
-function allowedSidebarTabIds(bugsTabEnabled: boolean): ReadonlyArray<SidebarTabSettings['id']> {
-  return ALL_SIDEBAR_TAB_IDS.filter(
-    (id) =>
-      (id !== 'bugs' || bugsTabEnabled) &&
-      (id !== 'invalid' || SIDEBAR_INVALID_TAB_ENABLED)
-  );
-}
+const ALLOWED_SIDEBAR_TAB_IDS = ALL_SIDEBAR_TAB_IDS.filter(
+  (id) => id !== 'invalid' || SIDEBAR_INVALID_TAB_ENABLED
+);
 
-function defaultSidebarTabItems(bugsTabEnabled: boolean): SidebarTabSettings[] {
-  return allowedSidebarTabIds(bugsTabEnabled).map((id) => ({ id, visible: true }));
-}
-
-function normalizeSidebarTabsSettings(
-  prev: SidebarTabSettings[],
-  bugsTabEnabled: boolean
-): SidebarTabSettings[] {
-  const allowedIds = allowedSidebarTabIds(bugsTabEnabled);
+function normalizeSidebarTabsSettings(prev: SidebarTabSettings[]): SidebarTabSettings[] {
+  const allowedIds = ALLOWED_SIDEBAR_TAB_IDS;
   const allowedSet = new Set<string>(allowedIds);
   const filtered = prev.filter((tab) => allowedSet.has(tab.id));
   if (filtered.length === 0) {
-    return defaultSidebarTabItems(bugsTabEnabled);
+    return allowedIds.map((id) => ({ id, visible: true }));
   }
 
   const knownIds = new Set(filtered.map((tab) => tab.id));
@@ -65,15 +52,14 @@ export function SidebarTabsSettingsList({
   setSidebarTabsSettings,
 }: SidebarTabsSettingsListProps) {
   const { t } = useI18n();
-  const { supportsSlaBugs } = useIssueTrackerProviderCapabilities();
-  const items = normalizeSidebarTabsSettings(sidebarTabsSettings, supportsSlaBugs);
+  const items = normalizeSidebarTabsSettings(sidebarTabsSettings);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
     setSidebarTabsSettings((prev) => {
-      const current = normalizeSidebarTabsSettings(prev, supportsSlaBugs);
+      const current = normalizeSidebarTabsSettings(prev);
       const oldIndex = current.findIndex((tab) => tab.id === active.id);
       const newIndex = current.findIndex((tab) => tab.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return prev;
@@ -86,7 +72,7 @@ export function SidebarTabsSettingsList({
 
   const handleToggleVisible = (id: string) => {
     setSidebarTabsSettings((prev) => {
-      const current = normalizeSidebarTabsSettings(prev, supportsSlaBugs);
+      const current = normalizeSidebarTabsSettings(prev);
       return current.map((tab) =>
         tab.id === id ? { ...tab, visible: !tab.visible } : tab
       );

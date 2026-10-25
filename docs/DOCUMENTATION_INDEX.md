@@ -30,8 +30,6 @@ beer-tracker/
 │   ├── ISSUE_TRACKERS.md              # Yandex Tracker и Jira (выбор на организацию)
 │   ├── ISSUE_TRACKER_PROVIDER_MIGRATION.md  # История/детали provider-слоя
 │   ├── ISSUE_TRACKER_YANDEX_CONTRACT.md     # Контрактные тесты: не сломать Yandex при Jira
-│   ├── SLA_BUGS_TAB.md                # Вкладка «Баги»: секции, сигналы, UI, API
-│   ├── SLA_BUGS_SIGNALS.md            # Краткий каталог сигналов на карточках
 │   ├── STRUCTURE.md                   # Feature-based архитектура
 │   ├── AGENT_TESTING_GUIDE.md         # Тест-кейсы для агентов
 │   ├── ICONS.md                       # Руководство по иконкам
@@ -88,8 +86,6 @@ beer-tracker/
 | [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md) | Yandex Tracker и Jira: выбор провайдера, auth | Все |
 | [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md) | Детали provider-слоя / история миграции routes | Разработчики |
 | [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md) | Контрактные тесты Yandex при развитии Jira | Разработчики |
-| [SLA_BUGS_TAB.md](./SLA_BUGS_TAB.md) | Вкладка «Баги»: секции, критерии, сигналы, сортировка, UI, API | Разработчики, PM |
-| [SLA_BUGS_SIGNALS.md](./SLA_BUGS_SIGNALS.md) | Краткий каталог сигналов на карточках (для согласования) | Разработчики, PM |
 | [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md) | Схема `beer_tracker`: каталог teams/staff и миграция для существующей БД | Разработчики, DevOps |
 | [STRUCTURE.md](./STRUCTURE.md) | Feature-based архитектура | Разработчики |
 | [FOLDER_NAMING.md](./FOLDER_NAMING.md) | Именование папок (kebab vs PascalCase для доменов) | Разработчики |
@@ -121,7 +117,6 @@ beer-tracker/
 - **Планирование спринтов** → [CAPABILITIES.md](./CAPABILITIES.md#1-планирование-спринтов)
 - **Бэклог** → [CAPABILITIES.md](./CAPABILITIES.md#2-управление-бэклогом)
 - **Burndown Chart** → [CAPABILITIES.md](./CAPABILITIES.md#4-burndown-chart)
-- **SLA-баги (вкладка «Баги»)** → [SLA_BUGS_TAB.md](./SLA_BUGS_TAB.md), [SLA_BUGS_SIGNALS.md](./SLA_BUGS_SIGNALS.md)
 - **Цели спринта** → [CAPABILITIES.md](./CAPABILITIES.md#5-цели-спринта)
 - **Что не развивать** → [steering/product.md](./steering/product.md)
 
@@ -144,7 +139,7 @@ beer-tracker/
 
 1. Добавьте его в этот индекс
 2. Добавьте ссылку в [README.md](../README.md) или [INSTALL.md](./INSTALL.md), если документ стартовый для пользователей / установки
-3. Не описывайте удалённые экраны (занятость, эпики, квартал) как текущие возможности
+3. Не описывайте удалённые экраны (занятость, эпики, квартал, SLA-баги) как текущие возможности
 
 ---
 

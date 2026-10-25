@@ -9,7 +9,6 @@ import {
 const sprintInfo = { id: 1, status: 'active', version: 1 };
 
 const visibilityBase = {
-  bugsTabEnabled: false,
   hideBacklogTab: false,
   hideTasksTab: false,
   sprintInfo,
@@ -23,25 +22,6 @@ describe('SIDEBAR_INVALID_TAB_ENABLED', () => {
 });
 
 describe('isSidebarHeaderTabVisible', () => {
-  it('hides the bugs tab when SLA bugs are unsupported even if settings keep it visible', () => {
-    expect(
-      isSidebarHeaderTabVisible({
-        ...visibilityBase,
-        tabId: 'bugs',
-      })
-    ).toBe(false);
-  });
-
-  it('shows the bugs tab when SLA bugs are supported and settings keep it visible', () => {
-    expect(
-      isSidebarHeaderTabVisible({
-        ...visibilityBase,
-        bugsTabEnabled: true,
-        tabId: 'bugs',
-      })
-    ).toBe(true);
-  });
-
   it('hides the invalid tab even when settings keep it visible', () => {
     expect(
       isSidebarHeaderTabVisible({
@@ -62,33 +42,10 @@ describe('isSidebarHeaderTabVisible', () => {
 });
 
 describe('resolveHiddenSidebarTabFallback', () => {
-  it('redirects the bugs tab to tasks while SLA bugs are unsupported', () => {
-    expect(
-      resolveHiddenSidebarTabFallback({
-        bugsTabEnabled: false,
-        hideBacklogTab: false,
-        hideTasksTab: false,
-        mainTab: 'bugs',
-      })
-    ).toBe('tasks');
-  });
-
-  it('keeps the bugs tab when SLA bugs are supported', () => {
-    expect(
-      resolveHiddenSidebarTabFallback({
-        bugsTabEnabled: true,
-        hideBacklogTab: false,
-        hideTasksTab: false,
-        mainTab: 'bugs',
-      })
-    ).toBe(null);
-  });
-
   it('redirects the invalid tab to tasks while it is disabled', () => {
     expect(
       resolveHiddenSidebarTabFallback({
-        bugsTabEnabled: false,
-        hideBacklogTab: false,
+              hideBacklogTab: false,
         hideTasksTab: false,
         mainTab: 'invalid',
       })
@@ -98,16 +55,14 @@ describe('resolveHiddenSidebarTabFallback', () => {
   it('redirects hidden tasks to backlog, or goals when backlog is also hidden', () => {
     expect(
       resolveHiddenSidebarTabFallback({
-        bugsTabEnabled: false,
-        hideBacklogTab: false,
+              hideBacklogTab: false,
         hideTasksTab: true,
         mainTab: 'tasks',
       })
     ).toBe('backlog');
     expect(
       resolveHiddenSidebarTabFallback({
-        bugsTabEnabled: false,
-        hideBacklogTab: true,
+              hideBacklogTab: true,
         hideTasksTab: true,
         mainTab: 'tasks',
       })
@@ -117,8 +72,7 @@ describe('resolveHiddenSidebarTabFallback', () => {
   it('redirects hidden backlog to tasks', () => {
     expect(
       resolveHiddenSidebarTabFallback({
-        bugsTabEnabled: false,
-        hideBacklogTab: true,
+              hideBacklogTab: true,
         hideTasksTab: false,
         mainTab: 'backlog',
       })

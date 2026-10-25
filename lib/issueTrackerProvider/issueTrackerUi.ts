@@ -46,7 +46,6 @@ export interface IssueTrackerProviderCapabilities {
   supportsQueryLanguageSearch: boolean;
   supportsRelatedIssues: boolean;
   supportsScreenCatalog: boolean;
-  supportsSlaBugs: boolean;
 }
 
 export function issueTrackerProviderCapabilities(
@@ -62,7 +61,6 @@ export function issueTrackerProviderCapabilities(
     supportsQueryLanguageSearch: yandexShaped,
     supportsRelatedIssues: yandexShaped,
     supportsScreenCatalog: yandexShaped,
-    supportsSlaBugs: yandexShaped,
   };
 }
 

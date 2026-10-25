@@ -32,7 +32,6 @@ export interface UseSprintPlannerHandlersProps {
   resetDragStateRef: MutableRefObject<(() => void) | null>;
   selectedSprintId: number | null;
   /** Открытые SLA-баги вкладки «Баги» (для DnD и дропа на свимлейн). */
-  slaBugsTasks?: Task[];
   sprintStartDate: Date;
   sprintTimelineWorkingDays: number;
   taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;

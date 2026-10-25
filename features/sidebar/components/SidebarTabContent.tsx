@@ -4,16 +4,11 @@ import type { SidebarMainTab } from '@/features/sidebar/hooks/useSidebarTabsStat
 
 import dynamic from 'next/dynamic';
 
-import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
 import { TasksTab } from '@/features/sidebar/components/tabs/TasksTab';
 import { SIDEBAR_INVALID_TAB_ENABLED } from '@/features/sidebar/hooks/useSidebarHeaderTabsHelpers';
 
 const BacklogTab = dynamic(
   () => import('@/features/sidebar/components/tabs/BacklogTab').then((mod) => mod.BacklogTab),
-  { ssr: false }
-);
-const BugsTab = dynamic(
-  () => import('@/features/sidebar/components/tabs/BugsTab/BugsTab').then((mod) => mod.BugsTab),
   { ssr: false }
 );
 const DailyTab = dynamic(
@@ -40,7 +35,6 @@ const SCROLLABLE_MAIN_TABS: SidebarMainTab[] = [
   'goals',
   'daily',
   'metrics',
-  'bugs',
 ];
 
 interface SidebarTabContentProps {
@@ -52,7 +46,6 @@ export function SidebarTabContent({
   hideBacklogTab = false,
   mainTab,
 }: SidebarTabContentProps) {
-  const { supportsSlaBugs } = useIssueTrackerProviderCapabilities();
   const isScrollable = SCROLLABLE_MAIN_TABS.includes(mainTab);
   const contentClassName = `flex-1 min-h-0 ${
     isScrollable ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'
@@ -66,7 +59,6 @@ export function SidebarTabContent({
       {mainTab === 'daily' && <DailyTab />}
       {SIDEBAR_INVALID_TAB_ENABLED && mainTab === 'invalid' && <InvalidTab />}
       {mainTab === 'backlog' && !hideBacklogTab && <BacklogTab />}
-      {supportsSlaBugs && mainTab === 'bugs' && <BugsTab />}
     </div>
   );
 }

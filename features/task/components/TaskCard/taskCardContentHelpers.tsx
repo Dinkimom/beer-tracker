@@ -1,5 +1,4 @@
 import type { SwimlaneCardFieldsVisibility, PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
-import type { SlaBugDemoteReason, SlaBugLabelKey } from '@/lib/slaBugs';
 import type { Task, Developer, TaskCardVariant, TaskPosition } from '@/types';
 import type { CSSProperties } from 'react';
 
@@ -45,10 +44,6 @@ interface RenderTaskCardBodyParams {
   rightPercent: number;
   showDangerousReleaseInsteadOfStatus: boolean;
   showExtraSplit: boolean;
-  slaBugBoardId?: number | null;
-  slaBugCloseP4ActionsEnabled: boolean;
-  slaBugDemoteReason?: SlaBugDemoteReason;
-  slaBugSignalLabel?: SlaBugLabelKey;
   sprintBadge?: { display: string; id: string } | null;
   task: Task;
   taskPosition?: TaskPosition;
@@ -83,8 +78,6 @@ export function renderTaskCardBody(params: RenderTaskCardBodyParams): React.Reac
       showQaStripedLeftOverlay={Boolean(
         params.isQATask && params.cardStylesQaStripedStyle && params.qaStripedStyle
       )}
-      slaBugDemoteReason={params.slaBugDemoteReason}
-      slaBugSignalLabel={params.slaBugSignalLabel}
       sprintBadge={params.sprintBadge}
       task={params.task}
       taskPosition={params.taskPosition}
@@ -115,10 +108,6 @@ export function renderTaskCardBody(params: RenderTaskCardBodyParams): React.Reac
       rightPercent={params.rightPercent}
       showDangerousReleaseInsteadOfStatus={params.showDangerousReleaseInsteadOfStatus}
       showExtraSplit={params.showExtraSplit}
-      slaBugBoardId={params.slaBugBoardId}
-      slaBugCloseP4ActionsEnabled={params.slaBugCloseP4ActionsEnabled}
-      slaBugDemoteReason={params.slaBugDemoteReason}
-      slaBugSignalLabel={params.slaBugSignalLabel}
       sprintBadge={params.sprintBadge}
       swimlaneCardFields={params.resolvedSwimlaneCardFields}
       task={params.task}

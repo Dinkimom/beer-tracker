@@ -35,7 +35,6 @@ interface UseSprintPlannerTaskHandlersProps {
   qaTasksByOriginalId: Map<string, Task>;
   qaTasksMap: Map<string, Task>;
   selectedSprintId: number | null;
-  slaBugsTasks?: Task[];
   /** Рабочих дней в таймлайне (длина спринта) */
   sprintTimelineWorkingDays?: number;
   tasks: Task[];
@@ -60,7 +59,6 @@ interface UseSprintPlannerTaskHandlersProps {
 
 export function useSprintPlannerTaskHandlers({
   backlogTaskRef,
-  slaBugsTasks = [],
   developers,
   filteredTaskPositions,
   qaTaskManagement,
@@ -119,7 +117,7 @@ export function useSprintPlannerTaskHandlers({
       }
 
       const sidebarTask =
-        backlogTaskRef.current?.getTask(taskId) ?? slaBugsTasks.find((task) => task.id === taskId);
+        backlogTaskRef.current?.getTask(taskId);
       if (!sidebarTask) {
         return;
       }
@@ -144,7 +142,7 @@ export function useSprintPlannerTaskHandlers({
         taskId,
       });
     },
-    [selectedSprintId, setTasks, setTaskPositions, savePosition, debouncedUpdateXarrow, backlogTaskRef, slaBugsTasks, timelineTotalCells]
+    [selectedSprintId, setTasks, setTaskPositions, savePosition, debouncedUpdateXarrow, backlogTaskRef, timelineTotalCells]
   );
 
   // Обработчик обновления позиции задачи при перетаскивании

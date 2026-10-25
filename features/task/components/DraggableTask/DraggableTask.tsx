@@ -1,6 +1,5 @@
 'use client';
 
-import type { SlaBugDemoteReason, SlaBugLabelKey } from '@/lib/slaBugs';
 import type { Developer, Task } from '@/types';
 
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
@@ -17,10 +16,6 @@ interface DraggableTaskProps {
   isQATask?: boolean;
   qaTasksMap?: Map<string, Task>;
   selectedSprintId?: number | null;
-  slaBugBoardId?: number | null;
-  slaBugCloseP4ActionsEnabled?: boolean;
-  slaBugDemoteReason?: SlaBugDemoteReason;
-  slaBugSignalLabel?: SlaBugLabelKey;
   task: Task;
   viewMode?: 'compact' | 'full';
   onAutoAddToSwimlane?: (task: Task) => void;
@@ -38,10 +33,6 @@ export function DraggableTask({
   contextMenuTaskId = null,
   viewMode,
   selectedSprintId,
-  slaBugBoardId,
-  slaBugCloseP4ActionsEnabled = false,
-  slaBugDemoteReason,
-  slaBugSignalLabel,
   onAutoAddToSwimlane,
 }: DraggableTaskProps) {
   const presenceLocked = useSprintCardPresenceLocked(task.id);
@@ -79,10 +70,6 @@ export function DraggableTask({
         isDragging={isDragging}
         isQATask={isQATask}
         selectedSprintId={selectedSprintId}
-        slaBugBoardId={slaBugBoardId}
-        slaBugCloseP4ActionsEnabled={slaBugCloseP4ActionsEnabled}
-        slaBugDemoteReason={slaBugDemoteReason}
-        slaBugSignalLabel={slaBugSignalLabel}
         style={style}
         task={task}
         variant="sidebar"

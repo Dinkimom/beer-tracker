@@ -22,5 +22,4 @@ export * from './queues';
 export * from './boardAvailability';
 export * from './sprintGoals';
 export * from './sprints';
-export * from './slaBugs';
 export * from './types';

@@ -71,7 +71,6 @@ interface UseSprintPlannerViewModelInteractionsParams {
     React.SetStateAction<Array<{ fromTaskId: string; toTaskId: string; id: string }>>
   >;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  slaBugsTasks: Task[] | undefined;
   sprintPlannerUi: SprintPlannerUi;
   sprints: SprintListItem[];
   sprintStartDate: Date;
@@ -144,7 +143,6 @@ export function useSprintPlannerViewModelInteractions({
   setTaskLinks,
   setTaskPositions,
   setTasks,
-  slaBugsTasks,
   sprintPlannerUi,
   sprintStartDate,
   sprintTimelineWorkingDays,
@@ -273,7 +271,6 @@ export function useSprintPlannerViewModelInteractions({
     setTaskPositions,
     setTasks,
     backlogTaskRef,
-    slaBugsTasks,
     allTasksForDrag: allTasksForDragWithComments,
     confirm,
     debouncedUpdateXarrow,
@@ -329,7 +326,6 @@ export function useSprintPlannerViewModelInteractions({
     comments,
     handlers,
     selectedSprintId,
-    slaBugsTasks,
     taskPositions,
     tasksMap,
     viewMode,
@@ -413,7 +409,6 @@ export function useSprintPlannerViewModelInteractions({
     activeTaskId: dragAndDrop.activeTaskId,
     allTasksForDrag: allTasksForDragWithComments,
     backlogTaskRef,
-    slaBugsTasks,
   });
 
   const {

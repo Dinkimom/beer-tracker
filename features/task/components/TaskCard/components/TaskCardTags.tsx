@@ -27,9 +27,6 @@ export function TaskCardTags({
   releaseGitlabChecks,
   releaseGitlabChecksLoading = false,
   showDangerousReleaseInsteadOfStatus = false,
-  inlineLayout = false,
-  slaBugDemoteReason,
-  slaBugSignalLabel,
 }: TaskCardTagsProps) {
   const { t } = useI18n();
   const estimateMapping = useTaskCardEstimateMapping();
@@ -62,7 +59,6 @@ export function TaskCardTags({
   );
   const containerClass = resolveContainerClass({
     containerPadding,
-    inlineLayout,
     isReleaseSidebarCard,
   });
 
@@ -77,12 +73,9 @@ export function TaskCardTags({
         dangerousReleaseColorClasses={dangerousReleaseColorClasses}
         dangerousReleaseValue={dangerousReleaseValue}
         hideTestPoints={hideTestPoints}
-        inlineLayout={inlineLayout}
         showDangerousReleaseInsteadOfStatus={showDangerousReleaseInsteadOfStatus}
         showStoryPoints={estimateVisibility.showStoryPoints}
         showTestPoints={estimateVisibility.showTestPoints}
-        slaBugDemoteReason={slaBugDemoteReason}
-        slaBugSignalLabel={slaBugSignalLabel}
         spText={spText}
         tagTextSize={tagTextSize}
         task={task}
