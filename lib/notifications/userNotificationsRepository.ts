@@ -1,7 +1,6 @@
 import type { NotificationKind, NotificationPayload, UserNotificationDto, UserNotificationRow } from './types';
 
 import { query } from '@/lib/db';
-import { ensureUserNotificationsTable } from '@/lib/notifications/ensureUserNotificationsTable';
 
 function rowToDto(row: UserNotificationRow): UserNotificationDto {
   return {
@@ -21,7 +20,6 @@ export async function insertUserNotifications(input: {
   payload: NotificationPayload;
   recipientUserIds: string[];
 }): Promise<void> {
-  await ensureUserNotificationsTable();
   const uniqueRecipients = [...new Set(input.recipientUserIds.filter(Boolean))];
   if (uniqueRecipients.length === 0) {
     return;
@@ -46,7 +44,6 @@ export async function listUserNotifications(input: {
   organizationId: string;
   recipientUserId: string;
 }): Promise<UserNotificationDto[]> {
-  await ensureUserNotificationsTable();
   const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
   const result = await query<UserNotificationRow>(
     `SELECT id, organization_id, recipient_user_id, actor_user_id, kind, payload, read_at, created_at
@@ -63,7 +60,6 @@ export async function countUnreadUserNotifications(input: {
   organizationId: string;
   recipientUserId: string;
 }): Promise<number> {
-  await ensureUserNotificationsTable();
   const result = await query<{ count: string }>(
     `SELECT COUNT(*)::text AS count
      FROM user_notifications
@@ -79,7 +75,6 @@ export async function markAllUserNotificationsRead(input: {
   organizationId: string;
   recipientUserId: string;
 }): Promise<number> {
-  await ensureUserNotificationsTable();
   const result = await query<{ id: string }>(
     `UPDATE user_notifications
      SET read_at = CURRENT_TIMESTAMP
@@ -97,7 +92,6 @@ export async function markUserNotificationRead(input: {
   organizationId: string;
   recipientUserId: string;
 }): Promise<boolean> {
-  await ensureUserNotificationsTable();
   const result = await query<{ id: string }>(
     `UPDATE user_notifications
      SET read_at = CURRENT_TIMESTAMP
@@ -115,7 +109,6 @@ export async function deleteAllUserNotifications(input: {
   organizationId: string;
   recipientUserId: string;
 }): Promise<number> {
-  await ensureUserNotificationsTable();
   const result = await query<{ id: string }>(
     `DELETE FROM user_notifications
      WHERE organization_id = $1 AND recipient_user_id = $2
@@ -130,7 +123,6 @@ export async function deleteUserNotification(input: {
   organizationId: string;
   recipientUserId: string;
 }): Promise<boolean> {
-  await ensureUserNotificationsTable();
   const result = await query<{ id: string }>(
     `DELETE FROM user_notifications
      WHERE id = $1

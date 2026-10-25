@@ -19,7 +19,7 @@ Beer Tracker — **надстройка** над внешней системой
 ```bash
 ./scripts/db/psql-with-schema.sh -d beer_tracker \
   -v provider=jira-onprem -v api_url=https://jira.example.com/rest/api/2 \
-  -f database/add-organization-issue-tracker-settings.sql
+  -f database/legacy/add-organization-issue-tracker-settings.sql
 ```
 
 Без миграции организации на Jira и организации без сохранённого трекера считаются неподключёнными, пока админ не сохранит трекер в админке.

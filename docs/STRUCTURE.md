@@ -30,13 +30,13 @@ beer-tracker/
 ├── constants/            # index.ts, zIndex.ts
 ├── types/                # index.ts, tracker.ts, team.ts, quarterly.ts
 ├── utils/                # Общие утилиты (даты, статусы, переводы, plannerClock)
-├── database/             # init.sql и плоские миграции database/*.sql
+├── database/             # migrations/ — схема, legacy/ — разовые переносы данных
 ├── scripts/              # bench, ci, db, eslint, i18n, knip, release
 ├── docs/                 # Документация (в т.ч. docs/steering/)
 └── public/               # Статика, PWA (sw.js, offline.html), демо-ассеты
 ```
 
-Миграции лежат прямо в `database/` (например `database/add-swimlane-card-layers.sql`), отдельной папки `migrations/` нет. Многие новые таблицы и колонки создаются приложением автоматически при первом обращении; миграционный файл нужен для ручной установки (см. [CHANGELOG.md](../CHANGELOG.md)).
+Схема — нумерованные миграции `database/migrations/NNNN_*.sql`. Приложение применяет новые при старте сервера, вручную — `pnpm db:migrate`. Подробно — [DATABASE.md](./DATABASE.md).
 
 ## 🧩 `features/`
 

@@ -301,7 +301,7 @@ features/ / components/ / hooks/
 | `issue_snapshots` | Снимки задач из sync |
 | tenant / staff / teams / roles | Мультиарендность и оргструктура |
 
-Схема: `database/init.sql` и плоские миграции `database/*.sql`; многие новые таблицы и колонки создаются автоматически при первом обращении.
+Схема: миграции `database/migrations/`, приложение применяет их при старте ([DATABASE.md](./DATABASE.md)).
 
 ---
 

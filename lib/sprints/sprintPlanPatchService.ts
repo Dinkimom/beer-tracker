@@ -13,14 +13,10 @@ import { ZodError } from 'zod';
 import { parseAgentSessionReplies } from '@/lib/agentSessions/agentSession';
 import { runBeerTrackerTransaction } from '@/lib/db';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
-import { ensurePlannerCommentImagesSchema } from '@/lib/sprints/ensurePlannerCommentImages';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
 import { deletePendingCommentReplacements } from '@/lib/sprints/sprintCommentReplacements';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
-import {
-  claimPlanPatchApplyToken,
-  ensurePlanPatchAppliedTokensSchema,
-} from '@/lib/sprints/sprintPlanPatchAppliedTokenRepository';
+import { claimPlanPatchApplyToken } from '@/lib/sprints/sprintPlanPatchAppliedTokenRepository';
 import {
   applySprintPlanPatchOps,
   collectRealtimeResources,
@@ -278,9 +274,6 @@ async function applyVerifiedPlanPatchAtomically(input: {
   organizationId: string;
   sprintId: number;
 }): Promise<AtomicApplyOutcome> {
-  // DDL ensure — до транзакции: ALTER TABLE ждал бы блокировок, которые держит она сама.
-  await ensurePlannerCommentImagesSchema();
-  await ensurePlanPatchAppliedTokensSchema();
   try {
     return await runBeerTrackerTransaction(async (tx): Promise<AtomicApplyOutcome> => {
       const claimed = await claimPlanPatchApplyToken(

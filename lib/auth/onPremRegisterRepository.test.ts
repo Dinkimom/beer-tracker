@@ -10,10 +10,6 @@ vi.mock('@/lib/db', () => ({
   qualifyBeerTrackerTables: (sql: string) => sql,
 }));
 
-vi.mock('./adminsRepository', () => ({
-  ensureAdminsTable: vi.fn(() => Promise.resolve()),
-}));
-
 vi.mock('@/lib/auth/orgSlug', () => ({
   allocateUniqueOrganizationSlug: vi.fn(() => Promise.resolve('acme')),
 }));

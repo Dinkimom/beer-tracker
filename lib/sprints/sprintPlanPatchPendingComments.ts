@@ -1,6 +1,5 @@
 import { query } from '@/lib/db';
 
-import { ensurePlannerCommentImagesSchema } from './ensurePlannerCommentImages';
 import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
 
 /** Число pending-заметок plan patch в спринте (ещё не apply / не истекли). */
@@ -8,7 +7,6 @@ export async function countPendingPlanPatchSprintComments(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<number> {
-  await ensurePlannerCommentImagesSchema();
   const result = await query<{ count: string }>(
     `SELECT COUNT(*)::text AS count
        FROM comments
@@ -27,7 +25,6 @@ export async function peekPendingPlanPatchCommentProposalId(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<string | null> {
-  await ensurePlannerCommentImagesSchema();
   const result = await query<{ plan_patch_proposal_id: string }>(
     `SELECT plan_patch_proposal_id
        FROM comments

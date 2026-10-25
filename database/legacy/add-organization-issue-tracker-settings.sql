@@ -1,5 +1,5 @@
--- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
--- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public.
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/legacy/<this-file>.sql
 \if :{?schema}
 \else
 \set schema public
@@ -12,7 +12,7 @@ SET search_path TO :"schema", public;
 -- Для уже существующей БД передайте прежние значения env:
 --   ./scripts/db/psql-with-schema.sh -d beer_tracker \
 --     -v provider=jira-onprem -v api_url=https://jira.example.com/rest/api/2 \
---     -f database/add-organization-issue-tracker-settings.sql
+--     -f database/legacy/add-organization-issue-tracker-settings.sql
 --
 -- provider: tracker | yandex-tracker | jira-cloud | jira-onprem | jira (по умолчанию tracker).
 -- api_url: обязателен для Jira; для Яндекс Трекера можно не задавать.

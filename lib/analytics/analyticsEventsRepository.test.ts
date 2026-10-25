@@ -2,15 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { query } from '@/lib/db';
 
-import { insertAnalyticsEvents, resetAnalyticsEventsTableEnsured } from './analyticsEventsRepository';
+import { insertAnalyticsEvents } from './analyticsEventsRepository';
 import { persistAnalyticsIngest, resolveAnalyticsUserId } from './analyticsIngestRouteHelpers';
 
 vi.mock('@/lib/db', () => ({
   query: vi.fn(),
-}));
-
-vi.mock('@/lib/env', () => ({
-  getBeerTrackerSchema: () => 'beer_tracker',
 }));
 
 describe('resolveAnalyticsUserId', () => {
@@ -26,10 +22,9 @@ describe('insertAnalyticsEvents', () => {
   beforeEach(() => {
     vi.mocked(query).mockReset();
     vi.mocked(query).mockResolvedValue({ rows: [] } as never);
-    resetAnalyticsEventsTableEnsured();
   });
 
-  it('creates the table once then inserts a batch', async () => {
+  it('inserts a batch', async () => {
     const occurredAt = new Date('2026-08-25T12:00:00.000Z');
     await insertAnalyticsEvents({
       events: [
@@ -43,7 +38,6 @@ describe('insertAnalyticsEvents', () => {
       userId: '22222222-2222-4222-8222-222222222222',
     });
 
-    expect(vi.mocked(query).mock.calls[0]?.[0]).toContain('CREATE TABLE IF NOT EXISTS');
     const insertCall = vi.mocked(query).mock.calls.find((call) =>
       String(call[0]).includes('INSERT INTO analytics_events')
     );
@@ -61,7 +55,6 @@ describe('persistAnalyticsIngest', () => {
   beforeEach(() => {
     vi.mocked(query).mockReset();
     vi.mocked(query).mockResolvedValue({ rows: [] } as never);
-    resetAnalyticsEventsTableEnsured();
   });
 
   it('returns 400 for an invalid body', async () => {

@@ -135,8 +135,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-beer_tracker}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Выполняется только при первом создании тома (пустой data directory)
-      - ./database/init.sql:/docker-entrypoint-initdb.d/01-beer-tracker.sql:ro
+      # Схему создаёт и обновляет app при старте (database/migrations, instrumentation.ts)
     ports:
       - "5433:5432"
     healthcheck:

@@ -66,7 +66,7 @@
 
 ## Реализация (отдельная таблица сегментов)
 
-- **Таблица**: `task_position_segments(organization_id, sprint_id, task_id, segment_index, start_day, start_part, duration)` с FK на `task_positions` и `ON DELETE CASCADE` — схема в `database/init.sql` (отдельного файла миграции `011_…` больше нет).
+- **Таблица**: `task_position_segments(organization_id, sprint_id, task_id, segment_index, start_day, start_part, duration)` с FK на `task_positions` и `ON DELETE CASCADE` — схема в `database/migrations/0001_baseline.sql`.
 - **Типы**: `PhaseSegment`, `TaskPosition.segments?: PhaseSegment[]` (`types/index.ts`).
 - **API**: GET позиций (`app/api/sprints/[sprintId]/positions/route.ts`) подгружает сегменты; batch (`app/api/sprints/[sprintId]/positions/batch/`) перезаписывает их. SQL — `lib/sprints/taskPositionsRepository.ts`, `lib/sprints/taskPositionsBatchRepository.ts`, `lib/sprints/taskPositionsBatchSql.ts`.
 - **Чистые функции**: `lib/planner-timeline/occupancyUtils.ts` — `getPositionSegmentRanges`, `getPositionEffectiveDuration`, `cellsToSegments`, `mergeAdjacentSegments`, `getSegmentEditorRangeAndCells` и др.; тесты — `lib/planner-timeline/occupancyUtils.test.ts`.

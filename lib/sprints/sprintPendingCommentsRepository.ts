@@ -6,7 +6,6 @@ import type { BeerTrackerTransactionQuery } from '@/lib/db';
 
 import { query } from '@/lib/db';
 
-import { ensurePlannerCommentImagesSchema } from './ensurePlannerCommentImages';
 import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
 
 /** Удаляет pending-заметки plan patch автора драфта в спринте (повторный propose / смена ops). */
@@ -14,7 +13,6 @@ export async function deletePendingPlanPatchSprintComments(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<number> {
-  await ensurePlannerCommentImagesSchema();
   const result = await query(
     `DELETE FROM comments
       WHERE ${sprintTenantWhere()}
@@ -38,7 +36,6 @@ export async function confirmPendingSprintComments(
   if (input.commentIds.length === 0) {
     return 0;
   }
-  await ensurePlannerCommentImagesSchema();
   const result = await run(
     `UPDATE comments
         SET pending_approval = FALSE,
@@ -76,7 +73,6 @@ export async function confirmAllPendingSprintComments(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<number> {
-  await ensurePlannerCommentImagesSchema();
   const result = await query(
     `UPDATE comments
         SET pending_approval = FALSE,
@@ -96,7 +92,6 @@ export async function deleteAllPendingSprintComments(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<number> {
-  await ensurePlannerCommentImagesSchema();
   const result = await query(
     `DELETE FROM comments
       WHERE ${sprintTenantWhere()}

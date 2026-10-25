@@ -16,10 +16,6 @@ vi.mock('@/lib/db', () => ({
   query: vi.fn(),
 }));
 
-vi.mock('@/lib/notifications/ensureUserNotificationsTable', () => ({
-  ensureUserNotificationsTable: vi.fn().mockResolvedValue(undefined),
-}));
-
 describe('insertUserNotifications', () => {
   beforeEach(() => {
     vi.mocked(query).mockReset();

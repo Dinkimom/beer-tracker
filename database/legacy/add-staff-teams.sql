@@ -1,5 +1,5 @@
--- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
--- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public.
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/legacy/<this-file>.sql
 \if :{?schema}
 \else
 \set schema public
@@ -8,10 +8,10 @@ CREATE SCHEMA IF NOT EXISTS :"schema";
 SET search_path TO :"schema", public;
 
 -- Каталог команд и сотрудников (для уже существующей БД).
--- Чистая БД: таблицы уже есть в database/init.sql — этот файл идемпотентен.
+-- Чистая БД: таблицы создаёт database/migrations/0001_baseline.sql — этот файл идемпотентен.
 --
 --   ./scripts/db/psql-with-schema.sh -h localhost -p 5433 -U postgres -d beer_tracker \
---     -f database/add-staff-teams.sql
+--     -f database/legacy/add-staff-teams.sql
 --
 -- Делает:
 --   1) staff, teams, team_members, system_roles, org_roles (если ещё нет)

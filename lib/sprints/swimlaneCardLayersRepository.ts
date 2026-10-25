@@ -1,47 +1,11 @@
 import type { SwimlaneCardLayer, SwimlaneCardLayerWrite } from '@/lib/swimlane/swimlaneCardLayers';
 
 import { query, runBeerTrackerTransaction } from '@/lib/db';
-import { getBeerTrackerSchema } from '@/lib/env';
 
 interface CardLayerRow {
   card_id: string;
   layer: number;
   updated_at: Date | string;
-}
-
-let schemaEnsured = false;
-let schemaEnsurePromise: Promise<void> | null = null;
-
-function qualifySchemaName(schema: string): string {
-  return schema.includes('-') ? `"${schema}"` : schema;
-}
-
-async function ensureSwimlaneCardLayersSchema(): Promise<void> {
-  if (schemaEnsured) {
-    return;
-  }
-  schemaEnsurePromise ??= runEnsureSwimlaneCardLayersSchema();
-  await schemaEnsurePromise;
-}
-
-async function runEnsureSwimlaneCardLayersSchema(): Promise<void> {
-  try {
-    const schema = qualifySchemaName(getBeerTrackerSchema());
-    await query(`
-      CREATE TABLE IF NOT EXISTS ${schema}.swimlane_card_layers (
-        organization_id UUID NOT NULL REFERENCES ${schema}.organizations (id) ON DELETE CASCADE,
-        sprint_id INTEGER NOT NULL,
-        card_id VARCHAR(255) NOT NULL,
-        layer INTEGER NOT NULL CHECK (layer >= 0 AND layer < 50),
-        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (organization_id, sprint_id, card_id)
-      )
-    `);
-    schemaEnsured = true;
-  } catch (error) {
-    schemaEnsurePromise = null;
-    throw error;
-  }
 }
 
 function revFromUpdatedAt(value: Date | string): number {
@@ -53,7 +17,6 @@ export async function listSwimlaneCardLayers(input: {
   organizationId: string;
   sprintId: number;
 }): Promise<SwimlaneCardLayer[]> {
-  await ensureSwimlaneCardLayersSchema();
   const result = await query<CardLayerRow>(
     `SELECT card_id, layer, updated_at
      FROM swimlane_card_layers
@@ -76,7 +39,6 @@ export async function writeSwimlaneCardLayers(input: {
   if (input.layers.length === 0) {
     return;
   }
-  await ensureSwimlaneCardLayersSchema();
   await runBeerTrackerTransaction(async (tx) => {
     for (const { cardId, layer } of input.layers) {
       if (layer == null) {

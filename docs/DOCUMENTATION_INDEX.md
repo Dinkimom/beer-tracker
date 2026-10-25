@@ -17,7 +17,7 @@ beer-tracker/
 │   ├── DOCUMENTATION_INDEX.md         # Этот индекс
 │   ├── BUSINESS_RULES.md              # Бизнес-правила кора: раскладка, поинты, done, burndown, жизненный цикл
 │   ├── INSTALL.md                     # Установка, Docker, env, sync, команды
-│   ├── DATABASE.md                    # Схема БД: init.sql, порядок миграций, таблицы, известные проблемы
+│   ├── DATABASE.md                    # Схема БД: миграции, таблицы, известные проблемы
 │   ├── SYNC.md                        # Синхронизация трекер → БД: BullMQ-воркер, тик, режимы, диагностика
 │   ├── COMMERCIAL_DB_CONTRACT.md      # Каталог staff/teams, DB_CONTRACT_MODE, права роли
 │   ├── companies.md                   # Компании на посадочной: как добавить следующую

@@ -1,5 +1,5 @@
--- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
--- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public.
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/legacy/<this-file>.sql
 \if :{?schema}
 \else
 \set schema public
@@ -8,10 +8,10 @@ CREATE SCHEMA IF NOT EXISTS :"schema";
 SET search_path TO :"schema", public;
 
 -- Legacy: add organization_id to sprint_goals.
--- Target: deployments whose sprint_goals predates the multi-tenant column in init.sql.
+-- Target: deployments whose sprint_goals predates the multi-tenant column (the baseline migration adds it to new DBs).
 --
 -- Usage:
---   psql -v ON_ERROR_STOP=1 -f database/add-sprint-goals-organization-id.sql
+--   psql -v ON_ERROR_STOP=1 -f database/legacy/add-sprint-goals-organization-id.sql
 --
 -- Backfills all existing rows to the single (or oldest) organization in the DB.
 

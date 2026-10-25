@@ -16,10 +16,6 @@ import {
 } from './sprintPendingCommentsRepository';
 
 vi.mock('@/lib/db', () => ({ query: vi.fn(), runBeerTrackerTransaction: vi.fn() }));
-vi.mock('./ensurePlannerCommentImages', () => ({
-  ensurePlannerCommentImagesSchema: vi.fn().mockResolvedValue(undefined),
-}));
-
 const mockedQuery = vi.mocked(query);
 const NOTE = '11111111-1111-4111-8111-111111111111';
 

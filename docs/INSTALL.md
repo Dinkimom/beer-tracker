@@ -16,7 +16,7 @@ docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
 
 Приложение: [http://localhost:3000](http://localhost:3000). Postgres на хосте — порт 5433. Воркер синхронизации: добавьте `--profile exporter` (и при необходимости `--profile cron`). Другой тег: `BEER_TRACKER_TAG=latest`.
 
-`database/init.sql` выполняется только на пустом томе. При переходе на новый тег существующую БД нужно догнать файлами из `database/`: порядок и даты — в [DATABASE.md](./DATABASE.md#обновление-живой-бд).
+Схему создаёт и обновляет само приложение: при старте контейнера app применяет новые миграции из `database/migrations/`, и на пустом томе, и при переходе на новый тег. Ручных шагов с БД при обновлении нет. Подробности и как выключить — [DATABASE.md](./DATABASE.md#как-применяется-схема).
 
 `YANDEX_OAUTH_CLIENT_ID` и `YANDEX_OAUTH_CLIENT_SECRET` — runtime env контейнера app (как `ATLASSIAN_OAUTH_*`), не Docker build ARG. Задайте в `.env` и перезапустите: пользователи входят кнопкой «Войти с Яндекс ID» (`/api/auth/yandex/start`). Для Jira эти переменные не нужны.
 
@@ -43,7 +43,7 @@ pnpm dev
 
 ### Без Docker (свой Postgres)
 
-Задайте `POSTGRES_*` и `BEER_TRACKER_SCHEMA` (по умолчанию `public`) в `.env` и выполните `database/init.sql` на чистой БД (`psql -v ON_ERROR_STOP=1 -f database/init.sql`). `init.sql` всегда создаёт таблицы в `public`. Живую БД обновляют файлами из `database/` через `./scripts/db/psql-with-schema.sh` (или `pnpm db:psql`). Порядок, идемпотентность и известные проблемы описаны в [DATABASE.md](./DATABASE.md), каталог `staff`/`teams` и права — в [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md).
+Задайте `POSTGRES_*` и `BEER_TRACKER_SCHEMA` (по умолчанию `public`) в `.env`. Таблицы в этой схеме создаст `pnpm dev` при старте (или заранее `pnpm db:migrate`). Как устроены миграции — [DATABASE.md](./DATABASE.md), каталог `staff`/`teams` и права — [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md).
 
 ```bash
 pnpm dev
@@ -67,7 +67,7 @@ S3_KEY_PREFIX=local/
 
 Бакет нужно создать заранее. Проверка: загрузить фотокарточки в планере → объект `local/orgs/<orgId>/planner/<fileId>` в бакете.
 
-Для уже существующей БД с BYTEA: `./scripts/db/psql-with-schema.sh ... -f database/migrate-planner-files-to-s3.sql`. Скрипт сносит текущие фото и схемы без переливки, и так при **каждом** запуске: применяйте его один раз. Приложение само делает тот же переход при первом обращении к файлам планера (`lib/sprints/ensurePlannerCommentImages.ts`).
+БД, где файлы планера ещё лежат в BYTEA, переводит на S3 baseline-миграция. Фото и схемы при этом удаляются без переливки, см. [DATABASE.md](./DATABASE.md#baseline-0001_baselinesql).
 
 ## Настройка трекера и токенов
 
@@ -125,7 +125,8 @@ pnpm build               # production-сборка Next.js
 pnpm start               # запуск production-сборки
 pnpm sync-worker         # BullMQ-воркер (нужен REDIS_URL)
 pnpm sync-worker:build   # бандл в dist/sync-worker (Docker target sync-worker)
-pnpm db:psql -f database/<файл>.sql   # psql с -v schema=$BEER_TRACKER_SCHEMA
+pnpm db:migrate         # применить миграции схемы (то же делает старт сервера)
+pnpm db:psql -f database/legacy/<файл>.sql   # psql с -v schema=$BEER_TRACKER_SCHEMA
 pnpm lint
 pnpm typecheck
 pnpm test
@@ -157,7 +158,7 @@ pnpm release -- patch --push # то же и push (remote public или origin)
 ├── hooks/
 ├── lib/                 # DB, snapshots, tracker API, sync, tenant, …
 ├── types/
-├── database/            # init.sql + ручные миграции, см. DATABASE.md
+├── database/            # migrations/ (схема) и legacy/ (разовые переносы данных), см. DATABASE.md
 ├── scripts/             # db/, release/, i18n/, knip/, …
 └── docs/
 ```

@@ -1,4 +1,0 @@
--- Устарело: кэш issue_links больше не используется.
--- Связи Tracker/Jira читаются live и не хранятся в Beer Tracker.
--- Если таблица уже создана ранее — удалите её:
---   psql -v ON_ERROR_STOP=1 ... -f database/drop-issue-links.sql

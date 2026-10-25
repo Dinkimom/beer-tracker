@@ -6,8 +6,6 @@ import { randomUUID } from 'crypto';
 import { commentParentToJsonb } from '@/lib/comments/commentParent';
 import { query } from '@/lib/db';
 
-import { ensurePlannerCommentImagesSchema } from './ensurePlannerCommentImages';
-
 /**
  * Правка или удаление заметки из propose_plan_patch — черновик-замена: копия заметки с новым
  * содержимым (pending_approval, видна только автору драфта) и ссылкой на оригинал.
@@ -74,7 +72,6 @@ export async function insertPendingCommentReplacements(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<string[]> {
-  await ensurePlannerCommentImagesSchema();
   const ids: string[] = [];
   for (const op of collectNoteChangeOps(input.ops)) {
     const id = randomUUID();
@@ -134,7 +131,6 @@ export async function applyPendingCommentReplacements(input: {
   ownerId?: string;
   sprintId: number;
 }): Promise<number> {
-  await ensurePlannerCommentImagesSchema();
   const result = await query(APPLY_REPLACEMENTS_SQL, [
     input.sprintId,
     input.commentIds ? [...input.commentIds] : null,
@@ -145,6 +141,5 @@ export async function applyPendingCommentReplacements(input: {
 
 /** apply_plan_patch сам применил updateNote / deleteNote — копии на доске больше не нужны. */
 export async function deletePendingCommentReplacements(input: { ownerId: string; sprintId: number }): Promise<void> {
-  await ensurePlannerCommentImagesSchema();
   await query(`DELETE FROM comments d WHERE ${DRAFT_SCOPE}`, [input.sprintId, null, input.ownerId]);
 }

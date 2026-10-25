@@ -77,6 +77,8 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 **Исключения:** транзакции целиком в repository; route не вызывает `pool.connect()`.
 
+**Схема БД — только миграции.** Новая таблица, колонка, индекс или CHECK — новый файл `database/migrations/NNNN_*.sql` (правила — [`docs/DATABASE.md`](./docs/DATABASE.md#как-добавить-миграцию)). Runtime-DDL (`CREATE TABLE IF NOT EXISTS` / `ALTER TABLE` в репозиториях, флаги `schemaEnsured`) не добавлять. Применённую миграцию не править.
+
 ## Слои: MobX, dnd-kit, `lib/`
 
 - **MobX (`lib/layers/application/mobx/`, сторы в `lib/layers/application/mobx/stores/`, корневой `createRootStore` рядом)** — доменное состояние приложения: позиции задач, UI-сессия планера, согласование с API (поколения ответов, оптимистичные правки). В планере позиции удобнее брать через [`hooks/useTaskPositionsApi.ts`](./hooks/useTaskPositionsApi.ts) (фасад на `TaskPositionsStore`). Не класть сюда жизненный цикл одного жеста drag, если он полностью задаётся dnd-kit.

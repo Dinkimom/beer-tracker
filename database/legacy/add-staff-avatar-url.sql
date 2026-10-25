@@ -1,5 +1,5 @@
--- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
--- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public.
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/legacy/<this-file>.sql
 \if :{?schema}
 \else
 \set schema public
@@ -9,9 +9,9 @@ SET search_path TO :"schema", public;
 
 -- URL аватара в staff (колонка avatar_url).
 -- Для уже существующей БД:
---   psql -v ON_ERROR_STOP=1 -f database/add-staff-avatar-url.sql
+--   psql -v ON_ERROR_STOP=1 -f database/legacy/add-staff-avatar-url.sql
 --
--- Чистая БД: колонка есть в database/init.sql.
+-- Чистая БД: колонку создаёт database/migrations/0001_baseline.sql.
 -- Если есть public.registry_employees — копирует avatar_link в staff
 -- (по uuid, затем по email), не затирая уже заполненные значения.
 

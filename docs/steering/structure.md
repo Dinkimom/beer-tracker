@@ -14,7 +14,7 @@
 | `lib/` | Домены сервера (repositories, SQL), клиент `lib/api/*`, MobX (`lib/layers/`), чистые функции |
 | `contexts/` | React-контексты |
 | `constants/`, `types/`, `utils/` | Общие константы, TS-типы, утилиты |
-| `database/` | `init.sql` и плоские миграции `database/*.sql` |
+| `database/` | `migrations/` — схема (применяются при старте), `legacy/` — разовые переносы данных |
 | `scripts/` | CLI-скрипты (i18n, release, knip, eslint, bench) |
 | `docs/` | Документация, в т.ч. **steering** (`docs/steering/`) |
 | `public/` | Статика, PWA |

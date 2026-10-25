@@ -1,6 +1,6 @@
 /**
  * Системная роль каталога «Тимлид» (slug в system_roles / org_roles) → права в приглашении / планере.
- * @see database/init.sql — seed slug `teamlead`
+ * @see database/migrations/0001_baseline.sql — seed slug `teamlead`
  */
 export const CATALOG_TEAMLEAD_SLUG = 'teamlead';
 

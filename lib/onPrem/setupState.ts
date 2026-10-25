@@ -1,4 +1,3 @@
-import { ensureAdminsTable } from '@/lib/auth/adminsRepository';
 import { query } from '@/lib/db';
 import { sqlExcludingDemoSystemOrganization } from '@/lib/onPrem/demoSystemOrganizationConstants';
 
@@ -18,7 +17,6 @@ interface SetupStateRow {
 }
 
 export async function readOnPremSetupState(): Promise<OnPremSetupState> {
-  await ensureAdminsTable();
   const res = await query<SetupStateRow>(
     `SELECT
        EXISTS(

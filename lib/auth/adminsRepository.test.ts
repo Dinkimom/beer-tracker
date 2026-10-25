@@ -2,34 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { query } from '@/lib/db';
 
-import {
-  countAdmins,
-  deleteAdmin,
-  insertAdmin,
-  isStaffAdmin,
-  resetAdminsTableEnsured,
-} from './adminsRepository';
+import { countAdmins, deleteAdmin, insertAdmin, isStaffAdmin } from './adminsRepository';
 
 vi.mock('@/lib/db', () => ({
   query: vi.fn(),
-}));
-
-vi.mock('@/lib/env', () => ({
-  getBeerTrackerSchema: () => 'beer_tracker',
 }));
 
 describe('adminsRepository', () => {
   beforeEach(() => {
     vi.mocked(query).mockReset();
     vi.mocked(query).mockResolvedValue({ rows: [] } as never);
-    resetAdminsTableEnsured();
   });
 
   it('isStaffAdmin is true when a row exists', async () => {
-    vi.mocked(query)
-      .mockResolvedValueOnce({ rows: [] } as never)
-      .mockResolvedValueOnce({ rows: [] } as never)
-      .mockResolvedValueOnce({ rows: [{ one: 1 }] } as never);
+    vi.mocked(query).mockResolvedValueOnce({ rows: [{ one: 1 }] } as never);
 
     await expect(isStaffAdmin('11111111-1111-4111-8111-111111111111')).resolves.toBe(true);
     const selectCall = vi.mocked(query).mock.calls.find((call) =>

@@ -13,7 +13,6 @@ import { DEFAULT_STICKY_NOTE_COLOR } from '@/lib/comments/stickyNoteColor';
 import { query, runBeerTrackerTransaction } from '@/lib/db';
 import { toPlannerCommentTaskId } from '@/lib/planner/plannerCardKind';
 
-import { ensurePlannerCommentImagesSchema } from './ensurePlannerCommentImages';
 import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
 
 export const SPRINT_COMMENT_RETURNING = `
@@ -89,7 +88,6 @@ export async function listSprintComments(input: {
    */
   viewerUserId?: string;
 }): Promise<unknown[]> {
-  await ensurePlannerCommentImagesSchema();
   await deleteExpiredPendingSprintComments({ sprintId: input.sprintId });
   const result = await query(
     `SELECT ${COMMENT_RETURNING}
@@ -109,7 +107,6 @@ export async function listSprintCommentIds(
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<string[]> {
-  await ensurePlannerCommentImagesSchema();
   const result = await run(
     `SELECT id FROM comments
       WHERE ${sprintTenantWhere()}
@@ -126,7 +123,6 @@ export async function sprintCommentExists(
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<boolean> {
-  await ensurePlannerCommentImagesSchema();
   const result = await run(
     `SELECT 1 FROM comments
       WHERE ${sprintTenantWhere()}
@@ -163,7 +159,6 @@ export async function insertSprintComment(
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<unknown> {
-  await ensurePlannerCommentImagesSchema();
   const color = input.color ?? DEFAULT_STICKY_NOTE_COLOR;
   const kind = input.kind ?? 'text';
   const imageFileId = input.imageFileId ?? null;
@@ -362,7 +357,6 @@ export async function updateSprintComment(
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<{ conflict?: boolean; row: unknown | null }> {
-  await ensurePlannerCommentImagesSchema();
   const result = await run(
     updateSprintCommentSql(),
     updateSprintCommentParams({
@@ -442,7 +436,7 @@ async function softDeleteSprintCommentWithLinks(
 }
 
 /** Мягко удаляет заметку и её стрелки — в своей транзакции или во внешней (`tx`). */
-export async function deleteSprintComment(
+export function deleteSprintComment(
   input: {
     actorUserId?: string | null;
     commentId: string;
@@ -451,7 +445,6 @@ export async function deleteSprintComment(
   },
   tx?: BeerTrackerTransactionQuery
 ): Promise<{ ok: boolean }> {
-  await ensurePlannerCommentImagesSchema();
   if (tx) {
     return softDeleteSprintCommentWithLinks(input, tx);
   }

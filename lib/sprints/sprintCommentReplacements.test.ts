@@ -11,10 +11,6 @@ import {
 } from './sprintCommentReplacements';
 
 vi.mock('@/lib/db', () => ({ query: vi.fn() }));
-vi.mock('./ensurePlannerCommentImages', () => ({
-  ensurePlannerCommentImagesSchema: vi.fn().mockResolvedValue(undefined),
-}));
-
 const mockedQuery = vi.mocked(query);
 
 function result(rowCount: number): QueryResult {

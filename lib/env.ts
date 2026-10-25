@@ -22,8 +22,8 @@ export function getPostgresConfig() {
 }
 
 /**
- * Имя схемы для таблиц beer-tracker в PostgreSQL приложения (по умолчанию `public`,
- * как в `database/init.sql`). Для legacy-инстансов задайте `BEER_TRACKER_SCHEMA=beer_tracker`.
+ * Имя схемы для таблиц beer-tracker в PostgreSQL приложения (по умолчанию `public`;
+ * миграции `database/migrations` создают таблицы в ней). Для legacy-инстансов задайте `BEER_TRACKER_SCHEMA=beer_tracker`.
  * Для схем с дефисом в SQL используются кавычки.
  */
 export function getBeerTrackerSchema(): string {
@@ -263,6 +263,15 @@ export function isDbContractPreflightStrict(): boolean {
   if (!value) {
     return false;
   }
+  return value !== 'false' && value !== '0' && value !== 'off' && value !== 'no';
+}
+
+/**
+ * Миграции схемы при старте сервера (`instrumentation.ts`). По умолчанию включены;
+ * false/0/off/no — схему накатывают вручную (`pnpm db:migrate`), например роль приложения без DDL.
+ */
+export function isDbMigrationsAutoEnabled(): boolean {
+  const value = process.env.DB_MIGRATIONS_AUTO?.trim().toLowerCase();
   return value !== 'false' && value !== '0' && value !== 'off' && value !== 'no';
 }
 

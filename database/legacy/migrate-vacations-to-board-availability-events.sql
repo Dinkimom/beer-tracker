@@ -1,5 +1,5 @@
--- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
--- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public.
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/legacy/<this-file>.sql
 \if :{?schema}
 \else
 \set schema public

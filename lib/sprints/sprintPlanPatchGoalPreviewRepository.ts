@@ -1,8 +1,6 @@
 import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPreview';
 
 import { query, runBeerTrackerTransaction } from '@/lib/db';
-import { getBeerTrackerSchema } from '@/lib/env';
-import { ensurePlanPatchPreviewOwnerColumn } from '@/lib/sprints/planPatchPreviewOwnerSchema';
 import { planPatchClientBrandFromUnknown } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 
 interface PreviewRow {
@@ -12,56 +10,6 @@ interface PreviewRow {
   goal_id: string;
   goal_type: string;
   text: string;
-}
-
-let schemaEnsured = false;
-let schemaEnsurePromise: Promise<void> | null = null;
-
-function qualifySchemaName(schema: string): string {
-  return schema.includes('-') ? `"${schema}"` : schema;
-}
-
-async function ensurePlanPatchGoalPreviewSchema(): Promise<void> {
-  if (schemaEnsured) {
-    return;
-  }
-  schemaEnsurePromise ??= runEnsurePlanPatchGoalPreviewSchema();
-  await schemaEnsurePromise;
-}
-
-async function runEnsurePlanPatchGoalPreviewSchema(): Promise<void> {
-  try {
-    const schema = qualifySchemaName(getBeerTrackerSchema());
-    await query(`
-      CREATE TABLE IF NOT EXISTS ${schema}.plan_patch_goal_previews (
-        organization_id UUID NOT NULL REFERENCES ${schema}.organizations (id) ON DELETE CASCADE,
-        sprint_id INTEGER NOT NULL,
-        goal_id UUID NOT NULL,
-        proposal_id VARCHAR(64) NOT NULL,
-        goal_type VARCHAR(16) NOT NULL CHECK (goal_type IN ('delivery', 'discovery')),
-        action VARCHAR(16) NOT NULL CHECK (action IN ('create', 'update', 'delete')),
-        text TEXT NOT NULL,
-        done BOOLEAN NOT NULL DEFAULT FALSE,
-        client_brand VARCHAR(16) NOT NULL DEFAULT '',
-        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-        owner_id VARCHAR(255) NOT NULL DEFAULT '',
-        PRIMARY KEY (organization_id, sprint_id, owner_id, goal_id)
-      )
-    `);
-    await query(`
-      CREATE INDEX IF NOT EXISTS idx_plan_patch_goal_previews_sprint
-        ON ${schema}.plan_patch_goal_previews (organization_id, sprint_id)
-    `);
-    await ensurePlanPatchPreviewOwnerColumn({
-      keyColumn: 'goal_id',
-      schema,
-      table: 'plan_patch_goal_previews',
-    });
-    schemaEnsured = true;
-  } catch (error) {
-    schemaEnsurePromise = null;
-    throw error;
-  }
 }
 
 function previewFromRow(row: PreviewRow): PlanPatchGoalPreview | null {
@@ -89,7 +37,6 @@ export async function listPlanPatchGoalPreviews(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<PlanPatchGoalPreview[]> {
-  await ensurePlanPatchGoalPreviewSchema();
   await query(
     `DELETE FROM plan_patch_goal_previews
      WHERE organization_id = $1::uuid AND sprint_id = $2 AND expires_at < CURRENT_TIMESTAMP`,
@@ -120,7 +67,6 @@ export async function peekPlanPatchGoalPreviewProposal(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<{ count: number; proposalId: string } | null> {
-  await ensurePlanPatchGoalPreviewSchema();
   await query(
     `DELETE FROM plan_patch_goal_previews
      WHERE organization_id = $1::uuid AND sprint_id = $2 AND expires_at < CURRENT_TIMESTAMP`,
@@ -150,7 +96,6 @@ export async function replacePlanPatchGoalPreviews(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<void> {
-  await ensurePlanPatchGoalPreviewSchema();
   await runBeerTrackerTransaction(async (tx) => {
     // Полная замена: повторный propose с другим opsHash убирает старые превью целей
     // (createGoal каждый раз даёт новый goal_id — иначе они копятся).
@@ -198,7 +143,6 @@ export async function deletePlanPatchGoalPreviews(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<number> {
-  await ensurePlanPatchGoalPreviewSchema();
   const result = await query(
     `DELETE FROM plan_patch_goal_previews
      WHERE organization_id = $1::uuid
@@ -216,7 +160,6 @@ export async function deletePlanPatchGoalPreviewsByProposal(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<void> {
-  await ensurePlanPatchGoalPreviewSchema();
   await query(
     `DELETE FROM plan_patch_goal_previews
      WHERE organization_id = $1::uuid AND sprint_id = $2 AND proposal_id = $3 AND owner_id = $4`,

@@ -13,9 +13,6 @@ import { applySprintPlanPatch } from './sprintPlanPatchService';
 
 vi.mock('@/lib/db', () => ({ runBeerTrackerTransaction: vi.fn() }));
 vi.mock('@/lib/realtime/notifySprintRealtime', () => ({ notifySprintRealtime: vi.fn() }));
-vi.mock('@/lib/sprints/ensurePlannerCommentImages', () => ({
-  ensurePlannerCommentImagesSchema: vi.fn(() => Promise.resolve()),
-}));
 vi.mock('@/lib/sprints/loadSprintContextForOrganization', () => ({
   loadSprintContextForOrganization: vi.fn(() => Promise.reject(new Error('not needed'))),
 }));
@@ -30,7 +27,6 @@ vi.mock('@/lib/sprints/sprintPlanPatchPositionPreviewRepository', () => ({
 }));
 vi.mock('./sprintPlanPatchAppliedTokenRepository', () => ({
   claimPlanPatchApplyToken: vi.fn(),
-  ensurePlanPatchAppliedTokensSchema: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('./sprintPlanPatchDraftNotes', () => ({ confirmProposedCreateNotes: vi.fn() }));
 vi.mock('./sprintPlanPatchToken', async (importOriginal) => ({

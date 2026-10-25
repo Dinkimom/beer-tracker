@@ -17,7 +17,6 @@ import { parseAgentBridgeStep } from '@/lib/agentSessions/agentBridge';
 import { parseAgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 import { STAFF_AUTHOR_DISPLAY_NAME_SQL } from '@/lib/comments/commentAuthor';
 import { query } from '@/lib/db';
-import { getBeerTrackerSchema } from '@/lib/env';
 import { planPatchClientBrandFromUnknown } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 
 type DbTimestamp = Date | string;
@@ -64,96 +63,6 @@ const CLOSED_VISIBLE_DAYS = 7;
 
 /** Тот же шаг агента пишем не чаще: каждый вызов тула — это ещё и перезапрос сессий в планере. */
 const ACTIVITY_THROTTLE_SECONDS = 20;
-
-let schemaEnsured = false;
-let schemaEnsurePromise: Promise<void> | null = null;
-
-function qualifySchemaName(schema: string): string {
-  return schema.includes('-') ? `"${schema}"` : schema;
-}
-
-async function ensureAgentSessionsSchema(): Promise<void> {
-  if (schemaEnsured) {
-    return;
-  }
-  schemaEnsurePromise ??= runEnsureAgentSessionsSchema();
-  await schemaEnsurePromise;
-}
-
-async function runEnsureAgentSessionsSchema(): Promise<void> {
-  try {
-    const schema = qualifySchemaName(getBeerTrackerSchema());
-    await query(`
-      CREATE TABLE IF NOT EXISTS ${schema}.agent_sessions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        organization_id UUID NOT NULL REFERENCES ${schema}.organizations (id) ON DELETE CASCADE,
-        sprint_id INTEGER NOT NULL,
-        owner_id VARCHAR(255) NOT NULL,
-        task_id VARCHAR(255),
-        title TEXT NOT NULL,
-        context JSONB NOT NULL DEFAULT '{}'::jsonb,
-        origin VARCHAR(16) NOT NULL CHECK (origin IN ('planner', 'agent')),
-        status VARCHAR(16) NOT NULL CHECK (status IN ('waiting_agent', 'waiting_user', 'closed')),
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        closed_at TIMESTAMP WITH TIME ZONE
-      )
-    `);
-    await query(`
-      ALTER TABLE ${schema}.agent_sessions
-        ADD COLUMN IF NOT EXISTS agent_step VARCHAR(16),
-        ADD COLUMN IF NOT EXISTS agent_step_at TIMESTAMP WITH TIME ZONE
-    `);
-    await query(`
-      CREATE INDEX IF NOT EXISTS idx_agent_sessions_owner
-        ON ${schema}.agent_sessions (organization_id, owner_id, status)
-    `);
-    await query(`
-      CREATE INDEX IF NOT EXISTS idx_agent_sessions_sprint
-        ON ${schema}.agent_sessions (organization_id, sprint_id)
-    `);
-    await query(`
-      CREATE TABLE IF NOT EXISTS ${schema}.agent_session_messages (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        session_id UUID NOT NULL REFERENCES ${schema}.agent_sessions (id) ON DELETE CASCADE,
-        author_kind VARCHAR(8) NOT NULL CHECK (author_kind IN ('user', 'agent')),
-        author_id VARCHAR(255),
-        kind VARCHAR(16) NOT NULL CHECK (kind IN ('request', 'comment', 'redo', 'message', 'draft', 'reply')),
-        text TEXT NOT NULL,
-        target_kind VARCHAR(16) CHECK (target_kind IN ('position', 'goal', 'note')),
-        target_id VARCHAR(255),
-        target_label TEXT,
-        proposal_id VARCHAR(64),
-        reply_to UUID REFERENCES ${schema}.agent_session_messages (id) ON DELETE CASCADE,
-        resolution VARCHAR(16) CHECK (resolution IN ('addressed', 'declined')),
-        mentions JSONB NOT NULL DEFAULT '[]'::jsonb,
-        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    await query(`
-      ALTER TABLE ${schema}.agent_session_messages
-        ADD COLUMN IF NOT EXISTS mentions JSONB NOT NULL DEFAULT '[]'::jsonb
-    `);
-    await query(`
-      ALTER TABLE ${schema}.agent_session_messages
-        ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16)
-    `);
-    await query(`
-      ALTER TABLE ${schema}.agent_session_messages
-        ADD COLUMN IF NOT EXISTS options JSONB NOT NULL DEFAULT '[]'::jsonb,
-        ADD COLUMN IF NOT EXISTS skill_id VARCHAR(32),
-        ADD COLUMN IF NOT EXISTS skill_params JSONB NOT NULL DEFAULT '{}'::jsonb
-    `);
-    await query(`
-      CREATE INDEX IF NOT EXISTS idx_agent_session_messages_session
-        ON ${schema}.agent_session_messages (session_id, created_at)
-    `);
-    schemaEnsured = true;
-  } catch (error) {
-    schemaEnsurePromise = null;
-    throw error;
-  }
-}
 
 function toIso(value: DbTimestamp): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
@@ -303,7 +212,6 @@ export async function createAgentSession(input: {
   taskId: string | null;
   title: string;
 }): Promise<string> {
-  await ensureAgentSessionsSchema();
   const result = await query<{ id: string }>(
     `INSERT INTO agent_sessions (organization_id, sprint_id, owner_id, task_id, title, context, origin, status)
      VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, $8)
@@ -342,7 +250,6 @@ export async function insertAgentSessionMessage(input: {
   target?: { id: string; kind: AgentSessionTargetKind; label?: string | null } | null;
   text: string;
 }): Promise<string> {
-  await ensureAgentSessionsSchema();
   const result = await query<{ id: string }>(
     `INSERT INTO agent_session_messages (
        session_id, author_kind, author_id, kind, text, target_kind, target_id, target_label,
@@ -386,7 +293,6 @@ export async function setAgentSessionStatus(input: {
   sessionId: string;
   status: AgentSessionStatus;
 }): Promise<void> {
-  await ensureAgentSessionsSchema();
   await query(
     `UPDATE agent_sessions
         SET status = $2::varchar,
@@ -403,7 +309,6 @@ export async function getAgentSession(input: {
   ownerId: string;
   sessionId: string;
 }): Promise<AgentSession | null> {
-  await ensureAgentSessionsSchema();
   const result = await query<SessionRow>(
     `SELECT ${SESSION_COLUMNS}
        FROM agent_sessions s
@@ -428,7 +333,6 @@ export async function listAgentSessions(input: {
   sprintId?: number;
   statuses?: readonly AgentSessionStatus[];
 }): Promise<AgentSession[]> {
-  await ensureAgentSessionsSchema();
   const result = await query<SessionRow>(
     `SELECT ${SESSION_COLUMNS}
        FROM agent_sessions s
@@ -461,7 +365,6 @@ export async function findAgentSessionByProposal(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<string | null> {
-  await ensureAgentSessionsSchema();
   const result = await query<{ id: string }>(
     `SELECT s.id::text AS id
        FROM agent_sessions s
@@ -484,7 +387,6 @@ export async function deleteOwnAgentSessionMessage(input: {
   messageId: string;
   sessionId: string;
 }): Promise<boolean> {
-  await ensureAgentSessionsSchema();
   const result = await query(
     `DELETE FROM agent_session_messages m
       WHERE m.id = $1::uuid
@@ -509,7 +411,6 @@ export async function touchAgentSessionActivity(input: {
   sprintId: number | null;
   step: AgentBridgeStep;
 }): Promise<number[]> {
-  await ensureAgentSessionsSchema();
   const result = await query<{ sprint_id: number }>(
     `UPDATE agent_sessions s
         SET agent_step = $5::varchar, agent_step_at = CURRENT_TIMESTAMP

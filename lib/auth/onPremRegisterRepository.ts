@@ -9,7 +9,6 @@ import { mergeOrganizationSettingsIssueTrackerPatch } from '@/lib/issueTrackerPr
 import { sqlExcludingDemoSystemOrganization } from '@/lib/onPrem/demoSystemOrganizationConstants';
 import { buildDefaultTrackerIntegrationStored, mergeOrganizationSettingsTrackerIntegration } from '@/lib/trackerIntegration';
 
-import { ensureAdminsTable } from './adminsRepository';
 import { appendProductSessionCookie } from './cookies';
 
 interface OnPremFirstUserInsertInput {
@@ -129,7 +128,6 @@ async function insertOnPremOrgAndAdmin(
 }
 
 async function runOnPremFirstUserTransaction(input: RegisterOnPremFirstUserInput) {
-  await ensureAdminsTable();
   const slug = await allocateUniqueOrganizationSlug(input.orgName);
   let settings: Record<string, unknown> = mergeOrganizationSettingsTrackerIntegration(
     {},

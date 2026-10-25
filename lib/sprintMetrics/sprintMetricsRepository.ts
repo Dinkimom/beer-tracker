@@ -8,30 +8,6 @@ import { query } from '@/lib/db';
 
 import { SPRINT_METRICS_FORMULA_VERSION } from './sprintMetricsTypes';
 
-let tablesEnsured = false;
-
-/** Идемпотентно создаёт таблицу (для БД, где не применяли database/add-sprint-metrics.sql). */
-async function ensureSprintMetricsTable(): Promise<void> {
-  if (tablesEnsured) return;
-  await query(`
-    CREATE TABLE IF NOT EXISTS sprint_metrics (
-      organization_id UUID NOT NULL REFERENCES organizations (id) ON DELETE CASCADE,
-      board_id INTEGER NOT NULL,
-      sprint_id INTEGER NOT NULL,
-      sprint_name TEXT NOT NULL,
-      start_date TEXT NOT NULL,
-      end_date TEXT NOT NULL,
-      open BOOLEAN NOT NULL,
-      frozen BOOLEAN NOT NULL,
-      formula_version INTEGER NOT NULL,
-      facts JSONB NOT NULL,
-      computed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (organization_id, board_id, sprint_id)
-    )
-  `);
-  tablesEnsured = true;
-}
-
 interface SprintMetricsRow {
   computed_at: string;
   end_date: string;
@@ -64,7 +40,6 @@ export async function listStoredSprintMetrics(input: {
   organizationId: string;
   sprintIds: number[];
 }): Promise<Map<number, StoredSprintMetrics>> {
-  await ensureSprintMetricsTable();
   if (input.sprintIds.length === 0) return new Map();
   const result = await query<SprintMetricsRow>(
     `SELECT sprint_id, sprint_name, start_date, end_date, open, frozen, facts,
@@ -82,7 +57,6 @@ export async function upsertSprintMetrics(input: {
   organizationId: string;
   record: StoredSprintMetrics;
 }): Promise<void> {
-  await ensureSprintMetricsTable();
   const { record } = input;
   await query(
     `INSERT INTO sprint_metrics

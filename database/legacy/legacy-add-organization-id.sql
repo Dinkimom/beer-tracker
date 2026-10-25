@@ -1,5 +1,5 @@
--- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public (= init.sql).
--- Prefer: ./scripts/db/psql-with-schema.sh -f database/<this-file>.sql
+-- Schema from psql -v schema=… (BEER_TRACKER_SCHEMA). Default: public.
+-- Prefer: ./scripts/db/psql-with-schema.sh -f database/legacy/<this-file>.sql
 \if :{?schema}
 \else
 \set schema public
@@ -11,7 +11,7 @@ SET search_path TO :"schema", public;
 -- Target: old single-tenant deployments where organization_id was absent.
 --
 -- Usage:
---   psql -v ON_ERROR_STOP=1 -f database/legacy-add-organization-id.sql
+--   psql -v ON_ERROR_STOP=1 -f database/legacy/legacy-add-organization-id.sql
 --
 -- What this script does:
 -- 1) Uses existing row from organizations.

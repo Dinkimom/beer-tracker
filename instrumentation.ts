@@ -3,6 +3,9 @@ export async function register(): Promise<void> {
     return;
   }
 
+  const { runDbMigrationsOnStartup } = await import('@/lib/dbMigrations/runDbMigrations');
+  await runDbMigrationsOnStartup();
+
   try {
     const { runDbContractPreflightOnStartup } = await import('@/lib/dbContractPreflight');
     await runDbContractPreflightOnStartup();

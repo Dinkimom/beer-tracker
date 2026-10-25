@@ -2,45 +2,6 @@ import type { BeerTrackerTransactionQuery } from '@/lib/db';
 
 import { createHash } from 'crypto';
 
-import { query } from '@/lib/db';
-import { getBeerTrackerSchema } from '@/lib/env';
-
-let schemaEnsured = false;
-let schemaEnsurePromise: Promise<void> | null = null;
-
-function qualifySchemaName(schema: string): string {
-  return schema.includes('-') ? `"${schema}"` : schema;
-}
-
-async function runEnsurePlanPatchAppliedTokensSchema(): Promise<void> {
-  try {
-    const schema = qualifySchemaName(getBeerTrackerSchema());
-    await query(`
-      CREATE TABLE IF NOT EXISTS ${schema}.plan_patch_applied_tokens (
-        organization_id UUID NOT NULL REFERENCES ${schema}.organizations (id) ON DELETE CASCADE,
-        token_hash CHAR(64) NOT NULL,
-        sprint_id INTEGER NOT NULL,
-        applied_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-        PRIMARY KEY (organization_id, token_hash)
-      )
-    `);
-    schemaEnsured = true;
-  } catch (error) {
-    schemaEnsurePromise = null;
-    throw error;
-  }
-}
-
-/** Таблица применённых токенов plan patch (runtime-DDL, см. docs/DATABASE.md). */
-export async function ensurePlanPatchAppliedTokensSchema(): Promise<void> {
-  if (schemaEnsured) {
-    return;
-  }
-  schemaEnsurePromise ??= runEnsurePlanPatchAppliedTokensSchema();
-  await schemaEnsurePromise;
-}
-
 function hashPlanPatchApplyToken(applyToken: string): string {
   return createHash('sha256').update(applyToken).digest('hex');
 }

@@ -1,8 +1,6 @@
 import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 
 import { query, runBeerTrackerTransaction } from '@/lib/db';
-import { getBeerTrackerSchema } from '@/lib/env';
-import { ensurePlanPatchPreviewOwnerColumn } from '@/lib/sprints/planPatchPreviewOwnerSchema';
 
 import {
   normalizePlanPatchPositionPreview,
@@ -21,72 +19,6 @@ interface PreviewRow {
   start_part: number;
   sync_to_tracker: boolean;
   task_id: string;
-}
-
-let schemaEnsured = false;
-let schemaEnsurePromise: Promise<void> | null = null;
-
-function qualifySchemaName(schema: string): string {
-  return schema.includes('-') ? `"${schema}"` : schema;
-}
-
-async function ensurePlanPatchPositionPreviewSchema(): Promise<void> {
-  if (schemaEnsured) {
-    return;
-  }
-  schemaEnsurePromise ??= runEnsurePlanPatchPositionPreviewSchema();
-  await schemaEnsurePromise;
-}
-
-async function runEnsurePlanPatchPositionPreviewSchema(): Promise<void> {
-  try {
-    const schema = qualifySchemaName(getBeerTrackerSchema());
-    await query(`
-      CREATE TABLE IF NOT EXISTS ${schema}.plan_patch_position_previews (
-        organization_id UUID NOT NULL REFERENCES ${schema}.organizations (id) ON DELETE CASCADE,
-        sprint_id INTEGER NOT NULL,
-        task_id VARCHAR(255) NOT NULL,
-        proposal_id VARCHAR(64) NOT NULL,
-        assignee_id VARCHAR(255) NOT NULL,
-        start_day INTEGER NOT NULL CHECK (start_day >= 0 AND start_day < 400),
-        start_part INTEGER NOT NULL CHECK (start_part >= 0 AND start_part < 4),
-        duration INTEGER NOT NULL CHECK (duration > 0),
-        remove BOOLEAN NOT NULL DEFAULT FALSE,
-        changes TEXT NOT NULL DEFAULT '',
-        client_brand VARCHAR(16) NOT NULL DEFAULT '',
-        segments JSONB,
-        sync_to_tracker BOOLEAN NOT NULL DEFAULT FALSE,
-        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-        owner_id VARCHAR(255) NOT NULL DEFAULT '',
-        PRIMARY KEY (organization_id, sprint_id, owner_id, task_id)
-      )
-    `);
-    await query(`
-      CREATE INDEX IF NOT EXISTS idx_plan_patch_position_previews_sprint
-        ON ${schema}.plan_patch_position_previews (organization_id, sprint_id)
-    `);
-    await query(`
-      ALTER TABLE ${schema}.plan_patch_position_previews
-        ADD COLUMN IF NOT EXISTS client_brand VARCHAR(16) NOT NULL DEFAULT ''
-    `);
-    await query(`
-      ALTER TABLE ${schema}.plan_patch_position_previews
-        ADD COLUMN IF NOT EXISTS segments JSONB
-    `);
-    await query(`
-      ALTER TABLE ${schema}.plan_patch_position_previews
-        ADD COLUMN IF NOT EXISTS sync_to_tracker BOOLEAN NOT NULL DEFAULT FALSE
-    `);
-    await ensurePlanPatchPreviewOwnerColumn({
-      keyColumn: 'task_id',
-      schema,
-      table: 'plan_patch_position_previews',
-    });
-    schemaEnsured = true;
-  } catch (error) {
-    schemaEnsurePromise = null;
-    throw error;
-  }
 }
 
 function changesFromRow(value: string): PlanPatchPositionPreview['changes'] {
@@ -137,7 +69,6 @@ export async function listPlanPatchPositionPreviews(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<PlanPatchPositionPreview[]> {
-  await ensurePlanPatchPositionPreviewSchema();
   await query(
     `DELETE FROM plan_patch_position_previews
      WHERE organization_id = $1::uuid AND sprint_id = $2 AND expires_at < CURRENT_TIMESTAMP`,
@@ -159,7 +90,6 @@ export async function peekPlanPatchPositionPreviewProposal(input: {
   ownerId: string;
   sprintId: number;
 }): Promise<{ count: number; proposalId: string } | null> {
-  await ensurePlanPatchPositionPreviewSchema();
   await query(
     `DELETE FROM plan_patch_position_previews
      WHERE organization_id = $1::uuid AND sprint_id = $2 AND expires_at < CURRENT_TIMESTAMP`,
@@ -189,7 +119,6 @@ export async function replacePlanPatchPositionPreviews(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<void> {
-  await ensurePlanPatchPositionPreviewSchema();
   await runBeerTrackerTransaction(async (tx) => {
     // Полная замена: повторный propose с другим opsHash должен снять старые карточки
     // (в т.ч. задачи, которых больше нет в ops), а не только строки с тем же proposal_id.
@@ -247,7 +176,6 @@ export async function updatePlanPatchPositionPreviewGeometry(input: {
   preview: PlanPatchPositionPreview;
   sprintId: number;
 }): Promise<number> {
-  await ensurePlanPatchPositionPreviewSchema();
   const { preview } = input;
   const result = await query(
     `UPDATE plan_patch_position_previews
@@ -285,7 +213,6 @@ export async function deletePlanPatchPositionPreviews(input: {
   sprintId: number;
   taskId?: string;
 }): Promise<number> {
-  await ensurePlanPatchPositionPreviewSchema();
   const result = await query(
     `DELETE FROM plan_patch_position_previews
      WHERE organization_id = $1::uuid
@@ -303,7 +230,6 @@ export async function deletePlanPatchPositionPreviewsByProposal(input: {
   proposalId: string;
   sprintId: number;
 }): Promise<void> {
-  await ensurePlanPatchPositionPreviewSchema();
   await query(
     `DELETE FROM plan_patch_position_previews
      WHERE organization_id = $1::uuid AND sprint_id = $2 AND proposal_id = $3 AND owner_id = $4`,

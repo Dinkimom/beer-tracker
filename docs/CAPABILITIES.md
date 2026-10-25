@@ -232,7 +232,7 @@ Feature-based структура: домены в `features/`, серверна�
 - `board_availability_events` — доступность участников
 - `agent_sessions`, `plan_patch_position_previews`, `plan_patch_goal_previews` — агент и его предложения
 
-Таблицы `feature_documents*` и `quarterly_plan_v2_*` — leftover deprecated-экранов (код квартального плана удалён), не развивать. Схема: `database/init.sql` и миграции `database/*.sql`.
+Таблицы `feature_documents*` и `quarterly_plan_v2_*` — leftover deprecated-экранов (код квартального плана удалён), не развивать. Схема: миграции `database/migrations/`.
 
 ## Ограничения
 

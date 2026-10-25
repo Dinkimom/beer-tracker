@@ -2,7 +2,6 @@ import type { PlannerTimelineScale, TimeslotsPerDay } from '@/lib/plannerTimelin
 import type { QueryResultRow } from 'pg';
 
 import { pool, qualifyBeerTrackerTables, query } from '@/lib/db';
-import { getBeerTrackerSchema } from '@/lib/env';
 import { findOrganizationById } from '@/lib/organizations';
 import {
   mergePlannerTimelineScale,
@@ -84,49 +83,6 @@ export function plannerGridPreviewHasRows(preview: PlannerGridMigrationPreview):
   return preview.positions + preview.segments + preview.comments > 0;
 }
 
-function plannerSchemaIdent(): string {
-  const schema = getBeerTrackerSchema();
-  if (!/^[A-Za-z_]\w*$/.test(schema)) {
-    throw new Error('Invalid database schema name');
-  }
-  return schema;
-}
-
-function widenPartCheckStatements(): string[] {
-  const schema = plannerSchemaIdent();
-  return [
-    `DO $$
-DECLARE r record;
-BEGIN
-  FOR r IN
-    SELECT c.relname AS table_name, con.conname
-    FROM pg_constraint con
-    JOIN pg_class c ON c.oid = con.conrelid
-    JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname = '${schema}'
-      AND c.relname IN ('task_positions', 'task_position_segments', 'comments')
-      AND con.contype = 'c'
-      AND pg_get_constraintdef(con.oid) LIKE '%part%'
-      AND pg_get_constraintdef(con.oid) LIKE '%< 3%'
-  LOOP
-    EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT %I', '${schema}', r.table_name, r.conname);
-  END LOOP;
-END $$`,
-    `ALTER TABLE task_positions DROP CONSTRAINT IF EXISTS task_positions_start_part_check`,
-    `ALTER TABLE task_positions ADD CONSTRAINT task_positions_start_part_check
-      CHECK (start_part >= 0 AND start_part < 4)`,
-    `ALTER TABLE task_positions DROP CONSTRAINT IF EXISTS task_positions_planned_start_part_check`,
-    `ALTER TABLE task_positions ADD CONSTRAINT task_positions_planned_start_part_check
-      CHECK (planned_start_part IS NULL OR (planned_start_part >= 0 AND planned_start_part < 4))`,
-    `ALTER TABLE task_position_segments DROP CONSTRAINT IF EXISTS task_position_segments_start_part_check`,
-    `ALTER TABLE task_position_segments ADD CONSTRAINT task_position_segments_start_part_check
-      CHECK (start_part >= 0 AND start_part < 4)`,
-    `ALTER TABLE comments DROP CONSTRAINT IF EXISTS comments_part_check`,
-    `ALTER TABLE comments ADD CONSTRAINT comments_part_check
-      CHECK (part IS NULL OR (part >= 0 AND part < 4))`,
-  ];
-}
-
 function positionUpdateSql(): string {
   return `UPDATE task_positions
      SET start_part = ${scaledSlot('start_part')},
@@ -156,9 +112,6 @@ export async function applyPlannerTimelineScale(
     const run = (sql: string, params?: unknown[]) =>
       client.query(qualifyBeerTrackerTables(sql), params);
     if (from !== next.timeslotsPerDay) {
-      for (const statement of widenPartCheckStatements()) {
-        await run(statement);
-      }
       await run(positionUpdateSql(), [organizationId, from, next.timeslotsPerDay]);
       await run(
         `UPDATE task_position_segments

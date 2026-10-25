@@ -83,6 +83,8 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup
 COPY --link --from=builder /app/public ./public
 COPY --link --from=builder --chown=1001:1001 /app/.next/standalone ./
 COPY --link --from=builder --chown=1001:1001 /app/.next/static ./.next/static
+# Миграции схемы читаются с диска при старте (instrumentation.ts → lib/dbMigrations).
+COPY --link --from=builder --chown=1001:1001 /app/database/migrations ./database/migrations
 
 USER nextjs
 EXPOSE 3000

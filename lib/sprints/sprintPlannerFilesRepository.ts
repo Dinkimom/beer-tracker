@@ -9,7 +9,6 @@ import { parseS3KeyPrefix } from '@/lib/env';
 import { deletePlannerStoredObject, getPlannerObjectStore } from '@/lib/storage/getPlannerObjectStore';
 import { buildPlannerObjectKey } from '@/lib/storage/plannerObjectKey';
 
-import { ensurePlannerCommentImagesSchema } from './ensurePlannerCommentImages';
 import {
   SPRINT_COMMENT_RETURNING,
   withCommentAuthors,
@@ -46,7 +45,6 @@ export async function insertPlannerFileComment(input: {
   text: string;
   width: number;
 }): Promise<unknown> {
-  await ensurePlannerCommentImagesSchema();
   const fileId = randomUUID();
   const storageKey = buildPlannerObjectKey(
     input.organizationId,
@@ -115,7 +113,6 @@ async function getPlannerCommentFileRef(input: {
   organizationId: string;
   sprintId: number;
 }): Promise<PlannerCommentFileRef | null> {
-  await ensurePlannerCommentImagesSchema();
   const result = await query<{
     byte_size: number;
     content_type: string;

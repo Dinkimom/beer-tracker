@@ -3,15 +3,8 @@
  */
 
 import { query } from '@/lib/db';
-import { getBeerTrackerSchema } from '@/lib/env';
 
 import { hashOpaqueToken } from './tokenHash';
-
-let tablesEnsured = false;
-
-function qualifySchemaName(schema: string): string {
-  return schema.includes('-') ? `"${schema}"` : schema;
-}
 
 export interface McpOAuthClientRow {
   clientId: string;
@@ -43,53 +36,6 @@ interface McpOAuthTokenRow {
   userId: string;
 }
 
-async function ensureMcpOAuthTables(): Promise<void> {
-  if (tablesEnsured) {
-    return;
-  }
-  const schema = qualifySchemaName(getBeerTrackerSchema());
-  await query(`
-    CREATE TABLE IF NOT EXISTS ${schema}.mcp_oauth_clients (
-      client_id TEXT PRIMARY KEY,
-      client_id_issued_at BIGINT NOT NULL,
-      client_secret TEXT,
-      client_secret_expires_at BIGINT,
-      redirect_uris JSONB NOT NULL,
-      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  await query(`
-    CREATE TABLE IF NOT EXISTS ${schema}.mcp_oauth_codes (
-      code_hash TEXT PRIMARY KEY,
-      client_id TEXT NOT NULL REFERENCES ${schema}.mcp_oauth_clients (client_id) ON DELETE CASCADE,
-      user_id TEXT NOT NULL,
-      organization_id UUID NOT NULL,
-      code_challenge TEXT NOT NULL,
-      redirect_uri TEXT NOT NULL,
-      resource TEXT,
-      scopes JSONB NOT NULL DEFAULT '[]'::jsonb,
-      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  await query(`
-    CREATE TABLE IF NOT EXISTS ${schema}.mcp_oauth_tokens (
-      token_hash TEXT PRIMARY KEY,
-      token_type TEXT NOT NULL CHECK (token_type IN ('access', 'refresh')),
-      client_id TEXT NOT NULL REFERENCES ${schema}.mcp_oauth_clients (client_id) ON DELETE CASCADE,
-      user_id TEXT NOT NULL,
-      organization_id UUID NOT NULL,
-      scopes JSONB NOT NULL DEFAULT '[]'::jsonb,
-      resource TEXT,
-      expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-      revoked_at TIMESTAMP WITH TIME ZONE,
-      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  tablesEnsured = true;
-}
-
 function parseStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
@@ -112,7 +58,6 @@ export async function insertMcpOAuthClient(input: {
   metadata: Record<string, unknown>;
   redirectUris: string[];
 }): Promise<McpOAuthClientRow> {
-  await ensureMcpOAuthTables();
   await query(
     `INSERT INTO mcp_oauth_clients (
       client_id, client_id_issued_at, client_secret, client_secret_expires_at, redirect_uris, metadata
@@ -137,7 +82,6 @@ export async function insertMcpOAuthClient(input: {
 }
 
 export async function findMcpOAuthClient(clientId: string): Promise<McpOAuthClientRow | null> {
-  await ensureMcpOAuthTables();
   const res = await query<{
     client_id: string;
     client_id_issued_at: string;
@@ -176,7 +120,6 @@ export async function insertMcpOAuthCode(input: {
   scopes: string[];
   userId: string;
 }): Promise<void> {
-  await ensureMcpOAuthTables();
   await query(
     `INSERT INTO mcp_oauth_codes (
       code_hash, client_id, user_id, organization_id, code_challenge, redirect_uri, resource, scopes, expires_at
@@ -197,7 +140,6 @@ export async function insertMcpOAuthCode(input: {
 
 /** Consume (delete) an authorization code; returns row if valid and not expired. */
 export async function consumeMcpOAuthCode(code: string): Promise<McpOAuthCodeRow | null> {
-  await ensureMcpOAuthTables();
   const codeHash = hashOpaqueToken(code);
   const res = await query<{
     client_id: string;
@@ -230,7 +172,6 @@ export async function consumeMcpOAuthCode(code: string): Promise<McpOAuthCodeRow
 }
 
 export async function findMcpOAuthCodeChallenge(code: string): Promise<string | null> {
-  await ensureMcpOAuthTables();
   const res = await query<{ code_challenge: string }>(
     `SELECT code_challenge FROM mcp_oauth_codes
      WHERE code_hash = $1 AND expires_at > NOW()`,
@@ -249,7 +190,6 @@ export async function insertMcpOAuthToken(input: {
   scopes: string[];
   userId: string;
 }): Promise<void> {
-  await ensureMcpOAuthTables();
   await query(
     `INSERT INTO mcp_oauth_tokens (
       token_hash, token_type, client_id, user_id, organization_id, scopes, resource, expires_at
@@ -271,7 +211,6 @@ export async function findValidMcpOAuthToken(
   token: string,
   tokenType?: 'access' | 'refresh'
 ): Promise<McpOAuthTokenRow | null> {
-  await ensureMcpOAuthTables();
   const params: (Date | boolean | number | string | null)[] = [hashOpaqueToken(token)];
   let typeClause = '';
   if (tokenType) {
@@ -312,7 +251,6 @@ export async function findValidMcpOAuthToken(
 }
 
 export async function revokeMcpOAuthToken(token: string): Promise<void> {
-  await ensureMcpOAuthTables();
   await query(
     `UPDATE mcp_oauth_tokens SET revoked_at = NOW()
      WHERE token_hash = $1 AND revoked_at IS NULL`,
@@ -322,7 +260,6 @@ export async function revokeMcpOAuthToken(token: string): Promise<void> {
 
 /** Revoke all MCP OAuth access/refresh tokens for a user (e.g. after staff delete). */
 export async function revokeMcpOAuthTokensForUser(userId: string): Promise<void> {
-  await ensureMcpOAuthTables();
   await query(
     `UPDATE mcp_oauth_tokens SET revoked_at = NOW()
      WHERE user_id = $1 AND revoked_at IS NULL`,
@@ -338,7 +275,6 @@ export async function findActiveMcpOAuthClientMetadata(
   organizationId: string,
   userId: string
 ): Promise<Record<string, unknown> | null> {
-  await ensureMcpOAuthTables();
   const res = await query<{ metadata: unknown }>(
     `SELECT c.metadata
      FROM mcp_oauth_tokens t
