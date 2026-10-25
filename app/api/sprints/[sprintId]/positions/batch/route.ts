@@ -8,6 +8,7 @@ import {
   persistBatchPositionsTransaction,
   syncBatchAssigneesToTracker,
   syncBatchPlannedDatesToTracker,
+  withTrackerSyncFailures,
 } from '@/lib/sprints';
 import { BatchPositionsSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
@@ -52,13 +53,13 @@ export async function POST(
       sprintId,
     });
 
-    await syncBatchAssigneesToTracker({
+    const assigneeFailures = await syncBatchAssigneesToTracker({
       organizationId,
       positions,
       request,
     });
 
-    await syncBatchPlannedDatesToTracker({
+    const datesFailures = await syncBatchPlannedDatesToTracker({
       organizationId,
       positions,
       request,
@@ -66,10 +67,12 @@ export async function POST(
     });
 
     notifySprintRealtime(request, organizationId, sprintId, ['positions']);
-    return NextResponse.json({
-      success: true,
-      count: positions.length,
-    });
+    return NextResponse.json(
+      withTrackerSyncFailures({ count: positions.length, success: true }, [
+        ...assigneeFailures,
+        ...datesFailures,
+      ])
+    );
   } catch (error) {
     return handleApiError(error, 'save batch positions', {
       forwardStatuses: TRACKER_UPSTREAM_FORWARD_STATUSES,

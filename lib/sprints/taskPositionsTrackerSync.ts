@@ -36,6 +36,28 @@ interface PlannedDateSyncPosition {
 
 type BatchPosition = z.infer<typeof BatchPositionsSchema>['positions'][number];
 
+/** Что не удалось записать в трекер после сохранения позиции (запись в БД при этом остаётся). */
+export interface TrackerSyncFailure {
+  field: 'assignee' | 'dates';
+  issueKey: string;
+}
+
+function issueKeyForPosition(position: { devTaskKey?: string; isQa?: boolean | null; taskId: string }): string {
+  return position.isQa && position.devTaskKey ? position.devTaskKey : position.taskId;
+}
+
+/** Тело ответа роута позиций: отказы синка в трекер — только если они есть. */
+export function withTrackerSyncFailures<T extends object>(
+  body: T,
+  failures: readonly TrackerSyncFailure[]
+): T & { trackerSyncFailures?: TrackerSyncFailure[] } {
+  return failures.length > 0 ? { ...body, trackerSyncFailures: [...failures] } : body;
+}
+
+function datesFailuresFor(issueKeys: Iterable<string>): TrackerSyncFailure[] {
+  return [...new Set(issueKeys)].map((issueKey) => ({ field: 'dates', issueKey }));
+}
+
 function toIsoDateOnlyLocal(date: Date): string {
   const y = date.getFullYear();
   const m = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -80,10 +102,10 @@ async function syncPlannedDatesToTracker({
   positions: PlannedDateSyncPosition[];
   request: Request;
   sprintId: number;
-}): Promise<void> {
+}): Promise<TrackerSyncFailure[]> {
   const groups = buildIssueTaskGroups(positions);
   if (groups.size === 0) {
-    return;
+    return [];
   }
 
   const relatedTaskIds = Array.from(new Set(Array.from(groups.values()).flatMap((ids) => [...ids])));
@@ -98,6 +120,7 @@ async function syncPlannedDatesToTracker({
     10
   );
 
+  const failures: TrackerSyncFailure[] = [];
   await Promise.all(
     Array.from(groups.entries()).map(async ([issueKey, taskIds]) => {
       const ranges = Array.from(taskIds)
@@ -132,10 +155,16 @@ async function syncPlannedDatesToTracker({
           `[sync planned dates → tracker] ${issueKey}: start+deadline failed, retrying deadline`,
           err
         );
-        await issueTracker.updateIssue(issueKey, { deadline });
+        try {
+          await issueTracker.updateIssue(issueKey, { deadline });
+        } catch (retryErr) {
+          console.error(`[sync planned dates → tracker] ${issueKey}`, retryErr);
+          failures.push({ field: 'dates', issueKey });
+        }
       }
     })
   );
+  return failures;
 }
 
 export async function trySyncPositionAssigneeToTracker(input: {
@@ -147,9 +176,9 @@ export async function trySyncPositionAssigneeToTracker(input: {
   request: NextRequest;
   syncAssignee?: boolean;
   taskId: string;
-}): Promise<void> {
+}): Promise<TrackerSyncFailure[]> {
   if (input.syncAssignee === false) {
-    return;
+    return [];
   }
 
   const trackerAssigneeId = await resolvePlannerAssigneeIdForTrackerSync(
@@ -157,7 +186,7 @@ export async function trySyncPositionAssigneeToTracker(input: {
     input.assigneeId
   );
   if (!trackerAssigneeId) {
-    return;
+    return [];
   }
 
   try {
@@ -166,8 +195,10 @@ export async function trySyncPositionAssigneeToTracker(input: {
     const issueKeyToUpdate = input.isQa && input.devTaskKey ? input.devTaskKey : input.taskId;
     const patch = buildIssueAssigneePatch(trackerAssigneeId, input.isQa ?? false, integration);
     await issueTracker.updateIssue(issueKeyToUpdate, patch);
+    return [];
   } catch (err) {
     console.error(`[sync assignee → tracker] ${input.logLabel}`, err);
+    return [{ field: 'assignee', issueKey: issueKeyForPosition(input) }];
   }
 }
 
@@ -184,13 +215,13 @@ export async function trySyncPositionPlannedDates(input: {
   segments?: TaskPositionSegmentInput[];
   sprintId: number;
   taskId: string;
-}): Promise<void> {
+}): Promise<TrackerSyncFailure[]> {
   if (input.plannedStartDay == null || input.plannedStartPart == null) {
-    return;
+    return [];
   }
 
   try {
-    await syncPlannedDatesToTracker({
+    return await syncPlannedDatesToTracker({
       positions: [
         {
           devTaskKey: input.devTaskKey,
@@ -208,6 +239,7 @@ export async function trySyncPositionPlannedDates(input: {
     });
   } catch (err) {
     console.error(`[sync planned dates → tracker] ${input.logLabel}`, err);
+    return datesFailuresFor([issueKeyForPosition(input)]);
   }
 }
 
@@ -223,9 +255,10 @@ export async function syncPutPositionSideEffects(input: {
   request: NextRequest;
   sprintId: number;
   taskId: string;
-}): Promise<void> {
+}): Promise<TrackerSyncFailure[]> {
+  const failures: TrackerSyncFailure[] = [];
   if (input.assigneeId != null) {
-    await trySyncPositionAssigneeToTracker({
+    failures.push(...await trySyncPositionAssigneeToTracker({
       assigneeId: input.assigneeId as string,
       devTaskKey: input.devTaskKey,
       isQa: input.isQa,
@@ -233,10 +266,10 @@ export async function syncPutPositionSideEffects(input: {
       organizationId: input.organizationId,
       request: input.request,
       taskId: input.taskId,
-    });
+    }));
   }
 
-  await trySyncPositionPlannedDates({
+  failures.push(...await trySyncPositionPlannedDates({
     devTaskKey: input.devTaskKey,
     duration: input.duration as number,
     isQa: input.isQa,
@@ -248,19 +281,21 @@ export async function syncPutPositionSideEffects(input: {
     request: input.request,
     sprintId: input.sprintId,
     taskId: input.taskId,
-  });
+  }));
+  return failures;
 }
 
 export async function syncBatchAssigneesToTracker(input: {
   organizationId: string;
   positions: BatchPosition[];
   request: NextRequest;
-}): Promise<void> {
+}): Promise<TrackerSyncFailure[]> {
   const toSync = input.positions.filter((pos) => pos.syncAssignee ?? true);
   if (toSync.length === 0) {
-    return;
+    return [];
   }
 
+  const failures: TrackerSyncFailure[] = [];
   try {
     const resolved = await resolvePlannerAssigneeIdsForTrackerSync(
       input.organizationId,
@@ -284,11 +319,17 @@ export async function syncBatchAssigneesToTracker(input: {
             `[sync assignee → tracker] Failed to update assignee for ${issueKeyToUpdate}:`,
             err
           );
+          failures.push({ field: 'assignee', issueKey: issueKeyToUpdate });
         }
       })
     );
+    return failures;
   } catch (err) {
     console.error('[sync assignee → tracker] POST /sprints/.../positions/batch', err);
+    return [...new Set(toSync.map(issueKeyForPosition))].map((issueKey) => ({
+      field: 'assignee',
+      issueKey,
+    }));
   }
 }
 
@@ -297,22 +338,23 @@ export async function syncBatchPlannedDatesToTracker(input: {
   positions: BatchPosition[];
   request: NextRequest;
   sprintId: number;
-}): Promise<void> {
+}): Promise<TrackerSyncFailure[]> {
   const toSyncDates = input.positions.filter(
     (pos) => pos.plannedStartDay != null && pos.plannedStartPart != null
   );
   if (toSyncDates.length === 0) {
-    return;
+    return [];
   }
 
   try {
-    await syncPlannedDatesToTracker({
+    return await syncPlannedDatesToTracker({
       positions: toSyncDates,
       request: input.request,
       sprintId: input.sprintId,
     });
   } catch (err) {
     console.error('[sync planned dates → tracker] POST /sprints/.../positions/batch', err);
+    return datesFailuresFor(toSyncDates.map(issueKeyForPosition));
   }
 }
 
@@ -341,10 +383,10 @@ export async function trySyncPlannedDatesAfterPositionDelete(input: {
   request: NextRequest;
   sprintId: number;
   taskId: string;
-}): Promise<void> {
+}): Promise<TrackerSyncFailure[]> {
   const issueKey = resolveIssueKeyForPositionDelete(input);
   if (!issueKey) {
-    return;
+    return [];
   }
 
   try {
@@ -369,18 +411,19 @@ export async function trySyncPlannedDatesAfterPositionDelete(input: {
     }
 
     if (remaining.length > 0) {
-      await syncPlannedDatesToTracker({
+      return await syncPlannedDatesToTracker({
         positions: remaining,
         request: input.request,
         sprintId: input.sprintId,
       });
-      return;
     }
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(input.request);
     await issueTracker.updateIssue(issueKey, { deadline: null, start: null });
     clearCachedSprintIssueScheduleDates(input.sprintId, issueKey);
+    return [];
   } catch (err) {
     console.error(`[sync planned dates → tracker] ${input.logLabel}`, err);
+    return datesFailuresFor([issueKey]);
   }
 }

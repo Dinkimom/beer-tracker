@@ -407,6 +407,8 @@ export const ruMessages = {
       removeFromSprintFailed: 'Не удалось убрать задачу из спринта',
       removedToBacklog: 'Задача убрана в бэклог',
       statusChangeFailed: 'Не удалось сменить статус {key}',
+      trackerSyncAssigneeFailed: 'В планере сохранено, но исполнитель не обновился в трекере: {keys}',
+      trackerSyncDatesFailed: 'В планере сохранено, но даты не обновились в трекере: {keys}',
       workLogged: 'Работа учтена',
     },
     status: {

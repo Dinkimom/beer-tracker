@@ -24,4 +24,5 @@ export {
   trySyncPlannedDatesAfterPositionDelete,
   trySyncPositionAssigneeToTracker,
   trySyncPositionPlannedDates,
+  withTrackerSyncFailures,
 } from './taskPositionsTrackerSync';

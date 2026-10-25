@@ -35,6 +35,7 @@ import { useSprintPlannerSwimlaneData } from './useSprintPlannerSwimlaneData';
 import { useSprintPlannerSyntheticQaCleanup } from './useSprintPlannerSyntheticQaCleanup';
 import { useSprintPlannerViewModelInteractions } from './useSprintPlannerViewModelInteractions';
 import { useSprintPlannerWorkflowScreens } from './useSprintPlannerWorkflowScreens';
+import { useTrackerSyncFailureToasts } from './useTrackerSyncFailureToasts';
 
 interface UseSprintPlannerViewModelParams {
   checklistDone: number;
@@ -173,6 +174,8 @@ export function useSprintPlannerViewModel({
     viewMode === 'features' ? featureColumnWidth : assigneeColumnWidth;
   const setParticipantsColumnWidth =
     viewMode === 'features' ? setFeatureColumnWidth : setAssigneeColumnWidth;
+
+  useTrackerSyncFailureToasts();
 
   useSprintPlannerSyntheticQaCleanup({
     deletePosition,

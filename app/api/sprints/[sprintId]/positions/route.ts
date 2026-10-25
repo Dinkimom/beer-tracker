@@ -19,6 +19,7 @@ import {
   trySyncPlannedDatesAfterPositionDelete,
   trySyncPositionAssigneeToTracker,
   trySyncPositionPlannedDates,
+  withTrackerSyncFailures,
   updateTaskPositionRecord,
   upsertTaskPositionRecord,
 } from '@/lib/sprints';
@@ -166,7 +167,7 @@ export async function POST(
       taskId,
     });
 
-    await trySyncPositionAssigneeToTracker({
+    const trackerSyncFailures = await trySyncPositionAssigneeToTracker({
       assigneeId,
       devTaskKey,
       isQa,
@@ -177,7 +178,7 @@ export async function POST(
       taskId,
     });
 
-    await trySyncPositionPlannedDates({
+    trackerSyncFailures.push(...await trySyncPositionPlannedDates({
       devTaskKey,
       duration,
       isQa,
@@ -190,7 +191,7 @@ export async function POST(
       segments,
       sprintId,
       taskId,
-    });
+    }));
 
     notifySprintRealtime(request, organizationId, sprintId, ['positions']);
     notifyAssigneeChangedIfNeeded({
@@ -202,7 +203,9 @@ export async function POST(
       sprintId,
       taskId,
     });
-    return NextResponse.json({ position: result.rows[0] });
+    return NextResponse.json(
+      withTrackerSyncFailures({ position: result.rows[0] }, trackerSyncFailures)
+    );
   } catch (error) {
     return handleApiError(error, 'save position', {
       forwardStatuses: TRACKER_UPSTREAM_FORWARD_STATUSES,
@@ -268,7 +271,7 @@ export async function PUT(
 
     const isQa = result.rows[0]?.is_qa ?? false;
 
-    await syncPutPositionSideEffects({
+    const trackerSyncFailures = await syncPutPositionSideEffects({
       assigneeId,
       devTaskKey,
       duration,
@@ -292,7 +295,9 @@ export async function PUT(
       sprintId,
       taskId,
     });
-    return NextResponse.json({ position: result.rows[0] });
+    return NextResponse.json(
+      withTrackerSyncFailures({ position: result.rows[0] }, trackerSyncFailures)
+    );
   } catch (error) {
     return handleApiError(error, 'update position', {
       forwardStatuses: TRACKER_UPSTREAM_FORWARD_STATUSES,
@@ -327,7 +332,7 @@ export async function DELETE(
 
     await deleteTaskPosition({ organizationId, sprintId, taskId });
 
-    await trySyncPlannedDatesAfterPositionDelete({
+    const trackerSyncFailures = await trySyncPlannedDatesAfterPositionDelete({
       ...(devTaskKey ? { devTaskKey } : {}),
       isQa,
       logLabel: 'DELETE /sprints/.../positions',
@@ -337,7 +342,7 @@ export async function DELETE(
     });
 
     notifySprintRealtime(request, organizationId, sprintId, ['positions']);
-    return NextResponse.json({ success: true });
+    return NextResponse.json(withTrackerSyncFailures({ success: true }, trackerSyncFailures));
   } catch (error) {
     return handleApiError(error, 'delete position', {
       forwardStatuses: TRACKER_UPSTREAM_FORWARD_STATUSES,

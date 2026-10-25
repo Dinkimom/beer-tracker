@@ -23,6 +23,8 @@ import {
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
+import { reportTrackerSyncFailures } from './trackerSyncFailures';
+
 export interface SprintPlanAnchor {
   anchoredAt: string;
   assigneeId: string;
@@ -137,7 +139,8 @@ export async function saveTaskPosition(
   }
 ): Promise<boolean> {
   try {
-    await getPlannerBeerTrackerApi().post(`/sprints/${sprintId}/positions`, position);
+    const { data } = await getPlannerBeerTrackerApi().post(`/sprints/${sprintId}/positions`, position);
+    reportTrackerSyncFailures(data);
     return true;
   } catch (error) {
     console.error(`Failed to save position for task ${position.taskId}:`, error);
@@ -170,6 +173,7 @@ export async function saveTaskPositionsBatch(
       `/sprints/${sprintId}/positions/batch`,
       { positions }
     );
+    reportTrackerSyncFailures(data);
     return { success: true, count: data.count || positions.length };
   } catch (error) {
     console.error(`Failed to save batch positions for sprint ${sprintId}:`, error);
@@ -328,7 +332,10 @@ export async function deleteTaskPosition(
     if (options?.devTaskKey) {
       params.set('devTaskKey', options.devTaskKey);
     }
-    await getPlannerBeerTrackerApi().delete(`/sprints/${sprintId}/positions?${params.toString()}`);
+    const { data } = await getPlannerBeerTrackerApi().delete(
+      `/sprints/${sprintId}/positions?${params.toString()}`
+    );
+    reportTrackerSyncFailures(data);
     return true;
   } catch (error) {
     console.error(`Failed to delete position for task ${taskId} in sprint ${sprintId}:`, error);
