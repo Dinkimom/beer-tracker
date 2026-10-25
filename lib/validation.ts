@@ -8,6 +8,7 @@ import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS, MAX_PLANNER_PART_IND
 import { PLANNER_COMMENT_TEXT_MAX_LENGTH } from '@/lib/comments/excalidrawCommentPayload';
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 import { MAX_STICKY_NOTE_REACTION_EMOJI_LENGTH } from '@/lib/comments/stickyNoteReaction';
+import { isEphemeralPlannerPositionId } from '@/lib/planner/ephemeralPlannerPositionId';
 import { MAX_SWIMLANE_CARD_LAYER } from '@/lib/swimlane/swimlaneCardLayers';
 const PhaseSegmentSchema = z.object({
   startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
@@ -16,7 +17,14 @@ const PhaseSegmentSchema = z.object({
 });
 
 export const TaskPositionSchema = z.object({
-  taskId: z.string().min(1).max(255),
+  /** Аннотации (`comment:*`) и клиентские черновики живут не в task_positions — отклоняем. */
+  taskId: z
+    .string()
+    .min(1)
+    .max(255)
+    .refine((taskId) => !isEphemeralPlannerPositionId(taskId), {
+      message: 'Planner annotations and drafts have no task position',
+    }),
   assigneeId: z.string().min(1).max(255),
   startDay: z.number().int().min(0).max(MAX_PLANNER_DAY_INDEX),
   startPart: z.number().int().min(0).max(MAX_PLANNER_PART_INDEX),

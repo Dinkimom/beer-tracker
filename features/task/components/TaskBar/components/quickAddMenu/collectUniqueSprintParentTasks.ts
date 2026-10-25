@@ -1,6 +1,7 @@
 import type { Task, TaskParent, TaskPosition } from '@/types';
 
 import { humanFeatureDraftParentDisplay } from '@/features/swimlane/utils/featureDraftParentLabel';
+import { isPlannerQuickAddDraftId } from '@/lib/planner/plannerCardKind';
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
 
 export function trimmedTaskParentToken(value: unknown): string {
@@ -89,7 +90,7 @@ export function collectQuickAddExcludedIssueKeys(
   );
   const excluded = new Set<string>();
   for (const taskId of taskPositions.keys()) {
-    if (taskId.startsWith('local-task-') || !inSprint.has(taskId)) {
+    if (isPlannerQuickAddDraftId(taskId) || !inSprint.has(taskId)) {
       continue;
     }
     excluded.add(taskId);

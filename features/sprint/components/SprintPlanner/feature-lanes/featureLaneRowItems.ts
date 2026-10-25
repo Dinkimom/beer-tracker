@@ -1,18 +1,7 @@
 import type { Comment, Task } from '@/types';
 
-import { isSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { resolveTaskFeatureRowId } from '@/features/swimlane/utils/featureSwimlaneRows';
-import { isSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
-
-export function isFeatureLaneAnnotationTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  return (
-    task.localDraftKind === 'comment' ||
-    task.localDraftKind === 'diagram' ||
-    task.localDraftKind === 'image' ||
-    task.localDraftKind === 'widget' ||
-    isSwimlaneImageTaskId(task.id)
-  );
-}
+import { isPlannerAnnotation, isPlannerAnnotationDraft } from '@/lib/planner/plannerCardKind';
 
 export function isOnFeatureLaneRow(
   rowId: string,
@@ -49,10 +38,7 @@ export function collectFeatureLaneRowWorkTasks(rowId: string, tasks: readonly Ta
     if (!isOnFeatureLaneRow(rowId, task)) {
       return false;
     }
-    if (isSwimlaneCommentTaskId(task.id) || isFeatureLaneAnnotationTask(task)) {
-      return false;
-    }
-    return true;
+    return !isPlannerAnnotation(task);
   });
 }
 
@@ -72,9 +58,9 @@ export function deleteFeatureLaneRowAnnotations(input: {
     if (!isOnFeatureLaneRow(input.rowId, task)) {
       continue;
     }
-    if (isSwimlaneCommentTaskId(task.id) || !isFeatureLaneAnnotationTask(task)) {
-      continue;
+    // Сохранённые аннотации удалены выше через comments; здесь — только клиентские черновики.
+    if (isPlannerAnnotationDraft(task)) {
+      input.onDeleteAnnotationTask(task.id);
     }
-    input.onDeleteAnnotationTask(task.id);
   }
 }

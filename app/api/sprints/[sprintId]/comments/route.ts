@@ -151,11 +151,12 @@ export async function POST(
 
     const savedComment = comment as { id?: string } | undefined;
     const commentId = savedComment?.id ?? id;
-    if (commentId && (kind == null || kind === 'text') && !skipMentionNotifications) {
+    if (commentId && !skipMentionNotifications) {
       notifyCommentMentionsIfNeeded({
         actorUserId: tenantResult.ctx.userId,
         commentId,
         isUpdate: false,
+        kind,
         organizationId,
         resolveBoardId: resolveNotificationBoardIdFromRequest(request, sprintId),
         sprintId,
@@ -239,6 +240,7 @@ export async function PUT(
         actorUserId: tenantResult.ctx.userId,
         commentId,
         isUpdate: true,
+        kind: (row as { kind?: string | null } | null)?.kind,
         organizationId,
         previousText,
         resolveBoardId: resolveNotificationBoardIdFromRequest(request, sprintId),
@@ -290,7 +292,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
     }
 
-    notifySprintRealtime(request, organizationId, sprintId, ['comments']);
+    // Стрелки к заметке удалены той же транзакцией.
+    notifySprintRealtime(request, organizationId, sprintId, ['comments', 'links']);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting comment:', error);

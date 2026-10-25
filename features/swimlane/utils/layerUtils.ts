@@ -3,7 +3,6 @@ import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCa
 import type { Task, TaskPosition } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
-import { isSwimlaneDiagramTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
   distributeIntervalsToLayers,
   findSpannedLayerForItem,
@@ -12,9 +11,16 @@ import {
 } from '@/features/swimlane/utils/layerUtilsHelpers';
 import { getOrderedPlanSegments } from '@/features/swimlane/utils/positionUtils';
 import { resolveStickyNoteEffectiveCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
-import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
-import { DEFAULT_PLANNER_COMMENT_CARD_ROW_HEIGHT } from '@/lib/comments/plannerCommentCardRow';
+import {
+  DEFAULT_PLANNER_COMMENT_CARD_ROW_HEIGHT,
+  plannerCommentCardRowHeightFromDurationParts,
+} from '@/lib/comments/plannerCommentCardRow';
 import { positionToStartCell } from '@/lib/planner-timeline';
+import {
+  isPlannerNonTrackerCard,
+  isSavedPlannerAnnotation,
+  resolvePlannerCardKind,
+} from '@/lib/planner/plannerCardKind';
 
 interface TaskWithPosition {
   position: TaskPosition;
@@ -27,35 +33,38 @@ interface SwimlaneTaskVerticalLayout {
 }
 
 function isQuickAddDraftTask(task: Task): boolean {
-  return task.isLocalTask === true && parseSwimlaneCommentTaskId(task.id) == null;
+  return task.isLocalTask === true && !isSavedPlannerAnnotation(task);
 }
 
-function isSwimlaneStickyNoteTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  if (isSwimlaneImageTask(task) || isSwimlaneDiagramTask(task)) {
-    return false;
-  }
-  return task.localDraftKind === 'comment' || parseSwimlaneCommentTaskId(task.id) != null;
-}
-
+/**
+ * Вертикальный span карточки в упаковке слоёв.
+ * - схема: 1:1 с длительностью, но не выше лимита строк, как при сохранении
+ *   (`plannerCommentCardRowHeightFromDurationParts`, max 10);
+ * - фото: ручной layout из карты, иначе дефолтная высота новой карточки;
+ * - заметка и виджет: ручной layout из карты (у виджета — сохранённый `height`);
+ * - задача: одна строка.
+ */
 function resolveSwimlaneTaskVerticalLayout(
   task: Pick<Task, 'id' | 'localDraftKind'>,
   position: Pick<TaskPosition, 'duration'>,
   stickyNoteCardRowById?: ReadonlyMap<string, StickyNoteCardRowLayout>
 ): SwimlaneTaskVerticalLayout {
-  if (isSwimlaneDiagramTask(task)) {
-    return { span: Math.max(1, position.duration), layerShiftUp: 0 };
-  }
-  if (isSwimlaneImageTask(task)) {
-    const override = stickyNoteCardRowById?.get(task.id);
-    if (override) {
-      return resolveStickyNoteEffectiveCardRowLayout(override);
+  switch (resolvePlannerCardKind(task)) {
+    case 'diagram':
+      return { span: plannerCommentCardRowHeightFromDurationParts(position.duration), layerShiftUp: 0 };
+    case 'image': {
+      const override = stickyNoteCardRowById?.get(task.id);
+      if (override) {
+        return resolveStickyNoteEffectiveCardRowLayout(override);
+      }
+      return { span: DEFAULT_PLANNER_COMMENT_CARD_ROW_HEIGHT, layerShiftUp: 0 };
     }
-    return { span: DEFAULT_PLANNER_COMMENT_CARD_ROW_HEIGHT, layerShiftUp: 0 };
+    case 'note':
+    case 'widget':
+      return resolveStickyNoteEffectiveCardRowLayout(stickyNoteCardRowById?.get(task.id));
+    default:
+      return { span: 1, layerShiftUp: 0 };
   }
-  if (isSwimlaneStickyNoteTask(task)) {
-    return resolveStickyNoteEffectiveCardRowLayout(stickyNoteCardRowById?.get(task.id));
-  }
-  return { span: 1, layerShiftUp: 0 };
 }
 
 export function resolveSwimlaneCardLayerSpan(
@@ -367,13 +376,7 @@ export function calculateBaselines(
   const baselines: Array<{ end: number, start: number; taskId: string; }> = [];
 
   tasksWithPositions.forEach(({ task, position }) => {
-    if (
-      parseSwimlaneCommentTaskId(task.id) != null ||
-      task.localDraftKind === 'comment' ||
-      task.localDraftKind === 'diagram' ||
-      task.localDraftKind === 'image' ||
-      task.isLocalTask === true
-    ) {
+    if (isPlannerNonTrackerCard(task)) {
       return;
     }
     if (task.status !== 'in-progress' && task.status !== 'todo') return;

@@ -6,7 +6,7 @@ import type {
 } from '@/lib/sprints/sprintContextTypes';
 
 import { parseCommentParent } from '@/lib/comments/commentParent';
-import { toPlannerCommentTaskId } from '@/lib/planner/plannerLinkEndpoint';
+import { toPlannerCommentTaskId } from '@/lib/planner/plannerCardKind';
 import {
   emptyFeatureLanesDocument,
   type FeatureLanesDocument,

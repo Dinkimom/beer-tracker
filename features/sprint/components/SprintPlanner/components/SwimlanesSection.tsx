@@ -12,7 +12,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { isSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
   sprintPlannerContentRowWidthCss,
   sprintPlannerDaysHeaderContentWidthCss,
@@ -40,8 +39,8 @@ import {
 } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import { resolvePlanAnchorFocusTaskId } from '@/features/swimlane/utils/planAnchorShift';
 import { isSwimlaneLinkingSessionActive } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
-import { isSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
 import { useRootStore } from '@/lib/layers';
+import { isPlannerAnnotation } from '@/lib/planner/plannerCardKind';
 import {
   insertOnboardingAssigneeRow,
   pickOnboardingSampleDayIndex,
@@ -305,9 +304,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   const isAnnotationHoverTarget = useCallback(
     (taskId: string | null) => {
       if (taskId == null) return false;
-      if (isSwimlaneCommentTaskId(taskId) || isSwimlaneImageTaskId(taskId)) return true;
-      const kind = laneTasksMap.get(taskId)?.localDraftKind;
-      return kind === 'comment' || kind === 'diagram' || kind === 'image' || kind === 'widget';
+      return isPlannerAnnotation(laneTasksMap.get(taskId) ?? { id: taskId });
     },
     [laneTasksMap]
   );

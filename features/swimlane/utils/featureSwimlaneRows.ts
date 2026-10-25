@@ -1,7 +1,7 @@
 import type { Comment, Developer, Task, TaskParent, TaskPosition } from '@/types';
 
 import { TASK_GROUP_KEY_NO_PARENT } from '@/features/task/constants/taskGroupKeys';
-import { isPlannerAnnotationTask } from '@/features/task/utils/swimlaneImageTask';
+import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
 import {
   FEATURE_LANE_DRAFT_ROW_PREFIX,
   isFeatureLaneDraftRowId,
@@ -276,7 +276,7 @@ export function buildFeatureSwimlaneProjection(
   labels: FeatureLaneBoardLabels,
   taskPositions?: ReadonlyMap<string, TaskPosition>
 ): FeatureSwimlaneProjection {
-  const workTasks = tasks.filter((task) => !isPlannerAnnotationTask(task));
+  const workTasks = tasks.filter((task) => !isPlannerNonTrackerCard(task));
   const tasksByRowId = new Map<string, Task[]>();
   const parentByRow = new Map<string, TaskParent | null>();
   const parentSourceByRow = new Map<string, FeatureLaneParentSource>();
@@ -330,7 +330,7 @@ export function projectTaskPositionsToFeatureRows(
   const next = new Map<string, TaskPosition>();
   taskPositions.forEach((position, taskId) => {
     const task = tasksMap.get(taskId);
-    if (!task || isPlannerAnnotationTask(task)) {
+    if (!task || isPlannerNonTrackerCard(task)) {
       next.set(taskId, position);
       return;
     }

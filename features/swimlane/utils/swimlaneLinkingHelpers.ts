@@ -9,6 +9,7 @@ import {
 import { positionToEndCell, positionToStartCell } from '@/features/sprint/utils/occupancyUtils';
 import { getSwimlaneCardRadiusClass } from '@/features/task/components/TaskCard/taskCardLayoutHelpers';
 import { isSwimlaneImageTask, isSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
+import { isPlannerQuickAddDraftId } from '@/lib/planner/plannerCardKind';
 import {
   plannerLinkEndpointAliases,
   rewritePlannerLinkEndpoint,
@@ -16,7 +17,7 @@ import {
 
 /** Черновики quick-add нельзя сохранять в task_links. */
 function isUnsavedSwimlaneLinkEndpoint(taskId: string): boolean {
-  return taskId.startsWith('local-task-') || isSwimlaneImageTaskId(taskId);
+  return isPlannerQuickAddDraftId(taskId) || isSwimlaneImageTaskId(taskId);
 }
 
 export function canUseSwimlaneLinkEndpoint(taskId: string): boolean {

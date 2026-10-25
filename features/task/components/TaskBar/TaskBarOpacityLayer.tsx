@@ -8,8 +8,7 @@ import type { DraggableAttributes } from '@dnd-kit/core';
 import React, { useCallback, useMemo } from 'react';
 
 import { Icon } from '@/components/Icon';
-import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
-import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
+import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 
 import { getQuickAddSubmittingOverlayRadiusClass } from './components/taskBarResizeHandleHelpers';
 import { TaskBarDragSourceGhost } from './TaskBarDragSourceGhost';
@@ -155,15 +154,10 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   } = props;
 
   const isContextMenuOpenForThis = contextMenuTaskId === task.id;
-  const isCommentCard = task.localDraftKind === 'comment';
   const cardElementRef = React.useRef<HTMLElement | null>(null);
   const layerRef = React.useRef<HTMLDivElement | null>(null);
   // У заметок упругой деформации нет: бумажка не резиновая.
-  const isStickyNote =
-    (isCommentCard || parseSwimlaneCommentTaskId(task.id) != null) &&
-    !isSwimlaneImageTask(task) &&
-    !isSwimlaneDiagramTask(task) &&
-    !isSwimlaneWidgetTask(task);
+  const isStickyNote = isSwimlaneCommentTask(task);
   useTaskBarResizeSquash(layerRef, {
     enabled: !isStickyNote,
     resizePreviewDuration: resize.resizePreviewDuration,
@@ -175,7 +169,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
       cardElementRef,
       currentDurationParts,
       effectiveIsDragging,
-      isCommentCard,
+      isCommentCard: isStickyNote,
       isDraftTask,
       isLinking,
       isNarrowForLongHoverExpand,
@@ -191,10 +185,10 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
       currentDurationParts,
       effectiveIsDragging,
       hoverExpandTimelineTotalParts,
-      isCommentCard,
       isDraftTask,
       isLinking,
       isNarrowForLongHoverExpand,
+      isStickyNote,
       longHoverTimeoutRef,
       onTaskHover,
       resize.isResizing,

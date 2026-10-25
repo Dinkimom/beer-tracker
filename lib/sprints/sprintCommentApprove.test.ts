@@ -5,7 +5,7 @@ import {
   confirmAllPendingSprintComments,
   confirmPendingSprintComments,
   deleteAllPendingSprintComments,
-  hasSprintComment,
+  hasConfirmedSprintComment,
 } from '@/lib/sprints/sprintCommentsRepository';
 
 import {
@@ -22,11 +22,11 @@ vi.mock('@/lib/sprints/sprintCommentsRepository', () => ({
   confirmAllPendingSprintComments: vi.fn(),
   confirmPendingSprintComments: vi.fn(),
   deleteAllPendingSprintComments: vi.fn(),
-  hasSprintComment: vi.fn(),
+  hasConfirmedSprintComment: vi.fn(),
 }));
 
 const confirmPending = vi.mocked(confirmPendingSprintComments);
-const exists = vi.mocked(hasSprintComment);
+const exists = vi.mocked(hasConfirmedSprintComment);
 const confirmAll = vi.mocked(confirmAllPendingSprintComments);
 const deleteAll = vi.mocked(deleteAllPendingSprintComments);
 const applyReplacements = vi.mocked(applyPendingCommentReplacements);
@@ -41,15 +41,15 @@ describe('approvePendingSprintComment', () => {
 
   it('applies a replacement draft to the original instead of confirming it', async () => {
     applyReplacements.mockResolvedValue(1);
-    await expect(approvePendingSprintComment({ commentId: 'c1', sprintId: 1152 })).resolves.toBe('ok');
-    expect(applyReplacements).toHaveBeenCalledWith({ commentIds: ['c1'], sprintId: 1152 });
+    await expect(approvePendingSprintComment({ commentId: 'c1', ownerId: 'owner', sprintId: 1152 })).resolves.toBe('ok');
+    expect(applyReplacements).toHaveBeenCalledWith({ commentIds: ['c1'], ownerId: 'owner', sprintId: 1152 });
     expect(confirmPending).not.toHaveBeenCalled();
   });
 
   it('confirms a pending note', async () => {
     confirmPending.mockResolvedValue(1);
     await expect(
-      approvePendingSprintComment({ commentId: 'c1', sprintId: 1152 })
+      approvePendingSprintComment({ commentId: 'c1', ownerId: 'owner', sprintId: 1152 })
     ).resolves.toBe('ok');
     expect(exists).not.toHaveBeenCalled();
   });
@@ -58,15 +58,34 @@ describe('approvePendingSprintComment', () => {
     confirmPending.mockResolvedValue(0);
     exists.mockResolvedValue(true);
     await expect(
-      approvePendingSprintComment({ commentId: 'c1', sprintId: 1152 })
+      approvePendingSprintComment({ commentId: 'c1', ownerId: 'owner', sprintId: 1152 })
     ).resolves.toBe('ok');
+  });
+
+  it('scopes the single approve to the draft owner, like approve-all', async () => {
+    confirmPending.mockResolvedValue(0);
+    exists.mockResolvedValue(false);
+    await expect(
+      approvePendingSprintComment({ commentId: 'c1', ownerId: 'someone-else', sprintId: 1152 })
+    ).resolves.toBe('not_found');
+    expect(applyReplacements).toHaveBeenCalledWith({
+      commentIds: ['c1'],
+      ownerId: 'someone-else',
+      sprintId: 1152,
+    });
+    expect(confirmPending).toHaveBeenCalledWith({
+      commentIds: ['c1'],
+      ownerId: 'someone-else',
+      sprintId: 1152,
+    });
+    expect(exists).toHaveBeenCalledWith({ commentId: 'c1', sprintId: 1152 });
   });
 
   it('returns not_found when the comment is missing', async () => {
     confirmPending.mockResolvedValue(0);
     exists.mockResolvedValue(false);
     await expect(
-      approvePendingSprintComment({ commentId: 'c1', sprintId: 1152 })
+      approvePendingSprintComment({ commentId: 'c1', ownerId: 'owner', sprintId: 1152 })
     ).resolves.toBe('not_found');
   });
 });

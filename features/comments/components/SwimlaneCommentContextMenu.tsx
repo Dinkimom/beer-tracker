@@ -1,5 +1,6 @@
 'use client';
 
+import type { SwimlaneAnnotationContextMenuVariant } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Task, TaskParent } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
@@ -35,8 +36,11 @@ import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
 
 function contextMenuDeleteLabel(
   t: (key: string) => string,
-  variant: 'diagram' | 'image' | 'note' | 'widget'
+  variant: SwimlaneAnnotationContextMenuVariant
 ): string {
+  if (variant === 'pending') {
+    return t('comments.agentRejectAria');
+  }
   if (variant === 'image') {
     return t('sprintPlanner.contextMenu.deleteImage');
   }
@@ -62,14 +66,19 @@ interface SwimlaneCommentContextMenuProps {
   position: { x: number; y: number };
   sprints?: SprintListItem[];
   task?: Task | null;
-  variant?: 'diagram' | 'image' | 'note' | 'widget';
+  /** `pending` — черновик агента: в меню только «Принять» и «Отклонить». */
+  variant?: SwimlaneAnnotationContextMenuVariant;
+  /** Принять черновик агента. */
+  onApprove?: () => void;
   /** «Попросить агента» по заметке: её текст уходит агенту как контекст. */
   onAskAgent?: () => void;
   onAssigneeSelect?: (assigneeId: string) => void;
   onClose: () => void;
   onConvertToTask?: () => void;
   onCopy?: () => void;
-  onDelete: () => void;
+  /** Удалить аннотацию; у черновика агента — отклонить. */
+  onDelete?: () => void;
+  /** Пункт «Редактировать» показывается, только если передан обработчик. */
   onEdit?: () => void;
   /** Перенос в другой спринт: сразу с выбором места на его доске, без бэклога. */
   onMoveToSprint?: (sprintId: number) => void;
@@ -90,6 +99,7 @@ export function SwimlaneCommentContextMenu({
   assigneeOptions = null,
   task = null,
   noteColor,
+  onApprove,
   onAskAgent,
   onAssigneeSelect,
   onClose,
@@ -104,9 +114,8 @@ export function SwimlaneCommentContextMenu({
   variant = 'note',
 }: SwimlaneCommentContextMenuProps) {
   const { t } = useI18n();
-  const isImage = variant === 'image';
   const isDiagram = variant === 'diagram';
-  const hidesComposer = isImage || variant === 'widget';
+  const isPending = variant === 'pending';
   const author = authorName?.trim();
   const showLink = onStartLinking != null;
   const menuRef = useRef<HTMLDivElement>(null);
@@ -184,41 +193,46 @@ export function SwimlaneCommentContextMenu({
               {t('sprintPlanner.contextMenu.imageAuthor', { name: author })}
             </div>
           ) : null}
-          {hidesComposer ? null : (
-            <>
-              <ContextMenuRow
-                icon={<Icon className={MENU_ROW_ICON} name="edit" />}
-                label={
-                  isDiagram
-                    ? t('sprintPlanner.contextMenu.editDiagram')
-                    : t('sprintPlanner.contextMenu.editNote')
-                }
-                onClick={onEdit}
-              />
-              {isDiagram ? null : (
-                <ContextMenuRow
-                  icon={<Icon className={MENU_ROW_ICON} name="file-text" />}
-                  label={t('sprintPlanner.contextMenu.convertNoteToTask')}
-                  onClick={onConvertToTask}
-                />
-              )}
-              {onAskAgent ? (
-                <ContextMenuRow
-                  data-note-ask-agent=""
-                  icon={<Icon className={MENU_ROW_ICON} name="sparkles" />}
-                  label={t('agentSession.menuAria')}
-                  onClick={onAskAgent}
-                />
-              ) : null}
-              {onCopy ? (
-                <ContextMenuRow
-                  icon={<Icon className={MENU_ROW_ICON} name="copy" />}
-                  label={t('sprintPlanner.contextMenu.copyNote')}
-                  onClick={onCopy}
-                />
-              ) : null}
-            </>
-          )}
+          {onApprove ? (
+            <ContextMenuRow
+              icon={<Icon className={MENU_ROW_ICON} name="check" />}
+              label={t('comments.agentApproveAria')}
+              onClick={onApprove}
+            />
+          ) : null}
+          {onEdit ? (
+            <ContextMenuRow
+              icon={<Icon className={MENU_ROW_ICON} name="edit" />}
+              label={
+                isDiagram
+                  ? t('sprintPlanner.contextMenu.editDiagram')
+                  : t('sprintPlanner.contextMenu.editNote')
+              }
+              onClick={onEdit}
+            />
+          ) : null}
+          {onConvertToTask ? (
+            <ContextMenuRow
+              icon={<Icon className={MENU_ROW_ICON} name="file-text" />}
+              label={t('sprintPlanner.contextMenu.convertNoteToTask')}
+              onClick={onConvertToTask}
+            />
+          ) : null}
+          {onAskAgent ? (
+            <ContextMenuRow
+              data-note-ask-agent=""
+              icon={<Icon className={MENU_ROW_ICON} name="sparkles" />}
+              label={t('agentSession.menuAria')}
+              onClick={onAskAgent}
+            />
+          ) : null}
+          {onCopy ? (
+            <ContextMenuRow
+              icon={<Icon className={MENU_ROW_ICON} name="copy" />}
+              label={t('sprintPlanner.contextMenu.copyNote')}
+              onClick={onCopy}
+            />
+          ) : null}
         </ContextMenuGroup>
         <ContextMenuGroup>
           {renderSwimlaneCommentAssigneeSubmenu({
@@ -278,14 +292,16 @@ export function SwimlaneCommentContextMenu({
             />
           ) : null}
         </ContextMenuGroup>
-        <ContextMenuGroup>
-          <ContextMenuRow
-            destructive
-            icon={<Icon className="h-4 w-4 shrink-0" name="trash" />}
-            label={contextMenuDeleteLabel(t, variant)}
-            onClick={onDelete}
-          />
-        </ContextMenuGroup>
+        {onDelete ? (
+          <ContextMenuGroup>
+            <ContextMenuRow
+              destructive
+              icon={<Icon className="h-4 w-4 shrink-0" name={isPending ? 'x' : 'trash'} />}
+              label={contextMenuDeleteLabel(t, variant)}
+              onClick={onDelete}
+            />
+          </ContextMenuGroup>
+        ) : null}
       </div>
     </>
   );

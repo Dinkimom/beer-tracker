@@ -9,10 +9,10 @@ import {
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { groupReactionsForAgent } from '@/lib/comments/stickyNoteReaction';
 import { findOrganizationById } from '@/lib/organizations';
+import { toPlannerCommentTaskId } from '@/lib/planner/plannerCardKind';
 import {
   commentIdSetFromRecords,
   resolvePlannerLinkEndpoints,
-  toPlannerCommentTaskId,
 } from '@/lib/planner/plannerLinkEndpoint';
 import {
   DEFAULT_PLANNER_TIMELINE_SCALE,

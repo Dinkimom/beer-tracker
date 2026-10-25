@@ -1,3 +1,5 @@
+import { isPlannerClientOnlyCardId } from '@/lib/planner/plannerCardKind';
+
 /** Показ тура. Код остаётся, на доске ничего не рисуется, пока флаг false. */
 export const PLANNER_ONBOARDING_ENABLED = true;
 
@@ -35,7 +37,7 @@ export function plannerBoardHasPlacedWork(
     return false;
   }
   for (const taskId of positions.keys()) {
-    if (!taskId.startsWith('comment:') && !taskId.startsWith('local-task-')) {
+    if (!isPlannerClientOnlyCardId(taskId)) {
       return true;
     }
   }

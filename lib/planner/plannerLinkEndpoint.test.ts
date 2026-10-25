@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { parsePlannerCommentTaskId, toPlannerCommentTaskId } from './plannerCardKind';
 import {
   commentIdSetFromRecords,
-  parsePlannerCommentTaskId,
   plannerLinkEndpointAliases,
   resolvePlannerLinkEndpointId,
   resolvePlannerLinkEndpoints,
   rewritePlannerLinkEndpoint,
-  toPlannerCommentTaskId,
 } from './plannerLinkEndpoint';
 
 describe('plannerLinkEndpoint', () => {

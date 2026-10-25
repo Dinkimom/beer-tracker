@@ -9,6 +9,10 @@ import { useCallback } from 'react';
 
 import { approveCommentDraftsLocally } from '@/features/comments/utils/approveCommentDrafts';
 import {
+  applyCommentChangeWithHistory,
+  type CommentHistoryChange,
+} from '@/features/comments/utils/commentHistoryChange';
+import {
   playStickyNoteExit,
   shouldAnimateStickyNoteDelete,
 } from '@/features/comments/utils/stickyNoteExit';
@@ -30,10 +34,6 @@ import {
 } from '@/lib/api/sprints';
 import { parseCommentAuthorName } from '@/lib/comments/commentAuthor';
 import { useRootStore } from '@/lib/layers';
-import {
-  commentHistorySliceFromComment,
-  commentHistorySlicesEqual,
-} from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 
 interface UseSprintPlannerCommentHandlersProps {
   comments: CommentType[];
@@ -52,6 +52,23 @@ interface UseSprintPlannerCommentHandlersProps {
 
 interface CommentHistoryRecordOptions {
   recordHistory?: boolean;
+}
+
+/**
+ * Undo планера для заметок: шаг пишут только перемещение (`handleCommentMove`), смена родителя
+ * (`handleCommentParentChange`) и атомарный drop на фиче-дорожку (`handleCommentPlanChange`).
+ * Создание, удаление, текст/цвет, ресайз и вертикальная раскладка, принять/отклонить — без истории.
+ */
+function recordCommentHistory(
+  positionsStore: Pick<ReturnType<typeof useRootStore>['taskPositions'], 'recordPlanHistory'>,
+  commentId: string,
+  history: CommentHistoryChange
+): void {
+  positionsStore.recordPlanHistory({
+    after: new Map(),
+    before: new Map(),
+    comments: new Map([[commentId, history]]),
+  });
 }
 
 function applyParentToComment(comment: CommentType, parent: TaskParent | null): CommentType {
@@ -74,38 +91,14 @@ function collectLinksTouchingCommentIds(
   return [...byId.values()];
 }
 
-function deleteLinksTouchingComment(
-  commentTaskId: string,
-  input: {
-    selectedSprintId: number | null;
-    taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;
-    deleteLink: (linkId: string) => Promise<void>;
-    setTaskLinks: (
-      updater: (
-        prev: Array<{ fromTaskId: string; id: string; toTaskId: string }>
-      ) => Array<{ fromTaskId: string; id: string; toTaskId: string }>
-    ) => void;
-  }
-): void {
-  const linksToDelete = selectTaskLinksTouchingId(input.taskLinks, commentTaskId);
-  if (linksToDelete.length === 0) {
-    return;
-  }
-  input.setTaskLinks((prev) => excludeTaskLinksTouchingId(prev, commentTaskId));
-  if (!input.selectedSprintId) {
-    return;
-  }
-  linksToDelete.forEach((link) => {
-    input.deleteLink(link.id).catch((error) => {
-      console.error('Error deleting link:', error);
-    });
-  });
-}
-
+/**
+ * Стрелки к удалённой заметке сервер убирает сам (DELETE comment → task_links в той же транзакции);
+ * клиенту остаётся убрать их из локального списка. При конвертации заметки в задачу стрелки
+ * сначала перецепляются на новую задачу.
+ */
 function syncLinksOnCommentDelete(input: {
   commentTaskId: string;
   retargetLinksTo?: string;
-  selectedSprintId: number | null;
   taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;
   deleteLink: (linkId: string) => Promise<void>;
   saveLink: (link: { fromTaskId: string; id: string; toTaskId: string }) => Promise<void>;
@@ -125,7 +118,7 @@ function syncLinksOnCommentDelete(input: {
       toTaskId: input.retargetLinksTo,
     });
   }
-  deleteLinksTouchingComment(input.commentTaskId, input);
+  input.setTaskLinks((prev) => excludeTaskLinksTouchingId(prev, input.commentTaskId));
   return Promise.resolve();
 }
 
@@ -161,17 +154,19 @@ export function useSprintPlannerCommentHandlers({
           deleteLink,
           retargetLinksTo: options?.retargetLinksTo,
           saveLink,
-          selectedSprintId,
           setTaskLinks,
           taskLinks,
         });
         setComments((prev: CommentType[]) => prev.filter((c: CommentType) => c.id !== id));
-        if (selectedSprintId) {
-          deleteComment(id).catch((error) => {
+        if (!selectedSprintId) {
+          return linksSync;
+        }
+        // Перецепка идёт до удаления: иначе серверный каскад снёс бы стрелки раньше клиента.
+        return linksSync
+          .then(() => deleteComment(id))
+          .catch((error) => {
             console.error('Error deleting comment:', error);
           });
-        }
-        return linksSync;
       };
       const comment = comments.find((item) => item.id === id);
       if (!shouldAnimateStickyNoteDelete(comment, options?.retargetLinksTo)) {
@@ -296,31 +291,14 @@ export function useSprintPlannerCommentHandlers({
       }>,
       options?: CommentHistoryRecordOptions
     ) => {
-      let historyBefore = null as ReturnType<typeof commentHistorySliceFromComment> | null;
-      let historyAfter = null as ReturnType<typeof commentHistorySliceFromComment> | null;
-
+      let history = null as CommentHistoryChange | null;
       setComments((prev: CommentType[]) => {
-        const current = prev.find((c) => c.id === id);
-        if (!current) {
-          return prev;
-        }
-        const next = { ...current, ...payload };
-        historyBefore = commentHistorySliceFromComment(current);
-        historyAfter = commentHistorySliceFromComment(next);
-        return prev.map((c: CommentType) => (c.id === id ? next : c));
+        const result = applyCommentChangeWithHistory(prev, id, (current) => ({ ...current, ...payload }));
+        history = result.history;
+        return result.comments;
       });
-
-      if (
-        options?.recordHistory !== false &&
-        historyBefore &&
-        historyAfter &&
-        !commentHistorySlicesEqual(historyBefore, historyAfter)
-      ) {
-        positionsStore.recordPlanHistory({
-          after: new Map(),
-          before: new Map(),
-          comments: new Map([[id, { after: historyAfter, before: historyBefore }]]),
-        });
+      if (options?.recordHistory !== false && history) {
+        recordCommentHistory(positionsStore, id, history);
       }
       positionsStore.laneLayers.touch(toSwimlaneCommentTaskId(id));
     },
@@ -329,31 +307,16 @@ export function useSprintPlannerCommentHandlers({
 
   const handleCommentParentChange = useCallback(
     (commentId: string, parent: TaskParent | null, options?: CommentHistoryRecordOptions) => {
-      let historyBefore = null as ReturnType<typeof commentHistorySliceFromComment> | null;
-      let historyAfter = null as ReturnType<typeof commentHistorySliceFromComment> | null;
-
+      let history = null as CommentHistoryChange | null;
       setComments((prev: CommentType[]) => {
-        const current = prev.find((comment) => comment.id === commentId);
-        if (!current) {
-          return prev;
-        }
-        const next = applyParentToComment(current, parent);
-        historyBefore = commentHistorySliceFromComment(current);
-        historyAfter = commentHistorySliceFromComment(next);
-        return prev.map((comment) => (comment.id === commentId ? next : comment));
+        const result = applyCommentChangeWithHistory(prev, commentId, (current) =>
+          applyParentToComment(current, parent)
+        );
+        history = result.history;
+        return result.comments;
       });
-
-      if (
-        options?.recordHistory !== false &&
-        historyBefore &&
-        historyAfter &&
-        !commentHistorySlicesEqual(historyBefore, historyAfter)
-      ) {
-        positionsStore.recordPlanHistory({
-          after: new Map(),
-          before: new Map(),
-          comments: new Map([[commentId, { after: historyAfter, before: historyBefore }]]),
-        });
+      if (options?.recordHistory !== false && history) {
+        recordCommentHistory(positionsStore, commentId, history);
       }
     },
     [positionsStore, setComments]
@@ -374,33 +337,17 @@ export function useSprintPlannerCommentHandlers({
       }>,
       parentChange: TaskParent | null | undefined
     ) => {
-      let historyBefore = null as ReturnType<typeof commentHistorySliceFromComment> | null;
-      let historyAfter = null as ReturnType<typeof commentHistorySliceFromComment> | null;
-
+      let history = null as CommentHistoryChange | null;
       setComments((prev: CommentType[]) => {
-        const current = prev.find((comment) => comment.id === commentId);
-        if (!current) {
-          return prev;
-        }
-        let next: CommentType = { ...current, ...patch };
-        if (parentChange !== undefined) {
-          next = applyParentToComment(next, parentChange);
-        }
-        historyBefore = commentHistorySliceFromComment(current);
-        historyAfter = commentHistorySliceFromComment(next);
-        return prev.map((comment) => (comment.id === commentId ? next : comment));
-      });
-
-      if (
-        historyBefore &&
-        historyAfter &&
-        !commentHistorySlicesEqual(historyBefore, historyAfter)
-      ) {
-        positionsStore.recordPlanHistory({
-          after: new Map(),
-          before: new Map(),
-          comments: new Map([[commentId, { after: historyAfter, before: historyBefore }]]),
+        const result = applyCommentChangeWithHistory(prev, commentId, (current) => {
+          const next: CommentType = { ...current, ...patch };
+          return parentChange === undefined ? next : applyParentToComment(next, parentChange);
         });
+        history = result.history;
+        return result.comments;
+      });
+      if (history) {
+        recordCommentHistory(positionsStore, commentId, history);
       }
       positionsStore.laneLayers.touch(toSwimlaneCommentTaskId(commentId));
     },

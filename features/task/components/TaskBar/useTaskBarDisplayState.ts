@@ -139,10 +139,7 @@ export function useTaskBarDisplayState(input: {
     setNodeRef,
     transform,
   } = useTaskBarDragBind();
-  const isStickyNoteCard =
-    !isSwimlaneImageTask(input.task) &&
-    !isSwimlaneDiagramTask(input.task) &&
-    isSwimlaneCommentTask(input.task);
+  const isStickyNoteCard = isSwimlaneCommentTask(input.task);
   const isSwimlanePhotoCard = isSwimlaneImageTask(input.task);
   const isPhotoOrDiagramCard = isSwimlanePhotoCard || isSwimlaneDiagramTask(input.task);
   const handleResizeSessionChange = useCallback(

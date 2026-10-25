@@ -6,7 +6,6 @@ import {
   collectFeatureLaneRowComments,
   collectFeatureLaneRowWorkTasks,
   deleteFeatureLaneRowAnnotations,
-  isFeatureLaneAnnotationTask,
   isOnFeatureLaneCommentRow,
   isOnFeatureLaneRow,
 } from './featureLaneRowItems';
@@ -37,13 +36,6 @@ function comment(partial: Partial<Comment> & Pick<Comment, 'id'>): Comment {
 const storyParent = { display: 'Стори', id: 'ST-9', key: 'ST-9' };
 
 describe('featureLaneRowItems', () => {
-  it('считает заметки, картинки и схемы аннотациями', () => {
-    expect(isFeatureLaneAnnotationTask({ id: 't', localDraftKind: 'comment' })).toBe(true);
-    expect(isFeatureLaneAnnotationTask({ id: 't', localDraftKind: 'diagram' })).toBe(true);
-    expect(isFeatureLaneAnnotationTask({ id: 'local-image:1' })).toBe(true);
-    expect(isFeatureLaneAnnotationTask({ id: 'T-1', localDraftKind: 'task' })).toBe(false);
-  });
-
   it('относит к строке детей по parent/epic и сам родительский issue', () => {
     expect(isOnFeatureLaneRow('ST-9', task({ id: 'T-1', name: 'Работа', parent: storyParent }))).toBe(
       true

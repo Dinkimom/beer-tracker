@@ -1,7 +1,7 @@
 import type { Comment, Task, TaskParent } from '@/types';
 
-import { isPlannerAnnotationTask } from '@/features/task/utils/swimlaneImageTask';
 import { createIssue, updateIssueParent } from '@/lib/api/issues';
+import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
 
 import { isOnFeatureLaneCommentRow, isOnFeatureLaneRow } from './featureLaneRowItems';
 
@@ -123,7 +123,7 @@ async function persistFeatureLaneDraftTrackerParents(
     if (!isFeatureLaneDraftChildTask(input.rowId, input.parent, task)) {
       continue;
     }
-    if (isPlannerAnnotationTask(task) || task.isLocalTask === true) {
+    if (isPlannerNonTrackerCard(task) || task.isLocalTask === true) {
       continue;
     }
     const updated = await updateIssueParent(task.id, input.parent.key, input.sprintId);

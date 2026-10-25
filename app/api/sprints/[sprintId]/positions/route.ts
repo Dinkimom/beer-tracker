@@ -5,6 +5,7 @@ import { requireTenantContext } from '@/lib/api-tenant';
 import { getTrackerApiFromRequest } from '@/lib/api-tracker';
 import { resolveParams } from '@/lib/nextjs-utils';
 import { notifyAssigneeChangedIfNeeded } from '@/lib/notifications/notifyAssigneeChangedIfNeeded';
+import { isEphemeralPlannerPositionId } from '@/lib/planner/ephemeralPlannerPositionId';
 import { plannerGridPartError } from '@/lib/planner/migrateOrganizationPlannerGrid';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
@@ -225,7 +226,8 @@ export async function PUT(
     const { searchParams } = new URL(request.url);
     const taskId = searchParams.get('taskId');
 
-    if (isNaN(sprintId) || !taskId) {
+    // Аннотации и черновики не хранят место в task_positions (см. TaskPositionSchema).
+    if (isNaN(sprintId) || !taskId || isEphemeralPlannerPositionId(taskId)) {
       return NextResponse.json(
         { error: 'Invalid sprint ID or task ID' },
         { status: 400 }

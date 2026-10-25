@@ -1,8 +1,8 @@
 import type { OccupancyErrorReason } from '@/lib/planner-timeline/occupancyErrorMessages';
 import type { Task, TaskPosition } from '@/types';
 
-import { isPlannerAnnotationTask } from '@/features/task/utils/swimlaneImageTask';
 import { isTaskCompleted } from '@/features/task/utils/taskUtils';
+import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
 
 import { getPositionSegmentRanges } from './occupancyUtils';
 import {
@@ -27,7 +27,7 @@ export function filterPositionsByTasks(
   taskPositions: Map<string, TaskPosition>,
 ): Map<string, TaskPosition> {
   const taskIds = new Set(
-    tasks.filter((task) => !isPlannerAnnotationTask(task)).map((task) => task.id)
+    tasks.filter((task) => !isPlannerNonTrackerCard(task)).map((task) => task.id)
   );
   const filtered = new Map<string, TaskPosition>();
   taskPositions.forEach((pos, taskId) => {

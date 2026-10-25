@@ -14,7 +14,7 @@ import {
   getStickyNoteDashedGhostStyle,
   getStickyNotePaint,
 } from '@/features/comments/utils/stickyNotePalette';
-import { isSwimlaneCommentTask, isSwimlaneDiagramTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { resolveSwimlaneDropPreviewTarget } from '@/features/swimlane/components/swimlaneHelpers';
 import { useSwimlaneLaneHoveredCell } from '@/features/swimlane/hooks/useSwimlaneDragHover';
 import { clampSwimlaneQuickAddBandBox } from '@/features/swimlane/utils/swimlaneCellOccupancy';
@@ -31,8 +31,8 @@ import { buildSwimlaneTaskBarHorizontalStyle } from '@/features/task/components/
 import { getSwimlaneCardRadiusClass } from '@/features/task/components/TaskCard/taskCardLayoutHelpers';
 import { getDiagramCardDashedGhostStyle } from '@/features/task/utils/diagramCardSurface';
 import { getPhotoCardDashedGhostStyle } from '@/features/task/utils/photoCardSurface';
-import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
+import { resolvePlannerCardKind } from '@/lib/planner/plannerCardKind';
 import { getStatusColors, resolvePaletteStatusKey } from '@/utils/statusColors';
 
 const NEW_LAYER_LINE_PX = 3;
@@ -60,17 +60,19 @@ interface SwimlaneDropPreviewProps {
   timelineTotalParts: number;
 }
 
+/** Виджет на доске рисуется фотокарточкой — и призрак у него такой же. */
 function resolveAnnotationPaint(task: Task, isDark: boolean): CSSProperties | null {
-  if (isSwimlaneImageTask(task)) {
-    return getPhotoCardDashedGhostStyle(isDark);
+  switch (resolvePlannerCardKind(task)) {
+    case 'image':
+    case 'widget':
+      return getPhotoCardDashedGhostStyle(isDark);
+    case 'diagram':
+      return getDiagramCardDashedGhostStyle(isDark);
+    case 'note':
+      return getStickyNoteDashedGhostStyle(task.stickyNoteColor, isDark);
+    default:
+      return null;
   }
-  if (isSwimlaneDiagramTask(task)) {
-    return getDiagramCardDashedGhostStyle(isDark);
-  }
-  if (isSwimlaneCommentTask(task)) {
-    return getStickyNoteDashedGhostStyle(task.stickyNoteColor, isDark);
-  }
-  return null;
 }
 
 /** Черта вставки — посередине зазора над слоем, куда встанет карточка. */
@@ -225,14 +227,15 @@ export function SwimlaneDropPreview({
     );
   }
 
+  const activeKind = resolvePlannerCardKind(activeTask);
   const radiusClass = getSwimlaneCardRadiusClass(
-    isSwimlaneImageTask(activeTask) || isSwimlaneDiagramTask(activeTask),
-    isSwimlaneCommentTask(activeTask)
+    activeKind === 'image' || activeKind === 'diagram' || activeKind === 'widget',
+    activeKind === 'note'
   );
   const statusPaintClass = annotationPaint
     ? ''
     : `${colors.previewBorder} ${colors.highlight.bg} ${colors.highlightDark?.bg ?? ''}`;
-  const notePaperClass = isSwimlaneCommentTask(activeTask) ? 'sticky-note-paper' : '';
+  const notePaperClass = activeKind === 'note' ? 'sticky-note-paper' : '';
 
   return (
     <div

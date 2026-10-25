@@ -1,7 +1,7 @@
 import type { PhaseSegment, Task } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
-import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
 
 export const SWIMLANE_BASELINE_DRAG_DIM_OPACITY = 0.3;
 
@@ -68,13 +68,7 @@ export function computeSwimlaneOverdueBaselineStripsForSegments(
     currentCell: number
   ) => { baselineStart: number; baselineWidth: number } | null
 ): Array<{ baselineStart: number; baselineWidth: number }> {
-  if (
-    task.isLocalTask === true ||
-    task.localDraftKind === 'comment' ||
-    task.localDraftKind === 'diagram' ||
-    task.localDraftKind === 'image' ||
-    (typeof task.id === 'string' && parseSwimlaneCommentTaskId(task.id) != null)
-  ) {
+  if (isPlannerNonTrackerCard(task)) {
     return [];
   }
   const lastSegment = planSegments.at(-1);

@@ -1,30 +1,15 @@
-/** Board id for a sticky note / diagram / photo (`comment:{uuid}`). */
-const PLANNER_COMMENT_TASK_ID_PREFIX = 'comment:';
-
-const COMMENT_UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-export function toPlannerCommentTaskId(commentId: string): string {
-  if (commentId.startsWith(PLANNER_COMMENT_TASK_ID_PREFIX)) {
-    return commentId;
-  }
-  return `${PLANNER_COMMENT_TASK_ID_PREFIX}${commentId}`;
-}
-
-export function parsePlannerCommentTaskId(taskId: string): string | null {
-  if (!taskId.startsWith(PLANNER_COMMENT_TASK_ID_PREFIX)) {
-    return null;
-  }
-  const id = taskId.slice(PLANNER_COMMENT_TASK_ID_PREFIX.length);
-  return id.length > 0 ? id : null;
-}
+import {
+  parsePlannerCommentTaskId,
+  PLANNER_COMMENT_UUID_RE,
+  toPlannerCommentTaskId,
+} from '@/lib/planner/plannerCardKind';
 
 export function plannerLinkEndpointAliases(taskId: string): readonly string[] {
   const commentId = parsePlannerCommentTaskId(taskId);
   if (commentId) {
     return [taskId, commentId];
   }
-  if (COMMENT_UUID_RE.test(taskId)) {
+  if (PLANNER_COMMENT_UUID_RE.test(taskId)) {
     return [taskId, toPlannerCommentTaskId(taskId)];
   }
   return [taskId];

@@ -1,41 +1,18 @@
 import type { Task } from '@/types';
 
-const SWIMLANE_IMAGE_TASK_ID_PREFIX = 'local-image:' as const;
+import {
+  isPlannerLocalImageTaskId,
+  parsePlannerLocalImageTaskId,
+  resolvePlannerCardKind,
+  toPlannerLocalImageTaskId,
+} from '@/lib/planner/plannerCardKind';
 
-export function toSwimlaneImageTaskId(imageId: string): string {
-  return `${SWIMLANE_IMAGE_TASK_ID_PREFIX}${imageId}`;
-}
+/** Локальное фото `local-image:*`; префикс — в `lib/planner/plannerCardKind`. */
+export const toSwimlaneImageTaskId = toPlannerLocalImageTaskId;
+export const parseSwimlaneImageTaskId = parsePlannerLocalImageTaskId;
+export const isSwimlaneImageTaskId = isPlannerLocalImageTaskId;
 
-export function parseSwimlaneImageTaskId(taskId: string): string | null {
-  if (!taskId.startsWith(SWIMLANE_IMAGE_TASK_ID_PREFIX)) {
-    return null;
-  }
-  const id = taskId.slice(SWIMLANE_IMAGE_TASK_ID_PREFIX.length);
-  return id.length > 0 ? id : null;
-}
-
-export function isSwimlaneImageTaskId(taskId: string): boolean {
-  return parseSwimlaneImageTaskId(taskId) != null;
-}
-
+/** Фотокарточка: сохранённая `comment:*` (kind=image), черновик или `local-image:*`. */
 export function isSwimlaneImageTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  return task.localDraftKind === 'image' || isSwimlaneImageTaskId(task.id);
-}
-
-/** Заметка или картинка на таймлайне — не работа из Tracker. */
-export function isPlannerAnnotationTask(
-  task: Pick<Task, 'id' | 'isLocalTask' | 'localDraftKind'>
-): boolean {
-  if (task.isLocalTask === true) {
-    return true;
-  }
-  if (
-    task.localDraftKind === 'comment' ||
-    task.localDraftKind === 'diagram' ||
-    task.localDraftKind === 'image' ||
-    task.localDraftKind === 'widget'
-  ) {
-    return true;
-  }
-  return isSwimlaneImageTaskId(task.id);
+  return resolvePlannerCardKind(task) === 'image';
 }

@@ -1,7 +1,4 @@
-import { parsePlannerCommentTaskId } from '@/lib/planner/plannerLinkEndpoint';
-
-const COMMENT_UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { parsePlannerCommentTaskId, PLANNER_COMMENT_UUID_RE } from '@/lib/planner/plannerCardKind';
 
 /** Заметка / фото / схема на планере (`comment:{uuid}` или сырой uuid комментария). */
 export function isPlannerCommentLinkEndpoint(endpointId: string): boolean {
@@ -12,7 +9,7 @@ export function isPlannerCommentLinkEndpoint(endpointId: string): boolean {
   if (parsePlannerCommentTaskId(trimmed) != null) {
     return true;
   }
-  return COMMENT_UUID_RE.test(trimmed);
+  return PLANNER_COMMENT_UUID_RE.test(trimmed);
 }
 
 /**

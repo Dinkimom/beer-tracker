@@ -4,6 +4,7 @@ import type { Task, TaskCardVariant } from '@/types';
 
 import { TEAM_TEXT_COLORS } from '@/constants';
 import { getStickyNotePlaceholderTextClass } from '@/features/comments/utils/stickyNoteSurfaceClasses';
+import { isPlannerAnnotation, isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
 import { getStatusColors, resolveStatusForPhaseCardColors } from '@/utils/statusColors';
 
 import { isSwimlaneSingleTimeslotWidth } from '../taskCardLayoutHelpers';
@@ -20,7 +21,7 @@ export function resolveTaskCardTeamTextColor(
     task.statusColorKey
   );
   const statusColors = getStatusColors(statusForTitle);
-  if (task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget') {
+  if (isPlannerAnnotation(task)) {
     return '';
   }
   if (task.isLocalTask) {
@@ -224,12 +225,7 @@ export function resolveTaskCardSwimlaneMetaVisibility(input: {
   mergedFields: SwimlaneCardFieldsVisibility;
   task: Task;
 }) {
-  const hideTrackerMeta =
-    input.task.isLocalTask === true ||
-    input.task.localDraftKind === 'comment' ||
-    input.task.localDraftKind === 'diagram' ||
-    input.task.localDraftKind === 'image' ||
-    input.task.localDraftKind === 'widget';
+  const hideTrackerMeta = isPlannerNonTrackerCard(input.task);
   const hideCompactMeta = isSwimlaneSingleTimeslotWidth(input.displayDuration);
   const showKey = hideTrackerMeta ? false : input.mergedFields.showKey;
   const showType = hideTrackerMeta || hideCompactMeta ? false : input.mergedFields.showType;

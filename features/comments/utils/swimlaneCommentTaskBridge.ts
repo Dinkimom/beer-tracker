@@ -7,15 +7,20 @@ import type { Comment, Task, TaskPosition } from '@/types';
 
 import {
   DEFAULT_PLANNER_COMMENT_CARD_ROW_HEIGHT,
-  MAX_PLANNER_COMMENT_CARD_ROW_HEIGHT,
   pairedPlannerCommentWidthAndCardRowHeight,
   plannerCommentCardRowHeightFromDurationParts,
   plannerCommentCardRowHeightFromWidth,
+  plannerCommentCardRowSpan,
   plannerCommentDurationPartsFromWidth,
 } from '@/lib/comments/plannerCommentCardRow';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
-
-const SWIMLANE_COMMENT_TASK_ID_PREFIX = 'comment:' as const;
+import {
+  isPlannerCommentTaskId,
+  isSavedPlannerAnnotation,
+  parsePlannerCommentTaskId,
+  resolvePlannerCardKind,
+  toPlannerCommentTaskId,
+} from '@/lib/planner/plannerCardKind';
 
 /** Дефолтный вертикальный span при создании (совпадает с дефолтной длительностью 2 части). */
 export const DEFAULT_COMMENT_CARD_ROW_HEIGHT = DEFAULT_PLANNER_COMMENT_CARD_ROW_HEIGHT;
@@ -64,79 +69,44 @@ export function isPlannerAnnotationVisibleOnLayers(
   return true;
 }
 
-export function toSwimlaneCommentTaskId(commentId: string): string {
-  return `${SWIMLANE_COMMENT_TASK_ID_PREFIX}${commentId}`;
-}
+/** Id карточки аннотации на доске; префикс и разбор — в `lib/planner/plannerCardKind`. */
+export const toSwimlaneCommentTaskId = toPlannerCommentTaskId;
+export const parseSwimlaneCommentTaskId = parsePlannerCommentTaskId;
+export const isSwimlaneCommentTaskId = isPlannerCommentTaskId;
 
-export function parseSwimlaneCommentTaskId(taskId: string): string | null {
-  if (!taskId.startsWith(SWIMLANE_COMMENT_TASK_ID_PREFIX)) {
-    return null;
-  }
-  const id = taskId.slice(SWIMLANE_COMMENT_TASK_ID_PREFIX.length);
-  return id.length > 0 ? id : null;
-}
-
-export function isSwimlaneCommentTaskId(taskId: string): boolean {
-  return parseSwimlaneCommentTaskId(taskId) != null;
-}
-
+/** Заметка (`kind=text`): сохранённая `comment:*` или черновик quick-add. Не фото/схема/виджет. */
 export function isSwimlaneCommentTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  if (
-    task.localDraftKind === 'image' ||
-    task.localDraftKind === 'diagram' ||
-    task.localDraftKind === 'widget'
-  ) {
-    return false;
-  }
-  return task.localDraftKind === 'comment' || isSwimlaneCommentTaskId(task.id);
-}
-
-/** Сохранённая заметка на свимлейне (`comment:id`), не quick-add черновик, не фото и не схема. */
-export function isSavedSwimlaneCommentTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  return (
-    isSwimlaneCommentTaskId(task.id) &&
-    task.localDraftKind !== 'image' &&
-    task.localDraftKind !== 'diagram' &&
-    task.localDraftKind !== 'widget'
-  );
-}
-
-/** Сохранённая фотокарточка (`comment:id` с kind=image). */
-export function isSavedSwimlaneImageCommentTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  return isSwimlaneCommentTaskId(task.id) && task.localDraftKind === 'image';
+  return resolvePlannerCardKind(task) === 'note';
 }
 
 /** Черновик или сохранённая схема Excalidraw. */
 export function isSwimlaneDiagramTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  return task.localDraftKind === 'diagram';
+  return resolvePlannerCardKind(task) === 'diagram';
 }
 
-/** Сохранённая схема на свимлейне (`comment:id`). */
-export function isSavedSwimlaneDiagramTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
-  return isSwimlaneCommentTaskId(task.id) && task.localDraftKind === 'diagram';
+/** Карточка-виджет (`kind=widget`). */
+export function isSwimlaneWidgetTask(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
+  return resolvePlannerCardKind(task) === 'widget';
 }
 
-/** Сохранённая карточка-виджет (`comment:id`, kind=widget). */
-export function isSwimlaneWidgetTask(task: Pick<Task, 'localDraftKind'>): boolean {
-  return task.localDraftKind === 'widget';
-}
+export type SwimlaneAnnotationContextMenuVariant = 'diagram' | 'image' | 'note' | 'pending' | 'widget';
 
+/**
+ * Вариант меню для сохранённой аннотации; `null` — не аннотация или ещё черновик quick-add.
+ * Черновик агента (`pendingApproval`) — отдельный вариант `pending` независимо от kind:
+ * до решения пользователя его можно только принять или отклонить.
+ */
 export function resolveSwimlaneAnnotationContextMenuVariant(
-  task: Pick<Task, 'id' | 'localDraftKind'>
-): 'diagram' | 'image' | 'note' | 'widget' | null {
-  if (isSavedSwimlaneImageCommentTask(task)) {
-    return 'image';
+  task: Pick<Task, 'id' | 'localDraftKind' | 'pendingApproval'>
+): SwimlaneAnnotationContextMenuVariant | null {
+  if (!isSavedPlannerAnnotation(task)) {
+    return null;
   }
-  if (isSavedSwimlaneDiagramTask(task)) {
-    return 'diagram';
+  if (task.pendingApproval === true) {
+    return 'pending';
   }
-  if (isSwimlaneWidgetTask(task) && isSwimlaneCommentTaskId(task.id)) {
-    return 'widget';
-  }
-  if (isSavedSwimlaneCommentTask(task)) {
-    return 'note';
-  }
-  return null;
+  const kind = resolvePlannerCardKind(task);
+  return kind === 'task' ? null : kind;
 }
 
 /** Длительность заметки в частях таймлайна. width: либо parts, либо legacy px. */
@@ -144,24 +114,21 @@ export function commentDurationParts(comment: Comment): number {
   return commentDurationPartsFromWidth(Number(comment.width));
 }
 
-/** Вертикальный span заметки/фото в строках карточки свимлейна. */
-export function commentCardRowSpan(comment: Pick<Comment, 'height'>): number {
-  const height = Number(comment.height);
-  if (!Number.isFinite(height) || height <= 0) {
-    return 1;
-  }
-  if (height <= MAX_PLANNER_COMMENT_CARD_ROW_HEIGHT) {
-    return Math.max(1, Math.round(height));
-  }
-  return 1;
-}
-
-/** layoutShiftUp хранится в position_y (comments.position_y). */
-export function commentCardRowLayout(comment: Pick<Comment, 'height' | 'y'>): {
+/**
+ * layoutShiftUp хранится в position_y (comments.position_y). Span — `plannerCommentCardRowSpan`
+ * (схема 1:1 с шириной, остальные — сохранённый height 1..10).
+ */
+export function commentCardRowLayout(
+  comment: Partial<Pick<Comment, 'kind' | 'width'>> & Pick<Comment, 'height' | 'y'>
+): {
   layerShiftUp: number;
   span: number;
 } {
-  const span = commentCardRowSpan(comment);
+  const span = plannerCommentCardRowSpan({
+    height: Number(comment.height),
+    kind: comment.kind ?? 'text',
+    width: Number(comment.width ?? 0),
+  });
   const shift = Number(comment.y);
   const layerShiftUp =
     Number.isFinite(shift) && shift > 0
@@ -338,19 +305,6 @@ export function mergeSwimlaneCommentTasksMap(
   return merged;
 }
 
-/** Убрать comment:* из карты перед записью в TaskPositionsStore. */
-export function stripSwimlaneCommentPositions(
-  positions: Map<string, TaskPosition>
-): Map<string, TaskPosition> {
-  const out = new Map<string, TaskPosition>();
-  for (const [id, pos] of positions) {
-    if (parseSwimlaneCommentTaskId(id) == null) {
-      out.set(id, pos);
-    }
-  }
-  return out;
-}
-
 export function swimlanePositionToCommentPatch(position: TaskPosition): {
   assigneeId: string;
   day: number;
@@ -390,7 +344,11 @@ export function swimlanePositionToCommentResizePatch(
   return {
     assigneeId: base.assigneeId,
     day: base.day,
-    height: commentCardRowSpan(comment),
+    height: plannerCommentCardRowSpan({
+      height: Number(comment.height),
+      kind: comment.kind ?? 'text',
+      width: base.width,
+    }),
     part: base.part,
     width: base.width,
   };

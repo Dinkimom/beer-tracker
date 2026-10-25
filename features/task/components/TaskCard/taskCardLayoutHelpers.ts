@@ -7,6 +7,7 @@ import {
 } from '@/features/comments/utils/stickyNoteSurfaceClasses';
 import { getPhotoCardSurfaceClasses } from '@/features/task/utils/photoCardSurface';
 import { getTaskPoints } from '@/features/task/utils/taskUtils';
+import { isPlannerAnnotation } from '@/lib/planner/plannerCardKind';
 import { storyPointsToTimeslots, timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 export function getTaskCardPaddingClasses(
@@ -122,7 +123,7 @@ export function computeTaskCardBarMetrics(
     swimlaneBarDurationParts ?? taskPosition?.duration ?? estimatedTimeslots;
   const actualDuration = resizePreviewDuration ?? planSlotsOnBar;
   // Заметка, схема и фото: width = duration в частях, без оценки SP — не показываем «+N» при resize.
-  if (task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget') {
+  if (isPlannerAnnotation(task)) {
     return {
       actualDuration,
       baselineSP: 0,

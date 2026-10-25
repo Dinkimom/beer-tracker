@@ -25,7 +25,11 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid sprint ID or comment ID' }, { status: 400 });
     }
 
-    const result = await approvePendingSprintComment({ commentId, sprintId });
+    const result = await approvePendingSprintComment({
+      commentId,
+      ownerId: tenantResult.ctx.userId,
+      sprintId,
+    });
     if (result === 'not_found') {
       return NextResponse.json({ error: 'Pending note not found' }, { status: 404 });
     }

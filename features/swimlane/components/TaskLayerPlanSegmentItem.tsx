@@ -343,10 +343,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   });
 
   const assignedTaskLayer = taskLayerMap.get(task.id) ?? 0;
-  const isStickyNoteCard =
-    !isSwimlaneImageTask(task) &&
-    !isSwimlaneDiagramTask(task) &&
-    isSwimlaneCommentTask(task);
+  const isStickyNoteCard = isSwimlaneCommentTask(task);
   const isPhotoCard = isSwimlaneImageTask(task);
   const cardRowPreview =
     sprintPlannerUi.stickyNoteCardRowPreview?.taskId === task.id

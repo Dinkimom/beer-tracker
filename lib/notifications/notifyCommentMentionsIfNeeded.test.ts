@@ -96,6 +96,42 @@ describe('notifyCommentMentionsIfNeeded', () => {
       expect(resolveMentionAssigneeIdsToProductUserIds).toHaveBeenCalledWith('org-1', ['dev-2']);
     });
   });
+
+  it('notifies text notes (explicit or legacy kind) on create and edit', async () => {
+    notifyCommentMentionsIfNeeded({
+      actorUserId: 'actor',
+      commentId: 'comment-1',
+      isUpdate: false,
+      kind: 'text',
+      organizationId: 'org-1',
+      sprintId: 10,
+      text: 'Hi @[Anna](dev-1)',
+    });
+    await vi.waitFor(() => {
+      expect(insertUserNotifications).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it.each(['image', 'diagram', 'widget'])(
+    'ignores mentions in a %s caption on both create and edit',
+    async (kind) => {
+      for (const isUpdate of [false, true]) {
+        notifyCommentMentionsIfNeeded({
+          actorUserId: 'actor',
+          commentId: 'comment-1',
+          isUpdate,
+          kind,
+          organizationId: 'org-1',
+          previousText: '',
+          sprintId: 10,
+          text: 'Hi @[Anna](dev-1)',
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(resolveMentionAssigneeIdsToProductUserIds).not.toHaveBeenCalled();
+      expect(insertUserNotifications).not.toHaveBeenCalled();
+    }
+  );
 });
 
 describe('emitCommentMentionNotifications', () => {

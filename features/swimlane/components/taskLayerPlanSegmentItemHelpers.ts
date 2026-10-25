@@ -10,8 +10,8 @@ import {
 } from '@/features/swimlane/utils/positionUtils';
 import { swimlaneTaskDraggableId } from '@/features/swimlane/utils/swimlaneDragIds';
 import { getSwimlanePlanSegmentHtmlAnchorId } from '@/features/swimlane/utils/task-arrows/swimlaneSegmentArrowHelpers';
-import { isPlannerAnnotationTask } from '@/features/task/utils/swimlaneImageTask';
 import { parseStickyNoteColor, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
 
 function isQuickAddDraftTask(task: Task): boolean {
   return task.isLocalTask === true && parseSwimlaneCommentTaskId(task.id) == null;
@@ -350,7 +350,7 @@ export function resolveTaskLayerPlanSegmentRenderState(input: {
     segmentSecondary: hasMultiplePlanSegments && segIdx > 0,
     isInError:
       !segmentEditorActive &&
-      !isPlannerAnnotationTask(task) &&
+      !isPlannerNonTrackerCard(task) &&
       (props.errorTaskIds?.has(taskId) ?? false),
   };
 }

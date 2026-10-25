@@ -8,7 +8,6 @@ import {
   commentCardRowHeightFromWidth,
   commentCardRowLayout,
   commentCardRowLayoutToPersistPatch,
-  commentCardRowSpan,
   buildSwimlaneCommentProjection,
   commentDurationParts,
   commentSizeFromDraftPosition,
@@ -16,9 +15,6 @@ import {
   commentToSwimlaneTask,
   filterPlannerCommentsByLayers,
   isPlannerAnnotationVisibleOnLayers,
-  isSavedSwimlaneCommentTask,
-  isSavedSwimlaneDiagramTask,
-  isSavedSwimlaneImageCommentTask,
   isSwimlaneCommentTask,
   isSwimlaneCommentTaskId,
   isSwimlaneDiagramTask,
@@ -26,7 +22,6 @@ import {
   resolveSwimlaneAnnotationContextMenuVariant,
   selectPendingAgentProposalNotes,
   selectPendingApprovalCommentIds,
-  stripSwimlaneCommentPositions,
   swimlanePositionToCommentPatch,
   swimlanePositionToCommentResizePatch,
   toSwimlaneCommentTaskId,
@@ -64,13 +59,8 @@ describe('swimlaneCommentTaskBridge', () => {
     expect(isSwimlaneCommentTask({ id: 'TASK-1', localDraftKind: 'task' })).toBe(false);
   });
 
-  it('detects saved swimlane notes separately from local drafts', () => {
-    expect(isSavedSwimlaneCommentTask({ id: 'comment:c1' })).toBe(true);
-    expect(isSavedSwimlaneCommentTask({ id: 'local-task-1' })).toBe(false);
-    expect(isSavedSwimlaneCommentTask({ id: 'comment:c1', localDraftKind: 'image' })).toBe(false);
-    expect(isSavedSwimlaneCommentTask({ id: 'comment:c1', localDraftKind: 'diagram' })).toBe(false);
-    expect(isSavedSwimlaneImageCommentTask({ id: 'comment:c1', localDraftKind: 'image' })).toBe(true);
-    expect(isSavedSwimlaneDiagramTask({ id: 'comment:c1', localDraftKind: 'diagram' })).toBe(true);
+  it('resolves the context menu variant only for saved annotations', () => {
+    expect(resolveSwimlaneAnnotationContextMenuVariant({ id: 'local-task-1', localDraftKind: 'comment' })).toBeNull();
     expect(isSwimlaneDiagramTask({ id: 'local-task-1', localDraftKind: 'diagram' })).toBe(true);
     expect(resolveSwimlaneAnnotationContextMenuVariant({ id: 'comment:c1' })).toBe('note');
     expect(
@@ -83,6 +73,12 @@ describe('swimlaneCommentTaskBridge', () => {
       resolveSwimlaneAnnotationContextMenuVariant({ id: 'comment:c1', localDraftKind: 'widget' })
     ).toBe('widget');
     expect(resolveSwimlaneAnnotationContextMenuVariant({ id: 'NW-1' })).toBeNull();
+    // Agent drafts: any kind collapses to `pending` (approve / reject only).
+    for (const localDraftKind of ['comment', 'image', 'diagram', 'widget'] as const) {
+      expect(
+        resolveSwimlaneAnnotationContextMenuVariant({ id: 'comment:c1', localDraftKind, pendingApproval: true })
+      ).toBe('pending');
+    }
   });
 
   it('treats small width as duration parts and large as legacy px', () => {
@@ -91,8 +87,11 @@ describe('swimlaneCommentTaskBridge', () => {
   });
 
   it('maps comment height/y to card row span and layer shift', () => {
-    expect(commentCardRowSpan(comment({ id: '1', height: 3 }))).toBe(3);
-    expect(commentCardRowSpan(comment({ id: '1', height: 100 }))).toBe(1);
+    expect(commentCardRowLayout(comment({ id: '1', height: 3 })).span).toBe(3);
+    expect(commentCardRowLayout(comment({ id: '1', height: 100 })).span).toBe(1);
+    // Diagram span follows its width (same rule as plannerCommentCardRowSpan / server context).
+    expect(commentCardRowLayout(comment({ id: '1', height: 1, kind: 'diagram', width: 4 })).span).toBe(4);
+    expect(commentCardRowLayout(comment({ id: '1', height: 1, kind: 'diagram', width: 30 })).span).toBe(10);
     expect(commentCardRowHeightFromWidth(3)).toBe(3);
     expect(commentCardRowHeightFromWidth(200)).toBe(2);
     expect(commentCardRowHeightFromDurationParts(5)).toBe(5);
@@ -259,22 +258,10 @@ describe('swimlaneCommentTaskBridge', () => {
     );
   });
 
-  it('builds projection maps and strips comment keys from store writes', () => {
+  it('builds projection maps', () => {
     const { positions, tasksMap } = buildSwimlaneCommentProjection([comment({ id: 'c1' })]);
     expect(tasksMap.has('comment:c1')).toBe(true);
     expect(positions.get('comment:c1')?.duration).toBe(3);
-
-    const mixed = new Map(positions);
-    mixed.set('TASK-1', {
-      assignee: 'dev-1',
-      duration: 1,
-      startDay: 0,
-      startPart: 0,
-      taskId: 'TASK-1',
-    });
-    const stripped = stripSwimlaneCommentPositions(mixed);
-    expect(stripped.has('comment:c1')).toBe(false);
-    expect(stripped.has('TASK-1')).toBe(true);
   });
 
   it('maps task position back to comment patch with duration in width', () => {

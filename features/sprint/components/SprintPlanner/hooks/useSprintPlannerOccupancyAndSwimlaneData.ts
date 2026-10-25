@@ -8,12 +8,12 @@ import { useMemo } from 'react';
 import { createQATasksMap } from '@/features/qa/utils/qaTaskUtils';
 import { useTaskChangelogs } from '@/features/sprint/components/SprintPlanner/occupancy/hooks/useTaskChangelogs';
 import { useOccupancyTasks } from '@/features/task/hooks/useTasks';
-import { isPlannerAnnotationTask } from '@/features/task/utils/swimlaneImageTask';
 import {
   collectMergeRequestLinksFromTasks,
   useMergeRequestFacts,
 } from '@/hooks/useMergeRequestFacts';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
 
 interface UseSprintPlannerOccupancyAndSwimlaneDataParams {
   allTasksForDrag: Task[];
@@ -49,7 +49,7 @@ export function useSprintPlannerOccupancyAndSwimlaneData({
     // Локальный черновик quick-add не имеет changelog в трекере; его id не должен
     // попадать в queryKey — иначе React Query сбрасывает кэш и таймлайны факта мигают.
     return allTasksForDrag
-      .filter((task) => !isPlannerAnnotationTask(task))
+      .filter((task) => !isPlannerNonTrackerCard(task))
       .map((task) => task.id);
   }, [swimlaneFactTimelineEnabled, allTasksForDrag]);
 
@@ -77,13 +77,13 @@ export function useSprintPlannerOccupancyAndSwimlaneData({
 
   const tasksForOccupancyRaw =
     occupancyStatusFilter === 'all' ? allTasksForDrag : (occupancyTasksWithQA ?? allTasksForDrag);
-  const tasksForOccupancy = tasksForOccupancyRaw.filter((task) => !isPlannerAnnotationTask(task));
+  const tasksForOccupancy = tasksForOccupancyRaw.filter((task) => !isPlannerNonTrackerCard(task));
 
   const { activeOrganizationId } = useProductTenantOrganizations({ pollIntervalMs: 0 });
   const gitlabMrLinks = useMemo(() => {
     if (!loadGitlabFacts) return [];
     return collectMergeRequestLinksFromTasks(
-      allTasksForDrag.filter((task) => !isPlannerAnnotationTask(task))
+      allTasksForDrag.filter((task) => !isPlannerNonTrackerCard(task))
     );
   }, [allTasksForDrag, loadGitlabFacts]);
   const gitlabFactsQuery = useMergeRequestFacts(

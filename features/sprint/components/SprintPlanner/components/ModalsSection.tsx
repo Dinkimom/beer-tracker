@@ -82,6 +82,7 @@ interface ModalsSectionProps {
   }) => Promise<void>;
   onAssigneeSelect?: (task: Task, assigneeId: string) => void;
   onCloseTransitionModal?: () => void;
+  onCommentApprove?: (commentId: string) => void;
   onCommentDelete?: (commentId: string) => void;
   onCommentParentChange?: (commentId: string, parent: TaskParent | null) => void;
   onCommentUpdate?: (commentId: string, text: string, color?: StickyNoteColor) => void;
@@ -120,6 +121,7 @@ export const ModalsSection = observer(function ModalsSection({
   onAccountWork,
   onAssigneeSelect,
   onMoveToSprint,
+  onCommentApprove,
   onCommentDelete,
   onCommentParentChange,
   onCommentUpdate,
@@ -186,6 +188,7 @@ export const ModalsSection = observer(function ModalsSection({
           sprintTasks={sprintTasks}
           sprints={sprints}
           onAssigneeSelect={onAssigneeSelect}
+          onCommentApprove={onCommentApprove}
           onCommentDelete={onCommentDelete}
           onCommentParentChange={onCommentParentChange}
           onCommentUpdate={onCommentUpdate}

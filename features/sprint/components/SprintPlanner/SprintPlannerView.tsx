@@ -474,6 +474,7 @@ export function SprintPlannerView({
         onAccountWork={handlers.handleAccountWork}
         onAssigneeSelect={handleContextMenuAssigneeSelect}
         onCloseTransitionModal={handlers.closeTransitionModal}
+        onCommentApprove={handlers.handleCommentApprove}
         onCommentDelete={handlers.handleCommentDelete}
         onCommentParentChange={handlers.handleCommentParentChange}
         onCommentUpdate={handlers.handleCommentUpdate}

@@ -49,7 +49,7 @@ describe('computeBaselineStretch', () => {
 });
 
 describe('computeSwimlaneOverdueBaselineStrips', () => {
-  const todo = { status: 'todo' } as never;
+  const todo = { id: 'QUEUE-1', status: 'todo' } as never;
 
   it('returns one strip from the last segment end when overdue', () => {
     const strips = computeSwimlaneOverdueBaselineStrips(

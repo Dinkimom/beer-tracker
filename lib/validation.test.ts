@@ -39,4 +39,11 @@ describe('TaskPositionSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it.each(['comment:11111111-1111-4111-8111-111111111111', 'local-task-1', 'local-image:1'])(
+    'rejects planner annotation / draft id %s',
+    (taskId) => {
+      expect(validateRequest(TaskPositionSchema, { ...base, taskId }).success).toBe(false);
+    }
+  );
 });

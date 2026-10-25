@@ -372,8 +372,12 @@ export function collectRealtimeResources(ops: SprintPlanPatchOp[]): SprintRealti
         break;
       case 'createNote':
       case 'updateNote':
-      case 'deleteNote':
         set.add('comments');
+        break;
+      case 'deleteNote':
+        // deleteSprintComment убирает и стрелки к заметке.
+        set.add('comments');
+        set.add('links');
         break;
       case 'upsertLink':
       case 'deleteLink':

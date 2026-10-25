@@ -3,12 +3,13 @@
 import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
 import type { Task, TaskCardVariant } from '@/types';
 
+import { isPlannerAnnotation } from '@/lib/planner/plannerCardKind';
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 import { isQuickAddChooserDraft } from './taskCardContentHelpers';
 
-function isSwimlaneNoteOrPolaroid(task: Pick<Task, 'localDraftKind'>): boolean {
-  return task.localDraftKind === 'comment' || task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget';
+function isSwimlaneNoteOrPolaroid(task: Pick<Task, 'id' | 'localDraftKind'>): boolean {
+  return isPlannerAnnotation(task);
 }
 
 export function shouldShowTaskCardSwimlaneMetaRow(input: {
