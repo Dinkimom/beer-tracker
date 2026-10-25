@@ -289,6 +289,14 @@ export async function transitionJiraIssue(
   if (!key || !id) {
     throw new Error('Jira transition requires an issue key and transition id');
   }
-  const transitionInput = await applyJiraOffScreenRequiredFields(api, key, id, input);
-  await api.post(jiraIssueTransitionsPath(key), buildJiraTransitionRequestBody(id, transitionInput));
+  const prepared = await applyJiraOffScreenRequiredFields(api, key, id, input);
+  try {
+    await api.post(jiraIssueTransitionsPath(key), buildJiraTransitionRequestBody(id, prepared.input));
+  } catch (error) {
+    // Переход не прошёл — возвращаем поля, записанные ради него (X3). Ошибку перехода не прячем.
+    await prepared.revert?.().catch((revertError: unknown) => {
+      console.error(`[jira transition] ${key}: could not revert pre-written fields`, revertError);
+    });
+    throw error;
+  }
 }

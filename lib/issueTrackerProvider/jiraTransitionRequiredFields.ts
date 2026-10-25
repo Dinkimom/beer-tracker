@@ -260,6 +260,33 @@ function withoutKeys(
   return next;
 }
 
+/** Значение поля из GET issue в форму для PUT: ссылки (компоненты, версии, опции) — `{ id }`. */
+function jiraRevertValue(value: unknown): unknown {
+  if (isEmptyJiraIssueFieldValue(value)) {
+    return null;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => {
+      const id = asRecord(item)?.id;
+      return id != null ? { id: String(id) } : item;
+    });
+  }
+  const id = asRecord(value)?.id;
+  return id != null ? { id: String(id) } : value;
+}
+
+async function readCurrentFieldValues(
+  api: AxiosInstance,
+  issueKey: string,
+  fieldIds: string[]
+): Promise<Record<string, unknown>> {
+  const { data } = await api.get<unknown>(`/issue/${encodeURIComponent(issueKey)}`, {
+    params: { fields: fieldIds.join(',') },
+  });
+  const fields = issueFields(data);
+  return Object.fromEntries(fieldIds.map((fieldId) => [fieldId, jiraRevertValue(fields[fieldId])]));
+}
+
 async function putOffScreenFields(
   api: AxiosInstance,
   issueKey: string,
@@ -275,19 +302,26 @@ async function putOffScreenFields(
   await api.put(`/issue/${encodeURIComponent(issueKey)}`, { fields });
 }
 
+/** Остаток ввода для POST transitions и откат заранее записанных полей, если переход не удастся. */
+interface JiraOffScreenFieldsResult {
+  input: IssueTrackerTransitionInput;
+  revert?: () => Promise<void>;
+}
+
 /**
  * Jira field-required validators are not transition screen fields (`hasScreen: false`).
  * Write them on the issue first — the transition payload ignores fields that are not on the screen.
+ * Jira не умеет «поля + переход» атомарно: прежние значения запоминаются для `revert`.
  */
 export async function applyJiraOffScreenRequiredFields(
   api: AxiosInstance,
   issueKey: string,
   transitionId: string,
   input: IssueTrackerTransitionInput
-): Promise<IssueTrackerTransitionInput> {
+): Promise<JiraOffScreenFieldsResult> {
   const pending = pendingFieldKeys(input);
   if (pending.length === 0) {
-    return input;
+    return { input };
   }
   const [requiredIds, screenFieldIds] = await Promise.all([
     fetchJiraValidatorRequiredFieldIds(api, issueKey, transitionId),
@@ -296,12 +330,18 @@ export async function applyJiraOffScreenRequiredFields(
   ]);
   const requiredPending = pending.filter((fieldId) => requiredIds.includes(fieldId));
   if (requiredPending.length === 0) {
-    return input;
+    return { input };
   }
   const offScreen = requiredPending.filter((fieldId) => !screenFieldIds.has(fieldId));
   if (offScreen.length === 0) {
-    return input;
+    return { input };
   }
+  const previous = await readCurrentFieldValues(api, issueKey, offScreen);
   await putOffScreenFields(api, issueKey, input, offScreen);
-  return withoutKeys(input, new Set(offScreen));
+  return {
+    input: withoutKeys(input, new Set(offScreen)),
+    revert: async () => {
+      await api.put(`/issue/${encodeURIComponent(issueKey)}`, { fields: previous });
+    },
+  };
 }

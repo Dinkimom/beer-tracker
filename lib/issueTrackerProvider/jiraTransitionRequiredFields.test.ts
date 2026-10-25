@@ -162,6 +162,23 @@ describe('Jira off-screen required transition fields', () => {
     });
   });
 
+  it('restores the pre-written fields when the transition itself fails', async () => {
+    const { api, post, put } = apiForRnd815();
+    post.mockImplementation((url: string) => {
+      if (url === '/workflows') {
+        return Promise.resolve({ data: IN_REVIEW_WORKFLOW });
+      }
+      return Promise.reject(new Error('400 transition rejected'));
+    });
+    await expect(
+      transitionJiraIssue(api as never, 'RND-815', '31', { components: ['10036'] })
+    ).rejects.toThrow('400 transition rejected');
+    expect(put).toHaveBeenNthCalledWith(1, '/issue/RND-815', {
+      fields: { components: [{ id: '10036' }] },
+    });
+    expect(put).toHaveBeenNthCalledWith(2, '/issue/RND-815', { fields: { components: null } });
+  });
+
   it('leaves a required field on the transition when it is already on the screen', async () => {
     const { api, post, put } = apiForRnd815();
     api.get.mockImplementation((url: string) => {
