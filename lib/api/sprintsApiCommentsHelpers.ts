@@ -19,6 +19,8 @@ interface SaveCommentInput {
   day?: number | null;
   height: number;
   id?: string;
+  /** Версия, от которой сделана правка; сервер отвечает 409, если заметку уже изменили. */
+  ifVersion?: number;
   imageFileId?: string | null;
   kind?: 'diagram' | 'image' | 'text' | 'widget';
   parent?: TaskParent | null;
@@ -37,6 +39,7 @@ export function commentToSaveApiFields(comment: SaveCommentInput): {
   day: number | null;
   height: number;
   id: string;
+  ifVersion?: number;
   imageFileId: string | null;
   kind?: 'diagram' | 'image' | 'text' | 'widget';
   parent: TaskParent | null;
@@ -49,6 +52,7 @@ export function commentToSaveApiFields(comment: SaveCommentInput): {
 } {
   return {
     id: comment.id ?? '',
+    ...(comment.ifVersion != null ? { ifVersion: comment.ifVersion } : {}),
     assigneeId: comment.assigneeId,
     color: comment.color,
     imageFileId: comment.imageFileId ?? null,
@@ -84,6 +88,7 @@ interface CommentFromApi {
   replace_action?: string | null;
   replaces_comment_id?: string | null;
   text: string;
+  version?: number | null;
   width: number;
   x: number | null;
   y: number | null;
@@ -135,6 +140,7 @@ export function mapCommentFromApi(comment: CommentFromApi, sprintId?: number): C
     ...(parent ? { parent } : {}),
     ...commentMediaUrls(kind, comment.id, sprintId),
     text: comment.text,
+    ...(typeof comment.version === 'number' ? { version: comment.version } : {}),
     x: comment.x ?? 0,
     y: comment.y ?? 0,
     day: comment.day ?? 0,
@@ -163,21 +169,31 @@ async function postCommentAndReturn(
   return mapCommentFromApi(data.comment, sprintId);
 }
 
+/** PUT вернул 409: заметку изменили параллельно (`ifVersion` устарел). */
+export class SprintCommentVersionConflictError extends Error {
+  constructor(readonly commentId: string) {
+    super(`Comment ${commentId} version conflict`);
+  }
+}
+
 async function updateSprintComment(
   sprintId: number,
   comment: SaveCommentInput
 ): Promise<Comment | boolean> {
   try {
-    await getPlannerBeerTrackerApi().put(
+    const { data } = await getPlannerBeerTrackerApi().put<{ comment?: CommentFromApi }>(
       `/sprints/${sprintId}/comments?commentId=${comment.id}`,
       comment
     );
-    return true;
+    return data?.comment ? mapCommentFromApi(data.comment, sprintId) : true;
   } catch (putError: unknown) {
     const status = (putError as { response?: { status?: number } })?.response?.status;
     if (status === 404) {
       const created = await postCommentAndReturn(sprintId, comment);
       return created ?? true;
+    }
+    if (status === 409) {
+      throw new SprintCommentVersionConflictError(comment.id ?? '');
     }
     throw putError;
   }

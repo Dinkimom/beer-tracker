@@ -33,6 +33,7 @@ export async function saveComment(
     day?: number | null;
     height: number;
     id?: string;
+    ifVersion?: number;
     imageFileId?: string | null;
     kind?: 'diagram' | 'image' | 'text' | 'widget';
     parent?: TaskParent | null;

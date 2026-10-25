@@ -406,6 +406,7 @@ export const enMessages = {
       movedToSprint: 'Task moved to sprint {sprintName}',
       removeFromSprintFailed: 'Could not remove the task from the sprint',
       removedToBacklog: 'Task moved to the backlog',
+      noteEditConflict: 'The note was changed by someone else — showing the latest version, your edit was not saved',
       statusChangeFailed: 'Could not change the status of {key}',
       trackerSyncAssigneeFailed: 'Saved in the planner, but the assignee was not updated in the tracker: {keys}',
       trackerSyncDatesFailed: 'Saved in the planner, but the dates were not updated in the tracker: {keys}',

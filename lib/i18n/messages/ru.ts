@@ -406,6 +406,7 @@ export const ruMessages = {
       movedToSprint: 'Задача перенесена в спринт {sprintName}',
       removeFromSprintFailed: 'Не удалось убрать задачу из спринта',
       removedToBacklog: 'Задача убрана в бэклог',
+      noteEditConflict: 'Заметку изменили параллельно — показана актуальная версия, ваша правка не сохранена',
       statusChangeFailed: 'Не удалось сменить статус {key}',
       trackerSyncAssigneeFailed: 'В планере сохранено, но исполнитель не обновился в трекере: {keys}',
       trackerSyncDatesFailed: 'В планере сохранено, но даты не обновились в трекере: {keys}',

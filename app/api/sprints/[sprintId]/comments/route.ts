@@ -19,6 +19,7 @@ import {
 import {
   CommentSchema,
   formatValidationError,
+  parseCommentIfVersion,
   validateRequest,
 } from '@/lib/validation';
 
@@ -199,6 +200,7 @@ export async function PUT(
 
     const body = await request.json();
     const { text, x, y, width, height, assigneeId, day, part, color } = body;
+    const ifVersion = parseCommentIfVersion(body);
     const parentUpdate = readCommentParentUpdate(body);
     if (typeof part === 'number') {
       const gridError = await plannerGridPartError(organizationId, [part]);
@@ -218,6 +220,7 @@ export async function PUT(
       commentId,
       day,
       height,
+      ifVersion,
       organizationId,
       parent: parentUpdate.provided ? parentUpdate.parent : null,
       parentProvided: parentUpdate.provided,

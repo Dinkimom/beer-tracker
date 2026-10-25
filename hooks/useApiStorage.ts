@@ -10,11 +10,14 @@
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
 import type { Comment, TaskLink } from '@/types';
 
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
-import { commentToSaveApiFields } from '@/lib/api/sprintsApiCommentsHelpers';
+import {
+  commentToSaveApiFields,
+  SprintCommentVersionConflictError,
+} from '@/lib/api/sprintsApiCommentsHelpers';
 import {
   fetchSprintLinks,
   saveTaskLink,
@@ -24,6 +27,10 @@ import {
   saveComment as apiSaveComment,
   deleteComment as apiDeleteComment,
 } from '@/lib/beerTrackerApi';
+import {
+  createCommentSaveSerializer,
+  type CommentSaveSerializer,
+} from '@/lib/comments/commentSaveSerializer';
 import { isValidSprintId } from '@/lib/layers/data/mappers/taskPositionToApi';
 import {
   prefetchSprintBoardList,
@@ -98,6 +105,42 @@ export function useTaskLinksApi(
 
 // ==================== Хуки для комментариев ====================
 
+type CommentSaveApiData = Parameters<typeof apiSaveComment>[1] & { id: string };
+
+/**
+ * Сохранение заметки по очереди своих сохранений: `ifVersion` продвигается собственными успешными
+ * PUT, 409 (параллельная правка) — `onConflict` и «обработано», чтобы синк не повторял устаревшую правку.
+ */
+function saveCommentSerialized(input: {
+  data: CommentSaveApiData;
+  isUpdate: boolean;
+  onConflict: () => void;
+  onFailure: () => void;
+  serializer: CommentSaveSerializer;
+  sprintId: number;
+}): Promise<Comment | boolean> {
+  const { data, isUpdate, serializer } = input;
+  return serializer.run(data.id || `new:${crypto.randomUUID()}`, async () => {
+    const ifVersion = isUpdate ? serializer.resolveIfVersion(data.id, data.ifVersion) : undefined;
+    try {
+      const saved = await apiSaveComment(input.sprintId, { ...data, ifVersion }, isUpdate);
+      if (isUpdate && typeof saved === 'object' && saved.id === data.id) {
+        // Не подменяем локальную копию ответом: пока PUT был в полёте, текст могли дописать.
+        serializer.recordSaved(data.id, ifVersion, saved.version);
+        return true;
+      }
+      return saved;
+    } catch (error) {
+      if (error instanceof SprintCommentVersionConflictError) {
+        input.onConflict();
+        return true;
+      }
+      input.onFailure();
+      throw error;
+    }
+  });
+}
+
 /**
  * Хук для работы с комментариями через API
  */
@@ -111,8 +154,11 @@ export function useCommentsApi(
   () => Promise<void>,
 ] {
   const { t } = useI18n();
+  const serializerRef = useRef(createCommentSaveSerializer());
+  const reloadRef = useRef<() => Promise<void>>(() => Promise.resolve());
   const [comments, setCommentsWithSave, saveCommentLocal, deleteCommentLocal, reloadFromRemote] = useDebouncedApiSync<Comment, string, {
     id: string;
+    ifVersion?: number;
     assigneeId: string;
     color?: string;
     imageFileId: string | null;
@@ -144,29 +190,18 @@ export function useCommentsApi(
       reactions: remote.reactions ?? pending.reactions,
     }),
     fetchFn: fetchSprintComments,
-    saveFn: async (sprintIdArg, data, isUpdate = false) => {
-      try {
-        return await apiSaveComment(sprintIdArg, {
-          id: data.id,
-          assigneeId: data.assigneeId,
-          color: data.color,
-          imageFileId: data.imageFileId,
-          kind: data.kind,
-          parent: data.parent,
-          text: data.text,
-          x: data.x,
-          y: data.y,
-          day: data.day,
-          part: data.part,
-          skipMentionNotifications: data.skipMentionNotifications,
-          width: data.width,
-          height: data.height,
-        }, isUpdate);
-      } catch (error) {
-        toast.error(t('sprintPlanner.swimlane.quickAddMenu.createCommentFailed'));
-        throw error;
-      }
-    },
+    saveFn: (sprintIdArg, data, isUpdate = false) =>
+      saveCommentSerialized({
+        data,
+        isUpdate,
+        onConflict: () => {
+          toast.error(t('sprint.taskToast.noteEditConflict'));
+          reloadRef.current().catch(() => undefined);
+        },
+        onFailure: () => toast.error(t('sprintPlanner.swimlane.quickAddMenu.createCommentFailed')),
+        serializer: serializerRef.current,
+        sprintId: sprintIdArg,
+      }),
     deleteFn: apiDeleteComment,
     getId: (comment) => comment.id,
     getInitialItems: takePrefetchedSprintComments,
@@ -174,6 +209,7 @@ export function useCommentsApi(
     toApiFormat: (comment, isUpdate) =>
       commentToSaveApiFields({
         id: isUpdate && comment.id ? comment.id : comment.id ?? '',
+        ...(isUpdate && comment.version != null ? { ifVersion: comment.version } : {}),
         assigneeId: comment.assigneeId,
         color: comment.color,
         imageFileId: comment.imageFileId ?? null,
@@ -189,6 +225,10 @@ export function useCommentsApi(
         height: comment.height,
       }),
   });
+
+  useEffect(() => {
+    reloadRef.current = reloadFromRemote;
+  }, [reloadFromRemote]);
 
   return [comments, setCommentsWithSave, saveCommentLocal, deleteCommentLocal, reloadFromRemote];
 }

@@ -118,6 +118,12 @@ export const CommentReactionToggleSchema = z.object({
   emoji: z.string().trim().min(1).max(MAX_STICKY_NOTE_REACTION_EMOJI_LENGTH),
 });
 
+/** `ifVersion` из тела правки заметки: положительное целое, иначе без проверки версии. */
+export function parseCommentIfVersion(body: { ifVersion?: unknown }): number | null {
+  const { ifVersion } = body;
+  return typeof ifVersion === 'number' && Number.isInteger(ifVersion) && ifVersion > 0 ? ifVersion : null;
+}
+
 export function validateRequest<T>(
   schema: z.ZodSchema<T>,
   data: unknown
