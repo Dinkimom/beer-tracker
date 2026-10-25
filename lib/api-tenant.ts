@@ -123,9 +123,13 @@ function requireOrgRoles(
   return null;
 }
 
-/** Сокращение для операций администратора организации. */
+/** Операции администратора организации: роль org_admin (у суперадмина продукта — всегда). */
 export function requireOrgAdmin(ctx: TenantContext): NextResponse | null {
-  return requireOrgRoles(ctx, ['org_admin']);
+  const denied = requireOrgRoles(ctx, ['org_admin']);
+  if (denied) {
+    logAdminAccessDenied('org_admin', { organizationId: ctx.organizationId });
+  }
+  return denied;
 }
 
 /**
@@ -174,33 +178,6 @@ export async function requireTenantWithPlannerProfile(
     return { response: NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 }) };
   }
   return { ctx: auth.ctx, profile };
-}
-
-/**
- * Админка организации: сессия + {@link requireTenantWithAdminProfile} + только org_admin.
- */
-export async function requireTenantOrgAdmin(
-  request: Request,
-  organizationIdRaw: string
-): Promise<TenantWithAdminProfileResult> {
-  const auth = await requireTenantWithAdminProfile(request, organizationIdRaw);
-  if ('response' in auth) {
-    return auth;
-  }
-  const denied = requireOrgAdminProfile(auth.profile);
-  if (denied) {
-    return { response: denied };
-  }
-  return auth;
-}
-
-/** Только org_admin по профилю (не путать с {@link requireOrgAdmin} по роли из ctx). */
-export function requireOrgAdminProfile(profile: AccessProfile): NextResponse | null {
-  if (profile.orgRole !== 'org_admin') {
-    logAdminAccessDenied('org_admin_profile', { organizationId: profile.organizationId });
-    return NextResponse.json({ error: 'Недостаточно прав' }, { status: 403 });
-  }
-  return null;
 }
 
 export function requireTeamManagementAccess(

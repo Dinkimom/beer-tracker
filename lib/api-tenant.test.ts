@@ -181,13 +181,16 @@ describe('requireOrgAdmin', () => {
     ).toBeNull();
   });
 
-  it('403 for member', () => {
+  it('403 for member, and the denial is logged', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const d = requireOrgAdmin({
       organizationId: ORG,
       role: 'member',
       userId: USER,
     });
     expect(d?.status).toBe(403);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('tag=org_admin'));
+    warn.mockRestore();
   });
 });
 

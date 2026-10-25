@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { requireAdminOrganization } from '@/lib/admin/adminOrgSyncActionHelpers';
+import { requireOrgAdminOrganization } from '@/lib/admin/adminOrgRouteHelpers';
 import { findOrganizationById } from '@/lib/organizations';
 import {
   applyPlannerTimelineScale,
@@ -18,7 +18,7 @@ export async function getPlannerTimelineScaleForAdmin(
   request: Request,
   organizationId: string
 ): Promise<NextResponse> {
-  const authResult = await requireAdminOrganization(request, organizationId);
+  const authResult = await requireOrgAdminOrganization(request, organizationId);
   if (authResult instanceof NextResponse) return authResult;
   return NextResponse.json(readPlannerTimelineScale(authResult.org.settings));
 }
@@ -28,7 +28,7 @@ export async function patchPlannerTimelineScale(
   organizationId: string,
   patch: PlannerTimelineScalePatch
 ): Promise<NextResponse> {
-  const authResult = await requireAdminOrganization(request, organizationId);
+  const authResult = await requireOrgAdminOrganization(request, organizationId);
   if (authResult instanceof NextResponse) return authResult;
   const org = await findOrganizationById(authResult.org.id);
   if (!org) {

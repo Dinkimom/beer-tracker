@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
 import {
   assertNoRunningOrQueuedHeavySync,
   assertSyncRedisReady,
   fullRescanCooldownRemaining,
   fullRescanCooldownResponse,
 } from '@/lib/admin/adminSyncRouteHelpers';
-import { requireOrgAdmin, requireTenantForOrganization } from '@/lib/api-tenant';
 import { getSyncPlatformEnv } from '@/lib/env';
 import { findOrganizationById } from '@/lib/organizations';
 import { enqueueFullRescan } from '@/lib/sync/queue';
@@ -26,13 +26,9 @@ export async function POST(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantForOrganization(request, organizationId);
-  if (auth.response) {
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
+  if ('response' in auth) {
     return auth.response;
-  }
-  const denied = requireOrgAdmin(auth.ctx);
-  if (denied) {
-    return denied;
   }
 
   let json: unknown;

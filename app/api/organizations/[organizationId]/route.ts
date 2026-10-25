@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { requireTenantForOrganization, requireTenantOrgAdmin } from '@/lib/api-tenant';
+import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
+import { requireTenantForOrganization } from '@/lib/api-tenant';
 import { findOrganizationById, updateOrganization } from '@/lib/organizations';
 
 const PatchBodySchema = z.object({
@@ -44,7 +45,7 @@ export async function PATCH(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantOrgAdmin(request, organizationId);
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
   if ('response' in auth) {
     return auth.response;
   }

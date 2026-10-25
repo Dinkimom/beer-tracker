@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
+import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
 import { handleApiError, TRACKER_UPSTREAM_FORWARD_STATUSES } from '@/lib/api-error-handler';
-import { requireOrgAdmin, requireTenantForOrganization } from '@/lib/api-tenant';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 
 /**
@@ -13,10 +13,8 @@ export async function GET(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantForOrganization(request, organizationId);
-  if (auth.response) return auth.response;
-  const denied = requireOrgAdmin(auth.ctx);
-  if (denied) return denied;
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
+  if ('response' in auth) return auth.response;
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q')?.trim() ?? '';

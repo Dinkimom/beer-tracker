@@ -6,11 +6,11 @@ import { listTeams } from '@/lib/staffTeams/teamsRepository';
 import { listRedisSyncJobsForOrganization } from '@/lib/sync/listRedisSyncJobsForOrganization';
 import { findLatestSyncRunForOrganization, findRunningSyncRunForOrganization } from '@/lib/sync/syncRunsRepository';
 
-import { requireAdminOrganization } from './adminOrgSyncActionHelpers';
+import { requireOrgAdminOrganization } from './adminOrgRouteHelpers';
 import { buildSyncStatusPayload } from './adminSyncStatusHelpers';
 
 export async function getOrganizationSyncStatus(request: Request, organizationId: string) {
-  const authResult = await requireAdminOrganization(request, organizationId);
+  const authResult = await requireOrgAdminOrganization(request, organizationId);
   if (authResult instanceof NextResponse) {
     return authResult;
   }

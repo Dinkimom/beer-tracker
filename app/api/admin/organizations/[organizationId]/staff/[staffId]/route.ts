@@ -3,6 +3,7 @@ import type { UpdateStaffPatch } from '@/lib/staffTeams/staffRepository';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
 import {
   deleteStaffFromAdmin,
   normalizeOptionalStaffText,
@@ -12,7 +13,6 @@ import {
   patchStaffFromAdmin,
   staffEmailFromInput,
 } from '@/lib/admin/adminStaffRouteHelpers';
-import { requireTenantOrgAdmin } from '@/lib/api-tenant';
 
 const UuidSchema = z.string().uuid();
 
@@ -74,7 +74,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Некорректный идентификатор сотрудника' }, { status: 400 });
   }
 
-  const auth = await requireTenantOrgAdmin(request, orgParsed.data);
+  const auth = await requireOrgAdminForOrganizationRoute(request, orgParsed.data);
   if ('response' in auth) {
     return auth.response;
   }
@@ -124,7 +124,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Некорректный идентификатор сотрудника' }, { status: 400 });
   }
 
-  const auth = await requireTenantOrgAdmin(request, orgParsed.data);
+  const auth = await requireOrgAdminForOrganizationRoute(request, orgParsed.data);
   if ('response' in auth) {
     return auth.response;
   }

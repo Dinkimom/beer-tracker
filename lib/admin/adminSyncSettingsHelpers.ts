@@ -8,14 +8,14 @@ import {
   type OrgSyncSettingsPartial,
 } from '@/lib/orgSyncSettings';
 
-import { requireAdminOrganization } from './adminOrgSyncActionHelpers';
+import { requireOrgAdminOrganization } from './adminOrgRouteHelpers';
 
 export async function patchOrganizationSyncSettings(
   request: Request,
   organizationId: string,
   patch: OrgSyncSettingsPartial
 ): Promise<NextResponse> {
-  const authResult = await requireAdminOrganization(request, organizationId);
+  const authResult = await requireOrgAdminOrganization(request, organizationId);
   if (authResult instanceof NextResponse) {
     return authResult;
   }

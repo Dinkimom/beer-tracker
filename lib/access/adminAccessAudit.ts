@@ -5,7 +5,7 @@
 
 type AdminAccessDenialTag =
   | 'admin_shell'
-  | 'org_admin_profile'
+  | 'org_admin'
   | 'planner_access'
   | 'team_management';
 

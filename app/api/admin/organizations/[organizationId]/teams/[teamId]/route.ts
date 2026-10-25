@@ -7,10 +7,7 @@ import {
   requireTeamPatchAccess,
   validateTeamPatchConflicts,
 } from '@/lib/admin/adminTeamPatchRouteHelpers';
-import {
-  requireOrgAdminProfile,
-  requireTenantWithAdminProfile,
-} from '@/lib/api-tenant';
+import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
 import { deleteTeam, findTeamById, listTeams } from '@/lib/staffTeams';
 
 /**
@@ -69,10 +66,6 @@ export async function DELETE(
   const auth = await requireTenantWithAdminProfile(request, organizationId);
   if ('response' in auth) {
     return auth.response;
-  }
-  const denied = requireOrgAdminProfile(auth.profile);
-  if (denied) {
-    return denied;
   }
 
   const ok = await deleteTeam(auth.ctx.organizationId, teamId);

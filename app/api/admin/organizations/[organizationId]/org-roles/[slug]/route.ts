@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { requireOrgAdmin, requireTenantForOrganization } from '@/lib/api-tenant';
+import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
 import { orgRoleToEntry } from '@/lib/roles/effectiveCatalog';
 import { deleteOrgRoleAndClearMembers, updateOrgRole } from '@/lib/roles/orgRolesRepository';
 import { formatValidationError } from '@/lib/validation';
@@ -27,13 +27,9 @@ export async function PATCH(
   const { organizationId, slug: slugParam } = await routeContext.params;
   const slug = decodeURIComponent(slugParam).trim().toLowerCase();
 
-  const auth = await requireTenantForOrganization(request, organizationId);
-  if (auth.response) {
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
+  if ('response' in auth) {
     return auth.response;
-  }
-  const denied = requireOrgAdmin(auth.ctx);
-  if (denied) {
-    return denied;
   }
 
   let json: unknown;
@@ -73,13 +69,9 @@ export async function DELETE(
   const { organizationId, slug: slugParam } = await routeContext.params;
   const slug = decodeURIComponent(slugParam).trim().toLowerCase();
 
-  const auth = await requireTenantForOrganization(request, organizationId);
-  if (auth.response) {
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
+  if ('response' in auth) {
     return auth.response;
-  }
-  const denied = requireOrgAdmin(auth.ctx);
-  if (denied) {
-    return denied;
   }
 
   const ok = await deleteOrgRoleAndClearMembers(auth.ctx.organizationId, slug);

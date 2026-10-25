@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createTeamFromAdminPost } from '@/lib/admin/adminCreateTeamHelpers';
-import { requireOrgAdminProfile, requireTenantWithAdminProfile } from '@/lib/api-tenant';
+import { requireTenantWithAdminProfile } from '@/lib/api-tenant';
 import { listTeams } from '@/lib/staffTeams';
 
 const BoardIdSchema = z.union([
@@ -49,10 +49,6 @@ export async function POST(
   const auth = await requireTenantWithAdminProfile(request, organizationId);
   if ('response' in auth) {
     return auth.response;
-  }
-  const denied = requireOrgAdminProfile(auth.profile);
-  if (denied) {
-    return denied;
   }
 
   let json: unknown;

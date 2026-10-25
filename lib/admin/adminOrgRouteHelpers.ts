@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import { requireOrgAdmin, requireTenantForOrganization } from '@/lib/api-tenant';
 import { findOrganizationById } from '@/lib/organizations';
 
-export { parseJsonRequestBody } from '@/lib/http/parseJsonRequestBody';
 
 type OrgRouteAuth =
   | { ctx: { organizationId: string; userId: string } }

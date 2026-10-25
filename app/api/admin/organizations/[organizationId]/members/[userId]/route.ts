@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { validateOrgMemberRoleChange } from '@/lib/admin/adminOrgMemberPatchHelpers';
+import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
 import { deleteStaffFromAdmin } from '@/lib/admin/adminStaffRouteHelpers';
-import { requireTenantOrgAdmin } from '@/lib/api-tenant';
 import { updateOrganizationMemberRole } from '@/lib/organizations/organizationMembersRepository';
 
 const UuidSchema = z.string().uuid();
@@ -34,7 +34,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Некорректный идентификатор пользователя' }, { status: 400 });
   }
 
-  const auth = await requireTenantOrgAdmin(request, orgParsed.data);
+  const auth = await requireOrgAdminForOrganizationRoute(request, orgParsed.data);
   if ('response' in auth) {
     return auth.response;
   }
@@ -98,7 +98,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Некорректный идентификатор пользователя' }, { status: 400 });
   }
 
-  const auth = await requireTenantOrgAdmin(request, orgParsed.data);
+  const auth = await requireOrgAdminForOrganizationRoute(request, orgParsed.data);
   if ('response' in auth) {
     return auth.response;
   }

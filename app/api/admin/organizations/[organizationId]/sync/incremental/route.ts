@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { requireOrgAdmin, requireTenantForOrganization } from '@/lib/api-tenant';
+import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
 import { findOrganizationById } from '@/lib/organizations';
 import {
   hasPendingHeavySyncInRedis,
@@ -19,13 +19,9 @@ export async function POST(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantForOrganization(request, organizationId);
-  if (auth.response) {
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
+  if ('response' in auth) {
     return auth.response;
-  }
-  const denied = requireOrgAdmin(auth.ctx);
-  if (denied) {
-    return denied;
   }
 
   const org = await findOrganizationById(auth.ctx.organizationId);

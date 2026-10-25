@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { requireAdminOrganization } from '@/lib/admin/adminOrgSyncActionHelpers';
+import { requireOrgAdminOrganization } from '@/lib/admin/adminOrgRouteHelpers';
 import {
   readRetroColumnTemplate,
   saveRetroColumnTemplate,
@@ -15,7 +15,7 @@ export async function GET(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const authResult = await requireAdminOrganization(request, organizationId);
+  const authResult = await requireOrgAdminOrganization(request, organizationId);
   if (authResult instanceof NextResponse) return authResult;
   const template = await readRetroColumnTemplate(authResult.org.id);
   return NextResponse.json(template);
@@ -30,7 +30,7 @@ export async function PUT(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const authResult = await requireAdminOrganization(request, organizationId);
+  const authResult = await requireOrgAdminOrganization(request, organizationId);
   if (authResult instanceof NextResponse) return authResult;
   const body: unknown = await request.json().catch(() => null);
   const saved = await saveRetroColumnTemplate(authResult.org.id, body);

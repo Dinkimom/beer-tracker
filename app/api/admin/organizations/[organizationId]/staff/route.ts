@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
 import {
   createStaffFromAdminPost,
   optionalStaffAvatarUrlSchema,
   optionalStaffEmailSchema,
   staffEmailFromInput,
 } from '@/lib/admin/adminStaffRouteHelpers';
-import { requireOrgAdmin, requireTenantForOrganization } from '@/lib/api-tenant';
 import { listStaff } from '@/lib/staffTeams';
 
 const PostBodySchema = z
@@ -40,13 +40,9 @@ export async function GET(
 ) {
   const { organizationId } = await routeContext.params;
 
-  const auth = await requireTenantForOrganization(request, organizationId);
-  if (auth.response) {
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
+  if ('response' in auth) {
     return auth.response;
-  }
-  const denied = requireOrgAdmin(auth.ctx);
-  if (denied) {
-    return denied;
   }
 
   const staff = await listStaff(auth.ctx.organizationId);
@@ -62,13 +58,9 @@ export async function POST(
   routeContext: { params: Promise<{ organizationId: string }> }
 ) {
   const { organizationId } = await routeContext.params;
-  const auth = await requireTenantForOrganization(request, organizationId);
-  if (auth.response) {
+  const auth = await requireOrgAdminForOrganizationRoute(request, organizationId);
+  if ('response' in auth) {
     return auth.response;
-  }
-  const denied = requireOrgAdmin(auth.ctx);
-  if (denied) {
-    return denied;
   }
 
   let json: unknown;
