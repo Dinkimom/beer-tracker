@@ -18,10 +18,9 @@ import { SprintSelectorWithCreate } from '@/features/sprint/components/SprintSel
 import { STORAGE_KEYS } from '@/hooks/localStorage/storageKeys';
 import { useDebouncedNumericLocalStorage } from '@/hooks/localStorage/useDebouncedNumericLocalStorage';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 import { resolveAdjacentSprintIds } from '@/lib/retro/retroBoard';
-import { sprintTaskCompletionRulesFromPlanner } from '@/lib/sprints/sprintTaskCompletion';
 
 import { RetroBoardView } from './RetroBoardView';
 import { RetroFactsBlock } from './RetroFactsBlock';
@@ -50,11 +49,7 @@ export function RetroPage({
 }: RetroPageProps) {
   const { t } = useI18n();
   const { activeOrganizationId } = useProductTenantOrganizations({ pollIntervalMs: 0 });
-  const { data: plannerRules } = usePlannerIntegrationRules(activeOrganizationId);
-  const completionRules = useMemo(
-    () => sprintTaskCompletionRulesFromPlanner(plannerRules),
-    [plannerRules]
-  );
+  const completionRules = useSprintTaskCompletionRules();
   const tasksForScore = tasksPending ? undefined : tasks;
   const selectedSprint = useMemo(
     () => sprints.find((sprint) => sprint.id === selectedSprintId) ?? null,

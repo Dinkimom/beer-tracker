@@ -2,6 +2,7 @@ import type { Developer, TaskPosition, Task } from '@/types';
 
 import { useMemo } from 'react';
 
+import { collectPersonTestPointTasks } from '@/features/sprint/utils/sprintMetrics';
 import { useDevelopersSortStorage, useDevelopersHiddenStorage, useDevelopersOrderStorage } from '@/hooks/useLocalStorage';
 import { getTaskStoryPoints, getTaskTestPoints, isOriginalTask } from '@/lib/pointsUtils';
 import { TEAM_SWIMLANE_ASSIGNEE_ID } from '@/lib/swimlane/teamSwimlaneAssignee';
@@ -10,6 +11,17 @@ import {
   applyAutomaticDeveloperSort,
   applyCustomDeveloperOrder,
 } from './useDevelopersManagementHelpers';
+
+function splitDevAndQaTasks(tasksByAssignee: Map<string, Task[]>): { devTasks: Task[]; qaTasks: Task[] } {
+  const devTasks: Task[] = [];
+  const qaTasks: Task[] = [];
+  for (const tasks of tasksByAssignee.values()) {
+    for (const task of tasks) {
+      (isOriginalTask(task) ? devTasks : qaTasks).push(task);
+    }
+  }
+  return { devTasks, qaTasks };
+}
 
 /**
  * Хук для управления участниками (сортировка и скрытие)
@@ -25,12 +37,16 @@ export function useDevelopersManagement(
 
   // Вычисляем статистику для каждого участника (мемоизируем)
   const developersWithStats = useMemo(() => {
+    const { devTasks, qaTasks } = splitDevAndQaTasks(tasksByAssignee);
     return developers.map((dev) => {
       const tasks = tasksByAssignee.get(dev.id) || [];
 
-      // Подсчитываем SP и TP через единую точку подсчёта (по карточкам: dev → SP, QA → TP)
+      // SP — по карточкам строки; TP — то же правило на человека, что в сайдбаре (QA-инженер / QA-задачи).
       const totalSP = tasks.filter(isOriginalTask).reduce((sum, task) => sum + getTaskStoryPoints(task), 0);
-      const totalTP = tasks.filter((t) => t.team === 'QA').reduce((sum, task) => sum + getTaskTestPoints(task), 0);
+      const totalTP = collectPersonTestPointTasks(dev.id, devTasks, qaTasks).tpTasks.reduce(
+        (sum, task) => sum + getTaskTestPoints(task),
+        0
+      );
 
       return {
         ...dev,

@@ -50,6 +50,8 @@ interface ChartDataPoint {
 
 interface UseBurndownChartDataProps {
   burndownData: BurndownData | null | undefined;
+  /** Праздники организации (YYYY-MM-DD) — исключаются из идеальной линии, как выходные. */
+  holidayDateKeys?: ReadonlySet<string>;
   isArchived: boolean;
   isDraft: boolean;
 }
@@ -59,6 +61,7 @@ interface UseBurndownChartDataProps {
  */
 export function useBurndownChartData({
   burndownData,
+  holidayDateKeys,
   isArchived,
   isDraft,
 }: UseBurndownChartDataProps): ChartDataPoint[] {
@@ -74,7 +77,7 @@ export function useBurndownChartData({
     today.setHours(0, 0, 0, 0);
     const maxDataDate = isArchived ? endDate : today;
 
-    const totalWorkingDays = countWorkingDays(startDate, endDate);
+    const totalWorkingDays = countWorkingDays(startDate, endDate, holidayDateKeys);
 
     let idealState = {
       lastWorkingDayIdealSP: burndownData.initialSP,
@@ -95,7 +98,8 @@ export function useBurndownChartData({
         burndownData.initialTP,
         startDate,
         totalWorkingDays,
-        idealState
+        idealState,
+        holidayDateKeys
       );
       idealState = nextState;
 
@@ -125,5 +129,5 @@ export function useBurndownChartData({
       }
       return row;
     });
-  }, [burndownData, isArchived, isDraft]);
+  }, [burndownData, holidayDateKeys, isArchived, isDraft]);
 }

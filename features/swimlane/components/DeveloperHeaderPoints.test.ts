@@ -71,6 +71,48 @@ describe('resolveDeveloperHeaderPointsVisibility', () => {
   });
 });
 
+describe('resolveDeveloperHeaderPointsVisibility (tester TP shown as 0 bug)', () => {
+  it('shows TP for a sprint assignee with unknown role whose row has only TP', () => {
+    expect(resolveDeveloperHeaderPointsVisibility(undefined, 0, 3)).toEqual({
+      hasPoints: true,
+      showSP: false,
+      showTP: true,
+    });
+  });
+
+  it('shows both kinds for an unknown role when both are non-zero', () => {
+    expect(resolveDeveloperHeaderPointsVisibility(undefined, 2, 3)).toEqual({
+      hasPoints: true,
+      showSP: true,
+      showTP: true,
+    });
+  });
+
+  it('shows SP for an unknown role when the row has tasks but no volume', () => {
+    expect(resolveDeveloperHeaderPointsVisibility(undefined, 0, 0, false, true)).toEqual({
+      hasPoints: true,
+      showSP: true,
+      showTP: false,
+    });
+  });
+
+  it('shows TP for a tester mislabelled as developer (assignee first) when only TP is on the row', () => {
+    expect(resolveDeveloperHeaderPointsVisibility('developer', 0, 3)).toEqual({
+      hasPoints: true,
+      showSP: false,
+      showTP: true,
+    });
+  });
+
+  it('shows SP for a tester row that carries only SP', () => {
+    expect(resolveDeveloperHeaderPointsVisibility('tester', 4, 0)).toEqual({
+      hasPoints: true,
+      showSP: true,
+      showTP: false,
+    });
+  });
+});
+
 describe('formatDeveloperHeaderPointsContent', () => {
   it('adds units when both kinds are visible', () => {
     expect(

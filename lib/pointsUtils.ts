@@ -3,6 +3,7 @@
  * Используется в свимлейне, отображении занятости, сайдбаре (метрики), бэклоге и везде, где считаются очки.
  */
 
+import { isPlannerAnnotation } from '@/lib/planner/plannerCardKind';
 import {
   getActivePlannerTimelineScale,
   storyPointsToTimeslotsForScale,
@@ -15,27 +16,16 @@ interface TaskLikeForPoints {
   id?: string;
   isLocalTask?: boolean;
   localDraftKind?: 'comment' | 'diagram' | 'existing' | 'image' | 'task' | 'widget';
+  /** У QA-фантома — id оригинальной задачи. */
+  originalTaskId?: string;
   storyPoints?: number | null;
   team?: string;
   testPoints?: number | null;
 }
 
-function isPlannerAnnotationForVolume(task: TaskLikeForPoints): boolean {
-  if (
-    task.localDraftKind === 'comment' ||
-    task.localDraftKind === 'diagram' ||
-    task.localDraftKind === 'image' ||
-    task.localDraftKind === 'widget'
-  ) {
-    return true;
-  }
-  const id = task.id ?? '';
-  return id.startsWith('comment:') || id.startsWith('local-image:');
-}
-
 /** Заметки/фото/схемы не входят в объём; SP/TP — у задач Tracker и черновика «новая задача». */
 export function shouldCountTaskForParticipantVolume(task: TaskLikeForPoints): boolean {
-  if (isPlannerAnnotationForVolume(task)) {
+  if (isPlannerAnnotation({ id: task.id ?? '', localDraftKind: task.localDraftKind })) {
     return false;
   }
   if (task.isLocalTask !== true) {
@@ -67,6 +57,45 @@ export function getTaskStoryPoints(task: TaskLikeForPoints): number {
  */
 export function getTaskTestPoints(task: TaskLikeForPoints): number {
   return task.testPoints ?? 0;
+}
+
+/** id оригинальных задач (не QA-фантомов) в наборе. */
+export function collectOriginalTaskIds(tasks: readonly TaskLikeForPoints[]): Set<string> {
+  const ids = new Set<string>();
+  for (const task of tasks) {
+    if (isOriginalTask(task) && task.id) ids.add(task.id);
+  }
+  return ids;
+}
+
+/**
+ * TP задачи внутри набора (строка свимлейна, колонка канбана): QA-фантом несёт те же TP, что
+ * оригинал, поэтому если оригинал в том же наборе — фантом даёт 0.
+ */
+export function getTaskTestPointsInList(
+  task: TaskLikeForPoints,
+  originalIdsInList: ReadonlySet<string>
+): number {
+  if (task.team === 'QA' && task.originalTaskId && originalIdsInList.has(task.originalTaskId)) {
+    return 0;
+  }
+  return getTaskTestPoints(task);
+}
+
+function finiteOrZero(value: number): number {
+  return Number.isFinite(value) ? value : 0;
+}
+
+/** Итоги SP/TP набора задач через единые правила (фантом: SP 0, TP без дубля оригинала). */
+export function sumTaskListPoints(tasks: readonly TaskLikeForPoints[]): { totalSP: number; totalTP: number } {
+  const originalIds = collectOriginalTaskIds(tasks);
+  let totalSP = 0;
+  let totalTP = 0;
+  for (const task of tasks) {
+    totalSP += finiteOrZero(getTaskStoryPoints(task));
+    totalTP += finiteOrZero(getTaskTestPointsInList(task, originalIds));
+  }
+  return { totalSP, totalTP };
 }
 
 /** Компактно: «3tp», «0tp»; не задано — «?tp». С пробелом: «3 tp», «0 tp», «? tp». */
@@ -218,7 +247,11 @@ interface TaskLikeForDurationPoints {
   testPoints?: number | null;
 }
 
-function isQaOnlyTaskForDuration(task: TaskLikeForDurationPoints): boolean {
+/**
+ * Задача фактически является КУА-задачей: 0 СП и > 0 ТП (нет объёма разработки — только тестирование).
+ * Такую задачу не дублируют синтетической QA-задачей, а фаза считается по ТП.
+ */
+export function isQaOnlyTask(task: TaskLikeForDurationPoints): boolean {
   return (
     (!task.storyPoints || task.storyPoints === 0) &&
     task.testPoints != null &&
@@ -244,7 +277,7 @@ export function resolveTaskPointsForTeam(task: TaskLikeForDurationPoints): numbe
     }
     return task.storyPoints || 1;
   }
-  if (isQaOnlyTaskForDuration(task)) {
+  if (isQaOnlyTask(task)) {
     return task.testPoints || 1;
   }
   return task.storyPoints || 1;

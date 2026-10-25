@@ -1,3 +1,5 @@
+import type { BurndownCompletionRules } from './burndownStatusDone';
+
 export type TaskChangelogTimelineItem =
   { type: 'reestimated'; issueKey: string; deltaSP: number; deltaTP: number }
   | { type: 'sprint_added'; issueKey: string }
@@ -21,5 +23,7 @@ export interface SprintTimelineTotals {
 }
 
 export interface ComputeSprintTimelineTotalsOptions extends BuildTaskChangelogTimelineOptions {
+  /** Правила завершения организации (SP/TP раздельно); без них — эвристика по ключу статуса. */
+  completionRules?: BurndownCompletionRules;
   sprintStartTime: number;
 }

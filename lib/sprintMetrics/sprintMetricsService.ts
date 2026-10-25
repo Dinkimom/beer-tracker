@@ -10,6 +10,7 @@ import type { SprintListItem } from '@/types/tracker';
 
 import { loadSprintBurndownSource } from '@/lib/burndown/loadSprintBurndownSource';
 import { apiCache, cacheKeys } from '@/lib/cache';
+import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
 
 import { DEFAULT_METRICS_QUARTERS, resolveMetricsWindowStartMs } from './aggregateSprintMetrics';
@@ -88,6 +89,10 @@ async function computeSprintRecord(input: {
   const startMs = Date.parse(sprintInfo.startDateTime);
   const endMs = Date.parse(sprintInfo.endDateTime);
   const facts = buildSprintIssueFacts(source.realIssues, source.burndownIssues, {
+    completionRules: sprintTaskCompletionRulesFromIntegration({
+      readyStatusKey: integration?.releaseReadiness?.readyStatusKey,
+      statuses: integration?.statuses,
+    }),
     endMs,
     nowMs: input.nowMs,
     sprintId: sprintInfo.id != null ? String(sprintInfo.id) : undefined,

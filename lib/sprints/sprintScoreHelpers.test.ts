@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   aggregateSprintScoreFromTasks,
   buildSprintScoreRows,
+  computeSprintCompletionScope,
   SPRINT_SCORE_MAX_MARK,
 } from './sprintScoreHelpers';
 import { sprintTaskCompletionRulesFromIntegration } from './sprintTaskCompletion';
@@ -21,6 +22,32 @@ function task(partial: Partial<Task> & Pick<Task, 'id'>): Task {
 }
 
 describe('aggregateSprintScoreFromTasks', () => {
+  it('does not round fractional points per task (0.4 SP is not 0)', () => {
+    const totals = aggregateSprintScoreFromTasks([
+      task({ id: '1', originalStatus: 'closed', storyPoints: 0.4, testPoints: 0.4 }),
+      task({ id: '2', originalStatus: 'closed', storyPoints: 0.4 }),
+      task({ id: '3', originalStatus: 'inprogress', storyPoints: 0.4 }),
+    ]);
+    expect(totals.sp_done).toBeCloseTo(0.8, 6);
+    expect(totals.sp_left).toBeCloseTo(0.4, 6);
+    expect(totals.qa_done).toBeCloseTo(0.4, 6);
+  });
+
+  it('excludes sprint goals and QA tasks like the planner tiles', () => {
+    const tasks = [
+      task({ id: '1', originalStatus: 'closed', storyPoints: 3 }),
+      task({ id: 'goal', originalStatus: 'inprogress', storyPoints: 8, type: 'goal' }),
+      task({ hideTestPointsByIntegration: true, id: 'qa', originalStatus: 'inprogress', storyPoints: 2, team: 'QA' }),
+    ];
+    expect(aggregateSprintScoreFromTasks(tasks)).toEqual({ qa_done: 0, qa_left: 0, sp_done: 3, sp_left: 0 });
+    expect(computeSprintCompletionScope(tasks, new Set(['goal']))).toEqual({
+      completedSP: 3,
+      completedTP: 0,
+      totalScopeSP: 3,
+      totalScopeTP: 0,
+    });
+  });
+
   it('counts TP/SP done from status category overrides, not only closed/rc', () => {
     const rules = sprintTaskCompletionRulesFromIntegration({
       readyStatusKey: 'rc',

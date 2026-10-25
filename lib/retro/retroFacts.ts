@@ -4,9 +4,11 @@
  * «Взяли» считается по дате создания: в сохранённом changelog нет поля спринта.
  */
 
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { Task } from '@/types';
 
 import { readChangelogPointValue } from '@/lib/burndown/changelogPointValue';
+import { isSpCompletedStatusKey } from '@/lib/sprints/sprintTaskCompletion';
 import { getWorkingHoursBetween } from '@/utils/dateUtils';
 import { WORKDAY_END_MS, WORKDAY_START_MS } from '@/utils/dateUtilsHelpers';
 import { mapStatus } from '@/utils/statusMapper';
@@ -74,6 +76,8 @@ export interface RetroFactsSprint {
 }
 
 interface RetroFactsInput {
+  /** Правила завершения организации: «сделано» в истории статусов — как в планере. */
+  completionRules?: SprintTaskCompletionRules | null;
   issues: RetroFactIssue[];
   nowMs: number;
   sprint: RetroFactsSprint;
@@ -170,9 +174,17 @@ export function isDeclinedStatus(statusKey: string | undefined): boolean {
   return DECLINED_KEYS.has(normalizeStatusKey(statusKey));
 }
 
-function isDoneStatusKey(statusKey: string): boolean {
-  if (isDeclinedStatus(statusKey)) return false;
-  return mapStatus(statusKey) === 'done';
+/**
+ * Поставка = SP сделано по правилам завершения организации. Отказ (won't do / cancelled) намеренно
+ * не поставка, даже если правила относят его к завершающей категории: это семантика метрик ретро,
+ * а не статуса задачи.
+ */
+export function isDeliveredStatusKey(
+  statusKey: string | undefined,
+  rules?: SprintTaskCompletionRules | null
+): boolean {
+  if (!statusKey || isDeclinedStatus(statusKey)) return false;
+  return isSpCompletedStatusKey(statusKey, rules);
 }
 
 function flowStageOf(statusKey: string): FlowStage | null {
@@ -207,6 +219,7 @@ interface StatusCursor {
   currentStart: number | null;
   doneAtMs: number | null;
   hasStatusHistory: boolean;
+  rules: SprintTaskCompletionRules | null | undefined;
   visits: StatusVisit[];
   windowEndMs: number;
 }
@@ -230,17 +243,22 @@ function applyStatusEntry(cursor: StatusCursor, entry: RetroFactChangelogEntry):
   cursor.hasStatusHistory = true;
   if (toKey === cursor.currentKey) return;
   closeStatusVisit(cursor, atMs);
-  cursor.doneAtMs = isDoneStatusKey(toKey) ? atMs : null;
+  cursor.doneAtMs = isDeliveredStatusKey(toKey, cursor.rules) ? atMs : null;
   cursor.currentKey = toKey;
   cursor.currentStart = atMs;
 }
 
-function walkStatuses(entries: RetroFactChangelogEntry[], windowEndMs: number): StatusWalk {
+function walkStatuses(
+  entries: RetroFactChangelogEntry[],
+  windowEndMs: number,
+  rules: SprintTaskCompletionRules | null | undefined
+): StatusWalk {
   const cursor: StatusCursor = {
     currentKey: null,
     currentStart: null,
     doneAtMs: null,
     hasStatusHistory: false,
+    rules,
     visits: [],
     windowEndMs,
   };
@@ -249,7 +267,7 @@ function walkStatuses(entries: RetroFactChangelogEntry[], windowEndMs: number): 
   );
   for (const entry of sorted) applyStatusEntry(cursor, entry);
   closeStatusVisit(cursor, windowEndMs);
-  const stillDone = cursor.currentKey != null && isDoneStatusKey(cursor.currentKey);
+  const stillDone = cursor.currentKey != null && isDeliveredStatusKey(cursor.currentKey, rules);
   return {
     doneAtMs: stillDone ? cursor.doneAtMs : null,
     hasStatusHistory: cursor.hasStatusHistory,
@@ -400,11 +418,12 @@ function flowNumbersForClosed(
 export function analyzeRetroFactIssue(
   issue: RetroFactIssue,
   sprint: RetroFactsSprint,
-  windowEndMs: number
+  windowEndMs: number,
+  rules?: SprintTaskCompletionRules | null
 ): RetroFactIssueRow {
   const planningCutMs = sprint.startMs + MS_PER_DAY;
   const membership = membershipOf(issue.createdAt, planningCutMs);
-  const walk = walkStatuses(issue.changelog, windowEndMs);
+  const walk = walkStatuses(issue.changelog, windowEndMs, rules);
   const closedFlags = issueClosedInWindow(issue, walk, sprint.startMs, windowEndMs);
   const flow = flowNumbersForClosed(walk, closedFlags.closed, sprint.startMs, windowEndMs);
 
@@ -484,7 +503,9 @@ export function selectRetroFactTasks(tasks: Task[]): Task[] {
 
 export function computeRetroFacts(input: RetroFactsInput): RetroFacts {
   const windowEndMs = Math.min(input.sprint.endMs, input.nowMs);
-  const rows = input.issues.map((issue) => analyzeRetroFactIssue(issue, input.sprint, windowEndMs));
+  const rows = input.issues.map((issue) =>
+    analyzeRetroFactIssue(issue, input.sprint, windowEndMs, input.completionRules)
+  );
   const cycleValues = rows
     .map((row) => row.cycleDays)
     .filter((days): days is number => days != null);

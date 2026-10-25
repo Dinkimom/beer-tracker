@@ -1,6 +1,6 @@
 import { getPlannerNow } from '@/utils/plannerClock';
 
-import { isWeekend, countWorkingDays } from '../utils/dateUtils';
+import { countWorkingDays, isBurndownNonWorkingDay } from '../utils/dateUtils';
 
 interface BurndownIdealState {
   lastWorkingDayIdealSP: number;
@@ -19,7 +19,9 @@ export function calculateBurndownIdealValues(
   initialTP: number,
   startDate: Date,
   totalWorkingDays: number,
-  state: BurndownIdealState
+  state: BurndownIdealState,
+  /** Праздники организации (YYYY-MM-DD): как выходные — линия стоит на месте. */
+  holidayDateKeys?: ReadonlySet<string>
 ): BurndownIdealValues {
   if (initialSP <= 0 && initialTP <= 0) {
     return {
@@ -29,7 +31,7 @@ export function calculateBurndownIdealValues(
     };
   }
 
-  if (isWeekend(date)) {
+  if (isBurndownNonWorkingDay(date, holidayDateKeys)) {
     return {
       idealSP: state.lastWorkingDayIdealSP,
       idealTP: state.lastWorkingDayIdealTP,
@@ -37,7 +39,7 @@ export function calculateBurndownIdealValues(
     };
   }
 
-  const workingDaysPassed = countWorkingDays(startDate, date);
+  const workingDaysPassed = countWorkingDays(startDate, date, holidayDateKeys);
   if (totalWorkingDays <= 0) {
     return {
       idealSP: undefined,

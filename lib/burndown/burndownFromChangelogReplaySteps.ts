@@ -1,3 +1,4 @@
+import type { BurndownCompletionRules } from './burndownStatusDone';
 import type { BurndownDayChangelogItem } from '@/lib/api/types';
 import type { YtrackerBurndownChangelogEntry, YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 
@@ -9,7 +10,6 @@ import {
   cloneTaskStateMap,
   enumerateSprintDays,
   extractStatusKey,
-  isDoneStatus,
   parseChangelogEntryToEvents,
   resolveCurrentBurndownDateKey,
   sumRemainingOpenWork,
@@ -17,6 +17,7 @@ import {
   type BurndownEvent,
   type TaskState,
 } from './burndownFromChangelogReplayHelpers';
+import { statusDoneFlags } from './burndownStatusDone';
 import { readChangelogPointValue } from './changelogPointValue';
 
 export interface BurndownDataPoint {
@@ -26,12 +27,14 @@ export interface BurndownDataPoint {
   remainingTP: number;
 }
 
-function createTaskStateFromIssue(yt: YtrackerBurndownIssue): TaskState {
+function createTaskStateFromIssue(yt: YtrackerBurndownIssue, rules: BurndownCompletionRules): TaskState {
+  const done = statusDoneFlags(extractStatusKey(yt.statusKey) ?? yt.statusKey, rules);
   return {
     inSprint: false,
     sp: yt.storyPoints ?? 0,
+    spDone: done.sp,
     tp: yt.testPoints ?? 0,
-    isDone: isDoneStatus(extractStatusKey(yt.statusKey) ?? yt.statusKey),
+    tpDone: done.tp,
   };
 }
 
@@ -53,6 +56,7 @@ function applyPreSprintEntryFields(
   sprintIdForMatch: string | undefined,
   state: TaskState,
   flags: PreSprintReplayFlags,
+  rules: BurndownCompletionRules,
 ): void {
   for (const field of entry.fields ?? []) {
     const fieldId = field?.field?.id;
@@ -64,7 +68,7 @@ function applyPreSprintEntryFields(
       if (kind === 'sp') flags.touchedSp = true;
       else flags.touchedTp = true;
     }
-    applyFieldToTaskState(field, sprintName, sprintIdForMatch, state);
+    applyFieldToTaskState(field, sprintName, sprintIdForMatch, state, rules);
   }
 }
 
@@ -74,6 +78,7 @@ function replayPreSprintChangelogFields(
   sprintName: string,
   sprintIdForMatch: string | undefined,
   state: TaskState,
+  rules: BurndownCompletionRules,
 ): PreSprintReplayFlags {
   const flags: PreSprintReplayFlags = { hasSprintField: false, touchedSp: false, touchedTp: false };
   for (const entry of raw) {
@@ -81,7 +86,7 @@ function replayPreSprintChangelogFields(
     if (t >= sprintStartTime) {
       break;
     }
-    applyPreSprintEntryFields(entry, sprintName, sprintIdForMatch, state, flags);
+    applyPreSprintEntryFields(entry, sprintName, sprintIdForMatch, state, flags, rules);
   }
   return flags;
 }
@@ -157,14 +162,16 @@ export function buildTaskStateAtSprintStart(
   sprintIdForMatch: string | undefined,
   sprintStartTime: number,
   sprintEndTime = Number.POSITIVE_INFINITY,
+  rules?: BurndownCompletionRules,
 ): TaskState {
-  const state = createTaskStateFromIssue(yt);
+  const state = createTaskStateFromIssue(yt, rules);
   const flags = replayPreSprintChangelogFields(
     yt.rawChangelog ?? [],
     sprintStartTime,
     sprintName,
     sprintIdForMatch,
     state,
+    rules,
   );
   if (!flags.hasSprintField) state.inSprint = true;
   rewindEstimatesAlreadyReflectedInCurrent(
@@ -199,6 +206,7 @@ function appendSprintWindowEventsForIssue(
   sprintEndTime: number,
   withSeq: { entryId: string; ev: BurndownEvent; seq: number }[],
   seqRef: { value: number },
+  rules: BurndownCompletionRules,
 ): void {
   for (const entry of yt.rawChangelog ?? []) {
     const entryTime = new Date(entry.updatedAt).getTime();
@@ -206,7 +214,7 @@ function appendSprintWindowEventsForIssue(
       continue;
     }
     const entryId = changelogEntrySortKey(entry);
-    for (const ev of parseChangelogEntryToEvents(entry, yt.issueKey, sprintName, sprintIdForMatch)) {
+    for (const ev of parseChangelogEntryToEvents(entry, yt.issueKey, sprintName, sprintIdForMatch, rules)) {
       withSeq.push({ ev, seq: seqRef.value++, entryId });
     }
   }
@@ -218,6 +226,7 @@ function collectSequencedBurndownEvents(
   sprintIdForMatch: string | undefined,
   sprintStartTime: number,
   sprintEndTime: number,
+  rules: BurndownCompletionRules,
 ): { entryId: string; ev: BurndownEvent; seq: number }[] {
   const withSeq: { entryId: string; ev: BurndownEvent; seq: number }[] = [];
   const seqRef = { value: 0 };
@@ -230,6 +239,7 @@ function collectSequencedBurndownEvents(
       sprintEndTime,
       withSeq,
       seqRef,
+      rules,
     );
   }
   return withSeq;
@@ -241,6 +251,7 @@ export function collectBurndownEventsInSprintWindow(
   sprintIdForMatch: string | undefined,
   sprintStartTime: number,
   sprintEndTime: number,
+  rules?: BurndownCompletionRules,
 ): BurndownEvent[] {
   const withSeq = collectSequencedBurndownEvents(
     ytrackerIssues,
@@ -248,6 +259,7 @@ export function collectBurndownEventsInSprintWindow(
     sprintIdForMatch,
     sprintStartTime,
     sprintEndTime,
+    rules,
   );
   withSeq.sort(compareSequencedBurndownEvents);
   return withSeq.map((x) => x.ev);
@@ -306,6 +318,7 @@ function buildDailyChangelogFromFieldStream(
   sprintStartTime: number,
   sprintEndTime: number,
   issueSummaries: Map<string, string>,
+  rules: BurndownCompletionRules,
 ): Record<string, BurndownDayChangelogItem[]> {
   const taskState = cloneTaskStateMap(taskStateAtStart);
   const dailyChangelog: Record<string, BurndownDayChangelogItem[]> = {};
@@ -322,6 +335,7 @@ function buildDailyChangelogFromFieldStream(
       dailyChangelog,
       sprintName,
       sprintIdForMatch,
+      rules,
     );
   }
 
@@ -334,27 +348,21 @@ function buildTaskStateMapAtStart(
   sprintIdForMatch: string | undefined,
   sprintStartTime: number,
   sprintEndTime: number,
+  rules: BurndownCompletionRules,
 ): Map<string, TaskState> {
   const taskStateAtStart = new Map<string, TaskState>();
   for (const yt of ytrackerIssues) {
     taskStateAtStart.set(
       yt.issueKey,
-      buildTaskStateAtSprintStart(yt, sprintName, sprintIdForMatch, sprintStartTime, sprintEndTime),
+      buildTaskStateAtSprintStart(yt, sprintName, sprintIdForMatch, sprintStartTime, sprintEndTime, rules),
     );
   }
   return taskStateAtStart;
 }
 
 function sumInitialOpenPoints(taskStateAtStart: Map<string, TaskState>): { initialSP: number; initialTP: number } {
-  let initialSP = 0;
-  let initialTP = 0;
-  for (const s of taskStateAtStart.values()) {
-    if (s.inSprint && !s.isDone) {
-      initialSP += s.sp;
-      initialTP += s.tp;
-    }
-  }
-  return { initialSP, initialTP };
+  const open = sumRemainingOpenWork(taskStateAtStart);
+  return { initialSP: open.remainingSP, initialTP: open.remainingTP };
 }
 
 function groupBurndownEventsByDay(events: BurndownEvent[]): Map<string, BurndownEvent[]> {
@@ -404,6 +412,8 @@ function buildBurndownDataPoints(
 }
 
 interface ComputeBurndownFromChangelogInput {
+  /** Правила завершения организации; без них — эвристика по ключу статуса. */
+  completionRules?: BurndownCompletionRules;
   issueSummaries: Map<string, string>;
   sprintEndDate: Date;
   sprintEndTime: number;
@@ -435,6 +445,7 @@ export function computeBurndownFromChangelog(
     sprintStartDate,
     sprintEndDate,
     issueSummaries,
+    completionRules,
   } = input;
 
   const taskStateAtStart = buildTaskStateMapAtStart(
@@ -443,6 +454,7 @@ export function computeBurndownFromChangelog(
     sprintIdForMatch,
     sprintStartTime,
     sprintEndTime,
+    completionRules,
   );
   const { initialSP, initialTP } = sumInitialOpenPoints(taskStateAtStart);
 
@@ -452,6 +464,7 @@ export function computeBurndownFromChangelog(
     sprintIdForMatch,
     sprintStartTime,
     sprintEndTime,
+    completionRules,
   );
   const eventsByDay = groupBurndownEventsByDay(events);
 
@@ -463,6 +476,7 @@ export function computeBurndownFromChangelog(
     sprintStartTime,
     sprintEndTime,
     issueSummaries,
+    completionRules,
   );
 
   const dayKeys = enumerateSprintDays(sprintStartDate, sprintEndDate);

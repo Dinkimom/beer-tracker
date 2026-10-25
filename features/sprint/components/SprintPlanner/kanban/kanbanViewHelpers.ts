@@ -1,8 +1,6 @@
 import type { Task } from '@/types';
 import type { BoardColumn } from '@/types/tracker';
 
-import { getTaskStoryPoints, getTaskTestPoints } from '@/lib/pointsUtils';
-
 import {
   computeKanbanColumnTaskTotals,
   filterKanbanColumnTasks,
@@ -33,8 +31,5 @@ export function buildKanbanColumnsWithHeaderData(
 export { resolveKanbanLaneDisplayName };
 
 export function kanbanLaneTotals(laneTasks: Task[]): { totalSp: number; totalTp: number } {
-  return {
-    totalSp: laneTasks.reduce((sum, task) => sum + getTaskStoryPoints(task), 0),
-    totalTp: laneTasks.reduce((sum, task) => sum + getTaskTestPoints(task), 0),
-  };
+  return computeKanbanColumnTaskTotals(laneTasks);
 }

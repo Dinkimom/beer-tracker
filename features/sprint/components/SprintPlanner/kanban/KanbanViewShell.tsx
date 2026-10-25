@@ -3,11 +3,12 @@
 import type { SidebarGroupBy, Task } from '@/types';
 import type { BoardColumn } from '@/types/tracker';
 
-import { isPlannerAnnotationTask } from '@/features/task/utils/swimlaneImageTask';
+import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
+
 
 export function filterKanbanTasksForDisplay(tasks: Task[]): Task[] {
   return tasks.filter(
-    (task) => !isPlannerAnnotationTask(task) && !(task.team === 'QA' && task.originalTaskId)
+    (task) => !isPlannerNonTrackerCard(task) && !(task.team === 'QA' && task.originalTaskId)
   );
 }
 

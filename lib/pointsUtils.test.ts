@@ -10,9 +10,11 @@ import {
   getTaskStoryPoints,
   getTaskTestPoints,
   isOriginalTask,
+  isQaOnlyTask,
   roundPointsForDisplay,
   shouldCountTaskForParticipantVolume,
   storyPointsToTimeslots,
+  sumTaskListPoints,
   timeslotsToStoryPoints,
 } from './pointsUtils';
 
@@ -181,5 +183,40 @@ describe('getSprintPointsTotals', () => {
   it('excludes goal task ids when provided', () => {
     const tasks = [{ id: 'g', storyPoints: 5, testPoints: 1 }];
     expect(getSprintPointsTotals(tasks, { goalTaskIds: 'g' })).toEqual({ totalSP: 0, totalTP: 0 });
+  });
+});
+
+describe('sumTaskListPoints', () => {
+  it('counts phantom TP once when the original is in the same list and skips phantom SP', () => {
+    expect(
+      sumTaskListPoints([
+        { id: 'DEV-1', storyPoints: 5, team: 'Web', testPoints: 3 },
+        { id: 'qa-1', originalTaskId: 'DEV-1', storyPoints: 5, team: 'QA', testPoints: 3 },
+      ])
+    ).toEqual({ totalSP: 5, totalTP: 3 });
+  });
+
+  it('keeps phantom TP when the original is elsewhere and standalone QA SP', () => {
+    expect(
+      sumTaskListPoints([
+        { id: 'qa-1', originalTaskId: 'DEV-1', storyPoints: 0, team: 'QA', testPoints: 2 },
+        { hideTestPointsByIntegration: true, id: 'QA-2', storyPoints: 4, team: 'QA' },
+      ])
+    ).toEqual({ totalSP: 4, totalTP: 2 });
+  });
+
+  it('ignores NaN estimates', () => {
+    expect(sumTaskListPoints([{ id: 'X', storyPoints: Number.NaN, testPoints: 1 }])).toEqual({
+      totalSP: 0,
+      totalTP: 1,
+    });
+  });
+});
+
+describe('isQaOnlyTask', () => {
+  it('is a non-QA task with 0 SP and positive TP', () => {
+    expect(isQaOnlyTask({ storyPoints: 0, team: 'Web', testPoints: 2 })).toBe(true);
+    expect(isQaOnlyTask({ storyPoints: 1, team: 'Web', testPoints: 2 })).toBe(false);
+    expect(isQaOnlyTask({ storyPoints: 0, team: 'QA', testPoints: 2 })).toBe(false);
   });
 });

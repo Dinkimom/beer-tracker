@@ -84,6 +84,30 @@ describe('isBurndownChangelogCloseEvent', () => {
   });
 });
 
+describe('isBurndownChangelogCloseEvent with server completion flags', () => {
+  it('uses closesSP / closesTP from the API over status-key heuristics', () => {
+    const readyForRelease = item({
+      closesSP: false,
+      closesTP: true,
+      statusFromKey: 'inProgress',
+      statusToKey: 'readyForRelease',
+    });
+    expect(isBurndownChangelogCloseEvent(readyForRelease, false)).toBe(false);
+    expect(isBurndownChangelogCloseEvent(readyForRelease, true)).toBe(true);
+    expect(isBurndownChangelogCloseEvent(readyForRelease)).toBe(true);
+    expect(burndownChangelogItemMatchesMetric(readyForRelease, false)).toBe(false);
+  });
+
+  it('shows a custom done status flagged by the server', () => {
+    expect(
+      isBurndownChangelogCloseEvent(
+        item({ closesSP: true, closesTP: true, statusFromKey: 'inProgress', statusToKey: 'shipped' }),
+        false
+      )
+    ).toBe(true);
+  });
+});
+
 describe('burndownChangelogItemDisplayType', () => {
   it('показывает закрытие вместо сырого status_change', () => {
     expect(burndownChangelogItemDisplayType(item({ type: 'added' }))).toBe('added');

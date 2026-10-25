@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import { computeBurndownTilesFromOccupancyRows } from '@/features/sprint/components/SprintPlanner/occupancy/occupancyViewHelpers';
 import { buildFlattenedRows } from '@/features/sprint/components/SprintPlanner/occupancy/utils/buildFlattenedRows';
 import { computeBurndownTilesFromTasks } from '@/features/sprint/utils/sprintMetrics';
+import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 
 import { useBurndownMetrics } from './useBurndownMetrics';
 
@@ -23,6 +24,7 @@ export function useBurndownChartTileMetrics(args: {
   positionsSettledForSprint: boolean;
   sprintTasksForTiles?: Task[];
 }) {
+  const completionRules = useSprintTaskCompletionRules();
   const occupancyBurndownTiles = useMemo(() => {
     if (!args.loadTilePositions || !args.sprintTasksForTiles?.length) {
       return null;
@@ -46,8 +48,12 @@ export function useBurndownChartTileMetrics(args: {
     if (args.sprintTasksForTiles === undefined) {
       return null;
     }
-    return computeBurndownTilesFromTasks(args.sprintTasksForTiles, args.goalTaskIdsForTiles);
-  }, [args.sprintTasksForTiles, args.goalTaskIdsForTiles]);
+    return computeBurndownTilesFromTasks(
+      args.sprintTasksForTiles,
+      args.goalTaskIdsForTiles,
+      completionRules
+    );
+  }, [args.sprintTasksForTiles, args.goalTaskIdsForTiles, completionRules]);
 
   const taskTileMetrics = useMemo(() => {
     const occupancyShowsZeroButTasksHaveScope =

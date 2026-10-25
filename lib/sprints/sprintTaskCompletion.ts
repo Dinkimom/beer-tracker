@@ -201,3 +201,27 @@ export function resolveStatusCategoryForStatusKey(
     rules
   );
 }
+
+/**
+ * SP сделано по одному ключу статуса (переход в changelog, статус на момент времени).
+ * Тип статуса для исторических ключей неизвестен, поэтому `statusCategoryByType` не применяется:
+ * override по ключу → `mapStatus(ключ)`; готовность к релизу — по `tpReadyStatusKeys`.
+ */
+export function isSpCompletedStatusKey(
+  statusKey: string | null | undefined,
+  rules?: SprintTaskCompletionRules | null
+): boolean {
+  const key = statusKey?.trim();
+  if (!key) return false;
+  return isSpCompleted({ originalStatus: key, status: undefined }, rules);
+}
+
+/** TP сделано по одному ключу статуса; ограничения те же, что у {@link isSpCompletedStatusKey}. */
+export function isTpCompletedStatusKey(
+  statusKey: string | null | undefined,
+  rules?: SprintTaskCompletionRules | null
+): boolean {
+  const key = statusKey?.trim();
+  if (!key) return false;
+  return isTpCompleted({ originalStatus: key, status: undefined }, rules);
+}

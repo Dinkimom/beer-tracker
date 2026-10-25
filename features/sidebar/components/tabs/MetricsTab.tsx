@@ -1,7 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
-
 import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { TextTooltip } from '@/components/TextTooltip';
@@ -13,21 +11,14 @@ import {
   calculateMetricsByStatus,
 } from '@/features/sprint/utils/sprintMetrics';
 import { TASK_GROUP_KEY_UNASSIGNED } from '@/features/task/constants/taskGroupKeys';
-import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
-import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 import { formatPointsForDisplay, roundPointsForDisplay } from '@/lib/pointsUtils';
-import { sprintTaskCompletionRulesFromPlanner } from '@/lib/sprints/sprintTaskCompletion';
 import { getInitials } from '@/utils/displayUtils';
 
 export function MetricsTab() {
   const { t } = useI18n();
   const { allSprintTasksForMetrics, developers, goalTaskIds, goalsTasks, selectedSprintId } = useTaskSidebar();
-  const { activeOrganizationId } = useProductTenantOrganizations({ pollIntervalMs: 0 });
-  const { data: plannerRules } = usePlannerIntegrationRules(activeOrganizationId);
-  const completionRules = useMemo(
-    () => sprintTaskCompletionRulesFromPlanner(plannerRules),
-    [plannerRules]
-  );
+  const completionRules = useSprintTaskCompletionRules();
   // Разбивка по исполнителям и итоги — по всем задачам спринта, а не только по запланированным
   const tasksForMetrics = allSprintTasksForMetrics ?? goalsTasks;
   const hideTp = tasksForMetrics.some((task) => task.hideTestPointsByIntegration === true);

@@ -1,5 +1,7 @@
 import type { Task } from '@/types';
 
+import { sumTaskListPoints } from '@/lib/pointsUtils';
+
 export function filterKanbanColumnTasks(
   columnTasks: Task[],
   globalNameFilter: string | undefined
@@ -14,22 +16,8 @@ export function filterKanbanColumnTasks(
   );
 }
 
-function addKanbanTaskPoints(
-  totals: { totalSp: number; totalTp: number },
-  task: Task
-): void {
-  if (typeof task.storyPoints === 'number' && !Number.isNaN(task.storyPoints)) {
-    totals.totalSp += task.storyPoints;
-  }
-  if (typeof task.testPoints === 'number' && !Number.isNaN(task.testPoints)) {
-    totals.totalTp += task.testPoints;
-  }
-}
-
+/** Итоги колонки — единые правила pointsUtils (фантом QA: SP 0, TP без дубля оригинала). */
 export function computeKanbanColumnTaskTotals(filtered: Task[]): { totalSp: number; totalTp: number } {
-  const totals = { totalSp: 0, totalTp: 0 };
-  for (const task of filtered) {
-    addKanbanTaskPoints(totals, task);
-  }
-  return totals;
+  const { totalSP, totalTP } = sumTaskListPoints(filtered);
+  return { totalSp: totalSP, totalTp: totalTP };
 }

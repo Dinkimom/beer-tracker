@@ -27,6 +27,7 @@ import {
   useSwimlaneBaselineLayoutModeStorage,
   useSwimlaneCardReservesEyebrow,
 } from '@/hooks/useLocalStorage';
+import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 import { useRootStore } from '@/lib/layers';
 import {
   remotePresenceCardRowPreviews,
@@ -86,6 +87,7 @@ export function useSwimlaneLayout({
   tasksMap,
 }: UseSwimlaneLayoutProps) {
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
+  const completionRules = useSprintTaskCompletionRules();
   const subscribeCardLayout = useCallback(
     (onStoreChange: () => void) =>
       reaction(() => sprintPlannerUi.cardLayoutRevision, onStoreChange),
@@ -190,7 +192,7 @@ export function useSwimlaneLayout({
   );
 
   const { totalSP, totalTP, completedSP, completedTP, hasVolumeTasks, hideTestPoints } =
-    computeSwimlanePointTotals(positionedTasks);
+    computeSwimlanePointTotals(positionedTasks, completionRules);
   const percentSP = totalSP > 0 ? Math.round((completedSP / totalSP) * 100) : 0;
   const percentTP = totalTP > 0 ? Math.round((completedTP / totalTP) * 100) : 0;
 

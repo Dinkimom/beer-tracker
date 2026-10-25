@@ -11,7 +11,6 @@ import type { IssueTrackerBurndownSprintContext } from './types';
 import type { ChangelogEntry } from '@/types/tracker';
 
 import { issueDataSprintContains } from '@/lib/burndown/sprintMembership';
-import { mapStatus } from '@/utils/statusMapper';
 
 import { processChangelogToDoneEvents } from './changelogDoneEventsHelpers';
 import { normalizeChangelogFields, parseChangelogAuthor } from './changelogNormalizerHelpers';
@@ -82,12 +81,6 @@ function adaptIssueData(raw: unknown): NormalizedIssueData {
   }
 
   return { key, statusKey, storyPoints, testPoints };
-}
-
-function processChangelogToDoneEventsLocal(
-  entries: NormalizedChangelogEntry[]
-): Array<{ date: string; isDone: boolean }> {
-  return processChangelogToDoneEvents(entries, mapStatus);
 }
 
 function toChangelogFieldValue(
@@ -161,7 +154,7 @@ export function buildIssueTrackerBurndownIssueFromPayloadAndLogs(
     .sort(
       (a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
     );
-  const changelog = processChangelogToDoneEventsLocal(normalizedEntries);
+  const changelog = processChangelogToDoneEvents(normalizedEntries);
   const rawChangelog: IssueTrackerBurndownChangelogEntry[] = normalizedEntries.map((e) => ({
     fields: e.fields?.map((f) => ({
       field: f.field,

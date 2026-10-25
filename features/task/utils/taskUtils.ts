@@ -10,9 +10,8 @@ import {
   issueTrackerIssueWebUrlFromBase,
   issueTrackerQueueWebUrlFromBase,
 } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import { isQaOnlyTask, resolveTaskPointsForTeam } from '@/lib/pointsUtils';
 import { mapStatus } from '@/utils/statusMapper';
-
-import { resolveTaskPointsForTeam } from './getTaskPointsHelpers';
 
 /**
  * Задача в состоянии «готово» — та же логика, что в метриках спринта / раскраске статусов (см. isTaskDone).
@@ -69,20 +68,8 @@ export function getTaskMergeRequestUrl(task: Task): string | null {
   return /^https?:\/\//i.test(trimmed) ? trimmed : null;
 }
 
-/**
- * Задача фактически является КУА-задачей: 0 СП и > 0 ТП.
- * Нет объёма разработки — только тестирование.
- * Такую задачу не нужно дублировать синтетической QA-задачей,
- * а фаза считается по ТП.
- */
-export function isQaOnlyTask(task: Task): boolean {
-  return (
-    (!task.storyPoints || task.storyPoints === 0) &&
-    task.testPoints != null &&
-    task.testPoints > 0 &&
-    task.team !== 'QA'
-  );
-}
+// Единственная реализация — в pointsUtils; реэкспорт для существующих импортёров (features/qa, occupancy).
+export { isQaOnlyTask };
 
 /**
  * Задача "эффективно" является QA-задачей:

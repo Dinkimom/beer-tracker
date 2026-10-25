@@ -87,6 +87,7 @@ export function useRetroFacts({
       }
     }
     return computeRetroFacts({
+      completionRules,
       issues: population.map((task) => {
         const declined = isDeclinedStatus(task.originalStatus);
         return {

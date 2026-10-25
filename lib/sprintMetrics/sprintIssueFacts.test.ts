@@ -3,6 +3,8 @@ import type { TrackerIssue } from '@/types/tracker';
 
 import { describe, expect, it } from 'vitest';
 
+import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+
 import {
   buildSprintIssueFact,
   buildSprintIssueFacts,
@@ -155,6 +157,50 @@ describe('buildSprintIssueFact', () => {
       window
     );
     expect(fact).toMatchObject({ carriedOver: false, declined: true, done: false });
+  });
+
+  it('counts a custom status mapped to done by organization rules as delivered', () => {
+    const shipped = { display: 'Shipped', key: 'shipped' };
+    const yt = burndownIssue(
+      [plannedIntoSprint, statusMove('2025-06-05T08:00:00.000Z', 'inProgress', 'shipped')],
+      { statusKey: 'shipped' }
+    );
+    const completionRules = sprintTaskCompletionRulesFromIntegration({
+      statuses: { overridesByStatusKey: { shipped: { category: 'done' } } },
+    });
+    expect(buildSprintIssueFact(trackerIssue({ status: shipped }), yt, window)?.done).toBe(false);
+    expect(
+      buildSprintIssueFact(trackerIssue({ status: shipped }), yt, { ...window, completionRules })?.done
+    ).toBe(true);
+  });
+
+  it('does not count the ready-for-release status as delivered (SP not done)', () => {
+    const rc = { display: 'RC', key: 'rc' };
+    const fact = buildSprintIssueFact(
+      trackerIssue({ status: rc }),
+      burndownIssue([plannedIntoSprint, statusMove('2025-06-05T08:00:00.000Z', 'inProgress', 'rc')], {
+        statusKey: 'rc',
+      }),
+      { ...window, completionRules: sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' }) }
+    );
+    expect(fact).toMatchObject({ committed: true, done: false });
+  });
+
+  it('keeps declined out of delivery even if organization rules map it to done', () => {
+    const fact = buildSprintIssueFact(
+      trackerIssue({ status: { display: 'Cancelled', key: 'cancelled' } }),
+      burndownIssue(
+        [plannedIntoSprint, statusMove('2025-06-04T10:00:00.000Z', 'open', 'cancelled')],
+        { statusKey: 'cancelled' }
+      ),
+      {
+        ...window,
+        completionRules: sprintTaskCompletionRulesFromIntegration({
+          statuses: { overridesByStatusKey: { cancelled: { category: 'done' } } },
+        }),
+      }
+    );
+    expect(fact).toMatchObject({ declined: true, done: false });
   });
 
   it('skips a task that left the sprint before it started', () => {

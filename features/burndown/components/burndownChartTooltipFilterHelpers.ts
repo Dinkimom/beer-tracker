@@ -1,6 +1,6 @@
 import type { BurndownDayChangelogItem } from './burndownChartTooltipContext';
 
-import { isDoneStatus } from '@/lib/burndown/burndownFromChangelogReplayHelpers';
+import { statusClosingFlags } from '@/lib/burndown/burndownStatusDone';
 
 const SCOPE_EVENT_TYPES = new Set<BurndownDayChangelogItem['type']>([
   'added',
@@ -8,10 +8,20 @@ const SCOPE_EVENT_TYPES = new Set<BurndownDayChangelogItem['type']>([
   'closed',
 ]);
 
-export function isBurndownChangelogCloseEvent(item: BurndownDayChangelogItem): boolean {
+/**
+ * Переход закрыл работу. Флаги closesSP/closesTP сервер считает по правилам завершения организации;
+ * в старых кэшах их нет — тогда эвристика по ключам статусов без правил.
+ * `isTP` не задан — закрытие SP или TP.
+ */
+export function isBurndownChangelogCloseEvent(item: BurndownDayChangelogItem, isTP?: boolean): boolean {
   if (item.type === 'closed') return true;
   if (item.type !== 'status_change') return false;
-  return isDoneStatus(item.statusToKey) && !isDoneStatus(item.statusFromKey);
+  const closes =
+    item.closesSP != null || item.closesTP != null
+      ? { sp: item.closesSP === true, tp: item.closesTP === true }
+      : statusClosingFlags(item.statusFromKey, item.statusToKey, null);
+  if (isTP == null) return closes.sp || closes.tp;
+  return isTP ? closes.tp : closes.sp;
 }
 
 export function burndownChangelogItemDisplayType(
@@ -23,9 +33,9 @@ export function burndownChangelogItemDisplayType(
 
 export function burndownChangelogItemMatchesMetric(
   item: BurndownDayChangelogItem,
-  _isTP: boolean
+  isTP: boolean
 ): boolean {
-  return SCOPE_EVENT_TYPES.has(item.type) || isBurndownChangelogCloseEvent(item);
+  return SCOPE_EVENT_TYPES.has(item.type) || isBurndownChangelogCloseEvent(item, isTP);
 }
 
 export function applyBurndownChangelogRemainingDeltas(

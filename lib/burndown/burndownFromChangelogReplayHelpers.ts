@@ -1,34 +1,32 @@
 import type { BurndownDayChangelogItem } from '@/lib/api/types';
+import type { BurndownCompletionRules } from '@/lib/burndown/burndownStatusDone';
 import type { YtrackerBurndownChangelogEntry } from '@/lib/ytrackerRawIssues';
 
+import { statusClosingFlags, statusDoneFlags } from '@/lib/burndown/burndownStatusDone';
 import { changelogPointOrZero, readChangelogPointValue } from '@/lib/burndown/changelogPointValue';
 import { extractStatusKeyFromValue } from '@/lib/burndown/extractStatusKeyHelpers';
 import { sprintArrayContainsSprint } from '@/lib/burndown/sprintMembership';
-import { mapStatus } from '@/utils/statusMapper';
 
 export function toBurndownDateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-export function isDoneStatus(statusKey: string | undefined): boolean {
-  if (!statusKey) return false;
-  return mapStatus(statusKey.toLowerCase()) === 'done';
 }
 
 export function extractStatusKey(value: unknown): string | undefined {
   return extractStatusKeyFromValue(value);
 }
 
+/** SP и TP «сделаны» раздельно: статус готовности к релизу закрывает TP, но не SP. */
 export interface TaskState {
   inSprint: boolean;
-  isDone: boolean;
   sp: number;
+  spDone: boolean;
   tp: number;
+  tpDone: boolean;
 }
 
 export type BurndownEvent =
   | { type: 'added'; date: string; issueKey: string }
-  | { type: 'closed'; date: string; issueKey: string }
+  | { type: 'closed'; closesSP: boolean; closesTP: boolean; date: string; issueKey: string }
   | { type: 'reestimated'; date: string; issueKey: string; deltaSP: number; deltaTP: number }
   | { type: 'removed'; date: string; issueKey: string };
 
@@ -37,12 +35,13 @@ export function applyFieldToTaskState(
   sprintName: string,
   sprintIdForMatch: string | undefined,
   state: TaskState,
+  rules?: BurndownCompletionRules,
 ): void {
   if (!field?.field?.id) return;
   const fid = field.field.id;
 
   if (fid === 'status') {
-    applyStatusFieldToTaskState(field, state);
+    applyStatusFieldToTaskState(field, state, rules);
     return;
   }
   if (fid === 'storyPoints' || fid === 'story_points') {
@@ -60,10 +59,14 @@ export function applyFieldToTaskState(
 
 function applyStatusFieldToTaskState(
   field: BurndownChangelogField,
-  state: TaskState
+  state: TaskState,
+  rules: BurndownCompletionRules
 ): void {
   const toKey = extractStatusKey(field.to);
-  if (toKey) state.isDone = isDoneStatus(toKey);
+  if (!toKey) return;
+  const done = statusDoneFlags(toKey, rules);
+  state.spDone = done.sp;
+  state.tpDone = done.tp;
 }
 
 function applyStoryPointsFieldToTaskState(
@@ -105,11 +108,11 @@ function applyStatusFieldToEvents(
   events: BurndownEvent[],
   date: string,
   issueKey: string,
+  rules: BurndownCompletionRules,
 ): void {
-  const fromKey = extractStatusKey(field.from);
-  const toKey = extractStatusKey(field.to);
-  if (toKey && isDoneStatus(toKey) && (!fromKey || !isDoneStatus(fromKey))) {
-    events.push({ type: 'closed', date, issueKey });
+  const closes = statusClosingFlags(extractStatusKey(field.from), extractStatusKey(field.to), rules);
+  if (closes.sp || closes.tp) {
+    events.push({ type: 'closed', closesSP: closes.sp, closesTP: closes.tp, date, issueKey });
   }
 }
 
@@ -148,13 +151,14 @@ function processChangelogFieldToEvents(
   issueKey: string,
   sprintName: string,
   sprintId: string | undefined,
-  deltas: { deltaSP: number; deltaTP: number }
+  deltas: { deltaSP: number; deltaTP: number },
+  rules: BurndownCompletionRules
 ): void {
   const fieldId = field?.field?.id;
   if (!fieldId) return;
 
   if (fieldId === 'status') {
-    applyStatusFieldToEvents(field, events, date, issueKey);
+    applyStatusFieldToEvents(field, events, date, issueKey, rules);
     return;
   }
   if (fieldId === 'storyPoints' || fieldId === 'story_points' || fieldId === 'testPoints' || fieldId === 'test_points') {
@@ -171,13 +175,14 @@ export function parseChangelogEntryToEvents(
   issueKey: string,
   sprintName: string,
   sprintId?: string,
+  rules?: BurndownCompletionRules,
 ): BurndownEvent[] {
   const events: BurndownEvent[] = [];
   const date = entry.updatedAt;
   const deltas = { deltaSP: 0, deltaTP: 0 };
 
   for (const field of entry.fields ?? []) {
-    processChangelogFieldToEvents(field, events, date, issueKey, sprintName, sprintId, deltas);
+    processChangelogFieldToEvents(field, events, date, issueKey, sprintName, sprintId, deltas, rules);
   }
 
   if (deltas.deltaSP !== 0 || deltas.deltaTP !== 0) {
@@ -209,10 +214,9 @@ export function sumRemainingOpenWork(
   let remainingSP = 0;
   let remainingTP = 0;
   for (const s of taskState.values()) {
-    if (s.inSprint && !s.isDone) {
-      remainingSP += s.sp;
-      remainingTP += s.tp;
-    }
+    if (!s.inSprint) continue;
+    if (!s.spDone) remainingSP += s.sp;
+    if (!s.tpDone) remainingTP += s.tp;
   }
   return { remainingSP, remainingTP };
 }
@@ -221,6 +225,7 @@ interface DailyChangelogFieldContext {
   dailyChangelog: Record<string, BurndownDayChangelogItem[]>;
   dateKey: string;
   issueKey: string;
+  rules: BurndownCompletionRules;
   sprintIdForMatch: string | undefined;
   sprintName: string;
   state: TaskState;
@@ -237,7 +242,7 @@ function appendPointsChangeToDailyChangelog(
 ): void {
   const from = changelogPointOrZero(field.from);
   const to = changelogPointOrZero(field.to);
-  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state);
+  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state, ctx.rules);
   const { remainingSP, remainingTP } = sumRemainingOpenWork(ctx.taskState);
   appendDailyChangelogItem(ctx.dailyChangelog, ctx.dateKey, {
     type,
@@ -289,17 +294,13 @@ function appendStatusFieldToDailyChangelog(
   const spBefore = ctx.state.sp;
   const tpBefore = ctx.state.tp;
   const before = sumRemainingOpenWork(ctx.taskState);
-  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state);
+  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state, ctx.rules);
   const after = sumRemainingOpenWork(ctx.taskState);
   let { change, changeTP } = remainingPointDeltas(before, after);
-  if (
-    change === 0 &&
-    changeTP === 0 &&
-    isDoneStatus(toKey) &&
-    !isDoneStatus(fromKey)
-  ) {
-    change = 0 - spBefore;
-    changeTP = 0 - tpBefore;
+  const closes = statusClosingFlags(fromKey, toKey, ctx.rules);
+  if (change === 0 && changeTP === 0 && (closes.sp || closes.tp)) {
+    change = closes.sp ? 0 - spBefore : 0;
+    changeTP = closes.tp ? 0 - tpBefore : 0;
   }
   appendDailyChangelogItem(ctx.dailyChangelog, ctx.dateKey, {
     type: 'status_change',
@@ -309,6 +310,8 @@ function appendStatusFieldToDailyChangelog(
     changeTP,
     remainingSP: after.remainingSP,
     remainingTP: after.remainingTP,
+    closesSP: closes.sp,
+    closesTP: closes.tp,
     statusFromKey: fromKey,
     statusToKey: toKey,
   });
@@ -321,7 +324,7 @@ function appendSprintAddedToDailyChangelog(
   spBefore: number,
   tpBefore: number,
 ): void {
-  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state);
+  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state, ctx.rules);
   const { remainingSP, remainingTP } = sumRemainingOpenWork(ctx.taskState);
   appendDailyChangelogItem(ctx.dailyChangelog, ctx.dateKey, {
     type: 'added',
@@ -343,7 +346,7 @@ function appendSprintRemovedToDailyChangelog(
 ): void {
   const changeSp = wasInSprint ? 0 - spBefore : 0;
   const changeTp = wasInSprint ? 0 - tpBefore : 0;
-  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state);
+  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state, ctx.rules);
   const { remainingSP, remainingTP } = sumRemainingOpenWork(ctx.taskState);
   appendDailyChangelogItem(ctx.dailyChangelog, ctx.dateKey, {
     type: 'removed',
@@ -360,7 +363,7 @@ function appendSprintFieldChangeToDailyChangelog(
   field: BurndownChangelogField,
   ctx: DailyChangelogFieldContext,
 ): void {
-  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state);
+  applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state, ctx.rules);
   const { remainingSP, remainingTP } = sumRemainingOpenWork(ctx.taskState);
   appendDailyChangelogItem(ctx.dailyChangelog, ctx.dateKey, {
     type: 'sprint_field_change',
@@ -426,6 +429,7 @@ export function appendDailyChangelogFieldsForEntry(
   dailyChangelog: Record<string, BurndownDayChangelogItem[]>,
   sprintName: string,
   sprintIdForMatch: string | undefined,
+  rules?: BurndownCompletionRules,
 ): void {
   const state = taskState.get(issueKey);
   if (!state) return;
@@ -434,6 +438,7 @@ export function appendDailyChangelogFieldsForEntry(
     dailyChangelog,
     dateKey: toBurndownDateKey(new Date(entry.updatedAt)),
     issueKey,
+    rules,
     sprintIdForMatch,
     sprintName,
     state,
@@ -466,12 +471,16 @@ export function resolveCurrentBurndownDateKey(dayKeys: string[]): string {
   return todayKey;
 }
 
-function applyClosedBurndownEvent(state: TaskState): { change: number; changeTP: number } {
-  if (state.isDone) {
-    return { change: 0, changeTP: 0 };
-  }
-  state.isDone = true;
-  return { change: 0 - state.sp, changeTP: 0 - state.tp };
+/** Закрытие не откатывается обратным переходом (как и раньше); SP и TP закрываются раздельно. */
+function applyClosedBurndownEvent(
+  state: TaskState,
+  ev: Extract<BurndownEvent, { type: 'closed' }>
+): { change: number; changeTP: number } {
+  const closeSP = ev.closesSP && !state.spDone;
+  const closeTP = ev.closesTP && !state.tpDone;
+  if (closeSP) state.spDone = true;
+  if (closeTP) state.tpDone = true;
+  return { change: closeSP ? 0 - state.sp : 0, changeTP: closeTP ? 0 - state.tp : 0 };
 }
 
 function applyReestimatedBurndownEvent(
@@ -516,7 +525,7 @@ export function applyBurndownEventType(
 ): { change: number; changeTP: number; wasInSprint: boolean } {
   const wasInSprint = state.inSprint;
   if (ev.type === 'closed') {
-    const result = applyClosedBurndownEvent(state);
+    const result = applyClosedBurndownEvent(state, ev);
     return { ...result, wasInSprint };
   }
   if (ev.type === 'reestimated') {

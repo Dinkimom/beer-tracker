@@ -1,10 +1,10 @@
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { SprintPresenceGestureCardRow, SprintPresenceGestureNote } from '@/lib/realtime/sprintRealtimeTypes';
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { Task, TaskPosition } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
 import { isSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
-import { isTaskDone } from '@/features/sprint/utils/sprintMetrics';
 import { resolveSwimlaneOneCardHeightPx } from '@/features/swimlane/utils/swimlaneRowReservedLayers';
 import {
   resolveSwimlaneStackedTaskBandHeightPx,
@@ -14,11 +14,12 @@ import { applyTaskResizePreviewToPositionedTasks } from '@/features/task/hooks/u
 import { isStickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { positionToStartCell } from '@/lib/planner-timeline';
 import {
+  collectOriginalTaskIds,
   getTaskStoryPoints,
-  getTaskTestPoints,
-  isOriginalTask,
+  getTaskTestPointsInList,
   shouldCountTaskForParticipantVolume,
 } from '@/lib/pointsUtils';
+import { isSpCompleted, isTpCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
 function resolveMaxOccupiedTaskLayers(
   taskLayerMap: Map<string, number>,
@@ -177,25 +178,31 @@ export function applyRemotePresenceCardRowPreviews(
   return next;
 }
 
-function collectOriginalTaskIdsOnRow(tasks: Array<{ task: Task }>): Set<string> {
-  const ids = new Set<string>();
-  for (const { task } of tasks) {
-    if (isOriginalTask(task) && task.id) {
-      ids.add(task.id);
-    }
+/**
+ * TP в шапке скрываем (режим отдельных QA-задач) только если все задачи строки с TP — отдельные QA;
+ * одна такая задача не должна прятать TP встроенного тестирования на той же строке.
+ */
+function shouldHideRowTestPoints(
+  volumeTasks: Array<{ task: Task }>,
+  originalIdsOnRow: ReadonlySet<string>
+): boolean {
+  if (!volumeTasks.some(({ task }) => task.hideTestPointsByIntegration === true)) {
+    return false;
   }
-  return ids;
+  return volumeTasks.every(
+    ({ task }) =>
+      task.hideTestPointsByIntegration === true || getTaskTestPointsInList(task, originalIdsOnRow) <= 0
+  );
 }
 
-/** На одной строке фичи оригинал и QA-фантом несут одни и те же TP — фантом не дублируем. */
-function getRowTaskTestPoints(task: Task, originalIdsOnRow: ReadonlySet<string>): number {
-  if (task.team === 'QA' && task.originalTaskId && originalIdsOnRow.has(task.originalTaskId)) {
-    return 0;
-  }
-  return getTaskTestPoints(task);
-}
-
-export function computeSwimlanePointTotals(positionedTasks: Array<{ task: Task; position: TaskPosition }>): {
+/**
+ * Итоги SP/TP строки свимлейна. «Сделано» — правила завершения организации (SP и TP раздельно:
+ * статус готовности к релизу закрывает TP, но не SP); без правил — эвристика по статусу.
+ */
+export function computeSwimlanePointTotals(
+  positionedTasks: Array<{ task: Task; position: TaskPosition }>,
+  rules?: SprintTaskCompletionRules | null
+): {
   completedSP: number;
   completedTP: number;
   hasVolumeTasks: boolean;
@@ -204,29 +211,26 @@ export function computeSwimlanePointTotals(positionedTasks: Array<{ task: Task; 
   totalTP: number;
 } {
   const volumeTasks = positionedTasks.filter(({ task }) => shouldCountTaskForParticipantVolume(task));
-  const originalIdsOnRow = collectOriginalTaskIdsOnRow(volumeTasks);
-  const totalSP = volumeTasks.reduce((sum, { task }) => sum + getTaskStoryPoints(task), 0);
-  const totalTP = volumeTasks.reduce(
-    (sum, { task }) => sum + getRowTaskTestPoints(task, originalIdsOnRow),
-    0
-  );
-  const hideTestPoints = volumeTasks.some(
-    ({ task }) => task.hideTestPointsByIntegration === true
-  );
+  const originalIdsOnRow = collectOriginalTaskIds(volumeTasks.map(({ task }) => task));
 
+  let totalSP = 0;
+  let totalTP = 0;
   let completedSP = 0;
   let completedTP = 0;
   for (const { task } of volumeTasks) {
-    if (!isTaskDone(task)) continue;
-    completedSP += getTaskStoryPoints(task);
-    completedTP += getRowTaskTestPoints(task, originalIdsOnRow);
+    const sp = getTaskStoryPoints(task);
+    const tp = getTaskTestPointsInList(task, originalIdsOnRow);
+    totalSP += sp;
+    totalTP += tp;
+    if (isSpCompleted(task, rules)) completedSP += sp;
+    if (isTpCompleted(task, rules)) completedTP += tp;
   }
 
   return {
     completedSP,
     completedTP,
     hasVolumeTasks: volumeTasks.length > 0,
-    hideTestPoints,
+    hideTestPoints: shouldHideRowTestPoints(volumeTasks, originalIdsOnRow),
     totalSP,
     totalTP,
   };

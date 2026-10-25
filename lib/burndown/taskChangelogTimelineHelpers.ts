@@ -1,3 +1,4 @@
+import type { BurndownCompletionRules } from './burndownStatusDone';
 import type {
   BuildTaskChangelogTimelineOptions,
   ComputeSprintTimelineTotalsOptions,
@@ -5,8 +6,6 @@ import type {
   TaskChangelogTimelineItem,
 } from './taskChangelogTimelineTypes';
 import type { YtrackerBurndownChangelogEntry, YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
-
-import { mapStatus } from '@/utils/statusMapper';
 
 import {
   applyBurndownEvent,
@@ -16,6 +15,7 @@ import {
   toBurndownDateKey,
   type TaskState,
 } from './burndownFromChangelogReplay';
+import { statusClosingFlags } from './burndownStatusDone';
 import { changelogPointOrZero } from './changelogPointValue';
 import { sprintArrayContainsSprint } from './sprintMembership';
 import {
@@ -31,12 +31,10 @@ interface ChangelogRow {
   timeMs: number;
 }
 
-function isDoneStatusKey(statusKey: string | undefined): boolean {
-  if (!statusKey) return false;
-  return mapStatus(statusKey.toLowerCase()) === 'done';
-}
-
-function timelineItemToBurndownEvent(item: TaskChangelogTimelineItem): BurndownEvent | null {
+function timelineItemToBurndownEvent(
+  item: TaskChangelogTimelineItem,
+  rules: BurndownCompletionRules
+): BurndownEvent | null {
   switch (item.type) {
     case 'sprint_added':
       return { type: 'added', date: '', issueKey: item.issueKey };
@@ -51,18 +49,19 @@ function timelineItemToBurndownEvent(item: TaskChangelogTimelineItem): BurndownE
         deltaTP: item.deltaTP,
       };
     case 'status_change':
-      return timelineStatusChangeToBurndownEvent(item);
+      return timelineStatusChangeToBurndownEvent(item, rules);
     default:
       return null;
   }
 }
 
 function timelineStatusChangeToBurndownEvent(
-  item: Extract<TaskChangelogTimelineItem, { type: 'status_change' }>
+  item: Extract<TaskChangelogTimelineItem, { type: 'status_change' }>,
+  rules: BurndownCompletionRules
 ): BurndownEvent | null {
-  if (!isDoneStatusKey(item.toKey)) return null;
-  if (item.fromKey && isDoneStatusKey(item.fromKey)) return null;
-  return { type: 'closed', date: '', issueKey: item.issueKey };
+  const closes = statusClosingFlags(item.fromKey, item.toKey, rules);
+  if (!closes.sp && !closes.tp) return null;
+  return { type: 'closed', closesSP: closes.sp, closesTP: closes.tp, date: '', issueKey: item.issueKey };
 }
 
 function sumSprintTotalsFromTaskStates(taskState: Map<string, TaskState>): SprintTimelineTotals {
@@ -75,10 +74,8 @@ function sumSprintTotalsFromTaskStates(taskState: Map<string, TaskState>): Sprin
     if (!s.inSprint) continue;
     totalSP += s.sp;
     totalTP += s.tp;
-    if (s.isDone) {
-      doneSP += s.sp;
-      doneTP += s.tp;
-    }
+    if (s.spDone) doneSP += s.sp;
+    if (s.tpDone) doneTP += s.tp;
   }
 
   return {
@@ -347,12 +344,19 @@ export function computeSprintTimelineTotalsFromRows(
   for (const yt of issues) {
     taskState.set(
       yt.issueKey,
-      buildTaskStateAtSprintStart(yt, sprintName, sprintId, sprintStartTime, options.windowEndMs),
+      buildTaskStateAtSprintStart(
+        yt,
+        sprintName,
+        sprintId,
+        sprintStartTime,
+        options.windowEndMs,
+        options.completionRules
+      ),
     );
   }
 
   for (const row of rows) {
-    applyTimelineRowToTaskState(row, taskState);
+    applyTimelineRowToTaskState(row, taskState, options.completionRules);
   }
 
   return sumSprintTotalsFromTaskStates(taskState);
@@ -360,10 +364,11 @@ export function computeSprintTimelineTotalsFromRows(
 
 function applyTimelineRowToTaskState(
   row: ChangelogRow,
-  taskState: Map<string, TaskState>
+  taskState: Map<string, TaskState>,
+  rules: BurndownCompletionRules
 ): void {
   for (const item of row.items) {
-    const ev = timelineItemToBurndownEvent(item);
+    const ev = timelineItemToBurndownEvent(item, rules);
     if (!ev) continue;
     const state = taskState.get(ev.issueKey);
     if (!state) continue;

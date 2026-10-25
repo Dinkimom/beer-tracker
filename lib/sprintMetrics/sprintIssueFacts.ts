@@ -4,19 +4,24 @@
  */
 
 import type { SprintIssueFact, SprintWorkCategory } from './sprintMetricsTypes';
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { YtrackerBurndownChangelogEntry, YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 import type { TrackerIssue } from '@/types/tracker';
 
 import {
   applyFieldToTaskState,
   extractStatusKey,
-  isDoneStatus,
   type TaskState,
 } from '@/lib/burndown/burndownFromChangelogReplayHelpers';
 import { buildTaskStateAtSprintStart } from '@/lib/burndown/burndownFromChangelogReplaySteps';
 import { sprintArrayContainsSprint } from '@/lib/burndown/sprintMembership';
-import { analyzeRetroFactIssue, isDeclinedStatus, isRetroExcludedType } from '@/lib/retro/retroFacts';
-import { mapStatus } from '@/utils/statusMapper';
+import {
+  analyzeRetroFactIssue,
+  isDeclinedStatus,
+  isDeliveredStatusKey,
+  isRetroExcludedType,
+} from '@/lib/retro/retroFacts';
+import { isSpCompletedStatusKey } from '@/lib/sprints/sprintTaskCompletion';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 /** Задачи, взятые в первый день, — часть плана (как в фактах ретро). */
@@ -29,6 +34,8 @@ const TECH_TYPES = new Set(['techdebt', 'tech', 'техдолг', 'refactoring',
 const FEATURE_TYPES = new Set(['story', 'task', 'feature', 'newfeature', 'improvement', 'задача', 'история', 'улучшение']);
 
 interface SprintFactsWindow {
+  /** Правила завершения организации (SP done); без них — эвристика по ключу статуса. */
+  completionRules?: SprintTaskCompletionRules | null;
   endMs: number;
   nowMs: number;
   sprintId?: string;
@@ -55,11 +62,6 @@ function isSprintMetricsIssue(issue: TrackerIssue): boolean {
 
 function entryTime(entry: YtrackerBurndownChangelogEntry): number {
   return new Date(entry.updatedAt).getTime();
-}
-
-function isDoneNotDeclined(statusKey: string | undefined): boolean {
-  if (!statusKey || isDeclinedStatus(statusKey)) return false;
-  return mapStatus(statusKey.toLowerCase()) === 'done';
 }
 
 function statusFieldOf(entry: YtrackerBurndownChangelogEntry) {
@@ -117,7 +119,7 @@ function applyMembershipEntry(
   const t = entryTime(entry);
   for (const field of entry.fields ?? []) {
     const before = replay.end.inSprint;
-    applyFieldToTaskState(field, window.sprintName, window.sprintId, replay.end);
+    applyFieldToTaskState(field, window.sprintName, window.sprintId, replay.end, window.completionRules);
     if (!before && replay.end.inSprint) {
       replay.addedDuringSprint = true;
       replay.removedAtMs = null;
@@ -166,13 +168,14 @@ function membershipFlags(input: {
   window: SprintFactsWindow;
 }): MembershipFlags {
   const { replay, start, window } = input;
-  const committed = start.inSprint && !start.isDone && !input.createdAfterCut;
-  const added = !committed && !start.isDone && (replay.addedDuringSprint || input.createdAfterCut);
+  // «Сделано» = SP done по правилам организации; отказ (declined) — не поставка (семантика метрик).
+  const committed = start.inSprint && !start.spDone && !input.createdAfterCut;
+  const added = !committed && !start.spDone && (replay.addedDuringSprint || input.createdAfterCut);
   const taken = committed || added;
-  const done = taken && replay.end.inSprint && replay.end.isDone && !input.declined;
+  const done = taken && replay.end.inSprint && replay.end.spDone && !input.declined;
   const leftAtClose =
     replay.removedAtMs != null && replay.removedAtMs >= window.endMs - CARRY_OVER_GRACE_MS;
-  const stillOpen = !replay.end.isDone && !input.declined;
+  const stillOpen = !replay.end.spDone && !input.declined;
   const carriedOver = !input.open && taken && stillOpen && (replay.end.inSprint || leftAtClose);
   const removed = taken && replay.removedAtMs != null && !carriedOver && !done;
   return { added, carriedOver, committed, declined: taken && input.declined, done, removed };
@@ -192,13 +195,14 @@ function flowOf(
       changelog: yt.rawChangelog ?? [],
       createdAt: issue.createdAt,
       declined: isDeclinedStatus(statusKey),
-      done: isDoneNotDeclined(statusKey),
+      done: isDeliveredStatusKey(statusKey, window.completionRules),
       id: issue.key,
       name: issue.summary ?? issue.key,
       storyPoints: issue.storyPoints,
     },
     { endMs: window.endMs, open, startMs: window.startMs },
-    windowEndMs
+    windowEndMs,
+    window.completionRules
   );
   return {
     codingDays: row.codingDays,
@@ -218,11 +222,19 @@ export function buildSprintIssueFact(
   const windowEndMs = Math.min(window.endMs, window.nowMs);
   const cutMs = window.startMs + PLANNING_GRACE_MS;
   const createdAfterCut = createdAfter(issue, cutMs);
-  const start = buildTaskStateAtSprintStart(yt, window.sprintName, window.sprintId, cutMs, windowEndMs);
+  const start = buildTaskStateAtSprintStart(
+    yt,
+    window.sprintName,
+    window.sprintId,
+    cutMs,
+    windowEndMs,
+    window.completionRules
+  );
   start.inSprint =
     inSprintBeforeFirstLaterChange(yt.rawChangelog ?? [], cutMs, window) ?? start.inSprint;
-  start.isDone =
-    !createdAfterCut && isDoneStatus(statusKeyAt(yt.rawChangelog ?? [], cutMs, yt.statusKey));
+  start.spDone =
+    !createdAfterCut &&
+    isSpCompletedStatusKey(statusKeyAt(yt.rawChangelog ?? [], cutMs, yt.statusKey), window.completionRules);
   const replay = replayMembership(yt, start, window, cutMs, windowEndMs);
   const declined = isDeclinedStatus(issue.status?.key ?? yt.statusKey);
   const flags = membershipFlags({

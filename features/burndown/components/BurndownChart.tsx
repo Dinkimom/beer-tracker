@@ -17,6 +17,7 @@ import {
   useBurndownChartTileState,
   useBurndownPinnedPointHandlers,
 } from '../hooks/useBurndownChartTileState';
+import { useBurndownHolidayDateKeys } from '../hooks/useBurndownHolidayDateKeys';
 
 import { BurndownChartEmptySprintState } from './BurndownChartEmptySprintState';
 import { BurndownChartErrorState } from './BurndownChartErrorState';
@@ -99,8 +100,13 @@ export const BurndownChart = observer(function BurndownChart({
     staleTime: 5 * 60 * 1000,
   });
 
+  const holidayDateKeys = useBurndownHolidayDateKeys(
+    burndownData?.sprintInfo.startDate,
+    burndownData?.sprintInfo.endDate
+  );
   const chartData = useBurndownChartData({
     burndownData,
+    holidayDateKeys,
     isArchived,
     isDraft,
   });

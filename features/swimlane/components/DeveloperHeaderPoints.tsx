@@ -34,10 +34,18 @@ export function resolveDeveloperHeaderPointsVisibility(
   if (showBothPointKinds) {
     return { hasPoints: true, showSP: true, showTP: !hideTestPoints };
   }
-  if (hideTestPoints || role !== 'tester') {
+  if (hideTestPoints) {
     return { hasPoints: true, showSP: true, showTP: false };
   }
-  return { hasPoints: true, showSP: false, showTP: true };
+  const hasSP = totalSP > 0;
+  const hasTP = totalTP > 0;
+  // Роль неизвестна (исполнитель спринта вне team_members) или «другое» — показываем то, что есть.
+  if (role !== 'developer' && role !== 'tester') {
+    return { hasPoints: true, showSP: hasSP || !hasTP, showTP: hasTP };
+  }
+  // По роли — свой вид очков; если он пуст, а другой нет — показываем другой, а не «0».
+  const preferTP = role === 'tester' ? hasTP || !hasSP : hasTP && !hasSP;
+  return { hasPoints: true, showSP: !preferTP, showTP: preferTP };
 }
 
 function formatHeaderPointValue(

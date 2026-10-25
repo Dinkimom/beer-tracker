@@ -1,38 +1,67 @@
 import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { Task } from '@/types';
 
-import { getTaskStoryPoints, getTaskTestPoints } from '@/lib/pointsUtils';
+import { getTaskStoryPoints, getTaskTestPoints, isOriginalTask } from '@/lib/pointsUtils';
 import { isSpCompleted, isTpCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
-function roundTaskPoints(value: number): number {
-  return Number.isFinite(value) ? Math.round(value) : 0;
+/** Объём спринта «сделано / всего» по SP и TP. */
+interface SprintCompletionScope {
+  completedSP: number;
+  completedTP: number;
+  totalScopeSP: number;
+  totalScopeTP: number;
 }
 
-function accumulateTaskScoreTotals(
-  task: Task,
-  totals: {
-    spDone: number;
-    spLeft: number;
-    tpDone: number;
-    tpTotal: number;
-  },
+type SprintScopeTask = Pick<
+  Task,
+  | 'hideTestPointsByIntegration'
+  | 'id'
+  | 'originalStatus'
+  | 'originalStatusId'
+  | 'status'
+  | 'statusTypeKey'
+  | 'storyPoints'
+  | 'team'
+  | 'testPoints'
+>;
+
+function finitePoints(value: number): number {
+  return Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * Единый подсчёт объёма спринта для плиток (сайдбар, бёрндаун) и серверной оценки спринта:
+ * только оригинальные задачи (без QA-фантомов), без целей спринта, дробные SP/TP без округления;
+ * «сделано» — правила завершения организации (SP и TP раздельно).
+ */
+export function computeSprintCompletionScope(
+  tasks: readonly SprintScopeTask[],
+  goalIds: ReadonlySet<string>,
   rules?: SprintTaskCompletionRules | null
-): void {
-  const sp = roundTaskPoints(getTaskStoryPoints(task));
-  const tp = roundTaskPoints(getTaskTestPoints(task));
-
-  totals.tpTotal += tp;
-  if (isTpCompleted(task, rules)) {
-    totals.tpDone += tp;
+): SprintCompletionScope {
+  const scope: SprintCompletionScope = {
+    completedSP: 0,
+    completedTP: 0,
+    totalScopeSP: 0,
+    totalScopeTP: 0,
+  };
+  for (const task of tasks) {
+    if (!isOriginalTask(task) || goalIds.has(task.id)) continue;
+    const sp = finitePoints(getTaskStoryPoints(task));
+    const tp = finitePoints(getTaskTestPoints(task));
+    scope.totalScopeSP += sp;
+    scope.totalScopeTP += tp;
+    if (isSpCompleted(task, rules)) scope.completedSP += sp;
+    if (isTpCompleted(task, rules)) scope.completedTP += tp;
   }
-
-  if (isSpCompleted(task, rules)) {
-    totals.spDone += sp;
-  } else {
-    totals.spLeft += sp;
-  }
+  return scope;
 }
 
+/**
+ * SP/TP для оценки спринта на сервере — тот же {@link computeSprintCompletionScope}, что у плиток
+ * в планере (цели — задачи с type `goal`, как `goalTaskIds` на клиенте), чтобы оценка совпадала
+ * с показанными числами.
+ */
 export function aggregateSprintScoreFromTasks(
   tasks: Task[],
   rules?: SprintTaskCompletionRules | null
@@ -42,15 +71,13 @@ export function aggregateSprintScoreFromTasks(
   sp_done: number;
   sp_left: number;
 } {
-  const totals = { spDone: 0, spLeft: 0, tpDone: 0, tpTotal: 0 };
-  for (const task of tasks) {
-    accumulateTaskScoreTotals(task, totals, rules);
-  }
+  const goalIds = new Set(tasks.filter((task) => task.type === 'goal').map((task) => task.id));
+  const scope = computeSprintCompletionScope(tasks, goalIds, rules);
   return {
-    qa_done: totals.tpDone,
-    qa_left: Math.max(0, totals.tpTotal - totals.tpDone),
-    sp_done: totals.spDone,
-    sp_left: totals.spLeft,
+    qa_done: scope.completedTP,
+    qa_left: Math.max(0, scope.totalScopeTP - scope.completedTP),
+    sp_done: scope.completedSP,
+    sp_left: Math.max(0, scope.totalScopeSP - scope.completedSP),
   };
 }
 

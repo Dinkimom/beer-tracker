@@ -3,7 +3,9 @@ import type { Task } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { computeRetroFacts, selectRetroFactTasks } from './retroFacts';
+import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+
+import { computeRetroFacts, isDeliveredStatusKey, selectRetroFactTasks } from './retroFacts';
 
 function at(year: number, month: number, day: number, hour: number): string {
   return new Date(year, month - 1, day, hour, 0, 0, 0).toISOString();
@@ -200,6 +202,32 @@ describe('computeRetroFacts', () => {
 
     expect(facts.dataQuality.unassigned).toBe(1);
     expect(facts.dataQuality.estimateDrift).toEqual({ count: 1, fromSp: 2, toSp: 5 });
+  });
+});
+
+describe('retro facts with organization completion rules', () => {
+  it('закрытие в кастомный статус «done» по правилам организации считается поставкой', () => {
+    const shipped = issue({
+      changelog: [
+        statusChange(at(2026, 6, 1, 9), null, 'inprogress'),
+        statusChange(at(2026, 6, 2, 18), 'inprogress', 'shipped'),
+      ],
+      done: true,
+      id: 'SHIP-1',
+    });
+    const completionRules = sprintTaskCompletionRulesFromIntegration({
+      statuses: { overridesByStatusKey: { shipped: { category: 'done' } } },
+    });
+    expect(computeRetroFacts({ issues: [shipped], nowMs, sprint }).closedTotal).toBe(0);
+    expect(computeRetroFacts({ completionRules, issues: [shipped], nowMs, sprint }).closedTotal).toBe(1);
+  });
+
+  it('отказ не поставка, даже если правила относят его к завершающей категории', () => {
+    const rules = sprintTaskCompletionRulesFromIntegration({
+      statuses: { overridesByStatusKey: { cancelled: { category: 'done' } } },
+    });
+    expect(isDeliveredStatusKey('cancelled', rules)).toBe(false);
+    expect(isDeliveredStatusKey('closed', rules)).toBe(true);
   });
 });
 

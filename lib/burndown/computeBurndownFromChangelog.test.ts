@@ -2,6 +2,8 @@ import type { YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 
 import { describe, expect, it } from 'vitest';
 
+import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+
 import {
   buildTaskStateAtSprintStart,
   collectBurndownEventsInSprintWindow,
@@ -55,7 +57,8 @@ describe('buildTaskStateAtSprintStart', () => {
     const s = buildTaskStateAtSprintStart(yt, 'My Sprint', '1', sprintStart);
     expect(s.inSprint).toBe(true);
     expect(s.sp).toBe(5);
-    expect(s.isDone).toBe(false);
+    expect(s.spDone).toBe(false);
+    expect(s.tpDone).toBe(false);
   });
 
   it('respects sprint removal before sprint start', () => {
@@ -420,5 +423,102 @@ describe('collectBurndownEventsInSprintWindow', () => {
       new Date('2025-06-30').getTime()
     );
     expect(evs.map((e) => e.issueKey)).toEqual(['CM-A', 'CM-B']);
+  });
+});
+
+describe('computeBurndownFromChangelog with organization completion rules', () => {
+  const sprintStartDate = new Date('2025-06-02T08:00:00.000Z');
+  const sprintEndDate = new Date('2025-06-15T18:00:00.000Z');
+  const sprintStartTime = sprintStartDate.getTime();
+  const sprintEndTime = sprintEndDate.getTime();
+
+  function statusMove(updatedAt: string, from: string, to: string) {
+    return {
+      updatedAt,
+      fields: [{ field: { id: 'status' }, from: { key: from }, to: { key: to } }],
+    };
+  }
+
+  function run(
+    yt: YtrackerBurndownIssue,
+    completionRules?: ReturnType<typeof sprintTaskCompletionRulesFromIntegration>
+  ) {
+    return computeBurndownFromChangelog({
+      completionRules,
+      ytrackerIssues: [yt],
+      sprintName: 'S',
+      sprintIdForMatch: undefined,
+      sprintStartTime,
+      sprintEndTime,
+      sprintStartDate,
+      sprintEndDate,
+      issueSummaries: new Map(),
+    });
+  }
+
+  const dayKey = toBurndownDateKey(new Date('2025-06-10T12:00:00.000Z'));
+
+  it('burns only TP on the ready-for-release status (rc), SP stays until done', () => {
+    const yt = issue({
+      storyPoints: 5,
+      testPoints: 2,
+      rawChangelog: [statusMove('2025-06-10T12:00:00.000Z', 'inprogress', 'rc')],
+    });
+    const result = run(yt, sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' }));
+    const point = result.dataPoints.find((p) => p.dateKey === dayKey);
+    expect(point?.remainingSP).toBe(5);
+    expect(point?.remainingTP).toBe(0);
+    const statusItem = result.dailyChangelog[dayKey]?.find((i) => i.type === 'status_change');
+    expect(statusItem?.closesSP).toBe(false);
+    expect(statusItem?.closesTP).toBe(true);
+  });
+
+  it('then burns SP when the task reaches a done-category status', () => {
+    const yt = issue({
+      storyPoints: 5,
+      testPoints: 2,
+      rawChangelog: [
+        statusMove('2025-06-10T12:00:00.000Z', 'inprogress', 'rc'),
+        statusMove('2025-06-11T12:00:00.000Z', 'rc', 'closed'),
+      ],
+    });
+    const result = run(yt, sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' }));
+    const nextKey = toBurndownDateKey(new Date('2025-06-11T12:00:00.000Z'));
+    const point = result.dataPoints.find((p) => p.dateKey === nextKey);
+    expect(point?.remainingSP).toBe(0);
+    expect(point?.remainingTP).toBe(0);
+  });
+
+  it('burns a custom status mapped to done by the integration override', () => {
+    const yt = issue({
+      storyPoints: 3,
+      testPoints: 1,
+      rawChangelog: [statusMove('2025-06-10T12:00:00.000Z', 'inprogress', 'shipped')],
+    });
+    const rules = sprintTaskCompletionRulesFromIntegration({
+      statuses: { overridesByStatusKey: { shipped: { category: 'done' } } },
+    });
+    expect(run(yt).dataPoints.find((p) => p.dateKey === dayKey)?.remainingSP).toBe(3);
+    const point = run(yt, rules).dataPoints.find((p) => p.dateKey === dayKey);
+    expect(point?.remainingSP).toBe(0);
+    expect(point?.remainingTP).toBe(0);
+  });
+
+  it('keeps sprint timeline totals on the same split rules', () => {
+    const yt = issue({
+      storyPoints: 5,
+      testPoints: 2,
+      rawChangelog: [statusMove('2025-06-10T12:00:00.000Z', 'inprogress', 'rc')],
+    });
+    const totals = computeSprintTimelineTotals([yt], {
+      completionRules: sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' }),
+      sprintName: 'S',
+      sprintStartTime,
+      windowEndMs: sprintEndTime,
+      windowStartMs: sprintStartTime,
+    });
+    expect(totals.doneSP).toBe(0);
+    expect(totals.doneTP).toBe(2);
+    expect(totals.remainingSP).toBe(5);
   });
 });

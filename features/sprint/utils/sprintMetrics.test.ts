@@ -7,6 +7,7 @@ import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTa
 import {
   calculateMetricsByAssignee,
   calculateMetricsByStatus,
+  collectPersonTestPointTasks,
   computeBurndownTilesFromTasks,
   isTaskDone,
 } from './sprintMetrics';
@@ -240,5 +241,20 @@ describe('computeBurndownTilesFromTasks', () => {
     expect(tiles.completedSP).toBe(2);
     expect(tiles.completedTP).toBe(5);
     expect(tiles.completionPercentTP).toBe(100);
+  });
+});
+
+describe('collectPersonTestPointTasks', () => {
+  it('takes TP from originals where the person is QA engineer and from QA-only tasks, without phantom duplicates', () => {
+    const original = task({ id: 'DEV-1', qaEngineer: 'qa-1', storyPoints: 5, testPoints: 3 });
+    const phantom = task({ assignee: 'qa-1', id: 'qa-ph', originalTaskId: 'DEV-1', qaEngineer: 'qa-1', team: 'QA', testPoints: 3 });
+    const standalone = task({ assignee: 'qa-1', hideTestPointsByIntegration: true, id: 'QA-2', team: 'QA', testPoints: 1 });
+    const { tpTasks } = collectPersonTestPointTasks('qa-1', [original], [phantom, standalone]);
+    expect(tpTasks.map((t) => t.id)).toEqual(['DEV-1', 'QA-2']);
+  });
+
+  it('keeps the phantom when its original is not counted for the person', () => {
+    const phantom = task({ assignee: 'qa-1', id: 'qa-ph', originalTaskId: 'DEV-1', team: 'QA', testPoints: 3 });
+    expect(collectPersonTestPointTasks('qa-1', [], [phantom]).tpTasks.map((t) => t.id)).toEqual(['qa-ph']);
   });
 });

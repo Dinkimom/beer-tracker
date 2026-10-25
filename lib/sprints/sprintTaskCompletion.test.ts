@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   isSpCompleted,
+  isSpCompletedStatusKey,
   isTpCompleted,
+  isTpCompletedStatusKey,
   resolveTaskCompletionCategory,
   sprintTaskCompletionRulesFromIntegration,
   sprintTaskCompletionRulesFromPlanner,
@@ -98,5 +100,30 @@ describe('sprintTaskCompletion', () => {
         rules
       )
     ).toBe(true);
+  });
+});
+
+describe('status-key completion (changelog replay)', () => {
+  it('splits SP and TP on the ready-for-release key', () => {
+    const rules = sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'readyForRelease' });
+    expect(isSpCompletedStatusKey('readyForRelease', rules)).toBe(false);
+    expect(isTpCompletedStatusKey('readyForRelease', rules)).toBe(true);
+    expect(isSpCompletedStatusKey('closed', rules)).toBe(true);
+    expect(isTpCompletedStatusKey('closed', rules)).toBe(true);
+  });
+
+  it('applies per-key category overrides from the integration', () => {
+    const rules = sprintTaskCompletionRulesFromIntegration({
+      statuses: { overridesByStatusKey: { shipped: { category: 'done' }, closed: { category: 'in-progress' } } },
+    });
+    expect(isSpCompletedStatusKey('shipped', rules)).toBe(true);
+    expect(isSpCompletedStatusKey('closed', rules)).toBe(false);
+  });
+
+  it('is false for an empty key and falls back to legacy rc without rules', () => {
+    expect(isSpCompletedStatusKey(undefined)).toBe(false);
+    expect(isTpCompletedStatusKey('  ')).toBe(false);
+    expect(isSpCompletedStatusKey('rc')).toBe(false);
+    expect(isTpCompletedStatusKey('rc')).toBe(true);
   });
 });

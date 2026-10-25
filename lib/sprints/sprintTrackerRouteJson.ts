@@ -121,6 +121,7 @@ export function buildBurndownApiResponse(input: BurndownApiResponse): BurndownAp
 }
 
 export function buildComputedBurndownApiResponse(input: {
+  completionRules?: SprintTaskCompletionRules | null;
   issueSummaries: Map<string, string>;
   sprintEndDate: Date;
   sprintEndTime: number;
@@ -133,6 +134,7 @@ export function buildComputedBurndownApiResponse(input: {
   ytrackerIssues: IssueTrackerBurndownIssue[];
 }): BurndownApiResponse {
   const computed = computeBurndownFromChangelog({
+    completionRules: input.completionRules,
     issueSummaries: input.issueSummaries,
     sprintEndDate: input.sprintEndDate,
     sprintEndTime: input.sprintEndTime,
@@ -143,6 +145,7 @@ export function buildComputedBurndownApiResponse(input: {
     ytrackerIssues: input.ytrackerIssues,
   });
   const sprintTimelineTotals = computeSprintTimelineTotals(input.ytrackerIssues, {
+    completionRules: input.completionRules,
     sprintId: input.sprintIdForMatch,
     sprintName: input.sprintName,
     sprintStartTime: input.sprintStartTime,

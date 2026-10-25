@@ -1,3 +1,5 @@
+import { isSpCompletedStatusKey } from '@/lib/sprints/sprintTaskCompletion';
+
 interface NormalizedChangelogEntry {
   fields?: Array<{
     field: { display?: string; id: string };
@@ -7,22 +9,17 @@ interface NormalizedChangelogEntry {
   updatedAt: string;
 }
 
-function isDoneStatus(statusKey: string | undefined, mapStatus: (s: string) => string | undefined): boolean {
-  if (!statusKey) return false;
-  return mapStatus(statusKey.toLowerCase()) === 'done';
-}
-
 function pushStatusDoneTransition(
   events: Array<{ date: string; isDone: boolean }>,
   entry: NormalizedChangelogEntry,
-  field: NonNullable<NormalizedChangelogEntry['fields']>[number],
-  mapStatus: (s: string) => string | undefined
+  field: NonNullable<NormalizedChangelogEntry['fields']>[number]
 ): void {
   if (field?.field?.id !== 'status') {
     return;
   }
-  const fromIsDone = isDoneStatus(field.from?.key, mapStatus);
-  const toIsDone = isDoneStatus(field.to?.key, mapStatus);
+  // Нормализация провайдера не знает настроек организации — правила завершения без overrides.
+  const fromIsDone = isSpCompletedStatusKey(field.from?.key, null);
+  const toIsDone = isSpCompletedStatusKey(field.to?.key, null);
   if (fromIsDone === toIsDone) {
     return;
   }
@@ -30,14 +27,13 @@ function pushStatusDoneTransition(
 }
 
 export function processChangelogToDoneEvents(
-  entries: NormalizedChangelogEntry[],
-  mapStatus: (s: string) => string | undefined
+  entries: NormalizedChangelogEntry[]
 ): Array<{ date: string; isDone: boolean }> {
   const events: Array<{ date: string; isDone: boolean }> = [];
   for (const entry of entries) {
     if (!entry.fields) continue;
     for (const field of entry.fields) {
-      pushStatusDoneTransition(events, entry, field, mapStatus);
+      pushStatusDoneTransition(events, entry, field);
     }
   }
   return events;

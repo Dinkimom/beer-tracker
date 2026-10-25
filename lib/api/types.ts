@@ -68,6 +68,10 @@ type BurndownDayChangelogItemType =
 export interface BurndownDayChangelogItem {
   change: number;
   changeTP: number;
+  /** status_change: переход закрыл SP по правилам завершения организации (нет в старых кэшах). */
+  closesSP?: boolean;
+  /** status_change: переход закрыл TP (включая статус готовности к релизу). */
+  closesTP?: boolean;
   issueKey: string;
   pointsFrom?: number | null;
   pointsTo?: number | null;

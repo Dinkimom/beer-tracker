@@ -7,11 +7,11 @@ import type { Developer, Task } from '@/types';
 
 import { TASK_GROUP_KEY_UNASSIGNED } from '@/features/task/constants/taskGroupKeys';
 import { getTaskStoryPoints, getTaskTestPoints, isOriginalTask } from '@/lib/pointsUtils';
+import { computeSprintCompletionScope } from '@/lib/sprints/sprintScoreHelpers';
 
 import {
   burndownCompletionPercent,
   collectAssigneePersonIds,
-  computeBurndownScopeFromTasks,
   goalTaskIdSet,
 } from './sprintMetricsHelpers';
 import { isDone, isTpClosedStatus } from './sprintMetricsStatusHelpers';
@@ -99,6 +99,29 @@ function resolveMetricsPersonName(
   );
 }
 
+/**
+ * Задачи, TP которых относятся к человеку (единое правило сайдбара и сортировки участников):
+ * оригиналы, где он QA-инженер, и QA-задачи, где он исполнитель или QA-инженер.
+ * QA-фантом не дублирует TP своего оригинала, если тот уже учтён.
+ */
+export function collectPersonTestPointTasks(
+  pid: string,
+  devTasks: Task[],
+  qaTasks: Task[]
+): { devAsQa: Task[]; qaForPerson: Task[]; tpTasks: Task[] } {
+  const id = pid === '' ? '__unassigned__' : pid;
+  const devAsQa = devTasks.filter(t => (t.qaEngineer ?? '') === pid);
+  const qaForPerson = qaTasks.filter(
+    t => (t.assignee ?? '__unassigned__') === id || (t.qaEngineer ?? '') === pid
+  );
+  const countedOriginalIds = new Set(devAsQa.map((t) => t.id));
+  const tpTasks = [
+    ...devAsQa,
+    ...qaForPerson.filter((t) => !t.originalTaskId || !countedOriginalIds.has(t.originalTaskId)),
+  ];
+  return { devAsQa, qaForPerson, tpTasks };
+}
+
 function buildMetricsByAssigneeRowForPerson(
   pid: string,
   devTasks: Task[],
@@ -115,11 +138,7 @@ function buildMetricsByAssigneeRowForPerson(
     .reduce((s, t) => s + getTaskStoryPoints(t), 0);
   const percentSP = totalSP > 0 ? Math.round((completedSP / totalSP) * 100) : 0;
 
-  const devAsQa = devTasks.filter(t => (t.qaEngineer ?? '') === pid);
-  const qaForPerson = qaTasks.filter(
-    t => (t.assignee ?? '__unassigned__') === id || (t.qaEngineer ?? '') === pid
-  );
-  const tpTasks = [...devAsQa, ...qaForPerson];
+  const { devAsQa, qaForPerson, tpTasks } = collectPersonTestPointTasks(pid, devTasks, qaTasks);
   const totalTP = tpTasks.reduce((s, t) => s + getTaskTestPoints(t), 0);
   const completedTP = tpTasks
     .filter((t) => isTpClosedStatus(t, rules))
@@ -219,7 +238,7 @@ export function computeBurndownTilesFromTasks(
   rules?: SprintTaskCompletionRules | null
 ): BurndownTilesFromTasks {
   const goalIdSet = goalTaskIdSet(goalTaskIds);
-  const scope = computeBurndownScopeFromTasks(tasks, goalIdSet, rules);
+  const scope = computeSprintCompletionScope(tasks, goalIdSet, rules);
 
   return {
     completedSP: scope.completedSP,
