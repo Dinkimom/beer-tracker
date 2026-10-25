@@ -2,6 +2,42 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.25.0] — 2026-10-26
+
+### English
+
+- **Security: the API now requires sign-in.** Planner, tracker and feature endpoints used to answer requests without a product session, and tracker calls fell back to the organization's stored token. Now they return 401, and the planner sends the user to sign in again (`/auth-setup` reissues the session from the tracker token). Public endpoints are only sign-in, MCP OAuth, cron with its secret and first-run setup.
+- **Database migrations.** The schema now lives in numbered files `database/migrations/`, and applied files are recorded in `schema_migrations`. The app applies new migrations on start; `pnpm db:migrate` does the same by hand. The first migration brings a database created by any earlier `init.sql` up to date.
+- **Action for operators:** the app's database role needs DDL rights (create and alter its tables). If production runs without them, set `DB_MIGRATIONS_AUTO=false` and run `pnpm db:migrate` as the table owner before starting each new version. If planner photos were still stored in the database (BYTEA), the first start removes them, as the app already did on first use. `database/init.sql` and the old `database/*.sql` files are gone; data-only scripts for old installations are in `database/legacy/`.
+- «Done» is decided by the tracker: in Yandex Tracker a status of type «done» with a resolution, in Jira a status in the «done» category. Burndown, metrics, retro, score and the board use this one rule; the organization's «ready status» setting is no longer used.
+- Agent plan changes apply all at once or not at all, and the same confirmation cannot be applied twice.
+- If a task saved in the planner did not update in the tracker (assignee or dates), a toast now names the tasks instead of failing silently.
+- Two people editing the same note no longer overwrite each other silently: the second save shows a conflict and loads the current note.
+- Jira: if a transition fails, the fields written before it are reverted.
+- Moving a feature row to another sprint no longer loses it when that sprint is open in another tab.
+- Quick add near the end of a sprint no longer shortens the card; photos and diagrams are unavailable where they do not fit.
+- The burndown ideal line skips organization holidays; sprint score matches the numbers shown.
+- Moving a task to another sprint keeps the tracker's own issue links.
+- Removed unused screens: Occupancy, quarterly planning, the epic editor, the Bugs (SLA) tab and GitLab merge request facts. Their database tables are kept for now.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.25.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- **Безопасность: API требует входа.** Эндпоинты планера, трекера и фич отвечали на запросы без сессии продукта, а вызовы трекера брали сохранённый токен организации. Теперь ответ 401, и планер отправляет пользователя войти заново (`/auth-setup` выдаёт сессию по токену трекера). Без входа доступны только вход, OAuth для MCP, cron по секрету и первичная настройка.
+- **Миграции БД.** Схема теперь в нумерованных файлах `database/migrations/`, применённые записываются в `schema_migrations`. Приложение применяет новые миграции при старте, вручную — `pnpm db:migrate`. Первая миграция доводит до актуальной схемы БД, созданную любой прежней версией `init.sql`.
+- **Действие для операторов:** роли приложения в БД нужны права на DDL (создавать и менять свои таблицы). Если в проде их нет, задайте `DB_MIGRATIONS_AUTO=false` и запускайте `pnpm db:migrate` под владельцем таблиц перед стартом каждой новой версии. Если фото планера ещё хранились в БД (BYTEA), первый старт удалит их — так раньше делало приложение при первом обращении. `database/init.sql` и старые `database/*.sql` удалены; разовые скрипты переноса данных для старых инсталляций — в `database/legacy/`.
+- «Сделано» определяет трекер: в Яндекс Трекере — статус типа «завершено» с резолюцией, в Jira — статус категории «done». Burndown, метрики, ретро, скор и доска считают по одному правилу; настройка «статус готовности» организации больше не используется.
+- Изменения плана от агента применяются целиком или никак, одно подтверждение нельзя применить дважды.
+- Если сохранённая в планере задача не обновилась в трекере (исполнитель или даты), тост называет эти задачи, а не молчит.
+- Две правки одной заметки больше не затирают друг друга молча: второе сохранение показывает конфликт и загружает актуальную заметку.
+- Jira: если переход не прошёл, поля, записанные перед ним, возвращаются.
+- Строка фичи, перенесённая в другой спринт, не теряется, если этот спринт открыт в другой вкладке.
+- Quick add у конца спринта не укорачивает карточку; фото и схема недоступны там, где не помещаются.
+- Идеальная линия burndown не опускается в праздники организации; скор спринта совпадает с показанными цифрами.
+- Перенос задачи в другой спринт не трогает собственные связи трекера.
+- Удалены неиспользуемые экраны: «Занятость», квартальное планирование, редактор эпиков, вкладка «Баги» (SLA) и факты MR из GitLab. Их таблицы в БД пока сохранены.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.25.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.24.0] — 2026-10-23
 
 ### English
