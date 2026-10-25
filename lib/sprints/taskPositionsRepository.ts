@@ -141,15 +141,19 @@ export function upsertTaskPositionRecord(input: {
   ]);
 }
 
+/** Исполнитель запроса: пул по умолчанию или `tx` из `runBeerTrackerTransaction`. */
+type SegmentsQuery = (sql: string, params?: QueryParams) => Promise<unknown>;
+
 async function insertPositionSegment(input: {
   index: number;
   organizationId: string;
+  run: SegmentsQuery;
   segment: TaskPositionSegmentInput;
   sprintId: number;
   taskId: string;
 }): Promise<void> {
   const { organizationId, sprintId, taskId, index, segment } = input;
-  await query(buildTaskPositionSegmentUpsertSql(), [
+  await input.run(buildTaskPositionSegmentUpsertSql(), [
     organizationId,
     sprintId,
     taskId,
@@ -160,18 +164,21 @@ async function insertPositionSegment(input: {
   ]);
 }
 
-export async function replaceTaskPositionSegments(input: {
-  organizationId: string;
-  segments: TaskPositionSegmentInput[] | undefined;
-  sprintId: number;
-  taskId: string;
-}): Promise<void> {
+export async function replaceTaskPositionSegments(
+  input: {
+    organizationId: string;
+    segments: TaskPositionSegmentInput[] | undefined;
+    sprintId: number;
+    taskId: string;
+  },
+  run: SegmentsQuery = query
+): Promise<void> {
   const { organizationId, sprintId, taskId, segments } = input;
   if (segments === undefined) {
     return;
   }
 
-  await query('DELETE FROM task_position_segments WHERE sprint_id = $1 AND task_id = $2', [
+  await run('DELETE FROM task_position_segments WHERE sprint_id = $1 AND task_id = $2', [
     sprintId,
     taskId,
   ]);
@@ -180,6 +187,7 @@ export async function replaceTaskPositionSegments(input: {
     await insertPositionSegment({
       index: i,
       organizationId,
+      run,
       segment: segments[i]!,
       sprintId,
       taskId,

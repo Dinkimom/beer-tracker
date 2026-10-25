@@ -1,4 +1,4 @@
-import { query } from '@/lib/db';
+import { query, runBeerTrackerTransaction } from '@/lib/db';
 
 import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
 import { buildTaskLinksBatchDeleteSql, buildTaskLinksBatchInsert } from './taskLinksBatchSql';
@@ -83,26 +83,22 @@ export async function persistBatchTaskLinks(params: {
   organizationId: number | string;
   sprintId: number;
 }): Promise<number> {
-  await query('BEGIN');
-  try {
+  return await runBeerTrackerTransaction(async (tx) => {
     const linkIds = params.links.map((l) => l.id);
-    if (linkIds.length > 0) {
-      const placeholders = linkIds.map((_, i) => `$${i + 2}`).join(', ');
-      await query(buildTaskLinksBatchDeleteSql(placeholders), [params.sprintId, ...linkIds]);
+    if (linkIds.length === 0) {
+      return 0;
     }
+    const placeholders = linkIds.map((_, i) => `$${i + 2}`).join(', ');
+    await tx(buildTaskLinksBatchDeleteSql(placeholders), [params.sprintId, ...linkIds]);
 
     const { params: insertParams, sql: insertSql } = buildTaskLinksBatchInsert(
       params.links,
       params.organizationId,
       params.sprintId
     );
-    await query(insertSql, insertParams);
-    await query('COMMIT');
+    await tx(insertSql, insertParams);
     return params.links.length;
-  } catch (error) {
-    await query('ROLLBACK');
-    throw error;
-  }
+  });
 }
 
 function buildBatchLinksSelectQuery(): string {

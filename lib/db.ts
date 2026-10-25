@@ -128,16 +128,21 @@ export function qualifyBeerTrackerTables(sql: string): string {
 
 export { pool };
 
+/** Запрос внутри `runBeerTrackerTransaction`; результат нужен, например, ради `rowCount`. */
+export type BeerTrackerTransactionQuery = (
+  sql: string,
+  params?: QueryParams
+) => Promise<QueryResult>;
+
 /** Одна транзакция на выделенном соединении из пула (все запросы — одна сессия). */
 export async function runBeerTrackerTransaction<T>(
-  fn: (tx: (sql: string, params?: QueryParams) => Promise<void>) => Promise<T>
+  fn: (tx: BeerTrackerTransactionQuery) => Promise<T>
 ): Promise<T> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const tx = async (sql: string, params?: QueryParams) => {
-      await client.query(qualifyBeerTrackerTables(sql), params);
-    };
+    const tx: BeerTrackerTransactionQuery = (sql, params) =>
+      client.query(qualifyBeerTrackerTables(sql), params);
     try {
       const result = await fn(tx);
       await client.query('COMMIT');

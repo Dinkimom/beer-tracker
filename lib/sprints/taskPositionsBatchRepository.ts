@@ -1,7 +1,8 @@
+import type { BeerTrackerTransactionQuery } from '@/lib/db';
 import type { BatchPositionsSchema } from '@/lib/validation';
 import type { z } from 'zod';
 
-import { query } from '@/lib/db';
+import { query, runBeerTrackerTransaction } from '@/lib/db';
 
 import {
   buildTaskPositionsBatchDeleteSql,
@@ -56,29 +57,25 @@ function buildBatchInsertValues(
   return { params, valuesParts };
 }
 
-async function deleteExistingBatchPositions(input: {
-  positions: BatchPosition[];
-  sprintId: number;
-}): Promise<void> {
+async function deleteExistingBatchPositions(
+  tx: BeerTrackerTransactionQuery,
+  input: { positions: BatchPosition[]; sprintId: number }
+): Promise<void> {
   const taskIds = input.positions.map((p) => p.taskId);
-  if (taskIds.length === 0) {
-    return;
-  }
   const placeholders = taskIds.map((_, i) => `$${i + 2}`).join(', ');
-  await query(buildTaskPositionsBatchDeleteSql(placeholders), [input.sprintId, ...taskIds]);
+  await tx(buildTaskPositionsBatchDeleteSql(placeholders), [input.sprintId, ...taskIds]);
 }
 
-async function insertBatchPositions(input: {
-  organizationId: string;
-  positions: BatchPosition[];
-  sprintId: number;
-}): Promise<void> {
+async function insertBatchPositions(
+  tx: BeerTrackerTransactionQuery,
+  input: { organizationId: string; positions: BatchPosition[]; sprintId: number }
+): Promise<void> {
   const { params, valuesParts } = buildBatchInsertValues(
     input.positions,
     input.organizationId,
     input.sprintId
   );
-  await query(buildTaskPositionsBatchInsertSql(valuesParts.join(', ')), params);
+  await tx(buildTaskPositionsBatchInsertSql(valuesParts.join(', ')), params);
 }
 
 export async function persistBatchPositionsTransaction(input: {
@@ -86,23 +83,24 @@ export async function persistBatchPositionsTransaction(input: {
   positions: BatchPosition[];
   sprintId: number;
 }): Promise<void> {
-  await query('BEGIN');
-  try {
-    await deleteExistingBatchPositions(input);
-    await insertBatchPositions(input);
-    for (const pos of input.positions) {
-      await replaceTaskPositionSegments({
-        organizationId: input.organizationId,
-        segments: pos.segments,
-        sprintId: input.sprintId,
-        taskId: pos.taskId,
-      });
-    }
-    await query('COMMIT');
-  } catch (error) {
-    await query('ROLLBACK');
-    throw error;
+  if (input.positions.length === 0) {
+    return;
   }
+  await runBeerTrackerTransaction(async (tx) => {
+    await deleteExistingBatchPositions(tx, input);
+    await insertBatchPositions(tx, input);
+    for (const pos of input.positions) {
+      await replaceTaskPositionSegments(
+        {
+          organizationId: input.organizationId,
+          segments: pos.segments,
+          sprintId: input.sprintId,
+          taskId: pos.taskId,
+        },
+        tx
+      );
+    }
+  });
 }
 
 type PositionRow = Record<string, unknown> & { sprint_id: number; task_id: string };

@@ -29,7 +29,7 @@ interface SaveQuarterlyPlanV2Payload {
   storyPhases: unknown;
 }
 
-type TxQuery = (sql: string, params?: QueryParams) => Promise<void>;
+type TxQuery = (sql: string, params?: QueryParams) => Promise<unknown>;
 
 async function insertStoryPhases(tx: TxQuery, planId: string, storyPhases: unknown): Promise<void> {
   const phaseEntries = storyPhasesPutEntries(storyPhases);
