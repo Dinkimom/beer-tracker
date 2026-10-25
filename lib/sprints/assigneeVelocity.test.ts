@@ -2,7 +2,7 @@ import type { Task } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
 
 import {
   averageAssigneeVelocity,
@@ -64,14 +64,7 @@ describe('selectRecentFinishedSprints', () => {
 });
 
 describe('deliveryFromTasks', () => {
-  const rules = sprintTaskCompletionRulesFromIntegration({
-    readyStatusKey: 'rc',
-    statuses: {
-      overridesByStatusKey: {
-        customDone: { category: 'done' },
-      },
-    },
-  });
+  const rules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [{ id: 'customDone', key: 'customDone', statusType: { key: 'done' } }]);
 
   it('counts closed story points on the assignee and test points on QA', () => {
     const delivery = deliveryFromTasks(
@@ -97,7 +90,7 @@ describe('deliveryFromTasks', () => {
           assignee: 'qa',
           team: 'QA',
           originalStatus: 'rc',
-          status: 'done',
+          statusTypeKey: 'done',
           storyPoints: 8,
           testPoints: 4,
         }),
@@ -124,7 +117,7 @@ describe('deliveryFromTasks', () => {
         assignee: 'qa',
         qaEngineer: 'qa',
         team: 'QA',
-        status: 'done',
+        statusTypeKey: 'done',
         testPoints: 4,
       }),
     ]);
@@ -135,13 +128,13 @@ describe('deliveryFromTasks', () => {
 describe('averageAssigneeVelocity', () => {
   it('skips a sprint where the person had no tasks', () => {
     const first = deliveryFromTasks([
-      task({ id: 'a', assignee: 'dev', status: 'done', storyPoints: 8 }),
+      task({ id: 'a', assignee: 'dev', statusTypeKey: 'done', storyPoints: 8 }),
     ]);
     const second = deliveryFromTasks([
-      task({ id: 'b', assignee: 'other', status: 'done', storyPoints: 9 }),
+      task({ id: 'b', assignee: 'other', statusTypeKey: 'done', storyPoints: 9 }),
     ]);
     const third = deliveryFromTasks([
-      task({ id: 'c', assignee: 'dev', status: 'done', storyPoints: 4 }),
+      task({ id: 'c', assignee: 'dev', statusTypeKey: 'done', storyPoints: 4 }),
     ]);
 
     expect(averageAssigneeVelocity([first, second, third])).toEqual({
@@ -156,13 +149,13 @@ describe('averageAssigneeVelocity', () => {
 
   it('keeps a zero when the person had tasks but closed nothing', () => {
     const first = deliveryFromTasks([
-      task({ id: 'a', assignee: 'dev', status: 'done', storyPoints: 8 }),
+      task({ id: 'a', assignee: 'dev', statusTypeKey: 'done', storyPoints: 8 }),
     ]);
     const second = deliveryFromTasks([
       task({ id: 'b', assignee: 'dev', status: 'in-progress', storyPoints: 5 }),
     ]);
     const third = deliveryFromTasks([
-      task({ id: 'c', assignee: 'dev', status: 'done', storyPoints: 4 }),
+      task({ id: 'c', assignee: 'dev', statusTypeKey: 'done', storyPoints: 4 }),
     ]);
 
     expect(averageAssigneeVelocity([first, second, third]).byAssignee.dev).toEqual({
@@ -179,21 +172,21 @@ describe('averageAssigneeVelocity', () => {
         id: 'a',
         assignee: 'dev',
         assigneeName: 'Nikita Dmitriev',
-        status: 'done',
+        statusTypeKey: 'done',
         storyPoints: 6,
       }),
       task({
         id: 'b',
         assignee: 'other',
         assigneeName: 'Nikita Dmitriev',
-        status: 'done',
+        statusTypeKey: 'done',
         storyPoints: 1,
       }),
       task({
         id: 'c',
         assignee: 'qa',
         assigneeName: 'Altynbek Kazezov',
-        status: 'done',
+        statusTypeKey: 'done',
         storyPoints: 3,
       }),
     ]);

@@ -10,10 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { fetchSprintTasks } from '@/lib/beerTrackerApi';
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
-import {
-  resolveStatusCategoryForStatusKey,
-  sprintTaskCompletionRulesFromPlanner,
-} from '@/lib/sprints/sprintTaskCompletion';
+import { statusTypeKeyForStatus } from '@/lib/sprints/sprintTaskCompletion';
+import { resolvePlannerStatusCategory } from '@/lib/trackerIntegration/resolveStatus';
 import { resolveStatusColorKey } from '@/lib/trackerIntegration/statusPalette';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
@@ -160,9 +158,9 @@ function patchTasksResponseStatus(
     queryKey: ['planner-integration-rules'],
   })[0];
   const plannerRules = rulesEntry?.[1];
-  const completionRules = sprintTaskCompletionRulesFromPlanner(plannerRules);
+  const nextStatusTypeKey = statusTypeKeyForStatus(statusKey, plannerRules?.completion);
   const nextCategory =
-    resolveStatusCategoryForStatusKey(statusKey, completionRules) ?? mapStatus(statusKey);
+    resolvePlannerStatusCategory(statusKey, nextStatusTypeKey, plannerRules) ?? mapStatus(statusKey);
   const nextStatusColorKey = resolveStatusColorKey(
     statusKey,
     undefined,
@@ -180,6 +178,9 @@ function patchTasksResponseStatus(
       originalStatusDisplay: statusDisplay,
       status: nextCategory,
       statusColorKey: nextStatusColorKey,
+      statusTypeKey: nextStatusTypeKey,
+      // Резолюция приходит со следующей загрузкой задачи; вне статуса «завершено» её нет.
+      resolution: nextStatusTypeKey === 'done' ? task.resolution : undefined,
     };
   });
   if (!changed) {

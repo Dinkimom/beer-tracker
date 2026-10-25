@@ -1,17 +1,14 @@
 import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 
-import { useMemo } from 'react';
-
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
-import { sprintTaskCompletionRulesFromPlanner } from '@/lib/sprints/sprintTaskCompletion';
 
 /**
- * Правила завершения задач активной организации (категории статусов, готовность к релизу) —
- * единый источник «сделано» для свимлейна, бёрндауна, сайдбара и ретро.
+ * Правила «сделано» из трекера (резолюция, справочник типов статусов) — единый источник
+ * для свимлейна, бёрндауна, сайдбара и ретро. До загрузки — `null`.
  */
-export function useSprintTaskCompletionRules(): SprintTaskCompletionRules {
+export function useSprintTaskCompletionRules(): SprintTaskCompletionRules | null {
   const { activeOrganizationId } = useProductTenantOrganizations({ pollIntervalMs: 0 });
   const { data: plannerRules } = usePlannerIntegrationRules(activeOrganizationId);
-  return useMemo(() => sprintTaskCompletionRulesFromPlanner(plannerRules), [plannerRules]);
+  return plannerRules?.completion ?? null;
 }

@@ -8,8 +8,8 @@ import { requireTenantContext } from '@/lib/api-tenant';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { ASSIGNEE_VELOCITY_SPRINT_WINDOW } from '@/lib/sprints/assigneeVelocity';
 import { loadAssigneeVelocity } from '@/lib/sprints/loadAssigneeVelocity';
+import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import { parseSprintIdsCsv } from '@/lib/sprints/sprintBatchHelpers';
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
 
 function parseAssigneeVelocitySprintIds(raw: string | null): NextResponse | number[] {
@@ -42,10 +42,7 @@ export async function GET(request: NextRequest) {
       getIssueTrackerProviderClientFromRequest(request),
       loadTrackerIntegrationForOrganization(organizationId),
     ]);
-    const completionRules = sprintTaskCompletionRulesFromIntegration({
-      readyStatusKey: integration?.releaseReadiness?.readyStatusKey,
-      statuses: integration?.statuses,
-    });
+    const completionRules = await loadSprintTaskCompletionRules(organizationId, issueTracker);
     const body = await loadAssigneeVelocity({
       completionRules,
       integration,

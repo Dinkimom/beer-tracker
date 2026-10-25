@@ -88,6 +88,7 @@ const ReleaseReadinessConfigSchema = z
     /** Устарело: парсится из старых сохранений, при сохранении не пишется. */
     enabled: z.boolean().optional(),
     mergeRequestFieldId: z.string().min(1).optional(),
+    /** Устарело: «сделано» определяет трекер; парсится из старых сохранений, при сохранении не пишется. */
     readyStatusKey: z.string().min(1).optional(),
     /** false — скрыть таб «Релизы» в сайдбаре планера. Устарело: таб удалён. */
     releasesTabVisible: z.boolean().optional(),

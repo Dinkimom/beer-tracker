@@ -115,6 +115,8 @@ export interface Task {
   qaEngineer?: string;
   // ID QA инженера (для задач тестирования)
   qaEngineerName?: string;
+  /** Ключ резолюции задачи в трекере (пусто, пока задача не решена). */
+  resolution?: string;
   /** Дата закрытия (resolved) в Tracker. */
   resolvedAt?: string;
   // Этап

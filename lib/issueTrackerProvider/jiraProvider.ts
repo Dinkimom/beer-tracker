@@ -32,6 +32,7 @@ import {
 } from './jiraIssueSprintMembership';
 import { updateJiraIssue } from './jiraIssueUpdate';
 import { fetchJiraCurrentUser } from './jiraMyself';
+import { fetchJiraOrganizationStatuses } from './jiraOrgMetadata';
 import { fetchJiraQueueByKey, fetchJiraQueueWorkflows, searchJiraQueues } from './jiraQueues';
 import { loadJiraSprintIssues } from './jiraSprintIssueLoad';
 import { createJiraSprint, fetchJiraSprintInfo, listJiraSprints, updateJiraSprintStatus } from './jiraSprints';
@@ -78,6 +79,7 @@ export const JIRA_IMPLEMENTED_PROVIDER_METHODS = [
   'listQueues',
   'listSprintIssues',
   'listSprints',
+  'listStatuses',
   'mapIssueToTask',
   'removeIssueFromSprint',
   'replaceIssueSprints',
@@ -182,6 +184,7 @@ function createJiraProviderClientWithApi(
     listQueues: () => fetchJiraProjectsAsQueues(api),
     listSprintIssues: (sprintId, options) => loadJiraSprintIssues(api, sprintId, options),
     listSprints: (boardId: number) => listJiraSprints(api, boardId),
+    listStatuses: () => fetchJiraOrganizationStatuses(api),
     mapIssueToTask: (issue, integration) => mapIssueTrackerIssueToTask(issue, web, integration),
     removeIssueFromSprint: (issueKey: string, sprintId: string) =>
       removeJiraIssueFromSprint(api, issueKey, sprintId),

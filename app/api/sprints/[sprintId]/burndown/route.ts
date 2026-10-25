@@ -11,7 +11,7 @@ import { loadSprintBurndownSource } from '@/lib/burndown/loadSprintBurndownSourc
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { resolveParams } from '@/lib/nextjs-utils';
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import {
   buildBurndownApiResponse,
   buildComputedBurndownApiResponse,
@@ -36,6 +36,7 @@ async function computeBurndownPayload(
   const testingFlowMode = resolveTrackerTestingFlowMode(integration);
 
   const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
+  const completionRules = await loadSprintTaskCompletionRules(organizationId, issueTracker);
   const { sprintInfo, issues, realIssues, burndownIssues } = await loadSprintBurndownSource({
     boardId,
     integration,
@@ -89,10 +90,7 @@ async function computeBurndownPayload(
   return {
     cacheTTL,
     response: buildComputedBurndownApiResponse({
-      completionRules: sprintTaskCompletionRulesFromIntegration({
-        readyStatusKey: integration?.releaseReadiness?.readyStatusKey,
-        statuses: integration?.statuses,
-      }),
+      completionRules,
       issueSummaries,
       sprintEndDate: endDate,
       sprintEndTime,

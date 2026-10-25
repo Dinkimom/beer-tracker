@@ -3,7 +3,7 @@ import type { Task } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
 
 import { computeRetroFacts, isDeliveredStatusKey, selectRetroFactTasks } from './retroFacts';
 
@@ -44,9 +44,16 @@ const sprint: RetroFactsSprint = {
 
 const nowMs = new Date(2026, 5, 10, 12, 0, 0, 0).getTime();
 
+/** Справочник трекера: `done` и `closed` — тип done, остальное — в работе. */
+const CATALOG = sprintTaskCompletionRulesFromStatuses('jira-cloud', [
+  { id: 'done', key: 'done', statusType: { key: 'done' } },
+  { id: 'closed', key: 'closed', statusType: { key: 'done' } },
+]);
+
 describe('computeRetroFacts', () => {
   it('делит состав по дате создания и не смешивает отказ с поставкой', () => {
     const facts = computeRetroFacts({
+      completionRules: CATALOG,
       issues: [
         issue({
           changelog: [
@@ -87,6 +94,7 @@ describe('computeRetroFacts', () => {
 
   it('на закрытом спринте не выдаёт перенос за ноль', () => {
     const facts = computeRetroFacts({
+      completionRules: CATALOG,
       issues: [issue({ id: 'OPEN-1' })],
       nowMs,
       sprint: { ...sprint, open: false },
@@ -114,7 +122,7 @@ describe('computeRetroFacts', () => {
       id: 'FAST-1',
     });
 
-    const facts = computeRetroFacts({ issues: [slow, fast], nowMs, sprint });
+    const facts = computeRetroFacts({ completionRules: CATALOG, issues: [slow, fast], nowMs, sprint });
 
     expect(facts.cycleTime?.sampleSize).toBe(2);
     expect(facts.cycleTime?.meanDays).toBe(2);
@@ -144,7 +152,7 @@ describe('computeRetroFacts', () => {
       id: 'BLK-1',
     });
 
-    const facts = computeRetroFacts({ issues: [reviewed, blocked], nowMs, sprint });
+    const facts = computeRetroFacts({ completionRules: CATALOG, issues: [reviewed, blocked], nowMs, sprint });
 
     expect(facts.bottleneck?.stage).toBe('review');
     expect(facts.bottleneck?.sampleSize).toBe(1);
@@ -172,7 +180,7 @@ describe('computeRetroFacts', () => {
       id: 'QUEUE-1',
     });
 
-    const facts = computeRetroFacts({ issues: [coded, queuedOnly], nowMs, sprint });
+    const facts = computeRetroFacts({ completionRules: CATALOG, issues: [coded, queuedOnly], nowMs, sprint });
 
     expect(facts.flow?.population).toBe(2);
     expect(facts.flow?.noCodingCount).toBe(1);
@@ -183,6 +191,7 @@ describe('computeRetroFacts', () => {
 
   it('пишет в футер пустого исполнителя и сдвиг оценки', () => {
     const facts = computeRetroFacts({
+      completionRules: CATALOG,
       issues: [
         issue({
           assignee: '  ',
@@ -205,8 +214,8 @@ describe('computeRetroFacts', () => {
   });
 });
 
-describe('retro facts with organization completion rules', () => {
-  it('закрытие в кастомный статус «done» по правилам организации считается поставкой', () => {
+describe('retro facts with the tracker status catalog', () => {
+  it('закрытие в кастомный статус с типом done в трекере считается поставкой', () => {
     const shipped = issue({
       changelog: [
         statusChange(at(2026, 6, 1, 9), null, 'inprogress'),
@@ -215,17 +224,16 @@ describe('retro facts with organization completion rules', () => {
       done: true,
       id: 'SHIP-1',
     });
-    const completionRules = sprintTaskCompletionRulesFromIntegration({
-      statuses: { overridesByStatusKey: { shipped: { category: 'done' } } },
-    });
-    expect(computeRetroFacts({ issues: [shipped], nowMs, sprint }).closedTotal).toBe(0);
+    const completionRules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [{ id: 'shipped', key: 'shipped', statusType: { key: 'done' } }]);
+    expect(computeRetroFacts({ completionRules: CATALOG, issues: [shipped], nowMs, sprint }).closedTotal).toBe(0);
     expect(computeRetroFacts({ completionRules, issues: [shipped], nowMs, sprint }).closedTotal).toBe(1);
   });
 
-  it('отказ не поставка, даже если правила относят его к завершающей категории', () => {
-    const rules = sprintTaskCompletionRulesFromIntegration({
-      statuses: { overridesByStatusKey: { cancelled: { category: 'done' } } },
-    });
+  it('отказ не поставка, даже если его тип в трекере — done', () => {
+    const rules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [
+      { id: 'cancelled', key: 'cancelled', statusType: { key: 'done' } },
+      { id: 'closed', key: 'closed', statusType: { key: 'done' } },
+    ]);
     expect(isDeliveredStatusKey('cancelled', rules)).toBe(false);
     expect(isDeliveredStatusKey('closed', rules)).toBe(true);
   });

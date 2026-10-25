@@ -10,7 +10,7 @@ import { issueTrackerClientWebContext } from '@/lib/issueTrackerProvider/types';
 import { resolveParams } from '@/lib/nextjs-utils';
 import { queryIssueSnapshotsMatchingSprint } from '@/lib/snapshots';
 import { aggregateSprintGoalsByTeam } from '@/lib/sprintGoals';
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import { buildSprintScoreApiResponse } from '@/lib/sprints/sprintTrackerRouteJson';
 import { resolveTrackerTestingFlowMode } from '@/lib/sprints/testingFlowMode';
 import { mapTrackerIssueToTask } from '@/lib/trackerApi/issues';
@@ -77,10 +77,7 @@ export async function GET(
           ).map((issue) =>
             mapTrackerIssueToTask(issue, issueTrackerClientWebContext(issueTracker), integration)
           );
-    const completionRules = sprintTaskCompletionRulesFromIntegration({
-      readyStatusKey: integration?.releaseReadiness?.readyStatusKey,
-      statuses: integration?.statuses,
-    });
+    const completionRules = await loadSprintTaskCompletionRules(organizationId, issueTracker);
     return NextResponse.json(
       buildSprintScoreApiResponse({
         completionRules,

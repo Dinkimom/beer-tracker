@@ -52,7 +52,6 @@ describe('Yandex changelog golden contract', () => {
     );
 
     expect(issue).toMatchObject({
-      changelog: [{ date: '2026-01-02T10:00:00.000Z', isDone: true }],
       inCurrentSprint: true,
       issueKey: 'BT-100',
       statusKey: 'inProgress',

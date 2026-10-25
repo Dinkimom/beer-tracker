@@ -46,6 +46,7 @@ import {
   fetchIssuesUpdatedInRange,
 } from '@/lib/trackerApi/issues';
 import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
+import { fetchTrackerOrganizationStatuses } from '@/lib/trackerIntegration/fetchTrackerOrgMetadata';
 import { resolveTrackerApiConfigFromRequest } from '@/lib/trackerRequestConfig';
 
 import { yandexIssueUpdateBody } from './issueTrackerIssuePatch';
@@ -257,6 +258,10 @@ function createYandexIssueTrackerProviderClient(
 
     listQueues() {
       return fetchTrackerQueuesPaginate(api);
+    },
+
+    listStatuses() {
+      return fetchTrackerOrganizationStatuses(api, 'tracker');
     },
 
     listIssuesForBoard(boardId: number, options) {

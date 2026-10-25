@@ -1,9 +1,12 @@
 import type { TrackerIntegrationStored } from './schema';
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 
 /**
  * Публичный DTO для планера: только то, что нужно для порогов и отображения статусов.
  */
 export interface PlannerIntegrationRulesDto {
+  /** Данные трекера для правила «сделано»: нужна ли резолюция и тип каждого статуса. */
+  completion: SprintTaskCompletionRules;
   configRevision: number;
   /** Поля оценок из админки. Пока id пустой, карточки оценки не показывают. */
   estimateFields: {
@@ -13,9 +16,6 @@ export interface PlannerIntegrationRulesDto {
   flags: {
     zeroDevPositiveQaRule: boolean;
   };
-  releaseReadiness: {
-    readyStatusKey: string | null;
-  };
   statusDefaultsByTrackerStatusType: Record<string, string>;
   statusOverridesByStatusKey: Record<string, { category?: string; visualToken?: string }>;
   testingFlowMode: 'embedded_in_dev' | 'standalone_qa_tasks' | 'unknown';
@@ -23,14 +23,15 @@ export interface PlannerIntegrationRulesDto {
 }
 
 export function toPlannerIntegrationRulesDto(
-  config: TrackerIntegrationStored | null
+  config: TrackerIntegrationStored | null,
+  completion: SprintTaskCompletionRules
 ): PlannerIntegrationRulesDto {
   if (!config) {
     return {
+      completion,
       configRevision: 0,
       estimateFields: { devMapped: false, qaMapped: false },
       flags: { zeroDevPositiveQaRule: false },
-      releaseReadiness: { readyStatusKey: null },
       statusDefaultsByTrackerStatusType: {},
       statusOverridesByStatusKey: {},
       testingFlowMode: 'unknown',
@@ -39,10 +40,9 @@ export function toPlannerIntegrationRulesDto(
   }
 
   const mode = config.testingFlow?.mode;
-  const rr = config.releaseReadiness;
-  const readyKey = rr?.readyStatusKey?.trim() ?? '';
   const flow = config.testingFlow;
   return {
+    completion,
     configRevision: config.configRevision,
     estimateFields: {
       devMapped: Boolean(flow?.devEstimateFieldId?.trim()),
@@ -50,9 +50,6 @@ export function toPlannerIntegrationRulesDto(
     },
     flags: {
       zeroDevPositiveQaRule: config.testingFlow?.zeroDevPositiveQaRule === true,
-    },
-    releaseReadiness: {
-      readyStatusKey: readyKey || null,
     },
     statusDefaultsByTrackerStatusType: { ...(config.statuses?.defaultsByTrackerStatusType ?? {}) },
     statusOverridesByStatusKey: Object.fromEntries(

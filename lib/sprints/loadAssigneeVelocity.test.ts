@@ -35,7 +35,7 @@ describe('loadAssigneeVelocity', () => {
   });
 
   it('averages closed points from tracker sprint issues', async () => {
-    const done = task({ id: 'A-1', assignee: 'dev', status: 'done', storyPoints: 6 });
+    const done = task({ id: 'A-1', assignee: 'dev', statusTypeKey: 'done', storyPoints: 6 });
     const issueTracker = {
       getSprint: vi.fn().mockResolvedValue({ name: 'Sprint 12', status: 'archived' }),
       listSprintIssues: vi.fn().mockResolvedValue([{ key: 'A-1' }]),
@@ -64,7 +64,7 @@ describe('loadAssigneeVelocity', () => {
       { key: 'A-2' } as TrackerIssue,
     ]);
     vi.mocked(mapTrackerIssueToTask).mockReturnValue(
-      task({ id: 'A-2', assignee: 'dev', status: 'done', storyPoints: 3 })
+      task({ id: 'A-2', assignee: 'dev', statusTypeKey: 'done', storyPoints: 3 })
     );
     const issueTracker = {
       getSprint: vi.fn().mockResolvedValue({ name: 'Sprint 11', status: 'archived' }),

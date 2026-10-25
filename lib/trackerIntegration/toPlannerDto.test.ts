@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { toPlannerIntegrationRulesDto } from './toPlannerDto';
 
+const completion = { requireResolution: true, statusTypeByKey: {} };
+
 describe('toPlannerIntegrationRulesDto', () => {
   it('reports estimate fields as unmapped without a saved config', () => {
-    expect(toPlannerIntegrationRulesDto(null).estimateFields).toEqual({
+    expect(toPlannerIntegrationRulesDto(null, completion).estimateFields).toEqual({
       devMapped: false,
       qaMapped: false,
     });
@@ -18,7 +20,7 @@ describe('toPlannerIntegrationRulesDto', () => {
           devEstimateFieldId: 'customfield_10016',
           qaEstimateFieldId: '  ',
         },
-      }).estimateFields
+      }, completion).estimateFields
     ).toEqual({ devMapped: true, qaMapped: false });
   });
 });

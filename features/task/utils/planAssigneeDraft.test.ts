@@ -48,7 +48,7 @@ describe('buildAssigneePlanDraft', () => {
         task({ assignee: 'dev-1', id: 'saved', storyPoints: 3 }),
         task({ assignee: 'dev-1', id: 'next', storyPoints: 2 }),
         task({ assignee: 'dev-2', id: 'other', storyPoints: 5 }),
-        task({ assignee: 'dev-1', id: 'done', status: 'done', storyPoints: 4 }),
+        task({ assignee: 'dev-1', id: 'done', statusTypeKey: 'done', storyPoints: 4 }),
         task({ assignee: 'dev-1', id: 'bare', storyPoints: 0 }),
       ],
     });

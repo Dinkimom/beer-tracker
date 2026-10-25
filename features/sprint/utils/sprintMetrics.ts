@@ -8,20 +8,20 @@ import type { Developer, Task } from '@/types';
 import { TASK_GROUP_KEY_UNASSIGNED } from '@/features/task/constants/taskGroupKeys';
 import { getTaskStoryPoints, getTaskTestPoints, isOriginalTask } from '@/lib/pointsUtils';
 import { computeSprintCompletionScope } from '@/lib/sprints/sprintScoreHelpers';
+import { isTaskCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
 import {
   burndownCompletionPercent,
   collectAssigneePersonIds,
   goalTaskIdSet,
 } from './sprintMetricsHelpers';
-import { isDone, isTpClosedStatus } from './sprintMetricsStatusHelpers';
 
 /** Экспорт для использования в свимлейнах и др. */
 export function isTaskDone(
   task: Task,
   rules?: SprintTaskCompletionRules | null
 ): boolean {
-  return isDone(task, rules);
+  return isTaskCompleted(task, rules);
 }
 
 /**
@@ -134,14 +134,14 @@ function buildMetricsByAssigneeRowForPerson(
   const devAsAssignee = devTasks.filter(t => (t.assignee ?? '__unassigned__') === id);
   const totalSP = devAsAssignee.reduce((s, t) => s + getTaskStoryPoints(t), 0);
   const completedSP = devAsAssignee
-    .filter((t) => isDone(t, rules))
+    .filter((t) => isTaskCompleted(t, rules))
     .reduce((s, t) => s + getTaskStoryPoints(t), 0);
   const percentSP = totalSP > 0 ? Math.round((completedSP / totalSP) * 100) : 0;
 
   const { devAsQa, qaForPerson, tpTasks } = collectPersonTestPointTasks(pid, devTasks, qaTasks);
   const totalTP = tpTasks.reduce((s, t) => s + getTaskTestPoints(t), 0);
   const completedTP = tpTasks
-    .filter((t) => isTpClosedStatus(t, rules))
+    .filter((t) => isTaskCompleted(t, rules))
     .reduce((s, t) => s + getTaskTestPoints(t), 0);
   const percentTP = totalTP > 0 ? Math.round((completedTP / totalTP) * 100) : 0;
 

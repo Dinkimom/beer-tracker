@@ -18,10 +18,8 @@ import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
 import { isTransitionRequiresFieldsError } from '@/lib/issues/transitionRequiresFields';
-import {
-  resolveStatusCategoryForStatusKey,
-  sprintTaskCompletionRulesFromPlanner,
-} from '@/lib/sprints/sprintTaskCompletion';
+import { statusTypeKeyForStatus } from '@/lib/sprints/sprintTaskCompletion';
+import { resolvePlannerStatusCategory } from '@/lib/trackerIntegration/resolveStatus';
 import { resolveStatusColorKey } from '@/lib/trackerIntegration/statusPalette';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
@@ -36,6 +34,16 @@ import {
 interface UseTaskStatusOperationsProps {
   tasks: Task[];
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
+}
+
+/** Резолюция, выбранная на экране перехода (строка или `{ key }`). */
+function transitionResolutionKey(extraFields: Record<string, unknown> | undefined): string | undefined {
+  const raw = extraFields?.resolution;
+  if (typeof raw === 'string') return raw.trim() || undefined;
+  if (raw && typeof raw === 'object' && typeof (raw as { key?: unknown }).key === 'string') {
+    return ((raw as { key: string }).key).trim() || undefined;
+  }
+  return undefined;
 }
 
 export function useTaskStatusOperations({
@@ -77,11 +85,15 @@ export function useTaskStatusOperations({
 
       const isClosing = isClosingStatusTransition(finalTargetStatusKey, transitionId, transitionData);
       const fromTransition = mergeTransitionExtraFieldsIntoTask(extraFields);
-      const completionRules = sprintTaskCompletionRulesFromPlanner(plannerRules);
-      const nextCategory =
-        resolveStatusCategoryForStatusKey(finalTargetStatusKey, completionRules) ??
-        mapStatus(finalTargetStatusKey);
       const statusId = transitionData?.to?.id?.trim();
+      const nextStatusTypeKey = (
+        transitionData?.to?.statusTypeKey ??
+        statusTypeKeyForStatus(finalTargetStatusKey, plannerRules?.completion) ??
+        (statusId ? statusTypeKeyForStatus(statusId, plannerRules?.completion) : undefined)
+      )?.toLowerCase();
+      const nextCategory =
+        resolvePlannerStatusCategory(finalTargetStatusKey, nextStatusTypeKey, plannerRules) ??
+        mapStatus(finalTargetStatusKey);
       const nextStatusDisplay = trackerStatusDisplayName(
         transitionData?.to?.display,
         finalTargetStatusKey
@@ -103,6 +115,11 @@ export function useTaskStatusOperations({
           ...(statusId ? { originalStatusId: statusId } : { originalStatusId: undefined }),
           status: nextCategory,
           statusColorKey: nextStatusColorKey,
+          statusTypeKey: nextStatusTypeKey,
+          resolution:
+            nextStatusTypeKey === 'done'
+              ? transitionResolutionKey(extraFields) ?? (isClosing ? 'fixed' : task.resolution)
+              : undefined,
           ...fromTransition,
         }))
       );

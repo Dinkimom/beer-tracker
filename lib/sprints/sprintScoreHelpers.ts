@@ -2,7 +2,7 @@ import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompleti
 import type { Task } from '@/types';
 
 import { getTaskStoryPoints, getTaskTestPoints, isOriginalTask } from '@/lib/pointsUtils';
-import { isSpCompleted, isTpCompleted } from '@/lib/sprints/sprintTaskCompletion';
+import { isTaskCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
 /** Объём спринта «сделано / всего» по SP и TP. */
 interface SprintCompletionScope {
@@ -51,8 +51,8 @@ export function computeSprintCompletionScope(
     const tp = finitePoints(getTaskTestPoints(task));
     scope.totalScopeSP += sp;
     scope.totalScopeTP += tp;
-    if (isSpCompleted(task, rules)) scope.completedSP += sp;
-    if (isTpCompleted(task, rules)) scope.completedTP += tp;
+    if (isTaskCompleted(task, rules)) scope.completedSP += sp;
+    if (isTaskCompleted(task, rules)) scope.completedTP += tp;
   }
   return scope;
 }

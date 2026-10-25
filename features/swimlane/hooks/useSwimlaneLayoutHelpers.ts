@@ -19,7 +19,7 @@ import {
   getTaskTestPointsInList,
   shouldCountTaskForParticipantVolume,
 } from '@/lib/pointsUtils';
-import { isSpCompleted, isTpCompleted } from '@/lib/sprints/sprintTaskCompletion';
+import { isTaskCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
 function resolveMaxOccupiedTaskLayers(
   taskLayerMap: Map<string, number>,
@@ -222,8 +222,8 @@ export function computeSwimlanePointTotals(
     const tp = getTaskTestPointsInList(task, originalIdsOnRow);
     totalSP += sp;
     totalTP += tp;
-    if (isSpCompleted(task, rules)) completedSP += sp;
-    if (isTpCompleted(task, rules)) completedTP += tp;
+    if (isTaskCompleted(task, rules)) completedSP += sp;
+    if (isTaskCompleted(task, rules)) completedTP += tp;
   }
 
   return {

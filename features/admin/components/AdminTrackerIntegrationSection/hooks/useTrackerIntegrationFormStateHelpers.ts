@@ -36,7 +36,6 @@ interface IntegrationFormHydrationSetters {
   setQaEngineerFieldId: (value: string) => void;
   setQaEstimateFieldId: (value: string) => void;
   setReleaseMrFieldId: (value: string) => void;
-  setReleaseReadyStatusKey: (value: string) => void;
   setRevision: (value: number | null) => void;
   setStatusPaletteByKey: (value: Record<string, string>) => void;
   setTestingFlowMode: (value: "embedded" | "standalone") => void;
@@ -45,7 +44,6 @@ interface IntegrationFormHydrationSetters {
 
 export function resetIntegrationFormToEmpty(setters: IntegrationFormHydrationSetters): void {
   setters.setRevision(null);
-  setters.setReleaseReadyStatusKey("");
   setters.setReleaseMrFieldId("");
   setters.initialIntegrationSnapshotRef.current = {
     hadEmbeddedTestingOnlyExtraRules: false,
@@ -66,7 +64,6 @@ export function hydrateIntegrationFormFromConfig(
   setters.setMinTp(th.minTp);
 
   const rel = pickReleaseReadinessForm(cfg);
-  setters.setReleaseReadyStatusKey(rel.readyStatusKey);
   setters.setReleaseMrFieldId(rel.mrFieldId);
 
   const flow = pickTestingFlowStrings(cfg);

@@ -21,7 +21,6 @@ export interface TrackerIntegrationConfigForm {
   qaEngineerFieldId: string;
   qaEstimateFieldId: string;
   releaseMrFieldId: string;
-  releaseReadyStatusKey: string;
   statusPaletteByKey: Record<string, string>;
   testingFlowMode: "embedded" | "standalone";
   zeroDevPositiveQa: boolean;
@@ -217,13 +216,9 @@ function applyReleaseReadinessConfig(
   form: TrackerIntegrationConfigForm,
   fieldRows: Array<{ id: string; key?: string }>,
 ): void {
-  const readyStatusKey = form.releaseReadyStatusKey.trim();
   const mrRaw = form.releaseMrFieldId.trim();
   const mrStored = mrRaw ? toStoredFieldAccessor(fieldRows, mrRaw) : "";
-  next.releaseReadiness = {
-    ...(readyStatusKey ? { readyStatusKey } : {}),
-    ...(mrStored ? { mergeRequestFieldId: mrStored } : {}),
-  };
+  next.releaseReadiness = mrStored ? { mergeRequestFieldId: mrStored } : {};
 }
 
 export function mergeTrackerIntegrationConfigSections(

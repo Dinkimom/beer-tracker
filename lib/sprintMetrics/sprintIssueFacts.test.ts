@@ -3,7 +3,7 @@ import type { TrackerIssue } from '@/types/tracker';
 
 import { describe, expect, it } from 'vitest';
 
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
 
 import {
   buildSprintIssueFact,
@@ -17,6 +17,9 @@ const NEXT_SPRINT = { display: 'Sprint 8', id: '8' };
 
 // Пн 2 июня — пт 13 июня 2025, конец спринта — пятница 18:00 UTC.
 const window = {
+  completionRules: sprintTaskCompletionRulesFromStatuses('jira-cloud', [
+    { id: 'closed', key: 'closed', statusType: { key: 'done' } },
+  ]),
   endMs: Date.parse('2025-06-13T18:00:00.000Z'),
   nowMs: Date.parse('2025-07-01T00:00:00.000Z'),
   sprintId: '7',
@@ -52,7 +55,6 @@ function burndownIssue(
   overrides: Partial<YtrackerBurndownIssue> = {}
 ): YtrackerBurndownIssue {
   return {
-    changelog: [],
     inCurrentSprint: true,
     issueKey: 'CM-1',
     rawChangelog,
@@ -165,9 +167,7 @@ describe('buildSprintIssueFact', () => {
       [plannedIntoSprint, statusMove('2025-06-05T08:00:00.000Z', 'inProgress', 'shipped')],
       { statusKey: 'shipped' }
     );
-    const completionRules = sprintTaskCompletionRulesFromIntegration({
-      statuses: { overridesByStatusKey: { shipped: { category: 'done' } } },
-    });
+    const completionRules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [{ id: 'shipped', key: 'shipped', statusType: { key: 'done' } }]);
     expect(buildSprintIssueFact(trackerIssue({ status: shipped }), yt, window)?.done).toBe(false);
     expect(
       buildSprintIssueFact(trackerIssue({ status: shipped }), yt, { ...window, completionRules })?.done
@@ -181,7 +181,7 @@ describe('buildSprintIssueFact', () => {
       burndownIssue([plannedIntoSprint, statusMove('2025-06-05T08:00:00.000Z', 'inProgress', 'rc')], {
         statusKey: 'rc',
       }),
-      { ...window, completionRules: sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' }) }
+      { ...window, completionRules: sprintTaskCompletionRulesFromStatuses('jira-cloud', []) }
     );
     expect(fact).toMatchObject({ committed: true, done: false });
   });
@@ -195,9 +195,7 @@ describe('buildSprintIssueFact', () => {
       ),
       {
         ...window,
-        completionRules: sprintTaskCompletionRulesFromIntegration({
-          statuses: { overridesByStatusKey: { cancelled: { category: 'done' } } },
-        }),
+        completionRules: sprintTaskCompletionRulesFromStatuses('jira-cloud', [{ id: 'cancelled', key: 'cancelled', statusType: { key: 'done' } }]),
       }
     );
     expect(fact).toMatchObject({ declined: true, done: false });

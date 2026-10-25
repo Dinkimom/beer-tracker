@@ -1,10 +1,11 @@
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { MoveTasksTo, Task } from '@/types';
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import toast from 'react-hot-toast';
 
 import { updateSprintStatus } from '@/lib/beerTrackerApi';
-import { isSpCompleted } from '@/lib/sprints/sprintTaskCompletion';
+import { isTaskCompleted } from '@/lib/sprints/sprintTaskCompletion';
 import { compareSprintNamesByNumberDesc } from '@/utils/sprintDisplayName';
 
 type FinishSprintMoveCandidate = Pick<
@@ -77,18 +78,24 @@ export function resolveFinishSprintDefaultMoveTarget(params: {
 }
 
 /**
- * Завершённые для переноса при закрытии спринта: категория done по воркфлоу
- * (statusTypeKey / mapStatus), включая Done и Won't be done.
- * RC / readyStatusKey не считаются SP-done и переносятся дальше.
+ * Завершённые при закрытии спринта не переносятся: «сделано» по правилу трекера
+ * (тип статуса done, в Tracker — с резолюцией, в том числе «Не будет сделано»).
  */
-export function isTaskClosedForSprintFinish(task: Task): boolean {
-  return isSpCompleted(task);
+export function isTaskClosedForSprintFinish(
+  task: Task,
+  rules?: SprintTaskCompletionRules | null
+): boolean {
+  return isTaskCompleted(task, rules);
 }
 
-export function getTasksToMoveOnSprintFinish(tasks: Task[], goalTaskIds: Set<string>): Task[] {
+export function getTasksToMoveOnSprintFinish(
+  tasks: Task[],
+  goalTaskIds: Set<string>,
+  rules?: SprintTaskCompletionRules | null
+): Task[] {
   return tasks.filter((task) => {
     if (goalTaskIds.has(task.id)) return false;
-    return !isTaskClosedForSprintFinish(task);
+    return !isTaskClosedForSprintFinish(task, rules);
   });
 }
 

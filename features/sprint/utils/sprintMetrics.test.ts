@@ -2,7 +2,7 @@ import type { Developer, Task } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
 
 import {
   calculateMetricsByAssignee,
@@ -32,21 +32,15 @@ function task(partial: Partial<Task> & Pick<Task, 'id'>): Task {
 }
 
 describe('isTaskDone', () => {
-  it('returns true when task.status is done', () => {
-    expect(isTaskDone(task({ id: '1', status: 'done' }))).toBe(true);
+  it('is done only for status type done', () => {
+    expect(isTaskDone(task({ id: '1', statusTypeKey: 'done' }))).toBe(true);
+    expect(isTaskDone(task({ id: '2', statusTypeKey: 'inProgress' }))).toBe(false);
   });
 
-  it('returns false when task.status is not done', () => {
-    expect(isTaskDone(task({ id: '1', status: 'todo' }))).toBe(false);
-  });
-
-  it('uses mapStatus(originalStatus) when status is absent', () => {
-    expect(isTaskDone(task({ id: '1', originalStatus: 'closed' }))).toBe(true);
-    expect(isTaskDone(task({ id: '2', originalStatus: 'backlog' }))).toBe(false);
-  });
-
-  it('does not treat readyStatusKey / legacy rc as SP done', () => {
-    expect(isTaskDone(task({ id: '1', originalStatus: 'rc', status: 'done' }))).toBe(false);
+  it('ignores the planner category and the status name', () => {
+    expect(isTaskDone(task({ id: '1', status: 'done' }))).toBe(false);
+    expect(isTaskDone(task({ id: '2', originalStatus: 'closed' }))).toBe(false);
+    expect(isTaskDone(task({ id: '3', originalStatus: 'rc', status: 'done' }))).toBe(false);
   });
 });
 
@@ -101,7 +95,7 @@ describe('calculateMetricsByAssignee', () => {
           id: 'd1',
           assignee: 'u1',
           originalStatus: 'closed',
-          status: 'done',
+          statusTypeKey: 'done',
           storyPoints: 5,
           testPoints: 0,
         }),
@@ -138,18 +132,11 @@ describe('calculateMetricsByAssignee', () => {
     });
   });
 
-  it('counts TP via done category or readyStatusKey from settings', () => {
+  it('closes TP only on a status of type done; rc closes nothing', () => {
     const developerMap = new Map<string, Developer>([
       ['qa1', dev({ id: 'qa1', name: 'Tester', role: 'tester' })],
     ]);
-    const rules = sprintTaskCompletionRulesFromIntegration({
-      readyStatusKey: 'rc',
-      statuses: {
-        overridesByStatusKey: {
-          customDone: { category: 'done' },
-        },
-      },
-    });
+    const rules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [{ id: 'customDone', key: 'customDone', statusType: { key: 'done' } }]);
     const rows = calculateMetricsByAssignee(
       [
         task({
@@ -177,8 +164,8 @@ describe('calculateMetricsByAssignee', () => {
     const qa = rows.find((r) => r.personId === 'qa1');
     expect(qa).toMatchObject({
       totalTP: 6,
-      completedTP: 6,
-      percentTP: 100,
+      completedTP: 2,
+      percentTP: 33,
     });
     const developer = rows.find((r) => r.personId === 'dev1');
     expect(developer).toMatchObject({
@@ -201,7 +188,7 @@ describe('computeBurndownTilesFromTasks', () => {
       task({
         id: 'b',
         originalStatus: 'closed',
-        status: 'done',
+        statusTypeKey: 'done',
         storyPoints: 2,
         testPoints: 0,
       }),
@@ -219,13 +206,7 @@ describe('computeBurndownTilesFromTasks', () => {
   });
 
   it('counts completed TP for done category without literal closed', () => {
-    const rules = sprintTaskCompletionRulesFromIntegration({
-      statuses: {
-        overridesByStatusKey: {
-          resolved: { category: 'done' },
-        },
-      },
-    });
+    const rules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [{ id: 'resolved', key: 'resolved', statusType: { key: 'done' } }]);
     const tiles = computeBurndownTilesFromTasks(
       [
         task({

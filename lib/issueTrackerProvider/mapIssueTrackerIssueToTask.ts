@@ -134,6 +134,16 @@ function resolvedAtFromCustomFields(customFields: Record<string, unknown> | unde
   return typeof value === 'string' ? value : undefined;
 }
 
+function resolutionFromCustomFields(customFields: Record<string, unknown> | undefined): string | undefined {
+  const value = customFields?.resolution;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+  const rec = value as { id?: unknown; key?: unknown };
+  if (typeof rec.key === 'string') return rec.key.trim() || undefined;
+  return typeof rec.id === 'string' ? rec.id.trim() || undefined : undefined;
+}
+
 /** Нормализует дату трекера к YYYY-MM-DD (берёт префикс даты из ISO/datetime). */
 function trackerDateOnly(value: string | undefined): string | undefined {
   if (!value) {
@@ -243,6 +253,7 @@ function mapIssueTrackerIssueToTaskBase(
     dangerousRelease: parseDangerousRelease(issue.dangerousRelease),
     trackerTags: readIssueTagTokens(fieldBag),
     updatedAt: issue.updatedAt,
+    resolution: resolutionFromCustomFields(issue.customFields),
     resolvedAt: resolvedAtFromCustomFields(issue.customFields),
     ...queueFromCustomFields(issue.customFields),
     ...trackerScheduleDates(issue),

@@ -2,6 +2,8 @@ import type { YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 
 import { describe, expect, it } from 'vitest';
 
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
+
 import { toBurndownDateKey } from './burndownFromChangelogReplay';
 import { computeBurndownFromChangelog } from './computeBurndownFromChangelog';
 import {
@@ -16,7 +18,6 @@ import {
 function issue(overrides: Partial<YtrackerBurndownIssue>): YtrackerBurndownIssue {
   return {
     issueKey: 'CM-1',
-    changelog: [],
     rawChangelog: [],
     statusKey: 'inprogress',
     storyPoints: 5,
@@ -375,6 +376,9 @@ describe('computeSprintTimelineTotals', () => {
   const sprintEndTime = sprintEndDate.getTime();
 
   const windowOpts = {
+    completionRules: sprintTaskCompletionRulesFromStatuses('jira-cloud', [
+      { id: 'closed', key: 'closed', statusType: { key: 'done' } },
+    ]),
     sprintName: 'S',
     sprintId: undefined as string | undefined,
     sprintStartTime,
@@ -429,6 +433,7 @@ describe('computeSprintTimelineTotals', () => {
 
     const totals = computeSprintTimelineTotals([yt], windowOpts);
     const burndown = computeBurndownFromChangelog({
+      completionRules: windowOpts.completionRules,
       ytrackerIssues: [yt],
       sprintName: 'S',
       sprintIdForMatch: undefined,

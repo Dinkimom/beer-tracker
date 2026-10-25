@@ -25,7 +25,6 @@ import {
 
 import { useTrackerPlatformFieldValues } from "./useTrackerIntegrationApi";
 import {
-  remapStatusKeyToStatusId,
   remapStatusPaletteKeysToStatusId,
 } from "./useTrackerIntegrationApiHelpers";
 import { useTrackerIntegrationFormAutoDefaults } from "./useTrackerIntegrationFormAutoDefaults";
@@ -79,7 +78,6 @@ export function useTrackerIntegrationFormState({
   const [minTp, setMinTp] = useState("");
   const [integrationLoadNonce, setIntegrationLoadNonce] = useState(0);
   const lastReleaseDefaultsForLoadNonceRef = useRef(-1);
-  const [releaseReadyStatusKey, setReleaseReadyStatusKey] = useState("");
   const [releaseMrFieldId, setReleaseMrFieldId] = useState("");
   const [devAssigneeFieldId, setDevAssigneeFieldId] = useState("");
   const [devEstimateFieldId, setDevEstimateFieldId] = useState("");
@@ -151,10 +149,6 @@ export function useTrackerIntegrationFormState({
           qaEngineerFieldId,
           qaEstimateFieldId,
           releaseMrFieldId,
-          releaseReadyStatusKey: remapStatusKeyToStatusId(
-            releaseReadyStatusKey,
-            trackerStatusesList,
-          ),
           statusPaletteByKey: remapStatusPaletteKeysToStatusId(
             statusPaletteByKey,
             trackerStatusesList,
@@ -178,7 +172,6 @@ export function useTrackerIntegrationFormState({
       qaEngineerFieldId,
       qaEstimateFieldId,
       releaseMrFieldId,
-      releaseReadyStatusKey,
       statusPaletteByKey,
       testingFlowMode,
       trackerStatusesList,
@@ -230,7 +223,6 @@ export function useTrackerIntegrationFormState({
         setQaEngineerFieldId,
         setQaEstimateFieldId,
         setReleaseMrFieldId,
-        setReleaseReadyStatusKey,
         setRevision,
         setStatusPaletteByKey,
         setTestingFlowMode,
@@ -279,7 +271,6 @@ export function useTrackerIntegrationFormState({
     setQaEngineerFieldId,
     setQaEstimateFieldId,
     setReleaseMrFieldId,
-    setReleaseReadyStatusKey,
     testingFlowMode,
     trackerStatusesList,
   });

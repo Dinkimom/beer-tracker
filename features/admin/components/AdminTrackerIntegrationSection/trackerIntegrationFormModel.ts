@@ -264,7 +264,6 @@ export function pickOccupancyThresholds(cfg: TrackerConfigShape | undefined): {
 
 export function pickReleaseReadinessForm(cfg: TrackerConfigShape | undefined): {
   mrFieldId: string;
-  readyStatusKey: string;
 } {
   const rr = asRecord(cfg?.releaseReadiness);
   return {
@@ -272,8 +271,6 @@ export function pickReleaseReadinessForm(cfg: TrackerConfigShape | undefined): {
       typeof rr?.mergeRequestFieldId === "string"
         ? rr.mergeRequestFieldId.trim()
         : "",
-    readyStatusKey:
-      typeof rr?.readyStatusKey === "string" ? rr.readyStatusKey.trim() : "",
   };
 }
 

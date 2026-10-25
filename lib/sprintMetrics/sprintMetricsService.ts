@@ -10,7 +10,7 @@ import type { SprintListItem } from '@/types/tracker';
 
 import { loadSprintBurndownSource } from '@/lib/burndown/loadSprintBurndownSource';
 import { apiCache, cacheKeys } from '@/lib/cache';
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration';
 
 import { DEFAULT_METRICS_QUARTERS, resolveMetricsWindowStartMs } from './aggregateSprintMetrics';
@@ -77,7 +77,10 @@ async function computeSprintRecord(input: {
   organizationId: string;
   sprintId: number;
 }): Promise<StoredSprintMetrics> {
-  const integration = await loadTrackerIntegrationForOrganization(input.organizationId);
+  const [integration, completionRules] = await Promise.all([
+    loadTrackerIntegrationForOrganization(input.organizationId),
+    loadSprintTaskCompletionRules(input.organizationId, input.issueTracker),
+  ]);
   const source = await loadSprintBurndownSource({
     boardId: input.boardId,
     integration,
@@ -89,10 +92,7 @@ async function computeSprintRecord(input: {
   const startMs = Date.parse(sprintInfo.startDateTime);
   const endMs = Date.parse(sprintInfo.endDateTime);
   const facts = buildSprintIssueFacts(source.realIssues, source.burndownIssues, {
-    completionRules: sprintTaskCompletionRulesFromIntegration({
-      readyStatusKey: integration?.releaseReadiness?.readyStatusKey,
-      statuses: integration?.statuses,
-    }),
+    completionRules,
     endMs,
     nowMs: input.nowMs,
     sprintId: sprintInfo.id != null ? String(sprintInfo.id) : undefined,

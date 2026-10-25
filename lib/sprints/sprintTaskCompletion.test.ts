@@ -1,129 +1,71 @@
-import type { Task } from '@/types';
-
 import { describe, expect, it } from 'vitest';
 
 import {
-  isSpCompleted,
-  isSpCompletedStatusKey,
-  isTpCompleted,
-  isTpCompletedStatusKey,
-  resolveTaskCompletionCategory,
-  sprintTaskCompletionRulesFromIntegration,
-  sprintTaskCompletionRulesFromPlanner,
+  isStatusKeyCompleted,
+  isTaskCompleted,
+  sprintTaskCompletionRulesFromStatuses,
+  statusTypeKeyForStatus,
 } from './sprintTaskCompletion';
 
-function task(partial: Partial<Task> & Pick<Task, 'id'>): Task {
-  const { id, ...rest } = partial;
-  return {
-    id,
-    link: 'https://t',
-    name: 'Task',
-    team: 'Web',
-    ...rest,
-  };
-}
+const statuses = [
+  { id: '1', key: 'open', statusType: { key: 'new' } },
+  { id: '2', key: 'inProgress', statusType: { key: 'inProgress' } },
+  { id: '3', key: 'rc', statusType: { key: 'inProgress' } },
+  { id: '4', key: 'closed', statusType: { key: 'done' } },
+  { id: '5', key: 'readyForDev', statusType: { key: 'new' } },
+];
 
-describe('sprintTaskCompletion', () => {
-  it('treats completing status type/category as SP and TP done', () => {
-    const rules = sprintTaskCompletionRulesFromPlanner({
-      releaseReadiness: { readyStatusKey: 'rc' },
-      statusDefaultsByTrackerStatusType: { done: 'done' },
-      statusOverridesByStatusKey: {},
-    });
-    const doneTask = task({
-      id: '1',
-      originalStatus: 'customClosed',
-      statusTypeKey: 'done',
-    });
-    expect(resolveTaskCompletionCategory(doneTask, rules)).toBe('done');
-    expect(isSpCompleted(doneTask, rules)).toBe(true);
-    expect(isTpCompleted(doneTask, rules)).toBe(true);
+const tracker = sprintTaskCompletionRulesFromStatuses('tracker', statuses);
+const jira = sprintTaskCompletionRulesFromStatuses('jira-cloud', statuses);
+
+describe('isTaskCompleted', () => {
+  it('requires status type done and a resolution in Yandex Tracker', () => {
+    expect(isTaskCompleted({ resolution: 'fixed', statusTypeKey: 'done' }, tracker)).toBe(true);
+    expect(isTaskCompleted({ statusTypeKey: 'done' }, tracker)).toBe(false);
+    expect(isTaskCompleted({ resolution: 'fixed', statusTypeKey: 'inProgress' }, tracker)).toBe(false);
   });
 
-  it('counts readyStatusKey as TP done but not SP done', () => {
-    const rules = sprintTaskCompletionRulesFromIntegration({
-      readyStatusKey: 'readyForRelease',
-      statuses: {
-        overridesByStatusKey: {
-          readyForRelease: { category: 'in-progress' },
-        },
-      },
-    });
-    const ready = task({ id: '1', originalStatus: 'readyForRelease', status: 'in-progress' });
-    expect(isTpCompleted(ready, rules)).toBe(true);
-    expect(isSpCompleted(ready, rules)).toBe(false);
+  it('needs only the done status category in Jira', () => {
+    expect(isTaskCompleted({ statusTypeKey: 'done' }, jira)).toBe(true);
+    expect(isTaskCompleted({ statusTypeKey: 'inProgress' }, jira)).toBe(false);
   });
 
-  it('matches readyStatusKey by originalStatusId when overrides are id-keyed', () => {
-    const rules = sprintTaskCompletionRulesFromIntegration({
-      readyStatusKey: '10042',
-      statuses: {
-        overridesByStatusKey: {
-          '10042': { category: 'in-progress' },
-        },
-      },
-    });
-    const ready = task({
-      id: '1',
-      originalStatus: 'исследование',
-      originalStatusId: '10042',
-      status: 'in-progress',
-    });
-    expect(isTpCompleted(ready, rules)).toBe(true);
-    expect(isSpCompleted(ready, rules)).toBe(false);
+  it('ignores status names: rc and «готово» are not done unless their type is', () => {
+    expect(isTaskCompleted({ originalStatus: 'rc', resolution: 'fixed' }, tracker)).toBe(false);
+    expect(isTaskCompleted({ originalStatus: 'готово', statusTypeKey: 'inProgress' }, jira)).toBe(false);
   });
 
-  it('falls back to legacy rc as TP-ready when readyStatusKey is unset', () => {
-    const rules = sprintTaskCompletionRulesFromPlanner(null);
-    const rc = task({ id: '1', originalStatus: 'rc', status: 'done' });
-    expect(isTpCompleted(rc, rules)).toBe(true);
-    expect(isSpCompleted(rc, rules)).toBe(false);
+  it('falls back to the status catalog by key or id when the task has no type', () => {
+    expect(isTaskCompleted({ originalStatus: 'closed', resolution: 'fixed' }, tracker)).toBe(true);
+    expect(isTaskCompleted({ originalStatusId: '4' }, jira)).toBe(true);
+    expect(isTaskCompleted({ originalStatus: 'unknown' }, jira)).toBe(false);
   });
 
-  it('counts exact Jira done status keys, not «готово к разработке»', () => {
-    const rules = sprintTaskCompletionRulesFromPlanner(null);
-    expect(isSpCompleted(task({ id: '1', originalStatus: 'готово' }), rules)).toBe(true);
-    expect(isSpCompleted(task({ id: '2', originalStatus: "won'tbedone" }), rules)).toBe(true);
-    expect(
-      isSpCompleted(task({ id: '3', originalStatus: 'готово к разработке' }), rules)
-    ).toBe(false);
-    expect(
-      isSpCompleted(task({ id: '4', originalStatus: 'readyfordevelopment' }), rules)
-    ).toBe(false);
-  });
-
-  it('uses status type done for custom names without exact mapStatus key', () => {
-    const rules = sprintTaskCompletionRulesFromPlanner(null);
-    expect(
-      isSpCompleted(
-        task({ id: '1', originalStatus: 'customFinal', statusTypeKey: 'done' }),
-        rules
-      )
-    ).toBe(true);
+  it('without rules checks the type only', () => {
+    expect(isTaskCompleted({ statusTypeKey: 'done' }, null)).toBe(true);
+    expect(isTaskCompleted({ originalStatus: 'closed' }, null)).toBe(false);
   });
 });
 
-describe('status-key completion (changelog replay)', () => {
-  it('splits SP and TP on the ready-for-release key', () => {
-    const rules = sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'readyForRelease' });
-    expect(isSpCompletedStatusKey('readyForRelease', rules)).toBe(false);
-    expect(isTpCompletedStatusKey('readyForRelease', rules)).toBe(true);
-    expect(isSpCompletedStatusKey('closed', rules)).toBe(true);
-    expect(isTpCompletedStatusKey('closed', rules)).toBe(true);
+describe('isStatusKeyCompleted (changelog replay)', () => {
+  it('resolves the type from the catalog, case-insensitively', () => {
+    expect(isStatusKeyCompleted('closed', tracker)).toBe(true);
+    expect(isStatusKeyCompleted('Closed', tracker)).toBe(true);
+    expect(isStatusKeyCompleted('rc', tracker)).toBe(false);
+    expect(isStatusKeyCompleted('readyForDev', tracker)).toBe(false);
   });
 
-  it('applies per-key category overrides from the integration', () => {
-    const rules = sprintTaskCompletionRulesFromIntegration({
-      statuses: { overridesByStatusKey: { shipped: { category: 'done' }, closed: { category: 'in-progress' } } },
-    });
-    expect(isSpCompletedStatusKey('shipped', rules)).toBe(true);
-    expect(isSpCompletedStatusKey('closed', rules)).toBe(false);
+  it('is false for empty or unknown keys', () => {
+    expect(isStatusKeyCompleted('', tracker)).toBe(false);
+    expect(isStatusKeyCompleted(undefined, tracker)).toBe(false);
+    expect(isStatusKeyCompleted('closed', null)).toBe(false);
   });
+});
 
-  it('is false for an empty key and falls back to legacy rc without rules', () => {
-    expect(isSpCompletedStatusKey(undefined)).toBe(false);
-    expect(isTpCompletedStatusKey('  ')).toBe(false);
-    expect(isSpCompletedStatusKey('rc')).toBe(false);
-    expect(isTpCompletedStatusKey('rc')).toBe(true);
+describe('statusTypeKeyForStatus', () => {
+  it('returns the normalized type for optimistic updates', () => {
+    expect(statusTypeKeyForStatus('inProgress', tracker)).toBe('inprogress');
+    expect(statusTypeKeyForStatus('closed', tracker)).toBe('done');
+    expect(statusTypeKeyForStatus('missing', tracker)).toBeUndefined();
   });
 });

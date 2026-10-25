@@ -193,7 +193,7 @@ export function useBacklogManagement({
     }
 
     if (statusFilter === 'completed') {
-      filtered = filtered.filter(isTaskCompleted);
+      filtered = filtered.filter((task) => isTaskCompleted(task));
     } else if (statusFilter === 'active') {
       filtered = filtered.filter(task => !isTaskCompleted(task));
     }

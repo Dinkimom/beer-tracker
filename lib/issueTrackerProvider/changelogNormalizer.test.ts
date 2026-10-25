@@ -65,7 +65,6 @@ describe('changelogNormalizer', () => {
       storyPoints: 5,
       testPoints: 2,
       inCurrentSprint: true,
-      changelog: [{ date: '2026-01-02T10:00:00.000Z', isDone: true }],
     });
     expect(issue.rawChangelog).toHaveLength(1);
   });

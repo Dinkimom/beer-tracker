@@ -8,7 +8,7 @@ import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompleti
 import type { Task } from '@/types';
 
 import { readChangelogPointValue } from '@/lib/burndown/changelogPointValue';
-import { isSpCompletedStatusKey } from '@/lib/sprints/sprintTaskCompletion';
+import { isStatusKeyCompleted } from '@/lib/sprints/sprintTaskCompletion';
 import { getWorkingHoursBetween } from '@/utils/dateUtils';
 import { WORKDAY_END_MS, WORKDAY_START_MS } from '@/utils/dateUtilsHelpers';
 import { mapStatus } from '@/utils/statusMapper';
@@ -184,7 +184,7 @@ export function isDeliveredStatusKey(
   rules?: SprintTaskCompletionRules | null
 ): boolean {
   if (!statusKey || isDeclinedStatus(statusKey)) return false;
-  return isSpCompletedStatusKey(statusKey, rules);
+  return isStatusKeyCompleted(statusKey, rules);
 }
 
 function flowStageOf(statusKey: string): FlowStage | null {

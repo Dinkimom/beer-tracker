@@ -405,6 +405,7 @@ describe('jiraTrackerProvider skeleton', () => {
       'listQueues',
       'listSprintIssues',
       'listSprints',
+      'listStatuses',
       'mapIssueToTask',
       'removeIssueFromSprint',
       'replaceIssueSprints',

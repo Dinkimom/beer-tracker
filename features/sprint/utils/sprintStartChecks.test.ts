@@ -54,6 +54,7 @@ describe('collectInvalidSprintDevTasks', () => {
       task({
         id: 'closed-bad',
         originalStatus: 'closed',
+        statusTypeKey: 'done',
         storyPoints: undefined,
         testPoints: undefined,
       }),
@@ -61,15 +62,16 @@ describe('collectInvalidSprintDevTasks', () => {
     expect(invalid).toHaveLength(0);
   });
 
-  it('skips rc tasks when fields are invalid', () => {
+  it('checks rc tasks: rc is not a status of type done', () => {
     const invalid = collectInvalidSprintDevTasks([
       task({
         id: 'rc-bad',
         originalStatus: 'rc',
+        statusTypeKey: 'inProgress',
         storyPoints: undefined,
         testPoints: undefined,
       }),
     ]);
-    expect(invalid).toHaveLength(0);
+    expect(invalid).toHaveLength(1);
   });
 });

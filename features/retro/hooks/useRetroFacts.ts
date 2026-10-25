@@ -14,7 +14,7 @@ import {
   selectRetroFactTasks,
   type RetroFacts,
 } from '@/lib/retro/retroFacts';
-import { isSpCompleted } from '@/lib/sprints/sprintTaskCompletion';
+import { isTaskCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
 const CHANGELOG_BATCH_LIMIT = 100;
 
@@ -95,7 +95,7 @@ export function useRetroFacts({
           changelog: byKey.get(task.id) ?? [],
           createdAt: task.createdAt,
           declined,
-          done: !declined && isSpCompleted(task, completionRules),
+          done: !declined && isTaskCompleted(task, completionRules),
           id: task.id,
           name: task.name,
           storyPoints: task.storyPoints,

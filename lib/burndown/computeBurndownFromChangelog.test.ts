@@ -2,7 +2,7 @@ import type { YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 
 import { describe, expect, it } from 'vitest';
 
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
 
 import {
   buildTaskStateAtSprintStart,
@@ -13,10 +13,16 @@ import {
   toBurndownDateKey,
 } from './computeBurndownFromChangelog';
 
+/** Справочник трекера: `closed` — тип done, `rc` — ещё в работе. */
+const CATALOG = sprintTaskCompletionRulesFromStatuses('jira-cloud', [
+  { id: 'closed', key: 'closed', statusType: { key: 'done' } },
+  { id: 'rc', key: 'rc', statusType: { key: 'inProgress' } },
+  { id: 'inprogress', key: 'inprogress', statusType: { key: 'inProgress' } },
+]);
+
 function issue(overrides: Partial<YtrackerBurndownIssue>): YtrackerBurndownIssue {
   return {
     issueKey: 'CM-1',
-    changelog: [],
     rawChangelog: [],
     statusKey: 'inprogress',
     storyPoints: 5,
@@ -107,6 +113,7 @@ describe('computeBurndownFromChangelog', () => {
 
     const summaries = new Map([['CM-1', 'Task one']]);
     const result = computeBurndownFromChangelog({
+      completionRules: CATALOG,
       ytrackerIssues: [yt],
       sprintName: 'S',
       sprintIdForMatch: undefined,
@@ -160,6 +167,7 @@ describe('computeBurndownFromChangelog', () => {
       ],
     });
     const result = computeBurndownFromChangelog({
+      completionRules: CATALOG,
       ytrackerIssues: [yt],
       sprintName: 'S',
       sprintIdForMatch: undefined,
@@ -221,6 +229,7 @@ describe('computeBurndownFromChangelog', () => {
     });
 
     const result = computeBurndownFromChangelog({
+      completionRules: CATALOG,
       ytrackerIssues: [yt],
       sprintName: 'S',
       sprintIdForMatch: '1',
@@ -291,6 +300,7 @@ describe('computeBurndownFromChangelog', () => {
     });
     const summaries = new Map([['CM-1', 'Task one']]);
     const result = computeBurndownFromChangelog({
+      completionRules: CATALOG,
       ytrackerIssues: [yt],
       sprintName: 'S',
       sprintIdForMatch: undefined,
@@ -330,6 +340,7 @@ describe('computeBurndownFromChangelog', () => {
       ],
     });
     const result = computeBurndownFromChangelog({
+      completionRules: CATALOG,
       ytrackerIssues: [yt],
       sprintName: 'S',
       sprintIdForMatch: undefined,
@@ -381,6 +392,7 @@ describe('IssueWorkflow / статус как объект', () => {
       ],
     });
     const result = computeBurndownFromChangelog({
+      completionRules: CATALOG,
       ytrackerIssues: [yt],
       sprintName: 'S',
       sprintIdForMatch: undefined,
@@ -426,7 +438,7 @@ describe('collectBurndownEventsInSprintWindow', () => {
   });
 });
 
-describe('computeBurndownFromChangelog with organization completion rules', () => {
+describe('computeBurndownFromChangelog with the tracker status catalog', () => {
   const sprintStartDate = new Date('2025-06-02T08:00:00.000Z');
   const sprintEndDate = new Date('2025-06-15T18:00:00.000Z');
   const sprintStartTime = sprintStartDate.getTime();
@@ -441,7 +453,7 @@ describe('computeBurndownFromChangelog with organization completion rules', () =
 
   function run(
     yt: YtrackerBurndownIssue,
-    completionRules?: ReturnType<typeof sprintTaskCompletionRulesFromIntegration>
+    completionRules?: ReturnType<typeof sprintTaskCompletionRulesFromStatuses>
   ) {
     return computeBurndownFromChangelog({
       completionRules,
@@ -458,22 +470,22 @@ describe('computeBurndownFromChangelog with organization completion rules', () =
 
   const dayKey = toBurndownDateKey(new Date('2025-06-10T12:00:00.000Z'));
 
-  it('burns only TP on the ready-for-release status (rc), SP stays until done', () => {
+  it('does not burn anything on rc: it is not a status of type done', () => {
     const yt = issue({
       storyPoints: 5,
       testPoints: 2,
       rawChangelog: [statusMove('2025-06-10T12:00:00.000Z', 'inprogress', 'rc')],
     });
-    const result = run(yt, sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' }));
+    const result = run(yt, CATALOG);
     const point = result.dataPoints.find((p) => p.dateKey === dayKey);
     expect(point?.remainingSP).toBe(5);
-    expect(point?.remainingTP).toBe(0);
+    expect(point?.remainingTP).toBe(2);
     const statusItem = result.dailyChangelog[dayKey]?.find((i) => i.type === 'status_change');
-    expect(statusItem?.closesSP).toBe(false);
-    expect(statusItem?.closesTP).toBe(true);
+    expect(statusItem?.closesSP ?? false).toBe(false);
+    expect(statusItem?.closesTP ?? false).toBe(false);
   });
 
-  it('then burns SP when the task reaches a done-category status', () => {
+  it('burns SP and TP together when the task reaches a status of type done', () => {
     const yt = issue({
       storyPoints: 5,
       testPoints: 2,
@@ -482,43 +494,41 @@ describe('computeBurndownFromChangelog with organization completion rules', () =
         statusMove('2025-06-11T12:00:00.000Z', 'rc', 'closed'),
       ],
     });
-    const result = run(yt, sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' }));
+    const result = run(yt, CATALOG);
     const nextKey = toBurndownDateKey(new Date('2025-06-11T12:00:00.000Z'));
     const point = result.dataPoints.find((p) => p.dateKey === nextKey);
     expect(point?.remainingSP).toBe(0);
     expect(point?.remainingTP).toBe(0);
   });
 
-  it('burns a custom status mapped to done by the integration override', () => {
+  it('burns a custom status whose tracker type is done', () => {
     const yt = issue({
       storyPoints: 3,
       testPoints: 1,
       rawChangelog: [statusMove('2025-06-10T12:00:00.000Z', 'inprogress', 'shipped')],
     });
-    const rules = sprintTaskCompletionRulesFromIntegration({
-      statuses: { overridesByStatusKey: { shipped: { category: 'done' } } },
-    });
+    const rules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [{ id: 'shipped', key: 'shipped', statusType: { key: 'done' } }]);
     expect(run(yt).dataPoints.find((p) => p.dateKey === dayKey)?.remainingSP).toBe(3);
     const point = run(yt, rules).dataPoints.find((p) => p.dateKey === dayKey);
     expect(point?.remainingSP).toBe(0);
     expect(point?.remainingTP).toBe(0);
   });
 
-  it('keeps sprint timeline totals on the same split rules', () => {
+  it('keeps sprint timeline totals on the same rule', () => {
     const yt = issue({
       storyPoints: 5,
       testPoints: 2,
-      rawChangelog: [statusMove('2025-06-10T12:00:00.000Z', 'inprogress', 'rc')],
+      rawChangelog: [statusMove('2025-06-10T12:00:00.000Z', 'inprogress', 'closed')],
     });
     const totals = computeSprintTimelineTotals([yt], {
-      completionRules: sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' }),
+      completionRules: CATALOG,
       sprintName: 'S',
       sprintStartTime,
       windowEndMs: sprintEndTime,
       windowStartMs: sprintStartTime,
     });
-    expect(totals.doneSP).toBe(0);
+    expect(totals.doneSP).toBe(5);
     expect(totals.doneTP).toBe(2);
-    expect(totals.remainingSP).toBe(5);
+    expect(totals.remainingSP).toBe(0);
   });
 });

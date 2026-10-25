@@ -1,25 +1,23 @@
+import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 /**
  * Утилиты для работы с задачами
  */
-
-import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { Task } from '@/types';
-import type { TaskStatus } from '@/utils/statusMapper';
 
 import {
   issueTrackerIssueWebUrlFromBase,
   issueTrackerQueueWebUrlFromBase,
 } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import { isQaOnlyTask, resolveTaskPointsForTeam } from '@/lib/pointsUtils';
-import { mapStatus } from '@/utils/statusMapper';
+import { isTaskCompleted as isTaskCompletedByTracker } from '@/lib/sprints/sprintTaskCompletion';
 
 /**
- * Задача в состоянии «готово» — та же логика, что в метриках спринта / раскраске статусов (см. isTaskDone).
+ * Задача «сделана» по правилу трекера ({@link isTaskCompletedByTracker}). Без правил организации
+ * проверяется только тип статуса `done`, резолюция — когда правила переданы.
  */
-export function isTaskCompleted(task: Task): boolean {
-  const effective: TaskStatus =
-    task.status ?? mapStatus(task.originalStatus || '') ?? 'todo';
-  return effective === 'done';
+export function isTaskCompleted(task: Task, rules?: SprintTaskCompletionRules | null): boolean {
+  return isTaskCompletedByTracker(task, rules);
 }
 
 /**

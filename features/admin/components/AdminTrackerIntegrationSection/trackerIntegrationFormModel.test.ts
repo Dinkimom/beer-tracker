@@ -21,7 +21,6 @@ function baseForm(overrides: Partial<ConfigForm> = {}): ConfigForm {
     qaEngineerFieldId: "",
     qaEstimateFieldId: "",
     releaseMrFieldId: "",
-    releaseReadyStatusKey: "",
     statusPaletteByKey: {},
     testingFlowMode: "embedded",
     zeroDevPositiveQa: false,
@@ -87,7 +86,6 @@ describe("mergeFormIntoConfig", () => {
         platformFieldId: "platform-field",
         platformValueMap: [{ platform: "Web", trackerValue: " web " }],
         releaseMrFieldId: "mr-field-id",
-        releaseReadyStatusKey: " ready ",
         statusPaletteByKey: { done: "green", empty: "" },
         testingFlowMode: "standalone",
         zeroDevPositiveQa: true,
@@ -116,7 +114,6 @@ describe("mergeFormIntoConfig", () => {
     });
     expect(merged.releaseReadiness).toEqual({
       mergeRequestFieldId: "mrKey",
-      readyStatusKey: "ready",
     });
   });
 });

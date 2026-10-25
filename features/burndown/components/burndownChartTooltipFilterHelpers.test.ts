@@ -35,7 +35,7 @@ describe('burndownChangelogItemMatchesMetric', () => {
   it('оставляет переход в done и скрывает промежуточные статусы', () => {
     expect(
       burndownChangelogItemMatchesMetric(
-        item({ type: 'status_change', statusFromKey: 'inProgress', statusToKey: 'closed' }),
+        item({ closesSP: true, closesTP: true, type: 'status_change', statusFromKey: 'inProgress', statusToKey: 'closed' }),
         false
       )
     ).toBe(true);
@@ -65,10 +65,10 @@ describe('burndownChangelogItemMatchesMetric', () => {
 });
 
 describe('isBurndownChangelogCloseEvent', () => {
-  it('не считает повторное закрытие и открытие заново', () => {
+  it('без флагов сервера переход статуса не считается закрытием', () => {
     expect(
       isBurndownChangelogCloseEvent(
-        item({ type: 'status_change', statusFromKey: 'closed', statusToKey: 'closed' })
+        item({ type: 'status_change', statusFromKey: 'inProgress', statusToKey: 'closed' })
       )
     ).toBe(false);
     expect(
@@ -76,16 +76,11 @@ describe('isBurndownChangelogCloseEvent', () => {
         item({ type: 'status_change', statusFromKey: 'closed', statusToKey: 'inProgress' })
       )
     ).toBe(false);
-    expect(
-      isBurndownChangelogCloseEvent(
-        item({ type: 'status_change', statusFromKey: 'inProgress', statusToKey: 'rc' })
-      )
-    ).toBe(true);
   });
 });
 
 describe('isBurndownChangelogCloseEvent with server completion flags', () => {
-  it('uses closesSP / closesTP from the API over status-key heuristics', () => {
+  it('uses closesSP / closesTP from the API', () => {
     const readyForRelease = item({
       closesSP: false,
       closesTP: true,
@@ -114,7 +109,7 @@ describe('burndownChangelogItemDisplayType', () => {
     expect(burndownChangelogItemDisplayType(item({ type: 'removed' }))).toBe('removed');
     expect(
       burndownChangelogItemDisplayType(
-        item({ type: 'status_change', statusFromKey: 'inProgress', statusToKey: 'closed' })
+        item({ closesSP: true, closesTP: true, type: 'status_change', statusFromKey: 'inProgress', statusToKey: 'closed' })
       )
     ).toBe('closed');
   });
@@ -127,7 +122,7 @@ describe('filterBurndownDayChangelog', () => {
         item({ type: 'status_change', statusFromKey: 'readyForDevelopment', statusToKey: 'inProgress' }),
         item({ type: 'added', change: 5 }),
         item({ type: 'story_points_change', change: 2 }),
-        item({ type: 'status_change', statusFromKey: 'inProgress', statusToKey: 'closed', change: -5 }),
+        item({ closesSP: true, closesTP: true, type: 'status_change', statusFromKey: 'inProgress', statusToKey: 'closed', change: -5 }),
         item({ type: 'removed', change: -3 }),
       ],
       false
@@ -146,8 +141,7 @@ describe('applyBurndownChangelogRemainingDeltas', () => {
           statusToKey: 'inProgress',
           remainingSP: 29,
         }),
-        item({
-          type: 'status_change',
+        item({ closesSP: true, closesTP: true, type: 'status_change',
           statusFromKey: 'inProgress',
           statusToKey: 'closed',
           remainingSP: 21,
@@ -174,8 +168,7 @@ describe('resolveBurndownTooltipDayChangelog', () => {
             statusToKey: 'inProgress',
             remainingSP: 29,
           }),
-          item({
-            type: 'status_change',
+          item({ closesSP: true, closesTP: true, type: 'status_change',
             statusFromKey: 'inProgress',
             statusToKey: 'closed',
             remainingSP: 21,

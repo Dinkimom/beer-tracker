@@ -44,6 +44,7 @@ export const ISSUE_TRACKER_PROVIDER_CLIENT_METHODS = [
   'listQueues',
   'listSprintIssues',
   'listSprints',
+  'listStatuses',
   'mapIssueToTask',
   'removeIssueFromSprint',
   'replaceChecklistItems',

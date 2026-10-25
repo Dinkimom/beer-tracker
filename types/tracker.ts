@@ -121,6 +121,8 @@ export interface TrackerIssue {
         key?: string;
         self?: string;
       };
+  /** Резолюция: в Tracker выставляется при переходе в статус типа «завершено». */
+  resolution?: { display?: string; id?: string; key?: string } | null;
   /** Дата закрытия (resolved) в Tracker. */
   resolvedAt?: string;
   self: string;

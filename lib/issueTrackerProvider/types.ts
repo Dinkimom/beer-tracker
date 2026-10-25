@@ -22,6 +22,13 @@ export const ISSUE_TRACKER_PROVIDER_KINDS = [
 ] as const;
 export type IssueTrackerProviderKind = (typeof ISSUE_TRACKER_PROVIDER_KINDS)[number];
 
+/** Статус трекера из справочника организации. */
+export interface IssueTrackerStatusCatalogItem {
+  id: string;
+  key: string;
+  statusType?: { key?: string };
+}
+
 /** Адаптер и payload снимков: Yandex Tracker vs Jira (Cloud и DC — один REST-адаптер). */
 export type IssueTrackerStoredProvider = 'jira' | 'yandex-tracker';
 
@@ -410,6 +417,8 @@ export interface IssueTrackerProviderClient {
     options?: IssueTrackerSprintIssuesOptions
   ): Promise<IssueTrackerIssue[]>;
   listSprints(boardId: number): Promise<SprintListItem[]>;
+  /** Справочник статусов с типами (для правила «сделано» по истории). Ошибка трекера → пустой список. */
+  listStatuses(): Promise<IssueTrackerStatusCatalogItem[]>;
   mapIssueToTask(
     issue: IssueTrackerIssue,
     integration?: TrackerIntegrationStored | null

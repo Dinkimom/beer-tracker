@@ -1,3 +1,4 @@
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { MoveTasksTo, Task } from '@/types';
 
 import { addIssueToSprint, removeIssueFromAllSprints } from '@/lib/beerTrackerApi';
@@ -32,13 +33,14 @@ async function moveTasksToTargetSprint(
 }
 
 export async function moveUnfinishedTasksOnFinish(params: {
+  completionRules: SprintTaskCompletionRules | null;
   goalTasks: Array<{ id: string }>;
   moveTasksTo: MoveTasksTo;
   selectedSprintId: number | null;
   tasks: Task[];
 }): Promise<void> {
   const goalIdSet = new Set(params.goalTasks.map((g) => g.id));
-  const unfinishedTasks = getTasksToMoveOnSprintFinish(params.tasks, goalIdSet);
+  const unfinishedTasks = getTasksToMoveOnSprintFinish(params.tasks, goalIdSet, params.completionRules);
   if (unfinishedTasks.length === 0) return;
 
   if (params.moveTasksTo === 'backlog') {

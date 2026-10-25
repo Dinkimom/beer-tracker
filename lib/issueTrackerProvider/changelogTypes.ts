@@ -17,10 +17,6 @@ export interface IssueTrackerBurndownChangelogEntry {
 
 /** Задача с changelog для burndown (provider-neutral контракт). */
 export interface IssueTrackerBurndownIssue {
-  changelog: Array<{
-    date: string;
-    isDone: boolean;
-  }>;
   inCurrentSprint: boolean;
   issueKey: string;
   rawChangelog: IssueTrackerBurndownChangelogEntry[];

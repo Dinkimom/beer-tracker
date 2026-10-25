@@ -11,7 +11,7 @@ import {
   getTaskTestPoints,
   shouldCountTaskForParticipantVolume,
 } from '@/lib/pointsUtils';
-import { isSpCompleted, isTpCompleted } from '@/lib/sprints/sprintTaskCompletion';
+import { isTaskCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
 export const ASSIGNEE_VELOCITY_SPRINT_WINDOW = 3;
 
@@ -114,7 +114,7 @@ function addOriginalTaskDelivery(
     const bucket = bucketFor(buckets, assigneeId);
     bucket.hadSp = true;
     rememberAssigneeName(bucket, task.assigneeName);
-    if (isSpCompleted(task, rules)) {
+    if (isTaskCompleted(task, rules)) {
       bucket.completedSp += getTaskStoryPoints(task);
     }
   }
@@ -125,7 +125,7 @@ function addOriginalTaskDelivery(
   const qa = bucketFor(buckets, qaId);
   qa.hadTp = true;
   rememberAssigneeName(qa, task.qaEngineerName);
-  if (isTpCompleted(task, rules)) {
+  if (isTaskCompleted(task, rules)) {
     qa.completedTp += testPoints;
   }
 }
@@ -144,7 +144,7 @@ function addQaTaskDelivery(
 ): void {
   const testPoints = getTaskTestPoints(task);
   if (testPoints <= 0) return;
-  const done = isTpCompleted(task, rules);
+  const done = isTaskCompleted(task, rules);
   for (const assigneeId of qaOwnerIds(task)) {
     const bucket = bucketFor(buckets, assigneeId);
     bucket.hadTp = true;

@@ -12,6 +12,7 @@ import {
   type AssigneeVelocityResponse,
 } from '@/lib/sprints/assigneeVelocity';
 import { emptyFeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
 
 import { buildDemoRetroBoards } from './demoFixtureSeedRetro';
 import {
@@ -472,12 +473,24 @@ export function createDemoFixtureSeed(): DemoFixtureState {
   };
 }
 
+/** Справочник статусов демо-трекера: ключи из задач и changelog фикстуры. */
+const DEMO_TRACKER_STATUSES = [
+  { id: 'open', key: 'open', statusType: { key: 'new' } },
+  { id: 'needInfo', key: 'needInfo', statusType: { key: 'paused' } },
+  { id: 'blocked', key: 'blocked', statusType: { key: 'paused' } },
+  { id: 'inProgress', key: 'inProgress', statusType: { key: 'inProgress' } },
+  { id: 'inReview', key: 'inReview', statusType: { key: 'inProgress' } },
+  { id: 'readyForTest', key: 'readyForTest', statusType: { key: 'inProgress' } },
+  { id: 'inTesting', key: 'inTesting', statusType: { key: 'inProgress' } },
+  { id: 'closed', key: 'closed', statusType: { key: 'done' } },
+];
+
 export function demoPlannerIntegrationRules(): PlannerIntegrationRulesDto {
   return {
+    completion: sprintTaskCompletionRulesFromStatuses('tracker', DEMO_TRACKER_STATUSES),
     configRevision: 1,
     estimateFields: { devMapped: true, qaMapped: true },
     flags: { zeroDevPositiveQaRule: true },
-    releaseReadiness: { readyStatusKey: 'tested' },
     statusDefaultsByTrackerStatusType: {
       new: 'todo',
       inProgress: 'in-progress',

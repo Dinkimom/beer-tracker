@@ -20,7 +20,6 @@ import {
   resolveMergeRequestFieldId,
 } from "../trackerIntegrationFormModel";
 
-import { trackerStatusIdentity } from "./useTrackerIntegrationApiHelpers";
 import {
   buildEmbeddedTestingAutoDefaultsUpdate,
   readEmbeddedTestingSnapshot,
@@ -29,17 +28,6 @@ import {
 
 function scheduleFormAutoDefault(update: () => void): void {
   queueMicrotask(update);
-}
-
-function defaultReleaseReadyStatusKey(
-  current: string,
-  statuses: TrackerStatusRowMeta[],
-): string {
-  if (current.trim()) {
-    return current;
-  }
-  const row = statuses.find((status) => status.key.trim().toLowerCase() === "rc");
-  return row ? trackerStatusIdentity(row) : current;
 }
 
 function defaultReleaseMrFieldId(
@@ -78,7 +66,6 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
   setQaEngineerFieldId: Dispatch<SetStateAction<string>>;
   setQaEstimateFieldId: Dispatch<SetStateAction<string>>;
   setReleaseMrFieldId: Dispatch<SetStateAction<string>>;
-  setReleaseReadyStatusKey: Dispatch<SetStateAction<string>>;
   testingFlowMode: "embedded" | "standalone";
   trackerStatusesList: TrackerStatusRowMeta[];
 }) {
@@ -104,7 +91,6 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
     setQaEngineerFieldId,
     setQaEstimateFieldId,
     setReleaseMrFieldId,
-    setReleaseReadyStatusKey,
     testingFlowMode,
     trackerStatusesList,
   } = options;
@@ -128,7 +114,6 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
       return;
     }
     scheduleFormAutoDefault(() => {
-      setReleaseReadyStatusKey((k) => defaultReleaseReadyStatusKey(k, trackerStatusesList));
       setReleaseMrFieldId((id) => defaultReleaseMrFieldId(id, fieldRows));
       lastReleaseDefaultsForLoadNonceRef.current = integrationLoadNonce;
     });
@@ -137,7 +122,6 @@ export function useTrackerIntegrationFormAutoDefaults(options: {
     integrationLoadNonce,
     lastReleaseDefaultsForLoadNonceRef,
     setReleaseMrFieldId,
-    setReleaseReadyStatusKey,
     trackerStatusesList,
   ]);
 

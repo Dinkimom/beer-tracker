@@ -15,7 +15,8 @@ import {
 } from './occupancyValidation';
 
 function devTask(id: string, name = id, originalStatus?: string): Task {
-  return { id, link: '', name, team: 'Web', ...(originalStatus != null ? { originalStatus } : {}) };
+  const done = originalStatus === 'closed' ? { statusTypeKey: 'done' } : {};
+  return { id, link: '', name, team: 'Web', ...(originalStatus != null ? { originalStatus } : {}), ...done };
 }
 
 function qaTask(id: string, originalTaskId: string, name = id): Task {

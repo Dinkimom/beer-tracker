@@ -1,7 +1,5 @@
 import type { BurndownDayChangelogItem } from './burndownChartTooltipContext';
 
-import { statusClosingFlags } from '@/lib/burndown/burndownStatusDone';
-
 const SCOPE_EVENT_TYPES = new Set<BurndownDayChangelogItem['type']>([
   'added',
   'removed',
@@ -9,19 +7,14 @@ const SCOPE_EVENT_TYPES = new Set<BurndownDayChangelogItem['type']>([
 ]);
 
 /**
- * Переход закрыл работу. Флаги closesSP/closesTP сервер считает по правилам завершения организации;
- * в старых кэшах их нет — тогда эвристика по ключам статусов без правил.
+ * Переход закрыл работу — по флагам closesSP/closesTP, которые сервер считает по правилу трекера.
  * `isTP` не задан — закрытие SP или TP.
  */
 export function isBurndownChangelogCloseEvent(item: BurndownDayChangelogItem, isTP?: boolean): boolean {
   if (item.type === 'closed') return true;
   if (item.type !== 'status_change') return false;
-  const closes =
-    item.closesSP != null || item.closesTP != null
-      ? { sp: item.closesSP === true, tp: item.closesTP === true }
-      : statusClosingFlags(item.statusFromKey, item.statusToKey, null);
-  if (isTP == null) return closes.sp || closes.tp;
-  return isTP ? closes.tp : closes.sp;
+  if (isTP == null) return item.closesSP === true || item.closesTP === true;
+  return isTP ? item.closesTP === true : item.closesSP === true;
 }
 
 export function burndownChangelogItemDisplayType(

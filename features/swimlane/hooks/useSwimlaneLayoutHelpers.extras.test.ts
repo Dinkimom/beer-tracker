@@ -2,7 +2,7 @@ import type { Task, TaskPosition } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { sprintTaskCompletionRulesFromIntegration } from '@/lib/sprints/sprintTaskCompletion';
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
 
 import {
   applyRemotePresenceCardRowPreviews,
@@ -65,8 +65,6 @@ describe('computeSwimlanePointTotals (row header points)', () => {
     };
   }
 
-  const rcRules = sprintTaskCompletionRulesFromIntegration({ readyStatusKey: 'rc' });
-
   it('keeps tester TP visible when one standalone QA task shares the row with embedded TP', () => {
     const totals = computeSwimlanePointTotals([
       placed({ hideTestPointsByIntegration: true, id: 'QA-1', storyPoints: 2, team: 'QA' }),
@@ -101,19 +99,20 @@ describe('computeSwimlanePointTotals (row header points)', () => {
     expect(totals.totalTP).toBe(3);
   });
 
-  it('uses organization completion rules: ready-for-release closes TP, not SP', () => {
+  it('closes SP and TP together only on a status of type done; rc closes nothing', () => {
+    const rules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [
+      { id: 'rc', key: 'rc', statusType: { key: 'inProgress' } },
+    ]);
     const totals = computeSwimlanePointTotals(
       [placed({ id: 'DEV-1', originalStatus: 'rc', storyPoints: 5, testPoints: 2 })],
-      rcRules
+      rules
     );
     expect(totals.completedSP).toBe(0);
-    expect(totals.completedTP).toBe(2);
+    expect(totals.completedTP).toBe(0);
   });
 
-  it('treats a custom status mapped to done by the integration as completed', () => {
-    const rules = sprintTaskCompletionRulesFromIntegration({
-      statuses: { overridesByStatusKey: { shipped: { category: 'done' } } },
-    });
+  it('treats a custom status of type done in the tracker catalog as completed', () => {
+    const rules = sprintTaskCompletionRulesFromStatuses('jira-cloud', [{ id: 'shipped', key: 'shipped', statusType: { key: 'done' } }]);
     const row = [placed({ id: 'DEV-1', originalStatus: 'shipped', storyPoints: 5, testPoints: 2 })];
     expect(computeSwimlanePointTotals(row).completedSP).toBe(0);
     expect(computeSwimlanePointTotals(row, rules)).toMatchObject({ completedSP: 5, completedTP: 2 });

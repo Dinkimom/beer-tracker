@@ -9,10 +9,7 @@
 
 import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 
-import {
-  isSpCompletedStatusKey,
-  isTpCompletedStatusKey,
-} from '@/lib/sprints/sprintTaskCompletion';
+import { isStatusKeyCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
 export type BurndownCompletionRules = SprintTaskCompletionRules | null | undefined;
 
@@ -26,8 +23,8 @@ export function statusDoneFlags(
   rules: BurndownCompletionRules
 ): StatusDoneFlags {
   return {
-    sp: isSpCompletedStatusKey(statusKey, rules),
-    tp: isTpCompletedStatusKey(statusKey, rules),
+    sp: isStatusKeyCompleted(statusKey, rules),
+    tp: isStatusKeyCompleted(statusKey, rules),
   };
 }
 

@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 
 import {
   canUpdateFinishSprintCheckbox,
@@ -59,6 +60,7 @@ export function useFinishSprintModal({
   const [selectedSprintId, setSelectedSprintId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useI18n();
+  const completionRules = useSprintTaskCompletionRules();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -112,6 +114,7 @@ export function useFinishSprintModal({
     setIsLoading(true);
     try {
       await moveUnfinishedTasksOnFinish({
+        completionRules,
         goalTasks,
         moveTasksTo,
         selectedSprintId,
@@ -134,6 +137,7 @@ export function useFinishSprintModal({
       setIsLoading(false);
     }
   }, [
+    completionRules,
     sprintInfo,
     moveTasksTo,
     selectedSprintId,

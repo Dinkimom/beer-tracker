@@ -1,227 +1,100 @@
-import type { PlannerIntegrationRulesDto } from '@/lib/trackerIntegration/toPlannerDto';
+import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { Task } from '@/types';
-import type { TaskStatus } from '@/utils/statusMapper';
 
-import { isTaskStatus } from '@/lib/trackerIntegration/schema';
-import { mapTrackerStatusTypeKeyToCategory } from '@/lib/trackerIntegration/statusTypeDefaults';
-import { mapStatus } from '@/utils/statusMapper';
+import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 
 /**
- * Правила завершения SP/TP:
- * - «завершающий» = категория done (тип статуса в воркфлоу / overrides в настройках);
- * - доп. набор ключей из настроек (`releaseReadiness.readyStatusKey`) — TP готово, SP ещё нет
- *   (раньше хардкод rc|closed).
+ * «Сделано» определяет трекер, а не организация:
+ * - Yandex Tracker — статус с типом `done` и заполненная резолюция;
+ * - Jira — статус из категории завершения (тип `done`).
+ * SP и TP закрываются одним правилом.
  */
 export interface SprintTaskCompletionRules {
-  /** overridesByStatusKey.category из настроек интеграции. */
-  statusCategoryByKey: Record<string, TaskStatus>;
-  /** defaultsByTrackerStatusType из настроек. */
-  statusCategoryByType: Record<string, TaskStatus>;
-  /** Ключи статусов «готово к релизу» / TP early-done (из readyStatusKey и т.п.). */
-  tpReadyStatusKeys: string[];
+  /** Tracker требует резолюцию, Jira — нет. */
+  requireResolution: boolean;
+  /** Справочник статусов трекера: ключ или id статуса → ключ типа статуса. */
+  statusTypeByKey: Record<string, string>;
 }
 
 type TaskCompletionFields = Pick<
   Task,
-  'originalStatus' | 'originalStatusId' | 'status' | 'statusTypeKey'
+  'originalStatus' | 'originalStatusId' | 'resolution' | 'statusTypeKey'
 >;
 
-const LEGACY_TP_READY_KEYS = ['rc'] as const;
+const DONE_STATUS_TYPE = 'done';
 
-function normalizeStatusKey(key: string): string {
-  return key.trim().toLowerCase();
+const EMPTY_RULES: SprintTaskCompletionRules = { requireResolution: false, statusTypeByKey: {} };
+
+function normalizeKey(key: string | null | undefined): string {
+  return (key ?? '').trim().toLowerCase();
 }
 
-function lookupCategoryByKey(
-  statusKey: string,
-  byKey: Record<string, TaskStatus>
-): TaskStatus | undefined {
-  const direct = byKey[statusKey];
-  if (direct) return direct;
-  const normalized = normalizeStatusKey(statusKey);
-  for (const [key, category] of Object.entries(byKey)) {
-    if (normalizeStatusKey(key) === normalized) return category;
+function statusTypeFromCatalog(
+  statusKeys: Array<string | null | undefined>,
+  rules: SprintTaskCompletionRules
+): string | undefined {
+  for (const key of statusKeys) {
+    const normalized = normalizeKey(key);
+    if (normalized && rules.statusTypeByKey[normalized]) {
+      return rules.statusTypeByKey[normalized];
+    }
   }
   return undefined;
 }
 
-function categoryFromRules(
-  statusKey: string,
-  statusId: string | undefined,
-  typeKey: string | undefined,
-  rules: SprintTaskCompletionRules
-): TaskStatus | undefined {
-  if (statusId) {
-    const fromId = lookupCategoryByKey(statusId, rules.statusCategoryByKey);
-    if (fromId) return fromId;
-  }
-  if (statusKey) {
-    const fromOverride = lookupCategoryByKey(statusKey, rules.statusCategoryByKey);
-    if (fromOverride) return fromOverride;
-  }
-  if (!typeKey) return undefined;
-  return (
-    rules.statusCategoryByType[typeKey] ??
-    lookupCategoryByKey(typeKey, rules.statusCategoryByType)
-  );
-}
-
-function categoryFromHeuristics(
-  statusKey: string,
-  typeKey: string | undefined
-): TaskStatus | undefined {
-  // Имя статуса — только точный mapStatus (без подстрок). Тип — statusType / category.
-  if (statusKey) {
-    const fromMap = mapStatus(statusKey);
-    if (fromMap) return fromMap;
-  }
-  return typeKey ? mapTrackerStatusTypeKeyToCategory(typeKey) : undefined;
-}
-
-/** Собирает правила из DTO планера / ответа score API. */
-export function sprintTaskCompletionRulesFromPlanner(
-  rules: Pick<
-    PlannerIntegrationRulesDto,
-    'releaseReadiness' | 'statusDefaultsByTrackerStatusType' | 'statusOverridesByStatusKey'
-  > | null | undefined
+/** Справочник статусов трекера → правила «сделано». */
+export function sprintTaskCompletionRulesFromStatuses(
+  providerKind: IssueTrackerProviderKind,
+  statuses: ReadonlyArray<{ id?: string; key: string; statusType?: { key?: string } }>
 ): SprintTaskCompletionRules {
-  const ready = rules?.releaseReadiness?.readyStatusKey?.trim();
-  const tpReadyStatusKeys = ready ? [ready] : [...LEGACY_TP_READY_KEYS];
-
-  const statusCategoryByKey: Record<string, TaskStatus> = {};
-  for (const [key, entry] of Object.entries(rules?.statusOverridesByStatusKey ?? {})) {
-    if (entry.category && isTaskStatus(entry.category)) {
-      statusCategoryByKey[key] = entry.category;
+  const statusTypeByKey: Record<string, string> = {};
+  for (const status of statuses) {
+    const typeKey = normalizeKey(status.statusType?.key);
+    if (!typeKey) continue;
+    for (const key of [status.key, status.id]) {
+      const normalized = normalizeKey(key);
+      if (normalized) statusTypeByKey[normalized] = typeKey;
     }
   }
-
-  const statusCategoryByType: Record<string, TaskStatus> = {};
-  for (const [key, category] of Object.entries(rules?.statusDefaultsByTrackerStatusType ?? {})) {
-    if (isTaskStatus(category)) {
-      statusCategoryByType[key] = category;
-    }
-  }
-
-  return { statusCategoryByKey, statusCategoryByType, tpReadyStatusKeys };
+  return { requireResolution: !isJiraProviderKind(providerKind), statusTypeByKey };
 }
 
-export function sprintTaskCompletionRulesFromIntegration(input: {
-  readyStatusKey?: string | null;
-  statuses?: {
-    defaultsByTrackerStatusType?: Record<string, TaskStatus | string>;
-    overridesByStatusKey?: Record<string, { category?: TaskStatus | string; visualToken?: string }>;
-  } | null;
-}): SprintTaskCompletionRules {
-  return sprintTaskCompletionRulesFromPlanner({
-    releaseReadiness: {
-      readyStatusKey: input.readyStatusKey?.trim() || null,
-    },
-    statusDefaultsByTrackerStatusType: {
-      ...(input.statuses?.defaultsByTrackerStatusType ?? {}),
-    },
-    statusOverridesByStatusKey: Object.fromEntries(
-      Object.entries(input.statuses?.overridesByStatusKey ?? {}).map(([k, v]) => [
-        k,
-        {
-          ...(v.category !== undefined ? { category: String(v.category) } : {}),
-          ...(v.visualToken !== undefined ? { visualToken: v.visualToken } : {}),
-        },
-      ])
-    ),
-  });
+/** Тип статуса задачи: из задачи, иначе из справочника по ключу/id. */
+function resolveTaskStatusType(
+  task: TaskCompletionFields,
+  rules: SprintTaskCompletionRules
+): string | undefined {
+  const own = normalizeKey(task.statusTypeKey);
+  if (own) return own;
+  return statusTypeFromCatalog([task.originalStatusId, task.originalStatus], rules);
+}
+
+/** Задача сделана по правилу трекера (тип `done`, для Tracker — ещё и резолюция). */
+export function isTaskCompleted(
+  task: TaskCompletionFields,
+  rules?: SprintTaskCompletionRules | null
+): boolean {
+  const effective = rules ?? EMPTY_RULES;
+  if (resolveTaskStatusType(task, effective) !== DONE_STATUS_TYPE) return false;
+  return !effective.requireResolution || Boolean(task.resolution?.trim());
 }
 
 /**
- * Категория статуса задачи: task.status → override по ключу → default по типу →
- * mapStatus(ключ) → эвристика по типу.
+ * Статус «сделано» по одному ключу (переход в changelog, статус на момент времени).
+ * Тип берётся из справочника; резолюция в истории не проверяется — в Tracker переход
+ * в статус типа `done` выставляет её вместе со статусом.
  */
-export function resolveTaskCompletionCategory(
-  task: TaskCompletionFields,
-  rules?: SprintTaskCompletionRules | null
-): TaskStatus {
-  if (task.status) return task.status;
-
-  const statusKey = (task.originalStatus ?? '').trim();
-  const statusId = task.originalStatusId?.trim();
-  const typeKey = task.statusTypeKey?.trim();
-  if (rules) {
-    const fromRules = categoryFromRules(statusKey, statusId, typeKey, rules);
-    if (fromRules) return fromRules;
-  }
-  return categoryFromHeuristics(statusKey, typeKey) ?? 'todo';
-}
-
-function isTpReadyOnlyStatus(
-  task: Pick<Task, 'originalStatus' | 'originalStatusId'>,
+export function isStatusKeyCompleted(
+  statusKey: string | null | undefined,
   rules?: SprintTaskCompletionRules | null
 ): boolean {
-  const candidates = [task.originalStatusId, task.originalStatus]
-    .map((k) => normalizeStatusKey(k ?? ''))
-    .filter(Boolean);
-  if (candidates.length === 0) return false;
-  const readyKeys = (rules?.tpReadyStatusKeys?.length ? rules.tpReadyStatusKeys : LEGACY_TP_READY_KEYS).map(
-    normalizeStatusKey
-  );
-  return candidates.some((key) => readyKeys.includes(key));
+  return statusTypeFromCatalog([statusKey], rules ?? EMPTY_RULES) === DONE_STATUS_TYPE;
 }
 
-/** SP сделано: завершающая категория, но не «только TP / ready» статус из настроек. */
-export function isSpCompleted(
-  task: TaskCompletionFields,
-  rules?: SprintTaskCompletionRules | null
-): boolean {
-  if (isTpReadyOnlyStatus(task, rules)) return false;
-  return resolveTaskCompletionCategory(task, rules) === 'done';
-}
-
-/**
- * TP сделано: завершающая категория ИЛИ ключ из набора настроек (readyStatusKey;
- * без настроек — legacy `rc`).
- */
-export function isTpCompleted(
-  task: TaskCompletionFields,
-  rules?: SprintTaskCompletionRules | null
-): boolean {
-  if (isTpReadyOnlyStatus(task, rules)) return true;
-  return resolveTaskCompletionCategory(task, rules) === 'done';
-}
-
-/** Категория для optimistic update по ключу статуса и правилам планера. */
-export function resolveStatusCategoryForStatusKey(
+/** Ключ типа статуса из справочника — для optimistic-обновления задачи после перехода. */
+export function statusTypeKeyForStatus(
   statusKey: string,
-  rules?: SprintTaskCompletionRules | null,
-  statusTypeKey?: string
-): TaskStatus | undefined {
-  return resolveTaskCompletionCategory(
-    {
-      originalStatus: statusKey,
-      statusTypeKey,
-      status: undefined,
-    },
-    rules
-  );
-}
-
-/**
- * SP сделано по одному ключу статуса (переход в changelog, статус на момент времени).
- * Тип статуса для исторических ключей неизвестен, поэтому `statusCategoryByType` не применяется:
- * override по ключу → `mapStatus(ключ)`; готовность к релизу — по `tpReadyStatusKeys`.
- */
-export function isSpCompletedStatusKey(
-  statusKey: string | null | undefined,
   rules?: SprintTaskCompletionRules | null
-): boolean {
-  const key = statusKey?.trim();
-  if (!key) return false;
-  return isSpCompleted({ originalStatus: key, status: undefined }, rules);
-}
-
-/** TP сделано по одному ключу статуса; ограничения те же, что у {@link isSpCompletedStatusKey}. */
-export function isTpCompletedStatusKey(
-  statusKey: string | null | undefined,
-  rules?: SprintTaskCompletionRules | null
-): boolean {
-  const key = statusKey?.trim();
-  if (!key) return false;
-  return isTpCompleted({ originalStatus: key, status: undefined }, rules);
+): string | undefined {
+  return statusTypeFromCatalog([statusKey], rules ?? EMPTY_RULES);
 }

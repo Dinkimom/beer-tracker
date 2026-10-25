@@ -19,7 +19,7 @@ import { qaTaskByOriginalId } from './occupancyValidationOverlap';
 export type AssigneeUnavailableDays = Map<string, Set<number>>;
 
 export function closedTaskIds(tasks: Task[]): Set<string> {
-  return new Set(tasks.filter(isTaskCompleted).map((t) => t.id));
+  return new Set(tasks.filter((t) => isTaskCompleted(t)).map((t) => t.id));
 }
 
 export function filterPositionsByTasks(

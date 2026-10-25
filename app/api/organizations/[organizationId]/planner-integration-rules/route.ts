@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { requireTenantWithPlannerProfile } from '@/lib/api-tenant';
 import { findOrganizationById } from '@/lib/organizations';
+import { loadSprintTaskCompletionRulesForRequest } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import {
   extractTrackerIntegrationJson,
   parseTrackerIntegrationStored,
@@ -28,5 +29,6 @@ export async function GET(
   }
 
   const parsed = parseTrackerIntegrationStored(extractTrackerIntegrationJson(org.settings));
-  return NextResponse.json(toPlannerIntegrationRulesDto(parsed));
+  const completion = await loadSprintTaskCompletionRulesForRequest(request, org);
+  return NextResponse.json(toPlannerIntegrationRulesDto(parsed, completion));
 }

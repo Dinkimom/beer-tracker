@@ -1,4 +1,5 @@
 import type { BurndownTilesFromTasks } from '@/features/sprint/utils/sprintMetrics';
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { Task } from '@/types';
 
 import { isTaskDone } from '@/features/sprint/utils/sprintMetrics';
@@ -42,9 +43,12 @@ function buildScopeRows(tasks: Task[]): ScopeRow[] {
  * TP строки: у dev и её QA одна оценка тестирования — берём большую, не суммируем.
  * «Сделано», если готова dev-задача или QA.
  */
-function rowTestPoints({ task, qaTask }: ScopeRow): { completed: number; total: number } {
+function rowTestPoints(
+  { task, qaTask }: ScopeRow,
+  rules: SprintTaskCompletionRules | null
+): { completed: number; total: number } {
   const total = Math.max(getTaskTestPoints(task), qaTask ? getTaskTestPoints(qaTask) : 0);
-  const done = isTaskDone(task) || (qaTask != null && isTaskDone(qaTask));
+  const done = isTaskDone(task, rules) || (qaTask != null && isTaskDone(qaTask, rules));
   return { completed: total > 0 && done ? total : 0, total };
 }
 
@@ -52,7 +56,11 @@ function rowTestPoints({ task, qaTask }: ScopeRow): { completed: number; total: 
  * Плитки «сделано / всего / %» на бёрндауне: весь объём спринта (не только размещённое на таймлайне),
  * с тем же фильтром по имени, что в планере.
  */
-export function computeBurndownScopeTiles(tasks: Task[], nameFilter: string): BurndownTilesFromTasks {
+export function computeBurndownScopeTiles(
+  tasks: Task[],
+  nameFilter: string,
+  rules: SprintTaskCompletionRules | null
+): BurndownTilesFromTasks {
   let totalScopeSP = 0;
   let totalScopeTP = 0;
   let completedSP = 0;
@@ -60,10 +68,10 @@ export function computeBurndownScopeTiles(tasks: Task[], nameFilter: string): Bu
 
   for (const row of buildScopeRows(filterTasksByNameQuery(tasks, nameFilter))) {
     const sp = getTaskStoryPoints(row.task);
-    const tp = rowTestPoints(row);
+    const tp = rowTestPoints(row, rules);
     totalScopeSP += sp;
     totalScopeTP += tp.total;
-    if (isTaskDone(row.task)) completedSP += sp;
+    if (isTaskDone(row.task, rules)) completedSP += sp;
     completedTP += tp.completed;
   }
 

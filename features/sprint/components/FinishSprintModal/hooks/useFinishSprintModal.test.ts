@@ -3,6 +3,8 @@ import type { Task } from '@/types';
 import toast from 'react-hot-toast';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { sprintTaskCompletionRulesFromStatuses } from '@/lib/sprints/sprintTaskCompletion';
+
 import {
   getTasksToMoveOnSprintFinish,
   isTaskClosedForSprintFinish,
@@ -43,35 +45,39 @@ function moveTargetSprint(overrides: {
 }
 
 describe('finish sprint task transfer', () => {
-  it('treats done-category statuses as non-transferable, not only closed', () => {
-    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'closed' }))).toBe(true);
-    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'Closed' }))).toBe(true);
-    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'done' }))).toBe(true);
-    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'готово' }))).toBe(true);
+  const tracker = sprintTaskCompletionRulesFromStatuses('tracker', [
+    { id: '1', key: 'closed', statusType: { key: 'done' } },
+    { id: '2', key: 'rc', statusType: { key: 'inProgress' } },
+  ]);
+
+  it('keeps tasks done by the tracker rule: status type done with a resolution', () => {
     expect(
-      isTaskClosedForSprintFinish(task({ originalStatus: "won'tbedone", statusTypeKey: 'done' }))
+      isTaskClosedForSprintFinish(task({ originalStatus: 'closed', resolution: 'fixed' }), tracker)
     ).toBe(true);
     expect(
-      isTaskClosedForSprintFinish(task({ originalStatus: 'customFinal', statusTypeKey: 'done' }))
+      isTaskClosedForSprintFinish(
+        task({ originalStatus: "won'tbedone", resolution: 'wontFix', statusTypeKey: 'done' }),
+        tracker
+      )
     ).toBe(true);
-    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'rc' }))).toBe(false);
-    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'inProgress' }))).toBe(false);
+    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'closed' }), tracker)).toBe(false);
+    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'готово' }), tracker)).toBe(false);
+    expect(isTaskClosedForSprintFinish(task({ originalStatus: 'rc' }), tracker)).toBe(false);
   });
 
-  it('moves unfinished tasks and skips goals and done-category tasks', () => {
+  it('moves unfinished tasks and skips goals and done tasks', () => {
     const tasks = [
       task({ id: 'GOAL-1', originalStatus: 'open' }),
-      task({ id: 'TASK-2', originalStatus: 'closed' }),
+      task({ id: 'TASK-2', originalStatus: 'closed', resolution: 'fixed' }),
       task({ id: 'TASK-3', originalStatus: 'rc' }),
       task({ id: 'TASK-4', originalStatus: 'inProgress' }),
-      task({ id: 'TASK-5', originalStatus: 'done', statusTypeKey: 'done' }),
-      task({ id: 'TASK-6', originalStatus: "won'tbedone", statusTypeKey: 'done' }),
+      task({ id: 'TASK-5', resolution: 'fixed', statusTypeKey: 'done' }),
+      task({ id: 'TASK-6', resolution: 'wontFix', statusTypeKey: 'done' }),
     ];
 
-    expect(getTasksToMoveOnSprintFinish(tasks, new Set(['GOAL-1'])).map(t => t.id)).toEqual([
-      'TASK-3',
-      'TASK-4',
-    ]);
+    expect(
+      getTasksToMoveOnSprintFinish(tasks, new Set(['GOAL-1']), tracker).map((t) => t.id)
+    ).toEqual(['TASK-3', 'TASK-4']);
   });
 });
 

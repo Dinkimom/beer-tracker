@@ -21,7 +21,7 @@ import {
   isDeliveredStatusKey,
   isRetroExcludedType,
 } from '@/lib/retro/retroFacts';
-import { isSpCompletedStatusKey } from '@/lib/sprints/sprintTaskCompletion';
+import { isStatusKeyCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 /** Задачи, взятые в первый день, — часть плана (как в фактах ретро). */
@@ -234,7 +234,7 @@ export function buildSprintIssueFact(
     inSprintBeforeFirstLaterChange(yt.rawChangelog ?? [], cutMs, window) ?? start.inSprint;
   start.spDone =
     !createdAfterCut &&
-    isSpCompletedStatusKey(statusKeyAt(yt.rawChangelog ?? [], cutMs, yt.statusKey), window.completionRules);
+    isStatusKeyCompleted(statusKeyAt(yt.rawChangelog ?? [], cutMs, yt.statusKey), window.completionRules);
   const replay = replayMembership(yt, start, window, cutMs, windowEndMs);
   const declined = isDeclinedStatus(issue.status?.key ?? yt.statusKey);
   const flags = membershipFlags({
