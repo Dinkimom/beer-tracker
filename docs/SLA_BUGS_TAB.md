@@ -4,7 +4,9 @@
 
 Краткий каталог только сигналов (для согласования меток): **[SLA_BUGS_SIGNALS.md](./SLA_BUGS_SIGNALS.md)**.
 
-Источник правды в коде: `lib/slaBugs/`, `features/sidebar/components/tabs/BugsTab/`, `app/api/boards/[boardId]/sla-bugs/route.ts`.
+Источник правды в коде: `lib/slaBugs/`, `features/sidebar/components/tabs/BugsTab/`, `features/sla-bugs/hooks/`, `app/api/boards/[boardId]/sla-bugs/route.ts`.
+
+**Доступность:** вкладка есть только у Yandex Tracker — флаг `supportsSlaBugs` в `lib/issueTrackerProvider/issueTrackerUi.ts` (`false` для Jira).
 
 ---
 
@@ -14,9 +16,9 @@
 
 - тип **bug**, критичность **P0–P4**, статус не closed;
 - поле **«Продуктовая команда»** совпадает с командой доски;
-- задачи, уже стоящие на свимлейне текущего спринта, **скрываются** из списка.
+- задачи, уже стоящие на свимлейне текущего спринта, **скрываются** из списка (`features/task/utils/filterTasksNotOnSwimlane.ts`).
 
-Задачи группируются в **4 секции**. На каждой карточке — **один сигнал** (метка риска). По клику на сигнал — попап с метриками, heatmap обращений HD и пояснением.
+Задачи группируются в **4 секции** (порядок в UI: «Брать сейчас» → «Следить» → «Обычные» → «Разобрать»). На каждой карточке — **один сигнал** (метка риска). По клику на сигнал — попап с метриками, heatmap обращений HD и пояснением.
 
 ---
 
@@ -24,7 +26,7 @@
 
 ```mermaid
 flowchart LR
-  Tracker["Issue tracker\n(Yandex / Jira)"] --> API["GET /api/boards/:boardId/sla-bugs"]
+  Tracker["Yandex Tracker"] --> API["GET /api/boards/:boardId/sla-bugs"]
   Overseer["overseer.mv_ytracker_hd_count_changelog_events"] --> API
   API --> Enrich["enrichTasksWithOverseerHdCounts"]
   Enrich --> Filter["filterSlaBugTasks"]

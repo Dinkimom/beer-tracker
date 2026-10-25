@@ -1,7 +1,7 @@
 # Миграция на провайдеры трекеров
 
 > **Актуальное описание провайдеров для людей:** [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md).  
-> Ниже — инженерные заметки по выносу адаптеров. Статус «Jira = stub» в старых абзацах **устарел**: runtime поддерживает `tracker` / `jira-cloud` / `jira-onprem`.
+> Ниже — инженерные заметки по выносу адаптеров; волны 1–6 закрыты, документ в основном исторический. Runtime поддерживает `tracker` / `jira-cloud` / `jira-onprem`.
 
 Цель миграции — работать не только с Yandex Tracker, но и с Jira, не размазывая условия вида `if (provider === 'jira')` по `app/api/**`.
 
@@ -19,7 +19,7 @@
 - `client.providerKind` / `client.webBaseUrl` — тип и web-base трекера текущей организации.
 - Адаптеры Yandex / Jira и `clientFactory.ts` — создание `IssueTrackerProviderClient` из `Request`.
 
-Старый Axios-фасад (`getTrackerApiFromRequest`, `createTrackerApiClient`) может ещё использоваться в routes, которые не полностью перенесены.
+Старый Axios-фасад `getTrackerApiFromRequest` (`lib/api-tracker.ts`) в `app/api/**` остался в двух роутах: `app/api/sprints/[sprintId]/positions/route.ts` и `app/api/quarterly-plans/v2/route.ts`. `createTrackerApiClient` (`lib/tracker-client.ts`) в роутах напрямую не используется.
 
 Уже переведены на `IssueTrackerProviderClient` (список мог расшириться — см. код):
 
@@ -131,11 +131,9 @@ Routes:
 - `getIssueChildren(parentKey, boardId)`
 - `getSprint(sprintId)`
 - `getTasksInSprintWithParents(sprintId, options)`
-- `mapProviderIssueToTask(issue, integration)`
+- `mapIssueToTask(issue, integration)`
 
-Пока не реализовано, но понадобится для следующих issue routes:
-
-- `getIssuesByKeys(issueKeys)`
+Планировавшийся `getIssuesByKeys(issueKeys)` в `IssueTrackerProviderClient` так и не появился.
 
 Особое внимание:
 
@@ -196,7 +194,7 @@ Routes:
 - `transitionIssue(issueKey, input)`
 - `addIssueToSprint(issueKey, sprintId)`
 - `removeIssueFromSprint(issueKey, sprintId)`
-- `removeIssueFromAllSprints(issueKey)`
+- `replaceIssueSprints(...)` (вместо планировавшегося `removeIssueFromAllSprints`)
 - `createRelatedIssue(sourceIssueKey, input)`
 - `createChecklistItem(issueKey, input)`
 - `updateChecklistItem(issueKey, itemId, patch)`
@@ -232,7 +230,7 @@ Routes:
 Особое внимание:
 
 - Jira changelog и comments отличаются по pagination и структуре.
-- Burndown replay использует provider-neutral `IssueTrackerBurndownIssue` (`lib/issueTrackerProvider/changelogTypes`).
+- Burndown replay использует provider-neutral `IssueTrackerBurndownIssue` (`lib/issueTrackerProvider/changelogTypes.ts`).
 - Перед Jira нужно нормализовать changelog events в provider-neutral форму.
 
 ## Волна 6: Sync и Snapshots
@@ -252,7 +250,7 @@ Routes:
 
 - incremental/full sync через `listIssuesUpdatedInRange` / `listIssuesForBoard`
 - changelog batch sync через `getIssuesChangelogBatch`
-- `resolveIssueChangelogBatchForOrganization` принимает `issueTracker`
+- ~~`resolveIssueChangelogBatchForOrganization` принимает `issueTracker`~~ — функции в коде больше нет; в `lib/snapshots/issueChangelogResolve.ts` сейчас только `issueChangelogBatchRecordFromCacheMap`
 
 Нужные методы (реализованы для Yandex):
 
@@ -263,7 +261,7 @@ Routes:
 Особое внимание:
 
 - Jira incremental sync лучше строить на JQL по `updated`.
-- `issue_snapshots.payload` пока хранит сырой Yandex payload (`yandexIssueFromProviderIssue` при upsert).
+- `issue_snapshots.payload` новые строки пишет envelope'ом (`wrapIssueSnapshotForStorage` в `lib/snapshots/issueSnapshotWrite.ts`); legacy flat payload читается через unwrap.
 - Для нескольких providers в одной БД нужен `provider` или `external_source` в ключах snapshot/changelog таблиц, если возможны пересечения issue keys.
 
 ## БД и Настройки
@@ -272,10 +270,10 @@ Routes:
 
 Текущая БД всё ещё Yandex-oriented (имена колонок без изменений):
 
-- `organizations.tracker_org_id` → `readIssueTrackerExternalOrgId` / `externalOrgId`
-- `organization_secrets.encrypted_tracker_token` → `DB_ORGANIZATION_SECRETS_ACCESS_TOKEN_COLUMN`
-- `teams.tracker_board_id` → `readIssueTrackerTeamBoardId` / `IssueTrackerTeamBinding.boardId`
-- `teams.tracker_queue_key` → `readIssueTrackerTeamQueueKey` / `IssueTrackerTeamBinding.queueKey`
+- `organizations.tracker_org_id` → `DB_ORGANIZATION_EXTERNAL_ORG_ID_COLUMN`, `readIssueTrackerExternalOrgId` / `externalOrgId`
+- `organization_secrets.encrypted_tracker_token` — alias-константы нет, колонка читается напрямую в `lib/organizations/organizationSecretsRepository.ts`
+- `teams.tracker_board_id` → `DB_TEAM_BOARD_ID_COLUMN`, `readIssueTrackerTeamBoardId` / `IssueTrackerTeamBinding.boardId`
+- `teams.tracker_queue_key` → `DB_TEAM_QUEUE_KEY_COLUMN`, `readIssueTrackerTeamQueueKey` / `IssueTrackerTeamBinding.queueKey`
 - `settings.trackerIntegration` — правила маппинга планера (отдельно от `settings.issueTracker.provider`)
 
 Модуль: `lib/issueTrackerProvider/storageAliases.ts`
@@ -306,37 +304,26 @@ Routes:
 - Legacy flat Yandex payload при чтении разворачивается с `provider: 'yandex-tracker'` по умолчанию.
 - `lib/ytrackerRawIssues.ts` оставлен как thin re-export для обратной совместимости burndown-кода.
 
-Осталось для multi-provider:
+Сделано для multi-provider:
 
-- Протянуть `unwrapIssueSnapshotPayload` во все read-пути `issue_snapshots` (сейчас основной write-path sync).
-- Jira-адаптер для raw changelog → neutral mapper.
+- ~~Протянуть `unwrapIssueSnapshotPayload` во все read-пути `issue_snapshots`~~ — readers разворачивают envelope (см. волну 3 в [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md)).
+- ~~Jira-адаптер для raw changelog → neutral mapper~~ — `lib/issueTrackerProvider/jiraChangelog.ts`.
 
-## Jira Adapter Skeleton
+## Jira Adapter
 
-Статус: сделано (skeleton).
+Статус: рабочий адаптер (был skeleton).
 
-- `lib/issueTrackerProvider/jiraProvider.ts` — `kind: 'jira'`, все методы → `UnsupportedIssueTrackerOperationError`
+- `lib/issueTrackerProvider/jiraProvider.ts` — реализованы методы из `JIRA_IMPLEMENTED_PROVIDER_METHODS`; остальные методы каталога → `UnsupportedIssueTrackerOperationError`. Реализация разнесена по `lib/issueTrackerProvider/jira*.ts`.
+- `lib/issueTrackerProvider/registry.ts` — `jira-cloud` и `jira-onprem` указывают на `jiraTrackerProvider`.
 - `lib/issueTrackerProvider/errors.ts` — `status: 422`, поля `operation` / `providerKind`
-- `resolveIssueTrackerProvider('jira')` регистрирует skeleton
-- `handleApiError` → `code: issue_tracker_unsupported_operation`
-
-Дальше по мере реализации Jira:
-
-- Реализовать методы `IssueTrackerProviderClient` по приоритету read routes
-- Jira credentials в `settings.issueTracker` (email, apiToken, baseUrl)
-- Убрать `assertYandexTrackerProvider` там, где маршрут уже provider-neutral
+- `handleApiError` → `code: issue_tracker_unsupported_operation` (`lib/api-error-handlerHelpers.ts`)
+- `assertYandexTrackerProvider` в коде больше нет.
 
 ## Ошибки и Capabilities
 
-`UnsupportedIssueTrackerOperationError` — реализовано (см. Jira skeleton).
+`UnsupportedIssueTrackerOperationError` — реализовано (см. Jira Adapter).
 
-Для отличий provider-ов позже стоит добавить capabilities:
-
-- `supportsChecklists`
-- `supportsWorkflowScreens`
-- `supportsSprintMutation`
-- `supportsIssueLinks`
-- `supportsWorkEstimates`
+Capabilities есть: `IssueTrackerProviderCapabilities` / `issueTrackerProviderCapabilities(kind)` в `lib/issueTrackerProvider/issueTrackerUi.ts` — `supportsChecklists`, `supportsFieldCatalog`, `supportsIssueChildren`, `supportsIssueLinks`, `supportsQueryLanguageSearch`, `supportsRelatedIssues`, `supportsScreenCatalog`, `supportsSlaBugs`. Отказ в роуте по capability — `rejectUnsupportedIssueTrackerCapability` (`lib/issueTrackerProvider/issueTrackerCapabilityRoute.ts`).
 
 Route должен либо использовать capability, либо доверять adapter-у и отдавать понятную ошибку через `handleApiError`.
 
@@ -349,7 +336,7 @@ Route должен либо использовать capability, либо дов
 - `pnpm typecheck`.
 - `pnpm test`, если меняется общий контракт или shared mapper.
 
-Полный `pnpm lint` сейчас может падать на существующем lint-долге вне migration-файлов. Для срезов миграции важно, чтобы focused ESLint по изменённым файлам был чистым.
+Перед завершением — полный набор проверок из `AGENTS.md` (`pnpm lint` без предупреждений, `pnpm lint:unused`).
 
 ## Контрактные тесты (Yandex не ломать)
 

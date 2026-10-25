@@ -1,5 +1,7 @@
 # Дробление фаз занятости (отрезки фазы)
 
+> **Исторический дизайн-документ.** Разделы «Контекст», «Варианты» и «Что править» писались под легаси-планер occupancy (`OccupancyPhaseBar` и т.п.) и не описывают текущий UI. Актуальная реализация — в свимлейне, см. раздел «Реализация» ниже (сверено 2026-10-25).
+
 ## Контекст: как сейчас работают фазы
 
 ### 1. Два типа фаз в интерфейсе
@@ -24,7 +26,7 @@
 
 ### 3. Отображение и взаимодействие
 
-- **OccupancyPhaseBar** (`occupancy/components/OccupancyPhaseBar.tsx`):
+- **OccupancyPhaseBar** (легаси occupancy, путь не сверялся):
   - Рисует одну полосу от `startCell` до `startCell + duration`.
   - Drag: перенос всей полосы (меняется `startDay`/`startPart`, `duration` не меняется).
   - Resize: ручки слева/справа — сдвиг начала или изменение длительности.
@@ -64,18 +66,13 @@
 
 ## Реализация (отдельная таблица сегментов)
 
-Реализовано через отдельную таблицу `task_position_segments` (миграция `database/migrations/011_task_position_segments.sql`).
-
-- **Таблица**: `task_position_segments(sprint_id, task_id, segment_index, start_day, start_part, duration)` с FK на `task_positions` и ON DELETE CASCADE.
-- **Типы**: `PhaseSegment`, `TaskPosition.segments?: PhaseSegment[]`.
-- **API**: GET позиций подгружает сегменты и добавляет в каждую позицию; POST/batch записывает сегменты в таблицу (удаление старых + вставка новых).
-- **Валидация и отображение**: `getPositionSegmentRanges(position)` в `occupancyUtils`; валидация переведена на проверку по всем отрезкам.
-- **UI**: при наличии `position.segments` рисуются несколько полос (по одной на отрезок); ПКМ по фазе → «Разбить на отрезки» → модалка с сеткой квадратов (вкл/выкл), сохранение в отрезки.
-
-**Перед первым использованием выполнить миграцию:**
-```bash
-psql -U ... -d <your-db-name> -f database/migrations/011_task_position_segments.sql
-```
+- **Таблица**: `task_position_segments(organization_id, sprint_id, task_id, segment_index, start_day, start_part, duration)` с FK на `task_positions` и `ON DELETE CASCADE` — схема в `database/init.sql` (отдельного файла миграции `011_…` больше нет).
+- **Типы**: `PhaseSegment`, `TaskPosition.segments?: PhaseSegment[]` (`types/index.ts`).
+- **API**: GET позиций (`app/api/sprints/[sprintId]/positions/route.ts`) подгружает сегменты; batch (`app/api/sprints/[sprintId]/positions/batch/`) перезаписывает их. SQL — `lib/sprints/taskPositionsRepository.ts`, `lib/sprints/taskPositionsBatchRepository.ts`, `lib/sprints/taskPositionsBatchSql.ts`.
+- **Чистые функции**: `lib/planner-timeline/occupancyUtils.ts` — `getPositionSegmentRanges`, `getPositionEffectiveDuration`, `cellsToSegments`, `mergeAdjacentSegments`, `getSegmentEditorRangeAndCells` и др.; тесты — `lib/planner-timeline/occupancyUtils.test.ts`.
+- **Валидация**: `features/sprint/utils/occupancyValidation.ts` (проверки по всем отрезкам); используется свимлейном через `features/sprint/components/SprintPlanner/components/SwimlanesSection.tsx` и шапкой дней (`features/sprint/components/DaysHeader.tsx`).
+- **UI (свимлейн)**: ПКМ по карточке → «Редактировать отрезки» (`features/context-menu/components/ContextMenu/components/ContextMenuPlanItems.tsx`) → инлайн-редактор `features/swimlane/components/SwimlaneSegmentEditFrame.tsx`: клик по карточке разрезает, разрыв можно тянуть/менять длину (`features/swimlane/hooks/useSegmentEditGapDrag.ts`), «Подтвердить»/«Отменить» в плавающем тулбаре. Бейдж отрезка на карточке — `features/task/components/TaskCard/components/TaskCardSwimlaneSegmentBadge.tsx`.
+- **Сетка**: число долей дня настраивается (`getPartsPerDay` из `lib/plannerTimelineScale.ts`, `start_part < 4`); `PARTS_PER_DAY = 3` — только значение по умолчанию/легаси.
 
 ---
 
@@ -106,7 +103,7 @@ psql -U ... -d <your-db-name> -f database/migrations/011_task_position_segments.
 
 1. **Типы** (`types/index.ts`): добавить в `TaskPosition` опциональное поле `segments?: Array<{ startDay: number; startPart: number; duration: number }>`.
 2. **БД**: миграция — добавить `segments JSONB` (или таблицу отрезков) и при чтении/записи маппить в/из типа.
-3. **API** (`app/api/sprints/.../positions/`, batch): при GET возвращать `segments`; при POST/batch принимать и сохранять `segments`; при отсутствии — считать одну позицию одним отрезком.
+3. **API** (`app/api/sprints/[sprintId]/positions/route.ts`, `.../positions/batch/route.ts`): при GET возвращать `segments`; при POST/batch принимать и сохранять `segments`; при отсутствии — считать одну позицию одним отрезком.
 4. **occupancyValidation**: ввести `getPositionSegments(position): Array<{ startCell, endCell }>` (если есть `segments` — по ним, иначе один отрезок из start_day/start_part/duration). Все проверки (dev/QA, пересечения по assignee, недоступные дни) переписать в терминах «все отрезки всех позиций» (например, проверять пересечения между любыми двумя отрезками разных задач у одного assignee; для dev/QA — сравнивать конец последнего dev-отрезка с началом первого QA-отрезка по задаче).
 5. **OccupancyPhaseBar** (или обёртка в OccupancyTaskRow):
    - Если у позиции есть `segments`: рендерить несколько полос (или одну «разорванную» визуально), каждая — drag/resize при желании; контекстное меню на каждой или общее «Разбить на отрезки» только для «целой» фазы.
@@ -129,4 +126,3 @@ psql -U ... -d <your-db-name> -f database/migrations/011_task_position_segments.
 - **Валидация и оценка** завязаны на один диапазон на позицию; для дробления нужно ввести «отрезки» и пересчитывать эффективную занятость и проверки по ним.
 - Внедрить дробление можно без смены концепции «одна позиция на задачу», добавив опциональный массив `segments` (вариант A), с правками в БД, API, типах, валидации и в компоненте полосы/режиме редактирования сетки.
 
-Если нужно, могу расписать пошаговый план задач (тикеты) под вариант A или набросать сигнатуры/примеры для `getPositionSegments` и изменений в валидации.

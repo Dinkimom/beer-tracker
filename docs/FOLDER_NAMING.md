@@ -1,24 +1,29 @@
 # Именование папок (домены и компоненты)
 
-В проекте есть два стиля имён папок. Ниже — зафиксированное правило, чтобы снять разногласия.
+В проекте есть несколько стилей имён папок. Ниже — зафиксированное правило, чтобы снять разногласия.
 
 ## Правило
 
 **Папки-домены (группировка по подфичам/областям):** **kebab-case**  
-Примеры: `task-row`, `quarterly-planning`, `feature-planner`, `context-menu`, `task-row`, `actual`, `availability`, `shared`, `table`, `task-arrows`, `other`.
+Примеры: `context-menu`, `sla-bugs`, `sprint-metrics`, `feature-planner`, `quarterly-planning-v2` (корень `features/`), `task-arrows`, `in-progress-fact` (`features/swimlane/components/`, `features/swimlane/utils/`), `feature-lanes` (`features/sprint/components/SprintPlanner/`).
 
-**Папки-компоненты** (одна главная сущность + её части, часто совпадает с именем React-компонента): в старом коде местами **PascalCase** (например `Phase`, `Task`, `Timeline`, `TaskBoard`, `CommentCard`). **Для новых таких папок** предпочтительно **kebab-case** в духе доменов, если это именно группировка по области, а не «одна папка = один компонент».
+**Папки-компоненты** (одна главная сущность + её части, совпадает с именем React-компонента): **PascalCase** (`TaskCard`, `TaskBar`, `SprintPlanner`, `DaysHeader`, `ContextMenu`, `BugsTab`). Так и оставляем: папка рядом с одноимённым файлом или главным компонентом внутри.
 
-**Итог:** для **разделения на домены/поддомены** везде используем **kebab-case**. Так сделано в `occupancy/components` (actual, availability, shared, table, task-row, task-arrows, other), в `features/swimlane/components` (`task-arrows`, `in-progress-fact`) и в корне фич (quarterly-planning, feature-planner). Старые папки в PascalCase (Phase, Task, Availability в quarterly-planning и т.п.) можно не переименовывать массово; при добавлении новых доменов — kebab-case.
+**Технические папки:** lowercase (`components`, `hooks`, `utils`, `contexts`, `constants`) и короткие lowercase-группы внутри модуля (`board`, `kanban`, `layout`, `mobx`, `onboarding`).
+
+**Итог:** для разделения на домены/поддомены в `features/` — **kebab-case**; для папки одного компонента — **PascalCase**. Массово старые папки не переименовываем.
 
 ## Текущее состояние
 
 | Где | Стиль | Примеры |
 |-----|--------|--------|
-| Фичи (корень) | kebab-case | `quarterly-planning`, `feature-planner`, `context-menu` |
-| Технические папки | lowercase | `components`, `hooks`, `utils`, `services` |
-| occupancy/components (домены) | kebab-case | `task-row`, `table`, `actual`, `availability`, `shared`, `task-arrows`, `other` |
-| quarterly-planning/components | PascalCase (исторически) | `Phase`, `Task`, `Quarter`, `Timeline`, `Availability`, `Participants` |
-| Другие фичи (папки под компоненты) | PascalCase (исторически) | `TaskBoard`, `CommentCard`, `SprintPlanner`, `DaysHeader` |
+| `features/` (корень) | kebab-case / одно слово | `context-menu`, `sla-bugs`, `sprint-metrics`, `swimlane`, `retro` |
+| Технические папки | lowercase | `components`, `hooks`, `utils`, `contexts` |
+| Поддомены внутри фич | kebab-case | `task-arrows`, `in-progress-fact`, `feature-lanes` |
+| Папки компонентов | PascalCase | `TaskCard`, `TaskInfoSidebar`, `SprintPlanner`, `DaysHeader`, `AccountWorkModal` |
+| Папки хука/модуля с частями | camelCase по имени модуля | `features/swimlane/hooks/useDragAndDrop/`, `features/task/utils/autoAssignTasks/` |
+| `lib/` (домены) | camelCase / одно слово | `sprintGoals`, `slaBugs`, `agentSessions`, `retro`; исключение — `planner-timeline` |
 
-При рефакторинге или добавлении новых доменов ориентируемся на kebab-case для доменной группировки.
+`features/sprint/components/SprintPlanner/occupancy/` — легаси, в этой сверке не проверялся.
+
+При рефакторинге или добавлении новых доменов в `features/` ориентируемся на kebab-case.

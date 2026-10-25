@@ -26,16 +26,40 @@ features/ / components/ / hooks/
 
 **ESLint:** `api/no-direct-db`, `layers/no-app-api-import`, `layers/no-features-import` (`lib` ↛ `features`). Правила и чеклисты волн: [`docs/ARCHITECTURE_UNIFORMITY.md`](./docs/ARCHITECTURE_UNIFORMITY.md), краткие нормы — [`AGENTS.md`](./AGENTS.md).
 
-**Tracker:** новый серверный код провайдера — `lib/issueTrackerProvider`; `lib/trackerApi` — легаси, трогать по касанию.
+Подробно про клиент и маршруты — [`docs/API_DOCUMENTATION.md`](./docs/API_DOCUMENTATION.md), маршрут → бэкенды — [`docs/API_BACKENDS.md`](./docs/API_BACKENDS.md).
+
+## Multi-tenancy и авторизация
+
+**Сессия продукта.** HttpOnly cookie `bt_product_session` с подписанным HMAC токеном (`AUTH_SESSION_SECRET`), в payload — id пользователя (`staff.id`): [`lib/auth/constants.ts`](./lib/auth/constants.ts), [`lib/auth/sessionToken.ts`](./lib/auth/sessionToken.ts), чтение — `getProductUserIdFromRequest` в [`lib/auth/productSession.ts`](./lib/auth/productSession.ts). Пароля нет (`/api/auth/login` всегда 401): сессию выдаёт `POST /api/auth/onprem/tracker-session` — токен трекера проверяется через `/myself`, по нему находится сотрудник организации ([`lib/auth/onpremTrackerSessionHelpers.ts`](./lib/auth/onpremTrackerSessionHelpers.ts), [`lib/onPrem/establishProductSessionFromTrackerTokenHelpers.ts`](./lib/onPrem/establishProductSessionFromTrackerTokenHelpers.ts)).
+
+**Организация (tenant) на запрос.** Браузер хранит активную организацию в localStorage (`beer-tracker-active-organization-id`), `beerTrackerApi` шлёт её в заголовке `x-organization-id` ([`lib/tenantHttpConstants.ts`](./lib/tenantHttpConstants.ts), [`lib/axios.ts`](./lib/axios.ts)). Резолв на сервере — [`lib/api-tenant.ts`](./lib/api-tenant.ts):
+
+- `requireTenantContext` — большинство маршрутов планера. On-prem режим: организация из заголовка (если есть в БД) или первая организация; роль `org_admin`, проверка членства отложена ([`lib/api/apiTenantHelpers.ts`](./lib/api/apiTenantHelpers.ts)).
+- `requireTenantForOrganization` и надстройки `requireTenantWithPlannerProfile` / `requireTenantWithAdminProfile` / `requireTenantOrgAdmin` — маршруты с `organizationId` в пути: обязательна сессия, членство в `organization_members` (или супер-админ), профиль доступа из [`lib/access/orgAccess.ts`](./lib/access/orgAccess.ts).
+- `requireTenantPathMatchesHeader` — защита от расхождения id в пути и заголовке.
+
+[`middleware.ts`](./middleware.ts) tenant не резолвит: он только проставляет PWA-заголовок для страниц и не матчит `/api/*`.
+
+**Креды трекера.** Тип трекера и URL API — `organizations.settings.issueTracker` ([`lib/issueTrackerProvider/settings.ts`](./lib/issueTrackerProvider/settings.ts)). Токен на запрос ([`lib/trackerRequestConfig.ts`](./lib/trackerRequestConfig.ts), `resolveTrackerApiConfigFromRequest`): сначала `X-Tracker-Token` пользователя, иначе сохранённый токен организации. Токен пользователя лежит в localStorage браузера с привязкой к организации ([`lib/trackerTokenStorage.ts`](./lib/trackerTokenStorage.ts); для Jira Cloud OAuth — ещё refresh-токен, cloudId и срок, обновление — [`lib/atlassianOAuth/browserRefresh.ts`](./lib/atlassianOAuth/browserRefresh.ts)). Токен организации хранится в `organization_secrets` зашифрованным AES-256-GCM ключом `ORG_SECRETS_ENCRYPTION_KEY` ([`lib/crypto-org-secrets.ts`](./lib/crypto-org-secrets.ts), [`lib/organizations/organizationSecretsRepository.ts`](./lib/organizations/organizationSecretsRepository.ts)); [`lib/organizations/organizationTrackerCredentials.ts`](./lib/organizations/organizationTrackerCredentials.ts) отдаёт его серверным вызовам (админка, sync-worker) и ротирует OAuth-токен Atlassian. Ошибки конфигурации — `TrackerApiConfigError` (400/401/403/404/422).
+
+## Провайдеры трекера: `lib/issueTrackerProvider` и легаси `lib/trackerApi`
+
+- **[`lib/issueTrackerProvider/`](./lib/issueTrackerProvider/)** — основной слой. `IssueTrackerProviderClient` (контракт в `types.ts`) с доменными методами: задачи, спринты, доски, переходы, changelog, очереди. Реестр [`registry.ts`](./lib/issueTrackerProvider/registry.ts): `tracker` → `yandexTrackerProvider.ts`, `jira-cloud` / `jira-onprem` → `jiraProvider.ts`. Клиент в route — `getIssueTrackerProviderClientFromRequest(request)` из [`clientFactory.ts`](./lib/issueTrackerProvider/clientFactory.ts); по токену организации без запроса — `getIssueTrackerProviderClientForOrganization`. Тип и web-base трекера — `client.providerKind` / `client.webBaseUrl`. Контрактные тесты — `lib/issueTrackerProvider/contracts/`.
+- **[`lib/trackerApi/`](./lib/trackerApi/)** — легаси-функции Yandex Tracker REST поверх axios. Сейчас их в основном вызывает Yandex-адаптер (`yandexTrackerProvider.ts`) и маппинг (`mapTrackerIssueToTask`, `extractDevelopers`); прямой вызов из нового route — нет.
+- **Сырой axios** — `getTrackerApiFromRequest` ([`lib/api-tracker.ts`](./lib/api-tracker.ts)) / `createTrackerApiFromRequest` ([`lib/tracker-client.ts`](./lib/tracker-client.ts)); остался в нескольких маршрутах и хелперах, не перенесённых на провайдер. Трогать по касанию.
+
+Новый код — только через `IssueTrackerProviderClient`, без `if (provider === 'jira')` в `app/api/**`. Подробнее: [`docs/ISSUE_TRACKERS.md`](./docs/ISSUE_TRACKERS.md), [`docs/ISSUE_TRACKER_PROVIDER_MIGRATION.md`](./docs/ISSUE_TRACKER_PROVIDER_MIGRATION.md).
 
 ## React Query (серверный кэш)
 
 | Данные | Ключ / хук | Примечание |
 |--------|------------|------------|
 | Задачи спринта (основной список) | `sprintTasksQueryKey` → `['tasks', sprintId, boardId]` | `useTasks` на странице и в `useSprintPlannerState` (один кэш), полный ответ — `useReloadTasks`; оптимистичные правки списка — `patchSprintTasksQuery` |
-| Задачи для вкладки «Занятость» с фильтром по статусу | `['tasks', 'occupancy', sprintId, boardId, statusFilter]` | `useOccupancyTasks` — отдельный запрос под фильтр |
-| Списки спринтов по доске | `['sprints', boardId]` | `useSprints` и т.п. |
-| Доски | см. `useBoards` | |
+| Задачи для вкладки «Занятость» с фильтром по статусу | `occupancyTasksQueryKey` → `['tasks', 'occupancy', sprintId, boardId, statusFilter]` | `useOccupancyTasks` — отдельный запрос под фильтр |
+| Списки спринтов по доске | `sprintsQueryKey` → `['sprints', boardId]` | [`useSprints`](./features/sprint/hooks/useSprints.ts) |
+| Доски | см. [`useBoards`](./features/board/hooks/useBoards.ts) | |
+
+На `/demo/planner` ключи задач и спринтов получают сегмент `'demo'` (`['tasks', 'demo', …]`, `['sprints', 'demo', boardId]`), чтобы не смешивать кэш с продуктом.
 
 **Фоновое обновление:** на основной странице [`useSprintTasksBackgroundRefresh`](./features/task/hooks/useSprintTasksBackgroundRefresh.ts) раз в минуту (только при видимой вкладке, не для archived/released) запрашивает `/api/tracker?skipSnapshots=1`: серверный in-memory кэш или живой Tracker, без снимка PG. Ответ кладётся в кэш, только если `dataUpdateCount` не изменился за время запроса и нет активных мутаций — оптимистичные правки не откатываются.
 
@@ -47,12 +71,13 @@ features/ / components/ / hooks/
 
 ## MobX (`lib/layers/application/mobx/`)
 
-Классы сторов: `lib/layers/application/mobx/stores/` (`TaskPositionsStore`, `SprintPlannerUiStore`); корневой стор: [`lib/layers/application/mobx/createRootStore.ts`](./lib/layers/application/mobx/createRootStore.ts).
+Классы сторов: `lib/layers/application/mobx/stores/` (`TaskPositionsStore`, `SprintPlannerUiStore`, `SprintMovePlacementStore`); корневой стор: [`lib/layers/application/mobx/createRootStore.ts`](./lib/layers/application/mobx/createRootStore.ts).
 
 | Стор | Назначение |
 |------|------------|
 | `TaskPositionsStore` | Позиции карточек на свимлейне/занятости: `observable.map<taskId, TaskPosition>`, загрузка `fetchSprintPositions`, debounce сохранений, поколения ответов чтобы устаревший `fetch` не затирал локальные правки после DnD |
 | `SprintPlannerUiStore` | Преходящий UI планера: поиск, контекстное меню, hover, сегменты фаз, фокус комментария и т.д. |
+| `SprintMovePlacementStore` | Сессия «Запланировать в другом спринте»: задача или заметка показывается на доске целевого спринта до подтверждения или отмены |
 
 Доступ к сторам: `useRootStore()` в клиентских компонентах. Для позиций в планере спринта типичен фасад [`useTaskPositionsApi`](./hooks/useTaskPositionsApi.ts) (внутри — тот же `TaskPositionsStore`).
 
@@ -87,9 +112,19 @@ features/ / components/ / hooks/
 
 3. **Полная перезагрузка:** `useReloadTasks` подменяет весь `TasksResponse` в кэше; подписчики `useTasks` получают новые данные.
 
-## `OccupancyView` и стор UI
+## Realtime (SSE)
 
-При `usePlannerUiStore: true` (только основной `SprintPlanner`) часть полей берётся из `SprintPlannerUiStore`; иначе — из пропсов. Единая логика: `occupancyPlannerUiResolve.ts` (есть unit-тесты).
+REST остаётся единственным каналом записи; realtime только сообщает другим вкладкам, что перечитать.
+
+- **Сервер → клиент:** `GET /api/realtime?sprintId=&organizationId=&clientId=&presence=` ([`app/api/realtime/route.ts`](./app/api/realtime/route.ts)) отдаёт Server-Sent Events ([`lib/realtime/sprintRealtimeSse.ts`](./lib/realtime/sprintRealtimeSse.ts)): tenant через `requireTenantContext`, ping каждые 25 с, при открытии — снимок таймера.
+- **Шина:** [`lib/realtime/sprintRealtimeBus.ts`](./lib/realtime/sprintRealtimeBus.ts) — слушатели в памяти процесса плюс Redis pub/sub (канал `beer-tracker:sprint-realtime:<org>:<sprint>`) для нескольких инстансов. В `next dev` Redis для realtime выключен, включается `REALTIME_REDIS_IN_DEV=1` ([`lib/realtime/sprintRealtimeConstants.ts`](./lib/realtime/sprintRealtimeConstants.ts)).
+- **Публикация:** маршруты после мутации вызывают `notifySprintRealtime(request, organizationId, sprintId, resources)` ([`lib/realtime/notifySprintRealtime.ts`](./lib/realtime/notifySprintRealtime.ts)). `originClientId` берётся из заголовка `x-realtime-client-id`, поэтому вкладка-автор своё эхо не получает.
+- **События** ([`lib/realtime/sprintRealtimeTypes.ts`](./lib/realtime/sprintRealtimeTypes.ts)): `sprint.changed` со списком `resources` (`positions`, `links`, `comments`, `reactions`, `goals`, `tasks`, `retro`, `agentSessions`) и опционально `issueStatus` / `issueMembership`; `sprint.presence` — кто смотрит спринт и что делает (фокус, жест, вид доски; `PUT /api/realtime/presence`, [`lib/realtime/sprintPresence.ts`](./lib/realtime/sprintPresence.ts)); `sprint.timer` — общий таймер ([`lib/realtime/sprintTimerStore.ts`](./lib/realtime/sprintTimerStore.ts)).
+- **Клиент:** [`hooks/useSprintRealtimeSync.ts`](./hooks/useSprintRealtimeSync.ts) открывает `EventSource` и раскладывает ресурсы по обработчикам. В планере ([`useSprintPlannerState.ts`](./features/sprint/components/SprintPlanner/hooks/useSprintPlannerState.ts)): `positions` → `TaskPositionsStore.reconcileRemoteSprint` (MobX, pending-правки не затираются); `links` / `comments` → `reloadFromRemote` из `useDebouncedApiSync` (слияние через [`lib/realtime/mergeRemoteItemsWithPending.ts`](./lib/realtime/mergeRemoteItemsWithPending.ts)); `tasks` → точечный патч кэша React Query (`patchSprintTaskStatusInQueries`, `upsertSprintTaskInQueries`, `removeSprintTaskFromQueries`), без payload — `reloadSprintTasksQueries`; `goals` / `agentSessions` → `invalidateQueries`. Ретро — [`features/retro/hooks/useRetroBoardCollaboration.ts`](./features/retro/hooks/useRetroBoardCollaboration.ts). На `/demo/planner` SSE не открывается.
+
+## `OccupancyView` (легаси)
+
+Старый планер; не трогать без прямой просьбы — см. [AGENTS.md](./AGENTS.md). Актуальная раскладка — свимлейн.
 
 ## Чистые функции (`lib/`, хелперы планера)
 

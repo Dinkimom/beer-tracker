@@ -24,23 +24,25 @@ import { Icon } from '@/components/Icon';
 
 ### Архитектура
 
-Проект использует компонент `Icon.tsx`, который рендерит SVG иконки напрямую с поддержкой:
+Проект использует компонент `components/Icon.tsx`, который рендерит SVG иконки напрямую (`viewBox="0 0 24 24"`) с поддержкой:
 - ✅ `currentColor` для управления цветом через CSS
 - ✅ Темная/светлая тема через Tailwind
 - ✅ Типизация TypeScript
-- ✅ Автоматическое предупреждение о несуществующих иконках
+- ✅ Автоматическое предупреждение о несуществующих иконках (`console.warn`, компонент возвращает `null`)
+- ✅ Проп `size?: 'sm' | 'md' | 'lg'` (`w-4 h-4` / `w-5 h-5` / `w-6 h-6`, по умолчанию `md`) — применяется, только если не передан `className`
 
 ### Структура файлов
 
 ```
-project/
-├── components/
-│   └── Icon.tsx              # Единственный компонент для всех иконок
-├── assets/icons/             # SVG файлы (для справки)
-└── public/assets/icons/      # Публичные SVG (для справки)
+components/
+├── Icon.tsx               # Компонент для всех иконок
+├── iconGlyphs.tsx         # Словарь глифов (часть 1)
+├── iconGlyphsMore.tsx     # Словарь глифов (часть 2) + iconOffsets (сдвиги для priority-* / issue-*)
+└── iconSizeClassName.ts   # Маппинг size → классы
+public/assets/icons/       # Публичные SVG (для справки, в Icon не используются)
 ```
 
-**Важно:** Для использования иконок импортируйте только `Icon.tsx`. Файлы в `assets/icons/` нужны только для справки.
+**Важно:** Для использования иконок импортируйте только `Icon` из `@/components/Icon`. Глифы добавляются в `iconGlyphs.tsx` / `iconGlyphsMore.tsx`.
 
 ## Каталог иконок
 
@@ -66,7 +68,7 @@ import { PriorityIcon } from '@/components/PriorityIcon';
 <Icon name="priority-blocker" className="w-4 h-4 text-red-600" />
 ```
 
-### 🐛 Иконки типов задач (4)
+### 🐛 Иконки типов задач (5)
 
 Каждый тип задачи имеет уникальный дизайн и рекомендованный цвет:
 
@@ -76,6 +78,7 @@ import { PriorityIcon } from '@/components/PriorityIcon';
 | `issue-task` | 🔵 Синий | Обычные задачи |
 | `issue-epic` | 🟣 Фиолетовый | Эпики |
 | `issue-story` | 🟢 Зеленый | Пользовательские истории |
+| `issue-draft` | 🟠 Янтарный | Черновики |
 
 **Пример:**
 ```tsx
@@ -87,31 +90,35 @@ import { IssueTypeIcon } from '@/components/IssueTypeIcon';
 <Icon name="issue-bug" className="w-4 h-4 text-red-600 dark:text-red-400" />
 ```
 
-### 🔧 Общие иконки (32)
+### 🔧 Общие иконки
+
+Полный список — ключи словарей в `components/iconGlyphs.tsx` и `components/iconGlyphsMore.tsx` (на 2026-10-25 всего 99 имён, включая priority-* и issue-*). Основные группы:
 
 #### Навигация
-- `chevron-down`, `chevron-up`, `chevron-left`, `chevron-right` - Стрелки для навигации
+- `chevron-down`, `chevron-down-bold`, `chevron-up`, `chevron-left`, `chevron-right`, `arrow-left`, `arrow-right`
 
 #### Действия
-- `plus`, `plus-bold` - Добавление элементов
-- `check`, `check-bold` - Подтверждение, успех
-- `x`, `x-bold` - Закрытие, удаление
-- `circle-x` - Закрытие с фоном
-- `edit` - Редактирование
-- `trash` - Удаление
-- `drag-handle` - Перетаскивание (6 точек)
+- `plus`, `plus-bold`, `minus`, `minus-bold` — добавление / удаление
+- `check`, `check-bold`, `check-circle`, `check-square` — подтверждение, успех
+- `x`, `x-bold`, `close`, `circle-x` — закрытие
+- `edit`, `trash`, `copy`, `scissors`, `archive`, `undo`, `redo`
+- `drag-handle`, `grip-vertical` — перетаскивание
+
+#### Медиа и таймеры
+- `play`, `play-fill`, `pause`, `pause-fill`, `stop`, `stopwatch`, `clock`
+
+#### Редактор текста
+- `bold`, `italic`, `strikethrough`, `code`, `code-block`, `quote`, `list`, `list-ordered`, `link`, `image`, `hash`
 
 #### UI элементы
-- `calendar` - Календарь, даты
-- `spinner` - Загрузка
-- `search` - Поиск
-- `menu` - Меню (гамбургер)
-- `refresh` - Обновление
-- `home` - Главная страница
-- `minimize`, `maximize` - Управление окнами
-- `sun`, `moon` - Переключение темы
-- `play` - Воспроизведение, запуск
-- `sparkles` - Автоматизация, AI
+- `calendar`, `spinner`, `loader`, `search`, `menu`, `refresh`, `home`, `settings`, `minimize`, `maximize`
+- `sun`, `moon`, `tree`, `snowflake`, `sparkles` — тема / сезонные / AI
+- `alert-triangle`, `warning`, `exclamation`, `circle-info`, `circle-help` — статусы и подсказки
+- `eye`, `eye-off`, `lock`, `log-out`, `mail`, `user`, `users`
+- `comment`, `comment-plus`, `file`, `file-text`, `diagram`, `dots-horizontal`
+
+#### Планер и доменные
+- `backlog`, `timeline`, `phase-segments`, `plan-add`, `test-plan`, `target`, `bar-chart`, `trend-down`, `crane`, `wrench`
 
 ## Примеры использования
 
@@ -364,11 +371,11 @@ import { Icon } from '@/components/Icon';
 </svg>
 ```
 
-### Шаг 2: Добавьте в Icon.tsx
+### Шаг 2: Добавьте глиф в iconGlyphs.tsx или iconGlyphsMore.tsx
 
 ```tsx
-// components/Icon.tsx
-const icons: Record<string, React.ReactNode> = {
+// components/iconGlyphsMore.tsx
+export const iconGlyphsMore: Record<string, ReactNode> = {
   // ... существующие иконки
   
   // Добавьте вашу иконку
@@ -393,7 +400,7 @@ const icons: Record<string, React.ReactNode> = {
 ### Рекомендации для новых иконок
 
 1. **ViewBox:** Используйте стандартный `viewBox="0 0 24 24"`
-2. **currentColor:** Всегда используйте `currentColor` вместо конкретных цветов
+2. **currentColor:** Всегда используйте `currentColor` вместо конкретных цветов. По умолчанию `<svg>` рендерится с `fill="none"` (stroke-иконки); `fill="currentColor"` включается только для `sun`, `moon`, `tree`, `sparkles` (список в `Icon.tsx`)
 3. **Толщина линий:** `strokeWidth="2"` для консистентности
 4. **Закругления:** `strokeLinecap="round"` и `strokeLinejoin="round"`
 5. **Имена:** Используйте kebab-case: `icon-name`, `chevron-down`
@@ -437,8 +444,9 @@ const icons: Record<string, React.ReactNode> = {
 
 ```tsx
 interface IconProps {
-  name: string;           // Имя иконки
-  className?: string;     // Tailwind классы
+  className?: string;             // Tailwind классы (перекрывают size)
+  name: string;                   // Имя иконки
+  size?: 'lg' | 'md' | 'sm';      // Размер, если className не передан
 }
 
 // Использование
@@ -499,8 +507,8 @@ import { Icon } from '@/components/Icon';
 
 ## Справочная информация
 
-**Всего иконок:** 41  
-**Компонентов с иконками:** 19  
+**Всего иконок:** 99 (на 2026-10-25)  
+**Файлов, импортирующих `Icon`:** ~190  
 **Поддержка темной темы:** Да  
 **Поддержка currentColor:** Да  
 **TypeScript:** Да
@@ -508,12 +516,13 @@ import { Icon } from '@/components/Icon';
 ### Связанные файлы
 
 - `components/Icon.tsx` - Основной компонент
-- `components/PriorityIcon.tsx` - Обертка для иконок приоритетов
+- `components/iconGlyphs.tsx`, `components/iconGlyphsMore.tsx` - Словари глифов
+- `components/iconSizeClassName.ts` - Размеры по пропу `size`
+- `components/PriorityIcon.tsx` - Обертка для иконок приоритетов (с тултипом)
 - `components/IssueTypeIcon.tsx` - Обертка для иконок типов задач
-- `assets/icons/` - SVG файлы (для справки)
 - `public/assets/icons/` - Публичные SVG (для справки)
 
 ---
 
-**Последнее обновление:** 21.12.2024  
-**Версия:** 2.0
+**Последнее обновление:** 25.10.2026  
+**Версия:** 2.1

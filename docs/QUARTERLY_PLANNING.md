@@ -9,7 +9,8 @@
 - UI: `features/quarterly-planning-v2/`
 - API: `app/api/quarterly-plans/v2/route.ts`
 - клиентский слой: `lib/api/quarterly.ts`
-- экран: `QuarterlyPlanningV2Page` (`?page=quarterly-v2`, не в шапке)
+- экран: `QuarterlyPlanningV2Page` — ни в одном роуте не смонтирован; файл держится как entry в `knip.json`, чтобы Knip не считал дерево мёртвым
+- настройки отображения: вкладка `quarterly-v2` в `components/SettingsModal/tabs/SettingsPlanningTab.tsx` (ключи `beer-tracker-quarterly-v2-*` в `hooks/localStorage/storageKeys.ts`)
 
 ## Что осталось в коде (не развивать)
 
@@ -37,7 +38,7 @@ GET /api/quarterly-plans/v2?boardId=X&year=Y&quarter=Z
 PUT /api/quarterly-plans/v2
 ```
 
-Дополнительный availability API (используется в планере/свимлейнах):
+Дополнительный availability API (живой: планер и свимлейн через `lib/api/quarterly.ts` → `features/sprint/hooks/useBoardAvailabilityEvents.ts`):
 
 ```text
 GET/POST/PATCH/DELETE /api/quarterly-plans/availability/board-events

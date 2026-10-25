@@ -14,21 +14,29 @@ import { ZIndex } from '@/constants';
 
 Система z-index организована по слоям с четкими диапазонами значений:
 
+Источник правды — [`constants/zIndex.ts`](../constants/zIndex.ts); ниже — значения на 2026-10-25.
+
 ### Базовый контент (0–9)
 - **`base: 0`** — базовый уровень контента
 - **`contentOverlay: 1`** — оверлеи поверх контента (например, стрелки связей задач)
 - **`contentInteractive: 2`** — интерактивные элементы в контенте
+- **`baselineOverBar: 3`** — бейзлайн поверх полос фаз (виден при перетаскивании)
+- **`rowScrollArrow: 9`** — стрелки быстрого скролла к фазе строки
 
 ### Липкие элементы в контенте (10–39)
 - **`stickyInContent: 10`** — липкие элементы внутри контента (например, карточки задач при скролле)
 - **`stickyElevated: 20`** — повышенные липкие элементы
+- **`stickyNote: 25`** — sticky-note комментарии (выше обычных карточек, чтобы реакции не перекрывались)
 - **`arrowsHovered: 30`** — стрелки при наведении
 
-### Chrome элементы (40–69)
+### Chrome элементы (40–70)
+- **`agentPendingApproval: 40`** — тулбар предложения агента под карточкой
+- **`plannerLaneGlass: 45`** — «стекло» колонки исполнителей (выше карточек, ниже имён)
 - **`stickyLeftColumn: 50`** — липкая левая колонка
 - **`stickyPinnedRows: 55`** — закреплённые строки свимлейна
 - **`stickyMainHeader: 60`** — липкая главная шапка (дни)
 - **`sidebarResize: 65`** — ручка изменения размера сайдбара (выше шапки дней)
+- **`plannerControls: 70`** — шапка планера с селектом (поверх скролла доски, ниже дропдаунов)
 
 ### Дропдауны и поповеры (100–199)
 - **`dropdown: 100`** — базовый уровень дропдаунов
@@ -39,7 +47,6 @@ import { ZIndex } from '@/constants';
 - **`floatingControls: 200`** — плавающие элементы управления
 
 ### Глобальные оверлеи (1000+)
-- **`tooltip: 1000`** — тултипы
 - **`dragPreview: 1200`** — превью при перетаскивании
 - **`sidePanel: 1300`** — правый сайдер задачи и др. панели (выше drag, ниже контекстных меню)
 - **`contextMenu: 1400`** — контекстное меню (поверх сайдеров, ниже модалок)
@@ -51,6 +58,8 @@ import { ZIndex } from '@/constants';
 - **`modalNested: 2011`** — вложенная модалка
 - **`modalConfirmBackdrop: 2020`** — фон диалога подтверждения (поверх вложенных модалок)
 - **`modalConfirm: 2021`** — диалог подтверждения
+- **`tooltip: 2500`** — тултипы (выше меню и модалок: подсказки пунктов меню не должны прятаться под меню)
+- **`toast: 2600`** — тосты (поверх модалок и тултипов)
 - **`overlay: 3000`** — глобальные оверлеи (загрузка и т.д.)
 
 ## Способы использования
@@ -67,7 +76,7 @@ import { ZIndex } from '@/constants';
 
 ### 2. Через className (Tailwind)
 
-Используйте метод `ZIndex.class()` для генерации Tailwind классов:
+Используйте метод `ZIndex.class()` для генерации Tailwind классов (для inline-style без зависимости от генерации Tailwind есть также `ZIndex.value('modal')`):
 
 ```tsx
 <div className={ZIndex.class('modal')}>
@@ -198,7 +207,7 @@ const ModalComponent = createPortal(modalElement, document.body);
 3. **Соблюдайте диапазоны** — новый уровень должен соответствовать логике диапазонов:
    - 0–9: базовый контент
    - 10–39: липкие элементы
-   - 40–69: chrome элементы
+   - 40–70: chrome элементы
    - 100–199: дропдауны
    - 200–299: плавающие контролы
    - 1000+: глобальные оверлеи
@@ -215,29 +224,22 @@ const levels = {
 
 ## Типизация
 
-Все уровни типизированы через `ZIndexLevel`:
-
-```typescript
-import type { ZIndexLevel } from '@/constants';
-
-function setZIndex(level: ZIndexLevel) {
-  return ZIndex.class(level);
-}
-```
-
-TypeScript предупредит, если вы используете несуществующий уровень.
+Аргумент `ZIndex.class()` / `ZIndex.value()` типизирован ключами `levels` (локальный тип `ZIndexLevel` в `constants/zIndex.ts`, наружу не экспортируется) — TypeScript предупредит, если вы используете несуществующий уровень.
 
 ## CSS переменные
 
-В `globals.css` определены CSS переменные для некоторых уровней (для совместимости со старым кодом), но рекомендуется использовать `ZIndex` из констант:
+В `app/globals.css` определены CSS переменные для части уровней (`--z-dropdown*`, `--z-tooltip`, `--z-toast`, `--z-drag-preview`, `--z-side-panel`, `--z-context-menu`, `--z-submenu`, `--z-popup-content`, `--z-modal*`) — для CSS-правил (тултипы, выпадающие меню). В TSX используйте `ZIndex` из констант:
 
 ```css
 :root {
+  --z-tooltip: 2500; /* = ZIndex.tooltip */
+  --z-toast: 2600;   /* = ZIndex.toast */
   --z-modal: 2001;
-  --z-tooltip: 1000;
   /* ... */
 }
 ```
+
+Расхождение: `--z-overlay: 1100` в `globals.css` не совпадает с `ZIndex.overlay: 3000`; переменная в CSS сейчас не используется.
 
 ## Отладка
 
@@ -252,5 +254,6 @@ TypeScript предупредит, если вы используете несу
 
 - `constants/zIndex.ts` — определение всех уровней z-index
 - `app/globals.css` — CSS переменные (legacy)
-- `components/ConfirmDialog.tsx` — пример использования для модалок
-- `components/Tooltip.tsx` — пример использования для тултипов
+- `components/ConfirmDialog.tsx` — пример использования для модалок (`modalConfirmBackdrop` / `modalConfirm`)
+- `components/TextTooltipPortalContent.tsx` — пример использования для тултипов
+- `components/AppToaster.tsx` — тосты

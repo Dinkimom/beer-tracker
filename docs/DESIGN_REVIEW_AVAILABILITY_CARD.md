@@ -1,5 +1,7 @@
 # Дизайн-ревью: карточка отпуска / техспринта в свимлейне
 
+> **Исторический документ (сверено 2026-10-25).** `AvailabilityCard` / `AvailabilityCardsLayer` удалены. Сейчас недоступность в свимлейне — штриховка дней в сетке (`features/swimlane/components/TimelineGrid.tsx`, `buildUnavailableHatchRanges` из `features/swimlane/utils/availabilityTimelineMarks.ts`) плюс кликабельная текстовая подпись `features/swimlane/components/SwimlaneAvailabilityChip.tsx` (через `SwimlaneAvailabilityChips.tsx`), открывающая `AvailabilityEventPopover`. Виды: отпуск, больничный, дежурство, техспринт Web/Back/QA (`features/swimlane/utils/availabilityCardKind.ts`). Ниже — ревью старой карточки, без правок.
+
 ## Назначение
 
 Карточка показывает в свимлейне спринт-планера периоды **отпуска** и **техспринтов** (Web / Back / QA) по `board_availability_events`. Данные общие с историческим квартальным планом; заведение и правка — в спринт-планере (`AvailabilityEventPopover` — поповер на дорожке), не на deprecated-экране квартала.

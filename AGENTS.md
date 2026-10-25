@@ -47,8 +47,8 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 ## Дизайн-система и общие компоненты
 
-- Перед добавлением нового атома UI: поиск в [`components/`](./components/) и в [каталоге спеки](.spec-workflow/specs/project-design-review/COMPONENT_CATALOG.md); по возможности расширять существующий примитив.
-- Семантические CSS-токены (бордеры шапки, muted-текст, тосты): [`app/globals.css`](./app/globals.css) (`--ds-*`, `--toast-*`); краткий перечень — в каталоге спеки.
+- Перед добавлением нового атома UI: поиск в [`components/`](./components/) и в [аудите дублей](./docs/SHARED_COMPONENTS_AUDIT.md); по возможности расширять существующий примитив.
+- Семантические CSS-токены (бордеры шапки, muted-текст, тосты): [`app/globals.css`](./app/globals.css) (`--ds-*`, `--toast-*`).
 - Сториз для ключевых примитивов: `components/*.stories.tsx`, запуск `pnpm storybook`.
 - Кнопка интерактивна. У `button` и контрола с `role="button"` обязательны: `cursor-pointer`; видимый hover (фон или цвет); отклик нажатия (`active:`, фон и обычно `active:scale-[0.98]`); плавный отпуск через `transition` — `transition-colors`, если меняется только цвет, и `transition-all duration-200`, если есть масштаб. Образец — [`components/HeaderIconButton.tsx`](./components/HeaderIconButton.tsx). Disabled не выглядит кликабельным: `disabled:pointer-events-none` или `disabled:cursor-not-allowed` и без hover.
 
@@ -94,7 +94,7 @@ UI планера можно проверять на **`/demo/planner`**, без
 - `sonarjs/no-nested-conditional`, `no-nested-functions`, `no-nested-template-literals` — **error** в `lib/**` и `app/api/**`; **off** в UI (ветвистый JSX не дробить ради стиля).
 - `react-hooks/exhaustive-deps` — **error** (явно строже recommended warn).
 - Архитектурное правило UI: **один компонент = один файл** (допускаются только точечные исключения с комментарием причины).
-- Размер файлов ограничивать и снижать поэтапно (см. `docs/REFACTORING_WAVES_PLAN.md`, трек `max-lines`).
+- Размер файлов ограничивать и снижать поэтапно (`max-lines: 500` в `eslint.config.mjs`, бэклог — [`docs/REFACTORING_BACKLOG.md`](./docs/REFACTORING_BACKLOG.md)).
 
 ## Рефакторинг, `*Helpers*` и размер модулей
 
@@ -119,6 +119,13 @@ UI планера можно проверять на **`/demo/planner`**, без
 - **Extract без wire-up** — helper рядом с route/component, но родитель по-прежнему с inline-логикой → Knip «unused file», ESLint «unused var». Сначала **подключить**, потом коммит.
 - **Big bang** — сотни файлов одним коммитом; лучше **волнами по домену** (`admin/`, `features/swimlane/`, `app/api/auth/`).
 - **Дробление ради lint** — цепочки `Foo.tsx` → `fooHelpers.ts` → `fooLayoutHelpers.ts` при complexity 6–8.
+- **Копия под новый тип** — новый вариант существующего механизма (ещё один вид черновика, карточки, заметки) делается параметром и записью в таблице поведения, а не копией файлов/хуков под этот вид. Копировать можно только то, что реально ведёт себя иначе.
+- **Второе правило вместо импорта** — бизнес-правило (раскладка, поинты, «сделано», виды карточек) реализуется один раз; см. [`docs/BUSINESS_RULES.md`](./docs/BUSINESS_RULES.md). Нужно в другом месте — импортировать, не переписывать.
+
+### Размер изменений
+
+- Один коммит — одна фича или один фикс, ориентир — несколько сотен строк, а не десятки файлов. Большую работу агент режет на шаги и показывает diff каждого.
+- В коммит не идёт код, который автор (человек) не прочитал и не может объяснить.
 
 ### Когда вливать helper обратно
 

@@ -14,7 +14,7 @@ UI по-прежнему ходит только в `/api/*`. Внешний т�
 | **Yandex-адаптер → Tracker REST** | URL, method, body | `*.contract.test.ts` + уже существующие `yandexTrackerProvider*.test.ts` |
 | **Снимки Postgres** | Legacy flat payload и envelope `{ schemaVersion, provider, payload }` | golden mapper + `snapshotEnvelope.test.ts` + `yandexSnapshotSync.contract.test.ts` |
 
-Jira пока stub: любая операция клиента — `422` и `code: issue_tracker_unsupported_operation`. Это отдельный контракт, его не смешивать с Yandex golden.
+Jira-адаптер (`lib/issueTrackerProvider/jiraProvider.ts`) реализует методы из `JIRA_IMPLEMENTED_PROVIDER_METHODS`; остальные методы каталога отвечают `422` и `code: issue_tracker_unsupported_operation` (`createJiraUnsupportedProviderClient` — то же для всех методов). Это отдельный контракт, его не смешивать с Yandex golden.
 
 Тип трекера берётся из настроек организации; в тестах он задаётся явно.
 
@@ -27,7 +27,7 @@ Jira пока stub: любая операция клиента — `422` и `cod
 - Golden: сырой Yandex issue → `IssueTrackerIssue` → `Task` (legacy payload, provider issue, snapshot envelope).
 - Golden: `buildIssueDetailResponse` для сайдбара задачи.
 - Golden: changelog logs → UI changelog и burndown issue.
-- Каталог методов `IssueTrackerProviderClient`: новый метод на интерфейсе без записи в каталог — ошибка `tsc`; реализация Yandex без метода — падение теста; Jira stub отклоняет **все** методы каталога.
+- Каталог методов `IssueTrackerProviderClient`: новый метод на интерфейсе без записи в каталог — ошибка `tsc`; реализация Yandex без метода — падение теста; Jira-адаптер отклоняет все методы каталога вне `JIRA_IMPLEMENTED_PROVIDER_METHODS` (`lib/issueTrackerProvider/contracts/issueTrackerProviderClient.contract.test.ts`).
 - Исходящие REST вызовы, которые адаптер делает сам (не через `lib/trackerApi`): URL/method/body.
 - HTTP-тело `handleApiError` для `UnsupportedIssueTrackerOperationError`.
 
@@ -52,7 +52,7 @@ Jira пока stub: любая операция клиента — `422` и `cod
 
 - JS-readers payload (`backlog`, sprint membership, snapshot summary, stories mapper, overseer `issue_data`, `IssueSnapshotRow`) разворачивают envelope через `issueFieldsFromStoredSnapshot`.
 - Golden: `yandexSnapshotSync.contract.test.ts` — тело инкрементального `_search` (`updatedAt` `{ from, to }` + `order: '+updatedAt'`, опционально `filter.queue` очередей команд), filter полного синка очереди, upsert envelope, паритет legacy vs envelope.
-- Когда появится Jira mapper: те же golden-файлы плюс отдельные Jira-фикстуры; shared mapper не принимают, если сломался Yandex payload.
+- Jira mapper (`mapIssueToTask` в Jira-адаптере) уже есть, но Jira-фикстур в `lib/issueTrackerProvider/contracts/fixtures/` нет — там только Yandex. Правило прежнее: shared mapper не принимают, если сломался Yandex payload.
 
 ## Что тесты не заменят
 

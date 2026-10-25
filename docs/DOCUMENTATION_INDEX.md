@@ -9,9 +9,17 @@ beer-tracker/
 ├── README.md                          # Посадочная (ru)
 ├── README.en.md                       # Посадочная (en)
 ├── CHANGELOG.md                       # Релиз-ноуты (en + ru)
+├── AGENTS.md                          # Правила для разработчиков и агентов: слои, проверки, конвенции
+├── ARCHITECTURE.md                    # Карта данных и состояния, tenant/auth, провайдеры, realtime
+├── CONTRIBUTING.md                    # Как контрибьютить
+├── SECURITY.md                        # Политика безопасности
 ├── docs/
 │   ├── DOCUMENTATION_INDEX.md         # Этот индекс
+│   ├── BUSINESS_RULES.md              # Бизнес-правила кора: раскладка, поинты, done, burndown, жизненный цикл
 │   ├── INSTALL.md                     # Установка, Docker, env, sync, команды
+│   ├── DATABASE.md                    # Схема БД: init.sql, порядок миграций, таблицы, известные проблемы
+│   ├── SYNC.md                        # Синхронизация трекер → БД: BullMQ-воркер, тик, режимы, диагностика
+│   ├── COMMERCIAL_DB_CONTRACT.md      # Каталог staff/teams, DB_CONTRACT_MODE, права роли
 │   ├── companies.md                   # Компании на посадочной: как добавить следующую
 │   ├── media/                         # Скрины/GIF для README (+ SVG-плейсхолдеры)
 │   ├── PROJECT_OVERVIEW.md            # Единый обзор: что / для кого / функции / стек
@@ -29,10 +37,9 @@ beer-tracker/
 │   ├── AGENT_TESTING_GUIDE.md         # Тест-кейсы для агентов
 │   ├── ICONS.md                       # Руководство по иконкам
 │   ├── REFACTORING_BACKLOG.md         # Что отрефакторено и бэклог рефакторинга
-│   └── ZINDEX.md                      # Работа с z-index
-├── BUGS_AND_TASKS.md                  # Известные проблемы и задачи
-├── REFACTORING_SUMMARY.md             # Сводка по реструктуризации
-└── SIDEBAR_MIGRATION.md               # Миграция сайдбара
+│   ├── ZINDEX.md                      # Работа с z-index
+│   └── steering/                      # product / structure / tech — краткие ориентиры
+└── BUGS_AND_TASKS.md                  # Известные проблемы и задачи
 ```
 
 ## 🎯 С чего начать?
@@ -43,9 +50,12 @@ beer-tracker/
 2. **[INSTALL.md](./INSTALL.md)** — установка (Docker Hub или исходники) и env
 3. **[PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md)** — что это, для кого, функции, стек
 4. **[ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md)** — Yandex Tracker / Jira на инстансе
-5. **[STRUCTURE.md](./STRUCTURE.md)** — архитектура проекта
-6. **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** — работа с API
-7. **[API_BACKENDS.md](./API_BACKENDS.md)** — какой бэкенд у какого `/api` маршрута
+5. **[AGENTS.md](../AGENTS.md)** — правила и обязательные проверки
+6. **[ARCHITECTURE.md](../ARCHITECTURE.md)** — где живут данные и состояние
+7. **[BUSINESS_RULES.md](./BUSINESS_RULES.md)** — бизнес-правила кора (читать перед правками планера)
+8. **[STRUCTURE.md](./STRUCTURE.md)** — структура каталогов
+9. **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** — работа с API
+10. **[API_BACKENDS.md](./API_BACKENDS.md)** — какой бэкенд у какого `/api` маршрута
 
 ### Для пользователей
 
@@ -65,6 +75,11 @@ beer-tracker/
 | Документ | Описание | Аудитория |
 |----------|----------|-----------|
 | [INSTALL.md](./INSTALL.md) | Установка, Docker, env, sync, команды | Разработчики, DevOps |
+| [DATABASE.md](./DATABASE.md) | Как применяется схема, порядок миграций, таблицы, известные проблемы | Разработчики, DevOps |
+| [SYNC.md](./SYNC.md) | Синхронизация трекер → БД: воркер, режимы, расписание, диагностика | Разработчики, DevOps |
+| [BUSINESS_RULES.md](./BUSINESS_RULES.md) | Бизнес-правила кора и где они закреплены тестами | Разработчики, PM |
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | Данные и состояние, tenant/auth, провайдеры трекера, realtime | Разработчики |
+| [AGENTS.md](../AGENTS.md) | Правила, слои, обязательные проверки | Разработчики, агенты |
 | [media/README.md](./media/README.md) | Слоты скринов README (только с живого планера) | Все |
 | [PROJECT_OVERVIEW.md](./PROJECT_OVERVIEW.md) | Единый обзор продукта (что / для кого / функции) | Все |
 | [CAPABILITIES.md](./CAPABILITIES.md) | Детальный список возможностей | Все |
@@ -98,14 +113,13 @@ beer-tracker/
 |----------|----------|-----------|
 | [QUARTERLY_PLANNING.md](./QUARTERLY_PLANNING.md) | Архив кода квартального плана (не развивать) | Разработчики |
 | [BUGS_AND_TASKS.md](../BUGS_AND_TASKS.md) | Известные проблемы | Все |
-| [REFACTORING_SUMMARY.md](../REFACTORING_SUMMARY.md) | Реструктуризация проекта | Разработчики |
 | [REFACTORING_BACKLOG.md](./REFACTORING_BACKLOG.md) | Что уже отрефакторено и бэклог на будущее | Разработчики |
-| [SIDEBAR_MIGRATION.md](../SIDEBAR_MIGRATION.md) | Миграция сайдбара | Разработчики |
 
 ## 🔍 Поиск по темам
 
 ### По функциональности
 
+- **Бизнес-правила (раскладка, поинты, done, burndown)** → [BUSINESS_RULES.md](./BUSINESS_RULES.md)
 - **Планирование спринтов** → [CAPABILITIES.md](./CAPABILITIES.md#1-планирование-спринтов)
 - **Бэклог** → [CAPABILITIES.md](./CAPABILITIES.md#2-управление-бэклогом)
 - **Burndown Chart** → [CAPABILITIES.md](./CAPABILITIES.md#4-burndown-chart)
@@ -116,10 +130,11 @@ beer-tracker/
 ### По техническим вопросам
 
 - **Установка / Docker / env** → [INSTALL.md](./INSTALL.md)
+- **Синхронизация** → [SYNC.md](./SYNC.md)
 - **API** → [API_DOCUMENTATION.md](./API_DOCUMENTATION.md), [API_BACKENDS.md](./API_BACKENDS.md), [SPRINT_CONTEXT.md](./SPRINT_CONTEXT.md), [ISSUE_TRACKER_PROVIDER_MIGRATION.md](./ISSUE_TRACKER_PROVIDER_MIGRATION.md), [ISSUE_TRACKER_YANDEX_CONTRACT.md](./ISSUE_TRACKER_YANDEX_CONTRACT.md)
 - **Архитектура** → [STRUCTURE.md](./STRUCTURE.md), [ARCHITECTURE.md](../ARCHITECTURE.md)
 - **Именование папок (домены)** → [FOLDER_NAMING.md](./FOLDER_NAMING.md)
-- **База данных** → [API_DOCUMENTATION.md](./API_DOCUMENTATION.md#распределение-эндпоинтов-по-источникам-данных), [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md)
+- **База данных** → [DATABASE.md](./DATABASE.md), [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md)
 - **Иконки** → [ICONS.md](./ICONS.md)
 - **Z-index и слои** → [ZINDEX.md](./ZINDEX.md)
 - **Тестирование** → [AGENT_TESTING_GUIDE.md](./AGENT_TESTING_GUIDE.md)

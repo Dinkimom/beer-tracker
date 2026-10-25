@@ -4,7 +4,7 @@
 
 **Полное описание вкладки** (секции, критерии попадания, сортировка, UI, API): **[SLA_BUGS_TAB.md](./SLA_BUGS_TAB.md)**.
 
-Источник правды в коде: `lib/slaBugs/classifySlaBug.ts`, `lib/slaBugs/slaBugMetrics.ts`, `lib/slaBugs/config.ts`.
+Источник правды в коде: `lib/slaBugs/classifySlaBug.ts`, `lib/slaBugs/classifySlaBugLabelHelpers.ts` (порядок `LABEL_PRIORITY`), `lib/slaBugs/slaBugMetrics.ts`, `lib/slaBugs/config.ts`. Вкладка доступна только для Yandex Tracker (`supportsSlaBugs`).
 
 ---
 

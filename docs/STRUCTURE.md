@@ -1,385 +1,138 @@
 # Структура проекта Beer Tracker
 
-## 📁 Новая Feature-Based архитектура
+## 📁 Feature-based архитектура
 
-Проект реорганизован по **domain-driven** принципу - каждая фича изолирована со своими компонентами, хуками и утилитами.
+Проект организован по **domain-driven** принципу: продуктовый UI-код лежит в `features/<домен>/` вместе с хуками и утилитами, серверная логика и чистые функции — в `lib/<домен>/`, HTTP-слой — в `app/api/`.
 
-### 🎯 Основные преимущества
+Правила слоёв, лимиты сложности и политика `*Helpers*` — в [AGENTS.md](../AGENTS.md); карта состояния — в [ARCHITECTURE.md](../ARCHITECTURE.md).
 
-- ✅ **Коллокация**: Все файлы фичи находятся рядом
-- ✅ **Масштабируемость**: Легко добавлять новые фичи
-- ✅ **Изоляция**: Легко удалить или заменить фичу
-- ✅ **Понятность**: Сразу видно границы каждого модуля
-- ✅ **Переиспользование**: Shared код вынесен отдельно
-
-## 📂 Структура папок
+## 📂 Корень репозитория
 
 ```
 beer-tracker/
-├── features/                    # 🆕 Все фичи приложения (только используемые папки)
-│   ├── sprint/                  # Домен: Спринты
-│   │   ├── components/
-│   │   │   ├── SprintPlanner.tsx      # Главный контейнер планировщика
-│   │   │   ├── SprintSelector.tsx
-│   │   │   ├── DaysHeader.tsx
-│   │   │   ├── SprintGoalsModal.tsx
-│   │   │   ├── StartSprintModal.tsx
-│   │   │   └── FinishSprintModal.tsx
-│   │   ├── hooks/
-│   │   │   ├── useSprints.ts
-│   │   │   ├── useGoals.ts
-│   │   │   └── useGoalManagement.ts
-│   │   └── utils/
-│   │       ├── sprintMetrics.ts
-│   │       └── sprintStartChecks.ts
-│   │
-│   ├── task/                    # Домен: Задачи
-│   │   ├── components/
-│   │   │   ├── DraggableTask/         # DnD-карточка (сайдбар + бэклог)
-│   │   │   ├── TaskCard.tsx
-│   │   │   ├── TaskCardBody.tsx
-│   │   │   ├── TaskCardContent.tsx
-│   │   │   ├── TaskCardTags.tsx
-│   │   │   ├── TaskBar.tsx
-│   │   │   └── TaskTimeline.tsx
-│   │   ├── hooks/
-│   │   │   ├── useTasks.ts
-│   │   │   ├── useTaskFiltering.ts
-│   │   │   ├── useTaskGrouping.ts
-│   │   │   ├── useTaskLinking.ts
-│   │   │   ├── useTaskMutations.ts
-│   │   │   └── useTaskService.ts
-│   │   ├── services/
-│   │   │   └── TaskService.ts
-│   │   └── utils/
-│   │       ├── taskUtils.ts
-│   │       ├── taskValidation.ts
-│   │       └── autoAssignTasks.ts
-│   │
-│   ├── sidebar/                 # 🆕 Домен: Планировщик сайдбар
-│   │   └── components/
-│   │       ├── Sidebar.tsx            # Главный контейнер (592 строки!)
-│   │       ├── SidebarHeader.tsx
-│   │       ├── SidebarFilters.tsx
-│   │       ├── GoalItem.tsx
-│   │       ├── SprintMetrics.tsx
-│   │       ├── DevelopersManagement.tsx
-│   │       └── tabs/
-│   │           ├── TasksTab.tsx       # Задачи спринта
-│   │           ├── BacklogTab.tsx     # Бэклог
-│   │           ├── GoalsTab.tsx       # Цели спринта
-│   │           ├── InvalidTab.tsx     # Невалидные задачи
-│   │           └── SettingsTab.tsx    # Настройки разработчиков
-│   │
-│   ├── swimlane/                # Домен: Свимлейны
-│   │   ├── components/
-│   │   │   ├── Swimlane.tsx           # Главный контейнер свимлейна
-│   │   │   ├── DeveloperHeader.tsx
-│   │   │   ├── DroppableCell.tsx
-│   │   │   ├── TaskArrows.tsx
-│   │   │   └── ConnectionPoint.tsx
-│   │   ├── hooks/
-│   │   │   ├── useDragAndDrop.ts
-│   │   │   ├── useLinkAnchors.ts
-│   │   │   └── useLinkRestoration.ts
-│   │   └── utils/
-│   │       ├── layerUtils.ts
-│   │       └── positionUtils.ts
-│   │
-│   ├── developers/              # Домен: Управление разработчиками
-│   │   └── hooks/
-│   │       └── useDevelopersManagement.ts
-│   │
-│   ├── qa/                      # Домен: QA логика
-│   │   └── utils/
-│   │       ├── qaStatusMapper.ts
-│   │       ├── qaTaskPlacement.ts
-│   │       └── qaTaskUtils.ts
-│   │
-│   ├── board/                   # Домен: Выбор доски
-│   │   └── components/
-│   │       └── BoardSelector.tsx
-│   │
-│   ├── context-menu/            # Домен: Контекстное меню
-│   │   ├── components/
-│   │   │   ├── ContextMenu.tsx
-│   │   │   ├── SprintSubmenu.tsx
-│   │   │   └── StatusSubmenu.tsx
-│   │   └── utils/
-│   │       └── submenuPositioning.ts
-│   │
-│   ├── account/                 # Домен: Учет работы
-│   │   └── components/
-│   │       └── AccountWorkModal.tsx
-│   │
-│   └── comments/                # Домен: Комментарии
-│       └── components/
-│           └── CommentCard.tsx
-│
-├── components/                  # ♻️ Shared компоненты
-│   ├── Icon.tsx                 # Используется во многих фичах
-│   ├── IssueTypeIcon.tsx
-│   ├── PriorityIcon.tsx
-│   ├── Tooltip.tsx
-│   ├── ErrorBoundary.tsx
-│   └── QueryProvider.tsx
-│
-├── hooks/                       # ♻️ Shared хуки
-│   ├── useLocalStorage.ts       # Используется в разных фичах
-│   ├── useApiStorage.ts
-│   └── usePerformance.ts
-│
-├── utils/                       # ♻️ Shared утилиты
-│   ├── dateUtils.ts             # Общие функции для работы с датами
-│   ├── constants.ts
-│   ├── statusColors.ts
-│   ├── statusMapper.ts
-│   ├── linkAnchors.ts
-│   └── translations.ts
-│
-├── lib/                         # 📚 Библиотеки и API клиенты
-│   ├── axios.ts
-│   ├── db.ts
-│   ├── env.ts
-│   ├── beerTrackerApi.ts
-│   ├── trackerApi.ts
-│   └── validation.ts
-│
-├── contexts/                    # 🔄 React контексты
-│   └── SprintContext.tsx
-│
-├── types/                       # 📝 TypeScript типы
-│   └── index.ts
-│
-├── app/                         # 🚀 Next.js App Router
-│   ├── api/                     # API routes
-│   ├── page.tsx                 # Главная страница
-│   ├── layout.tsx
-│   └── select-board/
-│
-├── database/                    # 🗄️ База данных
-│   ├── init.sql
-│   └── migrations/
-│
-├── docs/                        # 📖 Документация
-│   ├── API_DOCUMENTATION.md
-│   └── ICONS.md
-│
-└── public/                      # 🎨 Статические файлы
-        └── assets/
-            └── icons/
+├── app/                  # Next.js App Router
+│   ├── (main)/           # Главная и планер: /, /planner/[boardId]/sprint/[sprintId]
+│   ├── admin/            # Админка: org, teams, members, tracker, roles, sync, planner, retro
+│   ├── api/              # API routes (тонкий HTTP-слой, без SQL)
+│   ├── demo/planner/     # Демо планера на фикстурах (lib/demo/)
+│   ├── mcp/oauth/consent/# Экран согласия OAuth для MCP-клиентов
+│   ├── auth-setup/  login/  register/  select-board/
+│   └── layout.tsx, globals.css, ThemeProvider.tsx
+├── apps/                 # Отдельные процессы вне Next.js
+│   ├── sync-worker/      # BullMQ-воркер синхронизации (pnpm sync-worker)
+│   ├── agent-bridge/     # Локальный мост планер → Claude CLI (pnpm agent-bridge)
+│   └── mcp-sprint-context/ # stdio-клиент MCP для отладки (pnpm mcp:sprint-context)
+├── features/             # Продуктовые домены (UI + хуки + утилиты)
+├── components/           # Общие UI-примитивы (Button, Icon, PageHeader, SettingsModal/…)
+├── hooks/                # Общие хуки (useTaskPositionsApi, useDebouncedApiSync, localStorage/…)
+├── contexts/             # React-контексты (язык, провайдер трекера, демо-оболочка и т.п.)
+├── lib/                  # Домены сервера и клиента, API-клиенты, чистые функции
+├── constants/            # index.ts, zIndex.ts
+├── types/                # index.ts, tracker.ts, team.ts, quarterly.ts
+├── utils/                # Общие утилиты (даты, статусы, переводы, plannerClock)
+├── database/             # init.sql и плоские миграции database/*.sql
+├── scripts/              # bench, ci, db, eslint, i18n, knip, release
+├── docs/                 # Документация (в т.ч. docs/steering/)
+└── public/               # Статика, PWA (sw.js, offline.html), демо-ассеты
 ```
 
-## Квартальное планирование — **deprecated**
+Миграции лежат прямо в `database/` (например `database/add-swimlane-card-layers.sql`), отдельной папки `migrations/` нет. Многие новые таблицы и колонки создаются приложением автоматически при первом обращении; миграционный файл нужен для ручной установки (см. [CHANGELOG.md](../CHANGELOG.md)).
 
-Каноничная реализация находится в `features/quarterly-planning-v2`. Экран отключён от основной навигации, не развивать. Обзор: [QUARTERLY_PLANNING.md](./QUARTERLY_PLANNING.md).
+## 🧩 `features/`
+
+| Домен | Что внутри |
+|-------|------------|
+| `sprint/` | Планер спринта: `components/SprintPlanner.tsx` → `SprintPlanner/` (`SprintPlannerView.tsx`, `board/`, `kanban/`, `feature-lanes/`, `components/` — тулбары, чат агента, таймер; `sprintPlannerDndHelpers.ts`), селектор спринта, модалка финиша, цели, учёт работ, доступность |
+| `swimlane/` | Свимлейн: дорожки, ячейки, слои, стрелки связей (`task-arrows/`), таймлайн факта (`in-progress-fact/`), чипы доступности, занятость календаря, превью плана агента |
+| `task/` | Карточки задач: `TaskCard/`, `TaskBar/`, `DraggableTask/`, `TaskTimeline/`, `TaskInfoSidebar/`; хуки `useTasks`, мутации, ресайз |
+| `sidebar/` | Сайдбар спринта и вкладки `components/tabs/` (задачи, невалидные, цели, дейли, метрики, бэклог, баги) |
+| `comments/` | Заметки (стикеры) на свимлейне: WYSIWYG-редактор, реакции, диаграммы Excalidraw |
+| `backlog/` | Вкладка «Бэклог»: колонки спринтов, фильтры, массовый перенос |
+| `burndown/` | Вкладка «Диаграмма сгорания» |
+| `retro/` | Вкладка «Ретро»: доска ретроспективы и факты спринта |
+| `sprint-metrics/` | Вкладка «Метрики»: дашборд доски по кварталу |
+| `sla-bugs/` | Хуки вкладки «Баги» (UI — `features/sidebar/components/tabs/BugsTab/`) |
+| `context-menu/` | Контекстное меню карточки и сабменю |
+| `notifications/` | Колокольчик и панель уведомлений |
+| `board/` | Выбор доски, параметры доски |
+| `admin/` | UI админки (org, teams, members, roles, tracker, planner, retro, sync) |
+| `account/` | Модалка учёта работ |
+| `qa/` | QA-логика (маппинг статусов, размещение QA-задач) |
+| `gitlab/` | Маркеры MR на таймлайне факта |
+| `markdown/` | Превью чеклистов из markdown |
+| `widgets/` | Виджеты на свимлейне (крестики-нолики) |
+| `planner/` | `PlannerTimelineScaleProvider.tsx` |
+| `feature-planner/` | **Deprecated**, экраны не подключены к навигации |
+| `quarterly-planning-v2/` | **Deprecated**, см. [QUARTERLY_PLANNING.md](./QUARTERLY_PLANNING.md) |
+
+`features/sprint/components/SprintPlanner/occupancy/` — легаси-режим занятости, не трогать без прямой просьбы (см. AGENTS.md).
+
+## 📚 `lib/` (основные домены)
+
+| Путь | Назначение |
+|------|------------|
+| `lib/api/` | Клиентский фасад к `/api/*` (`getPlannerBeerTrackerApi`), DTO |
+| `lib/layers/` | MobX-сторы (`application/mobx/stores/`), репозитории и мапперы данных |
+| `lib/issueTrackerProvider/`, `lib/trackerApi/`, `lib/tracker/` | Абстракция провайдера (Yandex Tracker / Jira) и клиенты трекера |
+| `lib/sprints/`, `lib/sprintGoals/`, `lib/sprintMetrics/`, `lib/burndown/` | Позиции, связи, слои, превью плана, цели, метрики, burndown |
+| `lib/comments/`, `lib/retro/` | Заметки планера, доска ретро и шаблоны колонок |
+| `lib/agentSessions/`, `lib/mcp/` | Сессии агента и MCP-сервер (`/api/mcp`, OAuth в `lib/mcp/oauth/`) |
+| `lib/snapshots/`, `lib/sync/` | Снимки задач (`issue_snapshots`) и синхронизация (BullMQ) |
+| `lib/realtime/` | SSE-канал спринта, присутствие, таймер |
+| `lib/organizations/`, `lib/staffTeams/`, `lib/admin/`, `lib/roles/`, `lib/access/`, `lib/auth/` | Мультиарендность, команды, админка, роли, сессии |
+| `lib/calendar/`, `lib/holidays/` | CalDAV-занятость, производственный календарь |
+| `lib/slaBugs/`, `lib/overseer/` | SLA-баги и данные обращений HD |
+| `lib/notifications/`, `lib/gitlab/`, `lib/storage/` | Уведомления, GitLab, объектное хранилище (S3) |
+| `lib/i18n/` | Словари ru/en (`lib/i18n/messages/`) |
+| `lib/demo/` | Фикстуры `/demo/planner` |
+| `lib/db.ts` | Пул PostgreSQL (импорт из `app/api/**` запрещён ESLint) |
 
 ## 🎨 Принципы организации
 
-### 1. Feature-First подход
+### 1. Feature-first
 
-Каждая **feature** (домен) - это самодостаточный модуль:
-
-```typescript
-features/sprint/
-├── components/    # UI компоненты этой фичи
-├── hooks/        # Хуки только для этой фичи
-├── utils/        # Утилиты только для этой фичи
-└── services/     # Сервисы (при необходимости)
+```
+features/<домен>/
+├── components/   # UI этого домена
+├── hooks/        # хуки этого домена
+└── utils/        # утилиты этого домена
 ```
 
-### 2. Shared - только общее
+SQL и оркестрация роутов — только в `lib/<домен>/`, не в `features/` и не рядом с `route.ts`.
 
-В `components/`, `hooks/`, `utils/` попадает **только то, что используется в 2+ фичах**:
+### 2. Shared — только общее
 
-- ✅ `Icon.tsx` - используется в sprint, board, task
-- ✅ `useLocalStorage.ts` - используется в sprint, developers
-- ❌ `useSprints.ts` - используется только в sprint → `features/sprint/hooks/`
+В `components/`, `hooks/`, `utils/` попадает то, что используется в 2+ доменах. Перед новым UI-атомом — поиск в `components/` (см. раздел «Дизайн-система» в AGENTS.md).
 
 ### 3. Импорты
 
 ```typescript
-// ✅ Импорт из своей фичи (абсолютный путь)
-import { useSprints } from '@/features/sprint/hooks/useSprints';
-
-// ✅ Импорт из другой фичи (абсолютный путь)
-import { TaskCard } from '@/features/task/components/TaskCard';
-import { Sidebar } from '@/features/sidebar/components/Sidebar';
-
-// ✅ Импорт shared компонента
+// Между модулями — абсолютный путь через @/
+import { useTasks } from '@/features/task/hooks/useTasks';
 import { Icon } from '@/components/Icon';
-
-// ✅ Импорт shared хука
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
-// ✅ Импорт shared утилиты
-import { formatDate } from '@/utils/dateUtils';
-
-// ❌ Относительные импорты НЕ используются
-import { Icon } from '../../../components/Icon'; // ПЛОХО
+// Внутри одного модуля допустимы относительные импорты
+import { SprintPlannerView } from './SprintPlanner/SprintPlannerView';
 ```
 
-### 4. Стратегия масштабирования при добавлении новых страниц
+UI и `lib/` не импортируют из `@/app/api/**`; клиент ходит в API только через `lib/api/*`.
 
-#### 📄 Принцип: Страница = Композиция фич
+### 4. Страница = композиция фич
 
-Когда появятся новые страницы, следуем философии:
-- **`features/`** = переиспользуемые домены (кирпичики)
-- **`app/`** = страницы (композиция кирпичиков)
+- **`features/`** — домены (кирпичики).
+- **`app/`** — маршруты и композиция. Например, `app/(main)/MainPageClientSprintsContent.tsx` подключает планер, бэклог, burndown, ретро и метрики по `?tab=`.
 
-#### Пример: Новая страница аналитики
+Новый домен в `features/` заводится, если это самостоятельная бизнес-сущность или код переиспользуется на нескольких страницах.
 
-```typescript
-// app/analytics/page.tsx
-import { Sidebar } from '@/features/sidebar/components/Sidebar';
-import { TaskList } from '@/features/task/components/TaskList';
-import { AnalyticsChart } from '@/features/analytics/components/Chart';
+## ✅ Проверки
 
-export default function AnalyticsPage() {
-  return (
-    <div>
-      <Sidebar variant="compact" tabs={['tasks']} />
-      <AnalyticsChart />
-      <TaskList filter="completed" />
-    </div>
-  );
-}
-```
-
-#### Преимущества:
-- ✅ **Переиспользование**: Sidebar используется на разных страницах
-- ✅ **Гибкость**: Страница комбинирует нужные features
-- ✅ **Изоляция**: Features не знают о страницах
-- ✅ **Простота**: Одна фича = один домен в `features/`
-
-#### Когда создавать новый feature-домен:
-- ✅ Логика переиспользуется на 2+ страницах
-- ✅ Это самостоятельная бизнес-сущность
-- ✅ Можно изолировать от других доменов
-
-#### Когда код остается в `app/`:
-- ❌ Специфичная логика только для одной страницы
-- ❌ Композиция существующих features
-- ❌ Простые лейауты без бизнес-логики
-
-## 🔍 Как найти код?
-
-### Старая структура → Новая структура
-
-| Что ищете | Где было | Где теперь |
-|-----------|----------|------------|
-| SprintPlanner | `components/` | `features/sprint/components/` |
-| TaskCard | `components/` | `features/task/components/` |
-| TaskSidebar | `components/TaskSidebar/` | `features/sidebar/components/Sidebar.tsx` |
-| Swimlane | `components/` | `features/swimlane/components/` |
-| useSprints | `hooks/` | `features/sprint/hooks/` |
-| useTasks | `hooks/` | `features/task/hooks/` |
-| useDragAndDrop | `hooks/` | `features/swimlane/hooks/` |
-| sprintMetrics | `utils/` | `features/sprint/utils/` |
-| taskUtils | `utils/` | `features/task/utils/` |
-| qaTaskUtils | `utils/` | `features/qa/utils/` |
-| Icon (shared) | `components/` | `components/` ✅ |
-| useLocalStorage (shared) | `hooks/` | `hooks/` ✅ |
-| dateUtils (shared) | `utils/` | `utils/` ✅ |
-
-## 📋 Что было удалено?
-
-### ❌ Дубликаты
-
-- `API_DOCUMENTATION.md` в корне → оставили только в `docs/`
-- `assets/icons/` → оставили только `public/assets/icons/`
-- `file.svg`, `globe.svg`, `next.svg`, `vercel.svg`, `window.svg` → удалены (стандартные примеры Next.js)
-
-## 🚀 Как добавить новую фичу?
-
-1. Создайте папку в `features/`:
-```bash
-mkdir -p features/my-feature/{components,hooks,utils}
-```
-
-2. Создайте компоненты:
-```typescript
-// features/my-feature/components/MyComponent.tsx
-export function MyComponent() {
-  // ...
-}
-```
-
-3. Создайте хуки (если нужно):
-```typescript
-// features/my-feature/hooks/useMyFeature.ts
-export function useMyFeature() {
-  // ...
-}
-```
-
-4. Создайте утилиты (если нужно):
-```typescript
-// features/my-feature/utils/myUtils.ts
-export function myHelper() {
-  // ...
-}
-```
-
-5. Используйте в приложении:
-```typescript
-import { MyComponent } from '@/features/my-feature/components/MyComponent';
-import { useMyFeature } from '@/features/my-feature/hooks/useMyFeature';
-```
-
-## ✅ Проверка работоспособности
+Перед сдачей задачи (см. [AGENTS.md](../AGENTS.md)):
 
 ```bash
-# TypeScript проверка
-npx tsc --noEmit
-# ✅ 0 ошибок
-
-# ESLint проверка
-pnpm lint
-# ✅ 0 критических ошибок (только 4 warning)
-
-# Запуск проекта
-pnpm dev
-# ✅ Работает
+pnpm typecheck && pnpm lint && pnpm test && pnpm lint:unused
 ```
-
-## 📈 Метрики рефакторинга
-
-- **Удалено дубликатов**: 2 файла (документация) + 30 SVG иконок
-- **Удалено пустых папок**: 19 папок
-- **Перемещено файлов**: ~80 файлов
-- **Обновлено импортов**: ~600+ импортов
-- **Создано доменов**: 10 feature-доменов (добавлен `sidebar/`)
-- **Shared компонентов**: 6
-- **Shared хуков**: 3
-- **Shared утилит**: 6
-
-## 💬 Примечание по доменам
-
-### Почему `sidebar/` - отдельный домен?
-**Sidebar** (592 строки кода) - это **главный UI-контейнер планировщика**, объединяющий:
-- 📋 Задачи (TasksTab, BacklogTab, InvalidTab)
-- 🎯 Цели спринта (GoalsTab)
-- 👥 Настройки разработчиков (SettingsTab)
-- 📊 Метрики спринта
-- 🔍 Фильтры и группировки
-
-Это не просто компонент задач - это **композиция функционала из разных доменов**. Поэтому вынесен в отдельный домен, который можно переиспользовать на будущих страницах.
-
-### Плоская структура доменов
-Да, некоторые "домены" могли бы быть поддоменами других (например, `board/` → часть `sprint/`, `qa/` → часть `sprint/`, `developers/` → часть `swimlane/`). Но мы оставили плоскую структуру для:
-- ✅ Простоты навигации
-- ✅ Легкости поиска
-- ✅ Гибкости при рефакторинге (легко переместить позже)
-- ✅ Избежания глубокой вложенности
-
-### Стратегия масштабирования
-При добавлении новых страниц:
-- **Features** остаются переиспользуемыми доменами
-- **Страницы** (`app/`) - это композиция features
-- Новый feature создается только если будет использоваться на 2+ страницах
 
 ---
 
-**Последнее обновление**: декабрь 2025
-
+**Последнее обновление**: октябрь 2026 (v1.24.0)

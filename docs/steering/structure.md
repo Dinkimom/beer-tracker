@@ -1,52 +1,56 @@
 # Structure steering — Beer Tracker
 
-Цель: быстро понять **куда класть код** и **где искать** уже существующие паттерны. Детальное дерево файлов — в [STRUCTURE.md](../STRUCTURE.md).
+Цель: быстро понять **куда класть код** и **где искать** уже существующие паттерны. Детальная карта — в [STRUCTURE.md](../STRUCTURE.md).
 
 ## Корень репозитория
 
 | Путь | Назначение |
 |------|------------|
 | `app/` | Next.js App Router: страницы, layouts, **API routes** (`app/api/`) |
-| `features/` | Доменные модули (основной код продукта) |
+| `apps/` | Отдельные процессы: `sync-worker/`, `agent-bridge/`, `mcp-sprint-context/` |
+| `features/` | Доменные модули (основной UI-код продукта) |
 | `components/` | Переиспользуемые UI-компоненты вне одной фичи |
 | `hooks/` | Общие хуки |
-| `lib/` | Клиенты API, env, геометрия, валидация, слой application/mobx |
+| `lib/` | Домены сервера (repositories, SQL), клиент `lib/api/*`, MobX (`lib/layers/`), чистые функции |
 | `contexts/` | React-контексты |
-| `types/` | Общие TS-типы |
-| `database/` | SQL и миграции PostgreSQL |
+| `constants/`, `types/`, `utils/` | Общие константы, TS-типы, утилиты |
+| `database/` | `init.sql` и плоские миграции `database/*.sql` |
+| `scripts/` | CLI-скрипты (i18n, release, knip, eslint, bench) |
 | `docs/` | Документация, в т.ч. **steering** (`docs/steering/`) |
-| `public/` | Статика |
+| `public/` | Статика, PWA |
 
 ## Основные фичи (`features/`)
 
 | Домен | Роль |
 |-------|------|
-| `sprint/` | Спринт: планер, модалки старта/финиша, цели, селектор |
-| `task/` | Задачи: карточки, таймлайн, хуки загрузки/мутаций, TaskService |
-| `swimlane/` | Свимлейны, дроп-зоны, стрелки/линки |
-| `sidebar/` | Боковая панель планера, вкладки задач/бэклога/целей |
-| `backlog/` | Страница и логика бэклога |
-| `burndown/` | Burndown |
+| `sprint/` | Планер спринта (`SprintPlanner`), селектор, финиш спринта, цели, доступность |
+| `swimlane/` | Свимлейн: дорожки, слои, стрелки, таймлайн факта, чат агента |
+| `task/` | Карточки, панель задачи, хуки загрузки/мутаций/ресайза |
+| `sidebar/` | Боковая панель планера и её вкладки |
+| `comments/` | Заметки на свимлейне (WYSIWYG, реакции, диаграммы) |
+| `backlog/` | Вкладка бэклога |
+| `burndown/`, `retro/`, `sprint-metrics/` | Вкладки «Диаграмма сгорания», «Ретро», «Метрики» |
+| `sla-bugs/` | Хуки вкладки «Баги» |
+| `context-menu/`, `notifications/`, `board/`, `account/`, `qa/`, `admin/` | Меню карточки, уведомления, выбор доски, учёт работ, QA-логика, админка |
 | `feature-planner/` | Планировщик фич (**deprecated**, не развивать) |
 | `quarterly-planning-v2/` | Квартальный план (**deprecated**, не развивать) |
-| `board/` | Выбор доски |
-| `developers/` | Управление разработчиками в UI |
-| `qa/` | QA-утилиты (статусы, размещение) |
 
-Добавляя возможность, **расширяйте существующую фичу** или заводите новую папку по тому же шаблону: `components/`, `hooks/`, `utils/` (и `services/` при необходимости).
+Добавляя возможность, **расширяйте существующую фичу** или заводите новую папку по тому же шаблону: `components/`, `hooks/`, `utils/`. SQL и оркестрация роутов — только в `lib/<domain>/`.
 
 ## API
 
-- Маршруты: `app/api/**/route.ts`.
-- Клиентские обёртки: `lib/beerTrackerApi.ts`, `lib/api/*`, вызовы через настроенный axios.
+- Маршруты: `app/api/**/route.ts` — тонкий HTTP-слой, без SQL.
+- Клиентские обёртки: `lib/api/*` через `getPlannerBeerTrackerApi` (`lib/beerTrackerApi.ts` — реэкспорт `lib/api`).
 
 ## Точки входа планера
 
-- Главный контейнер: `features/sprint/components/SprintPlanner/SprintPlanner.tsx` (и соседние файлы).
-- Общие хелперы DnD: `sprintPlannerDndHelpers.ts` (не плодить копии логики в хуках/оболочках).
+- Контейнер: `features/sprint/components/SprintPlanner.tsx` → `features/sprint/components/SprintPlanner/SprintPlannerView.tsx` (и соседние папки `board/`, `kanban/`, `feature-lanes/`, `components/`).
+- Свимлейн: `features/swimlane/`, карточка — `features/task/components/TaskBar/`.
+- Общие хелперы DnD: `features/sprint/components/SprintPlanner/sprintPlannerDndHelpers.ts` (не плодить копии логики в хуках/оболочках).
+- `features/sprint/components/SprintPlanner/occupancy/` — легаси, не трогать без прямой просьбы.
 
 ## Документация
 
-- Индекс: [DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md) / [README.md](../README.md).
+- Индекс: [DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md).
 - Архитектура данных: [ARCHITECTURE.md](../../ARCHITECTURE.md) в корне.
 - Правила для агентов и CI: [AGENTS.md](../../AGENTS.md).

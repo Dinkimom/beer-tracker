@@ -17,9 +17,9 @@
 | ClickHouse → snapshots | `lib/snapshots/*` |
 | Квартальный UI | `features/quarterly-planning-v2/*` (v1 удалён) |
 
-Публичный клиент (`lib/api/index.ts`): `auth`, `admin`, `boards`, `epics`, `features`, `holidays`, `issues`, `onprem`, `organizations`, `quarterly`, `sprintGoals`, `sprints`, `slaBugs`, `stories`, `types` и др.
+Баррель (`lib/api/index.ts`) реэкспортирует часть модулей: `auth`, `admin`, `analytics`, `boards`, `calendar`, `epics`, `features`, `holidays`, `issues`, `notifications`, `onprem`, `organizations`, `quarterly`, `queues`, `realtime`, `sprintGoals`, `sprints`, `slaBugs`, `stories`, `types` и др. Остальные (`gitlab`, `sprintMetrics`, `plannerTimeline`, `retroColumnTemplate`, `agentSessions`, …) в баррель не входят; на практике UI чаще импортирует модуль напрямую (`@/lib/api/issues`, `@/lib/api/sprints`).
 
-Новый клиентский модуль: файл в `lib/api/`, `export *` в `index.ts`, вызов через `getPlannerBeerTrackerApi()` — без raw `beerTrackerApi` в UI.
+Новый клиентский модуль: файл в `lib/api/`, вызов через `getPlannerBeerTrackerApi()` (`lib/plannerBeerTrackerApiOverride.ts`) — без raw `beerTrackerApi` в UI.
 
 ---
 
@@ -27,17 +27,17 @@
 
 ### 2.1 Ошибки на клиенте (средний)
 
-Единый toast / обработчик для React Query и мутаций; меньше «тихих» `console.error` без UI (GroomingTab, части load story tasks и т.п.).
+Единый toast / обработчик для React Query и мутаций (в `components/QueryProvider.tsx` глобального `onError` нет); меньше «тихих» `console.error` без UI (на 2026-10-25 ~100 вхождений в `features/`, `components/`, `hooks/`, `contexts/`).
 
 ### 2.2 Shared UI (средний)
 
-Аудит: [`SHARED_COMPONENTS_AUDIT.md`](./SHARED_COMPONENTS_AUDIT.md) — SearchInput, PointBadge / TeamTag / StatusTag, Input/TextArea, Button secondary.
+Аудит: [`SHARED_COMPONENTS_AUDIT.md`](./SHARED_COMPONENTS_AUDIT.md). `SearchInput`, `StatusTag`, `Input`/`TextArea`, `Button`, `CustomSelect` внедрены; `PointBadge` / `TeamTag` удалены как мёртвый код — открыт только вопрос общего бейджа SP/TP и тега команды.
 
 ### 2.3 ESLint-disable (низкий–средний)
 
-- `react-hooks/exhaustive-deps` — пересмотреть зависимости или вынести логику.
-- `no-await-in-loop` — явный паттерн батчей с лимитом параллелизма.
-- `react-hooks/set-state-in-effect` — где возможно, без setState в эффекте.
+- `react-hooks/exhaustive-deps` — пересмотреть зависимости или вынести логику (5 `eslint-disable` на 2026-10-25).
+- `react-hooks/set-state-in-effect` — где возможно, без setState в эффекте (4 `eslint-disable`).
+- ~~`no-await-in-loop`~~ — правило выключено глобально в `eslint.config.mjs` (последовательные вызовы допускаются), локальных disable нет.
 
 ### 2.4 Мелочи (низкий)
 
@@ -45,7 +45,7 @@
 
 ### 2.5 Крупные UI-файлы (по касанию)
 
-`SprintPlanner` и соседние хуки — дробить при touch по правилам `AGENTS.md` (max-lines, consolidation helpers).
+`features/sprint/components/SprintPlanner/SprintPlannerView.tsx` (~500 строк) и соседние хуки — дробить при touch по правилам `AGENTS.md` (max-lines, consolidation helpers). Дерево `SprintPlanner/occupancy/` — легаси, не трогать.
 
 ---
 
@@ -53,4 +53,4 @@
 
 Правила слоёв, gate (`typecheck` / `lint` / `lint:unused` / `test`), консолидация `*Helpers*` — только в [`AGENTS.md`](../AGENTS.md) и [`ARCHITECTURE_UNIFORMITY.md`](./ARCHITECTURE_UNIFORMITY.md).
 
-**Последнее обновление:** 2026-07-14
+**Последнее обновление:** 2026-10-25
