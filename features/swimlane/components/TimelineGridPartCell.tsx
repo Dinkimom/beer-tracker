@@ -52,6 +52,8 @@ export function TimelineGridPartCell(props: {
   placedLayerItems?: readonly PlacedSwimlaneLayerItem[];
   quickAddClipHeight?: number;
   quickAddDurationCells?: number;
+  /** Не укорачивать футпринт у конца спринта: не помещается — ячейка без «+» (T4). */
+  quickAddMustFitSprint?: boolean;
   /** Целый день (отсутствие): превью от начала дня; хит на остальных слотах — по одной клетке. */
   quickAddSnapToDay?: boolean;
   quickAddSpan?: number;
@@ -81,6 +83,7 @@ export function TimelineGridPartCell(props: {
     placedLayerItems,
     quickAddClipHeight,
     quickAddDurationCells = 1,
+    quickAddMustFitSprint = false,
     quickAddSnapToDay = false,
     quickAddSpan = 1,
     sprintStartDate,
@@ -98,6 +101,7 @@ export function TimelineGridPartCell(props: {
   const remainingCells = Math.max(1, dayCount * partsPerDay - cellStart);
   const footprintCells = quickAddSnapToDay ? partsPerDay : quickAddDurationCells;
   const durationCells = Math.min(footprintCells, remainingCells);
+  const quickAddDoesNotFitSprint = quickAddMustFitSprint && footprintCells > remainingCells;
   // На слотах после первого дня hit — одна клетка (иначе overflow упрётся в соседний stacking context).
   const hitDurationCells = quickAddSnapToDay && partIndex !== 0 ? 1 : durationCells;
   const quickAddBand = resolveSwimlaneQuickAddLayerBand({
@@ -112,7 +116,11 @@ export function TimelineGridPartCell(props: {
   // Key stays stable across drag so cells are not remounted when + is suppressed.
   const isQuickAddEnabled = Boolean(onQuickAddTask);
   const showQuickAddButton =
-    isQuickAddEnabled && !isDraggingTask && !isLinking && quickAddBand != null;
+    isQuickAddEnabled &&
+    !isDraggingTask &&
+    !isLinking &&
+    !quickAddDoesNotFitSprint &&
+    quickAddBand != null;
 
   return (
     <DroppableCell
@@ -123,6 +131,9 @@ export function TimelineGridPartCell(props: {
       partIndex={partIndex}
       partStatus={partStatus}
       quickAddClipHeight={quickAddClipHeight}
+      quickAddDoesNotFitSprint={
+        isQuickAddEnabled && !isDraggingTask && !isLinking && quickAddDoesNotFitSprint
+      }
       quickAddDurationCells={hitDurationCells}
       quickAddLayer={quickAddBand?.layer ?? 0}
       quickAddLayerSpan={quickAddBand?.span ?? 1}

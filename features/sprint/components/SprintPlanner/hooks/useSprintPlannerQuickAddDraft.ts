@@ -32,18 +32,20 @@ import {
 import {
   applyQuickAddDraftAssignee,
   applyQuickAddDraftCommentColor,
-  applyQuickAddDraftDurationForKind,
-  applyQuickAddDraftKind,
   applyQuickAddDraftParent,
   applyQuickAddDraftTitle,
   applyQuickAddImageDraftCardRow,
+  changeQuickAddDraftKind,
   plannerDraftParentFromKey,
   syncQuickAddCommentPresencePreview,
 } from './applyQuickAddDraftFields';
 import { cancelQuickAddDraft } from './cancelQuickAddDraft';
 import { createSwimlaneCellFromPlacementTool } from './createQuickAddDraftInSwimlaneCell';
 import { submitConvertedSwimlaneComment } from './submitConvertedSwimlaneComment';
-import { submitExistingQuickAddDraft } from './submitExistingQuickAddDraft';
+import {
+  ensureExistingQuickAddFitsSprint,
+  submitExistingQuickAddDraft,
+} from './submitExistingQuickAddDraft';
 import { submitQuickAddCreatedIssueDraft } from './submitQuickAddCreatedIssueDraft';
 import { completeQuickAddDiagramDraft } from './submitQuickAddDiagramDraft';
 import { useCancelInlineDiagramDraftOnToolLeave } from './useCancelInlineDiagramDraftOnToolLeave';
@@ -284,26 +286,18 @@ export function useSprintPlannerQuickAddDraft({
   useCancelInlineDiagramDraftOnToolLeave(cancelDraftOnToolLeave);
 
   const handleQuickAddDraftKindChange = useCallback(
-    (taskId: string, kind: QuickAddDraftKind | undefined) => {
-      const timelineTotalParts = sprintTimelineWorkingDays * getPartsPerDay();
-      setTasks((prev) => {
-        const next = applyQuickAddDraftKind(prev, taskId, kind);
-        syncQuickAddCommentPresencePreview(
-          sprintPlannerUi,
-          taskId,
-          kind,
-          next.find((task) => task.id === taskId)?.name ?? ''
-        );
-        return kind === 'comment'
-          ? applyQuickAddDraftCommentColor(next, taskId, sprintPlannerUi.stickyNoteColor)
-          : next;
-      });
-      setTaskPositions((prev) =>
-        applyQuickAddDraftDurationForKind(prev, taskId, kind, timelineTotalParts)
-      );
-      applyQuickAddImageDraftCardRow(taskId, kind, sprintPlannerUi);
-    },
-    [setTaskPositions, setTasks, sprintPlannerUi, sprintTimelineWorkingDays]
+    (taskId: string, kind: QuickAddDraftKind | undefined) =>
+      changeQuickAddDraftKind({
+        doesNotFitMessage: t('sprintPlanner.swimlane.quickAddMenu.kindDoesNotFitSprint'),
+        kind,
+        setTaskPositions,
+        setTasks,
+        taskId,
+        taskPositions,
+        timelineTotalParts: sprintTimelineWorkingDays * getPartsPerDay(),
+        ui: sprintPlannerUi,
+      }),
+    [setTaskPositions, setTasks, sprintPlannerUi, sprintTimelineWorkingDays, t, taskPositions]
   );
 
   const handleSubmitQuickAddDiagramDraft = useCallback(
@@ -465,19 +459,24 @@ export function useSprintPlannerQuickAddDraft({
         featureDraftRowNamesById
       );
       const taskToAdd = plannerParent ? { ...selectedTask, parent: plannerParent } : selectedTask;
+      const submitInput = {
+        queryClient,
+        savePosition,
+        selectedSprintId,
+        selectedTask: taskToAdd,
+        setTaskPositions,
+        setTasks,
+        t,
+        taskId,
+        taskPositions,
+        timelineTotalParts: sprintTimelineWorkingDays * getPartsPerDay(),
+      };
+      if (!ensureExistingQuickAddFitsSprint(submitInput)) {
+        return;
+      }
       try {
         setQuickAddSubmittingTaskId(taskId);
-        await submitExistingQuickAddDraft({
-          queryClient,
-          savePosition,
-          selectedSprintId,
-          selectedTask: taskToAdd,
-          setTaskPositions,
-          setTasks,
-          t,
-          taskId,
-          taskPositions,
-        });
+        await submitExistingQuickAddDraft(submitInput);
         persistPlannerDraftParent(taskToAdd.id, plannerParent);
       } finally {
         setQuickAddSubmittingTaskId((prev) => (prev === taskId ? null : prev));
@@ -492,6 +491,7 @@ export function useSprintPlannerQuickAddDraft({
       selectedSprintId,
       setTaskPositions,
       setTasks,
+      sprintTimelineWorkingDays,
       t,
       taskPositions,
       tasks,

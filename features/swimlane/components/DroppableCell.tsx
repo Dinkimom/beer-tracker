@@ -40,6 +40,8 @@ interface DroppableCellProps {
   partStatus: 'current' | 'future' | 'past';
   /** Не даёт превью «+» вылезти за высоту строки (фото/новый слой) */
   quickAddClipHeight?: number;
+  /** Инструмент карточки не помещается от ячейки до конца спринта — подсказка вместо «+». */
+  quickAddDoesNotFitSprint?: boolean;
   /** Ширина хита в клетках — как у превью (фото 2). */
   quickAddDurationCells?: number;
   /** Слой превью «+»: свободный слот или новый слой ниже занятой ячейки */
@@ -61,6 +63,7 @@ export function DroppableCell({
   taskAreaHeight,
   hasTaskOverlaps = false,
   quickAddClipHeight,
+  quickAddDoesNotFitSprint = false,
   quickAddDurationCells = 1,
   quickAddLayer = 0,
   quickAddLayerSpan = 1,
@@ -104,6 +107,11 @@ export function DroppableCell({
       } ${onQuickAddClick ? 'cursor-pointer' : ''}`}
       data-current-cell={partStatus === 'current' ? 'true' : undefined}
       style={{ height: `${totalHeight}px`, minHeight: `${totalHeight}px` }}
+      title={
+        quickAddDoesNotFitSprint
+          ? t('sprintPlanner.swimlane.quickAddMenu.kindDoesNotFitSprint')
+          : undefined
+      }
       onMouseEnter={quickAddHover.onPointerEnter}
       onMouseLeave={quickAddHover.onPointerLeave}
       onMouseMove={quickAddHover.onPointerEnter}

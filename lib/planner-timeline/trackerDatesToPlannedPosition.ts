@@ -65,18 +65,41 @@ function rangeFromStartAndDeadline(startDayIndex: number, deadlineDayIndex: numb
   return { duration: endCell - startCell, startDay: startDayIndex, startPart: 0 };
 }
 
+function isAfterSprintEnd(
+  date: Date | null,
+  sprintStartDate: Date,
+  workingDaysCount: number
+): boolean {
+  if (!date) {
+    return false;
+  }
+  const range = getWorkingDaysRange(sprintStartDate, Math.max(1, workingDaysCount));
+  const lastDay = new Date(range[range.length - 1]!);
+  lastDay.setHours(0, 0, 0, 0);
+  return date.getTime() > lastDay.getTime();
+}
+
+/** Одна граница + длина из оценки. Не помещается в спринт — `null`, не укорачиваем (T4). */
 function rangeFromSingleBound(input: {
   deadlineDayIndex: number;
   duration: number;
   startDayIndex: number;
-}): CellRange {
+  totalCells: number;
+}): CellRange | null {
   if (input.startDayIndex >= 0) {
+    const startCell = input.startDayIndex * getPartsPerDay();
+    if (startCell + input.duration > input.totalCells) {
+      return null;
+    }
     return { duration: input.duration, startDay: input.startDayIndex, startPart: 0 };
   }
   const endCell = input.deadlineDayIndex * getPartsPerDay() + getPartsPerDay();
-  const startCell = Math.max(0, endCell - input.duration);
+  const startCell = endCell - input.duration;
+  if (startCell < 0) {
+    return null;
+  }
   return {
-    duration: endCell - startCell,
+    duration: input.duration,
     startDay: Math.floor(startCell / getPartsPerDay()),
     startPart: startCell % getPartsPerDay(),
   };
@@ -86,6 +109,7 @@ function rangeFromSingleBound(input: {
  * Обратное к `getPlannedCellRangeDateRange`:
  * дата начала → первый таймслот дня, дедлайн → последний таймслот дня.
  * Если задана только одна дата — длительность из оценки (минимум 1 слот).
+ * Карточка, которая не помещается в спринт (оценка за краем или дедлайн после конца спринта), не строится — `null` (T4).
  */
 export function trackerDatesToCellRange(input: {
   deadline?: string | null;
@@ -99,12 +123,20 @@ export function trackerDatesToCellRange(input: {
     input.sprintStartDate,
     input.workingDaysCount
   );
+  const deadlineDate = parseTrackerIsoDateOnlyLocal(input.deadline ?? undefined);
   const deadlineDayIndex = dayIndexOrMinusOne(
-    parseTrackerIsoDateOnlyLocal(input.deadline ?? undefined),
+    deadlineDate,
     input.sprintStartDate,
     input.workingDaysCount
   );
   if (startDayIndex < 0 && deadlineDayIndex < 0) {
+    return null;
+  }
+  if (
+    startDayIndex >= 0 &&
+    isAfterSprintEnd(deadlineDate, input.sprintStartDate, input.workingDaysCount)
+  ) {
+    // Старт в спринте, дедлайн после него: настоящая карточка длиннее спринта — не строим.
     return null;
   }
   if (startDayIndex >= 0 && deadlineDayIndex >= 0) {
@@ -114,6 +146,7 @@ export function trackerDatesToCellRange(input: {
     deadlineDayIndex,
     duration: estimateDurationSlots(input.task),
     startDayIndex,
+    totalCells: Math.max(1, input.workingDaysCount) * getPartsPerDay(),
   });
 }
 

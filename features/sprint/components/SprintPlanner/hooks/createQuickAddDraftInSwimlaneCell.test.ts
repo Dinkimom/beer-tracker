@@ -345,4 +345,72 @@ describe('createQuickAddDraftInSwimlaneCell', () => {
     expect(nextPositions.get(nextTasks[0].id)?.duration).toBe(QUICK_ADD_IMAGE_DRAFT_DURATION_PARTS);
     expect(onCreated).toHaveBeenCalledWith(nextTasks[0].id, 'diagram');
   });
+
+  it('refuses a diagram draft in the last cell instead of shortening it', () => {
+    const setTasks = vi.fn();
+    const setTaskPositions = vi.fn();
+
+    const draftId = createQuickAddDraftInSwimlaneCell({
+      assigneeId: 'dev-1',
+      boardIdForPlannerData: 1,
+      day: 9,
+      developers: [{ id: 'dev-1', name: 'Ada', role: 'developer' }],
+      getQueueByBoardId: () => 'QUEUE',
+      kind: 'diagram',
+      part: 2,
+      setTaskPositions,
+      setTasks,
+      tasksMap: new Map(),
+      timelineTotalParts: 30,
+    });
+
+    expect(draftId).toBeNull();
+    expect(setTasks).not.toHaveBeenCalled();
+    expect(setTaskPositions).not.toHaveBeenCalled();
+  });
+
+  it('warns and places nothing when the photo tool is used in the last cell', async () => {
+    const setTasks = vi.fn();
+    const t = vi.fn((key: string) => key);
+
+    const placed = await createSwimlaneCellFromPlacementTool({
+      assigneeId: 'dev-1',
+      boardIdForPlannerData: 1,
+      day: 9,
+      developers: [{ id: 'dev-1', name: 'Ada', role: 'developer' }],
+      getQueueByBoardId: () => 'QUEUE',
+      part: 2,
+      placementTool: 'image',
+      setTaskPositions: vi.fn(),
+      setTasks,
+      t,
+      tasksMap: new Map(),
+      timelineTotalParts: 30,
+    });
+
+    expect(placed).toBe(false);
+    expect(setTasks).not.toHaveBeenCalled();
+    expect(t).toHaveBeenCalledWith('sprintPlanner.swimlane.quickAddMenu.kindDoesNotFitSprint');
+  });
+
+  it('still opens a note draft in the last cell', () => {
+    const setTasks = vi.fn();
+
+    const draftId = createQuickAddDraftInSwimlaneCell({
+      assigneeId: 'dev-1',
+      boardIdForPlannerData: 1,
+      day: 9,
+      developers: [{ id: 'dev-1', name: 'Ada', role: 'developer' }],
+      getQueueByBoardId: () => 'QUEUE',
+      kind: 'comment',
+      part: 2,
+      setTaskPositions: vi.fn(),
+      setTasks,
+      tasksMap: new Map(),
+      timelineTotalParts: 30,
+    });
+
+    expect(draftId).not.toBeNull();
+    expect(setTasks).toHaveBeenCalled();
+  });
 });

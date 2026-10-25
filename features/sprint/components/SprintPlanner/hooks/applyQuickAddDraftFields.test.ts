@@ -1,5 +1,6 @@
 import type { Task, TaskPosition } from '@/types';
 
+import toast from 'react-hot-toast';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -10,6 +11,7 @@ import {
   applyQuickAddDraftParent,
   applyQuickAddDraftTitle,
   applyQuickAddImageDraftCardRow,
+  changeQuickAddDraftKind,
   plannerDraftParentFromKey,
   syncQuickAddCommentPresencePreview,
   trackerAssigneeKeyForCreate,
@@ -19,6 +21,55 @@ import {
   resolveQuickAddDraftDurationParts,
 } from './applyQuickAddDraftFields';
 import { cancelQuickAddDraft } from './cancelQuickAddDraft';
+
+vi.mock('react-hot-toast', () => ({ default: { error: vi.fn(), success: vi.fn() } }));
+
+function draftKindInput(startDay: number, startPart: number) {
+  return {
+    doesNotFitMessage: 'does-not-fit',
+    taskId: 'local-task-1',
+    taskPositions: new Map<string, TaskPosition>([
+      [
+        'local-task-1',
+        { assignee: 'dev', duration: 1, startDay, startPart, taskId: 'local-task-1' },
+      ],
+    ]),
+    timelineTotalParts: 30,
+    ui: {
+      clearNoteEditPreview: vi.fn(),
+      clearStickyNoteCardRowOverride: vi.fn(),
+      noteEditPreview: null,
+      setNoteEditPreview: vi.fn(),
+      setStickyNoteCardRowOverride: vi.fn(),
+      stickyNoteColor: 'yellow' as const,
+    },
+    setTaskPositions: vi.fn(),
+    setTasks: vi.fn(),
+  };
+}
+
+describe('changeQuickAddDraftKind', () => {
+  it('refuses the photo kind in the last cell: toast, draft untouched', () => {
+    const input = draftKindInput(9, 2);
+
+    changeQuickAddDraftKind({ ...input, kind: 'image' });
+
+    expect(toast.error).toHaveBeenCalledWith('does-not-fit');
+    expect(input.setTasks).not.toHaveBeenCalled();
+    expect(input.setTaskPositions).not.toHaveBeenCalled();
+    expect(input.ui.setStickyNoteCardRowOverride).not.toHaveBeenCalled();
+  });
+
+  it('applies the photo kind when two slots fit', () => {
+    const input = draftKindInput(9, 1);
+
+    changeQuickAddDraftKind({ ...input, kind: 'image' });
+
+    expect(input.setTasks).toHaveBeenCalled();
+    const nextPositions = input.setTaskPositions.mock.calls[0][0](input.taskPositions);
+    expect(nextPositions.get('local-task-1')?.duration).toBe(QUICK_ADD_IMAGE_DRAFT_DURATION_PARTS);
+  });
+});
 
 describe('applyQuickAddDraftFields', () => {
   it('updates imageUrl only on the local draft', () => {
@@ -102,8 +153,21 @@ describe('applyQuickAddDraftFields', () => {
     expect(resolveQuickAddDraftDurationParts('existing', 0, 0, 30)).toBe(1);
   });
 
-  it('clamps an image draft that would overflow the timeline', () => {
-    expect(resolveQuickAddDraftDurationParts('image', 9, 2, 30)).toBe(1);
+  it('refuses an image or diagram draft that does not fit before the sprint end', () => {
+    expect(resolveQuickAddDraftDurationParts('image', 9, 2, 30)).toBeNull();
+    expect(resolveQuickAddDraftDurationParts('diagram', 9, 2, 30)).toBeNull();
+  });
+
+  it('keeps the full two slots when the image ends exactly at the sprint end', () => {
+    expect(resolveQuickAddDraftDurationParts('image', 9, 1, 30)).toBe(
+      QUICK_ADD_IMAGE_DRAFT_DURATION_PARTS
+    );
+  });
+
+  it('always fits one-slot kinds in the last cell', () => {
+    expect(resolveQuickAddDraftDurationParts('comment', 9, 2, 30)).toBe(1);
+    expect(resolveQuickAddDraftDurationParts('task', 9, 2, 30)).toBe(1);
+    expect(resolveQuickAddDraftDurationParts(undefined, 9, 2, 30)).toBe(1);
   });
 
   it('sets draft kind only on the local draft', () => {
@@ -179,6 +243,26 @@ describe('applyQuickAddDraftFields', () => {
     const restored = applyQuickAddDraftDurationForKind(expanded, 'local-task-1', undefined, 30);
     expect(restored.get('local-task-1')?.duration).toBe(1);
     expect(restored.get('local-task-1')?.plannedDuration).toBe(1);
+  });
+
+  it('leaves the draft untouched when the image kind does not fit in the last cell', () => {
+    const positions = new Map<string, TaskPosition>([
+      [
+        'local-task-1',
+        {
+          assignee: 'dev',
+          duration: 1,
+          plannedDuration: 1,
+          startDay: 9,
+          startPart: 2,
+          taskId: 'local-task-1',
+        },
+      ],
+    ]);
+
+    expect(applyQuickAddDraftDurationForKind(positions, 'local-task-1', 'image', 30)).toBe(
+      positions
+    );
   });
 
   it('pins a photo draft to two card rows and clears the pin for other kinds', () => {

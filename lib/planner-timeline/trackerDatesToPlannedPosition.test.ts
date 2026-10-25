@@ -46,6 +46,62 @@ describe('trackerDatesToCellRange', () => {
     expect(range).toEqual({ duration: 5, startDay: 1, startPart: 0 });
   });
 
+  it('builds no range when a start-only estimate overflows the sprint', () => {
+    // Fri 17 Jan → day 9 (last of 10): 3 slots left, SP 8 → 6 slots
+    const range = trackerDatesToCellRange({
+      sprintStartDate: monday,
+      start: '2025-01-17',
+      task: { storyPoints: 8, team: 'Back' },
+      workingDaysCount: 10,
+    });
+    expect(range).toBeNull();
+  });
+
+  it('keeps a start-only estimate that ends exactly with the sprint', () => {
+    // day 9 → cells 27..29, SP 3 → 3 slots
+    const range = trackerDatesToCellRange({
+      sprintStartDate: monday,
+      start: '2025-01-17',
+      task: { storyPoints: 3, team: 'Back' },
+      workingDaysCount: 10,
+    });
+    expect(range).toEqual({ duration: 3, startDay: 9, startPart: 0 });
+  });
+
+  it('builds no range when the deadline is after the sprint end, even if the estimate fits', () => {
+    const range = trackerDatesToCellRange({
+      deadline: '2025-01-24',
+      sprintStartDate: monday,
+      start: '2025-01-15',
+      task: { storyPoints: 1, team: 'Back' },
+      workingDaysCount: 10,
+    });
+    expect(range).toBeNull();
+  });
+
+  it('falls back to the estimate when the deadline is a weekend inside the sprint', () => {
+    // Sat 11 Jan is not a working day → only start counts
+    const range = trackerDatesToCellRange({
+      deadline: '2025-01-11',
+      sprintStartDate: monday,
+      start: '2025-01-07',
+      task: { storyPoints: 2, team: 'Back' },
+      workingDaysCount: 10,
+    });
+    expect(range).toEqual({ duration: 2, startDay: 1, startPart: 0 });
+  });
+
+  it('builds no range when a deadline-only estimate would start before the sprint', () => {
+    // deadline Mon 6 Jan → endCell 3; SP 5 → 5 slots → start −2
+    const range = trackerDatesToCellRange({
+      deadline: '2025-01-06',
+      sprintStartDate: monday,
+      task: { storyPoints: 5, team: 'Back' },
+      workingDaysCount: 10,
+    });
+    expect(range).toBeNull();
+  });
+
   it('anchors estimate at deadline last timeslot when only deadline is set', () => {
     const range = trackerDatesToCellRange({
       deadline: '2025-01-08',
@@ -148,6 +204,28 @@ describe('mergeDbPositionsWithTrackerDateFallbacks', () => {
       workingDaysCount: 10,
     });
     expect(merged.size).toBe(0);
+  });
+});
+
+describe('mergeDbPositionsWithTrackerDateFallbacks overflow', () => {
+  it('leaves a task that does not fit unplanned instead of shortening it', () => {
+    const merged = mergeDbPositionsWithTrackerDateFallbacks({
+      dbPositions: new Map(),
+      sprintStartDate: monday,
+      tasks: [
+        {
+          id: 'LATE-1',
+          link: '',
+          name: 'starts on the last day',
+          start: '2025-01-17',
+          assignee: 'dev-1',
+          storyPoints: 8,
+          team: 'Back',
+        },
+      ],
+      workingDaysCount: 10,
+    });
+    expect(merged.has('LATE-1')).toBe(false);
   });
 });
 

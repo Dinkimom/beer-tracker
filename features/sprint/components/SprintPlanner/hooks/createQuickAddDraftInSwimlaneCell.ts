@@ -11,6 +11,7 @@ import {
 } from '@/features/task/utils/localPlannerImageFile';
 import { buildTicTacToeComment } from '@/features/widgets/buildTicTacToeComment';
 import { parseStickyNoteColor, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import { isPlannerQuickAddDraftId, PLANNER_QUICK_ADD_DRAFT_ID_PREFIX } from '@/lib/planner/plannerCardKind';
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 
 import {
@@ -42,9 +43,10 @@ interface CreateQuickAddDraftInSwimlaneCellInput {
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }
 
+/** `null` — вид не помещается от ячейки до конца спринта: черновик не создаём (T4). */
 export function createQuickAddDraftInSwimlaneCell(
   input: CreateQuickAddDraftInSwimlaneCellInput
-): string {
+): string | null {
   const kind = input.kind;
   const duration = resolveQuickAddDraftDurationParts(
     kind ?? 'task',
@@ -52,7 +54,10 @@ export function createQuickAddDraftInSwimlaneCell(
     input.part,
     input.timelineTotalParts
   );
-  const draftTaskId = `local-task-${crypto.randomUUID()}`;
+  if (duration == null) {
+    return null;
+  }
+  const draftTaskId = `${PLANNER_QUICK_ADD_DRAFT_ID_PREFIX}${crypto.randomUUID()}`;
   const assigneeName = input.developers.find((dev) => dev.id === input.assigneeId)?.name;
   const defaultQueue = input.getQueueByBoardId(input.boardIdForPlannerData) ?? undefined;
   input.setTasks((prev) => {
@@ -84,7 +89,7 @@ export function createQuickAddDraftInSwimlaneCell(
       const task = input.tasksMap.get(taskId);
       const isLocalDraft =
         task?.isLocalTask === true ||
-        (task == null && String(taskId).startsWith('local-task-'));
+        (task == null && isPlannerQuickAddDraftId(String(taskId)));
       if (isLocalDraft) {
         next.delete(taskId);
       }
@@ -115,11 +120,16 @@ export async function openQuickAddDraftInSwimlaneCell(
     t: (key: string) => string;
   }
 ): Promise<string | null> {
+  if (input.imageFile && input.allowImageDraft === false) {
+    return null;
+  }
+  const kind = input.imageFile ? 'image' : input.kind;
+  if (resolveQuickAddDraftDurationParts(kind, input.day, input.part, input.timelineTotalParts) == null) {
+    toast.error(input.t('sprintPlanner.swimlane.quickAddMenu.kindDoesNotFitSprint'));
+    return null;
+  }
   if (!input.imageFile) {
     return createQuickAddDraftInSwimlaneCell(input);
-  }
-  if (input.allowImageDraft === false) {
-    return null;
   }
   const prepared = await prepareLocalPlannerImageFile(input.imageFile);
   if (!prepared.ok) {

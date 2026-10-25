@@ -2,6 +2,8 @@ import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/compo
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Task, TaskParent, TaskPosition } from '@/types';
 
+import toast from 'react-hot-toast';
+
 import { getPartsPerDay } from '@/constants';
 import { isTaskGroupSentinelKey } from '@/features/task/constants/taskGroupKeys';
 import { revokeLocalPlannerImageObjectUrl } from '@/features/task/utils/localPlannerImageFile';
@@ -33,18 +35,20 @@ export function applyQuickAddImageDraftCardRow(
   ui.clearStickyNoteCardRowOverride(taskId);
 }
 
+/**
+ * Полная длина черновика вида (фото/схема — 2 слота, остальное — 1) или `null`, если от стартовой
+ * ячейки она не помещается до конца спринта. Не укорачиваем — такой вид добавить нельзя (T4).
+ */
 export function resolveQuickAddDraftDurationParts(
   kind: QuickAddDraftKind | undefined,
   startDay: number,
   startPart: number,
   timelineTotalParts: number
-): number {
-  if (kind !== 'image' && kind !== 'diagram') {
-    return 1;
-  }
+): number | null {
+  const duration =
+    kind === 'image' || kind === 'diagram' ? QUICK_ADD_IMAGE_DRAFT_DURATION_PARTS : 1;
   const startCell = startDay * getPartsPerDay() + startPart;
-  const remaining = Math.max(1, timelineTotalParts - startCell);
-  return Math.min(QUICK_ADD_IMAGE_DRAFT_DURATION_PARTS, remaining);
+  return startCell + duration <= timelineTotalParts ? duration : null;
 }
 
 export function applyQuickAddDraftKind(
@@ -92,12 +96,54 @@ export function applyQuickAddDraftDurationForKind(
     position.startPart,
     timelineTotalParts
   );
-  if (position.duration === duration && position.plannedDuration === duration) {
+  if (
+    duration == null ||
+    (position.duration === duration && position.plannedDuration === duration)
+  ) {
     return positions;
   }
   const next = new Map(positions);
   next.set(taskId, { ...position, duration, plannedDuration: duration });
   return next;
+}
+
+type QuickAddDraftKindUi = Parameters<typeof applyQuickAddImageDraftCardRow>[2] &
+  Parameters<typeof syncQuickAddCommentPresencePreview>[0];
+
+/**
+ * Смена вида черновика из меню quick-add. Вид, который от ячейки черновика не помещается
+ * до конца спринта (фото/схема в последнем слоте), не применяется — тост, черновик как был (T4).
+ */
+export function changeQuickAddDraftKind(input: {
+  doesNotFitMessage: string;
+  kind: QuickAddDraftKind | undefined;
+  taskId: string;
+  taskPositions: Map<string, TaskPosition>;
+  timelineTotalParts: number;
+  ui: QuickAddDraftKindUi;
+  setTaskPositions: (
+    updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>
+  ) => void;
+  setTasks: (updater: (prev: Task[]) => Task[]) => void;
+}): void {
+  const { kind, taskId, timelineTotalParts, ui } = input;
+  const position = input.taskPositions.get(taskId);
+  if (
+    position &&
+    resolveQuickAddDraftDurationParts(kind, position.startDay, position.startPart, timelineTotalParts) == null
+  ) {
+    toast.error(input.doesNotFitMessage);
+    return;
+  }
+  input.setTasks((prev) => {
+    const next = applyQuickAddDraftKind(prev, taskId, kind);
+    syncQuickAddCommentPresencePreview(ui, taskId, kind, next.find((task) => task.id === taskId)?.name ?? '');
+    return kind === 'comment' ? applyQuickAddDraftCommentColor(next, taskId, ui.stickyNoteColor) : next;
+  });
+  input.setTaskPositions((prev) =>
+    applyQuickAddDraftDurationForKind(prev, taskId, kind, timelineTotalParts)
+  );
+  applyQuickAddImageDraftCardRow(taskId, kind, ui);
 }
 
 export function applyQuickAddDraftImageUrl(

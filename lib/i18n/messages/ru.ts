@@ -1567,6 +1567,8 @@ export const ruMessages = {
       },
       quickAddMenu: {
         addExistingSuccess: 'Задача {key} добавлена в спринт',
+        existingDoesNotFitSprint: 'Задача не помещается до конца спринта — выберите ячейку раньше',
+        kindDoesNotFitSprint: 'Не помещается до конца спринта — выберите ячейку раньше',
         backToKindPicker: 'Назад',
         close: 'Закрыть',
         create: 'Создать',

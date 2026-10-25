@@ -48,6 +48,7 @@ interface TimelineGridProps {
   quickAddClipHeight?: number;
   quickAddFootprint?: {
     durationCells: number;
+    mustFitSprint?: boolean;
     span: number;
     snapToDay?: boolean;
   };
@@ -107,6 +108,7 @@ export function TimelineGrid({
   const quickAddDurationCells = quickAddFootprint?.durationCells ?? 1;
   const quickAddSnapToDay = quickAddFootprint?.snapToDay === true;
   const quickAddSpan = quickAddFootprint?.span ?? 1;
+  const quickAddMustFitSprint = quickAddFootprint?.mustFitSprint === true;
   const hasPatternRanges = hatchRanges.length > 0 || holidayRanges.length > 0;
   const todayDayIndex = Array.from({ length: dayCount }, (_, dayIndex) =>
     getDayDate(sprintStartDate, dayIndex, dayCount)
@@ -196,6 +198,7 @@ export function TimelineGrid({
                   placedLayerItems={placedLayerItems}
                   quickAddClipHeight={quickAddClipHeight}
                   quickAddDurationCells={quickAddDurationCells}
+                  quickAddMustFitSprint={quickAddMustFitSprint}
                   quickAddSnapToDay={quickAddSnapToDay}
                   quickAddSpan={quickAddSpan}
                   sprintStartDate={sprintStartDate}

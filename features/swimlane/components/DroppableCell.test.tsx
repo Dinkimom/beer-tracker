@@ -60,4 +60,21 @@ describe('DroppableCell', () => {
     expect(container.querySelector('[data-swimlane-cell-quick-add]')).not.toBeNull();
     expect(useDroppable).not.toHaveBeenCalled();
   });
+
+  it('explains that a card tool does not fit before the sprint end instead of offering +', () => {
+    const { container } = render(
+      <DroppableCell
+        partIndex={2}
+        partStatus="future"
+        quickAddDoesNotFitSprint
+        taskAreaHeight={40}
+        totalHeight={80}
+      />
+    );
+
+    expect(container.querySelector('[data-swimlane-cell-quick-add]')).toBeNull();
+    expect(container.firstElementChild?.getAttribute('title')).toBe(
+      'sprintPlanner.swimlane.quickAddMenu.kindDoesNotFitSprint'
+    );
+  });
 });

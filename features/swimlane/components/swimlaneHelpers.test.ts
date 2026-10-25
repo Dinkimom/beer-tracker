@@ -120,7 +120,8 @@ describe('resolveSwimlaneQuickAddLayoutState', () => {
     expect(state.hideQuickAddPreview).toBe(false);
     expect(state.previewSpanLayers).toBe(2);
     expect(state.hoverMinTaskLayers).toBeUndefined();
-    expect(state.quickAddFootprint).toEqual({ durationCells: 2, span: 2 });
+    // Фото не укорачивается у конца спринта — ячейка, где 2 слота не влезают, недоступна (T4).
+    expect(state.quickAddFootprint).toEqual({ durationCells: 2, mustFitSprint: true, span: 2 });
   });
 
   it('uses the same 2x2 hit target for tic-tac-toe as for a photo', () => {

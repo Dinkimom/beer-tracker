@@ -1567,6 +1567,8 @@ export const enMessages = {
       },
       quickAddMenu: {
         addExistingSuccess: 'Issue {key} added to sprint',
+        existingDoesNotFitSprint: 'The issue does not fit before the sprint ends — pick an earlier cell',
+        kindDoesNotFitSprint: 'Does not fit before the sprint ends — pick an earlier cell',
         backToKindPicker: 'Back',
         close: 'Close',
         create: 'Create',

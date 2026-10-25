@@ -119,10 +119,12 @@ describe('resolveSwimlaneQuickAddPlacementFootprint', () => {
   it('matches the 2x2 photo card and keeps a one-cell slot for other tools', () => {
     expect(resolveSwimlaneQuickAddPlacementFootprint('image')).toEqual({
       durationCells: 2,
+      mustFitSprint: true,
       span: 2,
     });
     expect(resolveSwimlaneQuickAddPlacementFootprint('diagram')).toEqual({
       durationCells: 2,
+      mustFitSprint: true,
       span: 2,
     });
     expect(resolveSwimlaneQuickAddPlacementFootprint('tictactoe')).toEqual({

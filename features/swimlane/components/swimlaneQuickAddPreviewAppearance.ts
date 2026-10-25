@@ -12,6 +12,8 @@ export type SwimlaneQuickAddPreviewKind =
 
 interface SwimlaneQuickAddPlacementFootprint {
   durationCells: number;
+  /** Карточка (фото/схема): если от ячейки не помещается до конца спринта — «+» нет (T4, не укорачиваем). */
+  mustFitSprint?: boolean;
   /** Отсутствие нельзя делить по слотам — превью и хит от начала дня на всю его ширину. */
   snapToDay?: boolean;
   span: number;
@@ -102,7 +104,10 @@ export function resolveSwimlaneQuickAddPreviewDurationCells(
 export function resolveSwimlaneQuickAddPlacementFootprint(
   tool: SwimlanePlacementTool
 ): SwimlaneQuickAddPlacementFootprint {
-  if (tool === 'image' || tool === 'diagram' || tool === 'tictactoe') {
+  if (tool === 'image' || tool === 'diagram') {
+    return { durationCells: 2, mustFitSprint: true, span: 2 };
+  }
+  if (tool === 'tictactoe') {
     return { durationCells: 2, span: 2 };
   }
   if (tool === 'availability') {
