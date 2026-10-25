@@ -433,12 +433,18 @@ export async function saveRetroBoard(
   return data.board ?? board;
 }
 
+/** Возвращает документ после слияния на сервере (`base` — версия, от которой правила вкладка). */
 export async function saveFeatureLanes(
   sprintId: number,
-  lanes: FeatureLanesDocument
-): Promise<void> {
+  lanes: FeatureLanesDocument,
+  base?: FeatureLanesDocument
+): Promise<FeatureLanesDocument | null> {
   try {
-    await getPlannerBeerTrackerApi().put(`/sprints/${sprintId}/feature-lanes`, lanes);
+    const { data } = await getPlannerBeerTrackerApi().put<{ lanes?: FeatureLanesDocument }>(
+      `/sprints/${sprintId}/feature-lanes`,
+      base ? { ...lanes, base } : lanes
+    );
+    return data?.lanes ?? null;
   } catch (error) {
     console.error(`Failed to save feature lanes for sprint ${sprintId}:`, error);
     throw error;

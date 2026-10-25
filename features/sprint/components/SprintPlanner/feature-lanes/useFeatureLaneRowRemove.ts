@@ -22,8 +22,8 @@ import {
 
 /** Пишем документ целевого спринта и обновляем его кэш в этой вкладке, если он уже открывался. */
 async function saveTargetFeatureLanes(sprintId: number, lanes: FeatureLanesDocument): Promise<void> {
-  await saveFeatureLanes(sprintId, lanes);
-  applyRemoteFeatureLanesSession(sprintId, lanes);
+  const saved = await saveFeatureLanes(sprintId, lanes);
+  applyRemoteFeatureLanesSession(sprintId, saved ?? lanes);
 }
 
 function ignoreCommentDelete(_commentId: string): void {

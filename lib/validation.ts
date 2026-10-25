@@ -360,7 +360,7 @@ export const QueueSearchQuerySchema = z.object({
   q: z.string().min(1).max(200),
 });
 
-export const FeatureLanesDocumentSchema = z.object({
+const FeatureLanesDocumentSchema = z.object({
   draftRows: z
     .array(
       z.object({
@@ -372,5 +372,10 @@ export const FeatureLanesDocumentSchema = z.object({
     .max(200),
   hiddenIds: z.array(z.string().trim().min(1).max(255)).max(500),
   orderIds: z.array(z.string().trim().min(1).max(255)).max(500),
+});
+
+/** PUT строк «по фичам»: `base` — версия документа, от которой правила вкладка (для слияния). */
+export const FeatureLanesSaveSchema = FeatureLanesDocumentSchema.extend({
+  base: FeatureLanesDocumentSchema.optional(),
 });
 

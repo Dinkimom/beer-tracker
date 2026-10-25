@@ -4,7 +4,8 @@ import { requireTenantContext } from '@/lib/api-tenant';
 import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { fetchFeatureLanes, mergePreservedFeatureLaneIssueKeys, upsertFeatureLanes } from '@/lib/sprints';
-import { FeatureLanesDocumentSchema, formatValidationError, validateRequest } from '@/lib/validation';
+import { mergeFeatureLanesDocuments } from '@/lib/sprints/featureLanesMerge';
+import { FeatureLanesSaveSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
 async function readSprintId(
   params: Promise<{ sprintId: string }> | { sprintId: string }
@@ -53,7 +54,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
     }
 
-    const parsed = validateRequest(FeatureLanesDocumentSchema, await request.json());
+    const parsed = validateRequest(FeatureLanesSaveSchema, await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: formatValidationError(parsed.error) }, { status: 400 });
     }
@@ -62,7 +63,10 @@ export async function PUT(
       organizationId: tenantResult.ctx.organizationId,
       sprintId,
     });
-    const lanes = mergePreservedFeatureLaneIssueKeys(existing, parsed.data);
+    const { base, ...incoming } = parsed.data;
+    // Вкладка правила от `base`; то, что сервер получил с тех пор (перенос фичи), не затираем.
+    const merged = base && existing ? mergeFeatureLanesDocuments(base, incoming, existing) : incoming;
+    const lanes = mergePreservedFeatureLaneIssueKeys(existing, merged);
     await upsertFeatureLanes({
       lanes,
       organizationId: tenantResult.ctx.organizationId,

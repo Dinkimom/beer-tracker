@@ -6,6 +6,8 @@ import {
 import { DELAYS } from '@/utils/constants';
 
 interface FeatureLanesSessionSlot {
+  /** Последняя версия с сервера — база для слияния при сохранении. */
+  base: FeatureLanesDocument | undefined;
   dirty: boolean;
   document: FeatureLanesDocument | undefined;
   listeners: Set<() => void>;
@@ -22,6 +24,7 @@ function getOrCreateSlot(sprintId: number): FeatureLanesSessionSlot {
     return existing;
   }
   const created: FeatureLanesSessionSlot = {
+    base: undefined,
     dirty: false,
     document: undefined,
     listeners: new Set(),
@@ -51,10 +54,16 @@ function scheduleSave(sprintId: number, slot: FeatureLanesSessionSlot): void {
     if (!toSave) {
       return;
     }
-    saveFeatureLanes(sprintId, toSave)
-      .then(() => {
+    saveFeatureLanes(sprintId, toSave, slot.base)
+      .then((saved) => {
+        slot.base = saved ?? toSave;
         if (slot.document === toSave) {
           slot.dirty = false;
+          // Сервер мог влить чужие изменения (перенос фичи) — показываем итоговый документ.
+          if (saved) {
+            slot.document = saved;
+            emit(slot);
+          }
         }
       })
       .catch((error: unknown) => {
@@ -98,6 +107,7 @@ export function ensureFeatureLanesSessionLoaded(sprintId: number): void {
   const load = fetchFeatureLanes(sprintId)
     .then((document) => {
       slot.loaded = true;
+      slot.base = document ?? emptyFeatureLanesDocument();
       if (slot.dirty) {
         scheduleSave(sprintId, slot);
       } else {
@@ -134,6 +144,7 @@ export function applyRemoteFeatureLanesSession(
   if (!slot?.loaded || slot.dirty) {
     return;
   }
+  slot.base = document;
   slot.document = document;
   emit(slot);
 }
