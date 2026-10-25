@@ -13,15 +13,6 @@ export {
 
   upsertIssueChangelogCacheRow
 } from './issueChangelogWrite';
-export {
-  fetchEpicDeepFromSnapshots,
-  queryEpicSnapshotsForOrgQueue,
-  queryStorySnapshotsForOrgQueue
-} from './issueSnapshotEpicsStoriesRead';
-export type {
-
-  PagedTrackerIssues
-} from './issueSnapshotEpicsStoriesRead';
 export { queryIssueSnapshotsMatchingSprint } from './issueSnapshotSprintRead';
 export {
   fetchIssueStatusesTypesAndSummariesFromSnapshots,

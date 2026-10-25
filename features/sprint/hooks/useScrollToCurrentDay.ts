@@ -17,7 +17,7 @@ interface UseScrollToCurrentDayProps {
   selectedSprintId: number | null;
   sprintInfo: SprintInfo | null;
   sprints: SprintListItem[];
-  viewMode: 'compact' | 'features' | 'full' | 'kanban' | 'occupancy';
+  viewMode: 'compact' | 'features' | 'full' | 'kanban';
 }
 
 export function useScrollToCurrentDay({

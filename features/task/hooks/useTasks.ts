@@ -1,7 +1,6 @@
 'use client';
 
 import type { PlannerIntegrationRulesDto } from '@/lib/trackerIntegration/toPlannerDto';
-import type { StatusFilter } from '@/types';
 import type { Task, Developer } from '@/types';
 import type { SprintInfo } from '@/types/tracker';
 import type { QueryClient } from '@tanstack/react-query';
@@ -52,9 +51,7 @@ export function patchSprintInfoInTasksQueries(
 }
 
 /**
- * Оптимистично обновляет массив `tasks` в кэше `useTasks` и во всех
- * снимках `useOccupancyTasks` той же пары спринт+доска.
- * Для occupancy после патча снова применяется фильтр статуса ключа.
+ * Оптимистично обновляет массив `tasks` в кэше `useTasks` той же пары спринт+доска.
  * Если записи в кэше ещё нет — ничего не делает.
  */
 export function patchSprintTasksQuery(
@@ -70,7 +67,7 @@ export function patchSprintTasksQuery(
   });
   for (const query of queries) {
     queryClient.setQueryData<TasksResponse>(query.queryKey, (old) =>
-      applySprintTasksPatch(old, patch, query.queryKey)
+      applySprintTasksPatch(old, patch)
     );
   }
 }
@@ -91,26 +88,6 @@ export function sprintTasksQueryKey(
   return ['tasks', sprintId, boardId ?? null] as const;
 }
 
-export function occupancyTasksQueryKeyPrefix(
-  sprintId: number | null,
-  boardId?: number | null,
-  forDemoPlanner = false
-) {
-  if (forDemoPlanner) {
-    return ['tasks', 'demo', 'occupancy', sprintId, boardId ?? null] as const;
-  }
-  return ['tasks', 'occupancy', sprintId, boardId ?? null] as const;
-}
-
-export function occupancyTasksQueryKey(
-  sprintId: number | null,
-  boardId: number | null | undefined,
-  statusFilter: StatusFilter,
-  forDemoPlanner = false
-) {
-  return [...occupancyTasksQueryKeyPrefix(sprintId, boardId, forDemoPlanner), statusFilter] as const;
-}
-
 export function queryKeyTouchesSprintTasks(queryKey: readonly unknown[], sprintId: number): boolean {
   if (queryKey[0] !== 'tasks') {
     return false;
@@ -118,13 +95,7 @@ export function queryKeyTouchesSprintTasks(queryKey: readonly unknown[], sprintI
   if (queryKey[1] === sprintId) {
     return true;
   }
-  if (queryKey[1] === 'occupancy' && queryKey[2] === sprintId) {
-    return true;
-  }
-  if (queryKey[1] === 'demo' && queryKey[2] === sprintId) {
-    return true;
-  }
-  return queryKey[1] === 'demo' && queryKey[2] === 'occupancy' && queryKey[3] === sprintId;
+  return queryKey[1] === 'demo' && queryKey[2] === sprintId;
 }
 
 function isSprintBoardTasksQueryKey(
@@ -138,27 +109,20 @@ function isSprintBoardTasksQueryKey(
   }
   const board = boardId ?? null;
   if (forDemoPlanner) {
-    if (queryKey[1] === 'demo' && queryKey[2] === sprintId) {
-      return queryKey[3] === board;
-    }
-    return queryKey[1] === 'demo' && queryKey[2] === 'occupancy' && queryKey[4] === board;
+    return queryKey[1] === 'demo' && queryKey[3] === board;
   }
-  if (queryKey[1] === sprintId) {
-    return queryKey[2] === board;
-  }
-  return queryKey[1] === 'occupancy' && queryKey[3] === board;
+  return queryKey[1] === sprintId && queryKey[2] === board;
 }
 
 function applySprintTasksPatch(
   old: TasksResponse | undefined,
-  patch: Task[] | ((prev: Task[]) => Task[]),
-  queryKey: readonly unknown[]
+  patch: Task[] | ((prev: Task[]) => Task[])
 ): TasksResponse | undefined {
   if (!old) {
     return old;
   }
   const nextTasks = typeof patch === 'function' ? patch(old.tasks) : patch;
-  return { ...old, tasks: filterTasksForQueryKey(nextTasks, queryKey) };
+  return { ...old, tasks: nextTasks };
 }
 
 /** Патч статуса задачи во всех кэшах спринта — без refetch Tracker (индекс отстаёт). */
@@ -224,41 +188,6 @@ function patchTasksResponseStatus(
   return { ...old, tasks };
 }
 
-function isClosedSprintTask(task: Task): boolean {
-  return (task.originalStatus ?? '').toLowerCase() === 'closed';
-}
-
-function occupancyFilterValue(value: unknown): 'active' | 'completed' | null {
-  return value === 'active' || value === 'completed' ? value : null;
-}
-
-function occupancyStatusFilterFromQueryKey(
-  queryKey: readonly unknown[]
-): 'active' | 'completed' | null {
-  if (queryKey[1] === 'occupancy') {
-    return occupancyFilterValue(queryKey[4]);
-  }
-  if (queryKey[1] === 'demo' && queryKey[2] === 'occupancy') {
-    return occupancyFilterValue(queryKey[5]);
-  }
-  return null;
-}
-
-function filterTasksForQueryKey(tasks: Task[], queryKey: readonly unknown[]): Task[] {
-  return tasks.filter((task) => shouldUpsertTaskIntoQuery(queryKey, task));
-}
-
-function shouldUpsertTaskIntoQuery(queryKey: readonly unknown[], task: Task): boolean {
-  const filter = occupancyStatusFilterFromQueryKey(queryKey);
-  if (filter === 'completed') {
-    return isClosedSprintTask(task);
-  }
-  if (filter === 'active') {
-    return !isClosedSprintTask(task);
-  }
-  return true;
-}
-
 function retainLocalDescriptionOnUpsert(previous: Task, incoming: Task): Task {
   if (incoming.description || !previous.description) {
     return incoming;
@@ -315,9 +244,7 @@ export function upsertSprintTaskInQueries(
   }
   queryClient.setQueriesData<TasksResponse>(
     {
-      predicate: (query) =>
-        queryKeyTouchesSprintTasks(query.queryKey, sprintId) &&
-        shouldUpsertTaskIntoQuery(query.queryKey, task),
+      predicate: (query) => queryKeyTouchesSprintTasks(query.queryKey, sprintId),
     },
     (old) => upsertTaskInTasksResponse(old, task)
   );
@@ -395,31 +322,5 @@ export function useTasks(sprintId: number | null, boardId?: number | null) {
     },
     enabled: !!sprintId,
     staleTime: 1000 * 60 * 2, // 2 минуты (задачи меняются чаще)
-  });
-}
-
-/**
- * Загрузка задач спринта с фильтром по статусу для вкладки «Занятость».
- * При смене фильтра уходит запрос на бэкенд, пока данные грузятся — показывается лоадер.
- * Запрос выполняется только когда enabled === true (например, только в режиме «По задачам»).
- */
-export function useOccupancyTasks(
-  sprintId: number | null,
-  boardId: number | null | undefined,
-  statusFilter: StatusFilter,
-  options?: { enabled?: boolean }
-) {
-  const forDemoPlanner = useDemoPlannerBoardsQueryScope();
-  const enabled = options?.enabled !== false;
-  return useQuery({
-    queryKey: occupancyTasksQueryKey(sprintId, boardId, statusFilter, forDemoPlanner),
-    queryFn: (): Promise<TasksResponse> => {
-      if (!sprintId) {
-        throw new Error('Sprint ID is required');
-      }
-      return fetchSprintTasks(sprintId, boardId ?? undefined, statusFilter);
-    },
-    enabled: !!sprintId && enabled,
-    staleTime: 1000 * 60 * 2,
   });
 }

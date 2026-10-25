@@ -262,10 +262,6 @@ function handleSprintExtras(path: string, method: string): DemoFixtureResult | n
   if (matchSprintId(path, 'score') != null && method === 'get') {
     return ok(store.score);
   }
-  if (matchSprintId(path, 'occupancy-task-order') != null) {
-    if (method === 'get') return ok({ order: null });
-    return ok({ success: true });
-  }
   return null;
 }
 

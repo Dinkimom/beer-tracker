@@ -2,7 +2,7 @@
 
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
-import type { Developer, StatusFilter, Task } from '@/types';
+import type { Developer, Task } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
 import { observer } from 'mobx-react-lite';
@@ -13,13 +13,11 @@ import { collectBacklogFilterPeople } from '@/features/backlog/utils/backlogFilt
 import { useRootStore } from '@/lib/layers';
 
 import {
-  buildOccupancyStatusFilterOptions,
   resolveControlsBarViewModeSelectValue,
   resolveTasksReloadButtonTitle,
 } from './sprintPlannerControlsBarHelpers';
 import { SprintPlannerControlsBarLeftSection } from './SprintPlannerControlsBarLeftSection';
 import { SprintPlannerControlsBarRightSection } from './SprintPlannerControlsBarSections';
-import { SprintPlannerOccupancyFiltersRow } from './SprintPlannerOccupancyFiltersRow';
 
 interface SprintPlannerControlsBarProps {
   /** Задачи спринта — для аватар-фильтра на канбане (как на бэклоге). */
@@ -27,8 +25,6 @@ interface SprintPlannerControlsBarProps {
   boardId: number | null;
   boardViewers?: readonly SprintPresenceViewer[];
   developers: Developer[];
-  /** Фильтр по статусу задач (только для режима занятости) */
-  occupancyStatusFilter?: StatusFilter;
   planHistory?: {
     canRedo: boolean;
     canUndo: boolean;
@@ -50,7 +46,6 @@ interface SprintPlannerControlsBarProps {
   onSprintChange: (sprintId: number | null) => void;
   /** Внешний обработчик перезагрузки задач из трекера/БД (showToast — показывать тост только при явном нажатии кнопки) */
   onTasksReload?: (options?: { showToast?: boolean }) => void;
-  setOccupancyStatusFilter?: (value: StatusFilter) => void;
   setSelectedAssigneeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   setViewMode: (value: BoardViewMode | ((prev: BoardViewMode) => BoardViewMode)) => void;
 }
@@ -63,11 +58,9 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
   boardId,
   boardViewers = [],
   developers,
-  occupancyStatusFilter = 'all',
   planHistory,
   selectedAssigneeIds,
   selectedSprintId,
-  setOccupancyStatusFilter,
   setSelectedAssigneeIds,
   setViewMode,
   sidebarOpen = false,
@@ -97,7 +90,6 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
 
   const viewModeSelectValue = resolveControlsBarViewModeSelectValue(viewMode);
   const tasksReloadButtonTitle = resolveTasksReloadButtonTitle(isReloading, selectedSprintId, t);
-  const statusFilterOptions = buildOccupancyStatusFilterOptions(t);
 
   const handleAssigneeToggle = useCallback(
     (id: string) => {
@@ -122,18 +114,6 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
         : [],
     [assigneeFilterTasks, developers, viewMode]
   );
-
-  const occupancyFiltersRow =
-    viewMode === 'occupancy' && setOccupancyStatusFilter ? (
-      <SprintPlannerOccupancyFiltersRow
-        developers={developers}
-        occupancyStatusFilter={occupancyStatusFilter}
-        selectedAssigneeIds={selectedAssigneeIds}
-        setOccupancyStatusFilter={setOccupancyStatusFilter}
-        setSelectedAssigneeIds={setSelectedAssigneeIds}
-        statusFilterOptions={statusFilterOptions}
-      />
-    ) : null;
 
   const blendWithBoard = viewMode === 'kanban';
 
@@ -175,7 +155,6 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
             onTasksReload={onTasksReload}
           />
         </div>
-        {occupancyFiltersRow}
       </div>
     </div>
   );

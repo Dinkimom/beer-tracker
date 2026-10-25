@@ -20,8 +20,8 @@ interface UsePlannerNotificationFocusInput {
   plannerDataReady: boolean;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   sprintPlannerUi: SprintPlannerUiStore;
-  viewMode: 'compact' | 'features' | 'full' | 'kanban' | 'occupancy';
-  setViewMode: (mode: 'compact' | 'features' | 'full' | 'kanban' | 'occupancy') => void;
+  viewMode: 'compact' | 'features' | 'full' | 'kanban';
+  setViewMode: (mode: 'compact' | 'features' | 'full' | 'kanban') => void;
 }
 
 function clearNotificationFocusTimer(
@@ -97,7 +97,7 @@ export function usePlannerNotificationFocus({
     if (!focusTaskId) {
       return;
     }
-    if (viewMode === 'kanban' || viewMode === 'occupancy') {
+    if (viewMode === 'kanban') {
       setViewMode('full');
     }
   }, [focusTaskId, setViewMode, viewMode]);

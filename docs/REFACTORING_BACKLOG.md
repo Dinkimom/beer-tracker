@@ -15,9 +15,8 @@
 | Клиентский API в модулях | `lib/api/*.ts`; баррель `lib/beerTrackerApi.ts` → `export * from './api'` |
 | Tracker API на сервере | `lib/trackerApi/`; новый код — `lib/issueTrackerProvider` |
 | ClickHouse → snapshots | `lib/snapshots/*` |
-| Квартальный UI | `features/quarterly-planning-v2/*` (v1 удалён) |
 
-Баррель (`lib/api/index.ts`) реэкспортирует часть модулей: `auth`, `admin`, `analytics`, `boards`, `calendar`, `epics`, `features`, `holidays`, `issues`, `notifications`, `onprem`, `organizations`, `quarterly`, `queues`, `realtime`, `sprintGoals`, `sprints`, `slaBugs`, `stories`, `types` и др. Остальные (`gitlab`, `sprintMetrics`, `plannerTimeline`, `retroColumnTemplate`, `agentSessions`, …) в баррель не входят; на практике UI чаще импортирует модуль напрямую (`@/lib/api/issues`, `@/lib/api/sprints`).
+Баррель (`lib/api/index.ts`) реэкспортирует часть модулей: `auth`, `admin`, `analytics`, `boards`, `boardAvailability`, `calendar`, `features`, `holidays`, `issues`, `linkPreview`, `notifications`, `onprem`, `organizations`, `plannerIntegrationRules`, `queues`, `readApiError`, `realtime`, `sprintGoals`, `sprints`, `slaBugs`, `types`. Остальные (`sprintMetrics`, `plannerTimeline`, `retroColumnTemplate`, `agentSessions`, …) в баррель не входят; на практике UI чаще импортирует модуль напрямую (`@/lib/api/issues`, `@/lib/api/sprints`).
 
 Новый клиентский модуль: файл в `lib/api/`, вызов через `getPlannerBeerTrackerApi()` (`lib/plannerBeerTrackerApiOverride.ts`) — без raw `beerTrackerApi` в UI.
 
@@ -45,7 +44,7 @@
 
 ### 2.5 Крупные UI-файлы (по касанию)
 
-`features/sprint/components/SprintPlanner/SprintPlannerView.tsx` (~500 строк) и соседние хуки — дробить при touch по правилам `AGENTS.md` (max-lines, consolidation helpers). Дерево `SprintPlanner/occupancy/` — легаси, не трогать.
+`features/sprint/components/SprintPlanner/SprintPlannerView.tsx` (~500 строк) и соседние хуки — дробить при touch по правилам `AGENTS.md` (max-lines, consolidation helpers).
 
 ---
 

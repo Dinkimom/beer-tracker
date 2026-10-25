@@ -8,15 +8,15 @@
 
 | Паттерн из аудита | Текущее состояние |
 |-------------------|-------------------|
-| Поле поиска с иконкой и «×» | [`components/SearchInput.tsx`](../components/SearchInput.tsx) (тест `SearchInput.test.tsx`). Используется в `TasksTabFilters`, `BacklogPageFilters`, `EpicsSidebar` (квартальный план), `SprintPlannerControlsBarLeftSection`, `AdminMembersPageClient`, `QuickAddMenuExistingPanel`, `StickyNoteReactionPicker`. |
+| Поле поиска с иконкой и «×» | [`components/SearchInput.tsx`](../components/SearchInput.tsx) (тест `SearchInput.test.tsx`). Используется в `TasksTabFilters`, `BacklogPageFilters`, `SprintPlannerControlsBarLeftSection`, `AdminMembersPageClient`, `QuickAddMenuExistingPanel`, `StickyNoteReactionPicker`. |
 | Бейджи SP/TP (`PointBadge`) | Компонент удалён как мёртвый код (`38220873`, 2026-03-27). Отдельного общего бейджа очков сейчас нет. |
 | Тег команды (`TeamTag`, `getTeamTagClasses`) | `TeamTag` удалён (`38220873`). Маппинг «команда → классы» остался в [`utils/teamColors.ts`](../utils/teamColors.ts) (`TEAM_TAG_BG`, `TEAM_TAG_BORDER`, `getTeamTagClasses`); единственный потребитель — `components/Avatar.tsx`. |
-| Тег статуса | [`components/StatusTag.tsx`](../components/StatusTag.tsx) — используется в карточке задачи (`TaskCardTagsSidebarRow`, `TaskCardSlotItem`), бэклоге, квартальном плане, свимлейне, `TaskStatusSelect`, `SprintStatusTag`, `TransitionFieldsModal`, `FeaturesPage`. |
+| Тег статуса | [`components/StatusTag.tsx`](../components/StatusTag.tsx) — используется в карточке задачи (`TaskCardTagsSidebarRow`, `TaskCardSlotItem`), бэклоге, свимлейне, `TaskStatusSelect`, `SprintStatusTag`, `TransitionFieldsModal`, `TaskInfoSidebarTransitions`. |
 | Текстовые поля | [`components/Input.tsx`](../components/Input.tsx), [`components/TextArea.tsx`](../components/TextArea.tsx), [`components/PasswordInput.tsx`](../components/PasswordInput.tsx). |
 | Кастомный селект | [`components/CustomSelect.tsx`](../components/CustomSelect.tsx) (+ `CustomSelectMenu`, `CustomSelectOptionsList`, `CustomSelectTrigger`). Отдельного `components/Select.tsx` нет; нативные `<select>` в UI не используются. |
 | Вторичные кнопки | [`components/Button.tsx`](../components/Button.tsx) (`variant`: `primary` / `secondary` / …), сториз `Button.stories.tsx`. Иконочные кнопки шапки — [`components/HeaderIconButton.tsx`](../components/HeaderIconButton.tsx). |
 
-Карточки задач по-прежнему не объединяются в один компонент: основная — [`features/task/components/TaskCard/`](../features/task/components/TaskCard/); отдельной карточки feature-planner (`features/feature-planner/components/TaskCard.tsx`) больше нет.
+Карточки задач по-прежнему не объединяются в один компонент: основная — [`features/task/components/TaskCard/`](../features/task/components/TaskCard/); отдельной карточки планировщика фич больше нет (`features/feature-planner/` удалён).
 
 ---
 

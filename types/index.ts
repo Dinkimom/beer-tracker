@@ -468,7 +468,3 @@ export interface BacklogResponse {
  * Импорт для ChecklistItem из trackerApi
  */
 // Реэкспортируем типы Tracker API для обратной совместимости
-// Реэкспортируем типы Quarterly Planning
-export type {
-  Quarter
-} from './quarterly';

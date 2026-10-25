@@ -8,9 +8,6 @@ export function invalidateSprintTasksQueries(
   queryClient.invalidateQueries({
     queryKey: ['tasks', selectedSprintId, boardIdForPlannerData ?? null],
   });
-  queryClient.invalidateQueries({
-    queryKey: ['tasks', 'occupancy', selectedSprintId, boardIdForPlannerData ?? null],
-  });
 }
 
 export function shouldInvalidateOnOrgChange(

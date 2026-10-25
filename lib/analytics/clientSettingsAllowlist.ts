@@ -1,7 +1,7 @@
 import { STORAGE_KEYS } from '@/hooks/localStorage/storageKeys';
 
 /** Версия JSON снимка настроек; повышение само меняет хеш и переотправляет снимок. */
-export const CLIENT_SETTINGS_PAYLOAD_VERSION = 3;
+export const CLIENT_SETTINGS_PAYLOAD_VERSION = 4;
 
 /**
  * Канонические ключи payload → ключи localStorage.
@@ -13,25 +13,12 @@ export const CLIENT_SETTINGS_FIELDS = {
   dataSyncAssignees: STORAGE_KEYS.DATA_SYNC_ASSIGNEES,
   dataSyncEstimates: STORAGE_KEYS.DATA_SYNC_ESTIMATES,
   developersSort: STORAGE_KEYS.DEVELOPERS_SORT,
-  epicOccupancyOldTmLayout: STORAGE_KEYS.EPIC_OCCUPANCY_OLD_TM_LAYOUT,
-  epicOccupancyRowFields: STORAGE_KEYS.EPIC_OCCUPANCY_ROW_FIELDS,
-  epicOccupancyTimelineSettings: STORAGE_KEYS.EPIC_OCCUPANCY_TIMELINE_SETTINGS,
   experimentalFeatures: STORAGE_KEYS.EXPERIMENTAL_FEATURES,
   holidayCountry: STORAGE_KEYS.HOLIDAY_COUNTRY,
   kanbanGroupBy: STORAGE_KEYS.KANBAN_GROUP_BY,
   language: STORAGE_KEYS.LANGUAGE,
   linksDimOnHover: STORAGE_KEYS.LINKS_DIM_ON_HOVER,
-  occupancyFactVisible: STORAGE_KEYS.OCCUPANCY_FACT_VISIBLE,
-  occupancyOldTmLayout: STORAGE_KEYS.OCCUPANCY_OLD_TM_LAYOUT,
-  occupancyRowFields: STORAGE_KEYS.OCCUPANCY_ROW_FIELDS,
-  occupancyStatusFilter: STORAGE_KEYS.OCCUPANCY_STATUS_FILTER,
-  occupancyTimelineScale: STORAGE_KEYS.OCCUPANCY_TIMELINE_SCALE,
-  occupancyTimelineSettings: STORAGE_KEYS.OCCUPANCY_TIMELINE_SETTINGS,
   planningPhaseCardColorScheme: STORAGE_KEYS.PLANNING_PHASE_CARD_COLOR_SCHEME,
-  quarterlyV2OccupancyOldTmLayout: STORAGE_KEYS.QUARTERLY_V2_OCCUPANCY_OLD_TM_LAYOUT,
-  quarterlyV2OccupancyRowFields: STORAGE_KEYS.QUARTERLY_V2_OCCUPANCY_ROW_FIELDS,
-  quarterlyV2OccupancyTimelineSettings: STORAGE_KEYS.QUARTERLY_V2_OCCUPANCY_TIMELINE_SETTINGS,
-  quarterlyV2ShowPlannedTasks: STORAGE_KEYS.QUARTERLY_V2_SHOW_PLANNED_TASKS,
   selectedBoard: STORAGE_KEYS.SELECTED_BOARD,
   selectedSprint: STORAGE_KEYS.SELECTED_SPRINT,
   showHolidays: STORAGE_KEYS.SHOW_HOLIDAYS,

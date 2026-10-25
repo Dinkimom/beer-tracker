@@ -17,10 +17,7 @@ export {
   resizeSegmentGap,
 } from './segmentEditGapHelpers';
 export { PHASE_ROW_INSET_PX } from './phaseRowInset';
-export {
-  getPhaseFocusRingClass,
-  PHASE_FOCUS_RING_SOURCE,
-} from './phaseFocusRing';
+export { PHASE_FOCUS_RING_SOURCE } from './phaseFocusRing';
 export { dateTimeToFractionalCellInRange } from './sprintCellUtils';
 export type {  StatusPhaseCell } from './statusToCells';
 export { statusDurationsToCells } from './statusToCells';

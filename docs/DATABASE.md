@@ -28,7 +28,6 @@ PostgreSQL 16 (`postgres:16-alpine` в `docker-compose.yml`). Как схема 
 | `lib/sprints/swimlaneCardLayersRepository.ts` | `swimlane_card_layers` |
 | `lib/sprintMetrics/sprintMetricsRepository.ts` | `sprint_metrics` |
 | `lib/mcp/oauth/mcpOAuthRepository.ts` | `mcp_oauth_clients`, `mcp_oauth_codes`, `mcp_oauth_tokens` |
-| `lib/quarterlyPlans/ensureQuarterlyPlanV2Tables.ts` | `quarterly_plan_v2_*` |
 | `lib/notifications/ensureUserNotificationsTable.ts` | `user_notifications` + CHECK `kind` |
 | `lib/analytics/analyticsEventsRepository.ts` | `analytics_events` |
 | `lib/auth/adminsRepository.ts` | `admins` |
@@ -43,7 +42,6 @@ PostgreSQL 16 (`postgres:16-alpine` в `docker-compose.yml`). Как схема 
 
 Что `init.sql` не создаёт:
 
-- `quarterly_plan_v2_epics`, `quarterly_plan_v2_story_phases`, `quarterly_plan_v2_excluded_stories`, `quarterly_plan_v2_story_events`. Их создаёт runtime (`ensureQuarterlyPlanV2Tables`) или `database/quarterly_plan_v2_tables.sql`.
 - `mcp_oauth_clients`, `mcp_oauth_codes`, `mcp_oauth_tokens`. Их создаёт runtime (`mcpOAuthRepository`) или `database/add-mcp-oauth.sql`.
 - Колонки `agent_session_messages.options`, `skill_id`, `skill_params`: только runtime, SQL-файла нет.
 - CHECK `comments_position_y_layer_shift_check` (`database/add-comment-card-row-height.sql`).
@@ -93,7 +91,7 @@ docker compose exec -T db psql -U postgres -d beer_tracker -v ON_ERROR_STOP=1 -v
 | `add-admins.sql` | `admins`; снимает FK `analytics_events.user_id`; удаляет `organization_invitations`, `users` | да | да (удаление legacy-таблиц необратимо) |
 | `migrate-vacations-to-board-availability-events.sql` | `vacations` → `board_availability_events`, `DROP TABLE vacations` | да | да, но см. «Известные проблемы» |
 | `remove_quarterly_v1_data.sql` | удаляет таблицы квартального плана v1 | да | да |
-| `quarterly_plan_v2_tables.sql` | таблицы квартального плана v2 | **нет** (runtime) | да |
+| `quarterly_plan_v2_tables.sql` | таблицы квартального плана v2 (код удалён, см. [ниже](#таблицы-без-кода-удаление-отложено)) | нет | да |
 | `add-issue-snapshots.sql` | `issue_snapshots`, `issue_changelog_events` | да | да |
 | `add-analytics-events.sql` | `analytics_events` | да | да |
 | `add-user-notifications.sql` | `user_notifications` | да | да |
@@ -166,7 +164,7 @@ docker compose exec -T db psql -U postgres -d beer_tracker -v ON_ERROR_STOP=1 -v
 - `planner_files` — метаданные файлов планера (байты в S3, `storage_key`).
 - `sprint_goals` — цели спринта (delivery / discovery).
 - `sprint_feature_lanes` — черновые строки и порядок доски «по фичам».
-- `occupancy_task_order` — порядок во вкладке «Занятость» (legacy).
+- `occupancy_task_order` — сохранённый порядок задач удалённой вкладки «Занятость». Сервер только читает его для сортировки задач спринта (`lib/tracker/trackerRouteHelpers.ts`), записи больше нет.
 - `board_availability_events` — отпуска, техспринты, больничные, дежурства по доске.
 
 **Агент и предложения плана**
@@ -190,10 +188,8 @@ docker compose exec -T db psql -U postgres -d beer_tracker -v ON_ERROR_STOP=1 -v
 **Фичи, стори, документы**
 - `features`, `feature_documents`, `feature_diagrams`, `feature_grooming_diagrams`, `feature_grooming_todos` — фичи и их артефакты.
 - `document_types` — справочник типов документов (сид), `document_versions` — история версий.
-- `story_task_positions`, `story_draft_tasks`, `story_task_links` — доска планирования стори.
 
-**Квартальное планирование** (архив, см. [QUARTERLY_PLANNING.md](./QUARTERLY_PLANNING.md))
-- `quarterly_plans`, `quarterly_plan_v2_epics`, `quarterly_plan_v2_story_phases`, `quarterly_plan_v2_excluded_stories`, `quarterly_plan_v2_story_events`.
+**Без кода** — `story_*`, `quarterly_plans`, `quarterly_plan_v2_*`, см. [Таблицы без кода](#таблицы-без-кода-удаление-отложено).
 
 **Внешние таблицы (не создаются приложением)**
 - `overseer.teams`, `overseer.staff_teams`, `overseer.staff_roles`, `overseer.roles`, `public.registry_employees` — проверяются preflight при `DB_CONTRACT_MODE=compatibility`; источник разового копирования в `add-staff-teams.sql`.
@@ -204,7 +200,7 @@ docker compose exec -T db psql -U postgres -d beer_tracker -v ON_ERROR_STOP=1 -v
 SQL не исправлялся, здесь только фиксация.
 
 1. **Нет учёта миграций.** Нельзя узнать, какие файлы применены к БД. Порядок задаёт только таблица выше.
-2. **`init.sql` отстаёт от кода:** нет `quarterly_plan_v2_*`, `mcp_oauth_*`, колонок `agent_session_messages.options` / `skill_id` / `skill_params`, CHECK `comments_position_y_layer_shift_check`, индекса `uq_organizations_slug_lower`. Таблицы и колонки догоняет runtime-DDL, CHECK и индекс — нет.
+2. **`init.sql` отстаёт от кода:** нет `mcp_oauth_*`, колонок `agent_session_messages.options` / `skill_id` / `skill_params`, CHECK `comments_position_y_layer_shift_check`, индекса `uq_organizations_slug_lower`. Таблицы и колонки догоняет runtime-DDL, CHECK и индекс — нет.
 3. **Колонки без SQL-миграции.** `comments.parent`, `pending_approval`, `pending_approval_expires_at`, `plan_patch_proposal_id` и `agent_session_messages.options` / `skill_id` / `skill_params` добавляет только runtime-DDL. Ни один `database/*.sql` их не создаёт.
 4. **Зашитая схема `beer_tracker`** при `BEER_TRACKER_SCHEMA=public`:
    - `migrate-vacations-to-board-availability-events.sql` проверяет `vacations` в `information_schema` по `table_schema = 'beer_tracker'`. В `public` копирование пропускается, а `DROP TABLE IF EXISTS vacations` выполняется: данные отпусков теряются.
@@ -219,5 +215,24 @@ SQL не исправлялся, здесь только фиксация.
 7. **`uuid_generate_v4()`** в `add-planner-comment-images.sql` и `init.master-tenant-addon.sql` требует расширения `uuid-ossp`. `init.sql` и runtime используют `gen_random_uuid()`.
 8. **`add-issue-links.sql`** — заглушка из одних комментариев, хотя по имени выглядит как миграция. Раньше [COMMERCIAL_DB_CONTRACT.md](./COMMERCIAL_DB_CONTRACT.md) приводил его как пример запуска.
 9. **Runtime-DDL требует владения таблицами.** Приложение выполняет `CREATE TABLE` / `ALTER TABLE` при первом обращении (список выше). Ensure-функции пробрасывают ошибку, поэтому у роли без владения такие запросы падают даже на полностью доведённой схеме. Раньше COMMERCIAL_DB_CONTRACT.md утверждал, что DDL в runtime не нужен.
-10. **Таблицы вне `BEER_TRACKER_TABLES`** (`features`, `story_*`, `sprint_metrics`, `quarterly_plan_v2_*` и др.) не получают префикс схемы. При `BEER_TRACKER_SCHEMA≠public` они резолвятся через `search_path` роли, а не через `BEER_TRACKER_SCHEMA`.
+10. **Таблицы вне `BEER_TRACKER_TABLES`** (`features`, `sprint_metrics` и др.) не получают префикс схемы. При `BEER_TRACKER_SCHEMA≠public` они резолвятся через `search_path` роли, а не через `BEER_TRACKER_SCHEMA`.
 11. Мелочь: в `init.sql` `organizations` объявлена дважды (второй раз `CREATE TABLE IF NOT EXISTS`, без эффекта).
+
+## Таблицы без кода (удаление отложено)
+
+2026-10-25 из кода удалены квартальное планирование, редактор эпиков и вкладка «Занятость». Таблицы этих фич **не удалены**: в PR убирали только код, чтобы откат релиза не терял данные.
+
+| Таблица | Чья была | Кто создаёт | Код сейчас |
+|---------|----------|-------------|------------|
+| `quarterly_plans` | Квартальный план | `init.sql` | нет |
+| `quarterly_plan_v2_epics`, `quarterly_plan_v2_story_phases`, `quarterly_plan_v2_excluded_stories`, `quarterly_plan_v2_story_events` | Квартальный план v2 | `quarterly_plan_v2_tables.sql` (runtime-DDL удалён) | нет |
+| `story_task_positions`, `story_draft_tasks`, `story_task_links` | Редактор эпиков / стори | `init.sql` | нет |
+
+Не путать: `board_availability_events` (отпуска, техспринты) — живая таблица, хоть роут и остался под `/api/quarterly-plans/availability/board-events`. `occupancy_task_order` тоже живая: её читают при сортировке задач.
+
+Как удалять:
+
+1. Не раньше, чем релиз без этого кода поработает в проде и откат на старую версию станет не нужен.
+2. Отдельной миграцией `database/drop-removed-feature-tables.sql` с `DROP TABLE IF EXISTS` для таблиц выше, с бэкапом перед запуском.
+3. В том же PR: убрать `CREATE TABLE` из `init.sql`, удалить `quarterly_plan_v2_tables.sql`, убрать имена из `BEER_TRACKER_TABLES` в `lib/db.ts` и строки из этой таблицы.
+

@@ -170,12 +170,12 @@ describe('sprintPresence', () => {
     expect(
       collapseSprintPresenceViewers([
         { ...ada, boardView: 'kanban', clientId: 'tab-1', focus: { state: 'viewing', targetId: 'BT-1' } },
-        { ...ada, boardView: 'occupancy', clientId: 'tab-2', focus: { state: 'resizing', targetId: 'BT-2' } },
+        { ...ada, boardView: 'swimlanes', clientId: 'tab-2', focus: { state: 'resizing', targetId: 'BT-2' } },
       ])
     ).toEqual([
       {
         ...ada,
-        boardView: 'occupancy',
+        boardView: 'swimlanes',
         clientId: 'tab-2',
         focus: { state: 'resizing', targetId: 'BT-2' },
       },

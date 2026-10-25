@@ -8,7 +8,7 @@ import {
   type TaskCardSlotLayout,
 } from '@/lib/taskCard/taskCardSlots';
 
-import { useSwimlaneCardFieldsStorage } from './hooksOccupancyEpicQuarterly';
+import { useSwimlaneCardFieldsStorage } from './hooksSwimlaneAndKanban';
 import { STORAGE_KEYS } from './storageKeys';
 import { useLocalStorage } from './useLocalStorageBase';
 

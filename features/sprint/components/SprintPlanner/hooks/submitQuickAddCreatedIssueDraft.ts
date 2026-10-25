@@ -116,11 +116,6 @@ export async function submitQuickAddCreatedIssueDraft(
     next.set(issueKey, savedPosition);
     return next;
   }, { recordHistory: true });
-  input.queryClient.invalidateQueries({
-    queryKey: input.forDemoPlanner
-      ? (['tasks', 'demo', 'occupancy', input.selectedSprintId, input.boardIdForPlannerData] as const)
-      : (['tasks', 'occupancy', input.selectedSprintId, input.boardIdForPlannerData] as const),
-  });
   toast.success(
     input.t('planning.featurePlanner.epicOccupancy.createTaskSuccess', { key: issueKey })
   );

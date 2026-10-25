@@ -211,7 +211,6 @@ export function DaysHeader({
                   errorDayIndices={errorDayIndices}
                   holidayDayIndices={holidayDayIndices}
                   sprintStartDate={sprintStartDate}
-                  variant="swimlanes"
                   workingDaysCount={sprintTimelineWorkingDays}
                 />
                 {showAfterSprintRail && afterSprintTone === 'shards' ? (

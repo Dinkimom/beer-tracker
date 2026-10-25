@@ -32,10 +32,6 @@ function developerMatchesTaskPlatform(developer: Developer, task: Task): boolean
   return developerMatchesDevTeamPlatform(developer, team);
 }
 
-export function getDevelopersForTask(developers: Developer[], task: Task): Developer[] {
-  return developers.filter((d) => developerMatchesTaskPlatform(d, task));
-}
-
 /**
  * Возвращает всех разработчиков, отсортированных: сначала подходящие по платформе, затем остальные.
  * Используется в пикере исполнителя для возможности назначить любого участника команды.

@@ -40,7 +40,6 @@ function baseInput(partial?: Partial<Parameters<typeof submitConvertedSwimlaneCo
     createFailedMessage: 'failed',
     defaultQueue: 'QUEUE' as string | null,
     fallbackTitle: 'New task',
-    invalidateOccupancyQueries: vi.fn(),
     missingAssigneeMessage: 'pick assignee',
     missingQueueMessage: 'no queue',
     onCommentDelete: vi.fn(),
@@ -59,13 +58,11 @@ describe('submitConvertedSwimlaneComment', () => {
   it('creates an issue, places it on the note cell, and deletes the note', async () => {
     const onCommentDelete = vi.fn();
     const savePosition = vi.fn(() => Promise.resolve());
-    const invalidateOccupancyQueries = vi.fn();
 
     const result = await submitConvertedSwimlaneComment(
       baseInput({
         draftTitle: 'Converted title',
         fields: { issueType: 'task', parentKey: '', queueKey: 'QUEUE' },
-        invalidateOccupancyQueries,
         onCommentDelete,
         savePosition,
       })
@@ -87,7 +84,6 @@ describe('submitConvertedSwimlaneComment', () => {
       false
     );
     expect(onCommentDelete).toHaveBeenCalledWith('note-1', { retargetLinksTo: 'TASK-9' });
-    expect(invalidateOccupancyQueries).toHaveBeenCalled();
   });
 
   it('returns an error when the queue is missing', async () => {

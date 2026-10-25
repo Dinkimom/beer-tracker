@@ -2,7 +2,7 @@ import type { Developer, Task } from '@/types';
 
 import { useCallback, useMemo } from 'react';
 
-import { useParentTypes } from '@/features/sprint/components/SprintPlanner/occupancy/hooks/useParentTypes';
+import { useParentTypes } from '@/features/sprint/components/SprintPlanner/hooks/useParentTypes';
 import {
   mergeFeatureSwimlaneBoardRows,
   moveFeatureSwimlaneRowOrder,

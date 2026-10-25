@@ -23,9 +23,8 @@ describe('resolveTasksReloadButtonTitle', () => {
 });
 
 describe('resolveControlsBarViewModeSelectValue', () => {
-  it('отличает фичи от свимлейнов; скрытую занятость считает свимлейном', () => {
+  it('отличает фичи от свимлейнов', () => {
     expect(resolveControlsBarViewModeSelectValue('features')).toBe('features');
-    expect(resolveControlsBarViewModeSelectValue('occupancy')).toBe('swimlanes');
     expect(resolveControlsBarViewModeSelectValue('full')).toBe('swimlanes');
   });
 });

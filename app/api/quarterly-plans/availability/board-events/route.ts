@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
-import { notifyAvailabilityChangedIfNeeded } from '@/lib/notifications/notifyLifecycleAndAvailability';
 import {
   deleteBoardAvailabilityEvent,
   insertBoardAvailabilityEvent,
   listBoardAvailabilityEvents,
   updateBoardAvailabilityEvent,
-} from '@/lib/quarterlyPlans';
+} from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
+import { notifyAvailabilityChangedIfNeeded } from '@/lib/notifications/notifyLifecycleAndAvailability';
 
 const EVENT_TYPES = new Set(['vacation', 'tech_sprint', 'sick_leave', 'duty']);
 const TECH_SUBTYPES = new Set(['web', 'back', 'qa']);

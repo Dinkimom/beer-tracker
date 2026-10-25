@@ -242,7 +242,6 @@ export function useSprintPlannerViewModelInteractions({
     setAssigneePicker,
     handleAssigneeSelect,
     handleContextMenuAssigneeSelect,
-    handleOpenAssigneePicker,
     onRequestQaEngineerPicker,
   } = useSprintPlannerAssigneePicker({
     developers,
@@ -492,7 +491,6 @@ export function useSprintPlannerViewModelInteractions({
     handleCommentCreateWithFocus,
     handleCreateTaskInSwimlaneCell,
     handleOccupancyPositionSave,
-    handleOpenAssigneePicker,
     handlePasteQuickAddNote,
     handleQuickAddDraftAssigneeChange,
     handleQuickAddDraftCommentColorChange,

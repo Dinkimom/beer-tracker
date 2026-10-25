@@ -4,7 +4,7 @@ import type { Developer, TaskPosition } from '@/types';
 
 import { getDevelopersForTaskSorted } from '@/features/sprint/utils/getDevelopersForTask';
 
-import { OccupancyAssigneePicker } from './occupancy/OccupancyAssigneePicker';
+import { AssigneePicker } from './components/AssigneePicker';
 
 interface SprintPlannerAssigneePickerLayerProps {
   assigneePicker: AssigneePickerState;
@@ -46,7 +46,7 @@ export function SprintPlannerAssigneePickerLayer({
         };
 
   return (
-    <OccupancyAssigneePicker
+    <AssigneePicker
       anchorRect={assigneePicker.anchorRect}
       assigneePointsStats={assigneePointsStats}
       availability={availability}

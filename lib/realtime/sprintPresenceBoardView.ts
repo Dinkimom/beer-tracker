@@ -14,7 +14,7 @@ export function toSprintPresenceBoardView(viewMode: string): SprintPresenceBoard
   return 'swimlanes';
 }
 
-type PlannerViewMode = 'compact' | 'features' | 'full' | 'kanban' | 'occupancy';
+type PlannerViewMode = 'compact' | 'features' | 'full' | 'kanban';
 
 export function applySprintPresenceBoardView(
   boardView: SprintPresenceBoardView,

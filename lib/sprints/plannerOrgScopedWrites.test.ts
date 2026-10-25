@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { upsertFeatureLanesSql } from './featureLanesRepository';
-import { upsertOccupancyTaskOrderSql } from './occupancyTaskOrderRepository';
 import { insertSprintCommentSql, moveSprintCommentsSql, updateSprintCommentSql } from './sprintCommentsRepository';
 import { insertFileCommentSql } from './sprintPlannerFilesRepository';
 import { buildTaskLinksBatchInsert } from './taskLinksBatchSql';
@@ -25,12 +24,6 @@ describe('planner writes include organization_id', () => {
     expect(updateSprintCommentSql()).toContain('WHERE sprint_id = $13');
     expect(updateSprintCommentSql()).toContain('AND id = $14');
     expect(updateSprintCommentSql()).toContain('deleted_at IS NULL');
-  });
-
-  it('upserts occupancy order on the organization-scoped primary key', () => {
-    const sql = upsertOccupancyTaskOrderSql();
-    expect(sql).toContain('ON CONFLICT (organization_id, sprint_id)');
-    expect(sql).not.toContain('ON CONFLICT (sprint_id)');
   });
 
   it('upserts feature lanes on the organization-scoped primary key', () => {

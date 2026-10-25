@@ -8,9 +8,6 @@
     "apps/agent-bridge/main.ts",
     "scripts/knip/*.mjs",
     "scripts/bench/runPlannerHotPathBench.ts",
-    "scripts/bench/plannerHotPath.bench.ts",
-    "features/feature-planner/components/FeaturesPage.tsx",
-    "features/feature-planner/components/EpicEditorPage.tsx",
-    "features/quarterly-planning-v2/components/QuarterlyPlanningV2Page.tsx"
+    "scripts/bench/plannerHotPath.bench.ts"
   ]
 }

@@ -1,7 +1,7 @@
 /**
  * Generic хук для синхронизации **списка** сущностей с API (дебаунс, save/delete по элементу).
  * Обёртки: `useTaskLinksApi`, `useCommentsApi` в useApiStorage.ts.
- * Для одного документа (порядок занятости) — `useOccupancyTaskOrderApi`; см. ARCHITECTURE.md.
+ * Для одного документа (строки доски «по фичам») — `useFeatureLanesApi`; см. ARCHITECTURE.md.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';

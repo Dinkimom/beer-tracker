@@ -1,19 +1,16 @@
 import type { BurndownChartDataPoint } from '../components/BurndownAreaChart';
-import type { GetTaskInfoFn } from '@/hooks/useApiStorage';
-import type { Task, TaskPosition } from '@/types';
+import type { SprintTimelineTotals } from '@/lib/burndown/taskChangelogTimeline';
+import type { Task } from '@/types';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { useTaskState } from '@/features/sprint/hooks/useTaskState';
-import { useOccupancyTaskOrderApi, useTaskPositionsApi } from '@/hooks/useApiStorage';
+import { computeBurndownTilesFromTasks } from '@/features/sprint/utils/sprintMetrics';
+import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 import { useRootStore } from '@/lib/layers';
 
-import {
-  buildBurndownFlattenedRows,
-  useBurndownChartTileMetrics,
-} from './useBurndownChartTileMetrics';
+import { computeBurndownScopeTiles } from '../utils/burndownScopeTiles';
 
-type BurndownTileBurndownData = Parameters<typeof useBurndownChartTileMetrics>[0]['burndownData'];
+import { useBurndownMetrics } from './useBurndownMetrics';
 
 export function useBurndownChartTileState({
   burndownData,
@@ -21,70 +18,68 @@ export function useBurndownChartTileState({
   sprintId,
   sprintTasksForTiles,
 }: {
-  burndownData: BurndownTileBurndownData;
+  burndownData: {
+    currentSP?: number;
+    currentTP?: number;
+    sprintTimelineTotals?: SprintTimelineTotals | null;
+  } | null | undefined;
   goalTaskIdsForTiles?: string[];
   sprintId: number | null;
   sprintTasksForTiles?: Task[];
 }) {
-  const { taskPositions: taskPositionsStore, sprintPlannerUi } = useRootStore();
+  const { sprintPlannerUi } = useRootStore();
   const globalNameFilter = sprintPlannerUi.globalNameFilter;
+  const completionRules = useSprintTaskCompletionRules();
 
-  const loadTilePositions = sprintTasksForTiles !== undefined && sprintId != null;
-  const getTaskInfoRef = useRef<GetTaskInfoFn | undefined>(undefined);
-  const [taskPositionsRaw] = useTaskPositionsApi(loadTilePositions ? sprintId : null, getTaskInfoRef);
-  const [taskOrder] = useOccupancyTaskOrderApi(loadTilePositions ? sprintId : null);
+  const scopeTiles = useMemo(() => {
+    if (sprintId == null || !sprintTasksForTiles?.length) {
+      return null;
+    }
+    return computeBurndownScopeTiles(sprintTasksForTiles, globalNameFilter);
+  }, [sprintId, sprintTasksForTiles, globalNameFilter]);
 
-  const { tasksMap, qaTasksByOriginalId } = useTaskState({
-    tasks: sprintTasksForTiles ?? [],
-    taskPositions: taskPositionsRaw,
-    developers: [],
+  const taskFallbackTileMetrics = useMemo(() => {
+    if (sprintTasksForTiles === undefined) {
+      return null;
+    }
+    return computeBurndownTilesFromTasks(sprintTasksForTiles, goalTaskIdsForTiles, completionRules);
+  }, [sprintTasksForTiles, goalTaskIdsForTiles, completionRules]);
+
+  const taskTileMetrics = useMemo(() => {
+    const scopeShowsZeroButTasksHaveScope =
+      scopeTiles != null &&
+      scopeTiles.totalScopeSP === 0 &&
+      scopeTiles.totalScopeTP === 0 &&
+      (taskFallbackTileMetrics?.totalScopeSP ?? 0) + (taskFallbackTileMetrics?.totalScopeTP ?? 0) > 0;
+
+    if (scopeShowsZeroButTasksHaveScope) {
+      return taskFallbackTileMetrics;
+    }
+    return scopeTiles ?? taskFallbackTileMetrics;
+  }, [scopeTiles, taskFallbackTileMetrics]);
+
+  const changelogTileMetrics = useBurndownMetrics({
+    burndownData:
+      burndownData != null ? { sprintTimelineTotals: burndownData.sprintTimelineTotals } : null,
   });
 
-  useEffect(() => {
-    getTaskInfoRef.current = (taskId: string) => {
-      const task = tasksMap.get(taskId) || qaTasksByOriginalId.get(taskId);
-      return task
-        ? { isQa: task.team === 'QA', devTaskKey: task.team === 'QA' ? task.originalTaskId : undefined }
-        : { isQa: false };
-    };
-  }, [tasksMap, qaTasksByOriginalId]);
+  const metrics = taskTileMetrics ?? changelogTileMetrics;
 
-  const filteredTaskPositions = useMemo(() => {
-    const m = new Map<string, TaskPosition>();
-    taskPositionsRaw.forEach((pos, taskId) => {
-      if (tasksMap.has(taskId) || qaTasksByOriginalId.has(taskId)) {
-        m.set(taskId, pos);
-      }
-    });
-    return m;
-  }, [taskPositionsRaw, tasksMap, qaTasksByOriginalId]);
+  const remainingSPForLabel =
+    taskTileMetrics != null
+      ? Math.max(0, taskTileMetrics.totalScopeSP - taskTileMetrics.completedSP)
+      : (burndownData?.sprintTimelineTotals?.remainingSP ?? burndownData?.currentSP ?? 0);
+  const remainingTPForLabel =
+    taskTileMetrics != null
+      ? Math.max(0, taskTileMetrics.totalScopeTP - taskTileMetrics.completedTP)
+      : (burndownData?.sprintTimelineTotals?.remainingTP ?? burndownData?.currentTP ?? 0);
 
-  const flattenedRowsForBurndownTiles = useMemo(
-    () =>
-      buildBurndownFlattenedRows({
-        globalNameFilter,
-        loadTilePositions,
-        sprintTasksForTiles,
-        filteredTaskPositions,
-        taskOrder,
-      }),
-    [loadTilePositions, sprintTasksForTiles, filteredTaskPositions, globalNameFilter, taskOrder]
-  );
-
-  const positionsSettledForSprint =
-    sprintId != null &&
-    taskPositionsStore.positionsSettledSprintId === sprintId &&
-    !taskPositionsStore.positionsLoadPending;
-
-  return useBurndownChartTileMetrics({
-    burndownData,
-    flattenedRowsForBurndownTiles,
-    filteredTaskPositions,
-    goalTaskIdsForTiles,
-    loadTilePositions,
-    positionsSettledForSprint,
-    sprintTasksForTiles,
-  });
+  return {
+    ...metrics,
+    remainingSPForLabel,
+    remainingTPForLabel,
+    taskTileMetrics,
+  };
 }
 
 export function useBurndownPinnedPointHandlers() {

@@ -1,6 +1,7 @@
 'use client';
 
 import type { SprintTab } from '@/components/PageHeader';
+import type { PlanningGanttTab } from '@/components/SettingsModal/tabs/SettingsPlanningTab.types';
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -18,19 +19,8 @@ import { useI18n } from '@/contexts/LanguageContext';
 import {
   useDataSyncAssigneesStorage,
   useDataSyncEstimatesStorage,
-  useEpicOccupancyRowFieldsStorage,
-  useEpicOccupancyRowViewStorage,
-  useEpicOccupancyTimelineSettingsStorage,
   useKanbanGroupByStorage,
   useLinksDimOnHoverStorage,
-  useOccupancyRowFieldsStorage,
-  useOccupancyRowViewStorage,
-  useOccupancyTimelineScaleStorage,
-  useOccupancyTimelineSettingsStorage,
-  useQuarterlyV2OccupancyRowFieldsStorage,
-  useQuarterlyV2OccupancyRowViewStorage,
-  useQuarterlyV2OccupancyTimelineSettingsStorage,
-  useQuarterlyV2ShowPlannedTasksStorage,
   useShowHolidaysStorage,
   useSidebarTabsSettingsStorage,
   useSwimlaneCalendarBusyVisibleStorage,
@@ -72,10 +62,6 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
   const [syncAssignees, setSyncAssignees] = useDataSyncAssigneesStorage();
   const [showHolidays, setShowHolidays] = useShowHolidaysStorage();
   const { holidayCountry, setHolidayCountry } = useOrgHolidayCountry();
-  const [timelineSettings, setTimelineSettings] = useOccupancyTimelineSettingsStorage();
-  const [occupancyTimelineScale, setOccupancyTimelineScale] = useOccupancyTimelineScaleStorage();
-  const [occupancyRowView, setOccupancyRowView] = useOccupancyRowViewStorage();
-  const [occupancyRowFields, setOccupancyRowFields] = useOccupancyRowFieldsStorage();
   const [kanbanGroupBy, setKanbanGroupBy] = useKanbanGroupByStorage();
   const [swimlaneFactTimelineVisible, setSwimlaneFactTimelineVisible] =
     useSwimlaneFactTimelineVisibleStorage();
@@ -83,20 +69,13 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
     useSwimlaneCalendarBusyVisibleStorage();
   const [swimlaneLinksVisible, setSwimlaneLinksVisible] = useSwimlaneLinksVisibilityStorage();
   const [linksDimOnHover, setLinksDimOnHover] = useLinksDimOnHoverStorage();
-  const [epicOccupancyRowView, setEpicOccupancyRowView] = useEpicOccupancyRowViewStorage();
-  const [epicTimelineSettings, setEpicTimelineSettings] = useEpicOccupancyTimelineSettingsStorage();
-  const [epicOccupancyRowFields, setEpicOccupancyRowFields] = useEpicOccupancyRowFieldsStorage();
-  const [quarterlyV2RowView, setQuarterlyV2RowView] = useQuarterlyV2OccupancyRowViewStorage();
-  const [quarterlyV2TimelineSettings, setQuarterlyV2TimelineSettings] = useQuarterlyV2OccupancyTimelineSettingsStorage();
-  const [quarterlyV2RowFields, setQuarterlyV2RowFields] = useQuarterlyV2OccupancyRowFieldsStorage();
-  const [quarterlyV2ShowPlannedTasks, setQuarterlyV2ShowPlannedTasks] = useQuarterlyV2ShowPlannedTasksStorage();
   const [sidebarTabsSettings, setSidebarTabsSettings] = useSidebarTabsSettingsStorage();
   const [boardViewMode] = useBoardViewModeStorage();
 
+  const [ganttTab, setGanttTab] = useState<PlanningGanttTab>('swimlane');
   const [activeTab, setActiveTab] = useState<SettingsTab>('planning');
   const [showChangelog, setShowChangelog] = useState(false);
   const [wasOpen, setWasOpen] = useState(isOpen);
-  const [ganttTab, setGanttTab] = useState<'epics' | 'kanban' | 'quarterly-v2' | 'sprint' | 'swimlane'>('swimlane');
   const [localToken, setLocalToken] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
@@ -285,40 +264,18 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
 
                 {activeTab === 'planning' && (
                   <SettingsPlanningTab
-                    epicOccupancyRowFields={epicOccupancyRowFields}
-                    epicOccupancyRowView={epicOccupancyRowView}
-                    epicTimelineSettings={epicTimelineSettings}
                     ganttTab={ganttTab}
                     kanbanGroupBy={kanbanGroupBy}
                     linksDimOnHover={linksDimOnHover}
-                    occupancyRowFields={occupancyRowFields}
-                    occupancyRowView={occupancyRowView}
-                    occupancyTimelineScale={occupancyTimelineScale}
-                    quarterlyV2RowFields={quarterlyV2RowFields}
-                    quarterlyV2RowView={quarterlyV2RowView}
-                    quarterlyV2ShowPlannedTasks={quarterlyV2ShowPlannedTasks}
-                    quarterlyV2TimelineSettings={quarterlyV2TimelineSettings}
-                    setEpicOccupancyRowFields={setEpicOccupancyRowFields}
-                    setEpicOccupancyRowView={setEpicOccupancyRowView}
-                    setEpicTimelineSettings={setEpicTimelineSettings}
                     setGanttTab={setGanttTab}
                     setKanbanGroupBy={setKanbanGroupBy}
                     setLinksDimOnHover={setLinksDimOnHover}
-                    setOccupancyRowFields={setOccupancyRowFields}
-                    setOccupancyRowView={setOccupancyRowView}
-                    setOccupancyTimelineScale={setOccupancyTimelineScale}
-                    setQuarterlyV2RowFields={setQuarterlyV2RowFields}
-                    setQuarterlyV2RowView={setQuarterlyV2RowView}
-                    setQuarterlyV2ShowPlannedTasks={setQuarterlyV2ShowPlannedTasks}
-                    setQuarterlyV2TimelineSettings={setQuarterlyV2TimelineSettings}
                     setSwimlaneCalendarBusyVisible={setSwimlaneCalendarBusyVisible}
                     setSwimlaneFactTimelineVisible={setSwimlaneFactTimelineVisible}
                     setSwimlaneLinksVisible={setSwimlaneLinksVisible}
-                    setTimelineSettings={setTimelineSettings}
                     swimlaneCalendarBusyVisible={swimlaneCalendarBusyVisible}
                     swimlaneFactTimelineVisible={swimlaneFactTimelineVisible}
                     swimlaneLinksVisible={swimlaneLinksVisible}
-                    timelineSettings={timelineSettings}
                   />
                 )}
               </div>

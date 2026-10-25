@@ -46,7 +46,7 @@ features/ / components/ / hooks/
 ### P1
 
 - [x] Типы score в `lib/`; UI + `lib/api` без `@/app/api`
-- [x] `lib/api/features.ts` + `FeaturesPage` → `fetchEpicsList`
+- [x] `lib/api/features.ts`
 - [x] ESLint: no `@/app/api` / no raw `beerTrackerApi` в UI
 
 ### P2
@@ -56,7 +56,7 @@ features/ / components/ / hooks/
 
 ### P3
 
-- [x] `app/api/**/*Helpers` → `lib/admin`, `lib/auth`, `lib/issues`, `lib/epics`, `lib/sprints`, `lib/organizations`, `lib/staffTeams`, `lib/http`
+- [x] `app/api/**/*Helpers` → `lib/admin`, `lib/auth`, `lib/issues`, `lib/sprints`, `lib/organizations`, `lib/staffTeams`, `lib/http`
 - [x] Нет кросс-импортов доменов через `@/app/api/...`
 - [x] Новый Tracker-код → `lib/issueTrackerProvider` (легаси `lib/trackerApi` по касанию)
 

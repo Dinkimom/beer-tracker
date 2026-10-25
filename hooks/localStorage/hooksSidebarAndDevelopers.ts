@@ -6,15 +6,17 @@ import { STORAGE_KEYS } from './storageKeys';
 import { getFromStorage, saveToStorage } from './storagePrimitives';
 import { useLocalStorage as useLocalStorageBase } from './useLocalStorageBase';
 
-/** `occupancy` скрыт; в storage ещё может лежать — сбрасываем на свимлейн. */
-export type BoardViewMode = 'compact' | 'features' | 'full' | 'kanban' | 'occupancy';
+export type BoardViewMode = 'compact' | 'features' | 'full' | 'kanban';
+
+const BOARD_VIEW_MODES: readonly string[] = ['compact', 'features', 'full', 'kanban'] satisfies BoardViewMode[];
 
 export function isAnySwimlaneViewMode(viewMode: BoardViewMode): boolean {
   return viewMode === 'full' || viewMode === 'compact' || viewMode === 'features';
 }
 
-export function resolveVisibleBoardViewMode(viewMode: BoardViewMode): BoardViewMode {
-  return viewMode === 'occupancy' ? 'full' : viewMode;
+/** В storage может лежать снятый режим (`occupancy`) — показываем свимлейн. */
+export function resolveVisibleBoardViewMode(viewMode: string): BoardViewMode {
+  return BOARD_VIEW_MODES.includes(viewMode) ? (viewMode as BoardViewMode) : 'full';
 }
 
 export function useBoardViewModeStorage(): [
@@ -25,12 +27,13 @@ export function useBoardViewModeStorage(): [
     STORAGE_KEYS.BOARD_VIEW_MODE,
     'full'
   );
+  const visibleViewMode = resolveVisibleBoardViewMode(viewMode);
   useEffect(() => {
-    if (viewMode === 'occupancy') {
-      setViewMode('full');
+    if (visibleViewMode !== viewMode) {
+      setViewMode(visibleViewMode);
     }
-  }, [setViewMode, viewMode]);
-  return [resolveVisibleBoardViewMode(viewMode), setViewMode];
+  }, [setViewMode, viewMode, visibleViewMode]);
+  return [visibleViewMode, setViewMode];
 }
 
 export function useSidebarGroupByStorage(): [
@@ -45,16 +48,6 @@ export function useSidebarStatusFilterStorage(): [
   (filter: StatusFilter | ((prev: StatusFilter) => StatusFilter)) => void
 ] {
   return useLocalStorageBase<StatusFilter>(STORAGE_KEYS.SIDEBAR_STATUS_FILTER, 'all');
-}
-
-/**
- * Фильтр по статусам задач в отображении занятости. Сохраняется в localStorage.
- */
-export function useOccupancyStatusFilterStorage(): [
-  StatusFilter,
-  (filter: StatusFilter | ((prev: StatusFilter) => StatusFilter)) => void
-] {
-  return useLocalStorageBase<StatusFilter>(STORAGE_KEYS.OCCUPANCY_STATUS_FILTER, 'all');
 }
 
 // ==================== Настройки табов сайдбара ====================

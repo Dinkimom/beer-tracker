@@ -102,7 +102,7 @@ export function useSprintMovePlacement({
 
   const enterTargetSprint = useCallback(
     (targetSprintId: number) => {
-      if (viewMode === 'kanban' || viewMode === 'occupancy') {
+      if (viewMode === 'kanban') {
         setViewMode('full');
       }
       onSprintChange(targetSprintId);

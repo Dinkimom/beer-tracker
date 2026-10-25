@@ -53,7 +53,7 @@ export function isSprintPresenceMutatingFocusState(
   return state === 'dragging' || state === 'editing' || state === 'resizing';
 }
 
-export const SPRINT_PRESENCE_BOARD_VIEWS = ['kanban', 'occupancy', 'retro', 'swimlanes'] as const;
+export const SPRINT_PRESENCE_BOARD_VIEWS = ['kanban', 'retro', 'swimlanes'] as const;
 
 export type SprintPresenceBoardView = (typeof SPRINT_PRESENCE_BOARD_VIEWS)[number];
 

@@ -1,11 +1,7 @@
 'use client';
 
 import type { PlanningGanttTab, SettingsPlanningTabProps } from './SettingsPlanningTab.types';
-import type {
-  OccupancyTimelineScale,
-  PlanningPhaseCardColorScheme,
-  SwimlaneLinksIdleMode,
-} from '@/hooks/useLocalStorage';
+import type { PlanningPhaseCardColorScheme, SwimlaneLinksIdleMode } from '@/hooks/useLocalStorage';
 
 import { useMemo, useState } from 'react';
 
@@ -18,10 +14,7 @@ import {
   useSwimlaneLinksIdleModeStorage,
 } from '@/hooks/useLocalStorage';
 
-import { OccupancySettingsSection } from '../components/OccupancySettingsSection';
 import { Toggle } from '../components/Toggle';
-
-import { SettingsPlanningTabRowFieldsGrid } from './SettingsPlanningTabRowFieldsGrid';
 
 export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
   const [phaseCardColorScheme, setPhaseCardColorScheme] = usePlanningPhaseCardColorSchemeStorage();
@@ -37,40 +30,18 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
     [t]
   );
   const {
-    epicOccupancyRowFields,
-    epicOccupancyRowView,
-    epicTimelineSettings,
     ganttTab,
     kanbanGroupBy,
     linksDimOnHover,
-    occupancyTimelineScale,
-    occupancyRowFields,
-    occupancyRowView,
-    quarterlyV2RowFields,
-    quarterlyV2RowView,
-    quarterlyV2ShowPlannedTasks,
-    quarterlyV2TimelineSettings,
-    setEpicOccupancyRowFields,
-    setEpicOccupancyRowView,
-    setEpicTimelineSettings,
     setGanttTab,
     setKanbanGroupBy,
     setLinksDimOnHover,
-    setOccupancyTimelineScale,
-    setOccupancyRowFields,
-    setOccupancyRowView,
-    setQuarterlyV2RowFields,
-    setQuarterlyV2RowView,
-    setQuarterlyV2ShowPlannedTasks,
-    setQuarterlyV2TimelineSettings,
     setSwimlaneCalendarBusyVisible,
     setSwimlaneFactTimelineVisible,
     setSwimlaneLinksVisible,
-    setTimelineSettings,
     swimlaneCalendarBusyVisible,
     swimlaneFactTimelineVisible,
     swimlaneLinksVisible,
-    timelineSettings,
   } = props;
 
   return (
@@ -159,98 +130,6 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
           );
         })}
       </div>
-
-      {ganttTab === 'sprint' && (
-        /* deprecated: вкладка занятости скрыта из tablist */
-        <OccupancySettingsSection
-          extraRowSettings={
-            <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {t('settings.planningTab.occupancyRowFieldsHeading')}
-              </h4>
-              <SettingsPlanningTabRowFieldsGrid fields={occupancyRowFields} setFields={setOccupancyRowFields} />
-            </div>
-          }
-          extraSettings={
-            <div className="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <div className="space-y-1.5">
-                <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('settings.planningTab.timelineLayoutMode')}
-                </span>
-                <CustomSelect<OccupancyTimelineScale>
-                  className="w-full"
-                  options={[
-                    { label: t('settings.planningTab.sizingFull'), value: 'full' },
-                    { label: t('settings.planningTab.sizingCompact'), value: 'compact' },
-                  ]}
-                  title={t('settings.planningTab.timelineLayoutTitle')}
-                  value={occupancyTimelineScale}
-                  onChange={(v) => setOccupancyTimelineScale(v)}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                  <span className="block">{t('settings.planningTab.timelineFullHelp')}</span>
-                  <span className="block">{t('settings.planningTab.timelineCompactHelp')}</span>
-                </p>
-              </div>
-            </div>
-          }
-          rowView={occupancyRowView}
-          sectionId="settings-occupancy-sprint"
-          timelineSettings={timelineSettings}
-          title={t('settings.planningTab.sectionTitles.sprint')}
-          onRowViewChange={setOccupancyRowView}
-          onTimelineSettingsChange={setTimelineSettings}
-        />
-      )}
-
-      {ganttTab === 'epics' && (
-        /* deprecated: вкладка эпиков скрыта из tablist, ветка только для старых сохранённых значений */
-        <OccupancySettingsSection
-          extraRowSettings={
-            <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {t('settings.planningTab.occupancyRowFieldsHeading')}
-              </h4>
-              <SettingsPlanningTabRowFieldsGrid fields={epicOccupancyRowFields} setFields={setEpicOccupancyRowFields} />
-            </div>
-          }
-          rowView={epicOccupancyRowView}
-          sectionId="settings-occupancy-epic"
-          timelineSettings={epicTimelineSettings}
-          title={t('settings.planningTab.sectionTitles.epic')}
-          onRowViewChange={setEpicOccupancyRowView}
-          onTimelineSettingsChange={setEpicTimelineSettings}
-        />
-      )}
-
-      {ganttTab === 'quarterly-v2' && (
-        /* deprecated: вкладка квартала скрыта из tablist, ветка только для старых сохранённых значений */
-        <OccupancySettingsSection
-          extraRowSettings={
-            <div className="space-y-4">
-              <Toggle
-                checked={quarterlyV2ShowPlannedTasks}
-                id="quarterly-v2-show-planned-tasks"
-                label={t('settings.planningTab.quarterlyShowPlannedTasks')}
-                onChange={setQuarterlyV2ShowPlannedTasks}
-              />
-              <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  {t('settings.planningTab.occupancyRowFieldsHeading')}
-                </h4>
-                <SettingsPlanningTabRowFieldsGrid fields={quarterlyV2RowFields} setFields={setQuarterlyV2RowFields} />
-              </div>
-            </div>
-          }
-          rowView={quarterlyV2RowView}
-          sectionId="settings-occupancy-quarterly"
-          showFactTimeline={false}
-          timelineSettings={quarterlyV2TimelineSettings}
-          title={t('settings.planningTab.sectionTitles.quarterly')}
-          onRowViewChange={setQuarterlyV2RowView}
-          onTimelineSettingsChange={setQuarterlyV2TimelineSettings}
-        />
-      )}
 
       {ganttTab === 'swimlane' && (
         <section className="space-y-3">

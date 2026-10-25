@@ -59,13 +59,6 @@ export function useSprintPlannerAssigneePicker({
 }: UseSprintPlannerAssigneePickerParams) {
   const [assigneePicker, setAssigneePicker] = useState<AssigneePickerState | null>(null);
 
-  const handleOpenAssigneePicker = useCallback(
-    (data: { anchorRect: DOMRect; position: TaskPosition; task: Task; taskName: string }) => {
-      setAssigneePicker({ mode: 'phase', ...data });
-    },
-    []
-  );
-
   const handleContextMenuAssigneeSelect = useCallback(
     (task: Task, assigneeId: string) => {
       const storedPosition = taskPositions.get(task.id);
@@ -157,7 +150,6 @@ export function useSprintPlannerAssigneePicker({
     setAssigneePicker,
     handleAssigneeSelect,
     handleContextMenuAssigneeSelect,
-    handleOpenAssigneePicker,
     onRequestQaEngineerPicker,
   };
 }

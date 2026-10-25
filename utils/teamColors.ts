@@ -16,10 +16,3 @@ export const TEAM_TAG_BORDER: Record<string, string> = {
   QA: 'border-amber-600 dark:border-amber-700',
   DevOps: 'border-violet-600 dark:border-violet-700',
 };
-
-/** Классы для тега команды (сплошной фон + белый текст + граница) */
-export function getTeamTagClasses(team: string): string {
-  const bg = TEAM_TAG_BG[team] ?? 'bg-gray-500 dark:bg-gray-600';
-  const border = TEAM_TAG_BORDER[team] ?? 'border-gray-600 dark:border-gray-700';
-  return `${bg} text-white border ${border}`;
-}

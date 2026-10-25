@@ -4,21 +4,18 @@
  *
  * Два паттерна отложенной записи — см. **«Локальный стейт + API»** в [ARCHITECTURE.md](../ARCHITECTURE.md):
  * - **useDebouncedApiSync** — списки (связи, комментарии) через `useTaskLinksApi` / `useCommentsApi`.
- * - **useOccupancyTaskOrderApi** / **useFeatureLanesApi** — один JSON-документ на спринт; отдельная реализация, не generic-список.
+ * - **useFeatureLanesApi** — один JSON-документ на спринт; отдельная реализация, не generic-список.
  */
 
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
 import type { Comment, TaskLink } from '@/types';
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import { commentToSaveApiFields } from '@/lib/api/sprintsApiCommentsHelpers';
 import {
-  type OccupancyTaskOrder,
-  fetchOccupancyTaskOrder,
-  saveOccupancyTaskOrder,
   fetchSprintLinks,
   saveTaskLink,
   saveTaskLinksBatch,
@@ -32,7 +29,6 @@ import {
   prefetchSprintBoardList,
   takePrefetchedSprintBoardList,
 } from '@/lib/sprints/sprintBoardListPrefetch';
-import { DELAYS } from '@/utils/constants';
 
 import {
   ensureFeatureLanesSessionLoaded,
@@ -198,78 +194,6 @@ export function useCommentsApi(
 }
 
 // ==================== Хук порядка занятости ====================
-
-/**
- * Порядок строк «Занятость» на спринт: один документ в API, дебаунс сохранения.
- * Не использовать `useDebouncedApiSync` — там модель «массив элементов + save/delete по id».
- */
-export function useOccupancyTaskOrderApi(sprintId: number | null): [
-  OccupancyTaskOrder | undefined,
-  (updater: (prev: OccupancyTaskOrder | undefined) => OccupancyTaskOrder) => void
-] {
-  const [taskOrder, setTaskOrderState] = useState<OccupancyTaskOrder | undefined>(undefined);
-  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingOrderRef = useRef<OccupancyTaskOrder | null>(null);
-
-  // Загрузка при изменении спринта
-  useEffect(() => {
-    if (!isValidSprintId(sprintId)) {
-      queueMicrotask(() => setTaskOrderState(undefined));
-      return;
-    }
-
-    let cancelled = false;
-    fetchOccupancyTaskOrder(sprintId!)
-      .then((order) => {
-        if (!cancelled) {
-          setTaskOrderState(order ?? undefined);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Error loading occupancy task order:', error);
-          setTaskOrderState(undefined);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
-    };
-  }, [sprintId]);
-
-  const setTaskOrder = (updater: (prev: OccupancyTaskOrder | undefined) => OccupancyTaskOrder) => {
-    if (!isValidSprintId(sprintId)) return;
-
-    setTaskOrderState((prev) => {
-      const next = updater(prev);
-      pendingOrderRef.current = next;
-
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-      }
-
-      saveTimerRef.current = setTimeout(async () => {
-        saveTimerRef.current = null;
-        const toSave = pendingOrderRef.current;
-        if (toSave && isValidSprintId(sprintId)) {
-          try {
-            await saveOccupancyTaskOrder(sprintId!, toSave);
-          } catch (error) {
-            console.error('Error saving occupancy task order:', error);
-          }
-        }
-      }, DELAYS.DEBOUNCE);
-
-      return next;
-    });
-  };
-
-  return [taskOrder, setTaskOrder];
-}
 
 /**
  * Черновые строки фич и порядок/видимость доски «по фичам»: один документ, дебаунс сохранения.

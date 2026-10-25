@@ -361,13 +361,6 @@ export function useSprintPlannerQuickAddDraft({
             draftTitle,
             fallbackTitle: t('sprintPlanner.swimlane.quickAddPreviewTitle'),
             fields,
-            invalidateOccupancyQueries: () => {
-              queryClient.invalidateQueries({
-                queryKey: forDemoPlanner
-                  ? (['tasks', 'demo', 'occupancy', selectedSprintId, boardIdForPlannerData] as const)
-                  : (['tasks', 'occupancy', selectedSprintId, boardIdForPlannerData] as const),
-              });
-            },
             missingAssigneeMessage: t('sprintPlanner.swimlane.quickAddMenu.assigneeRequired'),
             missingQueueMessage: t('task.mutations.tasksReloadFailed'),
             onCommentDelete,

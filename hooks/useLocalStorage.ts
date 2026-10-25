@@ -6,7 +6,7 @@ import { useLocalStorage as useLocalStorageBase } from './localStorage/useLocalS
 
 export { useLocalStorageBase as useLocalStorage };
 
-export * from './localStorage/hooksOccupancyEpicQuarterly';
+export * from './localStorage/hooksSwimlaneAndKanban';
 export * from './localStorage/swimlaneCardSlotLayout';
 export * from './localStorage/hooksSelectionThemeAndSync';
 export * from './localStorage/hooksSidebarAndDevelopers';
@@ -57,10 +57,4 @@ export function useFeatureColumnWidthStorage(
 function readStoredColumnWidth(key: string): number | null {
   const value = getFromStorage<unknown>(key, null);
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-export function useOccupancyTaskColumnWidthStorage(
-  defaultValue: number = 280
-): [number, (value: number | ((prev: number) => number)) => void] {
-  return useDebouncedNumericLocalStorage(STORAGE_KEYS.OCCUPANCY_TASK_COLUMN_WIDTH, defaultValue);
 }

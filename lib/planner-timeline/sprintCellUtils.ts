@@ -13,12 +13,6 @@ export function getSprintTotalParts(): number {
   return WORKING_DAYS * getPartsPerDay();
 }
 
-/**
- * Снимок на момент загрузки модуля для легаси-занятости.
- * Планер берёт живую сетку через {@link getSprintTotalParts}.
- */
-export const TOTAL_PARTS = WORKING_DAYS * 3;
-
 /** Дата/время → индекс рабочего дня в сетке из workingDaysCount дней (по умолчанию один «стандартный» спринт). */
 function getWorkingDayIndex(
   sprintStartDate: Date,

@@ -11,7 +11,7 @@
 
 **Beer Tracker** (в UI — «Трекер» / Sprint Manager) — веб-приложение для **планирования спринтов поверх внешнего issue tracker**: **Яндекс Трекер** или **Jira** (Cloud / Data Center). Провайдер выбирается на организацию и хранится в БД — см. [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md).
 
-Оно **не заменяет** трекер как систему учёта задач. Задачи, статусы, спринты и доски живут во внешнем трекере; приложение даёт визуальный планер (свимлейн, бэклог, burndown, ретро, метрики, цели, SLA-баги) с сохранением позиций, заметок и планов в собственной PostgreSQL, а также MCP-доступ для внешнего агента (Claude, Cursor…), который предлагает правки плана. Режим занятости («По задачам») deprecated и скрыт из переключателя видов.
+Оно **не заменяет** трекер как систему учёта задач. Задачи, статусы, спринты и доски живут во внешнем трекере; приложение даёт визуальный планер (свимлейн, бэклог, burndown, ретро, метрики, цели, SLA-баги) с сохранением позиций, заметок и планов в собственной PostgreSQL, а также MCP-доступ для внешнего агента (Claude, Cursor…), который предлагает правки плана.
 
 ---
 
@@ -49,8 +49,6 @@
 
 Рабочий контекст: **организация** (tenant) + **доска** Tracker + **спринт**.
 
-Экраны эпиков (`features/feature-planner`) и квартального плана (`features/quarterly-planning-v2`) не подключены к навигации и не развиваются. Код и API сохранены; см. [steering/product.md](./steering/product.md).
-
 ---
 
 ## 4. Возможности по доменам
@@ -66,7 +64,6 @@
 | **full / compact** | «По исполнителям»: свимлейн по разработчикам/тестировщикам (обычный и компактный) |
 | **features** | «По фичам»: строка = родитель (фича/стори) |
 | **kanban** | Канбан по статусам |
-| **occupancy** | Deprecated: скрыт из переключателя, сохранённое значение сбрасывается на свимлейн |
 
 **Функции:**
 
@@ -85,7 +82,6 @@
 - Финиш спринта (модалка с проверками), проверки старта — во вкладке целей
 - Оценка спринта (score / SP·TP метрики на UI)
 - Доступность (отпуска, техспринты и др.) и занятость календаря (CalDAV) на дорожках
-- Маркеры GitLab MR на таймлайне факта — где подключено
 - Совместная работа: присутствие участников, realtime-обновления (SSE), таймер спринта
 - Темы: светлая / тёмная / новогодняя; локализация **ru / en**
 
@@ -263,8 +259,7 @@ features/ / components/ / hooks/
         → lib/<domain>/        (repositories, оркестрация, SQL)
 ```
 
-**Feature-домены** (`features/`): `sprint`, `swimlane`, `task`, `sidebar`, `comments`, `backlog`, `burndown`, `retro`, `sprint-metrics`, `sla-bugs`, `context-menu`, `notifications`, `account`, `board`, `qa`, `admin`, `gitlab`, `widgets`, …  
-Deprecated (не развивать): `feature-planner`, `quarterly-planning-v2`.
+**Feature-домены** (`features/`): `sprint`, `swimlane`, `task`, `sidebar`, `comments`, `backlog`, `burndown`, `retro`, `sprint-metrics`, `sla-bugs`, `context-menu`, `notifications`, `account`, `board`, `qa`, `admin`, `widgets`, …
 
 **Состояние планера:**
 
@@ -284,10 +279,8 @@ Deprecated (не развивать): `feature-planner`, `quarterly-planning-v2`
 | `/api/tracker` | Задачи спринта |
 | `/api/backlog` | Бэклог |
 | `/api/issues/[issueKey]` | Задача, heatmap HD и др. |
-| `/api/stories` | Стори / эпики |
 | `/api/features` | Фичи (deprecated) |
-| `/api/quarterly-plans/v2` | Квартальный план (deprecated) |
-| `/api/quarterly-plans/availability/board-events` | Доступность |
+| `/api/quarterly-plans/availability/board-events` | События доступности (URL исторический) |
 | `/api/sprint-goals` | Цели спринта |
 | `/api/sprints/[sprintId]/sprint-context` | Контекст спринта для агента |
 | `/api/mcp` | Удалённый MCP-сервер |
@@ -313,7 +306,7 @@ Deprecated (не развивать): `feature-planner`, `quarterly-planning-v2`
 | `retro_boards`, `retro_column_templates` | Ретро |
 | `agent_sessions`, `plan_patch_*_previews` | Сессии агента и предложения плана |
 | `feature_documents` (+ versions) | Документы фич (deprecated) |
-| `quarterly_plans`, `quarterly_plan_v2_*` | Квартальный план v2 (deprecated) |
+| `quarterly_plans`, `quarterly_plan_v2_*` | Остаток квартального плана v2: код удалён, таблицы в схеме |
 | `board_availability_events` | Отпуска / техспринты |
 | `issue_snapshots` | Снимки задач из sync |
 | tenant / staff / teams / roles | Мультиарендность и оргструктура |
@@ -354,7 +347,7 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm lint:unused
 
 - Замена внешнего issue tracker (Yandex / Jira) как системы учёта задач
 - Хранение пользовательских токенов трекера на сервере (учётка — в браузере)
-- Планировщик эпиков / фич и квартальное планирование — экраны сняты с навигации, не развивать ([steering](./steering/product.md); исторический обзор кода — [QUARTERLY_PLANNING.md](./QUARTERLY_PLANNING.md))
+- Планировщик эпиков / фич и квартальное планирование — удалены из кода ([steering](./steering/product.md))
 
 ---
 

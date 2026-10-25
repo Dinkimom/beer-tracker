@@ -62,7 +62,7 @@ export function getPhaseLinkArrowDefaultHex(
 /**
  * Монохром: граница как у бэклога (с пунктиром) только для статуса «Бэклог», иначе сплошная, те же оттенки.
  */
-export function getMonochromeBorderParts(
+function getMonochromeBorderParts(
   originalStatus?: string
 ): Pick<StatusColorGroup, 'border' | 'borderDark'> {
   const backlog = getStatusColors('backlog');

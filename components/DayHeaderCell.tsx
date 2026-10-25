@@ -66,8 +66,6 @@ interface DayHeaderCellContentProps {
   showHolidayEmoji?: boolean;
   /** Список задач для поиска taskId по taskName */
   tasks?: Task[];
-  /** Вариант цветов: timeline (серый прошлое) или occupancy (серый прошлое) */
-  variant?: 'occupancy' | 'timeline';
   /** Callback для изменения hoveredErrorTaskId */
   onHoveredErrorTaskIdChange?: (taskId: string | null) => void;
 }
@@ -78,7 +76,6 @@ interface DayHeaderCellContentProps {
  */
 export function DayHeaderCellContent({
   day,
-  variant: _variant = 'timeline',
   errorDetails,
   hasError,
   tasks,

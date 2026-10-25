@@ -187,8 +187,6 @@ export const cacheKeys = {
    */
   jiraStaffAvatarsRefresh: (organizationId: string) =>
     `jira:staff-avatars:${organizationId}`,
-  /** GitLab MR fact (checks + timeline events); TTL 10 мин. */
-  gitlabMergeRequestFact: (normalizedLink: string) => `gitlab:mr-fact:${normalizedLink}`,
   /** Live issue links from Tracker/Jira (per issue key); TTL 30 мин. */
   trackerIssueLinks: (organizationId: string, issueKey: string) =>
     `tracker:issue-links:v2:${organizationId}:${issueKey.trim()}`,

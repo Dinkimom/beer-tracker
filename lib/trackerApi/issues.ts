@@ -348,33 +348,6 @@ export async function fetchChildren(
   }
 }
 
-export async function fetchEpicStories(
-  epicKey: string,
-  boardId: number,
-  axiosInstance?: AxiosInstance
-): Promise<TrackerIssue[]> {
-  const api = requireTrackerAxiosForApiRoute(axiosInstance);
-  const allIssues: TrackerIssue[] = [];
-  let page = 1;
-  let totalPages = 1;
-
-  do {
-    const { data, headers } = await api.post<TrackerIssue[]>(
-      `/issues/_search?expand=links&perPage=${SEARCH_PER_PAGE}&page=${page}`,
-      {
-        query: `boards: ${boardId} AND type: story AND "Is Subtask For": ${epicKey}`,
-      }
-    );
-    allIssues.push(...data);
-    totalPages = headers['x-total-pages']
-      ? parseInt(String(headers['x-total-pages']), 10)
-      : 1;
-    page += 1;
-  } while (page <= totalPages);
-
-  return allIssues;
-}
-
 function addDeveloperFromIssue(
   developersMap: Map<string, { id: string; name: string; role: 'developer' | 'tester' }>,
   id: string,

@@ -58,14 +58,9 @@ beer-tracker/
 | `admin/` | UI админки (org, teams, members, roles, tracker, planner, retro, sync) |
 | `account/` | Модалка учёта работ |
 | `qa/` | QA-логика (маппинг статусов, размещение QA-задач) |
-| `gitlab/` | Маркеры MR на таймлайне факта |
 | `markdown/` | Превью чеклистов из markdown |
 | `widgets/` | Виджеты на свимлейне (крестики-нолики) |
 | `planner/` | `PlannerTimelineScaleProvider.tsx` |
-| `feature-planner/` | **Deprecated**, экраны не подключены к навигации |
-| `quarterly-planning-v2/` | **Deprecated**, см. [QUARTERLY_PLANNING.md](./QUARTERLY_PLANNING.md) |
-
-`features/sprint/components/SprintPlanner/occupancy/` — легаси-режим занятости, не трогать без прямой просьбы (см. AGENTS.md).
 
 ## 📚 `lib/` (основные домены)
 
@@ -82,7 +77,8 @@ beer-tracker/
 | `lib/organizations/`, `lib/staffTeams/`, `lib/admin/`, `lib/roles/`, `lib/access/`, `lib/auth/` | Мультиарендность, команды, админка, роли, сессии |
 | `lib/calendar/`, `lib/holidays/` | CalDAV-занятость, производственный календарь |
 | `lib/slaBugs/`, `lib/overseer/` | SLA-баги и данные обращений HD |
-| `lib/notifications/`, `lib/gitlab/`, `lib/storage/` | Уведомления, GitLab, объектное хранилище (S3) |
+| `lib/notifications/`, `lib/storage/` | Уведомления, объектное хранилище (S3) |
+| `lib/boardAvailability/` | События доступности доски (отпуска, техспринты, больничные, дежурства) |
 | `lib/i18n/` | Словари ru/en (`lib/i18n/messages/`) |
 | `lib/demo/` | Фикстуры `/demo/planner` |
 | `lib/db.ts` | Пул PostgreSQL (импорт из `app/api/**` запрещён ESLint) |

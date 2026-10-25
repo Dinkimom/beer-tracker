@@ -33,7 +33,6 @@
 - **Запланировать в другом спринте** — перенос карточки или заметки черновиком в целевой спринт
 - **Доступность**: отпуска, больничные, дежурства, техспринты — чипы на дорожке, правка в поповере
 - **Занятость календаря** (CalDAV) отдельной дорожкой
-- Маркеры GitLab MR на таймлайне факта — где подключено
 - Совместная работа в реальном времени: аватары присутствия, цвет участника, общий таймер спринта
 - Онбординг-тур по планеру
 
@@ -171,20 +170,20 @@
 
 Колокольчик в шапке: упоминания в заметках, смена исполнителя и др. (`features/notifications/`).
 
-## Не в продукте (deprecated)
+## Не в продукте
 
-Планировщик эпиков / фич (`features/feature-planner`) и квартальный план (`features/quarterly-planning-v2`) не подключены к навигации. Режим занятости (`viewMode === 'occupancy'`) скрыт, сохранённое значение сбрасывается на свимлейн. Код сохранён, **не развивать**. См. [steering/product.md](./steering/product.md) и [QUARTERLY_PLANNING.md](./QUARTERLY_PLANNING.md).
+Планировщик эпиков / фич, квартальный план и режим «Занятость» удалены из кода. Сохранённый в браузере режим `occupancy` сбрасывается на свимлейн. См. [steering/product.md](./steering/product.md).
 
 ## Технические возможности
 
 ### Интеграции
 
 1. **Yandex Tracker / Jira API** — спринты, доски, мутации задач (статусы, оценки, исполнитель, спринт), связи
-2. **PostgreSQL (`issue_snapshots`, `issue_changelog_events`)** — снимки задач из sync: бэклог, стори и эпики, changelog
+2. **PostgreSQL (`issue_snapshots`, `issue_changelog_events`)** — снимки задач из sync: бэклог, карточка задачи, burndown, changelog
 3. **PostgreSQL приложения** — tenant, staff/teams, позиции, связи, заметки, цели, ретро, сессии агента
 4. **Redis + BullMQ** (опционально) — фоновая синхронизация (`apps/sync-worker/`)
 5. **S3-совместимое хранилище** (опционально) — фото и файлы планера
-6. **CalDAV**, **GitLab** — занятость календаря и MR, где настроены
+6. **CalDAV** — занятость календаря, где настроен
 
 ### Безопасность
 
@@ -216,7 +215,7 @@ Feature-based структура: домены в `features/`, серверна�
 - **Клиент** → `lib/api/*` (axios) → Next.js API Routes
 - **Сервер** → `/api/*`: API трекера, PostgreSQL (`lib/<домен>/*Repository.ts`)
 
-Основные эндпоинты: `/api/sprints`, `/api/tracker`, `/api/backlog`, `/api/issues/[issueKey]`, `/api/stories`, `/api/sprint-goals`, `/api/teams/members`, `/api/mcp`. Legacy: `/api/features`, `/api/quarterly-plans/v2`.
+Основные эндпоинты: `/api/sprints`, `/api/tracker`, `/api/backlog`, `/api/issues/[issueKey]`, `/api/sprint-goals`, `/api/teams/members`, `/api/mcp`. Legacy: `/api/features`.
 
 Подробнее: [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
 
@@ -233,7 +232,7 @@ Feature-based структура: домены в `features/`, серверна�
 - `board_availability_events` — доступность участников
 - `agent_sessions`, `plan_patch_position_previews`, `plan_patch_goal_previews` — агент и его предложения
 
-Таблицы `feature_documents*` и `quarterly_plan_v2_*` — leftover deprecated-экранов, не развивать. Схема: `database/init.sql` и миграции `database/*.sql`.
+Таблицы `feature_documents*` и `quarterly_plan_v2_*` — leftover deprecated-экранов (код квартального плана удалён), не развивать. Схема: `database/init.sql` и миграции `database/*.sql`.
 
 ## Ограничения
 

@@ -52,7 +52,7 @@ interface SidebarSectionProps {
   sprints: SprintListItem[];
   taskPositions?: Map<string, TaskPosition> | null;
   unassignedTasks: Task[];
-  viewMode: 'compact' | 'features' | 'full' | 'kanban' | 'occupancy';
+  viewMode: 'compact' | 'features' | 'full' | 'kanban';
   onAutoAddToSwimlane?: (task: Task) => void;
   onAutoAssignTasks: () => Promise<void>;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
@@ -136,7 +136,7 @@ export const SidebarSection = observer(function SidebarSection({
         goalTaskIds={goalTaskIds}
         goalsLoading={goalsLoading}
         hideBacklogTab
-        hideTasksTab={viewMode === 'occupancy' || viewMode === 'kanban'}
+        hideTasksTab={viewMode === 'kanban'}
         qaTasksMap={qaTasksMap}
         selectedBoardId={selectedBoardId}
         selectedSprintId={selectedSprintId}
@@ -146,7 +146,7 @@ export const SidebarSection = observer(function SidebarSection({
         taskPositions={taskPositions}
         tasks={unassignedTasks}
         viewMode={
-          viewMode === 'occupancy' || viewMode === 'kanban' || viewMode === 'features'
+          viewMode === 'kanban' || viewMode === 'features'
             ? 'full'
             : viewMode
         }

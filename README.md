@@ -181,7 +181,7 @@ Remote MCP крутится на вашем инстансе. Клиент (Curs
 
 Историческое имя UI — Sprint Manager. Стек и слои — [ARCHITECTURE.md](./ARCHITECTURE.md). Слоты скринов — [docs/media/README.md](./docs/media/README.md). Ещё одна компания на посадочной — [docs/companies.md](./docs/companies.md).
 
-Планировщик эпиков и квартальный план сняты с навигации и не развиваются: [product steering](./docs/steering/product.md).
+Планировщик эпиков и квартальный план удалены из продукта: [product steering](./docs/steering/product.md).
 
 ## Лицензия
 

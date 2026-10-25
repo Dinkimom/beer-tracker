@@ -177,4 +177,3 @@ export function TaskCardBody({
   );
 }
 
-export { getTaskCardStyles } from './taskCardBodyStyleHelpers';

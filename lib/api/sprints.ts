@@ -1,4 +1,4 @@
-import type { FeatureLanesDocument, OccupancyTaskOrder } from './types';
+import type { FeatureLanesDocument } from './types';
 import type { SprintScoreResponse } from './types';
 import type { RetroBoard } from '@/lib/retro/retroBoardShared';
 import type { AssigneeVelocityResponse } from '@/lib/sprints/assigneeVelocity';
@@ -22,8 +22,6 @@ import {
 } from '@/lib/swimlane/swimlaneCardLayers';
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
-
-type SprintLinkAnchor = 'bottom' | 'left' | 'right' | 'top';
 
 export interface SprintPlanAnchor {
   anchoredAt: string;
@@ -183,86 +181,6 @@ export async function saveTaskPositionsBatch(
  * Загружает позиции по всем указанным спринтам одним запросом.
  * Возвращает массив массивов в том же порядке, что и sprintIds.
  */
-/**
- * Связи по всем указанным спринтам одним запросом.
- * Порядок массивов совпадает с sprintIds.
- */
-export async function fetchSprintLinksBatch(sprintIds: number[]): Promise<TaskLink[][]> {
-  if (sprintIds.length === 0) return [];
-  try {
-    const { data } = await getPlannerBeerTrackerApi().get<{
-      bySprint: Array<{
-        sprintId: number;
-        links: SprintLinksResponse['links'];
-      }>;
-    }>(`/sprints/batch/links?sprintIds=${sprintIds.join(',')}`);
-    return (data.bySprint ?? []).map(({ links }) =>
-      (links || []).map((link) => ({
-        id: link.id,
-        fromTaskId: link.from_task_id,
-        toTaskId: link.to_task_id,
-        fromAnchor: link.from_anchor as SprintLinkAnchor | undefined,
-        toAnchor: link.to_anchor as SprintLinkAnchor | undefined,
-      }))
-    );
-  } catch (error) {
-    console.error('Failed to fetch batch links:', error);
-    throw error;
-  }
-}
-
-export async function fetchSprintPositionsBatch(
-  sprintIds: number[]
-): Promise<TaskPosition[][]> {
-  if (sprintIds.length === 0) return [];
-  try {
-    const { data } = await getPlannerBeerTrackerApi().get<{
-      bySprint: Array<{
-        sprintId: number;
-        positions: SprintPositionsResponse['positions'];
-      }>;
-    }>(`/sprints/batch/positions?sprintIds=${sprintIds.join(',')}`);
-    return (data.bySprint ?? []).map(({ positions }) =>
-      (positions || []).map((pos) => ({
-        taskId: pos.task_id,
-        assignee: pos.assignee_id,
-        startDay: pos.start_day,
-        startPart: pos.start_part,
-        duration: pos.duration,
-        plannedStartDay: pos.planned_start_day ?? undefined,
-        plannedStartPart: pos.planned_start_part ?? undefined,
-        plannedDuration: pos.planned_duration ?? undefined,
-        segments: (pos as { segments?: Array<{ start_day: number; start_part: number; duration: number }> }).segments?.map((s) => ({
-          startDay: s.start_day,
-          startPart: s.start_part,
-          duration: s.duration,
-        })),
-      }))
-    );
-  } catch (error) {
-    console.error('Failed to fetch batch positions:', error);
-    throw error;
-  }
-}
-
-/**
- * Загружает маппинг taskId → storyKey для всех задач в указанных спринтах.
- * Один запрос вместо N по стори/эпикам.
- */
-export async function fetchSprintBatchTaskParents(
-  sprintIds: number[]
-): Promise<Record<string, string>> {
-  if (sprintIds.length === 0) return {};
-  try {
-    const { data } = await getPlannerBeerTrackerApi().get<{ taskIdToStoryKey: Record<string, string> }>(
-      `/sprints/batch/task-parents?sprintIds=${sprintIds.join(',')}`
-    );
-    return data?.taskIdToStoryKey ?? {};
-  } catch (error) {
-    console.error('Failed to fetch batch task parents:', error);
-    throw error;
-  }
-}
 
 /**
  * Получает связи задач в спринте
@@ -445,23 +363,6 @@ export async function clearSprintLinks(sprintId: number): Promise<boolean> {
 }
 
 /**
- * Получает порядок стори и задач для вкладки «Занятость»
- */
-export async function fetchOccupancyTaskOrder(
-  sprintId: number
-): Promise<OccupancyTaskOrder | null> {
-  try {
-    const { data } = await getPlannerBeerTrackerApi().get<{ order: OccupancyTaskOrder | null }>(
-      `/sprints/${sprintId}/occupancy-task-order`
-    );
-    return data?.order ?? null;
-  } catch (error) {
-    console.error(`Failed to fetch occupancy task order for sprint ${sprintId}:`, error);
-    throw error;
-  }
-}
-
-/**
  * Получает оценку спринта по командам (цели, SP, QA, итоговая оценка)
  */
 export async function fetchSprintScore(sprintId: number): Promise<SprintScoreResponse> {
@@ -492,21 +393,6 @@ export async function fetchAssigneeVelocity(
     byName: data?.byName ?? {},
     sprintCount: data?.sprintCount ?? 0,
   };
-}
-
-/**
- * Сохраняет порядок стори и задач для вкладки «Занятость»
- */
-export async function saveOccupancyTaskOrder(
-  sprintId: number,
-  order: OccupancyTaskOrder
-): Promise<void> {
-  try {
-    await getPlannerBeerTrackerApi().put(`/sprints/${sprintId}/occupancy-task-order`, order);
-  } catch (error) {
-    console.error(`Failed to save occupancy task order for sprint ${sprintId}:`, error);
-    throw error;
-  }
 }
 
 export async function fetchFeatureLanes(sprintId: number): Promise<FeatureLanesDocument | null> {

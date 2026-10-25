@@ -11,7 +11,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import {
   SprintScoreMetricsPanel,
-} from '@/features/sprint/components/sprintScoreUi';
+} from '@/features/sprint/components/SprintScoreMetricsPanel';
 import { computeBurndownTilesFromTasks } from '@/features/sprint/utils/sprintMetrics';
 import { fetchSprintScore } from '@/lib/api/sprints';
 

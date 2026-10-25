@@ -22,7 +22,6 @@ interface SubmitConvertedSwimlaneCommentInput {
   missingQueueMessage: string;
   plannerParent?: TaskParent;
   selectedSprintId: number;
-  invalidateOccupancyQueries: () => void;
   onCommentDelete: (
     commentId: string,
     options?: ConvertedCommentDeleteOptions
@@ -81,6 +80,5 @@ export async function submitConvertedSwimlaneComment(
     return next;
   });
   await input.onCommentDelete(input.comment.id, { retargetLinksTo: issueKey });
-  input.invalidateOccupancyQueries();
   return { ok: true, issueKey, task: createdTask };
 }

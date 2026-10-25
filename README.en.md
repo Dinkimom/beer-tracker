@@ -183,7 +183,7 @@ Commits with a [DCO](https://developercertificate.org/) sign-off (`git commit -s
 
 The historical UI name is Sprint Manager. Stack and layers — [ARCHITECTURE.md](./ARCHITECTURE.md). Screenshot slots — [docs/media/README.md](./docs/media/README.md). Another company on the landing — [docs/companies.md](./docs/companies.md).
 
-The epic planner and the quarterly plan are off the navigation and are not being developed: [product steering](./docs/steering/product.md).
+The epic planner and the quarterly plan have been removed from the product: [product steering](./docs/steering/product.md).
 
 ## License
 

@@ -5,7 +5,7 @@
 ## Правило
 
 **Папки-домены (группировка по подфичам/областям):** **kebab-case**  
-Примеры: `context-menu`, `sla-bugs`, `sprint-metrics`, `feature-planner`, `quarterly-planning-v2` (корень `features/`), `task-arrows`, `in-progress-fact` (`features/swimlane/components/`, `features/swimlane/utils/`), `feature-lanes` (`features/sprint/components/SprintPlanner/`).
+Примеры: `context-menu`, `sla-bugs`, `sprint-metrics` (корень `features/`), `task-arrows`, `in-progress-fact` (`features/swimlane/components/`, `features/swimlane/utils/`), `feature-lanes` (`features/sprint/components/SprintPlanner/`).
 
 **Папки-компоненты** (одна главная сущность + её части, совпадает с именем React-компонента): **PascalCase** (`TaskCard`, `TaskBar`, `SprintPlanner`, `DaysHeader`, `ContextMenu`, `BugsTab`). Так и оставляем: папка рядом с одноимённым файлом или главным компонентом внутри.
 
@@ -23,7 +23,5 @@
 | Папки компонентов | PascalCase | `TaskCard`, `TaskInfoSidebar`, `SprintPlanner`, `DaysHeader`, `AccountWorkModal` |
 | Папки хука/модуля с частями | camelCase по имени модуля | `features/swimlane/hooks/useDragAndDrop/`, `features/task/utils/autoAssignTasks/` |
 | `lib/` (домены) | camelCase / одно слово | `sprintGoals`, `slaBugs`, `agentSessions`, `retro`; исключение — `planner-timeline` |
-
-`features/sprint/components/SprintPlanner/occupancy/` — легаси, в этой сверке не проверялся.
 
 При рефакторинге или добавлении новых доменов в `features/` ориентируемся на kebab-case.

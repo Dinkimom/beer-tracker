@@ -229,10 +229,6 @@ export const IssueKeyParamSchema = z.object({
   issueKey: z.string().min(1).max(50),
 });
 
-export const StoryKeyParamSchema = z.object({
-  storyKey: z.string().min(1).max(50),
-});
-
 export const BacklogQuerySchema = z.object({
   boardId: z.string().min(1),
   page: z

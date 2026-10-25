@@ -1,5 +1,4 @@
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
-import type { StatusFilter } from '@/types';
 
 type Translate = (key: string) => string;
 
@@ -36,12 +35,4 @@ export function applyControlsBarViewModeChange(
     return;
   }
   setViewMode((prev: BoardViewMode) => (prev === 'full' || prev === 'compact' ? prev : 'full'));
-}
-
-export function buildOccupancyStatusFilterOptions(t: Translate): Array<{ label: string; value: StatusFilter }> {
-  return [
-    { label: t('sprintPlanner.controls.statusAll'), value: 'all' },
-    { label: t('sprintPlanner.controls.statusActive'), value: 'active' },
-    { label: t('sprintPlanner.controls.statusCompleted'), value: 'completed' },
-  ];
 }

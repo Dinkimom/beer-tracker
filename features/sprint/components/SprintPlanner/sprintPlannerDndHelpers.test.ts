@@ -66,7 +66,6 @@ describe('resolveSwimlanePlannerAutoScrollOptions', () => {
       enabled: true,
     });
     expect(resolveSwimlanePlannerAutoScrollOptions('kanban', scrollContainerRef)).toBe(false);
-    expect(resolveSwimlanePlannerAutoScrollOptions('occupancy', scrollContainerRef)).toBe(false);
   });
 
   it('allows scrolling only the swimlane scroll container', () => {

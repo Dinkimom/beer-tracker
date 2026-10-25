@@ -173,7 +173,7 @@ describe('sprintRealtimeProtocol', () => {
         viewers: [
           {
             ...presence.viewers[0],
-            boardView: 'occupancy',
+            boardView: 'swimlanes',
             clientId: 'tab-1',
             focus: { state: 'resizing', targetId: 'BT-1' },
           },
@@ -184,7 +184,7 @@ describe('sprintRealtimeProtocol', () => {
       viewers: [
         {
           ...presence.viewers[0],
-          boardView: 'occupancy',
+          boardView: 'swimlanes',
           clientId: 'tab-1',
           focus: { state: 'resizing', targetId: 'BT-1' },
         },

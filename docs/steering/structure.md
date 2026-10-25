@@ -32,8 +32,6 @@
 | `burndown/`, `retro/`, `sprint-metrics/` | Вкладки «Диаграмма сгорания», «Ретро», «Метрики» |
 | `sla-bugs/` | Хуки вкладки «Баги» |
 | `context-menu/`, `notifications/`, `board/`, `account/`, `qa/`, `admin/` | Меню карточки, уведомления, выбор доски, учёт работ, QA-логика, админка |
-| `feature-planner/` | Планировщик фич (**deprecated**, не развивать) |
-| `quarterly-planning-v2/` | Квартальный план (**deprecated**, не развивать) |
 
 Добавляя возможность, **расширяйте существующую фичу** или заводите новую папку по тому же шаблону: `components/`, `hooks/`, `utils/`. SQL и оркестрация роутов — только в `lib/<domain>/`.
 
@@ -47,7 +45,6 @@
 - Контейнер: `features/sprint/components/SprintPlanner.tsx` → `features/sprint/components/SprintPlanner/SprintPlannerView.tsx` (и соседние папки `board/`, `kanban/`, `feature-lanes/`, `components/`).
 - Свимлейн: `features/swimlane/`, карточка — `features/task/components/TaskBar/`.
 - Общие хелперы DnD: `features/sprint/components/SprintPlanner/sprintPlannerDndHelpers.ts` (не плодить копии логики в хуках/оболочках).
-- `features/sprint/components/SprintPlanner/occupancy/` — легаси, не трогать без прямой просьбы.
 
 ## Документация
 

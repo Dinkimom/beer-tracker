@@ -4,8 +4,6 @@ import { WORKING_DAYS } from '@/constants';
 
 import {
   addWorkingHoursForDay,
-  advanceToMondayFromSaturday,
-  advanceToMondayFromSunday,
   advanceToNextWorkdayAfterHours,
   classifyDayStatusFromDiff,
   classifyPartStatusForToday,
@@ -24,6 +22,22 @@ import {
   WORKDAY_START_MS,
 } from './dateUtilsHelpers';
 import { getPlannerNow } from './plannerClock';
+
+function countWorkingDaysInclusiveCalendarRange(start: Date, end: Date): number {
+  const s = new Date(start);
+  s.setHours(0, 0, 0, 0);
+  const e = new Date(end);
+  e.setHours(0, 0, 0, 0);
+  if (e.getTime() < s.getTime()) return 0;
+
+  let count = 0;
+  const cursor = new Date(s);
+  while (cursor.getTime() <= e.getTime()) {
+    if (!isWeekendDate(cursor)) count++;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
 
 /**
  * Проверяет, является ли дата выходным днем (суббота или воскресенье)
@@ -49,29 +63,6 @@ export function getFridayEndOfDay(date: Date): Date {
  */
 export function isFullyOnWeekend(startDate: Date, endDate: Date): boolean {
   return isWeekendDate(startDate) && isWeekendDate(endDate);
-}
-
-/**
- * Эффективное начало таймлайна от даты создания задачи.
- * - Выходные → 9:00 понедельника (следующий рабочий день)
- * - После 18:00 рабочего дня → 9:00 следующего дня
- * - Иначе → дата создания как есть
- */
-export function getEffectiveTimelineStartFromCreation(createdAt: Date): Date {
-  const d = new Date(createdAt);
-  const dayOfWeek = d.getDay();
-  const totalMinutes = d.getHours() * 60 + d.getMinutes();
-
-  if (dayOfWeek === 6) {
-    return advanceToMondayFromSaturday(d);
-  }
-  if (dayOfWeek === 0) {
-    return advanceToMondayFromSunday(d);
-  }
-  if (totalMinutes >= WORKDAY_END_MINUTES) {
-    return advanceToNextWorkdayAfterHours(d, dayOfWeek);
-  }
-  return d;
 }
 
 /**
@@ -173,22 +164,6 @@ export function isTodaySprintFirstWeekMonday(
   today.setHours(0, 0, 0, 0);
   if (today.getDay() !== 1) return false;
   return today.getTime() === firstWeekMonday.getTime();
-}
-
-export function countWorkingDaysInclusiveCalendarRange(start: Date, end: Date): number {
-  const s = new Date(start);
-  s.setHours(0, 0, 0, 0);
-  const e = new Date(end);
-  e.setHours(0, 0, 0, 0);
-  if (e.getTime() < s.getTime()) return 0;
-
-  let count = 0;
-  const cursor = new Date(s);
-  while (cursor.getTime() <= e.getTime()) {
-    if (!isWeekendDate(cursor)) count++;
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return count;
 }
 
 /**

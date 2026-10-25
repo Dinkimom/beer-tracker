@@ -55,7 +55,6 @@ features/ / components/ / hooks/
 | Данные | Ключ / хук | Примечание |
 |--------|------------|------------|
 | Задачи спринта (основной список) | `sprintTasksQueryKey` → `['tasks', sprintId, boardId]` | `useTasks` на странице и в `useSprintPlannerState` (один кэш), полный ответ — `useReloadTasks`; оптимистичные правки списка — `patchSprintTasksQuery` |
-| Задачи для вкладки «Занятость» с фильтром по статусу | `occupancyTasksQueryKey` → `['tasks', 'occupancy', sprintId, boardId, statusFilter]` | `useOccupancyTasks` — отдельный запрос под фильтр |
 | Списки спринтов по доске | `sprintsQueryKey` → `['sprints', boardId]` | [`useSprints`](./features/sprint/hooks/useSprints.ts) |
 | Доски | см. [`useBoards`](./features/board/hooks/useBoards.ts) | |
 
@@ -65,17 +64,13 @@ features/ / components/ / hooks/
 
 Источник правды по составу задач с трекера — **кэш Query**. Инвалидация и `setQueryData` должны использовать **тот же ключ**, что и `useTasks` (см. `sprintTasksQueryKey` в `features/task/hooks/useTasks.ts`).
 
-### Два кэша списка задач: `useTasks` и `useOccupancyTasks`
-
-**`useTasks`** держит основной ответ спринта (задачи и разработчики для доски, сайдбара и свимлейна). **`useOccupancyTasks`** — отдельные запросы с **другим ключом** React Query: на вкладке «Занятость» при фильтре по статусу («активные» / «завершённые» и т.д.) уходит свой `fetch`, поэтому в кэше лежит несколько снимков на пару спринт+доска (по одному на комбинацию с фильтром). Оптимистичные правки через `patchSprintTasksQuery`, `upsertSprintTaskInQueries` и `removeSprintTaskFromQueries` зеркалятся во все ключи той же пары спринт+доска; для occupancy после патча снова применяется фильтр статуса ключа. После **полной** подтяжки из трекера используйте [`useReloadTasks`](./features/task/hooks/useTaskMutations.ts): там обновляется кэш основного списка и **инвалидируется** префикс occupancy, чтобы отфильтрованные снимки перезапросились.
-
 ## MobX (`lib/layers/application/mobx/`)
 
 Классы сторов: `lib/layers/application/mobx/stores/` (`TaskPositionsStore`, `SprintPlannerUiStore`, `SprintMovePlacementStore`); корневой стор: [`lib/layers/application/mobx/createRootStore.ts`](./lib/layers/application/mobx/createRootStore.ts).
 
 | Стор | Назначение |
 |------|------------|
-| `TaskPositionsStore` | Позиции карточек на свимлейне/занятости: `observable.map<taskId, TaskPosition>`, загрузка `fetchSprintPositions`, debounce сохранений, поколения ответов чтобы устаревший `fetch` не затирал локальные правки после DnD |
+| `TaskPositionsStore` | Позиции карточек на свимлейне: `observable.map<taskId, TaskPosition>`, загрузка `fetchSprintPositions`, debounce сохранений, поколения ответов чтобы устаревший `fetch` не затирал локальные правки после DnD |
 | `SprintPlannerUiStore` | Преходящий UI планера: поиск, контекстное меню, hover, сегменты фаз, фокус комментария и т.д. |
 | `SprintMovePlacementStore` | Сессия «Запланировать в другом спринте»: задача или заметка показывается на доске целевого спринта до подтверждения или отмены |
 
@@ -90,7 +85,6 @@ features/ / components/ / hooks/
 | Паттерн | Файл | Подходит для |
 |---------|------|----------------|
 | **`useDebouncedApiSync`** | [`hooks/useDebouncedApiSync.ts`](./hooks/useDebouncedApiSync.ts) | **Список сущностей** на спринт: загрузка массива, правки/создание/удаление по элементу, отложенный save (и опционально батч). |
-| **`useOccupancyTaskOrderApi`** | [`hooks/useApiStorage.ts`](./hooks/useApiStorage.ts) | **Один JSON-документ** на спринт (`OccupancyTaskOrder`) — порядок строк во вкладке «Занятость». Целиком пересохраняется после дебаунса; не CRUD по элементам. |
 | **`useFeatureLanesApi`** | [`hooks/useApiStorage.ts`](./hooks/useApiStorage.ts) | **Один JSON-документ** на спринт (`FeatureLanesDocument`) — черновые строки фич, порядок и скрытие. Целиком пересохраняется после дебаунса. |
 
 Обёртки над `useDebouncedApiSync` в том же [`useApiStorage.ts`](./hooks/useApiStorage.ts):
@@ -100,7 +94,7 @@ features/ / components/ / hooks/
 | Связи задач (стрелки) | `useTaskLinksApi` |
 | Комментарии на таймлайне | `useCommentsApi` |
 
-`useOccupancyTaskOrderApi` и `useFeatureLanesApi` **не** строятся на `useDebouncedApiSync`: последний рассчитан на массивы, карту отложенных обновлений по id и операции save/delete **по элементу**. Порядок занятости и строки фич — монолитные JSON-документы; проще и прозрачнее отдельный `useState` + один таймер.
+`useFeatureLanesApi` **не** строится на `useDebouncedApiSync`: последний рассчитан на массивы, карту отложенных обновлений по id и операции save/delete **по элементу**. Строки фич — монолитный JSON-документ; проще и прозрачнее отдельный `useState` + один таймер.
 
 При гонках с сервером или необходимости шарить состояние шире, чем через пропсы планера — отдельное решение (например React Query или стор); обсуждать в команде.
 
@@ -122,13 +116,9 @@ REST остаётся единственным каналом записи; real
 - **События** ([`lib/realtime/sprintRealtimeTypes.ts`](./lib/realtime/sprintRealtimeTypes.ts)): `sprint.changed` со списком `resources` (`positions`, `links`, `comments`, `reactions`, `goals`, `tasks`, `retro`, `agentSessions`) и опционально `issueStatus` / `issueMembership`; `sprint.presence` — кто смотрит спринт и что делает (фокус, жест, вид доски; `PUT /api/realtime/presence`, [`lib/realtime/sprintPresence.ts`](./lib/realtime/sprintPresence.ts)); `sprint.timer` — общий таймер ([`lib/realtime/sprintTimerStore.ts`](./lib/realtime/sprintTimerStore.ts)).
 - **Клиент:** [`hooks/useSprintRealtimeSync.ts`](./hooks/useSprintRealtimeSync.ts) открывает `EventSource` и раскладывает ресурсы по обработчикам. В планере ([`useSprintPlannerState.ts`](./features/sprint/components/SprintPlanner/hooks/useSprintPlannerState.ts)): `positions` → `TaskPositionsStore.reconcileRemoteSprint` (MobX, pending-правки не затираются); `links` / `comments` → `reloadFromRemote` из `useDebouncedApiSync` (слияние через [`lib/realtime/mergeRemoteItemsWithPending.ts`](./lib/realtime/mergeRemoteItemsWithPending.ts)); `tasks` → точечный патч кэша React Query (`patchSprintTaskStatusInQueries`, `upsertSprintTaskInQueries`, `removeSprintTaskFromQueries`), без payload — `reloadSprintTasksQueries`; `goals` / `agentSessions` → `invalidateQueries`. Ретро — [`features/retro/hooks/useRetroBoardCollaboration.ts`](./features/retro/hooks/useRetroBoardCollaboration.ts). На `/demo/planner` SSE не открывается.
 
-## `OccupancyView` (легаси)
-
-Старый планер; не трогать без прямой просьбы — см. [AGENTS.md](./AGENTS.md). Актуальная раскладка — свимлейн.
-
 ## Чистые функции (`lib/`, хелперы планера)
 
-Геометрия, мапперы в API, валидация занятости — без React/MobX; покрывать unit-тестами (Vitest). `lib/` не импортирует `@/features/**`.
+Геометрия, мапперы в API, валидация плана свимлейна — без React/MobX; покрывать unit-тестами (Vitest). `lib/` не импортирует `@/features/**`.
 
 ## См. также
 

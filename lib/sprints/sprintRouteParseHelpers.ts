@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 
-export { parseSprintIdsCsv } from '@/lib/sprints';
 
 export function parseSprintStatusPatch(body: { status?: string; version?: number }) {
   const validStatuses = ['draft', 'in_progress', 'released', 'archived'] as const;

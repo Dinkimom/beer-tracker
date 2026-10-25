@@ -6,11 +6,6 @@ import {
   useKanbanGroupByStorage,
   useLinksDimOnHoverStorage,
   useOccupancyAssigneeFilterStorage,
-  useOccupancyOldTmLayoutStorage,
-  useOccupancyRowFieldsStorage,
-  useOccupancyStatusFilterStorage,
-  useOccupancyTimelineScaleStorage,
-  useOccupancyTimelineSettingsStorage,
   useParticipantsColumnWidthStorage,
   useSelectedBoardStorage,
   useSwimlaneCalendarBusyVisibleStorage,
@@ -21,7 +16,7 @@ import {
 } from '@/hooks/useLocalStorage';
 
 /**
- * Настройки планировщика из localStorage (доска, занятость, свимлейн, синхронизация с трекером).
+ * Настройки планировщика из localStorage (доска, свимлейн, канбан, синхронизация с трекером).
  * Собраны в одном месте, чтобы не размазывать десяток хуков по SprintPlanner.
  */
 export function useSprintPlannerLocalPreferences() {
@@ -31,17 +26,12 @@ export function useSprintPlannerLocalPreferences() {
   const [featureColumnWidth, setFeatureColumnWidth] =
     useFeatureColumnWidthStorage(DEVELOPER_COLUMN_WIDTH);
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useOccupancyAssigneeFilterStorage();
-  const [timelineSettingsStorage] = useOccupancyTimelineSettingsStorage();
   const [swimlaneLinksVisible] = useSwimlaneLinksVisibilityStorage();
   const [swimlaneFactTimelineVisible] = useSwimlaneFactTimelineVisibleStorage();
   const [swimlaneCalendarBusyVisible] = useSwimlaneCalendarBusyVisibleStorage();
   const [swimlaneNotesVisible] = useSwimlaneNotesVisibleStorage();
   const [swimlaneImagesVisible] = useSwimlaneImagesVisibleStorage();
   const [linksDimOnHover] = useLinksDimOnHoverStorage();
-  const [occupancyOldTmLayout] = useOccupancyOldTmLayoutStorage();
-  const [occupancyRowFields] = useOccupancyRowFieldsStorage();
-  const [occupancyStatusFilter, setOccupancyStatusFilter] = useOccupancyStatusFilterStorage();
-  const [occupancyTimelineScale] = useOccupancyTimelineScaleStorage();
   const [syncAssignees] = useDataSyncAssigneesStorage();
   const [syncEstimates] = useDataSyncEstimatesStorage();
   const [kanbanGroupBy] = useKanbanGroupByStorage();
@@ -54,18 +44,12 @@ export function useSprintPlannerLocalPreferences() {
     setFeatureColumnWidth,
     selectedAssigneeIds,
     setSelectedAssigneeIds,
-    timelineSettingsStorage,
     swimlaneLinksVisible,
     swimlaneFactTimelineVisible,
     swimlaneCalendarBusyVisible,
     swimlaneNotesVisible,
     swimlaneImagesVisible,
     linksDimOnHover,
-    occupancyOldTmLayout,
-    occupancyRowFields,
-    occupancyStatusFilter,
-    setOccupancyStatusFilter,
-    occupancyTimelineScale,
     syncAssignees,
     syncEstimates,
     kanbanGroupBy,

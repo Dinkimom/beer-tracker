@@ -12,10 +12,10 @@ import {
 describe('sprintPresenceBoardView', () => {
   it('accepts known planner views', () => {
     expect(isSprintPresenceBoardView('kanban')).toBe(true);
-    expect(isSprintPresenceBoardView('occupancy')).toBe(true);
     expect(isSprintPresenceBoardView('retro')).toBe(true);
     expect(isSprintPresenceBoardView('swimlanes')).toBe(true);
     expect(isSprintPresenceBoardView('full')).toBe(false);
+    expect(isSprintPresenceBoardView('occupancy')).toBe(false);
   });
 
   it('maps compact and full to swimlanes', () => {
@@ -38,10 +38,6 @@ describe('sprintPresenceBoardView', () => {
     expect(keepCompact('kanban')).toBe('full');
     applySprintPresenceBoardView('retro', setViewMode);
     expect(setViewMode).toHaveBeenCalledTimes(2);
-    applySprintPresenceBoardView('occupancy', setViewMode);
-    const hideOccupancy = setViewMode.mock.calls[2][0] as (prev: string) => string;
-    expect(hideOccupancy('full')).toBe('full');
-    expect(hideOccupancy('kanban')).toBe('full');
   });
 
   it('formats a tooltip from name, view and action', () => {

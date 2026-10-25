@@ -1,5 +1,6 @@
 import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
 
+import { listBoardAvailabilityEvents } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { attachCommentReactionSummaries } from '@/lib/comments/commentReactionsRepository';
 import { extractExcalidrawSceneText } from '@/lib/comments/excalidrawSceneText';
 import {
@@ -18,7 +19,6 @@ import {
   DEFAULT_PLANNER_TIMELINE_SCALE,
   readPlannerTimelineScale,
 } from '@/lib/plannerTimelineScale';
-import { listBoardAvailabilityEvents } from '@/lib/quarterlyPlans';
 import { listSprintGoals } from '@/lib/sprintGoals';
 import { fetchFeatureLanes } from '@/lib/sprints/featureLanesRepository';
 import { getSprintCommentDiagramScene } from '@/lib/sprints/sprintCommentDiagramsRepository';

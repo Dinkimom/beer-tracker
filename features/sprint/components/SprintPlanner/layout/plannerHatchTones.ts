@@ -141,9 +141,6 @@ export function plannerAvailabilityEmojiPattern(
   };
 }
 
-/** Базовый фон под штриховку — совпадает с TimelineGrid и чипами отсутствия. */
-export const PLANNER_HATCH_BASE_CLASS = '!bg-white dark:!bg-gray-800';
-
 export const PLANNER_HATCH_TONES: Record<PlannerHatchTone, PlannerHatchToneColors> = {
   neutral: {
     lightLine: 'rgb(0 0 0 / 0.06)',

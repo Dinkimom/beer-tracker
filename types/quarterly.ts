@@ -3,11 +3,6 @@
  */
 
 /**
- * Квартал года (1-4)
- */
-export type Quarter = 1 | 2 | 3 | 4;
-
-/**
  * Тип техспринта
  */
 export type TechSprintType = 'back' | 'qa' | 'web';

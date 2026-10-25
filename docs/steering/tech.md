@@ -23,7 +23,7 @@
 ## Внешние системы
 
 - **Issue tracker API** (**Yandex Tracker** или **Jira**, выбор на организацию) — источник правды по задачам, спринтам, доскам; изменения через API и прокси-роуты приложения. См. [ISSUE_TRACKERS.md](../ISSUE_TRACKERS.md).
-- **PostgreSQL** — чтение снимков задач (бэклог, эпики, стори и т.д.), staff/teams, данные планера.
+- **PostgreSQL** — чтение снимков задач (бэклог, burndown, карточка задачи и т.д.), staff/teams, данные планера.
 - **MCP-клиенты** (claude.ai, Cursor, локальный `apps/agent-bridge/`) — читают контекст спринта и предлагают план; запись только через `propose_plan_patch` → `apply_plan_patch`. См. [SPRINT_CONTEXT.md](../SPRINT_CONTEXT.md).
 
 ## Аутентификация к трекеру
@@ -56,7 +56,7 @@
 
 - Feature-first: новая функциональность в `features/<domain>/` (компоненты, хуки, утилиты рядом).
 - Не дублировать маршрутизацию DnD планера — `features/sprint/components/SprintPlanner/sprintPlannerDndHelpers.ts`.
-- Режим занятости (`features/sprint/components/SprintPlanner/occupancy/`) — легаси, не трогать без прямой просьбы; UI основного планера — `SprintPlannerUiStore` и свимлейн.
+- UI основного планера — `SprintPlannerUiStore` и свимлейн.
 - SQL — только в `lib/<domain>/*Repository.ts`; `app/api/**` без прямого доступа к БД (ESLint `api/no-direct-db`).
 - ESLint: политика в `eslint.config.mjs` (Sonar/React Compiler — см. комментарии в файле).
 

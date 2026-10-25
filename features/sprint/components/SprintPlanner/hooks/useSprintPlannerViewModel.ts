@@ -1,4 +1,3 @@
-import type { TimelineSettings } from '../occupancy/components/table/OccupancyTableHeader';
 import type { Task } from '@/types';
 import type { SprintInfo, SprintListItem, ChecklistItem } from '@/types/tracker';
 
@@ -16,7 +15,6 @@ import { useBoards } from '@/features/board/hooks/useBoards';
 import { useSlaBugs } from '@/features/sla-bugs/hooks/useSlaBugs';
 import { useSprintPlannerTrackerLinkHandlers } from '@/features/sprint/hooks/useSprintPlannerTrackerLinkHandlers';
 import { computeAssigneePointsStats } from '@/features/sprint/utils/assigneePointsStats';
-import { useOccupancyTaskOrderApi } from '@/hooks/useApiStorage';
 import { useDebouncedCallback } from '@/hooks/usePerformance';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
@@ -33,8 +31,8 @@ import { useSprintMovePlacement } from './useSprintMovePlacement';
 import { useSprintPlannerIntegrationRulesInvalidation } from './useSprintPlannerIntegrationRulesInvalidation';
 import { useSprintPlannerLocalPreferences } from './useSprintPlannerLocalPreferences';
 import { useSprintPlannerMembersSync } from './useSprintPlannerMembersSync';
-import { useSprintPlannerOccupancyAndSwimlaneData } from './useSprintPlannerOccupancyAndSwimlaneData';
 import { useSprintPlannerState } from './useSprintPlannerState';
+import { useSprintPlannerSwimlaneData } from './useSprintPlannerSwimlaneData';
 import { useSprintPlannerSyntheticQaCleanup } from './useSprintPlannerSyntheticQaCleanup';
 import { useSprintPlannerViewModelInteractions } from './useSprintPlannerViewModelInteractions';
 import { useSprintPlannerWorkflowScreens } from './useSprintPlannerWorkflowScreens';
@@ -106,18 +104,12 @@ export function useSprintPlannerViewModel({
     setFeatureColumnWidth,
     selectedAssigneeIds,
     setSelectedAssigneeIds,
-    timelineSettingsStorage,
     swimlaneLinksVisible,
     swimlaneFactTimelineVisible,
     swimlaneCalendarBusyVisible,
     swimlaneNotesVisible,
     swimlaneImagesVisible,
     linksDimOnHover,
-    occupancyOldTmLayout,
-    occupancyRowFields,
-    occupancyStatusFilter,
-    setOccupancyStatusFilter,
-    occupancyTimelineScale,
     syncAssignees,
     syncEstimates,
     kanbanGroupBy,
@@ -134,20 +126,9 @@ export function useSprintPlannerViewModel({
     selectedSprintId,
   });
 
-  const [taskOrder, setTaskOrder] = useOccupancyTaskOrderApi(selectedSprintId);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { confirmWithAction, DialogComponent, confirm } = useConfirmDialog();
 
-  const timelineSettings: TimelineSettings = {
-    showStatuses: timelineSettingsStorage.showStatuses,
-    showComments: timelineSettingsStorage.showComments,
-    showGitlab: timelineSettingsStorage.showGitlab ?? true,
-    showReestimations: timelineSettingsStorage.showReestimations,
-    showLinks: timelineSettingsStorage.showLinks ?? true,
-    showFreeSlotPreview: timelineSettingsStorage.showFreeSlotPreview ?? true,
-  };
-
-  const factVisible = timelineSettingsStorage.enabled;
   const workflowScreens = useSprintPlannerWorkflowScreens(boardIdForPlannerData, getQueueByBoardId);
 
   const state = useSprintPlannerState({
@@ -205,8 +186,6 @@ export function useSprintPlannerViewModel({
   useEffect(() => {
     if (viewMode === 'kanban') {
       sprintPlannerUi.setSegmentEditTaskId(null);
-    }
-    if (viewMode === 'kanban' || viewMode === 'occupancy') {
       sprintPlannerUi.setPlacementTool('cursor');
     }
     if (viewMode === 'features' && sprintPlannerUi.placementTool === 'availability') {
@@ -224,26 +203,13 @@ export function useSprintPlannerViewModel({
   const swimlaneCalendarBusyEnabled =
     swimlaneCalendarBusyVisible && (viewMode === 'full' || viewMode === 'compact');
 
-  const loadGitlabFacts =
-    viewMode === 'occupancy' &&
-    timelineSettingsStorage.enabled &&
-    (timelineSettingsStorage.showGitlab ?? true);
-
   const {
-    gitlabFactByLink,
-    occupancyTasksLoading,
     swimlaneTaskChangelogsMap,
     swimlaneTaskDurationsMap,
     swimlaneTaskIssueCommentsMap,
-    tasksForOccupancy,
-  } = useSprintPlannerOccupancyAndSwimlaneData({
+  } = useSprintPlannerSwimlaneData({
     allTasksForDrag,
-    loadGitlabFacts,
-    occupancyStatusFilter,
-    selectedBoardId: boardIdForPlannerData,
-    selectedSprintId,
-    swimlaneFactTimelineVisible,
-    viewMode,
+    swimlaneFactTimelineEnabled,
   });
 
   const {
@@ -420,11 +386,9 @@ export function useSprintPlannerViewModel({
     developersManagement,
     discoveryChecklistItems,
     discoveryGoalsLoading,
-    factVisible,
     filteredTaskLinks,
     filteredTaskPositions,
     getQueueByBoardId,
-    gitlabFactByLink,
     goalTaskIds,
     goalsLoading,
     handleAddLink,
@@ -432,11 +396,6 @@ export function useSprintPlannerViewModel({
     kanbanGroupBy,
     linksDimOnHover,
     movePlacement,
-    occupancyOldTmLayout,
-    occupancyRowFields,
-    occupancyStatusFilter,
-    occupancyTasksLoading,
-    occupancyTimelineScale,
     onGoalsUpdate,
     onSprintChange,
     onTasksReload,
@@ -446,11 +405,9 @@ export function useSprintPlannerViewModel({
     scrollContainerRef,
     selectedAssigneeIds,
     selectedSprintId,
-    setOccupancyStatusFilter,
     setParticipantsColumnWidth,
     setSelectedAssigneeIds,
     setSidebarWidth,
-    setTaskOrder,
     setTasks,
     setViewMode,
     sidebarOpen: sprintPlannerUi.sidebarOpen,
@@ -468,15 +425,12 @@ export function useSprintPlannerViewModel({
     swimlaneTaskChangelogsMap,
     swimlaneTaskDurationsMap,
     swimlaneTaskIssueCommentsMap,
-    taskOrder,
     taskPositions,
     tasks,
     tasksByAssignee,
-    tasksForOccupancy,
     tasksLoading,
     tasksMap,
     tasksReloading,
-    timelineSettings,
     unassignedTasks,
     viewMode,
   };

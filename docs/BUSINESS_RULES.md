@@ -2,7 +2,7 @@
 
 Канон того, **как должен вести себя кор**: раскладка задач на свимлейне, поинты, «сделано», burndown, капасити, жизненный цикл задачи, заметки. Для каждого правила указано, где оно реализовано и каким тестом закреплено.
 
-Пути — от корня репозитория. Легаси `occupancy/` здесь не описывается (см. [AGENTS.md](../AGENTS.md)).
+Пути — от корня репозитория.
 
 ## Как пользоваться
 
@@ -117,7 +117,12 @@
 
 ## 9. «Задача сделана» — единый канон
 
-**Решение:** «сделано» везде определяется **правилами организации** в [`lib/sprints/sprintTaskCompletion.ts`](../lib/sprints/sprintTaskCompletion.ts). SP-done и TP-done — разные вопросы.
+**Решение:** «сделано» определяет **трекер**, а не организация:
+
+- **Yandex Tracker** — статус с типом «завершено» (`done`) **и** заполненная резолюция.
+- **Jira** — статус из категории завершения (`done`).
+
+Правил завершения у организации нет. В настройках интеграции организация задаёт только **цвет карточки** для статуса (`statuses.overridesByStatusKey[*].visualToken`); на «сделано» цвет не влияет. Канон реализован в [`lib/sprints/sprintTaskCompletion.ts`](../lib/sprints/sprintTaskCompletion.ts); где код пока отходит от правила — см. [расхождения](#известные-расхождения-и-открытые-вопросы). SP-done и TP-done — разные вопросы.
 
 
 | #  | Правило                                                                                                                                                                                                                                                                                                                                                                                                                                             | Где                                                                                      | Тест                                                                                                                                                          |
@@ -126,7 +131,7 @@
 | C2 | **SP сделаны**, если категория done и статус не в `tpReadyStatusKeys`. **TP сделаны**, если категория done или статус = `readyStatusKey` (легаси-фолбэк `rc`). Поэтому `rc` закрывает только TP.                                                                                                                                                              | `isSpCompleted`, `isTpCompleted`                                                            | `sprintTaskCompletion.test.ts`                                                                                                                                    |
 | C3 | Для истории (changelog) известен только ключ статуса, не его тип: применяются оверрайды по ключу,`readyStatusKey` и фолбэк `mapStatus`, дефолты по типу — нет.                                                                                                                                                                                               | `isSpCompletedStatusKey`, `isTpCompletedStatusKey`                                          | `sprintTaskCompletion.test.ts`                                                                                                                                    |
 | C4 | Поверхности на этом каноне: сайдбар, серверный скор, velocity, заголовок строки свимлейна, burndown (история, подсказки, запасные плитки), метрики спринта, ретро, канбан. Клиент берёт правила через`hooks/useSprintTaskCompletionRules.ts`, сервер — `sprintTaskCompletionRulesFromIntegration`. | см. колонку                                                                        | `useSwimlaneLayoutHelpers.extras.test.ts`, `computeBurndownFromChangelog.test.ts`, `sprintIssueFacts.test.ts`, `retroFacts.test.ts`, `sprintScoreHelpers.test.ts` |
-| C5 | Исключение для метрик и ретро:**declined не считается поставленным**, даже если организация относит его к done (семантика say/do).                                                                                                                                                                                                                                  | `lib/sprintMetrics/sprintIssueFacts.ts`, `lib/retro/retroFacts.ts` (`isDeliveredStatusKey`) | `sprintIssueFacts.test.ts`, `retroFacts.test.ts`                                                                                                                  |
+| C5 | Исключение для метрик и ретро:**declined не считается поставленным**, даже если трекер относит его к done (семантика say/do).                                                                                                                                                                                                                                  | `lib/sprintMetrics/sprintIssueFacts.ts`, `lib/retro/retroFacts.ts` (`isDeliveredStatusKey`) | `sprintIssueFacts.test.ts`, `retroFacts.test.ts`                                                                                                                  |
 | C6 | Mapping в категорию для отображения/интеграции и для MCP пока отдельные — см.[расхождения](#известные-расхождения-и-открытые-вопросы).                                                                                                                                                                                                                | `lib/trackerIntegration/resolveStatus.ts`, `lib/mcp/resolveMcpIssueStatusCategory.ts`       | `resolveStatus` / MCP тесты                                                                                                                                  |
 
 ## 10. Burndown
@@ -228,7 +233,9 @@
 
 **«Сделано» ещё не единое:**
 
-- Основной путь плиток burndown идёт через легаси `occupancy/` (`computeBurndownTilesFromOccupancyRows`) — без правил организации. Нужно решение, трогаем ли occupancy.
+- **Канон шире правила «тип статуса + резолюция».** `resolveTaskCompletionCategory` (C1) после типа статуса смотрит ещё и на **имя** статуса (`mapStatus`: `rc`, `closed`, `готово`… → done), а **резолюцию не проверяет** нигде. Задача в статусе типа done без резолюции в Tracker сейчас считается сделанной; статус с «готовым» именем, но другим типом — тоже.
+- **Остатки «правил организации» в каноне.** `overridesByStatusKey[*].category`, `defaultsByTrackerStatusType` и `releaseReadiness.readyStatusKey` читаются как правила завершения, но в админке их не задать: UI пишет в оверрайды только `visualToken` и при сохранении затирает `category`; `readyStatusKey` в UI не выведен. Действуют только значения, сохранённые раньше или через API.
+- Основной путь плиток burndown — `features/burndown/utils/burndownScopeTiles.ts` (`computeBurndownScopeTiles`): `isTaskDone` вызывается без этих настроек (запасной путь `computeBurndownTilesFromTasks` их передаёт). Разница исчезнет вместе с предыдущим пунктом.
 - Своя проверка done осталась в `features/task/utils/taskUtils.ts` (`isTaskCompleted`), `closeOverdueAndCreateNext.ts`, `features/swimlane/utils/in-progress-fact/factClosingStatus.ts`, `lib/sprints/sprintContextPlanVsActual.ts` (MCP: агент может видеть другой статус, чем UI).
 - Три маппинга статуса в категорию: `resolveStatus.ts` (интеграция), `sprintTaskCompletion.ts` (canon), `resolveMcpIssueStatusCategory.ts` (MCP, игнорирует конфиг интеграции).
 

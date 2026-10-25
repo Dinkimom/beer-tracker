@@ -24,12 +24,12 @@ function setDateToFridayEnd(d: Date): Date {
   return d;
 }
 
-export function advanceToMondayFromSaturday(d: Date): Date {
+function advanceToMondayFromSaturday(d: Date): Date {
   d.setDate(d.getDate() + 2);
   return setDateToWorkdayStart(d);
 }
 
-export function advanceToMondayFromSunday(d: Date): Date {
+function advanceToMondayFromSunday(d: Date): Date {
   d.setDate(d.getDate() + 1);
   return setDateToWorkdayStart(d);
 }

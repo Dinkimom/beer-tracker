@@ -19,7 +19,7 @@
 - `client.providerKind` / `client.webBaseUrl` — тип и web-base трекера текущей организации.
 - Адаптеры Yandex / Jira и `clientFactory.ts` — создание `IssueTrackerProviderClient` из `Request`.
 
-Старый Axios-фасад `getTrackerApiFromRequest` (`lib/api-tracker.ts`) в `app/api/**` остался в двух роутах: `app/api/sprints/[sprintId]/positions/route.ts` и `app/api/quarterly-plans/v2/route.ts`. `createTrackerApiClient` (`lib/tracker-client.ts`) в роутах напрямую не используется.
+Старый Axios-фасад `getTrackerApiFromRequest` (`lib/api-tracker.ts`) в `app/api/**` остался в одном роуте: `app/api/sprints/[sprintId]/positions/route.ts`. `createTrackerApiClient` (`lib/tracker-client.ts`) в роутах напрямую не используется.
 
 Уже переведены на `IssueTrackerProviderClient` (список мог расшириться — см. код):
 
@@ -37,9 +37,6 @@
 - `GET /api/issues/[issueKey]` live fallback/checklist
 - `GET /api/issues/[issueKey]/task` через provider-aware snapshot mapper
 - `GET /api/issues/[issueKey]/transitions`
-- `GET /api/sprints/batch/task-parents`
-- `GET /api/epics/[epicKey]/tasks`
-- `GET /api/stories/[storyKey]/tasks`
 
 ## Целевая архитектура
 
@@ -119,9 +116,6 @@ Routes:
 - `/api/issues/search`
 - `/api/issues/[issueKey]` GET, включая fallback к live tracker и checklist.
 - `/api/issues/[issueKey]/task` через provider-aware snapshot mapper без live token.
-- `/api/sprints/batch/task-parents`
-- `/api/epics/[epicKey]/tasks`
-- `/api/stories/[storyKey]/tasks`
 
 Нужные методы:
 

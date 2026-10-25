@@ -4,7 +4,6 @@ import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 
 import {
-  occupancyTasksQueryKey,
   patchSprintInfoInTasksQueries,
   patchSprintTaskStatusInQueries,
   patchSprintTasksQuery,
@@ -32,8 +31,6 @@ describe('sprintTasksQueryKey', () => {
     expect(queryKeyTouchesSprintTasks(sprintTasksQueryKey(12, 12), 12)).toBe(true);
     expect(queryKeyTouchesSprintTasks(sprintTasksQueryKey(5, 12), 12)).toBe(false);
     expect(queryKeyTouchesSprintTasks(sprintTasksQueryKey(12, 12, true), 12)).toBe(true);
-    expect(queryKeyTouchesSprintTasks(['tasks', 'occupancy', 12, 8, 'all'], 12)).toBe(true);
-    expect(queryKeyTouchesSprintTasks(['tasks', 'demo', 'occupancy', 12, 8, 'all'], 12)).toBe(true);
     expect(queryKeyTouchesSprintTasks(['sprints', 12], 12)).toBe(false);
   });
 });
@@ -73,34 +70,6 @@ describe('patchSprintTasksQuery', () => {
     patchSprintTasksQuery(qc, 5, 1, (prev) => [...prev, { id: 't2', name: 'Y' } as Task], true);
     const after = qc.getQueryData<{ tasks: Task[] }>(sprintTasksQueryKey(5, 1, true));
     expect(after?.tasks).toHaveLength(2);
-  });
-
-  it('зеркалит патч в occupancy-кэши той же доски и отсекает по фильтру статуса', () => {
-    const qc = new QueryClient();
-    const openTask = { id: 't1', name: 'Open', originalStatus: 'inProgress' } as Task;
-    const closedTask = { id: 't2', name: 'Done', originalStatus: 'closed' } as Task;
-    const bundle = {
-      developers: [],
-      sprintInfo: { id: 5, name: 'S', status: 'in_progress' as const, version: 1 },
-      tasks: [openTask],
-    };
-    const activeKey = occupancyTasksQueryKey(5, 1, 'active');
-    const completedKey = occupancyTasksQueryKey(5, 1, 'completed');
-    const otherBoardKey = occupancyTasksQueryKey(5, 9, 'active');
-    qc.setQueryData(sprintTasksQueryKey(5, 1), bundle);
-    qc.setQueryData(activeKey, bundle);
-    qc.setQueryData(completedKey, { ...bundle, tasks: [] as Task[] });
-    qc.setQueryData(otherBoardKey, bundle);
-
-    patchSprintTasksQuery(qc, 5, 1, [openTask, closedTask]);
-
-    expect(qc.getQueryData<typeof bundle>(sprintTasksQueryKey(5, 1))?.tasks.map((task) => task.id)).toEqual([
-      't1',
-      't2',
-    ]);
-    expect(qc.getQueryData<typeof bundle>(activeKey)?.tasks.map((task) => task.id)).toEqual(['t1']);
-    expect(qc.getQueryData<typeof bundle>(completedKey)?.tasks.map((task) => task.id)).toEqual(['t2']);
-    expect(qc.getQueryData<typeof bundle>(otherBoardKey)?.tasks.map((task) => task.id)).toEqual(['t1']);
   });
 });
 
@@ -325,28 +294,6 @@ describe('upsertSprintTaskInQueries', () => {
       parent: draftParent,
     });
   });
-
-  it('skips occupancy caches whose status filter does not match the task', () => {
-    const qc = new QueryClient();
-    const activeKey = ['tasks', 'occupancy', 5, 1, 'active'] as const;
-    const completedKey = ['tasks', 'occupancy', 5, 1, 'completed'] as const;
-    const activeBundle = {
-      developers: [],
-      sprintInfo: { id: 5, name: 'S', status: 'in_progress' as const, version: 1 },
-      tasks: [] as Task[],
-    };
-    qc.setQueryData(activeKey, activeBundle);
-    qc.setQueryData(completedKey, activeBundle);
-
-    upsertSprintTaskInQueries(qc, 5, {
-      id: 'BT-1',
-      name: 'Open',
-      originalStatus: 'inProgress',
-    } as Task);
-
-    expect(qc.getQueryData<typeof activeBundle>(activeKey)?.tasks.map((task) => task.id)).toEqual(['BT-1']);
-    expect(qc.getQueryData<typeof activeBundle>(completedKey)?.tasks).toEqual([]);
-  });
 });
 
 describe('removeSprintTaskFromQueries', () => {
@@ -377,7 +324,6 @@ describe('resetPlannerPaletteQueryCaches', () => {
     qc.setQueryData(['planner-integration-rules', orgId], { configRevision: 1 });
     qc.setQueryData(['planner-integration-rules', 'org-other'], { configRevision: 9 });
     qc.setQueryData(sprintTasksQueryKey(5, 1), { tasks: [] });
-    qc.setQueryData(occupancyTasksQueryKey(5, 1, 'all'), { tasks: [] });
     qc.setQueryData(['sprints', 5], { items: [] });
 
     resetPlannerPaletteQueryCaches(qc, orgId);
@@ -385,7 +331,6 @@ describe('resetPlannerPaletteQueryCaches', () => {
     expect(qc.getQueryData(['planner-integration-rules', orgId])).toBeUndefined();
     expect(qc.getQueryData(['planner-integration-rules', 'org-other'])).toEqual({ configRevision: 9 });
     expect(qc.getQueryData(sprintTasksQueryKey(5, 1))).toBeUndefined();
-    expect(qc.getQueryData(occupancyTasksQueryKey(5, 1, 'all'))).toBeUndefined();
     expect(qc.getQueryData(['sprints', 5])).toEqual({ items: [] });
   });
 });

@@ -26,7 +26,6 @@ export const STORAGE_KEYS = {
   TRACKER_TOKEN: TRACKER_OAUTH_LOCAL_STORAGE_KEY,
   /** CalDAV Mail.ru (URL + app-password) по id исполнителя — только localStorage */
   DEVELOPER_CALDAV_CREDENTIALS: DEVELOPER_CALDAV_CREDENTIALS_STORAGE_KEY,
-  OCCUPANCY_FACT_VISIBLE: 'beer-tracker-occupancy-fact-visible',
   SWIMLANE_LINKS_VISIBLE: 'beer-tracker-swimlane-links-visible',
   /** Какие связи свимлейна видны без наведения (all / important / hover) */
   SWIMLANE_LINKS_IDLE_MODE: 'beer-tracker-swimlane-links-idle-mode',
@@ -45,7 +44,6 @@ export const STORAGE_KEYS = {
   /** Заранее заложенное число слоёв карточек в строке свимлейна (per sprint, JSON assigneeId→layers) */
   SWIMLANE_ROW_RESERVED_LAYERS: 'beer-tracker-swimlane-row-reserved-layers',
   LINKS_DIM_ON_HOVER: 'beer-tracker-links-dim-on-hover',
-  OCCUPANCY_TASK_COLUMN_WIDTH: 'beer-tracker-occupancy-task-column-width',
   BOARD_VIEW_MODE: 'beer-tracker-board-view-mode',
   PARTICIPANTS_COLUMN_WIDTH: 'beer-tracker-participants-column-width',
   /** Ширина левой колонки свимлейна «по фичам» — отдельно от колонки исполнителей */
@@ -59,26 +57,10 @@ export const STORAGE_KEYS = {
   /** Страна календаря нерабочих дней (ISO 3166-1 alpha-2) */
   HOLIDAY_COUNTRY: 'beer-tracker-holiday-country',
   OCCUPANCY_ASSIGNEE_FILTER: 'beer-tracker-occupancy-assignee-filter',
-  OCCUPANCY_STATUS_FILTER: 'beer-tracker-occupancy-status-filter',
-  OCCUPANCY_TIMELINE_SETTINGS: 'beer-tracker-occupancy-timeline-settings',
   /**
    * Масштаб таймлайна занятости: полный — ~неделя во вьюпорте, остальное горизонтальным скроллом;
    * компактный — весь спринт (10 рабочих дней) по ширине экрана.
    */
-  OCCUPANCY_TIMELINE_SCALE: 'beer-tracker-occupancy-timeline-scale',
-  /** Компактный режим строк занятости (в UI — «Компактный») */
-  OCCUPANCY_OLD_TM_LAYOUT: 'beer-tracker-occupancy-old-tm-layout',
-  /** Набор полей, отображаемых в строке занятости */
-  OCCUPANCY_ROW_FIELDS: 'beer-tracker-occupancy-row-fields',
-  /** Настройки отображения занятости эпиков (отдельно от спринта) */
-  EPIC_OCCUPANCY_TIMELINE_SETTINGS: 'beer-tracker-epic-occupancy-timeline-settings',
-  EPIC_OCCUPANCY_OLD_TM_LAYOUT: 'beer-tracker-epic-occupancy-old-tm-layout',
-  EPIC_OCCUPANCY_ROW_FIELDS: 'beer-tracker-epic-occupancy-row-fields',
-  /** Настройки отображения квартального планирования v2 (отдельно от эпика) */
-  QUARTERLY_V2_OCCUPANCY_TIMELINE_SETTINGS: 'beer-tracker-quarterly-v2-occupancy-timeline-settings',
-  QUARTERLY_V2_OCCUPANCY_OLD_TM_LAYOUT: 'beer-tracker-quarterly-v2-occupancy-old-tm-layout',
-  QUARTERLY_V2_OCCUPANCY_ROW_FIELDS: 'beer-tracker-quarterly-v2-occupancy-row-fields',
-  QUARTERLY_V2_SHOW_PLANNED_TASKS: 'beer-tracker-quarterly-v2-show-planned-tasks',
   SWIMLANE_CARD_FIELDS: 'beer-tracker-swimlane-card-fields',
   /** Раскладка слотов карточки свимлейна. null — следовать галочкам полей. */
   SWIMLANE_CARD_SLOT_LAYOUT: 'beer-tracker-swimlane-card-slot-layout',

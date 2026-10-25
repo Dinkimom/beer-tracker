@@ -7,11 +7,11 @@
 | Тип | Где в коде | Назначение |
 |-----|------------|------------|
 | **Issue tracker** (Yandex Tracker **или** Jira) | `lib/issueTrackerProvider/*` (`getIssueTrackerProviderClientFromRequest`); легаси — `lib/trackerApi/*`, `getTrackerApiFromRequest` | Живые данные трекера, мутации, часть чтений (спринты, доски, workflow, детали issue). Выбор: `organizations.settings.issueTracker` — [ISSUE_TRACKERS.md](./ISSUE_TRACKERS.md) |
-| **Снимки задач (PostgreSQL)** | `lib/snapshots/*` | `issue_snapshots` (бэклог, эпики, стори, burndown/score, карточка задачи); `issue_changelog_events` — кэш changelog и комментариев задач |
+| **Снимки задач (PostgreSQL)** | `lib/snapshots/*` | `issue_snapshots` (бэклог, burndown/score, карточка задачи); `issue_changelog_events` — кэш changelog и комментариев задач |
 | **PostgreSQL (приложение)** | репозитории `lib/<домен>/*Repository.ts` поверх `lib/db` | Организации, команды, позиции, связи, комментарии, цели спринта, фичи, ретро, уведомления, OAuth MCP и т.д. |
 | **S3 (совместимое API)** | `lib/storage` | Байты фотокарточек и сцен Excalidraw планера (`planner_files.storage_key`) |
 | **Redis** | `lib/realtime/*`, `lib/sync/queue.ts` (BullMQ) | Pub/sub realtime, присутствие и таймер спринта; очередь синхронизации снимков. Без Redis realtime работает в памяти процесса |
-| **Внешний HTTP** | `fetch` в `lib/<домен>` | isdayoff.ru (праздники), CalDAV, deployhoroscope.ru, превью ссылок, GitLab |
+| **Внешний HTTP** | `fetch` в `lib/<домен>` | isdayoff.ru (праздники), CalDAV, deployhoroscope.ru, превью ссылок |
 | **Локальная ФС** | `fs` / `public/uploads` | Загрузка SVG диаграмм фич |
 
 Маршрут может быть **смешанным**: например burndown сочетает трекер (спринт, задачи, changelog), `issue_snapshots` и merged payload задач.
@@ -30,11 +30,6 @@
 | Статусы родителей | `/issues/parent-statuses` | `issue_snapshots` (batch) + tenant |
 | SLA-баги | `/boards/[boardId]/sla-bugs`, `/issues/[issueKey]/sla-bug-close-action`, `/issues/[issueKey]/hd-weekly-heatmap` | Tracker + PostgreSQL (команда доски, счётчики HD); heatmap — только PostgreSQL |
 | Бэклог | `/backlog` | `issue_snapshots` + `teams`/`staff`/`team_members` (мердж разработчиков) + tenant |
-| Эпики (список, deep) | `/epics`, `/epics/[epicKey]/deep` | `issue_snapshots` + tenant |
-| Задачи эпика | `/epics/[epicKey]/tasks` | Tracker |
-| Стори (список, карточка) | `/stories`, `/stories/[storyKey]` | `issue_snapshots` + tenant |
-| Задачи стори | `/stories/[storyKey]/tasks` | Tracker (in-memory кэш в процессе) |
-| Позиции/ссылки/черновики стори | `/stories/[storyKey]/task-positions`, `.../links`, `.../draft-tasks` | PostgreSQL (приложение) |
 | Доски | `/boards` | PostgreSQL `teams` (доски команд, видимые профилю) |
 | Параметры доски | `/boards/[boardId]` | Tracker (серверный кэш) |
 | Метрики спринтов доски | `/boards/[boardId]/sprint-metrics` | Tracker + `issue_snapshots` (через источник burndown) + PostgreSQL (сохранённые метрики) |
@@ -52,24 +47,20 @@
 | Таймер спринта | `/sprints/[sprintId]/timer` | Redis или память процесса |
 | Превью плана от агента | `/sprints/[sprintId]/plan-patch-previews`, `.../plan-patch-goal-previews` | PostgreSQL (+ Tracker для задач) |
 | Сессии агентов | `/sprints/[sprintId]/agent-sessions`, `/agent-sessions/[sessionId]`, `.../messages` | PostgreSQL (приложение) |
-| Порядок занятости (легаси) | `/sprints/[sprintId]/occupancy-task-order` | PostgreSQL (приложение) |
 | Строки фич планера | `/sprints/[sprintId]/feature-lanes` | PostgreSQL (приложение) |
-| Batch позиций/связей (несколько спринтов) | `/sprints/batch/positions`, `/sprints/batch/links` | PostgreSQL (приложение) |
-| Родители задач (batch) | `/sprints/batch/task-parents` | Tracker |
-| Квартальные планы v2 (deprecated) | `/quarterly-plans/v2` | PostgreSQL (приложение) + Tracker |
-| События доступности (отпуск, техспринт, больничный, дежурство) | `/quarterly-plans/availability/board-events` | PostgreSQL (приложение) |
+| События доступности (отпуск, техспринт, больничный, дежурство) | `/quarterly-plans/availability/board-events` (URL исторический) | PostgreSQL (приложение), `lib/boardAvailability/` |
 | Цели спринта | `/sprint-goals`, `/sprint-goals/[id]` | PostgreSQL (приложение) |
 | Фичи, документы, диаграммы, груминг (deprecated) | `/features`, `/features/[featureId]/**` | PostgreSQL (приложение) |
 | Картинка диаграммы фичи | `/features/[featureId]/diagrams/[diagramId]/image` | Локальная ФС |
 | Типы документов | `/document-types` | PostgreSQL (приложение) |
-| Задачи спринта для планера | `/tracker` | Tracker + `issue_snapshots` (кроме `skipSnapshots=1`) + PostgreSQL (порядок занятости, аватары `staff`, команда по `boardId`) + tenant |
+| Задачи спринта для планера | `/tracker` | Tracker + `issue_snapshots` (кроме `skipSnapshots=1`) + PostgreSQL (сохранённый порядок из `occupancy_task_order` — только чтение, аватары `staff`, команда по `boardId`) + tenant |
 | Экраны, очереди, поля | `/screens/*`, `/queues/*`, `/fields/*` | Tracker |
 | Realtime | `/realtime` (SSE), `/realtime/presence` | Redis pub/sub или шина в памяти процесса |
 | Сессия и вход | `/auth/session`, `/auth/logout`, `/auth/onprem/tracker-session`, `/auth/register`, `/auth/yandex/*`, `/auth/atlassian/*` | PostgreSQL (пользователи, cookie сессии) + Tracker (проверка токена) / OAuth провайдера |
 | Парольный вход | `/auth/login` | Отключён, всегда 401 |
 | Текущий пользователь (трекер) | `/auth/myself` | Tracker; опционально `staff` (аватар, birthdate) при `x-organization-id` и членстве |
 | Проверка токена трекера | `/auth/validate-token` | Tracker (`createTrackerApiClient`) |
-| Организации (настройки для участников) | `/organizations`, `/organizations/[organizationId]/**` (planner-timeline, retro-template, holiday-country, planner-integration-rules, tracker-fields) | PostgreSQL; `tracker-fields` — + Tracker; `gitlab/merge-requests/fact` — + GitLab HTTP |
+| Организации (настройки для участников) | `/organizations`, `/organizations/[organizationId]/**` (planner-timeline, retro-template, holiday-country, planner-integration-rules, tracker-fields) | PostgreSQL; `tracker-fields` — + Tracker |
 | Админка организации | `/admin/organizations/[organizationId]/**` (участники, роли, команды, staff, трекер, интеграция, sync) | PostgreSQL; `tracker/verify`, `tracker-metadata`, `teams/tracker-catalog`, `users/search`, `tracker-integration/init-status-defaults` — + Tracker; `sync/*` — + очередь BullMQ (Redis) |
 | On-prem | `/onprem/setup-state`, `/onprem/default-organization` | PostgreSQL |
 | Внутренние (cron, контракт БД) | `/internal/sync/tick`, `/internal/sync/full-rescan`, `/internal/db-contract/status` | `sync/tick` — очередь BullMQ (Redis); `sync/full-rescan` — синк Tracker → `issue_snapshots` в запросе; `db-contract/status` — PostgreSQL |

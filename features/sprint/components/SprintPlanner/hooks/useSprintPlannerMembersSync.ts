@@ -66,9 +66,6 @@ export function useSprintPlannerMembersSync({
             queryClient.invalidateQueries({
               queryKey: ['tasks', selectedSprintId, boardIdForPlannerData ?? null],
             });
-            queryClient.invalidateQueries({
-              queryKey: ['tasks', 'occupancy', selectedSprintId, boardIdForPlannerData ?? null],
-            });
           }
           removed = true;
           toast.success(
@@ -93,9 +90,6 @@ export function useSprintPlannerMembersSync({
       if (!selectedSprintId) return;
       queryClient.invalidateQueries({
         queryKey: ['tasks', selectedSprintId, boardIdForPlannerData ?? null],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['tasks', 'occupancy', selectedSprintId, boardIdForPlannerData ?? null],
       });
     };
     window.addEventListener('planner-members-updated', handler);

@@ -53,11 +53,9 @@ export function SprintPlannerView({
   discoveryGoalsLoading,
   dragAndDrop,
   dragContextRef,
-  factVisible,
   filteredTaskLinks,
   filteredTaskPositions,
   getQueueByBoardId,
-  gitlabFactByLink,
   goalTaskIds,
   goalsLoading,
   handleAddLink,
@@ -67,7 +65,6 @@ export function SprintPlannerView({
   handleCommentCreateWithFocus,
   handleCreateTaskInSwimlaneCell,
   handleOccupancyPositionSave,
-  handleOpenAssigneePicker,
   handlePasteQuickAddNote,
   handleQuickAddDraftAssigneeChange,
   handleQuickAddDraftCommentColorChange,
@@ -91,11 +88,6 @@ export function SprintPlannerView({
   kanbanGroupBy,
   linksDimOnHover,
   movePlacement,
-  occupancyOldTmLayout,
-  occupancyRowFields,
-  occupancyStatusFilter,
-  occupancyTasksLoading,
-  occupancyTimelineScale,
   onGoalsUpdate,
   onSprintChange,
   onTasksReload,
@@ -112,11 +104,9 @@ export function SprintPlannerView({
   selectedSprintId,
   setAssigneePicker,
   setIsDragFromSidebar,
-  setOccupancyStatusFilter,
   setParticipantsColumnWidth,
   setSelectedAssigneeIds,
   setSidebarWidth,
-  setTaskOrder,
   setTasks,
   setViewMode,
   sidebarOpen,
@@ -135,15 +125,12 @@ export function SprintPlannerView({
   swimlaneTaskDurationsMap,
   swimlaneTaskIssueCommentsMap,
   swimlaneTaskLinks,
-  taskOrder,
   taskPositions,
   tasks,
   tasksByAssignee,
-  tasksForOccupancy,
   tasksLoading,
   tasksMap,
   tasksReloading,
-  timelineSettings,
   unassignedTasks,
   viewMode,
   DialogComponent,
@@ -239,45 +226,6 @@ export function SprintPlannerView({
                   onContextMenu: handlers.handleContextMenu,
                   onStatusChange: handlers.handleStatusChange, onTaskClick: handlers.handleTaskClick,
                 }}
-                occupancy={{
-                  availability,
-                  contextMenuBlurOtherCards,
-                  deliveryChecklistItems,
-                  developers,
-                  discoveryChecklistItems,
-                  factVisible,
-                  gitlabFactByLink,
-                  linksDimOnHover,
-                  occupancyCallbacks: {
-                    onAddLink: handleAddLink,
-                    onContextMenu: handlers.handleContextMenu,
-                    onDeleteLink: handlers.handleDeleteLink,
-                    onOpenAssigneePicker: handleOpenAssigneePicker,
-                    onPositionSave: handleOccupancyPositionSave,
-                    onSegmentEditSave: handleSegmentEditSave,
-                    onTaskClick: handlers.handleTaskClick,
-                    onTaskOrderChange: (order) => setTaskOrder(() => order),
-                  },
-                  occupancyLayout: {
-                    legacyCompactLayout: occupancyOldTmLayout,
-                    plannerSidebarOpen: sidebarOpen,
-                    plannerSidebarWidth: sidebarWidth,
-                    rowFieldsVisibility: occupancyRowFields,
-                    timelineScale: occupancyTimelineScale,
-                  },
-                  selectedAssigneeIds,
-                  sprintStartDate,
-                  sprintWorkingDaysCount: sprintTimelineWorkingDays,
-                  swimlaneLinksVisible,
-                  taskLinks: filteredTaskLinks,
-                  taskOrder,
-                  taskPositions: filteredTaskPositions,
-                  tasks: tasksForOccupancy,
-                  timelineSettings,
-                  usePlannerUiStore: true,
-                }}
-                occupancyStatusFilter={occupancyStatusFilter}
-                occupancyTasksLoading={occupancyTasksLoading}
                 swimlanes={{
                   allTasksForDrag: allTasksForDragWithComments ?? allTasksForDrag,
                   boardAvailabilityEvents,
@@ -375,11 +323,9 @@ export function SprintPlannerView({
               boardId={boardIdForPlannerData ?? null}
               boardViewers={boardViewers}
               developers={developers}
-              occupancyStatusFilter={occupancyStatusFilter}
               planHistory={positionHistory}
               selectedAssigneeIds={selectedAssigneeIds}
               selectedSprintId={selectedSprintId}
-              setOccupancyStatusFilter={setOccupancyStatusFilter}
               setSelectedAssigneeIds={setSelectedAssigneeIds}
               setViewMode={setViewMode}
               sidebarOpen={sidebarOpen}

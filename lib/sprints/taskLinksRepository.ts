@@ -100,25 +100,3 @@ export async function persistBatchTaskLinks(params: {
     return params.links.length;
   });
 }
-
-function buildBatchLinksSelectQuery(): string {
-  return `SELECT 
-    sprint_id,
-    id,
-    from_task_id,
-    to_task_id,
-    from_anchor,
-    to_anchor,
-    created_at
-  FROM task_links 
-  WHERE sprint_id = ANY($1::int[])
-  ORDER BY sprint_id, created_at`;
-}
-
-export async function fetchTaskLinksForSprintIds(input: {
-  organizationId: string;
-  sprintIds: number[];
-}): Promise<Array<Record<string, unknown> & { sprint_id: number }>> {
-  const result = await query(buildBatchLinksSelectQuery(), [input.sprintIds]);
-  return result.rows as Array<Record<string, unknown> & { sprint_id: number }>;
-}
