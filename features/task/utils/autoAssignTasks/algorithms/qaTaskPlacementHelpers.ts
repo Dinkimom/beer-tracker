@@ -7,8 +7,7 @@ import type { Task, TaskPosition, TaskLink, Developer } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
 import { placeQaPhase } from '@/features/qa/utils/qaTaskPlacement';
-
-import { getQALinkAnchors } from '../utils/linkUtils';
+import { getQALinkAnchors } from '@/utils/linkAnchors';
 
 function ensureQaLinkForPlacedTask(
   devTask: Task,

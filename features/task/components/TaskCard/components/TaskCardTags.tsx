@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskCardTagsProps } from './TaskCardTags.types';
+import type { Task, TaskCardVariant, TaskPosition } from '@/types';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatTaskTestPointsForDisplay } from '@/lib/pointsUtils';
@@ -18,6 +18,21 @@ import {
   resolveTaskCardTagsPoints,
 } from './taskCardTagsHelpers';
 import { TaskCardTagsSidebarRow } from './TaskCardTagsSidebarRow';
+
+interface TaskCardTagsProps {
+  displayDuration?: number;
+  releaseGitlabChecks?: {
+    approvalsDone: number | null;
+    approvalsRequired: number;
+    lintSuccess: boolean | null;
+    testsSuccess: boolean | null;
+  } | null;
+  releaseGitlabChecksLoading?: boolean;
+  showDangerousReleaseInsteadOfStatus?: boolean;
+  task: Task;
+  taskPosition?: TaskPosition;
+  variant?: TaskCardVariant;
+}
 
 export function TaskCardTags({
   task,
