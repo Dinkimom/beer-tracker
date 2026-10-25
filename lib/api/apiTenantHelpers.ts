@@ -1,8 +1,8 @@
 import type { RequirePlannerTenantResult, TenantContext } from '../api-tenant';
-import type { AccessProfile } from '@/lib/access/orgAccess';
 
 import { NextResponse } from 'next/server';
 
+import { resolveAccessProfile } from '@/lib/access/orgAccess';
 import { getProductUserIdFromRequest } from '@/lib/auth/productSession';
 import { findOrganizationById, listAllOrganizationsAdminSummaries } from '@/lib/organizations/organizationRepository';
 import { parseRegistryUuidString } from '@/lib/registryUuidString';
@@ -20,24 +20,26 @@ async function resolveOnPremOrganizationId(request: Request): Promise<string | n
 }
 
 /**
- * Tenant для on-prem: org из заголовка (если есть в БД) или первая организация.
+ * Tenant планера: org из заголовка (если есть в БД) или первая организация; дальше нужна сессия
+ * и членство в этой организации (суперадмин продукта — как org_admin). Роль — из членства.
  */
 export async function resolveOnPremTenantContext(
   request: Request
 ): Promise<RequirePlannerTenantResult> {
+  const userId = getProductUserIdFromRequest(request);
+  if (!userId) {
+    return { response: NextResponse.json({ error: 'Требуется вход' }, { status: 401 }) };
+  }
   const organizationId = await resolveOnPremOrganizationId(request);
   if (!organizationId) {
     return {
       response: NextResponse.json({ error: 'Организация не найдена' }, { status: 503 }),
     };
   }
-  const userId = getProductUserIdFromRequest(request) ?? 'onprem-anonymous';
-  const ctx: TenantContext = { organizationId, role: 'org_admin', userId };
-  const profile: AccessProfile = {
-    organizationId,
-    orgRole: 'org_admin',
-    teamMemberships: [],
-    userId,
-  };
+  const profile = await resolveAccessProfile(userId, organizationId);
+  if (!profile) {
+    return { response: NextResponse.json({ error: 'Нет доступа к организации' }, { status: 403 }) };
+  }
+  const ctx: TenantContext = { organizationId, role: profile.orgRole, userId };
   return { ctx, profile };
 }

@@ -55,7 +55,7 @@ export async function fetchSprintGoals(sprintId: number, goalType: 'delivery' | 
 
 | Задача | Что использовать |
 |--------|------------------|
-| Tenant и доступ | [`lib/api-tenant.ts`](../lib/api-tenant.ts): `requireTenantContext` (большинство маршрутов планера), `requireTenantForOrganization` / `requireTenantWithPlannerProfile` / `requireTenantOrgAdmin` (маршруты с `organizationId` в пути) |
+| Tenant и доступ | [`lib/api-tenant.ts`](../lib/api-tenant.ts): `requireTenantContext` (большинство маршрутов планера), `requireTenantForOrganization` / `requireTenantWithPlannerProfile` / `requireOrgAdminForOrganizationRoute` (маршруты с `organizationId` в пути); вход в `/api/*` без сессии закрывает [`proxy.ts`](../proxy.ts), публичные роуты — [`lib/auth/apiAccessGate.ts`](../lib/auth/apiAccessGate.ts) |
 | Валидация | Zod-схемы и `validateRequest` / `formatValidationError` из [`lib/validation.ts`](../lib/validation.ts) |
 | Ошибки | `handleApiError(error, context)` из [`lib/api-error-handler.ts`](../lib/api-error-handler.ts): 401/429 трекера, `TrackerApiConfigError` (например 422 «трекер не подключён»), неподдерживаемая операция провайдера |
 | Трекер (Yandex / Jira) | `getIssueTrackerProviderClientFromRequest(request)` из [`lib/issueTrackerProvider/clientFactory.ts`](../lib/issueTrackerProvider/clientFactory.ts) → `IssueTrackerProviderClient`; для серверных задач по сохранённому токену организации — `getIssueTrackerProviderClientForOrganization(orgId)` |

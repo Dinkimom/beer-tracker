@@ -28,7 +28,12 @@ vi.mock('@/lib/organizations/organizationMembersRepository', () => ({
 }));
 
 vi.mock('@/lib/organizations/organizationRepository', () => ({
+  fetchFirstOrganizationId: vi.fn(() => Promise.resolve('00000000-0000-4000-8000-000000000001')),
   findOrganizationById: vi.fn(),
+}));
+
+vi.mock('@/lib/onPrem/setupState', () => ({
+  readOnPremSetupState: vi.fn(() => Promise.resolve({ hasAdmins: true, hasOrganizations: true, initialized: true })),
 }));
 
 vi.mock('@/lib/organizations/organizationTrackerCredentials', () => ({
@@ -151,6 +156,22 @@ describe('resolveTrackerApiConfigFromRequest', () => {
     await expect(resolveTrackerApiConfigFromRequest(authedRequest())).rejects.toBeInstanceOf(
       TrackerApiConfigError
     );
+  });
+
+  it('does not hand the stored org token to a request without a session', async () => {
+    vi.mocked(getProductUserIdFromRequest).mockReturnValue(null);
+    vi.mocked(getOrganizationTrackerCredentials).mockResolvedValue(storedToken('stored-oauth'));
+    await expect(resolveTrackerApiConfigFromRequest(authedRequest())).rejects.toMatchObject({
+      status: 401,
+    });
+    expect(getOrganizationTrackerCredentials).not.toHaveBeenCalled();
+  });
+
+  it('checks membership when a signed-in request has no org header', async () => {
+    vi.mocked(findOrganizationMembership).mockResolvedValue(null);
+    vi.mocked(getOrganizationTrackerCredentials).mockResolvedValue(storedToken('stored-oauth'));
+    const request = new Request('http://localhost/api/issues/BT-1/transitions');
+    await expect(resolveTrackerApiConfigFromRequest(request)).rejects.toMatchObject({ status: 403 });
   });
 
   it('accepts postgres uuid org header that fails zod .uuid()', async () => {

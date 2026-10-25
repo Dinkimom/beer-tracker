@@ -342,15 +342,18 @@ export async function resolveTrackerApiConfigFromRequest(
   const userId = getProductUserIdFromRequest(request);
   const organizationId = parseRegistryUuidString(request.headers.get(TENANT_ORG_HEADER));
 
-  if (userId && organizationId) {
+  if (userId) {
     return await resolveAuthedOrganizationTrackerApiConfig(
       request,
       userId,
-      organizationId,
+      organizationId ?? (await resolveDefaultOnPremOrganizationId()),
       oauthToken
     );
   }
-
+  // Без сессии — только токен из самого запроса: сохранённый токен организации анониму не выдаём.
+  if (!oauthToken) {
+    throw new TrackerApiConfigError('Требуется вход', 401);
+  }
   return await resolveOnPremTrackerApiConfigFromRequest(request, organizationId, oauthToken);
 }
 

@@ -66,7 +66,8 @@ function redirectBeerTrackerApiUnauthorized(): void {
   const { pathname, search } = window.location;
   const isAuthPage =
     pathname === '/login' || pathname === '/register' || pathname === '/auth-setup';
-  if (isAuthPage) {
+  // Демо-планер работает без входа: 401 случайного запроса не уводит его на настройку.
+  if (isAuthPage || pathname.startsWith('/demo')) {
     return;
   }
   const next = encodeURIComponent(`${pathname}${search}`);

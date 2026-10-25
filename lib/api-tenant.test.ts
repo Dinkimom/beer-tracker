@@ -1,3 +1,4 @@
+import type * as OrgAccess from '@/lib/access/orgAccess';
 import type * as OrganizationRepository from '@/lib/organizations/organizationRepository';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +20,12 @@ import {
 } from './api-tenant';
 
 vi.mock('@/lib/auth/productSession');
+vi.mock('@/lib/access/orgAccess', async (importOriginal) => ({
+  ...(await importOriginal<typeof OrgAccess>()),
+  resolveAccessProfile: vi.fn((userId: string, organizationId: string) =>
+    Promise.resolve({ organizationId, orgRole: 'member', teamMemberships: [], userId })
+  ),
+}));
 vi.mock('@/lib/auth/superAdmin', () => ({
   isProductSuperAdmin: vi.fn().mockResolvedValue(false),
 }));
@@ -108,7 +115,7 @@ describe('requireTenantContext (on-prem)', () => {
     expect(r.response.status).toBe(503);
   });
 
-  it('uses first organization when header missing', async () => {
+  it('uses first organization when header missing, role from membership', async () => {
     vi.mocked(getProductUserIdFromRequest).mockReturnValue(USER);
     vi.mocked(listAllOrganizationsAdminSummaries).mockResolvedValue([
       { organization_id: ORG } as never,
@@ -118,8 +125,8 @@ describe('requireTenantContext (on-prem)', () => {
       expect.fail('expected ctx');
     }
     expect(r.ctx.organizationId).toBe(ORG);
-    expect(r.ctx.role).toBe('org_admin');
-    expect(r.profile.orgRole).toBe('org_admin');
+    expect(r.ctx.role).toBe('member');
+    expect(r.profile.orgRole).toBe('member');
   });
 
   it('prefers valid header over DB fallback', async () => {

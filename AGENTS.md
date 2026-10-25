@@ -77,6 +77,8 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 **Исключения:** транзакции целиком в repository; route не вызывает `pool.connect()`.
 
+**Доступ:** `/api/*` без сессии закрыт в [`proxy.ts`](./proxy.ts). Роут, который должен работать без входа (вход, OAuth, cron по секрету), добавлять в [`lib/auth/apiAccessGate.ts`](./lib/auth/apiAccessGate.ts) и проверять доступ в нём самом. Права в организации — в роуте: `requireTenantContext` / `requireSprintRouteContext` / `requireOrgAdminForOrganizationRoute`.
+
 **Схема БД — только миграции.** Новая таблица, колонка, индекс или CHECK — новый файл `database/migrations/NNNN_*.sql` (правила — [`docs/DATABASE.md`](./docs/DATABASE.md#как-добавить-миграцию)). Runtime-DDL (`CREATE TABLE IF NOT EXISTS` / `ALTER TABLE` в репозиториях, флаги `schemaEnsured`) не добавлять. Применённую миграцию не править.
 
 ## Слои: MobX, dnd-kit, `lib/`
