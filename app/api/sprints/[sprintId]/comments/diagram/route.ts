@@ -1,25 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { insertSprintDiagramComment } from '@/lib/sprints';
 import { parseCreateDiagramCommentBody } from '@/lib/sprints/sprintCommentDiagramRouteHelpers';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
 
     const parsed = parseCreateDiagramCommentBody(await request.json());
     if (!parsed.ok) {

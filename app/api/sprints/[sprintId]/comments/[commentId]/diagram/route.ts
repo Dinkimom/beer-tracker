@@ -1,22 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { getSprintCommentDiagramScene, putSprintCommentDiagramScene } from '@/lib/sprints';
 import { parseDiagramSceneBody } from '@/lib/sprints/sprintCommentDiagramRouteHelpers';
-
-async function parseDiagramRouteParams(
-  params: Promise<{ commentId: string; sprintId: string }> | { commentId: string; sprintId: string }
-): Promise<{ commentId: string; sprintId: number } | null> {
-  const { commentId, sprintId: sprintIdStr } = await resolveParams(params);
-  const sprintId = parseInt(sprintIdStr, 10);
-  if (Number.isNaN(sprintId) || !z.string().uuid().safeParse(commentId).success) {
-    return null;
-  }
-  return { commentId, sprintId };
-}
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function GET(
   request: NextRequest,
@@ -27,13 +15,13 @@ export async function GET(
   }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const parsedParams = await parseDiagramRouteParams(params);
-    if (!parsedParams) {
-      return NextResponse.json({ error: 'Invalid sprint ID or comment ID' }, { status: 400 });
+    const parsedParams = { commentId: tenantResult.params.commentId, sprintId: tenantResult.sprintId };
+    if (!z.string().uuid().safeParse(parsedParams.commentId).success) {
+      return NextResponse.json({ error: 'Invalid comment ID' }, { status: 400 });
     }
 
     const scene = await getSprintCommentDiagramScene({
@@ -64,13 +52,13 @@ export async function PUT(
   }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const parsedParams = await parseDiagramRouteParams(params);
-    if (!parsedParams) {
-      return NextResponse.json({ error: 'Invalid sprint ID or comment ID' }, { status: 400 });
+    const parsedParams = { commentId: tenantResult.params.commentId, sprintId: tenantResult.sprintId };
+    if (!z.string().uuid().safeParse(parsedParams.commentId).success) {
+      return NextResponse.json({ error: 'Invalid comment ID' }, { status: 400 });
     }
 
     const parsed = parseDiagramSceneBody(await request.json());

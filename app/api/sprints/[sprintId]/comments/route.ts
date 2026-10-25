@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { requireTenantContext } from '@/lib/api-tenant';
 import { parseCommentParent, readCommentParentUpdate } from '@/lib/comments/commentParent';
 import { attachCommentReactionSummaries } from '@/lib/comments/commentReactionsRepository';
 import { parseOptionalStickyNoteColor, parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifyCommentMentionsIfNeeded } from '@/lib/notifications/notifyCommentMentionsIfNeeded';
 import { resolveNotificationBoardIdFromRequest } from '@/lib/notifications/resolveNotificationBoardIdFromRequest';
 import { plannerGridPartError } from '@/lib/planner/migrateOrganizationPlannerGrid';
@@ -16,6 +14,7 @@ import {
   listSprintComments,
   updateSprintComment,
 } from '@/lib/sprints';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 import {
   CommentSchema,
   formatValidationError,
@@ -41,20 +40,12 @@ export async function GET(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-
-    if (isNaN(sprintId)) {
-      return NextResponse.json(
-        { error: 'Invalid sprint ID' },
-        { status: 400 }
-      );
-    }
+    const { sprintId } = tenantResult;
 
     const comments = await listSprintComments({
       organizationId,
@@ -81,20 +72,12 @@ export async function POST(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-
-    if (isNaN(sprintId)) {
-      return NextResponse.json(
-        { error: 'Invalid sprint ID' },
-        { status: 400 }
-      );
-    }
+    const { sprintId } = tenantResult;
 
     const body = await request.json();
 
@@ -181,19 +164,18 @@ export async function PUT(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
+    const { sprintId } = tenantResult;
     const { searchParams } = new URL(request.url);
     const commentId = searchParams.get('commentId');
 
-    if (isNaN(sprintId) || !commentId) {
+    if (!commentId) {
       return NextResponse.json(
-        { error: 'Invalid sprint ID or comment ID' },
+        { error: 'Invalid comment ID' },
         { status: 400 }
       );
     }
@@ -268,19 +250,18 @@ export async function DELETE(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
+    const { sprintId } = tenantResult;
     const { searchParams } = new URL(request.url);
     const commentId = searchParams.get('commentId');
 
-    if (isNaN(sprintId) || !commentId) {
+    if (!commentId) {
       return NextResponse.json(
-        { error: 'Invalid sprint ID or comment ID' },
+        { error: 'Invalid comment ID' },
         { status: 400 }
       );
     }

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
-import { requireTenantContext } from '@/lib/api-tenant';
 import { getTrackerApiFromRequest } from '@/lib/api-tracker';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifyAssigneeChangedIfNeeded } from '@/lib/notifications/notifyAssigneeChangedIfNeeded';
 import { isEphemeralPlannerPositionId } from '@/lib/planner/ephemeralPlannerPositionId';
 import { plannerGridPartError } from '@/lib/planner/migrateOrganizationPlannerGrid';
@@ -25,6 +23,7 @@ import {
 } from '@/lib/sprints';
 import { listPlanAnchorsForSprint } from '@/lib/sprints/planAnchorRepository';
 import { listPlanPatchPositionPreviews } from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 import { listSwimlaneCardLayers } from '@/lib/sprints/swimlaneCardLayersRepository';
 import { resolveTrackerSprintBoardId } from '@/lib/trackerApi';
 import { TaskPositionSchema, formatValidationError, validateRequest } from '@/lib/validation';
@@ -45,20 +44,12 @@ export async function GET(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-
-    if (isNaN(sprintId)) {
-      return NextResponse.json(
-        { error: 'Invalid sprint ID' },
-        { status: 400 }
-      );
-    }
+    const { sprintId } = tenantResult;
 
     const positions = await listTaskPositionsForSprint({ organizationId, sprintId });
     if (positions.length > 0) {
@@ -87,21 +78,13 @@ export async function POST(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
     const actorUserId = tenantResult.ctx.userId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-
-    if (isNaN(sprintId)) {
-      return NextResponse.json(
-        { error: 'Invalid sprint ID' },
-        { status: 400 }
-      );
-    }
+    const { sprintId } = tenantResult;
 
     const body = await request.json();
 
@@ -218,21 +201,20 @@ export async function PUT(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
     const actorUserId = tenantResult.ctx.userId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
+    const { sprintId } = tenantResult;
     const { searchParams } = new URL(request.url);
     const taskId = searchParams.get('taskId');
 
     // Аннотации и черновики не хранят место в task_positions (см. TaskPositionSchema).
-    if (isNaN(sprintId) || !taskId || isEphemeralPlannerPositionId(taskId)) {
+    if (!taskId || isEphemeralPlannerPositionId(taskId)) {
       return NextResponse.json(
-        { error: 'Invalid sprint ID or task ID' },
+        { error: 'Invalid task ID' },
         { status: 400 }
       );
     }
@@ -310,22 +292,21 @@ export async function DELETE(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
+    const { sprintId } = tenantResult;
     const { searchParams } = new URL(request.url);
     const taskId = searchParams.get('taskId');
     const isQaParam = searchParams.get('isQa');
     const isQa = isQaParam === '1' || isQaParam === 'true';
     const devTaskKey = searchParams.get('devTaskKey')?.trim() || undefined;
 
-    if (isNaN(sprintId) || !taskId) {
+    if (!taskId) {
       return NextResponse.json(
-        { error: 'Invalid sprint ID or task ID' },
+        { error: 'Invalid task ID' },
         { status: 400 }
       );
     }

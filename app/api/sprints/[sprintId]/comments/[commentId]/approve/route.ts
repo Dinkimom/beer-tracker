@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { approvePendingSprintComment } from '@/lib/sprints/sprintCommentApprove';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function POST(
   request: NextRequest,
@@ -15,14 +14,15 @@ export async function POST(
   }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const { commentId, sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-    if (Number.isNaN(sprintId) || !z.string().uuid().safeParse(commentId).success) {
-      return NextResponse.json({ error: 'Invalid sprint ID or comment ID' }, { status: 400 });
+    const { sprintId } = tenantResult;
+    const { commentId } = tenantResult.params;
+
+    if (!z.string().uuid().safeParse(commentId).success) {
+      return NextResponse.json({ error: 'Invalid comment ID' }, { status: 400 });
     }
 
     const result = await approvePendingSprintComment({

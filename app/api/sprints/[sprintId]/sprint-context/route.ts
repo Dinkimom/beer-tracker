@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
 import { tryRequireSprintContextMcpAuth } from '@/lib/sprints/sprintContextAuth';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function GET(
   request: NextRequest,
@@ -12,16 +12,15 @@ export async function GET(
 ) {
   try {
     const mcpAuth = await tryRequireSprintContextMcpAuth(request);
-    const tenantResult = mcpAuth ?? (await requireTenantContext(request));
+    const tenantResult = await requireSprintRouteContext(
+      request,
+      params,
+      mcpAuth ?? (await requireTenantContext(request))
+    );
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
 
     const searchParams = new URL(request.url).searchParams;
     const featureId = searchParams.get('featureId')?.trim() || undefined;

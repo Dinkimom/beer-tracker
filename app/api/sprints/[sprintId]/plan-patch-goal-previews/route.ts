@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
   approvePlanPatchGoalPreviews,
   rejectPlanPatchGoalPreviews,
 } from '@/lib/sprints/sprintPlanPatchGoalPreviewActions';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 const BodySchema = z.object({
   goalId: z.string().uuid().optional(),
 });
-
-async function readSprintId(
-  params: Promise<{ sprintId: string }> | { sprintId: string }
-): Promise<number> {
-  const { sprintId } = await resolveParams(params);
-  return parseInt(sprintId, 10);
-}
 
 function readGoalId(request: NextRequest): string | undefined {
   const goalId = request.nextUrl.searchParams.get('goalId')?.trim();
@@ -30,14 +22,11 @@ export async function POST(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid goal ID' }, { status: 400 });
@@ -64,14 +53,11 @@ export async function DELETE(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const parsed = BodySchema.safeParse({ goalId: readGoalId(request) });
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid goal ID' }, { status: 400 });

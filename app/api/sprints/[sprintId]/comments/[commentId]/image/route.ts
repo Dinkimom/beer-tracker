@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { getSprintCommentImage } from '@/lib/sprints';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function GET(
   request: NextRequest,
@@ -14,14 +13,15 @@ export async function GET(
   }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const { commentId, sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-    if (Number.isNaN(sprintId) || !z.string().uuid().safeParse(commentId).success) {
-      return NextResponse.json({ error: 'Invalid sprint ID or comment ID' }, { status: 400 });
+    const { sprintId } = tenantResult;
+    const { commentId } = tenantResult.params;
+
+    if (!z.string().uuid().safeParse(commentId).success) {
+      return NextResponse.json({ error: 'Invalid comment ID' }, { status: 400 });
     }
 
     const image = await getSprintCommentImage({

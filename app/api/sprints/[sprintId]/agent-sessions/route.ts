@@ -5,27 +5,18 @@ import {
   createPlannerAgentSession,
   listSprintAgentSessionsForOwner,
 } from '@/lib/agentSessions/agentSessionService';
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 interface RouteParams { params: Promise<{ sprintId: string }> | { sprintId: string } }
-
-async function readSprintId(params: RouteParams['params']): Promise<number> {
-  const { sprintId } = await resolveParams(params);
-  return parseInt(sprintId, 10);
-}
 
 /** Свои сессии с агентом в спринте (сессии приватны). */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const result = await listSprintAgentSessionsForOwner({
       organizationId: tenantResult.ctx.organizationId,
       ownerId: tenantResult.ctx.userId,
@@ -41,14 +32,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 /** «Агенту»: новая сессия с просьбой по задаче или спринту. */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const parsed = AgentSessionCreateSchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });

@@ -6,12 +6,11 @@ import {
   TRACKER_UPSTREAM_FORWARD_STATUSES,
   handleApiError,
 } from '@/lib/api-error-handler';
-import { requireTenantContext } from '@/lib/api-tenant';
 import { loadSprintBurndownSource } from '@/lib/burndown/loadSprintBurndownSource';
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 import {
   buildBurndownApiResponse,
   buildComputedBurndownApiResponse,
@@ -114,29 +113,12 @@ export async function GET(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-
-    const { sprintId } = await resolveParams(params);
-
-    if (!sprintId) {
-      return NextResponse.json(
-        { error: 'sprintId is required' },
-        { status: 400 }
-      );
-    }
-
-    const sprintIdNum = parseInt(sprintId, 10);
-
-    if (isNaN(sprintIdNum)) {
-      return NextResponse.json(
-        { error: 'sprintId must be a valid number' },
-        { status: 400 }
-      );
-    }
+    const sprintIdNum = tenantResult.sprintId;
 
     const boardIdParam = request.nextUrl.searchParams.get('boardId');
     const boardId = boardIdParam ? parseInt(boardIdParam, 10) : undefined;

@@ -4,13 +4,12 @@ import {
   TRACKER_UPSTREAM_FORWARD_STATUSES,
   handleApiError,
 } from '@/lib/api-error-handler';
-import { requireTenantContext } from '@/lib/api-tenant';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { issueTrackerClientWebContext } from '@/lib/issueTrackerProvider/types';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { queryIssueSnapshotsMatchingSprint } from '@/lib/snapshots';
 import { aggregateSprintGoalsByTeam } from '@/lib/sprintGoals';
 import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 import { buildSprintScoreApiResponse } from '@/lib/sprints/sprintTrackerRouteJson';
 import { resolveTrackerTestingFlowMode } from '@/lib/sprints/testingFlowMode';
 import { mapTrackerIssueToTask } from '@/lib/trackerApi/issues';
@@ -33,22 +32,12 @@ export async function GET(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-
-    const { sprintId } = await resolveParams(params);
-
-    if (!sprintId) {
-      return NextResponse.json({ error: 'sprintId is required' }, { status: 400 });
-    }
-
-    const sprintIdNum = parseInt(sprintId, 10);
-    if (isNaN(sprintIdNum)) {
-      return NextResponse.json({ error: 'sprintId must be a valid number' }, { status: 400 });
-    }
+    const sprintIdNum = tenantResult.sprintId;
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const [sprintInfo, integration] = await Promise.all([

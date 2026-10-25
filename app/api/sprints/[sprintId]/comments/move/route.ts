@@ -1,25 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtimeForSprintIds } from '@/lib/realtime/notifySprintRealtime';
 import { moveSprintCommentsToSprint } from '@/lib/sprints';
 import { parseMoveSprintCommentsBody } from '@/lib/sprints/sprintCommentsMoveRouteHelpers';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const fromSprintId = Number.parseInt(sprintIdStr, 10);
-    if (!Number.isInteger(fromSprintId) || fromSprintId <= 0) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const fromSprintId = tenantResult.sprintId;
     const parsed = parseMoveSprintCommentsBody(await request.json(), fromSprintId);
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { normalizePlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
 import { updatePlanPatchPositionPreviewGeometry } from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
@@ -10,6 +8,7 @@ import {
   approvePlanPatchPositionPreviews,
   rejectPlanPatchPositionPreviews,
 } from '@/lib/sprints/sprintPlanPatchPreviewActions';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 const BodySchema = z.object({
   taskId: z.string().trim().min(1).max(255).optional(),
@@ -33,13 +32,6 @@ const MoveBodySchema = z.object({
   taskId: z.string().trim().min(1).max(255),
 });
 
-async function readSprintId(
-  params: Promise<{ sprintId: string }> | { sprintId: string }
-): Promise<number> {
-  const { sprintId } = await resolveParams(params);
-  return parseInt(sprintId, 10);
-}
-
 function readTaskId(request: NextRequest): string | undefined {
   const taskId = request.nextUrl.searchParams.get('taskId')?.trim();
   return taskId ? taskId : undefined;
@@ -50,14 +42,11 @@ export async function POST(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
@@ -84,14 +73,11 @@ export async function DELETE(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const taskId = readTaskId(request);
     const count = await rejectPlanPatchPositionPreviews({
       organizationId: tenantResult.ctx.organizationId,
@@ -115,14 +101,11 @@ export async function PATCH(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const parsed = MoveBodySchema.safeParse(await request.json().catch(() => ({})));
     const preview = parsed.success
       ? normalizePlanPatchPositionPreview({ ...parsed.data, remove: false })

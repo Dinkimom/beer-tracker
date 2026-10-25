@@ -1,33 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { fetchFeatureLanes, mergePreservedFeatureLaneIssueKeys, upsertFeatureLanes } from '@/lib/sprints';
 import { mergeFeatureLanesDocuments } from '@/lib/sprints/featureLanesMerge';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 import { FeatureLanesSaveSchema, formatValidationError, validateRequest } from '@/lib/validation';
-
-async function readSprintId(
-  params: Promise<{ sprintId: string }> | { sprintId: string }
-): Promise<number | null> {
-  const { sprintId: sprintIdStr } = await resolveParams(params);
-  const sprintId = parseInt(sprintIdStr, 10);
-  return Number.isNaN(sprintId) ? null : sprintId;
-}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (sprintId == null) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
 
     const lanes = await fetchFeatureLanes({
       organizationId: tenantResult.ctx.organizationId,
@@ -45,14 +33,11 @@ export async function PUT(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await readSprintId(params);
-    if (sprintId == null) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
 
     const parsed = validateRequest(FeatureLanesSaveSchema, await request.json());
     if (!parsed.success) {

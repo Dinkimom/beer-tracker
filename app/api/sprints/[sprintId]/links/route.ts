@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
@@ -9,6 +7,7 @@ import {
   listTaskLinksForSprint,
   upsertTaskLink,
 } from '@/lib/sprints';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 import {
   TaskLinkSchema,
   formatValidationError,
@@ -20,20 +19,12 @@ export async function GET(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-
-    if (isNaN(sprintId)) {
-      return NextResponse.json(
-        { error: 'Invalid sprint ID' },
-        { status: 400 }
-      );
-    }
+    const { sprintId } = tenantResult;
 
     const rows = await listTaskLinksForSprint({ organizationId, sprintId });
     const links = rows.filter((row) => {
@@ -61,20 +52,12 @@ export async function POST(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-
-    if (isNaN(sprintId)) {
-      return NextResponse.json(
-        { error: 'Invalid sprint ID' },
-        { status: 400 }
-      );
-    }
+    const { sprintId } = tenantResult;
 
     const body = await request.json();
 
@@ -127,19 +110,18 @@ export async function DELETE(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
     const organizationId = tenantResult.ctx.organizationId;
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
+    const { sprintId } = tenantResult;
     const { searchParams } = new URL(request.url);
     const linkId = searchParams.get('linkId');
 
-    if (isNaN(sprintId) || !linkId) {
+    if (!linkId) {
       return NextResponse.json(
-        { error: 'Invalid sprint ID or link ID' },
+        { error: 'Invalid link ID' },
         { status: 400 }
       );
     }

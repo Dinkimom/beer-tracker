@@ -1,33 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
   approveAllPendingSprintComments,
   rejectAllPendingSprintComments,
 } from '@/lib/sprints/sprintCommentApprove';
-
-async function parseSprintId(
-  params: Promise<{ sprintId: string }> | { sprintId: string }
-): Promise<number> {
-  const { sprintId: sprintIdStr } = await resolveParams(params);
-  return parseInt(sprintIdStr, 10);
-}
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await parseSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const count = await approveAllPendingSprintComments({
       ownerId: tenantResult.ctx.userId,
       sprintId,
@@ -45,14 +34,11 @@ export async function DELETE(
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const sprintId = await parseSprintId(params);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
     const count = await rejectAllPendingSprintComments({
       ownerId: tenantResult.ctx.userId,
       sprintId,

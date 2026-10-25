@@ -1,34 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { persistBatchTaskLinks } from '@/lib/sprints';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 import { BatchLinksSchema, formatValidationError, validateRequest } from '@/lib/validation';
-
-function parseSprintIdParam(sprintIdStr: string): NextResponse | number {
-  const sprintId = parseInt(sprintIdStr, 10);
-  if (isNaN(sprintId)) {
-    return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-  }
-  return sprintId;
-}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseSprintIdParam(sprintIdStr);
-    if (sprintId instanceof NextResponse) {
-      return sprintId;
-    }
+    const { sprintId } = tenantResult;
 
     const body = await request.json();
     const validation = validateRequest(BatchLinksSchema, body);

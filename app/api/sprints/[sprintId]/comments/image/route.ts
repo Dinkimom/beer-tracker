@@ -1,25 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { requireTenantContext } from '@/lib/api-tenant';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { insertSprintImageComment } from '@/lib/sprints';
 import { parseSprintImageCommentFormData } from '@/lib/sprints/sprintCommentImageRouteHelpers';
+import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ sprintId: string }> | { sprintId: string } }
 ) {
   try {
-    const tenantResult = await requireTenantContext(request);
+    const tenantResult = await requireSprintRouteContext(request, params);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
     }
-    const { sprintId: sprintIdStr } = await resolveParams(params);
-    const sprintId = parseInt(sprintIdStr, 10);
-    if (Number.isNaN(sprintId)) {
-      return NextResponse.json({ error: 'Invalid sprint ID' }, { status: 400 });
-    }
+    const { sprintId } = tenantResult;
 
     const parsed = await parseSprintImageCommentFormData(await request.formData());
     if (!parsed.ok) {
