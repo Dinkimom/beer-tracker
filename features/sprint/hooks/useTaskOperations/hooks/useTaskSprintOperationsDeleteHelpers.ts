@@ -1,5 +1,7 @@
 import type { TaskLink, TaskPosition } from '@/types';
 
+import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
+
 export async function deleteTargetSprintPosition(
   targetSprintId: number | undefined,
   actualTaskId: string
@@ -26,12 +28,19 @@ export async function deleteStoredPositionAfterMove(
   }
 }
 
+/**
+ * Удаляет только связи приложения (с участием заметки — они хранятся в `task_links`).
+ * Связи задача↔задача приходят из трекера и при переносе в трекере не трогаются.
+ */
 export async function deleteLinksAfterMove(
   linksToDelete: TaskLink[],
   deleteLink: (linkId: string) => Promise<void>
 ): Promise<void> {
+  const plannerLinks = linksToDelete.filter((link) =>
+    plannerLinkInvolvesComment(link.fromTaskId, link.toTaskId)
+  );
   await Promise.all(
-    linksToDelete.map((link) =>
+    plannerLinks.map((link) =>
       deleteLink(link.id).catch((error) => {
         console.error('Error deleting link:', error);
       })

@@ -387,14 +387,12 @@ export async function getYandexScreenFields(
   const screen = await fetchScreen(screenId, api);
   const elements = screen.elements ?? [];
 
-  const fieldIds: Array<{ display: string; id: string; required: boolean }> =
-    elements.length > 0
-      ? elements.map((el) => ({
-          id: el.field.id,
-          display: el.field.display || el.field.id,
-          required: el.required,
-        }))
-      : [{ id: 'comment', display: 'Комментарий', required: true }];
+  // Пустой экран — полей нет; обязательный комментарий трекер вернёт ответом 422.
+  const fieldIds = elements.map((el) => ({
+    id: el.field.id,
+    display: el.field.display || el.field.id,
+    required: el.required,
+  }));
 
   return enrichYandexScreenFieldSeeds(fieldIds, api);
 }
