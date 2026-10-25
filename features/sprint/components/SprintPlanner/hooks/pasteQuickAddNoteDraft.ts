@@ -6,6 +6,8 @@ import { createIdKeepingStickyNoteTilt } from '@/features/comments/utils/stickyN
 import { toSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { resolveAnnotationPersistFromLaneDraft } from '@/features/swimlane/utils/featureSwimlaneRows';
 
+import { findQuickAddDraftTask, removeQuickAddDraft } from './quickAddLocalDraft';
+
 interface PasteQuickAddNoteDraftInput {
   clipboard: SwimlaneNoteClipboard;
   taskId: string;
@@ -51,7 +53,7 @@ export function pasteNoteAtSwimlaneCell(input: {
 }
 
 export function pasteQuickAddNoteDraft(input: PasteQuickAddNoteDraftInput): 'created' | 'noop' {
-  const draftTask = input.tasks.find((task) => task.id === input.taskId && task.isLocalTask);
+  const draftTask = findQuickAddDraftTask(input);
   const draftPosition = input.taskPositions.get(input.taskId);
   if (!draftTask || !draftPosition) {
     return 'noop';
@@ -66,11 +68,6 @@ export function pasteQuickAddNoteDraft(input: PasteQuickAddNoteDraftInput): 'cre
     parent: persist.parent,
     part: draftPosition.startPart,
   });
-  input.setTasks((prev) => prev.filter((task) => task.id !== input.taskId));
-  input.setTaskPositions((prev) => {
-    const next = new Map(prev);
-    next.delete(input.taskId);
-    return next;
-  }, { recordHistory: true });
+  removeQuickAddDraft(input);
   return 'created';
 }

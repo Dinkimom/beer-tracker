@@ -13,6 +13,7 @@ import {
   trackerAssigneeKeyForCreate,
   trackerParentKeyForCreate,
 } from './applyQuickAddDraftFields';
+import { findQuickAddDraftTask } from './quickAddLocalDraft';
 
 interface SubmitQuickAddCreatedIssueDraftInput {
   boardIdForPlannerData: number;
@@ -49,7 +50,7 @@ interface SubmitQuickAddCreatedIssueDraftInput {
 export async function submitQuickAddCreatedIssueDraft(
   input: SubmitQuickAddCreatedIssueDraftInput
 ): Promise<void> {
-  const draftTask = input.tasks.find((task) => task.id === input.taskId && task.isLocalTask);
+  const draftTask = findQuickAddDraftTask(input);
   const draftPosition = input.taskPositions.get(input.taskId);
   if (!draftTask || !draftPosition) {
     return;

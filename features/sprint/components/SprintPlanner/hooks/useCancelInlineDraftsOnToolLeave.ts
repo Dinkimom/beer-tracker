@@ -3,12 +3,14 @@ import type { Task, TaskPosition } from '@/types';
 
 import { useEffect, useRef } from 'react';
 
-import { cancelLocalDiagramCreateDraftIfLeftDiagramTool } from './cancelQuickAddDraft';
+import { cancelLocalCreateDraftOnToolLeave } from './cancelQuickAddDraft';
 
-export function useCancelInlineDiagramDraftOnToolLeave(input: {
+/** Смена инструмента тулбара отменяет черновик заметки, фото или схемы, который он создавал. */
+export function useCancelInlineDraftsOnToolLeave(input: {
   placementTool: SwimlanePlacementTool;
   submittingTaskId: string | null;
   tasks: Task[];
+  clearNoteEditPreview?: () => void;
   clearStickyNoteCardRowOverride: (taskId: string) => void;
   closeNoteComposer: () => void;
   keepInlineCardDraftRef?: { current: boolean };
@@ -21,6 +23,7 @@ export function useCancelInlineDiagramDraftOnToolLeave(input: {
 }): void {
   const previousToolRef = useRef(input.placementTool);
   const {
+    clearNoteEditPreview,
     clearStickyNoteCardRowOverride,
     closeNoteComposer,
     keepInlineCardDraftRef,
@@ -35,13 +38,11 @@ export function useCancelInlineDiagramDraftOnToolLeave(input: {
   useEffect(() => {
     const previousTool = previousToolRef.current;
     previousToolRef.current = placementTool;
-    if (keepInlineCardDraftRef?.current && previousTool === 'diagram' && placementTool !== 'diagram') {
-      keepInlineCardDraftRef.current = false;
-      return;
-    }
-    cancelLocalDiagramCreateDraftIfLeftDiagramTool({
+    cancelLocalCreateDraftOnToolLeave({
+      clearNoteEditPreview,
       clearStickyNoteCardRowOverride,
       closeNoteComposer,
+      keepInlineCardDraftRef,
       placementTool,
       previousTool,
       setSubmittingTaskId,
@@ -51,6 +52,7 @@ export function useCancelInlineDiagramDraftOnToolLeave(input: {
       tasks,
     });
   }, [
+    clearNoteEditPreview,
     clearStickyNoteCardRowOverride,
     closeNoteComposer,
     keepInlineCardDraftRef,

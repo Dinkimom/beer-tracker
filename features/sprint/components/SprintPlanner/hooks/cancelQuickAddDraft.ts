@@ -5,6 +5,7 @@ import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCo
 import { revokeLocalPlannerImageObjectUrl } from '@/features/task/utils/localPlannerImageFile';
 import { isSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
 
+import { removeQuickAddDraft } from './quickAddLocalDraft';
 import { removeLocalImageTaskFromPlanner } from './submitQuickAddImageDraft';
 
 interface CancelQuickAddDraftInput {
@@ -35,95 +36,51 @@ export function cancelQuickAddDraft(input: CancelQuickAddDraftInput): void {
   }
   const draft = input.tasks.find((task) => task.id === input.taskId);
   revokeLocalPlannerImageObjectUrl(draft?.imageUrl);
-  input.setTasks((prev) => prev.filter((task) => task.id !== input.taskId));
-  input.setTaskPositions((prev) => {
-    const next = new Map(prev);
-    next.delete(input.taskId);
-    return next;
-  }, { recordHistory: true });
+  removeQuickAddDraft(input);
   if (input.submittingTaskId === input.taskId) {
     input.setSubmittingTaskId?.(null);
   }
 }
 
-export function findLocalCommentCreateDraftId(tasks: Task[]): string | undefined {
-  return tasks.find(
-    (task) => task.isLocalTask === true && task.localDraftKind === 'comment'
-  )?.id;
+/** Инструменты тулбара, которые создают локальный черновик прямо на доске. */
+type InlineDraftTool = 'comment' | 'diagram' | 'image';
+
+function isInlineDraftTool(tool: SwimlanePlacementTool): tool is InlineDraftTool {
+  return tool === 'comment' || tool === 'diagram' || tool === 'image';
 }
 
-export function findLocalImageCreateDraftId(tasks: Task[]): string | undefined {
-  return tasks.find(
-    (task) => task.isLocalTask === true && task.localDraftKind === 'image'
-  )?.id;
+/** Id несохранённого локального черновика нужного вида. */
+export function findLocalCreateDraftId(tasks: Task[], kind: InlineDraftTool): string | undefined {
+  return tasks.find((task) => task.isLocalTask === true && task.localDraftKind === kind)?.id;
 }
 
-export function findLocalDiagramCreateDraftId(tasks: Task[]): string | undefined {
-  return tasks.find(
-    (task) => task.isLocalTask === true && task.localDraftKind === 'diagram'
-  )?.id;
-}
-
-export function cancelLocalCommentCreateDraftIfLeftCommentTool(input: {
-  previousTool: SwimlanePlacementTool;
-  placementTool: SwimlanePlacementTool;
-  tasks: Task[];
-  clearNoteEditPreview?: () => void;
-  clearStickyNoteCardRowOverride?: (taskId: string) => void;
-  closeNoteComposer: () => void;
-  setSubmittingTaskId?: (taskId: string | null) => void;
-  setTaskPositions: CancelQuickAddDraftInput['setTaskPositions'];
-  setTasks: CancelQuickAddDraftInput['setTasks'];
-  submittingTaskId?: string | null;
-}): void {
-  if (input.previousTool !== 'comment' || input.placementTool === 'comment') {
+/**
+ * Ушли с инструмента заметки, фото или схемы — его черновик отменяется.
+ * Фото и схема переживают уход один раз, если выставлен `keepInlineCardDraftRef` (флаг сбрасывается);
+ * у заметки заодно сбрасывается превью редактирования.
+ */
+export function cancelLocalCreateDraftOnToolLeave(
+  input: Omit<CancelQuickAddDraftInput, 'taskId'> & {
+    keepInlineCardDraftRef?: { current: boolean };
+    placementTool: SwimlanePlacementTool;
+    previousTool: SwimlanePlacementTool;
+  }
+): void {
+  const { placementTool, previousTool } = input;
+  if (!isInlineDraftTool(previousTool) || placementTool === previousTool) {
     return;
   }
-  const taskId = findLocalCommentCreateDraftId(input.tasks);
+  if (previousTool !== 'comment' && input.keepInlineCardDraftRef?.current) {
+    input.keepInlineCardDraftRef.current = false;
+    return;
+  }
+  const taskId = findLocalCreateDraftId(input.tasks, previousTool);
   if (!taskId) {
     return;
   }
-  cancelQuickAddDraft({ ...input, taskId });
-}
-
-export function cancelLocalImageCreateDraftIfLeftImageTool(input: {
-  previousTool: SwimlanePlacementTool;
-  placementTool: SwimlanePlacementTool;
-  tasks: Task[];
-  clearStickyNoteCardRowOverride?: (taskId: string) => void;
-  closeNoteComposer: () => void;
-  setSubmittingTaskId?: (taskId: string | null) => void;
-  setTaskPositions: CancelQuickAddDraftInput['setTaskPositions'];
-  setTasks: CancelQuickAddDraftInput['setTasks'];
-  submittingTaskId?: string | null;
-}): void {
-  if (input.previousTool !== 'image' || input.placementTool === 'image') {
-    return;
-  }
-  const taskId = findLocalImageCreateDraftId(input.tasks);
-  if (!taskId) {
-    return;
-  }
-  cancelQuickAddDraft({ ...input, taskId });
-}
-
-export function cancelLocalDiagramCreateDraftIfLeftDiagramTool(input: {
-  previousTool: SwimlanePlacementTool;
-  placementTool: SwimlanePlacementTool;
-  tasks: Task[];
-  clearStickyNoteCardRowOverride?: (taskId: string) => void;
-  closeNoteComposer: () => void;
-  setSubmittingTaskId?: (taskId: string | null) => void;
-  setTaskPositions: CancelQuickAddDraftInput['setTaskPositions'];
-  setTasks: CancelQuickAddDraftInput['setTasks'];
-  submittingTaskId?: string | null;
-}): void {
-  if (input.previousTool !== 'diagram' || input.placementTool === 'diagram') {
-    return;
-  }
-  const taskId = findLocalDiagramCreateDraftId(input.tasks);
-  if (!taskId) {
-    return;
-  }
-  cancelQuickAddDraft({ ...input, taskId });
+  cancelQuickAddDraft({
+    ...input,
+    clearNoteEditPreview: previousTool === 'comment' ? input.clearNoteEditPreview : undefined,
+    taskId,
+  });
 }

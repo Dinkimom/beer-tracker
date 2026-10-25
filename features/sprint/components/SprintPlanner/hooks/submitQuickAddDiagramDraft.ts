@@ -12,6 +12,8 @@ import {
 } from '@/lib/comments/plannerDiagramPreviewStore';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
+import { findQuickAddDraftTask, removeQuickAddDraft } from './quickAddLocalDraft';
+
 interface SubmitQuickAddDiagramDraftInput {
   comments: Comment[];
   diagramName?: string;
@@ -41,19 +43,10 @@ type SubmitQuickAddDiagramDraftResult =
   | { type: 'failed' }
   | { type: 'noop' };
 
-function removeDraft(input: SubmitQuickAddDiagramDraftInput): void {
-  input.setTasks((prev) => prev.filter((task) => task.id !== input.taskId));
-  input.setTaskPositions((prev) => {
-    const next = new Map(prev);
-    next.delete(input.taskId);
-    return next;
-  }, { recordHistory: true });
-}
-
 function createLocalDiagramComment(
   input: SubmitQuickAddDiagramDraftInput
 ): SubmitQuickAddDiagramDraftResult {
-  const draftTask = input.tasks.find((task) => task.id === input.taskId && task.isLocalTask);
+  const draftTask = findQuickAddDraftTask(input);
   const draftPosition = input.taskPositions.get(input.taskId);
   if (!draftTask || !draftPosition) {
     return { type: 'noop' };
@@ -77,7 +70,7 @@ function createLocalDiagramComment(
     kind: 'diagram',
     ...(persist.parent ? { parent: persist.parent } : {}),
   });
-  removeDraft(input);
+  removeQuickAddDraft(input);
   return { commentId: newId, type: 'created' };
 }
 
@@ -91,7 +84,7 @@ async function persistDiagramComment(
     input.createDiagramComment ??
     ((fields) => createSprintDiagramComment(sprintId, fields));
   try {
-    const draftTask = input.tasks.find((task) => task.id === input.taskId && task.isLocalTask);
+    const draftTask = findQuickAddDraftTask(input);
     const persist = resolveAnnotationPersistFromLaneDraft(
       draftTask ?? { assignee: draftPosition.assignee },
       draftPosition.assignee
@@ -114,7 +107,7 @@ async function persistDiagramComment(
       kind: 'diagram',
       ...(persist.parent ? { parent: persist.parent } : {}),
     });
-    removeDraft(input);
+    removeQuickAddDraft(input);
     return { commentId: created.id, type: 'created' };
   } catch {
     return { type: 'failed' };
@@ -133,7 +126,7 @@ export async function submitQuickAddDiagramDraft(
     }
     return { commentId: savedCommentId, type: 'existing' };
   }
-  const draftTask = input.tasks.find((task) => task.id === input.taskId && task.isLocalTask);
+  const draftTask = findQuickAddDraftTask(input);
   const draftPosition = input.taskPositions.get(input.taskId);
   if (!draftTask || !draftPosition) {
     return { type: 'noop' };
@@ -154,7 +147,7 @@ interface CompleteQuickAddDiagramDraftInput extends SubmitQuickAddDiagramDraftIn
 }
 
 function resolveQuickAddDiagramName(input: CompleteQuickAddDiagramDraftInput): string {
-  const draftTask = input.tasks.find((task) => task.id === input.taskId && task.isLocalTask);
+  const draftTask = findQuickAddDraftTask(input);
   return (input.diagramName ?? draftTask?.name ?? '').trim();
 }
 

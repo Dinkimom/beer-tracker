@@ -2,94 +2,15 @@ import type { Task } from '@/types';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  cancelLocalCommentCreateDraftIfLeftCommentTool,
-  cancelLocalDiagramCreateDraftIfLeftDiagramTool,
-  cancelLocalImageCreateDraftIfLeftImageTool,
-  findLocalCommentCreateDraftId,
-  findLocalDiagramCreateDraftId,
-  findLocalImageCreateDraftId,
-} from './cancelQuickAddDraft';
+import { cancelLocalCreateDraftOnToolLeave, findLocalCreateDraftId } from './cancelQuickAddDraft';
 
-function draftNote(): Task {
+type InlineDraftKind = 'comment' | 'diagram' | 'image';
+
+function localDraft(kind: InlineDraftKind): Task {
   return {
-    id: 'local-task-1',
+    id: `local-task-${kind}`,
     isLocalTask: true,
-    localDraftKind: 'comment',
-    link: '#',
-    name: 'Draft',
-    status: 'todo',
-    team: 'Back',
-  };
-}
-
-describe('findLocalCommentCreateDraftId', () => {
-  it('finds a local note draft and ignores saved notes', () => {
-    expect(
-      findLocalCommentCreateDraftId([
-        { id: 'comment:1', localDraftKind: 'comment', link: '#', name: 'Saved', team: 'Back' },
-        draftNote(),
-      ])
-    ).toBe('local-task-1');
-    expect(findLocalCommentCreateDraftId([])).toBeUndefined();
-  });
-});
-
-describe('cancelLocalCommentCreateDraftIfLeftCommentTool', () => {
-  it('does not remove a note draft while another tool stays active', () => {
-    const setTasks = vi.fn();
-    cancelLocalCommentCreateDraftIfLeftCommentTool({
-      closeNoteComposer: vi.fn(),
-      placementTool: 'task',
-      previousTool: 'task',
-      setTaskPositions: vi.fn(),
-      setTasks,
-      tasks: [draftNote()],
-    });
-    expect(setTasks).not.toHaveBeenCalled();
-  });
-
-  it('keeps the draft while the note tool stays selected', () => {
-    const setTasks = vi.fn();
-    cancelLocalCommentCreateDraftIfLeftCommentTool({
-      closeNoteComposer: vi.fn(),
-      placementTool: 'comment',
-      previousTool: 'comment',
-      setTaskPositions: vi.fn(),
-      setTasks,
-      tasks: [draftNote()],
-    });
-    expect(setTasks).not.toHaveBeenCalled();
-  });
-
-  it('discards the in-progress note when leaving the note tool', () => {
-    const setTasks = vi.fn();
-    const setTaskPositions = vi.fn();
-    const clearStickyNoteCardRowOverride = vi.fn();
-    cancelLocalCommentCreateDraftIfLeftCommentTool({
-      clearStickyNoteCardRowOverride,
-      closeNoteComposer: vi.fn(),
-      placementTool: 'cursor',
-      previousTool: 'comment',
-      setTaskPositions,
-      setTasks,
-      tasks: [draftNote()],
-    });
-
-    const nextTasks = setTasks.mock.calls[0][0]([
-      draftNote(),
-      { id: 'DEV-1' } as Task,
-    ]) as Task[];
-    expect(nextTasks.map((task) => task.id)).toEqual(['DEV-1']);
-    expect(clearStickyNoteCardRowOverride).toHaveBeenCalledWith('local-task-1');
-  });
-});
-
-function draftPhoto(): Task {
-  return {
-    id: 'local-task-photo',
-    isLocalTask: true,
-    localDraftKind: 'image',
+    localDraftKind: kind,
     link: '#',
     name: '',
     status: 'todo',
@@ -97,101 +18,92 @@ function draftPhoto(): Task {
   };
 }
 
-describe('findLocalImageCreateDraftId', () => {
-  it('finds a local photo draft and ignores saved photos', () => {
-    expect(
-      findLocalImageCreateDraftId([
-        { id: 'local-image:1', localDraftKind: 'image', link: '#', name: 'Saved', team: 'Back' },
-        draftPhoto(),
-      ])
-    ).toBe('local-task-photo');
-    expect(findLocalImageCreateDraftId([])).toBeUndefined();
-  });
-});
-
-describe('cancelLocalImageCreateDraftIfLeftImageTool', () => {
-  it('does not remove a chooser photo draft while the task tool is active', () => {
-    const setTasks = vi.fn();
-    cancelLocalImageCreateDraftIfLeftImageTool({
-      closeNoteComposer: vi.fn(),
-      placementTool: 'task',
-      previousTool: 'task',
-      setTaskPositions: vi.fn(),
-      setTasks,
-      tasks: [draftPhoto()],
-    });
-    expect(setTasks).not.toHaveBeenCalled();
-  });
-
-  it('keeps the draft while the photo tool stays selected', () => {
-    const setTasks = vi.fn();
-    cancelLocalImageCreateDraftIfLeftImageTool({
-      closeNoteComposer: vi.fn(),
-      placementTool: 'image',
-      previousTool: 'image',
-      setTaskPositions: vi.fn(),
-      setTasks,
-      tasks: [draftPhoto()],
-    });
-    expect(setTasks).not.toHaveBeenCalled();
-  });
-
-  it('discards the in-progress photo when leaving the photo tool', () => {
-    const setTasks = vi.fn();
-    const setTaskPositions = vi.fn();
-    const clearStickyNoteCardRowOverride = vi.fn();
-    cancelLocalImageCreateDraftIfLeftImageTool({
-      clearStickyNoteCardRowOverride,
-      closeNoteComposer: vi.fn(),
-      placementTool: 'task',
-      previousTool: 'image',
-      setTaskPositions,
-      setTasks,
-      tasks: [draftPhoto()],
-    });
-
-    const nextTasks = setTasks.mock.calls[0][0]([
-      draftPhoto(),
-      { id: 'DEV-1' } as Task,
-    ]) as Task[];
-    expect(nextTasks.map((task) => task.id)).toEqual(['DEV-1']);
-    expect(clearStickyNoteCardRowOverride).toHaveBeenCalledWith('local-task-photo');
-  });
-});
-
-function draftDiagram(): Task {
-  return {
-    id: 'local-task-diagram',
-    isLocalTask: true,
-    localDraftKind: 'diagram',
-    link: '#',
-    name: '',
-    status: 'todo',
-    team: 'Back',
+function leaveTool(
+  kind: InlineDraftKind,
+  overrides: Partial<Parameters<typeof cancelLocalCreateDraftOnToolLeave>[0]> = {}
+) {
+  const mocks = {
+    clearNoteEditPreview: vi.fn(),
+    clearStickyNoteCardRowOverride: vi.fn(),
+    closeNoteComposer: vi.fn(),
+    setTaskPositions: vi.fn(),
+    setTasks: vi.fn(),
   };
+  cancelLocalCreateDraftOnToolLeave({
+    ...mocks,
+    placementTool: 'cursor',
+    previousTool: kind,
+    tasks: [localDraft(kind)],
+    ...overrides,
+  });
+  return mocks;
 }
 
-describe('findLocalDiagramCreateDraftId', () => {
-  it('finds a local diagram draft', () => {
-    expect(findLocalDiagramCreateDraftId([draftDiagram()])).toBe('local-task-diagram');
+function tasksLeftAfter(setTasks: ReturnType<typeof vi.fn>, kind: InlineDraftKind): string[] {
+  const next = setTasks.mock.calls[0][0]([localDraft(kind), { id: 'DEV-1' } as Task]) as Task[];
+  return next.map((task) => task.id);
+}
+
+describe('findLocalCreateDraftId', () => {
+  it('finds the unsaved local draft of the requested kind', () => {
+    const tasks: Task[] = [
+      { id: 'comment:1', localDraftKind: 'comment', link: '#', name: 'Saved', team: 'Back' },
+      localDraft('comment'),
+      localDraft('image'),
+    ];
+    expect(findLocalCreateDraftId(tasks, 'comment')).toBe('local-task-comment');
+    expect(findLocalCreateDraftId(tasks, 'image')).toBe('local-task-image');
+    expect(findLocalCreateDraftId(tasks, 'diagram')).toBeUndefined();
   });
 });
 
-describe('cancelLocalDiagramCreateDraftIfLeftDiagramTool', () => {
-  it('discards the in-progress diagram when leaving the diagram tool', () => {
-    const setTasks = vi.fn();
-    cancelLocalDiagramCreateDraftIfLeftDiagramTool({
-      closeNoteComposer: vi.fn(),
-      placementTool: 'task',
-      previousTool: 'diagram',
-      setTaskPositions: vi.fn(),
-      setTasks,
-      tasks: [draftDiagram()],
-    });
-    const nextTasks = setTasks.mock.calls[0][0]([
-      draftDiagram(),
-      { id: 'DEV-1' } as Task,
-    ]) as Task[];
-    expect(nextTasks.map((task) => task.id)).toEqual(['DEV-1']);
+describe('cancelLocalCreateDraftOnToolLeave', () => {
+  it.each<InlineDraftKind>(['comment', 'image', 'diagram'])(
+    'discards the %s draft when leaving its tool',
+    (kind) => {
+      const input = leaveTool(kind);
+      expect(tasksLeftAfter(input.setTasks, kind)).toEqual(['DEV-1']);
+      expect(input.clearStickyNoteCardRowOverride).toHaveBeenCalledWith(`local-task-${kind}`);
+    }
+  );
+
+  it.each<InlineDraftKind>(['comment', 'image', 'diagram'])(
+    'keeps the %s draft while its tool stays selected',
+    (kind) => {
+      const input = leaveTool(kind, { placementTool: kind });
+      expect(input.setTasks).not.toHaveBeenCalled();
+    }
+  );
+
+  it('ignores tools that do not create inline drafts', () => {
+    const input = leaveTool('comment', { previousTool: 'task', placementTool: 'cursor' });
+    expect(input.setTasks).not.toHaveBeenCalled();
+  });
+
+  it('does not touch a draft of another kind', () => {
+    const input = leaveTool('image', { tasks: [localDraft('comment')] });
+    expect(input.setTasks).not.toHaveBeenCalled();
+  });
+
+  it('clears the note edit preview only for notes', () => {
+    expect(leaveTool('comment').clearNoteEditPreview).toHaveBeenCalled();
+    expect(leaveTool('image').clearNoteEditPreview).not.toHaveBeenCalled();
+  });
+
+  it.each<InlineDraftKind>(['image', 'diagram'])(
+    'keeps the %s draft once when keepInlineCardDraftRef is set',
+    (kind) => {
+      const keepInlineCardDraftRef = { current: true };
+      const input = leaveTool(kind, { keepInlineCardDraftRef });
+      expect(input.setTasks).not.toHaveBeenCalled();
+      expect(keepInlineCardDraftRef.current).toBe(false);
+    }
+  );
+
+  it('ignores keepInlineCardDraftRef for notes', () => {
+    const keepInlineCardDraftRef = { current: true };
+    const input = leaveTool('comment', { keepInlineCardDraftRef });
+    expect(tasksLeftAfter(input.setTasks, 'comment')).toEqual(['DEV-1']);
+    expect(keepInlineCardDraftRef.current).toBe(true);
   });
 });

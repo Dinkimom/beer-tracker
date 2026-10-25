@@ -2,7 +2,7 @@ import type { Task, TaskPosition } from '@/types';
 
 import { useEffect } from 'react';
 
-import { cancelQuickAddDraft, findLocalCommentCreateDraftId } from './cancelQuickAddDraft';
+import { cancelQuickAddDraft, findLocalCreateDraftId } from './cancelQuickAddDraft';
 
 /** Черновик заметки живёт до явного сохранения, удаления или Escape — не сбрасывается при blur. */
 export function useDiscardStickyNoteCreateDraftOnEscape(input: {
@@ -26,7 +26,7 @@ export function useDiscardStickyNoteCreateDraftOnEscape(input: {
   } = input;
 
   useEffect(() => {
-    const taskId = findLocalCommentCreateDraftId(tasks);
+    const taskId = findLocalCreateDraftId(tasks, 'comment');
     if (!taskId) {
       return;
     }

@@ -9,6 +9,7 @@ import { compressPlannerImageFile } from '@/features/task/utils/compressPlannerI
 import { fileFromPlannerImageObjectUrl, revokeLocalPlannerImageObjectUrl } from '@/features/task/utils/localPlannerImageFile';
 import { toSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
 
+import { findQuickAddDraftTask, removeQuickAddDraft } from './quickAddLocalDraft';
 import {
   consumeDraftCommentCardRowLayout,
   peekDraftCommentCardRowLayout,
@@ -55,15 +56,6 @@ function buildLocalImageTask(draftTask: Task, imageId: string, imageUrl: string,
     storyPoints: 0,
     testPoints: 0,
   };
-}
-
-function removeDraft(input: SubmitQuickAddImageDraftInput): void {
-  input.setTasks((prev) => prev.filter((task) => task.id !== input.taskId));
-  input.setTaskPositions((prev) => {
-    const next = new Map(prev);
-    next.delete(input.taskId);
-    return next;
-  }, { recordHistory: true });
 }
 
 function resolveImageDraftCardRowLayout(
@@ -148,7 +140,7 @@ async function persistImageComment(
       kind: 'image',
       ...(persist.parent ? { parent: persist.parent } : {}),
     });
-    removeDraft(input);
+    removeQuickAddDraft(input);
     return 'created';
   } catch {
     return 'failed';
@@ -163,7 +155,7 @@ export async function submitQuickAddImageDraft(
   if (!imageUrl) {
     return 'noop';
   }
-  const draftTask = input.tasks.find((task) => task.id === input.taskId && task.isLocalTask);
+  const draftTask = findQuickAddDraftTask(input);
   const draftPosition = input.taskPositions.get(input.taskId);
   if (!draftTask || !draftPosition) {
     return 'noop';
@@ -187,10 +179,5 @@ export function removeLocalImageTaskFromPlanner(input: {
 }): void {
   const existing = input.tasks.find((task) => task.id === input.taskId);
   revokeLocalPlannerImageObjectUrl(existing?.imageUrl);
-  input.setTasks((prev) => prev.filter((task) => task.id !== input.taskId));
-  input.setTaskPositions((prev) => {
-    const next = new Map(prev);
-    next.delete(input.taskId);
-    return next;
-  }, { recordHistory: true });
+  removeQuickAddDraft(input);
 }

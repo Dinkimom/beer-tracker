@@ -48,9 +48,7 @@ import {
 } from './submitExistingQuickAddDraft';
 import { submitQuickAddCreatedIssueDraft } from './submitQuickAddCreatedIssueDraft';
 import { completeQuickAddDiagramDraft } from './submitQuickAddDiagramDraft';
-import { useCancelInlineDiagramDraftOnToolLeave } from './useCancelInlineDiagramDraftOnToolLeave';
-import { useCancelInlineImageDraftOnToolLeave } from './useCancelInlineImageDraftOnToolLeave';
-import { useCancelInlineNoteDraftOnToolLeave } from './useCancelInlineNoteDraftOnToolLeave';
+import { useCancelInlineDraftsOnToolLeave } from './useCancelInlineDraftsOnToolLeave';
 import { useDiscardStickyNoteCreateDraftOnEscape } from './useDiscardStickyNoteCreateDraftOnEscape';
 import { useSprintPlannerQuickAddImageActions } from './useSprintPlannerQuickAddImageActions';
 import { useSprintPlannerQuickAddNoteActions } from './useSprintPlannerQuickAddNoteActions';
@@ -281,9 +279,7 @@ export function useSprintPlannerQuickAddDraft({
     tasks,
     keepInlineCardDraftRef,
   };
-  useCancelInlineNoteDraftOnToolLeave(cancelDraftOnToolLeave);
-  useCancelInlineImageDraftOnToolLeave(cancelDraftOnToolLeave);
-  useCancelInlineDiagramDraftOnToolLeave(cancelDraftOnToolLeave);
+  useCancelInlineDraftsOnToolLeave(cancelDraftOnToolLeave);
 
   const handleQuickAddDraftKindChange = useCallback(
     (taskId: string, kind: QuickAddDraftKind | undefined) =>

@@ -10,6 +10,8 @@ import {
 import { resolveAnnotationPersistFromLaneDraft } from '@/features/swimlane/utils/featureSwimlaneRows';
 import { parseStickyNoteColor, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
+import { findQuickAddDraftTask, removeQuickAddDraft } from './quickAddLocalDraft';
+
 export interface DraftCommentCardRowUi {
   stickyNoteCardRowPreview: { layerShiftUp: number; span: number; taskId: string } | null;
   clearStickyNoteCardRowOverride: (taskId: string) => void;
@@ -89,7 +91,7 @@ function updateSavedSwimlaneComment(
 }
 
 function createSwimlaneCommentFromDraft(input: SubmitQuickAddCommentDraftInput): 'created' | 'noop' {
-  const draftTask = input.tasks.find((task) => task.id === input.taskId && task.isLocalTask);
+  const draftTask = findQuickAddDraftTask(input);
   const draftPosition = input.taskPositions.get(input.taskId);
   if (!draftTask || !draftPosition) {
     return 'noop';
@@ -122,12 +124,7 @@ function createSwimlaneCommentFromDraft(input: SubmitQuickAddCommentDraftInput):
     height,
     ...(parent ? { parent } : {}),
   });
-  input.setTasks((prev) => prev.filter((task) => task.id !== input.taskId));
-  input.setTaskPositions((prev) => {
-    const next = new Map(prev);
-    next.delete(input.taskId);
-    return next;
-  }, { recordHistory: true });
+  removeQuickAddDraft(input);
   return 'created';
 }
 
