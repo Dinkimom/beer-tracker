@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.25.1] — 2026-10-26
+
+### English
+
+- Auto-placement and «place by person» no longer put cards on organization holidays.
+- Sprint tasks follow the tracker's own order (Jira Rank / LexoRank); the Jira Rank field is found automatically.
+- Transition dialog: user fields (assignee, QA, reporter and Yandex Tracker screen fields) are picked from the people list.
+- Notes: Backspace at the start of a heading turns it into a paragraph; a checklist preview card can be dragged by its text.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.25.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Авторасстановка и расстановка «по человеку» не ставят карточки на праздники организации.
+- Задачи спринта идут в порядке трекера (Jira Rank / LexoRank); поле Rank в Jira находится автоматически.
+- Модалка перехода: поля-пользователи (исполнитель, QA, автор и поля экранов Яндекс Трекера) выбираются из списка людей.
+- Заметки: Backspace в начале заголовка превращает его в абзац; карточку с чеклист-превью можно тянуть за текст.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.25.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.25.0] — 2026-10-26
 
 ### English
