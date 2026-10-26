@@ -249,7 +249,7 @@ describe('searchJiraIssuesInSprint', () => {
     const issues = await searchJiraIssuesInSprint(apiWith({ get, post }), 78804);
     expect(post).toHaveBeenCalledWith('/search', {
       fields: ['*all'],
-      jql: 'sprint = 78804',
+      jql: 'sprint = 78804 ORDER BY Rank ASC',
       maxResults: 50,
       startAt: 0,
     });
@@ -337,6 +337,27 @@ describe('fetchJiraIssue', () => {
         ],
       })
     );
+  });
+
+  it('reads Jira Rank from the gh-lexo-rank custom field resolved via /field', async () => {
+    const get = vi.fn((url: string) => {
+      if (url === '/field') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'customfield_10019',
+              name: 'Rank',
+              schema: { custom: 'com.pyxis.greenhopper.jira:gh-lexo-rank', type: 'any' },
+            },
+          ],
+        });
+      }
+      return Promise.resolve({
+        data: { fields: { customfield_10019: '0|i0001b:', summary: 'Fix login' }, key: 'RND-7' },
+      });
+    });
+    const issue = await fetchJiraIssue(apiWith({ get }), 'RND-7');
+    expect(issue?.customFields?.rank).toBe('0|i0001b:');
   });
 
   it('returns null for 404', async () => {

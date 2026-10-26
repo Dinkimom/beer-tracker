@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 
 import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useHolidayDays } from '@/features/sprint/hooks/useHolidayDays';
 import {
   buildAssigneePlanDraft,
   positionsOmittingIds,
@@ -93,6 +94,8 @@ export function useSprintPlannerUIHandlers({
 }: UseSprintPlannerUIHandlersProps) {
   const { t } = useI18n();
   const { taskPositions: positionsStore } = useRootStore();
+  // Те же праздники, что в шапке свимлейна: расстановка их пропускает
+  const holidayDayIndices = useHolidayDays(sprintStartDate, sprintTimelineWorkingDays);
   // Обработчики контекстного меню
   const { handleContextMenu, handleParentChange } = useSprintPlannerContextMenuHandlers({
     onParentLayoutChanged: debouncedUpdateXarrow,
@@ -109,6 +112,7 @@ export function useSprintPlannerUIHandlers({
   const { handleAutoAssignTasks, handleReturnAllTasks } = useSprintPlannerAutoAssignHandlers({
     allTasksForDrag,
     developersManagement,
+    holidayDayIndices,
     resetDragStateRef,
     qaTasksByOriginalId,
     qaTasksMap,
@@ -154,6 +158,7 @@ export function useSprintPlannerUIHandlers({
         currentCell: getCurrentSprintCell(sprintStartDate, partsPerDay, sprintTimelineWorkingDays),
         developers: developersManagement.sortedDevelopers,
         existingPositions: positionsOmittingIds(taskPositions, positionsStore.draftTaskIds),
+        holidayDayIndices,
         tasks: allTasksForDrag,
         timelineCellCount: sprintTimelineWorkingDays * partsPerDay,
       });
@@ -166,6 +171,7 @@ export function useSprintPlannerUIHandlers({
     [
       allTasksForDrag,
       developersManagement.sortedDevelopers,
+      holidayDayIndices,
       positionsStore,
       sprintStartDate,
       sprintTimelineWorkingDays,

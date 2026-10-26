@@ -121,6 +121,11 @@ export interface TrackerIssue {
         key?: string;
         self?: string;
       };
+  /**
+   * Ранг задачи в трекере (Jira — LexoRank из поля Rank): строки сравниваются лексикографически,
+   * меньше — выше в бэклоге. Порядок списка задач спринта идёт по нему.
+   */
+  rank?: string;
   /** Резолюция: в Tracker выставляется при переходе в статус типа «завершено». */
   resolution?: { display?: string; id?: string; key?: string } | null;
   /** Дата закрытия (resolved) в Tracker. */

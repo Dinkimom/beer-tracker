@@ -5,9 +5,11 @@
 import type { AutoAssignResult } from './autoAssignTasks/types';
 import type { Task, TaskPosition, Developer, TaskLink } from '@/types';
 
+import { getPartsPerDay } from '@/constants';
+
 import { placeDevTasks } from './autoAssignTasks/algorithms/devTaskPlacement';
 import { placeQATasks } from './autoAssignTasks/algorithms/qaTaskPlacement';
-import { calculateOccupiedIntervals } from './autoAssignTasks/utils/intervalUtils';
+import { calculateOccupiedIntervals, dayIntervals } from './autoAssignTasks/utils/intervalUtils';
 import { filterUnassignedTasks, sortTasksByPriorityAndSize } from './autoAssignTasks/utils/taskUtils';
 import { calculateWorkload } from './autoAssignTasks/utils/workloadUtils';
 
@@ -15,6 +17,7 @@ import { calculateWorkload } from './autoAssignTasks/utils/workloadUtils';
  * Автоматически распределяет задачи между участниками
  * Алгоритм: для каждой задачи размещает её у указанного исполнителя, начиная с текущего времени спринта
  * Также размещает QA задачи и создает связи между dev и QA задачами
+ * Праздничные дни пропускаются: карточка их не пересекает
  */
 export function autoAssignTasks(
   tasks: Task[],
@@ -23,7 +26,8 @@ export function autoAssignTasks(
   qaTasksMap: Map<string, Task>, // Словарь QA задач: ключ - оригинальный ID dev задачи
   existingLinks: TaskLink[], // Существующие связи
   currentCell: number, // Текущая позиция в спринте (в ячейках)
-  totalCells: number // Ячеек в таймлайне спринта: карточки не выходят за его конец
+  totalCells: number, // Ячеек в таймлайне спринта: карточки не выходят за его конец
+  holidayDayIndices: ReadonlySet<number> = new Set() // Праздничные дни таймлайна
 ): AutoAssignResult {
   const newPositions = new Map<string, TaskPosition>(existingPositions);
 
@@ -46,6 +50,8 @@ export function autoAssignTasks(
     developers.map(d => d.id)
   );
 
+  const holidays = dayIntervals(holidayDayIndices, getPartsPerDay());
+
   // Сортируем задачи: сначала по приоритету, затем по размеру
   const sortedTasks = sortTasksByPriorityAndSize(unassignedTasks);
 
@@ -56,7 +62,8 @@ export function autoAssignTasks(
     occupiedIntervals,
     devWorkload,
     currentCell,
-    totalCells
+    totalCells,
+    holidays
   );
 
   // Объединяем новые позиции dev задач с существующими
@@ -83,7 +90,8 @@ export function autoAssignTasks(
     existingLinks,
     occupiedIntervals,
     currentCell,
-    totalCells
+    totalCells,
+    holidays
   );
 
   return {

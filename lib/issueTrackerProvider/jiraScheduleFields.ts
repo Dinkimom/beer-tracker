@@ -18,6 +18,8 @@ const END_DATE_NAMES = new Set([
 
 /** Jira Software Sprint custom field; REST v3 returns sprints only under its `customfield_*` id. */
 const JIRA_SPRINT_FIELD_SCHEMA = 'com.pyxis.greenhopper.jira:gh-sprint';
+/** Jira Software Rank (LexoRank) custom field: порядок бэклога и спринта. */
+const JIRA_RANK_FIELD_SCHEMA = 'com.pyxis.greenhopper.jira:gh-lexo-rank';
 
 interface JiraDateFieldRef {
   id: string;
@@ -27,6 +29,8 @@ interface JiraDateFieldRef {
 interface JiraScheduleFieldRefs {
   due: JiraDateFieldRef;
   dueResolved: boolean;
+  /** Catalog-only: Rank custom field id (e.g. `customfield_10019`, differs per site). */
+  rankFieldId?: string;
   /** Catalog-only: Sprint custom field id (e.g. `customfield_10020`, differs per site). */
   sprintFieldId?: string;
   start: JiraDateFieldRef | null;
@@ -161,28 +165,21 @@ function catalogFieldId(row: Record<string, unknown>): string {
   return '';
 }
 
-function isJiraSprintCatalogRow(row: Record<string, unknown>): boolean {
-  return asRecord(row.schema)?.custom === JIRA_SPRINT_FIELD_SCHEMA;
+function catalogFieldIdBySchema(rows: Record<string, unknown>[], custom: string): string {
+  const row = rows.find((candidate) => asRecord(candidate.schema)?.custom === custom);
+  return row ? catalogFieldId(row) : '';
 }
 
 export function pickJiraScheduleFieldsFromCatalog(catalog: unknown[]): JiraScheduleFieldRefs {
-  const named: JiraNamedDateField[] = [];
-  let sprintFieldId = '';
-  for (const raw of catalog) {
-    const row = asRecord(raw);
-    if (!row) {
-      continue;
-    }
-    if (!sprintFieldId && isJiraSprintCatalogRow(row)) {
-      sprintFieldId = catalogFieldId(row);
-    }
-    const field = readNamedDateField(catalogFieldId(row), raw);
-    if (field) {
-      named.push(field);
-    }
-  }
-  const refs = collectNamedDateFields(named);
-  return sprintFieldId ? { ...refs, sprintFieldId } : refs;
+  const rows = catalog.flatMap<Record<string, unknown>>((raw) => asRecord(raw) ?? []);
+  const named = rows.flatMap((row) => readNamedDateField(catalogFieldId(row), row) ?? []);
+  const sprintFieldId = catalogFieldIdBySchema(rows, JIRA_SPRINT_FIELD_SCHEMA);
+  const rankFieldId = catalogFieldIdBySchema(rows, JIRA_RANK_FIELD_SCHEMA);
+  return {
+    ...collectNamedDateFields(named),
+    ...(sprintFieldId ? { sprintFieldId } : {}),
+    ...(rankFieldId ? { rankFieldId } : {}),
+  };
 }
 
 export function jiraDateFieldValue(isoDate: string, schemaType: string | undefined): string {
@@ -234,6 +231,18 @@ export function applyJiraScheduleFieldRefsToTrackerIssue(
     ...(deadline ? { deadline } : {}),
     ...(start ? { start } : {}),
   };
+}
+
+/** Ранг Jira лежит в site-specific поле Rank; кладём его в общее `rank`. */
+export function applyJiraRankFieldToTrackerIssue(
+  issue: TrackerIssue,
+  rankFieldId: string | undefined
+): TrackerIssue {
+  if (issue.rank || !rankFieldId) {
+    return issue;
+  }
+  const rank = fieldValueFromTrackerIssue(issue, rankFieldId);
+  return typeof rank === 'string' && rank !== '' ? { ...issue, rank } : issue;
 }
 
 async function fetchJiraScheduleFieldRefsFromCatalog(

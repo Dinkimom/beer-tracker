@@ -24,6 +24,15 @@ describe('findFirstFreeCell', () => {
 });
 
 describe('findNextAvailableCell', () => {
+  it('jumps over a blocked holiday instead of crossing it', () => {
+    expect(findNextAvailableCell([{ start: 0, end: 2 }], 2, 0, 30, [{ start: 3, end: 6 }])).toBe(6);
+    expect(findNextAvailableCell([], 3, 0, 30, [{ start: 0, end: 3 }])).toBe(3);
+  });
+
+  it('keeps a start that fits before the holiday', () => {
+    expect(findNextAvailableCell([], 3, 0, 30, [{ start: 3, end: 6 }])).toBe(0);
+  });
+
   it('honours the passed sprint length', () => {
     expect(findNextAvailableCell([], 3, 28, 30)).toBeNull();
     expect(findNextAvailableCell([], 3, 28, 45)).toBe(28);

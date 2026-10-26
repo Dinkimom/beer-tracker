@@ -20,7 +20,8 @@ export function placeDevTasks(
   occupiedIntervals: Map<string, TimeInterval[]>,
   devWorkload: Map<string, number>,
   currentCell: number,
-  totalCells: number
+  totalCells: number,
+  holidays: readonly TimeInterval[] = []
 ): Map<string, TaskPosition> {
   const newPositions = new Map<string, TaskPosition>();
 
@@ -41,7 +42,13 @@ export function placeDevTasks(
 
     // Размещаем задачу у выбранного участника
     const intervals = occupiedIntervals.get(bestDeveloper.id) || [];
-    const startCell = findNextAvailableCell(intervals, taskDuration, currentCell, totalCells);
+    const startCell = findNextAvailableCell(
+      intervals,
+      taskDuration,
+      currentCell,
+      totalCells,
+      holidays
+    );
 
     // Проверяем, что задача поместится
     if (startCell === null) {

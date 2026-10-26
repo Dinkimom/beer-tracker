@@ -46,6 +46,15 @@ describe('autoAssignTasks', () => {
     expect(result.links).toHaveLength(1);
   });
 
+  it('skips holidays for dev and QA cards', () => {
+    setActivePlannerTimelineScale({ estimateUnit: 'day', timeslotsPerDay: 3 });
+    const tasks = [devTask()];
+    const qaMap = createQATasksMap(tasks);
+    const result = autoAssignTasks(tasks, developers, new Map(), qaMap, [], 0, 30, new Set([0, 2]));
+    expect(result.positions.get('T-1')).toMatchObject({ startDay: 1, startPart: 0 });
+    expect(result.positions.get(qaMap.get('T-1')!.id)).toMatchObject({ startDay: 3, startPart: 0 });
+  });
+
   it('skips the QA card when it does not fit before the sprint end', () => {
     setActivePlannerTimelineScale({ estimateUnit: 'day', timeslotsPerDay: 3 });
     const tasks = [devTask({ storyPoints: 10 })];

@@ -41,7 +41,8 @@ function placeNewQaTask(
   developers: Developer[],
   occupiedIntervals: Map<string, TimeInterval[]>,
   currentCell: number,
-  totalCells: number
+  totalCells: number,
+  holidays: readonly TimeInterval[]
 ): { link: TaskLink; position: TaskPosition } | null {
   const qaEngineerId = qaTask.assignee;
   if (!qaEngineerId) {
@@ -51,7 +52,7 @@ function placeNewQaTask(
   const qaEngineerIntervals = occupiedIntervals.get(qaEngineerId) || [];
   const qaPosition = placeQaPhase({
     devPosition,
-    laneIntervals: qaEngineerIntervals,
+    laneIntervals: [...qaEngineerIntervals, ...holidays],
     minStartCell: currentCell,
     qaTask,
     totalCells,
@@ -86,7 +87,8 @@ export function placeQaTaskForDevTask(
   newLinks: TaskLink[],
   occupiedIntervals: Map<string, TimeInterval[]>,
   currentCell: number,
-  totalCells: number
+  totalCells: number,
+  holidays: readonly TimeInterval[] = []
 ): void {
   const existingQaPosition = newPositions.get(qaTask.id);
   if (existingQaPosition) {
@@ -111,7 +113,8 @@ export function placeQaTaskForDevTask(
     developers,
     occupiedIntervals,
     currentCell,
-    totalCells
+    totalCells,
+    holidays
   );
   if (!placement) {
     return;

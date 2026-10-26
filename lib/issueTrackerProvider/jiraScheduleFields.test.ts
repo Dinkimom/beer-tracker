@@ -80,6 +80,14 @@ describe('pickJiraScheduleFieldsFromCatalog', () => {
       ]).sprintFieldId
     ).toBe('customfield_10020');
   });
+
+  it('resolves the Rank custom field id by gh-lexo-rank schema', () => {
+    expect(
+      pickJiraScheduleFieldsFromCatalog([
+        { id: 'customfield_10019', name: 'Rank', schema: { custom: 'com.pyxis.greenhopper.jira:gh-lexo-rank', type: 'any' } },
+      ]).rankFieldId
+    ).toBe('customfield_10019');
+  });
 });
 
 describe('applyJiraScheduleFieldRefsToTrackerIssue', () => {

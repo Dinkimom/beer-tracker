@@ -44,12 +44,32 @@ export function calculateOccupiedIntervals(
   return occupiedIntervals;
 }
 
+/** Дни (праздники) как окна ячеек таймлайна. */
+export function dayIntervals(dayIndices: Iterable<number>, partsPerDay: number): TimeInterval[] {
+  return [...dayIndices].map((day) => ({ start: day * partsPerDay, end: (day + 1) * partsPerDay }));
+}
+
 /**
  * Находит первую свободную позицию после всех занятых интервалов
  * Минимальная позиция - currentCell (не планируем в прошлое)
+ * `blocked` — окна без работы (праздники): карточка их не пересекает и сдвигается за них.
  * Возвращает позицию или null, если задача не поместится
  */
 export function findNextAvailableCell(
+  intervals: TimeInterval[],
+  taskDuration: number,
+  currentCell: number,
+  maxEndCell: number,
+  blocked: readonly TimeInterval[] = []
+): number | null {
+  const start = findNextCellAfterWork(intervals, taskDuration, currentCell, maxEndCell);
+  if (start == null || blocked.length === 0) {
+    return start;
+  }
+  return findFirstFreeCell([...intervals, ...blocked], taskDuration, start, maxEndCell);
+}
+
+function findNextCellAfterWork(
   intervals: TimeInterval[],
   taskDuration: number,
   currentCell: number,

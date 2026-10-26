@@ -61,6 +61,21 @@ describe('loadSprintIssuesForPlanner', () => {
     expect(deps.fetchFromTracker).not.toHaveBeenCalled();
   });
 
+  it('orders issues by tracker rank, unranked last in source order', async () => {
+    const deps = createDeps();
+    deps.querySnapshots.mockResolvedValue([
+      { ...issue('PG-3'), rank: '0|i0003:' },
+      issue('PG-X'),
+      { ...issue('PG-1'), rank: '0|i0001:' },
+      issue('PG-Y'),
+      { ...issue('PG-2'), rank: '0|i0002:' },
+    ]);
+
+    const result = await loadSprintIssuesForPlanner(baseParams, deps);
+
+    expect(result.map((row) => row.key)).toEqual(['PG-1', 'PG-2', 'PG-3', 'PG-X', 'PG-Y']);
+  });
+
   it('falls back to Tracker when the snapshot is empty', async () => {
     const deps = createDeps();
     deps.querySnapshots.mockResolvedValue([]);

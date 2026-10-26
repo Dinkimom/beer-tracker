@@ -54,6 +54,7 @@
 | M7 | **На сайдбар можно бросить только задачу трекера** (включая QA-карточку). Заметки, фото, схемы, виджеты и локальные черновики сайдбар не подсвечивают, а при отпускании над ним возвращаются на место без удаления и без шага undo. | `features/task/utils/canDropTaskOnSidebar.ts`; `lib/swimlane/swimlaneDragIds.ts` (`isActiveSidebarDropBlocked`); `sprintPlannerCollisionDetection.ts` | `canDropTaskOnSidebar.test.ts`, `sprintPlannerCollisionDetection.test.ts`, `swimlaneDragHandlers.sidebarBacklog.test.ts` |
 | M8 | Выбор дорожки — по Y курсора,`over` из dnd-kit только как tie-break. Закреплённая строка рисует только связи, которые её касаются.                                                                                                                                                                                             | `swimlaneDragPositionCalculationHelpers.ts`, `features/swimlane/utils/task-arrows/taskArrowsHelpers.ts`                                               | `sprintPlannerCollisionDetection.test.ts`, `taskArrowsHelpers.test.ts`                                                   |
 | M9 | Дорожка команды`__team__` никогда не уходит в трекер как исполнитель.                                                                                                                                                                                                                                                                                             | `lib/swimlane/teamSwimlaneAssignee.ts`                                                                                                                | `teamSwimlaneAssignee.test.ts`                                                                                           |
+| M10 | **Расстановка пропускает праздники.** Авторасстановка спринта и расстановка «по человеку» не ставят карточку на праздничный день (A3, тот же календарь, что в шапке планера): карточка не пересекает праздник и сдвигается за него целиком. | `features/task/utils/autoAssignTasks/utils/intervalUtils.ts` (`findNextAvailableCell`, `blocked`), `features/task/utils/autoAssignTasks.ts`, `features/task/utils/planAssigneeDraft.ts` | `intervalUtils.test.ts`, `autoAssignTasks.test.ts`, `planAssigneeDraft.test.ts` |
 
 ## 4. Dev-задача и QA
 
@@ -190,6 +191,7 @@
 | K4 | Перенос задачи в другой спринт: добавление в трекере → удаление позиции в исходном → удаление **только связей приложения** (с участием заметки, из `task_links`; связи задача↔задача трекера/Jira не трогаются) → удаление позиции в целевом (задача приходит**без плана и без дат**). Оптимистичное удаление откатывается при ошибке трекера.                                                                                                                                                                                                                                        | `features/sprint/hooks/useTaskOperations/hooks/useTaskSprintOperations*.ts`                                                                                      | `useTaskSprintOperationsDeleteHelpers.test.ts` (связи); остальное — **нет теста** |
 | K5 | **Перенос строки фичи** в другой спринт: сначала строка записывается в документ `feature_lanes` целевого спринта (трекерная — закрепляется, черновик — с `issueKeys` и порядком); при ошибке этой записи заметки не переносятся. Затем заметки и их связи переезжают одной транзакцией с сохранением позиций; ноль перенесённых — ошибка (404), клиент не удаляет заметки локально. Изменение строк рассылается realtime-ресурсом `featureLanes`. | `submitFeatureLaneRowSprintChange.ts`, `lib/sprints/featureLanesDocument.ts` (`transferFeatureLaneRowToDocument`), `lib/sprints/sprintCommentsMoveRepository.ts` | `submitFeatureLaneRowSprintChange.test.ts`, `featureLanesDocument.test.ts`, `sprintCommentsMoveRepository.test.ts` |
 | K6 | Документ «по фичам» сохраняется **слиянием**, а не перезаписью: вкладка присылает `base` (версия с сервера, от которой правила), сервер сливает её правки поверх текущего документа (строки по id, порядок локальный, добавленное другими — в конец, удалённое локально не воскресает). Строка, перенесённая из другого спринта, не теряется из-за устаревшей вкладки. | `lib/sprints/featureLanesMerge.ts`, `app/api/sprints/[sprintId]/feature-lanes/route.ts`, `hooks/featureLanesSessionStore.ts` | `featureLanesMerge.test.ts` |
+| K7 | **Порядок задач спринта — порядок трекера.** Список задач (сайдбар, группы по исполнителю) и расстановка «по человеку» идут по рангу трекера: в Jira — поле Rank (LexoRank, как в бэклоге и на доске Jira), сверху вниз. Если у трекера есть такой ранг (в т.ч. Yandex) — следуем ему же; приложение порядок не пересортировывает. Ранг сравнивается посимвольно; задачи без ранга — после ранжированных, в порядке ответа. Сортировка одна — на выходе загрузки задач спринта, после кэша и снимков PG. | `lib/tracker/loadSprintIssuesForPlanner.ts`, `lib/issueTrackerProvider/jiraIssues.ts` (`rank` из поля Rank), `lib/issueTrackerProvider/jiraScheduleFields.ts` (`rankFieldId`) | `loadSprintIssuesForPlanner.test.ts`, `jiraIssues.test.ts`, `jiraScheduleFields.test.ts` |
 
 ## 15. Plan patch (агент)
 
@@ -247,6 +249,17 @@
 
 - Jira-история маппит только поля `status`, `Story Points`, `Test Points`: кастомные/локализованные поля оценки и поле Sprint не распознаются (переоценка и scope change в burndown Jira не видны). Ключ статуса Jira берётся из имени — зависит от языка.
 - Yandex и Jira по-разному снимают задачу со спринта (K1/K2).
+
+**Порядок задач (K7):**
+
+- Yandex: ранг из API не маппится в `rank` — порядок как в ответе поиска. Если у Yandex есть ранг задач доски/спринта, его нужно положить в `rank`, и K7 заработает без других правок.
+- Авторасстановка всего спринта сортирует по приоритету и размеру, а не по рангу трекера. Под K7 не подходит — решить, нужен ли ранг и там.
+- `occupancy_task_order` (наследие удалённой «Занятости») ещё переставляет задачи в `/api/tracker` поверх ранга для старых спринтов, где строка осталась. Новые строки никто не пишет — кандидат на удаление.
+- Снимки PG, записанные до появления `rank`, без ранга: порядок исправится после фонового обновления из трекера или пересинхронизации.
+
+**Праздники (M10):**
+
+- Автодобавление (M6) и размещение QA кнопкой «+QA» праздники не учитывают. Отсутствия (отпуск, больничный) не учитывает ни одна расстановка.
 
 **Прочее:**
 

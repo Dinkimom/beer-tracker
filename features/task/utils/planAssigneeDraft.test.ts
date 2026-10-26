@@ -172,6 +172,24 @@ describe('buildAssigneePlanDraft', () => {
     expect(placed[1]?.startPart).toBeGreaterThan(0);
   });
 
+  it('пропускает праздник: карточка его не пересекает', () => {
+    const placed = buildAssigneePlanDraft({
+      assigneeIds: new Set(['dev-1']),
+      currentCell: 0,
+      developers,
+      existingPositions: new Map(),
+      holidayDayIndices: new Set([1]),
+      tasks: [
+        task({ assignee: 'dev-1', id: 'first', storyPoints: 2 }),
+        task({ assignee: 'dev-1', id: 'second', storyPoints: 2 }),
+      ],
+    });
+    expect(placed.map((item) => [item.taskId, item.startDay, item.startPart])).toEqual([
+      ['first', 0, 0],
+      ['second', 2, 0],
+    ]);
+  });
+
   it('не ставит задачу, если она вылезет за край спринта', () => {
     const placed = buildAssigneePlanDraft({
       assigneeIds: new Set(['dev-1']),

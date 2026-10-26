@@ -28,6 +28,8 @@ interface UseSprintPlannerAutoAssignHandlersProps {
   developersManagement: {
     sortedDevelopers: Developer[];
   };
+  /** Праздничные дни таймлайна: расстановка их пропускает. */
+  holidayDayIndices: ReadonlySet<number>;
   qaTasksByOriginalId: Map<string, Task>;
   qaTasksMap: Map<string, Task>;
   resetDragStateRef: MutableRefObject<(() => void) | null>;
@@ -58,6 +60,7 @@ interface UseSprintPlannerAutoAssignHandlersProps {
 export function useSprintPlannerAutoAssignHandlers({
   allTasksForDrag,
   developersManagement,
+  holidayDayIndices,
   resetDragStateRef,
   qaTasksByOriginalId,
   qaTasksMap,
@@ -96,7 +99,8 @@ export function useSprintPlannerAutoAssignHandlers({
       qaTasksMap,
       [],
       currentCell,
-      Math.max(1, sprintTimelineWorkingDays) * partsPerDay
+      Math.max(1, sprintTimelineWorkingDays) * partsPerDay,
+      holidayDayIndices
     );
 
     setTaskPositions(() => result.positions);
@@ -142,6 +146,7 @@ export function useSprintPlannerAutoAssignHandlers({
     sprintTimelineWorkingDays,
     allTasksForDrag,
     developersManagement.sortedDevelopers,
+    holidayDayIndices,
     qaTasksMap,
     tasksMap,
     qaTasksByOriginalId,

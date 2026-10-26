@@ -7,6 +7,7 @@ import { jiraAgileSprintIssuesUrl, shouldStopJiraBoardPages } from './jiraCatalo
 import { harvestJiraIssueLinks } from './jiraIssueLinks';
 import { postJiraIssueSearch, readJiraSearchNextPageToken } from './jiraIssueSearchRequest';
 import {
+  applyJiraRankFieldToTrackerIssue,
   applyJiraScheduleFieldRefsToTrackerIssue,
   loadJiraScheduleFieldRefsFromCatalog,
 } from './jiraScheduleFields';
@@ -359,7 +360,7 @@ function applyJiraSprintCustomFieldToTrackerIssue(
   return sprint ? { ...issue, sprint } : issue;
 }
 
-/** Resolves Start date / due / Sprint custom fields via `/field`, then normalizes. */
+/** Resolves Start date / due / Sprint / Rank custom fields via `/field`, then normalizes. */
 export async function normalizeJiraIssuesWithSchedule(
   api: AxiosInstance,
   issues: TrackerIssue[]
@@ -368,14 +369,13 @@ export async function normalizeJiraIssuesWithSchedule(
     return [];
   }
   const refs = await loadJiraScheduleFieldRefsFromCatalog(api);
-  return issues.map((issue) =>
-    normalizeJiraIssue(
-      applyJiraSprintCustomFieldToTrackerIssue(
-        applyJiraScheduleFieldRefsToTrackerIssue(issue, refs),
-        refs.sprintFieldId
-      )
-    )
-  );
+  return issues.map((issue) => {
+    const withSprint = applyJiraSprintCustomFieldToTrackerIssue(
+      applyJiraScheduleFieldRefsToTrackerIssue(issue, refs),
+      refs.sprintFieldId
+    );
+    return normalizeJiraIssue(applyJiraRankFieldToTrackerIssue(withSprint, refs.rankFieldId));
+  });
 }
 
 const JIRA_ISSUE_PAGE_SIZE = 50;
@@ -491,7 +491,7 @@ function fetchJqlSprintIssues(api: AxiosInstance, sprintId: number): Promise<Tra
   return fetchPagedJiraIssueData((startAt, maxResults, nextPageToken) =>
     postJiraIssueSearch(api, {
       fields: JIRA_SPRINT_ISSUE_FIELDS,
-      jql: `sprint = ${sprintId}`,
+      jql: `sprint = ${sprintId} ORDER BY Rank ASC`,
       maxResults,
       nextPageToken,
       startAt,

@@ -1,8 +1,10 @@
+import type { TimeInterval } from '@/features/task/utils/autoAssignTasks/types';
 import type { Developer, Task, TaskPosition } from '@/types';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import {
   calculateOccupiedIntervals,
+  dayIntervals,
   findNextAvailableCell,
 } from '@/features/task/utils/autoAssignTasks/utils/intervalUtils';
 import { isTaskCompleted } from '@/features/task/utils/taskUtils';
@@ -118,12 +120,13 @@ export function positionsOmittingIds(
 
 /** Место целиком внутри спринта. За штриховку после последнего дня не ставим. */
 function planStartCell(
-  intervals: { start: number; end: number }[],
+  intervals: TimeInterval[],
+  holidays: readonly TimeInterval[],
   duration: number,
   currentCell: number,
   timelineCellCount: number
 ): number | null {
-  const fitted = findNextAvailableCell(intervals, duration, currentCell, timelineCellCount);
+  const fitted = findNextAvailableCell(intervals, duration, currentCell, timelineCellCount, holidays);
   if (fitted == null || fitted + duration > timelineCellCount) {
     return null;
   }
@@ -197,13 +200,16 @@ export function buildMovedTaskDraftPosition(input: {
 /**
  * Раскладывает незапланированные задачи выбранных исполнителей
  * в свободные ячейки, не двигая уже сохранённые карточки.
- * Порядок — как в списке (ранг Jira), без пересортировки по приоритету и размеру.
+ * Порядок — как в списке (ранг трекера), без пересортировки по приоритету и размеру.
+ * Праздничные дни пропускаются: карточка их не пересекает.
  */
 export function buildAssigneePlanDraft(input: {
   assigneeIds: ReadonlySet<string>;
   currentCell: number;
   developers: ReadonlyArray<Pick<Developer, 'id' | 'name'>>;
   existingPositions: Map<string, TaskPosition>;
+  /** Индексы праздничных дней таймлайна (как в шапке планера). */
+  holidayDayIndices?: ReadonlySet<number>;
   tasks: readonly Task[];
   /** Длина таймлайна в ячейках. Карточка должна закончиться не позже этого края. */
   timelineCellCount?: number;
@@ -229,11 +235,13 @@ export function buildAssigneePlanDraft(input: {
     input.existingPositions,
     input.developers.map((developer) => developer.id)
   );
+  const holidays = dayIntervals(input.holidayDayIndices ?? [], getPartsPerDay());
   const placed: TaskPosition[] = [];
   for (const candidate of candidates) {
     const intervals = occupied.get(candidate.laneId) ?? [];
     const startCell = planStartCell(
       intervals,
+      holidays,
       candidate.duration,
       input.currentCell,
       timelineCellCount

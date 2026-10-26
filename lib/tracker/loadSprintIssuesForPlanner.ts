@@ -134,9 +134,41 @@ async function loadSprintIssuesFromSnapshots(
   }
 }
 
+function compareTrackerRank(a: string | undefined, b: string | undefined): number {
+  if (a === b) {
+    return 0;
+  }
+  if (a == null || a === '') {
+    return 1;
+  }
+  if (b == null || b === '') {
+    return -1;
+  }
+  return a < b ? -1 : 1;
+}
+
+/**
+ * Порядок трекера (ранг) — канон списка задач спринта: по нему сайдбар и расстановка по человеку.
+ * Кэш и снимки PG приходят без порядка, поэтому сортируем на выходе. Ранг сравниваем
+ * посимвольно (LexoRank), не `localeCompare`. Задачи без ранга — после ранжированных, в исходном порядке.
+ */
+function sortIssuesByTrackerRank(issues: TrackerIssue[]): TrackerIssue[] {
+  if (!issues.some((issue) => issue.rank)) {
+    return issues;
+  }
+  return [...issues].sort((a, b) => compareTrackerRank(a.rank, b.rank));
+}
+
 export async function loadSprintIssuesForPlanner(
   params: LoadSprintIssuesForPlannerParams,
   deps: LoadSprintIssuesForPlannerDeps = defaultDeps
+): Promise<TrackerIssue[]> {
+  return sortIssuesByTrackerRank(await loadUnorderedSprintIssues(params, deps));
+}
+
+async function loadUnorderedSprintIssues(
+  params: LoadSprintIssuesForPlannerParams,
+  deps: LoadSprintIssuesForPlannerDeps
 ): Promise<TrackerIssue[]> {
   if (!params.forceRefresh) {
     const cached = deps.getCached(params.sprintId);
