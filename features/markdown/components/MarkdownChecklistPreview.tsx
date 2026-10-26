@@ -192,11 +192,8 @@ export function MarkdownChecklistPreview({
   const lines = markdown.split('\n');
 
   return (
-    <div
-      className={`${rootClass} min-h-0 overflow-y-auto ${className}`}
-      onMouseDown={variant === 'card' ? stopCardPointerBubble : undefined}
-      onPointerDown={variant === 'card' ? stopCardPointerBubble : undefined}
-    >
+    // Нажатие на тело заметки уходит карточке — иначе её не перетащить; чекбоксы гасят его сами.
+    <div className={`${rootClass} min-h-0 overflow-y-auto ${className}`}>
       {lines.map((line, lineIndex) =>
         renderMarkdownLine(line, lineIndex, markdown, isDragging, onMarkdownChange, variant)
       )}

@@ -81,6 +81,26 @@ const StickyNoteBulletToTask = Extension.create({
   },
 });
 
+/**
+ * Backspace в начале заголовка снимает стиль заголовка (`#` в WYSIWYG не видно, удалить нечем).
+ * Стандартный Backspace превращает в абзац только пустой заголовок, а непустой склеивает с предыдущей строкой.
+ */
+const StickyNoteHeadingBackspace = Extension.create({
+  name: 'stickyNoteHeadingBackspace',
+  priority: 1000,
+  addKeyboardShortcuts() {
+    return {
+      Backspace: ({ editor }) => {
+        const { $from, empty } = editor.state.selection;
+        if (!empty || $from.parentOffset !== 0 || $from.parent.type.name !== 'heading') {
+          return false;
+        }
+        return editor.commands.setParagraph();
+      },
+    };
+  },
+});
+
 /** Только то, что умеет показывать заметка: строки, заголовки 1–3, списки, чекбоксы, инлайн-разметка. */
 export function createStickyNoteRichEditorExtensions(): AnyExtension[] {
   return [
@@ -103,5 +123,6 @@ export function createStickyNoteRichEditorExtensions(): AnyExtension[] {
     StickyNoteLineSource,
     StickyNoteMention,
     StickyNoteBulletToTask,
+    StickyNoteHeadingBackspace,
   ];
 }
