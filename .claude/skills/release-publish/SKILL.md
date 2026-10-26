@@ -52,17 +52,17 @@ Commit messages: Conventional Commit prefix, Russian summary, bullet body, then
 Let `VERSION` be the next version. Replace the previous version with `VERSION` in:
 
 1. `docker-compose.hub.yml` — `${BEER_TRACKER_TAG:-VERSION}` for `app` and `sync-worker`, and the header comment.
-2. `README.md` — the version badge and the sentence naming the published image tag.
+2. `README.md` and `README.en.md` — the version badge and the sentence naming the published image tag.
 3. `CHANGELOG.md` — new top section `## [VERSION] — YYYY-MM-DD` with `### English` then `### Русский`.
    Short product bullets for commits since the previous tag (Settings → «Что нового» shows them).
    Call out actions operators must take (new env vars, DB migrations, OAuth app changes) explicitly.
    Last bullet in each language: the Docker Hub images line (`dinkimom/beer-tracker` and
    `dinkimom/beer-tracker-sync-worker`, tags `VERSION` and `latest`, `linux/amd64`, `linux/arm64`).
 
-Commit only these three files:
+Commit only these four files:
 
 ```bash
-git add docker-compose.hub.yml README.md CHANGELOG.md
+git add docker-compose.hub.yml README.md README.en.md CHANGELOG.md
 git commit -m "chore: Готовит pin образов к релизу VERSION" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```
 

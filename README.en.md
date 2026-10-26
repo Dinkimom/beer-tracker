@@ -11,20 +11,21 @@
 </p>
 
 <p align="center">
-  <strong>A sprint planner on top of Yandex Tracker and Jira</strong><br />
-  Swimlanes by person and day, a backlog, goals, and burndown — issues stay in your tracker.
+  <strong>Sprint planner for Yandex Tracker and Jira</strong><br />
+  Lay out work by person and day, groom the backlog, track goals and burndown. Your issues stay in your tracker.
 </p>
 
 <p align="center">
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" /></a>
   <a href="https://hub.docker.com/r/dinkimom/beer-tracker"><img alt="Docker Hub" src="https://img.shields.io/badge/docker-dinkimom%2Fbeer--tracker-2496ED?logo=docker&logoColor=white" /></a>
-  <a href="./CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-1.16.8-informational" /></a>
+  <a href="./CHANGELOG.md"><img alt="Version" src="https://img.shields.io/badge/version-1.25.0-informational" /></a>
 </p>
 
 <p align="center">
   <a href="#planner">Planner</a> ·
   <a href="#backlog">Backlog</a> ·
-  <a href="#fact">Fact</a> ·
+  <a href="#burndown">Burndown</a> ·
+  <a href="#fact-timeline">Fact timeline</a> ·
   <a href="#retro">Retro</a> ·
   <a href="#collaboration">Collaboration</a> ·
   <a href="#used-by">Used by</a> ·
@@ -34,9 +35,9 @@
 
 ## Planner
 
-The grid is the working days between the sprint start and end in the tracker. A day splits into 2, 3, or 4 timeslots, three by default. One lane per developer and one per tester.
+The grid covers the sprint’s working days, taken from the tracker. Each day has 2, 3, or 4 slots (three by default), and every developer and tester gets their own lane.
 
-Task cards drag, and a resize changes the duration. Leave and tech sprints show on the same lanes. Drop notes during the sprint so nothing gets lost: they show links, checklists, and reactions. On the right are this sprint’s tasks.
+Drag a card to move it, or pull its edge to change the duration. Time off and tech sprints show up on the same lanes. You can pin notes to the board as the sprint goes, so nothing slips; links, checklists, and reactions work inside them. The sprint’s issue list sits on the right.
 
 <p align="center">
   <picture>
@@ -48,7 +49,7 @@ Task cards drag, and a resize changes the duration. Leave and tech sprints show 
 
 ## Backlog
 
-Pick issues outside the sprint, filter by status and people, and move them into the active sprint.
+Browse issues outside the sprint, filter by status and assignee, and pull them into the active sprint.
 
 <p align="center">
   <picture>
@@ -60,7 +61,7 @@ Pick issues outside the sprint, filter by status and people, and move them into 
 
 ## Burndown
 
-Story points and test points by sprint day, with an ideal line and a today marker.
+Story points and test points per sprint day, with an ideal line and a marker for today.
 
 <p align="center">
   <picture>
@@ -70,11 +71,11 @@ Story points and test points by sprint day, with an ideal line and a today marke
   </picture>
 </p>
 
-## Fact
+## Fact timeline
 
-Sync pulls status history from the tracker. On the swimlane that is the **fact timeline**: when an issue was in progress, in review, and in test — next to the plan, not instead of it.
+Sync pulls status history from the tracker and draws a **fact timeline** on the swimlane: when each issue was in progress, in review, and in test. It sits next to the plan rather than replacing it.
 
-Exports run from `/admin/sync`. Scheduled incremental sync uses Redis and `pnpm sync-worker`; a full rescan can run inline. Details are in [INSTALL.md](./docs/INSTALL.md).
+You start a sync from `/admin/sync`. Scheduled incremental sync needs Redis and `pnpm sync-worker`; a full rescan works without the worker. See [INSTALL.md](./docs/INSTALL.md) for details.
 
 <p align="center">
   <picture>
@@ -86,7 +87,7 @@ Exports run from `/admin/sync`. Scheduled incremental sync uses Redis and `pnpm 
 
 ## Retro
 
-Columns, notes, images, comments, and reactions. The **Facts** side panel shows what was closed, added, removed, and carried over, plus cycle time and changelog bottlenecks. Agreements from the retro move into the next sprint.
+Columns, notes, images, comments, and reactions. The **Facts** side panel lists what was closed, added, dropped, and carried over, along with cycle time and bottlenecks from the changelog. Action items from the retro carry over into the next sprint.
 
 <p align="center">
   <picture>
@@ -98,9 +99,9 @@ Columns, notes, images, comments, and reactions. The **Facts** side panel shows 
 
 ## Collaboration
 
-On one sprint you can see who is on the board: avatars in the header and on cards, and what they are doing (viewing, moving, editing, resizing). Someone else’s gesture locks the card. Changes to positions, issues, links, comments, and the retro arrive without a reload. There is a shared sprint timer.
+When several people open the same sprint, you see who is on the board and what they are doing: avatars in the header and on cards, with the action next to them (viewing, moving, editing, resizing). While someone is dragging a card, it is locked for everyone else. Positions, issues, links, comments, and the retro update without a page reload. There is also a shared sprint timer.
 
-Several instances need Redis. Without it, realtime stays in the memory of one process.
+If you run more than one instance, you need Redis. Without it, realtime only works within a single process.
 
 <p align="center">
   <picture>
@@ -133,26 +134,26 @@ cp env.example .env
 docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and connect a tracker. Published images are [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker), tag `1.16.7`.
+Open [http://localhost:3000](http://localhost:3000) and connect your tracker. Images are on Docker Hub as [`dinkimom/beer-tracker`](https://hub.docker.com/r/dinkimom/beer-tracker), tag `1.25.0`.
 
-Install, S3, sync, and developing from source: [docs/INSTALL.md](./docs/INSTALL.md). Per-organization provider: [docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md).
+[docs/INSTALL.md](./docs/INSTALL.md) covers installation, S3, sync, and running from source. [docs/ISSUE_TRACKERS.md](./docs/ISSUE_TRACKERS.md) explains how to pick a tracker per organization.
 
 ## MCP for agents
 
-Remote MCP runs on your instance. The client (Cursor, Claude Desktop / Code) opens a browser, login and consent, then receives a Bearer token. Scope: `mcp:tools`. Details: [SPRINT_CONTEXT.md](./docs/SPRINT_CONTEXT.md).
+The MCP server runs on your own instance. The client (Cursor, Claude Desktop, or Claude Code) opens a browser where you sign in and grant access, and then gets a Bearer token with the `mcp:tools` scope. See [SPRINT_CONTEXT.md](./docs/SPRINT_CONTEXT.md) for details.
 
-The agent reads the plan and proposes edits. A write into the sprint happens only after confirm.
+The agent reads the plan and suggests changes, but nothing is written to the sprint until you confirm. It can:
 
-- Find a sprint (`search_sprints`) and load the planning graph: positions, capacity, goals, notes, links (`get_sprint_context`, `get_sprint_capacity`)
-- Find issues and people (`search_issues`, `resolve_person`), open an issue and a snapshot
-- Propose edits (`propose_plan_patch`) and apply them (`apply_plan_patch`)
-- Read and edit the retro board (`get_retro_board`, `apply_retro_board`)
+- find a sprint (`search_sprints`) and load its planning graph: positions, capacity, goals, notes, links (`get_sprint_context`, `get_sprint_capacity`);
+- find issues and people (`search_issues`, `resolve_person`) and open an issue or its snapshot;
+- propose changes (`propose_plan_patch`) and apply them (`apply_plan_patch`);
+- read and edit the retro board (`get_retro_board`, `apply_retro_board`).
 
-| Case | What it looks like |
-|------|--------------------|
-| “What are the planning risks in sprint Demo 2615?” | Sprint → capacity and overlaps → a short overload read |
-| Plan DEMO-101 onto Alice | Propose positions and notes → a person reviews the preview → apply |
-| “Prepare the retro for Demo 2614” | A fact summary and draft cards on the retro board |
+| Prompt | What happens |
+|--------|--------------|
+| “What are the risks in sprint Demo 2615?” | The agent checks capacity and overlaps and briefly says who is overloaded |
+| “Plan DEMO-101 for Alice” | The agent proposes positions and notes; a person reviews the preview and applies it |
+| “Prepare the retro for Demo 2614” | The agent gathers the sprint’s facts and lays out draft cards on the retro board |
 
 ```json
 {
@@ -179,12 +180,12 @@ The guides below are in Russian.
 
 ## Contributing
 
-Commits with a [DCO](https://developercertificate.org/) sign-off (`git commit -s`) — [CONTRIBUTING.md](./CONTRIBUTING.md). Vulnerabilities — [SECURITY.md](./SECURITY.md).
+Commits need a [DCO](https://developercertificate.org/) sign-off (`git commit -s`); see [CONTRIBUTING.md](./CONTRIBUTING.md). Report vulnerabilities as described in [SECURITY.md](./SECURITY.md).
 
-The historical UI name is Sprint Manager. Stack and layers — [ARCHITECTURE.md](./ARCHITECTURE.md). Screenshot slots — [docs/media/README.md](./docs/media/README.md). Another company on the landing — [docs/companies.md](./docs/companies.md).
+You may see the UI called Sprint Manager in code and older docs; that was its earlier name. [ARCHITECTURE.md](./ARCHITECTURE.md) describes the stack and layers, and [docs/media/README.md](./docs/media/README.md) lists the screenshot slots. To add your company to “Used by”, follow [docs/companies.md](./docs/companies.md).
 
-The epic planner and the quarterly plan have been removed from the product: [product steering](./docs/steering/product.md).
+The epic planner and the quarterly plan were removed from the product; [product steering](./docs/steering/product.md) explains why.
 
 ## License
 
-[Apache License 2.0](./LICENSE). Attribution — [NOTICE](./NOTICE).
+[Apache License 2.0](./LICENSE). Attribution is in [NOTICE](./NOTICE).
