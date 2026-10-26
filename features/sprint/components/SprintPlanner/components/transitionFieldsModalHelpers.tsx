@@ -31,8 +31,14 @@ export function isMultiUserTransitionField(field: TransitionField): boolean {
   return !field.schemaType && KNOWN_MULTI_USER_FIELD_IDS.has(field.id);
 }
 
+/** Fallback ids when schemaType is unknown (e.g. fields parsed from a 422 transition error). */
+const KNOWN_SINGLE_USER_FIELD_IDS = new Set(['assignee', 'qaEngineer', 'reporter']);
+
 export function isSingleUserTransitionField(field: TransitionField): boolean {
-  return field.schemaType === 'user' && !isMultiUserTransitionField(field);
+  if (isMultiUserTransitionField(field)) {
+    return false;
+  }
+  return field.schemaType === 'user' || (!field.schemaType && KNOWN_SINGLE_USER_FIELD_IDS.has(field.id));
 }
 
 function formatTransitionFieldPrimitive(v: unknown): string {

@@ -336,6 +336,9 @@ describe('yandexTrackerProvider domain client', () => {
         },
       })
       .mockResolvedValueOnce({
+        data: { id: 'resolution', schema: { type: 'resolution' } },
+      })
+      .mockResolvedValueOnce({
         data: {
           issueTypesConfig: [
             {
@@ -368,6 +371,9 @@ describe('yandexTrackerProvider domain client', () => {
     expect(get).toHaveBeenCalledWith(
       'https://api.tracker.yandex.net/v3/queues/BT-W3-Q-SCREENS/workflows'
     );
+    // Схема поля — одна на все переходы с этим полем.
+    expect(get).toHaveBeenCalledWith('https://api.tracker.yandex.net/v3/fields/resolution');
+    expect(get.mock.calls.filter(([url]) => String(url).includes('/fields/'))).toHaveLength(1);
     expect(get).toHaveBeenCalledWith('https://api.tracker.yandex.net/v3/workflows/workflowDev');
     expect(get).toHaveBeenCalledWith('https://api.tracker.yandex.net/v3/screens/screen-1');
     expect(get).toHaveBeenCalledWith(

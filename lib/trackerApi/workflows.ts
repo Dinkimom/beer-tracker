@@ -173,13 +173,36 @@ async function resolveCachedScreen(
   return screen;
 }
 
-function collectTransitionScreensForWorkflowFromApi(
+function withFieldSchema(
+  field: TransitionField,
+  schema: TrackerFieldSchema['schema'] | undefined
+): TransitionField {
+  return {
+    ...field,
+    ...(schema?.type ? { schemaType: schema.type } : {}),
+    ...(typeof schema?.items === 'string' ? { schemaItems: schema.items } : {}),
+  };
+}
+
+/** Тип поля из схемы трекера: без него модалка перехода рисует пользователя текстовым инпутом. */
+async function collectTransitionScreensForWorkflowFromApi(
   workflow: { steps: WorkflowStep[] },
   api: AxiosInstance
 ): Promise<Record<string, TransitionField[]>> {
-  return collectTransitionScreensForWorkflow(workflow, (screenId) =>
+  const screens = await collectTransitionScreensForWorkflow(workflow, (screenId) =>
     resolveCachedScreen(screenId, api)
   );
+  const fieldIds = [...new Set(Object.values(screens).flat().map((field) => field.id))];
+  const schemas = new Map(
+    await Promise.all(
+      fieldIds.map(async (id) => [id, (await fetchField(id, api))?.schema] as const)
+    )
+  );
+  const result: Record<string, TransitionField[]> = {};
+  for (const [transitionKey, fields] of Object.entries(screens)) {
+    result[transitionKey] = fields.map((field) => withFieldSchema(field, schemas.get(field.id)));
+  }
+  return result;
 }
 
 function attachResolutionOptionsToTransitionFields(

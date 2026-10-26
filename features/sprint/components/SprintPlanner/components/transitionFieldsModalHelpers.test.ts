@@ -86,4 +86,13 @@ describe('transition multi-user fields', () => {
       assignee: { id: 'u1' },
     });
   });
+
+  // Поле из ответа 422 приходит без schemaType: исполнитель всё равно выбирается из списка людей.
+  it('treats known user field ids without schemaType as single user', () => {
+    expect(isSingleUserTransitionField({ id: 'assignee', display: 'assignee', required: true })).toBe(true);
+    expect(
+      isSingleUserTransitionField({ id: 'assignee', display: 'assignee', required: true, schemaType: 'string' })
+    ).toBe(false);
+    expect(isSingleUserTransitionField({ id: 'comment', display: 'comment', required: true })).toBe(false);
+  });
 });
