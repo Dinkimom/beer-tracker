@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 
-import { deleteSprintGoal, updateSprintGoal } from '@/lib/api/sprintGoals';
+import { createSprintGoal, deleteSprintGoal, updateSprintGoal } from '@/lib/api/sprintGoals';
 
 import {
   applyAddGoalOptimisticUpdate,
@@ -14,9 +14,9 @@ import {
 import {
   handleCheckboxGoalSuccess,
   handleDeleteGoalResult,
+  reconcileAddedGoalWithServer,
   restoreGoalsOnFailure,
 } from './sprintGoalManagementRunHelpers';
-import { submitAddGoalRequest } from './submitAddGoalRequestHelpers';
 
 export async function runCheckboxGoalUpdate(input: {
   checked: boolean;
@@ -76,18 +76,31 @@ export async function runAddGoalUpdate(input: {
   }
 
   try {
-    await submitAddGoalRequest({
-      boardId: input.boardId,
-      forDemoPlanner: input.forDemoPlanner,
-      getTeamByBoardId: input.getTeamByBoardId,
-      goalType: input.goalType,
-      onGoalsUpdate: input.onGoalsUpdate,
-      queryClient: input.queryClient,
-      queryKey: input.queryKey,
+    const team =
+      input.boardId != null ? input.getTeamByBoardId(input.boardId) ?? undefined : undefined;
+    const result = await createSprintGoal({
       sprintId: input.sprintId,
-      tempId,
+      goalType: input.goalType,
       text: input.text,
+      team,
     });
+    if (!result.success) {
+      throw new Error(result.error ?? 'Failed to add goal');
+    }
+    if (input.queryClient && result.item) {
+      reconcileAddedGoalWithServer({
+        forDemoPlanner: input.forDemoPlanner,
+        item: result.item,
+        onGoalsUpdate: input.onGoalsUpdate,
+        queryClient: input.queryClient,
+        queryKey: input.queryKey,
+        sprintId: input.sprintId,
+        tempId,
+        text: input.text,
+      });
+    } else {
+      input.onGoalsUpdate?.();
+    }
   } catch (err) {
     restoreGoalsOnFailure(input.queryClient, input.queryKey, prevGoalsData, err, 'Failed to add goal:');
   }
