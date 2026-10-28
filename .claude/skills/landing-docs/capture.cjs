@@ -1,15 +1,19 @@
-// Снимает кадры посадочной (README) с /demo/planner в docs/media/<slot>-<theme>.png.
+// Снимает кадры посадочной (README) с /demo/planner в docs/media/<slot>-<theme>.webp.
 // Запуск — см. SKILL.md (playwright подтягивается через npx, в зависимости проекта не входит).
 //
 //   node capture.cjs [--base http://localhost:3000] [--out docs/media] [--only backlog,metrics] [--themes light,dark]
 
 /* global console, process, localStorage -- Node-скрипт; localStorage — внутри addInitScript в браузере */
 
+const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
 
 const VIEWPORT = { width: 1680, height: 1050 };
 const SCALE = 2;
+/** Снимаем @2x и ужимаем ровно под показ: README width="900" × 2 для ретины. Лишние пиксели — лишние секунды загрузки. */
+const OUTPUT_WIDTH = 1800;
 const SETTLE_MS = 2500;
 
 /** Слоты из docs/media/README.md. tab — подпись вкладки в шапке на английском. */
@@ -63,9 +67,14 @@ async function capture(browser, args, shot, theme) {
   await page.mouse.move(0, 0);
   await page.waitForTimeout(SETTLE_MS);
 
-  const file = path.join(args.out, `${shot.slot}-${theme}.png`);
+  const file = path.join(args.out, `${shot.slot}-${theme}.webp`);
+  const png = `${file}.png`;
   const clip = shot.clipHeight ? { x: 0, y: 0, width: VIEWPORT.width, height: shot.clipHeight } : undefined;
-  await page.screenshot({ path: file, clip });
+  await page.screenshot({ path: png, clip });
+  // WebP q90 в 4–5 раз легче PNG того же кадра, артефактов на тексте UI не видно.
+  execFileSync('sips', ['--resampleWidth', String(OUTPUT_WIDTH), png], { stdio: 'ignore' });
+  execFileSync('cwebp', ['-quiet', '-q', '90', '-m', '6', png, '-o', file]);
+  fs.rmSync(png);
   await context.close();
   console.log(file);
 }

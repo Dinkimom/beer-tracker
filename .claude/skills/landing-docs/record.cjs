@@ -13,13 +13,16 @@ const path = require('node:path');
 const { chromium } = require('playwright');
 
 const VIEWPORT = { width: 1440, height: 900 };
-/** @2x, как у скринов: на ретине и при увеличении @1x мылится. */
+/** Рендер @2x (резкий текст), а кадр — ровно под показ: README width="900" × 2 для ретины. */
 const SCALE = 2;
+const OUTPUT_WIDTH = 1800;
 /**
- * Честный @2x скриншотом снимается ~5 кадров/с. Поэтому сценарий идёт в SLOWDOWN раз медленнее
- * (мышь, паузы, набор, CSS-анимации), а при сборке длительности кадров делятся обратно: ~20 кадров/с.
+ * Чёткий кадр скриншотом снимается в разы медленнее реального времени. Поэтому сценарий идёт в SLOWDOWN раз
+ * медленнее (мышь, паузы, набор, CSS-анимации), а при сборке длительности кадров делятся обратно.
  */
 const SLOWDOWN = 6;
+/** Кадры короче склеиваются: на GitHub четыре ролика играют разом, лишние кадры браузер не тянет. */
+const MIN_FRAME_MS = 40;
 const HOLD_START_MS = 800;
 const HOLD_END_MS = 1500;
 const STEP_MS = 16;
@@ -260,7 +263,7 @@ async function record(browser, args, spec, theme) {
   const cdp = await context.newCDPSession(page);
   await cdp.send('Animation.enable');
   await cdp.send('Animation.setPlaybackRate', { playbackRate: 1 / SLOWDOWN });
-  const clip = { x: 0, y: 0, ...VIEWPORT, scale: SCALE };
+  const clip = { x: 0, y: 0, ...VIEWPORT, scale: OUTPUT_WIDTH / VIEWPORT.width };
   const raw = [];
   let recording = true;
   const capture = (async () => {
@@ -286,10 +289,18 @@ async function record(browser, args, spec, theme) {
     await context.close();
   }
 
-  const frames = raw.map((f, i) => ({
-    image: f.image,
-    ms: raw[i + 1] ? Math.round((raw[i + 1].t - f.t) / SLOWDOWN) : HOLD_END_MS,
-  }));
+  const frames = [];
+  raw.forEach((f, i) => {
+    const ms = raw[i + 1] ? Math.round((raw[i + 1].t - f.t) / SLOWDOWN) : HOLD_END_MS;
+    const prev = frames[frames.length - 1];
+    if (prev && prev.ms < MIN_FRAME_MS) {
+      // Короткий кадр уступает место следующему: время сохраняется, картинка — свежая.
+      prev.image = f.image;
+      prev.ms += ms;
+    } else {
+      frames.push({ image: f.image, ms });
+    }
+  });
   const file = path.join(args.out, `${spec.clip}-${theme}.webp`);
   assemble(frames, file);
   if (args.frames) {

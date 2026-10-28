@@ -19,9 +19,9 @@ Landing = [`README.md`](../../../README.md) (Russian, primary) and [`README.en.m
 ## 1. Screens
 
 Shots come from `/demo/planner` (fixtures, frozen clock, no login), English UI,
-1680×1050 at @2x, light and dark. [`capture.cjs`](./capture.cjs) does it: sets
+1680×1050 rendered @2x and downscaled to 1800 px wide (README shows them at `width="900"`), light and dark. [`capture.cjs`](./capture.cjs) does it: sets
 language/theme/sidebar/onboarding in localStorage, hides the Next.js Dev Tools badge,
-clicks the header tab and writes `docs/media/<slot>-<theme>.png`.
+clicks the header tab and writes `docs/media/<slot>-<theme>.webp` (WebP q90).
 
 1. Dev server must answer: `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/demo/planner` → `200`.
    If not, ask the user to start it (`pnpm docker:dev` or `pnpm dev`); do not start a second one.
@@ -35,10 +35,10 @@ clicks the header tab and writes `docs/media/<slot>-<theme>.png`.
 
    `Executable doesn't exist` → once: `npx -y -p playwright@1.63.0 playwright install chromium`.
    Other flags: `--base <url>`, `--out <dir>`, `--themes light`.
-3. **Look at every new PNG** (Read) before keeping it: no toasts, spinners, empty states,
+3. **Look at every new shot** (Read) before keeping it: no toasts, spinners, empty states,
    onboarding popovers, cut-off menus; dark and light show the same scene. Retake a broken slot
    with `--only`. If the demo itself looks wrong, report it — don't patch around it in the script.
-4. `git diff --stat docs/media` — if a slot didn't change visually but the PNG did (antialiasing noise),
+4. `git diff --stat docs/media` — if a slot didn't change visually but the file did (antialiasing noise),
    `git checkout` it so the diff only carries real changes.
 5. New screen or setting in the planner header that the landing doesn't show (e.g. a new tab)?
    Don't add a slot silently: propose it to the user with a test shot. When agreed — add an entry to
@@ -50,11 +50,11 @@ clicks the header tab and writes `docs/media/<slot>-<theme>.png`.
 
 Sections that show a gesture use an animated WebP instead of a still: `drag-resize`, `link`, `note` (Planner)
 and `retro` (Retro). [`record.cjs`](./record.cjs) plays each scenario in `CLIPS` with a drawn cursor
-(headless Chromium has none) and builds `docs/media/<clip>-<theme>.webp` (2880×1800, @2x like the stills)
+(headless Chromium has none) and builds `docs/media/<clip>-<theme>.webp` (1800×1125: rendered @2x, sized for `width="900"` on retina)
 with `img2webp` (Homebrew `webp`). GitHub renders animated WebP in README; GIF also works there but has
 256 colours (banding on UI gradients) and is several times heavier.
 
-CDP screencast only gives CSS-pixel frames, and a true @2x screenshot takes ~200 ms. So the scenario runs
+CDP screencast only gives CSS-pixel frames, and a sharp screenshot takes ~150–200 ms. So the scenario runs
 `SLOWDOWN`× slower (mouse, pauses, typing, CSS animations via `Animation.setPlaybackRate`) while a screenshot
 loop captures it, and frame durations are divided back: ~16–18 fps at normal speed. A full run of all clips
 takes ~10 minutes; run it in the background. Pointer/typing timing in scenarios is in playback milliseconds:
@@ -74,7 +74,10 @@ NODE_PATH="$NM" node .claude/skills/landing-docs/record.cjs --only note --frames
 2. Scenarios find elements by visible text of demo fixtures (`Mobile: Apple Pay button`, `Receipt email template`).
    Fixture text changed → fix the scenario, not the fixtures. A gesture that does nothing on fixtures (a demo
    router that doesn't answer like the real API) is a demo bug: report or fix it in `lib/demo/` with a test.
-3. Size: each file ≲ 3 MB. Longer typing or idle frames grow it; trim pauses in the scenario.
+3. Size: each file ≲ 1 MB, frames ≥ `MIN_FRAME_MS` (40 ms, shorter ones are merged). GitHub strips
+   `loading="lazy"`, so every image on the README loads at page open and four clips play at once: extra pixels
+   or frames show up as a blank page for seconds and as slowed playback. Don't raise the resolution above
+   1800 px or drop the frame cap.
 4. A new clip follows the same rule as a new slot: propose it with a test recording first, then add it to
    `CLIPS`, the table in `docs/media/README.md` and both READMEs.
 
