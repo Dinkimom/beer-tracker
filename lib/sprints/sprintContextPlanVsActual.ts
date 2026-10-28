@@ -3,8 +3,6 @@ import type {
   SprintContextPosition,
 } from '@/lib/sprints/sprintContextTypes';
 
-const DONE_STATUS_TYPES = new Set(['done', 'closed', 'resolved', 'cancelled', 'canceled']);
-
 function normalizeStatusKey(value: string | null | undefined): string {
   return (value ?? '').trim().toLowerCase().replaceAll(/\s+/g, '_');
 }
@@ -14,23 +12,11 @@ export function isClosedSprintStatus(status: string | undefined): boolean {
   return key === 'closed' || key === 'done' || key === 'archived' || key === 'completed';
 }
 
-function isDoneIssueStatus(input: {
-  statusKey?: string | null;
-  statusTypeKey?: string | null;
-}): boolean {
-  const typeKey = normalizeStatusKey(input.statusTypeKey);
-  if (typeKey && DONE_STATUS_TYPES.has(typeKey)) {
-    return true;
-  }
-  const statusKey = normalizeStatusKey(input.statusKey);
-  return Boolean(statusKey && DONE_STATUS_TYPES.has(statusKey));
-}
-
 export function buildPlanVsActual(input: {
   inSprint?: boolean;
+  /** Задача сделана по канону «сделано» (`isTaskCompleted` со справочником трекера). */
+  issueCompleted?: boolean;
   issueFound?: boolean;
-  issueStatusKey?: string | null;
-  issueStatusTypeKey?: string | null;
   position: Pick<SprintContextPosition, 'duration' | 'plannedDuration'>;
   sprintStatus?: string;
   /** False when soft tracker load failed entirely — skip carriedOver guesses. */
@@ -55,12 +41,7 @@ export function buildPlanVsActual(input: {
     result.carriedOver = true;
     return result;
   }
-  if (
-    !isDoneIssueStatus({
-      statusKey: input.issueStatusKey,
-      statusTypeKey: input.issueStatusTypeKey,
-    })
-  ) {
+  if (!input.issueCompleted) {
     result.carriedOver = true;
   }
   return result;

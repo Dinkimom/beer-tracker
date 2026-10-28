@@ -24,6 +24,18 @@ describe('buildPlanVsActual', () => {
     ).toBe(true);
   });
 
+  it('marks carriedOver on closed sprint only when the issue is not done by the canon', () => {
+    const base = {
+      inSprint: true,
+      issueFound: true,
+      position: { duration: 2, plannedDuration: 2 },
+      sprintStatus: 'closed',
+      trackerIssuesLoaded: true,
+    };
+    expect(buildPlanVsActual({ ...base, issueCompleted: true }).carriedOver).toBeUndefined();
+    expect(buildPlanVsActual({ ...base, issueCompleted: false }).carriedOver).toBe(true);
+  });
+
   it('skips carriedOver when tracker load failed', () => {
     expect(
       buildPlanVsActual({

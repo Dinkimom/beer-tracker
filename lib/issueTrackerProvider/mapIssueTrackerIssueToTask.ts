@@ -135,7 +135,8 @@ function resolvedAtFromCustomFields(customFields: Record<string, unknown> | unde
   return typeof value === 'string' ? value : undefined;
 }
 
-function resolutionFromCustomFields(customFields: Record<string, unknown> | undefined): string | undefined {
+/** Резолюция задачи из customFields провайдера (Tracker — объект `{ key }`, Jira — строка/объект). */
+export function resolutionFromCustomFields(customFields: Record<string, unknown> | undefined): string | undefined {
   const value = customFields?.resolution;
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return undefined;

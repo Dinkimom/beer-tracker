@@ -11,7 +11,9 @@ import {
   getIssueTrackerProviderClientForOrganization,
   getIssueTrackerProviderClientFromRequest,
 } from '@/lib/issueTrackerProvider/clientFactory';
+import { resolutionFromCustomFields } from '@/lib/issueTrackerProvider/mapIssueTrackerIssueToTask';
 import { resolveMcpIssueStatusCategory } from '@/lib/mcp/resolveMcpIssueStatusCategory';
+import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
 import {
   buildSprintContextAgenda,
@@ -28,6 +30,7 @@ import {
   loadSprintContextTeamMembers,
   stampCapacityWithTeamRoles,
 } from '@/lib/sprints/sprintContextTeamMembers';
+import { isTaskCompleted, type SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import { listStaff } from '@/lib/staffTeams';
 
 interface AssigneeInfo {
@@ -44,8 +47,10 @@ interface IssueInfo {
   parentKey: string | null;
   priority: string | null;
   qaEngineerDisplay: string | null;
+  resolution: string | null;
   sprintHistory: Array<{ name: string; sprintId: string }>;
   statusDisplay: string | null;
+  statusId: string | null;
   statusKey: string | null;
   statusTypeKey: string | null;
   storyPoints: number | null;
@@ -142,8 +147,10 @@ function mapIssueInfo(issue: IssueTrackerIssue, inSprint: boolean): IssueInfo {
     parentKey: issue.parent?.key?.trim() || null,
     priority: issue.priority?.display?.trim() || issue.priority?.key?.trim() || null,
     qaEngineerDisplay: issue.qaEngineer?.display?.trim() || null,
+    resolution: resolutionFromCustomFields(issue.customFields)?.trim() || null,
     sprintHistory: mapSprintHistory(issue.sprint),
     statusDisplay: issue.status?.display?.trim() || null,
+    statusId: issue.status?.id?.trim() || null,
     statusKey: issue.status?.key?.trim() || null,
     statusTypeKey: issue.statusType?.key?.trim() || null,
     storyPoints: issue.storyPoints ?? null,
@@ -171,6 +178,8 @@ async function softLoadSprintIssues(input: {
   taskIds: string[];
   useStoredTracker: boolean;
 }): Promise<{
+  /** Справочник статусов для канона «сделано»; null — не загрузился. */
+  completionRules: SprintTaskCompletionRules | null;
   issuesByKey: Map<string, IssueInfo>;
   loaded: boolean;
   warning?: string;
@@ -183,6 +192,12 @@ async function softLoadSprintIssues(input: {
       sprintStatus: input.sprintStatus,
     });
     const issuesByKey = mapIssuesByKey(issues);
+    const completionRules = await loadSprintTaskCompletionRules(input.organizationId, issueTracker).catch(
+      (error: unknown) => {
+        console.warn(`[sprint-context] soft status catalog(${input.sprintId}):`, error);
+        return null;
+      }
+    );
 
     const missing = input.taskIds.filter((taskId) => taskId && !issuesByKey.has(taskId));
     if (missing.length > 0) {
@@ -204,6 +219,7 @@ async function softLoadSprintIssues(input: {
     const stillMissing = input.taskIds.filter((taskId) => taskId && !issuesByKey.has(taskId));
     if (stillMissing.length > 0) {
       return {
+        completionRules,
         issuesByKey,
         loaded: true,
         warning: `tracker_issues_partial: missing summaries for ${stillMissing.slice(0, 8).join(', ')}${
@@ -211,10 +227,11 @@ async function softLoadSprintIssues(input: {
         }`,
       };
     }
-    return { issuesByKey, loaded: true };
+    return { completionRules, issuesByKey, loaded: true };
   } catch (error) {
     console.warn(`[sprint-context] soft issues(${input.sprintId}):`, error);
     return {
+      completionRules: null,
       issuesByKey: new Map(),
       loaded: false,
       warning: `tracker_issues_unavailable: could not load issue summaries for sprint ${input.sprintId}`,
@@ -227,7 +244,8 @@ function enrichPosition(
   lookup: ReturnType<typeof buildAssigneeLookup>,
   issuesByKey: Map<string, IssueInfo>,
   sprintStatus: string | undefined,
-  trackerIssuesLoaded: boolean
+  trackerIssuesLoaded: boolean,
+  completionRules: SprintTaskCompletionRules | null
 ): { position: SprintContextPosition; unresolved: boolean } {
   const next = { ...position };
   const assignee = resolveAssignee(position.assigneeId, lookup);
@@ -255,9 +273,18 @@ function enrichPosition(
   }
   next.planVsActual = buildPlanVsActual({
     inSprint: issue?.inSprint,
+    issueCompleted:
+      issue != null &&
+      isTaskCompleted(
+        {
+          originalStatus: issue.statusKey ?? undefined,
+          originalStatusId: issue.statusId ?? undefined,
+          resolution: issue.resolution ?? undefined,
+          statusTypeKey: issue.statusTypeKey ?? undefined,
+        },
+        completionRules
+      ),
     issueFound: issue != null,
-    issueStatusKey: issue?.statusKey,
-    issueStatusTypeKey: issue?.statusTypeKey,
     position,
     sprintStatus,
     trackerIssuesLoaded,
@@ -336,6 +363,7 @@ export async function enrichSprintContextPayload(input: {
   const lookup = buildAssigneeLookup(staffRows);
 
   const {
+    completionRules,
     issuesByKey,
     loaded: trackerIssuesLoaded,
     warning: issuesWarning,
@@ -359,7 +387,8 @@ export async function enrichSprintContextPayload(input: {
       lookup,
       issuesByKey,
       sprintStatus,
-      trackerIssuesLoaded
+      trackerIssuesLoaded,
+      completionRules
     );
     if (unresolved && position.assigneeId) {
       unresolvedAssigneeIds.push(position.assigneeId);
