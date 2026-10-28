@@ -167,6 +167,18 @@ describe('handleDemoFixtureRequest', () => {
     expect(data['DEMO-104']?.changelog.length).toBeGreaterThan(1);
   });
 
+  it('returns the created tracker link so the planner keeps the arrow', () => {
+    const result = handleDemoFixtureRequest(
+      cfg('post', '/issues/DEMO-101/links', {
+        data: JSON.stringify({ relationship: 'relates', targetIssueKey: 'DEMO-103' }),
+      })
+    );
+    expect(result.status).toBe(200);
+    expect(result.data).toEqual({
+      link: expect.objectContaining({ id: expect.any(String), linkedIssueKey: 'DEMO-103', relationship: 'relates' }),
+    });
+  });
+
   it('returns assignee velocity averages for demo developers', () => {
     const result = handleDemoFixtureRequest(
       cfg('get', `/sprints/assignee-velocity?sprintIds=${DEMO_SPRINT_ID}`)

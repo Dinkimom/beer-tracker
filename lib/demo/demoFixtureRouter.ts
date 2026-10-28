@@ -319,7 +319,7 @@ export function handleDemoFixtureRequest(config: InternalAxiosRequestConfig): De
     () => handleAgentSessions(path, method),
     () => handleDemoWorkflow(path, method, body),
     () => handleDemoIssueSprint(path, method, body),
-    () => handleDemoMisc(path, method, params),
+    () => handleDemoMisc(path, method, params, body),
   ];
 
   for (const run of handlers) {

@@ -20,8 +20,25 @@ function handleIssueByKey(path: string): DemoFixtureResult {
   return notFound();
 }
 
-function handleIssues(path: string, method: string): DemoFixtureResult | null {
+/** Связь трекера между задачами: без `link` в ответе планер откатывает стрелку. */
+function handleCreateIssueLink(path: string, body: unknown): DemoFixtureResult {
+  const key = path.split('/')[2];
+  const target = (body as { targetIssueKey?: string } | null)?.targetIssueKey ?? '';
+  return ok({
+    link: {
+      direction: 'outward',
+      id: `demo-link-${key}-${target}`,
+      linkedIssueKey: target,
+      relationship: 'relates',
+    },
+  });
+}
+
+function handleIssues(path: string, method: string, body: unknown): DemoFixtureResult | null {
   if (!path.startsWith('/issues/')) return null;
+  if (method === 'post' && /^\/issues\/[^/]+\/links$/.test(path)) {
+    return handleCreateIssueLink(path, body);
+  }
   if (path === '/issues/changelog' && method === 'post') {
     return ok(buildDemoIssueChangelogs());
   }
@@ -89,7 +106,8 @@ function handleEmptyCollections(path: string, method: string): DemoFixtureResult
 export function handleDemoMisc(
   path: string,
   method: string,
-  params: URLSearchParams
+  params: URLSearchParams,
+  body: unknown
 ): DemoFixtureResult | null {
   if (path === '/holidays/isdayoff' && method === 'get') {
     const date1 = params.get('date1') ?? '2026-10-13';
@@ -99,5 +117,5 @@ export function handleDemoMisc(
   if (path === '/realtime/presence' && method === 'put') return ok({ applied: true });
   if (path === '/analytics/events' && method === 'post') return ok({ ok: true });
 
-  return handleIssues(path, method) ?? handleEmptyCollections(path, method);
+  return handleIssues(path, method, body) ?? handleEmptyCollections(path, method);
 }
