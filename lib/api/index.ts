@@ -9,7 +9,6 @@ export * from './analytics';
 export * from './notifications';
 export * from './boards';
 export * from './calendar';
-export * from './features';
 export * from './holidays';
 export * from './issues';
 export * from './linkPreview';

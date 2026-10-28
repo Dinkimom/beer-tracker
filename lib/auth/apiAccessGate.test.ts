@@ -11,10 +11,10 @@ describe('isPublicApiPath', () => {
     expect(isPublicApiPath('/api/onprem/setup-state', false)).toBe(true);
   });
 
-  it('requires a session for planner, tracker proxy and feature routes', () => {
+  it('requires a session for planner, tracker proxy and file routes', () => {
     expect(isPublicApiPath('/api/sprints/12/positions', false)).toBe(false);
     expect(isPublicApiPath('/api/issues/BT-1/status', false)).toBe(false);
-    expect(isPublicApiPath('/api/features', false)).toBe(false);
+    expect(isPublicApiPath('/api/sprint-goals', false)).toBe(false);
     expect(isPublicApiPath('/api/files/upload', false)).toBe(false);
     expect(isPublicApiPath('/api/authx', false)).toBe(false);
   });

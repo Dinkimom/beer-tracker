@@ -96,9 +96,6 @@ if (typeof setInterval !== 'undefined' && !globalForApiCache.beerTrackerApiCache
  * Генераторы ключей для кэша
  */
 export const cacheKeys = {
-  /** boardId влияет на выборку задач из CH по команде доски */
-  burndown: (sprintId: number, boardId?: number) =>
-    `burndown:${sprintId}:${boardId ?? 'na'}`,
   burndownFromPg: (organizationId: string, sprintId: number, boardId?: number) =>
     `burndown:pg:${organizationId}:${sprintId}:${boardId ?? 'na'}`,
   sprints: (boardId: number) => `sprints:${boardId}`,
@@ -112,8 +109,6 @@ export const cacheKeys = {
   sprintInfo: (sprintId: number) => `sprintInfo:${sprintId}`,
   /** POST /issues/_search по filter sprint (задачи спринта). */
   sprintIssues: (sprintId: number) => `sprintIssues:${sprintId}`,
-  backlog: (boardId: number, page: number) => `backlog:${boardId}:${page}`,
-  /** Бэклог из issue_snapshots (tenant + board + страница + размер страницы). */
   backlogFromPg: (organizationId: string, boardId: number, page: number, perPage: number) =>
     `backlog:pg:${organizationId}:${boardId}:${page}:${perPage}`,
   issueChangelog: (issueKey: string) => `changelog:${issueKey}`,
@@ -121,42 +116,6 @@ export const cacheKeys = {
   issueDetail: (organizationId: string, issueKey: string) =>
     `issue:detail:${organizationId}:${issueKey}`,
   issueFull: (issueKey: string) => `issue:${issueKey}`,
-  stories: (boardId: number, page: number, epicKey?: string) =>
-    epicKey ? `stories:${boardId}:${page}:epic:${epicKey}` : `stories:${boardId}:${page}`,
-  /** Список стори/эпиков из PG (tenant + board + страница). */
-  storiesListFromPg: (
-    organizationId: string,
-    boardId: number,
-    page: number,
-    perPage: number,
-    epicKey?: string | null
-  ) =>
-    epicKey
-      ? `stories:pg:${organizationId}:${boardId}:${page}:n${perPage}:epic:${epicKey}`
-      : `stories:pg:${organizationId}:${boardId}:${page}:n${perPage}`,
-  story: (storyKey: string) => `story:${storyKey}`,
-  storyFromPg: (organizationId: string, storyKey: string) =>
-    `story:pg:${organizationId}:${storyKey}`,
-  /** Список эпиков из PG. */
-  epicsListFromPg: (
-    organizationId: string,
-    boardId: number,
-    page: number,
-    perPage: number,
-    minYear: number | null
-  ) =>
-    `epics:pg:${organizationId}:${boardId}:${page}:n${perPage}:y${minYear ?? 'na'}`,
-  /** Epic deep из PG. */
-  epicDeepFromPg: (organizationId: string, epicKey: string) =>
-    `epic:deep:pg:${organizationId}:${epicKey}`,
-  storyTasks: (storyKey: string, boardId?: number) =>
-    boardId ? `story-tasks:${storyKey}:board:${boardId}` : `story-tasks:${storyKey}`,
-  epicTasks: (epicKey: string, boardId?: number) =>
-    boardId ? `epic-tasks:${epicKey}:board:${boardId}` : `epic-tasks:${epicKey}`,
-  features: (boardId: number) => `features:${boardId}`,
-  feature: (featureId: string) => `feature:${featureId}`,
-  featureDocuments: (featureId: string) => `feature-documents:${featureId}`,
-  documentTypes: () => 'document-types',
   queueWorkflows: (queueKey: string) => `queue-workflows:${queueKey}`,
   queueByKey: (queueKey: string) => `queue-by-key:${queueKey.trim().toUpperCase()}`,
   queueIssueTypesConfig: (queueKey: string) =>
@@ -205,10 +164,6 @@ export const invalidateCache = {
   sprints: (boardId: number) => {
     apiCache.delete(cacheKeys.sprints(boardId));
   },
-  sprintInfo: (sprintId: number) => {
-    apiCache.delete(cacheKeys.sprintInfo(sprintId));
-    apiCache.deleteByPattern(new RegExp(`^jira:sprint-info:${sprintId}:`));
-  },
   backlog: (boardId: number) => {
     apiCache.deleteByPattern(`^backlog:${boardId}:`);
     const b = Number(boardId);
@@ -232,30 +187,6 @@ export const invalidateCache = {
     apiCache.deleteByPattern(new RegExp(`^jira:sprint-issues:${sprintId}:`));
     apiCache.deleteByPattern(new RegExp(`^jira:sprint-info:${sprintId}:`));
   },
-  stories: (boardId: number) => {
-    apiCache.deleteByPattern(`^stories:${boardId}:`);
-    const b = Number(boardId);
-    apiCache.deleteByPattern(new RegExp(`^stories:pg:.+:${b}:`));
-  },
-  story: (storyKey: string) => {
-    apiCache.delete(cacheKeys.story(storyKey));
-    apiCache.delete(cacheKeys.storyTasks(storyKey));
-  },
-  epicTasks: (epicKey: string) => {
-    const escaped = epicKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    apiCache.deleteByPattern(new RegExp(`^epic-tasks:${escaped}`));
-  },
-  features: (boardId: number) => {
-    apiCache.delete(cacheKeys.features(boardId));
-  },
-  feature: (featureId: string) => {
-    apiCache.delete(cacheKeys.feature(featureId));
-    apiCache.delete(cacheKeys.featureDocuments(featureId));
-  },
-  documentTypes: () => {
-    apiCache.delete(cacheKeys.documentTypes());
-  },
-  /** После смены токена / Cloud Org ID / URL API трекера в админке. */
   adminTrackerCatalogQueuesBoards: (organizationId: string) => {
     const escaped = organizationId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     apiCache.deleteByPattern(new RegExp(`^admin:tracker-catalog:qb:${escaped}:`));

@@ -120,11 +120,7 @@ Sync-worker миграции не запускает. На пустой БД о�
 - `user_notifications` — in-app уведомления.
 - `analytics_events` — append-only продуктовая аналитика.
 
-**Фичи, стори, документы**
-- `features`, `feature_documents`, `feature_diagrams`, `feature_grooming_diagrams`, `feature_grooming_todos` — фичи и их артефакты.
-- `document_types` — справочник типов документов (сид), `document_versions` — история версий.
-
-**Без кода** — `story_*`, `quarterly_plans`, `quarterly_plan_v2_*`, см. [Таблицы без кода](#таблицы-без-кода-удаление-отложено).
+**Без кода** — `features`, `feature_*`, `document_*`, `story_*`, `quarterly_plans`, `quarterly_plan_v2_*`, см. [Таблицы без кода](#таблицы-без-кода-удаление-отложено).
 
 **Внешние таблицы (не создаются приложением)**
 - `overseer.teams`, `overseer.staff_teams`, `overseer.staff_roles`, `overseer.roles`, `public.registry_employees` — проверяются preflight при `DB_CONTRACT_MODE=compatibility`; источник разового копирования в `add-staff-teams.sql`.
@@ -147,6 +143,7 @@ Sync-worker миграции не запускает. На пустой БД о�
 | `quarterly_plans` | Квартальный план | baseline | нет |
 | `quarterly_plan_v2_epics`, `quarterly_plan_v2_story_phases`, `quarterly_plan_v2_excluded_stories`, `quarterly_plan_v2_story_events` | Квартальный план v2 | только старые инсталляции (файл `quarterly_plan_v2_tables.sql` удалён, в baseline их нет) | нет |
 | `story_task_positions`, `story_draft_tasks`, `story_task_links` | Редактор эпиков / стори | baseline | нет |
+| `features`, `feature_documents`, `feature_diagrams`, `feature_grooming_diagrams`, `feature_grooming_todos`, `document_types`, `document_versions` | Фичи и их документы (`/api/features`, без tenant-проверки; клиент удалён вместе с редактором эпиков, API — 2026-10-29) | baseline | нет |
 
 Не путать: `board_availability_events` (отпуска, техспринты) — живая таблица, хоть роут и остался под `/api/quarterly-plans/availability/board-events`. `occupancy_task_order` тоже живая: её читают при сортировке задач.
 

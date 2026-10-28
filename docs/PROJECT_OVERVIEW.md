@@ -270,7 +270,6 @@ features/ / components/ / hooks/
 | `/api/tracker` | Задачи спринта |
 | `/api/backlog` | Бэклог |
 | `/api/issues/[issueKey]` | Задача, переходы, связи и др. |
-| `/api/features` | Фичи (deprecated) |
 | `/api/quarterly-plans/availability/board-events` | События доступности (URL исторический) |
 | `/api/sprint-goals` | Цели спринта |
 | `/api/sprints/[sprintId]/sprint-context` | Контекст спринта для агента |
@@ -295,7 +294,7 @@ features/ / components/ / hooks/
 | `sprint_goals`, `sprint_plan_captures` | Цели и план на старте |
 | `retro_boards`, `retro_column_templates` | Ретро |
 | `agent_sessions`, `plan_patch_*_previews` | Сессии агента и предложения плана |
-| `feature_documents` (+ versions) | Документы фич (deprecated) |
+| `features`, `feature_*`, `document_*` | Остаток фич и документов: код удалён, таблицы в схеме |
 | `quarterly_plans`, `quarterly_plan_v2_*` | Остаток квартального плана v2: код удалён, таблицы в схеме |
 | `board_availability_events` | Отпуска / техспринты |
 | `issue_snapshots` | Снимки задач из sync |

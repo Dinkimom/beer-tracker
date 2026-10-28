@@ -22,7 +22,7 @@ features/ / components/ / hooks/
 | UI | React, хуки, сторы; без raw `fetch('/api/...')` и без импортов из `app/api` | `features/sprint/...` |
 | `lib/api/*` | axios → backend; публичные типы ответов | `lib/api/sprints.ts`, `lib/api/admin/` |
 | `app/api/**/route.ts` | HTTP-контракт; **без SQL** (`api/no-direct-db`) | `app/api/sprints/.../route.ts` |
-| `lib/<domain>` | SQL, транзакции, оркестрация для routes | `lib/sprints/`, `lib/admin/`, `lib/features/` |
+| `lib/<domain>` | SQL, транзакции, оркестрация для routes | `lib/sprints/`, `lib/admin/`, `lib/issues/` |
 
 **ESLint:** `api/no-direct-db`, `layers/no-app-api-import`, `layers/no-features-import` (`lib` ↛ `features`). Правила и чеклисты волн: [`docs/ARCHITECTURE_UNIFORMITY.md`](./docs/ARCHITECTURE_UNIFORMITY.md), краткие нормы — [`AGENTS.md`](./AGENTS.md).
 

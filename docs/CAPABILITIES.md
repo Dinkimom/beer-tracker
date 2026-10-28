@@ -215,7 +215,7 @@ Feature-based структура: домены в `features/`, серверна�
 - **Клиент** → `lib/api/*` (axios) → Next.js API Routes
 - **Сервер** → `/api/*`: API трекера, PostgreSQL (`lib/<домен>/*Repository.ts`)
 
-Основные эндпоинты: `/api/sprints`, `/api/tracker`, `/api/backlog`, `/api/issues/[issueKey]`, `/api/sprint-goals`, `/api/teams/members`, `/api/mcp`. Legacy: `/api/features`.
+Основные эндпоинты: `/api/sprints`, `/api/tracker`, `/api/backlog`, `/api/issues/[issueKey]`, `/api/sprint-goals`, `/api/teams/members`, `/api/mcp`.
 
 Подробнее: [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
 
@@ -232,7 +232,7 @@ Feature-based структура: домены в `features/`, серверна�
 - `board_availability_events` — доступность участников
 - `agent_sessions`, `plan_patch_position_previews`, `plan_patch_goal_previews` — агент и его предложения
 
-Таблицы `feature_documents*` и `quarterly_plan_v2_*` — leftover deprecated-экранов (код квартального плана удалён), не развивать. Схема: миграции `database/migrations/`.
+Таблицы `features`, `feature_*`, `document_*` и `quarterly_plan_v2_*` — остатки удалённых экранов (код фич и квартального плана удалён), не развивать. Схема: миграции `database/migrations/`.
 
 ## Ограничения
 

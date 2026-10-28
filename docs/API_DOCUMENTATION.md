@@ -60,7 +60,7 @@ export async function fetchSprintGoals(sprintId: number, goalType: 'delivery' | 
 | Ошибки | `handleApiError(error, context)` из [`lib/api-error-handler.ts`](../lib/api-error-handler.ts): 401/429 трекера, `TrackerApiConfigError` (например 422 «трекер не подключён»), неподдерживаемая операция провайдера |
 | Трекер (Yandex / Jira) | `getIssueTrackerProviderClientFromRequest(request)` из [`lib/issueTrackerProvider/clientFactory.ts`](../lib/issueTrackerProvider/clientFactory.ts) → `IssueTrackerProviderClient`; для серверных задач по сохранённому токену организации — `getIssueTrackerProviderClientForOrganization(orgId)` |
 | Снимки задач | `lib/snapshots/*` (`issue_snapshots`, кэш changelog `issue_changelog_events`) |
-| Доменные таблицы | репозитории в `lib/<домен>/` (`lib/sprints/`, `lib/features/`, `lib/sprintGoals/` …) |
+| Доменные таблицы | репозитории в `lib/<домен>/` (`lib/sprints/`, `lib/sprintGoals/`, `lib/issues/` …) |
 | Realtime после мутации | `notifySprintRealtime(request, organizationId, sprintId, resources)` из [`lib/realtime/notifySprintRealtime.ts`](../lib/realtime/notifySprintRealtime.ts) |
 
 **Токен и URL трекера** резолвятся в [`lib/trackerRequestConfig.ts`](../lib/trackerRequestConfig.ts): тип трекера и URL API — из `organizations.settings.issueTracker`, токен — из `X-Tracker-Token` или из зашифрованного секрета организации. Переменных окружения `TRACKER_API_URL` / `TRACKER_OAUTH_TOKEN` нет. Подробно — раздел «Multi-tenancy и авторизация» в [ARCHITECTURE.md](../ARCHITECTURE.md).

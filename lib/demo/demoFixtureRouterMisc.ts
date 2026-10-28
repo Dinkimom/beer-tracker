@@ -57,17 +57,6 @@ const EMPTY_PREFIX_HANDLERS: Array<{
   response: unknown;
 }> = [
   { match: (p) => p.startsWith('/users/'), response: { display: 'Demo User', id: 'demo-user' } },
-  {
-    match: (p) => p.startsWith('/features'),
-    response: {
-      features: [],
-      feature: null,
-      documents: [],
-      diagrams: [],
-      todos: [],
-      documentTypes: [],
-    },
-  },
   { match: (p) => p.startsWith('/queues/'), response: { types: [], key: 'DEMO', name: 'Demo' } },
   { match: (p) => p.startsWith('/screens/'), response: { fields: [] } },
 ];

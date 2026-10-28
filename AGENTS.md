@@ -70,7 +70,7 @@ UI планера можно проверять на **`/demo/planner`**, без
 | Repository / service | `lib/<domain>/*Repository.ts` | SQL, транзакции, маппинг строк |
 | Client | `lib/api/*` | axios → `beerTrackerApi`; UI без raw `fetch('/api/...')` |
 
-**Новый код:** SQL и оркестрация HTTP-роутов — только в `lib/<domain>/`, не рядом с `route.ts`. Образцы: [`lib/sprints/`](./lib/sprints/), [`lib/admin/`](./lib/admin/), [`lib/issues/`](./lib/issues/), [`lib/features/`](./lib/features/), [`lib/quarterlyPlans/`](./lib/quarterlyPlans/), [`lib/stories/`](./lib/stories/), [`lib/sprintGoals/`](./lib/sprintGoals/), [`lib/organizations/`](./lib/organizations/), [`lib/staffTeams/`](./lib/staffTeams/).
+**Новый код:** SQL и оркестрация HTTP-роутов — только в `lib/<domain>/`, не рядом с `route.ts`. Образцы: [`lib/sprints/`](./lib/sprints/), [`lib/admin/`](./lib/admin/), [`lib/issues/`](./lib/issues/), [`lib/sprintGoals/`](./lib/sprintGoals/), [`lib/organizations/`](./lib/organizations/), [`lib/staffTeams/`](./lib/staffTeams/).
 
 **Легаси:** при касании route с inline SQL — вынести в repository в том же PR.
 
