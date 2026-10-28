@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import {
   createTrackerIssueLink,
   listTrackerIssueLinkEdges,
 } from '@/lib/issues/trackerIssueLinksRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { rejectUnsupportedIssueTrackerCapability } from '@/lib/issueTrackerProvider/issueTrackerCapabilityRoute';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { CreateIssueLinkSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
 /** List from Tracker/Jira with in-memory per-issue cache (30m). */
@@ -23,10 +23,11 @@ export async function GET(
     }
     const { organizationId } = tenantResult.ctx;
 
-    const { issueKey } = await resolveParams(params);
-    if (!issueKey) {
-      return NextResponse.json({ error: 'issueKey is required' }, { status: 400 });
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(
@@ -66,10 +67,11 @@ export async function POST(
     }
     const { organizationId } = tenantResult.ctx;
 
-    const { issueKey } = await resolveParams(params);
-    if (!issueKey) {
-      return NextResponse.json({ error: 'issueKey is required' }, { status: 400 });
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
 
     const body = await request.json();
     const validation = validateRequest(CreateIssueLinkSchema, body);

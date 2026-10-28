@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { handleApiError, TRACKER_UPSTREAM_FORWARD_STATUSES } from '@/lib/api-error-handler';
 import { invalidateCache } from '@/lib/cache';
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { rejectUnsupportedIssueTrackerCapability } from '@/lib/issueTrackerProvider/issueTrackerCapabilityRoute';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { UpdateChecklistItemSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
 export async function PATCH(
@@ -12,14 +12,12 @@ export async function PATCH(
   { params }: { params: Promise<{ issueKey: string; itemId: string }> | { issueKey: string; itemId: string } }
 ) {
   try {
-    const { issueKey, itemId } = await resolveParams(params);
-
-    if (!issueKey || !itemId) {
-      return NextResponse.json(
-        { error: 'issueKey and itemId are required' },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params, ['itemId']);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
+    const { itemId } = issueRoute.params;
 
     const body = await request.json();
 
@@ -71,14 +69,12 @@ export async function DELETE(
   { params }: { params: Promise<{ issueKey: string; itemId: string }> | { issueKey: string; itemId: string } }
 ) {
   try {
-    const { issueKey, itemId } = await resolveParams(params);
-
-    if (!issueKey || !itemId) {
-      return NextResponse.json(
-        { error: 'issueKey and itemId are required' },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params, ['itemId']);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
+    const { itemId } = issueRoute.params;
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(

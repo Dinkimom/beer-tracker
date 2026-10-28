@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { invalidateCache } from '@/lib/cache';
 import { buildWorkEstimatesFromBody } from '@/lib/issues/issueDetailRouteHelpers';
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import { sprintIdsFromIssueSprint } from '@/lib/issues/issuesRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
-import { resolveParams } from '@/lib/nextjs-utils';
 import { patchCachedSprintIssueEstimates } from '@/lib/trackerApi/sprintIssuesCache';
 import { buildIssueWorkEstimatePatch } from '@/lib/trackerIntegration/buildIssueWorkPatch';
 import { loadTrackerIntegrationForRequest } from '@/lib/trackerIntegration/loadIntegrationForRequest';
@@ -14,10 +14,11 @@ export async function PATCH(
   { params }: { params: Promise<{ issueKey: string }> | { issueKey: string } }
 ) {
   try {
-    const { issueKey } = await resolveParams(params);
-    if (!issueKey) {
-      return NextResponse.json({ error: 'issueKey is required' }, { status: 400 });
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
 
     const body = await request.json();
     const estimates = buildWorkEstimatesFromBody(body);

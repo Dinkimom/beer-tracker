@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
-import { resolveParams } from '@/lib/nextjs-utils';
 import {
   fetchIssueChangelogCacheMap,
   upsertIssueChangelogCacheRow,
@@ -20,14 +20,11 @@ export async function GET(
     }
     const { organizationId } = tenantResult.ctx;
 
-    const { issueKey } = await resolveParams(params);
-
-    if (!issueKey) {
-      return NextResponse.json(
-        { error: 'issueKey is required' },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
 
     const refresh = request.nextUrl.searchParams.get('refresh') === '1';
     const cacheMap = await fetchIssueChangelogCacheMap(organizationId, [

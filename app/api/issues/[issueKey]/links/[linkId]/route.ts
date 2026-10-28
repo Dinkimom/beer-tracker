@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import { deleteTrackerIssueLink } from '@/lib/issues/trackerIssueLinksRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { rejectUnsupportedIssueTrackerCapability } from '@/lib/issueTrackerProvider/issueTrackerCapabilityRoute';
-import { resolveParams } from '@/lib/nextjs-utils';
 
 export async function DELETE(
   request: NextRequest,
@@ -22,13 +22,12 @@ export async function DELETE(
     }
     const { organizationId } = tenantResult.ctx;
 
-    const { issueKey, linkId } = await resolveParams(params);
-    if (!issueKey || !linkId) {
-      return NextResponse.json(
-        { error: 'issueKey and linkId are required' },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params, ['linkId']);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
+    const { linkId } = issueRoute.params;
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const unsupported = rejectUnsupportedIssueTrackerCapability(

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
-import { resolveParams } from '@/lib/nextjs-utils';
 
 export async function GET(
   request: NextRequest,
@@ -14,14 +14,12 @@ export async function GET(
   }
 ) {
   try {
-    const { issueKey, transitionId } = await resolveParams(params);
-
-    if (!issueKey || !transitionId) {
-      return NextResponse.json(
-        { error: 'issueKey and transitionId are required' },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params, ['transitionId']);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
+    const { transitionId } = issueRoute.params;
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const fields = await issueTracker.getTransitionFields(issueKey, transitionId);

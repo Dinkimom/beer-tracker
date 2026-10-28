@@ -2,18 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
-import { getRouteParam } from '@/lib/api-utils';
 import { apiCache, cacheKeys } from '@/lib/cache';
 import {
   buildIssueDetailResponse,
   loadIssueTrackerChecklistItems,
   resolveIssueDetailSource,
 } from '@/lib/issues/issueDetailRouteHelpers';
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import { syncPlannerIssueParentAfterTrackerUpdate, trackerParentForIssueUpdate } from '@/lib/issues/issuesRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { findIssueSnapshot } from '@/lib/snapshots';
 import {
-  IssueKeyParamSchema,
   UpdateIssueSchema,
   formatValidationError,
   validateRequest,
@@ -24,16 +23,12 @@ export async function GET(
   { params }: { params: Promise<{ issueKey: string }> | { issueKey: string } }
 ) {
   try {
-    const issueKey = await getRouteParam(params, 'issueKey');
-    const validation = validateRequest(IssueKeyParamSchema, { issueKey });
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: formatValidationError(validation.error) },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey: validIssueKey } = issueRoute;
 
-    const validIssueKey = validation.data.issueKey;
     const tenantResult = await requireTenantContext(request);
     if (!('ctx' in tenantResult)) {
       return tenantResult.response;
@@ -78,10 +73,11 @@ export async function PATCH(
   { params }: { params: Promise<{ issueKey: string }> | { issueKey: string } }
 ) {
   try {
-    const issueKey = await getRouteParam(params, 'issueKey');
-    if (!issueKey) {
-      return NextResponse.json({ error: 'issueKey is required' }, { status: 400 });
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
 
     const body = await request.json();
     const validation = validateRequest(UpdateIssueSchema, body);

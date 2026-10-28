@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import {
   completeIssueStatusChange,
   patchIssueStatusErrorResponse,
   sprintIdsFromIssueSprint,
 } from '@/lib/issues/issuesRouteHelpers';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
-import { resolveParams } from '@/lib/nextjs-utils';
 
 interface TransitionBody {
   comment?: string;
@@ -19,19 +19,16 @@ export async function PATCH(
   { params }: { params: Promise<{ issueKey: string }> | { issueKey: string } }
 ) {
   try {
-    const { issueKey } = await resolveParams(params);
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
+    }
+    const { issueKey } = issueRoute;
     const body = await request.json();
     const { transitionId } = body;
     const targetStatusKey = typeof body.targetStatusKey === 'string' ? body.targetStatusKey.trim() : '';
     const targetStatusDisplay =
       typeof body.targetStatusDisplay === 'string' ? body.targetStatusDisplay.trim() : '';
-
-    if (!issueKey) {
-      return NextResponse.json(
-        { error: 'issueKey is required' },
-        { status: 400 }
-      );
-    }
 
     if (!transitionId) {
       return NextResponse.json(

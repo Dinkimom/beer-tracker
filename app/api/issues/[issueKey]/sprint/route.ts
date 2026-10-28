@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { invalidateCache } from '@/lib/cache';
+import { resolveIssueRouteParams } from '@/lib/issues/issueRouteParams';
 import { completeIssueSprintMembershipChange } from '@/lib/issues/issueSprintMembershipRealtime';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
-import { resolveParams } from '@/lib/nextjs-utils';
 import {
   AddIssueToSprintSchema,
   UpdateIssueSprintSchema,
@@ -46,14 +46,11 @@ export async function POST(
   { params }: { params: Promise<{ issueKey: string }> | { issueKey: string } }
 ) {
   try {
-    const { issueKey } = await resolveParams(params);
-
-    if (!issueKey) {
-      return NextResponse.json(
-        { error: 'issueKey is required' },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
 
     const body = await request.json();
     const validation = validateRequest(AddIssueToSprintSchema, body);
@@ -95,15 +92,12 @@ export async function DELETE(
   { params }: { params: Promise<{ issueKey: string }> | { issueKey: string } }
 ) {
   try {
-    const { issueKey } = await resolveParams(params);
-    const sprintIdRaw = request.nextUrl.searchParams.get('sprintId');
-
-    if (!issueKey) {
-      return NextResponse.json(
-        { error: 'issueKey is required' },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
+    const sprintIdRaw = request.nextUrl.searchParams.get('sprintId');
 
     if (!sprintIdRaw) {
       return NextResponse.json(
@@ -140,14 +134,11 @@ export async function PATCH(
   { params }: { params: Promise<{ issueKey: string }> | { issueKey: string } }
 ) {
   try {
-    const { issueKey } = await resolveParams(params);
-
-    if (!issueKey) {
-      return NextResponse.json(
-        { error: 'issueKey is required' },
-        { status: 400 }
-      );
+    const issueRoute = await resolveIssueRouteParams(params);
+    if ('response' in issueRoute) {
+      return issueRoute.response;
     }
+    const { issueKey } = issueRoute;
 
     const body = await request.json();
     const validation = validateRequest(UpdateIssueSprintSchema, body);
