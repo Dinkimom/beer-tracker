@@ -54,16 +54,28 @@ function installCursor() {
   }
 }
 
-const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
+/** Синусоидальное сглаживание: пик скорости в 1,57 раза выше средней (у квадратичного — в 2), без долгих хвостов. */
+const ease = (t) => -(Math.cos(Math.PI * t) - 1) / 2;
+
+/** Средняя скорость, px/мс ролика. Длительность движения — от расстояния, иначе короткое ползёт, а длинное летит. */
+const MOVE_SPEED = 1.1;
+const DRAG_SPEED = 0.7;
+const durationFor = (from, to, speed) => {
+  const dist = Math.hypot(to.x - from.x, to.y - from.y);
+  return dist < 1 ? 0 : Math.min(1400, Math.max(150, 120 + dist / speed));
+};
 
 /** Мышь и клавиатура с памятью позиции: плавные перемещения, всё время — в темпе ролика. */
 function createPointer(page) {
   let at = { x: VIEWPORT.width / 2, y: VIEWPORT.height - 40 };
   const wait = (ms) => page.waitForTimeout(ms * SLOWDOWN);
   // Прогресс — по часам, а не по числу шагов: пока идёт скриншот, CDP-вызовы мыши ждут в очереди.
-  const glide = async (to, ms = 600) => {
+  const glide = async (to, speed = MOVE_SPEED) => {
     const from = at;
-    const total = ms * SLOWDOWN;
+    const total = durationFor(from, to, speed) * SLOWDOWN;
+    if (total === 0) {
+      return;
+    }
     const start = Date.now();
     for (let k = 0; k < 1; ) {
       k = Math.min(1, (Date.now() - start) / total);
@@ -75,12 +87,12 @@ function createPointer(page) {
   };
   return {
     glide,
-    async drag(from, to, ms = 900) {
+    async drag(from, to) {
       await glide(from);
       await wait(250);
       await page.mouse.down();
       await wait(150);
-      await glide(to, ms);
+      await glide(to, DRAG_SPEED);
       await wait(250);
       await page.mouse.up();
     },
@@ -118,7 +130,7 @@ const CLIPS = [
     async run(page, p) {
       const card = await center(page.getByText('Mobile: Apple Pay button').first());
       const grab = { x: card.box.x + 60, y: card.y };
-      await p.drag(grab, { x: grab.x - 270, y: grab.y + 95 }, 1100);
+      await p.drag(grab, { x: grab.x - 270, y: grab.y + 95 });
       await p.pause(700);
       // Правый край: ручка ресайза проявляется после ховера (~150 мс).
       const handle = page
@@ -128,7 +140,7 @@ const CLIPS = [
       const edge = await center(handle);
       await p.glide(edge);
       await p.pause(400);
-      await p.drag(edge, { x: edge.x - 260, y: edge.y }, 900);
+      await p.drag(edge, { x: edge.x - 260, y: edge.y });
       await p.pause(400);
     },
   },
@@ -144,7 +156,7 @@ const CLIPS = [
       await p.pause(500);
       await p.click(await center(page.getByRole('button', { name: /^Cursor \(/ })));
       // Связи relates рисуются при наведении на карточку (после короткой задержки).
-      await p.glide(await center(page.getByText('Receipt email template').first()), 900);
+      await p.glide(await center(page.getByText('Receipt email template').first()));
       await p.pause(1600);
     },
   },
@@ -155,16 +167,16 @@ const CLIPS = [
       await p.click(await center(page.getByRole('button', { name: /^Note \(/ })));
       await p.pause(300);
       // Пустая ячейка в общей строке сверху: кнопка «+» оживает после ховера.
-      await p.glide({ x: 950, y: 210 }, 800);
+      await p.glide({ x: 950, y: 210 });
       await p.pause(300);
       await p.click({ x: 950, y: 210 });
       await p.pause(300);
       // Черновик шириной в слот: сначала растягиваем, фокус остаётся в редакторе.
       const edge = await center(page.locator('[data-task-id^="local-task-"] .task-bar-resize-handle-hit').first());
-      await p.glide(edge, 400);
+      await p.glide(edge);
       await p.pause(300);
-      await p.drag(edge, { x: edge.x + 300, y: edge.y }, 800);
-      await p.glide({ x: 1180, y: 300 }, 400);
+      await p.drag(edge, { x: edge.x + 300, y: edge.y });
+      await p.glide({ x: 1180, y: 300 });
       // Строка свимлейна вмещает две строки текста заметки.
       await p.type('[ ] Smoke test on staging', 40);
       await page.keyboard.press('Enter');
@@ -173,7 +185,7 @@ const CLIPS = [
       await p.click(await center(page.locator('[data-swimlane-draft-save] button[aria-label="Confirm"]')));
       await p.pause(500);
       await p.click(await center(page.getByRole('button', { name: /^Cursor \(/ })));
-      await p.glide({ x: 1250, y: 560 }, 600);
+      await p.glide({ x: 1250, y: 560 });
       await p.pause(900);
     },
   },
@@ -191,7 +203,7 @@ const CLIPS = [
       await p.pause(300);
       await p.type('Too many tasks carried over', 40);
       await page.keyboard.press('Enter');
-      await p.glide({ x: 700, y: 640 }, 600);
+      await p.glide({ x: 700, y: 640 });
       await p.pause(900);
     },
   },
@@ -263,12 +275,16 @@ async function record(browser, args, spec, theme) {
       raw.push({ image: Buffer.from(data, 'base64'), t });
     }
   })();
-  await pointer.pause(HOLD_START_MS);
-  await spec.run(page, pointer);
-  await pointer.pause(300);
-  recording = false;
-  await capture;
-  await context.close();
+  try {
+    await pointer.pause(HOLD_START_MS);
+    await spec.run(page, pointer);
+    await pointer.pause(300);
+  } finally {
+    // Ошибка сценария не должна тонуть в «Target closed» от недоснятого кадра.
+    recording = false;
+    await capture.catch(() => {});
+    await context.close();
+  }
 
   const frames = raw.map((f, i) => ({
     image: f.image,

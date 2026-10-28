@@ -59,6 +59,8 @@ CDP screencast only gives CSS-pixel frames, and a true @2x screenshot takes ~200
 loop captures it, and frame durations are divided back: ~16–18 fps at normal speed. A full run of all clips
 takes ~10 minutes; run it in the background. Pointer/typing timing in scenarios is in playback milliseconds:
 use `p.glide`, `p.drag`, `p.click`, `p.type`, `p.pause`, never raw `page.waitForTimeout` or `keyboard.type`.
+Don't pass durations to `p.glide` / `p.drag`: the duration comes from the distance (`MOVE_SPEED`, `DRAG_SPEED`),
+so every move in every clip runs at the same pace. Fixed durations made short moves crawl and long ones fly.
 
 ```bash
 NODE_PATH="$NM" node .claude/skills/landing-docs/record.cjs --frames "$SCRATCH/frames"          # all clips
