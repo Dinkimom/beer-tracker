@@ -2,9 +2,10 @@
 
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
-import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { OWNED_ESCAPE } from '@/hooks/useEscapeKey';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 
 import { resolveNoteColorPopupOpen } from '../utils/swimlanePlacementToolbar';
 
@@ -28,27 +29,10 @@ export function SwimlanePlacementToolbarNoteTool({
   const [popupOpen, setPopupOpen] = useState(false);
   const colorPopupOpen = popupOpen && active;
 
-  useEffect(() => {
-    if (!colorPopupOpen) {
-      return;
-    }
-    const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current?.contains(event.target as Node)) {
-        return;
-      }
-      setPopupOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-    };
-  }, [colorPopupOpen]);
-  // Safari: without preventDefault, Escape exits fullscreen.
-  useEscapeKey(() => setPopupOpen(false), {
-    capture: true,
+  usePopoverDismiss(() => setPopupOpen(false), {
     enabled: colorPopupOpen,
-    preventDefault: true,
-    stopPropagation: true,
+    escape: OWNED_ESCAPE,
+    refs: [rootRef],
   });
 
   return (

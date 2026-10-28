@@ -16,6 +16,7 @@ import {
   resolveContextMenuViewportPosition,
 } from '@/features/context-menu/utils/resolveContextMenuViewportPosition';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 
 type ContextMenuAnchorRect = Pick<DOMRect, 'bottom' | 'height' | 'left' | 'right' | 'top' | 'width'>;
 
@@ -157,34 +158,19 @@ export function useContextMenu({
     };
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isLoading || !closeOnOutsideClick) return;
-
-      const target = event.target as Node;
-      const clickedInsideMenu = menuRef.current?.contains(target) ?? false;
-
-      const allSubmenus = document.querySelectorAll('[data-submenu="true"]');
-      const clickedInsideSubmenu = Array.from(allSubmenus).some((submenu) =>
-        submenu.contains(target)
-      );
-
-      const clickedInsideConfirmDialog = (target as HTMLElement).closest?.(
-        '[data-confirm-dialog="true"]'
-      );
-
-      if (!clickedInsideMenu && !clickedInsideSubmenu && !clickedInsideConfirmDialog) {
-        onCloseByClickOutside?.();
-        onClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside, true);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside, true);
-    };
-  }, [closeOnOutsideClick, isLoading, onClose, onCloseByClickOutside]);
+  usePopoverDismiss(
+    () => {
+      onCloseByClickOutside?.();
+      onClose();
+    },
+    {
+      capture: true,
+      enabled: closeOnOutsideClick && !isLoading,
+      event: 'mousedown',
+      ignoreSelector: '[data-submenu="true"], [data-confirm-dialog="true"]',
+      refs: [menuRef],
+    }
+  );
 
   useEscapeKey(
     () => {

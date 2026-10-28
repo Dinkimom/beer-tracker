@@ -6,7 +6,7 @@ import type { CSSProperties } from 'react';
 import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { OWNED_ESCAPE, useEscapeKey } from '@/hooks/useEscapeKey';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
 import {
   PLANNER_ONBOARDING_STEPS,
@@ -75,7 +75,7 @@ export function PlannerOnboardingTour({
   );
   const lastStep = stepIndex >= PLANNER_ONBOARDING_STEPS.length - 1;
 
-  useEscapeKey(requestClose, { capture: true, preventDefault: true, stopPropagation: true });
+  useEscapeKey(requestClose, OWNED_ESCAPE);
 
   return (
     <div

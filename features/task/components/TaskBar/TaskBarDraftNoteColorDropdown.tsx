@@ -2,7 +2,7 @@
 
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -10,7 +10,8 @@ import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { useI18n } from '@/contexts/LanguageContext';
 import { StickyNoteColorSwatch } from '@/features/comments/components/StickyNoteColorSwatch';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
-import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { OWNED_ESCAPE } from '@/hooks/useEscapeKey';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import { STICKY_NOTE_COLOR_LABEL_KEYS } from '@/lib/comments/stickyNoteColor';
 
 import { StickyNoteColorSwatches } from './StickyNoteColorSwatches';
@@ -30,27 +31,10 @@ export function TaskBarDraftNoteColorDropdown({
   const [open, setOpen] = useState(false);
   const colorLabel = t(STICKY_NOTE_COLOR_LABEL_KEYS[value]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current?.contains(event.target as Node)) {
-        return;
-      }
-      setOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-    };
-  }, [open]);
-  // Safari: without preventDefault, Escape exits fullscreen.
-  useEscapeKey(() => setOpen(false), {
-    capture: true,
+  usePopoverDismiss(() => setOpen(false), {
     enabled: open,
-    preventDefault: true,
-    stopPropagation: true,
+    escape: OWNED_ESCAPE,
+    refs: [rootRef],
   });
 
   return (

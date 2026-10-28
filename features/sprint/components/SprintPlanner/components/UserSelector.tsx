@@ -2,9 +2,10 @@
 
 import type { RegistryUserItem } from '@/lib/beerTrackerApi';
 
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 
 import { UserSelectorClosedButton } from './UserSelectorClosedButton';
 import { UserSelectorOpenPanel } from './UserSelectorOpenPanel';
@@ -59,16 +60,13 @@ export function UserSelector({
   );
   const { loading, results, setResults } = useUserSelectorSearch(isOpen, searchQuery, searchFn);
 
-  const handleClickOutside = useCallback((event: MouseEvent) => {
-    const target = event.target as Node;
-    if (containerRef.current?.contains(target) || resultsRef.current?.contains(target)) {
-      return;
-    }
-    setIsOpen(false);
-  }, []);
+  usePopoverDismiss(() => setIsOpen(false), {
+    enabled: isOpen,
+    event: 'mousedown',
+    refs: [containerRef, resultsRef],
+  });
 
   useUserSelectorDropdownLifecycle({
-    handleClickOutside,
     isOpen,
     setResults,
     setSearchQuery,

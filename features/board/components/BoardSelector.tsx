@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -8,8 +8,8 @@ import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { boardSelectorLabel } from '@/features/board/boardSelectorLabel';
-import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 
 import { useBoards } from '../hooks/useBoards';
 
@@ -42,23 +42,12 @@ export function BoardSelector({
       ? boards.map((board) => boardSelectorLabel(board))
       : [t('planning.board.selectTeamPlaceholder')];
 
-  // Закрываем dropdown при клике вне его и по Escape
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-  useEscapeKey(() => setIsOpen(false), { enabled: isOpen, target: 'document' });
+  usePopoverDismiss(() => setIsOpen(false), {
+    enabled: isOpen,
+    escape: { target: 'document' },
+    event: 'mousedown',
+    refs: [dropdownRef],
+  });
 
   const selectedBoard = getBoardById(selectedBoardId);
   const triggerTone = boardSelectorTriggerTone(isOpen, Boolean(selectedBoard));

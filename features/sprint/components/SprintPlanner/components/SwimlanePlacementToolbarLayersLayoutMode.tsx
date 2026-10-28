@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/Button';
@@ -12,8 +12,9 @@ import {
   CONTEXT_MENU_GHOST_BUTTON_RESET,
   FLOATING_MENU_SHELL,
 } from '@/features/context-menu/contextMenuClasses';
-import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { OWNED_ESCAPE } from '@/hooks/useEscapeKey';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import {
   SWIMLANE_BASELINE_LAYOUT_MODES,
   type SwimlaneBaselineLayoutMode,
@@ -46,28 +47,10 @@ export function SwimlanePlacementToolbarLayersLayoutMode({
   const [open, setOpen] = useState(false);
   const overlay = useOverlayPresence(open);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (rootRef.current?.contains(target) || submenuRef.current?.contains(target)) {
-        return;
-      }
-      setOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-    };
-  }, [open]);
-  // Safari: without preventDefault, Escape exits fullscreen.
-  useEscapeKey(() => setOpen(false), {
-    capture: true,
+  usePopoverDismiss(() => setOpen(false), {
     enabled: open,
-    preventDefault: true,
-    stopPropagation: true,
+    escape: OWNED_ESCAPE,
+    refs: [rootRef, submenuRef],
   });
 
   useLayoutEffect(() => {

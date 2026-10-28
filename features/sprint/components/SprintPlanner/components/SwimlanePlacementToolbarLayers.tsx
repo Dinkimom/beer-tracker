@@ -2,7 +2,7 @@
 
 import type { SwimlaneBaselineLayoutMode } from '@/lib/swimlane/swimlaneBaselineLayoutMode';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { IconActionMotion } from '@/components/IconActionMotion';
@@ -14,9 +14,10 @@ import {
 } from '@/features/context-menu/contextMenuClasses';
 import { useSwimlaneLaneLayerActions } from '@/features/swimlane/hooks/useSwimlaneLaneLayerActions';
 import { TaskCardDisplayDialog } from '@/features/task/components/TaskCard/slots/TaskCardDisplayDialog';
-import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { OWNED_ESCAPE } from '@/hooks/useEscapeKey';
 import { useSwimlaneAutoArrangeStorage } from '@/hooks/useLocalStorage';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 
 import { usePlannerOnboardingChrome } from '../onboarding/plannerOnboardingChrome';
 import {
@@ -75,31 +76,11 @@ export function SwimlanePlacementToolbarLayers({
   const overlay = useOverlayPresence(menuOpen);
   const label = t('sprintPlanner.swimlane.placementToolbar.layers');
 
-  useEffect(() => {
-    if (!menuOpen) {
-      return;
-    }
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (rootRef.current?.contains(target as Node)) {
-        return;
-      }
-      if (target instanceof Element && target.closest('[data-submenu="true"]')) {
-        return;
-      }
-      setMenuOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-    };
-  }, [menuOpen]);
-  // Safari: without preventDefault, Escape exits fullscreen.
-  useEscapeKey(() => setMenuOpen(false), {
-    capture: true,
+  usePopoverDismiss(() => setMenuOpen(false), {
     enabled: menuOpen,
-    preventDefault: true,
-    stopPropagation: true,
+    escape: OWNED_ESCAPE,
+    ignoreSelector: '[data-submenu="true"]',
+    refs: [rootRef],
   });
 
   const toggleLayer = (layer: SwimlaneVisibilityLayer) => {

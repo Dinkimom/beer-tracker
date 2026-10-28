@@ -2,10 +2,11 @@
 
 import type { BacklogFilterPerson } from '@/features/backlog/utils/backlogFilterPeople';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { Avatar } from '@/components/Avatar';
 import { useI18n } from '@/contexts/LanguageContext';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import { getInitials } from '@/utils/displayUtils';
 
 const VISIBLE_ASSIGNEE_COUNT = 5;
@@ -45,16 +46,11 @@ export function BacklogAssigneeFilter({
   const visible = ordered.slice(0, VISIBLE_ASSIGNEE_COUNT);
   const overflow = ordered.slice(VISIBLE_ASSIGNEE_COUNT);
 
-  useEffect(() => {
-    if (!overflowOpen) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOverflowOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
-  }, [overflowOpen]);
+  usePopoverDismiss(() => setOverflowOpen(false), {
+    enabled: overflowOpen,
+    event: 'mousedown',
+    refs: [rootRef],
+  });
 
   if (people.length === 0) return null;
 

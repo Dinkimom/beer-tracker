@@ -2,7 +2,7 @@
 
 import type { SprintListItem } from '@/types/tracker';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -13,6 +13,7 @@ import {
   FLOATING_TOOLBAR_ITEM_IDLE,
   FLOATING_TOOLBAR_ITEM_ON,
 } from '@/features/context-menu/contextMenuClasses';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import { formatSprintListItemDisplayName } from '@/utils/sprintDisplayName';
 
 const MENU_TRIGGER_CLASS = `!h-9 !min-h-0 !min-w-0 !gap-2 !rounded-lg !px-3 !py-0 text-sm font-medium ${CONTEXT_MENU_GHOST_BUTTON_RESET}`;
@@ -39,14 +40,7 @@ export function BacklogBulkSprintMenu({
   const { t } = useI18n();
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) onOpenChange(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [onOpenChange, open]);
+  usePopoverDismiss(() => onOpenChange(false), { enabled: open, refs: [rootRef] });
 
   return (
     <div ref={rootRef} className="relative">

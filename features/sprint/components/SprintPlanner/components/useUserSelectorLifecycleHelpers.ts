@@ -2,23 +2,20 @@ import type { RegistryUserItem } from '@/lib/beerTrackerApi';
 
 import { useCallback, useEffect } from 'react';
 
+/** Закрытый список сбрасывает поиск и результаты. */
 export function useUserSelectorDropdownLifecycle(input: {
-  handleClickOutside: (event: MouseEvent) => void;
   isOpen: boolean;
   setResults: (value: RegistryUserItem[]) => void;
   setSearchQuery: (value: string) => void;
 }): void {
-  const { handleClickOutside, isOpen, setResults, setSearchQuery } = input;
+  const { isOpen, setResults, setSearchQuery } = input;
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
+    if (isOpen) return;
     queueMicrotask(() => {
       setSearchQuery('');
       setResults([]);
     });
-  }, [isOpen, handleClickOutside, setResults, setSearchQuery]);
+  }, [isOpen, setResults, setSearchQuery]);
 }
 
 export function useUserSelectorHandlers(input: {

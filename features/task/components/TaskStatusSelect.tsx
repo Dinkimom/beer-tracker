@@ -13,6 +13,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useTaskStatusTransitionPhase } from '@/features/task/hooks/useTaskStatusTransitionPhase';
 import { taskStatusTransitionClassName } from '@/features/task/utils/taskStatusTransitionFeedback';
 import { taskStatusLabel } from '@/features/task/utils/taskUtils';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import { getIssueTransitions, type TransitionItem } from '@/lib/beerTrackerApi';
 
 import { TaskStatusSelectTransitionList } from './TaskStatusSelectTransitionList';
@@ -83,23 +84,11 @@ export function TaskStatusSelect({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        containerRef.current?.contains(target) ||
-        menuRef.current?.contains(target)
-      ) {
-        return;
-      }
-      setIsOpen(false);
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    return () => document.removeEventListener('mousedown', handlePointerDown);
-  }, [isOpen]);
+  usePopoverDismiss(() => setIsOpen(false), {
+    enabled: isOpen,
+    event: 'mousedown',
+    refs: [containerRef, menuRef],
+  });
 
   useEffect(() => {
     if (!isOpen || !menuRef.current || !buttonRef.current) return;

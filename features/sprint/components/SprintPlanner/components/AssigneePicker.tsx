@@ -5,7 +5,7 @@ import type { Developer, Task, TaskPosition } from '@/types';
 import type { QuarterlyAvailability } from '@/types/quarterly';
 import type { CSSProperties } from 'react';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
@@ -15,8 +15,8 @@ import {
   FLOATING_MENU_FIT_BODY,
   FLOATING_MENU_FIT_WIDTH,
 } from '@/features/context-menu/contextMenuClasses';
-import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 
 import { AssigneePickerList } from './AssigneePickerList';
 import { buildAssigneePickerAvailabilityLines } from './buildAssigneePickerAvailabilityLines';
@@ -59,21 +59,13 @@ export function AssigneePicker({
     [availability, developers, sprintStartDate, t]
   );
 
-  useEffect(() => {
-    if (overlay.isExiting) {
-      return;
-    }
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        requestClose();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside, true);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside, true);
-    };
-  }, [overlay.isExiting, requestClose]);
-  useEscapeKey(requestClose, { enabled: !overlay.isExiting, target: 'document' });
+  usePopoverDismiss(requestClose, {
+    capture: true,
+    enabled: !overlay.isExiting,
+    escape: { target: 'document' },
+    event: 'mousedown',
+    refs: [containerRef],
+  });
 
   const pickerStyle = useMemo((): CSSProperties => {
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 800;

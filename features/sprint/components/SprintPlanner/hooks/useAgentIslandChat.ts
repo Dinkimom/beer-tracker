@@ -6,8 +6,8 @@ import type { AgentSession } from '@/lib/agentSessions/agentSession';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAgentSessions } from '@/features/swimlane/hooks/useAgentSessions';
-import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import { useRootStore } from '@/lib/layers';
 
 import { resolveAgentChatOrigin } from '../utils/agentChatOrigin';
@@ -54,38 +54,20 @@ export function useAgentIslandChat(sprintId: number | null) {
     setPick(null);
   }
 
-  useEffect(() => {
-    if (!chatOpen) {
-      return;
-    }
-    const collapse = () => {
-      setPick(null);
-      sprintPlannerUi.setAgentRequestTarget(null);
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      const node = event.target;
-      // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
-      if (
-        event.button !== 0 ||
-        !(node instanceof Element) ||
-        islandRef.current?.contains(node) ||
-        node.closest(KEEP_CHAT_OPEN_SELECTOR)
-      ) {
-        return;
-      }
-      collapse();
-    };
-    document.addEventListener('pointerdown', onPointerDown, true);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown, true);
-    };
-  }, [chatOpen, sprintPlannerUi]);
-  useEscapeKey(
+  // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
+  usePopoverDismiss(
     () => {
       setPick(null);
       sprintPlannerUi.setAgentRequestTarget(null);
     },
-    { enabled: chatOpen }
+    {
+      capture: true,
+      enabled: chatOpen,
+      escape: {},
+      ignoreSelector: KEEP_CHAT_OPEN_SELECTOR,
+      primaryButtonOnly: true,
+      refs: [islandRef],
+    }
   );
 
   // Выбор режима в тулбаре (и хоткеем) сворачивает чат.

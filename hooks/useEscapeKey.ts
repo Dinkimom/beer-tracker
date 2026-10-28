@@ -13,6 +13,12 @@ interface UseEscapeKeyOptions {
 }
 
 /**
+ * Escape целиком принадлежит открытому окну: перехват в capture раньше вложенных обработчиков
+ * и гашение (Safari без `preventDefault` выходит из полноэкранного режима).
+ */
+export const OWNED_ESCAPE = { capture: true, preventDefault: true, stopPropagation: true } as const;
+
+/**
  * Escape на `window` / `document`. Флаги применяются к каждому Escape; если гасить событие нужно
  * по условию, колбэк получает его и решает сам. Колбэк берётся свежий, подписка меняется
  * только вместе с опциями.

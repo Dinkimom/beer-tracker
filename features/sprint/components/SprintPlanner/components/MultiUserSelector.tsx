@@ -5,6 +5,7 @@ import type { RegistryUserItem } from '@/lib/beerTrackerApi';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import { getUserByTrackerId } from '@/lib/beerTrackerApi';
 
 import {
@@ -68,14 +69,13 @@ export function MultiUserSelector({
     };
   }, [value]);
 
-  const handleClickOutside = useCallback((event: MouseEvent) => {
-    if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-      setIsOpen(false);
-    }
-  }, []);
+  usePopoverDismiss(() => setIsOpen(false), {
+    enabled: isOpen,
+    event: 'mousedown',
+    refs: [containerRef],
+  });
 
   useUserSelectorDropdownLifecycle({
-    handleClickOutside,
     isOpen,
     setResults,
     setSearchQuery,
