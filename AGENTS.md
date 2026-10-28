@@ -39,6 +39,7 @@ UI планера можно проверять на **`/demo/planner`**, без
 | `pnpm sync-worker` | BullMQ-воркер синхронизации (отдельный процесс) |
 | `pnpm sync-worker:build` | Бандл воркера в `dist/sync-worker` (Docker target `sync-worker`) |
 | `pnpm lint:unused` | Knip: неиспользуемые файлы/зависимости |
+| `pnpm lint:dup` | jscpd: новые копии кода сверх `.jscpd-baseline.json` (конфиг `.jscpd.json`). Убрал дубли — `pnpm lint:dup:baseline` и закоммитить baseline |
 | `pnpm build` | Production-сборка Next.js |
 | `pnpm storybook` | Витрина UI (Storybook, порт 6006) |
 | `pnpm build-storybook` | Статическая сборка Storybook в `storybook-static/` (каталог в `.gitignore`) |

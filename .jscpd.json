@@ -1,0 +1,15 @@
+{
+  "path": ["app", "components", "contexts", "features", "hooks", "lib", "utils"],
+  "format": ["typescript", "tsx"],
+  "minTokens": 50,
+  "minLines": 6,
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.stories.tsx",
+    "**/*.d.ts",
+    "lib/demo/**",
+    "lib/i18n/messages/**"
+  ],
+  "reporters": ["console"]
+}
