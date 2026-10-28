@@ -9,8 +9,6 @@ import { BurndownAreaChart } from './BurndownAreaChart';
 import { BurndownChartMetricsPanel } from './BurndownChartMetricsPanel';
 import { BurndownChartPinnedTooltipOverlay } from './BurndownChartPinnedTooltipOverlay';
 import { BurndownChartSeriesLegend } from './BurndownChartSeriesLegend';
-import { BurndownChartSpTooltip } from './BurndownChartSpTooltip';
-import { BurndownChartTpTooltip } from './BurndownChartTpTooltip';
 import { BurndownPageFrame } from './BurndownPageFrame';
 
 interface BurndownChartLoadedBodyProps {
@@ -113,7 +111,6 @@ export function BurndownChartLoadedBody({
           remainingSeriesName={t('burndown.chart.remainingSp')}
           theme={theme}
           title={t('burndown.metrics.storyPointsTitle')}
-          tooltipContent={BurndownChartSpTooltip}
           type="SP"
           onPointClick={handlePointClick}
         />
@@ -125,7 +122,6 @@ export function BurndownChartLoadedBody({
             remainingSeriesName={t('burndown.chart.remainingTp')}
             theme={theme}
             title={t('burndown.metrics.testPointsTitle')}
-            tooltipContent={BurndownChartTpTooltip}
             type="TP"
             onPointClick={handlePointClick}
           />

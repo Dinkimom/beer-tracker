@@ -27,6 +27,7 @@ import {
   resolveBurndownChartGridStroke,
   resolveBurndownYAxisTicks,
 } from './burndownAreaChartHelpers';
+import { BurndownChartMetricTooltip } from './BurndownChartMetricTooltip';
 
 export interface BurndownChartDataPoint {
   date: string;
@@ -51,7 +52,6 @@ interface BurndownAreaChartProps {
   title: string;
   type: PointsType;
   onPointClick?: (payload: BurndownChartDataPoint, metricType: PointsType, event: React.MouseEvent) => void;
-  tooltipContent: (props: TooltipProps<number, string>) => React.ReactNode;
 }
 
 function burndownPinnedRemainingValue(
@@ -68,7 +68,6 @@ export function BurndownAreaChart({
   chartData,
   pinnedPoint,
   theme,
-  tooltipContent,
   type,
   title,
   idealSeriesName,
@@ -120,7 +119,7 @@ export function BurndownAreaChart({
               ticks={yTicks}
               width={40}
             />
-            <Tooltip content={tooltipContent} />
+            <Tooltip content={(props: TooltipProps<number, string>) => <BurndownChartMetricTooltip {...props} metricType={type} />} />
             {todayLabel ? (
               <ReferenceLine
                 label={{
