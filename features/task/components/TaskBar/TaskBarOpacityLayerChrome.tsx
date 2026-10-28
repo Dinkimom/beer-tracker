@@ -6,7 +6,6 @@ import type { Task } from '@/types';
 import React from 'react';
 
 import { TaskBarResizeHandle } from './components/TaskBarResizeHandle';
-import { TaskBarVerticalResizeHandle } from './components/TaskBarVerticalResizeHandle';
 import { TaskBarCornerBadges } from './TaskBarCornerBadges';
 
 interface TaskBarOpacityLayerChromeProps {
@@ -101,7 +100,7 @@ export function TaskBarOpacityLayerChrome({
           />
 
           {showVerticalResize && verticalResize ? (
-            <TaskBarVerticalResizeHandle
+            <TaskBarResizeHandle
               cornerStyle={cornerStyle}
               isDraftTask={isDraftTask}
               isQATask={isQATask}

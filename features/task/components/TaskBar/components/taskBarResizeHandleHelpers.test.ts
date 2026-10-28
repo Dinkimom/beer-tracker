@@ -5,10 +5,6 @@ import {
   getQuickAddSubmittingOverlayRadiusClass,
   getResizeHandleInlineGripOpacityClass,
   getResizeHandleRoundedClass,
-  getResizeHandleVerticalEdgeClass,
-  getResizeHandleVerticalGripLineSizeClass,
-  getResizeHandleVerticalGripOffsetClass,
-  getResizeHandleVerticalHeightClass,
   getResizeHandleVisualVisibilityClass,
   isTaskBarResizeHandleActive,
   RESIZE_HANDLE_VISUAL_TRANSITION_CLASS,
@@ -17,6 +13,8 @@ import {
   resolveStickyNoteResizeHandleInlinePaint,
   resolveTaskBarResizeHandleColors,
   resolveTaskBarResizeHandleInlinePaint,
+  resolveTaskBarResizeHandleLayout,
+  resolveTaskBarResizeHandleTitle,
 } from './taskBarResizeHandleHelpers';
 
 describe('resolveTaskBarResizeHandleColors', () => {
@@ -91,6 +89,8 @@ describe('isTaskBarResizeHandleActive', () => {
     expect(isTaskBarResizeHandleActive(true, 'left', 'left')).toBe(true);
     expect(isTaskBarResizeHandleActive(true, 'left', 'right')).toBe(false);
     expect(isTaskBarResizeHandleActive(false, 'left', 'left')).toBe(false);
+    expect(isTaskBarResizeHandleActive(true, 'bottom', 'bottom')).toBe(true);
+    expect(isTaskBarResizeHandleActive(true, 'left', 'bottom')).toBe(false);
   });
 });
 
@@ -173,28 +173,45 @@ describe('resolvePhotoCardResizeHandleInlinePaint', () => {
   });
 });
 
-describe('getResizeHandleVerticalEdgeClass', () => {
-  it('keeps the handle on the card edge', () => {
-    expect(getResizeHandleVerticalEdgeClass('bottom')).toBe('bottom-0');
-    expect(getResizeHandleVerticalEdgeClass('top')).toBe('top-0');
+describe('resolveTaskBarResizeHandleTitle', () => {
+  it('uses a key per side', () => {
+    const t = (key: string) => key;
+    expect(resolveTaskBarResizeHandleTitle('left', t)).toBe('task.taskBar.resizeLeftTitle');
+    expect(resolveTaskBarResizeHandleTitle('right', t)).toBe('task.taskBar.resizeRightTitle');
+    expect(resolveTaskBarResizeHandleTitle('top', t)).toBe('task.taskBar.resizeTopTitle');
+    expect(resolveTaskBarResizeHandleTitle('bottom', t)).toBe('task.taskBar.resizeBottomTitle');
   });
 });
 
-describe('getResizeHandleVerticalHeightClass', () => {
-  it('matches the compact sticky-note grip on photo cards', () => {
-    expect(getResizeHandleVerticalHeightClass('square')).toBe('h-4');
-    expect(getResizeHandleVerticalHeightClass('photo')).toBe('h-4');
-    expect(getResizeHandleVerticalHeightClass('rounded')).toBe('h-6');
+describe('resolveTaskBarResizeHandleLayout', () => {
+  it('pins side handles to their edge with an overhang outside the card', () => {
+    const left = resolveTaskBarResizeHandleLayout('left');
+    expect(left.hitClass).toContain('left-0');
+    expect(left.hitClass).toContain('cursor-ew-resize');
+    expect(left.hitOverhangClass).toBe('-left-2');
+    expect(left.backgroundClass).toContain('rounded-l-lg');
+    expect(left).toMatchObject({ nudgeAxis: 'x', nudgeDirection: -1 });
+    expect(resolveTaskBarResizeHandleLayout('right')).toMatchObject({
+      hitOverhangClass: '-right-2',
+      nudgeAxis: 'x',
+      nudgeDirection: 1,
+    });
   });
-});
 
-describe('photo vertical grip matches the sticky note', () => {
-  it('uses the same offset and dash width', () => {
-    expect(getResizeHandleVerticalGripOffsetClass('bottom', 'photo')).toBe(
-      getResizeHandleVerticalGripOffsetClass('bottom', 'square')
-    );
-    expect(getResizeHandleVerticalGripLineSizeClass('photo')).toBe(
-      getResizeHandleVerticalGripLineSizeClass('square')
+  it('keeps the bottom handle on the card edge without an overhang', () => {
+    const bottom = resolveTaskBarResizeHandleLayout('bottom');
+    expect(bottom.hitClass).toContain('bottom-0');
+    expect(bottom.hitClass).toContain('cursor-ns-resize');
+    expect(bottom.hitOverhangClass).toBeNull();
+    expect(bottom).toMatchObject({ nudgeAxis: 'y', nudgeDirection: 1 });
+    expect(resolveTaskBarResizeHandleLayout('top').hitClass).toContain('top-0');
+  });
+
+  it('uses the compact vertical grip on sticky notes and photo cards', () => {
+    expect(resolveTaskBarResizeHandleLayout('bottom', 'square').hitClass).toContain('h-4');
+    expect(resolveTaskBarResizeHandleLayout('bottom', 'rounded').hitClass).toContain('h-6');
+    expect(resolveTaskBarResizeHandleLayout('bottom', 'photo')).toEqual(
+      resolveTaskBarResizeHandleLayout('bottom', 'square')
     );
   });
 });

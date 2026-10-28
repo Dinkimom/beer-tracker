@@ -1,5 +1,5 @@
 /**
- * Компонент ручки изменения размера TaskBar
+ * Компонент ручки изменения размера TaskBar: слева/справа — длительность, снизу — высота заметки.
  *
  * Один стабильный DOM-узел: видимость грипа через CSS :hover (и isActive при ресайзе).
  * Раньше HoverZone ↔ Active перемонтировались по JS-isHovering — mouseLeave терялся,
@@ -9,17 +9,26 @@
 'use client';
 
 import { usePhaseCardColorScheme } from '@/components/PhaseCardColorSchemeContext';
+import { RESIZE_HANDLE_TOOLTIP_DELAY_MS, TextTooltip } from '@/components/TextTooltip';
+import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 
-import { TaskBarResizeHandleActive } from './TaskBarResizeHandleActive';
 import {
+  getResizeHandleGripLineClasses,
+  getResizeHandleHoverBackgroundClasses,
+  getResizeHandleInlineGripOpacityClass,
+  getResizeHandleVisualVisibilityClass,
   isTaskBarResizeHandleActive,
-  resolveTaskBarResizeHandleInlinePaint,
+  RESIZE_HANDLE_VISUAL_TRANSITION_CLASS,
   resolveTaskBarResizeHandleColors,
+  resolveTaskBarResizeHandleInlinePaint,
+  resolveTaskBarResizeHandleLayout,
   resolveTaskBarResizeHandleTitle,
   type ResizeHandleCornerStyle,
+  type ResizeHandleSide,
 } from './taskBarResizeHandleHelpers';
+import { useResizeGripStepNudge } from './useResizeGripStepNudge';
 
 interface TaskBarResizeHandleProps {
   cornerStyle?: ResizeHandleCornerStyle;
@@ -27,10 +36,10 @@ interface TaskBarResizeHandleProps {
   isQATask: boolean;
   isResizing: boolean;
   originalStatus?: string;
-  resizeSide: 'left' | 'right' | null;
-  /** Длительность в ячейках во время жеста (толчок грипа на шаге сетки). */
+  resizeSide: ResizeHandleSide | null;
+  /** Шаг жеста: длительность в ячейках или высота заметки в строках (толчок грипа на смене). */
   resizeStep?: number | null;
-  side: 'left' | 'right';
+  side: ResizeHandleSide;
   statusColorKey?: string;
   stickyNoteColor?: string | null;
   onMouseDown: (e: React.MouseEvent) => void;
@@ -60,25 +69,65 @@ export function TaskBarResizeHandle({
     statusColorKey,
   });
   const isActive = isTaskBarResizeHandleActive(isResizing, resizeSide, side);
-  const paint = resolveTaskBarResizeHandleInlinePaint(
-    cornerStyle,
-    isDark,
-    isActive,
-    stickyNoteColor
+  const paint = resolveTaskBarResizeHandleInlinePaint(cornerStyle, isDark, isActive, stickyNoteColor);
+  const layout = resolveTaskBarResizeHandleLayout(side, cornerStyle);
+  const gripRef = useResizeGripStepNudge(
+    isActive ? resizeStep : null,
+    layout.nudgeAxis,
+    layout.nudgeDirection
   );
+  const backgroundClass = paint
+    ? ''
+    : getResizeHandleHoverBackgroundClasses(
+        isActive,
+        resizeHandleColors,
+        hoverBgClass,
+        hoverBgClassDark
+      );
+  const gripLineClass = paint
+    ? getResizeHandleInlineGripOpacityClass(isActive)
+    : getResizeHandleGripLineClasses(isActive, resizeHandleColors);
 
   return (
-    <TaskBarResizeHandleActive
-      cornerStyle={cornerStyle}
-      hoverBgClass={hoverBgClass}
-      hoverBgClassDark={hoverBgClassDark}
-      isActive={isActive}
-      paint={paint}
-      resizeHandleColors={resizeHandleColors}
-      resizeStep={isActive ? resizeStep : null}
-      side={side}
-      title={resolveTaskBarResizeHandleTitle(side, t)}
-      onMouseDown={onMouseDown}
-    />
+    <TextTooltip
+      content={resolveTaskBarResizeHandleTitle(side, t)}
+      delayDuration={RESIZE_HANDLE_TOOLTIP_DELAY_MS}
+      skipDelayDuration={0}
+    >
+      <div
+        className={`task-bar-resize-handle-hit absolute ${layout.hitClass} group/resize-handle ${ZIndex.class('arrowsHovered')}`}
+        // Inline zIndex: гарантирует корректное наложение в swimlane,
+        // t.к. z-[...] классы иногда не попадают в Tailwind build.
+        style={{
+          touchAction: 'none',
+          pointerEvents: 'auto',
+          zIndex: ZIndex.value('arrowsHovered'),
+        }}
+        onMouseDown={onMouseDown}
+      >
+        <div
+          className={`absolute inset-0 ${RESIZE_HANDLE_VISUAL_TRANSITION_CLASS} ${getResizeHandleVisualVisibilityClass(isActive)}`}
+        >
+          <div
+            className={`task-bar-resize-handle-bg absolute ${layout.backgroundClass} transition-all ${backgroundClass}`}
+            style={paint ? { backgroundColor: paint.background } : undefined}
+          />
+
+          <div ref={gripRef} className={`absolute ${layout.gripClass}`}>
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`${layout.gripLineClass} rounded transition-all ${gripLineClass}`}
+                style={paint ? { backgroundColor: paint.line } : undefined}
+              />
+            ))}
+          </div>
+        </div>
+
+        {layout.hitOverhangClass ? (
+          <div className={`absolute inset-0 ${layout.hitOverhangClass}`} />
+        ) : null}
+      </div>
+    </TextTooltip>
   );
 }
