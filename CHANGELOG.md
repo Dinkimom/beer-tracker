@@ -2,6 +2,30 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.26.0] — 2026-10-29
+
+### English
+
+- Removed the CalDAV (Mail.ru) calendar integration: the busy lane under swimlane rows, the «Calendar» layer in the visibility menu and the «Calendar» settings tab. It showed only busy/free time without meeting content. Google Calendar meetings with notes from Notion are recorded as a future idea.
+- A task closes through a transition to a status of type «done», not by the word «closed» in the status: overdue tasks, sprint goals on sprint completion and «Log work» find the closing transition the same way. In Jira this works for «Done»-category statuses with any name.
+- Manual status change sends a resolution only where the tracker requires it (Yandex Tracker). Jira sets the resolution in its workflow and no longer rejects the transition with 400.
+- The MCP agent counts carried-over tasks by the same «done» rule as the planner.
+- The date picker, period picker and month calendar follow the interface language.
+- Removed the leftover features and documents API from the deleted epic editor; those endpoints did not check the organization.
+- The old system demo organization is removed by database migration `0002` on start. No operator action needed: migrations apply automatically.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.26.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Удалена интеграция с календарём CalDAV (Mail.ru): дорожка занятости под строками свимлейна, слой «Календарь» в меню видимости и вкладка «Календарь» в настройках. Она показывала только «занят / свободен» без содержания встреч. Встречи из Google Calendar с заметками из Notion записаны как идея на будущее.
+- Задача закрывается переходом в статус типа «завершено», а не по слову «closed» в статусе: просрочка, цели при завершении спринта и «Учесть работу» находят закрывающий переход одинаково. В Jira это работает для статусов категории «Done» с любым названием.
+- Ручная смена статуса передаёт резолюцию только там, где её требует трекер (Яндекс Трекер). Jira ставит резолюцию в своём workflow и больше не отвечает на переход ошибкой 400.
+- MCP-агент считает перенесённые задачи по тому же правилу «сделано», что и планер.
+- Выбор даты, периода и календарь месяца следуют языку интерфейса.
+- Удалён оставшийся от редактора эпиков API фич и документов: эти эндпоинты не проверяли организацию.
+- Старая системная демо-организация удаляется миграцией БД `0002` при старте. Действий от операторов не нужно: миграции применяются сами.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.26.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.25.2] — 2026-10-28
 
 ### English
