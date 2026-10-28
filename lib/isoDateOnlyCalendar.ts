@@ -1,5 +1,7 @@
 /** Утилиты для строк даты YYYY-MM-DD в календарном UTC (как в событиях доступности). */
 
+import type { AppLanguage } from '@/lib/i18n/model';
+
 export function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
@@ -21,10 +23,10 @@ export function parseIsoDateOnly(iso: string): { d: number; m: number; y: number
   return { y, m: mo, d };
 }
 
-export function formatIsoDateRuLongUtc(iso: string): string {
+export function formatIsoDateLongUtc(iso: string, language: AppLanguage): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat('ru-RU', {
+  return new Intl.DateTimeFormat(language === 'ru' ? 'ru-RU' : 'en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

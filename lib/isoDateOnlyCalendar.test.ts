@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  formatIsoDateRuLongUtc,
+  formatIsoDateLongUtc,
   formatIsoDateRuNumericUtc,
   formatLocalDateToIsoDateOnly,
   parseIsoDateOnly,
@@ -22,11 +22,10 @@ describe('parseIsoDateOnly', () => {
   });
 });
 
-describe('formatIsoDateRuLongUtc', () => {
-  it('formats in UTC Russian locale', () => {
-    const s = formatIsoDateRuLongUtc('2026-05-14');
-    expect(s).toMatch(/14/);
-    expect(s).toMatch(/2026/);
+describe('formatIsoDateLongUtc', () => {
+  it('formats in UTC in the given language', () => {
+    expect(formatIsoDateLongUtc('2026-05-14', 'ru')).toBe('14 мая 2026 г.');
+    expect(formatIsoDateLongUtc('2026-05-14', 'en')).toBe('May 14, 2026');
   });
 });
 

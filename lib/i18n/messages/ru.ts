@@ -37,6 +37,8 @@ export const ruMessages = {
     calendar: {
       nextMonth: 'Следующий месяц',
       previousMonth: 'Предыдущий месяц',
+      pickDate: 'Выберите дату',
+      pickPeriod: 'Выберите период',
     },
     weekdays: {
       fri: 'Пт',

@@ -8,6 +8,7 @@ import { Icon } from '@/components/Icon';
 import { IsoCalendarMonth } from '@/components/IsoCalendarMonth';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
+import { useI18n } from '@/contexts/LanguageContext';
 import {
   CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER,
   FLOATING_MENU_GLASS_SHELL,
@@ -41,11 +42,12 @@ export function IsoDateRangePickerField({
   contentZIndex = ZIndex.modalNested + 2,
   disabled = false,
   endDate,
-  placeholder = 'Выберите период',
+  placeholder,
   startDate,
   surface = 'solid',
   onChange,
 }: IsoDateRangePickerFieldProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const isGlass = surface === 'glass';
   const [draft, setDraft] = useState<RangeDraft>(() => draftFromRange(startDate, endDate));
@@ -94,7 +96,7 @@ export function IsoDateRangePickerField({
                 : 'text-left text-sm text-gray-400 dark:text-gray-500'
             }
           >
-            {displayLabel ?? placeholder}
+            {displayLabel ?? placeholder ?? t('common.calendar.pickPeriod')}
           </span>
           <Icon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" name="calendar" />
         </Button>

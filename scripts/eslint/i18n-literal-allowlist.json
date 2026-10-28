@@ -9,8 +9,6 @@
     "components/ConfirmDialog.tsx",
     "components/CustomSelect.tsx",
     "components/ErrorBoundary.tsx",
-    "components/IsoDatePickerField.tsx",
-    "components/IsoDateRangePickerField.tsx",
     "components/LanguageSelector.tsx",
     "components/PriorityIcon.tsx",
     "features/admin/components/AdminSyncSectionSettingsForm.tsx",

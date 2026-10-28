@@ -8,7 +8,8 @@ import { Icon } from '@/components/Icon';
 import { IsoCalendarMonth } from '@/components/IsoCalendarMonth';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
-import { formatIsoDateRuLongUtc, parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
+import { useI18n } from '@/contexts/LanguageContext';
+import { formatIsoDateLongUtc, parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 
 function isoDatePickerDayClasses(selected: boolean, isToday: boolean): string {
   if (selected) {
@@ -31,12 +32,13 @@ interface IsoDatePickerFieldProps {
 export function IsoDatePickerField({
   contentZIndex = ZIndex.modalNested + 2,
   disabled = false,
-  placeholder = 'Выберите дату',
+  placeholder,
   value,
   onChange,
 }: IsoDatePickerFieldProps) {
+  const { language, t } = useI18n();
   const [open, setOpen] = useState(false);
-  const displayLabel = value && parseIsoDateOnly(value) ? formatIsoDateRuLongUtc(value) : null;
+  const displayLabel = value && parseIsoDateOnly(value) ? formatIsoDateLongUtc(value, language) : null;
 
   return (
     <Popover.Root modal={false} open={open} onOpenChange={(o) => !disabled && setOpen(o)}>
@@ -49,7 +51,7 @@ export function IsoDatePickerField({
           variant="outline"
         >
           <span className={displayLabel ? 'text-left text-sm text-gray-900 dark:text-gray-100' : 'text-left text-sm text-gray-400 dark:text-gray-500'}>
-            {displayLabel ?? placeholder}
+            {displayLabel ?? placeholder ?? t('common.calendar.pickDate')}
           </span>
           <Icon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" name="calendar" />
         </Button>

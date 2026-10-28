@@ -37,6 +37,8 @@ export const enMessages = {
     calendar: {
       nextMonth: 'Next month',
       previousMonth: 'Previous month',
+      pickDate: 'Pick a date',
+      pickPeriod: 'Pick a period',
     },
     weekdays: {
       fri: 'Fri',
