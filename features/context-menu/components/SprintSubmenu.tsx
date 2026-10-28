@@ -2,26 +2,21 @@
 
 import type { SprintListItem } from '@/types/tracker';
 
-import { useRef, useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
-import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
-import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
 import {
-  FLOATING_MENU_GLASS_SHELL,
-  MENU_PANEL_PADDING,
   MENU_ROW,
   MENU_ROW_ICON,
   MENU_ROW_STACK,
   MENU_ROW_VALUE,
 } from '@/features/context-menu/contextMenuClasses';
-import { calculateSubmenuPosition } from '@/features/context-menu/utils/submenuPositioning';
-import { useOverlayPresence } from '@/hooks/useOverlayPresence';
-import { DELAYS } from '@/utils/constants';
 import { formatSprintListItemDisplayName } from '@/utils/sprintDisplayName';
+
+import { ContextSubmenu } from './ContextSubmenu';
 
 interface SprintSubmenuProps {
   buttonRef: React.RefObject<HTMLButtonElement | null>;
@@ -65,47 +60,11 @@ export function SprintSubmenu({
   onSelect,
 }: SprintSubmenuProps) {
   const { t } = useI18n();
-  const sprintMenuRef = useRef<HTMLDivElement>(null);
   const [expandedSprintId, setExpandedSprintId] = useState<number | null>(null);
 
   const availableSprints = isBacklogTask
     ? sprints.filter((s) => !s.archived && (s.status === 'in_progress' || s.status === 'draft'))
     : sprints.filter((s) => s.id !== currentSprintId && !s.archived);
-
-  const overlay = useOverlayPresence(isOpen);
-
-  useEffect(() => {
-    if (isOpen && sprintMenuRef.current && buttonRef.current && menuRef.current) {
-      const menuElement = menuRef.current;
-
-      const updatePosition = () => {
-        if (!sprintMenuRef.current || !buttonRef.current || !menuElement) return;
-
-        const menuRect = menuElement.getBoundingClientRect();
-        const buttonRect = buttonRef.current.getBoundingClientRect();
-        // offset*: getBoundingClientRect меньше на время enter-анимации (scale 0.96)
-        const subMenuRect = DOMRect.fromRect({
-          height: sprintMenuRef.current.offsetHeight,
-          width: sprintMenuRef.current.offsetWidth,
-        });
-        const sprintMenuParent = sprintMenuRef.current.parentElement;
-        if (!sprintMenuParent) return;
-        const parentRect = sprintMenuParent.getBoundingClientRect();
-
-        const { left, top } = calculateSubmenuPosition(menuRect, buttonRect, subMenuRect, parentRect);
-
-        sprintMenuRef.current.style.left = `${left}px`;
-        sprintMenuRef.current.style.top = `${top}px`;
-      };
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          updatePosition();
-          setTimeout(updatePosition, DELAYS.POSITIONING);
-        });
-      });
-    }
-  }, [isOpen, menuRef, buttonRef]);
 
   if (availableSprints.length === 0) {
     return null;
@@ -116,24 +75,17 @@ export function SprintSubmenu({
     : t('sprintPlanner.contextMenu.moveToSprint');
 
   return (
-    <div className="relative">
-      <ContextMenuRow
-        ref={buttonRef}
-        disabled={isLoading}
-        icon={<Icon aria-hidden className={MENU_ROW_ICON} name="calendar" />}
-        label={rootLabel}
-        submenuOpen={isOpen}
-        onClick={onToggle}
-      />
-      {overlay.mounted ? (
-        <div
-          ref={sprintMenuRef}
-          className={`absolute w-max min-w-[280px] max-w-[min(340px,calc(100vw-40px))] ${FLOATING_MENU_GLASS_SHELL} ${ZIndex.class('submenu')} ${OVERLAY_PANEL_ENTER}`}
-          data-state={overlay.state}
-          data-submenu="true"
-          onAnimationEnd={overlay.onAnimationEnd}
-        >
-          <div className={`max-h-[320px] overflow-y-auto ${MENU_PANEL_PADDING} ${MENU_ROW_STACK}`}>
+    <ContextSubmenu
+      bodyClassName="max-h-[320px]"
+      buttonRef={buttonRef}
+      disabled={isLoading}
+      icon="calendar"
+      isOpen={isOpen}
+      label={rootLabel}
+      menuRef={menuRef}
+      panelClassName="min-w-[280px] max-w-[min(340px,calc(100vw-40px))]"
+      onToggle={onToggle}
+    >
             {availableSprints.map((sprint) => {
               const expanded = onPlan != null && expandedSprintId === sprint.id;
               return (
@@ -193,9 +145,6 @@ export function SprintSubmenu({
                 </div>
               );
             })}
-          </div>
-        </div>
-      ) : null}
-    </div>
+    </ContextSubmenu>
   );
 }

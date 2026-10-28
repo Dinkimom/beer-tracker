@@ -2,25 +2,13 @@
 
 import type { Task } from '@/types';
 
-import { useRef, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Icon } from '@/components/Icon';
-import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
-import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
-import {
-  FLOATING_MENU_GLASS_SHELL,
-  MENU_PANEL_PADDING,
-  MENU_ROW_ICON,
-  MENU_ROW_STACK,
-} from '@/features/context-menu/contextMenuClasses';
-import { calculateSubmenuPosition } from '@/features/context-menu/utils/submenuPositioning';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
-import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import { type TransitionItem, getIssueTransitions } from '@/lib/beerTrackerApi';
-import { DELAYS } from '@/utils/constants';
 
+import { ContextSubmenu } from './ContextSubmenu';
 import { StatusSubmenuTransitionList } from './StatusSubmenuTransitionList';
 
 interface StatusSubmenuProps {
@@ -46,7 +34,6 @@ export function StatusSubmenu({
   onSelect,
 }: StatusSubmenuProps) {
   const { t } = useI18n();
-  const statusMenuRef = useRef<HTMLDivElement>(null);
   const [statusTransitions, setStatusTransitions] = useState<TransitionItem[]>([]);
   const [isLoadingTransitions, setIsLoadingTransitions] = useState(false);
   const loadedForTaskIdRef = useRef<string | null>(null);
@@ -93,95 +80,42 @@ export function StatusSubmenu({
     };
   }, [isOpen, task, taskIdForActions]);
 
-  const overlay = useOverlayPresence(isOpen);
-
-  // Сброс данных только после unmount (конец exit-анимации), иначе на долю
-  // секунды мелькает «Нет доступных переходов».
+  // Закрыли — следующее открытие загрузит переходы заново.
   useEffect(() => {
     if (!isOpen) {
       loadedForTaskIdRef.current = null;
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (overlay.mounted) {
-      return;
-    }
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
-      setStatusTransitions([]);
-      setIsLoadingTransitions(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [overlay.mounted]);
-
-  // Позиционируем меню статусов
-  useEffect(() => {
-    if (isOpen && statusMenuRef.current && buttonRef.current && menuRef.current) {
-      const menuElement = menuRef.current;
-
-      const updatePosition = () => {
-        if (!statusMenuRef.current || !buttonRef.current || !menuElement) return;
-
-        const menuRect = menuElement.getBoundingClientRect();
-        const buttonRect = buttonRef.current.getBoundingClientRect();
-        // offset*: getBoundingClientRect меньше на время enter-анимации (scale 0.96)
-        const subMenuRect = DOMRect.fromRect({
-          height: statusMenuRef.current.offsetHeight,
-          width: statusMenuRef.current.offsetWidth,
-        });
-        const statusMenuParent = statusMenuRef.current.parentElement;
-        if (!statusMenuParent) return;
-        const parentRect = statusMenuParent.getBoundingClientRect();
-
-        const { left, top } = calculateSubmenuPosition(menuRect, buttonRect, subMenuRect, parentRect);
-
-        statusMenuRef.current.style.left = `${left}px`;
-        statusMenuRef.current.style.top = `${top}px`;
-      };
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          updatePosition();
-          setTimeout(updatePosition, DELAYS.POSITIONING);
-        });
-      });
-    }
-  }, [isOpen, statusTransitions.length, isLoadingTransitions, menuRef, buttonRef]);
+  // Сброс данных только после unmount (конец exit-анимации), иначе на долю
+  // секунды мелькает «Нет доступных переходов».
+  const resetTransitions = useCallback(() => {
+    setStatusTransitions([]);
+    setIsLoadingTransitions(false);
+  }, []);
 
   return (
-    <div className="relative">
-      <ContextMenuRow
-        ref={buttonRef}
-        disabled={isLoading}
-        icon={<Icon aria-hidden className={MENU_ROW_ICON} name="refresh" />}
-        label={t('sprintPlanner.contextMenu.changeStatus')}
-        submenuOpen={isOpen}
-        value={task.originalStatusDisplay || task.originalStatus}
-        onClick={onToggle}
+    <ContextSubmenu
+      bodyClassName="max-h-[400px]"
+      buttonRef={buttonRef}
+      disabled={isLoading}
+      icon="refresh"
+      isOpen={isOpen}
+      label={t('sprintPlanner.contextMenu.changeStatus')}
+      layoutKey={`${isLoadingTransitions}:${statusTransitions.length}`}
+      menuRef={menuRef}
+      panelClassName="min-w-[220px] max-w-[min(280px,calc(100vw-40px))]"
+      value={task.originalStatusDisplay || task.originalStatus}
+      onExited={resetTransitions}
+      onToggle={onToggle}
+    >
+      <StatusSubmenuTransitionList
+        isLoading={isLoading}
+        isLoadingTransitions={isLoadingTransitions}
+        statusTransitions={statusTransitions}
+        task={task}
+        onSelect={onSelect}
       />
-      {overlay.mounted ? (
-        <div
-          ref={statusMenuRef}
-          className={`absolute w-max min-w-[220px] max-w-[min(280px,calc(100vw-40px))] ${FLOATING_MENU_GLASS_SHELL} ${ZIndex.class('submenu')} ${OVERLAY_PANEL_ENTER}`}
-          data-state={overlay.state}
-          data-submenu="true"
-          onAnimationEnd={overlay.onAnimationEnd}
-        >
-          <div className={`max-h-[400px] overflow-y-auto ${MENU_PANEL_PADDING} ${MENU_ROW_STACK}`}>
-            <StatusSubmenuTransitionList
-              isLoading={isLoading}
-              isLoadingTransitions={isLoadingTransitions}
-              statusTransitions={statusTransitions}
-              task={task}
-              onSelect={onSelect}
-            />
-          </div>
-        </div>
-      ) : null}
-    </div>
+    </ContextSubmenu>
   );
 }
