@@ -1,3 +1,5 @@
+import { mergeAdjacentTextSegments } from '@/lib/comments/stickyNoteTextSegments';
+
 /** Ключи вида PROJ-12 / BT-W2-4 (Yandex и Jira). */
 const ISSUE_KEY_BODY = '[A-Za-z][A-Za-z0-9]*-(?:[A-Za-z0-9]+-)*\\d+';
 const ISSUE_KEY_FULL_RE = new RegExp(`^${ISSUE_KEY_BODY}$`);
@@ -33,19 +35,4 @@ export function splitStickyNoteTextByIssueKeys(text: string): StickyNoteIssueKey
     segments.push({ type: 'text', value: text.slice(lastIndex) });
   }
   return mergeAdjacentTextSegments(segments);
-}
-
-function mergeAdjacentTextSegments(
-  segments: StickyNoteIssueKeySegment[]
-): StickyNoteIssueKeySegment[] {
-  const merged: StickyNoteIssueKeySegment[] = [];
-  for (const segment of segments) {
-    const previous = merged.at(-1);
-    if (segment.type === 'text' && previous?.type === 'text') {
-      previous.value += segment.value;
-      continue;
-    }
-    merged.push(segment);
-  }
-  return merged;
 }

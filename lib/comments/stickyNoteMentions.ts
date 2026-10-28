@@ -1,5 +1,7 @@
 import type { Developer } from '@/types';
 
+import { mergeAdjacentTextSegments } from '@/lib/comments/stickyNoteTextSegments';
+
 interface StickyNoteMentionSegment {
   id: string;
   name: string;
@@ -121,20 +123,5 @@ export function splitStickyNoteTextByMentions(text: string): StickyNoteTextWithM
   if (lastIndex < text.length) {
     segments.push({ type: 'text', value: text.slice(lastIndex) });
   }
-  return mergeAdjacentStickyNoteMentionTextSegments(segments);
-}
-
-function mergeAdjacentStickyNoteMentionTextSegments(
-  segments: StickyNoteTextWithMentionSegment[]
-): StickyNoteTextWithMentionSegment[] {
-  const merged: StickyNoteTextWithMentionSegment[] = [];
-  for (const segment of segments) {
-    const previous = merged.at(-1);
-    if (segment.type === 'text' && previous?.type === 'text') {
-      previous.value += segment.value;
-      continue;
-    }
-    merged.push(segment);
-  }
-  return merged;
+  return mergeAdjacentTextSegments(segments);
 }

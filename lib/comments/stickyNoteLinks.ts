@@ -1,3 +1,4 @@
+import { mergeAdjacentTextSegments } from '@/lib/comments/stickyNoteTextSegments';
 import {
   isHttpUrlOnTrackerWebBase,
   type TrackerWebUrlContext,
@@ -113,7 +114,7 @@ export function splitStickyNoteTextByUrls(text: string): StickyNoteTextSegment[]
   if (lastIndex < text.length) {
     segments.push({ type: 'text', value: text.slice(lastIndex) });
   }
-  return mergeAdjacentStickyNoteTextSegments(segments);
+  return mergeAdjacentTextSegments(segments);
 }
 
 function pushUrlMatchSegment(
@@ -185,19 +186,4 @@ function normalizeStickyNoteHref(raw: string): string | null {
   } catch {
     return null;
   }
-}
-
-function mergeAdjacentStickyNoteTextSegments(
-  segments: StickyNoteTextSegment[]
-): StickyNoteTextSegment[] {
-  const merged: StickyNoteTextSegment[] = [];
-  for (const segment of segments) {
-    const previous = merged.at(-1);
-    if (segment.type === 'text' && previous?.type === 'text') {
-      previous.value += segment.value;
-      continue;
-    }
-    merged.push(segment);
-  }
-  return merged;
 }
