@@ -13,7 +13,7 @@ import { planPatchClientBrandFromUnknown } from '@/lib/sprints/sprintPlanPatchPo
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
-interface SaveCommentInput {
+export interface SaveCommentInput {
   assigneeId: string;
   color?: string;
   day?: number | null;

@@ -1,6 +1,7 @@
 'use client';
 
 import type { TaskSidebarContextValue } from '@/features/sidebar/contexts/TaskSidebarContext';
+import type { SidebarMainTab } from '@/features/sidebar/hooks/useSidebarTabsState';
 import type { Developer, Task, TaskPosition } from '@/types';
 import type { ChecklistItem, SprintInfo, SprintListItem } from '@/types/tracker';
 
@@ -23,7 +24,6 @@ import {
   resolveSidebarGoalsLoading,
   resolveSidebarHeaderSprintInfo,
 } from '@/features/sidebar/components/sidebarTaskSidebarHelpers';
-import { resolveSidebarTasksToGroup } from '@/features/sidebar/components/sidebarTasksToGroupHelpers';
 import { TaskSidebarContext } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { useBacklogManagement } from '@/features/sidebar/hooks/useBacklogManagement';
 import { useSidebarHeaderTabs } from '@/features/sidebar/hooks/useSidebarHeaderTabs';
@@ -34,6 +34,23 @@ import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
 import { useTaskGrouping } from '@/features/task/hooks/useTaskGrouping';
 import { useSidebarGroupByStorage, useSidebarStatusFilterStorage, useSidebarTabsSettingsStorage } from '@/hooks/useLocalStorage';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+
+function resolveSidebarTasksToGroup(params: {
+  activeTab: 'all' | 'dev' | 'qa';
+  allTasks: Task[];
+  backlogTasks: Task[];
+  devTasks: Task[];
+  invalidTasks: Array<{ task: Task }>;
+  mainTab: SidebarMainTab;
+  qaTasks: Task[];
+}): Task[] {
+  if (params.mainTab === 'backlog') return params.backlogTasks;
+  if (params.mainTab === 'invalid') return params.invalidTasks.map(({ task }) => task);
+  if (params.mainTab !== 'tasks') return [];
+  if (params.activeTab === 'all') return params.allTasks;
+  if (params.activeTab === 'dev') return params.devTasks;
+  return params.qaTasks;
+}
 
 function toggleAssigneeId(current: Set<string>, id: string): Set<string> {
   const next = new Set(current);

@@ -2,25 +2,13 @@
  * Tracker API: воркфлоу, экраны, поля, переходы (только сервер).
  */
 
+import type { WorkflowStep } from './workflowsHelpers';
 import type { AxiosInstance } from 'axios';
 
 import { apiCache, cacheKeys } from '../cache';
 import { requireTrackerAxiosForApiRoute } from '../trackerAxiosFactory';
 
 import { TRACKER_V3_BASE, WORKFLOW_CACHE_TTL, TRANSITIONS_BATCH_CONCURRENCY } from './constants';
-
-interface WorkflowStepAction {
-  id: string;
-  key?: string;
-  name?: string;
-  screen?: { id: string };
-  target?: { key?: string };
-}
-interface WorkflowStep {
-  actions?: WorkflowStepAction[];
-  metaAction?: WorkflowStepAction;
-  status?: { key?: string };
-}
 import {
   fetchQueueIssueTypeResolutions,
   resolutionOptionsForSelect,

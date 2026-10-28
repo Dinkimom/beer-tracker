@@ -1,11 +1,15 @@
 import type { ExcalidrawCommentScene } from '@/lib/comments/excalidrawCommentPayload';
-import type { Comment, SprintCommentsResponse, TaskParent } from '@/types';
+import type { Comment, SprintCommentsResponse } from '@/types';
 
 import { parseStickyNoteReactions, type StickyNoteReaction } from '@/lib/comments/stickyNoteReaction';
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
-import { mapCommentFromApi, persistSprintComment } from './sprintsApiCommentsHelpers';
+import {
+  mapCommentFromApi,
+  persistSprintComment,
+  type SaveCommentInput,
+} from './sprintsApiCommentsHelpers';
 
 /**
  * Получает комментарии в спринте
@@ -27,23 +31,7 @@ export async function fetchSprintComments(sprintId: number): Promise<Comment[]> 
  */
 export async function saveComment(
   sprintId: number,
-  comment: {
-    assigneeId: string;
-    color?: string;
-    day?: number | null;
-    height: number;
-    id?: string;
-    ifVersion?: number;
-    imageFileId?: string | null;
-    kind?: 'diagram' | 'image' | 'text' | 'widget';
-    parent?: TaskParent | null;
-    part?: number | null;
-    skipMentionNotifications?: boolean;
-    text: string;
-    width: number;
-    x?: number | null;
-    y?: number | null;
-  },
+  comment: SaveCommentInput,
   isUpdate: boolean = false
 ): Promise<Comment | boolean> {
   try {

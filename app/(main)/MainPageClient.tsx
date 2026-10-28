@@ -19,18 +19,29 @@ import { PlannerRemoteMediaProvider } from '@/contexts/PlannerRemoteMediaContext
 import { useBoards } from '@/features/board/hooks/useBoards';
 import { SPRINTS_STALE_TIME_MS, sprintsQueryKey } from '@/features/sprint/hooks/useSprints';
 import { fetchSprints } from '@/lib/beerTrackerApi';
+import { buildPlannerPath } from '@/lib/planner/plannerUrl';
+import { pickDefaultSprint } from '@/lib/planner/resolveValidatedSprintId';
 
 import { MainPageClientAccessDeniedView } from './MainPageClientAccessDeniedView';
-import {
-  buildBoardChangeReplacePath,
-  pickSprintForBoardChange,
-} from './mainPageClientBoardChangeHelpers';
 import { MainPageClientContent } from './MainPageClientContent';
 import { MainPageClientErrorView } from './MainPageClientErrorView';
+import { appendQuery } from './mainPageClientHelpers';
 import { MainPageClientRedirectingView } from './MainPageClientRedirectingView';
 import { computeMainPagePlannerAccessDenied } from './mainPagePlannerAccessDenied';
 import { useMainPageClientData } from './useMainPageClientData';
 import { usePlannerDocumentTitle } from './usePlannerDocumentTitle';
+
+function buildBoardChangeReplacePath(params: {
+  boardId: number;
+  searchParamsKey: string;
+  sprintToSelect: SprintListItem | null;
+}): string {
+  const pathBase =
+    params.sprintToSelect != null
+      ? buildPlannerPath(params.boardId, params.sprintToSelect.id)
+      : '/';
+  return appendQuery(pathBase, params.searchParamsKey);
+}
 
 const sprintTabParser = parseAsStringLiteral(['backlog', 'board', 'burndown', 'metrics', 'retro']).withDefault('board');
 
@@ -184,7 +195,7 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
         queryKey: sprintsQueryKey(boardId),
         staleTime: SPRINTS_STALE_TIME_MS,
       });
-      const sprintToSelect = pickSprintForBoardChange(sprintsData);
+      const sprintToSelect = pickDefaultSprint(sprintsData);
 
       setSelectedBoardId(boardId);
       setSelectedSprintId(sprintToSelect?.id ?? null);

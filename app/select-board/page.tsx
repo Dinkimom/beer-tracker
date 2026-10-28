@@ -15,11 +15,7 @@ import { useBoards } from '@/features/board/hooks/useBoards';
 import { useSelectedBoardStorage, useSelectedSprintStorage } from '@/hooks/useLocalStorage';
 import { fetchSprints } from '@/lib/beerTrackerApi';
 import { buildPlannerPath } from '@/lib/planner/plannerUrl';
-
-function pickDefaultSprint(sprints: SprintListItem[]): SprintListItem | null {
-  const activeSprint = sprints.find((s) => s.status === 'in_progress' && !s.archived);
-  return activeSprint ?? (sprints.length > 0 ? sprints[0]! : null);
-}
+import { pickDefaultSprint } from '@/lib/planner/resolveValidatedSprintId';
 
 function plannerUrlAfterBoardSelect(boardId: number, sprint: SprintListItem | null): string {
   if (sprint) {

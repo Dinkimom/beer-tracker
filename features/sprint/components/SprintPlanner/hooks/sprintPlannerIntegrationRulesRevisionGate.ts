@@ -1,10 +1,30 @@
 import type { PlannerIntegrationRulesDto } from '@/lib/trackerIntegration/toPlannerDto';
 import type { QueryClient } from '@tanstack/react-query';
 
-import {
-  invalidateSprintTasksQueries,
-  shouldInvalidateOnOrgChange,
-} from './sprintPlannerIntegrationRulesInvalidationHelpers';
+
+function invalidateSprintTasksQueries(
+  queryClient: QueryClient,
+  selectedSprintId: number,
+  boardIdForPlannerData: number | null
+) {
+  queryClient.invalidateQueries({
+    queryKey: ['tasks', selectedSprintId, boardIdForPlannerData ?? null],
+  });
+}
+
+function shouldInvalidateOnOrgChange(
+  prev: { orgId: string | null; sprintId: number | null } | null,
+  orgId: string | null,
+  selectedSprintId: number
+): boolean {
+  return (
+    prev != null &&
+    prev.sprintId === selectedSprintId &&
+    prev.orgId !== orgId &&
+    orgId != null &&
+    prev.orgId != null
+  );
+}
 
 export function applyIntegrationRulesRevisionGateUpdate(params: {
   activeOrganizationId: string | null | undefined;

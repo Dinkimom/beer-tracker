@@ -8,12 +8,9 @@ import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompleti
 import type { YtrackerBurndownChangelogEntry, YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 import type { TrackerIssue } from '@/types/tracker';
 
-import {
-  applyFieldToTaskState,
-  extractStatusKey,
-  type TaskState,
-} from '@/lib/burndown/burndownFromChangelogReplayHelpers';
+import { applyFieldToTaskState, type TaskState } from '@/lib/burndown/burndownFromChangelogReplayHelpers';
 import { buildTaskStateAtSprintStart } from '@/lib/burndown/burndownFromChangelogReplaySteps';
+import { extractStatusKey } from '@/lib/burndown/extractStatusKey';
 import { sprintArrayContainsSprint } from '@/lib/burndown/sprintMembership';
 import {
   analyzeRetroFactIssue,

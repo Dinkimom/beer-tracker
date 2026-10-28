@@ -9,7 +9,17 @@ import { apiCache, cacheKeys, invalidateCache } from '@/lib/cache';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { resolveParams } from '@/lib/nextjs-utils';
 import { notifySprintLifecycleIfNeeded } from '@/lib/notifications/notifyLifecycleAndAvailability';
-import { parseSprintStatusPatch } from '@/lib/sprints/sprintRouteParseHelpers';
+
+function parseSprintStatusPatch(body: { status?: string; version?: number }) {
+  const validStatuses = ['draft', 'in_progress', 'released', 'archived'] as const;
+  if (!body.status || !validStatuses.includes(body.status as (typeof validStatuses)[number])) {
+    return NextResponse.json(
+      { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
+      { status: 400 }
+    );
+  }
+  return { status: body.status as (typeof validStatuses)[number], version: body.version };
+}
 
 function invalidateSprintStatusCaches(sprintIdNum: number, boardId: number | undefined): void {
   invalidateCache.sprint(sprintIdNum);

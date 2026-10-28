@@ -9,9 +9,9 @@
  */
 
 export { sprintArrayContainsSprint } from '@/lib/burndown/sprintMembership';
+export { extractStatusKey } from '@/lib/burndown/extractStatusKey';
 export {
   applyBurndownEventType as applyBurndownEvent,
-  extractStatusKey,
   toBurndownDateKey,
   type BurndownEvent,
   type TaskState,

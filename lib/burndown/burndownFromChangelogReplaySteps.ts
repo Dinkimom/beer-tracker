@@ -2,6 +2,8 @@ import type { BurndownCompletionRules } from './burndownStatusDone';
 import type { BurndownDayChangelogItem } from '@/lib/api/types';
 import type { YtrackerBurndownChangelogEntry, YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 
+import { extractStatusKey } from '@/lib/burndown/extractStatusKey';
+
 import {
   appendDailyChangelogFieldsForEntry,
   applyBurndownEventType,
@@ -9,7 +11,6 @@ import {
   changelogEntrySortKey,
   cloneTaskStateMap,
   enumerateSprintDays,
-  extractStatusKey,
   parseChangelogEntryToEvents,
   resolveCurrentBurndownDateKey,
   sumRemainingOpenWork,

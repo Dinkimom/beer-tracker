@@ -4,15 +4,11 @@ import type { YtrackerBurndownChangelogEntry } from '@/lib/ytrackerRawIssues';
 
 import { statusClosingFlags, statusDoneFlags } from '@/lib/burndown/burndownStatusDone';
 import { changelogPointOrZero, readChangelogPointValue } from '@/lib/burndown/changelogPointValue';
-import { extractStatusKeyFromValue } from '@/lib/burndown/extractStatusKeyHelpers';
+import { extractStatusKey } from '@/lib/burndown/extractStatusKey';
 import { sprintArrayContainsSprint } from '@/lib/burndown/sprintMembership';
 
 export function toBurndownDateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-export function extractStatusKey(value: unknown): string | undefined {
-  return extractStatusKeyFromValue(value);
 }
 
 /** SP и TP «сделаны» раздельно: статус готовности к релизу закрывает TP, но не SP. */

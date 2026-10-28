@@ -4,6 +4,11 @@ interface SprintLike {
   status?: string;
 }
 
+/** Спринт по умолчанию для доски: активный (не архивный), иначе первый в списке. */
+export function pickDefaultSprint<T extends SprintLike>(sprints: readonly T[]): T | null {
+  return sprints.find((s) => s.status === 'in_progress' && !s.archived) ?? sprints[0] ?? null;
+}
+
 /**
  * Оставляет текущий id, если он есть в списке; иначе id из URL, если он валиден;
  * иначе выбирает активный или первый спринт.
@@ -29,6 +34,5 @@ export function resolveValidatedSprintId(
     return urlSprintId;
   }
 
-  const activeSprint = sprints.find((s) => s.status === 'in_progress' && !s.archived);
-  return activeSprint?.id ?? sprints[0].id;
+  return pickDefaultSprint(sprints)?.id ?? currentSprintId;
 }

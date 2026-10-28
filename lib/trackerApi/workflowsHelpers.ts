@@ -6,7 +6,7 @@ interface WorkflowStepAction {
   target?: { key?: string };
 }
 
-interface WorkflowStep {
+export interface WorkflowStep {
   actions?: WorkflowStepAction[];
   metaAction?: WorkflowStepAction;
   status?: { key?: string };
