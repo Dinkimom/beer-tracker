@@ -136,7 +136,6 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
           baselineHeight={baselineHeight}
           baselineTop={baselineTop}
           currentCell={currentCell}
-          holidayDayIndices={props.holidayDayIndices}
           isDraggingTask={props.isDraggingTask ?? false}
           linkingActive={linkingActive}
           status={task.status}

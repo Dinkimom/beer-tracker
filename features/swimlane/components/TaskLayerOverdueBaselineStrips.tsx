@@ -1,12 +1,9 @@
 'use client';
 
-import type { CSSProperties } from 'react';
-
 import { useState } from 'react';
 
 import { ZIndex, getPartsPerDay } from '@/constants';
 import { useSwimlaneDragHoverSelector } from '@/features/swimlane/hooks/useSwimlaneDragHover';
-import { factTimelineHolidayMask } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
 import { computeBaselineStripsDragDimMask } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { SWIMLANE_BASELINE_DRAG_DIM_OPACITY } from '@/features/swimlane/utils/taskLayerTaskLayoutHelpers';
 import {
@@ -26,8 +23,6 @@ interface TaskLayerOverdueBaselineStripsProps {
   baselineHeight: number;
   baselineTop: number;
   currentCell: number;
-  /** Индексы нерабочих дней таймлайна — в этих колонках полоса не видна */
-  holidayDayIndices?: ReadonlySet<number>;
   isDraggingTask: boolean;
   linkingActive?: boolean;
   status: string | undefined;
@@ -47,7 +42,6 @@ export function TaskLayerOverdueBaselineStrips({
   baselineHeight,
   baselineTop,
   currentCell,
-  holidayDayIndices,
   isDraggingTask,
   linkingActive = false,
   onCloseAndCreate,
@@ -71,21 +65,13 @@ export function TaskLayerOverdueBaselineStrips({
   );
   if (strips.length === 0) return null;
 
-  const holidayMask = factTimelineHolidayMask(
-    holidayDayIndices,
-    timelineTotalParts,
-    getPartsPerDay()
-  );
-  const holidayMaskStyle: CSSProperties | undefined = holidayMask
-    ? { maskImage: holidayMask, WebkitMaskImage: holidayMask }
-    : undefined;
-
   const partsPerDay = getPartsPerDay();
   const showChip = !isDraggingTask && !linkingActive;
 
   return (
     <div className="pointer-events-none absolute inset-0">
-      <div className={`absolute inset-0 ${ZIndex.class('base')}`} style={holidayMaskStyle}>
+      {/* Как факт-таймлайн: поверх штриховки выходных, без разрывов по нерабочим дням. */}
+      <div className={`absolute inset-0 ${ZIndex.class('base')}`}>
       {strips.map(({ baselineStart, baselineWidth }, stripIdx) => {
         const baselineOpacity =
           (dragDimMask >> stripIdx) & 1 ? SWIMLANE_BASELINE_DRAG_DIM_OPACITY : 1;

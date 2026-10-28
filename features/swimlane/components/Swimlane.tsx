@@ -387,7 +387,6 @@ function SwimlaneComponent({
               globalNameFilter={globalNameFilter}
               hasQuickAddDraftMode={hasQuickAddDraftMode}
               hasTaskOverlaps={layout.hasTaskOverlaps}
-              holidayDayIndices={holidayDayIndices}
               hoverConnectedTaskIds={hoverConnectedTaskIds}
               hoveredTaskId={hoveredTaskId}
               isDraggingTask={isDraggingTask}
