@@ -19,6 +19,7 @@ import {
   resolveTaskArrowNearestAnchors,
   resolveTaskLinkArrowBodyProps,
   resolveTaskLinkArrowHeadProps,
+  resolveXarrowEndpointsKey,
   TASK_LINK_ARROW_HEAD_SHAPE,
   TASK_LINK_ARROW_HEAD_SIZE,
   TASK_LINK_ARROW_PATH,
@@ -102,6 +103,7 @@ export function TaskArrowLink({
       onMouseLeave={() => arrowPointerEventsEnabled && onHoveredLinkIdChange(null)}
     >
       <Xarrow
+        key={resolveXarrowEndpointsKey(`task-${startTaskId}`, `task-${endTaskId}`)}
         animateDrawing={false}
         arrowBodyProps={resolveOnboardingArrowBodyProps(isOnboardingDemoLink, animateColor)}
         arrowHeadProps={resolveOnboardingArrowHeadProps(arrowColor, isOnboardingDemoLink, animateColor)}

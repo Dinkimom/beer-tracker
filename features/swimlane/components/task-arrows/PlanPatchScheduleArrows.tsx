@@ -19,6 +19,7 @@ import {
   resolveTaskArrowLinkColor,
   resolveTaskLinkArrowBodyProps,
   resolveTaskLinkArrowHeadProps,
+  resolveXarrowEndpointsKey,
   TASK_LINK_ARROW_HEAD_SHAPE,
   TASK_LINK_ARROW_HEAD_SIZE,
   TASK_LINK_ARROW_PATH,
@@ -78,7 +79,7 @@ export const PlanPatchScheduleArrows = observer(function PlanPatchScheduleArrows
         );
         return (
           <Xarrow
-            key={preview.taskId}
+            key={`${preview.taskId}:${resolveXarrowEndpointsKey(start, end)}`}
             animateDrawing={false}
             arrowBodyProps={resolveTaskLinkArrowBodyProps()}
             arrowHeadProps={resolveTaskLinkArrowHeadProps(arrowColor)}

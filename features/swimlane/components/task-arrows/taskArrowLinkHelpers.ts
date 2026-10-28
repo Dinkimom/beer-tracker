@@ -145,6 +145,32 @@ export function resolveTaskArrowLinkColor(params: {
   return resolveTaskLinkArrowPaintColor(baseColor, emphasized);
 }
 
+const xarrowEndpointInstanceIds = new WeakMap<Element, number>();
+let nextXarrowEndpointInstanceId = 0;
+
+function xarrowEndpointInstanceId(elementId: string): number {
+  const element = document.getElementById(elementId);
+  if (!element) return -1;
+  let id = xarrowEndpointInstanceIds.get(element);
+  if (id == null) {
+    nextXarrowEndpointInstanceId += 1;
+    id = nextXarrowEndpointInstanceId;
+    xarrowEndpointInstanceIds.set(element, id);
+  }
+  return id;
+}
+
+/**
+ * Часть key для Xarrow — какие именно DOM-узлы сейчас стоят за id концов.
+ * Xarrow ищет элемент по строке id только при смене пропа и дальше держит ссылку на узел.
+ * Карточка перемонтировалась с тем же id (смена спринта, перестроение строк) — стрелка
+ * меряла бы отсоединённый узел с нулевым rect и улетала за доску. Новый узел → новый key → свежий поиск.
+ */
+export function resolveXarrowEndpointsKey(startElementId: string, endElementId: string): string {
+  if (typeof document === 'undefined') return '';
+  return `${xarrowEndpointInstanceId(startElementId)}:${xarrowEndpointInstanceId(endElementId)}`;
+}
+
 export function resolveNearestAnchorsForElementIds(
   fromElementId: string,
   toElementId: string,

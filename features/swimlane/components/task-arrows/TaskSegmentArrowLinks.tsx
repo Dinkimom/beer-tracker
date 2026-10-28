@@ -18,6 +18,7 @@ import { getPhaseLinkArrowDefaultHex } from '@/utils/statusColors';
 import {
   resolveTaskLinkArrowHeadProps,
   resolveTaskLinkArrowPaintColor,
+  resolveXarrowEndpointsKey,
   TASK_LINK_ARROW_HEAD_SHAPE,
   TASK_LINK_ARROW_HEAD_SIZE,
 } from './taskArrowLinkHelpers';
@@ -59,7 +60,7 @@ export function TaskSegmentArrowLinks({ links, tasksMap }: TaskSegmentArrowLinks
         const color = resolveTaskLinkArrowPaintColor(hex, false, isDark);
         return (
           <Xarrow
-            key={link.id}
+            key={`${link.id}:${resolveXarrowEndpointsKey(link.startElement, link.endElement)}`}
             animateDrawing={false}
             arrowHeadProps={resolveTaskLinkArrowHeadProps(color)}
             color={color}

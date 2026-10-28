@@ -19,6 +19,7 @@ import { OVERLAY_EXIT_DURATION_MS } from '@/hooks/useOverlayPresence';
 import {
   isDevQaTaskArrowLink,
   resolveTaskArrowNearestAnchors,
+  resolveXarrowEndpointsKey,
   TASK_LINK_ARROW_PATH,
 } from './taskArrowLinkHelpers';
 
@@ -54,6 +55,10 @@ export function TaskArrowRelationshipMarker({
         return (
           <div key={entry.item.key} className="pointer-events-none">
             <Xarrow
+              key={resolveXarrowEndpointsKey(
+                `task-${entry.item.startTaskId}`,
+                `task-${entry.item.endTaskId}`
+              )}
               animateDrawing={false}
               color="transparent"
               dashness={false}
