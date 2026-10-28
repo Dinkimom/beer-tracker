@@ -19,7 +19,6 @@ import { resolveFactBarFocusTaskId } from '@/features/swimlane/components/in-pro
 import { memoizedSwimlanePropsEqual } from '@/features/swimlane/components/memoizedSwimlanePropsEqual';
 import { SwimlaneAvailabilityChips } from '@/features/swimlane/components/SwimlaneAvailabilityChips';
 import { SwimlaneAvailabilityPopoverGate } from '@/features/swimlane/components/SwimlaneAvailabilityPopoverGate';
-import { SwimlaneCalendarBusyLane } from '@/features/swimlane/components/SwimlaneCalendarBusyLane';
 import { SwimlaneDeveloperHeader } from '@/features/swimlane/components/SwimlaneDeveloperHeader';
 import { SwimlaneDropPreview } from '@/features/swimlane/components/SwimlaneDropPreview';
 import {
@@ -70,8 +69,6 @@ function SwimlaneComponent({
   activeTaskDuration,
   activeTask,
   boardId = null,
-  calendarBusySegments = [],
-  calendarBusyVisible = false,
   commentCardRowById,
   globalNameFilter,
   hoverConnectedTaskIds = null,
@@ -253,15 +250,7 @@ function SwimlaneComponent({
       }),
     [developer.id, developerAvailability, sprintStartDate, sprintTimelineWorkingDays]
   );
-  const {
-    calendarBusyLaneVisible,
-    laneLabels,
-    mainAreaHeight,
-    timelineOuterHeight,
-  } = resolveSwimlaneSecondaryLaneLayout({
-    calendarBusySegmentCount: calendarBusySegments.length,
-    calendarBusyVisible,
-    calendarLabel: t('sprintPlanner.swimlane.lanes.calendar'),
+  const { laneLabels, mainAreaHeight, timelineOuterHeight } = resolveSwimlaneSecondaryLaneLayout({
     factExtra,
     factLabel: t('sprintPlanner.swimlane.lanes.fact'),
     taskBandHeight: layout.totalHeight,
@@ -485,13 +474,6 @@ function SwimlaneComponent({
               />
             )}
           </div>
-
-          <SwimlaneCalendarBusyLane
-            calendarBusySegments={calendarBusySegments}
-            laneTopPx={mainAreaHeight}
-            totalParts={timelineTotalParts}
-            visible={calendarBusyLaneVisible}
-          />
 
           <SwimlaneAvailabilityChips
             dayCount={sprintTimelineWorkingDays}

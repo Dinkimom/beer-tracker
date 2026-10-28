@@ -8,7 +8,6 @@ import type { Task } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
-import { CALENDAR_BUSY_LANE_HEIGHT_PX } from '@/features/swimlane/components/SwimlaneCalendarBusyLane';
 import {
   resolveSwimlaneQuickAddPlacementFootprint,
   resolveSwimlaneQuickAddRowGrowLayers,
@@ -76,23 +75,14 @@ export function resolveSwimlaneAvailabilityTimeline(input: {
 }
 
 export function resolveSwimlaneSecondaryLaneLayout(input: {
-  calendarBusySegmentCount: number;
-  calendarBusyVisible: boolean;
-  calendarLabel: string;
   factExtra: number;
   factLabel: string;
   taskBandHeight: number;
 }): {
-  calendarBusyLaneVisible: boolean;
   laneLabels: DeveloperHeaderLaneLabelItem[];
   mainAreaHeight: number;
   timelineOuterHeight: number;
 } {
-  const calendarBusyLaneVisible =
-    input.calendarBusyVisible && input.calendarBusySegmentCount > 0;
-  const calendarBusyLaneHeightPx = calendarBusyLaneVisible
-    ? CALENDAR_BUSY_LANE_HEIGHT_PX
-    : 0;
   const mainAreaHeight = input.taskBandHeight + input.factExtra;
   const laneLabels: DeveloperHeaderLaneLabelItem[] = [];
   if (input.factExtra > 0) {
@@ -103,19 +93,10 @@ export function resolveSwimlaneSecondaryLaneLayout(input: {
       topPx: input.taskBandHeight,
     });
   }
-  if (calendarBusyLaneVisible) {
-    laneLabels.push({
-      accent: 'calendar',
-      heightPx: calendarBusyLaneHeightPx,
-      label: input.calendarLabel,
-      topPx: mainAreaHeight,
-    });
-  }
   return {
-    calendarBusyLaneVisible,
     laneLabels,
     mainAreaHeight,
-    timelineOuterHeight: mainAreaHeight + calendarBusyLaneHeightPx,
+    timelineOuterHeight: mainAreaHeight,
   };
 }
 

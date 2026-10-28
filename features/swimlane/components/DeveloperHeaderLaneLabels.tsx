@@ -1,6 +1,6 @@
 'use client';
 
-type DeveloperHeaderLaneLabelAccent = 'calendar' | 'fact';
+type DeveloperHeaderLaneLabelAccent = 'fact';
 
 export interface DeveloperHeaderLaneLabelItem {
   accent: DeveloperHeaderLaneLabelAccent;
@@ -10,7 +10,6 @@ export interface DeveloperHeaderLaneLabelItem {
 }
 
 const ACCENT_TEXT_CLASS: Record<DeveloperHeaderLaneLabelAccent, string> = {
-  calendar: 'text-sky-700 dark:text-sky-400',
   fact: 'text-ds-text-muted',
 };
 

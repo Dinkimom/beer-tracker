@@ -8,7 +8,6 @@ export * from './admin';
 export * from './analytics';
 export * from './notifications';
 export * from './boards';
-export * from './calendar';
 export * from './holidays';
 export * from './issues';
 export * from './linkPreview';

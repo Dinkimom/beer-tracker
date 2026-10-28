@@ -6,14 +6,12 @@ export interface SettingsPlanningTabProps {
   ganttTab: PlanningGanttTab;
   kanbanGroupBy: SidebarGroupBy;
   linksDimOnHover: boolean;
-  swimlaneCalendarBusyVisible: boolean;
   /** Fact timeline (“in progress”) under the swimlane row */
   swimlaneFactTimelineVisible: boolean;
   swimlaneLinksVisible: boolean;
   setGanttTab: (v: PlanningGanttTab) => void;
   setKanbanGroupBy: (v: SidebarGroupBy) => void;
   setLinksDimOnHover: (v: boolean) => void;
-  setSwimlaneCalendarBusyVisible: (v: boolean) => void;
   setSwimlaneFactTimelineVisible: (v: boolean) => void;
   setSwimlaneLinksVisible: (v: boolean) => void;
 }

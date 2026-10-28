@@ -29,7 +29,6 @@ import {
 } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionHelpers';
 import { mergeSwimlanePositionsWithVisibleComments } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionSwimlanePropsHelpers';
 import { useHolidayDays } from '@/features/sprint/hooks/useHolidayDays';
-import { useSwimlaneCalendarBusyByDeveloper } from '@/features/sprint/hooks/useSwimlaneCalendarBusy';
 import { buildAssigneeUnavailableDays, getOccupancyErrorDays, getOccupancyErrorDetailsByDay, getOccupancyErrorReasons, getOccupancyErrorTaskIds } from '@/features/sprint/utils/occupancyValidation';
 import { useCardShadowFactFocusTaskId } from '@/features/swimlane/components/in-progress-fact/useCardShadowFactFocusTaskId';
 import { useSwimlaneTaskHoverIntent } from '@/features/swimlane/hooks/useSwimlaneTaskHoverIntent';
@@ -85,7 +84,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     sidebarOpen,
     sprintStartDate,
     sprintTimelineWorkingDays = WORKING_DAYS,
-    swimlaneCalendarBusyEnabled = false,
     swimlaneFactTimelineEnabled = false,
     swimlaneImagesVisible = true,
     swimlaneNotesVisible = true,
@@ -126,17 +124,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   }, [dragAndDrop.isDraggingTask]);
 
   const holidayDayIndices = useHolidayDays(sprintStartDate, sprintTimelineWorkingDays);
-
-  const calendarBusyByDeveloper = useSwimlaneCalendarBusyByDeveloper({
-    developers: developersManagement.visibleDevelopers.map((d) => ({
-      email: d.email,
-      id: d.id,
-    })),
-    enabled:
-      swimlaneCalendarBusyEnabled && (viewMode === 'full' || viewMode === 'compact'),
-    sprintStartDate,
-    sprintTimelineWorkingDays,
-  });
 
   const swimlaneFactDeveloperMap = useMemo(
     () => new Map(developers.map((d) => [d.id, d] as const)),
@@ -452,7 +439,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
             />
             <div className="relative shrink-0" data-planner-swimlanes-lanes>
               <SwimlanesSectionLanes
-                calendarBusyByDeveloper={calendarBusyByDeveloper}
                 cardShadowTaskId={effectiveCardShadowTaskId}
                 comments={comments}
                 contextMenuTaskId={contextMenuTaskId}

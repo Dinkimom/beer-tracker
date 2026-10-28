@@ -194,7 +194,6 @@ export function FeatureSwimlanesSection({
         developersManagement={rowManagement.developersManagement}
         hideTeamLane
         occupancyValidationPositions={props.taskPositions}
-        swimlaneCalendarBusyEnabled={false}
         swimlaneFactTimelineEnabled={false}
         taskPositions={projectedPositions}
         tasksByAssignee={tasksByAssignee}

@@ -4,7 +4,6 @@ import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/me
 import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
-import type { CalendarBusySegment } from '@/lib/calendar/calendarEventTypes';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { OccupancyErrorReason } from '@/lib/planner-timeline';
 import type { Comment, Developer, LayoutViewMode, PhaseSegment, Task, TaskParent, TaskPosition } from '@/types';
@@ -17,10 +16,6 @@ export interface SwimlaneProps {
   activeTaskDuration: number | null;
   /** Доска (нужна для квартального плана отпусков) */
   boardId?: number | null;
-  /** Занятость из CalDAV за диапазон спринта */
-  calendarBusySegments?: CalendarBusySegment[];
-  /** Показывать дорожку занятости календаря */
-  calendarBusyVisible?: boolean;
   /**
    * Карточка, у которой hover дожил до тени.
    * Затемняет бары факта других задач и не трогает карточки.

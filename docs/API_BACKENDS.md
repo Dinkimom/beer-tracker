@@ -11,7 +11,7 @@
 | **PostgreSQL (приложение)** | репозитории `lib/<домен>/*Repository.ts` поверх `lib/db` | Организации, команды, позиции, связи, комментарии, цели спринта, фичи, ретро, уведомления, OAuth MCP и т.д. |
 | **S3 (совместимое API)** | `lib/storage` | Байты фотокарточек и сцен Excalidraw планера (`planner_files.storage_key`) |
 | **Redis** | `lib/realtime/*`, `lib/sync/queue.ts` (BullMQ) | Pub/sub realtime, присутствие и таймер спринта; очередь синхронизации снимков. Без Redis realtime работает в памяти процесса |
-| **Внешний HTTP** | `fetch` в `lib/<домен>` | isdayoff.ru (праздники), CalDAV, deployhoroscope.ru, превью ссылок |
+| **Внешний HTTP** | `fetch` в `lib/<домен>` | isdayoff.ru (праздники), deployhoroscope.ru, превью ссылок |
 | **Локальная ФС** | `fs` / `public/uploads` | Загрузка SVG диаграмм фич |
 
 Маршрут может быть **смешанным**: например burndown сочетает трекер (спринт, задачи, changelog), `issue_snapshots` и merged payload задач.
@@ -69,7 +69,6 @@
 | Участники команд | `/teams/members`, `/teams/members/search`, `/teams/members/registry-search` | PostgreSQL `teams` / `staff` / `team_members` + tenant |
 | Сотрудники реестра | `/users/search`, `/users/[trackerId]` | PostgreSQL `staff` + tenant |
 | Праздники (прокси) | `/holidays/isdayoff` | Внешний HTTP (isdayoff.ru) |
-| Календарь | `/calendar/caldav/events` | Внешний HTTP (CalDAV) |
 | Гороскоп релиза | `/release-horoscope/day` | Внешний HTTP (deployhoroscope.ru) |
 | Превью ссылок | `/link-preview` | Внешний HTTP (HTML страницы) |
 | Загрузка файлов | `/files/upload` | Локальная ФС |

@@ -2,16 +2,13 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 
-type SwimlaneLaneBandAccent = 'calendar' | 'fact';
+type SwimlaneLaneBandAccent = 'fact';
 
 const ACCENT_BORDER_CLASS: Record<SwimlaneLaneBandAccent, string> = {
-  calendar: 'border-t border-sky-500/25 dark:border-sky-400/20',
   fact: 'border-t border-ds-border-subtle',
 };
 
 const ACCENT_FILL_CLASS: Record<SwimlaneLaneBandAccent, string> = {
-  // Sky: лёгкий синий, отличен от нейтральной полосы факта и от цветных status-баров
-  calendar: 'bg-sky-500/[0.07] dark:bg-sky-400/[0.09]',
   // Нейтральный фон: в факте уже цветные статусы — полоса не должна добавлять ещё один акцент
   fact: 'bg-gray-500/[0.04] dark:bg-white/[0.04]',
 };

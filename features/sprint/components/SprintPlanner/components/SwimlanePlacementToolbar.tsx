@@ -17,7 +17,6 @@ import { useAgentAvailable, useAgentBrand } from '@/features/swimlane/hooks/useA
 import { usePlanPatchPreviewDecisions } from '@/features/swimlane/hooks/usePlanPatchPreviewDecisions';
 import {
   useSwimlaneBaselineLayoutModeStorage,
-  useSwimlaneCalendarBusyVisibleStorage,
   useSwimlaneFactTimelineVisibleStorage,
   useSwimlaneImagesVisibleStorage,
   useSwimlaneLinksVisibilityStorage,
@@ -93,7 +92,6 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   const [imagesVisible, setImagesVisible] = useSwimlaneImagesVisibleStorage();
   const [linksVisible, setLinksVisible] = useSwimlaneLinksVisibilityStorage();
   const [factVisible, setFactVisible] = useSwimlaneFactTimelineVisibleStorage();
-  const [calendarVisible, setCalendarVisible] = useSwimlaneCalendarBusyVisibleStorage();
   const [baselineLayoutMode, setBaselineLayoutMode] = useSwimlaneBaselineLayoutModeStorage();
   const active = sprintPlannerUi.placementTool;
   const pathname = usePathname();
@@ -245,14 +243,12 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
           })}
           <SwimlanePlacementToolbarLayers
             baselineLayoutMode={baselineLayoutMode}
-            calendarVisible={calendarVisible}
             factVisible={factVisible}
             imagesVisible={imagesVisible}
             linksVisible={linksVisible}
             notesVisible={notesVisible}
             personBoundLayersAvailable={!hidePersonBoundTools}
             onBaselineLayoutModeChange={setBaselineLayoutMode}
-            onCalendarVisibleChange={setCalendarVisible}
             onFactVisibleChange={setFactVisible}
             onImagesVisibleChange={setImagesVisible}
             onLinksVisibleChange={setLinksVisible}

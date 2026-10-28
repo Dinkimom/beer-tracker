@@ -3,8 +3,6 @@ import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { CALENDAR_BUSY_LANE_HEIGHT_PX } from '@/features/swimlane/components/SwimlaneCalendarBusyLane';
-
 import {
   buildSwimlanePlacementQuickAddHandler,
   buildSwimlaneRootClassName,
@@ -267,53 +265,22 @@ describe('resolveSwimlaneAvailabilityTimeline', () => {
 });
 
 describe('resolveSwimlaneSecondaryLaneLayout', () => {
-  const base = {
-    calendarBusySegmentCount: 0,
-    calendarBusyVisible: false,
-    calendarLabel: 'Calendar',
-    factExtra: 0,
-    factLabel: 'Fact',
-    taskBandHeight: 100,
-  };
+  const base = { factExtra: 0, factLabel: 'Fact', taskBandHeight: 100 };
 
-  it('keeps a single task band when fact and calendar lanes are off', () => {
+  it('keeps a single task band when the fact lane is off', () => {
     const layout = resolveSwimlaneSecondaryLaneLayout(base);
 
     expect(layout.laneLabels).toEqual([]);
     expect(layout.mainAreaHeight).toBe(100);
     expect(layout.timelineOuterHeight).toBe(100);
-    expect(layout.calendarBusyLaneVisible).toBe(false);
   });
 
-  it('stacks fact and calendar labels with matching heights', () => {
-    const layout = resolveSwimlaneSecondaryLaneLayout({
-      ...base,
-      calendarBusySegmentCount: 2,
-      calendarBusyVisible: true,
-      factExtra: 24,
-    });
+  it('adds the fact lane label below the task band', () => {
+    const layout = resolveSwimlaneSecondaryLaneLayout({ ...base, factExtra: 24 });
 
     expect(layout.mainAreaHeight).toBe(124);
-    expect(layout.timelineOuterHeight).toBe(124 + CALENDAR_BUSY_LANE_HEIGHT_PX);
-    expect(layout.laneLabels).toEqual([
-      { accent: 'fact', heightPx: 24, label: 'Fact', topPx: 100 },
-      {
-        accent: 'calendar',
-        heightPx: CALENDAR_BUSY_LANE_HEIGHT_PX,
-        label: 'Calendar',
-        topPx: 124,
-      },
-    ]);
-  });
-
-  it('hides the calendar lane when busy segments are empty', () => {
-    const layout = resolveSwimlaneSecondaryLaneLayout({
-      ...base,
-      calendarBusyVisible: true,
-    });
-
-    expect(layout.calendarBusyLaneVisible).toBe(false);
-    expect(layout.laneLabels).toEqual([]);
+    expect(layout.timelineOuterHeight).toBe(124);
+    expect(layout.laneLabels).toEqual([{ accent: 'fact', heightPx: 24, label: 'Fact', topPx: 100 }]);
   });
 });
 

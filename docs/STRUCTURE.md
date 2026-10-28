@@ -43,7 +43,7 @@ beer-tracker/
 | Домен | Что внутри |
 |-------|------------|
 | `sprint/` | Планер спринта: `components/SprintPlanner.tsx` → `SprintPlanner/` (`SprintPlannerView.tsx`, `board/`, `kanban/`, `feature-lanes/`, `components/` — тулбары, чат агента, таймер; `sprintPlannerDndHelpers.ts`), селектор спринта, модалка финиша, цели, учёт работ, доступность |
-| `swimlane/` | Свимлейн: дорожки, ячейки, слои, стрелки связей (`task-arrows/`), таймлайн факта (`in-progress-fact/`), чипы доступности, занятость календаря, превью плана агента |
+| `swimlane/` | Свимлейн: дорожки, ячейки, слои, стрелки связей (`task-arrows/`), таймлайн факта (`in-progress-fact/`), чипы доступности, превью плана агента |
 | `task/` | Карточки задач: `TaskCard/`, `TaskBar/`, `DraggableTask/`, `TaskTimeline/`, `TaskInfoSidebar/`; хуки `useTasks`, мутации, ресайз |
 | `sidebar/` | Сайдбар спринта и вкладки `components/tabs/` (задачи, невалидные, цели, дейли, метрики, бэклог, баги) |
 | `comments/` | Заметки (стикеры) на свимлейне: WYSIWYG-редактор, реакции, диаграммы Excalidraw |
@@ -74,7 +74,7 @@ beer-tracker/
 | `lib/snapshots/`, `lib/sync/` | Снимки задач (`issue_snapshots`) и синхронизация (BullMQ) |
 | `lib/realtime/` | SSE-канал спринта, присутствие, таймер |
 | `lib/organizations/`, `lib/staffTeams/`, `lib/admin/`, `lib/roles/`, `lib/access/`, `lib/auth/` | Мультиарендность, команды, админка, роли, сессии |
-| `lib/calendar/`, `lib/holidays/` | CalDAV-занятость, производственный календарь |
+| `lib/holidays/` | Производственный календарь |
 | `lib/notifications/`, `lib/storage/` | Уведомления, объектное хранилище (S3) |
 | `lib/boardAvailability/` | События доступности доски (отпуска, техспринты, больничные, дежурства) |
 | `lib/i18n/` | Словари ru/en (`lib/i18n/messages/`) |

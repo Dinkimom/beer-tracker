@@ -23,7 +23,6 @@ import {
   useLinksDimOnHoverStorage,
   useShowHolidaysStorage,
   useSidebarTabsSettingsStorage,
-  useSwimlaneCalendarBusyVisibleStorage,
   useSwimlaneFactTimelineVisibleStorage,
   useSwimlaneLinksVisibilityStorage,
   useTrackerTokenStorage,
@@ -40,12 +39,11 @@ import {
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 import { readTrackerTokenPayload } from '@/lib/trackerTokenStorage';
 
-import { SettingsCalendarTab } from './SettingsModal/tabs/SettingsCalendarTab';
 import { SettingsGeneralTab } from './SettingsModal/tabs/SettingsGeneralTab';
 import { SettingsPlanningTab } from './SettingsModal/tabs/SettingsPlanningTab';
 import { SettingsYTrackerTab } from './SettingsModal/tabs/SettingsYTrackerTab';
 
-type SettingsTab = 'calendar' | 'general' | 'planning' | 'ytracker';
+type SettingsTab = 'general' | 'planning' | 'ytracker';
 
 interface SettingsModalProps {
   /** Tab inside Sprints (from URL) */
@@ -65,8 +63,6 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
   const [kanbanGroupBy, setKanbanGroupBy] = useKanbanGroupByStorage();
   const [swimlaneFactTimelineVisible, setSwimlaneFactTimelineVisible] =
     useSwimlaneFactTimelineVisibleStorage();
-  const [swimlaneCalendarBusyVisible, setSwimlaneCalendarBusyVisible] =
-    useSwimlaneCalendarBusyVisibleStorage();
   const [swimlaneLinksVisible, setSwimlaneLinksVisible] = useSwimlaneLinksVisibilityStorage();
   const [linksDimOnHover, setLinksDimOnHover] = useLinksDimOnHoverStorage();
   const [sidebarTabsSettings, setSidebarTabsSettings] = useSidebarTabsSettingsStorage();
@@ -159,7 +155,6 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
   const showTrackerTokenTab = issueTrackerShowsSettingsTokenTab(issueTrackerProviderKind);
   const mainTabs: { id: SettingsTab; label: string; icon: 'calendar' | 'diagram' | 'link' | 'settings' }[] = [
     { id: 'planning', label: t('settings.tabs.planning'), icon: 'diagram' },
-    { id: 'calendar', label: t('settings.tabs.calendar'), icon: 'calendar' },
     ...(showTrackerTokenTab
       ? ([
           {
@@ -255,13 +250,6 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
                   />
                 ) : null}
 
-                {activeTab === 'calendar' && (
-                  <SettingsCalendarTab
-                    setSwimlaneCalendarBusyVisible={setSwimlaneCalendarBusyVisible}
-                    swimlaneCalendarBusyVisible={swimlaneCalendarBusyVisible}
-                  />
-                )}
-
                 {activeTab === 'planning' && (
                   <SettingsPlanningTab
                     ganttTab={ganttTab}
@@ -270,10 +258,8 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
                     setGanttTab={setGanttTab}
                     setKanbanGroupBy={setKanbanGroupBy}
                     setLinksDimOnHover={setLinksDimOnHover}
-                    setSwimlaneCalendarBusyVisible={setSwimlaneCalendarBusyVisible}
                     setSwimlaneFactTimelineVisible={setSwimlaneFactTimelineVisible}
                     setSwimlaneLinksVisible={setSwimlaneLinksVisible}
-                    swimlaneCalendarBusyVisible={swimlaneCalendarBusyVisible}
                     swimlaneFactTimelineVisible={swimlaneFactTimelineVisible}
                     swimlaneLinksVisible={swimlaneLinksVisible}
                   />

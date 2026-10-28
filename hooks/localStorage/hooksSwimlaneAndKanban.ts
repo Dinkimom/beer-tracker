@@ -122,16 +122,6 @@ export function useSwimlaneFactTimelineVisibleStorage(): [
 }
 
 /**
- * Показывать под свимлейном дорожку занятости из календаря (CalDAV).
- */
-export function useSwimlaneCalendarBusyVisibleStorage(): [
-  boolean,
-  (value: boolean | ((prev: boolean) => boolean)) => void
-] {
-  return useLocalStorageBase<boolean>(STORAGE_KEYS.SWIMLANE_CALENDAR_BUSY_VISIBLE, true);
-}
-
-/**
  * Показывать текстовые заметки (стикеры) на свимлейне.
  */
 export function useSwimlaneNotesVisibleStorage(): [

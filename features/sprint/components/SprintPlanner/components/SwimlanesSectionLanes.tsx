@@ -1,6 +1,5 @@
 import type { SwimlanesSectionProps } from './SwimlanesSection.types';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
-import type { CalendarBusySegment } from '@/lib/calendar/calendarEventTypes';
 import type { OccupancyErrorReason } from '@/lib/planner-timeline';
 import type { Comment, Developer, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
@@ -68,7 +67,6 @@ function usePinnedSwimlaneFrameTops(
 }
 
 interface SwimlanesSectionLanesProps {
-  calendarBusyByDeveloper: Map<string, CalendarBusySegment[]>;
   cardShadowTaskId: string | null;
   comments: Comment[];
   contextMenuTaskId: string | null;
@@ -99,7 +97,6 @@ interface SwimlanesSectionLanesProps {
 }
 
 export function SwimlanesSectionLanes({
-  calendarBusyByDeveloper,
   cardShadowTaskId,
   comments,
   contextMenuTaskId,
@@ -165,8 +162,6 @@ export function SwimlanesSectionLanes({
         ),
         activeTaskDuration: section.dragAndDrop.activeTaskDuration,
         boardId: section.boardId,
-        calendarBusySegments: calendarBusyByDeveloper.get(developer.id) ?? [],
-        calendarBusyVisible: Boolean(section.swimlaneCalendarBusyEnabled),
         cardShadowTaskId,
         comments,
         commentsVisible: section.commentsVisible,
@@ -247,7 +242,6 @@ export function SwimlanesSectionLanes({
     }
     return map;
   }, [
-    calendarBusyByDeveloper,
     cardShadowTaskId,
     comments,
     contextMenuTaskId,

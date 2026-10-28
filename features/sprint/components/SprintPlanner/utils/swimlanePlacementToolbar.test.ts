@@ -316,23 +316,12 @@ describe('resolvePlacementToolAfterLayerChange', () => {
 });
 
 describe('resolveVisibilityLayerMenuRows', () => {
-  it('puts stamp layers above fact and calendar overlays', () => {
+  it('puts stamp layers above the fact overlay', () => {
     expect(SWIMLANE_VISIBILITY_LAYER_GROUPS).toEqual([
       ['notes', 'images', 'links'],
-      ['fact', 'calendar'],
+      ['fact'],
     ]);
-    expect(resolveVisibilityLayerMenuRows({ calendarAvailable: true })).toEqual([
-      { kind: 'layer', layer: 'notes' },
-      { kind: 'layer', layer: 'images' },
-      { kind: 'layer', layer: 'links' },
-      { kind: 'separator' },
-      { kind: 'layer', layer: 'fact' },
-      { kind: 'layer', layer: 'calendar' },
-    ]);
-  });
-
-  it('hides calendar when CalDAV is not configured', () => {
-    expect(resolveVisibilityLayerMenuRows({ calendarAvailable: false })).toEqual([
+    expect(resolveVisibilityLayerMenuRows({})).toEqual([
       { kind: 'layer', layer: 'notes' },
       { kind: 'layer', layer: 'images' },
       { kind: 'layer', layer: 'links' },
@@ -343,10 +332,7 @@ describe('resolveVisibilityLayerMenuRows', () => {
 
   it('hides person-bound overlays on the feature board', () => {
     expect(
-      resolveVisibilityLayerMenuRows({
-        calendarAvailable: true,
-        personBoundLayersAvailable: false,
-      })
+      resolveVisibilityLayerMenuRows({ personBoundLayersAvailable: false })
     ).toEqual([
       { kind: 'layer', layer: 'notes' },
       { kind: 'layer', layer: 'images' },
@@ -376,7 +362,6 @@ describe('placementToolbarLayerLabelMessageKey', () => {
     expect(placementToolbarLayerLabelMessageKey('images')).toBe('layerImages');
     expect(placementToolbarLayerLabelMessageKey('links')).toBe('layerLinks');
     expect(placementToolbarLayerLabelMessageKey('fact')).toBe('layerFactTimeline');
-    expect(placementToolbarLayerLabelMessageKey('calendar')).toBe('layerCalendar');
   });
 });
 
@@ -421,13 +406,11 @@ describe('placementToolbarLayerIconName', () => {
   it('maps overlay and stamp layers to icons', () => {
     expect(placementToolbarLayerIconName('images')).toBe('image');
     expect(placementToolbarLayerIconName('fact')).toBe('bar-chart');
-    expect(placementToolbarLayerIconName('calendar')).toBe('calendar');
   });
 });
 
 describe('resolveVisibilityLayerVisible', () => {
   const visible = {
-    calendarVisible: true,
     factVisible: false,
     imagesVisible: true,
     linksVisible: false,
@@ -439,21 +422,18 @@ describe('resolveVisibilityLayerVisible', () => {
     expect(resolveVisibilityLayerVisible('images', visible)).toBe(true);
     expect(resolveVisibilityLayerVisible('links', visible)).toBe(false);
     expect(resolveVisibilityLayerVisible('fact', visible)).toBe(false);
-    expect(resolveVisibilityLayerVisible('calendar', visible)).toBe(true);
   });
 });
 
 describe('applyVisibilityLayerToggle', () => {
   it('flips only the selected layer', () => {
     const setters = {
-      setCalendarVisible: vi.fn(),
       setFactVisible: vi.fn(),
       setImagesVisible: vi.fn(),
       setLinksVisible: vi.fn(),
       setNotesVisible: vi.fn(),
     };
     const state = {
-      calendarVisible: true,
       factVisible: false,
       imagesVisible: true,
       linksVisible: true,
@@ -463,12 +443,10 @@ describe('applyVisibilityLayerToggle', () => {
     applyVisibilityLayerToggle('images', state, setters);
     applyVisibilityLayerToggle('links', state, setters);
     applyVisibilityLayerToggle('fact', state, setters);
-    applyVisibilityLayerToggle('calendar', state, setters);
     expect(setters.setNotesVisible).toHaveBeenCalledWith(false);
     expect(setters.setImagesVisible).toHaveBeenCalledWith(false);
     expect(setters.setLinksVisible).toHaveBeenCalledWith(false);
     expect(setters.setFactVisible).toHaveBeenCalledWith(true);
-    expect(setters.setCalendarVisible).toHaveBeenCalledWith(false);
   });
 });
 

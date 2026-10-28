@@ -42,17 +42,16 @@ describe('sanitizeAnalyticsPayload', () => {
     ).toEqual({ path: '/admin', search: '?tab=sync', v: 1 });
   });
 
-  it('drops tracker token and CalDAV url/password from ui_click payloads', () => {
+  it('drops tracker token and passwords from ui_click payloads', () => {
     expect(
       sanitizeAnalyticsPayload(ANALYTICS_EVENT.uiClick, {
         appPassword: 'mail-app-password-value',
-        caldavUrl: 'https://calendar.mail.ru/principals/mail.ru/user/calendars/id/',
-        surface: 'calendar',
+        surface: 'settings',
         targetId: 'save',
         token: 'y0_AgAAAAAsecretTokenValue',
       })
     ).toEqual({
-      surface: 'calendar',
+      surface: 'settings',
       targetId: 'save',
     });
   });

@@ -163,7 +163,6 @@ export const enMessages = {
     title: 'Settings',
     tabs: {
       planning: 'Planning',
-      calendar: 'Calendar',
       tracker: {
         jira: 'Jira',
         'yandex-tracker': 'YTracker',
@@ -179,15 +178,6 @@ export const enMessages = {
     accessibility: {
       closeSettings: 'Close settings',
       close: 'Close',
-    },
-    calendarTab: {
-      displaySection: 'Display',
-      swimlaneCalendarBusy: 'Show calendar busy on swimlane',
-      myCalendarHeading: 'My calendar (CalDAV)',
-      myCalendarHelp:
-        'Connect only your calendar. Busy blocks appear on your swimlane row when the toggle above is on.',
-      myCalendarLoading: 'Loading your profile…',
-      myCalendarUnavailable: 'Sign in to configure your calendar.',
     },
     generalTab: {
       sections: {
@@ -294,7 +284,6 @@ export const enMessages = {
       },
       swimlaneSection: 'Swimlane',
       swimlaneFactTimeline: 'Fact timeline under swimlane',
-      swimlaneCalendarBusy: 'Show calendar busy on swimlane',
       taskCardFieldsHeading: 'Task card fields',
       parentIssue: 'Parent issue',
       swimlaneEstimatesSpTp: 'Estimate (SP/TP)',
@@ -1221,24 +1210,7 @@ export const enMessages = {
     },
     swimlane: {
       quickAddPreviewTitle: 'New task',
-      calendar: {
-        appPassword: 'App-specific password',
-        busyBlockAria: '{summary}',
-        busyBlockAriaMany: 'Busy: {count} events',
-        caldavUrl: 'CalDAV URL',
-        email: 'Email',
-        hint: 'Copy the Mail.ru CalDAV calendar URL and create an app-specific password in mailbox security settings. Credentials are stored only in this browser.',
-        remove: 'Remove',
-        save: 'Save',
-        savedOk: 'Saved',
-        saving: 'Saving…',
-        test: 'Test',
-        testFailed: 'Could not connect. Check URL, email, and password.',
-        testing: 'Testing…',
-        testOk: 'Connection successful',
-      },
       lanes: {
-        calendar: 'Calendar',
         fact: 'Fact',
       },
       planAnchorCostAdded: 'Cost grew by {days} d after work started',
@@ -1318,7 +1290,6 @@ export const enMessages = {
         cursor: 'Cursor',
         diagram: 'Diagram',
         image: 'Photo',
-        layerCalendar: 'Calendar',
         layerFactTimeline: 'Fact timeline',
         layerImages: 'Photos',
         layerLinks: 'Links',

@@ -41,32 +41,18 @@ describe('clientSettingsPayload', () => {
     vi.unstubAllGlobals();
   });
 
-  it('collects allowlisted keys and ignores tracker token and CalDAV credentials', () => {
+  it('collects allowlisted keys and ignores the tracker token', () => {
     localStorage.setItem(STORAGE_KEYS.BOARD_VIEW_MODE, JSON.stringify('kanban'));
     localStorage.setItem(STORAGE_KEYS.EXPERIMENTAL_FEATURES, JSON.stringify(true));
     localStorage.setItem(
       STORAGE_KEYS.TRACKER_TOKEN,
       JSON.stringify({ organizationId: 'org-1', token: 'y0_AgAAAAAsecretTokenValue' })
     );
-    localStorage.setItem(
-      STORAGE_KEYS.DEVELOPER_CALDAV_CREDENTIALS,
-      JSON.stringify({
-        dev1: {
-          appPassword: 'mail-app-password-value',
-          caldavUrl: 'https://calendar.mail.ru/principals/mail.ru/user/calendars/id/',
-          email: 'user@mail.ru',
-        },
-      })
-    );
     const payload = collectClientSettingsPayload();
     expect(payload.boardViewMode).toBe('kanban');
     expect(payload.experimentalFeatures).toBe(true);
     const serialized = JSON.stringify(payload);
     expect(serialized).not.toContain('y0_AgAAAAAsecretTokenValue');
-    expect(serialized).not.toContain('mail-app-password-value');
-    expect(serialized).not.toContain('calendar.mail.ru');
-    expect(serialized).not.toContain('caldavUrl');
-    expect(serialized).not.toContain('appPassword');
   });
 
   it('sends on first visit and skips an unchanged hash', async () => {

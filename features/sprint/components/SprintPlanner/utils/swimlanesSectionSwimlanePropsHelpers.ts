@@ -3,7 +3,6 @@ import type { QuickAddQueueOption } from '@/features/board/quickAddQueueOptions'
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
-import type { CalendarBusySegment } from '@/lib/calendar/calendarEventTypes';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Comment, Developer, PhaseSegment, Task, TaskPosition } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
@@ -27,8 +26,6 @@ export function buildSwimlanePropsForDeveloper(input: {
   activeTask: Task | null;
   activeTaskDuration: number | null;
   boardId: number | null;
-  calendarBusySegments: CalendarBusySegment[];
-  calendarBusyVisible: boolean;
   cardShadowTaskId: string | null;
   comments: Comment[];
   commentsVisible: boolean;
@@ -123,8 +120,6 @@ export function buildSwimlanePropsForDeveloper(input: {
     activeTask: input.activeTask,
     activeTaskDuration: input.activeTaskDuration,
     boardId: input.boardId,
-    calendarBusySegments: isTeamLane ? [] : input.calendarBusySegments,
-    calendarBusyVisible: isTeamLane ? false : input.calendarBusyVisible,
     cardShadowTaskId: input.cardShadowTaskId,
     commentCardRowById: buildCommentCardRowById(developerComments),
     contextMenuBlurOtherCards: input.contextMenuBlurOtherCards,

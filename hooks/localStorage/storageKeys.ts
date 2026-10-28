@@ -1,4 +1,3 @@
-import { DEVELOPER_CALDAV_CREDENTIALS_STORAGE_KEY } from '@/lib/calendar/developerCalDavCredentialsStorage';
 import { TRACKER_OAUTH_LOCAL_STORAGE_KEY } from '@/lib/trackerTokenStorage';
 
 export const STORAGE_KEYS = {
@@ -24,15 +23,11 @@ export const STORAGE_KEYS = {
   /** Звать локальный мост к Claude CLI (`pnpm agent-bridge`), когда сессия ждёт агента */
   AGENT_BRIDGE_ENABLED: 'beer-tracker-agent-bridge-enabled',
   TRACKER_TOKEN: TRACKER_OAUTH_LOCAL_STORAGE_KEY,
-  /** CalDAV Mail.ru (URL + app-password) по id исполнителя — только localStorage */
-  DEVELOPER_CALDAV_CREDENTIALS: DEVELOPER_CALDAV_CREDENTIALS_STORAGE_KEY,
   SWIMLANE_LINKS_VISIBLE: 'beer-tracker-swimlane-links-visible',
   /** Какие связи свимлейна видны без наведения (all / important / hover) */
   SWIMLANE_LINKS_IDLE_MODE: 'beer-tracker-swimlane-links-idle-mode',
   /** Таймлайн факта «В работе» под строкой свимлейна (независимо от факта в занятости) */
   SWIMLANE_FACT_TIMELINE_VISIBLE: 'beer-tracker-swimlane-fact-timeline-visible',
-  /** Дорожка занятости из CalDAV под строкой свимлейна */
-  SWIMLANE_CALENDAR_BUSY_VISIBLE: 'beer-tracker-swimlane-calendar-busy-visible',
   /** Текстовые стикеры на свимлейне */
   SWIMLANE_NOTES_VISIBLE: 'beer-tracker-swimlane-notes-visible',
   /** Последний цвет стикера для инструмента «Заметка» */

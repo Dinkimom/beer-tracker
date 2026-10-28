@@ -15,7 +15,6 @@ import {
   CONTEXT_MENU_SEPARATOR,
   FLOATING_MENU_SHELL,
 } from '@/features/context-menu/contextMenuClasses';
-import { useHasDeveloperCalDavCredentials } from '@/hooks/useLocalStorage';
 
 import {
   placementToolbarLayerIconName,
@@ -32,7 +31,6 @@ interface SwimlanePlacementToolbarLayersMenuProps {
   animationState: 'closed' | 'open';
   autoArrange: boolean;
   baselineLayoutMode: SwimlaneBaselineLayoutMode;
-  calendarVisible: boolean;
   factVisible: boolean;
   imagesVisible: boolean;
   linksVisible: boolean;
@@ -59,7 +57,6 @@ export function SwimlanePlacementToolbarLayersMenu({
   animationState,
   autoArrange,
   baselineLayoutMode,
-  calendarVisible,
   factVisible,
   imagesVisible,
   linksVisible,
@@ -72,13 +69,8 @@ export function SwimlanePlacementToolbarLayersMenu({
   onToggleLayer,
 }: SwimlanePlacementToolbarLayersMenuProps) {
   const { t } = useI18n();
-  const calendarAvailable = useHasDeveloperCalDavCredentials();
-  const rows = resolveVisibilityLayerMenuRows({
-    calendarAvailable,
-    personBoundLayersAvailable,
-  });
+  const rows = resolveVisibilityLayerMenuRows({ personBoundLayersAvailable });
   const visibility: SwimlaneVisibilityLayerState = {
-    calendarVisible,
     factVisible,
     imagesVisible,
     linksVisible,

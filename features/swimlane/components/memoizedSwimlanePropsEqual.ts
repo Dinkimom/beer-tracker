@@ -26,8 +26,6 @@ export function memoizedSwimlanePropsEqual(
     prevProps.errorTaskIds === nextProps.errorTaskIds &&
     prevProps.errorReasons === nextProps.errorReasons &&
     prevProps.developerAvailability === nextProps.developerAvailability &&
-    prevProps.calendarBusySegments === nextProps.calendarBusySegments &&
-    prevProps.calendarBusyVisible === nextProps.calendarBusyVisible &&
     prevProps.swimlaneFactChangelogsByTaskId === nextProps.swimlaneFactChangelogsByTaskId &&
     prevProps.swimlaneFactCommentsByTaskId === nextProps.swimlaneFactCommentsByTaskId &&
     prevProps.swimlaneFactDeveloperMap === nextProps.swimlaneFactDeveloperMap &&

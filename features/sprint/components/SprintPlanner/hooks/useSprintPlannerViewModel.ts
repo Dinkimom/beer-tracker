@@ -120,7 +120,6 @@ export function useSprintPlannerViewModel({
     setSelectedAssigneeIds,
     swimlaneLinksVisible,
     swimlaneFactTimelineVisible,
-    swimlaneCalendarBusyVisible,
     swimlaneNotesVisible,
     swimlaneImagesVisible,
     linksDimOnHover,
@@ -215,9 +214,6 @@ export function useSprintPlannerViewModel({
 
   const swimlaneFactTimelineEnabled =
     swimlaneFactTimelineVisible && (viewMode === 'full' || viewMode === 'compact');
-
-  const swimlaneCalendarBusyEnabled =
-    swimlaneCalendarBusyVisible && (viewMode === 'full' || viewMode === 'compact');
 
   const {
     swimlaneTaskChangelogsMap,
@@ -430,7 +426,6 @@ export function useSprintPlannerViewModel({
     sprints,
     sprintsLoading,
     swimlaneFactTimelineEnabled,
-    swimlaneCalendarBusyEnabled,
     swimlaneImagesVisible,
     swimlaneLinksVisible,
     swimlaneNotesVisible,

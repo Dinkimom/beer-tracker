@@ -30,14 +30,12 @@ import { SwimlanePlacementToolbarLayersMenu } from './SwimlanePlacementToolbarLa
 
 interface SwimlanePlacementToolbarLayersProps {
   baselineLayoutMode: SwimlaneBaselineLayoutMode;
-  calendarVisible: boolean;
   factVisible: boolean;
   imagesVisible: boolean;
   linksVisible: boolean;
   notesVisible: boolean;
   personBoundLayersAvailable?: boolean;
   onBaselineLayoutModeChange: (mode: SwimlaneBaselineLayoutMode) => void;
-  onCalendarVisibleChange: (visible: boolean) => void;
   onFactVisibleChange: (visible: boolean) => void;
   onImagesVisibleChange: (visible: boolean) => void;
   onLinksVisibleChange: (visible: boolean) => void;
@@ -46,14 +44,12 @@ interface SwimlanePlacementToolbarLayersProps {
 
 export function SwimlanePlacementToolbarLayers({
   baselineLayoutMode,
-  calendarVisible,
   factVisible,
   imagesVisible,
   linksVisible,
   notesVisible,
   personBoundLayersAvailable = true,
   onBaselineLayoutModeChange,
-  onCalendarVisibleChange,
   onFactVisibleChange,
   onImagesVisibleChange,
   onLinksVisibleChange,
@@ -86,9 +82,8 @@ export function SwimlanePlacementToolbarLayers({
   const toggleLayer = (layer: SwimlaneVisibilityLayer) => {
     applyVisibilityLayerToggle(
       layer,
-      { calendarVisible, factVisible, imagesVisible, linksVisible, notesVisible },
+      { factVisible, imagesVisible, linksVisible, notesVisible },
       {
-        setCalendarVisible: onCalendarVisibleChange,
         setFactVisible: onFactVisibleChange,
         setImagesVisible: onImagesVisibleChange,
         setLinksVisible: onLinksVisibleChange,
@@ -127,7 +122,6 @@ export function SwimlanePlacementToolbarLayers({
             animationState={overlay.state}
             autoArrange={autoArrange}
             baselineLayoutMode={baselineLayoutMode}
-            calendarVisible={calendarVisible}
             factVisible={factVisible}
             imagesVisible={imagesVisible}
             linksVisible={linksVisible}

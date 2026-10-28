@@ -10,7 +10,6 @@ export * from './localStorage/hooksSwimlaneAndKanban';
 export * from './localStorage/swimlaneCardSlotLayout';
 export * from './localStorage/hooksSelectionThemeAndSync';
 export * from './localStorage/hooksSidebarAndDevelopers';
-export * from './localStorage/hooksDeveloperCalDav';
 
 export function useSidebarWidthStorage(
   defaultValue: number = 320

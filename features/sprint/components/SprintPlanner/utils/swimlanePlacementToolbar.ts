@@ -121,21 +121,20 @@ export function releaseCardPlacementTool(input: {
 
 type SwimlaneBoardLayer = 'images' | 'links' | 'notes';
 
-/** Слои доски + оверлеи под свимлейном (факт, календарь). */
-export type SwimlaneVisibilityLayer = SwimlaneBoardLayer | 'calendar' | 'fact';
+/** Слои доски + оверлей факта под свимлейном. */
+export type SwimlaneVisibilityLayer = SwimlaneBoardLayer | 'fact';
 
 export interface SwimlaneVisibilityLayerState {
-  calendarVisible: boolean;
   factVisible: boolean;
   imagesVisible: boolean;
   linksVisible: boolean;
   notesVisible: boolean;
 }
 
-/** Штампы на доске, затем оверлеи под строкой. */
+/** Штампы на доске, затем оверлей под строкой. */
 export const SWIMLANE_VISIBILITY_LAYER_GROUPS: readonly (readonly SwimlaneVisibilityLayer[])[] = [
   ['notes', 'images', 'links'],
-  ['fact', 'calendar'],
+  ['fact'],
 ];
 
 type SwimlaneVisibilityLayerMenuRow =
@@ -174,16 +173,12 @@ export function resolveArmedCardPlacementTool(
 }
 
 export function resolveVisibilityLayerMenuRows(input: {
-  calendarAvailable: boolean;
   personBoundLayersAvailable?: boolean;
 }): SwimlaneVisibilityLayerMenuRow[] {
   return SWIMLANE_VISIBILITY_LAYER_GROUPS.flatMap((group, groupIndex) => {
     const layers: SwimlaneVisibilityLayerMenuRow[] = [];
     for (const layer of group) {
-      if (!input.calendarAvailable && layer === 'calendar') {
-        continue;
-      }
-      if (input.personBoundLayersAvailable === false && (layer === 'calendar' || layer === 'fact')) {
+      if (input.personBoundLayersAvailable === false && layer === 'fact') {
         continue;
       }
       layers.push({ kind: 'layer', layer });
@@ -215,7 +210,7 @@ export function placementToolLayerToReveal(
 
 export function placementToolbarLayerLabelMessageKey(
   layer: SwimlaneVisibilityLayer
-): 'layerCalendar' | 'layerFactTimeline' | 'layerImages' | 'layerLinks' | 'layerNotes' {
+): 'layerFactTimeline' | 'layerImages' | 'layerLinks' | 'layerNotes' {
   if (layer === 'notes') {
     return 'layerNotes';
   }
@@ -225,10 +220,7 @@ export function placementToolbarLayerLabelMessageKey(
   if (layer === 'links') {
     return 'layerLinks';
   }
-  if (layer === 'fact') {
-    return 'layerFactTimeline';
-  }
-  return 'layerCalendar';
+  return 'layerFactTimeline';
 }
 
 export function placementToolbarLayoutModeMessageKey(
@@ -270,14 +262,8 @@ export function resolveLayoutModeSubmenuViewportPosition(input: {
 
 export function placementToolbarLayerIconName(
   layer: Exclude<SwimlaneVisibilityLayer, 'links' | 'notes'>
-): 'bar-chart' | 'calendar' | 'image' {
-  if (layer === 'images') {
-    return 'image';
-  }
-  if (layer === 'fact') {
-    return 'bar-chart';
-  }
-  return 'calendar';
+): 'bar-chart' | 'image' {
+  return layer === 'images' ? 'image' : 'bar-chart';
 }
 
 export function resolveVisibilityLayerVisible(
@@ -293,17 +279,13 @@ export function resolveVisibilityLayerVisible(
   if (layer === 'links') {
     return state.linksVisible;
   }
-  if (layer === 'fact') {
-    return state.factVisible;
-  }
-  return state.calendarVisible;
+  return state.factVisible;
 }
 
 export function applyVisibilityLayerToggle(
   layer: SwimlaneVisibilityLayer,
   state: SwimlaneVisibilityLayerState,
   setters: {
-    setCalendarVisible: (visible: boolean) => void;
     setFactVisible: (visible: boolean) => void;
     setImagesVisible: (visible: boolean) => void;
     setLinksVisible: (visible: boolean) => void;
@@ -322,11 +304,7 @@ export function applyVisibilityLayerToggle(
     setters.setLinksVisible(!state.linksVisible);
     return;
   }
-  if (layer === 'fact') {
-    setters.setFactVisible(!state.factVisible);
-    return;
-  }
-  setters.setCalendarVisible(!state.calendarVisible);
+  setters.setFactVisible(!state.factVisible);
 }
 
 export function resolvePlacementToolAfterLayerChange(

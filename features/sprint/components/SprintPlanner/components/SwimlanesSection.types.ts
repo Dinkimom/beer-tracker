@@ -64,8 +64,6 @@ export interface SwimlanesSectionProps {
   sidebarOpen: boolean;
   sprintStartDate: Date;
   sprintTimelineWorkingDays?: number;
-  /** Показывать дорожку занятости из CalDAV */
-  swimlaneCalendarBusyEnabled?: boolean;
   /** Показывать под строкой свимлейна таймлайн факта только по статусу «В работе» */
   swimlaneFactTimelineEnabled?: boolean;
   /** Показывать фотокарточки на свимлейне */

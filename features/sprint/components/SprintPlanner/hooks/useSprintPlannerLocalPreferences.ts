@@ -8,7 +8,6 @@ import {
   useOccupancyAssigneeFilterStorage,
   useParticipantsColumnWidthStorage,
   useSelectedBoardStorage,
-  useSwimlaneCalendarBusyVisibleStorage,
   useSwimlaneFactTimelineVisibleStorage,
   useSwimlaneImagesVisibleStorage,
   useSwimlaneLinksVisibilityStorage,
@@ -28,7 +27,6 @@ export function useSprintPlannerLocalPreferences() {
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useOccupancyAssigneeFilterStorage();
   const [swimlaneLinksVisible] = useSwimlaneLinksVisibilityStorage();
   const [swimlaneFactTimelineVisible] = useSwimlaneFactTimelineVisibleStorage();
-  const [swimlaneCalendarBusyVisible] = useSwimlaneCalendarBusyVisibleStorage();
   const [swimlaneNotesVisible] = useSwimlaneNotesVisibleStorage();
   const [swimlaneImagesVisible] = useSwimlaneImagesVisibleStorage();
   const [linksDimOnHover] = useLinksDimOnHoverStorage();
@@ -46,7 +44,6 @@ export function useSprintPlannerLocalPreferences() {
     setSelectedAssigneeIds,
     swimlaneLinksVisible,
     swimlaneFactTimelineVisible,
-    swimlaneCalendarBusyVisible,
     swimlaneNotesVisible,
     swimlaneImagesVisible,
     linksDimOnHover,

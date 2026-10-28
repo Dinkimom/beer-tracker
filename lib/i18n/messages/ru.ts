@@ -163,7 +163,6 @@ export const ruMessages = {
     title: 'Настройки',
     tabs: {
       planning: 'Планирование',
-      calendar: 'Календарь',
       tracker: {
         jira: 'Jira',
         'yandex-tracker': 'YTracker',
@@ -179,15 +178,6 @@ export const ruMessages = {
     accessibility: {
       closeSettings: 'Закрыть настройки',
       close: 'Закрыть',
-    },
-    calendarTab: {
-      displaySection: 'Отображение',
-      swimlaneCalendarBusy: 'Показывать занятость календаря на свимлейне',
-      myCalendarHeading: 'Мой календарь (CalDAV)',
-      myCalendarHelp:
-        'Подключается только ваш календарь. Занятость появится в вашей строке свимлейна, если включён переключатель выше.',
-      myCalendarLoading: 'Загрузка профиля…',
-      myCalendarUnavailable: 'Войдите в аккаунт, чтобы настроить календарь.',
     },
     generalTab: {
       sections: {
@@ -294,7 +284,6 @@ export const ruMessages = {
       },
       swimlaneSection: 'Свимлейн',
       swimlaneFactTimeline: 'Таймлайн факта под свимлейном',
-      swimlaneCalendarBusy: 'Показывать занятость календаря на свимлейне',
       taskCardFieldsHeading: 'Поля карточки задачи',
       parentIssue: 'Родительский тикет',
       swimlaneEstimatesSpTp: 'Оценка (SP/TP)',
@@ -1221,24 +1210,7 @@ export const ruMessages = {
     },
     swimlane: {
       quickAddPreviewTitle: 'Новая задача',
-      calendar: {
-        appPassword: 'Пароль для внешнего приложения',
-        busyBlockAria: '{summary}',
-        busyBlockAriaMany: 'Занятость: {count} событий',
-        caldavUrl: 'CalDAV URL',
-        email: 'Email',
-        hint: 'Скопируйте CalDAV-ссылку календаря Mail.ru и создайте пароль для внешнего приложения в настройках безопасности почты. Данные хранятся только в этом браузере.',
-        remove: 'Удалить',
-        save: 'Сохранить',
-        savedOk: 'Сохранено',
-        saving: 'Сохранение…',
-        test: 'Проверить',
-        testFailed: 'Не удалось подключиться. Проверьте URL, email и пароль.',
-        testing: 'Проверка…',
-        testOk: 'Подключение успешно',
-      },
       lanes: {
-        calendar: 'Календарь',
         fact: 'Факт',
       },
       planAnchorCostAdded: 'Стоимость выросла после старта работы на {days} д',
@@ -1318,7 +1290,6 @@ export const ruMessages = {
         cursor: 'Курсор',
         diagram: 'Схема',
         image: 'Картинка',
-        layerCalendar: 'Календарь',
         layerFactTimeline: 'Таймлайн факта',
         layerImages: 'Картинки',
         layerLinks: 'Связи',

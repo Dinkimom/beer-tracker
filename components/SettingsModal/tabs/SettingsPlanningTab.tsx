@@ -36,10 +36,8 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
     setGanttTab,
     setKanbanGroupBy,
     setLinksDimOnHover,
-    setSwimlaneCalendarBusyVisible,
     setSwimlaneFactTimelineVisible,
     setSwimlaneLinksVisible,
-    swimlaneCalendarBusyVisible,
     swimlaneFactTimelineVisible,
     swimlaneLinksVisible,
   } = props;
@@ -141,12 +139,6 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
             id="swimlane-fact-timeline"
             label={t('settings.planningTab.swimlaneFactTimeline')}
             onChange={setSwimlaneFactTimelineVisible}
-          />
-          <Toggle
-            checked={swimlaneCalendarBusyVisible}
-            id="swimlane-calendar-busy-planning"
-            label={t('settings.planningTab.swimlaneCalendarBusy')}
-            onChange={setSwimlaneCalendarBusyVisible}
           />
           <div className="space-y-2 pt-1">
             <h4 className="text-xs font-medium uppercase tracking-wide text-ds-text-muted">
