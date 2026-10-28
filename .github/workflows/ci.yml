@@ -40,6 +40,9 @@ jobs:
       - name: Run linter
         run: pnpm lint
 
+      - name: Duplicate code check
+        run: pnpm lint:dup
+
       - name: TypeScript check
         run: pnpm typecheck
 

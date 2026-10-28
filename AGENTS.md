@@ -10,7 +10,8 @@
 2. **`pnpm lint`** — строго без ошибок и предупреждений ESLint (`--max-warnings 0`).
 3. **`pnpm test`** — unit-тесты (Vitest); при изменении покрытой логики — добавить или обновить тесты.
 4. **`pnpm lint:unused`** — без находок Knip (мертвый код/неиспользуемые зависимости/экспорты).
-5. При изменении зависимостей или публичных API — при необходимости **`pnpm build`**.
+5. **`pnpm lint:dup`** — без новых копий кода сверх `.jscpd-baseline.json`. Убрал дубли — `pnpm lint:dup:baseline` и закоммитить baseline.
+6. При изменении зависимостей или публичных API — при необходимости **`pnpm build`**.
 
 Эти шаги обязательны для ассистентов-агентов перед завершением задачи: если какой-то этап не удалось запустить локально, явно зафиксировать это в ответе и указать причину.
 Предупреждения по качеству считаются блокирующими и должны устраняться как ошибки.
@@ -172,8 +173,8 @@ UI планера можно проверять на **`/demo/planner`**, без
 После **`pnpm install`** активируется хук: при коммите на **проиндексированных** `*.{js,jsx,mjs,cjs,ts,tsx}` запускается **`eslint --fix`**.
 
 - Обойти хук (только при необходимости): `git commit --no-verify` или `HUSKY=0 git commit …`.
-- Полный проект по-прежнему не линтится в хуке — только изменённые файлы; перед пушем прогонять **`pnpm lint`**, **`pnpm typecheck`**, **`pnpm test`** и **`pnpm lint:unused`**.
+- Полный проект по-прежнему не линтится в хуке — только изменённые файлы; перед пушем прогонять **`pnpm lint`**, **`pnpm typecheck`**, **`pnpm test`**, **`pnpm lint:unused`** и **`pnpm lint:dup`**.
 
 ## CI
 
-В GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) на `push`/`pull_request` в основную ветку запускаются `pnpm lint`, `pnpm typecheck` и `pnpm test`. Сборка Docker-образа не запускает ESLint (`NEXT_IGNORE_ESLINT` в Dockerfile), поэтому локальные и CI-проверки обязательны.
+В GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) на `push`/`pull_request` в основную ветку запускаются `pnpm lint`, `pnpm lint:dup`, `pnpm typecheck` и `pnpm test`. Сборка Docker-образа не запускает ESLint (`NEXT_IGNORE_ESLINT` в Dockerfile), поэтому локальные и CI-проверки обязательны.
