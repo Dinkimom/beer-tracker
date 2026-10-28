@@ -7,7 +7,9 @@
     "apps/mcp-sprint-context/main.ts",
     "apps/agent-bridge/main.ts",
     "scripts/knip/*.mjs",
+    ".claude/skills/*/*.cjs",
     "scripts/bench/runPlannerHotPathBench.ts",
     "scripts/bench/plannerHotPath.bench.ts"
-  ]
+  ],
+  "ignoreDependencies": ["playwright"]
 }
