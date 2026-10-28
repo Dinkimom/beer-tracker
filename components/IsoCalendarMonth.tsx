@@ -4,9 +4,10 @@ import { useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { useI18n } from '@/contexts/LanguageContext';
 import { pad2, parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 
-const WEEKDAYS_MON_FIRST = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+const WEEKDAYS_MON_FIRST = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 
 function todayIsoUtc(): string {
   const t = new Date();
@@ -31,6 +32,7 @@ export function IsoCalendarMonth({
   dayClassName,
   onDayPick,
 }: IsoCalendarMonthProps) {
+  const { language, t } = useI18n();
   const [today] = useState(todayIsoUtc);
   const [view, setView] = useState(() => {
     const p = (anchorIso && parseIsoDateOnly(anchorIso)) || parseIsoDateOnly(today)!;
@@ -39,7 +41,7 @@ export function IsoCalendarMonth({
 
   const lastDay = new Date(Date.UTC(view.y, view.m, 0)).getUTCDate();
   const startPad = (new Date(Date.UTC(view.y, view.m - 1, 1)).getUTCDay() + 6) % 7;
-  const monthTitle = new Intl.DateTimeFormat('ru-RU', {
+  const monthTitle = new Intl.DateTimeFormat(language === 'ru' ? 'ru-RU' : 'en-US', {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
@@ -58,7 +60,7 @@ export function IsoCalendarMonth({
     <>
       <div className="mb-2 flex items-center justify-between gap-1 px-0.5">
         <Button
-          aria-label="Предыдущий месяц"
+          aria-label={t('common.calendar.previousMonth')}
           className={navClass}
           type="button"
           variant="ghost"
@@ -70,7 +72,7 @@ export function IsoCalendarMonth({
           {monthTitle}
         </span>
         <Button
-          aria-label="Следующий месяц"
+          aria-label={t('common.calendar.nextMonth')}
           className={navClass}
           type="button"
           variant="ghost"
@@ -85,7 +87,7 @@ export function IsoCalendarMonth({
             key={w}
             className="flex h-7 items-center justify-center text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
           >
-            {w}
+            {t(`common.weekdays.${w}`)}
           </div>
         ))}
         {Array.from({ length: startPad }, (_, i) => (

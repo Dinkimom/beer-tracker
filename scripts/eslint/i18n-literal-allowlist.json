@@ -9,7 +9,6 @@
     "components/ConfirmDialog.tsx",
     "components/CustomSelect.tsx",
     "components/ErrorBoundary.tsx",
-    "components/IsoCalendarMonth.tsx",
     "components/IsoDatePickerField.tsx",
     "components/IsoDateRangePickerField.tsx",
     "components/LanguageSelector.tsx",

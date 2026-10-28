@@ -34,6 +34,10 @@ export const ruMessages = {
     deprecatedFeatureNotice:
       'Этот экран устарел и будет удалён. Используйте планер спринта.',
     nonWorkingDay: 'Нерабочий',
+    calendar: {
+      nextMonth: 'Следующий месяц',
+      previousMonth: 'Предыдущий месяц',
+    },
     weekdays: {
       fri: 'Пт',
       mon: 'Пн',

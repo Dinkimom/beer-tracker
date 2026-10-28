@@ -34,6 +34,10 @@ export const enMessages = {
     deprecatedFeatureNotice:
       'This screen is deprecated and will be removed. Use the sprint planner instead.',
     nonWorkingDay: 'Day off',
+    calendar: {
+      nextMonth: 'Next month',
+      previousMonth: 'Previous month',
+    },
     weekdays: {
       fri: 'Fri',
       mon: 'Mon',
