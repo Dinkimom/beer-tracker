@@ -11,7 +11,7 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { useWindowEscape } from '@/hooks/useWindowEscape';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { isDiagramEditorDirty } from '@/lib/comments/diagramEditorDirty';
 import {
   EXCALIDRAW_SCENE_MAX_BYTES,
@@ -49,7 +49,7 @@ export function SwimlaneDiagramEditor({
     savedCanvasRevision,
   });
 
-  useWindowEscape(onClose);
+  useEscapeKey(onClose);
 
   const handleApiReady = useCallback((readScene: () => ExcalidrawCommentScene) => {
     setGetScene(() => readScene);

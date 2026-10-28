@@ -14,6 +14,7 @@ import {
 } from '@/features/context-menu/contextMenuClasses';
 import { useSwimlaneLaneLayerActions } from '@/features/swimlane/hooks/useSwimlaneLaneLayerActions';
 import { TaskCardDisplayDialog } from '@/features/task/components/TaskCard/slots/TaskCardDisplayDialog';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useSwimlaneAutoArrangeStorage } from '@/hooks/useLocalStorage';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
@@ -88,22 +89,18 @@ export function SwimlanePlacementToolbarLayers({
       }
       setMenuOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      // Safari: without preventDefault, Escape exits fullscreen.
-      event.preventDefault();
-      event.stopPropagation();
-      setMenuOpen(false);
-    };
     document.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('keydown', onKeyDown, true);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('keydown', onKeyDown, true);
     };
   }, [menuOpen]);
+  // Safari: without preventDefault, Escape exits fullscreen.
+  useEscapeKey(() => setMenuOpen(false), {
+    capture: true,
+    enabled: menuOpen,
+    preventDefault: true,
+    stopPropagation: true,
+  });
 
   const toggleLayer = (layer: SwimlaneVisibilityLayer) => {
     applyVisibilityLayerToggle(

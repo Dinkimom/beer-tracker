@@ -15,6 +15,7 @@ import {
   measureContextMenuLayoutSize,
   resolveContextMenuViewportPosition,
 } from '@/features/context-menu/utils/resolveContextMenuViewportPosition';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 type ContextMenuAnchorRect = Pick<DOMRect, 'bottom' | 'height' | 'left' | 'right' | 'top' | 'width'>;
 
@@ -178,26 +179,25 @@ export function useContextMenu({
       }
     };
 
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        if (isLoading) return;
-        setIsStatusMenuOpen(false);
-        setIsSprintMenuOpen(false);
-        setIsEstimateMenuOpen(false);
-        setIsParentMenuOpen(false);
-        setIsAssigneeMenuOpen(false);
-        onClose();
-      }
-    };
-
     document.addEventListener('mousedown', handleClickOutside, true);
-    document.addEventListener('keydown', handleEscape);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true);
-      document.removeEventListener('keydown', handleEscape);
     };
   }, [closeOnOutsideClick, isLoading, onClose, onCloseByClickOutside]);
+
+  useEscapeKey(
+    () => {
+      if (isLoading) return;
+      setIsStatusMenuOpen(false);
+      setIsSprintMenuOpen(false);
+      setIsEstimateMenuOpen(false);
+      setIsParentMenuOpen(false);
+      setIsAssigneeMenuOpen(false);
+      onClose();
+    },
+    { target: 'document' }
+  );
 
   useLayoutEffect(() => {
     const el = menuRef.current;

@@ -4,8 +4,8 @@
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
-import { useWindowEscape } from '@/hooks/useWindowEscape';
 
 import { PlannerOnboardingPopover } from './PlannerOnboardingPopover';
 
@@ -20,7 +20,7 @@ export function PlannerOnboardingWelcome({
   const overlay = useDeferredOverlayClose(onSkip);
   const requestClose = overlay.requestClose;
 
-  useWindowEscape(requestClose, { capture: true });
+  useEscapeKey(requestClose, { capture: true, preventDefault: true, stopPropagation: true });
 
   return (
     <div

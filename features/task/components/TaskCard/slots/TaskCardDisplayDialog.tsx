@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/Button';
@@ -10,6 +9,7 @@ import { Icon } from '@/components/Icon';
 import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useCommitSwimlaneCardSlotLayout } from '@/hooks/useLocalStorage';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
@@ -36,22 +36,7 @@ export function TaskCardDisplayDialog({ nested = false, onClose, open }: TaskCar
   });
   const overlay = useOverlayPresence(open);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      event.stopPropagation();
-      onClose();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [onClose, open]);
+  useEscapeKey(onClose, { enabled: open, stopPropagation: true, target: 'document' });
 
   if (!overlay.mounted) {
     return null;

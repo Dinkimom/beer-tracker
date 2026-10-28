@@ -3,7 +3,7 @@
 import type { Developer, Task } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -15,6 +15,7 @@ import {
   FLOATING_TOOLBAR_GLASS,
   FLOATING_TOOLBAR_ITEM_IDLE,
 } from '@/features/context-menu/contextMenuClasses';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 import { useBacklogBulkMove } from '../hooks/useBacklogBulkMove';
 
@@ -59,10 +60,9 @@ export function BacklogBulkToolbar({
   });
   const [sprintMenuOpen, setSprintMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (selectedCount === 0) return undefined;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || moving) return;
+  useEscapeKey(
+    (event) => {
+      if (moving) return;
       const target = event.target;
       if (target instanceof HTMLElement && target.closest('input, textarea, select, [contenteditable="true"]')) {
         return;
@@ -72,10 +72,9 @@ export function BacklogBulkToolbar({
         return;
       }
       clear();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [clear, moving, selectedCount, sprintMenuOpen]);
+    },
+    { enabled: selectedCount > 0, target: 'document' }
+  );
 
   if (selectedCount === 0) return null;
 

@@ -12,6 +12,7 @@ import {
   CONTEXT_MENU_GHOST_BUTTON_RESET,
   FLOATING_MENU_SHELL,
 } from '@/features/context-menu/contextMenuClasses';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import {
   SWIMLANE_BASELINE_LAYOUT_MODES,
@@ -56,22 +57,18 @@ export function SwimlanePlacementToolbarLayersLayoutMode({
       }
       setOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      // Safari: without preventDefault, Escape exits fullscreen.
-      event.preventDefault();
-      event.stopPropagation();
-      setOpen(false);
-    };
     document.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('keydown', onKeyDown, true);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('keydown', onKeyDown, true);
     };
   }, [open]);
+  // Safari: without preventDefault, Escape exits fullscreen.
+  useEscapeKey(() => setOpen(false), {
+    capture: true,
+    enabled: open,
+    preventDefault: true,
+    stopPropagation: true,
+  });
 
   useLayoutEffect(() => {
     const button = buttonRef.current;

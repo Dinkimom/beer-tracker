@@ -10,7 +10,7 @@ import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overla
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { StatusSubmenuTransitionList } from '@/features/context-menu/components/StatusSubmenuTransitionList';
-import { useWindowEscape } from '@/hooks/useWindowEscape';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface KanbanColumnStatusChoiceModalProps {
   columnName: string;
@@ -29,7 +29,7 @@ export function KanbanColumnStatusChoiceModal({
 }: KanbanColumnStatusChoiceModalProps) {
   const { t } = useI18n();
 
-  useWindowEscape(onClose);
+  useEscapeKey(onClose);
 
   return createPortal(
     <div

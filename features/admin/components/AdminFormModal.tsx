@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react';
 
-import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 import { HeaderIconButton } from '@/components/HeaderIconButton';
@@ -10,6 +9,7 @@ import { Icon } from '@/components/Icon';
 import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 interface AdminFormModalProps {
@@ -34,16 +34,13 @@ export function AdminFormModal({
   const { t } = useI18n();
   const overlay = useOverlayPresence(isOpen);
 
-  useEffect(() => {
-    if (!isOpen || busy) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
+  useEscapeKey(
+    () => {
       if (document.querySelector('[data-confirm-dialog="true"]')) return;
       onClose();
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [busy, isOpen, onClose]);
+    },
+    { enabled: isOpen && !busy, target: 'document' }
+  );
 
   if (!overlay.mounted) return null;
 

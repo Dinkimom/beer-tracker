@@ -13,6 +13,7 @@ import {
   resolveSwimlaneLinkingCardClick,
   resolveSwimlaneTaskLinkMode,
 } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { orderTaskIdsByTimeline } from '@/utils/linkAnchors';
 
 export function useSwimlaneLinkingHandlers(input: {
@@ -116,14 +117,7 @@ export function useSwimlaneLinkingHandlers(input: {
     ]
   );
 
-  useEffect(() => {
-    if (linkingFromTaskId == null) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleCancelLinking();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleCancelLinking, linkingFromTaskId]);
+  useEscapeKey(handleCancelLinking, { enabled: linkingFromTaskId != null });
 
   useEffect(() => {
     if (!showLinks && linkingFromTaskId != null) {

@@ -6,6 +6,7 @@ import type { AgentSession } from '@/lib/agentSessions/agentSession';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAgentSessions } from '@/features/swimlane/hooks/useAgentSessions';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import { useRootStore } from '@/lib/layers';
 
@@ -61,11 +62,6 @@ export function useAgentIslandChat(sprintId: number | null) {
       setPick(null);
       sprintPlannerUi.setAgentRequestTarget(null);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        collapse();
-      }
-    };
     const onPointerDown = (event: PointerEvent) => {
       const node = event.target;
       // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
@@ -79,13 +75,18 @@ export function useAgentIslandChat(sprintId: number | null) {
       }
       collapse();
     };
-    window.addEventListener('keydown', onKeyDown);
     document.addEventListener('pointerdown', onPointerDown, true);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('pointerdown', onPointerDown, true);
     };
   }, [chatOpen, sprintPlannerUi]);
+  useEscapeKey(
+    () => {
+      setPick(null);
+      sprintPlannerUi.setAgentRequestTarget(null);
+    },
+    { enabled: chatOpen }
+  );
 
   // Выбор режима в тулбаре (и хоткеем) сворачивает чат.
   useEffect(() => {

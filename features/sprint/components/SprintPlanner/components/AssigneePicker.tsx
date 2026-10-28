@@ -15,6 +15,7 @@ import {
   FLOATING_MENU_FIT_BODY,
   FLOATING_MENU_FIT_WIDTH,
 } from '@/features/context-menu/contextMenuClasses';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
 
 import { AssigneePickerList } from './AssigneePickerList';
@@ -67,16 +68,12 @@ export function AssigneePicker({
         requestClose();
       }
     };
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') requestClose();
-    };
     document.addEventListener('mousedown', handleClickOutside, true);
-    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside, true);
-      document.removeEventListener('keydown', handleEscape);
     };
   }, [overlay.isExiting, requestClose]);
+  useEscapeKey(requestClose, { enabled: !overlay.isExiting, target: 'document' });
 
   const pickerStyle = useMemo((): CSSProperties => {
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 800;

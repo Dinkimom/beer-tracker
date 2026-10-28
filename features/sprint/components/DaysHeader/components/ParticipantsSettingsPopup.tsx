@@ -16,6 +16,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { DevelopersManagementContent } from '@/features/sidebar/components/DevelopersManagement';
 import { TeamSwimlaneSettingsItem } from '@/features/sprint/components/DaysHeader/components/TeamSwimlaneSettingsItem';
 import { UserSelector } from '@/features/sprint/components/SprintPlanner/components/UserSelector';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import {
   addTeamMemberForBoard,
@@ -143,20 +144,12 @@ export function ParticipantsSettingsPopup({
   };
 
   // Закрываем попап по Escape (клик снаружи обрабатывает overlay)
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !removingDeveloperId) {
-        onClose();
-      }
-    }
-
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen, onClose, removingDeveloperId]);
+  useEscapeKey(
+    () => {
+      if (!removingDeveloperId) onClose();
+    },
+    { enabled: isOpen, target: 'document' }
+  );
 
   const overlay = useOverlayPresence(isOpen);
   if (!overlay.mounted) return null;

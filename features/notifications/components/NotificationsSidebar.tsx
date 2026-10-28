@@ -8,6 +8,7 @@ import { ZIndex } from '@/constants';
 import { NotificationsPanelBody } from '@/features/notifications/components/NotificationsPanelBody';
 import { NotificationsSidebarHeader } from '@/features/notifications/components/NotificationsSidebarHeader';
 import { useResize } from '@/features/sidebar/hooks/useResize';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useNotificationsSidebarWidthStorage } from '@/hooks/useLocalStorage';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useSidePanelPresence } from '@/hooks/useSidePanelPresence';
@@ -61,22 +62,7 @@ export function NotificationsSidebar({ open, onClose }: NotificationsSidebarProp
     refetch().catch(() => undefined);
   }, [open, refetch]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    }
-
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [open, onClose]);
+  useEscapeKey(onClose, { enabled: open, target: 'document' });
 
   if (!presence.mounted || !mounted) {
     return null;

@@ -10,6 +10,7 @@ import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { useI18n } from '@/contexts/LanguageContext';
 import { StickyNoteColorSwatch } from '@/features/comments/components/StickyNoteColorSwatch';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { STICKY_NOTE_COLOR_LABEL_KEYS } from '@/lib/comments/stickyNoteColor';
 
 import { StickyNoteColorSwatches } from './StickyNoteColorSwatches';
@@ -39,21 +40,18 @@ export function TaskBarDraftNoteColorDropdown({
       }
       setOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      setOpen(false);
-    };
     document.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('keydown', onKeyDown, true);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('keydown', onKeyDown, true);
     };
   }, [open]);
+  // Safari: without preventDefault, Escape exits fullscreen.
+  useEscapeKey(() => setOpen(false), {
+    capture: true,
+    enabled: open,
+    preventDefault: true,
+    stopPropagation: true,
+  });
 
   return (
     <div ref={rootRef} className="relative">

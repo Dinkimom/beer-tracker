@@ -8,6 +8,7 @@ import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { boardSelectorLabel } from '@/features/board/boardSelectorLabel';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 import { useBoards } from '../hooks/useBoards';
@@ -41,7 +42,7 @@ export function BoardSelector({
       ? boards.map((board) => boardSelectorLabel(board))
       : [t('planning.board.selectTeamPlaceholder')];
 
-  // Закрываем dropdown при клике вне его или нажатии Escape
+  // Закрываем dropdown при клике вне его и по Escape
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -52,19 +53,12 @@ export function BoardSelector({
       }
     }
 
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-      }
-    }
-
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
+  useEscapeKey(() => setIsOpen(false), { enabled: isOpen, target: 'document' });
 
   const selectedBoard = getBoardById(selectedBoardId);
   const triggerTone = boardSelectorTriggerTone(isOpen, Boolean(selectedBoard));

@@ -4,6 +4,8 @@ import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
 import { useEffect, useRef, useState } from 'react';
 
+import { useEscapeKey } from '@/hooks/useEscapeKey';
+
 import { resolveNoteColorPopupOpen } from '../utils/swimlanePlacementToolbar';
 
 import { SwimlanePlacementToolbarButton } from './SwimlanePlacementToolbarButton';
@@ -36,22 +38,18 @@ export function SwimlanePlacementToolbarNoteTool({
       }
       setPopupOpen(false);
     };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      // Safari: without preventDefault, Escape exits fullscreen.
-      event.preventDefault();
-      event.stopPropagation();
-      setPopupOpen(false);
-    };
     document.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('keydown', onKeyDown, true);
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('keydown', onKeyDown, true);
     };
   }, [colorPopupOpen]);
+  // Safari: without preventDefault, Escape exits fullscreen.
+  useEscapeKey(() => setPopupOpen(false), {
+    capture: true,
+    enabled: colorPopupOpen,
+    preventDefault: true,
+    stopPropagation: true,
+  });
 
   return (
     <div ref={rootRef} className="relative">
