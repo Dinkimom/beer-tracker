@@ -1,19 +1,11 @@
 import { useSyncExternalStore } from 'react';
 
-import { DEMO_ORG_ID } from '@/lib/demo/demoIds';
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 
 function readActiveOrganizationId(): string | null {
   try {
     const value = localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)?.trim();
-    if (!value || value === DEMO_ORG_ID) {
-      // Демо-организация фикстуры не должна утекать в боевые `/api/*` (как в `lib/axios.ts`).
-      if (value === DEMO_ORG_ID) {
-        localStorage.removeItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
-      }
-      return null;
-    }
-    return value;
+    return value || null;
   } catch {
     return null;
   }

@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 
 import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
 import { fetchDemoProductSession, fetchProductSession } from '@/lib/api/auth';
-import { DEMO_ORG_ID } from '@/lib/demo/demoIds';
 import { parseRegistryUuidString } from '@/lib/registryUuidString';
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 
@@ -50,13 +49,7 @@ function readStoredOrganizationId(): string | null {
   }
   try {
     const v = localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
-    const parsed = parseRegistryUuidString(v);
-    // Fixture org from `/demo/planner` must never stick as the real tenant header.
-    if (parsed === DEMO_ORG_ID) {
-      localStorage.removeItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
-      return null;
-    }
-    return parsed;
+    return parseRegistryUuidString(v);
   } catch {
     return null;
   }
@@ -70,14 +63,13 @@ function writeStoredOrganizationId(id: string | null): void {
     const previous = parseRegistryUuidString(
       localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)
     );
-    const next = id === DEMO_ORG_ID ? null : id;
-    if (previous === next) {
+    if (previous === id) {
       return;
     }
-    if (!next) {
+    if (!id) {
       localStorage.removeItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
     } else {
-      localStorage.setItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY, next);
+      localStorage.setItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY, id);
     }
     window.dispatchEvent(
       new CustomEvent('localStorageChange', {
@@ -158,10 +150,8 @@ export function resolveActiveOrganizationId(
 }
 
 /**
- * Анонимный или «пустой» ответ `/auth/session` не должен затирать tenant в localStorage.
- * Иначе: (1) гонка до cookie после OAuth → AuthGuard на /auth-setup;
- * (2) отравленный кэш demo-сессии (signedIn + только DEMO_ORG, после фильтра orgs=[]) →
- * writeStoredOrganizationId(null) → токен без active org → снова /auth-setup.
+ * Анонимный или «пустой» ответ `/auth/session` не должен затирать tenant в localStorage:
+ * гонка до cookie после OAuth → writeStoredOrganizationId(null) → AuthGuard на /auth-setup.
  */
 export function shouldSyncStoredOrganizationFromSession(args: {
   organizationCount: number;
@@ -219,26 +209,12 @@ export function useProductTenantOrganizations(options?: {
     retry: false,
   });
 
-  const organizations = useMemo(() => {
-    const normalized = normalizeProductSessionOrganizations(data?.organizations);
-    // Fixture session must never drive the real tenant (SSE / X-Organization-Id / auth-setup).
-    if (isDemoPlanner) {
-      return normalized;
-    }
-    return normalized.filter((org) => org.id !== DEMO_ORG_ID);
-  }, [data, isDemoPlanner]);
+  const organizations = useMemo(
+    () => normalizeProductSessionOrganizations(data?.organizations),
+    [data]
+  );
   const signedIn = data?.user != null;
 
-  useEffect(() => {
-    if (isDemoPlanner || !data) {
-      return;
-    }
-    const raw = normalizeProductSessionOrganizations(data.organizations);
-    if (raw.some((org) => org.id === DEMO_ORG_ID)) {
-      // Drop poisoned cache from an older demo visit that shared product-session key.
-      queryClient.removeQueries({ queryKey: productSessionQueryKey });
-    }
-  }, [data, isDemoPlanner, queryClient]);
   const storedOrganizationId = useSyncExternalStore(
     subscribeStoredOrganizationId,
     readStoredOrganizationId,

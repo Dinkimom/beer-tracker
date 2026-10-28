@@ -7,7 +7,6 @@ import axios from 'axios';
 
 import { ensureFreshAtlassianAccessToken } from './atlassianOAuth/browserRefresh';
 import { TRACKER_CLOUD_ID_HEADER } from './atlassianOAuth/constants';
-import { DEMO_ORG_ID } from './demo/demoIds';
 import { getBrowserRealtimeClientId } from './realtime/sprintRealtimeClientId';
 import { REALTIME_CLIENT_ID_HEADER } from './realtime/sprintRealtimeConstants';
 import { parseRegistryUuidString } from './registryUuidString';
@@ -49,10 +48,7 @@ function applyBeerTrackerBrowserRequestHeaders(config: Parameters<
   const orgId = parseRegistryUuidString(
     localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)
   );
-  // Demo fixture org must not leak into real `/api/*` (breaks validate-token header vs body).
-  if (orgId === DEMO_ORG_ID) {
-    localStorage.removeItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
-  } else if (orgId) {
+  if (orgId) {
     config.headers[TENANT_ORG_HEADER] = orgId;
   }
 

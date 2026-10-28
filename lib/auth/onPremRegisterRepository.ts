@@ -6,7 +6,6 @@ import { NextResponse } from 'next/server';
 import { allocateUniqueOrganizationSlug } from '@/lib/auth/orgSlug';
 import { pool, qualifyBeerTrackerTables } from '@/lib/db';
 import { mergeOrganizationSettingsIssueTrackerPatch } from '@/lib/issueTrackerProvider/settings';
-import { sqlExcludingDemoSystemOrganization } from '@/lib/onPrem/demoSystemOrganizationConstants';
 import { buildDefaultTrackerIntegrationStored, mergeOrganizationSettingsTrackerIntegration } from '@/lib/trackerIntegration';
 
 import { appendProductSessionCookie } from './cookies';
@@ -62,10 +61,7 @@ async function assertOnPremDatabaseEmpty(client: PoolClient) {
   const stateResult = await client.query<{ has_admins: boolean; has_organizations: boolean }>(
     qualifyBeerTrackerTables(
       `SELECT
-         EXISTS(
-           SELECT 1 FROM organizations
-           WHERE ${sqlExcludingDemoSystemOrganization()}
-         ) AS has_organizations,
+         EXISTS(SELECT 1 FROM organizations) AS has_organizations,
          EXISTS(SELECT 1 FROM admins) AS has_admins`
     )
   );

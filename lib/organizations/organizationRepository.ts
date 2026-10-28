@@ -8,7 +8,6 @@ import type { QueryParams } from '@/types';
 
 import { query } from '@/lib/db';
 import { organizationIssueTrackerPublicDto } from '@/lib/issueTrackerProvider/settings';
-import { sqlExcludingDemoSystemOrganization } from '@/lib/onPrem/demoSystemOrganizationConstants';
 
 export async function findOrganizationById(
   organizationId: string
@@ -63,7 +62,6 @@ export async function findOrganizationBySlug(
 export async function fetchFirstOrganizationId(): Promise<string | null> {
   const res = await query<{ id: string }>(
     `SELECT id FROM organizations
-     WHERE ${sqlExcludingDemoSystemOrganization()}
      ORDER BY created_at ASC
      LIMIT 1`
   );
@@ -162,7 +160,6 @@ export async function listAllOrganizationsAdminSummaries(): Promise<UserOrganiza
   }>(
     `SELECT o.id AS organization_id, o.name, o.slug, o.initial_sync_completed_at, o.settings
      FROM organizations o
-     WHERE ${sqlExcludingDemoSystemOrganization('o.id', 'o.slug')}
      ORDER BY o.name ASC`
   );
   return res.rows.map(({ settings, ...row }) => ({
