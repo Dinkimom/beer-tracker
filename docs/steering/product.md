@@ -1,4 +1,4 @@
-# Product steering — Beer Tracker (Sprint Manager)
+# Product steering — Beer Tracker
 
 ## Назначение
 

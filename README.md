@@ -180,7 +180,7 @@ MCP-сервер работает на вашем же инстансе. Кли�
 
 Коммиты подписываются по [DCO](https://developercertificate.org/) (`git commit -s`), правила в [CONTRIBUTING.md](./CONTRIBUTING.md). Об уязвимостях сообщайте по [SECURITY.md](./SECURITY.md).
 
-В коде и старых документах интерфейс может называться Sprint Manager, это прежнее имя. Стек и слои описаны в [ARCHITECTURE.md](./ARCHITECTURE.md), слоты для скриншотов — в [docs/media/README.md](./docs/media/README.md). Как добавить компанию в «Где используется», написано в [docs/companies.md](./docs/companies.md).
+Стек и слои описаны в [ARCHITECTURE.md](./ARCHITECTURE.md), слоты для скриншотов — в [docs/media/README.md](./docs/media/README.md). Как добавить компанию в «Где используется», написано в [docs/companies.md](./docs/companies.md).
 
 Планировщик эпиков и квартальный план из продукта убраны, причины в [product steering](./docs/steering/product.md).
 

@@ -182,7 +182,7 @@ The guides below are in Russian.
 
 Commits need a [DCO](https://developercertificate.org/) sign-off (`git commit -s`); see [CONTRIBUTING.md](./CONTRIBUTING.md). Report vulnerabilities as described in [SECURITY.md](./SECURITY.md).
 
-You may see the UI called Sprint Manager in code and older docs; that was its earlier name. [ARCHITECTURE.md](./ARCHITECTURE.md) describes the stack and layers, and [docs/media/README.md](./docs/media/README.md) lists the screenshot slots. To add your company to “Used by”, follow [docs/companies.md](./docs/companies.md).
+[ARCHITECTURE.md](./ARCHITECTURE.md) describes the stack and layers, and [docs/media/README.md](./docs/media/README.md) lists the screenshot slots. To add your company to “Used by”, follow [docs/companies.md](./docs/companies.md).
 
 The epic planner and the quarterly plan were removed from the product; [product steering](./docs/steering/product.md) explains why.
 
