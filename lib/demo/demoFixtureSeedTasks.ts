@@ -22,7 +22,7 @@ export const DEMO_DEV_DISPLAY = {
   bob: { name: 'Guido van Rossum', avatarUrl: '/demo/avatars/guido.jpg' },
   carol: { name: 'Margaret Hamilton', avatarUrl: '/demo/avatars/margaret.jpg' },
   dana: { name: 'John Carmack', avatarUrl: '/demo/avatars/carmack.jpg' },
-  erin: { name: 'Ken Thompson', avatarUrl: null },
+  erin: { name: 'Ken Thompson', avatarUrl: '/demo/avatars/ken.jpg' },
 } as const;
 
 export function buildDemoDevelopers(): Developer[] {
