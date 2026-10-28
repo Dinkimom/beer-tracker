@@ -4,12 +4,11 @@ import type { CustomSelectOption } from '@/components/CustomSelect';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { formatTaskParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
 import { useDebouncedCallback } from '@/hooks/usePerformance';
 import { searchIssues } from '@/lib/api/issues';
 
-import {
-  formatQuickAddParentOptionLabel,
-  hasLocalParentSelectMatch,
+import { hasLocalParentSelectMatch,
   mergeParentSelectOptions,
 } from '../quickAddParentSelectHelpers';
 
@@ -47,7 +46,7 @@ export function useQuickAddParentSelect({
           const next = new Map(prev);
           for (const item of items) {
             const option: CustomSelectOption<string> = {
-              label: formatQuickAddParentOptionLabel({
+              label: formatTaskParentLabel({
                 display: item.summary,
                 id: item.key,
                 key: item.key,

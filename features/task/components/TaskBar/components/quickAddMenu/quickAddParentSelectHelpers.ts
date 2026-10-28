@@ -2,25 +2,10 @@ import type { CustomSelectOption } from '@/components/CustomSelect';
 import type { TaskParent } from '@/types';
 
 import { optionMatchesQuery } from '@/components/CustomSelect';
-import { resolveFeatureDraftParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
+import { formatTaskParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
 
 import { trimmedTaskParentToken } from './collectUniqueSprintParentTasks';
-
-export function formatQuickAddParentOptionLabel(
-  parent: Pick<TaskParent, 'display' | 'id' | 'key'>,
-  namesById?: ReadonlyMap<string, string>
-): string {
-  const key = trimmedTaskParentToken(parent.key) || trimmedTaskParentToken(parent.id);
-  const display = trimmedTaskParentToken(parent.display);
-  if (isFeatureLaneDraftRowId(key) || isFeatureLaneDraftRowId(trimmedTaskParentToken(parent.id))) {
-    return resolveFeatureDraftParentLabel(parent, namesById);
-  }
-  if (key && display && display !== key) {
-    return `${key} — ${display}`;
-  }
-  return display || key;
-}
 
 /** Есть ли совпадение в локальном списке родителей (тот же критерий, что у CustomSelect). */
 export function hasLocalParentSelectMatch(
@@ -77,7 +62,7 @@ export function withCurrentQuickAddParentOption(
   if (!parent || !key || options.some((option) => option.value === key)) {
     return [...options];
   }
-  const label = formatQuickAddParentOptionLabel(parent, namesById);
+  const label = formatTaskParentLabel(parent, namesById);
   if (!label) {
     return [...options];
   }

@@ -2,11 +2,11 @@ import type { Task } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
+import { formatTaskParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
+
 import {
   buildContextMenuParentOptions,
-  contextMenuParentMatchesQuery,
-  formatContextMenuParentLabel,
-  hasLocalContextMenuParentMatch,
+  contextMenuParentMatchesQuery, hasLocalContextMenuParentMatch,
   resolveContextMenuCurrentParentLabel,
   resolveTaskParentForMenu,
   taskParentFromIssueSearchItem,
@@ -55,15 +55,15 @@ describe('buildContextMenuParentOptions', () => {
     ).toEqual({ display: 'Story', id: 's', key: 'ST-1' });
   });
 
-  it('formatContextMenuParentLabel joins key and display', () => {
+  it('formatTaskParentLabel joins key and display', () => {
     expect(
-      formatContextMenuParentLabel({ display: 'Story One', id: '1', key: 'ST-1' })
+      formatTaskParentLabel({ display: 'Story One', id: '1', key: 'ST-1' })
     ).toBe('ST-1 — Story One');
   });
 
-  it('formatContextMenuParentLabel shows only the draft feature name', () => {
+  it('formatTaskParentLabel shows only the draft feature name', () => {
     expect(
-      formatContextMenuParentLabel({
+      formatTaskParentLabel({
         display: 'Пупи',
         id: 'feature-draft:44e9e359-5402-4d8d-af89-4',
         key: 'feature-draft:44e9e359-5402-4d8d-af89-4',
@@ -73,7 +73,7 @@ describe('buildContextMenuParentOptions', () => {
 
   it('does not show a raw feature-draft id as the parent label', () => {
     expect(
-      formatContextMenuParentLabel({
+      formatTaskParentLabel({
         display: 'feature-draft:44e9e359-5402-4d8d-af89-4',
         id: 'feature-draft:44e9e359-5402-4d8d-af89-4',
         key: 'feature-draft:44e9e359-5402-4d8d-af89-4',

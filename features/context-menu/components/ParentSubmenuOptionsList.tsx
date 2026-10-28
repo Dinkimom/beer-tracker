@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { MENU_ROW, MENU_ROW_CHECK, MENU_ROW_STACK } from '@/features/context-menu/contextMenuClasses';
-import { formatContextMenuParentLabel } from '@/features/context-menu/utils/buildContextMenuParentOptions';
+import { formatTaskParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
 
 interface ParentSubmenuOptionsListProps {
   currentKey: string;
@@ -72,7 +72,7 @@ export function ParentSubmenuOptionsList({
                 onClick={() => onSelect(parent)}
               >
                 <span className="min-w-0 flex-1 truncate">
-                  {formatContextMenuParentLabel(parent)}
+                  {formatTaskParentLabel(parent)}
                 </span>
                 {isSelected ? <Icon className={MENU_ROW_CHECK} name="check" /> : null}
               </Button>

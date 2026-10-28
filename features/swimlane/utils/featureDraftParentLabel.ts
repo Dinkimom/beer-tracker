@@ -45,6 +45,25 @@ export function resolveFeatureDraftParentLabel(
   return humanFeatureDraftParentDisplay(fromName, key);
 }
 
+/**
+ * Подпись родителя задачи в списках выбора: «KEY — название»; у черновой фичи — только её имя
+ * (из родителя, иначе из `namesById`), без технического id строки.
+ */
+export function formatTaskParentLabel(
+  parent: Pick<TaskParent, 'display' | 'id' | 'key'>,
+  namesById?: ReadonlyMap<string, string>
+): string {
+  const key = resolveFeatureDraftParentKey(parent);
+  const display = trimmedParentField(parent.display);
+  if (isFeatureLaneDraftRowId(key) || isFeatureLaneDraftRowId(trimmedParentField(parent.id))) {
+    return resolveFeatureDraftParentLabel(parent, namesById);
+  }
+  if (key && display && display !== key) {
+    return `${key} — ${display}`;
+  }
+  return display || key;
+}
+
 export function buildFeatureDraftRowNamesById(
   draftRows: readonly { id: string; name: string }[]
 ): Map<string, string> {

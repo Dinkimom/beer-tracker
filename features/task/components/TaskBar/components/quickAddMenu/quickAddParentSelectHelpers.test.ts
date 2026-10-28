@@ -1,30 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
 import { optionMatchesQuery } from '@/components/CustomSelect';
+import { formatTaskParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
 
-import {
-  formatQuickAddParentOptionLabel,
-  hasLocalParentSelectMatch,
+import { hasLocalParentSelectMatch,
   mergeParentSelectOptions,
   withCurrentQuickAddParentOption,
 } from './quickAddParentSelectHelpers';
 
-describe('formatQuickAddParentOptionLabel', () => {
+describe('formatTaskParentLabel', () => {
   it('joins key and display when they differ', () => {
-    expect(formatQuickAddParentOptionLabel({ key: 'ST-1', display: 'Story', id: '1' })).toBe(
+    expect(formatTaskParentLabel({ key: 'ST-1', display: 'Story', id: '1' })).toBe(
       'ST-1 — Story'
     );
   });
 
   it('returns key when display equals key', () => {
-    expect(formatQuickAddParentOptionLabel({ key: 'ST-1', display: 'ST-1', id: '1' })).toBe(
+    expect(formatTaskParentLabel({ key: 'ST-1', display: 'ST-1', id: '1' })).toBe(
       'ST-1'
     );
   });
 
   it('shows only the draft feature name, not the raw row id', () => {
     expect(
-      formatQuickAddParentOptionLabel({
+      formatTaskParentLabel({
         key: 'feature-draft:44e9e9a0-1',
         display: 'Пупи',
         id: 'feature-draft:44e9e9a0-1',
@@ -34,7 +33,7 @@ describe('formatQuickAddParentOptionLabel', () => {
 
   it('does not use a raw feature-draft id as the option label', () => {
     expect(
-      formatQuickAddParentOptionLabel({
+      formatTaskParentLabel({
         key: 'feature-draft:1',
         display: 'feature-draft:1',
         id: 'feature-draft:1',
@@ -44,7 +43,7 @@ describe('formatQuickAddParentOptionLabel', () => {
 
   it('looks up the draft title when the stored display is the row id', () => {
     expect(
-      formatQuickAddParentOptionLabel(
+      formatTaskParentLabel(
         {
           key: 'feature-draft:1',
           display: 'feature-draft:1',

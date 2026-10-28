@@ -1,6 +1,6 @@
 import type { Task, TaskParent } from '@/types';
 
-import { humanFeatureDraftParentDisplay } from '@/features/swimlane/utils/featureDraftParentLabel';
+import { humanFeatureDraftParentDisplay, formatTaskParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
 import {
   collectUniqueSprintParentTasks,
   trimmedTaskParentToken,
@@ -38,18 +38,6 @@ export function resolveTaskParentForMenu(task: Task): TaskParent | null {
   };
 }
 
-export function formatContextMenuParentLabel(parent: TaskParent): string {
-  const key = trimmedTaskParentToken(parent.key) || trimmedTaskParentToken(parent.id);
-  const display = trimmedTaskParentToken(parent.display);
-  if (isFeatureLaneDraftRowId(key) || isFeatureLaneDraftRowId(trimmedTaskParentToken(parent.id))) {
-    return humanDraftParentDisplay(parent, key);
-  }
-  if (key && display && display !== key) {
-    return `${key} — ${display}`;
-  }
-  return display || key;
-}
-
 /**
  * Варианты родителя для контекстного меню: уникальные parent/epic задач спринта,
  * плюс текущий родитель задачи, если его ещё нет в списке.
@@ -66,7 +54,7 @@ export function buildContextMenuParentOptions(
   if (options.some((parent) => parent.key === current.key)) {
     return options;
   }
-  if (isFeatureLaneDraftRowId(current.key) && !formatContextMenuParentLabel(current)) {
+  if (isFeatureLaneDraftRowId(current.key) && !formatTaskParentLabel(current)) {
     return options;
   }
   return [current, ...options].sort((a, b) =>
@@ -83,12 +71,12 @@ export function resolveContextMenuCurrentParentLabel(
   if (!current) {
     return '';
   }
-  const fromCurrent = formatContextMenuParentLabel(current);
+  const fromCurrent = formatTaskParentLabel(current);
   if (fromCurrent) {
     return fromCurrent;
   }
   const option = parentOptions.find((parent) => parent.key === current.key);
-  return option ? formatContextMenuParentLabel(option) : '';
+  return option ? formatTaskParentLabel(option) : '';
 }
 
 export function contextMenuParentMatchesQuery(parent: TaskParent, query: string): boolean {
@@ -97,7 +85,7 @@ export function contextMenuParentMatchesQuery(parent: TaskParent, query: string)
     return true;
   }
   return (
-    formatContextMenuParentLabel(parent).toLowerCase().includes(q) ||
+    formatTaskParentLabel(parent).toLowerCase().includes(q) ||
     (parent.key ?? '').toLowerCase().includes(q) ||
     (parent.display ?? '').toLowerCase().includes(q) ||
     (parent.id ?? '').toLowerCase().includes(q)

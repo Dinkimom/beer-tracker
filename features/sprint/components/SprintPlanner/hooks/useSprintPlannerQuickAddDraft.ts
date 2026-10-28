@@ -13,13 +13,12 @@ import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { buildQuickAddQueueOptionsFromBoards } from '@/features/board/quickAddQueueOptions';
 import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
-import { buildFeatureDraftRowNamesById } from '@/features/swimlane/utils/featureDraftParentLabel';
+import { buildFeatureDraftRowNamesById, formatTaskParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
 import {
   collectQuickAddExcludedIssueKeys,
   collectUniqueSprintParentTasks,
   mergeQuickAddParentTasks,
 } from '@/features/task/components/TaskBar/components/quickAddMenu/collectUniqueSprintParentTasks';
-import { formatQuickAddParentOptionLabel } from '@/features/task/components/TaskBar/components/quickAddMenu/quickAddParentSelectHelpers';
 import { upsertSprintTaskInQueries } from '@/features/task/hooks/useTasks';
 import { useFeatureLanesApi } from '@/hooks/useApiStorage';
 import { useRootStore } from '@/lib/layers';
@@ -176,7 +175,7 @@ export function useSprintPlannerQuickAddDraft({
         value: '',
       },
       ...quickAddParentTasks.map((parent) => ({
-        label: formatQuickAddParentOptionLabel(parent, featureDraftRowNamesById),
+        label: formatTaskParentLabel(parent, featureDraftRowNamesById),
         value: parent.key,
       })),
     ];
