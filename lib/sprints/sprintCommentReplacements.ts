@@ -1,9 +1,9 @@
 import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
-import type { QueryParams, TaskParent } from '@/types';
+import type { QueryParams } from '@/types';
 
 import { randomUUID } from 'crypto';
 
-import { commentParentToJsonb } from '@/lib/comments/commentParent';
+import { commentParentToJsonb, taskParentFromPatchRef } from '@/lib/comments/commentParent';
 import { query } from '@/lib/db';
 
 /**
@@ -19,12 +19,6 @@ function collectNoteChangeOps(ops: readonly SprintPlanPatchOp[]): NoteChangeOp[]
   return ops.filter((op): op is NoteChangeOp => op.op === 'updateNote' || op.op === 'deleteNote');
 }
 
-function asParent(parent: Extract<NoteChangeOp, { op: 'updateNote' }>['parent']): TaskParent | null {
-  if (!parent) {
-    return null;
-  }
-  return { display: parent.display, id: parent.id, key: parent.key, ...(parent.self ? { self: parent.self } : {}) };
-}
 
 /** Поля копии: что не задано в updateNote — из оригинала (те же значения, что записал бы apply). */
 function replacementParams(op: NoteChangeOp): QueryParams {
@@ -42,7 +36,7 @@ function replacementParams(op: NoteChangeOp): QueryParams {
     op.height ?? null,
     op.color ?? null,
     op.parent !== undefined,
-    commentParentToJsonb(asParent(op.parent)),
+    commentParentToJsonb(taskParentFromPatchRef(op.parent)),
     'update',
   ];
 }

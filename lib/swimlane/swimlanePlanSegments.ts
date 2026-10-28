@@ -43,7 +43,8 @@ function applyMovedSegmentAtStartCell(
   );
 }
 
-function buildPositionFromMergedSegments(
+/** Позиция из уже слитых сегментов: старт — первый сегмент, длительность — сумма. */
+export function buildPositionFromMergedSegments(
   position: TaskPosition,
   merged: PhaseSegment[]
 ): TaskPosition {

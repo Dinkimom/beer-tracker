@@ -12,7 +12,8 @@ import type {
 import { DEFAULT_PLANNER_TIMELINE_SCALE } from '@/lib/plannerTimelineScale';
 import { holidayDayIndexSet } from '@/lib/sprints/sprintContextHolidays';
 
-function resolvePartsPerDay(partsPerDay: number | undefined): number {
+/** Сетка частей дня из payload (2–4), иначе дефолт шкалы планера. */
+export function resolvePartsPerDay(partsPerDay: number | undefined): number {
   if (
     typeof partsPerDay === 'number' &&
     Number.isInteger(partsPerDay) &&

@@ -18,11 +18,12 @@ function customFieldValuesOf(
   return customFieldValues ? { customFieldValues } : {};
 }
 
-function optionalPoints(value: number | null | undefined): number | undefined {
+export function optionalPoints(value: number | null | undefined): number | undefined {
   return value === undefined || value === null ? undefined : value;
 }
 
-function mapTeam(functionalTeam?: string): Task['team'] {
+/** Функциональная команда трекера → команда карточки (единое правило для всех провайдеров). */
+export function mapTeam(functionalTeam?: string): Task['team'] {
   const teamStr = (functionalTeam || '').toLowerCase();
   if (teamStr.includes('backend') || teamStr.includes('back')) {
     return 'Back';
@@ -77,7 +78,7 @@ function mapSprints(sprint: IssueTrackerIssue['sprint']): Task['sprints'] {
   return [mapSprintItem(sprint)];
 }
 
-function parseIncidentSeverity(value: IssueTrackerIssue['incidentSeverity']): string | undefined {
+export function parseIncidentSeverity(value: IssueTrackerIssue['incidentSeverity']): string | undefined {
   if (!value) {
     return undefined;
   }
@@ -94,7 +95,7 @@ function parseDangerousReleaseFromObject(value: object): string | undefined {
   return key || undefined;
 }
 
-function parseDangerousRelease(value: IssueTrackerIssue['dangerousRelease']): string | undefined {
+export function parseDangerousRelease(value: IssueTrackerIssue['dangerousRelease']): string | undefined {
   if (value == null) {
     return undefined;
   }

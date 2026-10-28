@@ -3,20 +3,8 @@ import type {
   SprintContextPosition,
 } from '@/lib/sprints/sprintContextTypes';
 
-import { DEFAULT_PLANNER_TIMELINE_SCALE } from '@/lib/plannerTimelineScale';
-import { expandPositionOccupiedCells } from '@/lib/sprints/sprintContextCapacity';
+import { expandPositionOccupiedCells, resolvePartsPerDay } from '@/lib/sprints/sprintContextCapacity';
 
-function resolvePartsPerDay(partsPerDay: number | undefined): number {
-  if (
-    typeof partsPerDay === 'number' &&
-    Number.isInteger(partsPerDay) &&
-    partsPerDay >= 2 &&
-    partsPerDay <= 4
-  ) {
-    return partsPerDay;
-  }
-  return DEFAULT_PLANNER_TIMELINE_SCALE.timeslotsPerDay;
-}
 
 function dateByDayMap(calendarDays: SprintContextCalendarDay[]): Map<number, string> {
   return new Map(calendarDays.map((item) => [item.day, item.date]));

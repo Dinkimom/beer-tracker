@@ -2,11 +2,13 @@ import type { TaskPosition } from '@/types';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { mergeAdjacentSegments, positionToStartCell } from '@/lib/planner-timeline';
-import { getOrderedPlanSegments } from '@/lib/swimlane/swimlanePlanSegments';
+import {
+  buildPositionFromMergedSegments,
+  getOrderedPlanSegments,
+} from '@/lib/swimlane/swimlanePlanSegments';
 
 import {
   applyResizedSegment,
-  buildPositionFromMergedSegments,
   validateResizeSegmentBounds,
 } from './positionUtilsHelpers';
 

@@ -12,15 +12,8 @@ import {
   findStaffByOrganizationAndEmailNorm,
   insertStaff,
 } from '@/lib/staffTeams';
+import { staffDisplayNameFromEmail } from '@/lib/staffTeams/staffDisplayNameEmailLocalPart';
 
-function displayNameFromUserEmail(email: string): string {
-  const e = email.trim().toLowerCase();
-  const at = e.indexOf('@');
-  if (at > 0) {
-    return e.slice(0, at);
-  }
-  return e.length > 0 ? e : 'Пользователь';
-}
 
 export async function addMemberByUserId(input: {
   bodyUserId: string;
@@ -42,7 +35,7 @@ export async function addMemberByUserId(input: {
   let staffRow = await findStaffByOrganizationAndEmailNorm(input.orgId, emailNorm);
   if (!staffRow) {
     staffRow = await insertStaff(input.orgId, {
-      display_name: displayNameFromUserEmail(emailNorm),
+      display_name: staffDisplayNameFromEmail(emailNorm),
       email: emailNorm,
       tracker_user_id: null,
     });

@@ -47,3 +47,33 @@ export function clearJiraFieldCatalogCacheForTests(): void {
   inFlightByCacheKey.clear();
   apiCache.deleteByPattern(/^jira:/);
 }
+
+interface JiraFieldCatalogRow {
+  id?: string;
+  key?: string;
+  name?: string;
+  schema?: { custom?: string };
+}
+
+function fieldCatalogId(row: JiraFieldCatalogRow): string | null {
+  const id = row.id?.trim() || row.key?.trim();
+  return id || null;
+}
+
+/**
+ * Id поля из каталога Jira `GET /field`: приоритет — `schema.custom` содержит `schemaCustom`,
+ * иначе первое поле с одним из `names` (без учёта регистра).
+ */
+export function pickJiraFieldId(
+  fields: unknown[],
+  match: { names: readonly string[]; schemaCustom?: string }
+): string | null {
+  const wanted = new Set(match.names.map((name) => name.toLowerCase()));
+  const rows = fields.filter((raw): raw is JiraFieldCatalogRow => !!raw && typeof raw === 'object');
+  const bySchema = match.schemaCustom
+    ? rows.find((row) => fieldCatalogId(row) && (row.schema?.custom ?? '').includes(match.schemaCustom!))
+    : undefined;
+  const row =
+    bySchema ?? rows.find((r) => fieldCatalogId(r) && wanted.has((r.name ?? '').trim().toLowerCase()));
+  return row ? fieldCatalogId(row) : null;
+}

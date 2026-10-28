@@ -20,6 +20,16 @@ export function parseCommentParent(value: unknown): TaskParent | undefined {
   return self ? { display, id, key, self } : { display, id, key };
 }
 
+/** Родитель из операции plan patch → `TaskParent` без лишних полей (`self` только если задан). */
+export function taskParentFromPatchRef(
+  parent: { display: string; id: string; key: string; self?: string } | null | undefined
+): TaskParent | null {
+  if (!parent) {
+    return null;
+  }
+  return { display: parent.display, id: parent.id, key: parent.key, ...(parent.self ? { self: parent.self } : {}) };
+}
+
 export function commentParentToJsonb(parent: TaskParent | null): string | null {
   if (!parent) {
     return null;

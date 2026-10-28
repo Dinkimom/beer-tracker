@@ -5,8 +5,8 @@ import type {
   SprintPlanPatchOnError,
   SprintPlanPatchOp,
 } from '@/lib/sprints/sprintPlanPatchTypes';
-import type { TaskParent } from '@/types';
 
+import { taskParentFromPatchRef } from '@/lib/comments/commentParent';
 import { resolvePlannerLinkEndpoints } from '@/lib/planner/plannerLinkEndpoint';
 import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 import { deleteSprintGoal, insertSprintGoal, updateSprintGoal } from '@/lib/sprintGoals';
@@ -30,22 +30,6 @@ import {
   upsertTaskPositionRecord,
 } from '@/lib/sprints/taskPositionsRepository';
 
-function asParent(
-  parent: { display: string; id: string; key: string; self?: string } | null | undefined
-): TaskParent | null {
-  if (!parent) {
-    return null;
-  }
-  const result: TaskParent = {
-    display: parent.display,
-    id: parent.id,
-    key: parent.key,
-  };
-  if (parent.self) {
-    result.self = parent.self;
-  }
-  return result;
-}
 
 /** Синк позиции в трекер: выполняется после коммита транзакции, его нельзя откатить. */
 export interface PlanPatchTrackerSyncRequest {
@@ -135,7 +119,7 @@ async function applyCreateNote(input: {
     height: size.height,
     kind: 'text',
     organizationId,
-    parent: asParent(op.parent),
+    parent: taskParentFromPatchRef(op.parent),
     part: op.part,
     sprintId,
     text: op.text,
@@ -167,7 +151,7 @@ async function applyUpdateNote(input: {
     height: op.height,
     ifVersion: op.ifVersion,
     organizationId,
-    parent: parentProvided ? asParent(op.parent) : undefined,
+    parent: parentProvided ? taskParentFromPatchRef(op.parent) : undefined,
     parentProvided,
     part: op.part,
     sprintId,

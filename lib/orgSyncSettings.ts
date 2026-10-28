@@ -158,7 +158,27 @@ export function parseResolveAndValidateOrgSyncFromSettingsRoot(
   return validateResolvedOrgSyncSettings(resolved, platform);
 }
 
+function shallowCloneRecord(raw: unknown): Record<string, unknown> {
+  if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
+    return { ...(raw as Record<string, unknown>) };
+  }
+  return {};
+}
+
 /**
  * Вливает patch в `settings.sync`, не трогая остальные ключи корня `organizations.settings`.
  */
-export { mergeOrganizationSettingsSyncPatch } from './orgSyncSettingsMergeHelpers';
+export function mergeOrganizationSettingsSyncPatch(
+  settingsRoot: unknown,
+  patch: OrgSyncSettingsPartial
+): Record<string, unknown> {
+  const root = shallowCloneRecord(settingsRoot);
+  const prev = shallowCloneRecord(extractOrgSyncSettingsJson(root));
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) {
+      prev[key] = value;
+    }
+  }
+  root.sync = prev;
+  return root;
+}

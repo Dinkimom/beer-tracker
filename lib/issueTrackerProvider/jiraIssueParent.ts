@@ -7,15 +7,9 @@ import {
   jiraAgileEpicNoneIssuesUrl,
   jiraAgileIssueUrl,
 } from './jiraCatalog';
+import { pickJiraFieldId } from './jiraFieldCatalog';
 
 const EPIC_LINK_SCHEMA = 'gh-epic-link';
-
-interface JiraFieldCatalogRow {
-  id?: string;
-  key?: string;
-  name?: string;
-  schema?: { custom?: string };
-}
 
 function jiraIssuePath(issueKey: string): string {
   return `/issue/${encodeURIComponent(issueKey)}`;
@@ -77,31 +71,8 @@ function sameJiraIssueKey(left: string | null, right: string): boolean {
   return left != null && left.localeCompare(right, undefined, { sensitivity: 'accent' }) === 0;
 }
 
-function fieldCatalogId(row: JiraFieldCatalogRow): string | null {
-  const id = row.id?.trim() || row.key?.trim();
-  return id || null;
-}
-
 export function pickJiraEpicLinkFieldId(fields: unknown[]): string | null {
-  let byName: string | null = null;
-  for (const raw of fields) {
-    if (!raw || typeof raw !== 'object') {
-      continue;
-    }
-    const row = raw as JiraFieldCatalogRow;
-    const id = fieldCatalogId(row);
-    if (!id) {
-      continue;
-    }
-    if ((row.schema?.custom ?? '').includes(EPIC_LINK_SCHEMA)) {
-      return id;
-    }
-    const name = (row.name ?? '').trim().toLowerCase();
-    if (!byName && name === 'epic link') {
-      byName = id;
-    }
-  }
-  return byName;
+  return pickJiraFieldId(fields, { names: ['epic link'], schemaCustom: EPIC_LINK_SCHEMA });
 }
 
 async function readParentAndEpic(

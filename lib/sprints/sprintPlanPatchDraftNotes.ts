@@ -1,9 +1,9 @@
 import type { BeerTrackerTransactionQuery } from '@/lib/db';
 import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
-import type { TaskParent } from '@/types';
 
 import { randomUUID } from 'crypto';
 
+import { taskParentFromPatchRef } from '@/lib/comments/commentParent';
 import { insertPendingCommentReplacements } from '@/lib/sprints/sprintCommentReplacements';
 import { insertSprintComment } from '@/lib/sprints/sprintCommentsRepository';
 import {
@@ -18,20 +18,6 @@ export function collectCreateNoteOps(ops: SprintPlanPatchOp[]): SprintPlanPatchC
   return ops.filter((op): op is SprintPlanPatchCreateNoteOp => op.op === 'createNote');
 }
 
-function asParent(parent: SprintPlanPatchCreateNoteOp['parent']): TaskParent | null {
-  if (!parent) {
-    return null;
-  }
-  const result: TaskParent = {
-    display: parent.display,
-    id: parent.id,
-    key: parent.key,
-  };
-  if (parent.self) {
-    result.self = parent.self;
-  }
-  return result;
-}
 
 export async function persistProposedCreateNotes(input: {
   actorUserId: string;
@@ -66,7 +52,7 @@ export async function persistProposedCreateNotes(input: {
       height: size.height,
       kind: 'text',
       organizationId: input.organizationId,
-      parent: asParent(op.parent),
+      parent: taskParentFromPatchRef(op.parent),
       part: op.part,
       pendingApproval: true,
       pendingApprovalExpiresAt: input.expiresAt,

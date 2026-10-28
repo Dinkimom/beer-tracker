@@ -6,6 +6,18 @@
 export type DomainRole = 'developer' | 'other' | 'tester';
 export type Platform = 'back' | 'web';
 
+/** domain_role из БД; неизвестное значение → 'other'. */
+export function parseDomainRole(value: string): DomainRole {
+  if (value === 'developer' || value === 'tester' || value === 'other') return value;
+  return 'other';
+}
+
+/** platforms (JSONB) из БД: только известные платформы. */
+export function parsePlatforms(value: unknown): Platform[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((x): x is Platform => x === 'back' || x === 'web');
+}
+
 export interface RoleCatalogEntry {
   /** Доменная роль для бизнес-логики планировщика */
   domainRole: DomainRole;

@@ -11,6 +11,11 @@ export function normalizedEmailLocalPart(email: string): string {
   return e;
 }
 
+/** display_name для нового сотрудника, созданного по email пользователя. */
+export function staffDisplayNameFromEmail(email: string): string {
+  return normalizedEmailLocalPart(email) || 'Пользователь';
+}
+
 /** true, если display_name выглядит как «то, что до @» для данного email. */
 export function displayNameLooksLikeEmailLocalPart(
   email: string | null | undefined,

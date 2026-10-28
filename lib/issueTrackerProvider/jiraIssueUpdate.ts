@@ -3,7 +3,7 @@ import type { AxiosInstance } from 'axios';
 
 import { splitIssueTrackerIssuePatch } from './issueTrackerIssuePatch';
 import { jiraAgileIssueEstimationUrl, jiraAgileIssueUrl } from './jiraCatalog';
-import { loadJiraFieldCatalog } from './jiraFieldCatalog';
+import { loadJiraFieldCatalog, pickJiraFieldId } from './jiraFieldCatalog';
 import { putJiraIssueParent } from './jiraIssueParent';
 import { applyJiraScheduleFields } from './jiraScheduleFields';
 import { jiraUserSearchRequestParams } from './jiraUserSearch';
@@ -11,13 +11,6 @@ import { jiraUserSearchRequestParams } from './jiraUserSearch';
 const GH_RAPID_VIEW_ID = /(?:^|[,[])rapidViewId=(\d+)/;
 const STORY_POINTS_SCHEMA = 'jsw-story-points';
 const TEST_POINTS_FIELD_NAMES = ['test points', 'test point'] as const;
-
-interface JiraFieldCatalogRow {
-  id?: string;
-  key?: string;
-  name?: string;
-  schema?: { custom?: string };
-}
 
 export function splitJiraIssueUpdatePatch(patch: Record<string, unknown>): {
   fields: Record<string, unknown>;
@@ -94,50 +87,18 @@ function firstBoardIdInList(items: unknown[]): number | null {
   return null;
 }
 
-function fieldCatalogId(row: JiraFieldCatalogRow): string | null {
-  const id = row.id?.trim() || row.key?.trim();
-  return id || null;
-}
-
 export function pickJiraStoryPointsFieldId(fields: unknown[]): string | null {
-  let byName: string | null = null;
-  for (const raw of fields) {
-    if (!raw || typeof raw !== 'object') {
-      continue;
-    }
-    const row = raw as JiraFieldCatalogRow;
-    const id = fieldCatalogId(row);
-    if (!id) {
-      continue;
-    }
-    if ((row.schema?.custom ?? '').includes(STORY_POINTS_SCHEMA)) {
-      return id;
-    }
-    const name = (row.name ?? '').trim().toLowerCase();
-    if (!byName && (name === 'story points' || name === 'story point estimate')) {
-      byName = id;
-    }
-  }
-  return byName;
+  return pickJiraFieldId(fields, {
+    names: ['story points', 'story point estimate'],
+    schemaCustom: STORY_POINTS_SCHEMA,
+  });
 }
 
 export function pickJiraNamedNumberFieldId(
   fields: unknown[],
   names: readonly string[]
 ): string | null {
-  const wanted = new Set(names.map((name) => name.toLowerCase()));
-  for (const raw of fields) {
-    if (!raw || typeof raw !== 'object') {
-      continue;
-    }
-    const row = raw as JiraFieldCatalogRow;
-    const id = fieldCatalogId(row);
-    const name = (row.name ?? '').trim().toLowerCase();
-    if (id && wanted.has(name)) {
-      return id;
-    }
-  }
-  return null;
+  return pickJiraFieldId(fields, { names });
 }
 
 function jiraIssuePath(issueKey: string): string {

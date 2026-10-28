@@ -5,6 +5,7 @@ import {
   type ProductTeamRole,
 } from '@/lib/organizations/userTeamMembershipRepository';
 import { findStaffByOrganizationAndEmailNorm } from '@/lib/staffTeams';
+import { staffDisplayNameFromEmail } from '@/lib/staffTeams/staffDisplayNameEmailLocalPart';
 
 import {
   assignStaffToOrganizationTeam,
@@ -13,14 +14,6 @@ import {
   resolvePlannerTeamRoleForAssign,
 } from './setOrganizationMemberTeamHelpers';
 
-function displayNameFromUserEmail(email: string): string {
-  const e = email.trim().toLowerCase();
-  const at = e.indexOf('@');
-  if (at > 0) {
-    return e.slice(0, at);
-  }
-  return e.length > 0 ? e : 'Пользователь';
-}
 
 type SetOrganizationMemberTeamResult =
   { error: string; status: number } | { ok: true };
@@ -40,7 +33,7 @@ async function applyOrganizationMemberTeamChange(input: {
     return { ok: true };
   }
   return assignStaffToOrganizationTeam({
-    displayName: displayNameFromUserEmail(input.emailNorm),
+    displayName: staffDisplayNameFromEmail(input.emailNorm),
     emailNorm: input.emailNorm,
     orgId: input.orgId,
     roleForAssign: input.roleForAssign,

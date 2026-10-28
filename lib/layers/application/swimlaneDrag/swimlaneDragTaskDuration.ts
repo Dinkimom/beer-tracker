@@ -1,15 +1,9 @@
 import type { Task, TaskPosition } from '@/types';
 
+import { getPositionEffectiveDuration } from '@/lib/planner-timeline';
 import { getTaskPoints, storyPointsToTimeslots } from '@/lib/pointsUtils';
 import { parseSwimlaneTaskDraggableId } from '@/lib/swimlane/swimlaneDragIds';
 import { getOrderedPlanSegments } from '@/lib/swimlane/swimlanePlanSegments';
-
-function getPositionEffectiveDuration(position: TaskPosition): number {
-  if (position.segments && position.segments.length > 0) {
-    return position.segments.reduce((sum, s) => sum + s.duration, 0);
-  }
-  return position.duration;
-}
 
 function resolveSegmentDragDuration(
   activeTaskId: string,

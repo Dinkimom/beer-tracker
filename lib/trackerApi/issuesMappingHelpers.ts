@@ -4,31 +4,15 @@ import type { SprintObject, TrackerIssue } from '@/types/tracker';
 
 import { customFieldDisplayMap } from '@/lib/issueTrackerProvider/customFieldDisplayValue';
 import { issueTrackerIssueWebUrlFromBase } from '@/lib/issueTrackerProvider/issueTrackerUi';
+import {
+  mapTeam,
+  optionalPoints,
+  parseDangerousRelease,
+  parseIncidentSeverity,
+} from '@/lib/issueTrackerProvider/mapIssueTrackerIssueToTask';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 
-function mapTeam(functionalTeam?: string): 'Back' | 'DevOps' | 'QA' | 'Web' {
-  const teamStr = (functionalTeam || '').toLowerCase();
-
-  if (teamStr.includes('backend') || teamStr.includes('back')) {
-    return 'Back';
-  }
-  if (
-    teamStr.includes('frontend') ||
-    teamStr.includes('vue') ||
-    teamStr.includes('angular')
-  ) {
-    return 'Web';
-  }
-  if (teamStr.includes('qa') || teamStr.includes('tester')) {
-    return 'QA';
-  }
-  if (teamStr.includes('devops')) {
-    return 'DevOps';
-  }
-
-  return 'Back';
-}
 
 /** YYYY-MM-DD prefix from tracker ISO / date fields. */
 function trackerDateOnly(value: string | undefined): string | undefined {
@@ -107,45 +91,6 @@ function normalizeSprintField(
   return undefined;
 }
 
-function parseIncidentSeverity(
-  v: string | { display?: string; key?: string } | undefined
-): string | undefined {
-  if (!v) return undefined;
-  return typeof v === 'string' ? v : v.display ?? v.key ?? undefined;
-}
-
-function parseDangerousReleaseFromObject(v: object): string | undefined {
-  const obj = v as { display?: string; key?: string };
-  const display = typeof obj.display === 'string' ? obj.display.trim() : '';
-  if (display) {
-    return display;
-  }
-  const key = typeof obj.key === 'string' ? obj.key.trim() : '';
-  return key || undefined;
-}
-
-function parseDangerousRelease(
-  v: TrackerIssue['dangerousRelease']
-): string | undefined {
-  if (v == null) {
-    return undefined;
-  }
-  if (typeof v === 'string') {
-    const trimmed = v.trim();
-    return trimmed || undefined;
-  }
-  if (typeof v === 'boolean' || typeof v === 'number') {
-    return String(v);
-  }
-  if (typeof v === 'object') {
-    return parseDangerousReleaseFromObject(v);
-  }
-  return undefined;
-}
-
-function optionalPoints(value: number | null | undefined): number | undefined {
-  return value !== undefined && value !== null ? value : undefined;
-}
 
 function trackerRefToken(value: unknown): string {
   if (typeof value === 'string') {

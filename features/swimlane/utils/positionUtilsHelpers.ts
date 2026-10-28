@@ -1,21 +1,6 @@
-import type { PhaseSegment, TaskPosition } from '@/types';
+import type { PhaseSegment } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
-
-export function buildPositionFromMergedSegments(
-  position: TaskPosition,
-  merged: PhaseSegment[]
-): TaskPosition {
-  const effectiveDuration = merged.reduce((sum, segment) => sum + segment.duration, 0);
-  const first = merged[0]!;
-  return {
-    ...position,
-    segments: merged,
-    startDay: first.startDay,
-    startPart: first.startPart,
-    duration: effectiveDuration,
-  };
-}
 
 function isWithinSprintCellBounds(
   startCell: number,

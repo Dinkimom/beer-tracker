@@ -5,6 +5,7 @@
 import type { DomainRole, Platform } from '@/lib/roles/catalog';
 
 import { query } from '@/lib/db';
+import { parseDomainRole, parsePlatforms } from '@/lib/roles/catalog';
 
 export interface SystemRoleRow {
   created_at: Date;
@@ -17,15 +18,6 @@ export interface SystemRoleRow {
   updated_at: Date;
 }
 
-function parseDomainRole(value: string): DomainRole {
-  if (value === 'developer' || value === 'tester' || value === 'other') return value;
-  return 'other';
-}
-
-function parsePlatforms(value: unknown): Platform[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((x): x is Platform => x === 'back' || x === 'web');
-}
 
 function mapRow(r: {
   id: string;
