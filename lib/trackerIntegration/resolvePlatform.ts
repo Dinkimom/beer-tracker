@@ -1,2 +1,0 @@
-
-export { resolvePlatformFromIntegration } from './resolvePlatformHelpers';

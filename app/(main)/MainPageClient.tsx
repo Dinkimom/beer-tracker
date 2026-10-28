@@ -27,9 +27,24 @@ import { MainPageClientContent } from './MainPageClientContent';
 import { MainPageClientErrorView } from './MainPageClientErrorView';
 import { appendQuery } from './mainPageClientHelpers';
 import { MainPageClientRedirectingView } from './MainPageClientRedirectingView';
-import { computeMainPagePlannerAccessDenied } from './mainPagePlannerAccessDenied';
 import { useMainPageClientData } from './useMainPageClientData';
 import { usePlannerDocumentTitle } from './usePlannerDocumentTitle';
+
+function computeMainPagePlannerAccessDenied(params: {
+  activeOrganizationCanUsePlanner: boolean | undefined;
+  activeOrganizationPresent: boolean;
+  isMounted: boolean;
+  sessionLoading: boolean;
+  signedIn: boolean;
+}): boolean {
+  return (
+    params.isMounted &&
+    params.signedIn &&
+    !params.sessionLoading &&
+    params.activeOrganizationPresent &&
+    params.activeOrganizationCanUsePlanner === false
+  );
+}
 
 function buildBoardChangeReplacePath(params: {
   boardId: number;

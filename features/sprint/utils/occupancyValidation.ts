@@ -13,9 +13,9 @@ import type { BoardAvailabilityEvent, QuarterlyAvailability } from '@/types/quar
 import { WORKING_DAYS } from '@/constants';
 import { normalizeQuarterlyAvailabilityToBoardEvents } from '@/features/sprint/utils/quarterlyAvailabilityNormalize';
 import { type OccupancyErrorReason } from '@/lib/planner-timeline/occupancyErrorMessages';
+import { getPositionSegmentRanges } from '@/lib/planner-timeline/occupancyUtils';
 import { getWorkingDaysRange } from '@/utils/dateUtils';
 
-import { getPositionSegmentRanges } from './occupancyUtils';
 import {
   buildAssigneePositionIndex,
   closedTaskIds,

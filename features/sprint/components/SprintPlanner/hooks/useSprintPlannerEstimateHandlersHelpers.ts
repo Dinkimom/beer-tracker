@@ -1,8 +1,8 @@
 import type { PhaseSegment, Task, TaskPosition } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
-import { getSegmentEditorRangeAndCells } from '@/features/sprint/utils/occupancyUtils';
 import { getTaskPoints, isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
+import { getSegmentEditorRangeAndCells } from '@/lib/planner-timeline/occupancyUtils';
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 export function applyEstimateToTasks(

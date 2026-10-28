@@ -1,6 +1,8 @@
 import type { Task } from '@/types';
+import type { BoardAvailabilityEvent } from '@/types/quarterly';
 import type { SprintInfo, SprintListItem, ChecklistItem } from '@/types/tracker';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   useEffect,
   useMemo,
@@ -17,11 +19,11 @@ import { computeAssigneePointsStats } from '@/features/sprint/utils/assigneePoin
 import { useDebouncedCallback } from '@/hooks/usePerformance';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+import { fetchBoardAvailabilityEventsForBoard } from '@/lib/beerTrackerApi';
 import { useRootStore } from '@/lib/layers';
 import { DELAYS } from '@/utils/constants';
 import { getSprintStartDate, resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
-import { useBoardAvailabilityEvents } from '../../../hooks/useBoardAvailabilityEvents';
 import { useDevelopersManagement } from '../../../hooks/useDevelopersManagement';
 import { usePlannerNotificationFocus } from '../../../hooks/usePlannerNotificationFocus';
 import { useScrollToCurrentDay } from '../../../hooks/useScrollToCurrentDay';
@@ -36,6 +38,18 @@ import { useSprintPlannerSyntheticQaCleanup } from './useSprintPlannerSyntheticQ
 import { useSprintPlannerViewModelInteractions } from './useSprintPlannerViewModelInteractions';
 import { useSprintPlannerWorkflowScreens } from './useSprintPlannerWorkflowScreens';
 import { useTrackerSyncFailureToasts } from './useTrackerSyncFailureToasts';
+
+function useBoardAvailabilityEvents(boardId: number | null) {
+  return useQuery({
+    queryKey: ['boardAvailabilityEvents', boardId],
+    queryFn: async (): Promise<BoardAvailabilityEvent[]> => {
+      if (!boardId) return [];
+      return await fetchBoardAvailabilityEventsForBoard(boardId);
+    },
+    enabled: boardId != null,
+    staleTime: 1000 * 60 * 2,
+  });
+}
 
 interface UseSprintPlannerViewModelParams {
   checklistDone: number;
@@ -232,7 +246,6 @@ export function useSprintPlannerViewModel({
     getTask: (taskId: string) => Task | undefined;
     removeTask: (taskId: string) => void;
   } | null>(null);
-
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {

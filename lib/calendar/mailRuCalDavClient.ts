@@ -3,10 +3,14 @@ import {
   type CalDavCredentialsInput,
   type ParsedCalendarEvent,
 } from './calendarEventTypes';
-import { dateToCalDavUtcString } from './dateToCalDavUtcString';
 import { expandRecurringCalendarEvents } from './expandRecurringCalendarEvents';
 import { extractIcsFromCalDavMultistatus } from './extractIcsFromCalDavMultistatus';
 import { parseIcsCalendarData } from './parseIcsCalendarData';
+
+/** ISO Date → CalDAV UTC, напр. 20260717T120000Z */
+function dateToCalDavUtcString(date: Date): string {
+  return date.toISOString().replace(/-/g, '').replace(/:/g, '').replace(/\.\d{3}Z$/, 'Z');
+}
 
 function buildCalendarQueryXml(start: Date, end: Date): string {
   const startStr = dateToCalDavUtcString(start);

@@ -1,6 +1,6 @@
 import type { Task, TaskPosition } from '@/types';
 
-import { getPositionSegmentRanges } from './occupancyUtils';
+import { getPositionSegmentRanges } from '@/lib/planner-timeline/occupancyUtils';
 
 interface CellRange {
   endCell: number;

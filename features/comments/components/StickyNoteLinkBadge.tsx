@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 
 import { Icon } from '@/components/Icon';
@@ -7,12 +8,24 @@ import { JiraToolIcon } from '@/components/JiraToolIcon';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useTrackerWebUrlContext } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
-import { useStickyNoteLinkPreview } from '@/features/comments/hooks/useStickyNoteLinkPreview';
+import { fetchLinkPreview } from '@/lib/api/linkPreview';
 import { resolveStickyNoteLinkBadgeTitle } from '@/lib/comments/stickyNoteLinkLabel';
 import {
   isStickyNoteJiraWebUrl,
   resolveStickyNoteFaviconSources,
 } from '@/lib/comments/stickyNoteLinks';
+
+const LINK_PREVIEW_STALE_MS = 60 * 60 * 1000;
+const LINK_PREVIEW_GC_MS = 6 * 60 * 60 * 1000;
+
+function useStickyNoteLinkPreview(url: string) {
+  return useQuery({
+    gcTime: LINK_PREVIEW_GC_MS,
+    queryFn: ({ signal }) => fetchLinkPreview(url, signal),
+    queryKey: ['link-preview', url],
+    staleTime: LINK_PREVIEW_STALE_MS,
+  });
+}
 
 const BADGE_CLASS =
   'pointer-events-auto mx-0.5 inline-flex h-[18px] max-w-[16rem] cursor-pointer items-center gap-1 align-middle rounded border border-black/15 bg-white/90 px-1 font-sans text-[10px] font-medium leading-none text-gray-800 hover:border-blue-400 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-white/20 dark:bg-gray-900/90 dark:text-gray-100 dark:hover:bg-gray-900';

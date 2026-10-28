@@ -26,7 +26,7 @@ import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 import { useRootStore } from '@/lib/layers';
 
-import { SwimlaneQuickAddMenu, type SwimlaneQuickAddMenuProps } from './components/SwimlaneQuickAddMenu';
+import { SwimlaneQuickAddMenu, type SwimlaneQuickAddMenuProps } from './components/quickAddMenu/SwimlaneQuickAddMenu';
 import { resolveResizeHandleCornerStyle } from './components/taskBarResizeHandleHelpers';
 import {
   getTaskBarRootClassName,

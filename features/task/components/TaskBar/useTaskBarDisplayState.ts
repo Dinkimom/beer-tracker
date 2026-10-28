@@ -1,4 +1,4 @@
-import type { SwimlaneQuickAddMenuProps } from './components/SwimlaneQuickAddMenu';
+import type { SwimlaneQuickAddMenuProps } from './components/quickAddMenu/SwimlaneQuickAddMenu';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { Task, Developer, TaskPosition } from '@/types';
 

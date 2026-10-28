@@ -5,13 +5,24 @@ import { useEffect, useSyncExternalStore } from 'react';
 
 import { LoadingOverlayView } from '@/components/LoadingOverlayView';
 import { useI18n } from '@/contexts/LanguageContext';
+import { fetchOnPremSetupState } from '@/lib/api/onprem';
 import { persistAtlassianOAuthFragmentFromLocation } from '@/lib/atlassianOAuth/persistOAuthFragment';
 import {
   getTrackerTokenGateSnapshot,
   subscribeTrackerTokenGate,
 } from '@/lib/trackerTokenStorage';
 
-import { resolveMissingTrackerTokenRedirect } from './authGuardResolveMissingToken';
+async function resolveMissingTrackerTokenRedirect(): Promise<'auth-setup' | 'register'> {
+  try {
+    const data = await fetchOnPremSetupState();
+    if (data.onPremMode === true && data.hasUsers !== true) {
+      return 'register';
+    }
+    return 'auth-setup';
+  } catch {
+    return 'auth-setup';
+  }
+}
 
 function subscribeClient() {
   return () => {};

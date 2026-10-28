@@ -4,21 +4,26 @@ import type { UserOrganizationSummary } from '@/lib/organizations';
 import type { ReactNode } from 'react';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { AdminHeader } from '@/features/admin/AdminHeader';
 import { useAdminOrganizationId } from '@/features/admin/AdminOrganizationIdContext';
-import { resolveAdminShellRoleLine } from '@/features/admin/AdminShellHelpers';
+import { persistActiveOrganizationId, resolveAdminShellRoleLine } from '@/features/admin/AdminShellHelpers';
 import { AdminShellMobileDrawer } from '@/features/admin/AdminShellMobileDrawer';
 import { AdminShellMobileTopBar } from '@/features/admin/AdminShellMobileTopBar';
 import { renderAdminNavListEntry } from '@/features/admin/AdminShellNavHelpers';
 import { AdminShellSidebarFooter } from '@/features/admin/AdminShellSidebarFooter';
 import { useAdminTrackerConnectionReady } from '@/features/admin/hooks/useAdminTrackerConnectionReady';
-import { useAdminShellPersistence } from '@/features/admin/useAdminShellPersistence';
 import { resolvePrimaryAdminOrganization } from '@/lib/access/resolvePrimaryAdminOrganization';
 import { postProductLogout } from '@/lib/api/auth';
+
+function useAdminShellPersistence(connectOrgId: string | null): void {
+  useEffect(() => {
+    persistActiveOrganizationId(connectOrgId);
+  }, [connectOrgId]);
+}
 
 interface NavItem {
   href: string;

@@ -11,7 +11,7 @@ import {
   readMergeRequestLinkFromIssue,
   readUserRefFromIssue,
 } from './issueFieldUtils';
-import { resolvePlatformFromIntegration } from './resolvePlatform';
+import { resolvePlatformFromIntegration } from './resolvePlatformHelpers';
 import { resolveEffectiveStatusCategory } from './resolveStatus';
 import { resolveStatusColorKey } from './statusPalette';
 

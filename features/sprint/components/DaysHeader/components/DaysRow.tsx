@@ -4,11 +4,11 @@ import type { DayErrorDetail } from '@/features/sprint/utils/occupancyValidation
 
 import { DayHeaderCellContent } from '@/components/DayHeaderCell';
 import { WORKING_DAYS } from '@/constants';
-import { getDayDate } from '@/features/sprint/utils/occupancyUtils';
 import {
   TIMELINE_TODAY_COLUMN_TINT_CLASS,
   timelineDayDividerClass,
 } from '@/features/sprint/utils/timelineColumnChrome';
+import { getDayDate } from '@/lib/planner-timeline/occupancyUtils';
 import { getDayStatus, isPlannerToday } from '@/utils/dateUtils';
 
 interface DaysRowProps {

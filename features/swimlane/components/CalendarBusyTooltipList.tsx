@@ -2,7 +2,20 @@
 
 import type { CalendarBusyEventItem } from '@/lib/calendar/calendarEventTypes';
 
-import { formatCalendarBusyTimeRange } from '@/lib/calendar/formatCalendarBusyTime';
+import { CALENDAR_DEFAULT_TIME_ZONE } from '@/lib/calendar/icsDateTimeParse';
+
+function formatCalendarBusyClock(ms: number): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    hourCycle: 'h23',
+    minute: '2-digit',
+    timeZone: CALENDAR_DEFAULT_TIME_ZONE,
+  }).format(new Date(ms));
+}
+
+function formatCalendarBusyTimeRange(event: CalendarBusyEventItem): string {
+  return `${formatCalendarBusyClock(event.startMs)}–${formatCalendarBusyClock(event.endMs)}`;
+}
 
 interface CalendarBusyTooltipListProps {
   events: CalendarBusyEventItem[];

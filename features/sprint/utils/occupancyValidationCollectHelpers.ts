@@ -1,8 +1,7 @@
 import type { Task, TaskPosition } from '@/types';
 
 import { getPartsPerDay } from '@/constants';
-
-import { getPositionSegmentRanges } from './occupancyUtils';
+import { getPositionSegmentRanges } from '@/lib/planner-timeline/occupancyUtils';
 
 export interface AssigneePositionSegment {
   endCell: number;

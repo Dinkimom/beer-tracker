@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { boardParamsQueryKey } from '@/features/board/boardParamsQuery';
 import { fetchBoard } from '@/lib/beerTrackerApi';
+
+/** `columns` сбрасывает залипший в localStorage ответ без колонок (`['board', id]`). */
+function boardParamsQueryKey(boardId: number) {
+  return ['board', 'columns', boardId] as const;
+}
 
 /** Параметры доски (колонки канбана). Колонки редко меняются — длинный staleTime. */
 export function useBoardParams(boardId: number | null) {

@@ -9,7 +9,6 @@ import type { PlacedSwimlaneLayerItem } from '@/features/swimlane/utils/layerUti
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
-import { getDayDate } from '@/features/sprint/utils/occupancyUtils';
 import {
   TIMELINE_TODAY_COLUMN_TINT_CLASS,
   timelineDayDividerClass,
@@ -21,6 +20,7 @@ import {
   isInternalAvailabilityDayDivider,
   isInternalHolidayDayDivider,
 } from '@/features/swimlane/utils/availabilityTimelineMarks';
+import { getDayDate } from '@/lib/planner-timeline/occupancyUtils';
 import { isPlannerToday } from '@/utils/dateUtils';
 
 import { TimelineGridPartCell } from './TimelineGridPartCell';

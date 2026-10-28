@@ -1,10 +1,10 @@
 import type { CustomSelectOption } from '@/components/CustomSelect';
 import type { QuickAddQueueOption } from '@/features/board/quickAddQueueOptions';
+import type { SwimlaneQuickAddMenuProps } from '@/features/task/components/TaskBar/components/quickAddMenu/SwimlaneQuickAddMenu';
 import type {
   QuickAddCreateFields,
   QuickAddDraftKind,
 } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
-import type { SwimlaneQuickAddMenuProps } from '@/features/task/components/TaskBar/components/SwimlaneQuickAddMenu';
 import type { SprintPlannerNoteComposerState } from '@/lib/layers';
 import type { Developer, Task } from '@/types';
 

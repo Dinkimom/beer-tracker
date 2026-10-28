@@ -5,7 +5,7 @@
 
 import type { Anchor, Developer, Task, TaskPosition } from '@/types';
 
-import { positionToEndCell, positionToStartCell } from '@/features/sprint/utils/occupancyUtils';
+import { positionToEndCell, positionToStartCell } from '@/lib/planner-timeline/occupancyUtils';
 
 interface AnchorPair {
   fromAnchor: Anchor;

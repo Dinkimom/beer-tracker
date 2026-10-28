@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { appendProductSessionCookie } from '@/lib/auth';
 import { parseJsonRequestBody } from '@/lib/http/parseJsonRequestBody';
-import { resolveProductUserIdForOnPremTrackerSession } from '@/lib/onPrem/establishProductSessionFromTrackerToken';
+import { resolveProductUserIdForOnPremTrackerSession } from '@/lib/onPrem/establishProductSessionFromTrackerTokenHelpers';
 import { TrackerApiConfigError } from '@/lib/trackerRequestConfig';
 
 const BodySchema = z.object({

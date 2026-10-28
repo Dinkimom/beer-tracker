@@ -2,9 +2,9 @@ import type { OccupancyErrorReason } from '@/lib/planner-timeline/occupancyError
 import type { Task, TaskPosition } from '@/types';
 
 import { isTaskCompleted } from '@/features/task/utils/taskUtils';
+import { getPositionSegmentRanges } from '@/lib/planner-timeline/occupancyUtils';
 import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
 
-import { getPositionSegmentRanges } from './occupancyUtils';
 import {
   cellRangeToDayIndices,
   forEachHeavyPerformerOverlapCell,

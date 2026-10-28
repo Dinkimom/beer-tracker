@@ -26,11 +26,11 @@ import {
   MENU_QUICK_ACTION_LABEL,
   MENU_ROW_ICON,
 } from '@/features/context-menu/contextMenuClasses';
-import { getPositionEffectiveDuration } from '@/features/sprint/utils/occupancyUtils';
 import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
 import { useFollowAnchorRectByElementId } from '@/hooks/useFollowAnchorRect';
 import { useThemeStorage } from '@/hooks/useLocalStorage';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
+import { getPositionEffectiveDuration } from '@/lib/planner-timeline/occupancyUtils';
 import { ONBOARDING_SAMPLE_TASK_ID } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 

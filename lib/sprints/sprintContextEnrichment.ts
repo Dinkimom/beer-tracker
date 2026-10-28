@@ -1,3 +1,4 @@
+import type { HolidayCountryCode } from '@/lib/holidays/holidayCountries';
 import type { IssueTrackerIssue } from '@/lib/issueTrackerProvider/types';
 import type {
   SprintContextPayload,
@@ -7,12 +8,14 @@ import type {
 } from '@/lib/sprints/sprintContextTypes';
 import type { NextRequest } from 'next/server';
 
+import { readOrgHolidayCountry } from '@/lib/holidays/orgHolidayCountry';
 import {
   getIssueTrackerProviderClientForOrganization,
   getIssueTrackerProviderClientFromRequest,
 } from '@/lib/issueTrackerProvider/clientFactory';
 import { resolutionFromCustomFields } from '@/lib/issueTrackerProvider/mapIssueTrackerIssueToTask';
 import { resolveMcpIssueStatusCategory } from '@/lib/mcp/resolveMcpIssueStatusCategory';
+import { findOrganizationById } from '@/lib/organizations';
 import { loadSprintTaskCompletionRules } from '@/lib/sprints/loadSprintTaskCompletionRules';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
 import {
@@ -24,7 +27,6 @@ import {
 } from '@/lib/sprints/sprintContextEnrichmentHelpers';
 import { resolveFeatureScopeTaskIds } from '@/lib/sprints/sprintContextFilter';
 import { loadSprintContextHolidayDays } from '@/lib/sprints/sprintContextHolidays';
-import { loadOrgHolidayCountry } from '@/lib/sprints/sprintContextOrgHolidayCountry';
 import { buildPlanVsActual } from '@/lib/sprints/sprintContextPlanVsActual';
 import {
   loadSprintContextTeamMembers,
@@ -32,6 +34,13 @@ import {
 } from '@/lib/sprints/sprintContextTeamMembers';
 import { isTaskCompleted, type SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import { listStaff } from '@/lib/staffTeams';
+
+async function loadOrgHolidayCountry(
+  organizationId: string
+): Promise<HolidayCountryCode> {
+  const org = await findOrganizationById(organizationId);
+  return readOrgHolidayCountry(org?.settings);
+}
 
 interface AssigneeInfo {
   email: string | null;
