@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  closingTransitionResolution,
   isStatusKeyCompleted,
   isTransitionToDoneStatus,
   pickDoneTransition,
@@ -103,5 +104,16 @@ describe('pickDoneTransition', () => {
   it('ignores the status key and name without a done type', () => {
     expect(isTransitionToDoneStatus({ to: { key: 'closed' } })).toBe(false);
     expect(pickDoneTransition([{ id: 'start', to: { key: 'inProgress' } }], tracker)).toBeNull();
+  });
+});
+
+describe('closingTransitionResolution', () => {
+  it('sends fixed only where the tracker requires a resolution', () => {
+    expect(closingTransitionResolution(tracker)).toBe('fixed');
+    expect(closingTransitionResolution(jira)).toBeUndefined();
+  });
+
+  it('keeps fixed while the rules are not loaded', () => {
+    expect(closingTransitionResolution(null)).toBe('fixed');
   });
 });

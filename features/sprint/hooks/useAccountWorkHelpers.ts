@@ -8,7 +8,7 @@ import {
   getIssueTransitions,
   updateIssueWork,
 } from '@/lib/beerTrackerApi';
-import { pickDoneTransition } from '@/lib/sprints/sprintTaskCompletion';
+import { closingTransitionResolution, pickDoneTransition } from '@/lib/sprints/sprintTaskCompletion';
 import { mapStatus } from '@/utils/statusMapper';
 
 export interface AccountWorkData {
@@ -167,7 +167,11 @@ async function closeAccountWorkTask(input: {
   const closeTransition = pickDoneTransition(transitions, input.completionRules);
   if (!closeTransition) throw new Error('Close transition not found');
 
-  const statusSuccess = await changeIssueStatus(input.taskId, closeTransition.id, 'fixed');
+  const statusSuccess = await changeIssueStatus(
+    input.taskId,
+    closeTransition.id,
+    closingTransitionResolution(input.completionRules)
+  );
   if (!statusSuccess) throw new Error('Failed to close task');
 
   await syncClosedStatusFromApi(

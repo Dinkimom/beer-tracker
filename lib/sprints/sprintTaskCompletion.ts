@@ -122,3 +122,15 @@ export function pickDoneTransition<T extends CompletionTransitionFields>(
   const done = transitions.filter((transition) => isTransitionToDoneStatus(transition, rules));
   return done.find((transition) => !transition.screen?.id) ?? done[0] ?? null;
 }
+
+/**
+ * Резолюция закрывающего перехода. Tracker засчитывает «сделано» только с резолюцией (C1) —
+ * отправляем `fixed`. Jira резолюцию ставит workflow, а поле вне экрана перехода даёт 400 — не шлём.
+ * Правила ещё не загружены (провайдер неизвестен) — `fixed`, как было до канона.
+ */
+export function closingTransitionResolution(
+  rules?: SprintTaskCompletionRules | null
+): 'fixed' | undefined {
+  if (!rules) return 'fixed';
+  return rules.requireResolution ? 'fixed' : undefined;
+}

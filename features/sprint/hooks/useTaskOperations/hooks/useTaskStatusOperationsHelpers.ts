@@ -37,32 +37,20 @@ export async function resolveStatusTransitionTargetKey(
   return { finalTargetStatusKey, transitionData };
 }
 
-export function isClosingStatusTransition(
-  finalTargetStatusKey: string,
-  transitionId: string,
-  transitionData: { to?: TransitionToMeta } | null
-): boolean {
-  return (
-    finalTargetStatusKey.toLowerCase() === 'closed' ||
-    transitionId.toLowerCase().includes('closed') ||
-    transitionData?.to?.key?.toLowerCase() === 'closed'
-  );
-}
-
 export async function submitIssueStatusChange(input: {
   extraFields?: Record<string, unknown>;
-  isClosing: boolean;
+  /** Резолюция закрывающего перехода (`closingTransitionResolution`), иначе не задаётся. */
+  resolution?: string;
   targetStatusDisplay?: string;
   taskId: string;
   targetStatusKey: string;
   trackerIssueKey: string;
   transitionId: string;
 }): Promise<void> {
-  const resolution = input.isClosing ? 'fixed' : undefined;
   const success = await changeIssueStatus(
     input.trackerIssueKey,
     input.transitionId,
-    resolution,
+    input.resolution,
     input.extraFields,
     input.targetStatusKey,
     input.targetStatusDisplay

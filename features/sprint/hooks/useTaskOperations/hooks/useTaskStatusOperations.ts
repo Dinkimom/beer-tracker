@@ -18,7 +18,7 @@ import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
 import { isTransitionRequiresFieldsError } from '@/lib/issues/transitionRequiresFields';
-import { statusTypeKeyForStatus } from '@/lib/sprints/sprintTaskCompletion';
+import { closingTransitionResolution, statusTypeKeyForStatus } from '@/lib/sprints/sprintTaskCompletion';
 import { resolvePlannerStatusCategory } from '@/lib/trackerIntegration/resolveStatus';
 import { resolveStatusColorKey } from '@/lib/trackerIntegration/statusPalette';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
@@ -26,7 +26,6 @@ import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
 import { findTaskById, updateTaskInArray } from '../utils/taskUtils';
 
 import {
-  isClosingStatusTransition,
   resolveStatusTransitionTargetKey,
   submitIssueStatusChange,
 } from './useTaskStatusOperationsHelpers';
@@ -83,7 +82,6 @@ export function useTaskStatusOperations({
         return;
       }
 
-      const isClosing = isClosingStatusTransition(finalTargetStatusKey, transitionId, transitionData);
       const fromTransition = mergeTransitionExtraFieldsIntoTask(extraFields);
       const statusId = transitionData?.to?.id?.trim();
       const nextStatusTypeKey = (
@@ -91,6 +89,9 @@ export function useTaskStatusOperations({
         statusTypeKeyForStatus(finalTargetStatusKey, plannerRules?.completion) ??
         (statusId ? statusTypeKeyForStatus(statusId, plannerRules?.completion) : undefined)
       )?.toLowerCase();
+      // Закрывает переход в статус типа done (канон C1), а не слово closed в ключе.
+      const closingResolution =
+        nextStatusTypeKey === 'done' ? closingTransitionResolution(plannerRules?.completion) : undefined;
       const nextCategory =
         resolvePlannerStatusCategory(finalTargetStatusKey, nextStatusTypeKey, plannerRules) ??
         mapStatus(finalTargetStatusKey);
@@ -118,7 +119,7 @@ export function useTaskStatusOperations({
           statusTypeKey: nextStatusTypeKey,
           resolution:
             nextStatusTypeKey === 'done'
-              ? transitionResolutionKey(extraFields) ?? (isClosing ? 'fixed' : task.resolution)
+              ? transitionResolutionKey(extraFields) ?? closingResolution ?? task.resolution
               : undefined,
           ...fromTransition,
         }))
@@ -127,7 +128,7 @@ export function useTaskStatusOperations({
       try {
         await submitIssueStatusChange({
           extraFields,
-          isClosing,
+          resolution: closingResolution,
           targetStatusDisplay: nextStatusDisplay,
           taskId,
           targetStatusKey: finalTargetStatusKey,

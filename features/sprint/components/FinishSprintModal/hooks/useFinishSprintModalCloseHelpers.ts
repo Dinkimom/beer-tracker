@@ -2,7 +2,11 @@ import {
   changeIssueStatus,
   getIssueTransitions,
 } from '@/lib/beerTrackerApi';
-import { pickDoneTransition, type SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
+import {
+  closingTransitionResolution,
+  pickDoneTransition,
+  type SprintTaskCompletionRules,
+} from '@/lib/sprints/sprintTaskCompletion';
 
 async function closeSingleTrackerGoalTask(
   goalTaskId: string,
@@ -17,7 +21,11 @@ async function closeSingleTrackerGoalTask(
     return;
   }
 
-  const closeSuccess = await changeIssueStatus(goalTaskId, closeTransition.id, 'fixed');
+  const closeSuccess = await changeIssueStatus(
+    goalTaskId,
+    closeTransition.id,
+    closingTransitionResolution(completionRules)
+  );
   if (!closeSuccess) {
     console.error('Failed to close goal task:', goalTaskId);
   }
