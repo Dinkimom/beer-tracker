@@ -2,7 +2,7 @@
 
 import type { Task } from '@/types';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 
 import { SidebarResizeHandle } from '@/components/SidebarResizeHandle';
@@ -56,18 +56,6 @@ export function TaskInfoSidebar({ task, onClose, onFieldsSaved, onStatusChange }
     max: TASK_INFO_SIDEBAR_MAX_WIDTH_PX,
     clamp: true,
   });
-
-  useEffect(() => {
-    if (!isResizing) {
-      return;
-    }
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    return () => {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [isResizing]);
 
   if (!presence.mounted || !mounted || !displayedTask) {
     return null;

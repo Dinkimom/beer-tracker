@@ -3,12 +3,11 @@
 import type { PlannerOnboardingStep } from '@/lib/plannerOnboarding/plannerOnboarding';
 import type { CSSProperties } from 'react';
 
-import { useEffect } from 'react';
-
 import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
+import { useWindowEscape } from '@/hooks/useWindowEscape';
 import {
   PLANNER_ONBOARDING_STEPS,
   plannerOnboardingCalloutSide,
@@ -76,18 +75,7 @@ export function PlannerOnboardingTour({
   );
   const lastStep = stepIndex >= PLANNER_ONBOARDING_STEPS.length - 1;
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      requestClose();
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [requestClose]);
+  useWindowEscape(requestClose, { capture: true });
 
   return (
     <div

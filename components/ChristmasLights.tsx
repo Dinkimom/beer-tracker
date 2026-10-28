@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useChristmasThemeStorage, useThemeStorage } from '@/hooks/useLocalStorage';
 
 import { ChristmasLightBulb } from './ChristmasLightBulb';
-import { randomizeChristmasLightState } from './christmasLightsHelpers';
+import { isInChristmasPeriod, randomizeChristmasLightState } from './christmasLightsHelpers';
 
 const LIGHT_COLORS = ['#ff0000', '#ffff00', '#0099ff', '#00ff00', '#ff0000', '#ffff00', '#0099ff', '#00ff00'];
 
@@ -16,24 +16,6 @@ interface Light {
   isOn: boolean;
   verticalOffset: number; // Смещение по вертикали для создания эффекта "висящих" лампочек
 }
-
-// Проверка, попадает ли текущая дата в период показа гирлянды (15 декабря - 15 января)
-export const isInChristmasPeriod = (): boolean => {
-  const now = new Date();
-  const month = now.getMonth(); // 0 = январь, 11 = декабрь
-  const day = now.getDate();
-
-  // С 15 декабря по 31 декабря
-  if (month === 11 && day >= 15) {
-    return true;
-  }
-  // С 1 января по 15 января
-  if (month === 0 && day <= 15) {
-    return true;
-  }
-
-  return false;
-};
 
 export function ChristmasLights() {
   const [theme] = useThemeStorage();

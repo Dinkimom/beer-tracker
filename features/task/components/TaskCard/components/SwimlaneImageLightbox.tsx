@@ -9,6 +9,7 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { getPhotoCardCaptionColor } from '@/features/task/utils/photoCardSurface';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
+import { useWindowEscape } from '@/hooks/useWindowEscape';
 
 interface SwimlaneImageLightboxProps {
   authorName?: string;
@@ -24,15 +25,7 @@ export function SwimlaneImageLightbox({ authorName, caption, src, onClose }: Swi
   const captionColor = getPhotoCardCaptionColor(isDark);
   const captionText = caption?.trim();
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  useWindowEscape(onClose);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;

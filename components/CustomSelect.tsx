@@ -19,7 +19,8 @@ export interface CustomSelectOption<T extends string> {
   value: T;
 }
 
-function optionMatchesQuery<T extends string>(
+/** Поиск по опции: подстрока в подписи или значении (без учёта регистра). */
+export function optionMatchesQuery<T extends string>(
   option: CustomSelectOption<T>,
   query: string
 ): boolean {

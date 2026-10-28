@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
 
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
+import { useWindowEscape } from '@/hooks/useWindowEscape';
 
 import { PlannerOnboardingPopover } from './PlannerOnboardingPopover';
 
@@ -20,18 +20,7 @@ export function PlannerOnboardingWelcome({
   const overlay = useDeferredOverlayClose(onSkip);
   const requestClose = overlay.requestClose;
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      requestClose();
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [requestClose]);
+  useWindowEscape(requestClose, { capture: true });
 
   return (
     <div

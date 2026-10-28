@@ -3,7 +3,6 @@
 import type { TransitionItem } from '@/lib/beerTrackerApi';
 import type { Task } from '@/types';
 
-import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/Button';
@@ -11,6 +10,7 @@ import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overla
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { StatusSubmenuTransitionList } from '@/features/context-menu/components/StatusSubmenuTransitionList';
+import { useWindowEscape } from '@/hooks/useWindowEscape';
 
 interface KanbanColumnStatusChoiceModalProps {
   columnName: string;
@@ -29,13 +29,7 @@ export function KanbanColumnStatusChoiceModal({
 }: KanbanColumnStatusChoiceModalProps) {
   const { t } = useI18n();
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  useWindowEscape(onClose);
 
   return createPortal(
     <div

@@ -7,16 +7,16 @@ import type {
   SprintRealtimeResource,
 } from '@/lib/realtime/sprintRealtimeTypes';
 
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
-import { DEMO_ORG_ID } from '@/lib/demo/demoIds';
 import { buildDemoPresenceViewers } from '@/lib/demo/demoPresenceViewers';
 import { buildSprintRealtimeSseUrl } from '@/lib/realtime/buildSprintRealtimeSseUrl';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
 import { parseSprintRealtimeMessage, shouldApplySprintRealtimeEvent } from '@/lib/realtime/sprintRealtimeProtocol';
 import { publishSprintTimerClient } from '@/lib/realtime/sprintTimerClient';
-import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
+
+import { useActiveOrganizationId } from './useActiveOrganizationId';
 
 interface SprintRealtimeTaskPayload {
   issueMembership?: SprintRealtimeIssueMembership;
@@ -35,20 +35,6 @@ interface SprintRealtimeHandlers {
   onTasks?: (payload: SprintRealtimeTaskPayload) => void;
 }
 
-function readActiveOrganizationId(): string | null {
-  try {
-    const value = localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)?.trim();
-    if (!value || value === DEMO_ORG_ID) {
-      if (value === DEMO_ORG_ID) {
-        localStorage.removeItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY);
-      }
-      return null;
-    }
-    return value;
-  } catch {
-    return null;
-  }
-}
 
 function dispatchSprintRealtimeResources(
   resources: readonly SprintRealtimeResource[],
@@ -111,21 +97,6 @@ function applySprintRealtimeSsePayload(
   });
 }
 
-function subscribeActiveOrganizationId(onChange: () => void): () => void {
-  if (typeof window === 'undefined') {
-    return () => undefined;
-  }
-  window.addEventListener('storage', onChange);
-  window.addEventListener('localStorageChange', onChange);
-  return () => {
-    window.removeEventListener('storage', onChange);
-    window.removeEventListener('localStorageChange', onChange);
-  };
-}
-
-function useActiveOrganizationId(): string | null {
-  return useSyncExternalStore(subscribeActiveOrganizationId, readActiveOrganizationId, () => null);
-}
 
 /**
  * Подписка на обновления свимлейна текущего спринта через SSE.

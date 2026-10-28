@@ -78,18 +78,6 @@ export function NotificationsSidebar({ open, onClose }: NotificationsSidebarProp
     };
   }, [open, onClose]);
 
-  useEffect(() => {
-    if (!isResizing) {
-      return;
-    }
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    return () => {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [isResizing]);
-
   if (!presence.mounted || !mounted) {
     return null;
   }

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import { optionMatchesQuery } from '@/components/CustomSelect';
+
 import {
   formatQuickAddParentOptionLabel,
   hasLocalParentSelectMatch,
   mergeParentSelectOptions,
-  parentSelectOptionMatchesQuery,
   withCurrentQuickAddParentOption,
 } from './quickAddParentSelectHelpers';
 
@@ -55,12 +56,12 @@ describe('formatQuickAddParentOptionLabel', () => {
   });
 });
 
-describe('parentSelectOptionMatchesQuery', () => {
+describe('optionMatchesQuery', () => {
   it('matches by label or value', () => {
     const option = { label: 'ST-1 — Story One', value: 'ST-1' };
-    expect(parentSelectOptionMatchesQuery(option, 'story')).toBe(true);
-    expect(parentSelectOptionMatchesQuery(option, 'st-1')).toBe(true);
-    expect(parentSelectOptionMatchesQuery(option, 'missing')).toBe(false);
+    expect(optionMatchesQuery(option, 'story')).toBe(true);
+    expect(optionMatchesQuery(option, 'st-1')).toBe(true);
+    expect(optionMatchesQuery(option, 'missing')).toBe(false);
   });
 });
 

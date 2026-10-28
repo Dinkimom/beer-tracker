@@ -4,6 +4,8 @@ import type { RectBox } from './plannerOnboardingGeometry';
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 
+import { subscribeOnboardingLayoutChanges } from './useOnboardingScene';
+
 function resolveAnchorElement(
   selector: string | null,
   node: HTMLElement | null | undefined
@@ -52,25 +54,12 @@ export function useOnboardingAnchorRect(input: {
 }): RectBox | null {
   const { active, node = null, scrollContainerRef, selector } = input;
   const subscribe = useCallback(
-    (onChange: () => void) => {
-      const element = active ? resolveAnchorElement(selector, node) : null;
-      const observer = new ResizeObserver(onChange);
-      if (element) {
-        observer.observe(element);
-      }
-      const scrollContainer = scrollContainerRef.current;
-      scrollContainer?.addEventListener('scroll', onChange, { passive: true });
-      window.addEventListener('resize', onChange);
-      window.addEventListener('scroll', onChange, true);
-      const frame = requestAnimationFrame(onChange);
-      return () => {
-        cancelAnimationFrame(frame);
-        observer.disconnect();
-        scrollContainer?.removeEventListener('scroll', onChange);
-        window.removeEventListener('resize', onChange);
-        window.removeEventListener('scroll', onChange, true);
-      };
-    },
+    (onChange: () => void) =>
+      subscribeOnboardingLayoutChanges(
+        onChange,
+        active ? resolveAnchorElement(selector, node) : null,
+        scrollContainerRef.current
+      ),
     [active, node, scrollContainerRef, selector]
   );
   const getSnapshot = useCallback(

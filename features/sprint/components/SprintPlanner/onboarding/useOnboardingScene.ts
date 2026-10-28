@@ -13,6 +13,29 @@ interface OnboardingScene {
   dayIndex: number | null;
 }
 
+/** Пересчёт геометрии онбординга: resize наблюдаемого узла, скролл контейнера и окна, первый кадр. */
+export function subscribeOnboardingLayoutChanges(
+  onChange: () => void,
+  observed: Element | null,
+  scrollContainer: HTMLElement | null
+): () => void {
+  const observer = new ResizeObserver(onChange);
+  if (observed) {
+    observer.observe(observed);
+  }
+  scrollContainer?.addEventListener('scroll', onChange, { passive: true });
+  window.addEventListener('resize', onChange);
+  window.addEventListener('scroll', onChange, true);
+  const frame = requestAnimationFrame(onChange);
+  return () => {
+    cancelAnimationFrame(frame);
+    observer.disconnect();
+    scrollContainer?.removeEventListener('scroll', onChange);
+    window.removeEventListener('resize', onChange);
+    window.removeEventListener('scroll', onChange, true);
+  };
+}
+
 function readBox(element: Element): RectBox {
   const rect = element.getBoundingClientRect();
   return { height: rect.height, left: rect.left, top: rect.top, width: rect.width };
@@ -54,24 +77,8 @@ export function useOnboardingScene(input: {
 }): OnboardingScene | null {
   const { active, scroll, scrollContainerRef } = input;
   const subscribe = useCallback(
-    (onChange: () => void) => {
-      const observer = new ResizeObserver(onChange);
-      const scrollContainer = scrollContainerRef.current;
-      if (scrollContainer) {
-        observer.observe(scrollContainer);
-      }
-      scrollContainer?.addEventListener('scroll', onChange, { passive: true });
-      window.addEventListener('resize', onChange);
-      window.addEventListener('scroll', onChange, true);
-      const frame = requestAnimationFrame(onChange);
-      return () => {
-        cancelAnimationFrame(frame);
-        observer.disconnect();
-        scrollContainer?.removeEventListener('scroll', onChange);
-        window.removeEventListener('resize', onChange);
-        window.removeEventListener('scroll', onChange, true);
-      };
-    },
+    (onChange: () => void) =>
+      subscribeOnboardingLayoutChanges(onChange, scrollContainerRef.current, scrollContainerRef.current),
     [scrollContainerRef]
   );
   const getSnapshot = useCallback(

@@ -1,6 +1,7 @@
 import type { CustomSelectOption } from '@/components/CustomSelect';
 import type { TaskParent } from '@/types';
 
+import { optionMatchesQuery } from '@/components/CustomSelect';
 import { resolveFeatureDraftParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
 
@@ -21,19 +22,6 @@ export function formatQuickAddParentOptionLabel(
   return display || key;
 }
 
-export function parentSelectOptionMatchesQuery(
-  option: CustomSelectOption<string>,
-  query: string
-): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) {
-    return true;
-  }
-  return (
-    option.label.toLowerCase().includes(q) || String(option.value).toLowerCase().includes(q)
-  );
-}
-
 /** Есть ли совпадение в локальном списке родителей (тот же критерий, что у CustomSelect). */
 export function hasLocalParentSelectMatch(
   options: readonly CustomSelectOption<string>[],
@@ -43,7 +31,7 @@ export function hasLocalParentSelectMatch(
   if (!trimmed) {
     return true;
   }
-  return options.some((option) => parentSelectOptionMatchesQuery(option, trimmed));
+  return options.some((option) => optionMatchesQuery(option, trimmed));
 }
 
 export function mergeParentSelectOptions(input: {

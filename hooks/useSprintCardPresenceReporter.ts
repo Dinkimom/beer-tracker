@@ -7,7 +7,7 @@ import type {
   SprintPresenceGesture,
 } from '@/lib/realtime/sprintRealtimeTypes';
 
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { putSprintPresenceFocus } from '@/lib/api/realtime';
 import { resolveSprintCardPresenceFocus } from '@/lib/realtime/sprintCardPresence';
@@ -19,37 +19,13 @@ import {
   sprintPresenceGesturePublishKey,
 } from '@/lib/realtime/sprintPresenceGesture';
 import { SPRINT_PRESENCE_FOCUS_STATES } from '@/lib/realtime/sprintRealtimeTypes';
-import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 
+import { useActiveOrganizationId } from './useActiveOrganizationId';
 import { useSprintPresenceAttention } from './useSprintPresenceAttention';
 
 const JOIN_RETRY_DELAYS_MS = [0, 200, 400, 800];
 const FOCUS_STATES = new Set<string>(SPRINT_PRESENCE_FOCUS_STATES);
 
-function readActiveOrganizationId(): string | null {
-  try {
-    const value = localStorage.getItem(PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY)?.trim();
-    return value || null;
-  } catch {
-    return null;
-  }
-}
-
-function subscribeActiveOrganizationId(onChange: () => void): () => void {
-  if (typeof window === 'undefined') {
-    return () => undefined;
-  }
-  window.addEventListener('storage', onChange);
-  window.addEventListener('localStorageChange', onChange);
-  return () => {
-    window.removeEventListener('storage', onChange);
-    window.removeEventListener('localStorageChange', onChange);
-  };
-}
-
-function useActiveOrganizationId(): string | null {
-  return useSyncExternalStore(subscribeActiveOrganizationId, readActiveOrganizationId, () => null);
-}
 
 function focusKey(focus: SprintPresenceFocus | null): string {
   return focus ? `${focus.state}:${focus.targetId}` : '';

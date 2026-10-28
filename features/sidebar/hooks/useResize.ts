@@ -58,6 +58,17 @@ export function useResize({
 }: UseResizeOptions) {
   const [isResizing, setIsResizing] = useState(false);
 
+  // Курсор и запрет выделения на всю страницу, пока тянут: мышь может уйти с ручки.
+  useEffect(() => {
+    if (!isResizing) return;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    return () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
+
   useEffect(() => {
     if (!isResizing) return;
 

@@ -25,11 +25,8 @@ function defaultDayClassName(isToday: boolean): string {
 export function isoDateRangeDayClassName(
   iso: string,
   draft: { end: string | null; start: string | null },
-  todayUtc: { d: number; m: number; y: number },
-  viewM: number,
-  viewY: number,
+  isToday: boolean,
 ): string {
-  const isToday = viewY === todayUtc.y && viewM === todayUtc.m && parseIsoDateOnly(iso)?.d === todayUtc.d;
   const { start: s, end: e } = draft;
 
   if (s && e && s <= e) {
@@ -44,27 +41,11 @@ export function isoDateRangeDayClassName(
   return defaultDayClassName(isToday);
 }
 
-export function syncIsoDateRangePickerOnOpen(params: {
-  anchorIso: string | null;
-  endDate: string;
-  nowUtc: { m: number; y: number };
-  startDate: string;
-}): {
-  draft: { end: string | null; start: string | null };
-  todayUtc: { d: number; m: number; y: number };
-  viewM: number;
-  viewY: number;
-} {
-  const t = new Date();
-  const todayUtc = { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() };
-  const p = params.anchorIso ? parseIsoDateOnly(params.anchorIso) : null;
-  const viewY = p?.y ?? params.nowUtc.y;
-  const viewM = p?.m ?? params.nowUtc.m;
-  const draft = {
-    start: parseIsoDateOnly(params.startDate) ? params.startDate : null,
-    end: parseIsoDateOnly(params.endDate) ? params.endDate : null,
+export function draftFromRange(startDate: string, endDate: string): { end: string | null; start: string | null } {
+  return {
+    start: parseIsoDateOnly(startDate) ? startDate : null,
+    end: parseIsoDateOnly(endDate) ? endDate : null,
   };
-  return { draft, todayUtc, viewM, viewY };
 }
 
 export function resolveIsoDateRangeDayPick(

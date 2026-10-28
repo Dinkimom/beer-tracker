@@ -181,17 +181,6 @@ export function ResizableSidebar({
     };
   }, [phase]);
 
-  useEffect(() => {
-    if (isResizing) {
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-      return () => {
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      };
-    }
-  }, [isResizing]);
-
   const handleRef = (el: HTMLDivElement | null) => {
     sidebarRef.current = el;
     if (containerRef) {

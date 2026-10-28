@@ -1,10 +1,11 @@
 'use client';
 
 import * as Popover from '@radix-ui/react-popover';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { IsoCalendarMonth } from '@/components/IsoCalendarMonth';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import {
@@ -12,15 +13,13 @@ import {
   FLOATING_MENU_GLASS_SHELL,
   glassLensControlClass,
 } from '@/features/context-menu/contextMenuClasses';
-import { formatIsoDateRuNumericUtc, pad2, parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
+import { formatIsoDateRuNumericUtc, parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 
 import {
+  draftFromRange,
   isoDateRangeDayClassName,
   resolveIsoDateRangeDayPick,
-  syncIsoDateRangePickerOnOpen,
 } from './isoDateRangePickerFieldHelpers';
-
-const WEEKDAYS_MON_FIRST = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
 interface RangeDraft {
   end: string | null;
@@ -49,21 +48,7 @@ export function IsoDateRangePickerField({
 }: IsoDateRangePickerFieldProps) {
   const [open, setOpen] = useState(false);
   const isGlass = surface === 'glass';
-  const navButtonClass = `!h-8 !w-8 !min-w-0 shrink-0 !p-0 ${isGlass ? CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER : ''}`;
-  const nowUtc = useMemo(() => {
-    const t = new Date();
-    return { m: t.getUTCMonth() + 1, y: t.getUTCFullYear() };
-  }, []);
-
-  const [todayUtc, setTodayUtc] = useState(() => {
-    const t = new Date();
-    return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() };
-  });
-
-  const [draft, setDraft] = useState<RangeDraft>(() => ({
-    start: parseIsoDateOnly(startDate) ? startDate : null,
-    end: parseIsoDateOnly(endDate) ? endDate : null,
-  }));
+  const [draft, setDraft] = useState<RangeDraft>(() => draftFromRange(startDate, endDate));
 
   const anchorIso = useMemo(() => {
     if (parseIsoDateOnly(startDate)) return startDate;
@@ -71,55 +56,16 @@ export function IsoDateRangePickerField({
     return null;
   }, [endDate, startDate]);
 
-  const initialView = useMemo(() => {
-    const p = anchorIso ? parseIsoDateOnly(anchorIso) : null;
-    return { m: p?.m ?? nowUtc.m, y: p?.y ?? nowUtc.y };
-  }, [anchorIso, nowUtc.m, nowUtc.y]);
-
-  const [viewY, setViewY] = useState(initialView.y);
-  const [viewM, setViewM] = useState(initialView.m);
-
-  useEffect(() => {
-    if (!open) return;
-    const synced = syncIsoDateRangePickerOnOpen({ anchorIso, endDate, nowUtc, startDate });
-    setTodayUtc(synced.todayUtc);
-    setViewY(synced.viewY);
-    setViewM(synced.viewM);
-    setDraft(synced.draft);
-  }, [anchorIso, endDate, nowUtc, open, startDate]);
-
   const displayLabel = useMemo(() => {
     if (!parseIsoDateOnly(startDate) || !parseIsoDateOnly(endDate)) return null;
     if (startDate > endDate) return null;
     return `${formatIsoDateRuNumericUtc(startDate)} — ${formatIsoDateRuNumericUtc(endDate)}`;
   }, [endDate, startDate]);
 
-  const lastDay = new Date(Date.UTC(viewY, viewM, 0)).getUTCDate();
-  const firstWeekdayUtc = new Date(Date.UTC(viewY, viewM - 1, 1)).getUTCDay();
-  const startPad = (firstWeekdayUtc + 6) % 7;
-
-  const monthTitle = new Intl.DateTimeFormat('ru-RU', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(viewY, viewM - 1, 1)));
-
-  const goPrevMonth = () => {
-    if (viewM <= 1) {
-      setViewM(12);
-      setViewY((y) => y - 1);
-    } else {
-      setViewM((m) => m - 1);
-    }
-  };
-
-  const goNextMonth = () => {
-    if (viewM >= 12) {
-      setViewM(1);
-      setViewY((y) => y + 1);
-    } else {
-      setViewM((m) => m + 1);
-    }
+  const handleOpenChange = (next: boolean) => {
+    if (disabled) return;
+    if (next) setDraft(draftFromRange(startDate, endDate));
+    setOpen(next);
   };
 
   const onDayPick = (iso: string) => {
@@ -132,7 +78,7 @@ export function IsoDateRangePickerField({
   };
 
   return (
-    <Popover.Root modal={false} open={open} onOpenChange={(o) => !disabled && setOpen(o)}>
+    <Popover.Root modal={false} open={open} onOpenChange={handleOpenChange}>
       <Popover.Trigger asChild>
         <Button
           aria-expanded={open}
@@ -162,57 +108,12 @@ export function IsoDateRangePickerField({
           style={{ zIndex: contentZIndex }}
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
-          <div className="mb-2 flex items-center justify-between gap-1 px-0.5">
-            <Button
-              aria-label="Предыдущий месяц"
-              className={navButtonClass}
-              type="button"
-              variant="ghost"
-              onClick={goPrevMonth}
-            >
-              <Icon className="h-4 w-4" name="chevron-left" />
-            </Button>
-            <span className="min-w-0 truncate px-1 text-center text-sm font-semibold capitalize text-gray-900 dark:text-gray-100">
-              {monthTitle}
-            </span>
-            <Button
-              aria-label="Следующий месяц"
-              className={navButtonClass}
-              type="button"
-              variant="ghost"
-              onClick={goNextMonth}
-            >
-              <Icon className="h-4 w-4" name="chevron-right" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-7 gap-0.5">
-            {WEEKDAYS_MON_FIRST.map((w) => (
-              <div
-                key={w}
-                className="flex h-7 items-center justify-center text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
-              >
-                {w}
-              </div>
-            ))}
-            {Array.from({ length: startPad }, (_, i) => (
-              <div key={`pad-${i}`} className="h-8" />
-            ))}
-            {Array.from({ length: lastDay }, (_, i) => {
-              const day = i + 1;
-              const iso = `${viewY}-${pad2(viewM)}-${pad2(day)}`;
-              return (
-                <Button
-                  key={iso}
-                  className={`!h-8 !min-h-0 !w-full !px-0 !py-0 text-sm font-medium ${isoDateRangeDayClassName(iso, draft, todayUtc, viewM, viewY)}`}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => onDayPick(iso)}
-                >
-                  {day}
-                </Button>
-              );
-            })}
-          </div>
+          <IsoCalendarMonth
+            anchorIso={anchorIso}
+            dayClassName={(iso, isToday) => isoDateRangeDayClassName(iso, draft, isToday)}
+            navButtonClassName={isGlass ? CONTEXT_MENU_ITEM_ROW_NEUTRAL_HOVER : ''}
+            onDayPick={onDayPick}
+          />
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

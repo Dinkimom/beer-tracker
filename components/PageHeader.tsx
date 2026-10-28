@@ -5,7 +5,8 @@ import type { PageHeaderMainPageTabItem } from './PageHeaderMainPageTabs';
 import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 
-import { ChristmasLights, isInChristmasPeriod } from '@/components/ChristmasLights';
+import { ChristmasLights } from '@/components/ChristmasLights';
+import { isInChristmasPeriod } from '@/components/christmasLightsHelpers';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useChristmasThemeStorage, useThemeStorage } from '@/hooks/useLocalStorage';
 
