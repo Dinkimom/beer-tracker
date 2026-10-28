@@ -278,27 +278,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     [hoveredTaskId, filteredTaskLinks, qaTasksMap, swimlanePositions]
   );
 
-  const applyTaskHover = useCallback(
-    (taskId: string | null) => {
-      if (dragAndDrop.isDraggingTask || taskId == null) {
-        sprintPlannerUi.setHoveredTaskId(null);
-        sprintPlannerUi.setPlanPatchFocusTaskId(null);
-        syncCardShadowHover(null);
-        return;
-      }
-      sprintPlannerUi.setHoveredTaskId(taskId);
-      syncCardShadowHover(taskId);
-      const preview = positionsStore.planPatchPreviews.get(taskId);
-      if (preview && !preview.remove) {
-        sprintPlannerUi.setPlanPatchFocusTaskId(taskId);
-        return;
-      }
-      sprintPlannerUi.setPlanPatchFocusTaskId(null);
-    },
-    [dragAndDrop.isDraggingTask, positionsStore, sprintPlannerUi, syncCardShadowHover]
-  );
-  const getHoveredTaskId = useCallback(() => sprintPlannerUi.hoveredTaskId, [sprintPlannerUi]);
-  const scheduleTaskHover = useSwimlaneTaskHoverIntent(getHoveredTaskId, applyTaskHover);
   const laneTasksMap = laneSection.tasksMap;
   /** Заметки, фото и схемы откликаются на каждый hover сразу; задачи — через hover-intent. */
   const isAnnotationHoverTarget = useCallback(
@@ -308,6 +287,35 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     },
     [laneTasksMap]
   );
+
+  const applyTaskHover = useCallback(
+    (taskId: string | null) => {
+      if (dragAndDrop.isDraggingTask || taskId == null) {
+        sprintPlannerUi.setHoveredTaskId(null);
+        sprintPlannerUi.setPlanPatchFocusTaskId(null);
+        syncCardShadowHover(null);
+        return;
+      }
+      sprintPlannerUi.setHoveredTaskId(taskId);
+      // Факт-таймлайн приглушается только под карточкой задачи: у заметок своего факта нет.
+      syncCardShadowHover(isAnnotationHoverTarget(taskId) ? null : taskId);
+      const preview = positionsStore.planPatchPreviews.get(taskId);
+      if (preview && !preview.remove) {
+        sprintPlannerUi.setPlanPatchFocusTaskId(taskId);
+        return;
+      }
+      sprintPlannerUi.setPlanPatchFocusTaskId(null);
+    },
+    [
+      dragAndDrop.isDraggingTask,
+      isAnnotationHoverTarget,
+      positionsStore,
+      sprintPlannerUi,
+      syncCardShadowHover,
+    ]
+  );
+  const getHoveredTaskId = useCallback(() => sprintPlannerUi.hoveredTaskId, [sprintPlannerUi]);
+  const scheduleTaskHover = useSwimlaneTaskHoverIntent(getHoveredTaskId, applyTaskHover);
   const handleTaskHover = useCallback(
     (taskId: string | null) =>
       scheduleTaskHover(
