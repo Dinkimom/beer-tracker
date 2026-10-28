@@ -5,7 +5,6 @@ import { z } from 'zod';
 
 import { validateOrgMemberRoleChange } from '@/lib/admin/adminOrgMemberPatchHelpers';
 import { requireOrgAdminForOrganizationRoute } from '@/lib/admin/adminOrgRouteHelpers';
-import { deleteStaffFromAdmin } from '@/lib/admin/adminStaffRouteHelpers';
 import { updateOrganizationMemberRole } from '@/lib/organizations/organizationMembersRepository';
 
 const UuidSchema = z.string().uuid();
@@ -75,37 +74,5 @@ export async function PATCH(
 
   return NextResponse.json({
     member: { org_role: updated.role, userId: updated.user_id },
-  });
-}
-
-/**
- * DELETE /api/admin/organizations/[organizationId]/members/[userId]
- * org_admin: удалить сотрудника из каталога.
- */
-export async function DELETE(
-  request: Request,
-  routeContext: { params: Promise<{ organizationId: string; userId: string }> }
-) {
-  const { organizationId, userId: userIdRaw } = await routeContext.params;
-
-  const orgParsed = UuidSchema.safeParse(organizationId.trim());
-  if (!orgParsed.success) {
-    return NextResponse.json({ error: 'Некорректный organization id' }, { status: 400 });
-  }
-
-  const userParsed = UuidSchema.safeParse(userIdRaw.trim());
-  if (!userParsed.success) {
-    return NextResponse.json({ error: 'Некорректный идентификатор пользователя' }, { status: 400 });
-  }
-
-  const auth = await requireOrgAdminForOrganizationRoute(request, orgParsed.data);
-  if ('response' in auth) {
-    return auth.response;
-  }
-
-  return deleteStaffFromAdmin({
-    orgId: auth.ctx.organizationId,
-    requesterUserId: auth.ctx.userId,
-    staffId: userParsed.data,
   });
 }
