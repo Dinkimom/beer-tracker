@@ -2,6 +2,26 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.25.2] — 2026-10-28
+
+### English
+
+- Links on the swimlane can be drawn in either direction: click the later task first or the earlier one, the link is still stored from earlier to later, and the preview arrow already points that way.
+- Link arrows no longer fly off the board after a card is re-mounted (switching sprints, rebuilding rows).
+- The overdue strip runs over days off without gaps, like the fact timeline.
+- Hovering a note, photo or diagram no longer dims the fact timeline: only task cards have a fact.
+- Demo planner: a link between two tasks no longer disappears right after it is drawn; Ken Thompson has a portrait.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.25.2` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Связь на свимлейне можно тянуть в любую сторону: хоть от поздней задачи к ранней, хранится она всё равно «раньше → позже», и стрелка-превью смотрит так же.
+- Стрелки связей не улетают за доску, когда карточка перемонтировалась (смена спринта, перестроение строк).
+- Полоса просрочки идёт поверх выходных без разрывов, как факт-таймлайн.
+- Наведение на заметку, фото или схему не приглушает факт-таймлайн: факт есть только у задач.
+- Демо планера: связь между задачами не пропадает сразу после рисования; у Кена Томпсона появился портрет.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.25.2` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.25.1] — 2026-10-26
 
 ### English
