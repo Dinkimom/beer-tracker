@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { parsePositiveDecimalId } from "@/lib/admin/parsePositiveDecimalId";
 import { fetchAdminTrackerCatalog } from "@/lib/api/admin/teams";
 
-import { parseTrackerCatalogPayload } from "./useAdminTeamsPageHelpers";
 
 const BOARD_ID_LOOKUP_DEBOUNCE_MS = 300;
 
@@ -72,7 +71,7 @@ async function lookupBoardInCatalog(
   setBoardSearchLoading(true);
   try {
     const data = await fetchAdminTrackerCatalog(orgId, { boardId });
-    onCatalog(parseTrackerCatalogPayload(data));
+    onCatalog(data);
   } catch {
     /* board id may be unknown to this token */
   } finally {

@@ -17,21 +17,14 @@ import {
   MENU_SECTION_LABEL,
   MENU_SEPARATOR,
 } from '@/features/context-menu/contextMenuClasses';
+import {
+  ASSIGNEE_TARGET_STORY_POINTS,
+  ASSIGNEE_TARGET_TEST_POINTS,
+} from '@/features/context-menu/utils/assigneePickerOptions';
 import { availabilityKindMessageKey } from '@/features/swimlane/utils/availabilityCardKind';
 import { formatPointsForDisplay } from '@/lib/pointsUtils';
+import { getInitials } from '@/utils/displayUtils';
 
-/** Ориентир загрузки на спринт: «8 из 20 sp». */
-const TOTAL_STORY_POINTS = 20;
-const TOTAL_TEST_POINTS = 25;
-
-function developerNameInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 interface AssigneeSubmenuOptionsListProps {
   assigneePointsStats: AssigneePointsStats;
@@ -94,7 +87,7 @@ export function AssigneeSubmenuOptionsList({
       >
         <Avatar
           avatarUrl={developer.avatarUrl}
-          initials={developerNameInitials(developer.name)}
+          initials={getInitials(developer.name)}
           size="sm"
         />
         <span className="min-w-0 flex-1">
@@ -111,7 +104,7 @@ export function AssigneeSubmenuOptionsList({
         <span className={`${MENU_ROW_VALUE} tabular-nums`}>
           {t('sprintPlanner.contextMenu.assigneePicker.pointsOfTotal', {
             points: formatPointsForDisplay(points),
-            total: formatPointsForDisplay(isQaTask ? TOTAL_TEST_POINTS : TOTAL_STORY_POINTS),
+            total: formatPointsForDisplay(isQaTask ? ASSIGNEE_TARGET_TEST_POINTS : ASSIGNEE_TARGET_STORY_POINTS),
             unit: isQaTask ? 'tp' : 'sp',
           })}
         </span>

@@ -24,7 +24,7 @@ import {
 } from "@/lib/api/admin/teams";
 import { readApiErrorMessage } from "@/lib/api/readApiError";
 
-import { parseTrackerCatalogPayload, validateNewTeamForm } from "./useAdminTeamsPageHelpers";
+import { validateNewTeamForm } from "./useAdminTeamsPageHelpers";
 import { useEnsureTrackerCatalogBoard } from "./useEnsureTrackerCatalogBoard";
 
 interface UseAdminTeamsPageParams {
@@ -79,7 +79,7 @@ export function useAdminTeamsPage({
       const data = await fetchAdminTrackerCatalog(orgId, {
         refresh: opts?.refresh === true,
       });
-      setTrackerCatalog(parseTrackerCatalogPayload(data));
+      setTrackerCatalog(data);
     } catch (error) {
       setTrackerCatalog(null);
       toast.error(readApiErrorMessage(error, t("admin.teamsPage.catalogLoadFailed")));

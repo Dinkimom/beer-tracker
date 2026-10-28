@@ -12,8 +12,8 @@ import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { getInitials } from '@/utils/displayUtils';
 
-import { getInitials } from './userSelectorDisplayHelpers';
 
 const MIN_SEARCH_LENGTH = 2;
 

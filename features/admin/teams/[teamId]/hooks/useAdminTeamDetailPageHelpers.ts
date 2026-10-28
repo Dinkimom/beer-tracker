@@ -38,15 +38,6 @@ async function loadNonOrgAdminCatalog(
   }
 }
 
-function parseTrackerCatalogPayload(
-  data: AdminTrackerCatalogPayload
-): AdminTrackerCatalogPayload {
-  return {
-    boards: Array.isArray(data.boards) ? data.boards : [],
-    queues: Array.isArray(data.queues) ? data.queues : [],
-    teams: Array.isArray(data.teams) ? data.teams : [],
-  };
-}
 
 function parseTeamRolesPayload(
   roles: RoleCatalogEntry[] | undefined,
@@ -72,7 +63,7 @@ async function loadOrgAdminCatalog(
 
   let catalog: AdminTrackerCatalogPayload | null = null;
   if (catalogResult.status === 'fulfilled') {
-    catalog = parseTrackerCatalogPayload(catalogResult.value);
+    catalog = catalogResult.value;
   }
 
   let roleOptions: CustomSelectOption<string>[] | null = null;

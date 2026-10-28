@@ -12,6 +12,7 @@ import {
 } from './kanbanChromeClasses';
 import { kanbanColumnId } from './kanbanDndUtils';
 import { KanbanDraggableCard } from './KanbanDraggableCard';
+import { filterKanbanColumnTasks } from './kanbanViewColumnTotalsHelpers';
 
 interface KanbanColumnProps {
   columnId: string;
@@ -28,16 +29,6 @@ interface KanbanColumnProps {
   tasks: Task[];
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onTaskClick?: (taskId: string) => void;
-}
-
-function taskMatchesFilter(task: Task, filter: string): boolean {
-  if (!filter.trim()) return true;
-  const q = filter.trim().toLowerCase();
-  return (
-    task.name.toLowerCase().includes(q) ||
-    task.id.toLowerCase().includes(q) ||
-    (task.assigneeName?.toLowerCase().includes(q) ?? false)
-  );
 }
 
 export function KanbanColumn({
@@ -58,9 +49,7 @@ export function KanbanColumn({
     id: kanbanColumnId(columnId),
   });
 
-  const filteredTasks = globalNameFilter
-    ? tasks.filter((task) => taskMatchesFilter(task, globalNameFilter))
-    : tasks;
+  const filteredTasks = filterKanbanColumnTasks(tasks, globalNameFilter);
 
   const showForbiddenBanner = isDragging && isDropDisabled && !isSourceColumn;
   const chromeClass = resolveKanbanColumnChromeClass(isOver, isDropDisabled);

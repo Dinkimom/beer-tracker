@@ -9,7 +9,11 @@ import {
 } from '@/features/sprint/utils/quarterlyAvailabilityNormalize';
 import { getSegmentsForDeveloper } from '@/features/swimlane/utils/availabilitySegments';
 
-type AssigneePlatformKey = 'Back' | 'Other' | 'QA' | 'Web';
+export type AssigneePlatformKey = 'Back' | 'Other' | 'QA' | 'Web';
+
+/** Ориентир загрузки на спринт в пикере исполнителя: «8 из 20 sp». */
+export const ASSIGNEE_TARGET_STORY_POINTS = 20;
+export const ASSIGNEE_TARGET_TEST_POINTS = 25;
 
 export interface AssigneePickerGroup {
   developers: Developer[];

@@ -6,11 +6,8 @@ import type { BoardColumn } from '@/types/tracker';
 
 import { KanbanLaneColumns } from './KanbanLaneColumns';
 import { KanbanLaneHeader } from './KanbanLaneHeader';
-import {
-  kanbanLaneTotals,
-  kanbanTaskMatchesNameFilter,
-  resolveKanbanLaneDisplayName,
-} from './kanbanViewHelpers';
+import { filterKanbanColumnTasks } from './kanbanViewColumnTotalsHelpers';
+import { kanbanLaneTotals, resolveKanbanLaneDisplayName } from './kanbanViewHelpers';
 
 interface KanbanLaneSectionProps {
   activeTaskId: string | null;
@@ -49,11 +46,7 @@ export function KanbanLaneSection(props: KanbanLaneSectionProps) {
     props.lane.assigneeKey !== '__unassigned__' &&
     Boolean(props.lane.developer);
   const { totalSp, totalTp } = kanbanLaneTotals(props.lane.tasks);
-  const filteredCount = props.globalNameFilter
-    ? props.lane.tasks.filter((task) =>
-        kanbanTaskMatchesNameFilter(task, props.globalNameFilter!)
-      ).length
-    : props.lane.tasks.length;
+  const filteredCount = filterKanbanColumnTasks(props.lane.tasks, props.globalNameFilter).length;
 
   return (
     <div key={laneKey} className="flex flex-col gap-0 flex-none">

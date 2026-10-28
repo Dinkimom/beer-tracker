@@ -1,5 +1,6 @@
 'use client';
 
+import type { AssigneePlatformKey } from '@/features/context-menu/utils/assigneePickerOptions';
 import type { AssigneePointsStats } from '@/features/sprint/utils/assigneePointsStats';
 import type { Developer, Task } from '@/types';
 import type { MouseEvent as ReactMouseEvent } from 'react';
@@ -7,51 +8,13 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
+import {
+  ASSIGNEE_TARGET_STORY_POINTS,
+  ASSIGNEE_TARGET_TEST_POINTS,
+  groupAssigneesByPlatform,
+} from '@/features/context-menu/utils/assigneePickerOptions';
 import { formatPointsForDisplay } from '@/lib/pointsUtils';
-
-const TOTAL_STORY_POINTS = 20;
-const TOTAL_TEST_POINTS = 25;
-
-type PlatformKey = 'Back' | 'Other' | 'QA' | 'Web';
-
-function developerNameInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function getDeveloperPlatformKey(developer: Developer): PlatformKey {
-  if (developer.role === 'tester') return 'QA';
-  const platforms = developer.platforms ?? [];
-  if (platforms.includes('back')) return 'Back';
-  if (platforms.includes('web')) return 'Web';
-  return 'Other';
-}
-
-/** Группа пикера, которой соответствует проставленная платформа задачи. */
-export function assigneePickerGroupIsSuitable(
-  platformKey: PlatformKey,
-  taskTeam: string | undefined,
-): boolean {
-  const team = (taskTeam ?? '').toLowerCase();
-  if (team === 'qa') return platformKey === 'QA';
-  if (team === 'back') return platformKey === 'Back';
-  if (team === 'web') return platformKey === 'Web';
-  if (team === 'devops') return platformKey === 'Back' || platformKey === 'Web';
-  return false;
-}
-
-/** Порядок платформ в пикере: подходящая платформе задачи — первой */
-export function getAssigneePickerPlatformOrder(taskTeam: string | undefined): PlatformKey[] {
-  const team = (taskTeam ?? '').toLowerCase();
-  if (team === 'qa') return ['QA', 'Back', 'Web', 'Other'];
-  if (team === 'back') return ['Back', 'Web', 'QA', 'Other'];
-  if (team === 'web') return ['Web', 'Back', 'QA', 'Other'];
-  return ['Back', 'Web', 'QA', 'Other'];
-}
+import { getInitials } from '@/utils/displayUtils';
 
 function createAssigneePickerMouseDownHandler(
   onSelect: (assigneeId: string) => void,
@@ -65,7 +28,7 @@ function createAssigneePickerMouseDownHandler(
 }
 
 function platformLabel(
-  platformKey: PlatformKey,
+  platformKey: AssigneePlatformKey,
   t: (key: string, params?: Record<string, number | string>) => string
 ): string {
   if (platformKey === 'Other') {
@@ -101,28 +64,18 @@ export function AssigneePickerList({
     );
   }
 
-  const byPlatform = new Map<PlatformKey, Developer[]>();
-  developers.forEach((developer) => {
-    const key = getDeveloperPlatformKey(developer);
-    const list = byPlatform.get(key) ?? [];
-    list.push(developer);
-    byPlatform.set(key, list);
-  });
-
   return (
     <>
-      {getAssigneePickerPlatformOrder(task.team).map((platformKey, orderIndex) => {
-        const list = byPlatform.get(platformKey) ?? [];
-        if (list.length === 0) return null;
+      {groupAssigneesByPlatform(developers, task.team).map(({ developers: list, platformKey, suitable }, groupIndex) => {
         const label = platformLabel(platformKey, t);
-        const isFirst = orderIndex === 0;
+        const isFirst = groupIndex === 0;
         return (
           <div key={platformKey}>
             <div
               className={`px-3 py-1.5 ${!isFirst ? 'mt-0.5 border-t border-gray-100 dark:border-gray-700' : ''}`}
             >
               <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                {assigneePickerGroupIsSuitable(platformKey, task.team)
+                {suitable
                   ? t('sprintPlanner.occupancy.assigneePicker.suitable', { label })
                   : label}
               </p>
@@ -131,7 +84,7 @@ export function AssigneePickerList({
               const isQaPicker = task.team === 'QA';
               const entry = assigneePointsStats.byAssignee.get(developer.id);
               const points = isQaPicker ? (entry?.testPoints ?? 0) : (entry?.storyPoints ?? 0);
-              const total = isQaPicker ? TOTAL_TEST_POINTS : TOTAL_STORY_POINTS;
+              const total = isQaPicker ? ASSIGNEE_TARGET_TEST_POINTS : ASSIGNEE_TARGET_STORY_POINTS;
               const availabilityLine = developerAvailabilityById?.get(developer.id);
               const isSelected = developer.id === selectedAssigneeId;
               return (
@@ -151,7 +104,7 @@ export function AssigneePickerList({
                   <Avatar
                     avatarUrl={developer.avatarUrl}
                     className="mt-0.5"
-                    initials={developerNameInitials(developer.name)}
+                    initials={getInitials(developer.name)}
                     size="md"
                   />
                   <div className="min-w-0 flex-1">

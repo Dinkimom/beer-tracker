@@ -7,7 +7,6 @@ import { useCallback, useRef, useState } from 'react';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { UserSelectorClosedButton } from './UserSelectorClosedButton';
-import { getUserSelectorButtonText } from './userSelectorDisplayHelpers';
 import { UserSelectorOpenPanel } from './UserSelectorOpenPanel';
 import {
   useUserSelectorSearch,
@@ -86,13 +85,9 @@ export function UserSelector({
       setSelectedUser,
     });
 
-  const buttonText = getUserSelectorButtonText({
-    loadingLabel: t('common.loading'),
-    loadingUser,
-    placeholder: resolvedPlaceholder,
-    selectedUser,
-    value,
-  });
+  const buttonText = loadingUser
+    ? t('common.loading')
+    : selectedUser?.displayName || value || resolvedPlaceholder;
 
   return (
     <div ref={containerRef} className={className ? `relative ${className}` : 'relative'}>

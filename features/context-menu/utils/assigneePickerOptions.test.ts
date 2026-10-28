@@ -32,6 +32,7 @@ describe('assigneePlatformIsSuitable', () => {
   it('marks the matching platform when the task platform is set', () => {
     expect(assigneePlatformIsSuitable('Back', 'Back')).toBe(true);
     expect(assigneePlatformIsSuitable('Web', 'Back')).toBe(false);
+    expect(assigneePlatformIsSuitable('Web', 'Web')).toBe(true);
     expect(assigneePlatformIsSuitable('QA', 'QA')).toBe(true);
     expect(assigneePlatformIsSuitable('Back', 'DevOps')).toBe(true);
     expect(assigneePlatformIsSuitable('Web', 'DevOps')).toBe(true);

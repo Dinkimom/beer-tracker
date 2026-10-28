@@ -6,8 +6,8 @@ import type { MouseEvent } from 'react';
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { getInitials } from '@/utils/displayUtils';
 
-import { getUserSelectorInitials } from './userSelectorDisplayHelpers';
 
 interface UserSelectorClosedButtonProps {
   allowClear?: boolean;
@@ -63,7 +63,7 @@ export function UserSelectorClosedButton({
             <Avatar
               avatarUrl={selectedUser.avatarUrl}
               className="shrink-0"
-              initials={getUserSelectorInitials(selectedUser.displayName)}
+              initials={getInitials(selectedUser.displayName)}
               size={compact ? 'xs' : 'sm'}
             />
             <span className="min-w-0 truncate">{selectedUser.displayName}</span>

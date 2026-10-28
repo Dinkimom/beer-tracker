@@ -1,4 +1,4 @@
-import type { AdminTrackerCatalogPayload, AdminTrackerCatalogTeamBinding } from "@/features/admin/adminTeamCatalog";
+import type { AdminTrackerCatalogTeamBinding } from "@/features/admin/adminTeamCatalog";
 
 import {
   validateNewTeamFormBindings,
@@ -7,15 +7,6 @@ import {
 
 type Translate = (key: string, params?: Record<string, number | string>) => string;
 
-export function parseTrackerCatalogPayload(
-  data: AdminTrackerCatalogPayload & { error?: string },
-): AdminTrackerCatalogPayload {
-  return {
-    boards: Array.isArray(data.boards) ? data.boards : [],
-    queues: Array.isArray(data.queues) ? data.queues : [],
-    teams: Array.isArray(data.teams) ? data.teams : [],
-  };
-}
 
 interface NewTeamFormValidation {
   boardNum: number;

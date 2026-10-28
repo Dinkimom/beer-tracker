@@ -6,8 +6,8 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { getInitials } from '@/utils/displayUtils';
 
-import { getInitials } from './userSelectorDisplayHelpers';
 
 interface MultiUserSelectorSelectedChipsProps {
   selectedUsers: RegistryUserItem[];
