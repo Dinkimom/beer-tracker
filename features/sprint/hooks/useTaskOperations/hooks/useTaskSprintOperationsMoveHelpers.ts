@@ -4,9 +4,9 @@ import { playTaskBoardExit } from '@/features/task/utils/taskBoardExit';
 
 import {
   applyOptimisticTaskRemoval,
+  rollbackOptimisticTaskRemoval,
   type SprintOperationSnapshot,
 } from './useTaskSprintOperationsHelpers';
-import { rollbackMoveToSprintOnError } from './useTaskSprintOperationsMoveRollbackHelpers';
 import { submitMoveToSprint } from './useTaskSprintOperationsMoveSuccessHelpers';
 
 type StateUpdater<T> = (updater: (prev: T) => T) => void;
@@ -62,14 +62,16 @@ export async function executeMoveToSprint(input: {
   } catch (error) {
     // Откат только после удаления — иначе отложенное удаление снова скроет карточку.
     await removedFromBoard;
-    rollbackMoveToSprintOnError({
-      error,
-      setTaskLinks: input.setTaskLinks,
-      setTaskPositions: input.setTaskPositions,
-      setTasks: input.setTasks,
-      shouldRemoveFromCurrent,
-      snapshot: input.snapshot,
-      updateXarrow: input.updateXarrow,
-    });
+    if (shouldRemoveFromCurrent && input.snapshot.taskToMove) {
+      rollbackOptimisticTaskRemoval({
+        linksToDelete: input.snapshot.linksToDelete,
+        setTaskLinks: input.setTaskLinks,
+        setTaskPositions: input.setTaskPositions,
+        setTasks: input.setTasks,
+        snapshot: input.snapshot,
+        updateXarrow: input.updateXarrow,
+      });
+    }
+    throw error;
   }
 }
