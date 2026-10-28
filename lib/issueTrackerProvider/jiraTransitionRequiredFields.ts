@@ -2,17 +2,12 @@ import type { IssueTrackerTransitionInput } from './types';
 import type { AxiosInstance } from 'axios';
 
 import { apiCache } from '@/lib/cache';
+import { asRecord } from '@/lib/isRecord';
 
 const WORKFLOW_REQUIRED_CACHE_TTL_SECONDS = 60 * 60;
 const ID_REF_ITEMS = new Set(['component', 'group', 'issuetype', 'option', 'version']);
 const TRANSITION_PASSTHROUGH_KEYS = new Set(['comment', 'resolution']);
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-}
 
 function workflowRequiredCacheKey(baseUrl: string, projectId: string, issueTypeId: string): string {
   return `jira:workflow-required:${baseUrl}:${projectId}:${issueTypeId}`;

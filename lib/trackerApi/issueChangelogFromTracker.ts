@@ -3,6 +3,7 @@ import type { IssueChangelogWithComments, IssueComment } from '@/types/tracker';
 import axios, { type AxiosInstance } from 'axios';
 
 import { changelogEntriesFromRawIssueLogs } from '@/lib/issueTrackerProvider/changelogNormalizer';
+import { mapInChunks } from '@/lib/mapInChunks';
 
 import { requireTrackerAxiosForApiRoute } from '../trackerAxiosFactory';
 
@@ -127,19 +128,6 @@ export async function fetchIssueChangelogWithCommentsFromTracker(
   }
 }
 
-async function mapInChunks<T, R>(
-  items: T[],
-  chunkSize: number,
-  fn: (item: T) => Promise<R>
-): Promise<R[]> {
-  const out: R[] = [];
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize);
-    const part = await Promise.all(chunk.map(fn));
-    out.push(...part);
-  }
-  return out;
-}
 
 export async function fetchIssuesChangelogBatchFromTracker(
   issueKeys: string[],

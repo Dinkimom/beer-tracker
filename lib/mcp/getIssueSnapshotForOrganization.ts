@@ -1,14 +1,6 @@
+import { trimDescription } from '@/lib/mcp/getIssueForOrganization';
 import { findIssueSnapshot } from '@/lib/snapshots';
 
-const MAX_DESCRIPTION = 8000;
-
-function trimDescription(text: string | undefined): string | null {
-  const value = text?.trim() ?? '';
-  if (!value) {
-    return null;
-  }
-  return value.length > MAX_DESCRIPTION ? `${value.slice(0, MAX_DESCRIPTION - 1)}…` : value;
-}
 
 /**
  * Synced Jira/Tracker dump row from `issue_snapshots` (admin sync), not a live API call.

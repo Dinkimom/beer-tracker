@@ -2,6 +2,7 @@ import type { IssueTrackerIssueSearchOptions } from './types';
 import type { TrackerIssue } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
+import { axiosErrorStatusAndDetails } from './jiraAgileAuthError';
 import { fetchJiraBoardProjectKey, jiraAgileBoardIssuesUrl } from './jiraCatalog';
 import {
   extractJiraIssueRows,
@@ -66,12 +67,6 @@ function fetchJqlIssues(api: AxiosInstance, jql: string): Promise<TrackerIssue[]
   );
 }
 
-function isHttpBadRequest(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-  return (error as { response?: { status?: number } }).response?.status === 400;
-}
 
 export function isJiraEpicIssueTypeKey(key: string | undefined): boolean {
   const normalized = key?.trim().toLowerCase() ?? '';
@@ -149,7 +144,7 @@ async function fetchJqlIssuesOrEmptyOnBadRequest(
   try {
     return await fetchJqlIssues(api, jql);
   } catch (error) {
-    if (isHttpBadRequest(error)) {
+    if (axiosErrorStatusAndDetails(error).status === 400) {
       console.warn('[jira] issue search rejected JQL', { jql });
       return [];
     }

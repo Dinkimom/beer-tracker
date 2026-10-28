@@ -1,4 +1,7 @@
 /** Маркер в `comments.text`: сцена Excalidraw, не обычная заметка. */
+
+import { isRecord } from '@/lib/isRecord';
+
 export const EXCALIDRAW_COMMENT_PREFIX = '<!--bt-excalidraw-v1-->';
 
 /** Верхняя граница JSON сцены в S3 (не колонка comments.text). */
@@ -37,9 +40,6 @@ export function isExcalidrawCommentText(text: string | null | undefined): boolea
   return typeof text === 'string' && text.startsWith(EXCALIDRAW_COMMENT_PREFIX);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function optionalTrimmedName(value: unknown): string | undefined {
   if (typeof value !== 'string') {

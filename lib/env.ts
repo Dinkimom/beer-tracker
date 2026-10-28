@@ -312,6 +312,15 @@ function verifyTimingSafeSecret(
 /**
  * Сравнение секрета cron без утечки по времени (длины должны совпадать).
  */
+/** Секрет cron из запроса: `x-sync-cron-secret` или `Authorization: Bearer …`. */
+export function syncCronSecretFromRequest(request: Request): string {
+  return (
+    request.headers.get('x-sync-cron-secret')?.trim() ??
+    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim() ??
+    ''
+  );
+}
+
 export function verifySyncCronSecret(provided: string | null | undefined): boolean {
   return verifyTimingSafeSecret(getSyncCronSecret(), provided);
 }

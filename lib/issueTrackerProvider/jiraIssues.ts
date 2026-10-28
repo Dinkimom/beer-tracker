@@ -3,6 +3,7 @@ import type { TrackerIssue } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
 import { jiraAdfToMarkdown } from './jiraAdfToMarkdown';
+import { axiosErrorStatusAndDetails } from './jiraAgileAuthError';
 import { jiraAgileSprintIssuesUrl, shouldStopJiraBoardPages } from './jiraCatalog';
 import { harvestJiraIssueLinks } from './jiraIssueLinks';
 import { postJiraIssueSearch, readJiraSearchNextPageToken } from './jiraIssueSearchRequest';
@@ -514,12 +515,6 @@ function jiraIssuePath(issueKey: string): string {
   return `/issue/${encodeURIComponent(issueKey)}`;
 }
 
-function isHttpNotFound(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-  return (error as { response?: { status?: number } }).response?.status === 404;
-}
 
 export async function fetchJiraIssue(
   api: AxiosInstance,
@@ -538,7 +533,7 @@ export async function fetchJiraIssue(
     const [normalized] = await normalizeJiraIssuesWithSchedule(api, [mapped]);
     return normalized ?? null;
   } catch (error) {
-    if (isHttpNotFound(error)) {
+    if (axiosErrorStatusAndDetails(error).status === 404) {
       return null;
     }
     throw error;

@@ -1,10 +1,9 @@
+import { isRecord } from '@/lib/isRecord';
+
 const MAX_ENTRIES = 40;
 const MAX_LABEL_LENGTH = 80;
 const MAX_OPTION_LENGTH = 200;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function shortLabel(labels: Readonly<Record<string, string>>, key: string): string {
   return labels[key]?.trim() ?? '';

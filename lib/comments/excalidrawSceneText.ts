@@ -1,8 +1,7 @@
 import type { ExcalidrawCommentScene } from '@/lib/comments/excalidrawCommentPayload';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+import { isRecord } from '@/lib/isRecord';
+
 
 function readElementText(element: Record<string, unknown>): string | null {
   for (const key of ['originalText', 'text'] as const) {

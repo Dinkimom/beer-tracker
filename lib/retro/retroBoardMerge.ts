@@ -1,5 +1,7 @@
 import type { RetroBoard, RetroCardReaction, RetroColumn } from './retroBoardShared';
 
+import { isRecord } from '@/lib/isRecord';
+
 interface Identified {
   id: string;
 }
@@ -62,9 +64,6 @@ function mergeOrder<T extends Identified>(
   return result;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function isIdentified(value: unknown): value is Identified {
   return isRecord(value) && typeof value.id === 'string';

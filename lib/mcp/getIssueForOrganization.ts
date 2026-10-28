@@ -6,7 +6,8 @@ import { resolveMcpIssueStatusCategory } from '@/lib/mcp/resolveMcpIssueStatusCa
 const MAX_COMMENTS = 40;
 const MAX_DESCRIPTION = 8000;
 
-function trimDescription(text: string | undefined): string | null {
+/** Описание задачи для MCP: trim, пустое → null, длинное обрезается до MAX_DESCRIPTION. */
+export function trimDescription(text: string | undefined): string | null {
   const value = text?.trim() ?? '';
   if (!value) {
     return null;

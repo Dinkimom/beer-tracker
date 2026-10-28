@@ -3,12 +3,12 @@ import type { AccessProfile } from '@/lib/access/orgAccess';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { canUsePlanner } from '@/lib/access/orgAccess';
 import { AgentSessionRepliesSchema } from '@/lib/agentSessions/agentSession';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { getIssueForOrganization } from '@/lib/mcp/getIssueForOrganization';
 import { getIssueSnapshotForOrganization } from '@/lib/mcp/getIssueSnapshotForOrganization';
 import { loadMcpSprintContext, withPendingProposal } from '@/lib/mcp/mcpSprintContextWithDraft';
+import { plannerWriteDenied, toolError, toolJson } from '@/lib/mcp/mcpToolResult';
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
 import { registerAgentSessionMcpTools } from '@/lib/mcp/registerAgentSessionMcpTools';
 import { registerIdentityMcpTools } from '@/lib/mcp/registerIdentityMcpTools';
@@ -22,26 +22,6 @@ import {
   proposeSprintPlanPatch,
 } from '@/lib/sprints/sprintPlanPatchService';
 
-function toolError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  return {
-    content: [{ type: 'text' as const, text: message }],
-    isError: true as const,
-  };
-}
-
-function toolJson(payload: unknown) {
-  return {
-    content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }],
-  };
-}
-
-function plannerWriteDenied(profile: AccessProfile): string | null {
-  if (canUsePlanner(profile)) {
-    return null;
-  }
-  return 'forbidden: planner write requires organization admin or team membership';
-}
 
 export function createSprintContextMcpServer(input: {
   mcpClientId?: string;

@@ -271,15 +271,5 @@ export const invalidateCache = {
     invalidateCache.adminTrackerCatalogQueuesBoards(organizationId);
     invalidateCache.adminTrackerOrgMetadata(organizationId);
   },
-  /** Связи issue в Tracker/Jira после create/delete из приложения. */
-  trackerIssueLinks: (organizationId: string, ...issueKeys: string[]) => {
-    for (const raw of issueKeys) {
-      const key = raw.trim();
-      if (!key) {
-        continue;
-      }
-      apiCache.delete(cacheKeys.trackerIssueLinks(organizationId, key));
-    }
-  },
 };
 

@@ -1,5 +1,6 @@
 import { parseDeveloperCalDavCredentialsStoreRaw } from '@/lib/calendar/developerCalDavCredentialsParseHelpers';
 import { DEVELOPER_CALDAV_CREDENTIALS_STORAGE_KEY } from '@/lib/calendar/developerCalDavCredentialsStorage';
+import { asRecord } from '@/lib/isRecord';
 import { TRACKER_OAUTH_LOCAL_STORAGE_KEY } from '@/lib/trackerTokenStorage';
 import { parseTrackerTokenJson } from '@/lib/trackerTokenStorageParseHelpers';
 
@@ -49,12 +50,6 @@ export function redactSecretPatternsInString(value: string): string {
   return value.replace(YANDEX_OAUTH_TOKEN_RE, REDACTED).replace(CALDAV_URL_RE, REDACTED);
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-}
 
 function stripForbiddenKeysFromObject(input: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};

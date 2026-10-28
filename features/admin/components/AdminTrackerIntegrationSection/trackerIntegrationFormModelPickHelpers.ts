@@ -1,15 +1,10 @@
 import type { PlatformValueMapFormRow } from "./types";
 
+import { asRecord } from '@/lib/isRecord';
 import { canonicalPaletteKey } from "@/utils/statusColors";
 
 const VALID_PLATFORMS = new Set(["Back", "Web", "QA", "DevOps"]);
 
-function asRecord(v: unknown): Record<string, unknown> | null {
-  if (v !== null && typeof v === "object" && !Array.isArray(v)) {
-    return v as Record<string, unknown>;
-  }
-  return null;
-}
 
 export function parsePlatformValueMapRow(row: unknown): PlatformValueMapFormRow | null {
   const r = asRecord(row);

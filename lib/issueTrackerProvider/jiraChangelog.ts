@@ -7,23 +7,20 @@ import type {
 import type { IssueComment } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
+import { mapInChunks } from '@/lib/mapInChunks';
+
 import {
   buildIssueTrackerBurndownIssueFromPayloadAndLogs,
   changelogEntriesFromRawIssueLogs,
 } from './changelogNormalizer';
 import { jiraAdfToMarkdown } from './jiraAdfToMarkdown';
+import { axiosErrorStatusAndDetails } from './jiraAgileAuthError';
 import { yandexIssueFromProviderIssue } from './yandexTrackerProviderHelpers';
 
 const CHANGELOG_PAGE = 100;
 const CHANGELOG_BATCH = 8;
 const BURNDOWN_BATCH = 6;
 
-function isHttpNotFound(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-  return (error as { response?: { status?: number } }).response?.status === 404;
-}
 
 export function extractJiraChangelogHistories(data: unknown): unknown[] {
   if (!data || typeof data !== 'object') {
@@ -151,19 +148,6 @@ export function jiraChangelogLogsFromHistories(histories: unknown[]): unknown[] 
   return out;
 }
 
-async function mapInChunks<T, R>(
-  items: T[],
-  chunkSize: number,
-  fn: (item: T) => Promise<R>
-): Promise<R[]> {
-  const out: R[] = [];
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize);
-    const part = await Promise.all(chunk.map(fn));
-    out.push(...part);
-  }
-  return out;
-}
 
 async function fetchDedicatedChangelogPages(
   api: AxiosInstance,
@@ -186,7 +170,7 @@ async function fetchDedicatedChangelogPages(
     }
     return out;
   } catch (error) {
-    if (isHttpNotFound(error)) {
+    if (axiosErrorStatusAndDetails(error).status === 404) {
       return null;
     }
     throw error;
@@ -203,7 +187,7 @@ async function fetchExpandChangelogHistories(
     });
     return extractJiraChangelogHistories(data);
   } catch (error) {
-    if (isHttpNotFound(error)) {
+    if (axiosErrorStatusAndDetails(error).status === 404) {
       return [];
     }
     throw error;
@@ -294,7 +278,7 @@ async function fetchJiraIssueComments(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
   } catch (error) {
-    if (isHttpNotFound(error)) {
+    if (axiosErrorStatusAndDetails(error).status === 404) {
       return [];
     }
     throw error;
@@ -352,7 +336,7 @@ export function fetchJiraBurndownIssuesForKeys(
     try {
       rawLogs = await fetchJiraIssueChangelogLogs(api, key);
     } catch (error) {
-      if (!isHttpNotFound(error)) {
+      if (axiosErrorStatusAndDetails(error).status !== 404) {
         throw error;
       }
     }

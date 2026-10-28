@@ -9,6 +9,7 @@ import type { TrackerIssue } from '@/types/tracker';
 import axios, { type AxiosInstance } from 'axios';
 
 import { buildIssueTrackerBurndownIssueFromPayloadAndLogs } from '@/lib/issueTrackerProvider/changelogNormalizer';
+import { mapInChunks } from '@/lib/mapInChunks';
 
 import { requireTrackerAxiosForApiRoute } from '../trackerAxiosFactory';
 
@@ -16,19 +17,6 @@ import { fetchTrackerIssueChangelogRawPages } from './issueChangelogFromTracker'
 
 const BURNDOWN_CHANGELOG_CONCURRENCY = 6;
 
-async function mapInChunks<T, R>(
-  items: T[],
-  chunkSize: number,
-  fn: (item: T) => Promise<R>
-): Promise<R[]> {
-  const out: R[] = [];
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize);
-    const part = await Promise.all(chunk.map(fn));
-    out.push(...part);
-  }
-  return out;
-}
 
 export function fetchBurndownIssuesFromTrackerApi(
   issueKeys: string[],

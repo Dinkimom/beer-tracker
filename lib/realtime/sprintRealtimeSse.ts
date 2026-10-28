@@ -50,7 +50,8 @@ export function parseSprintRealtimeSseQuery(url: URL): {
   };
 }
 
-function requestWithOrganizationHeader(request: Request, organizationId: string): Request {
+/** Копия запроса с заголовком организации (SSE/beacon не могут выставить его сами). */
+export function requestWithOrganizationHeader(request: Request, organizationId: string): Request {
   const headers = new Headers(request.headers);
   headers.set(TENANT_ORG_HEADER, organizationId);
   return new Request(request.url, { headers });

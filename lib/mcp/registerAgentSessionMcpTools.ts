@@ -17,21 +17,9 @@ import {
   listAgentSessions,
 } from '@/lib/agentSessions/agentSessionsRepository';
 import { AgentReplyOptionsSchema } from '@/lib/agentSessions/agentSkills';
+import { toolError, toolJson } from '@/lib/mcp/mcpToolResult';
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
 
-function toolError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  return {
-    content: [{ type: 'text' as const, text: message }],
-    isError: true as const,
-  };
-}
-
-function toolJson(payload: unknown) {
-  return {
-    content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }],
-  };
-}
 
 const INBOX_HINT =
   'Your inbox: sessions the person handed to you from the Beer Tracker planner ("Ask the agent", 💬 on your draft, "Ask to redo"). Open each with get_agent_session, do the work, then answer: propose_plan_patch(sessionId, …) for a plan change or reply_agent_session for a text answer. One draft per sprint at a time: a session with waitsForDraftSession cannot propose a draft until that session draft is accepted/rejected — handle the draft session first. Sessions are private to the person you act for.';

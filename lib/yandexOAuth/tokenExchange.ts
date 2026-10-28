@@ -1,14 +1,7 @@
+import { oauthTokenErrorMessage } from '@/lib/oauthTokenErrorMessage';
+
 import { YANDEX_TOKEN_URL } from './constants';
 
-function tokenErrorMessage(data: Record<string, unknown>, status: number): string {
-  if (typeof data.error_description === 'string') {
-    return data.error_description;
-  }
-  if (typeof data.error === 'string') {
-    return data.error;
-  }
-  return `HTTP ${status}`;
-}
 
 /** Exchanges the authorization code for a Yandex Tracker access token. */
 export async function exchangeYandexAuthorizationCode(input: {
@@ -31,7 +24,7 @@ export async function exchangeYandexAuthorizationCode(input: {
   });
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   if (!res.ok) {
-    throw new Error(`Yandex token exchange failed: ${tokenErrorMessage(data, res.status)}`);
+    throw new Error(`Yandex token exchange failed: ${oauthTokenErrorMessage(data, res.status)}`);
   }
   const accessToken = typeof data.access_token === 'string' ? data.access_token.trim() : '';
   if (!accessToken) {

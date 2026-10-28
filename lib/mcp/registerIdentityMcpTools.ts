@@ -6,21 +6,9 @@ import { z } from 'zod';
 import { canUsePlanner } from '@/lib/access/orgAccess';
 import { findUserById } from '@/lib/auth/userRepository';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import { toolError, toolJson } from '@/lib/mcp/mcpToolResult';
 import { resolvePersonMcpHits } from '@/lib/mcp/resolvePersonMcpHits';
 
-function toolError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  return {
-    content: [{ type: 'text' as const, text: message }],
-    isError: true as const,
-  };
-}
-
-function toolJson(payload: unknown) {
-  return {
-    content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }],
-  };
-}
 
 export function registerIdentityMcpTools(
   server: McpServer,

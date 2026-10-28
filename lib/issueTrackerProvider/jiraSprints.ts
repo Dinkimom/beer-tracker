@@ -349,22 +349,15 @@ function jiraSprintStatusWriteBody(
   return body;
 }
 
-function httpResponseStatus(error: unknown): number | undefined {
-  if (!error || typeof error !== 'object') {
-    return undefined;
-  }
-  const status = (error as { response?: { status?: number } }).response?.status;
-  return typeof status === 'number' ? status : undefined;
-}
 
 function isSprintWriteFallbackError(error: unknown): boolean {
-  const status = httpResponseStatus(error);
+  const status = axiosErrorStatusAndDetails(error).status;
   return status === 400 || status === 404 || status === 405;
 }
 
 /** Soft-fail GreenHopper → Agile; Cloud OAuth often returns 401/403 for GreenHopper. */
 function isGreenhopperFallbackError(error: unknown): boolean {
-  return httpResponseStatus(error) != null;
+  return axiosErrorStatusAndDetails(error).status != null;
 }
 
 async function applyJiraSprintState(

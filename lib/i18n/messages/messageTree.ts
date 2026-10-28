@@ -2,9 +2,7 @@
  * Shared helpers for walking string-only message trees (ru/en parity, export/import).
  */
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+import { isRecord } from '@/lib/isRecord';
 
 function collectLeafKeysFromObject(value: Record<string, unknown>, prefix: string): string[] {
   const keys: string[] = [];
@@ -21,7 +19,7 @@ export function collectLeafKeys(value: unknown, prefix = ''): string[] {
     return prefix ? [prefix] : [];
   }
 
-  if (!isPlainObject(value)) {
+  if (!isRecord(value)) {
     throw new Error(`Unsupported messages node at "${prefix || '<root>'}"`);
   }
 
@@ -45,7 +43,7 @@ function getStringAtDotPath(root: unknown, dotPath: string): string | undefined 
   const parts = dotPath.split('.');
   let cur: unknown = root;
   for (const p of parts) {
-    if (!isPlainObject(cur)) return undefined;
+    if (!isRecord(cur)) return undefined;
     cur = cur[p];
   }
   return typeof cur === 'string' ? cur : undefined;
@@ -57,7 +55,7 @@ function setStringAtDotPath(root: Record<string, unknown>, dotPath: string, next
   for (let i = 0; i < parts.length - 1; i++) {
     const p = parts[i];
     const next = cur[p];
-    if (!isPlainObject(next)) {
+    if (!isRecord(next)) {
       throw new Error(`Cannot set "${dotPath}": missing or non-object segment "${p}"`);
     }
     cur = next;
@@ -103,7 +101,7 @@ function formatMessagesObjectBody(obj: Record<string, unknown>, indent: string):
     const v = obj[k];
     if (typeof v === 'string') {
       lines.push(`${nextIndent}${k}: ${quoteTsString(v)}`);
-    } else if (isPlainObject(v)) {
+    } else if (isRecord(v)) {
       lines.push(`${nextIndent}${k}: {\n${formatMessagesObjectBody(v, nextIndent)}\n${nextIndent}}`);
     } else {
       throw new Error(`Unsupported value type for key "${k}"`);

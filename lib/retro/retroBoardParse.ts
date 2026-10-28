@@ -4,6 +4,7 @@ import {
   type StickyNoteColor,
 } from '@/lib/comments/stickyNoteColor';
 import { isStickyNoteReactionEmoji } from '@/lib/comments/stickyNoteReaction';
+import { isRecord } from '@/lib/isRecord';
 
 import {
   defaultAgreementsColumn,
@@ -39,9 +40,6 @@ export function parseRetroStore(raw: unknown): RetroStore {
   return { version: 1, boards };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function readId(value: unknown): string | null {
   if (typeof value !== 'string') return null;

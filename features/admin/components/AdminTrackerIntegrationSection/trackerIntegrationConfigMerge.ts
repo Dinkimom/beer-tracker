@@ -5,6 +5,7 @@ import type {
   TrackerConfigShape,
 } from "./types";
 
+import { asRecord } from '@/lib/isRecord';
 import { canonicalPaletteKey } from "@/utils/statusColors";
 
 import { toStoredFieldAccessor } from "./embeddedTestingRuleFieldHelpers";
@@ -26,12 +27,6 @@ export interface TrackerIntegrationConfigForm {
   zeroDevPositiveQa: boolean;
 }
 
-function asRecord(v: unknown): Record<string, unknown> | null {
-  if (v !== null && typeof v === "object" && !Array.isArray(v)) {
-    return v as Record<string, unknown>;
-  }
-  return null;
-}
 
 function applyPlatformConfig(next: TrackerConfigShape, form: TrackerIntegrationConfigForm): void {
   const platformFieldId = form.platformFieldId.trim();

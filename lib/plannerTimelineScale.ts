@@ -6,6 +6,8 @@
 
 import { z } from 'zod';
 
+import { isRecord } from '@/lib/isRecord';
+
 const MAX_TIMESLOTS_PER_DAY = 4;
 export const MAX_PLANNER_PART_INDEX = MAX_TIMESLOTS_PER_DAY - 1;
 /** Как `MAX_PLANNER_DURATION_PARTS`: длина шага не длиннее карточки планера. */
@@ -368,9 +370,6 @@ export function plannerCoordinateShifts(
   return nextPart * from !== part * to || nextDuration * from !== duration * to;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
 
 function readCustomSteps(value: unknown): PlannerTimelineStep[] | null {
   if (!Array.isArray(value)) return null;

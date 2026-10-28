@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { syncCronSecretFromRequest } from '@/lib/env';
 import { handleSyncFullRescan } from '@/lib/sync/handleSyncFullRescan';
 
 /** Долгий прогон: Cloud Scheduler / Cloud Run должны допускать соответствующий HTTP timeout. */
@@ -14,13 +15,6 @@ const BodySchema = z.object({
   organizationId: z.string().uuid(),
 });
 
-function extractCronSecret(request: Request): string {
-  return (
-    request.headers.get('x-sync-cron-secret')?.trim() ??
-    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim() ??
-    ''
-  );
-}
 
 export async function POST(request: Request): Promise<NextResponse> {
   let json: unknown;
@@ -39,7 +33,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const result = await handleSyncFullRescan({
-    cronSecret: extractCronSecret(request),
+    cronSecret: syncCronSecretFromRequest(request),
     organizationId: parsed.data.organizationId,
   });
 

@@ -1,3 +1,5 @@
+import { oauthTokenErrorMessage } from '@/lib/oauthTokenErrorMessage';
+
 import {
   ATLASSIAN_ACCESSIBLE_RESOURCES_URL,
   ATLASSIAN_TOKEN_URL,
@@ -15,15 +17,6 @@ interface AtlassianAccessibleResource {
   url?: string;
 }
 
-function tokenErrorMessage(data: Record<string, unknown>, status: number): string {
-  if (typeof data.error_description === 'string') {
-    return data.error_description;
-  }
-  if (typeof data.error === 'string') {
-    return data.error;
-  }
-  return `HTTP ${status}`;
-}
 
 function parseExpiresIn(raw: unknown): number {
   if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
@@ -54,7 +47,7 @@ function postAtlassianToken(body: Record<string, string>): Promise<AtlassianToke
   }).then(async (res) => {
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
     if (!res.ok) {
-      throw new Error(`Atlassian token exchange failed: ${tokenErrorMessage(data, res.status)}`);
+      throw new Error(`Atlassian token exchange failed: ${oauthTokenErrorMessage(data, res.status)}`);
     }
     return parseTokenPair(data);
   });

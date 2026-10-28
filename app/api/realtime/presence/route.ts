@@ -4,17 +4,12 @@ import { requireTenantContext } from '@/lib/api-tenant';
 import { updateSprintPresenceFocus } from '@/lib/realtime/sprintPresence';
 import { SprintPresenceFocusBodySchema } from '@/lib/realtime/sprintPresenceFocusBody';
 import { getRealtimeClientIdFromRequest } from '@/lib/realtime/sprintRealtimeClientId';
-import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
+import { requestWithOrganizationHeader } from '@/lib/realtime/sprintRealtimeSse';
 import { formatValidationError, validateRequest } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-function requestWithOrganizationHeader(request: Request, organizationId: string): Request {
-  const headers = new Headers(request.headers);
-  headers.set(TENANT_ORG_HEADER, organizationId);
-  return new Request(request.url, { headers });
-}
 
 export async function PUT(request: NextRequest): Promise<Response> {
   let body: unknown;

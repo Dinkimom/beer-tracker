@@ -3,10 +3,8 @@ import {
   normalizeHolidayCountry,
   type HolidayCountryCode,
 } from '@/lib/holidays/holidayCountries';
+import { isRecord } from '@/lib/isRecord';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
 
 interface OrgHolidayCountryState {
   holidayCountry: HolidayCountryCode;

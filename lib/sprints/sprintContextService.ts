@@ -9,6 +9,7 @@ import {
 } from '@/lib/comments/plannerCommentCardRow';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { groupReactionsForAgent } from '@/lib/comments/stickyNoteReaction';
+import { asRecord } from '@/lib/isRecord';
 import { findOrganizationById } from '@/lib/organizations';
 import { toPlannerCommentTaskId } from '@/lib/planner/plannerCardKind';
 import {
@@ -70,11 +71,6 @@ async function loadOrgPartsPerDay(organizationId: string): Promise<number> {
   return readPlannerTimelineScale(org.settings).timeslotsPerDay;
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-}
 
 function asString(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;

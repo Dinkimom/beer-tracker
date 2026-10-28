@@ -1,6 +1,4 @@
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+import { isRecord } from '@/lib/isRecord';
 
 function elementRevisionToken(element: unknown): string {
   if (!isRecord(element) || typeof element.id !== 'string') {

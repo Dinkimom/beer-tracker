@@ -1,5 +1,6 @@
 import type { AxiosInstance } from 'axios';
 
+import { mapInChunks } from '@/lib/mapInChunks';
 import {
   extractTrackerMetadataArray,
   type TrackerMetadataFieldDto,
@@ -223,18 +224,6 @@ function readJiraProjectKeys(data: unknown): string[] {
     .filter(Boolean);
 }
 
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  concurrency: number,
-  mapItem: (item: T) => Promise<R>
-): Promise<R[]> {
-  const results: R[] = [];
-  for (let offset = 0; offset < items.length; offset += concurrency) {
-    const chunk = items.slice(offset, offset + concurrency);
-    results.push(...(await Promise.all(chunk.map(mapItem))));
-  }
-  return results;
-}
 
 async function fetchJiraProjectComponentNames(
   api: AxiosInstance,
@@ -252,7 +241,7 @@ async function fetchJiraProjectComponentNames(
 
 async function fetchJiraComponentOptionLabels(api: AxiosInstance): Promise<string[]> {
   const { data } = await api.get<unknown>('/project');
-  const names = await mapWithConcurrency(
+  const names = await mapInChunks(
     readJiraProjectKeys(data),
     JIRA_COMPONENT_FETCH_CONCURRENCY,
     (projectKey) => fetchJiraProjectComponentNames(api, projectKey)

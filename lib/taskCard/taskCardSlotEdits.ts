@@ -9,11 +9,15 @@ import type {
 } from './taskCardSlots';
 
 import { keepWhenSlotHiddenSpread } from './taskCardSlotDensity';
-import { normalizeTaskCardSlotLayout, TASK_CARD_SLOT_IDS, taskCardFieldPresentations } from './taskCardSlots';
+import {
+  normalizeCustomFieldId,
+  normalizeTaskCardSlotLayout,
+  TASK_CARD_SLOT_IDS,
+  taskCardFieldPresentations,
+} from './taskCardSlots';
 import { mergeTaskCardValueLabel } from './taskCardValueLabels';
 
 const MAX_CUSTOM_FIELDS = 16;
-const CUSTOM_FIELD_ID_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,79}$/;
 
 export function addTaskCardCustomField(
   layout: TaskCardSlotLayout,
@@ -440,13 +444,6 @@ function isAllowedPresentation(field: TaskCardFieldId, value: TaskCardPresentati
   return taskCardFieldPresentations(field).some((presentation) => presentation === value);
 }
 
-function normalizeCustomFieldId(value: unknown): string | null {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const fieldId = value.trim();
-  return CUSTOM_FIELD_ID_PATTERN.test(fieldId) ? fieldId : null;
-}
 
 function normalizeCustomFieldLabel(value: unknown, fieldId: string): string {
   if (typeof value !== 'string') {

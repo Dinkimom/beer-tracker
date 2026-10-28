@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
-import { getTrackerApiFromRequest } from '@/lib/api-tracker';
 import { notifyAssigneeChangedIfNeeded } from '@/lib/notifications/notifyAssigneeChangedIfNeeded';
+import { resolveNotificationBoardIdFromRequest } from '@/lib/notifications/resolveNotificationBoardIdFromRequest';
 import { isEphemeralPlannerPositionId } from '@/lib/planner/ephemeralPlannerPositionId';
 import { plannerGridPartError } from '@/lib/planner/migrateOrganizationPlannerGrid';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
@@ -25,19 +25,8 @@ import { listPlanAnchorsForSprint } from '@/lib/sprints/planAnchorRepository';
 import { listPlanPatchPositionPreviews } from '@/lib/sprints/sprintPlanPatchPositionPreviewRepository';
 import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 import { listSwimlaneCardLayers } from '@/lib/sprints/swimlaneCardLayersRepository';
-import { resolveTrackerSprintBoardId } from '@/lib/trackerApi';
 import { TaskPositionSchema, formatValidationError, validateRequest } from '@/lib/validation';
 
-function resolveAssigneeNotificationBoardId(request: NextRequest, sprintId: number) {
-  return async (): Promise<number | undefined> => {
-    try {
-      const trackerApi = await getTrackerApiFromRequest(request);
-      return resolveTrackerSprintBoardId(sprintId, trackerApi);
-    } catch {
-      return undefined;
-    }
-  };
-}
 
 export async function GET(
   request: NextRequest,
@@ -182,7 +171,7 @@ export async function POST(
       assigneeId,
       organizationId,
       previousAssigneeId,
-      resolveBoardId: resolveAssigneeNotificationBoardId(request, sprintId),
+      resolveBoardId: resolveNotificationBoardIdFromRequest(request, sprintId),
       sprintId,
       taskId,
     });
@@ -273,7 +262,7 @@ export async function PUT(
       assigneeId,
       organizationId,
       previousAssigneeId,
-      resolveBoardId: resolveAssigneeNotificationBoardId(request, sprintId),
+      resolveBoardId: resolveNotificationBoardIdFromRequest(request, sprintId),
       sprintId,
       taskId,
     });

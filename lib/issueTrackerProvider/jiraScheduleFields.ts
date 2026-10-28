@@ -1,6 +1,8 @@
 import type { TrackerIssue } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
+import { asRecord } from '@/lib/isRecord';
+
 import { clearJiraFieldCatalogCacheForTests, loadJiraFieldCatalog } from './jiraFieldCatalog';
 
 const START_DATE_NAMES = new Set(['start date', 'дата начала']);
@@ -71,12 +73,6 @@ function emptyAccumulator(): ScheduleFieldAccumulator {
   return { due: null, namedDue: null, start: null, targetStart: null };
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-}
 
 function readSchemaType(schema: Record<string, unknown> | null): string | undefined {
   const type = schema?.type;

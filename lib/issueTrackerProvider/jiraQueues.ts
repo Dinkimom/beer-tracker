@@ -2,6 +2,7 @@ import type { AxiosInstance } from 'axios';
 
 import { mapRawQueue } from '@/lib/trackerApi/queueMappingHelpers';
 
+import { axiosErrorStatusAndDetails } from './jiraAgileAuthError';
 import { fetchJiraProjectsAsQueues } from './jiraCatalog';
 
 interface JiraQueueWorkflowIssueType {
@@ -14,12 +15,6 @@ function jiraIssueTypeKey(name: string): string {
   return name.toLowerCase().replaceAll(/\s+/g, '');
 }
 
-function isHttpNotFound(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-  return (error as { response?: { status?: number } }).response?.status === 404;
-}
 
 export async function fetchJiraQueueByKey(
   api: AxiosInstance,
@@ -33,7 +28,7 @@ export async function fetchJiraQueueByKey(
     const { data } = await api.get<unknown>(`/project/${encodeURIComponent(key)}`);
     return mapRawQueue(data);
   } catch (error) {
-    if (isHttpNotFound(error)) {
+    if (axiosErrorStatusAndDetails(error).status === 404) {
       return null;
     }
     throw error;
@@ -132,7 +127,7 @@ async function loadJiraQueueWorkflowIssueTypes(
   try {
     return await fetchJiraQueueWorkflowsFromStatuses(api, projectKey);
   } catch (error) {
-    if (isHttpNotFound(error)) {
+    if (axiosErrorStatusAndDetails(error).status === 404) {
       return fetchJiraQueueWorkflowsFromCreateMeta(api, projectKey);
     }
     try {
