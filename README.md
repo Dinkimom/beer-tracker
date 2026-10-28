@@ -76,9 +76,9 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/backlog-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/backlog-light.png" />
-    <img src="./docs/media/backlog-light.png" alt="Бэклог" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/backlog-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/backlog-light.webp" />
+    <img src="./docs/media/backlog-light.webp" alt="Бэклог" width="900" />
   </picture>
 </p>
 
@@ -88,9 +88,9 @@ Story Points и Test Points по дням спринта, идеальная л�
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/burndown-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/burndown-light.png" />
-    <img src="./docs/media/burndown-light.png" alt="Burndown SP/TP" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/burndown-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/burndown-light.webp" />
+    <img src="./docs/media/burndown-light.webp" alt="Burndown SP/TP" width="900" />
   </picture>
 </p>
 
@@ -100,9 +100,9 @@ Story Points и Test Points по дням спринта, идеальная л�
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/metrics-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/metrics-light.png" />
-    <img src="./docs/media/metrics-light.png" alt="Метрики спринтов по кварталам" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/metrics-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/metrics-light.webp" />
+    <img src="./docs/media/metrics-light.webp" alt="Метрики спринтов по кварталам" width="900" />
   </picture>
 </p>
 
@@ -114,9 +114,9 @@ Sync забирает из трекера историю статусов, и н
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/fact-timeline-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/fact-timeline-light.png" />
-    <img src="./docs/media/fact-timeline-light.png" alt="Таймлайн факта на свимлейне" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/fact-timeline-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/fact-timeline-light.webp" />
+    <img src="./docs/media/fact-timeline-light.webp" alt="Таймлайн факта на свимлейне" width="900" />
   </picture>
 </p>
 
@@ -140,9 +140,9 @@ Sync забирает из трекера историю статусов, и н
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/collaboration-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/collaboration-light.png" />
-    <img src="./docs/media/collaboration-light.png" alt="Совместная работа: presence на доске" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/collaboration-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/collaboration-light.webp" />
+    <img src="./docs/media/collaboration-light.webp" alt="Совместная работа: presence на доске" width="900" />
   </picture>
 </p>
 

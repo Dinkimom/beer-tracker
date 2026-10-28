@@ -76,9 +76,9 @@ Browse issues outside the sprint, filter by status and assignee, and pull them i
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/backlog-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/backlog-light.png" />
-    <img src="./docs/media/backlog-light.png" alt="Backlog" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/backlog-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/backlog-light.webp" />
+    <img src="./docs/media/backlog-light.webp" alt="Backlog" width="900" />
   </picture>
 </p>
 
@@ -88,9 +88,9 @@ Story points and test points per sprint day, with an ideal line and a marker for
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/burndown-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/burndown-light.png" />
-    <img src="./docs/media/burndown-light.png" alt="Burndown SP/TP" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/burndown-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/burndown-light.webp" />
+    <img src="./docs/media/burndown-light.webp" alt="Burndown SP/TP" width="900" />
   </picture>
 </p>
 
@@ -100,9 +100,9 @@ A dashboard for the board over 2 to 8 quarters: say/do, velocity, cycle time, ca
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/metrics-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/metrics-light.png" />
-    <img src="./docs/media/metrics-light.png" alt="Sprint metrics by quarter" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/metrics-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/metrics-light.webp" />
+    <img src="./docs/media/metrics-light.webp" alt="Sprint metrics by quarter" width="900" />
   </picture>
 </p>
 
@@ -114,9 +114,9 @@ You start a sync from `/admin/sync`. Scheduled incremental sync needs Redis and 
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/fact-timeline-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/fact-timeline-light.png" />
-    <img src="./docs/media/fact-timeline-light.png" alt="Fact timeline on the swimlane" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/fact-timeline-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/fact-timeline-light.webp" />
+    <img src="./docs/media/fact-timeline-light.webp" alt="Fact timeline on the swimlane" width="900" />
   </picture>
 </p>
 
@@ -140,9 +140,9 @@ If you run more than one instance, you need Redis. Without it, realtime only wor
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/collaboration-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/collaboration-light.png" />
-    <img src="./docs/media/collaboration-light.png" alt="Collaboration: presence on the board" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/collaboration-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/collaboration-light.webp" />
+    <img src="./docs/media/collaboration-light.webp" alt="Collaboration: presence on the board" width="900" />
   </picture>
 </p>
 
