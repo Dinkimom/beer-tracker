@@ -86,7 +86,6 @@ interface SwimlanesSectionLanesProps {
   linkToolArmed?: boolean;
   section: SwimlanesSectionProps;
   segmentEditTaskId: string | null;
-  sourceLinkEndCell: number | null;
   swimlaneFactDeveloperMap: Map<string, Developer>;
   swimlaneInProgressFactSegmentsByDev: Map<string, SwimlaneInProgressFactSegment[]>;
   swimlanePositions: Map<string, TaskPosition>;
@@ -117,7 +116,6 @@ export function SwimlanesSectionLanes({
   linkingSessionActive,
   section,
   segmentEditTaskId,
-  sourceLinkEndCell,
   swimlaneFactDeveloperMap,
   swimlaneInProgressFactSegmentsByDev,
   swimlanePositions,
@@ -189,7 +187,6 @@ export function SwimlanesSectionLanes({
             : null,
         hoveredTaskId,
         linkingFromTaskId: showLinks ? linkingFromTaskId : null,
-        linkSourceEndCell: showLinks ? sourceLinkEndCell : null,
         showLinks,
         onCancelQuickAddDraft: section.onCancelQuickAddDraft,
         onCloseSidebar: section.onCloseSidebar,
@@ -272,7 +269,6 @@ export function SwimlanesSectionLanes({
     section,
     segmentEditTaskId,
     showLinks,
-    sourceLinkEndCell,
     swimlaneFactDeveloperMap,
     swimlaneInProgressFactSegmentsByDev,
     swimlaneRows,

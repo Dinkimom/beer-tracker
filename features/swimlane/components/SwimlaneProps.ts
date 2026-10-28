@@ -52,8 +52,6 @@ export interface SwimlaneProps {
   isPinned?: boolean;
   /** Режим создания связи: id задачи-источника (null — режим выключен). */
   linkingFromTaskId?: string | null;
-  /** Конец плана источника (ячейка), для правила «цель не раньше источника». */
-  linkSourceEndCell?: number | null;
   participantsColumnWidth: number;
   qaTasksMap?: Map<string, Task>;
   quickAddBoardId?: number | null;

@@ -6,7 +6,6 @@ import {
   isSwimlaneDiagramTask,
   isSwimlaneWidgetTask,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
-import { positionToEndCell, positionToStartCell } from '@/features/sprint/utils/occupancyUtils';
 import { getSwimlaneCardRadiusClass } from '@/features/task/components/TaskCard/taskCardLayoutHelpers';
 import { isSwimlaneImageTask, isSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
 import { isPlannerQuickAddDraftId } from '@/lib/planner/plannerCardKind';
@@ -14,6 +13,7 @@ import {
   plannerLinkEndpointAliases,
   rewritePlannerLinkEndpoint,
 } from '@/lib/planner/plannerLinkEndpoint';
+import { taskPositionsOverlapOnTimeline } from '@/utils/linkAnchors';
 
 /** Черновики quick-add нельзя сохранять в task_links. */
 function isUnsavedSwimlaneLinkEndpoint(taskId: string): boolean {
@@ -73,32 +73,27 @@ export function resolveSwimlaneLinkingCardClick(input: {
   return input.canUseAsSource ? 'start-source' : 'ignore';
 }
 
-/** Конец плана задачи-источника (после последнего отрезка). */
-export function computeSwimlaneLinkSourceEndCell(
-  linkingFromTaskId: string | null,
-  taskPositions: Map<string, TaskPosition>
-): number | null {
-  if (!linkingFromTaskId) return null;
-  const position = taskPositions.get(linkingFromTaskId);
-  if (!position) return null;
-  return positionToEndCell(position);
-}
-
 export function computeSwimlaneLinkAlreadyExists(
   linkingFromTaskId: string | null,
   targetTaskId: string,
   taskLinks: Array<Pick<TaskLink, 'fromTaskId' | 'toTaskId'>>
 ): boolean {
   if (!linkingFromTaskId) return false;
-  return taskLinks.some((l) => l.fromTaskId === linkingFromTaskId && l.toTaskId === targetTaskId);
+  // Связь рисуют в любую сторону и хранят «раньше → позже», поэтому дубль — в любом направлении.
+  return taskLinks.some(
+    (l) =>
+      (l.fromTaskId === linkingFromTaskId && l.toTaskId === targetTaskId) ||
+      (l.fromTaskId === targetTaskId && l.toTaskId === linkingFromTaskId)
+  );
 }
 
+/** Цель годится, если не пересекается с источником по времени — неважно, левее она или правее. */
 export function computeSwimlaneValidLinkTargetByTime(
   targetPosition: TaskPosition | undefined,
-  sourceEndCell: number | null
+  sourcePosition: TaskPosition | undefined
 ): boolean {
-  if (sourceEndCell == null || !targetPosition) return false;
-  return positionToStartCell(targetPosition) >= sourceEndCell;
+  if (!sourcePosition || !targetPosition) return false;
+  return !taskPositionsOverlapOnTimeline(sourcePosition, targetPosition);
 }
 
 export function resolveSwimlanePlacementLinkMode(input: {
@@ -322,7 +317,7 @@ export function resolveSwimlaneLinkPreviewTargetId(input: {
     taskId: hoveredTaskId,
     validTargetByTime: computeSwimlaneValidLinkTargetByTime(
       taskPositions.get(hoveredTaskId),
-      computeSwimlaneLinkSourceEndCell(linkingFromTaskId, taskPositions)
+      taskPositions.get(linkingFromTaskId)
     ),
   });
   return mode === 'target' ? hoveredTaskId : null;

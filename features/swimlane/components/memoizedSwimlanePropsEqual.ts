@@ -34,7 +34,6 @@ export function memoizedSwimlanePropsEqual(
     prevProps.swimlaneFactTimelineEnabled === nextProps.swimlaneFactTimelineEnabled &&
     prevProps.segmentEditTaskId === nextProps.segmentEditTaskId &&
     prevProps.linkingFromTaskId === nextProps.linkingFromTaskId &&
-    prevProps.linkSourceEndCell === nextProps.linkSourceEndCell &&
     prevProps.showLinks === nextProps.showLinks &&
     prevProps.taskLinks === nextProps.taskLinks &&
     prevProps.swimlaneInProgressDurations === nextProps.swimlaneInProgressDurations &&

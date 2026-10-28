@@ -42,7 +42,6 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     hoveredTaskId = null,
     isDraggingTask = false,
     linkingFromTaskId = null,
-    linkSourceEndCell = null,
     qaTasksMap,
     showLinks = true,
     onSegmentEditCancel,
@@ -101,7 +100,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     taskId: task.id,
     validTargetByTime: computeSwimlaneValidLinkTargetByTime(
       taskPositions.get(task.id),
-      linkSourceEndCell
+      linkingFromTaskId ? taskPositions.get(linkingFromTaskId) : undefined
     ),
   });
 

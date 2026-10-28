@@ -28,7 +28,6 @@ export interface TaskLayerProps {
   isDraggingTask?: boolean;
   layerHeight: number;
   linkingFromTaskId?: string | null;
-  linkSourceEndCell?: number | null;
   /** Дорожка, на которую агент предлагает поставить карточку. */
   planPatchAssigneeId?: string;
   planPatchSprintId?: number | null;

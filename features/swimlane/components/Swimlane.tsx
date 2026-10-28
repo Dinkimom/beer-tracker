@@ -133,7 +133,6 @@ function SwimlaneComponent({
   swimlaneFactDeveloperMap,
   swimlaneFactTimelineEnabled = false,
   linkingFromTaskId = null,
-  linkSourceEndCell = null,
   showLinks = true,
   taskLinks,
   segmentEditTaskId = null,
@@ -391,7 +390,6 @@ function SwimlaneComponent({
               hoveredTaskId={hoveredTaskId}
               isDraggingTask={isDraggingTask}
               layerHeight={layout.layerHeight}
-              linkSourceEndCell={linkSourceEndCell}
               linkingFromTaskId={linkingFromTaskId} planPatchAssigneeId={developer.id} planPatchSprintId={selectedSprintId} planPatchTasksMap={tasksMap}
               positionedTasks={layout.positionedTasks}
               qaTasksMap={qaTasksMap}

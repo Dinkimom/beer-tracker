@@ -237,6 +237,7 @@ export const TaskArrows = observer(function TaskArrows({
           cursorPos={cursorPos}
           linkingFromTaskId={linkingFromTaskId}
           previewTargetId={previewTargetId}
+          taskPositions={taskPositions}
         />
       ) : null}
       {handleDeleteLink && !clipToRow ? (

@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   computeSwimlaneLinkAlreadyExists,
-  computeSwimlaneLinkSourceEndCell,
   computeSwimlaneValidLinkTargetByTime,
   excludeTaskLinksTouchingId,
   filterTaskLinksByKnownTaskIds,
@@ -53,20 +52,18 @@ describe('swimlaneLinkingHelpers', () => {
     ],
   ]);
 
-  it('computeSwimlaneLinkSourceEndCell returns end cell of source position', () => {
-    expect(computeSwimlaneLinkSourceEndCell('from', positions)).toBe(3);
-    expect(computeSwimlaneLinkSourceEndCell(null, positions)).toBeNull();
-    expect(computeSwimlaneLinkSourceEndCell('missing', positions)).toBeNull();
-  });
-
-  it('computeSwimlaneValidLinkTargetByTime requires target start after source end', () => {
+  it('computeSwimlaneValidLinkTargetByTime accepts a target on either side, not an overlapping one', () => {
     expect(
-      computeSwimlaneValidLinkTargetByTime(positions.get('valid-to'), 3)
+      computeSwimlaneValidLinkTargetByTime(positions.get('valid-to'), positions.get('from'))
     ).toBe(true);
     expect(
-      computeSwimlaneValidLinkTargetByTime(positions.get('early-to'), 3)
+      computeSwimlaneValidLinkTargetByTime(positions.get('from'), positions.get('valid-to'))
+    ).toBe(true);
+    expect(
+      computeSwimlaneValidLinkTargetByTime(positions.get('early-to'), positions.get('from'))
     ).toBe(false);
-    expect(computeSwimlaneValidLinkTargetByTime(undefined, 3)).toBe(false);
+    expect(computeSwimlaneValidLinkTargetByTime(undefined, positions.get('from'))).toBe(false);
+    expect(computeSwimlaneValidLinkTargetByTime(positions.get('valid-to'), undefined)).toBe(false);
   });
 
   it('isSwimlaneLinkingSessionActive is on while the tool is armed or a source is picked', () => {
@@ -87,9 +84,10 @@ describe('swimlaneLinkingHelpers', () => {
     expect(shouldShowSwimlaneLinkDeleteHandles(true)).toBe(true);
   });
 
-  it('computeSwimlaneLinkAlreadyExists detects existing directed link', () => {
+  it('computeSwimlaneLinkAlreadyExists detects an existing link in either direction', () => {
     const links = [{ fromTaskId: 'from', toTaskId: 'valid-to' }];
     expect(computeSwimlaneLinkAlreadyExists('from', 'valid-to', links)).toBe(true);
+    expect(computeSwimlaneLinkAlreadyExists('valid-to', 'from', links)).toBe(true);
     expect(computeSwimlaneLinkAlreadyExists('from', 'early-to', links)).toBe(false);
   });
 
@@ -322,6 +320,14 @@ describe('swimlaneLinkingHelpers', () => {
         taskPositions: positions,
       })
     ).toBe('valid-to');
+    expect(
+      resolveSwimlaneLinkPreviewTargetId({
+        hoveredTaskId: 'from',
+        linkingFromTaskId: 'valid-to',
+        taskLinks: links,
+        taskPositions: positions,
+      })
+    ).toBe('from');
     expect(
       resolveSwimlaneLinkPreviewTargetId({
         hoveredTaskId: 'early-to',

@@ -124,7 +124,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     qaTasksMap,
     requestArrowRedraw,
     linkingFromTaskId = null,
-    linkSourceEndCell = null,
     selectedSprintId,
     selectedTaskId,
     sprintStartDate,
@@ -297,7 +296,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     taskId: task.id,
     validTargetByTime: computeSwimlaneValidLinkTargetByTime(
       taskPositions.get(task.id),
-      linkSourceEndCell
+      linkingFromTaskId ? taskPositions.get(linkingFromTaskId) : undefined
     ),
   });
   const linkingActive = linkingFromTaskId != null || sprintPlannerUi.placementTool === 'link';

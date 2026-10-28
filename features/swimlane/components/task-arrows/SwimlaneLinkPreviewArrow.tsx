@@ -1,11 +1,14 @@
 'use client';
 
+import type { TaskPosition } from '@/types';
+
 import { useContext } from 'react';
 import Xarrow, { useXarrow } from 'react-xarrows';
 
 import { ZIndex } from '@/constants';
 import { SwimlaneArrowRedrawGenerationContext } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import { SWIMLANE_LINK_PREVIEW_CURSOR_ID } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
+import { resolveLinkArrowDrawTaskIds } from '@/utils/linkAnchors';
 
 import { TaskArrowLayer } from './TaskArrowLayer';
 import {
@@ -21,6 +24,7 @@ interface SwimlaneLinkPreviewArrowProps {
   cursorPos: { x: number; y: number } | null;
   linkingFromTaskId: string;
   previewTargetId: string | null;
+  taskPositions: Map<string, TaskPosition> | undefined;
 }
 
 const PREVIEW_COLOR = '#60a5fa';
@@ -29,20 +33,35 @@ export function SwimlaneLinkPreviewArrow({
   cursorPos,
   linkingFromTaskId,
   previewTargetId,
+  taskPositions,
 }: SwimlaneLinkPreviewArrowProps) {
   useXarrow();
   const redrawGeneration = useContext(SwimlaneArrowRedrawGenerationContext);
   const snapped = previewTargetId != null;
   if (!snapped && cursorPos == null) return null;
 
-  const endId = snapped ? `task-${previewTargetId}` : SWIMLANE_LINK_PREVIEW_CURSOR_ID;
-  const anchors = snapped
-    ? resolveTaskArrowNearestAnchors(linkingFromTaskId, previewTargetId, redrawGeneration)
-    : resolveNearestAnchorsForElementIds(
-        `task-${linkingFromTaskId}`,
-        SWIMLANE_LINK_PREVIEW_CURSOR_ID,
-        redrawGeneration
-      );
+  const sourceId = `task-${linkingFromTaskId}`;
+  let startId = sourceId;
+  let endId = SWIMLANE_LINK_PREVIEW_CURSOR_ID;
+  let anchors;
+  // Тянуть можно в любую сторону, а наконечник — как у сохранённой связи: в более позднюю точку.
+  if (snapped) {
+    const { endTaskId, startTaskId } = resolveLinkArrowDrawTaskIds(
+      linkingFromTaskId,
+      previewTargetId,
+      taskPositions
+    );
+    startId = `task-${startTaskId}`;
+    endId = `task-${endTaskId}`;
+    anchors = resolveTaskArrowNearestAnchors(startTaskId, endTaskId, redrawGeneration);
+  } else {
+    const sourceLeft = document.getElementById(sourceId)?.getBoundingClientRect().left;
+    if (cursorPos != null && sourceLeft != null && cursorPos.x < sourceLeft) {
+      startId = SWIMLANE_LINK_PREVIEW_CURSOR_ID;
+      endId = sourceId;
+    }
+    anchors = resolveNearestAnchorsForElementIds(startId, endId, redrawGeneration);
+  }
 
   return (
     <>
@@ -66,7 +85,7 @@ export function SwimlaneLinkPreviewArrow({
           headSize={TASK_LINK_ARROW_HEAD_SIZE}
           passProps={{ pointerEvents: 'none' }}
           path={TASK_LINK_ARROW_PATH}
-          start={`task-${linkingFromTaskId}`}
+          start={startId}
           startAnchor={anchors.startAnchor}
           strokeWidth={2}
         />

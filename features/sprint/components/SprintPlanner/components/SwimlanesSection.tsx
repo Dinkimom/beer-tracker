@@ -321,7 +321,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   const {
     handleSwimlanesClickCapture,
     handleTaskClickWithLinking,
-    sourceLinkEndCell,
   } = useSwimlaneLinkingHandlers({
     linkToolArmed,
     linkingFromTaskId,
@@ -462,7 +461,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
                 linkingSessionActive={linkingSessionActive}
                 section={laneSection}
                 segmentEditTaskId={segmentEditTaskId}
-                sourceLinkEndCell={sourceLinkEndCell}
                 swimlaneFactDeveloperMap={swimlaneFactDeveloperMap}
                 swimlaneInProgressFactSegmentsByDev={swimlaneInProgressFactSegmentsByDev}
                 swimlanePositions={swimlanePositions}
