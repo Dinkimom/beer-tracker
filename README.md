@@ -25,6 +25,7 @@
   <a href="#планер">Планер</a> ·
   <a href="#бэклог">Бэклог</a> ·
   <a href="#burndown">Burndown</a> ·
+  <a href="#метрики">Метрики</a> ·
   <a href="#факт">Факт</a> ·
   <a href="#ретро">Ретро</a> ·
   <a href="#совместная-работа">Совместная работа</a> ·
@@ -37,13 +38,35 @@
 
 Сетка строится по рабочим дням спринта из трекера. День делится на 2, 3 или 4 слота, по умолчанию на три. У каждого разработчика и тестировщика своя дорожка.
 
-Карточку можно перетащить мышкой, а длительность поменять, потянув за край. Отпуска и техспринты видны на тех же дорожках. По ходу спринта на доску можно клеить заметки, чтобы ничего не забыть: в них работают ссылки, чеклисты и реакции. Справа список задач спринта.
+Доску можно смотреть по людям, по фичам или канбаном по статусам. Карточки раскладываются по строкам сами. Если выключить автосортировку, задачи и заметки можно расставить вручную, и эту раскладку увидит вся команда.
+
+Карточку можно перетащить мышкой, а длительность поменять, потянув за край. Отпуска и техспринты видны на тех же дорожках. Справа список задач спринта.
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/swimlane-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/swimlane-light.png" />
-    <img src="./docs/media/swimlane-light.png" alt="Планер спринта: свимлейны" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/drag-resize-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/drag-resize-light.webp" />
+    <img src="./docs/media/drag-resize-light.webp" alt="Перенос карточки и смена длительности" width="900" />
+  </picture>
+</p>
+
+Связь между задачами рисуется инструментом Link: клик по одной карточке, потом по другой, и связь сохраняется в трекере.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/link-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/link-light.webp" />
+    <img src="./docs/media/link-light.webp" alt="Связь между задачами" width="900" />
+  </picture>
+</p>
+
+По ходу спринта на доску можно клеить заметки, чтобы ничего не забыть: в них работают ссылки, чеклисты и реакции.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/note-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/note-light.webp" />
+    <img src="./docs/media/note-light.webp" alt="Заметка с чеклистом на доске" width="900" />
   </picture>
 </p>
 
@@ -71,6 +94,18 @@ Story Points и Test Points по дням спринта, идеальная л�
   </picture>
 </p>
 
+## Метрики
+
+Дашборд доски за 2–8 кварталов: say/do, velocity, cycle time, перенос задач и доля багов, каждая цифра в сравнении с прошлым кварталом. Ниже графики по спринтам: сколько взяли и сколько закрыли, куда ушла работа, где задачи ждут. Данные можно отфильтровать по команде и выгрузить в CSV.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/metrics-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/metrics-light.png" />
+    <img src="./docs/media/metrics-light.png" alt="Метрики спринтов по кварталам" width="900" />
+  </picture>
+</p>
+
 ## Факт
 
 Sync забирает из трекера историю статусов, и на свимлейне появляется **таймлайн факта**: когда задача была в работе, на ревью и в тесте. Он рисуется рядом с планом и не заменяет его.
@@ -91,9 +126,9 @@ Sync забирает из трекера историю статусов, и н
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/retro-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/retro-light.png" />
-    <img src="./docs/media/retro-light.png" alt="Доска ретроспринта" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/retro-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/retro-light.webp" />
+    <img src="./docs/media/retro-light.webp" alt="Доска ретроспринта" width="900" />
   </picture>
 </p>
 

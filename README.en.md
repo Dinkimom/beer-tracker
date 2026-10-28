@@ -25,6 +25,7 @@
   <a href="#planner">Planner</a> ·
   <a href="#backlog">Backlog</a> ·
   <a href="#burndown">Burndown</a> ·
+  <a href="#metrics">Metrics</a> ·
   <a href="#fact-timeline">Fact timeline</a> ·
   <a href="#retro">Retro</a> ·
   <a href="#collaboration">Collaboration</a> ·
@@ -37,13 +38,35 @@
 
 The grid covers the sprint’s working days, taken from the tracker. Each day has 2, 3, or 4 slots (three by default), and every developer and tester gets their own lane.
 
-Drag a card to move it, or pull its edge to change the duration. Time off and tech sprints show up on the same lanes. You can pin notes to the board as the sprint goes, so nothing slips; links, checklists, and reactions work inside them. The sprint’s issue list sits on the right.
+You can view the board by person, by feature, or as a kanban by status. Cards arrange themselves into rows; turn off auto-arrange to place tasks and notes by hand, and the whole team sees that layout.
+
+Drag a card to move it, or pull its edge to change the duration. Time off and tech sprints show up on the same lanes. The sprint’s issue list sits on the right.
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/swimlane-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/swimlane-light.png" />
-    <img src="./docs/media/swimlane-light.png" alt="Sprint planner swimlanes" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/drag-resize-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/drag-resize-light.webp" />
+    <img src="./docs/media/drag-resize-light.webp" alt="Moving a card and changing its duration" width="900" />
+  </picture>
+</p>
+
+To link two tasks, pick the Link tool, click one card and then the other; the link is saved in the tracker.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/link-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/link-light.webp" />
+    <img src="./docs/media/link-light.webp" alt="Linking two tasks" width="900" />
+  </picture>
+</p>
+
+You can pin notes to the board as the sprint goes, so nothing slips; links, checklists, and reactions work inside them.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/note-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/note-light.webp" />
+    <img src="./docs/media/note-light.webp" alt="A checklist note on the board" width="900" />
   </picture>
 </p>
 
@@ -71,6 +94,18 @@ Story points and test points per sprint day, with an ideal line and a marker for
   </picture>
 </p>
 
+## Metrics
+
+A dashboard for the board over 2 to 8 quarters: say/do, velocity, cycle time, carry-over and bug share, each compared with the previous quarter. Per-sprint charts below show committed versus closed points, where the work went and where tasks wait. You can filter by team and export to CSV.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/metrics-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/metrics-light.png" />
+    <img src="./docs/media/metrics-light.png" alt="Sprint metrics by quarter" width="900" />
+  </picture>
+</p>
+
 ## Fact timeline
 
 Sync pulls status history from the tracker and draws a **fact timeline** on the swimlane: when each issue was in progress, in review, and in test. It sits next to the plan rather than replacing it.
@@ -91,9 +126,9 @@ Columns, notes, images, comments, and reactions. The **Facts** side panel lists 
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/retro-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/media/retro-light.png" />
-    <img src="./docs/media/retro-light.png" alt="Sprint retro board" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/media/retro-dark.webp" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/media/retro-light.webp" />
+    <img src="./docs/media/retro-light.webp" alt="Sprint retro board" width="900" />
   </picture>
 </p>
 
