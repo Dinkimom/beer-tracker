@@ -134,6 +134,7 @@
 | C4 | Поверхности на этом каноне: сайдбар, серверный скор, velocity, заголовок строки свимлейна, burndown (история, подсказки, плитки), метрики спринта, ретро, канбан, перенос задач при завершении спринта, фильтры и проверки задач (`taskUtils.isTaskCompleted`). Правила (провайдер + справочник статусов) — сервер: `loadSprintTaskCompletionRules` (кэш 10 мин), клиент: `completion` в DTO правил планера через `hooks/useSprintTaskCompletionRules.ts`. | см. колонку | `useSwimlaneLayoutHelpers.extras.test.ts`, `computeBurndownFromChangelog.test.ts`, `sprintIssueFacts.test.ts`, `retroFacts.test.ts`, `sprintScoreHelpers.test.ts` |
 | C5 | Исключение для метрик и ретро:**declined не считается поставленным**, даже если трекер относит его к done (семантика say/do).                                                                                                                                                                                                                                  | `lib/sprintMetrics/sprintIssueFacts.ts`, `lib/retro/retroFacts.ts` (`isDeliveredStatusKey`) | `sprintIssueFacts.test.ts`, `retroFacts.test.ts`                                                                                                                  |
 | C6 | Категория статуса для **отображения** (колонка канбана, цвет) — отдельный путь: настройки интеграции и тип статуса (`resolveEffectiveStatusCategory`, `resolvePlannerStatusCategory`). На «сделано» не влияет. | `lib/trackerIntegration/resolveStatus.ts` | `resolveStatus` тесты |
+| C7 | **Закрывающий переход** (закрыть просроченную задачу, закрыть цели при завершении спринта, «учесть работу») — переход в статус типа `done` по тем же источникам, что C1: тип из перехода (`to.statusTypeKey`), иначе из справочника статусов по id/ключу целевого статуса. Ключ `closed`, название статуса и категория планера не участвуют. Из нескольких — без экрана полей. | `pickDoneTransition` (`lib/sprints/sprintTaskCompletion.ts`) | `sprintTaskCompletion.test.ts` |
 
 ## 10. Burndown
 
@@ -237,7 +238,7 @@
 
 **«Сделано» ещё не единое:**
 
-- Отдельные проверки «завершённости» вне канона, по своим причинам: выбор перехода для закрытия просроченной задачи (`features/swimlane/utils/closeOverdueAndCreateNext.ts`), конец полосы факта на свимлейне (`features/swimlane/utils/in-progress-fact/factClosingStatus.ts`), план-факт и категория статуса для MCP-агента (`lib/sprints/sprintContextPlanVsActual.ts`, `lib/mcp/resolveMcpIssueStatusCategory.ts`). Агент может видеть «сделано» иначе, чем UI.
+- Отдельные проверки «завершённости» вне канона, по своим причинам: конец полосы факта на свимлейне (`features/swimlane/utils/in-progress-fact/factClosingStatus.ts`), план-факт и категория статуса для MCP-агента (`lib/sprints/sprintContextPlanVsActual.ts`, `lib/mcp/resolveMcpIssueStatusCategory.ts`). Агент может видеть «сделано» иначе, чем UI.
 - Без доступа к трекеру (нет токена, сбой) справочник статусов пуст: текущие задачи оцениваются по своему типу статуса, а история (burndown, ретро) не видит закрытий.
 
 **Согласованность данных:**

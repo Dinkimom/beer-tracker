@@ -98,3 +98,27 @@ export function statusTypeKeyForStatus(
 ): string | undefined {
   return statusTypeFromCatalog([statusKey], rules ?? EMPTY_RULES);
 }
+
+interface CompletionTransitionFields {
+  screen?: { id: string };
+  to?: { id?: string; key?: string; statusTypeKey?: string };
+}
+
+/** Переход ведёт в статус «сделано»: тип из перехода, иначе из справочника по ключу/id целевого статуса. */
+export function isTransitionToDoneStatus(
+  transition: CompletionTransitionFields,
+  rules?: SprintTaskCompletionRules | null
+): boolean {
+  const own = normalizeKey(transition.to?.statusTypeKey);
+  const type = own || statusTypeFromCatalog([transition.to?.id, transition.to?.key], rules ?? EMPTY_RULES);
+  return type === DONE_STATUS_TYPE;
+}
+
+/** Закрывающий переход по канону «сделано»; без экрана полей предпочтительнее. */
+export function pickDoneTransition<T extends CompletionTransitionFields>(
+  transitions: readonly T[],
+  rules?: SprintTaskCompletionRules | null
+): T | null {
+  const done = transitions.filter((transition) => isTransitionToDoneStatus(transition, rules));
+  return done.find((transition) => !transition.screen?.id) ?? done[0] ?? null;
+}

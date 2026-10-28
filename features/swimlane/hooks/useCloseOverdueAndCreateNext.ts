@@ -8,6 +8,7 @@ import { useCallback, useRef } from 'react';
 import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { closeOverdueAndCreateNextRun } from '@/features/swimlane/utils/closeOverdueAndCreateNextRun';
+import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 
 interface UseCloseOverdueAndCreateNextInput {
   boardId: number | null;
@@ -28,6 +29,7 @@ export function useCloseOverdueAndCreateNext(input: UseCloseOverdueAndCreateNext
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const inFlightRef = useRef(false);
+  const completionRules = useSprintTaskCompletionRules();
   const {
     boardId,
     getQueueByBoardId,
@@ -50,6 +52,7 @@ export function useCloseOverdueAndCreateNext(input: UseCloseOverdueAndCreateNext
         await closeOverdueAndCreateNextRun({
           ...args,
           boardId,
+          completionRules,
           getQueueByBoardId,
           onStatusChange,
           partsPerDay: getPartsPerDay(),
@@ -63,6 +66,6 @@ export function useCloseOverdueAndCreateNext(input: UseCloseOverdueAndCreateNext
         inFlightRef.current = false;
       }
     },
-    [boardId, getQueueByBoardId, onStatusChange, queryClient, savePosition, selectedSprintId, setTasks, t]
+    [boardId, completionRules, getQueueByBoardId, onStatusChange, queryClient, savePosition, selectedSprintId, setTasks, t]
   );
 }

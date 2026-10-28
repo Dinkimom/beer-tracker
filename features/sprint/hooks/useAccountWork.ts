@@ -8,6 +8,7 @@ import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 
 import {
   runAccountWorkWithRollback,
@@ -23,6 +24,7 @@ interface UseAccountWorkProps {
 
 export function useAccountWork({ tasks, selectedSprintId, setTasks, onTasksReload }: UseAccountWorkProps) {
   const { t } = useI18n();
+  const completionRules = useSprintTaskCompletionRules();
   const handleAccountWork = useCallback(
     async (accountWorkModal: Task, data: AccountWorkData) => {
       if (!selectedSprintId) return;
@@ -30,6 +32,7 @@ export function useAccountWork({ tasks, selectedSprintId, setTasks, onTasksReloa
       try {
         await runAccountWorkWithRollback({
           accountWorkModal,
+          completionRules,
           data,
           onTasksReload,
           setTasks,
@@ -41,7 +44,7 @@ export function useAccountWork({ tasks, selectedSprintId, setTasks, onTasksReloa
         throw error;
       }
     },
-    [tasks, selectedSprintId, setTasks, onTasksReload, t]
+    [completionRules, tasks, selectedSprintId, setTasks, onTasksReload, t]
   );
 
   return { handleAccountWork };

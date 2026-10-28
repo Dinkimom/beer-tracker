@@ -1,3 +1,4 @@
+import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 import type { Task } from '@/types';
 
 import {
@@ -7,6 +8,7 @@ import {
   getIssueTransitions,
   updateIssueWork,
 } from '@/lib/beerTrackerApi';
+import { pickDoneTransition } from '@/lib/sprints/sprintTaskCompletion';
 import { mapStatus } from '@/utils/statusMapper';
 
 export interface AccountWorkData {
@@ -113,15 +115,6 @@ function rollbackAccountWorkTask(
   });
 }
 
-function findCloseTransition(
-  transitions: Array<{ display?: string; id: string; to?: { key?: string } }>
-): { display?: string; id: string; to?: { key?: string } } | undefined {
-  return transitions.find(
-    (t) =>
-      t.to?.key?.toLowerCase() === 'closed' || t.display?.toLowerCase().includes('закрыт')
-  );
-}
-
 function buildRelatedIssuePayload(accountWorkModal: Task, data: AccountWorkData) {
   return {
     title: data.newTaskTitle,
@@ -163,6 +156,7 @@ async function syncClosedStatusFromApi(
 async function closeAccountWorkTask(input: {
   accountWorkModal: Task;
   actualTaskId: string;
+  completionRules: SprintTaskCompletionRules | null;
   data: AccountWorkData;
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
   taskId: string;
@@ -170,7 +164,7 @@ async function closeAccountWorkTask(input: {
   const transitions = await getIssueTransitions(input.taskId);
   if (transitions.length === 0) throw new Error('Failed to fetch transitions');
 
-  const closeTransition = findCloseTransition(transitions);
+  const closeTransition = pickDoneTransition(transitions, input.completionRules);
   if (!closeTransition) throw new Error('Close transition not found');
 
   const statusSuccess = await changeIssueStatus(input.taskId, closeTransition.id, 'fixed');
@@ -187,6 +181,7 @@ async function closeAccountWorkTask(input: {
 
 async function executeAccountWorkFlow(input: {
   accountWorkModal: Task;
+  completionRules: SprintTaskCompletionRules | null;
   data: AccountWorkData;
   onTasksReload?: () => Promise<void> | void;
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
@@ -205,6 +200,7 @@ async function executeAccountWorkFlow(input: {
   await closeAccountWorkTask({
     accountWorkModal: input.accountWorkModal,
     actualTaskId,
+    completionRules: input.completionRules,
     data: input.data,
     setTasks: input.setTasks,
     taskId,
@@ -223,6 +219,7 @@ async function executeAccountWorkFlow(input: {
 
 export async function runAccountWorkWithRollback(input: {
   accountWorkModal: Task;
+  completionRules: SprintTaskCompletionRules | null;
   data: AccountWorkData;
   onTasksReload?: () => Promise<void> | void;
   setTasks: (updater: (prev: Task[]) => Task[]) => void;

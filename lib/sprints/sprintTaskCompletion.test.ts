@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   isStatusKeyCompleted,
+  isTransitionToDoneStatus,
+  pickDoneTransition,
   isTaskCompleted,
   sprintTaskCompletionRulesFromStatuses,
   statusTypeKeyForStatus,
@@ -67,5 +69,39 @@ describe('statusTypeKeyForStatus', () => {
     expect(statusTypeKeyForStatus('inProgress', tracker)).toBe('inprogress');
     expect(statusTypeKeyForStatus('closed', tracker)).toBe('done');
     expect(statusTypeKeyForStatus('missing', tracker)).toBeUndefined();
+  });
+});
+
+describe('pickDoneTransition', () => {
+  it('prefers a done transition that does not ask for a screen', () => {
+    const picked = pickDoneTransition([
+      { id: 'screen', screen: { id: '1' }, to: { key: 'done', statusTypeKey: 'done' } },
+      { id: 'plain', to: { key: 'closed', statusTypeKey: 'done' } },
+    ]);
+    expect(picked?.id).toBe('plain');
+  });
+
+  it('falls back to a screened done transition', () => {
+    const picked = pickDoneTransition([
+      { id: 'progress', to: { key: 'inProgress', statusTypeKey: 'indeterminate' } },
+      { id: 'screen', screen: { id: '9' }, to: { key: 'resolved', statusTypeKey: 'done' } },
+    ]);
+    expect(picked?.id).toBe('screen');
+  });
+
+  it('takes the status type from the tracker catalog when the transition has none (Yandex)', () => {
+    const picked = pickDoneTransition(
+      [
+        { id: 'start', to: { key: 'inProgress' } },
+        { id: 'close', to: { key: 'closed' } },
+      ],
+      tracker
+    );
+    expect(picked?.id).toBe('close');
+  });
+
+  it('ignores the status key and name without a done type', () => {
+    expect(isTransitionToDoneStatus({ to: { key: 'closed' } })).toBe(false);
+    expect(pickDoneTransition([{ id: 'start', to: { key: 'inProgress' } }], tracker)).toBeNull();
   });
 });

@@ -121,7 +121,7 @@ export function useFinishSprintModal({
         tasks,
       });
 
-      await closeTrackerGoalTasks(goalTasks);
+      await closeTrackerGoalTasks(goalTasks, completionRules);
 
       const archived = await archiveSprintOnFinish({
         onSprintStatusChange,

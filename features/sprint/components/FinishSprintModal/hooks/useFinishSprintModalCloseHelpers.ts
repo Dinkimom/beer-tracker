@@ -2,21 +2,16 @@ import {
   changeIssueStatus,
   getIssueTransitions,
 } from '@/lib/beerTrackerApi';
+import { pickDoneTransition, type SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 
-function findCloseTransition(
-  transitions: Array<{ display?: string; id: string; to?: { key?: string } }>
-): { display?: string; id: string; to?: { key?: string } } | undefined {
-  return transitions.find(
-    (t) =>
-      t.to?.key?.toLowerCase() === 'closed' || t.display?.toLowerCase().includes('закрыт')
-  );
-}
-
-async function closeSingleTrackerGoalTask(goalTaskId: string): Promise<void> {
+async function closeSingleTrackerGoalTask(
+  goalTaskId: string,
+  completionRules: SprintTaskCompletionRules | null
+): Promise<void> {
   const transitions = await getIssueTransitions(goalTaskId);
   if (transitions.length === 0) return;
 
-  const closeTransition = findCloseTransition(transitions);
+  const closeTransition = pickDoneTransition(transitions, completionRules);
   if (!closeTransition) {
     console.warn('Close transition not found for goal task:', goalTaskId);
     return;
@@ -29,12 +24,13 @@ async function closeSingleTrackerGoalTask(goalTaskId: string): Promise<void> {
 }
 
 export async function closeTrackerGoalTasks(
-  goalTasks: Array<{ id: string; source?: 'sprint_goals' | 'tracker' }>
+  goalTasks: Array<{ id: string; source?: 'sprint_goals' | 'tracker' }>,
+  completionRules: SprintTaskCompletionRules | null
 ): Promise<void> {
   for (const goalTask of goalTasks) {
     if (goalTask.source === 'sprint_goals') continue;
     try {
-      await closeSingleTrackerGoalTask(goalTask.id);
+      await closeSingleTrackerGoalTask(goalTask.id, completionRules);
     } catch (error) {
       console.error('Failed to close goal task:', error);
     }

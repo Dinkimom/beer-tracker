@@ -11,13 +11,15 @@ import { upsertSprintTaskInQueries } from '@/features/task/hooks/useTasks';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { createIssue, getIssueTransitions } from '@/lib/api/issues';
 import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
+import { pickDoneTransition, type SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
 
-import { buildNextPlanPosition, pickDoneTransition } from './closeOverdueAndCreateNext';
+import { buildNextPlanPosition } from './closeOverdueAndCreateNext';
 
 type Translate = (key: string, values?: Record<string, number | string>) => string;
 
 interface CloseOverdueAndCreateNextRunInput {
   boardId: number | null;
+  completionRules: SprintTaskCompletionRules | null;
   currentCell: number;
   partsPerDay: number;
   position: TaskPosition;
@@ -59,7 +61,7 @@ export async function closeOverdueAndCreateNextRun(
     return;
   }
 
-  const transition = pickDoneTransition(transitions);
+  const transition = pickDoneTransition(transitions, input.completionRules);
   const targetKey = transition?.to?.key;
   if (!transition || !targetKey) {
     toast.error(input.t('sprintPlanner.swimlane.overdue.noCloseTransition'));
