@@ -77,20 +77,24 @@ export function useAgentBrand(sprintId: number | null | undefined): McpOAuthClie
 }
 
 /**
- * Свои сессии с агентом в спринте. Активная — та, где лежит текущий драфт (туда пишут 💬
- * и «Попросить переделать»); если драфта нет — последняя незакрытая.
+ * Свои сессии с агентом в спринте. Открытых может быть сколько угодно, и агенты работают над ними
+ * параллельно. Драфт на доске один (`draftSession`): к его пунктам относятся 💬 и их счётчик.
  */
 export function useAgentSessions(sprintId: number | null | undefined) {
   const queryClient = useQueryClient();
   const { data, loaded, queryKey } = useSprintAgentSessionsQuery(sprintId);
   const bridge = useAgentBridge();
   const { draftSessionId, sessions } = data;
-  const active = useMemo(
-    () =>
-      sessions.find((session) => session.id === draftSessionId) ??
-      sessions.find((session) => session.status !== 'closed') ??
-      null,
+  const draftSession = useMemo(
+    () => sessions.find((session) => session.id === draftSessionId) ?? null,
     [draftSessionId, sessions]
+  );
+  const openSessions = useMemo(
+    () =>
+      sessions
+        .filter((session) => session.status !== 'closed')
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [sessions]
   );
 
   const store = (session: AgentSession | null) => {
@@ -116,56 +120,46 @@ export function useAgentSessions(sprintId: number | null | undefined) {
   });
 
   const post = useMutation({
-    /** `sessionId` — в какую сессию; по умолчанию активная. */
-    mutationFn: ({ sessionId, ...input }: AgentSessionUserMessagePayload & { sessionId?: string }) => {
-      const target = sessionId ?? active?.id;
-      if (!target) {
-        return Promise.reject(new Error('no active agent session'));
-      }
-      return postAgentSessionMessage(target, input);
-    },
+    mutationFn: ({ sessionId, ...input }: AgentSessionUserMessagePayload & { sessionId: string }) =>
+      postAgentSessionMessage(sessionId, input),
     onSuccess: store,
   });
 
+  /** Отозвать свой 💬 к пункту драфта. */
   const withdraw = useMutation({
     mutationFn: async (messageId: string) => {
-      if (!active) {
+      if (!draftSession) {
         return;
       }
-      await withdrawAgentSessionMessage(active.id, messageId);
+      await withdrawAgentSessionMessage(draftSession.id, messageId);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
   const close = useMutation({
-    mutationFn: (sessionId?: string) => {
-      const target = sessionId ?? active?.id;
-      if (!target) {
-        return Promise.resolve(null);
-      }
-      return setAgentSessionStatus(target, 'closed');
-    },
+    mutationFn: (sessionId: string) => setAgentSessionStatus(sessionId, 'closed'),
     onSuccess: store,
   });
 
   const derived = useMemo(
     () => ({
-      itemComments: groupAgentSessionItemComments(active?.messages ?? []),
-      openComments: countOpenAgentSessionComments(active?.messages ?? []),
+      itemComments: groupAgentSessionItemComments(draftSession?.messages ?? []),
+      openComments: countOpenAgentSessionComments(draftSession?.messages ?? []),
     }),
-    [active]
+    [draftSession]
   );
 
   return {
     ...derived,
-    active,
-    /** Сессия, чей драфт сейчас висит на доске: новые просьбы по умолчанию дописываются в неё. */
-    draftSession: sessions.find((session) => session.id === draftSessionId) ?? null,
     close: close.mutateAsync,
     create: create.mutateAsync,
     creating: create.isPending,
+    /** Сессия, чей драфт сейчас висит на доске; другие сессии ждут, пока его разберут. */
+    draftSession,
     /** Сессии спринта уже пришли с сервера (до этого — пустой список-заглушка). */
     loaded,
+    /** Незакрытые сессии, свежие сверху. */
+    openSessions,
     post: post.mutateAsync,
     posting: post.isPending,
     sessions,

@@ -259,8 +259,8 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
               brand={agentBrand}
               open={agentIsland.chatOpen}
               openComments={agentIsland.sessions.openComments}
-              status={agentIsland.sessions.active?.status}
-              unread={agentIsland.unreadReply}
+              status={agentIsland.status}
+              unread={agentIsland.unread.size > 0}
               onClick={agentIsland.toggleChat}
             />
           ) : null}

@@ -36,7 +36,7 @@ const ACTION_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !gap-1.5 
 const SHELL_CLASS = `!rounded-xl ${FLOATING_MENU_SHELL} ${FLOATING_TOOLBAR_GLASS}`;
 
 /**
- * Остров агента над тулбаром инструментов: карточка чата и строка ревью драфта «‹ 1/2 › ✓ ✗».
+ * Остров агента над тулбаром инструментов: карточка чата (со списком сессий) и строка ревью драфта «‹ 1/2 › ✓ ✗».
  * Строка — только пока драфт ждёт решения на доске. Чат открывают ✨ в тулбаре и «Агенту» в меню
  * задачи / заметки; сворачивают ✨, клик мимо острова и смена режима в тулбаре.
  */
@@ -71,13 +71,19 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
         <div className="absolute bottom-full left-1/2 mb-2 w-[min(100vw-2rem,30rem)] -translate-x-1/2">
           <div className={`agent-island-chat-panel p-3 ${SHELL_CLASS}`} data-state={island.panelState}>
             <AgentSessionChat
-              key={panel.chat.key}
+              // Своя сессия — свой черновик: набранное для одной сессии не уезжает в другую.
+              key={`${panel.chat.key}:${panel.session?.id ?? 'new'}`}
               autoFocus
-              newSession={
-                sessions.active ? { selected: island.newSelected, onToggle: island.toggleNewSession } : null
-              }
               origin={panel.chat.origin}
               session={panel.session}
+              sessionList={{
+                draftSessionId: sessions.draftSession?.id ?? null,
+                open: island.listOpen,
+                sessions: sessions.openSessions,
+                unread: island.unread,
+                onPick: island.openSession,
+                onToggle: island.toggleList,
+              }}
               sprintId={sprintId}
               onClear={island.clearChat}
               onContextRemove={island.removeContext}

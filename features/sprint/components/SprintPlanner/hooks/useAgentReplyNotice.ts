@@ -20,39 +20,58 @@ function snippetOf(text: string): string {
   return flat.length <= SNIPPET_MAX ? flat : `${flat.slice(0, SNIPPET_MAX - 1)}…`;
 }
 
-/** Что уже показано человеку: ответы на момент загрузки спринта и всё, что было при открытом чате. */
+/** Что уже показано человеку: ответы на момент загрузки спринта и всё, что было в открытой сессии. */
 interface Acked {
   ids: ReadonlySet<string>;
   sprintId: number | null;
 }
 
+interface AgentReply {
+  message: AgentSessionMessage;
+  sessionId: string;
+}
+
 /**
- * Ответ агента, пока чат свёрнут: тост «Claude ответил» (клик открывает чат) и непрочитанное на ✨.
+ * Ответы агента, которые человек не видел: по сессиям. Сессия прочитана, когда она открыта в чате;
+ * ответ в другой сессии — тост «Claude ответил» (клик открывает её) и точка в списке сессий.
  * Вкладка в фоне — тост ждёт возвращения на неё. Ответы, бывшие до загрузки спринта, не новые.
- * Возвращает, есть ли непрочитанный ответ.
+ * Возвращает id сессий с непрочитанным ответом.
  */
 export function useAgentReplyNotice(input: {
-  chatOpen: boolean;
   loaded: boolean;
   sessions: readonly AgentSession[];
   sprintId: number | null;
-  onOpen: () => void;
-}): boolean {
-  const { chatOpen, loaded, sessions, sprintId, onOpen } = input;
+  /** Сессия, открытая в развёрнутом чате; null — чат свёрнут или пишем новую. */
+  viewedSessionId: string | null;
+  onOpen: (sessionId: string) => void;
+}): ReadonlySet<string> {
+  const { loaded, sessions, sprintId, viewedSessionId, onOpen } = input;
   const { t } = useI18n();
-  const replies = useMemo(
-    () => sessions.flatMap((session) => session.messages.filter((message) => message.authorKind === 'agent')),
+  const replies = useMemo<AgentReply[]>(
+    () =>
+      sessions
+        .flatMap((session) =>
+          session.messages
+            .filter((message) => message.authorKind === 'agent')
+            .map((message) => ({ message, sessionId: session.id }))
+        )
+        .sort((a, b) => a.message.createdAt.localeCompare(b.message.createdAt)),
     [sessions]
   );
   const [acked, setAcked] = useState<Acked | null>(null);
-  // Первая загрузка спринта и открытый чат — всё видно (setState во время рендера, без эффекта).
+  // Первая загрузка спринта — всё видно; открытая сессия — видны её ответы (setState во время рендера).
   const stale = acked?.sprintId !== sprintId;
-  const seenAll = !stale && replies.every((message) => acked?.ids.has(message.id));
-  if (loaded && (stale || (chatOpen && !seenAll))) {
-    setAcked({ ids: new Set(replies.map((message) => message.id)), sprintId });
+  const viewedUnseen = stale
+    ? []
+    : replies.filter((reply) => reply.sessionId === viewedSessionId && !acked?.ids.has(reply.message.id));
+  if (loaded && stale) {
+    setAcked({ ids: new Set(replies.map((reply) => reply.message.id)), sprintId });
+  } else if (loaded && viewedUnseen.length > 0) {
+    setAcked({ ids: new Set([...(acked?.ids ?? []), ...viewedUnseen.map((reply) => reply.message.id)]), sprintId });
   }
-  const latest: AgentSessionMessage | undefined =
-    acked?.sprintId === sprintId ? replies.findLast((message) => !acked.ids.has(message.id)) : undefined;
+  const unseen = stale ? [] : replies.filter((reply) => !acked?.ids.has(reply.message.id));
+  const unread: ReadonlySet<string> = new Set(unseen.map((reply) => reply.sessionId));
+  const latest = unseen.at(-1);
 
   const toastedRef = useRef<string | null>(null);
   const onOpenRef = useRef(onOpen);
@@ -61,27 +80,26 @@ export function useAgentReplyNotice(input: {
   }, [onOpen]);
 
   useEffect(() => {
-    if (chatOpen) {
+    if (!latest) {
       toast.dismiss(TOAST_ID);
-    }
-  }, [chatOpen]);
-
-  useEffect(() => {
-    if (!latest || toastedRef.current === latest.id) {
       return;
     }
-    const agent = (latest.clientBrand && mcpOAuthClientBrandName(latest.clientBrand)) || t('agentSession.agent');
+    if (toastedRef.current === latest.message.id) {
+      return;
+    }
+    const { message, sessionId } = latest;
+    const agent = (message.clientBrand && mcpOAuthClientBrandName(message.clientBrand)) || t('agentSession.agent');
     const show = () => {
-      toastedRef.current = latest.id;
+      toastedRef.current = message.id;
       toast(
         () =>
           createElement(AgentReplyToast, {
             openLabel: t('agentSession.replyToastOpen'),
-            snippet: latest.kind === 'draft' ? '' : snippetOf(latest.text),
-            title: t(latest.kind === 'draft' ? 'agentSession.draftToast' : 'agentSession.replyToast', { agent }),
+            snippet: message.kind === 'draft' ? '' : snippetOf(message.text),
+            title: t(message.kind === 'draft' ? 'agentSession.draftToast' : 'agentSession.replyToast', { agent }),
             onOpen: () => {
               toast.dismiss(TOAST_ID);
-              onOpenRef.current();
+              onOpenRef.current(sessionId);
             },
           }),
         { duration: TOAST_DURATION_MS, id: TOAST_ID }
@@ -100,5 +118,5 @@ export function useAgentReplyNotice(input: {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [latest, t]);
 
-  return latest != null;
+  return unread;
 }

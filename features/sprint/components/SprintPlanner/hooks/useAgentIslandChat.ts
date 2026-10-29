@@ -1,7 +1,7 @@
 'use client';
 
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
-import type { AgentSession } from '@/lib/agentSessions/agentSession';
+import type { AgentSession, AgentSessionStatus } from '@/lib/agentSessions/agentSession';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -26,49 +26,53 @@ interface ChatPanel {
   session: AgentSession | null;
 }
 
+/** Какой статус показать на ✨: кто-то ждёт человека — синий, иначе кто-то ждёт агента — жёлтый. */
+function aggregateStatus(sessions: readonly AgentSession[]): AgentSessionStatus | undefined {
+  if (sessions.some((session) => session.status === 'waiting_user')) {
+    return 'waiting_user';
+  }
+  return sessions.some((session) => session.status === 'waiting_agent') ? 'waiting_agent' : undefined;
+}
+
 /**
- * Состояние острова агента: открыт ли чат и откуда, какая сессия в нём (текущая / новая /
- * только что созданная), действия — ✨ в тулбаре, новая сессия и 🗑 «Очистить чат» в шапке чата. Выбор
- * сессии сбрасывается при закрытии чата. Плашки контекста — `sprintPlannerUi.agentChatContext`:
- * «Попросить агента» с карточки или заметки добавляет плашку в открытый чат, не теряя набранный текст.
- * Вызывать из observer-компонента.
+ * Состояние острова агента: открыт ли чат и откуда, какая сессия в нём, список сессий.
+ * Сессий может быть несколько, агенты работают над ними параллельно; чат показывает одну —
+ * выбранную в списке (заголовок чата), только что созданную или, по умолчанию, сессию драфта
+ * на доске, иначе самую свежую. Выбор переживает сворачивание чата. Плашки контекста —
+ * `sprintPlannerUi.agentChatContext`: «Попросить агента» с карточки или заметки добавляет плашку
+ * в открытый чат, не теряя набранный текст. Вызывать из observer-компонента.
  *
  * Панель чата живёт дольше `chatOpen` на время анимации сворачивания (`panel` + `panelState`).
  * Чат сворачивают Escape, клик основной кнопкой мимо острова (`islandRef`; правый клик и контекстное
  * меню — нет) и смена режима в тулбаре инструментов.
- * Сессия закрывается 🗑 «Очистить чат» и сама при старте новой (прежняя, если её драфт не висит
- * на доске). После «Принять всё» сессия остаётся: в ней можно продолжить разговор с агентом.
+ * Сессия закрывается 🗑 «Очистить чат»; после «Принять всё» остаётся — в ней можно продолжить разговор.
  */
 export function useAgentIslandChat(sprintId: number | null) {
   const { sprintPlannerUi } = useRootStore();
   const sessions = useAgentSessions(sprintId);
   const target = sprintPlannerUi.agentRequestTarget;
   const chatOpen = target != null && sprintId != null;
-  /** Какую сессию показывает чат: 'new' — пишем новую, id — только что созданная; null — активная. */
+  /** Какую сессию показывает чат: 'new' — пишем новую, id — выбранная; null — по умолчанию. */
   const [pick, setPick] = useState<string | null>(null);
+  /** Вместо ленты — список сессий. */
+  const [listOpen, setListOpen] = useState(false);
   const islandRef = useRef<HTMLDivElement>(null);
   const placementTool = sprintPlannerUi.placementTool;
   const placementToolRef = useRef(placementTool);
-  // Чат свернули откуда угодно — выбор сессии сбрасываем (setState во время рендера, без эффекта).
-  if (!chatOpen && pick) {
-    setPick(null);
+  // Чат свернули откуда угодно — в следующий раз он откроется на ленте, а не на списке.
+  if (!chatOpen && listOpen) {
+    setListOpen(false);
   }
 
   // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
-  usePopoverDismiss(
-    () => {
-      setPick(null);
-      sprintPlannerUi.setAgentRequestTarget(null);
-    },
-    {
-      capture: true,
-      enabled: chatOpen,
-      escape: {},
-      ignoreSelector: KEEP_CHAT_OPEN_SELECTOR,
-      primaryButtonOnly: true,
-      refs: [islandRef],
-    }
-  );
+  usePopoverDismiss(() => sprintPlannerUi.setAgentRequestTarget(null), {
+    capture: true,
+    enabled: chatOpen,
+    escape: {},
+    ignoreSelector: KEEP_CHAT_OPEN_SELECTOR,
+    primaryButtonOnly: true,
+    refs: [islandRef],
+  });
 
   // Выбор режима в тулбаре (и хоткеем) сворачивает чат.
   useEffect(() => {
@@ -83,16 +87,24 @@ export function useAgentIslandChat(sprintId: number | null) {
   // Ссылка меняется только с плашками (observable.ref): по ней обновляется панель ниже.
   const origin = useMemo(() => resolveAgentChatOrigin(contextItems, undefined), [contextItems]);
   const chat = chatOpen ? { key: CHAT_KEY, origin } : null;
-  const selected = pick;
+  const fallback = sessions.draftSession ?? sessions.openSessions[0] ?? null;
   const session =
-    selected === 'new' ? null : (sessions.sessions.find((item) => item.id === selected) ?? sessions.active);
+    pick === 'new' ? null : (sessions.sessions.find((item) => item.id === pick) ?? fallback);
 
-  const unreadReply = useAgentReplyNotice({
-    chatOpen,
+  const openSession = (sessionId: string | 'new') => {
+    setPick(sessionId);
+    setListOpen(false);
+    if (!chatOpen) {
+      sprintPlannerUi.setAgentRequestTarget({ kind: 'session' });
+    }
+  };
+
+  const unread = useAgentReplyNotice({
     loaded: sessions.loaded,
     sessions: sessions.sessions,
     sprintId,
-    onOpen: () => sprintPlannerUi.setAgentRequestTarget({ kind: sessions.active ? 'session' : 'sprint' }),
+    viewedSessionId: chatOpen && !listOpen ? (session?.id ?? null) : null,
+    onOpen: openSession,
   });
 
   const presence = useOverlayPresence(chatOpen);
@@ -110,39 +122,34 @@ export function useAgentIslandChat(sprintId: number | null) {
   return {
     chatOpen,
     islandRef,
-    newSelected: chatOpen && selected === 'new',
+    listOpen,
     panel,
     panelState: presence.state,
     session,
     sessions,
-    /** Агент ответил, пока чат был свёрнут: ✨ в тулбаре это показывает. */
-    unreadReply,
+    /** Что показать на ✨ в тулбаре: чья очередь хоть в одной сессии. */
+    status: aggregateStatus(sessions.openSessions),
+    /** Сессии с ответом агента, который человек ещё не видел. */
+    unread,
     /** Плашки контекста: снять одну крестиком; реплика ушла — очистить все. */
     clearContext: sprintPlannerUi.clearAgentChatContext,
     removeContext: sprintPlannerUi.removeAgentChatContext,
-    /** 🗑: завершить показанную сессию — открытый чат остаётся, пустой, под новую просьбу. */
+    /** 🗑: завершить показанную сессию — чат остаётся открытым, пустой, под новую просьбу. */
     clearChat: () => {
       if (session) {
         sessions.close(session.id).catch(() => undefined);
       }
-      setPick(null);
+      setPick('new');
     },
-    selectCreated: (sessionId: string | null) => {
-      const previous = sessions.active;
-      if (previous && previous.id !== sessionId && previous.id !== sessions.draftSession?.id) {
-        sessions.close(previous.id).catch(() => undefined);
-      }
-      setPick(sessionId);
-    },
-    /** ✨ в тулбаре: без сессии — новая просьба про спринт, с сессией — её чат. */
+    /** Перейти в сессию (из списка или тоста) или к новой просьбе; свёрнутый чат открывается. */
+    openSession,
+    selectCreated: (sessionId: string | null) => setPick(sessionId),
+    /** ✨ в тулбаре: открыть чат на выбранной сессии или свернуть его. */
     toggleChat: () => {
-      setPick(null);
-      sprintPlannerUi.setAgentRequestTarget(chatOpen ? null : { kind: sessions.active ? 'session' : 'sprint' });
+      sprintPlannerUi.setAgentRequestTarget(chatOpen ? null : { kind: session ? 'session' : 'sprint' });
     },
-    /** Шапка чата: начать новую сессию; повторно — назад к текущей. */
-    toggleNewSession: () => {
-      setPick(selected === 'new' ? null : 'new');
-    },
+    /** Заголовок чата: список сессий вместо ленты и обратно. */
+    toggleList: () => setListOpen((prev) => !prev),
   };
 }
 

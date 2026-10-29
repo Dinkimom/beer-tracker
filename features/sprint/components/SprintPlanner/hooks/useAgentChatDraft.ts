@@ -100,8 +100,8 @@ export function useAgentChatDraft({
   return {
     busy,
     context,
-    /** Новая просьба встанет в очередь за драфтом другой сессии. */
-    hasDraftSession: sessions.draftSession != null,
+    /** На доске драфт другой сессии: план здесь агент поменяет после него. */
+    hasDraftSession: sessions.draftSession != null && sessions.draftSession.id !== session?.id,
     mentions,
     pickOption,
     placeholder: composerPlaceholder(session, skill, t),

@@ -47,12 +47,14 @@ export function DraftItemCommentButton({
 
   const submit = () => {
     const trimmed = text.trim();
-    if (!trimmed || !sessions.active || sessions.posting) {
+    const session = sessions.draftSession;
+    if (!trimmed || !session || sessions.posting) {
       return;
     }
     sessions
       .post({
         kind: 'comment',
+        sessionId: session.id,
         mentions: collectUsedAgentMentions(trimmed, mentions),
         target: { id: targetId, kind: targetKind, label: targetLabel },
         text: trimmed,
@@ -106,7 +108,7 @@ export function DraftItemCommentButton({
               sessions.withdraw(messageId).catch(() => undefined);
             }}
           />
-          {sessions.active ? (
+          {sessions.draftSession ? (
             <div className="mt-2">
               <AgentComposer
                 autoFocus
