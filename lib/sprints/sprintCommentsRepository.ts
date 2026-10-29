@@ -400,14 +400,14 @@ export function deleteSprintCommentLinksSql(): string {
 export function softDeleteSprintCommentSql(): string {
   return `UPDATE comments SET
         deleted_at = CURRENT_TIMESTAMP,
-        deleted_by = $3,
+        deleted_by = $3::uuid,
         updated_at = CURRENT_TIMESTAMP,
-        updated_by = COALESCE($3, updated_by),
+        updated_by = COALESCE($3::uuid, updated_by),
         version = version + 1
       WHERE sprint_id = $1
         AND id = $2
         AND deleted_at IS NULL
-        AND (pending_approval = FALSE OR LOWER(created_by::text) = LOWER($3::text))
+        AND (pending_approval = FALSE OR created_by = $3::uuid)
       RETURNING id`;
 }
 

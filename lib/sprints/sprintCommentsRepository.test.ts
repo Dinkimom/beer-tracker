@@ -119,7 +119,12 @@ describe('deleteSprintComment', () => {
 
   it('lets only the author delete an agent draft (pending_approval)', () => {
     expect(softDeleteSprintCommentSql()).toContain(
-      'AND (pending_approval = FALSE OR LOWER(created_by::text) = LOWER($3::text))'
+      'AND (pending_approval = FALSE OR created_by = $3::uuid)'
     );
+  });
+
+  it('types $3 as uuid everywhere so Postgres does not deduce text for it', () => {
+    const sql = softDeleteSprintCommentSql();
+    expect(sql).not.toMatch(/\$3(?!::uuid)/);
   });
 });
