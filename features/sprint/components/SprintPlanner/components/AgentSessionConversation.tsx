@@ -12,6 +12,7 @@ import { mcpOAuthClientBrandName } from '@/lib/mcp/oauth/resolveMcpOAuthClientBr
 
 import { agentSkillCaption } from '../utils/agentSkillCaption';
 
+import { AgentDevResultCard } from './AgentDevResultCard';
 import { AgentReplyOptions } from './AgentReplyOptions';
 
 type Translate = (key: string, params?: Record<string, number | string>) => string;
@@ -32,6 +33,9 @@ function messageCaption(message: AgentSessionMessage, draftVersion: number, t: T
   }
   if (message.kind === 'draft') {
     return `${who} · ${t('agentSession.kindDraft', { version: draftVersion })}`;
+  }
+  if (message.kind === 'result') {
+    return `${who} · ${t('agentSession.kindResult')}`;
   }
   if (message.kind === 'redo') {
     return `${who} · ${t('agentSession.kindRedo')}`;
@@ -218,7 +222,9 @@ export function AgentSessionConversation({
             brand={message.clientBrand}
             caption={messageCaption(message, versions.get(message.id) ?? 0, t)}
             card={message.kind === 'draft'}
-            footer={replyOptionsFor(messages, index, status, onPickOption)}
+            footer={
+              message.result ? <AgentDevResultCard result={message.result} /> : replyOptionsFor(messages, index, status, onPickOption)
+            }
             from={message.authorKind}
             placeholder={t('agentSession.kindRedo')}
             status={messageStatus(message, t)}

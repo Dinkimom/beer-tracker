@@ -11,9 +11,11 @@ import type {
   AgentSessionTarget,
   AgentSessionTargetKind,
 } from '@/lib/agentSessions/agentSession';
+import type { AgentDevResult, AgentSessionKind } from '@/lib/agentSessions/agentSessionKind';
 import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 
 import { parseAgentBridgeStep } from '@/lib/agentSessions/agentBridge';
+import { parseAgentDevResult } from '@/lib/agentSessions/agentSessionKind';
 import { parseAgentSessionSkill } from '@/lib/agentSessions/agentSkills';
 import { STAFF_AUTHOR_DISPLAY_NAME_SQL } from '@/lib/comments/commentAuthor';
 import { query } from '@/lib/db';
@@ -28,6 +30,7 @@ interface SessionRow {
   context: unknown;
   created_at: DbTimestamp;
   id: string;
+  kind: string;
   origin: string;
   owner_id: string;
   sprint_id: number;
@@ -49,6 +52,7 @@ interface MessageRow {
   proposal_id: string | null;
   reply_to: string | null;
   resolution: string | null;
+  result: unknown;
   session_id: string;
   skill_id: string | null;
   skill_params: unknown;
@@ -76,7 +80,7 @@ function parseStatus(value: string): AgentSessionStatus {
   return value === 'waiting_agent' || value === 'closed' ? value : 'waiting_user';
 }
 
-const MESSAGE_KINDS: ReadonlySet<string> = new Set(['comment', 'draft', 'message', 'redo', 'reply', 'request']);
+const MESSAGE_KINDS: ReadonlySet<string> = new Set(['comment', 'draft', 'message', 'redo', 'reply', 'request', 'result']);
 
 function parseKind(value: string): AgentSessionMessageKind {
   return MESSAGE_KINDS.has(value) ? (value as AgentSessionMessageKind) : 'message';
@@ -128,6 +132,7 @@ function parseOptions(value: unknown): string[] {
 
 function messageFromRow(row: MessageRow): AgentSessionMessage {
   const clientBrand = planPatchClientBrandFromUnknown(row.client_brand);
+  const result = row.kind === 'result' ? parseAgentDevResult(row.result) : null;
   return {
     authorKind: row.author_kind === 'agent' ? 'agent' : 'user',
     authorName: row.author_name,
@@ -140,6 +145,7 @@ function messageFromRow(row: MessageRow): AgentSessionMessage {
     proposalId: row.proposal_id,
     replyTo: row.reply_to,
     resolution: parseResolution(row.resolution),
+    ...(result ? { result } : {}),
     skill: parseAgentSessionSkill(row.skill_id, row.skill_params),
     target: parseTarget(row),
     text: row.text,
@@ -156,6 +162,7 @@ function sessionFromRow(row: SessionRow, messages: AgentSessionMessage[]): Agent
     context: parseContext(row.context),
     createdAt: toIso(row.created_at),
     id: row.id,
+    kind: row.kind === 'dev' ? 'dev' : 'plan',
     messages,
     origin: row.origin === 'agent' ? 'agent' : 'planner',
     ownerId: row.owner_id,
@@ -167,7 +174,7 @@ function sessionFromRow(row: SessionRow, messages: AgentSessionMessage[]): Agent
   };
 }
 
-const SESSION_COLUMNS = `s.id::text AS id, s.sprint_id, s.owner_id, s.task_id, s.title, s.context,
+const SESSION_COLUMNS = `s.id::text AS id, s.sprint_id, s.owner_id, s.task_id, s.title, s.context, s.kind,
        s.origin, s.status, s.created_at, s.updated_at, s.closed_at, s.agent_step, s.agent_step_at`;
 
 async function loadMessages(sessionIds: readonly string[]): Promise<Map<string, AgentSessionMessage[]>> {
@@ -179,7 +186,7 @@ async function loadMessages(sessionIds: readonly string[]): Promise<Map<string, 
     `SELECT DISTINCT ON (m.created_at, m.id)
             m.id::text AS id, m.session_id::text AS session_id, m.author_kind, m.kind, m.text,
             m.target_kind, m.target_id, m.target_label, m.mentions, m.options, m.proposal_id, m.reply_to::text AS reply_to,
-            m.resolution, m.created_at, m.client_brand, m.skill_id, m.skill_params,
+            m.resolution, m.result, m.created_at, m.client_brand, m.skill_id, m.skill_params,
             ${STAFF_AUTHOR_DISPLAY_NAME_SQL} AS author_name
        FROM agent_session_messages m
        LEFT JOIN staff s
@@ -204,6 +211,7 @@ async function withMessages(rows: readonly SessionRow[]): Promise<AgentSession[]
 
 export async function createAgentSession(input: {
   context: AgentSessionContext;
+  kind?: AgentSessionKind;
   organizationId: string;
   origin: AgentSessionOrigin;
   ownerId: string;
@@ -213,8 +221,8 @@ export async function createAgentSession(input: {
   title: string;
 }): Promise<string> {
   const result = await query<{ id: string }>(
-    `INSERT INTO agent_sessions (organization_id, sprint_id, owner_id, task_id, title, context, origin, status)
-     VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, $8)
+    `INSERT INTO agent_sessions (organization_id, sprint_id, owner_id, task_id, title, context, origin, status, kind)
+     VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)
      RETURNING id::text AS id`,
     [
       input.organizationId,
@@ -225,6 +233,7 @@ export async function createAgentSession(input: {
       JSON.stringify(input.context),
       input.origin,
       input.status,
+      input.kind ?? 'plan',
     ]
   );
   const id = result.rows[0]?.id;
@@ -245,6 +254,7 @@ export async function insertAgentSessionMessage(input: {
   proposalId?: string | null;
   replyTo?: string | null;
   resolution?: AgentSessionResolution | null;
+  result?: AgentDevResult | null;
   sessionId: string;
   skill?: AgentSessionSkill | null;
   target?: { id: string; kind: AgentSessionTargetKind; label?: string | null } | null;
@@ -254,10 +264,11 @@ export async function insertAgentSessionMessage(input: {
     `INSERT INTO agent_session_messages (
        session_id, author_kind, author_id, kind, text, target_kind, target_id, target_label,
        proposal_id, reply_to, resolution, mentions, client_brand, options,
-       skill_id, skill_params
+       skill_id, skill_params, result
      )
      VALUES (
-       $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10::uuid, $11, $12::jsonb, $13, $14::jsonb, $15, $16::jsonb
+       $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10::uuid, $11, $12::jsonb, $13, $14::jsonb, $15, $16::jsonb,
+       $17::jsonb
      )
      RETURNING id::text AS id`,
     [
@@ -277,6 +288,7 @@ export async function insertAgentSessionMessage(input: {
       JSON.stringify(input.options ?? []),
       input.skill?.id ?? null,
       JSON.stringify(input.skill?.params ?? {}),
+      input.result ? JSON.stringify(input.result) : null,
     ]
   );
   await query(`UPDATE agent_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1::uuid`, [

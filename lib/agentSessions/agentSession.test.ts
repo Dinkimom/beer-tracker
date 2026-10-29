@@ -3,6 +3,7 @@ import type { AgentSession, AgentSessionMessage } from './agentSession';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AgentSessionCreateSchema,
   AgentSessionUserMessageSchema,
   agentSessionDraftVersion,
   agentSessionTargetKey,
@@ -41,13 +42,14 @@ function message(overrides: Partial<AgentSessionMessage>): AgentSessionMessage {
 
 const target = { id: 'RND-1779', kind: 'position' as const, label: 'RND-1779 · перенос' };
 
-function session(messages: AgentSessionMessage[]): AgentSession {
+function session(messages: AgentSessionMessage[], kind: AgentSession['kind'] = 'plan'): AgentSession {
   return {
     agentActivity: null,
     closedAt: null,
     context: { taskKey: 'RND-1779' },
     createdAt: '2026-10-20T10:00:00.000Z',
     id: 'session-1',
+    kind,
     messages,
     origin: 'planner',
     ownerId: 'user-1',
@@ -78,6 +80,14 @@ describe('AgentSessionUserMessageSchema', () => {
   it('allows a redo without text', () => {
     expect(AgentSessionUserMessageSchema.safeParse({ kind: 'redo', text: '' }).success).toBe(true);
     expect(AgentSessionUserMessageSchema.safeParse({ kind: 'message', text: '' }).success).toBe(false);
+  });
+});
+
+describe('AgentSessionCreateSchema', () => {
+  it('defaults to a planning session and needs a task for a development one', () => {
+    expect(AgentSessionCreateSchema.parse({ text: 'Риски' }).kind).toBe('plan');
+    expect(AgentSessionCreateSchema.safeParse({ kind: 'dev', text: 'Сделай' }).success).toBe(false);
+    expect(AgentSessionCreateSchema.parse({ kind: 'dev', taskId: 'RND-1', text: 'Сделай' }).kind).toBe('dev');
   });
 });
 
@@ -164,6 +174,17 @@ describe('agent views', () => {
   it('summarizes a session for the inbox', () => {
     const summary = summarizeAgentSessionForAgent(session([message({ kind: 'request', text: 'Разбей' })]));
     expect(summary).toMatchObject({ draftVersion: 0, lastMessage: 'Разбей', openComments: 0, status: 'waiting_agent' });
+  });
+
+  it('starts a development session from the task brief and passes the result', () => {
+    const result = { branch: 'agent/RND-1779', commits: [{ sha: 'abc1234', subject: 'feat: фильтр' }], tests: 'passed' as const };
+    const done = message({ authorKind: 'agent', kind: 'result', result, text: 'Готово, смотри фильтр' });
+    const view = buildAgentSessionAgentView(session([message({ kind: 'request' }), done], 'dev'));
+    expect(view.kind).toBe('dev');
+    expect(view.fetchContext).toBe('get_task_brief(issueKey: "RND-1779", sprintId: 1221)');
+    expect(view.hint).toContain('Do not push');
+    expect(view.conversation[1]).toMatchObject({ kind: 'result', result });
+    expect(summarizeAgentSessionForAgent(session([], 'dev')).kind).toBe('dev');
   });
 
   it('counts draft versions', () => {

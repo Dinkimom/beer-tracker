@@ -35,6 +35,7 @@ import { ONBOARDING_SAMPLE_TASK_ID } from '@/lib/plannerOnboarding/onboardingDem
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 import { ContextMenuActions } from './ContextMenu/components/ContextMenuActions';
+import { ContextMenuAgentActions } from './ContextMenu/components/ContextMenuAgentActions';
 import { ContextMenuCopyQuickActions } from './ContextMenu/components/ContextMenuCopyQuickActions';
 import { ContextMenuPlanItems } from './ContextMenu/components/ContextMenuPlanItems';
 import { useContextMenu } from './ContextMenu/hooks/useContextMenu';
@@ -65,6 +66,8 @@ interface ContextMenuProps {
   onAssigneeSelect?: (assigneeId: string) => void;
   onClose: () => void;
   onCloseByClickOutside?: () => void;
+  /** Отдать задачу агенту в работу: он напишет код и пришлёт ветку. */
+  onDelegateToAgent?: (task: Task) => void;
   onMoveToSprint: (taskId: string, sprintId: number) => Promise<void>;
   onOpenTaskInfo?: (task: Task) => void;
   onParentChange?: (taskId: string, parent: TaskParent | null) => Promise<void>;
@@ -97,6 +100,7 @@ export function ContextMenu({
   assigneeOptions = null,
   onAccountWork,
   onAskAgent,
+  onDelegateToAgent,
   onAssigneeSelect,
   onUpdateEstimate,
   onCloseByClickOutside,
@@ -240,23 +244,13 @@ export function ContextMenu({
               </Button>
             ) : null}
             <ContextMenuCopyQuickActions task={task} tracker={tracker} />
-            {onAskAgent && agentAvailable && !isBacklogTask && currentSprintId !== null ? (
-              <Button
-                aria-label={t('agentSession.menuAria')}
-                className={MENU_QUICK_ACTION}
-                data-context-menu-ask-agent=""
-                title={t('agentSession.menuAria')}
-                type="button"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAskAgent(task);
-                  requestClose();
-                }}
-              >
-                <Icon className="h-4 w-4 shrink-0" name="sparkles" />
-                <span className={MENU_QUICK_ACTION_LABEL}>{t('agentSession.menuShort')}</span>
-              </Button>
+            {agentAvailable && !isBacklogTask && currentSprintId !== null ? (
+              <ContextMenuAgentActions
+                task={task}
+                onAskAgent={onAskAgent}
+                onClose={requestClose}
+                onDelegateToAgent={onDelegateToAgent}
+              />
             ) : null}
           </ContextMenuGroup>
 

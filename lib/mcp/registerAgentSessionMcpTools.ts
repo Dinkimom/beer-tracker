@@ -10,6 +10,7 @@ import {
   summarizeAgentSessionForAgent,
   waitingForDraftSessionId,
 } from '@/lib/agentSessions/agentSession';
+import { AgentDevResultSchema } from '@/lib/agentSessions/agentSessionKind';
 import { draftSessionIdsBySprint, replyAgentSession } from '@/lib/agentSessions/agentSessionService';
 import {
   findAgentSessionByProposal,
@@ -22,7 +23,7 @@ import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService
 
 
 const INBOX_HINT =
-  'Your inbox: sessions the person handed to you from the Beer Tracker planner ("Ask the agent", 💬 on your draft, "Ask to redo"). Open each with get_agent_session, do the work, then answer: propose_plan_patch(sessionId, …) for a plan change or reply_agent_session for a text answer. One draft per sprint at a time: a session with waitsForDraftSession cannot propose a draft until that session draft is accepted/rejected — handle the draft session first. Sessions are private to the person you act for.';
+  'Your inbox: sessions the person handed to you from the Beer Tracker planner ("Ask the agent", 💬 on your draft, "Ask to redo"). Open each with get_agent_session, do the work, then answer: propose_plan_patch(sessionId, …) for a plan change or reply_agent_session for a text answer. One draft per sprint at a time: a session with waitsForDraftSession cannot propose a draft until that session draft is accepted/rejected — handle the draft session first. kind=dev = a task handed to you to implement in code (follow that session hint; drafts do not apply); kind=plan = a planning request. Sessions are private to the person you act for.';
 
 /** Для get_sprint_context: сессия, в которой лежит текущий драфт владельца. */
 export async function loadDraftAgentSessionSummary(input: {
@@ -108,7 +109,7 @@ export function registerAgentSessionMcpTools(
     'get_agent_session',
     {
       description:
-        'One work session: what the person asked (request), your drafts (draft), their 💬 on draft items (comment, with target position/goal/note), "redo" requests and your replies. openComments lists 💬 ids waiting for your answer. fetchContext is the get_sprint_context call to start with.',
+        'One work session (kind=plan: a planning request; kind=dev: a task to implement in code — hint says how): what the person asked (request), your drafts (draft), their 💬 on draft items (comment, with target position/goal/note), "redo" requests and your replies. openComments lists 💬 ids waiting for your answer. fetchContext is the get_sprint_context call to start with.',
       inputSchema: {
         sessionId: z.string().uuid().describe('Session id from list_agent_sessions or get_sprint_context.agentSession'),
       },
@@ -134,7 +135,7 @@ export function registerAgentSessionMcpTools(
     'reply_agent_session',
     {
       description:
-        'Answer in a session without a new draft: a clarifying question, an explanation, "done" for a non-plan request, or replies to 💬 you decline. For plan changes use propose_plan_patch(sessionId, replies) instead. close=true when the request is fully done and nothing is left on the board. options = 2–5 short answers the person picks with one click (a fork only they can decide); the pick comes back as their next message. The session then waits for the person.',
+        'Answer in a session without a new draft: a clarifying question, an explanation, "done" for a non-plan request, or replies to 💬 you decline. For plan changes use propose_plan_patch(sessionId, replies) instead. close=true when the request is fully done and nothing is left on the board. options = 2–5 short answers the person picks with one click (a fork only they can decide); the pick comes back as their next message. result (kind=dev sessions only) = the finished work: branch, commits, tests — message then says what you did and what to review. The session then waits for the person.',
       inputSchema: {
         close: z.boolean().optional().describe('Close the session (request done)'),
         message: z.string().max(2000).optional().describe('Text for the person'),
@@ -144,10 +145,11 @@ export function registerAgentSessionMcpTools(
         replies: AgentSessionRepliesSchema.optional().describe(
           'Answers to openComments: [{messageId, resolution: addressed|declined, text}]'
         ),
+        result: AgentDevResultSchema.optional().describe('Development session only: the finished work. Needs message'),
         sessionId: z.string().uuid().describe('Session id'),
       },
     },
-    async ({ close, message, options, replies, sessionId }) => {
+    async ({ close, message, options, replies, result, sessionId }) => {
       try {
         if (!canUsePlanner(input.profile)) {
           return toolError(new Error('forbidden: planner write requires organization admin or team membership'));
@@ -158,6 +160,9 @@ export function registerAgentSessionMcpTools(
         if (options?.length && (!message?.trim() || close)) {
           return toolError(new Error('validation_failed: options need a message and an open session (no close)'));
         }
+        if (result && !message?.trim()) {
+          return toolError(new Error('validation_failed: result needs a message: what you did and what to review'));
+        }
         const clientBrand = input.mcpClientId ? await resolveRegisteredMcpClientBrand(input.mcpClientId) : undefined;
         const session = await replyAgentSession({
           clientBrand,
@@ -167,6 +172,7 @@ export function registerAgentSessionMcpTools(
           organizationId: input.organizationId,
           ownerId: input.userId,
           replies: replies ?? [],
+          result,
           sessionId,
         });
         return toolJson(summarizeAgentSessionForAgent(session));

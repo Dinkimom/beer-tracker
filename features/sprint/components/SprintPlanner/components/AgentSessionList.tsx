@@ -11,7 +11,7 @@ const ROW_CLASS =
 
 /**
  * Список открытых сессий острова агента — на месте ленты чата. Сверху «Новая сессия», дальше
- * сессии, свежие сверху: точка — чья очередь (пульсирует, пока агент работает в мосте), подпись —
+ * сессии, свежие сверху (у сессий разработки — значок кода): точка — чья очередь (пульсирует, пока агент работает в мосте), подпись —
  * задача, что агент делает или что ждут тебя, пометка драфта на доске; синяя точка справа — ответ,
  * которого ты ещё не видел. Клик открывает сессию в чате.
  */
@@ -77,7 +77,12 @@ export function AgentSessionList({
                 />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-medium text-gray-900 dark:text-gray-100">{session.title}</span>
+                <span className="flex min-w-0 items-center gap-1 text-xs font-medium text-gray-900 dark:text-gray-100">
+                  {session.kind === 'dev' ? (
+                    <Icon aria-label={t('agentSession.devSession')} className="h-3 w-3 shrink-0 text-gray-500 dark:text-gray-400" name="code" />
+                  ) : null}
+                  <span className="truncate">{session.title}</span>
+                </span>
                 <span className="block truncate text-[11px] text-gray-500 dark:text-gray-400">{details}</span>
               </span>
               {unread.has(session.id) ? (

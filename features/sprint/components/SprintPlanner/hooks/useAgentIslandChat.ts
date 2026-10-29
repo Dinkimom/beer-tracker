@@ -63,6 +63,16 @@ export function useAgentIslandChat(sprintId: number | null) {
   if (!chatOpen && listOpen) {
     setListOpen(false);
   }
+  // Чат открыли на конкретной сессии (список, тост, «Код» в меню карточки) — показываем её.
+  const requested = target?.kind === 'session' ? target.sessionId : undefined;
+  const [handledRequest, setHandledRequest] = useState<string | undefined>(undefined);
+  if (requested !== handledRequest) {
+    setHandledRequest(requested);
+    if (requested) {
+      setPick(requested);
+      setListOpen(false);
+    }
+  }
 
   // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
   usePopoverDismiss(() => sprintPlannerUi.setAgentRequestTarget(null), {

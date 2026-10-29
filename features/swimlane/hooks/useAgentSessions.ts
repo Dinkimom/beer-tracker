@@ -104,7 +104,8 @@ export function useAgentSessions(sprintId: number | null | undefined) {
     queryClient.setQueryData<SprintAgentSessions>(queryKey, (prev) => upsertSession(prev, session));
     // Просьба или «переделать» — сессия ждёт агента: при включённом мосте зовём его сразу.
     // Не ждём /health: если мост лежит, запуск просто не примут, а полоска покажет, что он не отвечает.
-    if (session.status === 'waiting_agent' && bridge.enabled) {
+    // Сессии разработки мост пока не берёт: у его агента нет доступа к коду — их забирает агент в IDE.
+    if (session.status === 'waiting_agent' && session.kind === 'plan' && bridge.enabled) {
       bridge.run(session.id).catch(() => undefined);
     }
   };

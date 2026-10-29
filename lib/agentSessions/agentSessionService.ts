@@ -4,6 +4,7 @@ import type {
   AgentSessionReply,
   AgentSessionUserMessageInput,
 } from '@/lib/agentSessions/agentSession';
+import type { AgentDevResult } from '@/lib/agentSessions/agentSessionKind';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { agentMcpToolCallsFromBody } from '@/lib/agentSessions/agentActivity';
@@ -125,6 +126,7 @@ export async function createPlannerAgentSession(input: {
 }): Promise<AgentSession> {
   const sessionId = await createAgentSession({
     context: input.request.context,
+    kind: input.request.kind,
     organizationId: input.organizationId,
     origin: 'planner',
     ownerId: input.ownerId,
@@ -312,7 +314,10 @@ export async function recordDraftInAgentSession(input: {
   };
 }
 
-/** reply_agent_session: агент отвечает без нового драфта (уточнение, отказ, «готово»). */
+/**
+ * reply_agent_session: агент отвечает без нового драфта (уточнение, отказ, «готово»).
+ * `result` — итог сессии разработки: реплика уходит сообщением `result` с веткой, коммитами и тестами.
+ */
 export async function replyAgentSession(input: {
   clientBrand?: McpOAuthClientBrand;
   close?: boolean;
@@ -321,9 +326,13 @@ export async function replyAgentSession(input: {
   organizationId: string;
   ownerId: string;
   replies: readonly AgentSessionReply[];
+  result?: AgentDevResult;
   sessionId: string;
 }): Promise<AgentSession> {
   const session = await requireSession(input);
+  if (input.result && session.kind !== 'dev') {
+    throw new Error('validation_failed: result is only for a development session (kind=dev)');
+  }
   await insertReplies(session, input.replies, input.clientBrand);
   const text = input.message?.trim();
   if (text) {
@@ -331,8 +340,9 @@ export async function replyAgentSession(input: {
       authorId: null,
       authorKind: 'agent',
       clientBrand: input.clientBrand,
-      kind: 'message',
+      kind: input.result ? 'result' : 'message',
       options: input.options,
+      result: input.result ?? null,
       sessionId: session.id,
       text,
     });
