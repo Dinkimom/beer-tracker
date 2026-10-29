@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  agentBridgeUnansweredRun,
   agentBridgeClaudeArgs,
   agentBridgeStepFromStreamLine,
   agentBridgeTallyUsage,
@@ -15,6 +16,21 @@ import {
 const SESSION_ID = '3f2b8c1e-9a4d-4c2b-8e1f-0a1b2c3d4e5f';
 
 describe('agentBridge', () => {
+  it('reports a finished run only while the session still waits for the agent after the last ask', () => {
+    const id = '97a5e91c-9dc6-42fd-ab68-fc0fe5302663';
+    const ask = { authorKind: 'user', createdAt: '2026-10-30T00:30:00.000Z' };
+    const session = { id, messages: [ask], status: 'waiting_agent' };
+    const run = { at: Date.parse('2026-10-30T00:32:00.000Z'), sessionId: id, text: 'Тулов Beer Tracker нет' };
+    const health = { finished: [run], runs: [] };
+    expect(agentBridgeUnansweredRun(session, health)).toEqual(run);
+    // Агент ещё работает, уже ответил или прогон был до новой реплики — молчим.
+    expect(agentBridgeUnansweredRun(session, { ...health, runs: [{ sessionId: id, startedAt: 0, step: 'coding' }] })).toBeNull();
+    expect(agentBridgeUnansweredRun({ ...session, status: 'waiting_user' }, health)).toBeNull();
+    expect(
+      agentBridgeUnansweredRun({ ...session, messages: [ask, { ...ask, createdAt: '2026-10-30T00:40:00.000Z' }] }, health)
+    ).toBeNull();
+  });
+
   it('accepts only uuid session ids', () => {
     expect(isAgentSessionId(SESSION_ID)).toBe(true);
     expect(isAgentSessionId('rm -rf /')).toBe(false);

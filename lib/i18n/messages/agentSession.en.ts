@@ -87,6 +87,8 @@ export const agentSessionEn = {
     drafting: 'Building the draft',
     replying: 'Writing a reply',
   },
+  bridgeFailed: 'The agent could not start: {error}',
+  bridgeSilent: 'The agent finished without replying in the chat. Its last words:',
   bridgeRunFailed: 'Bridge did not accept the run',
   collapseChat: 'Collapse chat',
   skillsTitle: 'Or pick a scenario',

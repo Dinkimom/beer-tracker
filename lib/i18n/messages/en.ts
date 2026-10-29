@@ -177,11 +177,12 @@ export const enMessages = {
       bridgeOff: 'Off: requests are picked up by the agent in your AI chat',
       reposSection: 'Repositories for tasks',
       reposHint:
-        'The bridge takes tasks of these queues itself: it makes a working copy on the agent/<key> branch, the agent writes code and commits but never pushes. A new repository starts working once you confirm it in the bridge terminal.',
+        'The bridge takes tasks of these queues itself: it makes a working copy on the agent/<key> branch, the agent writes code and commits but never pushes. If a queue has several repositories, the agent decides from the task where to work, and asks in the chat when it cannot tell. A new repository starts working once you confirm it in the bridge terminal.',
       reposOffline: 'Start the bridge to set up repositories.',
       empty: 'None yet — development sessions are picked up by the agent in your IDE.',
-      queueLabel: 'Task queue',
-      queuePlaceholder: 'RND',
+      queuesLabel: 'Task queues',
+      queuesPlaceholder: 'RND, WEB',
+      queuesHint: 'Keys of the tasks done in this repository, comma-separated',
       pathLabel: 'Repository folder',
       pathPlaceholder: '~/work/app',
       add: 'Add a repository',
@@ -189,7 +190,7 @@ export const enMessages = {
       save: 'Save',
       errors: {
         notAGitRepo: 'Not a git repository: {path}',
-        invalidQueue: 'A queue is the task key prefix in Latin letters, e.g. RND: “{queue}”',
+        noQueues: 'Set the task queues for {path}',
       },
       saveFailed: 'Not saved: {error}',
       status: {

@@ -1,7 +1,7 @@
 /**
- * Репозитории для сессий разработки: какая очередь задач в какой папке. Список правят в планере
+ * Репозитории для сессий разработки и очереди задач, которые в них делают. Список правят в планере
  * (Настройки → Агент), мост хранит его в `~/.beer-tracker/agent-bridge.json` (или `AGENT_BRIDGE_CONFIG`).
- * Новая пара начинает работать после «y» в терминале моста: из браузера разрешить агенту папку нельзя.
+ * Новая папка начинает работать после «y» в терминале моста: из браузера разрешить агенту папку нельзя.
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -12,12 +12,15 @@ import { createInterface } from 'node:readline';
 import {
   type AgentBridgeRepoSettings,
   type AgentBridgeStoredRepo,
-  isAgentBridgeQueue,
   mergeAgentBridgeRepos,
+  parseAgentBridgeQueues,
   parseAgentBridgeRepoConfig,
 } from '@/lib/agentSessions/agentBridgeDev';
 
 const CONFIG_PATH = process.env.AGENT_BRIDGE_CONFIG?.trim() || join(homedir(), '.beer-tracker', 'agent-bridge.json');
+
+/** Папка состояния моста рядом с настройками: что он помнит о сессиях разработки. */
+export const BRIDGE_STATE_DIR = join(dirname(CONFIG_PATH), 'agent-bridge-sessions');
 
 /** Где искать репозитории для подсказок: домашняя папка и привычные папки с кодом, на один уровень. */
 const CANDIDATE_ROOTS = ['', 'Desktop', 'Documents', 'Developer', 'Projects', 'projects', 'work', 'code', 'src', 'dev', 'repos', 'git'];
@@ -47,14 +50,15 @@ function save() {
   writeFileSync(CONFIG_PATH, `${JSON.stringify({ repos: stored }, null, 2)}\n`);
 }
 
-/** Папка репозитория для задач очереди, если пара подтверждена и папка на месте. */
-export function readyRepo(queue: string): string | undefined {
-  const repo = stored.find((item) => item.queue === queue && item.confirmed);
-  return repo && isGitRepo(repo.path) ? repo.path : undefined;
+const isReady = (repo: AgentBridgeStoredRepo) => repo.confirmed && isGitRepo(repo.path);
+
+/** Папки репозиториев, где делают задачи очереди: разрешённые в терминале и на месте. */
+export function readyRepos(queue: string): string[] {
+  return stored.filter((repo) => isReady(repo) && repo.queues.includes(queue)).map((repo) => repo.path);
 }
 
 export function readyQueues(): string[] {
-  return stored.filter((repo) => readyRepo(repo.queue)).map((repo) => repo.queue);
+  return [...new Set(stored.filter(isReady).flatMap((repo) => repo.queues))];
 }
 
 function findCandidates(): string[] {
@@ -87,7 +91,7 @@ export function repoSettings(): AgentBridgeRepoSettings {
       } else if (repo.confirmed) {
         status = 'ready';
       }
-      return { path: repo.path, queue: repo.queue, status };
+      return { path: repo.path, queues: repo.queues, status };
     }),
   };
 }
@@ -97,23 +101,23 @@ const asking = new Set<string>();
 const askQueue: AgentBridgeStoredRepo[] = [];
 let prompt: ReturnType<typeof createInterface> | null = null;
 
-const keyOf = (repo: Pick<AgentBridgeStoredRepo, 'path' | 'queue'>) => `${repo.queue}=${repo.path}`;
+const keyOf = (repo: Pick<AgentBridgeStoredRepo, 'path'>) => repo.path;
 
 function askNext() {
   const repo = askQueue[0];
   if (!repo || !prompt) {
     return;
   }
-  prompt.question(`\nagent-bridge: разрешить агенту писать код и коммитить в ${repo.path} для задач ${repo.queue}? [y/N] `, (answer) => {
+  prompt.question(`\nagent-bridge: разрешить агенту писать код и коммитить в ${repo.path} (задачи ${repo.queues.join(', ')})? [y/N] `, (answer) => {
     askQueue.shift();
     asking.delete(keyOf(repo));
     const current = stored.find((item) => keyOf(item) === keyOf(repo));
     if (current && answer.trim().toLowerCase() === 'y') {
       current.confirmed = true;
-      process.stdout.write(`agent-bridge: задачи ${repo.queue} → ${repo.path}\n`);
+      process.stdout.write(`agent-bridge: ${repo.path} — разрешён\n`);
     } else if (current) {
       stored = stored.filter((item) => item !== current);
-      process.stdout.write(`agent-bridge: ${repo.queue} → ${repo.path} не разрешён\n`);
+      process.stdout.write(`agent-bridge: ${repo.path} — не разрешён\n`);
     }
     save();
     askNext();
@@ -138,14 +142,14 @@ function askForPending() {
   }
 }
 
-/** Строка из планера: очередь в верхнем регистре, путь — существующий git-репозиторий. */
-function parseRepoRow(item: { path?: unknown; queue?: unknown } | null): { error: string } | { path: string; queue: string } {
-  const queue = typeof item?.queue === 'string' ? item.queue.trim().toUpperCase() : '';
-  if (!isAgentBridgeQueue(queue)) {
-    return { error: `invalid_queue: ${queue || '—'}` };
-  }
+/** Строка из планера: путь — существующий git-репозиторий, хотя бы одна очередь. */
+function parseRepoRow(item: { path?: unknown; queues?: unknown } | null): { error: string } | { path: string; queues: string[] } {
   const path = typeof item?.path === 'string' && item.path.trim() ? expandPath(item.path) : '';
-  return path && isGitRepo(path) ? { path, queue } : { error: `not_a_git_repo: ${path || '—'}` };
+  if (!path || !isGitRepo(path)) {
+    return { error: `not_a_git_repo: ${path || '—'}` };
+  }
+  const queues = parseAgentBridgeQueues(item?.queues);
+  return queues.length > 0 ? { path, queues } : { error: `no_queues: ${path}` };
 }
 
 /** PUT /repos из планера: проверить, сохранить и спросить про новые пары. Ошибка — текстом. */
@@ -154,8 +158,8 @@ export function updateRepos(raw: unknown): AgentBridgeRepoSettings | { error: st
   if (!Array.isArray(list)) {
     return { error: 'repos must be a list' };
   }
-  const requested: Array<{ path: string; queue: string }> = [];
-  for (const item of list as Array<{ path?: unknown; queue?: unknown } | null>) {
+  const requested: Array<{ path: string; queues: string[] }> = [];
+  for (const item of list as Array<{ path?: unknown; queues?: unknown } | null>) {
     const row = parseRepoRow(item);
     if ('error' in row) {
       return row;
@@ -172,7 +176,7 @@ export function updateRepos(raw: unknown): AgentBridgeRepoSettings | { error: st
 export function announceRepos() {
   for (const repo of stored) {
     const state = repo.confirmed ? '' : ' (ждёт подтверждения)';
-    process.stdout.write(`  задачи ${repo.queue} → ${repo.path}${state}\n`);
+    process.stdout.write(`  ${repo.path} — задачи ${repo.queues.join(', ')}${state}\n`);
   }
   askForPending();
 }

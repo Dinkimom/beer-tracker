@@ -31,9 +31,20 @@ interface AgentBridgeRun {
   step: AgentBridgeStep;
 }
 
+/** Чем кончился последний прогон по сессии: время по часам моста, ошибка и последний текст агента. */
+export interface AgentBridgeFinishedRun {
+  at: number;
+  error?: string;
+  sessionId: string;
+  text: string;
+}
+
+export const AGENT_BRIDGE_FINISHED_TEXT_MAX = 600;
+
 interface AgentBridgeHealth {
   /** Очереди задач, для которых у моста есть репозиторий: их сессии разработки он берёт сам. */
   devQueues: string[];
+  finished: AgentBridgeFinishedRun[];
   /** Запуски CLI, которые идут сейчас. */
   runs: AgentBridgeRun[];
 }
@@ -225,6 +236,36 @@ function parseAgentBridgeRun(value: unknown): AgentBridgeRun | null {
   return { sessionId: run.sessionId, startedAt: run.startedAt, step: parseAgentBridgeStep(run.step) };
 }
 
+function parseAgentBridgeFinishedRun(value: unknown): AgentBridgeFinishedRun | null {
+  const run = value as Partial<AgentBridgeFinishedRun> | null;
+  if (!run || !isAgentSessionId(run.sessionId) || typeof run.at !== 'number') {
+    return null;
+  }
+  return {
+    at: run.at,
+    ...(typeof run.error === 'string' && run.error ? { error: run.error } : {}),
+    sessionId: run.sessionId,
+    text: typeof run.text === 'string' ? run.text.slice(-AGENT_BRIDGE_FINISHED_TEXT_MAX) : '',
+  };
+}
+
+/**
+ * Прогон моста кончился, а сессия всё ещё ждёт агента: агент не ответил в чат (упал, не нашёл
+ * тулов, закончил молча). Прогон должен быть позже последней реплики человека — иначе это итог
+ * прошлого запуска. null — показывать нечего (агент работает, ответил или прогона не было).
+ */
+export function agentBridgeUnansweredRun(
+  session: { id: string; messages: ReadonlyArray<{ authorKind: string; createdAt: string }>; status: string },
+  health: { finished: readonly AgentBridgeFinishedRun[]; runs: readonly AgentBridgeRun[] }
+): AgentBridgeFinishedRun | null {
+  if (session.status !== 'waiting_agent' || health.runs.some((run) => run.sessionId === session.id)) {
+    return null;
+  }
+  const run = health.finished.find((item) => item.sessionId === session.id);
+  const lastAsk = session.messages.findLast((message) => message.authorKind === 'user');
+  return run && (!lastAsk || run.at > Date.parse(lastAsk.createdAt)) ? run : null;
+}
+
 const SESSION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function isAgentSessionId(value: unknown): value is string {
@@ -338,10 +379,15 @@ export async function fetchAgentBridgeHealth(baseUrl: string): Promise<AgentBrid
     if (!response.ok) {
       return null;
     }
-    const data = (await response.json()) as { devQueues?: unknown; runs?: unknown };
+    const data = (await response.json()) as { devQueues?: unknown; finished?: unknown; runs?: unknown };
     const runs = Array.isArray(data.runs) ? data.runs.map(parseAgentBridgeRun) : [];
     const devQueues = Array.isArray(data.devQueues) ? data.devQueues.filter((queue) => typeof queue === 'string') : [];
-    return { devQueues, runs: runs.filter((run): run is AgentBridgeRun => run != null) };
+    const finished = Array.isArray(data.finished) ? data.finished.map(parseAgentBridgeFinishedRun) : [];
+    return {
+      devQueues,
+      finished: finished.filter((run): run is AgentBridgeFinishedRun => run != null),
+      runs: runs.filter((run): run is AgentBridgeRun => run != null),
+    };
   } catch {
     return null;
   }
@@ -372,7 +418,7 @@ export async function fetchAgentBridgeRepos(baseUrl: string): Promise<AgentBridg
 /** Сохранить репозитории в мосте; ошибка проверки (не git, кривая очередь) — текстом исключения. */
 export async function saveAgentBridgeRepos(
   baseUrl: string,
-  repos: ReadonlyArray<{ path: string; queue: string }>
+  repos: ReadonlyArray<{ path: string; queues: string[] }>
 ): Promise<AgentBridgeRepoSettings> {
   const response = await fetch(`${baseUrl}/repos`, {
     body: JSON.stringify({ repos }),

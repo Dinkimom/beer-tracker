@@ -1,5 +1,6 @@
 'use client';
 
+import type { AgentBridgeFinishedRun } from '@/lib/agentSessions/agentBridge';
 import type { AgentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +25,8 @@ type StartingRuns = Readonly<Record<string, number>>;
 const NO_STARTING: StartingRuns = {};
 
 const NO_QUEUES: readonly string[] = [];
+
+const NO_FINISHED: readonly AgentBridgeFinishedRun[] = [];
 
 /**
  * Локальный мост к Claude CLI. Включается вручную: без этого планер не стучится на 127.0.0.1
@@ -77,6 +80,8 @@ export function useAgentBridge() {
     checking: enabled && health.isPending,
     /** Очереди, для задач которых у моста есть репозиторий: их сессии разработки он запускает сам. */
     devQueues: data?.devQueues ?? NO_QUEUES,
+    /** Чем кончились последние прогоны по сессиям: по ним видно, что агент не ответил в чат. */
+    finished: data?.finished ?? NO_FINISHED,
     enabled,
     run,
     /** Идущие запуски (и только что отправленные): сессия, шаг агента, время старта. */
@@ -101,7 +106,7 @@ export function useAgentBridgeRepos(alive: boolean) {
     retry: false,
   });
   const save = useMutation({
-    mutationFn: (repos: ReadonlyArray<{ path: string; queue: string }>) =>
+    mutationFn: (repos: ReadonlyArray<{ path: string; queues: string[] }>) =>
       saveAgentBridgeRepos(AGENT_BRIDGE_DEFAULT_URL, repos),
     onSuccess: (data) => {
       queryClient.setQueryData(REPOS_QUERY_KEY, data);

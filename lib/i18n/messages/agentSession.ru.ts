@@ -88,6 +88,8 @@ export const agentSessionRu = {
     drafting: 'Собирает драфт',
     replying: 'Пишет ответ',
   },
+  bridgeFailed: 'Агент не смог начать: {error}',
+  bridgeSilent: 'Агент закончил, но не ответил в чат. Его последние слова:',
   bridgeRunFailed: 'Мост не принял запуск',
   skillsTitle: 'Или выбери сценарий',
   skillRemove: 'Убрать сценарий',

@@ -5,15 +5,17 @@ import { useId, useState } from 'react';
 import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentBridge, useAgentBridgeRepos } from '@/features/swimlane/hooks/useAgentBridge';
+import { parseAgentBridgeQueues } from '@/lib/agentSessions/agentBridgeDev';
 
 import { AgentBridgeRepoRow } from '../components/AgentBridgeRepoRow';
 import { Toggle } from '../components/Toggle';
 
 interface RepoDraft {
-  /** Ключ строки: очередь меняют прямо в поле, по ней строку не узнать. */
+  /** Ключ строки: путь меняют прямо в поле, по нему строку не узнать. */
   id: string;
   path: string;
-  queue: string;
+  /** Очереди как в поле: через запятую. */
+  queues: string;
 }
 
 let draftSeq = 0;
@@ -22,13 +24,17 @@ function newDraftId(): string {
   return `repo-${draftSeq}`;
 }
 
-const sameRepos = (a: readonly RepoDraft[], b: ReadonlyArray<Omit<RepoDraft, 'id'>>) =>
-  a.length === b.length && a.every((repo, index) => repo.queue === b[index]?.queue && repo.path === b[index]?.path);
+const queuesText = (queues: readonly string[]) => queues.join(', ');
+
+const sameRepos = (a: readonly RepoDraft[], b: ReadonlyArray<{ path: string; queues: string[] }>) =>
+  a.length === b.length &&
+  a.every((repo, index) => repo.path === b[index]?.path && repo.queues === queuesText(b[index]?.queues ?? []));
 
 /**
  * Настройки агента: локальный мост к Claude CLI (на связи ли, запускать ли его сразу при отправке)
- * и репозитории для сессий разработки — задачи какой очереди в какой папке. Список хранит мост
- * у себя (`~/.beer-tracker/agent-bridge.json`), новая пара работает после «y» в его терминале.
+ * и репозитории для сессий разработки с очередями задач, которые в них делают. У очереди бывает
+ * несколько репозиториев — тогда для задачи агент выбирает сам. Список хранит мост у себя
+ * (`~/.beer-tracker/agent-bridge.json`), новая папка работает после «y» в его терминале.
  */
 export function SettingsAgentTab() {
   const { t } = useI18n();
@@ -38,7 +44,7 @@ export function SettingsAgentTab() {
   const saved = repos.data?.repos ?? [];
   const [draft, setDraft] = useState<RepoDraft[] | null>(null);
   const [error, setError] = useState('');
-  const rows = draft ?? saved.map(({ path, queue }) => ({ id: `${queue}=${path}`, path, queue }));
+  const rows = draft ?? saved.map(({ path, queues }) => ({ id: path, path, queues: queuesText(queues) }));
   const dirty = draft != null && !sameRepos(draft, saved);
 
   const update = (next: RepoDraft[]) => {
@@ -48,8 +54,8 @@ export function SettingsAgentTab() {
 
   const save = () => {
     const filled = rows
-      .filter((repo) => repo.queue.trim() || repo.path.trim())
-      .map(({ path, queue }) => ({ path, queue }));
+      .filter((repo) => repo.queues.trim() || repo.path.trim())
+      .map(({ path, queues }) => ({ path, queues: parseAgentBridgeQueues(queues) }));
     repos
       .save(filled)
       .then(() => setDraft(null))
@@ -65,8 +71,8 @@ export function SettingsAgentTab() {
     if (code === 'not_a_git_repo') {
       return t('settings.agentTab.errors.notAGitRepo', { path: value });
     }
-    if (code === 'invalid_queue') {
-      return t('settings.agentTab.errors.invalidQueue', { queue: value });
+    if (code === 'no_queues') {
+      return t('settings.agentTab.errors.noQueues', { path: value });
     }
     return t('settings.agentTab.saveFailed', { error: message });
   };
@@ -106,7 +112,7 @@ export function SettingsAgentTab() {
                     key={repo.id}
                     candidatesId={candidatesId}
                     path={repo.path}
-                    queue={repo.queue}
+                    queues={repo.queues}
                     status={dirty ? null : (saved[index]?.status ?? null)}
                     onChange={(next) => update(rows.map((item, at) => (at === index ? { ...item, ...next } : item)))}
                     onRemove={() => update(rows.filter((_, at) => at !== index))}
@@ -123,7 +129,7 @@ export function SettingsAgentTab() {
             </datalist>
             {error ? <p className="text-xs text-red-600 dark:text-red-400">{error}</p> : null}
             <div className="flex items-center gap-2">
-              <Button type="button" variant="secondary" onClick={() => update([...rows, { id: newDraftId(), path: '', queue: '' }])}>
+              <Button type="button" variant="secondary" onClick={() => update([...rows, { id: newDraftId(), path: '', queues: '' }])}>
                 {t('settings.agentTab.add')}
               </Button>
               <Button disabled={!dirty || repos.saving} type="button" onClick={save}>

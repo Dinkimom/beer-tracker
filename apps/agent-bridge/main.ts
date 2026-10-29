@@ -19,15 +19,17 @@
  * `pnpm agent-bridge` читает их из `.env.agent-bridge.local` (пример — `.env.agent-bridge.example`).
  */
 
-import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { existsSync, readdirSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { homedir } from 'node:os';
-import { basename, delimiter, dirname, join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { createInterface } from 'node:readline';
 
 import {
   AGENT_BRIDGE_DEFAULT_MODEL,
+  AGENT_BRIDGE_FINISHED_TEXT_MAX,
+  type AgentBridgeFinishedRun,
   AGENT_BRIDGE_DEFAULT_PORT,
   agentBridgeClaudeArgs,
   agentBridgeStepFromStreamLine,
@@ -43,13 +45,17 @@ import {
 } from '@/lib/agentSessions/agentBridge';
 import {
   agentBridgeCliSessionId,
-  agentBridgeDevBranch,
   agentBridgeDevClaudeArgs,
+  agentBridgeRepoNames,
+  agentBridgeResultText,
+  agentBridgeRouteClaudeArgs,
   agentBridgeTaskQueue,
   isAgentBridgeTaskKey,
+  parseAgentBridgeRouteAnswer,
 } from '@/lib/agentSessions/agentBridgeDev';
 
-import { announceRepos, readyQueues, readyRepo, repoSettings, updateRepos } from './repoConfig';
+import { mcpConfigFor, prepareWorktree, readDevSession, rememberDevSession } from './devWorkspace';
+import { announceRepos, readyQueues, readyRepos, repoSettings, updateRepos } from './repoConfig';
 
 const port = Number(process.env.AGENT_BRIDGE_PORT) || AGENT_BRIDGE_DEFAULT_PORT;
 const targets = parseAgentBridgeTargets(process.env.AGENT_BRIDGE_TARGETS ?? '');
@@ -90,145 +96,190 @@ const devBash = (process.env.AGENT_BRIDGE_DEV_BASH ?? '')
   .split(',')
   .map((command) => command.trim())
   .filter(Boolean);
-/** git по полному пути из PATH, как и CLI: команда без пути — лишняя дыра для подмены. */
-const gitBin =
-  (process.env.PATH ?? '')
-    .split(delimiter)
-    .map((dir) => join(dir, 'git'))
-    .find((bin) => bin.startsWith('/') && existsSync(bin)) ?? '/usr/bin/git';
-
-function git(repo: string, ...args: string[]): string {
-  return execFileSync(gitBin, ['-C', repo, ...args], { stdio: ['ignore', 'pipe', 'pipe'] })
-    .toString()
-    .trim();
-}
-
-/**
- * Рабочая копия задачи: `<папка репо>/../.bt-agent/<репо>-<ключ>` на ветке `agent/<ключ>`.
- * Есть — та же (просьба «переделай» продолжает ветку); ветка есть, а копии нет — копия на ней;
- * иначе новая ветка от основной ветки origin, без origin — от HEAD репозитория.
- */
-function prepareWorktree(repo: string, taskKey: string): string {
-  const dir = join(dirname(repo), '.bt-agent', `${basename(repo)}-${taskKey}`);
-  if (existsSync(dir)) {
-    return dir;
-  }
-  mkdirSync(dirname(dir), { recursive: true });
-  const branch = agentBridgeDevBranch(taskKey);
-  let hasBranch = true;
-  try {
-    git(repo, 'rev-parse', '--verify', '--quiet', `refs/heads/${branch}`);
-  } catch {
-    hasBranch = false;
-  }
-  if (hasBranch) {
-    git(repo, 'worktree', 'add', dir, branch);
-    return dir;
-  }
-  let base = 'HEAD';
-  try {
-    base = git(repo, 'rev-parse', '--abbrev-ref', 'origin/HEAD');
-  } catch {
-    // origin без HEAD или без origin — от текущего HEAD.
-  }
-  git(repo, 'worktree', 'add', '-b', branch, dir, base);
-  return dir;
-}
-
-/** id разговора CLI по сессии лежит рядом с копией, а не в ней: агент не закоммитит его. */
-function cliSessionFile(worktree: string): string {
-  return `${worktree}.claude-session`;
-}
-
-function readCliSessionId(worktree: string): string | null {
-  try {
-    return readFileSync(cliSessionFile(worktree), 'utf8').trim() || null;
-  } catch {
-    return null;
-  }
-}
-
-/** Как запустить CLI: обычная сессия — в папке моста; сессия разработки — в worktree задачи. */
-function launchSpec(sessionId: string, mcpServer: string, taskKey: string | undefined) {
-  const repo = taskKey ? readyRepo(agentBridgeTaskQueue(taskKey)) : undefined;
-  if (!taskKey || !repo) {
-    return { args: agentBridgeClaudeArgs(sessionId, mcpServer, model), cwd: undefined, limitMs: timeoutMs };
-  }
-  const cwd = prepareWorktree(repo, taskKey);
-  const resumeId = readCliSessionId(cwd);
-  const args = agentBridgeDevClaudeArgs({ bash: devBash, mcpServer, model, resumeId, sessionId, taskKey });
-  return { args, cwd, limitMs: devTimeoutMs };
-}
-
 interface RunState {
   /** Нужен ещё один прогон после текущего: человек дописал, пока агент работал. */
   again: boolean;
+  /** Почему прогон не удался (CLI не запустился, таймаут, код ≠ 0, нет рабочей копии). */
+  error?: string;
   startedAt: number;
   step: AgentBridgeStep;
-  usage: AgentBridgeUsageTally;
+  /** Последний итоговый текст агента: если в чат он не ответил, человек увидит хотя бы его. */
+  text: string;
 }
 
 const running = new Map<string, RunState>();
+
+/** Чем кончился последний прогон по сессии — планер покажет, если агент так и не ответил в чат. */
+const finished = new Map<string, AgentBridgeFinishedRun>();
+
+/** Итоги старше этого планеру не нужны: сессию уже либо подхватили, либо забыли. */
+const FINISHED_KEEP_MS = 6 * 60 * 60_000;
+
+function recordFinished(sessionId: string, state: RunState) {
+  const now = Date.now();
+  for (const [id, run] of finished) {
+    if (now - run.at > FINISHED_KEEP_MS) {
+      finished.delete(id);
+    }
+  }
+  finished.set(sessionId, {
+    at: now,
+    ...(state.error ? { error: state.error } : {}),
+    sessionId,
+    text: state.text.slice(-AGENT_BRIDGE_FINISHED_TEXT_MAX),
+  });
+}
 
 function log(sessionId: string, message: string) {
   process.stdout.write(`[${new Date().toLocaleTimeString()}] ${sessionId.slice(0, 8)} ${message}\n`);
 }
 
-/** Сессия живёт на том стенде, откуда пришла просьба, — и MCP берём его. */
-function runSession(sessionId: string, mcpServer: string, taskKey?: string) {
-  const state: RunState = {
-    again: false,
-    startedAt: Date.now(),
-    step: 'starting',
-    usage: EMPTY_AGENT_BRIDGE_USAGE_TALLY,
-  };
-  running.set(sessionId, state);
-  let spec: ReturnType<typeof launchSpec>;
-  try {
-    spec = launchSpec(sessionId, mcpServer, taskKey);
-  } catch (error) {
-    running.delete(sessionId);
-    log(sessionId, `не подготовил рабочую копию ${taskKey}: ${error instanceof Error ? error.message : String(error)}`);
+interface CliRun {
+  args: string[];
+  cwd?: string;
+  label: string;
+  limitMs: number;
+  /** id разговора CLI из первого события — запомнить для `--resume`. */
+  onCliSession?: (cliSessionId: string) => void;
+}
+
+/**
+ * Один прогон CLI. stream-json: по строке на событие — шаг для планера, в консоль смена шага
+ * и токены в конце. Результат — итоговый текст агента (для прогона выбора репозитория).
+ */
+function runCli(sessionId: string, state: RunState, run: CliRun): Promise<string> {
+  return new Promise((resolveRun) => {
+    log(sessionId, run.cwd ? `${run.label} в ${run.cwd}` : run.label);
+    const startedAt = Date.now();
+    let usage: AgentBridgeUsageTally = EMPTY_AGENT_BRIDGE_USAGE_TALLY;
+    let result = '';
+    const child = spawn(claudeBin, run.args, { cwd: run.cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    const timer = setTimeout(() => {
+      log(sessionId, 'таймаут, останавливаю');
+      state.error = `timeout: ${Math.round(run.limitMs / 60_000)} min`;
+      child.kill('SIGTERM');
+    }, run.limitMs);
+    createInterface({ input: child.stdout }).on('line', (line) => {
+      const cliSessionId = run.onCliSession ? agentBridgeCliSessionId(line) : null;
+      if (cliSessionId) {
+        run.onCliSession?.(cliSessionId);
+      }
+      result = agentBridgeResultText(line) ?? result;
+      usage = tallyAgentBridgeUsage(usage, line);
+      const step = agentBridgeStepFromStreamLine(line);
+      if (step && step !== state.step) {
+        state.step = step;
+        log(sessionId, step);
+      }
+    });
+    child.stderr.on('data', (chunk: Buffer) => process.stderr.write(chunk));
+    let finished = false;
+    const finish = (detail: string) => {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      clearTimeout(timer);
+      const seconds = Math.round((Date.now() - startedAt) / 1000);
+      const total = agentBridgeTallyUsage(usage);
+      const cost = total.costUsd == null ? '' : `, $${total.costUsd.toFixed(3)}`;
+      log(sessionId, `${detail} за ${seconds} с, ${agentBridgeUsageTotal(total)} токенов${cost}`);
+      state.text = result || state.text;
+      resolveRun(result);
+    };
+    child.on('error', (error) => {
+      state.error = `cli_not_started: ${error.message}`;
+      finish(`не запустился: ${error.message}`);
+    });
+    child.on('close', (code) => {
+      if (code !== 0 && !state.error) {
+        state.error = `cli_exit: ${code ?? 'signal'}`;
+      }
+      finish(`готово, код ${code ?? '—'}`);
+    });
+  });
+}
+
+/**
+ * Репозиторий сессии разработки: единственный у очереди задачи, запомненный по сессии или выбранный
+ * агентом в коротком прогоне. null — агент не понял по задаче и спросил человека: ответ запустит снова.
+ */
+async function resolveRepo(sessionId: string, mcpServer: string, taskKey: string, state: RunState): Promise<string | null> {
+  const repos = readyRepos(agentBridgeTaskQueue(taskKey));
+  const remembered = readDevSession(sessionId).repo;
+  if (remembered && repos.includes(remembered)) {
+    return remembered;
+  }
+  if (repos.length <= 1) {
+    return repos[0] ?? null;
+  }
+  const names = agentBridgeRepoNames(repos);
+  const answer = parseAgentBridgeRouteAnswer(
+    await runCli(sessionId, state, {
+      args: agentBridgeRouteClaudeArgs({
+        mcpServer,
+        model,
+        repos: repos.map((path) => ({ name: names.get(path) ?? path, path })),
+        sessionId,
+        taskKey,
+      }),
+      label: `выбирает репозиторий для ${taskKey}`,
+      limitMs: timeoutMs,
+    }),
+    [...names.values()]
+  );
+  const repo = repos.find((path) => names.get(path) === answer) ?? null;
+  log(sessionId, repo ? `репозиторий: ${repo}` : 'репозиторий не выбран — агент спросил человека');
+  return repo;
+}
+
+async function runDevSession(sessionId: string, mcpServer: string, taskKey: string, state: RunState) {
+  const repo = await resolveRepo(sessionId, mcpServer, taskKey, state);
+  if (!repo) {
     return;
   }
-  log(sessionId, spec.cwd ? `claude запущен в ${spec.cwd} (${mcpServer})` : `claude запущен (${mcpServer})`);
-  const child = spawn(claudeBin, spec.args, { cwd: spec.cwd, stdio: ['ignore', 'pipe', 'pipe'] });
-  const timer = setTimeout(() => {
-    log(sessionId, 'таймаут, останавливаю');
-    child.kill('SIGTERM');
-  }, spec.limitMs);
-  // stream-json: по строке на событие. Шаг — для планера, в консоль — смена шага и токены в конце.
-  createInterface({ input: child.stdout }).on('line', (line) => {
-    const cliSessionId = spec.cwd ? agentBridgeCliSessionId(line) : null;
-    if (cliSessionId && spec.cwd) {
-      writeFileSync(cliSessionFile(spec.cwd), cliSessionId);
-    }
-    state.usage = tallyAgentBridgeUsage(state.usage, line);
-    const step = agentBridgeStepFromStreamLine(line);
-    if (step && step !== state.step) {
-      state.step = step;
-      log(sessionId, step);
-    }
+  const memory = readDevSession(sessionId);
+  // Разговор CLI живёт в своём репозитории: сменился репозиторий — начинаем заново.
+  const resumeId = memory.repo === repo ? (memory.cliSessionId ?? null) : null;
+  rememberDevSession(sessionId, { cliSessionId: resumeId, repo });
+  const mcpConfig = mcpConfigFor(mcpServer, process.cwd());
+  if (!mcpConfig) {
+    log(sessionId, `MCP-сервер ${mcpServer} не найден в настройках Claude — агент в рабочей копии останется без Beer Tracker`);
+  }
+  await runCli(sessionId, state, {
+    args: agentBridgeDevClaudeArgs({ bash: devBash, mcpConfig, mcpServer, model, resumeId, sessionId, taskKey }),
+    cwd: prepareWorktree(repo, taskKey),
+    label: `claude запущен (${mcpServer})`,
+    limitMs: devTimeoutMs,
+    onCliSession: (cliSessionId) => rememberDevSession(sessionId, { cliSessionId }),
   });
-  child.stderr.on('data', (chunk: Buffer) => process.stderr.write(chunk));
-  let finished = false;
-  const finish = (detail: string) => {
-    if (finished) {
-      return;
-    }
-    finished = true;
-    clearTimeout(timer);
-    const seconds = Math.round((Date.now() - state.startedAt) / 1000);
-    const usage = agentBridgeTallyUsage(state.usage);
-    const cost = usage.costUsd == null ? '' : `, $${usage.costUsd.toFixed(3)}`;
-    log(sessionId, `${detail} за ${seconds} с, ${agentBridgeUsageTotal(usage)} токенов${cost}`);
-    running.delete(sessionId);
-    if (state.again) {
-      runSession(sessionId, mcpServer, taskKey);
-    }
-  };
-  child.on('error', (error) => finish(`не запустился: ${error.message}`));
-  child.on('close', (code) => finish(`готово, код ${code ?? '—'}`));
+}
+
+/** Сессия живёт на том стенде, откуда пришла просьба, — и MCP берём его. */
+function runSession(sessionId: string, mcpServer: string, taskKey?: string) {
+  const state: RunState = { again: false, startedAt: Date.now(), step: 'starting', text: '' };
+  running.set(sessionId, state);
+  const work = taskKey
+    ? runDevSession(sessionId, mcpServer, taskKey, state)
+    : runCli(sessionId, state, {
+        args: agentBridgeClaudeArgs(sessionId, mcpServer, model),
+        label: `claude запущен (${mcpServer})`,
+        limitMs: timeoutMs,
+      });
+  work
+    .catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      state.error = `bridge_failed: ${message}`;
+      log(sessionId, `не запустился: ${message}`);
+    })
+    .finally(() => {
+      running.delete(sessionId);
+      recordFinished(sessionId, state);
+      if (state.again) {
+        runSession(sessionId, mcpServer, taskKey);
+      }
+    })
+    .catch(() => undefined);
 }
 
 function requestRun(sessionId: string, mcpServer: string, taskKey?: string) {
@@ -277,7 +328,7 @@ function parseRunRequest(body: string): { error: string } | { sessionId: string;
   if (taskKey === undefined) {
     return { sessionId };
   }
-  return isAgentBridgeTaskKey(taskKey) && readyRepo(agentBridgeTaskQueue(taskKey))
+  return isAgentBridgeTaskKey(taskKey) && readyRepos(agentBridgeTaskQueue(taskKey)).length > 0
     ? { sessionId, taskKey }
     : { error: 'unknown task queue' };
 }
@@ -287,7 +338,7 @@ type Route = (request: IncomingMessage, response: ServerResponse, origin: string
 const routes: Readonly<Record<string, Route>> = {
   'GET /health': (_request, response, origin) => {
     const runs = [...running].map(([sessionId, { startedAt, step }]) => ({ sessionId, startedAt, step }));
-    send(response, 200, origin, { devQueues: readyQueues(), runs });
+    send(response, 200, origin, { devQueues: readyQueues(), finished: [...finished.values()], runs });
   },
   'POST /run': async (request, response, origin, mcpServer) => {
     const run = parseRunRequest(await readBody(request));
@@ -341,7 +392,11 @@ server.listen(port, '127.0.0.1', () => {
   process.stdout.write(
     [
       `agent-bridge: http://127.0.0.1:${port}`,
-      ...[...targets].map(([origin, mcpServer]) => `  ${origin} → MCP ${mcpServer}`),
+      ...[...targets].map(([origin, mcpServer]) =>
+        mcpConfigFor(mcpServer, process.cwd())
+          ? `  ${origin} → MCP ${mcpServer}`
+          : `  ${origin} → MCP ${mcpServer} (не найден в ~/.claude.json и .mcp.json — сессии разработки останутся без Beer Tracker)`
+      ),
       `  CLI: ${claudeBin}, модель ${model}`,
       '',
     ].join('\n')

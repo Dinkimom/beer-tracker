@@ -7,10 +7,12 @@ import type { AgentSession } from '@/lib/agentSessions/agentSession';
 import { useI18n } from '@/contexts/LanguageContext';
 import { AgentComposer } from '@/features/swimlane/components/AgentComposer';
 import { useAgentBridge } from '@/features/swimlane/hooks/useAgentBridge';
+import { agentBridgeUnansweredRun } from '@/lib/agentSessions/agentBridge';
 
 import { useAgentChatDraft } from '../hooks/useAgentChatDraft';
 import { useAgentWaitProgress } from '../hooks/useAgentWaitProgress';
 
+import { AgentBridgeOutcomeNotice } from './AgentBridgeOutcomeNotice';
 import { AgentBridgeProgress } from './AgentBridgeProgress';
 import { AgentBridgeToggle } from './AgentBridgeToggle';
 import { AgentCallAgentBar } from './AgentCallAgentBar';
@@ -65,6 +67,7 @@ export function AgentSessionChat({
   const { progress, silentStep } = useAgentWaitProgress(session, bridgeRun);
   const draft = useAgentChatDraft({ onContextRemove, onContextSent, onCreated, origin, session, sprintId });
   const runSteps = new Map<string, AgentBridgeStep>(bridge.runs.map((run) => [run.sessionId, run.step]));
+  const unanswered = session ? agentBridgeUnansweredRun(session, bridge) : null;
 
   return (
     <div className="flex flex-col gap-2.5" data-agent-session-chat="">
@@ -102,6 +105,8 @@ export function AgentSessionChat({
           />
 
           {draft.showSkillPicker ? <AgentSkillPicker onPick={draft.setSkill} /> : null}
+
+          {unanswered ? <AgentBridgeOutcomeNotice run={unanswered} /> : null}
 
           {session?.status === 'waiting_agent' && !progress ? (
             <AgentCallAgentBar session={session} silentStep={silentStep} />
