@@ -353,6 +353,7 @@ export const ruMessages = {
           tag: 'Бейдж',
           dot: 'Точка',
           chip: 'Чип',
+          avatars: 'Аватары',
         },
         density: {
           regular: 'Три ячейки и шире',

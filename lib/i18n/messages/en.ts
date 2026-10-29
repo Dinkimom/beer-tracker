@@ -353,6 +353,7 @@ export const enMessages = {
           tag: 'Tag',
           dot: 'Dot',
           chip: 'Chip',
+          avatars: 'Avatars',
         },
         density: {
           regular: 'Three cells or wider',

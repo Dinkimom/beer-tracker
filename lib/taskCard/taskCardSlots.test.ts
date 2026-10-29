@@ -231,6 +231,15 @@ describe('resolveTaskCardSlots', () => {
   });
 });
 
+describe('tracker field avatars', () => {
+  it('keeps the avatars look of a tracker field', () => {
+    const layout = normalizeTaskCardSlotLayout({
+      customPlacements: [{ fieldId: 'reviewers', label: '', order: 10, presentation: 'avatars', slot: 'footer' }],
+    });
+    expect(layout.customPlacements[0].presentation).toBe('avatars');
+  });
+});
+
 describe('taskCardFieldsSuppressedByKind', () => {
   it('hides tracker fields on notes and the chooser, and title meta on local drafts', () => {
     const trackerMeta = ['key', 'priority', 'type', 'status', 'estimate'];

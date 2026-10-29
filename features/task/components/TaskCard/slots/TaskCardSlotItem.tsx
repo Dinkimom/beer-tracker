@@ -16,6 +16,8 @@ import { getStatusColors, resolvePaletteStatusKey } from '@/utils/statusColors';
 
 import { TaskCardFeatureLaneAssigneeChip } from '../components/TaskCardFeatureLaneAssigneeChip';
 
+import { TaskCardSlotUserAvatars } from './TaskCardSlotUserAvatars';
+
 interface TaskCardSlotItemProps {
   context: TaskCardSlotItemContext;
   item: ResolvedTaskCardSlotItem;
@@ -43,20 +45,32 @@ export function TaskCardSlotItem({ context, item, keyLinkProps, task }: TaskCard
     case 'type':
       return renderType(item, task.type);
     case 'custom':
-      return renderCustomField(item, task);
+      return renderCustomField(item, task, context);
     default:
       return null;
   }
 }
 
-function renderCustomField(item: ResolvedTaskCardSlotItem, task: Task) {
+function renderCustomField(item: ResolvedTaskCardSlotItem, task: Task, context: TaskCardSlotItemContext) {
   const value = item.customFieldId ? task.customFieldValues?.[item.customFieldId] : undefined;
-  if (!value) {
+  if (!value || !item.customFieldId) {
     return null;
   }
   const shown = applyTaskCardValueLabels(value, item.valueLabels);
   const text = customFieldCaption(item.label, shown);
   const title = customFieldCaption(item.label, value);
+  const users = task.customFieldUsers?.[item.customFieldId];
+  // В поле не люди — аватарам нечего показать, остаётся текст.
+  if (item.presentation === 'avatars' && users && users.length > 0) {
+    return (
+      <TaskCardSlotUserAvatars
+        developers={context.developers ?? []}
+        fieldId={item.customFieldId}
+        title={title}
+        users={users}
+      />
+    );
+  }
   if (item.presentation === 'tag') {
     return (
       <span

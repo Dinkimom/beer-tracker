@@ -2,7 +2,7 @@ import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrack
 import type { Task } from '@/types';
 import type { SprintObject, TrackerIssue } from '@/types/tracker';
 
-import { customFieldDisplayMap } from '@/lib/issueTrackerProvider/customFieldDisplayValue';
+import { customFieldTaskFields } from '@/lib/issueTrackerProvider/customFieldDisplayValue';
 import { issueTrackerIssueWebUrlFromBase } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import {
   mapTeam,
@@ -239,13 +239,12 @@ const TRACKER_ISSUE_MAPPED_KEYS = new Set([
   'updatedAt',
 ]);
 
-function customFieldValuesFromIssue(issue: TrackerIssue): Pick<Task, 'customFieldValues'> {
+function customFieldValuesFromIssue(issue: TrackerIssue): Pick<Task, 'customFieldUsers' | 'customFieldValues'> {
   const extra: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(issue)) {
     if (!TRACKER_ISSUE_MAPPED_KEYS.has(key)) {
       extra[key] = value;
     }
   }
-  const customFieldValues = customFieldDisplayMap(extra);
-  return customFieldValues ? { customFieldValues } : {};
+  return customFieldTaskFields(extra);
 }

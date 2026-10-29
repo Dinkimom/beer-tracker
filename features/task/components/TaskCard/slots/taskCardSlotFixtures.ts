@@ -1,5 +1,5 @@
 import type { TaskCardSlotAssignee } from './taskCardSlotItemContext';
-import type { Task } from '@/types';
+import type { Task, TaskCustomFieldUser } from '@/types';
 
 function task(partial: Partial<Task> & Pick<Task, 'id' | 'name'>): Task {
   return {
@@ -15,6 +15,12 @@ export const TASK_CARD_SLOT_ASSIGNEE: TaskCardSlotAssignee = {
   initialsVariant: 'back',
   label: 'Ada Lovelace',
 };
+
+/** Люди для превью поля трекера в виде «Аватары». */
+export const TASK_CARD_SLOT_SAMPLE_USERS: TaskCustomFieldUser[] = [
+  { id: 'sample-ada', name: 'Ada Lovelace' },
+  { id: 'sample-grace', name: 'Grace Hopper' },
+];
 
 export const taskCardSlotSampleInProgress: Task = task({
   customFieldValues: { customer: 'Northwind' },

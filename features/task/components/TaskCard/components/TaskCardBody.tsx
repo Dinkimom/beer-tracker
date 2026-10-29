@@ -123,6 +123,7 @@ export function TaskCardBody({
           label: bodyContext.assigneeDisplayName,
         }
       : undefined,
+    developers,
     estimateLabel,
     isDragging,
     parentLabel,

@@ -6,7 +6,7 @@ import type { Task } from '@/types';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TASK_CARD_DENSITIES } from '@/lib/taskCard/taskCardSlots';
 
-import { taskCardSlotSampleInProgress } from './taskCardSlotFixtures';
+import { TASK_CARD_SLOT_SAMPLE_USERS, taskCardSlotSampleInProgress } from './taskCardSlotFixtures';
 import { TaskCardSlotPreview } from './TaskCardSlotPreview';
 
 interface TaskCardSlotPreviewGalleryProps {
@@ -27,7 +27,7 @@ export function TaskCardSlotPreviewGallery({ layout, sample = null }: TaskCardSl
             key={density}
             density={density}
             layout={layout}
-            task={previewTask(density, sample)}
+            task={previewTask(density, sample, layout)}
           />
         ))}
       </div>
@@ -35,15 +35,36 @@ export function TaskCardSlotPreviewGallery({ layout, sample = null }: TaskCardSl
   );
 }
 
-function previewTask(density: TaskCardDensity, sample: { fieldId: string; value: string } | null): Task {
+function previewTask(
+  density: TaskCardDensity,
+  sample: { fieldId: string; value: string } | null,
+  layout: TaskCardSlotLayout
+): Task {
+  const task = withSampleUsers(taskCardSlotSampleInProgress, layout);
   if (density !== 'regular' || !sample) {
-    return taskCardSlotSampleInProgress;
+    return task;
   }
   return {
-    ...taskCardSlotSampleInProgress,
+    ...task,
     customFieldValues: {
-      ...taskCardSlotSampleInProgress.customFieldValues,
+      ...task.customFieldValues,
       [sample.fieldId]: sample.value,
     },
   };
+}
+
+/** Полю в виде «Аватары» в превью — образцовые люди, чтобы вид было видно. */
+function withSampleUsers(task: Task, layout: TaskCardSlotLayout): Task {
+  const avatarFields = layout.customPlacements.filter((placement) => placement.presentation === 'avatars');
+  if (avatarFields.length === 0) {
+    return task;
+  }
+  const names = TASK_CARD_SLOT_SAMPLE_USERS.map((user) => user.name).join(', ');
+  const customFieldValues = { ...task.customFieldValues };
+  const customFieldUsers = { ...task.customFieldUsers };
+  for (const placement of avatarFields) {
+    customFieldValues[placement.fieldId] = names;
+    customFieldUsers[placement.fieldId] = TASK_CARD_SLOT_SAMPLE_USERS;
+  }
+  return { ...task, customFieldUsers, customFieldValues };
 }

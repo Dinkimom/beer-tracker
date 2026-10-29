@@ -29,13 +29,14 @@ const TASK_CARD_FIELD_IDS = [
 ] as const;
 export type TaskCardFieldId = (typeof TASK_CARD_FIELD_IDS)[number];
 
-const TASK_CARD_PRESENTATIONS = ['hidden', 'text', 'link', 'icon', 'tag', 'dot'] as const;
+const TASK_CARD_PRESENTATIONS = ['hidden', 'text', 'link', 'icon', 'tag', 'dot', 'avatars'] as const;
 export type TaskCardPresentation = (typeof TASK_CARD_PRESENTATIONS)[number];
 
 export const TASK_CARD_DENSITIES = ['regular', 'narrow', 'compact'] as const;
 export type TaskCardDensity = (typeof TASK_CARD_DENSITIES)[number];
 
-const TASK_CARD_CUSTOM_PRESENTATIONS = ['hidden', 'text', 'tag'] as const;
+/** `avatars` — для поля с пользователями; если в поле не люди, карточка покажет текст. */
+const TASK_CARD_CUSTOM_PRESENTATIONS = ['hidden', 'text', 'tag', 'avatars'] as const;
 export type TaskCardCustomPresentation = (typeof TASK_CARD_CUSTOM_PRESENTATIONS)[number];
 
 const MAX_CUSTOM_FIELDS = 16;

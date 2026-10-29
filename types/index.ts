@@ -50,11 +50,19 @@ export interface TaskParent {
   self?: string;
 }
 
+/** Пользователь из поля трекера. `id` — как у сотрудника (accountId в Jira, id в Яндексе). */
+export interface TaskCustomFieldUser {
+  id: string;
+  name: string;
+}
+
 export interface Task {
   assignee?: string;
   // ID исполнителя
   assigneeName?: string;
   createdAt?: string;
+  /** Пользователи из полей трекера (пользователь или их список) — для показа аватарами. */
+  customFieldUsers?: Record<string, TaskCustomFieldUser[]>;
   /** Значения полей трекера вне встроенного набора карточки, уже приведённые к строке. */
   customFieldValues?: Record<string, string>;
   /** Признак/метка опасности релиза (кастомное поле Tracker dangerousRelease). */

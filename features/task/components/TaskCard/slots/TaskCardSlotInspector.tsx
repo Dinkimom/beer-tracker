@@ -130,7 +130,7 @@ function renderCustom(
         />
       </label>
       <div className="flex flex-wrap gap-1.5">
-        {(['tag', 'text'] as const satisfies readonly TaskCardPresentation[]).map((choice) => (
+        {(['tag', 'text', 'avatars'] as const satisfies readonly TaskCardPresentation[]).map((choice) => (
           <button
             key={choice}
             aria-pressed={placement.presentation === choice}

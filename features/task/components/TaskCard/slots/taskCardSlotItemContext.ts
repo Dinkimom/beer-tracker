@@ -1,4 +1,5 @@
 import type { AvatarInitialsVariant } from '@/components/Avatar';
+import type { Developer } from '@/types';
 
 export interface TaskCardSlotAssignee {
   avatarUrl?: string | null;
@@ -21,6 +22,8 @@ export interface TaskCardKeyLinkProps {
 
 export interface TaskCardSlotItemContext {
   assignee?: TaskCardSlotAssignee;
+  /** Сотрудники: аватары пользователей из полей трекера. */
+  developers?: readonly Developer[];
   displayId?: string;
   estimateLabel?: string;
   isDragging?: boolean;
