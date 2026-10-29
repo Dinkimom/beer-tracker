@@ -2,6 +2,36 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.28.0] — 2026-10-30
+
+### English
+
+- The agent can now do a task in code. «Agent» in the card menu opens a chat about the task with «Do it in code»: the request is prefilled, you can add to it, and the agent starts when you send it. It works on its own branch `agent/<key>`, runs the project checks, commits and sends the branch for review — it never pushes.
+- Review right in the chat: the result card shows the branch, the checks, the changed files with +/− (click a file to see its diff in place, or open it in VS Code) and «Push and open MR» — the bridge pushes on your click and opens the GitLab MR / GitHub PR page. What the agent did not do is listed separately with «Do it» buttons.
+- «What to hand to the agent» skill: the agent goes through the sprint and suggests simple tasks it can do on its own, with a reason for each. Tick them and «Hand off selected» starts one development session per task.
+- The board shows the agent's work: tasks in progress, waiting for you or ready for review get a badge on the card (click it on the swimlane to open the chat); suggested tasks get a dashed badge.
+- Several agent sessions at once: switch between them from the chat header (a dropdown with search, like in Claude Code); a new session no longer closes the previous one. The chat is now as wide as the toolbar.
+- Local agent bridge: Settings → Agent lists repositories with their task queues (several repositories per queue — the agent picks one), check commands (`{worktree}` = the working copy, e.g. to run checks in docker) and what to copy from the main folder. A new folder starts working after you confirm it in the bridge terminal. At most `AGENT_BRIDGE_MAX_PARALLEL` (2) agents run at once, the rest wait in a queue. When a run fails or the agent stays silent, the chat says so.
+- MCP: `get_task_brief` returns a task with everything the board knows about it (notes, arrows, feature, goals); `transition_issue` moves a task to «in progress» / «review» following the team's own workflow learned from neighbouring tasks; sprint context marks board cards whose issue is in another tracker sprint (`inTrackerSprint: false`).
+- Burndown: Jira status transitions are matched by id, so tasks burn down when the changelog and the status catalog use different languages.
+- Backlog: sticky section headers; an empty sprint suggests dragging tasks from the backlog.
+- Operators: two database migrations (`0003`, `0004`, new columns only) run automatically on start. For development sessions run `pnpm agent-bridge` on the developer's machine and add repositories in Settings → Agent; `AGENT_BRIDGE_REPOS` / `AGENT_BRIDGE_DEV_BASH` are not used.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.28.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Агент делает задачу в коде. «Агенту» в меню карточки открывает чат по задаче с выбором «Сделать в коде»: просьба уже в поле, её можно дописать, агент стартует по отправке. Работает в своей ветке `agent/<ключ>`, гоняет проверки проекта, коммитит и присылает ветку на ревью — сам не пушит.
+- Ревью прямо в чате: в карточке результата — ветка, проверки, изменённые файлы с +/− (клик раскрывает дифф на месте или открывает файл в VS Code) и «Запушить и открыть MR»: мост пушит по вашему клику и открывает страницу MR в GitLab / PR в GitHub. Что агент не сделал — отдельным списком с кнопкой «Доделать».
+- Скилл «Что отдать агенту»: агент разбирает спринт и предлагает простые задачи, которые сделает сам, с причиной по каждой. Отметьте нужные — «Отдать выбранные» запускает по сессии разработки на задачу.
+- Работа агента видна на доске: у задач в работе, ждущих вас и готовых к ревью — значок на карточке (на свимлейне клик открывает чат); у предложенных агентом — пунктирный.
+- Несколько сессий с агентом одновременно: переключение в заголовке чата (выпадающий список с поиском, как в Claude Code); новая сессия больше не закрывает прежнюю. Чат стал шириной в тулбар.
+- Локальный мост агента: Настройки → Агент — репозитории с очередями задач (у очереди может быть несколько репозиториев — агент выбирает сам), команды проверок (`{worktree}` — рабочая копия, например чтобы гонять проверки в docker) и что скопировать из основной папки. Новая папка работает после подтверждения в терминале моста. Одновременно — не больше `AGENT_BRIDGE_MAX_PARALLEL` (2) агентов, остальные ждут в очереди. Если прогон упал или агент промолчал, чат об этом скажет.
+- MCP: `get_task_brief` — задача со всем, что о ней знает доска (заметки, стрелки, фича, цели); `transition_issue` двигает задачу «в работу» / «на ревью» по флоу команды, выведенному из соседних задач; контекст спринта помечает карточки, чья задача в трекере уже в другом спринте (`inTrackerSprint: false`).
+- Burndown: переходы статусов Jira сопоставляются по id — задачи сгорают, даже когда история и справочник статусов на разных языках.
+- Бэклог: заголовки секций прилипают при прокрутке; в пустом спринте — подсказка перетащить задачи из бэклога.
+- Для администраторов: две миграции БД (`0003`, `0004`, только новые колонки) применяются сами при старте. Для сессий разработки — `pnpm agent-bridge` на машине разработчика и репозитории в Настройках → Агент; `AGENT_BRIDGE_REPOS` / `AGENT_BRIDGE_DEV_BASH` больше не используются.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.28.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.27.0] — 2026-10-29
 
 ### English
