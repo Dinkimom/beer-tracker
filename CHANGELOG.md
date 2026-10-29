@@ -2,6 +2,26 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.27.0] — 2026-10-29
+
+### English
+
+- Kanban has its own card layout: Settings → Planning → «Customize card» under the kanban options. Fields are arranged in slots like on the swimlane, with a preview of a card in a column. By default the card looks as before: no parent, the assignee on its own row, the status set by the column. Swimlane cards are unchanged.
+- A tracker field holding users (one or a list, Jira and Yandex Tracker) can be shown as «Avatars» on the card: up to three avatars, the photo of the employee with the same id, otherwise initials. A field without users stays text.
+- The «Incident severity» field is removed from the card and the sidebar. Show it, if needed, as a regular tracker field in the card settings.
+- Swimlane: a split task whose last segment ends on the last sprint day no longer adds an empty column after the sprint.
+- Local agent bridge: Claude CLI reads links from the chat via `WebFetch` and searches and reads Notion through the claude.ai Notion connector (read-only).
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.27.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- У канбана своя раскладка карточки: Настройки → Планирование → «Настроить карточку» в блоке канбана. Поля расставляются по слотам, как на свимлейне, с превью карточки в колонке. По умолчанию карточка как раньше: без родителя, исполнитель отдельной строкой, статус задаёт колонка. Карточки свимлейна не меняются.
+- Поле трекера с пользователями (один или список, Jira и Яндекс Трекер) можно показать на карточке как «Аватары»: до трёх аватаров, фото — у сотрудника с тем же id, иначе инициалы. Поле без людей остаётся текстом.
+- Поле «Критичность инцидента» убрано с карточки и из сайдбара. При необходимости его можно вывести как обычное поле трекера в настройке карточки.
+- Свимлейн: разрезанная задача, чей последний отрезок кончается в последний день спринта, больше не добавляет пустую колонку после спринта.
+- Локальный мост агента: Claude CLI читает ссылки из чата через `WebFetch`, ищет и читает Notion через коннектор claude.ai Notion (только чтение).
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.27.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.26.1] — 2026-10-29
 
 ### English
