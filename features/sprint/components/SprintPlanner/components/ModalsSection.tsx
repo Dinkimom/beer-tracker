@@ -15,14 +15,12 @@ import type { SprintListItem } from '@/types/tracker';
 import { observer } from 'mobx-react-lite';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo } from 'react';
-import toast from 'react-hot-toast';
 
 import { getPartsPerDay } from '@/constants';
-import { useI18n } from '@/contexts/LanguageContext';
 import { resolveSwimlaneAnnotationContextMenuVariant } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { ContextMenu } from '@/features/context-menu/components/ContextMenu';
 import { buildContextMenuParentOptions } from '@/features/context-menu/utils/buildContextMenuParentOptions';
-import { useAgentAvailable, useAgentSessions } from '@/features/swimlane/hooks/useAgentSessions';
+import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useRootStore } from '@/lib/layers';
 import {
@@ -140,28 +138,13 @@ export const ModalsSection = observer(function ModalsSection({
   onCloseTransitionModal,
   onTransitionSubmit,
 }: ModalsSectionProps) {
-  const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
   const agentAvailable = useAgentAvailable(selectedSprintId);
-  const agentSessions = useAgentSessions(selectedSprintId);
 
-  /** «Код» в меню карточки: сессия разработки по задаче сразу уходит агенту, чат открывается на ней. */
+  /** «Код» в меню карточки: чат с готовой просьбой по задаче — агент стартует, когда её отправят. */
   const delegateToAgent = (task: Task) => {
     const sprintName = sprints.find((sprint) => sprint.id === selectedSprintId)?.name;
-    agentSessions
-      .create({
-        context: { assigneeName: task.assigneeName, sprintName, summary: task.name, taskKey: task.id },
-        kind: 'dev',
-        taskId: task.id,
-        text: t('agentSession.devRequest', { key: task.id, summary: task.name }),
-        title: task.name,
-      })
-      .then((created) => {
-        if (created) {
-          sprintPlannerUi.setAgentRequestTarget({ kind: 'session', sessionId: created.id });
-        }
-      })
-      .catch(() => toast.error(t('agentSession.submitFailed')));
+    sprintPlannerUi.setAgentRequestTarget({ kind: 'dev', sprintName, task });
   };
   const contextMenu = sprintPlannerUi.contextMenu;
   const presenceLocked = useSprintCardPresenceLocked(contextMenu?.task.id ?? '');

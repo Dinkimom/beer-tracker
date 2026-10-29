@@ -11,6 +11,8 @@ import {
   AGENT_BRIDGE_DEFAULT_URL,
   fetchAgentBridgeHealth,
   fetchAgentBridgeRepos,
+  fetchAgentBridgeWorkspace,
+  pushAgentBridgeBranch,
   runAgentBridgeSession,
   saveAgentBridgeRepos,
 } from '@/lib/agentSessions/agentBridge';
@@ -106,7 +108,7 @@ export function useAgentBridgeRepos(alive: boolean) {
     retry: false,
   });
   const save = useMutation({
-    mutationFn: (repos: ReadonlyArray<{ path: string; queues: string[] }>) =>
+    mutationFn: (repos: ReadonlyArray<{ checks: string[]; path: string; queues: string[] }>) =>
       saveAgentBridgeRepos(AGENT_BRIDGE_DEFAULT_URL, repos),
     onSuccess: (data) => {
       queryClient.setQueryData(REPOS_QUERY_KEY, data);
@@ -115,3 +117,28 @@ export function useAgentBridgeRepos(alive: boolean) {
   });
   return { data: query.data ?? null, save: save.mutateAsync, saving: save.isPending };
 }
+
+/**
+ * Рабочая копия сессии разработки у моста и её живое состояние в git — для ревью в карточке
+ * результата; `push` — запушить ветку (по клику человека) и вернуть ссылку на создание MR.
+ * Пока агент работает, состояние обновляется вместе с опросом моста.
+ */
+export function useAgentBridgeWorkspace(sessionId: string | null) {
+  const bridge = useAgentBridge();
+  const queryClient = useQueryClient();
+  const queryKey = ['agentBridge', 'workspace', sessionId] as const;
+  const working = bridge.runs.some((run) => run.sessionId === sessionId);
+  const query = useQuery({
+    enabled: bridge.alive && sessionId != null,
+    queryFn: () => (sessionId ? fetchAgentBridgeWorkspace(AGENT_BRIDGE_DEFAULT_URL, sessionId) : null),
+    queryKey,
+    refetchInterval: working ? 5000 : false,
+    retry: false,
+  });
+  const push = useMutation({
+    mutationFn: () => (sessionId ? pushAgentBridgeBranch(AGENT_BRIDGE_DEFAULT_URL, sessionId) : Promise.resolve(null)),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
+  });
+  return { push: push.mutateAsync, pushing: push.isPending, workspace: query.data ?? null };
+}
+

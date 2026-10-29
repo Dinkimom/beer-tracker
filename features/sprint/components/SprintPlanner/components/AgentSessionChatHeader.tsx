@@ -17,6 +17,7 @@ const HEADER_ICON_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !w-6
  */
 export function AgentSessionChatHeader({
   listOpen,
+  newTitle,
   otherUnread,
   session,
   sessionCount,
@@ -24,6 +25,8 @@ export function AgentSessionChatHeader({
   onToggleList,
 }: {
   listOpen: boolean;
+  /** Заголовок ещё не созданной сессии (по умолчанию — «Новая просьба агенту»). */
+  newTitle?: string;
   /** Непрочитанный ответ в сессии, которая сейчас не показана. */
   otherUnread: boolean;
   session: AgentSession | null;
@@ -47,7 +50,7 @@ export function AgentSessionChatHeader({
         onClick={onToggleList}
       >
         <h3 className="min-w-0 truncate text-xs font-semibold text-gray-900 dark:text-gray-100">
-          {listOpen ? t('agentSession.sessionsAria') : (session?.title ?? t('agentSession.newSessionTitle'))}
+          {listOpen ? t('agentSession.sessionsAria') : (session?.title ?? newTitle ?? t('agentSession.newSessionTitle'))}
         </h3>
         {sessionCount > 0 ? (
           <span className="shrink-0 rounded-full bg-gray-500/[0.12] px-1.5 text-[10px] font-semibold leading-4 text-gray-600 dark:bg-white/[0.1] dark:text-gray-300">

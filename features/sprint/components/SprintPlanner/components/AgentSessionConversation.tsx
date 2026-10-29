@@ -113,6 +113,15 @@ function replyOptionsFor(
   );
 }
 
+/**
+ * Куда прокрутить ленту: вниз, а если последняя реплика выше окна ленты (длинный отчёт агента) —
+ * к её началу, как в AI-чатах: итог работы и кнопки ревью стоят в начале ответа.
+ */
+function scrollTargetFor(list: HTMLElement): number {
+  const last = [...list.querySelectorAll<HTMLElement>('li[data-agent-session-message]')].at(-1);
+  return last && last.offsetHeight > list.clientHeight ? last.offsetTop - 8 : list.scrollHeight;
+}
+
 interface ScrollEdges {
   bottom: boolean;
   top: boolean;
@@ -135,6 +144,7 @@ export function AgentSessionConversation({
   empty,
   emptyTitle,
   messages,
+  sessionId,
   status,
   waitingDetail,
   onPickOption,
@@ -142,6 +152,8 @@ export function AgentSessionConversation({
   empty: string;
   emptyTitle?: string;
   messages: readonly AgentSessionMessage[];
+  /** Сессия ленты: карточка результата спрашивает у моста её рабочую копию. */
+  sessionId?: string;
   status?: AgentSessionStatus;
   waitingDetail?: ReactNode;
   /** Ответ кнопкой на последний вопрос агента. */
@@ -181,8 +193,8 @@ export function AgentSessionConversation({
     if (!list) {
       return;
     }
-    // При открытии — сразу вниз, дальше — плавно к новой реплике.
-    list.scrollTo({ behavior: scrolledRef.current ? 'smooth' : 'auto', top: list.scrollHeight });
+    // При открытии — сразу, дальше — плавно к новой реплике.
+    list.scrollTo({ behavior: scrolledRef.current ? 'smooth' : 'auto', top: scrollTargetFor(list) });
     scrolledRef.current = true;
     // Плавная прокрутка доедет сама и обновит края через onScroll; здесь — для мгновенной и без прокрутки.
     const next = readScrollEdges(list);
@@ -206,7 +218,7 @@ export function AgentSessionConversation({
     // -mr-3 pr-3: скроллбар уходит в паддинг панели (p-3) и встаёт у её правой границы, а не поверх реплик.
     <ol
       ref={listRef}
-      className="agent-chat-scroll -mr-3 max-h-[min(22rem,50vh)] space-y-2.5 overflow-y-auto pr-3"
+      className="agent-chat-scroll relative -mr-3 max-h-[min(30rem,calc(100vh-30rem))] space-y-2.5 overflow-y-auto pr-3"
       data-agent-session-conversation=""
       data-fade-bottom={edges.bottom ? '' : undefined}
       data-fade-top={edges.top ? '' : undefined}
@@ -222,10 +234,18 @@ export function AgentSessionConversation({
             brand={message.clientBrand}
             caption={messageCaption(message, versions.get(message.id) ?? 0, t)}
             card={message.kind === 'draft'}
-            footer={
-              message.result ? <AgentDevResultCard result={message.result} /> : replyOptionsFor(messages, index, status, onPickOption)
-            }
+            footer={replyOptionsFor(messages, index, status, onPickOption)}
             from={message.authorKind}
+            // Итог работы — первым: ветка и кнопки ревью видны без прокрутки длинного отчёта.
+            header={
+              message.result ? (
+                <AgentDevResultCard
+                  result={message.result}
+                  sessionId={sessionId ?? null}
+                  onAsk={status === 'waiting_user' ? onPickOption : undefined}
+                />
+              ) : undefined
+            }
             placeholder={t('agentSession.kindRedo')}
             status={messageStatus(message, t)}
             text={message.text}

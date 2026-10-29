@@ -4,6 +4,7 @@ import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
 import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
+import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -17,8 +18,12 @@ import { agentSkillTitle } from '../utils/agentSkillCaption';
 function composerPlaceholder(
   session: AgentSession | null,
   skill: AgentSessionSkill | null,
+  dev: AgentDevRequest | null,
   t: (key: string) => string
 ): string {
+  if (dev) {
+    return t('agentSession.devPlaceholder');
+  }
   if (skill) {
     return t('agentSession.skillNotePlaceholder');
   }
@@ -29,9 +34,11 @@ function composerPlaceholder(
  * Черновик чата с агентом: текст, «@»-упоминания, скилл и плашки контекста (`origin.chips`).
  * `send` дописывает реплику в `session` или создаёт новую сессию; плашки уходят с репликой
  * и очищаются (`onContextSent`). Со скиллом текст необязателен — репликой станет его название;
- * `pickOption` отвечает на вопрос агента выбранным вариантом.
+ * `pickOption` отвечает на вопрос агента выбранным вариантом. `dev` — задача агенту в работу («Код»):
+ * поле уже с просьбой по задаче, её можно дописать; отправка создаёт сессию разработки.
  */
 export function useAgentChatDraft({
+  dev = null,
   origin,
   session,
   sprintId,
@@ -39,6 +46,7 @@ export function useAgentChatDraft({
   onContextSent,
   onCreated,
 }: {
+  dev?: AgentDevRequest | null;
   origin: AgentSessionChatOrigin;
   session: AgentSession | null;
   sprintId: number;
@@ -50,7 +58,9 @@ export function useAgentChatDraft({
 }) {
   const { t } = useI18n();
   const sessions = useAgentSessions(sprintId);
-  const [text, setText] = useState('');
+  const [text, setText] = useState(() =>
+    dev ? t('agentSession.devRequest', { key: dev.task.id, summary: dev.task.name }) : ''
+  );
   const [mentions, setMentions] = useState<AgentMention[]>([]);
   const [skill, setSkill] = useState<AgentSessionSkill | null>(null);
   const busy = sessions.creating || sessions.posting;
@@ -79,14 +89,33 @@ export function useAgentChatDraft({
         .catch(() => toast.error(t('agentSession.sendFailed')));
       return;
     }
+    const devSession = dev
+      ? {
+          context: { assigneeName: dev.task.assigneeName, sprintName: dev.sprintName, summary: dev.task.name, taskKey: dev.task.id },
+          kind: 'dev' as const,
+          taskId: dev.task.id,
+          title: dev.task.name,
+        }
+      : null;
     sessions
-      .create({ ...message, context: origin.context ?? {}, taskId: origin.taskId, title: skillTitle })
+      .create({ ...message, context: origin.context ?? {}, taskId: origin.taskId, title: skillTitle, ...devSession })
       .then((created) => {
         reset();
         onCreated(created?.id ?? null);
       })
       .catch(() => toast.error(t('agentSession.submitFailed')));
   };
+
+  /** Пустая лента: что будет дальше — у задачи агенту, у новой просьбы за чужим драфтом и у обычной. */
+  let empty: { text: string; title?: string } = {
+    text: t('agentSession.emptyChat'),
+    title: t('agentSession.emptyChatTitle'),
+  };
+  if (dev) {
+    empty = { text: t('agentSession.devEmpty', { key: dev.task.id }), title: t('agentSession.devEmptyTitle') };
+  } else if (sessions.draftSession != null && sessions.draftSession.id !== session?.id) {
+    empty = { text: t('agentSession.queuedHint') };
+  }
 
   const pickOption = (option: string) => {
     if (busy || !session) {
@@ -100,11 +129,12 @@ export function useAgentChatDraft({
   return {
     busy,
     context,
-    /** На доске драфт другой сессии: план здесь агент поменяет после него. */
-    hasDraftSession: sessions.draftSession != null && sessions.draftSession.id !== session?.id,
+    empty,
     mentions,
+    /** Заголовок чата, пока сессии нет: у задачи агенту — её ключ. */
+    newTitle: dev ? t('agentSession.devTitle', { key: dev.task.id }) : undefined,
     pickOption,
-    placeholder: composerPlaceholder(session, skill, t),
+    placeholder: composerPlaceholder(session, skill, dev, t),
     send,
     removeContext: (item: AgentMention) => {
       const chip = chips.find((candidate) => candidate.mention === item);
@@ -116,8 +146,10 @@ export function useAgentChatDraft({
     setSkill,
     setText,
     skill,
+    /** Сценарии («/») — про план спринта: у задачи агенту в работу и в сессии разработки их нет. */
+    skillsEnabled: !dev && session?.kind !== 'dev',
     /** Карточки сценариев — в пустом чате новой сессии, пока скилл не выбран («/» работает всегда). */
-    showSkillPicker: !session && !skill,
+    showSkillPicker: !session && !skill && !dev,
     text,
   };
 }

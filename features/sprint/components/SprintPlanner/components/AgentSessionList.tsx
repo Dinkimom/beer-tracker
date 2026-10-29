@@ -43,7 +43,7 @@ export function AgentSessionList({
   };
 
   return (
-    <ul aria-label={t('agentSession.sessionsAria')} className="agent-chat-scroll -mr-3 max-h-[min(22rem,50vh)] space-y-0.5 overflow-y-auto pr-3" data-agent-session-list="">
+    <ul aria-label={t('agentSession.sessionsAria')} className="agent-chat-scroll -mr-3 max-h-[min(30rem,calc(100vh-30rem))] space-y-0.5 overflow-y-auto pr-3" data-agent-session-list="">
       <li>
         <button
           aria-current={currentId == null ? 'true' : undefined}

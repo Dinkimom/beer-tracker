@@ -38,6 +38,8 @@ function isAgentBridgeQueue(value: unknown): value is string {
  * такого разрешения не даёт, иначе любой скрипт на странице планера мог бы добавить свою папку.
  */
 export interface AgentBridgeStoredRepo {
+  /** Команды проверок проекта (тесты, линтеры): агенту можно их запускать, и он прогоняет их перед ответом. */
+  checks: string[];
   confirmed: boolean;
   path: string;
   queues: string[];
@@ -49,13 +51,25 @@ type AgentBridgeRepoStatus = 'missing' | 'pending' | 'ready';
 export interface AgentBridgeRepoSettings {
   /** Git-репозитории, которые мост нашёл в домашней папке: подсказки для поля пути. */
   candidates: string[];
-  repos: Array<{ path: string; queues: string[]; status: AgentBridgeRepoStatus }>;
+  repos: Array<{ checks: string[]; path: string; queues: string[]; status: AgentBridgeRepoStatus }>;
 }
 
 /** Очереди из поля настроек или файла: ключи латиницей, без повторов. */
 export function parseAgentBridgeQueues(raw: unknown): string[] {
   const parts = Array.isArray(raw) ? raw : String(raw ?? '').split(/[\s,;]+/);
   return [...new Set(parts.map((part) => String(part).trim().toUpperCase()).filter(isAgentBridgeQueue))];
+}
+
+const CHECKS_MAX = 20;
+
+/**
+ * Команды проверок: по строке на команду. Каждая станет правилом `Bash(<команда>:*)`, поэтому
+ * скобки и запятые (ломают правило) не пускаем.
+ */
+export function parseAgentBridgeChecks(raw: unknown): string[] {
+  const parts = Array.isArray(raw) ? raw : String(raw ?? '').split('\n');
+  const commands = parts.map((part) => String(part).trim()).filter((part) => part && part.length <= 200 && !/[(),]/.test(part));
+  return [...new Set(commands)].slice(0, CHECKS_MAX);
 }
 
 /** Файл настроек моста; битые строки пропускаем, на папку — одна запись. */
@@ -68,7 +82,12 @@ export function parseAgentBridgeRepoConfig(raw: unknown): AgentBridgeStoredRepo[
   for (const item of list as Array<Partial<AgentBridgeStoredRepo> | null>) {
     const queues = parseAgentBridgeQueues(item?.queues);
     if (item && typeof item.path === 'string' && item.path && queues.length > 0) {
-      byPath.set(item.path, { confirmed: item.confirmed === true, path: item.path, queues });
+      byPath.set(item.path, {
+        checks: parseAgentBridgeChecks(item.checks),
+        confirmed: item.confirmed === true,
+        path: item.path,
+        queues,
+      });
     }
   }
   return [...byPath.values()];
@@ -80,12 +99,18 @@ export function parseAgentBridgeRepoConfig(raw: unknown): AgentBridgeStoredRepo[
  */
 export function mergeAgentBridgeRepos(
   current: readonly AgentBridgeStoredRepo[],
-  requested: ReadonlyArray<{ path: string; queues: string[] }>
+  requested: ReadonlyArray<{ checks?: string[]; path: string; queues: string[] }>
 ): AgentBridgeStoredRepo[] {
   const byPath = new Map<string, AgentBridgeStoredRepo>();
-  for (const { path, queues } of requested) {
+  for (const { checks = [], path, queues } of requested) {
     const confirmed = current.some((repo) => repo.path === path && repo.confirmed);
-    byPath.set(path, { confirmed, path, queues: [...new Set([...(byPath.get(path)?.queues ?? []), ...queues])] });
+    const merged = byPath.get(path);
+    byPath.set(path, {
+      checks: [...new Set([...(merged?.checks ?? []), ...checks])],
+      confirmed,
+      path,
+      queues: [...new Set([...(merged?.queues ?? []), ...queues])],
+    });
   }
   return [...byPath.values()];
 }
@@ -122,13 +147,46 @@ const DEV_ALLOWED_TOOLS = [
 
 const DEV_DENIED_TOOLS = ['apply_plan_patch', 'propose_plan_patch', 'apply_retro_board'] as const;
 
-function agentBridgeDevPrompt(input: { mcpServer: string; resume: boolean; sessionId: string; taskKey: string }): string {
+/**
+ * Чтение из коннекторов claude.ai: в задачах ссылки на треды Slack, страницы Notion и Confluence,
+ * связанные задачи Jira. Только чтение; нет коннектора — нет и тулов, правило ни на что не влияет.
+ */
+const DEV_READ_CONNECTOR_TOOLS = [
+  'mcp__claude_ai_Slack__slack_read_thread',
+  'mcp__claude_ai_Slack__slack_read_channel',
+  'mcp__claude_ai_Slack__slack_read_canvas',
+  'mcp__claude_ai_Slack__slack_read_file',
+  'mcp__claude_ai_Slack__slack_search_public_and_private',
+  'mcp__claude_ai_Notion__notion-search',
+  'mcp__claude_ai_Notion__notion-fetch',
+  'mcp__claude_ai_Atlassian_MCP__getJiraIssue',
+  'mcp__claude_ai_Atlassian_MCP__getConfluenceContent',
+  'mcp__claude_ai_Atlassian_MCP__searchConfluence',
+];
+
+/** Команда в обратных кавычках — так агент не спутает её с текстом. */
+const inlineCode = (command: string) => ['`', command, '`'].join('');
+
+function checksSentence(checks: readonly string[]): string {
+  return checks.length > 0
+    ? `Проверки этого репозитория (запусти те, что касаются изменений, до коммита): ${checks.map(inlineCode).join(', ')}.`
+    : 'Команды проверок для репозитория не настроены: если проверку из правил проекта запустить не дали, назови её в ответе и поставь tests: not_run.';
+}
+
+function agentBridgeDevPrompt(input: {
+  checks: readonly string[];
+  mcpServer: string;
+  resume: boolean;
+  sessionId: string;
+  taskKey: string;
+}): string {
   const scope = `Из тулов Beer Tracker используй только mcp__${input.mcpServer}__*.`;
   if (input.resume) {
     return [
       `В сессии разработки ${input.sessionId} в Beer Tracker новые сообщения человека.`,
       scope,
       'Прочитай их через get_agent_session и продолжи работу в этой же ветке.',
+      checksSentence(input.checks),
       'Итог — reply_agent_session; если код менялся — с result.',
     ].join(' ');
   }
@@ -137,7 +195,8 @@ function agentBridgeDevPrompt(input: { mcpServer: string; resume: boolean; sessi
     `Обработай сессию разработки ${input.sessionId} в Beer Tracker — задачу ${input.taskKey}.`,
     scope,
     'Прочитай сессию через get_agent_session и следуй её hint: get_task_brief, transition_issue, код, проверки проекта, коммиты в этой ветке, reply_agent_session с result.',
-    'Ссылки из задачи читай через WebFetch.',
+    checksSentence(input.checks),
+    'Ссылки из задачи читай через WebFetch; Slack, Notion и Confluence — через их коннекторы, если они подключены.',
     'Не делай push и не открывай PR: ветку смотрит человек.',
     'Если задача неясна или заблокирована — спроси через reply_agent_session с options, не угадывай.',
   ].join(' ');
@@ -145,12 +204,12 @@ function agentBridgeDevPrompt(input: { mcpServer: string; resume: boolean; sessi
 
 /**
  * Аргументы `claude` для сессии разработки: запускается в worktree задачи. Правки — режим
- * `acceptEdits` (только внутри рабочей папки), Bash — git из списка выше плюс `bash` из конфига
- * моста и правила `.claude/settings.json` самого репозитория. `resumeId` — продолжить прошлый
+ * `acceptEdits` (только внутри рабочей папки), Bash — git из списка выше плюс команды проверок
+ * репозитория (Настройки → Агент) и правила `.claude/settings.json` самого репозитория. `resumeId` — продолжить прошлый
  * разговор CLI по этой сессии, а не начинать заново.
  */
 export function agentBridgeDevClaudeArgs(input: {
-  bash: readonly string[];
+  checks: readonly string[];
   /** `--mcp-config` с сервером Beer Tracker: в worktree его может не быть в настройках CLI. */
   mcpConfig: string | null;
   mcpServer: string;
@@ -180,8 +239,9 @@ export function agentBridgeDevClaudeArgs(input: {
       'Grep',
       'ToolSearch',
       'WebFetch',
-      ...[...DEV_GIT_COMMANDS, ...input.bash].map(bash),
+      ...[...DEV_GIT_COMMANDS, ...input.checks].map(bash),
       ...DEV_ALLOWED_TOOLS.map(tool),
+      ...DEV_READ_CONNECTOR_TOOLS,
     ].join(','),
     '--disallowedTools',
     [...DEV_DENIED_BASH.map(bash), ...DEV_DENIED_TOOLS.map(tool)].join(','),
@@ -241,6 +301,52 @@ export function agentBridgeResultText(line: string): string | null {
   } catch {
     return null;
   }
+}
+
+/** Что сделано в ветке по сравнению с основной: живые данные git для ревью в планере. */
+export interface AgentBridgeReview {
+  commits: Array<{ sha: string; subject: string }>;
+  files: Array<{ deletions: number; insertions: number; path: string }>;
+  /** Ссылка на создание MR (GitLab) / PR (GitHub) из ветки; null — хостинг не распознан. */
+  mergeRequestUrl: string | null;
+  /** Ветка на origin и в ней всё, что есть локально. */
+  pushed: boolean;
+  /** Незакоммиченных файлов в рабочей копии. */
+  uncommitted: number;
+}
+
+/** Веб-адрес репозитория по `origin`: `git@host:group/repo.git` и `https://…/repo.git` → `https://host/group/repo`. */
+export function agentBridgeRemoteWebUrl(remote: string): string | null {
+  const value = remote.trim();
+  const scp = /^[\w.-]+@([\w.-]+):(.+?)(?:\.git)?\/?$/.exec(value);
+  if (scp) {
+    return `https://${scp[1]}/${scp[2]}`;
+  }
+  try {
+    const url = new URL(value);
+    if (!['https:', 'ssh:'].includes(url.protocol)) {
+      return null;
+    }
+    return `https://${url.hostname}${url.pathname.replace(/\.git\/?$/, '').replace(/\/$/, '')}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Ссылка «создать MR/PR из ветки»: GitHub — compare, остальное — как у GitLab. */
+export function agentBridgeMergeRequestUrl(webUrl: string, branch: string): string {
+  if (new URL(webUrl).hostname === 'github.com') {
+    return `${webUrl}/compare/${encodeURIComponent(branch)}?expand=1`;
+  }
+  return `${webUrl}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${encodeURIComponent(branch)}`;
+}
+
+/** `git diff --numstat`: «+ − путь» на строку; у бинарных файлов вместо чисел «-». */
+export function parseAgentBridgeNumstat(text: string): AgentBridgeReview['files'] {
+  return text.split('\n').flatMap((line) => {
+    const [insertions = '', deletions = '', ...path] = line.split('\t');
+    return path.length > 0 ? [{ deletions: Number(deletions) || 0, insertions: Number(insertions) || 0, path: path.join('\t') }] : [];
+  });
 }
 
 /** id разговора CLI из первого события потока (`system/init`): по нему потом `--resume`. */

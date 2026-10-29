@@ -63,17 +63,19 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
     <div
       ref={island.islandRef}
       aria-label={t('comments.agentProposalAria')}
-      className="pointer-events-auto relative"
+      // Во всю ширину колонки — она по тулбару инструментов: чат над ним той же ширины.
+      className="pointer-events-auto relative self-stretch"
       data-agent-proposal-toolbar=""
     >
       {panel && sprintId != null ? (
-        // Ширина явная: иначе у absolute она — остаток от left-1/2 или длина самой длинной реплики.
-        <div className="absolute bottom-full left-1/2 mb-2 w-[min(100vw-2rem,30rem)] -translate-x-1/2">
+        // Ширина — как у тулбара инструментов, но не уже 30rem (в режиме «По фичам» тулбар короче).
+        <div className="absolute bottom-full left-1/2 mb-2 w-[max(100%,min(100vw-2rem,30rem))] -translate-x-1/2">
           <div className={`agent-island-chat-panel p-3 ${SHELL_CLASS}`} data-state={island.panelState}>
             <AgentSessionChat
               // Своя сессия — свой черновик: набранное для одной сессии не уезжает в другую.
               key={`${panel.chat.key}:${panel.session?.id ?? 'new'}`}
               autoFocus
+              dev={panel.chat.dev}
               origin={panel.chat.origin}
               session={panel.session}
               sessionList={{
@@ -94,7 +96,7 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
         </div>
       ) : null}
       {hasPendingDraft ? (
-        <div className={`flex items-center justify-center gap-0.5 px-1 py-1 ${SHELL_CLASS}`} role="toolbar">
+        <div className={`mx-auto flex w-fit items-center justify-center gap-0.5 px-1 py-1 ${SHELL_CLASS}`} role="toolbar">
           <AgentPendingNavigator
             total={pendingTotal}
             onRevealHidden={goalPreviewCount > 0 ? onRevealGoals : undefined}

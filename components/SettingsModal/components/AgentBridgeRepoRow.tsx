@@ -19,11 +19,13 @@ const INPUT_CLASS =
 
 /**
  * Строка репозитория в настройках агента: папка (с подсказками из найденных мостом репозиториев,
- * `datalist`) и очереди задач, которые в ней делают, через запятую. Статус — у сохранённой строки:
+ * `datalist`), очереди задач, которые в ней делают, через запятую, и команды проверок по строке
+ * (тесты, линтеры — агенту можно их запускать). Статус — у сохранённой строки:
  * работает, ждёт «y» в терминале моста или папки больше нет; у несохранённой правки статуса нет.
  */
 export function AgentBridgeRepoRow({
   candidatesId,
+  checks,
   path,
   queues,
   status,
@@ -32,10 +34,12 @@ export function AgentBridgeRepoRow({
 }: {
   /** id `datalist` с найденными репозиториями. */
   candidatesId: string;
+  /** Команды проверок, по строке на команду. */
+  checks: string;
   path: string;
   queues: string;
   status: RepoStatus | null;
-  onChange: (next: { path: string; queues: string }) => void;
+  onChange: (next: { checks: string; path: string; queues: string }) => void;
   onRemove: () => void;
 }) {
   const { t } = useI18n();
@@ -48,7 +52,7 @@ export function AgentBridgeRepoRow({
           list={candidatesId}
           placeholder={t('settings.agentTab.pathPlaceholder')}
           value={path}
-          onChange={(event) => onChange({ path: event.target.value, queues })}
+          onChange={(event) => onChange({ checks, path: event.target.value, queues })}
         />
         <input
           aria-label={t('settings.agentTab.queuesLabel')}
@@ -56,12 +60,21 @@ export function AgentBridgeRepoRow({
           placeholder={t('settings.agentTab.queuesPlaceholder')}
           title={t('settings.agentTab.queuesHint')}
           value={queues}
-          onChange={(event) => onChange({ path, queues: event.target.value.toUpperCase() })}
+          onChange={(event) => onChange({ checks, path, queues: event.target.value.toUpperCase() })}
         />
         <HeaderIconButton aria-label={t('settings.agentTab.remove')} title={t('settings.agentTab.remove')} type="button" onClick={onRemove}>
           <Icon className="h-4 w-4" name="trash" />
         </HeaderIconButton>
       </div>
+      <textarea
+        aria-label={t('settings.agentTab.checksLabel')}
+        className={`${INPUT_CLASS} block w-full resize-y font-mono text-xs`}
+        placeholder={t('settings.agentTab.checksPlaceholder')}
+        rows={2}
+        title={t('settings.agentTab.checksHint')}
+        value={checks}
+        onChange={(event) => onChange({ checks: event.target.value, path, queues })}
+      />
       {status ? (
         <p className={`pl-1 text-xs ${STATUS_CLASS[status]}`} data-agent-bridge-repo-status={status}>
           {t(`settings.agentTab.status.${status}`)}

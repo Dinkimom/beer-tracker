@@ -12,8 +12,6 @@
  *   AGENT_BRIDGE_MODEL       — модель CLI (default sonnet; opus — дороже раза в два)
  *   AGENT_BRIDGE_CONFIG      — файл настроек моста (default ~/.beer-tracker/agent-bridge.json): репозитории
  *                              для сессий разработки; правят их в планере, Настройки → Агент (`repoConfig.ts`)
- *   AGENT_BRIDGE_DEV_BASH    — команды, которые агенту разработки можно запускать (через запятую,
- *                              префиксом: `pnpm test,pnpm lint`); плюс правила `.claude/settings.json` репо
  *   AGENT_BRIDGE_DEV_TIMEOUT_MIN — лимит одного прогона сессии разработки (default 60)
  *
  * `pnpm agent-bridge` читает их из `.env.agent-bridge.local` (пример — `.env.agent-bridge.example`).
@@ -54,8 +52,8 @@ import {
   parseAgentBridgeRouteAnswer,
 } from '@/lib/agentSessions/agentBridgeDev';
 
-import { mcpConfigFor, prepareWorktree, readDevSession, rememberDevSession } from './devWorkspace';
-import { announceRepos, readyQueues, readyRepos, repoSettings, updateRepos } from './repoConfig';
+import { devWorkspace, mcpConfigFor, prepareWorktree, pushDevBranch, readDevSession, rememberDevSession } from './devWorkspace';
+import { announceRepos, readyQueues, readyRepos, repoChecks, repoSettings, updateRepos } from './repoConfig';
 
 const port = Number(process.env.AGENT_BRIDGE_PORT) || AGENT_BRIDGE_DEFAULT_PORT;
 const targets = parseAgentBridgeTargets(process.env.AGENT_BRIDGE_TARGETS ?? '');
@@ -92,10 +90,6 @@ const claudeBin = resolveClaudeBin();
 const timeoutMs = (Number(process.env.AGENT_BRIDGE_TIMEOUT_MIN) || 10) * 60_000;
 const devTimeoutMs = (Number(process.env.AGENT_BRIDGE_DEV_TIMEOUT_MIN) || 60) * 60_000;
 const model = process.env.AGENT_BRIDGE_MODEL?.trim() || AGENT_BRIDGE_DEFAULT_MODEL;
-const devBash = (process.env.AGENT_BRIDGE_DEV_BASH ?? '')
-  .split(',')
-  .map((command) => command.trim())
-  .filter(Boolean);
 interface RunState {
   /** Нужен ещё один прогон после текущего: человек дописал, пока агент работал. */
   again: boolean;
@@ -241,13 +235,13 @@ async function runDevSession(sessionId: string, mcpServer: string, taskKey: stri
   const memory = readDevSession(sessionId);
   // Разговор CLI живёт в своём репозитории: сменился репозиторий — начинаем заново.
   const resumeId = memory.repo === repo ? (memory.cliSessionId ?? null) : null;
-  rememberDevSession(sessionId, { cliSessionId: resumeId, repo });
+  rememberDevSession(sessionId, { cliSessionId: resumeId, repo, taskKey });
   const mcpConfig = mcpConfigFor(mcpServer, process.cwd());
   if (!mcpConfig) {
     log(sessionId, `MCP-сервер ${mcpServer} не найден в настройках Claude — агент в рабочей копии останется без Beer Tracker`);
   }
   await runCli(sessionId, state, {
-    args: agentBridgeDevClaudeArgs({ bash: devBash, mcpConfig, mcpServer, model, resumeId, sessionId, taskKey }),
+    args: agentBridgeDevClaudeArgs({ checks: repoChecks(repo), mcpConfig, mcpServer, model, resumeId, sessionId, taskKey }),
     cwd: prepareWorktree(repo, taskKey),
     label: `claude запущен (${mcpServer})`,
     limitMs: devTimeoutMs,
@@ -333,7 +327,13 @@ function parseRunRequest(body: string): { error: string } | { sessionId: string;
     : { error: 'unknown task queue' };
 }
 
-type Route = (request: IncomingMessage, response: ServerResponse, origin: string, mcpServer: string) => Promise<void> | void;
+type Route = (
+  request: IncomingMessage,
+  response: ServerResponse,
+  origin: string,
+  mcpServer: string,
+  query: URLSearchParams
+) => Promise<void> | void;
 
 const routes: Readonly<Record<string, Route>> = {
   'GET /health': (_request, response, origin) => {
@@ -351,6 +351,18 @@ const routes: Readonly<Record<string, Route>> = {
   },
   // Настройки → Агент в планере: репозитории для сессий разработки.
   'GET /repos': (_request, response, origin) => send(response, 200, origin, repoSettings()),
+  // Кнопки ревью в карточке результата: где рабочая копия сессии разработки.
+  'GET /workspace': (_request, response, origin, _mcpServer, query) => {
+    const sessionId = query.get('sessionId');
+    const workspace = isAgentSessionId(sessionId) ? devWorkspace(sessionId) : null;
+    send(response, workspace ? 200 : 404, origin, workspace ?? { error: 'unknown session' });
+  },
+  // «Запушить и открыть MR» в карточке результата: push делает человек, кнопкой, не агент.
+  'POST /push': async (request, response, origin) => {
+    const { sessionId } = JSON.parse(await readBody(request)) as { sessionId?: unknown };
+    const result = isAgentSessionId(sessionId) ? pushDevBranch(sessionId) : { error: 'invalid sessionId' };
+    send(response, 'error' in result ? 400 : 200, origin, result);
+  },
   'PUT /repos': async (request, response, origin) => {
     const result = updateRepos(JSON.parse(await readBody(request)));
     send(response, 'error' in result ? 400 : 200, origin, result);
@@ -368,9 +380,10 @@ async function handle(request: IncomingMessage, response: ServerResponse) {
     send(response, 204, origin);
     return;
   }
-  const route = routes[`${request.method} ${request.url}`];
+  const [pathname = '/', search = ''] = (request.url ?? '/').split('?');
+  const route = routes[`${request.method} ${pathname}`];
   if (route) {
-    await route(request, response, origin, mcpServer);
+    await route(request, response, origin, mcpServer, new URLSearchParams(search));
     return;
   }
   send(response, 404, origin);

@@ -89,6 +89,7 @@ export function AgentMessageBubble({
   card = false,
   footer,
   from,
+  header,
   placeholder,
   status,
   text,
@@ -104,6 +105,8 @@ export function AgentMessageBubble({
   /** Под репликой: например «Отозвать». */
   footer?: ReactNode;
   from: 'agent' | 'user';
+  /** Над текстом, сразу (без печати): то, ради чего реплика, — например итог работы агента. */
+  header?: ReactNode;
   /** Если текста нет (просьба переделать без комментария) — курсивом вместо него. */
   placeholder?: string;
   status?: { label: string; tone: AgentMessageStatus };
@@ -121,6 +124,7 @@ export function AgentMessageBubble({
   return (
     <div className={`flex flex-col gap-1 ${fromAgent ? 'items-start' : 'items-end'}`} data-agent-message={from}>
       {captionRow({ brand, caption, fromAgent, status })}
+      {header}
       <div className={`break-words ${bodyClassFor(fromAgent, card)} ${text ? '' : 'italic opacity-80'}`}>
         {text ? <AgentMessageText surface={fromAgent ? 'plain' : 'bubble'} text={shown} /> : placeholder}
       </div>

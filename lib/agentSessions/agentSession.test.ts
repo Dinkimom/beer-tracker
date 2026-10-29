@@ -177,7 +177,7 @@ describe('agent views', () => {
   });
 
   it('starts a development session from the task brief and passes the result', () => {
-    const result = { branch: 'agent/RND-1779', commits: [{ sha: 'abc1234', subject: 'feat: фильтр' }], tests: 'passed' as const };
+    const result = { branch: 'agent/RND-1779', commits: [{ sha: 'abc1234', subject: 'feat: фильтр' }], openItems: [], tests: 'passed' as const };
     const done = message({ authorKind: 'agent', kind: 'result', result, text: 'Готово, смотри фильтр' });
     const view = buildAgentSessionAgentView(session([message({ kind: 'request' }), done], 'dev'));
     expect(view.kind).toBe('dev');

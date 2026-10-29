@@ -13,6 +13,7 @@ import {
   type AgentBridgeRepoSettings,
   type AgentBridgeStoredRepo,
   mergeAgentBridgeRepos,
+  parseAgentBridgeChecks,
   parseAgentBridgeQueues,
   parseAgentBridgeRepoConfig,
 } from '@/lib/agentSessions/agentBridgeDev';
@@ -57,6 +58,11 @@ export function readyRepos(queue: string): string[] {
   return stored.filter((repo) => isReady(repo) && repo.queues.includes(queue)).map((repo) => repo.path);
 }
 
+/** Команды проверок репозитория — агенту можно их запускать. */
+export function repoChecks(path: string): string[] {
+  return stored.find((repo) => repo.path === path)?.checks ?? [];
+}
+
 export function readyQueues(): string[] {
   return [...new Set(stored.filter(isReady).flatMap((repo) => repo.queues))];
 }
@@ -91,7 +97,7 @@ export function repoSettings(): AgentBridgeRepoSettings {
       } else if (repo.confirmed) {
         status = 'ready';
       }
-      return { path: repo.path, queues: repo.queues, status };
+      return { checks: repo.checks, path: repo.path, queues: repo.queues, status };
     }),
   };
 }
@@ -143,13 +149,15 @@ function askForPending() {
 }
 
 /** Строка из планера: путь — существующий git-репозиторий, хотя бы одна очередь. */
-function parseRepoRow(item: { path?: unknown; queues?: unknown } | null): { error: string } | { path: string; queues: string[] } {
+function parseRepoRow(
+  item: { checks?: unknown; path?: unknown; queues?: unknown } | null
+): { checks: string[]; path: string; queues: string[] } | { error: string } {
   const path = typeof item?.path === 'string' && item.path.trim() ? expandPath(item.path) : '';
   if (!path || !isGitRepo(path)) {
     return { error: `not_a_git_repo: ${path || '—'}` };
   }
   const queues = parseAgentBridgeQueues(item?.queues);
-  return queues.length > 0 ? { path, queues } : { error: `no_queues: ${path}` };
+  return queues.length > 0 ? { checks: parseAgentBridgeChecks(item?.checks), path, queues } : { error: `no_queues: ${path}` };
 }
 
 /** PUT /repos из планера: проверить, сохранить и спросить про новые пары. Ошибка — текстом. */
@@ -158,8 +166,8 @@ export function updateRepos(raw: unknown): AgentBridgeRepoSettings | { error: st
   if (!Array.isArray(list)) {
     return { error: 'repos must be a list' };
   }
-  const requested: Array<{ path: string; queues: string[] }> = [];
-  for (const item of list as Array<{ path?: unknown; queues?: unknown } | null>) {
+  const requested: Array<{ checks: string[]; path: string; queues: string[] }> = [];
+  for (const item of list as Array<{ checks?: unknown; path?: unknown; queues?: unknown } | null>) {
     const row = parseRepoRow(item);
     if ('error' in row) {
       return row;

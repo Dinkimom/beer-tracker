@@ -1,4 +1,4 @@
-import type { AgentBridgeRepoSettings, AgentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
+import type { AgentBridgeRepoSettings, AgentBridgeReview, AgentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
 
 /**
  * Локальный мост к Claude CLI (`pnpm agent-bridge`): планер зовёт его, когда сессия ждёт агента,
@@ -406,6 +406,24 @@ export async function runAgentBridgeSession(baseUrl: string, target: AgentBridge
   }
 }
 
+/** Где лежит работа по сессии разработки: ветка, репозиторий и рабочая копия (если ещё на диске). */
+interface AgentBridgeWorkspace {
+  branch: string;
+  repo: string;
+  /** Живое состояние ветки (файлы, коммиты, push); null — рабочей копии уже нет. */
+  review: AgentBridgeReview | null;
+  worktree: string | null;
+}
+
+export async function fetchAgentBridgeWorkspace(baseUrl: string, sessionId: string): Promise<AgentBridgeWorkspace | null> {
+  try {
+    const response = await fetch(`${baseUrl}/workspace?sessionId=${encodeURIComponent(sessionId)}`);
+    return response.ok ? ((await response.json()) as AgentBridgeWorkspace) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchAgentBridgeRepos(baseUrl: string): Promise<AgentBridgeRepoSettings | null> {
   try {
     const response = await fetch(`${baseUrl}/repos`);
@@ -418,7 +436,7 @@ export async function fetchAgentBridgeRepos(baseUrl: string): Promise<AgentBridg
 /** Сохранить репозитории в мосте; ошибка проверки (не git, кривая очередь) — текстом исключения. */
 export async function saveAgentBridgeRepos(
   baseUrl: string,
-  repos: ReadonlyArray<{ path: string; queues: string[] }>
+  repos: ReadonlyArray<{ checks: string[]; path: string; queues: string[] }>
 ): Promise<AgentBridgeRepoSettings> {
   const response = await fetch(`${baseUrl}/repos`, {
     body: JSON.stringify({ repos }),
@@ -431,3 +449,18 @@ export async function saveAgentBridgeRepos(
   }
   return data;
 }
+
+/** Push ветки сессии разработки через мост; ошибка git — текстом исключения. */
+export async function pushAgentBridgeBranch(baseUrl: string, sessionId: string): Promise<{ mergeRequestUrl: string | null }> {
+  const response = await fetch(`${baseUrl}/push`, {
+    body: JSON.stringify({ sessionId }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
+  const data = (await response.json()) as { error?: string; mergeRequestUrl?: string | null };
+  if (!response.ok) {
+    throw new Error(data.error ?? `bridge ${response.status}`);
+  }
+  return { mergeRequestUrl: data.mergeRequestUrl ?? null };
+}
+

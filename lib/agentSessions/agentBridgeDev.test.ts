@@ -4,6 +4,8 @@ import { agentBridgeStepFromStreamLine } from './agentBridge';
 import {
   agentBridgeCliSessionId,
   agentBridgeDevClaudeArgs,
+  agentBridgeMergeRequestUrl,
+  agentBridgeRemoteWebUrl,
   agentBridgeRepoNames,
   agentBridgeResultText,
   agentBridgeRouteClaudeArgs,
@@ -11,6 +13,8 @@ import {
   agentBridgeTaskQueue,
   isAgentBridgeTaskKey,
   mergeAgentBridgeRepos,
+  parseAgentBridgeChecks,
+  parseAgentBridgeNumstat,
   parseAgentBridgeQueues,
   parseAgentBridgeRepoConfig,
   parseAgentBridgeRouteAnswer,
@@ -32,6 +36,32 @@ describe('agentBridgeDev', () => {
     expect(agentBridgeTaskQueue('MY_Q2-7')).toBe('MY_Q2');
   });
 
+  it('builds the merge request link from the origin remote', () => {
+    expect(agentBridgeRemoteWebUrl('git@gitlab.example.com:acme/billing.git')).toBe('https://gitlab.example.com/acme/billing');
+    expect(agentBridgeRemoteWebUrl('https://user:token@github.com/acme/app.git')).toBe('https://github.com/acme/app');
+    expect(agentBridgeRemoteWebUrl('/srv/git/app.git')).toBeNull();
+    expect(agentBridgeMergeRequestUrl('https://gitlab.example.com/acme/billing', 'agent/RND-1641')).toBe(
+      'https://gitlab.example.com/acme/billing/-/merge_requests/new?merge_request%5Bsource_branch%5D=agent%2FRND-1641'
+    );
+    expect(agentBridgeMergeRequestUrl('https://github.com/acme/app', 'agent/RND-1')).toBe(
+      'https://github.com/acme/app/compare/agent%2FRND-1?expand=1'
+    );
+  });
+
+  it('reads per-file numbers from git diff --numstat, binary files as zero', () => {
+    expect(parseAgentBridgeNumstat('12\t3\tsrc/a.php\n-\t-\tlogo.png\n')).toEqual([
+      { deletions: 3, insertions: 12, path: 'src/a.php' },
+      { deletions: 0, insertions: 0, path: 'logo.png' },
+    ]);
+  });
+
+  it('reads check commands one per line, dropping what would break a Bash rule', () => {
+    expect(parseAgentBridgeChecks('bin/phplint\n  vendor/bin/psalm --no-cache \n\nmake (x)\na,b\nbin/phplint')).toEqual([
+      'bin/phplint',
+      'vendor/bin/psalm --no-cache',
+    ]);
+  });
+
   it('reads queue lists from the settings field and file', () => {
     expect(parseAgentBridgeQueues('rnd, WEB;mob  RND, 1x, ')).toEqual(['RND', 'WEB', 'MOB']);
     expect(parseAgentBridgeQueues(['RND', 'bad key'])).toEqual(['RND']);
@@ -41,7 +71,7 @@ describe('agentBridgeDev', () => {
     expect(
       parseAgentBridgeRepoConfig({
         repos: [
-          { confirmed: true, path: '/work/back', queues: ['RND'] },
+          { checks: ['bin/autotest', 'bad (x)', ''], confirmed: true, path: '/work/back', queues: ['RND'] },
           { path: '/work/web', queues: ['RND', 'WEB'] },
           { path: '/work/none', queues: [] },
           { path: '', queues: ['OPS'] },
@@ -49,22 +79,22 @@ describe('agentBridgeDev', () => {
         ],
       })
     ).toEqual([
-      { confirmed: true, path: '/work/back', queues: ['RND'] },
-      { confirmed: false, path: '/work/web', queues: ['RND', 'WEB'] },
+      { checks: ['bin/autotest'], confirmed: true, path: '/work/back', queues: ['RND'] },
+      { checks: [], confirmed: false, path: '/work/web', queues: ['RND', 'WEB'] },
     ]);
     expect(parseAgentBridgeRepoConfig('garbage')).toEqual([]);
   });
 
   it('keeps the terminal confirmation per folder, whatever its queues', () => {
-    const current = [{ confirmed: true, path: '/work/back', queues: ['RND'] }];
+    const current = [{ checks: [], confirmed: true, path: '/work/back', queues: ['RND'] }];
     expect(
       mergeAgentBridgeRepos(current, [
-        { path: '/work/back', queues: ['RND', 'OPS'] },
+        { checks: ['bin/phplint'], path: '/work/back', queues: ['RND', 'OPS'] },
         { path: '/work/web', queues: ['RND'] },
       ])
     ).toEqual([
-      { confirmed: true, path: '/work/back', queues: ['RND', 'OPS'] },
-      { confirmed: false, path: '/work/web', queues: ['RND'] },
+      { checks: ['bin/phplint'], confirmed: true, path: '/work/back', queues: ['RND', 'OPS'] },
+      { checks: [], confirmed: false, path: '/work/web', queues: ['RND'] },
     ]);
   });
 
@@ -105,7 +135,7 @@ describe('agentBridgeDev', () => {
 
   it('lets the agent edit and commit in the worktree, never push or touch the plan', () => {
     const args = agentBridgeDevClaudeArgs({
-      bash: ['pnpm test'],
+      checks: ['pnpm test'],
       mcpConfig: '{"mcpServers":{"bt":{"type":"http","url":"http://localhost:3000/api/mcp"}}}',
       mcpServer: 'bt',
       model: 'sonnet',
@@ -120,6 +150,8 @@ describe('agentBridgeDev', () => {
     expect(args[args.indexOf('--mcp-config') + 1]).toContain('"bt"');
     expect(args).not.toContain('--resume');
     expect(args[1]).toContain('agent/RND-1641');
+    expect(args[1]).toContain('`pnpm test`');
+    expect(allowed).toContain('mcp__claude_ai_Slack__slack_read_thread');
     expect(allowed).toEqual(
       expect.arrayContaining(['Bash(git commit:*)', 'Bash(pnpm test:*)', 'mcp__bt__get_task_brief', 'mcp__bt__transition_issue'])
     );
@@ -128,7 +160,7 @@ describe('agentBridgeDev', () => {
 
   it('continues the same CLI conversation when the person writes again', () => {
     const args = agentBridgeDevClaudeArgs({
-      bash: [],
+      checks: [],
       mcpConfig: null,
       mcpServer: 'bt',
       model: 'sonnet',

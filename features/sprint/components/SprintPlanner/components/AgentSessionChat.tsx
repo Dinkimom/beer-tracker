@@ -3,8 +3,8 @@
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentBridgeStep } from '@/lib/agentSessions/agentBridge';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
+import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
-import { useI18n } from '@/contexts/LanguageContext';
 import { AgentComposer } from '@/features/swimlane/components/AgentComposer';
 import { useAgentBridge } from '@/features/swimlane/hooks/useAgentBridge';
 import { agentBridgeUnansweredRun } from '@/lib/agentSessions/agentBridge';
@@ -16,6 +16,7 @@ import { AgentBridgeOutcomeNotice } from './AgentBridgeOutcomeNotice';
 import { AgentBridgeProgress } from './AgentBridgeProgress';
 import { AgentBridgeToggle } from './AgentBridgeToggle';
 import { AgentCallAgentBar } from './AgentCallAgentBar';
+import { AgentDevSessionStrip } from './AgentDevSessionStrip';
 import { AgentSessionChatHeader } from './AgentSessionChatHeader';
 import { AgentSessionConversation } from './AgentSessionConversation';
 import { AgentSessionList } from './AgentSessionList';
@@ -33,6 +34,7 @@ import { AgentSkillPicker } from './AgentSkillPicker';
  */
 export function AgentSessionChat({
   autoFocus = false,
+  dev = null,
   origin = {},
   session,
   sessionList,
@@ -43,6 +45,8 @@ export function AgentSessionChat({
   onCreated,
 }: {
   autoFocus?: boolean;
+  /** «Код» в меню карточки: новая сессия разработки по этой задаче — просьба уже в поле. */
+  dev?: AgentDevRequest | null;
   origin?: AgentSessionChatOrigin;
   session: AgentSession | null;
   sessionList: {
@@ -59,13 +63,12 @@ export function AgentSessionChat({
   onContextSent: () => void;
   onCreated: (sessionId: string | null) => void;
 }) {
-  const { t } = useI18n();
   const bridge = useAgentBridge();
   // Агент работает над этой сессией в Claude CLI — шаг и время показываем в пузыре «Ждёт агента».
   const bridgeRun = session ? bridge.runs.find((run) => run.sessionId === session.id) : undefined;
   // Внешний агент (claude.ai, Cursor…): что он делает — по его вызовам MCP; затих — снова зовём.
   const { progress, silentStep } = useAgentWaitProgress(session, bridgeRun);
-  const draft = useAgentChatDraft({ onContextRemove, onContextSent, onCreated, origin, session, sprintId });
+  const draft = useAgentChatDraft({ dev, onContextRemove, onContextSent, onCreated, origin, session, sprintId });
   const runSteps = new Map<string, AgentBridgeStep>(bridge.runs.map((run) => [run.sessionId, run.step]));
   const unanswered = session ? agentBridgeUnansweredRun(session, bridge) : null;
 
@@ -73,6 +76,7 @@ export function AgentSessionChat({
     <div className="flex flex-col gap-2.5" data-agent-session-chat="">
       <AgentSessionChatHeader
         listOpen={sessionList.open}
+        newTitle={draft.newTitle}
         otherUnread={[...sessionList.unread].some((id) => id !== session?.id)}
         session={session}
         sessionCount={sessionList.sessions.length}
@@ -91,12 +95,13 @@ export function AgentSessionChat({
         />
       ) : (
         <>
+          <AgentDevSessionStrip session={session} />
           <AgentSessionConversation
             key={session?.id ?? 'new'}
-            {...(draft.hasDraftSession
-              ? { empty: t('agentSession.queuedHint') }
-              : { empty: t('agentSession.emptyChat'), emptyTitle: t('agentSession.emptyChatTitle') })}
+                empty={draft.empty.text}
+            emptyTitle={draft.empty.title}
             messages={session?.messages ?? []}
+            sessionId={session?.id}
             status={session?.status}
             waitingDetail={
               progress ? <AgentBridgeProgress startedAt={progress.startedAt} step={progress.step} /> : undefined
@@ -124,7 +129,7 @@ export function AgentSessionChat({
             text={draft.text}
             onContextRemove={draft.removeContext}
             onMentionsChange={draft.setMentions}
-            onSkillPick={draft.setSkill}
+            onSkillPick={draft.skillsEnabled ? draft.setSkill : undefined}
             onSubmit={draft.send}
             onTextChange={draft.setText}
           />

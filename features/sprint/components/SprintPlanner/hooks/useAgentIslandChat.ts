@@ -2,6 +2,7 @@
 
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentSession, AgentSessionStatus } from '@/lib/agentSessions/agentSession';
+import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -22,8 +23,37 @@ const CHAT_KEY = 'chat';
 
 /** Что рисует панель чата; при сворачивании — последний открытый, пока идёт анимация. */
 interface ChatPanel {
-  chat: { key: string; origin: AgentSessionChatOrigin };
+  /** «Код» в меню карточки: новая сессия разработки по задаче, ещё не отправленная. */
+  chat: { dev: AgentDevRequest | null; key: string; origin: AgentSessionChatOrigin };
   session: AgentSession | null;
+}
+
+type IslandTarget = ReturnType<typeof useRootStore>['sprintPlannerUi']['agentRequestTarget'];
+
+/** «Код» в меню карточки: задача, которую отдают агенту, пока сессия по ней не создана. */
+function devRequestOf(target: IslandTarget): AgentDevRequest | null {
+  return target?.kind === 'dev' ? { sprintName: target.sprintName, task: target.task } : null;
+}
+
+/** Чат открыли на конкретной сессии (список, тост, отправленная задача агенту). */
+function requestedSessionOf(target: IslandTarget): string | undefined {
+  return target?.kind === 'session' ? target.sessionId : undefined;
+}
+
+/**
+ * Какую сессию показать: у задачи агенту — ещё никакой; 'new' — новую; выбранную; иначе сессию
+ * драфта на доске, иначе самую свежую.
+ */
+function shownSession(
+  dev: AgentDevRequest | null,
+  pick: string | null,
+  sessions: ReturnType<typeof useAgentSessions>
+): AgentSession | null {
+  if (dev || pick === 'new') {
+    return null;
+  }
+  const fallback = sessions.draftSession ?? sessions.openSessions[0] ?? null;
+  return sessions.sessions.find((item) => item.id === pick) ?? fallback;
 }
 
 /** Какой статус показать на ✨: кто-то ждёт человека — синий, иначе кто-то ждёт агента — жёлтый. */
@@ -64,7 +94,7 @@ export function useAgentIslandChat(sprintId: number | null) {
     setListOpen(false);
   }
   // Чат открыли на конкретной сессии (список, тост, «Код» в меню карточки) — показываем её.
-  const requested = target?.kind === 'session' ? target.sessionId : undefined;
+  const requested = requestedSessionOf(target);
   const [handledRequest, setHandledRequest] = useState<string | undefined>(undefined);
   if (requested !== handledRequest) {
     setHandledRequest(requested);
@@ -96,15 +126,15 @@ export function useAgentIslandChat(sprintId: number | null) {
   const contextItems = sprintPlannerUi.agentChatContext;
   // Ссылка меняется только с плашками (observable.ref): по ней обновляется панель ниже.
   const origin = useMemo(() => resolveAgentChatOrigin(contextItems, undefined), [contextItems]);
-  const chat = chatOpen ? { key: CHAT_KEY, origin } : null;
-  const fallback = sessions.draftSession ?? sessions.openSessions[0] ?? null;
-  const session =
-    pick === 'new' ? null : (sessions.sessions.find((item) => item.id === pick) ?? fallback);
+  const dev = devRequestOf(target);
+  const chat = chatOpen ? { dev, key: dev ? `dev:${dev.task.id}` : CHAT_KEY, origin } : null;
+  const session = shownSession(dev, pick, sessions);
 
   const openSession = (sessionId: string | 'new') => {
     setPick(sessionId);
     setListOpen(false);
-    if (!chatOpen) {
+    // Из свёрнутого чата или из ещё не отправленной задачи агенту — в обычный чат сессии.
+    if (!chatOpen || dev) {
       sprintPlannerUi.setAgentRequestTarget({ kind: 'session' });
     }
   };
@@ -119,7 +149,7 @@ export function useAgentIslandChat(sprintId: number | null) {
 
   const presence = useOverlayPresence(chatOpen);
   const [lastPanel, setLastPanel] = useState<ChatPanel | null>(null);
-  if (chat && (lastPanel?.chat.origin !== origin || lastPanel.session !== session)) {
+  if (chat && (lastPanel?.chat.origin !== origin || lastPanel.chat.key !== chat.key || lastPanel.session !== session)) {
     setLastPanel({ chat, session });
   }
   let panel: ChatPanel | null = null;
@@ -153,7 +183,14 @@ export function useAgentIslandChat(sprintId: number | null) {
     },
     /** Перейти в сессию (из списка или тоста) или к новой просьбе; свёрнутый чат открывается. */
     openSession,
-    selectCreated: (sessionId: string | null) => setPick(sessionId),
+    /** Первая реплика создала сессию: чат дальше показывает её (задача агенту — уже обычная сессия). */
+    selectCreated: (sessionId: string | null) => {
+      if (dev && sessionId) {
+        sprintPlannerUi.setAgentRequestTarget({ kind: 'session', sessionId });
+        return;
+      }
+      setPick(sessionId);
+    },
     /** ✨ в тулбаре: открыть чат на выбранной сессии или свернуть его. */
     toggleChat: () => {
       sprintPlannerUi.setAgentRequestTarget(chatOpen ? null : { kind: session ? 'session' : 'sprint' });
