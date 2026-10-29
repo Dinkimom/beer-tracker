@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.26.1] — 2026-10-29
+
+### English
+
+- The retro sidebar shows the sprint's delivery and discovery goals with a done counter; a goal can be ticked as done right there (the text is not editable).
+- Deleting your own sprint comment awaiting approval no longer fails with a Postgres type error.
+- MCP agent: `deletePosition.moveToSprintId` moves a task to another tracker sprint, like «Move to sprint» in the card menu. The card and its links leave the board and the issue is added to the target sprint after apply; works for unplanned tasks too.
+- MCP agent: `whoami` returns `me` (your assignee id on the board) and warns when your staff card is not linked to your tracker user; `resolve_person` reports `trackerLinked` and no longer passes a staff id off as a tracker id; sprint context warns about backlog assignees with no swimlane on the board.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.26.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- В сайдбаре ретро — цели спринта (delivery и discovery) со счётчиком выполненных; цель можно отметить выполненной прямо там (текст не редактируется).
+- Удаление своего комментария спринта, ожидающего одобрения, больше не падает с ошибкой типов Postgres.
+- MCP-агент: `deletePosition.moveToSprintId` переносит задачу в другой спринт трекера, как «Перенести в спринт» в меню карточки. Карточка и её стрелки уходят с доски, после применения задача добавляется в целевой спринт; работает и для задач без карточки.
+- MCP-агент: `whoami` возвращает `me` (ваш id исполнителя на доске) и предупреждает, если карточка сотрудника не привязана к пользователю трекера; `resolve_person` сообщает `trackerLinked` и больше не выдаёт id сотрудника за id трекера; контекст спринта предупреждает об исполнителях бэклога без строки на доске.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.26.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.26.0] — 2026-10-29
 
 ### English
