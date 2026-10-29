@@ -25,8 +25,8 @@ describe('agentBridge', () => {
     const args = agentBridgeClaudeArgs(SESSION_ID, 'beer-tracker', 'sonnet');
     expect(args[0]).toBe('-p');
     expect(args[args.indexOf('--model') + 1]).toBe('sonnet');
-    // Из встроенных инструментов Claude Code — только подгрузка отложенных MCP-тулов.
-    expect(args[args.indexOf('--tools') + 1]).toBe('ToolSearch');
+    // Из встроенных инструментов Claude Code — подгрузка отложенных MCP-тулов и чтение ссылок.
+    expect(args[args.indexOf('--tools') + 1]).toBe('ToolSearch,WebFetch');
     expect(args[1]).toContain(SESSION_ID);
     expect(args[1]).toContain('mcp__beer-tracker__*');
     const allowed = args[args.indexOf('--allowedTools') + 1].split(',');
@@ -36,6 +36,11 @@ describe('agentBridge', () => {
     expect(allowed).toContain('mcp__beer-tracker__apply_retro_board');
     expect(allowed).not.toContain('mcp__beer-tracker__apply_plan_patch');
     expect(denied).toEqual(['mcp__beer-tracker__apply_plan_patch']);
+    // Ссылки из чата и Notion — только чтение.
+    expect(allowed).toContain('WebFetch');
+    expect(allowed).toContain('mcp__claude_ai_Notion__notion-search');
+    expect(allowed).toContain('mcp__claude_ai_Notion__notion-fetch');
+    expect(allowed).not.toContain('mcp__claude_ai_Notion__notion-update-page');
   });
 
   it('accepts only loopback hosts on the bridge port', () => {
@@ -67,6 +72,10 @@ describe('agentBridge', () => {
     expect(
       agentBridgeStepFromStreamLine(assistant([{ name: 'mcp__beer-tracker-dev__propose_plan_patch', type: 'tool_use' }]))
     ).toBe('drafting');
+    expect(agentBridgeStepFromStreamLine(assistant([{ name: 'mcp__claude_ai_Notion__notion-search', type: 'tool_use' }]))).toBe(
+      'searching'
+    );
+    expect(agentBridgeStepFromStreamLine(assistant([{ name: 'WebFetch', type: 'tool_use' }]))).toBe('reading');
     expect(agentBridgeStepFromStreamLine(assistant([{ text: 'Готово', type: 'text' }]))).toBe('thinking');
     expect(agentBridgeStepFromStreamLine(JSON.stringify({ subtype: 'init', type: 'system' }))).toBeNull();
     expect(agentBridgeStepFromStreamLine('not json')).toBeNull();

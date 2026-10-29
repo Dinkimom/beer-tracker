@@ -43,6 +43,7 @@ const AGENT_BRIDGE_STEPS: readonly AgentBridgeStep[] = [
 
 const TOOL_STEPS: Readonly<Record<string, AgentBridgeStep>> = {
   ToolSearch: 'connecting',
+  WebFetch: 'reading',
   whoami: 'reading',
   list_agent_sessions: 'reading',
   get_agent_session: 'reading',
@@ -58,6 +59,10 @@ const TOOL_STEPS: Readonly<Record<string, AgentBridgeStep>> = {
   propose_plan_patch: 'drafting',
   apply_retro_board: 'drafting',
   reply_agent_session: 'replying',
+  'notion-search': 'searching',
+  'notion-query-meeting-notes': 'searching',
+  'notion-fetch': 'reading',
+  'notion-get-self': 'reading',
 };
 
 /** Шаг агента по вызванному тулу MCP (с префиксом клиента `mcp__server__tool` или без). */
@@ -220,11 +225,21 @@ const BRIDGE_ALLOWED_TOOLS = [
 
 const BRIDGE_DENIED_TOOLS = ['apply_plan_patch'] as const;
 
+/**
+ * Notion через коннектор claude.ai — только поиск и чтение: саммари дейли, заметки встреч, страницы
+ * по ссылке из чата. Если коннектор не подключён, этих тулов в CLI просто нет.
+ */
+const BRIDGE_NOTION_TOOLS = ['notion-search', 'notion-fetch', 'notion-query-meeting-notes', 'notion-get-self'].map(
+  (name) => `mcp__claude_ai_Notion__${name}`
+);
+
 function agentBridgePrompt(sessionId: string, mcpServer: string): string {
   return [
     `Обработай сессию ${sessionId} в Beer Tracker.`,
     // Подключено может быть несколько стендов BT: сессия есть только на этом.
-    `Используй только тулы mcp__${mcpServer}__*.`,
+    `Из тулов Beer Tracker используй только mcp__${mcpServer}__*.`,
+    'Ссылки из сообщений читай через WebFetch.',
+    'Ссылки на Notion и поиск по Notion (саммари дейли, заметки встреч) — через mcp__claude_ai_Notion__*.',
     'Прочитай её через get_agent_session и подтяни fetchContext.',
     `Если план нужно менять — propose_plan_patch с sessionId ${sessionId}, replacePending: true, ответами на комментарии в replies и draftMessage.`,
     'Если просят записать на доску ретро — get_retro_board, затем apply_retro_board с confirm: true; итог сообщи через reply_agent_session.',
@@ -239,9 +254,10 @@ export const AGENT_BRIDGE_DEFAULT_MODEL = 'sonnet';
 
 /**
  * Аргументы `claude` для одной сессии; `mcpServer` — имя сервера Beer Tracker в конфиге CLI.
- * Из встроенных инструментов Claude Code — только `ToolSearch`: MCP-тулы в CLI отложенные и без него
- * не подгружаются. Остальные инструменты и skills мосту не нужны, а их описания едут в контекст
- * каждого шага (замер на whoami, Sonnet: ~140k → ~80k токенов за прогон).
+ * Из встроенных инструментов Claude Code — только `ToolSearch` и `WebFetch`: MCP-тулы в CLI отложенные
+ * и без `ToolSearch` не подгружаются, `WebFetch` читает ссылки из чата. Остальные инструменты и skills
+ * мосту не нужны, а их описания едут в контекст каждого шага (замер на whoami, Sonnet: ~140k → ~80k
+ * токенов за прогон).
  */
 export function agentBridgeClaudeArgs(sessionId: string, mcpServer: string, model: string): string[] {
   const tool = (name: string) => `mcp__${mcpServer}__${name}`;
@@ -251,14 +267,14 @@ export function agentBridgeClaudeArgs(sessionId: string, mcpServer: string, mode
     '--model',
     model,
     '--tools',
-    'ToolSearch',
+    'ToolSearch,WebFetch',
     '--disable-slash-commands',
     // Поток событий: мост видит каждый шаг агента и показывает его в планере.
     '--output-format',
     'stream-json',
     '--verbose',
     '--allowedTools',
-    ['ToolSearch', ...BRIDGE_ALLOWED_TOOLS.map(tool)].join(','),
+    ['ToolSearch', 'WebFetch', ...BRIDGE_ALLOWED_TOOLS.map(tool), ...BRIDGE_NOTION_TOOLS].join(','),
     '--disallowedTools',
     BRIDGE_DENIED_TOOLS.map(tool).join(','),
   ];

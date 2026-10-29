@@ -109,7 +109,7 @@ Notes: только `kind=text`; `width` — длина в частях тайм
 
 ### Мост к Claude CLI (локально)
 
-Чтобы не носить фразу в чат: `pnpm agent-bridge` поднимает на `127.0.0.1:47821` мост, а планер зовёт его, когда сессия переходит в `waiting_agent` (просьба, сообщение, «Переделать»). Мост запускает `claude -p` по этой сессии: разрешены чтение, `propose_plan_patch` и `reply_agent_session`, `apply_*` запрещены. В простое мост ничего не делает.
+Чтобы не носить фразу в чат: `pnpm agent-bridge` поднимает на `127.0.0.1:47821` мост, а планер зовёт его, когда сессия переходит в `waiting_agent` (просьба, сообщение, «Переделать»). Мост запускает `claude -p` по этой сессии: разрешены чтение, `propose_plan_patch` и `reply_agent_session`, `apply_*` запрещены. Ссылки из чата агент читает через `WebFetch`, Notion — через `notion-search` / `notion-fetch` / `notion-query-meeting-notes` / `notion-get-self` коннектора claude.ai `claude_ai_Notion` (только чтение). В простое мост ничего не делает.
 
 - Включить в планере: галка **«Сразу запускать в Claude CLI»** под полем ввода чата агента (флаг в localStorage; без него планер на localhost не ходит). Рядом — на связи ли мост.
 - Настройки — в `.env.agent-bridge.local` (пример: [`.env.agent-bridge.example`](../.env.agent-bridge.example)). CLI мост ищет в PATH, иначе берёт свежий из расширения Claude Code в VS Code / Cursor.
