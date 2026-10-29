@@ -10,6 +10,7 @@ import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClass
 import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
 import { AssigneeVelocityProvider } from '@/features/swimlane/hooks/useAssigneeVelocity';
 import { useCloseOverdueAndCreateNext } from '@/features/swimlane/hooks/useCloseOverdueAndCreateNext';
+import { AgentDevTasksProvider } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -182,6 +183,7 @@ export function SprintPlannerView({
         viewMode={viewMode}
       >
         <SprintPlannerDragStoresProvider hoverStore={dragAndDrop.hoverStore} sidebarDropPointerStore={dragAndDrop.sidebarDropPointerStore}>
+        <AgentDevTasksProvider sprintId={selectedSprintId}>
         <SprintCardPresenceProvider viewers={boardViewers}>
         <FeatureDraftRowNamesProvider names={featureDraftRowNamesById}>
         <SprintPlannerPresenceSync
@@ -391,6 +393,7 @@ export function SprintPlannerView({
         </PlannerOnboardingHost>
         </FeatureDraftRowNamesProvider>
         </SprintCardPresenceProvider>
+        </AgentDevTasksProvider>
         </SprintPlannerDragStoresProvider>
       </SprintPlannerDndShell>
       <ModalsSection

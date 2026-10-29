@@ -5,11 +5,14 @@ import type { Task } from '@/types';
 import { observer } from 'mobx-react-lite';
 
 import { ZIndex } from '@/constants';
+import { useAgentDevTask } from '@/features/task/components/TaskCard/AgentDevTasksContext';
+import { TaskCardAgentBadge } from '@/features/task/components/TaskCard/components/TaskCardAgentBadge';
 import { TaskCardSwimlaneSegmentBadge } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneSegmentBadge';
+import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { useRootStore } from '@/lib/layers';
 
 import { TaskBarQACreateButton, isTaskBarQACreateAvailable } from './components/TaskBarQACreateButton';
-import { TaskBarCornerRail } from './TaskBarCornerRail';
+import { TASK_BAR_CORNER_BADGE_CLASS, TaskBarCornerRail } from './TaskBarCornerRail';
 import { TaskBarHiddenLinksBadge } from './TaskBarHiddenLinksBadge';
 import { TaskBarPlanMovedBadge } from './TaskBarPlanMovedBadge';
 import { TaskBarPlanningErrorBadge } from './TaskBarPlanningErrorBadge';
@@ -32,7 +35,8 @@ interface TaskBarCornerBadgesProps {
 
 /**
  * Все значки и кнопки на углах карточки — в двух рейках с общими правилами.
- * Левая — состояние задачи: наложение, номер отрезка, перенос относительно плана на старте.
+ * Левая — состояние задачи: агент работает над ней, наложение, номер отрезка, перенос относительно
+ * плана на старте.
  * Правая — действия и связи: добавить QA, скрытые связи.
  */
 export const TaskBarCornerBadges = observer(function TaskBarCornerBadges(
@@ -43,10 +47,15 @@ export const TaskBarCornerBadges = observer(function TaskBarCornerBadges(
   const primary = !swimlaneSegmentSecondary;
   const hiddenLinks = primary ? (sprintPlannerUi.hiddenLinkCountByTaskId.get(task.id) ?? 0) : 0;
   const { onCreateQATask } = props;
+  // Агент делает саму задачу, не её QA-карточку.
+  const agentDev = useAgentDevTask(primary && !props.isQATask ? getTaskTrackerDisplayKey(task) : null);
   const qaAvailable =
     primary && isTaskBarQACreateAvailable({ ...props, isDragging: props.effectiveIsDragging });
 
   const left = [
+    agentDev
+      ? { key: 'agent', node: <TaskCardAgentBadge agentDev={agentDev} className={`${TASK_BAR_CORNER_BADGE_CLASS} !px-0`} /> }
+      : null,
     primary && props.isInError
       ? {
           key: 'error',

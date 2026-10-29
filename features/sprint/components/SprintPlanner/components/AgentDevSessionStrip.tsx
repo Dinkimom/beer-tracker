@@ -1,34 +1,20 @@
 'use client';
 
+import type { AgentDevState } from '@/lib/agentSessions/agentDevState';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentBridge, useAgentBridgeWorkspace } from '@/features/swimlane/hooks/useAgentBridge';
+import { agentDevState } from '@/lib/agentSessions/agentDevState';
 
-type DevState = 'closed' | 'review' | 'waitingAgent' | 'waitingUser' | 'working';
-
-const STATE_CLASS: Record<DevState, string> = {
+const STATE_CLASS: Record<AgentDevState, string> = {
   closed: 'bg-gray-500/[0.12] text-gray-600 dark:bg-white/[0.08] dark:text-gray-300',
   review: 'bg-green-600/[0.12] text-green-800 dark:bg-green-400/[0.15] dark:text-green-300',
   waitingAgent: 'bg-gray-500/[0.12] text-gray-600 dark:bg-white/[0.08] dark:text-gray-300',
   waitingUser: 'bg-blue-600/[0.12] text-blue-800 dark:bg-blue-400/[0.15] dark:text-blue-300',
   working: 'bg-amber-500/[0.15] text-amber-800 dark:bg-amber-400/[0.15] dark:text-amber-300',
 };
-
-/** Где сейчас работа: агент в мосте работает, прислал ветку на ревью, спросил, ждёт агента, закрыта. */
-function devState(session: AgentSession, working: boolean): DevState {
-  if (session.status === 'closed') {
-    return 'closed';
-  }
-  if (working) {
-    return 'working';
-  }
-  if (session.status === 'waiting_agent') {
-    return 'waitingAgent';
-  }
-  return session.messages.at(-1)?.kind === 'result' ? 'review' : 'waitingUser';
-}
 
 /**
  * Строка под заголовком сессии разработки: задача, репозиторий и ветка (от моста, когда он по ней
@@ -43,7 +29,7 @@ export function AgentDevSessionStrip({ session }: { session: AgentSession | null
   if (!dev) {
     return null;
   }
-  const state = devState(dev, bridge.runs.some((run) => run.sessionId === dev.id));
+  const state = agentDevState(dev, bridge.runs.some((run) => run.sessionId === dev.id));
   const repo = workspace?.repo.split('/').filter(Boolean).at(-1);
   const where = [dev.context.taskKey ?? dev.taskId, repo, workspace?.branch].filter(Boolean);
 

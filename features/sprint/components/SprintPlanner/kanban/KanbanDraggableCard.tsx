@@ -7,8 +7,11 @@ import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useState } from 'react';
 
 import { PhaseCardColorSchemeOverride } from '@/components/PhaseCardColorSchemeOverride';
+import { useAgentDevTask } from '@/features/task/components/TaskCard/AgentDevTasksContext';
+import { TaskCardAgentBadge } from '@/features/task/components/TaskCard/components/TaskCardAgentBadge';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
+import { getTaskTrackerDisplayKey, isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { useRootStore } from '@/lib/layers';
 import { sprintCardPresenceBlocksNewGestures } from '@/lib/realtime/sprintCardPresence';
 
@@ -73,6 +76,7 @@ export function KanbanDraggableCard({
     contextMenuTaskId != null &&
     contextMenuTaskId !== task.id;
   const menuOpenHere = contextMenuTaskId === task.id;
+  const agentDev = useAgentDevTask(isEffectivelyQaTask(task) ? null : getTaskTrackerDisplayKey(task));
   const blockNewGestures = sprintCardPresenceBlocksNewGestures(presenceLocked, isDragging);
 
   return (
@@ -81,7 +85,7 @@ export function KanbanDraggableCard({
       className={`${
         blockNewGestures ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
       } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
-        menuOpenHere ? 'overflow-visible relative z-20' : 'overflow-hidden'
+        menuOpenHere ? 'overflow-visible relative z-20' : 'relative overflow-hidden'
       } ${
         dimOthers
           ? 'opacity-50 pointer-events-none transition-opacity duration-200'
@@ -131,6 +135,14 @@ export function KanbanDraggableCard({
           variant="sidebar"
         />
       </PhaseCardColorSchemeOverride>
+      {agentDev ? (
+        <TaskCardAgentBadge
+          agentDev={agentDev}
+          className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-md border shadow-sm"
+          // В канбане нет чата агента — значок только показывает, что задачей занимается агент.
+          interactive={false}
+        />
+      ) : null}
     </div>
   );
 }
