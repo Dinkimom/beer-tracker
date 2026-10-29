@@ -67,12 +67,12 @@ export function KanbanLaneSection(props: KanbanLaneSectionProps) {
       <KanbanLaneColumns
         activeTaskId={props.activeTaskId}
         canDropInColumn={props.canDropInColumn}
+        columnsWithHeaderData={props.lane.columnsWithHeaderData}
         contextMenuBlurOtherCards={props.contextMenuBlurOtherCards}
         contextMenuTaskId={props.contextMenuTaskId}
         developers={props.developers}
         globalNameFilter={props.globalNameFilter}
         isLaneCollapsed={props.collapsedLanes.has(laneKey)}
-        lane={props.lane}
         laneKey={laneKey}
         sourceColumnId={props.sourceColumnId}
         onContextMenu={props.onContextMenu}

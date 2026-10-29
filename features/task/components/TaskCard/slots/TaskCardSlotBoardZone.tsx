@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  TaskCardBoard,
   TaskCardCustomFieldPlacement,
   TaskCardFieldId,
   TaskCardFieldPlacement,
@@ -15,6 +16,7 @@ import {
   toggleTaskCardCustomFieldHidden,
   toggleTaskCardFieldHidden,
 } from '@/lib/taskCard/taskCardSlotEdits';
+import { taskCardBoardFieldsOutsideSlots } from '@/lib/taskCard/taskCardSlots';
 
 import { TaskCardSlotChip } from './TaskCardSlotChip';
 import { taskCardFieldLabel, taskCardSlotLabel } from './taskCardSlotLabels';
@@ -31,6 +33,7 @@ type SlotRow =
 
 interface TaskCardSlotBoardZoneProps {
   alignEnd?: boolean;
+  board?: TaskCardBoard;
   className?: string;
   layout: TaskCardSlotLayout;
   selected: TaskCardSlotBoardSelection;
@@ -43,6 +46,7 @@ interface TaskCardSlotBoardZoneProps {
 
 export function TaskCardSlotBoardZone({
   alignEnd = false,
+  board = 'swimlane',
   className,
   layout,
   onChange,
@@ -53,7 +57,7 @@ export function TaskCardSlotBoardZone({
   wrap,
 }: TaskCardSlotBoardZoneProps) {
   const { t } = useI18n();
-  const rows = slotRows(layout, slot);
+  const rows = slotRows(layout, slot, board);
 
   return (
     <TaskCardSlotZone
@@ -124,9 +128,10 @@ export function TaskCardSlotBoardZone({
   );
 }
 
-function slotRows(layout: TaskCardSlotLayout, slot: TaskCardSlotId): SlotRow[] {
+function slotRows(layout: TaskCardSlotLayout, slot: TaskCardSlotId, board: TaskCardBoard): SlotRow[] {
+  const outsideSlots = taskCardBoardFieldsOutsideSlots(board);
   const builtins: SlotRow[] = layout.placements
-    .filter((placement) => placement.slot === slot)
+    .filter((placement) => placement.slot === slot && !outsideSlots.includes(placement.field))
     .map((placement) => ({ kind: 'builtin', order: placement.order, placement }));
   const customs: SlotRow[] = layout.customPlacements
     .filter((placement) => placement.slot === slot)

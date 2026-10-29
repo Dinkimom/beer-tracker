@@ -32,6 +32,28 @@ export type TaskCardFieldId = (typeof TASK_CARD_FIELD_IDS)[number];
 const TASK_CARD_PRESENTATIONS = ['hidden', 'text', 'link', 'icon', 'tag', 'dot', 'avatars'] as const;
 export type TaskCardPresentation = (typeof TASK_CARD_PRESENTATIONS)[number];
 
+/** Доска, у которой своя раскладка карточки. */
+export type TaskCardBoard = 'kanban' | 'swimlane';
+
+/** Канбан по умолчанию повторяет прежнюю карточку: родителя на ней не было (по нему можно сгруппировать доску). */
+const HIDDEN_BY_DEFAULT: Record<TaskCardBoard, readonly TaskCardFieldId[]> = {
+  kanban: ['parent'],
+  swimlane: [],
+};
+
+/**
+ * Поля вне слотов доски: их нет в настройке карточки этой доски.
+ * На канбане исполнитель рисуется отдельной строкой, а статус не нужен — его задаёт колонка.
+ */
+const FIELDS_OUTSIDE_SLOTS: Record<TaskCardBoard, readonly TaskCardFieldId[]> = {
+  kanban: ['assignee', 'status'],
+  swimlane: [],
+};
+
+export function taskCardBoardFieldsOutsideSlots(board: TaskCardBoard): readonly TaskCardFieldId[] {
+  return FIELDS_OUTSIDE_SLOTS[board];
+}
+
 export const TASK_CARD_DENSITIES = ['regular', 'narrow', 'compact'] as const;
 export type TaskCardDensity = (typeof TASK_CARD_DENSITIES)[number];
 
@@ -135,7 +157,8 @@ export function taskCardFieldPresentations(field: TaskCardFieldId): readonly Tas
   return FIELD_PRESENTATIONS[field];
 }
 
-export function defaultTaskCardSlotLayout(): TaskCardSlotLayout {
+export function defaultTaskCardSlotLayout(board: TaskCardBoard = 'swimlane'): TaskCardSlotLayout {
+  const hiddenByDefault = HIDDEN_BY_DEFAULT[board];
   return {
     customPlacements: [],
     hideEyebrow: 'one',
@@ -145,6 +168,7 @@ export function defaultTaskCardSlotLayout(): TaskCardSlotLayout {
       field,
       order,
       ...DEFAULT_PLACEMENT_BY_FIELD[field],
+      ...(hiddenByDefault.includes(field) ? { hidden: true } : {}),
     })),
   };
 }
@@ -255,8 +279,11 @@ export function taskCardLayoutReservesEyebrow(layout: TaskCardSlotLayout): boole
   );
 }
 
-export function normalizeTaskCardSlotLayout(value: unknown): TaskCardSlotLayout {
-  const defaults = defaultTaskCardSlotLayout();
+export function normalizeTaskCardSlotLayout(
+  value: unknown,
+  board: TaskCardBoard = 'swimlane'
+): TaskCardSlotLayout {
+  const defaults = defaultTaskCardSlotLayout(board);
   const record = isRecord(value) ? value : {};
   const storedPlacements = Array.isArray(record.placements) ? record.placements : [];
   const storedCustom = Array.isArray(record.customPlacements) ? record.customPlacements : [];

@@ -5,6 +5,7 @@ import type { Task, TaskCardVariant, TaskPosition } from '@/types';
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatTaskTestPointsForDisplay } from '@/lib/pointsUtils';
 
+import { useTaskCardBoard } from '../TaskCardBoardContext';
 import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility';
 import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 
@@ -45,8 +46,10 @@ export function TaskCardTags({
 }: TaskCardTagsProps) {
   const { t } = useI18n();
   const estimateMapping = useTaskCardEstimateMapping();
+  const board = useTaskCardBoard();
 
-  if (isSwimlaneTaskCardTagsVariant(variant)) {
+  // Канбан показывает статус, серьёзность и оценку слотами карточки.
+  if (isSwimlaneTaskCardTagsVariant(variant) || board === 'kanban') {
     return null;
   }
 

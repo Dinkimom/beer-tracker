@@ -1,20 +1,23 @@
 'use client';
 
-import type { KanbanLaneWithColumns } from './kanbanLane.types';
+import type { KanbanColumnHeaderData } from './kanbanLane.types';
 import type { Developer, Task } from '@/types';
 import type { BoardColumn } from '@/types/tracker';
 
 import { KanbanColumn } from './KanbanColumn';
 
+/** Ряд колонок канбана: в дорожке группировки или вся доска без группировки (`laneKey` = null). */
 interface KanbanLaneColumnsProps {
   activeTaskId: string | null;
+  className?: string;
+  columnsWithHeaderData: KanbanColumnHeaderData[];
+  containerRef?: React.RefObject<HTMLDivElement | null>;
   contextMenuBlurOtherCards: boolean;
   contextMenuTaskId: string | null | undefined;
   developers: Developer[];
   globalNameFilter: string | undefined;
-  isLaneCollapsed: boolean;
-  lane: KanbanLaneWithColumns;
-  laneKey: string;
+  isLaneCollapsed?: boolean;
+  laneKey: string | null;
   sourceColumnId: string | null | undefined;
   canDropInColumn: (column: BoardColumn) => boolean;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
@@ -24,12 +27,14 @@ interface KanbanLaneColumnsProps {
 export function KanbanLaneColumns({
   activeTaskId,
   canDropInColumn,
+  className = 'flex min-h-[120px] flex-none items-stretch gap-3 pr-4',
+  columnsWithHeaderData,
+  containerRef,
   contextMenuBlurOtherCards,
   contextMenuTaskId,
   developers,
   globalNameFilter,
-  isLaneCollapsed,
-  lane,
+  isLaneCollapsed = false,
   laneKey,
   sourceColumnId,
   onContextMenu,
@@ -37,11 +42,11 @@ export function KanbanLaneColumns({
 }: KanbanLaneColumnsProps) {
   if (isLaneCollapsed) return null;
   return (
-    <div className="flex min-h-[120px] flex-none items-stretch gap-3 pr-4">
-      {lane.columnsWithHeaderData.map(({ column, tasks: columnTasks }) => (
+    <div ref={containerRef} className={className}>
+      {columnsWithHeaderData.map(({ column, tasks: columnTasks }) => (
         <KanbanColumn
-          key={`${laneKey}-${column.id}`}
-          columnId={`${laneKey}__${column.id}`}
+          key={laneKey ? `${laneKey}-${column.id}` : column.id}
+          columnId={laneKey ? `${laneKey}__${column.id}` : column.id}
           contextMenuBlurOtherCards={contextMenuBlurOtherCards}
           contextMenuTaskId={contextMenuTaskId}
           developers={developers}

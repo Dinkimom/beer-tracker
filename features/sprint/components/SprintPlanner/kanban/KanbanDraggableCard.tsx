@@ -126,7 +126,6 @@ export function KanbanDraggableCard({
           assigneeName={task.assigneeName}
           className={KANBAN_CARD_SURFACE}
           developers={developers}
-          hideStatusTag
           isContextMenuOpen={menuOpenHere}
           task={task}
           variant="sidebar"

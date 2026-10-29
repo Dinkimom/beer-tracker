@@ -7,7 +7,7 @@ import { useLocalStorage as useLocalStorageBase } from './localStorage/useLocalS
 export { useLocalStorageBase as useLocalStorage };
 
 export * from './localStorage/hooksSwimlaneAndKanban';
-export * from './localStorage/swimlaneCardSlotLayout';
+export * from './localStorage/taskCardSlotLayout';
 export * from './localStorage/hooksSelectionThemeAndSync';
 export * from './localStorage/hooksSidebarAndDevelopers';
 

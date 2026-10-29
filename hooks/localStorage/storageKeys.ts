@@ -59,6 +59,8 @@ export const STORAGE_KEYS = {
   SWIMLANE_CARD_FIELDS: 'beer-tracker-swimlane-card-fields',
   /** Раскладка слотов карточки свимлейна. null — следовать галочкам полей. */
   SWIMLANE_CARD_SLOT_LAYOUT: 'beer-tracker-swimlane-card-slot-layout',
+  /** Раскладка слотов карточки канбана. null — раскладка канбана по умолчанию. */
+  KANBAN_CARD_SLOT_LAYOUT: 'beer-tracker-kanban-card-slot-layout',
   /**
    * Упаковка бейзлайна просрочки: compact | noOverlap.
    * Тот же ключ, что раньше был boolean «показывать просрочку».

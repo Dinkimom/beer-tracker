@@ -10,23 +10,33 @@ import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overla
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
-import { useCommitSwimlaneCardSlotLayout } from '@/hooks/useLocalStorage';
+import { useCommitTaskCardSlotLayout } from '@/hooks/useLocalStorage';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
 import { fetchPlannerTrackerFields } from '@/lib/api/plannerTrackerFields';
-import { defaultTaskCardSlotLayout, taskCardSlotLayoutsEqual } from '@/lib/taskCard/taskCardSlots';
+import {
+  defaultTaskCardSlotLayout,
+  taskCardSlotLayoutsEqual,
+  type TaskCardBoard,
+} from '@/lib/taskCard/taskCardSlots';
 
 import { TaskCardDisplaySettingsPanel } from './TaskCardDisplaySettingsPanel';
 
 interface TaskCardDisplayDialogProps {
+  board?: TaskCardBoard;
   nested?: boolean;
   open: boolean;
   onClose: () => void;
 }
 
-export function TaskCardDisplayDialog({ nested = false, onClose, open }: TaskCardDisplayDialogProps) {
+export function TaskCardDisplayDialog({
+  board = 'swimlane',
+  nested = false,
+  onClose,
+  open,
+}: TaskCardDisplayDialogProps) {
   const { t } = useI18n();
-  const { commit, layout } = useCommitSwimlaneCardSlotLayout();
+  const { commit, layout } = useCommitTaskCardSlotLayout(board);
   const { activeOrganizationId, sessionLoading } = useProductTenantOrganizations({ pollIntervalMs: 0 });
   const fieldsQuery = useQuery({
     enabled: open && Boolean(activeOrganizationId),
@@ -62,15 +72,19 @@ export function TaskCardDisplayDialog({ nested = false, onClose, open }: TaskCar
       >
         <div className="flex flex-shrink-0 items-center justify-between gap-3 px-5 pb-1 pt-3">
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100" id="task-card-display-title">
-            {t('settings.planningTab.cardSlots.dialogTitle')}
+            {t(
+              board === 'kanban'
+                ? 'settings.planningTab.cardSlots.kanbanDialogTitle'
+                : 'settings.planningTab.cardSlots.dialogTitle'
+            )}
           </h2>
           <div className="flex items-center gap-2">
             <Button
-              disabled={taskCardSlotLayoutsEqual(layout, defaultTaskCardSlotLayout())}
+              disabled={taskCardSlotLayoutsEqual(layout, defaultTaskCardSlotLayout(board))}
               title={t('settings.planningTab.cardSlots.resetHint')}
               variant="secondary"
               onClick={() => {
-                commit(defaultTaskCardSlotLayout());
+                commit(defaultTaskCardSlotLayout(board));
               }}
             >
               {t('settings.planningTab.cardSlots.reset')}
@@ -82,6 +96,7 @@ export function TaskCardDisplayDialog({ nested = false, onClose, open }: TaskCar
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <TaskCardDisplaySettingsPanel
+            board={board}
             fields={fieldsQuery.data ?? []}
             fieldsStatus={trackerFieldsStatus(
               activeOrganizationId,

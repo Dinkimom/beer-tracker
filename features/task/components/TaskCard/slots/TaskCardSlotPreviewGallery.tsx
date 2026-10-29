@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskCardDensity, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
+import type { TaskCardBoard, TaskCardDensity, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
 import type { Task } from '@/types';
 
 import { useI18n } from '@/contexts/LanguageContext';
@@ -9,25 +9,38 @@ import { TASK_CARD_DENSITIES } from '@/lib/taskCard/taskCardSlots';
 import { TASK_CARD_SLOT_SAMPLE_USERS, taskCardSlotSampleInProgress } from './taskCardSlotFixtures';
 import { TaskCardSlotPreview } from './TaskCardSlotPreview';
 
+/** Карточка в колонке канбана: колонка 200px минус поля. */
+const KANBAN_PREVIEW_WIDTH = 184;
+
 interface TaskCardSlotPreviewGalleryProps {
+  board?: TaskCardBoard;
   layout: TaskCardSlotLayout;
   sample?: { fieldId: string; value: string } | null;
 }
 
-export function TaskCardSlotPreviewGallery({ layout, sample = null }: TaskCardSlotPreviewGalleryProps) {
+export function TaskCardSlotPreviewGallery({
+  board = 'swimlane',
+  layout,
+  sample = null,
+}: TaskCardSlotPreviewGalleryProps) {
   const { t } = useI18n();
+  const isKanban = board === 'kanban';
+  const densities: readonly TaskCardDensity[] = isKanban ? ['regular'] : TASK_CARD_DENSITIES;
   return (
     <section className="space-y-2">
       <h3 className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        {t('settings.planningTab.cardSlots.previewWidths')}
+        {t(isKanban ? 'settings.planningTab.cardSlots.previewKanban' : 'settings.planningTab.cardSlots.previewWidths')}
       </h3>
       <div className="flex flex-wrap items-start gap-4">
-        {TASK_CARD_DENSITIES.map((density) => (
+        {densities.map((density) => (
           <TaskCardSlotPreview
             key={density}
+            board={board}
+            caption={isKanban ? '' : undefined}
             density={density}
             layout={layout}
             task={previewTask(density, sample, layout)}
+            width={isKanban ? KANBAN_PREVIEW_WIDTH : undefined}
           />
         ))}
       </div>

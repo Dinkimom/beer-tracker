@@ -3,12 +3,15 @@ import type { Task } from '@/types';
 import {
   resolveTaskCardSlots,
   taskCardDensityFromDuration,
+  taskCardBoardFieldsOutsideSlots,
   taskCardFieldsSuppressedByKind,
   type ResolvedTaskCardSlots,
+  type TaskCardBoard,
   type TaskCardSlotLayout,
 } from '@/lib/taskCard/taskCardSlots';
 
 export function resolveSwimlaneTaskCardSlots(input: {
+  board?: TaskCardBoard;
   displayDuration?: number;
   hasAssignee: boolean;
   hasEstimate: boolean;
@@ -27,7 +30,10 @@ export function resolveSwimlaneTaskCardSlots(input: {
     | 'type'
   >;
 }): ResolvedTaskCardSlots {
-  const suppressFields = taskCardFieldsSuppressedByKind(input.task);
+  const suppressFields = [
+    ...taskCardFieldsSuppressedByKind(input.task),
+    ...taskCardBoardFieldsOutsideSlots(input.board ?? 'swimlane'),
+  ];
   if (input.hideParent) {
     suppressFields.push('parent');
   }

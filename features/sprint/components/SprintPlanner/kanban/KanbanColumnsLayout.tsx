@@ -4,7 +4,7 @@ import type { KanbanColumnHeaderData, KanbanLaneWithColumns } from './kanbanLane
 import type { Developer, Task } from '@/types';
 import type { BoardColumn } from '@/types/tracker';
 
-import { KanbanColumn } from './KanbanColumn';
+import { KanbanLaneColumns } from './KanbanLaneColumns';
 import { KanbanLaneSection } from './KanbanLaneSection';
 
 interface KanbanColumnsLayoutProps {
@@ -79,26 +79,20 @@ export function KanbanColumnsLayout({
   }
 
   return (
-    <div
-      ref={columnsContainerRef}
+    <KanbanLaneColumns
+      activeTaskId={activeTaskId}
+      canDropInColumn={canDropInColumn}
       className="flex min-h-full flex-none items-stretch gap-3 px-4 pb-4 pt-0"
-    >
-      {columnsWithHeaderData.map(({ column, tasks: columnTasks }) => (
-        <KanbanColumn
-          key={column.id}
-          columnId={column.id}
-          contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-          contextMenuTaskId={contextMenuTaskId}
-          developers={developers}
-          globalNameFilter={globalNameFilter}
-          isDragging={Boolean(activeTaskId)}
-          isDropDisabled={Boolean(activeTaskId) && !canDropInColumn(column)}
-          isSourceColumn={column.id === sourceColumnId}
-          tasks={columnTasks}
-          onContextMenu={onContextMenu}
-          onTaskClick={onTaskClick}
-        />
-      ))}
-    </div>
+      columnsWithHeaderData={columnsWithHeaderData}
+      containerRef={columnsContainerRef}
+      contextMenuBlurOtherCards={contextMenuBlurOtherCards}
+      contextMenuTaskId={contextMenuTaskId}
+      developers={developers}
+      globalNameFilter={globalNameFilter}
+      laneKey={null}
+      sourceColumnId={sourceColumnId}
+      onContextMenu={onContextMenu}
+      onTaskClick={onTaskClick}
+    />
   );
 }

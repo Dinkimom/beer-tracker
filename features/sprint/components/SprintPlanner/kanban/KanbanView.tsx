@@ -14,6 +14,7 @@ import { filterTasksByAssignees } from '@/features/backlog/utils/backlogFilterPe
 import { useBoardParams } from '@/features/board/hooks/useBoardParams';
 import { TaskCardDueDateContext } from '@/features/task/components/TaskCard/components/TaskCardDueDateChip';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
+import { TaskCardBoardProvider } from '@/features/task/components/TaskCard/TaskCardBoardContext';
 import {
   getIssueTransitions,
   getIssueTransitionsBatch,
@@ -288,6 +289,7 @@ export const KanbanView = observer(function KanbanView({
 
   return (
     <TaskCardDueDateContext.Provider value={true}>
+    <TaskCardBoardProvider board="kanban">
     <KanbanViewGate
       boardId={boardId}
       error={error}
@@ -325,7 +327,7 @@ export const KanbanView = observer(function KanbanView({
           {headerColumns.map(({ column, filteredTasks, totalSp, totalTp }) => (
             <div
               key={column.id}
-              className={`w-[280px] max-w-[280px] min-w-[280px] shrink-0 overflow-hidden ${KANBAN_COLUMN_HEADER_GLASS}`}
+              className={`w-[200px] max-w-[200px] min-w-[200px] shrink-0 overflow-hidden ${KANBAN_COLUMN_HEADER_GLASS}`}
               data-kanban-header={column.id}
             >
               <KanbanColumnHeader
@@ -362,13 +364,12 @@ export const KanbanView = observer(function KanbanView({
         </div>
         <DragOverlay>
           {activeTask ? (
-            <div className="w-[264px] cursor-grabbing overflow-hidden rounded-lg opacity-95 shadow-xl rotate-2">
+            <div className="w-[184px] cursor-grabbing overflow-hidden rounded-lg opacity-95 shadow-xl rotate-2">
               <PhaseCardColorSchemeOverride value="monochrome">
                 <TaskCard
                   assigneeName={activeTask.assigneeName}
                   className={KANBAN_CARD_SURFACE}
                   developers={developers}
-                  hideStatusTag
                   task={activeTask}
                   variant="sidebar"
                 />
@@ -388,6 +389,7 @@ export const KanbanView = observer(function KanbanView({
       ) : null}
       </div>
     </KanbanViewGate>
+    </TaskCardBoardProvider>
     </TaskCardDueDateContext.Provider>
   );
 });

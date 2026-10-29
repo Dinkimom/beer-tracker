@@ -1,7 +1,7 @@
 'use client';
 
 import type { TaskCardSlotItemContext } from './taskCardSlotItemContext';
-import type { TaskCardDensity, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
+import type { TaskCardBoard, TaskCardDensity, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
 import type { Task } from '@/types';
 
 import { useI18n } from '@/contexts/LanguageContext';
@@ -20,6 +20,9 @@ const DENSITY_DURATION: Record<TaskCardDensity, number> = {
   regular: 4,
 };
 
+/** Канбан рисует исполнителя отдельной строкой — в превью так же. */
+const KANBAN_ASSIGNEE_ROW = [{ field: 'assignee', presentation: 'tag' }] as const;
+
 const DENSITY_WIDTH: Record<TaskCardDensity, number> = {
   compact: 96,
   narrow: 168,
@@ -27,6 +30,7 @@ const DENSITY_WIDTH: Record<TaskCardDensity, number> = {
 };
 
 interface TaskCardSlotPreviewProps {
+  board?: TaskCardBoard;
   caption?: string;
   density?: TaskCardDensity;
   layout: TaskCardSlotLayout;
@@ -35,6 +39,7 @@ interface TaskCardSlotPreviewProps {
 }
 
 export function TaskCardSlotPreview({
+  board = 'swimlane',
   caption,
   density = 'regular',
   layout,
@@ -44,6 +49,7 @@ export function TaskCardSlotPreview({
   const { t } = useI18n();
   const displayDuration = DENSITY_DURATION[density];
   const resolved = resolveSwimlaneTaskCardSlots({
+    board,
     displayDuration,
     hasAssignee: true,
     hasEstimate: task.storyPoints != null,
@@ -75,6 +81,7 @@ export function TaskCardSlotPreview({
           {resolved.titleLead.length > 0 ? ' ' : null}
           <span className="font-bold">{task.name}</span>
         </div>
+        {board === 'kanban' ? <TaskCardSlotItems context={context} items={KANBAN_ASSIGNEE_ROW} task={task} /> : null}
         {resolved.footer.length > 0 || resolved.footerEnd.length > 0 ? (
           <div className="flex min-w-0 shrink-0 items-center gap-1.5">
             <TaskCardSlotItems context={context} items={resolved.footer} task={task} />

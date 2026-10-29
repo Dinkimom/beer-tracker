@@ -290,6 +290,8 @@ export const enMessages = {
         hint: 'Each field sits in one slot and is drawn one way.',
         open: 'Customize card',
         dialogTitle: 'Card display',
+        kanbanDialogTitle: 'Kanban card display',
+        kanbanHint: 'Kanban has its own field layout; swimlane cards stay as they are.',
         reset: 'Reset',
         resetHint: 'Restore the original card layout',
         boardHint: 'Drag fields to arrange them, including within a row. The eye shows or hides a field.',
@@ -334,6 +336,7 @@ export const enMessages = {
         },
         slotHidden: 'Hidden',
         previewWidths: 'Card width',
+        previewKanban: 'Card in a column',
         previewDark: 'Dark theme',
         slots: {
           eyebrow: 'Above the title',

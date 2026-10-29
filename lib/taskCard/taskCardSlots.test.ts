@@ -16,6 +16,7 @@ import {
   layoutFromVisibility,
   normalizeTaskCardSlotLayout,
   resolveTaskCardSlots,
+  taskCardBoardFieldsOutsideSlots,
   taskCardDensityFromDuration,
   taskCardFieldsSuppressedByKind,
   taskCardLayoutReservesEyebrow,
@@ -237,6 +238,33 @@ describe('tracker field avatars', () => {
       customPlacements: [{ fieldId: 'reviewers', label: '', order: 10, presentation: 'avatars', slot: 'footer' }],
     });
     expect(layout.customPlacements[0].presentation).toBe('avatars');
+  });
+});
+
+describe('kanban card layout', () => {
+  it('hides the parent by default, like the old kanban card', () => {
+    expect(fieldsOf(defaultTaskCardSlotLayout('kanban')).eyebrow).toEqual([]);
+  });
+
+  it('fills missing kanban fields from the kanban defaults and keeps stored choices', () => {
+    const stored = { placements: [{ field: 'status', hidden: true, order: 4, presentation: 'tag', slot: 'footer' }] };
+    const layout = normalizeTaskCardSlotLayout(stored, 'kanban');
+    expect(layout.placements.find((item) => item.field === 'status')?.hidden).toBe(true);
+    expect(layout.placements.find((item) => item.field === 'parent')?.hidden).toBe(true);
+    expect(normalizeTaskCardSlotLayout(stored).placements.find((item) => item.field === 'parent')?.hidden).toBeUndefined();
+  });
+
+  it('keeps the assignee and the status out of kanban slots', () => {
+    const layout = defaultTaskCardSlotLayout('kanban');
+    const resolved = resolveTaskCardSlots({
+      ...fullData,
+      density: 'regular',
+      layout,
+      suppressFields: taskCardBoardFieldsOutsideSlots('kanban'),
+    });
+    expect(resolved.footer.map((item) => item.field)).toEqual(['estimate']);
+    expect(resolved.footerEnd).toEqual([]);
+    expect(taskCardBoardFieldsOutsideSlots('swimlane')).toEqual([]);
   });
 });
 

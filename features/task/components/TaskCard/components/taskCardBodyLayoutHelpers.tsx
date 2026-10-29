@@ -50,7 +50,14 @@ export function TaskCardSidebarAssigneeRow({
   );
 }
 
-export function resolveTaskCardBodyStackClass(variant: TaskCardVariant, isPhotoCard = false): string {
+export function resolveTaskCardBodyStackClass(
+  variant: TaskCardVariant,
+  isPhotoCard = false,
+  kanbanSlots = false
+): string {
+  if (kanbanSlots) {
+    return 'flex min-h-0 flex-1 flex-col gap-1.5';
+  }
   if (variant === 'swimlane') {
     return isPhotoCard ? 'flex h-full min-h-0 flex-1 flex-col gap-0' : 'flex h-full min-h-0 flex-1 flex-col gap-1';
   }

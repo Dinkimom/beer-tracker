@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskCardFieldId, TaskCardSlotId, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
+import type { TaskCardBoard, TaskCardFieldId, TaskCardSlotId, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
 import type { CollisionDetection, DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 
 import { DndContext, DragOverlay, PointerSensor, pointerWithin, rectIntersection, useSensor, useSensors } from '@dnd-kit/core';
@@ -21,6 +21,7 @@ import { TaskCardSlotBoardZone, type TaskCardSlotBoardSelection } from './TaskCa
 import { taskCardFieldLabel } from './taskCardSlotLabels';
 
 interface TaskCardSlotBoardProps {
+  board?: TaskCardBoard;
   layout: TaskCardSlotLayout;
   selected: TaskCardSlotBoardSelection;
   onChange: (layout: TaskCardSlotLayout) => void;
@@ -34,7 +35,13 @@ const preferChipCollision: CollisionDetection = (args) => {
   return chips.length > 0 ? chips : pool;
 };
 
-export function TaskCardSlotBoard({ layout, onChange, onSelect, selected }: TaskCardSlotBoardProps) {
+export function TaskCardSlotBoard({
+  board = 'swimlane',
+  layout,
+  onChange,
+  onSelect,
+  selected,
+}: TaskCardSlotBoardProps) {
   const { t } = useI18n();
   const [draft, setDraft] = useState<TaskCardSlotLayout | null>(null);
   const [draggingLabel, setDraggingLabel] = useState<string | null>(null);
@@ -101,6 +108,7 @@ export function TaskCardSlotBoard({ layout, onChange, onSelect, selected }: Task
     >
       <div className="flex w-full flex-col gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2.5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <TaskCardSlotBoardZone
+          board={board}
           className="w-full"
           layout={current}
           selected={selected}
@@ -109,6 +117,7 @@ export function TaskCardSlotBoard({ layout, onChange, onSelect, selected }: Task
           onSelect={onSelect}
         />
         <TaskCardSlotBoardZone
+          board={board}
           className="w-full"
           layout={current}
           selected={selected}
@@ -123,6 +132,7 @@ export function TaskCardSlotBoard({ layout, onChange, onSelect, selected }: Task
         />
         <div className="flex w-full items-start gap-1.5">
           <TaskCardSlotBoardZone
+            board={board}
             className="min-w-0 w-full flex-1"
             layout={current}
             selected={selected}
@@ -132,6 +142,7 @@ export function TaskCardSlotBoard({ layout, onChange, onSelect, selected }: Task
           />
           <TaskCardSlotBoardZone
             alignEnd
+            board={board}
             className="w-auto shrink-0"
             layout={current}
             selected={selected}

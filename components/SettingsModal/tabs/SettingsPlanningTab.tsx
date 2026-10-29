@@ -2,6 +2,7 @@
 
 import type { PlanningGanttTab, SettingsPlanningTabProps } from './SettingsPlanningTab.types';
 import type { PlanningPhaseCardColorScheme, SwimlaneLinksIdleMode } from '@/hooks/useLocalStorage';
+import type { TaskCardBoard } from '@/lib/taskCard/taskCardSlots';
 
 import { useMemo, useState } from 'react';
 
@@ -20,6 +21,7 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
   const [phaseCardColorScheme, setPhaseCardColorScheme] = usePlanningPhaseCardColorSchemeStorage();
   const [linksIdleMode, setLinksIdleMode] = useSwimlaneLinksIdleModeStorage();
   const [cardDisplayOpen, setCardDisplayOpen] = useState(false);
+  const [cardDisplayBoard, setCardDisplayBoard] = useState<TaskCardBoard>('swimlane');
   const { t } = useI18n();
   const ganttTabs = useMemo(
     () =>
@@ -149,6 +151,7 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
               type="button"
               variant="outline"
               onClick={() => {
+                setCardDisplayBoard('swimlane');
                 setCardDisplayOpen(true);
               }}
             >
@@ -182,9 +185,26 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
               onChange={(v) => setKanbanGroupBy(v)}
             />
           </div>
+          <div className="space-y-2 pt-1">
+            <h4 className="text-xs font-medium uppercase tracking-wide text-ds-text-muted">
+              {t('settings.planningTab.taskCardFieldsHeading')}
+            </h4>
+            <p className="text-xs leading-relaxed text-ds-text-muted">{t('settings.planningTab.cardSlots.kanbanHint')}</p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setCardDisplayBoard('kanban');
+                setCardDisplayOpen(true);
+              }}
+            >
+              {t('settings.planningTab.cardSlots.open')}
+            </Button>
+          </div>
         </section>
       )}
       <TaskCardDisplayDialog
+        board={cardDisplayBoard}
         nested
         open={cardDisplayOpen}
         onClose={() => {

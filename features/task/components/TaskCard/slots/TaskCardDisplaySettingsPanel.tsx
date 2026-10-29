@@ -1,7 +1,7 @@
 'use client';
 
 import type { TaskCardSlotBoardSelection } from './TaskCardSlotBoardZone';
-import type { TaskCardHideWhen, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
+import type { TaskCardBoard, TaskCardHideWhen, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
 import type { PlannerTrackerField } from '@/lib/tracker/plannerTrackerFieldOptions';
 
 import { useQuery } from '@tanstack/react-query';
@@ -31,6 +31,7 @@ interface FixedListOptions {
 }
 
 interface TaskCardDisplaySettingsPanelProps {
+  board?: TaskCardBoard;
   fields?: readonly PlannerTrackerField[];
   fieldsStatus?: 'loading' | 'ready' | 'unavailable';
   layout: TaskCardSlotLayout;
@@ -39,6 +40,7 @@ interface TaskCardDisplaySettingsPanelProps {
 }
 
 export function TaskCardDisplaySettingsPanel({
+  board = 'swimlane',
   fields = [],
   fieldsStatus = 'ready',
   layout,
@@ -59,7 +61,7 @@ export function TaskCardDisplaySettingsPanel({
     <div className="space-y-4">
       <p className="text-xs leading-relaxed text-ds-text-muted">{t('settings.planningTab.cardSlots.boardHint')}</p>
       <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_20rem]">
-        <TaskCardSlotBoard layout={layout} selected={selected} onChange={onChange} onSelect={setSelected} />
+        <TaskCardSlotBoard board={board} layout={layout} selected={selected} onChange={onChange} onSelect={setSelected} />
         <TaskCardSlotInspector
           layout={layout}
           options={fixedList.options}
@@ -74,6 +76,12 @@ export function TaskCardDisplaySettingsPanel({
         layout={layout}
         onChange={onChange}
       />
+      {/* У канбана одна ширина карточки — правила коротких карточек ему не нужны. */}
+      {board === 'kanban' ? (
+        <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
+          <TaskCardSlotPreviewGallery board="kanban" layout={layout} sample={sample} />
+        </div>
+      ) : (
       <div className="grid items-start gap-6 border-t border-gray-200 pt-4 lg:grid-cols-[minmax(0,1fr)_22rem] dark:border-gray-700">
         <TaskCardSlotPreviewGallery layout={layout} sample={sample} />
         <section className="space-y-3">
@@ -98,6 +106,7 @@ export function TaskCardDisplaySettingsPanel({
           ))}
         </section>
       </div>
+      )}
     </div>
   );
 }

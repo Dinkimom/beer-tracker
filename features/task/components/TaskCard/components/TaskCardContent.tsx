@@ -72,7 +72,7 @@ export function TaskCardContent({
   onCommentUpdate,
   phaseCardColorScheme = 'status',
   slotContext,
-  titleLeadItems = [],
+  titleLeadItems,
 }: TaskCardContentProps) {
   const { t } = useI18n();
   const teamTextColor = resolveTaskCardTeamTextColor(task, phaseCardColorScheme);
@@ -133,8 +133,10 @@ export function TaskCardContent({
       <TaskCardSidebarContent
         displayId={displayId}
         keyLinkProps={keyLinkProps}
+        slotContext={slotContext}
         task={task}
         teamTextColor={teamTextColor}
+        titleLeadItems={titleLeadItems}
       />
     );
   }

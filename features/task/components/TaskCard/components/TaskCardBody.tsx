@@ -6,7 +6,7 @@ import type { Task, Developer, TaskCardVariant } from '@/types';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveFeatureDraftParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
-import { useResolvedSwimlaneCardSlotLayout } from '@/hooks/useLocalStorage';
+import { useResolvedTaskCardSlotLayout } from '@/hooks/useLocalStorage';
 import {
   formatTaskStoryPointsForDisplay,
   formatTaskTestPointsForDisplay,
@@ -16,6 +16,7 @@ import { useFeatureDraftRowNames } from '../FeatureDraftRowNamesContext';
 import { useFeatureLaneShowAssigneeAvatar } from '../FeatureLaneCardUiContext';
 import { resolveSwimlaneTaskCardSlots } from '../slots/resolveSwimlaneTaskCardSlots';
 import { TaskCardSlotItems } from '../slots/TaskCardSlotItems';
+import { useTaskCardBoard } from '../TaskCardBoardContext';
 import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility';
 import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 
@@ -71,7 +72,10 @@ export function TaskCardBody({
   const estimateMapping = useTaskCardEstimateMapping();
   const showFeatureLaneAssigneeAvatar = useFeatureLaneShowAssigneeAvatar();
   const featureDraftRowNames = useFeatureDraftRowNames();
-  const slotLayout = useResolvedSwimlaneCardSlotLayout();
+  const board = useTaskCardBoard();
+  const slotLayout = useResolvedTaskCardSlotLayout(board);
+  // Канбан рисует sidebar-карточку, но поля раскладывает своими слотами.
+  const kanbanSlots = variant === 'sidebar' && board === 'kanban';
   const parentLabel = task.parent
     ? resolveFeatureDraftParentLabel(task.parent, featureDraftRowNames)
     : '';
@@ -97,9 +101,11 @@ export function TaskCardBody({
     task,
     variant,
   });
-  const slots = variant === 'swimlane'
+  const slots = variant === 'swimlane' || kanbanSlots
     ? resolveSwimlaneTaskCardSlots({
-        displayDuration,
+        board,
+        // Ширина карточки канбана не зависит от оценки — правила коротких карточек к ней не применяются.
+        displayDuration: kanbanSlots ? undefined : displayDuration,
         hasAssignee,
         hasEstimate,
         hasKey: true,
@@ -131,7 +137,7 @@ export function TaskCardBody({
   const showEyebrow = Boolean(slots && slots.eyebrow.length > 0);
   const showFooter = Boolean(slots && (slots.footer.length > 0 || slots.footerEnd.length > 0));
   return (
-    <div className={resolveTaskCardBodyStackClass(variant, task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget')}>
+    <div className={resolveTaskCardBodyStackClass(variant, task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget', kanbanSlots)}>
       {showEyebrow && slots ? (
         <TaskCardSlotItems context={slotContext} items={slots.eyebrow} task={task} />
       ) : null}

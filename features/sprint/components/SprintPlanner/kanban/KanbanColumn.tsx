@@ -57,7 +57,7 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`relative flex min-h-[120px] w-[280px] max-w-[280px] min-w-[280px] shrink-0 flex-col overflow-hidden transition-colors ${chromeClass}`}
+      className={`relative flex min-h-[120px] w-[200px] max-w-[200px] min-w-[200px] shrink-0 flex-col overflow-hidden transition-colors ${chromeClass}`}
       data-kanban-column={columnId}
     >
       <div
