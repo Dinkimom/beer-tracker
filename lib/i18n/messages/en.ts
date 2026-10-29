@@ -560,6 +560,12 @@ export const enMessages = {
     untitledColumn: 'Column',
     emptyColumn: 'No cards yet',
     agreementsHint: 'Converted notes stay here and in the next retro.',
+    goals: {
+      heading: 'Goals',
+      loading: 'Loading...',
+      loadError: 'Failed to load goals',
+      empty: 'This sprint has no goals',
+    },
     facts: {
       heading: 'Facts',
       loading: 'Loading...',

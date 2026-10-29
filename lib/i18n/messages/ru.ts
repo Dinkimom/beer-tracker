@@ -560,6 +560,12 @@ export const ruMessages = {
     untitledColumn: 'Колонка',
     emptyColumn: 'Пока пусто',
     agreementsHint: 'Сконвертированные заметки остаются здесь и в следующем ретро.',
+    goals: {
+      heading: 'Цели',
+      loading: 'Загрузка...',
+      loadError: 'Не удалось загрузить цели',
+      empty: 'У спринта нет целей',
+    },
     facts: {
       heading: 'Факты',
       loading: 'Загрузка...',

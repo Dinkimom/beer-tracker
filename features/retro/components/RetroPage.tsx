@@ -24,6 +24,7 @@ import { resolveAdjacentSprintIds } from '@/lib/retro/retroBoard';
 
 import { RetroBoardView } from './RetroBoardView';
 import { RetroFactsBlock } from './RetroFactsBlock';
+import { RetroGoalsBlock } from './RetroGoalsBlock';
 import { RetroMetricsSidebar } from './RetroMetricsSidebar';
 
 interface RetroPageProps {
@@ -157,6 +158,7 @@ export function RetroPage({
             localTasks={tasksForScore}
             sprintId={selectedSprintId}
           />
+          <RetroGoalsBlock boardId={boardId} sprintId={selectedSprintId} />
           <RetroFactsBlock
             key={selectedSprintId}
             completionRules={completionRules}
