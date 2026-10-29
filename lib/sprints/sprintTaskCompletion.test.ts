@@ -58,6 +58,22 @@ describe('isStatusKeyCompleted (changelog replay)', () => {
     expect(isStatusKeyCompleted('readyForDev', tracker)).toBe(false);
   });
 
+  it('prefers the status id from changelog over a key in another language', () => {
+    const russian = sprintTaskCompletionRulesFromStatuses('jira-cloud', [
+      { id: '10003', key: 'готово', statusType: { key: 'done' } },
+    ]);
+    expect(isStatusKeyCompleted({ id: '10003', key: 'done' }, russian)).toBe(true);
+    expect(isStatusKeyCompleted('done', russian)).toBe(false);
+  });
+
+  it('finds a status by its untranslated key when the changelog has no id', () => {
+    const russian = sprintTaskCompletionRulesFromStatuses('jira-cloud', [
+      { id: '10003', key: 'готово', statusType: { key: 'done' }, untranslatedKey: 'done' },
+    ]);
+    expect(isStatusKeyCompleted('done', russian)).toBe(true);
+    expect(isStatusKeyCompleted('готово', russian)).toBe(true);
+  });
+
   it('is false for empty or unknown keys', () => {
     expect(isStatusKeyCompleted('', tracker)).toBe(false);
     expect(isStatusKeyCompleted(undefined, tracker)).toBe(false);

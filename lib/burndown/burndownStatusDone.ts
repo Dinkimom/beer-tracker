@@ -2,12 +2,11 @@
  * «Сделано» для реплея changelog (burndown, итоги спринта, факты метрик) — правила завершения
  * организации ({@link ../sprints/sprintTaskCompletion}), раздельно для SP и TP.
  *
- * Ограничение: в changelog есть только ключ статуса, без типа статуса трекера, поэтому
- * `defaultsByTrackerStatusType` к историческим переходам не применяется — только override по ключу,
- * `readyStatusKey` и эвристика `mapStatus` по ключу.
+ * В changelog нет типа статуса, поэтому тип ищется в справочнике трекера: сначала по id статуса,
+ * затем по ключу. Статус, которого нет в справочнике, «сделанным» не считается.
  */
 
-import type { SprintTaskCompletionRules } from '@/lib/sprints/sprintTaskCompletion';
+import type { SprintTaskCompletionRules, StatusRef } from '@/lib/sprints/sprintTaskCompletion';
 
 import { isStatusKeyCompleted } from '@/lib/sprints/sprintTaskCompletion';
 
@@ -19,22 +18,22 @@ interface StatusDoneFlags {
 }
 
 export function statusDoneFlags(
-  statusKey: string | undefined,
+  status: StatusRef,
   rules: BurndownCompletionRules
 ): StatusDoneFlags {
   return {
-    sp: isStatusKeyCompleted(statusKey, rules),
-    tp: isStatusKeyCompleted(statusKey, rules),
+    sp: isStatusKeyCompleted(status, rules),
+    tp: isStatusKeyCompleted(status, rules),
   };
 }
 
-/** Что «закрылось» переходом fromKey → toKey (SP и/или TP впервые стали сделанными). */
+/** Что «закрылось» переходом from → to (SP и/или TP впервые стали сделанными). */
 export function statusClosingFlags(
-  fromKey: string | undefined,
-  toKey: string | undefined,
+  fromStatus: StatusRef,
+  toStatus: StatusRef,
   rules: BurndownCompletionRules
 ): StatusDoneFlags {
-  const to = statusDoneFlags(toKey, rules);
-  const from = statusDoneFlags(fromKey, rules);
+  const to = statusDoneFlags(toStatus, rules);
+  const from = statusDoneFlags(fromStatus, rules);
   return { sp: to.sp && !from.sp, tp: to.tp && !from.tp };
 }

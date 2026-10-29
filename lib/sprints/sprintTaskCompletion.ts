@@ -12,9 +12,15 @@ import { isJiraProviderKind } from '@/lib/issueTrackerProvider/types';
 export interface SprintTaskCompletionRules {
   /** Tracker требует резолюцию, Jira — нет. */
   requireResolution: boolean;
-  /** Справочник статусов трекера: ключ или id статуса → ключ типа статуса. */
+  /** Справочник статусов трекера: ключ, непереведённый ключ или id статуса → ключ типа статуса. */
   statusTypeByKey: Record<string, string>;
 }
+
+/**
+ * Статус для поиска в справочнике: ключ или `{ id, key }` из changelog. Id надёжнее ключа:
+ * Jira пишет в историю названия на языке сайта, а справочник отдаёт их на языке токена.
+ */
+export type StatusRef = string | { id?: string; key?: string } | null | undefined;
 
 type TaskCompletionFields = Pick<
   Task,
@@ -42,16 +48,26 @@ function statusTypeFromCatalog(
   return undefined;
 }
 
+function statusRefCandidates(status: StatusRef): Array<string | undefined> {
+  if (status == null || typeof status === 'string') return [status ?? undefined];
+  return [status.id, status.key];
+}
+
 /** Справочник статусов трекера → правила «сделано». */
 export function sprintTaskCompletionRulesFromStatuses(
   providerKind: IssueTrackerProviderKind,
-  statuses: ReadonlyArray<{ id?: string; key: string; statusType?: { key?: string } }>
+  statuses: ReadonlyArray<{
+    id?: string;
+    key: string;
+    statusType?: { key?: string };
+    untranslatedKey?: string;
+  }>
 ): SprintTaskCompletionRules {
   const statusTypeByKey: Record<string, string> = {};
   for (const status of statuses) {
     const typeKey = normalizeKey(status.statusType?.key);
     if (!typeKey) continue;
-    for (const key of [status.key, status.id]) {
+    for (const key of [status.key, status.untranslatedKey, status.id]) {
       const normalized = normalizeKey(key);
       if (normalized) statusTypeByKey[normalized] = typeKey;
     }
@@ -80,15 +96,15 @@ export function isTaskCompleted(
 }
 
 /**
- * Статус «сделано» по одному ключу (переход в changelog, статус на момент времени).
+ * Статус «сделано» по ключу или `{ id, key }` (переход в changelog, статус на момент времени).
  * Тип берётся из справочника; резолюция в истории не проверяется — в Tracker переход
  * в статус типа `done` выставляет её вместе со статусом.
  */
 export function isStatusKeyCompleted(
-  statusKey: string | null | undefined,
+  status: StatusRef,
   rules?: SprintTaskCompletionRules | null
 ): boolean {
-  return statusTypeFromCatalog([statusKey], rules ?? EMPTY_RULES) === DONE_STATUS_TYPE;
+  return statusTypeFromCatalog(statusRefCandidates(status), rules ?? EMPTY_RULES) === DONE_STATUS_TYPE;
 }
 
 /** Ключ типа статуса из справочника — для optimistic-обновления задачи после перехода. */

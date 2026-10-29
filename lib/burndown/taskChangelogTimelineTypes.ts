@@ -1,10 +1,14 @@
 import type { BurndownCompletionRules } from './burndownStatusDone';
 
 export type TaskChangelogTimelineItem =
-  { type: 'reestimated'; issueKey: string; deltaSP: number; deltaTP: number }
-  | { type: 'sprint_added'; issueKey: string }
-  | { type: 'sprint_removed'; issueKey: string }
-  | { type: 'status_change'; issueKey: string; fromKey?: string; toKey?: string };
+  {
+      type: 'status_change';
+      issueKey: string;
+      fromId?: string;
+      fromKey?: string;
+      toId?: string;
+      toKey?: string;
+    } | { type: 'reestimated'; issueKey: string; deltaSP: number; deltaTP: number } | { type: 'sprint_added'; issueKey: string } | { type: 'sprint_removed'; issueKey: string };
 
 export interface BuildTaskChangelogTimelineOptions {
   sprintId?: string;

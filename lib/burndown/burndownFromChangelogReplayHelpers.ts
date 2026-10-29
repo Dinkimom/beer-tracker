@@ -4,7 +4,7 @@ import type { YtrackerBurndownChangelogEntry } from '@/lib/ytrackerRawIssues';
 
 import { statusClosingFlags, statusDoneFlags } from '@/lib/burndown/burndownStatusDone';
 import { changelogPointOrZero, readChangelogPointValue } from '@/lib/burndown/changelogPointValue';
-import { extractStatusKey } from '@/lib/burndown/extractStatusKey';
+import { extractStatusKey, extractStatusRef } from '@/lib/burndown/extractStatusKey';
 import { sprintArrayContainsSprint } from '@/lib/burndown/sprintMembership';
 
 export function toBurndownDateKey(d: Date): string {
@@ -58,9 +58,8 @@ function applyStatusFieldToTaskState(
   state: TaskState,
   rules: BurndownCompletionRules
 ): void {
-  const toKey = extractStatusKey(field.to);
-  if (!toKey) return;
-  const done = statusDoneFlags(toKey, rules);
+  if (!extractStatusKey(field.to)) return;
+  const done = statusDoneFlags(extractStatusRef(field.to), rules);
   state.spDone = done.sp;
   state.tpDone = done.tp;
 }
@@ -106,7 +105,7 @@ function applyStatusFieldToEvents(
   issueKey: string,
   rules: BurndownCompletionRules,
 ): void {
-  const closes = statusClosingFlags(extractStatusKey(field.from), extractStatusKey(field.to), rules);
+  const closes = statusClosingFlags(extractStatusRef(field.from), extractStatusRef(field.to), rules);
   if (closes.sp || closes.tp) {
     events.push({ type: 'closed', closesSP: closes.sp, closesTP: closes.tp, date, issueKey });
   }
@@ -293,7 +292,7 @@ function appendStatusFieldToDailyChangelog(
   applyFieldToTaskState(field, ctx.sprintName, ctx.sprintIdForMatch, ctx.state, ctx.rules);
   const after = sumRemainingOpenWork(ctx.taskState);
   let { change, changeTP } = remainingPointDeltas(before, after);
-  const closes = statusClosingFlags(fromKey, toKey, ctx.rules);
+  const closes = statusClosingFlags(extractStatusRef(field.from), extractStatusRef(field.to), ctx.rules);
   if (change === 0 && changeTP === 0 && (closes.sp || closes.tp)) {
     change = closes.sp ? 0 - spBefore : 0;
     changeTP = closes.tp ? 0 - tpBefore : 0;

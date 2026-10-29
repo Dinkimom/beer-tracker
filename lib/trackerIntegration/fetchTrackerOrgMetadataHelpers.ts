@@ -16,6 +16,8 @@ export interface TrackerMetadataStatusDto {
   id: string;
   key: string;
   statusType?: { display?: string; id?: string; key?: string };
+  /** Ключ по непереведённому названию (Jira), если отличается от `key`. */
+  untranslatedKey?: string;
 }
 
 function normalizeEntityId(raw: unknown): string {

@@ -29,6 +29,7 @@ interface JiraStatusRaw {
   id?: string;
   name?: string;
   statusCategory?: JiraStatusCategoryRaw;
+  untranslatedName?: string;
 }
 
 export function mapJiraFieldToMetadata(raw: unknown): TrackerMetadataFieldDto | null {
@@ -64,6 +65,8 @@ export function mapJiraStatusToMetadata(raw: unknown): TrackerMetadataStatusDto 
   const display = row.name?.trim() || id;
   // Same key as mapJiraStatus / issues so admin visualToken overrides match planner cards.
   const key = row.name?.trim() ? jiraNameKey(row.name) : id;
+  // Changelog пишет названия на языке сайта, а `name` приходит на языке токена.
+  const untranslatedKey = row.untranslatedName?.trim() ? jiraNameKey(row.untranslatedName) : key;
   const category = row.statusCategory;
   return {
     description: row.description?.trim() || undefined,
@@ -77,6 +80,7 @@ export function mapJiraStatusToMetadata(raw: unknown): TrackerMetadataStatusDto 
           key: category.key,
         }
       : undefined,
+    ...(untranslatedKey === key ? {} : { untranslatedKey }),
   };
 }
 

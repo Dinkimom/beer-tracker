@@ -56,6 +56,17 @@ describe('mapJiraStatusToMetadata', () => {
     });
   });
 
+  it('keeps the untranslated name key when the name is localized', () => {
+    expect(
+      mapJiraStatusToMetadata({
+        id: '10003',
+        name: 'Готово',
+        statusCategory: { id: 3, key: 'done', name: 'Готово' },
+        untranslatedName: 'Done',
+      })
+    ).toMatchObject({ id: '10003', key: 'готово', untranslatedKey: 'done' });
+  });
+
   it('falls back to id as key when name is missing', () => {
     expect(mapJiraStatusToMetadata({ id: '42' })).toEqual({
       description: undefined,

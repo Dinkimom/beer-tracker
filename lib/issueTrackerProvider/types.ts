@@ -27,6 +27,8 @@ export interface IssueTrackerStatusCatalogItem {
   id: string;
   key: string;
   statusType?: { key?: string };
+  /** Ключ по непереведённому названию (Jira): так статус записан в changelog. */
+  untranslatedKey?: string;
 }
 
 /** Адаптер и payload снимков: Yandex Tracker vs Jira (Cloud и DC — один REST-адаптер). */

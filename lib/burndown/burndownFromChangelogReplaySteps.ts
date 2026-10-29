@@ -1,8 +1,9 @@
 import type { BurndownCompletionRules } from './burndownStatusDone';
 import type { BurndownDayChangelogItem } from '@/lib/api/types';
+import type { StatusRef } from '@/lib/sprints/sprintTaskCompletion';
 import type { YtrackerBurndownChangelogEntry, YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 
-import { extractStatusKey } from '@/lib/burndown/extractStatusKey';
+import { extractStatusKey, extractStatusRef } from '@/lib/burndown/extractStatusKey';
 
 import {
   appendDailyChangelogFieldsForEntry,
@@ -28,8 +29,20 @@ export interface BurndownDataPoint {
   remainingTP: number;
 }
 
+/**
+ * Статус до первого перехода в истории, иначе текущий. Переходы до старта спринта реплей
+ * применит поверх; без этого задача, закрытая внутри спринта, считалась бы сделанной с первого дня.
+ */
+function initialStatusRef(yt: YtrackerBurndownIssue): StatusRef {
+  for (const entry of yt.rawChangelog ?? []) {
+    const field = entry.fields?.find((item) => item?.field?.id === 'status');
+    if (field && extractStatusKey(field.from)) return extractStatusRef(field.from);
+  }
+  return extractStatusKey(yt.statusKey) ?? yt.statusKey;
+}
+
 function createTaskStateFromIssue(yt: YtrackerBurndownIssue, rules: BurndownCompletionRules): TaskState {
-  const done = statusDoneFlags(extractStatusKey(yt.statusKey) ?? yt.statusKey, rules);
+  const done = statusDoneFlags(initialStatusRef(yt), rules);
   return {
     inSprint: false,
     sp: yt.storyPoints ?? 0,

@@ -13,17 +13,3 @@ export function pushConsolidatedReestimateIfFirst(
   }
   out.push({ type: 'reestimated', issueKey, deltaSP: netSP, deltaTP: netTP });
 }
-
-export function pushConsolidatedStatusIfFirst(
-  out: TaskChangelogTimelineItem[],
-  inserted: boolean,
-  issueKey: string,
-  fromKey: string,
-  toKey: string
-): boolean {
-  if (inserted) {
-    return false;
-  }
-  out.push({ type: 'status_change', issueKey, fromKey, toKey });
-  return true;
-}

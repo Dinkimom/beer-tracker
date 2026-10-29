@@ -17,11 +17,9 @@ import {
 } from './burndownFromChangelogReplay';
 import { statusClosingFlags } from './burndownStatusDone';
 import { changelogPointOrZero } from './changelogPointValue';
+import { extractStatusId } from './extractStatusKey';
 import { sprintArrayContainsSprint } from './sprintMembership';
-import {
-  pushConsolidatedReestimateIfFirst,
-  pushConsolidatedStatusIfFirst,
-} from './taskChangelogTimelineRollupHelpers';
+import { pushConsolidatedReestimateIfFirst } from './taskChangelogTimelineRollupHelpers';
 
 interface ChangelogRow {
   dateKey: string;
@@ -59,7 +57,11 @@ function timelineStatusChangeToBurndownEvent(
   item: Extract<TaskChangelogTimelineItem, { type: 'status_change' }>,
   rules: BurndownCompletionRules
 ): BurndownEvent | null {
-  const closes = statusClosingFlags(item.fromKey, item.toKey, rules);
+  const closes = statusClosingFlags(
+    { id: item.fromId, key: item.fromKey },
+    { id: item.toId, key: item.toKey },
+    rules
+  );
   if (!closes.sp && !closes.tp) return null;
   return { type: 'closed', closesSP: closes.sp, closesTP: closes.tp, date: '', issueKey: item.issueKey };
 }
@@ -118,9 +120,14 @@ function parseStatusFieldToItem(
   field: NonNullable<YtrackerBurndownChangelogEntry['fields']>[number],
   issueKey: string
 ): TaskChangelogTimelineItem {
-  const fromKey = extractStatusKey(field.from);
-  const toKey = extractStatusKey(field.to);
-  return { type: 'status_change', issueKey, fromKey, toKey };
+  return {
+    type: 'status_change',
+    issueKey,
+    fromId: extractStatusId(field.from),
+    fromKey: extractStatusKey(field.from),
+    toId: extractStatusId(field.to),
+    toKey: extractStatusKey(field.to),
+  };
 }
 
 function parsePointsDelta(
@@ -309,17 +316,23 @@ function rollupTaskDayStatusChainToOne(
   );
   if (statuses.length <= 1) return events;
 
-  const issueKey = statuses[0].issueKey;
-  const fromKey = statuses[0].fromKey;
-  const toKey = statuses[statuses.length - 1].toKey;
+  const first = statuses[0];
+  const last = statuses[statuses.length - 1];
+  const consolidated: TaskChangelogTimelineItem = {
+    type: 'status_change',
+    issueKey: first.issueKey,
+    fromId: first.fromId,
+    fromKey: first.fromKey ?? '',
+    toId: last.toId,
+    toKey: last.toKey ?? '',
+  };
 
   const out: TaskChangelogTimelineItem[] = [];
   let inserted = false;
   for (const e of events) {
     if (e.type === 'status_change') {
-      inserted =
-        inserted ||
-        pushConsolidatedStatusIfFirst(out, inserted, issueKey, fromKey ?? '', toKey ?? '');
+      if (!inserted) out.push(consolidated);
+      inserted = true;
       continue;
     }
     out.push(e);
