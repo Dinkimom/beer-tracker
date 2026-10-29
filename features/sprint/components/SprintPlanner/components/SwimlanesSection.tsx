@@ -437,7 +437,12 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
               fillScrollport
               width={participantsColumnWidth}
             />
-            <div className="relative shrink-0" data-planner-swimlanes-lanes>
+            {/*
+              overflow-x-clip: холст SVG у Xarrow шире самой линии (контрольные точки кривой),
+              у отрезка в конце спринта он вылезал за сетку и растягивал scrollWidth доски.
+              clip, а не hidden — не создаёт второй скролл-контейнер, sticky и стрелки по вертикали живут.
+            */}
+            <div className="relative shrink-0 overflow-x-clip" data-planner-swimlanes-lanes>
               <SwimlanesSectionLanes
                 cardShadowTaskId={effectiveCardShadowTaskId}
                 comments={comments}
