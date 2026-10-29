@@ -12,7 +12,7 @@ const HEADER_ICON_CLASS = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !min-h-0 !w-6
 
 /**
  * Шапка чата агента. Заголовок — кнопка списка сессий: название показанной сессии, сколько открыто
- * и синяя точка, если агент ответил в другой; в списке — «Сессии с агентом». 🗑 «Очистить чат»
+ * и синяя точка, если агент ответил в другой; список открывается выпадающим под заголовком. 🗑 «Очистить чат»
  * завершает показанную сессию.
  */
 export function AgentSessionChatHeader({
@@ -50,7 +50,7 @@ export function AgentSessionChatHeader({
         onClick={onToggleList}
       >
         <h3 className="min-w-0 truncate text-xs font-semibold text-gray-900 dark:text-gray-100">
-          {listOpen ? t('agentSession.sessionsAria') : (session?.title ?? newTitle ?? t('agentSession.newSessionTitle'))}
+          {session?.title ?? newTitle ?? t('agentSession.newSessionTitle')}
         </h3>
         {sessionCount > 0 ? (
           <span className="shrink-0 rounded-full bg-gray-500/[0.12] px-1.5 text-[10px] font-semibold leading-4 text-gray-600 dark:bg-white/[0.1] dark:text-gray-300">
@@ -65,7 +65,7 @@ export function AgentSessionChatHeader({
           name="chevron-down"
         />
       </button>
-      {!listOpen && session && session.status !== 'closed' ? (
+      {session && session.status !== 'closed' ? (
         <Button
           aria-label={t('agentSession.clearChat')}
           className={HEADER_ICON_CLASS}

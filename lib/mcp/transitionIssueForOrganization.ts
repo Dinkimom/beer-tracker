@@ -85,6 +85,21 @@ async function requiredTransitionFields(
   }
 }
 
+/**
+ * Почему трекер отклонил переход: тексты Jira (`errorMessages`, `errors`) или Трекера (`errorMessages`),
+ * иначе сообщение ошибки — агенту понятно, что не так, а не просто «400».
+ */
+function trackerErrorDetail(error: unknown): string {
+  const data = (error as { response?: { data?: { errorMessages?: unknown; errors?: unknown } } }).response?.data;
+  const messages = Array.isArray(data?.errorMessages) ? data.errorMessages.map(String) : [];
+  const fields =
+    data?.errors && typeof data.errors === 'object'
+      ? Object.entries(data.errors as Record<string, unknown>).map(([field, text]) => `${field}: ${String(text)}`)
+      : [];
+  const detail = [...messages, ...fields].join('; ');
+  return detail || (error instanceof Error ? error.message : String(error));
+}
+
 async function moveIssueTo(input: {
   issueKey: string;
   issueTracker: IssueTrackerProviderClient;
@@ -110,7 +125,11 @@ async function moveIssueTo(input: {
   if (required.length > 0) {
     return { detail: required.join(', '), reason: 'transition_requires_fields', transitioned: false };
   }
-  await issueTracker.transitionIssue(issueKey, transition.id, {});
+  try {
+    await issueTracker.transitionIssue(issueKey, transition.id, {});
+  } catch (error) {
+    return { detail: trackerErrorDetail(error), reason: 'transition_rejected', transitioned: false };
+  }
   // Тот же хвост, что у смены статуса из UI: кэш спринта, burndown и realtime для открытых планеров.
   completeIssueStatusChange({
     issueKey,

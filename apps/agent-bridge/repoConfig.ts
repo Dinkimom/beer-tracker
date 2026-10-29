@@ -14,6 +14,7 @@ import {
   type AgentBridgeStoredRepo,
   mergeAgentBridgeRepos,
   parseAgentBridgeChecks,
+  parseAgentBridgeCopyPaths,
   parseAgentBridgeQueues,
   parseAgentBridgeRepoConfig,
 } from '@/lib/agentSessions/agentBridgeDev';
@@ -63,6 +64,11 @@ export function repoChecks(path: string): string[] {
   return stored.find((repo) => repo.path === path)?.checks ?? [];
 }
 
+/** Что ещё скопировать из основной папки в рабочую копию (кроме vendor/ и node_modules/). */
+export function repoCopyPaths(path: string): string[] {
+  return stored.find((repo) => repo.path === path)?.copy ?? [];
+}
+
 export function readyQueues(): string[] {
   return [...new Set(stored.filter(isReady).flatMap((repo) => repo.queues))];
 }
@@ -97,7 +103,7 @@ export function repoSettings(): AgentBridgeRepoSettings {
       } else if (repo.confirmed) {
         status = 'ready';
       }
-      return { checks: repo.checks, path: repo.path, queues: repo.queues, status };
+      return { checks: repo.checks, copy: repo.copy, path: repo.path, queues: repo.queues, status };
     }),
   };
 }
@@ -150,14 +156,17 @@ function askForPending() {
 
 /** Строка из планера: путь — существующий git-репозиторий, хотя бы одна очередь. */
 function parseRepoRow(
-  item: { checks?: unknown; path?: unknown; queues?: unknown } | null
-): { checks: string[]; path: string; queues: string[] } | { error: string } {
+  item: { checks?: unknown; copy?: unknown; path?: unknown; queues?: unknown } | null
+): { checks: string[]; copy: string[]; path: string; queues: string[] } | { error: string } {
   const path = typeof item?.path === 'string' && item.path.trim() ? expandPath(item.path) : '';
   if (!path || !isGitRepo(path)) {
     return { error: `not_a_git_repo: ${path || '—'}` };
   }
   const queues = parseAgentBridgeQueues(item?.queues);
-  return queues.length > 0 ? { checks: parseAgentBridgeChecks(item?.checks), path, queues } : { error: `no_queues: ${path}` };
+  if (queues.length === 0) {
+    return { error: `no_queues: ${path}` };
+  }
+  return { checks: parseAgentBridgeChecks(item?.checks), copy: parseAgentBridgeCopyPaths(item?.copy), path, queues };
 }
 
 /** PUT /repos из планера: проверить, сохранить и спросить про новые пары. Ошибка — текстом. */
@@ -166,8 +175,8 @@ export function updateRepos(raw: unknown): AgentBridgeRepoSettings | { error: st
   if (!Array.isArray(list)) {
     return { error: 'repos must be a list' };
   }
-  const requested: Array<{ checks: string[]; path: string; queues: string[] }> = [];
-  for (const item of list as Array<{ checks?: unknown; path?: unknown; queues?: unknown } | null>) {
+  const requested: Array<{ checks: string[]; copy: string[]; path: string; queues: string[] }> = [];
+  for (const item of list as Array<{ checks?: unknown; copy?: unknown; path?: unknown; queues?: unknown } | null>) {
     const row = parseRepoRow(item);
     if ('error' in row) {
       return row;

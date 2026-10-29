@@ -41,6 +41,20 @@ function requestedSessionOf(target: IslandTarget): string | undefined {
 }
 
 /**
+ * Чат открыли на конкретной сессии (список, тост, отправленная задача агенту) — показать её один раз
+ * на каждый новый запрос (setState во время рендера, без эффекта).
+ */
+function useRequestedSession(requested: string | undefined, onRequest: (sessionId: string) => void) {
+  const [handled, setHandled] = useState<string | undefined>(undefined);
+  if (requested !== handled) {
+    setHandled(requested);
+    if (requested) {
+      onRequest(requested);
+    }
+  }
+}
+
+/**
  * Какую сессию показать: у задачи агенту — ещё никакой; 'new' — новую; выбранную; иначе сессию
  * драфта на доске, иначе самую свежую.
  */
@@ -93,21 +107,16 @@ export function useAgentIslandChat(sprintId: number | null) {
   if (!chatOpen && listOpen) {
     setListOpen(false);
   }
-  // Чат открыли на конкретной сессии (список, тост, «Код» в меню карточки) — показываем её.
-  const requested = requestedSessionOf(target);
-  const [handledRequest, setHandledRequest] = useState<string | undefined>(undefined);
-  if (requested !== handledRequest) {
-    setHandledRequest(requested);
-    if (requested) {
-      setPick(requested);
-      setListOpen(false);
-    }
-  }
+  useRequestedSession(requestedSessionOf(target), (sessionId) => {
+    setPick(sessionId);
+    setListOpen(false);
+  });
 
   // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
+  // Пока открыт список сессий, клик мимо и Escape закрывают его, а не весь чат.
   usePopoverDismiss(() => sprintPlannerUi.setAgentRequestTarget(null), {
     capture: true,
-    enabled: chatOpen,
+    enabled: chatOpen && !listOpen,
     escape: {},
     ignoreSelector: KEEP_CHAT_OPEN_SELECTOR,
     primaryButtonOnly: true,

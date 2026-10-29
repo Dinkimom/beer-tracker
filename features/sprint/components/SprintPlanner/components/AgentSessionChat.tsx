@@ -74,67 +74,68 @@ export function AgentSessionChat({
 
   return (
     <div className="flex flex-col gap-2.5" data-agent-session-chat="">
-      <AgentSessionChatHeader
-        listOpen={sessionList.open}
-        newTitle={draft.newTitle}
-        otherUnread={[...sessionList.unread].some((id) => id !== session?.id)}
-        session={session}
-        sessionCount={sessionList.sessions.length}
-        onClear={onClear}
-        onToggleList={sessionList.onToggle}
+      {/* Список сессий — выпадающий поверх ленты под заголовком: чат под ним не пропадает. */}
+      <div className="relative">
+        <AgentSessionChatHeader
+          listOpen={sessionList.open}
+          newTitle={draft.newTitle}
+          otherUnread={[...sessionList.unread].some((id) => id !== session?.id)}
+          session={session}
+          sessionCount={sessionList.sessions.length}
+          onClear={onClear}
+          onToggleList={sessionList.onToggle}
+        />
+        {sessionList.open ? (
+          <AgentSessionList
+            currentId={session?.id ?? null}
+            draftSessionId={sessionList.draftSessionId}
+            runs={runSteps}
+            sessions={sessionList.sessions}
+            unread={sessionList.unread}
+            onClose={sessionList.onToggle}
+            onPick={sessionList.onPick}
+          />
+        ) : null}
+      </div>
+
+      <AgentDevSessionStrip session={session} />
+      <AgentSessionConversation
+        key={session?.id ?? 'new'}
+            empty={draft.empty.text}
+        emptyTitle={draft.empty.title}
+        messages={session?.messages ?? []}
+        sessionId={session?.id}
+        status={session?.status}
+        waitingDetail={
+          progress ? <AgentBridgeProgress startedAt={progress.startedAt} step={progress.step} /> : undefined
+        }
+        onPickOption={draft.pickOption}
       />
 
-      {sessionList.open ? (
-        <AgentSessionList
-          currentId={session?.id ?? null}
-          draftSessionId={sessionList.draftSessionId}
-          runs={runSteps}
-          sessions={sessionList.sessions}
-          unread={sessionList.unread}
-          onPick={sessionList.onPick}
-        />
-      ) : (
-        <>
-          <AgentDevSessionStrip session={session} />
-          <AgentSessionConversation
-            key={session?.id ?? 'new'}
-                empty={draft.empty.text}
-            emptyTitle={draft.empty.title}
-            messages={session?.messages ?? []}
-            sessionId={session?.id}
-            status={session?.status}
-            waitingDetail={
-              progress ? <AgentBridgeProgress startedAt={progress.startedAt} step={progress.step} /> : undefined
-            }
-            onPickOption={draft.pickOption}
-          />
+      {draft.showSkillPicker ? <AgentSkillPicker onPick={draft.setSkill} /> : null}
 
-          {draft.showSkillPicker ? <AgentSkillPicker onPick={draft.setSkill} /> : null}
+      {unanswered ? <AgentBridgeOutcomeNotice run={unanswered} /> : null}
 
-          {unanswered ? <AgentBridgeOutcomeNotice run={unanswered} /> : null}
+      {session?.status === 'waiting_agent' && !progress ? (
+        <AgentCallAgentBar session={session} silentStep={silentStep} />
+      ) : null}
 
-          {session?.status === 'waiting_agent' && !progress ? (
-            <AgentCallAgentBar session={session} silentStep={silentStep} />
-          ) : null}
-
-          <AgentComposer
-            allowEmpty={draft.skill != null}
-            autoFocus={autoFocus}
-            context={draft.context}
-            disabled={draft.busy}
-            header={<AgentSkillForm value={draft.skill} onChange={draft.setSkill} onRemove={() => draft.setSkill(null)} />}
-            mentions={draft.mentions}
-            placeholder={draft.placeholder}
-            sprintId={sprintId}
-            text={draft.text}
-            onContextRemove={draft.removeContext}
-            onMentionsChange={draft.setMentions}
-            onSkillPick={draft.skillsEnabled ? draft.setSkill : undefined}
-            onSubmit={draft.send}
-            onTextChange={draft.setText}
-          />
-        </>
-      )}
+      <AgentComposer
+        allowEmpty={draft.skill != null}
+        autoFocus={autoFocus}
+        context={draft.context}
+        disabled={draft.busy}
+        header={<AgentSkillForm value={draft.skill} onChange={draft.setSkill} onRemove={() => draft.setSkill(null)} />}
+        mentions={draft.mentions}
+        placeholder={draft.placeholder}
+        sprintId={sprintId}
+        text={draft.text}
+        onContextRemove={draft.removeContext}
+        onMentionsChange={draft.setMentions}
+        onSkillPick={draft.skillsEnabled ? draft.setSkill : undefined}
+        onSubmit={draft.send}
+        onTextChange={draft.setText}
+      />
 
       <AgentBridgeToggle />
     </div>

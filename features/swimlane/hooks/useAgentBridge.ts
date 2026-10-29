@@ -10,6 +10,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
   AGENT_BRIDGE_DEFAULT_URL,
   fetchAgentBridgeHealth,
+  fetchAgentBridgeFileDiff,
   fetchAgentBridgeRepos,
   fetchAgentBridgeWorkspace,
   pushAgentBridgeBranch,
@@ -108,7 +109,7 @@ export function useAgentBridgeRepos(alive: boolean) {
     retry: false,
   });
   const save = useMutation({
-    mutationFn: (repos: ReadonlyArray<{ checks: string[]; path: string; queues: string[] }>) =>
+    mutationFn: (repos: ReadonlyArray<{ checks: string[]; copy: string[]; path: string; queues: string[] }>) =>
       saveAgentBridgeRepos(AGENT_BRIDGE_DEFAULT_URL, repos),
     onSuccess: (data) => {
       queryClient.setQueryData(REPOS_QUERY_KEY, data);
@@ -140,5 +141,16 @@ export function useAgentBridgeWorkspace(sessionId: string | null) {
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
   return { push: push.mutateAsync, pushing: push.isPending, workspace: query.data ?? null };
+}
+
+/** Дифф одного файла ветки сессии разработки — грузится, когда файл раскрыли в карточке. */
+export function useAgentBridgeFileDiff(sessionId: string | null, path: string | null) {
+  const bridge = useAgentBridge();
+  return useQuery({
+    enabled: bridge.alive && sessionId != null && path != null,
+    queryFn: () => (sessionId && path ? fetchAgentBridgeFileDiff(AGENT_BRIDGE_DEFAULT_URL, sessionId, path) : null),
+    queryKey: ['agentBridge', 'diff', sessionId, path],
+    retry: false,
+  });
 }
 

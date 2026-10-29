@@ -44,6 +44,7 @@ import {
 import {
   agentBridgeCliSessionId,
   agentBridgeDevClaudeArgs,
+  agentBridgeExpandChecks,
   agentBridgeRepoNames,
   agentBridgeResultText,
   agentBridgeRouteClaudeArgs,
@@ -52,8 +53,17 @@ import {
   parseAgentBridgeRouteAnswer,
 } from '@/lib/agentSessions/agentBridgeDev';
 
-import { devWorkspace, mcpConfigFor, prepareWorktree, pushDevBranch, readDevSession, rememberDevSession } from './devWorkspace';
-import { announceRepos, readyQueues, readyRepos, repoChecks, repoSettings, updateRepos } from './repoConfig';
+import {
+  devFileDiff,
+  devWorkspace,
+  isClaudeAiConnector,
+  mcpConfigFor,
+  prepareWorktree,
+  pushDevBranch,
+  readDevSession,
+  rememberDevSession,
+} from './devWorkspace';
+import { announceRepos, readyQueues, readyRepos, repoChecks, repoCopyPaths, repoSettings, updateRepos } from './repoConfig';
 
 const port = Number(process.env.AGENT_BRIDGE_PORT) || AGENT_BRIDGE_DEFAULT_PORT;
 const targets = parseAgentBridgeTargets(process.env.AGENT_BRIDGE_TARGETS ?? '');
@@ -237,12 +247,21 @@ async function runDevSession(sessionId: string, mcpServer: string, taskKey: stri
   const resumeId = memory.repo === repo ? (memory.cliSessionId ?? null) : null;
   rememberDevSession(sessionId, { cliSessionId: resumeId, repo, taskKey });
   const mcpConfig = mcpConfigFor(mcpServer, process.cwd());
-  if (!mcpConfig) {
+  if (!mcpConfig && !isClaudeAiConnector(mcpServer)) {
     log(sessionId, `MCP-сервер ${mcpServer} не найден в настройках Claude — агент в рабочей копии останется без Beer Tracker`);
   }
+  const worktree = prepareWorktree(repo, taskKey, repoCopyPaths(repo));
   await runCli(sessionId, state, {
-    args: agentBridgeDevClaudeArgs({ checks: repoChecks(repo), mcpConfig, mcpServer, model, resumeId, sessionId, taskKey }),
-    cwd: prepareWorktree(repo, taskKey),
+    args: agentBridgeDevClaudeArgs({
+      checks: agentBridgeExpandChecks(repoChecks(repo), worktree),
+      mcpConfig,
+      mcpServer,
+      model,
+      resumeId,
+      sessionId,
+      taskKey,
+    }),
+    cwd: worktree,
     label: `claude запущен (${mcpServer})`,
     limitMs: devTimeoutMs,
     onCliSession: (cliSessionId) => rememberDevSession(sessionId, { cliSessionId }),
@@ -357,6 +376,13 @@ const routes: Readonly<Record<string, Route>> = {
     const workspace = isAgentSessionId(sessionId) ? devWorkspace(sessionId) : null;
     send(response, workspace ? 200 : 404, origin, workspace ?? { error: 'unknown session' });
   },
+  // Дифф файла прямо в карточке результата.
+  'GET /diff': (_request, response, origin, _mcpServer, query) => {
+    const sessionId = query.get('sessionId');
+    const path = query.get('path') ?? '';
+    const result = isAgentSessionId(sessionId) ? devFileDiff(sessionId, path) : { error: 'invalid sessionId' };
+    send(response, 'error' in result ? 404 : 200, origin, result);
+  },
   // «Запушить и открыть MR» в карточке результата: push делает человек, кнопкой, не агент.
   'POST /push': async (request, response, origin) => {
     const { sessionId } = JSON.parse(await readBody(request)) as { sessionId?: unknown };
@@ -406,7 +432,7 @@ server.listen(port, '127.0.0.1', () => {
     [
       `agent-bridge: http://127.0.0.1:${port}`,
       ...[...targets].map(([origin, mcpServer]) =>
-        mcpConfigFor(mcpServer, process.cwd())
+        isClaudeAiConnector(mcpServer) || mcpConfigFor(mcpServer, process.cwd())
           ? `  ${origin} → MCP ${mcpServer}`
           : `  ${origin} → MCP ${mcpServer} (не найден в ~/.claude.json и .mcp.json — сессии разработки останутся без Beer Tracker)`
       ),

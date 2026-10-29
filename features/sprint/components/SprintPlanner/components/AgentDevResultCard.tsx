@@ -80,7 +80,9 @@ export function AgentDevResultCard({
         ) : null}
       </p>
 
-      {review && workspace?.worktree ? <AgentDevResultFiles files={review.files} worktree={workspace.worktree} /> : null}
+      {review && workspace?.worktree && sessionId ? (
+        <AgentDevResultFiles files={review.files} sessionId={sessionId} worktree={workspace.worktree} />
+      ) : null}
 
       {commits.length > 0 ? (
         <details className="px-1">

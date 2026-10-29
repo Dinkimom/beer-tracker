@@ -5,20 +5,17 @@ import { useId, useState } from 'react';
 import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentBridge, useAgentBridgeRepos } from '@/features/swimlane/hooks/useAgentBridge';
-import { parseAgentBridgeChecks, parseAgentBridgeQueues } from '@/lib/agentSessions/agentBridgeDev';
+import {
+  parseAgentBridgeChecks,
+  parseAgentBridgeCopyPaths,
+  parseAgentBridgeQueues,
+} from '@/lib/agentSessions/agentBridgeDev';
 
-import { AgentBridgeRepoRow } from '../components/AgentBridgeRepoRow';
+import { type AgentBridgeRepoFields, AgentBridgeRepoRow } from '../components/AgentBridgeRepoRow';
 import { Toggle } from '../components/Toggle';
 
-interface RepoDraft {
-  /** Команды проверок как в поле: по строке. */
-  checks: string;
-  /** Ключ строки: путь меняют прямо в поле, по нему строку не узнать. */
-  id: string;
-  path: string;
-  /** Очереди как в поле: через запятую. */
-  queues: string;
-}
+/** Строка в поле: путь меняют прямо в поле, по нему строку не узнать — свой ключ. */
+type RepoDraft = AgentBridgeRepoFields & { id: string };
 
 let draftSeq = 0;
 function newDraftId(): string {
@@ -26,16 +23,12 @@ function newDraftId(): string {
   return `repo-${draftSeq}`;
 }
 
-const queuesText = (queues: readonly string[]) => queues.join(', ');
+/** Сохранённый репозиторий моста → поля строки. */
+function toFields(repo: { checks: string[]; copy: string[]; path: string; queues: string[] }): AgentBridgeRepoFields {
+  return { checks: repo.checks.join('\n'), copy: repo.copy.join('\n'), path: repo.path, queues: repo.queues.join(', ') };
+}
 
-const sameRepos = (a: readonly RepoDraft[], b: ReadonlyArray<{ checks: string[]; path: string; queues: string[] }>) =>
-  a.length === b.length &&
-  a.every(
-    (repo, index) =>
-      repo.path === b[index]?.path &&
-      repo.queues === queuesText(b[index]?.queues ?? []) &&
-      repo.checks === (b[index]?.checks ?? []).join('\n')
-  );
+const fieldsKey = ({ checks, copy, path, queues }: AgentBridgeRepoFields) => JSON.stringify([checks, copy, path, queues]);
 
 /**
  * Настройки агента: локальный мост к Claude CLI (на связи ли, запускать ли его сразу при отправке)
@@ -51,8 +44,8 @@ export function SettingsAgentTab() {
   const saved = repos.data?.repos ?? [];
   const [draft, setDraft] = useState<RepoDraft[] | null>(null);
   const [error, setError] = useState('');
-  const rows = draft ?? saved.map(({ checks, path, queues }) => ({ checks: checks.join('\n'), id: path, path, queues: queuesText(queues) }));
-  const dirty = draft != null && !sameRepos(draft, saved);
+  const rows = draft ?? saved.map((repo) => ({ ...toFields(repo), id: repo.path }));
+  const dirty = draft != null && draft.map(fieldsKey).join('|') !== saved.map((repo) => fieldsKey(toFields(repo))).join('|');
 
   const update = (next: RepoDraft[]) => {
     setDraft(next);
@@ -62,7 +55,12 @@ export function SettingsAgentTab() {
   const save = () => {
     const filled = rows
       .filter((repo) => repo.queues.trim() || repo.path.trim())
-      .map(({ checks, path, queues }) => ({ checks: parseAgentBridgeChecks(checks), path, queues: parseAgentBridgeQueues(queues) }));
+      .map((repo) => ({
+        checks: parseAgentBridgeChecks(repo.checks),
+        copy: parseAgentBridgeCopyPaths(repo.copy),
+        path: repo.path,
+        queues: parseAgentBridgeQueues(repo.queues),
+      }));
     repos
       .save(filled)
       .then(() => setDraft(null))
@@ -118,11 +116,9 @@ export function SettingsAgentTab() {
                   <AgentBridgeRepoRow
                     key={repo.id}
                     candidatesId={candidatesId}
-                    checks={repo.checks}
-                    path={repo.path}
-                    queues={repo.queues}
+                    repo={repo}
                     status={dirty ? null : (saved[index]?.status ?? null)}
-                    onChange={(next) => update(rows.map((item, at) => (at === index ? { ...item, ...next } : item)))}
+                    onChange={(next) => update(rows.map((item, at) => (at === index ? { ...next, id: item.id } : item)))}
                     onRemove={() => update(rows.filter((_, at) => at !== index))}
                   />
                 ))}
@@ -137,7 +133,7 @@ export function SettingsAgentTab() {
             </datalist>
             {error ? <p className="text-xs text-red-600 dark:text-red-400">{error}</p> : null}
             <div className="flex items-center gap-2">
-              <Button type="button" variant="secondary" onClick={() => update([...rows, { checks: '', id: newDraftId(), path: '', queues: '' }])}>
+              <Button type="button" variant="secondary" onClick={() => update([...rows, { checks: '', copy: '', id: newDraftId(), path: '', queues: '' }])}>
                 {t('settings.agentTab.add')}
               </Button>
               <Button disabled={!dirty || repos.saving} type="button" onClick={save}>

@@ -4,6 +4,7 @@ import { agentBridgeStepFromStreamLine } from './agentBridge';
 import {
   agentBridgeCliSessionId,
   agentBridgeDevClaudeArgs,
+  agentBridgeExpandChecks,
   agentBridgeMergeRequestUrl,
   agentBridgeRemoteWebUrl,
   agentBridgeRepoNames,
@@ -14,6 +15,7 @@ import {
   isAgentBridgeTaskKey,
   mergeAgentBridgeRepos,
   parseAgentBridgeChecks,
+  parseAgentBridgeCopyPaths,
   parseAgentBridgeNumstat,
   parseAgentBridgeQueues,
   parseAgentBridgeRepoConfig,
@@ -55,6 +57,16 @@ describe('agentBridgeDev', () => {
     ]);
   });
 
+  it('copies only paths inside the repository and fills in the worktree in check commands', () => {
+    expect(parseAgentBridgeCopyPaths('bin/\nconfig/config.php\n/etc/passwd\n../secrets\na/../b\nbin')).toEqual([
+      'bin',
+      'config/config.php',
+    ]);
+    expect(
+      agentBridgeExpandChecks(['docker run --rm -v {worktree}:/app -w /app php:8 bin/phpunit', 'bin/phplint'], '/w/app-RND-1')
+    ).toEqual(['docker run --rm -v /w/app-RND-1:/app -w /app php:8 bin/phpunit', 'bin/phplint']);
+  });
+
   it('reads check commands one per line, dropping what would break a Bash rule', () => {
     expect(parseAgentBridgeChecks('bin/phplint\n  vendor/bin/psalm --no-cache \n\nmake (x)\na,b\nbin/phplint')).toEqual([
       'bin/phplint',
@@ -79,22 +91,22 @@ describe('agentBridgeDev', () => {
         ],
       })
     ).toEqual([
-      { checks: ['bin/autotest'], confirmed: true, path: '/work/back', queues: ['RND'] },
-      { checks: [], confirmed: false, path: '/work/web', queues: ['RND', 'WEB'] },
+      { checks: ['bin/autotest'], confirmed: true, copy: [], path: '/work/back', queues: ['RND'] },
+      { checks: [], confirmed: false, copy: [], path: '/work/web', queues: ['RND', 'WEB'] },
     ]);
     expect(parseAgentBridgeRepoConfig('garbage')).toEqual([]);
   });
 
   it('keeps the terminal confirmation per folder, whatever its queues', () => {
-    const current = [{ checks: [], confirmed: true, path: '/work/back', queues: ['RND'] }];
+    const current = [{ checks: [], confirmed: true, copy: [], path: '/work/back', queues: ['RND'] }];
     expect(
       mergeAgentBridgeRepos(current, [
-        { checks: ['bin/phplint'], path: '/work/back', queues: ['RND', 'OPS'] },
+        { checks: ['bin/phplint'], copy: ['config/config.php'], path: '/work/back', queues: ['RND', 'OPS'] },
         { path: '/work/web', queues: ['RND'] },
       ])
     ).toEqual([
-      { checks: ['bin/phplint'], confirmed: true, path: '/work/back', queues: ['RND', 'OPS'] },
-      { checks: [], confirmed: false, path: '/work/web', queues: ['RND'] },
+      { checks: ['bin/phplint'], confirmed: true, copy: ['config/config.php'], path: '/work/back', queues: ['RND', 'OPS'] },
+      { checks: [], confirmed: false, copy: [], path: '/work/web', queues: ['RND'] },
     ]);
   });
 

@@ -38,9 +38,14 @@ function isAgentBridgeQueue(value: unknown): value is string {
  * такого разрешения не даёт, иначе любой скрипт на странице планера мог бы добавить свою папку.
  */
 export interface AgentBridgeStoredRepo {
-  /** Команды проверок проекта (тесты, линтеры): агенту можно их запускать, и он прогоняет их перед ответом. */
+  /**
+   * Команды проверок проекта (тесты, линтеры): агенту можно их запускать, и он прогоняет их перед
+   * ответом. `{worktree}` — путь рабочей копии задачи (например, смонтировать её в docker).
+   */
   checks: string[];
   confirmed: boolean;
+  /** Что из основной папки нужно рабочей копии, хотя этого нет в git: конфиги окружения, бинарники. */
+  copy: string[];
   path: string;
   queues: string[];
 }
@@ -51,7 +56,7 @@ type AgentBridgeRepoStatus = 'missing' | 'pending' | 'ready';
 export interface AgentBridgeRepoSettings {
   /** Git-репозитории, которые мост нашёл в домашней папке: подсказки для поля пути. */
   candidates: string[];
-  repos: Array<{ checks: string[]; path: string; queues: string[]; status: AgentBridgeRepoStatus }>;
+  repos: Array<{ checks: string[]; copy: string[]; path: string; queues: string[]; status: AgentBridgeRepoStatus }>;
 }
 
 /** Очереди из поля настроек или файла: ключи латиницей, без повторов. */
@@ -72,6 +77,34 @@ export function parseAgentBridgeChecks(raw: unknown): string[] {
   return [...new Set(commands)].slice(0, CHECKS_MAX);
 }
 
+/** Подстановка пути рабочей копии в командах проверок. */
+const WORKTREE_PLACEHOLDER = '{worktree}';
+
+/** Команды проверок для конкретной рабочей копии: `{worktree}` → её путь. */
+export function agentBridgeExpandChecks(checks: readonly string[], worktree: string): string[] {
+  return checks.map((command) => command.replaceAll(WORKTREE_PLACEHOLDER, worktree));
+}
+
+function withoutTrailingSlashes(path: string): string {
+  let end = path.length;
+  while (end > 0 && path[end - 1] === '/') {
+    end -= 1;
+  }
+  return path.slice(0, end);
+}
+
+/**
+ * Пути «скопировать из основной папки»: относительные, внутри репозитория (без `..` и `/` в начале),
+ * по строке на путь.
+ */
+export function parseAgentBridgeCopyPaths(raw: unknown): string[] {
+  const parts = Array.isArray(raw) ? raw : String(raw ?? '').split('\n');
+  const paths = parts
+    .map((part) => withoutTrailingSlashes(String(part).trim()))
+    .filter((part) => part && !part.startsWith('/') && !part.split('/').includes('..'));
+  return [...new Set(paths)].slice(0, CHECKS_MAX);
+}
+
 /** Файл настроек моста; битые строки пропускаем, на папку — одна запись. */
 export function parseAgentBridgeRepoConfig(raw: unknown): AgentBridgeStoredRepo[] {
   const list = (raw as { repos?: unknown } | null)?.repos;
@@ -85,6 +118,7 @@ export function parseAgentBridgeRepoConfig(raw: unknown): AgentBridgeStoredRepo[
       byPath.set(item.path, {
         checks: parseAgentBridgeChecks(item.checks),
         confirmed: item.confirmed === true,
+        copy: parseAgentBridgeCopyPaths(item.copy),
         path: item.path,
         queues,
       });
@@ -99,15 +133,16 @@ export function parseAgentBridgeRepoConfig(raw: unknown): AgentBridgeStoredRepo[
  */
 export function mergeAgentBridgeRepos(
   current: readonly AgentBridgeStoredRepo[],
-  requested: ReadonlyArray<{ checks?: string[]; path: string; queues: string[] }>
+  requested: ReadonlyArray<{ checks?: string[]; copy?: string[]; path: string; queues: string[] }>
 ): AgentBridgeStoredRepo[] {
   const byPath = new Map<string, AgentBridgeStoredRepo>();
-  for (const { checks = [], path, queues } of requested) {
+  for (const { checks = [], copy = [], path, queues } of requested) {
     const confirmed = current.some((repo) => repo.path === path && repo.confirmed);
     const merged = byPath.get(path);
     byPath.set(path, {
       checks: [...new Set([...(merged?.checks ?? []), ...checks])],
       confirmed,
+      copy: [...new Set([...(merged?.copy ?? []), ...copy])],
       path,
       queues: [...new Set([...(merged?.queues ?? []), ...queues])],
     });
@@ -169,7 +204,7 @@ const inlineCode = (command: string) => ['`', command, '`'].join('');
 
 function checksSentence(checks: readonly string[]): string {
   return checks.length > 0
-    ? `Проверки этого репозитория (запусти те, что касаются изменений, до коммита): ${checks.map(inlineCode).join(', ')}.`
+    ? `Проверки этого репозитория (запусти те, что касаются изменений, до коммита; команда — ровно так, аргументы и пути файлов после неё, из текущей папки без cd): ${checks.map(inlineCode).join(', ')}.`
     : 'Команды проверок для репозитория не настроены: если проверку из правил проекта запустить не дали, назови её в ответе и поставь tests: not_run.';
 }
 

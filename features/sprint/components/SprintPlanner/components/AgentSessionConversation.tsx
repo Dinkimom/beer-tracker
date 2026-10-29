@@ -13,6 +13,7 @@ import { mcpOAuthClientBrandName } from '@/lib/mcp/oauth/resolveMcpOAuthClientBr
 import { agentSkillCaption } from '../utils/agentSkillCaption';
 
 import { AgentDevResultCard } from './AgentDevResultCard';
+import { AgentDevResultSummary } from './AgentDevResultSummary';
 import { AgentReplyOptions } from './AgentReplyOptions';
 
 type Translate = (key: string, params?: Record<string, number | string>) => string;
@@ -179,6 +180,22 @@ export function AgentSessionConversation({
       list.scrollTop = list.scrollHeight;
     }
   }, []);
+  // Полная карточка — только у последнего итога; прежние — строкой.
+  const lastResultId = messages.findLast((message) => message.result)?.id;
+  const resultHeader = (message: AgentSessionMessage, latest: boolean): ReactNode => {
+    if (!message.result) {
+      return undefined;
+    }
+    return latest ? (
+      <AgentDevResultCard
+        result={message.result}
+        sessionId={sessionId ?? null}
+        onAsk={status === 'waiting_user' ? onPickOption : undefined}
+      />
+    ) : (
+      <AgentDevResultSummary result={message.result} />
+    );
+  };
   let draftVersion = 0;
   const versions = new Map<string, number>();
   for (const message of messages) {
@@ -237,15 +254,7 @@ export function AgentSessionConversation({
             footer={replyOptionsFor(messages, index, status, onPickOption)}
             from={message.authorKind}
             // Итог работы — первым: ветка и кнопки ревью видны без прокрутки длинного отчёта.
-            header={
-              message.result ? (
-                <AgentDevResultCard
-                  result={message.result}
-                  sessionId={sessionId ?? null}
-                  onAsk={status === 'waiting_user' ? onPickOption : undefined}
-                />
-              ) : undefined
-            }
+            header={resultHeader(message, message.id === lastResultId)}
             placeholder={t('agentSession.kindRedo')}
             status={messageStatus(message, t)}
             text={message.text}

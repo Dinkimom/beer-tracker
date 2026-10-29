@@ -436,7 +436,7 @@ export async function fetchAgentBridgeRepos(baseUrl: string): Promise<AgentBridg
 /** Сохранить репозитории в мосте; ошибка проверки (не git, кривая очередь) — текстом исключения. */
 export async function saveAgentBridgeRepos(
   baseUrl: string,
-  repos: ReadonlyArray<{ checks: string[]; path: string; queues: string[] }>
+  repos: ReadonlyArray<{ checks: string[]; copy: string[]; path: string; queues: string[] }>
 ): Promise<AgentBridgeRepoSettings> {
   const response = await fetch(`${baseUrl}/repos`, {
     body: JSON.stringify({ repos }),
@@ -462,5 +462,19 @@ export async function pushAgentBridgeBranch(baseUrl: string, sessionId: string):
     throw new Error(data.error ?? `bridge ${response.status}`);
   }
   return { mergeRequestUrl: data.mergeRequestUrl ?? null };
+}
+
+export async function fetchAgentBridgeFileDiff(
+  baseUrl: string,
+  sessionId: string,
+  path: string
+): Promise<{ diff: string; truncated: boolean } | null> {
+  try {
+    const query = new URLSearchParams({ path, sessionId });
+    const response = await fetch(`${baseUrl}/diff?${query.toString()}`);
+    return response.ok ? ((await response.json()) as { diff: string; truncated: boolean }) : null;
+  } catch {
+    return null;
+  }
 }
 

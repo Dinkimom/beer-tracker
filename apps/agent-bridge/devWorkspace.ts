@@ -5,7 +5,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, delimiter, dirname, join } from 'node:path';
 
@@ -48,21 +48,47 @@ function worktreeDir(repo: string, taskKey: string): string {
  */
 const DEPENDENCY_DIRS = ['vendor', 'node_modules'];
 
-function copyDependencies(repo: string, dir: string) {
-  for (const name of DEPENDENCY_DIRS) {
-    const from = join(repo, name);
-    const to = join(dir, name);
-    if (existsSync(from) && !existsSync(to)) {
-      const cloneFlag = process.platform === 'darwin' ? '-c' : '--reflink=auto';
-      execFileSync('/bin/cp', [cloneFlag, '-R', from, to], { stdio: ['ignore', 'ignore', 'pipe'] });
-    }
+const CLONE_FLAG = process.platform === 'darwin' ? '-c' : '--reflink=auto';
+
+/** Скопировать путь из основной папки, если в рабочей копии его ещё нет. */
+function copyIfMissing(from: string, to: string) {
+  if (!existsSync(from) || existsSync(to)) {
+    return;
+  }
+  mkdirSync(dirname(to), { recursive: true });
+  execFileSync('/bin/cp', [CLONE_FLAG, '-R', from, to], { stdio: ['ignore', 'ignore', 'pipe'] });
+}
+
+/**
+ * Дополнить папку рабочей копии недостающим из основной, ничего не перезаписывая (например `bin/`,
+ * где часть файлов из git). `cp -n` завершается с ошибкой, когда что-то пропустил, — это и нужно.
+ */
+function mergeMissing(from: string, to: string) {
+  if (!existsSync(from) || !existsSync(to) || !statSync(from).isDirectory()) {
+    copyIfMissing(from, to);
+    return;
+  }
+  try {
+    execFileSync('/bin/cp', [CLONE_FLAG, '-R', '-n', `${from}/`, `${to}/`], { stdio: ['ignore', 'ignore', 'pipe'] });
+  } catch {
+    // Пропущенные существующие файлы — не ошибка.
   }
 }
 
-export function prepareWorktree(repo: string, taskKey: string): string {
+/** vendor/ и node_modules/ — целиком, если их нет; пути из настроек репозитория — дополнением. */
+function copyDependencies(repo: string, dir: string, extra: readonly string[]) {
+  for (const name of DEPENDENCY_DIRS) {
+    copyIfMissing(join(repo, name), join(dir, name));
+  }
+  for (const name of extra) {
+    mergeMissing(join(repo, name), join(dir, name));
+  }
+}
+
+export function prepareWorktree(repo: string, taskKey: string, extra: readonly string[] = []): string {
   const dir = worktreeDir(repo, taskKey);
   if (existsSync(dir)) {
-    copyDependencies(repo, dir);
+    copyDependencies(repo, dir, extra);
     return dir;
   }
   mkdirSync(dirname(dir), { recursive: true });
@@ -75,7 +101,7 @@ export function prepareWorktree(repo: string, taskKey: string): string {
   }
   if (hasBranch) {
     git(repo, 'worktree', 'add', dir, branch);
-    copyDependencies(repo, dir);
+    copyDependencies(repo, dir, extra);
     return dir;
   }
   let base = 'HEAD';
@@ -85,7 +111,7 @@ export function prepareWorktree(repo: string, taskKey: string): string {
     // origin без HEAD или без origin — от текущего HEAD.
   }
   git(repo, 'worktree', 'add', '-b', branch, dir, base);
-  copyDependencies(repo, dir);
+  copyDependencies(repo, dir, extra);
   return dir;
 }
 
@@ -121,6 +147,11 @@ function readJson(path: string): Record<string, unknown> | null {
   }
 }
 
+/** Коннектор claude.ai (`claude_ai_*`) привязан к аккаунту и доступен CLI в любой папке. */
+export function isClaudeAiConnector(server: string): boolean {
+  return server.startsWith('claude_ai_');
+}
+
 /**
  * Определение MCP-сервера Beer Tracker для прогона в рабочей копии. `claude mcp add` по умолчанию
  * пишет сервер только для папки, где его добавили, — в worktree его нет, и агент остаётся без тулов.
@@ -129,6 +160,9 @@ function readJson(path: string): Record<string, unknown> | null {
  * null — сервер не нашёлся.
  */
 export function mcpConfigFor(server: string, bridgeDir: string): string | null {
+  if (isClaudeAiConnector(server)) {
+    return null;
+  }
   const claude = readJson(join(homedir(), '.claude.json'));
   const projects = claude?.projects as Record<string, { mcpServers?: McpServers }> | undefined;
   const sources: McpServers[] = [
@@ -155,9 +189,15 @@ function baseRef(worktree: string): string | null {
 }
 
 /** Что в ветке задачи: коммиты и файлы против основной ветки, запушено ли, ссылка на MR. */
+/** Диапазон ветки задачи против основной: от точки ответвления до HEAD. */
+function branchRange(worktree: string): string {
+  const base = baseRef(worktree);
+  return base ? `${base}...HEAD` : 'HEAD~1...HEAD';
+}
+
 function reviewOf(worktree: string, branch: string): AgentBridgeReview {
   const base = baseRef(worktree);
-  const range = base ? `${base}...HEAD` : 'HEAD~1...HEAD';
+  const range = branchRange(worktree);
   const log = gitOrNull(worktree, 'log', '--format=%h%x09%s', base ? `${base}..HEAD` : '-1') ?? '';
   const upstreamBehind = gitOrNull(worktree, 'rev-list', '--count', '@{u}..HEAD');
   const webUrl = agentBridgeRemoteWebUrl(gitOrNull(worktree, 'remote', 'get-url', 'origin') ?? '');
@@ -213,5 +253,18 @@ export function pushDevBranch(sessionId: string): { error: string } | { mergeReq
     return { error: `push_failed: ${stderr?.split('\n').at(-1) ?? (error instanceof Error ? error.message : String(error))}` };
   }
   return { mergeRequestUrl: devWorkspace(sessionId)?.review?.mergeRequestUrl ?? null };
+}
+
+/** Предел диффа одного файла для карточки: больше — смотреть в редакторе. */
+const DIFF_MAX = 200_000;
+
+/** Дифф одного файла ветки против основной — только для файлов из списка изменений ветки. */
+export function devFileDiff(sessionId: string, path: string): { diff: string; truncated: boolean } | { error: string } {
+  const workspace = devWorkspace(sessionId);
+  if (!workspace?.worktree || !workspace.review?.files.some((file) => file.path === path)) {
+    return { error: 'unknown file' };
+  }
+  const diff = gitOrNull(workspace.worktree, 'diff', '--no-color', branchRange(workspace.worktree), '--', path) ?? '';
+  return { diff: diff.slice(0, DIFF_MAX), truncated: diff.length > DIFF_MAX };
 }
 
