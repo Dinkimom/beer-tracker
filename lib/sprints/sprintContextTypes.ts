@@ -249,7 +249,10 @@ export interface SprintContextTeamMember {
 
 /** Задача спринта в трекере без позиции на доске (бэклог спринта в планере). */
 export interface SprintContextUnplannedTask {
-  /** Id пользователя трекера — тот же формат, что у positions[].assigneeId и teamMembers. */
+  /**
+   * Id пользователя трекера. Совпадает с positions[].assigneeId / teamMembers, только если карточка
+   * сотрудника привязана к трекеру; иначе на доске человек — staff:uuid (см. warning unplanned_assignee_not_on_board).
+   */
   assigneeId?: string | null;
   assigneeName?: string | null;
   issueType?: string | null;

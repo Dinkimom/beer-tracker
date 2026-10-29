@@ -14,7 +14,10 @@ interface ResolvePersonMcpHit {
   role?: SprintContextTeamMember['role'];
   roleTitle?: string | null;
   staffUid: string | null;
-  trackerId: string;
+  /** Id пользователя трекера; null — карточка сотрудника не привязана к трекеру. */
+  trackerId: string | null;
+  /** false: в трекере (Jira) у человека другой id, задачи там не сопоставятся с его строкой на доске. */
+  trackerLinked: boolean;
 }
 
 function assigneeIdForHit(
@@ -46,6 +49,8 @@ function mapResolvePersonHit(
     staffAssigneeId,
     hit.staffUid,
   ]);
+  // searchStaffInOrg без привязки подставляет в trackerId staff uuid — агенту это выдавать нельзя.
+  const trackerLinked = Boolean(hit.trackerId) && hit.trackerId !== hit.staffUid;
   return {
     assigneeId: assigneeIdForHit(hit, role),
     displayName: hit.displayName,
@@ -54,7 +59,8 @@ function mapResolvePersonHit(
     ...(role ? { role: role.role } : {}),
     ...(role?.roleTitle ? { roleTitle: role.roleTitle } : {}),
     staffUid: hit.staffUid ?? null,
-    trackerId: hit.trackerId,
+    trackerId: trackerLinked ? hit.trackerId : null,
+    trackerLinked,
   };
 }
 

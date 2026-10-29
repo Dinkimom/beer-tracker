@@ -22,6 +22,7 @@ import {
   buildSprintContextAgenda,
   buildSprintContextCalendarDays,
   buildSprintContextWeekendDays,
+  collectOffBoardUnplannedAssignees,
   collectSprintContextWarnings,
   parseStaffUuidFromAssigneeId,
 } from '@/lib/sprints/sprintContextEnrichmentHelpers';
@@ -451,8 +452,14 @@ export async function enrichSprintContextPayload(input: {
     organizationId: input.organizationId,
   });
 
+  const unplannedTasks = buildUnplannedTasks(
+    input.payload,
+    { issuesByKey, loaded: trackerIssuesLoaded },
+    lookup
+  );
   const warnings = collectSprintContextWarnings({
     emptyPlan,
+    offBoardAssignees: collectOffBoardUnplannedAssignees(unplannedTasks, { positions, teamMembers }),
     softWarnings,
     unresolvedAssigneeIds: [...new Set(unresolvedAssigneeIds)],
   });
@@ -471,11 +478,7 @@ export async function enrichSprintContextPayload(input: {
     notes,
     positions,
     ...(teamMembers.length > 0 ? { teamMembers } : {}),
-    unplannedTasks: buildUnplannedTasks(
-      input.payload,
-      { issuesByKey, loaded: trackerIssuesLoaded },
-      lookup
-    ),
+    unplannedTasks,
   };
 
   return {

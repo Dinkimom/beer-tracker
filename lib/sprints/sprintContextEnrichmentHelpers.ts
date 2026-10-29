@@ -2,6 +2,7 @@ import type {
   SprintContextAgendaItem,
   SprintContextCalendarDay,
   SprintContextPosition,
+  SprintContextUnplannedTask,
   SprintContextWeekendDay,
 } from '@/lib/sprints/sprintContextTypes';
 
@@ -126,8 +127,34 @@ export function parseStaffUuidFromAssigneeId(assigneeId: string): string | null 
   return match?.[1] ?? null;
 }
 
+/**
+ * Исполнители задач бэклога спринта, у которых нет строки на доске: обычно карточка сотрудника
+ * не привязана к пользователю трекера, и на доске тот же человек — staff:uuid.
+ */
+export function collectOffBoardUnplannedAssignees(
+  unplannedTasks: readonly SprintContextUnplannedTask[] | undefined,
+  board: { positions: readonly { assigneeId: string }[]; teamMembers: readonly { assigneeId: string }[] }
+): string[] {
+  // Без состава команды сравнивать не с чем.
+  if (board.teamMembers.length === 0) {
+    return [];
+  }
+  const boardAssigneeIds = new Set(
+    [...board.teamMembers, ...board.positions].map((row) => row.assigneeId)
+  );
+  const byId = new Map<string, string>();
+  for (const task of unplannedTasks ?? []) {
+    const id = task.assigneeId?.trim();
+    if (id && !boardAssigneeIds.has(id) && !byId.has(id)) {
+      byId.set(id, task.assigneeName?.trim() ? `${id} (${task.assigneeName.trim()})` : id);
+    }
+  }
+  return [...byId.values()];
+}
+
 export function collectSprintContextWarnings(input: {
   emptyPlan: boolean;
+  offBoardAssignees?: string[];
   softWarnings: string[];
   unresolvedAssigneeIds: string[];
 }): string[] {
@@ -142,6 +169,11 @@ export function collectSprintContextWarnings(input: {
       `unresolved_assignees: ${input.unresolvedAssigneeIds.slice(0, 8).join(', ')}${
         input.unresolvedAssigneeIds.length > 8 ? ', …' : ''
       }`
+    );
+  }
+  if (input.offBoardAssignees && input.offBoardAssignees.length > 0) {
+    warnings.push(
+      `unplanned_assignee_not_on_board: ${input.offBoardAssignees.join(', ')} — tracker ids with no swimlane on this board. If the same person is on teamMembers as staff:uuid, their staff card is not linked to the tracker: place work with the teamMembers assigneeId, not this id.`
     );
   }
   return warnings;

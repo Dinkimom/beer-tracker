@@ -10,6 +10,43 @@ import { toolError, toolJson } from '@/lib/mcp/mcpToolResult';
 import { resolvePersonMcpHits } from '@/lib/mcp/resolvePersonMcpHits';
 
 
+/** Своя строка на доске: карточка сотрудника с тем же email, что у пользователя продукта. */
+async function findSelfAssignee(organizationId: string, email: string | null | undefined) {
+  const normalized = email?.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  const hits = await resolvePersonMcpHits(organizationId, normalized);
+  return hits.find((hit) => hit.email?.trim().toLowerCase() === normalized) ?? null;
+}
+
+function trackerIdMismatchWarning(
+  self: { assigneeId: string; trackerId: string | null },
+  trackerUser: { trackerUid?: number | string; uid?: number | string }
+): string | null {
+  const trackerUid = String(trackerUser.trackerUid ?? trackerUser.uid ?? '').trim();
+  if (!trackerUid || trackerUid === self.trackerId) {
+    return null;
+  }
+  return `staff_not_linked_to_tracker: on the board you are ${self.assigneeId}, in the tracker ${trackerUid}. Tracker issues assigned to ${trackerUid} will not match your swimlane; an org admin should set this tracker user id on your staff card (Admin → Staff).`;
+}
+
+/** trackerUser из /myself и, если id в трекере не совпадает с id на доске, предупреждение. */
+async function loadTrackerSelf(
+  organizationId: string,
+  self: { assigneeId: string; trackerId: string | null } | null
+): Promise<Record<string, unknown>> {
+  try {
+    const issueTracker = await getIssueTrackerProviderClientForOrganization(organizationId);
+    const trackerUser = await issueTracker.getCurrentUser();
+    const mismatch = self ? trackerIdMismatchWarning(self, trackerUser) : null;
+    return { trackerUser, ...(mismatch ? { warnings: [mismatch] } : {}) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { trackerUserWarning: `tracker_myself_unavailable: ${message}` };
+  }
+}
+
 export function registerIdentityMcpTools(
   server: McpServer,
   input: {
@@ -22,7 +59,7 @@ export function registerIdentityMcpTools(
     'whoami',
     {
       description:
-        'Current Beer Tracker MCP identity: product userId, email/displayName, orgRole, canUsePlanner, and optionally the linked tracker /myself.',
+        'Current Beer Tracker MCP identity: product userId, email/displayName, orgRole, canUsePlanner; me = your planner identity (assigneeId used in positions/teamMembers/capacity, staffUid, trackerId or null when the staff card is not linked to the tracker); optionally the tracker /myself. With includeTracker, warnings flag when the tracker id differs from the board id.',
       inputSchema: {
         includeTracker: z
           .boolean()
@@ -33,25 +70,19 @@ export function registerIdentityMcpTools(
     async ({ includeTracker }) => {
       try {
         const user = await findUserById(input.userId);
+        const self = await findSelfAssignee(input.organizationId, user?.email);
         const payload: Record<string, unknown> = {
           canUsePlanner: canUsePlanner(input.profile),
           displayName: user?.display_name || null,
           email: user?.email || null,
+          me: self
+            ? { assigneeId: self.assigneeId, staffUid: self.staffUid, trackerId: self.trackerId }
+            : null,
           organizationId: input.organizationId,
           orgRole: input.profile.orgRole,
           userId: input.userId,
+          ...(includeTracker ? await loadTrackerSelf(input.organizationId, self) : {}),
         };
-        if (includeTracker) {
-          try {
-            const issueTracker = await getIssueTrackerProviderClientForOrganization(
-              input.organizationId
-            );
-            payload.trackerUser = await issueTracker.getCurrentUser();
-          } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            payload.trackerUserWarning = `tracker_myself_unavailable: ${message}`;
-          }
-        }
         return toolJson(payload);
       } catch (error) {
         return toolError(error);
@@ -76,7 +107,7 @@ export function registerIdentityMcpTools(
         const hits = await resolvePersonMcpHits(input.organizationId, queryText);
         return toolJson({
           hits,
-          hint: 'Prefer assigneeId from the hit (tracker id when linked, else staff:uuid). role/roleTitle/platforms come from team_members when the person is on a team.',
+          hint: 'Use assigneeId from the hit for positions/notes/capacity (tracker id when linked, else staff:uuid). trackerLinked=false: the staff card has no tracker user, so in the tracker (Jira) and in unplannedTasks this person shows up under a different id — match by name/email, never assign by that id. role/roleTitle/platforms come from team_members when the person is on a team.',
         });
       } catch (error) {
         return toolError(error);

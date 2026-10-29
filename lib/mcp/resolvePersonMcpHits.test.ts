@@ -69,11 +69,12 @@ describe('resolvePersonMcpHits', () => {
         roleTitle: 'Frontend',
         staffUid: '11111111-1111-4111-8111-111111111111',
         trackerId: 'tracker-ada',
+        trackerLinked: true,
       },
     ]);
   });
 
-  it('returns staff assignee without role when not on a team', async () => {
+  it('returns staff assignee without role or tracker id when not linked', async () => {
     search.mockResolvedValue([
       {
         displayName: 'Guest',
@@ -89,7 +90,8 @@ describe('resolvePersonMcpHits', () => {
         displayName: 'Guest',
         email: null,
         staffUid: '22222222-2222-4222-8222-222222222222',
-        trackerId: '22222222-2222-4222-8222-222222222222',
+        trackerId: null,
+        trackerLinked: false,
       },
     ]);
   });

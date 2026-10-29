@@ -5,6 +5,7 @@ import {
   buildSprintContextAgenda,
   buildSprintContextCalendarDays,
   buildSprintContextWeekendDays,
+  collectOffBoardUnplannedAssignees,
   collectSprintContextWarnings,
   parseStaffUuidFromAssigneeId,
 } from './sprintContextEnrichmentHelpers';
@@ -90,7 +91,46 @@ describe('parseStaffUuidFromAssigneeId', () => {
   });
 });
 
+describe('collectOffBoardUnplannedAssignees', () => {
+  it('lists each tracker assignee with no swimlane once, skipping board people and unassigned', () => {
+    expect(
+      collectOffBoardUnplannedAssignees(
+        [
+          { assigneeId: '712020:abc', assigneeName: 'Nikita', summary: 'a', taskId: 'R-1' },
+          { assigneeId: '712020:abc', assigneeName: 'Nikita', summary: 'b', taskId: 'R-2' },
+          { assigneeId: 'tracker-ada', assigneeName: 'Ada', summary: 'c', taskId: 'R-3' },
+          { assigneeId: null, summary: 'd', taskId: 'R-4' },
+        ],
+        {
+          positions: [{ assigneeId: 'tracker-ada' }],
+          teamMembers: [{ assigneeId: 'staff:11111111-1111-4111-8111-111111111111' }],
+        }
+      )
+    ).toEqual(['712020:abc (Nikita)']);
+  });
+
+  it('stays silent without a team roster', () => {
+    expect(
+      collectOffBoardUnplannedAssignees(
+        [{ assigneeId: '712020:abc', summary: 'a', taskId: 'R-1' }],
+        { positions: [], teamMembers: [] }
+      )
+    ).toEqual([]);
+  });
+});
+
 describe('collectSprintContextWarnings', () => {
+  it('flags unplanned assignees that are not on the board', () => {
+    expect(
+      collectSprintContextWarnings({
+        emptyPlan: false,
+        offBoardAssignees: ['712020:abc (Nikita)'],
+        softWarnings: [],
+        unresolvedAssigneeIds: [],
+      })[0]
+    ).toMatch(/^unplanned_assignee_not_on_board: 712020:abc \(Nikita\)/);
+  });
+
   it('merges soft warnings with empty plan and unresolved assignees', () => {
     expect(
       collectSprintContextWarnings({
