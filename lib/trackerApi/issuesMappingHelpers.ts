@@ -8,7 +8,6 @@ import {
   mapTeam,
   optionalPoints,
   parseDangerousRelease,
-  parseIncidentSeverity,
 } from '@/lib/issueTrackerProvider/mapIssueTrackerIssueToTask';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
@@ -194,9 +193,6 @@ export function mapTrackerIssueToTaskBase(
       issue.bizErpTeam && issue.bizErpTeam.length > 0 ? issue.bizErpTeam : undefined,
     stage: issue.stage || undefined,
     sprints,
-    incidentSeverity: parseIncidentSeverity(
-      (issue as { incidentSeverity?: string | { display?: string; key?: string } }).incidentSeverity
-    ),
     dangerousRelease: parseDangerousRelease(issue.dangerousRelease),
     trackerTags: readIssueTagTokens(issue),
     updatedAt: issue.updatedAt,
@@ -222,7 +218,6 @@ const TRACKER_ISSUE_MAPPED_KEYS = new Set([
   'epic',
   'functionalTeam',
   'id',
-  'incidentSeverity',
   'key',
   'parent',
   'priority',

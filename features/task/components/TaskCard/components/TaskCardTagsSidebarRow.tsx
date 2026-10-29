@@ -3,9 +3,6 @@
 import type { Task } from '@/types';
 
 import { StatusTag } from '@/components/StatusTag';
-import { TextTooltip } from '@/components/TextTooltip';
-import { useI18n } from '@/contexts/LanguageContext';
-import { getIncidentSeverityTagClasses } from '@/features/task/utils/incidentSeverityBadgeClasses';
 import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
 
@@ -34,7 +31,6 @@ export function TaskCardTagsSidebarRow({
   task,
   tpText,
 }: TaskCardTagsSidebarRowProps) {
-  const { t } = useI18n();
   return (
     <div className="flex items-center gap-2 min-w-0 overflow-hidden">
       {showDangerousReleaseInsteadOfStatus ? (
@@ -50,15 +46,6 @@ export function TaskCardTagsSidebarRow({
           statusColorKey={task.statusColorKey}
         />
       )}
-      {task.incidentSeverity ? (
-        <TextTooltip content={t('task.card.severityValue', { value: task.incidentSeverity })}>
-        <span
-          className={`text-[10px] font-bold leading-none whitespace-nowrap px-1.5 py-0.5 rounded shrink-0 border ${getIncidentSeverityTagClasses(task.incidentSeverity)}`}
-        >
-          {task.incidentSeverity}
-        </span>
-        </TextTooltip>
-      ) : null}
       <div className={`flex items-center gap-0 shrink-0 flex-wrap ${tagTextSize} text-gray-600 dark:text-white`}>
         {showStoryPoints ? <span>{spText}</span> : null}
         {showTestPoints && !hideTestPoints ? (

@@ -65,7 +65,6 @@ export function buildTrackerIssueFromProviderIssue(issue: IssueTrackerIssue): Tr
     epic: yandexEpicRef(issue),
     functionalTeam: issue.functionalTeam,
     id: issue.id,
-    incidentSeverity: issue.incidentSeverity,
     key: issue.key,
     MergeRequestLink: issue.mergeRequestLink,
     parent: yandexParentRef(issue),

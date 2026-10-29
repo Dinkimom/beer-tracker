@@ -8,7 +8,6 @@ const FIELD_LABEL_KEYS: Record<TaskCardFieldId, string> = {
   key: 'settings.planningTab.rowFieldLabels.issueKey',
   parent: 'settings.planningTab.parentIssue',
   priority: 'settings.planningTab.rowFieldLabels.priority',
-  severity: 'settings.planningTab.rowFieldLabels.severity',
   status: 'settings.planningTab.rowFieldLabels.status',
   type: 'settings.planningTab.rowFieldLabels.type',
 };

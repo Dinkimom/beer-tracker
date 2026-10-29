@@ -75,8 +75,6 @@ export interface Task {
   id: string;
   /** Превью картинки для локальной карточки-фото (blob: URL, без персиста). */
   imageUrl?: string;
-  /** Критичность инцидента (из Tracker) */
-  incidentSeverity?: string;
   isBacklogTask?: boolean;
   isLocalTask?: boolean;
   link: string;

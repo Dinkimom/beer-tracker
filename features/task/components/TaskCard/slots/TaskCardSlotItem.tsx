@@ -9,8 +9,6 @@ import { IssueTypeIcon } from '@/components/IssueTypeIcon';
 import { PriorityIcon } from '@/components/PriorityIcon';
 import { StatusTag } from '@/components/StatusTag';
 import { TextTooltip } from '@/components/TextTooltip';
-import { useI18n } from '@/contexts/LanguageContext';
-import { getIncidentSeverityTagClasses } from '@/features/task/utils/incidentSeverityBadgeClasses';
 import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 import { applyTaskCardValueLabels } from '@/lib/taskCard/taskCardValueLabels';
 import { getDisplayShortName } from '@/utils/displayUtils';
@@ -29,7 +27,6 @@ const META_TEXT = 'text-[10px] font-medium leading-none text-gray-600 dark:text-
 const CHIP = 'inline-flex items-center rounded border px-1 py-0.5 text-[10px] font-medium leading-none';
 
 export function TaskCardSlotItem({ context, item, keyLinkProps, task }: TaskCardSlotItemProps) {
-  const { t } = useI18n();
   switch (item.field) {
     case 'assignee':
       return renderAssignee(item, context);
@@ -41,8 +38,6 @@ export function TaskCardSlotItem({ context, item, keyLinkProps, task }: TaskCard
       return renderParent(context.parentLabel);
     case 'priority':
       return renderPriority(item, task.priority);
-    case 'severity':
-      return renderSeverity(item, task.incidentSeverity, t('task.card.severityValue', { value: task.incidentSeverity ?? '' }));
     case 'status':
       return renderStatus(item, task);
     case 'type':
@@ -202,29 +197,6 @@ function renderStatus(item: ResolvedTaskCardSlotItem, task: Task) {
     <span className={META_TEXT} data-task-card-field="status">
       {label}
     </span>
-  );
-}
-
-function renderSeverity(item: ResolvedTaskCardSlotItem, severity: string | undefined, tooltip: string) {
-  if (!severity) {
-    return null;
-  }
-  if (item.presentation === 'text') {
-    return (
-      <span className={META_TEXT} data-task-card-field="severity">
-        {severity}
-      </span>
-    );
-  }
-  return (
-    <TextTooltip content={tooltip}>
-      <span
-        className={`shrink-0 whitespace-nowrap rounded border px-1.5 py-0.5 text-[10px] font-bold leading-none ${getIncidentSeverityTagClasses(severity)}`}
-        data-task-card-field="severity"
-      >
-        {severity}
-      </span>
-    </TextTooltip>
   );
 }
 

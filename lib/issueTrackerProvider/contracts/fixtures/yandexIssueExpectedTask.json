@@ -26,7 +26,6 @@
   },
   "functionalTeam": "backend",
   "id": "BT-100",
-  "incidentSeverity": "high",
   "link": "https://tracker.yandex.ru/BT-100",
   "name": "Fix occupancy tooltip",
   "originalStatus": "inProgress",

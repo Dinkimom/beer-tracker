@@ -27,7 +27,6 @@ describe('shouldShowTaskCardParentRow', () => {
           showKey: true,
           showParent: true,
           showPriority: true,
-          showSeverity: true,
           showStatus: true,
           showType: true,
         },

@@ -146,7 +146,6 @@ describe('shouldShowTaskCardSwimlaneMetaRow', () => {
         showEstimateLabel: false,
         swimlaneCardFields: {
           ...visibleFields,
-          showSeverity: false,
           showStatus: false,
         },
         task: trackerTask,

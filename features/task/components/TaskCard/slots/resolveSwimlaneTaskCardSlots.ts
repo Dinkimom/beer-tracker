@@ -18,7 +18,6 @@ export function resolveSwimlaneTaskCardSlots(input: {
   task: Pick<
     Task,
     | 'customFieldValues'
-    | 'incidentSeverity'
     | 'isLocalTask'
     | 'localDraftKind'
     | 'originalStatus'
@@ -40,7 +39,6 @@ export function resolveSwimlaneTaskCardSlots(input: {
     hasKey: input.hasKey,
     hasParent: Boolean(input.task.parent),
     hasPriority: Boolean(input.task.priority),
-    hasSeverity: Boolean(input.task.incidentSeverity),
     hasStatus: Boolean(input.task.originalStatus?.trim() || input.task.originalStatusDisplay?.trim()),
     hasType: Boolean(input.task.type),
     layout: input.layout,

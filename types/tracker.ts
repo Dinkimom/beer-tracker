@@ -87,7 +87,6 @@ export interface TrackerIssue {
   /** Рост HD_count за 24 часа. */
   HD_growth24h?: number;
   id: string;
-  incidentSeverity?: string | { display?: string; key?: string };
   key: string;
   /** Ключевой клиент. */
   key_client?: boolean | string;

@@ -23,7 +23,6 @@ export function shouldShowTaskCardSwimlaneMetaRow(input: {
   if (isSwimlaneNoteOrPolaroid(input.task) || isQuickAddChooserDraft(input.task)) return false;
   return (
     (input.swimlaneCardFields?.showStatus ?? true) ||
-    (input.swimlaneCardFields?.showSeverity ?? true) ||
     input.showEstimateLabel
   );
 }

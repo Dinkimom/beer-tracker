@@ -214,7 +214,6 @@ export function mergeSwimlaneCardFields(
     showPriority: true,
     showType: true,
     showEstimates: true,
-    showSeverity: true,
     showStatus: true,
     ...swimlaneCardFields,
   };

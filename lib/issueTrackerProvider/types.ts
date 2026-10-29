@@ -82,7 +82,6 @@ export interface IssueTrackerIssue {
   epic?: IssueTrackerEntityRef | null;
   functionalTeam?: string;
   id: string;
-  incidentSeverity?: string | { display?: string; key?: string };
   /**
    * Связи из того же ответа, что и задача (Jira `issuelinks`).
    * `undefined` — поле не приходило, кэш связей не заполняем.

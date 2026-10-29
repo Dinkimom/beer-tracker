@@ -78,13 +78,6 @@ function mapSprints(sprint: IssueTrackerIssue['sprint']): Task['sprints'] {
   return [mapSprintItem(sprint)];
 }
 
-export function parseIncidentSeverity(value: IssueTrackerIssue['incidentSeverity']): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-  return typeof value === 'string' ? value : value.display ?? value.key ?? undefined;
-}
-
 function parseDangerousReleaseFromObject(value: object): string | undefined {
   const obj = value as { display?: string; key?: string };
   const display = typeof obj.display === 'string' ? obj.display.trim() : '';
@@ -195,7 +188,6 @@ function issueTrackerIssueFieldBag(issue: IssueTrackerIssue): TrackerIssue {
     description: issue.description,
     functionalTeam: issue.functionalTeam,
     id: issue.id,
-    incidentSeverity: issue.incidentSeverity,
     key: issue.key,
     MergeRequestLink: issue.mergeRequestLink,
     qaEngineer: issue.qaEngineer
@@ -251,7 +243,6 @@ function mapIssueTrackerIssueToTaskBase(
     productTeam: issue.productTeam && issue.productTeam.length > 0 ? issue.productTeam : undefined,
     stage: issue.stage || undefined,
     sprints: mapSprints(issue.sprint),
-    incidentSeverity: parseIncidentSeverity(issue.incidentSeverity),
     dangerousRelease: parseDangerousRelease(issue.dangerousRelease),
     trackerTags: readIssueTagTokens(fieldBag),
     updatedAt: issue.updatedAt,

@@ -24,7 +24,6 @@ const TASK_CARD_FIELD_IDS = [
   'type',
   'key',
   'status',
-  'severity',
   'estimate',
   'assignee',
 ] as const;
@@ -104,7 +103,6 @@ const FIELD_PRESENTATIONS: Record<TaskCardFieldId, readonly TaskCardPresentation
   key: ['hidden', 'link', 'text'],
   parent: ['hidden', 'text'],
   priority: ['hidden', 'icon', 'text', 'tag'],
-  severity: ['hidden', 'tag', 'text'],
   status: ['hidden', 'tag', 'dot', 'text'],
   type: ['hidden', 'icon', 'text', 'tag'],
 };
@@ -115,7 +113,6 @@ const TRACKER_META_FIELDS: readonly TaskCardFieldId[] = [
   'priority',
   'type',
   'status',
-  'severity',
   'estimate',
 ];
 const LOCAL_TITLE_FIELDS: readonly TaskCardFieldId[] = ['key', 'priority', 'type'];
@@ -129,7 +126,6 @@ const DEFAULT_PLACEMENT_BY_FIELD: Record<
   key: { keepWhenSlotHidden: true, presentation: 'link', slot: 'titleLead' },
   parent: { presentation: 'text', slot: 'eyebrow' },
   priority: { presentation: 'icon', slot: 'titleLead' },
-  severity: { presentation: 'tag', slot: 'footer' },
   status: { presentation: 'tag', slot: 'footer' },
   type: { presentation: 'icon', slot: 'titleLead' },
 };
@@ -188,7 +184,6 @@ interface ResolveTaskCardSlotsInput {
   hasKey: boolean;
   hasParent: boolean;
   hasPriority: boolean;
-  hasSeverity: boolean;
   hasStatus: boolean;
   hasType: boolean;
   layout: TaskCardSlotLayout;
@@ -240,7 +235,6 @@ export function visibilityFromLayout(layout: TaskCardSlotLayout): SwimlaneCardFi
     showKey: fieldIsShown(normalized, 'key'),
     showParent: fieldIsShown(normalized, 'parent'),
     showPriority: fieldIsShown(normalized, 'priority'),
-    showSeverity: fieldIsShown(normalized, 'severity'),
     showStatus: fieldIsShown(normalized, 'status'),
     showType: fieldIsShown(normalized, 'type'),
   };
@@ -340,8 +334,6 @@ function visibilityShowsField(
       return fields.showParent;
     case 'priority':
       return fields.showPriority;
-    case 'severity':
-      return fields.showSeverity;
     case 'status':
       return fields.showStatus;
     case 'type':
@@ -432,8 +424,6 @@ function fieldHasData(field: TaskCardFieldId, input: ResolveTaskCardSlotsInput):
       return input.hasParent;
     case 'priority':
       return input.hasPriority;
-    case 'severity':
-      return input.hasSeverity;
     case 'status':
       return input.hasStatus;
     case 'type':

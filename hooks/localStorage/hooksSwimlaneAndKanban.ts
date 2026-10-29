@@ -16,7 +16,6 @@ export interface SwimlaneCardFieldsVisibility {
   showKey: boolean;
   showParent: boolean;
   showPriority: boolean;
-  showSeverity: boolean;
   showStatus: boolean;
   showType: boolean;
 }
@@ -38,7 +37,6 @@ export function useSwimlaneCardFieldsStorage(): [
     showPriority: true,
     showType: true,
     showEstimates: true,
-    showSeverity: true,
     showStatus: true,
   };
   return useLocalStorageBase<SwimlaneCardFieldsVisibility>(

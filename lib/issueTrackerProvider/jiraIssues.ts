@@ -321,7 +321,6 @@ export function normalizeJiraIssue(issue: TrackerIssue): IssueTrackerIssue {
     epic: issue.epic,
     functionalTeam: issue.functionalTeam,
     id: issue.id,
-    incidentSeverity: issue.incidentSeverity,
     key: issue.key,
     mergeRequestLink: issue.MergeRequestLink,
     parent: issue.parent,

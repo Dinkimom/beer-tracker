@@ -30,7 +30,6 @@ const fullData = {
   hasKey: true,
   hasParent: true,
   hasPriority: true,
-  hasSeverity: true,
   hasStatus: true,
   hasType: true,
 };
@@ -62,7 +61,7 @@ describe('resolveTaskCardSlots', () => {
   it('matches the classic swimlane card', () => {
     expect(fieldsOf(defaultTaskCardSlotLayout())).toEqual({
       eyebrow: ['parent'],
-      footer: ['status:tag', 'severity:tag', 'estimate:text'],
+      footer: ['status:tag', 'estimate:text'],
       footerEnd: ['assignee'],
       titleLead: ['priority:icon', 'type:icon', 'key:link'],
     });
@@ -224,17 +223,17 @@ describe('resolveTaskCardSlots', () => {
       ...fullData,
       density: 'regular',
       hasParent: false,
-      hasSeverity: false,
+      hasStatus: false,
       layout: defaultTaskCardSlotLayout(),
     });
     expect(resolved.eyebrow).toEqual([]);
-    expect(resolved.footer.map((item) => item.field)).toEqual(['status', 'estimate']);
+    expect(resolved.footer.map((item) => item.field)).toEqual(['estimate']);
   });
 });
 
 describe('taskCardFieldsSuppressedByKind', () => {
   it('hides tracker fields on notes and the chooser, and title meta on local drafts', () => {
-    const trackerMeta = ['key', 'priority', 'type', 'status', 'severity', 'estimate'];
+    const trackerMeta = ['key', 'priority', 'type', 'status', 'estimate'];
     expect(taskCardFieldsSuppressedByKind({ localDraftKind: 'comment' })).toEqual(trackerMeta);
     expect(taskCardFieldsSuppressedByKind({ localDraftKind: 'diagram' })).toEqual(trackerMeta);
     expect(taskCardFieldsSuppressedByKind({ localDraftKind: 'image' })).toEqual(trackerMeta);
@@ -256,7 +255,6 @@ describe('layoutFromVisibility', () => {
       showKey: true,
       showParent: false,
       showPriority: true,
-      showSeverity: true,
       showStatus: false,
       showType: true,
     });
@@ -266,7 +264,7 @@ describe('layoutFromVisibility', () => {
       showStatus: false,
     });
     expect(fieldsOf(layout).eyebrow).toEqual([]);
-    expect(fieldsOf(layout).footer).toEqual(['severity:tag']);
+    expect(fieldsOf(layout).footer).toEqual([]);
   });
 });
 
