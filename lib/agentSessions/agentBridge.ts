@@ -16,6 +16,7 @@ export type AgentBridgeStep =
   | 'connecting'
   | 'drafting'
   | 'exploring'
+  | 'queued'
   | 'reading'
   | 'replying'
   | 'running'
@@ -55,6 +56,7 @@ const AGENT_BRIDGE_STEPS: readonly AgentBridgeStep[] = [
   'connecting',
   'drafting',
   'exploring',
+  'queued',
   'reading',
   'replying',
   'running',

@@ -22,6 +22,11 @@ export function AgentDevTasksProvider({ children, sprintId }: { children: React.
   return <AgentDevTasksContext.Provider value={value}>{children}</AgentDevTasksContext.Provider>;
 }
 
+/** Все задачи доски, которыми занимается агент или которые он предложил отдать ему. */
+export function useAgentDevTasks(): ReadonlyMap<string, AgentDevTask> {
+  return useContext(AgentDevTasksContext);
+}
+
 /** Сессия агента по задаче (ключ трекера) и её состояние; null — агент задачей не занимается. */
 export function useAgentDevTask(taskKey: string | null): AgentDevTask | null {
   const tasks = useContext(AgentDevTasksContext);

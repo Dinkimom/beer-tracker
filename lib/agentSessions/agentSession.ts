@@ -1,7 +1,7 @@
 import type { AgentSessionActivity } from '@/lib/agentSessions/agentActivity';
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentDevResult, AgentSessionKind } from '@/lib/agentSessions/agentSessionKind';
-import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
+import type { AgentSessionSkill, AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { z } from 'zod';
@@ -48,6 +48,8 @@ export interface AgentSessionTarget {
 export interface AgentSessionMessage {
   authorKind: 'agent' | 'user';
   authorName: string | null;
+  /** Задачи, которые агент предлагает отдать ему в работу (скилл «Что отдать агенту»). */
+  candidates?: AgentTaskCandidate[];
   /** Каким клиентом MCP написал агент (Claude, Cursor…); у старых ответов и у человека — нет. */
   clientBrand?: McpOAuthClientBrand;
   createdAt: string;
@@ -297,6 +299,7 @@ interface AgentSessionAgentView {
     replyTo?: string;
     resolution?: AgentSessionResolution;
     result?: AgentDevResult;
+    candidates?: AgentTaskCandidate[];
     skill?: ReturnType<typeof buildAgentSkillAgentView>;
     target?: AgentSessionTarget;
     text: string;
@@ -338,6 +341,7 @@ export function buildAgentSessionAgentView(session: AgentSession): AgentSessionA
       ...(message.replyTo ? { replyTo: message.replyTo } : {}),
       ...(message.resolution ? { resolution: message.resolution } : {}),
       ...(message.result ? { result: message.result } : {}),
+      ...(message.candidates?.length ? { candidates: message.candidates } : {}),
       ...(message.skill ? { skill: buildAgentSkillAgentView(message.skill) } : {}),
       ...(message.target ? { target: message.target } : {}),
       text: message.text,

@@ -7,7 +7,7 @@ import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from '
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { AgentMessageBubble } from '@/features/swimlane/components/AgentMessageBubble';
-import { chosenAgentReplyOption } from '@/lib/agentSessions/agentSkills';
+import { type AgentTaskCandidate, chosenAgentReplyOption } from '@/lib/agentSessions/agentSkills';
 import { mcpOAuthClientBrandName } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { agentSkillCaption } from '../utils/agentSkillCaption';
@@ -15,6 +15,7 @@ import { agentSkillCaption } from '../utils/agentSkillCaption';
 import { AgentDevResultCard } from './AgentDevResultCard';
 import { AgentDevResultSummary } from './AgentDevResultSummary';
 import { AgentReplyOptions } from './AgentReplyOptions';
+import { AgentTaskCandidates } from './AgentTaskCandidates';
 
 type Translate = (key: string, params?: Record<string, number | string>) => string;
 
@@ -148,6 +149,7 @@ export function AgentSessionConversation({
   sessionId,
   status,
   waitingDetail,
+  onHandOff,
   onPickOption,
 }: {
   empty: string;
@@ -157,6 +159,8 @@ export function AgentSessionConversation({
   sessionId?: string;
   status?: AgentSessionStatus;
   waitingDetail?: ReactNode;
+  /** «Отдать выбранные» из ответа «Что отдать агенту». */
+  onHandOff?: (candidates: readonly AgentTaskCandidate[]) => Promise<void>;
   /** Ответ кнопкой на последний вопрос агента. */
   onPickOption?: (option: string) => void;
 }) {
@@ -251,7 +255,16 @@ export function AgentSessionConversation({
             brand={message.clientBrand}
             caption={messageCaption(message, versions.get(message.id) ?? 0, t)}
             card={message.kind === 'draft'}
-            footer={replyOptionsFor(messages, index, status, onPickOption)}
+            footer={
+              message.candidates?.length ? (
+                <AgentTaskCandidates
+                  candidates={message.candidates}
+                  onHandOff={status === 'closed' ? undefined : onHandOff}
+                />
+              ) : (
+                replyOptionsFor(messages, index, status, onPickOption)
+              )
+            }
             from={message.authorKind}
             // Итог работы — первым: ветка и кнопки ревью видны без прокрутки длинного отчёта.
             header={resultHeader(message, message.id === lastResultId)}

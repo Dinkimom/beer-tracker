@@ -17,7 +17,7 @@ import {
   getAgentSession,
   listAgentSessions,
 } from '@/lib/agentSessions/agentSessionsRepository';
-import { AgentReplyOptionsSchema } from '@/lib/agentSessions/agentSkills';
+import { AgentReplyOptionsSchema, AgentTaskCandidatesSchema } from '@/lib/agentSessions/agentSkills';
 import { toolError, toolJson } from '@/lib/mcp/mcpToolResult';
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
 
@@ -146,10 +146,13 @@ export function registerAgentSessionMcpTools(
           'Answers to openComments: [{messageId, resolution: addressed|declined, text}]'
         ),
         result: AgentDevResultSchema.optional().describe('Development session only: the finished work. Needs message'),
+        candidates: AgentTaskCandidatesSchema.optional().describe(
+          'Skill delegate_candidates: sprint tasks an AI coding agent could implement on its own, best first. The planner shows them with checkboxes and "hand off selected". Needs message'
+        ),
         sessionId: z.string().uuid().describe('Session id'),
       },
     },
-    async ({ close, message, options, replies, result, sessionId }) => {
+    async ({ candidates, close, message, options, replies, result, sessionId }) => {
       try {
         if (!canUsePlanner(input.profile)) {
           return toolError(new Error('forbidden: planner write requires organization admin or team membership'));
@@ -173,6 +176,7 @@ export function registerAgentSessionMcpTools(
           ownerId: input.userId,
           replies: replies ?? [],
           result,
+          candidates,
           sessionId,
         });
         return toolJson(summarizeAgentSessionForAgent(session));

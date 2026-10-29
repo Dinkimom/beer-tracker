@@ -2,6 +2,8 @@ export const agentSessionRu = {
   menuAria: 'Попросить агента',
   menuShort: 'Агенту',
   taskEmptyTitle: 'Что сделать с {key}?',
+  candidatesHandOff: 'Отдать выбранные: {count}',
+  candidatesHandOffFailed: 'Не удалось отдать {key} агенту',
   devOfferTitle: 'Сделать в коде',
   devOfferHint: 'Агент напишет код в ветке agent/{key}, прогонит проверки и пришлёт ветку на ревью',
   devOfferAsk: 'Или спроси про задачу — напиши ниже.',
@@ -11,6 +13,7 @@ export const agentSessionRu = {
   devEmpty: 'Агент напишет код в отдельной ветке agent/{key}, прогонит проверки и пришлёт ветку на ревью. Допиши, что важно знать, и отправь.',
   devPlaceholder: 'Что важно знать агенту…',
   devState: {
+    candidate: 'Можно отдать агенту',
     working: 'Агент работает',
     waitingAgent: 'Ждёт агента',
     waitingUser: 'Ждёт тебя',
@@ -107,6 +110,7 @@ export const agentSessionRu = {
   bridgeReady: 'Мост к Claude CLI на связи',
   bridgeRun: 'Запустить агента',
   bridgeStep: {
+    queued: 'В очереди',
     exploring: 'Изучает код',
     coding: 'Пишет код',
     running: 'Запускает команды',
@@ -127,6 +131,11 @@ export const agentSessionRu = {
   skillRemove: 'Убрать сценарий',
   skillNotePlaceholder: 'Уточнение для агента — можно не писать…',
   skills: {
+    delegate_candidates: {
+      title: 'Что отдать агенту',
+      description: 'Простые задачи спринта, которые агент сделает сам',
+      params: { scope: { label: 'Задачи', choices: { notStarted: 'Не начатые', mine: 'Только мои' } } },
+    },
     balance_load: {
       title: 'Выровнять загрузку',
       description: 'Снять перегруз — драфт с перестановками',

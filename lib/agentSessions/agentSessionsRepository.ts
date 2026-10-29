@@ -12,11 +12,11 @@ import type {
   AgentSessionTargetKind,
 } from '@/lib/agentSessions/agentSession';
 import type { AgentDevResult, AgentSessionKind } from '@/lib/agentSessions/agentSessionKind';
-import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
+import type { AgentSessionSkill, AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
 
 import { parseAgentBridgeStep } from '@/lib/agentSessions/agentBridge';
 import { parseAgentDevResult } from '@/lib/agentSessions/agentSessionKind';
-import { parseAgentSessionSkill } from '@/lib/agentSessions/agentSkills';
+import { parseAgentSessionSkill, parseAgentTaskCandidates } from '@/lib/agentSessions/agentSkills';
 import { STAFF_AUTHOR_DISPLAY_NAME_SQL } from '@/lib/comments/commentAuthor';
 import { query } from '@/lib/db';
 import { planPatchClientBrandFromUnknown } from '@/lib/sprints/sprintPlanPatchPositionPreview';
@@ -43,6 +43,7 @@ interface SessionRow {
 interface MessageRow {
   author_kind: string;
   author_name: string | null;
+  candidates: unknown;
   client_brand: string | null;
   created_at: DbTimestamp;
   id: string;
@@ -133,6 +134,7 @@ function parseOptions(value: unknown): string[] {
 function messageFromRow(row: MessageRow): AgentSessionMessage {
   const clientBrand = planPatchClientBrandFromUnknown(row.client_brand);
   const result = row.kind === 'result' ? parseAgentDevResult(row.result) : null;
+  const candidates = parseAgentTaskCandidates(row.candidates);
   return {
     authorKind: row.author_kind === 'agent' ? 'agent' : 'user',
     authorName: row.author_name,
@@ -146,6 +148,7 @@ function messageFromRow(row: MessageRow): AgentSessionMessage {
     replyTo: row.reply_to,
     resolution: parseResolution(row.resolution),
     ...(result ? { result } : {}),
+    ...(candidates.length > 0 ? { candidates } : {}),
     skill: parseAgentSessionSkill(row.skill_id, row.skill_params),
     target: parseTarget(row),
     text: row.text,
@@ -186,7 +189,7 @@ async function loadMessages(sessionIds: readonly string[]): Promise<Map<string, 
     `SELECT DISTINCT ON (m.created_at, m.id)
             m.id::text AS id, m.session_id::text AS session_id, m.author_kind, m.kind, m.text,
             m.target_kind, m.target_id, m.target_label, m.mentions, m.options, m.proposal_id, m.reply_to::text AS reply_to,
-            m.resolution, m.result, m.created_at, m.client_brand, m.skill_id, m.skill_params,
+            m.resolution, m.result, m.candidates, m.created_at, m.client_brand, m.skill_id, m.skill_params,
             ${STAFF_AUTHOR_DISPLAY_NAME_SQL} AS author_name
        FROM agent_session_messages m
        LEFT JOIN staff s
@@ -255,6 +258,7 @@ export async function insertAgentSessionMessage(input: {
   replyTo?: string | null;
   resolution?: AgentSessionResolution | null;
   result?: AgentDevResult | null;
+  candidates?: readonly AgentTaskCandidate[] | null;
   sessionId: string;
   skill?: AgentSessionSkill | null;
   target?: { id: string; kind: AgentSessionTargetKind; label?: string | null } | null;
@@ -264,11 +268,11 @@ export async function insertAgentSessionMessage(input: {
     `INSERT INTO agent_session_messages (
        session_id, author_kind, author_id, kind, text, target_kind, target_id, target_label,
        proposal_id, reply_to, resolution, mentions, client_brand, options,
-       skill_id, skill_params, result
+       skill_id, skill_params, result, candidates
      )
      VALUES (
        $1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10::uuid, $11, $12::jsonb, $13, $14::jsonb, $15, $16::jsonb,
-       $17::jsonb
+       $17::jsonb, $18::jsonb
      )
      RETURNING id::text AS id`,
     [
@@ -289,6 +293,7 @@ export async function insertAgentSessionMessage(input: {
       input.skill?.id ?? null,
       JSON.stringify(input.skill?.params ?? {}),
       input.result ? JSON.stringify(input.result) : null,
+      input.candidates?.length ? JSON.stringify(input.candidates) : null,
     ]
   );
   await query(`UPDATE agent_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = $1::uuid`, [

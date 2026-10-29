@@ -10,6 +10,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useRootStore } from '@/lib/layers';
 
 const STATE_CLASS: Record<AgentDevTask['state'], string> = {
+  candidate: 'border-dashed border-violet-400 bg-white text-violet-600 dark:border-violet-400 dark:bg-gray-800 dark:text-violet-300',
   closed: 'border-gray-300 bg-gray-100 text-gray-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300',
   review: 'border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-500/25 dark:text-green-200',
   waitingAgent: 'border-gray-300 bg-white text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200',
@@ -19,7 +20,8 @@ const STATE_CLASS: Record<AgentDevTask['state'], string> = {
 
 /**
  * Значок на карточке задачи, которой занимается агент: цвет — где работа (жёлтый пульсирует, пока
- * агент работает; синий — ждёт тебя; зелёный — ветка на ревью). Клик открывает чат на сессии —
+ * агент работает; синий — ждёт тебя; зелёный — ветка на ревью; пунктир — агент предложил отдать
+ * задачу ему). Клик открывает чат на сессии —
  * там, где на доске есть чат агента (свимлейн); в канбане чата нет, значок только показывает.
  */
 export const TaskCardAgentBadge = observer(function TaskCardAgentBadge({

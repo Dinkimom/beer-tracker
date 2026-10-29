@@ -31,6 +31,11 @@ export interface SprintContextPosition {
   assigneeName?: string | null;
   createdAt?: string | null;
   duration: number;
+  /**
+   * false — карточка лежит на доске этого спринта, но в трекере задачи в нём нет (перенесли в другой
+   * спринт, а карточка осталась): это не работа спринта. Нет поля — задача в спринте или трекер не ответил.
+   */
+  inTrackerSprint?: false;
   isQa: boolean;
   issueType?: string | null;
   parentKey?: string | null;

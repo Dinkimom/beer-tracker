@@ -9,6 +9,7 @@ import { useAgentBridge, useAgentBridgeWorkspace } from '@/features/swimlane/hoo
 import { agentDevState } from '@/lib/agentSessions/agentDevState';
 
 const STATE_CLASS: Record<AgentDevState, string> = {
+  candidate: 'bg-violet-500/[0.12] text-violet-800 dark:bg-violet-400/[0.15] dark:text-violet-300',
   closed: 'bg-gray-500/[0.12] text-gray-600 dark:bg-white/[0.08] dark:text-gray-300',
   review: 'bg-green-600/[0.12] text-green-800 dark:bg-green-400/[0.15] dark:text-green-300',
   waitingAgent: 'bg-gray-500/[0.12] text-gray-600 dark:bg-white/[0.08] dark:text-gray-300',

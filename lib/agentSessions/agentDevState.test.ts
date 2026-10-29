@@ -48,4 +48,21 @@ describe('agentDevState', () => {
     );
     expect([...tasks]).toEqual([['RND-1', { sessionId: 'new', state: 'working' }]]);
   });
+
+  it('marks tasks the agent offered to take as candidates until they are handed off', () => {
+    const offer = {
+      authorKind: 'agent',
+      candidates: [
+        { reason: 'small', summary: 'Fix', taskKey: 'RND-1' },
+        { reason: 'clear', summary: 'Copy', taskKey: 'RND-5' },
+      ],
+      kind: 'message',
+    } as AgentSession['messages'][number];
+    const tasks = agentDevTasks(
+      [session({ id: 'dev', taskId: 'RND-1' }), session({ id: 'plan', kind: 'plan', messages: [offer], taskId: null })],
+      new Set()
+    );
+    expect(tasks.get('RND-1')).toEqual({ sessionId: 'dev', state: 'waitingAgent' });
+    expect(tasks.get('RND-5')).toEqual({ sessionId: 'plan', state: 'candidate' });
+  });
 });

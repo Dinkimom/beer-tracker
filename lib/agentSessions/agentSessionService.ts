@@ -5,6 +5,7 @@ import type {
   AgentSessionUserMessageInput,
 } from '@/lib/agentSessions/agentSession';
 import type { AgentDevResult } from '@/lib/agentSessions/agentSessionKind';
+import type { AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { agentMcpToolCallsFromBody } from '@/lib/agentSessions/agentActivity';
@@ -327,6 +328,8 @@ export async function replyAgentSession(input: {
   ownerId: string;
   replies: readonly AgentSessionReply[];
   result?: AgentDevResult;
+  /** Скилл «Что отдать агенту»: задачи, которые можно отдать агенту в работу. */
+  candidates?: readonly AgentTaskCandidate[];
   sessionId: string;
 }): Promise<AgentSession> {
   const session = await requireSession(input);
@@ -343,6 +346,7 @@ export async function replyAgentSession(input: {
       kind: input.result ? 'result' : 'message',
       options: input.options,
       result: input.result ?? null,
+      candidates: input.candidates ?? null,
       sessionId: session.id,
       text,
     });

@@ -5,7 +5,7 @@ import { z } from 'zod';
  * агент получает инструкцию в `get_agent_session.skill`. Подписи для UI — в i18n
  * (`agentSession.skills.<id>`), инструкции агенту — здесь, по-английски, как подсказки MCP.
  */
-type AgentSkillId = 'balance_load' | 'place_tasks' | 'sprint_goals' | 'sprint_risks';
+type AgentSkillId = 'balance_load' | 'delegate_candidates' | 'place_tasks' | 'sprint_goals' | 'sprint_risks';
 
 interface AgentSkillParam {
   /** Значение → что оно значит для агента. Первое — по умолчанию. */
@@ -17,8 +17,8 @@ interface AgentSkill {
   icon: string;
   id: AgentSkillId;
   instructions: string;
-  /** draft — результат драфтом на доске; reply — ответ текстом. */
-  output: 'draft' | 'reply';
+  /** draft — результат драфтом на доске; reply — ответ текстом; candidates — список задач для агента. */
+  output: 'candidates' | 'draft' | 'reply';
   params: readonly AgentSkillParam[];
 }
 
@@ -87,7 +87,44 @@ export const AGENT_SKILLS: readonly AgentSkill[] = [
       },
     ],
   },
+  {
+    icon: 'code',
+    id: 'delegate_candidates',
+    instructions:
+      'Find tasks of this sprint that an AI coding agent could implement on its own and hand back as a branch for review. Read get_sprint_context (positions and unplannedTasks with statusCategory, estimates, links) and get_issue for the promising ones. Only work of this sprint: skip positions with inTrackerSprint=false (the card is on this board, but in the tracker the issue moved to another sprint) and say in the message which ones you skipped for that. A good candidate: a clear description with expected behaviour, a small estimate, no open questions or design/UX decisions to make, not blocked by another unfinished task (board arrows, tracker links), not a QA task, not research. Skip everything that needs a human decision. Answer with reply_agent_session(sessionId, message: one or two sentences — how many fit and what you skipped and why, candidates: [{taskKey, summary, reason}] — up to 8, best first; reason = one short line why it fits and what the risk is). If nothing fits, say why in the message and pass no candidates.',
+    output: 'candidates',
+    params: [
+      {
+        choices: {
+          notStarted: 'Consider only tasks that are not started yet.',
+          mine: 'Consider only not started tasks assigned to the person (whoami).',
+        },
+        id: 'scope',
+      },
+    ],
+  },
 ];
+
+const TASK_KEY_RE = /^[A-Z][A-Z0-9_]*-\d+$/;
+
+/** Задачи, которые агент предлагает отдать ему в работу (скилл «Что отдать агенту»). */
+export const AgentTaskCandidatesSchema = z
+  .array(
+    z.object({
+      reason: z.string().trim().min(1).max(300).describe('Why it fits and what the risk is, one short line'),
+      summary: z.string().trim().min(1).max(300).describe('Task summary as in the tracker'),
+      taskKey: z.string().trim().regex(TASK_KEY_RE).describe('Tracker issue key, e.g. RND-123'),
+    })
+  )
+  .max(8);
+
+export type AgentTaskCandidate = z.infer<typeof AgentTaskCandidatesSchema>[number];
+
+/** Кандидаты из строки БД; битые — пропускаем. */
+export function parseAgentTaskCandidates(raw: unknown): AgentTaskCandidate[] {
+  const parsed = AgentTaskCandidatesSchema.safeParse(raw);
+  return parsed.success ? parsed.data : [];
+}
 
 const SKILL_IDS = AGENT_SKILLS.map((skill) => skill.id) as [AgentSkillId, ...AgentSkillId[]];
 

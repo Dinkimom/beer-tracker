@@ -113,6 +113,7 @@ export function AgentSessionChat({
         waitingDetail={
           progress ? <AgentBridgeProgress startedAt={progress.startedAt} step={progress.step} /> : undefined
         }
+        onHandOff={draft.handOff}
         onPickOption={draft.pickOption}
       />
 

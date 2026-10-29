@@ -2,6 +2,8 @@ export const agentSessionEn = {
   menuAria: 'Ask the agent',
   menuShort: 'Agent',
   taskEmptyTitle: 'What to do with {key}?',
+  candidatesHandOff: 'Hand off selected: {count}',
+  candidatesHandOffFailed: 'Could not hand {key} to the agent',
   devOfferTitle: 'Do it in code',
   devOfferHint: 'The agent writes the code on agent/{key}, runs the checks and sends the branch for review',
   devOfferAsk: 'Or ask about the task below.',
@@ -11,6 +13,7 @@ export const agentSessionEn = {
   devEmpty: 'The agent writes the code on a separate agent/{key} branch, runs the checks and sends the branch for review. Add what it should know and send.',
   devPlaceholder: 'What the agent should know…',
   devState: {
+    candidate: 'Can be handed to the agent',
     working: 'Agent at work',
     waitingAgent: 'Waiting for the agent',
     waitingUser: 'Waiting for you',
@@ -106,6 +109,7 @@ export const agentSessionEn = {
   bridgeReady: 'Claude CLI bridge is online',
   bridgeRun: 'Run agent',
   bridgeStep: {
+    queued: 'Queued',
     exploring: 'Reading the code',
     coding: 'Writing code',
     running: 'Running commands',
@@ -127,6 +131,11 @@ export const agentSessionEn = {
   skillRemove: 'Remove scenario',
   skillNotePlaceholder: 'A note for the agent — optional…',
   skills: {
+    delegate_candidates: {
+      title: 'What to hand to the agent',
+      description: 'Simple sprint tasks the agent can do on its own',
+      params: { scope: { label: 'Tasks', choices: { notStarted: 'Not started', mine: 'Mine only' } } },
+    },
     balance_load: {
       title: 'Balance the load',
       description: 'Fix overload — a draft that moves tasks',

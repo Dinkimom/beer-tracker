@@ -280,6 +280,9 @@ function enrichPosition(
     if (issue.sprintHistory.length > 0) {
       next.sprintHistory = issue.sprintHistory;
     }
+    if (!issue.inSprint) {
+      next.inTrackerSprint = false;
+    }
   }
   next.planVsActual = buildPlanVsActual({
     inSprint: issue?.inSprint,

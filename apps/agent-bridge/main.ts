@@ -13,6 +13,7 @@
  *   AGENT_BRIDGE_CONFIG      — файл настроек моста (default ~/.beer-tracker/agent-bridge.json): репозитории
  *                              для сессий разработки; правят их в планере, Настройки → Агент (`repoConfig.ts`)
  *   AGENT_BRIDGE_DEV_TIMEOUT_MIN — лимит одного прогона сессии разработки (default 60)
+ *   AGENT_BRIDGE_MAX_PARALLEL — сколько агентов работает одновременно (default 2); остальные ждут в очереди
  *
  * `pnpm agent-bridge` читает их из `.env.agent-bridge.local` (пример — `.env.agent-bridge.example`).
  */
@@ -291,14 +292,38 @@ function runSession(sessionId: string, mcpServer: string, taskKey?: string) {
       if (state.again) {
         runSession(sessionId, mcpServer, taskKey);
       }
+      startQueued();
     })
     .catch(() => undefined);
+}
+
+/** Сколько агентов одновременно: пачка задач не должна разом занять машину и бюджет. */
+const maxParallel = Math.max(1, Number(process.env.AGENT_BRIDGE_MAX_PARALLEL) || 2);
+
+/** Сессии, которые ждут свободного места, по порядку прихода. */
+const queued = new Map<string, { mcpServer: string; queuedAt: number; taskKey?: string }>();
+
+function startQueued() {
+  for (const [sessionId, entry] of queued) {
+    if (running.size >= maxParallel) {
+      return;
+    }
+    queued.delete(sessionId);
+    runSession(sessionId, entry.mcpServer, entry.taskKey);
+  }
 }
 
 function requestRun(sessionId: string, mcpServer: string, taskKey?: string) {
   const current = running.get(sessionId);
   if (current) {
     current.again = true;
+    return;
+  }
+  if (running.size >= maxParallel) {
+    if (!queued.has(sessionId)) {
+      queued.set(sessionId, { mcpServer, queuedAt: Date.now(), taskKey });
+      log(sessionId, `в очереди: работают ${running.size} из ${maxParallel}`);
+    }
     return;
   }
   runSession(sessionId, mcpServer, taskKey);
@@ -356,7 +381,10 @@ type Route = (
 
 const routes: Readonly<Record<string, Route>> = {
   'GET /health': (_request, response, origin) => {
-    const runs = [...running].map(([sessionId, { startedAt, step }]) => ({ sessionId, startedAt, step }));
+    const runs = [
+      ...[...running].map(([sessionId, { startedAt, step }]) => ({ sessionId, startedAt, step })),
+      ...[...queued].map(([sessionId, { queuedAt }]) => ({ sessionId, startedAt: queuedAt, step: 'queued' as const })),
+    ];
     send(response, 200, origin, { devQueues: readyQueues(), finished: [...finished.values()], runs });
   },
   'POST /run': async (request, response, origin, mcpServer) => {

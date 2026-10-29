@@ -3,7 +3,7 @@
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
-import type { AgentSessionSkill } from '@/lib/agentSessions/agentSkills';
+import type { AgentSessionSkill, AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
 import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
 import { useState } from 'react';
@@ -129,6 +129,26 @@ export function useAgentChatDraft({
     empty = { text: t('agentSession.queuedHint') };
   }
 
+  /**
+   * «Отдать выбранные» из ответа «Что отдать агенту»: по сессии разработки на задачу, по очереди.
+   * Мост подхватывает каждую сам (сверх лимита — в очередь).
+   */
+  const handOff = async (candidates: readonly AgentTaskCandidate[]) => {
+    for (const candidate of candidates) {
+      try {
+        await sessions.create({
+          context: { sprintName: origin.context?.sprintName, summary: candidate.summary, taskKey: candidate.taskKey },
+          kind: 'dev',
+          taskId: candidate.taskKey,
+          text: t('agentSession.devRequest', { key: candidate.taskKey, summary: candidate.summary }),
+          title: candidate.summary,
+        });
+      } catch {
+        toast.error(t('agentSession.candidatesHandOffFailed', { key: candidate.taskKey }));
+      }
+    }
+  };
+
   const pickOption = (option: string) => {
     if (busy || !session) {
       return;
@@ -142,6 +162,7 @@ export function useAgentChatDraft({
     busy,
     context,
     empty,
+    handOff,
     mentions,
     /** Заголовок чата, пока сессии нет: у задачи агенту — её ключ. */
     newTitle: dev ? t('agentSession.devTitle', { key: dev.taskKey }) : undefined,
