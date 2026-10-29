@@ -1,13 +1,17 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AgentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { STORAGE_KEYS } from '@/hooks/localStorage/storageKeys';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import {
   AGENT_BRIDGE_DEFAULT_URL,
   fetchAgentBridgeHealth,
+  fetchAgentBridgeRepos,
   runAgentBridgeSession,
+  saveAgentBridgeRepos,
 } from '@/lib/agentSessions/agentBridge';
 
 const HEALTH_QUERY_KEY = ['agentBridge', 'health'] as const;
@@ -18,6 +22,8 @@ const STARTING_QUERY_KEY = ['agentBridge', 'starting'] as const;
 type StartingRuns = Readonly<Record<string, number>>;
 
 const NO_STARTING: StartingRuns = {};
+
+const NO_QUEUES: readonly string[] = [];
 
 /**
  * Локальный мост к Claude CLI. Включается вручную: без этого планер не стучится на 127.0.0.1
@@ -46,12 +52,13 @@ export function useAgentBridge() {
    * Запуск виден сразу как «запускается», а не после ответа /run и следующего опроса /health:
    * иначе на эти доли секунды сессия выглядит ждущей без агента и мигает полоска «позови агента».
    */
-  const run = async (sessionId: string): Promise<boolean> => {
+  const run = async (target: AgentBridgeRunTarget): Promise<boolean> => {
+    const { sessionId } = target;
     const setStarting = (update: (prev: StartingRuns) => StartingRuns) =>
       queryClient.setQueryData<StartingRuns>(STARTING_QUERY_KEY, (prev) => update(prev ?? NO_STARTING));
     setStarting((prev) => ({ ...prev, [sessionId]: Date.now() }));
     try {
-      const accepted = await runAgentBridgeSession(AGENT_BRIDGE_DEFAULT_URL, sessionId);
+      const accepted = await runAgentBridgeSession(AGENT_BRIDGE_DEFAULT_URL, target);
       await queryClient.invalidateQueries({ queryKey: HEALTH_QUERY_KEY });
       return accepted;
     } finally {
@@ -68,10 +75,38 @@ export function useAgentBridge() {
     alive: data != null,
     /** Включён, но ответа /health ещё не было — «не отвечает» пока не показываем. */
     checking: enabled && health.isPending,
+    /** Очереди, для задач которых у моста есть репозиторий: их сессии разработки он запускает сам. */
+    devQueues: data?.devQueues ?? NO_QUEUES,
     enabled,
     run,
     /** Идущие запуски (и только что отправленные): сессия, шаг агента, время старта. */
     runs: enabled && pending.length > 0 ? [...runs, ...pending] : runs,
     setEnabled,
   };
+}
+
+const REPOS_QUERY_KEY = ['agentBridge', 'repos'] as const;
+
+/**
+ * Репозитории для сессий разработки в настройках моста (Настройки → Агент). Пока какой-то ждёт
+ * подтверждения в терминале моста, список опрашивается — статус сменится сам.
+ */
+export function useAgentBridgeRepos(alive: boolean) {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    enabled: alive,
+    queryFn: () => fetchAgentBridgeRepos(AGENT_BRIDGE_DEFAULT_URL),
+    queryKey: REPOS_QUERY_KEY,
+    refetchInterval: (state) => (state.state.data?.repos.some((repo) => repo.status === 'pending') ? 2000 : false),
+    retry: false,
+  });
+  const save = useMutation({
+    mutationFn: (repos: ReadonlyArray<{ path: string; queue: string }>) =>
+      saveAgentBridgeRepos(AGENT_BRIDGE_DEFAULT_URL, repos),
+    onSuccess: (data) => {
+      queryClient.setQueryData(REPOS_QUERY_KEY, data);
+      queryClient.invalidateQueries({ queryKey: HEALTH_QUERY_KEY }).catch(() => undefined);
+    },
+  });
+  return { data: query.data ?? null, save: save.mutateAsync, saving: save.isPending };
 }

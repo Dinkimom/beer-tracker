@@ -1,6 +1,7 @@
 'use client';
 
 import type { AgentBridgeStep } from '@/lib/agentSessions/agentBridge';
+import type { AgentSession } from '@/lib/agentSessions/agentSession';
 
 import toast from 'react-hot-toast';
 
@@ -8,6 +9,7 @@ import { CopyFeedbackGlyph } from '@/components/CopyFeedbackGlyph';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentBridge } from '@/features/swimlane/hooks/useAgentBridge';
 import { useCopyFeedback } from '@/hooks/useCopyFeedback';
+import { agentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
 import { claudeNewChatUrl, cursorPromptUrl } from '@/lib/agentSessions/agentChatLinks';
 
 const LINK_CLASS =
@@ -20,10 +22,17 @@ const BAR_CLASS =
  * Сессия ждёт агента, а он внешний: увидит её, когда человек ему напишет.
  * Полоска над полем ввода — фраза для чата и ссылки, открывающие чат с ней (фраза ещё и в буфере).
  * Если мост к Claude CLI на связи, агента он запускает сам при отправке; пока тот работает, полоски
- * нет — ход работы в пузыре «Ждёт агента». Кнопка — на случай, когда запуск не прошёл.
+ * нет — ход работы в пузыре «Ждёт агента». Кнопка — на случай, когда запуск не прошёл. Сессию разработки
+ * мост берёт, только если знает репозиторий её очереди; иначе — фраза для агента в IDE.
  * `silentStep` — агент забрал просьбу, но давно не вызывал MCP: зовём снова, с шагом, где он затих.
  */
-export function AgentCallAgentBar({ sessionId, silentStep }: { sessionId: string; silentStep?: AgentBridgeStep }) {
+export function AgentCallAgentBar({
+  session,
+  silentStep,
+}: {
+  session: Pick<AgentSession, 'id' | 'kind' | 'taskId'>;
+  silentStep?: AgentBridgeStep;
+}) {
   const { t } = useI18n();
   const { copied, copy } = useCopyFeedback();
   const bridge = useAgentBridge();
@@ -35,10 +44,11 @@ export function AgentCallAgentBar({ sessionId, silentStep }: { sessionId: string
     return null;
   }
 
-  if (bridge.alive) {
+  const target = agentBridgeRunTarget(session, bridge.devQueues);
+  if (bridge.alive && target) {
     const start = () => {
       bridge
-        .run(sessionId)
+        .run(target)
         .then((accepted) => {
           if (!accepted) {
             toast.error(t('agentSession.bridgeRunFailed'));

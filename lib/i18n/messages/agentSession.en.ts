@@ -74,6 +74,10 @@ export const agentSessionEn = {
   bridgeReady: 'Claude CLI bridge is online',
   bridgeRun: 'Run agent',
   bridgeStep: {
+    exploring: 'Reading the code',
+    coding: 'Writing code',
+    running: 'Running commands',
+    committing: 'Committing',
     starting: 'Starting up',
     connecting: 'Connecting to Beer Tracker',
     reading: 'Reading the request',

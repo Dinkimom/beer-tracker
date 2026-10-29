@@ -1,3 +1,5 @@
+import type { AgentBridgeRepoSettings, AgentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
+
 /**
  * Локальный мост к Claude CLI (`pnpm agent-bridge`): планер зовёт его, когда сессия ждёт агента,
  * мост запускает `claude -p` с MCP Beer Tracker. Здесь — общее для моста и планера, без Node и React.
@@ -9,10 +11,14 @@ export const AGENT_BRIDGE_DEFAULT_URL = `http://127.0.0.1:${AGENT_BRIDGE_DEFAULT
 
 /** Что агент делает сейчас — по последнему событию из потока CLI. */
 export type AgentBridgeStep =
+  | 'coding'
+  | 'committing'
   | 'connecting'
   | 'drafting'
+  | 'exploring'
   | 'reading'
   | 'replying'
+  | 'running'
   | 'searching'
   | 'starting'
   | 'studying'
@@ -26,15 +32,21 @@ interface AgentBridgeRun {
 }
 
 interface AgentBridgeHealth {
+  /** Очереди задач, для которых у моста есть репозиторий: их сессии разработки он берёт сам. */
+  devQueues: string[];
   /** Запуски CLI, которые идут сейчас. */
   runs: AgentBridgeRun[];
 }
 
 const AGENT_BRIDGE_STEPS: readonly AgentBridgeStep[] = [
+  'coding',
+  'committing',
   'connecting',
   'drafting',
+  'exploring',
   'reading',
   'replying',
+  'running',
   'searching',
   'starting',
   'studying',
@@ -59,6 +71,14 @@ const TOOL_STEPS: Readonly<Record<string, AgentBridgeStep>> = {
   propose_plan_patch: 'drafting',
   apply_retro_board: 'drafting',
   reply_agent_session: 'replying',
+  get_task_brief: 'reading',
+  transition_issue: 'replying',
+  Read: 'exploring',
+  Glob: 'exploring',
+  Grep: 'exploring',
+  Edit: 'coding',
+  Write: 'coding',
+  NotebookEdit: 'coding',
   'notion-search': 'searching',
   'notion-query-meeting-notes': 'searching',
   'notion-fetch': 'reading',
@@ -72,8 +92,15 @@ export function agentStepForTool(name: string): AgentBridgeStep {
 }
 
 interface StreamContentBlock {
+  input?: { command?: unknown };
   name?: unknown;
   type?: unknown;
+}
+
+/** Команда в Bash: коммит отдельно, остальное — «запускает команды» (тесты, линтер, git). */
+function bashStep(block: StreamContentBlock): AgentBridgeStep {
+  const command = typeof block.input?.command === 'string' ? block.input.command : '';
+  return /\bgit\s+commit\b/.test(command) ? 'committing' : 'running';
 }
 
 /**
@@ -92,6 +119,9 @@ export function agentBridgeStepFromStreamLine(line: string): AgentBridgeStep | n
     return null;
   }
   const tool = (content as StreamContentBlock[]).findLast((block) => block.type === 'tool_use');
+  if (tool?.name === 'Bash') {
+    return bashStep(tool);
+  }
   return typeof tool?.name === 'string' ? agentStepForTool(tool.name) : 'thinking';
 }
 
@@ -308,18 +338,19 @@ export async function fetchAgentBridgeHealth(baseUrl: string): Promise<AgentBrid
     if (!response.ok) {
       return null;
     }
-    const data = (await response.json()) as { runs?: unknown };
+    const data = (await response.json()) as { devQueues?: unknown; runs?: unknown };
     const runs = Array.isArray(data.runs) ? data.runs.map(parseAgentBridgeRun) : [];
-    return { runs: runs.filter((run): run is AgentBridgeRun => run != null) };
+    const devQueues = Array.isArray(data.devQueues) ? data.devQueues.filter((queue) => typeof queue === 'string') : [];
+    return { devQueues, runs: runs.filter((run): run is AgentBridgeRun => run != null) };
   } catch {
     return null;
   }
 }
 
-export async function runAgentBridgeSession(baseUrl: string, sessionId: string): Promise<boolean> {
+export async function runAgentBridgeSession(baseUrl: string, target: AgentBridgeRunTarget): Promise<boolean> {
   try {
     const response = await fetch(`${baseUrl}/run`, {
-      body: JSON.stringify({ sessionId }),
+      body: JSON.stringify(target),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     });
@@ -327,4 +358,30 @@ export async function runAgentBridgeSession(baseUrl: string, sessionId: string):
   } catch {
     return false;
   }
+}
+
+export async function fetchAgentBridgeRepos(baseUrl: string): Promise<AgentBridgeRepoSettings | null> {
+  try {
+    const response = await fetch(`${baseUrl}/repos`);
+    return response.ok ? ((await response.json()) as AgentBridgeRepoSettings) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Сохранить репозитории в мосте; ошибка проверки (не git, кривая очередь) — текстом исключения. */
+export async function saveAgentBridgeRepos(
+  baseUrl: string,
+  repos: ReadonlyArray<{ path: string; queue: string }>
+): Promise<AgentBridgeRepoSettings> {
+  const response = await fetch(`${baseUrl}/repos`, {
+    body: JSON.stringify({ repos }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PUT',
+  });
+  const data = (await response.json()) as AgentBridgeRepoSettings & { error?: string };
+  if (!response.ok) {
+    throw new Error(data.error ?? `bridge ${response.status}`);
+  }
+  return data;
 }

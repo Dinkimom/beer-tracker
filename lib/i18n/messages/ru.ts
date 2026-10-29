@@ -168,6 +168,35 @@ export const ruMessages = {
         'yandex-tracker': 'YTracker',
       },
       general: 'Общие',
+      agent: 'Агент',
+    },
+    agentTab: {
+      bridgeSection: 'Мост к Claude CLI',
+      bridgeHint:
+        'Локальный процесс на этом компьютере: запускает Claude CLI, когда сессия ждёт агента. Запуск — pnpm agent-bridge в папке Beer Tracker.',
+      bridgeOff: 'Выключен: просьбы забирает агент в твоём чате с ИИ',
+      reposSection: 'Репозитории для задач',
+      reposHint:
+        'Задачи этих очередей мост берёт в работу сам: делает рабочую копию на ветке agent/<ключ>, агент пишет код и коммитит, но не пушит. Новый репозиторий заработает после подтверждения в терминале моста.',
+      reposOffline: 'Запусти мост, чтобы настроить репозитории.',
+      empty: 'Пока ни одного — сессии разработки забирает агент в IDE.',
+      queueLabel: 'Очередь задач',
+      queuePlaceholder: 'RND',
+      pathLabel: 'Папка репозитория',
+      pathPlaceholder: '~/work/app',
+      add: 'Добавить репозиторий',
+      remove: 'Убрать репозиторий',
+      save: 'Сохранить',
+      errors: {
+        notAGitRepo: 'Не git-репозиторий: {path}',
+        invalidQueue: 'Очередь — ключ задач латиницей, например RND: «{queue}»',
+      },
+      saveFailed: 'Не сохранилось: {error}',
+      status: {
+        ready: 'Работает',
+        pending: 'Подтверди в терминале моста',
+        missing: 'Папка не найдена или это не git-репозиторий',
+      },
     },
     token: {
       empty: 'Токен не может быть пустым',

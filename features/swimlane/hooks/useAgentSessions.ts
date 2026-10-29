@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
+import { agentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
 import {
   countOpenAgentSessionComments,
   groupAgentSessionItemComments,
@@ -104,9 +105,10 @@ export function useAgentSessions(sprintId: number | null | undefined) {
     queryClient.setQueryData<SprintAgentSessions>(queryKey, (prev) => upsertSession(prev, session));
     // Просьба или «переделать» — сессия ждёт агента: при включённом мосте зовём его сразу.
     // Не ждём /health: если мост лежит, запуск просто не примут, а полоска покажет, что он не отвечает.
-    // Сессии разработки мост пока не берёт: у его агента нет доступа к коду — их забирает агент в IDE.
-    if (session.status === 'waiting_agent' && session.kind === 'plan' && bridge.enabled) {
-      bridge.run(session.id).catch(() => undefined);
+    // Сессию разработки — только если у моста есть репозиторий её очереди; иначе её заберёт агент в IDE.
+    const target = agentBridgeRunTarget(session, bridge.devQueues);
+    if (session.status === 'waiting_agent' && target && bridge.enabled) {
+      bridge.run(target).catch(() => undefined);
     }
   };
 

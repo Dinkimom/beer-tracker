@@ -39,11 +39,12 @@ import {
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 import { readTrackerTokenPayload } from '@/lib/trackerTokenStorage';
 
+import { SettingsAgentTab } from './SettingsModal/tabs/SettingsAgentTab';
 import { SettingsGeneralTab } from './SettingsModal/tabs/SettingsGeneralTab';
 import { SettingsPlanningTab } from './SettingsModal/tabs/SettingsPlanningTab';
 import { SettingsYTrackerTab } from './SettingsModal/tabs/SettingsYTrackerTab';
 
-type SettingsTab = 'general' | 'planning' | 'ytracker';
+type SettingsTab = 'agent' | 'general' | 'planning' | 'ytracker';
 
 interface SettingsModalProps {
   /** Tab inside Sprints (from URL) */
@@ -153,7 +154,7 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
   if (!overlay.mounted) return null;
 
   const showTrackerTokenTab = issueTrackerShowsSettingsTokenTab(issueTrackerProviderKind);
-  const mainTabs: { id: SettingsTab; label: string; icon: 'calendar' | 'diagram' | 'link' | 'settings' }[] = [
+  const mainTabs: { id: SettingsTab; label: string; icon: 'calendar' | 'diagram' | 'link' | 'settings' | 'sparkles' }[] = [
     { id: 'planning', label: t('settings.tabs.planning'), icon: 'diagram' },
     ...(showTrackerTokenTab
       ? ([
@@ -168,6 +169,7 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
           },
         ] as const)
       : []),
+    { id: 'agent', label: t('settings.tabs.agent'), icon: 'sparkles' },
     { id: 'general', label: t('settings.tabs.general'), icon: 'settings' },
   ];
 
@@ -221,6 +223,7 @@ export function SettingsModal({ isOpen, onClose, activeSprintTab }: SettingsModa
 
             <div className="min-h-0 flex-1 overflow-y-auto">
               <div className="px-5 py-4">
+                {activeTab === 'agent' ? <SettingsAgentTab /> : null}
                 {activeTab === 'general' && (
                   <SettingsGeneralTab
                     holidayCountry={holidayCountry}

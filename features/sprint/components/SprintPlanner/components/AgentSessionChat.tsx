@@ -104,7 +104,7 @@ export function AgentSessionChat({
           {draft.showSkillPicker ? <AgentSkillPicker onPick={draft.setSkill} /> : null}
 
           {session?.status === 'waiting_agent' && !progress ? (
-            <AgentCallAgentBar sessionId={session.id} silentStep={silentStep} />
+            <AgentCallAgentBar session={session} silentStep={silentStep} />
           ) : null}
 
           <AgentComposer

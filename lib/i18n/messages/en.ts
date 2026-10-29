@@ -168,6 +168,35 @@ export const enMessages = {
         'yandex-tracker': 'YTracker',
       },
       general: 'General',
+      agent: 'Agent',
+    },
+    agentTab: {
+      bridgeSection: 'Bridge to Claude CLI',
+      bridgeHint:
+        'A local process on this computer: starts Claude CLI when a session waits for the agent. Start it with pnpm agent-bridge in the Beer Tracker folder.',
+      bridgeOff: 'Off: requests are picked up by the agent in your AI chat',
+      reposSection: 'Repositories for tasks',
+      reposHint:
+        'The bridge takes tasks of these queues itself: it makes a working copy on the agent/<key> branch, the agent writes code and commits but never pushes. A new repository starts working once you confirm it in the bridge terminal.',
+      reposOffline: 'Start the bridge to set up repositories.',
+      empty: 'None yet — development sessions are picked up by the agent in your IDE.',
+      queueLabel: 'Task queue',
+      queuePlaceholder: 'RND',
+      pathLabel: 'Repository folder',
+      pathPlaceholder: '~/work/app',
+      add: 'Add a repository',
+      remove: 'Remove the repository',
+      save: 'Save',
+      errors: {
+        notAGitRepo: 'Not a git repository: {path}',
+        invalidQueue: 'A queue is the task key prefix in Latin letters, e.g. RND: “{queue}”',
+      },
+      saveFailed: 'Not saved: {error}',
+      status: {
+        ready: 'Working',
+        pending: 'Confirm in the bridge terminal',
+        missing: 'Folder not found or not a git repository',
+      },
     },
     token: {
       empty: 'Token cannot be empty',

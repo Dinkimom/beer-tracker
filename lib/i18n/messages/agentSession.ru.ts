@@ -75,6 +75,10 @@ export const agentSessionRu = {
   bridgeReady: 'Мост к Claude CLI на связи',
   bridgeRun: 'Запустить агента',
   bridgeStep: {
+    exploring: 'Изучает код',
+    coding: 'Пишет код',
+    running: 'Запускает команды',
+    committing: 'Коммитит',
     starting: 'Запускается',
     connecting: 'Подключается к Beer Tracker',
     reading: 'Читает просьбу',
