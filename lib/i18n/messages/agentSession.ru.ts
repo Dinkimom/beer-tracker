@@ -1,8 +1,10 @@
 export const agentSessionRu = {
   menuAria: 'Попросить агента',
   menuShort: 'Агенту',
-  devMenuShort: 'Код',
-  devMenuAria: 'Отдать задачу агенту в работу',
+  taskEmptyTitle: 'Что сделать с {key}?',
+  devOfferTitle: 'Сделать в коде',
+  devOfferHint: 'Агент напишет код в ветке agent/{key}, прогонит проверки и пришлёт ветку на ревью',
+  devOfferAsk: 'Или спроси про задачу — напиши ниже.',
   devRequest: 'Реализуй задачу {key}: {summary}',
   devTitle: 'Задача агенту: {key}',
   devEmptyTitle: 'Отдать задачу агенту в работу',

@@ -91,6 +91,7 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
               onContextRemove={island.removeContext}
               onContextSent={island.clearContext}
               onCreated={island.selectCreated}
+              onStartDev={island.startDev}
             />
           </div>
         </div>

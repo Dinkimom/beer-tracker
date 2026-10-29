@@ -34,7 +34,7 @@ function composerPlaceholder(
  * Черновик чата с агентом: текст, «@»-упоминания, скилл и плашки контекста (`origin.chips`).
  * `send` дописывает реплику в `session` или создаёт новую сессию; плашки уходят с репликой
  * и очищаются (`onContextSent`). Со скиллом текст необязателен — репликой станет его название;
- * `pickOption` отвечает на вопрос агента выбранным вариантом. `dev` — задача агенту в работу («Код»):
+ * `pickOption` отвечает на вопрос агента выбранным вариантом. `dev` — задача агенту в работу («Сделать в коде»):
  * поле уже с просьбой по задаче, её можно дописать; отправка создаёт сессию разработки.
  */
 export function useAgentChatDraft({
@@ -59,7 +59,7 @@ export function useAgentChatDraft({
   const { t } = useI18n();
   const sessions = useAgentSessions(sprintId);
   const [text, setText] = useState(() =>
-    dev ? t('agentSession.devRequest', { key: dev.task.id, summary: dev.task.name }) : ''
+    dev ? t('agentSession.devRequest', { key: dev.taskKey, summary: dev.summary }) : ''
   );
   const [mentions, setMentions] = useState<AgentMention[]>([]);
   const [skill, setSkill] = useState<AgentSessionSkill | null>(null);
@@ -91,10 +91,10 @@ export function useAgentChatDraft({
     }
     const devSession = dev
       ? {
-          context: { assigneeName: dev.task.assigneeName, sprintName: dev.sprintName, summary: dev.task.name, taskKey: dev.task.id },
+          context: { assigneeName: dev.assigneeName, sprintName: dev.sprintName, summary: dev.summary, taskKey: dev.taskKey },
           kind: 'dev' as const,
-          taskId: dev.task.id,
-          title: dev.task.name,
+          taskId: dev.taskKey,
+          title: dev.summary,
         }
       : null;
     sessions
@@ -106,13 +106,25 @@ export function useAgentChatDraft({
       .catch(() => toast.error(t('agentSession.submitFailed')));
   };
 
+  const devOffer: AgentDevRequest | null =
+    !session && !dev && origin.taskId
+      ? {
+          assigneeName: origin.context?.assigneeName,
+          sprintName: origin.context?.sprintName,
+          summary: origin.context?.summary ?? origin.taskId,
+          taskKey: origin.taskId,
+        }
+      : null;
+
   /** Пустая лента: что будет дальше — у задачи агенту, у новой просьбы за чужим драфтом и у обычной. */
   let empty: { text: string; title?: string } = {
     text: t('agentSession.emptyChat'),
     title: t('agentSession.emptyChatTitle'),
   };
   if (dev) {
-    empty = { text: t('agentSession.devEmpty', { key: dev.task.id }), title: t('agentSession.devEmptyTitle') };
+    empty = { text: t('agentSession.devEmpty', { key: dev.taskKey }), title: t('agentSession.devEmptyTitle') };
+  } else if (devOffer) {
+    empty = { text: devOffer.summary, title: t('agentSession.taskEmptyTitle', { key: devOffer.taskKey }) };
   } else if (sessions.draftSession != null && sessions.draftSession.id !== session?.id) {
     empty = { text: t('agentSession.queuedHint') };
   }
@@ -132,7 +144,7 @@ export function useAgentChatDraft({
     empty,
     mentions,
     /** Заголовок чата, пока сессии нет: у задачи агенту — её ключ. */
-    newTitle: dev ? t('agentSession.devTitle', { key: dev.task.id }) : undefined,
+    newTitle: dev ? t('agentSession.devTitle', { key: dev.taskKey }) : undefined,
     pickOption,
     placeholder: composerPlaceholder(session, skill, dev, t),
     send,
@@ -149,7 +161,9 @@ export function useAgentChatDraft({
     /** Сценарии («/») — про план спринта: у задачи агенту в работу и в сессии разработки их нет. */
     skillsEnabled: !dev && session?.kind !== 'dev',
     /** Карточки сценариев — в пустом чате новой сессии, пока скилл не выбран («/» работает всегда). */
-    showSkillPicker: !session && !skill && !dev,
+    showSkillPicker: !session && !skill && !dev && !devOffer,
+    /** Новая просьба про одну задачу: её можно сразу отдать агенту сделать в коде. */
+    devOffer,
     text,
   };
 }

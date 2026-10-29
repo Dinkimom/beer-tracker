@@ -141,11 +141,6 @@ export const ModalsSection = observer(function ModalsSection({
   const { sprintPlannerUi } = useRootStore();
   const agentAvailable = useAgentAvailable(selectedSprintId);
 
-  /** «Код» в меню карточки: чат с готовой просьбой по задаче — агент стартует, когда её отправят. */
-  const delegateToAgent = (task: Task) => {
-    const sprintName = sprints.find((sprint) => sprint.id === selectedSprintId)?.name;
-    sprintPlannerUi.setAgentRequestTarget({ kind: 'dev', sprintName, task });
-  };
   const contextMenu = sprintPlannerUi.contextMenu;
   const presenceLocked = useSprintCardPresenceLocked(contextMenu?.task.id ?? '');
   const accountWorkModal = sprintPlannerUi.accountWorkModal;
@@ -224,7 +219,6 @@ export const ModalsSection = observer(function ModalsSection({
           onAskAgent={(task) => sprintPlannerUi.setAgentRequestTarget({ kind: 'task', task })}
           onAssigneeSelect={bindTaskAssigneeSelect(onAssigneeSelect, contextMenu.task)}
           onClose={sprintPlannerUi.closeContextMenu}
-          onDelegateToAgent={delegateToAgent}
           onMoveToSprint={onMoveToSprint}
           onOpenTaskInfo={sprintPlannerUi.openTaskInfoPanel}
           onParentChange={onParentChange}

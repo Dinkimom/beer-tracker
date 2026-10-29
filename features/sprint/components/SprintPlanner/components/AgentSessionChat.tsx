@@ -16,6 +16,7 @@ import { AgentBridgeOutcomeNotice } from './AgentBridgeOutcomeNotice';
 import { AgentBridgeProgress } from './AgentBridgeProgress';
 import { AgentBridgeToggle } from './AgentBridgeToggle';
 import { AgentCallAgentBar } from './AgentCallAgentBar';
+import { AgentDevOffer } from './AgentDevOffer';
 import { AgentDevSessionStrip } from './AgentDevSessionStrip';
 import { AgentSessionChatHeader } from './AgentSessionChatHeader';
 import { AgentSessionConversation } from './AgentSessionConversation';
@@ -43,9 +44,10 @@ export function AgentSessionChat({
   onContextRemove,
   onContextSent,
   onCreated,
+  onStartDev,
 }: {
   autoFocus?: boolean;
-  /** «Код» в меню карточки: новая сессия разработки по этой задаче — просьба уже в поле. */
+  /** «Сделать в коде»: новая сессия разработки по этой задаче — просьба уже в поле. */
   dev?: AgentDevRequest | null;
   origin?: AgentSessionChatOrigin;
   session: AgentSession | null;
@@ -62,6 +64,8 @@ export function AgentSessionChat({
   onContextRemove: (key: string) => void;
   onContextSent: () => void;
   onCreated: (sessionId: string | null) => void;
+  /** «Сделать в коде»: перейти к черновику задачи агенту. */
+  onStartDev: (request: AgentDevRequest) => void;
 }) {
   const bridge = useAgentBridge();
   // Агент работает над этой сессией в Claude CLI — шаг и время показываем в пузыре «Ждёт агента».
@@ -113,6 +117,7 @@ export function AgentSessionChat({
       />
 
       {draft.showSkillPicker ? <AgentSkillPicker onPick={draft.setSkill} /> : null}
+      <AgentDevOffer offer={draft.devOffer} onStart={onStartDev} />
 
       {unanswered ? <AgentBridgeOutcomeNotice run={unanswered} /> : null}
 

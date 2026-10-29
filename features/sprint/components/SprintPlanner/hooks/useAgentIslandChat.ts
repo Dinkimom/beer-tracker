@@ -7,6 +7,7 @@ import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprin
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAgentSessions } from '@/features/swimlane/hooks/useAgentSessions';
+import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 import { useRootStore } from '@/lib/layers';
@@ -23,34 +24,39 @@ const CHAT_KEY = 'chat';
 
 /** Что рисует панель чата; при сворачивании — последний открытый, пока идёт анимация. */
 interface ChatPanel {
-  /** «Код» в меню карточки: новая сессия разработки по задаче, ещё не отправленная. */
+  /** «Сделать в коде»: новая сессия разработки по задаче, ещё не отправленная. */
   chat: { dev: AgentDevRequest | null; key: string; origin: AgentSessionChatOrigin };
   session: AgentSession | null;
 }
 
 type IslandTarget = ReturnType<typeof useRootStore>['sprintPlannerUi']['agentRequestTarget'];
 
-/** «Код» в меню карточки: задача, которую отдают агенту, пока сессия по ней не создана. */
+/** «Сделать в коде» в чате: задача, которую отдают агенту, пока сессия по ней не создана. */
 function devRequestOf(target: IslandTarget): AgentDevRequest | null {
-  return target?.kind === 'dev' ? { sprintName: target.sprintName, task: target.task } : null;
-}
-
-/** Чат открыли на конкретной сессии (список, тост, отправленная задача агенту). */
-function requestedSessionOf(target: IslandTarget): string | undefined {
-  return target?.kind === 'session' ? target.sessionId : undefined;
+  return target?.kind === 'dev' ? target.request : null;
 }
 
 /**
- * Чат открыли на конкретной сессии (список, тост, отправленная задача агенту) — показать её один раз
- * на каждый новый запрос (setState во время рендера, без эффекта).
+ * Куда открыть чат по новому запросу: на сессии — её; «Агенту» с карточки задачи — её открытую сессию,
+ * иначе новую просьбу (там же «Сделать в коде»); остальное — не трогать выбор.
  */
-function useRequestedSession(requested: string | undefined, onRequest: (sessionId: string) => void) {
-  const [handled, setHandled] = useState<string | undefined>(undefined);
-  if (requested !== handled) {
-    setHandled(requested);
-    if (requested) {
-      onRequest(requested);
-    }
+function requestedPick(target: IslandTarget, openSessions: readonly AgentSession[]): string | undefined {
+  if (target?.kind === 'session') {
+    return target.sessionId;
+  }
+  if (target?.kind === 'task') {
+    const taskKey = getTaskTrackerDisplayKey(target.task);
+    return openSessions.find((session) => session.taskId === taskKey)?.id ?? 'new';
+  }
+  return undefined;
+}
+
+/** Один раз на каждый новый запрос открыть чат (setState во время рендера, без эффекта). */
+function useOnNewTarget(target: IslandTarget, onTarget: (target: IslandTarget) => void) {
+  const [handled, setHandled] = useState<IslandTarget>(null);
+  if (target !== handled) {
+    setHandled(target);
+    onTarget(target);
   }
 }
 
@@ -107,9 +113,12 @@ export function useAgentIslandChat(sprintId: number | null) {
   if (!chatOpen && listOpen) {
     setListOpen(false);
   }
-  useRequestedSession(requestedSessionOf(target), (sessionId) => {
-    setPick(sessionId);
-    setListOpen(false);
+  useOnNewTarget(target, (next) => {
+    const requested = requestedPick(next, sessions.openSessions);
+    if (requested) {
+      setPick(requested);
+      setListOpen(false);
+    }
   });
 
   // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
@@ -136,7 +145,7 @@ export function useAgentIslandChat(sprintId: number | null) {
   // Ссылка меняется только с плашками (observable.ref): по ней обновляется панель ниже.
   const origin = useMemo(() => resolveAgentChatOrigin(contextItems, undefined), [contextItems]);
   const dev = devRequestOf(target);
-  const chat = chatOpen ? { dev, key: dev ? `dev:${dev.task.id}` : CHAT_KEY, origin } : null;
+  const chat = chatOpen ? { dev, key: dev ? `dev:${dev.taskKey}` : CHAT_KEY, origin } : null;
   const session = shownSession(dev, pick, sessions);
 
   const openSession = (sessionId: string | 'new') => {
@@ -192,6 +201,11 @@ export function useAgentIslandChat(sprintId: number | null) {
     },
     /** Перейти в сессию (из списка или тоста) или к новой просьбе; свёрнутый чат открывается. */
     openSession,
+    /** «Сделать в коде» в чате: черновик задачи агенту вместо обычной просьбы; плашки уже не нужны. */
+    startDev: (request: AgentDevRequest) => {
+      sprintPlannerUi.clearAgentChatContext();
+      sprintPlannerUi.setAgentRequestTarget({ kind: 'dev', request });
+    },
     /** Первая реплика создала сессию: чат дальше показывает её (задача агенту — уже обычная сессия). */
     selectCreated: (sessionId: string | null) => {
       if (dev && sessionId) {

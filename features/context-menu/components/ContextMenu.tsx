@@ -66,8 +66,6 @@ interface ContextMenuProps {
   onAssigneeSelect?: (assigneeId: string) => void;
   onClose: () => void;
   onCloseByClickOutside?: () => void;
-  /** Отдать задачу агенту в работу: он напишет код и пришлёт ветку. */
-  onDelegateToAgent?: (task: Task) => void;
   onMoveToSprint: (taskId: string, sprintId: number) => Promise<void>;
   onOpenTaskInfo?: (task: Task) => void;
   onParentChange?: (taskId: string, parent: TaskParent | null) => Promise<void>;
@@ -100,7 +98,6 @@ export function ContextMenu({
   assigneeOptions = null,
   onAccountWork,
   onAskAgent,
-  onDelegateToAgent,
   onAssigneeSelect,
   onUpdateEstimate,
   onCloseByClickOutside,
@@ -249,7 +246,6 @@ export function ContextMenu({
                 task={task}
                 onAskAgent={onAskAgent}
                 onClose={requestClose}
-                onDelegateToAgent={onDelegateToAgent}
               />
             ) : null}
           </ContextMenuGroup>

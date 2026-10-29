@@ -22,19 +22,27 @@ import {
 
 /**
  * Открытый чат агента и откуда его открыли: задача (меню карточки), заметка (меню заметки),
- * спринт целиком (✨ в тулбаре), новая задача агенту в работу («Код» в меню карточки: чат с готовой
- * просьбой, агент стартует по отправке) или сессия — выбранная (`sessionId`: список, тост, «Код» в меню карточки)
+ * спринт целиком (✨ в тулбаре), новая задача агенту в работу («Сделать в коде» в чате: чат с готовой
+ * просьбой, агент стартует по отправке) или сессия — выбранная (`sessionId`: список, тост)
  * или та, что уже в чате.
  */
 type AgentRequestTarget =
-  | { kind: 'dev'; sprintName?: string; task: Task }
+  | { kind: 'dev'; request: AgentDevRequest }
   | { kind: 'note'; noteId: string; text: string }
   | { kind: 'session'; sessionId?: string }
   | { kind: 'sprint' }
   | { kind: 'task'; task: Task };
 
-/** Задача, которую отдают агенту в работу: из неё — просьба по умолчанию и контекст сессии. */
-export type AgentDevRequest = Omit<Extract<AgentRequestTarget, { kind: 'dev' }>, 'kind'>;
+/**
+ * Задача, которую отдают агенту в работу: из неё — просьба по умолчанию и контекст сессии.
+ * Ключ — трекера (у QA-карточки id свой, а агент ищет задачу по ключу).
+ */
+export interface AgentDevRequest {
+  assigneeName?: string;
+  sprintName?: string;
+  summary: string;
+  taskKey: string;
+}
 
 /** Задача или заметка, приложенная к следующей реплике агенту (плашка над полем ввода). */
 export type AgentChatContextItem = Extract<AgentRequestTarget, { kind: 'note' | 'task' }>;

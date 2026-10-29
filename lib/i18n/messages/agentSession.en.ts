@@ -1,8 +1,10 @@
 export const agentSessionEn = {
   menuAria: 'Ask the agent',
   menuShort: 'Agent',
-  devMenuShort: 'Code',
-  devMenuAria: 'Hand the task to the agent to implement',
+  taskEmptyTitle: 'What to do with {key}?',
+  devOfferTitle: 'Do it in code',
+  devOfferHint: 'The agent writes the code on agent/{key}, runs the checks and sends the branch for review',
+  devOfferAsk: 'Or ask about the task below.',
   devRequest: 'Implement task {key}: {summary}',
   devTitle: 'Task for the agent: {key}',
   devEmptyTitle: 'Hand the task to the agent',
