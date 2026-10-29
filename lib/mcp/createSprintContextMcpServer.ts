@@ -11,6 +11,7 @@ import { loadMcpSprintContext, withPendingProposal } from '@/lib/mcp/mcpSprintCo
 import { plannerWriteDenied, toolError, toolJson } from '@/lib/mcp/mcpToolResult';
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
 import { registerAgentSessionMcpTools } from '@/lib/mcp/registerAgentSessionMcpTools';
+import { registerDevTaskMcpTools } from '@/lib/mcp/registerDevTaskMcpTools';
 import { registerIdentityMcpTools } from '@/lib/mcp/registerIdentityMcpTools';
 import { registerRetroBoardMcpTools } from '@/lib/mcp/registerRetroBoardMcpTools';
 import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
@@ -447,6 +448,7 @@ export function createSprintContextMcpServer(input: {
   );
 
   registerRetroBoardMcpTools(server, input);
+  registerDevTaskMcpTools(server, input);
 
   return server;
 }
