@@ -73,6 +73,21 @@ export async function deleteTaskLink(
   ]);
 }
 
+/** Все стрелки, у которых задача на одном из концов. */
+export async function deleteTaskLinksForTask(
+  input: {
+    organizationId: string;
+    sprintId: number;
+    taskId: string;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<void> {
+  await run('DELETE FROM task_links WHERE sprint_id = $1 AND (from_task_id = $2 OR to_task_id = $2)', [
+    input.sprintId,
+    input.taskId,
+  ]);
+}
+
 export async function clearTaskLinksForSprint(input: {
   organizationId: string;
   sprintId: number;

@@ -71,6 +71,14 @@ const UpsertPositionSchema = z.object({
 });
 
 const DeletePositionSchema = z.object({
+  moveToSprintId: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      'Move the issue to this tracker sprint (e.g. carry unfinished work to the next sprint). After apply the issue is added to that sprint in the tracker and its card and links leave this board. Without it, only the card is removed and the issue stays in this sprint. Works for unplannedTasks too (no card). One op per task, up to 50 per patch.'
+    ),
   op: z.literal('deletePosition'),
   taskId: z.string().min(1).max(255),
 });

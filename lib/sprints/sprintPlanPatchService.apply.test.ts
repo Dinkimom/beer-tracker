@@ -1,5 +1,6 @@
 import type * as ApplyModule from './sprintPlanPatchApply';
 import type * as TokenModule from './sprintPlanPatchToken';
+import type * as TrackerSyncModule from './sprintPlanPatchTrackerSync';
 import type { SprintPlanPatchOp } from './sprintPlanPatchTypes';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,9 +8,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { runBeerTrackerTransaction } from '@/lib/db';
 
 import { claimPlanPatchApplyToken } from './sprintPlanPatchAppliedTokenRepository';
-import { applySprintPlanPatchOps, runPlanPatchTrackerSyncs } from './sprintPlanPatchApply';
+import { applySprintPlanPatchOps } from './sprintPlanPatchApply';
 import { confirmProposedCreateNotes } from './sprintPlanPatchDraftNotes';
 import { applySprintPlanPatch } from './sprintPlanPatchService';
+import { runPlanPatchTrackerSyncs } from './sprintPlanPatchTrackerSync';
 
 vi.mock('@/lib/db', () => ({ runBeerTrackerTransaction: vi.fn() }));
 vi.mock('@/lib/realtime/notifySprintRealtime', () => ({ notifySprintRealtime: vi.fn() }));
@@ -36,6 +38,9 @@ vi.mock('./sprintPlanPatchToken', async (importOriginal) => ({
 vi.mock('./sprintPlanPatchApply', async (importOriginal) => ({
   ...(await importOriginal<typeof ApplyModule>()),
   applySprintPlanPatchOps: vi.fn(),
+}));
+vi.mock('./sprintPlanPatchTrackerSync', async (importOriginal) => ({
+  ...(await importOriginal<typeof TrackerSyncModule>()),
   runPlanPatchTrackerSyncs: vi.fn(() => Promise.resolve()),
 }));
 

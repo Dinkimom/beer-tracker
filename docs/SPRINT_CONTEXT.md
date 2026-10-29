@@ -103,6 +103,8 @@ Supported ops: `upsertPosition`, `deletePosition`, `createNote`, `updateNote`, `
 
 `upsertPosition.syncToTracker=true` — дополнительно `addIssueToSprint` + assign в Tracker/Jira (позиция в BT пишется всегда; ошибка sync — в `applied[].detail` / warning). Без флага — только планировщик BT; propose предупредит `issue_not_in_sprint: KEY` и вернёт `hints` с remediation (перепредложите с `syncToTracker:true`, можно вместе с `segments`), если задачи нет на доске спринта трекера.
 
+**Перенос в другой спринт:** `deletePosition.moveToSprintId=<id спринта трекера>` в патче исходного спринта — как «Перенести в спринт» в меню карточки. Карточка и её стрелки уходят с доски, после коммита задача добавляется в целевой спринт трекера (`addIssueToSprint`, текущий спринт той же доски снимается). Работает и для `unplannedTasks` без карточки. Пачка — по op на задачу, до 50 за патч. Ошибка трекера — в `applied[].detail`, изменения в BT остаются.
+
 Notes: только `kind=text`; `width` — длина в частях таймлайна от `(day, part)` (1..60, default 2; значения > 60 — legacy px/100); `height` — строки свимлейна (1 = карточка задачи, по умолчанию подбирается под текст). Заметки одного исполнителя, пересекающиеся по времени, свимлейн разносит по строкам (дорожка растёт) — propose предупреждает `note_overlap` и называет первый свободный слот. В context: `authorName` (кто завёл), `reactions[{emoji, count, by}]` (кто какой emoji поставил; ✅ — отметили сделанным, заметка зеленеет), `updatedAt` / `updatedBy` / `version`; soft-delete. `updateNote.ifVersion` — optimistic lock (иначе `version conflict`). Для `upsertLink` на заметку — `comment:{notes[].id}`.
 
 ### Мост к Claude CLI (локально)

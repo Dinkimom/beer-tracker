@@ -7,7 +7,7 @@ import { deleteSprintGoal } from '@/lib/sprintGoals';
 
 import { applySprintPlanPatchOps } from './sprintPlanPatchApply';
 import { syncUpsertPositionToTracker } from './sprintPlanPatchTrackerSync';
-import { upsertTaskPositionRecord } from './taskPositionsRepository';
+import { deleteTaskPosition, upsertTaskPositionRecord } from './taskPositionsRepository';
 
 vi.mock('@/lib/sprintGoals', () => ({
   deleteSprintGoal: vi.fn(),
@@ -28,6 +28,7 @@ vi.mock('./sprintCommentsRepository', () => ({
 }));
 
 const upsertPosition = vi.mocked(upsertTaskPositionRecord);
+const deletePosition = vi.mocked(deleteTaskPosition);
 const deleteGoal = vi.mocked(deleteSprintGoal);
 const trackerSync = vi.mocked(syncUpsertPositionToTracker);
 
@@ -99,5 +100,24 @@ describe('applySprintPlanPatchOps', () => {
     expect(result.applied.map((row) => row.ok)).toEqual([false, true]);
     expect(result.error).toBe('continued with 1 failed op(s)');
     expect(upsertPosition).toHaveBeenCalledTimes(1);
+  });
+
+  it('moveToSprintId drops the card and its links here, clears the target card, defers the tracker move', async () => {
+    const { statements, tx } = fakeTx();
+    const result = await run([{ moveToSprintId: 8, op: 'deletePosition', taskId: 'BT-2' }], 'stop', tx);
+    expect(result.applied[0]).toMatchObject({ detail: 'position BT-2 → sprint 8', ok: true });
+    expect(deletePosition.mock.calls.map((call) => call[0].sprintId)).toEqual([7, 8]);
+    expect(statements).toContain(
+      'DELETE FROM task_links WHERE sprint_id = $1 AND (from_task_id = $2 OR to_task_id = $2)'
+    );
+    expect(result.trackerSyncs).toEqual([{ index: 0, moveToSprintId: 8, taskId: 'BT-2' }]);
+  });
+
+  it('plain deletePosition keeps links and the tracker sprint', async () => {
+    const { statements, tx } = fakeTx();
+    const result = await run([{ op: 'deletePosition', taskId: 'BT-2' }], 'stop', tx);
+    expect(deletePosition).toHaveBeenCalledTimes(1);
+    expect(statements.some((sql) => sql.includes('task_links'))).toBe(false);
+    expect(result.trackerSyncs).toEqual([]);
   });
 });

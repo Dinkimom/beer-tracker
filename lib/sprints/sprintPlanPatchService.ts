@@ -20,8 +20,6 @@ import { claimPlanPatchApplyToken } from '@/lib/sprints/sprintPlanPatchAppliedTo
 import {
   applySprintPlanPatchOps,
   collectRealtimeResources,
-  runPlanPatchTrackerSyncs,
-  type PlanPatchTrackerSyncRequest,
 } from '@/lib/sprints/sprintPlanPatchApply';
 import {
   buildSprintPlanPatchContentChanges,
@@ -62,6 +60,8 @@ import {
   buildIssueNotInSprintPlanPatchHints,
   collectIssueNotInSprintWarnings,
   loadSprintIssueKeySet,
+  runPlanPatchTrackerSyncs,
+  type PlanPatchTrackerSyncRequest,
 } from '@/lib/sprints/sprintPlanPatchTrackerSync';
 import {
   collectPositionPatchTaskIds,

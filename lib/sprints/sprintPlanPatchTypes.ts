@@ -21,6 +21,11 @@ interface SprintPlanPatchSegment {
 
 export type SprintPlanPatchOp =
   {
+      /** Move the issue to this tracker sprint after apply (card and links leave this board). */
+      moveToSprintId?: number;
+      op: 'deletePosition';
+      taskId: string;
+    } | {
       assigneeId: string;
       color?: StickyNoteColor;
       day: number;
@@ -66,7 +71,7 @@ export type SprintPlanPatchOp =
       issueKeys?: string[];
       name: string;
       op: 'upsertFeatureDraft';
-    } | { commentId: string; op: 'deleteNote' } | { done?: boolean; id: string; op: 'updateGoal'; text?: string } | { goalType: SprintPlanPatchGoalType; op: 'createGoal'; text: string } | { id: string; op: 'deleteGoal' } | { linkId: string; op: 'deleteLink' } | { op: 'deletePosition'; taskId: string };
+    } | { commentId: string; op: 'deleteNote' } | { done?: boolean; id: string; op: 'updateGoal'; text?: string } | { goalType: SprintPlanPatchGoalType; op: 'createGoal'; text: string } | { id: string; op: 'deleteGoal' } | { linkId: string; op: 'deleteLink' };
 
 /** stop = roll back the whole patch on the first failure (default); continue = skip failed ops, apply the rest. */
 export type SprintPlanPatchOnError = 'continue' | 'stop';

@@ -1,4 +1,8 @@
-import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
+import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/types';
+import type {
+  SprintPlanPatchApplyOpResult,
+  SprintPlanPatchOp,
+} from '@/lib/sprints/sprintPlanPatchTypes';
 
 import { invalidateCache } from '@/lib/cache';
 import { completeIssueSprintMembershipChange } from '@/lib/issues/issueSprintMembershipRealtime';
@@ -104,6 +108,70 @@ export function buildIssueNotInSprintPlanPatchHints(
   return hints;
 }
 
+/**
+ * addIssueToSprint → `beforePublish` (например, назначить исполнителя) → сброс кэша бэклога
+ * и realtime о смене спринта. Realtime последним, чтобы вкладки перечитали задачу уже целиком.
+ */
+async function addIssueToTrackerSprint(input: {
+  beforePublish?: (issueTracker: IssueTrackerProviderClient) => Promise<void>;
+  organizationId: string;
+  sprintId: number;
+  taskId: string;
+}): Promise<void> {
+  const { sprintId, taskId } = input;
+  const issueTracker = await getIssueTrackerProviderClientForOrganization(input.organizationId);
+  const membership = await issueTracker.addIssueToSprint(taskId, sprintId);
+  await input.beforePublish?.(issueTracker);
+  for (const boardId of membership.backlogBoardIds) {
+    invalidateCache.backlog(boardId);
+  }
+  // Без client id: событие получают все вкладки, включая ту, что подтвердила превью.
+  await completeIssueSprintMembershipChange({
+    addedSprintIds: [sprintId],
+    issueKey: taskId,
+    issueTracker,
+    removedSprintIds: membership.affectedSprintIds.filter((id) => id !== sprintId),
+    request: new Request('http://localhost/api/mcp', {
+      headers: { [TENANT_ORG_HEADER]: input.organizationId },
+    }),
+  });
+}
+
+function trackerSyncFailed(taskId: string, error: unknown): { warning: string } {
+  const message = error instanceof Error ? error.message : String(error);
+  return { warning: `tracker_sync_failed: ${taskId}: ${message}` };
+}
+
+async function addAndAssignInTracker(input: {
+  assigneeId: string;
+  organizationId: string;
+  sprintId: number;
+  taskId: string;
+}): Promise<{ detail?: string; warning?: string }> {
+  let trackerAssigneeId: string | null = null;
+  await addIssueToTrackerSprint({
+    ...input,
+    beforePublish: async (issueTracker) => {
+      trackerAssigneeId = await resolvePlannerAssigneeIdForTrackerSync(
+        input.organizationId,
+        input.assigneeId
+      );
+      if (trackerAssigneeId) {
+        await issueTracker.updateIssue(input.taskId, { assigneeId: trackerAssigneeId });
+      }
+    },
+  });
+  if (!trackerAssigneeId) {
+    return {
+      detail: `tracker sync: added ${input.taskId} to sprint ${input.sprintId}`,
+      warning: `tracker_assignee_unresolved: ${input.assigneeId}`,
+    };
+  }
+  return {
+    detail: `tracker sync: added ${input.taskId} to sprint ${input.sprintId}, assigned ${trackerAssigneeId}`,
+  };
+}
+
 /** After BT position write: optionally add to tracker sprint and assign. Errors are returned, not thrown. */
 export async function syncUpsertPositionToTracker(input: {
   assigneeId: string;
@@ -112,43 +180,62 @@ export async function syncUpsertPositionToTracker(input: {
   taskId: string;
 }): Promise<{ detail?: string; warning?: string }> {
   try {
-    const issueTracker = await getIssueTrackerProviderClientForOrganization(
-      input.organizationId
-    );
-    const membership = await issueTracker.addIssueToSprint(input.taskId, input.sprintId);
-    const trackerAssigneeId = await resolvePlannerAssigneeIdForTrackerSync(
-      input.organizationId,
-      input.assigneeId
-    );
-    if (trackerAssigneeId) {
-      await issueTracker.updateIssue(input.taskId, { assigneeId: trackerAssigneeId });
-    }
-    for (const boardId of membership.backlogBoardIds) {
-      invalidateCache.backlog(boardId);
-    }
-    // Без client id: событие получают все вкладки, включая ту, что подтвердила превью.
-    await completeIssueSprintMembershipChange({
-      addedSprintIds: [input.sprintId],
-      issueKey: input.taskId,
-      issueTracker,
-      removedSprintIds: membership.affectedSprintIds.filter((id) => id !== input.sprintId),
-      request: new Request('http://localhost/api/mcp', {
-        headers: { [TENANT_ORG_HEADER]: input.organizationId },
-      }),
-    });
-    if (!trackerAssigneeId) {
-      return {
-        detail: `tracker sync: added ${input.taskId} to sprint ${input.sprintId}`,
-        warning: `tracker_assignee_unresolved: ${input.assigneeId}`,
-      };
-    }
-    return {
-      detail: `tracker sync: added ${input.taskId} to sprint ${input.sprintId}, assigned ${trackerAssigneeId}`,
-    };
+    return await addAndAssignInTracker(input);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      warning: `tracker_sync_failed: ${input.taskId}: ${message}`,
-    };
+    return trackerSyncFailed(input.taskId, error);
+  }
+}
+
+/**
+ * Синк в трекер: выполняется после коммита транзакции, его нельзя откатить.
+ * С assigneeId — upsertPosition.syncToTracker, с moveToSprintId — перенос задачи в другой спринт.
+ */
+export type PlanPatchTrackerSyncRequest =
+  { assigneeId: string; index: number; taskId: string } | { index: number; moveToSprintId: number; taskId: string };
+
+/** Ошибки трекера возвращаются предупреждением: изменения в BT уже закоммичены. */
+async function runOneTrackerSync(input: {
+  organizationId: string;
+  request: PlanPatchTrackerSyncRequest;
+  sprintId: number;
+}): Promise<{ detail?: string; warning?: string }> {
+  const { request } = input;
+  if (!('moveToSprintId' in request)) {
+    return syncUpsertPositionToTracker({
+      assigneeId: request.assigneeId,
+      organizationId: input.organizationId,
+      sprintId: input.sprintId,
+      taskId: request.taskId,
+    });
+  }
+  try {
+    // Как «Перенести в спринт» в планере: addIssueToSprint сам снимает задачу с текущего спринта доски.
+    await addIssueToTrackerSprint({
+      organizationId: input.organizationId,
+      sprintId: request.moveToSprintId,
+      taskId: request.taskId,
+    });
+    return { detail: `tracker sync: moved ${request.taskId} to sprint ${request.moveToSprintId}` };
+  } catch (error) {
+    return trackerSyncFailed(request.taskId, error);
+  }
+}
+
+/** Синк в трекер после коммита: детали и предупреждения дописываются к результату операции. */
+export async function runPlanPatchTrackerSyncs(input: {
+  applied: SprintPlanPatchApplyOpResult[];
+  organizationId: string;
+  sprintId: number;
+  trackerSyncs: readonly PlanPatchTrackerSyncRequest[];
+}): Promise<void> {
+  for (const request of input.trackerSyncs) {
+    const row = input.applied.find((item) => item.index === request.index);
+    if (!row?.ok) continue;
+    const sync = await runOneTrackerSync({
+      organizationId: input.organizationId,
+      request,
+      sprintId: input.sprintId,
+    });
+    row.detail = [row.detail, sync.detail, sync.warning].filter(Boolean).join('; ');
   }
 }

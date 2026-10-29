@@ -199,10 +199,11 @@ function summarizeDeletePosition(
   currentByTask: ReadonlyMap<string, SprintContextPosition> | undefined
 ): string {
   const before = currentByTask?.get(op.taskId);
+  const target = op.moveToSprintId === undefined ? '' : ` → sprint ${op.moveToSprintId}`;
   if (!before) {
-    return `deletePosition ${op.taskId}`;
+    return `deletePosition ${op.taskId}${target}`;
   }
-  return `deletePosition ${op.taskId}: ${formatPositionAnchor(before)} → (removed)`;
+  return `deletePosition ${op.taskId}: ${formatPositionAnchor(before)} → (removed)${target}`;
 }
 
 function summarizeOneOp(

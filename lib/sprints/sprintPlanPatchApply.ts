@@ -1,5 +1,6 @@
 import type { BeerTrackerTransactionQuery } from '@/lib/db';
 import type { SprintRealtimeResource } from '@/lib/realtime/sprintRealtimeTypes';
+import type { PlanPatchTrackerSyncRequest } from '@/lib/sprints/sprintPlanPatchTrackerSync';
 import type {
   SprintPlanPatchApplyOpResult,
   SprintPlanPatchOnError,
@@ -22,21 +23,17 @@ import {
 } from '@/lib/sprints/sprintCommentsRepository';
 import { mergeFeatureDraftIntoDocument } from '@/lib/sprints/sprintPlanPatchHelpers';
 import { resolvePlanPatchCreateNoteSize } from '@/lib/sprints/sprintPlanPatchNoteSize';
-import { syncUpsertPositionToTracker } from '@/lib/sprints/sprintPlanPatchTrackerSync';
-import { deleteTaskLink, upsertTaskLink } from '@/lib/sprints/taskLinksRepository';
+import {
+  deleteTaskLink,
+  deleteTaskLinksForTask,
+  upsertTaskLink,
+} from '@/lib/sprints/taskLinksRepository';
 import {
   deleteTaskPosition,
   replaceTaskPositionSegments,
   upsertTaskPositionRecord,
 } from '@/lib/sprints/taskPositionsRepository';
 
-
-/** Синк позиции в трекер: выполняется после коммита транзакции, его нельзя откатить. */
-export interface PlanPatchTrackerSyncRequest {
-  assigneeId: string;
-  index: number;
-  taskId: string;
-}
 
 async function applyUpsertPosition(input: {
   index: number;
@@ -77,24 +74,24 @@ async function applyUpsertPosition(input: {
   return `position ${op.taskId}`;
 }
 
-/** Синк в трекер после коммита: детали и предупреждения дописываются к результату операции. */
-export async function runPlanPatchTrackerSyncs(input: {
-  applied: SprintPlanPatchApplyOpResult[];
+async function applyDeletePosition(input: {
+  index: number;
   organizationId: string;
+  op: Extract<SprintPlanPatchOp, { op: 'deletePosition' }>;
   sprintId: number;
-  trackerSyncs: readonly PlanPatchTrackerSyncRequest[];
-}): Promise<void> {
-  for (const request of input.trackerSyncs) {
-    const row = input.applied.find((item) => item.index === request.index);
-    if (!row?.ok) continue;
-    const sync = await syncUpsertPositionToTracker({
-      assigneeId: request.assigneeId,
-      organizationId: input.organizationId,
-      sprintId: input.sprintId,
-      taskId: request.taskId,
-    });
-    row.detail = [row.detail, sync.detail, sync.warning].filter(Boolean).join('; ');
+  trackerSyncs: PlanPatchTrackerSyncRequest[];
+  tx: BeerTrackerTransactionQuery;
+}): Promise<string> {
+  const { op, organizationId, sprintId, tx } = input;
+  await deleteTaskPosition({ organizationId, sprintId, taskId: op.taskId }, tx);
+  if (op.moveToSprintId === undefined) {
+    return `position ${op.taskId}`;
   }
+  // Как перенос из планера: стрелки уходят с доски, старая позиция в целевом спринте сбрасывается.
+  await deleteTaskLinksForTask({ organizationId, sprintId, taskId: op.taskId }, tx);
+  await deleteTaskPosition({ organizationId, sprintId: op.moveToSprintId, taskId: op.taskId }, tx);
+  input.trackerSyncs.push({ index: input.index, moveToSprintId: op.moveToSprintId, taskId: op.taskId });
+  return `position ${op.taskId} → sprint ${op.moveToSprintId}`;
 }
 
 async function applyCreateNote(input: {
@@ -334,8 +331,14 @@ async function applyOneOp(input: ApplyOpContext): Promise<string> {
         tx,
       });
     case 'deletePosition':
-      await deleteTaskPosition({ organizationId, sprintId, taskId: op.taskId }, tx);
-      return `position ${op.taskId}`;
+      return applyDeletePosition({
+        index: input.index,
+        organizationId,
+        op,
+        sprintId,
+        trackerSyncs: input.trackerSyncs,
+        tx,
+      });
     case 'createNote':
       return applyCreateNoteOrDraft({
         actorUserId: input.actorUserId,
@@ -379,8 +382,13 @@ export function collectRealtimeResources(ops: SprintPlanPatchOp[]): SprintRealti
   for (const op of ops) {
     switch (op.op) {
       case 'upsertPosition':
+        set.add('positions');
+        break;
       case 'deletePosition':
         set.add('positions');
+        if (op.moveToSprintId !== undefined) {
+          set.add('links');
+        }
         break;
       case 'createNote':
       case 'updateNote':

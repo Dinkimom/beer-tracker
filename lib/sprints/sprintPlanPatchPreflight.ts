@@ -34,10 +34,13 @@ function missingTargetForOp(
   if (op.op === 'updateGoal' || op.op === 'deleteGoal') {
     return missingGoalTarget(op, index);
   }
+  if (op.op === 'deletePosition' && op.moveToSprintId === sprintId) {
+    return Promise.resolve(`ops[${index}] deletePosition: moveToSprintId ${sprintId} is this sprint`);
+  }
   return Promise.resolve(null);
 }
 
-/** Fail propose early when referenced notes/goals are already gone. */
+/** Fail propose early when referenced notes/goals are already gone or a move targets this sprint. */
 export async function assertPlanPatchTargetsExist(input: {
   ops: SprintPlanPatchOp[];
   sprintId: number;

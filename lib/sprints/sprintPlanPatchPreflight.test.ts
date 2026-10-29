@@ -42,4 +42,13 @@ describe('assertPlanPatchTargetsExist', () => {
       })
     ).rejects.toThrow(/preflight_failed.*note/);
   });
+
+  it('fails when moveToSprintId points at the patched sprint', async () => {
+    await expect(
+      assertPlanPatchTargetsExist({
+        ops: [{ moveToSprintId: 1, op: 'deletePosition', taskId: 'RND-1' }],
+        sprintId: 1,
+      })
+    ).rejects.toThrow(/preflight_failed.*moveToSprintId 1 is this sprint/);
+  });
 });
