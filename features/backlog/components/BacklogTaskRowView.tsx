@@ -51,10 +51,10 @@ export function BacklogTaskRowView({ developers, embedded = false, task }: Backl
           {taskKey}
         </span>
       </OverflowTooltip>
-      <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+      <span className="flex min-w-0 flex-1 items-baseline gap-2">
         {parents.length > 0 ? (
           <TextTooltip content={parentsTitle}>
-          <span className="block truncate text-[11px] leading-4 text-ds-text-muted">
+          <span className="max-w-[40%] shrink-0 truncate text-xs text-ds-text-muted">
             {parents.map((parent, index) => (
               <span key={parent.key ?? parent.title}>
                 {index > 0 ? BACKLOG_TASK_PARENT_SEPARATOR : null}
@@ -67,7 +67,7 @@ export function BacklogTaskRowView({ developers, embedded = false, task }: Backl
           </TextTooltip>
         ) : null}
         <OverflowTooltip content={task.name}>
-          <span className="truncate text-sm text-gray-900 dark:text-gray-100">
+          <span className="min-w-0 truncate text-sm text-gray-900 dark:text-gray-100">
             {task.name}
           </span>
         </OverflowTooltip>

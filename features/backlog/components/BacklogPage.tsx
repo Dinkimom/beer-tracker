@@ -25,6 +25,7 @@ import { organizeSprints } from '../utils/sprintUtils';
 
 import { ArchivedSprintsList } from './ArchivedSprintsList';
 import { BacklogBulkToolbar } from './BacklogBulkToolbar';
+import { BACKLOG_DIVIDE, BACKLOG_HAIRLINE, BACKLOG_ISLAND } from './backlogChromeClasses';
 import { BacklogColumn } from './BacklogColumn';
 import { BacklogPageFilters } from './BacklogPageFilters';
 import { BacklogSelectionProvider } from './BacklogSelectionProvider';
@@ -160,21 +161,32 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
   return (
     <BacklogSelectionProvider>
       <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-        <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
-          <BacklogPageFilters
-            assigneeIds={assigneeIds}
-            nameFilter={nameFilter}
-            people={people}
-            statusFilter={statusFilter}
-            onAssigneeToggle={toggleAssignee}
-            onNameFilterChange={setNameFilter}
-            onReset={resetFilters}
-            onStatusFilterChange={setStatusFilter}
-          />
+        <div className={BACKLOG_ISLAND}>
+          <div className={`flex shrink-0 items-center gap-2 border-b px-3 py-2.5 ${BACKLOG_HAIRLINE}`}>
+            <BacklogPageFilters
+              assigneeIds={assigneeIds}
+              nameFilter={nameFilter}
+              people={people}
+              statusFilter={statusFilter}
+              onAssigneeToggle={toggleAssignee}
+              onNameFilterChange={setNameFilter}
+              onReset={resetFilters}
+              onStatusFilterChange={setStatusFilter}
+            />
+            <Button
+              className="ml-auto !h-8 shrink-0 !px-2.5 !py-0 text-xs"
+              type="button"
+              variant="outline"
+              onClick={handleCreateSprint}
+            >
+              <Icon className="h-3.5 w-3.5" name="plus" />
+              {t('backlog.createSprint')}
+            </Button>
+          </div>
           <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin-custom">
-            <div className="flex flex-col gap-3 pr-2">
+            <div className={`flex flex-col border-b ${BACKLOG_DIVIDE} ${BACKLOG_HAIRLINE}`}>
               {sprintsLoading ? (
-                <div className="surface-glass-well flex items-center justify-center gap-2 rounded-2xl border border-black/[0.1] py-8 text-sm text-gray-500 dark:border-white/10 dark:text-gray-400">
+                <div className="flex items-center justify-center gap-2 py-8 text-sm text-gray-500 dark:text-gray-400">
                   <Icon className="h-4 w-4 animate-spin" name="spinner" />
                   {t('backlog.loadingSprints')}
                 </div>
@@ -191,16 +203,6 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
                 ))
               )}
 
-              <Button
-                className="!h-12 w-full !rounded-2xl !border-dashed !border-black/15 bg-transparent hover:!bg-black/[0.03] dark:!border-white/20 dark:hover:!bg-white/[0.04]"
-                type="button"
-                variant="outline"
-                onClick={handleCreateSprint}
-              >
-                <Icon className="h-4 w-4" name="plus" />
-                {t('backlog.createSprint')}
-              </Button>
-
               <BacklogColumn
                 developers={backlogDevelopers}
                 emptyLabel={filtersActive ? t('backlog.filters.noMatches') : undefined}
@@ -216,7 +218,7 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
         </div>
         <DragOverlay>
           {activeTask ? (
-            <div className="surface-glass-well w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-black/[0.08] shadow-xl dark:border-white/12">
+            <div className="w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-ds-border-subtle bg-ds-surface-header shadow-xl">
               <BacklogTaskRowView developers={activeTaskDevelopers} task={activeTask} />
             </div>
           ) : null}

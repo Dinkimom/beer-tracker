@@ -74,7 +74,7 @@ export function SprintColumnTasks({
 
   if (tasks.length === 0) {
     return (
-      <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-8">
+      <div className="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
         {emptyLabel}
       </div>
     );

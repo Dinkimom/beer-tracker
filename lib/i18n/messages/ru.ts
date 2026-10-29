@@ -506,7 +506,7 @@ export const ruMessages = {
       loading: 'Загрузка...',
       loadErrorTitle: 'Ошибка загрузки задач',
       retry: 'Перезагрузить',
-      empty: 'Нет задач',
+      empty: 'Нет задач — перетащите их сюда из бэклога',
     },
     archived: {
       title: 'Завершенные спринты',

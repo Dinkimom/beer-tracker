@@ -1,10 +1,18 @@
-/** Glass-хром секций бэклога — в духе канбана и планера. */
+/** Общий остров бэклога — та же рамка, что у доски и ретро. */
+export const BACKLOG_ISLAND =
+  'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header';
 
-export const BACKLOG_SECTION_IDLE =
-  'surface-glass-well overflow-hidden rounded-2xl border border-black/[0.1] transition-colors dark:border-white/10';
+/** Секции внутри острова — без своей рамки, разделены линиями. */
+export const BACKLOG_SECTION_IDLE = 'transition-colors';
 
 export const BACKLOG_SECTION_DROP =
-  'surface-glass-well overflow-hidden rounded-2xl border border-blue-400/70 !bg-blue-500/[0.1] transition-colors dark:border-blue-400/50 dark:!bg-blue-500/15';
+  'bg-blue-50 shadow-[inset_0_0_0_1px_rgba(96,165,250,0.7)] transition-colors dark:bg-blue-950/40';
+
+/** Шапка секции липкая, поэтому фон непрозрачный — чуть темнее/светлее острова. */
+export const BACKLOG_SECTION_HEADER =
+  'bg-gray-50 dark:bg-[color-mix(in_srgb,var(--ds-surface-header)_94%,white)]';
+
+export const BACKLOG_SECTION_HEADER_DROP = 'bg-blue-50 dark:bg-blue-950';
 
 export const BACKLOG_DIVIDE = 'divide-y divide-black/[0.06] dark:divide-white/10';
 

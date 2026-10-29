@@ -506,7 +506,7 @@ export const enMessages = {
       loading: 'Loading...',
       loadErrorTitle: 'Failed to load tasks',
       retry: 'Reload',
-      empty: 'No tasks',
+      empty: 'No tasks yet — drag them here from the backlog',
     },
     archived: {
       title: 'Completed sprints',
