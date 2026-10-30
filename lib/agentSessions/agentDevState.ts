@@ -72,5 +72,6 @@ function offeredTaskKeys(session: AgentSession): string[] {
     return [];
   }
   const offer = session.messages.findLast((message) => message.candidates?.length);
-  return offer?.candidates?.map((candidate) => candidate.taskKey) ?? [];
+  // Подсвечиваем на доске только то, что можно отдать сразу.
+  return offer?.candidates?.filter((candidate) => candidate.bucket === 'ready').map((candidate) => candidate.taskKey) ?? [];
 }

@@ -53,8 +53,9 @@ describe('agentDevState', () => {
     const offer = {
       authorKind: 'agent',
       candidates: [
-        { reason: 'small', summary: 'Fix', taskKey: 'RND-1' },
-        { reason: 'clear', summary: 'Copy', taskKey: 'RND-5' },
+        { bucket: 'ready', reason: 'small', summary: 'Fix', taskKey: 'RND-1' },
+        { bucket: 'ready', reason: 'clear', summary: 'Copy', taskKey: 'RND-5' },
+        { bucket: 'clarify', questions: ['Which page?'], reason: 'vague', summary: 'Tweak', taskKey: 'RND-6' },
       ],
       kind: 'message',
     } as AgentSession['messages'][number];
@@ -64,5 +65,7 @@ describe('agentDevState', () => {
     );
     expect(tasks.get('RND-1')).toEqual({ sessionId: 'dev', state: 'waitingAgent' });
     expect(tasks.get('RND-5')).toEqual({ sessionId: 'plan', state: 'candidate' });
+    // Задачи «нужно уточнить» на доске не подсвечиваем: отдавать их пока рано.
+    expect(tasks.has('RND-6')).toBe(false);
   });
 });

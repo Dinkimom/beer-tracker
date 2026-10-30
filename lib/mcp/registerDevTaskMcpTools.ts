@@ -4,6 +4,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import { buildDelegateShortlist } from '@/lib/mcp/delegateShortlist';
 import { getIssueForOrganization } from '@/lib/mcp/getIssueForOrganization';
 import { loadMcpSprintContext } from '@/lib/mcp/mcpSprintContextWithDraft';
 import { plannerWriteDenied, toolError, toolJson } from '@/lib/mcp/mcpToolResult';
@@ -40,6 +41,26 @@ export function registerDevTaskMcpTools(
         const planning = buildTaskBriefPlanning(context, key);
         const warnings = [...issue.warnings, ...(planning.plan ? [] : [`task_not_in_sprint: ${key} in ${sprintId}`])];
         return toolJson({ issue: issue.issue, planning, warnings });
+      } catch (error) {
+        return toolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_delegate_shortlist',
+    {
+      description:
+        'Start of skill delegate_candidates: sprint tasks worth checking for an AI coding agent, filtered by board data, smallest first. eligible: not started, in this sprint in the tracker, not QA, not waiting for an unfinished task by a board arrow (size: days on the board and/or story points). excluded: the rest with a reason (not_this_sprint, started, done, blocked + blockedBy, not_assignee). Description quality is not filtered here — judge each eligible task yourself (get_task_brief), a poor description of a small change is a task to clarify, not to drop.',
+      inputSchema: {
+        assigneeId: z.string().min(1).optional().describe('Only tasks of this tracker user (whoami) — scope «mine»'),
+        sprintId: z.number().int().positive().describe('Tracker sprint id of the board'),
+      },
+    },
+    async ({ assigneeId, sprintId }) => {
+      try {
+        const context = await loadMcpSprintContext({ organizationId: input.organizationId, sprintId, viewerUserId: input.userId });
+        return toolJson(buildDelegateShortlist(context, assigneeId));
       } catch (error) {
         return toolError(error);
       }

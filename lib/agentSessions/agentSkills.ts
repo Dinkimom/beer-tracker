@@ -22,6 +22,16 @@ interface AgentSkill {
   params: readonly AgentSkillParam[];
 }
 
+/** Где ошибка агента дорого стоит: такую задачу «Что отдать агенту» не кладёт в «можно отдать». */
+const DELEGATE_RISK_FLAGS = [
+  'auth, permissions or security',
+  'database schema or data migrations',
+  'money and payments',
+  'a public API or a contract between services',
+  'a shared module with many consumers',
+  'no tests around the code to change',
+];
+
 export const AGENT_SKILLS: readonly AgentSkill[] = [
   {
     icon: 'users',
@@ -90,8 +100,18 @@ export const AGENT_SKILLS: readonly AgentSkill[] = [
   {
     icon: 'code',
     id: 'delegate_candidates',
-    instructions:
-      'Find tasks of this sprint that an AI coding agent could implement on its own and hand back as a branch for review. Read get_sprint_context (positions and unplannedTasks with statusCategory, estimates, links) and get_issue for the promising ones. Only work of this sprint: skip positions with inTrackerSprint=false (the card is on this board, but in the tracker the issue moved to another sprint) and say in the message which ones you skipped for that. A good candidate: a clear description with expected behaviour, a small estimate, no open questions or design/UX decisions to make, not blocked by another unfinished task (board arrows, tracker links), not a QA task, not research. Skip everything that needs a human decision. Answer with reply_agent_session(sessionId, message: one or two sentences — how many fit and what you skipped and why, candidates: [{taskKey, summary, reason}] — up to 8, best first; reason = one short line why it fits and what the risk is). If nothing fits, say why in the message and pass no candidates.',
+    instructions: [
+      'Find tasks of this sprint an AI coding agent could implement on its own and hand back as a branch for review.',
+      'Start with get_delegate_shortlist(sprintId; scope mine → assigneeId from whoami): the board rules (this sprint, not started, not QA, not waiting by an arrow) are already applied there — do not re-check them, just mention the excluded counts.',
+      'For each eligible task, smallest first, read get_task_brief. Then look at the code with whatever access you have — GitLab or GitHub tools, or local files — read-only: search, read files, history. Find where the change goes by everything in the task: title, description, comments, links, stack traces, page URLs; the repository is usually named by the queue, the links or merged requests in the comments. Spend a few searches per task, not a full investigation.',
+      'Sort every eligible task you looked at into a bucket.',
+      'ready — the change is small and clear enough to do without a human decision: files = the main files to touch (when you found them in the code).',
+      'clarify — the change looks small, but the expected behaviour is unclear or the description is poor: questions = what a human must answer first (two or three short questions). A poor description is not a reason to drop a small task.',
+      'skip — not for an agent: a big or cross-cutting change, a product or design decision, research. reason says why.',
+      `Risk flags — a task touching any of them is never ready, at best clarify (name the flag in reason): ${DELEGATE_RISK_FLAGS.join('; ')}.`,
+      'Answer with reply_agent_session(sessionId, message: one or two sentences — how many fit, what the shortlist excluded, whether you checked the code; candidates: [{taskKey, summary, bucket, reason, files?, questions?}] — ready first, best first, at most 8 ready).',
+      'reason = one short line: why, and what the risk is; say it is judged by the description only when you could not check the code. If nothing fits, say why and pass the skip list.',
+    ].join(' '),
     output: 'candidates',
     params: [
       {
@@ -107,16 +127,25 @@ export const AGENT_SKILLS: readonly AgentSkill[] = [
 
 const TASK_KEY_RE = /^[A-Z][A-Z0-9_]*-\d+$/;
 
-/** Задачи, которые агент предлагает отдать ему в работу (скилл «Что отдать агенту»). */
+/** Корзины «Что отдать агенту»: можно отдать, нужно уточнить, не для агента. */
+const AGENT_CANDIDATE_BUCKETS = ['ready', 'clarify', 'skip'] as const;
+
+/** Задачи спринта, разобранные скиллом «Что отдать агенту», по корзинам. */
 export const AgentTaskCandidatesSchema = z
   .array(
     z.object({
-      reason: z.string().trim().min(1).max(300).describe('Why it fits and what the risk is, one short line'),
+      bucket: z
+        .enum(AGENT_CANDIDATE_BUCKETS)
+        .default('ready')
+        .describe('ready — hand off as is; clarify — small, but a human must answer questions first; skip — not for an agent'),
+      files: z.array(z.string().trim().min(1).max(200)).max(6).optional().describe('Main files to touch, found in the code'),
+      questions: z.array(z.string().trim().min(1).max(200)).max(4).optional().describe('Bucket clarify: what to answer first'),
+      reason: z.string().trim().min(1).max(300).describe('Why, and what the risk is, one short line'),
       summary: z.string().trim().min(1).max(300).describe('Task summary as in the tracker'),
       taskKey: z.string().trim().regex(TASK_KEY_RE).describe('Tracker issue key, e.g. RND-123'),
     })
   )
-  .max(8);
+  .max(20);
 
 export type AgentTaskCandidate = z.infer<typeof AgentTaskCandidatesSchema>[number];
 

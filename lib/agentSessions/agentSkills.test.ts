@@ -8,6 +8,7 @@ import {
   buildAgentSkillAgentView,
   chosenAgentReplyOption,
   parseAgentSessionSkill,
+  parseAgentTaskCandidates,
 } from './agentSkills';
 
 describe('AgentSessionSkillSchema', () => {
@@ -70,5 +71,20 @@ describe('agentSkillSlashQuery', () => {
     expect(agentSkillSlashQuery('/риски спринта')).toBeNull();
     expect(agentSkillSlashQuery('и/или')).toBeNull();
     expect(agentSkillSlashQuery('')).toBeNull();
+  });
+});
+
+describe('delegate_candidates', () => {
+  it('keeps risky areas out of «ready» by instruction', () => {
+    const instructions = buildAgentSkillAgentView({ id: 'delegate_candidates', params: { scope: 'notStarted' } })?.instructions;
+    expect(instructions).toContain('get_delegate_shortlist');
+    expect(instructions).toContain('data migrations');
+    expect(instructions).toContain('never ready');
+  });
+
+  it('reads answers saved before buckets as «ready»', () => {
+    expect(parseAgentTaskCandidates([{ reason: 'small', summary: 'Fix', taskKey: 'RND-1' }])).toEqual([
+      { bucket: 'ready', reason: 'small', summary: 'Fix', taskKey: 'RND-1' },
+    ]);
   });
 });

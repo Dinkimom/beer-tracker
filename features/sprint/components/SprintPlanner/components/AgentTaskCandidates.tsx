@@ -7,11 +7,15 @@ import { useState } from 'react';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentDevTasks } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 
+import { AgentTaskCandidateInfo } from './AgentTaskCandidateInfo';
+
+const GROUP_TITLE = 'px-1.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500';
+
 /**
- * Ответ скилла «Что отдать агенту»: задачи спринта, которые агент может сделать сам, с причиной.
- * Галочки — что отдать (уже отданные агенту помечены его состоянием, их не выбрать); «Отдать
- * выбранные» создаёт по сессии разработки на задачу — мост запускает их параллельно, сверх лимита
- * ставит в очередь.
+ * Ответ скилла «Что отдать агенту» по корзинам. «Можно отдать» — с галочками (уже отданные агенту
+ * помечены его состоянием, их не выбрать); «Отдать выбранные» создаёт по сессии разработки на
+ * задачу — мост запускает их параллельно, сверх лимита ставит в очередь. «Нужно уточнить» — задача
+ * маленькая, но сначала ответить на вопросы агента. «Не для агента» — свёрнуто, с причинами.
  */
 export function AgentTaskCandidates({
   candidates,
@@ -23,13 +27,18 @@ export function AgentTaskCandidates({
 }) {
   const { t } = useI18n();
   const taken = useAgentDevTasks();
-  const free = candidates.filter((candidate) => {
+  const ready = candidates.filter((candidate) => candidate.bucket === 'ready');
+  const clarify = candidates.filter((candidate) => candidate.bucket === 'clarify');
+  const skip = candidates.filter((candidate) => candidate.bucket === 'skip');
+  const free = ready.filter((candidate) => {
     const state = taken.get(candidate.taskKey)?.state;
     return !state || state === 'candidate';
   });
   const [unchecked, setUnchecked] = useState<ReadonlySet<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
+  const [skipOpen, setSkipOpen] = useState(false);
   const selected = free.filter((candidate) => !unchecked.has(candidate.taskKey));
+  const grouped = clarify.length > 0 || skip.length > 0;
 
   const toggle = (taskKey: string) =>
     setUnchecked((prev) => {
@@ -50,7 +59,8 @@ export function AgentTaskCandidates({
 
   return (
     <div className="mt-2 w-full space-y-1 rounded-lg border border-gray-200 p-1.5 dark:border-gray-700" data-agent-task-candidates="">
-      {candidates.map((candidate) => {
+      {grouped && ready.length > 0 ? <p className={GROUP_TITLE}>{t('agentSession.candidatesReady', { count: ready.length })}</p> : null}
+      {ready.map((candidate) => {
         const state = taken.get(candidate.taskKey)?.state;
         const handed = state != null && state !== 'candidate';
         return (
@@ -65,13 +75,7 @@ export function AgentTaskCandidates({
               type="checkbox"
               onChange={() => toggle(candidate.taskKey)}
             />
-            <span className="min-w-0 flex-1">
-              <span className="flex min-w-0 items-baseline gap-1.5">
-                <span className="shrink-0 font-mono text-gray-500 dark:text-gray-400">{candidate.taskKey}</span>
-                <span className="truncate font-medium text-gray-900 dark:text-gray-100">{candidate.summary}</span>
-              </span>
-              <span className="block text-gray-500 dark:text-gray-400">{candidate.reason}</span>
-            </span>
+            <AgentTaskCandidateInfo candidate={candidate} />
             {handed ? (
               <span className="shrink-0 rounded-full bg-gray-500/[0.12] px-1.5 text-[10px] font-medium leading-4 text-gray-600 dark:bg-white/[0.1] dark:text-gray-300">
                 {t(`agentSession.devState.${state}`)}
@@ -91,6 +95,37 @@ export function AgentTaskCandidates({
           >
             {t('agentSession.candidatesHandOff', { count: selected.length })}
           </button>
+        </div>
+      ) : null}
+
+      {clarify.length > 0 ? (
+        <div data-agent-task-candidates-clarify="">
+          <p className={GROUP_TITLE}>{t('agentSession.candidatesClarify', { count: clarify.length })}</p>
+          {clarify.map((candidate) => (
+            <div key={candidate.taskKey} className="flex px-1.5 py-1 text-[11px]">
+              <AgentTaskCandidateInfo candidate={candidate} />
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {skip.length > 0 ? (
+        <div data-agent-task-candidates-skip="">
+          <button
+            aria-expanded={skipOpen}
+            className={`${GROUP_TITLE} w-full cursor-pointer rounded-md pb-1 text-left transition-colors hover:bg-gray-500/[0.06] hover:text-gray-600 active:bg-gray-500/[0.1] dark:hover:bg-white/[0.04] dark:hover:text-gray-300`}
+            type="button"
+            onClick={() => setSkipOpen((open) => !open)}
+          >
+            {skipOpen ? '▾' : '▸'} {t('agentSession.candidatesSkip', { count: skip.length })}
+          </button>
+          {skipOpen
+            ? skip.map((candidate) => (
+                <div key={candidate.taskKey} className="flex px-1.5 py-1 text-[11px] opacity-80">
+                  <AgentTaskCandidateInfo candidate={candidate} />
+                </div>
+              ))
+            : null}
         </div>
       ) : null}
     </div>

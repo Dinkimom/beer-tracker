@@ -147,7 +147,7 @@ export function registerAgentSessionMcpTools(
         ),
         result: AgentDevResultSchema.optional().describe('Development session only: the finished work. Needs message'),
         candidates: AgentTaskCandidatesSchema.optional().describe(
-          'Skill delegate_candidates: sprint tasks an AI coding agent could implement on its own, best first. The planner shows them with checkboxes and "hand off selected". Needs message'
+          'Skill delegate_candidates: sprint tasks sorted into buckets — ready (checkboxes and "hand off selected" in the planner), clarify (questions for a human), skip (why not for an agent). Ready first, best first. Needs message'
         ),
         sessionId: z.string().uuid().describe('Session id'),
       },

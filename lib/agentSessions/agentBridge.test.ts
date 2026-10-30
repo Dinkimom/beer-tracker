@@ -59,6 +59,14 @@ describe('agentBridge', () => {
     expect(allowed).not.toContain('mcp__claude_ai_Notion__notion-update-page');
   });
 
+  it('lets a chat session load the sprint shortlist and task briefs', () => {
+    const args = agentBridgeClaudeArgs(SESSION_ID, 'beer-tracker', 'sonnet');
+    const allowed = args[args.indexOf('--allowedTools') + 1].split(',');
+    expect(allowed).toEqual(
+      expect.arrayContaining(['mcp__beer-tracker__get_delegate_shortlist', 'mcp__beer-tracker__get_task_brief'])
+    );
+  });
+
   it('accepts only loopback hosts on the bridge port', () => {
     expect(isAgentBridgeHostAllowed('127.0.0.1:47821', 47821)).toBe(true);
     expect(isAgentBridgeHostAllowed('localhost:47821', 47821)).toBe(true);
