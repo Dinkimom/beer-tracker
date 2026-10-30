@@ -1,90 +1,57 @@
 'use client';
 
-import { useId, useState } from 'react';
-
 import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentBridge, useAgentBridgeRepos } from '@/features/swimlane/hooks/useAgentBridge';
-import {
-  parseAgentBridgeChecks,
-  parseAgentBridgeCopyPaths,
-  parseAgentBridgeQueues,
-} from '@/lib/agentSessions/agentBridgeDev';
 
-import { type AgentBridgeRepoFields, AgentBridgeRepoRow } from '../components/AgentBridgeRepoRow';
 import { Toggle } from '../components/Toggle';
-
-/** Строка в поле: путь меняют прямо в поле, по нему строку не узнать — свой ключ. */
-type RepoDraft = AgentBridgeRepoFields & { id: string };
-
-let draftSeq = 0;
-function newDraftId(): string {
-  draftSeq += 1;
-  return `repo-${draftSeq}`;
-}
-
-/** Сохранённый репозиторий моста → поля строки. */
-function toFields(repo: { checks: string[]; copy: string[]; path: string; queues: string[] }): AgentBridgeRepoFields {
-  return { checks: repo.checks.join('\n'), copy: repo.copy.join('\n'), path: repo.path, queues: repo.queues.join(', ') };
-}
-
-const fieldsKey = ({ checks, copy, path, queues }: AgentBridgeRepoFields) => JSON.stringify([checks, copy, path, queues]);
 
 /**
  * Настройки агента: локальный мост к Claude CLI (на связи ли, запускать ли его сразу при отправке)
- * и репозитории для сессий разработки с очередями задач, которые в них делают. У очереди бывает
- * несколько репозиториев — тогда для задачи агент выбирает сам. Список хранит мост у себя
- * (`~/.beer-tracker/agent-bridge.json`), новая папка работает после «y» в его терминале.
+ * и репозитории, которые мост запомнил за очередями задач. Настраивать их не нужно: адрес мост
+ * спрашивает в чате при первой задаче очереди и клонирует сам; здесь — посмотреть и забыть.
  */
 export function SettingsAgentTab() {
   const { t } = useI18n();
   const bridge = useAgentBridge();
   const repos = useAgentBridgeRepos(bridge.alive);
-  const candidatesId = useId();
-  const saved = repos.data?.repos ?? [];
-  const [draft, setDraft] = useState<RepoDraft[] | null>(null);
-  const [error, setError] = useState('');
-  const rows = draft ?? saved.map((repo) => ({ ...toFields(repo), id: repo.path }));
-  const dirty = draft != null && draft.map(fieldsKey).join('|') !== saved.map((repo) => fieldsKey(toFields(repo))).join('|');
-
-  const update = (next: RepoDraft[]) => {
-    setDraft(next);
-    setError('');
-  };
-
-  const save = () => {
-    const filled = rows
-      .filter((repo) => repo.queues.trim() || repo.path.trim())
-      .map((repo) => ({
-        checks: parseAgentBridgeChecks(repo.checks),
-        copy: parseAgentBridgeCopyPaths(repo.copy),
-        path: repo.path,
-        queues: parseAgentBridgeQueues(repo.queues),
-      }));
-    repos
-      .save(filled)
-      .then(() => setDraft(null))
-      .catch((reason: unknown) => setError(saveErrorText(reason)));
-  };
-
-  /** Ответ моста `код: значение` → текст для человека; незнакомое — как есть. */
-  const saveErrorText = (reason: unknown): string => {
-    const message = reason instanceof Error ? reason.message : String(reason);
-    const colon = message.indexOf(':');
-    const code = colon < 0 ? message : message.slice(0, colon);
-    const value = colon < 0 ? '' : message.slice(colon + 1).trim();
-    if (code === 'not_a_git_repo') {
-      return t('settings.agentTab.errors.notAGitRepo', { path: value });
-    }
-    if (code === 'no_queues') {
-      return t('settings.agentTab.errors.noQueues', { path: value });
-    }
-    return t('settings.agentTab.saveFailed', { error: message });
-  };
+  const queues = repos.data?.queues ?? [];
 
   let bridgeStatus = t('settings.agentTab.bridgeOff');
   if (bridge.enabled && !bridge.checking) {
     bridgeStatus = bridge.alive ? t('agentSession.bridgeOnline') : t('agentSession.bridgeOffline');
+  }
+
+  let reposBody = <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.agentTab.reposOffline')}</p>;
+  if (bridge.alive && queues.length === 0) {
+    reposBody = <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.agentTab.empty')}</p>;
+  } else if (bridge.alive) {
+    reposBody = (
+      <ul className="space-y-1.5">
+        {queues.flatMap(({ queue, repos: list }) =>
+          list.map((repo) => (
+            <li key={`${queue} ${repo.url}`} className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700">
+              <span className="w-14 shrink-0 font-mono text-xs font-semibold text-gray-700 dark:text-gray-200">{queue}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm text-gray-900 dark:text-gray-100">{repo.name}</span>
+                <span className="block truncate font-mono text-[11px] text-gray-500 dark:text-gray-400" title={repo.url}>
+                  {repo.url}
+                  {repo.cloned ? null : ` · ${t('settings.agentTab.notCloned')}`}
+                </span>
+              </span>
+              <Button
+                className="!px-2.5 !py-1 text-xs"
+                disabled={repos.forgetting}
+                variant="ghost"
+                onClick={() => repos.forget({ queue, url: repo.url })}
+              >
+                {t('settings.agentTab.forget')}
+              </Button>
+            </li>
+          ))
+        )}
+      </ul>
+    );
   }
 
   return (
@@ -108,42 +75,7 @@ export function SettingsAgentTab() {
           {t('settings.agentTab.reposSection')}
         </h3>
         <p className="text-xs leading-snug text-ds-text-muted">{t('settings.agentTab.reposHint')}</p>
-        {bridge.alive ? (
-          <>
-            {rows.length > 0 ? (
-              <ul className="space-y-2">
-                {rows.map((repo, index) => (
-                  <AgentBridgeRepoRow
-                    key={repo.id}
-                    candidatesId={candidatesId}
-                    repo={repo}
-                    status={dirty ? null : (saved[index]?.status ?? null)}
-                    onChange={(next) => update(rows.map((item, at) => (at === index ? { ...next, id: item.id } : item)))}
-                    onRemove={() => update(rows.filter((_, at) => at !== index))}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.agentTab.empty')}</p>
-            )}
-            <datalist id={candidatesId}>
-              {(repos.data?.candidates ?? []).map((path) => (
-                <option key={path} value={path} />
-              ))}
-            </datalist>
-            {error ? <p className="text-xs text-red-600 dark:text-red-400">{error}</p> : null}
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="secondary" onClick={() => update([...rows, { checks: '', copy: '', id: newDraftId(), path: '', queues: '' }])}>
-                {t('settings.agentTab.add')}
-              </Button>
-              <Button disabled={!dirty || repos.saving} type="button" onClick={save}>
-                {t('settings.agentTab.save')}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.agentTab.reposOffline')}</p>
-        )}
+        {reposBody}
       </section>
     </div>
   );

@@ -106,7 +106,7 @@ export function useAgentSessions(sprintId: number | null | undefined) {
     // Просьба или «переделать» — сессия ждёт агента: при включённом мосте зовём его сразу.
     // Не ждём /health: если мост лежит, запуск просто не примут, а полоска покажет, что он не отвечает.
     // Сессию разработки — только если у моста есть репозиторий её очереди; иначе её заберёт агент в IDE.
-    const target = agentBridgeRunTarget(session, bridge.devQueues);
+    const target = agentBridgeRunTarget(session, bridge.dev);
     if (session.status === 'waiting_agent' && target && bridge.enabled) {
       bridge.run(target).catch(() => undefined);
     }

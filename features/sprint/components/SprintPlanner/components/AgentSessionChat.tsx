@@ -105,13 +105,15 @@ export function AgentSessionChat({
       <AgentDevSessionStrip session={session} />
       <AgentSessionConversation
         key={session?.id ?? 'new'}
-            empty={draft.empty.text}
+        empty={draft.empty.text}
         emptyTitle={draft.empty.title}
         messages={session?.messages ?? []}
         sessionId={session?.id}
         status={session?.status}
         waitingDetail={
-          progress ? <AgentBridgeProgress startedAt={progress.startedAt} step={progress.step} /> : undefined
+          progress ? (
+            <AgentBridgeProgress detail={progress.detail} percent={progress.percent} startedAt={progress.startedAt} step={progress.step} />
+          ) : undefined
         }
         onHandOff={draft.handOff}
         onPickOption={draft.pickOption}

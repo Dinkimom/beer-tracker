@@ -44,7 +44,7 @@ export function AgentCallAgentBar({
     return null;
   }
 
-  const target = agentBridgeRunTarget(session, bridge.devQueues);
+  const target = agentBridgeRunTarget(session, bridge.dev);
   if (bridge.alive && target) {
     const start = () => {
       bridge

@@ -113,6 +113,8 @@ export const agentSessionRu = {
   bridgeReady: 'Мост к Claude CLI на связи',
   bridgeRun: 'Запустить агента',
   bridgeStep: {
+    setting_up: 'Поднимает окружение',
+    cloning: 'Клонирует репозиторий',
     queued: 'В очереди',
     exploring: 'Изучает код',
     coding: 'Пишет код',

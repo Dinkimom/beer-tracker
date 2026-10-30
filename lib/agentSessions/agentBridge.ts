@@ -11,6 +11,7 @@ export const AGENT_BRIDGE_DEFAULT_URL = `http://127.0.0.1:${AGENT_BRIDGE_DEFAULT
 
 /** Что агент делает сейчас — по последнему событию из потока CLI. */
 export type AgentBridgeStep =
+  | 'cloning'
   | 'coding'
   | 'committing'
   | 'connecting'
@@ -21,11 +22,16 @@ export type AgentBridgeStep =
   | 'replying'
   | 'running'
   | 'searching'
+  | 'setting_up'
   | 'starting'
   | 'studying'
   | 'thinking';
 
 interface AgentBridgeRun {
+  /** Что именно идёт: команда, которую агент запустил (ставит зависимости, гоняет тесты). */
+  detail?: string;
+  /** Сколько готово, 0–100: клонирование репозитория. */
+  percent?: number;
   sessionId: string;
   /** Время старта по часам моста (та же машина, что и браузер). */
   startedAt: number;
@@ -43,14 +49,15 @@ export interface AgentBridgeFinishedRun {
 export const AGENT_BRIDGE_FINISHED_TEXT_MAX = 600;
 
 interface AgentBridgeHealth {
-  /** Очереди задач, для которых у моста есть репозиторий: их сессии разработки он берёт сам. */
-  devQueues: string[];
+  /** Мост берёт сессии разработки: репозиторий находит по очереди задачи или спрашивает в чате. */
+  dev: boolean;
   finished: AgentBridgeFinishedRun[];
   /** Запуски CLI, которые идут сейчас. */
   runs: AgentBridgeRun[];
 }
 
 const AGENT_BRIDGE_STEPS: readonly AgentBridgeStep[] = [
+  'cloning',
   'coding',
   'committing',
   'connecting',
@@ -61,6 +68,7 @@ const AGENT_BRIDGE_STEPS: readonly AgentBridgeStep[] = [
   'replying',
   'running',
   'searching',
+  'setting_up',
   'starting',
   'studying',
   'thinking',
@@ -111,17 +119,32 @@ interface StreamContentBlock {
   type?: unknown;
 }
 
-/** Команда в Bash: коммит отдельно, остальное — «запускает команды» (тесты, линтер, git). */
+/** Команды, которыми проект ставит зависимости и поднимает окружение (а не гоняет проверки). */
+const SETUP_COMMANDS = [
+  /\bcomposer\s+(?:install|update)\b/,
+  /\b(?:npm|pnpm|yarn)\s+(?:install|ci|i)\b/,
+  /\bdocker[\s-]compose\s+(?:build|up|pull)\b/,
+  /\bmake\s+(?:install|setup|init|build|up)\b/,
+];
+
+function bashCommand(block: StreamContentBlock): string {
+  return typeof block.input?.command === 'string' ? block.input.command : '';
+}
+
+/** Команда в Bash: коммит и подготовка окружения отдельно, остальное — «запускает команды» (тесты, линтер). */
 function bashStep(block: StreamContentBlock): AgentBridgeStep {
-  const command = typeof block.input?.command === 'string' ? block.input.command : '';
-  return /\bgit\s+commit\b/.test(command) ? 'committing' : 'running';
+  const command = bashCommand(block);
+  if (/\bgit\s+commit\b/.test(command)) {
+    return 'committing';
+  }
+  return SETUP_COMMANDS.some((pattern) => pattern.test(command)) ? 'setting_up' : 'running';
 }
 
 /**
  * Строка `claude -p --output-format stream-json` → шаг агента. Шаг даёт только ответ модели:
  * вызов тула — по имени тула, текст или размышление — «думает». Прочие события — null.
  */
-export function agentBridgeStepFromStreamLine(line: string): AgentBridgeStep | null {
+function assistantBlocks(line: string): StreamContentBlock[] | null {
   let event: { message?: { content?: unknown }; type?: unknown };
   try {
     event = JSON.parse(line) as typeof event;
@@ -129,14 +152,53 @@ export function agentBridgeStepFromStreamLine(line: string): AgentBridgeStep | n
     return null;
   }
   const content = event.type === 'assistant' ? event.message?.content : null;
-  if (!Array.isArray(content) || content.length === 0) {
+  return Array.isArray(content) && content.length > 0 ? (content as StreamContentBlock[]) : null;
+}
+
+export function agentBridgeStepFromStreamLine(line: string): AgentBridgeStep | null {
+  const content = assistantBlocks(line);
+  if (!content) {
     return null;
   }
-  const tool = (content as StreamContentBlock[]).findLast((block) => block.type === 'tool_use');
+  const tool = content.findLast((block) => block.type === 'tool_use');
   if (tool?.name === 'Bash') {
     return bashStep(tool);
   }
   return typeof tool?.name === 'string' ? agentStepForTool(tool.name) : 'thinking';
+}
+
+const COMMAND_DETAIL_MAX = 120;
+
+/** Команда Bash из той же строки потока — подпись к шагу: первая строка, обрезанная. Не Bash — null. */
+export function agentBridgeCommandFromStreamLine(line: string): string | null {
+  const tool = assistantBlocks(line)?.findLast((block) => block.type === 'tool_use');
+  const command = tool?.name === 'Bash' ? (bashCommand(tool).split('\n')[0]?.trim() ?? '') : '';
+  if (!command) {
+    return null;
+  }
+  return command.length > COMMAND_DETAIL_MAX ? `${command.slice(0, COMMAND_DETAIL_MAX - 1)}…` : command;
+}
+
+/**
+ * Фазы `git clone --progress` и их доля в общем прогрессе: дольше всего — получение объектов.
+ * Проценты фазы git пишет в stderr через `\r`.
+ */
+const CLONE_PHASES: ReadonlyArray<{ from: number; label: string; to: number }> = [
+  { from: 0, label: 'Receiving objects', to: 80 },
+  { from: 80, label: 'Resolving deltas', to: 95 },
+  { from: 95, label: 'Updating files', to: 100 },
+];
+
+/** Общий процент клонирования по последней строке прогресса git в куске stderr; нет такой — null. */
+export function agentBridgeCloneProgress(chunk: string): number | null {
+  for (const line of chunk.split(/[\r\n]/).reverse()) {
+    const phase = CLONE_PHASES.find((item) => line.includes(`${item.label}:`));
+    const percent = phase ? Number(/(\d{1,3})%/.exec(line)?.[1]) : Number.NaN;
+    if (phase && percent >= 0 && percent <= 100) {
+      return Math.round(phase.from + ((phase.to - phase.from) * percent) / 100);
+    }
+  }
+  return null;
 }
 
 /** Токены прогона CLI для лога моста; `costUsd` — условная цена по прайсу API, есть только в итоге. */
@@ -236,7 +298,13 @@ function parseAgentBridgeRun(value: unknown): AgentBridgeRun | null {
   if (!run || !isAgentSessionId(run.sessionId) || typeof run.startedAt !== 'number') {
     return null;
   }
-  return { sessionId: run.sessionId, startedAt: run.startedAt, step: parseAgentBridgeStep(run.step) };
+  return {
+    ...(typeof run.detail === 'string' && run.detail ? { detail: run.detail.slice(0, 200) } : {}),
+    ...(typeof run.percent === 'number' && run.percent >= 0 && run.percent <= 100 ? { percent: run.percent } : {}),
+    sessionId: run.sessionId,
+    startedAt: run.startedAt,
+    step: parseAgentBridgeStep(run.step),
+  };
 }
 
 function parseAgentBridgeFinishedRun(value: unknown): AgentBridgeFinishedRun | null {
@@ -384,12 +452,11 @@ export async function fetchAgentBridgeHealth(baseUrl: string): Promise<AgentBrid
     if (!response.ok) {
       return null;
     }
-    const data = (await response.json()) as { devQueues?: unknown; finished?: unknown; runs?: unknown };
+    const data = (await response.json()) as { dev?: unknown; finished?: unknown; runs?: unknown };
     const runs = Array.isArray(data.runs) ? data.runs.map(parseAgentBridgeRun) : [];
-    const devQueues = Array.isArray(data.devQueues) ? data.devQueues.filter((queue) => typeof queue === 'string') : [];
     const finished = Array.isArray(data.finished) ? data.finished.map(parseAgentBridgeFinishedRun) : [];
     return {
-      devQueues,
+      dev: data.dev === true,
       finished: finished.filter((run): run is AgentBridgeFinishedRun => run != null),
       runs: runs.filter((run): run is AgentBridgeRun => run != null),
     };
@@ -438,21 +505,14 @@ export async function fetchAgentBridgeRepos(baseUrl: string): Promise<AgentBridg
   }
 }
 
-/** Сохранить репозитории в мосте; ошибка проверки (не git, кривая очередь) — текстом исключения. */
-export async function saveAgentBridgeRepos(
-  baseUrl: string,
-  repos: ReadonlyArray<{ checks: string[]; copy: string[]; path: string; queues: string[] }>
-): Promise<AgentBridgeRepoSettings> {
-  const response = await fetch(`${baseUrl}/repos`, {
-    body: JSON.stringify({ repos }),
-    headers: { 'Content-Type': 'application/json' },
-    method: 'PUT',
-  });
-  const data = (await response.json()) as AgentBridgeRepoSettings & { error?: string };
+/** Забыть репозиторий очереди в мосте (Настройки → Агент). */
+export async function forgetAgentBridgeRepo(baseUrl: string, queue: string, url: string): Promise<AgentBridgeRepoSettings> {
+  const query = new URLSearchParams({ queue, url });
+  const response = await fetch(`${baseUrl}/repos?${query}`, { method: 'DELETE' });
   if (!response.ok) {
-    throw new Error(data.error ?? `bridge ${response.status}`);
+    throw new Error(`bridge ${response.status}`);
   }
-  return data;
+  return (await response.json()) as AgentBridgeRepoSettings;
 }
 
 /** Push ветки сессии разработки через мост; ошибка git — текстом исключения. */

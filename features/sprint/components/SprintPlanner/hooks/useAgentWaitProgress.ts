@@ -10,9 +10,16 @@ import { agentWaitState } from '@/lib/agentSessions/agentActivity';
 /** Как часто пересчитывать «работает» → «затих»: порог — минуты, секундная точность не нужна. */
 const RECHECK_MS = 15_000;
 
+/** Агент работает: шаг и с какого момента ждём ответ; у моста — ещё команда и процент клонирования. */
+interface AgentRunProgress {
+  detail?: string;
+  percent?: number;
+  startedAt: number;
+  step: AgentBridgeStep;
+}
+
 interface AgentWaitProgress {
-  /** Агент работает: шаг и с какого момента ждём ответ. */
-  progress: { startedAt: number; step: AgentBridgeStep } | null;
+  progress: AgentRunProgress | null;
   /** Агент забрал просьбу и давно затих — на каком шаге. */
   silentStep?: AgentBridgeStep;
 }
@@ -23,7 +30,7 @@ interface AgentWaitProgress {
  */
 export function useAgentWaitProgress(
   session: AgentSession | null,
-  bridgeRun: { startedAt: number; step: AgentBridgeStep } | undefined
+  bridgeRun: AgentRunProgress | undefined
 ): AgentWaitProgress {
   const waiting = session?.status === 'waiting_agent';
   const [now, setNow] = useState(() => Date.now());
@@ -37,7 +44,8 @@ export function useAgentWaitProgress(
   }, [waiting]);
 
   if (bridgeRun) {
-    return { progress: { startedAt: bridgeRun.startedAt, step: bridgeRun.step } };
+    const { detail, percent, startedAt, step } = bridgeRun;
+    return { progress: { detail, percent, startedAt, step } };
   }
   const wait = session && waiting ? agentWaitState(session, now) : null;
   if (wait?.kind === 'working') {

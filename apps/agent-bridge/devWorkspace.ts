@@ -4,11 +4,13 @@
  * Память лежит у моста (`BRIDGE_STATE_DIR`), а не в копии: агент её не закоммитит.
  */
 
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { execFile, execFileSync, spawn } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, delimiter, dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+import { promisify } from 'node:util';
 
+import { agentBridgeCloneProgress } from '@/lib/agentSessions/agentBridge';
 import {
   agentBridgeDevBranch,
   agentBridgeMergeRequestUrl,
@@ -17,14 +19,7 @@ import {
   parseAgentBridgeNumstat,
 } from '@/lib/agentSessions/agentBridgeDev';
 
-import { BRIDGE_STATE_DIR } from './repoConfig';
-
-/** git по полному пути из PATH, как и CLI: команда без пути — лишняя дыра для подмены. */
-const gitBin =
-  (process.env.PATH ?? '')
-    .split(delimiter)
-    .map((dir) => join(dir, 'git'))
-    .find((bin) => bin.startsWith('/') && existsSync(bin)) ?? '/usr/bin/git';
+import { BRIDGE_STATE_DIR, cloneDir, gitBin } from './repoConfig';
 
 function git(repo: string, ...args: string[]): string {
   return execFileSync(gitBin, ['-C', repo, ...args], { stdio: ['ignore', 'pipe', 'pipe'] })
@@ -41,54 +36,9 @@ function worktreeDir(repo: string, taskKey: string): string {
   return join(dirname(repo), '.bt-agent', `${basename(repo)}-${taskKey}`);
 }
 
-/**
- * Зависимости, которых нет в git, но без которых не запустить тесты и линтеры: в рабочую копию
- * их не кладёт `git worktree`. Копия, а не ссылка: автозагрузка (composer, node) раскрывает ссылку
- * и грузила бы код основной папки. На macOS — клон APFS (`cp -c`): мгновенно и без места на диске.
- */
-const DEPENDENCY_DIRS = ['vendor', 'node_modules'];
-
-const CLONE_FLAG = process.platform === 'darwin' ? '-c' : '--reflink=auto';
-
-/** Скопировать путь из основной папки, если в рабочей копии его ещё нет. */
-function copyIfMissing(from: string, to: string) {
-  if (!existsSync(from) || existsSync(to)) {
-    return;
-  }
-  mkdirSync(dirname(to), { recursive: true });
-  execFileSync('/bin/cp', [CLONE_FLAG, '-R', from, to], { stdio: ['ignore', 'ignore', 'pipe'] });
-}
-
-/**
- * Дополнить папку рабочей копии недостающим из основной, ничего не перезаписывая (например `bin/`,
- * где часть файлов из git). `cp -n` завершается с ошибкой, когда что-то пропустил, — это и нужно.
- */
-function mergeMissing(from: string, to: string) {
-  if (!existsSync(from) || !existsSync(to) || !statSync(from).isDirectory()) {
-    copyIfMissing(from, to);
-    return;
-  }
-  try {
-    execFileSync('/bin/cp', [CLONE_FLAG, '-R', '-n', `${from}/`, `${to}/`], { stdio: ['ignore', 'ignore', 'pipe'] });
-  } catch {
-    // Пропущенные существующие файлы — не ошибка.
-  }
-}
-
-/** vendor/ и node_modules/ — целиком, если их нет; пути из настроек репозитория — дополнением. */
-function copyDependencies(repo: string, dir: string, extra: readonly string[]) {
-  for (const name of DEPENDENCY_DIRS) {
-    copyIfMissing(join(repo, name), join(dir, name));
-  }
-  for (const name of extra) {
-    mergeMissing(join(repo, name), join(dir, name));
-  }
-}
-
-export function prepareWorktree(repo: string, taskKey: string, extra: readonly string[] = []): string {
+export function prepareWorktree(repo: string, taskKey: string): string {
   const dir = worktreeDir(repo, taskKey);
   if (existsSync(dir)) {
-    copyDependencies(repo, dir, extra);
     return dir;
   }
   mkdirSync(dirname(dir), { recursive: true });
@@ -101,7 +51,6 @@ export function prepareWorktree(repo: string, taskKey: string, extra: readonly s
   }
   if (hasBranch) {
     git(repo, 'worktree', 'add', dir, branch);
-    copyDependencies(repo, dir, extra);
     return dir;
   }
   let base = 'HEAD';
@@ -111,13 +60,76 @@ export function prepareWorktree(repo: string, taskKey: string, extra: readonly s
     // origin без HEAD или без origin — от текущего HEAD.
   }
   git(repo, 'worktree', 'add', '-b', branch, dir, base);
-  copyDependencies(repo, dir, extra);
   return dir;
 }
 
-/** Что мост помнит о сессии разработки: выбранный репозиторий и разговор CLI в нём. */
+const execFileAsync = promisify(execFile);
+
+/** Клон и fetch — без вопросов git в терминале: нет доступа — ошибка, а не зависший процесс. */
+const GIT_QUIET_ENV = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
+
+const CLONE_TIMEOUT_MS = 1_800_000;
+
+/** У git суть ошибки в строке `fatal:`, последняя часто — общая приписка про доступ. */
+function gitFailure(stderr: string): string {
+  const lines = stderr.trim().split(/[\r\n]+/);
+  return lines.find((line) => line.startsWith('fatal:')) ?? lines.at(-1) ?? 'git failed';
+}
+
+/** `git clone --progress` с процентами в `onProgress`; ошибка — исключением `clone_failed: …`. */
+function cloneWithProgress(url: string, dir: string, onProgress: (percent: number) => void): Promise<void> {
+  return new Promise((resolveClone, rejectClone) => {
+    const child = spawn(gitBin, ['clone', '--progress', url, dir], { env: GIT_QUIET_ENV, stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    const timer = setTimeout(() => child.kill('SIGTERM'), CLONE_TIMEOUT_MS);
+    child.stderr.on('data', (chunk: Buffer) => {
+      const text = chunk.toString();
+      stderr = (stderr + text).slice(-4000);
+      const percent = agentBridgeCloneProgress(text);
+      if (percent != null) {
+        onProgress(percent);
+      }
+    });
+    child.on('error', (error) => {
+      clearTimeout(timer);
+      rejectClone(new Error(`clone_failed: ${error.message}`));
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      if (code === 0) {
+        resolveClone();
+      } else {
+        rejectClone(new Error(`clone_failed: ${gitFailure(stderr)}`));
+      }
+    });
+  });
+}
+
+/**
+ * Клон репозитория в кэше моста: нет — клонируем (асинхронно: мост в это время отвечает планеру,
+ * проценты — в `onProgress`), есть — подтягиваем свежую основную ветку.
+ */
+export async function ensureClone(url: string, onProgress: (percent: number) => void = () => undefined): Promise<string> {
+  const dir = cloneDir(url);
+  if (!dir) {
+    throw new Error(`bad_remote: ${url}`);
+  }
+  if (existsSync(join(dir, '.git'))) {
+    await execFileAsync(gitBin, ['-C', dir, 'fetch', '--quiet', 'origin'], { env: GIT_QUIET_ENV, timeout: 300_000 }).catch(() => undefined);
+    return dir;
+  }
+  mkdirSync(dirname(dir), { recursive: true });
+  await cloneWithProgress(url, dir, onProgress);
+  return dir;
+}
+
+/**
+ * Что мост помнит о сессии разработки: выбранный репозиторий (адрес и папку клона) и разговор CLI
+ * в нём.
+ */
 interface DevSessionMemory {
   cliSessionId?: string | null;
+  remote?: string;
   repo?: string;
   taskKey?: string;
 }

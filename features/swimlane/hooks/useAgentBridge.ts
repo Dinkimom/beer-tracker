@@ -12,10 +12,10 @@ import {
   fetchAgentBridgeHealth,
   fetchAgentBridgeFileDiff,
   fetchAgentBridgeRepos,
+  forgetAgentBridgeRepo,
   fetchAgentBridgeWorkspace,
   pushAgentBridgeBranch,
   runAgentBridgeSession,
-  saveAgentBridgeRepos,
 } from '@/lib/agentSessions/agentBridge';
 
 const HEALTH_QUERY_KEY = ['agentBridge', 'health'] as const;
@@ -27,7 +27,6 @@ type StartingRuns = Readonly<Record<string, number>>;
 
 const NO_STARTING: StartingRuns = {};
 
-const NO_QUEUES: readonly string[] = [];
 
 const NO_FINISHED: readonly AgentBridgeFinishedRun[] = [];
 
@@ -81,8 +80,8 @@ export function useAgentBridge() {
     alive: data != null,
     /** Включён, но ответа /health ещё не было — «не отвечает» пока не показываем. */
     checking: enabled && health.isPending,
-    /** Очереди, для задач которых у моста есть репозиторий: их сессии разработки он запускает сам. */
-    devQueues: data?.devQueues ?? NO_QUEUES,
+    /** Мост берёт сессии разработки сам: репозиторий находит по очереди задачи или спрашивает в чате. */
+    dev: data?.dev ?? false,
     /** Чем кончились последние прогоны по сессиям: по ним видно, что агент не ответил в чат. */
     finished: data?.finished ?? NO_FINISHED,
     enabled,
@@ -95,28 +94,20 @@ export function useAgentBridge() {
 
 const REPOS_QUERY_KEY = ['agentBridge', 'repos'] as const;
 
-/**
- * Репозитории для сессий разработки в настройках моста (Настройки → Агент). Пока какой-то ждёт
- * подтверждения в терминале моста, список опрашивается — статус сменится сам.
- */
+/** Какие репозитории мост запомнил за очередями задач (Настройки → Агент) и «забыть». */
 export function useAgentBridgeRepos(alive: boolean) {
   const queryClient = useQueryClient();
   const query = useQuery({
     enabled: alive,
     queryFn: () => fetchAgentBridgeRepos(AGENT_BRIDGE_DEFAULT_URL),
     queryKey: REPOS_QUERY_KEY,
-    refetchInterval: (state) => (state.state.data?.repos.some((repo) => repo.status === 'pending') ? 2000 : false),
     retry: false,
   });
-  const save = useMutation({
-    mutationFn: (repos: ReadonlyArray<{ checks: string[]; copy: string[]; path: string; queues: string[] }>) =>
-      saveAgentBridgeRepos(AGENT_BRIDGE_DEFAULT_URL, repos),
-    onSuccess: (data) => {
-      queryClient.setQueryData(REPOS_QUERY_KEY, data);
-      queryClient.invalidateQueries({ queryKey: HEALTH_QUERY_KEY }).catch(() => undefined);
-    },
+  const forget = useMutation({
+    mutationFn: ({ queue, url }: { queue: string; url: string }) => forgetAgentBridgeRepo(AGENT_BRIDGE_DEFAULT_URL, queue, url),
+    onSuccess: (data) => queryClient.setQueryData(REPOS_QUERY_KEY, data),
   });
-  return { data: query.data ?? null, save: save.mutateAsync, saving: save.isPending };
+  return { data: query.data ?? null, forget: forget.mutate, forgetting: forget.isPending };
 }
 
 /**

@@ -1,6 +1,7 @@
 /**
- * Сессии разработки в локальном мосте: репозитории очереди задачи (Настройки → Агент; их несколько —
- * какой, решает агент коротким прогоном выбора), worktree с веткой `agent/<ключ>`, запуск `claude` с правом править код и коммитить, но без push.
+ * Сессии разработки в локальном мосте: репозиторий очереди задачи (адрес мост узнаёт у человека в чате
+ * и клонирует к себе; их несколько — какой, решает агент коротким прогоном выбора), worktree с веткой
+ * `agent/<ключ>`, запуск `claude` с правом править код и коммитить, но без push.
  * Здесь — общее для моста и планера, без Node и React; worktree и файлы — в `apps/agent-bridge`.
  */
 
@@ -31,139 +32,100 @@ function isAgentBridgeQueue(value: unknown): value is string {
   return typeof value === 'string' && QUEUE_RE.test(value);
 }
 
-/**
- * Репозиторий в настройках моста (`~/.beer-tracker/agent-bridge.json`) и очереди задач, которые в нём
- * делают: у одной очереди бывает несколько репозиториев (бэкенд, веб, мобилка), и наоборот.
- * `confirmed` — человек разрешил агенту работать в этой папке в терминале моста: браузер сам
- * такого разрешения не даёт, иначе любой скрипт на странице планера мог бы добавить свою папку.
- */
-export interface AgentBridgeStoredRepo {
-  /**
-   * Команды проверок проекта (тесты, линтеры): агенту можно их запускать, и он прогоняет их перед
-   * ответом. `{worktree}` — путь рабочей копии задачи (например, смонтировать её в docker).
-   */
-  checks: string[];
-  confirmed: boolean;
-  /** Что из основной папки нужно рабочей копии, хотя этого нет в git: конфиги окружения, бинарники. */
-  copy: string[];
+/** `git@host:group/app.git` — короткая запись ssh. */
+const SCP_REMOTE_RE = /^git@([\w.-]+):(\S+)$/;
+
+/** Путь репозитория на сервере: сегменты из букв, цифр, `.`, `_`, `-`. */
+const REMOTE_PATH_RE = /^[\w.-]+(?:\/[\w.-]+)*$/;
+
+interface AgentBridgeRemote {
+  /** Где лежит клон в кэше моста, относительно папки кэша: `host/group/app`. */
+  dir: string;
+  /** `group/app` — по нему агент и человек зовут репозиторий. */
   path: string;
-  queues: string[];
+  url: string;
 }
 
-/** ready — мост берёт задачи; pending — ждёт «y» в терминале моста; missing — папки нет или это не git. */
-type AgentBridgeRepoStatus = 'missing' | 'pending' | 'ready';
+function remoteHostAndPath(url: string): { host: string; path: string } | null {
+  const scp = SCP_REMOTE_RE.exec(url);
+  if (scp) {
+    return { host: scp[1] ?? '', path: scp[2] ?? '' };
+  }
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'ssh:' || parsed.protocol === 'https:'
+      ? { host: parsed.hostname, path: decodeURIComponent(parsed.pathname).slice(1) }
+      : null;
+  } catch {
+    return null;
+  }
+}
 
+/**
+ * Адрес репозитория для `git clone`: `git@host:group/app.git`, `ssh://…` или `https://…`. Из него —
+ * папка клона в кэше моста (`host/group/app`), поэтому `..`, пробелы и кавычки не пускаем.
+ */
+export function parseAgentBridgeRemote(value: unknown): AgentBridgeRemote | null {
+  const url = typeof value === 'string' ? value.trim() : '';
+  const parts = remoteHostAndPath(url);
+  let path = parts?.path ?? '';
+  while (path.endsWith('/')) {
+    path = path.slice(0, -1);
+  }
+  path = path.replace(/\.git$/, '');
+  if (!parts?.host || !REMOTE_PATH_RE.test(path) || path.split('/').some((part) => part === '..' || part === '.')) {
+    return null;
+  }
+  return { dir: `${parts.host}/${path}`, path, url };
+}
+
+/**
+ * Что мост запомнил: в каких репозиториях делают задачи очереди. У очереди бывает несколько
+ * репозиториев (бэкенд, веб, мобилка); адрес мост узнаёт у человека в чате при первой задаче очереди.
+ */
+export type AgentBridgeKnownRepos = Record<string, string[]>;
+
+/** Что мост помнит, для Настроек → Агент: очереди и их репозитории; `cloned` — клон уже в кэше. */
 export interface AgentBridgeRepoSettings {
-  /** Git-репозитории, которые мост нашёл в домашней папке: подсказки для поля пути. */
-  candidates: string[];
-  repos: Array<{ checks: string[]; copy: string[]; path: string; queues: string[]; status: AgentBridgeRepoStatus }>;
+  queues: Array<{ queue: string; repos: Array<{ cloned: boolean; name: string; url: string }> }>;
 }
 
-/** Очереди из поля настроек или файла: ключи латиницей, без повторов. */
-export function parseAgentBridgeQueues(raw: unknown): string[] {
-  const parts = Array.isArray(raw) ? raw : String(raw ?? '').split(/[\s,;]+/);
-  return [...new Set(parts.map((part) => String(part).trim().toUpperCase()).filter(isAgentBridgeQueue))];
-}
-
-const CHECKS_MAX = 20;
-
-/**
- * Команды проверок: по строке на команду. Каждая станет правилом `Bash(<команда>:*)`, поэтому
- * скобки и запятые (ломают правило) не пускаем.
- */
-export function parseAgentBridgeChecks(raw: unknown): string[] {
-  const parts = Array.isArray(raw) ? raw : String(raw ?? '').split('\n');
-  const commands = parts.map((part) => String(part).trim()).filter((part) => part && part.length <= 200 && !/[(),]/.test(part));
-  return [...new Set(commands)].slice(0, CHECKS_MAX);
-}
-
-/** Подстановка пути рабочей копии в командах проверок. */
-const WORKTREE_PLACEHOLDER = '{worktree}';
-
-/** Команды проверок для конкретной рабочей копии: `{worktree}` → её путь. */
-export function agentBridgeExpandChecks(checks: readonly string[], worktree: string): string[] {
-  return checks.map((command) => command.replaceAll(WORKTREE_PLACEHOLDER, worktree));
-}
-
-function withoutTrailingSlashes(path: string): string {
-  let end = path.length;
-  while (end > 0 && path[end - 1] === '/') {
-    end -= 1;
+/** Файл моста; битые очереди и адреса пропускаем. */
+export function parseAgentBridgeKnownRepos(raw: unknown): AgentBridgeKnownRepos {
+  const queues = (raw as { queues?: unknown } | null)?.queues;
+  if (!queues || typeof queues !== 'object') {
+    return {};
   }
-  return path.slice(0, end);
-}
-
-/**
- * Пути «скопировать из основной папки»: относительные, внутри репозитория (без `..` и `/` в начале),
- * по строке на путь.
- */
-export function parseAgentBridgeCopyPaths(raw: unknown): string[] {
-  const parts = Array.isArray(raw) ? raw : String(raw ?? '').split('\n');
-  const paths = parts
-    .map((part) => withoutTrailingSlashes(String(part).trim()))
-    .filter((part) => part && !part.startsWith('/') && !part.split('/').includes('..'));
-  return [...new Set(paths)].slice(0, CHECKS_MAX);
-}
-
-/** Файл настроек моста; битые строки пропускаем, на папку — одна запись. */
-export function parseAgentBridgeRepoConfig(raw: unknown): AgentBridgeStoredRepo[] {
-  const list = (raw as { repos?: unknown } | null)?.repos;
-  if (!Array.isArray(list)) {
-    return [];
-  }
-  const byPath = new Map<string, AgentBridgeStoredRepo>();
-  for (const item of list as Array<Partial<AgentBridgeStoredRepo> | null>) {
-    const queues = parseAgentBridgeQueues(item?.queues);
-    if (item && typeof item.path === 'string' && item.path && queues.length > 0) {
-      byPath.set(item.path, {
-        checks: parseAgentBridgeChecks(item.checks),
-        confirmed: item.confirmed === true,
-        copy: parseAgentBridgeCopyPaths(item.copy),
-        path: item.path,
-        queues,
-      });
+  const known: AgentBridgeKnownRepos = {};
+  for (const [queue, urls] of Object.entries(queues)) {
+    const valid = Array.isArray(urls) ? urls.filter((url) => parseAgentBridgeRemote(url) != null) : [];
+    if (isAgentBridgeQueue(queue) && valid.length > 0) {
+      known[queue] = [...new Set(valid as string[])];
     }
   }
-  return [...byPath.values()];
+  return known;
 }
 
-/**
- * Список из настроек планера поверх сохранённого. Разрешение — на папку: правка очередей его
- * не сбрасывает, новая папка ждёт «y» в терминале.
- */
-export function mergeAgentBridgeRepos(
-  current: readonly AgentBridgeStoredRepo[],
-  requested: ReadonlyArray<{ checks?: string[]; copy?: string[]; path: string; queues: string[] }>
-): AgentBridgeStoredRepo[] {
-  const byPath = new Map<string, AgentBridgeStoredRepo>();
-  for (const { checks = [], copy = [], path, queues } of requested) {
-    const confirmed = current.some((repo) => repo.path === path && repo.confirmed);
-    const merged = byPath.get(path);
-    byPath.set(path, {
-      checks: [...new Set([...(merged?.checks ?? []), ...checks])],
-      confirmed,
-      copy: [...new Set([...(merged?.copy ?? []), ...copy])],
-      path,
-      queues: [...new Set([...(merged?.queues ?? []), ...queues])],
-    });
-  }
-  return [...byPath.values()];
-}
-
-/** Как агент и человек зовут репозиторий: имя папки, при совпадении — с родительской. */
-export function agentBridgeRepoNames(paths: readonly string[]): Map<string, string> {
-  const segments = (path: string) => path.split('/').filter(Boolean);
-  const short = (path: string) => segments(path).at(-1) ?? path;
+/** Как агент и человек зовут репозиторий: последняя часть пути, при совпадении — с группой. */
+export function agentBridgeRepoNames(urls: readonly string[]): Map<string, string> {
+  const paths = new Map(urls.map((url) => [url, parseAgentBridgeRemote(url)?.path ?? url]));
+  const short = (path: string) => path.split('/').at(-1) ?? path;
   const names = new Map<string, string>();
-  for (const path of paths) {
-    const clash = paths.some((other) => other !== path && short(other) === short(path));
-    names.set(path, clash ? segments(path).slice(-2).join('/') : short(path));
+  for (const [url, path] of paths) {
+    const clash = [...paths].some(([other, otherPath]) => other !== url && short(otherPath) === short(path));
+    names.set(url, clash ? path.split('/').slice(-2).join('/') : short(path));
   }
   return names;
 }
 
 /** Git-команды, которые агенту разработки можно всегда: смотреть, добавлять и коммитить. */
 const DEV_GIT_COMMANDS = ['git status', 'git diff', 'git log', 'git show', 'git add', 'git commit', 'git rev-parse'];
+
+/**
+ * Чем агент поднимает окружение и гоняет проверки в свежем клоне — инструменты самого проекта.
+ * Какие команды нужны, он читает в правилах проекта (CLAUDE.md, AGENTS.md, README, Makefile).
+ */
+const DEV_PROJECT_COMMANDS = ['docker compose', 'docker-compose', 'make', 'npm', 'pnpm', 'yarn', 'composer'];
 
 /** Что агенту разработки нельзя никогда: выкладывать ветку, ходить в GitHub, менять план спринта. */
 const DEV_DENIED_BASH = ['git push', 'gh', 'git reset --hard', 'git worktree', 'git checkout', 'git switch'];
@@ -199,17 +161,11 @@ const DEV_READ_CONNECTOR_TOOLS = [
   'mcp__claude_ai_Atlassian_MCP__searchConfluence',
 ];
 
-/** Команда в обратных кавычках — так агент не спутает её с текстом. */
-const inlineCode = (command: string) => ['`', command, '`'].join('');
-
-function checksSentence(checks: readonly string[]): string {
-  return checks.length > 0
-    ? `Проверки этого репозитория (запусти те, что касаются изменений, до коммита; команда — ровно так, аргументы и пути файлов после неё, из текущей папки без cd): ${checks.map(inlineCode).join(', ')}.`
-    : 'Команды проверок для репозитория не настроены: если проверку из правил проекта запустить не дали, назови её в ответе и поставь tests: not_run.';
-}
+/** Окружение и проверки — по правилам проекта: настраивать в мосте нечего. */
+const PROJECT_SETUP_SENTENCE =
+  'Окружение и проверки — по правилам проекта: прочитай CLAUDE.md, AGENTS.md, README, Makefile и docker-compose. Зависимости ставь и проверки (тесты, линтеры) запускай их командами — через docker compose, make или менеджер пакетов проекта — до коммита. Что запустить не удалось, назови в ответе и поставь tests: not_run.';
 
 function agentBridgeDevPrompt(input: {
-  checks: readonly string[];
   mcpServer: string;
   resume: boolean;
   sessionId: string;
@@ -221,7 +177,7 @@ function agentBridgeDevPrompt(input: {
       `В сессии разработки ${input.sessionId} в Beer Tracker новые сообщения человека.`,
       scope,
       'Прочитай их через get_agent_session и продолжи работу в этой же ветке.',
-      checksSentence(input.checks),
+      PROJECT_SETUP_SENTENCE,
       'Итог — reply_agent_session; если код менялся — с result.',
     ].join(' ');
   }
@@ -230,7 +186,7 @@ function agentBridgeDevPrompt(input: {
     `Обработай сессию разработки ${input.sessionId} в Beer Tracker — задачу ${input.taskKey}.`,
     scope,
     'Прочитай сессию через get_agent_session и следуй её hint: get_task_brief, transition_issue, код, проверки проекта, коммиты в этой ветке, reply_agent_session с result.',
-    checksSentence(input.checks),
+    PROJECT_SETUP_SENTENCE,
     'Ссылки из задачи читай через WebFetch; Slack, Notion и Confluence — через их коннекторы, если они подключены.',
     'Не делай push и не открывай PR: ветку смотрит человек.',
     'Если задача неясна или заблокирована — спроси через reply_agent_session с options, не угадывай.',
@@ -239,12 +195,11 @@ function agentBridgeDevPrompt(input: {
 
 /**
  * Аргументы `claude` для сессии разработки: запускается в worktree задачи. Правки — режим
- * `acceptEdits` (только внутри рабочей папки), Bash — git из списка выше плюс команды проверок
- * репозитория (Настройки → Агент) и правила `.claude/settings.json` самого репозитория. `resumeId` — продолжить прошлый
+ * `acceptEdits` (только внутри рабочей папки), Bash — git из списка выше, инструменты проекта
+ * (docker compose, make, менеджеры пакетов) и правила `.claude/settings.json` самого репозитория. `resumeId` — продолжить прошлый
  * разговор CLI по этой сессии, а не начинать заново.
  */
 export function agentBridgeDevClaudeArgs(input: {
-  checks: readonly string[];
   /** `--mcp-config` с сервером Beer Tracker: в worktree его может не быть в настройках CLI. */
   mcpConfig: string | null;
   mcpServer: string;
@@ -274,7 +229,7 @@ export function agentBridgeDevClaudeArgs(input: {
       'Grep',
       'ToolSearch',
       'WebFetch',
-      ...[...DEV_GIT_COMMANDS, ...input.checks].map(bash),
+      ...[...DEV_GIT_COMMANDS, ...DEV_PROJECT_COMMANDS].map(bash),
       ...DEV_ALLOWED_TOOLS.map(tool),
       ...DEV_READ_CONNECTOR_TOOLS,
     ].join(','),
@@ -286,25 +241,29 @@ export function agentBridgeDevClaudeArgs(input: {
 const ROUTE_ANSWER_RE = /REPO:\s*(\S+)\s*$/;
 
 /**
- * Прогон выбора репозитория, когда у очереди задачи их несколько: только чтение — бриф задачи,
- * переписка сессии и файлы кандидатов. Ответ — последней строкой `REPO: <имя>`; не понять по
- * задаче — агент спрашивает человека кнопками и отвечает `REPO: ?`.
+ * Прогон выбора репозитория: у очереди задачи их несколько или мост ещё не знает ни одного. Только
+ * чтение — бриф задачи и переписка сессии. Ответ — последней строкой `REPO: <имя>` из известных или
+ * `REPO: <адрес для git clone>`, который человек прислал в чате; не понять — агент спрашивает
+ * человека и отвечает `REPO: ?`.
  */
 export function agentBridgeRouteClaudeArgs(input: {
   mcpServer: string;
   model: string;
-  repos: ReadonlyArray<{ name: string; path: string }>;
+  repos: ReadonlyArray<{ name: string; url: string }>;
   sessionId: string;
   taskKey: string;
 }): string[] {
   const tool = (name: string) => `mcp__${input.mcpServer}__${name}`;
+  const known =
+    input.repos.length > 0
+      ? [`Задачи очереди ${agentBridgeTaskQueue(input.taskKey)} делают в репозиториях:`, ...input.repos.map((repo) => `- ${repo.name}: ${repo.url}`)]
+      : [`Где делают задачи очереди ${agentBridgeTaskQueue(input.taskKey)}, пока неизвестно.`];
   const prompt = [
-    `Задачу ${input.taskKey} из сессии разработки ${input.sessionId} в Beer Tracker нужно делать в одном из репозиториев:`,
-    ...input.repos.map((repo) => `- ${repo.name}: ${repo.path}`),
+    `Нужно понять, в каком репозитории делать задачу ${input.taskKey} из сессии разработки ${input.sessionId} в Beer Tracker.`,
+    ...known,
     `Из тулов Beer Tracker используй только mcp__${input.mcpServer}__*. Прочитай get_task_brief(issueKey: "${input.taskKey}") и переписку get_agent_session — человек мог уже ответить, где делать.`,
-    'Если нужно, загляни в репозитории (README, структура, поиск по коду) — только чтение, ничего не меняй.',
-    'Последней строкой ответа напиши ровно `REPO: <имя из списка>`.',
-    'Если по задаче понять нельзя — спроси человека через reply_agent_session(sessionId, message, options: имена репозиториев) и последней строкой напиши `REPO: ?`.',
+    'Последней строкой ответа напиши ровно `REPO: <имя из списка>` или `REPO: <адрес>`, если человек прислал в переписке адрес репозитория для git clone (git@…, ssh://… или https://…).',
+    'Если понять нельзя — спроси человека через reply_agent_session(sessionId, message): пусть выберет из списка (options — имена) или пришлёт адрес репозитория для git clone; последней строкой напиши `REPO: ?`.',
   ].join('\n');
   return [
     '-p',
@@ -312,20 +271,23 @@ export function agentBridgeRouteClaudeArgs(input: {
     '--model',
     input.model,
     '--tools',
-    'Read,Glob,Grep,ToolSearch',
-    ...input.repos.flatMap((repo) => ['--add-dir', repo.path]),
+    'ToolSearch',
     '--output-format',
     'stream-json',
     '--verbose',
     '--allowedTools',
-    ['Read', 'Glob', 'Grep', 'ToolSearch', ...['get_agent_session', 'get_task_brief', 'reply_agent_session'].map(tool)].join(','),
+    ['ToolSearch', ...['get_agent_session', 'get_task_brief', 'reply_agent_session'].map(tool)].join(','),
   ];
 }
 
-/** Имя репозитория из ответа прогона выбора; `?`, чужое имя или нет строки — null. */
-export function parseAgentBridgeRouteAnswer(text: string, names: readonly string[]): string | null {
+/** Адрес репозитория из ответа прогона выбора: имя из известных или новый адрес; `?` и прочее — null. */
+export function parseAgentBridgeRouteAnswer(text: string, known: ReadonlyMap<string, string>): string | null {
   const answer = text.trim().split('\n').at(-1)?.replaceAll('`', '').match(ROUTE_ANSWER_RE)?.[1];
-  return answer && names.includes(answer) ? answer : null;
+  if (!answer) {
+    return null;
+  }
+  const byName = [...known].find(([, name]) => name === answer)?.[0];
+  return byName ?? parseAgentBridgeRemote(answer)?.url ?? null;
 }
 
 /** Итоговый текст прогона из события `result` потока CLI. */
@@ -398,17 +360,16 @@ export function agentBridgeCliSessionId(line: string): string | null {
 
 /**
  * Что отдать мосту на запуск: сессия, а у сессии разработки ещё и задача — по её очереди мост
- * выбирает репозиторий. null — мост эту сессию не возьмёт (задача из очереди без репозитория).
+ * находит репозиторий (или спрашивает в чате). null — мост сессию не возьмёт: он не умеет разработку
+ * (старая версия) или у сессии нет ключа задачи.
  */
 export function agentBridgeRunTarget(
   session: { id: string; kind: 'dev' | 'plan'; taskId: string | null },
-  devQueues: readonly string[]
+  dev: boolean
 ): AgentBridgeRunTarget | null {
   if (session.kind === 'plan') {
     return { sessionId: session.id };
   }
   const taskKey = session.taskId;
-  return taskKey && isAgentBridgeTaskKey(taskKey) && devQueues.includes(agentBridgeTaskQueue(taskKey))
-    ? { sessionId: session.id, taskKey }
-    : null;
+  return dev && taskKey && isAgentBridgeTaskKey(taskKey) ? { sessionId: session.id, taskKey } : null;
 }

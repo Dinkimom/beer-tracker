@@ -112,6 +112,8 @@ export const agentSessionEn = {
   bridgeReady: 'Claude CLI bridge is online',
   bridgeRun: 'Run agent',
   bridgeStep: {
+    setting_up: 'Setting up the environment',
+    cloning: 'Cloning the repository',
     queued: 'Queued',
     exploring: 'Reading the code',
     coding: 'Writing code',

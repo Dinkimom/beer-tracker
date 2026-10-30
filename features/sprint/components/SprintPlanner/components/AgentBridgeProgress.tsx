@@ -14,9 +14,20 @@ function formatElapsed(ms: number): string {
 /**
  * Текст пузыря «Ждёт агента», пока агент работает: что он делает сейчас и сколько уже идёт.
  * Шаг — из потока Claude CLI через мост или, для внешнего агента, по его последнему вызову MCP.
- * Таймер тикает сам — шаг обновляется опросом моста или realtime сессий.
+ * У моста ещё процент клонирования и команда, которую агент выполняет (ставит зависимости, гоняет
+ * тесты), — второй строкой. Таймер тикает сам — шаг обновляется опросом моста или realtime сессий.
  */
-export function AgentBridgeProgress({ startedAt, step }: { startedAt: number; step: AgentBridgeStep }) {
+export function AgentBridgeProgress({
+  detail,
+  percent,
+  startedAt,
+  step,
+}: {
+  detail?: string;
+  percent?: number;
+  startedAt: number;
+  step: AgentBridgeStep;
+}) {
   const { t } = useI18n();
   const [now, setNow] = useState(() => Date.now());
 
@@ -26,9 +37,17 @@ export function AgentBridgeProgress({ startedAt, step }: { startedAt: number; st
   }, []);
 
   return (
-    <span className="inline-flex min-w-0 items-center gap-1" data-agent-bridge-progress={step} role="status">
-      <span className="min-w-0 truncate">{t(`agentSession.bridgeStep.${step}`)}</span>
-      <span className="shrink-0 tabular-nums opacity-60">{formatElapsed(now - startedAt)}</span>
+    <span className="inline-flex min-w-0 flex-col" data-agent-bridge-progress={step} role="status">
+      <span className="inline-flex min-w-0 items-center gap-1">
+        <span className="min-w-0 truncate">{t(`agentSession.bridgeStep.${step}`)}</span>
+        {percent == null ? null : <span className="shrink-0 tabular-nums">{percent}%</span>}
+        <span className="shrink-0 tabular-nums opacity-60">{formatElapsed(now - startedAt)}</span>
+      </span>
+      {detail ? (
+        <span className="min-w-0 truncate font-mono text-[10px] opacity-70" title={detail}>
+          {detail}
+        </span>
+      ) : null}
     </span>
   );
 }

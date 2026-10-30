@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { agentBridgeStepFromStreamLine } from './agentBridge';
+import { agentBridgeCloneProgress, agentBridgeCommandFromStreamLine, agentBridgeStepFromStreamLine } from './agentBridge';
 import {
   agentBridgeCliSessionId,
   agentBridgeDevClaudeArgs,
-  agentBridgeExpandChecks,
   agentBridgeMergeRequestUrl,
   agentBridgeRemoteWebUrl,
   agentBridgeRepoNames,
@@ -13,12 +12,9 @@ import {
   agentBridgeRunTarget,
   agentBridgeTaskQueue,
   isAgentBridgeTaskKey,
-  mergeAgentBridgeRepos,
-  parseAgentBridgeChecks,
-  parseAgentBridgeCopyPaths,
+  parseAgentBridgeKnownRepos,
   parseAgentBridgeNumstat,
-  parseAgentBridgeQueues,
-  parseAgentBridgeRepoConfig,
+  parseAgentBridgeRemote,
   parseAgentBridgeRouteAnswer,
 } from './agentBridgeDev';
 
@@ -57,97 +53,81 @@ describe('agentBridgeDev', () => {
     ]);
   });
 
-  it('copies only paths inside the repository and fills in the worktree in check commands', () => {
-    expect(parseAgentBridgeCopyPaths('bin/\nconfig/config.php\n/etc/passwd\n../secrets\na/../b\nbin')).toEqual([
-      'bin',
-      'config/config.php',
-    ]);
+  it('takes clone addresses that map to a folder inside the cache, nothing else', () => {
+    expect(parseAgentBridgeRemote('git@gitlab.example.com:team/back.git')).toEqual({
+      dir: 'gitlab.example.com/team/back',
+      path: 'team/back',
+      url: 'git@gitlab.example.com:team/back.git',
+    });
+    expect(parseAgentBridgeRemote('https://github.com/org/web')?.dir).toBe('github.com/org/web');
+    expect(parseAgentBridgeRemote('ssh://git@host:2222/group/sub/app.git')?.dir).toBe('host/group/sub/app');
+    expect(parseAgentBridgeRemote('git@host:../etc.git')).toBeNull();
+    expect(parseAgentBridgeRemote('/Users/me/work/app')).toBeNull();
+    expect(parseAgentBridgeRemote('git@host:team/app.git; rm -rf ~')).toBeNull();
+  });
+
+  it('reads remembered repositories per queue and drops broken entries', () => {
     expect(
-      agentBridgeExpandChecks(['docker run --rm -v {worktree}:/app -w /app php:8 bin/phpunit', 'bin/phplint'], '/w/app-RND-1')
-    ).toEqual(['docker run --rm -v /w/app-RND-1:/app -w /app php:8 bin/phpunit', 'bin/phplint']);
-  });
-
-  it('reads check commands one per line, dropping what would break a Bash rule', () => {
-    expect(parseAgentBridgeChecks('bin/phplint\n  vendor/bin/psalm --no-cache \n\nmake (x)\na,b\nbin/phplint')).toEqual([
-      'bin/phplint',
-      'vendor/bin/psalm --no-cache',
-    ]);
-  });
-
-  it('reads queue lists from the settings field and file', () => {
-    expect(parseAgentBridgeQueues('rnd, WEB;mob  RND, 1x, ')).toEqual(['RND', 'WEB', 'MOB']);
-    expect(parseAgentBridgeQueues(['RND', 'bad key'])).toEqual(['RND']);
-  });
-
-  it('reads the bridge settings file and drops broken rows', () => {
-    expect(
-      parseAgentBridgeRepoConfig({
-        repos: [
-          { checks: ['bin/autotest', 'bad (x)', ''], confirmed: true, path: '/work/back', queues: ['RND'] },
-          { path: '/work/web', queues: ['RND', 'WEB'] },
-          { path: '/work/none', queues: [] },
-          { path: '', queues: ['OPS'] },
-          null,
-        ],
+      parseAgentBridgeKnownRepos({
+        queues: {
+          RND: ['git@host:team/back.git', 'git@host:team/back.git', '/local/path'],
+          bad: ['git@host:team/web.git'],
+          WEB: [],
+        },
       })
-    ).toEqual([
-      { checks: ['bin/autotest'], confirmed: true, copy: [], path: '/work/back', queues: ['RND'] },
-      { checks: [], confirmed: false, copy: [], path: '/work/web', queues: ['RND', 'WEB'] },
-    ]);
-    expect(parseAgentBridgeRepoConfig('garbage')).toEqual([]);
+    ).toEqual({ RND: ['git@host:team/back.git'] });
+    expect(parseAgentBridgeKnownRepos('garbage')).toEqual({});
   });
 
-  it('keeps the terminal confirmation per folder, whatever its queues', () => {
-    const current = [{ checks: [], confirmed: true, copy: [], path: '/work/back', queues: ['RND'] }];
-    expect(
-      mergeAgentBridgeRepos(current, [
-        { checks: ['bin/phplint'], copy: ['config/config.php'], path: '/work/back', queues: ['RND', 'OPS'] },
-        { path: '/work/web', queues: ['RND'] },
-      ])
-    ).toEqual([
-      { checks: ['bin/phplint'], confirmed: true, copy: ['config/config.php'], path: '/work/back', queues: ['RND', 'OPS'] },
-      { checks: [], confirmed: false, copy: [], path: '/work/web', queues: ['RND'] },
-    ]);
+  it('names repositories by path, adding the group when names clash', () => {
+    const names = agentBridgeRepoNames(['git@host:a/app.git', 'git@host:b/app.git', 'git@host:c/web.git']);
+    expect([...names.values()]).toEqual(['a/app', 'b/app', 'web']);
   });
 
-  it('names repositories by folder, adding the parent when folders clash', () => {
-    expect([...agentBridgeRepoNames(['/a/app', '/b/app', '/c/web']).values()]).toEqual(['a/app', 'b/app', 'web']);
-  });
-
-  it('lets the routing run only read and ask, and reads its answer from the last line', () => {
+  it('lets the routing run only read and ask, and reads a known name or a new address', () => {
     const args = agentBridgeRouteClaudeArgs({
       mcpServer: 'bt',
       model: 'sonnet',
       repos: [
-        { name: 'back', path: '/work/back' },
-        { name: 'web', path: '/work/web' },
+        { name: 'back', url: 'git@host:team/back.git' },
+        { name: 'web', url: 'git@host:team/web.git' },
       ],
       sessionId: SESSION_ID,
       taskKey: 'RND-1641',
     });
-    expect(args[args.indexOf('--tools') + 1]).toBe('Read,Glob,Grep,ToolSearch');
-    expect(args.filter((arg, index) => args[index - 1] === '--add-dir')).toEqual(['/work/back', '/work/web']);
+    expect(args[args.indexOf('--tools') + 1]).toBe('ToolSearch');
+    expect(args).not.toContain('--add-dir');
     expect(args[args.indexOf('--allowedTools') + 1]).not.toContain('Edit');
-    const names = ['back', 'web'];
-    expect(parseAgentBridgeRouteAnswer('Это API платежей.\nREPO: back', names)).toBe('back');
-    expect(parseAgentBridgeRouteAnswer('`REPO: web`', names)).toBe('web');
-    expect(parseAgentBridgeRouteAnswer('Спросил человека.\nREPO: ?', names)).toBeNull();
-    expect(parseAgentBridgeRouteAnswer('REPO: mobile', names)).toBeNull();
+    expect(args[1]).toContain('back: git@host:team/back.git');
+    const known = new Map([
+      ['git@host:team/back.git', 'back'],
+      ['git@host:team/web.git', 'web'],
+    ]);
+    expect(parseAgentBridgeRouteAnswer('Это API платежей.\nREPO: back', known)).toBe('git@host:team/back.git');
+    expect(parseAgentBridgeRouteAnswer('`REPO: web`', known)).toBe('git@host:team/web.git');
+    expect(parseAgentBridgeRouteAnswer('REPO: git@host:team/mobile.git', known)).toBe('git@host:team/mobile.git');
+    expect(parseAgentBridgeRouteAnswer('Спросил человека.\nREPO: ?', known)).toBeNull();
+    expect(parseAgentBridgeRouteAnswer('REPO: mobile', known)).toBeNull();
     expect(agentBridgeResultText(JSON.stringify({ result: 'REPO: back', type: 'result' }))).toBe('REPO: back');
     expect(agentBridgeResultText(JSON.stringify({ type: 'assistant' }))).toBeNull();
   });
 
-  it('hands a development session to the bridge only for a known queue', () => {
+  it('asks the person for the address when the queue has no repository yet', () => {
+    const args = agentBridgeRouteClaudeArgs({ mcpServer: 'bt', model: 'sonnet', repos: [], sessionId: SESSION_ID, taskKey: 'OPS-7' });
+    expect(args[1]).toContain('очереди OPS');
+    expect(args[1]).toContain('git clone');
+  });
+
+  it('hands any development task to a bridge that does development', () => {
     const dev = { id: SESSION_ID, kind: 'dev' as const, taskId: 'RND-1641' };
-    expect(agentBridgeRunTarget(dev, ['RND'])).toEqual({ sessionId: SESSION_ID, taskKey: 'RND-1641' });
-    expect(agentBridgeRunTarget(dev, ['WEB'])).toBeNull();
-    expect(agentBridgeRunTarget({ ...dev, taskId: null }, ['RND'])).toBeNull();
-    expect(agentBridgeRunTarget({ ...dev, kind: 'plan', taskId: null }, [])).toEqual({ sessionId: SESSION_ID });
+    expect(agentBridgeRunTarget(dev, true)).toEqual({ sessionId: SESSION_ID, taskKey: 'RND-1641' });
+    expect(agentBridgeRunTarget(dev, false)).toBeNull();
+    expect(agentBridgeRunTarget({ ...dev, taskId: null }, true)).toBeNull();
+    expect(agentBridgeRunTarget({ ...dev, kind: 'plan', taskId: null }, false)).toEqual({ sessionId: SESSION_ID });
   });
 
   it('lets the agent edit and commit in the worktree, never push or touch the plan', () => {
     const args = agentBridgeDevClaudeArgs({
-      checks: ['pnpm test'],
       mcpConfig: '{"mcpServers":{"bt":{"type":"http","url":"http://localhost:3000/api/mcp"}}}',
       mcpServer: 'bt',
       model: 'sonnet',
@@ -162,17 +142,24 @@ describe('agentBridgeDev', () => {
     expect(args[args.indexOf('--mcp-config') + 1]).toContain('"bt"');
     expect(args).not.toContain('--resume');
     expect(args[1]).toContain('agent/RND-1641');
-    expect(args[1]).toContain('`pnpm test`');
+    // Окружение и проверки — по правилам самого проекта.
+    expect(args[1]).toContain('AGENTS.md');
     expect(allowed).toContain('mcp__claude_ai_Slack__slack_read_thread');
     expect(allowed).toEqual(
-      expect.arrayContaining(['Bash(git commit:*)', 'Bash(pnpm test:*)', 'mcp__bt__get_task_brief', 'mcp__bt__transition_issue'])
+      expect.arrayContaining([
+        'Bash(git commit:*)',
+        'Bash(docker compose:*)',
+        'Bash(make:*)',
+        'Bash(pnpm:*)',
+        'mcp__bt__get_task_brief',
+        'mcp__bt__transition_issue',
+      ])
     );
     expect(denied).toEqual(expect.arrayContaining(['Bash(git push:*)', 'Bash(gh:*)', 'mcp__bt__apply_plan_patch']));
   });
 
   it('continues the same CLI conversation when the person writes again', () => {
     const args = agentBridgeDevClaudeArgs({
-      checks: [],
       mcpConfig: null,
       mcpServer: 'bt',
       model: 'sonnet',
@@ -196,5 +183,23 @@ describe('agentBridgeDev', () => {
     expect(agentBridgeStepFromStreamLine(toolUse('Bash', { command: 'pnpm test' }))).toBe('running');
     expect(agentBridgeStepFromStreamLine(toolUse('Bash', { command: 'git add -A && git commit -m "fix"' }))).toBe('committing');
     expect(agentBridgeStepFromStreamLine(toolUse('mcp__bt__get_task_brief'))).toBe('reading');
+  });
+
+  it('tells setting up the environment from running checks, with the command itself', () => {
+    const install = toolUse('Bash', { command: 'docker compose run --rm app composer install\necho done' });
+    expect(agentBridgeStepFromStreamLine(install)).toBe('setting_up');
+    expect(agentBridgeStepFromStreamLine(toolUse('Bash', { command: 'pnpm i --frozen-lockfile' }))).toBe('setting_up');
+    expect(agentBridgeStepFromStreamLine(toolUse('Bash', { command: 'docker compose up -d db' }))).toBe('setting_up');
+    expect(agentBridgeStepFromStreamLine(toolUse('Bash', { command: 'make test' }))).toBe('running');
+    expect(agentBridgeCommandFromStreamLine(install)).toBe('docker compose run --rm app composer install');
+    expect(agentBridgeCommandFromStreamLine(toolUse('Bash', { command: `pnpm test ${'x'.repeat(200)}` }))).toHaveLength(120);
+    expect(agentBridgeCommandFromStreamLine(toolUse('Edit'))).toBeNull();
+  });
+
+  it('turns git clone progress into one overall percent', () => {
+    expect(agentBridgeCloneProgress('Cloning into \'app\'...\nReceiving objects:  10% (1/10)\rReceiving objects:  50% (5/10)\r')).toBe(40);
+    expect(agentBridgeCloneProgress('Resolving deltas: 100% (3/3), done.\n')).toBe(95);
+    expect(agentBridgeCloneProgress('Updating files:  50% (5/10)\r')).toBe(98);
+    expect(agentBridgeCloneProgress('remote: Enumerating objects: 10, done.\n')).toBeNull();
   });
 });
