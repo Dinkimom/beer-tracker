@@ -129,6 +129,7 @@ export const agentSessionEn = {
     replying: 'Writing a reply',
   },
   bridgeFailed: 'The agent could not start: {error}',
+  bridgeCloneFailed: 'Could not clone the repository: {error}. Check git access to it from this machine and run the agent again.',
   bridgeSilent: 'The agent finished without replying in the chat. Its last words:',
   bridgeRunFailed: 'Bridge did not accept the run',
   collapseChat: 'Collapse chat',

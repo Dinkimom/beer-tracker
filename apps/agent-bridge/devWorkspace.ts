@@ -5,7 +5,7 @@
  */
 
 import { execFile, execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { promisify } from 'node:util';
@@ -14,12 +14,13 @@ import { agentBridgeCloneProgress } from '@/lib/agentSessions/agentBridge';
 import {
   agentBridgeDevBranch,
   agentBridgeMergeRequestUrl,
+  agentBridgeRemoteVariants,
   agentBridgeRemoteWebUrl,
   type AgentBridgeReview,
   parseAgentBridgeNumstat,
 } from '@/lib/agentSessions/agentBridgeDev';
 
-import { BRIDGE_STATE_DIR, cloneDir, gitBin } from './repoConfig';
+import { BRIDGE_STATE_DIR, cloneDir, gitBin, localCopy } from './repoConfig';
 
 function git(repo: string, ...args: string[]): string {
   return execFileSync(gitBin, ['-C', repo, ...args], { stdio: ['ignore', 'pipe', 'pipe'] })
@@ -65,8 +66,15 @@ export function prepareWorktree(repo: string, taskKey: string): string {
 
 const execFileAsync = promisify(execFile);
 
-/** Клон и fetch — без вопросов git в терминале: нет доступа — ошибка, а не зависший процесс. */
-const GIT_QUIET_ENV = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
+/**
+ * Клон и fetch — без вопросов git и ssh в терминале: нет доступа — ошибка за секунды, а не зависший
+ * процесс. Свой `GIT_SSH_COMMAND` человека не трогаем.
+ */
+const GIT_QUIET_ENV = {
+  ...process.env,
+  GIT_SSH_COMMAND: process.env.GIT_SSH_COMMAND ?? 'ssh -o BatchMode=yes -o ConnectTimeout=15',
+  GIT_TERMINAL_PROMPT: '0',
+};
 
 const CLONE_TIMEOUT_MS = 1_800_000;
 
@@ -77,9 +85,20 @@ function gitFailure(stderr: string): string {
 }
 
 /** `git clone --progress` с процентами в `onProgress`; ошибка — исключением `clone_failed: …`. */
-function cloneWithProgress(url: string, dir: string, onProgress: (percent: number) => void): Promise<void> {
+function cloneWithProgress(
+  url: string,
+  dir: string,
+  reference: string | null,
+  onProgress: (percent: number) => void
+): Promise<void> {
+  // Есть локальная копия — история с диска, из сети только новое; `--dissociate` — клон от неё не
+  // зависит. Нет — без истории содержимого файлов: скачивается в разы меньше, нужное git докачает сам.
+  const source = reference ? ['--reference-if-able', reference, '--dissociate'] : ['--filter=blob:none'];
   return new Promise((resolveClone, rejectClone) => {
-    const child = spawn(gitBin, ['clone', '--progress', url, dir], { env: GIT_QUIET_ENV, stdio: ['ignore', 'ignore', 'pipe'] });
+    const child = spawn(gitBin, ['clone', '--progress', ...source, url, dir], {
+      env: GIT_QUIET_ENV,
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
     let stderr = '';
     const timer = setTimeout(() => child.kill('SIGTERM'), CLONE_TIMEOUT_MS);
     child.stderr.on('data', (chunk: Buffer) => {
@@ -118,9 +137,21 @@ export async function ensureClone(url: string, onProgress: (percent: number) => 
     await execFileAsync(gitBin, ['-C', dir, 'fetch', '--quiet', 'origin'], { env: GIT_QUIET_ENV, timeout: 300_000 }).catch(() => undefined);
     return dir;
   }
+  // Остаток оборванного клона без .git: git в непустую папку не клонирует.
+  rmSync(dir, { force: true, recursive: true });
   mkdirSync(dirname(dir), { recursive: true });
-  await cloneWithProgress(url, dir, onProgress);
-  return dir;
+  const reference = localCopy(url)?.path ?? null;
+  let failure: unknown = null;
+  for (const variant of agentBridgeRemoteVariants(url)) {
+    try {
+      await cloneWithProgress(variant, dir, reference, onProgress);
+      return dir;
+    } catch (error) {
+      failure ??= error;
+      rmSync(dir, { force: true, recursive: true });
+    }
+  }
+  throw failure;
 }
 
 /**

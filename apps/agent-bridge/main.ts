@@ -66,7 +66,16 @@ import {
   readDevSession,
   rememberDevSession,
 } from './devWorkspace';
-import { announceRepos, forgetRepo, knownRepos, rememberRepo, repoSettings } from './repoConfig';
+import {
+  announceRepos,
+  chooseLocalCopy,
+  forgetLocalCopy,
+  forgetRepo,
+  knownRepos,
+  localCopy,
+  rememberRepo,
+  repoSettings,
+} from './repoConfig';
 
 const port = Number(process.env.AGENT_BRIDGE_PORT) || AGENT_BRIDGE_DEFAULT_PORT;
 const targets = parseAgentBridgeTargets(process.env.AGENT_BRIDGE_TARGETS ?? '');
@@ -255,7 +264,9 @@ async function runDevSession(sessionId: string, mcpServer: string, taskKey: stri
     return;
   }
   state.step = 'cloning';
-  state.detail = parseAgentBridgeRemote(remote)?.path;
+  const local = localCopy(remote);
+  const name = parseAgentBridgeRemote(remote)?.path;
+  state.detail = local ? `${name} ← ${local.path}` : name;
   const repo = await ensureClone(remote, (percent) => {
     state.percent = percent;
   });
@@ -301,7 +312,11 @@ function runSession(sessionId: string, mcpServer: string, taskKey?: string) {
   work
     .catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
-      state.error = `bridge_failed: ${message}`;
+      // Клон не удался: ответ прогона выбора («REPO: …») в плашке только путает.
+      if (message.startsWith('clone_failed')) {
+        state.text = '';
+      }
+      state.error = message.startsWith('clone_failed') ? message : `bridge_failed: ${message}`;
       log(sessionId, `не запустился: ${message}`);
     })
     .finally(() => {
@@ -416,6 +431,14 @@ const routes: Readonly<Record<string, Route>> = {
   'GET /repos': (_request, response, origin) => send(response, 200, origin, repoSettings()),
   'DELETE /repos': (_request, response, origin, _mcpServer, query) =>
     send(response, 200, origin, forgetRepo(query.get('queue') ?? '', query.get('url') ?? '')),
+  // «Выбрать папку» с клоном: системный диалог на этой машине, путь из браузера не принимаем.
+  'POST /repos/local': async (request, response, origin) => {
+    const { url } = JSON.parse(await readBody(request)) as { url?: unknown };
+    const result = await chooseLocalCopy(typeof url === 'string' ? url : '');
+    send(response, 'error' in result ? 400 : 200, origin, result);
+  },
+  'DELETE /repos/local': (_request, response, origin, _mcpServer, query) =>
+    send(response, 200, origin, forgetLocalCopy(query.get('url') ?? '')),
   // Кнопки ревью в карточке результата: где рабочая копия сессии разработки.
   'GET /workspace': (_request, response, origin, _mcpServer, query) => {
     const sessionId = query.get('sessionId');

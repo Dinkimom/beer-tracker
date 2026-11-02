@@ -80,14 +80,74 @@ export function parseAgentBridgeRemote(value: unknown): AgentBridgeRemote | null
 }
 
 /**
+ * Адреса одного репозитория для клона: сначала ssh, затем https. Большой репозиторий по https сервер
+ * обрывает через минуты (`early EOF`), а ssh без ключей отказывает сразу — так порядок дешевле.
+ */
+export function agentBridgeRemoteVariants(url: string): string[] {
+  const remote = parseAgentBridgeRemote(url);
+  if (!remote) {
+    return [url];
+  }
+  const host = remote.dir.slice(0, remote.dir.length - remote.path.length - 1);
+  const ssh = url.startsWith('https://') ? `git@${host}:${remote.path}.git` : url;
+  const https = url.startsWith('https://') ? url : `https://${host}/${remote.path}.git`;
+  return [ssh, https];
+}
+
+/**
  * Что мост запомнил: в каких репозиториях делают задачи очереди. У очереди бывает несколько
  * репозиториев (бэкенд, веб, мобилка); адрес мост узнаёт у человека в чате при первой задаче очереди.
  */
 export type AgentBridgeKnownRepos = Record<string, string[]>;
 
-/** Что мост помнит, для Настроек → Агент: очереди и их репозитории; `cloned` — клон уже в кэше. */
+/**
+ * Клон репозитория, который уже есть на диске: из него мост копирует историю при первом клоне
+ * (`git clone --reference … --dissociate`) — минуты вместо получаса у большого репозитория.
+ * `found` — мост нашёл сам по `origin`, `chosen` — человек выбрал папку в настройках.
+ */
+interface AgentBridgeLocalCopy {
+  path: string;
+  source: 'chosen' | 'found';
+}
+
+/**
+ * Что мост помнит, для Настроек → Агент: очереди и их репозитории; `cloned` — клон уже в кэше,
+ * `local` — откуда взять историю для первого клона.
+ */
 export interface AgentBridgeRepoSettings {
-  queues: Array<{ queue: string; repos: Array<{ cloned: boolean; name: string; url: string }> }>;
+  queues: Array<{
+    queue: string;
+    repos: Array<{ cloned: boolean; local: AgentBridgeLocalCopy | null; name: string; url: string }>;
+  }>;
+}
+
+/** Выбранные человеком локальные копии из файла моста: папка клона в кэше → абсолютный путь. */
+export function parseAgentBridgeLocalCopies(raw: unknown): Record<string, string> {
+  const local = (raw as { local?: unknown } | null)?.local;
+  if (!local || typeof local !== 'object') {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(local).filter(([dir, path]) => typeof path === 'string' && path.startsWith('/') && !dir.split('/').includes('..'))
+  ) as Record<string, string>;
+}
+
+/**
+ * Адрес `origin` из текста `.git/config`: секция `[remote "origin"]`, строка `url = …`. Без запуска
+ * git — мост перебирает так сотню папок в поисках локальной копии.
+ */
+export function agentBridgeOriginFromGitConfig(text: string): string | null {
+  let inOrigin = false;
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (line.startsWith('[')) {
+      inOrigin = line === '[remote "origin"]';
+    } else if (inOrigin && line.startsWith('url')) {
+      const value = line.slice(line.indexOf('=') + 1).trim();
+      return line.includes('=') && value ? value : null;
+    }
+  }
+  return null;
 }
 
 /** Файл моста; битые очереди и адреса пропускаем. */
@@ -287,7 +347,13 @@ export function parseAgentBridgeRouteAnswer(text: string, known: ReadonlyMap<str
     return null;
   }
   const byName = [...known].find(([, name]) => name === answer)?.[0];
-  return byName ?? parseAgentBridgeRemote(answer)?.url ?? null;
+  if (byName) {
+    return byName;
+  }
+  // Тот же репозиторий другим адресом (человек прислал https, а мост знает ssh) — берём известный.
+  const remote = parseAgentBridgeRemote(answer);
+  const same = [...known.keys()].find((url) => parseAgentBridgeRemote(url)?.dir === remote?.dir);
+  return same ?? remote?.url ?? null;
 }
 
 /** Итоговый текст прогона из события `result` потока CLI. */

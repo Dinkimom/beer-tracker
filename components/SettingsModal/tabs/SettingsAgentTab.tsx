@@ -1,15 +1,16 @@
 'use client';
 
-import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentBridge, useAgentBridgeRepos } from '@/features/swimlane/hooks/useAgentBridge';
 
+import { AgentBridgeRepoItem } from '../components/AgentBridgeRepoItem';
 import { Toggle } from '../components/Toggle';
 
 /**
  * Настройки агента: локальный мост к Claude CLI (на связи ли, запускать ли его сразу при отправке)
  * и репозитории, которые мост запомнил за очередями задач. Настраивать их не нужно: адрес мост
- * спрашивает в чате при первой задаче очереди и клонирует сам; здесь — посмотреть и забыть.
+ * спрашивает в чате при первой задаче очереди и клонирует сам; здесь — посмотреть, забыть и указать
+ * папку с уже готовым клоном, чтобы первый клон не качал всё из сети.
  */
 export function SettingsAgentTab() {
   const { t } = useI18n();
@@ -30,24 +31,15 @@ export function SettingsAgentTab() {
       <ul className="space-y-1.5">
         {queues.flatMap(({ queue, repos: list }) =>
           list.map((repo) => (
-            <li key={`${queue} ${repo.url}`} className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700">
-              <span className="w-14 shrink-0 font-mono text-xs font-semibold text-gray-700 dark:text-gray-200">{queue}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-gray-900 dark:text-gray-100">{repo.name}</span>
-                <span className="block truncate font-mono text-[11px] text-gray-500 dark:text-gray-400" title={repo.url}>
-                  {repo.url}
-                  {repo.cloned ? null : ` · ${t('settings.agentTab.notCloned')}`}
-                </span>
-              </span>
-              <Button
-                className="!px-2.5 !py-1 text-xs"
-                disabled={repos.forgetting}
-                variant="ghost"
-                onClick={() => repos.forget({ queue, url: repo.url })}
-              >
-                {t('settings.agentTab.forget')}
-              </Button>
-            </li>
+            <AgentBridgeRepoItem
+              key={`${queue} ${repo.url}`}
+              busy={repos.busy}
+              queue={queue}
+              repo={repo}
+              onChooseLocal={repos.chooseLocal}
+              onForget={() => repos.forget({ queue, url: repo.url })}
+              onForgetLocal={repos.forgetLocal}
+            />
           ))
         )}
       </ul>

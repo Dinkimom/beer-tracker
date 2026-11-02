@@ -515,6 +515,32 @@ export async function forgetAgentBridgeRepo(baseUrl: string, queue: string, url:
   return (await response.json()) as AgentBridgeRepoSettings;
 }
 
+/**
+ * «Выбрать папку» с клоном репозитория: мост открывает системный диалог на своей машине и проверяет
+ * папку. Ошибка проверки (`not_a_git_repo`, `other_repo`, `picker_unavailable`) — текстом исключения.
+ */
+export async function chooseAgentBridgeLocalCopy(baseUrl: string, url: string): Promise<AgentBridgeRepoSettings> {
+  const response = await fetch(`${baseUrl}/repos/local`, {
+    body: JSON.stringify({ url }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
+  const data = (await response.json()) as AgentBridgeRepoSettings & { error?: string };
+  if (!response.ok) {
+    throw new Error(data.error ?? `bridge ${response.status}`);
+  }
+  return data;
+}
+
+/** Не использовать выбранную папку: мост снова ищет локальную копию сам. */
+export async function forgetAgentBridgeLocalCopy(baseUrl: string, url: string): Promise<AgentBridgeRepoSettings> {
+  const response = await fetch(`${baseUrl}/repos/local?${new URLSearchParams({ url })}`, { method: 'DELETE' });
+  if (!response.ok) {
+    throw new Error(`bridge ${response.status}`);
+  }
+  return (await response.json()) as AgentBridgeRepoSettings;
+}
+
 /** Push ветки сессии разработки через мост; ошибка git — текстом исключения. */
 export async function pushAgentBridgeBranch(baseUrl: string, sessionId: string): Promise<{ mergeRequestUrl: string | null }> {
   const response = await fetch(`${baseUrl}/push`, {

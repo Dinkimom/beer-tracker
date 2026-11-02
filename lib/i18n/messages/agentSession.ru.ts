@@ -130,6 +130,7 @@ export const agentSessionRu = {
     replying: 'Пишет ответ',
   },
   bridgeFailed: 'Агент не смог начать: {error}',
+  bridgeCloneFailed: 'Не удалось склонировать репозиторий: {error}. Проверь доступ git к нему с этой машины и запусти агента снова.',
   bridgeSilent: 'Агент закончил, но не ответил в чат. Его последние слова:',
   bridgeRunFailed: 'Мост не принял запуск',
   skillsTitle: 'Или выбери сценарий',

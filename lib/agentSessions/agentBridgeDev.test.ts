@@ -6,13 +6,16 @@ import {
   agentBridgeDevClaudeArgs,
   agentBridgeMergeRequestUrl,
   agentBridgeRemoteWebUrl,
+  agentBridgeRemoteVariants,
   agentBridgeRepoNames,
   agentBridgeResultText,
   agentBridgeRouteClaudeArgs,
   agentBridgeRunTarget,
   agentBridgeTaskQueue,
+  agentBridgeOriginFromGitConfig,
   isAgentBridgeTaskKey,
   parseAgentBridgeKnownRepos,
+  parseAgentBridgeLocalCopies,
   parseAgentBridgeNumstat,
   parseAgentBridgeRemote,
   parseAgentBridgeRouteAnswer,
@@ -66,6 +69,38 @@ describe('agentBridgeDev', () => {
     expect(parseAgentBridgeRemote('git@host:team/app.git; rm -rf ~')).toBeNull();
   });
 
+  it('clones over ssh first and falls back to https', () => {
+    expect(agentBridgeRemoteVariants('https://gitlab.example.com/team/back')).toEqual([
+      'git@gitlab.example.com:team/back.git',
+      'https://gitlab.example.com/team/back',
+    ]);
+    expect(agentBridgeRemoteVariants('git@host:team/web.git')).toEqual(['git@host:team/web.git', 'https://host/team/web.git']);
+  });
+
+  it('reads origin from .git/config without running git', () => {
+    const config = [
+      '[core]',
+      '\turl = not-this',
+      '[remote "upstream"]',
+      '\turl = git@host:fork/app.git',
+      '[remote "origin"]',
+      '\tfetch = +refs/heads/*:refs/remotes/origin/*',
+      '\turl = git@host:team/app.git',
+      '[branch "main"]',
+    ].join('\n');
+    expect(agentBridgeOriginFromGitConfig(config)).toBe('git@host:team/app.git');
+    expect(agentBridgeOriginFromGitConfig('[core]\n\tbare = false')).toBeNull();
+  });
+
+  it('keeps only absolute local copy folders from the bridge file', () => {
+    expect(
+      parseAgentBridgeLocalCopies({
+        local: { 'host/team/app': '/Users/me/work/app', 'host/team/web': 'relative/web', 'host/../x': '/Users/me/x', 'host/team/api': 7 },
+      })
+    ).toEqual({ 'host/team/app': '/Users/me/work/app' });
+    expect(parseAgentBridgeLocalCopies(null)).toEqual({});
+  });
+
   it('reads remembered repositories per queue and drops broken entries', () => {
     expect(
       parseAgentBridgeKnownRepos({
@@ -106,6 +141,8 @@ describe('agentBridgeDev', () => {
     expect(parseAgentBridgeRouteAnswer('Это API платежей.\nREPO: back', known)).toBe('git@host:team/back.git');
     expect(parseAgentBridgeRouteAnswer('`REPO: web`', known)).toBe('git@host:team/web.git');
     expect(parseAgentBridgeRouteAnswer('REPO: git@host:team/mobile.git', known)).toBe('git@host:team/mobile.git');
+    // Человек прислал https того же репозитория, что мост знает по ssh, — берём известный адрес.
+    expect(parseAgentBridgeRouteAnswer('REPO: https://host/team/back', known)).toBe('git@host:team/back.git');
     expect(parseAgentBridgeRouteAnswer('Спросил человека.\nREPO: ?', known)).toBeNull();
     expect(parseAgentBridgeRouteAnswer('REPO: mobile', known)).toBeNull();
     expect(agentBridgeResultText(JSON.stringify({ result: 'REPO: back', type: 'result' }))).toBe('REPO: back');

@@ -1,7 +1,7 @@
 'use client';
 
 import type { AgentBridgeFinishedRun } from '@/lib/agentSessions/agentBridge';
-import type { AgentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
+import type { AgentBridgeRepoSettings, AgentBridgeRunTarget } from '@/lib/agentSessions/agentBridgeDev';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -11,7 +11,9 @@ import {
   AGENT_BRIDGE_DEFAULT_URL,
   fetchAgentBridgeHealth,
   fetchAgentBridgeFileDiff,
+  chooseAgentBridgeLocalCopy,
   fetchAgentBridgeRepos,
+  forgetAgentBridgeLocalCopy,
   forgetAgentBridgeRepo,
   fetchAgentBridgeWorkspace,
   pushAgentBridgeBranch,
@@ -94,7 +96,10 @@ export function useAgentBridge() {
 
 const REPOS_QUERY_KEY = ['agentBridge', 'repos'] as const;
 
-/** Какие репозитории мост запомнил за очередями задач (Настройки → Агент) и «забыть». */
+/**
+ * Какие репозитории мост запомнил за очередями задач (Настройки → Агент): «забыть» репозиторий,
+ * выбрать папку с его клоном (диалог открывает мост) или перестать её использовать.
+ */
 export function useAgentBridgeRepos(alive: boolean) {
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -103,11 +108,20 @@ export function useAgentBridgeRepos(alive: boolean) {
     queryKey: REPOS_QUERY_KEY,
     retry: false,
   });
+  const update = { onSuccess: (data: AgentBridgeRepoSettings) => queryClient.setQueryData(REPOS_QUERY_KEY, data) };
   const forget = useMutation({
     mutationFn: ({ queue, url }: { queue: string; url: string }) => forgetAgentBridgeRepo(AGENT_BRIDGE_DEFAULT_URL, queue, url),
-    onSuccess: (data) => queryClient.setQueryData(REPOS_QUERY_KEY, data),
+    ...update,
   });
-  return { data: query.data ?? null, forget: forget.mutate, forgetting: forget.isPending };
+  const chooseLocal = useMutation({ mutationFn: (url: string) => chooseAgentBridgeLocalCopy(AGENT_BRIDGE_DEFAULT_URL, url), ...update });
+  const forgetLocal = useMutation({ mutationFn: (url: string) => forgetAgentBridgeLocalCopy(AGENT_BRIDGE_DEFAULT_URL, url), ...update });
+  return {
+    busy: forget.isPending || chooseLocal.isPending || forgetLocal.isPending,
+    chooseLocal: chooseLocal.mutateAsync,
+    data: query.data ?? null,
+    forget: forget.mutate,
+    forgetLocal: forgetLocal.mutate,
+  };
 }
 
 /**
