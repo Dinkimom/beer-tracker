@@ -63,6 +63,7 @@ export const reactionKeywordsRu = {
   kiss: 'поцелуй',
   laptop: 'ноутбук',
   laugh: 'хохот',
+  loader: 'лоадер спиннер загрузка в работе',
   lock: 'замок',
   map: 'карта',
   memo: 'заметка',

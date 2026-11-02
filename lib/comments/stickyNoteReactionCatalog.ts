@@ -190,6 +190,7 @@ const SYMBOLS: CatalogEntry[] = [
   e('💯', 'hundred'),
   e('✨', 'sparkles'),
   e('➕', 'plus'),
+  e('🔄', 'loader'),
   e('⚠️', 'warning'),
   e('❌', 'cross'),
   e('❓', 'question'),

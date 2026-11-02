@@ -23,7 +23,7 @@ import {
 
 describe('stickyNoteReaction', () => {
   it('lists the Miro quick-reaction row', () => {
-    expect(STICKY_NOTE_QUICK_REACTION_EMOJIS).toEqual(['➕', '👍', '❤️', '🔥', '✅', '🚀']);
+    expect(STICKY_NOTE_QUICK_REACTION_EMOJIS).toEqual(['➕', '👍', '❤️', '🔥', '✅', '🔄', '🚀']);
     expect(STICKY_NOTE_CHECKMARK_REACTION_EMOJI).toBe('✅');
   });
 

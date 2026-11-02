@@ -5,7 +5,7 @@
 
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
-export const STICKY_NOTE_QUICK_REACTION_EMOJIS = ['➕', '👍', '❤️', '🔥', '✅', '🚀'] as const;
+export const STICKY_NOTE_QUICK_REACTION_EMOJIS = ['➕', '👍', '❤️', '🔥', '✅', '🔄', '🚀'] as const;
 
 /** Галка из быстрого ряда: побочное действие — покрасить заметку в зелёный. */
 export const STICKY_NOTE_CHECKMARK_REACTION_EMOJI = '✅';

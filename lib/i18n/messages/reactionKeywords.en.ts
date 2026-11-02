@@ -63,6 +63,7 @@ export const reactionKeywordsEn = {
   kiss: 'kiss',
   laptop: 'laptop',
   laugh: 'laugh squint',
+  loader: 'loader spinner loading progress',
   lock: 'lock',
   map: 'map',
   memo: 'memo note',
