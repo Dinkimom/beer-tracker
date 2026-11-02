@@ -1157,8 +1157,10 @@ html.dark .sprint-card-presence-changing::after {
   background: rgb(255 255 255 / 0.1);
 }
 
+/* Бумага в тёмной теме насыщенная: синий на ней не читается, упоминание — чернилами листа. */
 .dark .sticky-note-rich-editor [data-note-mention] {
-  color: rgb(147 197 253);
+  font-weight: 700;
+  color: inherit;
 }
 
 .sticky-note-paper {

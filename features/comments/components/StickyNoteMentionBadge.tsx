@@ -9,7 +9,8 @@ export function StickyNoteMentionBadge({ isDragging, name }: StickyNoteMentionBa
   return (
     <span
       className={[
-        'font-medium text-blue-700 dark:text-blue-300',
+        // В тёмной теме бумага насыщенная — синий на ней не читается, берём чернила листа.
+        'font-medium text-blue-700 dark:font-bold dark:text-inherit',
         isDragging ? 'pointer-events-none' : '',
       ]
         .filter(Boolean)
