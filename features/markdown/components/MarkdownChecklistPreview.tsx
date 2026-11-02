@@ -73,13 +73,9 @@ function renderMarkdownCheckboxLine(
   const checkboxSizeClass = 'h-3.5 w-3.5';
   const checkboxAlignClass = variant === 'card' ? 'mt-0.5' : 'mt-px';
 
+  // Нажатие гасит только сам чекбокс: за текст пункта карточку можно тащить, как за тело заметки.
   return (
-    <label
-      key={lineIndex}
-      className={`flex items-start gap-1.5 ${resolveLineItemPaddingClass(variant)} ${editable ? 'cursor-pointer' : ''}`}
-      onMouseDown={editable ? stopCardPointerBubble : undefined}
-      onPointerDown={editable ? stopCardPointerBubble : undefined}
-    >
+    <div key={lineIndex} className={`flex items-start gap-1.5 ${resolveLineItemPaddingClass(variant)}`}>
       <input
         checked={checkbox.checked}
         className={`${checkboxAlignClass} shrink-0 accent-blue-600 dark:accent-blue-500 ${checkboxSizeClass} ${
@@ -95,12 +91,14 @@ function renderMarkdownCheckboxLine(
               }
             : undefined
         }
+        onMouseDown={editable ? stopCardPointerBubble : undefined}
+        onPointerDown={editable ? stopCardPointerBubble : undefined}
       />
       {/* В тёмной теме бумага насыщенная — серый на ней не читается, приглушаем чернила листа. */}
       <span className={checkbox.checked ? 'text-gray-500 line-through dark:text-inherit dark:opacity-60' : ''}>
         {renderStickyNoteInlineText(checkbox.text, isDragging)}
       </span>
-    </label>
+    </div>
   );
 }
 

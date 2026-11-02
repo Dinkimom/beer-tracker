@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { MarkdownChecklistPreview } from './MarkdownChecklistPreview';
 
@@ -51,5 +51,29 @@ describe('MarkdownChecklistPreview', () => {
     expect(strong?.textContent).not.toContain('**');
     expect(container.querySelector('code')?.textContent).toBe('v2');
     expect(container.querySelector('s')?.textContent).toBe('later');
+  });
+
+  it('lets pointer down on checklist text reach the card, but not on the checkbox', () => {
+    const onCardPointerDown = vi.fn();
+    const onMarkdownChange = vi.fn();
+    const { container } = render(
+      <div onPointerDown={onCardPointerDown}>
+        <MarkdownChecklistPreview
+          markdown="- [ ] drag me"
+          variant="card"
+          onMarkdownChange={onMarkdownChange}
+        />
+      </div>
+    );
+
+    fireEvent.pointerDown(within(container).getByText('drag me'));
+    expect(onCardPointerDown).toHaveBeenCalledTimes(1);
+
+    const checkbox = within(container).getByRole('checkbox');
+    fireEvent.pointerDown(checkbox);
+    expect(onCardPointerDown).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(checkbox);
+    expect(onMarkdownChange).toHaveBeenCalledWith('- [x] drag me');
   });
 });
