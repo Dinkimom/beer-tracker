@@ -96,7 +96,8 @@ function renderMarkdownCheckboxLine(
             : undefined
         }
       />
-      <span className={checkbox.checked ? 'text-gray-500 line-through dark:text-gray-400' : ''}>
+      {/* В тёмной теме бумага насыщенная — серый на ней не читается, приглушаем чернила листа. */}
+      <span className={checkbox.checked ? 'text-gray-500 line-through dark:text-inherit dark:opacity-60' : ''}>
         {renderStickyNoteInlineText(checkbox.text, isDragging)}
       </span>
     </label>

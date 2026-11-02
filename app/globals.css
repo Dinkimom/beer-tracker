@@ -1149,8 +1149,10 @@ html.dark .sprint-card-presence-changing::after {
   accent-color: rgb(59 130 246);
 }
 
+/* Как у упоминаний: на насыщенной бумаге серый не читается — приглушённые чернила листа. */
 .dark .sticky-note-rich-editor ul[data-type='taskList'] > li[data-checked='true'] > div {
-  color: rgb(156 163 175);
+  color: inherit;
+  opacity: 0.6;
 }
 
 .dark .sticky-note-rich-editor code {
