@@ -10,8 +10,8 @@
  *   AGENT_BRIDGE_CLAUDE_BIN  — путь к CLI (default: claude из PATH, иначе из расширения VS Code / Cursor)
  *   AGENT_BRIDGE_TIMEOUT_MIN — лимит одного запуска (default 10)
  *   AGENT_BRIDGE_MODEL       — модель CLI (default sonnet; opus — дороже раза в два)
- *   AGENT_BRIDGE_CONFIG      — файл моста (default ~/.beer-tracker/agent-bridge.json): какие репозитории у
- *                              каких очередей задач (адрес мост узнаёт в чате); клоны — в repos/ рядом (`repoConfig.ts`)
+ *   AGENT_BRIDGE_CONFIG      — файл моста (default ~/.beer-tracker/agent-bridge.json): репозитории агента
+ *                              (из чата и Настроек → Агент); клоны — в repos/ рядом (`repoConfig.ts`)
  *   AGENT_BRIDGE_DEV_TIMEOUT_MIN — лимит одного прогона сессии разработки (default 60)
  *   AGENT_BRIDGE_MAX_PARALLEL — сколько агентов работает одновременно (default 2); остальные ждут в очереди
  *
@@ -49,7 +49,6 @@ import {
   agentBridgeRepoNames,
   agentBridgeResultText,
   agentBridgeRouteClaudeArgs,
-  agentBridgeTaskQueue,
   isAgentBridgeTaskKey,
   parseAgentBridgeRemote,
   parseAgentBridgeRouteAnswer,
@@ -59,6 +58,7 @@ import {
   devFileDiff,
   devWorkspace,
   ensureClone,
+  historyMentions,
   isClaudeAiConnector,
   mcpConfigFor,
   prepareWorktree,
@@ -67,10 +67,12 @@ import {
   rememberDevSession,
 } from './devWorkspace';
 import {
+  addRepoFromFolder,
   announceRepos,
   chooseLocalCopy,
   forgetLocalCopy,
   forgetRepo,
+  historyDir,
   knownRepos,
   localCopy,
   rememberRepo,
@@ -225,19 +227,28 @@ function runCli(sessionId: string, state: RunState, run: CliRun): Promise<string
 }
 
 /**
- * Адрес репозитория сессии разработки: запомненный по сессии, единственный у очереди задачи или
- * выбранный агентом в коротком прогоне — из известных или по адресу, который человек прислал в чате.
- * null — агент спросил человека: ответ запустит снова.
+ * Адрес репозитория сессии разработки: запомненный по сессии; единственный у агента; тот, в истории
+ * которого уже есть коммиты по этой задаче; иначе выбор агентом в коротком прогоне — по истории
+ * связанных задач, по брифу или по адресу, который человек прислал в чате. null — агент спросил
+ * человека: ответ запустит снова.
  */
 async function resolveRepo(sessionId: string, mcpServer: string, taskKey: string, state: RunState): Promise<string | null> {
-  const queue = agentBridgeTaskQueue(taskKey);
-  const repos = knownRepos(queue);
   const remembered = readDevSession(sessionId).remote;
   if (remembered) {
     return remembered;
   }
+  const repos = knownRepos();
   if (repos.length === 1) {
     return repos[0] ?? null;
+  }
+  const histories = repos.map((url) => ({ history: historyDir(url), url }));
+  const started = await Promise.all(
+    histories.map(async ({ history, url }) => (history && (await historyMentions(history, taskKey)) ? url : null))
+  );
+  const byHistory = started.filter((url): url is string => url != null);
+  if (byHistory.length === 1) {
+    log(sessionId, `репозиторий по истории задачи: ${byHistory[0]}`);
+    return byHistory[0] ?? null;
   }
   const names = agentBridgeRepoNames(repos);
   const repo = parseAgentBridgeRouteAnswer(
@@ -245,7 +256,7 @@ async function resolveRepo(sessionId: string, mcpServer: string, taskKey: string
       args: agentBridgeRouteClaudeArgs({
         mcpServer,
         model,
-        repos: repos.map((url) => ({ name: names.get(url) ?? url, url })),
+        repos: histories.map(({ history, url }) => ({ history, name: names.get(url) ?? url, url })),
         sessionId,
         taskKey,
       }),
@@ -272,7 +283,7 @@ async function runDevSession(sessionId: string, mcpServer: string, taskKey: stri
   });
   state.percent = undefined;
   state.detail = undefined;
-  rememberRepo(agentBridgeTaskQueue(taskKey), remote);
+  rememberRepo(remote);
   const memory = readDevSession(sessionId);
   // Разговор CLI живёт в своём репозитории: сменился репозиторий — начинаем заново.
   const resumeId = memory.repo === repo ? (memory.cliSessionId ?? null) : null;
@@ -390,7 +401,7 @@ function send(response: ServerResponse, status: number, origin: string, body?: u
   response.end(body === undefined ? undefined : JSON.stringify(body));
 }
 
-/** Тело POST /run: сессия, у сессии разработки — ключ задачи (репозиторий мост найдёт по очереди). */
+/** Тело POST /run: сессия, у сессии разработки — ключ задачи (репозиторий мост выберет по задаче). */
 function parseRunRequest(body: string): { error: string } | { sessionId: string; taskKey?: string } {
   const { sessionId, taskKey } = JSON.parse(body) as { sessionId?: unknown; taskKey?: unknown };
   if (!isAgentSessionId(sessionId)) {
@@ -427,10 +438,14 @@ const routes: Readonly<Record<string, Route>> = {
     requestRun(run.sessionId, mcpServer, run.taskKey);
     send(response, 202, origin, { ok: true });
   },
-  // Настройки → Агент в планере: какие репозитории мост запомнил за очередями задач.
+  // Настройки → Агент в планере: репозитории агента.
   'GET /repos': (_request, response, origin) => send(response, 200, origin, repoSettings()),
-  'DELETE /repos': (_request, response, origin, _mcpServer, query) =>
-    send(response, 200, origin, forgetRepo(query.get('queue') ?? '', query.get('url') ?? '')),
+  'DELETE /repos': (_request, response, origin, _mcpServer, query) => send(response, 200, origin, forgetRepo(query.get('url') ?? '')),
+  // «Добавить папку»: системный диалог, адрес — из origin выбранного клона.
+  'POST /repos/add': async (_request, response, origin) => {
+    const result = await addRepoFromFolder();
+    send(response, 'error' in result ? 400 : 200, origin, result);
+  },
   // «Выбрать папку» с клоном: системный диалог на этой машине, путь из браузера не принимаем.
   'POST /repos/local': async (request, response, origin) => {
     const { url } = JSON.parse(await readBody(request)) as { url?: unknown };

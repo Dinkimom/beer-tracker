@@ -11,6 +11,7 @@ import {
   AGENT_BRIDGE_DEFAULT_URL,
   fetchAgentBridgeHealth,
   fetchAgentBridgeFileDiff,
+  addAgentBridgeRepoFromFolder,
   chooseAgentBridgeLocalCopy,
   fetchAgentBridgeRepos,
   forgetAgentBridgeLocalCopy,
@@ -97,8 +98,8 @@ export function useAgentBridge() {
 const REPOS_QUERY_KEY = ['agentBridge', 'repos'] as const;
 
 /**
- * Какие репозитории мост запомнил за очередями задач (Настройки → Агент): «забыть» репозиторий,
- * выбрать папку с его клоном (диалог открывает мост) или перестать её использовать.
+ * Репозитории агента в мосте (Настройки → Агент): добавить из папки с клоном, «забыть», выбрать
+ * папку с клоном для первого клона (диалоги открывает мост) или перестать её использовать.
  */
 export function useAgentBridgeRepos(alive: boolean) {
   const queryClient = useQueryClient();
@@ -109,14 +110,13 @@ export function useAgentBridgeRepos(alive: boolean) {
     retry: false,
   });
   const update = { onSuccess: (data: AgentBridgeRepoSettings) => queryClient.setQueryData(REPOS_QUERY_KEY, data) };
-  const forget = useMutation({
-    mutationFn: ({ queue, url }: { queue: string; url: string }) => forgetAgentBridgeRepo(AGENT_BRIDGE_DEFAULT_URL, queue, url),
-    ...update,
-  });
+  const forget = useMutation({ mutationFn: (url: string) => forgetAgentBridgeRepo(AGENT_BRIDGE_DEFAULT_URL, url), ...update });
+  const add = useMutation({ mutationFn: () => addAgentBridgeRepoFromFolder(AGENT_BRIDGE_DEFAULT_URL), ...update });
   const chooseLocal = useMutation({ mutationFn: (url: string) => chooseAgentBridgeLocalCopy(AGENT_BRIDGE_DEFAULT_URL, url), ...update });
   const forgetLocal = useMutation({ mutationFn: (url: string) => forgetAgentBridgeLocalCopy(AGENT_BRIDGE_DEFAULT_URL, url), ...update });
   return {
-    busy: forget.isPending || chooseLocal.isPending || forgetLocal.isPending,
+    add: add.mutateAsync,
+    busy: forget.isPending || add.isPending || chooseLocal.isPending || forgetLocal.isPending,
     chooseLocal: chooseLocal.mutateAsync,
     data: query.data ?? null,
     forget: forget.mutate,

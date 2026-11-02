@@ -11,13 +11,12 @@ import {
   agentBridgeResultText,
   agentBridgeRouteClaudeArgs,
   agentBridgeRunTarget,
-  agentBridgeTaskQueue,
   agentBridgeOriginFromGitConfig,
   isAgentBridgeTaskKey,
-  parseAgentBridgeKnownRepos,
   parseAgentBridgeLocalCopies,
   parseAgentBridgeNumstat,
   parseAgentBridgeRemote,
+  parseAgentBridgeRemotes,
   parseAgentBridgeRouteAnswer,
 } from './agentBridgeDev';
 
@@ -34,7 +33,6 @@ describe('agentBridgeDev', () => {
     expect(isAgentBridgeTaskKey('../RND-1')).toBe(false);
     expect(isAgentBridgeTaskKey('rnd-1')).toBe(false);
     expect(isAgentBridgeTaskKey('RND-1; rm -rf')).toBe(false);
-    expect(agentBridgeTaskQueue('MY_Q2-7')).toBe('MY_Q2');
   });
 
   it('builds the merge request link from the origin remote', () => {
@@ -101,17 +99,14 @@ describe('agentBridgeDev', () => {
     expect(parseAgentBridgeLocalCopies(null)).toEqual({});
   });
 
-  it('reads remembered repositories per queue and drops broken entries', () => {
+  it('keeps one list of repositories, carrying over the per-queue file of the previous version', () => {
+    expect(parseAgentBridgeRemotes({ remotes: ['git@host:team/back.git', 'git@host:team/back.git', '/local/path'] })).toEqual([
+      'git@host:team/back.git',
+    ]);
     expect(
-      parseAgentBridgeKnownRepos({
-        queues: {
-          RND: ['git@host:team/back.git', 'git@host:team/back.git', '/local/path'],
-          bad: ['git@host:team/web.git'],
-          WEB: [],
-        },
-      })
-    ).toEqual({ RND: ['git@host:team/back.git'] });
-    expect(parseAgentBridgeKnownRepos('garbage')).toEqual({});
+      parseAgentBridgeRemotes({ queues: { BACK: ['git@host:team/back.git'], RND: ['git@host:team/back.git', 'git@host:team/web.git'] } })
+    ).toEqual(['git@host:team/back.git', 'git@host:team/web.git']);
+    expect(parseAgentBridgeRemotes('garbage')).toEqual([]);
   });
 
   it('names repositories by path, adding the group when names clash', () => {
@@ -124,16 +119,22 @@ describe('agentBridgeDev', () => {
       mcpServer: 'bt',
       model: 'sonnet',
       repos: [
-        { name: 'back', url: 'git@host:team/back.git' },
-        { name: 'web', url: 'git@host:team/web.git' },
+        { history: '/Users/me/.beer-tracker/repos/host/team/back', name: 'back', url: 'git@host:team/back.git' },
+        { history: '/Users/me/My Code/web', name: 'web', url: 'git@host:team/web.git' },
+        { history: null, name: 'mobile', url: 'git@host:team/mobile.git' },
       ],
       sessionId: SESSION_ID,
       taskKey: 'RND-1641',
     });
-    expect(args[args.indexOf('--tools') + 1]).toBe('ToolSearch');
+    expect(args[args.indexOf('--tools') + 1]).toBe('ToolSearch,Bash');
     expect(args).not.toContain('--add-dir');
-    expect(args[args.indexOf('--allowedTools') + 1]).not.toContain('Edit');
-    expect(args[1]).toContain('back: git@host:team/back.git');
+    const allowed = args[args.indexOf('--allowedTools') + 1].split(',');
+    // Bash — только git log по папкам истории; папка с пробелом сломала бы правило — её нет.
+    expect(allowed.filter((tool) => tool.startsWith('Bash'))).toEqual(['Bash(git -C /Users/me/.beer-tracker/repos/host/team/back log:*)']);
+    expect(allowed).not.toContain('Edit');
+    expect(args[1]).toContain('back: git@host:team/back.git (история: git -C /Users/me/.beer-tracker/repos/host/team/back log)');
+    expect(args[1]).toContain('web: git@host:team/web.git (истории на диске нет)');
+    expect(args[1]).toContain('--grep');
     const known = new Map([
       ['git@host:team/back.git', 'back'],
       ['git@host:team/web.git', 'web'],
@@ -149,9 +150,10 @@ describe('agentBridgeDev', () => {
     expect(agentBridgeResultText(JSON.stringify({ type: 'assistant' }))).toBeNull();
   });
 
-  it('asks the person for the address when the queue has no repository yet', () => {
+  it('asks the person for the address when the agent knows no repository yet', () => {
     const args = agentBridgeRouteClaudeArgs({ mcpServer: 'bt', model: 'sonnet', repos: [], sessionId: SESSION_ID, taskKey: 'OPS-7' });
-    expect(args[1]).toContain('очереди OPS');
+    expect(args[args.indexOf('--tools') + 1]).toBe('ToolSearch');
+    expect(args[1]).toContain('Ни одного репозитория');
     expect(args[1]).toContain('git clone');
   });
 

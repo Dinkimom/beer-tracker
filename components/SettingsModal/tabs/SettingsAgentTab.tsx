@@ -1,22 +1,31 @@
 'use client';
 
+import { useState } from 'react';
+
+import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentBridge, useAgentBridgeRepos } from '@/features/swimlane/hooks/useAgentBridge';
 
-import { AgentBridgeRepoItem } from '../components/AgentBridgeRepoItem';
+import { AgentBridgeRepoItem, localFolderErrorText } from '../components/AgentBridgeRepoItem';
 import { Toggle } from '../components/Toggle';
 
 /**
  * Настройки агента: локальный мост к Claude CLI (на связи ли, запускать ли его сразу при отправке)
- * и репозитории, которые мост запомнил за очередями задач. Настраивать их не нужно: адрес мост
- * спрашивает в чате при первой задаче очереди и клонирует сам; здесь — посмотреть, забыть и указать
- * папку с уже готовым клоном, чтобы первый клон не качал всё из сети.
+ * и репозитории агента — общий список: в каком делать задачу, мост решает по самой задаче (история
+ * связанных задач, бриф), а не по проекту трекера. Список пополняется адресом из чата или «Добавить
+ * папку» с готовым клоном; здесь же — забыть и указать папку с клоном для первого клона.
  */
 export function SettingsAgentTab() {
   const { t } = useI18n();
   const bridge = useAgentBridge();
   const repos = useAgentBridgeRepos(bridge.alive);
-  const queues = repos.data?.queues ?? [];
+  const list = repos.data?.repos ?? [];
+  const [addError, setAddError] = useState('');
+
+  const add = () => {
+    setAddError('');
+    repos.add().catch((reason: unknown) => setAddError(localFolderErrorText(t, reason)));
+  };
 
   let bridgeStatus = t('settings.agentTab.bridgeOff');
   if (bridge.enabled && !bridge.checking) {
@@ -24,25 +33,33 @@ export function SettingsAgentTab() {
   }
 
   let reposBody = <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.agentTab.reposOffline')}</p>;
-  if (bridge.alive && queues.length === 0) {
-    reposBody = <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.agentTab.empty')}</p>;
-  } else if (bridge.alive) {
+  if (bridge.alive) {
     reposBody = (
-      <ul className="space-y-1.5">
-        {queues.flatMap(({ queue, repos: list }) =>
-          list.map((repo) => (
-            <AgentBridgeRepoItem
-              key={`${queue} ${repo.url}`}
-              busy={repos.busy}
-              queue={queue}
-              repo={repo}
-              onChooseLocal={repos.chooseLocal}
-              onForget={() => repos.forget({ queue, url: repo.url })}
-              onForgetLocal={repos.forgetLocal}
-            />
-          ))
+      <>
+        {list.length > 0 ? (
+          <ul className="space-y-1.5">
+            {list.map((repo) => (
+              <AgentBridgeRepoItem
+                key={repo.url}
+                busy={repos.busy}
+                repo={repo}
+                onChooseLocal={repos.chooseLocal}
+                onForget={() => repos.forget(repo.url)}
+                onForgetLocal={repos.forgetLocal}
+              />
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.agentTab.empty')}</p>
         )}
-      </ul>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button disabled={repos.busy} type="button" variant="secondary" onClick={add}>
+            {t('settings.agentTab.add')}
+          </Button>
+          <span className="text-xs text-ds-text-muted">{t('settings.agentTab.addHint')}</span>
+        </div>
+        {addError ? <p className="text-xs text-red-600 dark:text-red-400">{addError}</p> : null}
+      </>
     );
   }
 

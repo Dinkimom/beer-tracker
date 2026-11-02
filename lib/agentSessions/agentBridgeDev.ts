@@ -18,18 +18,8 @@ export function isAgentBridgeTaskKey(value: unknown): value is string {
   return typeof value === 'string' && TASK_KEY_RE.test(value);
 }
 
-export function agentBridgeTaskQueue(taskKey: string): string {
-  return taskKey.slice(0, taskKey.lastIndexOf('-'));
-}
-
 export function agentBridgeDevBranch(taskKey: string): string {
   return `agent/${taskKey}`;
-}
-
-const QUEUE_RE = /^[A-Z][A-Z0-9_]*$/;
-
-function isAgentBridgeQueue(value: unknown): value is string {
-  return typeof value === 'string' && QUEUE_RE.test(value);
 }
 
 /** `git@host:group/app.git` — короткая запись ssh. */
@@ -95,12 +85,6 @@ export function agentBridgeRemoteVariants(url: string): string[] {
 }
 
 /**
- * Что мост запомнил: в каких репозиториях делают задачи очереди. У очереди бывает несколько
- * репозиториев (бэкенд, веб, мобилка); адрес мост узнаёт у человека в чате при первой задаче очереди.
- */
-export type AgentBridgeKnownRepos = Record<string, string[]>;
-
-/**
  * Клон репозитория, который уже есть на диске: из него мост копирует историю при первом клоне
  * (`git clone --reference … --dissociate`) — минуты вместо получаса у большого репозитория.
  * `found` — мост нашёл сам по `origin`, `chosen` — человек выбрал папку в настройках.
@@ -111,14 +95,11 @@ interface AgentBridgeLocalCopy {
 }
 
 /**
- * Что мост помнит, для Настроек → Агент: очереди и их репозитории; `cloned` — клон уже в кэше,
- * `local` — откуда взять историю для первого клона.
+ * Репозитории агента для Настроек → Агент: `cloned` — клон уже в кэше моста, `local` — откуда взять
+ * историю для первого клона.
  */
 export interface AgentBridgeRepoSettings {
-  queues: Array<{
-    queue: string;
-    repos: Array<{ cloned: boolean; local: AgentBridgeLocalCopy | null; name: string; url: string }>;
-  }>;
+  repos: Array<{ cloned: boolean; local: AgentBridgeLocalCopy | null; name: string; url: string }>;
 }
 
 /** Выбранные человеком локальные копии из файла моста: папка клона в кэше → абсолютный путь. */
@@ -150,20 +131,16 @@ export function agentBridgeOriginFromGitConfig(text: string): string | null {
   return null;
 }
 
-/** Файл моста; битые очереди и адреса пропускаем. */
-export function parseAgentBridgeKnownRepos(raw: unknown): AgentBridgeKnownRepos {
-  const queues = (raw as { queues?: unknown } | null)?.queues;
-  if (!queues || typeof queues !== 'object') {
-    return {};
-  }
-  const known: AgentBridgeKnownRepos = {};
-  for (const [queue, urls] of Object.entries(queues)) {
-    const valid = Array.isArray(urls) ? urls.filter((url) => parseAgentBridgeRemote(url) != null) : [];
-    if (isAgentBridgeQueue(queue) && valid.length > 0) {
-      known[queue] = [...new Set(valid as string[])];
-    }
-  }
-  return known;
+/**
+ * Репозитории агента из файла моста: общий список, без привязки к проектам трекера — где делать
+ * задачу, решается по самой задаче. Файл прошлой версии (`queues: {RND: [...]}`) — объединением.
+ * Битые адреса пропускаем.
+ */
+export function parseAgentBridgeRemotes(raw: unknown): string[] {
+  const file = raw as { queues?: unknown; remotes?: unknown } | null;
+  const queues = file?.queues && typeof file.queues === 'object' ? Object.values(file.queues).flat() : [];
+  const list = Array.isArray(file?.remotes) ? file.remotes : queues;
+  return [...new Set(list.filter((url): url is string => parseAgentBridgeRemote(url) != null))];
 }
 
 /** Как агент и человек зовут репозиторий: последняя часть пути, при совпадении — с группой. */
@@ -300,43 +277,71 @@ export function agentBridgeDevClaudeArgs(input: {
 
 const ROUTE_ANSWER_RE = /REPO:\s*(\S+)\s*$/;
 
+/** Репозиторий в прогоне выбора: имя, адрес и папка с его историей (клон или локальная копия). */
+interface AgentBridgeRouteRepo {
+  /** Где смотреть `git log`; null — истории на диске пока нет. */
+  history: string | null;
+  name: string;
+  url: string;
+}
+
+/** Папка истории попадает в правило `Bash(git -C <папка> log:*)`: пробелы, запятые и скобки его ломают. */
+const HISTORY_PATH_RE = /^\/[\w./-]+$/;
+
+const historyOf = (repo: AgentBridgeRouteRepo) => (repo.history && HISTORY_PATH_RE.test(repo.history) ? repo.history : null);
+
+function routeRepoLine(repo: AgentBridgeRouteRepo): string {
+  const path = historyOf(repo);
+  const history = path ? `история: git -C ${path} log` : 'истории на диске нет';
+  return `- ${repo.name}: ${repo.url} (${history})`;
+}
+
 /**
- * Прогон выбора репозитория: у очереди задачи их несколько или мост ещё не знает ни одного. Только
- * чтение — бриф задачи и переписка сессии. Ответ — последней строкой `REPO: <имя>` из известных или
- * `REPO: <адрес для git clone>`, который человек прислал в чате; не понять — агент спрашивает
- * человека и отвечает `REPO: ?`.
+ * Прогон выбора репозитория. Сначала история: ключи связанных задач (эпик, связи, соседи по фиче)
+ * агент ищет в `git log` репозиториев — где коммитили соседей, там и эта задача. Не помогло — по
+ * брифу. Ответ — последней строкой `REPO: <имя>` или `REPO: <адрес для git clone>`, который человек
+ * прислал в чате; не понять — агент спрашивает человека и отвечает `REPO: ?`. Bash — только
+ * `git -C <папка истории> log`.
  */
 export function agentBridgeRouteClaudeArgs(input: {
   mcpServer: string;
   model: string;
-  repos: ReadonlyArray<{ name: string; url: string }>;
+  repos: readonly AgentBridgeRouteRepo[];
   sessionId: string;
   taskKey: string;
 }): string[] {
   const tool = (name: string) => `mcp__${input.mcpServer}__${name}`;
+  const histories = input.repos.flatMap((repo) => historyOf(repo) ?? []);
   const known =
     input.repos.length > 0
-      ? [`Задачи очереди ${agentBridgeTaskQueue(input.taskKey)} делают в репозиториях:`, ...input.repos.map((repo) => `- ${repo.name}: ${repo.url}`)]
-      : [`Где делают задачи очереди ${agentBridgeTaskQueue(input.taskKey)}, пока неизвестно.`];
+      ? ['Репозитории агента:', ...input.repos.map(routeRepoLine)]
+      : ['Ни одного репозитория агент пока не знает.'];
   const prompt = [
     `Нужно понять, в каком репозитории делать задачу ${input.taskKey} из сессии разработки ${input.sessionId} в Beer Tracker.`,
     ...known,
     `Из тулов Beer Tracker используй только mcp__${input.mcpServer}__*. Прочитай get_task_brief(issueKey: "${input.taskKey}") и переписку get_agent_session — человек мог уже ответить, где делать.`,
+    'Сначала история: собери ключи связанных задач из брифа (родитель и эпик, связи трекера, dependsOn / blocks, соседи по фиче) и поищи их в истории репозиториев — `git -C <папка> log --all --oneline -E -i --grep=КЛЮЧ1 --grep=КЛЮЧ2 -n 5`. Где коммитили соседей, там обычно и эта задача.',
+    'История не помогла — решай по брифу: описание, компоненты, ссылки на файлы, MR и страницы.',
     'Последней строкой ответа напиши ровно `REPO: <имя из списка>` или `REPO: <адрес>`, если человек прислал в переписке адрес репозитория для git clone (git@…, ssh://… или https://…).',
-    'Если понять нельзя — спроси человека через reply_agent_session(sessionId, message): пусть выберет из списка (options — имена) или пришлёт адрес репозитория для git clone; последней строкой напиши `REPO: ?`.',
+    'Если уверенно выбрать нельзя — спроси человека через reply_agent_session(sessionId, message): пусть выберет из списка (options — имена) или пришлёт адрес репозитория для git clone; последней строкой напиши `REPO: ?`.',
   ].join('\n');
+  const builtIn = histories.length > 0 ? ['ToolSearch', 'Bash'] : ['ToolSearch'];
   return [
     '-p',
     prompt,
     '--model',
     input.model,
     '--tools',
-    'ToolSearch',
+    builtIn.join(','),
     '--output-format',
     'stream-json',
     '--verbose',
     '--allowedTools',
-    ['ToolSearch', ...['get_agent_session', 'get_task_brief', 'reply_agent_session'].map(tool)].join(','),
+    [
+      'ToolSearch',
+      ...histories.map((path) => `Bash(git -C ${path} log:*)`),
+      ...['get_agent_session', 'get_task_brief', 'reply_agent_session'].map(tool),
+    ].join(','),
   ];
 }
 

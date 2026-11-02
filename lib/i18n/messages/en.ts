@@ -177,9 +177,11 @@ export const enMessages = {
       bridgeOff: 'Off: requests are picked up by the agent in your AI chat',
       reposSection: 'Repositories for tasks',
       reposHint:
-        'The bridge works on development tasks in its own clones: it asks for the repository address in the chat on the first task of a queue and clones it from then on. The agent works on agent/<key>, sets up the environment and checks by the project\'s own rules, commits, and never pushes.',
+        'The agent picks the repository from the task itself: where related tasks were committed and what the description says. If none fits, it asks for the address in the chat. The bridge keeps its own clones: the agent works on agent/<key>, sets up the environment and checks by the project\'s own rules, commits, and never pushes.',
       reposOffline: 'Start the bridge to see the repositories.',
-      empty: 'None yet — the bridge asks for the address on the first development task.',
+      empty: 'None yet — add a folder with a clone or send the address to the agent in the chat.',
+      add: 'Add folder',
+      addHint: 'A folder with a git clone: the bridge takes the address from origin and the history for the first clone.',
       notCloned: 'not cloned yet',
       forget: 'Forget',
       localCopy: 'History for the first clone — from {path} ({source})',
@@ -190,6 +192,7 @@ export const enMessages = {
       localChoose: 'Choose folder',
       localForget: 'Stop using',
       localErrors: {
+        noOrigin: 'The repository in {path} has no origin, so there is nothing to clone from',
         notAGitRepo: 'No git repository in {path}',
         otherRepo: 'This folder holds another repository: {repo}',
         pickerUnavailable: 'The bridge cannot open a folder dialog on this system (needs macOS or zenity on Linux)',

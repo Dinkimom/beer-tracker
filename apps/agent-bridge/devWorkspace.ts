@@ -155,6 +155,23 @@ export async function ensureClone(url: string, onProgress: (percent: number) => 
 }
 
 /**
+ * Есть ли в истории репозитория коммиты по задаче: ключ целиком (`RND-16` не совпадёт с `RND-1641`),
+ * во всех ветках. Так задача, которую уже начинали, сразу идёт в свой репозиторий — без модели.
+ */
+export async function historyMentions(dir: string, taskKey: string): Promise<boolean> {
+  try {
+    const { stdout } = await execFileAsync(
+      gitBin,
+      ['-C', dir, 'log', '--all', '-E', '-i', '-1', '--format=%h', `--grep=${taskKey}([^0-9]|$)`],
+      { timeout: 60_000 }
+    );
+    return stdout.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Что мост помнит о сессии разработки: выбранный репозиторий (адрес и папку клона) и разговор CLI
  * в нём.
  */

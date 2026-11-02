@@ -1,6 +1,8 @@
 /**
- * В каких репозиториях делают задачи очереди: мост узнаёт адрес у человека в чате при первой задаче
- * очереди и запоминает в `~/.beer-tracker/agent-bridge.json` (или `AGENT_BRIDGE_CONFIG`). Клоны лежат
+ * Репозитории агента — общий список, без привязки к проектам трекера: в каком делать задачу, мост
+ * решает по самой задаче. Список пополняется адресом из чата (агент не нашёл подходящий и спросил)
+ * или «Добавить папку» в настройках, хранится в `~/.beer-tracker/agent-bridge.json`
+ * (или `AGENT_BRIDGE_CONFIG`). Клоны лежат
  * в кэше моста рядом с настройками (`repos/<хост>/<группа>/<репозиторий>`): папки на диске настраивать
  * не нужно. Если этот репозиторий у человека уже склонирован, первый клон берёт историю оттуда:
  * копию мост ищет сам по `origin` или человек выбирает папку в настройках (системный диалог — путь
@@ -14,13 +16,12 @@ import { delimiter, dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 import {
-  type AgentBridgeKnownRepos,
   type AgentBridgeRepoSettings,
   agentBridgeOriginFromGitConfig,
   agentBridgeRepoNames,
-  parseAgentBridgeKnownRepos,
   parseAgentBridgeLocalCopies,
   parseAgentBridgeRemote,
+  parseAgentBridgeRemotes,
 } from '@/lib/agentSessions/agentBridgeDev';
 
 const CONFIG_PATH = process.env.AGENT_BRIDGE_CONFIG?.trim() || join(homedir(), '.beer-tracker', 'agent-bridge.json');
@@ -45,46 +46,44 @@ export function cloneDir(url: string): string | null {
 }
 
 /**
- * Настройки до автоклона: `{repos: [{path, queues, confirmed}]}` с папками на диске. Переносим адреса
- * `origin` подтверждённых папок — очереди продолжают работать без вопроса в чате.
+ * Настройки до автоклона: `{repos: [{path, confirmed}]}` с папками на диске. Переносим адреса `origin`
+ * подтверждённых папок — эти репозитории остаются у агента без вопроса в чате.
  */
-function fromFolders(list: unknown[]): AgentBridgeKnownRepos {
-  const queues: Record<string, string[]> = {};
-  for (const item of list as Array<{ confirmed?: unknown; path?: unknown; queues?: unknown } | null>) {
-    if (item?.confirmed !== true || typeof item.path !== 'string' || !Array.isArray(item.queues)) {
+function fromFolders(list: unknown[]): string[] {
+  const remotes: string[] = [];
+  for (const item of list as Array<{ confirmed?: unknown; path?: unknown } | null>) {
+    if (item?.confirmed !== true || typeof item.path !== 'string') {
       continue;
     }
-    let url = '';
     try {
-      url = execFileSync(gitBin, ['-C', item.path, 'remote', 'get-url', 'origin'], { stdio: ['ignore', 'pipe', 'ignore'] })
-        .toString()
-        .trim();
+      remotes.push(
+        execFileSync(gitBin, ['-C', item.path, 'remote', 'get-url', 'origin'], { stdio: ['ignore', 'pipe', 'ignore'] })
+          .toString()
+          .trim()
+      );
     } catch {
-      continue;
-    }
-    for (const queue of item.queues) {
-      queues[String(queue)] = [...(queues[String(queue)] ?? []), url];
+      // Папки уже нет или нет origin — пропускаем.
     }
   }
-  return parseAgentBridgeKnownRepos({ queues });
+  return parseAgentBridgeRemotes({ remotes });
 }
 
-function readConfig(): { local?: unknown; queues?: unknown; repos?: unknown } {
+function readConfig(): { local?: unknown; repos?: unknown } {
   try {
-    return JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as { local?: unknown; queues?: unknown; repos?: unknown };
+    return JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as { local?: unknown; repos?: unknown };
   } catch {
     return {};
   }
 }
 
 const initial = readConfig();
-let known = Array.isArray(initial.repos) && !initial.queues ? fromFolders(initial.repos) : parseAgentBridgeKnownRepos(initial);
+let remotes = Array.isArray(initial.repos) ? fromFolders(initial.repos) : parseAgentBridgeRemotes(initial);
 /** Локальные копии, выбранные человеком: папка клона в кэше (`host/group/app`) → путь на диске. */
 let chosen = parseAgentBridgeLocalCopies(initial);
 
 function save() {
   mkdirSync(dirname(CONFIG_PATH), { recursive: true });
-  writeFileSync(CONFIG_PATH, `${JSON.stringify({ local: chosen, queues: known }, null, 2)}\n`);
+  writeFileSync(CONFIG_PATH, `${JSON.stringify({ local: chosen, remotes }, null, 2)}\n`);
 }
 
 /** Где искать уже склонированные репозитории: домашняя папка и привычные папки с кодом, на один уровень. */
@@ -115,6 +114,15 @@ function findLocalCopy(dir: string): string | null {
     }
   }
   return null;
+}
+
+/** Где смотреть историю репозитория при выборе, куда делать задачу: клон моста, иначе локальная копия. */
+export function historyDir(url: string): string | null {
+  const clone = cloneDir(url);
+  if (clone && existsSync(join(clone, '.git'))) {
+    return clone;
+  }
+  return localCopy(url)?.path ?? null;
 }
 
 /** Откуда взять историю для первого клона: выбранная папка (если в ней всё ещё этот репозиторий), иначе найденная. */
@@ -184,6 +192,36 @@ export async function chooseLocalCopy(url: string): Promise<AgentBridgeRepoSetti
   return repoSettings();
 }
 
+/**
+ * «Добавить папку» в настройках: диалог, в папке — git-клон с `origin`. Его адрес встаёт в список
+ * агента, а сама папка — локальной копией для первого клона.
+ */
+export async function addRepoFromFolder(): Promise<AgentBridgeRepoSettings | { error: string }> {
+  let path: string | null;
+  try {
+    path = await pickFolder('Папка с клоном репозитория');
+  } catch {
+    return { error: 'picker_unavailable' };
+  }
+  if (!path) {
+    return repoSettings();
+  }
+  let origin: string | null = null;
+  try {
+    origin = agentBridgeOriginFromGitConfig(readFileSync(join(path, '.git', 'config'), 'utf8'));
+  } catch {
+    return { error: `not_a_git_repo: ${path}` };
+  }
+  const remote = parseAgentBridgeRemote(origin);
+  if (!remote) {
+    return { error: `no_origin: ${path}` };
+  }
+  rememberRepo(remote.url);
+  chosen = { ...chosen, [remote.dir]: path };
+  save();
+  return repoSettings();
+}
+
 /** «Не использовать» выбранную папку: дальше мост снова ищет копию сам. */
 export function forgetLocalCopy(url: string): AgentBridgeRepoSettings {
   const dir = parseAgentBridgeRemote(url)?.dir;
@@ -192,48 +230,42 @@ export function forgetLocalCopy(url: string): AgentBridgeRepoSettings {
   return repoSettings();
 }
 
-/** Адреса репозиториев очереди. */
-export function knownRepos(queue: string): string[] {
-  return known[queue] ?? [];
+/** Репозитории агента. */
+export function knownRepos(): string[] {
+  return remotes;
 }
 
-export function rememberRepo(queue: string, url: string) {
-  if (!knownRepos(queue).includes(url)) {
-    known = { ...known, [queue]: [...knownRepos(queue), url] };
+export function rememberRepo(url: string) {
+  // Тот же репозиторий другим адресом (https и ssh) — одна запись.
+  const dir = parseAgentBridgeRemote(url)?.dir;
+  if (dir && !remotes.some((item) => parseAgentBridgeRemote(item)?.dir === dir)) {
+    remotes = [...remotes, url];
     save();
   }
 }
 
-/** Забыть репозиторий очереди (Настройки → Агент). Клон в кэше остаётся: его могут брать другие очереди. */
-export function forgetRepo(queue: string, url: string): AgentBridgeRepoSettings {
-  const rest = knownRepos(queue).filter((item) => item !== url);
-  known = Object.fromEntries(Object.entries({ ...known, [queue]: rest }).filter(([, urls]) => urls.length > 0));
+/** Забыть репозиторий (Настройки → Агент). Клон в кэше остаётся: вернётся — не качать заново. */
+export function forgetRepo(url: string): AgentBridgeRepoSettings {
+  remotes = remotes.filter((item) => item !== url);
   save();
   return repoSettings();
 }
 
 export function repoSettings(): AgentBridgeRepoSettings {
+  const names = agentBridgeRepoNames(remotes);
   return {
-    queues: Object.entries(known)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([queue, urls]) => {
-        const names = agentBridgeRepoNames(urls);
-        return {
-          queue,
-          repos: urls.map((url) => {
-            const cloned = existsSync(join(cloneDir(url) ?? '', '.git'));
-            // Локальная копия нужна только первому клону — у склонированного её не ищем.
-            return { cloned, local: cloned ? null : localCopy(url), name: names.get(url) ?? url, url };
-          }),
-        };
-      }),
+    repos: remotes.map((url) => {
+      const cloned = existsSync(join(cloneDir(url) ?? '', '.git'));
+      // Локальная копия нужна только первому клону — у склонированного её не ищем.
+      return { cloned, local: cloned ? null : localCopy(url), name: names.get(url) ?? url, url };
+    }),
   };
 }
 
-/** На старте: вывести, что запомнено. */
+/** На старте: вывести, что запомнено, и сохранить в текущем формате (файл прошлой версии переносится). */
 export function announceRepos() {
-  for (const { queue, repos } of repoSettings().queues) {
-    process.stdout.write(`  ${queue} → ${repos.map((repo) => repo.url).join(', ')}\n`);
+  for (const repo of repoSettings().repos) {
+    process.stdout.write(`  ${repo.name} — ${repo.url}\n`);
   }
   save();
 }
