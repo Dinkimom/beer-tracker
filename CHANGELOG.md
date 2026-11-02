@@ -2,6 +2,32 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.29.0] — 2026-11-03
+
+### English
+
+- Sprint goals are written to the Jira sprint goal: creating, editing or deleting a goal (also from the agent's plan) replaces the Jira sprint «Goal» field with the list of all goals. One-way; if Jira refuses, the goal is still saved in Beer Tracker.
+- «What to hand to the agent» now uses board rules in code: only unstarted, non-QA tasks in the tracker sprint that do not wait for an open task, smallest first. The agent sorts them into «Can hand off», «Needs clarification» (questions for you) and «Not for the agent»; risk signs (security, migrations, payments, public API, shared modules, no tests) keep a task out of the first group.
+- The agent bridge clones task repositories itself: no more local folder setup. The repository address is asked in the chat once (or picked by the agent), cloned into `~/.beer-tracker/repos` and fetched before each task. The agent sets up the environment and checks from the project's own rules (CLAUDE.md, AGENTS.md, README, Makefile, docker-compose). The chat shows clone progress and the command being run.
+- The agent picks the repository from the task itself: one shared list of repositories instead of per-queue settings; commits with the task key or related keys decide, otherwise the brief, otherwise it asks.
+- Faster first clone: if you already have the repository locally, history is taken from there (minutes instead of half an hour); otherwise a partial clone. ssh is tried before https.
+- Notes: a 🔄 «in progress» reaction in the quick row.
+- Fixes: Jira sprint tasks follow the board filter; a note with a checklist can be dragged by an item; checked items and mentions in notes are readable in the dark theme; card dimming on link hover is smooth; the status submenu in the context menu is at most 200px tall.
+- Operators: no database migrations or new env vars. Developers using the agent should restart `pnpm agent-bridge` — the old bridge does not take development sessions from the new planner; folder settings are migrated by their origin on first start.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.29.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Цели спринта пишутся в цель спринта Jira: создание, правка и удаление цели (в том числе из плана агента) перезаписывают поле «Цель» спринта в Jira списком всех целей. Синхронизация односторонняя; если Jira отказала, цель всё равно сохраняется в Beer Tracker.
+- «Что отдать агенту» опирается на правила доски в коде: только не начатые задачи не на QA, в спринте трекера и не ждущие открытую задачу, от меньшей оценки к большей. Агент раскладывает их на «Можно отдать», «Нужно уточнить» (вопросы вам) и «Не для агента»; признаки риска (безопасность, миграции, платежи, публичный API, общий модуль, нет тестов) не пускают задачу в первую группу.
+- Мост агента сам клонирует репозитории задач — настраивать папки больше не нужно. Адрес репозитория спрашивается в чате один раз (или агент выбирает сам), клон лежит в `~/.beer-tracker/repos`, перед задачей — fetch. Окружение и проверки агент поднимает по правилам проекта (CLAUDE.md, AGENTS.md, README, Makefile, docker-compose). В чате видно прогресс клонирования и выполняемую команду.
+- Репозиторий агент выбирает по самой задаче: общий список репозиториев вместо настроек по очередям; решают коммиты с ключом задачи или связанных задач, иначе бриф, не уверен — спрашивает.
+- Первый клон быстрее: если репозиторий уже есть у вас локально, история берётся оттуда (минуты вместо получаса), иначе частичный клон. Сначала ssh, потом https.
+- Заметки: реакция 🔄 «в работе» в быстром ряду.
+- Исправления: задачи спринта Jira фильтруются по фильтру доски; заметку с чек-листом можно тащить за пункт; отмеченные пункты и упоминания в заметках читаются в тёмной теме; карточки плавно затемняются при наведении на связи; подменю статуса в контекстном меню не выше 200px.
+- Для администраторов: миграций БД и новых переменных окружения нет. Разработчикам с агентом — перезапустить `pnpm agent-bridge`: старый мост не берёт сессии разработки от нового планера; настройки папок переносятся по origin при первом запуске.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.29.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.28.0] — 2026-10-30
 
 ### English
