@@ -6,6 +6,7 @@ import { boardSelectorLabel } from './boardSelectorLabel';
 
 function row(partial: Partial<BoardListItem> & Pick<BoardListItem, 'id' | 'name' | 'queue' | 'team'>): BoardListItem {
   return {
+    isMyTeam: false,
     teamTitle: '',
     ...partial,
   };

@@ -78,7 +78,7 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { getBoardById, getBoardSelectorLabel, isLoading: boardsLoading } = useBoards();
+  const { getBoardById, getBoardSelectorLabel, isLoading: boardsLoading, myTeamBoardId } = useBoards();
 
   const [{ tab: activeTab }, setQueryStates] = useQueryStates(
     {
@@ -149,6 +149,7 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
     getBoardById,
     isMounted,
     isPlannerDeepLink,
+    myTeamBoardId,
     pathname,
     plannerBoardId,
     plannerDeepLinkKey,

@@ -6,7 +6,7 @@ import { listPlannerBoardsForAccessProfile } from '@/lib/staffTeams/plannerBoard
 
 /**
  * GET /api/boards
- * Доски планера — активные команды организации в PostgreSQL, видимые профилю.
+ * Доски планера — все активные команды организации в PostgreSQL; свои команды первыми (`isMyTeam`).
  * Без Yandex Tracker `_paginate`: пересечение с Tracker на каждый заход держало TTFB ~10 с.
  */
 export async function GET(request: NextRequest) {

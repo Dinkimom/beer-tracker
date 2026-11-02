@@ -5,10 +5,10 @@ import {
   canAccessAdminShell,
   canManageTeamInAdmin,
   canUsePlanner,
-  filterTeamsVisibleInPlanner,
   isOrganizationAdminProfile,
   isTeamLeadForTeam,
   managedTeamIdsForAccessProfile,
+  myTeamIdsForAccessProfile,
 } from './orgAccess';
 
 function profile(p: Partial<AccessProfile> & Pick<AccessProfile, 'organizationId' | 'orgRole' | 'userId'>): AccessProfile {
@@ -98,7 +98,7 @@ describe('canUsePlanner', () => {
     ).toBe(true);
   });
 
-  it('denies member without teams', () => {
+  it('allows org member without teams: every board of the org is open', () => {
     expect(
       canUsePlanner(
         profile({
@@ -107,30 +107,12 @@ describe('canUsePlanner', () => {
           userId: 'u1',
         })
       )
-    ).toBe(false);
-  });
-
-  it('denies org team_lead without teams', () => {
-    expect(
-      canUsePlanner(
-        profile({
-          organizationId: 'o1',
-          orgRole: 'team_lead',
-          userId: 'u1',
-        })
-      )
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 
-describe('filterTeamsVisibleInPlanner', () => {
-  it('returns all teams for org_admin', () => {
-    const teams = [{ id: 't1' }, { id: 't2' }];
-    const p = profile({ organizationId: 'o1', orgRole: 'org_admin', userId: 'u1' });
-    expect(filterTeamsVisibleInPlanner(p, teams)).toEqual(teams);
-  });
-
-  it('filters to member or lead teams only', () => {
+describe('myTeamIdsForAccessProfile', () => {
+  it('collects member and lead teams', () => {
     const p = profile({
       organizationId: 'o1',
       orgRole: 'member',
@@ -140,16 +122,13 @@ describe('filterTeamsVisibleInPlanner', () => {
       ],
       userId: 'u1',
     });
+    expect([...myTeamIdsForAccessProfile(p)]).toEqual(['t1', 't3']);
+  });
+
+  it('is empty for org_admin outside any team', () => {
     expect(
-      filterTeamsVisibleInPlanner(p, [
-        { id: 't1', title: 'A' },
-        { id: 't2', title: 'B' },
-        { id: 't3', title: 'C' },
-      ])
-    ).toEqual([
-      { id: 't1', title: 'A' },
-      { id: 't3', title: 'C' },
-    ]);
+      myTeamIdsForAccessProfile(profile({ organizationId: 'o1', orgRole: 'org_admin', userId: 'u1' })).size
+    ).toBe(0);
   });
 });
 

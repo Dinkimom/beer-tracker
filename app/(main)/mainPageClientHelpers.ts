@@ -235,7 +235,6 @@ export function shouldRedirectToSelectBoard(params: {
   if (params.isPlannerDeepLink && isKnownPlannerBoard(params.getBoardById, params.plannerBoardId)) {
     return false;
   }
-  if (!params.selectedBoardId) return true;
   if (params.boardsLoading) return false;
   return !isKnownPlannerBoard(params.getBoardById, params.selectedBoardId);
 }

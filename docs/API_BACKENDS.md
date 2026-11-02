@@ -29,7 +29,7 @@
 | Changelog batch | `/issues/changelog` | Только кэш `issue_changelog_events` |
 | Статусы родителей | `/issues/parent-statuses` | `issue_snapshots` (batch) + tenant |
 | Бэклог | `/backlog` | `issue_snapshots` + `teams`/`staff`/`team_members` (мердж разработчиков) + tenant |
-| Доски | `/boards` | PostgreSQL `teams` (доски команд, видимые профилю) |
+| Доски | `/boards` | PostgreSQL `teams` (все доски команд организации, свои — первыми) |
 | Параметры доски | `/boards/[boardId]` | Tracker (серверный кэш) |
 | Метрики спринтов доски | `/boards/[boardId]/sprint-metrics` | Tracker + `issue_snapshots` (через источник burndown) + PostgreSQL (сохранённые метрики) |
 | Спринты (список/создание) | `/sprints` | Tracker |

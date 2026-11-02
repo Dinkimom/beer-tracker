@@ -168,15 +168,17 @@ describe('GET /api/boards JSON', () => {
     expect(
       mapTeamsToPlannerBoards([
         {
+          id: 'core-id',
           slug: 'core',
           title: 'Core',
           tracker_board_id: '7',
           tracker_queue_key: 'BT',
         },
-      ])
+      ], new Set(['core-id']))
     ).toEqual([
       {
         id: 7,
+        isMyTeam: true,
         name: 'Core',
         queue: 'BT',
         team: 'core',

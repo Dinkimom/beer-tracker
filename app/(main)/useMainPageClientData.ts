@@ -23,6 +23,7 @@ export function useMainPageClientData({
   getBoardById,
   isMounted,
   isPlannerDeepLink,
+  myTeamBoardId,
   pathname,
   plannerBoardId,
   plannerDeepLinkKey,
@@ -37,6 +38,7 @@ export function useMainPageClientData({
   getBoardById: (id: number) => unknown;
   isMounted: boolean;
   isPlannerDeepLink: boolean;
+  myTeamBoardId: number | null;
   pathname: string;
   plannerBoardId?: number;
   plannerDeepLinkKey: string | null;
@@ -102,6 +104,7 @@ export function useMainPageClientData({
     getBoardById,
     isMounted,
     isPlannerDeepLink,
+    myTeamBoardId,
     pathname,
     plannerBoardId,
     plannerDeepLinkKey,

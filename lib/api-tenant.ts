@@ -157,8 +157,7 @@ export async function requireTenantWithAdminProfile(
 }
 
 /**
- * Сессия + членство в org + доступ к планеру (org_admin или назначенная команда).
- * Участник org без команд — 403 (согласовано с {@link canUsePlanner} и главной).
+ * Сессия + членство в org + доступ к планеру ({@link canUsePlanner}).
  */
 export async function requireTenantWithPlannerProfile(
   request: Request,

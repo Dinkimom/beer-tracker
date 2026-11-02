@@ -11,7 +11,7 @@ describe('loadBoardsForPlanner', () => {
 
   it('returns data when transport succeeds', async () => {
     vi.spyOn(boardsTransport, 'fetchBoardsTransport').mockResolvedValue({
-      data: [{ id: 1, name: 'A', queue: 'q', team: 't', teamTitle: 'Team A' }],
+      data: [{ id: 1, isMyTeam: true, name: 'A', queue: 'q', team: 't', teamTitle: 'Team A' }],
       ok: true,
     });
     const r = await loadBoardsForPlanner();

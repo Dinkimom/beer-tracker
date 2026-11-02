@@ -11,6 +11,7 @@ describe('buildQuickAddQueueOptionsFromBoards', () => {
     const options = buildQuickAddQueueOptionsFromBoards([
       {
         id: 1,
+        isMyTeam: false,
         name: 'Board A',
         queue: 'NW',
         team: 'team-a',
@@ -18,6 +19,7 @@ describe('buildQuickAddQueueOptionsFromBoards', () => {
       },
       {
         id: 2,
+        isMyTeam: false,
         name: 'Board B',
         queue: 'NW',
         team: 'team-b',
@@ -25,6 +27,7 @@ describe('buildQuickAddQueueOptionsFromBoards', () => {
       },
       {
         id: 3,
+        isMyTeam: false,
         name: 'Board C',
         queue: 'HR',
         team: 'team-c',

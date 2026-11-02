@@ -31,9 +31,11 @@ export interface TransitionField {
   schemaType?: string;
 }
 
-/** Доска из GET /api/boards (команды организации в PG, видимые профилю) */
+/** Доска из GET /api/boards (все активные команды организации в PG) */
 export interface BoardListItem {
   id: number;
+  /** Пользователь в составе команды: её доска открывается по умолчанию. */
+  isMyTeam: boolean;
   name: string;
   queue: string;
   /** Slug команды в PG (стабильный ключ, например для метаданных). */

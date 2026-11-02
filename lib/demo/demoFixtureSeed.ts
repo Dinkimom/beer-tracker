@@ -351,6 +351,7 @@ export function createDemoFixtureSeed(): DemoFixtureState {
     availabilityEvents: buildDemoAvailabilityEvents(),
     board: {
       id: DEMO_BOARD_ID,
+      isMyTeam: true,
       name: 'Demo Board',
       queue: 'DEMO',
       team: 'demo-team',

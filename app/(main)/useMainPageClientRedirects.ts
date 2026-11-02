@@ -15,6 +15,7 @@ export function useMainPageClientRedirects({
   getBoardById,
   isMounted,
   isPlannerDeepLink,
+  myTeamBoardId,
   pathname,
   plannerBoardId,
   plannerDeepLinkKey,
@@ -31,6 +32,8 @@ export function useMainPageClientRedirects({
   getBoardById: (id: number) => unknown;
   isMounted: boolean;
   isPlannerDeepLink: boolean;
+  /** Доска первой своей команды: открывается, когда сохранённой доски нет. */
+  myTeamBoardId: number | null;
   pathname: string;
   plannerBoardId?: number;
   plannerDeepLinkKey: string | null;
@@ -141,16 +144,19 @@ export function useMainPageClientRedirects({
     ) {
       return;
     }
-    if (!boardsLoading && selectedBoardId != null && !getBoardById(selectedBoardId)) {
-      setSelectedBoardId(null);
-      setSelectedSprintIdState(null);
+    setSelectedSprintIdState(null);
+    if (myTeamBoardId != null) {
+      setSelectedBoardId(myTeamBoardId);
+      return;
     }
+    setSelectedBoardId(null);
     router.push('/select-board');
   }, [
     boardsLoading,
     getBoardById,
     isMounted,
     isPlannerDeepLink,
+    myTeamBoardId,
     plannerBoardId,
     router,
     selectedBoardId,

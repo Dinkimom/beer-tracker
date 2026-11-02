@@ -40,13 +40,13 @@ export function canManageTeamInAdmin(profile: AccessProfile, _teamId: string): b
 }
 
 /**
- * org_admin — всегда; иначе нужна хотя бы одна команда (lead или member).
+ * Любой участник организации (профиль есть только у них): доски всех команд org открыты всем,
+ * членство в команде решает только, кто стоит на доске.
+ * Когда появятся приватные доски, проверка «можно ли открыть доску» ляжет сюда и в
+ * `listPlannerBoardsForAccessProfile`; роуты спринта тогда тоже должны проверять команду.
  */
-export function canUsePlanner(profile: AccessProfile): boolean {
-  if (profile.orgRole === 'org_admin') {
-    return true;
-  }
-  return profile.teamMemberships.length > 0;
+export function canUsePlanner(_profile: AccessProfile): boolean {
+  return true;
 }
 
 /**
@@ -60,20 +60,9 @@ export function managedTeamIdsForAccessProfile(profile: AccessProfile): string[]
   return [];
 }
 
-/** Команды, доступные в планере: org_admin — все переданные; иначе только с членством (member или lead). */
-export function filterTeamsVisibleInPlanner<T extends { id: string }>(
-  profile: AccessProfile,
-  teams: T[]
-): T[] {
-  if (profile.orgRole === 'org_admin') {
-    return teams;
-  }
-  const allowed = new Set(
-    profile.teamMemberships
-      .filter((m) => m.isTeamMember || m.isTeamLead)
-      .map((m) => m.teamId)
-  );
-  return teams.filter((t) => allowed.has(t.id));
+/** Команды, в составе которых пользователь (member или lead): «свои» доски в планере. */
+export function myTeamIdsForAccessProfile(profile: AccessProfile): Set<string> {
+  return new Set(profile.teamMemberships.map((m) => m.teamId));
 }
 
 export async function resolveAccessProfile(

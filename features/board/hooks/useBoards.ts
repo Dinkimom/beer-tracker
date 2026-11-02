@@ -67,6 +67,9 @@ export function useBoards() {
     [boards]
   );
 
+  /** Сервер ставит свои команды первыми. */
+  const myTeamBoardId = boards.find((b) => b.isMyTeam)?.id ?? null;
+
   return {
     boards,
     getBoardById,
@@ -75,5 +78,6 @@ export function useBoards() {
     getQueueByBoardId,
     getTeamByBoardId,
     isLoading: boardsLoading,
+    myTeamBoardId,
   };
 }

@@ -78,6 +78,16 @@ describe('shouldRedirectToSelectBoard', () => {
     ).toBe(true);
   });
 
+  it('waits for the boards list before choosing a board for a user without one', () => {
+    expect(
+      shouldRedirectToSelectBoard({
+        ...redirectBase,
+        boardsLoading: true,
+        selectedBoardId: null,
+      })
+    ).toBe(false);
+  });
+
   it('waits for the boards list before treating a stored id as stale', () => {
     expect(
       shouldRedirectToSelectBoard({
