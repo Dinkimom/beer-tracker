@@ -118,11 +118,12 @@ html.theme-changing * {
 }
 
 /* Исключение: плавное затемнение карточек при hover связей в свимлейне.
-   Те же 0.2s, что у тени карточки и маркеров факта; hover-intent — в useSwimlaneTaskHoverIntent. */
+   Стартует после hover-intent (useSwimlaneTaskHoverIntent), поэтому длиннее прямого отклика (0.2s)
+   и с мягким началом: иначе после паузы доска гаснет рывком. Тот же темп у стрелок связей. */
 .task-bar-opacity-layer {
   transition-property: opacity !important;
-  transition-duration: 0.2s !important;
-  transition-timing-function: ease !important;
+  transition-duration: 0.35s !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* Разрешаем только анимацию ширины карточки при long-hover.

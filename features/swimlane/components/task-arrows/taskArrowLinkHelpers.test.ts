@@ -12,7 +12,9 @@ describe('resolveTaskLinkArrowHeadProps', () => {
     expect(resolveTaskLinkArrowHeadProps('#60a5fa')).toEqual({
       fill: 'none',
       stroke: '#60a5fa',
-      style: { transition: 'stroke 0.2s ease, fill 0.2s ease' },
+      style: {
+        transition: 'stroke 0.35s cubic-bezier(0.4, 0, 0.2, 1), fill 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+      },
     });
   });
 

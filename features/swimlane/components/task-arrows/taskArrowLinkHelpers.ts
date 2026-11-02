@@ -19,8 +19,9 @@ import { getPhaseLinkArrowDefaultHex } from '@/utils/statusColors';
  */
 export const TASK_LINK_ARROW_HEAD_SIZE = 4;
 
-/** Как у затемнения карточек (`opacity 0.2s ease`) — stroke/fill стрелок. */
-const TASK_LINK_ARROW_COLOR_TRANSITION = 'stroke 0.2s ease, fill 0.2s ease';
+/** Как у затемнения карточек (`.task-bar-opacity-layer` в globals.css) — stroke/fill стрелок. */
+const TASK_LINK_ARROW_COLOR_TRANSITION =
+  'stroke 0.35s cubic-bezier(0.4, 0, 0.2, 1), fill 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
 
 /** Ортогональная трасса (прямые углы) вместо плавной кривой. */
 export const TASK_LINK_ARROW_PATH = 'grid' as const;
