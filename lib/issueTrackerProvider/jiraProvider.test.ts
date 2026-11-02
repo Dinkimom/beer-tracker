@@ -414,6 +414,7 @@ describe('jiraTrackerProvider skeleton', () => {
       'searchUsers',
       'transitionIssue',
       'updateIssue',
+      'updateSprintGoal',
       'updateSprintStatus',
     ]);
   });

@@ -451,6 +451,8 @@ export interface IssueTrackerProviderClient {
     input: IssueTrackerUpdateChecklistItemInput
   ): Promise<void>;
   updateIssue(issueKey: string, patch: IssueTrackerIssuePatch): Promise<unknown>;
+  /** Перезаписывает цель спринта. У Yandex Tracker поля цели нет — no-op. */
+  updateSprintGoal(sprintId: number, goal: string): Promise<void>;
   updateSprintStatus(
     sprintId: number,
     status: IssueTrackerSprintStatus,

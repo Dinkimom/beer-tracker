@@ -7,6 +7,7 @@ import type {
 import { invalidateCache } from '@/lib/cache';
 import { completeIssueSprintMembershipChange } from '@/lib/issues/issueSprintMembershipRealtime';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import { syncSprintGoalsToTracker } from '@/lib/sprintGoals';
 import { resolvePlannerAssigneeIdForTrackerSync } from '@/lib/staffTeams/resolvePlannerAssigneeForTrackerSync';
 import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
 
@@ -221,7 +222,9 @@ async function runOneTrackerSync(input: {
   }
 }
 
-/** Синк в трекер после коммита: детали и предупреждения дописываются к результату операции. */
+const GOAL_OPS: ReadonlySet<string> = new Set(['createGoal', 'deleteGoal', 'updateGoal']);
+
+/** Синк в трекер после коммита: детали и предупреждения дописываются к результату операции; цели спринта — одним вызовом. */
 export async function runPlanPatchTrackerSyncs(input: {
   applied: SprintPlanPatchApplyOpResult[];
   organizationId: string;
@@ -237,5 +240,11 @@ export async function runPlanPatchTrackerSyncs(input: {
       sprintId: input.sprintId,
     });
     row.detail = [row.detail, sync.detail, sync.warning].filter(Boolean).join('; ');
+  }
+  if (input.applied.some((row) => row.ok && GOAL_OPS.has(row.op))) {
+    await syncSprintGoalsToTracker({
+      getIssueTracker: () => getIssueTrackerProviderClientForOrganization(input.organizationId),
+      sprintId: input.sprintId,
+    });
   }
 }

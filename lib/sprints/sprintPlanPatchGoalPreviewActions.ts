@@ -1,6 +1,12 @@
 import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPreview';
 
-import { deleteSprintGoal, insertSprintGoal, updateSprintGoal } from '@/lib/sprintGoals';
+import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import {
+  deleteSprintGoal,
+  insertSprintGoal,
+  syncSprintGoalsToTracker,
+  updateSprintGoal,
+} from '@/lib/sprintGoals';
 
 import {
   deletePlanPatchGoalPreviews,
@@ -55,6 +61,12 @@ export async function approvePlanPatchGoalPreviews(input: {
       goalId: preview.goalId,
       organizationId: input.organizationId,
       ownerId: input.ownerId,
+      sprintId: input.sprintId,
+    });
+  }
+  if (selected.length > 0) {
+    await syncSprintGoalsToTracker({
+      getIssueTracker: () => getIssueTrackerProviderClientForOrganization(input.organizationId),
       sprintId: input.sprintId,
     });
   }

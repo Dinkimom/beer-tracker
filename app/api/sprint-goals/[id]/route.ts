@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
 import { resolveParams } from '@/lib/nextjs-utils';
-import { deleteSprintGoal, updateSprintGoal } from '@/lib/sprintGoals';
+import { deleteSprintGoal, syncSprintGoalsToTrackerFromRequest, updateSprintGoal } from '@/lib/sprintGoals';
 
 /** PATCH: обновить цель (text и/или checked) */
 export async function PATCH(
@@ -48,6 +48,9 @@ export async function PATCH(
     if (!row) {
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
+    if (typeof body.text === 'string') {
+      await syncSprintGoalsToTrackerFromRequest(request, row.sprint_id);
+    }
 
     return NextResponse.json({
       success: true,
@@ -91,6 +94,7 @@ export async function DELETE(
     if (!deleted) {
       return NextResponse.json({ success: true, notFound: true });
     }
+    await syncSprintGoalsToTrackerFromRequest(request, deleted.sprintId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting sprint goal:', error);

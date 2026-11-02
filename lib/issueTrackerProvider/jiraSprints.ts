@@ -511,3 +511,16 @@ export async function updateJiraSprintStatus(
   const resolvedBoardId = mapped.boardId ?? confirmedBoardId;
   return resolvedBoardId != null ? { ...mapped, boardId: resolvedBoardId } : mapped;
 }
+
+/** POST в Agile API — частичное обновление: меняется только цель, имя и даты остаются. */
+export async function updateJiraSprintGoal(
+  api: AxiosInstance,
+  sprintId: number,
+  goal: string
+): Promise<void> {
+  const baseUrl = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
+  if (!baseUrl) {
+    throw new Error('Jira updateSprintGoal requires API base URL');
+  }
+  await api.post(jiraAgileSprintByIdUrl(baseUrl, sprintId), { goal });
+}

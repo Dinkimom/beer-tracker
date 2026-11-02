@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { completeIssueSprintMembershipChange } from '@/lib/issues/issueSprintMembershipRealtime';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import { syncSprintGoalsToTracker } from '@/lib/sprintGoals';
 
 import {
   buildIssueNotInSprintPlanPatchHints,
@@ -17,6 +18,9 @@ vi.mock('@/lib/issues/issueSprintMembershipRealtime', () => ({
 }));
 vi.mock('@/lib/issueTrackerProvider/clientFactory', () => ({
   getIssueTrackerProviderClientForOrganization: vi.fn(),
+}));
+vi.mock('@/lib/sprintGoals', () => ({
+  syncSprintGoalsToTracker: vi.fn(() => Promise.resolve()),
 }));
 vi.mock('@/lib/staffTeams/resolvePlannerAssigneeForTrackerSync', () => ({
   resolvePlannerAssigneeIdForTrackerSync: vi.fn(),
@@ -161,5 +165,32 @@ describe('runPlanPatchTrackerSyncs', () => {
       trackerSyncs: [{ index: 0, moveToSprintId: 8, taskId: 'BT-3' }],
     });
     expect(applied[0]?.detail).toBe('position BT-3 → sprint 8; tracker_sync_failed: BT-3: 403');
+  });
+
+  it('syncs sprint goals to the tracker once when goal ops applied', async () => {
+    vi.mocked(syncSprintGoalsToTracker).mockClear();
+    await runPlanPatchTrackerSyncs({
+      applied: [
+        { detail: 'goal g1', index: 0, ok: true, op: 'createGoal' },
+        { detail: 'goal g2', index: 1, ok: true, op: 'deleteGoal' },
+        { error: 'goal g3 not found', index: 2, ok: false, op: 'updateGoal' },
+      ],
+      organizationId: 'org-1',
+      sprintId: 7,
+      trackerSyncs: [],
+    });
+    expect(syncSprintGoalsToTracker).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(syncSprintGoalsToTracker).mock.calls[0]?.[0]).toMatchObject({ sprintId: 7 });
+  });
+
+  it('skips the goal sync when no goal op applied', async () => {
+    vi.mocked(syncSprintGoalsToTracker).mockClear();
+    await runPlanPatchTrackerSyncs({
+      applied: [{ error: 'goal g3 not found', index: 0, ok: false, op: 'updateGoal' }],
+      organizationId: 'org-1',
+      sprintId: 7,
+      trackerSyncs: [],
+    });
+    expect(syncSprintGoalsToTracker).not.toHaveBeenCalled();
   });
 });

@@ -8,6 +8,11 @@ interface SprintGoalRow {
   text: string;
 }
 
+export interface SprintGoalTextRow {
+  goal_type: string;
+  text: string;
+}
+
 export async function listSprintGoals(input: {
   goalType: string;
   organizationId: string;
@@ -21,6 +26,18 @@ export async function listSprintGoals(input: {
     [input.sprintId, input.goalType]
   );
   return result.rows as SprintGoalRow[];
+}
+
+/** Все цели спринта (Delivery и Discovery) в порядке создания — для зеркала в трекер. */
+export async function listSprintGoalTexts(input: { sprintId: number }): Promise<SprintGoalTextRow[]> {
+  const result = await query(
+    `SELECT goal_type, text
+       FROM sprint_goals
+       WHERE sprint_id = $1
+       ORDER BY created_at ASC`,
+    [input.sprintId]
+  );
+  return result.rows as SprintGoalTextRow[];
 }
 
 export async function insertSprintGoal(
@@ -51,17 +68,17 @@ export async function updateSprintGoal(
     updateValues: Array<boolean | number | string | null | undefined>;
   },
   run: BeerTrackerTransactionQuery = query
-): Promise<SprintGoalRow | null> {
+): Promise<(SprintGoalRow & { sprint_id: number }) | null> {
   const { goalId, updateFields, updateValues } = input;
   const paramIndex = updateValues.length + 1;
   const result = await run(
     `UPDATE sprint_goals
        SET ${updateFields.join(', ')}
        WHERE id = $${paramIndex}
-       RETURNING id, text, done`,
+       RETURNING id, text, done, sprint_id`,
     [...updateValues, goalId]
   );
-  return (result.rows[0] as SprintGoalRow | undefined) ?? null;
+  return (result.rows[0] as (SprintGoalRow & { sprint_id: number }) | undefined) ?? null;
 }
 
 export async function deleteSprintGoal(
@@ -70,9 +87,10 @@ export async function deleteSprintGoal(
     organizationId: string;
   },
   run: BeerTrackerTransactionQuery = query
-): Promise<boolean> {
-  const result = await run('DELETE FROM sprint_goals WHERE id = $1 RETURNING id', [input.goalId]);
-  return result.rows.length > 0;
+): Promise<{ sprintId: number } | null> {
+  const result = await run('DELETE FROM sprint_goals WHERE id = $1 RETURNING sprint_id', [input.goalId]);
+  const row = result.rows[0] as { sprint_id: number } | undefined;
+  return row ? { sprintId: row.sprint_id } : null;
 }
 
 export async function sprintGoalExists(input: { goalId: string }): Promise<boolean> {

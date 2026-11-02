@@ -366,6 +366,10 @@ function createYandexIssueTrackerProviderClient(
       return data;
     },
 
+    updateSprintGoal() {
+      return Promise.resolve();
+    },
+
     updateSprintStatus(sprintId, status, version) {
       return updateTrackerSprintStatus(sprintId, status, version, api);
     },

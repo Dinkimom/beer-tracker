@@ -10,6 +10,7 @@ import {
   mapJiraSprintState,
   mapJiraSprintToPlannerListItem,
   mapPlannerStatusToJiraSprintState,
+  updateJiraSprintGoal,
   updateJiraSprintStatus,
 } from './jiraSprints';
 
@@ -404,5 +405,15 @@ describe('createJiraSprint', () => {
         startDate: '2026-09-03',
       })
     ).rejects.toThrow('Jira createSprint returned no sprint id');
+  });
+});
+
+describe('updateJiraSprintGoal', () => {
+  it('partially updates only the sprint goal via Agile POST', async () => {
+    const post = vi.fn().mockResolvedValue({ data: {} });
+    await updateJiraSprintGoal(apiWith({ post }), 99, '- Ship checkout');
+    expect(post).toHaveBeenCalledWith('https://jira.example.com/rest/agile/1.0/sprint/99', {
+      goal: '- Ship checkout',
+    });
   });
 });

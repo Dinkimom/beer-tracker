@@ -67,7 +67,7 @@ describe('applySprintPlanPatchOps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     upsertPosition.mockResolvedValue({ rows: [] });
-    deleteGoal.mockResolvedValue(false);
+    deleteGoal.mockResolvedValue(null);
   });
 
   it('writes every op through the transaction, each in its own savepoint', async () => {

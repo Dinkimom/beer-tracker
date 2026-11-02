@@ -3,7 +3,7 @@ import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPrev
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
-import { insertSprintGoal, listSprintGoals } from '@/lib/sprintGoals';
+import { insertSprintGoal, listSprintGoals, syncSprintGoalsToTrackerFromRequest } from '@/lib/sprintGoals';
 import { listPlanPatchGoalPreviews } from '@/lib/sprints/sprintPlanPatchGoalPreviewRepository';
 
 /** GET: список целей по sprintId, goalType */
@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
       team,
       text: text.trim(),
     });
+    await syncSprintGoalsToTrackerFromRequest(request, sprintId);
 
     const item = {
       id: String(row.id),

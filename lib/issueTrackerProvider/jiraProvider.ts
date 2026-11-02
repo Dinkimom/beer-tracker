@@ -35,7 +35,13 @@ import { fetchJiraCurrentUser } from './jiraMyself';
 import { fetchJiraOrganizationStatuses } from './jiraOrgMetadata';
 import { fetchJiraQueueByKey, fetchJiraQueueWorkflows, searchJiraQueues } from './jiraQueues';
 import { loadJiraSprintIssues } from './jiraSprintIssueLoad';
-import { createJiraSprint, fetchJiraSprintInfo, listJiraSprints, updateJiraSprintStatus } from './jiraSprints';
+import {
+  createJiraSprint,
+  fetchJiraSprintInfo,
+  listJiraSprints,
+  updateJiraSprintGoal,
+  updateJiraSprintStatus,
+} from './jiraSprints';
 import {
   fetchJiraIssueTransitions,
   fetchJiraIssueTransitionsBatch,
@@ -88,6 +94,7 @@ export const JIRA_IMPLEMENTED_PROVIDER_METHODS = [
   'searchUsers',
   'transitionIssue',
   'updateIssue',
+  'updateSprintGoal',
   'updateSprintStatus',
 ] as const satisfies ReadonlyArray<keyof IssueTrackerProviderClient>;
 
@@ -199,6 +206,7 @@ function createJiraProviderClientWithApi(
     transitionIssue: (issueKey, transitionId, input) =>
       transitionJiraIssue(api, issueKey, transitionId, input),
     updateIssue: (issueKey, patch) => updateJiraIssue(api, issueKey, patch, web.kind),
+    updateSprintGoal: (sprintId, goal) => updateJiraSprintGoal(api, sprintId, goal),
     updateSprintStatus: (sprintId, status) => updateJiraSprintStatus(api, sprintId, status),
   });
 }

@@ -2,7 +2,12 @@ import type { PlanPatchGoalPreview } from './sprintPlanPatchGoalPreview';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { deleteSprintGoal, insertSprintGoal, updateSprintGoal } from '@/lib/sprintGoals';
+import {
+  deleteSprintGoal,
+  insertSprintGoal,
+  syncSprintGoalsToTracker,
+  updateSprintGoal,
+} from '@/lib/sprintGoals';
 
 import {
   approvePlanPatchGoalPreviews,
@@ -13,9 +18,14 @@ import {
   listPlanPatchGoalPreviews,
 } from './sprintPlanPatchGoalPreviewRepository';
 
+vi.mock('@/lib/issueTrackerProvider/clientFactory', () => ({
+  getIssueTrackerProviderClientForOrganization: vi.fn(),
+}));
+
 vi.mock('@/lib/sprintGoals', () => ({
   deleteSprintGoal: vi.fn(),
   insertSprintGoal: vi.fn(),
+  syncSprintGoalsToTracker: vi.fn(),
   updateSprintGoal: vi.fn(),
 }));
 
@@ -29,6 +39,7 @@ const remove = vi.mocked(deletePlanPatchGoalPreviews);
 const insert = vi.mocked(insertSprintGoal);
 const update = vi.mocked(updateSprintGoal);
 const drop = vi.mocked(deleteSprintGoal);
+const syncToTracker = vi.mocked(syncSprintGoalsToTracker);
 
 const created: PlanPatchGoalPreview = {
   action: 'create',
@@ -45,6 +56,7 @@ describe('plan patch goal preview actions', () => {
     insert.mockReset();
     update.mockReset();
     drop.mockReset();
+    syncToTracker.mockReset();
     remove.mockResolvedValue(1);
     list.mockResolvedValue([created]);
   });
@@ -66,6 +78,8 @@ describe('plan patch goal preview actions', () => {
       ownerId: 'user-1',
       sprintId: 7,
     });
+    expect(syncToTracker).toHaveBeenCalledTimes(1);
+    expect(syncToTracker.mock.calls[0]?.[0]).toMatchObject({ sprintId: 7 });
   });
 
   it('updates text and done, and deletes a goal marked for removal', async () => {
@@ -88,5 +102,6 @@ describe('plan patch goal preview actions', () => {
     expect(insert).not.toHaveBeenCalled();
     expect(update).not.toHaveBeenCalled();
     expect(drop).not.toHaveBeenCalled();
+    expect(syncToTracker).not.toHaveBeenCalled();
   });
 });

@@ -55,6 +55,7 @@ export const ISSUE_TRACKER_PROVIDER_CLIENT_METHODS = [
   'transitionIssue',
   'updateChecklistItem',
   'updateIssue',
+  'updateSprintGoal',
   'updateSprintStatus',
 ] as const satisfies ReadonlyArray<keyof IssueTrackerProviderClient>;
 
