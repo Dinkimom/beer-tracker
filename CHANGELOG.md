@@ -2,6 +2,20 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.29.1] — 2026-11-03
+
+### English
+
+- Every member of an organization can open and edit the boards of all its teams. Team membership now only decides who appears on the team's board. A member of a team opens their team's board by default (own teams come first in the board list); someone outside any team lands on the board picker instead of «no access».
+- Operators: no database migrations or new env vars.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.29.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Любой участник организации может открывать и править доски всех её команд. Членство в команде теперь решает только, кто стоит на доске команды. Участник команды по умолчанию попадает на доску своей команды (свои команды — первыми в списке досок); человек вне команд попадает на выбор доски вместо «нет доступа».
+- Для администраторов: миграций БД и новых переменных окружения нет.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.29.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.29.0] — 2026-11-03
 
 ### English
