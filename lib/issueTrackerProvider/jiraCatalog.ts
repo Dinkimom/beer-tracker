@@ -46,6 +46,15 @@ export function jiraAgileBoardSprintsUrl(restApiBaseUrl: string, boardId: number
   return `${jiraAgileBoardByIdUrl(restApiBaseUrl, boardId)}/sprint`;
 }
 
+/** Задачи спринта через доску: Jira применяет фильтр доски, как на самой доске. */
+export function jiraAgileBoardSprintIssuesUrl(
+  restApiBaseUrl: string,
+  boardId: number,
+  sprintId: number
+): string {
+  return `${jiraAgileBoardSprintsUrl(restApiBaseUrl, boardId)}/${sprintId}/issue`;
+}
+
 export function jiraAgileBoardIssuesUrl(restApiBaseUrl: string, boardId: number): string {
   return `${jiraAgileBoardByIdUrl(restApiBaseUrl, boardId)}/issue`;
 }

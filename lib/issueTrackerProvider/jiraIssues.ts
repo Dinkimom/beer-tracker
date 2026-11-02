@@ -4,9 +4,9 @@ import type { AxiosInstance } from 'axios';
 
 import { jiraAdfToMarkdown } from './jiraAdfToMarkdown';
 import { axiosErrorStatusAndDetails } from './jiraAgileAuthError';
-import { jiraAgileSprintIssuesUrl, shouldStopJiraBoardPages } from './jiraCatalog';
+import { shouldStopJiraBoardPages } from './jiraCatalog';
 import { harvestJiraIssueLinks } from './jiraIssueLinks';
-import { postJiraIssueSearch, readJiraSearchNextPageToken } from './jiraIssueSearchRequest';
+import { readJiraSearchNextPageToken } from './jiraIssueSearchRequest';
 import {
   applyJiraRankFieldToTrackerIssue,
   applyJiraScheduleFieldRefsToTrackerIssue,
@@ -17,7 +17,6 @@ import { jiraNameKey, mapJiraStatus, mapJiraStatusCategory } from './jiraStatusK
 export { mapJiraStatus } from './jiraStatusKeys';
 
 /** JQL `fields`: `*all` so admin-mapped customfields (SP/TP and others) are returned. */
-const JIRA_SPRINT_ISSUE_FIELDS = ['*all'] as const;
 
 /** REST keys already mapped onto TrackerIssue — skip bulky system blobs. */
 const JIRA_REST_STRUCTURED_FIELD_KEYS = new Set([
@@ -456,58 +455,6 @@ export async function collectPagedJiraRestIssues(
     startAt += rows.length;
   }
   return { issues, truncated: true };
-}
-
-async function fetchPagedJiraIssueData(
-  requestPage: (startAt: number, maxResults: number, nextPageToken?: string) => Promise<unknown>
-): Promise<TrackerIssue[]> {
-  const { issues } = await collectPagedJiraRestIssues(requestPage, {
-    maxResults: JIRA_ISSUE_PAGE_SIZE,
-  });
-  return issues;
-}
-
-async function fetchAgileSprintIssues(
-  api: AxiosInstance,
-  sprintId: number
-): Promise<TrackerIssue[] | null> {
-  const baseUrl = typeof api.defaults.baseURL === 'string' ? api.defaults.baseURL : '';
-  if (!baseUrl) {
-    return null;
-  }
-  try {
-    return await fetchPagedJiraIssueData(async (startAt, maxResults) => {
-      const { data } = await api.get<unknown>(jiraAgileSprintIssuesUrl(baseUrl, sprintId), {
-        params: { fields: '*all', maxResults, startAt },
-      });
-      return data;
-    });
-  } catch {
-    return null;
-  }
-}
-
-function fetchJqlSprintIssues(api: AxiosInstance, sprintId: number): Promise<TrackerIssue[]> {
-  return fetchPagedJiraIssueData((startAt, maxResults, nextPageToken) =>
-    postJiraIssueSearch(api, {
-      fields: JIRA_SPRINT_ISSUE_FIELDS,
-      jql: `sprint = ${sprintId} ORDER BY Rank ASC`,
-      maxResults,
-      nextPageToken,
-      startAt,
-    })
-  );
-}
-
-export async function searchJiraIssuesInSprint(
-  api: AxiosInstance,
-  sprintId: number
-): Promise<TrackerIssue[]> {
-  const agile = await fetchAgileSprintIssues(api, sprintId);
-  if (agile !== null) {
-    return agile;
-  }
-  return fetchJqlSprintIssues(api, sprintId);
 }
 
 function jiraIssuePath(issueKey: string): string {

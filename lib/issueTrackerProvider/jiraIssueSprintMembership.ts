@@ -72,7 +72,7 @@ async function requestJiraSprintBoardId(
   }
 }
 
-async function getJiraSprintBoardId(api: AxiosInstance, sprintId: number): Promise<number | null> {
+export async function getJiraSprintBoardId(api: AxiosInstance, sprintId: number): Promise<number | null> {
   const baseUrl = jiraApiBaseUrl(api);
   if (!baseUrl) {
     return null;

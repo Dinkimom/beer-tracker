@@ -11,7 +11,6 @@ import {
   mapJiraRestIssueToTrackerIssue,
   mapJiraSprintField,
   normalizeJiraIssue,
-  searchJiraIssuesInSprint,
 } from './jiraIssues';
 import { clearJiraScheduleFieldRefsCacheForTests } from './jiraScheduleFields';
 
@@ -214,46 +213,6 @@ describe('normalizeJiraIssue', () => {
         summary: 'Fix',
       } as TrackerIssue).customFields
     ).toEqual({ customfield_10016: 5 });
-  });
-});
-
-describe('searchJiraIssuesInSprint', () => {
-  it('loads Agile sprint issues', async () => {
-    const get = vi.fn().mockResolvedValue({
-      data: {
-        isLast: true,
-        issues: [
-          {
-            fields: { summary: 'Fix login', status: { statusCategory: { key: 'new' } } },
-            key: 'PROJ-1',
-          },
-        ],
-        total: 1,
-      },
-    });
-    const issues = await searchJiraIssuesInSprint(apiWith({ get }), 78804);
-    expect(get).toHaveBeenCalledWith('https://jira.example.com/rest/agile/1.0/sprint/78804/issue', {
-      params: { fields: '*all', maxResults: 50, startAt: 0 },
-    });
-    expect(issues).toEqual([expect.objectContaining({ key: 'PROJ-1', summary: 'Fix login' })]);
-  });
-
-  it('falls back to JQL search when Agile fails', async () => {
-    const get = vi.fn().mockRejectedValue(new Error('no agile'));
-    const post = vi.fn().mockResolvedValue({
-      data: {
-        issues: [{ fields: { summary: 'From JQL' }, key: 'PROJ-9' }],
-        total: 1,
-      },
-    });
-    const issues = await searchJiraIssuesInSprint(apiWith({ get, post }), 78804);
-    expect(post).toHaveBeenCalledWith('/search', {
-      fields: ['*all'],
-      jql: 'sprint = 78804 ORDER BY Rank ASC',
-      maxResults: 50,
-      startAt: 0,
-    });
-    expect(issues).toEqual([expect.objectContaining({ key: 'PROJ-9', summary: 'From JQL' })]);
   });
 });
 
