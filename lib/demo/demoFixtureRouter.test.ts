@@ -207,7 +207,8 @@ describe('handleDemoFixtureRequest', () => {
   it('offers workflow transitions and applies the chosen one to the sprint tasks', () => {
     const transitions = handleDemoFixtureRequest(cfg('get', '/issues/DEMO-101/transitions'))
       .data as Array<{ id: string; to: { key: string } }>;
-    expect(transitions.map((t) => t.to.key)).toEqual(['inReview', 'blocked', 'needInfo', 'open']);
+    expect(transitions.map((t) => t.to.key).slice(0, 4)).toEqual(['inReview', 'blocked', 'needInfo', 'open']);
+    expect(transitions.length).toBeGreaterThan(10);
 
     const toReview = transitions.find((t) => t.to.key === 'inReview');
     const patched = handleDemoFixtureRequest(

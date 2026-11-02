@@ -96,7 +96,7 @@ export function StatusSubmenu({
 
   return (
     <ContextSubmenu
-      bodyClassName="max-h-[400px]"
+      bodyClassName="max-h-[200px]"
       buttonRef={buttonRef}
       disabled={isLoading}
       icon="refresh"

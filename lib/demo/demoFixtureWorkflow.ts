@@ -14,7 +14,10 @@ interface DemoWorkflowStatus {
   statusTypeKey: string;
 }
 
-/** Воркфлоу демо: те же статусы, что в истории (`demoFixtureChangelog`). */
+/**
+ * Воркфлоу демо: статусы из истории (`demoFixtureChangelog`) и запасные — из «In progress»
+ * переходов больше, чем строк в контекстном меню, чтобы было видно прокрутку подменю статуса.
+ */
 const DEMO_WORKFLOW: Record<string, DemoWorkflowStatus> = {
   open: {
     category: 'todo',
@@ -28,7 +31,22 @@ const DEMO_WORKFLOW: Record<string, DemoWorkflowStatus> = {
     display: 'In progress',
     key: 'inProgress',
     statusTypeKey: 'inProgress',
-    next: ['inReview', 'blocked', 'needInfo', 'open'],
+    next: [
+      'inReview',
+      'blocked',
+      'needInfo',
+      'open',
+      'onHold',
+      'waitingForDeploy',
+      'readyForRelease',
+      'inDesign',
+      'needsEstimate',
+      'readyForDev',
+      'reopened',
+      'duplicate',
+      'wontFix',
+      'cancelled',
+    ],
   },
   inReview: {
     category: 'in-progress',
@@ -71,6 +89,76 @@ const DEMO_WORKFLOW: Record<string, DemoWorkflowStatus> = {
     key: 'closed',
     statusTypeKey: 'done',
     next: ['open'],
+  },
+  onHold: {
+    category: 'paused',
+    display: 'On hold',
+    key: 'onHold',
+    statusTypeKey: 'paused',
+    next: ['inProgress', 'open'],
+  },
+  waitingForDeploy: {
+    category: 'in-progress',
+    display: 'Waiting for deploy',
+    key: 'waitingForDeploy',
+    statusTypeKey: 'inProgress',
+    next: ['inProgress', 'open'],
+  },
+  readyForRelease: {
+    category: 'in-progress',
+    display: 'Ready for release',
+    key: 'readyForRelease',
+    statusTypeKey: 'inProgress',
+    next: ['inProgress', 'open'],
+  },
+  inDesign: {
+    category: 'in-progress',
+    display: 'In design',
+    key: 'inDesign',
+    statusTypeKey: 'inProgress',
+    next: ['inProgress', 'open'],
+  },
+  needsEstimate: {
+    category: 'todo',
+    display: 'Needs estimate',
+    key: 'needsEstimate',
+    statusTypeKey: 'new',
+    next: ['inProgress', 'open'],
+  },
+  readyForDev: {
+    category: 'todo',
+    display: 'Ready for dev',
+    key: 'readyForDev',
+    statusTypeKey: 'new',
+    next: ['inProgress', 'open'],
+  },
+  reopened: {
+    category: 'todo',
+    display: 'Reopened',
+    key: 'reopened',
+    statusTypeKey: 'new',
+    next: ['inProgress', 'open'],
+  },
+  duplicate: {
+    category: 'done',
+    display: 'Duplicate',
+    key: 'duplicate',
+    statusTypeKey: 'done',
+    next: ['inProgress', 'open'],
+  },
+  wontFix: {
+    category: 'done',
+    display: "Won't fix",
+    key: 'wontFix',
+    statusTypeKey: 'done',
+    next: ['inProgress', 'open'],
+  },
+  cancelled: {
+    category: 'done',
+    display: 'Cancelled',
+    key: 'cancelled',
+    statusTypeKey: 'done',
+    next: ['inProgress', 'open'],
   },
 };
 
