@@ -37,6 +37,7 @@ import {
   summarizeSprintPlanPatchOps,
 } from '@/lib/sprints/sprintPlanPatchHelpers';
 import { buildNoteOverlapHints, collectNoteOverlapWarnings } from '@/lib/sprints/sprintPlanPatchNoteOverlap';
+import { fitPlanPatchNoteHeights } from '@/lib/sprints/sprintPlanPatchNoteSize';
 import { assertPlanPatchOpsFitPartsPerDay } from '@/lib/sprints/sprintPlanPatchPartsValidation';
 import { applyPendingProposeGate } from '@/lib/sprints/sprintPlanPatchPendingView';
 import { persistDraftInSession } from '@/lib/sprints/sprintPlanPatchPersist';
@@ -106,7 +107,7 @@ export async function proposeSprintPlanPatch(input: {
   replacePending?: boolean;
   sprintId: number;
 }): Promise<SprintPlanPatchProposeResult> {
-  const ops = parseOpsOrThrow(input.ops);
+  const parsedOps = parseOpsOrThrow(input.ops);
   const replies = parseAgentSessionReplies(input.replies);
   const persistNotes = input.persistNotes !== false;
   const replacePending = input.replacePending === true;
@@ -117,7 +118,9 @@ export async function proposeSprintPlanPatch(input: {
     useStoredTracker: true,
     viewerUserId: input.actorUserId,
   });
-  assertPlanPatchOpsFitPartsPerDay(ops, current.meta.partsPerDay);
+  assertPlanPatchOpsFitPartsPerDay(parsedOps, current.meta.partsPerDay);
+  // Высота заметок по тексту — до хеша и токена, чтобы черновик и apply совпали.
+  const ops = fitPlanPatchNoteHeights(parsedOps, current.notes, current.meta.partsPerDay);
   await assertPlanPatchTargetsExist({ ops, sprintId: input.sprintId });
   const simulated = simulatePositionsAfterPatch(current.positions, ops);
   const capacityPreviewSummary = buildSprintContextCapacity({

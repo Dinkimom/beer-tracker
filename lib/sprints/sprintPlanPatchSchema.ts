@@ -86,7 +86,11 @@ const DeletePositionSchema = z.object({
 const NOTE_WIDTH_DESCRIPTION =
   'Card length on the timeline in parts from (day, part), 1..60 (default 2). Values > 60 are legacy px (/100).';
 const NOTE_HEIGHT_DESCRIPTION =
-  'Card height in swimlane rows, 1 = one task card. Omit on createNote to fit the text.';
+  'Card height in swimlane rows, 1 = one task card. Omit it: the server fits the height to the text (on createNote, and on updateNote that changes text or width). ' +
+  'Fit formula, about 6.4px per char of 12px handwriting: text width W = width/partsPerDay·144 − 58 px; ' +
+  'plain text wraps by words into lines of 16.5px (line breaks collapse into spaces); ' +
+  'with markdown (- [ ], -, #) each line is 4px + 18px per wrapped line, an empty line 6px, # heading 8px + 20px per line; ' +
+  'height = ceil((textPx + 24) / 66), 1..10. Pass height only to make a card deliberately taller than its text.';
 
 const CreateNoteSchema = z.object({
   assigneeId: z.string().min(1).max(255),
