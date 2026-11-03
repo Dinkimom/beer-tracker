@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.29.2] — 2026-11-04
+
+### English
+
+- New Year theme: a garland hangs above the header with softly twinkling bulbs (still when reduced motion is on) that no longer overlap the tabs; snow now falls over the content instead of under it; the logo shows a 🎄 instead of the beer mug. Snow is also on /demo/planner. The theme period is unchanged: December 15 — January 15.
+- Notes created or edited by the agent get a height that fits their text, so they no longer come out cut off or with empty space.
+- Fix: a setting stored in the browser is no longer overwritten when a component mounts — the New Year theme can be turned back on.
+- Operators: no database migrations or new env vars.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.29.2` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Новогодняя тема: над шапкой гирлянда с мягко мерцающими лампочками (без анимации при «уменьшить движение»), которая больше не налезает на вкладки; снег падает поверх контента, а не под ним; в логотипе 🎄 вместо кружки. Снег есть и на /demo/planner. Период оформления прежний: 15 декабря — 15 января.
+- Заметки, которые создаёт или правит агент, получают высоту по тексту — без обрезки и пустого места.
+- Исправлено: настройка в браузере больше не перетирается при монтировании компонента — новогоднюю тему снова можно включить.
+- Для администраторов: миграций БД и новых переменных окружения нет.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.29.2` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.29.1] — 2026-11-03
 
 ### English
