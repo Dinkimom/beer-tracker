@@ -27,7 +27,10 @@ export function Snow() {
   if (!isInChristmasPeriod() || !christmasThemeEnabled) return null;
 
   return (
-    <div className={`fixed inset-0 pointer-events-none ${ZIndex.class('overlay')} overflow-hidden`}>
+    <div
+      className="pointer-events-none fixed inset-0 overflow-hidden"
+      style={{ zIndex: ZIndex.value('overlay') }}
+    >
       <SnowfallEffect theme={theme} />
     </div>
   );

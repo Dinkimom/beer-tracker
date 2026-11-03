@@ -245,6 +245,27 @@ html.theme-changing * {
   }
 }
 
+/* Гирлянда в шапке (новогодняя тема): лампочки мерцают вразнобой за счёт отрицательных animation-delay. */
+@keyframes christmas-light-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.christmas-light {
+  animation: christmas-light-twinkle 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .christmas-light {
+    animation: none;
+  }
+}
+
 /* Исключение: плавное появление ленивого контента (таймлайн факта, плановые фазы) при скролле */
 .occupancy-lazy-fade-in {
   transition-property: opacity !important;

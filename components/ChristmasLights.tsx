@@ -2,161 +2,83 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { useChristmasThemeStorage, useThemeStorage } from '@/hooks/useLocalStorage';
+const LIGHT_COLORS = ['#ef4444', '#facc15', '#3b82f6', '#22c55e', '#ec4899'];
+/** Шаг между лампочками, px: на 1400px шапки — около 30 лампочек. */
+const LIGHT_SPACING = 48;
+/** Провод крепится на этой высоте и провисает к лампочке; вся гирлянда висит в верхнем отступе шапки (pt-3), не задевая кнопки. */
+const WIRE_Y = 1;
+const SAG_CONTROL_Y = 9;
+const SOCKET_Y = 4.5;
+const BULB_Y = 10;
+const HEIGHT = 17;
 
-import { ChristmasLightBulb } from './ChristmasLightBulb';
-import { isInChristmasPeriod, randomizeChristmasLightState } from './christmasLightsHelpers';
-
-const LIGHT_COLORS = ['#ff0000', '#ffff00', '#0099ff', '#00ff00', '#ff0000', '#ffff00', '#0099ff', '#00ff00'];
-
-interface Light {
-  color: string;
-  delay: number;
-  id: string;
-  isOn: boolean;
-  verticalOffset: number; // Смещение по вертикали для создания эффекта "висящих" лампочек
+/** Провод: дуги между точками крепления, лампочка висит в нижней точке каждой дуги. */
+function buildWirePath(count: number): string {
+  let path = `M 0 ${WIRE_Y}`;
+  for (let i = 0; i < count; i++) {
+    const x = (i + 1) * LIGHT_SPACING;
+    path += ` Q ${x - LIGHT_SPACING / 2} ${SAG_CONTROL_Y} ${x} ${WIRE_Y}`;
+  }
+  return path;
 }
 
 export function ChristmasLights() {
-  const [theme] = useThemeStorage();
-  const [christmasThemeEnabled] = useChristmasThemeStorage();
-  const [lights, setLights] = useState<Light[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(1000);
+  const [width, setWidth] = useState(0);
 
   useEffect(() => {
-    // Нам нужно установить флаг монтирования, чтобы избежать проблем с гидратацией.
-    // Это осознанное использование setState внутри эффекта.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsMounted(true);
-    setLights(
-      Array.from({ length: 20 }, (_, i) => ({
-        color: LIGHT_COLORS[i % LIGHT_COLORS.length],
-        delay: i * 0.15, // Задержка для волнового эффекта
-        id: `light-${i}-${Date.now()}-${Math.random()}`,
-        isOn: Math.random() > 0.3, // Начальное состояние
-        verticalOffset: (Math.random() - 0.5) * 8, // Случайное смещение от -4px до +4px
-      }))
-    );
+    const container = containerRef.current;
+    if (!container) return;
+    const measure = () => setWidth(container.getBoundingClientRect().width);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLights((prev) => prev.map(randomizeChristmasLightState));
-    }, 600);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerWidth(rect.width - 32); // Учитываем padding (2rem = 32px)
-      }
-    };
-
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
-
-  if (!isMounted || !isInChristmasPeriod() || !christmasThemeEnabled) return null;
-
-  if (lights.length === 0) return null;
-
-  const baseY = 12;
-  const waveAmplitude = 3;
-  const socketHeight = 4; // Высота основания лампочки
-  const socketCenterOffset = socketHeight / 2;
-  const wireExtension = 50;
-
-  const wirePoints = lights.map((light, i) => {
-    const progress = lights.length > 1 ? i / (lights.length - 1) : 0;
-    const waveY = Math.sin(progress * Math.PI * 2) * waveAmplitude;
-    const lampY = baseY + waveY + light.verticalOffset;
-    const wireY = lampY - socketHeight + socketCenterOffset;
-    return { progress, wireY };
-  });
-
-  const getWirePath = (width: number) => {
-    if (wirePoints.length === 0) return '';
-
-    const points = wirePoints.map(({ progress, wireY }) => ({
-      x: progress * width,
-      y: wireY,
-    }));
-
-    // Начальная точка - слева за пределами экрана
-    const startX = -wireExtension;
-    const startY = points[0].y;
-
-    // Конечная точка - справа за пределами экрана
-    const endX = width + wireExtension;
-    const endY = points[points.length - 1].y;
-
-    // Начинаем слева за пределами экрана
-    let path = `M ${startX} ${startY}`;
-
-    // Соединяем с первой лампочкой
-    if (points.length > 0) {
-      path += ` L ${points[0].x} ${points[0].y}`;
-    }
-
-    // Провод между лампочками
-    for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1];
-      const curr = points[i];
-      // Используем кривую Безье для плавного провода
-      const cp1x = prev.x + (curr.x - prev.x) * 0.5;
-      const cp1y = prev.y;
-      const cp2x = prev.x + (curr.x - prev.x) * 0.5;
-      const cp2y = curr.y;
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curr.x} ${curr.y}`;
-    }
-
-    // Заканчиваем справа за пределами экрана
-    if (points.length > 0) {
-      path += ` L ${endX} ${endY}`;
-    }
-
-    return path;
-  };
+  const count = Math.ceil(width / LIGHT_SPACING);
 
   return (
     <div
       ref={containerRef}
-      className="absolute top-0 left-0 right-0 h-8 flex items-start justify-between px-4 overflow-visible pointer-events-none -mt-2"
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden"
+      style={{ height: HEIGHT }}
     >
-      {/* Провод гирлянды - изогнутый SVG путь */}
-      <svg
-        className="absolute top-0 left-4 h-8 pointer-events-none"
-        preserveAspectRatio="none"
-        style={{ width: `calc(100% - 2rem + ${wireExtension * 2}px)`, left: `calc(1rem - ${wireExtension}px)` }}
-        viewBox={`${-wireExtension} 0 ${containerWidth + wireExtension * 2} 32`}
-      >
-        <path
-          d={getWirePath(containerWidth)}
-          fill="none"
-          stroke={theme === 'dark' ? '#166534' : '#16a34a'}
-          strokeWidth="2"
-        />
-      </svg>
-
-      {/* Лампочки гирлянды */}
-      {lights.map((light, index) => (
-        <ChristmasLightBulb
-          key={light.id}
-          baseY={baseY}
-          index={index}
-          light={light}
-          lightsCount={lights.length}
-          theme={theme}
-          waveAmplitude={waveAmplitude}
-        />
-      ))}
+      {count > 0 ? (
+        <svg height={HEIGHT} width={count * LIGHT_SPACING}>
+          <path
+            className="stroke-green-800/70 dark:stroke-green-700/70"
+            d={buildWirePath(count)}
+            fill="none"
+            strokeWidth={1}
+          />
+          {Array.from({ length: count }, (_, i) => {
+            const x = i * LIGHT_SPACING + LIGHT_SPACING / 2;
+            const color = LIGHT_COLORS[i % LIGHT_COLORS.length];
+            return (
+              <g key={i}>
+                <rect
+                  className="fill-green-800 dark:fill-green-700"
+                  height={3}
+                  rx={0.5}
+                  width={3.5}
+                  x={x - 1.75}
+                  y={SOCKET_Y}
+                />
+                <g
+                  className="christmas-light"
+                  style={{ animationDelay: `${-((i * 0.7) % 2.4)}s`, color }}
+                >
+                  <circle cx={x} cy={BULB_Y} fill="currentColor" opacity={0.3} r={6.5} />
+                  <ellipse cx={x} cy={BULB_Y + 0.5} fill="currentColor" rx={3} ry={4.2} />
+                  <ellipse cx={x - 1} cy={BULB_Y - 0.5} fill="white" opacity={0.6} rx={0.8} ry={1.4} />
+                </g>
+              </g>
+            );
+          })}
+        </svg>
+      ) : null}
     </div>
   );
 }
-

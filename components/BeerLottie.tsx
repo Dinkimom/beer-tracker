@@ -27,7 +27,7 @@ interface LottiePlayerProps {
 
 type LottiePlayer = (props: LottiePlayerProps) => React.ReactNode;
 
-const DEFAULT_SIZE = 32;
+export const DEFAULT_SIZE = 32;
 const BEER_EMOJI_JSON_URL = '/assets/beer-emoji.json';
 const BEER_MUG_FALLBACK_SRC = '/assets/icons/beer-mug.svg';
 

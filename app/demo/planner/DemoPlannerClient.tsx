@@ -10,6 +10,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { PageHeader } from '@/components/PageHeader';
 import { PhaseCardColorSchemeProvider } from '@/components/PhaseCardColorSchemeContext';
+import { Snow } from '@/components/Snow';
 import { useI18n } from '@/contexts/LanguageContext';
 import { BacklogPage } from '@/features/backlog/components/BacklogPage';
 import { useBoards } from '@/features/board/hooks/useBoards';
@@ -214,6 +215,7 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
 
   return (
     <ErrorBoundary>
+      <Snow />
       <PhaseCardColorSchemeProvider>
         <div className="flex h-screen flex-col overflow-hidden bg-ds-canvas">
           <PageHeader
