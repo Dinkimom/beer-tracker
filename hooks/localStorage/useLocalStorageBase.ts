@@ -1,82 +1,77 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 
-import { getFromStorage, saveToStorage } from './storagePrimitives';
+import { saveToStorage } from './storagePrimitives';
+
+function readRaw(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/** Читает значение ключа; повторный разбор только при смене сырой строки (стабильный снапшот). */
+function createSnapshotReader<T>(key: string, fallback: T): () => T {
+  let cachedRaw: string | null = null;
+  let cachedValue = fallback;
+  return () => {
+    const raw = readRaw(key);
+    if (raw === cachedRaw) return cachedValue;
+    cachedRaw = raw;
+    try {
+      cachedValue = raw === null ? fallback : (JSON.parse(raw) as T);
+    } catch (error) {
+      console.error(`Ошибка при загрузке из localStorage (${key}):`, error);
+      cachedValue = fallback;
+    }
+    return cachedValue;
+  };
+}
 
 /**
- * Универсальный хук для работы с простыми значениями в localStorage
+ * Универсальный хук для работы с простыми значениями в localStorage.
+ * Источник правды — сам localStorage: все потребители ключа видят одно значение,
+ * запись происходит только через setter (монтирование ничего не пишет).
  */
 export function useLocalStorage<T>(
   key: string,
   defaultValue: T
 ): [T, (value: T | ((prev: T) => T)) => void] {
-  const [value, setValueState] = useState<T>(() =>
-    getFromStorage(key, defaultValue)
+  // Первый default фиксируем: снапшот должен быть стабильным, а вызывающие часто передают литерал.
+  const [fallback] = useState(defaultValue);
+
+  const getSnapshot = useMemo(() => createSnapshotReader(key, fallback), [key, fallback]);
+
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      // `storage` — другие вкладки, `localStorageChange` — это же окно
+      const handleStorage = (e: StorageEvent) => {
+        if (e.key === key) onChange();
+      };
+      const handleCustom = (e: Event) => {
+        if ((e as CustomEvent<{ key: string }>).detail?.key === key) onChange();
+      };
+      window.addEventListener('storage', handleStorage);
+      window.addEventListener('localStorageChange', handleCustom);
+      return () => {
+        window.removeEventListener('storage', handleStorage);
+        window.removeEventListener('localStorageChange', handleCustom);
+      };
+    },
+    [key]
   );
-  const isInitialMount = useRef(true);
 
-  // Синхронизация с изменениями в других вкладках/окнах
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === key && e.newValue !== null) {
-        try {
-          const newValue = JSON.parse(e.newValue) as T;
-          setValueState(newValue);
-        } catch (error) {
-          console.error(`Ошибка при синхронизации из localStorage (${key}):`, error);
-        }
-      }
-    };
+  const value = useSyncExternalStore(subscribe, getSnapshot, () => fallback);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [key]);
-
-  // Синхронизация внутри того же окна через кастомное событие
-  useEffect(() => {
-    const handleCustomStorageChange = (e: Event) => {
-      const customEvent = e as CustomEvent<{ key: string; value: T }>;
-      if (customEvent.detail?.key === key && customEvent.detail?.value !== undefined) {
-        setValueState(customEvent.detail.value);
-      }
-    };
-
-    window.addEventListener('localStorageChange', handleCustomStorageChange as EventListener);
-    return () => window.removeEventListener('localStorageChange', handleCustomStorageChange as EventListener);
-  }, [key]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      const currentValue = getFromStorage(key, defaultValue);
-      if (JSON.stringify(currentValue) !== JSON.stringify(value)) {
-        // Используем setTimeout для отложенного обновления состояния
-        setTimeout(() => {
-          setValueState(currentValue);
-        }, 0);
-      }
-    }
-  }, [key, defaultValue, value]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      return;
-    }
-    saveToStorage(key, value);
-    window.dispatchEvent(new CustomEvent('localStorageChange', {
-      detail: { key, value }
-    }));
-  }, [key, value]);
-
-  const setValue = (newValue: T | ((prev: T) => T)) => {
-    setValueState((prev) =>
-      typeof newValue === 'function' ? (newValue as (prev: T) => T)(prev) : newValue
-    );
-  };
+  const setValue = useCallback(
+    (newValue: T | ((prev: T) => T)) => {
+      const next =
+        typeof newValue === 'function' ? (newValue as (prev: T) => T)(getSnapshot()) : newValue;
+      saveToStorage(key, next);
+      window.dispatchEvent(new CustomEvent('localStorageChange', { detail: { key, value: next } }));
+    },
+    [key, getSnapshot]
+  );
 
   return [value, setValue];
 }
