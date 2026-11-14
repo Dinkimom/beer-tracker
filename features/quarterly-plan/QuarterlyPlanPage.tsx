@@ -36,7 +36,7 @@ import {
 } from '@/lib/quarterlyPlans/quarterWeeks';
 import { getPlannerNow } from '@/utils/plannerClock';
 
-import { QuarterlyPlanAgentPanel } from './components/QuarterlyPlanAgentPanel';
+import { QuarterlyPlanAgentChat } from './components/QuarterlyPlanAgentChat';
 import { QuarterlyPlanBoard } from './components/QuarterlyPlanBoard';
 import { QuarterlyPlanDraftBar } from './components/QuarterlyPlanDraftBar';
 import { QuarterlyPlanMenu } from './components/QuarterlyPlanMenu';
@@ -309,21 +309,9 @@ export function QuarterlyPlanPage() {
             onToggle={draftView.toggle}
           />
         ) : null}
-        {agentOpen ? (
-          <QuarterlyPlanAgentPanel
-            busy={agent.busy}
-            draftSessionId={agent.draftSessionId}
-            sessions={agent.sessions}
-            onClose={() => setAgentOpen(false)}
-            onSend={agent.send}
-          />
-        ) : null}
+        {agentOpen ? <QuarterlyPlanAgentChat scope={agent.scope} /> : null}
         <QuarterlyPlanToolbar
-          agent={
-            agent.agentAvailable || agent.sessions.length > 0
-              ? { open: agentOpen, waiting: agent.sessions.some((session) => session.status === 'waiting_user'), onToggle: () => setAgentOpen((open) => !open) }
-              : null
-          }
+          agent={agent.agentVisible ? { open: agentOpen, waiting: agent.waiting, onToggle: () => setAgentOpen((open) => !open) } : null}
           hideDone={hideDone}
           issueCounts={{
             away: issues.filter((issue) => issue.away).length,

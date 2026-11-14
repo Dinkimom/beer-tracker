@@ -5,6 +5,7 @@ import type {
   AgentSessionCreatePayload,
   AgentSessionUserMessagePayload,
 } from '@/lib/agentSessions/agentSession';
+import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,9 +17,10 @@ import {
   countOpenAgentSessionComments,
   groupAgentSessionItemComments,
 } from '@/lib/agentSessions/agentSession';
+import { agentSessionScopeKey, sprintScope } from '@/lib/agentSessions/agentSessionScope';
 import {
-  createSprintAgentSession,
-  fetchSprintAgentSessions,
+  createAgentSession,
+  fetchAgentSessions,
   postAgentSessionMessage,
   setAgentSessionStatus,
   type SprintAgentSessions,
@@ -37,39 +39,52 @@ function upsertSession(data: SprintAgentSessions | undefined, session: AgentSess
   return { ...(data ?? EMPTY), sessions: [session, ...rest] };
 }
 
-function useAgentSessionsQueryKey(sprintId: number | null | undefined) {
+/** Сессии спринта (номер) или квартального плана (`AgentSessionScope`). */
+type AgentSessionsTarget = AgentSessionScope | number | null | undefined;
+
+function toScope(target: AgentSessionsTarget): AgentSessionScope | null {
+  if (target == null) return null;
+  return typeof target === 'number' ? sprintScope(target) : target;
+}
+
+/** У квартала своего realtime-канала нет: его сессии перечитываем сами, пока доска открыта (QM11). */
+const QUARTER_POLL_MS = 5000;
+
+function useAgentSessionsQueryKey(scope: AgentSessionScope | null) {
   const forDemoPlanner = useDemoPlannerBoardsQueryScope();
+  // Сессии спринта — по номеру, как раньше: realtime инвалидирует `[agentSessions, sprintId]`.
+  const key = scope?.kind === 'sprint' ? scope.sprintId : scope ? agentSessionScopeKey(scope) : null;
   return useMemo(
     () =>
-      forDemoPlanner
-        ? ([AGENT_SESSIONS_QUERY_KEY, 'demo', sprintId ?? null] as const)
-        : ([AGENT_SESSIONS_QUERY_KEY, sprintId ?? null] as const),
-    [forDemoPlanner, sprintId]
+      forDemoPlanner ? ([AGENT_SESSIONS_QUERY_KEY, 'demo', key] as const) : ([AGENT_SESSIONS_QUERY_KEY, key] as const),
+    [forDemoPlanner, key]
   );
 }
 
-function useSprintAgentSessionsQuery(sprintId: number | null | undefined) {
-  const queryKey = useAgentSessionsQueryKey(sprintId);
+function useSprintAgentSessionsQuery(target: AgentSessionsTarget) {
+  const scope = toScope(target);
+  const queryKey = useAgentSessionsQueryKey(scope);
   const query = useQuery({
-    enabled: sprintId != null,
-    queryFn: () => (sprintId == null ? EMPTY : fetchSprintAgentSessions(sprintId)),
+    enabled: scope != null,
+    queryFn: () => (scope == null ? EMPTY : fetchAgentSessions(scope)),
     queryKey,
+    refetchInterval: scope?.kind === 'quarter' ? QUARTER_POLL_MS : false,
     staleTime: 1000 * 60,
   });
-  return { data: query.data ?? EMPTY, loaded: query.isSuccess, queryKey };
+  return { data: query.data ?? EMPTY, loaded: query.isSuccess, queryKey, scope };
 }
 
 /** Показывать ли «Агенту»: без агента просьба из планера никуда не уйдёт. */
-export function useAgentAvailable(sprintId: number | null | undefined): boolean {
-  return useSprintAgentSessionsQuery(sprintId).data.agentAvailable;
+export function useAgentAvailable(target: AgentSessionsTarget): boolean {
+  return useSprintAgentSessionsQuery(target).data.agentAvailable;
 }
 
 /**
  * Кто ответит на просьбу: мост на связи — Claude CLI, иначе клиент подключённого MCP.
  * null — агента нет или клиент не опознан.
  */
-export function useAgentBrand(sprintId: number | null | undefined): McpOAuthClientBrand | null {
-  const { agentBrand } = useSprintAgentSessionsQuery(sprintId).data;
+export function useAgentBrand(target: AgentSessionsTarget): McpOAuthClientBrand | null {
+  const { agentBrand } = useSprintAgentSessionsQuery(target).data;
   const bridge = useAgentBridge();
   if (bridge.alive) {
     return 'claude';
@@ -81,9 +96,9 @@ export function useAgentBrand(sprintId: number | null | undefined): McpOAuthClie
  * Свои сессии с агентом в спринте. Открытых может быть сколько угодно, и агенты работают над ними
  * параллельно. Драфт на доске один (`draftSession`): к его пунктам относятся 💬 и их счётчик.
  */
-export function useAgentSessions(sprintId: number | null | undefined) {
+export function useAgentSessions(target: AgentSessionsTarget) {
   const queryClient = useQueryClient();
-  const { data, loaded, queryKey } = useSprintAgentSessionsQuery(sprintId);
+  const { data, loaded, queryKey, scope } = useSprintAgentSessionsQuery(target);
   const bridge = useAgentBridge();
   const { draftSessionId, sessions } = data;
   const draftSession = useMemo(
@@ -114,10 +129,10 @@ export function useAgentSessions(sprintId: number | null | undefined) {
 
   const create = useMutation({
     mutationFn: (input: AgentSessionCreatePayload) => {
-      if (sprintId == null) {
+      if (scope == null) {
         return Promise.reject(new Error('sprint is not selected'));
       }
-      return createSprintAgentSession(sprintId, input);
+      return createAgentSession(scope, input);
     },
     onSuccess: store,
   });

@@ -6,7 +6,6 @@ import type {
 import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
-import { sprintScope } from '@/lib/agentSessions/agentSessionScope';
 import { getPlannerBeerTrackerApi } from '@/lib/plannerBeerTrackerApiOverride';
 
 export interface SprintAgentSessions {
@@ -46,14 +45,6 @@ export async function createAgentSession(
     input
   );
   return data.session ?? null;
-}
-
-export function fetchSprintAgentSessions(sprintId: number): Promise<SprintAgentSessions> {
-  return fetchAgentSessions(sprintScope(sprintId));
-}
-
-export function createSprintAgentSession(sprintId: number, input: AgentSessionCreatePayload): Promise<AgentSession | null> {
-  return createAgentSession(sprintScope(sprintId), input);
 }
 
 export async function postAgentSessionMessage(

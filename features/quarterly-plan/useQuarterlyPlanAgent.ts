@@ -1,6 +1,5 @@
 'use client';
 
-import type { AgentSessionUserMessagePayload } from '@/lib/agentSessions/agentSession';
 import type { QuarterlyPlanDraftView } from '@/lib/api/quarterlyPlans';
 import type { QuarterlyPlan, QuarterlyPlanContent, QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
@@ -9,8 +8,12 @@ import { useCallback, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import {
+  AGENT_SESSIONS_QUERY_KEY,
+  useAgentAvailable,
+  useAgentSessions,
+} from '@/features/swimlane/hooks/useAgentSessions';
 import { quarterScope } from '@/lib/agentSessions/agentSessionScope';
-import { createAgentSession, fetchAgentSessions, postAgentSessionMessage } from '@/lib/api/agentSessions';
 import {
   approveQuarterlyPlanDraft,
   fetchQuarterlyPlanDraft,
@@ -20,7 +23,7 @@ import { diffQuarterlyPlanDraft } from '@/lib/quarterlyPlans/quarterlyPlanDraftD
 
 /**
  * Черновик агента и сессии по квартальному плану (QM9–QM11). Своего realtime-канала у квартала нет:
- * пока вкладка открыта, перечитываем раз в несколько секунд — агент кладёт черновик и отвечает в сессии.
+ * пока вкладка открыта, черновик перечитываем раз в несколько секунд (сессии опрашивает `useAgentSessions`).
  */
 const POLL_MS = 5000;
 
@@ -29,23 +32,20 @@ export function useQuarterlyPlanAgent(ref: QuarterRef) {
   const queryClient = useQueryClient();
   const { quarter, year } = ref;
   const draftKey = useMemo(() => ['quarterlyPlanDraft', year, quarter] as const, [quarter, year]);
-  const sessionsKey = useMemo(() => ['quarterlyPlanAgentSessions', year, quarter] as const, [quarter, year]);
   const scope = useMemo(() => quarterScope({ quarter, year }), [quarter, year]);
+  // Сессии — тем же хуком, что у доски спринта: чат квартала — тот же компонент.
+  const sessions = useAgentSessions(scope);
+  const agentAvailable = useAgentAvailable(scope);
 
   const draftQuery = useQuery({
     queryFn: () => fetchQuarterlyPlanDraft({ quarter, year }),
     queryKey: draftKey,
     refetchInterval: POLL_MS,
   });
-  const sessionsQuery = useQuery({
-    queryFn: () => fetchAgentSessions(scope),
-    queryKey: sessionsKey,
-    refetchInterval: POLL_MS,
-  });
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: draftKey }).catch(() => undefined);
-    queryClient.invalidateQueries({ queryKey: sessionsKey }).catch(() => undefined);
+    queryClient.invalidateQueries({ queryKey: [AGENT_SESSIONS_QUERY_KEY] }).catch(() => undefined);
     queryClient.invalidateQueries({ queryKey: ['quarterlyPlan', year, quarter] }).catch(() => undefined);
   };
 
@@ -61,24 +61,17 @@ export function useQuarterlyPlanAgent(ref: QuarterRef) {
     mutationFn: (proposalId: string) => rejectQuarterlyPlanDraft({ quarter, year }, proposalId),
     onSuccess: refresh,
   });
-  const send = useMutation({
-    mutationFn: ({
-      sessionId,
-      ...message
-    }: AgentSessionUserMessagePayload & { sessionId: string | null }) =>
-      sessionId ? postAgentSessionMessage(sessionId, message) : createAgentSession(scope, { kind: 'plan', text: message.text }),
-    onSuccess: refresh,
-  });
 
   return {
-    agentAvailable: sessionsQuery.data?.agentAvailable ?? false,
+    /** Показывать ли «Агент»: агент подключён или по кварталу уже есть сессии. */
+    agentVisible: agentAvailable || sessions.openSessions.length > 0,
     approve: approve.mutate,
-    busy: approve.isPending || reject.isPending || send.isPending,
+    busy: approve.isPending || reject.isPending,
     draft: draftQuery.data ?? null,
-    draftSessionId: sessionsQuery.data?.draftSessionId ?? null,
     reject: reject.mutate,
-    send: send.mutateAsync,
-    sessions: sessionsQuery.data?.sessions ?? [],
+    scope,
+    /** Агент ответил и ждёт человека. */
+    waiting: sessions.openSessions.some((session) => session.status === 'waiting_user'),
   };
 }
 

@@ -875,12 +875,6 @@ export const enMessages = {
     },
     agent: {
       button: 'Agent',
-      sessions: 'Agent sessions',
-      newSession: 'New request',
-      empty: 'Describe what to do with the quarterly plan, and the agent will propose a draft.',
-      placeholder: 'What should change in the plan? ⌘↵ to send',
-      send: 'Send',
-      redo: 'Redo the draft',
     },
     link: {
       title: 'Epic from tracker',

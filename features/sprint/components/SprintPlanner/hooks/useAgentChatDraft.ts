@@ -3,6 +3,7 @@
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
+import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { AgentSessionSkill, AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
 import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
@@ -40,16 +41,17 @@ function composerPlaceholder(
 export function useAgentChatDraft({
   dev = null,
   origin,
+  scope,
   session,
-  sprintId,
   onContextRemove,
   onContextSent,
   onCreated,
 }: {
   dev?: AgentDevRequest | null;
   origin: AgentSessionChatOrigin;
+  /** Спринт или квартальный план: сценарии («/») и «Сделать в коде» — только у спринта. */
+  scope: AgentSessionScope;
   session: AgentSession | null;
-  sprintId: number;
   /** Снять плашку контекста по её ключу. */
   onContextRemove: (key: string) => void;
   /** Реплика ушла — плашки контекста больше не нужны. */
@@ -57,7 +59,8 @@ export function useAgentChatDraft({
   onCreated: (sessionId: string | null) => void;
 }) {
   const { t } = useI18n();
-  const sessions = useAgentSessions(sprintId);
+  const sessions = useAgentSessions(scope);
+  const isSprint = scope.kind === 'sprint';
   const [text, setText] = useState(() =>
     dev ? t('agentSession.devRequest', { key: dev.taskKey, summary: dev.summary }) : ''
   );
@@ -107,7 +110,7 @@ export function useAgentChatDraft({
   };
 
   const devOffer: AgentDevRequest | null =
-    !session && !dev && origin.taskId
+    isSprint && !session && !dev && origin.taskId
       ? {
           assigneeName: origin.context?.assigneeName,
           sprintName: origin.context?.sprintName,
@@ -180,9 +183,9 @@ export function useAgentChatDraft({
     setText,
     skill,
     /** Сценарии («/») — про план спринта: у задачи агенту в работу и в сессии разработки их нет. */
-    skillsEnabled: !dev && session?.kind !== 'dev',
+    skillsEnabled: isSprint && !dev && session?.kind !== 'dev',
     /** Карточки сценариев — в пустом чате новой сессии, пока скилл не выбран («/» работает всегда). */
-    showSkillPicker: !session && !skill && !dev && !devOffer,
+    showSkillPicker: isSprint && !session && !skill && !dev && !devOffer,
     /** Новая просьба про одну задачу: её можно сразу отдать агенту сделать в коде. */
     devOffer,
     text,

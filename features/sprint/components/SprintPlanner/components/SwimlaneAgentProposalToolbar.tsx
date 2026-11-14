@@ -12,6 +12,7 @@ import {
   FLOATING_MENU_SHELL,
   FLOATING_TOOLBAR_GLASS,
 } from '@/features/context-menu/contextMenuClasses';
+import { sprintScope } from '@/lib/agentSessions/agentSessionScope';
 
 import { AgentPendingNavigator } from './AgentPendingNavigator';
 import { AgentSessionChat } from './AgentSessionChat';
@@ -77,6 +78,7 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
               autoFocus
               dev={panel.chat.dev}
               origin={panel.chat.origin}
+              scope={sprintScope(sprintId)}
               session={panel.session}
               sessionList={{
                 draftSessionId: sessions.draftSession?.id ?? null,
@@ -86,7 +88,6 @@ export const SwimlaneAgentProposalToolbar = observer(function SwimlaneAgentPropo
                 onPick: island.openSession,
                 onToggle: island.toggleList,
               }}
-              sprintId={sprintId}
               onClear={island.clearChat}
               onContextRemove={island.removeContext}
               onContextSent={island.clearContext}

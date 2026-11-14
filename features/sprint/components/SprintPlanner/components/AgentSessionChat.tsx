@@ -3,6 +3,7 @@
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentBridgeStep } from '@/lib/agentSessions/agentBridge';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
+import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
 import { AgentComposer } from '@/features/swimlane/components/AgentComposer';
@@ -38,8 +39,8 @@ export function AgentSessionChat({
   dev = null,
   origin = {},
   session,
+  scope,
   sessionList,
-  sprintId,
   onClear,
   onContextRemove,
   onContextSent,
@@ -50,6 +51,8 @@ export function AgentSessionChat({
   /** «Сделать в коде»: новая сессия разработки по этой задаче — просьба уже в поле. */
   dev?: AgentDevRequest | null;
   origin?: AgentSessionChatOrigin;
+  /** Спринт или квартальный план: упоминания задач и сценарии — только у спринта. */
+  scope: AgentSessionScope;
   session: AgentSession | null;
   sessionList: {
     draftSessionId: string | null;
@@ -59,7 +62,6 @@ export function AgentSessionChat({
     onPick: (sessionId: string | 'new') => void;
     onToggle: () => void;
   };
-  sprintId: number;
   onClear: () => void;
   onContextRemove: (key: string) => void;
   onContextSent: () => void;
@@ -72,7 +74,7 @@ export function AgentSessionChat({
   const bridgeRun = session ? bridge.runs.find((run) => run.sessionId === session.id) : undefined;
   // Внешний агент (claude.ai, Cursor…): что он делает — по его вызовам MCP; затих — снова зовём.
   const { progress, silentStep } = useAgentWaitProgress(session, bridgeRun);
-  const draft = useAgentChatDraft({ dev, onContextRemove, onContextSent, onCreated, origin, session, sprintId });
+  const draft = useAgentChatDraft({ dev, onContextRemove, onContextSent, onCreated, origin, scope, session });
   const runSteps = new Map<string, AgentBridgeStep>(bridge.runs.map((run) => [run.sessionId, run.step]));
   const unanswered = session ? agentBridgeUnansweredRun(session, bridge) : null;
 
@@ -136,7 +138,7 @@ export function AgentSessionChat({
         header={<AgentSkillForm value={draft.skill} onChange={draft.setSkill} onRemove={() => draft.setSkill(null)} />}
         mentions={draft.mentions}
         placeholder={draft.placeholder}
-        sprintId={sprintId}
+        sprintId={scope.kind === 'sprint' ? scope.sprintId : null}
         text={draft.text}
         onContextRemove={draft.removeContext}
         onMentionsChange={draft.setMentions}
