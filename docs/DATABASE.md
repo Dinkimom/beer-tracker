@@ -70,8 +70,8 @@ Sync-worker миграции не запускает. На пустой БД о�
 
 - `BEER_TRACKER_SCHEMA` (по умолчанию `public`, `lib/env.ts` → `getBeerTrackerSchema()`). Legacy-инстансы: `beer_tracker`.
 - `lib/db.ts` → `qualifyBeerTrackerTables()` подставляет схему перед таблицами из списка `BEER_TRACKER_TABLES` после `FROM` / `INTO` / `UPDATE` / `JOIN` / `REFERENCES` / `ALTER TABLE` / `USING`. Это делают `query()` и `runBeerTrackerTransaction()`.
-- Таблицы вне `BEER_TRACKER_TABLES` идут без схемы и резолвятся через `search_path` соединения: `features`, `feature_*`, `document_types`, `document_versions`, `story_*`, `sprint_metrics`, `quarterly_plan_v2_*`. Пул (`lib/db.ts`) `search_path` не задаёт.
-- Мультиарендность: почти все таблицы планера несут `organization_id → organizations(id) ON DELETE CASCADE`. Без `organization_id`: `features`, `feature_*`, `document_*`, `story_*`, `quarterly_plans`, `quarterly_plan_v2_*` и `board_availability_events` (ключ — `board_id`), а также `admins` и `system_roles` (глобальные).
+- Таблицы вне `BEER_TRACKER_TABLES` идут без схемы и резолвятся через `search_path` соединения: `features`, `feature_*`, `document_types`, `document_versions`, `story_*`, `sprint_metrics`. Пул (`lib/db.ts`) `search_path` не задаёт.
+- Мультиарендность: почти все таблицы планера несут `organization_id → organizations(id) ON DELETE CASCADE`. Без `organization_id`: `features`, `feature_*`, `document_*`, `story_*` и `board_availability_events` (ключ — `board_id`), а также `admins` и `system_roles` (глобальные).
 - Подключение: `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` или `PG*`. Пул: `DB_POOL_MAX` (потолок 20), `DB_POOL_MIN`, `DB_POOL_TIMEOUT`; `statement_timeout` 10 с.
 
 ## Таблицы по доменам
@@ -120,7 +120,7 @@ Sync-worker миграции не запускает. На пустой БД о�
 - `user_notifications` — in-app уведомления.
 - `analytics_events` — append-only продуктовая аналитика.
 
-**Без кода** — `features`, `feature_*`, `document_*`, `story_*`, `quarterly_plans`, `quarterly_plan_v2_*`, см. [Таблицы без кода](#таблицы-без-кода-удаление-отложено).
+**Без кода** — `features`, `feature_*`, `document_*`, `story_*`, см. [Таблицы без кода](#таблицы-без-кода-удаление-отложено).
 
 **Внешние таблицы (не создаются приложением)**
 - `overseer.teams`, `overseer.staff_teams`, `overseer.staff_roles`, `overseer.roles`, `public.registry_employees` — проверяются preflight при `DB_CONTRACT_MODE=compatibility`; источник разового копирования в `add-staff-teams.sql`.
@@ -136,12 +136,10 @@ Sync-worker миграции не запускает. На пустой БД о�
 
 ## Таблицы без кода (удаление отложено)
 
-2026-10-25 из кода удалены квартальное планирование, редактор эпиков и вкладка «Занятость». Таблицы этих фич **не удалены**: в PR убирали только код, чтобы откат релиза не терял данные.
+2026-10-25 из кода удалены прежнее квартальное планирование, редактор эпиков и вкладка «Занятость». Таблицы этих фич **не удалены**: в PR убирали только код, чтобы откат релиза не терял данные. Исключение — таблицы прежнего квартального плана (`quarterly_plans`, `quarterly_plan_v2_*`): их удаляет миграция `0005_drop_old_quarterly_plan_tables.sql`.
 
 | Таблица | Чья была | Кто создаёт | Код сейчас |
 |---------|----------|-------------|------------|
-| `quarterly_plans` | Квартальный план | baseline | нет |
-| `quarterly_plan_v2_epics`, `quarterly_plan_v2_story_phases`, `quarterly_plan_v2_excluded_stories`, `quarterly_plan_v2_story_events` | Квартальный план v2 | только старые инсталляции (файл `quarterly_plan_v2_tables.sql` удалён, в baseline их нет) | нет |
 | `story_task_positions`, `story_draft_tasks`, `story_task_links` | Редактор эпиков / стори | baseline | нет |
 | `features`, `feature_documents`, `feature_diagrams`, `feature_grooming_diagrams`, `feature_grooming_todos`, `document_types`, `document_versions` | Фичи и их документы (`/api/features`, без tenant-проверки; клиент удалён вместе с редактором эпиков, API — 2026-10-29) | baseline | нет |
 
