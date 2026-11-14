@@ -51,6 +51,21 @@ function member(partial: {
   };
 }
 
+function mockJiraCloudOrg() {
+  vi.mocked(findOrganizationById).mockResolvedValue({
+    id: 'org-1',
+    settings: {
+      issueTracker: { apiUrl: 'https://jira.example/rest/api/3', provider: 'jira-cloud' },
+    },
+  } as never);
+  vi.mocked(getOrganizationTrackerCredentials).mockResolvedValue({
+    accessToken: 'token',
+    atlassianOAuth: false,
+  });
+  vi.mocked(createIssueTrackerAxiosForCredentials).mockReturnValue({ get: vi.fn() } as never);
+  vi.mocked(updateStaff).mockResolvedValue({} as never);
+}
+
 describe('enrichPlannerTeamMembersAvatarsFromJira', () => {
   beforeEach(() => {
     apiCache.clear();
@@ -108,6 +123,72 @@ describe('enrichPlannerTeamMembersAvatarsFromJira', () => {
     const second = await enrichPlannerTeamMembersAvatarsFromJira('org-1', members);
     expect(second).toBe(members);
     expect(fetchJiraUserAvatarUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it('checks a newly added member right away, without waiting for the TTL', async () => {
+    mockJiraCloudOrg();
+    vi.mocked(fetchJiraUserAvatarUrl).mockImplementation((_api, trackerId) =>
+      Promise.resolve(`https://cdn.example/${trackerId}.png`)
+    );
+
+    await enrichPlannerTeamMembersAvatarsFromJira('org-1', [member({ uid: 'staff-1' })]);
+    const result = await enrichPlannerTeamMembersAvatarsFromJira('org-1', [
+      member({ uid: 'staff-1', avatarUrl: 'https://cdn.example/acc-1.png' }),
+      member({ uid: 'staff-2', tracker_uid: 'acc-2' }),
+    ]);
+
+    expect(fetchJiraUserAvatarUrl).toHaveBeenCalledTimes(2);
+    expect(result[1]?.avatarUrl).toBe('https://cdn.example/acc-2.png');
+    expect(updateStaff).toHaveBeenLastCalledWith('org-1', 'staff-2', {
+      avatar_url: 'https://cdn.example/acc-2.png',
+    });
+  });
+
+  it('rechecks after the TTL and writes a changed avatar', async () => {
+    vi.useFakeTimers();
+    try {
+      mockJiraCloudOrg();
+      vi.mocked(fetchJiraUserAvatarUrl).mockResolvedValueOnce('https://cdn.example/old.png');
+      await enrichPlannerTeamMembersAvatarsFromJira('org-1', [member({ uid: 'staff-1' })]);
+
+      vi.advanceTimersByTime(31 * 60 * 1000);
+      vi.mocked(fetchJiraUserAvatarUrl).mockResolvedValueOnce('https://cdn.example/new.png');
+      const result = await enrichPlannerTeamMembersAvatarsFromJira('org-1', [
+        member({ uid: 'staff-1', avatarUrl: 'https://cdn.example/old.png' }),
+      ]);
+
+      expect(result[0]?.avatarUrl).toBe('https://cdn.example/new.png');
+      expect(updateStaff).toHaveBeenLastCalledWith('org-1', 'staff-1', {
+        avatar_url: 'https://cdn.example/new.png',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('answers without waiting for slow Jira and still writes staff in background', async () => {
+    vi.useFakeTimers();
+    try {
+      mockJiraCloudOrg();
+      vi.mocked(fetchJiraUserAvatarUrl).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve('https://cdn.example/slow.png'), 10_000);
+          })
+      );
+      const members = [member({ uid: 'staff-1' })];
+      const pending = enrichPlannerTeamMembersAvatarsFromJira('org-1', members);
+      await vi.advanceTimersByTimeAsync(3000);
+      await expect(pending).resolves.toEqual(members);
+      expect(updateStaff).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(updateStaff).toHaveBeenCalledWith('org-1', 'staff-1', {
+        avatar_url: 'https://cdn.example/slow.png',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('uses the Atlassian OAuth gateway for an org-stored OAuth pair', async () => {

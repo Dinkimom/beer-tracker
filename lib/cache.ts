@@ -143,11 +143,14 @@ export const cacheKeys = {
   /** v2 — полный каталог (до 10k); v1 обрезал на 2000 и ломал поиск по ФИО. */
   trackerUsersList: (fingerprint: string) => `tracker:users:v2:${fingerprint}`,
   /**
-   * Gate: аватары staff для org уже обновлены из Jira (in-memory TTL).
-   * Пока ключ жив — повторный GET /user не делаем.
+   * Gate по одному сотруднику: аватар staff уже сверен с Jira (in-memory TTL).
+   * В ключе tracker id — смена привязки к трекеру сразу даёт новую проверку.
    */
-  jiraStaffAvatarsRefresh: (organizationId: string) =>
-    `jira:staff-avatars:${organizationId}`,
+  jiraStaffAvatarCheck: (organizationId: string, staffId: string, trackerUserId: string) =>
+    `jira:staff-avatar:${organizationId}:${staffId}:${trackerUserId}`,
+  /** Org не Jira или без токена трекера — аватары не сверяем до истечения TTL. */
+  jiraStaffAvatarsUnavailable: (organizationId: string) =>
+    `jira:staff-avatars-unavailable:${organizationId}`,
   /** Live issue links from Tracker/Jira (per issue key); TTL 30 мин. */
   trackerIssueLinks: (organizationId: string, issueKey: string) =>
     `tracker:issue-links:v2:${organizationId}:${issueKey.trim()}`,
