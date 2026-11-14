@@ -26,14 +26,15 @@ export interface QuarterlyPlanTeam {
   title: string;
 }
 
-/** Направление — веха квартала; живёт только в плане и объединяет эпики команды. */
+/** Направление — веха квартала, объединяет эпики команды; может быть привязано к эпику трекера по ключу. */
 export interface QuarterlyPlanDirection {
   id: string;
+  issueKey?: string;
   teamId: string;
   title: string;
 }
 
-/** Эпик в рамках направления; может быть привязан к эпику трекера по ключу. */
+/** Эпик плана в рамках направления; может быть привязан к задаче трекера (любого типа) по ключу. */
 export interface QuarterlyPlanEpic {
   directionId: string;
   id: string;

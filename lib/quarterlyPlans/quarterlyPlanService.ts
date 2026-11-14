@@ -32,6 +32,7 @@ import {
   collectQuarterlyPlanIssues,
   type QuarterlyPlanIssue,
 } from './quarterlyPlanIssues';
+import { planIssueKeys } from './quarterlyPlanLayout';
 import { buildQuarterlyPlanMemberIndex, planContentForClient, planContentForStorage } from './quarterlyPlanMembers';
 import { applyQuarterlyPlanOps as applyOpsToContent } from './quarterlyPlanOps';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
@@ -124,7 +125,7 @@ export async function getQuarterlyPlan(input: {
       }))
     ),
     loadQuarterlyPlanTrackerEpics({
-      issueKeys: stored.content.epics.flatMap((epic) => (epic.issueKey ? [epic.issueKey] : [])),
+      issueKeys: planIssueKeys(stored.content),
       issueTracker,
       organizationId,
     }),

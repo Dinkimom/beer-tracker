@@ -50,7 +50,13 @@ const noteRow = z.object({ id: target, kind: z.enum(['absence', 'direction', 'ep
 
 const QuarterlyPlanOpSchema = z.discriminatedUnion('op', [
   z.object({ op: z.literal('addDirection'), ref: ref.optional(), teamId: target, title }),
-  z.object({ directionId: target, op: z.literal('renameDirection'), title }),
+  z.object({
+    directionId: target,
+    issue: z.object({ issueKey: z.string().trim().min(1).max(64), title }).optional(),
+    op: z.literal('updateDirection'),
+    title: title.optional(),
+    unlink: z.literal(true).optional(),
+  }),
   z.object({ directionId: target, op: z.literal('removeDirection') }),
   z.object({
     directionId: target,
@@ -176,10 +182,14 @@ function requireRow(ctx: OpContext, plan: QuarterlyPlanContent, row: QuarterlyPl
   return { id, kind: row.kind };
 }
 
-/** Один эпик трекера — одна строка на план (QE4); ошибка называет строку, где он уже стоит (QM5). */
-function requireIssueFree(plan: QuarterlyPlanContent, issueKey: string, exceptEpicId?: string): void {
-  const taken = plan.epics.find((epic) => epic.issueKey === issueKey && epic.id !== exceptEpicId);
-  if (taken) throw new OpError(`issue ${issueKey} is already in the plan as epic ${taken.id}`);
+/** Одна задача трекера — одна строка на план (QE4); ошибка называет строку, где она уже стоит (QM5). */
+function requireIssueFree(plan: QuarterlyPlanContent, issueKey: string, exceptId?: string): void {
+  const rows = [
+    ...plan.directions.map((row) => ({ kind: 'direction', row })),
+    ...plan.epics.map((row) => ({ kind: 'epic', row })),
+  ];
+  const taken = rows.find(({ row }) => row.issueKey === issueKey && row.id !== exceptId);
+  if (taken) throw new OpError(`issue ${issueKey} is already in the plan as ${taken.kind} ${taken.row.id}`);
 }
 
 type Handlers = {
@@ -202,9 +212,16 @@ const handlers: Handlers = {
     remember(ctx, op.ref, id);
     return existing ? plan : addDirection(plan, { id, teamId, title: op.title });
   },
-  renameDirection: (plan, op, ctx) => {
+  // Направление привязывают к эпику трекера: название — из трекера (QE5).
+  updateDirection: (plan, op, ctx) => {
     const directionId = findOr(plan.directions, resolveId(ctx, op.directionId), 'direction').id;
-    return updateDirection(plan, directionId, { title: op.title });
+    if (op.issue && op.unlink) throw new OpError('issue and unlink exclude each other');
+    if (op.issue) requireIssueFree(plan, op.issue.issueKey, directionId);
+    return updateDirection(plan, directionId, {
+      ...(op.title ? { title: op.title } : {}),
+      ...(op.issue ? { issueKey: op.issue.issueKey, title: op.issue.title } : {}),
+      ...(op.unlink ? { issueKey: undefined } : {}),
+    });
   },
   removeDirection: (plan, op, ctx) =>
     removeDirection(plan, findOr(plan.directions, resolveId(ctx, op.directionId), 'direction').id),

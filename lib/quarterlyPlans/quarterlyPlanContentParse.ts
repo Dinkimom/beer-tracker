@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 
-import { areLinked, QUARTER_NOTE_MAX_ROWS } from './quarterlyPlanLayout';
+import { areLinked, planIssueKeys, QUARTER_NOTE_MAX_ROWS } from './quarterlyPlanLayout';
 import { buildQuarterWeeks } from './quarterWeeks';
 
 /** Квартал из запроса (`?year=&quarter=` или тело): числа приводятся, квартал — 1–4. */
@@ -25,7 +25,9 @@ const contentSchema = z.object({
   assignments: z
     .array(z.object({ epicId: id, id, memberId: id, ...span }))
     .max(MAX_ITEMS),
-  directions: z.array(z.object({ id, teamId: id, title })).max(MAX_ITEMS),
+  directions: z
+    .array(z.object({ id, issueKey: z.string().trim().min(1).max(64).optional(), teamId: id, title }))
+    .max(MAX_ITEMS),
   epics: z
     .array(
       z.object({
@@ -76,8 +78,8 @@ function duplicateError(content: QuarterlyPlanContent): string | null {
     const duplicate = firstDuplicate(items.map((item) => item.id));
     if (duplicate) return `${name}: duplicate id ${duplicate}`;
   }
-  const issueKey = firstDuplicate(content.epics.flatMap((epic) => (epic.issueKey ? [epic.issueKey] : [])));
-  return issueKey ? `epics: issue ${issueKey} is in the plan twice` : null;
+  const issueKey = firstDuplicate(planIssueKeys(content));
+  return issueKey ? `issue ${issueKey} is in the plan twice` : null;
 }
 
 /** Каждая ссылка ведёт на существующую сущность: эпик — на направление, назначение — на эпик и т.д. */

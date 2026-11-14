@@ -5,7 +5,7 @@ import type { QuarterlyPlanDirection, QuarterlyPlanEpic } from '@/lib/quarterlyP
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { epicTitle, isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
 import {
@@ -17,6 +17,7 @@ import {
 import { QuarterlyPlanDraftMark } from './QuarterlyPlanDraftMark';
 import { QuarterlyPlanEpicRow } from './QuarterlyPlanEpicRow';
 import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
+import { QuarterlyPlanIssueKey } from './QuarterlyPlanIssueKey';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
 
 interface QuarterlyPlanDirectionSectionProps {
@@ -79,10 +80,11 @@ export function QuarterlyPlanDirectionSection({
                     name={collapsed ? 'chevron-right' : 'chevron-down'}
                   />
                   <span className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {direction.title}
+                    {epicTitle(direction, trackerEpics)}
                   </span>
                   <QuarterlyPlanDraftMark id={direction.id} />
                 </button>
+                {direction.issueKey ? <QuarterlyPlanIssueKey issueKey={direction.issueKey} /> : null}
                 {unplannedCount > 0 ? (
                   <span className="shrink-0 text-xs text-ds-text-muted">
                     {t('quarterlyPlan.unplannedCount', { count: unplannedCount })}

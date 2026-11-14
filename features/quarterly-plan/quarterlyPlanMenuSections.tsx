@@ -19,10 +19,12 @@ import { StatusTag } from '@/components/StatusTag';
 import {
   absentDaysWithinSpan,
   addAssignment,
+  addEpic,
   buildWeekLoad,
   QUARTER_MAX_PARALLEL_EPICS,
   removeAssignment,
   updateAssignment,
+  updateDirection,
   updateEpic,
   type WeekSpan,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
@@ -36,10 +38,32 @@ import {
 export type QuarterlyPlanMenuState =
   { anchor: QuarterMenuAnchor; assignmentId: string; kind: 'bar' } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'assign'; week: number; weeks: number } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'status' } | { anchor: QuarterMenuAnchor; kind: 'row'; target: QuarterlyPlanRowTarget };
 
-/** Зачем открыт поиск по трекеру: добавить строку из трекера или привязать уже заведённую. */
+/**
+ * Зачем открыт поиск по трекеру: добавить эпик плана из задачи трекера, привязать эпик плана к задаче
+ * или направление — к эпику трекера.
+ */
 export type QuarterlyPlanTrackerPick =
   | { directionId: string; kind: 'add' }
+  | { directionId: string; kind: 'linkDirection' }
   | { epicId: string; kind: 'link' };
+
+/** Доска команды, к которой относится строка: по ней ищем в трекере. */
+export function trackerPickBoardId(plan: QuarterlyPlan, pick: QuarterlyPlanTrackerPick): number {
+  const directionId = pick.kind === 'link' ? plan.epics.find((epic) => epic.id === pick.epicId)?.directionId : pick.directionId;
+  const teamId = plan.directions.find((direction) => direction.id === directionId)?.teamId;
+  return plan.teams.find((team) => team.id === teamId)?.boardId ?? 0;
+}
+
+/** Выбранное в трекере ложится в план: новый эпик плана, привязка эпика или направления. */
+export function applyTrackerPickToPlan(
+  content: QuarterlyPlanContent,
+  pick: QuarterlyPlanTrackerPick,
+  issue: { issueKey: string; title: string }
+): QuarterlyPlanContent {
+  if (pick.kind === 'linkDirection') return updateDirection(content, pick.directionId, issue);
+  if (pick.kind === 'link') return updateEpic(content, pick.epicId, issue);
+  return addEpic(content, { directionId: pick.directionId, id: crypto.randomUUID(), ...issue, status: 'backlog' });
+}
 
 /** Действия строк, у которых есть своё состояние на странице: поле ввода, диалог, запрос в трекер. */
 export interface QuarterlyPlanRowActions {
@@ -215,18 +239,32 @@ function addEpicSections(input: MenuSectionsInput, directionId: string): Quarter
 }
 
 function directionSections(input: MenuSectionsInput, directionId: string): QuarterlyPlanMenuSection[] {
-  const { actions, t } = input;
+  const { actions, applyEdit, plan, t } = input;
+  const linked = Boolean(plan.directions.find((direction) => direction.id === directionId)?.issueKey);
+  const tracker: QuarterlyPlanMenuRow = linked
+    ? {
+        icon: rowIcon('x'),
+        id: 'unlink',
+        label: t('quarterlyPlan.menuUnlink'),
+        onSelect: () => applyEdit((content) => updateDirection(content, directionId, { issueKey: undefined })),
+      }
+    : {
+        icon: rowIcon('link'),
+        id: 'link',
+        label: t('quarterlyPlan.menuLinkDirection'),
+        onSelect: () => actions.onPickTrackerEpic({ directionId, kind: 'linkDirection' }),
+      };
+  // Название привязанного направления — из трекера (QE5): переименовывают его там.
+  const rename: QuarterlyPlanMenuRow = {
+    icon: rowIcon('edit'),
+    id: 'rename',
+    label: t('quarterlyPlan.menuRename'),
+    onSelect: () => actions.onStartDraft({ id: directionId, kind: 'renameDirection' }),
+  };
   return [
     {
       id: 'edit',
-      rows: [
-        {
-          icon: rowIcon('edit'),
-          id: 'rename',
-          label: t('quarterlyPlan.menuRename'),
-          onSelect: () => actions.onStartDraft({ id: directionId, kind: 'renameDirection' }),
-        },
-      ],
+      rows: linked ? [tracker] : [rename, tracker],
     },
     {
       id: 'danger',

@@ -10,13 +10,21 @@ import { searchIssues } from '@/lib/beerTrackerApi';
 
 interface QuarterlyPlanTrackerEpicSearchProps {
   boardId: number;
+  /** Только эпики (для направления); иначе — любая задача трекера (для эпика плана). */
+  epicsOnly: boolean;
+  placeholder: string;
   usedIssueKeys: ReadonlySet<string>;
   onPick: (issueKey: string, title: string) => void;
 }
 
-/** Поиск эпика в трекере: тот же поиск родителей, что у пикера на доске спринта. */
+/**
+ * Поиск в трекере: эпики — тем же поиском родителей, что у пикера на доске спринта;
+ * задачи — тем же поиском, что у быстрого добавления.
+ */
 export function QuarterlyPlanTrackerEpicSearch({
   boardId,
+  epicsOnly,
+  placeholder,
   usedIssueKeys,
   onPick,
 }: QuarterlyPlanTrackerEpicSearchProps) {
@@ -24,15 +32,15 @@ export function QuarterlyPlanTrackerEpicSearch({
   const [query, setQuery] = useState('');
   const { data: results = [], isFetching } = useQuery({
     placeholderData: (previous) => previous,
-    queryFn: () => searchIssues(query, boardId, { parentCandidates: true }),
-    queryKey: ['quarterlyPlanEpicSearch', boardId, query],
+    queryFn: () => searchIssues(query, boardId, { parentCandidates: epicsOnly }),
+    queryKey: ['quarterlyPlanEpicSearch', boardId, epicsOnly, query],
   });
 
   return (
     <div className="flex flex-col gap-2">
       <SearchInput
         autoFocus
-        placeholder={t('quarterlyPlan.link.searchPlaceholder')}
+        placeholder={placeholder}
         value={query}
         onChange={setQuery}
       />

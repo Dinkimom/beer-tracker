@@ -16,6 +16,7 @@ import { plannerWriteDenied, toolError, toolJson, toolOpsResult } from '@/lib/mc
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
 import { loadDraftAgentSessionSummary } from '@/lib/mcp/registerAgentSessionMcpTools';
 import { loadQuarterlyPlanDraft, proposeQuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanDrafts';
+import { planIssueKeys } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QuarterlyPlanOpsSchema } from '@/lib/quarterlyPlans/quarterlyPlanOps';
 import {
   findQuarterlyPlanProblems,
@@ -31,7 +32,8 @@ const quarterInput = {
 
 const WRITE_HINT =
   'Change the plan with propose_quarterly_plan (ifVersion = version) — the person accepts the draft on the board. People: teams[].members[].id (resolve names with resolve_person). ' +
-  'Tracker epics: find keys with search_tracker_epics (boardId = teams[].boardId), link with addEpic.issueKey or updateEpic.issue. ' +
+  'Tracker links: a direction is a tracker epic (search_tracker_epics, link with updateDirection.issue); a plan epic is any ' +
+  'tracker issue, usually a task inside that epic (search_issues, link with addEpic.issueKey or updateEpic.issue). ' +
   'Absences: apply_availability_events.';
 
 /**
@@ -47,8 +49,8 @@ export function registerQuarterlyPlanMcpTools(
     {
       description:
         "Read the organization's quarterly plan: weeks (index + Mon–Fri dates), teams (id, boardId, members, sprints), " +
-        'directions (milestones), epics (issueKey, status, title; for linked epics trackerEpics[issueKey] has the tracker ' +
-        'title, status and done), assignments (person × epic × weeks), links ' +
+        'directions (milestones; issueKey = linked tracker epic), epics (issueKey = linked tracker issue, status, title; ' +
+        'for every linked key trackerEpics[issueKey] has the tracker title, status and done), assignments (person × epic × weeks), links ' +
         '(fromId must finish before toId starts), notes, absences per team, issues (assignments where the person is away, ' +
         'works on another epic the same weeks, starts before a blocker ends, or left the team), dutyRiskAssignmentIds ' +
         '(on duty during the assignment: a risk, not a problem), pendingProposal (your draft the person has not accepted yet — ' +
@@ -100,8 +102,8 @@ export function registerQuarterlyPlanMcpTools(
           quarter,
           teams,
           trackerEpics: Object.fromEntries(
-            epics.flatMap((epic) =>
-              epic.issueKey && plan.trackerEpics[epic.issueKey] ? [[epic.issueKey, plan.trackerEpics[epic.issueKey]]] : []
+            planIssueKeys({ directions, epics }).flatMap((key) =>
+              plan.trackerEpics[key] ? [[key, plan.trackerEpics[key]]] : []
             )
           ),
           version,
@@ -119,7 +121,7 @@ export function registerQuarterlyPlanMcpTools(
     {
       description:
         'Propose a change to the quarterly plan as a draft the person accepts or rejects as a whole on the quarterly board ' +
-        '(you cannot write the plan yourself). Batch of ops, all or nothing: addDirection|renameDirection|removeDirection|' +
+        '(you cannot write the plan yourself). Batch of ops, all or nothing: addDirection|updateDirection|removeDirection|' +
         'addEpic|updateEpic|removeEpic|assign|updateAssignment|removeAssignment|addLink|removeLink|addNote|updateNote|removeNote. ' +
         'Give created entities a ref like "$epic1" and use it in later ops of the same batch. Spans: {startWeek, weeks} ' +
         'or {startDate, endDate}. A person must be in the epic team. addDirection with an existing title reuses it; addEpic ' +
@@ -206,9 +208,9 @@ export function registerQuarterlyPlanMcpTools(
     'search_tracker_epics',
     {
       description:
-        'Find tracker epics by key or title on a team board — the same search as "Epic from tracker" on the board. ' +
-        'Use the key to link a plan epic: updateEpic with issue {issueKey, title} or addEpic with issueKey. ' +
-        'A linked epic takes its title and done status from the tracker.',
+        'Find tracker epics by key or title in the project of a team board — the same search as linking a direction on the board. ' +
+        'A tracker epic is a plan direction: link it with updateDirection {directionId, issue: {issueKey, title}}. ' +
+        'Plan epics link to tracker tasks (search_issues). A linked row takes its title from the tracker.',
       inputSchema: {
         boardId: z.number().int().positive().describe('teams[].boardId from get_quarterly_plan'),
         query: z.string().trim().min(1).describe('Epic key or words from its title'),

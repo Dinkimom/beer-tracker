@@ -21,6 +21,7 @@ import { collectQuarterlyPlanIssues, quarterTimelineStart } from '@/lib/quarterl
 import {
   addDirection,
   addEpic,
+  planIssueKeys,
   removeDirection,
   removeEpic,
   updateAssignment,
@@ -47,7 +48,7 @@ import {
   buildAbsenceByMember,
   buildToneByKey,
 } from './quarterlyPlanBoardModel';
-import { buildQuarterlyPlanMenuSections } from './quarterlyPlanMenuSections';
+import { applyTrackerPickToPlan, buildQuarterlyPlanMenuSections, trackerPickBoardId } from './quarterlyPlanMenuSections';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
 import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarterlyPlanAgent';
 import { useQuarterlyPlanLinks } from './useQuarterlyPlanLinks';
@@ -223,27 +224,9 @@ export function QuarterlyPlanPage() {
     onStartDraft: setDraft,
   };
 
-  /** Доска команды, к которой относится строка: по ней ищем в трекере. */
-  const boardIdOfPick = (pick: QuarterlyPlanTrackerPick): number => {
-    const directionId =
-      pick.kind === 'add' ? pick.directionId : plan?.epics.find((epic) => epic.id === pick.epicId)?.directionId;
-    const teamId = plan?.directions.find((direction) => direction.id === directionId)?.teamId;
-    return plan?.teams.find((team) => team.id === teamId)?.boardId ?? 0;
-  };
-
   const applyTrackerPick = (issueKey: string, title: string) => {
     if (!trackerPick) return;
-    applyEdit((content) =>
-      trackerPick.kind === 'add'
-        ? addEpic(content, {
-            directionId: trackerPick.directionId,
-            id: crypto.randomUUID(),
-            issueKey,
-            status: 'backlog',
-            title,
-          })
-        : updateEpic(content, trackerPick.epicId, { issueKey, title })
-    );
+    applyEdit((content) => applyTrackerPickToPlan(content, trackerPick, { issueKey, title }));
     setTrackerPick(null);
   };
 
@@ -284,8 +267,9 @@ export function QuarterlyPlanPage() {
             ) : null}
             {trackerPick ? (
               <QuarterlyPlanTrackerEpicDialog
-                boardId={boardIdOfPick(trackerPick)}
-                usedIssueKeys={new Set(plan.epics.flatMap((epic) => (epic.issueKey ? [epic.issueKey] : [])))}
+                boardId={trackerPickBoardId(plan, trackerPick)}
+                direction={trackerPick.kind === 'linkDirection'}
+                usedIssueKeys={new Set(planIssueKeys(plan))}
                 onClose={() => setTrackerPick(null)}
                 onPick={applyTrackerPick}
               />

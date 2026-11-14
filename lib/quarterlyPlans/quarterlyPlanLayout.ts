@@ -356,6 +356,11 @@ export function overloadingAssignments(
   return others.filter((other) => ids.has(other.id));
 }
 
+/** Ключи трекера, привязанные к плану: у направлений и у эпиков. Один ключ — одна строка плана (QE4). */
+export function planIssueKeys(plan: Pick<QuarterlyPlanContent, 'directions' | 'epics'>): string[] {
+  return [...plan.directions, ...plan.epics].flatMap((row) => (row.issueKey ? [row.issueKey] : []));
+}
+
 /** Эпик трекера, к которому привязана строка; null — строка не привязана или трекер эпик не отдал. */
 export function trackerEpicOf(
   epic: Pick<QuarterlyPlanEpic, 'issueKey'>,

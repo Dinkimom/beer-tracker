@@ -99,6 +99,20 @@ describe('applyQuarterlyPlanOps', () => {
     expect(manual.content.epics[0]?.status).toBe('test');
   });
 
+  it('направление привязывается к эпику трекера; ключ один на весь план (QE4, QE9)', () => {
+    const linked = ok(
+      [{ directionId: 'id1', issue: { issueKey: 'RND-1', title: 'Checkout epic' }, op: 'updateDirection' }],
+      BASE.content
+    );
+    expect(linked.content.directions[0]).toMatchObject({ issueKey: 'RND-1', title: 'Checkout epic' });
+    const taken = run([{ directionId: 'id1', issue: { issueKey: 'DEMO-1', title: 'x' }, op: 'updateDirection' }], BASE.content);
+    expect(taken.ok ? '' : taken.error).toMatch(/DEMO-1 is already in the plan as epic id2/);
+    const epicTaken = run([{ directionId: 'id1', issueKey: 'RND-1', op: 'addEpic' }], linked.content);
+    expect(epicTaken.ok ? '' : epicTaken.error).toMatch(/RND-1 is already in the plan as direction id1/);
+    const unlinked = ok([{ directionId: 'id1', op: 'updateDirection', unlink: true }], linked.content);
+    expect(unlinked.content.directions[0]).toMatchObject({ issueKey: undefined, title: 'Checkout epic' });
+  });
+
   it('связь: порядок задаёт агент, петля и дубль — ошибка (QL1, QL4)', () => {
     const linked = ok(
       [

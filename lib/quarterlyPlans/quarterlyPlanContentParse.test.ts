@@ -51,6 +51,8 @@ describe('parseQuarterlyPlanContent', () => {
     );
     const second = { directionId: 'd1', id: 'e2', issueKey: 'DEMO-1', status: 'test', title: 'Copy' } as const;
     expect(errorOf(plan({ epics: [...plan().epics, second] }))).toMatch(/DEMO-1 is in the plan twice/);
+    const direction = [{ id: 'd1', issueKey: 'DEMO-1', teamId: 't1', title: 'Checkout' }];
+    expect(errorOf(plan({ directions: direction }))).toMatch(/DEMO-1 is in the plan twice/);
   });
 
   it('отклоняет ссылки на несуществующие сущности', () => {
