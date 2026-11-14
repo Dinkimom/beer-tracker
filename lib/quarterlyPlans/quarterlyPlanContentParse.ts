@@ -7,6 +7,12 @@ import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 import { areLinked, QUARTER_NOTE_MAX_ROWS } from './quarterlyPlanLayout';
 import { buildQuarterWeeks } from './quarterWeeks';
 
+/** Квартал из запроса (`?year=&quarter=` или тело): числа приводятся, квартал — 1–4. */
+export const QuarterRefSchema = z.object({
+  quarter: z.coerce.number().pipe(z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])),
+  year: z.coerce.number().int().min(2000).max(2100),
+});
+
 const MAX_ITEMS = 2000;
 const MAX_TITLE_LENGTH = 300;
 const MAX_NOTE_LENGTH = 5000;

@@ -2,16 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
-import { requireTenantContext } from '@/lib/api-tenant';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
+import { QuarterRefSchema } from '@/lib/quarterlyPlans/quarterlyPlanContentParse';
+import { requireQuarterBody, requireQuarterQuery } from '@/lib/quarterlyPlans/quarterlyPlanRouteHelpers';
 import { getQuarterlyPlan, saveQuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanService';
 
-const QuarterSchema = z.object({
-  quarter: z.coerce.number().pipe(z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])),
-  year: z.coerce.number().int().min(2000).max(2100),
-});
-
-const SaveSchema = QuarterSchema.extend({
+const SaveSchema = QuarterRefSchema.extend({
   content: z.unknown(),
   ifVersion: z.number().int().min(0),
 });
@@ -22,17 +18,13 @@ const SaveSchema = QuarterSchema.extend({
  */
 export async function GET(request: NextRequest) {
   try {
-    const tenantResult = await requireTenantContext(request);
-    if (!('ctx' in tenantResult)) return tenantResult.response;
-    const ref = QuarterSchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
-    if (!ref.success) {
-      return NextResponse.json({ error: 'year and quarter are required' }, { status: 400 });
-    }
+    const route = await requireQuarterQuery(request);
+    if ('response' in route) return route.response;
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const result = await getQuarterlyPlan({
       issueTracker,
-      organizationId: tenantResult.ctx.organizationId,
-      ref: ref.data,
+      organizationId: route.ctx.organizationId,
+      ref: route.input,
     });
     return NextResponse.json(result);
   } catch (error) {
@@ -46,17 +38,14 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const tenantResult = await requireTenantContext(request);
-    if (!('ctx' in tenantResult)) return tenantResult.response;
-    const body = SaveSchema.safeParse(await request.json().catch(() => null));
-    if (!body.success) {
-      return NextResponse.json({ error: 'year, quarter, ifVersion and content are required' }, { status: 400 });
-    }
+    const route = await requireQuarterBody(request, SaveSchema, 'year, quarter, ifVersion and content are required');
+    if ('response' in route) return route.response;
+    const { content, ifVersion, quarter, year } = route.input;
     const result = await saveQuarterlyPlan({
-      content: body.data.content,
-      ifVersion: body.data.ifVersion,
-      organizationId: tenantResult.ctx.organizationId,
-      ref: { quarter: body.data.quarter, year: body.data.year },
+      content,
+      ifVersion,
+      organizationId: route.ctx.organizationId,
+      ref: { quarter, year },
     });
     if (result.status === 'invalid') return NextResponse.json({ error: result.error }, { status: 400 });
     if (result.status === 'conflict') {

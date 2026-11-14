@@ -183,7 +183,7 @@ MCP-сервер работает на вашем же инстансе. Кли�
 - найти задачи и людей (`search_issues`, `resolve_person`), открыть задачу и её snapshot;
 - предложить правки (`propose_plan_patch`) и применить их (`apply_plan_patch`);
 - читать и править доску ретро (`get_retro_board`, `apply_retro_board`);
-- читать и заполнять квартальный план и отпуска команд (`get_quarterly_plan`, `apply_quarterly_plan`, `apply_availability_events`);
+- читать и заполнять квартальный план и отпуска команд (`get_quarterly_plan`, `propose_quarterly_plan` — черновиком, который вы принимаете на доске, `apply_availability_events`);
 - смотреть состав команд и, если вы администратор организации, менять его (`get_team_composition`, `search_tracker_users`, `apply_team_composition`).
 
 | Запрос | Что происходит |

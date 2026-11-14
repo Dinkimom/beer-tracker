@@ -15,6 +15,7 @@ function session(overrides: Partial<AgentSession>): AgentSession {
     messages: [],
     origin: 'planner',
     ownerId: 'u1',
+    scope: { kind: 'sprint', sprintId: 1 },
     sprintId: 1,
     status: 'waiting_agent',
     taskId: 'RND-1',

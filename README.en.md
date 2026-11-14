@@ -183,7 +183,7 @@ The agent reads the plan and suggests changes, but nothing is written to the spr
 - find issues and people (`search_issues`, `resolve_person`) and open an issue or its snapshot;
 - propose changes (`propose_plan_patch`) and apply them (`apply_plan_patch`);
 - read and edit the retro board (`get_retro_board`, `apply_retro_board`);
-- read and fill in the quarterly plan and team absences (`get_quarterly_plan`, `apply_quarterly_plan`, `apply_availability_events`);
+- read and fill in the quarterly plan and team absences (`get_quarterly_plan`, `propose_quarterly_plan` as a draft you accept on the board, `apply_availability_events`);
 - view team composition and, as an organization admin, change it (`get_team_composition`, `search_tracker_users`, `apply_team_composition`).
 
 | Prompt | What happens |

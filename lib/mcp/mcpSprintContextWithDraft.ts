@@ -1,5 +1,6 @@
 import type { SprintContextPayload } from '@/lib/sprints/sprintContextTypes';
 
+import { sprintScope } from '@/lib/agentSessions/agentSessionScope';
 import { loadDraftAgentSessionSummary } from '@/lib/mcp/registerAgentSessionMcpTools';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
 import {
@@ -52,7 +53,7 @@ export async function withPendingProposal(
       organizationId: payload.meta.organizationId,
       ownerId,
       proposalId: pendingProposal.proposalId,
-      sprintId: payload.meta.sprintId,
+      scope: sprintScope(payload.meta.sprintId),
     });
     return { ...payload, ...(agentSession ? { agentSession } : {}), pendingProposal };
   } catch (error) {

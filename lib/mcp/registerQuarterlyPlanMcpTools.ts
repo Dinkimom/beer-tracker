@@ -4,6 +4,8 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { z } from 'zod';
 
+import { AgentSessionRepliesSchema } from '@/lib/agentSessions/agentSession';
+import { quarterScope } from '@/lib/agentSessions/agentSessionScope';
 import { AvailabilityEventOpsSchema, applyAvailabilityEventOps } from '@/lib/boardAvailability/boardAvailabilityEventOps';
 import {
   boardAvailabilityEventFromRow,
@@ -11,9 +13,11 @@ import {
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { plannerWriteDenied, toolError, toolJson, toolOpsResult } from '@/lib/mcp/mcpToolResult';
+import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
+import { loadDraftAgentSessionSummary } from '@/lib/mcp/registerAgentSessionMcpTools';
+import { loadQuarterlyPlanDraft, proposeQuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanDrafts';
 import { QuarterlyPlanOpsSchema } from '@/lib/quarterlyPlans/quarterlyPlanOps';
 import {
-  applyQuarterlyPlanOps,
   findQuarterlyPlanProblems,
   getQuarterlyPlan,
   loadQuarterlyPlanTeams,
@@ -26,7 +30,7 @@ const quarterInput = {
 };
 
 const WRITE_HINT =
-  'Write with apply_quarterly_plan (ifVersion = version). People: teams[].members[].id (resolve names with resolve_person). ' +
+  'Change the plan with propose_quarterly_plan (ifVersion = version) — the person accepts the draft on the board. People: teams[].members[].id (resolve names with resolve_person). ' +
   'Epics from the tracker: find keys with search_issues. Absences: apply_availability_events.';
 
 /**
@@ -35,7 +39,7 @@ const WRITE_HINT =
  */
 export function registerQuarterlyPlanMcpTools(
   server: McpServer,
-  input: { organizationId: string; profile: AccessProfile; userId: string }
+  input: { mcpClientId?: string; organizationId: string; profile: AccessProfile; userId: string }
 ): void {
   server.registerTool(
     'get_quarterly_plan',
@@ -46,7 +50,8 @@ export function registerQuarterlyPlanMcpTools(
         'title, status and done), assignments (person × epic × weeks), links ' +
         '(fromId must finish before toId starts), notes, absences per team, issues (assignments where the person is away, ' +
         'works on another epic the same weeks, starts before a blocker ends, or left the team), dutyRiskAssignmentIds ' +
-        '(on duty during the assignment: a risk, not a problem) and version. Optional teamId narrows the result.',
+        '(on duty during the assignment: a risk, not a problem), pendingProposal (your draft the person has not accepted yet — ' +
+        'the plan above is without it) with its agentSession, and version. Optional teamId narrows the result.',
       inputSchema: { ...quarterInput, teamId: z.string().optional().describe('teams[].id to narrow the plan') },
     },
     async ({ quarter, teamId, year }) => {
@@ -57,7 +62,11 @@ export function registerQuarterlyPlanMcpTools(
         const teams = plan.teams.filter((team) => !teamId || team.id === teamId);
         const directions = plan.directions.filter((direction) => teams.some((team) => team.id === direction.teamId));
         const epics = plan.epics.filter((epic) => directions.some((direction) => direction.id === epic.directionId));
-        const findings = await findQuarterlyPlanProblems(plan);
+        const owner = { organizationId: input.organizationId, ownerId: input.userId, ref };
+        const [findings, pendingProposal] = await Promise.all([findQuarterlyPlanProblems(plan), loadQuarterlyPlanDraft(owner)]);
+        const agentSession = pendingProposal
+          ? await loadDraftAgentSessionSummary({ ...owner, proposalId: pendingProposal.proposalId, scope: quarterScope(ref) })
+          : null;
         const inTeams = new Set(teams.map((team) => team.id));
         const absences = await Promise.all(
           teams.map(async (team) => ({
@@ -75,6 +84,18 @@ export function registerQuarterlyPlanMcpTools(
           issues: findings.issues.filter((issue) => inTeams.has(issue.teamId)),
           links: plan.links,
           notes: plan.notes,
+          // Твой черновик, который человек ещё не принял: план выше — без него.
+          ...(pendingProposal
+            ? {
+                pendingProposal: {
+                  createdAt: pendingProposal.createdAt,
+                  error: pendingProposal.error,
+                  proposalId: pendingProposal.proposalId,
+                  summary: pendingProposal.summary,
+                },
+              }
+            : {}),
+          ...(agentSession ? { agentSession } : {}),
           quarter,
           teams,
           trackerEpics: Object.fromEntries(
@@ -93,43 +114,57 @@ export function registerQuarterlyPlanMcpTools(
   );
 
   server.registerTool(
-    'apply_quarterly_plan',
+    'propose_quarterly_plan',
     {
       description:
-        'Change the quarterly plan with a batch of ops, all or nothing: addDirection|renameDirection|removeDirection|' +
+        'Propose a change to the quarterly plan as a draft the person accepts or rejects as a whole on the quarterly board ' +
+        '(you cannot write the plan yourself). Batch of ops, all or nothing: addDirection|renameDirection|removeDirection|' +
         'addEpic|updateEpic|removeEpic|assign|updateAssignment|removeAssignment|addLink|removeLink|addNote|updateNote|removeNote. ' +
         'Give created entities a ref like "$epic1" and use it in later ops of the same batch. Spans: {startWeek, weeks} ' +
         'or {startDate, endDate}. A person must be in the epic team. addDirection with an existing title reuses it; addEpic ' +
-        'with an issueKey already in the plan fails with the existing epic id. Pass ifVersion from get_quarterly_plan; ' +
-        'on conflict re-read. dryRun=true returns the resulting plan with its issues and duty risks without writing; ' +
-        'writes need confirm=true.',
+        'with an issueKey already in the plan fails with the existing epic id. Pass ifVersion from get_quarterly_plan. ' +
+        'The draft is checked against the plan now and re-applied to the current plan when accepted. One draft per person ' +
+        'per quarter: a different draft needs replacePending: true. Pass sessionId when working on a session from ' +
+        'list_agent_sessions; replies answer its openComments. Returns the issues and duty risks of the resulting plan.',
       inputSchema: {
         ...quarterInput,
-        confirm: z.boolean().optional().describe('Must be true to write (not needed for dryRun)'),
-        dryRun: z.boolean().optional(),
+        draftMessage: z.string().max(2000).optional().describe('One or two sentences for the person: what this draft does and why'),
         ifVersion: z.number().int().min(0).describe('version from get_quarterly_plan'),
+        intent: z.string().max(300).optional().describe('What the person asked for — titles a new session'),
         ops: QuarterlyPlanOpsSchema.describe('1–200 ops'),
+        replacePending: z.boolean().optional().describe('Replace an unreviewed draft of yours in this quarter'),
+        replies: AgentSessionRepliesSchema.optional().describe('Answers to the session openComments'),
+        sessionId: z.string().uuid().optional().describe('Agent session id from list_agent_sessions'),
       },
     },
-    async ({ confirm, dryRun = false, ifVersion, ops, quarter, year }) => {
+    async ({ draftMessage, ifVersion, intent, ops, quarter, replacePending, replies, sessionId, year }) => {
       try {
-        if (!dryRun) {
-          const denied = plannerWriteDenied(input.profile);
-          if (denied) return toolError(new Error(denied));
-          if (confirm !== true) return toolError(new Error('confirm=true is required to write; use dryRun to preview'));
-        }
-        const result = await applyQuarterlyPlanOps({
-          dryRun,
+        const denied = plannerWriteDenied(input.profile);
+        if (denied) return toolError(new Error(denied));
+        const clientBrand = input.mcpClientId ? await resolveRegisteredMcpClientBrand(input.mcpClientId) : undefined;
+        const result = await proposeQuarterlyPlan({
+          clientBrand,
+          draftMessage,
           ifVersion,
+          intent,
           ops,
           organizationId: input.organizationId,
+          ownerId: input.userId,
           ref: { quarter, year },
+          replacePending,
+          replies,
+          sessionId,
         });
-        if (result.status === 'invalid') return toolError(new Error(`op ${result.opIndex ?? '?'}: ${result.error}`));
+        if (result.status === 'invalid') {
+          return toolError(new Error('opIndex' in result && result.opIndex != null ? `op ${result.opIndex}: ${result.error}` : result.error));
+        }
         if (result.status === 'conflict') {
           return toolError(new Error(`version conflict: the plan is at version ${result.version}; re-read and rebuild the batch`));
         }
-        return toolJson(result);
+        return toolJson({
+          ...result,
+          hint: 'The draft is on the quarterly board. The person accepts or rejects it; their comments come back in the session.',
+        });
       } catch (error) {
         return toolError(error);
       }

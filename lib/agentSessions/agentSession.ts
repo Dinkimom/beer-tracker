@@ -1,13 +1,15 @@
 import type { AgentSessionActivity } from '@/lib/agentSessions/agentActivity';
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentDevResult, AgentSessionKind } from '@/lib/agentSessions/agentSessionKind';
+import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { AgentSessionSkill, AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { z } from 'zod';
 
 import { AgentMentionsSchema } from '@/lib/agentSessions/agentMentions';
-import { AGENT_SESSION_KIND_BEHAVIOR, AGENT_SESSION_KINDS } from '@/lib/agentSessions/agentSessionKind';
+import { AGENT_SESSION_KIND_BEHAVIOR, AGENT_SESSION_KINDS, QUARTER_PLAN_HINT } from '@/lib/agentSessions/agentSessionKind';
+import { agentSessionScopeKey } from '@/lib/agentSessions/agentSessionScope';
 import { AgentSessionSkillSchema, buildAgentSkillAgentView } from '@/lib/agentSessions/agentSkills';
 
 /**
@@ -82,7 +84,10 @@ export interface AgentSession {
   messages: AgentSessionMessage[];
   origin: AgentSessionOrigin;
   ownerId: string;
-  sprintId: number;
+  /** Про что сессия: спринт или квартальный план. */
+  scope: AgentSessionScope;
+  /** Спринт сессии; null — сессия про квартальный план (`scope`). */
+  sprintId: number | null;
   status: AgentSessionStatus;
   /** Задача, про которую просьба; null — про спринт целиком. */
   taskId: string | null;
@@ -279,11 +284,22 @@ function pendingTaskKeys(session: Pick<AgentSession, 'messages' | 'taskId'>): st
   return [...keys];
 }
 
-function fetchContextCall(session: Pick<AgentSession, 'messages' | 'sprintId' | 'taskId'>): string {
+function fetchContextCall(session: Pick<AgentSession, 'kind' | 'messages' | 'scope' | 'taskId'>): string {
+  const { scope } = session;
+  if (scope.kind === 'quarter') return `get_quarterly_plan(year: ${scope.year}, quarter: ${scope.quarter})`;
+  const behavior = AGENT_SESSION_KIND_BEHAVIOR[session.kind].fetchContext({ sprintId: scope.sprintId, taskId: session.taskId });
+  if (behavior) return behavior;
   const keys = pendingTaskKeys(session);
   return keys.length > 0
-    ? `get_sprint_context(sprintId: ${session.sprintId}, taskIds: ${JSON.stringify(keys)})`
-    : `get_sprint_context(sprintId: ${session.sprintId})`;
+    ? `get_sprint_context(sprintId: ${scope.sprintId}, taskIds: ${JSON.stringify(keys)})`
+    : `get_sprint_context(sprintId: ${scope.sprintId})`;
+}
+
+/** Где сессия, для агента: спринт или квартал. */
+function scopeFields(scope: AgentSessionScope) {
+  return scope.kind === 'sprint'
+    ? { sprintId: scope.sprintId }
+    : { quarterlyPlan: { quarter: scope.quarter, year: scope.year }, sprintId: null };
 }
 
 
@@ -311,8 +327,9 @@ interface AgentSessionAgentView {
   kind: AgentSessionKind;
   /** id сообщений-💬 без ответа агента. */
   openComments: string[];
+  quarterlyPlan?: { quarter: number; year: number };
   skill?: ReturnType<typeof buildAgentSkillAgentView>;
-  sprintId: number;
+  sprintId: number | null;
   status: AgentSessionStatus;
   taskId: string | null;
   title: string;
@@ -347,13 +364,13 @@ export function buildAgentSessionAgentView(session: AgentSession): AgentSessionA
       text: message.text,
     })),
     draftVersion: agentSessionDraftVersion(session.messages),
-    fetchContext: behavior.fetchContext(session) ?? fetchContextCall(session),
-    hint: behavior.hint,
+    fetchContext: fetchContextCall(session),
+    hint: session.scope.kind === 'quarter' ? QUARTER_PLAN_HINT : behavior.hint,
     id: session.id,
     kind: session.kind,
     openComments,
     ...(pendingSkill ? { skill: buildAgentSkillAgentView(pendingSkill) } : {}),
-    sprintId: session.sprintId,
+    ...scopeFields(session.scope),
     status: session.status,
     taskId: session.taskId,
     title: session.title,
@@ -371,7 +388,7 @@ export function summarizeAgentSessionForAgent(session: AgentSession) {
     lastMessage: session.messages.at(-1)?.text ?? '',
     openComments: countOpenAgentSessionComments(session.messages),
     ...(pendingSkill ? { skill: pendingSkill.id } : {}),
-    sprintId: session.sprintId,
+    ...scopeFields(session.scope),
     status: session.status,
     taskId: session.taskId,
     title: session.title,
@@ -396,14 +413,14 @@ export function draftSessionConflict(input: {
   if (!input.draftSessionId || input.draftSessionId === input.requestedSessionId) {
     return null;
   }
-  return `draft_belongs_to_other_session: the board has an unreviewed draft of session ${input.draftSessionId}. Work in that session (propose_plan_patch with sessionId=${input.draftSessionId}) or wait until the person accepts/rejects it; answer this session with reply_agent_session meanwhile.`;
+  return `draft_belongs_to_other_session: the board has an unreviewed draft of session ${input.draftSessionId}. Work in that session (propose with sessionId=${input.draftSessionId}) or wait until the person accepts/rejects it; answer this session with reply_agent_session meanwhile.`;
 }
 
-/** Для входящих агента: сессии спринта, которые ждут, пока разберут драфт другой сессии. */
+/** Для входящих агента: сессии спринта или квартала, которые ждут, пока разберут драфт другой сессии. */
 export function waitingForDraftSessionId(
-  session: Pick<AgentSession, 'id' | 'sprintId'>,
-  draftSessionBySprint: ReadonlyMap<number, string>
+  session: Pick<AgentSession, 'id' | 'scope'>,
+  draftSessionByScope: ReadonlyMap<string, string>
 ): string | null {
-  const draftSessionId = draftSessionBySprint.get(session.sprintId);
+  const draftSessionId = draftSessionByScope.get(agentSessionScopeKey(session.scope));
   return draftSessionId && draftSessionId !== session.id ? draftSessionId : null;
 }

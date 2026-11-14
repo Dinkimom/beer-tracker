@@ -12,10 +12,13 @@ import type {
   AgentSessionTargetKind,
 } from '@/lib/agentSessions/agentSession';
 import type { AgentDevResult, AgentSessionKind } from '@/lib/agentSessions/agentSessionKind';
+import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { AgentSessionSkill, AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
+import type { QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { parseAgentBridgeStep } from '@/lib/agentSessions/agentBridge';
 import { parseAgentDevResult } from '@/lib/agentSessions/agentSessionKind';
+import { agentSessionScopeColumns, agentSessionScopeFromColumns } from '@/lib/agentSessions/agentSessionScope';
 import { parseAgentSessionSkill, parseAgentTaskCandidates } from '@/lib/agentSessions/agentSkills';
 import { STAFF_AUTHOR_DISPLAY_NAME_SQL } from '@/lib/comments/commentAuthor';
 import { query } from '@/lib/db';
@@ -33,7 +36,9 @@ interface SessionRow {
   kind: string;
   origin: string;
   owner_id: string;
-  sprint_id: number;
+  plan_quarter: number | null;
+  plan_year: number | null;
+  sprint_id: number | null;
   status: string;
   task_id: string | null;
   title: string;
@@ -169,6 +174,7 @@ function sessionFromRow(row: SessionRow, messages: AgentSessionMessage[]): Agent
     messages,
     origin: row.origin === 'agent' ? 'agent' : 'planner',
     ownerId: row.owner_id,
+    scope: agentSessionScopeFromColumns(row),
     sprintId: row.sprint_id,
     status: parseStatus(row.status),
     taskId: row.task_id,
@@ -177,7 +183,7 @@ function sessionFromRow(row: SessionRow, messages: AgentSessionMessage[]): Agent
   };
 }
 
-const SESSION_COLUMNS = `s.id::text AS id, s.sprint_id, s.owner_id, s.task_id, s.title, s.context, s.kind,
+const SESSION_COLUMNS = `s.id::text AS id, s.sprint_id, s.plan_year, s.plan_quarter, s.owner_id, s.task_id, s.title, s.context, s.kind,
        s.origin, s.status, s.created_at, s.updated_at, s.closed_at, s.agent_step, s.agent_step_at`;
 
 async function loadMessages(sessionIds: readonly string[]): Promise<Map<string, AgentSessionMessage[]>> {
@@ -218,18 +224,20 @@ export async function createAgentSession(input: {
   organizationId: string;
   origin: AgentSessionOrigin;
   ownerId: string;
-  sprintId: number;
+  scope: AgentSessionScope;
   status: AgentSessionStatus;
   taskId: string | null;
   title: string;
 }): Promise<string> {
+  const columns = agentSessionScopeColumns(input.scope);
   const result = await query<{ id: string }>(
-    `INSERT INTO agent_sessions (organization_id, sprint_id, owner_id, task_id, title, context, origin, status, kind)
-     VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)
+    `INSERT INTO agent_sessions
+       (organization_id, sprint_id, owner_id, task_id, title, context, origin, status, kind, plan_year, plan_quarter)
+     VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11)
      RETURNING id::text AS id`,
     [
       input.organizationId,
-      input.sprintId,
+      columns.sprintId,
       input.ownerId,
       input.taskId,
       input.title,
@@ -237,6 +245,8 @@ export async function createAgentSession(input: {
       input.origin,
       input.status,
       input.kind ?? 'plan',
+      columns.planYear,
+      columns.planQuarter,
     ]
   );
   const id = result.rows[0]?.id;
@@ -347,6 +357,8 @@ export async function listAgentSessions(input: {
   limit?: number;
   organizationId: string;
   ownerId: string;
+  /** Только сессии квартального плана этого квартала. */
+  quarter?: QuarterRef;
   sprintId?: number;
   statuses?: readonly AgentSessionStatus[];
 }): Promise<AgentSession[]> {
@@ -356,6 +368,7 @@ export async function listAgentSessions(input: {
       WHERE s.organization_id = $1::uuid
         AND LOWER(s.owner_id) = LOWER($2)
         AND ($3::int IS NULL OR s.sprint_id = $3)
+        AND ($7::int IS NULL OR (s.plan_year = $7 AND s.plan_quarter = $8))
         AND (
           ($4::text[] IS NOT NULL AND s.status = ANY($4::text[]))
           OR ($4::text[] IS NULL AND (s.status <> 'closed'
@@ -370,30 +383,35 @@ export async function listAgentSessions(input: {
       input.statuses ? [...input.statuses] : null,
       CLOSED_VISIBLE_DAYS,
       input.limit ?? 50,
+      input.quarter?.year ?? null,
+      input.quarter?.quarter ?? null,
     ]
   );
   return withMessages(result.rows);
 }
 
-/** Незакрытая сессия владельца, в которой лежит его текущий драфт в спринте. */
+/** Незакрытая сессия владельца, в которой лежит его текущий драфт в спринте или квартале. */
 export async function findAgentSessionByProposal(input: {
   organizationId: string;
   ownerId: string;
   proposalId: string;
-  sprintId: number;
+  scope: AgentSessionScope;
 }): Promise<string | null> {
+  const columns = agentSessionScopeColumns(input.scope);
   const result = await query<{ id: string }>(
     `SELECT s.id::text AS id
        FROM agent_sessions s
        JOIN agent_session_messages m ON m.session_id = s.id AND m.kind = 'draft'
       WHERE s.organization_id = $1::uuid
         AND LOWER(s.owner_id) = LOWER($2)
-        AND s.sprint_id = $3
+        AND s.sprint_id IS NOT DISTINCT FROM $3::int
+        AND s.plan_year IS NOT DISTINCT FROM $5::int
+        AND s.plan_quarter IS NOT DISTINCT FROM $6::smallint
         AND s.status <> 'closed'
         AND m.proposal_id = $4
       ORDER BY m.created_at DESC
       LIMIT 1`,
-    [input.organizationId, input.ownerId, input.sprintId, input.proposalId]
+    [input.organizationId, input.ownerId, columns.sprintId, input.proposalId, columns.planYear, columns.planQuarter]
   );
   return result.rows[0]?.id ?? null;
 }
@@ -428,7 +446,7 @@ export async function touchAgentSessionActivity(input: {
   sprintId: number | null;
   step: AgentBridgeStep;
 }): Promise<number[]> {
-  const result = await query<{ sprint_id: number }>(
+  const result = await query<{ sprint_id: number | null }>(
     `UPDATE agent_sessions s
         SET agent_step = $5::varchar, agent_step_at = CURRENT_TIMESTAMP
       WHERE s.organization_id = $1::uuid
@@ -441,5 +459,6 @@ export async function touchAgentSessionActivity(input: {
       RETURNING s.sprint_id`,
     [input.organizationId, input.ownerId, input.sessionId, input.sprintId, input.step, ACTIVITY_THROTTLE_SECONDS]
   );
-  return [...new Set(result.rows.map((row) => row.sprint_id))];
+  // Квартальные сессии планер перечитывает сам (опрос), пинать нечего.
+  return [...new Set(result.rows.flatMap((row) => (row.sprint_id == null ? [] : [row.sprint_id])))];
 }

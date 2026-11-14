@@ -11,7 +11,8 @@ import {
   waitingForDraftSessionId,
 } from '@/lib/agentSessions/agentSession';
 import { AgentDevResultSchema } from '@/lib/agentSessions/agentSessionKind';
-import { draftSessionIdsBySprint, replyAgentSession } from '@/lib/agentSessions/agentSessionService';
+import { agentSessionScopeKey, type AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
+import { draftSessionIdsByScope, replyAgentSession } from '@/lib/agentSessions/agentSessionService';
 import {
   findAgentSessionByProposal,
   getAgentSession,
@@ -23,14 +24,14 @@ import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService
 
 
 const INBOX_HINT =
-  'Your inbox: sessions the person handed to you from the Beer Tracker planner ("Ask the agent", 💬 on your draft, "Ask to redo"). Open each with get_agent_session, do the work, then answer: propose_plan_patch(sessionId, …) for a plan change or reply_agent_session for a text answer. One draft per sprint at a time: a session with waitsForDraftSession cannot propose a draft until that session draft is accepted/rejected — handle the draft session first. kind=dev = a task handed to you to implement in code (follow that session hint; drafts do not apply); kind=plan = a planning request. Sessions are private to the person you act for.';
+  'Your inbox: sessions the person handed to you from the Beer Tracker planner ("Ask the agent", 💬 on your draft, "Ask to redo"). Open each with get_agent_session, do the work, then answer: propose_plan_patch(sessionId, …) for a sprint plan change (a session with quarterlyPlan instead of sprintId: propose_quarterly_plan) or reply_agent_session for a text answer. One draft per sprint or quarter at a time: a session with waitsForDraftSession cannot propose a draft until that session draft is accepted/rejected — handle the draft session first. kind=dev = a task handed to you to implement in code (follow that session hint; drafts do not apply); kind=plan = a planning request. Sessions are private to the person you act for.';
 
 /** Для get_sprint_context: сессия, в которой лежит текущий драфт владельца. */
 export async function loadDraftAgentSessionSummary(input: {
   organizationId: string;
   ownerId: string;
   proposalId: string | null;
-  sprintId: number;
+  scope: AgentSessionScope;
 }) {
   if (!input.proposalId) {
     return null;
@@ -39,7 +40,7 @@ export async function loadDraftAgentSessionSummary(input: {
     organizationId: input.organizationId,
     ownerId: input.ownerId,
     proposalId: input.proposalId,
-    sprintId: input.sprintId,
+    scope: input.scope,
   });
   if (!sessionId) {
     return null;
@@ -60,16 +61,18 @@ export function registerAgentSessionMcpTools(
     'list_agent_sessions',
     {
       description:
-        'Your inbox of work sessions from the Beer Tracker planner. Call it when the person says "look at my requests / what is waiting for you". Default status=waiting_agent (handed to you and not answered yet). Each row: title, sprintId, taskId, context (task key, summary, assignee), openComments, draftVersion. Then get_agent_session(sessionId).',
+        'Your inbox of work sessions from the Beer Tracker planner. Call it when the person says "look at my requests / what is waiting for you". Default status=waiting_agent (handed to you and not answered yet). Each row: title, sprintId (null for a quarterly plan session — then quarterlyPlan {year, quarter}), taskId, context (task key, summary, assignee), openComments, draftVersion. Then get_agent_session(sessionId).',
       inputSchema: {
+        quarter: z.number().int().min(1).max(4).optional().describe('With year: only sessions of this quarterly plan'),
         sprintId: z.number().int().positive().optional().describe('Only sessions of this sprint'),
         status: z
           .enum(['waiting_agent', 'open', 'all'])
           .optional()
           .describe('waiting_agent (default) · open = not closed · all = including closed in the last 7 days'),
+        year: z.number().int().min(2000).max(2100).optional().describe('With quarter: only sessions of this quarterly plan'),
       },
     },
-    async ({ sprintId, status }) => {
+    async ({ quarter, sprintId, status, year }) => {
       try {
         let statuses: Array<'closed' | 'waiting_agent' | 'waiting_user'> | undefined = ['waiting_agent'];
         if (status === 'open') {
@@ -80,21 +83,22 @@ export function registerAgentSessionMcpTools(
         const sessions = await listAgentSessions({
           organizationId: input.organizationId,
           ownerId: input.userId,
+          ...(year && quarter ? { quarter: { quarter: quarter as 1 | 2 | 3 | 4, year } } : {}),
           sprintId,
           statuses,
         });
-        const draftBySprint = await draftSessionIdsBySprint({
+        const draftByScope = await draftSessionIdsByScope({
           organizationId: input.organizationId,
           ownerId: input.userId,
-          sprintIds: sessions.map((session) => session.sprintId),
+          scopes: sessions.map((session) => session.scope),
         });
         return toolJson({
           hint: INBOX_HINT,
           sessions: sessions.map((session) => {
-            const waitsFor = waitingForDraftSessionId(session, draftBySprint);
+            const waitsFor = waitingForDraftSessionId(session, draftByScope);
             return {
               ...summarizeAgentSessionForAgent(session),
-              ...(draftBySprint.get(session.sprintId) === session.id ? { hasDraftOnBoard: true } : {}),
+              ...(draftByScope.get(agentSessionScopeKey(session.scope)) === session.id ? { hasDraftOnBoard: true } : {}),
               ...(waitsFor ? { waitsForDraftSession: waitsFor } : {}),
             };
           }),

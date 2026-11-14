@@ -53,6 +53,7 @@ function session(messages: AgentSessionMessage[], kind: AgentSession['kind'] = '
     messages,
     origin: 'planner',
     ownerId: 'user-1',
+    scope: { kind: 'sprint', sprintId: 1221 },
     sprintId: 1221,
     status: 'waiting_agent',
     taskId: 'RND-1779',
@@ -221,10 +222,27 @@ describe('one draft per session', () => {
     );
   });
 
-  it('marks inbox sessions queued behind the draft session of their sprint', () => {
-    const bySprint = new Map([[1221, 'a']]);
-    expect(waitingForDraftSessionId({ id: 'b', sprintId: 1221 }, bySprint)).toBe('a');
-    expect(waitingForDraftSessionId({ id: 'a', sprintId: 1221 }, bySprint)).toBeNull();
-    expect(waitingForDraftSessionId({ id: 'c', sprintId: 7 }, bySprint)).toBeNull();
+  it('marks inbox sessions queued behind the draft session of their sprint or quarter', () => {
+    const byScope = new Map([
+      ['sprint:1221', 'a'],
+      ['quarter:2026-Q4', 'q'],
+    ]);
+    const sprint = (sprintId: number) => ({ kind: 'sprint' as const, sprintId });
+    expect(waitingForDraftSessionId({ id: 'b', scope: sprint(1221) }, byScope)).toBe('a');
+    expect(waitingForDraftSessionId({ id: 'a', scope: sprint(1221) }, byScope)).toBeNull();
+    expect(waitingForDraftSessionId({ id: 'c', scope: sprint(7) }, byScope)).toBeNull();
+    expect(waitingForDraftSessionId({ id: 'd', scope: { kind: 'quarter', quarter: 4, year: 2026 } }, byScope)).toBe('q');
+  });
+
+  it('a quarterly plan session points the agent at get_quarterly_plan and propose_quarterly_plan', () => {
+    const view = buildAgentSessionAgentView({
+      ...session([]),
+      scope: { kind: 'quarter', quarter: 4, year: 2026 },
+      sprintId: null,
+      taskId: null,
+    });
+    expect(view.fetchContext).toBe('get_quarterly_plan(year: 2026, quarter: 4)');
+    expect(view.hint).toMatch(/propose_quarterly_plan/);
+    expect(view).toMatchObject({ quarterlyPlan: { quarter: 4, year: 2026 }, sprintId: null });
   });
 });

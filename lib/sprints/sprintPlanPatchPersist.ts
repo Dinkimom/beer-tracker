@@ -8,6 +8,7 @@ import type { SprintPlanPatchOp, SprintPlanPatchProposeResult } from '@/lib/spri
 
 import { randomUUID } from 'crypto';
 
+import { sprintScope } from '@/lib/agentSessions/agentSessionScope';
 import {
   prepareDraftAgentSession,
   recordDraftInAgentSession,
@@ -187,8 +188,8 @@ export async function persistDraftInSession(
     intent: input.intent,
     organizationId: input.organizationId,
     ownerId: input.actorUserId,
+    scope: sprintScope(input.sprintId),
     sessionId: input.sessionId,
-    sprintId: input.sprintId,
     summaryFallback: input.summary[0] ?? 'Plan draft',
   });
   const draftNoteIds = await persistProposeBoardDrafts(input);

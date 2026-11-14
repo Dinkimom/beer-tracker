@@ -5,6 +5,7 @@ import type {
   AgentSessionUserMessageInput,
 } from '@/lib/agentSessions/agentSession';
 import type { AgentDevResult } from '@/lib/agentSessions/agentSessionKind';
+import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
@@ -15,6 +16,7 @@ import {
   draftSessionConflict,
   statusAfterUserMessage,
 } from '@/lib/agentSessions/agentSession';
+import { agentSessionScopeKey, sprintScope } from '@/lib/agentSessions/agentSessionScope';
 import {
   createAgentSession,
   deleteOwnAgentSessionMessage,
@@ -27,6 +29,7 @@ import {
 } from '@/lib/agentSessions/agentSessionsRepository';
 import { findActiveMcpOAuthClientMetadata } from '@/lib/mcp/oauth/mcpOAuthRepository';
 import { resolveMcpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
+import { findQuarterlyPlanDraft } from '@/lib/quarterlyPlans/quarterlyPlanDraftsRepository';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { loadPendingPlanPatchSnapshot } from '@/lib/sprints/sprintPlanPatchPending';
 
@@ -36,10 +39,25 @@ export class AgentSessionNotFoundError extends Error {
   }
 }
 
-function notifySession(organizationId: string, sprintId: number): void {
-  notifySprintRealtime(new Request('http://localhost/api/agent-sessions'), organizationId, sprintId, [
+/** Пинок планеру: доска спринта перечитывает сессии по realtime, квартальная — сама опросом. */
+function notifySession(organizationId: string, scope: AgentSessionScope): void {
+  if (scope.kind !== 'sprint') return;
+  notifySprintRealtime(new Request('http://localhost/api/agent-sessions'), organizationId, scope.sprintId, [
     'agentSessions',
   ]);
+}
+
+/** Текущий черновик владельца в спринте или квартале — его версия (proposal id); null — черновика нет. */
+async function pendingProposalId(input: {
+  organizationId: string;
+  ownerId: string;
+  scope: AgentSessionScope;
+}): Promise<string | null> {
+  const { organizationId, ownerId, scope } = input;
+  if (scope.kind === 'sprint') {
+    return (await loadPendingPlanPatchSnapshot({ organizationId, ownerId, sprintId: scope.sprintId }))?.proposalId ?? null;
+  }
+  return (await findQuarterlyPlanDraft({ organizationId, ownerId, ref: scope }))?.proposalId ?? null;
 }
 
 async function requireSession(input: {
@@ -54,47 +72,50 @@ async function requireSession(input: {
   return session;
 }
 
-/** Сессия, которой принадлежит висящий драфт владельца в спринте (null — драфта нет или он без сессии). */
+/** Сессия, которой принадлежит висящий драфт владельца в спринте или квартале (null — драфта нет или он без сессии). */
 async function findDraftSessionId(input: {
   organizationId: string;
   ownerId: string;
-  sprintId: number;
+  scope: AgentSessionScope;
 }): Promise<string | null> {
-  const pending = await loadPendingPlanPatchSnapshot(input);
-  return pending?.proposalId
-    ? findAgentSessionByProposal({ ...input, proposalId: pending.proposalId })
-    : null;
+  const proposalId = await pendingProposalId(input);
+  return proposalId ? findAgentSessionByProposal({ ...input, proposalId }) : null;
 }
 
-/** id сессий с висящим драфтом по спринтам — для пометки очереди во входящих агента. */
-export async function draftSessionIdsBySprint(input: {
+/** id сессий с висящим драфтом по областям (`agentSessionScopeKey`) — для пометки очереди во входящих агента. */
+export async function draftSessionIdsByScope(input: {
   organizationId: string;
   ownerId: string;
-  sprintIds: readonly number[];
-}): Promise<Map<number, string>> {
-  const bySprint = new Map<number, string>();
-  for (const sprintId of new Set(input.sprintIds)) {
-    const sessionId = await findDraftSessionId({ ...input, sprintId });
+  scopes: readonly AgentSessionScope[];
+}): Promise<Map<string, string>> {
+  const byScope = new Map<string, string>();
+  const unique = new Map(input.scopes.map((scope) => [agentSessionScopeKey(scope), scope]));
+  for (const [key, scope] of unique) {
+    const sessionId = await findDraftSessionId({ ...input, scope });
     if (sessionId) {
-      bySprint.set(sprintId, sessionId);
+      byScope.set(key, sessionId);
     }
   }
-  return bySprint;
+  return byScope;
 }
 
-/** Свои сессии в спринте и id той, где лежит текущий драфт (туда идут 💬 к его пунктам). */
-export async function listSprintAgentSessionsForOwner(input: {
+/** Свои сессии в спринте или квартале и id той, где лежит текущий драфт (туда идут 💬 к его пунктам). */
+export async function listAgentSessionsForOwner(input: {
   organizationId: string;
   ownerId: string;
-  sprintId: number;
+  scope: AgentSessionScope;
 }): Promise<{
   agentAvailable: boolean;
   agentBrand: McpOAuthClientBrand | null;
   draftSessionId: string | null;
   sessions: AgentSession[];
 }> {
+  const { scope } = input;
   const [sessions, draftSessionId, agentBrand] = await Promise.all([
-    listAgentSessions(input),
+    listAgentSessions({
+      ...input,
+      ...(scope.kind === 'sprint' ? { sprintId: scope.sprintId } : { quarter: { quarter: scope.quarter, year: scope.year } }),
+    }),
     findDraftSessionId(input),
     findAgentBrandForOwner(input),
   ]);
@@ -123,7 +144,7 @@ export async function createPlannerAgentSession(input: {
   organizationId: string;
   ownerId: string;
   request: AgentSessionCreateInput;
-  sprintId: number;
+  scope: AgentSessionScope;
 }): Promise<AgentSession> {
   const sessionId = await createAgentSession({
     context: input.request.context,
@@ -131,7 +152,7 @@ export async function createPlannerAgentSession(input: {
     organizationId: input.organizationId,
     origin: 'planner',
     ownerId: input.ownerId,
-    sprintId: input.sprintId,
+    scope: input.scope,
     status: 'waiting_agent',
     taskId: input.request.taskId ?? null,
     title: agentSessionTitleFromIntent(input.request.title, input.request.text),
@@ -145,7 +166,7 @@ export async function createPlannerAgentSession(input: {
     skill: input.request.skill ?? null,
     text: input.request.text,
   });
-  notifySession(input.organizationId, input.sprintId);
+  notifySession(input.organizationId, input.scope);
   return requireSession({ organizationId: input.organizationId, ownerId: input.ownerId, sessionId });
 }
 
@@ -157,17 +178,17 @@ export async function postUserAgentSessionMessage(input: {
   sessionId: string;
 }): Promise<AgentSession> {
   const session = await requireSession(input);
-  const pending = await loadPendingPlanPatchSnapshot({
+  const proposalId = await pendingProposalId({
     organizationId: input.organizationId,
     ownerId: input.ownerId,
-    sprintId: session.sprintId,
+    scope: session.scope,
   });
   await insertAgentSessionMessage({
     authorId: input.ownerId,
     authorKind: 'user',
     kind: input.message.kind,
     mentions: input.message.mentions,
-    proposalId: pending?.proposalId ?? null,
+    proposalId,
     sessionId: session.id,
     skill: input.message.skill ?? null,
     target: input.message.target,
@@ -177,7 +198,7 @@ export async function postUserAgentSessionMessage(input: {
   if (next !== session.status) {
     await setAgentSessionStatus({ sessionId: session.id, status: next });
   }
-  notifySession(input.organizationId, session.sprintId);
+  notifySession(input.organizationId, session.scope);
   return requireSession(input);
 }
 
@@ -194,7 +215,7 @@ export async function withdrawUserAgentSessionMessage(input: {
     sessionId: session.id,
   });
   if (deleted) {
-    notifySession(input.organizationId, session.sprintId);
+    notifySession(input.organizationId, session.scope);
   }
   return deleted;
 }
@@ -207,7 +228,7 @@ export async function setUserAgentSessionStatus(input: {
 }): Promise<AgentSession> {
   const session = await requireSession(input);
   await setAgentSessionStatus({ sessionId: session.id, status: input.status });
-  notifySession(input.organizationId, session.sprintId);
+  notifySession(input.organizationId, session.scope);
   return requireSession(input);
 }
 
@@ -251,8 +272,8 @@ export async function prepareDraftAgentSession(input: {
   intent?: string;
   organizationId: string;
   ownerId: string;
+  scope: AgentSessionScope;
   sessionId?: string;
-  sprintId: number;
   summaryFallback: string;
 }): Promise<AgentSession> {
   const existingId = await findDraftSessionId(input);
@@ -266,8 +287,10 @@ export async function prepareDraftAgentSession(input: {
       ownerId: input.ownerId,
       sessionId: input.sessionId,
     });
-    if (session.sprintId !== input.sprintId) {
-      throw new Error(`session_sprint_mismatch: session ${session.id} is for sprint ${session.sprintId}`);
+    if (agentSessionScopeKey(session.scope) !== agentSessionScopeKey(input.scope)) {
+      throw new Error(
+        `session_scope_mismatch: session ${session.id} is for ${agentSessionScopeKey(session.scope)}, not ${agentSessionScopeKey(input.scope)}`
+      );
     }
     return session;
   }
@@ -278,7 +301,7 @@ export async function prepareDraftAgentSession(input: {
       organizationId: input.organizationId,
       origin: 'agent',
       ownerId: input.ownerId,
-      sprintId: input.sprintId,
+      scope: input.scope,
       status: 'waiting_user',
       taskId: null,
       title: agentSessionTitleFromIntent(input.intent, input.summaryFallback),
@@ -307,7 +330,7 @@ export async function recordDraftInAgentSession(input: {
     text: input.message?.trim() || input.summary,
   });
   await setAgentSessionStatus({ sessionId: input.session.id, status: 'waiting_user' });
-  notifySession(input.organizationId, input.session.sprintId);
+  notifySession(input.organizationId, input.session.scope);
   return {
     draftVersion: agentSessionDraftVersion(input.session.messages) + 1,
     repliesRecorded,
@@ -352,7 +375,7 @@ export async function replyAgentSession(input: {
     });
   }
   await setAgentSessionStatus({ sessionId: session.id, status: input.close ? 'closed' : 'waiting_user' });
-  notifySession(input.organizationId, session.sprintId);
+  notifySession(input.organizationId, session.scope);
   return requireSession(input);
 }
 
@@ -377,6 +400,6 @@ export async function recordAgentMcpActivity(input: {
     }
   }
   for (const sprintId of sprintIds) {
-    notifySession(input.organizationId, sprintId);
+    notifySession(input.organizationId, sprintScope(sprintId));
   }
 }
