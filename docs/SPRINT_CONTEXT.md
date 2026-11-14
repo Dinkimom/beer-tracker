@@ -67,6 +67,9 @@ Tools:
 - `apply_plan_patch(sprintId, ops, applyToken, confirm=true, onError?)` — запись после propose + confirm; `onError=stop|continue`; `schedule[]` после apply
 - `get_retro_board(sprintId)` — колонки и карточки ретро (без картинок): `authorName` — кто завёл, `reactions[{emoji, count, by}]` — кто какой emoji поставил (✅ — отметили сделанным); если доски ещё нет — шаблон орги без записи
 - `apply_retro_board(sprintId, ops, confirm=true)` — заметки/комментарии/колонки ретро (`addNote`, `moveCard`, `addComment`, `addColumn`, …); колонка по `columnId` или `columnPreset`
+- `get_quarterly_plan(year, quarter, teamId?)` — квартальный план организации: недели с датами, команды (люди, спринты), направления, эпики, назначения, связи, заметки, отсутствия по командам и `version`
+- `apply_quarterly_plan(year, quarter, ifVersion, ops, dryRun?, confirm)` — пакет правок плана, всё или ничего (`addDirection`, `addEpic`, `assign`, `addLink`, `addNote`, …); созданное адресуется ссылкой `$имя` в том же пакете; срок неделями или датами; `dryRun` ничего не пишет. Правила — [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md#11-инструменты-агента-mcp)
+- `apply_availability_events(ops, confirm=true)` — отпуска, больничные, техспринты и дежурства людей команды; те же события, что на доске спринта
 
 **Статусы:** `statusType` — сырая категория трекера (у Jira «Ready for development» часто ошибочно `inProgress`). Для фильтров «что уже в работе» используйте **`statusCategory`**: not-started | `in-progress` | `paused` | `done` (имя статуса важнее категории; `readyfordevelopment` → not-started bucket).
 

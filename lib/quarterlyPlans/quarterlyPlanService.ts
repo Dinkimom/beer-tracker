@@ -62,6 +62,11 @@ async function loadTeamRosters(
   return { index: buildQuarterlyPlanMemberIndex(people), rosters };
 }
 
+/** Команды организации и их люди без аватаров — для проверки событий отсутствия от агента (QM7). */
+export async function loadQuarterlyPlanTeams(organizationId: string): Promise<TeamRoster[]> {
+  return (await loadTeamRosters(organizationId, false)).rosters;
+}
+
 async function loadBoardSprints(issueTracker: IssueTrackerProviderClient, boardId: number): Promise<SprintListItem[]> {
   const cacheKey = cacheKeys.sprints(boardId);
   const cached = apiCache.get<SprintListItem[]>(cacheKey);

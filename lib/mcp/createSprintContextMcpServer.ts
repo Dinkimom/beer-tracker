@@ -13,6 +13,7 @@ import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService
 import { registerAgentSessionMcpTools } from '@/lib/mcp/registerAgentSessionMcpTools';
 import { registerDevTaskMcpTools } from '@/lib/mcp/registerDevTaskMcpTools';
 import { registerIdentityMcpTools } from '@/lib/mcp/registerIdentityMcpTools';
+import { registerQuarterlyPlanMcpTools } from '@/lib/mcp/registerQuarterlyPlanMcpTools';
 import { registerRetroBoardMcpTools } from '@/lib/mcp/registerRetroBoardMcpTools';
 import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
@@ -448,6 +449,7 @@ export function createSprintContextMcpServer(input: {
   );
 
   registerRetroBoardMcpTools(server, input);
+  registerQuarterlyPlanMcpTools(server, input);
   registerDevTaskMcpTools(server, input);
 
   return server;

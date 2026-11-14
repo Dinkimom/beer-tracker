@@ -1,3 +1,5 @@
+import type { BoardAvailabilityEvent } from '@/types/quarterly';
+
 import { query } from '@/lib/db';
 
 interface BoardAvailabilityEventRow {
@@ -8,6 +10,28 @@ interface BoardAvailabilityEventRow {
   member_name: string;
   start_date: unknown;
   tech_sprint_type: string | null;
+}
+
+function toIsoDateOnly(value: unknown): string {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  const s = String(value);
+  return s.length >= 10 ? s.slice(0, 10) : s;
+}
+
+/** Строка таблицы → событие доступности, как его видит клиент. */
+export function boardAvailabilityEventFromRow(row: BoardAvailabilityEventRow): BoardAvailabilityEvent {
+  const base = {
+    endDate: toIsoDateOnly(row.end_date),
+    eventType: row.event_type as BoardAvailabilityEvent['eventType'],
+    id: row.id,
+    memberId: row.member_id,
+    memberName: row.member_name,
+    startDate: toIsoDateOnly(row.start_date),
+  };
+  if (row.event_type === 'tech_sprint' && row.tech_sprint_type) {
+    return { ...base, techSprintSubtype: row.tech_sprint_type as NonNullable<BoardAvailabilityEvent['techSprintSubtype']> };
+  }
+  return base;
 }
 
 export async function listBoardAvailabilityEvents(

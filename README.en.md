@@ -182,7 +182,8 @@ The agent reads the plan and suggests changes, but nothing is written to the spr
 - find a sprint (`search_sprints`) and load its planning graph: positions, capacity, goals, notes, links (`get_sprint_context`, `get_sprint_capacity`);
 - find issues and people (`search_issues`, `resolve_person`) and open an issue or its snapshot;
 - propose changes (`propose_plan_patch`) and apply them (`apply_plan_patch`);
-- read and edit the retro board (`get_retro_board`, `apply_retro_board`).
+- read and edit the retro board (`get_retro_board`, `apply_retro_board`);
+- read and fill in the quarterly plan and team absences (`get_quarterly_plan`, `apply_quarterly_plan`, `apply_availability_events`).
 
 | Prompt | What happens |
 |--------|--------------|

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-error-handler';
 import { requireTenantContext } from '@/lib/api-tenant';
 import {
+  boardAvailabilityEventFromRow as rowToEvent,
   deleteBoardAvailabilityEvent,
   insertBoardAvailabilityEvent,
   listBoardAvailabilityEvents,
@@ -25,35 +26,6 @@ function parseDateOnly(value: string): Date | null {
     return null;
   }
   return d;
-}
-
-function toIsoDateOnly(value: unknown): string {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  const s = String(value);
-  return s.length >= 10 ? s.slice(0, 10) : s;
-}
-
-function rowToEvent(row: {
-  end_date: unknown;
-  event_type: string;
-  id: string;
-  member_id: string;
-  member_name: string;
-  start_date: unknown;
-  tech_sprint_type: string | null;
-}) {
-  const base = {
-    id: row.id,
-    memberId: row.member_id,
-    memberName: row.member_name,
-    startDate: toIsoDateOnly(row.start_date),
-    endDate: toIsoDateOnly(row.end_date),
-    eventType: row.event_type as 'duty' | 'sick_leave' | 'tech_sprint' | 'vacation',
-  };
-  if (row.event_type === 'tech_sprint' && row.tech_sprint_type) {
-    return { ...base, techSprintSubtype: row.tech_sprint_type as 'back' | 'qa' | 'web' };
-  }
-  return base;
 }
 
 function validateEventPayload(body: Record<string, unknown>): {

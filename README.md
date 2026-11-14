@@ -182,7 +182,8 @@ MCP-сервер работает на вашем же инстансе. Кли�
 - найти спринт (`search_sprints`) и получить planning graph: позиции, capacity, цели, заметки, связи (`get_sprint_context`, `get_sprint_capacity`);
 - найти задачи и людей (`search_issues`, `resolve_person`), открыть задачу и её snapshot;
 - предложить правки (`propose_plan_patch`) и применить их (`apply_plan_patch`);
-- читать и править доску ретро (`get_retro_board`, `apply_retro_board`).
+- читать и править доску ретро (`get_retro_board`, `apply_retro_board`);
+- читать и заполнять квартальный план и отпуска команд (`get_quarterly_plan`, `apply_quarterly_plan`, `apply_availability_events`).
 
 | Запрос | Что происходит |
 |--------|----------------|
