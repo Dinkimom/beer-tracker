@@ -55,6 +55,8 @@ export interface SprintQuarterPlanInput {
 
 interface SprintQuarterAssignment {
   endDate: string;
+  /** Назначение кончается в этом спринте: план ждёт, что эпик здесь доделают (QK7). */
+  endsInSprint: boolean;
   epicId: string;
   id: string;
   memberId: string;
@@ -150,6 +152,7 @@ export function buildSprintQuarterPlanView(input: {
         .map((task) => task.taskId);
       return {
         endDate: weeks[assignment.startWeek + assignment.weeks - 1]!.endDate,
+        endsInSprint: assignment.startWeek + assignment.weeks <= span.startWeek + span.weeks,
         epicId: assignment.epicId,
         id: assignment.id,
         memberId: assignment.memberId,

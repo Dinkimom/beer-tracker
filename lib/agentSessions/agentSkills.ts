@@ -85,7 +85,7 @@ export const AGENT_SKILLS: readonly AgentSkill[] = [
     icon: 'target',
     id: 'sprint_goals',
     instructions:
-      'Propose sprint goals from the sprint tasks: 2–4 short, outcome-oriented goals (createGoal), each backed by real tasks of the sprint. Do not duplicate existing goals; suggest updateGoal when an existing goal is vague. In draftMessage say which tasks back each goal.',
+      'Propose 2–4 short, outcome-oriented sprint goals (createGoal) from the roadmap, not from the task list. Start with get_sprint_context: when quarter is present, take the plan epics and directions the team is assigned to in the sprint weeks (quarter.plans[].assignments → epics/directions); an assignment with endsInSprint=true means the plan expects that epic finished this sprint — make it a delivery goal. Back every goal with real sprint tasks (quarter.plans[].tasks maps tasks to plan rows; assignments[].taskIds are the person’s tasks of that epic). An assignment with empty taskIds is planned work the sprint has no tasks for — say so instead of writing a goal it cannot meet. Work in outsidePlan does not make a goal unless it is large; mention it. Without quarter, group the sprint tasks by their tracker parent and write goals per group. Check the goals fit the people: availability and capacity (when tasks are not placed and have no story points, say the fit is a rough guess). Do not duplicate existing goals; suggest updateGoal when an existing goal is vague. In draftMessage, for each goal say which plan epic or direction it advances and which tasks back it.',
     output: 'draft',
     params: [
       {

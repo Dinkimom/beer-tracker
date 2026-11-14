@@ -65,8 +65,9 @@ describe('buildSprintQuarterPlanView (QK2–QK4)', () => {
     expect(view.weeks.map((week) => week.index)).toEqual([4, 5]);
     expect(view.version).toBe(7);
     expect(view.assignments).toEqual([
-      { endDate: '2026-11-06', epicId: 'e1', id: 'a1', memberId: 'dev-1', memberName: 'Аня', startDate: '2026-10-19', taskIds: ['PAY-11'] },
-      { endDate: '2026-11-13', epicId: 'e2', id: 'a2', memberId: 'dev-2', startDate: '2026-11-02', taskIds: [] },
+      // a1 кончается в последней неделе спринта, a2 идёт дальше него.
+      { endDate: '2026-11-06', endsInSprint: true, epicId: 'e1', id: 'a1', memberId: 'dev-1', memberName: 'Аня', startDate: '2026-10-19', taskIds: ['PAY-11'] },
+      { endDate: '2026-11-13', endsInSprint: false, epicId: 'e2', id: 'a2', memberId: 'dev-2', startDate: '2026-11-02', taskIds: [] },
     ]);
   });
 
