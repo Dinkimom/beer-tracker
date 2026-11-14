@@ -128,7 +128,8 @@ async function searchJiraBoardIssues(
 ): Promise<TrackerIssue[]> {
   const textClause = buildJiraIssueSearchTextClause(queryText);
   const agile = await fetchAgileBoardIssues(api, boardId, appendJiraJqlAnd(textClause, typeClause));
-  if (agile !== null) {
+  // Эпик часто не попадает в фильтр scrum-доски (нет спринта и команды): пусто по доске — ищем в её проекте.
+  if (agile !== null && (agile.length > 0 || !typeClause)) {
     return agile;
   }
 

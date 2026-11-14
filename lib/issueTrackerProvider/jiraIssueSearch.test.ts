@@ -188,6 +188,20 @@ describe('searchJiraIssuesOnBoard parent candidates', () => {
     expect(issues).toEqual([expect.objectContaining({ key: 'PROJ-10', summary: 'Real epic' })]);
   });
 
+  it('ищет эпики в проекте доски, если в фильтр доски они не попадают', async () => {
+    const get = vi.fn((url: string) => {
+      if (url === '/issuetype') return { data: [{ hierarchyLevel: 1, id: '10000', name: 'Эпик', subtask: false }] };
+      if (url.endsWith('/board/15116')) return { data: { location: { projectKey: 'RND' } } };
+      return { data: { issues: [], isLast: true, total: 0 } };
+    });
+    const post = vi.fn().mockResolvedValue({
+      data: { issues: [{ fields: { issuetype: { name: 'Эпик' }, summary: 'Auth foundation' }, key: 'RND-1480' }] },
+    });
+    const issues = await searchJiraIssuesOnBoard(apiWith({ get, post }), 15116, 'auth', { parentCandidates: true });
+    expect(post).toHaveBeenCalledWith('/search', expect.objectContaining({ jql: expect.stringContaining('project = "RND"') }));
+    expect(issues).toEqual([expect.objectContaining({ key: 'RND-1480' })]);
+  });
+
   it('falls back to issuetype = Epic when the type catalog is empty', async () => {
     const get = vi.fn((url: string) => {
       if (url === '/issuetype') {
