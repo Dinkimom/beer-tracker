@@ -96,6 +96,22 @@ export interface QuarterlyPlanContent {
   notes: QuarterlyPlanNote[];
 }
 
+/**
+ * Эпик трекера, к которому привязана строка плана: название и статус оттуда (QE5, QE7).
+ * В плане не хранится — сервер собирает при чтении.
+ */
+export interface QuarterlyPlanTrackerEpic {
+  /** «Сделано» по канону C1. */
+  done: boolean;
+  /** Ключ палитры карточек планера для статуса (с настройками организации). */
+  statusColorKey?: string;
+  /** Название статуса, как его показывает трекер. */
+  statusDisplay: string;
+  title: string;
+}
+
 export interface QuarterlyPlan extends QuarterlyPlanContent, QuarterRef {
   teams: QuarterlyPlanTeam[];
+  /** Привязанные эпики трекера по ключу; эпика нет — трекер его не отдал (нет доступа, удалён). */
+  trackerEpics: Record<string, QuarterlyPlanTrackerEpic>;
 }

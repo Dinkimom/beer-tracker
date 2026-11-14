@@ -14,7 +14,9 @@ import {
   assignBarLanes,
   assignNoteLanes,
   buildWeekLoad,
+  epicTitle,
   groupConsecutiveDays,
+  isEpicDone,
   isLinkViolated,
   orderLinkEnds,
   overlappingAssignments,
@@ -25,6 +27,7 @@ import {
   removeNote,
   removeLink,
   resizeNoteRows,
+  trackerEpicOf,
   updateAssignment,
   updateDirection,
   updateEpic,
@@ -228,5 +231,24 @@ describe('заметки: высота и дорожки', () => {
       [bar]
     );
     expect(Object.fromEntries(laneById)).toEqual({ beside: 0, 'tall-beside': 0, 'tall-clash': 1, under: 1 });
+  });
+});
+
+describe('привязка к эпику трекера (QE5, QE7, QE8)', () => {
+  const trackerEpics = { 'DEMO-1': { done: true, statusDisplay: 'Closed', title: 'From tracker' } };
+
+  it('привязанный эпик берёт название и готовность из трекера', () => {
+    const epic = { issueKey: 'DEMO-1', status: 'backlog' as const, title: 'Own title' };
+    expect(trackerEpicOf(epic, trackerEpics)?.statusDisplay).toBe('Closed');
+    expect(epicTitle(epic, trackerEpics)).toBe('From tracker');
+    expect(isEpicDone(epic, trackerEpics)).toBe(true);
+  });
+
+  it('без привязки или без ответа трекера — своё название и ручной статус', () => {
+    expect(isEpicDone({ status: 'done' }, trackerEpics)).toBe(true);
+    const missing = { issueKey: 'DEMO-9', status: 'in_progress' as const, title: 'Own' };
+    expect(trackerEpicOf(missing, trackerEpics)).toBeNull();
+    expect(epicTitle(missing, trackerEpics)).toBe('Own');
+    expect(isEpicDone(missing, trackerEpics)).toBe(false);
   });
 });

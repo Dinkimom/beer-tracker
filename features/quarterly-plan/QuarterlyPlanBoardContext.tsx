@@ -8,6 +8,7 @@ import type {
   QuarterlyPlanEpic,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
+  QuarterlyPlanTrackerEpic,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
 import type { Developer } from '@/types';
@@ -84,6 +85,8 @@ export interface QuarterlyPlanBoardContextValue {
   /** Включён инструмент «Заметка»: клик по неделе любой строки ставит заметку. */
   noteTool: boolean;
   timelineStart: Date;
+  /** Привязанные эпики трекера по ключу: название, статус, «сделано» (QE5, QE7). */
+  trackerEpics: Readonly<Record<string, QuarterlyPlanTrackerEpic>>;
   /** Для зависимого назначения — те, кого оно ждёт и кто ещё не закончит к его началу. */
   violatedBlockers: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
   weeks: readonly QuarterWeek[];

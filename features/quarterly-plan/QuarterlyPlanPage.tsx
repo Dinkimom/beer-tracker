@@ -175,6 +175,7 @@ export function QuarterlyPlanPage() {
       onStartDraft: setDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
       timelineStart: quarterTimelineStart(weeks),
+      trackerEpics: plan.trackerEpics,
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };

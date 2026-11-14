@@ -41,7 +41,8 @@ export function registerQuarterlyPlanMcpTools(
     {
       description:
         "Read the organization's quarterly plan: weeks (index + Mon–Fri dates), teams (id, boardId, members, sprints), " +
-        'directions (milestones), epics (issueKey, status, title), assignments (person × epic × weeks), links ' +
+        'directions (milestones), epics (issueKey, status, title; for linked epics trackerEpics[issueKey] has the tracker ' +
+        'title, status and done), assignments (person × epic × weeks), links ' +
         '(fromId must finish before toId starts), notes, absences per team, and version. Optional teamId narrows the result.',
       inputSchema: { ...quarterInput, teamId: z.string().optional().describe('teams[].id to narrow the plan') },
     },
@@ -69,6 +70,11 @@ export function registerQuarterlyPlanMcpTools(
           notes: plan.notes,
           quarter,
           teams,
+          trackerEpics: Object.fromEntries(
+            epics.flatMap((epic) =>
+              epic.issueKey && plan.trackerEpics[epic.issueKey] ? [[epic.issueKey, plan.trackerEpics[epic.issueKey]]] : []
+            )
+          ),
           version,
           weeks: buildQuarterWeeks(ref).map(({ endDate, index, startDate }) => ({ endDate, index, startDate })),
           year,

@@ -821,6 +821,7 @@ export const ruMessages = {
     addEpicPlaceholder: 'Название эпика',
     rowActions: 'Действия',
     changeStatus: 'Сменить статус',
+    statusFromTracker: 'Статус эпика в трекере',
     assignWeek: 'Назначить исполнителя на «{title}», неделя',
     menuAssign: 'Кто делает',
     menuAssignee: 'Исполнитель',

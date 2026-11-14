@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
+import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
@@ -121,7 +122,7 @@ export function QuarterlyPlanBoard({
                           key={direction.id}
                           collapsed={collapsedIds.has(direction.id)}
                           direction={direction}
-                          epics={hideDone ? epics.filter((epic) => epic.status !== 'done') : epics}
+                          epics={hideDone ? epics.filter((epic) => !isEpicDone(epic, plan.trackerEpics)) : epics}
                           onToggle={() => toggle(direction.id)}
                         />
                       );

@@ -103,6 +103,7 @@ describe('collectQuarterlyPlanIssues', () => {
     notes: [],
     quarter: 4,
     teams: [team],
+    trackerEpics: {},
     year: 2026,
   };
   const absence = buildAbsenceByMember([team], new Map([[1, [event({})]]]), weeks);
@@ -123,5 +124,20 @@ describe('collectQuarterlyPlanIssues', () => {
   it('со скрытыми готовыми не считает их строки', () => {
     const issues = collectQuarterlyPlanIssues(plan, absence, true);
     expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'bob-2']);
+  });
+
+  it('готовность привязанного эпика — по трекеру, а не по ручному статусу (QE8)', () => {
+    const linked = {
+      ...plan,
+      epics: plan.epics.map((epic) =>
+        epic.id === 'e2' ? { ...epic, issueKey: 'DEMO-2' } : epic.id === 'done' ? { ...epic, issueKey: 'DEMO-3' } : epic
+      ),
+      trackerEpics: {
+        'DEMO-2': { done: true, statusDisplay: 'Closed', title: 'E2' },
+        'DEMO-3': { done: false, statusDisplay: 'Open', title: 'Done' },
+      },
+    };
+    const issues = collectQuarterlyPlanIssues(linked, absence, true);
+    expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'ann-done']);
   });
 });

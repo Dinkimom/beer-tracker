@@ -5,6 +5,7 @@ import type { QuarterlyPlanDirection, QuarterlyPlanEpic } from '@/lib/quarterlyP
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
 import {
@@ -36,7 +37,7 @@ export function QuarterlyPlanDirectionSection({
   onToggle,
 }: QuarterlyPlanDirectionSectionProps) {
   const { t } = useI18n();
-  const { assignmentsByEpic, draft, onDraftSubmit, onRowMenu, weeks } = useQuarterlyPlanBoard();
+  const { assignmentsByEpic, draft, onDraftSubmit, onRowMenu, trackerEpics, weeks } = useQuarterlyPlanBoard();
   // Заметки направления занимают его дорожку — сводная полоса тогда уходит к нижнему краю строки.
   const hasNotes = useQuarterRowNotes({ id: direction.id, kind: 'direction' }).notes.length > 0;
 
@@ -45,7 +46,7 @@ export function QuarterlyPlanDirectionSection({
   const rollupStart = Math.min(...spans.map((span) => span.startWeek));
   /** Эпики без единой полосы; готовые не в счёт — планировать их уже незачем. */
   const unplannedCount = epics.filter(
-    (epic) => epic.status !== 'done' && !assignmentsByEpic.get(epic.id)?.length
+    (epic) => !isEpicDone(epic, trackerEpics) && !assignmentsByEpic.get(epic.id)?.length
   ).length;
   const rollupEnd = Math.max(...spans.map((span) => span.startWeek + span.weeks));
 

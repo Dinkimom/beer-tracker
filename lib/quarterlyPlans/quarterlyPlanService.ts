@@ -25,6 +25,7 @@ import { parseQuarterlyPlanContent } from './quarterlyPlanContentParse';
 import { buildQuarterlyPlanMemberIndex, planContentForClient, planContentForStorage } from './quarterlyPlanMembers';
 import { applyQuarterlyPlanOps as applyOpsToContent } from './quarterlyPlanOps';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
+import { loadQuarterlyPlanTrackerEpics } from './quarterlyPlanTrackerEpics';
 import { buildQuarterWeeks, resolveWeekSpan } from './quarterWeeks';
 
 /** Тот же срок, что у `/api/sprints`: список спринтов доски общий в кэше. */
@@ -101,13 +102,23 @@ export async function getQuarterlyPlan(input: {
     loadTeamRosters(organizationId, true),
     fetchQuarterlyPlanContent(organizationId, ref),
   ]);
-  const teams = await Promise.all(
-    rosters.map(async (roster) => ({
-      ...roster,
-      sprints: sprintsInQuarter(await loadBoardSprints(issueTracker, roster.boardId), ref),
-    }))
-  );
-  return { plan: { ...ref, ...planContentForClient(stored.content, index), teams }, version: stored.version };
+  const [teams, trackerEpics] = await Promise.all([
+    Promise.all(
+      rosters.map(async (roster) => ({
+        ...roster,
+        sprints: sprintsInQuarter(await loadBoardSprints(issueTracker, roster.boardId), ref),
+      }))
+    ),
+    loadQuarterlyPlanTrackerEpics({
+      issueKeys: stored.content.epics.flatMap((epic) => (epic.issueKey ? [epic.issueKey] : [])),
+      issueTracker,
+      organizationId,
+    }),
+  ]);
+  return {
+    plan: { ...ref, ...planContentForClient(stored.content, index), teams, trackerEpics },
+    version: stored.version,
+  };
 }
 
 type SaveQuarterlyPlanResult =

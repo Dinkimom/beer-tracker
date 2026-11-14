@@ -15,6 +15,7 @@ import { buildUnavailableDayHatchKinds } from '@/features/swimlane/utils/availab
 import { parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import {
   absentDaysWithinSpan,
+  isEpicDone,
   overlappingAssignments,
   violatedBlockersByAssignment,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
@@ -192,7 +193,7 @@ export function collectQuarterlyPlanIssues(
       .filter((direction) => direction.teamId === team.id)
       .flatMap((direction) =>
         plan.epics
-          .filter((epic) => epic.directionId === direction.id && !(hideDone && epic.status === 'done'))
+          .filter((epic) => epic.directionId === direction.id && !(hideDone && isEpicDone(epic, plan.trackerEpics)))
           .map((epic) => ({ directionId: direction.id, epicId: epic.id, teamId: team.id }))
       )
   );

@@ -820,6 +820,7 @@ export const enMessages = {
     addEpicPlaceholder: 'Epic title',
     rowActions: 'Actions',
     changeStatus: 'Change status',
+    statusFromTracker: 'Epic status in the tracker',
     assignWeek: 'Assign someone to "{title}", week',
     menuAssign: 'Who does it',
     menuAssignee: 'Assignee',

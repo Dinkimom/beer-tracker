@@ -11,7 +11,10 @@ import { availabilityKindMessageKey } from '@/features/swimlane/utils/availabili
 import {
   absentDaysWithinSpan,
   assignBarLanes,
+  epicTitle,
+  isEpicDone,
   overlappingAssignments,
+  trackerEpicOf,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
@@ -50,6 +53,7 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
     onDraftSubmit,
     onRowMenu,
     onStatusClick,
+    trackerEpics,
     violatedBlockers,
   } = useQuarterlyPlanBoard();
   const assignments = assignmentsByEpic.get(epic.id) ?? [];
@@ -60,8 +64,15 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
     )
   );
   const renaming = draft?.kind === 'renameEpic' && draft.id === epic.id;
-  /** Готовый эпик уходит на второй план: приглушён и зачёркнут. */
-  const done = epic.status === 'done';
+  /** Готовый эпик уходит на второй план: приглушён и зачёркнут (QE8). */
+  const done = isEpicDone(epic, trackerEpics);
+  const title = epicTitle(epic, trackerEpics);
+  /** У привязанного эпика статус из трекера и вручную не меняется (QE7). */
+  const tracked = trackerEpicOf(epic, trackerEpics);
+  const titleOf = (epicId: string) => {
+    const other = epicById.get(epicId);
+    return other ? epicTitle(other, trackerEpics) : '';
+  };
 
   /** Что не так с назначением: человек отсутствует, занят другим эпиком или нарушен порядок работ. */
   const issuesOf = (assignment: QuarterlyPlanAssignment): string[] => {
@@ -73,9 +84,9 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
     const parallel = overlappingAssignments(
       assignment,
       assignmentsByMember.get(assignment.memberId) ?? []
-    ).map((other) => epicById.get(other.epicId)?.title ?? '');
+    ).map((other) => titleOf(other.epicId));
     const blockers = (violatedBlockers.get(assignment.id) ?? []).map((blocker) =>
-      t('quarterlyPlan.issueBlocked', { title: epicById.get(blocker.epicId)?.title ?? '' })
+      t('quarterlyPlan.issueBlocked', { title: titleOf(blocker.epicId) })
     );
     return [
       ...away,
@@ -99,13 +110,13 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
             />
           ) : (
             <>
-              <OverflowTooltip content={epic.title}>
+              <OverflowTooltip content={title}>
                 <span
                   className={`truncate text-sm ${
                     done ? 'text-ds-text-muted line-through opacity-70' : 'text-gray-900 dark:text-gray-100'
                   }`}
                 >
-                  {epic.title}
+                  {title}
                 </span>
               </OverflowTooltip>
               {epic.issueKey ? <QuarterlyPlanIssueKey issueKey={epic.issueKey} /> : null}
@@ -121,17 +132,26 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
               </HeaderIconButton>
             </>
           )}
-          <button
-            aria-label={t('quarterlyPlan.changeStatus')}
-            className="shrink-0 cursor-pointer rounded-md transition-all duration-200 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] active:brightness-90 dark:hover:brightness-125"
-            type="button"
-            onClick={(event) => onStatusClick(epic.id, { x: event.clientX, y: event.clientY })}
-          >
-            <StatusTag
-              label={t(`quarterlyPlan.status.${epic.status}`)}
-              status={QUARTER_STATUS_PALETTE_KEY[epic.status]}
-            />
-          </button>
+          {epic.issueKey ? (
+            <span className="shrink-0" title={t('quarterlyPlan.statusFromTracker')}>
+              <StatusTag
+                label={tracked?.statusDisplay || t(`quarterlyPlan.status.${epic.status}`)}
+                status={tracked?.statusColorKey ?? QUARTER_STATUS_PALETTE_KEY[epic.status]}
+              />
+            </span>
+          ) : (
+            <button
+              aria-label={t('quarterlyPlan.changeStatus')}
+              className="shrink-0 cursor-pointer rounded-md transition-all duration-200 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] active:brightness-90 dark:hover:brightness-125"
+              type="button"
+              onClick={(event) => onStatusClick(epic.id, { x: event.clientX, y: event.clientY })}
+            >
+              <StatusTag
+                label={t(`quarterlyPlan.status.${epic.status}`)}
+                status={QUARTER_STATUS_PALETTE_KEY[epic.status]}
+              />
+            </button>
+          )}
         </div>
       }
       noteBlockers={assignments.map((assignment) => ({

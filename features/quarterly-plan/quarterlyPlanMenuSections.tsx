@@ -249,7 +249,8 @@ function epicSections(input: MenuSectionsInput, epicId: string): QuarterlyPlanMe
         icon: rowIcon('x'),
         id: 'unlink',
         label: t('quarterlyPlan.menuUnlink'),
-        onSelect: () => applyEdit((content) => updateEpic(content, epicId, { issueKey: undefined })),
+        // Отвязанная строка снова ставит статус руками и начинает с «Бэклога» (QE7).
+        onSelect: () => applyEdit((content) => updateEpic(content, epicId, { issueKey: undefined, status: 'backlog' })),
       }
     : {
         icon: rowIcon('link'),
@@ -260,13 +261,18 @@ function epicSections(input: MenuSectionsInput, epicId: string): QuarterlyPlanMe
   return [
     {
       id: 'edit',
+      // Название привязанного эпика — из трекера (QE5): переименовывают его там.
       rows: [
-        {
-          icon: rowIcon('edit'),
-          id: 'rename',
-          label: t('quarterlyPlan.menuRename'),
-          onSelect: () => actions.onStartDraft({ id: epicId, kind: 'renameEpic' }),
-        },
+        ...(linked
+          ? []
+          : [
+              {
+                icon: rowIcon('edit'),
+                id: 'rename',
+                label: t('quarterlyPlan.menuRename'),
+                onSelect: () => actions.onStartDraft({ id: epicId, kind: 'renameEpic' }),
+              },
+            ]),
         tracker,
       ],
     },

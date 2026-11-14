@@ -8,6 +8,7 @@ import type {
   QuarterlyPlanEpicStatus,
   QuarterlyPlanSprint,
   QuarterlyPlanTeam,
+  QuarterlyPlanTrackerEpic,
   QuarterRef,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { Developer } from '@/types';
@@ -276,7 +277,13 @@ export function buildDemoQuarterlyPlan(
   content: QuarterlyPlanContent,
   demoDevelopers: Developer[]
 ): QuarterlyPlan {
-  return { ...ref, ...content, teams: buildTeams(ref, demoDevelopers) };
+  const trackerEpics = Object.fromEntries(
+    content.epics.flatMap((epic) => {
+      const tracked = DEMO_TRACKER_EPICS.find((item) => item.issueKey === epic.issueKey);
+      return tracked ? [[tracked.issueKey, demoTrackerEpic(tracked)]] : [];
+    })
+  );
+  return { ...ref, ...content, teams: buildTeams(ref, demoDevelopers), trackerEpics };
 }
 
 const DUTY_ROTATION: Array<[memberId: string, memberName: string]> = [
@@ -341,12 +348,32 @@ export function buildDemoQuarterAvailabilityEvents(bob: {
   ];
 }
 
+type DemoTrackerStatus = 'closed' | 'inprogress' | 'intesting' | 'open';
+
+const DEMO_STATUS_DISPLAY: Record<DemoTrackerStatus, string> = {
+  closed: 'Closed',
+  inprogress: 'In progress',
+  intesting: 'Testing',
+  open: 'Open',
+};
+
+/** Статус эпика «в трекере» → то, что план показывает у привязанной строки (QE7). */
+function demoTrackerEpic(epic: { status?: DemoTrackerStatus; title: string }): QuarterlyPlanTrackerEpic {
+  const status = epic.status ?? 'open';
+  return {
+    done: status === 'closed',
+    statusColorKey: status === 'open' ? 'backlog' : status,
+    statusDisplay: DEMO_STATUS_DISPLAY[status],
+    title: epic.title,
+  };
+}
+
 /** Эпики «в трекере» для поиска при привязке; часть из них ещё не стоит в плане. */
-export const DEMO_TRACKER_EPICS: Array<{ issueKey: string; title: string }> = [
-  { issueKey: 'DEMO-101', title: 'Payment step API' },
-  { issueKey: 'DEMO-102', title: 'Payment step UI' },
-  { issueKey: 'DEMO-103', title: 'Cart summary & promo field' },
-  { issueKey: 'DEMO-104', title: 'PDF receipts' },
+export const DEMO_TRACKER_EPICS: Array<{ issueKey: string; status?: DemoTrackerStatus; title: string }> = [
+  { issueKey: 'DEMO-101', status: 'inprogress', title: 'Payment step API' },
+  { issueKey: 'DEMO-102', status: 'inprogress', title: 'Payment step UI' },
+  { issueKey: 'DEMO-103', status: 'closed', title: 'Cart summary & promo field' },
+  { issueKey: 'DEMO-104', status: 'intesting', title: 'PDF receipts' },
   { issueKey: 'DEMO-110', title: 'Checkout analytics events' },
   { issueKey: 'DEMO-215', title: 'Stackable discounts engine' },
   { issueKey: 'DEMO-217', title: 'Promo usage report' },

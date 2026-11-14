@@ -3,6 +3,7 @@ import type {
   QuarterlyPlanContent,
   QuarterlyPlanDirection,
   QuarterlyPlanEpic,
+  QuarterlyPlanTrackerEpic,
   QuarterlyPlanLink,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
@@ -334,4 +335,31 @@ export function overlapWeeks(
     }
   }
   return weeks;
+}
+
+/** Эпик трекера, к которому привязана строка; null — строка не привязана или трекер эпик не отдал. */
+export function trackerEpicOf(
+  epic: Pick<QuarterlyPlanEpic, 'issueKey'>,
+  trackerEpics: Readonly<Record<string, QuarterlyPlanTrackerEpic>>
+): QuarterlyPlanTrackerEpic | null {
+  return epic.issueKey ? (trackerEpics[epic.issueKey] ?? null) : null;
+}
+
+/**
+ * Эпик готов (QE8): привязанный — по канону «сделано» трекера (C1), иначе по ручному статусу.
+ * Одно правило для «Скрыть готовые», «Без плана» и вида строки.
+ */
+export function isEpicDone(
+  epic: Pick<QuarterlyPlanEpic, 'issueKey' | 'status'>,
+  trackerEpics: Readonly<Record<string, QuarterlyPlanTrackerEpic>>
+): boolean {
+  return trackerEpicOf(epic, trackerEpics)?.done ?? epic.status === 'done';
+}
+
+/** Название строки: у привязанного эпика — из трекера (QE5), иначе своё. */
+export function epicTitle(
+  epic: Pick<QuarterlyPlanEpic, 'issueKey' | 'title'>,
+  trackerEpics: Readonly<Record<string, QuarterlyPlanTrackerEpic>>
+): string {
+  return trackerEpicOf(epic, trackerEpics)?.title ?? epic.title;
 }
