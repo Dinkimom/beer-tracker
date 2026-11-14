@@ -3,8 +3,10 @@ import type {
   AgentSessionCreatePayload,
   AgentSessionUserMessagePayload,
 } from '@/lib/agentSessions/agentSession';
+import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
+import { sprintScope } from '@/lib/agentSessions/agentSessionScope';
 import { getPlannerBeerTrackerApi } from '@/lib/plannerBeerTrackerApiOverride';
 
 export interface SprintAgentSessions {
@@ -17,10 +19,16 @@ export interface SprintAgentSessions {
   sessions: AgentSession[];
 }
 
-export async function fetchSprintAgentSessions(sprintId: number): Promise<SprintAgentSessions> {
-  const { data }: { data: Partial<SprintAgentSessions> } = await getPlannerBeerTrackerApi().get(
-    `/sprints/${sprintId}/agent-sessions`
-  );
+/** Путь сессий области: спринт или квартальный план. */
+function agentSessionsPath(scope: AgentSessionScope): string {
+  return scope.kind === 'sprint'
+    ? `/sprints/${scope.sprintId}/agent-sessions`
+    : `/quarterly-plans/agent-sessions?year=${scope.year}&quarter=${scope.quarter}`;
+}
+
+/** Свои сессии с агентом в спринте или квартале. */
+export async function fetchAgentSessions(scope: AgentSessionScope): Promise<SprintAgentSessions> {
+  const { data }: { data: Partial<SprintAgentSessions> } = await getPlannerBeerTrackerApi().get(agentSessionsPath(scope));
   return {
     agentAvailable: data.agentAvailable ?? false,
     agentBrand: data.agentBrand ?? null,
@@ -29,15 +37,23 @@ export async function fetchSprintAgentSessions(sprintId: number): Promise<Sprint
   };
 }
 
-export async function createSprintAgentSession(
-  sprintId: number,
+export async function createAgentSession(
+  scope: AgentSessionScope,
   input: AgentSessionCreatePayload
 ): Promise<AgentSession | null> {
   const { data }: { data: { session?: AgentSession } } = await getPlannerBeerTrackerApi().post(
-    `/sprints/${sprintId}/agent-sessions`,
+    agentSessionsPath(scope),
     input
   );
   return data.session ?? null;
+}
+
+export function fetchSprintAgentSessions(sprintId: number): Promise<SprintAgentSessions> {
+  return fetchAgentSessions(sprintScope(sprintId));
+}
+
+export function createSprintAgentSession(sprintId: number, input: AgentSessionCreatePayload): Promise<AgentSession | null> {
+  return createAgentSession(sprintScope(sprintId), input);
 }
 
 export async function postAgentSessionMessage(

@@ -36,7 +36,9 @@ import {
 } from '@/lib/quarterlyPlans/quarterWeeks';
 import { getPlannerNow } from '@/utils/plannerClock';
 
+import { QuarterlyPlanAgentPanel } from './components/QuarterlyPlanAgentPanel';
 import { QuarterlyPlanBoard } from './components/QuarterlyPlanBoard';
+import { QuarterlyPlanDraftBar } from './components/QuarterlyPlanDraftBar';
 import { QuarterlyPlanMenu } from './components/QuarterlyPlanMenu';
 import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
 import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTrackerEpicDialog';
@@ -47,6 +49,7 @@ import {
 } from './quarterlyPlanBoardModel';
 import { buildQuarterlyPlanMenuSections } from './quarterlyPlanMenuSections';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
+import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarterlyPlanAgent';
 import { useQuarterlyPlanLinks } from './useQuarterlyPlanLinks';
 import { useQuarterlyPlanNotes } from './useQuarterlyPlanNotes';
 
@@ -77,7 +80,13 @@ export function QuarterlyPlanPage() {
   const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(new Set());
   const [focusedIssue, setFocusedIssue] = useState<{ assignmentId: string; nonce: number } | null>(null);
   const [todayNonce, setTodayNonce] = useState(0);
-  const { applyEdit, eventsByBoard, isLoading, plan } = useQuarterlyPlan(quarterRef);
+  const { applyEdit: savePlanEdit, eventsByBoard, isLoading, plan: savedPlan } = useQuarterlyPlan(quarterRef);
+  const agent = useQuarterlyPlanAgent(quarterRef);
+  const [agentOpen, setAgentOpen] = useState(false);
+  const agentDraft = agent.draft;
+  /** План на доске — с черновиком агента, пока он показан (QM9): доска, проблемы и меню считают по нему. */
+  const draftView = useQuarterlyPlanDraftPreview({ draft: agentDraft, savedPlan, saveEdit: savePlanEdit });
+  const { applyEdit, plan } = draftView;
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
   const timelineStart = useMemo(() => quarterTimelineStart(weeks), [weeks]);
@@ -175,12 +184,13 @@ export function QuarterlyPlanPage() {
       onRowMenu: (target, anchor) => setMenu({ anchor, kind: 'row', target }),
       onStartDraft: setDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
+      draftMarks: draftView.marks,
       timelineStart,
       trackerEpics: plan.trackerEpics,
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, applyEdit, draft, focusedIssue, issues, linksBoard, notesBoard, plan, submitDraft, timelineStart, weeks]);
+  }, [absenceByMember, applyEdit, draft, draftView.marks, focusedIssue, issues, linksBoard, notesBoard, plan, submitDraft, timelineStart, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -287,7 +297,33 @@ export function QuarterlyPlanPage() {
             {t(isLoading ? 'quarterlyPlan.loading' : 'quarterlyPlan.loadError')}
           </div>
         )}
+        {agentDraft ? (
+          <QuarterlyPlanDraftBar
+            busy={agent.busy}
+            diff={draftView.diff}
+            error={agentDraft.error}
+            showing={draftView.showing}
+            summary={agentDraft.summary}
+            onApprove={() => agent.approve(agentDraft.proposalId)}
+            onReject={() => agent.reject(agentDraft.proposalId)}
+            onToggle={draftView.toggle}
+          />
+        ) : null}
+        {agentOpen ? (
+          <QuarterlyPlanAgentPanel
+            busy={agent.busy}
+            draftSessionId={agent.draftSessionId}
+            sessions={agent.sessions}
+            onClose={() => setAgentOpen(false)}
+            onSend={agent.send}
+          />
+        ) : null}
         <QuarterlyPlanToolbar
+          agent={
+            agent.agentAvailable || agent.sessions.length > 0
+              ? { open: agentOpen, waiting: agent.sessions.some((session) => session.status === 'waiting_user'), onToggle: () => setAgentOpen((open) => !open) }
+              : null
+          }
           hideDone={hideDone}
           issueCounts={{
             away: issues.filter((issue) => issue.away).length,

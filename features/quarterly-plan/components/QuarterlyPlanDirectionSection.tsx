@@ -14,6 +14,7 @@ import {
   QUARTER_ROW_PADDING_PX,
 } from '../quarterlyPlanBoardModel';
 
+import { QuarterlyPlanDraftMark } from './QuarterlyPlanDraftMark';
 import { QuarterlyPlanEpicRow } from './QuarterlyPlanEpicRow';
 import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
@@ -80,6 +81,7 @@ export function QuarterlyPlanDirectionSection({
                   <span className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {direction.title}
                   </span>
+                  <QuarterlyPlanDraftMark id={direction.id} />
                 </button>
                 {unplannedCount > 0 ? (
                   <span className="shrink-0 text-xs text-ds-text-muted">

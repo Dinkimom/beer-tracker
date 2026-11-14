@@ -53,6 +53,8 @@ export interface QuarterlyPlanBoardContextValue {
   currentWeek: number;
   dayCount: number;
   draft: QuarterlyPlanDraft | null;
+  /** Черновик агента показан: что в нём новое и что изменено (QM9); null — черновика на доске нет. */
+  draftMarks: { added: ReadonlySet<string>; changed: ReadonlySet<string> } | null;
   epicById: ReadonlyMap<string, QuarterlyPlanEpic>;
   /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   focusedIssue: { assignmentId: string; nonce: number } | null;

@@ -27,6 +27,7 @@ import {
 } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanBar } from './QuarterlyPlanBar';
+import { QuarterlyPlanDraftMark } from './QuarterlyPlanDraftMark';
 import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
 import { QuarterlyPlanIssueKey } from './QuarterlyPlanIssueKey';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
@@ -131,6 +132,7 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
                 </span>
               </OverflowTooltip>
               {epic.issueKey ? <QuarterlyPlanIssueKey issueKey={epic.issueKey} /> : null}
+              <QuarterlyPlanDraftMark id={epic.id} />
               <span className="flex-1" />
               <HeaderIconButton
                 className={QUARTER_ROW_ACTION_CLASS}

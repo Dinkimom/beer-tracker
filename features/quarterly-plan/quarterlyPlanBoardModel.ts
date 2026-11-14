@@ -174,3 +174,20 @@ export function formatWeekRange(week: QuarterWeek): string {
 /** Кнопка-иконка в строке: появляется при наведении на строку и при фокусе. */
 export const QUARTER_ROW_ACTION_CLASS =
   '!h-6 !w-6 opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100';
+
+/** Что показанный черновик агента сделал со строкой или полосой (QM9); null — не трогал или черновика нет. */
+export function draftMarkOf(
+  draftMarks: { added: ReadonlySet<string>; changed: ReadonlySet<string> } | null,
+  id: string
+): 'added' | 'changed' | null {
+  if (draftMarks?.added.has(id)) return 'added';
+  return draftMarks?.changed.has(id) ? 'changed' : null;
+}
+
+/** Обводка полосы, которую добавил или изменил показанный черновик агента: пунктир; иначе пусто. */
+export function draftOutlineClass(
+  draftMarks: { added: ReadonlySet<string>; changed: ReadonlySet<string> } | null,
+  id: string
+): string {
+  return draftMarkOf(draftMarks, id) ? 'outline-dashed outline-2 outline-offset-1 outline-blue-500' : '';
+}

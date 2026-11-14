@@ -16,6 +16,7 @@ import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   formatSpanRange,
   barDayMarks,
+  draftOutlineClass,
   QUARTER_ISSUE_HATCH,
   QUARTER_RISK_DOTS,
   QUARTER_LANE_HEIGHT_PX,
@@ -85,7 +86,10 @@ export function QuarterlyPlanBar({
     onBarClick,
     onLinkBarClick,
     weeks,
+    draftMarks,
   } = useQuarterlyPlanBoard();
+  /** Полосу добавил или изменил показанный черновик агента (QM9) — пунктирная обводка. */
+  const draftOutline = draftOutlineClass(draftMarks, assignment.id);
   const isLinkSource = linking.sourceId === assignment.id;
   const isLinkTarget = canLinkTo(assignment.id);
   const weekCount = weeks.length;
@@ -118,7 +122,7 @@ export function QuarterlyPlanBar({
     <div
       ref={rootRef}
       aria-label={`${name}, ${formatSpanRange(weeks, span)}`}
-      className={`group/bar absolute touch-none select-none rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${linking.armed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${isLinkTarget ? 'hover:ring-2 hover:ring-blue-400' : ''} ${faded ? 'opacity-50' : ''} ${drag ? '' : 'transition-[left,width] duration-200'}`}
+      className={`group/bar absolute touch-none select-none rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${linking.armed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${isLinkTarget ? 'hover:ring-2 hover:ring-blue-400' : ''} ${faded ? 'opacity-50' : ''} ${draftOutline} ${drag ? '' : 'transition-[left,width] duration-200'}`}
       data-quarter-bar={assignment.id}
       style={{
         height: QUARTER_LANE_HEIGHT_PX - 4,

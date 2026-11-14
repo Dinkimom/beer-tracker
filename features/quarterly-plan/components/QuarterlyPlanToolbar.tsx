@@ -27,6 +27,8 @@ const PILL_CLASS = 'h-8 min-h-0 shrink-0 gap-1.5 whitespace-nowrap !rounded-lg !
 const DIVIDER_CLASS = 'mx-1 h-5 w-px shrink-0 bg-black/10 dark:bg-white/15';
 
 interface QuarterlyPlanToolbarProps {
+  /** Кнопка агента; null — агента нет (не подключён MCP) и сессий по кварталу тоже. */
+  agent: { open: boolean; waiting: boolean; onToggle: () => void } | null;
   hideDone: boolean;
   /**
    * Проблемные назначения: всего и по причинам — отсутствие, порядок работ, исполнитель не в команде,
@@ -56,6 +58,7 @@ interface QuarterlyPlanToolbarProps {
  * Счётчик — кнопка: ведёт к следующей проблемной полосе; в подсказке — разбивка по причинам.
  */
 export function QuarterlyPlanToolbar({
+  agent,
   hideDone,
   issueCounts,
   linkTool,
@@ -137,6 +140,14 @@ export function QuarterlyPlanToolbar({
             />
           ) : null}
         </div>
+        {agent ? (
+          <Button aria-pressed={agent.open} className={`relative ${pill(agent.open)}`} variant="ghost" onClick={agent.onToggle}>
+            <Icon className="h-4 w-4" name="sparkles" />
+            {t('quarterlyPlan.agent.button')}
+            {/* Агент ответил и ждёт человека — точка, как непрочитанное. */}
+            {agent.waiting ? <span aria-hidden className="absolute right-1 top-1 h-2 w-2 rounded-full bg-blue-500" /> : null}
+          </Button>
+        ) : null}
         <Button
           aria-pressed={hideDone}
           className={pill(hideDone)}

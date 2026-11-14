@@ -40,3 +40,38 @@ export async function saveQuarterlyPlan(
   );
   return response.status === 409 ? { conflict: true } : { version: response.data.version };
 }
+
+/** Свой черновик агента, применённый к текущему плану; null — черновика нет (QM9). */
+export interface QuarterlyPlanDraftView {
+  baseVersion: number;
+  createdAt: string;
+  /** Пакет больше не применяется к плану; черновик остаётся только отклонить. */
+  error: string | null;
+  /** План, каким он станет после черновика; null — не применился. */
+  preview: { content: QuarterlyPlanContent } | null;
+  proposalId: string;
+  summary: string;
+}
+
+export async function fetchQuarterlyPlanDraft({ quarter, year }: QuarterRef): Promise<QuarterlyPlanDraftView | null> {
+  const { data } = await getPlannerBeerTrackerApi().get<{ draft?: QuarterlyPlanDraftView | null }>(
+    `/quarterly-plans/draft?year=${year}&quarter=${quarter}`
+  );
+  return data.draft ?? null;
+}
+
+/** Принять черновик целиком; ошибка — текстом (пакет не применился, план не изменился). */
+export async function approveQuarterlyPlanDraft(ref: QuarterRef, proposalId: string): Promise<{ error: string } | { version: number }> {
+  const response = await getPlannerBeerTrackerApi().post<{ error?: string; version?: number }>(
+    '/quarterly-plans/draft',
+    { ...ref, proposalId },
+    { validateStatus: (status) => status < 500 }
+  );
+  return response.status < 300 && response.data.version != null
+    ? { version: response.data.version }
+    : { error: response.data.error ?? 'error' };
+}
+
+export async function rejectQuarterlyPlanDraft(ref: QuarterRef, proposalId: string): Promise<void> {
+  await getPlannerBeerTrackerApi().delete('/quarterly-plans/draft', { data: { ...ref, proposalId } });
+}
