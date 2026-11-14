@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiCache } from '@/lib/cache';
 import { fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
 
-import { getQuarterlyPlan, saveQuarterlyPlan } from './quarterlyPlanService';
+import { applyQuarterlyPlanOps, getQuarterlyPlan, saveQuarterlyPlan } from './quarterlyPlanService';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
 
 vi.mock('@/lib/staffTeams', () => ({
@@ -109,5 +109,54 @@ describe('quarterlyPlanService', () => {
       saveQuarterlyPlan({ content: content('tracker-9'), ifVersion: 0, organizationId: 'org-1', ref: Q4 })
     ).resolves.toEqual({ error: 'assignment a1: unknown member tracker-9', status: 'invalid' });
     expect(saveQuarterlyPlanContent).not.toHaveBeenCalled();
+  });
+
+  describe('applyQuarterlyPlanOps', () => {
+    const ops = [
+      { epicId: 'e1', memberId: 'staff:staff-2', op: 'assign', ref: '$a', span: { startWeek: 3, weeks: 1 } },
+    ] as const;
+
+    beforeEach(() => {
+      vi.mocked(fetchQuarterlyPlanContent).mockResolvedValue({ content: content('staff-1') as never, version: 7 });
+    });
+
+    it('устаревшая версия — конфликт до применения (QM6)', async () => {
+      await expect(
+        applyQuarterlyPlanOps({ dryRun: false, ifVersion: 6, ops: [...ops], organizationId: 'org-1', ref: Q4 })
+      ).resolves.toEqual({ status: 'conflict', version: 7 });
+      expect(saveQuarterlyPlanContent).not.toHaveBeenCalled();
+    });
+
+    it('dryRun показывает план после пакета и ничего не пишет (QM4)', async () => {
+      const result = await applyQuarterlyPlanOps({ dryRun: true, ifVersion: 7, ops: [...ops], organizationId: 'org-1', ref: Q4 });
+      expect(result.status).toBe('preview');
+      expect(result.status === 'preview' && result.content.assignments.map((a) => a.memberId)).toEqual([
+        'tracker-1',
+        'staff:staff-2',
+      ]);
+      expect(saveQuarterlyPlanContent).not.toHaveBeenCalled();
+    });
+
+    it('пишет пакет поверх версии и возвращает ссылки на созданное', async () => {
+      vi.mocked(saveQuarterlyPlanContent).mockResolvedValue(8);
+      const result = await applyQuarterlyPlanOps({ dryRun: false, ifVersion: 7, ops: [...ops], organizationId: 'org-1', ref: Q4 });
+      expect(result.status === 'saved' && result.version).toBe(8);
+      expect(result.status === 'saved' && Object.keys(result.refs)).toEqual(['$a']);
+      const saved = vi.mocked(saveQuarterlyPlanContent).mock.calls[0]![0];
+      expect(saved.ifVersion).toBe(7);
+      expect(saved.content.assignments.map((a) => a.memberId)).toEqual(['staff-1', 'staff-2']);
+    });
+
+    it('ошибка операции называет её номер', async () => {
+      await expect(
+        applyQuarterlyPlanOps({
+          dryRun: false,
+          ifVersion: 7,
+          ops: [{ epicId: 'nope', op: 'removeEpic' }],
+          organizationId: 'org-1',
+          ref: Q4,
+        })
+      ).resolves.toEqual({ error: 'removeEpic: unknown epic nope', opIndex: 0, status: 'invalid' });
+    });
   });
 });

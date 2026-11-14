@@ -4,7 +4,14 @@
  */
 
 import type { QuarterlyPlanMemberIndex } from './quarterlyPlanMembers';
-import type { QuarterlyPlan, QuarterlyPlanSprint, QuarterlyPlanTeam, QuarterRef } from './quarterlyPlanTypes';
+import type { QuarterlyPlanOp } from './quarterlyPlanOps';
+import type {
+  QuarterlyPlan,
+  QuarterlyPlanContent,
+  QuarterlyPlanSprint,
+  QuarterlyPlanTeam,
+  QuarterRef,
+} from './quarterlyPlanTypes';
 import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/types';
 import type { Developer } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
@@ -16,6 +23,7 @@ import { convertTeamMemberToDeveloper } from '@/lib/teamMemberUtils';
 
 import { parseQuarterlyPlanContent } from './quarterlyPlanContentParse';
 import { buildQuarterlyPlanMemberIndex, planContentForClient, planContentForStorage } from './quarterlyPlanMembers';
+import { applyQuarterlyPlanOps as applyOpsToContent } from './quarterlyPlanOps';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
 import { buildQuarterWeeks, resolveWeekSpan } from './quarterWeeks';
 
@@ -102,14 +110,12 @@ type SaveQuarterlyPlanResult =
   | { status: 'conflict' }
   | { status: 'saved'; version: number };
 
-/** Сохраняет план целиком поверх версии `ifVersion` (QS1, QS5). */
-export async function saveQuarterlyPlan(input: {
-  content: unknown;
-  ifVersion: number;
-  organizationId: string;
-  ref: QuarterRef;
-}): Promise<SaveQuarterlyPlanResult> {
-  const { index, rosters } = await loadTeamRosters(input.organizationId, false);
+type Rosters = Awaited<ReturnType<typeof loadTeamRosters>>;
+
+async function writePlan(
+  input: { content: unknown; ifVersion: number; organizationId: string; ref: QuarterRef },
+  { index, rosters }: Rosters
+): Promise<SaveQuarterlyPlanResult> {
   const parsed = parseQuarterlyPlanContent(input.content, input.ref, new Set(rosters.map((roster) => roster.id)));
   if (!parsed.ok) return { error: parsed.error, status: 'invalid' };
   const stored = planContentForStorage(parsed.content, index);
@@ -121,4 +127,56 @@ export async function saveQuarterlyPlan(input: {
     ref: input.ref,
   });
   return version === null ? { status: 'conflict' } : { status: 'saved', version };
+}
+
+/** Сохраняет план целиком поверх версии `ifVersion` (QS1, QS5). */
+export async function saveQuarterlyPlan(input: {
+  content: unknown;
+  ifVersion: number;
+  organizationId: string;
+  ref: QuarterRef;
+}): Promise<SaveQuarterlyPlanResult> {
+  return writePlan(input, await loadTeamRosters(input.organizationId, false));
+}
+
+type ApplyOpsResult =
+  | { content: QuarterlyPlanContent; refs: Record<string, string>; status: 'preview'; version: number }
+  | { content: QuarterlyPlanContent; refs: Record<string, string>; status: 'saved'; version: number }
+  | { error: string; opIndex?: number; status: 'invalid' }
+  | { status: 'conflict'; version: number };
+
+/**
+ * Пакет операций агента над планом (раздел 11): атомарно (QM1), поверх версии `ifVersion` (QM6),
+ * с теми же проверками, что у сохранения из UI (QM2). `dryRun` ничего не пишет (QM4).
+ */
+export async function applyQuarterlyPlanOps(input: {
+  dryRun: boolean;
+  ifVersion: number;
+  ops: readonly QuarterlyPlanOp[];
+  organizationId: string;
+  ref: QuarterRef;
+}): Promise<ApplyOpsResult> {
+  const [rosters, stored] = await Promise.all([
+    loadTeamRosters(input.organizationId, false),
+    fetchQuarterlyPlanContent(input.organizationId, input.ref),
+  ]);
+  if (stored.version !== input.ifVersion) return { status: 'conflict', version: stored.version };
+  const applied = applyOpsToContent({
+    content: planContentForClient(stored.content, rosters.index),
+    ops: input.ops,
+    ref: input.ref,
+    teams: {
+      memberIdsByTeam: new Map(
+        rosters.rosters.map((roster) => [roster.id, new Set(roster.members.map((member) => member.id))])
+      ),
+    },
+  });
+  if (!applied.ok) return { error: applied.error, opIndex: applied.opIndex, status: 'invalid' };
+  if (input.dryRun) {
+    return { content: applied.content, refs: applied.refs, status: 'preview', version: stored.version };
+  }
+  const saved = await writePlan({ ...input, content: applied.content }, rosters);
+  if (saved.status === 'invalid') return saved;
+  if (saved.status === 'conflict') return { status: 'conflict', version: stored.version };
+  return { content: applied.content, refs: applied.refs, status: 'saved', version: saved.version };
 }
