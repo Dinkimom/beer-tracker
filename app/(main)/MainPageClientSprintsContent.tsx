@@ -26,6 +26,11 @@ const SprintMetricsPage = dynamic(
   { ssr: false }
 );
 
+const QuarterlyPlanPage = dynamic(
+  () => import('@/features/quarterly-plan/QuarterlyPlanPage').then((mod) => mod.QuarterlyPlanPage),
+  { ssr: false }
+);
+
 const RetroPage = dynamic(
   () => import('@/features/retro/components/RetroPage').then((mod) => mod.RetroPage),
   { ssr: false }
@@ -121,6 +126,9 @@ export function MainPageClientSprintsContent({
       )}
 
       {activeTab === 'metrics' && <SprintMetricsPage boardId={selectedBoardId} />}
+
+      {/* План общий на организацию: доска и спринт его не меняют. */}
+      {activeTab === 'quarter' && <QuarterlyPlanPage />}
 
       {activeTab === 'retro' && (
         <RetroPage

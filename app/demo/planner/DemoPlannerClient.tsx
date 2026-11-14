@@ -223,7 +223,6 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
             activeTab={activeTab}
             boardName={boardName}
             selectedBoardId={activeBoardId}
-            showQuarterTab
             onBoardChange={handleBoardChange}
             onTabChange={handleTabChange}
           />

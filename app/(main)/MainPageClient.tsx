@@ -58,7 +58,7 @@ function buildBoardChangeReplacePath(params: {
   return appendQuery(pathBase, params.searchParamsKey);
 }
 
-const sprintTabParser = parseAsStringLiteral(['backlog', 'board', 'burndown', 'metrics', 'retro']).withDefault('board');
+const sprintTabParser = parseAsStringLiteral(['backlog', 'board', 'burndown', 'metrics', 'quarter', 'retro']).withDefault('board');
 
 /**
  * После первого подъёма MainPageClient в этой вкладке не показываем полноэкранный лоадер при remount
@@ -180,8 +180,6 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
 
   const handleTabChange = useCallback(
     (tab: SprintTab) => {
-      // Квартальный план пока живёт только в демо: у основного приложения нет его API.
-      if (tab === 'quarter') return;
       setQueryStates({ tab });
     },
     [setQueryStates]
@@ -286,7 +284,8 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
                     activeTab === 'retro' ||
                     activeTab === 'backlog' ||
                     activeTab === 'burndown' ||
-                    activeTab === 'metrics'
+                    activeTab === 'metrics' ||
+                    activeTab === 'quarter'
                       ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
                       : 'flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header'
                   }
