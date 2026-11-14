@@ -81,9 +81,10 @@ export function mapJiraSprintToPlannerListItem(
   const self = typeof row.self === 'string' ? row.self : '';
   return {
     archived,
+    // Доска-владелец спринта: Jira отдаёт в списке доски и спринты соседних досок с её задачами.
     board: {
       display: '',
-      id: String(boardId),
+      id: String(jiraOriginBoardId(raw) ?? boardId),
       self: '',
     },
     createdAt: start.dateTime,

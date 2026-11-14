@@ -63,8 +63,8 @@ function content(memberId: string) {
   };
 }
 
-function sprint(id: number, startDate: string, endDate: string) {
-  return { endDate, id, name: `Sprint ${id}`, startDate };
+function sprint(id: number, startDate: string, endDate: string, boardId = '42') {
+  return { board: { display: '', id: boardId, self: '' }, endDate, id, name: `Sprint ${id}`, startDate };
 }
 
 describe('quarterlyPlanService', () => {
@@ -86,6 +86,8 @@ describe('quarterlyPlanService', () => {
         // Кончается в субботу перед кварталом, начинается с выходных — не попадает (QW5).
         sprint(3, '2026-09-26', '2026-09-27'),
         sprint(4, '2026-12-28', '2027-01-08'),
+        // Спринт соседней доски, где есть задачи этой: в ленту команды не попадает (QB3).
+        sprint(5, '2026-10-26', '2026-11-08', '112'),
       ]),
     } as unknown as IssueTrackerProviderClient;
 

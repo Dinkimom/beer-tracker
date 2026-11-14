@@ -58,6 +58,12 @@ describe('extractJiraSprintRows', () => {
 });
 
 describe('mapJiraSprintToPlannerListItem', () => {
+  it('keeps the owner board of a sprint borrowed from a neighbouring board', () => {
+    expect(
+      mapJiraSprintToPlannerListItem({ id: 77, name: 'RND Team 2 Sprint 34', originBoardId: 112 }, 113)?.board.id
+    ).toBe('112');
+  });
+
   it('maps an Agile sprint onto the planner list contract', () => {
     expect(
       mapJiraSprintToPlannerListItem(

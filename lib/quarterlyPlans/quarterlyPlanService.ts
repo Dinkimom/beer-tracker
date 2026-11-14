@@ -93,10 +93,14 @@ async function loadBoardSprints(issueTracker: IssueTrackerProviderClient, boardI
   }
 }
 
-/** Спринты доски, которые задевают квартал рабочими днями (QW5), по порядку дат. */
-function sprintsInQuarter(sprints: readonly SprintListItem[], ref: QuarterRef): QuarterlyPlanSprint[] {
+/**
+ * Спринты доски, которые задевают квартал рабочими днями (QW5), по порядку дат. Только спринты самой
+ * доски: трекер отдаёт в её списке и спринты соседних досок, где есть её задачи (QB3).
+ */
+function sprintsInQuarter(sprints: readonly SprintListItem[], boardId: number, ref: QuarterRef): QuarterlyPlanSprint[] {
   const weeks = buildQuarterWeeks(ref);
   return sprints
+    .filter((sprint) => !sprint.board?.id || sprint.board.id === String(boardId))
     .filter((sprint) => resolveWeekSpan(weeks, sprint.startDate, sprint.endDate) !== null)
     .map((sprint) => ({ endDate: sprint.endDate, id: sprint.id, name: sprint.name, startDate: sprint.startDate }))
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
@@ -116,7 +120,7 @@ export async function getQuarterlyPlan(input: {
     Promise.all(
       rosters.map(async (roster) => ({
         ...roster,
-        sprints: sprintsInQuarter(await loadBoardSprints(issueTracker, roster.boardId), ref),
+        sprints: sprintsInQuarter(await loadBoardSprints(issueTracker, roster.boardId), roster.boardId, ref),
       }))
     ),
     loadQuarterlyPlanTrackerEpics({
