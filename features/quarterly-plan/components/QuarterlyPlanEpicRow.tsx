@@ -13,7 +13,7 @@ import {
   assignBarLanes,
   epicTitle,
   isEpicDone,
-  overlappingAssignments,
+  overloadingAssignments,
   trackerEpicOf,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
@@ -83,7 +83,7 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
     const away = (absence?.segments ?? [])
       .filter((segment) => segment.dayIndices.some((day) => absentDays.has(day)))
       .map((segment) => `${t(availabilityKindMessageKey(segment.kind))} ${segment.dateRangeLabel}`);
-    const parallel = overlappingAssignments(
+    const parallel = overloadingAssignments(
       assignment,
       assignmentsByMember.get(assignment.memberId) ?? []
     ).map((other) => titleOf(other.epicId));

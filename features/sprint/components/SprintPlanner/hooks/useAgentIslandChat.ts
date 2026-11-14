@@ -77,7 +77,7 @@ function shownSession(
 }
 
 /** Какой статус показать на ✨: кто-то ждёт человека — синий, иначе кто-то ждёт агента — жёлтый. */
-function aggregateStatus(sessions: readonly AgentSession[]): AgentSessionStatus | undefined {
+export function aggregateAgentSessionStatus(sessions: readonly AgentSession[]): AgentSessionStatus | undefined {
   if (sessions.some((session) => session.status === 'waiting_user')) {
     return 'waiting_user';
   }
@@ -186,7 +186,7 @@ export function useAgentIslandChat(sprintId: number | null) {
     session,
     sessions,
     /** Что показать на ✨ в тулбаре: чья очередь хоть в одной сессии. */
-    status: aggregateStatus(sessions.openSessions),
+    status: aggregateAgentSessionStatus(sessions.openSessions),
     /** Сессии с ответом агента, который человек ещё не видел. */
     unread,
     /** Плашки контекста: снять одну крестиком; реплика ушла — очистить все. */

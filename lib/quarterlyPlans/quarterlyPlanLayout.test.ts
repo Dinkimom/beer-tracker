@@ -20,6 +20,9 @@ import {
   isLinkViolated,
   orderLinkEnds,
   overlappingAssignments,
+  overlapWeeks,
+  overloadingAssignments,
+  QUARTER_MAX_PARALLEL_EPICS,
   quarterNoteRowKey,
   removeAssignment,
   removeDirection,
@@ -188,6 +191,16 @@ describe('правки плана', () => {
       { id: 'd', epicId: 'i4', memberId: 'm2', startWeek: 2, weeks: 2 },
     ];
     expect(overlappingAssignments(a, others).map((epic) => epic.id)).toEqual(['b']);
+  });
+
+  it(`перегруз — больше ${QUARTER_MAX_PARALLEL_EPICS} назначений у человека в одну неделю (QI2)`, () => {
+    const a = { id: 'a', epicId: 'i1', memberId: 'm1', startWeek: 2, weeks: 3 };
+    const pair = [a, { id: 'b', epicId: 'i2', memberId: 'm1', startWeek: 3, weeks: 2 }];
+    expect(overlapWeeks(a, pair)).toEqual([]);
+    expect(overloadingAssignments(a, pair)).toEqual([]);
+    const triple = [...pair, { id: 'c', epicId: 'i3', memberId: 'm1', startWeek: 4, weeks: 1 }];
+    expect(overlapWeeks(a, triple)).toEqual([4]);
+    expect(overloadingAssignments(a, triple).map((other) => other.id)).toEqual(['b', 'c']);
   });
 });
 

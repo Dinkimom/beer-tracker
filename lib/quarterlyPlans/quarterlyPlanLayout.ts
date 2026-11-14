@@ -322,7 +322,18 @@ export function overlappingAssignments(
   );
 }
 
-/** Недели назначения, в которые у того же человека стоит ещё одно назначение. */
+/**
+ * Сколько эпиков одновременно у человека — ещё норма (QI2): два параллельных эпика в неделю бывают
+ * постоянно, проблема — третий и дальше.
+ */
+export const QUARTER_MAX_PARALLEL_EPICS = 2;
+
+/** Назначения, которые в неделю `week` стоят у человека вместе с этим (без него самого). */
+function othersInWeek(others: readonly QuarterlyPlanAssignment[], week: number): QuarterlyPlanAssignment[] {
+  return others.filter((other) => other.startWeek <= week && week < other.startWeek + other.weeks);
+}
+
+/** Недели назначения, в которые у человека больше `QUARTER_MAX_PARALLEL_EPICS` назначений вместе с этим (QI2). */
 export function overlapWeeks(
   assignment: QuarterlyPlanAssignment,
   all: readonly QuarterlyPlanAssignment[]
@@ -330,11 +341,19 @@ export function overlapWeeks(
   const others = overlappingAssignments(assignment, all);
   const weeks: number[] = [];
   for (let week = assignment.startWeek; week < assignment.startWeek + assignment.weeks; week += 1) {
-    if (others.some((other) => other.startWeek <= week && week < other.startWeek + other.weeks)) {
-      weeks.push(week);
-    }
+    if (othersInWeek(others, week).length >= QUARTER_MAX_PARALLEL_EPICS) weeks.push(week);
   }
   return weeks;
+}
+
+/** Другие назначения человека в его перегруженные недели (`overlapWeeks`) — их эпики называет подсказка. */
+export function overloadingAssignments(
+  assignment: QuarterlyPlanAssignment,
+  all: readonly QuarterlyPlanAssignment[]
+): QuarterlyPlanAssignment[] {
+  const others = overlappingAssignments(assignment, all);
+  const ids = new Set(overlapWeeks(assignment, all).flatMap((week) => othersInWeek(others, week).map((other) => other.id)));
+  return others.filter((other) => ids.has(other.id));
 }
 
 /** Эпик трекера, к которому привязана строка; null — строка не привязана или трекер эпик не отдал. */

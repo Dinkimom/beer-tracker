@@ -8,9 +8,11 @@ import { useCallback, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { aggregateAgentSessionStatus } from '@/features/sprint/components/SprintPlanner/hooks/useAgentIslandChat';
 import {
   AGENT_SESSIONS_QUERY_KEY,
   useAgentAvailable,
+  useAgentBrand,
   useAgentSessions,
 } from '@/features/swimlane/hooks/useAgentSessions';
 import { quarterScope } from '@/lib/agentSessions/agentSessionScope';
@@ -36,6 +38,7 @@ export function useQuarterlyPlanAgent(ref: QuarterRef) {
   // Сессии — тем же хуком, что у доски спринта: чат квартала — тот же компонент.
   const sessions = useAgentSessions(scope);
   const agentAvailable = useAgentAvailable(scope);
+  const brand = useAgentBrand(scope);
 
   const draftQuery = useQuery({
     queryFn: () => fetchQuarterlyPlanDraft({ quarter, year }),
@@ -66,12 +69,15 @@ export function useQuarterlyPlanAgent(ref: QuarterRef) {
     /** Показывать ли «Агент»: агент подключён или по кварталу уже есть сессии. */
     agentVisible: agentAvailable || sessions.openSessions.length > 0,
     approve: approve.mutate,
+    brand,
     busy: approve.isPending || reject.isPending,
     draft: draftQuery.data ?? null,
+    /** 💬 к черовику без ответа агента — число на кнопке агента. */
+    openComments: sessions.openComments,
     reject: reject.mutate,
     scope,
-    /** Агент ответил и ждёт человека. */
-    waiting: sessions.openSessions.some((session) => session.status === 'waiting_user'),
+    /** Чья очередь хоть в одной сессии — точка на кнопке агента, как на доске спринта. */
+    status: aggregateAgentSessionStatus(sessions.openSessions),
   };
 }
 

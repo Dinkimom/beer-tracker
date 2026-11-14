@@ -164,13 +164,14 @@ describe('quarterlyPlanService', () => {
         ops: [
           { epicId: 'e1', memberId: 'staff:staff-2', op: 'assign', ref: '$duty', span: { startWeek: 2, weeks: 1 } },
           { epicId: 'e1', memberId: 'staff:staff-2', op: 'assign', ref: '$twice', span: { startWeek: 2, weeks: 1 } },
+          { epicId: 'e1', memberId: 'staff:staff-2', op: 'assign', ref: '$thrice', span: { startWeek: 2, weeks: 1 } },
         ],
         organizationId: 'org-1',
         ref: Q4,
       });
       if (result.status !== 'preview') throw new Error(result.status);
-      expect(result.dutyRiskAssignmentIds).toEqual([result.refs.$duty, result.refs.$twice]);
-      expect(result.issues.map((issue) => issue.parallel)).toEqual([true, true]);
+      expect(result.dutyRiskAssignmentIds).toEqual([result.refs.$duty, result.refs.$twice, result.refs.$thrice]);
+      expect(result.issues.map((issue) => issue.parallel)).toEqual([true, true, true]);
     });
 
     it('пишет пакет поверх версии и возвращает ссылки на созданное', async () => {

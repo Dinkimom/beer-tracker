@@ -311,7 +311,17 @@ export function QuarterlyPlanPage() {
         ) : null}
         {agentOpen ? <QuarterlyPlanAgentChat scope={agent.scope} /> : null}
         <QuarterlyPlanToolbar
-          agent={agent.agentVisible ? { open: agentOpen, waiting: agent.waiting, onToggle: () => setAgentOpen((open) => !open) } : null}
+          agent={
+            agent.agentVisible
+              ? {
+                  brand: agent.brand,
+                  open: agentOpen,
+                  openComments: agent.openComments,
+                  status: agent.status,
+                  onToggle: () => setAgentOpen((open) => !open),
+                }
+              : null
+          }
           hideDone={hideDone}
           issueCounts={{
             away: issues.filter((issue) => issue.away).length,

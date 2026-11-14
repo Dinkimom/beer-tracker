@@ -31,12 +31,13 @@ export const QUARTER_HEADER_ROW_PX = 28;
 export const QUARTER_WEEK_LINE = 'color-mix(in srgb, var(--ds-border-subtle) 55%, transparent)';
 
 /**
- * Штриховка проблемного участка полосы: человек отсутствует или в те же недели занят другим эпиком.
+ * Штриховка проблемного участка полосы: человек отсутствует или в те же недели у него больше двух эпиков (QI2).
+ * Бледная и редкая: проблем на большом плане много, штриховка не должна забивать полосы.
  * Вид один — причину называет подсказка у значка. Рисуется цветом текста полосы (`currentColor`),
  * поэтому остаётся в её тоне и не даёт грязных смесей.
  */
 export const QUARTER_ISSUE_HATCH =
-  'repeating-linear-gradient(-45deg, color-mix(in srgb, currentColor 30%, transparent) 0 2px, transparent 2px 6px)';
+  'repeating-linear-gradient(-45deg, color-mix(in srgb, currentColor 14%, transparent) 0 1.5px, transparent 1.5px 7px)';
 
 /**
  * Дни дежурства на полосе — риск, а не проблема (QV3): точки вместо штриховки, тем же цветом текста полосы.

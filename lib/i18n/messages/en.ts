@@ -806,7 +806,7 @@ export const enMessages = {
     hideDone: 'Hide done',
     issues: 'Overlaps: {count}',
     issuesAway: 'Time off or sick leave: {count}',
-    issuesParallel: 'Another epic of the same person: {count}',
+    issuesParallel: 'More than two epics a week for one person: {count}',
     issuesNext: 'Click to jump to the next one',
     issueParallel: 'Same weeks: {titles}',
     columnDirections: 'Directions and epics',
@@ -872,9 +872,6 @@ export const enMessages = {
         added: 'new',
         changed: 'changed',
       },
-    },
-    agent: {
-      button: 'Agent',
     },
     link: {
       title: 'Epic from tracker',

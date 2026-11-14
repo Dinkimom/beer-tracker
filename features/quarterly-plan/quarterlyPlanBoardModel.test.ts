@@ -93,6 +93,7 @@ describe('collectQuarterlyPlanIssues', () => {
       { epicId: 'e2', id: 'bob-2', memberId: 'bob', startWeek: 2, weeks: 2 },
       { epicId: 'e1', id: 'ann-away', memberId: 'ann', startWeek: 1, weeks: 1 },
       { epicId: 'e1', id: 'bob-1', memberId: 'bob', startWeek: 3, weeks: 1 },
+      { epicId: 'e1', id: 'bob-3', memberId: 'bob', startWeek: 3, weeks: 1 },
       { epicId: 'done', id: 'ann-done', memberId: 'ann', startWeek: 1, weeks: 1 },
     ],
     directions: [{ id: 'd1', teamId: 'team', title: 'D1' }],
@@ -112,8 +113,8 @@ describe('collectQuarterlyPlanIssues', () => {
 
   it('идёт в порядке доски и различает отсутствие и параллельный эпик', () => {
     const issues = collectQuarterlyPlanIssues(plan, absence, false);
-    expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'bob-2', 'ann-done']);
-    expect(issues[0]).toMatchObject({ away: true, directionId: 'd1', parallel: true, teamId: 'team' });
+    expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'bob-3', 'bob-2', 'ann-done']);
+    expect(issues[0]).toMatchObject({ away: true, directionId: 'd1', parallel: false, teamId: 'team' });
     expect(issues[1]).toMatchObject({ away: false, blocked: false, parallel: true });
   });
 
@@ -125,7 +126,7 @@ describe('collectQuarterlyPlanIssues', () => {
 
   it('со скрытыми готовыми не считает их строки', () => {
     const issues = collectQuarterlyPlanIssues(plan, absence, true);
-    expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'bob-2']);
+    expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'bob-3', 'bob-2']);
   });
 
   it('исполнитель ушёл из команды эпика — проблема, назначение остаётся (QI6)', () => {
@@ -147,7 +148,7 @@ describe('collectQuarterlyPlanIssues', () => {
       },
     };
     const issues = collectQuarterlyPlanIssues(linked, absence, true);
-    expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'ann-done']);
+    expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'bob-3', 'ann-done']);
   });
 });
 
@@ -163,10 +164,17 @@ describe('barDayMarks', () => {
   it('штрихует отсутствие и параллельный эпик, точками — дежурство там, где нет штриховки (QV3)', () => {
     const bar = { epicId: 'e1', id: 'a1', memberId: 'ann', startWeek: 1, weeks: 2 };
     const other = { epicId: 'e2', id: 'a2', memberId: 'ann', startWeek: 2, weeks: 1 };
-    expect(barDayMarks(bar, absence, [bar, other])).toEqual({
+    const third = { epicId: 'e3', id: 'a3', memberId: 'ann', startWeek: 2, weeks: 1 };
+    expect(barDayMarks(bar, absence, [bar, other, third])).toEqual({
       issues: [{ dayCount: 2, startDay: 5 }, { dayCount: 5, startDay: 10 }],
       risks: [{ dayCount: 2, startDay: 7 }],
     });
+  });
+
+  it('два эпика в неделю у человека — норма, не штрихуется (QI2)', () => {
+    const bar = { epicId: 'e1', id: 'a1', memberId: 'bob', startWeek: 0, weeks: 2 };
+    const other = { epicId: 'e2', id: 'a2', memberId: 'bob', startWeek: 1, weeks: 1 };
+    expect(barDayMarks(bar, undefined, [bar, other])).toEqual({ issues: [], risks: [] });
   });
 
   it('без отсутствий и пересечений полоса чистая', () => {

@@ -1,6 +1,8 @@
 'use client';
 
+import type { AgentSessionStatus } from '@/lib/agentSessions/agentSession';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { useState } from 'react';
@@ -18,6 +20,7 @@ import {
   FLOATING_TOOLBAR_ITEM_IDLE,
   FLOATING_TOOLBAR_ITEM_ON,
 } from '@/features/context-menu/contextMenuClasses';
+import { SwimlanePlacementToolbarAgentButton } from '@/features/sprint/components/SprintPlanner/components/SwimlanePlacementToolbarAgentButton';
 import { SwimlanePlacementToolbarNoteColors } from '@/features/sprint/components/SprintPlanner/components/SwimlanePlacementToolbarNoteColors';
 import { SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
@@ -27,8 +30,14 @@ const PILL_CLASS = 'h-8 min-h-0 shrink-0 gap-1.5 whitespace-nowrap !rounded-lg !
 const DIVIDER_CLASS = 'mx-1 h-5 w-px shrink-0 bg-black/10 dark:bg-white/15';
 
 interface QuarterlyPlanToolbarProps {
-  /** Кнопка агента; null — агента нет (не подключён MCP) и сессий по кварталу тоже. */
-  agent: { open: boolean; waiting: boolean; onToggle: () => void } | null;
+  /** Кнопка агента (та же, что на доске спринта); null — агента нет (не подключён MCP) и сессий по кварталу тоже. */
+  agent: {
+    brand: McpOAuthClientBrand | null;
+    open: boolean;
+    openComments: number;
+    status?: AgentSessionStatus;
+    onToggle: () => void;
+  } | null;
   hideDone: boolean;
   /**
    * Проблемные назначения: всего и по причинам — отсутствие, порядок работ, исполнитель не в команде,
@@ -140,14 +149,6 @@ export function QuarterlyPlanToolbar({
             />
           ) : null}
         </div>
-        {agent ? (
-          <Button aria-pressed={agent.open} className={`relative ${pill(agent.open)}`} variant="ghost" onClick={agent.onToggle}>
-            <Icon className="h-4 w-4" name="sparkles" />
-            {t('quarterlyPlan.agent.button')}
-            {/* Агент ответил и ждёт человека — точка, как непрочитанное. */}
-            {agent.waiting ? <span aria-hidden className="absolute right-1 top-1 h-2 w-2 rounded-full bg-blue-500" /> : null}
-          </Button>
-        ) : null}
         <Button
           aria-pressed={hideDone}
           className={pill(hideDone)}
@@ -184,6 +185,15 @@ export function QuarterlyPlanToolbar({
               </Button>
             </TextTooltip>
           </>
+        ) : null}
+        {agent ? (
+          <SwimlanePlacementToolbarAgentButton
+            brand={agent.brand}
+            open={agent.open}
+            openComments={agent.openComments}
+            status={agent.status}
+            onClick={agent.onToggle}
+          />
         ) : null}
       </div>
     </div>

@@ -807,7 +807,7 @@ export const ruMessages = {
     hideDone: 'Скрыть готовые',
     issues: 'Пересечения: {count}',
     issuesAway: 'Отпуск или больничный: {count}',
-    issuesParallel: 'Другой эпик человека: {count}',
+    issuesParallel: 'Больше двух эпиков у человека в неделю: {count}',
     issuesNext: 'Нажмите, чтобы перейти к следующему',
     issueParallel: 'В те же недели: {titles}',
     columnDirections: 'Направления и эпики',
@@ -873,9 +873,6 @@ export const ruMessages = {
         added: 'новое',
         changed: 'изменено',
       },
-    },
-    agent: {
-      button: 'Агент',
     },
     link: {
       title: 'Эпик из трекера',

@@ -20,6 +20,7 @@ import {
   absentDaysWithinSpan,
   addAssignment,
   buildWeekLoad,
+  QUARTER_MAX_PARALLEL_EPICS,
   removeAssignment,
   updateAssignment,
   updateEpic,
@@ -93,7 +94,8 @@ function spanHint(input: MenuSectionsInput, memberId: string, span: WeekSpan): s
     input.plan.assignments.filter((assignment) => assignment.memberId === memberId),
     input.weeks.length
   );
-  const busy = load.slice(span.startWeek, span.startWeek + span.weeks).some((count) => count > 0);
+  // Ещё одна полоса — уже больше нормы параллельных эпиков (QI2).
+  const busy = load.slice(span.startWeek, span.startWeek + span.weeks).some((count) => count >= QUARTER_MAX_PARALLEL_EPICS);
   return busy ? input.t('quarterlyPlan.memberBusy') : undefined;
 }
 

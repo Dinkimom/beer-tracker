@@ -14,7 +14,7 @@ import { parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import {
   absentDaysWithinSpan,
   isEpicDone,
-  overlappingAssignments,
+  overlapWeeks,
   violatedBlockersByAssignment,
 } from './quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from './quarterWeeks';
@@ -118,7 +118,7 @@ export function collectQuarterlyPlanIssues(
       blocked: violated.has(assignment.id),
       directionId,
       notInTeam: !team.members.some((member) => member.id === assignment.memberId),
-      parallel: overlappingAssignments(assignment, plan.assignments).length > 0,
+      parallel: overlapWeeks(assignment, plan.assignments).length > 0,
       teamId: team.id,
     };
     return issue.away || issue.blocked || issue.notInTeam || issue.parallel ? [issue] : [];
