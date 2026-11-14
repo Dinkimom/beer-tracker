@@ -134,7 +134,7 @@ export function createSprintContextMcpServer(input: {
     'get_sprint_capacity',
     {
       description:
-        'Capacity analysis for a sprint: per-person load vs free parts (meta.partsPerDay from org settings), overlaps, gaps, overloaded days; includes teamMembers roster with roles when board is known. Sticky notes do not reserve capacity — only task positions. meta.weekendDays are Sat/Sun (no day index). meta.holidayCountry comes from org Settings → Holiday calendar; meta.holidayDays for that country are unavailable for everyone — free gaps and totalMaxParts already exclude them. Prefer this over raw positions when answering "who is overloaded / where is free capacity".',
+        'Capacity analysis for a sprint: per-person load vs free parts (meta.partsPerDay from org settings), overlaps, gaps, overloaded days; includes teamMembers roster with roles when board is known. Sticky notes do not reserve capacity — only task positions. meta.weekendDays are Sat/Sun (no day index). meta.holidayCountry comes from org Settings → Holiday calendar; meta.holidayDays for that country are unavailable for everyone — free gaps and totalMaxParts already exclude them. Vacation, sick leave and tech sprint make a person unavailable for the day; duty does not reduce capacity — work on a duty day is listed in dutyRisks (a risk to mention, not an overload). Prefer this over raw positions when answering "who is overloaded / where is free capacity".',
       inputSchema: {
         assigneeId: z
           .string()

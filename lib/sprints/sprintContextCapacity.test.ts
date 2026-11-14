@@ -145,6 +145,47 @@ describe('buildSprintContextCapacity', () => {
     ]);
   });
 
+  it('duty keeps capacity: work on a duty day is a risk, not an overload (A2)', () => {
+    const report = buildSprintContextCapacity(
+      basePayload({
+        availability: [
+          {
+            endDate: '2026-09-07',
+            eventType: 'duty',
+            id: 'av-duty',
+            memberId: 'a',
+            memberName: 'Ada',
+            startDate: '2026-09-07',
+          },
+        ],
+        positions: [
+          {
+            assigneeId: 'staff:a',
+            assigneeName: 'Ada',
+            duration: 1,
+            isQa: false,
+            plannedDuration: null,
+            plannedStartDay: null,
+            plannedStartPart: null,
+            startDay: 0,
+            startPart: 1,
+            taskId: 'T-1',
+          },
+        ],
+      })
+    );
+
+    const day = report.people[0]?.days[0];
+    expect(day?.unavailable).toBeUndefined();
+    expect(day?.duty).toBe(true);
+    expect(report.overloaded).toEqual([]);
+    expect(report.people[0]?.totalMaxParts).toBe(PARTS_PER_DAY * 2);
+    expect(report.dutyRisks).toEqual([
+      { assigneeId: 'staff:a', assigneeName: 'Ada', date: '2026-09-07', day: 0, loadParts: 1 },
+    ]);
+    expect(report.summary).toContain('while on duty (risk)');
+  });
+
   it('treats meta.holidayDays as unavailable for everyone and shrinks free capacity', () => {
     const report = buildSprintContextCapacity(
       basePayload({

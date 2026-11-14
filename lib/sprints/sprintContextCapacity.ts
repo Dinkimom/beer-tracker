@@ -78,15 +78,20 @@ function eventMatchesAssignee(event: SprintContextAvailabilityEvent, ids: Set<st
   return ids.has(event.memberId) || ids.has(`staff:${event.memberId}`);
 }
 
-function unavailableDaysForAssignee(
+/**
+ * Дни событий доступности человека. `duty: false` — отпуск, больничный, техспринт: человек недоступен.
+ * `duty: true` — дежурство: капасити не уменьшает, это риск (A2).
+ */
+function availabilityDaysForAssignee(
   assigneeId: string,
   availability: SprintContextAvailabilityEvent[],
-  calendarDays: SprintContextCalendarDay[]
+  calendarDays: SprintContextCalendarDay[],
+  duty: boolean
 ): Set<number> {
   const ids = assigneeMatchIds(assigneeId);
   const unavailable = new Set<number>();
   for (const event of availability) {
-    if (!eventMatchesAssignee(event, ids)) {
+    if (!eventMatchesAssignee(event, ids) || (event.eventType === 'duty') !== duty) {
       continue;
     }
     for (const day of calendarDays) {
@@ -170,7 +175,7 @@ function loadPartsForDay(
 function buildPersonDays(
   calendarDays: SprintContextCalendarDay[],
   cellsByKey: Map<string, string[]>,
-  unavailableDays: Set<number>,
+  days: { duty: Set<number>; unavailable: Set<number> },
   partsPerDay: number
 ): SprintContextCapacityPersonDay[] {
   return calendarDays.map((calendarDay) => {
@@ -182,8 +187,10 @@ function buildPersonDays(
     if (calendarDay.date) {
       row.date = calendarDay.date;
     }
-    if (unavailableDays.has(calendarDay.day)) {
+    if (days.unavailable.has(calendarDay.day)) {
       row.unavailable = true;
+    } else if (days.duty.has(calendarDay.day)) {
+      row.duty = true;
     }
     return row;
   });
@@ -228,6 +235,7 @@ function buildPersonCapacity(input: {
   assigneeId: string;
   assigneeName?: string | null;
   calendarDays: SprintContextCalendarDay[];
+  dutyDays: Set<number>;
   partsPerDay: number;
   positions: SprintContextPosition[];
   unavailableDays: Set<number>;
@@ -238,7 +246,7 @@ function buildPersonCapacity(input: {
   const days = buildPersonDays(
     input.calendarDays,
     cellsByKey,
-    input.unavailableDays,
+    { duty: input.dutyDays, unavailable: input.unavailableDays },
     input.partsPerDay
   );
   const gaps = buildGaps(days, cellsByKey, input.partsPerDay);
@@ -315,9 +323,25 @@ function collectOverloaded(
   return overloaded;
 }
 
+/** Работа в день дежурства — риск для агента, а не перегрузка (A2). */
+function collectDutyRisks(people: SprintContextCapacityPerson[]): SprintContextCapacityReport['dutyRisks'] {
+  return people.flatMap((person) =>
+    person.days
+      .filter((day) => day.duty && day.loadParts > 0)
+      .map((day) => ({
+        assigneeId: person.assigneeId,
+        ...(person.assigneeName != null ? { assigneeName: person.assigneeName } : {}),
+        ...(day.date ? { date: day.date } : {}),
+        day: day.day,
+        loadParts: day.loadParts,
+      }))
+  );
+}
+
 function buildCapacitySummary(
   people: SprintContextCapacityPerson[],
-  overloadedCount: number
+  overloadedCount: number,
+  dutyRiskCount: number
 ): string {
   const overlapCount = people.reduce((sum, person) => sum + person.overlaps.length, 0);
   const gapHint = people
@@ -330,6 +354,9 @@ function buildCapacitySummary(
     `${overlapCount} overlap cell(s)`,
     `${overloadedCount} overloaded day(s)`,
   ];
+  if (dutyRiskCount > 0) {
+    summaryParts.push(`${dutyRiskCount} day(s) of work while on duty (risk)`);
+  }
   if (gapHint) {
     summaryParts.push(gapHint);
   }
@@ -352,9 +379,10 @@ export function buildSprintContextCapacity(
         assigneeName,
         calendarDays,
         partsPerDay,
+        dutyDays: availabilityDaysForAssignee(assigneeId, payload.availability, calendarDays, true),
         positions,
         unavailableDays: mergeUnavailableDays(
-          unavailableDaysForAssignee(assigneeId, payload.availability, calendarDays),
+          availabilityDaysForAssignee(assigneeId, payload.availability, calendarDays, false),
           holidayDays
         ),
       })
@@ -362,9 +390,11 @@ export function buildSprintContextCapacity(
   }
   people.sort((a, b) => (a.assigneeName ?? a.assigneeId).localeCompare(b.assigneeName ?? b.assigneeId));
   const overloaded = collectOverloaded(people);
+  const dutyRisks = collectDutyRisks(people);
   return {
+    dutyRisks,
     overloaded,
     people,
-    summary: buildCapacitySummary(people, overloaded.length),
+    summary: buildCapacitySummary(people, overloaded.length, dutyRisks.length),
   };
 }

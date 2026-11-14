@@ -207,6 +207,8 @@ export interface SprintContextCapacityOverlap {
 export interface SprintContextCapacityPersonDay {
   date?: string;
   day: number;
+  /** Человек дежурит: капасити не уменьшается, работа в этот день — риск (A2). */
+  duty?: boolean;
   loadParts: number;
   maxParts: number;
   unavailable?: boolean;
@@ -227,7 +229,17 @@ export interface SprintContextCapacityPerson {
   totalMaxParts: number;
 }
 
+/** День, когда человек дежурит и при этом в него стоит работа: риск, не перегрузка (A2). */
+interface SprintContextCapacityDutyRisk {
+  assigneeId: string;
+  assigneeName?: string | null;
+  date?: string;
+  day: number;
+  loadParts: number;
+}
+
 export interface SprintContextCapacityReport {
+  dutyRisks: SprintContextCapacityDutyRisk[];
   overloaded: Array<{
     assigneeId: string;
     assigneeName?: string | null;

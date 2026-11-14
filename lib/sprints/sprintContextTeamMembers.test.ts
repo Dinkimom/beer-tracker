@@ -49,6 +49,7 @@ describe('sprintContextTeamMemberFromDeveloper', () => {
 describe('stampCapacityWithTeamRoles', () => {
   it('stamps matching capacity people and overloaded rows', () => {
     const capacity: SprintContextCapacityReport = {
+      dutyRisks: [],
       overloaded: [{ assigneeId: 'dev-1', day: 0, loadParts: 3 }],
       people: [
         {

@@ -51,7 +51,7 @@ Tools:
 - `whoami(includeTracker?)` — текущий MCP-пользователь (userId, email, orgRole, canUsePlanner; опционально tracker `/myself`)
 - `search_sprints(query, boardId?, limit?)` — найти спринт по фрагменту имени («Sprint 31», «RND Team 1»)
 - `get_sprint_context(sprintId, featureId?, assigneeId?, taskIds?)` — planning graph по **числовому** sprintId (включая `capacity`, **`teamMembers`** с `role` / `roleTitle` / `platforms`, `meta.partsPerDay`, `planVsActual`, статусы / **`statusCategory`** / `sprintHistory`)
-- `get_sprint_capacity(sprintId, featureId?, assigneeId?)` — capacity (overlaps / gaps / overloaded) + roster `teamMembers` с ролями
+- `get_sprint_capacity(sprintId, featureId?, assigneeId?)` — capacity (overlaps / gaps / overloaded / `dutyRisks`) + roster `teamMembers` с ролями. Дежурство капасити не уменьшает: работа в день дежурства попадает в `dutyRisks` как риск, а не в `overloaded` (A2)
 - `get_feature_context(sprintId, featureId)` — тот же graph, но `featureId` обязателен
 - `search_issues(boardId, query?, status?, statusType?, …)` — поиск задач на доске/бэклоге; фильтр «в работе» — через `statusCategory` / `statusType` с эвристиками
 - `get_issue(issueKey, includeComments?)` — живая задача: description, links, comments
