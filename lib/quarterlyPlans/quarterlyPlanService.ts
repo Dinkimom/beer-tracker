@@ -27,6 +27,7 @@ import { enrichPlannerTeamMembersFromTracker, fetchAllTeamMembersForOrg, listTea
 import { convertTeamMemberToDeveloper } from '@/lib/teamMemberUtils';
 
 import { parseQuarterlyPlanContent } from './quarterlyPlanContentParse';
+import { diffQuarterlyPlanDraft } from './quarterlyPlanDraftDiff';
 import {
   buildMemberAbsenceDays,
   collectDutyRiskAssignmentIds,
@@ -264,7 +265,18 @@ type SprintQuarterDraftView = Pick<SprintQuarterPlanView, 'assignments' | 'direc
 
 /** План квартала в окне спринта и, если есть, свой черновик агента — каким станет вид после принятия (QK6). */
 type SprintQuarterPlanWithDraft = SprintQuarterPlanView & {
-  pendingProposal?: { after?: SprintQuarterDraftView; error?: string; proposalId: string; summary: string };
+  pendingProposal?: {
+    /** Назначения, эпики и направления окна спринта, которых в плане нет (QM9). */
+    added?: string[];
+    after?: SprintQuarterDraftView;
+    /** Есть в плане, но в черновике выглядят иначе. */
+    changed?: string[];
+    error?: string;
+    proposalId: string;
+    /** Есть в окне спринта сейчас, а после черновика — нет (удалены или ушли из недель спринта). */
+    removed?: string[];
+    summary: string;
+  };
 };
 
 /** Квартал спринта для агента (раздел 12): команда доски и вид каждого плана, который задевает спринт. */
@@ -286,14 +298,33 @@ function rowIssueKeys(view: SprintQuarterPlanView | null): string[] {
   return view ? [...view.directions, ...view.epics].flatMap((row) => (row.issueKey ? [row.issueKey] : [])) : [];
 }
 
+function viewRowIds(view: Pick<SprintQuarterPlanView, 'assignments' | 'directions' | 'epics'>): string[] {
+  return [...view.assignments, ...view.epics, ...view.directions].map((row) => row.id);
+}
+
+/**
+ * Черновик в окне спринта: вид после принятия и что в нём новое, изменённое и пропавшее — по тому же
+ * сравнению, что плашка черновика на доске (`diffQuarterlyPlanDraft`), только среди строк окна.
+ */
 function pendingProposalView(
   draft: SprintQuarterDraftInput,
+  current: SprintQuarterPlanView,
+  currentContent: QuarterlyPlanContent,
   after: SprintQuarterPlanView | null
 ): NonNullable<SprintQuarterPlanWithDraft['pendingProposal']> {
   const base = { proposalId: draft.proposalId, summary: draft.summary };
-  if (!after) return { ...base, error: draft.error ?? 'the draft no longer applies' };
+  if (!after || !draft.content) return { ...base, error: draft.error ?? 'the draft no longer applies' };
+  const diff = diffQuarterlyPlanDraft(currentContent, draft.content);
+  const afterIds = viewRowIds(after);
+  const afterIdSet = new Set(afterIds);
   const { assignments, directions, epics, outsidePlan, tasks } = after;
-  return { ...base, after: { assignments, directions, epics, outsidePlan, tasks } };
+  return {
+    ...base,
+    added: afterIds.filter((id) => diff.added.has(id)),
+    after: { assignments, directions, epics, outsidePlan, tasks },
+    changed: afterIds.filter((id) => diff.changed.has(id)),
+    removed: viewRowIds(current).filter((id) => !afterIdSet.has(id)),
+  };
 }
 
 /**
@@ -357,7 +388,7 @@ export async function loadSprintQuarterContext(input: {
     plans: plans.flatMap((plan) => {
       const current = view({ ...plan.base, trackerEpics });
       if (!current) return [];
-      return [plan.draft ? { ...current, pendingProposal: pendingProposalView(plan.draft, draftView(plan, trackerEpics)) } : current];
+      return [plan.draft ? { ...current, pendingProposal: pendingProposalView(plan.draft, current, plan.base.content, draftView(plan, trackerEpics)) } : current];
     }),
     team: team ? { id: team.id, title: team.title } : null,
   };

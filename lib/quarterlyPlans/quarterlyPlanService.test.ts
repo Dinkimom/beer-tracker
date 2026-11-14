@@ -258,6 +258,7 @@ describe('quarterlyPlanService', () => {
     expect(plan?.assignments).toEqual([]);
     expect(plan?.pendingProposal?.proposalId).toBe('p1');
     expect(plan?.pendingProposal?.after?.assignments.map((assignment) => assignment.id)).toEqual(['a2']);
+    expect(plan?.pendingProposal).toMatchObject({ added: ['a2'], changed: [], removed: [] });
     expect(loadDraft).toHaveBeenCalledWith(Q4);
   });
 
@@ -272,5 +273,30 @@ describe('quarterlyPlanService', () => {
       tasks: [],
     });
     expect(context?.plans[0]?.pendingProposal).toEqual({ error: 'conflict', proposalId: 'p1', summary: 'assign×1' });
+  });
+
+  it('квартал спринта: черновик — что в окне спринта изменено и что из него пропало', async () => {
+    const stored = {
+      ...content('staff-1'),
+      assignments: [
+        { epicId: 'e1', id: 'a1', memberId: 'staff-1', startWeek: 4, weeks: 2 },
+        { epicId: 'e1', id: 'a3', memberId: 'staff-1', startWeek: 5, weeks: 1 },
+      ],
+    };
+    vi.mocked(fetchQuarterlyPlanContent).mockResolvedValue({ content: stored as never, version: 2 });
+    const draftContent = {
+      ...content('tracker-1'),
+      // a1 укоротили, a3 убрали.
+      assignments: [{ epicId: 'e1', id: 'a1', memberId: 'tracker-1', startWeek: 4, weeks: 1 }],
+    };
+    const context = await loadSprintQuarterContext({
+      boardId: 42,
+      issueTracker: {} as IssueTrackerProviderClient,
+      loadDraft: () => Promise.resolve({ content: draftContent as never, error: null, proposalId: 'p2', summary: 'updateAssignment×1, removeAssignment×1' }),
+      organizationId: 'org-1',
+      sprintWindow: { endDate: '2026-11-06', startDate: '2026-10-26' },
+      tasks: [],
+    });
+    expect(context?.plans[0]?.pendingProposal).toMatchObject({ added: [], changed: ['a1'], removed: ['a3'] });
   });
 });
