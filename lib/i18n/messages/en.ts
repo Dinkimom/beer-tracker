@@ -821,6 +821,7 @@ export const enMessages = {
     rowActions: 'Actions',
     changeStatus: 'Change status',
     statusFromTracker: 'Epic status in the tracker',
+    riskDuty: 'On duty {range}: work on these days is at risk',
     assignWeek: 'Assign someone to "{title}", week',
     menuAssign: 'Who does it',
     menuAssignee: 'Assignee',

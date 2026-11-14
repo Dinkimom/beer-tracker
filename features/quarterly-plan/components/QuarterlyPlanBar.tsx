@@ -9,17 +9,14 @@ import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
-import {
-  absentDaysWithinSpan,
-  groupConsecutiveDays,
-  overlapWeeks,
-} from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   formatSpanRange,
+  barDayMarks,
   QUARTER_ISSUE_HATCH,
+  QUARTER_RISK_DOTS,
   QUARTER_LANE_HEIGHT_PX,
   QUARTER_ROW_PADDING_PX,
   QUARTER_STICKY_LABEL_LEFT_PX,
@@ -49,6 +46,8 @@ interface QuarterlyPlanBarProps {
   issues: string[];
   lane: number;
   member?: Developer;
+  /** Риски, которые проблемой не считаются: дежурство в сроке (QV3). */
+  risks: string[];
   toneClass: string;
 }
 
@@ -71,6 +70,7 @@ export function QuarterlyPlanBar({
   issues,
   lane,
   member,
+  risks,
   toneClass,
 }: QuarterlyPlanBarProps) {
   const {
@@ -94,20 +94,10 @@ export function QuarterlyPlanBar({
     // С инструментом «Связь» клик по полосе выбирает её источником или целью, меню не открывается.
     onClick: (pointer) => (linking.armed ? onLinkBarClick(assignment.id) : onBarClick(assignment.id, pointer)),
   });
-  const blockedDays = absenceByMember.get(assignment.memberId)?.blockedDays;
-  const absentDays = blockedDays ? absentDaysWithinSpan(span, blockedDays) : [];
-  const parallelDays = overlapWeeks(
+  const marks = barDayMarks(
     { ...assignment, ...span },
+    absenceByMember.get(assignment.memberId),
     assignmentsByMember.get(assignment.memberId) ?? []
-  ).flatMap((week) =>
-    Array.from(
-      { length: QUARTER_WORKING_DAYS_PER_WEEK },
-      (_, offset) => week * QUARTER_WORKING_DAYS_PER_WEEK + offset
-    )
-  );
-  /** Дни под вопросом одним списком: участки двух причин не накладываются друг на друга. */
-  const issueRanges = groupConsecutiveDays(
-    [...new Set([...absentDays, ...parallelDays])].sort((a, b) => a - b)
   );
   const spanDays = span.weeks * QUARTER_WORKING_DAYS_PER_WEEK;
   const spanFirstDay = span.startWeek * QUARTER_WORKING_DAYS_PER_WEEK;
@@ -150,17 +140,21 @@ export function QuarterlyPlanBar({
         className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border px-1.5 text-xs font-medium ${toneClass}`}
         style={drag?.mode === 'move' ? BAR_LIFTED_STYLE : undefined}
       >
-        {issueRanges.map((range) => {
+        {[
+          ...marks.issues.map((range) => ({ ...range, pattern: QUARTER_ISSUE_HATCH, size: undefined })),
+          ...marks.risks.map((range) => ({ ...range, pattern: QUARTER_RISK_DOTS, size: '5px 5px' })),
+        ].map((range) => {
           // Участок у края полосы повторяет её скругление: обрезка по контуру оставляет на углу зубец.
           const startsAtEdge = range.startDay === spanFirstDay;
           const endsAtEdge = range.startDay + range.dayCount === spanFirstDay + spanDays;
           return (
             <span
-              key={range.startDay}
+              key={`${range.pattern === QUARTER_RISK_DOTS ? 'risk' : 'issue'}-${range.startDay}`}
               aria-hidden
               className={`pointer-events-none absolute inset-y-0 ${startsAtEdge ? 'rounded-l-[7px]' : ''} ${endsAtEdge ? 'rounded-r-[7px]' : ''}`}
               style={{
-                backgroundImage: QUARTER_ISSUE_HATCH,
+                backgroundImage: range.pattern,
+                backgroundSize: range.size,
                 left: `${((range.startDay - spanFirstDay) / spanDays) * 100}%`,
                 width: `${(range.dayCount / spanDays) * 100}%`,
               }}
@@ -182,20 +176,27 @@ export function QuarterlyPlanBar({
           <span className="min-w-0 truncate">{name}</span>
         </span>
         <span className="flex-1" />
-        {issues.length > 0 ? (
+        {issues.length + risks.length > 0 ? (
           <TextTooltip
             content={
               <div className="flex flex-col gap-0.5">
-                {issues.map((issue) => (
-                  <span key={issue}>{issue}</span>
+                {[...issues, ...risks].map((line) => (
+                  <span key={line}>{line}</span>
                 ))}
               </div>
             }
             side="top"
           >
-            {/* Залитый кружок: значок читается и поверх штриховки; отступ справа — под рукоятку края. */}
-            <span className="relative mr-1.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950">
-              <Icon className="h-2.5 w-2.5" name="alert-triangle" />
+            {/* Залитый кружок: значок читается и поверх штриховки; отступ справа — под рукоятку края.
+                Проблема — жёлтый треугольник; только риск — приглушённый кружок «i». */}
+            <span
+              className={`relative mr-1.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
+                issues.length > 0
+                  ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950'
+                  : 'bg-gray-500/70 text-white dark:bg-gray-400/70 dark:text-gray-950'
+              }`}
+            >
+              <Icon className="h-2.5 w-2.5" name={issues.length > 0 ? 'alert-triangle' : 'circle-info'} />
             </span>
           </TextTooltip>
         ) : null}

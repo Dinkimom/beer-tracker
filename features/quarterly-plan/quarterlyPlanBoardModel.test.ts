@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { buildQuarterWeeks } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import {
+  barDayMarks,
   buildAbsenceByMember,
   buildToneByKey,
   collectQuarterlyPlanIssues,
@@ -47,12 +48,13 @@ describe('buildAbsenceByMember', () => {
     expect(absence.get('bob')!.segments).toEqual([]);
   });
 
-  it('дежурство видно на таймлайне, но работе над задачей не мешает', () => {
+  it('дежурство видно на таймлайне, но работе не мешает — это риск (QV3)', () => {
     const duty = event({ endDate: '2026-10-02', eventType: 'duty', startDate: '2026-09-28' });
     const absence = buildAbsenceByMember([team], new Map([[1, [duty]]]), weeks).get('ann')!;
     expect(absence.segments).toHaveLength(1);
     expect(absence.hatchKinds.get(0)).toBe('duty');
     expect(absence.blockedDays.size).toBe(0);
+    expect([...absence.dutyDays]).toEqual([0, 1, 2, 3, 4]);
   });
 
   it('берёт события только своей доски и только своего человека', () => {
@@ -139,5 +141,29 @@ describe('collectQuarterlyPlanIssues', () => {
     };
     const issues = collectQuarterlyPlanIssues(linked, absence, true);
     expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'ann-done']);
+  });
+});
+
+describe('barDayMarks', () => {
+  const absence = {
+    blockedDays: new Set([5, 6]),
+    dutyDays: new Set([6, 7, 8, 12]),
+    events: [],
+    hatchKinds: new Map(),
+    segments: [],
+  };
+
+  it('штрихует отсутствие и параллельный эпик, точками — дежурство там, где нет штриховки (QV3)', () => {
+    const bar = { epicId: 'e1', id: 'a1', memberId: 'ann', startWeek: 1, weeks: 2 };
+    const other = { epicId: 'e2', id: 'a2', memberId: 'ann', startWeek: 2, weeks: 1 };
+    expect(barDayMarks(bar, absence, [bar, other])).toEqual({
+      issues: [{ dayCount: 2, startDay: 5 }, { dayCount: 5, startDay: 10 }],
+      risks: [{ dayCount: 2, startDay: 7 }],
+    });
+  });
+
+  it('без отсутствий и пересечений полоса чистая', () => {
+    const bar = { epicId: 'e1', id: 'a1', memberId: 'bob', startWeek: 0, weeks: 1 };
+    expect(barDayMarks(bar, undefined, [bar])).toEqual({ issues: [], risks: [] });
   });
 });

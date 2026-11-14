@@ -822,6 +822,7 @@ export const ruMessages = {
     rowActions: 'Действия',
     changeStatus: 'Сменить статус',
     statusFromTracker: 'Статус эпика в трекере',
+    riskDuty: 'Дежурство {range}: работа в эти дни под риском',
     assignWeek: 'Назначить исполнителя на «{title}», неделя',
     menuAssign: 'Кто делает',
     menuAssignee: 'Исполнитель',

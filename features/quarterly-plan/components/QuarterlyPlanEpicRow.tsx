@@ -97,6 +97,15 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
     ];
   };
 
+  /** Дежурство в сроке назначения — риск, не проблема (QV3): в подсказку, но не в счётчик. */
+  const risksOf = (assignment: QuarterlyPlanAssignment): string[] => {
+    const absence = absenceByMember.get(assignment.memberId);
+    const dutyDays = new Set(absentDaysWithinSpan(assignment, absence?.dutyDays ?? new Set()));
+    return (absence?.segments ?? [])
+      .filter((segment) => segment.kind === 'duty' && segment.dayIndices.some((day) => dutyDays.has(day)))
+      .map((segment) => t('quarterlyPlan.riskDuty', { range: segment.dateRangeLabel }));
+  };
+
   return (
     <QuarterlyPlanRow
       heightPx={quarterRowHeightPx(laneCount)}
@@ -185,6 +194,7 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
           issues={issuesOf(assignment)}
           lane={laneById.get(assignment.id) ?? 0}
           member={memberById.get(assignment.memberId)}
+          risks={risksOf(assignment)}
           toneClass={memberToneById.get(assignment.memberId) ?? ''}
         />
       ))}

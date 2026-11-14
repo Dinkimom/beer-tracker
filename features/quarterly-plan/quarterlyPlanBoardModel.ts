@@ -1,6 +1,7 @@
 import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 import type {
   QuarterlyPlan,
+  QuarterlyPlanAssignment,
   QuarterlyPlanEpicStatus,
   QuarterlyPlanTeam,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
@@ -15,8 +16,10 @@ import { buildUnavailableDayHatchKinds } from '@/features/swimlane/utils/availab
 import { parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import {
   absentDaysWithinSpan,
+  groupConsecutiveDays,
   isEpicDone,
   overlappingAssignments,
+  overlapWeeks,
   violatedBlockersByAssignment,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
@@ -41,6 +44,11 @@ export const QUARTER_WEEK_LINE = 'color-mix(in srgb, var(--ds-border-subtle) 55%
  */
 export const QUARTER_ISSUE_HATCH =
   'repeating-linear-gradient(-45deg, color-mix(in srgb, currentColor 30%, transparent) 0 2px, transparent 2px 6px)';
+
+/**
+ * Дни дежурства на полосе — риск, а не проблема (QV3): точки вместо штриховки, тем же цветом текста полосы.
+ */
+export const QUARTER_RISK_DOTS = 'radial-gradient(color-mix(in srgb, currentColor 45%, transparent) 1px, transparent 1.5px)';
 
 /** Новая заметка занимает две недели — в одну короткий текст не помещается. */
 export const QUARTER_NEW_NOTE_WEEKS = 2;
@@ -112,6 +120,8 @@ export const QUARTER_STATUS_ORDER: QuarterlyPlanEpicStatus[] = [
 export interface MemberAbsence {
   /** Дни, когда человек не может работать над эпиком; дежурство сюда не входит. */
   blockedDays: Set<number>;
+  /** Дни дежурства: работать можно, но это риск (QV3, A2). */
+  dutyDays: Set<number>;
   events: BoardAvailabilityEvent[];
   hatchKinds: Map<number, AvailabilityCardKind>;
   segments: AvailabilitySegment[];
@@ -138,11 +148,13 @@ export function buildAbsenceByMember(
     const events = eventsByBoard.get(team.boardId) ?? [];
     for (const member of team.members) {
       const segments = getSegmentsForDeveloper(member.id, timelineStart, events, dayCount);
-      const blockedDays = new Set(
-        segments.filter((segment) => segment.kind !== 'duty').flatMap((segment) => segment.dayIndices)
-      );
+      const daysOf = (duty: boolean) =>
+        new Set(
+          segments.filter((segment) => (segment.kind === 'duty') === duty).flatMap((segment) => segment.dayIndices)
+        );
       result.set(member.id, {
-        blockedDays,
+        blockedDays: daysOf(false),
+        dutyDays: daysOf(true),
         events: events.filter((event) => event.memberId === member.id),
         hatchKinds: buildUnavailableDayHatchKinds(segments),
         segments,
@@ -150,6 +162,27 @@ export function buildAbsenceByMember(
     }
   }
   return result;
+}
+
+/**
+ * Отмеченные участки полосы в днях квартала. `issues` — штриховка проблем: человек отсутствует или в те же
+ * недели занят другим эпиком (участки двух причин не накладываются). `risks` — точки дежурства (QV3)
+ * там, где нет штриховки.
+ */
+export function barDayMarks(
+  assignment: QuarterlyPlanAssignment,
+  absence: MemberAbsence | undefined,
+  memberAssignments: readonly QuarterlyPlanAssignment[]
+): { issues: Array<{ dayCount: number; startDay: number }>; risks: Array<{ dayCount: number; startDay: number }> } {
+  const parallelDays = overlapWeeks(assignment, memberAssignments).flatMap((week) =>
+    Array.from({ length: QUARTER_WORKING_DAYS_PER_WEEK }, (_, offset) => week * QUARTER_WORKING_DAYS_PER_WEEK + offset)
+  );
+  const issueDays = new Set([...absentDaysWithinSpan(assignment, absence?.blockedDays ?? new Set()), ...parallelDays]);
+  const riskDays = absentDaysWithinSpan(assignment, absence?.dutyDays ?? new Set()).filter((day) => !issueDays.has(day));
+  return {
+    issues: groupConsecutiveDays([...issueDays].sort((a, b) => a - b)),
+    risks: groupConsecutiveDays(riskDays),
+  };
 }
 
 /** Срок полосы: первый день первой недели — последний день последней. */
