@@ -6,7 +6,8 @@ import type { QuarterlyPlanNoteRow } from '@/lib/quarterlyPlans/quarterlyPlanTyp
 import type { ReactNode } from 'react';
 
 import { ZIndex } from '@/constants';
-import { quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { TimelineWeekendHatch } from '@/features/swimlane/components/TimelineWeekendHatch';
+import { groupConsecutiveDays, quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
 import {
@@ -80,7 +81,8 @@ export function QuarterlyPlanRow({
   weekActionLabel,
   onWeekClick,
 }: QuarterlyPlanRowProps) {
-  const { currentWeek, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const { currentWeek, dayCount, holidayDays, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const holidayRanges = groupConsecutiveDays([...holidayDays].sort((a, b) => a - b));
   const rowNotes = useQuarterRowNotes(noteRow, noteBlockers);
   const weekWidth = 100 / weeks.length;
   const toneClass = ROW_TONE_CLASS[tone];
@@ -123,6 +125,19 @@ export function QuarterlyPlanRow({
             className="pointer-events-none absolute inset-y-0 bg-blue-500/[0.06] dark:bg-blue-400/[0.08]"
             style={{ left: `${currentWeek * weekWidth}%`, width: `${weekWidth}%` }}
           />
+        ) : null}
+        {/* Праздники — той же штриховкой, что выходные и праздники на доске спринта (QV5). */}
+        {holidayRanges.length > 0 ? (
+          <div aria-hidden className="pointer-events-none absolute inset-0">
+            {holidayRanges.map((range) => (
+              <TimelineWeekendHatch
+                key={range.startDay}
+                dayCount={dayCount}
+                daySpan={range.dayCount}
+                startDay={range.startDay}
+              />
+            ))}
+          </div>
         ) : null}
         <QuarterlyPlanWeekCells
           actionLabel={weekActionLabel}

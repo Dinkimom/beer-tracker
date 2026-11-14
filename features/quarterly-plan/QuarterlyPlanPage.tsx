@@ -16,6 +16,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useHolidayDays } from '@/features/sprint/hooks/useHolidayDays';
 import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskBarNoteFocusEditor';
 import {
   addDirection,
@@ -81,6 +82,9 @@ export function QuarterlyPlanPage() {
   const { applyEdit, eventsByBoard, isLoading, plan } = useQuarterlyPlan(quarterRef);
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
+  const timelineStart = useMemo(() => quarterTimelineStart(weeks), [weeks]);
+  /** Праздники по календарю страны организации — как на доске спринта (QV5). */
+  const holidayDays = useHolidayDays(timelineStart, weeks.length * QUARTER_WORKING_DAYS_PER_WEEK);
   const notes = useQuarterlyPlanNotes({ applyEdit, plan, weekCount: weeks.length });
   const confirmLinkDelete = useCallback(
     () =>
@@ -158,6 +162,7 @@ export function QuarterlyPlanPage() {
       draft,
       epicById: new Map(plan.epics.map((epic) => [epic.id, epic])),
       focusedIssue,
+      holidayDays,
       issueCountByTeam: issues.reduce(
         (counts, issue) => counts.set(issue.teamId, (counts.get(issue.teamId) ?? 0) + 1),
         new Map<string, number>()
@@ -174,12 +179,12 @@ export function QuarterlyPlanPage() {
       onRowMenu: (target, anchor) => setMenu({ anchor, kind: 'row', target }),
       onStartDraft: setDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
-      timelineStart: quarterTimelineStart(weeks),
+      timelineStart,
       trackerEpics: plan.trackerEpics,
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, applyEdit, draft, focusedIssue, issues, linksBoard, notesBoard, plan, submitDraft, weeks]);
+  }, [absenceByMember, applyEdit, draft, focusedIssue, holidayDays, issues, linksBoard, notesBoard, plan, submitDraft, timelineStart, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })

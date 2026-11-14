@@ -159,6 +159,13 @@ describe('handleDemoFixtureRequest', () => {
     });
   });
 
+  it('marks demo holidays in the day-off calendar, compact dates included', () => {
+    const codes = handleDemoFixtureRequest(
+      cfg('get', '/holidays/isdayoff', { params: { cc: 'ru', date1: '20261102', date2: '20261106' } })
+    );
+    expect(codes.data).toBe('00100');
+  });
+
   it('serves the quarterly plan and keeps edits and availability changes', () => {
     const plan = handleDemoFixtureRequest(cfg('get', '/quarterly-plans?year=2026&quarter=4'));
     const data = plan.data as {
