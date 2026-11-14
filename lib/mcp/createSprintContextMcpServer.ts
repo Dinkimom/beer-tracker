@@ -15,6 +15,7 @@ import { registerDevTaskMcpTools } from '@/lib/mcp/registerDevTaskMcpTools';
 import { registerIdentityMcpTools } from '@/lib/mcp/registerIdentityMcpTools';
 import { registerQuarterlyPlanMcpTools } from '@/lib/mcp/registerQuarterlyPlanMcpTools';
 import { registerRetroBoardMcpTools } from '@/lib/mcp/registerRetroBoardMcpTools';
+import { registerTeamCompositionMcpTools } from '@/lib/mcp/registerTeamCompositionMcpTools';
 import { searchIssuesForOrganization } from '@/lib/mcp/searchIssuesForOrganization';
 import { searchSprintsForOrganization } from '@/lib/mcp/searchSprintsForOrganization';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
@@ -450,6 +451,7 @@ export function createSprintContextMcpServer(input: {
 
   registerRetroBoardMcpTools(server, input);
   registerQuarterlyPlanMcpTools(server, input);
+  registerTeamCompositionMcpTools(server, input);
   registerDevTaskMcpTools(server, input);
 
   return server;

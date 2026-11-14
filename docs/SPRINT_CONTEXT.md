@@ -70,6 +70,9 @@ Tools:
 - `get_quarterly_plan(year, quarter, teamId?)` — квартальный план организации: недели с датами, команды (люди, спринты), направления, эпики, назначения, связи, заметки, отсутствия по командам и `version`
 - `apply_quarterly_plan(year, quarter, ifVersion, ops, dryRun?, confirm)` — пакет правок плана, всё или ничего (`addDirection`, `addEpic`, `assign`, `addLink`, `addNote`, …); созданное адресуется ссылкой `$имя` в том же пакете; срок неделями или датами; `dryRun` ничего не пишет. Правила — [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md#11-инструменты-агента-mcp)
 - `apply_availability_events(ops, confirm=true)` — отпуска, больничные, техспринты и дежурства людей команды; те же события, что на доске спринта
+- `get_team_composition(teamId?)` — команды организации с людьми (`staffId`, имя, email, `trackerUserId`, `roleSlug`) и каталог ролей; `canEdit` — может ли вызывающий менять состав
+- `search_tracker_users(query)` — найти пользователя трекера, которого ещё нет в организации (людей организации ищет `resolve_person`); только администратор организации
+- `apply_team_composition(ops, confirm=true)` — состав команд: `addMember` (`staffId` человека организации или `trackerUserId` из трекера — тогда заводится карточка сотрудника и доступ к планеру), `setRole`, `removeMember`; по очереди, до первой ошибки. Только администратор организации, как в админке команд
 
 **Статусы:** `statusType` — сырая категория трекера (у Jira «Ready for development» часто ошибочно `inProgress`). Для фильтров «что уже в работе» используйте **`statusCategory`**: not-started | `in-progress` | `paused` | `done` (имя статуса важнее категории; `readyfordevelopment` → not-started bucket).
 

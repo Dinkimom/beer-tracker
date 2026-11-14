@@ -10,7 +10,7 @@ import {
   listBoardAvailabilityEvents,
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
-import { plannerWriteDenied, toolError, toolJson } from '@/lib/mcp/mcpToolResult';
+import { plannerWriteDenied, toolError, toolJson, toolOpsResult } from '@/lib/mcp/mcpToolResult';
 import { QuarterlyPlanOpsSchema } from '@/lib/quarterlyPlans/quarterlyPlanOps';
 import {
   applyQuarterlyPlanOps,
@@ -159,7 +159,7 @@ export function registerQuarterlyPlanMcpTools(
           organizationId: input.organizationId,
           teams,
         });
-        return result.ok ? toolJson(result) : toolError(new Error(`op ${result.opIndex}: ${result.error}; applied before it: ${JSON.stringify(result.applied)}`));
+        return toolOpsResult(result);
       } catch (error) {
         return toolError(error);
       }

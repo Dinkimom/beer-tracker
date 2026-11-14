@@ -25,3 +25,15 @@ export function plannerWriteDenied(profile: AccessProfile): string | null {
   }
   return 'forbidden: planner write requires organization admin or team membership';
 }
+
+/**
+ * Итог операций, которые применяются по очереди и останавливаются на первой ошибке: успех — как есть,
+ * ошибка — номер операции, причина и то, что успело примениться до неё.
+ */
+export function toolOpsResult(
+  result: { applied: readonly unknown[]; error: string; ok: false; opIndex: number } | { ok: true }
+) {
+  return result.ok
+    ? toolJson(result)
+    : toolError(new Error(`op ${result.opIndex}: ${result.error}; applied before it: ${JSON.stringify(result.applied)}`));
+}
