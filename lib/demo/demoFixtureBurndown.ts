@@ -74,12 +74,7 @@ export function buildDemoBurndownPayload(store: DemoFixtureState) {
   };
 }
 
-/** Праздники демо: вне дат демо-спринта, чтобы доска спринта не менялась, но квартал их показал (QV5). */
-const DEMO_HOLIDAYS = new Set(['2026-11-04', '2026-12-31']);
-
-/** Строка кодов в духе isdayoff по дням диапазона: `0` — рабочий день, `1` — праздник демо. */
+/** Строка кодов в духе isdayoff по дням диапазона: в демо праздников нет, каждый день — `0`. */
 export function buildHolidayZeroString(date1: string, date2: string): string {
-  return eachDayInclusive(date1, date2)
-    .map((day) => (DEMO_HOLIDAYS.has(dateKey(day)) ? '1' : '0'))
-    .join('');
+  return '0'.repeat(eachDayInclusive(date1, date2).length);
 }

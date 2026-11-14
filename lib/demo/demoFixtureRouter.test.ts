@@ -159,11 +159,11 @@ describe('handleDemoFixtureRequest', () => {
     });
   });
 
-  it('marks demo holidays in the day-off calendar, compact dates included', () => {
+  it('has no holidays in the day-off calendar, compact dates included', () => {
     const codes = handleDemoFixtureRequest(
       cfg('get', '/holidays/isdayoff', { params: { cc: 'ru', date1: '20261102', date2: '20261106' } })
     );
-    expect(codes.data).toBe('00100');
+    expect(codes.data).toBe('00000');
   });
 
   it('serves the quarterly plan and keeps edits and availability changes', () => {

@@ -6,6 +6,7 @@ import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveWeekSpan } from '@/lib/quarterlyPlans/quarterWeeks';
+import { formatSprintDisplayName } from '@/utils/sprintDisplayName';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
@@ -97,11 +98,13 @@ export function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: Quarterly
             }}
           >
             {/* Ячейка спринта — на всю высоту строки, вместе с заметками команды; подпись — в верхней ленте. */}
+            {/* Номер спринта без названия команды — как в селекторе спринта планера; полное имя — в подсказке. */}
             <span
               className="sticky right-2 truncate"
               style={{ left: QUARTER_STICKY_LABEL_LEFT_PX, lineHeight: `${QUARTER_ROW_HEIGHT_PX}px` }}
+              title={sprint.name}
             >
-              {sprint.name}
+              {formatSprintDisplayName(sprint.name)}
             </span>
           </div>
         );

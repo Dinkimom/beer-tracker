@@ -56,8 +56,6 @@ export interface QuarterlyPlanBoardContextValue {
   epicById: ReadonlyMap<string, QuarterlyPlanEpic>;
   /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   focusedIssue: { assignmentId: string; nonce: number } | null;
-  /** Праздничные дни квартала (индексы рабочих дней, QV5). */
-  holidayDays: ReadonlySet<number>;
   /** Сколько назначений с пересечениями у команды. */
   issueCountByTeam: ReadonlyMap<string, number>;
   /** Инструмент «Связь»: включён ли и какая полоса выбрана источником. */
