@@ -22,7 +22,7 @@ import { resizeNoteRows } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   QUARTER_LANE_HEIGHT_PX,
-  QUARTER_STICKY_LABEL_LEFT_PX,
+  QUARTER_STICKY_LABEL_LEFT,
   quarterNoteBoxStyle,
   quarterNoteHeightPx,
 } from '../quarterlyPlanBoardModel';
@@ -124,7 +124,7 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
         className={`sticky-note-paper flex h-full w-full px-2 text-xs leading-snug hover:brightness-95 dark:hover:brightness-110 ${getStickyNoteTextClass()} ${rows > 1 ? 'items-start pt-1' : 'items-center'} ${carried ? 'opacity-90 !shadow-lg' : ''}`}
         style={getStickyNoteCardStyle(note.color, isDark)}
       >
-        <span className="sticky flex min-w-0" style={{ left: QUARTER_STICKY_LABEL_LEFT_PX }}>
+        <span className="sticky flex min-w-0" style={{ left: QUARTER_STICKY_LABEL_LEFT }}>
           <OverflowTooltip content={note.text}>
             <span
               className={`min-w-0 overflow-hidden whitespace-pre-wrap break-words ${note.text ? '' : getStickyNotePlaceholderTextClass()}`}

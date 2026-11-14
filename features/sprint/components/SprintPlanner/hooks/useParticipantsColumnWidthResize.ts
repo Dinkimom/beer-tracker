@@ -6,7 +6,9 @@ import { clampParticipantsColumnWidth } from '../utils/participantsColumnWidth';
 
 export function useParticipantsColumnWidthResize(
   columnWidth: number,
-  onWidthChange?: (width: number) => void
+  onWidthChange?: (width: number) => void,
+  /** Пределы ширины; по умолчанию — колонки исполнителей свимлейна. */
+  clampWidth: (width: number) => number = clampParticipantsColumnWidth
 ): {
   isResizing: boolean;
   onResizeMouseDown: (event: React.MouseEvent) => void;
@@ -17,9 +19,9 @@ export function useParticipantsColumnWidthResize(
     (event: MouseEvent) => {
       if (!resizeStart || !onWidthChange) return;
       const delta = event.clientX - resizeStart.x;
-      onWidthChange(clampParticipantsColumnWidth(resizeStart.width + delta));
+      onWidthChange(clampWidth(resizeStart.width + delta));
     },
-    [onWidthChange, resizeStart]
+    [clampWidth, onWidthChange, resizeStart]
   );
 
   const handleResizeEnd = useCallback(() => {

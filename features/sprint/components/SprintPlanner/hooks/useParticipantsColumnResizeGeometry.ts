@@ -7,8 +7,10 @@ import {
   type ParticipantsColumnResizeGeometry,
 } from '../utils/participantsColumnResizeGeometry';
 
-const DAYS_HEADER_SELECTOR = '[data-planner-days-header]';
-const SWIMLANES_LANES_SELECTOR = '[data-planner-swimlanes-lanes]';
+const SWIMLANE_SELECTORS = {
+  header: '[data-planner-days-header]',
+  rows: '[data-planner-swimlanes-lanes]',
+};
 
 /**
  * Геометрия ручки: sticky left колонки × пересечение шапки+строк с scrollport
@@ -16,8 +18,11 @@ const SWIMLANES_LANES_SELECTOR = '[data-planner-swimlanes-lanes]';
  */
 export function useParticipantsColumnResizeGeometry(
   scrollContainerRef: RefObject<HTMLElement | null>,
-  enabled: boolean
+  enabled: boolean,
+  /** Шапка и строки внутри скролла: ручка не заходит в пустой низ под последней строкой. */
+  selectors: { header: string; rows: string } = SWIMLANE_SELECTORS
 ): ParticipantsColumnResizeGeometry | null {
+  const { header: headerSelector, rows: rowsSelector } = selectors;
   const [geometry, setGeometry] = useState<ParticipantsColumnResizeGeometry | null>(null);
 
   useEffect(() => {
@@ -28,8 +33,8 @@ export function useParticipantsColumnResizeGeometry(
 
     const update = () => {
       const scrollRect = scrollEl.getBoundingClientRect();
-      const headerEl = scrollEl.querySelector(DAYS_HEADER_SELECTOR);
-      const lanesEl = scrollEl.querySelector(SWIMLANES_LANES_SELECTOR);
+      const headerEl = scrollEl.querySelector(headerSelector);
+      const lanesEl = scrollEl.querySelector(rowsSelector);
 
       if (!(headerEl instanceof HTMLElement) || !(lanesEl instanceof HTMLElement)) {
         setGeometry({
@@ -54,8 +59,8 @@ export function useParticipantsColumnResizeGeometry(
     update();
     const observer = new ResizeObserver(update);
     observer.observe(scrollEl);
-    const headerEl = scrollEl.querySelector(DAYS_HEADER_SELECTOR);
-    const lanesEl = scrollEl.querySelector(SWIMLANES_LANES_SELECTOR);
+    const headerEl = scrollEl.querySelector(headerSelector);
+    const lanesEl = scrollEl.querySelector(rowsSelector);
     if (headerEl instanceof HTMLElement) observer.observe(headerEl);
     if (lanesEl instanceof HTMLElement) observer.observe(lanesEl);
 
@@ -69,7 +74,7 @@ export function useParticipantsColumnResizeGeometry(
       window.removeEventListener('resize', update);
       window.removeEventListener('scroll', update, true);
     };
-  }, [enabled, scrollContainerRef]);
+  }, [enabled, headerSelector, rowsSelector, scrollContainerRef]);
 
   return enabled ? geometry : null;
 }

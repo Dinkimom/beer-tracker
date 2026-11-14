@@ -12,7 +12,7 @@ import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   QUARTER_ROW_ACTION_CLASS,
   QUARTER_ROW_HEIGHT_PX,
-  QUARTER_STICKY_LABEL_LEFT_PX,
+  QUARTER_STICKY_LABEL_LEFT,
 } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
@@ -101,7 +101,7 @@ export function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: Quarterly
             {/* Номер спринта без названия команды — как в селекторе спринта планера; полное имя — в подсказке. */}
             <span
               className="sticky right-2 truncate"
-              style={{ left: QUARTER_STICKY_LABEL_LEFT_PX, lineHeight: `${QUARTER_ROW_HEIGHT_PX}px` }}
+              style={{ left: QUARTER_STICKY_LABEL_LEFT, lineHeight: `${QUARTER_ROW_HEIGHT_PX}px` }}
               title={sprint.name}
             >
               {formatSprintDisplayName(sprint.name)}

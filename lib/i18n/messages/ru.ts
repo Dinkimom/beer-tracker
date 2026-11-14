@@ -811,6 +811,7 @@ export const ruMessages = {
     issuesNext: 'Нажмите, чтобы перейти к следующему',
     issueParallel: 'В те же недели: {titles}',
     columnDirections: 'Направления и эпики',
+    resizeColumn: 'Изменить ширину колонки эпиков',
     teamMembers: '{count} чел.',
     absencePickMember: 'Кто отсутствует',
     absenceWeek: 'Добавить отпуск или дежурство, неделя',

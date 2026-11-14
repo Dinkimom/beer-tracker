@@ -12,7 +12,7 @@ import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoard
 import {
   QUARTER_HEADER_ROW_PX,
   QUARTER_LANE_HEIGHT_PX,
-  QUARTER_LEFT_COLUMN_PX,
+  QUARTER_LEFT_COLUMN_WIDTH,
   QUARTER_ROW_PADDING_PX,
   QUARTER_WEEK_LINE,
 } from '../quarterlyPlanBoardModel';
@@ -101,7 +101,7 @@ export function QuarterlyPlanRow({
     >
       <div
         className={`sticky left-0 flex shrink-0 items-start border-r border-ds-border-subtle transition-colors ${toneClass} ${tone === 'default' ? ROW_HOVER_CLASS : ''} !border-b-0 !border-t-0`}
-        style={{ width: QUARTER_LEFT_COLUMN_PX, zIndex: ZIndex.stickyInContent }}
+        style={{ width: QUARTER_LEFT_COLUMN_WIDTH, zIndex: ZIndex.stickyInContent }}
       >
         {/* Подпись стоит напротив содержимого строки, а не посередине между ним и заметками. */}
         <div className="flex min-w-0 flex-1 items-center" style={{ minHeight: heightPx }}>

@@ -39,6 +39,13 @@ export function useParticipantsColumnWidthStorage(
   return useDebouncedNumericLocalStorage(STORAGE_KEYS.PARTICIPANTS_COLUMN_WIDTH, defaultValue);
 }
 
+/** Ширина колонки направлений и эпиков на квартальном плане. */
+export function useQuarterLeftColumnWidthStorage(
+  defaultValue: number
+): [number, (value: number | ((prev: number) => number)) => void] {
+  return useDebouncedNumericLocalStorage(STORAGE_KEYS.QUARTER_LEFT_COLUMN_WIDTH, defaultValue);
+}
+
 /**
  * Ширина колонки фич. Если ключа ещё нет, стартует с текущей ширины колонки исполнителей.
  */

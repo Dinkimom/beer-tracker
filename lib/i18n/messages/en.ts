@@ -810,6 +810,7 @@ export const enMessages = {
     issuesNext: 'Click to jump to the next one',
     issueParallel: 'Same weeks: {titles}',
     columnDirections: 'Directions and epics',
+    resizeColumn: 'Resize epics column width',
     teamMembers: '{count} people',
     absencePickMember: 'Who is away',
     absenceWeek: 'Add time off or duty, week',

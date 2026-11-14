@@ -22,7 +22,7 @@ import {
   QUARTER_ROW_ACTION_CLASS,
   QUARTER_ROW_PADDING_PX,
   QUARTER_STATUS_PALETTE_KEY,
-  QUARTER_STICKY_LABEL_LEFT_PX,
+  QUARTER_STICKY_LABEL_LEFT,
   quarterRowHeightPx,
 } from '../quarterlyPlanBoardModel';
 
@@ -184,7 +184,7 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
         <div className="pointer-events-none absolute inset-0 flex items-center">
           <span
             className="sticky ml-1.5 rounded-md border border-dashed border-gray-300 px-2 py-0.5 text-xs text-ds-text-muted dark:border-gray-600"
-            style={{ left: QUARTER_STICKY_LABEL_LEFT_PX }}
+            style={{ left: QUARTER_STICKY_LABEL_LEFT }}
           >
             {t('quarterlyPlan.unplanned')}
           </span>

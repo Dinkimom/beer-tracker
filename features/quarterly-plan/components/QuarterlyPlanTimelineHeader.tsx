@@ -8,7 +8,7 @@ import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   formatWeekRange,
   QUARTER_HEADER_ROW_PX,
-  QUARTER_LEFT_COLUMN_PX,
+  QUARTER_LEFT_COLUMN_WIDTH,
   QUARTER_WEEK_LINE,
 } from '../quarterlyPlanBoardModel';
 
@@ -28,12 +28,13 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
   return (
     <div
       className="sticky top-0 flex border-b border-ds-border-subtle bg-white dark:bg-gray-800"
+      data-quarter-header
       style={{ zIndex: ZIndex.stickyInContent + 2 }}
     >
       {/* Левая ячейка повторяет две строки шапки: квартал — напротив месяцев, подпись колонки — напротив недель. */}
       <div
         className="sticky left-0 flex shrink-0 flex-col border-r border-ds-border-subtle bg-white dark:bg-gray-800"
-        style={{ width: QUARTER_LEFT_COLUMN_PX, zIndex: ZIndex.stickyInContent + 3 }}
+        style={{ width: QUARTER_LEFT_COLUMN_WIDTH, zIndex: ZIndex.stickyInContent + 3 }}
       >
         <div
           className="flex items-center border-b border-ds-border-subtle px-3 text-xs font-semibold text-gray-900 dark:text-gray-100"

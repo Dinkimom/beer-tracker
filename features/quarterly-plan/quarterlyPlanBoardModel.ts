@@ -17,7 +17,16 @@ import {
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
+/** Ширина колонки эпиков по умолчанию; пользователь меняет её ручкой на правой границе. */
 export const QUARTER_LEFT_COLUMN_PX = 380;
+const QUARTER_LEFT_COLUMN_MIN_PX = 240;
+const QUARTER_LEFT_COLUMN_MAX_PX = 720;
+/** Текущая ширина колонки: доска кладёт её в CSS-переменную, строки и подписи читают оттуда. */
+export const QUARTER_LEFT_COLUMN_WIDTH = 'var(--quarter-left-col)';
+
+export function clampQuarterLeftColumnWidth(width: number): number {
+  return Math.min(QUARTER_LEFT_COLUMN_MAX_PX, Math.max(QUARTER_LEFT_COLUMN_MIN_PX, width));
+}
 /** Неделя в полтора раза шире, чем при вписывании квартала в экран: таймлайн листается вбок. */
 export const QUARTER_WEEK_MIN_WIDTH_PX = 128;
 export const QUARTER_LANE_HEIGHT_PX = 28;
@@ -70,7 +79,7 @@ export function quarterNoteBoxStyle(
 }
 
 /** Отступ липкой подписи от левой колонки: подпись полосы остаётся на экране при прокрутке вбок. */
-export const QUARTER_STICKY_LABEL_LEFT_PX = QUARTER_LEFT_COLUMN_PX + 6;
+export const QUARTER_STICKY_LABEL_LEFT = `calc(${QUARTER_LEFT_COLUMN_WIDTH} + 6px)`;
 
 /** Высота строки под `laneCount` дорожек полос. */
 export function quarterRowHeightPx(laneCount: number): number {

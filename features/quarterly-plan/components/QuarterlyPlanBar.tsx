@@ -21,7 +21,7 @@ import {
   QUARTER_RISK_DOTS,
   QUARTER_LANE_HEIGHT_PX,
   QUARTER_ROW_PADDING_PX,
-  QUARTER_STICKY_LABEL_LEFT_PX,
+  QUARTER_STICKY_LABEL_LEFT,
 } from '../quarterlyPlanBoardModel';
 import { useQuarterSpanDrag } from '../useQuarterSpanDrag';
 
@@ -170,7 +170,7 @@ export function QuarterlyPlanBar({
         })}
         <span
           className="sticky flex min-w-0 items-center gap-1.5"
-          style={{ left: QUARTER_STICKY_LABEL_LEFT_PX }}
+          style={{ left: QUARTER_STICKY_LABEL_LEFT }}
         >
           {member ? (
             <Avatar
