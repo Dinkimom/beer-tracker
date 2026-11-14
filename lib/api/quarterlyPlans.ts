@@ -14,8 +14,7 @@ export async function fetchQuarterlyPlan({ quarter, year }: QuarterRef): Promise
   const { data } = await getPlannerBeerTrackerApi().get<{ plan: QuarterlyPlan }>(
     `/quarterly-plans?year=${year}&quarter=${quarter}`
   );
-  // План, сохранённый до появления заметок и зависимостей, приходит без них.
-  return { ...data.plan, links: data.plan.links ?? [], notes: data.plan.notes ?? [] };
+  return data.plan;
 }
 
 export async function saveQuarterlyPlan(

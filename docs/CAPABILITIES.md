@@ -171,7 +171,7 @@
 
 ## Не в продукте
 
-Планировщик эпиков / фич, квартальный план, режим «Занятость» и занятость из CalDAV удалены из кода. Сохранённый в браузере режим `occupancy` сбрасывается на свимлейн. См. [steering/product.md](./steering/product.md).
+Планировщик эпиков / фич, прежний квартальный план, режим «Занятость» и занятость из CalDAV удалены из кода. Новый квартальный план в разработке: пока только на `/demo/planner`, правила — [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md). Сохранённый в браузере режим `occupancy` сбрасывается на свимлейн. См. [steering/product.md](./steering/product.md).
 
 ## Технические возможности
 
@@ -230,7 +230,7 @@ Feature-based структура: домены в `features/`, серверна�
 - `board_availability_events` — доступность участников
 - `agent_sessions`, `plan_patch_position_previews`, `plan_patch_goal_previews` — агент и его предложения
 
-Таблицы `features`, `feature_*`, `document_*` и `quarterly_plan_v2_*` — остатки удалённых экранов (код фич и квартального плана удалён), не развивать. Схема: миграции `database/migrations/`.
+Таблицы `features`, `feature_*` и `document_*` — остатки удалённых экранов (код фич удалён), не развивать. Схема: миграции `database/migrations/`.
 
 ## Ограничения
 

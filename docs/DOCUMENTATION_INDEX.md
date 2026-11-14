@@ -16,6 +16,7 @@ beer-tracker/
 ├── docs/
 │   ├── DOCUMENTATION_INDEX.md         # Этот индекс
 │   ├── BUSINESS_RULES.md              # Бизнес-правила кора: раскладка, поинты, done, burndown, жизненный цикл
+│   ├── QUARTERLY_PLAN_RULES.md        # Бизнес-правила квартального плана (в разработке, демо)
 │   ├── INSTALL.md                     # Установка, Docker, env, sync, команды
 │   ├── DATABASE.md                    # Схема БД: миграции, таблицы, известные проблемы
 │   ├── SYNC.md                        # Синхронизация трекер → БД: BullMQ-воркер, тик, режимы, диагностика
@@ -75,6 +76,7 @@ beer-tracker/
 | [DATABASE.md](./DATABASE.md) | Как применяется схема, порядок миграций, таблицы, известные проблемы | Разработчики, DevOps |
 | [SYNC.md](./SYNC.md) | Синхронизация трекер → БД: воркер, режимы, расписание, диагностика | Разработчики, DevOps |
 | [BUSINESS_RULES.md](./BUSINESS_RULES.md) | Бизнес-правила кора и где они закреплены тестами | Разработчики, PM |
+| [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md) | Бизнес-правила квартального плана и открытые вопросы до боевой версии | Разработчики, PM |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | Данные и состояние, tenant/auth, провайдеры трекера, realtime | Разработчики |
 | [AGENTS.md](../AGENTS.md) | Правила, слои, обязательные проверки | Разработчики, агенты |
 | [media/README.md](./media/README.md) | Слоты скринов README (только с живого планера) | Все |
@@ -114,6 +116,7 @@ beer-tracker/
 ### По функциональности
 
 - **Бизнес-правила (раскладка, поинты, done, burndown)** → [BUSINESS_RULES.md](./BUSINESS_RULES.md)
+- **Квартальный план (в разработке)** → [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md)
 - **Планирование спринтов** → [CAPABILITIES.md](./CAPABILITIES.md#1-планирование-спринтов)
 - **Бэклог** → [CAPABILITIES.md](./CAPABILITIES.md#2-управление-бэклогом)
 - **Burndown Chart** → [CAPABILITIES.md](./CAPABILITIES.md#4-burndown-chart)
@@ -139,7 +142,7 @@ beer-tracker/
 
 1. Добавьте его в этот индекс
 2. Добавьте ссылку в [README.md](../README.md) или [INSTALL.md](./INSTALL.md), если документ стартовый для пользователей / установки
-3. Не описывайте удалённые экраны (занятость, эпики, квартал, SLA-баги) как текущие возможности
+3. Не описывайте удалённые экраны (занятость, эпики, прежний квартальный план, SLA-баги) как текущие возможности. Новый квартальный план — в разработке, его правила в [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md)
 
 ---
 

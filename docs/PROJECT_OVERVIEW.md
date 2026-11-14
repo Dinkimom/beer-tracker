@@ -294,7 +294,6 @@ features/ / components/ / hooks/
 | `retro_boards`, `retro_column_templates` | Ретро |
 | `agent_sessions`, `plan_patch_*_previews` | Сессии агента и предложения плана |
 | `features`, `feature_*`, `document_*` | Остаток фич и документов: код удалён, таблицы в схеме |
-| `quarterly_plans`, `quarterly_plan_v2_*` | Остаток квартального плана v2: код удалён, таблицы в схеме |
 | `board_availability_events` | Отпуска / техспринты |
 | `issue_snapshots` | Снимки задач из sync |
 | tenant / staff / teams / roles | Мультиарендность и оргструктура |
@@ -335,7 +334,7 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm lint:unused
 
 - Замена внешнего issue tracker (Yandex / Jira) как системы учёта задач
 - Хранение пользовательских токенов трекера на сервере (учётка — в браузере)
-- Планировщик эпиков / фич и квартальное планирование — удалены из кода ([steering](./steering/product.md))
+- Планировщик эпиков / фич и прежнее квартальное планирование — удалены из кода ([steering](./steering/product.md)). Новый квартальный план в разработке — [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md)
 
 ---
 
