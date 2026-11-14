@@ -111,11 +111,16 @@ export function QuarterlyPlanRow({
       <div
         className="relative min-w-0 flex-1"
         data-quarter-track
-        style={{
-          backgroundImage: `linear-gradient(to right, ${QUARTER_WEEK_LINE} 1px, transparent 1px)`,
-          backgroundPosition: '-1px 0',
-          backgroundSize: `${weekWidth}% 100%`,
-        }}
+        style={
+          // В строке команды сетку недель не рисуем: там ячейки спринтов, а недели уже размечены в шапке.
+          tone === 'team'
+            ? undefined
+            : {
+                backgroundImage: `linear-gradient(to right, ${QUARTER_WEEK_LINE} 1px, transparent 1px)`,
+                backgroundPosition: '-1px 0',
+                backgroundSize: `${weekWidth}% 100%`,
+              }
+        }
       >
         {currentWeek >= 0 ? (
           <div
