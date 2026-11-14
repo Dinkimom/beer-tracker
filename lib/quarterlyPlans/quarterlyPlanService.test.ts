@@ -1,3 +1,4 @@
+import type * as AvailabilityRepository from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/types';
 import type { TeamMember } from '@/types/team';
 
@@ -16,6 +17,20 @@ vi.mock('@/lib/staffTeams', () => ({
 }));
 vi.mock('@/lib/sprints/sprintContextTeamMembers', () => ({
   loadRoleResolutionContext: vi.fn(() => Promise.resolve(undefined)),
+}));
+vi.mock('@/lib/boardAvailability/boardAvailabilityEventsRepository', async (importOriginal) => ({
+  ...(await importOriginal<typeof AvailabilityRepository>()),
+  listBoardAvailabilityEvents: vi.fn().mockResolvedValue([
+    {
+      end_date: '2026-10-16',
+      event_type: 'duty',
+      id: 'duty-1',
+      member_id: 'staff:staff-2',
+      member_name: 'staff-2',
+      start_date: '2026-10-12',
+      tech_sprint_type: null,
+    },
+  ]),
 }));
 vi.mock('./quarterlyPlansRepository', () => ({
   fetchQuarterlyPlanContent: vi.fn(),
@@ -135,6 +150,25 @@ describe('quarterlyPlanService', () => {
         'staff:staff-2',
       ]);
       expect(saveQuarterlyPlanContent).not.toHaveBeenCalled();
+      // Дежурство staff-2 — на неделе 2 (12–16.10), новое назначение — на неделе 3: риска нет.
+      expect(result.status === 'preview' && result.dutyRiskAssignmentIds).toEqual([]);
+      expect(result.status === 'preview' && result.issues).toEqual([]);
+    });
+
+    it('предпросмотр называет проблемы и риски дежурства, как доска (QM4)', async () => {
+      const result = await applyQuarterlyPlanOps({
+        dryRun: true,
+        ifVersion: 7,
+        ops: [
+          { epicId: 'e1', memberId: 'staff:staff-2', op: 'assign', ref: '$duty', span: { startWeek: 2, weeks: 1 } },
+          { epicId: 'e1', memberId: 'staff:staff-2', op: 'assign', ref: '$twice', span: { startWeek: 2, weeks: 1 } },
+        ],
+        organizationId: 'org-1',
+        ref: Q4,
+      });
+      if (result.status !== 'preview') throw new Error(result.status);
+      expect(result.dutyRiskAssignmentIds).toEqual([result.refs.$duty, result.refs.$twice]);
+      expect(result.issues.map((issue) => issue.parallel)).toEqual([true, true]);
     });
 
     it('пишет пакет поверх версии и возвращает ссылки на созданное', async () => {

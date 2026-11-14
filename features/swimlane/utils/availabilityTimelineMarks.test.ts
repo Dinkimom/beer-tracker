@@ -1,5 +1,5 @@
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
-import type { AvailabilitySegment } from '@/features/swimlane/utils/availabilitySegments';
+import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
+import type { AvailabilitySegment } from '@/lib/boardAvailability/availabilitySegments';
 
 import { describe, expect, it } from 'vitest';
 

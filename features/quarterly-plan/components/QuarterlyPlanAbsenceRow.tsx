@@ -2,7 +2,7 @@
 
 import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
 import type { AvailabilityPopoverState } from '@/features/swimlane/hooks/useSwimlaneAvailabilityUi';
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
+import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
 import type { QuarterlyPlanTeam } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { useState } from 'react';
@@ -12,7 +12,7 @@ import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { SwimlaneAvailabilityPopoverGate } from '@/features/swimlane/components/SwimlaneAvailabilityPopoverGate';
-import { availabilityKindMessageKey } from '@/features/swimlane/utils/availabilityCardKind';
+import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
 import { assignBarLanes } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 

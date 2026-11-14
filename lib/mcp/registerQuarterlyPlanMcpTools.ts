@@ -14,6 +14,7 @@ import { plannerWriteDenied, toolError, toolJson } from '@/lib/mcp/mcpToolResult
 import { QuarterlyPlanOpsSchema } from '@/lib/quarterlyPlans/quarterlyPlanOps';
 import {
   applyQuarterlyPlanOps,
+  findQuarterlyPlanProblems,
   getQuarterlyPlan,
   loadQuarterlyPlanTeams,
 } from '@/lib/quarterlyPlans/quarterlyPlanService';
@@ -43,7 +44,9 @@ export function registerQuarterlyPlanMcpTools(
         "Read the organization's quarterly plan: weeks (index + Mon–Fri dates), teams (id, boardId, members, sprints), " +
         'directions (milestones), epics (issueKey, status, title; for linked epics trackerEpics[issueKey] has the tracker ' +
         'title, status and done), assignments (person × epic × weeks), links ' +
-        '(fromId must finish before toId starts), notes, absences per team, and version. Optional teamId narrows the result.',
+        '(fromId must finish before toId starts), notes, absences per team, issues (assignments where the person is away, ' +
+        'works on another epic the same weeks, starts before a blocker ends, or left the team), dutyRiskAssignmentIds ' +
+        '(on duty during the assignment: a risk, not a problem) and version. Optional teamId narrows the result.',
       inputSchema: { ...quarterInput, teamId: z.string().optional().describe('teams[].id to narrow the plan') },
     },
     async ({ quarter, teamId, year }) => {
@@ -54,6 +57,8 @@ export function registerQuarterlyPlanMcpTools(
         const teams = plan.teams.filter((team) => !teamId || team.id === teamId);
         const directions = plan.directions.filter((direction) => teams.some((team) => team.id === direction.teamId));
         const epics = plan.epics.filter((epic) => directions.some((direction) => direction.id === epic.directionId));
+        const findings = await findQuarterlyPlanProblems(plan);
+        const inTeams = new Set(teams.map((team) => team.id));
         const absences = await Promise.all(
           teams.map(async (team) => ({
             events: (await listBoardAvailabilityEvents(team.boardId)).map(boardAvailabilityEventFromRow),
@@ -65,7 +70,9 @@ export function registerQuarterlyPlanMcpTools(
           assignments: plan.assignments.filter((assignment) => epics.some((epic) => epic.id === assignment.epicId)),
           directions,
           epics,
+          dutyRiskAssignmentIds: findings.dutyRiskAssignmentIds,
           hint: WRITE_HINT,
+          issues: findings.issues.filter((issue) => inTeams.has(issue.teamId)),
           links: plan.links,
           notes: plan.notes,
           quarter,
@@ -94,7 +101,8 @@ export function registerQuarterlyPlanMcpTools(
         'Give created entities a ref like "$epic1" and use it in later ops of the same batch. Spans: {startWeek, weeks} ' +
         'or {startDate, endDate}. A person must be in the epic team. addDirection with an existing title reuses it; addEpic ' +
         'with an issueKey already in the plan fails with the existing epic id. Pass ifVersion from get_quarterly_plan; ' +
-        'on conflict re-read. dryRun=true returns the result without writing; writes need confirm=true.',
+        'on conflict re-read. dryRun=true returns the resulting plan with its issues and duty risks without writing; ' +
+        'writes need confirm=true.',
       inputSchema: {
         ...quarterInput,
         confirm: z.boolean().optional().describe('Must be true to write (not needed for dryRun)'),

@@ -1,4 +1,4 @@
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
+import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
 
 export type PlannerHatchTone = AvailabilityCardKind | 'neutral' | 'shards' | 'weekend';
 

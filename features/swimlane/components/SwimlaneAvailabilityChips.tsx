@@ -1,9 +1,9 @@
 'use client';
 
-import type { AvailabilitySegment } from '@/features/swimlane/utils/availabilitySegments';
+import type { AvailabilitySegment } from '@/lib/boardAvailability/availabilitySegments';
 
 import { useI18n } from '@/contexts/LanguageContext';
-import { availabilityKindMessageKey } from '@/features/swimlane/utils/availabilityCardKind';
+import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
 
 import { SwimlaneAvailabilityChip } from './SwimlaneAvailabilityChip';
 

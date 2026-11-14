@@ -17,8 +17,8 @@ import {
   FLOATING_MENU_GLASS_SHELL,
   glassLensControlClass,
 } from '@/features/context-menu/contextMenuClasses';
-import { resolveAvailabilityDayRange } from '@/features/swimlane/utils/availabilitySegments';
 import { QuickAddMenuCloseButton } from '@/features/task/components/TaskBar/components/quickAddMenu/QuickAddMenuCloseButton';
+import { resolveAvailabilityDayRange } from '@/lib/boardAvailability/availabilitySegments';
 
 const EVENT_TYPES: { messageKey: string; value: BoardAvailabilityEventType }[] = [
   { messageKey: 'sprintPlanner.swimlane.availability.vacation', value: 'vacation' },

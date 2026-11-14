@@ -16,12 +16,22 @@ import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/type
 import type { Developer } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
+import {
+  boardAvailabilityEventFromRow,
+  listBoardAvailabilityEvents,
+} from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { loadRoleResolutionContext } from '@/lib/sprints/sprintContextTeamMembers';
 import { enrichPlannerTeamMembersFromTracker, fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
 import { convertTeamMemberToDeveloper } from '@/lib/teamMemberUtils';
 
 import { parseQuarterlyPlanContent } from './quarterlyPlanContentParse';
+import {
+  buildMemberAbsenceDays,
+  collectDutyRiskAssignmentIds,
+  collectQuarterlyPlanIssues,
+  type QuarterlyPlanIssue,
+} from './quarterlyPlanIssues';
 import { buildQuarterlyPlanMemberIndex, planContentForClient, planContentForStorage } from './quarterlyPlanMembers';
 import { applyQuarterlyPlanOps as applyOpsToContent } from './quarterlyPlanOps';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
@@ -155,11 +165,37 @@ export async function saveQuarterlyPlan(input: {
   return writePlan(input, await loadTeamRosters(input.organizationId, false));
 }
 
+/** Проблемы назначений (QI1–QI3, QI6) и риски дежурства (QV3) — как их считает доска. */
+interface QuarterlyPlanFindings {
+  /** Назначения, в срок которых попадает дежурство исполнителя. */
+  dutyRiskAssignmentIds: string[];
+  issues: QuarterlyPlanIssue[];
+}
+
+/** Проблемы и риски плана по событиям отсутствия досок его команд (QM4). */
+export async function findQuarterlyPlanProblems(plan: QuarterlyPlan): Promise<QuarterlyPlanFindings> {
+  const eventsByBoard = new Map(
+    await Promise.all(
+      plan.teams.map(
+        async (team) =>
+          [team.boardId, (await listBoardAvailabilityEvents(team.boardId)).map(boardAvailabilityEventFromRow)] as const
+      )
+    )
+  );
+  const absence = buildMemberAbsenceDays(plan.teams, eventsByBoard, buildQuarterWeeks(plan));
+  return {
+    dutyRiskAssignmentIds: collectDutyRiskAssignmentIds(plan, absence),
+    issues: collectQuarterlyPlanIssues(plan, absence, false),
+  };
+}
+
 type ApplyOpsResult =
-  | { content: QuarterlyPlanContent; refs: Record<string, string>; status: 'preview'; version: number }
-  | { content: QuarterlyPlanContent; refs: Record<string, string>; status: 'saved'; version: number }
-  | { error: string; opIndex?: number; status: 'invalid' }
-  | { status: 'conflict'; version: number };
+  { content: QuarterlyPlanContent; refs: Record<string, string>; status: 'saved'; version: number } | { error: string; opIndex?: number; status: 'invalid' } | { status: 'conflict'; version: number } | QuarterlyPlanFindings & {
+      content: QuarterlyPlanContent;
+      refs: Record<string, string>;
+      status: 'preview';
+      version: number;
+    };
 
 /**
  * Пакет операций агента над планом (раздел 11): атомарно (QM1), поверх версии `ifVersion` (QM6),
@@ -189,7 +225,14 @@ export async function applyQuarterlyPlanOps(input: {
   });
   if (!applied.ok) return { error: applied.error, opIndex: applied.opIndex, status: 'invalid' };
   if (input.dryRun) {
-    return { content: applied.content, refs: applied.refs, status: 'preview', version: stored.version };
+    // Предпросмотр показывает, что пакет сделает с проблемами плана (QM4); спринты и трекер не нужны.
+    const findings = await findQuarterlyPlanProblems({
+      ...input.ref,
+      ...applied.content,
+      teams: rosters.rosters.map((roster) => ({ ...roster, sprints: [] })),
+      trackerEpics: {},
+    });
+    return { ...findings, content: applied.content, refs: applied.refs, status: 'preview', version: stored.version };
   }
   const saved = await writePlan({ ...input, content: applied.content }, rosters);
   if (saved.status === 'invalid') return saved;

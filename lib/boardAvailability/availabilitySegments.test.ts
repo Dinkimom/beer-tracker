@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { PARTS_PER_DAY } from '@/constants';
 
 import { getSegmentsForDeveloper, resolveAvailabilityDayRange } from './availabilitySegments';
-import { getWidthPercent } from './positionUtils';
 
 function boardEvent(
   memberId: string,
@@ -42,7 +41,8 @@ describe('getSegmentsForDeveloper', () => {
     expect(segments[0]!.durationInParts).toBe(workingDaysCount * PARTS_PER_DAY);
 
     const timelineTotalParts = workingDaysCount * PARTS_PER_DAY;
-    expect(getWidthPercent(segments[0]!.durationInParts, timelineTotalParts)).toBe(100);
+    // Доля ширины таймлайна: сегмент на весь спринт — 100%.
+    expect((segments[0]!.durationInParts / timelineTotalParts) * 100).toBe(100);
   });
 
   it('5-day event with 10-day default denominator would be half width (regression guard)', () => {
@@ -50,7 +50,7 @@ describe('getSegmentsForDeveloper', () => {
     const segments = getSegmentsForDeveloper('dev-1', sprintStart, events, 5);
 
     const wrongTimelineTotalParts = 10 * PARTS_PER_DAY;
-    expect(getWidthPercent(segments[0]!.durationInParts, wrongTimelineTotalParts)).toBe(50);
+    expect((segments[0]!.durationInParts / wrongTimelineTotalParts) * 100).toBe(50);
   });
 });
 

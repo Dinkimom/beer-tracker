@@ -1,5 +1,5 @@
+import type { AvailabilityCardKind } from './availabilityCardKind';
 import type { AvailabilitySegment } from './availabilitySegments';
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { getPartsPerDay } from '@/constants';

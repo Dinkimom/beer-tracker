@@ -1,4 +1,4 @@
-import type { AvailabilitySegment } from '@/features/swimlane/utils/availabilitySegments';
+import type { AvailabilitySegment } from '@/lib/boardAvailability/availabilitySegments';
 import type { Developer } from '@/types';
 import type { QuarterlyAvailability } from '@/types/quarterly';
 
@@ -7,7 +7,7 @@ import {
   normalizeQuarterlyAvailabilityToBoardEvents,
   quarterlyAvailabilityHasBlockingSegments,
 } from '@/features/sprint/utils/quarterlyAvailabilityNormalize';
-import { getSegmentsForDeveloper } from '@/features/swimlane/utils/availabilitySegments';
+import { getSegmentsForDeveloper } from '@/lib/boardAvailability/availabilitySegments';
 
 export type AssigneePlatformKey = 'Back' | 'Other' | 'QA' | 'Web';
 

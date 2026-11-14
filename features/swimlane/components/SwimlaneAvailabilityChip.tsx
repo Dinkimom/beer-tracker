@@ -1,6 +1,6 @@
 'use client';
 
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
+import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
 
 import { Button } from '@/components/Button';
 import { ZIndex } from '@/constants';

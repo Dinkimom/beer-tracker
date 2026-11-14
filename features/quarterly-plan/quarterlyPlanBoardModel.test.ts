@@ -3,13 +3,13 @@ import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { describe, expect, it } from 'vitest';
 
+import { collectQuarterlyPlanIssues } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import { buildQuarterWeeks } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import {
   barDayMarks,
   buildAbsenceByMember,
   buildToneByKey,
-  collectQuarterlyPlanIssues,
   formatSpanRange,
   formatWeekRange,
   quarterRowHeightPx,

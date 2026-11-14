@@ -6,8 +6,8 @@ import {
   normalizeQuarterlyAvailabilityToBoardEvents,
   quarterlyAvailabilityHasBlockingSegments,
 } from '@/features/sprint/utils/quarterlyAvailabilityNormalize';
-import { availabilityKindMessageKey } from '@/features/swimlane/utils/availabilityCardKind';
-import { getSegmentsForDeveloper } from '@/features/swimlane/utils/availabilitySegments';
+import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
+import { getSegmentsForDeveloper } from '@/lib/boardAvailability/availabilitySegments';
 
 export function buildAssigneePickerAvailabilityLines(input: {
   availability?: QuarterlyAvailability | null;

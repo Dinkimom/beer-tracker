@@ -1,4 +1,4 @@
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
+import type { AvailabilityCardKind } from './availabilityCardKind';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { WORKING_DAYS } from '@/constants';

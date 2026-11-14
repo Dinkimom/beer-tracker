@@ -2,7 +2,7 @@
 
 import type { AssigneePickerGroup } from '@/features/context-menu/utils/assigneePickerOptions';
 import type { AssigneePointsStats } from '@/features/sprint/utils/assigneePointsStats';
-import type { AvailabilitySegment } from '@/features/swimlane/utils/availabilitySegments';
+import type { AvailabilitySegment } from '@/lib/boardAvailability/availabilitySegments';
 import type { Developer } from '@/types';
 
 import { Avatar } from '@/components/Avatar';
@@ -21,7 +21,7 @@ import {
   ASSIGNEE_TARGET_STORY_POINTS,
   ASSIGNEE_TARGET_TEST_POINTS,
 } from '@/features/context-menu/utils/assigneePickerOptions';
-import { availabilityKindMessageKey } from '@/features/swimlane/utils/availabilityCardKind';
+import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
 import { formatPointsForDisplay } from '@/lib/pointsUtils';
 import { getInitials } from '@/utils/displayUtils';
 

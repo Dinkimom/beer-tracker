@@ -1,6 +1,6 @@
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
+import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
+import type { MemberAbsenceDays } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import type {
-  QuarterlyPlan,
   QuarterlyPlanAssignment,
   QuarterlyPlanEpicStatus,
   QuarterlyPlanTeam,
@@ -8,19 +8,12 @@ import type {
 import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
-import {
-  getSegmentsForDeveloper,
-  type AvailabilitySegment,
-} from '@/features/swimlane/utils/availabilitySegments';
 import { buildUnavailableDayHatchKinds } from '@/features/swimlane/utils/availabilityTimelineMarks';
-import { parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
+import { buildMemberAbsenceDays } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import {
   absentDaysWithinSpan,
   groupConsecutiveDays,
-  isEpicDone,
-  overlappingAssignments,
   overlapWeeks,
-  violatedBlockersByAssignment,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
@@ -117,51 +110,23 @@ export const QUARTER_STATUS_ORDER: QuarterlyPlanEpicStatus[] = [
   'blocked',
 ];
 
-export interface MemberAbsence {
-  /** Дни, когда человек не может работать над эпиком; дежурство сюда не входит. */
-  blockedDays: Set<number>;
-  /** Дни дежурства: работать можно, но это риск (QV3, A2). */
-  dutyDays: Set<number>;
-  events: BoardAvailabilityEvent[];
+/** Отсутствия человека для доски: дни из `lib` и штриховка дней для таймлайна. */
+export interface MemberAbsence extends MemberAbsenceDays {
   hatchKinds: Map<number, AvailabilityCardKind>;
-  segments: AvailabilitySegment[];
 }
 
-export function quarterTimelineStart(weeks: readonly QuarterWeek[]): Date {
-  const parsed = parseIsoDateOnly(weeks[0]?.startDate ?? '');
-  return parsed ? new Date(parsed.y, parsed.m - 1, parsed.d) : new Date();
-}
-
-/**
- * Отсутствия людей на таймлайне квартала. Квартал для свимлейна — тот же ряд
- * рабочих дней, только длиннее спринта, поэтому сегменты считает общий код.
- */
+/** Отсутствия людей на таймлайне квартала (`buildMemberAbsenceDays`) со штриховкой для доски. */
 export function buildAbsenceByMember(
   teams: readonly QuarterlyPlanTeam[],
   eventsByBoard: ReadonlyMap<number, BoardAvailabilityEvent[]>,
   weeks: readonly QuarterWeek[]
 ): Map<string, MemberAbsence> {
-  const result = new Map<string, MemberAbsence>();
-  const timelineStart = quarterTimelineStart(weeks);
-  const dayCount = weeks.length * QUARTER_WORKING_DAYS_PER_WEEK;
-  for (const team of teams) {
-    const events = eventsByBoard.get(team.boardId) ?? [];
-    for (const member of team.members) {
-      const segments = getSegmentsForDeveloper(member.id, timelineStart, events, dayCount);
-      const daysOf = (duty: boolean) =>
-        new Set(
-          segments.filter((segment) => (segment.kind === 'duty') === duty).flatMap((segment) => segment.dayIndices)
-        );
-      result.set(member.id, {
-        blockedDays: daysOf(false),
-        dutyDays: daysOf(true),
-        events: events.filter((event) => event.memberId === member.id),
-        hatchKinds: buildUnavailableDayHatchKinds(segments),
-        segments,
-      });
-    }
-  }
-  return result;
+  return new Map(
+    [...buildMemberAbsenceDays(teams, eventsByBoard, weeks)].map(([memberId, days]) => [
+      memberId,
+      { ...days, hatchKinds: buildUnavailableDayHatchKinds(days.segments) },
+    ])
+  );
 }
 
 /**
@@ -196,58 +161,6 @@ export function formatSpanRange(
   const [, startMonth, startDay] = first.startDate.split('-');
   const [, endMonth, endDay] = last.endDate.split('-');
   return `${startDay}.${startMonth}–${endDay}.${endMonth}`;
-}
-
-interface QuarterlyPlanIssue {
-  assignmentId: string;
-  /** Человек отсутствует в часть срока. */
-  away: boolean;
-  /** Начинается раньше, чем закончится назначение, которого оно ждёт. */
-  blocked: boolean;
-  directionId: string;
-  /** Исполнитель больше не в команде эпика (QI6). */
-  notInTeam: boolean;
-  /** В те же недели у человека стоит другой эпик. */
-  parallel: boolean;
-  teamId: string;
-}
-
-/**
- * Назначения с проблемами (отсутствие, второй эпик, нарушенный порядок, исполнитель не в команде) в порядке доски: команда → направление → эпик → начало полосы.
- * По этому списку считает счётчик тулбара и ходит переход «к следующему пересечению».
- * `hideDone` убирает готовые эпики — их строк на доске нет.
- */
-export function collectQuarterlyPlanIssues(
-  plan: QuarterlyPlan,
-  absenceByMember: ReadonlyMap<string, MemberAbsence>,
-  hideDone: boolean
-): QuarterlyPlanIssue[] {
-  const violated = violatedBlockersByAssignment(plan);
-  const memberIdsByTeam = new Map(plan.teams.map((team) => [team.id, new Set(team.members.map((member) => member.id))]));
-  const rows = plan.teams.flatMap((team) =>
-    plan.directions
-      .filter((direction) => direction.teamId === team.id)
-      .flatMap((direction) =>
-        plan.epics
-          .filter((epic) => epic.directionId === direction.id && !(hideDone && isEpicDone(epic, plan.trackerEpics)))
-          .map((epic) => ({ directionId: direction.id, epicId: epic.id, teamId: team.id }))
-      )
-  );
-  return rows.flatMap(({ directionId, epicId, teamId }) =>
-    plan.assignments
-      .filter((assignment) => assignment.epicId === epicId)
-      .sort((a, b) => a.startWeek - b.startWeek)
-      .flatMap((assignment) => {
-        const absentDays = absenceByMember.get(assignment.memberId)?.blockedDays ?? new Set<number>();
-        const away = absentDaysWithinSpan(assignment, absentDays).length > 0;
-        const parallel = overlappingAssignments(assignment, plan.assignments).length > 0;
-        const blocked = violated.has(assignment.id);
-        const notInTeam = !memberIdsByTeam.get(teamId)?.has(assignment.memberId);
-        return away || parallel || blocked || notInTeam
-          ? [{ assignmentId: assignment.id, away, blocked, directionId, notInTeam, parallel, teamId }]
-          : [];
-      })
-  );
 }
 
 export function formatWeekRange(week: QuarterWeek): string {

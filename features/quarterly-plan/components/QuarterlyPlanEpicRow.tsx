@@ -7,7 +7,7 @@ import { Icon } from '@/components/Icon';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { StatusTag } from '@/components/StatusTag';
 import { useI18n } from '@/contexts/LanguageContext';
-import { availabilityKindMessageKey } from '@/features/swimlane/utils/availabilityCardKind';
+import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
 import {
   absentDaysWithinSpan,
   assignBarLanes,

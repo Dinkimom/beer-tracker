@@ -18,6 +18,7 @@ import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useHolidayDays } from '@/features/sprint/hooks/useHolidayDays';
 import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskBarNoteFocusEditor';
+import { collectQuarterlyPlanIssues, quarterTimelineStart } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import {
   addDirection,
   addEpic,
@@ -44,8 +45,6 @@ import { QuarterlyPlanBoardProvider } from './QuarterlyPlanBoardContext';
 import {
   buildAbsenceByMember,
   buildToneByKey,
-  collectQuarterlyPlanIssues,
-  quarterTimelineStart,
 } from './quarterlyPlanBoardModel';
 import { buildQuarterlyPlanMenuSections } from './quarterlyPlanMenuSections';
 import { useQuarterlyPlan } from './useQuarterlyPlan';

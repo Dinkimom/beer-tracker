@@ -4,8 +4,8 @@
  * Компонент сетки времени в свимлейне
  */
 
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
 import type { PlacedSwimlaneLayerItem } from '@/features/swimlane/utils/layerUtils';
+import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
 
 import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';

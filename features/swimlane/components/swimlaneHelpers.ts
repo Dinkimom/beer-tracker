@@ -1,8 +1,8 @@
 import type { DeveloperHeaderLaneLabelItem } from '@/features/swimlane/components/DeveloperHeaderLaneLabels';
-import type { AvailabilityCardKind } from '@/features/swimlane/utils/availabilityCardKind';
-import type { AvailabilitySegment } from '@/features/swimlane/utils/availabilitySegments';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import type { SwimlaneDropPreviewTarget } from '@/features/swimlane/utils/swimlaneDropPreview';
+import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
+import type { AvailabilitySegment } from '@/lib/boardAvailability/availabilitySegments';
 import type { SwimlanePlacementTool } from '@/lib/layers';
 import type { Task } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
@@ -12,12 +12,12 @@ import {
   resolveSwimlaneQuickAddPlacementFootprint,
   resolveSwimlaneQuickAddRowGrowLayers,
 } from '@/features/swimlane/components/swimlaneQuickAddPreviewAppearance';
-import { getSegmentsForDeveloper } from '@/features/swimlane/utils/availabilitySegments';
 import {
   buildUnavailableDayHatchKinds,
   isoDateOnlyFromWorkingDayIndex,
 } from '@/features/swimlane/utils/availabilityTimelineMarks';
 import { getVisibleSwimlaneFactLayerHeightPx } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
+import { getSegmentsForDeveloper } from '@/lib/boardAvailability/availabilitySegments';
 
 export function buildSwimlaneRootClassName(sidebarClickEnabled: boolean): string {
   const interactive = sidebarClickEnabled ? 'cursor-pointer' : '';
