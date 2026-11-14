@@ -860,6 +860,7 @@ export const enMessages = {
       blocked: 'Blocked',
     },
     saveError: 'Could not save the plan',
+    saveConflict: 'Someone else just changed the plan. Showing the latest version; your edit was not saved',
     loading: 'Loading the plan…',
     loadError: 'Could not load the plan',
   },

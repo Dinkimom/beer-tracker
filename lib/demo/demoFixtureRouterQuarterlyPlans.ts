@@ -23,10 +23,11 @@ function quarterKey({ quarter, year }: QuarterRef): string {
   return `${year}-Q${quarter}`;
 }
 
-function readContent(ref: QuarterRef): QuarterlyPlanContent {
+/** Содержимое и версия плана квартала; заполненный сид считается первым сохранением. */
+function readStored(ref: QuarterRef): { content: QuarterlyPlanContent; version: number } {
   const store = getDemoFixtureStore();
   const key = quarterKey(ref);
-  store.quarterlyPlans[key] ??= buildDemoQuarterlyPlanContent(ref);
+  store.quarterlyPlans[key] ??= { content: buildDemoQuarterlyPlanContent(ref), version: 1 };
   return store.quarterlyPlans[key];
 }
 
@@ -36,15 +37,23 @@ function handlePlan(method: string, params: URLSearchParams, body: unknown): Dem
       quarter: Number(params.get('quarter') ?? 4) as QuarterNumber,
       year: Number(params.get('year') ?? 2026),
     };
-    return ok({
-      plan: buildDemoQuarterlyPlan(ref, readContent(ref), getDemoFixtureStore().developers),
-    });
+    const { content, version } = readStored(ref);
+    return ok({ plan: buildDemoQuarterlyPlan(ref, content, getDemoFixtureStore().developers), version });
   }
   if (method === 'put') {
-    const { quarter, year, ...content } = body as QuarterlyPlanContent & QuarterRef;
+    // Тот же контракт, что у /api/quarterly-plans: запись поверх версии, которую видел клиент (QS5).
+    const { content, ifVersion, quarter, year } = body as QuarterRef & { content: QuarterlyPlanContent; ifVersion: number };
+    const ref = { quarter, year };
+    const stored = readStored(ref);
+    if (stored.version !== ifVersion) {
+      return { data: { error: 'Quarterly plan was changed by someone else' }, status: 409 };
+    }
     const { assignments, directions, epics, links, notes } = content;
-    getDemoFixtureStore().quarterlyPlans[quarterKey({ quarter, year })] = { assignments, directions, epics, links, notes };
-    return ok({ ok: true });
+    getDemoFixtureStore().quarterlyPlans[quarterKey(ref)] = {
+      content: { assignments, directions, epics, links, notes },
+      version: stored.version + 1,
+    };
+    return ok({ version: stored.version + 1 });
   }
   return null;
 }

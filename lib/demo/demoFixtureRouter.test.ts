@@ -163,19 +163,24 @@ describe('handleDemoFixtureRequest', () => {
     const plan = handleDemoFixtureRequest(cfg('get', '/quarterly-plans?year=2026&quarter=4'));
     const data = plan.data as {
       plan: { assignments: unknown[]; directions: unknown[]; epics: unknown[]; teams: Array<{ sprints: unknown[] }> };
+      version: number;
     };
     expect(data.plan.teams).toHaveLength(2);
     expect(data.plan.teams[0]!.sprints).toHaveLength(7);
     expect(data.plan.teams[1]!.sprints).toHaveLength(8);
     expect(data.plan.directions.length).toBeGreaterThan(0);
 
-    handleDemoFixtureRequest(
-      cfg('put', '/quarterly-plans', {
-        data: { assignments: [], directions: [], epics: [], quarter: 4, year: 2026 },
-      })
-    );
+    const emptyContent = { assignments: [], directions: [], epics: [], links: [], notes: [] };
+    const put = (ifVersion: number) =>
+      handleDemoFixtureRequest(
+        cfg('put', '/quarterly-plans', { data: { content: emptyContent, ifVersion, quarter: 4, year: 2026 } })
+      );
+    expect(put(data.version)).toEqual({ data: { version: data.version + 1 }, status: 200 });
+    // Тот же ifVersion второй раз — план уже сохранили, конфликт (QS5).
+    expect(put(data.version).status).toBe(409);
     const saved = handleDemoFixtureRequest(cfg('get', '/quarterly-plans?year=2026&quarter=4'));
     expect((saved.data as typeof data).plan.directions).toEqual([]);
+    expect((saved.data as typeof data).version).toBe(data.version + 1);
 
     const empty = handleDemoFixtureRequest(cfg('get', '/quarterly-plans?year=2027&quarter=1'));
     expect((empty.data as typeof data).plan.epics).toEqual([]);

@@ -116,8 +116,8 @@ export interface DemoFixtureState {
   orgId: string;
   planAnchors: SprintPlanAnchor[];
   positions: DemoPositionRow[];
-  /** Содержимое квартальных планов по ключу `2026-Q4`; заполняется при первом запросе. */
-  quarterlyPlans: Record<string, QuarterlyPlanContent>;
+  /** Квартальные планы по ключу `2026-Q4`: содержимое и версия; заполняются при первом запросе. */
+  quarterlyPlans: Record<string, { content: QuarterlyPlanContent; version: number }>;
   retroBoards: Record<string, RetroBoard>;
   score: SprintScoreResponse;
   sprintInfo: NonNullable<SprintTasksResponse['sprintInfo']>;

@@ -16,7 +16,7 @@ import {
 } from '@/lib/staffTeams';
 import { convertTeamMembersToDevelopers } from '@/lib/teamMemberUtils';
 
-async function loadRoleResolutionContext(organizationId: string) {
+export async function loadRoleResolutionContext(organizationId: string) {
   const [systemRows, orgRows] = await Promise.all([
     listSystemRoles(),
     listOrgRoles(organizationId),
