@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
     });
     if (result.status === 'invalid') return NextResponse.json({ error: result.error }, { status: 422 });
     if (result.status === 'conflict') return NextResponse.json({ error: 'The plan changed, try again' }, { status: 409 });
-    return NextResponse.json({ version: result.version });
+    // План после принятия — клиент сразу кладёт его на доску, не дожидаясь чтения с трекером.
+    return NextResponse.json({ content: result.content, version: result.version });
   } catch (error) {
     return handleApiError(error, 'approve quarterly plan draft');
   }

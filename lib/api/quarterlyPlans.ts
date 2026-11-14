@@ -69,19 +69,18 @@ export interface QuarterlyPlanDraftDecision {
   proposalId: string;
 }
 
-/** Принять черновик или его пункты; ошибка — текстом (пакет не применился, план не изменился). */
+/** Принять черновик или его пункты: план после принятия и его версия; ошибка — текстом (план не изменился). */
 export async function approveQuarterlyPlanDraft(
   ref: QuarterRef,
   decision: QuarterlyPlanDraftDecision
-): Promise<{ error: string } | { version: number }> {
-  const response = await getPlannerBeerTrackerApi().post<{ error?: string; version?: number }>(
-    '/quarterly-plans/draft',
-    { ...ref, ...decision },
-    { validateStatus: (status) => status < 500 }
-  );
-  return response.status < 300 && response.data.version != null
-    ? { version: response.data.version }
-    : { error: response.data.error ?? 'error' };
+): Promise<{ content: QuarterlyPlanContent; version: number } | { error: string }> {
+  const response = await getPlannerBeerTrackerApi().post<{
+    content?: QuarterlyPlanContent;
+    error?: string;
+    version?: number;
+  }>('/quarterly-plans/draft', { ...ref, ...decision }, { validateStatus: (status) => status < 500 });
+  const { content, error, version } = response.data;
+  return response.status < 300 && content && version != null ? { content, version } : { error: error ?? 'error' };
 }
 
 export async function rejectQuarterlyPlanDraft(ref: QuarterRef, decision: QuarterlyPlanDraftDecision): Promise<void> {

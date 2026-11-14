@@ -61,16 +61,14 @@ export function useQuarterlyPlanAgent(ref: QuarterRef, setVersion: (version: num
         toast.error(t('quarterlyPlan.draft.applyFailed', { error: result.error }));
       } else {
         setVersion(result.version);
-        // Принятый целиком план — сразу на доску: перечитанный придёт после запроса в трекер по новым ключам,
-        // а черновик к тому времени уже пропадёт. Пункты по одному — как на доске спринта, без тоста.
-        const accepted =
-          !decision.itemIds && draftQuery.data?.proposalId === decision.proposalId ? draftQuery.data.preview?.content : null;
-        if (accepted) {
-          toast.success(t('quarterlyPlan.draft.approved'));
-          queryClient.setQueryData<QuarterlyPlan>(['quarterlyPlan', year, quarter], (plan) =>
-            plan ? { ...plan, ...accepted } : plan
-          );
-        }
+        // План после принятия — сразу на доску: перечитанный придёт после запроса в трекер, а черновик без
+        // принятых пунктов — раньше; иначе принятое на миг выглядело бы снова предложенным.
+        const { assignments, directions, epics, links, notes } = result.content;
+        queryClient.setQueryData<QuarterlyPlan>(['quarterlyPlan', year, quarter], (plan) =>
+          plan ? { ...plan, assignments, directions, epics, links, notes } : plan
+        );
+        // Пункты по одному — как на доске спринта, без тоста.
+        if (!decision.itemIds) toast.success(t('quarterlyPlan.draft.approved'));
       }
       refresh();
     },
