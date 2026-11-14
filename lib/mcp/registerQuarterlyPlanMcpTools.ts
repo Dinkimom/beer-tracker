@@ -31,7 +31,8 @@ const quarterInput = {
 
 const WRITE_HINT =
   'Change the plan with propose_quarterly_plan (ifVersion = version) — the person accepts the draft on the board. People: teams[].members[].id (resolve names with resolve_person). ' +
-  'Epics from the tracker: find keys with search_issues. Absences: apply_availability_events.';
+  'Tracker epics: find keys with search_tracker_epics (boardId = teams[].boardId), link with addEpic.issueKey or updateEpic.issue. ' +
+  'Absences: apply_availability_events.';
 
 /**
  * Квартальный план для агентов (раздел 11 docs/QUARTERLY_PLAN_RULES.md): чтение, пакет правок плана
@@ -195,6 +196,36 @@ export function registerQuarterlyPlanMcpTools(
           teams,
         });
         return toolOpsResult(result);
+      } catch (error) {
+        return toolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    'search_tracker_epics',
+    {
+      description:
+        'Find tracker epics by key or title on a team board — the same search as "Epic from tracker" on the board. ' +
+        'Use the key to link a plan epic: updateEpic with issue {issueKey, title} or addEpic with issueKey. ' +
+        'A linked epic takes its title and done status from the tracker.',
+      inputSchema: {
+        boardId: z.number().int().positive().describe('teams[].boardId from get_quarterly_plan'),
+        query: z.string().trim().min(1).describe('Epic key or words from its title'),
+      },
+    },
+    async ({ boardId, query }) => {
+      try {
+        const issueTracker = await getIssueTrackerProviderClientForOrganization(input.organizationId);
+        const issues = await issueTracker.searchIssuesOnBoard(boardId, query, { parentCandidates: true });
+        return toolJson({
+          epics: issues.map((issue) => ({
+            issueKey: issue.key,
+            status: issue.status?.display ?? issue.status?.key ?? null,
+            title: issue.summary,
+            type: issue.type?.display ?? null,
+          })),
+        });
       } catch (error) {
         return toolError(error);
       }
