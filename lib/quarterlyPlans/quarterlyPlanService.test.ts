@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiCache } from '@/lib/cache';
 import { fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
 
-import { applyQuarterlyPlanOps, getQuarterlyPlan, saveQuarterlyPlan } from './quarterlyPlanService';
+import { applyQuarterlyPlanOps, getQuarterlyPlan, loadSprintQuarterContext, saveQuarterlyPlan } from './quarterlyPlanService';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
 
 vi.mock('@/lib/staffTeams', () => ({
@@ -195,5 +195,82 @@ describe('quarterlyPlanService', () => {
         })
       ).resolves.toEqual({ error: 'removeEpic: unknown epic nope', opIndex: 0, status: 'invalid' });
     });
+  });
+
+  it('квартал спринта: команда по доске, назначения людей команды, кварталы на стыке (QK2)', async () => {
+    vi.mocked(fetchQuarterlyPlanContent).mockImplementation((_org, ref) =>
+      Promise.resolve(
+        ref.quarter === 4 ? { content: content('staff-1') as never, version: 3 } : { content: content('staff-1') as never, version: 0 }
+      )
+    );
+    const issueTracker = {} as IssueTrackerProviderClient;
+
+    const context = await loadSprintQuarterContext({
+      boardId: 42,
+      issueTracker,
+      organizationId: 'org-1',
+      // Спринт на стыке Q3 и Q4: у Q3 плана нет, в ответе только Q4.
+      sprintWindow: { endDate: '2026-10-09', startDate: '2026-09-21' },
+      tasks: [],
+    });
+
+    expect(context?.team).toEqual({ id: TEAM_ID, title: 'Demo' });
+    expect(context?.plans.map((plan) => [plan.year, plan.quarter, plan.version])).toEqual([[2026, 4, 3]]);
+    expect(context?.plans[0]?.assignments.map((assignment) => [assignment.memberId, assignment.taskIds])).toEqual([
+      ['tracker-1', []],
+    ]);
+    expect(fetchQuarterlyPlanContent).toHaveBeenCalledTimes(2);
+  });
+
+  it('квартал спринта: нет сохранённого плана — null', async () => {
+    vi.mocked(fetchQuarterlyPlanContent).mockResolvedValue({ content: content('staff-1') as never, version: 0 });
+    await expect(
+      loadSprintQuarterContext({
+        boardId: 42,
+        issueTracker: {} as IssueTrackerProviderClient,
+        organizationId: 'org-1',
+        sprintWindow: { endDate: '2026-11-06', startDate: '2026-10-26' },
+        tasks: [],
+      })
+    ).resolves.toBeNull();
+  });
+
+  it('квартал спринта: свой черновик агента — вид плана после принятия (QK6)', async () => {
+    vi.mocked(fetchQuarterlyPlanContent).mockResolvedValue({ content: content('staff-1') as never, version: 0 });
+    const draftContent = {
+      ...content('tracker-1'),
+      assignments: [{ epicId: 'e1', id: 'a2', memberId: 'tracker-1', startWeek: 4, weeks: 2 }],
+    };
+    const loadDraft = vi.fn().mockResolvedValue({ content: draftContent, error: null, proposalId: 'p1', summary: 'assign×1' });
+
+    const context = await loadSprintQuarterContext({
+      boardId: 42,
+      issueTracker: {} as IssueTrackerProviderClient,
+      loadDraft,
+      organizationId: 'org-1',
+      sprintWindow: { endDate: '2026-11-06', startDate: '2026-10-26' },
+      tasks: [],
+    });
+
+    // Плана в базе ещё нет, но черновик есть — квартал в ответе, в текущем плане назначений в окне нет.
+    const plan = context?.plans[0];
+    expect(plan?.version).toBe(0);
+    expect(plan?.assignments).toEqual([]);
+    expect(plan?.pendingProposal?.proposalId).toBe('p1');
+    expect(plan?.pendingProposal?.after?.assignments.map((assignment) => assignment.id)).toEqual(['a2']);
+    expect(loadDraft).toHaveBeenCalledWith(Q4);
+  });
+
+  it('квартал спринта: черновик больше не применяется — ошибка вместо вида', async () => {
+    vi.mocked(fetchQuarterlyPlanContent).mockResolvedValue({ content: content('staff-1') as never, version: 2 });
+    const context = await loadSprintQuarterContext({
+      boardId: 42,
+      issueTracker: {} as IssueTrackerProviderClient,
+      loadDraft: () => Promise.resolve({ content: null, error: 'conflict', proposalId: 'p1', summary: 'assign×1' }),
+      organizationId: 'org-1',
+      sprintWindow: { endDate: '2026-11-06', startDate: '2026-10-26' },
+      tasks: [],
+    });
+    expect(context?.plans[0]?.pendingProposal).toEqual({ error: 'conflict', proposalId: 'p1', summary: 'assign×1' });
   });
 });

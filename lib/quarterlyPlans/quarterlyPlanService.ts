@@ -21,6 +21,7 @@ import {
   listBoardAvailabilityEvents,
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { apiCache, cacheKeys } from '@/lib/cache';
+import { parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import { loadRoleResolutionContext } from '@/lib/sprints/sprintContextTeamMembers';
 import { enrichPlannerTeamMembersFromTracker, fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
 import { convertTeamMemberToDeveloper } from '@/lib/teamMemberUtils';
@@ -35,9 +36,15 @@ import {
 import { planIssueKeys } from './quarterlyPlanLayout';
 import { buildQuarterlyPlanMemberIndex, planContentForClient, planContentForStorage } from './quarterlyPlanMembers';
 import { applyQuarterlyPlanOps as applyOpsToContent } from './quarterlyPlanOps';
+import {
+  buildSprintQuarterPlanView,
+  type SprintQuarterPlanInput,
+  type SprintQuarterPlanView,
+  type SprintQuarterTask,
+} from './quarterlyPlanSprintLink';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
 import { loadQuarterlyPlanTrackerEpics } from './quarterlyPlanTrackerEpics';
-import { buildQuarterWeeks, resolveWeekSpan } from './quarterWeeks';
+import { buildQuarterWeeks, quarterOfDate, resolveWeekSpan } from './quarterWeeks';
 
 /** Тот же срок, что у `/api/sprints`: список спринтов доски общий в кэше. */
 const SPRINTS_CACHE_TTL_SECONDS = 10 * 60;
@@ -243,4 +250,115 @@ export async function applyQuarterlyPlanOps(input: {
   if (saved.status === 'invalid') return saved;
   if (saved.status === 'conflict') return { status: 'conflict', version: stored.version };
   return { content: applied.content, refs: applied.refs, status: 'saved', version: saved.version };
+}
+
+/** Черновик агента в квартале, применённый к текущему плану (QM9); `content` null — пакет больше не применяется. */
+interface SprintQuarterDraftInput {
+  content: QuarterlyPlanContent | null;
+  error: string | null;
+  proposalId: string;
+  summary: string;
+}
+
+type SprintQuarterDraftView = Pick<SprintQuarterPlanView, 'assignments' | 'directions' | 'epics' | 'outsidePlan' | 'tasks'>;
+
+/** План квартала в окне спринта и, если есть, свой черновик агента — каким станет вид после принятия (QK6). */
+type SprintQuarterPlanWithDraft = SprintQuarterPlanView & {
+  pendingProposal?: { after?: SprintQuarterDraftView; error?: string; proposalId: string; summary: string };
+};
+
+/** Квартал спринта для агента (раздел 12): команда доски и вид каждого плана, который задевает спринт. */
+export interface SprintQuarterContext {
+  plans: SprintQuarterPlanWithDraft[];
+  team: { id: string; title: string } | null;
+}
+
+/** Кварталы, которые задевает окно спринта: обычно один, на стыке кварталов — два (QW3). */
+function quartersOfWindow(window: { endDate: string; startDate: string }): QuarterRef[] {
+  const refs = [window.startDate, window.endDate].flatMap((iso) => {
+    const parsed = parseIsoDateOnly(iso.slice(0, 10));
+    return parsed ? [quarterOfDate(new Date(parsed.y, parsed.m - 1, parsed.d, 12))] : [];
+  });
+  return refs.filter((ref, index) => refs.findIndex((other) => other.year === ref.year && other.quarter === ref.quarter) === index);
+}
+
+function rowIssueKeys(view: SprintQuarterPlanView | null): string[] {
+  return view ? [...view.directions, ...view.epics].flatMap((row) => (row.issueKey ? [row.issueKey] : [])) : [];
+}
+
+function pendingProposalView(
+  draft: SprintQuarterDraftInput,
+  after: SprintQuarterPlanView | null
+): NonNullable<SprintQuarterPlanWithDraft['pendingProposal']> {
+  const base = { proposalId: draft.proposalId, summary: draft.summary };
+  if (!after) return { ...base, error: draft.error ?? 'the draft no longer applies' };
+  const { assignments, directions, epics, outsidePlan, tasks } = after;
+  return { ...base, after: { assignments, directions, epics, outsidePlan, tasks } };
+}
+
+/**
+ * Что квартальный план говорит о спринте (QK1–QK6). Назначения — людей команды доски спринта и исполнителей
+ * его задач (или одного `onlyMemberId`). `loadDraft` — свой черновик агента в квартале: вид плана после него
+ * кладётся рядом. Нет окна спринта, сохранённого плана и черновика — null.
+ */
+export async function loadSprintQuarterContext(input: {
+  boardId?: number;
+  issueTracker: IssueTrackerProviderClient;
+  loadDraft?: (ref: QuarterRef) => Promise<SprintQuarterDraftInput | null>;
+  onlyMemberId?: string;
+  organizationId: string;
+  sprintWindow?: { endDate: string; startDate: string };
+  tasks: readonly SprintQuarterTask[];
+}): Promise<SprintQuarterContext | null> {
+  const { loadDraft, sprintWindow } = input;
+  if (!sprintWindow?.startDate || !sprintWindow.endDate) return null;
+  const refs = quartersOfWindow(sprintWindow);
+  const [{ index, rosters }, stored] = await Promise.all([
+    loadTeamRosters(input.organizationId, false),
+    Promise.all(
+      refs.map(async (ref) => {
+        const [plan, draft] = await Promise.all([
+          fetchQuarterlyPlanContent(input.organizationId, ref),
+          loadDraft ? loadDraft(ref) : null,
+        ]);
+        return { ...plan, draft, ref };
+      })
+    ),
+  ]);
+  const relevant = stored.filter((plan) => plan.version > 0 || plan.draft);
+  if (relevant.length === 0) return null;
+
+  const team = rosters.find((roster) => roster.boardId === input.boardId) ?? null;
+  const memberIds = new Set(
+    input.onlyMemberId
+      ? [input.onlyMemberId]
+      : [
+          ...(team?.members.map((member) => member.id) ?? []),
+          ...input.tasks.flatMap((task) => (task.assigneeId ? [task.assigneeId] : [])),
+        ]
+  );
+  const memberNames = new Map(rosters.flatMap((roster) => roster.members.map((member) => [member.id, member.name] as const)));
+  const view = (plan: SprintQuarterPlanInput) =>
+    buildSprintQuarterPlanView({ memberIds, memberNames, plan, sprintWindow, tasks: input.tasks });
+
+  const plans = relevant.map((plan) => ({
+    base: { content: planContentForClient(plan.content, index), ref: plan.ref, trackerEpics: {}, version: plan.version },
+    draft: plan.draft,
+  }));
+  const draftView = (plan: (typeof plans)[number], trackerEpics: SprintQuarterPlanInput['trackerEpics']) =>
+    plan.draft?.content ? view({ ...plan.base, content: plan.draft.content, trackerEpics }) : null;
+  // Названия и «готово» из трекера — только у строк, которые попали в ответ (QE5, QE8).
+  const trackerEpics = await loadQuarterlyPlanTrackerEpics({
+    issueKeys: plans.flatMap((plan) => [...rowIssueKeys(view(plan.base)), ...rowIssueKeys(draftView(plan, {}))]),
+    issueTracker: input.issueTracker,
+    organizationId: input.organizationId,
+  });
+  return {
+    plans: plans.flatMap((plan) => {
+      const current = view({ ...plan.base, trackerEpics });
+      if (!current) return [];
+      return [plan.draft ? { ...current, pendingProposal: pendingProposalView(plan.draft, draftView(plan, trackerEpics)) } : current];
+    }),
+    team: team ? { id: team.id, title: team.title } : null,
+  };
 }
