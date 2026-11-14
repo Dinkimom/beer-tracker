@@ -81,8 +81,8 @@ export function QuarterlyPlanPage() {
   const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(new Set());
   const [focusedIssue, setFocusedIssue] = useState<{ assignmentId: string; nonce: number } | null>(null);
   const [todayNonce, setTodayNonce] = useState(0);
-  const { applyEdit: savePlanEdit, eventsByBoard, isLoading, plan: savedPlan } = useQuarterlyPlan(quarterRef);
-  const agent = useQuarterlyPlanAgent(quarterRef);
+  const { applyEdit: savePlanEdit, eventsByBoard, isLoading, plan: savedPlan, setVersion } = useQuarterlyPlan(quarterRef);
+  const agent = useQuarterlyPlanAgent(quarterRef, setVersion);
   const [agentOpen, setAgentOpen] = useState(false);
   const agentDraft = agent.draft;
   /** План на доске — с черновиком агента, пока он показан (QM9): доска, проблемы и меню считают по нему. */

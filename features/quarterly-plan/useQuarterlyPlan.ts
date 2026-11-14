@@ -17,6 +17,7 @@ import {
   fetchQuarterlyPlan,
   saveQuarterlyPlan,
 } from '@/lib/beerTrackerApi';
+import { planIssueKeys } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 const AVAILABILITY_STALE_MS = 2 * 60 * 1000;
 
@@ -94,6 +95,10 @@ export function useQuarterlyPlan(ref: QuarterRef) {
             reload('quarterlyPlan.saveConflict');
           } else {
             versionsRef.current.set(quarterKey(ref), result.version);
+            // Новый ключ трекера: статус и название задачи сервер подтягивает при чтении плана.
+            if (planIssueKeys(content).some((key) => !(key in current.trackerEpics))) {
+              queryClient.invalidateQueries({ queryKey }).catch(() => undefined);
+            }
           }
         } catch {
           reload('quarterlyPlan.saveError');
@@ -103,5 +108,13 @@ export function useQuarterlyPlan(ref: QuarterRef) {
     [quarter, queryClient, queryKey, t, year]
   );
 
-  return { applyEdit, eventsByBoard, isLoading: planQuery.isLoading, plan };
+  /** Версия плана после чужой записи, о которой клиент знает (принятый черновик агента). */
+  const setVersion = useCallback(
+    (version: number) => {
+      versionsRef.current.set(quarterKey({ quarter, year }), version);
+    },
+    [quarter, year]
+  );
+
+  return { applyEdit, eventsByBoard, isLoading: planQuery.isLoading, plan, setVersion };
 }

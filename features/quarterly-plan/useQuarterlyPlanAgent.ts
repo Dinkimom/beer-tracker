@@ -29,7 +29,7 @@ import { diffQuarterlyPlanDraft } from '@/lib/quarterlyPlans/quarterlyPlanDraftD
  */
 const POLL_MS = 5000;
 
-export function useQuarterlyPlanAgent(ref: QuarterRef) {
+export function useQuarterlyPlanAgent(ref: QuarterRef, setVersion: (version: number) => void) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { quarter, year } = ref;
@@ -54,9 +54,21 @@ export function useQuarterlyPlanAgent(ref: QuarterRef) {
 
   const approve = useMutation({
     mutationFn: (proposalId: string) => approveQuarterlyPlanDraft({ quarter, year }, proposalId),
-    onSuccess: (result) => {
-      if ('error' in result) toast.error(t('quarterlyPlan.draft.applyFailed', { error: result.error }));
-      else toast.success(t('quarterlyPlan.draft.approved'));
+    onSuccess: (result, proposalId) => {
+      if ('error' in result) {
+        toast.error(t('quarterlyPlan.draft.applyFailed', { error: result.error }));
+      } else {
+        toast.success(t('quarterlyPlan.draft.approved'));
+        setVersion(result.version);
+        // Принятый план — сразу на доску: перечитанный придёт после запроса в трекер по новым ключам,
+        // а черновик к тому времени уже пропадёт.
+        const accepted = draftQuery.data?.proposalId === proposalId ? draftQuery.data.preview?.content : null;
+        if (accepted) {
+          queryClient.setQueryData<QuarterlyPlan>(['quarterlyPlan', year, quarter], (plan) =>
+            plan ? { ...plan, ...accepted } : plan
+          );
+        }
+      }
       refresh();
     },
   });
