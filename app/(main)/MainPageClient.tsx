@@ -180,6 +180,8 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
 
   const handleTabChange = useCallback(
     (tab: SprintTab) => {
+      // Квартальный план пока живёт только в демо: у основного приложения нет его API.
+      if (tab === 'quarter') return;
       setQueryStates({ tab });
     },
     [setQueryStates]

@@ -17,6 +17,7 @@ export * from './readApiError';
 export * from './realtime';
 export * from './plannerIntegrationRules';
 export * from './queues';
+export * from './quarterlyPlans';
 export * from './boardAvailability';
 export * from './sprintGoals';
 export * from './sprints';

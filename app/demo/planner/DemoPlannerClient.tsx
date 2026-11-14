@@ -15,6 +15,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { BacklogPage } from '@/features/backlog/components/BacklogPage';
 import { useBoards } from '@/features/board/hooks/useBoards';
 import { BurndownChart } from '@/features/burndown/components/BurndownChart';
+import { QuarterlyPlanPage } from '@/features/quarterly-plan/QuarterlyPlanPage';
 import { RetroPage } from '@/features/retro/components/RetroPage';
 import { SprintMetricsPage } from '@/features/sprint-metrics/components/SprintMetricsPage';
 import { SprintPlanner } from '@/features/sprint/components/SprintPlanner';
@@ -222,6 +223,7 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
             activeTab={activeTab}
             boardName={boardName}
             selectedBoardId={activeBoardId}
+            showQuarterTab
             onBoardChange={handleBoardChange}
             onTabChange={handleTabChange}
           />
@@ -260,6 +262,7 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
                   />
                 </div>
               )}
+              {activeTab === 'quarter' && <QuarterlyPlanPage />}
               {activeTab === 'burndown' && (
                 <BurndownChart
                   boardId={activeBoardId}

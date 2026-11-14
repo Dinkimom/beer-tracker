@@ -1,5 +1,6 @@
 import type { SprintPlanAnchor } from '@/lib/api/sprints';
 import type { BoardListItem, SprintScoreResponse } from '@/lib/api/types';
+import type { QuarterlyPlanContent } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { RetroBoard } from '@/lib/retro/retroBoardShared';
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
 import type { PlannerIntegrationRulesDto } from '@/lib/trackerIntegration/toPlannerDto';
@@ -33,6 +34,7 @@ import {
   DEMO_SPRINT_NEXT_ID,
   DEMO_SPRINT_PREV_ID,
 } from './demoIds';
+import { buildDemoQuarterAvailabilityEvents } from './demoQuarterlyPlanSeed';
 
 type DemoCommentRow = SprintCommentsResponse['comments'][number];
 
@@ -114,6 +116,8 @@ export interface DemoFixtureState {
   orgId: string;
   planAnchors: SprintPlanAnchor[];
   positions: DemoPositionRow[];
+  /** Содержимое квартальных планов по ключу `2026-Q4`; заполняется при первом запросе. */
+  quarterlyPlans: Record<string, QuarterlyPlanContent>;
   retroBoards: Record<string, RetroBoard>;
   score: SprintScoreResponse;
   sprintInfo: NonNullable<SprintTasksResponse['sprintInfo']>;
@@ -348,7 +352,11 @@ export function createDemoFixtureSeed(): DemoFixtureState {
   return {
     orgId: DEMO_ORG_ID,
     assigneeVelocity: buildDemoAssigneeVelocity(),
-    availabilityEvents: buildDemoAvailabilityEvents(),
+    availabilityEvents: [
+      ...buildDemoAvailabilityEvents(),
+      ...buildDemoQuarterAvailabilityEvents({ memberName: DEMO_DEV_DISPLAY.bob.name }),
+    ],
+    quarterlyPlans: {},
     board: {
       id: DEMO_BOARD_ID,
       isMyTeam: true,

@@ -8,6 +8,7 @@ import { handleDemoComments } from './demoFixtureRouterComments';
 import { handleDemoIssueSprint } from './demoFixtureRouterIssueSprint';
 import { handleDemoMisc } from './demoFixtureRouterMisc';
 import { handleDemoPositions } from './demoFixtureRouterPositions';
+import { handleDemoQuarterlyPlans } from './demoFixtureRouterQuarterlyPlans';
 import { demoPlannerIntegrationRules } from './demoFixtureSeed';
 import { buildDemoBoardSprintMetrics } from './demoFixtureSprintMetrics';
 import {
@@ -319,6 +320,7 @@ export function handleDemoFixtureRequest(config: InternalAxiosRequestConfig): De
     () => handleAgentSessions(path, method),
     () => handleDemoWorkflow(path, method, body),
     () => handleDemoIssueSprint(path, method, body),
+    () => handleDemoQuarterlyPlans(path, method, params, body),
     () => handleDemoMisc(path, method, params, body),
   ];
 

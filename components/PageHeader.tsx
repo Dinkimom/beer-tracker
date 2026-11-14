@@ -17,12 +17,19 @@ const SettingsModal = dynamic(
   { ssr: false }
 );
 
-export type SprintTab = 'backlog' | 'board' | 'burndown' | 'metrics' | 'retro';
+export type SprintTab = 'backlog' | 'board' | 'burndown' | 'metrics' | 'quarter' | 'retro';
 
-function buildSprintTabItems(t: (key: string) => string): Array<PageHeaderMainPageTabItem<SprintTab>> {
+function buildSprintTabItems(
+  t: (key: string) => string,
+  showQuarterTab: boolean
+): Array<PageHeaderMainPageTabItem<SprintTab>> {
+  const quarterTab: Array<PageHeaderMainPageTabItem<SprintTab>> = showQuarterTab
+    ? [{ id: 'quarter', icon: 'calendar', label: t('header.sprintTabs.quarter') }]
+    : [];
   return [
     { id: 'backlog', icon: 'backlog', label: t('header.sprintTabs.backlog') },
     { id: 'board', icon: 'timeline', label: t('header.sprintTabs.board') },
+    ...quarterTab,
     {
       id: 'burndown',
       icon: 'trend-down',
@@ -39,6 +46,8 @@ interface PageHeaderProps {
   adminHref?: string | null;
   boardName?: string | null;
   selectedBoardId?: number | null;
+  /** Вкладка квартального плана: пока только там, где у плана есть данные (демо). */
+  showQuarterTab?: boolean;
   onBoardChange?: (boardId: number | null) => void;
   onTabChange?: (tab: SprintTab) => void;
 }
@@ -48,6 +57,7 @@ export function PageHeader({
   adminHref,
   boardName,
   selectedBoardId,
+  showQuarterTab = false,
   onBoardChange,
   onTabChange,
 }: PageHeaderProps) {
@@ -58,7 +68,7 @@ export function PageHeader({
   const [settingsRequested, setSettingsRequested] = useState(false);
   const isChristmasPeriod = isInChristmasPeriod();
 
-  const sprintTabs = useMemo(() => buildSprintTabItems(t), [t]);
+  const sprintTabs = useMemo(() => buildSprintTabItems(t, showQuarterTab), [showQuarterTab, t]);
 
   const showChristmasLights = isChristmasPeriod && christmasThemeEnabled;
   const showBoardToolbar = selectedBoardId !== undefined;

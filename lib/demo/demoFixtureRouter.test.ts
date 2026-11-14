@@ -148,15 +148,62 @@ describe('handleDemoFixtureRequest', () => {
     );
     expect(availability.status).toBe(200);
     expect(availability.data).toEqual({
-      events: [
+      events: expect.arrayContaining([
         expect.objectContaining({
           endDate: '2026-10-14',
           eventType: 'vacation',
           memberId: DEMO_DEV_CAROL,
           startDate: '2026-10-13',
         }),
-      ],
+      ]),
     });
+  });
+
+  it('serves the quarterly plan and keeps edits and availability changes', () => {
+    const plan = handleDemoFixtureRequest(cfg('get', '/quarterly-plans?year=2026&quarter=4'));
+    const data = plan.data as {
+      plan: { assignments: unknown[]; directions: unknown[]; epics: unknown[]; teams: Array<{ sprints: unknown[] }> };
+    };
+    expect(data.plan.teams).toHaveLength(2);
+    expect(data.plan.teams[0]!.sprints).toHaveLength(7);
+    expect(data.plan.teams[1]!.sprints).toHaveLength(8);
+    expect(data.plan.directions.length).toBeGreaterThan(0);
+
+    handleDemoFixtureRequest(
+      cfg('put', '/quarterly-plans', {
+        data: { assignments: [], directions: [], epics: [], quarter: 4, year: 2026 },
+      })
+    );
+    const saved = handleDemoFixtureRequest(cfg('get', '/quarterly-plans?year=2026&quarter=4'));
+    expect((saved.data as typeof data).plan.directions).toEqual([]);
+
+    const empty = handleDemoFixtureRequest(cfg('get', '/quarterly-plans?year=2027&quarter=1'));
+    expect((empty.data as typeof data).plan.epics).toEqual([]);
+
+    const created = handleDemoFixtureRequest(
+      cfg('post', '/quarterly-plans/availability/board-events', {
+        data: {
+          boardId: DEMO_BOARD_ID,
+          endDate: '2026-12-04',
+          eventType: 'vacation',
+          memberId: DEMO_DEV_CAROL,
+          memberName: 'Carol',
+          startDate: '2026-11-30',
+        },
+      })
+    ).data as { id: string };
+    const listEvents = () =>
+      (
+        handleDemoFixtureRequest(
+          cfg('get', `/quarterly-plans/availability/board-events?boardId=${DEMO_BOARD_ID}`)
+        ).data as { events: Array<{ id: string }> }
+      ).events.map((event) => event.id);
+    expect(listEvents()).toContain(created.id);
+
+    handleDemoFixtureRequest(
+      cfg('delete', `/quarterly-plans/availability/board-events?id=${created.id}&boardId=${DEMO_BOARD_ID}`)
+    );
+    expect(listEvents()).not.toContain(created.id);
   });
 
   it('returns swimlane fact changelogs keyed by issue', () => {
