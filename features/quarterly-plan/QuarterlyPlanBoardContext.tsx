@@ -86,6 +86,8 @@ export interface QuarterlyPlanBoardContextValue {
   notesByRow: ReadonlyMap<string, QuarterlyPlanNote[]>;
   /** Включён инструмент «Заметка»: клик по неделе любой строки ставит заметку. */
   noteTool: boolean;
+  /** Назначения, исполнитель которых больше не в команде эпика (QI6). */
+  notInTeamAssignmentIds: ReadonlySet<string>;
   timelineStart: Date;
   /** Привязанные эпики трекера по ключу: название, статус, «сделано» (QE5, QE7). */
   trackerEpics: Readonly<Record<string, QuarterlyPlanTrackerEpic>>;

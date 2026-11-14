@@ -169,6 +169,7 @@ export function QuarterlyPlanPage() {
       ),
       memberById: new Map(members.map((member) => [member.id, member])),
       memberToneById: buildToneByKey(members.map((member) => member.id)),
+      notInTeamAssignmentIds: new Set(issues.filter((issue) => issue.notInTeam).map((issue) => issue.assignmentId)),
       ...linksBoard,
       ...notesBoard,
       onBarChange: (assignmentId, span) =>
@@ -292,14 +293,17 @@ export function QuarterlyPlanPage() {
           </div>
         )}
         <QuarterlyPlanToolbar
-          awayCount={issues.filter((issue) => issue.away).length}
-          blockedCount={issues.filter((issue) => issue.blocked).length}
           hideDone={hideDone}
-          issueCount={issues.length}
+          issueCounts={{
+            away: issues.filter((issue) => issue.away).length,
+            blocked: issues.filter((issue) => issue.blocked).length,
+            notInTeam: issues.filter((issue) => issue.notInTeam).length,
+            parallel: issues.filter((issue) => issue.parallel).length,
+            total: issues.length,
+          }}
           linkTool={planLinks.armed}
           noteColor={notes.noteColor}
           noteTool={notes.noteTool}
-          parallelCount={issues.filter((issue) => issue.parallel).length}
           quarterRef={quarterRef}
           onHideDoneChange={setHideDone}
           onLinkToolChange={(active) => {

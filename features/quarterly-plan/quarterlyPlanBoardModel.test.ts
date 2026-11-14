@@ -128,6 +128,13 @@ describe('collectQuarterlyPlanIssues', () => {
     expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'bob-2']);
   });
 
+  it('исполнитель ушёл из команды эпика — проблема, назначение остаётся (QI6)', () => {
+    const gone = { ...plan, assignments: [{ epicId: 'e1', id: 'gone', memberId: 'staff:left', startWeek: 9, weeks: 1 }] };
+    expect(collectQuarterlyPlanIssues(gone, absence, false)).toEqual([
+      { assignmentId: 'gone', away: false, blocked: false, directionId: 'd1', notInTeam: true, parallel: false, teamId: 'team' },
+    ]);
+  });
+
   it('готовность привязанного эпика — по трекеру, а не по ручному статусу (QE8)', () => {
     const linked = {
       ...plan,

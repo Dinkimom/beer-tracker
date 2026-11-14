@@ -9,6 +9,7 @@ import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
+import { useI18n } from '@/contexts/LanguageContext';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
@@ -73,6 +74,7 @@ export function QuarterlyPlanBar({
   risks,
   toneClass,
 }: QuarterlyPlanBarProps) {
+  const { t } = useI18n();
   const {
     absenceByMember,
     assignmentsByMember,
@@ -101,7 +103,8 @@ export function QuarterlyPlanBar({
   );
   const spanDays = span.weeks * QUARTER_WORKING_DAYS_PER_WEEK;
   const spanFirstDay = span.startWeek * QUARTER_WORKING_DAYS_PER_WEEK;
-  const name = member?.name ?? assignment.memberId;
+  // Человека нет ни в одной команде плана — имени у доски нет (QI6).
+  const name = member?.name ?? t('quarterlyPlan.formerMember');
 
   const focusNonce = focusedIssue?.assignmentId === assignment.id ? focusedIssue.nonce : null;
   useEffect(() => {

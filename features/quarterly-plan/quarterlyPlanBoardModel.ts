@@ -205,13 +205,15 @@ interface QuarterlyPlanIssue {
   /** Начинается раньше, чем закончится назначение, которого оно ждёт. */
   blocked: boolean;
   directionId: string;
+  /** Исполнитель больше не в команде эпика (QI6). */
+  notInTeam: boolean;
   /** В те же недели у человека стоит другой эпик. */
   parallel: boolean;
   teamId: string;
 }
 
 /**
- * Назначения с проблемами (отсутствие, второй эпик, нарушенный порядок) в порядке доски: команда → направление → эпик → начало полосы.
+ * Назначения с проблемами (отсутствие, второй эпик, нарушенный порядок, исполнитель не в команде) в порядке доски: команда → направление → эпик → начало полосы.
  * По этому списку считает счётчик тулбара и ходит переход «к следующему пересечению».
  * `hideDone` убирает готовые эпики — их строк на доске нет.
  */
@@ -221,6 +223,7 @@ export function collectQuarterlyPlanIssues(
   hideDone: boolean
 ): QuarterlyPlanIssue[] {
   const violated = violatedBlockersByAssignment(plan);
+  const memberIdsByTeam = new Map(plan.teams.map((team) => [team.id, new Set(team.members.map((member) => member.id))]));
   const rows = plan.teams.flatMap((team) =>
     plan.directions
       .filter((direction) => direction.teamId === team.id)
@@ -239,8 +242,9 @@ export function collectQuarterlyPlanIssues(
         const away = absentDaysWithinSpan(assignment, absentDays).length > 0;
         const parallel = overlappingAssignments(assignment, plan.assignments).length > 0;
         const blocked = violated.has(assignment.id);
-        return away || parallel || blocked
-          ? [{ assignmentId: assignment.id, away, blocked, directionId, parallel, teamId }]
+        const notInTeam = !memberIdsByTeam.get(teamId)?.has(assignment.memberId);
+        return away || parallel || blocked || notInTeam
+          ? [{ assignmentId: assignment.id, away, blocked, directionId, notInTeam, parallel, teamId }]
           : [];
       })
   );

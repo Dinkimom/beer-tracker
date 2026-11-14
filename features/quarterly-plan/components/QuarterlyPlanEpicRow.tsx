@@ -49,6 +49,7 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
     epicById,
     memberById,
     memberToneById,
+    notInTeamAssignmentIds,
     onCellClick,
     onDraftSubmit,
     onRowMenu,
@@ -89,6 +90,7 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
       t('quarterlyPlan.issueBlocked', { title: titleOf(blocker.epicId) })
     );
     return [
+      ...(notInTeamAssignmentIds.has(assignment.id) ? [t('quarterlyPlan.issueNotInTeam')] : []),
       ...away,
       ...(parallel.length > 0
         ? [t('quarterlyPlan.issueParallel', { titles: [...new Set(parallel)].join(', ') })]

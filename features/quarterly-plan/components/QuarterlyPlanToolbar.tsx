@@ -27,21 +27,18 @@ const PILL_CLASS = 'h-8 min-h-0 shrink-0 gap-1.5 whitespace-nowrap !rounded-lg !
 const DIVIDER_CLASS = 'mx-1 h-5 w-px shrink-0 bg-black/10 dark:bg-white/15';
 
 interface QuarterlyPlanToolbarProps {
-  /** Назначения, которые пересекаются с отсутствием человека. */
-  awayCount: number;
-  /** Назначения, которые начинаются раньше, чем закончится то, чего они ждут. */
-  blockedCount: number;
   hideDone: boolean;
-  /** Назначения, которые пересекаются с отсутствием или с другим эпиком человека. */
-  issueCount: number;
+  /**
+   * Проблемные назначения: всего и по причинам — отсутствие, порядок работ, исполнитель не в команде,
+   * второй эпик в те же недели. Одно назначение может попасть в несколько причин.
+   */
+  issueCounts: { away: number; blocked: number; notInTeam: number; parallel: number; total: number };
   /** Включён инструмент «Связь»: клики по полосам ставят зависимость. */
   linkTool: boolean;
   /** Цвет листа, которым инструмент «Заметка» поставит следующую заметку. */
   noteColor: StickyNoteColor;
   /** Включён инструмент «Заметка»: следующий клик по неделе ставит заметку. */
   noteTool: boolean;
-  /** Назначения, у которых в те же недели стоит другой эпик человека. */
-  parallelCount: number;
   quarterRef: QuarterRef;
   onHideDoneChange: (hideDone: boolean) => void;
   /** Перейти к следующему назначению с пересечением. */
@@ -59,14 +56,11 @@ interface QuarterlyPlanToolbarProps {
  * Счётчик — кнопка: ведёт к следующей проблемной полосе; в подсказке — разбивка по причинам.
  */
 export function QuarterlyPlanToolbar({
-  awayCount,
-  blockedCount,
   hideDone,
-  issueCount,
+  issueCounts,
   linkTool,
   noteColor,
   noteTool,
-  parallelCount,
   quarterRef,
   onHideDoneChange,
   onLinkToolChange,
@@ -152,15 +146,18 @@ export function QuarterlyPlanToolbar({
           <Icon className="h-4 w-4" name={hideDone ? 'eye-off' : 'eye'} />
           {t('quarterlyPlan.hideDone')}
         </Button>
-        {issueCount > 0 ? (
+        {issueCounts.total > 0 ? (
           <>
             <span aria-hidden className={DIVIDER_CLASS} />
             <TextTooltip
               content={
                 <div className="flex flex-col gap-1">
-                  <span>{t('quarterlyPlan.issuesAway', { count: awayCount })}</span>
-                  <span>{t('quarterlyPlan.issuesParallel', { count: parallelCount })}</span>
-                  <span>{t('quarterlyPlan.issuesBlocked', { count: blockedCount })}</span>
+                  <span>{t('quarterlyPlan.issuesAway', { count: issueCounts.away })}</span>
+                  <span>{t('quarterlyPlan.issuesParallel', { count: issueCounts.parallel })}</span>
+                  <span>{t('quarterlyPlan.issuesBlocked', { count: issueCounts.blocked })}</span>
+                  {issueCounts.notInTeam > 0 ? (
+                    <span>{t('quarterlyPlan.issuesNotInTeam', { count: issueCounts.notInTeam })}</span>
+                  ) : null}
                   <span className="opacity-70">{t('quarterlyPlan.issuesNext')}</span>
                 </div>
               }
@@ -172,7 +169,7 @@ export function QuarterlyPlanToolbar({
                 onClick={onNextIssue}
               >
                 <Icon className="h-3.5 w-3.5" name="alert-triangle" />
-                {t('quarterlyPlan.issues', { count: issueCount })}
+                {t('quarterlyPlan.issues', { count: issueCounts.total })}
               </Button>
             </TextTooltip>
           </>
