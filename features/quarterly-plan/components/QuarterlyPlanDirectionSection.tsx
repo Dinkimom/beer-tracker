@@ -14,6 +14,7 @@ import {
   QUARTER_ROW_PADDING_PX,
 } from '../quarterlyPlanBoardModel';
 
+import { QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
 import { QuarterlyPlanDraftMark } from './QuarterlyPlanDraftMark';
 import { QuarterlyPlanEpicRow } from './QuarterlyPlanEpicRow';
 import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
@@ -85,6 +86,7 @@ export function QuarterlyPlanDirectionSection({
                   <QuarterlyPlanDraftMark id={direction.id} />
                 </button>
                 {direction.issueKey ? <QuarterlyPlanIssueKey issueKey={direction.issueKey} /> : null}
+                <QuarterlyPlanDraftItemToolbar id={direction.id} placement="flow" />
                 {unplannedCount > 0 ? (
                   <span className="shrink-0 text-xs text-ds-text-muted">
                     {t('quarterlyPlan.unplannedCount', { count: unplannedCount })}

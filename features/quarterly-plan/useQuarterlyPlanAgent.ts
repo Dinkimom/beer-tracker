@@ -1,6 +1,8 @@
 'use client';
 
-import type { QuarterlyPlanDraftView } from '@/lib/api/quarterlyPlans';
+import type { QuarterlyPlanDraftReview } from './QuarterlyPlanBoardContext';
+import type { QuarterlyPlanDraftDecision, QuarterlyPlanDraftView } from '@/lib/api/quarterlyPlans';
+import type { QuarterlyPlanDraftItem } from '@/lib/quarterlyPlans/quarterlyPlanDraftItems';
 import type { QuarterlyPlan, QuarterlyPlanContent, QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,7 +23,7 @@ import {
   fetchQuarterlyPlanDraft,
   rejectQuarterlyPlanDraft,
 } from '@/lib/api/quarterlyPlans';
-import { diffQuarterlyPlanDraft } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
+import { diffQuarterlyPlanDraft, withRemovedFromDraft } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
 
 /**
  * Черновик агента и сессии по квартальному плану (QM9–QM11). Своего realtime-канала у квартала нет:
@@ -53,17 +55,18 @@ export function useQuarterlyPlanAgent(ref: QuarterRef, setVersion: (version: num
   };
 
   const approve = useMutation({
-    mutationFn: (proposalId: string) => approveQuarterlyPlanDraft({ quarter, year }, proposalId),
-    onSuccess: (result, proposalId) => {
+    mutationFn: (decision: QuarterlyPlanDraftDecision) => approveQuarterlyPlanDraft({ quarter, year }, decision),
+    onSuccess: (result, decision) => {
       if ('error' in result) {
         toast.error(t('quarterlyPlan.draft.applyFailed', { error: result.error }));
       } else {
-        toast.success(t('quarterlyPlan.draft.approved'));
         setVersion(result.version);
-        // Принятый план — сразу на доску: перечитанный придёт после запроса в трекер по новым ключам,
-        // а черновик к тому времени уже пропадёт.
-        const accepted = draftQuery.data?.proposalId === proposalId ? draftQuery.data.preview?.content : null;
+        // Принятый целиком план — сразу на доску: перечитанный придёт после запроса в трекер по новым ключам,
+        // а черновик к тому времени уже пропадёт. Пункты по одному — как на доске спринта, без тоста.
+        const accepted =
+          !decision.itemIds && draftQuery.data?.proposalId === decision.proposalId ? draftQuery.data.preview?.content : null;
         if (accepted) {
+          toast.success(t('quarterlyPlan.draft.approved'));
           queryClient.setQueryData<QuarterlyPlan>(['quarterlyPlan', year, quarter], (plan) =>
             plan ? { ...plan, ...accepted } : plan
           );
@@ -73,7 +76,7 @@ export function useQuarterlyPlanAgent(ref: QuarterRef, setVersion: (version: num
     },
   });
   const reject = useMutation({
-    mutationFn: (proposalId: string) => rejectQuarterlyPlanDraft({ quarter, year }, proposalId),
+    mutationFn: (decision: QuarterlyPlanDraftDecision) => rejectQuarterlyPlanDraft({ quarter, year }, decision),
     onSuccess: refresh,
   });
 
@@ -94,25 +97,56 @@ export function useQuarterlyPlanAgent(ref: QuarterRef, setVersion: (version: num
 }
 
 /**
- * Показ черновика на доске (QM9): план с черновиком, что в нём нового и изменённого, скрыть/показать.
- * Пока черновик показан, правки плана не сохраняются — правка легла бы не туда, куда смотрит человек.
+ * Показ черновика на доске (QM9, QM10): план с черновиком (убранное — на месте, пока о нём не решили), что в нём
+ * нового, изменённого и убранного, пункты для ✓/✗ на доске, скрыть/показать. Пока черновик показан, правки плана
+ * не сохраняются — правка легла бы не туда, куда смотрит человек.
  */
 export function useQuarterlyPlanDraftPreview(input: {
+  /** Решения о черновике (`useQuarterlyPlanAgent`). */
+  agent: Pick<ReturnType<typeof useQuarterlyPlanAgent>, 'approve' | 'brand' | 'busy' | 'reject'>;
   draft: QuarterlyPlanDraftView | null;
   savedPlan: QuarterlyPlan | null;
   saveEdit: (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => void;
 }) {
   const { t } = useI18n();
-  const { draft, savedPlan, saveEdit } = input;
+  const { agent, draft, savedPlan, saveEdit } = input;
   /** Скрытый черновик — по его версии: новый черновик снова показывается. */
   const [hiddenProposalId, setHiddenProposalId] = useState<string | null>(null);
   const preview = draft?.preview?.content ?? null;
   const showing = Boolean(preview && draft?.proposalId !== hiddenProposalId);
-  const diff = useMemo(() => (savedPlan && preview ? diffQuarterlyPlanDraft(savedPlan, preview) : null), [preview, savedPlan]);
-  const plan = useMemo(
-    () => (savedPlan && showing && preview ? { ...savedPlan, ...preview } : savedPlan),
-    [preview, savedPlan, showing]
-  );
+  const shown = useMemo(() => {
+    if (!savedPlan || !preview || !showing) return null;
+    const diff = diffQuarterlyPlanDraft(savedPlan, preview);
+    return {
+      after: { ...savedPlan, ...preview },
+      board: { ...savedPlan, ...withRemovedFromDraft(savedPlan, preview) },
+      marks: diff,
+    };
+  }, [preview, savedPlan, showing]);
+  const { approve, brand, busy, reject } = agent;
+  const proposalId = draft?.proposalId ?? null;
+  const items = shown ? (draft?.items ?? null) : null;
+  const board = shown?.board ?? null;
+  /** ✓/✗ пунктов на доске (QM10): пока прошлое решение не дошло, новое не уходит. */
+  const review = useMemo<QuarterlyPlanDraftReview | null>(() => {
+    if (!items?.length || !board || !proposalId) return null;
+    const toIdOfLink = new Map(board.links.map((link) => [link.id, link.toId]));
+    const linkItemsByAssignment = new Map<string, QuarterlyPlanDraftItem[]>();
+    for (const item of items) {
+      const toId = item.kind === 'link' ? toIdOfLink.get(item.id) : undefined;
+      if (toId) linkItemsByAssignment.set(toId, [...(linkItemsByAssignment.get(toId) ?? []), item]);
+    }
+    const decide = (run: (decision: QuarterlyPlanDraftDecision) => void) => (itemId: string) => {
+      if (!busy) run({ itemIds: [itemId], proposalId });
+    };
+    return {
+      brand,
+      items: new Map(items.map((item) => [item.id, item])),
+      linkItemsByAssignment,
+      onApprove: decide(approve),
+      onReject: decide(reject),
+    };
+  }, [approve, board, brand, busy, items, proposalId, reject]);
   const applyEdit = useCallback(
     (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => {
       if (showing) {
@@ -124,10 +158,15 @@ export function useQuarterlyPlanDraftPreview(input: {
     [saveEdit, showing, t]
   );
   return {
+    /** План, каким он станет после черновика: по нему считаются проблемы плана. */
+    after: shown?.after ?? savedPlan,
     applyEdit,
-    diff,
-    marks: showing && diff ? { added: diff.added, changed: diff.changed } : null,
-    plan,
+    /** Пункты на доске; пусто — черновик скрыт или не применяется. */
+    itemCount: items?.length ?? 0,
+    marks: shown?.marks ?? null,
+    /** План на доске: после черновика и с убранным на месте. */
+    plan: shown?.board ?? savedPlan,
+    review,
     showing,
     toggle: () => setHiddenProposalId(showing ? (draft?.proposalId ?? null) : null),
   };

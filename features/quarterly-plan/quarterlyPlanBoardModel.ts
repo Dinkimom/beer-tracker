@@ -1,4 +1,5 @@
 import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
+import type { QuarterlyPlanDraftDiff } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
 import type { MemberAbsenceDays } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import type {
   QuarterlyPlanAssignment,
@@ -185,19 +186,17 @@ export function formatWeekRange(week: QuarterWeek): string {
 export const QUARTER_ROW_ACTION_CLASS =
   '!h-6 !w-6 opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100';
 
-/** Что показанный черновик агента сделал со строкой или полосой (QM9); null — не трогал или черновика нет. */
-export function draftMarkOf(
-  draftMarks: { added: ReadonlySet<string>; changed: ReadonlySet<string> } | null,
-  id: string
-): 'added' | 'changed' | null {
-  if (draftMarks?.added.has(id)) return 'added';
-  return draftMarks?.changed.has(id) ? 'changed' : null;
+/** Что показанный черновик агента сделал со строкой, полосой или заметкой (QM9); null — не трогал или черновика нет. */
+export function draftMarkOf(draftMarks: QuarterlyPlanDraftDiff | null, id: string): 'added' | 'changed' | 'removed' | null {
+  if (!draftMarks) return null;
+  if (draftMarks.added.has(id)) return 'added';
+  if (draftMarks.removed.has(id)) return 'removed';
+  return draftMarks.changed.has(id) ? 'changed' : null;
 }
 
-/** Обводка полосы, которую добавил или изменил показанный черновик агента: пунктир; иначе пусто. */
-export function draftOutlineClass(
-  draftMarks: { added: ReadonlySet<string>; changed: ReadonlySet<string> } | null,
-  id: string
-): string {
-  return draftMarkOf(draftMarks, id) ? 'outline-dashed outline-2 outline-offset-1 outline-blue-500' : '';
+/** Обводка того, что тронул показанный черновик агента: синий пунктир, убранное — красный и бледнее; иначе пусто. */
+export function draftOutlineClass(draftMarks: QuarterlyPlanDraftDiff | null, id: string): string {
+  const mark = draftMarkOf(draftMarks, id);
+  if (mark === 'removed') return 'opacity-60 outline-dashed outline-2 outline-offset-1 outline-red-500';
+  return mark ? 'outline-dashed outline-2 outline-offset-1 outline-blue-500' : '';
 }

@@ -43,6 +43,33 @@ describe('applyQuarterlyPlanOps', () => {
     expect(BASE.content.assignments).toEqual([{ epicId: 'id2', id: 'id3', memberId: 'alice', startWeek: 0, weeks: 2 }]);
   });
 
+  it('у каждой операции — её сущность: созданная, изменённая или удалённая; взятое существующее направление — ничья (QM10)', () => {
+    expect(BASE.targets).toEqual(['id1', 'id2', 'id3']);
+    const next = ok(
+      [
+        { op: 'addDirection', teamId: 't1', title: 'checkout' },
+        { epicId: 'id2', op: 'updateEpic', title: 'Payments' },
+        { assignmentId: 'id3', op: 'removeAssignment' },
+      ],
+      BASE.content
+    );
+    expect(next.targets).toEqual([null, 'id2', 'id3']);
+  });
+
+  it('newId получает номер операции', () => {
+    const result = applyQuarterlyPlanOps({
+      content: EMPTY,
+      newId: (opIndex) => `op${opIndex}`,
+      ops: [
+        { op: 'addDirection', ref: '$d', teamId: 't1', title: 'Checkout' },
+        { directionId: '$d', op: 'addEpic', title: 'Payment API' },
+      ],
+      ref: Q4,
+      teams,
+    });
+    expect(result.ok && result.targets).toEqual(['op0', 'op1']);
+  });
+
   it('пакет атомарный: ошибка во второй операции не меняет план и называет номер', () => {
     const result = run(
       [

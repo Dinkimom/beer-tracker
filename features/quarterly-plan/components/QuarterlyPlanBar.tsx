@@ -25,6 +25,7 @@ import {
 } from '../quarterlyPlanBoardModel';
 import { useQuarterSpanDrag } from '../useQuarterSpanDrag';
 
+import { draftItemsOf, QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
 import { QuarterlyPlanResizeHandle } from './QuarterlyPlanResizeHandle';
 
 const BAR_GAP_PX = 2;
@@ -87,9 +88,12 @@ export function QuarterlyPlanBar({
     onLinkBarClick,
     weeks,
     draftMarks,
+    draftReview,
   } = useQuarterlyPlanBoard();
   /** Полосу добавил или изменил показанный черновик агента (QM9) — пунктирная обводка. */
   const draftOutline = draftOutlineClass(draftMarks, assignment.id);
+  // ✓/✗ пункта черновика — под полосой: она поверх соседних, чтобы их не закрывали.
+  const draftPending = draftItemsOf(draftReview, assignment.id).length > 0;
   const isLinkSource = linking.sourceId === assignment.id;
   const isLinkTarget = canLinkTo(assignment.id);
   const weekCount = weeks.length;
@@ -129,7 +133,7 @@ export function QuarterlyPlanBar({
         left: `calc(${(span.startWeek / weekCount) * 100}% + ${BAR_GAP_PX}px)`,
         top: QUARTER_ROW_PADDING_PX + lane * QUARTER_LANE_HEIGHT_PX + 2,
         width: `calc(${(span.weeks / weekCount) * 100}% - ${BAR_GAP_PX * 2}px)`,
-        zIndex: drag ? ZIndex.stickyInContent - 1 : ZIndex.contentInteractive,
+        zIndex: drag ? ZIndex.stickyInContent - 1 : ZIndex.contentInteractive + Number(draftPending),
       }}
       {...rootProps}
     >
@@ -217,6 +221,7 @@ export function QuarterlyPlanBar({
                 <QuarterlyPlanResizeHandle active={drag?.mode === 'start'} rounded side="left" onPointerDown={beginDrag('start')} />
         <QuarterlyPlanResizeHandle active={drag?.mode === 'end'} rounded side="right" onPointerDown={beginDrag('end')} />
       </div>
+      <QuarterlyPlanDraftItemToolbar hidden={drag !== null} id={assignment.id} placement="below" />
     </div>
   );
 }

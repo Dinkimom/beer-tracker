@@ -2,6 +2,7 @@
  * API квартального плана: общий на организацию, все команды в одной сетке.
  */
 
+import type { QuarterlyPlanDraftItem } from '@/lib/quarterlyPlans/quarterlyPlanDraftItems';
 import type {
   QuarterlyPlan,
   QuarterlyPlanContent,
@@ -47,6 +48,8 @@ export interface QuarterlyPlanDraftView {
   createdAt: string;
   /** Пакет больше не применяется к плану; черновик остаётся только отклонить. */
   error: string | null;
+  /** Пункты черновика — сущности плана, которые принимают и отклоняют по одному (QM10). */
+  items: QuarterlyPlanDraftItem[];
   /** План, каким он станет после черновика; null — не применился. */
   preview: { content: QuarterlyPlanContent } | null;
   proposalId: string;
@@ -60,11 +63,20 @@ export async function fetchQuarterlyPlanDraft({ quarter, year }: QuarterRef): Pr
   return data.draft ?? null;
 }
 
-/** Принять черновик целиком; ошибка — текстом (пакет не применился, план не изменился). */
-export async function approveQuarterlyPlanDraft(ref: QuarterRef, proposalId: string): Promise<{ error: string } | { version: number }> {
+/** Решение о черновике: весь (`itemIds` нет) или эти пункты (QM10). */
+export interface QuarterlyPlanDraftDecision {
+  itemIds?: readonly string[];
+  proposalId: string;
+}
+
+/** Принять черновик или его пункты; ошибка — текстом (пакет не применился, план не изменился). */
+export async function approveQuarterlyPlanDraft(
+  ref: QuarterRef,
+  decision: QuarterlyPlanDraftDecision
+): Promise<{ error: string } | { version: number }> {
   const response = await getPlannerBeerTrackerApi().post<{ error?: string; version?: number }>(
     '/quarterly-plans/draft',
-    { ...ref, proposalId },
+    { ...ref, ...decision },
     { validateStatus: (status) => status < 500 }
   );
   return response.status < 300 && response.data.version != null
@@ -72,6 +84,6 @@ export async function approveQuarterlyPlanDraft(ref: QuarterRef, proposalId: str
     : { error: response.data.error ?? 'error' };
 }
 
-export async function rejectQuarterlyPlanDraft(ref: QuarterRef, proposalId: string): Promise<void> {
-  await getPlannerBeerTrackerApi().delete('/quarterly-plans/draft', { data: { ...ref, proposalId } });
+export async function rejectQuarterlyPlanDraft(ref: QuarterRef, decision: QuarterlyPlanDraftDecision): Promise<void> {
+  await getPlannerBeerTrackerApi().delete('/quarterly-plans/draft', { data: { ...ref, ...decision } });
 }

@@ -21,6 +21,7 @@ import { resizeNoteRows } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
+  draftOutlineClass,
   QUARTER_LANE_HEIGHT_PX,
   QUARTER_STICKY_LABEL_LEFT,
   quarterNoteBoxStyle,
@@ -28,6 +29,7 @@ import {
 } from '../quarterlyPlanBoardModel';
 import { useQuarterSpanDrag } from '../useQuarterSpanDrag';
 
+import { draftItemsOf, QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
 import { QuarterlyPlanResizeHandle } from './QuarterlyPlanResizeHandle';
 
 /** Высота строки текста заметки (`text-xs leading-snug`) — по ней считаем, сколько строк помещается. */
@@ -63,7 +65,8 @@ function noteRowAtPoint(x: number, y: number, dragged: HTMLElement | null): Quar
  */
 export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteChipProps) {
   const { t } = useI18n();
-  const { noteEditing, onNoteChange, onNoteClick, onNoteDelete, onNoteDrag, weeks } = useQuarterlyPlanBoard();
+  const { draftMarks, draftReview, noteEditing, onNoteChange, onNoteClick, onNoteDelete, onNoteDrag, weeks } =
+    useQuarterlyPlanBoard();
   const isDark = useDocumentDarkClass();
   const tiltRef = useStickyNoteTilt(true, note.id);
   const weekCount = weeks.length;
@@ -109,13 +112,13 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
     <div
       ref={rootRef}
       aria-label={note.text || t('comments.placeholder')}
-      className={`group absolute cursor-grab touch-none select-none focus-visible:outline-none active:cursor-grabbing ${focused ? 'pointer-events-none opacity-0' : ''}`}
+      className={`group absolute cursor-grab touch-none select-none rounded focus-visible:outline-none active:cursor-grabbing ${focused ? 'pointer-events-none opacity-0' : ''} ${draftOutlineClass(draftMarks, note.id)}`}
       data-quarter-note={note.id}
       style={{
         ...quarterNoteBoxStyle({ ...shown, rows }, lane, topPx, weekCount),
         ...(carried ? { transform: `translate(${drag.dx}px, ${drag.dy}px)` } : {}),
         // Стикер в руке — поверх строк, в том числе липкой строки команды.
-        zIndex: drag ? ZIndex.stickyInContent + 2 : ZIndex.contentInteractive,
+        zIndex: drag ? ZIndex.stickyInContent + 2 : ZIndex.contentInteractive + Number(draftItemsOf(draftReview, note.id).length > 0),
       }}
       {...rootProps}
     >
@@ -160,6 +163,7 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
           <SwimlaneCommentDeleteButton color={note.color} tilt onDelete={() => onNoteDelete(note.id)} />
         </span>
       )}
+      <QuarterlyPlanDraftItemToolbar hidden={drag !== null} id={note.id} placement="below" />
     </div>
   );
 }

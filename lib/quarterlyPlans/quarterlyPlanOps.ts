@@ -117,12 +117,14 @@ interface QuarterlyPlanOpsTeams {
 }
 
 type ApplyQuarterlyPlanOpsResult =
-  | { content: QuarterlyPlanContent; ok: true; refs: Record<string, string> }
+  | { content: QuarterlyPlanContent; ok: true; refs: Record<string, string>; targets: (string | null)[] }
   | { error: string; ok: false; opIndex: number };
 
 class OpError extends Error {}
 
 interface OpContext {
+  /** Сущность, которую создала текущая операция; null — не создавала (или взяла существующую). */
+  created: string | null;
   /** `$имя` → id сущности, созданной раньше в пакете. */
   refs: Map<string, string>;
   teams: QuarterlyPlanOpsTeams;
@@ -142,6 +144,12 @@ function remember(ctx: OpContext, name: string | undefined, id: string): void {
   if (!name) return;
   if (ctx.refs.has(name)) throw new OpError(`ref ${name} is already used in this batch`);
   ctx.refs.set(name, id);
+}
+
+/** Операция создала сущность: её id — цель операции и, если есть `ref`, имя для следующих операций. */
+function created(ctx: OpContext, name: string | undefined, id: string): void {
+  remember(ctx, name, id);
+  ctx.created = id;
 }
 
 /** Срок в неделях квартала; даты переводятся по QW5. Целые недели в пределах квартала (QA1). */
@@ -208,9 +216,13 @@ const handlers: Handlers = {
     const existing = plan.directions.find(
       (direction) => direction.teamId === teamId && direction.title.toLowerCase() === op.title.toLowerCase()
     );
-    const id = existing?.id ?? ctx.newId();
-    remember(ctx, op.ref, id);
-    return existing ? plan : addDirection(plan, { id, teamId, title: op.title });
+    if (existing) {
+      remember(ctx, op.ref, existing.id);
+      return plan;
+    }
+    const id = ctx.newId();
+    created(ctx, op.ref, id);
+    return addDirection(plan, { id, teamId, title: op.title });
   },
   // Направление привязывают к эпику трекера: название — из трекера (QE5).
   updateDirection: (plan, op, ctx) => {
@@ -231,7 +243,7 @@ const handlers: Handlers = {
     const epicTitle = op.title ?? op.issueKey;
     if (!epicTitle) throw new OpError('epic needs a title or an issueKey');
     const id = ctx.newId();
-    remember(ctx, op.ref, id);
+    created(ctx, op.ref, id);
     return addEpic(plan, {
       directionId,
       id,
@@ -260,7 +272,7 @@ const handlers: Handlers = {
     const epicId = findOr(plan.epics, resolveId(ctx, op.epicId), 'epic').id;
     requireTeamMember(ctx, plan, epicId, op.memberId);
     const id = ctx.newId();
-    remember(ctx, op.ref, id);
+    created(ctx, op.ref, id);
     return addAssignment(plan, { epicId, id, memberId: op.memberId, ...resolveSpan(ctx, op.span) });
   },
   updateAssignment: (plan, op, ctx) => {
@@ -280,7 +292,7 @@ const handlers: Handlers = {
     if (fromId === toId) throw new OpError('an assignment cannot wait for itself');
     if (areLinked(plan.links, fromId, toId)) throw new OpError(`assignments ${fromId} and ${toId} are already linked`);
     const id = ctx.newId();
-    remember(ctx, op.ref, id);
+    created(ctx, op.ref, id);
     return addLink(plan, { fromId, id, toId });
   },
   removeLink: (plan, op, ctx) => removeLink(plan, findOr(plan.links, resolveId(ctx, op.linkId), 'link').id),
@@ -294,7 +306,7 @@ const handlers: Handlers = {
       text: op.text,
       ...resolveSpan(ctx, op.span),
     };
-    remember(ctx, op.ref, id);
+    created(ctx, op.ref, id);
     return addNote(plan, note);
   },
   updateNote: (plan, op, ctx) => {
@@ -319,33 +331,62 @@ function applyOp(plan: QuarterlyPlanContent, op: QuarterlyPlanOp, ctx: OpContext
   return handler(plan, op, ctx);
 }
 
+/** Поле операции изменения или удаления, где лежит её сущность. */
+const TARGET_FIELD: Partial<Record<QuarterlyPlanOp['op'], string>> = {
+  removeAssignment: 'assignmentId',
+  removeDirection: 'directionId',
+  removeEpic: 'epicId',
+  removeLink: 'linkId',
+  removeNote: 'noteId',
+  updateAssignment: 'assignmentId',
+  updateDirection: 'directionId',
+  updateEpic: 'epicId',
+  updateNote: 'noteId',
+};
+
+/** Сущность плана, которую трогает операция: созданная, изменённая или удалённая; null — ничего (QM5). */
+function targetOf(op: QuarterlyPlanOp, ctx: OpContext): string | null {
+  const field = TARGET_FIELD[op.op];
+  if (!field) return ctx.created;
+  const value = (op as Record<string, unknown>)[field];
+  return typeof value === 'string' ? resolveId(ctx, value) : null;
+}
+
 /**
  * Применяет пакет целиком или не применяет вовсе (QM1): первая ошибка называет номер операции.
  * Люди — в форме клиента (`Developer.id`); план на выходе ещё проверяет сохранение (QS1).
+ * `targets` — сущность каждой операции (по ним черновик делится на пункты, QM10); `newId` получает номер операции.
  */
 export function applyQuarterlyPlanOps(input: {
   content: QuarterlyPlanContent;
-  newId?: () => string;
+  newId?: (opIndex: number) => string;
   ops: readonly QuarterlyPlanOp[];
   ref: QuarterRef;
   teams: QuarterlyPlanOpsTeams;
 }): ApplyQuarterlyPlanOpsResult {
   const weeks = buildQuarterWeeks(input.ref);
+  const makeId = input.newId ?? (() => crypto.randomUUID());
+  let opIndex = 0;
   const ctx: OpContext = {
-    newId: input.newId ?? (() => crypto.randomUUID()),
+    created: null,
+    newId: () => makeId(opIndex),
     refs: new Map(),
     teams: input.teams,
     weekCount: weeks.length,
     weeks,
   };
   let plan = input.content;
-  for (const [opIndex, op] of input.ops.entries()) {
+  const targets: (string | null)[] = [];
+  for (const [index, op] of input.ops.entries()) {
+    opIndex = index;
+    ctx.created = null;
     try {
       plan = applyOp(plan, op, ctx);
+      targets.push(targetOf(op, ctx));
     } catch (error) {
-      if (error instanceof OpError) return { error: `${op.op}: ${error.message}`, ok: false, opIndex };
+      if (error instanceof OpError) return { error: `${op.op}: ${error.message}`, ok: false, opIndex: index };
       throw error;
     }
   }
-  return { content: plan, ok: true, refs: Object.fromEntries(ctx.refs) };
+  return { content: plan, ok: true, refs: Object.fromEntries(ctx.refs), targets };
 }

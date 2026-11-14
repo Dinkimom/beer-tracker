@@ -9,6 +9,7 @@ import {
   loadQuarterlyPlanDraft,
   proposeQuarterlyPlan,
   quarterlyPlanProposalId,
+  rejectQuarterlyPlanDraft,
 } from './quarterlyPlanDrafts';
 import { deleteQuarterlyPlanDraft, findQuarterlyPlanDraft, saveQuarterlyPlanDraft } from './quarterlyPlanDraftsRepository';
 import { applyQuarterlyPlanOps } from './quarterlyPlanService';
@@ -35,6 +36,7 @@ const preview = {
   issues: [],
   refs: {},
   status: 'preview' as const,
+  targets: ['d1'],
   version: 3,
 };
 
@@ -79,10 +81,75 @@ describe('quarterlyPlanDrafts', () => {
 
   it('принятие применяет пакет к текущему плану, а не к версии агента, и убирает черновик (QM10)', async () => {
     vi.mocked(findQuarterlyPlanDraft).mockResolvedValue(storedDraft());
-    vi.mocked(applyQuarterlyPlanOps).mockResolvedValue({ ...preview, status: 'saved', version: 6 } as never);
+    // Предпросмотр — на текущем плане (версия 5), запись — поверх него.
+    vi.mocked(applyQuarterlyPlanOps)
+      .mockResolvedValueOnce({ ...preview, version: 5 } as never)
+      .mockResolvedValueOnce({ ...preview, status: 'saved', version: 6 } as never);
     await approveQuarterlyPlanDraft({ ...owner, proposalId: quarterlyPlanProposalId(ops) });
-    expect(applyQuarterlyPlanOps).toHaveBeenCalledWith(expect.objectContaining({ dryRun: false, ifVersion: 5, ops }));
+    expect(applyQuarterlyPlanOps).toHaveBeenLastCalledWith(expect.objectContaining({ dryRun: false, ifVersion: 5, ops }));
     expect(deleteQuarterlyPlanDraft).toHaveBeenCalled();
+  });
+
+  it('id новых сущностей черновика не меняются от опроса к опросу: пункт на доске остаётся тем же (QM10)', async () => {
+    vi.mocked(findQuarterlyPlanDraft).mockResolvedValue(storedDraft());
+    await loadQuarterlyPlanDraft(owner);
+    await loadQuarterlyPlanDraft(owner);
+    const [first, second] = vi.mocked(applyQuarterlyPlanOps).mock.calls.map(([input]) => input.newId?.(0));
+    expect(first).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(second).toBe(first);
+  });
+
+  describe('решение по пунктам (QM10)', () => {
+    const packageOps: QuarterlyPlanOp[] = [
+      { directionId: 'dir-1', op: 'addEpic', ref: '$e', title: 'Payments' },
+      { epicId: '$e', memberId: 'alice', op: 'assign', span: { startWeek: 0, weeks: 2 } },
+      { noteId: 'note-1', op: 'removeNote' },
+    ];
+    const packageId = quarterlyPlanProposalId(packageOps);
+    const packagePreview = { ...preview, targets: ['epic-new', 'asg-new', 'note-1'] };
+
+    beforeEach(() => {
+      vi.mocked(findQuarterlyPlanDraft).mockResolvedValue({ ...storedDraft(packageId), ops: packageOps });
+    });
+
+    it('пункты черновика — по сущностям, что с ними делает черновик', async () => {
+      vi.mocked(applyQuarterlyPlanOps).mockResolvedValue(packagePreview as never);
+      await expect(loadQuarterlyPlanDraft(owner)).resolves.toMatchObject({
+        items: [
+          { change: 'added', id: 'epic-new', kind: 'epic' },
+          { change: 'added', id: 'asg-new', kind: 'assignment' },
+          { change: 'removed', id: 'note-1', kind: 'note' },
+        ],
+      });
+    });
+
+    it('принять назначение — с эпиком, без которого оно не применится; остальное остаётся черновиком той же версии', async () => {
+      vi.mocked(applyQuarterlyPlanOps)
+        .mockResolvedValueOnce(packagePreview as never)
+        .mockResolvedValueOnce({ ...packagePreview, refs: { $e: 'epic-new' }, status: 'saved', version: 6 } as never)
+        .mockResolvedValueOnce({ ...packagePreview, targets: ['note-1'] } as never);
+      await approveQuarterlyPlanDraft({ ...owner, itemIds: ['asg-new'], proposalId: packageId });
+      expect(applyQuarterlyPlanOps).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ dryRun: false, ops: packageOps.slice(0, 2) })
+      );
+      expect(saveQuarterlyPlanDraft).toHaveBeenCalledWith(
+        expect.objectContaining({ baseVersion: 6, ops: [packageOps[2]], proposalId: packageId })
+      );
+      expect(deleteQuarterlyPlanDraft).not.toHaveBeenCalled();
+    });
+
+    it('отклонить эпик — вместе с назначением на него; последний пункт — черновик убирается', async () => {
+      vi.mocked(applyQuarterlyPlanOps)
+        .mockResolvedValueOnce(packagePreview as never)
+        .mockResolvedValueOnce({ ...packagePreview, targets: ['note-1'] } as never);
+      await expect(rejectQuarterlyPlanDraft({ ...owner, itemIds: ['epic-new'], proposalId: packageId })).resolves.toBe(true);
+      expect(saveQuarterlyPlanDraft).toHaveBeenCalledWith(expect.objectContaining({ ops: [packageOps[2]] }));
+      vi.mocked(findQuarterlyPlanDraft).mockResolvedValue({ ...storedDraft(packageId), ops: [packageOps[2]] });
+      vi.mocked(applyQuarterlyPlanOps).mockResolvedValueOnce({ ...packagePreview, targets: ['note-1'] } as never);
+      await rejectQuarterlyPlanDraft({ ...owner, itemIds: ['note-1'], proposalId: packageId });
+      expect(deleteQuarterlyPlanDraft).toHaveBeenCalledWith(expect.objectContaining({ proposalId: packageId }));
+    });
   });
 
   it('не применилось — черновик остаётся; устаревшая версия черновика не принимается', async () => {

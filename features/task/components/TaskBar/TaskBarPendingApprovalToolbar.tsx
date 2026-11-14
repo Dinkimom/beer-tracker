@@ -23,7 +23,8 @@ interface TaskBarPendingApprovalToolbarProps {
   label?: string;
   labelClassName?: string;
   labelIcon?: string | null;
-  placement?: 'card' | 'inline';
+  /** `card` — под карточкой; `inline` — строкой под ней с отступом; `flow` — в потоке родителя, как есть. */
+  placement?: 'card' | 'flow' | 'inline';
   onApprove?: (commentId: string) => void;
   onReject?: (commentId: string) => void;
 }
@@ -122,7 +123,7 @@ export function TaskBarPendingApprovalToolbar({
         placement === 'inline' ? ' !relative !right-auto !top-auto ml-6 mt-1' : ''
       }`}
       data-agent-pending-approval=""
-      placement={placement === 'inline' ? 'none' : 'below-end'}
+      placement={placement === 'card' ? 'below-end' : 'none'}
     >
       {placement === 'inline'
         ? renderInlineCaption({

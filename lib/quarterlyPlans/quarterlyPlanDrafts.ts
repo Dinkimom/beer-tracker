@@ -1,6 +1,6 @@
 /**
  * Черновики агента для квартального плана (раздел 11 QUARTERLY_PLAN_RULES.md, QM8–QM11): агент предлагает пакет
- * операций, человек принимает или отклоняет его целиком на доске. Агент план сам не пишет.
+ * операций, человек принимает или отклоняет его на доске — целиком или по пунктам. Агент план сам не пишет.
  */
 
 import type { QuarterlyPlanOp } from './quarterlyPlanOps';
@@ -13,6 +13,11 @@ import { createHash } from 'crypto';
 import { quarterScope } from '@/lib/agentSessions/agentSessionScope';
 import { prepareDraftAgentSession, recordDraftInAgentSession } from '@/lib/agentSessions/agentSessionService';
 
+import {
+  quarterlyPlanDraftItems,
+  resolveQuarterlyPlanDraftRefs,
+  selectQuarterlyPlanDraftOps,
+} from './quarterlyPlanDraftItems';
 import {
   deleteQuarterlyPlanDraft,
   findQuarterlyPlanDraft,
@@ -40,10 +45,33 @@ function summarizeQuarterlyPlanOps(ops: readonly QuarterlyPlanOp[]): string {
   return [...counts].map(([op, count]) => `${op}×${count}`).join(', ');
 }
 
+/**
+ * id новых сущностей черновика: от версии и самой операции, а не случайные. Доска опрашивает черновик,
+ * и пункт должен остаться тем же пунктом (QM10); принятый пункт ложится в план с тем же id, что был на доске.
+ */
+function draftEntityIds(proposalId: string, ops: readonly QuarterlyPlanOp[]): string[] {
+  const seen = new Map<string, number>();
+  return ops.map((op) => {
+    const key = JSON.stringify(op);
+    const nth = seen.get(key) ?? 0;
+    seen.set(key, nth + 1);
+    const hex = createHash('sha256').update(`${proposalId}|${key}|${nth}`).digest('hex');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+  });
+}
+
 /** Пакет черновика заново против текущего плана, без записи: что получится, если принять сейчас. */
-async function previewOnCurrentPlan(owner: DraftOwner, ops: readonly QuarterlyPlanOp[]) {
+async function previewOnCurrentPlan(owner: DraftOwner, proposalId: string, ops: readonly QuarterlyPlanOp[]) {
   const { version } = await fetchQuarterlyPlanContent(owner.organizationId, owner.ref);
-  return applyQuarterlyPlanOps({ dryRun: true, ifVersion: version, ops, organizationId: owner.organizationId, ref: owner.ref });
+  const ids = draftEntityIds(proposalId, ops);
+  return applyQuarterlyPlanOps({
+    dryRun: true,
+    ifVersion: version,
+    newId: (index) => ids[index] ?? crypto.randomUUID(),
+    ops,
+    organizationId: owner.organizationId,
+    ref: owner.ref,
+  });
 }
 
 /**
@@ -110,47 +138,99 @@ export async function proposeQuarterlyPlan(
 
 /**
  * Черновик человека в квартале, применённый к текущему плану без записи (QM9): доска рисует результат,
- * агент видит его в `get_quarterly_plan`. null — черновика нет.
+ * агент видит его в `get_quarterly_plan`. `items` — пункты, которые решают по одному (QM10). null — черновика нет.
  */
 export async function loadQuarterlyPlanDraft(owner: DraftOwner) {
   const draft = await findQuarterlyPlanDraft(owner);
   if (!draft) return null;
   const ops = QuarterlyPlanOpsSchema.safeParse(draft.ops);
-  if (!ops.success) return { ...draft, error: 'the draft is unreadable; reject it', preview: null };
-  const preview = await previewOnCurrentPlan(owner, ops.data);
-  return {
-    baseVersion: draft.baseVersion,
-    createdAt: draft.createdAt,
-    ...(preview.status === 'preview' ? { error: null, preview } : { error: preview.status === 'invalid' ? preview.error : 'conflict', preview: null }),
-    proposalId: draft.proposalId,
-    summary: draft.summary,
-  };
+  const base = { baseVersion: draft.baseVersion, createdAt: draft.createdAt, proposalId: draft.proposalId, summary: draft.summary };
+  if (!ops.success) return { ...base, error: 'the draft is unreadable; reject it', items: [], preview: null };
+  const preview = await previewOnCurrentPlan(owner, draft.proposalId, ops.data);
+  if (preview.status !== 'preview') {
+    return { ...base, error: preview.status === 'invalid' ? preview.error : 'conflict', items: [], preview: null };
+  }
+  return { ...base, error: null, items: quarterlyPlanDraftItems(ops.data, preview.targets), preview };
 }
 
+type StoredDraft = NonNullable<Awaited<ReturnType<typeof findQuarterlyPlanDraft>>>;
+
 /**
- * Человек принимает черновик целиком (QM10): операции применяются к текущему плану, а не к той версии,
- * от которой агент считал, — правки, сделанные после предложения, не теряются. Не применилось — черновик остаётся.
+ * Что осталось от черновика после решения о части пунктов (QM10). Версия черновика та же — он остаётся в своей
+ * сессии агента. Не осталось ни одного пункта на доске — черновик убирается.
  */
-export async function approveQuarterlyPlanDraft(owner: DraftOwner & { proposalId: string }) {
+async function keepRestOfDraft(owner: DraftOwner, draft: StoredDraft, rest: QuarterlyPlanOp[], baseVersion: number) {
+  const preview = rest.length > 0 ? await previewOnCurrentPlan(owner, draft.proposalId, rest) : null;
+  const visible = preview?.status !== 'preview' || quarterlyPlanDraftItems(rest, preview.targets).length > 0;
+  if (rest.length === 0 || !visible) {
+    await deleteQuarterlyPlanDraft({ ...owner, proposalId: draft.proposalId });
+    return;
+  }
+  await saveQuarterlyPlanDraft({
+    ...owner,
+    baseVersion,
+    ops: rest,
+    proposalId: draft.proposalId,
+    summary: summarizeQuarterlyPlanOps(rest),
+  });
+}
+
+/** Черновик той версии, о которой решает человек; иначе ошибка. */
+async function readDraftForDecision(owner: DraftOwner & { proposalId?: string }) {
   const draft = await findQuarterlyPlanDraft(owner);
-  if (!draft || draft.proposalId !== owner.proposalId) {
+  if (!draft || (owner.proposalId && draft.proposalId !== owner.proposalId)) {
     return { error: 'the draft has changed or is gone; reload the plan', status: 'invalid' as const };
   }
   const ops = QuarterlyPlanOpsSchema.safeParse(draft.ops);
   if (!ops.success) return { error: 'the draft is unreadable; reject it', status: 'invalid' as const };
-  const { version } = await fetchQuarterlyPlanContent(owner.organizationId, owner.ref);
+  return { draft, ops: ops.data, status: 'ok' as const };
+}
+
+/**
+ * Человек принимает черновик целиком или пункты `itemIds` (QM10): операции применяются к текущему плану,
+ * а не к той версии, от которой агент считал, — правки, сделанные после предложения, не теряются. Пункт тянет
+ * за собой то, без чего не применится. Остальное остаётся черновиком. Не применилось — черновик как был.
+ */
+export async function approveQuarterlyPlanDraft(owner: DraftOwner & { itemIds?: readonly string[]; proposalId: string }) {
+  const read = await readDraftForDecision(owner);
+  if (read.status !== 'ok') return read;
+  const { draft, ops } = read;
+  const ids = draftEntityIds(draft.proposalId, ops);
+  const preview = await previewOnCurrentPlan(owner, draft.proposalId, ops);
+  if (preview.status !== 'preview') return preview;
+  const selected = owner.itemIds
+    ? selectQuarterlyPlanDraftOps({ itemIds: owner.itemIds, mode: 'approve', ops, targets: preview.targets })
+    : new Set(ops.keys());
+  const picked = [...selected].sort((a, b) => a - b);
+  if (picked.length === 0) return { error: 'no such items in the draft; reload the plan', status: 'invalid' as const };
   const result = await applyQuarterlyPlanOps({
     dryRun: false,
-    ifVersion: version,
-    ops: ops.data,
+    ifVersion: preview.version,
+    newId: (index) => ids[picked[index] ?? -1] ?? crypto.randomUUID(),
+    ops: picked.flatMap((index) => ops[index] ?? []),
     organizationId: owner.organizationId,
     ref: owner.ref,
   });
-  if (result.status === 'saved') await deleteQuarterlyPlanDraft(owner);
+  if (result.status !== 'saved') return result;
+  const rest = resolveQuarterlyPlanDraftRefs(
+    ops.filter((_, index) => !selected.has(index)),
+    result.refs
+  );
+  await keepRestOfDraft(owner, draft, rest, result.version);
   return result;
 }
 
-/** Человек отклоняет черновик (QM10): план не меняется. */
-export function rejectQuarterlyPlanDraft(owner: DraftOwner & { proposalId?: string }): Promise<boolean> {
-  return deleteQuarterlyPlanDraft(owner);
+/** Человек отклоняет черновик целиком или пункты `itemIds` с тем, что без них не применится (QM10): план не меняется. */
+export async function rejectQuarterlyPlanDraft(
+  owner: DraftOwner & { itemIds?: readonly string[]; proposalId?: string }
+): Promise<boolean> {
+  if (!owner.itemIds) return deleteQuarterlyPlanDraft(owner);
+  const read = await readDraftForDecision(owner);
+  if (read.status !== 'ok') return false;
+  const { draft, ops } = read;
+  const preview = await previewOnCurrentPlan(owner, draft.proposalId, ops);
+  if (preview.status !== 'preview') return false;
+  const selected = selectQuarterlyPlanDraftOps({ itemIds: owner.itemIds, mode: 'reject', ops, targets: preview.targets });
+  await keepRestOfDraft(owner, draft, ops.filter((_, index) => !selected.has(index)), draft.baseVersion);
+  return true;
 }

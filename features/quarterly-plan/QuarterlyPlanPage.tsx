@@ -37,9 +37,8 @@ import {
 } from '@/lib/quarterlyPlans/quarterWeeks';
 import { getPlannerNow } from '@/utils/plannerClock';
 
-import { QuarterlyPlanAgentChat } from './components/QuarterlyPlanAgentChat';
+import { QuarterlyPlanAgentIsland } from './components/QuarterlyPlanAgentIsland';
 import { QuarterlyPlanBoard } from './components/QuarterlyPlanBoard';
-import { QuarterlyPlanDraftBar } from './components/QuarterlyPlanDraftBar';
 import { QuarterlyPlanMenu } from './components/QuarterlyPlanMenu';
 import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
 import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTrackerEpicDialog';
@@ -84,10 +83,9 @@ export function QuarterlyPlanPage() {
   const { applyEdit: savePlanEdit, eventsByBoard, isLoading, plan: savedPlan, setVersion } = useQuarterlyPlan(quarterRef);
   const agent = useQuarterlyPlanAgent(quarterRef, setVersion);
   const [agentOpen, setAgentOpen] = useState(false);
-  const agentDraft = agent.draft;
   /** План на доске — с черновиком агента, пока он показан (QM9): доска, проблемы и меню считают по нему. */
-  const draftView = useQuarterlyPlanDraftPreview({ draft: agentDraft, savedPlan, saveEdit: savePlanEdit });
-  const { applyEdit, plan } = draftView;
+  const draftView = useQuarterlyPlanDraftPreview({ agent, draft: agent.draft, savedPlan, saveEdit: savePlanEdit });
+  const { after: planAfterDraft, applyEdit, plan } = draftView;
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
   const timelineStart = useMemo(() => quarterTimelineStart(weeks), [weeks]);
@@ -108,9 +106,10 @@ export function QuarterlyPlanPage() {
     [eventsByBoard, plan?.teams, weeks]
   );
 
+  // Проблемы — по плану после черновика: убранное черновиком стоит на доске, но в счёт не идёт.
   const issues = useMemo(
-    () => (plan ? collectQuarterlyPlanIssues(plan, absenceByMember, hideDone) : []),
-    [absenceByMember, hideDone, plan]
+    () => (planAfterDraft ? collectQuarterlyPlanIssues(planAfterDraft, absenceByMember, hideDone) : []),
+    [absenceByMember, hideDone, planAfterDraft]
   );
 
   const toggleCollapsed = useCallback((id: string) => {
@@ -186,12 +185,13 @@ export function QuarterlyPlanPage() {
       onStartDraft: setDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
       draftMarks: draftView.marks,
+      draftReview: draftView.review,
       timelineStart,
       trackerEpics: plan.trackerEpics,
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, applyEdit, draft, draftView.marks, focusedIssue, issues, linksBoard, notesBoard, plan, submitDraft, timelineStart, weeks]);
+  }, [absenceByMember, applyEdit, draft, draftView.marks, draftView.review, focusedIssue, issues, linksBoard, notesBoard, plan, submitDraft, timelineStart, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -281,19 +281,7 @@ export function QuarterlyPlanPage() {
             {t(isLoading ? 'quarterlyPlan.loading' : 'quarterlyPlan.loadError')}
           </div>
         )}
-        {agentDraft ? (
-          <QuarterlyPlanDraftBar
-            busy={agent.busy}
-            diff={draftView.diff}
-            error={agentDraft.error}
-            showing={draftView.showing}
-            summary={agentDraft.summary}
-            onApprove={() => agent.approve(agentDraft.proposalId)}
-            onReject={() => agent.reject(agentDraft.proposalId)}
-            onToggle={draftView.toggle}
-          />
-        ) : null}
-        {agentOpen ? <QuarterlyPlanAgentChat scope={agent.scope} /> : null}
+        <QuarterlyPlanAgentIsland agent={agent} chatOpen={agentOpen} draftView={draftView} />
         <QuarterlyPlanToolbar
           agent={
             agent.agentVisible

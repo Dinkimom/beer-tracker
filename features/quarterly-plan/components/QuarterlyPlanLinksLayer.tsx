@@ -8,6 +8,7 @@ import { ZIndex } from '@/constants';
 import { LinkArrowDeleteButton } from '@/features/swimlane/components/task-arrows/LinkArrowDeleteButton';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { draftMarkOf } from '../quarterlyPlanBoardModel';
 
 /** Вынос стрелки от края полосы до поворота. */
 const STUB_PX = 10;
@@ -83,7 +84,7 @@ function boxOf(element: Element, origin: DOMRect): Box {
  * и при плавном росте строк. Связь со скрытой полосой (свёрнутая команда) не рисуется.
  */
 export function QuarterlyPlanLinksLayer({ links, violatedLinkIds }: QuarterlyPlanLinksLayerProps) {
-  const { canLinkTo, linking, onLinkDelete } = useQuarterlyPlanBoard();
+  const { canLinkTo, draftMarks, linking, onLinkDelete } = useQuarterlyPlanBoard();
   const svgRef = useRef<SVGSVGElement>(null);
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
   const [measured, setMeasured] = useState<Measured>({ paths: [], preview: null });
@@ -150,7 +151,10 @@ export function QuarterlyPlanLinksLayer({ links, violatedLinkIds }: QuarterlyPla
   }, [links, snapTargetId, sourceId]);
 
   const toneOf = (path: LinkPath): LinkTone => {
-    if (path.id === deleteHoverId) return 'danger';
+    // Связь из черновика агента (QM9): новая — синяя, убранная — красная; обе пунктиром.
+    const draftMark = draftMarkOf(draftMarks, path.id);
+    if (path.id === deleteHoverId || draftMark === 'removed') return 'danger';
+    if (draftMark) return 'preview';
     if (violatedLinkIds.has(path.id)) return 'violated';
     return path.fromId === hoveredBarId || path.toId === hoveredBarId ? 'strong' : 'idle';
   };
@@ -198,6 +202,7 @@ export function QuarterlyPlanLinksLayer({ links, violatedLinkIds }: QuarterlyPla
                   d={path.d}
                   fill="none"
                   markerEnd={`url(#quarter-link-head-${tone})`}
+                  strokeDasharray={draftMarkOf(draftMarks, path.id) ? '6 4' : undefined}
                   strokeLinejoin="round"
                   strokeWidth={2.5}
                 />

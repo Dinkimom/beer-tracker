@@ -202,10 +202,12 @@ export async function findQuarterlyPlanProblems(plan: QuarterlyPlan): Promise<Qu
   };
 }
 
+/** `targets` — сущность плана каждой операции (`applyOpsToContent`). */
 type ApplyOpsResult =
-  { content: QuarterlyPlanContent; refs: Record<string, string>; status: 'saved'; version: number } | { error: string; opIndex?: number; status: 'invalid' } | { status: 'conflict'; version: number } | QuarterlyPlanFindings & {
+  { content: QuarterlyPlanContent; refs: Record<string, string>; status: 'saved'; targets: (string | null)[]; version: number } | { error: string; opIndex?: number; status: 'invalid' } | { status: 'conflict'; version: number } | QuarterlyPlanFindings & {
       content: QuarterlyPlanContent;
       refs: Record<string, string>;
+      targets: (string | null)[];
       status: 'preview';
       version: number;
     };
@@ -217,6 +219,8 @@ type ApplyOpsResult =
 export async function applyQuarterlyPlanOps(input: {
   dryRun: boolean;
   ifVersion: number;
+  /** id новой сущности по номеру операции; без него — случайный. */
+  newId?: (opIndex: number) => string;
   ops: readonly QuarterlyPlanOp[];
   organizationId: string;
   ref: QuarterRef;
@@ -228,6 +232,7 @@ export async function applyQuarterlyPlanOps(input: {
   if (stored.version !== input.ifVersion) return { status: 'conflict', version: stored.version };
   const applied = applyOpsToContent({
     content: planContentForClient(stored.content, rosters.index),
+    newId: input.newId,
     ops: input.ops,
     ref: input.ref,
     teams: {
@@ -245,12 +250,12 @@ export async function applyQuarterlyPlanOps(input: {
       teams: rosters.rosters.map((roster) => ({ ...roster, sprints: [] })),
       trackerEpics: {},
     });
-    return { ...findings, content: applied.content, refs: applied.refs, status: 'preview', version: stored.version };
+    return { ...findings, content: applied.content, refs: applied.refs, status: 'preview', targets: applied.targets, version: stored.version };
   }
   const saved = await writePlan({ ...input, content: applied.content }, rosters);
   if (saved.status === 'invalid') return saved;
   if (saved.status === 'conflict') return { status: 'conflict', version: stored.version };
-  return { content: applied.content, refs: applied.refs, status: 'saved', version: saved.version };
+  return { content: applied.content, refs: applied.refs, status: 'saved', targets: applied.targets, version: saved.version };
 }
 
 /** Черновик агента в квартале, применённый к текущему плану (QM9); `content` null — пакет больше не применяется. */

@@ -10,7 +10,11 @@ import {
 } from '@/lib/quarterlyPlans/quarterlyPlanDrafts';
 import { requireQuarterBody, requireQuarterQuery } from '@/lib/quarterlyPlans/quarterlyPlanRouteHelpers';
 
-const DecisionSchema = QuarterRefSchema.extend({ proposalId: z.string().min(1).max(32) });
+/** Без `itemIds` — весь черновик, с ними — эти пункты (QM10). */
+const DecisionSchema = QuarterRefSchema.extend({
+  itemIds: z.array(z.string().min(1).max(80)).min(1).max(200).optional(),
+  proposalId: z.string().min(1).max(32),
+});
 const DECISION_REQUIRED = 'year, quarter and proposalId are required';
 
 /** GET /api/quarterly-plans/draft?year=&quarter= — свой черновик агента, применённый к текущему плану (QM9). */
@@ -29,13 +33,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** POST — принять черновик целиком: операции применяются к текущему плану (QM10). */
+/** POST — принять черновик целиком или пункты `itemIds`: операции применяются к текущему плану (QM10). */
 export async function POST(request: NextRequest) {
   try {
     const route = await requireQuarterBody(request, DecisionSchema, DECISION_REQUIRED);
     if ('response' in route) return route.response;
-    const { proposalId, ...ref } = route.input;
+    const { itemIds, proposalId, ...ref } = route.input;
     const result = await approveQuarterlyPlanDraft({
+      itemIds,
       organizationId: route.ctx.organizationId,
       ownerId: route.ctx.userId,
       proposalId,
@@ -49,13 +54,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** DELETE — отклонить черновик: план не меняется (QM10). */
+/** DELETE — отклонить черновик целиком или пункты `itemIds`: план не меняется (QM10). */
 export async function DELETE(request: NextRequest) {
   try {
     const route = await requireQuarterBody(request, DecisionSchema, DECISION_REQUIRED);
     if ('response' in route) return route.response;
-    const { proposalId, ...ref } = route.input;
+    const { itemIds, proposalId, ...ref } = route.input;
     const deleted = await rejectQuarterlyPlanDraft({
+      itemIds,
       organizationId: route.ctx.organizationId,
       ownerId: route.ctx.userId,
       proposalId,

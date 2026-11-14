@@ -2,6 +2,9 @@
 
 import type { MemberAbsence } from './quarterlyPlanBoardModel';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
+import type { QuarterlyPlanDraftDiff } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
+import type { QuarterlyPlanDraftItem } from '@/lib/quarterlyPlans/quarterlyPlanDraftItems';
 import type { NoteLaneBlocker, WeekSpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type {
   QuarterlyPlanAssignment,
@@ -45,6 +48,18 @@ export interface QuarterlyPlanNoteDrag {
   row: QuarterlyPlanNoteRow;
 }
 
+/** Пункты показанного черновика агента, которые решают на доске по одному (QM10). */
+export interface QuarterlyPlanDraftReview {
+  brand: McpOAuthClientBrand | null;
+  /** Пункт по id его сущности. */
+  items: ReadonlyMap<string, QuarterlyPlanDraftItem>;
+  /** Пункты-связи по полосе, к которой связь ведёт: на линии ✓/✗ не поставить, они — у полосы. */
+  linkItemsByAssignment: ReadonlyMap<string, readonly QuarterlyPlanDraftItem[]>;
+  /** Решение уходит сразу; пока прошлое не дошло, новое не принимается. */
+  onApprove: (itemId: string) => void;
+  onReject: (itemId: string) => void;
+}
+
 export interface QuarterlyPlanBoardContextValue {
   absenceByMember: ReadonlyMap<string, MemberAbsence>;
   assignmentsByEpic: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
@@ -53,8 +68,10 @@ export interface QuarterlyPlanBoardContextValue {
   currentWeek: number;
   dayCount: number;
   draft: QuarterlyPlanDraft | null;
-  /** Черновик агента показан: что в нём новое и что изменено (QM9); null — черновика на доске нет. */
-  draftMarks: { added: ReadonlySet<string>; changed: ReadonlySet<string> } | null;
+  /** Черновик агента показан: что в нём новое, изменено и убрано (QM9); null — черновика на доске нет. */
+  draftMarks: QuarterlyPlanDraftDiff | null;
+  /** ✓/✗ пунктов показанного черновика на доске (QM10); null — черновика на доске нет. */
+  draftReview: QuarterlyPlanDraftReview | null;
   epicById: ReadonlyMap<string, QuarterlyPlanEpic>;
   /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   focusedIssue: { assignmentId: string; nonce: number } | null;
