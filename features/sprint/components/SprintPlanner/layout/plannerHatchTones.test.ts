@@ -60,24 +60,6 @@ describe('plannerAvailabilityEmojiPattern', () => {
     ]);
   });
 
-  it('uses a mixed emoji set (≤3) for tech-sprint kinds', () => {
-    expect(plannerAvailabilityEmojiPattern('tech-sprint-web')?.emojis).toEqual([
-      '🌐',
-      '💻',
-      '🎨',
-    ]);
-    expect(plannerAvailabilityEmojiPattern('tech-sprint-back')?.emojis).toEqual([
-      '⚙️',
-      '🗄️',
-      '🔧',
-    ]);
-    expect(plannerAvailabilityEmojiPattern('tech-sprint-qa')?.emojis).toEqual([
-      '🧪',
-      '🐛',
-      '✅',
-    ]);
-  });
-
   it('keeps diagonal hatch only for neutral cells', () => {
     expect(plannerAvailabilityEmojiPattern('neutral')).toBeNull();
   });

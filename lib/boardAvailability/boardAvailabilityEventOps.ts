@@ -1,5 +1,5 @@
 /**
- * Отпуска, больничные, техспринты и дежурства от агента (QM7): те же события, что пишет поповер доски
+ * Отпуска, больничные и дежурства от агента (QM7): те же события, что пишет поповер доски
  * спринта (`board_availability_events`), поэтому они общие для спринта и квартала (QV1, QV3).
  */
 
@@ -19,11 +19,10 @@ import {
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const eventFields = {
   endDate: isoDate,
-  eventType: z.enum(['duty', 'sick_leave', 'tech_sprint', 'vacation']),
+  eventType: z.enum(['duty', 'sick_leave', 'vacation']),
   memberId: z.string().min(1).describe('Developer id from get_quarterly_plan teams[].members[].id'),
   startDate: isoDate,
   teamId: z.string().min(1).describe('teams[].id from get_quarterly_plan'),
-  techSprintSubtype: z.enum(['back', 'qa', 'web']).optional().describe('Required for tech_sprint'),
 };
 
 export const AvailabilityEventOpsSchema = z
@@ -63,7 +62,6 @@ function eventError(op: AvailabilityEventOp, team: AvailabilityTeam | undefined)
   }
   if (op.op === 'remove') return null;
   if (op.endDate < op.startDate) return 'endDate must not be before startDate';
-  if (op.eventType === 'tech_sprint' && !op.techSprintSubtype) return 'tech_sprint needs techSprintSubtype';
   return null;
 }
 
@@ -84,7 +82,6 @@ async function applyOne(
     memberId: op.memberId,
     memberName: team.members.find((member) => member.id === op.memberId)?.name ?? op.memberId,
     startDate: op.startDate,
-    techSprintSubtype: op.eventType === 'tech_sprint' ? (op.techSprintSubtype ?? null) : null,
   };
   const row =
     op.op === 'add'

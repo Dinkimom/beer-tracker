@@ -9,7 +9,6 @@ interface BoardAvailabilityEventRow {
   member_id: string;
   member_name: string;
   start_date: unknown;
-  tech_sprint_type: string | null;
 }
 
 function toIsoDateOnly(value: unknown): string {
@@ -20,7 +19,7 @@ function toIsoDateOnly(value: unknown): string {
 
 /** Строка таблицы → событие доступности, как его видит клиент. */
 export function boardAvailabilityEventFromRow(row: BoardAvailabilityEventRow): BoardAvailabilityEvent {
-  const base = {
+  return {
     endDate: toIsoDateOnly(row.end_date),
     eventType: row.event_type as BoardAvailabilityEvent['eventType'],
     id: row.id,
@@ -28,10 +27,6 @@ export function boardAvailabilityEventFromRow(row: BoardAvailabilityEventRow): B
     memberName: row.member_name,
     startDate: toIsoDateOnly(row.start_date),
   };
-  if (row.event_type === 'tech_sprint' && row.tech_sprint_type) {
-    return { ...base, techSprintSubtype: row.tech_sprint_type as NonNullable<BoardAvailabilityEvent['techSprintSubtype']> };
-  }
-  return base;
 }
 
 export async function listBoardAvailabilityEvents(
@@ -40,14 +35,14 @@ export async function listBoardAvailabilityEvents(
 ): Promise<BoardAvailabilityEventRow[]> {
   const result = memberId
     ? await query(
-        `SELECT id, board_id, member_id, member_name, event_type, tech_sprint_type, start_date, end_date
+        `SELECT id, board_id, member_id, member_name, event_type, start_date, end_date
            FROM board_availability_events
            WHERE board_id = $1 AND member_id = $2
            ORDER BY start_date ASC, end_date ASC`,
         [boardId, memberId]
       )
     : await query(
-        `SELECT id, board_id, member_id, member_name, event_type, tech_sprint_type, start_date, end_date
+        `SELECT id, board_id, member_id, member_name, event_type, start_date, end_date
            FROM board_availability_events
            WHERE board_id = $1
            ORDER BY member_name ASC, start_date ASC, end_date ASC`,
@@ -63,20 +58,18 @@ export async function insertBoardAvailabilityEvent(input: {
   memberId: string;
   memberName: string;
   startDate: string;
-  techSprintSubtype: string | null;
 }): Promise<BoardAvailabilityEventRow> {
   const insertResult = await query(
     `INSERT INTO board_availability_events (
-         board_id, member_id, member_name, event_type, tech_sprint_type, start_date, end_date, updated_at
+         board_id, member_id, member_name, event_type, start_date, end_date, updated_at
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-       RETURNING id, member_id, member_name, event_type, tech_sprint_type, start_date, end_date`,
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       RETURNING id, member_id, member_name, event_type, start_date, end_date`,
     [
       input.boardId,
       input.memberId,
       input.memberName,
       input.eventType,
-      input.techSprintSubtype,
       input.startDate,
       input.endDate,
     ]
@@ -92,18 +85,16 @@ export async function updateBoardAvailabilityEvent(input: {
   memberId: string;
   memberName: string;
   startDate: string;
-  techSprintSubtype: string | null;
 }): Promise<BoardAvailabilityEventRow | null> {
   const updateResult = await query(
     `UPDATE board_availability_events
-       SET member_name = $1, event_type = $2, tech_sprint_type = $3,
-           start_date = $4, end_date = $5, updated_at = NOW()
-       WHERE id = $6 AND board_id = $7 AND member_id = $8
-       RETURNING id, member_id, member_name, event_type, tech_sprint_type, start_date, end_date`,
+       SET member_name = $1, event_type = $2,
+           start_date = $3, end_date = $4, updated_at = NOW()
+       WHERE id = $5 AND board_id = $6 AND member_id = $7
+       RETURNING id, member_id, member_name, event_type, start_date, end_date`,
     [
       input.memberName,
       input.eventType,
-      input.techSprintSubtype,
       input.startDate,
       input.endDate,
       input.id,

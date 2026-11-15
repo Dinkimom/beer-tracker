@@ -279,7 +279,6 @@ export function useSprintPlannerViewModel({
       planId: `board-${boardIdForPlannerData}`,
       boardEvents: boardAvailabilityEvents,
       vacations: [],
-      techSprints: [],
     };
   }, [boardAvailabilityEvents, boardIdForPlannerData]);
 

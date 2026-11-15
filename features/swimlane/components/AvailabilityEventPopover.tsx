@@ -1,6 +1,6 @@
 'use client';
 
-import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
+import type { BoardAvailabilityEventType } from '@/types/quarterly';
 
 import * as Popover from '@radix-ui/react-popover';
 import { useEffect, useRef, useState } from 'react';
@@ -24,13 +24,6 @@ const EVENT_TYPES: { messageKey: string; value: BoardAvailabilityEventType }[] =
   { messageKey: 'sprintPlanner.swimlane.availability.vacation', value: 'vacation' },
   { messageKey: 'sprintPlanner.swimlane.availability.sickLeave', value: 'sick_leave' },
   { messageKey: 'sprintPlanner.swimlane.availability.duty', value: 'duty' },
-  { messageKey: 'sprintPlanner.swimlane.availability.techSprint', value: 'tech_sprint' },
-];
-
-const TECH_SPRINT_TYPES: { label: string; value: TechSprintType }[] = [
-  { label: 'Web', value: 'web' },
-  { label: 'Back', value: 'back' },
-  { label: 'QA', value: 'qa' },
 ];
 
 const POPOVER_WIDTH_PX = 340;
@@ -45,7 +38,6 @@ interface AvailabilityEventValues {
   endDate: string;
   eventType: BoardAvailabilityEventType;
   startDate: string;
-  techSprintSubtype?: TechSprintType;
 }
 
 interface AvailabilityEventPopoverProps {
@@ -80,9 +72,6 @@ export function AvailabilityEventPopover({
   const [startDate, setStartDate] = useState(initial.startDate);
   const [endDate, setEndDate] = useState(initial.endDate);
   const [eventType, setEventType] = useState<BoardAvailabilityEventType>(initial.eventType);
-  const [techSprintSubtype, setTechSprintSubtype] = useState<TechSprintType>(
-    initial.techSprintSubtype ?? 'web'
-  );
 
   const totalDays = Math.max(1, sprintTimelineWorkingDays);
   const range = resolveAvailabilityDayRange({
@@ -99,7 +88,6 @@ export function AvailabilityEventPopover({
     }) ?? { dayCount: 1, startDay: 0 };
 
   const submitting = pending != null;
-  const needsTechSubtype = eventType === 'tech_sprint';
   const canSubmit = Boolean(startDate && endDate && startDate <= endDate) && !submitting;
 
   useEffect(() => {
@@ -128,12 +116,7 @@ export function AvailabilityEventPopover({
     }
     setPending('save');
     try {
-      await onSubmit({
-        endDate,
-        eventType,
-        startDate,
-        ...(needsTechSubtype ? { techSprintSubtype } : {}),
-      });
+      await onSubmit({ endDate, eventType, startDate });
       onClose();
     } finally {
       setPending(null);
@@ -242,28 +225,6 @@ export function AvailabilityEventPopover({
                 ))}
               </div>
             </div>
-
-            {needsTechSubtype ? (
-              <div className="flex flex-col gap-1.5">
-                <span className="text-xs text-ds-text-muted">
-                  {t('sprintPlanner.swimlane.availability.techSprintSubtypeLabel')}
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {TECH_SPRINT_TYPES.map((item) => (
-                    <Button
-                      key={item.value}
-                      aria-pressed={techSprintSubtype === item.value}
-                      className={`${CHOICE_PILL_CLASS} ${glassLensControlClass(techSprintSubtype === item.value)}`}
-                      disabled={submitting}
-                      variant="outline"
-                      onClick={() => setTechSprintSubtype(item.value)}
-                    >
-                      {item.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
 
             <label className="flex flex-col gap-1.5">
               <span className="text-xs text-ds-text-muted">

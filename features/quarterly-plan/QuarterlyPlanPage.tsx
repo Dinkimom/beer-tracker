@@ -49,7 +49,6 @@ import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTracke
 import { QuarterlyPlanBoardProvider } from './QuarterlyPlanBoardContext';
 import {
   buildAbsenceByMember,
-  buildToneByKey,
 } from './quarterlyPlanBoardModel';
 import { applyTrackerPickToPlan, buildQuarterlyPlanMenuSections, trackerPickBoardId } from './quarterlyPlanMenuSections';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
@@ -178,7 +177,6 @@ export function QuarterlyPlanPage() {
         new Map<string, number>()
       ),
       memberById: new Map(members.map((member) => [member.id, member])),
-      memberToneById: buildToneByKey(members.map((member) => member.id)),
       notInTeamAssignmentIds: new Set(issues.filter((issue) => issue.notInTeam).map((issue) => issue.assignmentId)),
       ...linksBoard,
       ...notesBoard,

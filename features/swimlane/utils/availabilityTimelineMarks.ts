@@ -28,9 +28,6 @@ const HATCH_KIND_PRIORITY: Record<AvailabilityCardKind, number> = {
   sick_leave: 0,
   vacation: 1,
   duty: 2,
-  'tech-sprint-qa': 3,
-  'tech-sprint-web': 4,
-  'tech-sprint-back': 5,
 };
 
 export function pickAvailabilityHatchKind(

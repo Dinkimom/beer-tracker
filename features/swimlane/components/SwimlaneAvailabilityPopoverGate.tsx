@@ -53,7 +53,6 @@ export function SwimlaneAvailabilityPopoverGate({
         endDate: popover.endDate,
         eventType: editing?.eventType ?? 'vacation',
         startDate: popover.startDate,
-        techSprintSubtype: editing?.techSprintSubtype,
       }}
       isEditing={editing != null}
       sprintStartDate={sprintStartDate}
@@ -71,7 +70,7 @@ export function SwimlaneAvailabilityPopoverGate({
               })
           : undefined
       }
-      onSubmit={async ({ startDate, endDate, eventType, techSprintSubtype }) => {
+      onSubmit={async ({ startDate, endDate, eventType }) => {
         await submitBoardAvailabilityEvent({
           boardId: popover.boardId,
           editing,
@@ -83,7 +82,6 @@ export function SwimlaneAvailabilityPopoverGate({
           sprintId: popover.sprintId,
           startDate,
           t,
-          techSprintSubtype,
         });
       }}
     />

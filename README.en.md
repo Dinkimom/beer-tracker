@@ -40,7 +40,7 @@ The grid covers the sprint’s working days, taken from the tracker. Each day ha
 
 You can view the board by person, by feature, or as a kanban by status. Cards arrange themselves into rows; turn off auto-arrange to place tasks and notes by hand, and the whole team sees that layout.
 
-Drag a card to move it, or pull its edge to change the duration. Time off and tech sprints show up on the same lanes. The sprint’s issue list sits on the right.
+Drag a card to move it, or pull its edge to change the duration. Time off and duty shifts show up on the same lanes. The sprint’s issue list sits on the right.
 
 <p align="center">
   <picture>

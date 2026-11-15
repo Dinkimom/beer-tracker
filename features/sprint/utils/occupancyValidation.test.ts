@@ -44,10 +44,10 @@ describe('buildAssigneeUnavailableDays', () => {
     expect(buildAssigneeUnavailableDays(undefined, new Date(2025, 0, 6)).size).toBe(0);
   });
 
-  it('returns empty map when vacations and techSprints are empty', () => {
+  it('returns empty map when vacations are empty', () => {
     expect(
       buildAssigneeUnavailableDays(
-        { planId: 'p-empty', vacations: [], techSprints: [] },
+        { planId: 'p-empty', vacations: [] },
         new Date(2025, 0, 6)
       ).size
     ).toBe(0);
@@ -69,7 +69,6 @@ describe('buildAssigneeUnavailableDays', () => {
         ],
         planId: 'board-1',
         vacations: [],
-        techSprints: [],
       },
       sprintStart
     );
@@ -92,7 +91,6 @@ describe('buildAssigneeUnavailableDays', () => {
             endDate: '2100-12-31',
           },
         ],
-        techSprints: [],
       },
       sprintStart
     );

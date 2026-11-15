@@ -10,8 +10,17 @@ export interface QuarterlyPlanDraftDiff {
   added: ReadonlySet<string>;
   /** id сущностей, которые в черновике выглядят иначе. */
   changed: ReadonlySet<string>;
+  /** Из изменённых — строки, которым черновик только поставил ключ задачи трекера: «прилинковано», а не «изменено». */
+  linked: ReadonlySet<string>;
   /** id сущностей плана, которых в черновике нет (удалены сами или вместе с родителем). */
   removed: ReadonlySet<string>;
+}
+
+/** Изменение — только привязка к трекеру: появился или сменился `issueKey`, остальное то же. */
+function isOnlyLinked(previous: { id: string }, item: { id: string }): boolean {
+  const { issueKey: was, ...before } = previous as { id: string; issueKey?: string };
+  const { issueKey: now, ...after } = item as { id: string; issueKey?: string };
+  return Boolean(now) && now !== was && JSON.stringify(before) === JSON.stringify(after);
 }
 
 function byId<T extends { id: string }>(items: readonly T[]): Map<string, T> {
@@ -21,7 +30,8 @@ function byId<T extends { id: string }>(items: readonly T[]): Map<string, T> {
 /** Сравнивает план с планом после черновика: добавлено, изменено, убрано — по всем видам сущностей. */
 export function diffQuarterlyPlanDraft(before: QuarterlyPlanContent, after: QuarterlyPlanContent): QuarterlyPlanDraftDiff {
   const added = new Set<string>();
-  const changed = new Set<string>();
+  /** id изменённой сущности → изменение — только привязка к трекеру. */
+  const changed = new Map<string, boolean>();
   const removed = new Set<string>();
   for (const collection of COLLECTIONS) {
     const was = byId<{ id: string }>(before[collection]);
@@ -31,12 +41,17 @@ export function diffQuarterlyPlanDraft(before: QuarterlyPlanContent, after: Quar
       if (!previous) {
         added.add(id);
       } else if (JSON.stringify(previous) !== JSON.stringify(item)) {
-        changed.add(id);
+        changed.set(id, isOnlyLinked(previous, item));
       }
     }
     [...was.keys()].filter((id) => !now.has(id)).forEach((id) => removed.add(id));
   }
-  return { added, changed, removed };
+  return {
+    added,
+    changed: new Set(changed.keys()),
+    linked: new Set([...changed].filter(([, onlyLinked]) => onlyLinked).map(([id]) => id)),
+    removed,
+  };
 }
 
 /**

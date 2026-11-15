@@ -7,13 +7,15 @@ import { collectQuarterlyPlanIssues } from '@/lib/quarterlyPlans/quarterlyPlanIs
 import { buildQuarterWeeks } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import {
+  absenceDatesAfterDrag,
   barDayMarks,
   buildAbsenceByMember,
-  buildToneByKey,
   formatSpanRange,
   formatWeekRange,
   layoutRowBars,
+  quarterBarToneClass,
   quarterRowHeightPx,
+  sprintStartWeeks,
 } from './quarterlyPlanBoardModel';
 
 const weeks = buildQuarterWeeks({ quarter: 4, year: 2026 });
@@ -92,11 +94,10 @@ describe('подписи и размеры', () => {
     expect(quarterRowHeightPx(2) - quarterRowHeightPx(1)).toBe(28);
   });
 
-  it('цвет стабилен для ключа и повторяется по кругу', () => {
-    const keys = Array.from({ length: 10 }, (_, index) => `k${index}`);
-    const tones = buildToneByKey(keys);
-    expect(tones.get('k0')).toBe(tones.get('k9'));
-    expect(tones.get('k0')).not.toBe(tones.get('k1'));
+  it('цвет полосы — по статусу строки; без статуса — как бэклог (QA9)', () => {
+    expect(quarterBarToneClass('inprogress')).not.toBe(quarterBarToneClass('closed'));
+    expect(quarterBarToneClass(undefined)).toBe(quarterBarToneClass('backlog'));
+    expect(quarterBarToneClass('inprogress')).toMatch(/bg-.+ text-.+ border-/);
   });
 });
 
@@ -207,5 +208,40 @@ describe('barDayMarks', () => {
   it('без отсутствий и пересечений полоса чистая', () => {
     const bar = { epicId: 'e1', id: 'a1', memberId: 'bob', startWeek: 0, weeks: 1 };
     expect(barDayMarks(bar, undefined, [bar])).toEqual({ issues: [], risks: [] });
+  });
+});
+
+describe('absenceDatesAfterDrag (QV4)', () => {
+  // Отпуск 05.10–11.10 (кончается в воскресенье): на доске — дни 5–9.
+  const event = { endDate: '2026-10-11', startDate: '2026-10-05' };
+  const from = { days: 5, startDay: 5 };
+
+  it('перенос сдвигает обе даты на рабочие дни квартала', () => {
+    expect(absenceDatesAfterDrag({ event, from, to: { days: 5, startDay: 7 }, weeks })).toEqual({
+      endDate: '2026-10-13',
+      startDate: '2026-10-07',
+    });
+  });
+
+  it('растягивание за один край не трогает дату другого', () => {
+    expect(absenceDatesAfterDrag({ event, from, to: { days: 3, startDay: 7 }, weeks })).toEqual({
+      endDate: '2026-10-11',
+      startDate: '2026-10-07',
+    });
+    expect(absenceDatesAfterDrag({ event, from, to: { days: 2, startDay: 5 }, weeks })).toEqual({
+      endDate: '2026-10-06',
+      startDate: '2026-10-05',
+    });
+  });
+});
+
+describe('sprintStartWeeks', () => {
+  it('недели начала спринтов по порядку; первая неделя квартала и спринты вне него границы не дают', () => {
+    const sprints = [
+      { endDate: '2026-10-23', startDate: '2026-10-12' },
+      { endDate: '2026-10-09T15:00:00.000Z', startDate: '2026-09-28' },
+      { endDate: '2026-09-25', startDate: '2026-09-14' },
+    ];
+    expect(sprintStartWeeks(sprints, weeks)).toEqual([2]);
   });
 });

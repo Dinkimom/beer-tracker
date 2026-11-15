@@ -47,7 +47,7 @@
 | Превью плана от агента | `/sprints/[sprintId]/plan-patch-previews`, `.../plan-patch-goal-previews` | PostgreSQL (+ Tracker для задач) |
 | Сессии агентов | `/sprints/[sprintId]/agent-sessions`, `/agent-sessions/[sessionId]`, `.../messages` | PostgreSQL (приложение) |
 | Строки фич планера | `/sprints/[sprintId]/feature-lanes` | PostgreSQL (приложение) |
-| События доступности (отпуск, техспринт, больничный, дежурство) | `/quarterly-plans/availability/board-events` (URL исторический) | PostgreSQL (приложение), `lib/boardAvailability/` |
+| События доступности (отпуск, больничный, дежурство) | `/quarterly-plans/availability/board-events` (URL исторический) | PostgreSQL (приложение), `lib/boardAvailability/` |
 | Цели спринта | `/sprint-goals`, `/sprint-goals/[id]` | PostgreSQL (приложение) |
 | Фичи, документы, диаграммы, груминг (deprecated) | `/features`, `/features/[featureId]/**` | PostgreSQL (приложение) |
 | Картинка диаграммы фичи | `/features/[featureId]/diagrams/[diagramId]/image` | Локальная ФС |

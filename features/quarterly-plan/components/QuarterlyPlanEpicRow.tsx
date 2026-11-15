@@ -123,7 +123,12 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
           </span>
         </div>
       ) : null}
-      <QuarterlyPlanRowBars assignments={assignments} faded={done} laneById={laneById} />
+      <QuarterlyPlanRowBars
+        assignments={assignments}
+        faded={done}
+        laneById={laneById}
+        statusKey={tracked?.statusColorKey ?? QUARTER_STATUS_PALETTE_KEY[epic.status]}
+      />
     </QuarterlyPlanRow>
   );
 }

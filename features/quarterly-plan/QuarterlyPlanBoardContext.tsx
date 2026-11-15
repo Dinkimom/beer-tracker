@@ -86,7 +86,6 @@ export interface QuarterlyPlanBoardContextValue {
   /** Инструмент «Связь»: включён ли и какая полоса выбрана источником. */
   linking: { armed: boolean; sourceId: string | null };
   memberById: ReadonlyMap<string, Developer>;
-  memberToneById: ReadonlyMap<string, string>;
   /** Цвет, которым инструмент «Заметка» поставит следующую заметку. */
   noteColor: StickyNoteColor;
   /** Идущий жест над заметкой; null — жеста нет или заметку несут мимо строк. */
@@ -150,6 +149,15 @@ export interface QuarterlyPlanBoardContextValue {
 const QuarterlyPlanBoardContext = createContext<QuarterlyPlanBoardContextValue | null>(null);
 
 export const QuarterlyPlanBoardProvider = QuarterlyPlanBoardContext.Provider;
+
+/** Недели, с которых начинаются спринты команды: по ним строки команды рисуют вертикальные границы спринтов. */
+const QuarterSprintStartWeeksContext = createContext<readonly number[]>([]);
+
+export const QuarterSprintStartWeeksProvider = QuarterSprintStartWeeksContext.Provider;
+
+export function useQuarterSprintStartWeeks(): readonly number[] {
+  return useContext(QuarterSprintStartWeeksContext);
+}
 
 export function useQuarterlyPlanBoard(): QuarterlyPlanBoardContextValue {
   const value = useContext(QuarterlyPlanBoardContext);

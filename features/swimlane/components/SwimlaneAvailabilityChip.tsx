@@ -18,9 +18,6 @@ interface SwimlaneAvailabilityChipProps {
 const CHIP_TEXT_CLASS: Record<AvailabilityCardKind, string> = {
   duty: 'text-violet-900 dark:text-violet-50',
   sick_leave: 'text-rose-900 dark:text-rose-50',
-  'tech-sprint-back': 'text-emerald-900 dark:text-emerald-50',
-  'tech-sprint-qa': 'text-orange-900 dark:text-orange-50',
-  'tech-sprint-web': 'text-sky-900 dark:text-sky-50',
   vacation: 'text-amber-950 dark:text-amber-50',
 };
 

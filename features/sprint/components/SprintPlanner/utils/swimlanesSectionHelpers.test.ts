@@ -22,12 +22,11 @@ describe('buildDeveloperAvailabilityMap', () => {
     const boardEvents: BoardAvailabilityEvent[] = [
       {
         endDate: '2025-01-05',
-        eventType: 'tech_sprint',
-        id: 'ts1',
+        eventType: 'duty',
+        id: 'd1',
         memberId: 'u1',
         memberName: 'A',
         startDate: '2025-01-01',
-        techSprintSubtype: 'back',
       },
       {
         endDate: '2025-02-10',

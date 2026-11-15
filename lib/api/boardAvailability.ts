@@ -1,12 +1,8 @@
 /**
- * API событий доступности доски: отпуска, техспринты и прочая занятость участников.
+ * API событий доступности доски: отпуска, больничные и дежурства участников.
  */
 
-import type {
-  BoardAvailabilityEvent,
-  BoardAvailabilityEventType,
-  TechSprintType,
-} from '@/types/quarterly';
+import type { BoardAvailabilityEvent, BoardAvailabilityEventType } from '@/types/quarterly';
 
 import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
@@ -25,7 +21,6 @@ export async function createBoardAvailabilityEvent(options: {
   memberName: string;
   sprintId?: number;
   startDate: string;
-  techSprintSubtype?: TechSprintType;
 }): Promise<BoardAvailabilityEvent> {
   const { data } = await getPlannerBeerTrackerApi().post<BoardAvailabilityEvent>(
     '/quarterly-plans/availability/board-events',
@@ -43,7 +38,6 @@ export async function updateBoardAvailabilityEvent(options: {
   memberName: string;
   sprintId?: number;
   startDate: string;
-  techSprintSubtype?: TechSprintType;
 }): Promise<BoardAvailabilityEvent> {
   const { data } = await getPlannerBeerTrackerApi().patch<BoardAvailabilityEvent>(
     '/quarterly-plans/availability/board-events',

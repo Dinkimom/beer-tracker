@@ -11,8 +11,7 @@ import {
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { notifyAvailabilityChangedIfNeeded } from '@/lib/notifications/notifyLifecycleAndAvailability';
 
-const EVENT_TYPES = new Set(['vacation', 'tech_sprint', 'sick_leave', 'duty']);
-const TECH_SUBTYPES = new Set(['web', 'back', 'qa']);
+const EVENT_TYPES = new Set(['vacation', 'sick_leave', 'duty']);
 
 function parseDateOnly(value: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -39,7 +38,6 @@ function validateEventPayload(body: Record<string, unknown>): {
   startDate: string;
   endDate: string;
   eventType: string;
-  techSprintSubtype: string | null;
 } {
   const boardId = body.boardId;
   const memberId = body.memberId;
@@ -102,21 +100,6 @@ function validateEventPayload(body: Record<string, unknown>): {
     };
   }
 
-  let techSprintSubtype: string | null = null;
-  if (et === 'tech_sprint') {
-    const sub = body.techSprintSubtype ?? body.tech_sprint_type;
-    if (sub == null || !TECH_SUBTYPES.has(String(sub))) {
-      return {
-        ok: false,
-        response: NextResponse.json(
-          { error: 'Для tech_sprint нужен techSprintSubtype: web | back | qa' },
-          { status: 400 }
-        ),
-      };
-    }
-    techSprintSubtype = String(sub);
-  }
-
   return {
     ok: true,
     boardIdNum,
@@ -125,7 +108,6 @@ function validateEventPayload(body: Record<string, unknown>): {
     startDate: String(startDate),
     endDate: String(endDate),
     eventType: et,
-    techSprintSubtype,
   };
 }
 
@@ -176,7 +158,6 @@ export async function POST(request: NextRequest) {
       memberId: parsed.memberId,
       memberName: parsed.memberName,
       eventType: parsed.eventType,
-      techSprintSubtype: parsed.techSprintSubtype,
       startDate: parsed.startDate,
       endDate: parsed.endDate,
     });
@@ -238,7 +219,6 @@ export async function PATCH(request: NextRequest) {
       memberId: String(memberId),
       memberName: parsed.memberName,
       eventType: parsed.eventType,
-      techSprintSubtype: parsed.techSprintSubtype,
       startDate: parsed.startDate,
       endDate: parsed.endDate,
     });

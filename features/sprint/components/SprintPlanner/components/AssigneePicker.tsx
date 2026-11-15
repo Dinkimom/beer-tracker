@@ -29,7 +29,7 @@ const VIEWPORT_PADDING = 8;
 interface AssigneePickerProps {
   anchorRect: DOMRect;
   assigneePointsStats: AssigneePointsStats;
-  /** Отпуска и техспринты из квартального планирования — для подсказки в пикере */
+  /** Отпуска и другие отсутствия из квартального планирования — для подсказки в пикере */
   availability?: QuarterlyAvailability | null;
   developers: Developer[];
   position: TaskPosition;

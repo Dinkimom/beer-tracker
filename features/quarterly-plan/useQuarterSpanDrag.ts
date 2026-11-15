@@ -108,7 +108,8 @@ export function useQuarterSpanDrag({
     const movedFreely = Math.hypot(drag.dx, drag.dy) > FREE_MOVE_THRESHOLD_PX;
     if (drag.delta !== 0 || movedFreely) {
       onChange(spanAfter(drag), pointer, drag);
-    } else if (drag.mode === 'move' && !origin.moved) {
+    } else if (drag.mode !== 'height' && !origin.moved) {
+      // Клик по рукоятке края — тоже клик: у плашки в один день рукоятки занимают всю ширину.
       onClick(pointer);
     }
   };

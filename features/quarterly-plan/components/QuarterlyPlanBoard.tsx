@@ -12,12 +12,13 @@ import { SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX } from '@/features/sprint/comp
 import { useQuarterLeftColumnWidthStorage } from '@/hooks/useLocalStorage';
 import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { QuarterSprintStartWeeksProvider, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   clampQuarterLeftColumnWidth,
   QUARTER_LEFT_COLUMN_PX,
   QUARTER_ROW_HEIGHT_PX,
   QUARTER_WEEK_MIN_WIDTH_PX,
+  sprintStartWeeks,
 } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanAbsenceRow } from './QuarterlyPlanAbsenceRow';
@@ -133,8 +134,9 @@ export function QuarterlyPlanBoard({
                   onToggle={() => toggle(team.id)}
                 />
                 {collapsed ? null : (
-                  <>
-                    <QuarterlyPlanAbsenceRow team={team} />
+                  <QuarterSprintStartWeeksProvider value={sprintStartWeeks(team.sprints, weeks)}>
+                    <QuarterlyPlanAbsenceRow group="duty" team={team} />
+                    <QuarterlyPlanAbsenceRow group="away" team={team} />
                     {plan.directions
                       .filter((direction) => direction.teamId === team.id)
                       .map((direction) => {
@@ -182,7 +184,7 @@ export function QuarterlyPlanBoard({
                         tone="direction"
                       />
                     ) : null}
-                  </>
+                  </QuarterSprintStartWeeksProvider>
                 )}
               </section>
             );

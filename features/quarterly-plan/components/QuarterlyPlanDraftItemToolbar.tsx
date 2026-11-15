@@ -7,6 +7,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { TaskBarPendingApprovalToolbar } from '@/features/task/components/TaskBar/TaskBarPendingApprovalToolbar';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { draftMarkOf } from '../quarterlyPlanBoardModel';
 
 /** Тон подписи пункта — как у предложений агента на доске спринта: новое зелёное, убранное красное. */
 const CHANGE_TONE: Record<QuarterlyPlanDraftItem['change'], { className: string; icon: string | null }> = {
@@ -37,17 +38,19 @@ interface QuarterlyPlanDraftItemToolbarProps {
  */
 export function QuarterlyPlanDraftItemToolbar({ hidden = false, id, placement }: QuarterlyPlanDraftItemToolbarProps) {
   const { t } = useI18n();
-  const { draftReview } = useQuarterlyPlanBoard();
+  const { draftMarks, draftReview } = useQuarterlyPlanBoard();
   const items = draftItemsOf(draftReview, id);
   if (!draftReview || hidden || items.length === 0) return null;
   const toolbars = items.map((item) => {
     const tone = CHANGE_TONE[item.change];
+    // «Изменено» уточняется по плану после черновика: одна привязка к трекеру — «прилинковано».
+    const mark = item.change === 'changed' ? (draftMarkOf(draftMarks, item.id) ?? item.change) : item.change;
     return (
       <TaskBarPendingApprovalToolbar
         key={item.id}
         clientBrand={draftReview.brand ?? undefined}
         commentId={item.id}
-        label={`${t(`quarterlyPlan.draft.itemKind.${item.kind}`)}: ${t(`quarterlyPlan.draft.mark.${item.change}`)}`}
+        label={`${t(`quarterlyPlan.draft.itemKind.${item.kind}`)}: ${t(`quarterlyPlan.draft.mark.${mark}`)}`}
         labelClassName={tone.className}
         labelIcon={tone.icon}
         placement="flow"

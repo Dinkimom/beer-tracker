@@ -24,12 +24,6 @@ export function boardEventToKind(ev: BoardAvailabilityEvent): AvailabilityCardKi
       return 'sick_leave';
     case 'vacation':
       return 'vacation';
-    case 'tech_sprint': {
-      const t = ev.techSprintSubtype;
-      if (t === 'web') return 'tech-sprint-web';
-      if (t === 'back') return 'tech-sprint-back';
-      return 'tech-sprint-qa';
-    }
     default:
       return 'vacation';
   }

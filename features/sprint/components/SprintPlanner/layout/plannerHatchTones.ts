@@ -31,9 +31,6 @@ const PLANNER_AVAILABILITY_EMOJI_SETS: Record<
 > = {
   duty: ['🛟', '⚡', '📞'],
   sick_leave: ['🍋', '🤒', '💊'],
-  'tech-sprint-back': ['⚙️', '🗄️', '🔧'],
-  'tech-sprint-qa': ['🧪', '🐛', '✅'],
-  'tech-sprint-web': ['🌐', '💻', '🎨'],
   vacation: ['🏖️', '🌴', '✈️'],
 };
 
@@ -163,24 +160,6 @@ export const PLANNER_HATCH_TONES: Record<PlannerHatchTone, PlannerHatchToneColor
     lightLine: 'rgb(139 92 246 / 0.4)',
     darkFill: 'rgb(76 29 149 / 0.45)',
     darkLine: 'rgb(167 139 250 / 0.45)',
-  },
-  'tech-sprint-web': {
-    lightFill: 'rgb(224 242 254 / 0.55)',
-    lightLine: 'rgb(14 165 233 / 0.4)',
-    darkFill: 'rgb(12 74 110 / 0.48)',
-    darkLine: 'rgb(56 189 248 / 0.45)',
-  },
-  'tech-sprint-back': {
-    lightFill: 'rgb(209 250 229 / 0.55)',
-    lightLine: 'rgb(16 185 129 / 0.4)',
-    darkFill: 'rgb(6 78 59 / 0.48)',
-    darkLine: 'rgb(52 211 153 / 0.45)',
-  },
-  'tech-sprint-qa': {
-    lightFill: 'rgb(255 237 213 / 0.55)',
-    lightLine: 'rgb(249 115 22 / 0.4)',
-    darkFill: 'rgb(124 45 18 / 0.45)',
-    darkLine: 'rgb(251 146 60 / 0.45)',
   },
   shards: {
     lightLine: 'rgb(0 0 0 / 0.06)',

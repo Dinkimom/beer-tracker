@@ -12,7 +12,7 @@ type SwimlaneLinkAnchor = 'bottom' | 'left' | 'right' | 'top';
 
 export interface SwimlanesSectionProps {
   allTasksForDrag: Task[];
-  /** События доступности участников доски (отпуск, техспринт и т.д.) */
+  /** События доступности участников доски (отпуск, больничный, дежурство) */
   boardAvailabilityEvents?: BoardAvailabilityEvent[];
   boardId: number | null;
   comments: Comment[];

@@ -99,7 +99,7 @@ Sync-worker миграции не запускает. На пустой БД о�
 - `sprint_goals` — цели спринта (delivery / discovery).
 - `sprint_feature_lanes` — черновые строки и порядок доски «по фичам».
 - `occupancy_task_order` — сохранённый порядок задач удалённой вкладки «Занятость». Сервер только читает его для сортировки задач спринта (`lib/tracker/trackerRouteHelpers.ts`), записи больше нет.
-- `board_availability_events` — отпуска, техспринты, больничные, дежурства по доске.
+- `board_availability_events` — отпуска, больничные, дежурства по доске.
 
 **Агент и предложения плана**
 - `plan_patch_position_previews` / `plan_patch_goal_previews` — превью `propose_plan_patch` до apply.
@@ -143,7 +143,7 @@ Sync-worker миграции не запускает. На пустой БД о�
 | `story_task_positions`, `story_draft_tasks`, `story_task_links` | Редактор эпиков / стори | baseline | нет |
 | `features`, `feature_documents`, `feature_diagrams`, `feature_grooming_diagrams`, `feature_grooming_todos`, `document_types`, `document_versions` | Фичи и их документы (`/api/features`, без tenant-проверки; клиент удалён вместе с редактором эпиков, API — 2026-10-29) | baseline | нет |
 
-Не путать: `board_availability_events` (отпуска, техспринты) — живая таблица, хоть роут и остался под `/api/quarterly-plans/availability/board-events`. `occupancy_task_order` тоже живая: её читают при сортировке задач.
+Не путать: `board_availability_events` (отпуска, больничные, дежурства) — живая таблица, хоть роут и остался под `/api/quarterly-plans/availability/board-events`. `occupancy_task_order` тоже живая: её читают при сортировке задач.
 
 Как удалять:
 

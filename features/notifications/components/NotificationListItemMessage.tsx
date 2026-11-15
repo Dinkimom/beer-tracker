@@ -10,7 +10,6 @@ import { useI18n } from '@/contexts/LanguageContext';
 
 const AVAILABILITY_EVENT_TYPE_KEYS: Record<string, string> = {
   vacation: 'notifications.eventTypes.vacation',
-  tech_sprint: 'notifications.eventTypes.techSprint',
   sick_leave: 'notifications.eventTypes.sickLeave',
   duty: 'notifications.eventTypes.duty',
 };

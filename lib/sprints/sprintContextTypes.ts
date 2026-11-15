@@ -2,7 +2,7 @@ import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { AgentReactionView } from '@/lib/comments/stickyNoteReaction';
 import type { DomainRole, Platform } from '@/lib/roles/catalog';
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
-import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
+import type { BoardAvailabilityEventType } from '@/types/quarterly';
 
 export const SPRINT_CONTEXT_SCHEMA_VERSION = 2 as const;
 
@@ -129,7 +129,6 @@ export interface SprintContextAvailabilityEvent {
   memberId: string;
   memberName: string;
   startDate: string;
-  techSprintSubtype?: TechSprintType;
 }
 
 interface SprintContextSprintWindow {

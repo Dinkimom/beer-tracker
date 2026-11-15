@@ -69,8 +69,9 @@ describe('buildUnavailableHatchRanges', () => {
 });
 
 describe('pickAvailabilityHatchKind', () => {
-  it('picks duty over a tech sprint', () => {
-    expect(pickAvailabilityHatchKind(['tech-sprint-web', 'duty'])).toBe('duty');
+  it('picks sick leave over vacation and duty', () => {
+    expect(pickAvailabilityHatchKind(['duty', 'vacation', 'sick_leave'])).toBe('sick_leave');
+    expect(pickAvailabilityHatchKind(['duty', 'vacation'])).toBe('vacation');
   });
 });
 
@@ -120,9 +121,6 @@ describe('buildUnavailableDayTitles', () => {
     const labels: Record<AvailabilityCardKind, string> = {
       duty: 'Duty',
       sick_leave: 'Sick',
-      'tech-sprint-back': 'Back',
-      'tech-sprint-qa': 'QA',
-      'tech-sprint-web': 'Web',
       vacation: 'Vacation',
     };
     const titles = buildUnavailableDayTitles(

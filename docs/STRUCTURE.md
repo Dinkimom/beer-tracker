@@ -76,7 +76,7 @@ beer-tracker/
 | `lib/organizations/`, `lib/staffTeams/`, `lib/admin/`, `lib/roles/`, `lib/access/`, `lib/auth/` | Мультиарендность, команды, админка, роли, сессии |
 | `lib/holidays/` | Производственный календарь |
 | `lib/notifications/`, `lib/storage/` | Уведомления, объектное хранилище (S3) |
-| `lib/boardAvailability/` | События доступности доски (отпуска, техспринты, больничные, дежурства) |
+| `lib/boardAvailability/` | События доступности доски (отпуска, больничные, дежурства) |
 | `lib/i18n/` | Словари ru/en (`lib/i18n/messages/`) |
 | `lib/demo/` | Фикстуры `/demo/planner` |
 | `lib/db.ts` | Пул PostgreSQL (импорт из `app/api/**` запрещён ESLint) |

@@ -1,4 +1,4 @@
-import type { BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
+import type { BoardAvailabilityEventType } from '@/types/quarterly';
 
 import { listBoardAvailabilityEvents } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { attachCommentReactionSummaries } from '@/lib/comments/commentReactionsRepository';
@@ -219,8 +219,7 @@ function mapGoal(row: { done: boolean; id: string; text: string }): SprintContex
   };
 }
 
-const AVAILABILITY_TYPES = new Set(['duty', 'sick_leave', 'tech_sprint', 'vacation']);
-const TECH_SUBTYPES = new Set(['back', 'qa', 'web']);
+const AVAILABILITY_TYPES = new Set(['duty', 'sick_leave', 'vacation']);
 
 function mapAvailabilityRow(row: {
   end_date: unknown;
@@ -229,12 +228,11 @@ function mapAvailabilityRow(row: {
   member_id: string;
   member_name: string;
   start_date: unknown;
-  tech_sprint_type: string | null;
 }): SprintContextAvailabilityEvent | null {
   if (!AVAILABILITY_TYPES.has(row.event_type)) {
     return null;
   }
-  const base: SprintContextAvailabilityEvent = {
+  return {
     endDate: toIsoDateOnly(row.end_date),
     eventType: row.event_type as BoardAvailabilityEventType,
     id: row.id,
@@ -242,14 +240,6 @@ function mapAvailabilityRow(row: {
     memberName: row.member_name,
     startDate: toIsoDateOnly(row.start_date),
   };
-  if (
-    row.event_type === 'tech_sprint' &&
-    row.tech_sprint_type &&
-    TECH_SUBTYPES.has(row.tech_sprint_type)
-  ) {
-    return { ...base, techSprintSubtype: row.tech_sprint_type as TechSprintType };
-  }
-  return base;
 }
 
 async function loadPositions(input: {

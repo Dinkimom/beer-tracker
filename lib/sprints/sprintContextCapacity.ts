@@ -79,7 +79,7 @@ function eventMatchesAssignee(event: SprintContextAvailabilityEvent, ids: Set<st
 }
 
 /**
- * Дни событий доступности человека. `duty: false` — отпуск, больничный, техспринт: человек недоступен.
+ * Дни событий доступности человека. `duty: false` — отпуск, больничный: человек недоступен.
  * `duty: true` — дежурство: капасити не уменьшает, это риск (A2).
  */
 function availabilityDaysForAssignee(

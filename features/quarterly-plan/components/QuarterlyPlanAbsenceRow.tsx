@@ -1,152 +1,113 @@
 'use client';
 
 import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
-import type { AvailabilityPopoverState } from '@/features/swimlane/hooks/useSwimlaneAvailabilityUi';
 import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
 import type { QuarterlyPlanTeam } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { useState } from 'react';
 
 import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
-import { TextTooltip } from '@/components/TextTooltip';
-import { ZIndex } from '@/constants';
+import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-import { SwimlaneAvailabilityPopoverGate } from '@/features/swimlane/components/SwimlaneAvailabilityPopoverGate';
 import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
 import { assignBarLanes } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
-import { QUARTER_LANE_HEIGHT_PX } from '../quarterlyPlanBoardModel';
+import {
+  absenceDatesAfterDrag,
+  QUARTER_ABSENCE_ROW_KINDS,
+  type QuarterAbsenceRowGroup,
+  QUARTER_ROW_PADDING_PX,
+  quarterRowHeightPx,
+} from '../quarterlyPlanBoardModel';
+import { useQuarterAbsenceEdits } from '../useQuarterAbsenceEdits';
 
+import { QuarterlyPlanAbsenceChip, type QuarterAbsenceChip } from './QuarterlyPlanAbsenceChip';
 import { QuarterlyPlanMenu } from './QuarterlyPlanMenu';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
 
-const CHIP_LANE_PX = 22;
-const ROW_PADDING_PX = 7;
-/** До скольких рабочих дней плашка считается короткой: в ней только аватар и имя. */
-const SHORT_CHIP_DAYS = 3;
-const TINY_CHIP_DAYS = 2;
-
-/** Плашки без рамок: вид отсутствия читается по цвету заливки и подписи. */
-const CHIP_KIND_CLASS: Record<AvailabilityCardKind, string> = {
-  duty: 'bg-violet-100 text-violet-900 hover:bg-violet-200 active:bg-violet-300 dark:bg-violet-500/20 dark:text-violet-100 dark:hover:bg-violet-500/30',
-  sick_leave: 'bg-rose-100 text-rose-900 hover:bg-rose-200 active:bg-rose-300 dark:bg-rose-500/20 dark:text-rose-100 dark:hover:bg-rose-500/30',
-  'tech-sprint-back': 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 active:bg-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-100 dark:hover:bg-emerald-500/30',
-  'tech-sprint-qa': 'bg-orange-100 text-orange-900 hover:bg-orange-200 active:bg-orange-300 dark:bg-orange-500/20 dark:text-orange-100 dark:hover:bg-orange-500/30',
-  'tech-sprint-web': 'bg-sky-100 text-sky-900 hover:bg-sky-200 active:bg-sky-300 dark:bg-sky-500/20 dark:text-sky-100 dark:hover:bg-sky-500/30',
-  vacation: 'bg-amber-100 text-amber-950 hover:bg-amber-200 active:bg-amber-300 dark:bg-amber-500/20 dark:text-amber-100 dark:hover:bg-amber-500/30',
-};
-
 interface QuarterlyPlanAbsenceRowProps {
+  /** Какие события в строке: дежурства или отпуска с больничными. */
+  group: QuarterAbsenceRowGroup;
   team: QuarterlyPlanTeam;
 }
 
 /**
- * Отпуска и дежурства команды с точностью до дня. Это те же события, что на доске спринта:
- * клик по неделе добавляет отсутствие, клик по плашке открывает его на правку.
+ * Строка отсутствий команды с точностью до дня: дежурства или отпуска с больничными (QV2). Это те же события, что на доске спринта, а ведут
+ * себя как полосы (QV4): клик по неделе и выбор человека ставят отсутствие на эту неделю, плашку
+ * тянут и растягивают по дням, клик по ней открывает меню с видом и удалением.
  */
-export function QuarterlyPlanAbsenceRow({ team }: QuarterlyPlanAbsenceRowProps) {
+export function QuarterlyPlanAbsenceRow({ group, team }: QuarterlyPlanAbsenceRowProps) {
   const { t } = useI18n();
-  const { absenceByMember, dayCount, timelineStart, weeks } = useQuarterlyPlanBoard();
+  const { absenceByMember, weeks } = useQuarterlyPlanBoard();
+  const edits = useQuarterAbsenceEdits(team.boardId);
   const [picker, setPicker] = useState<{ anchor: QuarterMenuAnchor; week: number } | null>(null);
-  const [popover, setPopover] = useState<AvailabilityPopoverState | null>(null);
+  const [menu, setMenu] = useState<{ anchor: QuarterMenuAnchor; eventId: string } | null>(null);
 
-  const chips = team.members.flatMap((member) =>
-    (absenceByMember.get(member.id)?.segments ?? []).map((segment) => ({
+  const kinds: readonly AvailabilityCardKind[] = QUARTER_ABSENCE_ROW_KINDS[group];
+  const chips: QuarterAbsenceChip[] = team.members.flatMap((member) =>
+    (absenceByMember.get(member.id)?.segments ?? [])
+      .filter((segment) => kinds.includes(segment.kind))
+      .map((segment) => ({
+      days: segment.dayIndices[segment.dayIndices.length - 1]! - segment.startDay + 1,
       id: segment.eventId,
       kind: segment.kind,
       member,
       range: segment.dateRangeLabel,
-      startWeek: segment.startDay,
-      weeks: segment.dayIndices[segment.dayIndices.length - 1]! - segment.startDay + 1,
+      startDay: segment.startDay,
     }))
   );
-  const { laneById, laneCount } = assignBarLanes(chips);
-  // Плашки ниже дорожки заметки и считаются в днях: для заметок неделя с плашкой занята на всю
-  // высоту плашек, свободная — с самого верха строки.
-  const chipRows = Math.ceil((laneCount * CHIP_LANE_PX) / QUARTER_LANE_HEIGHT_PX);
+  const { laneById, laneCount } = assignBarLanes(
+    chips.map((chip) => ({ id: chip.id, startWeek: chip.startDay, weeks: chip.days }))
+  );
+  // Плашки считаются в днях: для заметок неделя с плашкой занята на всю высоту плашек,
+  // свободная — с самого верха строки.
   const noteBlockers = chips.map((chip) => {
-    const startWeek = Math.floor(chip.startWeek / QUARTER_WORKING_DAYS_PER_WEEK);
-    const lastWeek = Math.floor((chip.startWeek + chip.weeks - 1) / QUARTER_WORKING_DAYS_PER_WEEK);
-    return { lane: 0, rows: chipRows, startWeek, weeks: lastWeek - startWeek + 1 };
+    const startWeek = Math.floor(chip.startDay / QUARTER_WORKING_DAYS_PER_WEEK);
+    const lastWeek = Math.floor((chip.startDay + chip.days - 1) / QUARTER_WORKING_DAYS_PER_WEEK);
+    return { lane: 0, rows: laneCount, startWeek, weeks: lastWeek - startWeek + 1 };
   });
+  const eventOf = (chip: Pick<QuarterAbsenceChip, 'id' | 'member'>) =>
+    absenceByMember.get(chip.member.id)?.events.find((event) => event.id === chip.id);
+
+  const menuChip = menu ? chips.find((chip) => chip.id === menu.eventId) : undefined;
+  const menuEvent = menuChip ? eventOf(menuChip) : undefined;
 
   return (
     <QuarterlyPlanRow
-      heightPx={laneCount * CHIP_LANE_PX + ROW_PADDING_PX * 2}
+      heightPx={quarterRowHeightPx(laneCount)}
       left={
         <span className="truncate px-3 text-xs text-ds-text-muted">
-          {t('quarterlyPlan.absenceRow')}
+          {t(`quarterlyPlan.absenceRows.${group}`)}
         </span>
       }
       noteBlockers={noteBlockers}
-      noteRow={{ id: team.id, kind: 'absence' }}
-      notesTopPx={ROW_PADDING_PX}
-      weekActionLabel={t('quarterlyPlan.absenceWeek')}
+      // Заметки строки отсутствий живут в строке отпусков; у графика дежурств их нет.
+      noteRow={group === 'away' ? { id: team.id, kind: 'absence' } : undefined}
+      notesTopPx={QUARTER_ROW_PADDING_PX}
+      weekActionLabel={t(`quarterlyPlan.absenceWeeks.${group}`)}
       onWeekClick={(week, anchor) => setPicker({ anchor, week })}
     >
-      {chips.map((chip) => {
-        const firstName = chip.member.name.split(/\s+/)[0] ?? chip.member.name;
-        const label = `${firstName} · ${t(availabilityKindMessageKey(chip.kind))}`;
-        // Короткой плашке хватает места на имя: вид отсутствия виден по цвету и в подсказке.
-        // В плашку на день-два не влезает и аватар — он съел бы имя.
-        const short = chip.weeks <= SHORT_CHIP_DAYS;
-        const withAvatar = chip.weeks > TINY_CHIP_DAYS;
-        return (
-          <TextTooltip key={chip.id} content={`${label} · ${chip.range}`}>
-            <button
-              className={`absolute flex cursor-pointer items-center gap-1 overflow-hidden rounded text-[11px] font-medium leading-none transition-all duration-200 active:scale-[0.98] ${withAvatar ? 'px-0.5' : 'px-1'} ${CHIP_KIND_CLASS[chip.kind]}`}
-              style={{
-                height: CHIP_LANE_PX - 4,
-                left: `calc(${(chip.startWeek / dayCount) * 100}% + 2px)`,
-                top: ROW_PADDING_PX + (laneById.get(chip.id) ?? 0) * CHIP_LANE_PX + 2,
-                width: `calc(${(chip.weeks / dayCount) * 100}% - 4px)`,
-                zIndex: ZIndex.contentInteractive,
-              }}
-              type="button"
-              onClick={() => {
-                const event = absenceByMember
-                  .get(chip.member.id)
-                  ?.events.find((epic) => epic.id === chip.id);
-                if (!event) return;
-                setPopover({
-                  boardId: team.boardId,
-                  editing: event,
-                  endDate: event.endDate,
-                  memberId: chip.member.id,
-                  memberName: chip.member.name,
-                  startDate: event.startDate,
-                });
-              }}
-            >
-              {withAvatar ? (
-                <Avatar
-                  avatarUrl={chip.member.avatarUrl}
-                  className="!h-3.5 !min-h-3.5 !w-3.5 !min-w-3.5"
-                  initials={chip.member.name.charAt(0).toUpperCase()}
-                  initialsVariant={getAvatarVariantForDeveloper(chip.member)}
-                  size="2xs"
-                />
-              ) : null}
-              <span className="truncate">{short ? firstName : label}</span>
-            </button>
-          </TextTooltip>
-        );
-      })}
-      <SwimlaneAvailabilityPopoverGate
-        popover={popover}
-        sprintStartDate={timelineStart}
-        sprintTimelineWorkingDays={dayCount}
-        onClose={() => setPopover(null)}
-      />
+      {chips.map((chip) => (
+        <QuarterlyPlanAbsenceChip
+          key={chip.id}
+          chip={chip}
+          lane={laneById.get(chip.id) ?? 0}
+          onChange={(to) => {
+            const event = eventOf(chip);
+            if (event) edits.update(event, absenceDatesAfterDrag({ event, from: chip, to, weeks }));
+          }}
+          onClick={(anchor) => setMenu({ anchor, eventId: chip.id })}
+        />
+      ))}
       {picker ? (
         <QuarterlyPlanMenu
           anchor={picker.anchor}
           sections={[
             {
               id: 'members',
-              label: t('quarterlyPlan.absencePickMember'),
+              label: t(`quarterlyPlan.absencePickMembers.${group}`),
               rows: team.members.map((member) => ({
                 icon: (
                   <Avatar
@@ -158,19 +119,55 @@ export function QuarterlyPlanAbsenceRow({ team }: QuarterlyPlanAbsenceRowProps) 
                 ),
                 id: member.id,
                 label: member.name,
-                onSelect: () =>
-                  setPopover({
-                    boardId: team.boardId,
-                    editing: null,
-                    endDate: weeks[picker.week]!.endDate,
-                    memberId: member.id,
-                    memberName: member.name,
-                    startDate: weeks[picker.week]!.startDate,
-                  }),
+                onSelect: () => {
+                  const { anchor, week } = picker;
+                  // Плашка сразу встаёт на неделю первым видом строки; если видов несколько — следом её меню.
+                  edits
+                    .create({
+                      endDate: weeks[week]!.endDate,
+                      eventType: kinds[0]!,
+                      memberId: member.id,
+                      memberName: member.name,
+                      startDate: weeks[week]!.startDate,
+                    })
+                    .then((created) => created && kinds.length > 1 && setMenu({ anchor, eventId: created.id }))
+                    .catch(() => undefined);
+                },
               })),
             },
           ]}
           onClose={() => setPicker(null)}
+        />
+      ) : null}
+      {menu && menuChip && menuEvent ? (
+        <QuarterlyPlanMenu
+          anchor={menu.anchor}
+          sections={[
+            {
+              id: 'kind',
+              label: `${menuChip.member.name} · ${menuChip.range}`,
+              // В строке одного вида выбирать нечего — остаётся подпись и удаление.
+              rows: (kinds.length > 1 ? kinds : []).map((kind) => ({
+                checked: kind === menuChip.kind,
+                id: kind,
+                label: t(availabilityKindMessageKey(kind)),
+                onSelect: () => edits.update(menuEvent, { eventType: kind }),
+              })),
+            },
+            {
+              id: 'actions',
+              rows: [
+                {
+                  destructive: true,
+                  icon: <Icon className="h-4 w-4" name="trash" />,
+                  id: 'remove',
+                  label: t(`quarterlyPlan.absenceRemoves.${group}`),
+                  onSelect: () => edits.remove(menuEvent),
+                },
+              ],
+            },
+          ]}
+          onClose={() => setMenu(null)}
         />
       ) : null}
     </QuarterlyPlanRow>

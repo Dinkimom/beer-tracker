@@ -1,10 +1,10 @@
-# Дизайн-ревью: карточка отпуска / техспринта в свимлейне
+# Дизайн-ревью: карточка отсутствия в свимлейне
 
-> **Исторический документ (сверено 2026-10-25).** `AvailabilityCard` / `AvailabilityCardsLayer` удалены. Сейчас недоступность в свимлейне — штриховка дней в сетке (`features/swimlane/components/TimelineGrid.tsx`, `buildUnavailableHatchRanges` из `features/swimlane/utils/availabilityTimelineMarks.ts`) плюс кликабельная текстовая подпись `features/swimlane/components/SwimlaneAvailabilityChip.tsx` (через `SwimlaneAvailabilityChips.tsx`), открывающая `AvailabilityEventPopover`. Виды: отпуск, больничный, дежурство, техспринт Web/Back/QA (`features/swimlane/utils/availabilityCardKind.ts`). Ниже — ревью старой карточки, без правок.
+> **Исторический документ (сверено 2026-10-25).** `AvailabilityCard` / `AvailabilityCardsLayer` удалены. Сейчас недоступность в свимлейне — штриховка дней в сетке (`features/swimlane/components/TimelineGrid.tsx`, `buildUnavailableHatchRanges` из `features/swimlane/utils/availabilityTimelineMarks.ts`) плюс кликабельная текстовая подпись `features/swimlane/components/SwimlaneAvailabilityChip.tsx` (через `SwimlaneAvailabilityChips.tsx`), открывающая `AvailabilityEventPopover`. Виды: отпуск, больничный, дежурство (`lib/boardAvailability/availabilityCardKind.ts`). Ниже — ревью старой карточки, без правок.
 
 ## Назначение
 
-Карточка показывает в свимлейне спринт-планера периоды **отпуска** и **техспринтов** (Web / Back / QA) по `board_availability_events`. Заведение и правка — в спринт-планере (`AvailabilityEventPopover` — поповер на дорожке); репозиторий — `lib/boardAvailability/`, клиент — `lib/api/boardAvailability.ts`.
+Карточка показывает в свимлейне спринт-планера периоды **отсутствий** (тогда — отпуска) по `board_availability_events`. Заведение и правка — в спринт-планере (`AvailabilityEventPopover` — поповер на дорожке); репозиторий — `lib/boardAvailability/`, клиент — `lib/api/boardAvailability.ts`.
 
 ---
 
@@ -33,7 +33,7 @@
    Нет hover-тени и ручки перетаскивания, блок выглядит статичным.
 
 4. **Цветовая кодировка**  
-   Отпуск (янтарь), Back (изумруд), Web (голубой), QA (янтарь) — в одну палитру с командами.
+   У каждого вида отсутствия свой цвет (отпуск — янтарь) — в одну палитру с командами.
 
 5. **Тёмная тема**  
    Отдельные тёмные варианты, блок не теряется на тёмном фоне.
@@ -71,4 +71,4 @@
 
 ## Итог
 
-Карточка отпуска/техспринта по смыслу и месту в интерфейсе вписана удачно: однозначно отличается от задач, не выглядит перетаскиваемой и логично сидит в сетке по исполнителям и дням. Визуальное единство с карточками задач обеспечено (скругление, рамка, тень, плотность фона в dark). Текст при скролле намеренно оставлен «вместе с карточкой», без sticky/fixed, чтобы не усложнять реализацию.
+Карточка отсутствия по смыслу и месту в интерфейсе вписана удачно: однозначно отличается от задач, не выглядит перетаскиваемой и логично сидит в сетке по исполнителям и дням. Визуальное единство с карточками задач обеспечено (скругление, рамка, тень, плотность фона в dark). Текст при скролле намеренно оставлен «вместе с карточкой», без sticky/fixed, чтобы не усложнять реализацию.

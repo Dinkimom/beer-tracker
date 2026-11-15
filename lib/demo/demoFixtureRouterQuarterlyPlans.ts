@@ -79,7 +79,6 @@ function handleAvailabilityMutation(
     memberId: input.memberId,
     memberName: input.memberName,
     startDate: input.startDate,
-    ...(input.techSprintSubtype ? { techSprintSubtype: input.techSprintSubtype } : {}),
   };
   store.availabilityEvents = [
     ...store.availabilityEvents.filter((existing) => existing.id !== event.id),

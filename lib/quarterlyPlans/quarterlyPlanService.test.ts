@@ -28,7 +28,6 @@ vi.mock('@/lib/boardAvailability/boardAvailabilityEventsRepository', async (impo
       member_id: 'staff:staff-2',
       member_name: 'staff-2',
       start_date: '2026-10-12',
-      tech_sprint_type: null,
     },
   ]),
 }));

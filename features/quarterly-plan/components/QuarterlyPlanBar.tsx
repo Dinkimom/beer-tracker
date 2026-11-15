@@ -19,7 +19,6 @@ import {
   barDayMarks,
   draftOutlineClass,
   QUARTER_ISSUE_HATCH,
-  QUARTER_RISK_DOTS,
   QUARTER_LANE_HEIGHT_PX,
   QUARTER_ROW_PADDING_PX,
   QUARTER_STICKY_LABEL_LEFT,
@@ -30,8 +29,14 @@ import { draftItemsOf, QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraf
 import { QuarterlyPlanResizeHandle } from './QuarterlyPlanResizeHandle';
 
 const BAR_GAP_PX = 2;
-/** Проработка — контур без заливки: отличается от поставки при любой ширине полосы (QG1). */
-const PHASE_BAR_CLASS = { delivery: '', discovery: 'border-dashed !border-current/50 !bg-transparent' } as const;
+/**
+ * Проработка — пунктирный контур без заливки: отличается от поставки при любой ширине полосы (QG1).
+ * У поставки кромка всегда сплошная: палитра статуса «Бэклог» даёт пунктир, а пунктир на полосе значит проработку.
+ */
+const PHASE_BAR_CLASS = {
+  delivery: '!border-solid',
+  discovery: '!border-dashed !border-current/50 !bg-transparent',
+} as const;
 /** Полоса в руке: приподнята над доской и чуть повёрнута, как магнит, который сняли. */
 const BAR_LIFTED_STYLE = {
   boxShadow: '0 2px 4px rgb(0 0 0 / 0.12), 0 12px 22px -8px rgb(0 0 0 / 0.35)',
@@ -54,6 +59,7 @@ interface QuarterlyPlanBarProps {
   member?: Developer;
   /** Риски, которые проблемой не считаются: дежурство в сроке (QV3). */
   risks: string[];
+  /** Заливка, кромка и текст — по статусу строки (QA9). */
   toneClass: string;
 }
 
@@ -116,7 +122,7 @@ export function QuarterlyPlanBar({
   const spanFirstDay = span.startWeek * QUARTER_WORKING_DAYS_PER_WEEK;
   // Человека нет ни в одной команде плана — имени у доски нет (QI6).
   const name = member?.name ?? t('quarterlyPlan.formerMember');
-  /** Проработка (QG1) — контур без заливки, фаза в подсказке; цвет — по человеку, как у остальных. */
+  /** Проработка (QG1) — контур без заливки, фаза в подсказке; цвет — по статусу строки, как у остальных. */
   const phase = assignmentPhase(assignment);
   const phaseTitle = { delivery: undefined, discovery: t('quarterlyPlan.phase.discovery') }[phase];
 
@@ -158,21 +164,18 @@ export function QuarterlyPlanBar({
         className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border px-1.5 text-xs font-medium ${toneClass} ${PHASE_BAR_CLASS[phase]}`}
         style={drag?.mode === 'move' ? BAR_LIFTED_STYLE : undefined}
       >
-        {[
-          ...marks.issues.map((range) => ({ ...range, pattern: QUARTER_ISSUE_HATCH, size: undefined })),
-          ...marks.risks.map((range) => ({ ...range, pattern: QUARTER_RISK_DOTS, size: '5px 5px' })),
-        ].map((range) => {
+        {/* Проблема и риск (дежурство) штрихуются одинаково: их различает значок, а не узор. */}
+        {[...marks.issues, ...marks.risks].map((range) => {
           // Участок у края полосы повторяет её скругление: обрезка по контуру оставляет на углу зубец.
           const startsAtEdge = range.startDay === spanFirstDay;
           const endsAtEdge = range.startDay + range.dayCount === spanFirstDay + spanDays;
           return (
             <span
-              key={`${range.pattern === QUARTER_RISK_DOTS ? 'risk' : 'issue'}-${range.startDay}`}
+              key={range.startDay}
               aria-hidden
               className={`pointer-events-none absolute inset-y-0 ${startsAtEdge ? 'rounded-l-[7px]' : ''} ${endsAtEdge ? 'rounded-r-[7px]' : ''}`}
               style={{
-                backgroundImage: range.pattern,
-                backgroundSize: range.size,
+                backgroundImage: QUARTER_ISSUE_HATCH,
                 left: `${((range.startDay - spanFirstDay) / spanDays) * 100}%`,
                 width: `${(range.dayCount / spanDays) * 100}%`,
               }}

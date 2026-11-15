@@ -17,7 +17,8 @@ import {
   groupConsecutiveDays,
   overlapWeeks,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
-import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
+import { quarterDayIsoDate, QUARTER_WORKING_DAYS_PER_WEEK, resolveWeekSpan } from '@/lib/quarterlyPlans/quarterWeeks';
+import { getStatusColors } from '@/utils/statusColors';
 
 /** Ширина колонки эпиков по умолчанию; пользователь меняет её ручкой на правой границе. */
 export const QUARTER_LEFT_COLUMN_PX = 380;
@@ -42,18 +43,13 @@ export const QUARTER_HEADER_ROW_PX = 28;
 export const QUARTER_WEEK_LINE = 'color-mix(in srgb, var(--ds-border-subtle) 55%, transparent)';
 
 /**
- * Штриховка проблемного участка полосы: человек отсутствует или в те же недели у него больше двух эпиков (QI2).
- * Бледная и редкая: проблем на большом плане много, штриховка не должна забивать полосы.
- * Вид один — причину называет подсказка у значка. Рисуется цветом текста полосы (`currentColor`),
+ * Штриховка отмеченного участка полосы: человек отсутствует, в те же недели у него больше двух эпиков (QI2)
+ * или он дежурит (QV3). Бледная и редкая: отметок на большом плане много, штриховка не должна забивать полосы.
+ * Вид один — причину называет подсказка у значка, проблему от риска отличает сам значок. Рисуется цветом текста полосы (`currentColor`),
  * поэтому остаётся в её тоне и не даёт грязных смесей.
  */
 export const QUARTER_ISSUE_HATCH =
   'repeating-linear-gradient(-45deg, color-mix(in srgb, currentColor 14%, transparent) 0 1.5px, transparent 1.5px 7px)';
-
-/**
- * Дни дежурства на полосе — риск, а не проблема (QV3): точки вместо штриховки, тем же цветом текста полосы.
- */
-export const QUARTER_RISK_DOTS = 'radial-gradient(color-mix(in srgb, currentColor 45%, transparent) 1px, transparent 1.5px)';
 
 /** Новая заметка занимает две недели — в одну короткий текст не помещается. */
 export const QUARTER_NEW_NOTE_WEEKS = 2;
@@ -108,23 +104,6 @@ export function layoutRowBars(assignments: readonly QuarterlyPlanAssignment[]) {
   };
 }
 
-/** Заливка и кромка полосы — по человеку; тень и подъём полосе даёт «картон» карточек планера. */
-const BAR_TONES = [
-  'border-sky-200 bg-sky-100 text-sky-950 dark:border-sky-400/30 dark:bg-sky-500/25 dark:text-sky-100',
-  'border-emerald-200 bg-emerald-100 text-emerald-950 dark:border-emerald-400/30 dark:bg-emerald-500/25 dark:text-emerald-100',
-  'border-amber-200 bg-amber-100 text-amber-950 dark:border-amber-400/30 dark:bg-amber-500/25 dark:text-amber-100',
-  'border-violet-200 bg-violet-100 text-violet-950 dark:border-violet-400/30 dark:bg-violet-500/25 dark:text-violet-100',
-  'border-rose-200 bg-rose-100 text-rose-950 dark:border-rose-400/30 dark:bg-rose-500/25 dark:text-rose-100',
-  'border-teal-200 bg-teal-100 text-teal-950 dark:border-teal-400/30 dark:bg-teal-500/25 dark:text-teal-100',
-  'border-orange-200 bg-orange-100 text-orange-950 dark:border-orange-400/30 dark:bg-orange-500/25 dark:text-orange-100',
-  'border-indigo-200 bg-indigo-100 text-indigo-950 dark:border-indigo-400/30 dark:bg-indigo-500/25 dark:text-indigo-100',
-  'border-lime-200 bg-lime-100 text-lime-950 dark:border-lime-400/30 dark:bg-lime-500/25 dark:text-lime-100',
-] as const;
-
-export function buildToneByKey(keys: readonly string[]): Map<string, string> {
-  return new Map(keys.map((key, index) => [key, BAR_TONES[index % BAR_TONES.length]!]));
-}
-
 /** Статус строки плана → ключ палитры карточек планера. */
 export const QUARTER_STATUS_PALETTE_KEY: Record<QuarterlyPlanEpicStatus, string> = {
   backlog: 'backlog',
@@ -133,6 +112,15 @@ export const QUARTER_STATUS_PALETTE_KEY: Record<QuarterlyPlanEpicStatus, string>
   in_progress: 'inprogress',
   test: 'intesting',
 };
+
+/**
+ * Заливка, кромка и текст полосы — по статусу строки (QA9), той же палитрой, что тег статуса и карточки
+ * планера. Строка без статуса (направление без эпика трекера) — как бэклог.
+ */
+export function quarterBarToneClass(statusKey: string | undefined): string {
+  const colors = getStatusColors(statusKey ?? QUARTER_STATUS_PALETTE_KEY.backlog);
+  return [colors.bg, colors.bgDark, colors.text, colors.textDark, colors.border, colors.borderDark].filter(Boolean).join(' ');
+}
 
 export const QUARTER_STATUS_ORDER: QuarterlyPlanEpicStatus[] = [
   'backlog',
@@ -208,10 +196,15 @@ export const QUARTER_ROW_ACTION_CLASS =
   '!h-6 !w-6 opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100';
 
 /** Что показанный черновик агента сделал со строкой, полосой или заметкой (QM9); null — не трогал или черновика нет. */
-export function draftMarkOf(draftMarks: QuarterlyPlanDraftDiff | null, id: string): 'added' | 'changed' | 'removed' | null {
+export function draftMarkOf(
+  draftMarks: QuarterlyPlanDraftDiff | null,
+  id: string
+): 'added' | 'changed' | 'linked' | 'removed' | null {
   if (!draftMarks) return null;
   if (draftMarks.added.has(id)) return 'added';
   if (draftMarks.removed.has(id)) return 'removed';
+  // Привязка к задаче трекера — не правка самой строки: «изменено» остаётся за названием и остальным.
+  if (draftMarks.linked.has(id)) return 'linked';
   return draftMarks.changed.has(id) ? 'changed' : null;
 }
 
@@ -220,4 +213,51 @@ export function draftOutlineClass(draftMarks: QuarterlyPlanDraftDiff | null, id:
   const mark = draftMarkOf(draftMarks, id);
   if (mark === 'removed') return 'opacity-60 outline-dashed outline-2 outline-offset-1 outline-red-500';
   return mark ? 'outline-dashed outline-2 outline-offset-1 outline-blue-500' : '';
+}
+
+/**
+ * Строки отсутствий команды (QV2): дежурства — график, человек работает (риск, QV3); отпуска и больничные —
+ * человека нет. Первый вид строки — тот, которым встаёт новая плашка; остальные выбирают в её меню.
+ */
+export const QUARTER_ABSENCE_ROW_KINDS = {
+  away: ['vacation', 'sick_leave'],
+  duty: ['duty'],
+} as const satisfies Record<string, readonly AvailabilityCardKind[]>;
+
+export type QuarterAbsenceRowGroup = keyof typeof QUARTER_ABSENCE_ROW_KINDS;
+
+/**
+ * Даты отсутствия после переноса или растягивания плашки (QV4). Сдвинутый край встаёт на свой рабочий день
+ * квартала; край, который не трогали, остаётся как был — так событие, начатое до квартала или
+ * кончающееся в выходной, не обрезается от растягивания другого края.
+ */
+export function absenceDatesAfterDrag(input: {
+  event: Pick<BoardAvailabilityEvent, 'endDate' | 'startDate'>;
+  /** Плашка до жеста и после него, в рабочих днях квартала. */
+  from: { days: number; startDay: number };
+  to: { days: number; startDay: number };
+  weeks: readonly QuarterWeek[];
+}): Pick<BoardAvailabilityEvent, 'endDate' | 'startDate'> {
+  const { event, from, to, weeks } = input;
+  const startMoved = to.startDay !== from.startDay;
+  const endMoved = to.startDay + to.days !== from.startDay + from.days;
+  return {
+    endDate: (endMoved ? quarterDayIsoDate(weeks, to.startDay + to.days - 1) : null) ?? event.endDate,
+    startDate: (startMoved ? quarterDayIsoDate(weeks, to.startDay) : null) ?? event.startDate,
+  };
+}
+
+/**
+ * Недели квартала, с которых начинаются спринты команды, кроме первой недели: по ним строки команды
+ * проводят границы спринтов. Спринт вне квартала границы не даёт.
+ */
+export function sprintStartWeeks(
+  sprints: ReadonlyArray<{ endDate: string; startDate: string }>,
+  weeks: readonly QuarterWeek[]
+): number[] {
+  const starts = sprints.flatMap((sprint) => {
+    const span = resolveWeekSpan(weeks, sprint.startDate, sprint.endDate);
+    return span && span.startWeek > 0 ? [span.startWeek] : [];
+  });
+  return [...new Set(starts)].sort((a, b) => a - b);
 }

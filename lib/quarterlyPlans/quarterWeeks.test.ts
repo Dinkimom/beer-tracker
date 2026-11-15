@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildQuarterWeeks,
   groupWeeksByMonth,
+  quarterDayIsoDate,
   quarterOfDate,
   quartersOfWindow,
   resolveWeekSpan,
@@ -83,5 +84,20 @@ describe('quartersOfWindow (QW3)', () => {
       { quarter: 4, year: 2026 },
       { quarter: 1, year: 2027 },
     ]);
+  });
+});
+
+describe('quarterDayIsoDate', () => {
+  const weeks = buildQuarterWeeks({ quarter: 4, year: 2026 });
+
+  it('рабочий день квартала по номеру: выходные в счёт не идут', () => {
+    expect(quarterDayIsoDate(weeks, 0)).toBe('2026-09-28');
+    expect(quarterDayIsoDate(weeks, 4)).toBe('2026-10-02');
+    expect(quarterDayIsoDate(weeks, 5)).toBe('2026-10-05');
+  });
+
+  it('день вне квартала — null', () => {
+    expect(quarterDayIsoDate(weeks, weeks.length * 5)).toBeNull();
+    expect(quarterDayIsoDate(weeks, -1)).toBeNull();
   });
 });

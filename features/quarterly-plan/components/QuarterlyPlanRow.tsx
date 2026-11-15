@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 import { ZIndex } from '@/constants';
 import { quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterRowNotes, useQuarterSprintStartWeeks } from '../QuarterlyPlanBoardContext';
 import {
   QUARTER_HEADER_ROW_PX,
   QUARTER_LANE_HEIGHT_PX,
@@ -26,7 +26,8 @@ type QuarterlyPlanRowTone = 'default' | 'direction' | 'team';
 
 /**
  * Горизонтальная линия одна на стык: под шапкой, под строкой команды и над каждым направлением;
- * линию над командой рисует её секция. Эпики внутри направления идут без разделителей.
+ * линию над командой рисует её секция. Между обычными строками (эпики, строки отсутствий) — линия
+ * слабее, того же веса, что линии недель: строки читаются, а границы направлений остаются главными.
  * Фоны непрозрачные — левая колонка и строка команды липкие, под ними проезжают полосы.
  */
 const ROW_TONE_CLASS: Record<QuarterlyPlanRowTone, string> = {
@@ -81,6 +82,7 @@ export function QuarterlyPlanRow({
   onWeekClick,
 }: QuarterlyPlanRowProps) {
   const { currentWeek, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const sprintStarts = useQuarterSprintStartWeeks();
   const rowNotes = useQuarterRowNotes(noteRow, noteBlockers);
   const weekWidth = 100 / weeks.length;
   const toneClass = ROW_TONE_CLASS[tone];
@@ -96,6 +98,7 @@ export function QuarterlyPlanRow({
       data-quarter-note-row={noteRow ? quarterNoteRowKey(noteRow) : undefined}
       style={{
         minHeight: totalHeight,
+        ...(tone === 'default' ? { borderTop: `1px solid ${QUARTER_WEEK_LINE}` } : {}),
         ...(sticky ? { top: STICKY_TOP_PX, zIndex: ZIndex.stickyInContent + 1 } : {}),
       }}
     >
@@ -129,6 +132,17 @@ export function QuarterlyPlanRow({
             style={{ left: `${currentWeek * weekWidth}%`, width: `${weekWidth}%` }}
           />
         ) : null}
+        {/* Границы спринтов команды — тем же цветом, что линии между направлениями: недели внутри спринта слабее. */}
+        {tone === 'team'
+          ? null
+          : sprintStarts.map((week) => (
+              <div
+                key={week}
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 w-px bg-ds-border-subtle"
+                style={{ left: `calc(${week * weekWidth}% - 1px)` }}
+              />
+            ))}
         <QuarterlyPlanWeekCells
           actionLabel={weekActionLabel}
           noteRow={noteRow}

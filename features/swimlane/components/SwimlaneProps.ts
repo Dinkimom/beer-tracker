@@ -25,7 +25,7 @@ export interface SwimlaneProps {
   contextMenuBlurOtherCards?: boolean;
   contextMenuTaskId?: string | null;
   developer: Developer;
-  /** События доступности исполнителя (отпуск, техспринт, больничный, дежурство) */
+  /** События доступности исполнителя (отпуск, больничный, дежурство) */
   developerAvailability?: { boardEvents: BoardAvailabilityEvent[] };
   developers: Developer[];
   // Отключить закрытие сайдбара при клике на свимлейн (полезно для спринт планера)

@@ -39,7 +39,6 @@ function row(id: string) {
     member_id: 'alice',
     member_name: 'Alice',
     start_date: '2026-11-16',
-    tech_sprint_type: null,
   };
 }
 
@@ -57,7 +56,7 @@ describe('applyAvailabilityEventOps', () => {
     const result = await run([vacation]);
     expect(result.ok && result.applied.map((item) => item.id)).toEqual(['ev1']);
     expect(insertBoardAvailabilityEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ boardId: 42, memberName: 'Alice', techSprintSubtype: null })
+      expect.objectContaining({ boardId: 42, eventType: 'vacation', memberName: 'Alice' })
     );
     expect(notifyAvailabilityChangedIfNeeded).toHaveBeenCalledWith(expect.objectContaining({ boardId: 42 }));
   });
@@ -70,13 +69,15 @@ describe('applyAvailabilityEventOps', () => {
     expect(insertBoardAvailabilityEvent).not.toHaveBeenCalled();
   });
 
-  it('проверяет даты и подвид техспринта', async () => {
+  it('проверяет даты', async () => {
     await expect(run([{ ...vacation, endDate: '2026-11-01' }])).resolves.toMatchObject({
       error: 'endDate must not be before startDate',
     });
-    await expect(run([{ ...vacation, eventType: 'tech_sprint' }])).resolves.toMatchObject({
-      error: 'tech_sprint needs techSprintSubtype',
-    });
+  });
+
+  it('схема принимает только отпуск, больничный и дежурство', () => {
+    expect(AvailabilityEventOpsSchema.safeParse([{ ...vacation, eventType: 'duty' }]).success).toBe(true);
+    expect(AvailabilityEventOpsSchema.safeParse([{ ...vacation, eventType: 'training' }]).success).toBe(false);
   });
 
   it('останавливается на первой ошибке, сделанное до неё остаётся', async () => {

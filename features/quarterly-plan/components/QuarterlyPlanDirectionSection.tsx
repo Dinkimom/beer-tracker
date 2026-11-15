@@ -4,7 +4,7 @@ import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
 import type { QuarterlyPlanDirection, QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { useI18n } from '@/contexts/LanguageContext';
-import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { isEpicDone, trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
 import {
@@ -84,7 +84,11 @@ export function QuarterlyPlanDirectionSection({
         weekActionLabel={t('quarterlyPlan.assignWeek', { title: direction.title })}
         onWeekClick={assignWeek}
       >
-        <QuarterlyPlanRowBars assignments={shownAssignments} laneById={own.laneById} />
+        <QuarterlyPlanRowBars
+          assignments={shownAssignments}
+          laneById={own.laneById}
+          statusKey={trackerEpicOf(direction, trackerEpics)?.statusColorKey}
+        />
         {spans.length > 0 ? (
           <div
             aria-hidden

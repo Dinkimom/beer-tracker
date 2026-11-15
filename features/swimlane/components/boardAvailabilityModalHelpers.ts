@@ -1,4 +1,4 @@
-import type { BoardAvailabilityEvent, BoardAvailabilityEventType, TechSprintType } from '@/types/quarterly';
+import type { BoardAvailabilityEvent, BoardAvailabilityEventType } from '@/types/quarterly';
 
 import toast from 'react-hot-toast';
 
@@ -45,11 +45,7 @@ export async function submitBoardAvailabilityEvent(args: {
   sprintId?: number;
   startDate: string;
   t: (key: string) => string;
-  techSprintSubtype?: TechSprintType;
 }): Promise<void> {
-  const techSprintFields =
-    args.eventType === 'tech_sprint' ? { techSprintSubtype: args.techSprintSubtype } : {};
-
   try {
     if (args.editing) {
       const updated = await updateBoardAvailabilityEvent({
@@ -61,7 +57,6 @@ export async function submitBoardAvailabilityEvent(args: {
         memberName: args.memberName,
         sprintId: args.sprintId,
         startDate: args.startDate,
-        ...techSprintFields,
       });
       applyAvailabilityEventUpsert(updated, true, args.setItems, args.patchBoardEventsCache);
       toast.success(args.t('sprintPlanner.swimlane.availability.updated'));
@@ -76,7 +71,6 @@ export async function submitBoardAvailabilityEvent(args: {
       memberName: args.memberName,
       sprintId: args.sprintId,
       startDate: args.startDate,
-      ...techSprintFields,
     });
     applyAvailabilityEventUpsert(created, false, args.setItems, args.patchBoardEventsCache);
     toast.success(args.t('sprintPlanner.swimlane.availability.created'));

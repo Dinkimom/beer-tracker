@@ -31,6 +31,19 @@ describe('diffQuarterlyPlanDraft', () => {
     expect([...diff.removed]).toEqual(['a2']);
   });
 
+  it('привязка к задаче трекера — «прилинковано»; с переименованием — обычное изменение', () => {
+    const linked = diffQuarterlyPlanDraft(before, {
+      ...before,
+      directions: [{ ...before.directions[0]!, issueKey: 'CHK-1' }],
+      epics: [{ ...before.epics[0]!, issueKey: 'CHK-2', title: 'Payments' }],
+    });
+    expect([...linked.changed]).toEqual(['d1', 'e1']);
+    expect([...linked.linked]).toEqual(['d1']);
+
+    const wasLinked = { ...before, epics: [{ ...before.epics[0]!, issueKey: 'CHK-2' }] };
+    expect([...diffQuarterlyPlanDraft(wasLinked, before).linked]).toEqual([]);
+  });
+
   it('убранное остаётся на доске на своём месте, новое — после прежнего (QM10)', () => {
     const after: QuarterlyPlanContent = {
       ...before,

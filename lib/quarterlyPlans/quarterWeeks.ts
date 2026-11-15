@@ -59,6 +59,15 @@ export function quarterOfDate(date: Date): QuarterRef {
   };
 }
 
+/** Дата рабочего дня квартала по его номеру (0 — понедельник первой недели), ISO date-only; вне квартала — null. */
+export function quarterDayIsoDate(weeks: readonly QuarterWeek[], dayIndex: number): string | null {
+  const week = weeks[Math.floor(dayIndex / QUARTER_WORKING_DAYS_PER_WEEK)];
+  const monday = week ? parseIsoDateOnly(week.startDate) : null;
+  if (!monday) return null;
+  const offset = dayIndex % QUARTER_WORKING_DAYS_PER_WEEK;
+  return formatLocalDateToIsoDateOnly(new Date(monday.y, monday.m - 1, monday.d + offset, 12));
+}
+
 /** Кварталы, которые задевает окно спринта: обычно один, на стыке кварталов — два (QW3). */
 export function quartersOfWindow(window: { endDate: string; startDate: string }): QuarterRef[] {
   const refs = [window.startDate, window.endDate].flatMap((iso) => {

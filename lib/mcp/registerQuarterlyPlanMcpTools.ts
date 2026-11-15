@@ -192,7 +192,7 @@ export function registerQuarterlyPlanMcpTools(
     'apply_availability_events',
     {
       description:
-        'Add, update or remove absences (vacation, sick_leave, tech_sprint with techSprintSubtype, duty) for people of a team. ' +
+        'Add, update or remove absences (vacation, sick_leave, duty) for people of a team. ' +
         'These are the same events the sprint board shows. Ops run in order and stop at the first error; earlier ops stay applied. ' +
         'teamId and memberId come from get_quarterly_plan; event ids from its absences. Requires confirm=true.',
       inputSchema: {

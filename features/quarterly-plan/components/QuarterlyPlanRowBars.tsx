@@ -7,6 +7,7 @@ import { availabilityKindMessageKey } from '@/lib/boardAvailability/availability
 import { absentDaysWithinSpan, overloadingAssignments } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { quarterBarToneClass } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanBar } from './QuarterlyPlanBar';
 
@@ -16,16 +17,17 @@ interface QuarterlyPlanRowBarsProps {
   /** Строка готова: полосы приглушены (QE8). */
   faded?: boolean;
   laneById: ReadonlyMap<string, number>;
+  /** Ключ палитры статуса строки: им красятся её полосы (QA9); нет — как бэклог. */
+  statusKey?: string;
 }
 
 /** Полосы назначений одной строки с их проблемами (QI1–QI6) и рисками (QV3). */
-export function QuarterlyPlanRowBars({ assignments, faded = false, laneById }: QuarterlyPlanRowBarsProps) {
+export function QuarterlyPlanRowBars({ assignments, faded = false, laneById, statusKey }: QuarterlyPlanRowBarsProps) {
   const { t } = useI18n();
   const {
     absenceByMember,
     assignmentsByMember,
     memberById,
-    memberToneById,
     notInTeamAssignmentIds,
     rowTitleOf,
     violatedBlockers,
@@ -63,6 +65,8 @@ export function QuarterlyPlanRowBars({ assignments, faded = false, laneById }: Q
       .map((segment) => t('quarterlyPlan.riskDuty', { range: segment.dateRangeLabel }));
   };
 
+  const toneClass = quarterBarToneClass(statusKey);
+
   return assignments.map((assignment) => (
     <QuarterlyPlanBar
       key={assignment.id}
@@ -72,7 +76,7 @@ export function QuarterlyPlanRowBars({ assignments, faded = false, laneById }: Q
       lane={laneById.get(assignment.id) ?? 0}
       member={memberById.get(assignment.memberId)}
       risks={risksOf(assignment)}
-      toneClass={memberToneById.get(assignment.memberId) ?? ''}
+      toneClass={toneClass}
     />
   ));
 }
