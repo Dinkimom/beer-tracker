@@ -6,11 +6,12 @@
 import type {
   QuarterlyPlanAssignment,
   QuarterlyPlanContent,
+  QuarterlyPlanPhase,
   QuarterlyPlanTrackerEpic,
   QuarterRef,
 } from './quarterlyPlanTypes';
 
-import { epicTitle, isEpicDone } from './quarterlyPlanLayout';
+import { assignmentPhase, directionIdOfAssignment, epicTitle, isEpicDone } from './quarterlyPlanLayout';
 import { buildQuarterWeeks, resolveWeekSpan, type QuarterWeek } from './quarterWeeks';
 
 /** Строка плана задачи: эпик плана (если есть) и его направление. */
@@ -54,17 +55,21 @@ export interface SprintQuarterPlanInput {
 }
 
 interface SprintQuarterAssignment {
+  /** Направление строки: своё у назначения на направление, иначе направление эпика. */
+  directionId: string;
   endDate: string;
-  /** Назначение кончается в этом спринте: план ждёт, что эпик здесь доделают (QK7). */
+  /** Назначение кончается в этом спринте: план ждёт, что эту фазу строки здесь закончат (QK7). */
   endsInSprint: boolean;
-  epicId: string;
+  /** Эпик назначения; нет — назначение стоит в строке направления (QG2). */
+  epicId?: string;
   id: string;
   memberId: string;
   memberName?: string;
+  phase: QuarterlyPlanPhase;
   startDate: string;
   /**
-   * Задачи этого человека в спринте по эпику назначения (у непривязанного эпика — и задачи прямо под эпиком
-   * трекера его направления); пусто — по плану он на эпике, а задач нет.
+   * Задачи этого человека в спринте по строке назначения. У непривязанного эпика и у назначения
+   * на направление — задачи прямо под эпиком трекера направления; пусто — по плану он занят, а задач нет.
    */
   taskIds: string[];
 }
@@ -93,13 +98,13 @@ function overlapsSpan(assignment: QuarterlyPlanAssignment, span: { startWeek: nu
 function outsidePlanOf(
   assignments: readonly SprintQuarterAssignment[],
   tasks: readonly SprintQuarterTask[],
-  matchByTask: ReadonlyMap<string, QuarterlyPlanRowMatch>,
-  directionOfEpic: ReadonlyMap<string, string>
+  matchByTask: ReadonlyMap<string, QuarterlyPlanRowMatch>
 ): SprintQuarterPlanView['outsidePlan'] {
   const memberIds = [...new Set(assignments.map((assignment) => assignment.memberId))];
   return memberIds.flatMap((memberId) => {
-    const epicIds = new Set(assignments.filter((a) => a.memberId === memberId).map((a) => a.epicId));
-    const directionIds = new Set([...epicIds].map((epicId) => directionOfEpic.get(epicId)));
+    const own = assignments.filter((a) => a.memberId === memberId);
+    const epicIds = new Set(own.map((a) => a.epicId));
+    const directionIds = new Set(own.map((a) => a.directionId));
     const taskIds = tasks
       .filter((task) => task.assigneeId === memberId)
       .filter((task) => {
@@ -138,37 +143,45 @@ export function buildSprintQuarterPlanView(input: {
   const epicById = new Map(content.epics.map((epic) => [epic.id, epic]));
   const assignments = content.assignments
     .filter((assignment) => input.memberIds.has(assignment.memberId) && overlapsSpan(assignment, span))
-    .map((assignment): SprintQuarterAssignment => {
+    .flatMap((assignment): SprintQuarterAssignment[] => {
+      const directionId = directionIdOfAssignment(content, assignment);
+      if (!directionId) return [];
       const memberName = input.memberNames?.get(assignment.memberId);
-      const epic = epicById.get(assignment.epicId);
+      const epic = assignment.epicId ? epicById.get(assignment.epicId) : undefined;
       const taskIds = input.tasks
         .filter((task) => {
           const match = matchByTask.get(task.taskId);
           if (task.assigneeId !== assignment.memberId || !match) return false;
           if (match.epicId) return match.epicId === assignment.epicId;
-          // Непривязанному эпику плана задач по ключу не найти: ему идут задачи прямо под эпиком его направления.
-          return !epic?.issueKey && match.directionId === epic?.directionId;
+          // Непривязанному эпику плана задач по ключу не найти: ему, как и назначению на само направление,
+          // идут задачи прямо под эпиком трекера направления.
+          return !epic?.issueKey && match.directionId === directionId;
         })
         .map((task) => task.taskId);
-      return {
+      return [{
+        directionId,
         endDate: weeks[assignment.startWeek + assignment.weeks - 1]!.endDate,
         endsInSprint: assignment.startWeek + assignment.weeks <= span.startWeek + span.weeks,
-        epicId: assignment.epicId,
+        ...(assignment.epicId ? { epicId: assignment.epicId } : {}),
         id: assignment.id,
         memberId: assignment.memberId,
         ...(memberName ? { memberName } : {}),
+        phase: assignmentPhase(assignment),
         startDate: weeks[assignment.startWeek]!.startDate,
         taskIds: [...new Set(taskIds)],
-      };
+      }];
     });
 
   const epicIds = new Set([
-    ...assignments.map((assignment) => assignment.epicId),
+    ...assignments.flatMap((assignment) => (assignment.epicId ? [assignment.epicId] : [])),
     ...[...matchByTask.values()].flatMap((match) => (match.epicId ? [match.epicId] : [])),
   ]);
   const epics = content.epics.filter((epic) => epicIds.has(epic.id));
-  const directionIds = new Set([...epics.map((epic) => epic.directionId), ...[...matchByTask.values()].map((m) => m.directionId)]);
-  const directionOfEpic = new Map(content.epics.map((epic) => [epic.id, epic.directionId]));
+  const directionIds = new Set([
+    ...epics.map((epic) => epic.directionId),
+    ...assignments.map((assignment) => assignment.directionId),
+    ...[...matchByTask.values()].map((m) => m.directionId),
+  ]);
 
   return {
     ...ref,
@@ -188,7 +201,7 @@ export function buildSprintQuarterPlanView(input: {
       ...(epic.issueKey ? { issueKey: epic.issueKey } : {}),
       title: epicTitle(epic, trackerEpics),
     })),
-    outsidePlan: outsidePlanOf(assignments, input.tasks, matchByTask, directionOfEpic),
+    outsidePlan: outsidePlanOf(assignments, input.tasks, matchByTask),
     tasks: [...matchByTask].map(([taskId, match]) => ({ taskId, ...match })),
     version: input.plan.version,
     weeks: weeks

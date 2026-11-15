@@ -82,12 +82,15 @@ export interface QuarterlyPlanIssue {
 
 type AbsenceLookup = ReadonlyMap<string, Pick<MemberAbsenceDays, 'blockedDays' | 'dutyDays'>>;
 
-/** Назначения в порядке доски: команда → направление → эпик → начало полосы (QI5). */
+/** Назначения в порядке доски: команда → направление (его полосы, затем эпики) → начало полосы (QI5). */
 function assignmentsInBoardOrder(plan: QuarterlyPlan, hideDone: boolean) {
   const rows: Array<{ assignment: QuarterlyPlanAssignment; directionId: string; team: QuarterlyPlanTeam }> = [];
   const byStart = (a: QuarterlyPlanAssignment, b: QuarterlyPlanAssignment) => a.startWeek - b.startWeek;
   for (const team of plan.teams) {
     for (const direction of plan.directions.filter((item) => item.teamId === team.id)) {
+      // Свои полосы направления (QG2) стоят в его строке — выше эпиков.
+      const own = plan.assignments.filter((assignment) => assignment.directionId === direction.id).sort(byStart);
+      rows.push(...own.map((assignment) => ({ assignment, directionId: direction.id, team })));
       const epics = plan.epics.filter(
         (epic) => epic.directionId === direction.id && !(hideDone && isEpicDone(epic, plan.trackerEpics))
       );

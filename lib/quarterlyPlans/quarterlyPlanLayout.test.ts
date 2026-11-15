@@ -12,8 +12,10 @@ import {
   applyBarDrag,
   areLinked,
   assignBarLanes,
+  assignmentPhase,
   assignNoteLanes,
   buildWeekLoad,
+  directionIdOfAssignment,
   epicTitle,
   groupConsecutiveDays,
   isEpicDone,
@@ -263,5 +265,41 @@ describe('привязка к эпику трекера (QE5, QE7, QE8)', () => 
     expect(trackerEpicOf(missing, trackerEpics)).toBeNull();
     expect(epicTitle(missing, trackerEpics)).toBe('Own');
     expect(isEpicDone(missing, trackerEpics)).toBe(false);
+  });
+});
+
+describe('полосы направления и фаза (QG1, QG2)', () => {
+  const content: QuarterlyPlanContent = {
+    assignments: [
+      { directionId: 'd1', id: 'research', memberId: 'm1', phase: 'discovery', startWeek: 0, weeks: 2 },
+      { epicId: 'e1', id: 'build', memberId: 'm1', startWeek: 2, weeks: 3 },
+      { directionId: 'd2', id: 'other', memberId: 'm2', phase: 'discovery', startWeek: 0, weeks: 1 },
+    ],
+    directions: [
+      { id: 'd1', teamId: 't1', title: 'Checkout' },
+      { id: 'd2', teamId: 't1', title: 'Promo' },
+    ],
+    epics: [{ directionId: 'd1', id: 'e1', status: 'backlog', title: 'Payment' }],
+    links: [
+      { fromId: 'research', id: 'l1', toId: 'build' },
+      { fromId: 'other', id: 'l2', toId: 'research' },
+    ],
+    notes: [],
+  };
+
+  it('назначение без фазы — delivery', () => {
+    expect(content.assignments.map(assignmentPhase)).toEqual(['discovery', 'delivery', 'discovery']);
+  });
+
+  it('направление строки — своё или направление эпика', () => {
+    expect(content.assignments.map((assignment) => directionIdOfAssignment(content, assignment))).toEqual(['d1', 'd1', 'd2']);
+    expect(directionIdOfAssignment(content, { epicId: 'gone' })).toBeUndefined();
+  });
+
+  it('направление уносит свои полосы и их зависимости; удаление эпика их не трогает (QE9)', () => {
+    const withoutDirection = removeDirection(content, 'd1');
+    expect(withoutDirection.assignments.map((assignment) => assignment.id)).toEqual(['other']);
+    expect(withoutDirection.links).toEqual([]);
+    expect(removeEpic(content, 'e1').assignments.map((assignment) => assignment.id)).toEqual(['research', 'other']);
   });
 });

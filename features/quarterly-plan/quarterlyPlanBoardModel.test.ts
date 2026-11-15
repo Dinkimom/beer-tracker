@@ -12,6 +12,7 @@ import {
   buildToneByKey,
   formatSpanRange,
   formatWeekRange,
+  layoutRowBars,
   quarterRowHeightPx,
 } from './quarterlyPlanBoardModel';
 
@@ -74,6 +75,19 @@ describe('подписи и размеры', () => {
     expect(formatSpanRange(weeks, { startWeek: 99, weeks: 1 })).toBe('');
   });
 
+  it('раскладка полос строки: дорожки, занятые недели и место в дорожках заметок', () => {
+    const layout = layoutRowBars([
+      { epicId: 'e1', id: 'a', memberId: 'ann', startWeek: 0, weeks: 2 },
+      { epicId: 'e1', id: 'b', memberId: 'bob', startWeek: 1, weeks: 2 },
+    ]);
+    expect(layout.laneCount).toBe(2);
+    expect([...layout.occupiedWeeks].sort()).toEqual([0, 1, 2]);
+    expect(layout.noteBlockers).toEqual([
+      { lane: 0, rows: 1, startWeek: 0, weeks: 2 },
+      { lane: 1, rows: 1, startWeek: 1, weeks: 2 },
+    ]);
+  });
+
   it('высота строки растёт с числом дорожек', () => {
     expect(quarterRowHeightPx(2) - quarterRowHeightPx(1)).toBe(28);
   });
@@ -116,6 +130,19 @@ describe('collectQuarterlyPlanIssues', () => {
     expect(issues.map((issue) => issue.assignmentId)).toEqual(['ann-away', 'bob-1', 'bob-3', 'bob-2', 'ann-done']);
     expect(issues[0]).toMatchObject({ away: true, directionId: 'd1', parallel: false, teamId: 'team' });
     expect(issues[1]).toMatchObject({ away: false, blocked: false, parallel: true });
+  });
+
+  it('полосы самого направления идут перед его эпиками и считаются так же (QG2)', () => {
+    const withResearch: QuarterlyPlan = {
+      ...plan,
+      assignments: [
+        ...plan.assignments,
+        { directionId: 'd1', id: 'ann-research', memberId: 'ann', phase: 'discovery', startWeek: 1, weeks: 1 },
+      ],
+    };
+    const issues = collectQuarterlyPlanIssues(withResearch, absence, false);
+    expect(issues[0]).toMatchObject({ assignmentId: 'ann-research', away: true, directionId: 'd1', teamId: 'team' });
+    expect(issues.map((issue) => issue.assignmentId).slice(1, 3)).toEqual(['ann-away', 'bob-1']);
   });
 
   it('нарушенный порядок — тоже проблема: зависимое назначение начинается до конца предшественника', () => {

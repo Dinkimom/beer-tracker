@@ -23,7 +23,16 @@ const span = { startWeek: z.number().int().min(0), weeks: z.number().int().min(1
 
 const contentSchema = z.object({
   assignments: z
-    .array(z.object({ epicId: id, id, memberId: id, ...span }))
+    .array(
+      z.object({
+        directionId: id.optional(),
+        epicId: id.optional(),
+        id,
+        memberId: id,
+        phase: z.enum(['delivery', 'discovery']).optional(),
+        ...span,
+      })
+    )
     .max(MAX_ITEMS),
   directions: z
     .array(z.object({ id, issueKey: z.string().trim().min(1).max(64).optional(), teamId: id, title }))
@@ -82,6 +91,18 @@ function duplicateError(content: QuarterlyPlanContent): string | null {
   return issueKey ? `issue ${issueKey} is in the plan twice` : null;
 }
 
+/** Строка назначения — ровно одна, эпик или направление плана (QG2). */
+function assignmentRowError(
+  assignment: QuarterlyPlanContent['assignments'][number],
+  epicIds: ReadonlySet<string>,
+  directionIds: ReadonlySet<string>
+): string | null {
+  const { directionId, epicId } = assignment;
+  if ((epicId === undefined) === (directionId === undefined)) return 'needs exactly one of epicId and directionId';
+  if (epicId !== undefined) return epicIds.has(epicId) ? null : `unknown epic ${epicId}`;
+  return directionIds.has(directionId!) ? null : `unknown direction ${directionId}`;
+}
+
 /** Каждая ссылка ведёт на существующую сущность: эпик — на направление, назначение — на эпик и т.д. */
 function referenceError(content: QuarterlyPlanContent, teamIds: ReadonlySet<string> | null): string | null {
   const directionIds = new Set(content.directions.map((direction) => direction.id));
@@ -100,9 +121,10 @@ function referenceError(content: QuarterlyPlanContent, teamIds: ReadonlySet<stri
     ...content.epics
       .filter((epic) => !directionIds.has(epic.directionId))
       .map((epic) => `epic ${epic.id}: unknown direction ${epic.directionId}`),
-    ...content.assignments
-      .filter((assignment) => !epicIds.has(assignment.epicId))
-      .map((assignment) => `assignment ${assignment.id}: unknown epic ${assignment.epicId}`),
+    ...content.assignments.flatMap((assignment) => {
+      const problem = assignmentRowError(assignment, epicIds, directionIds);
+      return problem ? [`assignment ${assignment.id}: ${problem}`] : [];
+    }),
     ...content.links
       .filter((link) => !assignmentIds.has(link.fromId) || !assignmentIds.has(link.toId))
       .map((link) => `link ${link.id}: unknown assignment`),

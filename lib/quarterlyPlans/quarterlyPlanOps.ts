@@ -3,7 +3,7 @@
  * Чистые функции: план на входе, план на выходе. Правила — те же, что у доски (QM2), из `quarterlyPlanLayout`.
  */
 
-import type { QuarterlyPlanContent, QuarterlyPlanNoteRow, QuarterRef } from './quarterlyPlanTypes';
+import type { QuarterlyPlanAssignment, QuarterlyPlanContent, QuarterlyPlanNoteRow, QuarterRef } from './quarterlyPlanTypes';
 
 import { z } from 'zod';
 
@@ -16,6 +16,7 @@ import {
   addLink,
   addNote,
   areLinked,
+  directionIdOfAssignment,
   QUARTER_NOTE_MAX_ROWS,
   removeAssignment,
   removeDirection,
@@ -46,6 +47,7 @@ const span = z.union([
   z.object({ endDate: isoDate, startDate: isoDate }),
 ]);
 const status = z.enum(['backlog', 'blocked', 'done', 'in_progress', 'test']);
+const phase = z.enum(['delivery', 'discovery']);
 const noteRow = z.object({ id: target, kind: z.enum(['absence', 'direction', 'epic', 'team']) });
 
 const QuarterlyPlanOpSchema = z.discriminatedUnion('op', [
@@ -75,11 +77,20 @@ const QuarterlyPlanOpSchema = z.discriminatedUnion('op', [
     unlink: z.literal(true).optional(),
   }),
   z.object({ epicId: target, op: z.literal('removeEpic') }),
-  z.object({ epicId: target, memberId: target, op: z.literal('assign'), ref: ref.optional(), span }),
+  z.object({
+    directionId: target.optional().describe('Row is the direction itself (usually discovery); exactly one of epicId and directionId'),
+    epicId: target.optional(),
+    memberId: target,
+    op: z.literal('assign'),
+    phase: phase.optional().describe('Default: discovery on a direction, delivery on an epic'),
+    ref: ref.optional(),
+    span,
+  }),
   z.object({
     assignmentId: target,
     memberId: target.optional(),
     op: z.literal('updateAssignment'),
+    phase: phase.optional(),
     span: span.optional(),
   }),
   z.object({ assignmentId: target, op: z.literal('removeAssignment') }),
@@ -169,13 +180,30 @@ function findOr<T extends { id: string }>(items: readonly T[], id: string, what:
   return item;
 }
 
-/** Исполнитель — из команды эпика (QA3). */
-function requireTeamMember(ctx: OpContext, plan: QuarterlyPlanContent, epicId: string, memberId: string): void {
-  const directionId = findOr(plan.epics, epicId, 'epic').directionId;
-  const teamId = findOr(plan.directions, directionId, 'direction').teamId;
+type AssignmentRow = Pick<QuarterlyPlanAssignment, 'directionId' | 'epicId'>;
+
+/** Исполнитель — из команды строки: эпика или направления (QA3, QG2). */
+function requireTeamMember(ctx: OpContext, plan: QuarterlyPlanContent, row: AssignmentRow, memberId: string): void {
+  const directionId = directionIdOfAssignment(plan, row);
+  const teamId = findOr(plan.directions, directionId ?? '', 'direction').teamId;
   if (!ctx.teams.memberIdsByTeam.get(teamId)?.has(memberId)) {
-    throw new OpError(`member ${memberId} is not in the epic's team ${teamId}`);
+    throw new OpError(`member ${memberId} is not in the row's team ${teamId}`);
   }
+}
+
+/** Строка нового назначения — эпик или направление, ровно одно (QG2). */
+function resolveAssignRow(ctx: OpContext, plan: QuarterlyPlanContent, op: AssignmentRow): AssignmentRow {
+  if ((op.epicId === undefined) === (op.directionId === undefined)) {
+    throw new OpError('needs exactly one of epicId and directionId');
+  }
+  return op.epicId === undefined
+    ? { directionId: findOr(plan.directions, resolveId(ctx, op.directionId!), 'direction').id }
+    : { epicId: findOr(plan.epics, resolveId(ctx, op.epicId), 'epic').id };
+}
+
+/** Фаза в плане: discovery хранится, delivery — отсутствием поля (QG1). */
+function phasePatch(value: 'delivery' | 'discovery'): Pick<QuarterlyPlanAssignment, 'phase'> {
+  return { phase: value === 'discovery' ? 'discovery' : undefined };
 }
 
 function requireRow(ctx: OpContext, plan: QuarterlyPlanContent, row: QuarterlyPlanNoteRow): QuarterlyPlanNoteRow {
@@ -269,17 +297,26 @@ const handlers: Handlers = {
   },
   removeEpic: (plan, op, ctx) => removeEpic(plan, findOr(plan.epics, resolveId(ctx, op.epicId), 'epic').id),
   assign: (plan, op, ctx) => {
-    const epicId = findOr(plan.epics, resolveId(ctx, op.epicId), 'epic').id;
-    requireTeamMember(ctx, plan, epicId, op.memberId);
+    const row = resolveAssignRow(ctx, plan, op);
+    requireTeamMember(ctx, plan, row, op.memberId);
+    // В строке направления полоса по умолчанию — discovery, в строке эпика — delivery (QG2).
+    const isDiscovery = (op.phase ?? (row.directionId ? 'discovery' : 'delivery')) === 'discovery';
     const id = ctx.newId();
     created(ctx, op.ref, id);
-    return addAssignment(plan, { epicId, id, memberId: op.memberId, ...resolveSpan(ctx, op.span) });
+    return addAssignment(plan, {
+      ...row,
+      id,
+      memberId: op.memberId,
+      ...(isDiscovery ? { phase: 'discovery' as const } : {}),
+      ...resolveSpan(ctx, op.span),
+    });
   },
   updateAssignment: (plan, op, ctx) => {
     const assignment = findOr(plan.assignments, resolveId(ctx, op.assignmentId), 'assignment');
-    if (op.memberId) requireTeamMember(ctx, plan, assignment.epicId, op.memberId);
+    if (op.memberId) requireTeamMember(ctx, plan, assignment, op.memberId);
     return updateAssignment(plan, assignment.id, {
       ...(op.memberId ? { memberId: op.memberId } : {}),
+      ...(op.phase ? phasePatch(op.phase) : {}),
       ...(op.span ? resolveSpan(ctx, op.span) : {}),
     });
   },

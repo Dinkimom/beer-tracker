@@ -1,24 +1,17 @@
 'use client';
 
-import type { QuarterlyPlanAssignment, QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
+import type { QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { StatusTag } from '@/components/StatusTag';
 import { useI18n } from '@/contexts/LanguageContext';
-import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
-import {
-  absentDaysWithinSpan,
-  assignBarLanes,
-  epicTitle,
-  isEpicDone,
-  overloadingAssignments,
-  trackerEpicOf,
-} from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { epicTitle, isEpicDone, trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
+  layoutRowBars,
   QUARTER_ROW_ACTION_CLASS,
   QUARTER_ROW_PADDING_PX,
   QUARTER_STATUS_PALETTE_KEY,
@@ -26,12 +19,12 @@ import {
   quarterRowHeightPx,
 } from '../quarterlyPlanBoardModel';
 
-import { QuarterlyPlanBar } from './QuarterlyPlanBar';
 import { QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
 import { QuarterlyPlanDraftMark } from './QuarterlyPlanDraftMark';
 import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
 import { QuarterlyPlanIssueKey } from './QuarterlyPlanIssueKey';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
+import { QuarterlyPlanRowBars } from './QuarterlyPlanRowBars';
 
 interface QuarterlyPlanEpicRowProps {
   epic: QuarterlyPlanEpic;
@@ -43,73 +36,16 @@ interface QuarterlyPlanEpicRowProps {
  */
 export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
   const { t } = useI18n();
-  const {
-    absenceByMember,
-    assignmentsByEpic,
-    assignmentsByMember,
-    draft,
-    epicById,
-    memberById,
-    memberToneById,
-    notInTeamAssignmentIds,
-    onCellClick,
-    onDraftSubmit,
-    onRowMenu,
-    onStatusClick,
-    trackerEpics,
-    violatedBlockers,
-  } = useQuarterlyPlanBoard();
+  const { assignmentsByEpic, draft, onCellClick, onDraftSubmit, onRowMenu, onStatusClick, trackerEpics } =
+    useQuarterlyPlanBoard();
   const assignments = assignmentsByEpic.get(epic.id) ?? [];
-  const { laneById, laneCount } = assignBarLanes(assignments);
-  const occupiedWeeks = new Set(
-    assignments.flatMap((assignment) =>
-      Array.from({ length: assignment.weeks }, (_, offset) => assignment.startWeek + offset)
-    )
-  );
+  const { laneById, laneCount, noteBlockers, occupiedWeeks } = layoutRowBars(assignments);
   const renaming = draft?.kind === 'renameEpic' && draft.id === epic.id;
   /** Готовый эпик уходит на второй план: приглушён и зачёркнут (QE8). */
   const done = isEpicDone(epic, trackerEpics);
   const title = epicTitle(epic, trackerEpics);
   /** У привязанного эпика статус из трекера и вручную не меняется (QE7). */
   const tracked = trackerEpicOf(epic, trackerEpics);
-  const titleOf = (epicId: string) => {
-    const other = epicById.get(epicId);
-    return other ? epicTitle(other, trackerEpics) : '';
-  };
-
-  /** Что не так с назначением: человек отсутствует, занят другим эпиком или нарушен порядок работ. */
-  const issuesOf = (assignment: QuarterlyPlanAssignment): string[] => {
-    const absence = absenceByMember.get(assignment.memberId);
-    const absentDays = new Set(absentDaysWithinSpan(assignment, absence?.blockedDays ?? new Set()));
-    const away = (absence?.segments ?? [])
-      .filter((segment) => segment.dayIndices.some((day) => absentDays.has(day)))
-      .map((segment) => `${t(availabilityKindMessageKey(segment.kind))} ${segment.dateRangeLabel}`);
-    const parallel = overloadingAssignments(
-      assignment,
-      assignmentsByMember.get(assignment.memberId) ?? []
-    ).map((other) => titleOf(other.epicId));
-    const blockers = (violatedBlockers.get(assignment.id) ?? []).map((blocker) =>
-      t('quarterlyPlan.issueBlocked', { title: titleOf(blocker.epicId) })
-    );
-    return [
-      ...(notInTeamAssignmentIds.has(assignment.id) ? [t('quarterlyPlan.issueNotInTeam')] : []),
-      ...away,
-      ...(parallel.length > 0
-        ? [t('quarterlyPlan.issueParallel', { titles: [...new Set(parallel)].join(', ') })]
-        : []),
-      ...blockers,
-    ];
-  };
-
-  /** Дежурство в сроке назначения — риск, не проблема (QV3): в подсказку, но не в счётчик. */
-  const risksOf = (assignment: QuarterlyPlanAssignment): string[] => {
-    const absence = absenceByMember.get(assignment.memberId);
-    const dutyDays = new Set(absentDaysWithinSpan(assignment, absence?.dutyDays ?? new Set()));
-    return (absence?.segments ?? [])
-      .filter((segment) => segment.kind === 'duty' && segment.dayIndices.some((day) => dutyDays.has(day)))
-      .map((segment) => t('quarterlyPlan.riskDuty', { range: segment.dateRangeLabel }));
-  };
-
   return (
     <QuarterlyPlanRow
       heightPx={quarterRowHeightPx(laneCount)}
@@ -169,17 +105,12 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
           )}
         </div>
       }
-      noteBlockers={assignments.map((assignment) => ({
-        lane: laneById.get(assignment.id) ?? 0,
-        rows: 1,
-        startWeek: assignment.startWeek,
-        weeks: assignment.weeks,
-      }))}
+      noteBlockers={noteBlockers}
       noteRow={{ id: epic.id, kind: 'epic' }}
       notesTopPx={QUARTER_ROW_PADDING_PX}
       occupiedWeeks={occupiedWeeks}
       weekActionLabel={t('quarterlyPlan.assignWeek', { title: epic.title })}
-      onWeekClick={(week, anchor) => onCellClick(epic.id, week, anchor)}
+      onWeekClick={(week, anchor) => onCellClick({ id: epic.id, kind: 'epic' }, week, anchor)}
     >
       {/* Эпик без единой полосы: пометка в начале таймлайна, клики по неделям проходят сквозь неё. */}
       {assignments.length === 0 && !done ? (
@@ -192,18 +123,7 @@ export function QuarterlyPlanEpicRow({ epic }: QuarterlyPlanEpicRowProps) {
           </span>
         </div>
       ) : null}
-      {assignments.map((assignment) => (
-        <QuarterlyPlanBar
-          key={assignment.id}
-          assignment={assignment}
-          faded={done}
-          issues={issuesOf(assignment)}
-          lane={laneById.get(assignment.id) ?? 0}
-          member={memberById.get(assignment.memberId)}
-          risks={risksOf(assignment)}
-          toneClass={memberToneById.get(assignment.memberId) ?? ''}
-        />
-      ))}
+      <QuarterlyPlanRowBars assignments={assignments} faded={done} laneById={laneById} />
     </QuarterlyPlanRow>
   );
 }

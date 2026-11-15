@@ -852,6 +852,8 @@ export const enMessages = {
       'The direction, its epics and assignments will be removed from the plan. Nothing changes in the tracker.',
     memberAway: 'away',
     memberBusy: 'already busy',
+    menuPhase: 'Phase',
+    phase: { delivery: 'Delivery', discovery: 'Discovery' },
     draft: {
       notApplicable: 'The draft no longer applies to the current plan. Reject it',
       show: 'Show draft',

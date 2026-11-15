@@ -1,5 +1,6 @@
 import type { QuarterlyPlanMenuRow, QuarterlyPlanMenuSection } from './components/QuarterlyPlanMenu';
 import type {
+  QuarterlyPlanAssignRow,
   QuarterlyPlanDraft,
   QuarterMenuAnchor,
   QuarterlyPlanRowTarget,
@@ -7,8 +8,10 @@ import type {
 import type { MemberAbsence } from './quarterlyPlanBoardModel';
 import type {
   QuarterlyPlan,
+  QuarterlyPlanAssignment,
   QuarterlyPlanContent,
   QuarterlyPlanEpicStatus,
+  QuarterlyPlanPhase,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
 import type { Developer } from '@/types';
@@ -20,7 +23,9 @@ import {
   absentDaysWithinSpan,
   addAssignment,
   addEpic,
+  assignmentPhase,
   buildWeekLoad,
+  directionIdOfAssignment,
   QUARTER_MAX_PARALLEL_EPICS,
   removeAssignment,
   updateAssignment,
@@ -36,7 +41,7 @@ import {
 } from './quarterlyPlanBoardModel';
 
 export type QuarterlyPlanMenuState =
-  { anchor: QuarterMenuAnchor; assignmentId: string; kind: 'bar' } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'assign'; week: number; weeks: number } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'status' } | { anchor: QuarterMenuAnchor; kind: 'row'; target: QuarterlyPlanRowTarget };
+  { anchor: QuarterMenuAnchor; assignmentId: string; kind: 'bar' } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'status' } | { anchor: QuarterMenuAnchor; kind: 'assign'; phase?: QuarterlyPlanPhase; row: QuarterlyPlanAssignRow; week: number; weeks: number } | { anchor: QuarterMenuAnchor; kind: 'row'; target: QuarterlyPlanRowTarget };
 
 /**
  * Зачем открыт поиск по трекеру: добавить эпик плана из задачи трекера, привязать эпик плана к задаче
@@ -67,8 +72,8 @@ export function applyTrackerPickToPlan(
 
 /** Действия строк, у которых есть своё состояние на странице: поле ввода, диалог, запрос в трекер. */
 export interface QuarterlyPlanRowActions {
-  /** Открыть выбор ещё одного человека на те же недели, что у полосы. */
-  onAssignMore: (epicId: string, span: WeekSpan) => void;
+  /** Открыть выбор ещё одного человека на те же недели, строку и фазу, что у полосы. */
+  onAssignMore: (assignment: QuarterlyPlanAssignment) => void;
   onPickTrackerEpic: (purpose: QuarterlyPlanTrackerPick) => void;
   onRemoveDirection: (directionId: string) => void;
   onRemoveEpic: (epicId: string) => void;
@@ -98,9 +103,19 @@ function memberAvatar(member: Developer) {
   );
 }
 
-/** Команда, которой принадлежит эпик: исполнителей предлагаем из неё. */
-function teamMembersOfEpic(plan: QuarterlyPlan, epicId: string): Developer[] {
-  const directionId = plan.epics.find((epic) => epic.id === epicId)?.directionId;
+/** Строка назначения в форме плана: эпик или направление (QG2). */
+function rowFields(row: QuarterlyPlanAssignRow): Pick<QuarterlyPlanAssignment, 'directionId' | 'epicId'> {
+  return row.kind === 'epic' ? { epicId: row.id } : { directionId: row.id };
+}
+
+/** Фаза в плане: discovery хранится, delivery — отсутствием поля (QG1). */
+function phaseFields(phase: QuarterlyPlanPhase): Pick<QuarterlyPlanAssignment, 'phase'> {
+  return { phase: phase === 'discovery' ? 'discovery' : undefined };
+}
+
+/** Команда, которой принадлежит строка: исполнителей предлагаем из неё (QA3). */
+function teamMembersOfRow(plan: QuarterlyPlan, row: Pick<QuarterlyPlanAssignment, 'directionId' | 'epicId'>): Developer[] {
+  const directionId = directionIdOfAssignment(plan, row);
   const teamId = plan.directions.find((direction) => direction.id === directionId)?.teamId;
   return plan.teams.find((team) => team.id === teamId)?.members ?? [];
 }
@@ -123,19 +138,29 @@ function spanHint(input: MenuSectionsInput, memberId: string, span: WeekSpan): s
   return busy ? input.t('quarterlyPlan.memberBusy') : undefined;
 }
 
-/** Выбор человека на срок `span`; тех, кто уже стоит на этом эпике в эти недели, не предлагаем. */
-function assignSections(input: MenuSectionsInput, epicId: string, span: WeekSpan): QuarterlyPlanMenuSection[] {
+/**
+ * Выбор человека на срок `span`; тех, кто уже стоит в этой строке в эти недели, не предлагаем.
+ * Фаза новой полосы: в строке направления — discovery, в строке эпика — delivery (QG2).
+ */
+function assignSections(
+  input: MenuSectionsInput,
+  row: QuarterlyPlanAssignRow,
+  span: WeekSpan,
+  phase: QuarterlyPlanPhase = row.kind === 'direction' ? 'discovery' : 'delivery'
+): QuarterlyPlanMenuSection[] {
+  const fields = rowFields(row);
   const taken = new Set(
     input.plan.assignments
       .filter(
         (assignment) =>
-          assignment.epicId === epicId &&
+          assignment.epicId === fields.epicId &&
+          assignment.directionId === fields.directionId &&
           assignment.startWeek < span.startWeek + span.weeks &&
           assignment.startWeek + assignment.weeks > span.startWeek
       )
       .map((assignment) => assignment.memberId)
   );
-  const rows: QuarterlyPlanMenuRow[] = teamMembersOfEpic(input.plan, epicId)
+  const rows: QuarterlyPlanMenuRow[] = teamMembersOfRow(input.plan, fields)
     .filter((member) => !taken.has(member.id))
     .map((member) => ({
       hint: spanHint(input, member.id, span),
@@ -144,7 +169,13 @@ function assignSections(input: MenuSectionsInput, epicId: string, span: WeekSpan
       label: member.name,
       onSelect: () =>
         input.applyEdit((content) =>
-          addAssignment(content, { id: crypto.randomUUID(), epicId, memberId: member.id, ...span })
+          addAssignment(content, {
+            ...fields,
+            id: crypto.randomUUID(),
+            memberId: member.id,
+            ...(phase === 'discovery' ? phaseFields(phase) : {}),
+            ...span,
+          })
         ),
     }));
   return [{ id: 'assign', label: withRange(input, input.t('quarterlyPlan.menuAssign'), span), rows }];
@@ -153,7 +184,7 @@ function assignSections(input: MenuSectionsInput, epicId: string, span: WeekSpan
 function barSections(input: MenuSectionsInput, assignmentId: string): QuarterlyPlanMenuSection[] {
   const assignment = input.plan.assignments.find((epic) => epic.id === assignmentId);
   if (!assignment) return [];
-  const members: QuarterlyPlanMenuRow[] = teamMembersOfEpic(input.plan, assignment.epicId).map(
+  const members: QuarterlyPlanMenuRow[] = teamMembersOfRow(input.plan, assignment).map(
     (member) => ({
       checked: member.id === assignment.memberId,
       icon: memberAvatar(member),
@@ -163,8 +194,15 @@ function barSections(input: MenuSectionsInput, assignmentId: string): QuarterlyP
         input.applyEdit((content) => updateAssignment(content, assignmentId, { memberId: member.id })),
     })
   );
+  const phases: QuarterlyPlanMenuRow[] = (['discovery', 'delivery'] as const).map((phase) => ({
+    checked: assignmentPhase(assignment) === phase,
+    id: phase,
+    label: input.t(`quarterlyPlan.phase.${phase}`),
+    onSelect: () => input.applyEdit((content) => updateAssignment(content, assignmentId, phaseFields(phase))),
+  }));
   return [
     { id: 'reassign', label: withRange(input, input.t('quarterlyPlan.menuAssignee'), assignment), rows: members },
+    { id: 'phase', label: input.t('quarterlyPlan.menuPhase'), rows: phases },
     {
       id: 'actions',
       rows: [
@@ -173,7 +211,7 @@ function barSections(input: MenuSectionsInput, assignmentId: string): QuarterlyP
           id: 'more',
           keepOpen: true,
           label: input.t('quarterlyPlan.menuAddPerson'),
-          onSelect: () => input.actions.onAssignMore(assignment.epicId, assignment),
+          onSelect: () => input.actions.onAssignMore(assignment),
         },
         {
           icon: rowIcon('arrow-right'),
@@ -340,7 +378,7 @@ function rowSections(input: MenuSectionsInput, target: QuarterlyPlanRowTarget): 
 export function buildQuarterlyPlanMenuSections(input: MenuSectionsInput): QuarterlyPlanMenuSection[] {
   const { menu } = input;
   if (menu.kind === 'assign') {
-    return assignSections(input, menu.epicId, { startWeek: menu.week, weeks: menu.weeks });
+    return assignSections(input, menu.row, { startWeek: menu.week, weeks: menu.weeks }, menu.phase);
   }
   if (menu.kind === 'bar') return barSections(input, menu.assignmentId);
   if (menu.kind === 'row') return rowSections(input, menu.target);

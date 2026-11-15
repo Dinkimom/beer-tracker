@@ -100,6 +100,8 @@ interface SeedEpic {
 }
 
 interface SeedDirection {
+  /** Проработка фичи в строке самого направления (QG2). */
+  discovery?: SeedAssignment[];
   epics: SeedEpic[];
   teamId: string;
   title: string;
@@ -118,6 +120,7 @@ const SEED_DIRECTIONS: SeedDirection[] = [
     ],
   },
   {
+    discovery: [[DEMO_DEV_DANA, 2, 2]],
     teamId: DEMO_TEAM_ID,
     title: 'Promo codes v2',
     epics: [
@@ -240,6 +243,9 @@ function buildSeedContent(): QuarterlyPlanContent {
   SEED_DIRECTIONS.forEach((direction, directionIndex) => {
     const directionId = `demo-direction-${directionIndex + 1}`;
     content.directions.push({ id: directionId, teamId: direction.teamId, title: direction.title });
+    (direction.discovery ?? []).forEach(([memberId, startWeek, weeks], index) => {
+      content.assignments.push({ directionId, id: `${directionId}-d${index + 1}`, memberId, phase: 'discovery', startWeek, weeks });
+    });
     direction.epics.forEach((epic, epicIndex) => {
       const planEpic: QuarterlyPlanEpic = {
         directionId,

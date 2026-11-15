@@ -83,7 +83,40 @@ describe('applyQuarterlyPlanOps', () => {
 
   it('исполнитель — только из команды эпика (QA3)', () => {
     const result = run([{ epicId: 'id2', memberId: 'grace', op: 'assign', span: { startWeek: 3, weeks: 1 } }], BASE.content);
-    expect(result.ok ? '' : result.error).toBe('assign: member grace is not in the epic\'s team t1');
+    expect(result.ok ? '' : result.error).toBe('assign: member grace is not in the row\'s team t1');
+  });
+
+  it('полоса в строке направления — discovery, в строке эпика — delivery; фаза меняется (QG1, QG2)', () => {
+    const result = ok(
+      [
+        { directionId: 'id1', memberId: 'bob', op: 'assign', ref: '$research', span: { startWeek: 0, weeks: 1 } },
+        { epicId: 'id2', memberId: 'bob', op: 'assign', phase: 'discovery', ref: '$spike', span: { startWeek: 1, weeks: 1 } },
+        { assignmentId: '$spike', op: 'updateAssignment', phase: 'delivery' },
+        { assignmentId: 'id3', op: 'updateAssignment', phase: 'discovery' },
+      ],
+      BASE.content
+    );
+    expect(result.content.assignments).toEqual([
+      { epicId: 'id2', id: 'id3', memberId: 'alice', phase: 'discovery', startWeek: 0, weeks: 2 },
+      { directionId: 'id1', id: 'id1', memberId: 'bob', phase: 'discovery', startWeek: 0, weeks: 1 },
+      { epicId: 'id2', id: 'id2', memberId: 'bob', phase: undefined, startWeek: 1, weeks: 1 },
+    ]);
+  });
+
+  it('строка назначения — ровно одна; исполнитель направления — из его команды (QG2)', () => {
+    const errorOf = (op: QuarterlyPlanOp) => {
+      const result = run([op], BASE.content);
+      return result.ok ? '' : result.error;
+    };
+    const span = { startWeek: 3, weeks: 1 };
+    expect(errorOf({ memberId: 'bob', op: 'assign', span })).toBe('assign: needs exactly one of epicId and directionId');
+    expect(errorOf({ directionId: 'id1', epicId: 'id2', memberId: 'bob', op: 'assign', span })).toBe(
+      'assign: needs exactly one of epicId and directionId'
+    );
+    expect(errorOf({ directionId: 'id1', memberId: 'grace', op: 'assign', span })).toBe(
+      "assign: member grace is not in the row's team t1"
+    );
+    expect(errorOf({ directionId: 'nope', memberId: 'bob', op: 'assign', span })).toBe('assign: unknown direction nope');
   });
 
   it('срок датами переводится в недели; за краем квартала — ошибка (QM3)', () => {

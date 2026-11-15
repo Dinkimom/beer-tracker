@@ -84,3 +84,23 @@ describe('parseQuarterlyPlanContent', () => {
     expect(errorOf(plan({ notes: [{ ...plan().notes[0]!, rows: 5 }] }))).toMatch(/notes\.0\.rows/);
   });
 });
+
+describe('строка назначения (QG1, QG2)', () => {
+  const onDirection = { directionId: 'd1', id: 'a3', memberId: 'staff-1', phase: 'discovery', startWeek: 0, weeks: 1 } as const;
+
+  it('принимает назначение на направление с фазой', () => {
+    const result = parseQuarterlyPlanContent(plan({ assignments: [onDirection], links: [] }), Q4);
+    expect(result.ok && result.content.assignments).toEqual([onDirection]);
+  });
+
+  it('отклоняет назначение без строки, с двумя строками, с чужим направлением и неизвестной фазой', () => {
+    const withAssignment = (assignment: object) => plan({ assignments: [assignment as never], links: [] });
+    const { directionId: _directionId, ...rowless } = onDirection;
+    expect(errorOf(withAssignment(rowless))).toBe('assignment a3: needs exactly one of epicId and directionId');
+    expect(errorOf(withAssignment({ ...onDirection, epicId: 'e1' }))).toBe(
+      'assignment a3: needs exactly one of epicId and directionId'
+    );
+    expect(errorOf(withAssignment({ ...onDirection, directionId: 'nope' }))).toBe('assignment a3: unknown direction nope');
+    expect(errorOf(withAssignment({ ...onDirection, phase: 'design' }))).toMatch(/assignments\.0\.phase/);
+  });
+});

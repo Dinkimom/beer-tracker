@@ -8,7 +8,6 @@ import type { QuarterlyPlanDraftItem } from '@/lib/quarterlyPlans/quarterlyPlanD
 import type { NoteLaneBlocker, WeekSpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type {
   QuarterlyPlanAssignment,
-  QuarterlyPlanEpic,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
   QuarterlyPlanTrackerEpic,
@@ -30,6 +29,12 @@ export type QuarterlyPlanDraft =
   | { directionId: string; kind: 'newEpic' }
   | { id: string; kind: 'renameDirection' | 'renameEpic' }
   | { kind: 'newDirection'; teamId: string };
+
+/** Строка, в которой стоят полосы назначений: эпик или направление (QG2). */
+export interface QuarterlyPlanAssignRow {
+  id: string;
+  kind: 'direction' | 'epic';
+}
 
 export interface QuarterlyPlanRowTarget {
   id: string;
@@ -62,6 +67,8 @@ export interface QuarterlyPlanDraftReview {
 
 export interface QuarterlyPlanBoardContextValue {
   absenceByMember: ReadonlyMap<string, MemberAbsence>;
+  /** Свои полосы направлений (QG2). */
+  assignmentsByDirection: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
   assignmentsByEpic: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
   assignmentsByMember: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
   /** Индекс текущей недели; -1, если «сегодня» вне квартала. */
@@ -72,7 +79,6 @@ export interface QuarterlyPlanBoardContextValue {
   draftMarks: QuarterlyPlanDraftDiff | null;
   /** ✓/✗ пунктов показанного черновика на доске (QM10); null — черновика на доске нет. */
   draftReview: QuarterlyPlanDraftReview | null;
-  epicById: ReadonlyMap<string, QuarterlyPlanEpic>;
   /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   focusedIssue: { assignmentId: string; nonce: number } | null;
   /** Сколько назначений с пересечениями у команды. */
@@ -115,7 +121,7 @@ export interface QuarterlyPlanBoardContextValue {
   canLinkTo: (assignmentId: string) => boolean;
   onBarChange: (assignmentId: string, span: WeekSpan) => void;
   onBarClick: (assignmentId: string, anchor: QuarterMenuAnchor) => void;
-  onCellClick: (epicId: string, week: number, anchor: QuarterMenuAnchor) => void;
+  onCellClick: (row: QuarterlyPlanAssignRow, week: number, anchor: QuarterMenuAnchor) => void;
   /** Завершить ввод в открытом поле: название или null, если ввод отменён. */
   onDraftSubmit: (title: string | null) => void;
   /** Клик по полосе с включённым инструментом «Связь»: источник, цель или снятие выбора. */
@@ -135,6 +141,8 @@ export interface QuarterlyPlanBoardContextValue {
   onRowMenu: (target: QuarterlyPlanRowTarget, anchor: QuarterMenuAnchor) => void;
   onStartDraft: (draft: QuarterlyPlanDraft) => void;
   onStatusClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
+  /** Название строки назначения — эпика или направления; для подсказок полос. */
+  rowTitleOf: (assignment: Pick<QuarterlyPlanAssignment, 'directionId' | 'epicId'>) => string;
 }
 
 const QuarterlyPlanBoardContext = createContext<QuarterlyPlanBoardContextValue | null>(null);

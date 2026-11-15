@@ -10,6 +10,7 @@ import { Icon } from '@/components/Icon';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { assignmentPhase } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
@@ -26,9 +27,11 @@ import {
 import { useQuarterSpanDrag } from '../useQuarterSpanDrag';
 
 import { draftItemsOf, QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
+import { QuarterlyPlanPhaseTag } from './QuarterlyPlanPhaseTag';
 import { QuarterlyPlanResizeHandle } from './QuarterlyPlanResizeHandle';
 
 const BAR_GAP_PX = 2;
+const PHASE_BORDER_CLASS = { delivery: '', discovery: 'border-dashed' } as const;
 /** Полоса в руке: приподнята над доской и чуть повёрнута, как магнит, который сняли. */
 const BAR_LIFTED_STYLE = {
   boxShadow: '0 2px 4px rgb(0 0 0 / 0.12), 0 12px 22px -8px rgb(0 0 0 / 0.35)',
@@ -113,6 +116,8 @@ export function QuarterlyPlanBar({
   const spanFirstDay = span.startWeek * QUARTER_WORKING_DAYS_PER_WEEK;
   // Человека нет ни в одной команде плана — имени у доски нет (QI6).
   const name = member?.name ?? t('quarterlyPlan.formerMember');
+  /** Проработка (QG1): пунктирная кромка и подпись фазы; цвет — по человеку, как у остальных. */
+  const phase = assignmentPhase(assignment);
 
   const focusNonce = focusedIssue?.assignmentId === assignment.id ? focusedIssue.nonce : null;
   useEffect(() => {
@@ -125,7 +130,7 @@ export function QuarterlyPlanBar({
   return (
     <div
       ref={rootRef}
-      aria-label={`${name}, ${formatSpanRange(weeks, span)}`}
+      aria-label={`${name}, ${t(`quarterlyPlan.phase.${phase}`)}, ${formatSpanRange(weeks, span)}`}
       className={`group/bar absolute touch-none select-none rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${linking.armed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${isLinkTarget ? 'hover:ring-2 hover:ring-blue-400' : ''} ${faded ? 'opacity-50' : ''} ${draftOutline} ${drag ? '' : 'transition-[left,width] duration-200'}`}
       data-quarter-bar={assignment.id}
       style={{
@@ -148,7 +153,7 @@ export function QuarterlyPlanBar({
       {/* Магнит на доске: тот же картон, что у карточек планера, — кромка, тень в покое и подъём
           под курсором. Пока полосу несут, она приподнята и чуть повёрнута; при растягивании за край — нет. */}
       <div
-        className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border px-1.5 text-xs font-medium ${toneClass}`}
+        className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border px-1.5 text-xs font-medium ${toneClass} ${PHASE_BORDER_CLASS[phase]}`}
         style={drag?.mode === 'move' ? BAR_LIFTED_STYLE : undefined}
       >
         {[
@@ -185,6 +190,7 @@ export function QuarterlyPlanBar({
             />
           ) : null}
           <span className="min-w-0 truncate">{name}</span>
+          <QuarterlyPlanPhaseTag phase={phase} />
         </span>
         <span className="flex-1" />
         {issues.length + risks.length > 0 ? (

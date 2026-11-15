@@ -1,25 +1,24 @@
 'use client';
 
+import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
 import type { QuarterlyPlanDirection, QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
-import { HeaderIconButton } from '@/components/HeaderIconButton';
-import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-import { epicTitle, isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
 import {
-  QUARTER_ROW_ACTION_CLASS,
+  layoutRowBars,
   QUARTER_ROW_HEIGHT_PX,
   QUARTER_ROW_PADDING_PX,
+  quarterRowHeightPx,
 } from '../quarterlyPlanBoardModel';
 
-import { QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
-import { QuarterlyPlanDraftMark } from './QuarterlyPlanDraftMark';
+import { QuarterlyPlanDirectionHeader } from './QuarterlyPlanDirectionHeader';
 import { QuarterlyPlanEpicRow } from './QuarterlyPlanEpicRow';
 import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
-import { QuarterlyPlanIssueKey } from './QuarterlyPlanIssueKey';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
+import { QuarterlyPlanRowBars } from './QuarterlyPlanRowBars';
 
 interface QuarterlyPlanDirectionSectionProps {
   collapsed: boolean;
@@ -30,8 +29,8 @@ interface QuarterlyPlanDirectionSectionProps {
 }
 
 /**
- * Направление (веха): сворачиваемый заголовок, под ним эпики.
- * Свой таймлайн у направления пуст, пока оно раскрыто: сроки видны по полосам эпиков.
+ * Направление (веха): сворачиваемый заголовок, под ним эпики. В своей строке — полосы самого
+ * направления (QG2): проработка фичи, пока она не разбита на эпики. Свёрнутое показывает общий срок.
  */
 export function QuarterlyPlanDirectionSection({
   collapsed,
@@ -40,12 +39,22 @@ export function QuarterlyPlanDirectionSection({
   onToggle,
 }: QuarterlyPlanDirectionSectionProps) {
   const { t } = useI18n();
-  const { assignmentsByEpic, draft, onDraftSubmit, onRowMenu, trackerEpics, weeks } = useQuarterlyPlanBoard();
+  const { assignmentsByDirection, assignmentsByEpic, draft, onCellClick, onDraftSubmit, trackerEpics, weeks } =
+    useQuarterlyPlanBoard();
+  const ownAssignments = assignmentsByDirection.get(direction.id) ?? [];
+  /** Свои полосы видны, пока направление раскрыто; свёрнутое сводит их в общий срок. */
+  const shownAssignments = collapsed ? [] : ownAssignments;
+  const own = layoutRowBars(shownAssignments);
+  const assignWeek = collapsed
+    ? undefined
+    : (week: number, anchor: QuarterMenuAnchor) => onCellClick({ id: direction.id, kind: 'direction' }, week, anchor);
   // Заметки направления занимают его дорожку — сводная полоса тогда уходит к нижнему краю строки.
   const hasNotes = useQuarterRowNotes({ id: direction.id, kind: 'direction' }).notes.length > 0;
 
-  /** Свёрнутое направление показывает общий срок своих эпиков одной тонкой полосой. */
-  const spans = collapsed ? epics.flatMap((epic) => assignmentsByEpic.get(epic.id) ?? []) : [];
+  /** Свёрнутое направление показывает общий срок своих полос и эпиков одной тонкой полосой (QB5). */
+  const spans = collapsed
+    ? [...ownAssignments, ...epics.flatMap((epic) => assignmentsByEpic.get(epic.id) ?? [])]
+    : [];
   const rollupStart = Math.min(...spans.map((span) => span.startWeek));
   /** Эпики без единой полосы; готовые не в счёт — планировать их уже незачем. */
   const unplannedCount = epics.filter(
@@ -53,72 +62,29 @@ export function QuarterlyPlanDirectionSection({
   ).length;
   const rollupEnd = Math.max(...spans.map((span) => span.startWeek + span.weeks));
 
-  const renaming = draft?.kind === 'renameDirection' && draft.id === direction.id;
   const addingEpic = draft?.kind === 'newEpic' && draft.directionId === direction.id;
 
   return (
     <>
       <QuarterlyPlanRow
-        heightPx={QUARTER_ROW_HEIGHT_PX}
+        heightPx={Math.max(QUARTER_ROW_HEIGHT_PX, quarterRowHeightPx(own.laneCount))}
         left={
-          <div className="flex min-w-0 flex-1 items-center gap-2 pl-2 pr-2">
-            {renaming ? (
-              <QuarterlyPlanInlineInput
-                initialValue={direction.title}
-                placeholder={t('quarterlyPlan.addDirectionPlaceholder')}
-                onSubmit={onDraftSubmit}
-              />
-            ) : (
-              <>
-                <button
-                  aria-expanded={!collapsed}
-                  className="flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md px-1 py-1 text-left transition-colors hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15"
-                  type="button"
-                  onClick={onToggle}
-                >
-                  <Icon
-                    className="h-3.5 w-3.5 shrink-0 text-ds-text-muted"
-                    name={collapsed ? 'chevron-right' : 'chevron-down'}
-                  />
-                  <span className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {epicTitle(direction, trackerEpics)}
-                  </span>
-                  <QuarterlyPlanDraftMark id={direction.id} />
-                </button>
-                {direction.issueKey ? <QuarterlyPlanIssueKey issueKey={direction.issueKey} /> : null}
-                <QuarterlyPlanDraftItemToolbar id={direction.id} placement="flow" />
-                {unplannedCount > 0 ? (
-                  <span className="shrink-0 text-xs text-ds-text-muted">
-                    {t('quarterlyPlan.unplannedCount', { count: unplannedCount })}
-                  </span>
-                ) : null}
-                <span className="flex-1" />
-                <HeaderIconButton
-                  className={QUARTER_ROW_ACTION_CLASS}
-                  title={t('quarterlyPlan.addEpic')}
-                  onClick={(event) =>
-                    onRowMenu({ id: direction.id, kind: 'addEpic' }, { x: event.clientX, y: event.clientY })
-                  }
-                >
-                  <Icon className="h-3.5 w-3.5" name="plus" />
-                </HeaderIconButton>
-                <HeaderIconButton
-                  className={QUARTER_ROW_ACTION_CLASS}
-                  title={t('quarterlyPlan.rowActions')}
-                  onClick={(event) =>
-                    onRowMenu({ id: direction.id, kind: 'direction' }, { x: event.clientX, y: event.clientY })
-                  }
-                >
-                  <Icon className="h-3.5 w-3.5" name="dots-horizontal" />
-                </HeaderIconButton>
-              </>
-            )}
-          </div>
+          <QuarterlyPlanDirectionHeader
+            collapsed={collapsed}
+            direction={direction}
+            unplannedCount={unplannedCount}
+            onToggle={onToggle}
+          />
         }
+        noteBlockers={own.noteBlockers}
         noteRow={{ id: direction.id, kind: 'direction' }}
         notesTopPx={QUARTER_ROW_PADDING_PX}
+        occupiedWeeks={own.occupiedWeeks}
         tone="direction"
+        weekActionLabel={t('quarterlyPlan.assignWeek', { title: direction.title })}
+        onWeekClick={assignWeek}
       >
+        <QuarterlyPlanRowBars assignments={shownAssignments} laneById={own.laneById} />
         {spans.length > 0 ? (
           <div
             aria-hidden

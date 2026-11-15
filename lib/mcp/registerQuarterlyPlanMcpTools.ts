@@ -50,7 +50,8 @@ export function registerQuarterlyPlanMcpTools(
       description:
         "Read the organization's quarterly plan: weeks (index + Mon–Fri dates), teams (id, boardId, members, sprints), " +
         'directions (milestones; issueKey = linked tracker epic), epics (issueKey = linked tracker issue, status, title; ' +
-        'for every linked key trackerEpics[issueKey] has the tracker title, status and done), assignments (person × epic × weeks), links ' +
+        'for every linked key trackerEpics[issueKey] has the tracker title, status and done), assignments (person × row × weeks; the row is ' +
+        'an epic (epicId) or the direction itself (directionId); phase "discovery" marks research, no phase = delivery), links ' +
         '(fromId must finish before toId starts), notes, absences per team, issues (assignments where the person is away, ' +
         'works on another epic the same weeks, starts before a blocker ends, or left the team), dutyRiskAssignmentIds ' +
         '(on duty during the assignment: a risk, not a problem), pendingProposal (your draft the person has not accepted yet — ' +
@@ -79,7 +80,11 @@ export function registerQuarterlyPlanMcpTools(
         );
         return toolJson({
           absences,
-          assignments: plan.assignments.filter((assignment) => epics.some((epic) => epic.id === assignment.epicId)),
+          assignments: plan.assignments.filter(
+            (assignment) =>
+              epics.some((epic) => epic.id === assignment.epicId) ||
+              directions.some((direction) => direction.id === assignment.directionId)
+          ),
           directions,
           epics,
           dutyRiskAssignmentIds: findings.dutyRiskAssignmentIds,
@@ -124,7 +129,8 @@ export function registerQuarterlyPlanMcpTools(
         '(you cannot write the plan yourself). Batch of ops, all or nothing: addDirection|updateDirection|removeDirection|' +
         'addEpic|updateEpic|removeEpic|assign|updateAssignment|removeAssignment|addLink|removeLink|addNote|updateNote|removeNote. ' +
         'Give created entities a ref like "$epic1" and use it in later ops of the same batch. Spans: {startWeek, weeks} ' +
-        'or {startDate, endDate}. A person must be in the epic team. addDirection with an existing title reuses it; addEpic ' +
+        'or {startDate, endDate}. assign takes epicId or directionId: put discovery (research before the feature is split into epics) ' +
+        'on the direction, delivery on its epics; phase overrides the default. A person must be in the row team. addDirection with an existing title reuses it; addEpic ' +
         'with an issueKey already in the plan fails with the existing epic id. Pass ifVersion from get_quarterly_plan. ' +
         'The draft is checked against the plan now and re-applied to the current plan when accepted. One draft per person ' +
         'per quarter: a different draft needs replacePending: true. Pass sessionId when working on a session from ' +

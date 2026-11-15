@@ -21,6 +21,8 @@ import { collectQuarterlyPlanIssues, quarterTimelineStart } from '@/lib/quarterl
 import {
   addDirection,
   addEpic,
+  assignmentPhase,
+  epicTitle,
   planIssueKeys,
   removeDirection,
   removeEpic,
@@ -55,11 +57,12 @@ import { useQuarterlyPlanNotes } from './useQuarterlyPlanNotes';
 
 function groupBy(
   assignments: readonly QuarterlyPlanAssignment[],
-  key: 'epicId' | 'memberId'
+  key: 'directionId' | 'epicId' | 'memberId'
 ): Map<string, QuarterlyPlanAssignment[]> {
   const groups = new Map<string, QuarterlyPlanAssignment[]>();
   for (const assignment of assignments) {
-    groups.set(assignment[key], [...(groups.get(assignment[key]) ?? []), assignment]);
+    const value = assignment[key];
+    if (value !== undefined) groups.set(value, [...(groups.get(value) ?? []), assignment]);
   }
   return groups;
 }
@@ -158,14 +161,15 @@ export function QuarterlyPlanPage() {
   const board = useMemo<QuarterlyPlanBoardContextValue | null>(() => {
     if (!plan) return null;
     const members = plan.teams.flatMap((team) => team.members);
+    const rowById = new Map([...plan.directions, ...plan.epics].map((row) => [row.id, row]));
     return {
       absenceByMember,
+      assignmentsByDirection: groupBy(plan.assignments, 'directionId'),
       assignmentsByEpic: groupBy(plan.assignments, 'epicId'),
       assignmentsByMember: groupBy(plan.assignments, 'memberId'),
       currentWeek: weekIndexOfDate(weeks, getPlannerNow()),
       dayCount: weeks.length * QUARTER_WORKING_DAYS_PER_WEEK,
       draft,
-      epicById: new Map(plan.epics.map((epic) => [epic.id, epic])),
       focusedIssue,
       issueCountByTeam: issues.reduce(
         (counts, issue) => counts.set(issue.teamId, (counts.get(issue.teamId) ?? 0) + 1),
@@ -179,11 +183,15 @@ export function QuarterlyPlanPage() {
       onBarChange: (assignmentId, span) =>
         applyEdit((content) => updateAssignment(content, assignmentId, span)),
       onBarClick: (assignmentId, anchor) => setMenu({ anchor, assignmentId, kind: 'bar' }),
-      onCellClick: (epicId, week, anchor) => setMenu({ anchor, epicId, kind: 'assign', week, weeks: 1 }),
+      onCellClick: (row, week, anchor) => setMenu({ anchor, kind: 'assign', row, week, weeks: 1 }),
       onDraftSubmit: submitDraft,
       onRowMenu: (target, anchor) => setMenu({ anchor, kind: 'row', target }),
       onStartDraft: setDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
+      rowTitleOf: (assignment) => {
+        const row = rowById.get(assignment.epicId ?? assignment.directionId ?? '');
+        return row ? epicTitle(row, plan.trackerEpics) : '';
+      },
       draftMarks: draftView.marks,
       draftReview: draftView.review,
       timelineStart,
@@ -203,9 +211,20 @@ export function QuarterlyPlanPage() {
 
   const rowActions: QuarterlyPlanRowActions = {
     onStartLink: planLinks.startFrom,
-    onAssignMore: (epicId, span) =>
+    onAssignMore: (assignment) =>
       setMenu((current) =>
-        current ? { anchor: current.anchor, epicId, kind: 'assign', week: span.startWeek, weeks: span.weeks } : null
+        current
+          ? {
+              anchor: current.anchor,
+              kind: 'assign',
+              phase: assignmentPhase(assignment),
+              row: assignment.epicId
+                ? { id: assignment.epicId, kind: 'epic' }
+                : { id: assignment.directionId ?? '', kind: 'direction' },
+              week: assignment.startWeek,
+              weeks: assignment.weeks,
+            }
+          : null
       ),
     onPickTrackerEpic: setTrackerPick,
     onRemoveDirection: (directionId) =>

@@ -43,11 +43,20 @@ export interface QuarterlyPlanEpic {
   title: string;
 }
 
-/** Человек занят эпиком `weeks` недель подряд, начиная с недели `startWeek` квартала. */
+/** Фаза работы; совпадает с типом цели спринта (QG1). */
+export type QuarterlyPlanPhase = 'delivery' | 'discovery';
+
+/**
+ * Человек занят строкой плана `weeks` недель подряд, начиная с недели `startWeek` квартала.
+ * Строка — эпик (`epicId`) или направление (`directionId`): задано ровно одно (QG2).
+ */
 export interface QuarterlyPlanAssignment {
-  epicId: string;
+  directionId?: string;
+  epicId?: string;
   id: string;
   memberId: string;
+  /** Нет фазы — delivery (QG1). */
+  phase?: QuarterlyPlanPhase;
   startWeek: number;
   weeks: number;
 }

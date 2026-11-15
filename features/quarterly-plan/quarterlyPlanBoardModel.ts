@@ -13,6 +13,7 @@ import { buildUnavailableDayHatchKinds } from '@/features/swimlane/utils/availab
 import { buildMemberAbsenceDays } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import {
   absentDaysWithinSpan,
+  assignBarLanes,
   groupConsecutiveDays,
   overlapWeeks,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
@@ -85,6 +86,26 @@ export const QUARTER_STICKY_LABEL_LEFT = `calc(${QUARTER_LEFT_COLUMN_WIDTH} + 6p
 /** Высота строки под `laneCount` дорожек полос. */
 export function quarterRowHeightPx(laneCount: number): number {
   return laneCount * QUARTER_LANE_HEIGHT_PX + QUARTER_ROW_PADDING_PX * 2;
+}
+
+/** Раскладка полос строки: дорожки, недели под полосами и место полос в дорожках заметок. */
+export function layoutRowBars(assignments: readonly QuarterlyPlanAssignment[]) {
+  const { laneById, laneCount } = assignBarLanes(assignments);
+  return {
+    laneById,
+    laneCount,
+    noteBlockers: assignments.map((assignment) => ({
+      lane: laneById.get(assignment.id) ?? 0,
+      rows: 1,
+      startWeek: assignment.startWeek,
+      weeks: assignment.weeks,
+    })),
+    occupiedWeeks: new Set(
+      assignments.flatMap((assignment) =>
+        Array.from({ length: assignment.weeks }, (_, offset) => assignment.startWeek + offset)
+      )
+    ),
+  };
 }
 
 /** Заливка и кромка полосы — по человеку; тень и подъём полосе даёт «картон» карточек планера. */

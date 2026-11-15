@@ -66,8 +66,8 @@ describe('buildSprintQuarterPlanView (QK2–QK4)', () => {
     expect(view.version).toBe(7);
     expect(view.assignments).toEqual([
       // a1 кончается в последней неделе спринта, a2 идёт дальше него.
-      { endDate: '2026-11-06', endsInSprint: true, epicId: 'e1', id: 'a1', memberId: 'dev-1', memberName: 'Аня', startDate: '2026-10-19', taskIds: ['PAY-11'] },
-      { endDate: '2026-11-13', endsInSprint: false, epicId: 'e2', id: 'a2', memberId: 'dev-2', startDate: '2026-11-02', taskIds: [] },
+      { directionId: 'd1', endDate: '2026-11-06', endsInSprint: true, epicId: 'e1', id: 'a1', memberId: 'dev-1', memberName: 'Аня', phase: 'delivery', startDate: '2026-10-19', taskIds: ['PAY-11'] },
+      { directionId: 'd1', endDate: '2026-11-13', endsInSprint: false, epicId: 'e2', id: 'a2', memberId: 'dev-2', phase: 'delivery', startDate: '2026-11-02', taskIds: [] },
     ]);
   });
 
@@ -115,6 +115,29 @@ describe('buildSprintQuarterPlanView (QK2–QK4)', () => {
       ['linked', []],
       ['unlinked', ['PAY-12']],
     ]);
+  });
+
+  it('назначению на направление идут задачи прямо под его эпиком трекера; фаза — в ответе (QG2)', () => {
+    const content: QuarterlyPlanContent = {
+      ...plan,
+      assignments: [{ directionId: 'd1', id: 'research', memberId: 'dev-1', phase: 'discovery', startWeek: 4, weeks: 1 }],
+    };
+    const result = buildSprintQuarterPlanView({
+      memberIds: new Set(['dev-1']),
+      plan: { content, ref: Q4, trackerEpics: {}, version: 1 },
+      sprintWindow: SPRINT,
+      tasks: [
+        { assigneeId: 'dev-1', parentKey: 'PAY-1', taskId: 'PAY-12' },
+        // Задача эпика плана — не работа по самому направлению, но и не вне плана: направление то же.
+        { assigneeId: 'dev-1', parentKey: 'PAY-10', taskId: 'PAY-11' },
+        { assigneeId: 'dev-1', parentKey: null, taskId: 'OPS-5' },
+      ],
+    })!;
+    expect(result.assignments).toEqual([
+      { directionId: 'd1', endDate: '2026-10-30', endsInSprint: true, id: 'research', memberId: 'dev-1', phase: 'discovery', startDate: '2026-10-26', taskIds: ['PAY-12'] },
+    ]);
+    expect(result.directions.map((direction) => direction.id)).toEqual(['d1']);
+    expect(result.outsidePlan).toEqual([{ assigneeId: 'dev-1', taskIds: ['OPS-5'] }]);
   });
 
   it('спринт вне квартала — null', () => {

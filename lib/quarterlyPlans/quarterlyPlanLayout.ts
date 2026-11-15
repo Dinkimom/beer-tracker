@@ -7,6 +7,7 @@ import type {
   QuarterlyPlanLink,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
+  QuarterlyPlanPhase,
 } from './quarterlyPlanTypes';
 
 import { QUARTER_WORKING_DAYS_PER_WEEK } from './quarterWeeks';
@@ -92,6 +93,19 @@ export function groupConsecutiveDays(days: readonly number[]): Array<{ dayCount:
     }
   }
   return ranges;
+}
+
+/** Фаза назначения: без фазы — delivery (QG1). */
+export function assignmentPhase(assignment: Pick<QuarterlyPlanAssignment, 'phase'>): QuarterlyPlanPhase {
+  return assignment.phase ?? 'delivery';
+}
+
+/** Направление строки назначения: своё или направление эпика (QG2); строки нет в плане — undefined. */
+export function directionIdOfAssignment(
+  plan: Pick<QuarterlyPlanContent, 'epics'>,
+  assignment: Pick<QuarterlyPlanAssignment, 'directionId' | 'epicId'>
+): string | undefined {
+  return assignment.directionId ?? plan.epics.find((epic) => epic.id === assignment.epicId)?.directionId;
 }
 
 export function updateAssignment(
@@ -287,7 +301,7 @@ export function removeNote(plan: QuarterlyPlanContent, noteId: string): Quarterl
 /** Убирает эпики вместе с их назначениями, зависимостями этих назначений и заметками в их строках. */
 function removeEpics(plan: QuarterlyPlanContent, epicIds: ReadonlySet<string>): QuarterlyPlanContent {
   return {
-    ...dropAssignments(plan, (assignment) => epicIds.has(assignment.epicId)),
+    ...dropAssignments(plan, (assignment) => assignment.epicId !== undefined && epicIds.has(assignment.epicId)),
     epics: plan.epics.filter((epic) => !epicIds.has(epic.id)),
     notes: plan.notes.filter((note) => !(note.row.kind === 'epic' && epicIds.has(note.row.id))),
   };
@@ -299,7 +313,8 @@ export function removeEpic(plan: QuarterlyPlanContent, epicId: string): Quarterl
 
 export function removeDirection(plan: QuarterlyPlanContent, directionId: string): QuarterlyPlanContent {
   const epicIds = new Set(plan.epics.filter((epic) => epic.directionId === directionId).map((epic) => epic.id));
-  const next = removeEpics(plan, epicIds);
+  // Направление уносит и свои полосы (QG2) с их зависимостями.
+  const next = dropAssignments(removeEpics(plan, epicIds), (assignment) => assignment.directionId === directionId);
   return {
     ...next,
     directions: next.directions.filter((direction) => direction.id !== directionId),
