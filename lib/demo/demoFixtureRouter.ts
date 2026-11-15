@@ -1,4 +1,5 @@
 import type { DemoFixtureResult } from './demoFixtureRouterTypes';
+import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { InternalAxiosRequestConfig } from 'axios';
 
 import { defaultRetroColumnTemplate } from '@/lib/retro/retroBoard';
@@ -179,6 +180,14 @@ function handleBacklog(path: string, method: string, params: URLSearchParams): D
   });
 }
 
+/** Привязка цели к строке плана живёт только на сервере: без записи в стор её сотрёт перечитывание целей. */
+function storeDemoGoalPlanRow(goalId: string, body: unknown): void {
+  const { goals } = getDemoFixtureStore();
+  const planRow = (body as { planRow?: SprintGoalPlanRow | null } | null)?.planRow;
+  const goal = [...goals.delivery, ...goals.discovery].find((item) => item.id === goalId);
+  if (goal && planRow !== undefined) goal.planRow = planRow;
+}
+
 function handleSprintGoals(
   path: string,
   method: string,
@@ -199,7 +208,11 @@ function handleSprintGoals(
   if (path === '/sprint-goals' && method === 'post') {
     return ok({ success: true, item: body });
   }
-  if (path.startsWith('/sprint-goals/') && (method === 'patch' || method === 'delete')) {
+  if (path.startsWith('/sprint-goals/') && method === 'patch') {
+    storeDemoGoalPlanRow(decodeURIComponent(path.slice('/sprint-goals/'.length)), body);
+    return ok({ success: true });
+  }
+  if (path.startsWith('/sprint-goals/') && method === 'delete') {
     return ok({ success: true });
   }
   return null;

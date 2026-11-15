@@ -90,8 +90,7 @@ describe('plan patch goal preview actions', () => {
     expect(update).toHaveBeenCalledWith({
       goalId: updated.goalId,
       organizationId: 'org',
-      updateFields: ['text = $1', 'done = $2'],
-      updateValues: ['Next', false],
+      patch: { done: false, text: 'Next' },
     });
     expect(drop).toHaveBeenCalledWith({ goalId: removed.goalId, organizationId: 'org' });
   });

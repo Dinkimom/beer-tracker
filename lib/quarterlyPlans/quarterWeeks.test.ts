@@ -4,6 +4,7 @@ import {
   buildQuarterWeeks,
   groupWeeksByMonth,
   quarterOfDate,
+  quartersOfWindow,
   resolveWeekSpan,
   shiftQuarter,
   weekIndexOfDate,
@@ -66,6 +67,21 @@ describe('resolveWeekSpan / weekIndexOfDate / groupWeeksByMonth', () => {
       { month: 9, startWeek: 0, weeks: 5 },
       { month: 10, startWeek: 5, weeks: 4 },
       { month: 11, startWeek: 9, weeks: 5 },
+    ]);
+  });
+});
+
+describe('quartersOfWindow (QW3)', () => {
+  it('спринт внутри квартала — один квартал; время в датах не мешает', () => {
+    expect(quartersOfWindow({ endDate: '2026-10-24T15:00:00.000Z', startDate: '2026-10-13' })).toEqual([
+      { quarter: 4, year: 2026 },
+    ]);
+  });
+
+  it('спринт на стыке — оба квартала', () => {
+    expect(quartersOfWindow({ endDate: '2027-01-08', startDate: '2026-12-21' })).toEqual([
+      { quarter: 4, year: 2026 },
+      { quarter: 1, year: 2027 },
     ]);
   });
 });

@@ -166,6 +166,25 @@ describe('handleDemoFixtureRequest', () => {
     expect(codes.data).toBe('00000');
   });
 
+  it('serves sprint goals with their quarterly plan row and keeps a changed row', () => {
+    const goalsUrl = `/sprint-goals?sprintId=${DEMO_SPRINT_ID}&goalType=delivery`;
+    const read = () =>
+      (handleDemoFixtureRequest(cfg('get', goalsUrl)).data as {
+        checklistItems: Array<{ id: string; planRow?: unknown }>;
+      }).checklistItems;
+    expect(read()[0]).toMatchObject({
+      id: 'goal-del-1',
+      planRow: { quarter: 4, rowId: 'demo-direction-1-epic-2', year: 2026 },
+    });
+    expect(read()[1]?.planRow).toBeUndefined();
+
+    const planRow = { quarter: 4, rowId: 'demo-direction-2', year: 2026 };
+    handleDemoFixtureRequest(cfg('patch', '/sprint-goals/goal-del-2', { data: { planRow } }));
+    handleDemoFixtureRequest(cfg('patch', '/sprint-goals/goal-del-1', { data: { planRow: null } }));
+    handleDemoFixtureRequest(cfg('patch', '/sprint-goals/goal-del-2', { data: { checked: false } }));
+    expect(read().map((item) => item.planRow)).toEqual([null, planRow]);
+  });
+
   it('serves the quarterly plan and keeps edits and availability changes', () => {
     const plan = handleDemoFixtureRequest(cfg('get', '/quarterly-plans?year=2026&quarter=4'));
     const data = plan.data as {

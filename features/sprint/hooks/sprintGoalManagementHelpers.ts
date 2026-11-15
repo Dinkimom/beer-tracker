@@ -1,14 +1,30 @@
+import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { QueryClient } from '@tanstack/react-query';
 
 export interface GoalsData {
   checklistDone: number;
-  checklistItems: Array<{ id: string; text: string; checked: boolean; checklistItemType: string }>;
+  checklistItems: Array<{
+    checked: boolean;
+    checklistItemType: string;
+    id: string;
+    planRow?: SprintGoalPlanRow | null;
+    text: string;
+  }>;
   checklistTotal: number;
 }
 
 export type SprintGoalsQueryKey =
   | readonly ['sprintGoals', 'demo', number | null, 'delivery' | 'discovery']
   | readonly ['sprintGoals', number | null, 'delivery' | 'discovery'];
+
+/** Ключ кэша целей спринта; у демо-планера свой, чтобы не смешивать с боевым. */
+export function sprintGoalsQueryKey(
+  forDemoPlanner: boolean,
+  sprintId: number | null,
+  goalType: 'delivery' | 'discovery'
+): SprintGoalsQueryKey {
+  return forDemoPlanner ? ['sprintGoals', 'demo', sprintId, goalType] : ['sprintGoals', sprintId, goalType];
+}
 
 export function invalidateSprintScoreQuery(
   queryClient: QueryClient | null | undefined,
@@ -100,7 +116,7 @@ export function applyEditGoalOptimisticUpdate(
   queryClient: QueryClient,
   queryKey: SprintGoalsQueryKey,
   itemId: string,
-  text: string
+  updates: { planRow?: SprintGoalPlanRow | null; text?: string }
 ): GoalsData | undefined {
   const prevGoalsData = queryClient.getQueryData<GoalsData>(queryKey);
   queryClient.setQueryData<GoalsData>(queryKey, (old) => {
@@ -108,7 +124,7 @@ export function applyEditGoalOptimisticUpdate(
     return {
       ...old,
       checklistItems: old.checklistItems.map((it) =>
-        it.id === itemId ? { ...it, text } : it
+        it.id === itemId ? { ...it, ...updates } : it
       ),
     };
   });

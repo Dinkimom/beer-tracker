@@ -12,6 +12,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { SPRINT_GOAL_PLAN_ROWS_QUERY_KEY } from '@/features/sprint/hooks/useSprintGoalPlanRows';
 import {
   fetchBoardAvailabilityEventsForBoard,
   fetchQuarterlyPlan,
@@ -95,6 +96,8 @@ export function useQuarterlyPlan(ref: QuarterRef) {
             reload('quarterlyPlan.saveConflict');
           } else {
             versionsRef.current.set(quarterKey(ref), result.version);
+            // Строки плана у целей спринта (QG5): удалённая строка должна сразу стать висячей привязкой.
+            queryClient.invalidateQueries({ queryKey: SPRINT_GOAL_PLAN_ROWS_QUERY_KEY }).catch(() => undefined);
             // Новый ключ трекера: статус и название задачи сервер подтягивает при чтении плана.
             if (planIssueKeys(content).some((key) => !(key in current.trackerEpics))) {
               queryClient.invalidateQueries({ queryKey }).catch(() => undefined);

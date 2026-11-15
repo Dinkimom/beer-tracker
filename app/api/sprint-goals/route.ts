@@ -3,7 +3,13 @@ import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPrev
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
-import { insertSprintGoal, listSprintGoals, syncSprintGoalsToTrackerFromRequest } from '@/lib/sprintGoals';
+import {
+  insertSprintGoal,
+  listSprintGoals,
+  resolveSprintGoalPlanRow,
+  syncSprintGoalsToTrackerFromRequest,
+  toSprintGoalItem,
+} from '@/lib/sprintGoals';
 import { listPlanPatchGoalPreviews } from '@/lib/sprints/sprintPlanPatchGoalPreviewRepository';
 
 /** GET: список целей по sprintId, goalType */
@@ -33,12 +39,7 @@ export async function GET(request: NextRequest) {
       goalType,
     });
 
-    const checklistItems = rows.map((row) => ({
-      id: String(row.id),
-      text: row.text ?? '',
-      checked: Boolean(row.done),
-      checklistItemType: 'standard' as const,
-    }));
+    const checklistItems = rows.map(toSprintGoalItem);
 
     const checklistDone = checklistItems.filter((i) => i.checked).length;
     const checklistTotal = checklistItems.length;
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
     const { sprintId, goalType, text, team } = body as {
       sprintId: number;
       goalType: 'delivery' | 'discovery';
+      planRow?: unknown;
       text: string;
       team?: string;
     };
@@ -99,23 +101,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const planRow = await resolveSprintGoalPlanRow(organizationId, body.planRow);
+    if ('error' in planRow) {
+      return NextResponse.json({ error: planRow.error }, { status: 400 });
+    }
+
     const row = await insertSprintGoal({
       organizationId,
       sprintId,
       goalType,
+      planRow: planRow.planRow,
       team,
       text: text.trim(),
     });
     await syncSprintGoalsToTrackerFromRequest(request, sprintId);
 
-    const item = {
-      id: String(row.id),
-      text: row.text ?? '',
-      checked: Boolean(row.done),
-      checklistItemType: 'standard' as const,
-    };
-
-    return NextResponse.json({ success: true, item });
+    return NextResponse.json({ success: true, item: toSprintGoalItem(row) });
   } catch (error) {
     console.error('Error creating sprint goal:', error);
     return NextResponse.json(

@@ -1,3 +1,4 @@
+import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { createSprintGoal, deleteSprintGoal, updateSprintGoal } from '@/lib/api/sprintGoals';
@@ -111,15 +112,16 @@ export async function runEditGoalUpdate(input: {
   onGoalsUpdate?: () => void;
   queryClient: QueryClient | null;
   queryKey: SprintGoalsQueryKey;
-  text: string;
+  /** Что меняется у цели: текст или строка квартального плана (`null` снимает привязку). */
+  updates: { planRow?: SprintGoalPlanRow | null; text?: string };
 }): Promise<void> {
   let prevGoalsData: GoalsData | undefined;
   if (input.queryClient) {
-    prevGoalsData = applyEditGoalOptimisticUpdate(input.queryClient, input.queryKey, input.itemId, input.text);
+    prevGoalsData = applyEditGoalOptimisticUpdate(input.queryClient, input.queryKey, input.itemId, input.updates);
   }
 
   try {
-    const success = await updateSprintGoal(input.itemId, { text: input.text });
+    const success = await updateSprintGoal(input.itemId, input.updates);
     if (!success) throw new Error('Failed to edit goal');
     if (!input.queryClient) input.onGoalsUpdate?.();
   } catch (err) {

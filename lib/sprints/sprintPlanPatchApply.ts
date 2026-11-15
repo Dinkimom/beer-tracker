@@ -229,22 +229,10 @@ async function applyUpdateGoal(input: {
   op: Extract<SprintPlanPatchOp, { op: 'updateGoal' }>;
   tx: BeerTrackerTransactionQuery;
 }): Promise<string> {
-  const updateFields: string[] = [];
-  const updateValues: Array<boolean | string> = [];
-  let paramIndex = 1;
-  if (input.op.text !== undefined) {
-    updateFields.push(`text = $${paramIndex++}`);
-    updateValues.push(input.op.text);
-  }
-  if (input.op.done !== undefined) {
-    updateFields.push(`done = $${paramIndex++}`);
-    updateValues.push(input.op.done);
-  }
   const row = await updateSprintGoal({
     goalId: input.op.id,
     organizationId: input.organizationId,
-    updateFields,
-    updateValues,
+    patch: { done: input.op.done, text: input.op.text },
   }, input.tx);
   if (!row) {
     throw new Error(`goal ${input.op.id} not found`);

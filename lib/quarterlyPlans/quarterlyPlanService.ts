@@ -21,7 +21,6 @@ import {
   listBoardAvailabilityEvents,
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { apiCache, cacheKeys } from '@/lib/cache';
-import { parseIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import { loadRoleResolutionContext } from '@/lib/sprints/sprintContextTeamMembers';
 import { enrichPlannerTeamMembersFromTracker, fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
 import { convertTeamMemberToDeveloper } from '@/lib/teamMemberUtils';
@@ -45,7 +44,7 @@ import {
 } from './quarterlyPlanSprintLink';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
 import { loadQuarterlyPlanTrackerEpics } from './quarterlyPlanTrackerEpics';
-import { buildQuarterWeeks, quarterOfDate, resolveWeekSpan } from './quarterWeeks';
+import { buildQuarterWeeks, quartersOfWindow, resolveWeekSpan } from './quarterWeeks';
 
 /** Тот же срок, что у `/api/sprints`: список спринтов доски общий в кэше. */
 const SPRINTS_CACHE_TTL_SECONDS = 10 * 60;
@@ -288,15 +287,6 @@ type SprintQuarterPlanWithDraft = SprintQuarterPlanView & {
 export interface SprintQuarterContext {
   plans: SprintQuarterPlanWithDraft[];
   team: { id: string; title: string } | null;
-}
-
-/** Кварталы, которые задевает окно спринта: обычно один, на стыке кварталов — два (QW3). */
-function quartersOfWindow(window: { endDate: string; startDate: string }): QuarterRef[] {
-  const refs = [window.startDate, window.endDate].flatMap((iso) => {
-    const parsed = parseIsoDateOnly(iso.slice(0, 10));
-    return parsed ? [quarterOfDate(new Date(parsed.y, parsed.m - 1, parsed.d, 12))] : [];
-  });
-  return refs.filter((ref, index) => refs.findIndex((other) => other.year === ref.year && other.quarter === ref.quarter) === index);
 }
 
 function rowIssueKeys(view: SprintQuarterPlanView | null): string[] {

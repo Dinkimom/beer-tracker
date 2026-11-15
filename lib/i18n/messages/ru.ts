@@ -1017,6 +1017,12 @@ export const ruMessages = {
       deleteGoalConfirm: 'Удалить эту цель?',
       deleteGoalTitle: 'Удаление цели',
       deleteGoalServerFailed: 'Не удалось удалить цель на сервере, она убрана только локально',
+      planRowAdd: 'Строка плана',
+      planRowNone: 'Без строки плана',
+      planRowRemoved: 'Строка удалена из плана',
+      planRowSearch: 'Эпик или направление…',
+      planRowSearchEmpty: 'Таких строк в плане квартала нет',
+      planRowTitle: 'Строка квартального плана, к которой относится цель',
     },
     backlogTab: {
       rateLimitMessage: 'Слишком много запросов. Подождите немного и попробуйте снова.',

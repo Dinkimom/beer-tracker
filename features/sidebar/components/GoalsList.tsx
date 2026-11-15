@@ -2,28 +2,36 @@
  * Компонент списка целей
  */
 
+import type { GoalPlanRowOption, SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPreview';
 import type { ChecklistItem } from '@/types/tracker';
 
 import { GoalItem } from '@/features/sidebar/components/GoalItem';
 import { GoalPlanPatchToolbar } from '@/features/sidebar/components/GoalPlanPatchToolbar';
 import { GoalPlanPatchUpdateDiff } from '@/features/sidebar/components/GoalPlanPatchUpdateDiff';
+import { GoalPlanRowSelect } from '@/features/sidebar/components/GoalPlanRowSelect';
 import { usePlanPatchGoalPreviewDecisions } from '@/features/sprint/hooks/usePlanPatchGoalPreviewDecisions';
+
+/** Цель в списке: пункт чек-листа и его строка квартального плана (QG5). */
+type GoalListItem = ChecklistItem & { planRow?: SprintGoalPlanRow | null };
 
 interface GoalsListProps {
   canEdit: boolean;
-  checklistItems: ChecklistItem[];
+  checklistItems: GoalListItem[];
   deletingItems: Map<string, ChecklistItem>;
   editingId: string | null;
   editingText: string;
   goalType: 'delivery' | 'discovery';
   isAdding: boolean;
   newGoalId: string | null;
+  /** Строки плана для привязки; null — планы кварталов ещё грузятся. */
+  planRowOptions: readonly GoalPlanRowOption[] | null;
   sprintId: number | null;
   updatingItems: Set<string>;
   onCancelEdit: () => void;
   onCheckboxChange: (itemId: string, checked: boolean) => void;
   onDeleteGoal: (itemId: string) => void;
+  onPlanRowChange: (itemId: string, planRow: SprintGoalPlanRow | null) => void;
   onSaveEdit: () => void;
   onStartEdit: (item: ChecklistItem) => void;
   onTextChange: (text: string) => void;
@@ -57,9 +65,11 @@ export function GoalsList({
   onCancelEdit,
   onCheckboxChange,
   onDeleteGoal,
+  onPlanRowChange,
   onSaveEdit,
   onStartEdit,
   onTextChange,
+  planRowOptions,
   sprintId,
   updatingItems,
 }: GoalsListProps) {
@@ -111,6 +121,17 @@ export function GoalsList({
                   onStartEdit={() => onStartEdit(item)}
                   onTextChange={onTextChange}
                 />
+                {planRowOptions && editingId !== item.id && !item.id.startsWith('temp-') ? (
+                  <div className="-mt-1.5 pb-1 pl-6">
+                    <GoalPlanRowSelect
+                      canEdit={canEdit && preview == null}
+                      disabled={updatingItems.has(item.id) || isDeleting}
+                      options={planRowOptions}
+                      planRow={item.planRow ?? null}
+                      onChange={(planRow) => onPlanRowChange(item.id, planRow)}
+                    />
+                  </div>
+                ) : null}
                 {preview?.action === 'update' ? (
                   <GoalPlanPatchUpdateDiff fromText={item.text} />
                 ) : null}

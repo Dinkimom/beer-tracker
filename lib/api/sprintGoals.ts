@@ -2,6 +2,7 @@
  * API целей спринта (таблица sprint_goals в beer_tracker)
  */
 
+import type { SprintGoalItem, SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPreview';
 import type { ChecklistItem } from '@/types/tracker';
 
@@ -9,7 +10,8 @@ import { getPlannerBeerTrackerApi } from '../plannerBeerTrackerApiOverride';
 
 export interface SprintGoalsResponse {
   checklistDone: number;
-  checklistItems: ChecklistItem[];
+  /** `planRow` — строка квартального плана цели (QG5); демо и старые ответы его не несут. */
+  checklistItems: Array<ChecklistItem & Partial<Pick<SprintGoalItem, 'planRow'>>>;
   checklistTotal: number;
   goalPreviews?: PlanPatchGoalPreview[];
 }
@@ -32,6 +34,7 @@ export async function fetchSprintGoals(
 export async function createSprintGoal(params: {
   sprintId: number;
   goalType: 'delivery' | 'discovery';
+  planRow?: SprintGoalPlanRow | null;
   text: string;
   team?: string;
 }): Promise<{ success: boolean; item?: ChecklistItem; error?: string }> {
@@ -50,7 +53,7 @@ export async function createSprintGoal(params: {
 
 export async function updateSprintGoal(
   id: string,
-  updates: { text?: string; checked?: boolean }
+  updates: { text?: string; checked?: boolean; planRow?: SprintGoalPlanRow | null }
 ): Promise<boolean> {
   try {
     await getPlannerBeerTrackerApi().patch(`/sprint-goals/${encodeURIComponent(id)}`, updates);

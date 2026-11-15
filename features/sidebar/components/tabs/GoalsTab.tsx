@@ -14,6 +14,7 @@ import { submitStartSprint } from '@/features/sidebar/components/tabs/goalsTabSt
 import { useTaskSidebar } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { useGoalsTab } from '@/features/sidebar/hooks/useGoalsTab';
 import { FinishSprintModal } from '@/features/sprint/components/FinishSprintModal';
+import { useSprintGoalPlanRows } from '@/features/sprint/hooks/useSprintGoalPlanRows';
 import { patchSprintInSprintsQueries } from '@/features/sprint/hooks/useSprints';
 import { patchSprintInfoInTasksQueries } from '@/features/task/hooks/useTasks';
 
@@ -29,6 +30,7 @@ export function GoalsTab() {
     discoveryGoalsLoading,
     discoveryUpdatingItems,
     goalsLoading,
+    selectedBoardId = null,
     selectedSprintId = null,
     sprintInfo,
     sprints,
@@ -58,6 +60,13 @@ export function GoalsTab() {
     onDeleteGoal: onDeleteDiscoveryGoal,
     onEditGoal: onEditDiscoveryGoal,
   });
+
+  const goalPlanRows = useSprintGoalPlanRows({
+    boardId: selectedBoardId,
+    sprintId: selectedSprintId,
+    sprintWindow: sprintInfo,
+  });
+  const planRowOptions = goalPlanRows.ready ? goalPlanRows.options : null;
 
   const { confirm, DialogComponent: startSprintConfirmDialog } = useConfirmDialog();
 
@@ -127,11 +136,13 @@ export function GoalsTab() {
                 goalType="delivery"
                 isAdding={deliveryGoalsTab.isAdding}
                 newGoalId={deliveryGoalsTab.newGoalId}
+                planRowOptions={planRowOptions}
                 sprintId={selectedSprintId}
                 updatingItems={deliveryUpdatingItems}
                 onCancelEdit={deliveryGoalsTab.handleCancelEdit}
                 onCheckboxChange={onCheckboxChangeDelivery}
                 onDeleteGoal={deliveryGoalsTab.handleDeleteGoal}
+                onPlanRowChange={(itemId, planRow) => goalPlanRows.setPlanRow('delivery', itemId, planRow)}
                 onSaveEdit={deliveryGoalsTab.handleSaveEdit}
                 onStartEdit={deliveryGoalsTab.handleStartEdit}
                 onTextChange={deliveryGoalsTab.setEditingText}
@@ -179,11 +190,13 @@ export function GoalsTab() {
                 goalType="discovery"
                 isAdding={discoveryGoalsTab.isAdding}
                 newGoalId={discoveryGoalsTab.newGoalId}
+                planRowOptions={planRowOptions}
                 sprintId={selectedSprintId}
                 updatingItems={discoveryUpdatingItems}
                 onCancelEdit={discoveryGoalsTab.handleCancelEdit}
                 onCheckboxChange={onCheckboxChangeDiscovery}
                 onDeleteGoal={discoveryGoalsTab.handleDeleteGoal}
+                onPlanRowChange={(itemId, planRow) => goalPlanRows.setPlanRow('discovery', itemId, planRow)}
                 onSaveEdit={discoveryGoalsTab.handleSaveEdit}
                 onStartEdit={discoveryGoalsTab.handleStartEdit}
                 onTextChange={discoveryGoalsTab.setEditingText}

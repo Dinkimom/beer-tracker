@@ -2,10 +2,24 @@ import type { BeerTrackerTransactionQuery } from '@/lib/db';
 
 import { query } from '@/lib/db';
 
+import { planRowFromColumns, type SprintGoalPlanRow } from './sprintGoalPlanRow';
+
 interface SprintGoalRow {
   done: boolean;
   id: string;
+  /** Строка квартального плана цели (QG5); null — цель без привязки. */
+  planRow: SprintGoalPlanRow | null;
   text: string;
+}
+
+const GOAL_COLUMNS = 'id, text, done, plan_year, plan_quarter, plan_row_id';
+
+type PlanRowColumns = Parameters<typeof planRowFromColumns>[0];
+type StoredGoalRow = Omit<SprintGoalRow, 'planRow'> & PlanRowColumns;
+
+function goalFromRow<T extends StoredGoalRow>(row: T): Omit<T, keyof PlanRowColumns> & SprintGoalRow {
+  const { plan_quarter, plan_row_id, plan_year, ...goal } = row;
+  return { ...goal, planRow: planRowFromColumns({ plan_quarter, plan_row_id, plan_year }) };
 }
 
 export interface SprintGoalTextRow {
@@ -19,13 +33,13 @@ export async function listSprintGoals(input: {
   sprintId: number;
 }): Promise<SprintGoalRow[]> {
   const result = await query(
-    `SELECT id, text, done
+    `SELECT ${GOAL_COLUMNS}
        FROM sprint_goals
        WHERE sprint_id = $1 AND goal_type = $2
        ORDER BY created_at ASC`,
     [input.sprintId, input.goalType]
   );
-  return result.rows as SprintGoalRow[];
+  return (result.rows as StoredGoalRow[]).map(goalFromRow);
 }
 
 /** Все цели спринта (Delivery и Discovery) в порядке создания — для зеркала в трекер. */
@@ -45,6 +59,7 @@ export async function insertSprintGoal(
     goalId?: string;
     goalType: string;
     organizationId: string;
+    planRow?: SprintGoalPlanRow | null;
     sprintId: number;
     team?: string | null;
     text: string;
@@ -52,33 +67,62 @@ export async function insertSprintGoal(
   run: BeerTrackerTransactionQuery = query
 ): Promise<SprintGoalRow> {
   const insert = await run(
-    `INSERT INTO sprint_goals (id, organization_id, sprint_id, team, text, goal_type, done)
-           VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6, false)
-           RETURNING id, text, done`,
-    [input.goalId ?? null, input.organizationId, input.sprintId, input.team ?? null, input.text, input.goalType]
+    `INSERT INTO sprint_goals
+             (id, organization_id, sprint_id, team, text, goal_type, done, plan_year, plan_quarter, plan_row_id)
+           VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6, false, $7, $8, $9)
+           RETURNING ${GOAL_COLUMNS}`,
+    [
+      input.goalId ?? null,
+      input.organizationId,
+      input.sprintId,
+      input.team ?? null,
+      input.text,
+      input.goalType,
+      input.planRow?.year ?? null,
+      input.planRow?.quarter ?? null,
+      input.planRow?.rowId ?? null,
+    ]
   );
-  return insert.rows[0] as SprintGoalRow;
+  return goalFromRow(insert.rows[0] as StoredGoalRow);
+}
+
+/** Что меняется у цели; полей, которых нет, правка не трогает. `planRow: null` снимает привязку. */
+export interface SprintGoalPatch {
+  done?: boolean;
+  planRow?: SprintGoalPlanRow | null;
+  text?: string;
 }
 
 export async function updateSprintGoal(
   input: {
     goalId: string;
     organizationId: string;
-    updateFields: string[];
-    updateValues: Array<boolean | number | string | null | undefined>;
+    patch: SprintGoalPatch;
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<(SprintGoalRow & { sprint_id: number }) | null> {
-  const { goalId, updateFields, updateValues } = input;
-  const paramIndex = updateValues.length + 1;
+  const { done, planRow, text } = input.patch;
+  const columns: Array<[string, boolean | number | string | null]> = [];
+  if (text !== undefined) columns.push(['text', text]);
+  if (done !== undefined) columns.push(['done', done]);
+  if (planRow !== undefined) {
+    columns.push(
+      ['plan_year', planRow?.year ?? null],
+      ['plan_quarter', planRow?.quarter ?? null],
+      ['plan_row_id', planRow?.rowId ?? null]
+    );
+  }
+  // Пустая правка ничего не меняет, но цель возвращает — как и раньше, когда вызывающий не прислал полей.
+  const assignments = columns.length > 0 ? columns.map(([column], index) => `${column} = $${index + 1}`) : ['text = text'];
   const result = await run(
     `UPDATE sprint_goals
-       SET ${updateFields.join(', ')}
-       WHERE id = $${paramIndex}
-       RETURNING id, text, done, sprint_id`,
-    [...updateValues, goalId]
+       SET ${assignments.join(', ')}
+       WHERE id = $${columns.length + 1}
+       RETURNING ${GOAL_COLUMNS}, sprint_id`,
+    [...columns.map(([, value]) => value), input.goalId]
   );
-  return (result.rows[0] as (SprintGoalRow & { sprint_id: number }) | undefined) ?? null;
+  const row = result.rows[0] as (StoredGoalRow & { sprint_id: number }) | undefined;
+  return row ? goalFromRow(row) : null;
 }
 
 export async function deleteSprintGoal(

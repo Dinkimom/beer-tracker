@@ -2,6 +2,7 @@ import type { SprintPlanAnchor } from '@/lib/api/sprints';
 import type { BoardListItem, SprintScoreResponse } from '@/lib/api/types';
 import type { QuarterlyPlanContent } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { RetroBoard } from '@/lib/retro/retroBoardShared';
+import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
 import type { PlannerIntegrationRulesDto } from '@/lib/trackerIntegration/toPlannerDto';
 import type { Developer, SprintCommentsResponse, SprintTasksResponse, Task } from '@/types';
@@ -100,10 +101,8 @@ export interface DemoFixtureState {
   comments: DemoCommentRow[];
   developers: Developer[];
   featureLanes: FeatureLanesDocument;
-  goals: {
-    delivery: ChecklistItem[];
-    discovery: ChecklistItem[];
-  };
+  /** Цели спринта; `planRow` — строка квартального плана цели (QG5). */
+  goals: Record<'delivery' | 'discovery', Array<ChecklistItem & { planRow?: SprintGoalPlanRow | null }>>;
   /** Ручные слои карточек свимлейна: cardId → слой. */
   laneLayers: Record<string, number>;
   links: Array<{
@@ -423,6 +422,8 @@ export function createDemoFixtureSeed(): DemoFixtureState {
           text: 'Checkout MVP behind flag',
           checked: false,
           checklistItemType: 'delivery',
+          // «Payment step API» в Checkout redesign: цель привязана к эпику квартального плана.
+          planRow: { quarter: 4, rowId: 'demo-direction-1-epic-2', year: 2026 },
         },
         {
           id: 'goal-del-2',
@@ -437,6 +438,8 @@ export function createDemoFixtureSeed(): DemoFixtureState {
           text: 'Validate saved-methods scope',
           checked: false,
           checklistItemType: 'discovery',
+          // Проработка идёт в строке направления «Promo codes v2».
+          planRow: { quarter: 4, rowId: 'demo-direction-2', year: 2026 },
         },
       ],
     },

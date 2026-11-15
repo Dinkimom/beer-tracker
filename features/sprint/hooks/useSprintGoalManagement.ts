@@ -8,7 +8,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { useBoards } from '@/features/board/hooks/useBoards';
 
-import { applyDeleteGoalOptimisticUpdate } from './sprintGoalManagementHelpers';
+import { applyDeleteGoalOptimisticUpdate, sprintGoalsQueryKey } from './sprintGoalManagementHelpers';
 import {
   runAddGoalUpdate,
   runCheckboxGoalUpdate,
@@ -37,9 +37,7 @@ export function useSprintGoalManagement({
   const forDemoPlanner = useDemoPlannerBoardsQueryScope();
   const { t } = useI18n();
 
-  const queryKey = forDemoPlanner
-    ? (['sprintGoals', 'demo', sprintId, goalType] as const)
-    : (['sprintGoals', sprintId, goalType] as const);
+  const queryKey = sprintGoalsQueryKey(forDemoPlanner, sprintId, goalType);
 
   const handleCheckboxChange = async (itemId: string, checked: boolean): Promise<void> => {
     if (updatingItems.has(itemId)) return;
@@ -99,7 +97,7 @@ export function useSprintGoalManagement({
         onGoalsUpdate,
         queryClient,
         queryKey,
-        text,
+        updates: { text },
       });
     } finally {
       setUpdatingItems((prev) => {

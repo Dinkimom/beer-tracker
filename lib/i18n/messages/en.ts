@@ -1015,6 +1015,12 @@ export const enMessages = {
       deleteGoalConfirm: 'Delete this goal?',
       deleteGoalTitle: 'Delete goal',
       deleteGoalServerFailed: 'Could not delete the goal on the server; it was removed locally only',
+      planRowAdd: 'Plan row',
+      planRowNone: 'No plan row',
+      planRowRemoved: 'Row removed from the plan',
+      planRowSearch: 'Epic or direction…',
+      planRowSearchEmpty: 'No such rows in the quarter plan',
+      planRowTitle: 'Quarterly plan row this goal belongs to',
     },
     backlogTab: {
       rateLimitMessage: 'Too many requests. Wait a bit and try again.',

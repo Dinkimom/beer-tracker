@@ -36,8 +36,7 @@ async function writeGoalPreview(input: {
   await updateSprintGoal({
     goalId: preview.goalId,
     organizationId,
-    updateFields: ['text = $1', 'done = $2'],
-    updateValues: [preview.text, preview.done],
+    patch: { done: preview.done, text: preview.text },
   });
 }
 
