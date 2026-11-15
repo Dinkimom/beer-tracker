@@ -5,8 +5,8 @@ import type {
   SprintContextPosition,
 } from '@/lib/sprints/sprintContextTypes';
 import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPreview';
-import type { PendingPlanPatchSnapshot } from '@/lib/sprints/sprintPlanPatchPending';
 import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
+import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
 
 import { listPlanPatchGoalPreviews } from '@/lib/sprints/sprintPlanPatchGoalPreviewRepository';
 import {
@@ -230,9 +230,38 @@ export async function loadPendingPlanPatchView(input: {
   });
 }
 
+function opIds(ops: readonly SprintPlanPatchOp[], pick: (op: SprintPlanPatchOp) => string | undefined): Set<string> {
+  return new Set(ops.map(pick).filter((id): id is string => id !== undefined));
+}
+
+/**
+ * Что из неподтверждённого драфта не переходит в новый: карточки, цели и заметки, которых новые ops
+ * не трогают. Человек видел их на доске — при замене они исчезнут.
+ */
+export function droppedPendingLines(view: PendingPlanPatchView, ops: readonly SprintPlanPatchOp[]): string[] {
+  const tasks = opIds(ops, (op) => (op.op === 'upsertPosition' || op.op === 'deletePosition' ? op.taskId : undefined));
+  const goals = opIds(ops, (op) => (op.op === 'updateGoal' || op.op === 'deleteGoal' ? op.id : undefined));
+  const goalTexts = opIds(ops, (op) => (op.op === 'createGoal' ? op.text.trim() : undefined));
+  const notes = opIds(ops, (op) => (op.op === 'updateNote' || op.op === 'deleteNote' ? op.commentId : undefined));
+  const noteTexts = opIds(ops, (op) => (op.op === 'createNote' ? op.text.trim() : undefined));
+  return pendingPlanPatchViewLines({
+    ...view,
+    draftNotes: view.draftNotes.filter((note) =>
+      note.replacesNoteId ? !notes.has(note.replacesNoteId) : !noteTexts.has(note.text.trim())
+    ),
+    goals: view.goals.filter((goal) =>
+      goal.action === 'create' ? !goalTexts.has((goal.afterText ?? '').trim()) : !goals.has(goal.id)
+    ),
+    positions: view.positions.filter((position) => !tasks.has(position.taskId)),
+  });
+}
+
 /** Returns whether an older proposal was discarded. Throws when replace is required. */
 export async function applyPendingProposeGate(input: {
   context: PendingPlanPatchContext;
+  /** Реплика агента человеку: обязательна, если замена драфта что-то из него убирает. */
+  draftMessage?: string;
+  ops: readonly SprintPlanPatchOp[];
   /** Гейт по своему драфту: чужие приватные драфты не мешают. */
   ownerId: string;
   persistNotes: boolean;
@@ -255,31 +284,40 @@ export async function applyPendingProposeGate(input: {
   if (!pendingProposalBlocksReplace(pending, input.proposalId)) {
     return false;
   }
+  const view = await loadPendingViewOrNull(input.context, input.ownerId);
   if (!input.replacePending) {
-    throw new Error(await pendingProposalConflictMessage(pending, input.context, input.ownerId));
+    throw new Error(formatPendingProposalConflictError(pending, view ? pendingPlanPatchViewLines(view) : []));
+  }
+  const dropped = view ? droppedPendingLines(view, input.ops) : [];
+  if (dropped.length > 0 && !input.draftMessage?.trim()) {
+    throw new Error(
+      [
+        'draft_message_required: replacing the unconfirmed proposal removes items the person has already seen on the board, and your new ops do not carry them over:',
+        ...dropped,
+        'Add them to ops to keep them, or pass draftMessage telling the person what is gone and why.',
+      ].join('\n')
+    );
   }
   input.warnings.push(formatReplacedPendingWarning(pending));
+  if (dropped.length > 0) {
+    input.warnings.push(`dropped_from_pending: not carried over from the replaced proposal — ${dropped.join('; ')}`);
+  }
   return true;
 }
 
-async function pendingProposalConflictMessage(
-  pending: PendingPlanPatchSnapshot,
+async function loadPendingViewOrNull(
   context: PendingPlanPatchContext,
   ownerId: string
-): Promise<string> {
+): Promise<PendingPlanPatchView | null> {
   try {
-    const view = await loadPendingPlanPatchView({
+    return await loadPendingPlanPatchView({
       context,
       organizationId: context.meta.organizationId,
       ownerId,
       sprintId: context.meta.sprintId,
     });
-    return formatPendingProposalConflictError(
-      pending,
-      view ? pendingPlanPatchViewLines(view) : []
-    );
   } catch (error) {
     console.warn('[sprint-plan-patch] pending proposal detail:', error);
-    return formatPendingProposalConflictError(pending);
+    return null;
   }
 }

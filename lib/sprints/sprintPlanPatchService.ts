@@ -14,6 +14,7 @@ import { parseAgentSessionReplies } from '@/lib/agentSessions/agentSession';
 import { runBeerTrackerTransaction } from '@/lib/db';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
+import { boardVersionWarnings, sprintBoardVersion } from '@/lib/sprints/sprintBoardVersion';
 import { deletePendingCommentReplacements } from '@/lib/sprints/sprintCommentReplacements';
 import { buildSprintContextCapacity } from '@/lib/sprints/sprintContextCapacity';
 import { claimPlanPatchApplyToken } from '@/lib/sprints/sprintPlanPatchAppliedTokenRepository';
@@ -89,6 +90,8 @@ export async function proposeSprintPlanPatch(input: {
   actorUserId: string;
   /** Short agent note for the person: what this draft version changes (shown in the session). */
   draftMessage?: string;
+  /** meta.boardVersion the agent read; a different current version adds a board_changed_since_read warning. */
+  ifBoardVersion?: string;
   /** Session title when the agent starts a new session from chat (no sessionId, no current draft). */
   intent?: string;
   /** Agent answers to 💬 comments in the session: [{messageId, resolution, text}]. */
@@ -165,7 +168,9 @@ export async function proposeSprintPlanPatch(input: {
     sprintId: input.sprintId,
     sprintStatus: current.meta.sprintWindow?.status,
   });
+  const boardVersion = sprintBoardVersion(current.positions);
   const warnings = [
+    ...boardVersionWarnings(input.ifBoardVersion, boardVersion),
     ...(sprintIssues.warning ? [sprintIssues.warning] : []),
     ...collectIssueNotInSprintWarnings(ops, sprintIssues.keys),
   ];
@@ -191,6 +196,8 @@ export async function proposeSprintPlanPatch(input: {
   const proposalId = proposalIdFromOpsHash(opsHash);
   const replacedPending = await applyPendingProposeGate({
     context: current,
+    draftMessage: input.draftMessage,
+    ops,
     ownerId: input.actorUserId,
     persistNotes,
     proposalId,
@@ -226,6 +233,7 @@ export async function proposeSprintPlanPatch(input: {
   });
   return {
     applyToken,
+    boardVersion,
     capacityPreview: { summary: capacityPreviewSummary },
     ...(contentChanges.length > 0 ? { contentChanges } : {}),
     ...(draftNoteIds.length > 0 ? { draftNoteIds } : {}),

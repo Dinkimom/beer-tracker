@@ -22,6 +22,7 @@ import {
 } from '@/lib/plannerTimelineScale';
 import { listSprintGoals } from '@/lib/sprintGoals';
 import { fetchFeatureLanes } from '@/lib/sprints/featureLanesRepository';
+import { sprintBoardVersion } from '@/lib/sprints/sprintBoardVersion';
 import { getSprintCommentDiagramScene } from '@/lib/sprints/sprintCommentDiagramsRepository';
 import { listSprintComments } from '@/lib/sprints/sprintCommentsRepository';
 import {
@@ -398,6 +399,7 @@ export async function buildSprintContext(input: {
   }
 
   const meta: SprintContextPayload['meta'] = {
+    boardVersion: sprintBoardVersion(positions),
     legend: { day: DAY_LEGEND, note: NOTE_LEGEND, part: partLegend(partsPerDay) },
     organizationId,
     partsPerDay,

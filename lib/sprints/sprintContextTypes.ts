@@ -172,6 +172,8 @@ export interface SprintContextAgendaItem {
 
 interface SprintContextMeta {
   boardId?: number;
+  /** Версия раскладки всей доски (без фильтров запроса): см. `sprintBoardVersion`. */
+  boardVersion?: string;
   calendarDays?: SprintContextCalendarDay[];
   featureId?: string;
   /** ISO country used for holidayDays / capacity (organizations.settings.planner.holidayCountry). */

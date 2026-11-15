@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildPendingPlanPatchView,
+  droppedPendingLines,
   pendingPlanPatchViewLines,
 } from './sprintPlanPatchPendingView';
 
@@ -89,5 +90,50 @@ describe('buildPendingPlanPatchView', () => {
         proposalId: null,
       })
     ).toBeNull();
+  });
+});
+
+describe('droppedPendingLines', () => {
+  const view = {
+    draftNotes: [
+      { id: 'n1', text: 'Tail of RND-1 goes to sprint 37' },
+      { id: 'n2', replaceAction: 'update' as const, replacesNoteId: 'c9', text: 'Edited' },
+    ],
+    goals: [
+      { action: 'create' as const, afterText: 'Ship checkout', beforeText: null, goalType: 'delivery' as const, id: 'g-new' },
+      { action: 'update' as const, afterText: 'New', beforeText: 'Old', goalType: 'delivery' as const, id: 'g1' },
+    ],
+    hint: '',
+    positions: [
+      { afterSchedule: 'Tue', beforeSchedule: 'Mon', taskId: 'RND-1' },
+      { afterSchedule: 'Wed', beforeSchedule: null, taskId: 'RND-2' },
+    ],
+    proposalId: 'p1',
+  };
+
+  it('lists what the new ops do not carry over from the pending proposal', () => {
+    const lines = droppedPendingLines(view, [
+      { assigneeId: 'staff:a', duration: 2, op: 'upsertPosition', startDay: 3, startPart: 0, taskId: 'RND-1' },
+      { goalType: 'delivery', op: 'createGoal', text: ' Ship checkout ' },
+      { commentId: 'c9', op: 'deleteNote' },
+    ]);
+    expect(lines).toEqual([
+      'position RND-2: (none) → Wed',
+      'goal update delivery g1: "Old" → "New"',
+      'draft note n1: "Tail of RND-1 goes to sprint 37"',
+    ]);
+  });
+
+  it('is empty when every pending item is still addressed', () => {
+    expect(
+      droppedPendingLines(view, [
+        { op: 'deletePosition', taskId: 'RND-1' },
+        { op: 'deletePosition', taskId: 'RND-2' },
+        { goalType: 'delivery', op: 'createGoal', text: 'Ship checkout' },
+        { id: 'g1', op: 'deleteGoal' },
+        { assigneeId: 'staff:a', day: 1, op: 'createNote', part: 0, text: 'Tail of RND-1 goes to sprint 37' },
+        { commentId: 'c9', op: 'updateNote', text: 'Edited again' },
+      ])
+    ).toEqual([]);
   });
 });

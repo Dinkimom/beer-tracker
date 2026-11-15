@@ -16,17 +16,23 @@ const STUB_PX = 10;
 const DETOUR_PX = 14;
 /** Зазор между остриём и полосой. */
 const TIP_GAP_PX = 2;
+/** Наименьший просвет между полосами, в который стрелка входит одним поворотом: место под остриё. */
+const MIN_DIRECT_GAP_PX = 8;
 const DELETE_BUTTON_PX = 20;
 
-/** Вид стрелки — как у связей на доске спринта: приглушённая в покое, оранжевая при нарушенном порядке. */
-type LinkTone = 'danger' | 'idle' | 'preview' | 'strong' | 'violated';
+/**
+ * Вид стрелки — как у связей на доске спринта: приглушённая в покое, оранжевая при нарушенном порядке.
+ * У полосы под курсором ярче и обычные связи, и нарушенные.
+ */
+type LinkTone = 'danger' | 'idle' | 'preview' | 'strong' | 'violated' | 'violatedStrong';
 
 const TONE_STROKE_CLASS: Record<LinkTone, string> = {
   danger: 'stroke-red-500',
   idle: 'stroke-gray-300 dark:stroke-gray-600',
   preview: 'stroke-blue-400',
   strong: 'stroke-gray-500 dark:stroke-gray-300',
-  violated: 'stroke-orange-500',
+  violated: 'stroke-orange-300 dark:stroke-orange-700',
+  violatedStrong: 'stroke-orange-500',
 };
 const TONES = Object.keys(TONE_STROKE_CLASS) as LinkTone[];
 
@@ -51,6 +57,8 @@ interface QuarterlyPlanLinksLayerProps {
 }
 
 interface Box {
+  /** Половина высоты полосы; у курсора — ноль. */
+  half: number;
   left: number;
   right: number;
   y: number;
@@ -58,13 +66,20 @@ interface Box {
 
 /**
  * Ломаная от правого края полосы-предшественника к левому краю зависимой. Если зависимая начинается
- * правее — один поворот; если левее (порядок нарушен) — стрелка обходит её строку и заходит слева.
+ * правее — один поворот от правого края. Если просвета между полосами нет (соседние недели или
+ * сроки пересекаются), стрелка выходит из нижнего или верхнего края предшественника над точкой входа
+ * и тоже поворачивает один раз. В обход строки она идёт, только когда зависимая стоит целиком левее.
  */
 function buildLinkPath(from: Box, to: Box): string {
   const x1 = from.right;
   const x2 = to.left - TIP_GAP_PX;
-  if (x2 >= x1 + STUB_PX * 2) {
-    return `M ${x1} ${from.y} H ${x1 + STUB_PX} V ${to.y} H ${x2}`;
+  const gap = x2 - x1;
+  if (gap >= MIN_DIRECT_GAP_PX) {
+    return `M ${x1} ${from.y} H ${x1 + Math.min(STUB_PX, gap / 2)} V ${to.y} H ${x2}`;
+  }
+  const dropX = x2 - STUB_PX;
+  if (Math.abs(to.y - from.y) > from.half && dropX >= from.left + STUB_PX && dropX <= x1) {
+    return `M ${dropX} ${from.y + Math.sign(to.y - from.y) * from.half} V ${to.y} H ${x2}`;
   }
   const detourY = to.y > from.y ? to.y - DETOUR_PX : to.y + DETOUR_PX;
   return `M ${x1} ${from.y} H ${x1 + STUB_PX} V ${detourY} H ${x2 - STUB_PX} V ${to.y} H ${x2}`;
@@ -72,7 +87,12 @@ function buildLinkPath(from: Box, to: Box): string {
 
 function boxOf(element: Element, origin: DOMRect): Box {
   const rect = element.getBoundingClientRect();
-  return { left: rect.left - origin.left, right: rect.right - origin.left, y: rect.top + rect.height / 2 - origin.top };
+  return {
+    half: rect.height / 2,
+    left: rect.left - origin.left,
+    right: rect.right - origin.left,
+    y: rect.top + rect.height / 2 - origin.top,
+  };
 }
 
 /**
@@ -155,8 +175,9 @@ export function QuarterlyPlanLinksLayer({ links, violatedLinkIds }: QuarterlyPla
     const draftMark = draftMarkOf(draftMarks, path.id);
     if (path.id === deleteHoverId || draftMark === 'removed') return 'danger';
     if (draftMark) return 'preview';
-    if (violatedLinkIds.has(path.id)) return 'violated';
-    return path.fromId === hoveredBarId || path.toId === hoveredBarId ? 'strong' : 'idle';
+    const hovered = path.fromId === hoveredBarId || path.toId === hoveredBarId;
+    if (violatedLinkIds.has(path.id)) return hovered ? 'violatedStrong' : 'violated';
+    return hovered ? 'strong' : 'idle';
   };
   const visible = links.length > 0 || sourceId !== null;
 
@@ -264,6 +285,6 @@ function buildPreview(input: {
   }
   if (!input.pointer) return null;
   const x = input.pointer.x - input.origin.left;
-  const cursor = { left: x, right: x, y: input.pointer.y - input.origin.top };
+  const cursor = { half: 0, left: x, right: x, y: input.pointer.y - input.origin.top };
   return x < source.left ? buildLinkPath(cursor, source) : buildLinkPath(source, cursor);
 }
