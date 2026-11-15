@@ -2,6 +2,30 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.31.0] — 2026-11-16
+
+### English
+
+- Quarter board: time off and duty now behave like assignment bars. Click a week and pick a person — the chip appears at once; drag it or pull its edges with a one-day step; click it for a menu with the kind and removal. The form with dates is gone from the quarter (the sprint board keeps its popover).
+- Each team has two rows instead of one: «Duty» (a rota, the person is working) and «Vacation and sick leave» (the person is away). Chips are the same size as bars; a short one shows just the avatar instead of a clipped name.
+- Bars are colored by the status of their row — the same palette as the status tag — instead of by person. Duty days on a bar use the same hatch as problem spans; the icon tells a risk from a problem.
+- A lighter line now separates epic rows, and sprint boundaries run through a team's rows in the same color as the lines between directions.
+- Agent draft on the quarter: a row that only gets a tracker issue key is marked «linked»; «changed» is kept for renames and other edits.
+- Tech sprints are removed from the product: the event kind and its Web/Back/QA track are gone from the sprint board popover, the quarter, the API and the agent tools. Availability events are now vacation, sick leave and duty. The API and the agent reject `tech_sprint` like any unknown kind.
+- Operators: migration `0009` runs automatically on start (or with `pnpm db:migrate` when `DB_MIGRATIONS_AUTO=false`). It **deletes existing tech sprint events** from `board_availability_events`, drops the `tech_sprint_type` column and limits `event_type` to `vacation`, `sick_leave`, `duty`. This cannot be undone — back up the table first if you need those events. No new env vars.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.31.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Доска квартала: отпуска и дежурства теперь ведут себя как полосы назначений. Клик по неделе и выбор человека — плашка сразу на месте; её тянут целиком и за края с шагом в день; клик открывает меню с видом и удалением. Формы с датами на квартале больше нет (на доске спринта поповер остался).
+- У команды две строки вместо одной: «Дежурства» (график, человек работает) и «Отпуска и больничные» (человека нет). Плашки того же размера, что полосы; короткая показывает только аватар, а не обрезанное имя.
+- Полосы красятся по статусу своей строки — той же палитрой, что тег статуса, — а не по человеку. Дни дежурства на полосе штрихуются так же, как проблемные участки; риск от проблемы отличает значок.
+- Между строками эпиков появилась слабая линия, а границы спринтов идут через строки команды тем же цветом, что линии между направлениями.
+- Черновик агента на квартале: строка, которой только поставили ключ задачи трекера, помечается «прилинковано»; «изменено» остаётся за переименованием и остальными правками.
+- Техспринты убраны из продукта: вид события и его направление (Web/Back/QA) исчезли из поповера доски спринта, с квартала, из API и инструментов агента. События доступности теперь — отпуск, больничный и дежурство. API и агент отвечают на `tech_sprint` ошибкой, как на любой неизвестный вид.
+- Для администраторов: миграция `0009` применяется сама при старте (или через `pnpm db:migrate`, если `DB_MIGRATIONS_AUTO=false`). Она **удаляет существующие события-техспринты** из `board_availability_events`, убирает колонку `tech_sprint_type` и оставляет в `event_type` только `vacation`, `sick_leave`, `duty`. Отменить это нельзя — если события нужны, сохраните таблицу заранее. Новых переменных окружения нет.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.31.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.30.0] — 2026-11-15
 
 ### English
