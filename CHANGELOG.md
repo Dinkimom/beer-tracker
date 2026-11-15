@@ -2,6 +2,36 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.30.0] — 2026-11-15
+
+### English
+
+- New «Quarter» tab in the planner: one quarterly plan per organization with all teams on a single week grid. Directions and epics, people assigned by weeks, dependencies between assignments, notes, time off and duty, each team's sprints; the epic column is resizable. The plan is stored on the server and saved with version checks, so two people do not overwrite each other.
+- Directions link to tracker epics and plan epics to any tracker issue: the title and status come from the tracker.
+- Discovery and delivery in the plan: an assignment has a phase, and discovery can sit in the direction row before the feature is split into epics. A direction whose discovery has ended with no delivery planned is marked «researched, not split».
+- Plan problems and risks (overlaps, overload from three epics a week, person not in the team, duty) are computed by the same code for the board and for agents. Duty is now a risk, not unavailability — in the sprint as well: it no longer reduces capacity.
+- Agent on the quarter board: it proposes a draft that you accept or reject item by item, as on the sprint board. New MCP tools for the quarterly plan, for finding tracker epics and for team composition (changing the composition is admin-only).
+- The quarter in the sprint: the agent sees who the quarter expects on which epics during the sprint and what its quarter draft changes; the «Sprint goals» scenario builds goals from the quarter.
+- A sprint goal can be linked to a quarterly plan row — an epic or a direction — right under the goal on the sprint board. If the row is later removed from the plan, the goal shows it.
+- Fixes: Jira avatars are checked per employee, new ones appear at once; tracker epic search looks in the board's project.
+- /demo/planner has the Quarter tab on fixtures.
+- Operators: database migrations `0005`–`0008` run automatically on start (or with `pnpm db:migrate` when `DB_MIGRATIONS_AUTO=false`). `0005` drops the tables of the previous quarterly plan together with their data; `0006`–`0007` create the new plan and agent draft tables; `0008` adds plan row columns to `sprint_goals`. No new env vars.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.30.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Новая вкладка «Квартал» в планере: один квартальный план на организацию, все команды в общей сетке недель. Направления и эпики, люди по неделям, зависимости между назначениями, заметки, отпуска и дежурства, спринты каждой команды; ширина колонки эпиков меняется. План хранится на сервере и сохраняется с проверкой версии — двое не перетирают правки друг друга.
+- Направления привязываются к эпикам трекера, эпики плана — к любой задаче: название и статус берутся из трекера.
+- Discovery и delivery в плане: у назначения есть фаза, проработку можно поставить в строку направления, пока фича не разбита на эпики. Направление, у которого проработка кончилась, а поставка не запланирована, помечается «проработано, не разбито».
+- Проблемы и риски плана (пересечения, перегруз от трёх эпиков в неделю, человек не в команде, дежурство) считает один код для доски и агентов. Дежурство теперь риск, а не недоступность — и в спринте тоже: капасити оно больше не уменьшает.
+- Агент на доске квартала: предлагает черновик, который принимается и отклоняется по пунктам, как на доске спринта. Новые MCP-инструменты для квартального плана, поиска эпиков трекера и состава команд (менять состав может только администратор).
+- Квартал в спринте: агент видит, кого квартал ждёт на каких эпиках в неделях спринта и что меняет его черновик квартала; сценарий «Цели спринта» собирает цели от квартала.
+- Цель спринта можно привязать к строке квартального плана — эпику или направлению — прямо под целью на доске спринта. Если строку потом удалили из плана, у цели это видно.
+- Исправлено: аватары из Jira сверяются по каждому сотруднику, новые появляются сразу; поиск эпиков трекера идёт по проекту доски.
+- На /demo/planner вкладка «Квартал» работает на фикстурах.
+- Для администраторов: миграции БД `0005`–`0008` применяются сами при старте (или через `pnpm db:migrate`, если `DB_MIGRATIONS_AUTO=false`). `0005` удаляет таблицы прежнего квартального плана вместе с данными; `0006`–`0007` создают таблицы нового плана и черновиков агента; `0008` добавляет в `sprint_goals` колонки строки плана. Новых переменных окружения нет.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.30.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.29.2] — 2026-11-04
 
 ### English
