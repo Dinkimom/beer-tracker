@@ -11,6 +11,7 @@ import {
   boardAvailabilityEventFromRow,
   listBoardAvailabilityEvents,
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
+import { formatLocalDateToIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { plannerWriteDenied, toolError, toolJson, toolOpsResult } from '@/lib/mcp/mcpToolResult';
 import { resolveRegisteredMcpClientBrand } from '@/lib/mcp/oauth/mcpOAuthService';
@@ -18,6 +19,7 @@ import { loadDraftAgentSessionSummary } from '@/lib/mcp/registerAgentSessionMcpT
 import { loadQuarterlyPlanDraft, proposeQuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanDrafts';
 import { planIssueKeys } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QuarterlyPlanOpsSchema } from '@/lib/quarterlyPlans/quarterlyPlanOps';
+import { collectUnsplitDirectionIds } from '@/lib/quarterlyPlans/quarterlyPlanPhases';
 import {
   findQuarterlyPlanProblems,
   getQuarterlyPlan,
@@ -54,13 +56,15 @@ export function registerQuarterlyPlanMcpTools(
         'an epic (epicId) or the direction itself (directionId); phase "discovery" marks research, no phase = delivery), links ' +
         '(fromId must finish before toId starts), notes, absences per team, issues (assignments where the person is away, ' +
         'works on another epic the same weeks, starts before a blocker ends, or left the team), dutyRiskAssignmentIds ' +
-        '(on duty during the assignment: a risk, not a problem), pendingProposal (your draft the person has not accepted yet — ' +
+        '(on duty during the assignment: a risk, not a problem), unsplitDirectionIds (discovery on the direction is over but no ' +
+        'delivery bars are planned under it: a signal, not a problem), pendingProposal (your draft the person has not accepted yet — ' +
         'the plan above is without it) with its agentSession, and version. Optional teamId narrows the result.',
       inputSchema: { ...quarterInput, teamId: z.string().optional().describe('teams[].id to narrow the plan') },
     },
     async ({ quarter, teamId, year }) => {
       try {
         const ref: QuarterRef = { quarter, year };
+        const weeks = buildQuarterWeeks(ref);
         const issueTracker = await getIssueTrackerProviderClientForOrganization(input.organizationId);
         const { plan, version } = await getQuarterlyPlan({ issueTracker, organizationId: input.organizationId, ref });
         const teams = plan.teams.filter((team) => !teamId || team.id === teamId);
@@ -106,13 +110,17 @@ export function registerQuarterlyPlanMcpTools(
           ...(agentSession ? { agentSession } : {}),
           quarter,
           teams,
+          // Проработка кончилась, а поставка не запланирована (QG4): сигнал, не проблема.
+          unsplitDirectionIds: collectUnsplitDirectionIds(plan, weeks, formatLocalDateToIsoDateOnly(new Date())).filter((id) =>
+            directions.some((direction) => direction.id === id)
+          ),
           trackerEpics: Object.fromEntries(
             planIssueKeys({ directions, epics }).flatMap((key) =>
               plan.trackerEpics[key] ? [[key, plan.trackerEpics[key]]] : []
             )
           ),
           version,
-          weeks: buildQuarterWeeks(ref).map(({ endDate, index, startDate }) => ({ endDate, index, startDate })),
+          weeks: weeks.map(({ endDate, index, startDate }) => ({ endDate, index, startDate })),
           year,
         });
       } catch (error) {

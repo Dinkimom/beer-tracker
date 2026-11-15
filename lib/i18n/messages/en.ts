@@ -852,6 +852,8 @@ export const enMessages = {
       'The direction, its epics and assignments will be removed from the plan. Nothing changes in the tracker.',
     memberAway: 'away',
     memberBusy: 'already busy',
+    unsplit: 'researched, not split',
+    unsplitHint: 'Discovery is over, but delivery is not planned: there are no delivery bars',
     menuPhase: 'Phase',
     phase: { delivery: 'Delivery', discovery: 'Discovery' },
     draft: {

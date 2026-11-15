@@ -17,6 +17,7 @@ import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskBarNoteFocusEditor';
+import { formatLocalDateToIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import { collectQuarterlyPlanIssues, quarterTimelineStart } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import {
   addDirection,
@@ -31,6 +32,7 @@ import {
   updateEpic,
   violatedBlockersByAssignment,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { collectUnsplitDirectionIds } from '@/lib/quarterlyPlans/quarterlyPlanPhases';
 import {
   buildQuarterWeeks,
   QUARTER_WORKING_DAYS_PER_WEEK,
@@ -196,6 +198,9 @@ export function QuarterlyPlanPage() {
       draftReview: draftView.review,
       timelineStart,
       trackerEpics: plan.trackerEpics,
+      unsplitDirectionIds: new Set(
+        collectUnsplitDirectionIds(plan, weeks, formatLocalDateToIsoDateOnly(getPlannerNow()))
+      ),
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };

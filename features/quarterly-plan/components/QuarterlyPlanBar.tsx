@@ -27,11 +27,11 @@ import {
 import { useQuarterSpanDrag } from '../useQuarterSpanDrag';
 
 import { draftItemsOf, QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
-import { QuarterlyPlanPhaseTag } from './QuarterlyPlanPhaseTag';
 import { QuarterlyPlanResizeHandle } from './QuarterlyPlanResizeHandle';
 
 const BAR_GAP_PX = 2;
-const PHASE_BORDER_CLASS = { delivery: '', discovery: 'border-dashed' } as const;
+/** Проработка — контур без заливки: отличается от поставки при любой ширине полосы (QG1). */
+const PHASE_BAR_CLASS = { delivery: '', discovery: 'border-dashed !border-current/50 !bg-transparent' } as const;
 /** Полоса в руке: приподнята над доской и чуть повёрнута, как магнит, который сняли. */
 const BAR_LIFTED_STYLE = {
   boxShadow: '0 2px 4px rgb(0 0 0 / 0.12), 0 12px 22px -8px rgb(0 0 0 / 0.35)',
@@ -116,8 +116,9 @@ export function QuarterlyPlanBar({
   const spanFirstDay = span.startWeek * QUARTER_WORKING_DAYS_PER_WEEK;
   // Человека нет ни в одной команде плана — имени у доски нет (QI6).
   const name = member?.name ?? t('quarterlyPlan.formerMember');
-  /** Проработка (QG1): пунктирная кромка и подпись фазы; цвет — по человеку, как у остальных. */
+  /** Проработка (QG1) — контур без заливки, фаза в подсказке; цвет — по человеку, как у остальных. */
   const phase = assignmentPhase(assignment);
+  const phaseTitle = { delivery: undefined, discovery: t('quarterlyPlan.phase.discovery') }[phase];
 
   const focusNonce = focusedIssue?.assignmentId === assignment.id ? focusedIssue.nonce : null;
   useEffect(() => {
@@ -140,6 +141,7 @@ export function QuarterlyPlanBar({
         width: `calc(${(span.weeks / weekCount) * 100}% - ${BAR_GAP_PX * 2}px)`,
         zIndex: drag ? ZIndex.stickyInContent - 1 : ZIndex.contentInteractive + Number(draftPending),
       }}
+      title={phaseTitle}
       {...rootProps}
     >
       {/* Источник связи — синяя рамка с отступом, как у карточки-источника на доске спринта. Отдельным
@@ -153,7 +155,7 @@ export function QuarterlyPlanBar({
       {/* Магнит на доске: тот же картон, что у карточек планера, — кромка, тень в покое и подъём
           под курсором. Пока полосу несут, она приподнята и чуть повёрнута; при растягивании за край — нет. */}
       <div
-        className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border px-1.5 text-xs font-medium ${toneClass} ${PHASE_BORDER_CLASS[phase]}`}
+        className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border px-1.5 text-xs font-medium ${toneClass} ${PHASE_BAR_CLASS[phase]}`}
         style={drag?.mode === 'move' ? BAR_LIFTED_STYLE : undefined}
       >
         {[
@@ -190,7 +192,6 @@ export function QuarterlyPlanBar({
             />
           ) : null}
           <span className="min-w-0 truncate">{name}</span>
-          <QuarterlyPlanPhaseTag phase={phase} />
         </span>
         <span className="flex-1" />
         {issues.length + risks.length > 0 ? (

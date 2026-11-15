@@ -114,6 +114,8 @@ export interface QuarterlyPlanBoardContextValue {
   timelineStart: Date;
   /** Привязанные эпики трекера по ключу: название, статус, «сделано» (QE5, QE7). */
   trackerEpics: Readonly<Record<string, QuarterlyPlanTrackerEpic>>;
+  /** Направления «проработано, не разбито» (QG4). */
+  unsplitDirectionIds: ReadonlySet<string>;
   /** Для зависимого назначения — те, кого оно ждёт и кто ещё не закончит к его началу. */
   violatedBlockers: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
   weeks: readonly QuarterWeek[];

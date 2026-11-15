@@ -31,7 +31,7 @@ export function QuarterlyPlanDirectionHeader({
   onToggle,
 }: QuarterlyPlanDirectionHeaderProps) {
   const { t } = useI18n();
-  const { draft, onDraftSubmit, onRowMenu, trackerEpics } = useQuarterlyPlanBoard();
+  const { draft, onDraftSubmit, onRowMenu, trackerEpics, unsplitDirectionIds } = useQuarterlyPlanBoard();
   const renaming = draft?.kind === 'renameDirection' && draft.id === direction.id;
 
   return (
@@ -64,6 +64,11 @@ export function QuarterlyPlanDirectionHeader({
           {unplannedCount > 0 ? (
             <span className="shrink-0 text-xs text-ds-text-muted">
               {t('quarterlyPlan.unplannedCount', { count: unplannedCount })}
+            </span>
+          ) : null}
+          {unsplitDirectionIds.has(direction.id) ? (
+            <span className="shrink-0 text-xs text-amber-700 dark:text-amber-400" title={t('quarterlyPlan.unsplitHint')}>
+              {t('quarterlyPlan.unsplit')}
             </span>
           ) : null}
           <span className="flex-1" />

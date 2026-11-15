@@ -153,6 +153,13 @@ const SEED_DIRECTIONS: SeedDirection[] = [
       { assignments: [[DEMO_DEV_ALICE, 10, 3]], status: 'backlog', title: 'Drop legacy checkout' },
     ],
   },
+  // Проработка кончилась в прошлом спринте, поставка не запланирована: сигнал «проработано, не разбито» (QG4).
+  {
+    discovery: [[DEMO_DEV_DANA, 0, 2]],
+    teamId: DEMO_TEAM_ID,
+    title: 'Loyalty program',
+    epics: [],
+  },
   {
     teamId: PLATFORM_TEAM_ID,
     title: 'Public API v3',
