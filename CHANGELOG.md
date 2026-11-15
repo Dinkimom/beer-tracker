@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.31.1] — 2026-11-16
+
+### English
+
+- Quarter board: a dependency arrow between bars in neighboring weeks, or between bars whose dates overlap, now leaves the edge of the first bar and turns once instead of looping around the row.
+- Dependencies with a broken order are muted orange at rest and bright under the cursor, like the other dependencies of the hovered bar.
+- Agent on the sprint board: `get_sprint_context` returns `meta.boardVersion`, and `propose_plan_patch` takes it as `ifBoardVersion`. If someone changed the board after the agent read it, the agent gets a `board_changed_since_read` warning; the draft is still written.
+- Replacing an unconfirmed draft: when the new draft leaves out cards, goals or notes of the previous one, the agent must explain it in the session message — the server lists what is gone and rejects the call without `draftMessage`.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.31.1` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Доска квартала: стрелка зависимости между полосами в соседних неделях и между полосами с пересекающимися сроками теперь выходит из края первой полосы и поворачивает один раз, а не обходит строку петлёй.
+- Зависимости с нарушенным порядком в покое приглушённо-оранжевые и яркие под курсором — как остальные зависимости полосы, на которую навели.
+- Агент на доске спринта: `get_sprint_context` отдаёт `meta.boardVersion`, а `propose_plan_patch` принимает её как `ifBoardVersion`. Если доску изменили после того, как агент её прочитал, он получает предупреждение `board_changed_since_read`; черновик при этом записывается.
+- Замена неподтверждённого черновика: если новый черновик не переносит часть карточек, целей или заметок прежнего, агент обязан объяснить это в сообщении сессии — сервер перечисляет, что уходит, и отклоняет вызов без `draftMessage`.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.31.1` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.31.0] — 2026-11-16
 
 ### English
