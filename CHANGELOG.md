@@ -2,6 +2,28 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.33.0] — 2026-11-16
+
+### English
+
+- Quarter board: version history. The clock button on the board toolbar opens a sidebar next to the board with the plan's versions — when, who, whether it was an agent draft or a restore, and what changed (directions, epics, tasks, bars, links, notes). Edits of one person within 10 minutes are kept as one version.
+- Click a version to see it on the board, read-only, with its changes marked; «Restore this version» saves it as a new version on top of the current plan, so a restore can be undone too.
+- Bars of epics and directions can now be sized to the day, like task bars. Bar height follows the row level (task, epic, direction), so the levels are easier to tell apart.
+- Planning a bar: the phase (discovery or delivery) is picked right in the assign menu, so delivery can be put on a direction; a preview of the new bar shows where it will land; the add cell fits the free days of a partly busy week.
+- Smaller polish: discovery bars get a pale fill, board menus close with an animation, «Not planned» moved next to the row title, the bar no longer tilts while dragged.
+- Operators: migration `0010` adds the `org_quarterly_plan_versions` table. It runs automatically on start (or with `pnpm db:migrate` when `DB_MIGRATIONS_AUTO=false`). History starts with the first edit after the update; the plan as it was before becomes the first version.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.33.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Доска квартала: история версий. Кнопка с часами на панели доски открывает сайдбар рядом с доской с версиями плана — когда, кто, был ли это черновик агента или откат и что поменялось (направления, эпики, задачи, полосы, связи, заметки). Правки одного человека в пределах 10 минут хранятся одной версией.
+- Клик по версии показывает её на доске только для просмотра, с пометками изменений; «Восстановить эту версию» сохраняет её новой версией поверх текущего плана — откат тоже можно откатить.
+- Полосы эпиков и направлений теперь ставятся с точностью до дня, как полосы задач. Высота полосы зависит от уровня строки (задача, эпик, направление) — уровни легче различить.
+- Назначение полосы: фазу (проработка или поставка) выбирают прямо в меню назначения — поставку можно поставить на направление; превью показывает, куда встанет новая полоса; клетка добавления встаёт на свободные дни частично занятой недели.
+- Мелкие доработки: у проработки бледная заливка, меню доски закрываются с анимацией, «Не запланировано» переехало к названию строки, полоса при перетаскивании больше не наклоняется.
+- Для администраторов: миграция `0010` добавляет таблицу `org_quarterly_plan_versions`. Она применяется сама при старте (или через `pnpm db:migrate`, если `DB_MIGRATIONS_AUTO=false`). История начинается с первой правки после обновления; план, каким он был до неё, станет первой версией.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.33.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.32.0] — 2026-11-16
 
 ### English
