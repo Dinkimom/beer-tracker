@@ -250,12 +250,13 @@ function SwimlaneComponent({
       }),
     [developer.id, developerAvailability, sprintStartDate, sprintTimelineWorkingDays]
   );
-  const { laneLabels, mainAreaHeight, timelineOuterHeight } = resolveSwimlaneSecondaryLaneLayout({
+  const { availabilityBandHeight, laneLabels, mainAreaHeight, timelineOuterHeight } = resolveSwimlaneSecondaryLaneLayout({
+    availabilitySegments,
     factExtra,
     factLabel: t('sprintPlanner.swimlane.lanes.fact'),
+    positionedTasks: layout.positionedTasks,
     taskBandHeight: layout.totalHeight,
   });
-
   const swimlaneRowTaskIds = useMemo(
     () => new Set(layout.positionedTasks.map(({ task }) => task.id)),
     [layout.positionedTasks]
@@ -332,7 +333,7 @@ function SwimlaneComponent({
             isLinking={linkingFromTaskId != null}
             maxTaskLayers={layout.maxTaskLayers}
             partDividersVisible={partDividersVisible}
-            patternHeight={layout.totalHeight}
+            patternHeight={availabilityBandHeight}
             placedLayerItems={layout.placedLayerItems}
             quickAddClipHeight={layout.totalHeight}
             quickAddFootprint={quickAddFootprint}
@@ -478,7 +479,7 @@ function SwimlaneComponent({
           <SwimlaneAvailabilityChips
             dayCount={sprintTimelineWorkingDays}
             segments={availabilitySegments}
-            taskBandHeight={layout.totalHeight}
+            taskBandHeight={availabilityBandHeight}
             onChipClick={openAvailabilityUpsertForEventId}
           />
           <SwimlaneAvailabilityPopoverGate

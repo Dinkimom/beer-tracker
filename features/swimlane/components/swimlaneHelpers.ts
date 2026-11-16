@@ -4,9 +4,10 @@ import type { SwimlaneDropPreviewTarget } from '@/features/swimlane/utils/swimla
 import type { AvailabilityCardKind } from '@/lib/boardAvailability/availabilityCardKind';
 import type { AvailabilitySegment } from '@/lib/boardAvailability/availabilitySegments';
 import type { SwimlanePlacementTool } from '@/lib/layers';
-import type { Task } from '@/types';
+import type { Task, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
+import { getPartsPerDay } from '@/constants';
 import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
   resolveSwimlaneQuickAddPlacementFootprint,
@@ -18,6 +19,7 @@ import {
 } from '@/features/swimlane/utils/availabilityTimelineMarks';
 import { getVisibleSwimlaneFactLayerHeightPx } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerHelpers';
 import { getSegmentsForDeveloper } from '@/lib/boardAvailability/availabilitySegments';
+import { isCellOccupiedByTask } from '@/lib/planner-timeline';
 
 export function buildSwimlaneRootClassName(sidebarClickEnabled: boolean): string {
   const interactive = sidebarClickEnabled ? 'cursor-pointer' : '';
@@ -74,26 +76,55 @@ export function resolveSwimlaneAvailabilityTimeline(input: {
   };
 }
 
+/** Высота полоски под лейбл отсутствия: чип 20px + отступы. */
+const AVAILABILITY_CHIP_STRIP_HEIGHT_PX = 24;
+
+/** Карточка проходит через день, в котором стоит лейбл отсутствия. */
+function hasCardOnAvailabilityChipDay(
+  segments: AvailabilitySegment[],
+  positionedTasks: Array<{ position: TaskPosition }>
+): boolean {
+  const parts = Array.from({ length: getPartsPerDay() }, (_, partIndex) => partIndex);
+  return segments.some((segment) =>
+    positionedTasks.some(({ position }) =>
+      parts.some((partIndex) => isCellOccupiedByTask(segment.startDay, partIndex, position))
+    )
+  );
+}
+
+/**
+ * Дорожки под зоной карточек: полоска лейбла отсутствия (только когда карточка
+ * проходит через его день — иначе лейбл стоит внизу самой зоны) и дорожка факта.
+ */
 export function resolveSwimlaneSecondaryLaneLayout(input: {
+  availabilitySegments: AvailabilitySegment[];
   factExtra: number;
   factLabel: string;
+  positionedTasks: Array<{ position: TaskPosition }>;
   taskBandHeight: number;
 }): {
+  /** Низ зоны, к которому прижат лейбл отсутствия; до него же тянется штриховка. */
+  availabilityBandHeight: number;
   laneLabels: DeveloperHeaderLaneLabelItem[];
   mainAreaHeight: number;
   timelineOuterHeight: number;
 } {
-  const mainAreaHeight = input.taskBandHeight + input.factExtra;
+  const chipStrip = hasCardOnAvailabilityChipDay(input.availabilitySegments, input.positionedTasks)
+    ? AVAILABILITY_CHIP_STRIP_HEIGHT_PX
+    : 0;
+  const availabilityBandHeight = input.taskBandHeight + chipStrip;
+  const mainAreaHeight = availabilityBandHeight + input.factExtra;
   const laneLabels: DeveloperHeaderLaneLabelItem[] = [];
   if (input.factExtra > 0) {
     laneLabels.push({
       accent: 'fact',
       heightPx: input.factExtra,
       label: input.factLabel,
-      topPx: input.taskBandHeight,
+      topPx: availabilityBandHeight,
     });
   }
   return {
+    availabilityBandHeight,
     laneLabels,
     mainAreaHeight,
     timelineOuterHeight: mainAreaHeight,

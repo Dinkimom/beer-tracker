@@ -265,7 +265,26 @@ describe('resolveSwimlaneAvailabilityTimeline', () => {
 });
 
 describe('resolveSwimlaneSecondaryLaneLayout', () => {
-  const base = { factExtra: 0, factLabel: 'Fact', taskBandHeight: 100 };
+  const base = {
+    availabilitySegments: [],
+    factExtra: 0,
+    factLabel: 'Fact',
+    positionedTasks: [],
+    taskBandHeight: 100,
+  };
+  const vacationOnDay2 = [
+    {
+      dateRangeLabel: '13.10–14.10',
+      dayIndices: [2, 3],
+      durationInParts: 6,
+      eventId: 'event-1',
+      kind: 'vacation' as const,
+      startDay: 2,
+    },
+  ];
+  const cardAt = (startDay: number, duration: number) => ({
+    position: { assignee: 'dev-1', duration, startDay, startPart: 0, taskId: 'task-1' },
+  });
 
   it('keeps a single task band when the fact lane is off', () => {
     const layout = resolveSwimlaneSecondaryLaneLayout(base);
@@ -281,6 +300,30 @@ describe('resolveSwimlaneSecondaryLaneLayout', () => {
     expect(layout.mainAreaHeight).toBe(124);
     expect(layout.timelineOuterHeight).toBe(124);
     expect(layout.laneLabels).toEqual([{ accent: 'fact', heightPx: 24, label: 'Fact', topPx: 100 }]);
+  });
+
+  it('keeps the row height when no card crosses the absence label day', () => {
+    const layout = resolveSwimlaneSecondaryLaneLayout({
+      ...base,
+      availabilitySegments: vacationOnDay2,
+      positionedTasks: [cardAt(0, 6), cardAt(3, 3)],
+    });
+
+    expect(layout.availabilityBandHeight).toBe(100);
+    expect(layout.timelineOuterHeight).toBe(100);
+  });
+
+  it('reserves a strip for the absence label under a card and pushes the fact lane down', () => {
+    const layout = resolveSwimlaneSecondaryLaneLayout({
+      ...base,
+      availabilitySegments: vacationOnDay2,
+      factExtra: 24,
+      positionedTasks: [cardAt(1, 6)],
+    });
+
+    expect(layout.availabilityBandHeight).toBe(124);
+    expect(layout.mainAreaHeight).toBe(148);
+    expect(layout.laneLabels[0]?.topPx).toBe(124);
   });
 });
 

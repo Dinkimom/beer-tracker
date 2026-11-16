@@ -10,7 +10,7 @@ import { SwimlaneAvailabilityChip } from './SwimlaneAvailabilityChip';
 interface SwimlaneAvailabilityChipsProps {
   dayCount: number;
   segments: AvailabilitySegment[];
-  /** Высота зоны карточек: чип стоит внизу ячейки занятости, над дорожками факта и календаря */
+  /** Низ зоны карточек (с полоской под лейбл, если под ним карточка): чип стоит внизу, над дорожкой факта */
   taskBandHeight: number;
   onChipClick: (eventId: string) => void;
 }
