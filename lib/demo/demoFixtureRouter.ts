@@ -181,11 +181,46 @@ function handleBacklog(path: string, method: string, params: URLSearchParams): D
 }
 
 /** Привязка цели к строке плана живёт только на сервере: без записи в стор её сотрёт перечитывание целей. */
-function storeDemoGoalPlanRow(goalId: string, body: unknown): void {
-  const { goals } = getDemoFixtureStore();
-  const planRow = (body as { planRow?: SprintGoalPlanRow | null } | null)?.planRow;
-  const goal = [...goals.delivery, ...goals.discovery].find((item) => item.id === goalId);
-  if (goal && planRow !== undefined) goal.planRow = planRow;
+type DemoGoals = ReturnType<typeof getDemoFixtureStore>['goals'];
+
+/** Цели спринта демо: у текущего — из сида, у остальных — свои, пустые до первой цели. */
+function demoGoalsOf(sprintId: number): DemoGoals {
+  const store = getDemoFixtureStore();
+  if (sprintId === DEMO_SPRINT_ID) return store.goals;
+  store.goalsBySprint[sprintId] ??= { delivery: [], discovery: [] };
+  return store.goalsBySprint[sprintId];
+}
+
+function findDemoGoal(goalId: string) {
+  const store = getDemoFixtureStore();
+  const all = [store.goals, ...Object.values(store.goalsBySprint)].flatMap((goals) => [...goals.delivery, ...goals.discovery]);
+  return all.find((item) => item.id === goalId);
+}
+
+/** Новая цель демо: в список своего спринта и типа. */
+function addDemoGoal(body: unknown) {
+  const input = (body ?? {}) as { goalType?: string; sprintId?: number; text?: string };
+  const item = { checked: false, checklistItemType: 'standard' as const, id: crypto.randomUUID(), planRow: null, text: input.text ?? '' };
+  demoGoalsOf(Number(input.sprintId))[input.goalType === 'discovery' ? 'discovery' : 'delivery'].push(item);
+  return item;
+}
+
+function deleteDemoGoal(goalId: string): void {
+  const store = getDemoFixtureStore();
+  for (const goals of [store.goals, ...Object.values(store.goalsBySprint)]) {
+    goals.delivery = goals.delivery.filter((item) => item.id !== goalId);
+    goals.discovery = goals.discovery.filter((item) => item.id !== goalId);
+  }
+}
+
+/** Правка цели в демо: текст, отметка и строка плана (QG5). */
+function storeDemoGoalPatch(goalId: string, body: unknown): void {
+  const goal = findDemoGoal(goalId);
+  const patch = (body ?? {}) as { checked?: boolean; planRow?: SprintGoalPlanRow | null; text?: string };
+  if (!goal) return;
+  if (patch.planRow !== undefined) goal.planRow = patch.planRow;
+  if (patch.text !== undefined) goal.text = patch.text;
+  if (patch.checked !== undefined) goal.checked = patch.checked;
 }
 
 function handleSprintGoals(
@@ -194,10 +229,9 @@ function handleSprintGoals(
   params: URLSearchParams,
   body: unknown
 ): DemoFixtureResult | null {
-  const store = getDemoFixtureStore();
   if (path === '/sprint-goals' && method === 'get') {
     const goalType = params.get('goalType') === 'discovery' ? 'discovery' : 'delivery';
-    const items = store.goals[goalType];
+    const items = demoGoalsOf(Number(params.get('sprintId')))[goalType];
     const checklistDone = items.filter((i) => i.checked).length;
     return ok({
       checklistDone,
@@ -206,13 +240,14 @@ function handleSprintGoals(
     });
   }
   if (path === '/sprint-goals' && method === 'post') {
-    return ok({ success: true, item: body });
+    return ok({ success: true, item: addDemoGoal(body) });
   }
   if (path.startsWith('/sprint-goals/') && method === 'patch') {
-    storeDemoGoalPlanRow(decodeURIComponent(path.slice('/sprint-goals/'.length)), body);
+    storeDemoGoalPatch(decodeURIComponent(path.slice('/sprint-goals/'.length)), body);
     return ok({ success: true });
   }
   if (path.startsWith('/sprint-goals/') && method === 'delete') {
+    deleteDemoGoal(decodeURIComponent(path.slice('/sprint-goals/'.length)));
     return ok({ success: true });
   }
   return null;

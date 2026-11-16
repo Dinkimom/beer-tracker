@@ -9,7 +9,7 @@ import type {
   QuarterlyPlanRowActions,
   QuarterlyPlanTrackerPick,
 } from './quarterlyPlanMenuSections';
-import type { QuarterlyPlanAssignment, QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
+import type { QuarterlyPlanAssignment, QuarterlyPlanSprint, QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { useCallback, useMemo, useState } from 'react';
 
@@ -47,6 +47,7 @@ import { QuarterlyPlanAgentIsland } from './components/QuarterlyPlanAgentIsland'
 import { QuarterlyPlanBoard } from './components/QuarterlyPlanBoard';
 import { QuarterlyPlanHistorySidebar } from './components/QuarterlyPlanHistorySidebar';
 import { QuarterlyPlanMenu } from './components/QuarterlyPlanMenu';
+import { QuarterlyPlanSprintGoals } from './components/QuarterlyPlanSprintGoals';
 import { QuarterlyPlanSprintSyncDialog } from './components/QuarterlyPlanSprintSyncDialog';
 import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
 import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTrackerEpicDialog';
@@ -114,6 +115,15 @@ export function QuarterlyPlanPage() {
     setVersion,
   } = useQuarterlyPlan(quarterRef);
   const history = useQuarterlyPlanHistory({ getVersion, onRestored: setVersion, ref: quarterRef, savedPlan });
+  /** Цели спринта в сайдбаре (QG13); одновременно с историей версий не открываются — место одно. */
+  const [goalsTarget, setGoalsTarget] = useState<{ boardId: number; sprint: QuarterlyPlanSprint } | null>(null);
+  const openSprintGoals = useCallback(
+    (sprint: QuarterlyPlanSprint, boardId: number) => {
+      history.close();
+      setGoalsTarget({ boardId, sprint });
+    },
+    [history]
+  );
   const changeTrackerStatus = useQuarterlyPlanTrackerStatus(refreshTrackerRow);
   const agent = useQuarterlyPlanAgent(quarterRef, setVersion);
   const [agentOpen, setAgentOpen] = useState(false);
@@ -270,6 +280,7 @@ export function QuarterlyPlanPage() {
       onStartDraft: startDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
       onSprintDriftClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'sprintDrift' }),
+      onSprintGoalsOpen: openSprintGoals,
       onToggleEpic: toggleEpic,
       onTrackerStatusChange: (...change) => void changeTrackerStatus(...change),
       rivalAssignmentsOf: (assignment) => rivalsOf(assignment, assignmentsByMember.get(assignment.memberId) ?? []),
@@ -289,7 +300,7 @@ export function QuarterlyPlanPage() {
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
+  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, openSprintGoals, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -415,7 +426,13 @@ export function QuarterlyPlanPage() {
               : null
           }
           hideDone={hideDone}
-          history={{ open: history.open, onToggle: history.toggle }}
+          history={{
+            open: history.open,
+            onToggle: () => {
+              setGoalsTarget(null);
+              history.toggle();
+            },
+          }}
           issueCounts={{
             away: issues.filter((issue) => issue.away).length,
             blocked: issues.filter((issue) => issue.blocked).length,
@@ -457,6 +474,7 @@ export function QuarterlyPlanPage() {
         onRestore={history.restore}
         onSelect={history.select}
       />
+      <QuarterlyPlanSprintGoals target={goalsTarget} onClose={() => setGoalsTarget(null)} />
       <QuarterlyPlanSprintSyncDialog
         key={sprintSync.openCount}
         busy={sprintSync.busy}

@@ -24,8 +24,7 @@ import {
   DEMO_DEV_BOB,
   DEMO_DEV_CAROL,
   DEMO_DEV_DANA,
-  DEMO_DEV_ERIN,
-} from './demoIds';
+  DEMO_DEV_ERIN, DEMO_SPRINT_PREV_ID } from './demoIds';
 
 const DEMO_PLATFORM_BOARD_ID = 43;
 const DEMO_TEAM_ID = 'demo-team';
@@ -79,7 +78,12 @@ function buildTeams(ref: QuarterRef, demoDevelopers: Developer[]): QuarterlyPlan
       boardId: DEMO_BOARD_ID,
       id: DEMO_TEAM_ID,
       members: demoDevelopers,
-      sprints: buildSprints(weeks, { firstNumber: Math.max(1, 14 + numberShift), firstSprintWeeks: 2, idBase: 1400 }),
+      // Спринты 14–16 — те же, что на демо-доске (id 101–103): их цели видны и правятся с квартала (QG13).
+      sprints: buildSprints(weeks, {
+        firstNumber: Math.max(1, 14 + numberShift),
+        firstSprintWeeks: 2,
+        idBase: DEMO_SPRINT_PREV_ID + quarterOffset * SPRINTS_PER_QUARTER,
+      }),
       title: 'Demo Team',
     },
     {

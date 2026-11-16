@@ -65,12 +65,14 @@ export function QuarterlyPlanHistorySidebar({
           <Icon className="h-4 w-4" name="x" />
         </HeaderIconButton>
       }
+      hideClosedHandle
       isOpen={open}
       maxWidth={SIDEBAR_MAX_WIDTH}
       minWidth={SIDEBAR_MIN_WIDTH}
       resizeHandleSide="left"
       title={t('quarterlyPlan.history.title')}
-      width={width}
+      // Ширина не уже минимальной: сохранённая ширина могла остаться от стягивания до закрытия.
+      width={Math.max(SIDEBAR_MIN_WIDTH, width)}
       onToggle={onClose}
       onWidthChange={setWidth}
     >

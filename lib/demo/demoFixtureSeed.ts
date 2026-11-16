@@ -104,6 +104,8 @@ export interface DemoFixtureState {
   featureLanes: FeatureLanesDocument;
   /** Цели спринта; `planRow` — строка квартального плана цели (QG5). */
   goals: Record<'delivery' | 'discovery', Array<ChecklistItem & { planRow?: SprintGoalPlanRow | null }>>;
+  /** Цели остальных спринтов демо по id спринта; у текущего — `goals`. */
+  goalsBySprint: Record<number, Record<'delivery' | 'discovery', Array<ChecklistItem & { planRow?: SprintGoalPlanRow | null }>>>;
   /** Ручные слои карточек свимлейна: cardId → слой. */
   laneLayers: Record<string, number>;
   links: Array<{
@@ -422,6 +424,7 @@ export function createDemoFixtureSeed(): DemoFixtureState {
     ],
     comments: buildDemoComments(),
     featureLanes: emptyFeatureLanesDocument(),
+    goalsBySprint: {},
     goals: {
       delivery: [
         {

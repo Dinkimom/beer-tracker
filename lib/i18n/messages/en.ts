@@ -892,6 +892,13 @@ export const enMessages = {
       done: 'Synced: {count}',
       failed: 'Could not sync — some changes may not have been applied',
     },
+    goals: {
+      title: 'Goals — {sprint}',
+      label: 'Goals',
+      open: 'Goals of {sprint}',
+      close: 'Close goals',
+      count: 'Sprint goals: {done} of {total} done',
+    },
     history: {
       title: 'Version history',
       open: 'Version history',

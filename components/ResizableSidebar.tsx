@@ -47,6 +47,11 @@ interface ResizableSidebarProps {
    */
   headerActions?: React.ReactNode;
   /**
+   * Закрытый сайдбар не оставляет рукоятку у края: его открывают только кнопкой.
+   * Для сайдбаров, которые делят одно место (квартальный план), — иначе рукояток у края несколько.
+   */
+  hideClosedHandle?: boolean;
+  /**
    * Открыт ли сайдбар (для управления видимостью)
    */
   isOpen?: boolean;
@@ -115,11 +120,13 @@ export function ResizableSidebar({
   style,
   containerRef,
   contentClassName = '',
+  hideClosedHandle = false,
   title,
   headerActions,
 }: ResizableSidebarProps) {
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const wasOpenOnResizeStart = useRef<boolean>(isOpen);
+  const widthOnResizeStart = useRef<number>(width);
   const [phase, setPhase] = useState<ResizableSidebarPhase>(isOpen ? 'open' : 'closed');
 
   const { isResizing, setIsResizing } = useResize({
@@ -140,6 +147,7 @@ export function ResizableSidebar({
         onToggle,
         onWidthChange,
         wasOpenOnResizeStart: wasOpenOnResizeStart.current,
+        widthOnResizeStart: widthOnResizeStart.current,
       });
     },
     min: 0, // Разрешаем перетаскивание до нуля
@@ -213,6 +221,7 @@ export function ResizableSidebar({
   const onResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     wasOpenOnResizeStart.current = isOpen;
+    widthOnResizeStart.current = width;
     setIsResizing(true);
   };
 
@@ -237,6 +246,7 @@ export function ResizableSidebar({
     <>
       {/* Resize handle (всегда видимый, даже когда сайдбар закрыт) */}
       {!mounted &&
+        !hideClosedHandle &&
         (closedHandleHost
           ? createPortal(closedResizeHandle, closedHandleHost)
           : closedResizeHandle)}

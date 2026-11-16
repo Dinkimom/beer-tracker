@@ -893,6 +893,13 @@ export const ruMessages = {
       done: 'Синхронизировано: {count}',
       failed: 'Не удалось синхронизировать — часть изменений могла не примениться',
     },
+    goals: {
+      title: 'Цели — {sprint}',
+      label: 'Цели',
+      open: 'Цели спринта {sprint}',
+      close: 'Закрыть цели',
+      count: 'Цели спринта: выполнено {done} из {total}',
+    },
     history: {
       title: 'История версий',
       open: 'История версий',

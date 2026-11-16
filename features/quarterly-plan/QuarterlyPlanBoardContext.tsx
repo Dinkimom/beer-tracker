@@ -14,6 +14,7 @@ import type {
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
   QuarterlyPlanPhase,
+  QuarterlyPlanSprint,
   QuarterlyPlanTrackerEpic,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
@@ -174,6 +175,8 @@ export interface QuarterlyPlanBoardContextValue {
   onRowMove: (level: QuarterRowLevel, id: string, anchorId: string, place: QuarterRowPlace) => void;
   /** Клик по пунктиру расхождения задачи (QK8): поповер с синхронизацией этой задачи (QK9). */
   onSprintDriftClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
+  /** Клик по спринту в строке команды: цели спринта в сайдбаре (QG13). */
+  onSprintGoalsOpen: (sprint: QuarterlyPlanSprint, boardId: number) => void;
   onStartDraft: (draft: QuarterlyPlanDraft) => void;
   onStatusClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
   onToggleEpic: (epicId: string) => void;

@@ -3,13 +3,11 @@ import type { SprintInfo } from '@/types/tracker';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import { Button } from '@/components/Button';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
-import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-import { GoalsList } from '@/features/sidebar/components/GoalsList';
 import { SprintActions } from '@/features/sidebar/components/SprintActions';
+import { SprintGoalsSection } from '@/features/sidebar/components/SprintGoalsSection';
 import { submitStartSprint } from '@/features/sidebar/components/tabs/goalsTabStartSprintHelpers';
 import { useTaskSidebar } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { useGoalsTab } from '@/features/sidebar/hooks/useGoalsTab';
@@ -109,113 +107,29 @@ export function GoalsTab() {
           </div>
         ) : (
           <>
-            <div className="px-4 pt-4 flex-shrink-0 flex items-center gap-2">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                {t('sidebar.goalsTab.deliveryGoalsHeading')}
-              </h2>
-              {canEdit && !deliveryGoalsTab.newGoalId && !deliveryGoalsTab.editingId && deliveryChecklistItems.length === 0 && (
-                <HeaderIconButton
-                  aria-label={t('sidebar.goalsTab.addGoalAria')}
-                  className="h-7 w-7"
-                  disabled={deliveryGoalsTab.isAdding}
-                  title={t('sidebar.goalsTab.addGoalAria')}
-                  type="button"
-                  onClick={deliveryGoalsTab.handleAddNewGoal}
-                >
-                  <Icon className="h-4 w-4" name="plus" />
-                </HeaderIconButton>
-              )}
-            </div>
-            <div className="flex-shrink-0">
-              <GoalsList
-                canEdit={canEdit}
-                checklistItems={deliveryChecklistItems}
-                deletingItems={deliveryGoalsTab.deletingItems}
-                editingId={deliveryGoalsTab.editingId}
-                editingText={deliveryGoalsTab.editingText}
-                goalType="delivery"
-                isAdding={deliveryGoalsTab.isAdding}
-                newGoalId={deliveryGoalsTab.newGoalId}
-                planRowOptions={planRowOptions}
-                sprintId={selectedSprintId}
-                updatingItems={deliveryUpdatingItems}
-                onCancelEdit={deliveryGoalsTab.handleCancelEdit}
-                onCheckboxChange={onCheckboxChangeDelivery}
-                onDeleteGoal={deliveryGoalsTab.handleDeleteGoal}
-                onPlanRowChange={(itemId, planRow) => goalPlanRows.setPlanRow('delivery', itemId, planRow)}
-                onSaveEdit={deliveryGoalsTab.handleSaveEdit}
-                onStartEdit={deliveryGoalsTab.handleStartEdit}
-                onTextChange={deliveryGoalsTab.setEditingText}
-              />
-            </div>
-            {canEdit && !deliveryGoalsTab.newGoalId && !deliveryGoalsTab.editingId && deliveryChecklistItems.length > 0 && (
-              <div className="px-4 pb-2 pt-1 flex-shrink-0">
-                <Button
-                  className="-mx-1.5 -my-0.5 h-auto min-h-0 gap-1.5 px-1.5 py-0.5 text-sm font-normal text-gray-600 hover:!bg-black/10 dark:text-gray-400 dark:hover:!bg-white/10 dark:hover:!text-gray-100"
-                  disabled={deliveryGoalsTab.isAdding}
-                  type="button"
-                  variant="ghost"
-                  onClick={deliveryGoalsTab.handleAddNewGoal}
-                >
-                  <Icon className="h-4 w-4" name="plus" />
-                  {t('sidebar.goalsTab.addGoal')}
-                </Button>
-              </div>
-            )}
-            {/* Цели Discovery */}
-            <div className="px-4 pt-4 flex-shrink-0 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                {t('sidebar.goalsTab.discoveryGoalsHeading')}
-              </h2>
-              {canEdit && !discoveryGoalsTab.newGoalId && !discoveryGoalsTab.editingId && discoveryChecklistItems.length === 0 && (
-                <HeaderIconButton
-                  aria-label={t('sidebar.goalsTab.addGoalAria')}
-                  className="h-7 w-7"
-                  disabled={discoveryGoalsTab.isAdding}
-                  title={t('sidebar.goalsTab.addGoalAria')}
-                  type="button"
-                  onClick={discoveryGoalsTab.handleAddNewGoal}
-                >
-                  <Icon className="h-4 w-4" name="plus" />
-                </HeaderIconButton>
-              )}
-            </div>
-            <div className="flex-shrink-0">
-              <GoalsList
-                canEdit={canEdit}
-                checklistItems={discoveryChecklistItems}
-                deletingItems={discoveryGoalsTab.deletingItems}
-                editingId={discoveryGoalsTab.editingId}
-                editingText={discoveryGoalsTab.editingText}
-                goalType="discovery"
-                isAdding={discoveryGoalsTab.isAdding}
-                newGoalId={discoveryGoalsTab.newGoalId}
-                planRowOptions={planRowOptions}
-                sprintId={selectedSprintId}
-                updatingItems={discoveryUpdatingItems}
-                onCancelEdit={discoveryGoalsTab.handleCancelEdit}
-                onCheckboxChange={onCheckboxChangeDiscovery}
-                onDeleteGoal={discoveryGoalsTab.handleDeleteGoal}
-                onPlanRowChange={(itemId, planRow) => goalPlanRows.setPlanRow('discovery', itemId, planRow)}
-                onSaveEdit={discoveryGoalsTab.handleSaveEdit}
-                onStartEdit={discoveryGoalsTab.handleStartEdit}
-                onTextChange={discoveryGoalsTab.setEditingText}
-              />
-            </div>
-            {canEdit && !discoveryGoalsTab.newGoalId && !discoveryGoalsTab.editingId && discoveryChecklistItems.length > 0 && (
-              <div className="flex-shrink-0 px-4 pb-4 pt-1 dark:border-gray-700">
-                <Button
-                  className="-mx-1.5 -my-0.5 h-auto min-h-0 gap-1.5 px-1.5 py-0.5 text-sm font-normal text-gray-600 hover:!bg-black/10 dark:text-gray-400 dark:hover:!bg-white/10 dark:hover:!text-gray-100"
-                  disabled={discoveryGoalsTab.isAdding}
-                  type="button"
-                  variant="ghost"
-                  onClick={discoveryGoalsTab.handleAddNewGoal}
-                >
-                  <Icon className="h-4 w-4" name="plus" />
-                  {t('sidebar.goalsTab.addGoal')}
-                </Button>
-              </div>
-            )}
+            <SprintGoalsSection
+              canEdit={canEdit}
+              first
+              goalType="delivery"
+              items={deliveryChecklistItems}
+              planRowOptions={planRowOptions}
+              sprintId={selectedSprintId}
+              tab={deliveryGoalsTab}
+              updatingItems={deliveryUpdatingItems}
+              onCheckboxChange={onCheckboxChangeDelivery}
+              onPlanRowChange={(itemId, planRow) => goalPlanRows.setPlanRow('delivery', itemId, planRow)}
+            />
+            <SprintGoalsSection
+              canEdit={canEdit}
+              goalType="discovery"
+              items={discoveryChecklistItems}
+              planRowOptions={planRowOptions}
+              sprintId={selectedSprintId}
+              tab={discoveryGoalsTab}
+              updatingItems={discoveryUpdatingItems}
+              onCheckboxChange={onCheckboxChangeDiscovery}
+              onPlanRowChange={(itemId, planRow) => goalPlanRows.setPlanRow('discovery', itemId, planRow)}
+            />
           </>
         )}
       </div>

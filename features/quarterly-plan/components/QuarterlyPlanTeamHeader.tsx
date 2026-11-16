@@ -6,16 +6,15 @@ import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveWeekSpan } from '@/lib/quarterlyPlans/quarterWeeks';
-import { formatSprintDisplayName } from '@/utils/sprintDisplayName';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   QUARTER_ROW_ACTION_CLASS,
   QUARTER_ROW_HEIGHT_PX,
-  QUARTER_STICKY_LABEL_LEFT,
 } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
+import { QuarterlyPlanSprintCell } from './QuarterlyPlanSprintCell';
 
 interface QuarterlyPlanTeamHeaderProps {
   collapsed: boolean;
@@ -31,7 +30,6 @@ interface QuarterlyPlanTeamHeaderProps {
 export function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: QuarterlyPlanTeamHeaderProps) {
   const { t } = useI18n();
   const { currentWeek, issueCountByTeam, onStartDraft, weeks } = useQuarterlyPlanBoard();
-  const weekCount = weeks.length;
   const issueCount = issueCountByTeam.get(team.id) ?? 0;
 
   return (
@@ -81,32 +79,15 @@ export function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: Quarterly
       {team.sprints.map((sprint) => {
         const span = resolveWeekSpan(weeks, sprint.startDate, sprint.endDate);
         if (!span) return null;
-        const isCurrent = currentWeek >= span.startWeek && currentWeek < span.startWeek + span.weeks;
         return (
-          <div
+          <QuarterlyPlanSprintCell
             key={sprint.id}
-            className={`absolute inset-y-0 flex items-start justify-center px-2 text-[11px] ${
-              span.startWeek > 0 ? 'border-l border-ds-border-subtle' : ''
-            } ${
-              isCurrent
-                ? 'bg-blue-100 font-semibold text-blue-800 dark:bg-[#31496d] dark:text-blue-100'
-                : 'text-ds-text-muted'
-            }`}
-            style={{
-              left: `calc(${(span.startWeek / weekCount) * 100}% - 1px)`,
-              width: `${(span.weeks / weekCount) * 100}%`,
-            }}
-          >
-            {/* Ячейка спринта — на всю высоту строки, вместе с заметками команды; подпись — в верхней ленте. */}
-            {/* Номер спринта без названия команды — как в селекторе спринта планера; полное имя — в подсказке. */}
-            <span
-              className="sticky right-2 truncate"
-              style={{ left: QUARTER_STICKY_LABEL_LEFT, lineHeight: `${QUARTER_ROW_HEIGHT_PX}px` }}
-              title={sprint.name}
-            >
-              {formatSprintDisplayName(sprint.name)}
-            </span>
-          </div>
+            boardId={team.boardId}
+            current={currentWeek >= span.startWeek && currentWeek < span.startWeek + span.weeks}
+            divided={span.startWeek > 0}
+            span={span}
+            sprint={sprint}
+          />
         );
       })}
     </QuarterlyPlanRow>
