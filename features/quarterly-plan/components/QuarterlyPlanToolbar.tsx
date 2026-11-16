@@ -39,6 +39,8 @@ interface QuarterlyPlanToolbarProps {
     onToggle: () => void;
   } | null;
   hideDone: boolean;
+  /** История версий плана (QH3): кнопка открывает сайдбар с версиями. */
+  history: { open: boolean; onToggle: () => void };
   /**
    * Проблемные назначения: всего и по причинам — отсутствие, порядок работ, исполнитель не в команде,
    * второй эпик в те же недели. Одно назначение может попасть в несколько причин.
@@ -69,6 +71,7 @@ interface QuarterlyPlanToolbarProps {
 export function QuarterlyPlanToolbar({
   agent,
   hideDone,
+  history,
   issueCounts,
   linkTool,
   noteColor,
@@ -158,6 +161,9 @@ export function QuarterlyPlanToolbar({
           <Icon className="h-4 w-4" name={hideDone ? 'eye-off' : 'eye'} />
           {t('quarterlyPlan.hideDone')}
         </Button>
+        <HeaderIconButton aria-pressed={history.open} title={t('quarterlyPlan.history.open')} onClick={history.onToggle}>
+          <Icon className="h-4 w-4" name="clock" />
+        </HeaderIconButton>
         {issueCounts.total > 0 ? (
           <>
             <span aria-hidden className={DIVIDER_CLASS} />

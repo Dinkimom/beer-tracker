@@ -1,3 +1,4 @@
+import type { DemoQuarterlyPlanVersion } from './demoFixtureRouterQuarterlyPlanVersions';
 import type { SprintPlanAnchor } from '@/lib/api/sprints';
 import type { BoardListItem, SprintScoreResponse } from '@/lib/api/types';
 import type { QuarterlyPlanContent } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
@@ -117,6 +118,8 @@ export interface DemoFixtureState {
   positions: DemoPositionRow[];
   /** Квартальные планы по ключу `2026-Q4`: содержимое и версия; заполняются при первом запросе. */
   quarterlyPlans: Record<string, { content: QuarterlyPlanContent; version: number }>;
+  /** История версий квартальных планов по тому же ключу, старые первыми (QH1). */
+  quarterlyPlanVersions: Record<string, DemoQuarterlyPlanVersion[]>;
   retroBoards: Record<string, RetroBoard>;
   score: SprintScoreResponse;
   sprintInfo: NonNullable<SprintTasksResponse['sprintInfo']>;
@@ -358,6 +361,7 @@ export function createDemoFixtureSeed(): DemoFixtureState {
       ...buildDemoQuarterAvailabilityEvents({ memberName: DEMO_DEV_DISPLAY.bob.name }),
     ],
     quarterlyPlans: {},
+    quarterlyPlanVersions: {},
     transitionedIssueKeys: [],
     board: {
       id: DEMO_BOARD_ID,

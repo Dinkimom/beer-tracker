@@ -83,6 +83,7 @@ const BEER_TRACKER_TABLES = [
   'planner_files',
   'organizations',
   'org_quarterly_plan_drafts',
+  'org_quarterly_plan_versions',
   'org_quarterly_plans',
   'org_roles',
   'retro_boards',

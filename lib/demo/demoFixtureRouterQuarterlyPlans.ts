@@ -8,6 +8,11 @@ import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { getPartsPerDay } from '@/lib/plannerTimelineScale';
 
+import {
+  demoQuarterlyPlanVersions,
+  handleDemoQuarterlyPlanVersions,
+  recordDemoQuarterlyPlanVersion,
+} from './demoFixtureRouterQuarterlyPlanVersions';
 import { getDemoFixtureStore } from './demoFixtureStore';
 import { DEMO_SPRINT_ID } from './demoIds';
 import {
@@ -32,6 +37,18 @@ function readStored(ref: QuarterRef): { content: QuarterlyPlanContent; version: 
   const key = quarterKey(ref);
   store.quarterlyPlans[key] ??= { content: buildDemoQuarterlyPlanContent(ref), version: 1 };
   return store.quarterlyPlans[key];
+}
+
+/** План квартала с примером истории: у остальных кварталов история начинается с первой правки. */
+function isSeedQuarter({ quarter, year }: QuarterRef): boolean {
+  return year === 2026 && quarter === 4;
+}
+
+/** Новое содержимое плана поверх текущей версии; возвращает новую версию. */
+function writeStored(ref: QuarterRef, content: QuarterlyPlanContent): number {
+  const version = readStored(ref).version + 1;
+  getDemoFixtureStore().quarterlyPlans[quarterKey(ref)] = { content, version };
+  return version;
 }
 
 function handlePlan(method: string, params: URLSearchParams, body: unknown): DemoFixtureResult | null {
@@ -69,11 +86,15 @@ function handlePlan(method: string, params: URLSearchParams, body: unknown): Dem
       return { data: { error: 'Quarterly plan was changed by someone else' }, status: 409 };
     }
     const { assignments, directions, epics, links, notes } = content;
-    getDemoFixtureStore().quarterlyPlans[quarterKey(ref)] = {
+    const versions = demoQuarterlyPlanVersions(quarterKey(ref), stored, isSeedQuarter(ref));
+    const planVersion = writeStored(ref, { assignments, directions, epics, links, notes });
+    recordDemoQuarterlyPlanVersion(versions, {
+      before: stored,
       content: { assignments, directions, epics, links, notes },
-      version: stored.version + 1,
-    };
-    return ok({ version: stored.version + 1 });
+      planVersion,
+      source: 'user',
+    });
+    return ok({ version: planVersion });
   }
   return null;
 }
@@ -121,6 +142,15 @@ function handleEpicSearch(params: URLSearchParams): DemoFixtureResult {
   return ok({ items });
 }
 
+/** Квартал из `?year=&quarter=` или из тела запроса. */
+function refOf(params: URLSearchParams, body: unknown): QuarterRef {
+  const fromBody = (body ?? {}) as Partial<QuarterRef>;
+  return {
+    quarter: Number(fromBody.quarter ?? params.get('quarter') ?? 4) as QuarterNumber,
+    year: Number(fromBody.year ?? params.get('year') ?? 2026),
+  };
+}
+
 export function handleDemoQuarterlyPlans(
   path: string,
   method: string,
@@ -128,6 +158,18 @@ export function handleDemoQuarterlyPlans(
   body: unknown
 ): DemoFixtureResult | null {
   if (path === '/quarterly-plans') return handlePlan(method, params, body);
+  if (path.startsWith('/quarterly-plans/versions')) {
+    const ref = refOf(params, body);
+    return handleDemoQuarterlyPlanVersions({
+      ifVersion: (body as { ifVersion?: number } | undefined)?.ifVersion,
+      method,
+      path,
+      read: () => readStored(ref),
+      ref,
+      versions: demoQuarterlyPlanVersions(quarterKey(ref), readStored(ref), isSeedQuarter(ref)),
+      write: (content) => writeStored(ref, content),
+    });
+  }
   if (path === AVAILABILITY_PATH) return handleAvailabilityMutation(method, params, body);
   if (path === '/issues/search' && method === 'get' && params.get('parentCandidates') === '1') {
     return handleEpicSearch(params);

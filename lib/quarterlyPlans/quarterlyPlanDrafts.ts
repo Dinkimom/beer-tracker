@@ -204,6 +204,7 @@ export async function approveQuarterlyPlanDraft(owner: DraftOwner & { itemIds?: 
   const picked = [...selected].sort((a, b) => a - b);
   if (picked.length === 0) return { error: 'no such items in the draft; reload the plan', status: 'invalid' as const };
   const result = await applyQuarterlyPlanOps({
+    authorId: owner.ownerId,
     dryRun: false,
     ifVersion: preview.version,
     newId: (index) => ids[picked[index] ?? -1] ?? crypto.randomUUID(),

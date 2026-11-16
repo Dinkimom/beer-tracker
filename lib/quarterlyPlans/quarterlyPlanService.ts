@@ -48,6 +48,12 @@ import {
 } from './quarterlyPlanSprintLink';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
 import { loadQuarterlyPlanTrackerEpics, markTrackerEpicChanged } from './quarterlyPlanTrackerEpics';
+import {
+  prepareQuarterlyPlanVersion,
+  recordQuarterlyPlanVersion,
+  type QuarterlyPlanVersionAuthor,
+} from './quarterlyPlanVersionHistory';
+import { fetchQuarterlyPlanVersionWithPrevious } from './quarterlyPlanVersionsRepository';
 import { buildQuarterWeeks, quartersOfWindow, resolveWeekSpan } from './quarterWeeks';
 
 /** Тот же срок, что у `/api/sprints`: список спринтов доски общий в кэше. */
@@ -191,30 +197,87 @@ type SaveQuarterlyPlanResult =
 type Rosters = Awaited<ReturnType<typeof loadTeamRosters>>;
 
 async function writePlan(
-  input: { content: unknown; ifVersion: number; organizationId: string; ref: QuarterRef },
+  input: {
+    /** Кто сохраняет — для истории версий (QH1); без автора версия не пишется. */
+    author?: QuarterlyPlanVersionAuthor;
+    content: unknown;
+    ifVersion: number;
+    organizationId: string;
+    ref: QuarterRef;
+  },
   { index, rosters }: Rosters
 ): Promise<SaveQuarterlyPlanResult> {
   const parsed = parseQuarterlyPlanContent(input.content, input.ref, new Set(rosters.map((roster) => roster.id)));
   if (!parsed.ok) return { error: parsed.error, status: 'invalid' };
   const stored = planContentForStorage(parsed.content, index);
   if (!stored.ok) return { error: stored.error, status: 'invalid' };
+  if (input.author) await prepareQuarterlyPlanVersion(input.organizationId, input.ref);
   const version = await saveQuarterlyPlanContent({
     content: stored.content,
     ifVersion: input.ifVersion,
     organizationId: input.organizationId,
     ref: input.ref,
   });
-  return version === null ? { status: 'conflict' } : { status: 'saved', version };
+  if (version === null) return { status: 'conflict' };
+  if (input.author) {
+    await recordQuarterlyPlanVersion({
+      author: input.author,
+      content: stored.content,
+      organizationId: input.organizationId,
+      planVersion: version,
+      ref: input.ref,
+    });
+  }
+  return { status: 'saved', version };
 }
 
-/** Сохраняет план целиком поверх версии `ifVersion` (QS1, QS5). */
+/** Сохраняет план целиком поверх версии `ifVersion` (QS1, QS5); правка человека `authorId` уходит в историю (QH1). */
 export async function saveQuarterlyPlan(input: {
+  authorId: string;
   content: unknown;
   ifVersion: number;
   organizationId: string;
   ref: QuarterRef;
 }): Promise<SaveQuarterlyPlanResult> {
-  return writePlan(input, await loadTeamRosters(input.organizationId, false));
+  const { authorId, ...plan } = input;
+  return writePlan({ ...plan, author: { id: authorId, source: 'user' } }, await loadTeamRosters(input.organizationId, false));
+}
+
+/** Версия плана людьми в форме клиента и та, что перед ней (QH4): по ним доска показывает, что версия поменяла. */
+export async function loadQuarterlyPlanVersion(input: { organizationId: string; ref: QuarterRef; versionId: string }) {
+  const found = await fetchQuarterlyPlanVersionWithPrevious(input.organizationId, input.ref, input.versionId);
+  if (!found) return null;
+  const { index } = await loadTeamRosters(input.organizationId, false);
+  return {
+    content: planContentForClient(found.version.content, index),
+    previousContent: found.previous ? planContentForClient(found.previous.content, index) : null,
+  };
+}
+
+/**
+ * Откат к версии (QH5): её содержимое сохраняется поверх текущего плана как новая версия — история не
+ * теряется, и откат можно откатить. Версия читается заново и проходит те же проверки, что правка с доски.
+ */
+export async function restoreQuarterlyPlanVersion(input: {
+  authorId: string;
+  ifVersion: number;
+  organizationId: string;
+  ref: QuarterRef;
+  versionId: string;
+}): Promise<SaveQuarterlyPlanResult | { status: 'not_found' }> {
+  const found = await fetchQuarterlyPlanVersionWithPrevious(input.organizationId, input.ref, input.versionId);
+  if (!found) return { status: 'not_found' };
+  const rosters = await loadTeamRosters(input.organizationId, false);
+  return writePlan(
+    {
+      author: { id: input.authorId, source: 'restore' },
+      content: planContentForClient(found.version.content, rosters.index),
+      ifVersion: input.ifVersion,
+      organizationId: input.organizationId,
+      ref: input.ref,
+    },
+    rosters
+  );
 }
 
 /** Проблемы назначений (QI1–QI3, QI6) и риски дежурства (QV3) — как их считает доска. */
@@ -256,6 +319,8 @@ type ApplyOpsResult =
  * с теми же проверками, что у сохранения из UI (QM2). `dryRun` ничего не пишет (QM4).
  */
 export async function applyQuarterlyPlanOps(input: {
+  /** Кто принял черновик агента — версия в истории пишется от его имени (QH1); в предпросмотре не нужен. */
+  authorId?: string;
   dryRun: boolean;
   ifVersion: number;
   /** id новой сущности по номеру операции; без него — случайный. */
@@ -292,7 +357,11 @@ export async function applyQuarterlyPlanOps(input: {
     });
     return { ...findings, content: applied.content, refs: applied.refs, status: 'preview', targets: applied.targets, version: stored.version };
   }
-  const saved = await writePlan({ ...input, content: applied.content }, rosters);
+  const { authorId } = input;
+  const saved = await writePlan(
+    { ...input, author: authorId ? { id: authorId, source: 'agent' } : undefined, content: applied.content },
+    rosters
+  );
   if (saved.status === 'invalid') return saved;
   if (saved.status === 'conflict') return { status: 'conflict', version: stored.version };
   return { content: applied.content, refs: applied.refs, status: 'saved', targets: applied.targets, version: saved.version };

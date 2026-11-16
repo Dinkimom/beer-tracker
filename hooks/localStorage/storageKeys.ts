@@ -45,6 +45,7 @@ export const STORAGE_KEYS = {
   FEATURE_COLUMN_WIDTH: 'beer-tracker-feature-column-width',
   /** Ширина колонки направлений и эпиков на квартальном плане */
   QUARTER_LEFT_COLUMN_WIDTH: 'beer-tracker-quarter-left-column-width',
+  QUARTER_HISTORY_SIDEBAR_WIDTH: 'beer-tracker-quarter-history-sidebar-width',
   EXPERIMENTAL_FEATURES: 'beer-tracker-experimental-features',
   /** Показывать эмодзи праздников в шапке с датами (занятость, свимлейны) */
   SHOW_HOLIDAYS: 'beer-tracker-show-holidays',

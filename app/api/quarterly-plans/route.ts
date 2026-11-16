@@ -46,6 +46,7 @@ export async function PUT(request: NextRequest) {
     if ('response' in route) return route.response;
     const { content, ifVersion, quarter, year } = route.input;
     const result = await saveQuarterlyPlan({
+      authorId: route.ctx.userId,
       content,
       ifVersion,
       organizationId: route.ctx.organizationId,

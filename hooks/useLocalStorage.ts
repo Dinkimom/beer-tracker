@@ -39,6 +39,13 @@ export function useParticipantsColumnWidthStorage(
   return useDebouncedNumericLocalStorage(STORAGE_KEYS.PARTICIPANTS_COLUMN_WIDTH, defaultValue);
 }
 
+/** Ширина сайдбара истории версий квартального плана. */
+export function useQuarterHistorySidebarWidthStorage(
+  defaultValue: number
+): [number, (value: number | ((prev: number) => number)) => void] {
+  return useDebouncedNumericLocalStorage(STORAGE_KEYS.QUARTER_HISTORY_SIDEBAR_WIDTH, defaultValue);
+}
+
 /** Ширина колонки направлений и эпиков на квартальном плане. */
 export function useQuarterLeftColumnWidthStorage(
   defaultValue: number

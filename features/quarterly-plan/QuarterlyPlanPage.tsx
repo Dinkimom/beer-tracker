@@ -45,6 +45,7 @@ import { getPlannerNow } from '@/utils/plannerClock';
 
 import { QuarterlyPlanAgentIsland } from './components/QuarterlyPlanAgentIsland';
 import { QuarterlyPlanBoard } from './components/QuarterlyPlanBoard';
+import { QuarterlyPlanHistorySidebar } from './components/QuarterlyPlanHistorySidebar';
 import { QuarterlyPlanMenu } from './components/QuarterlyPlanMenu';
 import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
 import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTrackerEpicDialog';
@@ -56,6 +57,7 @@ import { applyTrackerPickToPlan, buildQuarterlyPlanMenuSections, trackerPickBoar
 import { useClosingValue } from './useClosingValue';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
 import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarterlyPlanAgent';
+import { useQuarterlyPlanHistory, useQuarterlyPlanShownView } from './useQuarterlyPlanHistory';
 import { useQuarterlyPlanLinks } from './useQuarterlyPlanLinks';
 import { useQuarterlyPlanNotes } from './useQuarterlyPlanNotes';
 import { useQuarterlyPlanTrackerStatus } from './useQuarterlyPlanTrackerStatus';
@@ -99,13 +101,17 @@ export function QuarterlyPlanPage() {
   const [expandedEpicIds, setExpandedEpicIds] = useState<ReadonlySet<string>>(new Set());
   const [focusedIssue, setFocusedIssue] = useState<{ assignmentId: string; nonce: number } | null>(null);
   const [todayNonce, setTodayNonce] = useState(0);
-  const { applyEdit: savePlanEdit, eventsByBoard, isLoading, plan: savedPlan, refreshTrackerRow, setVersion } = useQuarterlyPlan(quarterRef);
+  const { applyEdit: savePlanEdit, eventsByBoard, getVersion, isLoading, plan: savedPlan, refreshTrackerRow, setVersion } =
+    useQuarterlyPlan(quarterRef);
+  const history = useQuarterlyPlanHistory({ getVersion, onRestored: setVersion, ref: quarterRef, savedPlan });
   const changeTrackerStatus = useQuarterlyPlanTrackerStatus(refreshTrackerRow);
   const agent = useQuarterlyPlanAgent(quarterRef, setVersion);
   const [agentOpen, setAgentOpen] = useState(false);
   /** План на доске — с черновиком агента, пока он показан (QM9): доска, проблемы и меню считают по нему. */
   const draftView = useQuarterlyPlanDraftPreview({ agent, draft: agent.draft, savedPlan, saveEdit: savePlanEdit });
-  const { after: planAfterDraft, applyEdit, plan } = draftView;
+  /** Выбрана версия из истории (QH4): на доске она, только для просмотра, с пометками её изменений. */
+  const shownView = useQuarterlyPlanShownView(draftView, history.preview);
+  const { after: planAfterDraft, applyEdit, plan } = shownView;
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
   const timelineStart = useMemo(() => quarterTimelineStart(weeks), [weeks]);
@@ -259,8 +265,8 @@ export function QuarterlyPlanPage() {
         const row = rowById.get(assignment.epicId ?? assignment.directionId ?? '');
         return row ? epicTitle(row, plan.trackerEpics) : '';
       },
-      draftMarks: draftView.marks,
-      draftReview: draftView.review,
+      draftMarks: shownView.marks,
+      draftReview: shownView.review,
       sprintCards: plan.sprintCards,
       tasksByEpic: tasksByEpic(plan.epics),
       timelineStart,
@@ -271,7 +277,7 @@ export function QuarterlyPlanPage() {
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, draftView.marks, draftView.review, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
+  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -326,8 +332,9 @@ export function QuarterlyPlanPage() {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header">
+    // История версий — сайдбар рядом с доской, как на доске спринта: доска сужается, а не закрывается им.
+    <div className="relative flex min-h-0 flex-1 gap-3 overflow-hidden">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header">
         {plan && board ? (
           <QuarterlyPlanBoardProvider value={board}>
             <QuarterlyPlanBoard
@@ -394,6 +401,7 @@ export function QuarterlyPlanPage() {
               : null
           }
           hideDone={hideDone}
+          history={{ open: history.open, onToggle: history.toggle }}
           issueCounts={{
             away: issues.filter((issue) => issue.away).length,
             blocked: issues.filter((issue) => issue.blocked).length,
@@ -423,6 +431,17 @@ export function QuarterlyPlanPage() {
           }}
         />
       </div>
+      <QuarterlyPlanHistorySidebar
+        loading={history.loading}
+        open={history.open}
+        previewLoading={history.previewLoading}
+        restoring={history.restoring}
+        selectedId={history.selectedId}
+        versions={history.versions}
+        onClose={history.close}
+        onRestore={history.restore}
+        onSelect={history.select}
+      />
       {DialogComponent}
     </div>
   );

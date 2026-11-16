@@ -20,6 +20,8 @@ import {
 } from '@/lib/beerTrackerApi';
 import { planIssueKeys } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
+import { QUARTERLY_PLAN_VERSIONS_QUERY_KEY } from './useQuarterlyPlanHistory';
+
 const AVAILABILITY_STALE_MS = 2 * 60 * 1000;
 
 const quarterKey = ({ quarter, year }: QuarterRef) => `${year}-Q${quarter}`;
@@ -96,6 +98,8 @@ export function useQuarterlyPlan(ref: QuarterRef) {
             reload('quarterlyPlan.saveConflict');
           } else {
             versionsRef.current.set(quarterKey(ref), result.version);
+            // Правка легла в историю версий (QH1): открытый сайдбар перечитывает список.
+            queryClient.invalidateQueries({ queryKey: [QUARTERLY_PLAN_VERSIONS_QUERY_KEY, year, quarter] }).catch(() => undefined);
             // Строки плана у целей спринта (QG5): удалённая строка должна сразу стать висячей привязкой.
             queryClient.invalidateQueries({ queryKey: SPRINT_GOAL_PLAN_ROWS_QUERY_KEY }).catch(() => undefined);
             // Новый ключ трекера: статус и название задачи сервер подтягивает при чтении плана.
@@ -130,5 +134,8 @@ export function useQuarterlyPlan(ref: QuarterRef) {
     [quarter, queryClient, queryKey, year]
   );
 
-  return { applyEdit, eventsByBoard, isLoading: planQuery.isLoading, plan, refreshTrackerRow, setVersion };
+  /** Версия плана, с которой пойдёт следующая запись: из неё же идёт откат к версии (QH5). */
+  const getVersion = useCallback(() => versionsRef.current.get(quarterKey({ quarter, year })) ?? 0, [quarter, year]);
+
+  return { applyEdit, eventsByBoard, getVersion, isLoading: planQuery.isLoading, plan, refreshTrackerRow, setVersion };
 }

@@ -9,6 +9,7 @@ import { fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
 
 import { applyQuarterlyPlanOps, getQuarterlyPlan, loadSprintQuarterContext, saveQuarterlyPlan } from './quarterlyPlanService';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
+import { prepareQuarterlyPlanVersion, recordQuarterlyPlanVersion } from './quarterlyPlanVersionHistory';
 
 vi.mock('@/lib/staffTeams', () => ({
   enrichPlannerTeamMembersFromTracker: vi.fn((_org: string, members: unknown) => Promise.resolve(members)),
@@ -30,6 +31,10 @@ vi.mock('@/lib/boardAvailability/boardAvailabilityEventsRepository', async (impo
       start_date: '2026-10-12',
     },
   ]),
+}));
+vi.mock('./quarterlyPlanVersionHistory', () => ({
+  prepareQuarterlyPlanVersion: vi.fn(),
+  recordQuarterlyPlanVersion: vi.fn(),
 }));
 vi.mock('./quarterlyPlansRepository', () => ({
   fetchQuarterlyPlanContent: vi.fn(),
@@ -102,27 +107,37 @@ describe('quarterlyPlanService', () => {
   it('сохраняет людей по staff_id поверх ожидаемой версии', async () => {
     vi.mocked(saveQuarterlyPlanContent).mockResolvedValue(5);
     await expect(
-      saveQuarterlyPlan({ content: content('staff:staff-2'), ifVersion: 4, organizationId: 'org-1', ref: Q4 })
+      saveQuarterlyPlan({ authorId: 'user-1', content: content('staff:staff-2'), ifVersion: 4, organizationId: 'org-1', ref: Q4 })
     ).resolves.toEqual({ status: 'saved', version: 5 });
     const saved = vi.mocked(saveQuarterlyPlanContent).mock.calls[0]![0];
     expect(saved.ifVersion).toBe(4);
     expect(saved.content.assignments[0]?.memberId).toBe('staff-2');
+    // Правка человека уходит в историю версий (QH1): то же содержимое, что легло в план.
+    expect(prepareQuarterlyPlanVersion).toHaveBeenCalledWith('org-1', Q4);
+    expect(recordQuarterlyPlanVersion).toHaveBeenCalledWith({
+      author: { id: 'user-1', source: 'user' },
+      content: saved.content,
+      organizationId: 'org-1',
+      planVersion: 5,
+      ref: Q4,
+    });
   });
 
   it('чужое сохранение между чтением и записью — конфликт (QS5)', async () => {
     vi.mocked(saveQuarterlyPlanContent).mockResolvedValue(null);
     await expect(
-      saveQuarterlyPlan({ content: content('tracker-1'), ifVersion: 4, organizationId: 'org-1', ref: Q4 })
+      saveQuarterlyPlan({ authorId: 'user-1', content: content('tracker-1'), ifVersion: 4, organizationId: 'org-1', ref: Q4 })
     ).resolves.toEqual({ status: 'conflict' });
+    expect(recordQuarterlyPlanVersion).not.toHaveBeenCalled();
   });
 
   it('не пишет план с чужой командой или незнакомым человеком', async () => {
     const foreignTeam = { ...content('tracker-1'), directions: [{ id: 'd1', teamId: 'other', title: 'X' }] };
     await expect(
-      saveQuarterlyPlan({ content: foreignTeam, ifVersion: 0, organizationId: 'org-1', ref: Q4 })
+      saveQuarterlyPlan({ authorId: 'user-1', content: foreignTeam, ifVersion: 0, organizationId: 'org-1', ref: Q4 })
     ).resolves.toEqual({ error: 'direction d1: unknown team other', status: 'invalid' });
     await expect(
-      saveQuarterlyPlan({ content: content('tracker-9'), ifVersion: 0, organizationId: 'org-1', ref: Q4 })
+      saveQuarterlyPlan({ authorId: 'user-1', content: content('tracker-9'), ifVersion: 0, organizationId: 'org-1', ref: Q4 })
     ).resolves.toEqual({ error: 'assignment a1: unknown member tracker-9', status: 'invalid' });
     expect(saveQuarterlyPlanContent).not.toHaveBeenCalled();
   });
