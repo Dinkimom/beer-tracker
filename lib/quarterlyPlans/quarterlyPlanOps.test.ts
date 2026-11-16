@@ -193,7 +193,13 @@ describe('applyQuarterlyPlanOps', () => {
       [{ op: 'addNote', row: { id: 'id2', kind: 'epic' }, span: { startWeek: 0, weeks: 3 }, text: 'Waiting for contract' }],
       BASE.content
     );
-    expect(noted.content.notes[0]).toMatchObject({ color: 'yellow', rows: 2, startWeek: 0, weeks: 3 });
+    // Высоту агент не задал: короткому тексту на три недели хватает одной дорожки (QN2).
+    expect(noted.content.notes[0]).toMatchObject({ color: 'yellow', rows: 1, startWeek: 0, weeks: 3 });
+    const noteId = noted.content.notes[0]!.id;
+    const narrowed = ok([{ noteId, op: 'updateNote', span: { startWeek: 0, weeks: 1 } }], noted.content);
+    expect(narrowed.content.notes[0]).toMatchObject({ rows: 2, weeks: 1 });
+    const fixed = ok([{ noteId, op: 'updateNote', rows: 5, text: 'Short' }], noted.content);
+    expect(fixed.content.notes[0]).toMatchObject({ rows: 5, text: 'Short' });
     const badRow = run([{ op: 'addNote', row: { id: 't9', kind: 'team' }, span: { startWeek: 0, weeks: 1 }, text: 'x' }]);
     expect(badRow.ok ? '' : badRow.error).toBe('addNote: unknown team t9');
     const removed = ok([{ epicId: 'id2', op: 'removeEpic' }], noted.content);

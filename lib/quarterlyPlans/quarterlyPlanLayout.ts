@@ -263,7 +263,7 @@ export function updateDirection(
   };
 }
 
-export const QUARTER_NOTE_MAX_ROWS = 4;
+export const QUARTER_NOTE_MAX_ROWS = 6;
 
 /** Высота заметки после растягивания на `deltaRows` дорожек. */
 export function resizeNoteRows(rows: number, deltaRows: number): number {

@@ -30,6 +30,7 @@ import {
   updateNote,
   type WeekSpan,
 } from './quarterlyPlanLayout';
+import { estimateQuarterNoteRows } from './quarterlyPlanNoteSize';
 import { moveDirection, moveEpic, moveEpicError } from './quarterlyPlanRows';
 import { buildQuarterWeeks, resolveDaySpan, resolveWeekSpan } from './quarterWeeks';
 
@@ -402,24 +403,30 @@ const handlers: Handlers = {
   removeLink: (plan, op, ctx) => removeLink(plan, findOr(plan.links, resolveId(ctx, op.linkId), 'link').id),
   addNote: (plan, op, ctx) => {
     const id = ctx.newId();
+    const noteSpan = resolveSpan(ctx, op.span);
     const note = {
       color: op.color ?? 'yellow',
       id,
       row: requireRow(ctx, plan, op.row),
-      rows: op.rows ?? 2,
+      // Высоту агент обычно не задаёт: она подбирается по тексту и ширине (QN2).
+      rows: op.rows ?? estimateQuarterNoteRows(op.text, noteSpan.weeks),
       text: op.text,
-      ...resolveSpan(ctx, op.span),
+      ...noteSpan,
     };
     created(ctx, op.ref, id);
     return addNote(plan, note);
   },
   updateNote: (plan, op, ctx) => {
-    const noteId = findOr(plan.notes, resolveId(ctx, op.noteId), 'note').id;
-    return updateNote(plan, noteId, {
+    const note = findOr(plan.notes, resolveId(ctx, op.noteId), 'note');
+    const noteSpan = op.span ? resolveSpan(ctx, op.span) : null;
+    // Сменился текст или ширина, а высоту не задали — она подбирается заново (QN2).
+    const refit = op.rows === undefined && (op.text !== undefined || noteSpan !== null);
+    const rows = refit ? estimateQuarterNoteRows(op.text ?? note.text, (noteSpan ?? note).weeks) : op.rows;
+    return updateNote(plan, note.id, {
       ...(op.color ? { color: op.color } : {}),
       ...(op.row ? { row: requireRow(ctx, plan, op.row) } : {}),
-      ...(op.rows ? { rows: op.rows } : {}),
-      ...(op.span ? resolveSpan(ctx, op.span) : {}),
+      ...(rows ? { rows } : {}),
+      ...(noteSpan ?? {}),
       ...(op.text ? { text: op.text } : {}),
     });
   },

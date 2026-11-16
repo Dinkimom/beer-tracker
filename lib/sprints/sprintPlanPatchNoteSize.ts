@@ -28,9 +28,11 @@ const ROW_STEP_PX = ONE_ROW_CARD_HEIGHT_PX + 8;
 const CARD_VERTICAL_CHROME_PX = 16;
 
 /** Средняя ширина символа Excalifont 12px (латиница ~6.0, кириллица ~6.3) с запасом на перенос. */
-const CHAR_WIDTH_PX = 6.4;
+export const STICKY_NOTE_CHAR_WIDTH_PX = 6.4;
+const CHAR_WIDTH_PX = STICKY_NOTE_CHAR_WIDTH_PX;
 /** Обычный текст: `text-xs leading-snug`, по центру, `\n` схлопывается в пробел. */
-const PLAIN_LINE_HEIGHT_PX = 16.5;
+export const STICKY_NOTE_LINE_HEIGHT_PX = 16.5;
+const PLAIN_LINE_HEIGHT_PX = STICKY_NOTE_LINE_HEIGHT_PX;
 
 /** Markdown-раскладка (`MarkdownChecklistPreview`, variant card): `text-xs leading-normal`. */
 const MARKDOWN_LINE_HEIGHT_PX = 18;
@@ -58,7 +60,7 @@ const HEADING_LINE = /^(#{1,3}) /;
 const INLINE_MARKERS = /\*\*|~~|[*`]/g;
 
 /** Строк текста при жадном переносе по словам; слово длиннее строки рвётся (`break-words`). */
-function countWrappedLines(text: string, widthPx: number, charPx: number): number {
+export function countWrappedLines(text: string, widthPx: number, charPx: number): number {
   const charsPerLine = Math.max(1, Math.floor(widthPx / charPx));
   const words = text.replaceAll(INLINE_MARKERS, '').split(/\s+/).filter(Boolean);
   let lines = 1;

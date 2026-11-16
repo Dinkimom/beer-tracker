@@ -81,7 +81,7 @@ describe('parseQuarterlyPlanContent', () => {
       /a1: weeks 13\+2 outside the quarter \(14\)/
     );
     expect(errorOf(plan({ assignments: [{ ...plan().assignments[0]!, weeks: 0 }] }))).toMatch(/weeks/);
-    expect(errorOf(plan({ notes: [{ ...plan().notes[0]!, rows: 5 }] }))).toMatch(/notes\.0\.rows/);
+    expect(errorOf(plan({ notes: [{ ...plan().notes[0]!, rows: 7 }] }))).toMatch(/notes\.0\.rows/);
   });
 });
 
