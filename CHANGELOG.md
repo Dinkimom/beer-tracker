@@ -2,6 +2,26 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.34.0] — 2026-11-16
+
+### English
+
+- Quarter board: plan and sprint sync. The «Mismatches: N» button on the board toolbar (or the epic / direction menu) opens a list «Task | Plan | Sprint»: click the dates that are right, and only the checked rows are applied.
+- If the plan is right, the sprint card moves as a whole to the bar's start day, its length stays, and the move goes to the tracker like a move on the sprint board. If the sprint is right, the task bar takes the card's days.
+- A single task: click the dashed mismatch outline to get a popover with «Move card» or «Set bar»; a side that can't be applied is dimmed with the reason.
+- Sprint goals on the quarter board: each sprint in the team header shows a goals button with progress (✓ done/total, «+ Goals» when empty). It opens a sidebar next to the board where goals can be checked, added and edited.
+- Sidebars: a closed sidebar no longer leaves its handle at the edge, and collapsing a sidebar by dragging no longer makes the next one open a few pixels wide.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.34.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Доска квартала: синхронизация плана и спринта. Кнопка «Расхождения: N» на панели доски (или пункт в меню эпика и направления) открывает список «Задача | План | Спринт»: клик по верным датам — и применяется только отмеченное.
+- Верен план — карточка в спринте сдвигается целиком на день начала полосы, длина не меняется, сдвиг уходит в трекер как перенос на доске. Верен спринт — полоса задачи встаёт на дни карточки.
+- Одна задача: клик по пунктиру расхождения открывает поповер «Сдвинуть карточку» или «Поставить полосу»; недоступная сторона приглушена с причиной.
+- Цели спринтов на доске квартала: у каждого спринта в шапке команды кнопка целей с прогрессом (✓ выполнено/всего, «+ Цели», если пусто). Открывает сайдбар рядом с доской — цели можно отмечать, добавлять и править.
+- Сайдбары: у закрытого сайдбара больше нет рукоятки на краю, а сайдбар, стянутый до закрытия, не заставляет следующий открываться шириной в пару пикселей.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.34.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.33.0] — 2026-11-16
 
 ### English
