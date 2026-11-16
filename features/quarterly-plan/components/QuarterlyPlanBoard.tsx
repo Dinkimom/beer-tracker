@@ -6,8 +6,10 @@ import { type CSSProperties, Fragment, useEffect, useMemo, useRef } from 'react'
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { ParticipantsColumnResizeHandle } from '@/features/sprint/components/SprintPlanner/components/ParticipantsColumnResizeHandle';
+import { PlannerParticipantsColumnGlass } from '@/features/sprint/components/SprintPlanner/components/PlannerParticipantsColumnGlass';
 import { SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import { useQuarterLeftColumnWidthStorage } from '@/hooks/useLocalStorage';
 import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
@@ -106,6 +108,15 @@ export function QuarterlyPlanBoard({
           } as CSSProperties
         }
       >
+        {/* Стекло колонки — как у колонки исполнителей на доске спринта: одна плашка на всю видимую высоту,
+            полосы и заметки проезжают под ней размытыми, подписи строк лежат выше и остаются резкими. */}
+        <PlannerParticipantsColumnGlass
+          className="sticky left-0 top-0"
+          fillScrollport
+          scrollerSelector="[data-quarter-scroller]"
+          style={{ zIndex: ZIndex.stickyInContent }}
+          width={columnWidth}
+        />
         {/* Ручка ширины колонки эпиков — та же, что у колонки исполнителей на свимлейне. */}
         <ParticipantsColumnResizeHandle
           clampWidth={clampQuarterLeftColumnWidth}

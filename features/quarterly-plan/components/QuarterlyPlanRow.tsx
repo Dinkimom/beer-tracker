@@ -30,17 +30,34 @@ type QuarterlyPlanRowTone = 'default' | 'direction' | 'team';
  * Горизонтальная линия одна на стык: под шапкой, под строкой команды и над каждым направлением;
  * линию над командой рисует её секция. Между обычными строками (эпики, строки отсутствий) — линия
  * слабее, того же веса, что линии недель: строки читаются, а границы направлений остаются главными.
- * Фоны непрозрачные — левая колонка и строка команды липкие, под ними проезжают полосы.
+ * Строка команды — стеклянная: она липнет под шапкой, под ней проезжают строки.
  */
 const ROW_TONE_CLASS: Record<QuarterlyPlanRowTone, string> = {
   default: 'bg-white dark:bg-gray-800',
   // Направление — шапка своей группы: тонированная полоса во всю ширину отделяет его от эпиков под ним.
   direction: 'border-t border-ds-border-subtle bg-gray-50 dark:bg-[#253246]',
-  team: 'border-b border-ds-border-subtle bg-gray-100 dark:bg-[#2a3749]',
+  // Стекло в сером тоне: строка команды липнет под шапкой, строки проезжают под ней размытыми.
+  team: 'border-b border-ds-border-subtle quarter-team-glass',
 };
 
-/** Подсветка левой ячейки строки под курсором; фон непрозрачный, как у остальных тонов. */
-const ROW_HOVER_CLASS = 'group-hover/row:bg-gray-50 dark:group-hover/row:bg-[#243044]';
+/**
+ * Левая ячейка лежит на стеклянной плашке колонки (`QuarterlyPlanBoard`), поэтому своего фона у неё нет —
+ * только лёгкая вуаль поверх стекла: тон направления и подсветка строки под курсором. У строки команды,
+ * которая липнет выше плашки, ячейка непрозрачная.
+ */
+const LEFT_CELL_CLASS: Record<QuarterlyPlanRowTone, string> = {
+  default: 'group-hover/row:bg-gray-900/[0.035] dark:group-hover/row:bg-white/[0.05]',
+  direction: 'bg-gray-900/[0.025] dark:bg-white/[0.04]',
+  // Непрозрачная: стекло внутри стеклянной строки не размыло бы спринты, которые проезжают под ячейкой.
+  team: 'bg-gray-100 dark:bg-[#2a3749]',
+};
+
+/** Верхняя линия левой ячейки — того же веса, что у самой строки. */
+const LEFT_CELL_TOP_LINE: Record<QuarterlyPlanRowTone, string | undefined> = {
+  default: `0 -1px 0 0 ${QUARTER_WEEK_LINE}`,
+  direction: '0 -1px 0 0 var(--ds-border-subtle)',
+  team: undefined,
+};
 
 /** Две строки шапки и её нижняя линия. */
 const STICKY_TOP_PX = QUARTER_HEADER_ROW_PX * 2 + 1;
@@ -115,8 +132,13 @@ export function QuarterlyPlanRow({
       }}
     >
       <div
-        className={`sticky left-0 flex shrink-0 items-start border-r border-ds-border-subtle transition-colors ${toneClass} ${tone === 'default' ? ROW_HOVER_CLASS : ''} !border-b-0 !border-t-0`}
-        style={{ width: QUARTER_LEFT_COLUMN_WIDTH, zIndex: ZIndex.stickyInContent }}
+        className={`sticky left-0 flex shrink-0 items-start border-r border-ds-border-subtle transition-colors ${LEFT_CELL_CLASS[tone]} !border-b-0 !border-t-0`}
+        style={{
+          // Линия над строкой лежит под стеклом и размывается — в колонке рисуем её ещё раз, поверх стекла.
+          boxShadow: LEFT_CELL_TOP_LINE[tone],
+          width: QUARTER_LEFT_COLUMN_WIDTH,
+          zIndex: ZIndex.stickyInContent,
+        }}
       >
         {/* Задача эпика — ветка дерева: направляющая слева связывает задачи с их эпиком (QT1). */}
         {sortRow?.level === 'task' ? (

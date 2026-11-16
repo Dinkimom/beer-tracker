@@ -27,10 +27,11 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
 
   return (
     <div
-      className="sticky top-0 flex border-b border-ds-border-subtle bg-white dark:bg-gray-800"
+      className="planner-pinned-lane-glass sticky top-0 flex border-b border-ds-border-subtle"
       data-quarter-header
       style={{ zIndex: ZIndex.stickyInContent + 2 }}
     >
+      {/* Шапка — стекло, угловая ячейка — нет: стекло внутри стекла не размывает подписи недель, они читались бы сквозь неё. */}
       {/* Левая ячейка повторяет две строки шапки: квартал — напротив месяцев, подпись колонки — напротив недель. */}
       <div
         className="sticky left-0 flex shrink-0 flex-col border-r border-ds-border-subtle bg-white dark:bg-gray-800"

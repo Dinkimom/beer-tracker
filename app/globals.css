@@ -1771,6 +1771,22 @@ textarea:focus-visible,
   backdrop-filter: blur(24px) saturate(1.5);
 }
 
+/*
+ * Строка команды квартальной доски: то же стекло, что у колонки и шапки, но в сером тоне —
+ * она шапка своего блока и липнет под шапкой недель, строки проезжают под ней.
+ */
+.quarter-team-glass {
+  background-color: rgb(243 244 246 / 0.72) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(1);
+  backdrop-filter: blur(28px) saturate(1);
+}
+
+.dark .quarter-team-glass {
+  background-color: rgb(42 55 73 / 0.88) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+}
+
 .dark .floating-toolbar-glass {
   --floating-menu-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.35);
   border-color: rgba(255, 255, 255, 0.15) !important;

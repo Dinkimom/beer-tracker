@@ -11,17 +11,20 @@ interface PlannerParticipantsColumnGlassProps {
   className?: string;
   /** Занять видимую область скролла под шапкой, не раздвигая строки. */
   fillScrollport?: boolean;
+  /** Скролл-контейнер доски, по которому плашка берёт высоту; по умолчанию — доска спринта. */
+  scrollerSelector?: string;
   style?: CSSProperties;
   width: number;
 }
 
 /**
- * Одна стеклянная плашка на всю видимую колонку исполнителей.
+ * Одна стеклянная плашка на всю видимую колонку исполнителей (на доске квартала — колонку направлений и эпиков).
  * Имена строк лежат выше и остаются резкими, карточки под колонкой блюрятся один раз.
  */
 export function PlannerParticipantsColumnGlass({
   className = '',
   fillScrollport = false,
+  scrollerSelector = '.planner-board-scroll',
   style,
   width,
 }: PlannerParticipantsColumnGlassProps) {
@@ -30,7 +33,7 @@ export function PlannerParticipantsColumnGlass({
   useLayoutEffect(() => {
     if (!fillScrollport) return undefined;
     const pane = paneRef.current;
-    const scroller = pane?.closest('.planner-board-scroll');
+    const scroller = pane?.closest(scrollerSelector);
     if (!pane || !(scroller instanceof HTMLElement)) return undefined;
 
     const apply = () => {
@@ -44,7 +47,7 @@ export function PlannerParticipantsColumnGlass({
     const observer = new ResizeObserver(apply);
     observer.observe(scroller);
     return () => observer.disconnect();
-  }, [fillScrollport]);
+  }, [fillScrollport, scrollerSelector]);
 
   return (
     <div
