@@ -2,6 +2,34 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.32.0] — 2026-11-16
+
+### English
+
+- Quarter board: an epic can have tasks — rows one level below with their own bars, status and notes. A task is a tracker issue or a plain title. Tasks sit under an accordion: the epic shows an arrow and a count, and expands on click.
+- Rows can be added right below another row («Add … below» in the row menu) and reordered by dragging the handle on the left — directions, epics and tasks. An epic dropped next to an epic of another direction moves there with its tasks.
+- Task bars are planned in working days: drag and resize them with a one-day step, down to one day. While you drag, the row shows a day grid. Bars of epics and directions stay in whole weeks. Overlaps, absences and dependency order are now counted by days, and an epic bar no longer counts as parallel work with the bars of its own tasks.
+- Plan versus sprint: when a linked task stands on a sprint board on other days than in the plan, its row shows a dashed outline on the sprint days. Nothing moves by itself.
+- The status of a linked epic or task can be changed from the quarter board: click the status tag and pick a tracker transition. Transitions that require extra fields still have to be done in the tracker.
+- Clearer hierarchy: direction rows are tinted, epics are bolder, tasks hang on a tree line. The left column, the week header and the team row are now glass, as on the sprint board.
+- Notes can be up to six lanes tall. A note written by the agent gets its height from its text.
+- Agent: `addEpic` takes `parentEpicId` (a task under an epic) and `afterId`; new `moveEpic` and `moveDirection`; a task bar given by dates keeps its days; `get_quarterly_plan` returns `sprintCards` — where linked tasks stand in sprints.
+- Fixes on the swimlane: the absence label no longer slides under a card, and a card expanded on hover no longer slips under its neighbor when it collapses.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.32.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Доска квартала: у эпика появились задачи — строки уровнем ниже со своими полосами, статусом и заметками. Задача — из трекера или просто названием. Задачи лежат под аккордеоном: у эпика стрелка и счётчик, список раскрывается по клику.
+- Строку можно добавить сразу под другой («Добавить … ниже» в меню строки) и переставить, потянув за ручку слева, — направления, эпики и задачи. Эпик, отпущенный рядом с эпиком другого направления, переезжает туда вместе с задачами.
+- Полосы задач ставятся рабочими днями: их тянут и растягивают с шагом в день, минимум — день. Пока полосу тянут, в строке видна сетка дней. Полосы эпиков и направлений остаются неделями. Пересечения, отсутствия и порядок зависимостей теперь считаются по дням, а полоса эпика больше не считается параллельной работой с полосами его собственных задач.
+- План и спринт: если привязанная задача стоит на доске спринта не в те дни, что в плане, в её строке появляется пунктирный контур на днях из спринта. Само ничего не двигается.
+- Статус привязанного эпика или задачи можно сменить с доски квартала: клик по тегу статуса и выбор перехода из трекера. Переходы, которым трекер требует заполнить поля, по-прежнему делаются в трекере.
+- Иерархия стала заметнее: строки направлений тонированы, эпики полужирные, задачи висят на «ветке». Левая колонка, шапка недель и строка команды теперь стеклянные, как на доске спринта.
+- Заметка может быть высотой до шести дорожек. Заметке, которую пишет агент, высота подбирается по тексту.
+- Агент: `addEpic` принимает `parentEpicId` (задача под эпиком) и `afterId`; новые `moveEpic` и `moveDirection`; полоса задачи, заданная датами, сохраняет дни; `get_quarterly_plan` отдаёт `sprintCards` — где привязанные задачи стоят в спринтах.
+- Исправления на свимлейне: лейбл отсутствия больше не уезжает под карточку, а карточка, раскрытая по наведению, не уходит под соседнюю при сворачивании.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.32.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.31.1] — 2026-11-16
 
 ### English
