@@ -4,7 +4,7 @@ import type { Task, Developer, TaskPosition } from '@/types';
 
 import { CSS } from '@dnd-kit/utilities';
 import omit from 'lodash-es/omit';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { isSwimlaneCommentTask, isSwimlaneDiagramTask, isSwimlaneWidgetTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintPlanner/onboarding/plannerOnboardingChrome';
@@ -82,6 +82,28 @@ function publishTaskBarResizePreview(
       taskId,
     });
   }
+}
+
+/** Длительность `transition: width` у `.task-bar-item` (app/globals.css). */
+const TASK_BAR_WIDTH_TRANSITION_MS = 250;
+
+/**
+ * Карточка, раскрытая по long-hover, остаётся поверх соседей, пока сжимается обратно:
+ * иначе z-index падает сразу, и на время анимации ширины она уезжает под соседнюю карточку.
+ */
+function useLongHoverElevation(shouldExpandByLongHover: boolean): boolean {
+  const [wasExpanded, setWasExpanded] = useState(shouldExpandByLongHover);
+  const [isCollapsing, setIsCollapsing] = useState(false);
+  if (wasExpanded !== shouldExpandByLongHover) {
+    setWasExpanded(shouldExpandByLongHover);
+    setIsCollapsing(!shouldExpandByLongHover);
+  }
+  useEffect(() => {
+    if (!isCollapsing) return;
+    const timeoutId = setTimeout(() => setIsCollapsing(false), TASK_BAR_WIDTH_TRANSITION_MS);
+    return () => clearTimeout(timeoutId);
+  }, [isCollapsing]);
+  return shouldExpandByLongHover || isCollapsing;
 }
 
 export function useTaskBarDisplayState(input: {
@@ -242,6 +264,9 @@ export function useTaskBarDisplayState(input: {
       swimlaneTimelineTotalParts: input.swimlaneTimelineTotalParts,
     });
 
+  // Пока карточка сжимается, контент остаётся в раскрытой раскладке: текст обрезает сама ширина.
+  const longHoverElevated = useLongHoverElevation(shouldExpandByLongHover);
+
   const { baseWidthCss, expandedWidthCss } = buildTaskBarWidthCss(
     displayWidthPercent,
     expandedMinWidthPercent
@@ -251,7 +276,7 @@ export function useTaskBarDisplayState(input: {
     displayWidthPercent,
     durationParts: barDurationParts,
     expandedMinWidthPercent,
-    shouldExpandByLongHover,
+    shouldExpandByLongHover: longHoverElevated,
   });
 
   const customStyleLayout = omit(input.customStyle ?? {}, ['opacity', 'transition']);
@@ -296,7 +321,7 @@ export function useTaskBarDisplayState(input: {
     isPhotoCard,
     isStickyNote: isSwimlaneCommentTask(input.task),
     quickAddMenu: input.quickAddMenu,
-    shouldExpandByLongHover,
+    shouldExpandByLongHover: longHoverElevated,
   });
 
   const instantGeometryClass = resolveTaskBarInstantGeometryClass({
@@ -326,6 +351,7 @@ export function useTaskBarDisplayState(input: {
     isQATask,
     isStickyNoteCard,
     layoutStyle,
+    longHoverElevated,
     presenceLocked,
     resize,
     setNodeRef,

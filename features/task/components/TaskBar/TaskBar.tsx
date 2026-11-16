@@ -202,6 +202,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
     isNarrowForLongHoverExpand,
     isQATask,
     layoutStyle,
+    longHoverElevated,
     presenceLocked,
     resize,
     setNodeRef,
@@ -381,7 +382,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
         isQATask={isQATask}
         isSelected={isSelected}
         linkMode={linkMode}
-        longHoverExpanded={isExpandedByLongHover}
+        longHoverExpanded={isExpandedByLongHover || longHoverElevated}
         longHoverTimeoutRef={longHoverTimeoutRef}
         planAnchorOverlay={planAnchorOverlay}
         quickAddSubmitting={quickAddSubmitting}
