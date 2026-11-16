@@ -143,8 +143,16 @@ export function QuarterlyPlanBoard({
               <section
                 key={team.id}
                 aria-label={team.title}
-                className={collapsed ? '' : 'border-b border-ds-border-subtle'}
+                className="relative"
               >
+                {/* Нижняя граница команды — поверх стекла колонки: border секции лежал бы под ним и размывался. */}
+                {collapsed ? null : (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-ds-border-subtle"
+                    style={{ zIndex: ZIndex.stickyInContent + 1 }}
+                  />
+                )}
                 <QuarterlyPlanTeamHeader
                   collapsed={collapsed}
                   team={team}

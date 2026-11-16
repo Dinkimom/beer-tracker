@@ -15,6 +15,7 @@ import {
   absentDaysWithinSpan,
   assignBarLanes,
   daySpanOf,
+  type DaySpan,
   groupConsecutiveDays,
   overloadedDays,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
@@ -58,8 +59,8 @@ export const QUARTER_NEW_NOTE_WEEKS = 2;
 export const QUARTER_NEW_NOTE_ROWS = 2;
 
 /** Высота стикера в `rows` дорожек: между соседними остаётся зазор, как у полос. */
-export function quarterNoteHeightPx(rows: number): number {
-  return rows * QUARTER_LANE_HEIGHT_PX - 4;
+export function quarterNoteHeightPx(rows: number, laneHeightPx: number = QUARTER_LANE_HEIGHT_PX): number {
+  return rows * laneHeightPx - 4;
 }
 
 /** Место листа заметки в строке: недели — по горизонтали, дорожка и высота — по вертикали. */
@@ -67,12 +68,13 @@ export function quarterNoteBoxStyle(
   box: { rows: number; startWeek: number; weeks: number },
   lane: number,
   topPx: number,
-  weekCount: number
+  weekCount: number,
+  laneHeightPx: number = QUARTER_LANE_HEIGHT_PX
 ): { height: number; left: string; top: number; width: string } {
   return {
-    height: quarterNoteHeightPx(box.rows),
+    height: quarterNoteHeightPx(box.rows, laneHeightPx),
     left: `calc(${(box.startWeek / weekCount) * 100}% + 2px)`,
-    top: topPx + lane * QUARTER_LANE_HEIGHT_PX + 2,
+    top: topPx + lane * laneHeightPx + 2,
     width: `calc(${(box.weeks / weekCount) * 100}% - 4px)`,
   };
 }
@@ -80,9 +82,28 @@ export function quarterNoteBoxStyle(
 /** Отступ липкой подписи от левой колонки: подпись полосы остаётся на экране при прокрутке вбок. */
 export const QUARTER_STICKY_LABEL_LEFT = `calc(${QUARTER_LEFT_COLUMN_WIDTH} + 6px)`;
 
+/**
+ * Свободное место недели для новой полосы: самый длинный отрезок подряд идущих свободных рабочих дней
+ * (при равных — первый); null — неделя занята целиком. Без занятых дней — вся неделя.
+ */
+export function freeDaysOfWeek(week: number, occupiedDays: ReadonlySet<number> | undefined): DaySpan | null {
+  let best: DaySpan | null = null;
+  let run: DaySpan | null = null;
+  for (let offset = 0; offset < QUARTER_WORKING_DAYS_PER_WEEK; offset += 1) {
+    const day = week * QUARTER_WORKING_DAYS_PER_WEEK + offset;
+    if (occupiedDays?.has(day)) {
+      run = null;
+      continue;
+    }
+    run = run ? { days: run.days + 1, startDay: run.startDay } : { days: 1, startDay: day };
+    if (!best || run.days > best.days) best = run;
+  }
+  return best;
+}
+
 /** Высота строки под `laneCount` дорожек полос. */
-export function quarterRowHeightPx(laneCount: number): number {
-  return laneCount * QUARTER_LANE_HEIGHT_PX + QUARTER_ROW_PADDING_PX * 2;
+export function quarterRowHeightPx(laneCount: number, laneHeightPx: number = QUARTER_LANE_HEIGHT_PX): number {
+  return laneCount * laneHeightPx + QUARTER_ROW_PADDING_PX * 2;
 }
 
 /** Раскладка полос строки: дорожки, недели под полосами и место полос в дорожках заметок. */
@@ -101,10 +122,12 @@ export function layoutRowBars(assignments: readonly QuarterlyPlanAssignment[]) {
     laneById,
     laneCount,
     noteBlockers: spans.map(({ id, startWeek, weeks }) => ({ lane: laneById.get(id) ?? 0, rows: 1, startWeek, weeks })),
-    occupiedWeeks: new Set(
-      assignments.flatMap((assignment) =>
-        Array.from({ length: assignment.weeks }, (_, offset) => assignment.startWeek + offset)
-      )
+    /** Рабочие дни, занятые полосами строки: клетка добавления встаёт на свободные дни недели (QT5). */
+    occupiedDays: new Set(
+      assignments.flatMap((assignment) => {
+        const { days, startDay } = daySpanOf(assignment);
+        return Array.from({ length: days }, (_, offset) => startDay + offset);
+      })
     ),
   };
 }
@@ -199,11 +222,29 @@ export function formatWeekRange(week: QuarterWeek): string {
 export const QUARTER_ROW_LEVELS = ['direction', 'epic', 'task'] as const;
 export type QuarterRowLevel = (typeof QUARTER_ROW_LEVELS)[number];
 
+/**
+ * Высота дорожки по уровню строки: чем выше уровень, тем крупнее его полосы — направление, эпик и задача
+ * различаются и на таймлайне, не только в колонке. Задача — базовая дорожка, эпик заметно выше.
+ */
+export const QUARTER_LANE_HEIGHT_BY_LEVEL: Record<QuarterRowLevel, number> = {
+  // Полосы: задача 24 px, эпик 30, направление 36 (дорожка на 4 px выше полосы).
+  direction: QUARTER_LANE_HEIGHT_PX + 12,
+  epic: QUARTER_LANE_HEIGHT_PX + 6,
+  task: QUARTER_LANE_HEIGHT_PX,
+};
+
+/** Подпись и аватар полосы по уровню строки: у крупной полосы они крупнее, у задачи — как раньше. */
+export const QUARTER_BAR_LOOK_BY_LEVEL: Record<QuarterRowLevel, { avatar: '2xs' | 'sm' | 'xs'; text: string }> = {
+  direction: { avatar: 'sm', text: 'text-sm font-semibold' },
+  epic: { avatar: 'xs', text: 'text-[13px] font-semibold' },
+  task: { avatar: '2xs', text: 'text-xs font-medium' },
+};
+
 /** Отступ названия строки по уровню; место слева — под стрелку раскрытия и ручку порядка. */
 export const QUARTER_ROW_INDENT_CLASS: Record<QuarterRowLevel, string> = {
-  direction: 'pl-5',
-  epic: 'pl-9',
-  task: 'pl-14',
+  direction: 'pl-6',
+  epic: 'pl-10',
+  task: 'pl-[60px]',
 };
 
 export const QUARTER_ROW_ACTION_CLASS =

@@ -15,6 +15,8 @@ interface QuarterlyPlanAnchoredPopoverProps {
   anchor: QuarterMenuAnchor;
   children: ReactNode;
   className: string;
+  /** false — поповер уходит с анимацией; родитель держит его на экране, пока она идёт (`useClosingValue`). */
+  open?: boolean;
   /** Поповер закрывают: Escape или клик мимо. */
   onDismiss: (reason: 'escape' | 'outside') => void;
 }
@@ -27,6 +29,7 @@ export function QuarterlyPlanAnchoredPopover({
   anchor,
   children,
   className,
+  open = true,
   onDismiss,
 }: QuarterlyPlanAnchoredPopoverProps) {
   const virtualRef = useMemo(
@@ -37,14 +40,13 @@ export function QuarterlyPlanAnchoredPopover({
   );
 
   return (
-    <Popover.Root open>
+    <Popover.Root open={open}>
       <Popover.Anchor virtualRef={virtualRef} />
       {/* Прозрачная подложка: клик мимо только закрывает поповер и не попадает в кнопки доски под ним.
           Свой портал — Popover.Portal принимает ровно один дочерний элемент. */}
-      {createPortal(
-        <div aria-hidden className="fixed inset-0" style={{ zIndex: ZIndex.modalBackdrop }} />,
-        document.body
-      )}
+      {open
+        ? createPortal(<div aria-hidden className="fixed inset-0" style={{ zIndex: ZIndex.modalBackdrop }} />, document.body)
+        : null}
       <Popover.Portal>
         <Popover.Content
           align="start"

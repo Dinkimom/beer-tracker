@@ -849,6 +849,7 @@ export const ruMessages = {
     issuesBlocked: 'Нарушен порядок работ: {count}',
     menuAddPerson: 'Ещё один человек…',
     unplanned: 'Не запланировано',
+    unplannedHint: 'У строки нет ни одной полосы — кликните по неделе, чтобы назначить человека',
     unplannedCount: 'без плана: {count}',
     menuRemove: 'Убрать из плана',
     menuStatus: 'Статус',

@@ -24,7 +24,10 @@ import {
   addAssignment,
   addEpic,
   assignmentPhase,
+  assignmentSpanFields,
   buildWeekLoad,
+  daySpanOf,
+  type DaySpan,
   directionIdOfAssignment,
   QUARTER_MAX_PARALLEL_EPICS,
   removeAssignment,
@@ -41,7 +44,7 @@ import {
 } from './quarterlyPlanBoardModel';
 
 export type QuarterlyPlanMenuState =
-  { anchor: QuarterMenuAnchor; assignmentId: string; kind: 'bar' } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'status' } | { anchor: QuarterMenuAnchor; kind: 'assign'; phase?: QuarterlyPlanPhase; row: QuarterlyPlanAssignRow; week: number; weeks: number } | { anchor: QuarterMenuAnchor; kind: 'row'; target: QuarterlyPlanRowTarget };
+  { anchor: QuarterMenuAnchor; assignmentId: string; kind: 'bar' } | { anchor: QuarterMenuAnchor; days?: number; kind: 'assign'; phase?: QuarterlyPlanPhase; row: QuarterlyPlanAssignRow; startDay?: number; week: number; weeks: number } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'status' } | { anchor: QuarterMenuAnchor; kind: 'row'; target: QuarterlyPlanRowTarget };
 
 /**
  * Зачем открыт поиск по трекеру: добавить эпик плана или задачу эпика (`parentEpicId`) из задачи трекера,
@@ -81,6 +84,8 @@ export function applyTrackerPickToPlan(
 export interface QuarterlyPlanRowActions {
   /** Открыть выбор ещё одного человека на те же недели, строку и фазу, что у полосы. */
   onAssignMore: (assignment: QuarterlyPlanAssignment) => void;
+  /** В меню назначения выбрали фазу новой полосы: меню остаётся открытым, выбор человека — следом. */
+  onAssignPhase: (phase: QuarterlyPlanPhase) => void;
   onPickTrackerEpic: (purpose: QuarterlyPlanTrackerPick) => void;
   onRemoveDirection: (directionId: string) => void;
   onRemoveEpic: (epicId: string) => void;
@@ -128,7 +133,11 @@ function teamMembersOfRow(plan: QuarterlyPlan, row: Pick<QuarterlyPlanAssignment
 }
 
 /** Заголовок меню со сроком: видно, про какие недели выбор. */
-function withRange(input: MenuSectionsInput, label: string, span: { startWeek: number; weeks: number }): string {
+function withRange(
+  input: MenuSectionsInput,
+  label: string,
+  span: { days?: number; startDay?: number; startWeek: number; weeks: number }
+): string {
   return `${label} · ${formatSpanRange(input.weeks, span)}`;
 }
 
@@ -147,24 +156,29 @@ function spanHint(input: MenuSectionsInput, memberId: string, span: WeekSpan): s
 
 /**
  * Выбор человека на срок `span`; тех, кто уже стоит в этой строке в эти недели, не предлагаем.
- * Фаза новой полосы: в строке направления — discovery, в строке эпика — delivery (QG2).
+ * Фаза новой полосы: в строке направления — discovery, в строке эпика — delivery (QG2); её можно сменить
+ * переключателем над списком людей — поставку ставят и на само направление, не разбивая его на эпики.
  */
 function assignSections(
   input: MenuSectionsInput,
   row: QuarterlyPlanAssignRow,
-  span: WeekSpan,
+  span: Partial<DaySpan> & WeekSpan,
   phase: QuarterlyPlanPhase = row.kind === 'direction' ? 'discovery' : 'delivery'
 ): QuarterlyPlanMenuSection[] {
   const fields = rowFields(row);
+  // Полоса встаёт на дни клетки (свободные дни недели) или на дни полосы, к которой добавляют человека (QT5).
+  const days = daySpanOf(span);
   const taken = new Set(
     input.plan.assignments
-      .filter(
-        (assignment) =>
+      .filter((assignment) => {
+        const other = daySpanOf(assignment);
+        return (
           assignment.epicId === fields.epicId &&
           assignment.directionId === fields.directionId &&
-          assignment.startWeek < span.startWeek + span.weeks &&
-          assignment.startWeek + assignment.weeks > span.startWeek
-      )
+          other.startDay < days.startDay + days.days &&
+          other.startDay + other.days > days.startDay
+        );
+      })
       .map((assignment) => assignment.memberId)
   );
   const rows: QuarterlyPlanMenuRow[] = teamMembersOfRow(input.plan, fields)
@@ -181,11 +195,21 @@ function assignSections(
             id: crypto.randomUUID(),
             memberId: member.id,
             ...(phase === 'discovery' ? phaseFields(phase) : {}),
-            ...span,
+            ...assignmentSpanFields(days),
           })
         ),
     }));
-  return [{ id: 'assign', label: withRange(input, input.t('quarterlyPlan.menuAssign'), span), rows }];
+  const phases: QuarterlyPlanMenuRow[] = (['discovery', 'delivery'] as const).map((value) => ({
+    checked: value === phase,
+    id: `phase-${value}`,
+    keepOpen: true,
+    label: input.t(`quarterlyPlan.phase.${value}`),
+    onSelect: () => input.actions.onAssignPhase(value),
+  }));
+  return [
+    { id: 'phase', label: input.t('quarterlyPlan.menuPhase'), rows: phases },
+    { id: 'assign', label: withRange(input, input.t('quarterlyPlan.menuAssign'), span), rows },
+  ];
 }
 
 function barSections(input: MenuSectionsInput, assignmentId: string): QuarterlyPlanMenuSection[] {
@@ -421,7 +445,8 @@ function rowSections(input: MenuSectionsInput, target: QuarterlyPlanRowTarget): 
 export function buildQuarterlyPlanMenuSections(input: MenuSectionsInput): QuarterlyPlanMenuSection[] {
   const { menu } = input;
   if (menu.kind === 'assign') {
-    return assignSections(input, menu.row, { startWeek: menu.week, weeks: menu.weeks }, menu.phase);
+    const { days, startDay } = menu;
+    return assignSections(input, menu.row, { days, startDay, startWeek: menu.week, weeks: menu.weeks }, menu.phase);
   }
   if (menu.kind === 'bar') return barSections(input, menu.assignmentId);
   if (menu.kind === 'row') return rowSections(input, menu.target);

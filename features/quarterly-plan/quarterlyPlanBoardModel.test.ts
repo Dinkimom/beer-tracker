@@ -16,6 +16,7 @@ import {
   quarterBarToneClass,
   quarterRowHeightPx,
   sprintStartWeeks,
+  freeDaysOfWeek,
 } from './quarterlyPlanBoardModel';
 
 const weeks = buildQuarterWeeks({ quarter: 4, year: 2026 });
@@ -77,17 +78,25 @@ describe('подписи и размеры', () => {
     expect(formatSpanRange(weeks, { startWeek: 99, weeks: 1 })).toBe('');
   });
 
-  it('раскладка полос строки: дорожки, занятые недели и место в дорожках заметок', () => {
+  it('раскладка полос строки: дорожки, занятые дни и место в дорожках заметок', () => {
     const layout = layoutRowBars([
       { epicId: 'e1', id: 'a', memberId: 'ann', startWeek: 0, weeks: 2 },
       { epicId: 'e1', id: 'b', memberId: 'bob', startWeek: 1, weeks: 2 },
     ]);
     expect(layout.laneCount).toBe(2);
-    expect([...layout.occupiedWeeks].sort()).toEqual([0, 1, 2]);
+    expect(layout.occupiedDays.size).toBe(15);
+    expect(layout.occupiedDays.has(14)).toBe(true);
     expect(layout.noteBlockers).toEqual([
       { lane: 0, rows: 1, startWeek: 0, weeks: 2 },
       { lane: 1, rows: 1, startWeek: 1, weeks: 2 },
     ]);
+  });
+
+  it('клетка добавления встаёт на самый длинный свободный отрезок недели (QT5)', () => {
+    expect(freeDaysOfWeek(2, undefined)).toEqual({ days: 5, startDay: 10 });
+    expect(freeDaysOfWeek(2, new Set([10, 11]))).toEqual({ days: 3, startDay: 12 });
+    expect(freeDaysOfWeek(2, new Set([12]))).toEqual({ days: 2, startDay: 10 });
+    expect(freeDaysOfWeek(2, new Set([10, 11, 12, 13, 14]))).toBeNull();
   });
 
   it('высота строки растёт с числом дорожек', () => {

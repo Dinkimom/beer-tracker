@@ -36,7 +36,7 @@ export function QuarterlyPlanDirectionHeader({
   const renaming = draft?.kind === 'renameDirection' && draft.id === direction.id;
 
   return (
-    <div className="relative flex min-w-0 flex-1 items-center gap-2 pl-4 pr-2">
+    <div className="relative flex min-w-0 flex-1 items-center gap-2 pl-5 pr-2">
       {renaming ? (
         <QuarterlyPlanInlineInput
           initialValue={direction.title}

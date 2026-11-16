@@ -13,6 +13,7 @@ import type {
   QuarterlyPlanEpic,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
+  QuarterlyPlanPhase,
   QuarterlyPlanTrackerEpic,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
@@ -21,6 +22,8 @@ import type { Developer } from '@/types';
 import { createContext, useContext } from 'react';
 
 import { assignNoteLanes, quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+
+import { QUARTER_LANE_HEIGHT_PX } from './quarterlyPlanBoardModel';
 
 export interface QuarterMenuAnchor {
   x: number;
@@ -78,6 +81,15 @@ export interface QuarterlyPlanBoardContextValue {
   assignmentsByEpic: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
   /** Полосы эпика вместе с полосами его задач (QT3); у задачи — только свои. */
   assignmentsByEpicTree: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
+  /** Открыто меню назначения: строка, недели и фаза будущей полосы — строка рисует её превью. */
+  assignPreview: {
+    /** Меню уже закрыто: превью уходит. */
+    closing: boolean;
+    phase: QuarterlyPlanPhase;
+    row: QuarterlyPlanAssignRow;
+    startWeek: number;
+    weeks: number;
+  } | null;
 
   /** Индекс текущей недели; -1, если «сегодня» вне квартала. */
   currentWeek: number;
@@ -139,7 +151,8 @@ export interface QuarterlyPlanBoardContextValue {
   /** Полосу сдвинули или растянули: срок неделями, у полосы задачи — ещё и днями (QT5). */
   onBarChange: (assignmentId: string, span: Partial<DaySpan> & WeekSpan) => void;
   onBarClick: (assignmentId: string, anchor: QuarterMenuAnchor) => void;
-  onCellClick: (row: QuarterlyPlanAssignRow, week: number, anchor: QuarterMenuAnchor) => void;
+  /** Клик по свободной клетке строки; `span` — свободные дни этой недели, на них встанет новая полоса. */
+  onCellClick: (row: QuarterlyPlanAssignRow, week: number, anchor: QuarterMenuAnchor, span: DaySpan) => void;
   /** Завершить ввод в открытом поле: название или null, если ввод отменён. */
   onDraftSubmit: (title: string | null) => void;
   /** Клик по полосе с включённым инструментом «Связь»: источник, цель или снятие выбора. */
@@ -186,6 +199,18 @@ export const QuarterSprintStartWeeksProvider = QuarterSprintStartWeeksContext.Pr
 
 export function useQuarterSprintStartWeeks(): readonly number[] {
   return useContext(QuarterSprintStartWeeksContext);
+}
+
+/**
+ * Высота дорожки строки: по ней встают полосы, плашки и заметки этой строки. У строк разных уровней она
+ * разная (`QUARTER_LANE_HEIGHT_BY_LEVEL`); строка задаёт её своему содержимому.
+ */
+const QuarterLaneHeightContext = createContext<number>(QUARTER_LANE_HEIGHT_PX);
+
+export const QuarterLaneHeightProvider = QuarterLaneHeightContext.Provider;
+
+export function useQuarterLaneHeight(): number {
+  return useContext(QuarterLaneHeightContext);
 }
 
 export function useQuarterlyPlanBoard(): QuarterlyPlanBoardContextValue {

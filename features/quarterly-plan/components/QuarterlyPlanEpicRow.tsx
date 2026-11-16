@@ -9,10 +9,10 @@ import { isEpicDone, trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLay
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   layoutRowBars,
+  QUARTER_LANE_HEIGHT_BY_LEVEL,
   QUARTER_ROW_INDENT_CLASS,
   QUARTER_ROW_PADDING_PX,
   QUARTER_STATUS_PALETTE_KEY,
-  QUARTER_STICKY_LABEL_LEFT,
   quarterRowHeightPx,
 } from '../quarterlyPlanBoardModel';
 
@@ -40,14 +40,15 @@ export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps)
     useQuarterlyPlanBoard();
   const level = epic.parentEpicId === undefined ? 'epic' : 'task';
   const assignments = assignmentsByEpic.get(epic.id) ?? [];
-  const { laneById, laneCount, noteBlockers, occupiedWeeks } = layoutRowBars(assignments);
+  const { laneById, laneCount, noteBlockers, occupiedDays } = layoutRowBars(assignments);
   const renaming = draft?.kind === 'renameEpic' && draft.id === epic.id;
   const done = isEpicDone(epic, trackerEpics);
   /** Эпик запланирован и полосами своих задач (QT3); готовый планировать уже незачем. */
   const unplanned = !done && !assignmentsByEpicTree.get(epic.id)?.length;
   return (
     <QuarterlyPlanRow
-      heightPx={quarterRowHeightPx(laneCount)}
+      heightPx={quarterRowHeightPx(laneCount, QUARTER_LANE_HEIGHT_BY_LEVEL[level])}
+      laneHeightPx={QUARTER_LANE_HEIGHT_BY_LEVEL[level]}
       left={
         <div className={`relative flex min-w-0 flex-1 items-center gap-2 pr-2 ${QUARTER_ROW_INDENT_CLASS[level]}`}>
           {renaming ? (
@@ -57,7 +58,7 @@ export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps)
               onSubmit={onDraftSubmit}
             />
           ) : (
-            <QuarterlyPlanEpicHeader epic={epic} level={level} tasks={tasks} />
+            <QuarterlyPlanEpicHeader epic={epic} level={level} tasks={tasks} unplanned={unplanned} />
           )}
           <QuarterlyPlanEpicStatus epic={epic} />
         </div>
@@ -65,28 +66,17 @@ export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps)
       noteBlockers={noteBlockers}
       noteRow={{ id: epic.id, kind: 'epic' }}
       notesTopPx={QUARTER_ROW_PADDING_PX}
-      occupiedWeeks={occupiedWeeks}
+      occupiedDays={occupiedDays}
       sortRow={{ id: epic.id, level, parentId: epic.parentEpicId ?? epic.directionId }}
       weekActionLabel={t('quarterlyPlan.assignWeek', { title: epic.title })}
-      onWeekClick={(week, anchor) => onCellClick({ id: epic.id, kind: 'epic' }, week, anchor)}
+      onWeekClick={(week, anchor, span) => onCellClick({ id: epic.id, kind: 'epic' }, week, anchor, span)}
     >
-      {/* Строка без единой полосы: пометка в начале таймлайна, клики по неделям проходят сквозь неё. */}
-      {unplanned ? (
-        <div className="pointer-events-none absolute inset-0 flex items-center">
-          <span
-            className="sticky ml-1.5 rounded-md border border-dashed border-gray-300 px-2 py-0.5 text-xs text-ds-text-muted dark:border-gray-600"
-            style={{ left: QUARTER_STICKY_LABEL_LEFT }}
-          >
-            {t('quarterlyPlan.unplanned')}
-          </span>
-        </div>
-      ) : null}
       <QuarterlyPlanSprintCardGhost assignments={assignments} card={sprintCards[epic.issueKey ?? '']} />
       <QuarterlyPlanRowBars
         assignments={assignments}
-        dayStep={level === 'task'}
         faded={done}
         laneById={laneById}
+        level={level}
         statusKey={trackerEpicOf(epic, trackerEpics)?.statusColorKey ?? QUARTER_STATUS_PALETTE_KEY[epic.status]}
       />
     </QuarterlyPlanRow>

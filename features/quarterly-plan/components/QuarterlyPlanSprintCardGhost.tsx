@@ -9,8 +9,8 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { daySpanFields } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { sprintCardDrift } from '@/lib/quarterlyPlans/quarterlyPlanSprintCards';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
-import { formatSpanRange, QUARTER_LANE_HEIGHT_PX, QUARTER_ROW_PADDING_PX } from '../quarterlyPlanBoardModel';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { formatSpanRange, QUARTER_ROW_PADDING_PX } from '../quarterlyPlanBoardModel';
 
 interface QuarterlyPlanSprintCardGhostProps {
   /** Полосы строки задачи. */
@@ -26,6 +26,7 @@ interface QuarterlyPlanSprintCardGhostProps {
 export function QuarterlyPlanSprintCardGhost({ assignments, card }: QuarterlyPlanSprintCardGhostProps) {
   const { t } = useI18n();
   const { dayCount, weeks } = useQuarterlyPlanBoard();
+  const laneHeightPx = useQuarterLaneHeight();
   const span = sprintCardDrift({ assignments, card, weeks });
   if (!span || !card) return null;
   const label = t('quarterlyPlan.sprintDrift', {
@@ -39,7 +40,7 @@ export function QuarterlyPlanSprintCardGhost({ assignments, card }: QuarterlyPla
         className="absolute flex items-center justify-end rounded-lg border border-dashed border-amber-500 bg-amber-400/10 pr-1 text-amber-600 dark:border-amber-400 dark:text-amber-300"
         role="img"
         style={{
-          height: QUARTER_LANE_HEIGHT_PX - 4,
+          height: laneHeightPx - 4,
           left: `calc(${(span.startDay / dayCount) * 100}% + 2px)`,
           top: QUARTER_ROW_PADDING_PX + 2,
           width: `calc(${(span.days / dayCount) * 100}% - 4px)`,

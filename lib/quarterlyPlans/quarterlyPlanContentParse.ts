@@ -119,14 +119,12 @@ function taskParentError(content: QuarterlyPlanContent): string | null {
   return null;
 }
 
-/** Срок в днях — только у полосы задачи эпика, и недели назначения — те, что эти дни задевают (QT5). */
+/** Срок в днях задаётся целиком, и недели назначения — те, что эти дни задевают (QT5). */
 function daySpanError(content: QuarterlyPlanContent): string | null {
-  const taskIds = new Set(content.epics.filter((epic) => epic.parentEpicId !== undefined).map((epic) => epic.id));
   for (const assignment of content.assignments) {
     const { days, id: assignmentId, startDay } = assignment;
     if (days === undefined && startDay === undefined) continue;
     if (days === undefined || startDay === undefined) return `assignment ${assignmentId}: startDay and days go together`;
-    if (!taskIds.has(assignment.epicId ?? '')) return `assignment ${assignmentId}: days are only for a task row`;
     const fit = daySpanFields({ days, startDay });
     if (fit.startWeek !== assignment.startWeek || fit.weeks !== assignment.weeks) {
       return `assignment ${assignmentId}: weeks do not match its days`;

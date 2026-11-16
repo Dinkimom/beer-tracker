@@ -37,17 +37,21 @@ export interface QuarterlyPlanMenuSection {
 
 interface QuarterlyPlanMenuProps {
   anchor: QuarterMenuAnchor;
+  /** false — меню закрывается: уходит с анимацией и клики уже не принимает. */
+  open?: boolean;
   sections: QuarterlyPlanMenuSection[];
-  onClose: () => void;
+  /** `select` — выбрали пункт (правка уже сделана), `dismiss` — закрыли мимо или Escape. */
+  onClose: (reason: 'dismiss' | 'select') => void;
 }
 
 /** Меню у точки клика: выбор исполнителя, статуса или действия над полосой. */
-export function QuarterlyPlanMenu({ anchor, sections, onClose }: QuarterlyPlanMenuProps) {
+export function QuarterlyPlanMenu({ anchor, open = true, sections, onClose }: QuarterlyPlanMenuProps) {
   return (
     <QuarterlyPlanAnchoredPopover
       anchor={anchor}
       className={`max-h-[60vh] min-w-[220px] overflow-y-auto ${MENU_PANEL_PADDING}`}
-      onDismiss={onClose}
+      open={open}
+      onDismiss={() => onClose('dismiss')}
     >
           {sections.map((section, index) => (
             <div key={section.id}>
@@ -60,7 +64,7 @@ export function QuarterlyPlanMenu({ anchor, sections, onClose }: QuarterlyPlanMe
                   type="button"
                   onClick={() => {
                     row.onSelect();
-                    if (!row.keepOpen) onClose();
+                    if (!row.keepOpen) onClose('select');
                   }}
                 >
                   {row.icon}

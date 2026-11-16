@@ -24,7 +24,7 @@ export interface DaySpan {
   startDay: number;
 }
 
-/** Срок неделями, у полосы задачи — ещё и днями (QT5). */
+/** Срок неделями, а если полоса стоит не целыми неделями — ещё и днями (QT5). */
 type AnySpan = Partial<DaySpan> & WeekSpan;
 
 /** Срок в днях: свой у полосы задачи, иначе целые недели. По нему считаются пересечения, отсутствия и порядок. */
@@ -39,6 +39,16 @@ export function daySpanFields(span: DaySpan): DaySpan & WeekSpan {
   const startWeek = Math.floor(span.startDay / QUARTER_WORKING_DAYS_PER_WEEK);
   const weeks = Math.ceil((span.startDay + span.days) / QUARTER_WORKING_DAYS_PER_WEEK) - startWeek;
   return { days: span.days, startDay: span.startDay, startWeek, weeks };
+}
+
+/**
+ * Срок назначения в том виде, в каком он хранится (QT5): полоса на целые недели — только неделями,
+ * иначе — днями и неделями, которые они задевают. `undefined` снимает прежние дни при правке.
+ */
+export function assignmentSpanFields(span: DaySpan): Partial<DaySpan> & WeekSpan {
+  const fields = daySpanFields(span);
+  const wholeWeeks = span.startDay % QUARTER_WORKING_DAYS_PER_WEEK === 0 && span.days % QUARTER_WORKING_DAYS_PER_WEEK === 0;
+  return wholeWeeks ? { days: undefined, startDay: undefined, startWeek: fields.startWeek, weeks: fields.weeks } : fields;
 }
 
 function daysOverlap(a: DaySpan, b: DaySpan): boolean {
@@ -383,7 +393,7 @@ function othersOnDay(others: readonly QuarterlyPlanAssignment[], day: number): Q
 
 /**
  * Дни назначения, в которые у человека больше `QUARTER_MAX_PARALLEL_EPICS` назначений вместе с этим (QI2).
- * Считается по дням: задачи одной недели, идущие друг за другом, одновременно не стоят (QT5).
+ * Считается по дням: полосы одной недели, идущие друг за другом, одновременно не стоят (QT5).
  */
 export function overloadedDays(
   assignment: QuarterlyPlanAssignment,

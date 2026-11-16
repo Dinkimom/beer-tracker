@@ -93,12 +93,12 @@ function buildTeams(ref: QuarterRef, demoDevelopers: Developer[]): QuarterlyPlan
 }
 
 type SeedAssignment = [memberId: string, startWeek: number, weeks: number];
-/** Полоса задачи — в рабочих днях квартала (QT5): день 10 — понедельник третьей недели. */
+/** Полоса в рабочих днях квартала (QT5): день 10 — понедельник третьей недели. */
 type SeedDayAssignment = [memberId: string, startDay: number, days: number];
 
 interface SeedEpic {
   assignments?: SeedAssignment[];
-  /** Полосы в днях — только у задач. */
+  /** Полосы с точностью до дня (QT5). */
   dayAssignments?: SeedDayAssignment[];
   issueKey?: string;
   status: QuarterlyPlanEpicStatus;
@@ -123,7 +123,8 @@ const SEED_DIRECTIONS: SeedDirection[] = [
     epics: [
       { assignments: [[DEMO_DEV_BOB, 0, 2]], issueKey: 'DEMO-103', status: 'done', title: 'Cart summary & promo field' },
       {
-        assignments: [[DEMO_DEV_ALICE, 1, 3]],
+        // Полоса эпика подогнана под его задачи: с понедельника второй недели по четверг третьей.
+        dayAssignments: [[DEMO_DEV_ALICE, 5, 9]],
         issueKey: 'DEMO-101',
         status: 'in_progress',
         tasks: [

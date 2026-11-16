@@ -11,8 +11,8 @@ import {
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { assignNoteLanes, quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
-import { QUARTER_LANE_HEIGHT_PX, quarterNoteHeightPx } from '../quarterlyPlanBoardModel';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { quarterNoteHeightPx } from '../quarterlyPlanBoardModel';
 
 /** Толщина черты «встанет сюда, строка вырастет» — как у превью нового слоя на доске спринта. */
 const INSERT_LINE_PX = 3;
@@ -44,6 +44,7 @@ export function QuarterlyPlanNoteDropGhost({
   topPx,
 }: QuarterlyPlanNoteDropGhostProps) {
   const { noteDrag, weeks } = useQuarterlyPlanBoard();
+  const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
   if (noteDrag?.mode !== 'move' || !noteRow || quarterNoteRowKey(noteDrag.row) !== quarterNoteRowKey(noteRow)) {
     return null;
@@ -52,8 +53,8 @@ export function QuarterlyPlanNoteDropGhost({
   const { note } = noteDrag;
   const others = notes.filter((other) => other.id !== note.id);
   const lane = assignNoteLanes([...others, note], blockers).laneById.get(note.id) ?? 0;
-  const slotTop = topPx + lane * QUARTER_LANE_HEIGHT_PX + 2;
-  const fits = slotTop + quarterNoteHeightPx(note.rows) <= rowHeightPx;
+  const slotTop = topPx + lane * laneHeightPx + 2;
+  const fits = slotTop + quarterNoteHeightPx(note.rows, laneHeightPx) <= rowHeightPx;
   const horizontal = {
     left: `calc(${(note.startWeek / weeks.length) * 100}% + 2px)`,
     width: `calc(${(note.weeks / weeks.length) * 100}% - 4px)`,
@@ -67,7 +68,7 @@ export function QuarterlyPlanNoteDropGhost({
       style={{
         ...getStickyNoteDashedGhostStyle(note.color, isDark),
         ...horizontal,
-        height: quarterNoteHeightPx(note.rows),
+        height: quarterNoteHeightPx(note.rows, laneHeightPx),
         top: slotTop,
       }}
     />

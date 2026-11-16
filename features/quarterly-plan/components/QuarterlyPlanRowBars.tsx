@@ -7,18 +7,18 @@ import { availabilityKindMessageKey } from '@/lib/boardAvailability/availability
 import { absentDaysWithinSpan, overloadingAssignments } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
-import { quarterBarToneClass } from '../quarterlyPlanBoardModel';
+import { quarterBarToneClass, type QuarterRowLevel } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanBar } from './QuarterlyPlanBar';
 
 interface QuarterlyPlanRowBarsProps {
   /** Полосы строки — эпика или направления (QG2). */
   assignments: readonly QuarterlyPlanAssignment[];
-  /** Строка задачи: её полосы тянутся с шагом в день (QT5). */
-  dayStep?: boolean;
   /** Строка готова: полосы приглушены (QE8). */
   faded?: boolean;
   laneById: ReadonlyMap<string, number>;
+  /** Уровень строки: от него размер полос. */
+  level: QuarterRowLevel;
   /** Ключ палитры статуса строки: им красятся её полосы (QA9); нет — как бэклог. */
   statusKey?: string;
 }
@@ -26,9 +26,9 @@ interface QuarterlyPlanRowBarsProps {
 /** Полосы назначений одной строки с их проблемами (QI1–QI6) и рисками (QV3). */
 export function QuarterlyPlanRowBars({
   assignments,
-  dayStep = false,
   faded = false,
   laneById,
+  level,
   statusKey,
 }: QuarterlyPlanRowBarsProps) {
   const { t } = useI18n();
@@ -79,10 +79,10 @@ export function QuarterlyPlanRowBars({
     <QuarterlyPlanBar
       key={assignment.id}
       assignment={assignment}
-      dayStep={dayStep}
       faded={faded}
       issues={issuesOf(assignment)}
       lane={laneById.get(assignment.id) ?? 0}
+      level={level}
       member={memberById.get(assignment.memberId)}
       risks={risksOf(assignment)}
       toneClass={toneClass}

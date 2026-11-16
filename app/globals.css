@@ -2188,6 +2188,17 @@ input[type="checkbox"]:disabled {
   }
 }
 
+/* Превью полосы в меню назначения квартала: проявляется вместе с меню. */
+.quarter-assign-ghost {
+  animation: quarter-assign-ghost-enter 200ms ease-out backwards;
+}
+
+@keyframes quarter-assign-ghost-enter {
+  from {
+    opacity: 0;
+  }
+}
+
 @keyframes overlay-float-exit {
   from {
     opacity: 1;

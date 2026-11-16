@@ -167,7 +167,7 @@ export function buildSprintQuarterPlanView(input: {
       const directionId = directionIdOfAssignment(content, assignment);
       if (!directionId) return [];
       const memberName = input.memberNames?.get(assignment.memberId);
-      // Полоса задачи стоит днями (QT5): агенту — её настоящие даты.
+      // Полоса может стоять днями (QT5): агенту — её настоящие даты.
       const daySpan = daySpanOf(assignment);
       const epic = assignment.epicId ? epicById.get(assignment.epicId) : undefined;
       // Задаче без ключа трекера задач спринта не найти: ей идут задачи её эпика (QT3).

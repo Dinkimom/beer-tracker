@@ -23,6 +23,7 @@ import {
   addDirection,
   addEpic,
   assignmentPhase,
+  daySpanOf,
   epicTitle,
   planIssueKeys,
   removeDirection,
@@ -52,6 +53,7 @@ import {
   buildAbsenceByMember,
 } from './quarterlyPlanBoardModel';
 import { applyTrackerPickToPlan, buildQuarterlyPlanMenuSections, trackerPickBoardId } from './quarterlyPlanMenuSections';
+import { useClosingValue } from './useClosingValue';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
 import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarterlyPlanAgent';
 import { useQuarterlyPlanLinks } from './useQuarterlyPlanLinks';
@@ -80,6 +82,15 @@ export function QuarterlyPlanPage() {
   const [quarterRef, setQuarterRef] = useState<QuarterRef>(() => quarterOfDate(getPlannerNow()));
   const [hideDone, setHideDone] = useState(false);
   const [menu, setMenu] = useState<QuarterlyPlanMenuState | null>(null);
+  /** Меню и превью полосы уходят с анимацией: закрытое меню ещё миг на экране. */
+  const closingMenu = useClosingValue(menu);
+  const shownMenu = closingMenu.shown;
+  /**
+   * Пункт меню выбран — превью полосы убираем сразу: на его месте уже настоящая полоса, а гаснущее превью
+   * перескочило бы в соседнюю дорожку и раздвинуло строку. Закрыли мимо — превью гаснет вместе с меню.
+   */
+  const [previewCut, setPreviewCut] = useState(false);
+  if (menu !== null && previewCut) setPreviewCut(false);
   const [draft, setDraft] = useState<QuarterlyPlanDraft | null>(null);
   const [trackerPick, setTrackerPick] = useState<QuarterlyPlanTrackerPick | null>(null);
   /** Свёрнутые команды и направления: идентификаторы у них не пересекаются. */
@@ -196,6 +207,17 @@ export function QuarterlyPlanPage() {
     const rivalsOf = rivalAssignments(plan.epics);
     return {
       absenceByMember,
+      assignPreview:
+        shownMenu?.kind === 'assign' && !previewCut
+          ? {
+              closing: !closingMenu.open,
+              phase: shownMenu.phase ?? (shownMenu.row.kind === 'direction' ? 'discovery' : 'delivery'),
+              row: shownMenu.row,
+              // Превью — на тех днях, куда встанет полоса: в неделях с дробью, как дорожки полос.
+              startWeek: (shownMenu.startDay ?? shownMenu.week * QUARTER_WORKING_DAYS_PER_WEEK) / QUARTER_WORKING_DAYS_PER_WEEK,
+              weeks: (shownMenu.days ?? shownMenu.weeks * QUARTER_WORKING_DAYS_PER_WEEK) / QUARTER_WORKING_DAYS_PER_WEEK,
+            }
+          : null,
       assignmentsByDirection: groupBy(plan.assignments, 'directionId'),
       assignmentsByEpic,
       assignmentsByEpicTree: new Map(
@@ -221,7 +243,7 @@ export function QuarterlyPlanPage() {
       onBarChange: (assignmentId, span) =>
         applyEdit((content) => updateAssignment(content, assignmentId, span)),
       onBarClick: (assignmentId, anchor) => setMenu({ anchor, assignmentId, kind: 'bar' }),
-      onCellClick: (row, week, anchor) => setMenu({ anchor, kind: 'assign', row, week, weeks: 1 }),
+      onCellClick: (row, week, anchor, span) => setMenu({ anchor, kind: 'assign', row, week, weeks: 1, ...span }),
       onDraftSubmit: submitDraft,
       onRowMenu: (target, anchor) => setMenu({ anchor, kind: 'row', target }),
       onRowMove: (level, id, anchorId, place) =>
@@ -249,7 +271,7 @@ export function QuarterlyPlanPage() {
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, applyEdit, draft, draftView.marks, draftView.review, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
+  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, draftView.marks, draftView.review, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -273,9 +295,11 @@ export function QuarterlyPlanPage() {
                 : { id: assignment.directionId ?? '', kind: 'direction' },
               week: assignment.startWeek,
               weeks: assignment.weeks,
+              ...daySpanOf(assignment),
             }
           : null
       ),
+    onAssignPhase: (phase) => setMenu((current) => (current?.kind === 'assign' ? { ...current, phase } : current)),
     onPickTrackerEpic: setTrackerPick,
     onRemoveDirection: (directionId) =>
       confirmThen(t('quarterlyPlan.removeDirectionConfirm'), () =>
@@ -313,19 +337,23 @@ export function QuarterlyPlanPage() {
               todayNonce={todayNonce}
               onToggle={toggleCollapsed}
             />
-            {menu ? (
+            {shownMenu ? (
               <QuarterlyPlanMenu
-                anchor={menu.anchor}
+                anchor={shownMenu.anchor}
+                open={closingMenu.open}
                 sections={buildQuarterlyPlanMenuSections({
                   absenceByMember,
                   actions: rowActions,
                   applyEdit,
-                  menu,
+                  menu: shownMenu,
                   plan,
                   t,
                   weeks,
                 })}
-                onClose={() => setMenu(null)}
+                onClose={(reason) => {
+                  setPreviewCut(reason === 'select');
+                  setMenu(null);
+                }}
               />
             ) : null}
             {notes.focusEditor ? (

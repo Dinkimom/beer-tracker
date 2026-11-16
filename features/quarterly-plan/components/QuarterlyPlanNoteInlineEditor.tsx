@@ -11,7 +11,7 @@ import { getStickyNoteCardStyle } from '@/features/comments/utils/stickyNotePale
 import { TaskBarDraftSaveButton } from '@/features/task/components/TaskBar/TaskBarDraftSaveButton';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import { quarterNoteBoxStyle } from '../quarterlyPlanBoardModel';
 
 /** Клик сюда — не «мимо заметки»: тулбар листа и выпадающие списки редактора (цвет, упоминания). */
@@ -33,6 +33,7 @@ interface QuarterlyPlanNoteInlineEditorProps {
 export function QuarterlyPlanNoteInlineEditor({ lane, note, topPx }: QuarterlyPlanNoteInlineEditorProps) {
   const { t } = useI18n();
   const { memberById, noteEditActions, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
   const rootRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(noteEditing?.value ?? '');
@@ -56,7 +57,7 @@ export function QuarterlyPlanNoteInlineEditor({ lane, note, topPx }: QuarterlyPl
       className="absolute cursor-text"
       data-quarter-note={note.id}
       // Поверх полос и ячеек недель: клики в лист не должны попадать в доску под ним.
-      style={{ ...quarterNoteBoxStyle(note, lane, topPx, weeks.length), zIndex: ZIndex.contentInteractive + 2 }}
+      style={{ ...quarterNoteBoxStyle(note, lane, topPx, weeks.length, laneHeightPx), zIndex: ZIndex.contentInteractive + 2 }}
       onClick={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}
     >

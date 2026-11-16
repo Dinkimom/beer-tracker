@@ -1,6 +1,7 @@
 'use client';
 
 import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
+import type { DaySpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type { QuarterlyPlanDirection, QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { useI18n } from '@/contexts/LanguageContext';
@@ -9,7 +10,7 @@ import { isEpicDone, trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLay
 import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
 import {
   layoutRowBars,
-  QUARTER_ROW_HEIGHT_PX,
+  QUARTER_LANE_HEIGHT_BY_LEVEL,
   QUARTER_ROW_PADDING_PX,
   quarterRowHeightPx,
 } from '../quarterlyPlanBoardModel';
@@ -46,7 +47,8 @@ export function QuarterlyPlanDirectionSection({
   const own = layoutRowBars(shownAssignments);
   const assignWeek = collapsed
     ? undefined
-    : (week: number, anchor: QuarterMenuAnchor) => onCellClick({ id: direction.id, kind: 'direction' }, week, anchor);
+    : (week: number, anchor: QuarterMenuAnchor, span: DaySpan) =>
+        onCellClick({ id: direction.id, kind: 'direction' }, week, anchor, span);
   // Заметки направления занимают его дорожку — сводная полоса тогда уходит к нижнему краю строки.
   const hasNotes = useQuarterRowNotes({ id: direction.id, kind: 'direction' }).notes.length > 0;
 
@@ -65,7 +67,8 @@ export function QuarterlyPlanDirectionSection({
   return (
     <>
       <QuarterlyPlanRow
-        heightPx={Math.max(QUARTER_ROW_HEIGHT_PX, quarterRowHeightPx(own.laneCount))}
+        heightPx={quarterRowHeightPx(own.laneCount, QUARTER_LANE_HEIGHT_BY_LEVEL.direction)}
+        laneHeightPx={QUARTER_LANE_HEIGHT_BY_LEVEL.direction}
         left={
           <QuarterlyPlanDirectionHeader
             collapsed={collapsed}
@@ -77,7 +80,7 @@ export function QuarterlyPlanDirectionSection({
         noteBlockers={own.noteBlockers}
         noteRow={{ id: direction.id, kind: 'direction' }}
         notesTopPx={QUARTER_ROW_PADDING_PX}
-        occupiedWeeks={own.occupiedWeeks}
+        occupiedDays={own.occupiedDays}
         sortRow={{ id: direction.id, level: 'direction', parentId: direction.teamId }}
         tone="direction"
         weekActionLabel={t('quarterlyPlan.assignWeek', { title: direction.title })}
@@ -86,6 +89,7 @@ export function QuarterlyPlanDirectionSection({
         <QuarterlyPlanRowBars
           assignments={shownAssignments}
           laneById={own.laneById}
+          level="direction"
           statusKey={trackerEpicOf(direction, trackerEpics)?.statusColorKey}
         />
         {spans.length > 0 ? (

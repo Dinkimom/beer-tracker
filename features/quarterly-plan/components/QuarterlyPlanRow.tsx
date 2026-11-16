@@ -1,15 +1,20 @@
 'use client';
 
 import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
-import type { NoteLaneBlocker } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import type { DaySpan, NoteLaneBlocker } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type { QuarterlyPlanNoteRow } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { ReactNode } from 'react';
 
 import { ZIndex } from '@/constants';
-import { quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { assignNoteLanes, quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
-import { useQuarterlyPlanBoard, useQuarterRowNotes, useQuarterSprintStartWeeks } from '../QuarterlyPlanBoardContext';
+import {
+  QuarterLaneHeightProvider,
+  useQuarterlyPlanBoard,
+  useQuarterRowNotes,
+  useQuarterSprintStartWeeks,
+} from '../QuarterlyPlanBoardContext';
 import {
   QUARTER_HEADER_ROW_PX,
   QUARTER_LANE_HEIGHT_PX,
@@ -19,6 +24,7 @@ import {
   type QuarterRowLevel,
 } from '../quarterlyPlanBoardModel';
 
+import { QuarterlyPlanAssignGhost } from './QuarterlyPlanAssignGhost';
 import { QuarterlyPlanNoteChip } from './QuarterlyPlanNoteChip';
 import { QuarterlyPlanNoteDropGhost } from './QuarterlyPlanNoteDropGhost';
 import { QuarterlyPlanNoteInlineEditor } from './QuarterlyPlanNoteInlineEditor';
@@ -67,6 +73,8 @@ interface QuarterlyPlanRowProps {
   children?: ReactNode;
   /** Высота строки без заметок; заметки строка добавляет сама. */
   heightPx: number;
+  /** Высота дорожки строки; по умолчанию — базовая. */
+  laneHeightPx?: number;
   left: ReactNode;
   /** Полосы и плашки строки в дорожках заметок: заметка встаёт рядом с ними, а не только под ними. */
   noteBlockers?: readonly NoteLaneBlocker[];
@@ -75,7 +83,7 @@ interface QuarterlyPlanRowProps {
   /** Где начинается первая дорожка заметок; по умолчанию — под содержимым строки. */
   notesTopPx?: number;
   /** Недели, занятые полосами: клик по ним не ловим — второго человека добавляют из меню полосы. */
-  occupiedWeeks?: ReadonlySet<number>;
+  occupiedDays?: ReadonlySet<number>;
   /**
    * Строку можно переставлять (QO2, QO3): её уровень и родитель — направление у эпика, эпик у задачи,
    * команда у направления. По ним ручка порядка находит соседей.
@@ -86,7 +94,7 @@ interface QuarterlyPlanRowProps {
   tone?: QuarterlyPlanRowTone;
   /** Подпись ячейки недели для скринридера; вместе с `onWeekClick` делает недели кликабельными. */
   weekActionLabel?: string;
-  onWeekClick?: (week: number, anchor: QuarterMenuAnchor) => void;
+  onWeekClick?: (week: number, anchor: QuarterMenuAnchor, span: DaySpan) => void;
 }
 
 /**
@@ -96,18 +104,28 @@ interface QuarterlyPlanRowProps {
 export function QuarterlyPlanRow({
   children,
   heightPx,
+  laneHeightPx = QUARTER_LANE_HEIGHT_PX,
   left,
   noteBlockers,
   noteRow,
   notesTopPx,
-  occupiedWeeks,
+  occupiedDays,
   sortRow,
   sticky = false,
   tone = 'default',
   weekActionLabel,
   onWeekClick,
 }: QuarterlyPlanRowProps) {
-  const { currentWeek, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const { assignPreview, currentWeek, noteEditing, weeks } = useQuarterlyPlanBoard();
+  // Превью полосы из открытого меню назначения — в первой дорожке, где её недели свободны.
+  const ghost =
+    assignPreview && noteRow && assignPreview.row.kind === noteRow.kind && assignPreview.row.id === noteRow.id
+      ? {
+          ...assignPreview,
+          lane:
+            assignNoteLanes([{ id: 'ghost', rows: 1, startWeek: assignPreview.startWeek, weeks: assignPreview.weeks }], noteBlockers).laneById.get('ghost') ?? 0,
+        }
+      : null;
   const sprintStarts = useQuarterSprintStartWeeks();
   const rowNotes = useQuarterRowNotes(noteRow, noteBlockers);
   const weekWidth = 100 / weeks.length;
@@ -115,10 +133,12 @@ export function QuarterlyPlanRow({
   const notesTop = notesTopPx ?? heightPx - QUARTER_ROW_PADDING_PX;
   const totalHeight = Math.max(
     heightPx,
-    rowNotes.laneCount > 0 ? notesTop + rowNotes.laneCount * QUARTER_LANE_HEIGHT_PX + QUARTER_ROW_PADDING_PX : 0
+    ghost ? (ghost.lane + 1) * laneHeightPx + QUARTER_ROW_PADDING_PX * 2 : 0,
+    rowNotes.laneCount > 0 ? notesTop + rowNotes.laneCount * laneHeightPx + QUARTER_ROW_PADDING_PX : 0
   );
 
   return (
+    <QuarterLaneHeightProvider value={laneHeightPx}>
     <div
       className={`group/row flex transition-[min-height] duration-200 ${toneClass} ${sticky ? 'sticky' : ''}`}
       data-quarter-note-row={noteRow ? quarterNoteRowKey(noteRow) : undefined}
@@ -143,8 +163,8 @@ export function QuarterlyPlanRow({
         {/* Задача эпика — ветка дерева: направляющая слева связывает задачи с их эпиком (QT1). */}
         {sortRow?.level === 'task' ? (
           <>
-            <span aria-hidden className="absolute inset-y-0 left-[22px] w-px bg-ds-border-subtle" />
-            <span aria-hidden className="absolute left-[22px] h-px w-2.5 bg-ds-border-subtle" style={{ top: heightPx / 2 }} />
+            <span aria-hidden className="absolute inset-y-0 left-[26px] w-px bg-ds-border-subtle" />
+            <span aria-hidden className="absolute left-[26px] h-px w-2.5 bg-ds-border-subtle" style={{ top: heightPx / 2 }} />
           </>
         ) : null}
         {/* Подпись стоит напротив содержимого строки, а не посередине между ним и заметками. */}
@@ -167,7 +187,7 @@ export function QuarterlyPlanRow({
         }
       >
         {/* Сетка дней — как части дня на свимлейне: в покое её нет, она проявляется в строке, где полосу
-            или плашку тянут с шагом в день (`data-quarter-day-drag="1"` — шаг жеста в днях), и показывает, куда та встанет. */}
+            или плашку тянут (`data-quarter-day-drag="1"` — шаг жеста в днях), и показывает, куда та встанет. */}
         {tone === 'team' ? null : (
           <div
             aria-hidden
@@ -200,10 +220,19 @@ export function QuarterlyPlanRow({
         <QuarterlyPlanWeekCells
           actionLabel={weekActionLabel}
           noteRow={noteRow}
-          occupiedWeeks={occupiedWeeks}
+          occupiedDays={occupiedDays}
           onWeekClick={onWeekClick}
         />
         {children}
+        {ghost ? (
+          <QuarterlyPlanAssignGhost
+            closing={ghost.closing}
+            lane={ghost.lane}
+            phase={ghost.phase}
+            startWeek={ghost.startWeek}
+            weeks={ghost.weeks}
+          />
+        ) : null}
         <QuarterlyPlanNoteDropGhost
           blockers={noteBlockers}
           noteRow={noteRow}
@@ -221,5 +250,6 @@ export function QuarterlyPlanRow({
         })}
       </div>
     </div>
+    </QuarterLaneHeightProvider>
   );
 }

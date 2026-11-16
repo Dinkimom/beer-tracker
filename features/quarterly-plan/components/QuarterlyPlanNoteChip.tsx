@@ -19,10 +19,9 @@ import {
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { resizeNoteRows } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   draftOutlineClass,
-  QUARTER_LANE_HEIGHT_PX,
   QUARTER_STICKY_LABEL_LEFT,
   quarterNoteBoxStyle,
   quarterNoteHeightPx,
@@ -67,10 +66,11 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
   const { t } = useI18n();
   const { draftMarks, draftReview, noteEditing, onNoteChange, onNoteClick, onNoteDelete, onNoteDrag, weeks } =
     useQuarterlyPlanBoard();
+  const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
   const tiltRef = useStickyNoteTilt(true, note.id);
   const weekCount = weeks.length;
-  const rowsAfter = (dy: number) => resizeNoteRows(note.rows, Math.round(dy / QUARTER_LANE_HEIGHT_PX));
+  const rowsAfter = (dy: number) => resizeNoteRows(note.rows, Math.round(dy / laneHeightPx));
 
   const { begin, drag, rootProps, rootRef, span } = useQuarterSpanDrag({
     free: true,
@@ -101,7 +101,7 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
 
   const carried = drag?.mode === 'move';
   const rows = drag?.mode === 'height' ? rowsAfter(drag.dy) : note.rows;
-  const heightPx = quarterNoteHeightPx(rows);
+  const heightPx = quarterNoteHeightPx(rows, laneHeightPx);
   // Пока стикер несут, он остаётся на своём сроке и едет за курсором; новое место показывает превью.
   const shown = carried ? note : span;
   const handlePaint = getStickyNoteResizeHandlePaint(note.color, isDark);
@@ -115,7 +115,7 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
       className={`group absolute cursor-grab touch-none select-none rounded focus-visible:outline-none active:cursor-grabbing ${focused ? 'pointer-events-none opacity-0' : ''} ${draftOutlineClass(draftMarks, note.id)}`}
       data-quarter-note={note.id}
       style={{
-        ...quarterNoteBoxStyle({ ...shown, rows }, lane, topPx, weekCount),
+        ...quarterNoteBoxStyle({ ...shown, rows }, lane, topPx, weekCount, laneHeightPx),
         ...(carried ? { transform: `translate(${drag.dx}px, ${drag.dy}px)` } : {}),
         // Стикер в руке — поверх строк, в том числе липкой строки команды.
         zIndex: drag ? ZIndex.stickyInContent + 2 : ZIndex.contentInteractive + Number(draftItemsOf(draftReview, note.id).length > 0),

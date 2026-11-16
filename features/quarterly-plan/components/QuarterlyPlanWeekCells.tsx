@@ -1,6 +1,7 @@
 'use client';
 
 import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
+import type { DaySpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type { QuarterlyPlanNoteRow } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { Icon } from '@/components/Icon';
@@ -8,9 +9,11 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { getStickyNoteDashedGhostStyle } from '@/features/comments/utils/stickyNotePalette';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
+import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
+  freeDaysOfWeek,
   formatWeekRange,
   QUARTER_NEW_NOTE_ROWS,
   QUARTER_NEW_NOTE_WEEKS,
@@ -30,10 +33,10 @@ interface QuarterlyPlanWeekCellsProps {
   actionLabel?: string;
   /** Сущность строки: с инструментом «Заметка» клик по её неделе ставит заметку. */
   noteRow?: QuarterlyPlanNoteRow;
-  /** Недели, занятые полосами: своё действие строки по ним не ловим. */
-  occupiedWeeks?: ReadonlySet<number>;
-  /** Своё действие строки по клику на неделю (назначить человека, добавить отсутствие). */
-  onWeekClick?: (week: number, anchor: QuarterMenuAnchor) => void;
+  /** Дни, занятые полосами: клетка действия строки встаёт на свободные дни недели, занятую целиком — пропускает. */
+  occupiedDays?: ReadonlySet<number>;
+  /** Своё действие строки по клику на неделю (назначить человека, добавить отсутствие); `span` — свободные дни клетки. */
+  onWeekClick?: (week: number, anchor: QuarterMenuAnchor, span: DaySpan) => void;
 }
 
 /**
@@ -43,11 +46,12 @@ interface QuarterlyPlanWeekCellsProps {
 export function QuarterlyPlanWeekCells({
   actionLabel = '',
   noteRow,
-  occupiedWeeks,
+  occupiedDays,
   onWeekClick,
 }: QuarterlyPlanWeekCellsProps) {
   const { t } = useI18n();
   const { noteColor, noteTool, onNotePlace, weeks } = useQuarterlyPlanBoard();
+  const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
   const weekWidth = 100 / weeks.length;
 
@@ -58,26 +62,35 @@ export function QuarterlyPlanWeekCells({
           tone: 'note' as const,
           weeks,
           zIndex: ZIndex.contentInteractive + 1,
+          free: (week: number): DaySpan | null => freeDaysOfWeek(week, undefined),
           onClick: (week: number, anchor: QuarterMenuAnchor) => onNotePlace(noteRow, week, anchor),
         }
       : {
           label: actionLabel,
           tone: 'action' as const,
-          weeks: weeks.filter((week) => !occupiedWeeks?.has(week.index)),
+          weeks,
           zIndex: undefined,
+          free: (week: number): DaySpan | null => freeDaysOfWeek(week, occupiedDays),
           onClick: onWeekClick,
         };
   const { onClick } = mode;
   if (!onClick) return null;
 
-  return mode.weeks.map((week) => (
+  return mode.weeks.map((week) => {
+    const span = mode.free(week.index);
+    if (!span) return null;
+    return (
     <button
       key={week.index}
       aria-label={`${mode.label} ${formatWeekRange(week)}`.trim()}
       className={`group/cell absolute inset-y-0 flex cursor-pointer items-center justify-center transition-colors focus-visible:outline-none ${WEEK_CELL_TONE[mode.tone]}`}
-      style={{ left: `${week.index * weekWidth}%`, width: `${weekWidth}%`, zIndex: mode.zIndex }}
+      style={{
+        left: `${(span.startDay / QUARTER_WORKING_DAYS_PER_WEEK) * weekWidth}%`,
+        width: `${(span.days / QUARTER_WORKING_DAYS_PER_WEEK) * weekWidth}%`,
+        zIndex: mode.zIndex,
+      }}
       type="button"
-      onClick={(event) => onClick(week.index, { x: event.clientX, y: event.clientY })}
+      onClick={(event) => onClick(week.index, { x: event.clientX, y: event.clientY }, span)}
     >
       {mode.tone === 'note' ? (
         // Превью постановки, как на доске спринта: пунктирный лист выбранного цвета в размер новой
@@ -87,7 +100,7 @@ export function QuarterlyPlanWeekCells({
           className="pointer-events-none absolute left-0.5 top-0.5 flex items-center justify-center opacity-0 transition-opacity group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100"
           style={{
             ...getStickyNoteDashedGhostStyle(noteColor, isDark),
-            height: `min(${quarterNoteHeightPx(QUARTER_NEW_NOTE_ROWS)}px, calc(100% - 4px))`,
+            height: `min(${quarterNoteHeightPx(QUARTER_NEW_NOTE_ROWS, laneHeightPx)}px, calc(100% - 4px))`,
             width: `calc(${Math.min(QUARTER_NEW_NOTE_WEEKS, weeks.length - week.index) * 100}% - 4px)`,
           }}
         >
@@ -100,5 +113,6 @@ export function QuarterlyPlanWeekCells({
         />
       )}
     </button>
-  ));
+    );
+  });
 }

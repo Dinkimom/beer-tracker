@@ -848,6 +848,7 @@ export const enMessages = {
     issuesBlocked: 'Order of work broken: {count}',
     menuAddPerson: 'Add another person…',
     unplanned: 'Not planned',
+    unplannedHint: 'No bars in this row yet — click a week to assign someone',
     unplannedCount: 'not planned: {count}',
     menuRemove: 'Remove from plan',
     menuStatus: 'Status',

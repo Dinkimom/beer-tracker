@@ -16,7 +16,7 @@ import {
   addLink,
   addNote,
   areLinked,
-  daySpanFields,
+  assignmentSpanFields,
   directionIdOfAssignment,
   QUARTER_NOTE_MAX_ROWS,
   removeAssignment,
@@ -195,17 +195,14 @@ function resolveSpan(ctx: OpContext, input: z.infer<typeof span>): WeekSpan {
   return { startWeek: weekSpan.startWeek, weeks: weekSpan.weeks };
 }
 
-/** Срок назначения: у полосы задачи даты дают дни (QT5), иначе — целые недели, а дни снимаются. */
+/** Срок назначения (QT5): даты дают рабочие дни, недели — целые недели; прежние дни при этом снимаются. */
 function resolveAssignmentSpan(
   ctx: OpContext,
-  plan: QuarterlyPlanContent,
-  row: Pick<QuarterlyPlanAssignment, 'epicId'>,
   input: z.infer<typeof span>
 ): Pick<QuarterlyPlanAssignment, 'days' | 'startDay' | 'startWeek' | 'weeks'> {
   const weekSpan = resolveSpan(ctx, input);
-  const isTask = plan.epics.some((epic) => epic.id === row.epicId && epic.parentEpicId !== undefined);
-  const daySpan = isTask && 'startDate' in input ? resolveDaySpan(ctx.weeks, input.startDate, input.endDate) : null;
-  return daySpan ? daySpanFields(daySpan) : { ...weekSpan, days: undefined, startDay: undefined };
+  const daySpan = 'startDate' in input ? resolveDaySpan(ctx.weeks, input.startDate, input.endDate) : null;
+  return daySpan ? assignmentSpanFields(daySpan) : { ...weekSpan, days: undefined, startDay: undefined };
 }
 
 function findOr<T extends { id: string }>(items: readonly T[], id: string, what: string): T {
@@ -376,7 +373,7 @@ const handlers: Handlers = {
       id,
       memberId: op.memberId,
       ...(isDiscovery ? { phase: 'discovery' as const } : {}),
-      ...resolveAssignmentSpan(ctx, plan, row, op.span),
+      ...resolveAssignmentSpan(ctx, op.span),
     });
   },
   updateAssignment: (plan, op, ctx) => {
@@ -385,7 +382,7 @@ const handlers: Handlers = {
     return updateAssignment(plan, assignment.id, {
       ...(op.memberId ? { memberId: op.memberId } : {}),
       ...(op.phase ? phasePatch(op.phase) : {}),
-      ...(op.span ? resolveAssignmentSpan(ctx, plan, assignment, op.span) : {}),
+      ...(op.span ? resolveAssignmentSpan(ctx, op.span) : {}),
     });
   },
   removeAssignment: (plan, op, ctx) =>

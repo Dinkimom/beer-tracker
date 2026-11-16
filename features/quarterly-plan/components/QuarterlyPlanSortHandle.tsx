@@ -78,7 +78,7 @@ export function QuarterlyPlanSortHandle({ id, level }: QuarterlyPlanSortHandlePr
     <>
       <button
         aria-label={t('quarterlyPlan.sortRow')}
-        className={`absolute ${level === 'task' ? 'left-8' : 'left-0'} top-1/2 flex h-6 w-4 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded text-ds-text-muted opacity-0 transition-colors hover:bg-black/[0.06] hover:text-gray-900 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:cursor-grabbing active:bg-black/10 group-hover/row:opacity-100 dark:hover:bg-white/10 dark:hover:text-gray-100 dark:active:bg-white/15`}
+        className={`absolute ${level === 'task' ? 'left-9' : 'left-1'} top-1/2 flex h-6 w-4 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded text-ds-text-muted opacity-0 transition-colors hover:bg-black/[0.06] hover:text-gray-900 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:cursor-grabbing active:bg-black/10 group-hover/row:opacity-100 dark:hover:bg-white/10 dark:hover:text-gray-100 dark:active:bg-white/15`}
         title={t('quarterlyPlan.sortRow')}
         type="button"
         onPointerCancel={() => finish(false)}

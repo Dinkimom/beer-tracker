@@ -8,15 +8,15 @@ import { useEffect } from 'react';
 import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { assignmentPhase, daySpanFields, daySpanOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
-import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
+import { assignmentPhase, assignmentSpanFields, daySpanFields, daySpanOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   formatSpanRange,
+  QUARTER_BAR_LOOK_BY_LEVEL,
+  type QuarterRowLevel,
   barDayMarks,
   draftOutlineClass,
-  QUARTER_LANE_HEIGHT_PX,
   QUARTER_ROW_PADDING_PX,
   QUARTER_STICKY_LABEL_LEFT,
 } from '../quarterlyPlanBoardModel';
@@ -31,17 +31,19 @@ const BAR_GAP_PX = 2;
 /** Полоса такой длины и короче показывает только аватар. */
 const COMPACT_BAR_DAYS = 2;
 /**
- * Проработка — пунктирный контур без заливки: отличается от поставки при любой ширине полосы (QG1).
+ * Проработка — пунктирный контур и бледная заливка цвета статуса (заливка поставки под вуалью):
+ * отличается от сплошной насыщенной поставки при любой ширине полосы (QG1).
  * У поставки кромка всегда сплошная: палитра статуса «Бэклог» даёт пунктир, а пунктир на полосе значит проработку.
  */
 const PHASE_BAR_CLASS = {
   delivery: '!border-solid',
-  discovery: '!border-dashed !border-current/50 !bg-transparent',
+  discovery:
+    '!border-dashed !border-current/50 [background-image:linear-gradient(rgb(255_255_255/0.6),rgb(255_255_255/0.6))] dark:[background-image:linear-gradient(rgb(31_41_55/0.6),rgb(31_41_55/0.6))]',
 } as const;
-/** Полоса в руке: приподнята над доской и чуть повёрнута, как магнит, который сняли. */
+/** Полоса в руке: приподнята над доской — тень и лёгкое увеличение, без поворота. */
 const BAR_LIFTED_STYLE = {
   boxShadow: '0 2px 4px rgb(0 0 0 / 0.12), 0 12px 22px -8px rgb(0 0 0 / 0.35)',
-  transform: 'scale(1.015) rotate(-0.6deg)',
+  transform: 'scale(1.015)',
 };
 /** Вспышка полосы, к которой перешли по счётчику пересечений. */
 const ISSUE_FOCUS_KEYFRAMES = [
@@ -52,13 +54,13 @@ const ISSUE_FOCUS_KEYFRAMES = [
 
 interface QuarterlyPlanBarProps {
   assignment: QuarterlyPlanAssignment;
-  /** Полоса задачи: тянется с шагом в день, а не в неделю (QT5). */
-  dayStep?: boolean;
   /** Эпик готов: полоса приглушена. */
   faded?: boolean;
   /** Пересечения с отсутствием и с другими эпиками человека — одна пометка на полосе. */
   issues: string[];
   lane: number;
+  /** Уровень строки: от него размер подписи и аватара (QT5). */
+  level: QuarterRowLevel;
   member?: Developer;
   /** Риски, которые проблемой не считаются: дежурство в сроке (QV3). */
   risks: string[];
@@ -75,7 +77,7 @@ function initialsOf(name: string): string {
 }
 
 /**
- * Полоса назначения: тянется целиком и за края, шаг — неделя, у полосы задачи — день (QT5). Клик без сдвига
+ * Полоса назначения: тянется целиком и за края, шаг — день (QT5). Клик без сдвига
  * (или Enter) открывает меню. Полоса на день-два показывает только аватар; картинка аватара
  * не ловит курсор — иначе браузер тащит её саму, а не полосу.
  * Заштрихованы дни отсутствия и недели, где у человека стоит ещё один эпик, — видно, какая часть
@@ -83,8 +85,8 @@ function initialsOf(name: string): string {
  */
 export function QuarterlyPlanBar({
   assignment,
-  dayStep = false,
   faded = false,
+  level,
   issues,
   lane,
   member,
@@ -112,20 +114,19 @@ export function QuarterlyPlanBar({
   const draftPending = draftItemsOf(draftReview, assignment.id).length > 0;
   const isLinkSource = linking.sourceId === assignment.id;
   const isLinkTarget = canLinkTo(assignment.id);
-  /** Шаг перетаскивания в рабочих днях; жест считается в этих шагах. */
-  const stepDays = dayStep ? 1 : QUARTER_WORKING_DAYS_PER_WEEK;
+  // Жест считается в рабочих днях: шаг любой полосы — день (QT5).
   const saved = daySpanOf(assignment);
-  const toFields = (steps: { startWeek: number; weeks: number }) =>
-    daySpanFields({ days: steps.weeks * stepDays, startDay: steps.startWeek * stepDays });
+  const toDays = (steps: { startWeek: number; weeks: number }) => ({ days: steps.weeks, startDay: steps.startWeek });
   const { begin: beginDrag, drag, rootProps, rootRef, span: steps } = useQuarterSpanDrag({
-    span: { startWeek: saved.startDay / stepDays, weeks: saved.days / stepDays },
-    weekCount: dayCount / stepDays,
-    // Дни хранит только полоса задачи; у остальных срок — целые недели.
-    onChange: (next) => onBarChange(assignment.id, dayStep ? toFields(next) : next),
+    span: { startWeek: saved.startDay, weeks: saved.days },
+    weekCount: dayCount,
+    onChange: (next) => onBarChange(assignment.id, assignmentSpanFields(toDays(next))),
     // С инструментом «Связь» клик по полосе выбирает её источником или целью, меню не открывается.
     onClick: (pointer) => (linking.armed ? onLinkBarClick(assignment.id) : onBarClick(assignment.id, pointer)),
   });
-  const span = toFields(steps);
+  const span = daySpanFields(toDays(steps));
+  /** Дорожка строки: у эпика она выше, чем у задачи, у направления — ещё выше; полоса занимает её целиком. */
+  const laneHeightPx = useQuarterLaneHeight();
   const marks = barDayMarks(
     { ...assignment, ...span },
     absenceByMember.get(assignment.memberId),
@@ -153,11 +154,11 @@ export function QuarterlyPlanBar({
       aria-label={`${name}, ${t(`quarterlyPlan.phase.${phase}`)}, ${formatSpanRange(weeks, span)}`}
       className={`group/bar absolute touch-none select-none rounded-lg [&_img]:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${linking.armed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${isLinkTarget ? 'hover:ring-2 hover:ring-blue-400' : ''} ${faded ? 'opacity-50' : ''} ${draftOutline} ${drag ? '' : 'transition-[left,width] duration-200'}`}
       data-quarter-bar={assignment.id}
-      data-quarter-day-drag={drag ? stepDays : undefined}
+      data-quarter-day-drag={drag ? 1 : undefined}
       style={{
-        height: QUARTER_LANE_HEIGHT_PX - 4,
+        height: laneHeightPx - 4,
         left: `calc(${(span.startDay / dayCount) * 100}% + ${BAR_GAP_PX}px)`,
-        top: QUARTER_ROW_PADDING_PX + lane * QUARTER_LANE_HEIGHT_PX + 2,
+        top: QUARTER_ROW_PADDING_PX + lane * laneHeightPx + 2,
         width: `calc(${(span.days / dayCount) * 100}% - ${BAR_GAP_PX * 2}px)`,
         zIndex: drag ? ZIndex.stickyInContent - 1 : ZIndex.contentInteractive + Number(draftPending),
       }}
@@ -173,9 +174,9 @@ export function QuarterlyPlanBar({
         />
       ) : null}
       {/* Магнит на доске: тот же картон, что у карточек планера, — кромка, тень в покое и подъём
-          под курсором. Пока полосу несут, она приподнята и чуть повёрнута; при растягивании за край — нет. */}
+          под курсором. Пока полосу несут, она приподнята; при растягивании за край — нет. */}
       <div
-        className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border text-xs font-medium ${compact ? 'justify-center' : 'px-1.5'} ${toneClass} ${PHASE_BAR_CLASS[phase]}`}
+        className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border ${QUARTER_BAR_LOOK_BY_LEVEL[level].text} ${compact ? 'justify-center' : 'px-1.5'} ${toneClass} ${PHASE_BAR_CLASS[phase]}`}
         style={drag?.mode === 'move' ? BAR_LIFTED_STYLE : undefined}
       >
         <QuarterlyPlanBarHatch ranges={[...marks.issues, ...marks.risks]} span={span} />
@@ -188,7 +189,7 @@ export function QuarterlyPlanBar({
               avatarUrl={member.avatarUrl}
               initials={initialsOf(member.name)}
               initialsVariant={getAvatarVariantForDeveloper(member)}
-              size="2xs"
+              size={QUARTER_BAR_LOOK_BY_LEVEL[level].avatar}
             />
           ) : null}
           <span className="min-w-0 truncate" hidden={compact}>

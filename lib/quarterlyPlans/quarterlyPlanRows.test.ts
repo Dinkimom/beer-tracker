@@ -6,6 +6,7 @@ import { parseQuarterlyPlanContent } from './quarterlyPlanContentParse';
 import {
   addDirection,
   addEpic,
+  assignmentSpanFields,
   daySpanFields,
   daySpanOf,
   isLinkViolated,
@@ -119,7 +120,7 @@ describe('порядок строк (QO1–QO3)', () => {
   });
 });
 
-describe('срок полосы задачи в днях (QT5)', () => {
+describe('срок полосы в днях (QT5)', () => {
   const day = (id: string, startDay: number, days: number, epicId = 't1') => ({
     epicId,
     id,
@@ -131,6 +132,9 @@ describe('срок полосы задачи в днях (QT5)', () => {
     expect(daySpanFields({ days: 2, startDay: 7 })).toEqual({ days: 2, startDay: 7, startWeek: 1, weeks: 1 });
     expect(daySpanFields({ days: 2, startDay: 9 })).toMatchObject({ startWeek: 1, weeks: 2 });
     expect(daySpanOf({ startWeek: 2, weeks: 2 })).toEqual({ days: 10, startDay: 10 });
+    // Полоса на целые недели хранится неделями: дни снимаются.
+    expect(assignmentSpanFields({ days: 10, startDay: 5 })).toEqual({ days: undefined, startDay: undefined, startWeek: 1, weeks: 2 });
+    expect(assignmentSpanFields({ days: 3, startDay: 5 })).toEqual({ days: 3, startDay: 5, startWeek: 1, weeks: 1 });
   });
 
   it('задачи одной недели, идущие друг за другом, не пересекаются и порядок не нарушают', () => {
@@ -149,11 +153,11 @@ describe('срок полосы задачи в днях (QT5)', () => {
     expect(rivalAssignments(plan.epics)(others[0]!, [epicBar, others[1]!]).map((row) => row.id)).toEqual(['b']);
   });
 
-  it('дни — только у полосы задачи и вместе со своими неделями', () => {
+  it('дни стоят у полосы любой строки — вместе со своими неделями', () => {
     const parse = (assignment: QuarterlyPlanContent['assignments'][number]) =>
       parseQuarterlyPlanContent({ ...plan, assignments: [assignment], notes: [] }, { quarter: 4, year: 2026 });
     expect(parse(day('a', 7, 2)).ok).toBe(true);
-    expect(parse(day('a', 7, 2, 'e1'))).toMatchObject({ error: 'assignment a: days are only for a task row' });
+    expect(parse(day('a', 7, 2, 'e1')).ok).toBe(true);
     expect(parse({ ...day('a', 7, 2), startWeek: 0 })).toMatchObject({ error: 'assignment a: weeks do not match its days' });
     expect(parse({ ...day('a', 7, 2), days: undefined })).toMatchObject({ error: 'assignment a: startDay and days go together' });
   });

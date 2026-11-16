@@ -57,7 +57,7 @@ export type QuarterlyPlanPhase = 'delivery' | 'discovery';
  */
 export interface QuarterlyPlanAssignment {
   /**
-   * Длина в рабочих днях — только у полосы задачи эпика (QT5), вместе со `startDay`.
+   * Длина в рабочих днях (QT5) — у полосы, которая стоит не целыми неделями; вместе со `startDay`.
    * `startWeek` и `weeks` тогда — недели, которые эти дни задевают.
    */
   days?: number;
@@ -67,7 +67,7 @@ export interface QuarterlyPlanAssignment {
   memberId: string;
   /** Нет фазы — delivery (QG1). */
   phase?: QuarterlyPlanPhase;
-  /** Первый рабочий день полосы задачи от начала квартала (понедельник первой недели — 0). */
+  /** Первый рабочий день полосы от начала квартала (понедельник первой недели — 0). */
   startDay?: number;
   startWeek: number;
   weeks: number;

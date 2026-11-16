@@ -35,13 +35,15 @@ interface QuarterlyPlanEpicHeaderProps {
   level: QuarterRowLevel;
   /** У задачи не задаётся: под задачей задач нет (QT1). */
   tasks?: QuarterlyPlanEpicTasks;
+  /** Ни одной полосы — ни у строки, ни у её задач (QB6): пометка у названия, а не на таймлайне. */
+  unplanned: boolean;
 }
 
 /**
  * Название строки эпика или задачи с её управлением: ручка порядка, стрелка и число задач, ключ трекера,
  * пометка черновика, «+ задача» и меню действий.
  */
-export function QuarterlyPlanEpicHeader({ epic, level, tasks }: QuarterlyPlanEpicHeaderProps) {
+export function QuarterlyPlanEpicHeader({ epic, level, tasks, unplanned }: QuarterlyPlanEpicHeaderProps) {
   const { t } = useI18n();
   const { onRowMenu, trackerEpics } = useQuarterlyPlanBoard();
   /** Готовый эпик уходит на второй план: приглушён и зачёркнут (QE8). */
@@ -59,7 +61,7 @@ export function QuarterlyPlanEpicHeader({ epic, level, tasks }: QuarterlyPlanEpi
         <button
           aria-expanded={tasks.expanded}
           aria-label={taskCountLabel}
-          className="absolute left-4 flex h-6 w-5 cursor-pointer items-center justify-center rounded-md text-ds-text-muted transition-colors hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15"
+          className="absolute left-5 flex h-6 w-5 cursor-pointer items-center justify-center rounded-md text-ds-text-muted transition-colors hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15"
           type="button"
           onClick={tasks.onToggle}
         >
@@ -82,6 +84,14 @@ export function QuarterlyPlanEpicHeader({ epic, level, tasks }: QuarterlyPlanEpi
           title={taskCountLabel}
         >
           {tasks.count}
+        </span>
+      ) : null}
+      {unplanned ? (
+        <span
+          className="shrink-0 rounded border border-dashed border-gray-300 px-1 text-[11px] leading-4 text-ds-text-muted dark:border-gray-600"
+          title={t('quarterlyPlan.unplannedHint')}
+        >
+          {t('quarterlyPlan.unplanned')}
         </span>
       ) : null}
       <QuarterlyPlanDraftMark id={epic.id} />

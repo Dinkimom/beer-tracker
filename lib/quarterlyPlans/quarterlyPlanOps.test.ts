@@ -224,7 +224,7 @@ describe('applyQuarterlyPlanOps', () => {
     });
   });
 
-  it('полоса задачи по датам встаёт днями, по неделям — целыми неделями; у эпика даты дают недели (QT5)', () => {
+  it('полоса по датам встаёт днями, по неделям — целыми неделями; даты на целые недели — тоже недели (QT5)', () => {
     const withTask = ok([{ op: 'addEpic', parentEpicId: 'id2', title: 'Webhooks' }], BASE.content);
     const dates = { endDate: '2026-10-09', startDate: '2026-10-08' };
     const result = ok(
@@ -235,8 +235,13 @@ describe('applyQuarterlyPlanOps', () => {
       withTask.content
     );
     expect(result.content.assignments[1]).toMatchObject({ days: 2, startDay: 8, startWeek: 1, weeks: 1 });
-    expect(result.content.assignments[2]).toMatchObject({ startWeek: 1, weeks: 1 });
-    expect(result.content.assignments[2]?.days).toBeUndefined();
+    expect(result.content.assignments[2]).toMatchObject({ days: 2, startDay: 8, startWeek: 1, weeks: 1 });
+    const fullWeek = ok(
+      [{ epicId: 'id2', memberId: 'bob', op: 'assign', span: { endDate: '2026-10-09', startDate: '2026-10-05' } }],
+      withTask.content
+    );
+    expect(fullWeek.content.assignments[1]).toMatchObject({ startWeek: 1, weeks: 1 });
+    expect(fullWeek.content.assignments[1]?.days).toBeUndefined();
     const weekly = ok([{ assignmentId: 'id1', op: 'updateAssignment', span: { startWeek: 3, weeks: 1 } }], result.content);
     expect(weekly.content.assignments[1]).toMatchObject({ startWeek: 3, weeks: 1 });
     expect(weekly.content.assignments[1]?.startDay).toBeUndefined();
