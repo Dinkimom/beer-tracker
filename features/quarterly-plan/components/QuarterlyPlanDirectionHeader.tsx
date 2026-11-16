@@ -14,6 +14,7 @@ import { QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
 import { QuarterlyPlanDraftMark } from './QuarterlyPlanDraftMark';
 import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
 import { QuarterlyPlanIssueKey } from './QuarterlyPlanIssueKey';
+import { QuarterlyPlanSortHandle } from './QuarterlyPlanSortHandle';
 
 interface QuarterlyPlanDirectionHeaderProps {
   collapsed: boolean;
@@ -35,7 +36,7 @@ export function QuarterlyPlanDirectionHeader({
   const renaming = draft?.kind === 'renameDirection' && draft.id === direction.id;
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2 pl-2 pr-2">
+    <div className="relative flex min-w-0 flex-1 items-center gap-2 pl-4 pr-2">
       {renaming ? (
         <QuarterlyPlanInlineInput
           initialValue={direction.title}
@@ -44,6 +45,7 @@ export function QuarterlyPlanDirectionHeader({
         />
       ) : (
         <>
+          <QuarterlyPlanSortHandle id={direction.id} level="direction" />
           <button
             aria-expanded={!collapsed}
             className="flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md px-1 py-1 text-left transition-colors hover:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:bg-black/10 dark:hover:bg-white/10 dark:active:bg-white/15"

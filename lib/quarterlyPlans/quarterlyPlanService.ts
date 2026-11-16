@@ -21,7 +21,10 @@ import {
   listBoardAvailabilityEvents,
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { apiCache, cacheKeys } from '@/lib/cache';
+import { findOrganizationById } from '@/lib/organizations';
+import { DEFAULT_PLANNER_TIMELINE_SCALE, readPlannerTimelineScale } from '@/lib/plannerTimelineScale';
 import { loadRoleResolutionContext } from '@/lib/sprints/sprintContextTeamMembers';
+import { listTaskCardSpans } from '@/lib/sprints/taskPositionsRepository';
 import { enrichPlannerTeamMembersFromTracker, fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
 import { convertTeamMemberToDeveloper } from '@/lib/teamMemberUtils';
 
@@ -36,6 +39,7 @@ import {
 import { planIssueKeys } from './quarterlyPlanLayout';
 import { buildQuarterlyPlanMemberIndex, planContentForClient, planContentForStorage } from './quarterlyPlanMembers';
 import { applyQuarterlyPlanOps as applyOpsToContent } from './quarterlyPlanOps';
+import { buildSprintCards } from './quarterlyPlanSprintCards';
 import {
   buildSprintQuarterPlanView,
   type SprintQuarterPlanInput,
@@ -43,7 +47,7 @@ import {
   type SprintQuarterTask,
 } from './quarterlyPlanSprintLink';
 import { fetchQuarterlyPlanContent, saveQuarterlyPlanContent } from './quarterlyPlansRepository';
-import { loadQuarterlyPlanTrackerEpics } from './quarterlyPlanTrackerEpics';
+import { loadQuarterlyPlanTrackerEpics, markTrackerEpicChanged } from './quarterlyPlanTrackerEpics';
 import { buildQuarterWeeks, quartersOfWindow, resolveWeekSpan } from './quarterWeeks';
 
 /** Тот же срок, что у `/api/sprints`: список спринтов доски общий в кэше. */
@@ -114,12 +118,42 @@ function sprintsInQuarter(sprints: readonly SprintListItem[], boardId: number, r
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
+/**
+ * Где привязанные задачи эпиков стоят на досках спринтов квартала (QK8). Не загрузилось — карточек нет:
+ * план остаётся рабочим, пометки расхождения просто не показываются.
+ */
+async function loadSprintCards(
+  organizationId: string,
+  content: QuarterlyPlanContent,
+  teams: readonly QuarterlyPlanTeam[]
+): Promise<QuarterlyPlan['sprintCards']> {
+  const taskIds = content.epics.flatMap((epic) => (epic.parentEpicId && epic.issueKey ? [epic.issueKey] : []));
+  const sprints = teams.flatMap((team) => team.sprints);
+  if (taskIds.length === 0 || sprints.length === 0) return {};
+  try {
+    const [positions, organization] = await Promise.all([
+      listTaskCardSpans({ sprintIds: sprints.map((sprint) => sprint.id), taskIds }),
+      findOrganizationById(organizationId),
+    ]);
+    const partsPerDay = organization
+      ? readPlannerTimelineScale(organization.settings).timeslotsPerDay
+      : DEFAULT_PLANNER_TIMELINE_SCALE.timeslotsPerDay;
+    return buildSprintCards({ partsPerDay, positions, sprints });
+  } catch (error) {
+    console.warn('[quarterly-plan] sprint cards:', error);
+    return {};
+  }
+}
+
 export async function getQuarterlyPlan(input: {
   issueTracker: IssueTrackerProviderClient;
   organizationId: string;
+  /** Задача, которой только что сменили статус с доски: её строка читается из трекера заново (QE7). */
+  refreshIssueKey?: string;
   ref: QuarterRef;
 }): Promise<{ plan: QuarterlyPlan; version: number }> {
   const { issueTracker, organizationId, ref } = input;
+  if (input.refreshIssueKey) markTrackerEpicChanged(organizationId, input.refreshIssueKey);
   const [{ index, rosters }, stored] = await Promise.all([
     loadTeamRosters(organizationId, true),
     fetchQuarterlyPlanContent(organizationId, ref),
@@ -138,7 +172,13 @@ export async function getQuarterlyPlan(input: {
     }),
   ]);
   return {
-    plan: { ...ref, ...planContentForClient(stored.content, index), teams, trackerEpics },
+    plan: {
+      ...ref,
+      ...planContentForClient(stored.content, index),
+      sprintCards: await loadSprintCards(organizationId, stored.content, teams),
+      teams,
+      trackerEpics,
+    },
     version: stored.version,
   };
 }
@@ -246,6 +286,7 @@ export async function applyQuarterlyPlanOps(input: {
     const findings = await findQuarterlyPlanProblems({
       ...input.ref,
       ...applied.content,
+      sprintCards: {},
       teams: rosters.rosters.map((roster) => ({ ...roster, sprints: [] })),
       trackerEpics: {},
     });

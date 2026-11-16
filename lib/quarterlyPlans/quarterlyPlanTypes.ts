@@ -34,11 +34,16 @@ export interface QuarterlyPlanDirection {
   title: string;
 }
 
-/** Эпик плана в рамках направления; может быть привязан к задаче трекера (любого типа) по ключу. */
+/**
+ * Эпик плана в рамках направления; может быть привязан к задаче трекера (любого типа) по ключу.
+ * С `parentEpicId` это задача эпика (QT1): такая же строка со своими полосами, уровнем ниже.
+ */
 export interface QuarterlyPlanEpic {
   directionId: string;
   id: string;
   issueKey?: string;
+  /** Эпик-родитель задачи; у эпика поля нет. Задача стоит в направлении родителя (QT2). */
+  parentEpicId?: string;
   status: QuarterlyPlanEpicStatus;
   title: string;
 }
@@ -51,12 +56,19 @@ export type QuarterlyPlanPhase = 'delivery' | 'discovery';
  * Строка — эпик (`epicId`) или направление (`directionId`): задано ровно одно (QG2).
  */
 export interface QuarterlyPlanAssignment {
+  /**
+   * Длина в рабочих днях — только у полосы задачи эпика (QT5), вместе со `startDay`.
+   * `startWeek` и `weeks` тогда — недели, которые эти дни задевают.
+   */
+  days?: number;
   directionId?: string;
   epicId?: string;
   id: string;
   memberId: string;
   /** Нет фазы — delivery (QG1). */
   phase?: QuarterlyPlanPhase;
+  /** Первый рабочий день полосы задачи от начала квартала (понедельник первой недели — 0). */
+  startDay?: number;
   startWeek: number;
   weeks: number;
 }
@@ -120,7 +132,20 @@ export interface QuarterlyPlanTrackerEpic {
   title: string;
 }
 
+/**
+ * Где задача трекера стоит на доске спринта: первый и последний рабочий день карточки (QK8).
+ * В плане не хранится — сервер собирает при чтении.
+ */
+export interface QuarterlyPlanSprintCard {
+  endDate: string;
+  sprintId: number;
+  sprintName: string;
+  startDate: string;
+}
+
 export interface QuarterlyPlan extends QuarterlyPlanContent, QuarterRef {
+  /** Карточки привязанных задач эпиков на досках спринтов квартала, по ключу трекера; задачи нет на доске — ключа нет. */
+  sprintCards: Record<string, QuarterlyPlanSprintCard>;
   teams: QuarterlyPlanTeam[];
   /** Привязанные эпики трекера по ключу; эпика нет — трекер его не отдал (нет доступа, удалён). */
   trackerEpics: Record<string, QuarterlyPlanTrackerEpic>;

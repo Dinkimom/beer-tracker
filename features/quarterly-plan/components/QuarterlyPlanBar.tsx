@@ -6,11 +6,9 @@ import type { Developer } from '@/types';
 import { useEffect } from 'react';
 
 import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
-import { Icon } from '@/components/Icon';
-import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { assignmentPhase } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { assignmentPhase, daySpanFields, daySpanOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
@@ -18,17 +16,20 @@ import {
   formatSpanRange,
   barDayMarks,
   draftOutlineClass,
-  QUARTER_ISSUE_HATCH,
   QUARTER_LANE_HEIGHT_PX,
   QUARTER_ROW_PADDING_PX,
   QUARTER_STICKY_LABEL_LEFT,
 } from '../quarterlyPlanBoardModel';
 import { useQuarterSpanDrag } from '../useQuarterSpanDrag';
 
+import { QuarterlyPlanBarHatch } from './QuarterlyPlanBarHatch';
+import { QuarterlyPlanBarIssueBadge } from './QuarterlyPlanBarIssueBadge';
 import { draftItemsOf, QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
 import { QuarterlyPlanResizeHandle } from './QuarterlyPlanResizeHandle';
 
 const BAR_GAP_PX = 2;
+/** Полоса такой длины и короче показывает только аватар. */
+const COMPACT_BAR_DAYS = 2;
 /**
  * Проработка — пунктирный контур без заливки: отличается от поставки при любой ширине полосы (QG1).
  * У поставки кромка всегда сплошная: палитра статуса «Бэклог» даёт пунктир, а пунктир на полосе значит проработку.
@@ -51,6 +52,8 @@ const ISSUE_FOCUS_KEYFRAMES = [
 
 interface QuarterlyPlanBarProps {
   assignment: QuarterlyPlanAssignment;
+  /** Полоса задачи: тянется с шагом в день, а не в неделю (QT5). */
+  dayStep?: boolean;
   /** Эпик готов: полоса приглушена. */
   faded?: boolean;
   /** Пересечения с отсутствием и с другими эпиками человека — одна пометка на полосе. */
@@ -72,12 +75,15 @@ function initialsOf(name: string): string {
 }
 
 /**
- * Полоса назначения: тянется целиком и за края, шаг — неделя. Клик без сдвига (или Enter) открывает меню.
+ * Полоса назначения: тянется целиком и за края, шаг — неделя, у полосы задачи — день (QT5). Клик без сдвига
+ * (или Enter) открывает меню. Полоса на день-два показывает только аватар; картинка аватара
+ * не ловит курсор — иначе браузер тащит её саму, а не полосу.
  * Заштрихованы дни отсутствия и недели, где у человека стоит ещё один эпик, — видно, какая часть
  * работы под вопросом; причину называет подсказка у значка. Подпись липнет к левой колонке, пока полоса на экране.
  */
 export function QuarterlyPlanBar({
   assignment,
+  dayStep = false,
   faded = false,
   issues,
   lane,
@@ -88,13 +94,14 @@ export function QuarterlyPlanBar({
   const { t } = useI18n();
   const {
     absenceByMember,
-    assignmentsByMember,
     canLinkTo,
+    dayCount,
     focusedIssue,
     linking,
     onBarChange,
     onBarClick,
     onLinkBarClick,
+    rivalAssignmentsOf,
     weeks,
     draftMarks,
     draftReview,
@@ -105,21 +112,27 @@ export function QuarterlyPlanBar({
   const draftPending = draftItemsOf(draftReview, assignment.id).length > 0;
   const isLinkSource = linking.sourceId === assignment.id;
   const isLinkTarget = canLinkTo(assignment.id);
-  const weekCount = weeks.length;
-  const { begin: beginDrag, drag, rootProps, rootRef, span } = useQuarterSpanDrag({
-    span: assignment,
-    weekCount,
-    onChange: (next) => onBarChange(assignment.id, next),
+  /** Шаг перетаскивания в рабочих днях; жест считается в этих шагах. */
+  const stepDays = dayStep ? 1 : QUARTER_WORKING_DAYS_PER_WEEK;
+  const saved = daySpanOf(assignment);
+  const toFields = (steps: { startWeek: number; weeks: number }) =>
+    daySpanFields({ days: steps.weeks * stepDays, startDay: steps.startWeek * stepDays });
+  const { begin: beginDrag, drag, rootProps, rootRef, span: steps } = useQuarterSpanDrag({
+    span: { startWeek: saved.startDay / stepDays, weeks: saved.days / stepDays },
+    weekCount: dayCount / stepDays,
+    // Дни хранит только полоса задачи; у остальных срок — целые недели.
+    onChange: (next) => onBarChange(assignment.id, dayStep ? toFields(next) : next),
     // С инструментом «Связь» клик по полосе выбирает её источником или целью, меню не открывается.
     onClick: (pointer) => (linking.armed ? onLinkBarClick(assignment.id) : onBarClick(assignment.id, pointer)),
   });
+  const span = toFields(steps);
   const marks = barDayMarks(
     { ...assignment, ...span },
     absenceByMember.get(assignment.memberId),
-    assignmentsByMember.get(assignment.memberId) ?? []
+    rivalAssignmentsOf(assignment)
   );
-  const spanDays = span.weeks * QUARTER_WORKING_DAYS_PER_WEEK;
-  const spanFirstDay = span.startWeek * QUARTER_WORKING_DAYS_PER_WEEK;
+  /** На день-два имя не помещается: остаётся аватар, срок и человек — в подсказке. */
+  const compact = span.days <= COMPACT_BAR_DAYS;
   // Человека нет ни в одной команде плана — имени у доски нет (QI6).
   const name = member?.name ?? t('quarterlyPlan.formerMember');
   /** Проработка (QG1) — контур без заливки, фаза в подсказке; цвет — по статусу строки, как у остальных. */
@@ -138,16 +151,17 @@ export function QuarterlyPlanBar({
     <div
       ref={rootRef}
       aria-label={`${name}, ${t(`quarterlyPlan.phase.${phase}`)}, ${formatSpanRange(weeks, span)}`}
-      className={`group/bar absolute touch-none select-none rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${linking.armed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${isLinkTarget ? 'hover:ring-2 hover:ring-blue-400' : ''} ${faded ? 'opacity-50' : ''} ${draftOutline} ${drag ? '' : 'transition-[left,width] duration-200'}`}
+      className={`group/bar absolute touch-none select-none rounded-lg [&_img]:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${linking.armed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${isLinkTarget ? 'hover:ring-2 hover:ring-blue-400' : ''} ${faded ? 'opacity-50' : ''} ${draftOutline} ${drag ? '' : 'transition-[left,width] duration-200'}`}
       data-quarter-bar={assignment.id}
+      data-quarter-day-drag={drag ? stepDays : undefined}
       style={{
         height: QUARTER_LANE_HEIGHT_PX - 4,
-        left: `calc(${(span.startWeek / weekCount) * 100}% + ${BAR_GAP_PX}px)`,
+        left: `calc(${(span.startDay / dayCount) * 100}% + ${BAR_GAP_PX}px)`,
         top: QUARTER_ROW_PADDING_PX + lane * QUARTER_LANE_HEIGHT_PX + 2,
-        width: `calc(${(span.weeks / weekCount) * 100}% - ${BAR_GAP_PX * 2}px)`,
+        width: `calc(${(span.days / dayCount) * 100}% - ${BAR_GAP_PX * 2}px)`,
         zIndex: drag ? ZIndex.stickyInContent - 1 : ZIndex.contentInteractive + Number(draftPending),
       }}
-      title={phaseTitle}
+      title={compact ? `${name} · ${formatSpanRange(weeks, span)}` : phaseTitle}
       {...rootProps}
     >
       {/* Источник связи — синяя рамка с отступом, как у карточки-источника на доске спринта. Отдельным
@@ -161,27 +175,10 @@ export function QuarterlyPlanBar({
       {/* Магнит на доске: тот же картон, что у карточек планера, — кромка, тень в покое и подъём
           под курсором. Пока полосу несут, она приподнята и чуть повёрнута; при растягивании за край — нет. */}
       <div
-        className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border px-1.5 text-xs font-medium ${toneClass} ${PHASE_BAR_CLASS[phase]}`}
+        className={`retro-card-cardboard flex h-full items-center gap-1.5 overflow-clip rounded-lg border text-xs font-medium ${compact ? 'justify-center' : 'px-1.5'} ${toneClass} ${PHASE_BAR_CLASS[phase]}`}
         style={drag?.mode === 'move' ? BAR_LIFTED_STYLE : undefined}
       >
-        {/* Проблема и риск (дежурство) штрихуются одинаково: их различает значок, а не узор. */}
-        {[...marks.issues, ...marks.risks].map((range) => {
-          // Участок у края полосы повторяет её скругление: обрезка по контуру оставляет на углу зубец.
-          const startsAtEdge = range.startDay === spanFirstDay;
-          const endsAtEdge = range.startDay + range.dayCount === spanFirstDay + spanDays;
-          return (
-            <span
-              key={range.startDay}
-              aria-hidden
-              className={`pointer-events-none absolute inset-y-0 ${startsAtEdge ? 'rounded-l-[7px]' : ''} ${endsAtEdge ? 'rounded-r-[7px]' : ''}`}
-              style={{
-                backgroundImage: QUARTER_ISSUE_HATCH,
-                left: `${((range.startDay - spanFirstDay) / spanDays) * 100}%`,
-                width: `${(range.dayCount / spanDays) * 100}%`,
-              }}
-            />
-          );
-        })}
+        <QuarterlyPlanBarHatch ranges={[...marks.issues, ...marks.risks]} span={span} />
         <span
           className="sticky flex min-w-0 items-center gap-1.5"
           style={{ left: QUARTER_STICKY_LABEL_LEFT }}
@@ -194,33 +191,16 @@ export function QuarterlyPlanBar({
               size="2xs"
             />
           ) : null}
-          <span className="min-w-0 truncate">{name}</span>
+          <span className="min-w-0 truncate" hidden={compact}>
+            {name}
+          </span>
         </span>
-        <span className="flex-1" />
-        {issues.length + risks.length > 0 ? (
-          <TextTooltip
-            content={
-              <div className="flex flex-col gap-0.5">
-                {[...issues, ...risks].map((line) => (
-                  <span key={line}>{line}</span>
-                ))}
-              </div>
-            }
-            side="top"
-          >
-            {/* Залитый кружок: значок читается и поверх штриховки; отступ справа — под рукоятку края.
-                Проблема — жёлтый треугольник; только риск — приглушённый кружок «i». */}
-            <span
-              className={`relative mr-1.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-                issues.length > 0
-                  ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950'
-                  : 'bg-gray-500/70 text-white dark:bg-gray-400/70 dark:text-gray-950'
-              }`}
-            >
-              <Icon className="h-2.5 w-2.5" name={issues.length > 0 ? 'alert-triangle' : 'circle-info'} />
-            </span>
-          </TextTooltip>
-        ) : null}
+        {compact ? null : (
+          <>
+            <span className="flex-1" />
+            <QuarterlyPlanBarIssueBadge issues={issues} risks={risks} />
+          </>
+        )}
 {/* Цель связи под курсором подсвечена, как на доске спринта. */}
         {isLinkTarget ? (
           <span
@@ -228,8 +208,8 @@ export function QuarterlyPlanBar({
             className="pointer-events-none absolute inset-0 bg-blue-400/20 opacity-0 group-hover/bar:opacity-100"
           />
         ) : null}
-                <QuarterlyPlanResizeHandle active={drag?.mode === 'start'} rounded side="left" onPointerDown={beginDrag('start')} />
-        <QuarterlyPlanResizeHandle active={drag?.mode === 'end'} rounded side="right" onPointerDown={beginDrag('end')} />
+                <QuarterlyPlanResizeHandle active={drag?.mode === 'start'} narrow={span.days <= 1} rounded side="left" onPointerDown={beginDrag('start')} />
+        <QuarterlyPlanResizeHandle active={drag?.mode === 'end'} narrow={span.days <= 1} rounded side="right" onPointerDown={beginDrag('end')} />
       </div>
       <QuarterlyPlanDraftItemToolbar hidden={drag !== null} id={assignment.id} placement="below" />
     </div>

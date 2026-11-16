@@ -103,6 +103,7 @@ describe('подписи и размеры', () => {
 
 describe('collectQuarterlyPlanIssues', () => {
   const plan: QuarterlyPlan = {
+    sprintCards: {},
     assignments: [
       { epicId: 'e2', id: 'late', memberId: 'bob', startWeek: 6, weeks: 1 },
       { epicId: 'e2', id: 'bob-2', memberId: 'bob', startWeek: 2, weeks: 2 },

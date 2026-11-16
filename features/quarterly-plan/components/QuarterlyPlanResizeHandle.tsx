@@ -27,6 +27,11 @@ const DEFAULT_PAINT = {
 interface QuarterlyPlanResizeHandleProps {
   /** Сейчас тянут за эту рукоятку: она видна, пока идёт жест. */
   active: boolean;
+  /**
+   * Узкая зона захвата — у полосы на один день: обычные рукоятки закрыли бы её целиком,
+   * а середина нужна, чтобы полосу переносить.
+   */
+  narrow?: boolean;
   /** Краска листа заметки (`getStickyNoteResizeHandlePaint`); у полос не задаётся. */
   paint?: { activeBackground: string; hoverBackground: string; line: string };
   /** Элемент со скруглёнными углами (полоса): подложка рукоятки повторяет его скругление. */
@@ -41,6 +46,7 @@ interface QuarterlyPlanResizeHandleProps {
  */
 export function QuarterlyPlanResizeHandle({
   active,
+  narrow = false,
   paint = DEFAULT_PAINT,
   rounded = false,
   side,
@@ -48,7 +54,7 @@ export function QuarterlyPlanResizeHandle({
 }: QuarterlyPlanResizeHandleProps) {
   const layout = SIDE_LAYOUT[side];
   return (
-    <span className={`group/handle absolute ${layout.hit}`} onPointerDown={onPointerDown}>
+    <span className={`group/handle absolute ${layout.hit} ${narrow ? '!w-1.5' : ''}`} onPointerDown={onPointerDown}>
       <span
         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-150 ${layout.grip} ${rounded ? layout.rounded : ''} ${active ? 'opacity-100' : 'opacity-0 group-hover/handle:opacity-100'}`}
         style={{ backgroundColor: active ? paint.activeBackground : paint.hoverBackground }}

@@ -16,6 +16,7 @@ import {
   addLink,
   addNote,
   areLinked,
+  daySpanFields,
   directionIdOfAssignment,
   QUARTER_NOTE_MAX_ROWS,
   removeAssignment,
@@ -29,7 +30,8 @@ import {
   updateNote,
   type WeekSpan,
 } from './quarterlyPlanLayout';
-import { buildQuarterWeeks, resolveWeekSpan } from './quarterWeeks';
+import { moveDirection, moveEpic, moveEpicError } from './quarterlyPlanRows';
+import { buildQuarterWeeks, resolveDaySpan, resolveWeekSpan } from './quarterWeeks';
 
 const MAX_OPS = 200;
 
@@ -48,10 +50,18 @@ const span = z.union([
 ]);
 const status = z.enum(['backlog', 'blocked', 'done', 'in_progress', 'test']);
 const phase = z.enum(['delivery', 'discovery']);
+const place = z.enum(['after', 'before']).describe('Where the row goes relative to anchorId');
 const noteRow = z.object({ id: target, kind: z.enum(['absence', 'direction', 'epic', 'team']) });
 
 const QuarterlyPlanOpSchema = z.discriminatedUnion('op', [
-  z.object({ op: z.literal('addDirection'), ref: ref.optional(), teamId: target, title }),
+  z.object({
+    afterId: target.optional().describe('Direction of the same team to put the new one right below; default: last'),
+    op: z.literal('addDirection'),
+    ref: ref.optional(),
+    teamId: target,
+    title,
+  }),
+  z.object({ anchorId: target, directionId: target, op: z.literal('moveDirection'), place }),
   z.object({
     directionId: target,
     issue: z.object({ issueKey: z.string().trim().min(1).max(64), title }).optional(),
@@ -61,9 +71,13 @@ const QuarterlyPlanOpSchema = z.discriminatedUnion('op', [
   }),
   z.object({ directionId: target, op: z.literal('removeDirection') }),
   z.object({
-    directionId: target,
+    afterId: target.optional().describe('Row of the same level and parent to put the new one right below; default: last'),
+    directionId: target.optional().describe('Direction of a new epic; exactly one of directionId and parentEpicId'),
     issueKey: z.string().trim().min(1).max(64).optional(),
     op: z.literal('addEpic'),
+    parentEpicId: target
+      .optional()
+      .describe('Epic to add a task under: a task is a row of its own with its own bars, one level below the epic'),
     ref: ref.optional(),
     status: status.optional(),
     title: title.optional(),
@@ -77,6 +91,12 @@ const QuarterlyPlanOpSchema = z.discriminatedUnion('op', [
     unlink: z.literal(true).optional(),
   }),
   z.object({ epicId: target, op: z.literal('removeEpic') }),
+  z.object({
+    anchorId: target.describe('Row of the same level: an epic for an epic, a task for a task'),
+    epicId: target,
+    op: z.literal('moveEpic'),
+    place,
+  }),
   z.object({
     directionId: target.optional().describe('Row is the direction itself (usually discovery); exactly one of epicId and directionId'),
     epicId: target.optional(),
@@ -174,6 +194,19 @@ function resolveSpan(ctx: OpContext, input: z.infer<typeof span>): WeekSpan {
   return { startWeek: weekSpan.startWeek, weeks: weekSpan.weeks };
 }
 
+/** Срок назначения: у полосы задачи даты дают дни (QT5), иначе — целые недели, а дни снимаются. */
+function resolveAssignmentSpan(
+  ctx: OpContext,
+  plan: QuarterlyPlanContent,
+  row: Pick<QuarterlyPlanAssignment, 'epicId'>,
+  input: z.infer<typeof span>
+): Pick<QuarterlyPlanAssignment, 'days' | 'startDay' | 'startWeek' | 'weeks'> {
+  const weekSpan = resolveSpan(ctx, input);
+  const isTask = plan.epics.some((epic) => epic.id === row.epicId && epic.parentEpicId !== undefined);
+  const daySpan = isTask && 'startDate' in input ? resolveDaySpan(ctx.weeks, input.startDate, input.endDate) : null;
+  return daySpan ? daySpanFields(daySpan) : { ...weekSpan, days: undefined, startDay: undefined };
+}
+
 function findOr<T extends { id: string }>(items: readonly T[], id: string, what: string): T {
   const item = items.find((candidate) => candidate.id === id);
   if (!item) throw new OpError(`unknown ${what} ${id}`);
@@ -228,6 +261,23 @@ function requireIssueFree(plan: QuarterlyPlanContent, issueKey: string, exceptId
   if (taken) throw new OpError(`issue ${issueKey} is already in the plan as ${taken.kind} ${taken.row.id}`);
 }
 
+/** Куда встаёт новая строка: эпик — в направление, задача — под эпик своего направления (QT1, QT2). */
+function resolveEpicParent(
+  ctx: OpContext,
+  plan: QuarterlyPlanContent,
+  op: { directionId?: string; parentEpicId?: string }
+): { directionId: string; parentEpicId?: string } {
+  if ((op.directionId === undefined) === (op.parentEpicId === undefined)) {
+    throw new OpError('needs exactly one of directionId and parentEpicId');
+  }
+  if (op.parentEpicId === undefined) {
+    return { directionId: findOr(plan.directions, resolveId(ctx, op.directionId!), 'direction').id };
+  }
+  const parent = findOr(plan.epics, resolveId(ctx, op.parentEpicId), 'epic');
+  if (parent.parentEpicId !== undefined) throw new OpError(`epic ${parent.id} is a task itself; a task cannot have tasks`);
+  return { directionId: parent.directionId, parentEpicId: parent.id };
+}
+
 type Handlers = {
   [K in QuarterlyPlanOp['op']]: (
     plan: QuarterlyPlanContent,
@@ -248,9 +298,11 @@ const handlers: Handlers = {
       remember(ctx, op.ref, existing.id);
       return plan;
     }
+    const afterId =
+      op.afterId === undefined ? undefined : findOr(plan.directions, resolveId(ctx, op.afterId), 'direction').id;
     const id = ctx.newId();
     created(ctx, op.ref, id);
-    return addDirection(plan, { id, teamId, title: op.title });
+    return addDirection(plan, { id, teamId, title: op.title }, afterId);
   },
   // Направление привязывают к эпику трекера: название — из трекера (QE5).
   updateDirection: (plan, op, ctx) => {
@@ -265,20 +317,35 @@ const handlers: Handlers = {
   },
   removeDirection: (plan, op, ctx) =>
     removeDirection(plan, findOr(plan.directions, resolveId(ctx, op.directionId), 'direction').id),
+  // Порядок направлений — только внутри команды (QO2).
+  moveDirection: (plan, op, ctx) => {
+    const direction = findOr(plan.directions, resolveId(ctx, op.directionId), 'direction');
+    const anchor = findOr(plan.directions, resolveId(ctx, op.anchorId), 'direction');
+    if (direction.id === anchor.id) throw new OpError('a row cannot be placed next to itself');
+    if (direction.teamId !== anchor.teamId) throw new OpError('directions of different teams');
+    return moveDirection(plan, direction.id, anchor.id, op.place);
+  },
   addEpic: (plan, op, ctx) => {
-    const directionId = findOr(plan.directions, resolveId(ctx, op.directionId), 'direction').id;
+    const parent = resolveEpicParent(ctx, plan, op);
     if (op.issueKey) requireIssueFree(plan, op.issueKey);
     const epicTitle = op.title ?? op.issueKey;
     if (!epicTitle) throw new OpError('epic needs a title or an issueKey');
+    const afterId = op.afterId === undefined ? undefined : findOr(plan.epics, resolveId(ctx, op.afterId), 'epic').id;
     const id = ctx.newId();
     created(ctx, op.ref, id);
-    return addEpic(plan, {
-      directionId,
-      id,
-      ...(op.issueKey ? { issueKey: op.issueKey } : {}),
-      status: op.status ?? 'backlog',
-      title: epicTitle,
-    });
+    return addEpic(
+      plan,
+      { ...parent, id, ...(op.issueKey ? { issueKey: op.issueKey } : {}), status: op.status ?? 'backlog', title: epicTitle },
+      afterId
+    );
+  },
+  // Строка остаётся на своём уровне и в своей команде (QO3).
+  moveEpic: (plan, op, ctx) => {
+    const epicId = findOr(plan.epics, resolveId(ctx, op.epicId), 'epic').id;
+    const anchorId = findOr(plan.epics, resolveId(ctx, op.anchorId), 'epic').id;
+    const error = moveEpicError(plan, epicId, anchorId);
+    if (error) throw new OpError(error);
+    return moveEpic(plan, epicId, anchorId, op.place);
   },
   updateEpic: (plan, op, ctx) => {
     const epic = findOr(plan.epics, resolveId(ctx, op.epicId), 'epic');
@@ -308,7 +375,7 @@ const handlers: Handlers = {
       id,
       memberId: op.memberId,
       ...(isDiscovery ? { phase: 'discovery' as const } : {}),
-      ...resolveSpan(ctx, op.span),
+      ...resolveAssignmentSpan(ctx, plan, row, op.span),
     });
   },
   updateAssignment: (plan, op, ctx) => {
@@ -317,7 +384,7 @@ const handlers: Handlers = {
     return updateAssignment(plan, assignment.id, {
       ...(op.memberId ? { memberId: op.memberId } : {}),
       ...(op.phase ? phasePatch(op.phase) : {}),
-      ...(op.span ? resolveSpan(ctx, op.span) : {}),
+      ...(op.span ? resolveAssignmentSpan(ctx, plan, assignment, op.span) : {}),
     });
   },
   removeAssignment: (plan, op, ctx) =>
@@ -370,6 +437,8 @@ function applyOp(plan: QuarterlyPlanContent, op: QuarterlyPlanOp, ctx: OpContext
 
 /** Поле операции изменения или удаления, где лежит её сущность. */
 const TARGET_FIELD: Partial<Record<QuarterlyPlanOp['op'], string>> = {
+  moveDirection: 'directionId',
+  moveEpic: 'epicId',
   removeAssignment: 'assignmentId',
   removeDirection: 'directionId',
   removeEpic: 'epicId',

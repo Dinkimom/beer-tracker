@@ -53,6 +53,36 @@ export async function listTaskPositionsForSprint(input: {
   return result.rows as TaskPositionRow[];
 }
 
+/** Карточки задач `taskIds` на досках спринтов `sprintIds` вместе с их отрезками — для квартального плана (QK8). */
+export async function listTaskCardSpans(input: {
+  sprintIds: readonly number[];
+  taskIds: readonly string[];
+}): Promise<
+  Array<{
+    duration: number;
+    segments: Array<{ duration: number; startDay: number; startPart: number }> | null;
+    sprintId: number;
+    startDay: number;
+    startPart: number;
+    taskId: string;
+  }>
+> {
+  if (input.sprintIds.length === 0 || input.taskIds.length === 0) return [];
+  const result = await query(
+    `SELECT p.sprint_id AS "sprintId", p.task_id AS "taskId", p.start_day AS "startDay",
+            p.start_part AS "startPart", p.duration, s.segments
+       FROM task_positions p
+       LEFT JOIN LATERAL (
+         SELECT json_agg(json_build_object('startDay', seg.start_day, 'startPart', seg.start_part, 'duration', seg.duration)) AS segments
+           FROM task_position_segments seg
+          WHERE seg.sprint_id = p.sprint_id AND seg.task_id = p.task_id
+       ) s ON TRUE
+      WHERE p.sprint_id = ANY($1::int[]) AND p.task_id = ANY($2::text[])`,
+    [[...input.sprintIds], [...input.taskIds]]
+  );
+  return result.rows;
+}
+
 export async function loadPositionSegmentsByTask(
   sprintId: number
 ): Promise<Map<string, Array<{ segment_index: number; start_day: number; start_part: number; duration: number }>>> {

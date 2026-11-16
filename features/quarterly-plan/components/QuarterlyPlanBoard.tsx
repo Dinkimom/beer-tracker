@@ -2,7 +2,7 @@
 
 import type { QuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
-import { type CSSProperties, useEffect, useMemo, useRef } from 'react';
+import { type CSSProperties, Fragment, useEffect, useMemo, useRef } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -11,6 +11,7 @@ import { ParticipantsColumnResizeHandle } from '@/features/sprint/components/Spr
 import { SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import { useQuarterLeftColumnWidthStorage } from '@/hooks/useLocalStorage';
 import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { topLevelEpics } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 
 import { QuarterSprintStartWeeksProvider, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
@@ -23,7 +24,7 @@ import {
 
 import { QuarterlyPlanAbsenceRow } from './QuarterlyPlanAbsenceRow';
 import { QuarterlyPlanDirectionSection } from './QuarterlyPlanDirectionSection';
-import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
+import { QuarterlyPlanInputRow } from './QuarterlyPlanInputRow';
 import { QuarterlyPlanLinksLayer } from './QuarterlyPlanLinksLayer';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
 import { QuarterlyPlanTeamHeader } from './QuarterlyPlanTeamHeader';
@@ -53,8 +54,9 @@ export function QuarterlyPlanBoard({
   onToggle: toggle,
 }: QuarterlyPlanBoardProps) {
   const { t } = useI18n();
-  const { currentWeek, draft, linking, onDraftSubmit, onLinkSourceClear, onStartDraft, violatedBlockers, weeks } =
+  const { currentWeek, draft, linking, onLinkSourceClear, onStartDraft, violatedBlockers, weeks } =
     useQuarterlyPlanBoard();
+  const directionInput = <QuarterlyPlanInputRow level="direction" placeholder={t('quarterlyPlan.addDirectionPlaceholder')} />;
   const violatedLinkIds = useMemo(
     () =>
       new Set(
@@ -83,6 +85,7 @@ export function QuarterlyPlanBoard({
     <div
       ref={scrollRef}
       className="scrollbar-thin-custom min-h-0 flex-1 overflow-auto"
+      data-quarter-scroller
       // Связь: клик мимо полос (и мимо кнопок удаления связей) снимает выбранный источник.
       onClickCapture={(event) => {
         const target = event.target as Element;
@@ -120,6 +123,9 @@ export function QuarterlyPlanBoard({
         <div data-quarter-rows>
           {plan.teams.map((team) => {
             const addingDirection = draft?.kind === 'newDirection' && draft.teamId === team.id;
+            const directions = plan.directions.filter((direction) => direction.teamId === team.id);
+            // Поле нового направления — под направлением, из меню которого его добавили (QO1); иначе в конце.
+            const inputAfterId = addingDirection ? directions.find((direction) => direction.id === draft.afterId)?.id : undefined;
             // Новое направление видно и в свёрнутой команде: иначе поле ввода некуда показать.
             const collapsed = collapsedIds.has(team.id) && !addingDirection;
             return (
@@ -137,22 +143,22 @@ export function QuarterlyPlanBoard({
                   <QuarterSprintStartWeeksProvider value={sprintStartWeeks(team.sprints, weeks)}>
                     <QuarterlyPlanAbsenceRow group="duty" team={team} />
                     <QuarterlyPlanAbsenceRow group="away" team={team} />
-                    {plan.directions
-                      .filter((direction) => direction.teamId === team.id)
-                      .map((direction) => {
-                        const epics = plan.epics.filter((epic) => epic.directionId === direction.id);
-                        return (
+                    {directions.map((direction) => {
+                      const epics = topLevelEpics(plan.epics, direction.id);
+                      return (
+                        <Fragment key={direction.id}>
                           <QuarterlyPlanDirectionSection
-                            key={direction.id}
                             collapsed={collapsedIds.has(direction.id)}
                             direction={direction}
                             epics={hideDone ? epics.filter((epic) => !isEpicDone(epic, plan.trackerEpics)) : epics}
                             onToggle={() => toggle(direction.id)}
                           />
-                        );
-                      })}
+                          {inputAfterId === direction.id ? directionInput : null}
+                        </Fragment>
+                      );
+                    })}
                     {/* Пустая команда: кнопка «+» в шапке видна только при наведении, поэтому зовём явно. */}
-                    {!addingDirection && !plan.directions.some((direction) => direction.teamId === team.id) ? (
+                    {!addingDirection && directions.length === 0 ? (
                       <QuarterlyPlanRow
                         heightPx={QUARTER_ROW_HEIGHT_PX + 8}
                         left={
@@ -170,20 +176,7 @@ export function QuarterlyPlanBoard({
                         tone="direction"
                       />
                     ) : null}
-                    {addingDirection ? (
-                      <QuarterlyPlanRow
-                        heightPx={QUARTER_ROW_HEIGHT_PX}
-                        left={
-                          <div className="flex min-w-0 flex-1 pl-3 pr-2">
-                            <QuarterlyPlanInlineInput
-                              placeholder={t('quarterlyPlan.addDirectionPlaceholder')}
-                              onSubmit={onDraftSubmit}
-                            />
-                          </div>
-                        }
-                        tone="direction"
-                      />
-                    ) : null}
+                    {addingDirection && !inputAfterId ? directionInput : null}
                   </QuarterSprintStartWeeksProvider>
                 )}
               </section>

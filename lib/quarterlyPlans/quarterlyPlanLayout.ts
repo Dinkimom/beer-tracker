@@ -10,11 +10,39 @@ import type {
   QuarterlyPlanPhase,
 } from './quarterlyPlanTypes';
 
+import { epicRowIds, insertAfter } from './quarterlyPlanRows';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from './quarterWeeks';
 
 export interface WeekSpan {
   startWeek: number;
   weeks: number;
+}
+
+/** Срок в рабочих днях квартала: понедельник первой недели — день 0. */
+export interface DaySpan {
+  days: number;
+  startDay: number;
+}
+
+/** Срок неделями, у полосы задачи — ещё и днями (QT5). */
+type AnySpan = Partial<DaySpan> & WeekSpan;
+
+/** Срок в днях: свой у полосы задачи, иначе целые недели. По нему считаются пересечения, отсутствия и порядок. */
+export function daySpanOf(span: AnySpan): DaySpan {
+  return span.startDay !== undefined && span.days !== undefined
+    ? { days: span.days, startDay: span.startDay }
+    : { days: span.weeks * QUARTER_WORKING_DAYS_PER_WEEK, startDay: span.startWeek * QUARTER_WORKING_DAYS_PER_WEEK };
+}
+
+/** Поля назначения для срока в днях: сами дни и недели, которые они задевают (QT5). */
+export function daySpanFields(span: DaySpan): DaySpan & WeekSpan {
+  const startWeek = Math.floor(span.startDay / QUARTER_WORKING_DAYS_PER_WEEK);
+  const weeks = Math.ceil((span.startDay + span.days) / QUARTER_WORKING_DAYS_PER_WEEK) - startWeek;
+  return { days: span.days, startDay: span.startDay, startWeek, weeks };
+}
+
+function daysOverlap(a: DaySpan, b: DaySpan): boolean {
+  return a.startDay < b.startDay + b.days && b.startDay < a.startDay + a.days;
 }
 
 export type BarDragMode = 'end' | 'move' | 'start';
@@ -71,9 +99,8 @@ export function buildWeekLoad(
 }
 
 /** Рабочие дни назначения (индексы от начала квартала), в которые человек отсутствует. */
-export function absentDaysWithinSpan(span: WeekSpan, absentDays: ReadonlySet<number>): number[] {
-  const firstDay = span.startWeek * QUARTER_WORKING_DAYS_PER_WEEK;
-  const dayCount = span.weeks * QUARTER_WORKING_DAYS_PER_WEEK;
+export function absentDaysWithinSpan(span: AnySpan, absentDays: ReadonlySet<number>): number[] {
+  const { days: dayCount, startDay: firstDay } = daySpanOf(span);
   const days: number[] = [];
   for (let day = firstDay; day < firstDay + dayCount; day += 1) {
     if (absentDays.has(day)) days.push(day);
@@ -160,7 +187,8 @@ export function orderLinkEnds(
   source: QuarterlyPlanAssignment,
   target: QuarterlyPlanAssignment
 ): Pick<QuarterlyPlanLink, 'fromId' | 'toId'> {
-  return target.startWeek + target.weeks <= source.startWeek
+  const ends = daySpanOf(target);
+  return ends.startDay + ends.days <= daySpanOf(source).startDay
     ? { fromId: target.id, toId: source.id }
     : { fromId: source.id, toId: target.id };
 }
@@ -175,8 +203,9 @@ export function removeLink(plan: QuarterlyPlanContent, linkId: string): Quarterl
 }
 
 /** Порядок нарушен: зависимое назначение начинается раньше, чем закончится то, которого оно ждёт. */
-export function isLinkViolated(from: WeekSpan, to: WeekSpan): boolean {
-  return to.startWeek < from.startWeek + from.weeks;
+export function isLinkViolated(from: AnySpan, to: AnySpan): boolean {
+  const blocker = daySpanOf(from);
+  return daySpanOf(to).startDay < blocker.startDay + blocker.days;
 }
 
 /**
@@ -209,12 +238,18 @@ export function updateEpic(
   };
 }
 
-export function addEpic(plan: QuarterlyPlanContent, epic: QuarterlyPlanEpic): QuarterlyPlanContent {
-  return { ...plan, epics: [...plan.epics, epic] };
+/** Новый эпик или задача: сразу под строкой `afterId` (QO1), без неё — в конец. */
+export function addEpic(plan: QuarterlyPlanContent, epic: QuarterlyPlanEpic, afterId?: string): QuarterlyPlanContent {
+  return { ...plan, epics: insertAfter(plan.epics, epic, afterId) };
 }
 
-export function addDirection(plan: QuarterlyPlanContent, direction: QuarterlyPlanDirection): QuarterlyPlanContent {
-  return { ...plan, directions: [...plan.directions, direction] };
+/** Новое направление: сразу под направлением `afterId` (QO1), без него — в конец. */
+export function addDirection(
+  plan: QuarterlyPlanContent,
+  direction: QuarterlyPlanDirection,
+  afterId?: string
+): QuarterlyPlanContent {
+  return { ...plan, directions: insertAfter(plan.directions, direction, afterId) };
 }
 
 export function updateDirection(
@@ -307,8 +342,9 @@ function removeEpics(plan: QuarterlyPlanContent, epicIds: ReadonlySet<string>): 
   };
 }
 
+/** Эпик уходит вместе со своими задачами (QT2). */
 export function removeEpic(plan: QuarterlyPlanContent, epicId: string): QuarterlyPlanContent {
-  return removeEpics(plan, new Set([epicId]));
+  return removeEpics(plan, epicRowIds(plan.epics, epicId));
 }
 
 export function removeDirection(plan: QuarterlyPlanContent, directionId: string): QuarterlyPlanContent {
@@ -322,18 +358,15 @@ export function removeDirection(plan: QuarterlyPlanContent, directionId: string)
   };
 }
 
-/** Другие назначения того же человека, которые пересекаются с этим по неделям. */
+/** Другие назначения того же человека, которые пересекаются с этим по дням. */
 export function overlappingAssignments(
   assignment: QuarterlyPlanAssignment,
   all: readonly QuarterlyPlanAssignment[]
 ): QuarterlyPlanAssignment[] {
-  const end = assignment.startWeek + assignment.weeks;
+  const span = daySpanOf(assignment);
   return all.filter(
     (other) =>
-      other.id !== assignment.id &&
-      other.memberId === assignment.memberId &&
-      other.startWeek < end &&
-      other.startWeek + other.weeks > assignment.startWeek
+      other.id !== assignment.id && other.memberId === assignment.memberId && daysOverlap(span, daySpanOf(other))
   );
 }
 
@@ -343,31 +376,41 @@ export function overlappingAssignments(
  */
 export const QUARTER_MAX_PARALLEL_EPICS = 2;
 
-/** Назначения, которые в неделю `week` стоят у человека вместе с этим (без него самого). */
-function othersInWeek(others: readonly QuarterlyPlanAssignment[], week: number): QuarterlyPlanAssignment[] {
-  return others.filter((other) => other.startWeek <= week && week < other.startWeek + other.weeks);
+/** Назначения, которые стоят у человека в день `day`. */
+function othersOnDay(others: readonly QuarterlyPlanAssignment[], day: number): QuarterlyPlanAssignment[] {
+  return others.filter((other) => daysOverlap({ days: 1, startDay: day }, daySpanOf(other)));
 }
 
-/** Недели назначения, в которые у человека больше `QUARTER_MAX_PARALLEL_EPICS` назначений вместе с этим (QI2). */
-export function overlapWeeks(
+/**
+ * Дни назначения, в которые у человека больше `QUARTER_MAX_PARALLEL_EPICS` назначений вместе с этим (QI2).
+ * Считается по дням: задачи одной недели, идущие друг за другом, одновременно не стоят (QT5).
+ */
+export function overloadedDays(
   assignment: QuarterlyPlanAssignment,
   all: readonly QuarterlyPlanAssignment[]
 ): number[] {
   const others = overlappingAssignments(assignment, all);
-  const weeks: number[] = [];
-  for (let week = assignment.startWeek; week < assignment.startWeek + assignment.weeks; week += 1) {
-    if (othersInWeek(others, week).length >= QUARTER_MAX_PARALLEL_EPICS) weeks.push(week);
-  }
-  return weeks;
+  const { days, startDay } = daySpanOf(assignment);
+  return Array.from({ length: days }, (_, offset) => startDay + offset).filter(
+    (day) => othersOnDay(others, day).length >= QUARTER_MAX_PARALLEL_EPICS
+  );
 }
 
-/** Другие назначения человека в его перегруженные недели (`overlapWeeks`) — их эпики называет подсказка. */
+/** Недели назначения, в которых есть перегруженные дни (`overloadedDays`). */
+export function overlapWeeks(
+  assignment: QuarterlyPlanAssignment,
+  all: readonly QuarterlyPlanAssignment[]
+): number[] {
+  return [...new Set(overloadedDays(assignment, all).map((day) => Math.floor(day / QUARTER_WORKING_DAYS_PER_WEEK)))];
+}
+
+/** Другие назначения человека в его перегруженные дни (`overloadedDays`) — их эпики называет подсказка. */
 export function overloadingAssignments(
   assignment: QuarterlyPlanAssignment,
   all: readonly QuarterlyPlanAssignment[]
 ): QuarterlyPlanAssignment[] {
   const others = overlappingAssignments(assignment, all);
-  const ids = new Set(overlapWeeks(assignment, all).flatMap((week) => othersInWeek(others, week).map((other) => other.id)));
+  const ids = new Set(overloadedDays(assignment, all).flatMap((day) => othersOnDay(others, day).map((other) => other.id)));
   return others.filter((other) => ids.has(other.id));
 }
 

@@ -14,16 +14,15 @@ import {
   quarterRowHeightPx,
 } from '../quarterlyPlanBoardModel';
 
+import { QuarterlyPlanDirectionEpics } from './QuarterlyPlanDirectionEpics';
 import { QuarterlyPlanDirectionHeader } from './QuarterlyPlanDirectionHeader';
-import { QuarterlyPlanEpicRow } from './QuarterlyPlanEpicRow';
-import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
 import { QuarterlyPlanRowBars } from './QuarterlyPlanRowBars';
 
 interface QuarterlyPlanDirectionSectionProps {
   collapsed: boolean;
   direction: QuarterlyPlanDirection;
-  /** Эпики направления после фильтров. */
+  /** Эпики направления (без задач) после фильтров. */
   epics: QuarterlyPlanEpic[];
   onToggle: () => void;
 }
@@ -39,7 +38,7 @@ export function QuarterlyPlanDirectionSection({
   onToggle,
 }: QuarterlyPlanDirectionSectionProps) {
   const { t } = useI18n();
-  const { assignmentsByDirection, assignmentsByEpic, draft, onCellClick, onDraftSubmit, trackerEpics, weeks } =
+  const { assignmentsByDirection, assignmentsByEpicTree, onCellClick, trackerEpics, weeks } =
     useQuarterlyPlanBoard();
   const ownAssignments = assignmentsByDirection.get(direction.id) ?? [];
   /** Свои полосы видны, пока направление раскрыто; свёрнутое сводит их в общий срок. */
@@ -51,18 +50,17 @@ export function QuarterlyPlanDirectionSection({
   // Заметки направления занимают его дорожку — сводная полоса тогда уходит к нижнему краю строки.
   const hasNotes = useQuarterRowNotes({ id: direction.id, kind: 'direction' }).notes.length > 0;
 
-  /** Свёрнутое направление показывает общий срок своих полос и эпиков одной тонкой полосой (QB5). */
+  /** Свёрнутое направление показывает общий срок своих полос, эпиков и их задач одной тонкой полосой (QB5, QT3). */
   const spans = collapsed
-    ? [...ownAssignments, ...epics.flatMap((epic) => assignmentsByEpic.get(epic.id) ?? [])]
+    ? [...ownAssignments, ...epics.flatMap((epic) => assignmentsByEpicTree.get(epic.id) ?? [])]
     : [];
   const rollupStart = Math.min(...spans.map((span) => span.startWeek));
   /** Эпики без единой полосы; готовые не в счёт — планировать их уже незачем. */
   const unplannedCount = epics.filter(
-    (epic) => !isEpicDone(epic, trackerEpics) && !assignmentsByEpic.get(epic.id)?.length
+    (epic) => !isEpicDone(epic, trackerEpics) && !assignmentsByEpicTree.get(epic.id)?.length
   ).length;
   const rollupEnd = Math.max(...spans.map((span) => span.startWeek + span.weeks));
 
-  const addingEpic = draft?.kind === 'newEpic' && draft.directionId === direction.id;
 
   return (
     <>
@@ -80,6 +78,7 @@ export function QuarterlyPlanDirectionSection({
         noteRow={{ id: direction.id, kind: 'direction' }}
         notesTopPx={QUARTER_ROW_PADDING_PX}
         occupiedWeeks={own.occupiedWeeks}
+        sortRow={{ id: direction.id, level: 'direction', parentId: direction.teamId }}
         tone="direction"
         weekActionLabel={t('quarterlyPlan.assignWeek', { title: direction.title })}
         onWeekClick={assignWeek}
@@ -100,22 +99,7 @@ export function QuarterlyPlanDirectionSection({
           />
         ) : null}
       </QuarterlyPlanRow>
-      {collapsed
-        ? null
-        : epics.map((epic) => <QuarterlyPlanEpicRow key={epic.id} epic={epic} />)}
-      {addingEpic ? (
-        <QuarterlyPlanRow
-          heightPx={QUARTER_ROW_HEIGHT_PX}
-          left={
-            <div className="flex min-w-0 flex-1 pl-9 pr-2">
-              <QuarterlyPlanInlineInput
-                placeholder={t('quarterlyPlan.addEpicPlaceholder')}
-                onSubmit={onDraftSubmit}
-              />
-            </div>
-          }
-        />
-      ) : null}
+      <QuarterlyPlanDirectionEpics collapsed={collapsed} directionId={direction.id} epics={epics} />
     </>
   );
 }

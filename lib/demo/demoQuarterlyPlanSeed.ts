@@ -11,9 +11,11 @@ import type {
   QuarterlyPlanTrackerEpic,
   QuarterRef,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
-import type { Developer } from '@/types';
+import type { Developer, Task } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
+import { daySpanFields } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { buildSprintCards, type SprintCardPosition } from '@/lib/quarterlyPlans/quarterlyPlanSprintCards';
 import { buildQuarterWeeks, type QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import {
@@ -91,11 +93,17 @@ function buildTeams(ref: QuarterRef, demoDevelopers: Developer[]): QuarterlyPlan
 }
 
 type SeedAssignment = [memberId: string, startWeek: number, weeks: number];
+/** Полоса задачи — в рабочих днях квартала (QT5): день 10 — понедельник третьей недели. */
+type SeedDayAssignment = [memberId: string, startDay: number, days: number];
 
 interface SeedEpic {
   assignments?: SeedAssignment[];
+  /** Полосы в днях — только у задач. */
+  dayAssignments?: SeedDayAssignment[];
   issueKey?: string;
   status: QuarterlyPlanEpicStatus;
+  /** Задачи эпика — строки уровнем ниже со своими полосами (QT1). Задача — на день-два: дольше — это уже эпик. */
+  tasks?: SeedEpic[];
   title: string;
 }
 
@@ -114,8 +122,28 @@ const SEED_DIRECTIONS: SeedDirection[] = [
     title: 'Checkout redesign',
     epics: [
       { assignments: [[DEMO_DEV_BOB, 0, 2]], issueKey: 'DEMO-103', status: 'done', title: 'Cart summary & promo field' },
-      { assignments: [[DEMO_DEV_ALICE, 1, 3]], issueKey: 'DEMO-101', status: 'in_progress', title: 'Payment step API' },
-      { assignments: [[DEMO_DEV_BOB, 2, 3]], issueKey: 'DEMO-102', status: 'in_progress', title: 'Payment step UI' },
+      {
+        assignments: [[DEMO_DEV_ALICE, 1, 3]],
+        issueKey: 'DEMO-101',
+        status: 'in_progress',
+        tasks: [
+          { dayAssignments: [[DEMO_DEV_ALICE, 5, 2]], status: 'done', title: 'Payment intent endpoint' },
+          { dayAssignments: [[DEMO_DEV_ALICE, 7, 2]], status: 'done', title: 'Provider webhooks' },
+          { dayAssignments: [[DEMO_DEV_ALICE, 10, 1]], status: 'in_progress', title: 'Retry policy' },
+          { dayAssignments: [[DEMO_DEV_ALICE, 11, 1]], status: 'backlog', title: 'Idempotency keys' },
+          { dayAssignments: [[DEMO_DEV_ALICE, 12, 2]], status: 'backlog', title: 'Refund endpoint' },
+        ],
+        title: 'Payment step API',
+      },
+      {
+        assignments: [[DEMO_DEV_BOB, 2, 3]],
+        issueKey: 'DEMO-102',
+        status: 'in_progress',
+        // Задача из трекера: название и статус — оттуда. В плане на неё день (16.10), а на доске спринта карточка
+        // стоит четыре — доска квартала показывает расхождение (QK8).
+        tasks: [{ dayAssignments: [[DEMO_DEV_ERIN, 14, 1]], issueKey: 'DEMO-110', status: 'backlog', title: 'Checkout analytics events' }],
+        title: 'Payment step UI',
+      },
       { assignments: [[DEMO_DEV_CAROL, 5, 2]], status: 'backlog', title: 'Regression & staged rollout' },
     ],
   },
@@ -125,12 +153,16 @@ const SEED_DIRECTIONS: SeedDirection[] = [
     title: 'Promo codes v2',
     epics: [
       { assignments: [[DEMO_DEV_DANA, 4, 3]], status: 'backlog', title: 'Stackable discounts engine' },
+      // Эпик без своих полос: кто и когда — видно по задачам.
       {
-        assignments: [
-          [DEMO_DEV_ERIN, 5, 2],
-          [DEMO_DEV_BOB, 7, 2],
-        ],
         status: 'backlog',
+        tasks: [
+          { dayAssignments: [[DEMO_DEV_ERIN, 25, 2]], status: 'backlog', title: 'Rules list & filters' },
+          { dayAssignments: [[DEMO_DEV_ERIN, 27, 2]], status: 'backlog', title: 'Conditions builder' },
+          { dayAssignments: [[DEMO_DEV_BOB, 30, 1]], status: 'backlog', title: 'Rule form & validation' },
+          { dayAssignments: [[DEMO_DEV_BOB, 31, 1]], status: 'backlog', title: 'Preview & publish' },
+          { issueKey: 'DEMO-217', status: 'backlog', title: 'Promo usage report' },
+        ],
         title: 'Admin: promo rules editor',
       },
     ],
@@ -166,7 +198,17 @@ const SEED_DIRECTIONS: SeedDirection[] = [
     epics: [
       { assignments: [[GRACE, 0, 2]], status: 'done', title: 'Access context refactoring' },
       { assignments: [[DENNIS, 1, 3]], status: 'in_progress', title: 'Cursor pagination & formats' },
-      { assignments: [[GRACE, 2, 4]], issueKey: 'PLAT-48', status: 'backlog', title: 'OAuth clients & scopes' },
+      {
+        issueKey: 'PLAT-48',
+        status: 'backlog',
+        tasks: [
+          { dayAssignments: [[GRACE, 10, 2]], status: 'in_progress', title: 'Client registration' },
+          { dayAssignments: [[GRACE, 12, 1]], status: 'backlog', title: 'Scopes & consent screen' },
+          { dayAssignments: [[GRACE, 13, 2]], issueKey: 'PLAT-50', status: 'backlog', title: 'Rate limiting' },
+          { dayAssignments: [[GRACE, 15, 1]], status: 'backlog', title: 'Token rotation' },
+        ],
+        title: 'OAuth clients & scopes',
+      },
       { assignments: [[BARBARA, 3, 3]], status: 'backlog', title: 'Developer portal: API keys' },
     ],
   },
@@ -253,11 +295,12 @@ function buildSeedContent(): QuarterlyPlanContent {
     (direction.discovery ?? []).forEach(([memberId, startWeek, weeks], index) => {
       content.assignments.push({ directionId, id: `${directionId}-d${index + 1}`, memberId, phase: 'discovery', startWeek, weeks });
     });
-    direction.epics.forEach((epic, epicIndex) => {
+    const pushEpic = (epic: SeedEpic, id: string, parentEpicId?: string) => {
       const planEpic: QuarterlyPlanEpic = {
         directionId,
-        id: `${directionId}-epic-${epicIndex + 1}`,
+        id,
         issueKey: epic.issueKey,
+        ...(parentEpicId ? { parentEpicId } : {}),
         status: epic.status,
         title: epic.title,
       };
@@ -272,7 +315,12 @@ function buildSeedContent(): QuarterlyPlanContent {
         };
         content.assignments.push(assignment);
       });
-    });
+      (epic.dayAssignments ?? []).forEach(([memberId, startDay, days], index) => {
+        content.assignments.push({ epicId: planEpic.id, id: `${planEpic.id}-a${index + 1}`, memberId, ...daySpanFields({ days, startDay }) });
+      });
+      (epic.tasks ?? []).forEach((task, taskIndex) => pushEpic(task, `${id}-task-${taskIndex + 1}`, id));
+    };
+    direction.epics.forEach((epic, epicIndex) => pushEpic(epic, `${directionId}-epic-${epicIndex + 1}`));
   });
   return content;
 }
@@ -288,15 +336,27 @@ export function buildDemoQuarterlyPlanContent(ref: QuarterRef): QuarterlyPlanCon
 export function buildDemoQuarterlyPlan(
   ref: QuarterRef,
   content: QuarterlyPlanContent,
-  demoDevelopers: Developer[]
+  demoDevelopers: Developer[],
+  /** Карточки текущего демо-спринта: по ним план показывает расхождение со спринтом (QK8). */
+  sprint: {
+    partsPerDay: number;
+    positions: readonly SprintCardPosition[];
+    sprints: readonly QuarterlyPlanSprint[];
+    /** Задачи демо-трекера: привязанная строка берёт их текущий статус — его можно сменить с доски (QE7). */
+    tasks: readonly Task[];
+  }
 ): QuarterlyPlan {
   const trackerEpics = Object.fromEntries(
     content.epics.flatMap((epic) => {
       const tracked = DEMO_TRACKER_EPICS.find((item) => item.issueKey === epic.issueKey);
-      return tracked ? [[tracked.issueKey, demoTrackerEpic(tracked)]] : [];
+      if (!tracked) return [];
+      const live = sprint.tasks.find((task) => task.id === tracked.issueKey);
+      return [[tracked.issueKey, live ? demoTrackerEpicFromTask(live, tracked.title) : demoTrackerEpic(tracked)]];
     })
   );
-  return { ...ref, ...content, teams: buildTeams(ref, demoDevelopers), trackerEpics };
+  const taskKeys = new Set(content.epics.flatMap((epic) => (epic.parentEpicId && epic.issueKey ? [epic.issueKey] : [])));
+  const sprintCards = buildSprintCards({ partsPerDay: sprint.partsPerDay, sprints: sprint.sprints, positions: sprint.positions.filter((row) => taskKeys.has(row.taskId)) });
+  return { ...ref, ...content, sprintCards, teams: buildTeams(ref, demoDevelopers), trackerEpics };
 }
 
 const DUTY_ROTATION: Array<[memberId: string, memberName: string]> = [
@@ -369,6 +429,17 @@ const DEMO_STATUS_DISPLAY: Record<DemoTrackerStatus, string> = {
   intesting: 'Testing',
   open: 'Open',
 };
+
+/** Задача демо-трекера → строка плана: статус живой, меняется переходами. */
+function demoTrackerEpicFromTask(task: Task, title: string): QuarterlyPlanTrackerEpic {
+  const status = task.originalStatus ?? 'open';
+  return {
+    done: task.statusTypeKey === 'done',
+    statusColorKey: status,
+    statusDisplay: task.originalStatusDisplay ?? status,
+    title,
+  };
+}
 
 /** Статус эпика «в трекере» → то, что план показывает у привязанной строки (QE7). */
 function demoTrackerEpic(epic: { status?: DemoTrackerStatus; title: string }): QuarterlyPlanTrackerEpic {

@@ -17,6 +17,7 @@ import {
   overlapWeeks,
   violatedBlockersByAssignment,
 } from './quarterlyPlanLayout';
+import { rivalAssignments, tasksByEpic, topLevelEpics } from './quarterlyPlanRows';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from './quarterWeeks';
 
 /** Отсутствия человека в днях квартала (индексы рабочих дней от понедельника первой недели). */
@@ -91,9 +92,12 @@ function assignmentsInBoardOrder(plan: QuarterlyPlan, hideDone: boolean) {
       // Свои полосы направления (QG2) стоят в его строке — выше эпиков.
       const own = plan.assignments.filter((assignment) => assignment.directionId === direction.id).sort(byStart);
       rows.push(...own.map((assignment) => ({ assignment, directionId: direction.id, team })));
-      const epics = plan.epics.filter(
-        (epic) => epic.directionId === direction.id && !(hideDone && isEpicDone(epic, plan.trackerEpics))
-      );
+      // Эпик, под ним его задачи; готовый эпик скрывается вместе с задачами (QT4).
+      const shown = (epic: QuarterlyPlan['epics'][number]) => !(hideDone && isEpicDone(epic, plan.trackerEpics));
+      const tasks = tasksByEpic(plan.epics);
+      const epics = topLevelEpics(plan.epics, direction.id)
+        .filter(shown)
+        .flatMap((epic) => [epic, ...(tasks.get(epic.id) ?? []).filter(shown)]);
       for (const epic of epics) {
         const assignments = plan.assignments.filter((assignment) => assignment.epicId === epic.id).sort(byStart);
         rows.push(...assignments.map((assignment) => ({ assignment, directionId: direction.id, team })));
@@ -113,6 +117,7 @@ export function collectQuarterlyPlanIssues(
   hideDone: boolean
 ): QuarterlyPlanIssue[] {
   const violated = violatedBlockersByAssignment(plan);
+  const rivalsOf = rivalAssignments(plan.epics);
   return assignmentsInBoardOrder(plan, hideDone).flatMap(({ assignment, directionId, team }) => {
     const absentDays = absenceByMember.get(assignment.memberId)?.blockedDays ?? new Set<number>();
     const issue: QuarterlyPlanIssue = {
@@ -121,7 +126,7 @@ export function collectQuarterlyPlanIssues(
       blocked: violated.has(assignment.id),
       directionId,
       notInTeam: !team.members.some((member) => member.id === assignment.memberId),
-      parallel: overlapWeeks(assignment, plan.assignments).length > 0,
+      parallel: overlapWeeks(assignment, rivalsOf(assignment, plan.assignments)).length > 0,
       teamId: team.id,
     };
     return issue.away || issue.blocked || issue.notInTeam || issue.parallel ? [issue] : [];

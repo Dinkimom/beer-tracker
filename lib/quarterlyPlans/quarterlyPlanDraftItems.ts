@@ -21,6 +21,8 @@ const KIND_OF_OP: Record<QuarterlyPlanOp['op'], QuarterlyPlanDraftItemKind> = {
   addLink: 'link',
   addNote: 'note',
   assign: 'assignment',
+  moveDirection: 'direction',
+  moveEpic: 'epic',
   removeAssignment: 'assignment',
   removeDirection: 'direction',
   removeEpic: 'epic',
@@ -34,12 +36,15 @@ const KIND_OF_OP: Record<QuarterlyPlanOp['op'], QuarterlyPlanDraftItemKind> = {
 
 /** Поля операций, где стоит id сущности или `$имя` из того же пакета. */
 const REF_FIELDS = [
+  'afterId',
+  'anchorId',
   'assignmentId',
   'directionId',
   'epicId',
   'fromId',
   'linkId',
   'noteId',
+  'parentEpicId',
   'teamId',
   'toId',
 ] as const;

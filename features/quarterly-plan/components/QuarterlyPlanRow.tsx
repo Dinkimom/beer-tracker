@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 
 import { ZIndex } from '@/constants';
 import { quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import { useQuarterlyPlanBoard, useQuarterRowNotes, useQuarterSprintStartWeeks } from '../QuarterlyPlanBoardContext';
 import {
@@ -15,6 +16,7 @@ import {
   QUARTER_LEFT_COLUMN_WIDTH,
   QUARTER_ROW_PADDING_PX,
   QUARTER_WEEK_LINE,
+  type QuarterRowLevel,
 } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanNoteChip } from './QuarterlyPlanNoteChip';
@@ -32,7 +34,8 @@ type QuarterlyPlanRowTone = 'default' | 'direction' | 'team';
  */
 const ROW_TONE_CLASS: Record<QuarterlyPlanRowTone, string> = {
   default: 'bg-white dark:bg-gray-800',
-  direction: 'border-t border-ds-border-subtle bg-white dark:bg-gray-800',
+  // Направление — шапка своей группы: тонированная полоса во всю ширину отделяет его от эпиков под ним.
+  direction: 'border-t border-ds-border-subtle bg-gray-50 dark:bg-[#253246]',
   team: 'border-b border-ds-border-subtle bg-gray-100 dark:bg-[#2a3749]',
 };
 
@@ -56,6 +59,11 @@ interface QuarterlyPlanRowProps {
   notesTopPx?: number;
   /** Недели, занятые полосами: клик по ним не ловим — второго человека добавляют из меню полосы. */
   occupiedWeeks?: ReadonlySet<number>;
+  /**
+   * Строку можно переставлять (QO2, QO3): её уровень и родитель — направление у эпика, эпик у задачи,
+   * команда у направления. По ним ручка порядка находит соседей.
+   */
+  sortRow?: { id: string; level: QuarterRowLevel; parentId: string };
   /** Строка липнет под шапкой, пока на экране её секция. */
   sticky?: boolean;
   tone?: QuarterlyPlanRowTone;
@@ -76,6 +84,7 @@ export function QuarterlyPlanRow({
   noteRow,
   notesTopPx,
   occupiedWeeks,
+  sortRow,
   sticky = false,
   tone = 'default',
   weekActionLabel,
@@ -96,6 +105,9 @@ export function QuarterlyPlanRow({
     <div
       className={`group/row flex transition-[min-height] duration-200 ${toneClass} ${sticky ? 'sticky' : ''}`}
       data-quarter-note-row={noteRow ? quarterNoteRowKey(noteRow) : undefined}
+      data-quarter-sort={sortRow?.level}
+      data-quarter-sort-id={sortRow?.id}
+      data-quarter-sort-parent={sortRow?.parentId}
       style={{
         minHeight: totalHeight,
         ...(tone === 'default' ? { borderTop: `1px solid ${QUARTER_WEEK_LINE}` } : {}),
@@ -106,13 +118,20 @@ export function QuarterlyPlanRow({
         className={`sticky left-0 flex shrink-0 items-start border-r border-ds-border-subtle transition-colors ${toneClass} ${tone === 'default' ? ROW_HOVER_CLASS : ''} !border-b-0 !border-t-0`}
         style={{ width: QUARTER_LEFT_COLUMN_WIDTH, zIndex: ZIndex.stickyInContent }}
       >
+        {/* Задача эпика — ветка дерева: направляющая слева связывает задачи с их эпиком (QT1). */}
+        {sortRow?.level === 'task' ? (
+          <>
+            <span aria-hidden className="absolute inset-y-0 left-[22px] w-px bg-ds-border-subtle" />
+            <span aria-hidden className="absolute left-[22px] h-px w-2.5 bg-ds-border-subtle" style={{ top: heightPx / 2 }} />
+          </>
+        ) : null}
         {/* Подпись стоит напротив содержимого строки, а не посередине между ним и заметками. */}
         <div className="flex min-w-0 flex-1 items-center" style={{ minHeight: heightPx }}>
           {left}
         </div>
       </div>
       <div
-        className="relative min-w-0 flex-1"
+        className="group/track relative min-w-0 flex-1"
         data-quarter-track
         style={
           // В строке команды сетку недель не рисуем: там ячейки спринтов, а недели уже размечены в шапке.
@@ -125,6 +144,19 @@ export function QuarterlyPlanRow({
               }
         }
       >
+        {/* Сетка дней — как части дня на свимлейне: в покое её нет, она проявляется в строке, где полосу
+            или плашку тянут с шагом в день (`data-quarter-day-drag="1"` — шаг жеста в днях), и показывает, куда та встанет. */}
+        {tone === 'team' ? null : (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-has-[[data-quarter-day-drag='1']]/track:opacity-100"
+            style={{
+              backgroundImage: `linear-gradient(to right, ${QUARTER_WEEK_LINE} 1px, transparent 1px)`,
+              backgroundPosition: '-1px 0',
+              backgroundSize: `${weekWidth / QUARTER_WORKING_DAYS_PER_WEEK}% 100%`,
+            }}
+          />
+        )}
         {currentWeek >= 0 ? (
           <div
             aria-hidden

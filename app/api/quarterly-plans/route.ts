@@ -6,6 +6,7 @@ import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProv
 import { QuarterRefSchema } from '@/lib/quarterlyPlans/quarterlyPlanContentParse';
 import { requireQuarterBody, requireQuarterQuery } from '@/lib/quarterlyPlans/quarterlyPlanRouteHelpers';
 import { getQuarterlyPlan, saveQuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanService';
+import { IssueKeyParamSchema } from '@/lib/validation';
 
 const SaveSchema = QuarterRefSchema.extend({
   content: z.unknown(),
@@ -14,17 +15,20 @@ const SaveSchema = QuarterRefSchema.extend({
 
 /**
  * GET /api/quarterly-plans?year=&quarter= — план квартала организации: команды, люди, спринты,
- * содержимое и `version` для следующего сохранения.
+ * содержимое и `version` для следующего сохранения. `refresh=<ключ>` — задаче только что сменили статус:
+ * её строка читается из трекера заново.
  */
 export async function GET(request: NextRequest) {
   try {
     const route = await requireQuarterQuery(request);
     if ('response' in route) return route.response;
+    const refresh = IssueKeyParamSchema.safeParse({ issueKey: request.nextUrl.searchParams.get('refresh') });
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
     const result = await getQuarterlyPlan({
       issueTracker,
       organizationId: route.ctx.organizationId,
       ref: route.input,
+      refreshIssueKey: refresh.success ? refresh.data.issueKey : undefined,
     });
     return NextResponse.json(result);
   } catch (error) {

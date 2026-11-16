@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 
-import { areLinked, planIssueKeys, QUARTER_NOTE_MAX_ROWS } from './quarterlyPlanLayout';
+import { areLinked, daySpanFields, planIssueKeys, QUARTER_NOTE_MAX_ROWS } from './quarterlyPlanLayout';
 import { buildQuarterWeeks } from './quarterWeeks';
 
 /** Квартал из запроса (`?year=&quarter=` или тело): числа приводятся, квартал — 1–4. */
@@ -25,11 +25,13 @@ const contentSchema = z.object({
   assignments: z
     .array(
       z.object({
+        days: z.number().int().min(1).optional(),
         directionId: id.optional(),
         epicId: id.optional(),
         id,
         memberId: id,
         phase: z.enum(['delivery', 'discovery']).optional(),
+        startDay: z.number().int().min(0).optional(),
         ...span,
       })
     )
@@ -43,6 +45,7 @@ const contentSchema = z.object({
         directionId: id,
         id,
         issueKey: z.string().trim().min(1).max(64).optional(),
+        parentEpicId: id.optional(),
         status: z.enum(['backlog', 'blocked', 'done', 'in_progress', 'test']),
         title,
       })
@@ -101,6 +104,35 @@ function assignmentRowError(
   if ((epicId === undefined) === (directionId === undefined)) return 'needs exactly one of epicId and directionId';
   if (epicId !== undefined) return epicIds.has(epicId) ? null : `unknown epic ${epicId}`;
   return directionIds.has(directionId!) ? null : `unknown direction ${directionId}`;
+}
+
+/** Задача стоит под эпиком своего направления; под задачей задач нет (QT1, QT2). */
+function taskParentError(content: QuarterlyPlanContent): string | null {
+  const epicById = new Map(content.epics.map((epic) => [epic.id, epic]));
+  for (const task of content.epics) {
+    if (task.parentEpicId === undefined) continue;
+    const parent = epicById.get(task.parentEpicId);
+    if (!parent) return `epic ${task.id}: unknown parent epic ${task.parentEpicId}`;
+    if (parent.parentEpicId !== undefined) return `epic ${task.id}: parent ${parent.id} is a task itself`;
+    if (parent.directionId !== task.directionId) return `epic ${task.id}: not in the direction of its parent ${parent.id}`;
+  }
+  return null;
+}
+
+/** Срок в днях — только у полосы задачи эпика, и недели назначения — те, что эти дни задевают (QT5). */
+function daySpanError(content: QuarterlyPlanContent): string | null {
+  const taskIds = new Set(content.epics.filter((epic) => epic.parentEpicId !== undefined).map((epic) => epic.id));
+  for (const assignment of content.assignments) {
+    const { days, id: assignmentId, startDay } = assignment;
+    if (days === undefined && startDay === undefined) continue;
+    if (days === undefined || startDay === undefined) return `assignment ${assignmentId}: startDay and days go together`;
+    if (!taskIds.has(assignment.epicId ?? '')) return `assignment ${assignmentId}: days are only for a task row`;
+    const fit = daySpanFields({ days, startDay });
+    if (fit.startWeek !== assignment.startWeek || fit.weeks !== assignment.weeks) {
+      return `assignment ${assignmentId}: weeks do not match its days`;
+    }
+  }
+  return null;
 }
 
 /** Каждая ссылка ведёт на существующую сущность: эпик — на направление, назначение — на эпик и т.д. */
@@ -173,6 +205,8 @@ export function parseQuarterlyPlanContent(
   const error =
     duplicateError(content) ??
     referenceError(content, teamIds) ??
+    taskParentError(content) ??
+    daySpanError(content) ??
     linkError(content) ??
     spanError(content, buildQuarterWeeks(ref).length);
   return error ? { error, ok: false } : { content, ok: true };

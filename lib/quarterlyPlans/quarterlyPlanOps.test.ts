@@ -200,6 +200,62 @@ describe('applyQuarterlyPlanOps', () => {
     expect(removed.content).toMatchObject({ assignments: [], epics: [], notes: [] });
   });
 
+  it('задача встаёт под эпик и берёт его направление; под задачей задач нет (QT1, QT2)', () => {
+    const result = ok(
+      [
+        { op: 'addEpic', parentEpicId: 'id2', ref: '$t', title: 'Webhooks' },
+        { epicId: '$t', memberId: 'bob', op: 'assign', span: { startWeek: 3, weeks: 1 } },
+      ],
+      BASE.content
+    );
+    expect(result.content.epics[1]).toEqual({ directionId: 'id1', id: 'id1', parentEpicId: 'id2', status: 'backlog', title: 'Webhooks' });
+    expect(result.content.assignments[1]).toMatchObject({ epicId: 'id1', memberId: 'bob' });
+    expect(run([{ op: 'addEpic', parentEpicId: 'id1', title: 'Deeper' }], result.content)).toMatchObject({
+      error: 'addEpic: epic id1 is a task itself; a task cannot have tasks',
+    });
+    expect(run([{ directionId: 'id1', op: 'addEpic', parentEpicId: 'id2', title: 'Both' }], BASE.content)).toMatchObject({
+      error: 'addEpic: needs exactly one of directionId and parentEpicId',
+    });
+  });
+
+  it('полоса задачи по датам встаёт днями, по неделям — целыми неделями; у эпика даты дают недели (QT5)', () => {
+    const withTask = ok([{ op: 'addEpic', parentEpicId: 'id2', title: 'Webhooks' }], BASE.content);
+    const dates = { endDate: '2026-10-09', startDate: '2026-10-08' };
+    const result = ok(
+      [
+        { epicId: 'id1', memberId: 'bob', op: 'assign', ref: '$t', span: dates },
+        { epicId: 'id2', memberId: 'bob', op: 'assign', span: dates },
+      ],
+      withTask.content
+    );
+    expect(result.content.assignments[1]).toMatchObject({ days: 2, startDay: 8, startWeek: 1, weeks: 1 });
+    expect(result.content.assignments[2]).toMatchObject({ startWeek: 1, weeks: 1 });
+    expect(result.content.assignments[2]?.days).toBeUndefined();
+    const weekly = ok([{ assignmentId: 'id1', op: 'updateAssignment', span: { startWeek: 3, weeks: 1 } }], result.content);
+    expect(weekly.content.assignments[1]).toMatchObject({ startWeek: 3, weeks: 1 });
+    expect(weekly.content.assignments[1]?.startDay).toBeUndefined();
+  });
+
+  it('строку ставят под другой и переставляют; уровень и команда не меняются (QO1–QO3)', () => {
+    const result = ok(
+      [
+        { directionId: 'id1', op: 'addEpic', ref: '$last', title: 'Last' },
+        { afterId: 'id2', directionId: 'id1', op: 'addEpic', ref: '$second', title: 'Second' },
+        { anchorId: 'id2', epicId: '$last', op: 'moveEpic', place: 'before' },
+        { afterId: 'id1', op: 'addDirection', ref: '$d2', teamId: 't1', title: 'Search' },
+        { anchorId: 'id1', directionId: '$d2', op: 'moveDirection', place: 'before' },
+      ],
+      BASE.content
+    );
+    expect(result.content.epics.map((epic) => epic.title)).toEqual(['Last', 'Payment API', 'Second']);
+    expect(result.content.directions.map((direction) => direction.title)).toEqual(['Search', 'Checkout']);
+    expect(result.targets).toEqual(['id1', 'id2', 'id1', 'id3', 'id3']);
+    const other = ok([{ op: 'addDirection', ref: '$o', teamId: 't2', title: 'Platform' }], BASE.content);
+    expect(run([{ anchorId: 'id1', directionId: 'id1', op: 'moveDirection', place: 'after' }], other.content)).toMatchObject({
+      error: 'moveDirection: a row cannot be placed next to itself',
+    });
+  });
+
   it('схема принимает пакет из MCP и отклоняет неизвестную операцию', () => {
     expect(QuarterlyPlanOpsSchema.safeParse([{ epicId: 'e', op: 'removeEpic' }]).success).toBe(true);
     expect(QuarterlyPlanOpsSchema.safeParse([{ op: 'moveEverything' }]).success).toBe(false);

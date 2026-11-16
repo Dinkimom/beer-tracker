@@ -122,6 +122,8 @@ export interface DemoFixtureState {
   sprintInfo: NonNullable<SprintTasksResponse['sprintInfo']>;
   sprints: SprintListItem[];
   tasks: Task[];
+  /** Задачи, которым в демо сменили статус: квартальный план показывает у них статус из задачи, а не из сида. */
+  transitionedIssueKeys: string[];
 }
 
 function buildDemoPositions(): DemoPositionRow[] {
@@ -356,6 +358,7 @@ export function createDemoFixtureSeed(): DemoFixtureState {
       ...buildDemoQuarterAvailabilityEvents({ memberName: DEMO_DEV_DISPLAY.bob.name }),
     ],
     quarterlyPlans: {},
+    transitionedIssueKeys: [],
     board: {
       id: DEMO_BOARD_ID,
       isMyTeam: true,

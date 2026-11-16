@@ -36,6 +36,7 @@ const WRITE_HINT =
   'Change the plan with propose_quarterly_plan (ifVersion = version) — the person accepts the draft on the board. People: teams[].members[].id (resolve names with resolve_person). ' +
   'Tracker links: a direction is a tracker epic (search_tracker_epics, link with updateDirection.issue); a plan epic is any ' +
   'tracker issue, usually a task inside that epic (search_issues, link with addEpic.issueKey or updateEpic.issue). ' +
+  'Tasks: to show what a person does in which weeks inside an epic, add task rows under it (addEpic with parentEpicId) and assign on them — do not list tasks in a direction or epic title. ' +
   'Absences: apply_availability_events.';
 
 /**
@@ -52,6 +53,8 @@ export function registerQuarterlyPlanMcpTools(
       description:
         "Read the organization's quarterly plan: weeks (index + Mon–Fri dates), teams (id, boardId, members, sprints), " +
         'directions (milestones; issueKey = linked tracker epic), epics (issueKey = linked tracker issue, status, title; ' +
+        'sprintCards[issueKey] = where a linked task stands on a sprint board (sprintId, sprintName, first and last working day): compare with the dates of its bars to see plan vs sprint drift — nothing moves by itself; ' +
+        'parentEpicId marks a task of that epic — a row of its own one level below, with its own assignments; directions and epics come in board order; ' +
         'for every linked key trackerEpics[issueKey] has the tracker title, status and done), assignments (person × row × weeks; the row is ' +
         'an epic (epicId) or the direction itself (directionId); phase "discovery" marks research, no phase = delivery), links ' +
         '(fromId must finish before toId starts), notes, absences per team, issues (assignments where the person is away, ' +
@@ -95,6 +98,7 @@ export function registerQuarterlyPlanMcpTools(
           hint: WRITE_HINT,
           issues: findings.issues.filter((issue) => inTeams.has(issue.teamId)),
           links: plan.links,
+          sprintCards: plan.sprintCards,
           notes: plan.notes,
           // Твой черновик, который человек ещё не принял: план выше — без него.
           ...(pendingProposal
@@ -135,7 +139,11 @@ export function registerQuarterlyPlanMcpTools(
       description:
         'Propose a change to the quarterly plan as a draft the person accepts or rejects as a whole on the quarterly board ' +
         '(you cannot write the plan yourself). Batch of ops, all or nothing: addDirection|updateDirection|removeDirection|' +
-        'addEpic|updateEpic|removeEpic|assign|updateAssignment|removeAssignment|addLink|removeLink|addNote|updateNote|removeNote. ' +
+        'moveDirection|addEpic|updateEpic|removeEpic|moveEpic|assign|updateAssignment|removeAssignment|addLink|removeLink|addNote|updateNote|removeNote. ' +
+        'A bar on a task row can be shorter than a week: give its span as {startDate, endDate} and it keeps the working days (assignments then carry startDay/days — working-day index from the quarter start — next to startWeek/weeks); a task is a day or two of work, longer is an epic. Bars on epics and directions are always whole weeks. An epic bar and the bars of its own tasks are the same work, not parallel load. ' +
+        'addEpic takes directionId (an epic) or parentEpicId (a task under that epic: tracker issue or plain title; one level only; assign on it with epicId = the task id); ' +
+        'removing an epic removes its tasks. Order: addEpic/addDirection afterId puts the new row right below that row; moveEpic/moveDirection {anchorId, place: before|after} ' +
+        'reorder rows of the same level inside a team (an epic moved next to an epic of another direction joins that direction with its tasks; a task moved next to a task joins its epic). ' +
         'Give created entities a ref like "$epic1" and use it in later ops of the same batch. Spans: {startWeek, weeks} ' +
         'or {startDate, endDate}. assign takes epicId or directionId: put discovery (research before the feature is split into epics) ' +
         'on the direction, delivery on its epics; phase overrides the default. A person must be in the row team. addDirection with an existing title reuses it; addEpic ' +

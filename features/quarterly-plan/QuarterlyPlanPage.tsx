@@ -33,6 +33,7 @@ import {
   violatedBlockersByAssignment,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { collectUnsplitDirectionIds } from '@/lib/quarterlyPlans/quarterlyPlanPhases';
+import { epicRowIds, moveDirection, moveEpic, rivalAssignments, tasksByEpic } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 import {
   buildQuarterWeeks,
   QUARTER_WORKING_DAYS_PER_WEEK,
@@ -55,6 +56,7 @@ import { useQuarterlyPlan } from './useQuarterlyPlan';
 import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarterlyPlanAgent';
 import { useQuarterlyPlanLinks } from './useQuarterlyPlanLinks';
 import { useQuarterlyPlanNotes } from './useQuarterlyPlanNotes';
+import { useQuarterlyPlanTrackerStatus } from './useQuarterlyPlanTrackerStatus';
 
 function groupBy(
   assignments: readonly QuarterlyPlanAssignment[],
@@ -82,9 +84,12 @@ export function QuarterlyPlanPage() {
   const [trackerPick, setTrackerPick] = useState<QuarterlyPlanTrackerPick | null>(null);
   /** Свёрнутые команды и направления: идентификаторы у них не пересекаются. */
   const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(new Set());
+  /** Эпики с раскрытым списком задач: по умолчанию задачи свёрнуты, доска остаётся компактной (QT4). */
+  const [expandedEpicIds, setExpandedEpicIds] = useState<ReadonlySet<string>>(new Set());
   const [focusedIssue, setFocusedIssue] = useState<{ assignmentId: string; nonce: number } | null>(null);
   const [todayNonce, setTodayNonce] = useState(0);
-  const { applyEdit: savePlanEdit, eventsByBoard, isLoading, plan: savedPlan, setVersion } = useQuarterlyPlan(quarterRef);
+  const { applyEdit: savePlanEdit, eventsByBoard, isLoading, plan: savedPlan, refreshTrackerRow, setVersion } = useQuarterlyPlan(quarterRef);
+  const changeTrackerStatus = useQuarterlyPlanTrackerStatus(refreshTrackerRow);
   const agent = useQuarterlyPlanAgent(quarterRef, setVersion);
   const [agentOpen, setAgentOpen] = useState(false);
   /** План на доске — с черновиком агента, пока он показан (QM9): доска, проблемы и меню считают по нему. */
@@ -124,11 +129,32 @@ export function QuarterlyPlanPage() {
     });
   }, []);
 
-  /** Следующее пересечение по порядку доски; свёрнутые команда и направление раскрываются. */
+  const toggleEpic = useCallback((id: string) => {
+    setExpandedEpicIds((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  }, []);
+  const expandEpic = useCallback((id: string | undefined) => {
+    if (id) setExpandedEpicIds((current) => new Set(current).add(id));
+  }, []);
+  /** Поле новой задачи открывается в раскрытом эпике и оставляет его раскрытым. */
+  const startDraft = useCallback(
+    (next: QuarterlyPlanDraft) => {
+      if (next.kind === 'newEpic') expandEpic(next.parentEpicId);
+      setDraft(next);
+    },
+    [expandEpic]
+  );
+
+  /** Следующее пересечение по порядку доски; свёрнутые команда, направление и эпик задачи раскрываются. */
   const focusNextIssue = () => {
     const index = issues.findIndex((issue) => issue.assignmentId === focusedIssue?.assignmentId);
     const next = issues[(index + 1) % issues.length];
     if (!next) return;
+    const epicId = plan?.assignments.find((assignment) => assignment.id === next.assignmentId)?.epicId;
+    expandEpic(plan?.epics.find((epic) => epic.id === epicId)?.parentEpicId);
     setCollapsedIds((current) => {
       const expanded = new Set(current);
       expanded.delete(next.teamId);
@@ -144,10 +170,12 @@ export function QuarterlyPlanPage() {
       if (!draft || !title) return;
       applyEdit((content) => {
         if (draft.kind === 'newDirection') {
-          return addDirection(content, { id: crypto.randomUUID(), teamId: draft.teamId, title });
+          return addDirection(content, { id: crypto.randomUUID(), teamId: draft.teamId, title }, draft.afterId);
         }
         if (draft.kind === 'newEpic') {
-          return addEpic(content, { directionId: draft.directionId, id: crypto.randomUUID(), status: 'backlog', title });
+          const { afterId, directionId, parentEpicId } = draft;
+          const epic = { directionId, id: crypto.randomUUID(), ...(parentEpicId ? { parentEpicId } : {}), status: 'backlog' as const, title };
+          return addEpic(content, epic, afterId);
         }
         return draft.kind === 'renameDirection'
           ? updateDirection(content, draft.id, { title })
@@ -163,15 +191,25 @@ export function QuarterlyPlanPage() {
     if (!plan) return null;
     const members = plan.teams.flatMap((team) => team.members);
     const rowById = new Map([...plan.directions, ...plan.epics].map((row) => [row.id, row]));
+    const assignmentsByEpic = groupBy(plan.assignments, 'epicId');
+    const assignmentsByMember = groupBy(plan.assignments, 'memberId');
+    const rivalsOf = rivalAssignments(plan.epics);
     return {
       absenceByMember,
       assignmentsByDirection: groupBy(plan.assignments, 'directionId'),
-      assignmentsByEpic: groupBy(plan.assignments, 'epicId'),
-      assignmentsByMember: groupBy(plan.assignments, 'memberId'),
+      assignmentsByEpic,
+      assignmentsByEpicTree: new Map(
+        plan.epics.map((epic) => [
+          epic.id,
+          [...epicRowIds(plan.epics, epic.id)].flatMap((rowId) => assignmentsByEpic.get(rowId) ?? []),
+        ])
+      ),
       currentWeek: weekIndexOfDate(weeks, getPlannerNow()),
       dayCount: weeks.length * QUARTER_WORKING_DAYS_PER_WEEK,
       draft,
+      expandedEpicIds,
       focusedIssue,
+      hideDone,
       issueCountByTeam: issues.reduce(
         (counts, issue) => counts.set(issue.teamId, (counts.get(issue.teamId) ?? 0) + 1),
         new Map<string, number>()
@@ -186,14 +224,23 @@ export function QuarterlyPlanPage() {
       onCellClick: (row, week, anchor) => setMenu({ anchor, kind: 'assign', row, week, weeks: 1 }),
       onDraftSubmit: submitDraft,
       onRowMenu: (target, anchor) => setMenu({ anchor, kind: 'row', target }),
-      onStartDraft: setDraft,
+      onRowMove: (level, id, anchorId, place) =>
+        applyEdit((content) =>
+          level === 'direction' ? moveDirection(content, id, anchorId, place) : moveEpic(content, id, anchorId, place)
+        ),
+      onStartDraft: startDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
+      onToggleEpic: toggleEpic,
+      onTrackerStatusChange: (...change) => void changeTrackerStatus(...change),
+      rivalAssignmentsOf: (assignment) => rivalsOf(assignment, assignmentsByMember.get(assignment.memberId) ?? []),
       rowTitleOf: (assignment) => {
         const row = rowById.get(assignment.epicId ?? assignment.directionId ?? '');
         return row ? epicTitle(row, plan.trackerEpics) : '';
       },
       draftMarks: draftView.marks,
       draftReview: draftView.review,
+      sprintCards: plan.sprintCards,
+      tasksByEpic: tasksByEpic(plan.epics),
       timelineStart,
       trackerEpics: plan.trackerEpics,
       unsplitDirectionIds: new Set(
@@ -202,7 +249,7 @@ export function QuarterlyPlanPage() {
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, applyEdit, draft, draftView.marks, draftView.review, focusedIssue, issues, linksBoard, notesBoard, plan, submitDraft, timelineStart, weeks]);
+  }, [absenceByMember, applyEdit, draft, draftView.marks, draftView.review, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -234,21 +281,23 @@ export function QuarterlyPlanPage() {
       confirmThen(t('quarterlyPlan.removeDirectionConfirm'), () =>
         applyEdit((content) => removeDirection(content, directionId))
       ),
-    // Пустую строку убираем сразу; эпик с назначениями — после подтверждения, отмены на доске нет.
+    // Пустую строку убираем сразу; эпик с назначениями или задачами — после подтверждения, отмены на доске нет.
     onRemoveEpic: (epicId) => {
       const remove = () => applyEdit((content) => removeEpic(content, epicId));
-      if (plan?.assignments.some((assignment) => assignment.epicId === epicId)) {
+      const rowIds = epicRowIds(plan?.epics ?? [], epicId);
+      if (rowIds.size > 1 || plan?.assignments.some((assignment) => assignment.epicId === epicId)) {
         confirmThen(t('quarterlyPlan.removeEpicConfirm'), remove);
       } else {
         remove();
       }
     },
-    onStartDraft: setDraft,
+    onStartDraft: startDraft,
   };
 
   const applyTrackerPick = (issueKey: string, title: string) => {
     if (!trackerPick) return;
     applyEdit((content) => applyTrackerPickToPlan(content, trackerPick, { issueKey, title }));
+    if (trackerPick.kind === 'add') expandEpic(trackerPick.parentEpicId);
     setTrackerPick(null);
   };
 

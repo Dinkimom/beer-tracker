@@ -1,13 +1,16 @@
 'use client';
 
-import type { MemberAbsence } from './quarterlyPlanBoardModel';
+import type { MemberAbsence, QuarterRowLevel } from './quarterlyPlanBoardModel';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { QuarterlyPlanDraftDiff } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
 import type { QuarterlyPlanDraftItem } from '@/lib/quarterlyPlans/quarterlyPlanDraftItems';
-import type { NoteLaneBlocker, WeekSpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import type { DaySpan, NoteLaneBlocker, WeekSpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import type { QuarterRowPlace } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 import type {
+  QuarterlyPlan,
   QuarterlyPlanAssignment,
+  QuarterlyPlanEpic,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
   QuarterlyPlanTrackerEpic,
@@ -24,11 +27,14 @@ export interface QuarterMenuAnchor {
   y: number;
 }
 
-/** Строка, в которой сейчас открыто поле ввода: новый эпик, новое направление или переименование. */
+/**
+ * Строка, в которой сейчас открыто поле ввода: новая строка или переименование. `afterId` — строка,
+ * под которую встанет новая (QO1); `parentEpicId` — новая строка будет задачей этого эпика (QT1).
+ */
 export type QuarterlyPlanDraft =
-  | { directionId: string; kind: 'newEpic' }
-  | { id: string; kind: 'renameDirection' | 'renameEpic' }
-  | { kind: 'newDirection'; teamId: string };
+  | { afterId?: string; directionId: string; kind: 'newEpic'; parentEpicId?: string }
+  | { afterId?: string; kind: 'newDirection'; teamId: string }
+  | { id: string; kind: 'renameDirection' | 'renameEpic' };
 
 /** Строка, в которой стоят полосы назначений: эпик или направление (QG2). */
 export interface QuarterlyPlanAssignRow {
@@ -38,8 +44,8 @@ export interface QuarterlyPlanAssignRow {
 
 export interface QuarterlyPlanRowTarget {
   id: string;
-  /** `addEpic` — меню «+» в строке: новая строка или строка из трекера. */
-  kind: 'addEpic' | 'direction' | 'epic';
+  /** `addEpic` и `addTask` — меню «+» в строке направления и эпика: новая строка или строка из трекера. */
+  kind: 'addEpic' | 'addTask' | 'direction' | 'epic';
 }
 
 /**
@@ -70,7 +76,9 @@ export interface QuarterlyPlanBoardContextValue {
   /** Свои полосы направлений (QG2). */
   assignmentsByDirection: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
   assignmentsByEpic: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
-  assignmentsByMember: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
+  /** Полосы эпика вместе с полосами его задач (QT3); у задачи — только свои. */
+  assignmentsByEpicTree: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
+
   /** Индекс текущей недели; -1, если «сегодня» вне квартала. */
   currentWeek: number;
   dayCount: number;
@@ -79,8 +87,12 @@ export interface QuarterlyPlanBoardContextValue {
   draftMarks: QuarterlyPlanDraftDiff | null;
   /** ✓/✗ пунктов показанного черновика на доске (QM10); null — черновика на доске нет. */
   draftReview: QuarterlyPlanDraftReview | null;
+  /** Эпики с раскрытым списком задач (QT4). */
+  expandedEpicIds: ReadonlySet<string>;
   /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   focusedIssue: { assignmentId: string; nonce: number } | null;
+  /** Включено «Скрыть готовые»: готовые задачи эпиков тоже не показываются (QB7). */
+  hideDone: boolean;
   /** Сколько назначений с пересечениями у команды. */
   issueCountByTeam: ReadonlyMap<string, number>;
   /** Инструмент «Связь»: включён ли и какая полоса выбрана источником. */
@@ -110,6 +122,10 @@ export interface QuarterlyPlanBoardContextValue {
   noteTool: boolean;
   /** Назначения, исполнитель которых больше не в команде эпика (QI6). */
   notInTeamAssignmentIds: ReadonlySet<string>;
+  /** Карточки привязанных задач на досках спринтов, по ключу трекера (QK8). */
+  sprintCards: QuarterlyPlan['sprintCards'];
+  /** Задачи эпиков по эпику-родителю, в порядке плана (QT1). */
+  tasksByEpic: ReadonlyMap<string, QuarterlyPlanEpic[]>;
   timelineStart: Date;
   /** Привязанные эпики трекера по ключу: название, статус, «сделано» (QE5, QE7). */
   trackerEpics: Readonly<Record<string, QuarterlyPlanTrackerEpic>>;
@@ -120,7 +136,8 @@ export interface QuarterlyPlanBoardContextValue {
   weeks: readonly QuarterWeek[];
   /** Полосу можно сделать целью связи от выбранного источника. */
   canLinkTo: (assignmentId: string) => boolean;
-  onBarChange: (assignmentId: string, span: WeekSpan) => void;
+  /** Полосу сдвинули или растянули: срок неделями, у полосы задачи — ещё и днями (QT5). */
+  onBarChange: (assignmentId: string, span: Partial<DaySpan> & WeekSpan) => void;
   onBarClick: (assignmentId: string, anchor: QuarterMenuAnchor) => void;
   onCellClick: (row: QuarterlyPlanAssignRow, week: number, anchor: QuarterMenuAnchor) => void;
   /** Завершить ввод в открытом поле: название или null, если ввод отменён. */
@@ -140,8 +157,20 @@ export interface QuarterlyPlanBoardContextValue {
   onNoteDrag: (drag: QuarterlyPlanNoteDrag | null) => void;
   onNotePlace: (row: QuarterlyPlanNoteRow, week: number, anchor: QuarterMenuAnchor) => void;
   onRowMenu: (target: QuarterlyPlanRowTarget, anchor: QuarterMenuAnchor) => void;
+  /** Строку перетащили: она встаёт перед строкой `anchorId` того же уровня или после неё (QO2, QO3). */
+  onRowMove: (level: QuarterRowLevel, id: string, anchorId: string, place: QuarterRowPlace) => void;
   onStartDraft: (draft: QuarterlyPlanDraft) => void;
   onStatusClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
+  onToggleEpic: (epicId: string) => void;
+  /** Сменить статус привязанной строки: переход её задачи в трекере (QE7). */
+  onTrackerStatusChange: (
+    issueKey: string,
+    transitionId: string,
+    targetStatusKey?: string,
+    targetStatusDisplay?: string
+  ) => void;
+  /** Другие назначения того же человека, с которыми это может стоять параллельно: без полос той же работы (QT3). */
+  rivalAssignmentsOf: (assignment: QuarterlyPlanAssignment) => QuarterlyPlanAssignment[];
   /** Название строки назначения — эпика или направления; для подсказок полос. */
   rowTitleOf: (assignment: Pick<QuarterlyPlanAssignment, 'directionId' | 'epicId'>) => string;
 }

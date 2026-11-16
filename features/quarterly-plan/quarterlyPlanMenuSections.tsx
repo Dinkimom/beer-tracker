@@ -44,11 +44,11 @@ export type QuarterlyPlanMenuState =
   { anchor: QuarterMenuAnchor; assignmentId: string; kind: 'bar' } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'status' } | { anchor: QuarterMenuAnchor; kind: 'assign'; phase?: QuarterlyPlanPhase; row: QuarterlyPlanAssignRow; week: number; weeks: number } | { anchor: QuarterMenuAnchor; kind: 'row'; target: QuarterlyPlanRowTarget };
 
 /**
- * Зачем открыт поиск по трекеру: добавить эпик плана из задачи трекера, привязать эпик плана к задаче
- * или направление — к эпику трекера.
+ * Зачем открыт поиск по трекеру: добавить эпик плана или задачу эпика (`parentEpicId`) из задачи трекера,
+ * привязать эпик плана к задаче или направление — к эпику трекера.
  */
 export type QuarterlyPlanTrackerPick =
-  | { directionId: string; kind: 'add' }
+  | { directionId: string; kind: 'add'; parentEpicId?: string }
   | { directionId: string; kind: 'linkDirection' }
   | { epicId: string; kind: 'link' };
 
@@ -67,7 +67,14 @@ export function applyTrackerPickToPlan(
 ): QuarterlyPlanContent {
   if (pick.kind === 'linkDirection') return updateDirection(content, pick.directionId, issue);
   if (pick.kind === 'link') return updateEpic(content, pick.epicId, issue);
-  return addEpic(content, { directionId: pick.directionId, id: crypto.randomUUID(), ...issue, status: 'backlog' });
+  const { directionId, parentEpicId } = pick;
+  return addEpic(content, {
+    directionId,
+    id: crypto.randomUUID(),
+    ...issue,
+    ...(parentEpicId ? { parentEpicId } : {}),
+    status: 'backlog',
+  });
 }
 
 /** Действия строк, у которых есть своё состояние на странице: поле ввода, диалог, запрос в трекер. */
@@ -253,7 +260,11 @@ function rowIcon(name: string) {
   return <Icon className="h-4 w-4 shrink-0" name={name} />;
 }
 
-function addEpicSections(input: MenuSectionsInput, directionId: string): QuarterlyPlanMenuSection[] {
+/** Меню «+»: новая строка в направлении или задача под эпиком (`parentEpicId`) — своя или из трекера. */
+function addEpicSections(
+  input: MenuSectionsInput,
+  parent: { directionId: string; parentEpicId?: string }
+): QuarterlyPlanMenuSection[] {
   const { actions, t } = input;
   return [
     {
@@ -262,14 +273,14 @@ function addEpicSections(input: MenuSectionsInput, directionId: string): Quarter
         {
           icon: rowIcon('plus'),
           id: 'new',
-          label: t('quarterlyPlan.menuNewEpic'),
-          onSelect: () => actions.onStartDraft({ directionId, kind: 'newEpic' }),
+          label: t(parent.parentEpicId ? 'quarterlyPlan.menuNewTask' : 'quarterlyPlan.menuNewEpic'),
+          onSelect: () => actions.onStartDraft({ ...parent, kind: 'newEpic' }),
         },
         {
           icon: rowIcon('link'),
           id: 'tracker',
           label: t('quarterlyPlan.menuEpicFromTracker'),
-          onSelect: () => actions.onPickTrackerEpic({ directionId, kind: 'add' }),
+          onSelect: () => actions.onPickTrackerEpic({ ...parent, kind: 'add' }),
         },
       ],
     },
@@ -278,7 +289,8 @@ function addEpicSections(input: MenuSectionsInput, directionId: string): Quarter
 
 function directionSections(input: MenuSectionsInput, directionId: string): QuarterlyPlanMenuSection[] {
   const { actions, applyEdit, plan, t } = input;
-  const linked = Boolean(plan.directions.find((direction) => direction.id === directionId)?.issueKey);
+  const direction = plan.directions.find((row) => row.id === directionId);
+  const linked = Boolean(direction?.issueKey);
   const tracker: QuarterlyPlanMenuRow = linked
     ? {
         icon: rowIcon('x'),
@@ -305,6 +317,18 @@ function directionSections(input: MenuSectionsInput, directionId: string): Quart
       rows: linked ? [tracker] : [rename, tracker],
     },
     {
+      id: 'add',
+      rows: [
+        {
+          icon: rowIcon('plus'),
+          id: 'below',
+          label: t('quarterlyPlan.menuAddDirectionBelow'),
+          onSelect: () =>
+            actions.onStartDraft({ afterId: directionId, kind: 'newDirection', teamId: direction?.teamId ?? '' }),
+        },
+      ],
+    },
+    {
       id: 'danger',
       rows: [
         {
@@ -321,7 +345,10 @@ function directionSections(input: MenuSectionsInput, directionId: string): Quart
 
 function epicSections(input: MenuSectionsInput, epicId: string): QuarterlyPlanMenuSection[] {
   const { actions, applyEdit, plan, t } = input;
-  const linked = Boolean(plan.epics.find((epic) => epic.id === epicId)?.issueKey);
+  const epic = plan.epics.find((row) => row.id === epicId);
+  if (!epic) return [];
+  const linked = Boolean(epic.issueKey);
+  const { directionId, parentEpicId } = epic;
   const tracker: QuarterlyPlanMenuRow = linked
     ? {
         icon: rowIcon('x'),
@@ -355,6 +382,18 @@ function epicSections(input: MenuSectionsInput, epicId: string): QuarterlyPlanMe
       ],
     },
     {
+      id: 'add',
+      rows: [
+        {
+          icon: rowIcon('plus'),
+          id: 'below',
+          label: t(parentEpicId ? 'quarterlyPlan.menuAddTaskBelow' : 'quarterlyPlan.menuAddEpicBelow'),
+          onSelect: () =>
+            actions.onStartDraft({ afterId: epicId, directionId, kind: 'newEpic', ...(parentEpicId ? { parentEpicId } : {}) }),
+        },
+      ],
+    },
+    {
       id: 'danger',
       rows: [
         {
@@ -370,7 +409,11 @@ function epicSections(input: MenuSectionsInput, epicId: string): QuarterlyPlanMe
 }
 
 function rowSections(input: MenuSectionsInput, target: QuarterlyPlanRowTarget): QuarterlyPlanMenuSection[] {
-  if (target.kind === 'addEpic') return addEpicSections(input, target.id);
+  if (target.kind === 'addEpic') return addEpicSections(input, { directionId: target.id });
+  if (target.kind === 'addTask') {
+    const directionId = input.plan.epics.find((epic) => epic.id === target.id)?.directionId ?? '';
+    return addEpicSections(input, { directionId, parentEpicId: target.id });
+  }
   if (target.kind === 'direction') return directionSections(input, target.id);
   return epicSections(input, target.id);
 }

@@ -72,7 +72,8 @@ export function QuarterlyPlanAbsenceChip({ chip, lane, onChange, onClick }: Quar
       <div
         ref={rootRef}
         aria-label={`${label}, ${chip.range}`}
-        className={`group/bar absolute flex cursor-grab touch-none select-none items-center gap-1.5 overflow-hidden rounded-lg text-xs font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:cursor-grabbing ${avatarOnly ? 'justify-center' : 'px-1.5'} ${drag ? '' : 'transition-[left,width,background-color] duration-200'} ${CHIP_KIND_CLASS[chip.kind]}`}
+        className={`group/bar absolute flex cursor-grab touch-none select-none [&_img]:pointer-events-none items-center gap-1.5 overflow-hidden rounded-lg text-xs font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:cursor-grabbing ${avatarOnly ? 'justify-center' : 'px-1.5'} ${drag ? '' : 'transition-[left,width,background-color] duration-200'} ${CHIP_KIND_CLASS[chip.kind]}`}
+        data-quarter-day-drag={drag ? 1 : undefined}
         style={{
           height: QUARTER_LANE_HEIGHT_PX - 4,
           left: `calc(${(span.startWeek / dayCount) * 100}% + 2px)`,
@@ -89,8 +90,8 @@ export function QuarterlyPlanAbsenceChip({ chip, lane, onChange, onClick }: Quar
           size="2xs"
         />
         {avatarOnly ? null : <span className="truncate">{nameOnly ? firstName : label}</span>}
-        <QuarterlyPlanResizeHandle active={drag?.mode === 'start'} rounded side="left" onPointerDown={begin('start')} />
-        <QuarterlyPlanResizeHandle active={drag?.mode === 'end'} rounded side="right" onPointerDown={begin('end')} />
+        <QuarterlyPlanResizeHandle active={drag?.mode === 'start'} narrow={span.weeks <= 1} rounded side="left" onPointerDown={begin('start')} />
+        <QuarterlyPlanResizeHandle active={drag?.mode === 'end'} narrow={span.weeks <= 1} rounded side="right" onPointerDown={begin('end')} />
       </div>
     </TextTooltip>
   );

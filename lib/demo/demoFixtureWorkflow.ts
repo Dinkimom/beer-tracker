@@ -211,6 +211,7 @@ function applyDemoIssueTransition(issueKey: string, transitionId: string): DemoF
     statusTypeKey: target.statusTypeKey,
   };
   const store = getDemoFixtureStore();
+  store.transitionedIssueKeys = [...new Set([...store.transitionedIssueKeys, issueKey])];
   store.tasks = store.tasks.map((t) => (t === issue ? moved : t));
   store.nextSprintTasks = store.nextSprintTasks.map((t) => (t === issue ? moved : t));
   store.backlogTasks = store.backlogTasks.map((t) => (t === issue ? moved : t));

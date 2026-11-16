@@ -44,7 +44,17 @@ describe('diffQuarterlyPlanDraft', () => {
     expect([...diffQuarterlyPlanDraft(wasLinked, before).linked]).toEqual([]);
   });
 
-  it('убранное остаётся на доске на своём месте, новое — после прежнего (QM10)', () => {
+  it('перестановка помечает только переставленную строку (QO4)', () => {
+    const epics = ['e1', 'e2', 'e3', 'e4'].map((id) => ({ ...before.epics[0]!, id }));
+    const order = (ids: string[]) => ({ ...before, assignments: [], epics: ids.map((id) => epics.find((row) => row.id === id)!) });
+    const diff = diffQuarterlyPlanDraft(order(['e1', 'e2', 'e3', 'e4']), order(['e4', 'e1', 'e2', 'e3']));
+    expect([...diff.changed]).toEqual(['e4']);
+    expect(
+      withRemovedFromDraft(order(['e1', 'e2', 'e3', 'e4']), order(['e4', 'e1', 'e3'])).epics.map((row) => row.id)
+    ).toEqual(['e4', 'e1', 'e2', 'e3']);
+  });
+
+  it('убранное остаётся на доске на своём месте, остальное — в порядке черновика (QM10)', () => {
     const after: QuarterlyPlanContent = {
       ...before,
       assignments: [
@@ -54,8 +64,8 @@ describe('diffQuarterlyPlanDraft', () => {
     };
     expect(withRemovedFromDraft(before, after).assignments.map(({ id, startWeek }) => [id, startWeek])).toEqual([
       ['a1', 0],
-      ['a2', 3],
       ['a3', 4],
+      ['a2', 3],
     ]);
   });
 

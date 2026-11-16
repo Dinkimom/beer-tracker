@@ -119,5 +119,16 @@ export function useQuarterlyPlan(ref: QuarterRef) {
     [quarter, year]
   );
 
-  return { applyEdit, eventsByBoard, isLoading: planQuery.isLoading, plan, setVersion };
+  /** Статус строки сменили в трекере: перечитываем только то, что план берёт оттуда, свои правки не трогаем. */
+  const refreshTrackerRow = useCallback(
+    async (issueKey: string) => {
+      const { plan: loaded } = await fetchQuarterlyPlan({ quarter, year }, issueKey);
+      queryClient.setQueryData<QuarterlyPlan>(queryKey, (current) =>
+        current ? { ...current, trackerEpics: loaded.trackerEpics } : loaded
+      );
+    },
+    [quarter, queryClient, queryKey, year]
+  );
+
+  return { applyEdit, eventsByBoard, isLoading: planQuery.isLoading, plan, refreshTrackerRow, setVersion };
 }

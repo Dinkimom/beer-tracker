@@ -14,6 +14,8 @@ import { QuarterlyPlanBar } from './QuarterlyPlanBar';
 interface QuarterlyPlanRowBarsProps {
   /** Полосы строки — эпика или направления (QG2). */
   assignments: readonly QuarterlyPlanAssignment[];
+  /** Строка задачи: её полосы тянутся с шагом в день (QT5). */
+  dayStep?: boolean;
   /** Строка готова: полосы приглушены (QE8). */
   faded?: boolean;
   laneById: ReadonlyMap<string, number>;
@@ -22,13 +24,19 @@ interface QuarterlyPlanRowBarsProps {
 }
 
 /** Полосы назначений одной строки с их проблемами (QI1–QI6) и рисками (QV3). */
-export function QuarterlyPlanRowBars({ assignments, faded = false, laneById, statusKey }: QuarterlyPlanRowBarsProps) {
+export function QuarterlyPlanRowBars({
+  assignments,
+  dayStep = false,
+  faded = false,
+  laneById,
+  statusKey,
+}: QuarterlyPlanRowBarsProps) {
   const { t } = useI18n();
   const {
     absenceByMember,
-    assignmentsByMember,
     memberById,
     notInTeamAssignmentIds,
+    rivalAssignmentsOf,
     rowTitleOf,
     violatedBlockers,
   } = useQuarterlyPlanBoard();
@@ -40,7 +48,7 @@ export function QuarterlyPlanRowBars({ assignments, faded = false, laneById, sta
     const away = (absence?.segments ?? [])
       .filter((segment) => segment.dayIndices.some((day) => absentDays.has(day)))
       .map((segment) => `${t(availabilityKindMessageKey(segment.kind))} ${segment.dateRangeLabel}`);
-    const parallel = overloadingAssignments(assignment, assignmentsByMember.get(assignment.memberId) ?? []).map(
+    const parallel = overloadingAssignments(assignment, rivalAssignmentsOf(assignment)).map(
       rowTitleOf
     );
     const blockers = (violatedBlockers.get(assignment.id) ?? []).map((blocker) =>
@@ -71,6 +79,7 @@ export function QuarterlyPlanRowBars({ assignments, faded = false, laneById, sta
     <QuarterlyPlanBar
       key={assignment.id}
       assignment={assignment}
+      dayStep={dayStep}
       faded={faded}
       issues={issuesOf(assignment)}
       lane={laneById.get(assignment.id) ?? 0}

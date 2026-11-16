@@ -17,9 +17,14 @@ interface QuarterlyPlanResponse {
   version: number;
 }
 
-export async function fetchQuarterlyPlan({ quarter, year }: QuarterRef): Promise<QuarterlyPlanResponse> {
+/** `refreshIssueKey` — задаче только что сменили статус: её строку сервер перечитает из трекера. */
+export async function fetchQuarterlyPlan(
+  { quarter, year }: QuarterRef,
+  refreshIssueKey?: string
+): Promise<QuarterlyPlanResponse> {
+  const refresh = refreshIssueKey ? `&refresh=${encodeURIComponent(refreshIssueKey)}` : '';
   const { data } = await getPlannerBeerTrackerApi().get<QuarterlyPlanResponse>(
-    `/quarterly-plans?year=${year}&quarter=${quarter}`
+    `/quarterly-plans?year=${year}&quarter=${quarter}${refresh}`
   );
   return data;
 }

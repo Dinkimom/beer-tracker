@@ -93,6 +93,20 @@ export function resolveWeekSpan(
   return { startWeek: hit[0]!.index, weeks: hit.length };
 }
 
+/** Рабочие дни квартала, которые период задевает (понедельник первой недели — день 0); null — ни одного. */
+export function resolveDaySpan(
+  weeks: readonly QuarterWeek[],
+  startDate: string,
+  endDate: string
+): { days: number; startDay: number } | null {
+  const hit: number[] = [];
+  for (let day = 0; day < weeks.length * QUARTER_WORKING_DAYS_PER_WEEK; day += 1) {
+    const iso = quarterDayIsoDate(weeks, day);
+    if (iso !== null && iso >= startDate && iso <= endDate) hit.push(day);
+  }
+  return hit.length > 0 ? { days: hit.length, startDay: hit[0]! } : null;
+}
+
 /** Индекс недели, в которую попадает дата; -1 — дата вне квартала. */
 export function weekIndexOfDate(weeks: readonly QuarterWeek[], date: Date): number {
   const iso = formatLocalDateToIsoDateOnly(thursdayOfWeek(date));

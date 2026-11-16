@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { QuarterRefSchema } from '@/lib/quarterlyPlans/quarterlyPlanContentParse';
 import { epicTitle } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { topLevelEpics } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 
 /** Строка плана у цели: квартал плана и id эпика или направления в нём. */
 export interface SprintGoalPlanRow extends QuarterRef {
@@ -88,8 +89,8 @@ export function buildGoalPlanRowOptions(
       .filter((direction) => !team || direction.teamId === team.id)
       .flatMap((direction) => {
         const directionTitle = epicTitle(direction, plan.trackerEpics);
-        const epics = plan.epics
-          .filter((epic) => epic.directionId === direction.id)
+        // Задачи эпиков в выбор не идут: цель спринта привязывают к эпику или направлению.
+        const epics = topLevelEpics(plan.epics, direction.id)
           .map((epic) => ({
             directionTitle,
             planRow: { quarter, rowId: epic.id, year },

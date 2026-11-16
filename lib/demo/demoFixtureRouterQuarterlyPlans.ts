@@ -6,7 +6,10 @@ import type {
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
+import { getPartsPerDay } from '@/lib/plannerTimelineScale';
+
 import { getDemoFixtureStore } from './demoFixtureStore';
+import { DEMO_SPRINT_ID } from './demoIds';
 import {
   buildDemoQuarterlyPlan,
   buildDemoQuarterlyPlanContent,
@@ -38,7 +41,24 @@ function handlePlan(method: string, params: URLSearchParams, body: unknown): Dem
       year: Number(params.get('year') ?? 2026),
     };
     const { content, version } = readStored(ref);
-    return ok({ plan: buildDemoQuarterlyPlan(ref, content, getDemoFixtureStore().developers), version });
+    const store = getDemoFixtureStore();
+    const sprint = {
+      partsPerDay: getPartsPerDay(),
+      // Позиции демо — доска текущего спринта.
+      positions: store.positions.map((row) => ({
+        duration: row.duration,
+        sprintId: DEMO_SPRINT_ID,
+        startDay: row.start_day,
+        startPart: row.start_part,
+        taskId: row.task_id,
+      })),
+      sprints: store.sprints.filter((item) => item.id === DEMO_SPRINT_ID),
+      // Статус из задачи — только после перехода в демо: до него строки показывают сид плана.
+      tasks: [...store.tasks, ...store.nextSprintTasks, ...store.backlogTasks].filter((task) =>
+        store.transitionedIssueKeys.includes(task.id)
+      ),
+    };
+    return ok({ plan: buildDemoQuarterlyPlan(ref, content, store.developers, sprint), version });
   }
   if (method === 'put') {
     // Тот же контракт, что у /api/quarterly-plans: запись поверх версии, которую видел клиент (QS5).

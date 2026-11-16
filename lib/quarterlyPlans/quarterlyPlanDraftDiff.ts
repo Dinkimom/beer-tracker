@@ -27,6 +27,34 @@ function byId<T extends { id: string }>(items: readonly T[]): Map<string, T> {
   return new Map(items.map((item) => [item.id, item]));
 }
 
+/** Индексы самой длинной возрастающей подпоследовательности: эти элементы порядка не меняли. */
+function longestIncreasing(values: readonly number[]): Set<number> {
+  const length = values.map(() => 1);
+  const previous = values.map(() => -1);
+  values.forEach((value, index) => {
+    for (let before = 0; before < index; before += 1) {
+      if (values[before]! < value && length[before]! + 1 > length[index]!) {
+        length[index] = length[before]! + 1;
+        previous[index] = before;
+      }
+    }
+  });
+  const kept = new Set<number>();
+  for (let index = length.indexOf(Math.max(0, ...length)); index >= 0; index = previous[index]!) kept.add(index);
+  return kept;
+}
+
+/**
+ * Строки, которые черновик переставил (QO4): из общих строк — те, что не входят в самую длинную цепочку,
+ * сохранившую взаимный порядок. Одна перестановка помечает одну строку, а не всех её соседей.
+ */
+function movedIds(was: readonly { id: string }[], now: readonly { id: string }[]): string[] {
+  const wasIndex = new Map(was.map((item, index) => [item.id, index]));
+  const common = now.filter((item) => wasIndex.has(item.id));
+  const kept = longestIncreasing(common.map((item) => wasIndex.get(item.id)!));
+  return common.filter((_, index) => !kept.has(index)).map((item) => item.id);
+}
+
 /** Сравнивает план с планом после черновика: добавлено, изменено, убрано — по всем видам сущностей. */
 export function diffQuarterlyPlanDraft(before: QuarterlyPlanContent, after: QuarterlyPlanContent): QuarterlyPlanDraftDiff {
   const added = new Set<string>();
@@ -46,6 +74,12 @@ export function diffQuarterlyPlanDraft(before: QuarterlyPlanContent, after: Quar
     }
     [...was.keys()].filter((id) => !now.has(id)).forEach((id) => removed.add(id));
   }
+  // Порядок что-то значит только у строк доски: направлений и эпиков с задачами.
+  for (const collection of ['directions', 'epics'] as const) {
+    movedIds(before[collection], after[collection])
+      .filter((id) => !changed.has(id))
+      .forEach((id) => changed.set(id, false));
+  }
   return {
     added,
     changed: new Set(changed.keys()),
@@ -54,21 +88,29 @@ export function diffQuarterlyPlanDraft(before: QuarterlyPlanContent, after: Quar
   };
 }
 
+/** `now` в своём порядке; убранное из `was` — после ближайшего прежнего соседа сверху, который остался. */
+function withRemoved<T extends { id: string }>(was: readonly T[], now: readonly T[]): T[] {
+  const result = [...now];
+  const has = (id: string) => result.some((kept) => kept.id === id);
+  for (const [index, item] of was.entries()) {
+    if (has(item.id)) continue;
+    const above = was.slice(0, index).findLast((candidate) => has(candidate.id));
+    result.splice(above ? result.findIndex((kept) => kept.id === above.id) + 1 : 0, 0, item);
+  }
+  return result;
+}
+
 /**
  * План после черновика вместе с тем, что черновик убирает (QM10): убранное стоит на доске на своём месте,
- * пока о нём не решили, — как удаление в предложении агента на доске спринта. Новое — после прежнего.
+ * пока о нём не решили, — как удаление в предложении агента на доске спринта. Порядок — как в черновике:
+ * так видно и перестановку строк (QO4).
  */
 export function withRemovedFromDraft(before: QuarterlyPlanContent, after: QuarterlyPlanContent): QuarterlyPlanContent {
-  const merge = <T extends { id: string }>(was: readonly T[], now: readonly T[]): T[] => {
-    const nowById = byId(now);
-    const wasIds = new Set(was.map((item) => item.id));
-    return [...was.map((item) => nowById.get(item.id) ?? item), ...now.filter((item) => !wasIds.has(item.id))];
-  };
   return {
-    assignments: merge(before.assignments, after.assignments),
-    directions: merge(before.directions, after.directions),
-    epics: merge(before.epics, after.epics),
-    links: merge(before.links, after.links),
-    notes: merge(before.notes, after.notes),
+    assignments: withRemoved(before.assignments, after.assignments),
+    directions: withRemoved(before.directions, after.directions),
+    epics: withRemoved(before.epics, after.epics),
+    links: withRemoved(before.links, after.links),
+    notes: withRemoved(before.notes, after.notes),
   };
 }

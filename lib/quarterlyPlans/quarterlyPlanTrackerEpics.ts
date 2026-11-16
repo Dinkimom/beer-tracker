@@ -18,6 +18,21 @@ import { loadTrackerIntegrationForOrganization } from '@/lib/trackerIntegration/
 
 /** Эпика нет в снимках — спрашиваем трекер не чаще раза в 10 минут. */
 const TRACKER_EPIC_CACHE_TTL_SECONDS = 10 * 60;
+/**
+ * Сколько после смены статуса с доски квартала строка читается из трекера, минуя снимок: снимок обновит
+ * только следующая синхронизация, а до неё показывал бы прежний статус.
+ */
+const TRACKER_EPIC_CHANGED_TTL_SECONDS = 60 * 60;
+const epicCacheKey = (organizationId: string, issueKey: string) => `quarterly-plan:tracker-epic:${organizationId}:${issueKey}`;
+const changedCacheKey = (organizationId: string, issueKey: string) =>
+  `quarterly-plan:tracker-epic-changed:${organizationId}:${issueKey}`;
+
+/** Статус задачи только что сменили: её строка плана читается из трекера заново (QE7). */
+export function markTrackerEpicChanged(organizationId: string, issueKey: string): void {
+  apiCache.delete(epicCacheKey(organizationId, issueKey));
+  apiCache.set(changedCacheKey(organizationId, issueKey), true, TRACKER_EPIC_CHANGED_TTL_SECONDS);
+}
+
 /** Сколько эпиков спрашиваем у трекера одновременно. */
 const TRACKER_FETCH_CONCURRENCY = 8;
 
@@ -39,7 +54,7 @@ async function tasksFromTracker(
   organizationId: string
 ): Promise<Map<string, Task>> {
   const tasks = new Map<string, Task>();
-  const cacheKey = (key: string) => `quarterly-plan:tracker-epic:${organizationId}:${key}`;
+  const cacheKey = (key: string) => epicCacheKey(organizationId, key);
   const missing = issueKeys.filter((key) => {
     const cached = apiCache.get<Task>(cacheKey(key));
     if (cached) tasks.set(key, cached);
@@ -80,7 +95,9 @@ export async function loadQuarterlyPlanTrackerEpics(input: {
     findIssueSnapshotMetaByKeys(organizationId, issueKeys),
   ]);
   const web = issueTrackerClientWebContext(issueTracker);
-  const tasks = new Map(snapshots.map((issue) => [issue.key, mapTrackerIssueToTask(issue, web, integration)]));
+  // Строку с только что сменённым статусом снимок ещё не знает — её читаем из трекера.
+  const fresh = snapshots.filter((issue) => !apiCache.get<boolean>(changedCacheKey(organizationId, issue.key)));
+  const tasks = new Map(fresh.map((issue) => [issue.key, mapTrackerIssueToTask(issue, web, integration)]));
   const fromTracker = await tasksFromTracker(
     issueTracker,
     issueKeys.filter((key) => !tasks.has(key)),

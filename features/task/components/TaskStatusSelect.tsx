@@ -19,6 +19,8 @@ import { getIssueTransitions, type TransitionItem } from '@/lib/beerTrackerApi';
 import { TaskStatusSelectTransitionList } from './TaskStatusSelectTransitionList';
 
 interface TaskStatusSelectProps {
+  /** Триггер — сам тег статуса, без рамки и стрелки: в плотной строке (квартальный план). */
+  bare?: boolean;
   className?: string;
   disabled?: boolean;
   /** Растягивать триггер на ширину контейнера (ячейки квартала). В сайдере — `false`. */
@@ -40,6 +42,7 @@ interface TaskStatusSelectProps {
 export function TaskStatusSelect({
   task,
   onTransitionSelect,
+  bare = false,
   disabled = false,
   fullWidth = true,
   className = '',
@@ -125,7 +128,7 @@ export function TaskStatusSelect({
     >
       <Button
         ref={buttonRef}
-        className={`!h-auto !min-h-0 min-w-0 !justify-between !gap-1 !rounded-md !px-1.5 !py-1 hover:!border-gray-400 focus-visible:!border-blue-500 focus-visible:!ring-2 focus-visible:!ring-blue-500 dark:hover:!border-gray-500 ${
+        className={`!h-auto !min-h-0 min-w-0 !justify-between !gap-1 !rounded-md ${bare ? '!border-transparent !bg-transparent !p-0 !shadow-none hover:brightness-95 dark:hover:brightness-125' : '!px-1.5 !py-1'} hover:!border-gray-400 focus-visible:!border-blue-500 focus-visible:!ring-2 focus-visible:!ring-blue-500 dark:hover:!border-gray-500 ${
           fullWidth ? 'w-full' : '!w-auto'
         } ${isOpen ? '!border-gray-400 dark:!border-gray-500' : ''}`}
         disabled={disabled}
@@ -137,17 +140,19 @@ export function TaskStatusSelect({
         }}
       >
         <StatusTag
-          className="min-w-0 max-w-full truncate text-[10px]"
+          className={`min-w-0 max-w-full truncate ${bare ? '' : 'text-[10px]'}`}
           label={taskStatusLabel(task)}
           status={task.originalStatus}
           statusColorKey={task.statusColorKey}
         />
-        <Icon
-          className={`h-3 w-3 shrink-0 text-gray-400 transition-transform duration-150 dark:text-gray-500 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-          name="chevron-down"
-        />
+        {bare ? null : (
+          <Icon
+            className={`h-3 w-3 shrink-0 text-gray-400 transition-transform duration-150 dark:text-gray-500 ${
+              isOpen ? 'rotate-180' : ''
+            }`}
+            name="chevron-down"
+          />
+        )}
       </Button>
 
       {isOpen &&

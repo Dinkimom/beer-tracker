@@ -13,6 +13,7 @@ import type {
 import type { QuarterWeek } from './quarterWeeks';
 
 import { assignmentPhase } from './quarterlyPlanLayout';
+import { epicRowIds } from './quarterlyPlanRows';
 
 /** Строка плана, у которой есть срок: эпик или направление. */
 interface PlanRowRef {
@@ -35,7 +36,8 @@ function dayOf(isoDateTime: string): string {
 
 /**
  * Полосы, по которым считается срок фазы строки. У направления delivery — свои полосы и полосы
- * его эпиков; discovery — только свои: проработка эпика относится к эпику.
+ * его эпиков; discovery — только свои: проработка эпика относится к эпику. У эпика — свои полосы
+ * и полосы его задач (QT3).
  */
 function phaseAssignmentsOfRow(
   plan: Pick<QuarterlyPlanContent, 'assignments' | 'epics'>,
@@ -43,7 +45,10 @@ function phaseAssignmentsOfRow(
   phase: QuarterlyPlanPhase
 ): QuarterlyPlanAssignment[] {
   const ofPhase = plan.assignments.filter((assignment) => assignmentPhase(assignment) === phase);
-  if (row.kind === 'epic') return ofPhase.filter((assignment) => assignment.epicId === row.id);
+  if (row.kind === 'epic') {
+    const rowIds = epicRowIds(plan.epics, row.id);
+    return ofPhase.filter((assignment) => assignment.epicId !== undefined && rowIds.has(assignment.epicId));
+  }
   const epicIds = new Set(
     phase === 'delivery' ? plan.epics.filter((epic) => epic.directionId === row.id).map((epic) => epic.id) : []
   );

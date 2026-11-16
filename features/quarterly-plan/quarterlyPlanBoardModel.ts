@@ -14,8 +14,9 @@ import { buildMemberAbsenceDays } from '@/lib/quarterlyPlans/quarterlyPlanIssues
 import {
   absentDaysWithinSpan,
   assignBarLanes,
+  daySpanOf,
   groupConsecutiveDays,
-  overlapWeeks,
+  overloadedDays,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { quarterDayIsoDate, QUARTER_WORKING_DAYS_PER_WEEK, resolveWeekSpan } from '@/lib/quarterlyPlans/quarterWeeks';
 import { getStatusColors } from '@/utils/statusColors';
@@ -86,16 +87,20 @@ export function quarterRowHeightPx(laneCount: number): number {
 
 /** Раскладка полос строки: дорожки, недели под полосами и место полос в дорожках заметок. */
 export function layoutRowBars(assignments: readonly QuarterlyPlanAssignment[]) {
-  const { laneById, laneCount } = assignBarLanes(assignments);
+  // Дорожки — по настоящему сроку: задачи на пару дней в одной неделе встают в одну дорожку (QT5).
+  const spans = assignments.map((assignment) => {
+    const { days, startDay } = daySpanOf(assignment);
+    return {
+      id: assignment.id,
+      startWeek: startDay / QUARTER_WORKING_DAYS_PER_WEEK,
+      weeks: days / QUARTER_WORKING_DAYS_PER_WEEK,
+    };
+  });
+  const { laneById, laneCount } = assignBarLanes(spans);
   return {
     laneById,
     laneCount,
-    noteBlockers: assignments.map((assignment) => ({
-      lane: laneById.get(assignment.id) ?? 0,
-      rows: 1,
-      startWeek: assignment.startWeek,
-      weeks: assignment.weeks,
-    })),
+    noteBlockers: spans.map(({ id, startWeek, weeks }) => ({ lane: laneById.get(id) ?? 0, rows: 1, startWeek, weeks })),
     occupiedWeeks: new Set(
       assignments.flatMap((assignment) =>
         Array.from({ length: assignment.weeks }, (_, offset) => assignment.startWeek + offset)
@@ -151,7 +156,7 @@ export function buildAbsenceByMember(
 
 /**
  * Отмеченные участки полосы в днях квартала. `issues` — штриховка проблем: человек отсутствует или в те же
- * недели занят другим эпиком (участки двух причин не накладываются). `risks` — точки дежурства (QV3)
+ * дни занят другими эпиками сверх нормы (участки двух причин не накладываются). `risks` — точки дежурства (QV3)
  * там, где нет штриховки.
  */
 export function barDayMarks(
@@ -159,9 +164,7 @@ export function barDayMarks(
   absence: MemberAbsence | undefined,
   memberAssignments: readonly QuarterlyPlanAssignment[]
 ): { issues: Array<{ dayCount: number; startDay: number }>; risks: Array<{ dayCount: number; startDay: number }> } {
-  const parallelDays = overlapWeeks(assignment, memberAssignments).flatMap((week) =>
-    Array.from({ length: QUARTER_WORKING_DAYS_PER_WEEK }, (_, offset) => week * QUARTER_WORKING_DAYS_PER_WEEK + offset)
-  );
+  const parallelDays = overloadedDays(assignment, memberAssignments);
   const issueDays = new Set([...absentDaysWithinSpan(assignment, absence?.blockedDays ?? new Set()), ...parallelDays]);
   const riskDays = absentDaysWithinSpan(assignment, absence?.dutyDays ?? new Set()).filter((day) => !issueDays.has(day));
   return {
@@ -170,17 +173,17 @@ export function barDayMarks(
   };
 }
 
-/** Срок полосы: первый день первой недели — последний день последней. */
+/** Срок полосы: первый рабочий день — последний; у полосы на один день — одна дата. */
 export function formatSpanRange(
   weeks: readonly QuarterWeek[],
-  span: { startWeek: number; weeks: number }
+  span: { days?: number; startDay?: number; startWeek: number; weeks: number }
 ): string {
-  const first = weeks[span.startWeek];
-  const last = weeks[span.startWeek + span.weeks - 1];
+  const { days, startDay } = daySpanOf(span);
+  const first = quarterDayIsoDate(weeks, startDay);
+  const last = quarterDayIsoDate(weeks, startDay + days - 1);
   if (!first || !last) return '';
-  const [, startMonth, startDay] = first.startDate.split('-');
-  const [, endMonth, endDay] = last.endDate.split('-');
-  return `${startDay}.${startMonth}–${endDay}.${endMonth}`;
+  const short = (iso: string) => `${iso.slice(8, 10)  }.${  iso.slice(5, 7)}`;
+  return first === last ? short(first) : `${short(first)}–${short(last)}`;
 }
 
 export function formatWeekRange(week: QuarterWeek): string {
@@ -192,6 +195,17 @@ export function formatWeekRange(week: QuarterWeek): string {
 }
 
 /** Кнопка-иконка в строке: появляется при наведении на строку и при фокусе. */
+/** Уровни строк плана сверху вниз: направление, эпик, задача эпика (QT1). */
+export const QUARTER_ROW_LEVELS = ['direction', 'epic', 'task'] as const;
+export type QuarterRowLevel = (typeof QUARTER_ROW_LEVELS)[number];
+
+/** Отступ названия строки по уровню; место слева — под стрелку раскрытия и ручку порядка. */
+export const QUARTER_ROW_INDENT_CLASS: Record<QuarterRowLevel, string> = {
+  direction: 'pl-5',
+  epic: 'pl-9',
+  task: 'pl-14',
+};
+
 export const QUARTER_ROW_ACTION_CLASS =
   '!h-6 !w-6 opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100';
 
