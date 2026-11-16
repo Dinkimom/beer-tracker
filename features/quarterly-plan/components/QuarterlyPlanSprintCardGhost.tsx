@@ -17,15 +17,17 @@ interface QuarterlyPlanSprintCardGhostProps {
   assignments: readonly QuarterlyPlanAssignment[];
   /** Карточка этой задачи на доске спринта; нет — задачи на досках спринтов квартала нет. */
   card: QuarterlyPlanSprintCard | undefined;
+  /** Строка задачи: клик синхронизирует её. */
+  epicId: string;
 }
 
 /**
  * Расхождение плана и спринта (QK8): пунктирный контур там, где карточка задачи стоит на доске спринта,
- * если это не дни её полос в плане. Ничего само не двигается — контур показывает, что сроки разошлись.
+ * если это не дни её полос в плане. Само ничего не двигается; клик — поповер с синхронизацией этой задачи (QK9).
  */
-export function QuarterlyPlanSprintCardGhost({ assignments, card }: QuarterlyPlanSprintCardGhostProps) {
+export function QuarterlyPlanSprintCardGhost({ assignments, card, epicId }: QuarterlyPlanSprintCardGhostProps) {
   const { t } = useI18n();
-  const { dayCount, weeks } = useQuarterlyPlanBoard();
+  const { dayCount, onSprintDriftClick, weeks } = useQuarterlyPlanBoard();
   const laneHeightPx = useQuarterLaneHeight();
   const span = sprintCardDrift({ assignments, card, weeks });
   if (!span || !card) return null;
@@ -35,10 +37,9 @@ export function QuarterlyPlanSprintCardGhost({ assignments, card }: QuarterlyPla
   });
   return (
     <TextTooltip content={label} side="top">
-      <div
-        aria-label={label}
-        className="absolute flex items-center justify-end rounded-lg border border-dashed border-amber-500 bg-amber-400/10 pr-1 text-amber-600 dark:border-amber-400 dark:text-amber-300"
-        role="img"
+      <button
+        aria-label={`${label}. ${t('quarterlyPlan.sync.title')}`}
+        className="absolute flex cursor-pointer items-center justify-end rounded-lg border border-dashed border-amber-500 bg-amber-400/10 pr-1 text-amber-600 transition-colors hover:bg-amber-400/25 active:bg-amber-400/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-amber-400 dark:text-amber-300"
         style={{
           height: laneHeightPx - 4,
           left: `calc(${(span.startDay / dayCount) * 100}% + 2px)`,
@@ -47,9 +48,14 @@ export function QuarterlyPlanSprintCardGhost({ assignments, card }: QuarterlyPla
           // Под полосами: полоса плана — главное, контур виден там, где они не совпали.
           zIndex: ZIndex.contentInteractive - 1,
         }}
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onSprintDriftClick(epicId, { x: event.clientX, y: event.clientY });
+        }}
       >
         {span.days > 1 ? <Icon className="h-3 w-3" name="calendar" /> : null}
-      </div>
+      </button>
     </TextTooltip>
   );
 }

@@ -123,19 +123,29 @@ export function useQuarterlyPlan(ref: QuarterRef) {
     [quarter, year]
   );
 
-  /** Статус строки сменили в трекере: перечитываем только то, что план берёт оттуда, свои правки не трогаем. */
-  const refreshTrackerRow = useCallback(
-    async (issueKey: string) => {
+  /** Перечитываем только то, что план берёт из трекера и спринтов, — свои правки не трогаем. */
+  const refreshServerFields = useCallback(
+    async (field: 'sprintCards' | 'trackerEpics', issueKey?: string) => {
       const { plan: loaded } = await fetchQuarterlyPlan({ quarter, year }, issueKey);
-      queryClient.setQueryData<QuarterlyPlan>(queryKey, (current) =>
-        current ? { ...current, trackerEpics: loaded.trackerEpics } : loaded
-      );
+      queryClient.setQueryData<QuarterlyPlan>(queryKey, (current) => (current ? { ...current, [field]: loaded[field] } : loaded));
     },
     [quarter, queryClient, queryKey, year]
   );
+  const refreshTrackerRow = useCallback((issueKey: string) => refreshServerFields('trackerEpics', issueKey), [refreshServerFields]);
+  /** Карточки спринтов сдвинули с доски квартала (QK9): перечитываем, где задачи стоят теперь. */
+  const refreshSprintCards = useCallback(() => refreshServerFields('sprintCards'), [refreshServerFields]);
 
   /** Версия плана, с которой пойдёт следующая запись: из неё же идёт откат к версии (QH5). */
   const getVersion = useCallback(() => versionsRef.current.get(quarterKey({ quarter, year })) ?? 0, [quarter, year]);
 
-  return { applyEdit, eventsByBoard, getVersion, isLoading: planQuery.isLoading, plan, refreshTrackerRow, setVersion };
+  return {
+    applyEdit,
+    eventsByBoard,
+    getVersion,
+    isLoading: planQuery.isLoading,
+    plan,
+    refreshSprintCards,
+    refreshTrackerRow,
+    setVersion,
+  };
 }

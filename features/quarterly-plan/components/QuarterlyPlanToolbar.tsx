@@ -53,6 +53,8 @@ interface QuarterlyPlanToolbarProps {
   /** Включён инструмент «Заметка»: следующий клик по неделе ставит заметку. */
   noteTool: boolean;
   quarterRef: QuarterRef;
+  /** Расхождения плана и спринта (QK8): кнопка открывает синхронизацию, если они есть (QK9). */
+  sprintSync: { count: number; onOpen: () => void };
   onHideDoneChange: (hideDone: boolean) => void;
   /** Перейти к следующему назначению с пересечением. */
   onLinkToolChange: (active: boolean) => void;
@@ -72,6 +74,7 @@ export function QuarterlyPlanToolbar({
   agent,
   hideDone,
   history,
+  sprintSync,
   issueCounts,
   linkTool,
   noteColor,
@@ -161,6 +164,12 @@ export function QuarterlyPlanToolbar({
           <Icon className="h-4 w-4" name={hideDone ? 'eye-off' : 'eye'} />
           {t('quarterlyPlan.hideDone')}
         </Button>
+        {sprintSync.count > 0 ? (
+          <Button className={pill(false)} title={t('quarterlyPlan.sync.title')} variant="ghost" onClick={sprintSync.onOpen}>
+            <Icon className="h-4 w-4" name="refresh" />
+            {t('quarterlyPlan.sync.open', { count: sprintSync.count })}
+          </Button>
+        ) : null}
         <HeaderIconButton aria-pressed={history.open} title={t('quarterlyPlan.history.open')} onClick={history.onToggle}>
           <Icon className="h-4 w-4" name="clock" />
         </HeaderIconButton>

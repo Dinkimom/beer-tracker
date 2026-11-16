@@ -11,6 +11,7 @@ import type {
 } from '@/types';
 import type { SprintInfo } from '@/types/tracker';
 
+import { shiftSprintCard } from '@/lib/quarterlyPlans/quarterlyPlanSprintSync';
 import {
   normalizePlanPatchPositionPreview,
   type PlanPatchPositionPreview,
@@ -179,6 +180,53 @@ export async function saveTaskPositionsBatch(
     console.error(`Failed to save batch positions for sprint ${sprintId}:`, error);
     throw error;
   }
+}
+
+/**
+ * Сдвигает карточки спринта так, чтобы каждая начиналась в рабочий день `startDay` (синхронизация с квартальным
+ * планом, QK9): отрезки едут вместе, длина, исполнитель, QA и плановая позиция не меняются. Позиции берутся
+ * свежими с сервера и сохраняются одним батчем — с той же синхронизацией в трекер, что перенос на доске.
+ * Возвращает, сколько карточек сдвинуто: задачи без карточки на этой доске пропускаются.
+ */
+export async function shiftSprintCards(
+  sprintId: number,
+  moves: ReadonlyArray<{ startDay: number; taskId: string }>
+): Promise<number> {
+  const { data } = await getPlannerBeerTrackerApi().get<SprintPositionsResponse>(`/sprints/${sprintId}/positions`);
+  const byTask = new Map((data.positions ?? []).map((row) => [row.task_id, row]));
+  const positions = moves.flatMap(({ startDay, taskId }) => {
+    const row = byTask.get(taskId);
+    if (!row) return [];
+    const shifted = shiftSprintCard(
+      {
+        duration: row.duration,
+        segments: row.segments?.map((segment) => ({
+          duration: segment.duration,
+          startDay: segment.start_day,
+          startPart: segment.start_part,
+        })),
+        startDay: row.start_day,
+        startPart: row.start_part,
+      },
+      startDay
+    );
+    return [
+      {
+        assigneeId: row.assignee_id,
+        duration: shifted.duration,
+        isQa: row.is_qa ?? false,
+        plannedDuration: row.planned_duration ?? null,
+        plannedStartDay: row.planned_start_day ?? null,
+        plannedStartPart: row.planned_start_part ?? null,
+        ...(shifted.segments ? { segments: shifted.segments } : {}),
+        startDay: shifted.startDay,
+        startPart: shifted.startPart,
+        taskId,
+      },
+    ];
+  });
+  if (positions.length > 0) await saveTaskPositionsBatch(sprintId, positions);
+  return positions.length;
 }
 
 /**

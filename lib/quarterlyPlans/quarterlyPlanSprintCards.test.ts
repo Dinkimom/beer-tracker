@@ -18,7 +18,14 @@ const card = (taskId: string, startDay: number, startPart: number, duration: num
 describe('карточки задач на досках спринтов (QK8)', () => {
   it('срок карточки — её первый и последний рабочий день; выходные не в счёт', () => {
     const cards = buildSprintCards({ partsPerDay: 3, positions: [card('A-1', 3, 0, 12), card('A-2', 0, 2, 1)], sprints: [sprint] });
-    expect(cards['A-1']).toEqual({ endDate: '2026-10-21', sprintId: 102, sprintName: 'Sprint 15', startDate: '2026-10-16' });
+    expect(cards['A-1']).toEqual({
+      endDate: '2026-10-21',
+      sprintEndDate: '2026-10-24',
+      sprintId: 102,
+      sprintName: 'Sprint 15',
+      sprintStartDate: '2026-10-13',
+      startDate: '2026-10-16',
+    });
     expect(cards['A-2']).toMatchObject({ endDate: '2026-10-13', startDate: '2026-10-13' });
   });
 

@@ -172,6 +172,8 @@ export interface QuarterlyPlanBoardContextValue {
   onRowMenu: (target: QuarterlyPlanRowTarget, anchor: QuarterMenuAnchor) => void;
   /** Строку перетащили: она встаёт перед строкой `anchorId` того же уровня или после неё (QO2, QO3). */
   onRowMove: (level: QuarterRowLevel, id: string, anchorId: string, place: QuarterRowPlace) => void;
+  /** Клик по пунктиру расхождения задачи (QK8): поповер с синхронизацией этой задачи (QK9). */
+  onSprintDriftClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
   onStartDraft: (draft: QuarterlyPlanDraft) => void;
   onStatusClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
   onToggleEpic: (epicId: string) => void;

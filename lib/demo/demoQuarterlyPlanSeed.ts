@@ -142,7 +142,11 @@ const SEED_DIRECTIONS: SeedDirection[] = [
         status: 'in_progress',
         // Задача из трекера: название и статус — оттуда. В плане на неё день (16.10), а на доске спринта карточка
         // стоит четыре — доска квартала показывает расхождение (QK8).
-        tasks: [{ dayAssignments: [[DEMO_DEV_ERIN, 14, 1]], issueKey: 'DEMO-110', status: 'backlog', title: 'Checkout analytics events' }],
+        tasks: [
+          { dayAssignments: [[DEMO_DEV_ERIN, 14, 1]], issueKey: 'DEMO-110', status: 'backlog', title: 'Checkout analytics events' },
+          // В плане — вторник 20.10, на доске спринта — пятница 23.10: синхронизация сдвигает в любую сторону (QK9).
+          { dayAssignments: [[DEMO_DEV_ERIN, 16, 1]], issueKey: 'DEMO-112', status: 'backlog', title: 'Chargeback notifications' },
+        ],
         title: 'Payment step UI',
       },
       { assignments: [[DEMO_DEV_CAROL, 5, 2]], status: 'backlog', title: 'Regression & staged rollout' },
@@ -460,6 +464,7 @@ export const DEMO_TRACKER_EPICS: Array<{ issueKey: string; status?: DemoTrackerS
   { issueKey: 'DEMO-103', status: 'closed', title: 'Cart summary & promo field' },
   { issueKey: 'DEMO-104', status: 'intesting', title: 'PDF receipts' },
   { issueKey: 'DEMO-110', title: 'Checkout analytics events' },
+  { issueKey: 'DEMO-112', title: 'Chargeback notifications' },
   { issueKey: 'DEMO-215', title: 'Stackable discounts engine' },
   { issueKey: 'DEMO-217', title: 'Promo usage report' },
   { issueKey: 'DEMO-231', title: 'Fiscal export fixes' },

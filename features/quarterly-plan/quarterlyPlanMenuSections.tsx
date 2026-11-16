@@ -36,15 +36,17 @@ import {
   updateEpic,
   type WeekSpan,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { collectSprintDrifts, type QuarterlyPlanSprintDrift } from '@/lib/quarterlyPlans/quarterlyPlanSprintSync';
 
 import {
+  formatDateRange,
   formatSpanRange,
   QUARTER_STATUS_ORDER,
   QUARTER_STATUS_PALETTE_KEY,
 } from './quarterlyPlanBoardModel';
 
 export type QuarterlyPlanMenuState =
-  { anchor: QuarterMenuAnchor; assignmentId: string; kind: 'bar' } | { anchor: QuarterMenuAnchor; days?: number; kind: 'assign'; phase?: QuarterlyPlanPhase; row: QuarterlyPlanAssignRow; startDay?: number; week: number; weeks: number } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'status' } | { anchor: QuarterMenuAnchor; kind: 'row'; target: QuarterlyPlanRowTarget };
+  { anchor: QuarterMenuAnchor; assignmentId: string; kind: 'bar' } | { anchor: QuarterMenuAnchor; days?: number; kind: 'assign'; phase?: QuarterlyPlanPhase; row: QuarterlyPlanAssignRow; startDay?: number; week: number; weeks: number } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'sprintDrift' } | { anchor: QuarterMenuAnchor; epicId: string; kind: 'status' } | { anchor: QuarterMenuAnchor; kind: 'row'; target: QuarterlyPlanRowTarget };
 
 /**
  * Зачем открыт поиск по трекеру: добавить эпик плана или задачу эпика (`parentEpicId`) из задачи трекера,
@@ -86,12 +88,16 @@ export interface QuarterlyPlanRowActions {
   onAssignMore: (assignment: QuarterlyPlanAssignment) => void;
   /** В меню назначения выбрали фазу новой полосы: меню остаётся открытым, выбор человека — следом. */
   onAssignPhase: (phase: QuarterlyPlanPhase) => void;
+  /** Синхронизация со спринтом по задачам строки (QK9). */
+  onOpenSprintSync: (rowId: string) => void;
   onPickTrackerEpic: (purpose: QuarterlyPlanTrackerPick) => void;
   onRemoveDirection: (directionId: string) => void;
   onRemoveEpic: (epicId: string) => void;
   onStartDraft: (draft: QuarterlyPlanDraft) => void;
   /** Начать связь от этой полосы: следующим кликом выбирают вторую. */
   onStartLink: (assignmentId: string) => void;
+  /** Синхронизировать одну задачу в выбранную сторону (QK9). */
+  onSyncDrift: (drift: QuarterlyPlanSprintDrift, to: 'plan' | 'sprint') => void;
 }
 
 interface MenuSectionsInput {
@@ -352,6 +358,7 @@ function directionSections(input: MenuSectionsInput, directionId: string): Quart
         },
       ],
     },
+    ...syncSections(input, directionId),
     {
       id: 'danger',
       rows: [
@@ -361,6 +368,61 @@ function directionSections(input: MenuSectionsInput, directionId: string): Quart
           id: 'delete',
           label: t('quarterlyPlan.menuRemoveDirection'),
           onSelect: () => actions.onRemoveDirection(directionId),
+        },
+      ],
+    },
+  ];
+}
+
+/**
+ * Поповер расхождения одной задачи (QK9): где она в спринте и два действия — сдвинуть карточку по плану или
+ * поставить полосу на дни спринта. Сторона, которую нельзя применить, показывает причину вместо действия.
+ */
+function sprintDriftSections(input: MenuSectionsInput, epicId: string): QuarterlyPlanMenuSection[] {
+  const [drift] = collectSprintDrifts(input.plan, input.weeks, new Set([epicId]));
+  if (!drift) return [];
+  const { t } = input;
+  const row = (to: 'plan' | 'sprint'): QuarterlyPlanMenuRow => {
+    const target = to === 'sprint' ? drift.toSprint : drift.toPlan;
+    const range = to === 'sprint' ? drift.plan : drift.sprint;
+    const blocked = 'blocker' in target;
+    return {
+      hint: blocked ? t(`quarterlyPlan.sync.blockerShort.${target.blocker}`) : undefined,
+      icon: rowIcon(to === 'sprint' ? 'arrow-right' : 'calendar'),
+      id: to,
+      // Сторону нельзя применить: пункт приглушён, причина — в пометке.
+      disabled: blocked,
+      label: t(to === 'sprint' ? 'quarterlyPlan.sync.moveCard' : 'quarterlyPlan.sync.takeSprint', {
+        range: formatDateRange(range.startDate, range.endDate),
+      }),
+      onSelect: () => input.actions.onSyncDrift(drift, to),
+    };
+  };
+  return [
+    {
+      id: 'drift',
+      label: t('quarterlyPlan.sync.driftLabel', {
+        range: formatDateRange(drift.sprint.startDate, drift.sprint.endDate),
+        sprint: drift.sprint.sprintName,
+      }),
+      rows: [row('sprint'), row('plan')],
+    },
+  ];
+}
+
+/** Пункт «Синхронизировать со спринтом» — только если у задач строки есть расхождения (QK9). */
+function syncSections(input: MenuSectionsInput, rowId: string): QuarterlyPlanMenuSection[] {
+  const count = collectSprintDrifts(input.plan, input.weeks, new Set([rowId])).length;
+  if (count === 0) return [];
+  return [
+    {
+      id: 'sync',
+      rows: [
+        {
+          icon: rowIcon('refresh'),
+          id: 'sync',
+          label: input.t('quarterlyPlan.sync.menu', { count }),
+          onSelect: () => input.actions.onOpenSprintSync(rowId),
         },
       ],
     },
@@ -417,6 +479,7 @@ function epicSections(input: MenuSectionsInput, epicId: string): QuarterlyPlanMe
         },
       ],
     },
+    ...syncSections(input, epicId),
     {
       id: 'danger',
       rows: [
@@ -450,5 +513,6 @@ export function buildQuarterlyPlanMenuSections(input: MenuSectionsInput): Quarte
   }
   if (menu.kind === 'bar') return barSections(input, menu.assignmentId);
   if (menu.kind === 'row') return rowSections(input, menu.target);
+  if (menu.kind === 'sprintDrift') return sprintDriftSections(input, menu.epicId);
   return statusSections(input, menu.epicId);
 }

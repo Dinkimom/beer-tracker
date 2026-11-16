@@ -209,6 +209,12 @@ export function formatSpanRange(
   return first === last ? short(first) : `${short(first)}–${short(last)}`;
 }
 
+/** Период датами: «16.10» или «16.10–21.10». */
+export function formatDateRange(startDate: string, endDate: string): string {
+  const short = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
+  return startDate === endDate ? short(startDate) : `${short(startDate)}–${short(endDate)}`;
+}
+
 export function formatWeekRange(week: QuarterWeek): string {
   const [, startMonth, startDay] = week.startDate.split('-');
   const [, endMonth, endDay] = week.endDate.split('-');

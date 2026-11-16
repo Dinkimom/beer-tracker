@@ -47,6 +47,7 @@ import { QuarterlyPlanAgentIsland } from './components/QuarterlyPlanAgentIsland'
 import { QuarterlyPlanBoard } from './components/QuarterlyPlanBoard';
 import { QuarterlyPlanHistorySidebar } from './components/QuarterlyPlanHistorySidebar';
 import { QuarterlyPlanMenu } from './components/QuarterlyPlanMenu';
+import { QuarterlyPlanSprintSyncDialog } from './components/QuarterlyPlanSprintSyncDialog';
 import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
 import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTrackerEpicDialog';
 import { QuarterlyPlanBoardProvider } from './QuarterlyPlanBoardContext';
@@ -60,6 +61,7 @@ import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarte
 import { useQuarterlyPlanHistory, useQuarterlyPlanShownView } from './useQuarterlyPlanHistory';
 import { useQuarterlyPlanLinks } from './useQuarterlyPlanLinks';
 import { useQuarterlyPlanNotes } from './useQuarterlyPlanNotes';
+import { useQuarterlyPlanSprintSync } from './useQuarterlyPlanSprintSync';
 import { useQuarterlyPlanTrackerStatus } from './useQuarterlyPlanTrackerStatus';
 
 function groupBy(
@@ -101,8 +103,16 @@ export function QuarterlyPlanPage() {
   const [expandedEpicIds, setExpandedEpicIds] = useState<ReadonlySet<string>>(new Set());
   const [focusedIssue, setFocusedIssue] = useState<{ assignmentId: string; nonce: number } | null>(null);
   const [todayNonce, setTodayNonce] = useState(0);
-  const { applyEdit: savePlanEdit, eventsByBoard, getVersion, isLoading, plan: savedPlan, refreshTrackerRow, setVersion } =
-    useQuarterlyPlan(quarterRef);
+  const {
+    applyEdit: savePlanEdit,
+    eventsByBoard,
+    getVersion,
+    isLoading,
+    plan: savedPlan,
+    refreshSprintCards,
+    refreshTrackerRow,
+    setVersion,
+  } = useQuarterlyPlan(quarterRef);
   const history = useQuarterlyPlanHistory({ getVersion, onRestored: setVersion, ref: quarterRef, savedPlan });
   const changeTrackerStatus = useQuarterlyPlanTrackerStatus(refreshTrackerRow);
   const agent = useQuarterlyPlanAgent(quarterRef, setVersion);
@@ -116,6 +126,7 @@ export function QuarterlyPlanPage() {
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
   const timelineStart = useMemo(() => quarterTimelineStart(weeks), [weeks]);
   const notes = useQuarterlyPlanNotes({ applyEdit, plan, weekCount: weeks.length });
+  const sprintSync = useQuarterlyPlanSprintSync({ applyEdit, plan, refreshSprintCards, weeks });
   const confirmLinkDelete = useCallback(
     () =>
       confirm(t('sprintPlanner.links.removeConfirm'), {
@@ -258,6 +269,7 @@ export function QuarterlyPlanPage() {
         ),
       onStartDraft: startDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
+      onSprintDriftClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'sprintDrift' }),
       onToggleEpic: toggleEpic,
       onTrackerStatusChange: (...change) => void changeTrackerStatus(...change),
       rivalAssignmentsOf: (assignment) => rivalsOf(assignment, assignmentsByMember.get(assignment.memberId) ?? []),
@@ -305,6 +317,8 @@ export function QuarterlyPlanPage() {
             }
           : null
       ),
+    onOpenSprintSync: (rowId) => sprintSync.open(new Set([rowId])),
+    onSyncDrift: (drift, to) => sprintSync.apply([{ drift, to }]),
     onAssignPhase: (phase) => setMenu((current) => (current?.kind === 'assign' ? { ...current, phase } : current)),
     onPickTrackerEpic: setTrackerPick,
     onRemoveDirection: (directionId) =>
@@ -413,6 +427,7 @@ export function QuarterlyPlanPage() {
           noteColor={notes.noteColor}
           noteTool={notes.noteTool}
           quarterRef={quarterRef}
+          sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
           onHideDoneChange={setHideDone}
           onLinkToolChange={(active) => {
             planLinks.setArmed(active);
@@ -441,6 +456,14 @@ export function QuarterlyPlanPage() {
         onClose={history.close}
         onRestore={history.restore}
         onSelect={history.select}
+      />
+      <QuarterlyPlanSprintSyncDialog
+        key={sprintSync.openCount}
+        busy={sprintSync.busy}
+        drifts={sprintSync.drifts}
+        open={sprintSync.opened}
+        onApply={sprintSync.apply}
+        onClose={sprintSync.close}
       />
       {DialogComponent}
     </div>

@@ -18,6 +18,8 @@ import { QuarterlyPlanAnchoredPopover } from './QuarterlyPlanAnchoredPopover';
 export interface QuarterlyPlanMenuRow {
   checked?: boolean;
   destructive?: boolean;
+  /** Действие сейчас нельзя применить: пункт приглушён и не нажимается, причина — в `hint`. */
+  disabled?: boolean;
   /** Приглушённая пометка справа от подписи: «отсутствует», «уже занят». */
   hint?: string;
   /** Иконка или аватар перед подписью. */
@@ -60,7 +62,8 @@ export function QuarterlyPlanMenu({ anchor, open = true, sections, onClose }: Qu
               {section.rows.map((row) => (
                 <button
                   key={row.id}
-                  className={`${row.destructive ? MENU_ROW_DESTRUCTIVE : MENU_ROW} transition-colors`}
+                  className={`${row.destructive ? MENU_ROW_DESTRUCTIVE : MENU_ROW} transition-colors disabled:pointer-events-none disabled:opacity-50`}
+                  disabled={row.disabled}
                   type="button"
                   onClick={() => {
                     row.onSelect();

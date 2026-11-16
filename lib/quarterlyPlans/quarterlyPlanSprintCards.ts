@@ -59,7 +59,15 @@ export function buildSprintCards(input: {
   for (const sprint of [...input.sprints].sort((a, b) => a.startDate.localeCompare(b.startDate))) {
     for (const position of input.positions.filter((row) => row.sprintId === sprint.id)) {
       const dates = cardDates(position, sprint, input.partsPerDay);
-      if (dates) cards[position.taskId] = { ...dates, sprintId: sprint.id, sprintName: sprint.name };
+      if (dates) {
+        cards[position.taskId] = {
+          ...dates,
+          sprintEndDate: sprint.endDate,
+          sprintId: sprint.id,
+          sprintName: sprint.name,
+          sprintStartDate: sprint.startDate,
+        };
+      }
     }
   }
   return cards;

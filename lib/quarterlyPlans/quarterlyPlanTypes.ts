@@ -138,8 +138,12 @@ export interface QuarterlyPlanTrackerEpic {
  */
 export interface QuarterlyPlanSprintCard {
   endDate: string;
+  /** Последний день спринта карточки. */
+  sprintEndDate: string;
   sprintId: number;
   sprintName: string;
+  /** Первый день спринта карточки: от него считаются рабочие дни доски (QK9). */
+  sprintStartDate: string;
   startDate: string;
 }
 

@@ -71,7 +71,7 @@ export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps)
       weekActionLabel={t('quarterlyPlan.assignWeek', { title: epic.title })}
       onWeekClick={(week, anchor, span) => onCellClick({ id: epic.id, kind: 'epic' }, week, anchor, span)}
     >
-      <QuarterlyPlanSprintCardGhost assignments={assignments} card={sprintCards[epic.issueKey ?? '']} />
+      <QuarterlyPlanSprintCardGhost assignments={assignments} card={sprintCards[epic.issueKey ?? '']} epicId={epic.id} />
       <QuarterlyPlanRowBars
         assignments={assignments}
         faded={done}

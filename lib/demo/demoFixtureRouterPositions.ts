@@ -60,8 +60,35 @@ function handleLaneLayersWrite(path: string, method: string, body: unknown): Dem
   return ok({ success: true });
 }
 
-function handlePositionsAliases(path: string, method: string): DemoFixtureResult | null {
+/** Позиция из батча доски: тот же контракт, что `/sprints/:id/positions/batch`. */
+interface DemoBatchPosition {
+  assigneeId: string;
+  duration: number;
+  isQa?: boolean;
+  plannedDuration?: number | null;
+  plannedStartDay?: number | null;
+  plannedStartPart?: number | null;
+  startDay: number;
+  startPart: number;
+  taskId: string;
+}
+
+function handlePositionsAliases(path: string, method: string, body: unknown): DemoFixtureResult | null {
   if (path.match(/^\/sprints\/\d+\/positions\/batch$/) && method === 'post') {
+    // Батч ложится в общие позиции фикстуры: доска и квартал (карточки спринта, QK8) видят новое место.
+    for (const position of (body as { positions?: DemoBatchPosition[] } | undefined)?.positions ?? []) {
+      upsertDemoPosition({
+        assignee_id: position.assigneeId,
+        duration: position.duration,
+        is_qa: position.isQa ?? false,
+        planned_duration: position.plannedDuration ?? null,
+        planned_start_day: position.plannedStartDay ?? null,
+        planned_start_part: position.plannedStartPart ?? null,
+        start_day: position.startDay,
+        start_part: position.startPart,
+        task_id: position.taskId,
+      });
+    }
     return ok({ success: true });
   }
   if (path.match(/^\/sprints\/\d+\/positions\/clear$/) && method === 'delete') {
@@ -112,7 +139,7 @@ export function handleDemoPositions(
   params: URLSearchParams,
   body: unknown
 ): DemoFixtureResult | null {
-  const alias = handlePositionsAliases(path, method) ?? handleLaneLayersWrite(path, method, body);
+  const alias = handlePositionsAliases(path, method, body) ?? handleLaneLayersWrite(path, method, body);
   if (alias) return alias;
 
   const sprintId = matchSprintId(path, 'positions');
