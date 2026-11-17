@@ -1,5 +1,5 @@
 /**
- * Детализация квартальной доски (docs/QUARTERLY_PLAN_RULES.md, раздел 14): три уровня — роадмэп, план, детали.
+ * Детализация квартальной доски (docs/QUARTERLY_PLAN_RULES.md, раздел 14): три уровня — роадмэп, план, по дням.
  * Чистые правила уровня; состояние — `useQuarterDetail`.
  */
 
@@ -15,22 +15,24 @@ import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks
 
 import { QUARTER_WEEK_MIN_WIDTH_PX } from './quarterlyPlanBoardModel';
 
-/** Роадмэп — что и когда поставляем; план — кто на чём по неделям; детали — как эпик идёт по дням и задачам. */
-export type QuarterDetailLevel = 'details' | 'plan' | 'roadmap';
+/** Роадмэп — что и когда поставляем; план — кто на чём по неделям; по дням — как эпик идёт по дням и задачам. */
+export type QuarterDetailLevel = 'days' | 'plan' | 'roadmap';
 
 /** От общего к подробному — порядок кнопок переключателя. */
-export const QUARTER_DETAIL_LEVELS: readonly QuarterDetailLevel[] = ['roadmap', 'plan', 'details'];
+export const QUARTER_DETAIL_LEVELS: readonly QuarterDetailLevel[] = ['roadmap', 'plan', 'days'];
 
+/** Разбирает сохранённый уровень; `details` — прежнее имя уровня «По дням», в браузерах оно ещё лежит. */
 export function parseQuarterDetailLevel(value: unknown): QuarterDetailLevel {
+  if (value === 'details') return 'days';
   return QUARTER_DETAIL_LEVELS.find((level) => level === value) ?? 'plan';
 }
 
 /**
- * Наименьшая ширина недели (QZ2): роадмэп вписывает квартал в экран, план — как раньше, в деталях неделя
+ * Наименьшая ширина недели (QZ2): роадмэп вписывает квартал в экран, план — как раньше, по дням неделя
  * такая, что читается каждый день.
  */
 export const QUARTER_WEEK_MIN_WIDTH_BY_DETAIL: Record<QuarterDetailLevel, number> = {
-  details: 320,
+  days: 320,
   plan: QUARTER_WEEK_MIN_WIDTH_PX,
   roadmap: 56,
 };

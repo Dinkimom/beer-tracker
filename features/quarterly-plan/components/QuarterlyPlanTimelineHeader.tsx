@@ -102,7 +102,7 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
               }}
             >
               {/* В деталях неделя широкая (QZ2): вместо «05–09.10» — число каждого рабочего дня над его колонкой. */}
-              {detail === 'details'
+              {detail === 'days'
                 ? weekDayNumbers(week.startDate).map((day, dayIndex) => (
                     <span
                       key={day}

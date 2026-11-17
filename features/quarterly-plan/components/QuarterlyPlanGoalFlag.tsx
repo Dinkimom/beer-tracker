@@ -21,7 +21,7 @@ const PILL_INSET_PX = 4;
 
 /**
  * Флажок целей спринта в строке плана (QG8): цели одного типа одного спринта, привязанные к строке.
- * Пилюля шириной по тексту (не шире спринта; в «Деталях» — на всю ширину спринта) у начала спринта — своей формы и заливки, чтобы её не путали
+ * Пилюля шириной по тексту (не шире спринта; в «По дням» — на всю ширину спринта) у начала спринта — своей формы и заливки, чтобы её не путали
  * с полосами. Тип — словом (Delivery / Discovery, как на доске спринта), открытые цели — иконкой цели и счётчиком «выполнено/всего», все выполнены —
  * зелёная с галочкой. Текст — первая цель, весь список — в подсказке. Клик открывает цели спринта (QG13).
  */
@@ -51,7 +51,7 @@ export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFl
     >
       <button
         aria-label={label}
-        className={`pointer-events-auto inline-flex h-full max-w-full min-w-0 ${detail === 'details' ? 'w-full' : ''} cursor-pointer items-center gap-1.5 rounded-full border pl-1.5 pr-2 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] ${tone}`}
+        className={`pointer-events-auto inline-flex h-full max-w-full min-w-0 ${detail === 'days' ? 'w-full' : ''} cursor-pointer items-center gap-1.5 rounded-full border pl-1.5 pr-2 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] ${tone}`}
         title={title}
         type="button"
         onClick={() => onSprintGoalsOpen(flag.sprint, flag.boardId)}

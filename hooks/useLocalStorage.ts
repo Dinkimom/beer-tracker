@@ -58,7 +58,7 @@ export function useQuarterNotesVisibleStorage(): [boolean, (value: boolean | ((p
   return useLocalStorageBase<boolean>(STORAGE_KEYS.QUARTER_NOTES_VISIBLE, true);
 }
 
-/** Детализация квартального плана: роадмэп, план или детали (QZ1); значение разбирает `parseQuarterDetailLevel`. */
+/** Детализация квартального плана: роадмэп, план или по дням (QZ1); значение разбирает `parseQuarterDetailLevel`. */
 export function useQuarterDetailLevelStorage(): [string, (value: string | ((prev: string) => string)) => void] {
   return useLocalStorageBase<string>(STORAGE_KEYS.QUARTER_DETAIL_LEVEL, 'plan');
 }

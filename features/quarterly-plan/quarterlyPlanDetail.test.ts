@@ -48,6 +48,11 @@ describe('parseQuarterDetailLevel', () => {
     expect(parseQuarterDetailLevel('roadmap')).toBe('roadmap');
     expect(parseQuarterDetailLevel('zoom')).toBe('plan');
   });
+
+  it('прежнее имя уровня «По дням» читается как он', () => {
+    expect(parseQuarterDetailLevel('details')).toBe('days');
+    expect(parseQuarterDetailLevel('days')).toBe('days');
+  });
 });
 
 describe('связи на роадмэпе (QL7)', () => {

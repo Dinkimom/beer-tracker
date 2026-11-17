@@ -11,7 +11,7 @@ import { useQuarterDetailLevelStorage } from '@/hooks/useLocalStorage';
 import { parseQuarterDetailLevel } from './quarterlyPlanDetail';
 
 /**
- * Уровень детализации доски (QZ1), запоминается в браузере. Переход в «Детали» раскрывает задачи всех эпиков,
+ * Уровень детализации доски (QZ1), запоминается в браузере. Переход в «По дням» раскрывает задачи всех эпиков,
  * выход из них — сворачивает: на «Плане» доска снова компактная, а стрелки эпиков работают на обоих уровнях.
  */
 export function useQuarterDetail(
@@ -24,7 +24,7 @@ export function useQuarterDetail(
     (level: QuarterDetailLevel) => {
       setStored(level);
       const parents = (epics ?? []).flatMap((epic) => (epic.parentEpicId ? [epic.parentEpicId] : []));
-      setExpandedEpicIds(new Set(level === 'details' ? parents : []));
+      setExpandedEpicIds(new Set(level === 'days' ? parents : []));
     },
     [epics, setExpandedEpicIds, setStored]
   );

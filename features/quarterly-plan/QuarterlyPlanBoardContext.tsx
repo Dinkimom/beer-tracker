@@ -98,7 +98,7 @@ export interface QuarterlyPlanBoardContextValue {
   currentWeek: number;
   dayCount: number;
   /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
-  /** Уровень детализации доски: роадмэп, план или детали (QZ1). */
+  /** Уровень детализации доски: роадмэп, план или по дням (QZ1). */
   detail: QuarterDetailLevel;
   draft: QuarterlyPlanDraft | null;
   /** Черновик агента показан: что в нём новое, изменено и убрано (QM9); null — черновика на доске нет. */
