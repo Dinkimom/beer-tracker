@@ -162,13 +162,8 @@ export function QuarterlyPlanBoard({
                 />
                 {collapsed ? null : (
                   <QuarterSprintStartWeeksProvider value={sprintStartWeeks(team.sprints, weeks)}>
-                    {/* Роадмэп без людей (QZ3): дежурства и отпуска — на плане и в деталях. */}
-                    {detail === 'roadmap' ? null : (
-                      <>
-                        <QuarterlyPlanAbsenceRow group="duty" team={team} />
-                        <QuarterlyPlanAbsenceRow group="away" team={team} />
-                      </>
-                    )}
+                    <QuarterlyPlanAbsenceRow group="duty" team={team} />
+                    <QuarterlyPlanAbsenceRow group="away" team={team} />
                     {directions.map((direction) => {
                       const epics = topLevelEpics(plan.epics, direction.id);
                       return (
