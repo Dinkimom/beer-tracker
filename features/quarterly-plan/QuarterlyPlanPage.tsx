@@ -62,6 +62,7 @@ import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarte
 import { useQuarterlyPlanHistory, useQuarterlyPlanShownView } from './useQuarterlyPlanHistory';
 import { useQuarterlyPlanLinks } from './useQuarterlyPlanLinks';
 import { useQuarterlyPlanNotes } from './useQuarterlyPlanNotes';
+import { useQuarterlyPlanRowGoals } from './useQuarterlyPlanRowGoals';
 import { useQuarterlyPlanSprintSync } from './useQuarterlyPlanSprintSync';
 import { useQuarterlyPlanTrackerStatus } from './useQuarterlyPlanTrackerStatus';
 
@@ -136,6 +137,7 @@ export function QuarterlyPlanPage() {
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
   const timelineStart = useMemo(() => quarterTimelineStart(weeks), [weeks]);
   const notes = useQuarterlyPlanNotes({ applyEdit, plan, weekCount: weeks.length });
+  const rowGoals = useQuarterlyPlanRowGoals(plan, weeks);
   const sprintSync = useQuarterlyPlanSprintSync({ applyEdit, plan, refreshSprintCards, weeks });
   const confirmLinkDelete = useCallback(
     () =>
@@ -258,6 +260,7 @@ export function QuarterlyPlanPage() {
       draft,
       expandedEpicIds,
       focusedIssue,
+      goalsByRow: rowGoals,
       hideDone,
       issueCountByTeam: issues.reduce(
         (counts, issue) => counts.set(issue.teamId, (counts.get(issue.teamId) ?? 0) + 1),
@@ -300,7 +303,7 @@ export function QuarterlyPlanPage() {
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, openSprintGoals, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
+  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, openSprintGoals, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, rowGoals, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })

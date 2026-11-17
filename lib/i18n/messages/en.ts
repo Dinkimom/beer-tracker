@@ -898,6 +898,7 @@ export const enMessages = {
       open: 'Goals of {sprint}',
       close: 'Close goals',
       count: 'Sprint goals: {done} of {total} done',
+      flag: 'Sprint {sprint} goals for this row: {phase}, {done} of {total} done',
     },
     history: {
       title: 'Version history',

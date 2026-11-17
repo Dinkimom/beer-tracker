@@ -4,9 +4,12 @@ import type { MemberAbsenceDays } from '@/lib/quarterlyPlans/quarterlyPlanIssues
 import type {
   QuarterlyPlanAssignment,
   QuarterlyPlanEpicStatus,
+  QuarterlyPlanSprint,
   QuarterlyPlanTeam,
+  QuarterRef,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
+import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { buildUnavailableDayHatchKinds } from '@/features/swimlane/utils/availabilityTimelineMarks';
@@ -321,4 +324,73 @@ export function sprintStartWeeks(
     return span && span.startWeek > 0 ? [span.startWeek] : [];
   });
   return [...new Set(starts)].sort((a, b) => a - b);
+}
+
+export type QuarterGoalType = 'delivery' | 'discovery';
+
+/** Цель спринта, как её отдаёт `/sprint-goals`: текст, отметка и строка плана (QG5). */
+interface SprintGoalForRow {
+  checked: boolean;
+  id: string;
+  planRow?: SprintGoalPlanRow | null;
+  text: string;
+}
+
+/**
+ * Флажок целей в строке плана (QG8): цели одного типа одного спринта, привязанные к этой строке.
+ * Стоит на неделях спринта; несколько целей — один флажок со счётчиком.
+ */
+export interface QuarterRowGoalFlag {
+  /** Доска команды спринта — по ней флажок открывает сайдбар целей. */
+  boardId: number;
+  goals: Array<{ done: boolean; id: string; text: string }>;
+  goalType: QuarterGoalType;
+  id: string;
+  sprint: QuarterlyPlanSprint;
+  startWeek: number;
+  weeks: number;
+}
+
+/** Цели одного спринта и типа, привязанные к строкам этого плана, — по id строки. */
+function linkedGoalsByRow(
+  goals: readonly SprintGoalForRow[],
+  ref: QuarterRef,
+  rowIds: ReadonlySet<string>
+): Map<string, QuarterRowGoalFlag['goals']> {
+  const byRow = new Map<string, QuarterRowGoalFlag['goals']>();
+  for (const goal of goals) {
+    const row = goal.planRow;
+    if (!row || row.year !== ref.year || row.quarter !== ref.quarter || !rowIds.has(row.rowId)) continue;
+    byRow.set(row.rowId, [...(byRow.get(row.rowId) ?? []), { done: goal.checked, id: goal.id, text: goal.text }]);
+  }
+  return byRow;
+}
+
+/**
+ * Флажки целей по id строки плана (QG8). Цель попадает в строку, если привязана к этому кварталу и строка
+ * есть в плане (`rowIds`); висячая привязка (строку удалили) флажка не даёт. Флажок стоит на неделях спринта
+ * цели (QW5), спринт вне квартала — без флажка. Порядок в строке — по неделям, затем delivery, discovery.
+ */
+export function buildRowGoalFlags(input: {
+  goalsOf: (sprintId: number, goalType: QuarterGoalType) => readonly SprintGoalForRow[] | undefined;
+  ref: QuarterRef;
+  rowIds: ReadonlySet<string>;
+  teams: ReadonlyArray<Pick<QuarterlyPlanTeam, 'boardId' | 'sprints'>>;
+  weeks: readonly QuarterWeek[];
+}): Map<string, QuarterRowGoalFlag[]> {
+  const byRow = new Map<string, QuarterRowGoalFlag[]>();
+  const sprints = input.teams.flatMap((team) => team.sprints.map((sprint) => ({ boardId: team.boardId, sprint })));
+  for (const { boardId, sprint } of sprints) {
+    const span = resolveWeekSpan(input.weeks, sprint.startDate, sprint.endDate);
+    if (!span) continue;
+    for (const goalType of ['delivery', 'discovery'] as const) {
+      const rows = linkedGoalsByRow(input.goalsOf(sprint.id, goalType) ?? [], input.ref, input.rowIds);
+      for (const [rowId, goals] of rows) {
+        const flag = { boardId, goals, goalType, id: `${sprint.id}:${goalType}:${rowId}`, sprint, ...span };
+        byRow.set(rowId, [...(byRow.get(rowId) ?? []), flag]);
+      }
+    }
+  }
+  for (const flags of byRow.values()) flags.sort((a, b) => a.startWeek - b.startWeek);
+  return byRow;
 }

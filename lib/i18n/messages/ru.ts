@@ -899,6 +899,7 @@ export const ruMessages = {
       open: 'Цели спринта {sprint}',
       close: 'Закрыть цели',
       count: 'Цели спринта: выполнено {done} из {total}',
+      flag: 'Цели спринта {sprint} по этой строке: {phase}, выполнено {done} из {total}',
     },
     history: {
       title: 'История версий',

@@ -10,6 +10,7 @@ import {
   absenceDatesAfterDrag,
   barDayMarks,
   buildAbsenceByMember,
+  buildRowGoalFlags,
   formatSpanRange,
   formatWeekRange,
   layoutRowBars,
@@ -255,3 +256,54 @@ describe('sprintStartWeeks', () => {
     expect(sprintStartWeeks(sprints, weeks)).toEqual([2]);
   });
 });
+
+describe('buildRowGoalFlags (QG8)', () => {
+  const Q4 = { quarter: 4, year: 2026 } as const;
+  const link = (rowId: string, ref: { quarter: 1 | 2 | 3 | 4; year: number } = Q4) => ({ ...ref, rowId });
+  const sprints = [
+    // Недели 7–8 квартала.
+    { endDate: '2026-11-29', id: 36, name: 'Sprint 36', startDate: '2026-11-15' },
+    { endDate: '2027-01-15', id: 99, name: 'Next quarter', startDate: '2027-01-04' },
+  ];
+  const goals: Record<string, Array<{ checked: boolean; id: string; planRow?: ReturnType<typeof link> | null; text: string }>> = {
+    '36:delivery': [
+      { checked: true, id: 'g1', planRow: link('epic-1'), text: 'Ship A' },
+      { checked: false, id: 'g2', planRow: link('epic-1'), text: 'Ship B' },
+      { checked: false, id: 'g3', planRow: null, text: 'Влёт' },
+      { checked: false, id: 'g4', planRow: link('epic-1', { quarter: 3, year: 2026 }), text: 'Чужой квартал' },
+      { checked: false, id: 'g5', planRow: link('deleted-row'), text: 'Строку удалили' },
+    ],
+    '36:discovery': [{ checked: false, id: 'g6', planRow: link('direction-1'), text: 'Research' }],
+    '99:delivery': [{ checked: false, id: 'g7', planRow: link('epic-1'), text: 'Вне квартала' }],
+  };
+  const flags = buildRowGoalFlags({
+    goalsOf: (sprintId, goalType) => goals[`${sprintId}:${goalType}`],
+    ref: Q4,
+    rowIds: new Set(['epic-1', 'direction-1']),
+    teams: [{ boardId: 7, sprints }],
+    weeks,
+  });
+
+  it('цели одного типа одного спринта в строке — один флажок на неделях спринта', () => {
+    expect(flags.get('epic-1')).toEqual([
+      {
+        boardId: 7,
+        goals: [
+          { done: true, id: 'g1', text: 'Ship A' },
+          { done: false, id: 'g2', text: 'Ship B' },
+        ],
+        goalType: 'delivery',
+        id: '36:delivery:epic-1',
+        sprint: sprints[0],
+        startWeek: 7,
+        weeks: 2,
+      },
+    ]);
+    expect(flags.get('direction-1')?.map((flag) => [flag.goalType, flag.goals.length])).toEqual([['discovery', 1]]);
+  });
+
+  it('влёт, чужой квартал, висячая привязка и спринт вне квартала флажка не дают', () => {
+    expect([...flags.keys()].sort()).toEqual(['direction-1', 'epic-1']);
+  });
+});
+

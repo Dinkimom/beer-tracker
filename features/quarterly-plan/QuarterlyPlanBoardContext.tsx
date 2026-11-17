@@ -1,6 +1,6 @@
 'use client';
 
-import type { MemberAbsence, QuarterRowLevel } from './quarterlyPlanBoardModel';
+import type { MemberAbsence, QuarterRowGoalFlag, QuarterRowLevel } from './quarterlyPlanBoardModel';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { QuarterlyPlanDraftDiff } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
@@ -104,6 +104,8 @@ export interface QuarterlyPlanBoardContextValue {
   expandedEpicIds: ReadonlySet<string>;
   /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   focusedIssue: { assignmentId: string; nonce: number } | null;
+  /** Флажки целей спринтов по id строки плана — эпика или направления (QG8). */
+  goalsByRow: ReadonlyMap<string, QuarterRowGoalFlag[]>;
   /** Включено «Скрыть готовые»: готовые задачи эпиков тоже не показываются (QB7). */
   hideDone: boolean;
   /** Сколько назначений с пересечениями у команды. */

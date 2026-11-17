@@ -25,6 +25,7 @@ import {
 } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanAssignGhost } from './QuarterlyPlanAssignGhost';
+import { QuarterlyPlanGoalFlag } from './QuarterlyPlanGoalFlag';
 import { QuarterlyPlanNoteChip } from './QuarterlyPlanNoteChip';
 import { QuarterlyPlanNoteDropGhost } from './QuarterlyPlanNoteDropGhost';
 import { QuarterlyPlanNoteInlineEditor } from './QuarterlyPlanNoteInlineEditor';
@@ -116,25 +117,38 @@ export function QuarterlyPlanRow({
   weekActionLabel,
   onWeekClick,
 }: QuarterlyPlanRowProps) {
-  const { assignPreview, currentWeek, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const { assignPreview, currentWeek, goalsByRow, noteEditing, weeks } = useQuarterlyPlanBoard();
+  // Флажки целей спринтов (QG8) — только у эпика и направления. Встают в дорожки раньше заметок: рядом
+  // с полосами, если недели свободны; заметки и превью полосы обходят их так же, как полосы.
+  const goalFlags = noteRow?.kind === 'epic' || noteRow?.kind === 'direction' ? (goalsByRow.get(noteRow.id) ?? []) : [];
+  const goalLanes = assignNoteLanes(
+    goalFlags.map((flag) => ({ id: flag.id, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks })),
+    noteBlockers
+  ).laneById;
+  const blockers: readonly NoteLaneBlocker[] = [
+    ...(noteBlockers ?? []),
+    ...goalFlags.map((flag) => ({ lane: goalLanes.get(flag.id) ?? 0, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks })),
+  ];
+  const goalLaneCount = Math.max(0, ...goalFlags.map((flag) => (goalLanes.get(flag.id) ?? 0) + 1));
   // Превью полосы из открытого меню назначения — в первой дорожке, где её недели свободны.
   const ghost =
     assignPreview && noteRow && assignPreview.row.kind === noteRow.kind && assignPreview.row.id === noteRow.id
       ? {
           ...assignPreview,
           lane:
-            assignNoteLanes([{ id: 'ghost', rows: 1, startWeek: assignPreview.startWeek, weeks: assignPreview.weeks }], noteBlockers).laneById.get('ghost') ?? 0,
+            assignNoteLanes([{ id: 'ghost', rows: 1, startWeek: assignPreview.startWeek, weeks: assignPreview.weeks }], blockers).laneById.get('ghost') ?? 0,
         }
       : null;
   const sprintStarts = useQuarterSprintStartWeeks();
-  const rowNotes = useQuarterRowNotes(noteRow, noteBlockers);
+  const rowNotes = useQuarterRowNotes(noteRow, blockers);
   const weekWidth = 100 / weeks.length;
   const toneClass = ROW_TONE_CLASS[tone];
   const notesTop = notesTopPx ?? heightPx - QUARTER_ROW_PADDING_PX;
+  const laneCount = Math.max(rowNotes.laneCount, goalLaneCount);
   const totalHeight = Math.max(
     heightPx,
     ghost ? (ghost.lane + 1) * laneHeightPx + QUARTER_ROW_PADDING_PX * 2 : 0,
-    rowNotes.laneCount > 0 ? notesTop + rowNotes.laneCount * laneHeightPx + QUARTER_ROW_PADDING_PX : 0
+    laneCount > 0 ? notesTop + laneCount * laneHeightPx + QUARTER_ROW_PADDING_PX : 0
   );
 
   return (
@@ -233,8 +247,11 @@ export function QuarterlyPlanRow({
             weeks={ghost.weeks}
           />
         ) : null}
+        {goalFlags.map((flag) => (
+          <QuarterlyPlanGoalFlag key={flag.id} flag={flag} lane={goalLanes.get(flag.id) ?? 0} topPx={notesTop} />
+        ))}
         <QuarterlyPlanNoteDropGhost
-          blockers={noteBlockers}
+          blockers={blockers}
           noteRow={noteRow}
           notes={rowNotes.notes}
           rowHeightPx={totalHeight}
