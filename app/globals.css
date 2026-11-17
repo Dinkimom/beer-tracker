@@ -1776,13 +1776,13 @@ textarea:focus-visible,
  * она шапка своего блока и липнет под шапкой недель, строки проезжают под ней.
  */
 .quarter-team-glass {
-  background-color: rgb(243 244 246 / 0.72) !important;
+  background-color: rgb(231 234 239 / 0.8) !important;
   -webkit-backdrop-filter: blur(28px) saturate(1);
   backdrop-filter: blur(28px) saturate(1);
 }
 
 .dark .quarter-team-glass {
-  background-color: rgb(42 55 73 / 0.88) !important;
+  background-color: rgb(47 61 82 / 0.88) !important;
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
   backdrop-filter: blur(24px) saturate(1.5);
 }

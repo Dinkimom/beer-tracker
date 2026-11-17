@@ -47,7 +47,8 @@ export function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: Quarterly
               className="h-3.5 w-3.5 shrink-0 text-ds-text-muted"
               name={collapsed ? 'chevron-right' : 'chevron-down'}
             />
-            <span className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {/* Команда — верхний уровень доски: её название крупнее названия направления под ней. */}
+            <span className="truncate text-base font-semibold text-gray-900 dark:text-gray-100">
               {team.title}
             </span>
           </button>
