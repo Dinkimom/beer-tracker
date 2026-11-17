@@ -2,6 +2,22 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.36.0] — 2026-11-17
+
+### English
+
+- Agent: new tool `move_issues_to_sprint` moves issues to another sprint or to the backlog right away — no draft, no approval on the board. The tracker and the Beer Tracker boards change together, like «Move to sprint» in the planner: the card and its arrows leave the boards of open sprints, the issue lands in the target sprint unplanned. Stale cards left by earlier moves made directly in Jira are cleaned up too; closed sprints keep their cards. The agent is told not to move issues between sprints in the tracker directly.
+- Quarter board: a task is shown in the sprint where the tracker holds it. A task moved or removed from a sprint directly in the tracker no longer shows up in its old sprint or in two places at once.
+- Quarter board: a row that has only a sprint goal keeps its normal height; when a row has a goal and bars, its title and controls sit on the top line, next to the goal.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.36.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Агент: новый инструмент `move_issues_to_sprint` переносит задачи в другой спринт или в бэклог сразу — без черновика и подтверждения на доске. Трекер и доски Beer Tracker меняются вместе, как «Перенести в спринт» в планере: карточка и стрелки уходят с досок незакрытых спринтов, задача приходит в целевой спринт без плана. Заодно убираются карточки, брошенные прошлыми переносами прямо в Jira; закрытые спринты не трогаются. Агенту сказано не переносить задачи между спринтами в трекере напрямую.
+- Доска квартала: задача показывается в том спринте, где её держит трекер. Перенесённая или убранная из спринта прямо в трекере задача больше не видна в старом спринте и не «лежит в двух местах».
+- Доска квартала: строка, где есть только цель спринта, обычной высоты; в строке с целью и полосами название и контролы стоят на верхней линии, напротив цели.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.36.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.35.0] — 2026-11-17
 
 ### English
