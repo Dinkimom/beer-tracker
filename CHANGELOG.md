@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.38.0] — 2026-11-18
+
+### English
+
+- The «Quarter» tab is now called «Roadmap». The view switch on the board is named by time scale: «Quarter», «Weeks» and «Days» (were «Roadmap», «Plan» and «Days»). The level saved in the browser is kept.
+- Roadmap, «Quarter» view: dates come first on a summary bar, so a narrow bar cuts the phase name, not the term.
+- Roadmap: the avatars of people on a note no longer cover its text.
+- Roadmap: one line under the team row instead of two. Row tone goes in three steps — team, direction, epics — and is the same across the whole row; the team name is larger than the direction name.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.38.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Вкладка «Квартал» теперь называется «Роадмэп». Переключатель вида на доске назван по масштабу времени: «Квартал», «Недели» и «Дни» (были «Роадмэп», «План» и «Дни»). Сохранённый в браузере уровень остаётся.
+- Роадмэп, вид «Квартал»: на сводной полосе даты стоят первыми — на узкой полосе обрезается название фазы, а не срок.
+- Роадмэп: аватары тех, кто на заметке, больше не закрывают её текст.
+- Роадмэп: под строкой команды одна линия вместо двух. Тон строк идёт тремя ступенями — команда, направление, эпики — и один на всю строку; название команды крупнее названия направления.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.38.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.37.0] — 2026-11-17
 
 ### English
