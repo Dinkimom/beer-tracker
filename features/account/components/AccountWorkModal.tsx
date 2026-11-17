@@ -5,8 +5,8 @@ import type { SprintListItem } from '@/types/tracker';
 
 import { useId, useState } from 'react';
 
-import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
+import { ModalFormActions } from '@/components/ModalFormActions';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { TaskTimeline } from '@/features/task/components/TaskTimeline';
@@ -76,14 +76,13 @@ export function AccountWorkModal({
     <Modal
       closeOnBackdrop={false}
       footer={
-        <>
-          <Button disabled={isLoading} variant="outline" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button disabled={isLoading} form={formId} type="submit">
-            {isLoading ? t('account.workModal.processing') : t('account.workModal.confirm')}
-          </Button>
-        </>
+        <ModalFormActions
+          busy={isLoading}
+          busyLabel={t('account.workModal.processing')}
+          formId={formId}
+          submitLabel={t('account.workModal.confirm')}
+          onCancel={onClose}
+        />
       }
       open={isOpen}
       title={t('account.workModal.title')}

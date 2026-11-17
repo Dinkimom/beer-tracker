@@ -2,11 +2,12 @@
 
 import type { RoleCatalogEntry } from "@/lib/roles/catalog";
 
-import { useCallback, useState } from "react";
+import { useCallback, useId, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
 import { Modal } from "@/components/Modal";
+import { ModalFormActions } from "@/components/ModalFormActions";
 import { useI18n } from "@/contexts/LanguageContext";
 import { cardBody, cardHeader, cardShell, hCard } from "@/features/admin/adminUiTokens";
 
@@ -17,7 +18,7 @@ import {
 } from "./OrganizationRolesTable";
 
 interface AdminOrganizationRolesPanelProps {
-  form: Omit<CreateOrgRoleFormProps, "onCancel">;
+  form: Omit<CreateOrgRoleFormProps, "formId"> & { createBusy: boolean };
   hidden: boolean;
   orgRoles: RoleCatalogEntry[];
   table: Omit<OrganizationRolesTableProps, "orgRoles">;
@@ -31,6 +32,8 @@ export function AdminOrganizationRolesPanel({
 }: AdminOrganizationRolesPanelProps) {
   const { t } = useI18n();
   const [createOpen, setCreateOpen] = useState(false);
+  const formId = useId();
+  const { createBusy, ...createForm } = form;
   const closeCreate = useCallback(() => setCreateOpen(false), []);
   if (hidden && createOpen) {
     setCreateOpen(false);
@@ -59,20 +62,29 @@ export function AdminOrganizationRolesPanel({
       </section>
 
       <Modal
-        busy={form.createBusy}
+        busy={createBusy}
         className="max-w-lg"
+        footer={
+          <ModalFormActions
+            busy={createBusy}
+            busyLabel={t("admin.rolesPage.createBusy")}
+            formId={formId}
+            submitLabel={t("admin.rolesPage.createSubmit")}
+            onCancel={closeCreate}
+          />
+        }
         open={createOpen}
         title={t("admin.rolesPage.createFormTitle")}
         onClose={closeCreate}
       >
         <CreateOrgRoleForm
-          {...form}
+          {...createForm}
+          formId={formId}
           submitCreate={async (event) => {
             const ok = await form.submitCreate(event);
             if (ok) closeCreate();
             return ok;
           }}
-          onCancel={closeCreate}
         />
       </Modal>
     </div>

@@ -6,11 +6,11 @@ import type { CSSProperties, RefObject } from 'react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { ANCHORED_POPOVER_CHILD_ATTR } from '@/components/AnchoredPopover';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
+import { OVERLAY_CHILD_ATTR } from '@/components/overlayChild';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { getInitials } from '@/utils/displayUtils';
@@ -44,6 +44,8 @@ function resolveUserSelectorResultsStyle(input: {
   if (input.usePortal && input.portalRect) {
     return {
       left: input.portalRect.left,
+      // Открытое модальное окно выключает клики по `body`: список в своём портале включает их себе сам.
+      pointerEvents: 'auto',
       top: input.portalRect.bottom + 4,
       width: input.portalRect.width,
       zIndex: input.menuZIndex,
@@ -98,7 +100,7 @@ export function UserSelectorOpenPanel({
     showResults && (!usePortal || portalRect) ? (
       <div
         ref={resultsRef}
-        {...(usePortal ? { [ANCHORED_POPOVER_CHILD_ATTR]: '' } : {})}
+        {...(usePortal ? { [OVERLAY_CHILD_ATTR]: '' } : {})}
         className={
           usePortal
             ? 'fixed min-w-[12rem] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800'

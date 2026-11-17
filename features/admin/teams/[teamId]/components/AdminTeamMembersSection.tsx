@@ -9,6 +9,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
 import { Modal } from "@/components/Modal";
+import { ModalFormActions } from "@/components/ModalFormActions";
 import { useI18n } from "@/contexts/LanguageContext";
 import {
   adminListShell,
@@ -138,13 +139,24 @@ export function AdminTeamMembersSection({
         busy={addLoading}
         className="max-w-lg"
         description={modalDescription}
+        footer={
+          <ModalFormActions
+            busy={addLoading}
+            busyLabel={t("admin.teamMembers.addLoading")}
+            disabled={!addCanAddMember}
+            submitLabel={t("admin.teamMembers.addSubmit")}
+            onCancel={closeAdd}
+            onSubmit={async () => {
+              const ok = await onAddMember();
+              if (ok) closeAdd();
+            }}
+          />
+        }
         open={addOpen}
         title={modalTitle}
         onClose={closeAdd}
       >
         <AdminTeamMembersAddForm
-          addCanAddMember={addCanAddMember}
-          addLoading={addLoading}
           addRoleOptions={addRoleOptions}
           addRoleSlug={addRoleSlug}
           addSource={addSource}
@@ -160,11 +172,6 @@ export function AdminTeamMembersSection({
           setAddTrackerMeta={setAddTrackerMeta}
           setAddTrackerUserId={setAddTrackerUserId}
           teamId={teamId}
-          onAddMember={async () => {
-            const ok = await onAddMember();
-            if (ok) closeAdd();
-          }}
-          onCancel={closeAdd}
         />
       </Modal>
     </section>

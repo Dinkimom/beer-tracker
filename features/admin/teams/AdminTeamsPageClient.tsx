@@ -3,12 +3,13 @@
 import type { AdminTeamRow } from "@/features/admin/adminTeamCatalog";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { Icon } from "@/components/Icon";
 import { Modal } from "@/components/Modal";
+import { ModalFormActions } from "@/components/ModalFormActions";
 import { useIssueTrackerProviderKind } from "@/contexts/IssueTrackerProviderKindContext";
 import { useI18n } from "@/contexts/LanguageContext";
 import { pageStack } from "@/features/admin/adminUiTokens";
@@ -33,6 +34,7 @@ export function AdminTeamsPageClient({ initialTeams, isOrgAdmin, orgId }: AdminT
   const { confirm, DialogComponent } = useConfirmDialog();
   const page = useAdminTeamsPage({ confirmDestructive: confirm, initialTeams, isOrgAdmin, orgId });
   const [createOpen, setCreateOpen] = useState(false);
+  const formId = useId();
   const closeCreate = useCallback(() => setCreateOpen(false), []);
 
   useEffect(() => {
@@ -97,6 +99,16 @@ export function AdminTeamsPageClient({ initialTeams, isOrgAdmin, orgId }: AdminT
           busy={page.teamFormSubmitting}
           className="max-w-2xl"
           description={t("admin.newTeamForm.subtitle")}
+          footer={
+            <ModalFormActions
+              busy={page.teamFormSubmitting}
+              busyLabel={t("admin.newTeamForm.submitSaving")}
+              disabled={!page.orgId || page.catalogLoading}
+              formId={formId}
+              submitLabel={t("admin.newTeamForm.submit")}
+              onCancel={closeCreate}
+            />
+          }
           open={createOpen}
           title={t("admin.newTeamForm.title")}
           onClose={closeCreate}
@@ -105,8 +117,8 @@ export function AdminTeamsPageClient({ initialTeams, isOrgAdmin, orgId }: AdminT
             boardSearchLoading={page.boardSearchLoading}
             boardSelectOptions={page.boardSelectOptions}
             catalogLoading={page.catalogLoading}
+            formId={formId}
             newTeamTitle={page.newTeamTitle}
-            orgId={page.orgId}
             queueSelectOptions={page.queueSelectOptions}
             selectTeamBoard={page.selectTeamBoard}
             selectTeamQueue={page.selectTeamQueue}
@@ -118,9 +130,7 @@ export function AdminTeamsPageClient({ initialTeams, isOrgAdmin, orgId }: AdminT
               if (ok) closeCreate();
               return ok;
             }}
-            teamFormSubmitting={page.teamFormSubmitting}
             onBoardSearchQueryChange={page.onBoardSearchQueryChange}
-            onCancel={closeCreate}
           />
         </Modal>
       ) : null}

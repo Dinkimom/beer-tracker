@@ -13,8 +13,6 @@ import { AdminTeamMembersUserPicker } from './AdminTeamMembersUserPicker';
 export type AdminTeamMemberAddSource = 'registry' | 'tracker';
 
 interface AdminTeamMembersAddFormProps {
-  addCanAddMember: boolean;
-  addLoading: boolean;
   addRoleOptions: CustomSelectOption<string>[];
   addRoleSlug: string;
   addSource: AdminTeamMemberAddSource;
@@ -24,8 +22,6 @@ interface AdminTeamMembersAddFormProps {
   addTrackerUserId: string;
   orgId: string;
   teamId: string;
-  onAddMember: () => void;
-  onCancel: () => void;
   setAddRoleSlug: (v: string) => void;
   setAddSource: (v: AdminTeamMemberAddSource) => void;
   setAddStaffMeta: (v: { displayName?: string; email?: string | null } | null) => void;
@@ -35,8 +31,6 @@ interface AdminTeamMembersAddFormProps {
 }
 
 export function AdminTeamMembersAddForm({
-  addCanAddMember,
-  addLoading,
   addRoleOptions,
   addRoleSlug,
   addSource,
@@ -44,8 +38,6 @@ export function AdminTeamMembersAddForm({
   addStaffUid,
   addTrackerMeta,
   addTrackerUserId,
-  onAddMember,
-  onCancel,
   orgId,
   setAddRoleSlug,
   setAddSource,
@@ -115,19 +107,6 @@ export function AdminTeamMembersAddForm({
         value={addRoleSlug}
         onChange={(slug) => setAddRoleSlug(slug)}
       />
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button disabled={addLoading} type="button" variant="outline" onClick={onCancel}>
-          {t('common.cancel')}
-        </Button>
-        <Button
-          disabled={!addCanAddMember || addLoading}
-          type="button"
-          variant="primary"
-          onClick={() => void onAddMember()}
-        >
-          {addLoading ? t('admin.teamMembers.addLoading') : t('admin.teamMembers.addSubmit')}
-        </Button>
-      </div>
     </div>
   );
 }

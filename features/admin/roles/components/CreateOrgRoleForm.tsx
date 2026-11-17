@@ -3,7 +3,6 @@ import type { FormEvent } from "react";
 
 import { useMemo } from "react";
 
-import { Button } from "@/components/Button";
 import { CustomSelect } from "@/components/CustomSelect";
 import { TextTooltip } from "@/components/TextTooltip";
 import { useI18n } from "@/contexts/LanguageContext";
@@ -13,13 +12,13 @@ import { toSlug } from "@/lib/roles/toSlug";
 import { domainRoleOptions, PLATFORM_VALUES } from "../rolesPageConstants";
 
 export interface CreateOrgRoleFormProps {
-  createBusy: boolean;
+  /** id формы: кнопка отправки стоит в подвале окна и ссылается на неё атрибутом `form`. */
+  formId: string;
   newDomainRole: DomainRole;
   newPlatforms: Platform[];
   newSlug: string;
   newTitle: string;
   slugLocked: boolean;
-  onCancel: () => void;
   setNewDomainRoleSafe: (v: DomainRole) => void;
   setNewSlug: (v: string) => void;
   setNewTitle: (v: string) => void;
@@ -29,12 +28,11 @@ export interface CreateOrgRoleFormProps {
 }
 
 export function CreateOrgRoleForm({
-  createBusy,
+  formId,
   newDomainRole,
   newPlatforms,
   newSlug,
   newTitle,
-  onCancel,
   setNewDomainRoleSafe,
   setNewSlug,
   setNewTitle,
@@ -47,7 +45,7 @@ export function CreateOrgRoleForm({
   const domainOptions = useMemo(() => domainRoleOptions(t), [t]);
 
   return (
-    <form className="space-y-4" onSubmit={(e) => void submitCreate(e)}>
+    <form className="space-y-4" id={formId} onSubmit={(e) => void submitCreate(e)}>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={label} htmlFor="role-new-title">
@@ -119,14 +117,6 @@ export function CreateOrgRoleForm({
           </div>
         </div>
       ) : null}
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button disabled={createBusy} type="button" variant="outline" onClick={onCancel}>
-          {t("common.cancel")}
-        </Button>
-        <Button disabled={createBusy} type="submit" variant="primary">
-          {createBusy ? t("admin.rolesPage.createBusy") : t("admin.rolesPage.createSubmit")}
-        </Button>
-      </div>
     </form>
   );
 }

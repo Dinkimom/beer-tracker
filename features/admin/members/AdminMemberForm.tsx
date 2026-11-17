@@ -4,7 +4,6 @@ import type { FormEvent } from 'react';
 
 import { useCallback } from 'react';
 
-import { Button } from '@/components/Button';
 import { CustomSelect } from '@/components/CustomSelect';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -26,15 +25,15 @@ export interface AdminMemberFormValues {
 
 interface AdminMemberFormProps {
   busy: boolean;
+  /** id формы: кнопка отправки стоит в подвале окна и ссылается на неё атрибутом `form`. */
+  formId: string;
   idPrefix: string;
   orgId: string;
   resetIdentityOnClear: boolean;
   roleOptions: CustomSelectOption<string>[];
   showRoleSelect: boolean;
-  submitLabel: string;
   teamOptions: AdminMemberTeamOption[];
   values: AdminMemberFormValues;
-  onCancel?: () => void;
   onChange: (values: AdminMemberFormValues) => void;
   onSubmit: (event: FormEvent) => void;
 }
@@ -53,15 +52,14 @@ function previewFromValues(values: AdminMemberFormValues): RegistryUserItem | nu
 
 export function AdminMemberForm({
   busy,
+  formId,
   idPrefix,
-  onCancel,
   onChange,
   onSubmit,
   orgId,
   resetIdentityOnClear,
   roleOptions,
   showRoleSelect,
-  submitLabel,
   teamOptions,
   values,
 }: AdminMemberFormProps) {
@@ -73,7 +71,7 @@ export function AdminMemberForm({
   );
 
   return (
-    <form className="space-y-3" onSubmit={onSubmit}>
+    <form className="space-y-3" id={formId} onSubmit={onSubmit}>
       <div>
         <label className={label}>{t('admin.membersPage.trackerSearchLabel')}</label>
         <UserSelector
@@ -155,16 +153,6 @@ export function AdminMemberForm({
           </p>
         </div>
       ) : null}
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button disabled={busy} type="submit" variant="primary">
-          {busy ? t('admin.membersPage.saving') : submitLabel}
-        </Button>
-        {onCancel ? (
-          <Button disabled={busy} type="button" variant="outline" onClick={onCancel}>
-            {t('common.cancel')}
-          </Button>
-        ) : null}
-      </div>
     </form>
   );
 }

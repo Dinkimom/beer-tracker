@@ -3,12 +3,13 @@
 import type { AdminMemberTeamOption } from '@/features/admin/members/AdminMemberTeamsMultiSelect';
 import type { RegistryEmployeeDirectoryRow } from '@/lib/organizations/organizationMembersRepository';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
 import { Modal } from '@/components/Modal';
+import { ModalFormActions } from '@/components/ModalFormActions';
 import { SearchInput } from '@/components/SearchInput';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
@@ -47,6 +48,8 @@ export function AdminMembersPageClient({
   });
   const { cancelEdit, removeMember, startEdit, submitCreate, submitEdit, updateOrgRole } = page;
   const [inviteOpen, setInviteOpen] = useState(false);
+  const inviteFormId = useId();
+  const editFormId = useId();
   const closeInvite = useCallback(() => setInviteOpen(false), []);
   const editOpen = page.editingId != null;
   const editBusy = page.editingId != null && page.busyId === page.editingId;
@@ -118,21 +121,29 @@ export function AdminMembersPageClient({
       <Modal
         busy={page.createSubmitting}
         className="max-w-lg"
+        footer={
+          <ModalFormActions
+            busy={page.createSubmitting}
+            busyLabel={t('admin.membersPage.saving')}
+            formId={inviteFormId}
+            submitLabel={t('admin.membersPage.inviteSubmit')}
+            onCancel={closeInvite}
+          />
+        }
         open={inviteOpen}
         title={t('admin.membersPage.inviteSectionTitle')}
         onClose={closeInvite}
       >
         <AdminMemberForm
           busy={page.createSubmitting}
+          formId={inviteFormId}
           idPrefix="create-member"
           orgId={orgId}
           resetIdentityOnClear
           roleOptions={page.roleOptions}
           showRoleSelect
-          submitLabel={t('admin.membersPage.inviteSubmit')}
           teamOptions={page.teamOptions}
           values={page.createValues}
-          onCancel={closeInvite}
           onChange={page.setCreateValues}
           onSubmit={async (event) => {
             const ok = await submitCreate(event);
@@ -144,21 +155,29 @@ export function AdminMembersPageClient({
       <Modal
         busy={editBusy}
         className="max-w-lg"
+        footer={
+          <ModalFormActions
+            busy={editBusy}
+            busyLabel={t('admin.membersPage.saving')}
+            formId={editFormId}
+            submitLabel={t('common.save')}
+            onCancel={cancelEdit}
+          />
+        }
         open={editOpen}
         title={t('admin.membersPage.editSectionTitle')}
         onClose={cancelEdit}
       >
         <AdminMemberForm
           busy={editBusy}
+          formId={editFormId}
           idPrefix={`edit-${page.editingId ?? 'member'}`}
           orgId={orgId}
           resetIdentityOnClear={false}
           roleOptions={page.roleOptions}
           showRoleSelect={false}
-          submitLabel={t('common.save')}
           teamOptions={page.teamOptions}
           values={page.editValues}
-          onCancel={cancelEdit}
           onChange={page.setEditValues}
           onSubmit={(event) => void submitEdit(event)}
         />

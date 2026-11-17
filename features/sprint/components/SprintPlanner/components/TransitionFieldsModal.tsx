@@ -6,8 +6,8 @@ import type { SprintListItem } from '@/types/tracker';
 
 import { useCallback, useEffect, useId, useState } from 'react';
 
-import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
+import { ModalFormActions } from '@/components/ModalFormActions';
 import { StatusTag } from '@/components/StatusTag';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
@@ -106,14 +106,13 @@ export function TransitionFieldsModal({
   return (
     <Modal
       footer={
-        <>
-          <Button variant="outline" onClick={onClose}>
-            {t('task.transitionFields.cancel')}
-          </Button>
-          <Button disabled={isSubmitting} form={formId} type="submit">
-            {isSubmitting ? t('task.transitionFields.submitting') : t('task.transitionFields.submit')}
-          </Button>
-        </>
+        <ModalFormActions
+          busy={isSubmitting}
+          busyLabel={t('task.transitionFields.submitting')}
+          formId={formId}
+          submitLabel={t('task.transitionFields.submit')}
+          onCancel={onClose}
+        />
       }
       open={isOpen}
       title={t('task.transitionFields.title')}

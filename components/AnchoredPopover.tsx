@@ -7,17 +7,12 @@ import { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
+import { isOverlayChildTarget } from '@/components/overlayChild';
 import { ZIndex } from '@/constants';
 import { FLOATING_MENU_GLASS_SHELL } from '@/features/context-menu/contextMenuClasses';
 
 /** Точка клика или прямоугольник элемента, у которого открывается поповер. */
 type PopoverAnchor = Pick<DOMRect, 'height' | 'width' | 'x' | 'y'> | { x: number; y: number };
-
-/**
- * Метка узла, который отрисован в своём портале, но принадлежит поповеру (список результатов поиска):
- * клик по нему поповер не закрывает.
- */
-export const ANCHORED_POPOVER_CHILD_ATTR = 'data-anchored-popover-child';
 
 interface AnchoredPopoverProps {
   align?: 'center' | 'end' | 'start';
@@ -73,8 +68,7 @@ export function AnchoredPopover({
           style={{ zIndex: ZIndex.modal }}
           onEscapeKeyDown={() => onDismiss('escape')}
           onInteractOutside={(event) => {
-            const target = event.target;
-            if (target instanceof Element && target.closest(`[${ANCHORED_POPOVER_CHILD_ATTR}]`)) {
+            if (isOverlayChildTarget(event.target)) {
               event.preventDefault();
               return;
             }

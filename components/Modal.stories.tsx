@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Modal } from './Modal';
+import { ModalFormActions } from './ModalFormActions';
 
 const meta = {
   title: 'Components/Modal',
@@ -74,6 +75,27 @@ export const DangerAction: Story = {
       </>
     ),
     title: 'Завершить спринт',
+  },
+};
+
+/** Кнопки формы в подвале — `ModalFormActions`: «Отмена» и главное действие, привязанное к форме по `formId`. */
+export const FormActionsInFooter: Story = {
+  args: {
+    children: (
+      <form id="story-form">
+        <Input aria-label="Название" defaultValue="Новая команда" />
+      </form>
+    ),
+    footer: <ModalFormActions formId="story-form" submitLabel="Создать" onCancel={() => {}} />,
+  },
+};
+
+/** То же, пока идёт отправка: обе кнопки выключены, на главной — подпись процесса. */
+export const FormActionsBusy: Story = {
+  args: {
+    busy: true,
+    children: <p className="text-sm text-gray-700 dark:text-gray-300">Форма отправляется.</p>,
+    footer: <ModalFormActions busy busyLabel="Создаём…" submitLabel="Создать" onCancel={() => {}} />,
   },
 };
 

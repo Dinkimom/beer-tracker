@@ -1,7 +1,6 @@
 import type { CustomSelectOption } from "@/components/CustomSelect";
 import type { FormEvent } from "react";
 
-import { Button } from "@/components/Button";
 import { CustomSelect } from "@/components/CustomSelect";
 import { useI18n } from "@/contexts/LanguageContext";
 import { field, label } from "@/features/admin/adminUiTokens";
@@ -11,14 +10,13 @@ interface AdminNewTeamFormSectionProps {
   boardSearchLoading: boolean;
   boardSelectOptions: CustomSelectOption<string>[];
   catalogLoading: boolean;
+  /** id формы: кнопка отправки стоит в подвале окна и ссылается на неё атрибутом `form`. */
+  formId: string;
   newTeamTitle: string;
-  orgId: string;
   queueSelectOptions: CustomSelectOption<string>[];
   selectTeamBoard: string;
   selectTeamQueue: string;
-  teamFormSubmitting: boolean;
   onBoardSearchQueryChange: (query: string) => void;
-  onCancel: () => void;
   setNewTeamTitle: (v: string) => void;
   setSelectTeamBoard: (v: string) => void;
   setSelectTeamQueue: (v: string) => void;
@@ -29,14 +27,12 @@ export function AdminNewTeamFormSection({
   boardSearchLoading,
   boardSelectOptions,
   catalogLoading,
+  formId,
   newTeamTitle,
-  orgId,
   queueSelectOptions,
   selectTeamBoard,
   selectTeamQueue,
-  teamFormSubmitting,
   onBoardSearchQueryChange,
-  onCancel,
   setNewTeamTitle,
   setSelectTeamBoard,
   setSelectTeamQueue,
@@ -44,7 +40,7 @@ export function AdminNewTeamFormSection({
 }: AdminNewTeamFormSectionProps) {
   const { t } = useI18n();
   return (
-    <form className="space-y-4" onSubmit={(e) => void submitNewTeam(e)}>
+    <form className="space-y-4" id={formId} onSubmit={(e) => void submitNewTeam(e)}>
       <div>
         <label className={label} htmlFor="team-title">
           {t("admin.newTeamForm.nameLabel")}
@@ -100,18 +96,6 @@ export function AdminNewTeamFormSection({
             </div>
           ) : null}
         </div>
-      </div>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button disabled={teamFormSubmitting} type="button" variant="outline" onClick={onCancel}>
-          {t("common.cancel")}
-        </Button>
-        <Button
-          disabled={teamFormSubmitting || !orgId || catalogLoading}
-          type="submit"
-          variant="primary"
-        >
-          {teamFormSubmitting ? t("admin.newTeamForm.submitSaving") : t("admin.newTeamForm.submit")}
-        </Button>
       </div>
     </form>
   );
