@@ -39,7 +39,7 @@ import {
 import { planIssueKeys } from './quarterlyPlanLayout';
 import { buildQuarterlyPlanMemberIndex, planContentForClient, planContentForStorage } from './quarterlyPlanMembers';
 import { applyQuarterlyPlanOps as applyOpsToContent } from './quarterlyPlanOps';
-import { buildSprintCards } from './quarterlyPlanSprintCards';
+import { buildSprintCards, positionsInTrackerSprints } from './quarterlyPlanSprintCards';
 import {
   buildSprintQuarterPlanView,
   type SprintQuarterPlanInput,
@@ -124,11 +124,33 @@ function sprintsInQuarter(sprints: readonly SprintListItem[], boardId: number, r
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
+/** Задачи спринтов по трекеру: спринт → ключи задач. Спринт, который трекер не отдал, в ответ не попадает. */
+async function loadTrackerSprintMembers(
+  issueTracker: IssueTrackerProviderClient,
+  sprintIds: readonly number[]
+): Promise<Map<number, Set<string>>> {
+  const members = await Promise.all(
+    sprintIds.map(async (sprintId) => {
+      try {
+        // Тот же кэш, что у доски спринта: идущий спринт — минута, архивный — час.
+        const issues = await issueTracker.getTasksInSprintWithParents(sprintId);
+        return [[sprintId, new Set(issues.map((issue) => issue.key))] as const];
+      } catch (error) {
+        console.warn(`[quarterly-plan] sprint issues(${sprintId}):`, error);
+        return [];
+      }
+    })
+  );
+  return new Map(members.flat());
+}
+
 /**
- * Где привязанные задачи эпиков стоят на досках спринтов квартала (QK8). Не загрузилось — карточек нет:
- * план остаётся рабочим, пометки расхождения просто не показываются.
+ * Где привязанные задачи эпиков стоят на досках спринтов квартала (QK8). Карточку берём, только если трекер
+ * держит задачу в этом спринте (QK10). Не загрузилось — карточек нет: план остаётся рабочим, пометки
+ * расхождения просто не показываются.
  */
 async function loadSprintCards(
+  issueTracker: IssueTrackerProviderClient,
   organizationId: string,
   content: QuarterlyPlanContent,
   teams: readonly QuarterlyPlanTeam[]
@@ -141,10 +163,11 @@ async function loadSprintCards(
       listTaskCardSpans({ sprintIds: sprints.map((sprint) => sprint.id), taskIds }),
       findOrganizationById(organizationId),
     ]);
+    const members = await loadTrackerSprintMembers(issueTracker, [...new Set(positions.map((position) => position.sprintId))]);
     const partsPerDay = organization
       ? readPlannerTimelineScale(organization.settings).timeslotsPerDay
       : DEFAULT_PLANNER_TIMELINE_SCALE.timeslotsPerDay;
-    return buildSprintCards({ partsPerDay, positions, sprints });
+    return buildSprintCards({ partsPerDay, positions: positionsInTrackerSprints(positions, members), sprints });
   } catch (error) {
     console.warn('[quarterly-plan] sprint cards:', error);
     return {};
@@ -181,7 +204,7 @@ export async function getQuarterlyPlan(input: {
     plan: {
       ...ref,
       ...planContentForClient(stored.content, index),
-      sprintCards: await loadSprintCards(organizationId, stored.content, teams),
+      sprintCards: await loadSprintCards(issueTracker, organizationId, stored.content, teams),
       teams,
       trackerEpics,
     },

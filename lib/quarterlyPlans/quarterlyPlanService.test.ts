@@ -5,6 +5,7 @@ import type { TeamMember } from '@/types/team';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiCache } from '@/lib/cache';
+import { listTaskCardSpans } from '@/lib/sprints/taskPositionsRepository';
 import { fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
 
 import { applyQuarterlyPlanOps, getQuarterlyPlan, loadSprintQuarterContext, saveQuarterlyPlan } from './quarterlyPlanService';
@@ -31,6 +32,12 @@ vi.mock('@/lib/boardAvailability/boardAvailabilityEventsRepository', async (impo
       start_date: '2026-10-12',
     },
   ]),
+}));
+vi.mock('@/lib/sprints/taskPositionsRepository', () => ({ listTaskCardSpans: vi.fn() }));
+vi.mock('@/lib/organizations', () => ({ findOrganizationById: vi.fn(() => Promise.resolve(null)) }));
+vi.mock('./quarterlyPlanTrackerEpics', () => ({
+  loadQuarterlyPlanTrackerEpics: vi.fn(() => Promise.resolve({})),
+  markTrackerEpicChanged: vi.fn(),
 }));
 vi.mock('./quarterlyPlanVersionHistory', () => ({
   prepareQuarterlyPlanVersion: vi.fn(),
@@ -102,6 +109,34 @@ describe('quarterlyPlanService', () => {
     expect(plan.teams).toHaveLength(1);
     expect(plan.teams[0]?.members.map((developer) => developer.id)).toEqual(['tracker-1', 'staff:staff-2']);
     expect(plan.teams[0]?.sprints.map((item) => item.id)).toEqual([2, 4]);
+  });
+
+  it('карточку задачи берёт из того спринта, где её держит трекер (QK10)', async () => {
+    const withTask = {
+      ...content('staff-1'),
+      epics: [
+        { directionId: 'd1', id: 'e1', status: 'backlog', title: 'Payment' },
+        { directionId: 'd1', id: 't1', issueKey: 'A-1', parentEpicId: 'e1', status: 'backlog', title: 'Task' },
+      ],
+    };
+    vi.mocked(fetchQuarterlyPlanContent).mockResolvedValue({ content: withTask as never, version: 3 });
+    // На досках Beer Tracker задача стоит в Sprint 2 и Sprint 6, а в трекере её перенесли обратно в Sprint 2.
+    vi.mocked(listTaskCardSpans).mockResolvedValue([
+      { duration: 2, segments: null, sprintId: 2, startDay: 0, startPart: 0, taskId: 'A-1' },
+      { duration: 2, segments: null, sprintId: 6, startDay: 0, startPart: 0, taskId: 'A-1' },
+    ]);
+    const getTasksInSprintWithParents = vi.fn((sprintId: number) =>
+      Promise.resolve(sprintId === 2 ? [{ key: 'A-1' }] : [])
+    );
+    const issueTracker = {
+      getTasksInSprintWithParents,
+      listSprints: vi.fn().mockResolvedValue([sprint(2, '2026-10-12', '2026-10-23'), sprint(6, '2026-10-26', '2026-11-06')]),
+    } as unknown as IssueTrackerProviderClient;
+
+    const { plan } = await getQuarterlyPlan({ issueTracker, organizationId: 'org-1', ref: Q4 });
+
+    expect(plan.sprintCards['A-1']?.sprintId).toBe(2);
+    expect(getTasksInSprintWithParents.mock.calls.map(([sprintId]) => sprintId).sort()).toEqual([2, 6]);
   });
 
   it('сохраняет людей по staff_id поверх ожидаемой версии', async () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { daySpanFields } from './quarterlyPlanLayout';
-import { buildSprintCards, sprintCardDrift } from './quarterlyPlanSprintCards';
+import { buildSprintCards, positionsInTrackerSprints, sprintCardDrift } from './quarterlyPlanSprintCards';
 import { buildQuarterWeeks } from './quarterWeeks';
 
 /** Q4 2026: день 0 — понедельник 28.09; спринт 13–24.10 начинается во вторник (день квартала 11). */
@@ -64,3 +64,29 @@ describe('карточки задач на досках спринтов (QK8)',
     expect(sprintCardDrift({ assignments: [bar], card: { endDate: '2026-09-10', startDate: '2026-09-09' }, weeks })).toBeNull();
   });
 });
+
+describe('карточки, которые подтверждает трекер (QK10)', () => {
+  const next = { endDate: '2026-11-07', id: 103, name: 'Sprint 16', startDate: '2026-10-27' };
+
+  it('агент перенёс задачу в трекере обратно в текущий спринт — старая карточка в следующем не в счёт', () => {
+    // На досках Beer Tracker задача стоит в обоих спринтах; трекер держит её только в Sprint 15.
+    const positions = [card('A-1', 0, 0, 2, 102), card('A-1', 1, 0, 2, 103)];
+    const members = new Map([
+      [102, new Set(['A-1'])],
+      [103, new Set<string>()],
+    ]);
+    const cards = buildSprintCards({ partsPerDay: 2, positions: positionsInTrackerSprints(positions, members), sprints: [sprint, next] });
+    expect(cards['A-1']?.sprintId).toBe(102);
+  });
+
+  it('задачу убрали из спринта в трекере — карточки нет, план её больше не показывает в спринте', () => {
+    const positions = [card('A-1', 0, 0, 2, 102)];
+    expect(positionsInTrackerSprints(positions, new Map([[102, new Set<string>()]]))).toEqual([]);
+  });
+
+  it('спринт, который трекер не отдал, карточки не теряет', () => {
+    const positions = [card('A-1', 0, 0, 2, 102)];
+    expect(positionsInTrackerSprints(positions, new Map())).toEqual(positions);
+  });
+});
+

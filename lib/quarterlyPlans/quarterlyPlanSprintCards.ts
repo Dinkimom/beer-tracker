@@ -47,6 +47,19 @@ function cardDates(
 }
 
 /**
+ * Карточки, которые подтверждает трекер (QK10): задача стоит на доске спринта, а трекер держит её в этом спринте.
+ * Задачу перенесли в другой спринт или убрали из спринта прямо в трекере (агентом, руками в Jira) — карточка на
+ * доске осталась, но работы этого спринта уже нет: такую не берём (как `inTrackerSprint: false` в контексте спринта).
+ * Спринт, состав которого трекер не отдал (`membersBySprint` без него), — карточки остаются: план не ломается из-за трекера.
+ */
+export function positionsInTrackerSprints<T extends Pick<SprintCardPosition, 'sprintId' | 'taskId'>>(
+  positions: readonly T[],
+  membersBySprint: ReadonlyMap<number, ReadonlySet<string>>
+): T[] {
+  return positions.filter((position) => membersBySprint.get(position.sprintId)?.has(position.taskId) ?? true);
+}
+
+/**
  * Карточки задач по ключу трекера. Задача стоит на досках нескольких спринтов — берётся самый поздний:
  * там она стоит сейчас, в прежних — её прошлые места.
  */
