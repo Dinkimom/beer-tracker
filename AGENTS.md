@@ -51,7 +51,8 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 - Перед добавлением нового атома UI: поиск в [`components/`](./components/) и в [аудите дублей](./docs/SHARED_COMPONENTS_AUDIT.md); по возможности расширять существующий примитив.
 - Семантические CSS-токены (бордеры шапки, muted-текст, тосты): [`app/globals.css`](./app/globals.css) (`--ds-*`, `--toast-*`).
-- Сториз для ключевых примитивов: `components/*.stories.tsx`, запуск `pnpm storybook`.
+- Сториз — для общих примитивов (`components/*.stories.tsx`, запуск `pnpm storybook`): новый или изменённый примитив в `components/` получает или обновляет историю в том же коммите — все его состояния (длинное содержимое, ошибка, disabled, варианты). Сторибук — место промежуточной отладки состояний; экраны и окна фич в него не выносить (завязаны на сторы и данные трекера), их финальная проверка — в приложении на `/demo/planner`.
+- Модальное окно — только через [`components/Modal.tsx`](./components/Modal.tsx); подтверждение действия — `useConfirmDialog`. Свою оболочку с `fixed inset-0` не заводить.
 - Кнопка интерактивна. У `button` и контрола с `role="button"` обязательны: `cursor-pointer`; видимый hover (фон или цвет); отклик нажатия (`active:`, фон и обычно `active:scale-[0.98]`); плавный отпуск через `transition` — `transition-colors`, если меняется только цвет, и `transition-all duration-200`, если есть масштаб. Образец — [`components/HeaderIconButton.tsx`](./components/HeaderIconButton.tsx). Disabled не выглядит кликабельным: `disabled:pointer-events-none` или `disabled:cursor-not-allowed` и без hover.
 
 ## Архитектура данных (кратко)
