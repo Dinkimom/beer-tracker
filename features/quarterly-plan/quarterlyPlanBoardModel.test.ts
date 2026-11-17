@@ -322,6 +322,14 @@ describe('layoutRowGoals (QG8)', () => {
     expect(layout.blockers.map((blocker) => blocker.lane)).toEqual([0, 1, 2]);
   });
 
+  it('с целями подпись — на верхней линии, без целей — посередине содержимого', () => {
+    const size = { contentHeightPx: 100, laneHeightPx: 30 };
+    const withGoals = layoutRowGoals(goals, [{ lane: 0, rows: 1, startWeek: 0, weeks: 3 }], size);
+    expect(withGoals.barsTopPx).toBe(60);
+    expect(withGoals.labelHeightPx).toBe(38);
+    expect(layoutRowGoals([], [{ lane: 0, rows: 1, startWeek: 0, weeks: 3 }], size).labelHeightPx).toBe(100);
+  });
+
   it('в строке без полос цели стоят с первой дорожки и строку под полосы не растят', () => {
     const layout = layoutRowGoals(goals.slice(0, 1));
     expect(layout.goalLaneCount).toBe(1);

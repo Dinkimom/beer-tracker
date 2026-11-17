@@ -401,21 +401,33 @@ export function buildRowGoalFlags(input: {
  * Дорожки целей в строке (QG8): цели всегда сверху. Полосы строки (`barBlockers`) сдвигаются под цели на
  * `barsTopLanes` дорожек — но только если полосы есть: в строке с одними целями цель стоит в первой дорожке,
  * и строка не растёт на пустую дорожку под полосы. `blockers` — цели и сдвинутые полосы: их обходят заметки.
+ * Подпись строки (`labelHeightPx`) с целями — на верхней линии, напротив первой цели; без целей — посередине
+ * содержимого строки (`contentHeightPx`).
  */
 export function layoutRowGoals(
   flags: ReadonlyArray<Pick<QuarterRowGoalFlag, 'id' | 'startWeek' | 'weeks'>>,
-  barBlockers: readonly NoteLaneBlocker[] = []
-): { barsTopLanes: number; blockers: NoteLaneBlocker[]; goalLaneCount: number; goalLanes: Map<string, number> } {
+  barBlockers: readonly NoteLaneBlocker[] = [],
+  size: { contentHeightPx: number; laneHeightPx: number } = { contentHeightPx: QUARTER_ROW_HEIGHT_PX, laneHeightPx: QUARTER_LANE_HEIGHT_PX }
+): {
+  barsTopLanes: number;
+  barsTopPx: number;
+  blockers: NoteLaneBlocker[];
+  goalLaneCount: number;
+  goalLanes: Map<string, number>;
+  labelHeightPx: number;
+} {
   const goalLanes = assignNoteLanes(flags.map((flag) => ({ id: flag.id, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks }))).laneById;
   const goalLaneCount = Math.max(0, ...flags.map((flag) => (goalLanes.get(flag.id) ?? 0) + 1));
   const barsTopLanes = barBlockers.length > 0 ? goalLaneCount : 0;
   return {
     barsTopLanes,
+    barsTopPx: barsTopLanes * size.laneHeightPx,
     blockers: [
       ...flags.map((flag) => ({ lane: goalLanes.get(flag.id) ?? 0, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks })),
       ...barBlockers.map((blocker) => ({ ...blocker, lane: blocker.lane + barsTopLanes })),
     ],
     goalLaneCount,
     goalLanes,
+    labelHeightPx: goalLaneCount > 0 ? size.laneHeightPx + QUARTER_ROW_PADDING_PX * 2 : size.contentHeightPx,
   };
 }

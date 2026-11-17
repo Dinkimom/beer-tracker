@@ -123,8 +123,10 @@ export function QuarterlyPlanRow({
   // Цели спринтов (QG8) — только у эпика и направления, всегда сверху (`layoutRowGoals`); полосы встают
   // под ними через `QuarterBarsTopProvider`, заметки обходят и цели, и полосы.
   const goalFlags = noteRow?.kind === 'epic' || noteRow?.kind === 'direction' ? (goalsByRow.get(noteRow.id) ?? []) : [];
-  const { barsTopLanes, blockers, goalLaneCount, goalLanes } = layoutRowGoals(goalFlags, noteBlockers);
-  const barsTopPx = barsTopLanes * laneHeightPx;
+  const { barsTopPx, blockers, goalLaneCount, goalLanes, labelHeightPx } = layoutRowGoals(goalFlags, noteBlockers, {
+    contentHeightPx: heightPx,
+    laneHeightPx,
+  });
   // Превью полосы из открытого меню назначения — в первой дорожке полос, где её недели свободны (под целями).
   const ghost =
     assignPreview && noteRow && assignPreview.row.kind === noteRow.kind && assignPreview.row.id === noteRow.id
@@ -176,11 +178,11 @@ export function QuarterlyPlanRow({
         {sortRow?.level === 'task' ? (
           <>
             <span aria-hidden className="absolute inset-y-0 left-[26px] w-px bg-ds-border-subtle" />
-            <span aria-hidden className="absolute left-[26px] h-px w-2.5 bg-ds-border-subtle" style={{ top: barsTopPx + heightPx / 2 }} />
+            <span aria-hidden className="absolute left-[26px] h-px w-2.5 bg-ds-border-subtle" style={{ top: labelHeightPx / 2 }} />
           </>
         ) : null}
-        {/* Подпись стоит напротив полос строки, а не посередине между ними и заметками; цели — над ней. */}
-        <div className="flex min-w-0 flex-1 items-center" style={{ marginTop: barsTopPx, minHeight: heightPx }}>
+        {/* Подпись — на верхней линии строки (`labelHeightPx`), а не посередине между содержимым и заметками. */}
+        <div className="flex min-w-0 flex-1 items-center" style={{ minHeight: labelHeightPx }}>
           {left}
         </div>
       </div>
