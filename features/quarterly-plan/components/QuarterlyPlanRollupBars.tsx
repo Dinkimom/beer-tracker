@@ -81,7 +81,7 @@ export function QuarterlyPlanRollupBars({ faded = false, rollups, rowId, statusK
           width: `calc(${(rollup.days / dayCount) * 100}% - 4px)`,
           zIndex: ZIndex.contentInteractive,
         }}
-        title={[`${phase} · ${range}`, names].filter(Boolean).join('\n')}
+        title={[`${range} · ${phase}`, names].filter(Boolean).join('\n')}
       >
         {/* Источник связи — синяя рамка, как у полосы-источника на плане. Отдельным слоем: у самой
             полосы-кнопки тень в фокусе гасит глобальный сброс. */}
@@ -103,7 +103,7 @@ export function QuarterlyPlanRollupBars({ faded = false, rollups, rowId, statusK
         </span>
         {members.length > MAX_AVATARS ? <span className="mr-1.5 shrink-0 opacity-70">+{members.length - MAX_AVATARS}</span> : null}
         <span className="truncate">
-          {phase} · {range}
+          {range} · {phase}
         </span>
       </div>
     );

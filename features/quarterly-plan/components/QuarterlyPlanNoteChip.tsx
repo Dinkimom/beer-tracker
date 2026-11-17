@@ -19,6 +19,7 @@ import {
   getStickyNoteTextClass,
 } from '@/features/comments/utils/stickyNoteSurfaceClasses';
 import { SprintCardPresenceAvatars } from '@/features/task/components/TaskCard/SprintCardPresenceAvatars';
+import { useSprintCardPresenceViewers } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { resizeNoteRows } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
@@ -38,6 +39,12 @@ import { QuarterlyPlanResizeHandle } from './QuarterlyPlanResizeHandle';
 /** Высота строки текста заметки (`text-xs leading-snug`) — по ней считаем, сколько строк помещается. */
 const NOTE_LINE_PX = 16;
 const HANDLE_MODE = { bottom: 'height', left: 'start', right: 'end' } as const;
+/** Стопка аватаров присутствия в правом углу листа: первый — 24 px (`Avatar size="sm"`), каждый следующий выступает на 18; плюс отступы от края и текста. */
+const PRESENCE_AVATAR_PX = 24;
+const PRESENCE_STEP_PX = 18;
+const PRESENCE_GAP_PX = 10;
+/** Столько мест занимает стопка самое большее: три аватара и счётчик остальных. */
+const PRESENCE_MAX_SLOTS = 4;
 
 interface QuarterlyPlanNoteChipProps {
   lane: number;
@@ -81,6 +88,8 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
   const [ownGesture, setOwnGesture] = useState<'dragging' | 'resizing' | null>(null);
   // Заметку несёт, растягивает или редактирует другой человек (QS7): свои жесты ждут.
   const presence = useQuarterPresenceTarget(note.id, focused ? 'editing' : ownGesture);
+  // Аватары тех, кто на заметке, лежат поверх правого края листа: текст уступает им место, а не уходит под них.
+  const presenceSlots = Math.min(useSprintCardPresenceViewers(note.id).length, PRESENCE_MAX_SLOTS);
   const { begin, drag, rootProps, rootRef, span } = useQuarterSpanDrag({
     disabled: presence.locked,
     free: true,
@@ -140,7 +149,10 @@ export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteCh
       <div
         ref={tiltRef}
         className={`sticky-note-paper flex h-full w-full px-2 text-xs leading-snug hover:brightness-95 dark:hover:brightness-110 ${getStickyNoteTextClass()} ${rows > 1 ? 'items-start pt-1' : 'items-center'} ${carried ? 'opacity-90 !shadow-lg' : ''}`}
-        style={getStickyNoteCardStyle(note.color, isDark)}
+        style={{
+          ...getStickyNoteCardStyle(note.color, isDark),
+          ...(presenceSlots > 0 ? { paddingRight: PRESENCE_AVATAR_PX + (presenceSlots - 1) * PRESENCE_STEP_PX + PRESENCE_GAP_PX } : {}),
+        }}
       >
         <span className="sticky flex min-w-0" style={{ left: QUARTER_STICKY_LABEL_LEFT }}>
           <OverflowTooltip content={note.text}>
