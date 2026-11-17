@@ -1776,7 +1776,8 @@ textarea:focus-visible,
  * она шапка своего блока и липнет под шапкой недель, строки проезжают под ней.
  */
 .quarter-team-glass {
-  background-color: rgb(231 234 239 / 0.8) !important;
+  /* На белом листе даёт slate-100 — тот же цвет у левой ячейки строки (`QuarterlyPlanRow`). */
+  background-color: rgb(239 243 248 / 0.86) !important;
   -webkit-backdrop-filter: blur(28px) saturate(1);
   backdrop-filter: blur(28px) saturate(1);
 }

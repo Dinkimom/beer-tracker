@@ -39,9 +39,10 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
 
   return (
     <div
-      className="sticky top-0 flex border-b border-ds-border-subtle"
+      className="sticky flex border-b border-ds-border-subtle"
       data-quarter-header
-      style={{ zIndex: ZIndex.stickyInContent + 2 }}
+      // Липнет под стеклянной панелью контролов страницы.
+      style={{ top: 'var(--planner-controls-h, 0px)', zIndex: ZIndex.stickyInContent + 2 }}
     >
       {/* Стекло — у угловой ячейки и у полосы недель по отдельности, не у всей шапки: стекло внутри стекла
           не размыло бы подписи недель, которые проезжают под ячейкой при горизонтальной прокрутке. */}

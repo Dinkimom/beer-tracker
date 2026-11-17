@@ -45,12 +45,13 @@ type QuarterlyPlanRowTone = 'default' | 'direction' | 'team';
  * её нижняя линия ложится на верхнюю линию следующей строки (`-mb-px`), а не встаёт рядом второй.
  *
  * Тон — три ступени, по одной на уровень, и один на всю строку: команда темнее направления, направление
- * темнее эпиков и строк отсутствий. Левая ячейка красится тем же цветом, что таймлайн (`LEFT_CELL_CLASS`).
+ * темнее эпиков и строк отсутствий. В светлой теме ступени — холодные slate-100 и slate-50: нейтральный
+ * серый рядом с голубой подсветкой текущей недели выглядел грязным. Левая ячейка красится тем же цветом, что таймлайн (`LEFT_CELL_CLASS`).
  */
 const ROW_TONE_CLASS: Record<QuarterlyPlanRowTone, string> = {
   default: 'bg-white dark:bg-gray-800',
   // Направление — шапка своей группы: тонированная полоса во всю ширину отделяет его от эпиков под ним.
-  direction: 'border-t border-ds-border-subtle bg-gray-50 dark:bg-[#243043]',
+  direction: 'border-t border-ds-border-subtle bg-slate-50 dark:bg-[#243043]',
   // Стекло в сером тоне: строка команды липнет под шапкой, строки проезжают под ней размытыми.
   team: 'border-b border-ds-border-subtle quarter-team-glass [&:not(:last-child)]:-mb-px',
 };
@@ -62,10 +63,10 @@ const ROW_TONE_CLASS: Record<QuarterlyPlanRowTone, string> = {
  */
 const LEFT_CELL_CLASS: Record<QuarterlyPlanRowTone, string> = {
   default: 'group-hover/row:bg-gray-900/[0.035] dark:group-hover/row:bg-white/[0.05]',
-  direction: 'bg-gray-50 dark:bg-[#243043]',
+  direction: 'bg-slate-50 dark:bg-[#243043]',
   // Непрозрачная: стекло внутри стеклянной строки не размыло бы спринты, которые проезжают под ячейкой.
   // Цвет — то, как стекло строки (`quarter-team-glass`) выглядит на белом листе.
-  team: 'bg-[#eceef2] dark:bg-[#2d3b4f]',
+  team: 'bg-slate-100 dark:bg-[#2d3b4f]',
 };
 
 /** Верхняя линия левой ячейки — того же веса, что у самой строки. */
@@ -75,8 +76,8 @@ const LEFT_CELL_TOP_LINE: Record<QuarterlyPlanRowTone, string | undefined> = {
   team: undefined,
 };
 
-/** Две строки шапки и её нижняя линия. */
-const STICKY_TOP_PX = QUARTER_HEADER_ROW_PX * 2 + 1;
+/** Под панелью контролов страницы — две строки шапки и её нижняя линия. */
+const STICKY_TOP = `calc(var(--planner-controls-h, 0px) + ${QUARTER_HEADER_ROW_PX * 2 + 1}px)`;
 
 /** Сетка дней в строке: на уровне «Дни» видна всегда и слабее недельной, на остальных — только пока полосу тянут. */
 const DAY_GRID_ON_DRAG = {
@@ -181,7 +182,7 @@ export function QuarterlyPlanRow({
       style={{
         minHeight: totalHeight,
         ...(tone === 'default' ? { borderTop: `1px solid ${QUARTER_WEEK_LINE}` } : {}),
-        ...(sticky ? { top: STICKY_TOP_PX, zIndex: ZIndex.stickyInContent + 1 } : {}),
+        ...(sticky ? { top: STICKY_TOP, zIndex: ZIndex.stickyInContent + 1 } : {}),
       }}
     >
       <div

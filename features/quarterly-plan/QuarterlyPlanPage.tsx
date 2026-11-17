@@ -15,8 +15,11 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
+import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskBarNoteFocusEditor';
+import { useHeightCssVar } from '@/hooks/useHeightCssVar';
 import { useQuarterHideDoneStorage } from '@/hooks/useLocalStorage';
 import { formatLocalDateToIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import { collectQuarterlyPlanIssues, quarterTimelineStart } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
@@ -109,6 +112,9 @@ export function QuarterlyPlanPage() {
   const [expandedEpicIds, setExpandedEpicIds] = useState<ReadonlySet<string>>(new Set());
   const [focusedIssue, setFocusedIssue] = useState<{ assignmentId: string; nonce: number } | null>(null);
   const [todayNonce, setTodayNonce] = useState(0);
+  const [frameEl, setFrameEl] = useState<HTMLDivElement | null>(null);
+  const [controlsEl, setControlsEl] = useState<HTMLDivElement | null>(null);
+  useHeightCssVar(frameEl, controlsEl, '--planner-controls-h');
   const {
     applyEdit: savePlanEdit,
     eventsByBoard,
@@ -370,34 +376,44 @@ export function QuarterlyPlanPage() {
   return (
     // История версий — сайдбар рядом с доской, как на доске спринта: доска сужается, а не закрывается им.
     <div className="relative flex min-h-0 flex-1 gap-3 overflow-hidden">
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header">
-        <QuarterlyPlanHeader
-          detail={detail}
-          history={{
-            open: history.open,
-            onToggle: () => {
-              setGoalsTarget(null);
-              history.toggle();
-            },
-          }}
-          issueCounts={{
-            away: issues.filter((issue) => issue.away).length,
-            blocked: issues.filter((issue) => issue.blocked).length,
-            notInTeam: issues.filter((issue) => issue.notInTeam).length,
-            parallel: issues.filter((issue) => issue.parallel).length,
-            total: issues.length,
-          }}
-          presenceViewers={presenceViewers}
-          quarterRef={quarterRef}
-          sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
-          onDetailChange={setDetail}
-          onNextIssue={focusNextIssue}
-          onQuarterChange={setQuarterRef}
-          onToday={() => {
-            setQuarterRef(quarterOfDate(getPlannerNow()));
-            setTodayNonce((nonce) => nonce + 1);
-          }}
-        />
+      <div
+        ref={setFrameEl}
+        className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header"
+      >
+        {/* Панель контролов — стекло поверх доски, как на доске спринта: строки проезжают под ней размытыми. */}
+        <div
+          ref={setControlsEl}
+          className={`absolute inset-x-0 top-0 ${FLOATING_TOOLBAR_GLASS}`}
+          style={{ zIndex: ZIndex.plannerControls }}
+        >
+          <QuarterlyPlanHeader
+            detail={detail}
+            history={{
+              open: history.open,
+              onToggle: () => {
+                setGoalsTarget(null);
+                history.toggle();
+              },
+            }}
+            issueCounts={{
+              away: issues.filter((issue) => issue.away).length,
+              blocked: issues.filter((issue) => issue.blocked).length,
+              notInTeam: issues.filter((issue) => issue.notInTeam).length,
+              parallel: issues.filter((issue) => issue.parallel).length,
+              total: issues.length,
+            }}
+            presenceViewers={presenceViewers}
+            quarterRef={quarterRef}
+            sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
+            onDetailChange={setDetail}
+            onNextIssue={focusNextIssue}
+            onQuarterChange={setQuarterRef}
+            onToday={() => {
+              setQuarterRef(quarterOfDate(getPlannerNow()));
+              setTodayNonce((nonce) => nonce + 1);
+            }}
+          />
+        </div>
         {plan && board ? (
           <QuarterlyPlanBoardProvider value={board}>
             <QuarterlyPlanPresence quarterRef={quarterRef} viewers={presenceViewers}>
@@ -448,7 +464,10 @@ export function QuarterlyPlanPage() {
             ) : null}
           </QuarterlyPlanBoardProvider>
         ) : (
-          <div className="flex flex-1 items-center justify-center gap-2 text-sm text-ds-text-muted">
+          <div
+            className="flex flex-1 items-center justify-center gap-2 text-sm text-ds-text-muted"
+            style={{ paddingTop: 'var(--planner-controls-h, 0px)' }}
+          >
             {isLoading ? <Icon className="h-4 w-4 animate-spin" name="spinner" /> : null}
             {t(isLoading ? 'quarterlyPlan.loading' : 'quarterlyPlan.loadError')}
           </div>

@@ -3,7 +3,7 @@
 import type { Task } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
-import { useLayoutEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -17,6 +17,7 @@ import { SprintPlannerTimer } from '@/features/sprint/components/SprintPlanner/c
 import { SprintSelectorWithCreate } from '@/features/sprint/components/SprintSelectorWithCreate';
 import { STORAGE_KEYS } from '@/hooks/localStorage/storageKeys';
 import { useDebouncedNumericLocalStorage } from '@/hooks/localStorage/useDebouncedNumericLocalStorage';
+import { useHeightCssVar } from '@/hooks/useHeightCssVar';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
 import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
@@ -66,18 +67,7 @@ export function RetroPage({
   const [boardFrameEl, setBoardFrameEl] = useState<HTMLDivElement | null>(null);
   const [controlsEl, setControlsEl] = useState<HTMLDivElement | null>(null);
 
-  useLayoutEffect(() => {
-    const frame = boardFrameEl;
-    const bar = controlsEl;
-    if (!frame || !bar) return undefined;
-    const apply = () => {
-      frame.style.setProperty('--retro-controls-h', `${bar.offsetHeight}px`);
-    };
-    apply();
-    const observer = new ResizeObserver(apply);
-    observer.observe(bar);
-    return () => observer.disconnect();
-  }, [boardFrameEl, controlsEl]);
+  useHeightCssVar(boardFrameEl, controlsEl, '--retro-controls-h');
 
   return (
     <div

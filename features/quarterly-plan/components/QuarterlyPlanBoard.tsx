@@ -121,13 +121,15 @@ export function QuarterlyPlanBoard({
             '--quarter-left-col': `${columnWidth}px`,
             minWidth: Math.max(columnWidth + weeks.length * weekMinWidth, holdWidth ? fullWidth : 0),
             paddingBottom: SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX,
+            // Сверху — место под стеклянную панель контролов: доска начинается под ней и проезжает под неё.
+            paddingTop: 'var(--planner-controls-h, 0px)',
           } as CSSProperties
         }
       >
         {/* Стекло колонки — как у колонки исполнителей на доске спринта: одна плашка на всю видимую высоту,
             полосы и заметки проезжают под ней размытыми, подписи строк лежат выше и остаются резкими. */}
         <PlannerParticipantsColumnGlass
-          className="sticky left-0 top-0"
+          className="sticky left-0"
           fillScrollport
           scrollerSelector="[data-quarter-scroller]"
           style={{ zIndex: ZIndex.stickyInContent }}

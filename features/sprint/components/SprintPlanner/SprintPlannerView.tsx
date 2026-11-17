@@ -1,7 +1,7 @@
 
 import type { useSprintPlannerViewModel } from './hooks/useSprintPlannerViewModel';
 
-import { useLayoutEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { ZIndex } from '@/constants';
 import { StickyNoteReactionsProvider } from '@/features/comments/StickyNoteReactionsProvider';
@@ -13,6 +13,7 @@ import { useCloseOverdueAndCreateNext } from '@/features/swimlane/hooks/useClose
 import { AgentDevTasksProvider } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
+import { useHeightCssVar } from '@/hooks/useHeightCssVar';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
 import { SprintPlannerBoardViews } from './board';
@@ -141,18 +142,7 @@ export function SprintPlannerView({
   const daysChrome =
     viewMode === 'compact' || viewMode === 'full' || viewMode === 'features';
 
-  useLayoutEffect(() => {
-    const frame = boardFrameEl;
-    const bar = controlsEl;
-    if (!frame || !bar) return undefined;
-    const apply = () => {
-      frame.style.setProperty('--planner-controls-h', `${bar.offsetHeight}px`);
-    };
-    apply();
-    const observer = new ResizeObserver(apply);
-    observer.observe(bar);
-    return () => observer.disconnect();
-  }, [boardFrameEl, controlsEl]);
+  useHeightCssVar(boardFrameEl, controlsEl, '--planner-controls-h');
   const onOverdueCloseAndCreate = useCloseOverdueAndCreateNext({
     boardId: boardIdForPlannerData ?? null,
     getQueueByBoardId,
