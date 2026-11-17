@@ -58,6 +58,7 @@ import {
 } from './quarterlyPlanBoardModel';
 import { applyTrackerPickToPlan, buildQuarterlyPlanMenuSections, trackerPickBoardId } from './quarterlyPlanMenuSections';
 import { useClosingValue } from './useClosingValue';
+import { useQuarterDetail } from './useQuarterDetail';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
 import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarterlyPlanAgent';
 import { useQuarterlyPlanHistory, useQuarterlyPlanShownView } from './useQuarterlyPlanHistory';
@@ -134,6 +135,7 @@ export function QuarterlyPlanPage() {
   /** Выбрана версия из истории (QH4): на доске она, только для просмотра, с пометками её изменений. */
   const shownView = useQuarterlyPlanShownView(draftView, history.preview);
   const { after: planAfterDraft, applyEdit, plan } = shownView;
+  const { detail, setDetail } = useQuarterDetail(plan?.epics, setExpandedEpicIds);
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
   const timelineStart = useMemo(() => quarterTimelineStart(weeks), [weeks]);
@@ -260,6 +262,7 @@ export function QuarterlyPlanPage() {
       dayCount: weeks.length * QUARTER_WORKING_DAYS_PER_WEEK,
       draft,
       expandedEpicIds,
+      detail,
       focusedIssue,
       goalsByRow: rowGoals,
       hideDone,
@@ -271,6 +274,8 @@ export function QuarterlyPlanPage() {
       notInTeamAssignmentIds: new Set(issues.filter((issue) => issue.notInTeam).map((issue) => issue.assignmentId)),
       ...linksBoard,
       ...notesBoard,
+      // Роадмэп — вид для бизнеса (QZ3): без заметок и без расхождений со спринтом.
+      ...(detail === 'roadmap' ? { notesByRow: new Map() } : {}),
       onBarChange: (assignmentId, span) =>
         applyEdit((content) => updateAssignment(content, assignmentId, span)),
       onBarClick: (assignmentId, anchor) => setMenu({ anchor, assignmentId, kind: 'bar' }),
@@ -294,7 +299,7 @@ export function QuarterlyPlanPage() {
       },
       draftMarks: shownView.marks,
       draftReview: shownView.review,
-      sprintCards: plan.sprintCards,
+      sprintCards: detail === 'roadmap' ? {} : plan.sprintCards,
       tasksByEpic: tasksByEpic(plan.epics),
       timelineStart,
       trackerEpics: plan.trackerEpics,
@@ -304,7 +309,7 @@ export function QuarterlyPlanPage() {
       violatedBlockers: violatedBlockersByAssignment(plan),
       weeks,
     };
-  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, openSprintGoals, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, rowGoals, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
+  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, openSprintGoals, detail, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, rowGoals, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -429,6 +434,7 @@ export function QuarterlyPlanPage() {
                 }
               : null
           }
+          detail={detail}
           hideDone={hideDone}
           history={{
             open: history.open,
@@ -450,6 +456,7 @@ export function QuarterlyPlanPage() {
           notesVisible={notes.notesVisible}
           quarterRef={quarterRef}
           sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
+          onDetailChange={setDetail}
           onHideDoneChange={setHideDone}
           onLinkToolChange={(active) => {
             planLinks.setArmed(active);

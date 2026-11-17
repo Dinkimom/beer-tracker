@@ -20,9 +20,9 @@ import {
   clampQuarterLeftColumnWidth,
   QUARTER_LEFT_COLUMN_PX,
   QUARTER_ROW_HEIGHT_PX,
-  QUARTER_WEEK_MIN_WIDTH_PX,
   sprintStartWeeks,
 } from '../quarterlyPlanBoardModel';
+import { QUARTER_WEEK_MIN_WIDTH_BY_DETAIL } from '../quarterlyPlanDetail';
 
 import { QuarterlyPlanAbsenceRow } from './QuarterlyPlanAbsenceRow';
 import { QuarterlyPlanDirectionSection } from './QuarterlyPlanDirectionSection';
@@ -56,7 +56,7 @@ export function QuarterlyPlanBoard({
   onToggle: toggle,
 }: QuarterlyPlanBoardProps) {
   const { t } = useI18n();
-  const { currentWeek, draft, linking, onLinkSourceClear, onStartDraft, violatedBlockers, weeks } =
+  const { currentWeek, detail, draft, linking, onLinkSourceClear, onStartDraft, violatedBlockers, weeks } =
     useQuarterlyPlanBoard();
   const directionInput = <QuarterlyPlanInputRow level="direction" placeholder={t('quarterlyPlan.addDirectionPlaceholder')} />;
   const violatedLinkIds = useMemo(
@@ -70,6 +70,7 @@ export function QuarterlyPlanBoard({
   );
   const scrollRef = useRef<HTMLDivElement>(null);
   const weekCount = weeks.length;
+  const weekMinWidth = QUARTER_WEEK_MIN_WIDTH_BY_DETAIL[detail];
   const [storedColumnWidth, setColumnWidth] = useQuarterLeftColumnWidthStorage(QUARTER_LEFT_COLUMN_PX);
   const columnWidth = clampQuarterLeftColumnWidth(storedColumnWidth);
 
@@ -79,9 +80,10 @@ export function QuarterlyPlanBoard({
     if (!scroller) return;
     // Ширину недели берём с дорожки, а не из ширины колонки: ручка колонки не должна листать доску.
     const track = scroller.querySelector('[data-quarter-track]');
-    const weekPx = track ? track.getBoundingClientRect().width / weekCount : QUARTER_WEEK_MIN_WIDTH_PX;
+    const weekPx = track ? track.getBoundingClientRect().width / weekCount : weekMinWidth;
     scroller.scrollLeft = Math.max(0, (currentWeek - 1) * weekPx);
-  }, [currentWeek, todayNonce, weekCount]);
+    // Смена детализации меняет ширину недели — текущая неделя снова встаёт на место (QZ2).
+  }, [currentWeek, todayNonce, weekCount, weekMinWidth]);
 
   return (
     <div
@@ -103,7 +105,7 @@ export function QuarterlyPlanBoard({
         style={
           {
             '--quarter-left-col': `${columnWidth}px`,
-            minWidth: columnWidth + weeks.length * QUARTER_WEEK_MIN_WIDTH_PX,
+            minWidth: columnWidth + weeks.length * weekMinWidth,
             paddingBottom: SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX,
           } as CSSProperties
         }
@@ -160,8 +162,13 @@ export function QuarterlyPlanBoard({
                 />
                 {collapsed ? null : (
                   <QuarterSprintStartWeeksProvider value={sprintStartWeeks(team.sprints, weeks)}>
-                    <QuarterlyPlanAbsenceRow group="duty" team={team} />
-                    <QuarterlyPlanAbsenceRow group="away" team={team} />
+                    {/* Роадмэп без людей (QZ3): дежурства и отпуска — на плане и в деталях. */}
+                    {detail === 'roadmap' ? null : (
+                      <>
+                        <QuarterlyPlanAbsenceRow group="duty" team={team} />
+                        <QuarterlyPlanAbsenceRow group="away" team={team} />
+                      </>
+                    )}
                     {directions.map((direction) => {
                       const epics = topLevelEpics(plan.epics, direction.id);
                       return (

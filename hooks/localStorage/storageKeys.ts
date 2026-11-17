@@ -47,6 +47,7 @@ export const STORAGE_KEYS = {
   QUARTER_LEFT_COLUMN_WIDTH: 'beer-tracker-quarter-left-column-width',
   QUARTER_HISTORY_SIDEBAR_WIDTH: 'beer-tracker-quarter-history-sidebar-width',
   QUARTER_HIDE_DONE: 'beer-tracker-quarter-hide-done',
+  QUARTER_DETAIL_LEVEL: 'beer-tracker-quarter-detail-level',
   QUARTER_NOTES_VISIBLE: 'beer-tracker-quarter-notes-visible',
   EXPERIMENTAL_FEATURES: 'beer-tracker-experimental-features',
   /** Показывать эмодзи праздников в шапке с датами (занятость, свимлейны) */

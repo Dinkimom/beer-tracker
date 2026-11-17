@@ -1,5 +1,6 @@
 'use client';
 
+import type { QuarterDetailLevel } from '../quarterlyPlanDetail';
 import type { AgentSessionStatus } from '@/lib/agentSessions/agentSession';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
@@ -26,6 +27,7 @@ import { SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX } from '@/features/sprint/component
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { shiftQuarter } from '@/lib/quarterlyPlans/quarterWeeks';
 
+import { QuarterlyPlanDetailSwitch } from './QuarterlyPlanDetailSwitch';
 import { QuarterlyPlanLayersButton } from './QuarterlyPlanLayersButton';
 
 const PILL_CLASS = 'h-8 min-h-0 shrink-0 gap-1.5 whitespace-nowrap !rounded-lg !px-2.5 !py-0 text-sm shadow-none';
@@ -44,6 +46,8 @@ interface QuarterlyPlanToolbarProps {
     status?: AgentSessionStatus;
     onToggle: () => void;
   } | null;
+  /** Уровень детализации доски (QZ1). */
+  detail: QuarterDetailLevel;
   hideDone: boolean;
   /** История версий плана (QH3): кнопка открывает сайдбар с версиями. */
   history: { open: boolean; onToggle: () => void };
@@ -63,6 +67,7 @@ interface QuarterlyPlanToolbarProps {
   quarterRef: QuarterRef;
   /** Расхождения плана и спринта (QK8): кнопка открывает синхронизацию, если они есть (QK9). */
   sprintSync: { count: number; onOpen: () => void };
+  onDetailChange: (level: QuarterDetailLevel) => void;
   onHideDoneChange: (hideDone: boolean) => void;
   /** Перейти к следующему назначению с пересечением. */
   onLinkToolChange: (active: boolean) => void;
@@ -81,6 +86,7 @@ interface QuarterlyPlanToolbarProps {
  */
 export function QuarterlyPlanToolbar({
   agent,
+  detail,
   hideDone,
   history,
   sprintSync,
@@ -90,6 +96,7 @@ export function QuarterlyPlanToolbar({
   noteTool,
   notesVisible,
   quarterRef,
+  onDetailChange,
   onHideDoneChange,
   onLinkToolChange,
   onNextIssue,
@@ -132,6 +139,9 @@ export function QuarterlyPlanToolbar({
           {t('quarterlyPlan.today')}
         </Button>
         <span aria-hidden className={DIVIDER_CLASS} />
+        {/* Инструменты правят план — на роадмэпе, виде только для просмотра, их нет (QZ3). */}
+        {detail === 'roadmap' ? null : (
+          <>
         <Button
           aria-pressed={linkTool}
           className={pill(linkTool)}
@@ -166,8 +176,11 @@ export function QuarterlyPlanToolbar({
             />
           ) : null}
         </div>
-        <span aria-hidden className={DIVIDER_CLASS} />
-        {/* Вид доски: что показывать и какую версию плана. */}
+            <span aria-hidden className={DIVIDER_CLASS} />
+          </>
+        )}
+        {/* Вид доски: детализация, что показывать и какую версию плана. */}
+        <QuarterlyPlanDetailSwitch value={detail} onChange={onDetailChange} />
         <QuarterlyPlanLayersButton
           hideDone={hideDone}
           notesVisible={notesVisible}

@@ -15,10 +15,12 @@ import {
   QUARTER_STATUS_PALETTE_KEY,
   quarterRowHeightPx,
 } from '../quarterlyPlanBoardModel';
+import { rollupNoteBlockers, rollupPhases } from '../quarterlyPlanDetail';
 
 import { QuarterlyPlanEpicHeader } from './QuarterlyPlanEpicHeader';
 import { QuarterlyPlanEpicStatus } from './QuarterlyPlanEpicStatus';
 import { QuarterlyPlanInlineInput } from './QuarterlyPlanInlineInput';
+import { QuarterlyPlanRollupBars } from './QuarterlyPlanRollupBars';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
 import { QuarterlyPlanRowBars } from './QuarterlyPlanRowBars';
 import { QuarterlyPlanSprintCardGhost } from './QuarterlyPlanSprintCardGhost';
@@ -36,11 +38,17 @@ interface QuarterlyPlanEpicRowProps {
  */
 export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps) {
   const { t } = useI18n();
-  const { assignmentsByEpic, assignmentsByEpicTree, draft, onCellClick, onDraftSubmit, sprintCards, trackerEpics } =
+  const { assignmentsByEpic, assignmentsByEpicTree, detail, draft, onCellClick, onDraftSubmit, sprintCards, trackerEpics } =
     useQuarterlyPlanBoard();
   const level = epic.parentEpicId === undefined ? 'epic' : 'task';
   const assignments = assignmentsByEpic.get(epic.id) ?? [];
-  const { laneById, laneCount, noteBlockers, occupiedDays } = layoutRowBars(assignments);
+  const bars = layoutRowBars(assignments);
+  // Роадмэп (QZ3): вместо полос людей — общий срок фаз эпика вместе с его задачами; строка только для просмотра.
+  const rollup = detail === 'roadmap' ? rollupPhases(assignmentsByEpicTree.get(epic.id) ?? []) : null;
+  const { laneById, occupiedDays } = bars;
+  const laneCount = rollup?.laneCount ?? bars.laneCount;
+  const noteBlockers = rollup ? rollupNoteBlockers(rollup.rollups) : bars.noteBlockers;
+  const statusKey = trackerEpicOf(epic, trackerEpics)?.statusColorKey ?? QUARTER_STATUS_PALETTE_KEY[epic.status];
   const renaming = draft?.kind === 'renameEpic' && draft.id === epic.id;
   const done = isEpicDone(epic, trackerEpics);
   /** Эпик запланирован и полосами своих задач (QT3); готовый планировать уже незачем. */
@@ -69,16 +77,16 @@ export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps)
       occupiedDays={occupiedDays}
       sortRow={{ id: epic.id, level, parentId: epic.parentEpicId ?? epic.directionId }}
       weekActionLabel={t('quarterlyPlan.assignWeek', { title: epic.title })}
-      onWeekClick={(week, anchor, span) => onCellClick({ id: epic.id, kind: 'epic' }, week, anchor, span)}
+      onWeekClick={rollup ? undefined : (week, anchor, span) => onCellClick({ id: epic.id, kind: 'epic' }, week, anchor, span)}
     >
-      <QuarterlyPlanSprintCardGhost assignments={assignments} card={sprintCards[epic.issueKey ?? '']} epicId={epic.id} />
-      <QuarterlyPlanRowBars
-        assignments={assignments}
-        faded={done}
-        laneById={laneById}
-        level={level}
-        statusKey={trackerEpicOf(epic, trackerEpics)?.statusColorKey ?? QUARTER_STATUS_PALETTE_KEY[epic.status]}
-      />
+      {rollup ? (
+        <QuarterlyPlanRollupBars faded={done} rollups={rollup.rollups} statusKey={statusKey} />
+      ) : (
+        <>
+          <QuarterlyPlanSprintCardGhost assignments={assignments} card={sprintCards[epic.issueKey ?? '']} epicId={epic.id} />
+          <QuarterlyPlanRowBars assignments={assignments} faded={done} laneById={laneById} level={level} statusKey={statusKey} />
+        </>
+      )}
     </QuarterlyPlanRow>
   );
 }

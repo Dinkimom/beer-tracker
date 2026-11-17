@@ -68,7 +68,7 @@ interface QuarterlyPlanBarProps {
   toneClass: string;
 }
 
-function initialsOf(name: string): string {
+export function quarterMemberInitials(name: string): string {
   return name
     .split(/\s+/)
     .slice(0, 2)
@@ -188,7 +188,7 @@ export function QuarterlyPlanBar({
           {member ? (
             <Avatar
               avatarUrl={member.avatarUrl}
-              initials={initialsOf(member.name)}
+              initials={quarterMemberInitials(member.name)}
               initialsVariant={getAvatarVariantForDeveloper(member)}
               size={QUARTER_BAR_LOOK_BY_LEVEL[level].avatar}
             />

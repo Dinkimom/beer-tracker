@@ -1,6 +1,7 @@
 'use client';
 
 import type { MemberAbsence, QuarterRowGoalFlag, QuarterRowLevel } from './quarterlyPlanBoardModel';
+import type { QuarterDetailLevel } from './quarterlyPlanDetail';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { QuarterlyPlanDraftDiff } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
@@ -95,6 +96,9 @@ export interface QuarterlyPlanBoardContextValue {
   /** Индекс текущей недели; -1, если «сегодня» вне квартала. */
   currentWeek: number;
   dayCount: number;
+  /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
+  /** Уровень детализации доски: роадмэп, план или детали (QZ1). */
+  detail: QuarterDetailLevel;
   draft: QuarterlyPlanDraft | null;
   /** Черновик агента показан: что в нём новое, изменено и убрано (QM9); null — черновика на доске нет. */
   draftMarks: QuarterlyPlanDraftDiff | null;
@@ -102,7 +106,6 @@ export interface QuarterlyPlanBoardContextValue {
   draftReview: QuarterlyPlanDraftReview | null;
   /** Эпики с раскрытым списком задач (QT4). */
   expandedEpicIds: ReadonlySet<string>;
-  /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   focusedIssue: { assignmentId: string; nonce: number } | null;
   /** Флажки целей спринтов по id строки плана — эпика или направления (QG8). */
   goalsByRow: ReadonlyMap<string, QuarterRowGoalFlag[]>;

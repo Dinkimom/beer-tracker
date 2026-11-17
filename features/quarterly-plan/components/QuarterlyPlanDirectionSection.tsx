@@ -14,9 +14,11 @@ import {
   QUARTER_ROW_PADDING_PX,
   quarterRowHeightPx,
 } from '../quarterlyPlanBoardModel';
+import { rollupNoteBlockers, rollupPhases } from '../quarterlyPlanDetail';
 
 import { QuarterlyPlanDirectionEpics } from './QuarterlyPlanDirectionEpics';
 import { QuarterlyPlanDirectionHeader } from './QuarterlyPlanDirectionHeader';
+import { QuarterlyPlanRollupBars } from './QuarterlyPlanRollupBars';
 import { QuarterlyPlanRow } from './QuarterlyPlanRow';
 import { QuarterlyPlanRowBars } from './QuarterlyPlanRowBars';
 
@@ -39,13 +41,17 @@ export function QuarterlyPlanDirectionSection({
   onToggle,
 }: QuarterlyPlanDirectionSectionProps) {
   const { t } = useI18n();
-  const { assignmentsByDirection, assignmentsByEpicTree, onCellClick, trackerEpics, weeks } =
+  const { assignmentsByDirection, assignmentsByEpicTree, detail, onCellClick, trackerEpics, weeks } =
     useQuarterlyPlanBoard();
   const ownAssignments = assignmentsByDirection.get(direction.id) ?? [];
   /** Свои полосы видны, пока направление раскрыто; свёрнутое сводит их в общий срок. */
   const shownAssignments = collapsed ? [] : ownAssignments;
-  const own = layoutRowBars(shownAssignments);
-  const assignWeek = collapsed
+  const bars = layoutRowBars(shownAssignments);
+  // Роадмэп (QZ3): свои полосы направления — общим сроком фаз, без людей; строка только для просмотра.
+  const rollup = detail === 'roadmap' ? rollupPhases(shownAssignments) : null;
+  const own = rollup ? { ...bars, laneCount: rollup.laneCount, noteBlockers: rollupNoteBlockers(rollup.rollups) } : bars;
+  const statusKey = trackerEpicOf(direction, trackerEpics)?.statusColorKey;
+  const assignWeek = collapsed || rollup
     ? undefined
     : (week: number, anchor: QuarterMenuAnchor, span: DaySpan) =>
         onCellClick({ id: direction.id, kind: 'direction' }, week, anchor, span);
@@ -86,12 +92,11 @@ export function QuarterlyPlanDirectionSection({
         weekActionLabel={t('quarterlyPlan.assignWeek', { title: direction.title })}
         onWeekClick={assignWeek}
       >
-        <QuarterlyPlanRowBars
-          assignments={shownAssignments}
-          laneById={own.laneById}
-          level="direction"
-          statusKey={trackerEpicOf(direction, trackerEpics)?.statusColorKey}
-        />
+        {rollup ? (
+          <QuarterlyPlanRollupBars rollups={rollup.rollups} statusKey={statusKey} />
+        ) : (
+          <QuarterlyPlanRowBars assignments={shownAssignments} laneById={own.laneById} level="direction" statusKey={statusKey} />
+        )}
         {spans.length > 0 ? (
           <div
             aria-hidden

@@ -9,6 +9,7 @@ import {
   formatWeekRange,
   QUARTER_HEADER_ROW_PX,
   QUARTER_LEFT_COLUMN_WIDTH,
+  QUARTER_STICKY_LABEL_LEFT,
   QUARTER_WEEK_LINE,
 } from '../quarterlyPlanBoardModel';
 
@@ -18,10 +19,20 @@ interface QuarterlyPlanTimelineHeaderProps {
   title: string;
 }
 
+/** Числа месяца пяти рабочих дней недели, начиная с её понедельника. */
+function weekDayNumbers(mondayIso: string): number[] {
+  const monday = new Date(`${mondayIso}T12:00:00`);
+  return Array.from({ length: 5 }, (_, index) => {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + index);
+    return day.getDate();
+  });
+}
+
 /** Липкая шапка: месяцы и недели квартала, текущая неделя выделена. */
 export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPlanTimelineHeaderProps) {
   const { language } = useI18n();
-  const { currentWeek, weeks } = useQuarterlyPlanBoard();
+  const { currentWeek, detail, weeks } = useQuarterlyPlanBoard();
   const weekWidth = 100 / weeks.length;
   const monthFormat = new Intl.DateTimeFormat(language === 'ru' ? 'ru-RU' : 'en-US', { month: 'long' });
 
@@ -55,12 +66,15 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
           {groupWeeksByMonth(weeks).map((group) => (
             <div
               key={group.startWeek}
-              className={`flex items-center truncate px-3 text-xs font-semibold capitalize text-gray-900 dark:text-gray-100 ${
+              className={`flex items-center text-xs font-semibold capitalize text-gray-900 dark:text-gray-100 ${
                 group.startWeek > 0 ? 'border-l border-ds-border-subtle' : ''
               }`}
               style={{ width: `${group.weeks * weekWidth}%` }}
             >
-              {monthFormat.format(new Date(2026, group.month, 15))}
+              {/* Подпись липнет к колонке: в широком месяце (детали, QZ2) она остаётся на экране, пока виден месяц. */}
+              <span className="sticky truncate px-3" style={{ left: QUARTER_STICKY_LABEL_LEFT }}>
+                {monthFormat.format(new Date(2026, group.month, 15))}
+              </span>
             </div>
           ))}
         </div>
@@ -86,7 +100,14 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
                   : {}),
               }}
             >
-              {formatWeekRange(week)}
+              {/* В деталях неделя широкая (QZ2): вместо «05–09.10» — число каждого рабочего дня над его колонкой. */}
+              {detail === 'details'
+                ? weekDayNumbers(week.startDate).map((day) => (
+                    <span key={day} className="flex-1 text-center">
+                      {day}
+                    </span>
+                  ))
+                : formatWeekRange(week)}
             </div>
           ))}
         </div>

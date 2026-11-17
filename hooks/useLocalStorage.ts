@@ -58,6 +58,11 @@ export function useQuarterNotesVisibleStorage(): [boolean, (value: boolean | ((p
   return useLocalStorageBase<boolean>(STORAGE_KEYS.QUARTER_NOTES_VISIBLE, true);
 }
 
+/** Детализация квартального плана: роадмэп, план или детали (QZ1); значение разбирает `parseQuarterDetailLevel`. */
+export function useQuarterDetailLevelStorage(): [string, (value: string | ((prev: string) => string)) => void] {
+  return useLocalStorageBase<string>(STORAGE_KEYS.QUARTER_DETAIL_LEVEL, 'plan');
+}
+
 /** Слой «Готовые эпики» квартального плана выключен: готовые строки скрыты (QB7). */
 export function useQuarterHideDoneStorage(): [boolean, (value: boolean | ((prev: boolean) => boolean)) => void] {
   return useLocalStorageBase<boolean>(STORAGE_KEYS.QUARTER_HIDE_DONE, false);
