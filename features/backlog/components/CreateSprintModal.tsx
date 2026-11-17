@@ -2,16 +2,13 @@
 
 import type { SprintListItem } from '@/types/tracker';
 
-import { useState, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect, useId, useMemo } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { Input } from '@/components/Input';
-import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
-import { ZIndex } from '@/constants';
+import { Modal } from '@/components/Modal';
 import { useI18n } from '@/contexts/LanguageContext';
-import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 type SprintDurationWeeks = 1 | 2;
 
@@ -154,142 +151,116 @@ export function CreateSprintModal({
     }
   };
 
-  const overlay = useOverlayPresence(isOpen);
-  if (!overlay.mounted) return null;
+  const formId = useId();
 
-  const content = (
-    <div
-      className={`fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 ${OVERLAY_BACKDROP_ENTER}`}
-      data-state={overlay.state}
-      style={{ zIndex: ZIndex.modalBackdrop }}
-      onAnimationEnd={overlay.onAnimationEnd}
-      onClick={onClose}
+  return (
+    <Modal
+      footer={
+        <>
+          <Button disabled={isSubmitting} variant="outline" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            className="flex items-center justify-center gap-2"
+            disabled={!name.trim() || !startDate || isSubmitting}
+            form={formId}
+            type="submit"
+          >
+            {isSubmitting && <Icon className="w-4 h-4 animate-spin" name="spinner" />}
+            {t('backlog.createSprintModal.submit')}
+          </Button>
+        </>
+      }
+      open={isOpen}
+      title={t('backlog.createSprintModal.title')}
+      onClose={onClose}
     >
-      <div
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-4 ${OVERLAY_PANEL_ENTER}`}
-        data-state={overlay.state}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <form onSubmit={handleSubmit}>
-          <div className="p-5">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-5">
-              {t('backlog.createSprintModal.title')}
-            </h2>
+      <form className="flex flex-col gap-4" id={formId} onSubmit={handleSubmit}>
+        {/* Название спринта */}
+        <div>
+          <label
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            htmlFor="sprint-name"
+          >
+            {t('backlog.createSprintModal.sprintNameLabel')}
+          </label>
+          <Input
+            autoFocus
+            className="px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            id="sprint-name"
+            placeholder={t('backlog.createSprintModal.namePlaceholder')}
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
 
-            {/* Название спринта */}
-            <div className="mb-4">
-              <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                htmlFor="sprint-name"
-              >
-                {t('backlog.createSprintModal.sprintNameLabel')}
-              </label>
+        {/* Продолжительность */}
+        <div>
+          <label
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            id="sprint-duration-label"
+          >
+            {t('backlog.createSprintModal.durationLabel')}
+          </label>
+          <div
+            aria-labelledby="sprint-duration-label"
+            className="grid w-full grid-cols-2 gap-2"
+            role="radiogroup"
+          >
+            {SPRINT_DURATION_OPTIONS.map((weeks) => {
+              const isSelected = durationWeeks === weeks;
+
+              return (
+                <button
+                  key={weeks}
+                  aria-checked={isSelected}
+                  className={getSprintDurationOptionClassName(isSelected)}
+                  role="radio"
+                  type="button"
+                  onClick={() => setDurationWeeks(weeks)}
+                  onKeyDown={(event) => handleDurationKeyDown(event, weeks)}
+                >
+                  {weeks === 1
+                    ? t('backlog.createSprintModal.durationOneWeek')
+                    : t('backlog.createSprintModal.durationTwoWeeks')}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Начало — конец */}
+        <div>
+          <label
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+          >
+            {t('backlog.createSprintModal.dateRangeLabel')}
+          </label>
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
               <Input
-                autoFocus
-                className="px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                id="sprint-name"
-                placeholder={t('backlog.createSprintModal.namePlaceholder')}
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                className="px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
-
-            {/* Продолжительность */}
-            <div className="mb-4">
-              <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-                id="sprint-duration-label"
-              >
-                {t('backlog.createSprintModal.durationLabel')}
-              </label>
-              <div
-                aria-labelledby="sprint-duration-label"
-                className="grid w-full grid-cols-2 gap-2"
-                role="radiogroup"
-              >
-                {SPRINT_DURATION_OPTIONS.map((weeks) => {
-                  const isSelected = durationWeeks === weeks;
-
-                  return (
-                    <button
-                      key={weeks}
-                      aria-checked={isSelected}
-                      className={getSprintDurationOptionClassName(isSelected)}
-                      role="radio"
-                      type="button"
-                      onClick={() => setDurationWeeks(weeks)}
-                      onKeyDown={(event) => handleDurationKeyDown(event, weeks)}
-                    >
-                      {weeks === 1
-                        ? t('backlog.createSprintModal.durationOneWeek')
-                        : t('backlog.createSprintModal.durationTwoWeeks')}
-                    </button>
-                  );
+            <span className="text-gray-500 dark:text-gray-400">—</span>
+            <div className="relative flex-1">
+              <Input
+                className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed [&::-webkit-calendar-picker-indicator]:hidden"
+                readOnly
+                title={t('backlog.createSprintModal.endDateTitle', {
+                  date: formatDateForDisplay(endDate),
                 })}
-              </div>
-            </div>
-
-            {/* Начало — конец */}
-            <div className="mb-5">
-              <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-              >
-                {t('backlog.createSprintModal.dateRangeLabel')}
-              </label>
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <Input
-                    className="px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <span className="text-gray-500 dark:text-gray-400">—</span>
-                <div className="relative flex-1">
-                  <Input
-                    className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed [&::-webkit-calendar-picker-indicator]:hidden"
-                    readOnly
-                    title={t('backlog.createSprintModal.endDateTitle', {
-                      date: formatDateForDisplay(endDate),
-                    })}
-                    type="date"
-                    value={endDate}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Кнопки */}
-            <div className="flex gap-3">
-              <Button
-                className="flex-1 py-2.5 text-sm disabled:cursor-not-allowed"
-                disabled={isSubmitting}
-                fullWidth
-                variant="secondary"
-                onClick={onClose}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                className="flex-1 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                disabled={!name.trim() || !startDate || isSubmitting}
-                fullWidth
-                type="submit"
-                variant="primary"
-              >
-                {isSubmitting && (
-                  <Icon className="w-4 h-4 animate-spin" name="spinner" />
-                )}
-                {t('backlog.createSprintModal.submit')}
-              </Button>
+                type="date"
+                value={endDate}
+              />
             </div>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Modal>
   );
-
-  return createPortal(content, document.body);
 }

@@ -3,15 +3,13 @@
 import type { Task } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
-import { useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useId, useState } from 'react';
 
-import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
-import { ZIndex } from '@/constants';
+import { Button } from '@/components/Button';
+import { Modal } from '@/components/Modal';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { TaskTimeline } from '@/features/task/components/TaskTimeline';
-import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
 import { AccountWorkForm } from './AccountWorkModal/components/AccountWorkForm';
 import { useAccountWorkModal } from './AccountWorkModal/hooks/useAccountWorkModal';
@@ -46,7 +44,7 @@ export function AccountWorkModal({
     setLatchedTask(task);
   }
   const displayTask = task ?? latchedTask;
-  const overlay = useOverlayPresence(isOpen && Boolean(displayTask));
+  const formId = useId();
   const {
     burnedStoryPoints,
     setBurnedStoryPoints,
@@ -72,68 +70,64 @@ export function AccountWorkModal({
     onClose,
   });
 
-  if (!overlay.mounted || !displayTask) return null;
+  if (!displayTask) return null;
 
-  const content = (
-    <div
-      className={`fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 ${OVERLAY_BACKDROP_ENTER}`}
-      data-state={overlay.state}
-      style={{ zIndex: ZIndex.modalBackdrop }}
-      onAnimationEnd={overlay.onAnimationEnd}
+  return (
+    <Modal
+      closeOnBackdrop={false}
+      footer={
+        <>
+          <Button disabled={isLoading} variant="outline" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button disabled={isLoading} form={formId} type="submit">
+            {isLoading ? t('account.workModal.processing') : t('account.workModal.confirm')}
+          </Button>
+        </>
+      }
+      open={isOpen}
+      title={t('account.workModal.title')}
+      onClose={onClose}
     >
-      <div
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto ${OVERLAY_PANEL_ENTER}`}
-        data-state={overlay.state}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-5">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-            {t('account.workModal.title')}
-          </h2>
-
-          {/* Карточка задачи */}
-          <div className="mb-3">
-            <TaskCard
-              className="pointer-events-auto"
-              isContextMenuOpen={false}
-              isDragging={false}
-              isResizing={false}
-              isSelected={false}
-              task={displayTask}
-              variant="sidebar"
-              widthPercent={100}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-            />
-          </div>
-
-          {/* Таймлайн задачи */}
-          <TaskTimeline issueKey={displayTask.id} />
-
-          <AccountWorkForm
-            availableSprints={availableSprints}
-            burnedStoryPoints={burnedStoryPoints}
-            burnedTestPoints={burnedTestPoints}
-            isLoading={isLoading}
-            newTaskTitle={newTaskTitle}
-            remainingStoryPoints={remainingStoryPoints}
-            remainingTestPoints={remainingTestPoints}
-            setBurnedStoryPoints={setBurnedStoryPoints}
-            setBurnedTestPoints={setBurnedTestPoints}
-            setNewTaskTitle={setNewTaskTitle}
-            setRemainingStoryPoints={setRemainingStoryPoints}
-            setRemainingTestPoints={setRemainingTestPoints}
-            setTargetSprintId={setTargetSprintId}
-            targetSprintId={targetSprintId}
-            onCancel={onClose}
-            onSubmit={handleSubmit}
-          />
-        </div>
+      {/* Карточка задачи */}
+      <div>
+        <TaskCard
+          className="pointer-events-auto"
+          isContextMenuOpen={false}
+          isDragging={false}
+          isResizing={false}
+          isSelected={false}
+          task={displayTask}
+          variant="sidebar"
+          widthPercent={100}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        />
       </div>
-    </div>
-  );
 
-  return createPortal(content, document.body);
+      {/* Таймлайн задачи */}
+      <TaskTimeline issueKey={displayTask.id} />
+
+      <AccountWorkForm
+        availableSprints={availableSprints}
+        burnedStoryPoints={burnedStoryPoints}
+        burnedTestPoints={burnedTestPoints}
+        formId={formId}
+        isLoading={isLoading}
+        newTaskTitle={newTaskTitle}
+        remainingStoryPoints={remainingStoryPoints}
+        remainingTestPoints={remainingTestPoints}
+        setBurnedStoryPoints={setBurnedStoryPoints}
+        setBurnedTestPoints={setBurnedTestPoints}
+        setNewTaskTitle={setNewTaskTitle}
+        setRemainingStoryPoints={setRemainingStoryPoints}
+        setRemainingTestPoints={setRemainingTestPoints}
+        setTargetSprintId={setTargetSprintId}
+        targetSprintId={targetSprintId}
+        onSubmit={handleSubmit}
+      />
+    </Modal>
+  );
 }

@@ -6,7 +6,6 @@
 
 import type { SprintListItem } from '@/types/tracker';
 
-import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { TextArea } from '@/components/TextArea';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -16,12 +15,13 @@ interface AccountWorkFormProps {
   availableSprints: SprintListItem[];
   burnedStoryPoints: string;
   burnedTestPoints: string;
+  /** id формы: кнопка отправки стоит в подвале окна и ссылается на неё атрибутом `form`. */
+  formId: string;
   isLoading: boolean;
   newTaskTitle: string;
   remainingStoryPoints: string;
   remainingTestPoints: string;
   targetSprintId: number | null;
-  onCancel: () => void;
   onSubmit: (e: React.FormEvent) => void;
   setBurnedStoryPoints: (value: string) => void;
   setBurnedTestPoints: (value: string) => void;
@@ -45,14 +45,14 @@ export function AccountWorkForm({
   targetSprintId,
   setTargetSprintId,
   availableSprints,
+  formId,
   isLoading,
   onSubmit,
-  onCancel,
 }: AccountWorkFormProps) {
   const { t, language } = useI18n();
   const sprintDateLocale = language === 'en' ? 'en-US' : 'ru-RU';
   return (
-    <form className="space-y-3 mt-4" onSubmit={onSubmit}>
+    <form className="space-y-3" id={formId} onSubmit={onSubmit}>
       {/* Группа полей для сожженных points */}
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -142,25 +142,6 @@ export function AccountWorkForm({
           sprints={availableSprints}
           onChange={setTargetSprintId}
         />
-      </div>
-
-      <div className="flex gap-3 pt-3">
-        <Button
-          className="flex-1 text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isLoading}
-          variant="secondary"
-          onClick={onCancel}
-        >
-          {t('common.cancel')}
-        </Button>
-        <Button
-          className="flex-1 text-sm rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isLoading}
-          type="submit"
-          variant="primary"
-        >
-          {isLoading ? t('account.workModal.processing') : t('account.workModal.confirm')}
-        </Button>
       </div>
     </form>
   );
