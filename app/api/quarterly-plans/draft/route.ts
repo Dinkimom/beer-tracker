@@ -9,6 +9,7 @@ import {
   rejectQuarterlyPlanDraft,
 } from '@/lib/quarterlyPlans/quarterlyPlanDrafts';
 import { requireQuarterBody, requireQuarterQuery } from '@/lib/quarterlyPlans/quarterlyPlanRouteHelpers';
+import { notifyQuarterRealtime } from '@/lib/realtime/quarterRealtime';
 
 /** Без `itemIds` — весь черновик, с ними — эти пункты (QM10). */
 const DecisionSchema = QuarterRefSchema.extend({
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
     });
     if (result.status === 'invalid') return NextResponse.json({ error: result.error }, { status: 422 });
     if (result.status === 'conflict') return NextResponse.json({ error: 'The plan changed, try again' }, { status: 409 });
+    notifyQuarterRealtime(request, { organizationId: route.ctx.organizationId, ...ref });
     // План после принятия — клиент сразу кладёт его на доску, не дожидаясь чтения с трекером.
     return NextResponse.json({ content: result.content, version: result.version });
   } catch (error) {

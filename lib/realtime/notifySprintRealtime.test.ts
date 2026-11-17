@@ -45,7 +45,7 @@ describe('notifySprintRealtimeForSprintIds', () => {
         (event) => event.type === 'sprint.changed' && event.issueStatus?.statusKey === 'inProgress'
       )
     ).toBe(true);
-    expect(received.map((event) => event.sprintId)).toEqual([7, 8]);
+    expect(received.map((event) => (event.type === 'sprint.changed' ? event.sprintId : null))).toEqual([7, 8]);
     unsubscribe();
   });
 

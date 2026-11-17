@@ -10,6 +10,7 @@ import {
   QUARTER_HEADER_ROW_PX,
   QUARTER_LEFT_COLUMN_WIDTH,
   QUARTER_STICKY_LABEL_LEFT,
+  QUARTER_DAY_LINE,
   QUARTER_WEEK_LINE,
 } from '../quarterlyPlanBoardModel';
 
@@ -102,8 +103,12 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
             >
               {/* В деталях неделя широкая (QZ2): вместо «05–09.10» — число каждого рабочего дня над его колонкой. */}
               {detail === 'details'
-                ? weekDayNumbers(week.startDate).map((day) => (
-                    <span key={day} className="flex-1 text-center">
+                ? weekDayNumbers(week.startDate).map((day, dayIndex) => (
+                    <span
+                      key={day}
+                      className="flex h-full flex-1 items-center justify-center"
+                      style={dayIndex > 0 ? { borderLeft: `1px solid ${QUARTER_DAY_LINE}` } : undefined}
+                    >
                       {day}
                     </span>
                   ))

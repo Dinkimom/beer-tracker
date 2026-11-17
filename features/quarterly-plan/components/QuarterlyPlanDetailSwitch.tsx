@@ -11,14 +11,15 @@ interface QuarterlyPlanDetailSwitchProps {
 
 /**
  * Переключатель детализации доски (QZ1): роадмэп — что и когда поставляем, план — кто на чём по неделям,
- * детали — дни и задачи. Три кнопки от общего к подробному.
+ * дни — по дням и задачам. Три кнопки от общего к подробному; между ними зазор — hover соседней кнопки
+ * не сливается с выбранной.
  */
 export function QuarterlyPlanDetailSwitch({ value, onChange }: QuarterlyPlanDetailSwitchProps) {
   const { t } = useI18n();
   return (
     <div
       aria-label={t('quarterlyPlan.detail.title')}
-      className="flex shrink-0 items-center rounded-lg bg-black/[0.05] p-0.5 dark:bg-white/[0.08]"
+      className="flex shrink-0 items-center gap-0.5 rounded-lg bg-black/[0.05] p-0.5 dark:bg-white/[0.08]"
       role="radiogroup"
     >
       {QUARTER_DETAIL_LEVELS.map((level) => (

@@ -94,7 +94,7 @@ export function startSprintRealtimeRedisSubscriber(): void {
 
 export async function publishSprintRealtimeEvent(event: SprintRealtimeMessage): Promise<void> {
   const payload = serializeSprintRealtimeMessage(event);
-  const channel = sprintRealtimeChannel(event.organizationId, event.sprintId);
+  const channel = sprintRealtimeChannel(event);
   emitLocalSprintRealtime(event);
   const pair = acquireRealtimeRedisPair();
   if (!pair) {

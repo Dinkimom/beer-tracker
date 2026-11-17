@@ -5,53 +5,95 @@ import type {
   QuarterlyPlanContent,
   QuarterRef,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
+import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
+import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { SPRINT_GOAL_PLAN_ROWS_QUERY_KEY } from '@/features/sprint/hooks/useSprintGoalPlanRows';
-import {
-  fetchBoardAvailabilityEventsForBoard,
-  fetchQuarterlyPlan,
-  saveQuarterlyPlan,
-} from '@/lib/beerTrackerApi';
+import { useActiveOrganizationId } from '@/hooks/useActiveOrganizationId';
+import { fetchBoardAvailabilityEventsForBoard, fetchQuarterlyPlan } from '@/lib/beerTrackerApi';
+import { buildDemoQuarterPresenceViewers } from '@/lib/demo/demoPresenceViewers';
 import { planIssueKeys } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { quarterlyPlanContentOf } from '@/lib/quarterlyPlans/quarterlyPlanMerge';
+import { sprintPresenceViewersUiEqual } from '@/lib/realtime/sprintPresenceCollapse';
+import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
+import { SPRINT_REALTIME_PATH } from '@/lib/realtime/sprintRealtimeConstants';
+import { parseSprintRealtimeMessage } from '@/lib/realtime/sprintRealtimeProtocol';
 
+import {
+  flushQuarterlyPlan,
+  integrateQuarterlyPlan,
+  noteQuarterlyPlanVersion,
+  quarterlyPlanQueryKey,
+  quarterlyPlanVersion,
+} from './quarterlyPlanSync';
 import { QUARTERLY_PLAN_VERSIONS_QUERY_KEY } from './useQuarterlyPlanHistory';
 
 const AVAILABILITY_STALE_MS = 2 * 60 * 1000;
+const DEMO_PRESENCE_VIEWERS = buildDemoQuarterPresenceViewers();
 
-const quarterKey = ({ quarter, year }: QuarterRef) => `${year}-Q${quarter}`;
+/**
+ * Канал квартала (SSE): `quarter.changed` — план изменил кто-то другой, доска его перечитывает (QS6);
+ * `quarter.presence` — кто сейчас на доске и что делает (QS7), возвращается отсюда.
+ * На `/demo/planner` канала нет: коллеги на доске — из фикстуры.
+ */
+function useQuarterlyPlanRealtime({ quarter, year }: QuarterRef, onChanged: () => void): SprintPresenceViewer[] {
+  const { isDemoPlanner } = useDemoPlannerShell();
+  const organizationId = useActiveOrganizationId();
+  const onChangedRef = useRef(onChanged);
+  const [viewers, setViewers] = useState<SprintPresenceViewer[]>([]);
+  useEffect(() => {
+    onChangedRef.current = onChanged;
+  }, [onChanged]);
+
+  useEffect(() => {
+    if (isDemoPlanner || !organizationId) return;
+    const clientId = getBrowserRealtimeClientId();
+    const params = new URLSearchParams({
+      clientId,
+      organizationId,
+      quarter: String(quarter),
+      year: String(year),
+    });
+    const source = new EventSource(`${SPRINT_REALTIME_PATH}/quarter?${params.toString()}`);
+    source.onmessage = (message) => {
+      const event = parseSprintRealtimeMessage(message.data);
+      if (event?.type === 'quarter.changed') onChangedRef.current();
+      if (event?.type === 'quarter.presence') {
+        setViewers((current) => (sprintPresenceViewersUiEqual(current, event.viewers, clientId) ? current : event.viewers));
+      }
+    };
+    return () => {
+      source.close();
+      setViewers([]);
+    };
+  }, [isDemoPlanner, organizationId, quarter, year]);
+  return isDemoPlanner ? DEMO_PRESENCE_VIEWERS : viewers;
+}
 
 /**
  * План квартала и отсутствия команд. Отсутствия лежат в том же кэше, что у доски спринта
  * (`boardAvailabilityEvents`), поэтому правка на одном экране сразу видна на другом.
  *
- * Сохранение (QS5): каждая правка уходит целым планом с версией, которую клиент видел. Свои правки
- * идут по очереди и продвигают версию сами, поэтому друг с другом не конфликтуют. Чужое сохранение
- * между ними — 409: тост, план перечитывается, правки из очереди после конфликта не отправляются.
+ * Сохранение и совместная правка (QS5, QS6) — в `quarterlyPlanSync`: правка сразу ложится на доску и
+ * уходит целым планом поверх версии, которую видел клиент. Чужие правки приходят по SSE и сливаются
+ * со своими несохранёнными по сущностям, поэтому несколько человек правят план одновременно.
  */
 export function useQuarterlyPlan(ref: QuarterRef) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { quarter, year } = ref;
-  const queryKey = useMemo(() => ['quarterlyPlan', year, quarter] as const, [quarter, year]);
-
-  /** Версия плана на сервере по кварталу: из последнего чтения или своего сохранения. */
-  const versionsRef = useRef(new Map<string, number>());
-  /** Очередь своих сохранений. */
-  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
-  /** Растёт на конфликт и ошибку: правки, вставшие в очередь раньше, больше не отправляются. */
-  const saveGenerationRef = useRef(0);
+  const queryKey = useMemo(() => quarterlyPlanQueryKey({ quarter, year }), [quarter, year]);
 
   const planQuery = useQuery({
     queryFn: async () => {
       const { plan: loaded, version } = await fetchQuarterlyPlan({ quarter, year });
-      versionsRef.current.set(quarterKey(loaded), version);
-      return loaded;
+      return integrateQuarterlyPlan(queryClient, { quarter, year }, loaded, version);
     },
     queryKey,
   });
@@ -71,56 +113,64 @@ export function useQuarterlyPlan(ref: QuarterRef) {
     })),
   });
 
+  const invalidate = useCallback(
+    (key: readonly unknown[]) => {
+      queryClient.invalidateQueries({ queryKey: key }).catch(() => undefined);
+    },
+    [queryClient]
+  );
+
+  /** Несохранённое с доски уходит на сервер; вызывается после каждой правки и после чтения плана. */
+  const flush = useCallback(() => {
+    flushQuarterlyPlan(
+      queryClient,
+      { quarter, year },
+      {
+        onFailed: (message) => {
+          toast.error(t(message));
+          invalidate(queryKey);
+        },
+        onSaved: (before, saved) => {
+          // Правка легла в историю версий (QH1): открытый сайдбар перечитывает список.
+          invalidate([QUARTERLY_PLAN_VERSIONS_QUERY_KEY, year, quarter]);
+          // Строки плана у целей спринта (QG5): удалённая строка должна сразу стать висячей привязкой.
+          invalidate(SPRINT_GOAL_PLAN_ROWS_QUERY_KEY);
+          // Новый ключ трекера: статус и название задачи сервер подтягивает при чтении плана.
+          const known = new Set(planIssueKeys(before));
+          if (planIssueKeys(saved).some((key) => !known.has(key))) invalidate(queryKey);
+        },
+      }
+    );
+  }, [invalidate, quarter, queryClient, queryKey, t, year]);
+
+  // Прочитанный план мог принести чужие правки поверх своих несохранённых: слитое досылаем.
+  useEffect(() => {
+    if (plan) flush();
+  }, [flush, plan]);
+
+  const presenceViewers = useQuarterlyPlanRealtime(
+    ref,
+    useCallback(() => {
+      invalidate(queryKey);
+      invalidate([QUARTERLY_PLAN_VERSIONS_QUERY_KEY, year, quarter]);
+    }, [invalidate, quarter, queryKey, year])
+  );
+
   const applyEdit = useCallback(
     (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => {
       const current = queryClient.getQueryData<QuarterlyPlan>(queryKey);
       if (!current) return;
-      const content = edit(current);
-      const { assignments, directions, epics, links, notes } = content;
-      queryClient.setQueryData<QuarterlyPlan>(queryKey, { ...current, assignments, directions, epics, links, notes });
-
-      const ref = { quarter, year };
-      const generation = saveGenerationRef.current;
-      const reload = (message: string) => {
-        saveGenerationRef.current += 1;
-        toast.error(t(message));
-        queryClient.invalidateQueries({ queryKey }).catch(() => undefined);
-      };
-      saveQueueRef.current = saveQueueRef.current.then(async () => {
-        if (generation !== saveGenerationRef.current) return;
-        try {
-          const result = await saveQuarterlyPlan(
-            ref,
-            { assignments, directions, epics, links, notes },
-            versionsRef.current.get(quarterKey(ref)) ?? 0
-          );
-          if ('conflict' in result) {
-            reload('quarterlyPlan.saveConflict');
-          } else {
-            versionsRef.current.set(quarterKey(ref), result.version);
-            // Правка легла в историю версий (QH1): открытый сайдбар перечитывает список.
-            queryClient.invalidateQueries({ queryKey: [QUARTERLY_PLAN_VERSIONS_QUERY_KEY, year, quarter] }).catch(() => undefined);
-            // Строки плана у целей спринта (QG5): удалённая строка должна сразу стать висячей привязкой.
-            queryClient.invalidateQueries({ queryKey: SPRINT_GOAL_PLAN_ROWS_QUERY_KEY }).catch(() => undefined);
-            // Новый ключ трекера: статус и название задачи сервер подтягивает при чтении плана.
-            if (planIssueKeys(content).some((key) => !(key in current.trackerEpics))) {
-              queryClient.invalidateQueries({ queryKey }).catch(() => undefined);
-            }
-          }
-        } catch {
-          reload('quarterlyPlan.saveError');
-        }
-      });
+      queryClient.setQueryData<QuarterlyPlan>(queryKey, { ...current, ...quarterlyPlanContentOf(edit(current)) });
+      flush();
     },
-    [quarter, queryClient, queryKey, t, year]
+    [flush, queryClient, queryKey]
   );
 
-  /** Версия плана после чужой записи, о которой клиент знает (принятый черновик агента). */
+  /** Версия плана после своей записи мимо доски (принятый черновик агента, откат к версии). */
   const setVersion = useCallback(
-    (version: number) => {
-      versionsRef.current.set(quarterKey({ quarter, year }), version);
-    },
-    [quarter, year]
+    (version: number, content?: QuarterlyPlanContent) =>
+      noteQuarterlyPlanVersion(queryClient, { quarter, year }, version, content),
+    [quarter, queryClient, year]
   );
 
   /** Перечитываем только то, что план берёт из трекера и спринтов, — свои правки не трогаем. */
@@ -136,7 +186,7 @@ export function useQuarterlyPlan(ref: QuarterRef) {
   const refreshSprintCards = useCallback(() => refreshServerFields('sprintCards'), [refreshServerFields]);
 
   /** Версия плана, с которой пойдёт следующая запись: из неё же идёт откат к версии (QH5). */
-  const getVersion = useCallback(() => versionsRef.current.get(quarterKey({ quarter, year })) ?? 0, [quarter, year]);
+  const getVersion = useCallback(() => quarterlyPlanVersion(queryClient, { quarter, year }), [quarter, queryClient, year]);
 
   return {
     applyEdit,
@@ -144,6 +194,7 @@ export function useQuarterlyPlan(ref: QuarterRef) {
     getVersion,
     isLoading: planQuery.isLoading,
     plan,
+    presenceViewers,
     refreshSprintCards,
     refreshTrackerRow,
     setVersion,

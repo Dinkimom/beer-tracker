@@ -12,6 +12,8 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { fetchQuarterlyPlanVersion, fetchQuarterlyPlanVersions, restoreQuarterlyPlanVersion } from '@/lib/beerTrackerApi';
 import { diffQuarterlyPlanDraft, withRemovedFromDraft } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
 
+import { quarterlyPlanQueryKey } from './quarterlyPlanSync';
+
 const EMPTY_CONTENT: QuarterlyPlanContent = { assignments: [], directions: [], epics: [], links: [], notes: [] };
 
 /** Ключ истории версий квартала: сохранение плана её сбрасывает. */
@@ -96,7 +98,7 @@ export function useQuarterlyPlanHistory(input: {
         toast.success(t('quarterlyPlan.history.restored'));
         setSelectedId(null);
       }
-      queryClient.invalidateQueries({ queryKey: ['quarterlyPlan', year, quarter] }).catch(() => undefined);
+      queryClient.invalidateQueries({ queryKey: quarterlyPlanQueryKey({ quarter, year }) }).catch(() => undefined);
       queryClient.invalidateQueries({ queryKey: [QUARTERLY_PLAN_VERSIONS_QUERY_KEY, year, quarter] }).catch(() => undefined);
     },
     onError: () => toast.error(t('quarterlyPlan.history.restoreFailed')),

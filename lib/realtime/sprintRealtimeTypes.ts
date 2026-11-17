@@ -128,4 +128,36 @@ export interface SprintTimerEvent {
   type: 'sprint.timer';
 }
 
-export type SprintRealtimeMessage = SprintPresenceEvent | SprintRealtimeEvent | SprintTimerEvent;
+/** Квартальный план организации сохранён: открытые доски квартала перечитывают его (QS6). */
+export interface QuarterRealtimeEvent {
+  at: number;
+  organizationId: string;
+  originClientId: string | null;
+  quarter: number;
+  type: 'quarter.changed';
+  year: number;
+}
+
+/** Квартал организации как место присутствия (QS7). */
+export interface QuarterPresenceScope {
+  quarter: number;
+  year: number;
+}
+
+/** Где человек присутствует: доска спринта (id спринта) или квартальный план. */
+export type SprintPresenceScope = QuarterPresenceScope | number;
+
+/** Кто сейчас на доске квартала и что делает (QS7); состав — как у `sprint.presence`. */
+export interface QuarterPresenceEvent extends QuarterPresenceScope {
+  at: number;
+  organizationId: string;
+  type: 'quarter.presence';
+  viewers: SprintPresenceViewer[];
+}
+
+export type SprintRealtimeMessage =
+  | QuarterPresenceEvent
+  | QuarterRealtimeEvent
+  | SprintPresenceEvent
+  | SprintRealtimeEvent
+  | SprintTimerEvent;

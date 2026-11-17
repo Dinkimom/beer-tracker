@@ -1,3 +1,5 @@
+import type { SprintPresenceScope } from './sprintRealtimeTypes';
+
 import { z } from 'zod';
 
 import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS } from '@/constants';
@@ -49,5 +51,20 @@ export const SprintPresenceFocusBodySchema = z.object({
     .nullable()
     .optional(),
   organizationId: z.string().trim().min(1),
-  sprintId: z.number().int().positive(),
+  /** Присутствие на квартальном плане (QS7): вместо `sprintId` — `year` и `quarter`. */
+  quarter: z.number().int().min(1).max(4).optional(),
+  sprintId: z.number().int().positive().optional(),
+  year: z.number().int().min(2000).max(2100).optional(),
 });
+
+/** Где присутствует вкладка: спринт или квартал — ровно одно; null — в теле нет ни того, ни другого. */
+export function sprintPresenceScopeOfBody(body: {
+  quarter?: number;
+  sprintId?: number;
+  year?: number;
+}): SprintPresenceScope | null {
+  const { quarter, sprintId, year } = body;
+  const hasQuarter = quarter !== undefined && year !== undefined;
+  if ((sprintId !== undefined) === hasQuarter) return null;
+  return sprintId ?? { quarter: quarter!, year: year! };
+}

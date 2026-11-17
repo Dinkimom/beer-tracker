@@ -3,6 +3,7 @@ import type {
   SprintPresenceBoardView,
   SprintPresenceFocus,
   SprintPresenceGesture,
+  SprintPresenceScope,
   SprintPresenceViewer,
 } from './sprintRealtimeTypes';
 
@@ -22,8 +23,9 @@ function memoryPresenceStore(): Map<string, Map<string, SprintPresenceViewer>> {
   return globalForPresence.__beerTrackerSprintPresence;
 }
 
-function sprintPresenceRedisKey(organizationId: string, sprintId: number): string {
-  return `${SPRINT_PRESENCE_KEY_PREFIX}${organizationId}:${sprintId}`;
+function sprintPresenceRedisKey(organizationId: string, scope: SprintPresenceScope): string {
+  const place = typeof scope === 'number' ? String(scope) : `quarter:${scope.year}-${scope.quarter}`;
+  return `${SPRINT_PRESENCE_KEY_PREFIX}${organizationId}:${place}`;
 }
 
 function memoryBucket(key: string): Map<string, SprintPresenceViewer> {
@@ -65,12 +67,12 @@ function storedPresenceViewer(connectionId: string, viewer: SprintPresenceViewer
 
 export async function addSprintPresence(
   organizationId: string,
-  sprintId: number,
+  scope: SprintPresenceScope,
   connectionId: string,
   viewer: SprintPresenceViewer
 ): Promise<SprintPresenceViewer[]> {
   const stored = storedPresenceViewer(connectionId, viewer);
-  const key = sprintPresenceRedisKey(organizationId, sprintId);
+  const key = sprintPresenceRedisKey(organizationId, scope);
   const redis = getRealtimeRedisPubClient();
   if (redis) {
     try {
@@ -87,10 +89,10 @@ export async function addSprintPresence(
 
 export async function removeSprintPresence(
   organizationId: string,
-  sprintId: number,
+  scope: SprintPresenceScope,
   connectionId: string
 ): Promise<SprintPresenceViewer[]> {
-  const key = sprintPresenceRedisKey(organizationId, sprintId);
+  const key = sprintPresenceRedisKey(organizationId, scope);
   const redis = getRealtimeRedisPubClient();
   if (redis) {
     try {
@@ -117,10 +119,10 @@ export async function removeSprintPresence(
 
 async function readStoredPresenceViewer(
   organizationId: string,
-  sprintId: number,
+  scope: SprintPresenceScope,
   connectionId: string
 ): Promise<SprintPresenceViewer | null> {
-  const key = sprintPresenceRedisKey(organizationId, sprintId);
+  const key = sprintPresenceRedisKey(organizationId, scope);
   const redis = getRealtimeRedisPubClient();
   if (redis) {
     try {
@@ -157,14 +159,14 @@ function mergeSprintPresenceIdentity(
 
 export async function updateSprintPresenceFocus(
   organizationId: string,
-  sprintId: number,
+  scope: SprintPresenceScope,
   connectionId: string,
   focus: SprintPresenceFocus | null,
   boardView?: SprintPresenceBoardView,
   gesture?: SprintPresenceGesture | null,
   attention?: SprintPresenceAttention
 ): Promise<'missing' | 'unchanged' | 'updated'> {
-  const current = await readStoredPresenceViewer(organizationId, sprintId, connectionId);
+  const current = await readStoredPresenceViewer(organizationId, scope, connectionId);
   if (!current) {
     return 'missing';
   }
@@ -188,18 +190,18 @@ export async function updateSprintPresenceFocus(
     ...(focus ? { focus } : {}),
     ...(nextGesture ? { gesture: nextGesture } : {}),
   };
-  const viewers = await addSprintPresence(organizationId, sprintId, connectionId, next);
-  await publishSprintPresenceSnapshot(organizationId, sprintId, viewers);
+  const viewers = await addSprintPresence(organizationId, scope, connectionId, next);
+  await publishSprintPresenceSnapshot(organizationId, scope, viewers);
   return 'updated';
 }
 
-async function touchSprintPresence(organizationId: string, sprintId: number): Promise<void> {
+async function touchSprintPresence(organizationId: string, scope: SprintPresenceScope): Promise<void> {
   const redis = getRealtimeRedisPubClient();
   if (!redis) {
     return;
   }
   try {
-    await redis.expire(sprintPresenceRedisKey(organizationId, sprintId), SPRINT_PRESENCE_TTL_SECONDS);
+    await redis.expire(sprintPresenceRedisKey(organizationId, scope), SPRINT_PRESENCE_TTL_SECONDS);
   } catch (error) {
     console.error('[realtime] presence redis expire failed', error);
   }
@@ -207,48 +209,47 @@ async function touchSprintPresence(organizationId: string, sprintId: number): Pr
 
 async function publishSprintPresenceSnapshot(
   organizationId: string,
-  sprintId: number,
+  scope: SprintPresenceScope,
   viewers: SprintPresenceViewer[]
 ): Promise<void> {
-  await publishSprintRealtimeEvent({
-    at: Date.now(),
-    organizationId,
-    sprintId,
-    type: 'sprint.presence',
-    viewers,
-  });
+  const at = Date.now();
+  await publishSprintRealtimeEvent(
+    typeof scope === 'number'
+      ? { at, organizationId, sprintId: scope, type: 'sprint.presence', viewers }
+      : { at, organizationId, quarter: scope.quarter, type: 'quarter.presence', viewers, year: scope.year }
+  );
 }
 
 async function joinSprintPresence(
   organizationId: string,
-  sprintId: number,
+  scope: SprintPresenceScope,
   connectionId: string,
   viewer: SprintPresenceViewer
 ): Promise<void> {
-  const existing = await readStoredPresenceViewer(organizationId, sprintId, connectionId);
+  const existing = await readStoredPresenceViewer(organizationId, scope, connectionId);
   const viewers = await addSprintPresence(
     organizationId,
-    sprintId,
+    scope,
     connectionId,
     mergeSprintPresenceIdentity(existing, viewer)
   );
-  await publishSprintPresenceSnapshot(organizationId, sprintId, viewers);
+  await publishSprintPresenceSnapshot(organizationId, scope, viewers);
 }
 
 async function leaveSprintPresence(
   organizationId: string,
-  sprintId: number,
+  scope: SprintPresenceScope,
   connectionId: string
 ): Promise<void> {
-  const viewers = await removeSprintPresence(organizationId, sprintId, connectionId);
-  await publishSprintPresenceSnapshot(organizationId, sprintId, viewers);
+  const viewers = await removeSprintPresence(organizationId, scope, connectionId);
+  await publishSprintPresenceSnapshot(organizationId, scope, viewers);
 }
 
 /** Сессия SSE: join/leave в одной очереди, чтобы cancel не обгонял HSET. */
 export function createSprintPresenceSession(input: {
   connectionId?: string;
   organizationId: string;
-  sprintId: number;
+  scope: SprintPresenceScope;
   viewer: SprintPresenceViewer;
   resolveViewer?: () => Promise<SprintPresenceViewer>;
 }): { cancel: () => void; ping: () => void; start: () => void } {
@@ -260,21 +261,21 @@ export function createSprintPresenceSession(input: {
   return {
     cancel() {
       run(async () => {
-        await leaveSprintPresence(input.organizationId, input.sprintId, connectionId);
+        await leaveSprintPresence(input.organizationId, input.scope, connectionId);
       });
     },
     ping() {
-      void touchSprintPresence(input.organizationId, input.sprintId);
+      void touchSprintPresence(input.organizationId, input.scope);
     },
     start() {
       run(async () => {
-        await joinSprintPresence(input.organizationId, input.sprintId, connectionId, input.viewer);
+        await joinSprintPresence(input.organizationId, input.scope, connectionId, input.viewer);
         if (!input.resolveViewer) {
           return;
         }
         try {
           const resolved = await input.resolveViewer();
-          await joinSprintPresence(input.organizationId, input.sprintId, connectionId, resolved);
+          await joinSprintPresence(input.organizationId, input.scope, connectionId, resolved);
         } catch {
           /* keep the fallback identity already published */
         }

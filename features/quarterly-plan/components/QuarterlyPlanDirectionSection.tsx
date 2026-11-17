@@ -95,7 +95,7 @@ export function QuarterlyPlanDirectionSection({
         onWeekClick={assignWeek}
       >
         {rollup ? (
-          <QuarterlyPlanRollupBars rollups={rollup.rollups} statusKey={statusKey} />
+          <QuarterlyPlanRollupBars rollups={rollup.rollups} rowId={direction.id} statusKey={statusKey} />
         ) : (
           <QuarterlyPlanRowBars assignments={shownAssignments} laneById={own.laneById} level="direction" statusKey={statusKey} />
         )}

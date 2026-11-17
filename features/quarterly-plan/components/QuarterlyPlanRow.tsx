@@ -1,6 +1,7 @@
 'use client';
 
 import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
+import type { QuarterDetailLevel } from '../quarterlyPlanDetail';
 import type { DaySpan, NoteLaneBlocker } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type { QuarterlyPlanNoteRow } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { ReactNode } from 'react';
@@ -21,6 +22,7 @@ import {
   QUARTER_LANE_HEIGHT_PX,
   QUARTER_LEFT_COLUMN_WIDTH,
   QUARTER_ROW_PADDING_PX,
+  QUARTER_DAY_LINE,
   QUARTER_WEEK_LINE,
   layoutRowGoals,
   type QuarterRowLevel,
@@ -71,6 +73,17 @@ const LEFT_CELL_TOP_LINE: Record<QuarterlyPlanRowTone, string | undefined> = {
 /** Две строки шапки и её нижняя линия. */
 const STICKY_TOP_PX = QUARTER_HEADER_ROW_PX * 2 + 1;
 
+/** Сетка дней в строке: на уровне «Дни» видна всегда и слабее недельной, на остальных — только пока полосу тянут. */
+const DAY_GRID_ON_DRAG = {
+  className: "opacity-0 transition-opacity duration-200 group-has-[[data-quarter-day-drag='1']]/track:opacity-100",
+  line: QUARTER_WEEK_LINE,
+};
+const DAY_GRID_BY_DETAIL: Record<QuarterDetailLevel, { className: string; line: string }> = {
+  details: { className: '', line: QUARTER_DAY_LINE },
+  plan: DAY_GRID_ON_DRAG,
+  roadmap: DAY_GRID_ON_DRAG,
+};
+
 interface QuarterlyPlanRowProps {
   /** Содержимое таймлайна: полосы, штриховка, плашки. */
   children?: ReactNode;
@@ -119,7 +132,8 @@ export function QuarterlyPlanRow({
   weekActionLabel,
   onWeekClick,
 }: QuarterlyPlanRowProps) {
-  const { assignPreview, currentWeek, goalsByRow, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const { assignPreview, currentWeek, detail, goalsByRow, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const dayGrid = DAY_GRID_BY_DETAIL[detail];
   // Цели спринтов (QG8) — только у эпика и направления, всегда сверху (`layoutRowGoals`); полосы встают
   // под ними через `QuarterBarsTopProvider`, заметки обходят и цели, и полосы.
   const goalFlags = noteRow?.kind === 'epic' || noteRow?.kind === 'direction' ? (goalsByRow.get(noteRow.id) ?? []) : [];
@@ -201,13 +215,14 @@ export function QuarterlyPlanRow({
         }
       >
         {/* Сетка дней — как части дня на свимлейне: в покое её нет, она проявляется в строке, где полосу
-            или плашку тянут (`data-quarter-day-drag="1"` — шаг жеста в днях), и показывает, куда та встанет. */}
+            или плашку тянут (`data-quarter-day-drag="1"` — шаг жеста в днях), и показывает, куда та встанет.
+            На уровне «Дни» дни размечены всегда, линией слабее недельной (QZ2). */}
         {tone === 'team' ? null : (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-has-[[data-quarter-day-drag='1']]/track:opacity-100"
+            className={`pointer-events-none absolute inset-0 ${dayGrid.className}`}
             style={{
-              backgroundImage: `linear-gradient(to right, ${QUARTER_WEEK_LINE} 1px, transparent 1px)`,
+              backgroundImage: `linear-gradient(to right, ${dayGrid.line} 1px, transparent 1px)`,
               backgroundPosition: '-1px 0',
               backgroundSize: `${weekWidth / QUARTER_WORKING_DAYS_PER_WEEK}% 100%`,
             }}

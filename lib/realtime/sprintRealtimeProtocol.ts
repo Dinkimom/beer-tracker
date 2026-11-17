@@ -1,4 +1,6 @@
 import type {
+  QuarterPresenceEvent,
+  QuarterRealtimeEvent,
   SprintPresenceFocus,
   SprintPresenceFocusState,
   SprintPresenceViewer,
@@ -30,8 +32,10 @@ const RESOURCES: ReadonlySet<string> = new Set([
   'tasks',
 ]);
 
-export function sprintRealtimeChannel(organizationId: string, sprintId: number): string {
-  return `${SPRINT_REALTIME_CHANNEL_PREFIX}${organizationId}:${sprintId}`;
+/** Канал Redis события: спринта или квартала организации. */
+export function sprintRealtimeChannel(event: SprintRealtimeMessage): string {
+  const scope = 'sprintId' in event ? String(event.sprintId) : `quarter:${event.year}-${event.quarter}`;
+  return `${SPRINT_REALTIME_CHANNEL_PREFIX}${event.organizationId}:${scope}`;
 }
 
 function isSprintRealtimeResource(value: unknown): value is SprintRealtimeResource {
@@ -251,7 +255,23 @@ function parseSprintTimerEvent(
   };
 }
 
+function parseQuarterEvent(value: Record<string, unknown>): QuarterPresenceEvent | QuarterRealtimeEvent | null {
+  const { at, organizationId, quarter, year } = value;
+  if (typeof organizationId !== 'string' || organizationId.length === 0) return null;
+  if (typeof at !== 'number' || !Number.isFinite(at)) return null;
+  if (!Number.isInteger(year) || !Number.isInteger(quarter)) return null;
+  const envelope = { at, organizationId, quarter: quarter as number, year: year as number };
+  if (value.type === 'quarter.changed') {
+    return { ...envelope, originClientId: parseOriginClientId(value.originClientId), type: 'quarter.changed' };
+  }
+  const viewers = parsePresenceViewers(value.viewers);
+  return viewers ? { ...envelope, type: 'quarter.presence', viewers } : null;
+}
+
 function parseSprintRealtimeMessageObject(value: Record<string, unknown>): SprintRealtimeMessage | null {
+  if (value.type === 'quarter.changed' || value.type === 'quarter.presence') {
+    return parseQuarterEvent(value);
+  }
   const envelope = parseSprintRealtimeEnvelope(value);
   if (!envelope) {
     return null;

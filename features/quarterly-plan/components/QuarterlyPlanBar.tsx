@@ -3,11 +3,12 @@
 import type { QuarterlyPlanAssignment } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { Developer } from '@/types';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { SprintCardPresenceAvatars } from '@/features/task/components/TaskCard/SprintCardPresenceAvatars';
 import { assignmentPhase, assignmentSpanFields, daySpanFields, daySpanOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
 import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
@@ -20,6 +21,7 @@ import {
   QUARTER_ROW_PADDING_PX,
   QUARTER_STICKY_LABEL_LEFT,
 } from '../quarterlyPlanBoardModel';
+import { useQuarterPresenceTarget } from '../QuarterlyPlanPresence';
 import { useQuarterSpanDrag } from '../useQuarterSpanDrag';
 
 import { QuarterlyPlanBarHatch } from './QuarterlyPlanBarHatch';
@@ -66,6 +68,12 @@ interface QuarterlyPlanBarProps {
   risks: string[];
   /** Заливка, кромка и текст — по статусу строки (QA9). */
   toneClass: string;
+}
+
+/** Курсор полосы: занята другим человеком (QS7) — не взять; с инструментом «Связь» — клик; иначе — тащить. */
+function barCursorClass(locked: boolean, linkArmed: boolean): string {
+  if (locked) return 'cursor-not-allowed';
+  return linkArmed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing';
 }
 
 export function quarterMemberInitials(name: string): string {
@@ -117,12 +125,19 @@ export function QuarterlyPlanBar({
   // Жест считается в рабочих днях: шаг любой полосы — день (QT5).
   const saved = daySpanOf(assignment);
   const toDays = (steps: { startWeek: number; weeks: number }) => ({ days: steps.weeks, startDay: steps.startWeek });
+  const [activity, setActivity] = useState<'dragging' | 'resizing' | null>(null);
+  // Полосу несёт или растягивает другой человек (QS7): свои жесты и меню ждут, пока он закончит.
+  const presence = useQuarterPresenceTarget(assignment.id, activity);
   const { begin: beginDrag, drag, rootProps, rootRef, span: steps } = useQuarterSpanDrag({
+    disabled: presence.locked,
     span: { startWeek: saved.startDay, weeks: saved.days },
     weekCount: dayCount,
     onChange: (next) => onBarChange(assignment.id, assignmentSpanFields(toDays(next))),
     // С инструментом «Связь» клик по полосе выбирает её источником или целью, меню не открывается.
     onClick: (pointer) => (linking.armed ? onLinkBarClick(assignment.id) : onBarClick(assignment.id, pointer)),
+    onEnd: () => setActivity(null),
+    // Жест виден другим, только когда полоса сдвинулась: клик по ней её не занимает.
+    onMove: (_span, _pointer, gesture) => setActivity(gesture.mode === 'move' ? 'dragging' : 'resizing'),
   });
   const span = daySpanFields(toDays(steps));
   /** Дорожка строки: у эпика она выше, чем у задачи, у направления — ещё выше; полоса занимает её целиком. */
@@ -141,6 +156,8 @@ export function QuarterlyPlanBar({
   const phase = assignmentPhase(assignment);
   const phaseTitle = { delivery: undefined, discovery: t('quarterlyPlan.phase.discovery') }[phase];
 
+  const ownTitle = compact ? `${name} · ${formatSpanRange(weeks, span)}` : phaseTitle;
+
   const focusNonce = focusedIssue?.assignmentId === assignment.id ? focusedIssue.nonce : null;
   useEffect(() => {
     const root = rootRef.current;
@@ -153,18 +170,20 @@ export function QuarterlyPlanBar({
     <div
       ref={rootRef}
       aria-label={`${name}, ${t(`quarterlyPlan.phase.${phase}`)}, ${formatSpanRange(weeks, span)}`}
-      className={`group/bar absolute touch-none select-none rounded-lg [&_img]:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${linking.armed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'} ${isLinkTarget ? 'hover:ring-2 hover:ring-blue-400' : ''} ${faded ? 'opacity-50' : ''} ${draftOutline} ${drag ? '' : 'transition-[left,width] duration-200'}`}
+      className={`group/bar absolute touch-none select-none rounded-lg [&_img]:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${barCursorClass(presence.locked, linking.armed)} ${presence.ringClass} ${isLinkTarget ? 'hover:ring-2 hover:ring-blue-400' : ''} ${faded ? 'opacity-50' : ''} ${draftOutline} ${drag ? '' : 'transition-[left,width] duration-200'}`}
       data-quarter-bar={assignment.id}
       data-quarter-day-drag={drag ? 1 : undefined}
       style={{
+        ...presence.ringStyle,
         height: laneHeightPx - 4,
         left: `calc(${(span.startDay / dayCount) * 100}% + ${BAR_GAP_PX}px)`,
         top: QUARTER_ROW_PADDING_PX + barsTopPx + lane * laneHeightPx + 2,
         width: `calc(${(span.days / dayCount) * 100}% - ${BAR_GAP_PX * 2}px)`,
         zIndex: drag ? ZIndex.stickyInContent - 1 : ZIndex.contentInteractive + Number(draftPending),
       }}
-      title={compact ? `${name} · ${formatSpanRange(weeks, span)}` : phaseTitle}
+      title={presence.locked ? t('quarterlyPlan.presenceLocked') : ownTitle}
       {...rootProps}
+      {...presence.hoverProps}
     >
       {/* Источник связи — синяя рамка с отступом, как у карточки-источника на доске спринта. Отдельным
           слоем: у самой полосы-кнопки тень в фокусе гасит глобальный сброс. */}
@@ -213,6 +232,8 @@ export function QuarterlyPlanBar({
                 <QuarterlyPlanResizeHandle active={drag?.mode === 'start'} narrow={span.days <= 1} rounded side="left" onPointerDown={beginDrag('start')} />
         <QuarterlyPlanResizeHandle active={drag?.mode === 'end'} narrow={span.days <= 1} rounded side="right" onPointerDown={beginDrag('end')} />
       </div>
+      {/* Кто ещё на этой полосе; на полосе в день-два аватару негде встать. */}
+      {compact ? null : <SprintCardPresenceAvatars taskId={assignment.id} />}
       <QuarterlyPlanDraftItemToolbar hidden={drag !== null} id={assignment.id} placement="below" />
     </div>
   );

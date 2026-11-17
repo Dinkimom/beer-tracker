@@ -2,7 +2,7 @@
 
 import type { QuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
-import { type CSSProperties, Fragment, useEffect, useMemo, useRef } from 'react';
+import { type CSSProperties, Fragment, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -38,6 +38,8 @@ interface QuarterlyPlanBoardProps {
   /** Свёрнутые команды и направления: идентификаторы у них не пересекаются. */
   collapsedIds: ReadonlySet<string>;
   hideDone: boolean;
+  /** Рядом открыт сайдбар (история версий, цели спринта): доска уже, но недели не сжимаются — появляется прокрутка. */
+  holdWidth: boolean;
   plan: QuarterlyPlan;
   /** Меняется по кнопке «Текущий»: доска снова листает к текущей неделе. */
   todayNonce: number;
@@ -51,24 +53,36 @@ interface QuarterlyPlanBoardProps {
 export function QuarterlyPlanBoard({
   collapsedIds,
   hideDone,
+  holdWidth,
   plan,
   todayNonce,
   onToggle: toggle,
 }: QuarterlyPlanBoardProps) {
   const { t } = useI18n();
-  const { currentWeek, detail, draft, linking, onLinkSourceClear, onStartDraft, violatedBlockers, weeks } =
+  const { currentWeek, detail, draft, linking, onLinkSourceClear, onStartDraft, shownLinks, violatedBlockers, weeks } =
     useQuarterlyPlanBoard();
   const directionInput = <QuarterlyPlanInputRow level="direction" placeholder={t('quarterlyPlan.addDirectionPlaceholder')} />;
-  const violatedLinkIds = useMemo(
-    () =>
-      new Set(
-        plan.links
-          .filter((link) => violatedBlockers.get(link.toId)?.some((blocker) => blocker.id === link.fromId))
-          .map((link) => link.id)
-      ),
-    [plan.links, violatedBlockers]
-  );
+  const violatedLinkIds = useMemo(() => {
+    const violated = new Set(
+      plan.links
+        .filter((link) => violatedBlockers.get(link.toId)?.some((blocker) => blocker.id === link.fromId))
+        .map((link) => link.id)
+    );
+    // Стрелка роадмэпа нарушена, если нарушена хоть одна связь назначений за ней (QL7).
+    return new Set(
+      shownLinks.filter((link) => (link.linkIds ?? [link.id]).some((id) => violated.has(id))).map((link) => link.id)
+    );
+  }, [plan.links, shownLinks, violatedBlockers]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Ширина доски без сайдбара: пока он открыт, сетка держит её, и недели остаются той же ширины.
+  const [fullWidth, setFullWidth] = useState(0);
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller || holdWidth) return undefined;
+    const observer = new ResizeObserver(() => setFullWidth(scroller.clientWidth));
+    observer.observe(scroller);
+    return () => observer.disconnect();
+  }, [holdWidth]);
   const weekCount = weeks.length;
   const weekMinWidth = QUARTER_WEEK_MIN_WIDTH_BY_DETAIL[detail];
   const [storedColumnWidth, setColumnWidth] = useQuarterLeftColumnWidthStorage(QUARTER_LEFT_COLUMN_PX);
@@ -105,7 +119,7 @@ export function QuarterlyPlanBoard({
         style={
           {
             '--quarter-left-col': `${columnWidth}px`,
-            minWidth: columnWidth + weeks.length * weekMinWidth,
+            minWidth: Math.max(columnWidth + weeks.length * weekMinWidth, holdWidth ? fullWidth : 0),
             paddingBottom: SWIMLANE_PLACEMENT_TOOLBAR_SCROLL_PAD_PX,
           } as CSSProperties
         }
@@ -128,7 +142,7 @@ export function QuarterlyPlanBoard({
           title={t('quarterlyPlan.resizeColumn')}
           onWidthChange={setColumnWidth}
         />
-        <QuarterlyPlanLinksLayer links={plan.links} violatedLinkIds={violatedLinkIds} />
+        <QuarterlyPlanLinksLayer links={shownLinks} violatedLinkIds={violatedLinkIds} />
         <QuarterlyPlanTimelineHeader
           columnLabel={t('quarterlyPlan.columnDirections')}
           title={t('quarterlyPlan.quarterLabel', { quarter: plan.quarter, year: plan.year })}

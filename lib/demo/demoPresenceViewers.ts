@@ -25,3 +25,29 @@ export function buildDemoPresenceViewers(): SprintPresenceViewer[] {
     },
   ];
 }
+
+/** Строки `DEMO_DEV_DISPLAY`, которыми демо показывает коллег на доске. */
+type DemoColleague = keyof typeof DEMO_DEV_DISPLAY;
+
+function demoQuarterViewer(colleague: DemoColleague, focus: SprintPresenceViewer['focus']): SprintPresenceViewer {
+  return {
+    attention: 'active',
+    avatarUrl: DEMO_DEV_DISPLAY[colleague].avatarUrl,
+    clientId: `demo-presence-${colleague}`,
+    displayName: DEMO_DEV_DISPLAY[colleague].name,
+    focus,
+    userId: `demo-presence-${colleague}`,
+  };
+}
+
+/**
+ * Коллеги на квартальном плане демо (QS7): одна растягивает полосу, другой редактирует заметку —
+ * обе обведены их цветом и заняты; третий просто смотрит на полосу. Цели — из сида плана Q4 2026.
+ */
+export function buildDemoQuarterPresenceViewers(): SprintPresenceViewer[] {
+  return [
+    demoQuarterViewer('carol', { state: 'resizing', targetId: 'demo-direction-1-epic-3-a1' }),
+    demoQuarterViewer('alice', { state: 'editing', targetId: 'demo-quarter-note-promo' }),
+    demoQuarterViewer('dana', { state: 'viewing', targetId: 'demo-direction-2-epic-1-a1' }),
+  ];
+}

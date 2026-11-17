@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
 import { updateSprintPresenceFocus } from '@/lib/realtime/sprintPresence';
-import { SprintPresenceFocusBodySchema } from '@/lib/realtime/sprintPresenceFocusBody';
+import { SprintPresenceFocusBodySchema, sprintPresenceScopeOfBody } from '@/lib/realtime/sprintPresenceFocusBody';
 import { getRealtimeClientIdFromRequest } from '@/lib/realtime/sprintRealtimeClientId';
 import { requestWithOrganizationHeader } from '@/lib/realtime/sprintRealtimeSse';
 import { formatValidationError, validateRequest } from '@/lib/validation';
@@ -25,7 +25,11 @@ export async function PUT(request: NextRequest): Promise<Response> {
       { status: 400 }
     );
   }
-  const { attention, boardView, focus, gesture, organizationId, sprintId } = validation.data;
+  const { attention, boardView, focus, gesture, organizationId } = validation.data;
+  const scope = sprintPresenceScopeOfBody(validation.data);
+  if (scope === null) {
+    return NextResponse.json({ error: 'Either sprintId or year and quarter is required' }, { status: 400 });
+  }
   const tenantResult = await requireTenantContext(requestWithOrganizationHeader(request, organizationId));
   if (!('ctx' in tenantResult)) {
     return tenantResult.response;
@@ -39,7 +43,7 @@ export async function PUT(request: NextRequest): Promise<Response> {
   }
   const applied = await updateSprintPresenceFocus(
     organizationId,
-    sprintId,
+    scope,
     clientId,
     focus,
     boardView,

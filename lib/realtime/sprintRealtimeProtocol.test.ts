@@ -21,9 +21,39 @@ const presence = {
   viewers: [{ avatarUrl: 'https://cdn.example/a.png', displayName: 'Ada', userId: 'u-1' }],
 };
 
+const quarterChanged = {
+  at: 3,
+  organizationId: event.organizationId,
+  originClientId: 'tab-a',
+  quarter: 4,
+  type: 'quarter.changed' as const,
+  year: 2026,
+};
+
 describe('sprintRealtimeProtocol', () => {
   it('builds a stable Redis channel', () => {
-    expect(sprintRealtimeChannel('org-1', 42)).toBe('beer-tracker:sprint-realtime:org-1:42');
+    expect(sprintRealtimeChannel({ ...event, organizationId: 'org-1', sprintId: 42 })).toBe(
+      'beer-tracker:sprint-realtime:org-1:42'
+    );
+    expect(sprintRealtimeChannel(quarterChanged)).toBe(
+      `beer-tracker:sprint-realtime:${event.organizationId}:quarter:2026-4`
+    );
+  });
+
+  it('parses a quarter plan change and rejects a malformed one', () => {
+    expect(parseSprintRealtimeMessage(JSON.stringify(quarterChanged))).toEqual(quarterChanged);
+    expect(parseSprintRealtimeMessage({ ...quarterChanged, originClientId: undefined })).toEqual({
+      ...quarterChanged,
+      originClientId: null,
+    });
+    expect(parseSprintRealtimeMessage({ ...quarterChanged, quarter: '4' })).toBeNull();
+    expect(parseSprintRealtimeMessage({ ...quarterChanged, organizationId: '' })).toBeNull();
+  });
+
+  it('parses who is on a quarter plan', () => {
+    const quarterPresence = { at: 4, organizationId: 'org', quarter: 4, type: 'quarter.presence', viewers: presence.viewers, year: 2026 };
+    expect(parseSprintRealtimeMessage(JSON.stringify(quarterPresence))).toEqual(quarterPresence);
+    expect(parseSprintRealtimeMessage({ ...quarterPresence, viewers: [{ userId: '' }] })).toBeNull();
   });
 
   it('parses a valid JSON event', () => {

@@ -73,7 +73,7 @@ function applySprintRealtimeSsePayload(
   handlers: SprintRealtimeHandlers
 ): void {
   const parsed = parseSprintRealtimeMessage(raw);
-  if (!parsed) {
+  if (!parsed || !('sprintId' in parsed)) {
     return;
   }
   if (parsed.type === 'sprint.presence') {

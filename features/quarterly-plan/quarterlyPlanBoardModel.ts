@@ -48,6 +48,8 @@ export const QUARTER_HEADER_ROW_PX = 28;
 
 /** Приглушённая линия между неделями — одна и та же в шапке и в строках. */
 export const QUARTER_WEEK_LINE = 'color-mix(in srgb, var(--ds-border-subtle) 55%, transparent)';
+/** Линия между днями недели на уровне «Дни» (QZ2): слабее недельной, чтобы недели читались. */
+export const QUARTER_DAY_LINE = 'color-mix(in srgb, var(--ds-border-subtle) 28%, transparent)';
 
 /**
  * Штриховка отмеченного участка полосы: человек отсутствует, в те же недели у него больше двух эпиков (QI2)

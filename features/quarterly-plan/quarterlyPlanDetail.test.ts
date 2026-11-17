@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseQuarterDetailLevel, rollupPhases } from './quarterlyPlanDetail';
+import { parseQuarterDetailLevel, rollupBarId, rollupLinkEnds, rollupLinks, rollupPhases } from './quarterlyPlanDetail';
 
 const bar = (id: string, startWeek: number, weeks: number, phase?: 'discovery', memberId = 'dev') => ({
   epicId: 'e1',
@@ -47,5 +47,56 @@ describe('parseQuarterDetailLevel', () => {
   it('незнакомое значение — план', () => {
     expect(parseQuarterDetailLevel('roadmap')).toBe('roadmap');
     expect(parseQuarterDetailLevel('zoom')).toBe('plan');
+  });
+});
+
+describe('связи на роадмэпе (QL7)', () => {
+  const epic = (id: string, parentEpicId?: string) => ({
+    directionId: 'd1',
+    id,
+    ...(parentEpicId ? { parentEpicId } : {}),
+    status: 'backlog' as const,
+    title: id,
+  });
+  const onEpic = (id: string, epicId: string, startWeek: number, weeks: number, phase?: 'discovery') => ({
+    ...bar(id, startWeek, weeks, phase),
+    epicId,
+  });
+  const plan = {
+    assignments: [
+      onEpic('a1', 'e1', 0, 2),
+      onEpic('a2', 'e1-task', 2, 2),
+      onEpic('a0', 'e1', 0, 1, 'discovery'),
+      onEpic('b1', 'e2', 5, 1),
+      onEpic('b2', 'e2', 6, 2),
+      { directionId: 'd1', id: 'c1', memberId: 'dev', startWeek: 1, weeks: 1 },
+    ],
+    epics: [epic('e1'), epic('e1-task', 'e1'), epic('e2')],
+    links: [
+      { fromId: 'a1', id: 'l1', toId: 'b1' },
+      { fromId: 'a2', id: 'l2', toId: 'b2' },
+      { fromId: 'a1', id: 'l3', toId: 'a2' },
+      { fromId: 'a0', id: 'l4', toId: 'a1' },
+    ],
+  };
+  const delivery = (rowId: string) => rollupBarId(rowId, 'delivery');
+
+  it('связи назначений сводятся в связи сводных полос: пара полос — одна стрелка, внутри полосы — ничего', () => {
+    expect(rollupLinks(plan)).toEqual([
+      { fromId: delivery('e1'), id: 'l1', linkIds: ['l1', 'l2'], toId: delivery('e2') },
+      { fromId: rollupBarId('e1', 'discovery'), id: 'l4', linkIds: ['l4'], toId: delivery('e1') },
+    ]);
+  });
+
+  it('новая связь ложится от последнего назначения блокирующей полосы к первому назначению зависимой', () => {
+    expect(rollupLinkEnds(plan, delivery('e1'), delivery('e2'))).toEqual({ fromId: 'a2', toId: 'b1' });
+    // Выбрали в обратном порядке — блокирует всё равно та, что стоит раньше.
+    expect(rollupLinkEnds(plan, delivery('e2'), delivery('e1'))).toEqual({ fromId: 'a2', toId: 'b1' });
+  });
+
+  it('сроки пересекаются — блокирует полоса, выбранная первой; пустая полоса связи не даёт', () => {
+    expect(rollupLinkEnds(plan, delivery('d1'), delivery('e1'))).toEqual({ fromId: 'c1', toId: 'a1' });
+    expect(rollupLinkEnds(plan, delivery('e1'), delivery('d1'))).toEqual({ fromId: 'a2', toId: 'c1' });
+    expect(rollupLinkEnds(plan, delivery('e1'), delivery('nope'))).toBeNull();
   });
 });

@@ -6,6 +6,7 @@ import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProv
 import { QuarterRefSchema } from '@/lib/quarterlyPlans/quarterlyPlanContentParse';
 import { requireQuarterBody, requireQuarterQuery } from '@/lib/quarterlyPlans/quarterlyPlanRouteHelpers';
 import { getQuarterlyPlan, saveQuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanService';
+import { notifyQuarterRealtime } from '@/lib/realtime/quarterRealtime';
 import { IssueKeyParamSchema } from '@/lib/validation';
 
 const SaveSchema = QuarterRefSchema.extend({
@@ -38,7 +39,8 @@ export async function GET(request: NextRequest) {
 
 /**
  * PUT /api/quarterly-plans — содержимое плана целиком поверх версии `ifVersion`.
- * План уже сохранил кто-то другой → 409, клиент перечитывает план (QS5).
+ * План уже сохранил кто-то другой → 409, клиент сливает свою правку с актуальным планом и повторяет (QS5).
+ * После записи открытые доски квартала получают `quarter.changed` (QS6).
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -56,6 +58,7 @@ export async function PUT(request: NextRequest) {
     if (result.status === 'conflict') {
       return NextResponse.json({ error: 'Quarterly plan was changed by someone else' }, { status: 409 });
     }
+    notifyQuarterRealtime(request, { organizationId: route.ctx.organizationId, quarter, year });
     return NextResponse.json({ version: result.version });
   } catch (error) {
     return handleApiError(error, 'save quarterly plan');

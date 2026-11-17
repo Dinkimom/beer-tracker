@@ -3,7 +3,12 @@
  * Чистые правила уровня; состояние — `useQuarterDetail`.
  */
 
-import type { QuarterlyPlanAssignment, QuarterlyPlanPhase } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
+import type {
+  QuarterlyPlanAssignment,
+  QuarterlyPlanContent,
+  QuarterlyPlanLink,
+  QuarterlyPlanPhase,
+} from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { assignBarLanes, assignmentPhase, daySpanOf, type NoteLaneBlocker } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
@@ -80,4 +85,76 @@ export function rollupNoteBlockers(rollups: readonly QuarterPhaseRollup[]): Note
     startWeek: rollup.startDay / QUARTER_WORKING_DAYS_PER_WEEK,
     weeks: rollup.days / QUARTER_WORKING_DAYS_PER_WEEK,
   }));
+}
+
+/** Сводная полоса фазы в строке роадмэпа — как цель связи: строка (эпик или направление) и фаза. */
+export function rollupBarId(rowId: string, phase: QuarterlyPlanPhase): string {
+  return `rollup:${rowId}:${phase}`;
+}
+
+type RollupLinkPlan = Pick<QuarterlyPlanContent, 'assignments' | 'epics' | 'links'>;
+
+/** В какую сводную полосу роадмэпа входит каждое назначение: полосы задач — в полосу своего эпика (QZ3). */
+function rollupBarByAssignment(plan: RollupLinkPlan): Map<string, string> {
+  const epicById = new Map(plan.epics.map((epic) => [epic.id, epic]));
+  const bars = new Map<string, string>();
+  for (const assignment of plan.assignments) {
+    const epic = assignment.epicId === undefined ? undefined : epicById.get(assignment.epicId);
+    const rowId = epic ? (epic.parentEpicId ?? epic.id) : assignment.directionId;
+    if (rowId !== undefined) bars.set(assignment.id, rollupBarId(rowId, assignmentPhase(assignment)));
+  }
+  return bars;
+}
+
+/** Связь между сводными полосами роадмэпа: за ней — связи назначений `linkIds` этих двух полос. */
+interface QuarterRollupLink extends QuarterlyPlanLink {
+  linkIds: string[];
+}
+
+/**
+ * Связи плана, как их видит роадмэп (QL7): связь назначений — это связь сводных полос, в которые они
+ * входят; несколько связей между одной парой полос — одна стрелка. Связь внутри одной полосы не видна.
+ */
+export function rollupLinks(plan: RollupLinkPlan): QuarterRollupLink[] {
+  const barOf = rollupBarByAssignment(plan);
+  const byPair = new Map<string, QuarterRollupLink>();
+  for (const link of plan.links) {
+    const fromId = barOf.get(link.fromId);
+    const toId = barOf.get(link.toId);
+    if (fromId === undefined || toId === undefined || fromId === toId) continue;
+    const key = `${fromId}>${toId}`;
+    const shown = byPair.get(key);
+    if (shown) shown.linkIds.push(link.id);
+    else byPair.set(key, { fromId, id: link.id, linkIds: [link.id], toId });
+  }
+  return [...byPair.values()];
+}
+
+/**
+ * Концы связи, поставленной на роадмэпе между сводными полосами (QL7): блокирует та, что стоит раньше,
+ * сроки пересекаются — та, что выбрали первой (как QL4). В план связь ложится между назначениями:
+ * от того, что в блокирующей полосе заканчивается последним, к тому, что в зависимой начинается первым.
+ */
+export function rollupLinkEnds(
+  plan: RollupLinkPlan,
+  sourceBarId: string,
+  targetBarId: string
+): Pick<QuarterlyPlanLink, 'fromId' | 'toId'> | null {
+  const barOf = rollupBarByAssignment(plan);
+  const spansOf = (barId: string) =>
+    plan.assignments
+      .filter((assignment) => barOf.get(assignment.id) === barId)
+      .map((assignment) => {
+        const { days, startDay } = daySpanOf(assignment);
+        return { endDay: startDay + days, id: assignment.id, startDay };
+      });
+  const source = spansOf(sourceBarId);
+  const target = spansOf(targetBarId);
+  if (source.length === 0 || target.length === 0) return null;
+  const targetFirst =
+    Math.max(...target.map((span) => span.endDay)) <= Math.min(...source.map((span) => span.startDay));
+  const [blocking, waiting] = targetFirst ? [target, source] : [source, target];
+  const last = blocking.reduce((a, b) => (b.endDay > a.endDay ? b : a));
+  const first = waiting.reduce((a, b) => (b.startDay < a.startDay ? b : a));
+  return { fromId: last.id, toId: first.id };
 }

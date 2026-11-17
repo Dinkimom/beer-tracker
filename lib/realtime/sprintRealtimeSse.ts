@@ -15,7 +15,7 @@ import { readSprintTimerState } from './sprintTimerStore';
 const PING_INTERVAL_MS = 25_000;
 const encoder = new TextEncoder();
 
-const SPRINT_REALTIME_SSE_HEADERS = {
+export const SPRINT_REALTIME_SSE_HEADERS = {
   'Cache-Control': 'no-cache, no-transform',
   Connection: 'keep-alive',
   'Content-Type': 'text/event-stream',
@@ -69,6 +69,9 @@ function shouldDeliverSprintRealtimeSseEvent(
   event: SprintRealtimeMessage,
   filter: SprintRealtimeSseFilter
 ): boolean {
+  if (!('sprintId' in event)) {
+    return false;
+  }
   if (event.sprintId !== filter.sprintId || event.organizationId !== filter.organizationId) {
     return false;
   }
@@ -143,7 +146,7 @@ function createSprintRealtimeSseLifecycle(filter: SprintRealtimeSseFilter): {
     ? createSprintPresenceSession({
         connectionId: filter.clientId || undefined,
         organizationId: filter.organizationId,
-        sprintId: filter.sprintId,
+        scope: filter.sprintId,
         viewer: filter.viewer,
         resolveViewer: filter.resolveViewer,
       })

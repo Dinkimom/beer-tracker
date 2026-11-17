@@ -30,6 +30,8 @@ interface QuarterSpanDragState {
 }
 
 interface UseQuarterSpanDragOptions {
+  /** Элемент сейчас меняет другой человек (QS7): жесты и клик не начинаются. */
+  disabled?: boolean;
   /** Следить за сдвигом в пикселях: элемент несут за курсором и меняют ему высоту (заметки). */
   free?: boolean;
   span: WeekSpan;
@@ -50,6 +52,7 @@ interface UseQuarterSpanDragOptions {
  * клик без сдвига и Enter вызывают `onClick`.
  */
 export function useQuarterSpanDrag({
+  disabled = false,
   free = false,
   span,
   weekCount,
@@ -68,7 +71,7 @@ export function useQuarterSpanDrag({
   const begin = (mode: QuarterSpanDragMode) => (event: ReactPointerEvent<HTMLElement>) => {
     const root = rootRef.current;
     const track = root?.closest<HTMLElement>('[data-quarter-track]');
-    if (event.button !== 0 || !root || !track) return;
+    if (disabled || event.button !== 0 || !root || !track) return;
     event.stopPropagation();
     root.setPointerCapture(event.pointerId);
     originRef.current = {
@@ -121,7 +124,7 @@ export function useQuarterSpanDrag({
     rootProps: {
       onClick: (event: ReactMouseEvent<HTMLElement>) => event.stopPropagation(),
       onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
+        if (disabled || (event.key !== 'Enter' && event.key !== ' ')) return;
         event.preventDefault();
         const rect = event.currentTarget.getBoundingClientRect();
         onClick({ x: rect.left, y: rect.bottom });

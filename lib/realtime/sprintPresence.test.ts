@@ -16,6 +16,7 @@ import {
   sprintPresenceViewerReactKey,
   sprintPresenceViewersUiEqual,
 } from './sprintPresenceCollapse';
+import { subscribeLocalSprintRealtime } from './sprintRealtimeBus';
 
 vi.mock('@/lib/env', () => ({
   getRedisUrl: () => undefined,
@@ -190,7 +191,7 @@ describe('sprintPresence', () => {
     const session = createSprintPresenceSession({
       connectionId: 'conn-1',
       organizationId: 'org',
-      sprintId: 3,
+      scope: 3,
       viewer: ada,
       resolveViewer: () => lookup,
     });
@@ -219,6 +220,26 @@ describe('sprintPresence', () => {
       'unchanged'
     );
     expect(await updateSprintPresenceFocus('org', 3, 'conn-1', null)).toBe('updated');
+  });
+
+  it('keeps presence of a quarter plan apart from a sprint and announces it as quarter.presence', async () => {
+    const quarter = { quarter: 4, year: 2026 };
+    const received: unknown[] = [];
+    const unsubscribe = subscribeLocalSprintRealtime((event) => received.push(event));
+    await addSprintPresence('org', 3, 'conn-1', ada);
+    await addSprintPresence('org', quarter, 'conn-2', bob);
+
+    expect(await updateSprintPresenceFocus('org', quarter, 'conn-1', { state: 'viewing', targetId: 'bar' })).toBe('missing');
+    expect(await updateSprintPresenceFocus('org', quarter, 'conn-2', { state: 'dragging', targetId: 'bar' })).toBe('updated');
+
+    expect(received).toEqual([
+      expect.objectContaining({
+        ...quarter,
+        type: 'quarter.presence',
+        viewers: [expect.objectContaining({ focus: { state: 'dragging', targetId: 'bar' }, userId: 'user-b' })],
+      }),
+    ]);
+    unsubscribe();
   });
 
   it('updates board view without clearing an existing card focus', async () => {

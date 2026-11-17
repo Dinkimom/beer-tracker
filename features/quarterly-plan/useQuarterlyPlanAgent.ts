@@ -25,13 +25,18 @@ import {
 } from '@/lib/api/quarterlyPlans';
 import { diffQuarterlyPlanDraft, withRemovedFromDraft } from '@/lib/quarterlyPlans/quarterlyPlanDraftDiff';
 
+import { quarterlyPlanQueryKey } from './quarterlyPlanSync';
+
 /**
- * Черновик агента и сессии по квартальному плану (QM9–QM11). Своего realtime-канала у квартала нет:
- * пока вкладка открыта, черновик перечитываем раз в несколько секунд (сессии опрашивает `useAgentSessions`).
+ * Черновик агента и сессии по квартальному плану (QM9–QM11). Черновик личный и по каналу квартала (QS6) не ходит:
+ * пока вкладка открыта, его перечитываем раз в несколько секунд (сессии опрашивает `useAgentSessions`).
  */
 const POLL_MS = 5000;
 
-export function useQuarterlyPlanAgent(ref: QuarterRef, setVersion: (version: number) => void) {
+export function useQuarterlyPlanAgent(
+  ref: QuarterRef,
+  setVersion: (version: number, content?: QuarterlyPlanContent) => void
+) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const { quarter, year } = ref;
@@ -51,7 +56,7 @@ export function useQuarterlyPlanAgent(ref: QuarterRef, setVersion: (version: num
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: draftKey }).catch(() => undefined);
     queryClient.invalidateQueries({ queryKey: [AGENT_SESSIONS_QUERY_KEY] }).catch(() => undefined);
-    queryClient.invalidateQueries({ queryKey: ['quarterlyPlan', year, quarter] }).catch(() => undefined);
+    queryClient.invalidateQueries({ queryKey: quarterlyPlanQueryKey({ quarter, year }) }).catch(() => undefined);
   };
 
   const approve = useMutation({
@@ -60,11 +65,11 @@ export function useQuarterlyPlanAgent(ref: QuarterRef, setVersion: (version: num
       if ('error' in result) {
         toast.error(t('quarterlyPlan.draft.applyFailed', { error: result.error }));
       } else {
-        setVersion(result.version);
+        setVersion(result.version, result.content);
         // План после принятия — сразу на доску: перечитанный придёт после запроса в трекер, а черновик без
         // принятых пунктов — раньше; иначе принятое на миг выглядело бы снова предложенным.
         const { assignments, directions, epics, links, notes } = result.content;
-        queryClient.setQueryData<QuarterlyPlan>(['quarterlyPlan', year, quarter], (plan) =>
+        queryClient.setQueryData<QuarterlyPlan>(quarterlyPlanQueryKey({ quarter, year }), (plan) =>
           plan ? { ...plan, assignments, directions, epics, links, notes } : plan
         );
         // Пункты по одному — как на доске спринта, без тоста.

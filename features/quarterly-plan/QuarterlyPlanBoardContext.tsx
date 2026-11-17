@@ -12,6 +12,7 @@ import type {
   QuarterlyPlan,
   QuarterlyPlanAssignment,
   QuarterlyPlanEpic,
+  QuarterlyPlanLink,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
   QuarterlyPlanPhase,
@@ -140,6 +141,8 @@ export interface QuarterlyPlanBoardContextValue {
   noteTool: boolean;
   /** Назначения, исполнитель которых больше не в команде эпика (QI6). */
   notInTeamAssignmentIds: ReadonlySet<string>;
+  /** Связи, которые доска рисует: связи назначений, а на роадмэпе — связи сводных полос (QL7). */
+  shownLinks: ReadonlyArray<QuarterlyPlanLink & { linkIds?: readonly string[] }>;
   /** Карточки привязанных задач на досках спринтов, по ключу трекера (QK8). */
   sprintCards: QuarterlyPlan['sprintCards'];
   /** Задачи эпиков по эпику-родителю, в порядке плана (QT1). */

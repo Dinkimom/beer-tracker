@@ -6,11 +6,13 @@ import type { QuarterlyPlan, QuarterlyPlanContent } from '@/lib/quarterlyPlans/q
 import { useMemo, useState } from 'react';
 
 import { useEscapeKey } from '@/hooks/useEscapeKey';
-import { addLink, areLinked, orderLinkEnds, removeLink } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { addLink, areLinked, orderLinkEnds } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+
+import { rollupLinkEnds, rollupLinks } from './quarterlyPlanDetail';
 
 type LinksBoardSlice = Pick<
   QuarterlyPlanBoardContextValue,
-  'canLinkTo' | 'linking' | 'onLinkBarClick' | 'onLinkDelete' | 'onLinkSourceClear'
+  'canLinkTo' | 'linking' | 'onLinkBarClick' | 'onLinkDelete' | 'onLinkSourceClear' | 'shownLinks'
 >;
 
 interface LinkingState {
@@ -21,6 +23,8 @@ interface LinkingState {
 
 interface UseQuarterlyPlanLinksInput {
   plan: QuarterlyPlan | null;
+  /** Доска на роадмэпе: связывают сводные полосы, связь ложится между их назначениями (QL7). */
+  roadmap: boolean;
   applyEdit: (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => void;
   /** Спросить подтверждение удаления связи. */
   confirmDelete: () => Promise<boolean>;
@@ -30,9 +34,16 @@ interface UseQuarterlyPlanLinksInput {
  * Блокирующие зависимости между полосами — сценарий доски спринта. С инструментом «Связь» первый
  * клик по полосе выбирает источник, второй — цель; клик по источнику или мимо полос снимает выбор.
  * Инструмент остаётся включённым для следующей связи; Escape снимает выбор, затем выключает его.
+ * На роадмэпе полосы — сводные: `sourceId` и связи доски (`shownLinks`) — про них (QL7).
  */
-export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan }: UseQuarterlyPlanLinksInput) {
+export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan, roadmap }: UseQuarterlyPlanLinksInput) {
   const [state, setState] = useState<LinkingState | null>(null);
+  // Сменили уровень доски — полосы другие: выбранный источник снимаем, инструмент остаётся.
+  const [stateRoadmap, setStateRoadmap] = useState(roadmap);
+  if (stateRoadmap !== roadmap) {
+    setStateRoadmap(roadmap);
+    setState((current) => (current && !current.oneShot ? { oneShot: false, sourceId: null } : null));
+  }
   const armed = state !== null;
   const sourceId = state?.sourceId ?? null;
 
@@ -42,37 +53,43 @@ export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan }: UseQua
     enabled: armed,
   });
 
-  const links = plan?.links;
-  const assignments = plan?.assignments;
   const board = useMemo<LinksBoardSlice>(() => {
-    const canLinkTo = (assignmentId: string) =>
-      sourceId !== null && assignmentId !== sourceId && !areLinked(links ?? [], sourceId, assignmentId);
+    const shownLinks: LinksBoardSlice['shownLinks'] = (roadmap && plan ? rollupLinks(plan) : plan?.links) ?? [];
+    const canLinkTo = (barId: string) => sourceId !== null && barId !== sourceId && !areLinked(shownLinks, sourceId, barId);
+    /** Концы новой связи в плане — всегда назначения; null — такой связи не поставить. */
+    const linkEnds = (targetId: string) => {
+      if (!plan || sourceId === null || !canLinkTo(targetId)) return null;
+      if (roadmap) return rollupLinkEnds(plan, sourceId, targetId);
+      const source = plan.assignments.find((assignment) => assignment.id === sourceId);
+      const target = plan.assignments.find((assignment) => assignment.id === targetId);
+      return source && target ? orderLinkEnds(source, target) : null;
+    };
     return {
       canLinkTo,
       linking: { armed, sourceId },
-      onLinkBarClick: (assignmentId) => {
-        const source = assignments?.find((assignment) => assignment.id === sourceId);
-        const target = assignments?.find((assignment) => assignment.id === assignmentId);
-        if (source && target && canLinkTo(assignmentId)) {
-          applyEdit((content) => addLink(content, { id: crypto.randomUUID(), ...orderLinkEnds(source, target) }));
+      onLinkBarClick: (barId) => {
+        const ends = linkEnds(barId);
+        if (ends) {
+          applyEdit((content) => addLink(content, { id: crypto.randomUUID(), ...ends }));
           setState((current) => (current?.oneShot ? null : { oneShot: false, sourceId: null }));
           return;
         }
         // Клик по источнику снимает выбор; по полосе, с которой связь уже есть, — делает её источником.
-        setState((current) =>
-          current ? { ...current, sourceId: assignmentId === current.sourceId ? null : assignmentId } : current
-        );
+        setState((current) => (current ? { ...current, sourceId: barId === current.sourceId ? null : barId } : current));
       },
       onLinkDelete: (linkId) => {
+        // Стрелка роадмэпа — все связи назначений между двумя сводными полосами: уходят вместе.
+        const removed = new Set(shownLinks.find((link) => link.id === linkId)?.linkIds ?? [linkId]);
         confirmDelete()
           .then((confirmed) => {
-            if (confirmed) applyEdit((content) => removeLink(content, linkId));
+            if (confirmed) applyEdit((content) => ({ ...content, links: content.links.filter((link) => !removed.has(link.id)) }));
           })
           .catch(() => undefined);
       },
       onLinkSourceClear: clearSource,
+      shownLinks,
     };
-  }, [applyEdit, armed, assignments, confirmDelete, links, sourceId]);
+  }, [applyEdit, armed, confirmDelete, plan, roadmap, sourceId]);
 
   return {
     armed,

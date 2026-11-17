@@ -6,6 +6,7 @@ import { resolveParams } from '@/lib/nextjs-utils';
 import { QuarterRefSchema } from '@/lib/quarterlyPlans/quarterlyPlanContentParse';
 import { requireQuarterBody, requireQuarterQuery } from '@/lib/quarterlyPlans/quarterlyPlanRouteHelpers';
 import { loadQuarterlyPlanVersion, restoreQuarterlyPlanVersion } from '@/lib/quarterlyPlans/quarterlyPlanService';
+import { notifyQuarterRealtime } from '@/lib/realtime/quarterRealtime';
 
 interface Params {
   params: Promise<{ versionId: string }> | { versionId: string };
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (result.status === 'not_found') return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     if (result.status === 'invalid') return NextResponse.json({ error: result.error }, { status: 422 });
     if (result.status === 'conflict') return NextResponse.json({ error: 'The plan changed, try again' }, { status: 409 });
+    notifyQuarterRealtime(request, { organizationId: route.ctx.organizationId, quarter, year });
     return NextResponse.json({ version: result.version });
   } catch (error) {
     return handleApiError(error, 'restore quarterly plan version');

@@ -54,7 +54,7 @@
 | Типы документов | `/document-types` | PostgreSQL (приложение) |
 | Задачи спринта для планера | `/tracker` | Tracker + `issue_snapshots` (кроме `skipSnapshots=1`) + PostgreSQL (сохранённый порядок из `occupancy_task_order` — только чтение, аватары `staff`, команда по `boardId`) + tenant |
 | Экраны, очереди, поля | `/screens/*`, `/queues/*`, `/fields/*` | Tracker |
-| Realtime | `/realtime` (SSE), `/realtime/presence` | Redis pub/sub или шина в памяти процесса |
+| Realtime | `/realtime` (SSE), `/realtime/presence`, `/realtime/quarter` (SSE квартального плана) | Redis pub/sub или шина в памяти процесса |
 | Сессия и вход | `/auth/session`, `/auth/logout`, `/auth/onprem/tracker-session`, `/auth/register`, `/auth/yandex/*`, `/auth/atlassian/*` | PostgreSQL (пользователи, cookie сессии) + Tracker (проверка токена) / OAuth провайдера |
 | Парольный вход | `/auth/login` | Отключён, всегда 401 |
 | Текущий пользователь (трекер) | `/auth/myself` | Tracker; опционально `staff` (аватар, birthdate) при `x-organization-id` и членстве |

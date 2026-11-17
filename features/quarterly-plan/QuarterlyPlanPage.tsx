@@ -46,6 +46,7 @@ import { getPlannerNow } from '@/utils/plannerClock';
 
 import { QuarterlyPlanAgentIsland } from './components/QuarterlyPlanAgentIsland';
 import { QuarterlyPlanBoard } from './components/QuarterlyPlanBoard';
+import { QuarterlyPlanHeader } from './components/QuarterlyPlanHeader';
 import { QuarterlyPlanHistorySidebar } from './components/QuarterlyPlanHistorySidebar';
 import { QuarterlyPlanMenu } from './components/QuarterlyPlanMenu';
 import { QuarterlyPlanSprintGoals } from './components/QuarterlyPlanSprintGoals';
@@ -57,6 +58,7 @@ import {
   buildAbsenceByMember,
 } from './quarterlyPlanBoardModel';
 import { applyTrackerPickToPlan, buildQuarterlyPlanMenuSections, trackerPickBoardId } from './quarterlyPlanMenuSections';
+import { QuarterlyPlanPresence } from './QuarterlyPlanPresence';
 import { useClosingValue } from './useClosingValue';
 import { useQuarterDetail } from './useQuarterDetail';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
@@ -113,6 +115,7 @@ export function QuarterlyPlanPage() {
     getVersion,
     isLoading,
     plan: savedPlan,
+    presenceViewers,
     refreshSprintCards,
     refreshTrackerRow,
     setVersion,
@@ -152,7 +155,7 @@ export function QuarterlyPlanPage() {
       }),
     [confirm, t]
   );
-  const planLinks = useQuarterlyPlanLinks({ applyEdit, confirmDelete: confirmLinkDelete, plan });
+  const planLinks = useQuarterlyPlanLinks({ applyEdit, confirmDelete: confirmLinkDelete, plan, roadmap: detail === 'roadmap' });
   const absenceByMember = useMemo(
     () => buildAbsenceByMember(plan?.teams ?? [], eventsByBoard, weeks),
     [eventsByBoard, plan?.teams, weeks]
@@ -274,8 +277,6 @@ export function QuarterlyPlanPage() {
       notInTeamAssignmentIds: new Set(issues.filter((issue) => issue.notInTeam).map((issue) => issue.assignmentId)),
       ...linksBoard,
       ...notesBoard,
-      // Роадмэп — вид для бизнеса (QZ3): без заметок и без расхождений со спринтом.
-      ...(detail === 'roadmap' ? { notesByRow: new Map() } : {}),
       onBarChange: (assignmentId, span) =>
         applyEdit((content) => updateAssignment(content, assignmentId, span)),
       onBarClick: (assignmentId, anchor) => setMenu({ anchor, assignmentId, kind: 'bar' }),
@@ -299,6 +300,7 @@ export function QuarterlyPlanPage() {
       },
       draftMarks: shownView.marks,
       draftReview: shownView.review,
+      // Роадмэп — вид для бизнеса (QZ3): без расхождений со спринтом.
       sprintCards: detail === 'roadmap' ? {} : plan.sprintCards,
       tasksByEpic: tasksByEpic(plan.epics),
       timelineStart,
@@ -369,15 +371,45 @@ export function QuarterlyPlanPage() {
     // История версий — сайдбар рядом с доской, как на доске спринта: доска сужается, а не закрывается им.
     <div className="relative flex min-h-0 flex-1 gap-3 overflow-hidden">
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-ds-surface-header">
+        <QuarterlyPlanHeader
+          detail={detail}
+          history={{
+            open: history.open,
+            onToggle: () => {
+              setGoalsTarget(null);
+              history.toggle();
+            },
+          }}
+          issueCounts={{
+            away: issues.filter((issue) => issue.away).length,
+            blocked: issues.filter((issue) => issue.blocked).length,
+            notInTeam: issues.filter((issue) => issue.notInTeam).length,
+            parallel: issues.filter((issue) => issue.parallel).length,
+            total: issues.length,
+          }}
+          presenceViewers={presenceViewers}
+          quarterRef={quarterRef}
+          sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
+          onDetailChange={setDetail}
+          onNextIssue={focusNextIssue}
+          onQuarterChange={setQuarterRef}
+          onToday={() => {
+            setQuarterRef(quarterOfDate(getPlannerNow()));
+            setTodayNonce((nonce) => nonce + 1);
+          }}
+        />
         {plan && board ? (
           <QuarterlyPlanBoardProvider value={board}>
-            <QuarterlyPlanBoard
-              collapsedIds={collapsedIds}
-              hideDone={hideDone}
-              plan={plan}
-              todayNonce={todayNonce}
-              onToggle={toggleCollapsed}
-            />
+            <QuarterlyPlanPresence quarterRef={quarterRef} viewers={presenceViewers}>
+              <QuarterlyPlanBoard
+                collapsedIds={collapsedIds}
+                hideDone={hideDone}
+                holdWidth={history.open || goalsTarget !== null}
+                plan={plan}
+                todayNonce={todayNonce}
+                onToggle={toggleCollapsed}
+              />
+            </QuarterlyPlanPresence>
             {shownMenu ? (
               <QuarterlyPlanMenu
                 anchor={shownMenu.anchor}
@@ -434,46 +466,22 @@ export function QuarterlyPlanPage() {
                 }
               : null
           }
-          detail={detail}
           hideDone={hideDone}
-          history={{
-            open: history.open,
-            onToggle: () => {
-              setGoalsTarget(null);
-              history.toggle();
-            },
-          }}
-          issueCounts={{
-            away: issues.filter((issue) => issue.away).length,
-            blocked: issues.filter((issue) => issue.blocked).length,
-            notInTeam: issues.filter((issue) => issue.notInTeam).length,
-            parallel: issues.filter((issue) => issue.parallel).length,
-            total: issues.length,
-          }}
           linkTool={planLinks.armed}
           noteColor={notes.noteColor}
           noteTool={notes.noteTool}
           notesVisible={notes.notesVisible}
-          quarterRef={quarterRef}
-          sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
-          onDetailChange={setDetail}
           onHideDoneChange={setHideDone}
           onLinkToolChange={(active) => {
             planLinks.setArmed(active);
             if (active) notes.setNoteTool(false);
           }}
-          onNextIssue={focusNextIssue}
           onNoteColorChange={notes.setNoteColor}
           onNoteToolChange={(active) => {
             notes.setNoteTool(active);
             if (active) planLinks.setArmed(false);
           }}
           onNotesVisibleChange={notes.setNotesVisible}
-          onQuarterChange={setQuarterRef}
-          onToday={() => {
-            setQuarterRef(quarterOfDate(getPlannerNow()));
-            setTodayNonce((nonce) => nonce + 1);
-          }}
         />
       </div>
       <QuarterlyPlanHistorySidebar

@@ -808,7 +808,7 @@ export const enMessages = {
       roadmapHint: 'What ships and when: the whole quarter, phase spans per epic, no people or tasks',
       plan: 'Plan',
       planHint: 'Who works on what, by week',
-      details: 'Details',
+      details: 'Days',
       detailsHint: 'By day, with all tasks of the epics',
     },
     layers: { title: 'Layers', done: 'Done epics', notes: 'Notes' },
@@ -877,6 +877,7 @@ export const enMessages = {
     unsplitHint: 'Discovery is over, but delivery is not planned: there are no delivery bars',
     menuPhase: 'Phase',
     phase: { delivery: 'Delivery', discovery: 'Discovery' },
+    presenceLocked: 'Someone else is changing this right now',
     sync: {
       title: 'Sync with sprint',
       hint: 'Pick the dates that are right — the other side will follow.',

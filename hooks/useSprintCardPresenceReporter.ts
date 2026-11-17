@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  QuarterPresenceScope,
   SprintPresenceAttention,
   SprintPresenceBoardView,
   SprintPresenceFocus,
@@ -31,9 +32,17 @@ function focusKey(focus: SprintPresenceFocus | null): string {
   return focus ? `${focus.state}:${focus.targetId}` : '';
 }
 
+/** Доска, на которой вкладка присутствует: спринт или квартальный план. */
+type PresencePlace = QuarterPresenceScope | { sprintId: number };
+
+function presencePlace(sprintId: number | null, quarter: number | undefined, year: number | undefined): PresencePlace | null {
+  if (sprintId && sprintId > 0) return { sprintId };
+  return quarter !== undefined && year !== undefined ? { quarter, year } : null;
+}
+
 function packPresencePublishKey(input: {
   attention: SprintPresenceAttention;
-  boardView: SprintPresenceBoardView;
+  boardView?: SprintPresenceBoardView;
   focus: SprintPresenceFocus | null;
   gesture: SprintPresenceGesture | null;
 }): string {
@@ -77,7 +86,7 @@ async function publishSprintCardPresenceFocus(input: {
   desiredKey: string;
   isCancelled: () => boolean;
   organizationId: string;
-  sprintId: number;
+  place: PresencePlace;
 }): Promise<boolean> {
   const { attention, boardView, focus, gesture } = unpackPresencePublishKey(input.desiredKey);
   for (const delayMs of JOIN_RETRY_DELAYS_MS) {
@@ -97,7 +106,7 @@ async function publishSprintCardPresenceFocus(input: {
         focus,
         gesture,
         organizationId: input.organizationId,
-        sprintId: input.sprintId,
+        ...input.place,
       });
       if (input.isCancelled()) {
         return false;
@@ -114,15 +123,17 @@ async function publishSprintCardPresenceFocus(input: {
 
 /**
  * Пишет вид доски, фокус, attention и live-жест в presence. SSE односторонний — это REST.
+ * Доска — спринт (`sprintId`) или квартальный план (`quarter`, QS7).
  */
 export function useSprintCardPresenceReporter(input: {
-  boardView: SprintPresenceBoardView;
+  boardView?: SprintPresenceBoardView;
   contextMenuTaskId: string | null;
   draggingTaskId: string | null;
   editingTaskId: string | null;
   gesture: SprintPresenceGesture | null;
   hoveredTaskId: string | null;
   linkingTaskId: string | null;
+  quarter?: QuarterPresenceScope | null;
   resizingTaskId: string | null;
   sprintId: number | null;
 }): void {
@@ -146,9 +157,13 @@ export function useSprintCardPresenceReporter(input: {
     gesture: publishGesture,
   });
 
+  const { sprintId } = input;
+  const quarter = input.quarter?.quarter;
+  const year = input.quarter?.year;
+
   useEffect(() => {
-    const sprintId = input.sprintId;
-    if (!sprintId || sprintId <= 0 || !organizationId) {
+    const place = presencePlace(sprintId, quarter, year);
+    if (!place || !organizationId) {
       lastPostedKeyRef.current = null;
       return;
     }
@@ -166,7 +181,7 @@ export function useSprintCardPresenceReporter(input: {
         desiredKey: focusKeyToPost,
         isCancelled: () => cancelled,
         organizationId,
-        sprintId,
+        place,
       })
         .then((applied) => {
           if (cancelled) {
@@ -180,12 +195,12 @@ export function useSprintCardPresenceReporter(input: {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [desiredKey, input.sprintId, organizationId]);
+  }, [desiredKey, organizationId, quarter, sprintId, year]);
 
   useEffect(() => {
-    const sprintId = input.sprintId;
+    const place = presencePlace(sprintId, quarter, year);
     return () => {
-      if (!sprintId || sprintId <= 0 || !organizationId || !lastPostedKeyRef.current) {
+      if (!place || !organizationId || !lastPostedKeyRef.current) {
         return;
       }
       lastPostedKeyRef.current = '';
@@ -194,8 +209,8 @@ export function useSprintCardPresenceReporter(input: {
         focus: null,
         gesture: null,
         organizationId,
-        sprintId,
+        ...place,
       }).catch(() => undefined);
     };
-  }, [input.sprintId, organizationId]);
+  }, [organizationId, quarter, sprintId, year]);
 }
