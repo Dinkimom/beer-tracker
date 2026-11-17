@@ -2,6 +2,30 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.37.0] — 2026-11-17
+
+### English
+
+- Quarter board: three levels of detail — «Roadmap», «Plan» and «Days». The roadmap shows whole weeks: one summary bar per phase with the avatars of the people on it, dates rounded to weeks, no tasks. «Days» shows every day and opens all epics; a sprint goal there spans the whole sprint. The level is remembered in the browser.
+- Roadmap: vacations and duties are shown, links are drawn between summary bars, notes are visible and editable.
+- Quarter board: several people can edit the plan at once. Edits are merged per bar, note and link instead of failing with a conflict and losing the edit; other people's edits arrive live, without a reload.
+- Quarter board: presence, as on the sprint board — avatars of the people on the board, and a bar or note that someone else is changing is outlined and locked.
+- Quarter board: a header with the quarter, plan signals, presence, the detail switch and version history. The floating toolbar keeps the tools, layers and the agent, plus a new «Cursor» tool.
+- Quarter board: with the sidebar open, weeks no longer shrink — the board scrolls instead.
+- Fix: the term bar of a collapsed direction no longer runs through a sprint goal.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.37.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Доска квартала: три уровня детализации — «Роадмэп», «План» и «Дни». Роадмэп показывает целые недели: одна сводная полоса на фазу с аватарами тех, кто ею занят, сроки округлены до недель, задач нет. «Дни» показывают каждый день и раскрывают все эпики; цель спринта там идёт на всю ширину спринта. Уровень запоминается в браузере.
+- Роадмэп: видны отпуска и дежурства, связи рисуются между сводными полосами, заметки показаны и правятся.
+- Доска квартала: план могут править несколько человек одновременно. Правки сливаются по полосам, заметкам и связям, а не падают с конфликтом и потерей правки; чужие правки приходят сразу, без перезагрузки.
+- Доска квартала: присутствие, как на доске спринта — аватары тех, кто на доске; полоса или заметка, которую меняет другой человек, обведена и заблокирована.
+- Доска квартала: шапка с кварталом, сигналами плана, присутствием, переключателем детализации и историей версий. На плавающей панели остались инструменты, слои и агент, добавлен инструмент «Курсор».
+- Доска квартала: при открытом сайдбаре недели больше не сжимаются — появляется прокрутка.
+- Исправление: полоса срока свёрнутого направления больше не проходит сквозь цель спринта.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.37.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.36.0] — 2026-11-17
 
 ### English
