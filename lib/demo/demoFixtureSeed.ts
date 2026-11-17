@@ -441,6 +441,14 @@ export function createDemoFixtureSeed(): DemoFixtureState {
           checked: true,
           checklistItemType: 'delivery',
         },
+        {
+          id: 'goal-del-3',
+          text: 'Invoice email copy approved',
+          checked: false,
+          checklistItemType: 'delivery',
+          // «Invoice email templates» без полос: в строке только цель (QG8).
+          planRow: { quarter: 4, rowId: 'demo-direction-3-epic-3', year: 2026 },
+        },
       ],
       discovery: [
         {

@@ -14,6 +14,7 @@ import {
   formatSpanRange,
   formatWeekRange,
   layoutRowBars,
+  layoutRowGoals,
   quarterBarToneClass,
   quarterRowHeightPx,
   sprintStartWeeks,
@@ -304,6 +305,28 @@ describe('buildRowGoalFlags (QG8)', () => {
 
   it('влёт, чужой квартал, висячая привязка и спринт вне квартала флажка не дают', () => {
     expect([...flags.keys()].sort()).toEqual(['direction-1', 'epic-1']);
+  });
+});
+
+describe('layoutRowGoals (QG8)', () => {
+  const goals = [
+    { id: 'delivery', startWeek: 7, weeks: 2 },
+    // Тот же спринт, другой тип — вторая дорожка.
+    { id: 'discovery', startWeek: 7, weeks: 2 },
+  ];
+
+  it('цели сверху, полосы сдвигаются под них', () => {
+    const layout = layoutRowGoals(goals, [{ lane: 0, rows: 1, startWeek: 0, weeks: 3 }]);
+    expect(layout.goalLaneCount).toBe(2);
+    expect(layout.barsTopLanes).toBe(2);
+    expect(layout.blockers.map((blocker) => blocker.lane)).toEqual([0, 1, 2]);
+  });
+
+  it('в строке без полос цели стоят с первой дорожки и строку под полосы не растят', () => {
+    const layout = layoutRowGoals(goals.slice(0, 1));
+    expect(layout.goalLaneCount).toBe(1);
+    expect(layout.barsTopLanes).toBe(0);
+    expect(layout.goalLanes.get('delivery')).toBe(0);
   });
 });
 

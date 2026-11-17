@@ -22,6 +22,7 @@ import {
   QUARTER_LEFT_COLUMN_WIDTH,
   QUARTER_ROW_PADDING_PX,
   QUARTER_WEEK_LINE,
+  layoutRowGoals,
   type QuarterRowLevel,
 } from '../quarterlyPlanBoardModel';
 
@@ -119,18 +120,11 @@ export function QuarterlyPlanRow({
   onWeekClick,
 }: QuarterlyPlanRowProps) {
   const { assignPreview, currentWeek, goalsByRow, noteEditing, weeks } = useQuarterlyPlanBoard();
-  // Цели спринтов (QG8) — только у эпика и направления, и всегда сверху: занимают верхние дорожки строки,
-  // полосы встают под ними (`QuarterBarsTopProvider`). Заметки обходят и цели, и полосы.
+  // Цели спринтов (QG8) — только у эпика и направления, всегда сверху (`layoutRowGoals`); полосы встают
+  // под ними через `QuarterBarsTopProvider`, заметки обходят и цели, и полосы.
   const goalFlags = noteRow?.kind === 'epic' || noteRow?.kind === 'direction' ? (goalsByRow.get(noteRow.id) ?? []) : [];
-  const goalLanes = assignNoteLanes(
-    goalFlags.map((flag) => ({ id: flag.id, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks }))
-  ).laneById;
-  const goalLaneCount = Math.max(0, ...goalFlags.map((flag) => (goalLanes.get(flag.id) ?? 0) + 1));
-  const barsTopPx = goalLaneCount * laneHeightPx;
-  const blockers: readonly NoteLaneBlocker[] = [
-    ...goalFlags.map((flag) => ({ lane: goalLanes.get(flag.id) ?? 0, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks })),
-    ...(noteBlockers ?? []).map((blocker) => ({ ...blocker, lane: blocker.lane + goalLaneCount })),
-  ];
+  const { barsTopLanes, blockers, goalLaneCount, goalLanes } = layoutRowGoals(goalFlags, noteBlockers);
+  const barsTopPx = barsTopLanes * laneHeightPx;
   // Превью полосы из открытого меню назначения — в первой дорожке полос, где её недели свободны (под целями).
   const ghost =
     assignPreview && noteRow && assignPreview.row.kind === noteRow.kind && assignPreview.row.id === noteRow.id
@@ -150,6 +144,7 @@ export function QuarterlyPlanRow({
   const totalHeight = Math.max(
     contentHeightPx,
     ghost ? (ghost.lane + 1) * laneHeightPx + QUARTER_ROW_PADDING_PX * 2 : 0,
+    goalLaneCount * laneHeightPx + QUARTER_ROW_PADDING_PX * 2,
     rowNotes.laneCount > 0 ? notesTop + rowNotes.laneCount * laneHeightPx + QUARTER_ROW_PADDING_PX : 0
   );
 

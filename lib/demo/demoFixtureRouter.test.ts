@@ -182,7 +182,12 @@ describe('handleDemoFixtureRequest', () => {
     handleDemoFixtureRequest(cfg('patch', '/sprint-goals/goal-del-2', { data: { planRow } }));
     handleDemoFixtureRequest(cfg('patch', '/sprint-goals/goal-del-1', { data: { planRow: null } }));
     handleDemoFixtureRequest(cfg('patch', '/sprint-goals/goal-del-2', { data: { checked: false } }));
-    expect(read().map((item) => item.planRow)).toEqual([null, planRow]);
+    // Третья цель — «только цель в строке» (QG8): её привязку правки двух первых не трогают.
+    expect(read().map((item) => item.planRow)).toEqual([
+      null,
+      planRow,
+      { quarter: 4, rowId: 'demo-direction-3-epic-3', year: 2026 },
+    ]);
   });
 
   it('serves the quarterly plan and keeps edits and availability changes', () => {
