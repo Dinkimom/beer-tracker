@@ -35,6 +35,7 @@ beer-tracker/
 │   ├── AGENT_TESTING_GUIDE.md         # Тест-кейсы для агентов
 │   ├── ICONS.md                       # Руководство по иконкам
 │   ├── REFACTORING_BACKLOG.md         # Что отрефакторено и бэклог рефакторинга
+│   ├── CLEANUP_BACKLOG.md             # Найденные по дороге проблемы интерфейса и флоу — к починке
 │   ├── ZINDEX.md                      # Работа с z-index
 │   └── steering/                      # product / structure / tech — краткие ориентиры
 └── BUGS_AND_TASKS.md                  # Известные проблемы и задачи
@@ -110,6 +111,7 @@ beer-tracker/
 |----------|----------|-----------|
 | [BUGS_AND_TASKS.md](../BUGS_AND_TASKS.md) | Известные проблемы | Все |
 | [REFACTORING_BACKLOG.md](./REFACTORING_BACKLOG.md) | Что уже отрефакторено и бэклог на будущее | Разработчики |
+| [CLEANUP_BACKLOG.md](./CLEANUP_BACKLOG.md) | Проблемы интерфейса и флоу, найденные по дороге и отложенные | Разработчики, PM |
 
 ## 🔍 Поиск по темам
 
