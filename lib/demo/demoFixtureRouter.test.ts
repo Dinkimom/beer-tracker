@@ -340,7 +340,26 @@ describe('handleDemoFixtureRequest', () => {
     expect(result.status).toBe(409);
   });
 
-  it('returns no required fields for demo transitions', () => {
+  it('asks for fields on the transition to Blocked and finds people for them', () => {
+    const fields = (
+      handleDemoFixtureRequest(cfg('get', '/issues/DEMO-101/transitions/demo-to-blocked/fields')).data as {
+        fields: Array<{ id: string; required: boolean; schemaType?: string }>;
+      }
+    ).fields;
+    expect(fields.map((field) => field.id)).toEqual(['comment', 'unblockedBy', 'followers', 'expectedBy']);
+    expect(fields.filter((field) => field.required).map((field) => field.id)).toEqual(['comment']);
+
+    const found = (
+      handleDemoFixtureRequest(cfg('get', '/users/search?q=grace')).data as {
+        items: Array<{ displayName: string; trackerId: string }>;
+      }
+    ).items;
+    expect(found.map((user) => user.displayName)).toEqual(['Grace Hopper']);
+    const byId = handleDemoFixtureRequest(cfg('get', `/users/${found[0]!.trackerId}`)).data as { displayName: string };
+    expect(byId.displayName).toBe('Grace Hopper');
+  });
+
+  it('returns no required fields for demo transitions without a screen', () => {
     const result = handleDemoFixtureRequest(cfg('get', '/issues/DEMO-101/transitions/demo-to-inReview/fields'));
     expect(result.data).toEqual({ fields: [] });
   });

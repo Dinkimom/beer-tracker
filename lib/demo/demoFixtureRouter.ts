@@ -354,6 +354,23 @@ function handleTeamMemberRegistry(
   return null;
 }
 
+/** Люди организации для выбора человека (поля перехода и др.): команда доски и команда Platform. */
+function handleUsers(path: string, method: string, params: URLSearchParams): DemoFixtureResult | null {
+  if (method !== 'get' || !path.startsWith('/users/')) return null;
+  const people = [...getDemoFixtureStore().developers, ...DEMO_PLATFORM_MEMBERS].map((person) => ({
+    avatarUrl: person.avatarUrl ?? null,
+    displayName: person.name,
+    email: null,
+    trackerId: person.id,
+  }));
+  if (path === '/users/search') {
+    const query = (params.get('q') ?? '').trim().toLowerCase();
+    return ok({ items: people.filter((person) => person.displayName.toLowerCase().includes(query)) });
+  }
+  const person = people.find((candidate) => candidate.trackerId === decodeURIComponent(path.slice('/users/'.length)));
+  return person ? ok(person) : null;
+}
+
 function handleTeamsAndRules(path: string, method: string): DemoFixtureResult | null {
   const store = getDemoFixtureStore();
   if (path === '/teams/members' && method === 'get') {
@@ -397,6 +414,7 @@ export function handleDemoFixtureRequest(config: InternalAxiosRequestConfig): De
     () => handleFeatureLanes(path, method, body),
     () => handleSprintExtras(path, method),
     () => handleTeamMemberRegistry(path, method, params, body),
+    () => handleUsers(path, method, params),
     () => handleTeamsAndRules(path, method),
     () => handleAgentSessions(path, method),
     () => handleDemoWorkflow(path, method, body),

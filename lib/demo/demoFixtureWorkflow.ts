@@ -1,5 +1,5 @@
 import type { DemoFixtureResult } from './demoFixtureRouterTypes';
-import type { TransitionItem } from '@/lib/api/types';
+import type { TransitionField, TransitionItem } from '@/lib/api/types';
 import type { Task } from '@/types';
 import type { TaskStatus } from '@/utils/statusMapper';
 
@@ -164,6 +164,19 @@ const DEMO_WORKFLOW: Record<string, DemoWorkflowStatus> = {
 
 const TRANSITION_ID_PREFIX = 'demo-to-';
 
+/**
+ * Переход с экраном полей: «Blocked» спрашивает причину и людей. Остальные переходы — без полей.
+ * На нём видно окно полей перехода: текст, выбор человека, выбор нескольких людей, дата.
+ */
+const DEMO_TRANSITION_FIELDS: Record<string, TransitionField[]> = {
+  blocked: [
+    { display: 'Comment', id: 'comment', required: true, schemaType: 'string' },
+    { display: 'Who can unblock', id: 'unblockedBy', required: false, schemaType: 'user' },
+    { display: 'Followers', id: 'followers', required: false, schemaItems: 'user', schemaType: 'array' },
+    { display: 'Expected by', id: 'expectedBy', required: false, schemaType: 'date' },
+  ],
+};
+
 function ok(data: unknown, status = 200): DemoFixtureResult {
   return { data, status };
 }
@@ -231,7 +244,7 @@ function handleTransitionsBatch(body: unknown): DemoFixtureResult {
   return ok(result);
 }
 
-/** Переходы по статусам в `/demo/planner`: список, поля перехода (всегда пусто), смена статуса. */
+/** Переходы по статусам в `/demo/planner`: список, поля перехода (`DEMO_TRANSITION_FIELDS`), смена статуса. */
 export function handleDemoWorkflow(path: string, method: string, body: unknown): DemoFixtureResult | null {
   if (path === '/issues/transitions/batch' && method === 'post') {
     return handleTransitionsBatch(body);
@@ -240,8 +253,9 @@ export function handleDemoWorkflow(path: string, method: string, body: unknown):
   if (transitions && method === 'get') {
     return ok(demoIssueTransitions(findDemoIssue(transitions[1])?.originalStatus));
   }
-  if (/^\/issues\/[^/]+\/transitions\/[^/]+\/fields$/.test(path) && method === 'get') {
-    return ok({ fields: [] });
+  const fields = path.match(/^\/issues\/[^/]+\/transitions\/([^/]+)\/fields$/);
+  if (fields && method === 'get') {
+    return ok({ fields: DEMO_TRANSITION_FIELDS[fields[1].slice(TRANSITION_ID_PREFIX.length)] ?? [] });
   }
   const status = path.match(/^\/issues\/([^/]+)\/status$/);
   if (status && method === 'patch') {
