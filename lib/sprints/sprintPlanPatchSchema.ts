@@ -6,6 +6,7 @@ import { MAX_PLANNER_DAY_INDEX, MAX_PLANNER_DURATION_PARTS, MAX_PLANNER_PART_IND
 import { PLANNER_COMMENT_TEXT_MAX_LENGTH } from '@/lib/comments/excalidrawCommentPayload';
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
 import { PLANNER_NOTE_TEXT_FORMAT_DESCRIPTION } from '@/lib/comments/stickyNoteInlineFormat';
+import { SprintGoalPlanRowSchema } from '@/lib/sprintGoals/sprintGoalPlanRow';
 
 const MAX_OPS = 50;
 
@@ -162,6 +163,8 @@ const UpsertFeatureDraftSchema = z.object({
 const CreateGoalSchema = z.object({
   goalType: z.enum(['delivery', 'discovery']),
   op: z.literal('createGoal'),
+  /** Строка квартального плана цели (QG5): цель видна в этой строке на доске квартала (QG8). */
+  planRow: SprintGoalPlanRowSchema.optional(),
   text: z.string().trim().min(1).max(2000),
 });
 
@@ -169,6 +172,8 @@ const UpdateGoalSchema = z.object({
   done: z.boolean().optional(),
   id: z.string().uuid(),
   op: z.literal('updateGoal'),
+  /** Привязать к строке плана; null — снять привязку. */
+  planRow: SprintGoalPlanRowSchema.nullable().optional(),
   text: z.string().trim().min(1).max(2000).optional(),
 });
 

@@ -3,7 +3,7 @@ import type { BeerTrackerTransactionQuery } from '@/lib/db';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { deleteSprintGoal } from '@/lib/sprintGoals';
+import { deleteSprintGoal, insertSprintGoal, updateSprintGoal } from '@/lib/sprintGoals';
 
 import { applySprintPlanPatchOps } from './sprintPlanPatchApply';
 import { syncUpsertPositionToTracker } from './sprintPlanPatchTrackerSync';
@@ -119,5 +119,23 @@ describe('applySprintPlanPatchOps', () => {
     expect(deletePosition).toHaveBeenCalledTimes(1);
     expect(statements.some((sql) => sql.includes('task_links'))).toBe(false);
     expect(result.trackerSyncs).toEqual([]);
+  });
+
+  it('writes the goal plan row (QG5): createGoal links, updateGoal planRow null unlinks', async () => {
+    const planRow = { quarter: 4 as const, rowId: 'epic-1', year: 2026 };
+    vi.mocked(insertSprintGoal).mockResolvedValue({ done: false, id: 'goal-1', planRow, text: 'Ship it' });
+    vi.mocked(updateSprintGoal).mockResolvedValue({ done: false, id: 'goal-2', planRow: null, sprint_id: 7, text: 'Old' });
+    const { tx } = fakeTx();
+    const result = await run(
+      [
+        { goalType: 'delivery', op: 'createGoal', planRow, text: 'Ship it' },
+        { id: 'goal-2', op: 'updateGoal', planRow: null },
+      ],
+      'stop',
+      tx
+    );
+    expect(result.error).toBeUndefined();
+    expect(vi.mocked(insertSprintGoal).mock.calls[0]?.[0]).toMatchObject({ planRow, text: 'Ship it' });
+    expect(vi.mocked(updateSprintGoal).mock.calls[0]?.[0].patch).toEqual({ done: undefined, planRow: null, text: undefined });
   });
 });

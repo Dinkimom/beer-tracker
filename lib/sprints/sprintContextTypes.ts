@@ -1,6 +1,7 @@
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { AgentReactionView } from '@/lib/comments/stickyNoteReaction';
 import type { DomainRole, Platform } from '@/lib/roles/catalog';
+import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
 import type { BoardAvailabilityEventType } from '@/types/quarterly';
 
@@ -114,6 +115,8 @@ export interface SprintContextTaskLink {
 export interface SprintContextGoalItem {
   done: boolean;
   id: string;
+  /** Строка квартального плана цели (QG5); цель с привязкой видна в этой строке на доске квартала (QG8). */
+  planRow?: SprintGoalPlanRow;
   text: string;
 }
 

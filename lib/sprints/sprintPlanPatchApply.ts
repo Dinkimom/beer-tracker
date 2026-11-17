@@ -218,6 +218,7 @@ async function applyCreateGoal(input: {
   const row = await insertSprintGoal({
     goalType: input.op.goalType,
     organizationId: input.organizationId,
+    planRow: input.op.planRow ?? null,
     sprintId: input.sprintId,
     text: input.op.text,
   }, input.tx);
@@ -232,7 +233,7 @@ async function applyUpdateGoal(input: {
   const row = await updateSprintGoal({
     goalId: input.op.id,
     organizationId: input.organizationId,
-    patch: { done: input.op.done, text: input.op.text },
+    patch: { done: input.op.done, planRow: input.op.planRow, text: input.op.text },
   }, input.tx);
   if (!row) {
     throw new Error(`goal ${input.op.id} not found`);

@@ -1,6 +1,7 @@
 import type { SprintPlanPatchOp } from '@/lib/sprints/sprintPlanPatchTypes';
 
 import { sprintGoalExists } from '@/lib/sprintGoals';
+import { resolveSprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalRouteHelpers';
 import { sprintCommentExists } from '@/lib/sprints/sprintCommentsRepository';
 
 async function missingNoteTarget(
@@ -23,15 +24,33 @@ async function missingGoalTarget(
   return exists ? null : `ops[${index}] ${op.op}: goal ${op.id} not found`;
 }
 
-function missingTargetForOp(
+/** Строка плана у цели (QG5) должна быть в сохранённом плане своего квартала — та же проверка, что у роута целей. */
+async function missingGoalPlanRow(
+  op: Extract<SprintPlanPatchOp, { op: 'createGoal' | 'updateGoal' }>,
+  index: number,
+  organizationId: string
+): Promise<string | null> {
+  if (!op.planRow) return null;
+  const resolved = await resolveSprintGoalPlanRow(organizationId, op.planRow);
+  return 'error' in resolved ? `ops[${index}] ${op.op}: ${resolved.error}` : null;
+}
+
+async function missingTargetForOp(
   op: SprintPlanPatchOp,
   index: number,
-  sprintId: number
+  sprintId: number,
+  organizationId: string
 ): Promise<string | null> {
   if (op.op === 'updateNote' || op.op === 'deleteNote') {
     return missingNoteTarget(op, index, sprintId);
   }
-  if (op.op === 'updateGoal' || op.op === 'deleteGoal') {
+  if (op.op === 'createGoal') {
+    return missingGoalPlanRow(op, index, organizationId);
+  }
+  if (op.op === 'updateGoal') {
+    return (await missingGoalTarget(op, index)) ?? missingGoalPlanRow(op, index, organizationId);
+  }
+  if (op.op === 'deleteGoal') {
     return missingGoalTarget(op, index);
   }
   if (op.op === 'deletePosition' && op.moveToSprintId === sprintId) {
@@ -40,14 +59,18 @@ function missingTargetForOp(
   return Promise.resolve(null);
 }
 
-/** Fail propose early when referenced notes/goals are already gone or a move targets this sprint. */
+/**
+ * Fail propose early when referenced notes/goals are already gone, a goal's plan row is not in the quarterly plan,
+ * or a move targets this sprint.
+ */
 export async function assertPlanPatchTargetsExist(input: {
   ops: SprintPlanPatchOp[];
+  organizationId: string;
   sprintId: number;
 }): Promise<void> {
   const missing: string[] = [];
   for (let index = 0; index < input.ops.length; index++) {
-    const message = await missingTargetForOp(input.ops[index]!, index, input.sprintId);
+    const message = await missingTargetForOp(input.ops[index]!, index, input.sprintId, input.organizationId);
     if (message) {
       missing.push(message);
     }

@@ -37,6 +37,7 @@ const WRITE_HINT =
   'Tracker links: a direction is a tracker epic (search_tracker_epics, link with updateDirection.issue); a plan epic is any ' +
   'tracker issue, usually a task inside that epic (search_issues, link with addEpic.issueKey or updateEpic.issue). ' +
   'Tasks: to show what a person does in which weeks inside an epic, add task rows under it (addEpic with parentEpicId) and assign on them — do not list tasks in a direction or epic title. ' +
+  'Sprint goals: a sprint goal linked to a plan row (planRow on createGoal/updateGoal in propose_plan_patch) is shown in that row on this board in the weeks of its sprint — do not add notes (addNote) that repeat sprint goals; link the goal instead. ' +
   'Absences: apply_availability_events.';
 
 /**

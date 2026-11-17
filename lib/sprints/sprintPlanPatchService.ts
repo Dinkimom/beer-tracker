@@ -124,7 +124,7 @@ export async function proposeSprintPlanPatch(input: {
   assertPlanPatchOpsFitPartsPerDay(parsedOps, current.meta.partsPerDay);
   // Высота заметок по тексту — до хеша и токена, чтобы черновик и apply совпали.
   const ops = fitPlanPatchNoteHeights(parsedOps, current.notes, current.meta.partsPerDay);
-  await assertPlanPatchTargetsExist({ ops, sprintId: input.sprintId });
+  await assertPlanPatchTargetsExist({ ops, organizationId: input.organizationId, sprintId: input.sprintId });
   const simulated = simulatePositionsAfterPatch(current.positions, ops);
   const capacityPreviewSummary = buildSprintContextCapacity({
     availability: current.availability,

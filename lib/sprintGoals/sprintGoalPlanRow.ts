@@ -17,11 +17,12 @@ export interface SprintGoalPlanRow extends QuarterRef {
   rowId: string;
 }
 
-const planRowSchema = QuarterRefSchema.extend({ rowId: z.string().trim().min(1).max(80) }).strict();
+/** Привязка в теле запроса и в операциях агента над целями (`createGoal` / `updateGoal`). */
+export const SprintGoalPlanRowSchema = QuarterRefSchema.extend({ rowId: z.string().trim().min(1).max(80) }).strict();
 
 /** Привязка из тела запроса; null — значение не похоже на привязку. */
 export function parseSprintGoalPlanRow(value: unknown): SprintGoalPlanRow | null {
-  const parsed = planRowSchema.safeParse(value);
+  const parsed = SprintGoalPlanRowSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
 

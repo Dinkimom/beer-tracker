@@ -1,3 +1,4 @@
+import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { BoardAvailabilityEventType } from '@/types/quarterly';
 
 import { listBoardAvailabilityEvents } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
@@ -212,10 +213,11 @@ function rewriteLinksForNoteEndpoints(
   return links.map((link) => resolvePlannerLinkEndpoints(link, commentIds));
 }
 
-function mapGoal(row: { done: boolean; id: string; text: string }): SprintContextGoalItem {
+function mapGoal(row: { done: boolean; id: string; planRow?: SprintGoalPlanRow | null; text: string }): SprintContextGoalItem {
   return {
     done: Boolean(row.done),
     id: String(row.id),
+    ...(row.planRow ? { planRow: row.planRow } : {}),
     text: row.text ?? '',
   };
 }

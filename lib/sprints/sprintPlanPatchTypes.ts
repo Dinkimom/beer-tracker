@@ -1,6 +1,7 @@
 /** Discriminated plan-patch ops for MCP propose → apply (v1). */
 
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 
 type SprintPlanPatchGoalType = 'delivery' | 'discovery';
 
@@ -71,7 +72,7 @@ export type SprintPlanPatchOp =
       issueKeys?: string[];
       name: string;
       op: 'upsertFeatureDraft';
-    } | { commentId: string; op: 'deleteNote' } | { done?: boolean; id: string; op: 'updateGoal'; text?: string } | { goalType: SprintPlanPatchGoalType; op: 'createGoal'; text: string } | { id: string; op: 'deleteGoal' } | { linkId: string; op: 'deleteLink' };
+    } | { commentId: string; op: 'deleteNote' } | { done?: boolean; id: string; op: 'updateGoal'; planRow?: SprintGoalPlanRow | null; text?: string } | { goalType: SprintPlanPatchGoalType; op: 'createGoal'; planRow?: SprintGoalPlanRow; text: string } | { id: string; op: 'deleteGoal' } | { linkId: string; op: 'deleteLink' };
 
 /** stop = roll back the whole patch on the first failure (default); continue = skip failed ops, apply the rest. */
 export type SprintPlanPatchOnError = 'continue' | 'stop';
