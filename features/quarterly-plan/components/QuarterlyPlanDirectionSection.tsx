@@ -41,7 +41,7 @@ export function QuarterlyPlanDirectionSection({
   onToggle,
 }: QuarterlyPlanDirectionSectionProps) {
   const { t } = useI18n();
-  const { assignmentsByDirection, assignmentsByEpicTree, detail, onCellClick, trackerEpics, weeks } =
+  const { assignmentsByDirection, assignmentsByEpicTree, detail, goalsByRow, onCellClick, trackerEpics, weeks } =
     useQuarterlyPlanBoard();
   const ownAssignments = assignmentsByDirection.get(direction.id) ?? [];
   /** Свои полосы видны, пока направление раскрыто; свёрнутое сводит их в общий срок. */
@@ -56,7 +56,9 @@ export function QuarterlyPlanDirectionSection({
     : (week: number, anchor: QuarterMenuAnchor, span: DaySpan) =>
         onCellClick({ id: direction.id, kind: 'direction' }, week, anchor, span);
   // Заметки направления занимают его дорожку — сводная полоса тогда уходит к нижнему краю строки.
-  const hasNotes = useQuarterRowNotes({ id: direction.id, kind: 'direction' }).notes.length > 0;
+  // Так же с целями спринтов (QG8): пилюля цели стоит в той же дорожке.
+  const hasNotes =
+    useQuarterRowNotes({ id: direction.id, kind: 'direction' }).notes.length > 0 || (goalsByRow.get(direction.id)?.length ?? 0) > 0;
 
   /** Свёрнутое направление показывает общий срок своих полос, эпиков и их задач одной тонкой полосой (QB5, QT3). */
   const spans = collapsed
