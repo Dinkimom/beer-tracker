@@ -44,7 +44,7 @@ const PHASE_ORDER: readonly QuarterlyPlanPhase[] = ['discovery', 'delivery'];
 
 /**
  * Сводные полосы строки роадмэпа (QZ3): по одной на фазу — от самого раннего начала до самого позднего конца
- * её полос, с людьми этой фазы. Проработка и поставка пересекаются — встают в две дорожки, идут подряд — в одну.
+ * её полос, округлённый до целых недель, с людьми этой фазы. Проработка и поставка пересекаются — встают в две дорожки, идут подряд — в одну.
  */
 export function rollupPhases(assignments: readonly QuarterlyPlanAssignment[]): {
   laneCount: number;
@@ -56,8 +56,10 @@ export function rollupPhases(assignments: readonly QuarterlyPlanAssignment[]): {
       .map((assignment) => ({ ...daySpanOf(assignment), memberId: assignment.memberId }))
       .sort((a, b) => a.startDay - b.startDay);
     if (own.length === 0) return [];
-    const startDay = own[0]!.startDay;
-    const days = Math.max(...own.map((span) => span.startDay + span.days)) - startDay;
+    // Роадмэп считает неделями: срок округляется до целых недель, даже если полоса задевает неделю одним днём.
+    const startDay = Math.floor(own[0]!.startDay / QUARTER_WORKING_DAYS_PER_WEEK) * QUARTER_WORKING_DAYS_PER_WEEK;
+    const endDay = Math.max(...own.map((span) => span.startDay + span.days));
+    const days = Math.ceil(endDay / QUARTER_WORKING_DAYS_PER_WEEK) * QUARTER_WORKING_DAYS_PER_WEEK - startDay;
     return [{ days, memberIds: [...new Set(own.map((span) => span.memberId))], phase, startDay }];
   });
   const { laneById, laneCount } = assignBarLanes(

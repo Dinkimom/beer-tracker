@@ -36,9 +36,10 @@ describe('rollupPhases (QZ3)', () => {
     expect(rollups[0]?.memberIds).toEqual(['ann', 'bob']);
   });
 
-  it('полоса с точностью до дня даёт срок в днях', () => {
-    const day = { ...bar('a', 1, 1), days: 3, startDay: 6 };
-    expect(rollupPhases([day]).rollups).toEqual([{ days: 3, lane: 0, memberIds: ['dev'], phase: 'delivery', startDay: 6 }]);
+  it('срок округляется до целых недель, даже если полоса задевает неделю одним днём', () => {
+    // Дни 6–10: со вторника второй недели по понедельник третьей — на роадмэпе это недели 2 и 3 целиком.
+    const day = { ...bar('a', 1, 2), days: 5, startDay: 6 };
+    expect(rollupPhases([day]).rollups).toEqual([{ days: 10, lane: 0, memberIds: ['dev'], phase: 'delivery', startDay: 5 }]);
   });
 });
 

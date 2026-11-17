@@ -21,13 +21,13 @@ const PILL_INSET_PX = 4;
 
 /**
  * Флажок целей спринта в строке плана (QG8): цели одного типа одного спринта, привязанные к строке.
- * Пилюля шириной по тексту (не шире спринта) у начала спринта — своей формы и заливки, чтобы её не путали
+ * Пилюля шириной по тексту (не шире спринта; в «Деталях» — на всю ширину спринта) у начала спринта — своей формы и заливки, чтобы её не путали
  * с полосами. Тип — словом (Delivery / Discovery, как на доске спринта), открытые цели — иконкой цели и счётчиком «выполнено/всего», все выполнены —
  * зелёная с галочкой. Текст — первая цель, весь список — в подсказке. Клик открывает цели спринта (QG13).
  */
 export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFlagProps) {
   const { t } = useI18n();
-  const { onSprintGoalsOpen, weeks } = useQuarterlyPlanBoard();
+  const { detail, onSprintGoalsOpen, weeks } = useQuarterlyPlanBoard();
   const laneHeightPx = useQuarterLaneHeight();
   const done = flag.goals.filter((goal) => goal.done).length;
   const allDone = done === flag.goals.length;
@@ -51,7 +51,7 @@ export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFl
     >
       <button
         aria-label={label}
-        className={`pointer-events-auto inline-flex h-full max-w-full min-w-0 cursor-pointer items-center gap-1.5 rounded-full border pl-1.5 pr-2 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] ${tone}`}
+        className={`pointer-events-auto inline-flex h-full max-w-full min-w-0 ${detail === 'details' ? 'w-full' : ''} cursor-pointer items-center gap-1.5 rounded-full border pl-1.5 pr-2 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] ${tone}`}
         title={title}
         type="button"
         onClick={() => onSprintGoalsOpen(flag.sprint, flag.boardId)}
@@ -61,7 +61,7 @@ export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFl
           name={allDone ? 'check-circle' : 'target'}
         />
         <span className={`shrink-0 rounded-full px-1.5 text-[10px] font-semibold leading-4 ${badge}`}>{phase}</span>
-        <span className="min-w-0 truncate">{flag.goals[0]?.text}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{flag.goals[0]?.text}</span>
         <span className="shrink-0 font-medium tabular-nums opacity-70">
           {done}/{flag.goals.length}
         </span>
