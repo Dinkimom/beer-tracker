@@ -2,6 +2,24 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.35.0] — 2026-11-17
+
+### English
+
+- Quarter board: sprint goals linked to an epic or direction now show in that row, in the weeks of their sprint — a pill with the type (Delivery / Discovery), the first goal and done/total; all done turns it green. Goals always sit above the bars of the row; click a pill to open the sprint goals.
+- Agent: when it sets sprint goals, it links each goal to the plan epic or direction it advances, instead of copying the goal into a quarter note. A goal linked to a row that is not in the plan is rejected right away.
+- Quarter toolbar: a «Layers» button, as on the sprint board. «Done epics» (the former «Hide done») and the new «Notes» layer that hides all note cards; turning on the note tool shows notes again. Layers are remembered in the browser.
+- The quarter toolbar is grouped: quarter, tools, view (layers, history), signals (mismatches, overlaps — only when there are any), agent.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.35.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Доска квартала: цели спринтов, привязанные к эпику или направлению, видны в этой строке на неделях своего спринта — пилюля с типом (Delivery / Discovery), первой целью и счётчиком выполнено/всего; все выполнены — зелёная. Цели всегда стоят над полосами строки, клик по пилюле открывает цели спринта.
+- Агент: ставя цели спринта, привязывает каждую к эпику или направлению плана, которое она двигает, вместо того чтобы копировать цель в заметку квартала. Цель с привязкой к строке, которой нет в плане, отклоняется сразу.
+- Панель квартала: кнопка «Слои», как на доске спринта. «Готовые эпики» (бывшее «Скрыть готовые») и новый слой «Заметки» — прячет все листы заметок; инструмент «Заметка» включает их обратно. Слои запоминаются в браузере.
+- Панель квартала разложена по группам: квартал, инструменты, вид (слои, история), сигналы (расхождения, пересечения — только когда есть), агент.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.35.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.34.0] — 2026-11-16
 
 ### English
