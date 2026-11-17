@@ -40,6 +40,7 @@
 | · Диаграмма сгорания | `?tab=burndown` | Burndown SP/TP |
 | · Ретро | `?tab=retro` | Доска ретроспективы |
 | · Метрики | `?tab=metrics` | Дашборд спринтов доски по кварталу |
+| · Роадмэп | `?tab=quarter` | Квартальный план организации: все команды в одной сетке недель ([правила](./QUARTERLY_PLAN_RULES.md)) |
 | **Выбор доски** | `/select-board` | Первичный выбор доски трекера |
 | **Настройка доступа** | `/auth-setup` | Учётка трекера (Yandex ID OAuth / Atlassian OAuth / Jira PAT) |
 | **Вход / регистрация** | `/login`, `/register` | Аккаунт продукта |
@@ -334,7 +335,7 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm lint:unused
 
 - Замена внешнего issue tracker (Yandex / Jira) как системы учёта задач
 - Хранение пользовательских токенов трекера на сервере (учётка — в браузере)
-- Планировщик эпиков / фич и прежнее квартальное планирование — удалены из кода ([steering](./steering/product.md)). Новый квартальный план в разработке — [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md)
+- Планировщик эпиков / фич и прежнее квартальное планирование — удалены из кода ([steering](./steering/product.md)). Новый квартальный план — вкладка «Роадмэп», правила в [QUARTERLY_PLAN_RULES.md](./QUARTERLY_PLAN_RULES.md)
 
 ---
 
