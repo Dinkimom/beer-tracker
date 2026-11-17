@@ -20,6 +20,7 @@ import {
 } from './demoFixtureStore';
 import { handleDemoWorkflow } from './demoFixtureWorkflow';
 import { DEMO_BOARD_ID, DEMO_ORG_ID, DEMO_SPRINT_ID } from './demoIds';
+import { DEMO_PLATFORM_MEMBERS } from './demoQuarterlyPlanSeed';
 
 function parseBody(config: InternalAxiosRequestConfig): unknown {
   const raw = config.data;
@@ -322,6 +323,37 @@ function handleAgentSessions(path: string, method: string): DemoFixtureResult | 
   return path.startsWith('/agent-sessions/') ? ok({ ok: true }) : null;
 }
 
+/**
+ * «Добавить участника» на доске спринта: поиск по людям организации, которых ещё нет в команде
+ * (команда Platform с квартальной доски), и добавление найденного в команду доски.
+ */
+function handleTeamMemberRegistry(
+  path: string,
+  method: string,
+  params: URLSearchParams,
+  body: unknown
+): DemoFixtureResult | null {
+  const store = getDemoFixtureStore();
+  const outsideTeam = DEMO_PLATFORM_MEMBERS.filter(
+    (person) => !store.developers.some((developer) => developer.id === person.id)
+  );
+  if (path === '/teams/members/registry-search' && method === 'get') {
+    const query = (params.get('q') ?? '').trim().toLowerCase();
+    const items = outsideTeam
+      .filter((person) => person.name.toLowerCase().includes(query))
+      .map((person) => ({ avatarUrl: null, displayName: person.name, email: null, staffUid: person.id, trackerId: person.id }));
+    return ok({ items });
+  }
+  if (path === '/teams/members' && method === 'post') {
+    const staffUid = (body as { staffUid?: unknown } | undefined)?.staffUid;
+    const person = outsideTeam.find((candidate) => candidate.id === staffUid);
+    if (!person) return notFound('No such person outside the team');
+    store.developers = [...store.developers, person];
+    return ok({ success: true });
+  }
+  return null;
+}
+
 function handleTeamsAndRules(path: string, method: string): DemoFixtureResult | null {
   const store = getDemoFixtureStore();
   if (path === '/teams/members' && method === 'get') {
@@ -364,6 +396,7 @@ export function handleDemoFixtureRequest(config: InternalAxiosRequestConfig): De
     () => handleRetro(path, method, body),
     () => handleFeatureLanes(path, method, body),
     () => handleSprintExtras(path, method),
+    () => handleTeamMemberRegistry(path, method, params, body),
     () => handleTeamsAndRules(path, method),
     () => handleAgentSessions(path, method),
     () => handleDemoWorkflow(path, method, body),

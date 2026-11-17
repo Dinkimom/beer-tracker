@@ -44,6 +44,33 @@ describe('handleDemoFixtureRequest', () => {
     expect(data.records.filter((record) => record.open)).toHaveLength(1);
   });
 
+  it('finds people outside the board team and adds the picked one to the team', () => {
+    const search = (q: string) =>
+      (
+        handleDemoFixtureRequest(cfg('get', '/teams/members/registry-search', { params: { boardId: DEMO_BOARD_ID, q } }))
+          .data as { items: Array<{ displayName: string; staffUid: string }> }
+      ).items;
+    const members = () =>
+      (handleDemoFixtureRequest(cfg('get', `/teams/members?boardId=${DEMO_BOARD_ID}`)).data as { developers: Array<{ id: string }> })
+        .developers;
+
+    expect(search('grace').map((item) => item.displayName)).toEqual(['Grace Hopper']);
+    expect(search('zzz')).toEqual([]);
+    const [grace] = search('grace');
+    const before = members().length;
+
+    const added = handleDemoFixtureRequest(
+      cfg('post', `/teams/members?boardId=${DEMO_BOARD_ID}`, { data: { staffUid: grace!.staffUid } })
+    );
+    expect(added.status).toBe(200);
+    expect(members()).toHaveLength(before + 1);
+    // Уже в команде — в поиске её больше нет, повторное добавление не проходит.
+    expect(search('grace')).toEqual([]);
+    expect(
+      handleDemoFixtureRequest(cfg('post', `/teams/members?boardId=${DEMO_BOARD_ID}`, { data: { staffUid: grace!.staffUid } })).status
+    ).toBe(404);
+  });
+
   it('returns no agent sessions', () => {
     const result = handleDemoFixtureRequest(cfg('get', `/sprints/${DEMO_SPRINT_ID}/agent-sessions`));
     expect(result).toEqual({ data: { draftSessionId: null, sessions: [] }, status: 200 });

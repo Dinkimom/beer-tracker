@@ -102,6 +102,7 @@ export function UserSelector({
           title={title}
           value={value}
           onClearInput={handleClearInput}
+          onDismiss={() => setIsOpen(false)}
           onSearchQueryChange={setSearchQuery}
           onSelect={handleSelect}
         />

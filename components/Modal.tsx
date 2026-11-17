@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 
 import { OVERLAY_BACKDROP_ENTER, OVERLAY_CENTERED_DIALOG_ANIMATION } from '@/components/overlayAnimationClasses';
-import { isOverlayChildTarget } from '@/components/overlayChild';
 import { ZIndex } from '@/constants';
 
 interface ModalProps {
@@ -62,8 +61,7 @@ export function Modal({
             if (busy) event.preventDefault();
           }}
           onInteractOutside={(event) => {
-            // Выпадающий список в своём портале (поиск человека) — часть окна, а не клик мимо.
-            if (busy || !closeOnBackdrop || isOverlayChildTarget(event.target)) event.preventDefault();
+            if (busy || !closeOnBackdrop) event.preventDefault();
           }}
         >
           {bare ? (

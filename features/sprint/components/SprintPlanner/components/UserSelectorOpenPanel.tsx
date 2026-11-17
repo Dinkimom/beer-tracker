@@ -1,16 +1,15 @@
 'use client';
 
 import type { RegistryUserItem } from '@/lib/beerTrackerApi';
-import type { CSSProperties, RefObject } from 'react';
+import type { RefObject } from 'react';
 
-import { useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import * as Popover from '@radix-ui/react-popover';
 
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
-import { OVERLAY_CHILD_ATTR } from '@/components/overlayChild';
+import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { getInitials } from '@/utils/displayUtils';
@@ -22,6 +21,7 @@ interface UserSelectorOpenPanelProps {
   compact?: boolean;
   inputRef: RefObject<HTMLInputElement | null>;
   loading: boolean;
+  /** Слой списка результатов; по умолчанию — поверх модального окна. */
   menuZIndex?: number;
   placeholder?: string;
   results: RegistryUserItem[];
@@ -32,26 +32,10 @@ interface UserSelectorOpenPanelProps {
   title?: string;
   value: string;
   onClearInput: (e: React.MouseEvent) => void;
+  /** Escape при открытом списке: закрыть селектор, а не окно под ним. */
+  onDismiss?: () => void;
   onSearchQueryChange: (value: string) => void;
   onSelect: (user: RegistryUserItem) => void;
-}
-
-function resolveUserSelectorResultsStyle(input: {
-  menuZIndex?: number;
-  portalRect: DOMRect | null;
-  usePortal: boolean;
-}): CSSProperties {
-  if (input.usePortal && input.portalRect) {
-    return {
-      left: input.portalRect.left,
-      // Открытое модальное окно выключает клики по `body`: список в своём портале включает их себе сам.
-      pointerEvents: 'auto',
-      top: input.portalRect.bottom + 4,
-      width: input.portalRect.width,
-      zIndex: input.menuZIndex,
-    };
-  }
-  return { zIndex: input.menuZIndex ?? ZIndex.dropdownContent };
 }
 
 export function UserSelectorOpenPanel({
@@ -60,6 +44,7 @@ export function UserSelectorOpenPanel({
   loading,
   menuZIndex,
   onClearInput,
+  onDismiss,
   onSearchQueryChange,
   onSelect,
   placeholder,
@@ -71,42 +56,24 @@ export function UserSelectorOpenPanel({
   value,
 }: UserSelectorOpenPanelProps) {
   const { t } = useI18n();
-  const inputWrapRef = useRef<HTMLDivElement>(null);
   const showResults = searchQuery.length >= MIN_SEARCH_LENGTH;
-  const usePortal = menuZIndex != null;
-  const [portalRect, setPortalRect] = useState<DOMRect | null>(null);
   const searchPlaceholder = placeholder ?? t('common.userSelector.searchPlaceholder');
   const clearTitle = t('common.userSelector.clearTitle');
 
-  useLayoutEffect(() => {
-    if (!usePortal || !showResults) {
-      return;
-    }
-    const el = inputWrapRef.current;
-    if (!el) {
-      return;
-    }
-    const update = () => setPortalRect(el.getBoundingClientRect());
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [showResults, usePortal]);
-
-  const resultsNode =
-    showResults && (!usePortal || portalRect) ? (
-      <div
+  // Список — поповер у поля поиска: фокус остаётся в поле, клик мимо разбирает селектор-родитель.
+  const resultsNode = (
+    <Popover.Portal>
+      <Popover.Content
         ref={resultsRef}
-        {...(usePortal ? { [OVERLAY_CHILD_ATTR]: '' } : {})}
-        className={
-          usePortal
-            ? 'fixed min-w-[12rem] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800'
-            : 'absolute top-full left-0 right-0 z-50 mt-1 min-w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800'
-        }
-        style={resolveUserSelectorResultsStyle({ menuZIndex, portalRect, usePortal })}
+        align="start"
+        className={`min-w-[12rem] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg outline-none dark:border-gray-700 dark:bg-gray-800 ${OVERLAY_FLOATING_ANIMATION}`}
+        collisionPadding={8}
+        sideOffset={4}
+        style={{ width: 'var(--radix-popover-trigger-width)', zIndex: menuZIndex ?? ZIndex.modalNested }}
+        onCloseAutoFocus={(event) => event.preventDefault()}
+        onEscapeKeyDown={() => onDismiss?.()}
+        onInteractOutside={(event) => event.preventDefault()}
+        onOpenAutoFocus={(event) => event.preventDefault()}
       >
         {loading && (
           <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</div>
@@ -151,41 +118,43 @@ export function UserSelectorOpenPanel({
             })}
           </div>
         )}
-      </div>
-    ) : null;
+      </Popover.Content>
+    </Popover.Portal>
+  );
 
   return (
-    <>
-      <div
-        ref={inputWrapRef}
-        className={
-          compact
-            ? 'flex h-9 min-h-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-0 text-sm focus-within:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:focus-within:border-blue-400'
-            : 'flex h-[38px] min-h-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-0 text-sm focus-within:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:focus-within:border-blue-400'
-        }
-        style={{ zIndex: ZIndex.dropdownContent + 1 }}
-      >
-        <input
-          ref={inputRef}
-          aria-label={title}
-          className="min-w-0 flex-1 bg-transparent text-gray-900 outline-none placeholder-gray-500 dark:text-gray-100"
-          placeholder={searchPlaceholder}
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchQueryChange(e.target.value)}
-        />
-        {searchQuery ? (
-          <HeaderIconButton
-            aria-label={clearTitle}
-            className="!h-7 !w-7 shrink-0"
-            type="button"
-            onClick={onClearInput}
-          >
-            <Icon className="h-4 w-4" name="x" />
-          </HeaderIconButton>
-        ) : null}
-      </div>
-      {usePortal && resultsNode ? createPortal(resultsNode, document.body) : resultsNode}
-    </>
+    <Popover.Root open={showResults}>
+      <Popover.Anchor asChild>
+        <div
+          className={
+            compact
+              ? 'flex h-9 min-h-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-0 text-sm focus-within:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:focus-within:border-blue-400'
+              : 'flex h-[38px] min-h-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-0 text-sm focus-within:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:focus-within:border-blue-400'
+          }
+          style={{ zIndex: ZIndex.dropdownContent + 1 }}
+        >
+          <input
+            ref={inputRef}
+            aria-label={title}
+            className="min-w-0 flex-1 bg-transparent text-gray-900 outline-none placeholder-gray-500 dark:text-gray-100"
+            placeholder={searchPlaceholder}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+          />
+          {searchQuery ? (
+            <HeaderIconButton
+              aria-label={clearTitle}
+              className="!h-7 !w-7 shrink-0"
+              type="button"
+              onClick={onClearInput}
+            >
+              <Icon className="h-4 w-4" name="x" />
+            </HeaderIconButton>
+          ) : null}
+        </div>
+      </Popover.Anchor>
+      {resultsNode}
+    </Popover.Root>
   );
 }

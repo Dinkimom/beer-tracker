@@ -35,8 +35,11 @@ const DENNIS = 'demo-dennis';
 const BARBARA = 'demo-barbara';
 const DONALD = 'demo-donald';
 
-/** Вторая команда существует только на квартальной доске: у неё свой сдвиг спринтов. */
-const PLATFORM_MEMBERS: Developer[] = [
+/**
+ * Вторая команда существует только на квартальной доске: у неё свой сдвиг спринтов.
+ * Для доски спринта это люди организации вне команды — их находит поиск в «Добавить участника».
+ */
+export const DEMO_PLATFORM_MEMBERS: Developer[] = [
   { id: GRACE, name: 'Grace Hopper', platforms: ['back'], role: 'developer', roleTitle: 'Backend' },
   { id: DENNIS, name: 'Dennis Ritchie', platforms: ['back'], role: 'developer', roleTitle: 'Backend' },
   { id: BARBARA, name: 'Barbara Liskov', platforms: ['web'], role: 'developer', roleTitle: 'Frontend' },
@@ -89,7 +92,7 @@ function buildTeams(ref: QuarterRef, demoDevelopers: Developer[]): QuarterlyPlan
     {
       boardId: DEMO_PLATFORM_BOARD_ID,
       id: PLATFORM_TEAM_ID,
-      members: PLATFORM_MEMBERS,
+      members: DEMO_PLATFORM_MEMBERS,
       sprints: buildSprints(weeks, { firstNumber: Math.max(1, 21 + numberShift), firstSprintWeeks: 1, idBase: 2100 }),
       title: 'Platform Team',
     },

@@ -43,6 +43,7 @@ export function MultiUserSelector({
   const [selectedUsers, setSelectedUsers] = useState<RegistryUserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { loading, results, setResults } = useUserSelectorSearch(isOpen, searchQuery);
@@ -72,7 +73,8 @@ export function MultiUserSelector({
   usePopoverDismiss(() => setIsOpen(false), {
     enabled: isOpen,
     event: 'mousedown',
-    refs: [containerRef],
+    // Список результатов — поповер в своём портале: клик по нему не «мимо».
+    refs: [containerRef, resultsRef],
   });
 
   useUserSelectorDropdownLifecycle({
@@ -142,11 +144,13 @@ export function MultiUserSelector({
           loading={loading}
           placeholder={resolvedPlaceholder}
           results={results}
+          resultsRef={resultsRef}
           searchQuery={searchQuery}
           selectedIds={selectedIds}
           title={title}
           value=""
           onClearInput={handleClearInput}
+          onDismiss={() => setIsOpen(false)}
           onSearchQueryChange={setSearchQuery}
           onSelect={handleSelect}
         />

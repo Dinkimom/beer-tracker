@@ -7,7 +7,6 @@ import { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
-import { isOverlayChildTarget } from '@/components/overlayChild';
 import { ZIndex } from '@/constants';
 import { FLOATING_MENU_GLASS_SHELL } from '@/features/context-menu/contextMenuClasses';
 
@@ -67,13 +66,7 @@ export function AnchoredPopover({
           sideOffset={sideOffset}
           style={{ zIndex: ZIndex.modal }}
           onEscapeKeyDown={() => onDismiss('escape')}
-          onInteractOutside={(event) => {
-            if (isOverlayChildTarget(event.target)) {
-              event.preventDefault();
-              return;
-            }
-            onDismiss('outside');
-          }}
+          onInteractOutside={() => onDismiss('outside')}
         >
           {children}
         </Popover.Content>
