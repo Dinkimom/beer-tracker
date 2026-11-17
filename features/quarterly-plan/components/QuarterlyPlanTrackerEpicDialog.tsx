@@ -1,9 +1,9 @@
 'use client';
 
 import { Button } from '@/components/Button';
+import { Modal } from '@/components/Modal';
 import { useI18n } from '@/contexts/LanguageContext';
 
-import { QuarterlyPlanDialog } from './QuarterlyPlanDialog';
 import { QuarterlyPlanTrackerEpicSearch } from './QuarterlyPlanTrackerEpicSearch';
 
 interface QuarterlyPlanTrackerEpicDialogProps {
@@ -27,8 +27,14 @@ export function QuarterlyPlanTrackerEpicDialog({
   const { t } = useI18n();
 
   return (
-    <QuarterlyPlanDialog
+    <Modal
+      className="max-w-xl"
       description={t(direction ? 'quarterlyPlan.link.directionHint' : 'quarterlyPlan.link.searchHint')}
+      footer={
+        <Button variant="outline" onClick={onClose}>
+          {t('common.cancel')}
+        </Button>
+      }
       title={t(direction ? 'quarterlyPlan.link.directionTitle' : 'quarterlyPlan.link.title')}
       onClose={onClose}
     >
@@ -39,11 +45,6 @@ export function QuarterlyPlanTrackerEpicDialog({
         usedIssueKeys={usedIssueKeys}
         onPick={onPick}
       />
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={onClose}>
-          {t('common.cancel')}
-        </Button>
-      </div>
-    </QuarterlyPlanDialog>
+    </Modal>
   );
 }

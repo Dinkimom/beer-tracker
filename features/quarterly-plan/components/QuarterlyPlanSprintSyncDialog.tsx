@@ -6,11 +6,11 @@ import type { QuarterlyPlanSprintDrift } from '@/lib/quarterlyPlans/quarterlyPla
 import { useState } from 'react';
 
 import { Button } from '@/components/Button';
+import { Modal } from '@/components/Modal';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { formatDateRange } from '../quarterlyPlanBoardModel';
 
-import { QuarterlyPlanDialog } from './QuarterlyPlanDialog';
 
 /** Какие даты верные: плана (карточка в спринте сдвигается) или спринта (полоса в плане подстраивается). */
 type Truth = 'plan' | 'sprint';
@@ -86,50 +86,52 @@ export function QuarterlyPlanSprintSyncDialog({ busy, drifts, open, onApply, onC
   };
 
   return (
-    <QuarterlyPlanDialog
+    <Modal
       className="max-h-[80vh] max-w-xl"
       description={t('quarterlyPlan.sync.hint')}
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            {t('common.cancel')}
+          </Button>
+          <Button disabled={busy || choices.length === 0} onClick={() => onApply(choices)}>
+            {t(busy ? 'quarterlyPlan.sync.applying' : 'quarterlyPlan.sync.apply', { count: choices.length })}
+          </Button>
+        </>
+      }
       open={open}
       title={t('quarterlyPlan.sync.title')}
       onClose={onClose}
     >
-          {drifts.length === 0 ? (
-            <p className="text-sm text-ds-text-muted">{t('quarterlyPlan.sync.empty')}</p>
-          ) : (
-            <div className="scrollbar-thin-custom -mx-1 min-h-0 flex-1 overflow-y-auto px-1 py-1">
-              <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_7rem_7rem] items-center gap-x-3 gap-y-1">
-                <span />
-                <span className="text-xs text-ds-text-muted">{t('quarterlyPlan.sync.columnTask')}</span>
-                <span className="px-2 text-xs text-ds-text-muted">{t('quarterlyPlan.sync.columnPlan')}</span>
-                <span className="px-2 text-xs text-ds-text-muted">{t('quarterlyPlan.sync.columnSprint')}</span>
-                {drifts.map((drift) => (
-                  <div key={drift.epicId} className="contents">
-                    <input
-                      aria-label={drift.title}
-                      checked={checked.has(drift.epicId)}
-                      className="h-4 w-4 cursor-pointer accent-blue-600 disabled:cursor-not-allowed"
-                      disabled={!truths.has(drift.epicId)}
-                      type="checkbox"
-                      onChange={() => toggle(drift.epicId)}
-                    />
-                    <span className="truncate text-sm text-gray-900 dark:text-gray-100" title={drift.issueKey}>
-                      {drift.title}
-                    </span>
-                    {dates(drift, 'plan')}
-                    {dates(drift, 'sprint')}
-                  </div>
-                ))}
+      {drifts.length === 0 ? (
+        <p className="text-sm text-ds-text-muted">{t('quarterlyPlan.sync.empty')}</p>
+      ) : (
+        <div className="scrollbar-thin-custom -mx-1 min-h-0 flex-1 overflow-y-auto px-1 py-1">
+          <div className="grid grid-cols-[1.25rem_minmax(0,1fr)_7rem_7rem] items-center gap-x-3 gap-y-1">
+            <span />
+            <span className="text-xs text-ds-text-muted">{t('quarterlyPlan.sync.columnTask')}</span>
+            <span className="px-2 text-xs text-ds-text-muted">{t('quarterlyPlan.sync.columnPlan')}</span>
+            <span className="px-2 text-xs text-ds-text-muted">{t('quarterlyPlan.sync.columnSprint')}</span>
+            {drifts.map((drift) => (
+              <div key={drift.epicId} className="contents">
+                <input
+                  aria-label={drift.title}
+                  checked={checked.has(drift.epicId)}
+                  className="h-4 w-4 cursor-pointer accent-blue-600 disabled:cursor-not-allowed"
+                  disabled={!truths.has(drift.epicId)}
+                  type="checkbox"
+                  onChange={() => toggle(drift.epicId)}
+                />
+                <span className="truncate text-sm text-gray-900 dark:text-gray-100" title={drift.issueKey}>
+                  {drift.title}
+                </span>
+                {dates(drift, 'plan')}
+                {dates(drift, 'sprint')}
               </div>
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              {t('common.cancel')}
-            </Button>
-            <Button disabled={busy || choices.length === 0} onClick={() => onApply(choices)}>
-              {t(busy ? 'quarterlyPlan.sync.applying' : 'quarterlyPlan.sync.apply', { count: choices.length })}
-            </Button>
+            ))}
           </div>
-    </QuarterlyPlanDialog>
+        </div>
+      )}
+    </Modal>
   );
 }
