@@ -53,6 +53,15 @@ export async function listTaskPositionsForSprint(input: {
   return result.rows as TaskPositionRow[];
 }
 
+/** Спринты, на досках которых у задачи есть карточка, — для переноса задачи агентом (K8). */
+export async function listTaskPositionSprintIds(input: { organizationId: string; taskId: string }): Promise<number[]> {
+  const result = await query<{ sprint_id: number }>(
+    'SELECT DISTINCT sprint_id FROM task_positions WHERE organization_id = $1 AND task_id = $2',
+    [input.organizationId, input.taskId]
+  );
+  return result.rows.map((row) => Number(row.sprint_id));
+}
+
 /** Карточки задач `taskIds` на досках спринтов `sprintIds` вместе с их отрезками — для квартального плана (QK8). */
 export async function listTaskCardSpans(input: {
   sprintIds: readonly number[];
