@@ -10,6 +10,7 @@ import { assignNoteLanes, quarterNoteRowKey } from '@/lib/quarterlyPlans/quarter
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import {
+  QuarterBarsTopProvider,
   QuarterLaneHeightProvider,
   useQuarterlyPlanBoard,
   useQuarterRowNotes,
@@ -118,41 +119,43 @@ export function QuarterlyPlanRow({
   onWeekClick,
 }: QuarterlyPlanRowProps) {
   const { assignPreview, currentWeek, goalsByRow, noteEditing, weeks } = useQuarterlyPlanBoard();
-  // Флажки целей спринтов (QG8) — только у эпика и направления. Встают в дорожки раньше заметок: рядом
-  // с полосами, если недели свободны; заметки и превью полосы обходят их так же, как полосы.
+  // Цели спринтов (QG8) — только у эпика и направления, и всегда сверху: занимают верхние дорожки строки,
+  // полосы встают под ними (`QuarterBarsTopProvider`). Заметки обходят и цели, и полосы.
   const goalFlags = noteRow?.kind === 'epic' || noteRow?.kind === 'direction' ? (goalsByRow.get(noteRow.id) ?? []) : [];
   const goalLanes = assignNoteLanes(
-    goalFlags.map((flag) => ({ id: flag.id, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks })),
-    noteBlockers
+    goalFlags.map((flag) => ({ id: flag.id, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks }))
   ).laneById;
-  const blockers: readonly NoteLaneBlocker[] = [
-    ...(noteBlockers ?? []),
-    ...goalFlags.map((flag) => ({ lane: goalLanes.get(flag.id) ?? 0, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks })),
-  ];
   const goalLaneCount = Math.max(0, ...goalFlags.map((flag) => (goalLanes.get(flag.id) ?? 0) + 1));
-  // Превью полосы из открытого меню назначения — в первой дорожке, где её недели свободны.
+  const barsTopPx = goalLaneCount * laneHeightPx;
+  const blockers: readonly NoteLaneBlocker[] = [
+    ...goalFlags.map((flag) => ({ lane: goalLanes.get(flag.id) ?? 0, rows: 1, startWeek: flag.startWeek, weeks: flag.weeks })),
+    ...(noteBlockers ?? []).map((blocker) => ({ ...blocker, lane: blocker.lane + goalLaneCount })),
+  ];
+  // Превью полосы из открытого меню назначения — в первой дорожке полос, где её недели свободны (под целями).
   const ghost =
     assignPreview && noteRow && assignPreview.row.kind === noteRow.kind && assignPreview.row.id === noteRow.id
       ? {
           ...assignPreview,
           lane:
-            assignNoteLanes([{ id: 'ghost', rows: 1, startWeek: assignPreview.startWeek, weeks: assignPreview.weeks }], blockers).laneById.get('ghost') ?? 0,
+            goalLaneCount +
+            (assignNoteLanes([{ id: 'ghost', rows: 1, startWeek: assignPreview.startWeek, weeks: assignPreview.weeks }], noteBlockers).laneById.get('ghost') ?? 0),
         }
       : null;
   const sprintStarts = useQuarterSprintStartWeeks();
   const rowNotes = useQuarterRowNotes(noteRow, blockers);
   const weekWidth = 100 / weeks.length;
   const toneClass = ROW_TONE_CLASS[tone];
-  const notesTop = notesTopPx ?? heightPx - QUARTER_ROW_PADDING_PX;
-  const laneCount = Math.max(rowNotes.laneCount, goalLaneCount);
+  const contentHeightPx = heightPx + barsTopPx;
+  const notesTop = notesTopPx ?? contentHeightPx - QUARTER_ROW_PADDING_PX;
   const totalHeight = Math.max(
-    heightPx,
+    contentHeightPx,
     ghost ? (ghost.lane + 1) * laneHeightPx + QUARTER_ROW_PADDING_PX * 2 : 0,
-    laneCount > 0 ? notesTop + laneCount * laneHeightPx + QUARTER_ROW_PADDING_PX : 0
+    rowNotes.laneCount > 0 ? notesTop + rowNotes.laneCount * laneHeightPx + QUARTER_ROW_PADDING_PX : 0
   );
 
   return (
     <QuarterLaneHeightProvider value={laneHeightPx}>
+    <QuarterBarsTopProvider value={barsTopPx}>
     <div
       className={`group/row flex transition-[min-height] duration-200 ${toneClass} ${sticky ? 'sticky' : ''}`}
       data-quarter-note-row={noteRow ? quarterNoteRowKey(noteRow) : undefined}
@@ -178,11 +181,11 @@ export function QuarterlyPlanRow({
         {sortRow?.level === 'task' ? (
           <>
             <span aria-hidden className="absolute inset-y-0 left-[26px] w-px bg-ds-border-subtle" />
-            <span aria-hidden className="absolute left-[26px] h-px w-2.5 bg-ds-border-subtle" style={{ top: heightPx / 2 }} />
+            <span aria-hidden className="absolute left-[26px] h-px w-2.5 bg-ds-border-subtle" style={{ top: barsTopPx + heightPx / 2 }} />
           </>
         ) : null}
-        {/* Подпись стоит напротив содержимого строки, а не посередине между ним и заметками. */}
-        <div className="flex min-w-0 flex-1 items-center" style={{ minHeight: heightPx }}>
+        {/* Подпись стоит напротив полос строки, а не посередине между ними и заметками; цели — над ней. */}
+        <div className="flex min-w-0 flex-1 items-center" style={{ marginTop: barsTopPx, minHeight: heightPx }}>
           {left}
         </div>
       </div>
@@ -267,6 +270,7 @@ export function QuarterlyPlanRow({
         })}
       </div>
     </div>
+    </QuarterBarsTopProvider>
     </QuarterLaneHeightProvider>
   );
 }

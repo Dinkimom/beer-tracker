@@ -220,6 +220,18 @@ export function useQuarterLaneHeight(): number {
   return useContext(QuarterLaneHeightContext);
 }
 
+/**
+ * Сдвиг полос строки вниз, px: верхние дорожки строки занимают цели спринтов (QG8), полосы встают под ними.
+ * В строке без целей — 0.
+ */
+const QuarterBarsTopContext = createContext<number>(0);
+
+export const QuarterBarsTopProvider = QuarterBarsTopContext.Provider;
+
+export function useQuarterBarsTop(): number {
+  return useContext(QuarterBarsTopContext);
+}
+
 export function useQuarterlyPlanBoard(): QuarterlyPlanBoardContextValue {
   const value = useContext(QuarterlyPlanBoardContext);
   if (!value) {

@@ -12,7 +12,7 @@ import { quarterNoteBoxStyle } from '../quarterlyPlanBoardModel';
 interface QuarterlyPlanGoalFlagProps {
   flag: QuarterRowGoalFlag;
   lane: number;
-  /** Где в строке начинаются дорожки заметок: флажки стоят в них же, раньше заметок. */
+  /** Где в строке начинаются дорожки: цели занимают верхние, полосы и заметки — под ними. */
   topPx: number;
 }
 

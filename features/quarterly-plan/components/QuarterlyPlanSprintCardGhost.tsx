@@ -9,7 +9,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { daySpanFields } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { sprintCardDrift } from '@/lib/quarterlyPlans/quarterlyPlanSprintCards';
 
-import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import { formatSpanRange, QUARTER_ROW_PADDING_PX } from '../quarterlyPlanBoardModel';
 
 interface QuarterlyPlanSprintCardGhostProps {
@@ -29,6 +29,7 @@ export function QuarterlyPlanSprintCardGhost({ assignments, card, epicId }: Quar
   const { t } = useI18n();
   const { dayCount, onSprintDriftClick, weeks } = useQuarterlyPlanBoard();
   const laneHeightPx = useQuarterLaneHeight();
+  const barsTopPx = useQuarterBarsTop();
   const span = sprintCardDrift({ assignments, card, weeks });
   if (!span || !card) return null;
   const label = t('quarterlyPlan.sprintDrift', {
@@ -43,7 +44,7 @@ export function QuarterlyPlanSprintCardGhost({ assignments, card, epicId }: Quar
         style={{
           height: laneHeightPx - 4,
           left: `calc(${(span.startDay / dayCount) * 100}% + 2px)`,
-          top: QUARTER_ROW_PADDING_PX + 2,
+          top: QUARTER_ROW_PADDING_PX + barsTopPx + 2,
           width: `calc(${(span.days / dayCount) * 100}% - 4px)`,
           // Под полосами: полоса плана — главное, контур виден там, где они не совпали.
           zIndex: ZIndex.contentInteractive - 1,

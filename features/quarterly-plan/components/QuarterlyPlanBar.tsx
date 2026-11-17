@@ -10,7 +10,7 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { assignmentPhase, assignmentSpanFields, daySpanFields, daySpanOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import {
   formatSpanRange,
   QUARTER_BAR_LOOK_BY_LEVEL,
@@ -127,6 +127,7 @@ export function QuarterlyPlanBar({
   const span = daySpanFields(toDays(steps));
   /** Дорожка строки: у эпика она выше, чем у задачи, у направления — ещё выше; полоса занимает её целиком. */
   const laneHeightPx = useQuarterLaneHeight();
+  const barsTopPx = useQuarterBarsTop();
   const marks = barDayMarks(
     { ...assignment, ...span },
     absenceByMember.get(assignment.memberId),
@@ -158,7 +159,7 @@ export function QuarterlyPlanBar({
       style={{
         height: laneHeightPx - 4,
         left: `calc(${(span.startDay / dayCount) * 100}% + ${BAR_GAP_PX}px)`,
-        top: QUARTER_ROW_PADDING_PX + lane * laneHeightPx + 2,
+        top: QUARTER_ROW_PADDING_PX + barsTopPx + lane * laneHeightPx + 2,
         width: `calc(${(span.days / dayCount) * 100}% - ${BAR_GAP_PX * 2}px)`,
         zIndex: drag ? ZIndex.stickyInContent - 1 : ZIndex.contentInteractive + Number(draftPending),
       }}
