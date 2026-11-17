@@ -2,14 +2,12 @@
 
 import type { PlanningGanttTab, SettingsPlanningTabProps } from './SettingsPlanningTab.types';
 import type { PlanningPhaseCardColorScheme, SwimlaneLinksIdleMode } from '@/hooks/useLocalStorage';
-import type { TaskCardBoard } from '@/lib/taskCard/taskCardSlots';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { Button } from '@/components/Button';
 import { CustomSelect } from '@/components/CustomSelect';
 import { useI18n } from '@/contexts/LanguageContext';
-import { TaskCardDisplayDialog } from '@/features/task/components/TaskCard/slots/TaskCardDisplayDialog';
 import {
   usePlanningPhaseCardColorSchemeStorage,
   useSwimlaneLinksIdleModeStorage,
@@ -20,8 +18,6 @@ import { Toggle } from '../components/Toggle';
 export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
   const [phaseCardColorScheme, setPhaseCardColorScheme] = usePlanningPhaseCardColorSchemeStorage();
   const [linksIdleMode, setLinksIdleMode] = useSwimlaneLinksIdleModeStorage();
-  const [cardDisplayOpen, setCardDisplayOpen] = useState(false);
-  const [cardDisplayBoard, setCardDisplayBoard] = useState<TaskCardBoard>('swimlane');
   const { t } = useI18n();
   const ganttTabs = useMemo(
     () =>
@@ -35,6 +31,7 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
     ganttTab,
     kanbanGroupBy,
     linksDimOnHover,
+    onOpenCardDisplay,
     setGanttTab,
     setKanbanGroupBy,
     setLinksDimOnHover,
@@ -150,10 +147,7 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setCardDisplayBoard('swimlane');
-                setCardDisplayOpen(true);
-              }}
+              onClick={() => onOpenCardDisplay('swimlane')}
             >
               {t('settings.planningTab.cardSlots.open')}
             </Button>
@@ -193,24 +187,13 @@ export function SettingsPlanningTab(props: SettingsPlanningTabProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setCardDisplayBoard('kanban');
-                setCardDisplayOpen(true);
-              }}
+              onClick={() => onOpenCardDisplay('kanban')}
             >
               {t('settings.planningTab.cardSlots.open')}
             </Button>
           </div>
         </section>
       )}
-      <TaskCardDisplayDialog
-        board={cardDisplayBoard}
-        nested
-        open={cardDisplayOpen}
-        onClose={() => {
-          setCardDisplayOpen(false);
-        }}
-      />
     </div>
   );
 }

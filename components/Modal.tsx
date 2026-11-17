@@ -8,6 +8,11 @@ import { OVERLAY_BACKDROP_ENTER, OVERLAY_CENTERED_DIALOG_ANIMATION } from '@/com
 import { ZIndex } from '@/constants';
 
 interface ModalProps {
+  /**
+   * Окно со своей раскладкой (вкладки, сменные экраны): содержимое занимает панель целиком и само рисует
+   * шапку и прокрутку; `title` остаётся для скринридера. Обычному окну не нужно.
+   */
+  bare?: boolean;
   children: ReactNode;
   /** Размер окна: классы Tailwind (`max-w-xl`, `max-h-[80vh]`). */
   className?: string;
@@ -27,6 +32,7 @@ interface ModalProps {
  * Подтверждение действия — `useConfirmDialog`, не это окно.
  */
 export function Modal({
+  bare = false,
   children,
   className = 'max-w-md',
   closeOnBackdrop = true,
@@ -44,28 +50,37 @@ export function Modal({
         </div>
         <Dialog.Content
           {...(description ? {} : { 'aria-describedby': undefined })}
-          className={`fixed left-1/2 top-1/2 flex max-h-[90vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg bg-white shadow-xl dark:bg-gray-800 ${OVERLAY_CENTERED_DIALOG_ANIMATION} ${className}`}
+          className={`fixed left-1/2 top-1/2 flex max-h-[90vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg bg-white shadow-xl dark:bg-gray-800 ${OVERLAY_CENTERED_DIALOG_ANIMATION} ${className}`}
           style={{ zIndex: ZIndex.modal }}
           onInteractOutside={(event) => {
             if (!closeOnBackdrop) event.preventDefault();
           }}
         >
-          <div className="flex shrink-0 flex-col gap-1 px-5 pt-5">
-            <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</Dialog.Title>
-            {description ? (
-              <Dialog.Description className="text-sm text-ds-text-muted">{description}</Dialog.Description>
-            ) : null}
-          </div>
-          <div
-            className={`scrollbar-thin-custom flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pt-4 ${footer ? 'pb-4' : 'pb-5'}`}
-          >
-            {children}
-          </div>
-          {footer ? (
-            <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
-              {footer}
-            </div>
-          ) : null}
+          {bare ? (
+            <>
+              <Dialog.Title className="sr-only">{title}</Dialog.Title>
+              {children}
+            </>
+          ) : (
+            <>
+              <div className="flex shrink-0 flex-col gap-1 px-5 pt-5">
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</Dialog.Title>
+                {description ? (
+                  <Dialog.Description className="text-sm text-ds-text-muted">{description}</Dialog.Description>
+                ) : null}
+              </div>
+              <div
+                className={`scrollbar-thin-custom flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pt-4 ${footer ? 'pb-4' : 'pb-5'}`}
+              >
+                {children}
+              </div>
+              {footer ? (
+                <div className="flex shrink-0 justify-end gap-3 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
+                  {footer}
+                </div>
+              ) : null}
+            </>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
