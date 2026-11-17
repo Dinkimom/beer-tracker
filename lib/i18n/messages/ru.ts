@@ -900,6 +900,8 @@ export const ruMessages = {
       close: 'Закрыть цели',
       count: 'Цели спринта: выполнено {done} из {total}',
       flag: 'Цели спринта {sprint} по этой строке: {phase}, выполнено {done} из {total}',
+      /** Тип цели — как на доске спринта, без перевода. */
+      type: { delivery: 'Delivery', discovery: 'Discovery' },
     },
     history: {
       title: 'История версий',

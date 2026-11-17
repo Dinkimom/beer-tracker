@@ -22,7 +22,7 @@ const PILL_INSET_PX = 4;
 /**
  * Флажок целей спринта в строке плана (QG8): цели одного типа одного спринта, привязанные к строке.
  * Пилюля шириной по тексту (не шире спринта) у начала спринта — своей формы и заливки, чтобы её не путали
- * с полосами. Тип — словом, открытые цели — иконкой цели и счётчиком «выполнено/всего», все выполнены —
+ * с полосами. Тип — словом (Delivery / Discovery, как на доске спринта), открытые цели — иконкой цели и счётчиком «выполнено/всего», все выполнены —
  * зелёная с галочкой. Текст — первая цель, весь список — в подсказке. Клик открывает цели спринта (QG13).
  */
 export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFlagProps) {
@@ -31,7 +31,7 @@ export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFl
   const laneHeightPx = useQuarterLaneHeight();
   const done = flag.goals.filter((goal) => goal.done).length;
   const allDone = done === flag.goals.length;
-  const phase = t(`quarterlyPlan.phase.${flag.goalType}`);
+  const phase = t(`quarterlyPlan.goals.type.${flag.goalType}`);
   const label = t('quarterlyPlan.goals.flag', { done, phase, sprint: flag.sprint.name, total: flag.goals.length });
   const title = [label, ...flag.goals.map((goal) => `${goal.done ? '✓' : '○'} ${goal.text}`)].join('\n');
   const box = quarterNoteBoxStyle({ rows: 1, startWeek: flag.startWeek, weeks: flag.weeks }, lane, topPx, weeks.length, laneHeightPx);

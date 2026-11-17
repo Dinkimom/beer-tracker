@@ -899,6 +899,8 @@ export const enMessages = {
       close: 'Close goals',
       count: 'Sprint goals: {done} of {total} done',
       flag: 'Sprint {sprint} goals for this row: {phase}, {done} of {total} done',
+      /** Тип цели — как на доске спринта, без перевода. */
+      type: { delivery: 'Delivery', discovery: 'Discovery' },
     },
     history: {
       title: 'Version history',
