@@ -6,9 +6,9 @@ import { useCallback, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
+import { Modal } from "@/components/Modal";
 import { useI18n } from "@/contexts/LanguageContext";
 import { cardBody, cardHeader, cardShell, hCard } from "@/features/admin/adminUiTokens";
-import { AdminFormModal } from "@/features/admin/components/AdminFormModal";
 
 import { CreateOrgRoleForm, type CreateOrgRoleFormProps } from "./CreateOrgRoleForm";
 import {
@@ -58,9 +58,10 @@ export function AdminOrganizationRolesPanel({
         </div>
       </section>
 
-      <AdminFormModal
+      <Modal
         busy={form.createBusy}
-        isOpen={createOpen}
+        className="max-w-lg"
+        open={createOpen}
         title={t("admin.rolesPage.createFormTitle")}
         onClose={closeCreate}
       >
@@ -73,7 +74,7 @@ export function AdminOrganizationRolesPanel({
           }}
           onCancel={closeCreate}
         />
-      </AdminFormModal>
+      </Modal>
     </div>
   );
 }

@@ -8,10 +8,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/Button";
 import { useConfirmDialog } from "@/components/ConfirmDialog";
 import { Icon } from "@/components/Icon";
+import { Modal } from "@/components/Modal";
 import { useIssueTrackerProviderKind } from "@/contexts/IssueTrackerProviderKindContext";
 import { useI18n } from "@/contexts/LanguageContext";
 import { pageStack } from "@/features/admin/adminUiTokens";
-import { AdminFormModal } from "@/features/admin/components/AdminFormModal";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { translateIssueTrackerProviderMessage } from "@/lib/issueTrackerProvider/issueTrackerUi";
 
@@ -93,11 +93,11 @@ export function AdminTeamsPageClient({ initialTeams, isOrgAdmin, orgId }: AdminT
       />
 
       {isOrgAdmin ? (
-        <AdminFormModal
+        <Modal
           busy={page.teamFormSubmitting}
+          className="max-w-2xl"
           description={t("admin.newTeamForm.subtitle")}
-          isOpen={createOpen}
-          maxWidthClassName="max-w-2xl"
+          open={createOpen}
           title={t("admin.newTeamForm.title")}
           onClose={closeCreate}
         >
@@ -122,7 +122,7 @@ export function AdminTeamsPageClient({ initialTeams, isOrgAdmin, orgId }: AdminT
             onBoardSearchQueryChange={page.onBoardSearchQueryChange}
             onCancel={closeCreate}
           />
-        </AdminFormModal>
+        </Modal>
       ) : null}
     </div>
   );

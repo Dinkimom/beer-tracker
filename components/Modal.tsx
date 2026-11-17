@@ -13,6 +13,8 @@ interface ModalProps {
    * шапку и прокрутку; `title` остаётся для скринридера. Обычному окну не нужно.
    */
   bare?: boolean;
+  /** Идёт операция: окно не закрывается ни по Escape, ни кликом мимо. */
+  busy?: boolean;
   children: ReactNode;
   /** Размер окна: классы Tailwind (`max-w-xl`, `max-h-[80vh]`). */
   className?: string;
@@ -28,11 +30,12 @@ interface ModalProps {
 
 /**
  * Модальное окно приложения — одна оболочка на все: затемнение, заголовок с пояснением, прокручиваемое
- * содержимое и кнопки внизу. Escape закрывает окно, фокус остаётся внутри (Radix Dialog).
+ * содержимое и кнопки внизу. Escape закрывает окно (и дальше не всплывает), фокус остаётся внутри (Radix Dialog).
  * Подтверждение действия — `useConfirmDialog`, не это окно.
  */
 export function Modal({
   bare = false,
+  busy = false,
   children,
   className = 'max-w-md',
   closeOnBackdrop = true,
@@ -43,7 +46,7 @@ export function Modal({
   onClose,
 }: ModalProps) {
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
+    <Dialog.Root open={open} onOpenChange={(next) => (next || busy ? undefined : onClose())}>
       <Dialog.Portal>
         <div aria-hidden className={`fixed inset-0 ${OVERLAY_BACKDROP_ENTER}`} style={{ zIndex: ZIndex.modalBackdrop }}>
           <Dialog.Overlay className="absolute inset-0 bg-black/50 dark:bg-black/70" />
@@ -52,8 +55,13 @@ export function Modal({
           {...(description ? {} : { 'aria-describedby': undefined })}
           className={`fixed left-1/2 top-1/2 flex max-h-[90vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg bg-white shadow-xl dark:bg-gray-800 ${OVERLAY_CENTERED_DIALOG_ANIMATION} ${className}`}
           style={{ zIndex: ZIndex.modal }}
+          onEscapeKeyDown={(event) => {
+            // Escape принадлежит верхнему окну: до доски и меню под ним не доходит.
+            event.stopPropagation();
+            if (busy) event.preventDefault();
+          }}
           onInteractOutside={(event) => {
-            if (!closeOnBackdrop) event.preventDefault();
+            if (busy || !closeOnBackdrop) event.preventDefault();
           }}
         >
           {bare ? (

@@ -8,6 +8,7 @@ import { useCallback, useState } from "react";
 
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
+import { Modal } from "@/components/Modal";
 import { useI18n } from "@/contexts/LanguageContext";
 import {
   adminListShell,
@@ -18,7 +19,6 @@ import {
   hCard,
   muted,
 } from "@/features/admin/adminUiTokens";
-import { AdminFormModal } from "@/features/admin/components/AdminFormModal";
 
 import { AdminTeamMemberRow } from "./AdminTeamMemberRow";
 import { AdminTeamMembersAddForm } from "./AdminTeamMembersAddForm";
@@ -134,10 +134,11 @@ export function AdminTeamMembersSection({
           </ul>
         </>
       )}
-      <AdminFormModal
+      <Modal
         busy={addLoading}
+        className="max-w-lg"
         description={modalDescription}
-        isOpen={addOpen}
+        open={addOpen}
         title={modalTitle}
         onClose={closeAdd}
       >
@@ -165,7 +166,7 @@ export function AdminTeamMembersSection({
           }}
           onCancel={closeAdd}
         />
-      </AdminFormModal>
+      </Modal>
     </section>
   );
 }

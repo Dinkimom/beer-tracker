@@ -8,6 +8,7 @@ import { useCallback, useState } from 'react';
 import { Button } from '@/components/Button';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
+import { Modal } from '@/components/Modal';
 import { SearchInput } from '@/components/SearchInput';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
@@ -17,7 +18,6 @@ import {
   cardShell,
   muted,
 } from '@/features/admin/adminUiTokens';
-import { AdminFormModal } from '@/features/admin/components/AdminFormModal';
 import { AdminPageHeader } from '@/features/admin/components/AdminPageHeader';
 import { AdminMemberForm } from '@/features/admin/members/AdminMemberForm';
 import { AdminMemberRow } from '@/features/admin/members/AdminMemberRow';
@@ -115,9 +115,10 @@ export function AdminMembersPageClient({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">{membersListBody}</div>
       </section>
 
-      <AdminFormModal
+      <Modal
         busy={page.createSubmitting}
-        isOpen={inviteOpen}
+        className="max-w-lg"
+        open={inviteOpen}
         title={t('admin.membersPage.inviteSectionTitle')}
         onClose={closeInvite}
       >
@@ -138,11 +139,12 @@ export function AdminMembersPageClient({
             if (ok) closeInvite();
           }}
         />
-      </AdminFormModal>
+      </Modal>
 
-      <AdminFormModal
+      <Modal
         busy={editBusy}
-        isOpen={editOpen}
+        className="max-w-lg"
+        open={editOpen}
         title={t('admin.membersPage.editSectionTitle')}
         onClose={cancelEdit}
       >
@@ -160,7 +162,7 @@ export function AdminMembersPageClient({
           onChange={page.setEditValues}
           onSubmit={(event) => void submitEdit(event)}
         />
-      </AdminFormModal>
+      </Modal>
     </div>
   );
 }

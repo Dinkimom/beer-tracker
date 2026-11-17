@@ -77,6 +77,22 @@ export const DangerAction: Story = {
   },
 };
 
+/** Идёт операция (`busy`): Escape и клик мимо окно не закрывают, кнопки выключает само окно-потребитель. */
+export const Busy: Story = {
+  args: {
+    busy: true,
+    children: <p className="text-sm text-gray-700 dark:text-gray-300">Сохраняем…</p>,
+    footer: (
+      <>
+        <Button disabled variant="outline">
+          Отмена
+        </Button>
+        <Button disabled>Сохраняем…</Button>
+      </>
+    ),
+  },
+};
+
 /** Своя раскладка (`bare`): окно с вкладками или сменными экранами само рисует шапку и прокрутку. */
 export const BareWithOwnLayout: Story = {
   args: {
