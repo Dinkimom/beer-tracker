@@ -3,28 +3,16 @@
 import type { AssigneePointsStats } from '@/features/sprint/utils/assigneePointsStats';
 import type { Developer, Task, TaskPosition } from '@/types';
 import type { QuarterlyAvailability } from '@/types/quarterly';
-import type { CSSProperties } from 'react';
 
-import { useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { useMemo } from 'react';
 
-import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
-import { ZIndex } from '@/constants';
+import { AnchoredPopover } from '@/components/AnchoredPopover';
 import { useI18n } from '@/contexts/LanguageContext';
-import {
-  FLOATING_MENU_FIT_BODY,
-  FLOATING_MENU_FIT_WIDTH,
-} from '@/features/context-menu/contextMenuClasses';
+import { FLOATING_MENU_FIT_BODY, FLOATING_MENU_FIT_WIDTH } from '@/features/context-menu/contextMenuClasses';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
-import { usePopoverDismiss } from '@/hooks/usePopoverDismiss';
 
 import { AssigneePickerList } from './AssigneePickerList';
 import { buildAssigneePickerAvailabilityLines } from './buildAssigneePickerAvailabilityLines';
-
-const PICKER_MAX_HEIGHT = 280;
-const PICKER_MIN_WIDTH = 220;
-const PICKER_OFFSET = 4;
-const VIEWPORT_PADDING = 8;
 
 interface AssigneePickerProps {
   anchorRect: DOMRect;
@@ -51,83 +39,35 @@ export function AssigneePicker({
   task,
 }: AssigneePickerProps) {
   const { t } = useI18n();
-  const containerRef = useRef<HTMLDivElement>(null);
   const overlay = useDeferredOverlayClose(onClose);
-  const requestClose = overlay.requestClose;
   const developerAvailabilityById = useMemo(
     () => buildAssigneePickerAvailabilityLines({ availability, developers, sprintStartDate, t }),
     [availability, developers, sprintStartDate, t]
   );
 
-  usePopoverDismiss(requestClose, {
-    capture: true,
-    enabled: !overlay.isExiting,
-    escape: { target: 'document' },
-    event: 'mousedown',
-    refs: [containerRef],
-  });
-
-  const pickerStyle = useMemo((): CSSProperties => {
-    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 800;
-    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 600;
-    const spaceBelow = viewportHeight - anchorRect.bottom - PICKER_OFFSET - VIEWPORT_PADDING;
-    const spaceAbove = anchorRect.top - PICKER_OFFSET - VIEWPORT_PADDING;
-    const showAbove =
-      spaceBelow < PICKER_MAX_HEIGHT && spaceAbove >= Math.min(spaceBelow, PICKER_MAX_HEIGHT);
-
-    const anchorCenterX = anchorRect.left + anchorRect.width / 2;
-    let left = anchorCenterX - PICKER_MIN_WIDTH / 2;
-    if (left + PICKER_MIN_WIDTH > viewportWidth - VIEWPORT_PADDING) {
-      left = viewportWidth - PICKER_MIN_WIDTH - VIEWPORT_PADDING;
-    }
-    left = Math.max(VIEWPORT_PADDING, left);
-
-    if (showAbove) {
-      return {
-        left,
-        bottom: viewportHeight - (anchorRect.top - PICKER_OFFSET),
-        maxHeight: Math.max(100, anchorRect.top - PICKER_OFFSET - VIEWPORT_PADDING),
-        zIndex: ZIndex.modalBackdrop + 10,
-      };
-    }
-
-    return {
-      left,
-      top: anchorRect.bottom + PICKER_OFFSET,
-      zIndex: ZIndex.modalBackdrop + 10,
-    };
-  }, [anchorRect]);
-
-  const content = (
-    <>
+  return (
+    <AnchoredPopover
+      align="center"
+      anchor={anchorRect}
+      className={`max-h-[240px] overflow-auto ${FLOATING_MENU_FIT_WIDTH}`}
+      open={!overlay.isExiting}
+      sideOffset={4}
+      onDismiss={overlay.requestClose}
+    >
       <div
-        aria-hidden="true"
-        className="fixed inset-0 bg-transparent"
-        style={{ zIndex: ZIndex.modalBackdrop }}
-        onClick={requestClose}
-      />
-      <div
-        ref={containerRef}
         aria-label={t('sprintPlanner.occupancy.assigneePicker.ariaLabel')}
-        className={`fixed max-h-[240px] overflow-auto border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800 ${FLOATING_MENU_FIT_WIDTH} rounded-lg ${OVERLAY_PANEL_ENTER}`}
-        data-state={overlay.state}
+        className={FLOATING_MENU_FIT_BODY}
         role="listbox"
-        style={pickerStyle}
-        onAnimationEnd={overlay.onAnimationEnd}
       >
-        <div className={FLOATING_MENU_FIT_BODY}>
-          <AssigneePickerList
-            assigneePointsStats={assigneePointsStats}
-            developerAvailabilityById={developerAvailabilityById}
-            developers={developers}
-            selectedAssigneeId={position.assignee}
-            task={task}
-            onSelect={onSelect}
-          />
-        </div>
+        <AssigneePickerList
+          assigneePointsStats={assigneePointsStats}
+          developerAvailabilityById={developerAvailabilityById}
+          developers={developers}
+          selectedAssigneeId={position.assignee}
+          task={task}
+          onSelect={onSelect}
+        />
       </div>
-    </>
+    </AnchoredPopover>
   );
-
-  return createPortal(content, document.body);
 }

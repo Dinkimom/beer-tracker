@@ -3,6 +3,7 @@
 import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
 import type { ReactNode } from 'react';
 
+import { AnchoredPopover } from '@/components/AnchoredPopover';
 import { Icon } from '@/components/Icon';
 import {
   MENU_PANEL_PADDING,
@@ -12,8 +13,6 @@ import {
   MENU_SECTION_LABEL,
   MENU_SEPARATOR,
 } from '@/features/context-menu/contextMenuClasses';
-
-import { QuarterlyPlanAnchoredPopover } from './QuarterlyPlanAnchoredPopover';
 
 export interface QuarterlyPlanMenuRow {
   checked?: boolean;
@@ -49,7 +48,7 @@ interface QuarterlyPlanMenuProps {
 /** Меню у точки клика: выбор исполнителя, статуса или действия над полосой. */
 export function QuarterlyPlanMenu({ anchor, open = true, sections, onClose }: QuarterlyPlanMenuProps) {
   return (
-    <QuarterlyPlanAnchoredPopover
+    <AnchoredPopover
       anchor={anchor}
       className={`max-h-[60vh] min-w-[220px] overflow-y-auto ${MENU_PANEL_PADDING}`}
       open={open}
@@ -80,6 +79,6 @@ export function QuarterlyPlanMenu({ anchor, open = true, sections, onClose }: Qu
               ))}
             </div>
           ))}
-    </QuarterlyPlanAnchoredPopover>
+    </AnchoredPopover>
   );
 }

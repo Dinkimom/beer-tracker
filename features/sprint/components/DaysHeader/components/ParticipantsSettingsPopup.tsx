@@ -3,21 +3,18 @@
 import type { RegistryUserItem } from '@/lib/api/types';
 import type { Developer } from '@/types';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
+import { AnchoredPopover } from '@/components/AnchoredPopover';
 import { Button } from '@/components/Button';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
-import { OVERLAY_BACKDROP_ENTER, OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { DevelopersManagementContent } from '@/features/sidebar/components/DevelopersManagement';
 import { TeamSwimlaneSettingsItem } from '@/features/sprint/components/DaysHeader/components/TeamSwimlaneSettingsItem';
 import { UserSelector } from '@/features/sprint/components/SprintPlanner/components/UserSelector';
-import { useEscapeKey } from '@/hooks/useEscapeKey';
-import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 import {
   addTeamMemberForBoard,
   fetchTeamMembersForBoard,
@@ -60,7 +57,6 @@ export function ParticipantsSettingsPopup({
   position,
 }: ParticipantsSettingsPopupProps) {
   const { t } = useI18n();
-  const popupRef = useRef<HTMLDivElement>(null);
   const [removingDeveloperId, setRemovingDeveloperId] = useState<string | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [locallyRemovedIds, setLocallyRemovedIds] = useState<Set<string>>(new Set());
@@ -143,178 +139,151 @@ export function ParticipantsSettingsPopup({
     }
   };
 
-  // Закрываем попап по Escape (клик снаружи обрабатывает overlay)
-  useEscapeKey(
-    () => {
-      if (!removingDeveloperId) onClose();
-    },
-    { enabled: isOpen, target: 'document' }
-  );
-
-  const overlay = useOverlayPresence(isOpen);
-  if (!overlay.mounted) return null;
-
-  const popupContent = (
-    <>
-      {/* Overlay */}
-      <div
-        className={`fixed inset-0 bg-transparent ${OVERLAY_BACKDROP_ENTER}`}
-        data-state={overlay.state}
-        style={{ zIndex: ZIndex.contextMenu }}
-        onAnimationEnd={overlay.onAnimationEnd}
-        onClick={() => {
-          if (!removingDeveloperId) onClose();
-        }}
-      />
-
-      {/* Popup — выше оверлея и остального контента */}
-      <div
-        ref={popupRef}
-        className={`fixed flex max-h-[70vh] w-[480px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800 ${OVERLAY_PANEL_ENTER}`}
-        data-state={overlay.state}
-        style={{
-          zIndex: ZIndex.popupContent,
-          top: `${position.top}px`,
-          left: `${position.left}px`,
-        }}
-      >
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-              {t('sprintPlanner.participants.addTitle')}
-            </h3>
-            <HeaderIconButton
-              aria-label={t('common.close')}
-              className="!h-6 !w-6"
-              disabled={Boolean(removingDeveloperId)}
-              type="button"
-              onClick={onClose}
-            >
-              <Icon className="h-4 w-4 text-gray-500 dark:text-gray-400" name="x" />
-            </HeaderIconButton>
-          </div>
-          {removeError && (
-            <p className="mt-2 text-xs text-red-600 dark:text-red-400">{removeError}</p>
-          )}
-          <div className="mt-3 min-w-0">
-            <div className="flex min-w-0 items-center gap-2">
-              <UserSelector
-                allowClear
-                className="min-w-0 flex-1"
-                menuZIndex={ZIndex.popupContent + 1}
-                placeholder={t('sprintPlanner.participants.selectPlaceholder')}
-                searchFn={searchRegistry}
-                selectedPreview={selectedRegistryUser}
-                value={selectedStaffUid}
-                onChange={(staffUid, user) => {
-                  setSelectedStaffUid(staffUid);
-                  setSelectedRegistryUser(user ?? null);
-                }}
-              />
-              <Button
-                className="shrink-0 whitespace-nowrap"
-                disabled={!canAddCandidate}
-                type="button"
-                variant="primary"
-                onClick={() => void handleAddCandidate()}
-              >
-                {isAdding
-                  ? t('sprintPlanner.participants.adding')
-                  : t('sprintPlanner.participants.addButton')}
-              </Button>
-            </div>
-          </div>
+  return (
+    <AnchoredPopover
+      anchor={{ x: position.left, y: position.top }}
+      className="flex max-h-[70vh] w-[480px] max-w-[calc(100vw-1rem)] flex-col overflow-hidden"
+      open={isOpen}
+      sideOffset={0}
+      onDismiss={() => {
+        // Пока участника удаляют (идёт подтверждение или запрос), панель не закрывается.
+        if (!removingDeveloperId) onClose();
+      }}
+    >
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {t('sprintPlanner.participants.addTitle')}
+          </h3>
+          <HeaderIconButton
+            aria-label={t('common.close')}
+            className="!h-6 !w-6"
+            disabled={Boolean(removingDeveloperId)}
+            type="button"
+            onClick={onClose}
+          >
+            <Icon className="h-4 w-4 text-gray-500 dark:text-gray-400" name="x" />
+          </HeaderIconButton>
         </div>
-
-        <div className="px-3 py-2 overflow-y-auto flex-1 min-h-0">
-          <div className="mb-1 flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-              {t('sprintPlanner.participants.listTitle')}
-            </h3>
-            <div className="flex items-center gap-1.5">
-              <button
-                className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
-                type="button"
-                onClick={developersManagement.showAllDevelopers}
-              >
-                {t('sprintPlanner.participants.showAll')}
-              </button>
-              <button
-                className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
-                type="button"
-                onClick={developersManagement.hideAllDevelopers}
-              >
-                {t('sprintPlanner.participants.hideAll')}
-              </button>
-            </div>
+        {removeError && (
+          <p className="mt-2 text-xs text-red-600 dark:text-red-400">{removeError}</p>
+        )}
+        <div className="mt-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <UserSelector
+              allowClear
+              className="min-w-0 flex-1"
+              menuZIndex={ZIndex.modalNested}
+              placeholder={t('sprintPlanner.participants.selectPlaceholder')}
+              searchFn={searchRegistry}
+              selectedPreview={selectedRegistryUser}
+              value={selectedStaffUid}
+              onChange={(staffUid, user) => {
+                setSelectedStaffUid(staffUid);
+                setSelectedRegistryUser(user ?? null);
+              }}
+            />
+            <Button
+              className="shrink-0 whitespace-nowrap"
+              disabled={!canAddCandidate}
+              type="button"
+              variant="primary"
+              onClick={() => void handleAddCandidate()}
+            >
+              {isAdding
+                ? t('sprintPlanner.participants.adding')
+                : t('sprintPlanner.participants.addButton')}
+            </Button>
           </div>
-          {developersManagement && (
-            <>
-              <div
-                className={
-                  developersInPopup.length > 0
-                    ? 'border-b border-gray-200 dark:border-gray-700'
-                    : undefined
-                }
-              >
-                <TeamSwimlaneSettingsItem
-                  isHidden={isTeamSwimlaneRowHidden(developersManagement.hiddenIds)}
-                  onToggleVisibility={() => {
-                    developersManagement.toggleDeveloperVisibility(TEAM_SWIMLANE_ASSIGNEE_ID);
-                  }}
-                />
-              </div>
-              {developersInPopup.length > 0 ? (
-                <DevelopersManagementContent
-                  developers={developersInPopup}
-                  developersManagement={developersManagementForPopup}
-                  removingDeveloperId={removingDeveloperId}
-                  onRemoveDeveloper={
-                    onRemoveParticipant
-                      ? async (developer) => {
-                          try {
-                            setRemoveError(null);
-                            setRemovingDeveloperId(developer.id);
-                            const removed = await onRemoveParticipant(
-                              developer.id,
-                              developer.name
-                            );
-                            if (!removed) {
-                              return;
-                            }
-                            setLocallyRemovedIds((prev) => {
-                              const next = new Set(prev);
-                              next.add(developer.id);
-                              return next;
-                            });
-                            if (boardId != null) {
-                              try {
-                                setRosterOverride(await fetchTeamMembersForBoard(boardId));
-                                setLocallyRemovedIds(new Set());
-                              } catch {
-                                /* оставляем локальное скрытие */
-                              }
-                            }
-                          } catch (error) {
-                            setRemoveError(
-                              error instanceof Error
-                                ? error.message
-                                : t('sprintPlanner.participants.removeFailed')
-                            );
-                          } finally {
-                            setRemovingDeveloperId(null);
-                          }
-                        }
-                      : undefined
-                  }
-                />
-              ) : null}
-            </>
-          )}
         </div>
       </div>
-    </>
-  );
 
-  return createPortal(popupContent, document.body);
+      <div className="px-3 py-2 overflow-y-auto flex-1 min-h-0">
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {t('sprintPlanner.participants.listTitle')}
+          </h3>
+          <div className="flex items-center gap-1.5">
+            <button
+              className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
+              type="button"
+              onClick={developersManagement.showAllDevelopers}
+            >
+              {t('sprintPlanner.participants.showAll')}
+            </button>
+            <button
+              className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
+              type="button"
+              onClick={developersManagement.hideAllDevelopers}
+            >
+              {t('sprintPlanner.participants.hideAll')}
+            </button>
+          </div>
+        </div>
+        {developersManagement && (
+          <>
+            <div
+              className={
+                developersInPopup.length > 0
+                  ? 'border-b border-gray-200 dark:border-gray-700'
+                  : undefined
+              }
+            >
+              <TeamSwimlaneSettingsItem
+                isHidden={isTeamSwimlaneRowHidden(developersManagement.hiddenIds)}
+                onToggleVisibility={() => {
+                  developersManagement.toggleDeveloperVisibility(TEAM_SWIMLANE_ASSIGNEE_ID);
+                }}
+              />
+            </div>
+            {developersInPopup.length > 0 ? (
+              <DevelopersManagementContent
+                developers={developersInPopup}
+                developersManagement={developersManagementForPopup}
+                removingDeveloperId={removingDeveloperId}
+                onRemoveDeveloper={
+                  onRemoveParticipant
+                    ? async (developer) => {
+                        try {
+                          setRemoveError(null);
+                          setRemovingDeveloperId(developer.id);
+                          const removed = await onRemoveParticipant(
+                            developer.id,
+                            developer.name
+                          );
+                          if (!removed) {
+                            return;
+                          }
+                          setLocallyRemovedIds((prev) => {
+                            const next = new Set(prev);
+                            next.add(developer.id);
+                            return next;
+                          });
+                          if (boardId != null) {
+                            try {
+                              setRosterOverride(await fetchTeamMembersForBoard(boardId));
+                              setLocallyRemovedIds(new Set());
+                            } catch {
+                              /* оставляем локальное скрытие */
+                            }
+                          }
+                        } catch (error) {
+                          setRemoveError(
+                            error instanceof Error
+                              ? error.message
+                              : t('sprintPlanner.participants.removeFailed')
+                          );
+                        } finally {
+                          setRemovingDeveloperId(null);
+                        }
+                      }
+                    : undefined
+                }
+              />
+            ) : null}
+          </>
+        )}
+      </div>
+    </AnchoredPopover>
+  );
 }

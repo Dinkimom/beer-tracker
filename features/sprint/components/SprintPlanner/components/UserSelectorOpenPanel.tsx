@@ -6,6 +6,7 @@ import type { CSSProperties, RefObject } from 'react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { ANCHORED_POPOVER_CHILD_ATTR } from '@/components/AnchoredPopover';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
@@ -97,6 +98,7 @@ export function UserSelectorOpenPanel({
     showResults && (!usePortal || portalRect) ? (
       <div
         ref={resultsRef}
+        {...(usePortal ? { [ANCHORED_POPOVER_CHILD_ATTR]: '' } : {})}
         className={
           usePortal
             ? 'fixed min-w-[12rem] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800'
