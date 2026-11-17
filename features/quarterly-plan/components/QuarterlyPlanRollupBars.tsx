@@ -32,9 +32,9 @@ interface QuarterlyPlanRollupBarsProps {
 }
 
 /**
- * Сводные полосы строки на роадмэпе (QZ3): по одной на фазу — общий срок проработки и поставки и аватары тех,
+ * Сводные полосы строки на уровне «Квартал» (QZ3): по одной на фазу — общий срок проработки и поставки и аватары тех,
  * кто ей занят.
- * Проработка — пунктир и бледная заливка, как у её полос на плане (QG1). Сроки и людей здесь не правят;
+ * Проработка — пунктир и бледная заливка, как у её полос на уровне «Недели» (QG1). Сроки и людей здесь не правят;
  * с инструментом «Связь» клик по полосе выбирает её источником или целью связи (QL7).
  */
 export function QuarterlyPlanRollupBars({ faded = false, rollups, rowId, statusKey }: QuarterlyPlanRollupBarsProps) {
@@ -83,7 +83,7 @@ export function QuarterlyPlanRollupBars({ faded = false, rollups, rowId, statusK
         }}
         title={[`${range} · ${phase}`, names].filter(Boolean).join('\n')}
       >
-        {/* Источник связи — синяя рамка, как у полосы-источника на плане. Отдельным слоем: у самой
+        {/* Источник связи — синяя рамка, как у полосы-источника на уровне «Недели». Отдельным слоем: у самой
             полосы-кнопки тень в фокусе гасит глобальный сброс. */}
         {linking.sourceId === barId ? (
           <span aria-hidden className="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-blue-500 dark:ring-blue-400" />

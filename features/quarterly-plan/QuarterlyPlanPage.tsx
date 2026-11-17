@@ -155,7 +155,7 @@ export function QuarterlyPlanPage() {
       }),
     [confirm, t]
   );
-  const planLinks = useQuarterlyPlanLinks({ applyEdit, confirmDelete: confirmLinkDelete, plan, roadmap: detail === 'roadmap' });
+  const planLinks = useQuarterlyPlanLinks({ applyEdit, confirmDelete: confirmLinkDelete, plan, quarterView: detail === 'quarter' });
   const absenceByMember = useMemo(
     () => buildAbsenceByMember(plan?.teams ?? [], eventsByBoard, weeks),
     [eventsByBoard, plan?.teams, weeks]
@@ -300,8 +300,8 @@ export function QuarterlyPlanPage() {
       },
       draftMarks: shownView.marks,
       draftReview: shownView.review,
-      // Роадмэп — вид для бизнеса (QZ3): без расхождений со спринтом.
-      sprintCards: detail === 'roadmap' ? {} : plan.sprintCards,
+      // Уровень «Квартал» — вид для бизнеса (QZ3): без расхождений со спринтом.
+      sprintCards: detail === 'quarter' ? {} : plan.sprintCards,
       tasksByEpic: tasksByEpic(plan.epics),
       timelineStart,
       trackerEpics: plan.trackerEpics,

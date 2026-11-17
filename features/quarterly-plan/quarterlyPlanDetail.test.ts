@@ -37,25 +37,27 @@ describe('rollupPhases (QZ3)', () => {
   });
 
   it('срок округляется до целых недель, даже если полоса задевает неделю одним днём', () => {
-    // Дни 6–10: со вторника второй недели по понедельник третьей — на роадмэпе это недели 2 и 3 целиком.
+    // Дни 6–10: со вторника второй недели по понедельник третьей — на уровне «Квартал» это недели 2 и 3 целиком.
     const day = { ...bar('a', 1, 2), days: 5, startDay: 6 };
     expect(rollupPhases([day]).rollups).toEqual([{ days: 10, lane: 0, memberIds: ['dev'], phase: 'delivery', startDay: 5 }]);
   });
 });
 
 describe('parseQuarterDetailLevel', () => {
-  it('незнакомое значение — план', () => {
-    expect(parseQuarterDetailLevel('roadmap')).toBe('roadmap');
-    expect(parseQuarterDetailLevel('zoom')).toBe('plan');
+  it('незнакомое значение — недели', () => {
+    expect(parseQuarterDetailLevel('quarter')).toBe('quarter');
+    expect(parseQuarterDetailLevel('zoom')).toBe('weeks');
+    expect(parseQuarterDetailLevel('toString')).toBe('weeks');
   });
 
-  it('прежнее имя уровня «По дням» читается как он', () => {
+  it('прежние имена уровней читаются как новые', () => {
+    expect(parseQuarterDetailLevel('roadmap')).toBe('quarter');
+    expect(parseQuarterDetailLevel('plan')).toBe('weeks');
     expect(parseQuarterDetailLevel('details')).toBe('days');
-    expect(parseQuarterDetailLevel('days')).toBe('days');
   });
 });
 
-describe('связи на роадмэпе (QL7)', () => {
+describe('связи на уровне «Квартал» (QL7)', () => {
   const epic = (id: string, parentEpicId?: string) => ({
     directionId: 'd1',
     id,

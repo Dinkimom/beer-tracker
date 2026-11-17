@@ -1,5 +1,5 @@
 /**
- * Детализация квартальной доски (docs/QUARTERLY_PLAN_RULES.md, раздел 14): три уровня — роадмэп, план, по дням.
+ * Детализация квартальной доски (docs/QUARTERLY_PLAN_RULES.md, раздел 14): три уровня — квартал, недели, дни.
  * Чистые правила уровня; состояние — `useQuarterDetail`.
  */
 
@@ -15,29 +15,35 @@ import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks
 
 import { QUARTER_WEEK_MIN_WIDTH_PX } from './quarterlyPlanBoardModel';
 
-/** Роадмэп — что и когда поставляем; план — кто на чём по неделям; по дням — как эпик идёт по дням и задачам. */
-export type QuarterDetailLevel = 'days' | 'plan' | 'roadmap';
+/** Квартал — что и когда поставляем; недели — кто на чём по неделям; дни — как эпик идёт по дням и задачам. */
+export type QuarterDetailLevel = 'days' | 'quarter' | 'weeks';
 
 /** От общего к подробному — порядок кнопок переключателя. */
-export const QUARTER_DETAIL_LEVELS: readonly QuarterDetailLevel[] = ['roadmap', 'plan', 'days'];
+export const QUARTER_DETAIL_LEVELS: readonly QuarterDetailLevel[] = ['quarter', 'weeks', 'days'];
 
-/** Разбирает сохранённый уровень; `details` — прежнее имя уровня «По дням», в браузерах оно ещё лежит. */
+/** Прежние имена уровней: в браузерах они ещё лежат сохранёнными. */
+const LEGACY_DETAIL_LEVELS = new Map<unknown, QuarterDetailLevel>([
+  ['details', 'days'],
+  ['plan', 'weeks'],
+  ['roadmap', 'quarter'],
+]);
+
+/** Разбирает сохранённый уровень; незнакомое значение — «Недели». */
 export function parseQuarterDetailLevel(value: unknown): QuarterDetailLevel {
-  if (value === 'details') return 'days';
-  return QUARTER_DETAIL_LEVELS.find((level) => level === value) ?? 'plan';
+  return QUARTER_DETAIL_LEVELS.find((level) => level === value) ?? LEGACY_DETAIL_LEVELS.get(value) ?? 'weeks';
 }
 
 /**
- * Наименьшая ширина недели (QZ2): роадмэп вписывает квартал в экран, план — как раньше, по дням неделя
+ * Наименьшая ширина недели (QZ2): уровень «Квартал» вписывает квартал в экран, «Недели» — как раньше, на «Днях» неделя
  * такая, что читается каждый день.
  */
 export const QUARTER_WEEK_MIN_WIDTH_BY_DETAIL: Record<QuarterDetailLevel, number> = {
   days: 320,
-  plan: QUARTER_WEEK_MIN_WIDTH_PX,
-  roadmap: 56,
+  quarter: 56,
+  weeks: QUARTER_WEEK_MIN_WIDTH_PX,
 };
 
-/** Сводная полоса фазы в строке роадмэпа: общий срок всех полос этой фазы и кто ей занят. */
+/** Сводная полоса фазы в строке уровня «Квартал»: общий срок всех полос этой фазы и кто ей занят. */
 export interface QuarterPhaseRollup {
   days: number;
   lane: number;
@@ -50,7 +56,7 @@ export interface QuarterPhaseRollup {
 const PHASE_ORDER: readonly QuarterlyPlanPhase[] = ['discovery', 'delivery'];
 
 /**
- * Сводные полосы строки роадмэпа (QZ3): по одной на фазу — от самого раннего начала до самого позднего конца
+ * Сводные полосы строки уровня «Квартал» (QZ3): по одной на фазу — от самого раннего начала до самого позднего конца
  * её полос, округлённый до целых недель, с людьми этой фазы. Проработка и поставка пересекаются — встают в две дорожки, идут подряд — в одну.
  */
 export function rollupPhases(assignments: readonly QuarterlyPlanAssignment[]): {
@@ -63,7 +69,7 @@ export function rollupPhases(assignments: readonly QuarterlyPlanAssignment[]): {
       .map((assignment) => ({ ...daySpanOf(assignment), memberId: assignment.memberId }))
       .sort((a, b) => a.startDay - b.startDay);
     if (own.length === 0) return [];
-    // Роадмэп считает неделями: срок округляется до целых недель, даже если полоса задевает неделю одним днём.
+    // Уровень «Квартал» считает неделями: срок округляется до целых недель, даже если полоса задевает неделю одним днём.
     const startDay = Math.floor(own[0]!.startDay / QUARTER_WORKING_DAYS_PER_WEEK) * QUARTER_WORKING_DAYS_PER_WEEK;
     const endDay = Math.max(...own.map((span) => span.startDay + span.days));
     const days = Math.ceil(endDay / QUARTER_WORKING_DAYS_PER_WEEK) * QUARTER_WORKING_DAYS_PER_WEEK - startDay;
@@ -89,14 +95,14 @@ export function rollupNoteBlockers(rollups: readonly QuarterPhaseRollup[]): Note
   }));
 }
 
-/** Сводная полоса фазы в строке роадмэпа — как цель связи: строка (эпик или направление) и фаза. */
+/** Сводная полоса фазы в строке уровня «Квартал» — как цель связи: строка (эпик или направление) и фаза. */
 export function rollupBarId(rowId: string, phase: QuarterlyPlanPhase): string {
   return `rollup:${rowId}:${phase}`;
 }
 
 type RollupLinkPlan = Pick<QuarterlyPlanContent, 'assignments' | 'epics' | 'links'>;
 
-/** В какую сводную полосу роадмэпа входит каждое назначение: полосы задач — в полосу своего эпика (QZ3). */
+/** В какую сводную полосу уровня «Квартал» входит каждое назначение: полосы задач — в полосу своего эпика (QZ3). */
 function rollupBarByAssignment(plan: RollupLinkPlan): Map<string, string> {
   const epicById = new Map(plan.epics.map((epic) => [epic.id, epic]));
   const bars = new Map<string, string>();
@@ -108,13 +114,13 @@ function rollupBarByAssignment(plan: RollupLinkPlan): Map<string, string> {
   return bars;
 }
 
-/** Связь между сводными полосами роадмэпа: за ней — связи назначений `linkIds` этих двух полос. */
+/** Связь между сводными полосами уровня «Квартал»: за ней — связи назначений `linkIds` этих двух полос. */
 interface QuarterRollupLink extends QuarterlyPlanLink {
   linkIds: string[];
 }
 
 /**
- * Связи плана, как их видит роадмэп (QL7): связь назначений — это связь сводных полос, в которые они
+ * Связи плана, как их видит уровень «Квартал» (QL7): связь назначений — это связь сводных полос, в которые они
  * входят; несколько связей между одной парой полос — одна стрелка. Связь внутри одной полосы не видна.
  */
 export function rollupLinks(plan: RollupLinkPlan): QuarterRollupLink[] {
@@ -133,7 +139,7 @@ export function rollupLinks(plan: RollupLinkPlan): QuarterRollupLink[] {
 }
 
 /**
- * Концы связи, поставленной на роадмэпе между сводными полосами (QL7): блокирует та, что стоит раньше,
+ * Концы связи, поставленной на уровне «Квартал» между сводными полосами (QL7): блокирует та, что стоит раньше,
  * сроки пересекаются — та, что выбрали первой (как QL4). В план связь ложится между назначениями:
  * от того, что в блокирующей полосе заканчивается последним, к тому, что в зависимой начинается первым.
  */

@@ -27,16 +27,16 @@ export function QuarterlyPlanEpicGroup({ epic }: QuarterlyPlanEpicGroupProps) {
   const tasks = hideDone ? allTasks.filter((task) => !isEpicDone(task, trackerEpics)) : allTasks;
   const adding = draft?.kind === 'newEpic' && draft.parentEpicId === epic.id ? draft : null;
   // Новая задача видна и в свёрнутом эпике: иначе поле ввода некуда показать.
-  // На роадмэпе задач нет (QZ3): эпик показывает общий срок вместе с ними.
-  const roadmap = detail === 'roadmap';
-  const expanded = !roadmap && (expandedEpicIds.has(epic.id) || adding !== null);
+  // На уровне «Квартал» задач нет (QZ3): эпик показывает общий срок вместе с ними.
+  const quarterView = detail === 'quarter';
+  const expanded = !quarterView && (expandedEpicIds.has(epic.id) || adding !== null);
   const input = <QuarterlyPlanInputRow level="task" placeholder={t('quarterlyPlan.addTaskPlaceholder')} />;
 
   return (
     <>
       <QuarterlyPlanEpicRow
         epic={epic}
-        tasks={roadmap ? undefined : { count: allTasks.length, expanded, onToggle: () => onToggleEpic(epic.id) }}
+        tasks={quarterView ? undefined : { count: allTasks.length, expanded, onToggle: () => onToggleEpic(epic.id) }}
       />
       {expanded
         ? tasks.map((task) => (
@@ -46,7 +46,7 @@ export function QuarterlyPlanEpicGroup({ epic }: QuarterlyPlanEpicGroupProps) {
             </Fragment>
           ))
         : null}
-      {adding && !roadmap && !tasks.some((task) => task.id === adding.afterId) ? input : null}
+      {adding && !quarterView && !tasks.some((task) => task.id === adding.afterId) ? input : null}
     </>
   );
 }

@@ -11,8 +11,8 @@ import { useQuarterDetailLevelStorage } from '@/hooks/useLocalStorage';
 import { parseQuarterDetailLevel } from './quarterlyPlanDetail';
 
 /**
- * Уровень детализации доски (QZ1), запоминается в браузере. Переход в «По дням» раскрывает задачи всех эпиков,
- * выход из них — сворачивает: на «Плане» доска снова компактная, а стрелки эпиков работают на обоих уровнях.
+ * Уровень детализации доски (QZ1), запоминается в браузере. Переход в «Дни» раскрывает задачи всех эпиков,
+ * выход из них — сворачивает: на «Неделях» доска снова компактная, а стрелки эпиков работают на обоих уровнях.
  */
 export function useQuarterDetail(
   epics: readonly QuarterlyPlanEpic[] | undefined,

@@ -68,7 +68,7 @@ export function QuarterlyPlanBoard({
         .filter((link) => violatedBlockers.get(link.toId)?.some((blocker) => blocker.id === link.fromId))
         .map((link) => link.id)
     );
-    // Стрелка роадмэпа нарушена, если нарушена хоть одна связь назначений за ней (QL7).
+    // Стрелка уровня «Квартал» нарушена, если нарушена хоть одна связь назначений за ней (QL7).
     return new Set(
       shownLinks.filter((link) => (link.linkIds ?? [link.id]).some((id) => violated.has(id))).map((link) => link.id)
     );

@@ -73,15 +73,15 @@ const LEFT_CELL_TOP_LINE: Record<QuarterlyPlanRowTone, string | undefined> = {
 /** Две строки шапки и её нижняя линия. */
 const STICKY_TOP_PX = QUARTER_HEADER_ROW_PX * 2 + 1;
 
-/** Сетка дней в строке: на уровне «По дням» видна всегда и слабее недельной, на остальных — только пока полосу тянут. */
+/** Сетка дней в строке: на уровне «Дни» видна всегда и слабее недельной, на остальных — только пока полосу тянут. */
 const DAY_GRID_ON_DRAG = {
   className: "opacity-0 transition-opacity duration-200 group-has-[[data-quarter-day-drag='1']]/track:opacity-100",
   line: QUARTER_WEEK_LINE,
 };
 const DAY_GRID_BY_DETAIL: Record<QuarterDetailLevel, { className: string; line: string }> = {
   days: { className: '', line: QUARTER_DAY_LINE },
-  plan: DAY_GRID_ON_DRAG,
-  roadmap: DAY_GRID_ON_DRAG,
+  quarter: DAY_GRID_ON_DRAG,
+  weeks: DAY_GRID_ON_DRAG,
 };
 
 interface QuarterlyPlanRowProps {
@@ -216,7 +216,7 @@ export function QuarterlyPlanRow({
       >
         {/* Сетка дней — как части дня на свимлейне: в покое её нет, она проявляется в строке, где полосу
             или плашку тянут (`data-quarter-day-drag="1"` — шаг жеста в днях), и показывает, куда та встанет.
-            На уровне «По дням» дни размечены всегда, линией слабее недельной (QZ2). */}
+            На уровне «Дни» дни размечены всегда, линией слабее недельной (QZ2). */}
         {tone === 'team' ? null : (
           <div
             aria-hidden

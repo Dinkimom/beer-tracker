@@ -47,8 +47,8 @@ export function QuarterlyPlanDirectionSection({
   /** Свои полосы видны, пока направление раскрыто; свёрнутое сводит их в общий срок. */
   const shownAssignments = collapsed ? [] : ownAssignments;
   const bars = layoutRowBars(shownAssignments);
-  // Роадмэп (QZ3): свои полосы направления — общим сроком фаз, без людей; строка только для просмотра.
-  const rollup = detail === 'roadmap' ? rollupPhases(shownAssignments) : null;
+  // Уровень «Квартал» (QZ3): свои полосы направления — общим сроком фаз, без людей; строка только для просмотра.
+  const rollup = detail === 'quarter' ? rollupPhases(shownAssignments) : null;
   const own = rollup ? { ...bars, laneCount: rollup.laneCount, noteBlockers: rollupNoteBlockers(rollup.rollups) } : bars;
   const statusKey = trackerEpicOf(direction, trackerEpics)?.statusColorKey;
   const assignWeek = collapsed || rollup

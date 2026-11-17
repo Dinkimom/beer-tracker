@@ -98,7 +98,7 @@ export interface QuarterlyPlanBoardContextValue {
   currentWeek: number;
   dayCount: number;
   /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
-  /** Уровень детализации доски: роадмэп, план или по дням (QZ1). */
+  /** Уровень детализации доски: квартал, недели или дни (QZ1). */
   detail: QuarterDetailLevel;
   draft: QuarterlyPlanDraft | null;
   /** Черновик агента показан: что в нём новое, изменено и убрано (QM9); null — черновика на доске нет. */
@@ -141,7 +141,7 @@ export interface QuarterlyPlanBoardContextValue {
   noteTool: boolean;
   /** Назначения, исполнитель которых больше не в команде эпика (QI6). */
   notInTeamAssignmentIds: ReadonlySet<string>;
-  /** Связи, которые доска рисует: связи назначений, а на роадмэпе — связи сводных полос (QL7). */
+  /** Связи, которые доска рисует: связи назначений, а на уровне «Квартал» — связи сводных полос (QL7). */
   shownLinks: ReadonlyArray<QuarterlyPlanLink & { linkIds?: readonly string[] }>;
   /** Карточки привязанных задач на досках спринтов, по ключу трекера (QK8). */
   sprintCards: QuarterlyPlan['sprintCards'];

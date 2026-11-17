@@ -23,8 +23,8 @@ interface LinkingState {
 
 interface UseQuarterlyPlanLinksInput {
   plan: QuarterlyPlan | null;
-  /** Доска на роадмэпе: связывают сводные полосы, связь ложится между их назначениями (QL7). */
-  roadmap: boolean;
+  /** Доска на уровне «Квартал»: связывают сводные полосы, связь ложится между их назначениями (QL7). */
+  quarterView: boolean;
   applyEdit: (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => void;
   /** Спросить подтверждение удаления связи. */
   confirmDelete: () => Promise<boolean>;
@@ -34,14 +34,14 @@ interface UseQuarterlyPlanLinksInput {
  * Блокирующие зависимости между полосами — сценарий доски спринта. С инструментом «Связь» первый
  * клик по полосе выбирает источник, второй — цель; клик по источнику или мимо полос снимает выбор.
  * Инструмент остаётся включённым для следующей связи; Escape снимает выбор, затем выключает его.
- * На роадмэпе полосы — сводные: `sourceId` и связи доски (`shownLinks`) — про них (QL7).
+ * На уровне «Квартал» полосы — сводные: `sourceId` и связи доски (`shownLinks`) — про них (QL7).
  */
-export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan, roadmap }: UseQuarterlyPlanLinksInput) {
+export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan, quarterView }: UseQuarterlyPlanLinksInput) {
   const [state, setState] = useState<LinkingState | null>(null);
   // Сменили уровень доски — полосы другие: выбранный источник снимаем, инструмент остаётся.
-  const [stateRoadmap, setStateRoadmap] = useState(roadmap);
-  if (stateRoadmap !== roadmap) {
-    setStateRoadmap(roadmap);
+  const [stateQuarterView, setStateQuarterView] = useState(quarterView);
+  if (stateQuarterView !== quarterView) {
+    setStateQuarterView(quarterView);
     setState((current) => (current && !current.oneShot ? { oneShot: false, sourceId: null } : null));
   }
   const armed = state !== null;
@@ -54,12 +54,12 @@ export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan, roadmap 
   });
 
   const board = useMemo<LinksBoardSlice>(() => {
-    const shownLinks: LinksBoardSlice['shownLinks'] = (roadmap && plan ? rollupLinks(plan) : plan?.links) ?? [];
+    const shownLinks: LinksBoardSlice['shownLinks'] = (quarterView && plan ? rollupLinks(plan) : plan?.links) ?? [];
     const canLinkTo = (barId: string) => sourceId !== null && barId !== sourceId && !areLinked(shownLinks, sourceId, barId);
     /** Концы новой связи в плане — всегда назначения; null — такой связи не поставить. */
     const linkEnds = (targetId: string) => {
       if (!plan || sourceId === null || !canLinkTo(targetId)) return null;
-      if (roadmap) return rollupLinkEnds(plan, sourceId, targetId);
+      if (quarterView) return rollupLinkEnds(plan, sourceId, targetId);
       const source = plan.assignments.find((assignment) => assignment.id === sourceId);
       const target = plan.assignments.find((assignment) => assignment.id === targetId);
       return source && target ? orderLinkEnds(source, target) : null;
@@ -78,7 +78,7 @@ export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan, roadmap 
         setState((current) => (current ? { ...current, sourceId: barId === current.sourceId ? null : barId } : current));
       },
       onLinkDelete: (linkId) => {
-        // Стрелка роадмэпа — все связи назначений между двумя сводными полосами: уходят вместе.
+        // Стрелка уровня «Квартал» — все связи назначений между двумя сводными полосами: уходят вместе.
         const removed = new Set(shownLinks.find((link) => link.id === linkId)?.linkIds ?? [linkId]);
         confirmDelete()
           .then((confirmed) => {
@@ -89,7 +89,7 @@ export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan, roadmap 
       onLinkSourceClear: clearSource,
       shownLinks,
     };
-  }, [applyEdit, armed, confirmDelete, plan, roadmap, sourceId]);
+  }, [applyEdit, armed, confirmDelete, plan, quarterView, sourceId]);
 
   return {
     armed,

@@ -43,8 +43,8 @@ export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps)
   const level = epic.parentEpicId === undefined ? 'epic' : 'task';
   const assignments = assignmentsByEpic.get(epic.id) ?? [];
   const bars = layoutRowBars(assignments);
-  // Роадмэп (QZ3): вместо полос людей — общий срок фаз эпика вместе с его задачами; строка только для просмотра.
-  const rollup = detail === 'roadmap' ? rollupPhases(assignmentsByEpicTree.get(epic.id) ?? []) : null;
+  // Уровень «Квартал» (QZ3): вместо полос людей — общий срок фаз эпика вместе с его задачами; строка только для просмотра.
+  const rollup = detail === 'quarter' ? rollupPhases(assignmentsByEpicTree.get(epic.id) ?? []) : null;
   const { laneById, occupiedDays } = bars;
   const laneCount = rollup?.laneCount ?? bars.laneCount;
   const noteBlockers = rollup ? rollupNoteBlockers(rollup.rollups) : bars.noteBlockers;

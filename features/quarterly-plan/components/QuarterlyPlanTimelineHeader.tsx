@@ -39,14 +39,15 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
 
   return (
     <div
-      className="planner-pinned-lane-glass sticky top-0 flex border-b border-ds-border-subtle"
+      className="sticky top-0 flex border-b border-ds-border-subtle"
       data-quarter-header
       style={{ zIndex: ZIndex.stickyInContent + 2 }}
     >
-      {/* Шапка — стекло, угловая ячейка — нет: стекло внутри стекла не размывает подписи недель, они читались бы сквозь неё. */}
+      {/* Стекло — у угловой ячейки и у полосы недель по отдельности, не у всей шапки: стекло внутри стекла
+          не размыло бы подписи недель, которые проезжают под ячейкой при горизонтальной прокрутке. */}
       {/* Левая ячейка повторяет две строки шапки: квартал — напротив месяцев, подпись колонки — напротив недель. */}
       <div
-        className="sticky left-0 flex shrink-0 flex-col border-r border-ds-border-subtle bg-white dark:bg-gray-800"
+        className="sticky left-0 flex shrink-0 flex-col border-r border-ds-border-subtle planner-pinned-lane-glass"
         style={{ width: QUARTER_LEFT_COLUMN_WIDTH, zIndex: ZIndex.stickyInContent + 3 }}
       >
         <div
@@ -59,7 +60,7 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
           {columnLabel}
         </div>
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="planner-pinned-lane-glass min-w-0 flex-1">
         <div
           className="relative -left-px flex border-b border-ds-border-subtle"
           style={{ height: QUARTER_HEADER_ROW_PX }}

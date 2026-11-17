@@ -51,7 +51,7 @@ interface Measured {
 }
 
 interface QuarterlyPlanLinksLayerProps {
-  /** Связи между полосами доски: концы — значения `data-quarter-bar` (назначения или сводные полосы роадмэпа). */
+  /** Связи между полосами доски: концы — значения `data-quarter-bar` (назначения или сводные полосы уровня «Квартал»). */
   links: readonly QuarterlyPlanLink[];
   /** Зависимости с нарушенным порядком. */
   violatedLinkIds: ReadonlySet<string>;

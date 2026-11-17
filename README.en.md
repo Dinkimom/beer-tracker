@@ -221,7 +221,7 @@ Commits need a [DCO](https://developercertificate.org/) sign-off (`git commit -s
 
 [ARCHITECTURE.md](./ARCHITECTURE.md) describes the stack and layers, and [docs/media/README.md](./docs/media/README.md) lists the screenshot slots. To add your company to “Used by”, follow [docs/companies.md](./docs/companies.md).
 
-The epic planner and the old quarterly plan were removed from the product; [product steering](./docs/steering/product.md) explains why. A new quarterly plan is in development: the Quarter tab in the planner and on `/demo/planner`.
+The epic planner and the old quarterly plan were removed from the product; [product steering](./docs/steering/product.md) explains why. A new quarterly plan is in development: the Roadmap tab in the planner and on `/demo/planner`.
 
 ## License
 
