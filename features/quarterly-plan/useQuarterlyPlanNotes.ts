@@ -11,9 +11,10 @@ import type {
   QuarterlyPlanNote,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useQuarterNotesVisibleStorage } from '@/hooks/useLocalStorage';
 import { DEFAULT_STICKY_NOTE_COLOR } from '@/lib/comments/stickyNoteColor';
 import {
   addNote,
@@ -56,7 +57,17 @@ interface UseQuarterlyPlanNotesInput {
  * Цвет новой заметки — выбранный у инструмента.
  */
 export function useQuarterlyPlanNotes({ applyEdit, plan, weekCount }: UseQuarterlyPlanNotesInput) {
-  const [noteTool, setNoteTool] = useState(false);
+  const [noteTool, setNoteToolState] = useState(false);
+  /** Слой «Заметки» (QN7): скрытые заметки не рисуются и не занимают дорожки строк. */
+  const [notesVisible, setNotesVisible] = useQuarterNotesVisibleStorage();
+  // Инструмент ставит новый лист — с выключенным слоем его не было бы видно, поэтому слой включается.
+  const setNoteTool = useCallback(
+    (active: boolean) => {
+      setNoteToolState(active);
+      if (active) setNotesVisible(true);
+    },
+    [setNotesVisible]
+  );
   const [noteColor, setNoteColor] = useState<StickyNoteColor>(DEFAULT_STICKY_NOTE_COLOR);
   const [editing, setEditing] = useState<NoteEditingState | null>(null);
   const [noteDrag, setNoteDrag] = useState<QuarterlyPlanNoteDrag | null>(null);
@@ -69,12 +80,13 @@ export function useQuarterlyPlanNotes({ applyEdit, plan, weekCount }: UseQuarter
   const draft = editing?.draft ?? null;
   const notesByRow = useMemo(() => {
     const groups = new Map<string, QuarterlyPlanNote[]>();
+    if (!notesVisible) return groups;
     for (const note of draft ? [...(notes ?? []), draft] : (notes ?? [])) {
       const key = quarterNoteRowKey(note.row);
       groups.set(key, [...(groups.get(key) ?? []), note]);
     }
     return groups;
-  }, [draft, notes]);
+  }, [draft, notes, notesVisible]);
 
   const noteEditing = useMemo(
     () =>
@@ -145,7 +157,7 @@ export function useQuarterlyPlanNotes({ applyEdit, plan, weekCount }: UseQuarter
         setEditing({ color: noteColor, draft: note, expanded: false, noteId: note.id, value: '' });
       },
     }),
-    [applyEdit, editing, noteColor, noteDrag, noteEditing, noteTool, notes, notesByRow, weekCount]
+    [applyEdit, editing, noteColor, noteDrag, noteEditing, noteTool, notes, notesByRow, setNoteTool, weekCount]
   );
 
   /** Пропсы редактора фокуса (`TaskBarNoteFocusEditor`); null — заметка не развёрнута. */
@@ -166,5 +178,5 @@ export function useQuarterlyPlanNotes({ applyEdit, plan, weekCount }: UseQuarter
       }
     : null;
 
-  return { board, focusEditor, noteColor, noteTool, setNoteColor, setNoteTool };
+  return { board, focusEditor, noteColor, notesVisible, noteTool, setNoteColor, setNotesVisible, setNoteTool };
 }

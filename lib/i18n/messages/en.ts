@@ -802,7 +802,7 @@ export const enMessages = {
     previousQuarter: 'Previous quarter',
     nextQuarter: 'Next quarter',
     today: 'Current',
-    hideDone: 'Hide done',
+    layers: { title: 'Layers', done: 'Done epics', notes: 'Notes' },
     issues: 'Overlaps: {count}',
     issuesAway: 'Time off or sick leave: {count}',
     issuesParallel: 'More than two epics a week for one person: {count}',

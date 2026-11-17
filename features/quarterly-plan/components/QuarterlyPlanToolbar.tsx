@@ -26,8 +26,14 @@ import { SWIMLANE_PLACEMENT_TOOLBAR_INSET_PX } from '@/features/sprint/component
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { shiftQuarter } from '@/lib/quarterlyPlans/quarterWeeks';
 
+import { QuarterlyPlanLayersButton } from './QuarterlyPlanLayersButton';
+
 const PILL_CLASS = 'h-8 min-h-0 shrink-0 gap-1.5 whitespace-nowrap !rounded-lg !px-2.5 !py-0 text-sm shadow-none';
 const DIVIDER_CLASS = 'mx-1 h-5 w-px shrink-0 bg-black/10 dark:bg-white/15';
+/** Квадратная кнопка-иконка тулбара — слои, история; как кнопка слоёв на доске спринта. */
+const ICON_BUTTON_CLASS = '!h-8 !w-8 !min-h-0 !min-w-0 !gap-0 !rounded-lg !px-0 !py-0 shadow-none';
+/** Сигнал плана (расхождения, пересечения): меньше инструментов, один размер у всех. */
+const SIGNAL_CLASS = `${PILL_CLASS} !text-xs !font-medium`;
 
 interface QuarterlyPlanToolbarProps {
   /** Кнопка агента (та же, что на доске спринта); null — агента нет (не подключён MCP) и сессий по кварталу тоже. */
@@ -50,6 +56,8 @@ interface QuarterlyPlanToolbarProps {
   linkTool: boolean;
   /** Цвет листа, которым инструмент «Заметка» поставит следующую заметку. */
   noteColor: StickyNoteColor;
+  /** Слой «Заметки»: показаны ли листы заметок на доске. */
+  notesVisible: boolean;
   /** Включён инструмент «Заметка»: следующий клик по неделе ставит заметку. */
   noteTool: boolean;
   quarterRef: QuarterRef;
@@ -60,14 +68,15 @@ interface QuarterlyPlanToolbarProps {
   onLinkToolChange: (active: boolean) => void;
   onNextIssue: () => void;
   onNoteColorChange: (color: StickyNoteColor) => void;
+  onNotesVisibleChange: (visible: boolean) => void;
   onNoteToolChange: (active: boolean) => void;
   onQuarterChange: (ref: QuarterRef) => void;
   onToday: () => void;
 }
 
 /**
- * Остров поверх доски, как тулбар размещения на доске спринта: квартал, фильтр готовых
- * и счётчик пересечений. Сам остров кликабелен, полоса вокруг него пропускает клики к доске.
+ * Остров поверх доски, как тулбар размещения на доске спринта. Группы через разделители: квартал | инструменты
+ * (связь, заметка) | вид (слои, история) | сигналы (расхождения, пересечения — только когда есть) | агент. Сам остров кликабелен, полоса вокруг него пропускает клики к доске.
  * Счётчик — кнопка: ведёт к следующей проблемной полосе; в подсказке — разбивка по причинам.
  */
 export function QuarterlyPlanToolbar({
@@ -79,12 +88,14 @@ export function QuarterlyPlanToolbar({
   linkTool,
   noteColor,
   noteTool,
+  notesVisible,
   quarterRef,
   onHideDoneChange,
   onLinkToolChange,
   onNextIssue,
   onNoteColorChange,
   onNoteToolChange,
+  onNotesVisibleChange,
   onQuarterChange,
   onToday,
 }: QuarterlyPlanToolbarProps) {
@@ -155,51 +166,61 @@ export function QuarterlyPlanToolbar({
             />
           ) : null}
         </div>
+        <span aria-hidden className={DIVIDER_CLASS} />
+        {/* Вид доски: что показывать и какую версию плана. */}
+        <QuarterlyPlanLayersButton
+          hideDone={hideDone}
+          notesVisible={notesVisible}
+          onHideDoneChange={onHideDoneChange}
+          onNotesVisibleChange={onNotesVisibleChange}
+        />
         <Button
-          aria-pressed={hideDone}
-          className={pill(hideDone)}
+          aria-label={t('quarterlyPlan.history.open')}
+          aria-pressed={history.open}
+          className={`${ICON_BUTTON_CLASS} ${history.open ? FLOATING_TOOLBAR_ITEM_ON : FLOATING_TOOLBAR_ITEM_IDLE}`}
+          title={t('quarterlyPlan.history.open')}
           variant="ghost"
-          onClick={() => onHideDoneChange(!hideDone)}
+          onClick={history.onToggle}
         >
-          <Icon className="h-4 w-4" name={hideDone ? 'eye-off' : 'eye'} />
-          {t('quarterlyPlan.hideDone')}
+          <Icon className="h-4 w-4" name="clock" />
         </Button>
+        {/* Сигналы плана — только когда есть что показать: расхождения со спринтом и пересечения. */}
+        {sprintSync.count > 0 || issueCounts.total > 0 ? <span aria-hidden className={DIVIDER_CLASS} /> : null}
         {sprintSync.count > 0 ? (
-          <Button className={pill(false)} title={t('quarterlyPlan.sync.title')} variant="ghost" onClick={sprintSync.onOpen}>
-            <Icon className="h-4 w-4" name="refresh" />
+          <Button
+            className={`${SIGNAL_CLASS} ${FLOATING_TOOLBAR_ITEM_IDLE}`}
+            title={t('quarterlyPlan.sync.title')}
+            variant="ghost"
+            onClick={sprintSync.onOpen}
+          >
+            <Icon className="h-3.5 w-3.5" name="refresh" />
             {t('quarterlyPlan.sync.open', { count: sprintSync.count })}
           </Button>
         ) : null}
-        <HeaderIconButton aria-pressed={history.open} title={t('quarterlyPlan.history.open')} onClick={history.onToggle}>
-          <Icon className="h-4 w-4" name="clock" />
-        </HeaderIconButton>
         {issueCounts.total > 0 ? (
-          <>
-            <span aria-hidden className={DIVIDER_CLASS} />
-            <TextTooltip
-              content={
-                <div className="flex flex-col gap-1">
-                  <span>{t('quarterlyPlan.issuesAway', { count: issueCounts.away })}</span>
-                  <span>{t('quarterlyPlan.issuesParallel', { count: issueCounts.parallel })}</span>
-                  <span>{t('quarterlyPlan.issuesBlocked', { count: issueCounts.blocked })}</span>
-                  {issueCounts.notInTeam > 0 ? (
-                    <span>{t('quarterlyPlan.issuesNotInTeam', { count: issueCounts.notInTeam })}</span>
-                  ) : null}
-                  <span className="opacity-70">{t('quarterlyPlan.issuesNext')}</span>
-                </div>
-              }
-              side="top"
+          <TextTooltip
+            content={
+              <div className="flex flex-col gap-1">
+                <span>{t('quarterlyPlan.issuesAway', { count: issueCounts.away })}</span>
+                <span>{t('quarterlyPlan.issuesParallel', { count: issueCounts.parallel })}</span>
+                <span>{t('quarterlyPlan.issuesBlocked', { count: issueCounts.blocked })}</span>
+                {issueCounts.notInTeam > 0 ? (
+                  <span>{t('quarterlyPlan.issuesNotInTeam', { count: issueCounts.notInTeam })}</span>
+                ) : null}
+                <span className="opacity-70">{t('quarterlyPlan.issuesNext')}</span>
+              </div>
+            }
+            side="top"
+          >
+            <Button
+              className={`${SIGNAL_CLASS} !text-amber-700 hover:!bg-amber-500/10 active:!bg-amber-500/20 dark:!text-amber-300 dark:hover:!bg-amber-400/15 dark:active:!bg-amber-400/25`}
+              variant="ghost"
+              onClick={onNextIssue}
             >
-              <Button
-                className={`${PILL_CLASS} !text-xs !font-medium !text-amber-700 hover:!bg-amber-500/10 active:!bg-amber-500/20 dark:!text-amber-300 dark:hover:!bg-amber-400/15 dark:active:!bg-amber-400/25`}
-                variant="ghost"
-                onClick={onNextIssue}
-              >
-                <Icon className="h-3.5 w-3.5" name="alert-triangle" />
-                {t('quarterlyPlan.issues', { count: issueCounts.total })}
-              </Button>
-            </TextTooltip>
-          </>
+              <Icon className="h-3.5 w-3.5" name="alert-triangle" />
+              {t('quarterlyPlan.issues', { count: issueCounts.total })}
+            </Button>
+          </TextTooltip>
         ) : null}
         {agent ? (
           <SwimlanePlacementToolbarAgentButton

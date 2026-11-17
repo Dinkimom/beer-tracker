@@ -17,6 +17,7 @@ import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskBarNoteFocusEditor';
+import { useQuarterHideDoneStorage } from '@/hooks/useLocalStorage';
 import { formatLocalDateToIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import { collectQuarterlyPlanIssues, quarterTimelineStart } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import {
@@ -86,7 +87,7 @@ export function QuarterlyPlanPage() {
   const { t } = useI18n();
   const { confirm, DialogComponent } = useConfirmDialog();
   const [quarterRef, setQuarterRef] = useState<QuarterRef>(() => quarterOfDate(getPlannerNow()));
-  const [hideDone, setHideDone] = useState(false);
+  const [hideDone, setHideDone] = useQuarterHideDoneStorage();
   const [menu, setMenu] = useState<QuarterlyPlanMenuState | null>(null);
   /** Меню и превью полосы уходят с анимацией: закрытое меню ещё миг на экране. */
   const closingMenu = useClosingValue(menu);
@@ -446,6 +447,7 @@ export function QuarterlyPlanPage() {
           linkTool={planLinks.armed}
           noteColor={notes.noteColor}
           noteTool={notes.noteTool}
+          notesVisible={notes.notesVisible}
           quarterRef={quarterRef}
           sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
           onHideDoneChange={setHideDone}
@@ -459,6 +461,7 @@ export function QuarterlyPlanPage() {
             notes.setNoteTool(active);
             if (active) planLinks.setArmed(false);
           }}
+          onNotesVisibleChange={notes.setNotesVisible}
           onQuarterChange={setQuarterRef}
           onToday={() => {
             setQuarterRef(quarterOfDate(getPlannerNow()));

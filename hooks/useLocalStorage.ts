@@ -53,6 +53,16 @@ export function useQuarterLeftColumnWidthStorage(
   return useDebouncedNumericLocalStorage(STORAGE_KEYS.QUARTER_LEFT_COLUMN_WIDTH, defaultValue);
 }
 
+/** Слой «Заметки» квартального плана: показывать листы заметок на доске. */
+export function useQuarterNotesVisibleStorage(): [boolean, (value: boolean | ((prev: boolean) => boolean)) => void] {
+  return useLocalStorageBase<boolean>(STORAGE_KEYS.QUARTER_NOTES_VISIBLE, true);
+}
+
+/** Слой «Готовые эпики» квартального плана выключен: готовые строки скрыты (QB7). */
+export function useQuarterHideDoneStorage(): [boolean, (value: boolean | ((prev: boolean) => boolean)) => void] {
+  return useLocalStorageBase<boolean>(STORAGE_KEYS.QUARTER_HIDE_DONE, false);
+}
+
 /**
  * Ширина колонки фич. Если ключа ещё нет, стартует с текущей ширины колонки исполнителей.
  */

@@ -803,7 +803,7 @@ export const ruMessages = {
     previousQuarter: 'Предыдущий квартал',
     nextQuarter: 'Следующий квартал',
     today: 'Текущий',
-    hideDone: 'Скрыть готовые',
+    layers: { title: 'Слои', done: 'Готовые эпики', notes: 'Заметки' },
     issues: 'Пересечения: {count}',
     issuesAway: 'Отпуск или больничный: {count}',
     issuesParallel: 'Больше двух эпиков у человека в неделю: {count}',
