@@ -4,6 +4,7 @@ import type { InternalAxiosRequestConfig } from 'axios';
 
 import { randomUuid } from '@/lib/randomUuid';
 import { defaultRetroColumnTemplate } from '@/lib/retro/retroBoard';
+import { sprintScoreGoalsMark } from '@/lib/sprints/sprintScoreHelpers';
 
 import { buildDemoBurndownPayload } from './demoFixtureBurndown';
 import { handleDemoComments } from './demoFixtureRouterComments';
@@ -305,13 +306,36 @@ function handleFeatureLanes(path: string, method: string, body: unknown): DemoFi
   return null;
 }
 
+/**
+ * Скор демо: SP и TP — из сида, цели — из целей спринта демо (delivery и discovery), как сервер берёт их
+ * из `sprint_goals`. Иначе счётчик целей не сходился с вкладкой «Спринт» и не менялся от отметок.
+ */
+function demoScoreWithGoals(store: ReturnType<typeof getDemoFixtureStore>) {
+  const goals = [...store.goals.delivery, ...store.goals.discovery];
+  const goalsTotal = goals.length;
+  const goalsDone = goals.filter((goal) => goal.checked).length;
+  const goalsPercent = goalsTotal > 0 ? Math.round((100 * goalsDone) / goalsTotal) : 0;
+  const markGoals = sprintScoreGoalsMark(goalsPercent);
+  return {
+    ...store.score,
+    rows: store.score.rows.map((row) => ({
+      ...row,
+      goals_done: goalsDone,
+      goals_percent: goalsPercent,
+      goals_total: goalsTotal,
+      mark: row.mark - row.mark_goals + markGoals,
+      mark_goals: markGoals,
+    })),
+  };
+}
+
 function handleSprintExtras(path: string, method: string): DemoFixtureResult | null {
   const store = getDemoFixtureStore();
   if (matchSprintId(path, 'burndown') != null && method === 'get') {
     return ok(buildDemoBurndownPayload(store));
   }
   if (matchSprintId(path, 'score') != null && method === 'get') {
-    return ok(store.score);
+    return ok(demoScoreWithGoals(store));
   }
   return null;
 }

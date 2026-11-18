@@ -44,6 +44,17 @@ describe('handleDemoFixtureRequest', () => {
     expect(data.records.filter((record) => record.open)).toHaveLength(1);
   });
 
+  it('counts every sprint goal in the score and follows goal checks', () => {
+    const score = () =>
+      (handleDemoFixtureRequest(cfg('get', `/sprints/${DEMO_SPRINT_ID}/score`)).data as {
+        rows: Array<{ goals_done: number; goals_percent: number; goals_total: number }>;
+      }).rows[0];
+    expect(score()).toMatchObject({ goals_done: 1, goals_percent: 25, goals_total: 4 });
+
+    handleDemoFixtureRequest(cfg('patch', '/sprint-goals/goal-del-1', { data: { checked: true } }));
+    expect(score()).toMatchObject({ goals_done: 2, goals_percent: 50, goals_total: 4 });
+  });
+
   it('finds people outside the board team and adds the picked one to the team', () => {
     const search = (q: string) =>
       (

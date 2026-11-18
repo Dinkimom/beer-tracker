@@ -145,6 +145,14 @@ function scoreTpDropPercent(dropPercent: number): number {
   return 1;
 }
 
+/** Цели → до 2 баллов: ≥ 60% → 2, ≥ 30% → 1 (R3). */
+export function sprintScoreGoalsMark(goalsPercent: number): number {
+  return scoreAtLeast(goalsPercent, [
+    { min: 60, score: 2 },
+    { min: 30, score: 1 },
+  ]);
+}
+
 function markEmojiForScore(mark: number): string {
   if (mark > 3) {
     return '🟢';
@@ -174,10 +182,7 @@ function buildSprintScoreRow(
   const spDonePercent = spTotal > 0 ? Math.round((100 * spDone) / spTotal) : 0;
   const tpDonePercent = qaTotal > 0 ? Math.round((100 * qaDone) / qaTotal) : 0;
 
-  const markGoals = scoreAtLeast(goalsPercent, [
-    { min: 60, score: 2 },
-    { min: 30, score: 1 },
-  ]);
+  const markGoals = sprintScoreGoalsMark(goalsPercent);
   const markSp = scoreSpDropPercent(spDrop);
   const markTp = scoreTpDropPercent(tpDrop);
   const mark = Math.min(SPRINT_SCORE_MAX_MARK, markGoals + markSp + markTp);
