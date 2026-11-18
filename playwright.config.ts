@@ -34,6 +34,8 @@ export default defineConfig({
     { name: 'functional', testDir: 'e2e/functional' },
     { name: 'visual', testDir: 'e2e/visual' },
     { name: 'audit', testDir: 'e2e/audit' },
+    // Материал для скилла ui-audit, не проверка: только с E2E_TOUR=1 (pnpm e2e:tour).
+    { name: 'tour', testDir: 'e2e/tour' },
   ],
   reporter: [
     [isCi ? 'github' : 'list'],

@@ -43,6 +43,7 @@ UI планера можно проверять на **`/demo/planner`**, без
 | `pnpm e2e` | Функциональные e2e (Playwright) на `/demo/planner` против запущенного dev-сервера |
 | `pnpm e2e:visual` | Визуальный регресс в Linux-образе Playwright (Docker); `pnpm e2e:visual:update` — переснять эталоны |
 | `pnpm e2e:audit` | Аудит интерфейса (axe, обрезка текста, перекрытия, правила кнопок) в Docker; `pnpm e2e:audit:update` — переписать список известных проблем |
+| `pnpm e2e:tour` | Кадры состояний демо (меню, окна, пустые результаты) и находки детекторов для разбора глазами — скилл `ui-audit` |
 | `pnpm e2e:affected` | Кейсы `docs/TEST_CASES.md`, задетые текущим diff, и UI-файлы без кейса |
 | `pnpm check:e2e-cases` | Сверка каталога кейсов с кодом и спеками (входит в `pnpm test`) |
 | `pnpm e2e:report` | HTML-отчёт последнего e2e-прогона |

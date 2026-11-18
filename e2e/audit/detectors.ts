@@ -12,7 +12,8 @@ import AxeBuilder from '@axe-core/playwright';
  * - `covered` — ни одна точка видимой части контрола не кликается: сверху другой элемент;
  * - `button:cursor` — кнопка или ссылка без курсора-руки (перетаскиваемому можно grab/move);
  * - `button:disabled-looks-active` — выключенная кнопка с курсором-рукой;
- * - `button:no-hover` — наведение не меняет вид кнопки (правило AGENTS.md «Кнопка интерактивна»).
+ * - `button:no-hover` — наведение не меняет вид кнопки (правило AGENTS.md «Кнопка интерактивна»);
+ * - `i18n:untranslated` — кириллица в английском интерфейсе (e2e всегда на английском): строка мимо словаря.
  */
 
 export interface Finding {
@@ -38,6 +39,7 @@ interface AuditHelpers {
   describe(el: Element): string;
   isDisabled(el: Element): boolean;
   isShown(el: Element): boolean;
+  untranslatedFinding(el: HTMLElement): Finding | null;
   visibleRect(el: Element): Rect;
 }
 
@@ -101,6 +103,18 @@ function isDisabled(el: Element): boolean {
   return el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true';
 }
 
+/** Кириллица в собственном тексте или подписи элемента. */
+function untranslatedFinding(el: HTMLElement): Finding | null {
+  const own = [...el.childNodes]
+    .filter((n) => n.nodeType === Node.TEXT_NODE)
+    .map((n) => n.textContent ?? '')
+    .join(' ');
+  const text = `${own} ${el.getAttribute('aria-label') ?? ''} ${el.getAttribute('title') ?? ''} ${el.getAttribute('placeholder') ?? ''}`;
+  const match = /[А-Яа-яЁё][А-Яа-яЁё\s,.:-]*/.exec(text);
+  if (!match || el.closest('nextjs-portal') || !window.auditHelpers.isShown(el)) return null;
+  return { detail: `«${match[0].trim().slice(0, 40)}»`, element: window.auditHelpers.describe(el), rule: 'i18n:untranslated' };
+}
+
 function clipFinding(el: HTMLElement): Finding | null {
   const { describe: name, isShown: shown } = window.auditHelpers;
   const ownText = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim());
@@ -149,7 +163,7 @@ function controlFindings(el: HTMLElement): Finding[] {
 }
 
 async function installHelpers(page: Page): Promise<void> {
-  const helpers = { clipFinding, controlFindings, describe, isDisabled, isShown, visibleRect };
+  const helpers = { clipFinding, controlFindings, describe, isDisabled, isShown, untranslatedFinding, visibleRect };
   const source = Object.entries(helpers)
     .map(([key, fn]) => `${key}: ${fn.toString()}`)
     .join(',\n');
@@ -179,11 +193,11 @@ async function axeFindings(page: Page): Promise<Finding[]> {
 
 function domFindings(page: Page): Promise<Finding[]> {
   return page.evaluate(() => {
-    const { clipFinding: clip, controlFindings: control, isShown: shown } = window.auditHelpers;
+    const { clipFinding: clip, controlFindings: control, isShown: shown, untranslatedFinding: untranslated } =
+      window.auditHelpers;
     const findings: Finding[] = [];
     for (const el of document.querySelectorAll<HTMLElement>('body *')) {
-      const finding = clip(el);
-      if (finding) findings.push(finding);
+      for (const finding of [clip(el), untranslated(el)]) if (finding) findings.push(finding);
     }
     const controls = 'button, a[href], input, select, textarea, [role=button], [role=checkbox], [role=tab], [role=link]';
     for (const el of document.querySelectorAll<HTMLElement>(controls)) {
