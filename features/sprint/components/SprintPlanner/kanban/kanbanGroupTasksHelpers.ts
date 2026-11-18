@@ -17,6 +17,31 @@ function findColumnIdForTaskStatus(
   return column?.id ?? KANBAN_UNKNOWN_STATUS_COLUMN_ID;
 }
 
+/** Без `__`: по нему `getColumnIdFromDroppable` отделяет дорожку от колонки. */
+const KANBAN_STATUS_COLUMN_ID_PREFIX = 'unmapped-status-';
+
+/**
+ * Статусы задач, для которых у доски нет колонки, — своей колонкой с названием статуса после колонок доски.
+ * Иначе такие задачи попадали в «Без статуса», будто статуса нет. Колонки считаются по всем задачам канбана,
+ * чтобы у дорожек был один набор колонок.
+ */
+export function appendKanbanUnmappedStatusColumns(columns: BoardColumn[], tasks: Task[]): BoardColumn[] {
+  const extra = new Map<string, BoardColumn>();
+  for (const task of tasks) {
+    const key = task.originalStatus?.trim() ?? '';
+    const norm = normKanbanStatusKey(key);
+    if (!norm || extra.has(norm) || findColumnIdForTaskStatus(norm, columns) !== KANBAN_UNKNOWN_STATUS_COLUMN_ID) {
+      continue;
+    }
+    extra.set(norm, {
+      display: task.originalStatusDisplay?.trim() || key,
+      id: `${KANBAN_STATUS_COLUMN_ID_PREFIX}${norm}`,
+      statusKeys: [key],
+    });
+  }
+  return extra.size > 0 ? [...columns, ...extra.values()] : columns;
+}
+
 function assignKanbanTaskToColumn(
   result: Map<string, { column: BoardColumn; tasks: Task[] }>,
   task: Task,

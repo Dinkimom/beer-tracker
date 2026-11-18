@@ -1696,7 +1696,7 @@ export const ruMessages = {
       loadingColumns: 'Загрузка колонок доски…',
       boardLoadError:
         'Не удалось загрузить настройки доски. Проверьте доступ к {trackerDative}.',
-      unknownStatus: 'Неизвестный статус',
+      unknownStatus: 'Без статуса',
       taskCountOne: '{count} задача',
       taskCountMany: '{count} задач',
       expandGroup: 'Развернуть группу',

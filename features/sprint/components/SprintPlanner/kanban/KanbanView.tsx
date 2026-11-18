@@ -28,6 +28,7 @@ import { KanbanColumnsLayout } from './KanbanColumnsLayout';
 import { KanbanColumnStatusChoiceModal } from './KanbanColumnStatusChoiceModal';
 import { parseKanbanTaskId } from './kanbanDndUtils';
 import {
+  appendKanbanUnmappedStatusColumns,
   groupKanbanTasksByColumns,
   orderKanbanGroupedColumns,
 } from './kanbanGroupTasksHelpers';
@@ -130,15 +131,20 @@ export const KanbanView = observer(function KanbanView({
     return filterTasksByAssignees(displayTasks, selectedAssigneeIds);
   }, [selectedAssigneeIds, tasks]);
 
+  const kanbanColumns = useMemo(
+    () => (board?.columns?.length ? appendKanbanUnmappedStatusColumns(board.columns, tasksForKanban) : []),
+    [board?.columns, tasksForKanban]
+  );
+
   const columnsWithTasks = useMemo(() => {
-    if (!board?.columns?.length) return [];
+    if (kanbanColumns.length === 0) return [];
     const grouped = groupKanbanTasksByColumns(
       tasksForKanban,
-      board.columns,
+      kanbanColumns,
       t('sprintPlanner.kanban.unknownStatus')
     );
-    return orderKanbanGroupedColumns(grouped, board.columns);
-  }, [board, tasksForKanban, t]);
+    return orderKanbanGroupedColumns(grouped, kanbanColumns);
+  }, [kanbanColumns, tasksForKanban, t]);
 
   const columnsWithHeaderData = useMemo(() => {
     return buildKanbanColumnsWithHeaderData(columnsWithTasks, globalNameFilter);
@@ -155,30 +161,30 @@ export const KanbanView = observer(function KanbanView({
   }, [groupByParent, board?.columns?.length, tasksForKanban]);
 
   const assigneeLanesWithColumns = useMemo(() => {
-    if (!board?.columns?.length || assigneeLanes.length === 0) return [];
+    if (kanbanColumns.length === 0 || assigneeLanes.length === 0) return [];
     return assigneeLanes.map((lane) => ({
       ...lane,
       columnsWithHeaderData: buildKanbanLaneColumnsWithHeaderData(
         lane.tasks,
-        board!.columns!,
+        kanbanColumns,
         t('sprintPlanner.kanban.unknownStatus'),
         globalNameFilter
       ),
     }));
-  }, [assigneeLanes, board, globalNameFilter, t]);
+  }, [assigneeLanes, kanbanColumns, globalNameFilter, t]);
 
   const parentLanesWithColumns = useMemo(() => {
-    if (!board?.columns?.length || parentLanes.length === 0) return [];
+    if (kanbanColumns.length === 0 || parentLanes.length === 0) return [];
     return parentLanes.map((lane) => ({
       ...lane,
       columnsWithHeaderData: buildKanbanLaneColumnsWithHeaderData(
         lane.tasks,
-        board!.columns!,
+        kanbanColumns,
         t('sprintPlanner.kanban.unknownStatus'),
         globalNameFilter
       ),
     }));
-  }, [parentLanes, board, globalNameFilter, t]);
+  }, [parentLanes, kanbanColumns, globalNameFilter, t]);
 
   const lanesWithColumns = resolveKanbanLanesWithColumns(
     hasLaneGrouping,
