@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
+import { SearchInput } from '@/components/SearchInput';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { trackerStatusMappingEmptyTitle } from '../trackerStatusMappingEmptyState';
@@ -76,12 +77,11 @@ export function TrackerStatusMappingPanel({
         <div className="mt-3 space-y-3">
           {!isEmpty ? (
             <div className="px-0.5">
-              <input
-                className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20"
+              <SearchInput
                 placeholder={t('admin.plannerIntegration.searchField')}
-                type="search"
+                size="md"
                 value={statusSearch}
-                onChange={(e) => setStatusSearch(e.target.value)}
+                onChange={setStatusSearch}
               />
             </div>
           ) : null}

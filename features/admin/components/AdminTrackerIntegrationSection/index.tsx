@@ -8,7 +8,6 @@ import {
   cardBody,
   cardHeader,
   cardShell,
-  field,
   hCard,
   label,
   muted,
@@ -177,7 +176,6 @@ export function AdminTrackerIntegrationSection({
               devEstimateFieldId={devEstimateFieldId}
               embeddedTestingOnlyJoins={embeddedTestingOnlyJoins}
               embeddedTestingOnlyRules={embeddedTestingOnlyRules}
-              fieldClass={field}
               fieldRows={fieldRows}
               fieldSelectOptions={fieldSelectOptions}
               label={label}

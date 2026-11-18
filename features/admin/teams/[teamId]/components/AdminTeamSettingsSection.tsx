@@ -3,12 +3,12 @@ import type { AdminTeamRow } from "@/features/admin/adminTeamCatalog";
 import type { FormEvent } from "react";
 
 import { Button } from "@/components/Button";
+import { Input } from "@/components/Input";
 import { useI18n } from "@/contexts/LanguageContext";
 import {
   cardBody,
   cardHeader,
   cardShell,
-  field,
   hCard,
   label,
 } from "@/features/admin/adminUiTokens";
@@ -66,8 +66,7 @@ export function AdminTeamSettingsSection({
             <label className={label} htmlFor="team-edit-title">
               {t("admin.teamSettings.nameLabel")}
             </label>
-            <input
-              className={field}
+            <Input
               id="team-edit-title"
               required
               type="text"

@@ -86,8 +86,8 @@ export function FeatureRowsSettingsPopup({
         </p>
         <div className="mt-3 flex items-center gap-2">
           <Input
-            className="!px-3 !py-1.5 text-sm"
             placeholder={t('sprintPlanner.featureLanes.addRowPlaceholder')}
+            size="sm"
             value={draftName}
             onChange={(event) => setDraftName(event.target.value)}
             onKeyDown={(event) => {

@@ -1,9 +1,10 @@
 'use client';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
-import { field, label } from '@/features/admin/adminUiTokens';
+import { label } from '@/features/admin/adminUiTokens';
 import { translateIssueTrackerProviderMessage } from '@/lib/issueTrackerProvider/issueTrackerUi';
 
 interface AdminTrackerSectionTokenFieldsProps {
@@ -69,9 +70,9 @@ export function AdminTrackerSectionTokenFields({
       </label>
       {trackerTokenEditOpen ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-2">
-          <input
+          <Input
             autoComplete="off"
-            className={`${field} min-w-0 w-full sm:flex-1`}
+            className="min-w-0 w-full sm:flex-1"
             id="tr-token"
             placeholder={t('admin.trackerSection.pasteTokenPlaceholder')}
             required
@@ -89,9 +90,8 @@ export function AdminTrackerSectionTokenFields({
           </Button>
         </div>
       ) : (
-        <input
+        <Input
           autoComplete="off"
-          className={field}
           id="tr-token"
           placeholder={t('admin.trackerSection.pasteTokenPlaceholder')}
           required={!trackerHasStoredToken}

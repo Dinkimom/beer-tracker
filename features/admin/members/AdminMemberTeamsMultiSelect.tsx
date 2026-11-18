@@ -11,6 +11,7 @@ import {
 } from '@/components/customSelectHelpers';
 import { CustomSelectTrigger } from '@/components/CustomSelectTrigger';
 import { Icon } from '@/components/Icon';
+import { Input } from '@/components/Input';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -149,11 +150,11 @@ export function AdminMemberTeamsMultiSelect({
                 }}
               >
                 <div className="shrink-0 border-b border-gray-200 px-2 py-2 dark:border-gray-600">
-                  <input
+                  <Input
                     ref={searchInputRef}
                     autoComplete="off"
-                    className="w-full rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/25 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-blue-400"
                     placeholder={t('admin.membersPage.teamsMultiSearchPlaceholder')}
+                    size="sm"
                     type="search"
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}

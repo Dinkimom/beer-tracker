@@ -3,8 +3,8 @@
 import type { RetroColumn } from '@/lib/retro/retroBoardShared';
 
 import { Icon } from '@/components/Icon';
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
-import { field } from '@/features/admin/adminUiTokens';
 import { retroColumnTitle } from '@/features/retro/components/retroUi';
 
 interface RetroTemplateColumnRowProps {
@@ -36,9 +36,9 @@ export function RetroTemplateColumnRow({
 
   return (
     <li className="flex items-center gap-2 px-5 py-3">
-      <input
+      <Input
         aria-label={t('admin.retroTemplate.columnName')}
-        className={`${field} min-w-0 flex-1`}
+        className="min-w-0 flex-1"
         value={shownTitle}
         onChange={(event) => commitTitle(event.target.value)}
       />

@@ -60,7 +60,6 @@ export function AccountWorkForm({
             {t('account.workModal.burnedSp')}
           </label>
           <Input
-            className="py-1.5 text-sm rounded-md focus:ring-2 focus:ring-blue-500"
             min={0}
             placeholder="0"
             type="number"
@@ -74,7 +73,6 @@ export function AccountWorkForm({
             {t('account.workModal.burnedTp')}
           </label>
           <Input
-            className="py-1.5 text-sm rounded-md focus:ring-2 focus:ring-blue-500"
             min={0}
             placeholder="0"
             type="number"
@@ -91,7 +89,6 @@ export function AccountWorkForm({
             {t('account.workModal.remainingSp')}
           </label>
           <Input
-            className="py-1.5 text-sm rounded-md focus:ring-2 focus:ring-blue-500"
             min={0}
             placeholder="0"
             type="number"
@@ -105,7 +102,6 @@ export function AccountWorkForm({
             {t('account.workModal.remainingTp')}
           </label>
           <Input
-            className="py-1.5 text-sm rounded-md focus:ring-2 focus:ring-blue-500"
             min={0}
             placeholder="0"
             type="number"
@@ -120,7 +116,6 @@ export function AccountWorkForm({
           {t('account.workModal.newTaskTitle')}
         </label>
         <TextArea
-          className="py-1.5 text-sm rounded-md focus:ring-2 focus:ring-blue-500"
           required
           rows={2}
           value={newTaskTitle}

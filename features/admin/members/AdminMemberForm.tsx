@@ -5,9 +5,10 @@ import type { FormEvent } from 'react';
 import { useCallback } from 'react';
 
 import { CustomSelect } from '@/components/CustomSelect';
+import { Input } from '@/components/Input';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { field, label } from '@/features/admin/adminUiTokens';
+import { label } from '@/features/admin/adminUiTokens';
 import {
   AdminMemberTeamsMultiSelect,
   type AdminMemberTeamOption,
@@ -113,8 +114,7 @@ export function AdminMemberForm({
         <label className={label} htmlFor={nameId}>
           {t('admin.membersPage.displayNameLabel')}
         </label>
-        <input
-          className={field}
+        <Input
           id={nameId}
           required
           type="text"

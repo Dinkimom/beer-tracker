@@ -24,3 +24,16 @@ export const Invalid: Story = {
     defaultValue: 'некорректно',
   },
 };
+
+/** Компактное поле: поповер, строка списка, поиск в выпадающем списке. Высота как у компактного селекта. */
+export const Small: Story = {
+  args: { placeholder: 'Поиск…', 'aria-label': 'Компактное поле', size: 'sm' },
+};
+
+export const Disabled: Story = {
+  args: { 'aria-label': 'Выключенное поле', defaultValue: 'Нельзя изменить', disabled: true },
+};
+
+export const NumberField: Story = {
+  args: { 'aria-label': 'Число', min: 0, placeholder: '0', type: 'number' },
+};

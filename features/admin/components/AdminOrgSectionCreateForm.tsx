@@ -3,8 +3,9 @@
 import type { FormEvent } from 'react';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
-import { field, label } from '@/features/admin/adminUiTokens';
+import { label } from '@/features/admin/adminUiTokens';
 
 interface AdminOrgSectionCreateFormProps {
   createLoading: boolean;
@@ -29,8 +30,7 @@ export function AdminOrgSectionCreateForm({
       <label className={label} htmlFor="org-name">
         {t('admin.orgSection.createLabel')}
       </label>
-      <input
-        className={field}
+      <Input
         id="org-name"
         placeholder={t('admin.orgSection.createPlaceholder')}
         required

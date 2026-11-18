@@ -27,7 +27,6 @@ interface TrackerEmbeddedTestingRulesPanelProps {
   allFieldSelectOptions: CustomSelectOption<string>[];
   embeddedTestingOnlyJoins: EmbeddedTestingOnlyJoin[];
   embeddedTestingOnlyRules: EmbeddedTestingOnlyRuleForm[];
-  fieldClass: string;
   fieldRows: EmbeddedRulesFieldRow[];
   mutedClass: string;
   setEmbeddedTestingOnlyJoins: Dispatch<
@@ -42,7 +41,6 @@ export function TrackerEmbeddedTestingRulesPanel({
   allFieldSelectOptions,
   embeddedTestingOnlyJoins,
   embeddedTestingOnlyRules,
-  fieldClass,
   fieldRows,
   mutedClass,
   setEmbeddedTestingOnlyJoins,
@@ -70,7 +68,6 @@ export function TrackerEmbeddedTestingRulesPanel({
               allFieldSelectOptions={allFieldSelectOptions}
               embeddedTestingOnlyJoins={embeddedTestingOnlyJoins}
               embeddedTestingOnlyRules={embeddedTestingOnlyRules}
-              fieldClass={fieldClass}
               fieldRows={fieldRows}
               idx={idx}
               setEmbeddedTestingOnlyJoins={setEmbeddedTestingOnlyJoins}

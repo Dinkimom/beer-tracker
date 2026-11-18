@@ -39,8 +39,6 @@ export const hCard = 'text-sm font-semibold text-gray-900 dark:text-gray-100';
 /** Вторичный текст (описания, подсказки); в тёмной теме чуть выше контраст для чтения. */
 export const muted = 'text-sm leading-relaxed text-gray-500 dark:text-gray-400';
 export const label = 'mb-1.5 block text-xs font-medium text-gray-500 dark:text-gray-400';
-export const field =
-  'h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-900 transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-blue-400 dark:focus:ring-blue-400/20';
 
 /** Чекбокс в формах админки: без классов в тёмной теме контроль почти не виден. */
 export const adminFormCheckbox =

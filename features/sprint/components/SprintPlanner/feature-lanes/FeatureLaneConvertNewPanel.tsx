@@ -119,8 +119,8 @@ export function FeatureLaneConvertNewPanel({
         />
         <Input
           autoFocus
-          className="!px-3 !py-1.5 text-sm"
           disabled={isSubmitting}
+          size="sm"
           value={summary}
           onChange={(event) => setSummary(event.target.value)}
           onKeyDown={(event) => {

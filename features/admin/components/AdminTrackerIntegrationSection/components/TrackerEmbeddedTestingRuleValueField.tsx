@@ -5,6 +5,7 @@ import type { EmbeddedRulesFieldRow } from './TrackerEmbeddedTestingRulesPanel';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { CustomSelect } from '@/components/CustomSelect';
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
 
 import {
@@ -15,7 +16,6 @@ import { updateRuleValueAt } from './trackerEmbeddedTestingRuleRowHelpers';
 
 interface TrackerEmbeddedTestingRuleValueFieldProps {
   field: EmbeddedRulesFieldRow | undefined;
-  fieldClass: string;
   idx: number;
   listField: boolean;
   ruleValue: string;
@@ -24,7 +24,6 @@ interface TrackerEmbeddedTestingRuleValueFieldProps {
 
 export function TrackerEmbeddedTestingRuleValueField({
   field,
-  fieldClass,
   idx,
   listField,
   ruleValue,
@@ -56,8 +55,8 @@ export function TrackerEmbeddedTestingRuleValueField({
   }
 
   return (
-    <input
-      className={`${fieldClass} !h-9`}
+    <Input
+      className="!h-9"
       inputMode={fieldRowIsNumeric(field) ? 'decimal' : 'text'}
       placeholder={
         fieldRowIsNumeric(field)

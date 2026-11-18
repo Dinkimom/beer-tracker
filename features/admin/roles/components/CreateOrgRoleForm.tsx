@@ -4,9 +4,10 @@ import type { FormEvent } from "react";
 import { useMemo } from "react";
 
 import { CustomSelect } from "@/components/CustomSelect";
+import { Input } from "@/components/Input";
 import { TextTooltip } from "@/components/TextTooltip";
 import { useI18n } from "@/contexts/LanguageContext";
-import { adminFormCheckbox, field, label } from "@/features/admin/adminUiTokens";
+import { adminFormCheckbox, label } from "@/features/admin/adminUiTokens";
 import { toSlug } from "@/lib/roles/toSlug";
 
 import { domainRoleOptions, PLATFORM_VALUES } from "../rolesPageConstants";
@@ -51,9 +52,8 @@ export function CreateOrgRoleForm({
           <label className={label} htmlFor="role-new-title">
             {t("admin.rolesPage.createTitleLabel")}
           </label>
-          <input
+          <Input
             autoFocus
-            className={field}
             id="role-new-title"
             type="text"
             value={newTitle}
@@ -71,8 +71,7 @@ export function CreateOrgRoleForm({
             Slug
           </label>
           <TextTooltip content={t("admin.rolesPage.createSlugHint")}>
-          <input
-            className={field}
+          <Input
             id="role-new-slug"
             placeholder="latin-kebab-case"
             type="text"

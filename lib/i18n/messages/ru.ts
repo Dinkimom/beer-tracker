@@ -518,8 +518,8 @@ export const ruMessages = {
       durationOneWeek: 'Одна неделя',
       durationTwoWeeks: 'Две недели',
       dateRangeLabel: 'Начало — конец',
-      endDateTitle: 'Конечная дата: {date}',
       submit: 'Создать спринт',
+      submitting: 'Создаём спринт…',
       nameCopySuffix: 'новый',
     },
     dnd: {

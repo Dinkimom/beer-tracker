@@ -3,8 +3,9 @@
 import type { FormEvent } from 'react';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
-import { field, label } from '@/features/admin/adminUiTokens';
+import { label } from '@/features/admin/adminUiTokens';
 
 interface AdminOrgSectionRenameFormProps {
   renameDraft: string;
@@ -32,8 +33,7 @@ export function AdminOrgSectionRenameForm({
         {t('admin.orgSection.renameLabel')}
       </label>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <input
-          className={field}
+        <Input
           id="org-rename"
           placeholder={t('admin.orgSection.renamePlaceholder')}
           required

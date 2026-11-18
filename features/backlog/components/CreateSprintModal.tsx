@@ -4,10 +4,10 @@ import type { SprintListItem } from '@/types/tracker';
 
 import { useState, useEffect, useId, useMemo } from 'react';
 
-import { Button } from '@/components/Button';
-import { Icon } from '@/components/Icon';
 import { Input } from '@/components/Input';
+import { IsoDatePickerField } from '@/components/IsoDatePickerField';
 import { Modal } from '@/components/Modal';
+import { ModalFormActions } from '@/components/ModalFormActions';
 import { useI18n } from '@/contexts/LanguageContext';
 
 type SprintDurationWeeks = 1 | 2;
@@ -31,12 +31,6 @@ function formatDateForInput(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
-
-function formatDateForDisplay(dateStr: string): string {
-  if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-');
-  return `${day}.${month}.${year}`;
 }
 
 function addWeeks(date: Date, weeks: number): Date {
@@ -155,21 +149,16 @@ export function CreateSprintModal({
 
   return (
     <Modal
+      busy={isSubmitting}
       footer={
-        <>
-          <Button disabled={isSubmitting} variant="outline" onClick={onClose}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            className="flex items-center justify-center gap-2"
-            disabled={!name.trim() || !startDate || isSubmitting}
-            form={formId}
-            type="submit"
-          >
-            {isSubmitting && <Icon className="w-4 h-4 animate-spin" name="spinner" />}
-            {t('backlog.createSprintModal.submit')}
-          </Button>
-        </>
+        <ModalFormActions
+          busy={isSubmitting}
+          busyLabel={t('backlog.createSprintModal.submitting')}
+          disabled={!name.trim() || !startDate}
+          formId={formId}
+          submitLabel={t('backlog.createSprintModal.submit')}
+          onCancel={onClose}
+        />
       }
       open={isOpen}
       title={t('backlog.createSprintModal.title')}
@@ -186,7 +175,6 @@ export function CreateSprintModal({
           </label>
           <Input
             autoFocus
-            className="px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             id="sprint-name"
             placeholder={t('backlog.createSprintModal.namePlaceholder')}
             type="text"
@@ -238,25 +226,13 @@ export function CreateSprintModal({
             {t('backlog.createSprintModal.dateRangeLabel')}
           </label>
           <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Input
-                className="px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+            <div className="min-w-0 flex-1">
+              <IsoDatePickerField value={startDate} onChange={setStartDate} />
             </div>
             <span className="text-gray-500 dark:text-gray-400">—</span>
-            <div className="relative flex-1">
-              <Input
-                className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed [&::-webkit-calendar-picker-indicator]:hidden"
-                readOnly
-                title={t('backlog.createSprintModal.endDateTitle', {
-                  date: formatDateForDisplay(endDate),
-                })}
-                type="date"
-                value={endDate}
-              />
+            {/* Конец считается от начала и продолжительности — поле только показывает дату. */}
+            <div className="min-w-0 flex-1">
+              <IsoDatePickerField disabled value={endDate} onChange={() => {}} />
             </div>
           </div>
         </div>

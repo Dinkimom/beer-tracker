@@ -3,10 +3,10 @@
 import type { FormEvent } from 'react';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   adminFormCheckbox,
-  field,
   hCard,
   label,
   muted,
@@ -76,8 +76,7 @@ export function AdminSyncSectionSettingsForm({
           <label className={label} htmlFor="set-int">
             {t('admin.syncPage.intervalMinutes')}
           </label>
-          <input
-            className={field}
+          <Input
             id="set-int"
             inputMode="numeric"
             type="text"
@@ -89,8 +88,7 @@ export function AdminSyncSectionSettingsForm({
           <label className={label} htmlFor="set-ov">
             {t('admin.syncPage.overlapMinutes')}
           </label>
-          <input
-            className={field}
+          <Input
             id="set-ov"
             inputMode="numeric"
             type="text"
@@ -102,8 +100,7 @@ export function AdminSyncSectionSettingsForm({
           <label className={label} htmlFor="set-max">
             {t('admin.syncPage.maxIssues')}
           </label>
-          <input
-            className={field}
+          <Input
             id="set-max"
             inputMode="numeric"
             type="text"

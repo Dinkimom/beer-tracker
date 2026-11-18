@@ -2,8 +2,9 @@ import type { DomainRole, Platform } from '@/lib/roles/catalog';
 
 import { Button } from '@/components/Button';
 import { CustomSelect, type CustomSelectOption } from '@/components/CustomSelect';
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
-import { adminFormCheckbox, field, label, muted } from '@/features/admin/adminUiTokens';
+import { adminFormCheckbox, label, muted } from '@/features/admin/adminUiTokens';
 
 import { PLATFORM_VALUES } from '../rolesPageConstants';
 
@@ -49,8 +50,7 @@ export function OrganizationRoleTableRowEdit({
               <label className={label} htmlFor={`edit-title-${slug}`}>
                 {t('admin.rolesPage.rowTitle')}
               </label>
-              <input
-                className={field}
+              <Input
                 id={`edit-title-${slug}`}
                 type="text"
                 value={editTitle}

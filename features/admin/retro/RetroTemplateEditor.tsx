@@ -8,8 +8,9 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
-import { adminListShell, cardShell, field } from '@/features/admin/adminUiTokens';
+import { adminListShell, cardShell } from '@/features/admin/adminUiTokens';
 import { RetroTemplateColumnRow } from '@/features/admin/retro/RetroTemplateColumnRow';
 import { readApiErrorMessage } from '@/lib/api/readApiError';
 import { saveAdminRetroColumnTemplate } from '@/lib/api/retroColumnTemplate';
@@ -80,9 +81,9 @@ export function RetroTemplateEditor({ initialColumns, organizationId }: RetroTem
           ))}
         </ul>
         <div className="flex items-center gap-2 border-t border-gray-200 px-5 py-4 dark:border-gray-700">
-          <input
+          <Input
             aria-label={t('admin.retroTemplate.addColumn')}
-            className={`${field} min-w-0 flex-1`}
+            className="min-w-0 flex-1"
             placeholder={t('admin.retroTemplate.columnName')}
             value={draftTitle}
             onChange={(event) => setDraftTitle(event.target.value)}

@@ -23,7 +23,7 @@ const FEATURE_LANE_RENAME_ROW_CLASS = `${FEATURE_LANE_TITLE_ROW_CLASS} min-h-7`;
 const FEATURE_LANE_RENAME_TITLE_CLASS =
   'box-border flex h-7 min-h-7 items-center border border-transparent px-1.5';
 const FEATURE_LANE_RENAME_INPUT_CLASS =
-  '!box-border !h-7 !min-h-7 !min-w-0 flex-1 !px-1.5 !py-0 text-sm';
+  '!h-7 !min-h-7 !min-w-0 flex-1 !px-1.5';
 
 function resolveFeatureLaneRowTitleClasses(variant: 'header' | 'list'): {
   keyClassName: string;
@@ -122,6 +122,7 @@ export function FeatureLaneRowTitle({
           aria-label={t('sprintPlanner.featureLanes.renameRow')}
           autoFocus
           className={FEATURE_LANE_RENAME_INPUT_CLASS}
+          size="sm"
           value={draft}
           onBlur={commitRename}
           onChange={(event) => setDraft(event.target.value)}

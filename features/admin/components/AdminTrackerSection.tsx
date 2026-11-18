@@ -4,6 +4,7 @@ import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types'
 import type { FormEvent } from 'react';
 
 import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
 import { IssueTrackerConnectionFields } from '@/components/IssueTrackerConnectionFields';
 import { useIssueTrackerProviderKind, useIssueTrackerTokenHelpUrl } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -13,7 +14,6 @@ import {
   cardBody,
   cardHeader,
   cardShell,
-  field,
   label,
   muted,
 } from '@/features/admin/adminUiTokens';
@@ -149,9 +149,8 @@ export function AdminTrackerSection({
               <label className={label} htmlFor="tr-email">
                 {t('auth.setup.jiraCloudEmailLabel')}
               </label>
-              <input
+              <Input
                 autoComplete="email"
-                className={field}
                 id="tr-email"
                 placeholder={t('auth.setup.jiraCloudEmailPlaceholder')}
                 required={!trackerHasStoredToken}
@@ -173,8 +172,7 @@ export function AdminTrackerSection({
                     'admin.trackerSection.orgIdLabel'
                   )}
                 </label>
-                <input
-                  className={field}
+                <Input
                   id="tr-org"
                   placeholder={translateIssueTrackerProviderMessage(
                     t,

@@ -47,7 +47,6 @@ interface AdminTrackerIntegrationProcessSetupPanelProps {
   devEstimateFieldId: string;
   embeddedTestingOnlyJoins: EmbeddedTestingOnlyJoin[];
   embeddedTestingOnlyRules: EmbeddedTestingOnlyRuleForm[];
-  fieldClass: string;
   fieldRows: TrackerIntegrationFieldRow[];
   fieldSelectOptions: CustomSelectOption<string>[];
   label: string;
@@ -85,7 +84,6 @@ export function AdminTrackerIntegrationProcessSetupPanel({
   devEstimateFieldId,
   embeddedTestingOnlyJoins,
   embeddedTestingOnlyRules,
-  fieldClass,
   fieldRows,
   fieldSelectOptions,
   label,
@@ -233,7 +231,6 @@ export function AdminTrackerIntegrationProcessSetupPanel({
           allFieldSelectOptions={allFieldSelectOptions}
           embeddedTestingOnlyJoins={embeddedTestingOnlyJoins}
           embeddedTestingOnlyRules={embeddedTestingOnlyRules}
-          fieldClass={fieldClass}
           fieldRows={fieldRows}
           mutedClass={muted}
           setEmbeddedTestingOnlyJoins={setEmbeddedTestingOnlyJoins}

@@ -42,7 +42,6 @@ interface TrackerEmbeddedTestingRuleRowProps {
   allFieldSelectOptions: CustomSelectOption<string>[];
   embeddedTestingOnlyJoins: EmbeddedTestingOnlyJoin[];
   embeddedTestingOnlyRules: EmbeddedTestingOnlyRuleForm[];
-  fieldClass: string;
   fieldRows: EmbeddedRulesFieldRow[];
   idx: number;
   setEmbeddedTestingOnlyJoins: Dispatch<SetStateAction<EmbeddedTestingOnlyJoin[]>>;
@@ -59,7 +58,6 @@ export function TrackerEmbeddedTestingRuleRow({
   allFieldSelectOptions,
   embeddedTestingOnlyJoins,
   embeddedTestingOnlyRules,
-  fieldClass,
   fieldRows,
   idx,
   setEmbeddedTestingOnlyJoins,
@@ -149,7 +147,6 @@ export function TrackerEmbeddedTestingRuleRow({
         <div className="w-36 shrink-0">
           <TrackerEmbeddedTestingRuleValueField
             field={field}
-            fieldClass={fieldClass}
             idx={idx}
             listField={fieldRowIsList(field)}
             ruleValue={rule.value}

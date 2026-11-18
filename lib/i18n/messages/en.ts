@@ -518,8 +518,8 @@ export const enMessages = {
       durationOneWeek: 'One week',
       durationTwoWeeks: 'Two weeks',
       dateRangeLabel: 'Start — end',
-      endDateTitle: 'End date: {date}',
       submit: 'Create sprint',
+      submitting: 'Creating sprint…',
       nameCopySuffix: 'new',
     },
     dnd: {

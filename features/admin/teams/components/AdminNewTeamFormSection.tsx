@@ -2,8 +2,9 @@ import type { CustomSelectOption } from "@/components/CustomSelect";
 import type { FormEvent } from "react";
 
 import { CustomSelect } from "@/components/CustomSelect";
+import { Input } from "@/components/Input";
 import { useI18n } from "@/contexts/LanguageContext";
-import { field, label } from "@/features/admin/adminUiTokens";
+import { label } from "@/features/admin/adminUiTokens";
 import { AdminInlineAlert } from "@/features/admin/components/AdminInlineAlert";
 
 interface AdminNewTeamFormSectionProps {
@@ -45,9 +46,8 @@ export function AdminNewTeamFormSection({
         <label className={label} htmlFor="team-title">
           {t("admin.newTeamForm.nameLabel")}
         </label>
-        <input
+        <Input
           autoFocus
-          className={field}
           id="team-title"
           placeholder={t("admin.newTeamForm.namePlaceholder")}
           required

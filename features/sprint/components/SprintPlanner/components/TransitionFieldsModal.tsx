@@ -92,8 +92,7 @@ export function TransitionFieldsModal({
         })
       : undefined;
 
-  const inputClassName =
-    'mt-1 block min-h-[38px] rounded-md px-3 py-2 text-sm placeholder-gray-500 focus:ring-blue-500';
+  const inputClassName = 'mt-1';
 
   const renderField = (field: TransitionField) =>
     renderTransitionFieldInput({

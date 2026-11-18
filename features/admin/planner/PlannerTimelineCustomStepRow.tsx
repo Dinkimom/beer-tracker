@@ -2,8 +2,8 @@
 
 import type { PlannerTimelineStep, TimeslotsPerDay } from '@/lib/plannerTimelineScale';
 
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
-import { field } from '@/features/admin/adminUiTokens';
 import {
   plannerDayLengthPlural,
   plannerSlotCenter,
@@ -84,9 +84,9 @@ export function PlannerTimelineCustomStepRow({
         </svg>
       </button>
       <div className="relative">
-        <input
+        <Input
           aria-label={t('admin.plannerTimeline.columnSp')}
-          className={`${field} pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+          className="pr-9 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           min={1}
           name={`storyPoints-${index}`}
           type="number"
