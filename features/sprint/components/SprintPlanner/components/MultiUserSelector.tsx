@@ -130,9 +130,9 @@ export function MultiUserSelector({
 
   let buttonText = resolvedPlaceholder;
   if (loadingUsers) {
-    buttonText = 'Загрузка…';
+    buttonText = t('common.loading');
   } else if (selectedIds.length > 0) {
-    buttonText = `Выбрано: ${selectedIds.length}`;
+    buttonText = t('common.userSelector.selectedCount', { count: selectedIds.length });
   }
 
   return (

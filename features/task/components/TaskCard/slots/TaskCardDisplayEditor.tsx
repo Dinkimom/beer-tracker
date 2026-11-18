@@ -45,9 +45,17 @@ export function TaskCardDisplayEditor({ board = 'swimlane' }: { board?: TaskCard
   });
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex justify-end">
+    <TaskCardDisplaySettingsPanel
+      board={board}
+      fields={fieldsQuery.data ?? []}
+      fieldsStatus={trackerFieldsStatus(
+        activeOrganizationId,
+        fieldsQuery.isError,
+        fieldsQuery.isLoading || sessionLoading
+      )}
+      hintAction={
         <Button
+          className="shrink-0"
           disabled={taskCardSlotLayoutsEqual(layout, defaultTaskCardSlotLayout(board))}
           title={t('settings.planningTab.cardSlots.resetHint')}
           variant="outline"
@@ -57,19 +65,10 @@ export function TaskCardDisplayEditor({ board = 'swimlane' }: { board?: TaskCard
         >
           {t('settings.planningTab.cardSlots.reset')}
         </Button>
-      </div>
-      <TaskCardDisplaySettingsPanel
-        board={board}
-        fields={fieldsQuery.data ?? []}
-        fieldsStatus={trackerFieldsStatus(
-          activeOrganizationId,
-          fieldsQuery.isError,
-          fieldsQuery.isLoading || sessionLoading
-        )}
-        layout={layout}
-        organizationId={activeOrganizationId}
-        onChange={commit}
-      />
-    </div>
+      }
+      layout={layout}
+      organizationId={activeOrganizationId}
+      onChange={commit}
+    />
   );
 }

@@ -18,6 +18,7 @@ export const enMessages = {
     close: 'Close',
     cancel: 'Cancel',
     confirm: 'Confirm',
+    deleting: 'Deleting…',
     confirmDialogTitle: 'Please confirm',
     settings: 'Settings',
     unknownError: 'Unknown error',
@@ -54,6 +55,7 @@ export const enMessages = {
       clearTitle: 'Clear',
       empty: 'Nothing found',
       resetSelectionAria: 'Reset selection',
+      selectedCount: 'Selected: {count}',
     },
     issueTracker: {
       name: {
@@ -1764,7 +1766,22 @@ export const enMessages = {
       submit: 'Execute transition',
       submitting: 'Saving…',
       submitError: 'Transition failed',
+      requiredMissing: 'Fill in the required fields: {fields}',
       statusPathAria: 'From {from} to {to}',
+    },
+    finishSprint: {
+      title: 'Finish sprint',
+      goalsTitle: 'Sprint goals',
+      noGoals: 'No goals',
+      transferTitle: 'Move unfinished tasks',
+      moveToLabel: 'Move to',
+      toBacklog: 'To backlog',
+      toSprint: 'To a sprint',
+      targetSprintLabel: 'Target sprint',
+      noDraftSprints: 'No draft sprints available',
+      selectSprint: 'Select a sprint',
+      submit: 'Finish sprint',
+      submitting: 'Finishing…',
     },
     occupancyRisks: {
       possibleRisks: 'Possible risks:',

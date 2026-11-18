@@ -18,6 +18,7 @@ export const ruMessages = {
     close: 'Закрыть',
     cancel: 'Отмена',
     confirm: 'Подтвердить',
+    deleting: 'Удаляем…',
     confirmDialogTitle: 'Подтверждение',
     settings: 'Настройки',
     unknownError: 'Неизвестная ошибка',
@@ -54,6 +55,7 @@ export const ruMessages = {
       clearTitle: 'Очистить',
       empty: 'Ничего не найдено',
       resetSelectionAria: 'Сбросить выбор',
+      selectedCount: 'Выбрано: {count}',
     },
     issueTracker: {
       name: {
@@ -1764,7 +1766,22 @@ export const ruMessages = {
       submit: 'Выполнить переход',
       submitting: 'Сохранение…',
       submitError: 'Ошибка при переходе',
+      requiredMissing: 'Заполните обязательные поля: {fields}',
       statusPathAria: 'Из статуса {from} в {to}',
+    },
+    finishSprint: {
+      title: 'Завершить спринт',
+      goalsTitle: 'Цели спринта',
+      noGoals: 'Цели отсутствуют',
+      transferTitle: 'Перенести незавершённые задачи',
+      moveToLabel: 'Куда переносить',
+      toBacklog: 'В бэклог',
+      toSprint: 'В спринт',
+      targetSprintLabel: 'Целевой спринт',
+      noDraftSprints: 'Нет доступных спринтов-черновиков',
+      selectSprint: 'Выберите спринт',
+      submit: 'Завершить спринт',
+      submitting: 'Завершение…',
     },
     occupancyRisks: {
       possibleRisks: 'Возможные риски:',

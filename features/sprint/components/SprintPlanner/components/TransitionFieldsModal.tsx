@@ -15,8 +15,8 @@ import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import {
   buildTransitionInitialValues,
   buildTransitionSubmitBody,
+  missingRequiredTransitionFields,
   renderTransitionFieldInput,
-  validateTransitionRequiredFields,
 } from './transitionFieldsModalHelpers';
 
 interface TransitionFieldsModalProps {
@@ -58,9 +58,9 @@ export function TransitionFieldsModal({
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      const validationError = validateTransitionRequiredFields(fields, values);
-      if (validationError) {
-        setError(validationError);
+      const missing = missingRequiredTransitionFields(fields, values);
+      if (missing.length > 0) {
+        setError(t('task.transitionFields.requiredMissing', { fields: missing.join(', ') }));
         return;
       }
       setIsSubmitting(true);
@@ -80,13 +80,14 @@ export function TransitionFieldsModal({
   const formId = useId();
 
   const fromStatus = task?.originalStatus?.trim() || null;
+  const fromStatusLabel = task?.originalStatusDisplay?.trim() || undefined;
   const toStatusKey = targetStatusKey?.trim() || targetStatusDisplay?.trim() || null;
   const toStatusLabel = targetStatusDisplay?.trim() || undefined;
   const hasStatusPath = Boolean(fromStatus || toStatusKey);
   const statusPathAria =
     fromStatus && toStatusKey
       ? t('task.transitionFields.statusPathAria', {
-          from: fromStatus,
+          from: fromStatusLabel || fromStatus,
           to: toStatusLabel || toStatusKey,
         })
       : undefined;
@@ -99,6 +100,7 @@ export function TransitionFieldsModal({
       field,
       handleChange,
       inputClassName,
+      notSelectedLabel: t('common.notSelected'),
       sprints,
       value: values[field.id] ?? '',
     });
@@ -126,7 +128,7 @@ export function TransitionFieldsModal({
           >
             {fromStatus ? (
               <>
-                <StatusTag status={fromStatus} statusColorKey={task?.statusColorKey} />
+                <StatusTag label={fromStatusLabel} status={fromStatus} statusColorKey={task?.statusColorKey} />
                 {toStatusKey ? (
                   <span aria-hidden className="text-gray-400 dark:text-gray-500">
                     →

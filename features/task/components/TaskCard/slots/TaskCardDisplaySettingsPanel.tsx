@@ -3,6 +3,7 @@
 import type { TaskCardSlotBoardSelection } from './TaskCardSlotBoardZone';
 import type { TaskCardBoard, TaskCardHideWhen, TaskCardSlotLayout } from '@/lib/taskCard/taskCardSlots';
 import type { PlannerTrackerField } from '@/lib/tracker/plannerTrackerFieldOptions';
+import type { ReactNode } from 'react';
 
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -34,6 +35,8 @@ interface TaskCardDisplaySettingsPanelProps {
   board?: TaskCardBoard;
   fields?: readonly PlannerTrackerField[];
   fieldsStatus?: 'loading' | 'ready' | 'unavailable';
+  /** Действие справа от подсказки над карточкой (сброс раскладки). */
+  hintAction?: ReactNode;
   layout: TaskCardSlotLayout;
   organizationId?: string | null;
   onChange: (layout: TaskCardSlotLayout) => void;
@@ -43,6 +46,7 @@ export function TaskCardDisplaySettingsPanel({
   board = 'swimlane',
   fields = [],
   fieldsStatus = 'ready',
+  hintAction,
   layout,
   onChange,
   organizationId = null,
@@ -59,7 +63,10 @@ export function TaskCardDisplaySettingsPanel({
 
   return (
     <div className="space-y-4">
-      <p className="text-xs leading-relaxed text-ds-text-muted">{t('settings.planningTab.cardSlots.boardHint')}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs leading-relaxed text-ds-text-muted">{t('settings.planningTab.cardSlots.boardHint')}</p>
+        {hintAction}
+      </div>
       <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_20rem]">
         <TaskCardSlotBoard board={board} layout={layout} selected={selected} onChange={onChange} onSelect={setSelected} />
         <TaskCardSlotInspector

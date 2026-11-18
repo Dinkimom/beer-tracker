@@ -77,19 +77,30 @@ export function ParticipantsSettingsPopup({
     }
   }, [isOpen]);
 
+  /**
+   * Состав после добавления или удаления приходит с сервера в своём порядке: держим порядок доски,
+   * новые люди встают в конец — строки списка не «прыгают».
+   */
+  const orderedRoster = useMemo(() => {
+    if (!rosterOverride) return null;
+    const boardOrder = new Map(developersManagement.sortedDevelopers.map((d, index) => [d.id, index]));
+    const position = (id: string) => boardOrder.get(id) ?? boardOrder.size;
+    return [...rosterOverride].sort((a, b) => position(a.id) - position(b.id));
+  }, [developersManagement.sortedDevelopers, rosterOverride]);
+
   const developersInPopup = useMemo(() => {
-    return (rosterOverride ?? developers).filter((d) => !locallyRemovedIds.has(d.id));
-  }, [developers, locallyRemovedIds, rosterOverride]);
+    return (orderedRoster ?? developers).filter((d) => !locallyRemovedIds.has(d.id));
+  }, [developers, locallyRemovedIds, orderedRoster]);
 
   const developersManagementForPopup = useMemo(() => {
-    const sortedDevelopers = rosterOverride
-      ? rosterOverride.filter((d) => !locallyRemovedIds.has(d.id))
+    const sortedDevelopers = orderedRoster
+      ? orderedRoster.filter((d) => !locallyRemovedIds.has(d.id))
       : developersManagement.sortedDevelopers.filter((d) => !locallyRemovedIds.has(d.id));
     return {
       ...developersManagement,
       sortedDevelopers,
     };
-  }, [developersManagement, locallyRemovedIds, rosterOverride]);
+  }, [developersManagement, locallyRemovedIds, orderedRoster]);
 
   const searchRegistry = useCallback(
     async (query: string, signal?: AbortSignal): Promise<RegistryUserItem[]> => {

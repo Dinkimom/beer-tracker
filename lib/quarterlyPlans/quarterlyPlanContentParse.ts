@@ -176,7 +176,7 @@ function linkError(content: QuarterlyPlanContent): string | null {
   return null;
 }
 
-/** Назначения и заметки — целые недели в пределах квартала (QA1, QN2). */
+/** Недели назначений и заметок — в пределах квартала (QA1, QN2); дни полосы сверяет `daySpanError` (QT5). */
 function spanError(content: QuarterlyPlanContent, weekCount: number): string | null {
   const outside = [...content.assignments, ...content.notes].find(
     (item) => item.startWeek + item.weeks > weekCount

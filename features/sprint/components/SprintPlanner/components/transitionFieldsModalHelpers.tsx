@@ -138,14 +138,12 @@ export function buildTransitionSubmitBody(
   return body;
 }
 
-export function validateTransitionRequiredFields(
+/** Названия обязательных полей, которые не заполнены; пусто — всё заполнено. */
+export function missingRequiredTransitionFields(
   fields: TransitionField[],
   values: Record<string, string>
-): string | null {
-  const required = fields.filter((f) => f.required);
-  const missing = required.filter((f) => !values[f.id]?.trim());
-  if (missing.length === 0) return null;
-  return `Заполните обязательные поля: ${missing.map((f) => f.display).join(', ')}`;
+): string[] {
+  return fields.filter((f) => f.required && !values[f.id]?.trim()).map((f) => f.display);
 }
 
 function isLongTransitionTextField(field: TransitionField): boolean {
@@ -165,10 +163,11 @@ function isResolutionTransitionField(field: TransitionField): boolean {
 function renderTransitionSelectField(
   field: TransitionField,
   value: string,
-  handleChange: (fieldId: string, value: string) => void
+  handleChange: (fieldId: string, value: string) => void,
+  notSelectedLabel: string
 ): React.ReactNode {
   const selectOptions = [
-    { label: 'Не выбрано', value: '' },
+    { label: notSelectedLabel, value: '' },
     ...(field.options ?? []).map(normalizeTransitionSelectOption),
   ];
   return (
@@ -308,13 +307,17 @@ function renderTransitionDefaultTextField(
   );
 }
 
-type TransitionFieldRenderer = (input: {
+interface TransitionFieldInput {
   field: TransitionField;
-  handleChange: (fieldId: string, value: string) => void;
   inputClassName: string;
+  /** Подпись пустого значения в селекте («Не выбрано»). */
+  notSelectedLabel: string;
   sprints: SprintListItem[];
   value: string;
-}) => React.ReactNode;
+  handleChange: (fieldId: string, value: string) => void;
+}
+
+type TransitionFieldRenderer = (input: TransitionFieldInput) => React.ReactNode;
 
 const TRANSITION_FIELD_RENDERERS: Array<{
   match: (field: TransitionField) => boolean;
@@ -323,7 +326,8 @@ const TRANSITION_FIELD_RENDERERS: Array<{
   {
     match: (field) =>
       isResolutionTransitionField(field) || Boolean(field.options && field.options.length > 0),
-    render: (input) => renderTransitionSelectField(input.field, input.value, input.handleChange),
+    render: (input) =>
+      renderTransitionSelectField(input.field, input.value, input.handleChange, input.notSelectedLabel),
   },
   {
     match: (field) =>
@@ -370,12 +374,6 @@ function resolveTransitionFieldRenderer(field: TransitionField): TransitionField
   );
 }
 
-export function renderTransitionFieldInput(input: {
-  field: TransitionField;
-  handleChange: (fieldId: string, value: string) => void;
-  inputClassName: string;
-  sprints: SprintListItem[];
-  value: string;
-}): React.ReactNode {
+export function renderTransitionFieldInput(input: TransitionFieldInput): React.ReactNode {
   return resolveTransitionFieldRenderer(input.field)(input);
 }

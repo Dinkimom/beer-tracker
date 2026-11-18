@@ -49,7 +49,7 @@ function ConfirmDialog({
   const { t } = useI18n();
   const confirmLabel = confirmText ?? t('common.confirm');
   const cancelLabel = cancelText ?? t('common.cancel');
-  const loadingLabel = loadingText ?? 'Удаляем...';
+  const loadingLabel = loadingText ?? t('common.deleting');
   const handleConfirm = useCallback(() => {
     if (loading) return;
     onConfirm();

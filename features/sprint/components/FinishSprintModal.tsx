@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
+import { useI18n } from '@/contexts/LanguageContext';
 import { FinishSprintChecklist } from '@/features/sprint/components/FinishSprintModal/components/FinishSprintChecklist';
 import { FinishSprintTaskTransfer } from '@/features/sprint/components/FinishSprintModal/components/FinishSprintTaskTransfer';
 import { useFinishSprintModal } from '@/features/sprint/components/FinishSprintModal/hooks/useFinishSprintModal';
@@ -45,6 +46,7 @@ export function FinishSprintModal({
   onSprintStatusChange,
   onTasksReload,
 }: FinishSprintModalProps) {
+  const { t } = useI18n();
   const initialChecklistItems = useMemo(
     () =>
       goalTasks.flatMap((g) =>
@@ -81,15 +83,15 @@ export function FinishSprintModal({
       footer={
         <>
           <Button disabled={finishSprint.isLoading} variant="outline" onClick={onClose}>
-            Отмена
+            {t('common.cancel')}
           </Button>
           <Button disabled={finishSprint.isLoading} variant="danger" onClick={handleSubmit}>
-            {finishSprint.isLoading ? 'Завершение...' : 'Завершить спринт'}
+            {finishSprint.isLoading ? t('task.finishSprint.submitting') : t('task.finishSprint.submit')}
           </Button>
         </>
       }
       open={isOpen}
-      title="Завершить спринт"
+      title={t('task.finishSprint.title')}
       onClose={onClose}
     >
       {/* Цели спринта */}
