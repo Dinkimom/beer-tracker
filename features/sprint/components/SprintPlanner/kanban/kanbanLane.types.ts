@@ -3,7 +3,6 @@ import type { BoardColumn } from '@/types/tracker';
 
 export interface KanbanColumnHeaderData {
   column: BoardColumn;
-  filteredTasks: Task[];
   tasks: Task[];
   totalSp: number;
   totalTp: number;

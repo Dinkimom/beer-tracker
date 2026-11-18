@@ -5,6 +5,7 @@ import type { CSSProperties, FocusEvent } from 'react';
 
 import { CARD_MARGIN, ZIndex } from '@/constants';
 import { SWIMLANE_TASK_ROW_VERTICAL_INSET_PX } from '@/features/swimlane/utils/taskLayerTaskLayout';
+import { taskMatchesNameFilter } from '@/features/task/utils/taskMatchesNameFilter';
 import {
   ONBOARDING_SAMPLE_TASK_ID,
   isOnboardingSampleTaskId,
@@ -251,12 +252,6 @@ export function resolveHasQaTaskInSwimlane(params: {
   return qaTask ? params.taskPositions.has(qaTask.id) : false;
 }
 
-function taskMatchesGlobalNameFilter(task: Task, globalNameFilter?: string): boolean {
-  if (!globalNameFilter) return true;
-  const needle = globalNameFilter.trim().toLowerCase();
-  return task.name.toLowerCase().includes(needle) || task.id.toLowerCase().includes(needle);
-}
-
 export function resolveTaskBarEffectiveOpacity(params: {
   contextMenuBlurOtherCards: boolean;
   contextMenuTaskId: string | null;
@@ -264,7 +259,7 @@ export function resolveTaskBarEffectiveOpacity(params: {
   globalNameFilter?: string;
   task: Task;
 }): number {
-  const matchesFilter = taskMatchesGlobalNameFilter(params.task, params.globalNameFilter);
+  const matchesFilter = taskMatchesNameFilter(params.task, params.globalNameFilter);
   const taskOpacity = matchesFilter ? 1 : 0.3;
   const opacityFromParent = params.customStyleOpacity ?? 1;
   const dimmedByContextMenuElsewhere =

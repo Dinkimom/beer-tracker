@@ -29,3 +29,24 @@ test('TC-013: статус без колонки доски — своя кол�
     await expect(needInfo.locator('[data-task-id="DEMO-101"]')).toBeVisible();
   });
 });
+
+/** TC-014: поиск, набранный на свимлейне, на канбане приглушает карточки, а не прячет их. */
+test('TC-014: поиск по доске на канбане приглушает, а не прячет карточки', async ({ page }) => {
+  await openDemoPlanner(page);
+  await page.getByPlaceholder(controls.searchPlaceholder).fill('Payments webhook');
+  await page.getByRole('button', { exact: true, expanded: false, name: controls.viewByAssignees }).click();
+  await page.getByRole('dialog').getByRole('button', { exact: true, name: controls.viewKanban }).click();
+
+  const card = (key: string) => page.locator(`[data-kanban-column] [data-task-id="${key}"]`).first();
+  await expect(card('DEMO-109')).toBeVisible();
+  await expect(card('DEMO-106')).toBeVisible();
+  // Прозрачность поиска — инлайн на обёртке перетаскивания канбана (у самой карточки своя, у закрытых 0.8).
+  const opacity = (key: string) =>
+    card(key).evaluate((el) => {
+      let node: HTMLElement | null = el as HTMLElement;
+      while (node && !node.style.opacity) node = node.parentElement;
+      return node?.style.opacity ?? '';
+    });
+  expect(await opacity('DEMO-109')).toBe('1');
+  expect(await opacity('DEMO-106')).toBe('0.3');
+});

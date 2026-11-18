@@ -5,6 +5,7 @@ import type { Task, Developer } from '@/types';
 import { useDroppable } from '@dnd-kit/core';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { taskMatchesNameFilter } from '@/features/task/utils/taskMatchesNameFilter';
 
 import {
   KANBAN_COLUMN_BODY,
@@ -12,7 +13,6 @@ import {
 } from './kanbanChromeClasses';
 import { kanbanColumnId } from './kanbanDndUtils';
 import { KanbanDraggableCard } from './KanbanDraggableCard';
-import { filterKanbanColumnTasks } from './kanbanViewColumnTotalsHelpers';
 
 interface KanbanColumnProps {
   columnId: string;
@@ -49,8 +49,6 @@ export function KanbanColumn({
     id: kanbanColumnId(columnId),
   });
 
-  const filteredTasks = filterKanbanColumnTasks(tasks, globalNameFilter);
-
   const showForbiddenBanner = isDragging && isDropDisabled && !isSourceColumn;
   const chromeClass = resolveKanbanColumnChromeClass(isOver, isDropDisabled);
 
@@ -74,12 +72,13 @@ export function KanbanColumn({
             </p>
           </div>
         )}
-        {filteredTasks.map((task) => (
+        {tasks.map((task) => (
           <KanbanDraggableCard
             key={task.id}
             contextMenuBlurOtherCards={contextMenuBlurOtherCards}
             contextMenuTaskId={contextMenuTaskId}
             developers={developers}
+            dimmedBySearch={!taskMatchesNameFilter(task, globalNameFilter)}
             task={task}
             onContextMenu={onContextMenu}
             onTaskClick={onTaskClick}

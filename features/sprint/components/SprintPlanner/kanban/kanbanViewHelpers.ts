@@ -1,20 +1,14 @@
 import type { Task } from '@/types';
 import type { BoardColumn } from '@/types/tracker';
 
-import {
-  computeKanbanColumnTaskTotals,
-  filterKanbanColumnTasks,
-} from './kanbanViewColumnTotalsHelpers';
+import { computeKanbanColumnTaskTotals } from './kanbanViewColumnTotalsHelpers';
 import { resolveKanbanLaneDisplayName } from './kanbanViewLaneNameHelpers';
 
-export function buildKanbanColumnsWithHeaderData(
-  ordered: Array<{ column: BoardColumn; tasks: Task[] }>,
-  globalNameFilter: string | undefined
-) {
+/** Итоги колонки — по всем её задачам: поиск карточки только приглушает. */
+export function buildKanbanColumnsWithHeaderData(ordered: Array<{ column: BoardColumn; tasks: Task[] }>) {
   return ordered.map(({ column, tasks: columnTasks }) => {
-    const filtered = filterKanbanColumnTasks(columnTasks, globalNameFilter);
-    const { totalSp, totalTp } = computeKanbanColumnTaskTotals(filtered);
-    return { column, tasks: columnTasks, filteredTasks: filtered, totalSp, totalTp };
+    const { totalSp, totalTp } = computeKanbanColumnTaskTotals(columnTasks);
+    return { column, tasks: columnTasks, totalSp, totalTp };
   });
 }
 

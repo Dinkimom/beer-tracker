@@ -22,6 +22,8 @@ interface KanbanDraggableCardProps {
   contextMenuBlurOtherCards?: boolean;
   contextMenuTaskId?: string | null;
   developers: Developer[];
+  /** Не подходит под поиск по доске — приглушена, как на свимлейне. */
+  dimmedBySearch?: boolean;
   task: Task;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onTaskClick?: (taskId: string) => void;
@@ -32,6 +34,7 @@ export function KanbanDraggableCard({
   developers,
   contextMenuBlurOtherCards = false,
   contextMenuTaskId = null,
+  dimmedBySearch = false,
   onTaskClick,
   onContextMenu,
 }: KanbanDraggableCardProps) {
@@ -68,7 +71,7 @@ export function KanbanDraggableCard({
 
   const style: React.CSSProperties = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0 : 1,
+    opacity: isDragging ? 0 : dimmedBySearch ? 0.3 : 1,
   };
 
   const dimOthers =

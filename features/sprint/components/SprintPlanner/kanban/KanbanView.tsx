@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PhaseCardColorSchemeOverride } from '@/components/PhaseCardColorSchemeOverride';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
-import { filterTasksByAssignees } from '@/features/backlog/utils/backlogFilterPeople';
+import { filterTasksByAssignees, selectedAssigneeIdsInPeople } from '@/features/backlog/utils/backlogFilterPeople';
 import { useBoardParams } from '@/features/board/hooks/useBoardParams';
 import { TaskCardDueDateContext } from '@/features/task/components/TaskCard/components/TaskCardDueDateChip';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
@@ -67,12 +67,11 @@ export interface KanbanViewProps {
 function buildKanbanLaneColumnsWithHeaderData(
   laneTasks: Task[],
   boardColumns: BoardColumn[],
-  unknownStatusDisplay: string,
-  globalNameFilter: string | undefined
+  unknownStatusDisplay: string
 ) {
   const grouped = groupKanbanTasksByColumns(laneTasks, boardColumns, unknownStatusDisplay);
   const ordered = orderKanbanGroupedColumns(grouped, boardColumns);
-  return buildKanbanColumnsWithHeaderData(ordered, globalNameFilter);
+  return buildKanbanColumnsWithHeaderData(ordered);
 }
 
 function resolveKanbanLanesWithColumns(
@@ -128,7 +127,11 @@ export const KanbanView = observer(function KanbanView({
     if (!selectedAssigneeIds || selectedAssigneeIds.size === 0) {
       return displayTasks;
     }
-    return filterTasksByAssignees(displayTasks, selectedAssigneeIds);
+    // Сохранённый выбор (localStorage) — только из людей с задачами здесь, как в самом фильтре:
+    // иначе человек из другого спринта давал пустой канбан без выбранного аватара, и сбросить было нечем.
+    const assignees = [...new Set(displayTasks.flatMap((task) => (task.assignee ? [task.assignee] : [])))];
+    const effective = selectedAssigneeIdsInPeople(selectedAssigneeIds, assignees.map((id) => ({ id })));
+    return filterTasksByAssignees(displayTasks, effective);
   }, [selectedAssigneeIds, tasks]);
 
   const kanbanColumns = useMemo(
@@ -147,8 +150,8 @@ export const KanbanView = observer(function KanbanView({
   }, [kanbanColumns, tasksForKanban, t]);
 
   const columnsWithHeaderData = useMemo(() => {
-    return buildKanbanColumnsWithHeaderData(columnsWithTasks, globalNameFilter);
-  }, [columnsWithTasks, globalNameFilter]);
+    return buildKanbanColumnsWithHeaderData(columnsWithTasks);
+  }, [columnsWithTasks]);
 
   const assigneeLanes = useMemo(() => {
     if (!groupByAssignee || !board?.columns?.length) return [];
@@ -167,11 +170,10 @@ export const KanbanView = observer(function KanbanView({
       columnsWithHeaderData: buildKanbanLaneColumnsWithHeaderData(
         lane.tasks,
         kanbanColumns,
-        t('sprintPlanner.kanban.unknownStatus'),
-        globalNameFilter
+        t('sprintPlanner.kanban.unknownStatus')
       ),
     }));
-  }, [assigneeLanes, kanbanColumns, globalNameFilter, t]);
+  }, [assigneeLanes, kanbanColumns, t]);
 
   const parentLanesWithColumns = useMemo(() => {
     if (kanbanColumns.length === 0 || parentLanes.length === 0) return [];
@@ -180,11 +182,10 @@ export const KanbanView = observer(function KanbanView({
       columnsWithHeaderData: buildKanbanLaneColumnsWithHeaderData(
         lane.tasks,
         kanbanColumns,
-        t('sprintPlanner.kanban.unknownStatus'),
-        globalNameFilter
+        t('sprintPlanner.kanban.unknownStatus')
       ),
     }));
-  }, [parentLanes, kanbanColumns, globalNameFilter, t]);
+  }, [parentLanes, kanbanColumns, t]);
 
   const lanesWithColumns = resolveKanbanLanesWithColumns(
     hasLaneGrouping,
@@ -330,7 +331,7 @@ export const KanbanView = observer(function KanbanView({
             zIndex: ZIndex.stickyMainHeader,
           }}
         >
-          {headerColumns.map(({ column, filteredTasks, totalSp, totalTp }) => (
+          {headerColumns.map(({ column, tasks: columnTasks, totalSp, totalTp }) => (
             <div
               key={column.id}
               className={`w-[200px] max-w-[200px] min-w-[200px] shrink-0 overflow-hidden ${KANBAN_COLUMN_HEADER_GLASS}`}
@@ -338,7 +339,7 @@ export const KanbanView = observer(function KanbanView({
             >
               <KanbanColumnHeader
                 displayName={column.display}
-                taskCount={filteredTasks.length}
+                taskCount={columnTasks.length}
                 totalSp={totalSp}
                 totalTp={totalTp}
               />
