@@ -43,7 +43,7 @@ export function TaskCardSlotItems({
 
   const className = flow === 'inline'
     ? 'inline-flex items-center gap-1 align-middle'
-    : `flex min-w-0 flex-wrap items-center gap-1.5${alignEnd ? ' ml-auto justify-end' : ''}`;
+    : `flex min-w-0 flex-wrap items-center gap-1.5${alignEnd ? ' ml-auto flex-1 basis-0 justify-end' : ''}`;
 
   return (
     <span className={className} data-task-card-slot-items="">

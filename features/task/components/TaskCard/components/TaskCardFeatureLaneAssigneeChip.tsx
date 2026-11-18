@@ -11,7 +11,10 @@ interface TaskCardFeatureLaneAssigneeChipProps {
   assigneeLabel: string;
 }
 
-/** Исполнитель в подвале: аватар слева от «Имя Ф.». */
+/**
+ * Исполнитель в подвале: аватар слева от «Имя Ф.». Ширину ограничивает правая группа подвала (она берёт
+ * свободное место); процент от сжатого по содержимому родителя резал имя до 60% от него самого.
+ */
 export function TaskCardFeatureLaneAssigneeChip({
   assigneeAvatarUrl,
   assigneeAvatarVariant,
@@ -20,7 +23,7 @@ export function TaskCardFeatureLaneAssigneeChip({
 }: TaskCardFeatureLaneAssigneeChipProps) {
   return (
     <TextTooltip content={assigneeLabel}>
-    <span className="ml-auto flex min-w-0 max-w-[60%] items-center justify-end gap-1 text-[10px] font-medium leading-tight text-gray-700 dark:text-gray-200">
+    <span className="ml-auto flex min-w-0 max-w-full items-center justify-end gap-1 text-[10px] font-medium leading-tight text-gray-700 dark:text-gray-200">
       <Avatar
         avatarUrl={assigneeAvatarUrl}
         className="shrink-0"

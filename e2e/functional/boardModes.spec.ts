@@ -37,5 +37,9 @@ test('TC-012: режимы доски — по исполнителям, по ф
     await switchBoardMode(page, controls.viewKanban, controls.viewByFeatures);
     await expect(page.getByText('Checkout redesign', { exact: true }).first()).toBeVisible();
     await expect(undoButton(page)).toBeVisible();
+    // Исполнитель в подвале карточки — «Имя Ф.» целиком: чип не должен резать имя при свободном месте.
+    const assignee = page.locator('[data-swimlane] [data-task-id="DEMO-101"]').getByText('Linus T.', { exact: true });
+    await expect(assignee).toBeVisible();
+    expect(await assignee.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   });
 });
