@@ -12,6 +12,10 @@ const chromeClass =
 const canvasClass =
   'hover:!bg-black/[0.05] hover:!text-gray-900 active:!bg-black/10 dark:hover:!bg-white/10 dark:hover:!text-gray-100 dark:active:!bg-white/15 focus-visible:!ring-offset-ds-canvas';
 
+/** Удаление и другие необратимые действия: красный hover поверх обычного или «на холсте». */
+const dangerClass =
+  'hover:!bg-red-50 hover:!text-red-600 active:!bg-red-100 dark:hover:!bg-red-900/20 dark:hover:!text-red-400 dark:active:!bg-red-900/40';
+
 /** `md` — шапка, окна, панели; `sm` — внутри карточки или заголовка колонки. */
 const sizeClass = {
   md: 'h-8 w-8',
@@ -25,6 +29,7 @@ interface HeaderIconButtonProps
   /** Полупрозрачная вуаль на hover: серый холст шапки, стекло колонки, карточка. */
   onCanvas?: boolean;
   size?: keyof typeof sizeClass;
+  tone?: 'danger' | 'default';
   type?: ButtonHTMLAttributes<HTMLButtonElement>['type'];
 }
 
@@ -33,6 +38,7 @@ export function HeaderIconButton({
   className = '',
   onCanvas = false,
   size = 'md',
+  tone = 'default',
   type = 'button',
   title,
   disabled,
@@ -42,7 +48,7 @@ export function HeaderIconButton({
   const button = (
     <button
       aria-label={ariaLabel ?? title}
-      className={`${chromeClass} ${sizeClass[size]} ${onCanvas ? canvasClass : ''} ${className}`}
+      className={`${chromeClass} ${sizeClass[size]} ${onCanvas ? canvasClass : ''} ${tone === 'danger' ? dangerClass : ''} ${className}`}
       disabled={disabled}
       type={type}
       {...props}

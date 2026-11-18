@@ -6,6 +6,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 import { Avatar } from '@/components/Avatar';
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { TextTooltip, wrapWithTextTooltip } from '@/components/TextTooltip';
@@ -137,20 +138,21 @@ export function SortableDeveloperItem({
         </span>
       </label>
       {onRemove ? (
-        <button
+        <HeaderIconButton
           aria-label={t('sidebar.developersManagement.removeFromTeamAria', {
             name: developer.name,
           })}
-          className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-gray-400 opacity-0 transition-all duration-200 hover:bg-red-50 hover:text-red-500 active:scale-[0.98] active:bg-red-100 focus:opacity-100 disabled:pointer-events-none disabled:opacity-40 group-hover/item:opacity-100 dark:hover:bg-red-900/20 dark:active:bg-red-900/40"
+          className="opacity-0 focus-visible:opacity-100 group-hover/item:opacity-100"
           disabled={isRemoving}
-          type="button"
+          size="sm"
+          tone="danger"
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
         >
           <Icon className="h-3.5 w-3.5" name="x" />
-        </button>
+        </HeaderIconButton>
       ) : null}
     </div>
   );

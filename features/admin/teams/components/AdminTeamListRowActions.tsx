@@ -4,7 +4,7 @@ import type { AdminTeamRow } from '@/features/admin/adminTeamCatalog';
 
 import Link from 'next/link';
 
-import { Button } from '@/components/Button';
+import { Button, buttonClassName } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -36,7 +36,7 @@ export function AdminTeamListRowActions({
     <div className="flex shrink-0 flex-wrap items-center gap-3 md:justify-end">
       <Link
         aria-label={editLabel}
-        className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 transition-all duration-200 hover:bg-gray-50 active:scale-[0.98] active:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:active:bg-gray-500"
+        className={buttonClassName({ size: 'sm', variant: 'outline' })}
         href={detailHref}
         title={editLabel}
       >

@@ -58,3 +58,14 @@ export const Disabled: Story = {
     children: <Icon className="h-4 w-4" name="settings" />,
   },
 };
+
+/** Удаление: красный hover. */
+export const Danger: Story = {
+  args: {
+    size: 'sm',
+    title: 'Убрать из команды',
+    tone: 'danger',
+    type: 'button',
+    children: <Icon className="h-3.5 w-3.5" name="x" />,
+  },
+};

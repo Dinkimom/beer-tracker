@@ -57,6 +57,26 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'cla
   variant?: ButtonVariant;
 }
 
+const BASE_CLASS =
+  'inline-flex cursor-pointer items-center justify-center gap-2 text-sm font-medium transition-all duration-200 active:scale-[0.98]';
+
+interface ButtonLookOptions {
+  className?: string;
+  fullWidth?: boolean;
+  size?: keyof typeof sizeClasses;
+  variant?: ButtonVariant;
+}
+
+/** Классы кнопки для ссылки (`<a>`, `Link`), которая должна выглядеть как `Button`. */
+export function buttonClassName({
+  className = '',
+  fullWidth = false,
+  size = 'md',
+  variant = 'primary',
+}: ButtonLookOptions = {}): string {
+  return `${BASE_CLASS} ${sizeClasses[size]} ${variantClasses[variant]} ${fullWidth ? 'flex-1' : ''} ${className}`;
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = 'primary',
@@ -71,14 +91,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   },
   ref
 ) {
-  const base =
-    'inline-flex cursor-pointer items-center justify-center gap-2 text-sm font-medium transition-all duration-200 active:scale-[0.98]';
-  const variantClass = variantClasses[variant];
-  const widthClass = fullWidth ? 'flex-1' : '';
   const button = (
     <button
       ref={ref}
-      className={`${base} ${sizeClasses[size]} ${variantClass} ${widthClass} ${className}`}
+      className={buttonClassName({ className, fullWidth, size, variant })}
       disabled={disabled}
       type={type}
       {...props}
