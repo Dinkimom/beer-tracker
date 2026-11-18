@@ -8,8 +8,15 @@ import {
   DEMO_DEV_ERIN,
 } from './demoIds';
 
+/**
+ * Задачи демо заведены на планировании, до старта спринта 13.10: факты ретро считают их обязательством
+ * (R1). Без даты создания ретро не знало, что взято в спринт, и показывало «0 из 0».
+ */
+const DEMO_TASK_CREATED_AT = '2026-10-09T10:00:00.000Z';
+
 function task(partial: Omit<Task, 'link' | 'team'> & { link?: string; team?: Task['team'] }): Task {
   return {
+    createdAt: DEMO_TASK_CREATED_AT,
     team: partial.team ?? 'Back',
     link: partial.link ?? `https://demo.local/issues/${partial.id}`,
     ...partial,
@@ -167,6 +174,8 @@ export function buildDemoSprintTasks(): Task[] {
     }),
     task({
       id: 'DEMO-106',
+      // Баг нашли посреди спринта — в фактах ретро он «добавлен после старта».
+      createdAt: '2026-10-14T11:00:00.000Z',
       name: 'Fix: double charge on retry',
       assignee: DEMO_DEV_ALICE,
       assigneeName: DEMO_DEV_DISPLAY.alice.name,
@@ -248,6 +257,7 @@ export function buildDemoSprintTasks(): Task[] {
     }),
     task({
       id: 'DEMO-112',
+      createdAt: '2026-10-15T09:30:00.000Z',
       name: 'Chargeback notifications',
       assignee: DEMO_DEV_ERIN,
       assigneeName: DEMO_DEV_DISPLAY.erin.name,
