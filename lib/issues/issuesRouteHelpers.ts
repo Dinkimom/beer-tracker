@@ -97,11 +97,26 @@ export function patchIssueStatusErrorResponse(error: unknown): NextResponse {
   );
 }
 
-function trackerStatusFromChange(
-  statusKey: string,
-  statusDisplay: string | undefined
-): TrackerIssue['status'] {
-  return { display: statusDisplay?.trim() || statusKey, key: statusKey };
+/**
+ * Статус и тип для кэша задач спринта. Без id и типа следующая выдача из кэша красила карточку
+ * по старому типу (`resolveStatusColorKey` ищет переопределения по id, иначе берёт цвет типа).
+ */
+function trackerStatusPatchFromChange(input: {
+  statusDisplay?: string;
+  statusId?: string;
+  statusKey: string;
+  statusTypeKey?: string;
+}): { status: NonNullable<TrackerIssue['status']>; statusType?: TrackerIssue['statusType'] } {
+  const statusId = input.statusId?.trim();
+  const statusTypeKey = input.statusTypeKey?.trim();
+  return {
+    status: {
+      display: input.statusDisplay?.trim() || input.statusKey,
+      ...(statusId ? { id: statusId } : {}),
+      key: input.statusKey,
+    },
+    ...(statusTypeKey ? { statusType: { display: statusTypeKey, key: statusTypeKey } } : {}),
+  };
 }
 
 export function completeIssueStatusChange(input: {
@@ -109,7 +124,9 @@ export function completeIssueStatusChange(input: {
   request: Request;
   sprintIds: number[];
   statusDisplay?: string;
+  statusId?: string;
   statusKey?: string;
+  statusTypeKey?: string;
 }): void {
   invalidateBurndownForSprintIds(input.sprintIds, invalidateCache.burndown);
   if (input.sprintIds.length === 0) {
@@ -119,9 +136,14 @@ export function completeIssueStatusChange(input: {
   const statusKey = input.statusKey?.trim();
   const statusDisplay = trackerStatusDisplayName(input.statusDisplay, statusKey);
   if (statusKey) {
-    const status = trackerStatusFromChange(statusKey, statusDisplay);
+    const patch = trackerStatusPatchFromChange({
+      statusDisplay,
+      statusId: input.statusId,
+      statusKey,
+      statusTypeKey: input.statusTypeKey,
+    });
     for (const sprintId of input.sprintIds) {
-      patchCachedSprintIssueStatus(sprintId, input.issueKey, { status });
+      patchCachedSprintIssueStatus(sprintId, input.issueKey, patch);
     }
   }
   notifySprintRealtimeForSprintIds(input.request, input.sprintIds, ['tasks'], {

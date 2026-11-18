@@ -8,6 +8,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
 
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
+import { applyPendingTaskStatuses } from '@/features/task/hooks/pendingTaskStatus';
 import { fetchSprintTasks } from '@/lib/beerTrackerApi';
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
 import { statusTypeKeyForStatus } from '@/lib/sprints/sprintTaskCompletion';
@@ -319,7 +320,7 @@ export function useTasks(sprintId: number | null, boardId?: number | null) {
         throw new Error('Sprint ID is required');
       }
 
-      return fetchSprintTasks(sprintId, boardId || undefined);
+      return fetchSprintTasks(sprintId, boardId || undefined).then((data) => applyPendingTaskStatuses(data));
     },
     enabled: !!sprintId,
     staleTime: 1000 * 60 * 2, // 2 минуты (задачи меняются чаще)

@@ -42,6 +42,8 @@ export async function submitIssueStatusChange(input: {
   /** Резолюция закрывающего перехода (`closingTransitionResolution`), иначе не задаётся. */
   resolution?: string;
   targetStatusDisplay?: string;
+  targetStatusId?: string;
+  targetStatusTypeKey?: string;
   taskId: string;
   targetStatusKey: string;
   trackerIssueKey: string;
@@ -52,8 +54,12 @@ export async function submitIssueStatusChange(input: {
     input.transitionId,
     input.resolution,
     input.extraFields,
-    input.targetStatusKey,
-    input.targetStatusDisplay
+    {
+      display: input.targetStatusDisplay,
+      id: input.targetStatusId,
+      key: input.targetStatusKey,
+      statusTypeKey: input.targetStatusTypeKey,
+    }
   );
   if (!success) {
     throw new Error(`Failed to change status for task ${input.taskId}`);

@@ -98,6 +98,39 @@ describe('issuesRouteHelpers', () => {
     unsubscribe();
   });
 
+  it('patches the status id and type in the sprint cache, so the next read keeps the new colour', () => {
+    setCachedSprintIssues(
+      77,
+      [
+        {
+          id: '1',
+          key: 'BT-1',
+          self: '',
+          status: { display: 'Open', id: '1', key: 'open' },
+          statusType: { display: 'New', key: 'new' },
+          summary: 'Move card',
+        },
+      ],
+      'in_progress'
+    );
+
+    completeIssueStatusChange({
+      issueKey: 'BT-1',
+      request: new Request('http://localhost/api/issues/BT-1/status', {
+        headers: { [TENANT_ORG_HEADER]: 'org-1' },
+      }),
+      sprintIds: [77],
+      statusDisplay: 'In review',
+      statusId: '10',
+      statusKey: 'inReview',
+      statusTypeKey: 'inProgress',
+    });
+
+    const issue = getCachedSprintIssues(77)?.[0];
+    expect(issue?.status).toEqual({ display: 'In review', id: '10', key: 'inReview' });
+    expect(issue?.statusType?.key).toBe('inProgress');
+  });
+
   it('keeps the human status name in the sprint cache and realtime payload', async () => {
     setCachedSprintIssues(
       77,

@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import { mergeTransitionExtraFieldsIntoTask } from '@/features/sprint/utils/mergeTransitionFieldsIntoTask';
+import { forgetTaskStatusChange, rememberTaskStatusChange } from '@/features/task/hooks/pendingTaskStatus';
 import {
   clearTaskStatusTransition,
   markTaskStatusTransitionPending,
@@ -108,21 +109,21 @@ export function useTaskStatusOperations({
         alternateKeys
       );
 
+      const nextResolution =
+        nextStatusTypeKey === 'done'
+          ? transitionResolutionKey(extraFields) ?? closingResolution ?? currentTask.resolution
+          : undefined;
+      const statusFields = {
+        originalStatus: finalTargetStatusKey,
+        originalStatusDisplay: nextStatusDisplay,
+        originalStatusId: statusId || undefined,
+        resolution: nextResolution,
+        status: nextCategory,
+        statusColorKey: nextStatusColorKey,
+        statusTypeKey: nextStatusTypeKey,
+      };
       setTasks((prev) =>
-        updateTaskInArray(prev, taskId, (task) => ({
-          ...task,
-          originalStatus: finalTargetStatusKey!,
-          originalStatusDisplay: nextStatusDisplay,
-          ...(statusId ? { originalStatusId: statusId } : { originalStatusId: undefined }),
-          status: nextCategory,
-          statusColorKey: nextStatusColorKey,
-          statusTypeKey: nextStatusTypeKey,
-          resolution:
-            nextStatusTypeKey === 'done'
-              ? transitionResolutionKey(extraFields) ?? closingResolution ?? task.resolution
-              : undefined,
-          ...fromTransition,
-        }))
+        updateTaskInArray(prev, taskId, (task) => ({ ...task, ...statusFields, ...fromTransition }))
       );
 
       try {
@@ -130,16 +131,21 @@ export function useTaskStatusOperations({
           extraFields,
           resolution: closingResolution,
           targetStatusDisplay: nextStatusDisplay,
+          targetStatusId: statusId || undefined,
+          targetStatusTypeKey: nextStatusTypeKey,
           taskId,
           targetStatusKey: finalTargetStatusKey,
           trackerIssueKey,
           transitionId,
         });
 
+        // Ответ сервера какое-то время может нести старый статус (индекс трекера отстаёт) — держим свой.
+        rememberTaskStatusChange(taskId, statusFields);
         // Отклик — перекраска карточки с подсветкой, без тоста.
         settleTaskStatusTransition(currentTask.id, 'applied');
       } catch (error) {
         console.error('Error changing status:', error);
+        forgetTaskStatusChange(taskId);
         setTasks((prev) =>
           updateTaskInArray(prev, taskId, () => ({ ...currentTask }))
         );

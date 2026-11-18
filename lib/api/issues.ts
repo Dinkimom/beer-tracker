@@ -227,8 +227,8 @@ export async function changeIssueStatus(
   transitionId: string,
   resolution?: string,
   extraFields?: Record<string, unknown>,
-  targetStatusKey?: string,
-  targetStatusDisplay?: string
+  /** Целевой статус: сервер правит им кэш задач спринта (ключ, подпись, id и тип — от них цвет карточки). */
+  target?: { display?: string; id?: string; key: string; statusTypeKey?: string }
 ): Promise<boolean> {
   // После перехода список доступных переходов другой.
   recentTransitionsByIssueKey.delete(issueKey);
@@ -238,11 +238,14 @@ export async function changeIssueStatus(
     if (extraFields && typeof extraFields === 'object') {
       Object.assign(body, extraFields);
     }
-    if (targetStatusKey) {
-      body.targetStatusKey = targetStatusKey;
-    }
-    if (targetStatusDisplay) {
-      body.targetStatusDisplay = targetStatusDisplay;
+    const targetFields = {
+      targetStatusDisplay: target?.display,
+      targetStatusId: target?.id,
+      targetStatusKey: target?.key,
+      targetStatusTypeKey: target?.statusTypeKey,
+    };
+    for (const [field, value] of Object.entries(targetFields)) {
+      if (value) body[field] = value;
     }
     await getPlannerBeerTrackerApi().patch(`/issues/${issueKey}/status`, body);
     return true;
