@@ -2,7 +2,7 @@ import type { TaskPosition } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { mergeRemotePositions } from './taskPositionsStoreLoadHelpers';
+import { keepQuickAddDraftPositions, mergeRemotePositions } from './taskPositionsStoreLoadHelpers';
 
 function pos(taskId: string, startDay: number): TaskPosition {
   return { taskId, assignee: 'a', startDay, startPart: 0, duration: 1 };
@@ -38,5 +38,13 @@ describe('mergeRemotePositions', () => {
   it('drops positions that are absent remotely and not pending', () => {
     const next = mergeRemotePositions([], new Map(), new Map());
     expect(next.size).toBe(0);
+  });
+});
+
+describe('keepQuickAddDraftPositions', () => {
+  it('keeps client-only quick-add drafts through a remote reconcile', () => {
+    const keep = new Map();
+    keepQuickAddDraftPositions(new Map([['local-task-1', pos('local-task-1', 3)], ['DEMO-1', pos('DEMO-1', 1)]]), keep);
+    expect([...mergeRemotePositions([pos('DEMO-1', 2)], new Map(), keep).keys()]).toEqual(['DEMO-1', 'local-task-1']);
   });
 });

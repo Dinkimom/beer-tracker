@@ -5,7 +5,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
-import { applyPendingTaskStatuses } from '@/features/task/hooks/pendingTaskStatus';
+import { reconcileFetchedSprintTasks } from '@/features/task/hooks/pendingTaskStatus';
 import { sprintTasksQueryKey } from '@/features/task/hooks/useTasks';
 import { fetchSprintTasks } from '@/lib/beerTrackerApi';
 
@@ -43,7 +43,7 @@ export async function refreshSprintTasksInBackground(
   ) {
     return false;
   }
-  queryClient.setQueryData(queryKey, applyPendingTaskStatuses(data));
+  queryClient.setQueryData<typeof data>(queryKey, (old) => reconcileFetchedSprintTasks(data, old));
   return true;
 }
 

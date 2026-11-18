@@ -5,10 +5,10 @@ import type { Task, Developer } from '@/types';
 import type { SprintInfo } from '@/types/tracker';
 import type { QueryClient } from '@tanstack/react-query';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
-import { applyPendingTaskStatuses } from '@/features/task/hooks/pendingTaskStatus';
+import { reconcileFetchedSprintTasks } from '@/features/task/hooks/pendingTaskStatus';
 import { fetchSprintTasks } from '@/lib/beerTrackerApi';
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
 import { statusTypeKeyForStatus } from '@/lib/sprints/sprintTaskCompletion';
@@ -313,14 +313,17 @@ export function resetPlannerPaletteQueryCaches(
  */
 export function useTasks(sprintId: number | null, boardId?: number | null) {
   const forDemoPlanner = useDemoPlannerBoardsQueryScope();
+  const queryClient = useQueryClient();
+  const queryKey = sprintTasksQueryKey(sprintId, boardId, forDemoPlanner);
   return useQuery({
-    queryKey: sprintTasksQueryKey(sprintId, boardId, forDemoPlanner),
-    queryFn: (): Promise<TasksResponse> => {
+    queryKey,
+    queryFn: async (): Promise<TasksResponse> => {
       if (!sprintId) {
         throw new Error('Sprint ID is required');
       }
-
-      return fetchSprintTasks(sprintId, boardId || undefined).then((data) => applyPendingTaskStatuses(data));
+      const data = await fetchSprintTasks(sprintId, boardId || undefined);
+      // Перезагрузка списка (realtime, смена правил) не стирает черновики и свежие статусы на экране.
+      return reconcileFetchedSprintTasks(data, queryClient.getQueryData<TasksResponse>(queryKey));
     },
     enabled: !!sprintId,
     staleTime: 1000 * 60 * 2, // 2 минуты (задачи меняются чаще)

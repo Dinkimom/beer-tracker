@@ -27,6 +27,7 @@ import {
 } from './taskPositionsStoreHistory';
 import {
   fetchSprintPositionsBundle,
+  keepQuickAddDraftPositions,
   mergeRemotePositions,
   replacePlanAnchors,
   replacePlanPatchPreviews,
@@ -594,7 +595,7 @@ export class TaskPositionsStore {
       const { anchors, laneLayers, positions: data, previews } = await fetchSprintPositionsBundle(sprintId);
       if (this.sprintId !== sprintId) return;
       const pending = this.pendingUpdatesRef;
-      const draftKeep = snapshotPlanDraftPositions(this.draftTaskIds, this.positions);
+      const draftKeep = keepQuickAddDraftPositions(this.positions, snapshotPlanDraftPositions(this.draftTaskIds, this.positions));
       runInAction(() => {
         const next = mergeRemotePositions(data, pending, draftKeep);
         this.positions.clear();

@@ -10,6 +10,7 @@ import {
   fetchSprintPositions,
 } from '@/lib/beerTrackerApi';
 import { stripPositionSource } from '@/lib/layers/data/mappers/taskPositionToApi';
+import { isPlannerQuickAddDraftId } from '@/lib/planner/plannerCardKind';
 
 /** Parallel positions + plan-anchors fetch used by {@link TaskPositionsStore.loadSprint}. */
 export async function fetchSprintPositionsBundle(sprintId: number): Promise<{
@@ -69,4 +70,18 @@ export function mergeRemotePositions(
     next.set(taskId, position);
   });
   return next;
+}
+
+/**
+ * Черновики быстрого добавления (`local-task-*`) живут только на клиенте и на сервер не уходят:
+ * без этого reconcile по realtime стирал позицию неотправленной заметки, и она пропадала с доски.
+ */
+export function keepQuickAddDraftPositions(
+  positions: ReadonlyMap<string, TaskPosition>,
+  keep: Map<string, TaskPosition>
+): Map<string, TaskPosition> {
+  positions.forEach((position, taskId) => {
+    if (isPlannerQuickAddDraftId(taskId)) keep.set(taskId, position);
+  });
+  return keep;
 }

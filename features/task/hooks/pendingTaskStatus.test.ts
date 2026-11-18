@@ -2,7 +2,10 @@ import type { Task } from '@/types';
 
 import { describe, expect, it } from 'vitest';
 
-import { applyPendingTaskStatuses, forgetTaskStatusChange, rememberTaskStatusChange } from './pendingTaskStatus';
+import { forgetTaskStatusChange, reconcileFetchedSprintTasks, rememberTaskStatusChange } from './pendingTaskStatus';
+
+const applyPendingTaskStatuses = (response: { tasks: Task[] }, now: number) =>
+  reconcileFetchedSprintTasks(response, undefined, now);
 
 function task(id: string, originalStatus: string): Task {
   return { id, link: '#', name: id, originalStatus, statusColorKey: originalStatus, team: 'Web' };
@@ -42,5 +45,16 @@ describe('applyPendingTaskStatuses', () => {
     forgetTaskStatusChange('C-1');
     const response = { tasks: [task('C-1', 'open')] };
     expect(applyPendingTaskStatuses(response, 1000)).toBe(response);
+  });
+});
+
+describe('reconcileFetchedSprintTasks', () => {
+  it('keeps client-only drafts that the server response does not know about', () => {
+    const draft = { ...task('local-task-1', 'todo'), isLocalTask: true, localDraftKind: 'comment' as const, name: '' };
+    const previous = { tasks: [task('D-1', 'open'), draft] };
+    const fresh = { tasks: [task('D-1', 'closed')] };
+
+    expect(reconcileFetchedSprintTasks(fresh, previous, 0).tasks.map((item) => item.id)).toEqual(['D-1', 'local-task-1']);
+    expect(reconcileFetchedSprintTasks(fresh, undefined, 0)).toBe(fresh);
   });
 });
