@@ -564,6 +564,8 @@ export default [
       'coverage/**',
       'storybook-static/**',
       'public/sw.js',
+      // Отчёты и артефакты прогонов Playwright (HTML-отчёт с бандлом trace viewer).
+      'e2e/.results/**',
     ],
   },
 ];

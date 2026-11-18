@@ -22,6 +22,13 @@ if ! curl -s -o /dev/null -f "http://localhost:$port/demo/planner"; then
   exit 1
 fi
 
+# Все воркеры бьют в один dev-сервер хоста, а образ делит ВМ Docker с его контейнером: при 7+ браузерах
+# страницы грузятся дольше таймаута теста. --workers в аргументах перекрывает.
+workers=(--workers=4)
+for arg in "$@"; do
+  case "$arg" in --workers*|-j*) workers=() ;; esac
+done
+
 forward="require('net').createServer((c) => { const u = require('net').connect($port, 'host.docker.internal'); \
 c.pipe(u).pipe(c); c.on('error', () => u.destroy()); u.on('error', () => c.destroy()); }).listen($port, '127.0.0.1')"
 
@@ -30,6 +37,7 @@ exec docker run --rm --ipc=host \
   -v "$PWD":/work -w /work \
   -e E2E_PORT="$port" \
   -e CI="${CI:-}" \
+  -e E2E_AUDIT_UPDATE="${E2E_AUDIT_UPDATE:-}" \
   --add-host=host.docker.internal:host-gateway \
   "mcr.microsoft.com/playwright:v${version}-noble" \
-  bash -c 'node -e "$1" & sleep 0.5; shift; exec node node_modules/@playwright/test/cli.js test "$@"' _ "$forward" "$@"
+  bash -c 'node -e "$1" & sleep 0.5; shift; exec node node_modules/@playwright/test/cli.js test "$@"' _ "$forward" ${workers[@]+"${workers[@]}"} "$@"

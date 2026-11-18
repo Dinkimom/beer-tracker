@@ -78,22 +78,40 @@ async function dragMouse(page: Page, from: { x: number; y: number }, to: { x: nu
   await page.mouse.up();
 }
 
-const GRAB_OFFSET = 30;
+/**
+ * Отступ от левого верхнего угла карточки, за который её можно взять: первая точка, где ближайший
+ * интерактивный элемент под курсором — сама карточка. Иначе жест возьмёт не то: край карточки может уйти
+ * под липкую колонку участников (там ручка её ширины), а за ссылку на задачу браузер тянет саму ссылку.
+ */
+async function grabOffset(card: Locator): Promise<{ x: number; y: number }> {
+  const offset = await card.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    for (const y of [12, box.height - 12, box.height / 2]) {
+      for (let x = 30; x < box.width - 10; x += 20) {
+        const hit = document.elementFromPoint(box.left + x, box.top + y);
+        if (hit?.closest('a, button, [role=button], [role=separator]') === el) return { x, y };
+      }
+    }
+    return null;
+  });
+  if (offset === null) throw new Error('карточку не за что взять: её закрывают другие элементы');
+  return offset;
+}
 
 /**
  * Перетаскивает карточку (со свимлейна или из сайдбара) так, чтобы её левый верхний угол лёг в ячейку
- * `start` строки `lane`. Берём за точку у левого края, а не за центр: карточка встаёт туда, куда
- * пришёл этот угол.
+ * `start` строки `lane`: точку захвата ведём в ту же точку относительно ячейки, где она была относительно карточки.
  */
 export async function dragCardToCell(page: Page, card: Locator, lane: string, start: number): Promise<void> {
   const cardBox = await card.boundingBox();
   const laneBox = await page.locator(`[data-swimlane="${lane}"]`).boundingBox();
   if (!cardBox || !laneBox) throw new Error(`нет карточки или строки ${lane}`);
   const part = await partWidth(page);
+  const grab = await grabOffset(card);
   await dragMouse(
     page,
-    { x: cardBox.x + GRAB_OFFSET, y: cardBox.y + GRAB_OFFSET },
-    { x: laneBox.x + start * part + 12 + GRAB_OFFSET, y: laneBox.y + 12 + GRAB_OFFSET }
+    { x: cardBox.x + grab.x, y: cardBox.y + grab.y },
+    { x: laneBox.x + start * part + 12 + grab.x, y: laneBox.y + 12 + grab.y }
   );
 }
 
@@ -102,9 +120,10 @@ export async function dragCardTo(page: Page, card: Locator, target: Locator): Pr
   const cardBox = await card.boundingBox();
   const targetBox = await target.boundingBox();
   if (!cardBox || !targetBox) throw new Error('нет карточки или цели переноса');
+  const grab = await grabOffset(card);
   await dragMouse(
     page,
-    { x: cardBox.x + GRAB_OFFSET, y: cardBox.y + GRAB_OFFSET },
+    { x: cardBox.x + grab.x, y: cardBox.y + grab.y },
     { x: targetBox.x + targetBox.width / 2, y: targetBox.y + targetBox.height / 2 }
   );
 }

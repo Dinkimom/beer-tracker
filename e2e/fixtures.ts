@@ -28,7 +28,7 @@ const DEMO_NOW = new Date('2026-10-16T12:00:00+03:00');
 
 /**
  * `page` с подготовленным демо: язык, тема, пройденный онбординг; падает в конце теста,
- * если браузер написал в консоль ошибку или бросил необработанное исключение.
+ * если браузер написал в консоль ошибку, бросил необработанное исключение или получил ответ 4xx/5xx.
  * Состояние демо живёт в памяти вкладки — у каждого теста свой контекст и чистая фикстура.
  */
 export const test = base.extend<DemoOptions>({
@@ -52,10 +52,13 @@ export const test = base.extend<DemoOptions>({
       if (message.type() === 'error') problems.push(`console.error: ${message.text()}`);
     });
     page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
+    page.on('response', (response) => {
+      if (response.status() >= 400) problems.push(`HTTP ${response.status()}: ${response.url()}`);
+    });
 
     await provide(page);
 
-    expect(problems, 'браузер не должен писать ошибки в консоль').toEqual([]);
+    expect(problems, 'ни ошибок в консоли браузера, ни ответов 4xx/5xx').toEqual([]);
   },
   storage: [{}, { option: true }],
   theme: ['light', { option: true }],
@@ -70,6 +73,15 @@ export async function openDemoPlanner(page: Page): Promise<void> {
   await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
   await expect(sprintTab(page, 'board')).toHaveAttribute('aria-current', 'page');
   await page.waitForLoadState('networkidle');
+  await expectNoLoadingOverlay(page);
+}
+
+/**
+ * Полноэкранный оверлей загрузки (`LoadingOverlayView`) может висеть поверх уже отрисованного экрана:
+ * маркер экрана виден, а кликнуть и снять снимок ещё нельзя.
+ */
+async function expectNoLoadingOverlay(page: Page): Promise<void> {
+  await expect(page.locator('[role="status"][aria-busy="true"]')).toHaveCount(0);
 }
 
 type SprintTabKey = 'backlog' | 'board' | 'burndown' | 'metrics' | 'quarter' | 'retro';
@@ -98,4 +110,5 @@ export async function openSprintTab(page: Page, key: SprintTabKey): Promise<void
   await sprintTab(page, key).click();
   await expect(sprintTab(page, key)).toHaveAttribute('aria-current', 'page');
   await expect(SCREEN_MARKERS[key](page)).toBeVisible();
+  await expectNoLoadingOverlay(page);
 }

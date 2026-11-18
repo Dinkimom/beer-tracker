@@ -87,7 +87,9 @@ test('TC-024: карточка возвращается в сайдбар — м
   });
 
   await test.step('перетаскиванием на сайдбар', async () => {
-    await dragCardTo(page, plannedCard(page, 'DEMO-109'), sidebarCard(page, 'DEMO-106'));
+    // Цель — верх списка сайдбара: нижние карточки на другом шрифте уходят за край окна.
+    // После «Удалить из плана» доска прокручена вбок (CLEANUP_BACKLOG) — захват ищет видимую часть карточки.
+    await dragCardTo(page, plannedCard(page, 'DEMO-109'), sidebarCard(page, 'DEMO-111'));
     await expect(plannedCard(page, 'DEMO-109')).toHaveCount(0);
     await expect(sidebarCard(page, 'DEMO-109')).toHaveCount(1);
     await expect(sidebarTasksTab(page)).toHaveAccessibleName(tasksTab(13));

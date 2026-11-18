@@ -33,6 +33,7 @@ export default defineConfig({
   projects: [
     { name: 'functional', testDir: 'e2e/functional' },
     { name: 'visual', testDir: 'e2e/visual' },
+    { name: 'audit', testDir: 'e2e/audit' },
   ],
   reporter: [
     [isCi ? 'github' : 'list'],
@@ -44,6 +45,9 @@ export default defineConfig({
   // Одинаковый путь эталона на любой ОС: снимки валидны только из Linux-образа, см. e2e/visual.
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
   testDir: 'e2e',
+  // Сервер — dev: первый HTML страницы рендерится на лету, под 4+ параллельными браузерами ответ доходит
+  // до 20–30 с (по trace — висел сам документ, не тест). 30 с по умолчанию на тест мало.
+  timeout: 60_000,
   use: {
     baseURL,
     deviceScaleFactor: 1,
