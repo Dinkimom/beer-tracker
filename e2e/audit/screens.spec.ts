@@ -7,7 +7,8 @@ import { collectFindings, type Finding } from './detectors';
 
 /**
  * Аудит интерфейса: детекторы (`detectors.ts`) по каждому экрану шапки в обеих темах.
- * Известные проблемы — e2e/audit/known/<экран>-<тема>.json (ключ «правило · элемент» → сколько раз).
+ * Известные проблемы — e2e/audit/known/<язык>[-stress]/<экран>-<тема>.json (ключ «правило · элемент» → сколько раз).
+ * Язык и данные — из проекта: `audit` (en), `audit-ru` (ru), `audit-ru-stress` (ru, стресс-фикстура).
  * Падает на новых находках и на исчезнувших (исправил — убери из списка: `pnpm e2e:audit:update`).
  * Только в Linux-образе, как визуальные: обрезка текста зависит от шрифтов.
  */
@@ -39,20 +40,21 @@ for (const theme of THEMES) {
     test.use({ theme });
 
     for (const tab of SPRINT_TABS) {
-      test(`${tab}`, async ({ page }, testInfo) => {
+      test(`${tab}`, async ({ demoFixture, language, page }, testInfo) => {
         await openDemoPlanner(page);
         if (tab !== 'board') await openSprintTab(page, tab);
         await page.waitForLoadState('networkidle');
         await page.mouse.move(0, 0);
 
-        const findings = await collectFindings(page);
+        const findings = await collectFindings(page, language);
         const counts = countByKey(findings);
-        const file = path.join(KNOWN_DIR, `${tab}-${theme}.json`);
+        const variant = demoFixture === 'stress' ? `${language}-stress` : language;
+        const file = path.join(KNOWN_DIR, variant, `${tab}-${theme}.json`);
         await testInfo.attach('findings.json', { body: JSON.stringify(findings, null, 2), contentType: 'application/json' });
         await testInfo.attach('screen.png', { body: await page.screenshot(), contentType: 'image/png' });
 
         if (UPDATE) {
-          fs.mkdirSync(KNOWN_DIR, { recursive: true });
+          fs.mkdirSync(path.dirname(file), { recursive: true });
           fs.writeFileSync(file, `${JSON.stringify(counts, null, 2)}\n`);
           return;
         }

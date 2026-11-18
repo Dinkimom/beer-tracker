@@ -14,7 +14,13 @@ const isCi = Boolean(process.env.CI);
 const port = Number(process.env.E2E_PORT ?? 3000);
 const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${port}`;
 
-export default defineConfig({
+/** Опции фикстуры `e2e/fixtures.ts`, которые задаются на уровне проекта. */
+interface ProjectOptions {
+  demoFixture: 'default' | 'stress';
+  language: 'en' | 'ru';
+}
+
+export default defineConfig<ProjectOptions>({
   expect: {
     timeout: 10_000,
     toHaveScreenshot: {
@@ -34,6 +40,10 @@ export default defineConfig({
     { name: 'functional', testDir: 'e2e/functional' },
     { name: 'visual', testDir: 'e2e/visual' },
     { name: 'audit', testDir: 'e2e/audit' },
+    // Русский длиннее английского: обрезка и переносы прячутся в нём; плюс английские фразы мимо перевода.
+    { name: 'audit-ru', testDir: 'e2e/audit', use: { language: 'ru' } },
+    // Неудобные данные (длинные названия, много людей, нет оценок) на самом длинном языке.
+    { name: 'audit-ru-stress', testDir: 'e2e/audit', use: { demoFixture: 'stress', language: 'ru' } },
     // Материал для скилла ui-audit, не проверка: только с E2E_TOUR=1 (pnpm e2e:tour).
     { name: 'tour', testDir: 'e2e/tour' },
   ],

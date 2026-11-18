@@ -2,16 +2,29 @@ import type { DemoFixtureState } from './demoFixtureSeed';
 import type { Task } from '@/types';
 
 import { createDemoFixtureSeed } from './demoFixtureSeed';
+import { applyDemoStressVariant, type DemoFixtureVariant } from './demoFixtureStress';
 import { DEMO_SPRINT_NEXT_ID } from './demoIds';
 
-let state: DemoFixtureState = createDemoFixtureSeed();
+/** Вариант фикстуры из адреса страницы (`?fixture=stress`); на сервере — обычный. */
+function variantFromLocation(): DemoFixtureVariant {
+  if (typeof window === 'undefined') return 'default';
+  return new URLSearchParams(window.location.search).get('fixture') === 'stress' ? 'stress' : 'default';
+}
+
+function createState(variant: DemoFixtureVariant): DemoFixtureState {
+  const seed = createDemoFixtureSeed();
+  return variant === 'stress' ? applyDemoStressVariant(seed) : seed;
+}
+
+const variant = variantFromLocation();
+let state: DemoFixtureState = createState(variant);
 
 export function getDemoFixtureStore(): DemoFixtureState {
   return state;
 }
 
 export function resetDemoFixtureStore(): void {
-  state = createDemoFixtureSeed();
+  state = createState(variant);
 }
 
 /** Задачи спринта. Прошлый (архивный) спринт по-прежнему показывает задачи текущего. */

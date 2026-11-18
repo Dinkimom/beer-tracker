@@ -2,18 +2,27 @@ import type { Page } from '@playwright/test';
 
 import AxeBuilder from '@axe-core/playwright';
 
+import { createDemoFixtureSeed } from '@/lib/demo/demoFixtureSeed';
+import { buildDemoQuarterlyPlan, buildDemoQuarterlyPlanContent } from '@/lib/demo/demoQuarterlyPlanSeed';
+import { enMessages } from '@/lib/i18n/messages/en';
+import { flattenMessagesToDotMap } from '@/lib/i18n/messages/messageTree';
+import { ruMessages } from '@/lib/i18n/messages/ru';
+
 /**
  * Детекторы проблем интерфейса: не «изменилось ли», а «плохо ли сейчас». Каждая находка — со стабильным
  * ключом (правило + элемент по доступному имени), чтобы известные проблемы можно было зафиксировать списком,
  * а падать только на новых.
  *
  * - `axe:*` — WCAG 2.1 A/AA: контраст, имена контролов, вложенные интерактивные элементы, ARIA;
- * - `clip:horizontal` / `clip:vertical` — текст не помещается и обрезан без многоточия и без подсказки;
+ * - `clip:horizontal` / `clip:vertical` — текст не помещается и обрезан без многоточия и без подсказки
+ *   (в том числе `truncate` на flex-контейнере: многоточие там не рисуется);
  * - `covered` — ни одна точка видимой части контрола не кликается: сверху другой элемент;
  * - `button:cursor` — кнопка или ссылка без курсора-руки (перетаскиваемому можно grab/move);
  * - `button:disabled-looks-active` — выключенная кнопка с курсором-рукой;
  * - `button:no-hover` — наведение не меняет вид кнопки (правило AGENTS.md «Кнопка интерактивна»);
- * - `i18n:untranslated` — кириллица в английском интерфейсе (e2e всегда на английском): строка мимо словаря.
+ * - `i18n:untranslated` — строка мимо словаря: в английском интерфейсе — кириллица, в русском — фраза из
+ *   английского словаря, у которой есть перевод (данные фикстуры — английские, поэтому латиница сама по себе
+ *   ничего не значит).
  */
 
 export interface Finding {
@@ -34,8 +43,11 @@ interface Rect {
 
 /** Хелперы, которые ставятся в страницу один раз (`installHelpers`) и доступны детекторам в evaluate. */
 interface AuditHelpers {
+  /** Русский интерфейс: английские фразы словаря, которых в нём быть не должно; английский — null. */
+  englishPhrases: Set<string> | null;
   clipFinding(el: HTMLElement): Finding | null;
   controlFindings(el: HTMLElement): Finding[];
+  cutByParent(el: HTMLElement): number;
   describe(el: Element): string;
   isDisabled(el: Element): boolean;
   isShown(el: Element): boolean;
@@ -103,25 +115,61 @@ function isDisabled(el: Element): boolean {
   return el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true';
 }
 
-/** Кириллица в собственном тексте или подписи элемента. */
+/**
+ * Строка мимо словаря в собственном тексте или подписи элемента: в английском UI — кириллица,
+ * в русском — точное совпадение с английской фразой словаря.
+ */
 function untranslatedFinding(el: HTMLElement): Finding | null {
+  const { describe: name, englishPhrases, isShown: shown } = window.auditHelpers;
   const own = [...el.childNodes]
     .filter((n) => n.nodeType === Node.TEXT_NODE)
-    .map((n) => n.textContent ?? '')
-    .join(' ');
-  const text = `${own} ${el.getAttribute('aria-label') ?? ''} ${el.getAttribute('title') ?? ''} ${el.getAttribute('placeholder') ?? ''}`;
-  const match = /[А-Яа-яЁё][А-Яа-яЁё\s,.:-]*/.exec(text);
-  if (!match || el.closest('nextjs-portal') || !window.auditHelpers.isShown(el)) return null;
-  return { detail: `«${match[0].trim().slice(0, 40)}»`, element: window.auditHelpers.describe(el), rule: 'i18n:untranslated' };
+    .map((n) => (n.textContent ?? '').trim())
+    .join(' ')
+    .trim();
+  const labels = [own, el.getAttribute('aria-label'), el.getAttribute('title'), el.getAttribute('placeholder')];
+  let hit: string | null | undefined;
+  if (englishPhrases) {
+    hit = labels.find((label) => label && englishPhrases.has(label.trim()));
+  } else {
+    hit = /[А-Яа-яЁё][А-Яа-яЁё\s,.:-]*/.exec(labels.join(' '))?.[0];
+  }
+  if (!hit || el.closest('nextjs-portal') || !shown(el)) return null;
+  return { detail: `«${hit.trim().slice(0, 40)}»`, element: name(el), rule: 'i18n:untranslated' };
+}
+
+/**
+ * На сколько пикселей текст элемента уходит за правый край ближайшего (до 3 уровней) родителя, который обрезает
+ * содержимое (`overflow: hidden/clip`) без многоточия и без подсказки. Прокручиваемые родители не в счёт:
+ * карточка за краем доски не обрезана, её можно прокрутить.
+ */
+function cutByParent(el: HTMLElement): number {
+  let parent = el.parentElement;
+  for (let depth = 0; parent && depth < 3; depth += 1, parent = parent.parentElement) {
+    const s = getComputedStyle(parent);
+    if (/auto|scroll/.test(s.overflowX)) return 0;
+    if (!/hidden|clip/.test(s.overflowX)) continue;
+    if ((s.textOverflow === 'ellipsis' && !/flex|grid/.test(s.display)) || parent.hasAttribute('title')) return 0;
+    return Math.max(0, el.getBoundingClientRect().right - parent.getBoundingClientRect().right);
+  }
+  return 0;
 }
 
 function clipFinding(el: HTMLElement): Finding | null {
-  const { describe: name, isShown: shown } = window.auditHelpers;
+  const { cutByParent: cut, describe: name, isShown: shown } = window.auditHelpers;
   const ownText = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim());
-  if (!ownText || el.closest('[title], [aria-label], nextjs-portal') || !shown(el)) return null;
+  // Полный текст по наведению даёт только title у самого элемента или его обёртки; aria-label предка (карточка-
+  // кнопка) подсказку не показывает — раньше из-за него выпадало всё содержимое карточек.
+  const tooltip = el.hasAttribute('title') || el.parentElement?.hasAttribute('title');
+  if (!ownText || tooltip || el.closest('nextjs-portal') || !shown(el)) return null;
   const s = getComputedStyle(el);
-  if (/hidden|clip/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1 && s.textOverflow !== 'ellipsis') {
+  // text-overflow в flex/grid-контейнере не работает: `truncate` на строке «аватар + имя» режет без многоточия.
+  const ellipsis = s.textOverflow === 'ellipsis' && !/flex|grid/.test(s.display);
+  if (/hidden|clip/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1 && !ellipsis) {
     return { detail: `${el.scrollWidth}px текста в ${el.clientWidth}px`, element: name(el), rule: 'clip:horizontal' };
+  }
+  const beyond = cut(el);
+  if (beyond > 1) {
+    return { detail: `${Math.round(beyond)}px текста за краем родителя`, element: name(el), rule: 'clip:horizontal' };
   }
   const clamped = s.webkitLineClamp !== 'none' && s.webkitLineClamp !== '';
   if (/hidden|clip/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 1 && !clamped) {
@@ -162,12 +210,61 @@ function controlFindings(el: HTMLElement): Finding[] {
   return findings;
 }
 
-async function installHelpers(page: Page): Promise<void> {
-  const helpers = { clipFinding, controlFindings, describe, isDisabled, isShown, untranslatedFinding, visibleRect };
+function collectStrings(value: unknown, out: Set<string>): Set<string> {
+  if (typeof value === 'string') out.add(value.trim());
+  else if (Array.isArray(value)) value.forEach((item) => collectStrings(item, out));
+  else if (value && typeof value === 'object') Object.values(value).forEach((item) => collectStrings(item, out));
+  return out;
+}
+
+/** Все строки данных демо: сид спринта и план квартала демо — статусы и названия «из трекера». */
+function demoDataStrings(): Set<string> {
+  const seed = createDemoFixtureSeed();
+  const quarter = { quarter: 4, year: 2026 } as const;
+  // Без задач спринта статусы эпиков берутся из справочника демо-трекера — так в набор попадают все варианты;
+  // живые статусы задач уже есть в сиде.
+  const plan = buildDemoQuarterlyPlan(quarter, buildDemoQuarterlyPlanContent(quarter), seed.developers, {
+    partsPerDay: 3,
+    positions: [],
+    sprints: [],
+    tasks: [],
+  });
+  return collectStrings(plan, collectStrings(seed, new Set()));
+}
+
+/**
+ * Английские фразы словаря, которых не должно быть в русском интерфейсе: у ключа есть отличающийся перевод,
+ * это не шаблон с `{…}`, не заимствование, которое русский словарь сам где-то использует («Delivery»),
+ * и не данные демо (статусы и названия из «трекера» английские по замыслу).
+ */
+function englishOnlyPhrases(): string[] {
+  const en = flattenMessagesToDotMap(enMessages);
+  const ru = flattenMessagesToDotMap(ruMessages);
+  const ruValues = new Set(Object.values(ru).map((text) => text.trim()));
+  const data = demoDataStrings();
+  const phrases = Object.entries(en)
+    .filter(([key, text]) => text !== ru[key] && /[A-Za-z]{2}/.test(text) && !text.includes('{'))
+    .map(([, text]) => text.trim())
+    .filter((text) => !ruValues.has(text) && !data.has(text));
+  return [...new Set(phrases)];
+}
+
+async function installHelpers(page: Page, language: 'en' | 'ru'): Promise<void> {
+  const helpers = {
+    clipFinding,
+    controlFindings,
+    cutByParent,
+    describe,
+    isDisabled,
+    isShown,
+    untranslatedFinding,
+    visibleRect,
+  };
   const source = Object.entries(helpers)
     .map(([key, fn]) => `${key}: ${fn.toString()}`)
     .join(',\n');
-  await page.addScriptTag({ content: `window.auditHelpers = {\n${source}\n};` });
+  const phrases = language === 'ru' ? `new Set(${JSON.stringify(englishOnlyPhrases())})` : 'null';
+  await page.addScriptTag({ content: `window.auditHelpers = {\n${source},\nenglishPhrases: ${phrases}\n};` });
 }
 
 // --- Детекторы ---
@@ -272,10 +369,10 @@ const FREEZE_MOTION = `*, *::before, *::after {
 }`;
 
 /** Все детекторы по текущему состоянию страницы. Страницу после аудита не переиспользовать. */
-export async function collectFindings(page: Page): Promise<Finding[]> {
+export async function collectFindings(page: Page, language: 'en' | 'ru' = 'en'): Promise<Finding[]> {
   await page.addStyleTag({ content: FREEZE_MOTION });
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-  await installHelpers(page);
+  await installHelpers(page, language);
   const findings = [...(await axeFindings(page)), ...(await domFindings(page)), ...(await hoverFindings(page))];
   return findings.map((finding) => ({ ...finding, element: normalizeName(finding.element) }));
 }
