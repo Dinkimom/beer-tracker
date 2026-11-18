@@ -43,16 +43,24 @@ const variantClasses: Record<ButtonVariant, string> = {
     'rounded-lg bg-transparent text-gray-700 hover:bg-gray-100 active:bg-gray-200 disabled:pointer-events-none disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800 dark:active:bg-gray-700',
 };
 
+/** `md` — окна, формы, панели; `sm` — внутри карточки, поповера или строки (черновик, «Применить»). */
+const sizeClasses = {
+  md: 'px-4 py-2',
+  sm: 'px-2.5 py-1',
+} as const;
+
 interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
   className?: string;
   /** Полная ширина (flex-1 для кнопок в ряду) */
   fullWidth?: boolean;
+  size?: keyof typeof sizeClasses;
   variant?: ButtonVariant;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = 'primary',
+    size = 'md',
     fullWidth,
     className = '',
     children,
@@ -64,13 +72,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref
 ) {
   const base =
-    'inline-flex cursor-pointer items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 active:scale-[0.98]';
+    'inline-flex cursor-pointer items-center justify-center gap-2 text-sm font-medium transition-all duration-200 active:scale-[0.98]';
   const variantClass = variantClasses[variant];
   const widthClass = fullWidth ? 'flex-1' : '';
   const button = (
     <button
       ref={ref}
-      className={`${base} ${variantClass} ${widthClass} ${className}`}
+      className={`${base} ${sizeClasses[size]} ${variantClass} ${widthClass} ${className}`}
       disabled={disabled}
       type={type}
       {...props}

@@ -6,17 +6,13 @@ import type { Task } from '@/types';
 import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
-import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   TaskInfoSidebarDescriptionEditor,
   type TaskInfoSidebarDescriptionEditorHandle,
 } from '@/features/task/components/TaskInfoSidebar/TaskInfoSidebarDescriptionEditor';
-import {
-  TASK_INFO_ICON_BUTTON_CLASS,
-  TASK_INFO_ICON_SVG_CLASS,
-} from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarIconClasses';
 import {
   normalizeEditorMarkdown,
   trackerDescriptionToEditorMarkdown,
@@ -112,19 +108,16 @@ export function TaskInfoSidebarDescriptionField({
   return (
     <div className="group relative">
       {canEdit && !isEditing ? (
-        <TextTooltip content={t('sprintPlanner.taskInfo.editDescription')}>
-        <button
-          aria-label={t('sprintPlanner.taskInfo.editDescription')}
-          className={`${TASK_INFO_ICON_BUTTON_CLASS} absolute right-0 top-4 z-10 bg-transparent opacity-0 group-hover:opacity-100`}
-          type="button"
+        <HeaderIconButton
+          className="absolute right-0 top-4 z-10 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+          title={t('sprintPlanner.taskInfo.editDescription')}
           onClick={(event) => {
             event.stopPropagation();
             startEdit();
           }}
         >
-          <Icon className={TASK_INFO_ICON_SVG_CLASS} name="edit" />
-        </button>
-        </TextTooltip>
+          <Icon className="h-4 w-4 shrink-0" name="edit" />
+        </HeaderIconButton>
       ) : null}
       <div
         className={`${isEditing ? DESCRIPTION_EDIT_CLASS : DESCRIPTION_VIEW_CLASS} ${

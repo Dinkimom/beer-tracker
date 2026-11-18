@@ -146,7 +146,7 @@ export function RetroCardComments({ comments, onAdd, onDelete }: RetroCardCommen
               onPointerDown={stopPointer}
             />
             <div className="mt-2 flex justify-end">
-              <Button className="!px-2.5 !py-1" disabled={!draft.trim()} type="submit" variant="primary">
+              <Button disabled={!draft.trim()} size="sm" type="submit" variant="primary">
                 {t('retro.addCommentSubmit')}
               </Button>
             </div>

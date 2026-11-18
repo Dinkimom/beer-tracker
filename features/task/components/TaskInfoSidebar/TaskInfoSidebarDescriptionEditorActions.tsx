@@ -18,20 +18,19 @@ export function TaskInfoSidebarDescriptionEditorActions({
 
   return (
     <div
-      className="flex items-center justify-end gap-3 px-3 py-2.5"
+      className="flex items-center justify-end gap-2 px-3 py-2.5"
       data-description-editor-chrome=""
     >
-      <button
-        className="cursor-pointer border-0 bg-transparent px-1 py-1 text-sm text-gray-500 transition-all duration-200 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-100 active:scale-[0.98]"
+      <Button
         disabled={disabled}
-        type="button"
+        variant="ghost"
         onClick={onCancel}
         onMouseDown={(event) => {
           event.preventDefault();
         }}
       >
         {t('common.cancel')}
-      </button>
+      </Button>
       <Button
         disabled={disabled}
         type="button"

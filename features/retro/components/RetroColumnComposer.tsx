@@ -78,7 +78,7 @@ export function RetroColumnComposer({ onAddNote }: RetroColumnComposerProps) {
         />
       </div>
       <div className="mt-2 flex items-center gap-1">
-        <Button className="!px-2.5 !py-1" disabled={!draft.trim()} type="submit" variant="primary">
+        <Button disabled={!draft.trim()} size="sm" type="submit" variant="primary">
           {t('retro.addCardSubmit')}
         </Button>
         <HeaderIconButton aria-label={t('retro.cancel')} size="sm" onCanvas onClick={close}>

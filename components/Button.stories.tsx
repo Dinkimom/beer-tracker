@@ -43,3 +43,12 @@ export const Accent: Story = {
 export const Warning: Story = {
   args: { children: 'Warning', variant: 'warning' },
 };
+
+/** Компактная: черновик в карточке, «Применить» в поповере. */
+export const Small: Story = {
+  args: { children: 'Применить', size: 'sm' },
+};
+
+export const SmallDangerOutline: Story = {
+  args: { children: 'Убрать ссылку', size: 'sm', variant: 'dangerOutline' },
+};

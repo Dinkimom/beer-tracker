@@ -174,7 +174,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
               onChange={(event) => setColumnDraft(event.target.value)}
             />
             <div className="flex items-center gap-1">
-              <Button className="!px-3 !py-1.5" disabled={!columnDraft.trim()} type="submit" variant="primary">
+              <Button disabled={!columnDraft.trim()} size="sm" type="submit" variant="primary">
                 {t('retro.addListSubmit')}
               </Button>
               <HeaderIconButton

@@ -6,9 +6,12 @@ import * as Popover from '@radix-ui/react-popover';
 import { useEditorState } from '@tiptap/react';
 import { useState } from 'react';
 
+import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { Input } from '@/components/Input';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { wrapWithTextTooltip } from '@/components/TextTooltip';
+import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   TOOLBAR_BTN_ACTIVE_CLASS,
@@ -82,9 +85,10 @@ export function TaskInfoSidebarDescriptionLinkControl({
       <Popover.Portal>
         <Popover.Content
           align="start"
-          className={`z-[120] w-72 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-600 dark:bg-gray-800 ${OVERLAY_FLOATING_ANIMATION}`}
+          className={`w-72 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-600 dark:bg-gray-800 ${OVERLAY_FLOATING_ANIMATION}`}
           data-description-editor-chrome=""
           sideOffset={6}
+          style={{ zIndex: ZIndex.popupContent }}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             const input = (event.currentTarget as HTMLElement).querySelector('input');
@@ -94,9 +98,10 @@ export function TaskInfoSidebarDescriptionLinkControl({
           <label className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-300">
             {t('sprintPlanner.taskInfo.descriptionEditor.linkPrompt')}
           </label>
-          <input
-            className="mb-2 w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:focus:border-blue-400"
+          <Input
+            className="mb-2"
             placeholder="https://"
+            size="sm"
             type="url"
             value={url}
             onChange={(event) => {
@@ -111,21 +116,13 @@ export function TaskInfoSidebarDescriptionLinkControl({
           />
           <div className="flex justify-end gap-2">
             {isActive ? (
-              <button
-                className="cursor-pointer rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 transition-all duration-200 active:scale-[0.98]"
-                type="button"
-                onClick={removeLink}
-              >
+              <Button size="sm" variant="dangerOutline" onClick={removeLink}>
                 {t('sprintPlanner.taskInfo.descriptionEditor.linkRemove')}
-              </button>
+              </Button>
             ) : null}
-            <button
-              className="cursor-pointer rounded-full bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 transition-all duration-200 active:scale-[0.98]"
-              type="button"
-              onClick={applyLink}
-            >
+            <Button size="sm" onClick={applyLink}>
               {t('sprintPlanner.taskInfo.descriptionEditor.linkApply')}
-            </button>
+            </Button>
           </div>
         </Popover.Content>
       </Popover.Portal>

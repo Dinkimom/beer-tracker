@@ -10,7 +10,6 @@ import { TextTooltip } from '@/components/TextTooltip';
 import { useTrackerWebUrlContext } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveTaskInfoBreadcrumbParts } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarFormatters';
-import { TASK_INFO_ICON_BUTTON_CLASS } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarIconClasses';
 import {
   getTaskTrackerDisplayKey,
   getTaskTrackerIssueUrl,
@@ -91,30 +90,22 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
             {issueKey}
           </a>
           </TextTooltip>
-          <TextTooltip content={t('sprintPlanner.taskInfo.copyKey')}>
-          <button
-            aria-label={t('sprintPlanner.taskInfo.copyKey')}
-            className={TASK_INFO_ICON_BUTTON_CLASS}
-            type="button"
+          <HeaderIconButton
+            title={t('sprintPlanner.taskInfo.copyKey')}
             onClick={() => {
               keyCopyFeedback.copy(issueKey).catch(() => undefined);
             }}
           >
             <CopyFeedbackGlyph copied={keyCopyFeedback.copied} idleName="copy" />
-          </button>
-          </TextTooltip>
-          <TextTooltip content={t('sprintPlanner.taskInfo.copyLink')}>
-          <button
-            aria-label={t('sprintPlanner.taskInfo.copyLink')}
-            className={TASK_INFO_ICON_BUTTON_CLASS}
-            type="button"
+          </HeaderIconButton>
+          <HeaderIconButton
+            title={t('sprintPlanner.taskInfo.copyLink')}
             onClick={() => {
               linkCopyFeedback.copy(issueUrl).catch(() => undefined);
             }}
           >
             <CopyFeedbackGlyph copied={linkCopyFeedback.copied} idleName="link" />
-          </button>
-          </TextTooltip>
+          </HeaderIconButton>
         </div>
 
         <HeaderIconButton

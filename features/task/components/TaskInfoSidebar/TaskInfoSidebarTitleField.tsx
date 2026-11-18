@@ -6,9 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { CopyFeedbackGlyph } from '@/components/CopyFeedbackGlyph';
-import { TextTooltip } from '@/components/TextTooltip';
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { useI18n } from '@/contexts/LanguageContext';
-import { TASK_INFO_ICON_BUTTON_CLASS } from '@/features/task/components/TaskInfoSidebar/taskInfoSidebarIconClasses';
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { useCopyFeedback } from '@/hooks/useCopyFeedback';
 import { updateIssueFields } from '@/lib/beerTrackerApi';
@@ -134,16 +133,13 @@ export function TaskInfoSidebarTitleField({ task, onFieldsSaved }: TaskInfoSideb
           {task.name}
         </button>
       )}
-      <TextTooltip content={t('sprintPlanner.taskInfo.copyTitle')}>
-      <button
-        aria-label={t('sprintPlanner.taskInfo.copyTitle')}
-        className={`${TASK_INFO_ICON_BUTTON_CLASS} mt-1.5 shrink-0`}
-        type="button"
+      <HeaderIconButton
+        className="mt-1.5"
+        title={t('sprintPlanner.taskInfo.copyTitle')}
         onClick={copyTitle}
       >
         <CopyFeedbackGlyph copied={titleCopyFeedback.copied} idleName="copy" />
-      </button>
-      </TextTooltip>
+      </HeaderIconButton>
     </div>
   );
 }
