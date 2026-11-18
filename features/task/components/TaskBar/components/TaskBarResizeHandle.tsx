@@ -87,15 +87,19 @@ export function TaskBarResizeHandle({
   const gripLineClass = paint
     ? getResizeHandleInlineGripOpacityClass(isActive)
     : getResizeHandleGripLineClasses(isActive, resizeHandleColors);
+  const title = resolveTaskBarResizeHandleTitle(side, t);
 
   return (
     <TextTooltip
-      content={resolveTaskBarResizeHandleTitle(side, t)}
+      content={title}
       delayDuration={RESIZE_HANDLE_TOOLTIP_DELAY_MS}
       skipDelayDuration={0}
     >
       <div
+        aria-label={title}
+        aria-orientation={side === 'top' || side === 'bottom' ? 'horizontal' : 'vertical'}
         className={`task-bar-resize-handle-hit absolute ${layout.hitClass} group/resize-handle ${ZIndex.class('arrowsHovered')}`}
+        role="separator"
         // Inline zIndex: гарантирует корректное наложение в swimlane,
         // t.к. z-[...] классы иногда не попадают в Tailwind build.
         style={{
