@@ -12,11 +12,11 @@ import {
 /** Иконка-кнопка внутри капсулы под карточкой (агент, подтверждение отрезков и т.п.). */
 const CARD_FLOATING_TOOLBAR_ICON_BUTTON = `${CONTEXT_MENU_GHOST_BUTTON_RESET} !h-6 !w-6 !min-h-0 !min-w-0 !justify-center !rounded-md !p-0`;
 
-export const CARD_FLOATING_TOOLBAR_CONFIRM_BUTTON_CLASS = `${CARD_FLOATING_TOOLBAR_ICON_BUTTON} text-green-700/90 hover:!bg-green-500/[0.12] dark:text-green-400/90 dark:hover:!bg-green-400/[0.12]`;
+export const CARD_FLOATING_TOOLBAR_CONFIRM_BUTTON_CLASS = `${CARD_FLOATING_TOOLBAR_ICON_BUTTON} text-green-700/90 hover:!bg-green-500/[0.12] active:!bg-green-500/[0.2] dark:text-green-400/90 dark:hover:!bg-green-400/[0.12] dark:active:!bg-green-400/[0.2]`;
 
-export const CARD_FLOATING_TOOLBAR_CANCEL_BUTTON_CLASS = `${CARD_FLOATING_TOOLBAR_ICON_BUTTON} text-red-600/90 hover:!bg-red-500/[0.1] dark:text-red-400/90 dark:hover:!bg-red-400/[0.1]`;
+export const CARD_FLOATING_TOOLBAR_CANCEL_BUTTON_CLASS = `${CARD_FLOATING_TOOLBAR_ICON_BUTTON} text-red-600/90 hover:!bg-red-500/[0.1] active:!bg-red-500/[0.18] dark:text-red-400/90 dark:hover:!bg-red-400/[0.1] dark:active:!bg-red-400/[0.18]`;
 
-export const CARD_FLOATING_TOOLBAR_NEUTRAL_BUTTON_CLASS = `${CARD_FLOATING_TOOLBAR_ICON_BUTTON} text-gray-600 hover:!bg-gray-500/[0.12] dark:text-gray-300 dark:hover:!bg-white/[0.08]`;
+export const CARD_FLOATING_TOOLBAR_NEUTRAL_BUTTON_CLASS = `${CARD_FLOATING_TOOLBAR_ICON_BUTTON} text-gray-600 hover:!bg-gray-500/[0.12] active:!bg-gray-500/[0.2] dark:text-gray-300 dark:hover:!bg-white/[0.08] dark:active:!bg-white/[0.14]`;
 
 const BELOW_END_PLACEMENT =
   'pointer-events-auto absolute right-0 top-full mt-1 w-max max-w-none whitespace-nowrap';
