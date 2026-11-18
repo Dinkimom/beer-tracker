@@ -79,8 +79,10 @@ export function TasksTab() {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* isolate: z-index внутри карточек (нижняя строка — z-20) не выходит выше стеклянных панелей
+          фильтров и действий (z-10) — иначе статус карточки рисуется поверх «Add task» и кнопок фильтра. */}
       <div
-        className="absolute inset-0 overflow-y-auto overscroll-contain"
+        className="absolute inset-0 isolate overflow-y-auto overscroll-contain"
         style={{
           paddingTop: SIDEBAR_TAB_HEADER_HEIGHT_PX + filtersHeight,
           paddingBottom: actionsHeight,
