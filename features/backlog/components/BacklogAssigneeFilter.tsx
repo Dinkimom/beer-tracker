@@ -13,11 +13,20 @@ const VISIBLE_ASSIGNEE_COUNT = 5;
 const ASSIGNEE_OVERLAP_CLASS = '-ml-1';
 const ASSIGNEE_MORE_CLASS = 'h-7 w-7 text-[11px]';
 
-/** Кольцо не на самой кнопке: глобальный `button:focus { box-shadow: none }` снимал бы его до потери фокуса. */
+/**
+ * Кольцо не на самой кнопке: глобальный `button:focus { box-shadow: none }` снимал бы его до потери фокуса.
+ * Наведение красит кольцо (кнопке нужен отклик цветом, не только масштабом).
+ */
 function assigneeRingClass(selected: boolean): string {
-  return `pointer-events-none absolute inset-0 rounded-full ring-2 ${
-    selected ? 'ring-blue-500' : 'ring-ds-canvas'
+  return `pointer-events-none absolute inset-0 rounded-full ring-2 transition-colors ${
+    selected ? 'ring-blue-500' : 'ring-ds-canvas group-hover:ring-gray-400 dark:group-hover:ring-gray-500'
   }`;
+}
+
+/** Порядок кружков: выбранные, затем люди с фото — узнаваемых не прячем за «+N»; дальше — как пришли. */
+function assigneeRank(person: BacklogFilterPerson, selectedIds: ReadonlySet<string>): number {
+  if (selectedIds.has(person.id)) return 0;
+  return person.avatarUrl ? 1 : 2;
 }
 
 interface BacklogAssigneeFilterProps {
@@ -36,11 +45,7 @@ export function BacklogAssigneeFilter({
   const rootRef = useRef<HTMLDivElement>(null);
   const ordered = useMemo(
     () =>
-      [...people].sort((a, b) => {
-        const aSelected = selectedIds.has(a.id) ? 0 : 1;
-        const bSelected = selectedIds.has(b.id) ? 0 : 1;
-        return aSelected - bSelected;
-      }),
+      [...people].sort((a, b) => assigneeRank(a, selectedIds) - assigneeRank(b, selectedIds)),
     [people, selectedIds]
   );
   const visible = ordered.slice(0, VISIBLE_ASSIGNEE_COUNT);
@@ -61,8 +66,9 @@ export function BacklogAssigneeFilter({
         return (
           <button
             key={person.id}
+            aria-label={person.name}
             aria-pressed={selected}
-            className={`relative cursor-pointer rounded-full transition-all duration-200 hover:z-10 hover:scale-105 active:scale-[0.98] ${index > 0 ? ASSIGNEE_OVERLAP_CLASS : ''} ${selected ? 'z-10' : ''}`}
+            className={`group relative cursor-pointer rounded-full transition-all duration-200 hover:z-10 hover:scale-105 active:scale-[0.98] ${index > 0 ? ASSIGNEE_OVERLAP_CLASS : ''} ${selected ? 'z-10' : ''}`}
             type="button"
             onClick={() => onToggle(person.id)}
           >

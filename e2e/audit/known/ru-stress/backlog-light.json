@@ -1,10 +1,8 @@
 {
-  "axe:button-name · button \"\"": 3,
   "axe:color-contrast · button \"Диаграмма сгорания\"": 1,
   "axe:color-contrast · button \"Доска\"": 1,
   "axe:color-contrast · button \"Метрики\"": 1,
   "axe:color-contrast · button \"Ретро\"": 1,
   "axe:color-contrast · button \"Роадмэп\"": 1,
-  "button:no-hover · button \"\"": 2,
   "button:no-hover · button \"Пивтрекер — нажмите для анимации\"": 1
 }
