@@ -30,6 +30,8 @@ export function isTaskDone(
  */
 interface MetricsByStatusRow {
   statusKey: string;
+  /** Подпись статуса из трекера; без подписи — ключ. Для `__none__` подпись даёт UI. */
+  statusLabel: string;
   totalSP: number;
   totalTP: number;
 }
@@ -173,19 +175,23 @@ export function calculateMetricsByStatus(
   const goalIdSet = goalTaskIdSet(goalTaskIds);
   const devTasks = tasks.filter(task => isOriginalTask(task) && !goalIdSet.has(task.id));
 
-  const byStatus = new Map<string, { totalSP: number; totalTP: number }>();
+  const byStatus = new Map<string, { statusLabel: string; totalSP: number; totalTP: number }>();
   for (const task of devTasks) {
     const key = (task.originalStatus ?? '').trim() || '__none__';
-    const cur = byStatus.get(key) ?? { totalSP: 0, totalTP: 0 };
+    const cur = byStatus.get(key) ?? { statusLabel: key, totalSP: 0, totalTP: 0 };
+    const display = task.originalStatusDisplay?.trim();
+    if (display && cur.statusLabel === key) {
+      cur.statusLabel = display;
+    }
     cur.totalSP += getTaskStoryPoints(task);
     cur.totalTP += getTaskTestPoints(task);
     byStatus.set(key, cur);
   }
 
   const rows: MetricsByStatusRow[] = [];
-  for (const [statusKey, { totalSP, totalTP }] of byStatus) {
+  for (const [statusKey, { statusLabel, totalSP, totalTP }] of byStatus) {
     if (totalSP > 0 || totalTP > 0) {
-      rows.push({ statusKey, totalSP, totalTP });
+      rows.push({ statusKey, statusLabel, totalSP, totalTP });
     }
   }
   rows.sort((a, b) => statusSortIndex(a.statusKey) - statusSortIndex(b.statusKey));

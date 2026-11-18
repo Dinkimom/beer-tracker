@@ -65,8 +65,18 @@ describe('calculateMetricsByStatus', () => {
       ['goal']
     );
     const byKey = Object.fromEntries(rows.map((r) => [r.statusKey, r]));
-    expect(byKey.inprogress).toEqual({ statusKey: 'inprogress', totalSP: 5, totalTP: 1 });
+    expect(byKey.inprogress).toEqual({ statusKey: 'inprogress', statusLabel: 'inprogress', totalSP: 5, totalTP: 1 });
     expect(byKey.goal).toBeUndefined();
+  });
+
+  it('labels a status with the tracker display name, falling back to the key', () => {
+    const rows = calculateMetricsByStatus([
+      task({ id: 'a', originalStatus: 'needInfo', storyPoints: 1 }),
+      task({ id: 'b', originalStatus: 'needInfo', originalStatusDisplay: 'Need info', storyPoints: 2 }),
+      task({ id: 'c', originalStatus: 'review', storyPoints: 1 }),
+    ]);
+    const byKey = Object.fromEntries(rows.map((r) => [r.statusKey, r.statusLabel]));
+    expect(byKey).toEqual({ needInfo: 'Need info', review: 'review' });
   });
 
   it('ignores QA phantom tasks for dev metrics', () => {

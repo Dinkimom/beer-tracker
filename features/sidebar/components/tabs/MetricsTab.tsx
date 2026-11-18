@@ -72,7 +72,7 @@ export function MetricsTab() {
               }`}
             >
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 truncate block">
-                {row.statusKey === '__none__' ? t('sidebar.metrics.noStatus') : row.statusKey}
+                {row.statusKey === '__none__' ? t('sidebar.metrics.noStatus') : row.statusLabel}
               </span>
               <div className="text-sm tabular-nums text-right text-gray-700 dark:text-gray-300">
                 {roundPointsForDisplay(row.totalSP) > 0 ? (
