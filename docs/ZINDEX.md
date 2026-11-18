@@ -75,7 +75,7 @@ import { ZIndex } from '@/constants';
 
 ### 2. Через className (Tailwind)
 
-Используйте метод `ZIndex.class()` для генерации Tailwind классов (для inline-style без зависимости от генерации Tailwind есть также `ZIndex.value('modal')`):
+Используйте метод `ZIndex.class()` — он отдаёт готовый класс из таблицы `levelClasses` в `constants/zIndex.ts`. Классы записаны там литералами, иначе Tailwind их не сгенерирует: строку `z-[${n}]`, собранную в рантайме, он не видит. Новый слой — новая строка и в `levels`, и в `levelClasses` (расхождение ловит `constants/zIndex.test.ts`). Свой `z-[N]` с числом в обход таблицы не пишите. Для inline-style есть `ZIndex.value('modal')`:
 
 ```tsx
 <div className={ZIndex.class('modal')}>

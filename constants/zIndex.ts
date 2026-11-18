@@ -71,10 +71,51 @@ const levels = {
 
 type ZIndexLevel = keyof typeof levels;
 
+/**
+ * Готовые классы Tailwind по слоям — литералами, чтобы Tailwind их увидел и сгенерировал.
+ * Строку `z-[${n}]`, собранную в рантайме, он не видит, и класс молча не работает.
+ * Совпадение с `levels` проверяет `zIndex.test.ts`.
+ */
+const levelClasses = {
+  base: 'z-[0]',
+  contentOverlay: 'z-[1]',
+  contentInteractive: 'z-[2]',
+  baselineOverBar: 'z-[3]',
+  stickyInContent: 'z-[10]',
+  stickyElevated: 'z-[20]',
+  stickyNote: 'z-[25]',
+  arrowsHovered: 'z-[30]',
+  agentPendingApproval: 'z-[40]',
+  rowScrollArrow: 'z-[9]',
+  plannerLaneGlass: 'z-[45]',
+  stickyLeftColumn: 'z-[50]',
+  stickyPinnedRows: 'z-[55]',
+  stickyMainHeader: 'z-[60]',
+  sidebarResize: 'z-[65]',
+  plannerControls: 'z-[70]',
+  dropdown: 'z-[100]',
+  dropdownContent: 'z-[110]',
+  dropdownNested: 'z-[120]',
+  floatingControls: 'z-[200]',
+  dragPreview: 'z-[1200]',
+  sidePanel: 'z-[1300]',
+  contextMenu: 'z-[1400]',
+  submenu: 'z-[1410]',
+  popupContent: 'z-[1420]',
+  modalBackdrop: 'z-[2000]',
+  modal: 'z-[2001]',
+  modalNested: 'z-[2011]',
+  modalConfirmBackdrop: 'z-[2020]',
+  modalConfirm: 'z-[2021]',
+  tooltip: 'z-[2500]',
+  toast: 'z-[2600]',
+  overlay: 'z-[3000]',
+} as const satisfies Record<ZIndexLevel, string>;
+
 export const ZIndex = {
   ...levels,
   /** Класс Tailwind для z-index. В className: `ZIndex.class('modal')` → `z-[2001]` */
-  class: (level: ZIndexLevel): string => `z-[${levels[level]}]`,
+  class: (level: ZIndexLevel): string => levelClasses[level],
   /** Числовое значение z-index (для inline-style — чтобы не зависеть от Tailwind генерации). */
   value: (level: ZIndexLevel): number => levels[level],
 };
