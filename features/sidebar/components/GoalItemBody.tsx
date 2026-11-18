@@ -47,6 +47,7 @@ export function GoalItemBody({
     return (
       <>
         <input
+          aria-label={item.text}
           checked={item.checked}
           className="w-4 h-4 accent-blue-600 dark:accent-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
           disabled={isUpdating || dimmed}

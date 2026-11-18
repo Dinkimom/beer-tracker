@@ -48,3 +48,44 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+  e2e:
+    name: E2E (functional + visual)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Тот же образ, в котором сняты визуальные эталоны (pnpm e2e:visual:update). Версия — как @playwright/test в package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
+    env:
+      E2E_START_SERVER: '1'
+      # Демо не ходит в БД и трекер; секреты — заглушки, чтобы сервер стартовал.
+      AUTH_SESSION_SECRET: e2e-only-auth-session-secret-min-32-chars
+      ORG_SECRETS_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Playwright
+        run: pnpm exec playwright test
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: e2e/.results/
+          retention-days: 7

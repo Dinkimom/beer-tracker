@@ -47,6 +47,7 @@ next-env.d.ts
 
 #playwright
 .playwright-mcp
+/e2e/.results/
 
 # uploaded files
 /public/uploads
