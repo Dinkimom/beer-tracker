@@ -1,6 +1,8 @@
 import type { DemoFixtureState } from './demoFixtureSeed';
 
-import { DEMO_SPRINT_ID } from './demoIds';
+import { computeSprintCompletionScope } from '@/lib/sprints/sprintScoreHelpers';
+
+import { DEMO_PLANNER_NOW, DEMO_SPRINT_ID } from './demoIds';
 
 function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -21,32 +23,35 @@ function eachDayInclusive(startIso: string, endIso: string): Date[] {
   return days;
 }
 
-/** Synthetic burndown curve for the fixture sprint (no tracker changelog). */
+/**
+ * Synthetic burndown curve for the fixture sprint (no tracker changelog).
+ * Объём и «сделано» — тем же `computeSprintCompletionScope`, что плитки и скор ретро (без QA-задач и целей,
+ * как боевой бёрндаун): иначе цифры одного спринта на ретро и бёрндауне расходились (TP 16 против 21).
+ * Сделанное копится до «сегодня» демо (`DEMO_PLANNER_NOW`), а не размазывается по всему спринту — иначе линия
+ * на «Today» стояла выше остатка в плитке.
+ */
 export function buildDemoBurndownPayload(store: DemoFixtureState) {
   const sprint =
     store.sprints.find((s) => s.id === DEMO_SPRINT_ID) ?? store.sprints[store.sprints.length - 1];
-  const tasks = store.tasks.filter((t) => t.type !== 'goal');
-  const initialSP = tasks.reduce((sum, t) => sum + (t.storyPoints ?? 0), 0);
-  const initialTP = tasks.reduce((sum, t) => sum + (t.testPoints ?? 0), 0);
-  const doneSP = tasks
-    .filter((t) => t.status === 'done')
-    .reduce((sum, t) => sum + (t.storyPoints ?? 0), 0);
-  const doneTP = tasks
-    .filter((t) => t.status === 'done')
-    .reduce((sum, t) => sum + (t.testPoints ?? 0), 0);
+  const goalIds = new Set(store.tasks.filter((t) => t.type === 'goal').map((t) => t.id));
+  const scope = computeSprintCompletionScope(store.tasks, goalIds);
+  const initialSP = scope.totalScopeSP;
+  const initialTP = scope.totalScopeTP;
+  const doneSP = scope.completedSP;
+  const doneTP = scope.completedTP;
   const currentSP = Math.max(0, initialSP - doneSP);
   const currentTP = Math.max(0, initialTP - doneTP);
 
   const days = eachDayInclusive(sprint.startDate, sprint.endDate);
+  const todayKey = dateKey(DEMO_PLANNER_NOW);
+  const todayIndex = Math.max(1, days.findIndex((day) => dateKey(day) === todayKey));
   const dataPoints = days.map((day, index) => {
-    const progress = days.length <= 1 ? 1 : index / (days.length - 1);
-    const remainingSP = Math.round(initialSP * (1 - progress * (doneSP / Math.max(initialSP, 1))));
-    const remainingTP = Math.round(initialTP * (1 - progress * (doneTP / Math.max(initialTP, 1))));
+    const progress = Math.min(1, index / todayIndex);
     return {
       date: day.toISOString(),
       dateKey: dateKey(day),
-      remainingSP: Math.max(0, remainingSP),
-      remainingTP: Math.max(0, remainingTP),
+      remainingSP: Math.max(0, initialSP - doneSP * progress),
+      remainingTP: Math.max(0, initialTP - doneTP * progress),
     };
   });
 

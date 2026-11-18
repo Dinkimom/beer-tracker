@@ -35,8 +35,8 @@ export function useBurndownChartTileState({
     if (sprintId == null || !sprintTasksForTiles?.length) {
       return null;
     }
-    return computeBurndownScopeTiles(sprintTasksForTiles, globalNameFilter, completionRules);
-  }, [sprintId, sprintTasksForTiles, globalNameFilter, completionRules]);
+    return computeBurndownScopeTiles(sprintTasksForTiles, globalNameFilter, goalTaskIdsForTiles, completionRules);
+  }, [sprintId, sprintTasksForTiles, globalNameFilter, goalTaskIdsForTiles, completionRules]);
 
   const taskFallbackTileMetrics = useMemo(() => {
     if (sprintTasksForTiles === undefined) {
