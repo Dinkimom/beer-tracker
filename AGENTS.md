@@ -12,6 +12,7 @@
 4. **`pnpm lint:unused`** — без находок Knip (мертвый код/неиспользуемые зависимости/экспорты).
 5. **`pnpm lint:dup`** — без новых копий кода сверх `.jscpd-baseline.json`. Убрал дубли — `pnpm lint:dup:baseline` и закоммитить baseline.
 6. При изменении зависимостей или публичных API — при необходимости **`pnpm build`**.
+7. **Регресс**, если меняется видимое пользователю поведение или вид: `pnpm e2e:affected` → обновить кейсы в [`docs/TEST_CASES.md`](./docs/TEST_CASES.md) → написать или поправить автотесты в `e2e/` → **`pnpm e2e`** и **`pnpm e2e:visual`** (Docker), каждое падение разобрать. Весь цикл — скилл `regress`, правила — [`docs/AGENT_TESTING_GUIDE.md`](./docs/AGENT_TESTING_GUIDE.md#постоянный-процесс-фича--кейсы--тесты).
 
 Эти шаги обязательны для ассистентов-агентов перед завершением задачи: если какой-то этап не удалось запустить локально, явно зафиксировать это в ответе и указать причину.
 Предупреждения по качеству считаются блокирующими и должны устраняться как ошибки.
@@ -24,6 +25,8 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 Локально это тот же dev-сервер, что уже запущен, плюс путь `/demo/planner` (у `pnpm docker:dev` обычно `http://localhost:3000/demo/planner`).
 
+На этой же странице идёт автоматический регресс (`e2e/`, Playwright). Новое поведение, которое на фикстурах не воспроизвести, сначала получает данные в `lib/demo/`.
+
 ## Команды
 
 | Команда | Назначение |
@@ -32,11 +35,16 @@ UI планера можно проверять на **`/demo/planner`**, без
 | `pnpm lint:fix` | ESLint с автоисправлением |
 | `pnpm lint:sonar-density` | Плотность SonarJS-срабатываний / 1000 LoC (цель ≤ 6) |
 | `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm test` | Vitest (`vitest run`) и затем **`pnpm check:i18n`** (паритет ключей ru/en) |
+| `pnpm test` | Vitest (`vitest run`), затем **`pnpm check:i18n`** (паритет ключей ru/en) и **`pnpm check:e2e-cases`** |
 | `pnpm check:i18n` | Паритет ключей ru/en + проверка английских листьев (пустые строки, TODO/TBD/FIXME); исключения — `scripts/i18n/english-quality-allowlist.json` |
 | `pnpm i18n:export` | Экспорт `en`/`ru` в плоский JSON для офлайн-перевода (см. `scripts/i18n/README.md`) |
 | `pnpm i18n:import` | Слияние правок из JSON обратно в `en.ts` / `ru.ts` |
 | `pnpm test:watch` | Vitest в режиме watch |
+| `pnpm e2e` | Функциональные e2e (Playwright) на `/demo/planner` против запущенного dev-сервера |
+| `pnpm e2e:visual` | Визуальный регресс в Linux-образе Playwright (Docker); `pnpm e2e:visual:update` — переснять эталоны |
+| `pnpm e2e:affected` | Кейсы `docs/TEST_CASES.md`, задетые текущим diff, и UI-файлы без кейса |
+| `pnpm check:e2e-cases` | Сверка каталога кейсов с кодом и спеками (входит в `pnpm test`) |
+| `pnpm e2e:report` | HTML-отчёт последнего e2e-прогона |
 | `pnpm sync-worker` | BullMQ-воркер синхронизации (отдельный процесс) |
 | `pnpm sync-worker:build` | Бандл воркера в `dist/sync-worker` (Docker target `sync-worker`) |
 | `pnpm lint:unused` | Knip: неиспользуемые файлы/зависимости |
@@ -172,4 +180,4 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 ## CI
 
-В GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) на `push`/`pull_request` в основную ветку запускаются `pnpm lint`, `pnpm lint:dup`, `pnpm typecheck` и `pnpm test`. Сборка Docker-образа не запускает ESLint (`NEXT_IGNORE_ESLINT` в Dockerfile), поэтому локальные и CI-проверки обязательны.
+В GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) на `push`/`pull_request` в основную ветку запускаются `pnpm lint`, `pnpm lint:dup`, `pnpm typecheck` и `pnpm test`, а отдельным job `e2e` — функциональные и визуальные спеки Playwright в его Linux-образе. Сборка Docker-образа не запускает ESLint (`NEXT_IGNORE_ESLINT` в Dockerfile), поэтому локальные и CI-проверки обязательны.
