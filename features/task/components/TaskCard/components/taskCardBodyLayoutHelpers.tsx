@@ -31,7 +31,7 @@ export function TaskCardSidebarAssigneeRow({
 }: TaskCardSidebarAssigneeRowProps) {
   return (
     <div
-      className={`${assigneeTextSize} ${assigneeMargin} text-gray-700 dark:text-gray-200 truncate flex-shrink-0 font-medium flex items-center gap-2`}
+      className={`${assigneeTextSize} ${assigneeMargin} text-gray-700 dark:text-gray-200 min-w-0 flex-shrink-0 font-medium flex items-center gap-2`}
       data-task-card-assignee=""
       style={{ lineHeight: '1.3' }}
     >
@@ -45,7 +45,10 @@ export function TaskCardSidebarAssigneeRow({
           title={assigneeLabel}
         />
       )}
-      {sidebarAssigneeContent}
+      {/* truncate — на обёртке: у flex-контейнера text-overflow не работает, имя резалось без многоточия. */}
+      <span className="min-w-0 truncate" title={assigneeLabel}>
+        {sidebarAssigneeContent}
+      </span>
     </div>
   );
 }
