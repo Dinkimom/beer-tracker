@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar } from '@/components/Avatar';
+import { Avatar, type AvatarInitialsVariant } from '@/components/Avatar';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { DEVELOPER_COLUMN_WIDTH, ZIndex } from '@/constants';
@@ -22,6 +22,8 @@ import {
 interface DeveloperHeaderProps {
   /** Доп. действия справа (например, кнопка меню) — показываются при наведении */
   actions?: React.ReactNode;
+  /** Цвет инициалов без фото — как у исполнителя на карточке (`getAvatarVariantForDeveloper`). */
+  avatarInitialsVariant?: AvatarInitialsVariant;
   /** URL фото профиля; при отсутствии показываются инициалы */
   avatarUrl?: string | null;
   /** Сделано SP (для прогресса) */
@@ -78,6 +80,7 @@ interface DeveloperHeaderProps {
 
 export function DeveloperHeader({
   actions,
+  avatarInitialsVariant,
   avatarUrl,
   developerName,
   frosted = false,
@@ -166,6 +169,7 @@ export function DeveloperHeader({
                 <Avatar
                   avatarUrl={avatarUrl}
                   initials={getInitials(developerName)}
+                  initialsVariant={avatarInitialsVariant}
                   size="lg"
                   title={developerName}
                 />

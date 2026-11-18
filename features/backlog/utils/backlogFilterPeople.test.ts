@@ -39,7 +39,17 @@ describe('collectBacklogFilterPeople', () => {
       sprintBundles: [],
     });
 
-    expect(people).toEqual([{ avatarUrl: null, id: 'missing', name: 'Temirlan Shaikenov' }]);
+    expect(people).toEqual([{ avatarUrl: null, id: 'missing', initialsVariant: 'default', name: 'Temirlan Shaikenov' }]);
+  });
+
+  it('colours initials like the task card: by the person, else by the task team', () => {
+    const people = collectBacklogFilterPeople({
+      backlogDevelopers: [{ id: 'q', name: 'Quinn', role: 'tester' }],
+      backlogTasks: [task('1', 'q'), { ...task('2', 'x', 'Xan'), team: 'Web' }],
+      sprintBundles: [],
+    });
+
+    expect(Object.fromEntries(people.map((item) => [item.id, item.initialsVariant]))).toEqual({ q: 'qa', x: 'web' });
   });
 });
 

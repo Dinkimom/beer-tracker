@@ -1,8 +1,13 @@
+import type { AvatarInitialsVariant } from '@/components/Avatar';
 import type { Developer, Task } from '@/types';
+
+import { getAvatarVariantForDeveloper, getAvatarVariantForTeam } from '@/components/Avatar';
 
 export interface BacklogFilterPerson {
   avatarUrl?: string | null;
   id: string;
+  /** Цвет инициалов — как на карточке задачи: по человеку, без него — по команде задачи. */
+  initialsVariant: AvatarInitialsVariant;
   name: string;
 }
 
@@ -29,6 +34,7 @@ function rememberDeveloper(byId: Map<string, PersonAcc>, developer: Developer): 
   byId.set(developer.id, {
     avatarUrl: developer.avatarUrl,
     id: developer.id,
+    initialsVariant: getAvatarVariantForDeveloper(developer),
     name: developer.name,
     taskCount: 0,
   });
@@ -46,6 +52,7 @@ function noteTaskAssignee(byId: Map<string, PersonAcc>, task: Task): void {
   byId.set(task.assignee, {
     avatarUrl: null,
     id: task.assignee,
+    initialsVariant: getAvatarVariantForTeam(task.team),
     name,
     taskCount: 1,
   });
@@ -81,7 +88,7 @@ export function collectBacklogFilterPeople(input: {
       (a, b) =>
         b.taskCount - a.taskCount || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
     )
-    .map(({ avatarUrl, id, name }) => ({ avatarUrl, id, name }));
+    .map(({ avatarUrl, id, initialsVariant, name }) => ({ avatarUrl, id, initialsVariant, name }));
 }
 
 export function filterTasksByAssignees(tasks: Task[], assigneeIds: ReadonlySet<string>): Task[] {

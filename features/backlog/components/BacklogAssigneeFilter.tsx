@@ -76,7 +76,7 @@ export function BacklogAssigneeFilter({
             <Avatar
               avatarUrl={person.avatarUrl}
               initials={getInitials(person.name)}
-              initialsVariant="default"
+              initialsVariant={person.initialsVariant}
               size="md"
               title={person.name}
             />
@@ -115,7 +115,7 @@ export function BacklogAssigneeFilter({
                 <Avatar
                   avatarUrl={person.avatarUrl}
                   initials={getInitials(person.name)}
-                  initialsVariant="default"
+                  initialsVariant={person.initialsVariant}
                   size="md"
                   title={person.name}
                 />

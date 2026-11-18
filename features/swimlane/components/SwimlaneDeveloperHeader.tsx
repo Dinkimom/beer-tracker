@@ -3,6 +3,7 @@
 import type { DeveloperHeaderLaneLabelItem } from '@/features/swimlane/components/DeveloperHeaderLaneLabels';
 import type { Developer } from '@/types';
 
+import { getAvatarVariantForDeveloper } from '@/components/Avatar';
 import { ZIndex } from '@/constants';
 import { DeveloperHeader } from '@/features/swimlane/components/DeveloperHeader';
 import { FeatureLaneDraftRowActions } from '@/features/swimlane/components/FeatureLaneDraftRowActions';
@@ -66,6 +67,7 @@ export function SwimlaneDeveloperHeader({
   const showRowActions = featureColumn.isFeatureLane;
   return (
     <DeveloperHeader
+      avatarInitialsVariant={getAvatarVariantForDeveloper(developer)}
       avatarUrl={developer.avatarUrl}
       completedSP={layout.completedSP}
       completedTP={layout.completedTP}
