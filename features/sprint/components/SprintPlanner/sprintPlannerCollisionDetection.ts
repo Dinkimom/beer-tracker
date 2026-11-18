@@ -165,15 +165,21 @@ export const sprintPlannerCollisionDetection: CollisionDetection = (args) => {
     }
   }
 
+  if (swimlaneEntries.length === 0) {
+    return closestCenter(args);
+  }
+  // Выше первой строки или ниже последней — мимо доски: без цели бросок отменяется, как по Esc.
+  const lanesTop = Math.min(...swimlaneEntries.map((entry) => entry.rect.top));
+  const lanesBottom = Math.max(...swimlaneEntries.map((entry) => entry.rect.bottom));
+  if (pointerY < lanesTop || pointerY > lanesBottom) {
+    return [];
+  }
+
   const fallbackId = pickSwimlaneDroppableByPointer({
     entries: swimlaneEntries,
     pointerX,
     pointerY,
   });
   const fallback = swimlaneEntries.find((item) => item.id === fallbackId);
-  if (fallback) {
-    return [collisionFor(fallbackId!, fallback.container, 0)];
-  }
-
-  return closestCenter(args);
+  return fallback ? [collisionFor(fallback.id, fallback.container, 0)] : [];
 };

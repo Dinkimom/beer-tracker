@@ -13,7 +13,7 @@ import {
 } from '../swimlane';
 
 /**
- * Планирование на свимлейне «По исполнителям» (TC-021…025). Раскладка фикстуры на старте:
+ * Планирование на свимлейне «По исполнителям» (TC-021…025, TC-028). Раскладка фикстуры на старте:
  * DEMO-104 — Guido (bob), ячейки 0–2; DEMO-106 — Linus (alice), 9–11; DEMO-109 — Ken (erin), 0–5;
  * DEMO-112 — Ken, 24–26 (последние ячейки спринта); DEMO-111 — в сайдбаре; у Ken свободны ячейки 6–8.
  * Ячейка = треть дня, день 2 (четверг 15.10) — ячейки 6–8.
@@ -94,6 +94,16 @@ test('TC-024: карточка возвращается в сайдбар — м
     await expect(sidebarCard(page, 'DEMO-109')).toHaveCount(1);
     await expect(sidebarTasksTab(page)).toHaveAccessibleName(tasksTab(13));
   });
+});
+
+test('TC-028: карточка, отпущенная над шапкой страницы, остаётся на месте', async ({ page }) => {
+  await expect.poll(() => cardPlacement(page, 'DEMO-109')).toEqual({ lane: DEMO_DEV_ERIN, length: 6, start: 0 });
+  await dragCardTo(page, plannedCard(page, 'DEMO-109'), page.getByRole('navigation', { name: en.header.accessibility.sprintTabsNavigation }));
+
+  await expect.poll(() => cardPlacement(page, 'DEMO-109')).toEqual({ lane: DEMO_DEV_ERIN, length: 6, start: 0 });
+  await expect(
+    page.getByRole('button', { name: new RegExp(`^${en.sprintPlanner.controls.undoPlanChange}`) })
+  ).toBeDisabled();
 });
 
 test('TC-025: перенос карточки отменяется и повторяется', async ({ page }) => {

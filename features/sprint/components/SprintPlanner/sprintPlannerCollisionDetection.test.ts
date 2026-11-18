@@ -116,6 +116,11 @@ describe('sprintPlannerCollisionDetection', () => {
     expect(collisions.map((c) => c.id)).toEqual(['swimlane-b']);
   });
 
+  it('has no target when the pointer is above the first lane or below the last one', () => {
+    expect(sprintPlannerCollisionDetection(makeArgs({ pointerX: 300, pointerY: -40 }))).toEqual([]);
+    expect(sprintPlannerCollisionDetection(makeArgs({ pointerX: 300, pointerY: 260 }))).toEqual([]);
+  });
+
   it('never targets the sidebar for a card that cannot be dropped there', () => {
     const collisions = sprintPlannerCollisionDetection(
       makeArgs({ pointerX: 900, pointerY: 400, sidebarDrop: false })

@@ -117,6 +117,13 @@
 - Ожидаемо: карточка на новом месте (позиции хранятся в PostgreSQL).
 - Автотест: нет — боевой контур
 
+### TC-028: Бросок мимо доски
+- Контур: демо
+- Код: features/sprint/components/SprintPlanner/sprintPlannerCollisionDetection.ts
+- Шаги: взять карточку со свимлейна и отпустить над шапкой страницы, выше доски.
+- Ожидаемо: карточка остаётся на прежнем месте и у прежнего исполнителя, в историю правок ничего не пишется.
+- Автотест: e2e/functional/swimlaneDnd.spec.ts
+
 ### TC-027: Фото-карточка — отмена обрезки
 - Контур: демо
 - Код: features/task/components/TaskBar/components/quickAddMenu/usePlannerImageDraftFile.ts, features/task/components/TaskBar/components/quickAddMenu/PlannerImageCropperDialog.tsx, features/task/components/TaskCard/components/TaskCardSwimlaneImageDraftEditor.tsx
