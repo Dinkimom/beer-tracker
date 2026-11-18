@@ -13,7 +13,7 @@ import { AgentDevFileDiff } from './AgentDevFileDiff';
 const VISIBLE_FILES = 6;
 
 const ROW_CLASS =
-  'flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-gray-500/[0.12] dark:hover:bg-white/[0.08]';
+  'flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-gray-500/[0.12] active:bg-gray-500/[0.18] dark:hover:bg-white/[0.08] dark:active:bg-white/[0.12]';
 
 /**
  * Изменённые файлы ветки против основной: папка приглушённо, имя файла ярко, +/− по файлу.
@@ -88,7 +88,7 @@ export function AgentDevResultFiles({
       {files.length > VISIBLE_FILES ? (
         <li>
           <button
-            className="cursor-pointer rounded-md px-1 text-[11px] text-gray-500 transition-colors hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+            className="cursor-pointer rounded-md px-1 text-[11px] text-gray-500 transition-colors hover:text-gray-800 active:text-gray-950 dark:text-gray-400 dark:hover:text-gray-200 dark:active:text-white"
             type="button"
             onClick={() => setExpanded((prev) => !prev)}
           >

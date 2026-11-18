@@ -213,20 +213,12 @@ export function ParticipantsSettingsPopup({
             {t('sprintPlanner.participants.listTitle')}
           </h3>
           <div className="flex items-center gap-1.5">
-            <button
-              className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
-              type="button"
-              onClick={developersManagement.showAllDevelopers}
-            >
+            <Button size="sm" variant="outline" onClick={developersManagement.showAllDevelopers}>
               {t('sprintPlanner.participants.showAll')}
-            </button>
-            <button
-              className="px-2 py-1 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-all duration-200 active:scale-[0.98]"
-              type="button"
-              onClick={developersManagement.hideAllDevelopers}
-            >
+            </Button>
+            <Button size="sm" variant="outline" onClick={developersManagement.hideAllDevelopers}>
               {t('sprintPlanner.participants.hideAll')}
-            </button>
+            </Button>
           </div>
         </div>
         {developersManagement && (

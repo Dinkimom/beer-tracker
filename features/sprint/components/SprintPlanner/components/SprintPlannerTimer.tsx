@@ -3,6 +3,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import { useEffect, useRef, useState } from 'react';
 
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { IconActionMotion } from '@/components/IconActionMotion';
 import { wrapWithTextTooltip } from '@/components/TextTooltip';
@@ -169,14 +170,9 @@ export function SprintPlannerTimer({
             <h2 className="text-base font-medium text-gray-900 dark:text-gray-100">
               {t('sprintPlanner.timer.title')}
             </h2>
-            <button
-              aria-label={t('sprintPlanner.timer.close')}
-              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-all duration-200 active:scale-[0.98]"
-              type="button"
-              onClick={() => handleOpenChange(false)}
-            >
+            <HeaderIconButton aria-label={t('sprintPlanner.timer.close')} size="sm" onClick={() => handleOpenChange(false)}>
               <Icon className="h-3.5 w-3.5" name="close" />
-            </button>
+            </HeaderIconButton>
           </div>
           <div className={SPRINT_PLANNER_TIMER_CLOCK_PANEL_CLASS}>
             <SprintPlannerTimerClockFields

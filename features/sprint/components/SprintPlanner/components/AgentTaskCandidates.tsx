@@ -4,6 +4,7 @@ import type { AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
 
 import { useState } from 'react';
 
+import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useAgentDevTasks } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 
@@ -86,15 +87,14 @@ export function AgentTaskCandidates({
       })}
       {onHandOff && free.length > 0 ? (
         <div className="px-1.5 pb-0.5 pt-1">
-          <button
-            className="inline-flex h-7 cursor-pointer items-center rounded-lg bg-blue-600 px-2.5 text-xs font-medium text-white transition-all duration-200 hover:bg-blue-700 active:scale-[0.98] active:bg-blue-800 disabled:pointer-events-none disabled:opacity-60 dark:bg-blue-500/80 dark:hover:bg-blue-500"
+          <Button
             data-agent-task-candidates-handoff=""
             disabled={busy || selected.length === 0}
-            type="button"
+            size="sm"
             onClick={handOff}
           >
             {t('agentSession.candidatesHandOff', { count: selected.length })}
-          </button>
+          </Button>
         </div>
       ) : null}
 
