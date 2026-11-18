@@ -6,7 +6,6 @@ import { useCallback } from 'react';
 
 import { CustomSelect } from '@/components/CustomSelect';
 import { Input } from '@/components/Input';
-import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { label } from '@/features/admin/adminUiTokens';
 import {
@@ -124,7 +123,6 @@ export function AdminMemberForm({
       </div>
       <AdminMemberTeamsMultiSelect
         disabled={busy}
-        menuZIndex={ZIndex.modal + 1}
         options={teamOptions}
         selectedIds={values.teamIds}
         onChange={(teamIds) =>
@@ -140,8 +138,7 @@ export function AdminMemberForm({
           <span className={label}>{t('admin.membersPage.catalogTeamRoleLabel')}</span>
           <CustomSelect
             className="mt-1.5 w-full"
-            menuZIndex={ZIndex.modal + 1}
-            options={roleOptions}
+                options={roleOptions}
             selectedPrefix=""
             title={t('admin.membersPage.catalogTeamRoleInviteTitle')}
             value={values.roleSlug}
