@@ -38,8 +38,8 @@ export function TaskCardSwimlaneImageDraftEditor({
     isCropping,
     applyFile,
     handleCropApply,
+    handleCropCancel,
     handleCropCurrent,
-    revokeCropSource,
   } = usePlannerImageDraftFile({
     imageUrl: draft.imageUrl,
     isSubmitting: draft.isSubmitting,
@@ -153,7 +153,7 @@ export function TaskCardSwimlaneImageDraftEditor({
           onApply={handleCropApply}
           onOpenChange={(nextOpen) => {
             if (!nextOpen && !isCropping) {
-              revokeCropSource();
+              handleCropCancel();
             }
           }}
         />

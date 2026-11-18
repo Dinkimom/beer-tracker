@@ -23,6 +23,8 @@ import {
 
 interface CropSource {
   file: File;
+  /** Новый файл ещё не в черновике: отмена обрезки кладёт его без обрезки, а не выбрасывает. */
+  pending: boolean;
   url: string;
 }
 
@@ -45,9 +47,9 @@ export function usePlannerImageDraftFile(input: {
   isCropping: boolean;
   applyFile: (file: File | null) => void;
   handleCropApply: (rect: NormalizedCropRect) => void;
+  handleCropCancel: () => void;
   handleCropCurrent: () => void;
   handleRemove: () => void;
-  revokeCropSource: () => void;
 } {
   const { t } = useI18n();
   const { imageUrl, isSubmitting, listenToWindowPaste, onImageUrlChange } = input;
@@ -82,9 +84,9 @@ export function usePlannerImageDraftFile(input: {
     [onImageUrlChange]
   );
 
-  const openCropper = useCallback((file: File) => {
+  const openCropper = useCallback((file: File, pending: boolean) => {
     revokeLocalPlannerImageObjectUrl(cropSourceRef.current?.url);
-    const next = { file, url: createLocalPlannerImageObjectUrl(file) };
+    const next = { file, pending, url: createLocalPlannerImageObjectUrl(file) };
     cropSourceRef.current = next;
     setCropSource(next);
   }, []);
@@ -122,7 +124,7 @@ export function usePlannerImageDraftFile(input: {
         applyPreparedFile(file, generation);
         return;
       }
-      openCropper(file);
+      openCropper(file, true);
     },
     [applyPreparedFile, isCropping, isSubmitting, openCropper, t]
   );
@@ -150,6 +152,14 @@ export function usePlannerImageDraftFile(input: {
     [commitPreparedFile, isSubmitting, revokeCropSource, t]
   );
 
+  const handleCropCancel = useCallback(() => {
+    const source = cropSourceRef.current;
+    revokeCropSource();
+    if (source?.pending) {
+      applyPreparedFile(source.file, ++applyGenerationRef.current);
+    }
+  }, [applyPreparedFile, revokeCropSource]);
+
   const handleCropCurrent = useCallback(() => {
     if (!imageUrl || isSubmitting || isCropping) {
       return;
@@ -159,7 +169,7 @@ export function usePlannerImageDraftFile(input: {
         if (!file || !canCropPlannerImageFile(file)) {
           return;
         }
-        openCropper(file);
+        openCropper(file, false);
       })
       .catch(() => undefined);
   }, [imageUrl, isCropping, isSubmitting, openCropper]);
@@ -217,7 +227,7 @@ export function usePlannerImageDraftFile(input: {
         if (!canCrop) {
           return;
         }
-        openCropper(file);
+        openCropper(file, false);
       })
       .catch(() => undefined);
     return () => {
@@ -231,8 +241,8 @@ export function usePlannerImageDraftFile(input: {
     isCropping,
     applyFile,
     handleCropApply,
+    handleCropCancel,
     handleCropCurrent,
     handleRemove,
-    revokeCropSource,
   };
 }

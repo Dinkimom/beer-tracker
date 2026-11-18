@@ -117,6 +117,13 @@
 - Ожидаемо: карточка на новом месте (позиции хранятся в PostgreSQL).
 - Автотест: нет — боевой контур
 
+### TC-027: Фото-карточка — отмена обрезки
+- Контур: демо
+- Код: features/task/components/TaskBar/components/quickAddMenu/usePlannerImageDraftFile.ts, features/task/components/TaskBar/components/quickAddMenu/PlannerImageCropperDialog.tsx, features/task/components/TaskCard/components/TaskCardSwimlaneImageDraftEditor.tsx
+- Шаги: в панели инструментов выбрать «Карточки», кликнуть по свободной ячейке, выбрать картинку; в окне обрезки нажать «Отмена» (или Escape).
+- Ожидаемо: окно закрывается, картинка остаётся в черновике без обрезки, её можно обрезать позже кнопкой на фото.
+- Автотест: e2e/functional/swimlanePhoto.spec.ts
+
 ## 4. Бэклог
 
 ### TC-030: Отображение бэклога
