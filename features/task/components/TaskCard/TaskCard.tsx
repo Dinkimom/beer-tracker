@@ -19,7 +19,7 @@ import { SPRINT_PRESENCE_COLOR_CSS_VAR, sprintPresenceViewerColor } from '@/lib/
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
 import { getStatusColors, resolvePaletteStatusKey } from '@/utils/statusColors';
 
-import { SprintCardPresenceAvatars } from './SprintCardPresenceAvatars';
+import { SprintCardPresenceAvatars, sprintCardPresenceInset } from './SprintCardPresenceAvatars';
 import { useSprintCardPresenceViewers, useSprintPresenceColorSlots } from './SprintCardPresenceContext';
 import { renderTaskCardBody, renderTaskCardChrome } from './taskCardContentHelpers';
 import { useTaskCardVisualState } from './useTaskCardVisualState';
@@ -172,10 +172,14 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
       className={`${visual.cardRootClassName}${isResizing ? ' select-none task-card-resizing' : ''}${
         isRemoteChanging ? ' sprint-card-presence-changing' : ''
       }${taskStatusTransitionClassName(statusTransitionPhase)}${taskBoardExitClassName(boardExit)}`}
+      data-card-presence={presenceViewers.length > 0 ? '' : undefined}
       data-context-menu-source="task-card"
       data-task-id={task.id}
       style={{
         ...visual.cardRootStyle,
+        ...(presenceViewers.length > 0
+          ? ({ '--card-presence-inset': sprintCardPresenceInset(presenceViewers.length) } as React.CSSProperties)
+          : {}),
         ...(remoteChangingViewer
           ? ({
               [SPRINT_PRESENCE_COLOR_CSS_VAR]: sprintPresenceViewerColor(presenceColorSlots, remoteChangingViewer),

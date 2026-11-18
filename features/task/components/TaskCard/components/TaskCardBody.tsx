@@ -137,7 +137,10 @@ export function TaskCardBody({
   const showEyebrow = Boolean(slots && slots.eyebrow.length > 0);
   const showFooter = Boolean(slots && (slots.footer.length > 0 || slots.footerEnd.length > 0));
   return (
-    <div className={resolveTaskCardBodyStackClass(variant, task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget', kanbanSlots)}>
+    <div
+      className={resolveTaskCardBodyStackClass(variant, task.localDraftKind === 'diagram' || task.localDraftKind === 'image' || task.localDraftKind === 'widget', kanbanSlots)}
+      data-task-card-body=""
+    >
       {showEyebrow && slots ? (
         <TaskCardSlotItems context={slotContext} items={slots.eyebrow} task={task} />
       ) : null}

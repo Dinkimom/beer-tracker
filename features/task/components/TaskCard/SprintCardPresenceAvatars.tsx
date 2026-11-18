@@ -21,6 +21,16 @@ const PRESENCE_EXIT_ANIMATION = 'sprint-card-presence-exit';
 
 const AVATAR_SLOT_CLASS = 'sprint-card-presence-avatar inline-flex rounded-full';
 
+/**
+ * Ширина аватаров в углу карточки: первая строка тела отступает на неё (`--card-presence-inset`
+ * в globals.css), чтобы аватары не закрывали конец заголовка или фичи. Аватар 1.5rem, следующие
+ * заходят на предыдущий на 0.375rem; при переполнении — ещё кружок «+N».
+ */
+export function sprintCardPresenceInset(viewerCount: number): string {
+  const slots = Math.min(viewerCount, MAX_VISIBLE) + (viewerCount > MAX_VISIBLE ? 1 : 0);
+  return `${1.5 + (slots - 1) * 1.125}rem`;
+}
+
 const AVATAR_RING_CLASS = 'ring-2 ring-white dark:ring-gray-800';
 
 const AVATAR_PRESENCE_RING_CLASS = 'ring-2 ring-[var(--sprint-presence-color)]';

@@ -823,6 +823,11 @@ html.theme-changing * {
   }
 }
 
+/* Аватары присутствия в правом верхнем углу карточки: первая строка (заголовок или фича) уходит из-под них. */
+[data-card-presence] [data-task-card-body] > :first-child {
+  padding-right: var(--card-presence-inset);
+}
+
 .sprint-card-presence-avatar {
   animation: sprint-card-presence-enter 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
   margin-left: -0.375rem;
