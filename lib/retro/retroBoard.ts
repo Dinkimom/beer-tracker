@@ -9,6 +9,7 @@ import {
   isStickyNoteReactionEmoji,
   type StickyNoteReaction,
 } from '@/lib/comments/stickyNoteReaction';
+import { randomUuid } from '@/lib/randomUuid';
 
 import {
   defaultAgreementsColumn,
@@ -540,7 +541,7 @@ function writeBoard(store: RetroStore, board: RetroBoard): RetroStore {
 }
 
 function createRetroId(prefix: string): string {
-  return `${prefix}-${crypto.randomUUID()}`;
+  return `${prefix}-${randomUuid()}`;
 }
 
 function resolveRetroCardId(cardId: string | undefined): string {

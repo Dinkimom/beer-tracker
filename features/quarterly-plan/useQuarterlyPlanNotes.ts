@@ -22,6 +22,7 @@ import {
   removeNote,
   updateNote,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { randomUuid } from '@/lib/randomUuid';
 
 import { QUARTER_NEW_NOTE_ROWS, QUARTER_NEW_NOTE_WEEKS } from './quarterlyPlanBoardModel';
 
@@ -146,7 +147,7 @@ export function useQuarterlyPlanNotes({ applyEdit, plan, weekCount }: UseQuarter
       onNotePlace: (row, startWeek) => {
         const note: QuarterlyPlanNote = {
           color: noteColor,
-          id: crypto.randomUUID(),
+          id: randomUuid(),
           row,
           rows: QUARTER_NEW_NOTE_ROWS,
           startWeek,

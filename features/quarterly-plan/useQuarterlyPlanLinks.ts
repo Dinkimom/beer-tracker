@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { addLink, areLinked, orderLinkEnds } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { randomUuid } from '@/lib/randomUuid';
 
 import { rollupLinkEnds, rollupLinks } from './quarterlyPlanDetail';
 
@@ -70,7 +71,7 @@ export function useQuarterlyPlanLinks({ applyEdit, confirmDelete, plan, quarterV
       onLinkBarClick: (barId) => {
         const ends = linkEnds(barId);
         if (ends) {
-          applyEdit((content) => addLink(content, { id: crypto.randomUUID(), ...ends }));
+          applyEdit((content) => addLink(content, { id: randomUuid(), ...ends }));
           setState((current) => (current?.oneShot ? null : { oneShot: false, sourceId: null }));
           return;
         }

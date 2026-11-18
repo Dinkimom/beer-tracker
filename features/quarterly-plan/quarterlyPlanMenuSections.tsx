@@ -37,6 +37,7 @@ import {
   type WeekSpan,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { collectSprintDrifts, type QuarterlyPlanSprintDrift } from '@/lib/quarterlyPlans/quarterlyPlanSprintSync';
+import { randomUuid } from '@/lib/randomUuid';
 
 import {
   formatDateRange,
@@ -75,7 +76,7 @@ export function applyTrackerPickToPlan(
   const { directionId, parentEpicId } = pick;
   return addEpic(content, {
     directionId,
-    id: crypto.randomUUID(),
+    id: randomUuid(),
     ...issue,
     ...(parentEpicId ? { parentEpicId } : {}),
     status: 'backlog',
@@ -198,7 +199,7 @@ function assignSections(
         input.applyEdit((content) =>
           addAssignment(content, {
             ...fields,
-            id: crypto.randomUUID(),
+            id: randomUuid(),
             memberId: member.id,
             ...(phase === 'discovery' ? phaseFields(phase) : {}),
             ...assignmentSpanFields(days),

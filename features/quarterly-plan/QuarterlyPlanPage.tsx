@@ -45,6 +45,7 @@ import {
   quarterOfDate,
   weekIndexOfDate,
 } from '@/lib/quarterlyPlans/quarterWeeks';
+import { randomUuid } from '@/lib/randomUuid';
 import { getPlannerNow } from '@/utils/plannerClock';
 
 import { QuarterlyPlanAgentIsland } from './components/QuarterlyPlanAgentIsland';
@@ -222,11 +223,11 @@ export function QuarterlyPlanPage() {
       if (!draft || !title) return;
       applyEdit((content) => {
         if (draft.kind === 'newDirection') {
-          return addDirection(content, { id: crypto.randomUUID(), teamId: draft.teamId, title }, draft.afterId);
+          return addDirection(content, { id: randomUuid(), teamId: draft.teamId, title }, draft.afterId);
         }
         if (draft.kind === 'newEpic') {
           const { afterId, directionId, parentEpicId } = draft;
-          const epic = { directionId, id: crypto.randomUUID(), ...(parentEpicId ? { parentEpicId } : {}), status: 'backlog' as const, title };
+          const epic = { directionId, id: randomUuid(), ...(parentEpicId ? { parentEpicId } : {}), status: 'backlog' as const, title };
           return addEpic(content, epic, afterId);
         }
         return draft.kind === 'renameDirection'

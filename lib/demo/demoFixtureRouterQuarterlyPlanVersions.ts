@@ -9,6 +9,7 @@ import type { QuarterlyPlanVersionSource } from '@/lib/quarterlyPlans/quarterlyP
 
 import { removeDirection } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { mergesIntoLatestVersion, summarizeQuarterlyPlanVersion } from '@/lib/quarterlyPlans/quarterlyPlanVersions';
+import { randomUuid } from '@/lib/randomUuid';
 
 import { getDemoFixtureStore } from './demoFixtureStore';
 import { DEMO_PLANNER_NOW } from './demoIds';
@@ -93,7 +94,7 @@ export function recordDemoQuarterlyPlanVersion(
   const now = new Date();
   const at = now.toISOString();
   if (versions.length === 0) {
-    versions.push({ authorId: null, authorName: null, content: input.before.content, createdAt: at, id: crypto.randomUUID(), planVersion: input.before.version, source: 'baseline', updatedAt: at });
+    versions.push({ authorId: null, authorName: null, content: input.before.content, createdAt: at, id: randomUuid(), planVersion: input.before.version, source: 'baseline', updatedAt: at });
   }
   const latest = versions.at(-1)!;
   const merge = mergesIntoLatestVersion(
@@ -109,7 +110,7 @@ export function recordDemoQuarterlyPlanVersion(
     authorName: DEMO_EDITOR.name,
     content: input.content,
     createdAt: at,
-    id: crypto.randomUUID(),
+    id: randomUuid(),
     planVersion: input.planVersion,
     source: input.source,
     updatedAt: at,

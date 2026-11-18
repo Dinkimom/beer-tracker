@@ -12,6 +12,7 @@ import { createHash } from 'crypto';
 
 import { quarterScope } from '@/lib/agentSessions/agentSessionScope';
 import { prepareDraftAgentSession, recordDraftInAgentSession } from '@/lib/agentSessions/agentSessionService';
+import { randomUuid } from '@/lib/randomUuid';
 
 import {
   quarterlyPlanDraftItems,
@@ -67,7 +68,7 @@ async function previewOnCurrentPlan(owner: DraftOwner, proposalId: string, ops: 
   return applyQuarterlyPlanOps({
     dryRun: true,
     ifVersion: version,
-    newId: (index) => ids[index] ?? crypto.randomUUID(),
+    newId: (index) => ids[index] ?? randomUuid(),
     ops,
     organizationId: owner.organizationId,
     ref: owner.ref,
@@ -207,7 +208,7 @@ export async function approveQuarterlyPlanDraft(owner: DraftOwner & { itemIds?: 
     authorId: owner.ownerId,
     dryRun: false,
     ifVersion: preview.version,
-    newId: (index) => ids[picked[index] ?? -1] ?? crypto.randomUUID(),
+    newId: (index) => ids[picked[index] ?? -1] ?? randomUuid(),
     ops: picked.flatMap((index) => ops[index] ?? []),
     organizationId: owner.organizationId,
     ref: owner.ref,

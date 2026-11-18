@@ -14,6 +14,7 @@ import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { DEFAULT_STICKY_NOTE_COLOR } from '@/lib/comments/stickyNoteColor';
+import { randomUuid } from '@/lib/randomUuid';
 
 import { retroNoteAuthor } from '../retroNoteAuthor';
 
@@ -131,7 +132,7 @@ function pendingNote(
     columnId,
     comments: [],
     createdAt: new Date().toISOString(),
-    id: `card-${crypto.randomUUID()}`,
+    id: `card-${randomUuid()}`,
     imageDataUrl: null,
     kind: 'note',
     originSprintId: null,

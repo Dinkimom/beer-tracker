@@ -32,6 +32,7 @@ import {
   type CommentSaveSerializer,
 } from '@/lib/comments/commentSaveSerializer';
 import { isValidSprintId } from '@/lib/layers/data/mappers/taskPositionToApi';
+import { randomUuid } from '@/lib/randomUuid';
 import {
   prefetchSprintBoardList,
   takePrefetchedSprintBoardList,
@@ -120,7 +121,7 @@ function saveCommentSerialized(input: {
   sprintId: number;
 }): Promise<Comment | boolean> {
   const { data, isUpdate, serializer } = input;
-  return serializer.run(data.id || `new:${crypto.randomUUID()}`, async () => {
+  return serializer.run(data.id || `new:${randomUuid()}`, async () => {
     const ifVersion = isUpdate ? serializer.resolveIfVersion(data.id, data.ifVersion) : undefined;
     try {
       const saved = await apiSaveComment(input.sprintId, { ...data, ifVersion }, isUpdate);

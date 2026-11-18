@@ -8,6 +8,7 @@ import type { QuarterlyPlanAssignment, QuarterlyPlanContent, QuarterlyPlanNoteRo
 import { z } from 'zod';
 
 import { STICKY_NOTE_COLORS } from '@/lib/comments/stickyNoteColor';
+import { randomUuid } from '@/lib/randomUuid';
 
 import {
   addAssignment,
@@ -475,7 +476,7 @@ export function applyQuarterlyPlanOps(input: {
   teams: QuarterlyPlanOpsTeams;
 }): ApplyQuarterlyPlanOpsResult {
   const weeks = buildQuarterWeeks(input.ref);
-  const makeId = input.newId ?? (() => crypto.randomUUID());
+  const makeId = input.newId ?? (() => randomUuid());
   let opIndex = 0;
   const ctx: OpContext = {
     created: null,

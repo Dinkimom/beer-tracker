@@ -1,6 +1,7 @@
 import type { Comment, TaskParent } from '@/types';
 
 import { resolveAnnotationPersistFromLaneDraft } from '@/features/swimlane/utils/featureSwimlaneRows';
+import { randomUuid } from '@/lib/randomUuid';
 import { createTicTacToeState, serializeTicTacToeWidget } from '@/lib/widgets/ticTacToe';
 import { resolveTicTacToeCardSize } from '@/lib/widgets/ticTacToeCardSize';
 
@@ -11,7 +12,7 @@ export function buildTicTacToeComment(input: {
   part: number;
   timelineTotalParts: number;
 }): Comment {
-  const id = crypto.randomUUID();
+  const id = randomUuid();
   const persist = resolveAnnotationPersistFromLaneDraft(
     { assignee: input.assigneeId, parent: input.parent },
     input.assigneeId

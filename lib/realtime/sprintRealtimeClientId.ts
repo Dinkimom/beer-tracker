@@ -1,3 +1,5 @@
+import { randomUuid } from '@/lib/randomUuid';
+
 import { REALTIME_CLIENT_ID_HEADER, REALTIME_CLIENT_ID_STORAGE_KEY } from './sprintRealtimeConstants';
 
 const MAX_REALTIME_CLIENT_ID_LENGTH = 80;
@@ -17,7 +19,7 @@ export function getRealtimeClientIdFromRequest(request: Request): string | null 
 }
 
 function createBrowserRealtimeClientId(): string {
-  const created = crypto.randomUUID();
+  const created = randomUuid();
   browserRealtimeClientIdFallback = created;
   try {
     sessionStorage.setItem(REALTIME_CLIENT_ID_STORAGE_KEY, created);

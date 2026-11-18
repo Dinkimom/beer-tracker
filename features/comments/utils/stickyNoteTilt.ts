@@ -1,3 +1,5 @@
+import { randomUuid } from '@/lib/randomUuid';
+
 /**
  * Наклон листа на доске.
  * Модуль = 3° × (короткая сторона / длинная) × спад от размера.
@@ -47,7 +49,7 @@ const KEEP_TILT_MAX_ATTEMPTS = 16;
 export function createIdKeepingStickyNoteTilt(
   sourceCardId: string,
   toCardId: (id: string) => string,
-  createId: () => string = () => crypto.randomUUID()
+  createId: () => string = () => randomUuid()
 ): string {
   const sign = stickyNoteTiltSign(sourceCardId);
   let id = createId();

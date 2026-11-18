@@ -5,6 +5,7 @@ import { playStickyNoteSaveMotion } from '@/features/comments/utils/stickyNoteSa
 import { createIdKeepingStickyNoteTilt } from '@/features/comments/utils/stickyNoteTilt';
 import { toSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { resolveAnnotationPersistFromLaneDraft } from '@/features/swimlane/utils/featureSwimlaneRows';
+import { randomUuid } from '@/lib/randomUuid';
 
 import { findQuickAddDraftTask, removeQuickAddDraft } from './quickAddLocalDraft';
 
@@ -33,7 +34,7 @@ export function pasteNoteAtSwimlaneCell(input: {
 }): void {
   const newId = input.draftTaskId
     ? createIdKeepingStickyNoteTilt(input.draftTaskId, toSwimlaneCommentTaskId)
-    : crypto.randomUUID();
+    : randomUuid();
   playStickyNoteSaveMotion(toSwimlaneCommentTaskId(newId), 'stick');
   input.onCommentCreate({
     id: newId,

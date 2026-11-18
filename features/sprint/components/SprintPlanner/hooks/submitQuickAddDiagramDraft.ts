@@ -11,6 +11,7 @@ import {
   rememberPlannerDiagramScene,
 } from '@/lib/comments/plannerDiagramPreviewStore';
 import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
+import { randomUuid } from '@/lib/randomUuid';
 
 import { findQuickAddDraftTask, removeQuickAddDraft } from './quickAddLocalDraft';
 
@@ -51,7 +52,7 @@ function createLocalDiagramComment(
   if (!draftTask || !draftPosition) {
     return { type: 'noop' };
   }
-  const newId = crypto.randomUUID();
+  const newId = randomUuid();
   const name = input.diagramName ?? draftTask.name;
   const { height, width } = pairedCommentWidthAndCardRowHeight(draftPosition.duration);
   const persist = resolveAnnotationPersistFromLaneDraft(draftTask, draftPosition.assignee);

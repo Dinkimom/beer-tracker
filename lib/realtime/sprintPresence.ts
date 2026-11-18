@@ -7,6 +7,8 @@ import type {
   SprintPresenceViewer,
 } from './sprintRealtimeTypes';
 
+import { randomUuid } from '@/lib/randomUuid';
+
 import { serializeSprintPresenceViewer, sprintPresenceFocusEquals } from './sprintCardPresence';
 import { collapseSprintPresenceViewers } from './sprintPresenceCollapse';
 import { sprintPresenceGestureEquals } from './sprintPresenceGesture';
@@ -253,7 +255,7 @@ export function createSprintPresenceSession(input: {
   viewer: SprintPresenceViewer;
   resolveViewer?: () => Promise<SprintPresenceViewer>;
 }): { cancel: () => void; ping: () => void; start: () => void } {
-  const connectionId = input.connectionId || crypto.randomUUID();
+  const connectionId = input.connectionId || randomUuid();
   let chain = Promise.resolve();
   const run = (task: () => Promise<void>) => {
     chain = chain.then(task, task);

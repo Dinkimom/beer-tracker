@@ -8,6 +8,7 @@ import { resolveAnnotationPersistFromLaneDraft } from '@/features/swimlane/utils
 import { compressPlannerImageFile } from '@/features/task/utils/compressPlannerImageFile';
 import { fileFromPlannerImageObjectUrl, revokeLocalPlannerImageObjectUrl } from '@/features/task/utils/localPlannerImageFile';
 import { toSwimlaneImageTaskId } from '@/features/task/utils/swimlaneImageTask';
+import { randomUuid } from '@/lib/randomUuid';
 
 import { findQuickAddDraftTask, removeQuickAddDraft } from './quickAddLocalDraft';
 import {
@@ -82,7 +83,7 @@ function commitLocalImageCard(
   caption: string,
   cardRowLayout: { layerShiftUp: number; span: number }
 ): 'created' {
-  const imageId = crypto.randomUUID();
+  const imageId = randomUuid();
   const committed = buildLocalImageTask(draftTask, imageId, imageUrl, caption);
   input.setTasks((prev) => [...prev.filter((task) => task.id !== input.taskId), committed]);
   input.setTaskPositions((prev) => {

@@ -2,6 +2,7 @@ import type { DemoFixtureResult } from './demoFixtureRouterTypes';
 import type { SprintGoalPlanRow } from '@/lib/sprintGoals/sprintGoalPlanRow';
 import type { InternalAxiosRequestConfig } from 'axios';
 
+import { randomUuid } from '@/lib/randomUuid';
 import { defaultRetroColumnTemplate } from '@/lib/retro/retroBoard';
 
 import { buildDemoBurndownPayload } from './demoFixtureBurndown';
@@ -201,7 +202,7 @@ function findDemoGoal(goalId: string) {
 /** Новая цель демо: в список своего спринта и типа. */
 function addDemoGoal(body: unknown) {
   const input = (body ?? {}) as { goalType?: string; sprintId?: number; text?: string };
-  const item = { checked: false, checklistItemType: 'standard' as const, id: crypto.randomUUID(), planRow: null, text: input.text ?? '' };
+  const item = { checked: false, checklistItemType: 'standard' as const, id: randomUuid(), planRow: null, text: input.text ?? '' };
   demoGoalsOf(Number(input.sprintId))[input.goalType === 'discovery' ? 'discovery' : 'delivery'].push(item);
   return item;
 }

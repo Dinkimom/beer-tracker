@@ -2,6 +2,7 @@ import type { Comment, Developer, Task, TaskParent, TaskPosition } from '@/types
 
 import { TASK_GROUP_KEY_NO_PARENT } from '@/features/task/constants/taskGroupKeys';
 import { isPlannerNonTrackerCard } from '@/lib/planner/plannerCardKind';
+import { randomUuid } from '@/lib/randomUuid';
 import {
   FEATURE_LANE_DRAFT_ROW_PREFIX,
   isFeatureLaneDraftRowId,
@@ -226,7 +227,7 @@ export function omitTaskPositionsByIds(
 }
 
 export function createFeatureLaneDraftRow(name: string): Developer {
-  return { id: `${FEATURE_LANE_DRAFT_ROW_PREFIX}${crypto.randomUUID()}`, name, role: 'other' };
+  return { id: `${FEATURE_LANE_DRAFT_ROW_PREFIX}${randomUuid()}`, name, role: 'other' };
 }
 
 /** Исполнитель и родитель карточки: человек, если выбран; строка драфта — только как parent. */

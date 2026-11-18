@@ -202,6 +202,15 @@ export default [
       // === Безопасность ===
       // Запрет использования dangerouslySetInnerHTML без явного указания
       'react/no-danger': 'warn',
+      // crypto.randomUUID нет по http не с localhost — роняет планер на self-hosted без TLS
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'crypto',
+          property: 'randomUUID',
+          message: 'Используйте randomUuid() из @/lib/randomUuid: в незащищённом контексте crypto.randomUUID нет.',
+        },
+      ],
       // Запрет использования eval и подобных опасных функций
       'no-eval': 'error',
       'no-implied-eval': 'error',

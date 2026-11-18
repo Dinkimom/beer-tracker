@@ -1,3 +1,5 @@
+import { randomUuid } from '@/lib/randomUuid';
+
 import {
   RETRO_COLUMN_TITLE_MAX_LENGTH,
   type RetroColumn,
@@ -40,7 +42,7 @@ export function addRetroTemplateColumn(columns: readonly RetroColumn[], title: s
   return [
     ...columns,
     {
-      id: `column-${crypto.randomUUID()}`,
+      id: `column-${randomUuid()}`,
       preset: null,
       role: null,
       title: trimmed,

@@ -12,6 +12,7 @@ import {
 import { buildTicTacToeComment } from '@/features/widgets/buildTicTacToeComment';
 import { parseStickyNoteColor, type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { isPlannerQuickAddDraftId, PLANNER_QUICK_ADD_DRAFT_ID_PREFIX } from '@/lib/planner/plannerCardKind';
+import { randomUuid } from '@/lib/randomUuid';
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 
 import {
@@ -57,7 +58,7 @@ export function createQuickAddDraftInSwimlaneCell(
   if (duration == null) {
     return null;
   }
-  const draftTaskId = `${PLANNER_QUICK_ADD_DRAFT_ID_PREFIX}${crypto.randomUUID()}`;
+  const draftTaskId = `${PLANNER_QUICK_ADD_DRAFT_ID_PREFIX}${randomUuid()}`;
   const assigneeName = input.developers.find((dev) => dev.id === input.assigneeId)?.name;
   const defaultQueue = input.getQueueByBoardId(input.boardIdForPlannerData) ?? undefined;
   input.setTasks((prev) => {
