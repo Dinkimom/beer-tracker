@@ -5,6 +5,7 @@ import type { RetroCommentAuthor, RetroVisibleCard } from '@/lib/retro/retroBoar
 import * as Popover from '@radix-ui/react-popover';
 import { memo, useState } from 'react';
 
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { StickyNoteReactionAddIcon } from '@/features/comments/components/StickyNoteReactionAddIcon';
@@ -22,7 +23,7 @@ import {
 
 import { RetroCardAuthorButton } from './RetroCardAuthorButton';
 import { RetroCardComments } from './RetroCardComments';
-import { retroCardSurfaceClass, retroIconButtonClass } from './retroUi';
+import { retroCardSurfaceClass } from './retroUi';
 
 const NOTE_TEXT_CLASS =
   'w-full whitespace-pre-wrap break-words rounded-md px-1.5 py-1 text-left text-sm leading-snug';
@@ -154,15 +155,16 @@ export const RetroNoteCard = memo(function RetroNoteCard({
               <StickyNoteTextContent isDragging={false} text={card.text} />
             </button>
           )}
-          <button
+          <HeaderIconButton
             aria-label={t('retro.deleteCard')}
-            className={`${retroIconButtonClass} opacity-0 group-hover:opacity-100`}
-            type="button"
+            className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+            size="sm"
+            onCanvas
             onClick={() => onDelete(card.id)}
             onPointerDown={(event) => event.stopPropagation()}
           >
             <Icon className="h-3.5 w-3.5" name="x" />
-          </button>
+          </HeaderIconButton>
         </div>
         <div className={reactionRowClass}>
           {reactionChips.length > 0 ? (

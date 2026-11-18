@@ -4,11 +4,10 @@ import type { TrackerMyselfUser } from '@/lib/api/types';
 import type { RetroCardComment, RetroCommentAuthor } from '@/lib/retro/retroBoard';
 
 import { Avatar } from '@/components/Avatar';
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { getInitials } from '@/utils/displayUtils';
-
-import { retroIconButtonClass } from './retroUi';
 
 /** Та же поверхность, что у заметки на доске, без внешнего отступа колонки. */
 const COMMENT_CARD_CLASS =
@@ -35,15 +34,16 @@ export function RetroCommentItem({ comment, currentUser, onDelete }: RetroCommen
 
   return (
     <li className={COMMENT_CARD_CLASS}>
-      <button
+      <HeaderIconButton
         aria-label={t('retro.deleteComment')}
-        className={`${retroIconButtonClass} absolute right-1 top-1 opacity-0 focus-visible:opacity-100 group-hover/comment:opacity-100`}
-        type="button"
+        className="absolute right-1 top-1 opacity-0 focus-visible:opacity-100 group-hover/comment:opacity-100"
+        size="sm"
+        onCanvas
         onClick={onDelete}
         onPointerDown={stopPointer}
       >
         <Icon className="h-3.5 w-3.5" name="x" />
-      </button>
+      </HeaderIconButton>
       <div className="flex min-w-0 items-center gap-1.5 pr-6">
         <Avatar
           avatarUrl={visibleAvatarUrl(comment, currentUser)}

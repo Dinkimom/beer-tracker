@@ -2,6 +2,7 @@
 
 import type { RetroCommentAuthor, RetroVisibleCard } from '@/lib/retro/retroBoard';
 
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { PhotoCardImage } from '@/features/task/components/TaskCard/components/PhotoCardImage';
@@ -13,7 +14,6 @@ import {
 import { useThemeStorage } from '@/hooks/useLocalStorage';
 
 import { RetroCardComments } from './RetroCardComments';
-import { retroIconButtonClass } from './retroUi';
 
 interface RetroPhotoCardProps {
   card: RetroVisibleCard;
@@ -43,14 +43,15 @@ export function RetroPhotoCard({
           <PhotoCardImage alt={t('retro.imageAlt')} src={card.imageDataUrl} />
         </div>
       </div>
-      <button
+      <HeaderIconButton
         aria-label={t('retro.deleteCard')}
-        className={`${retroIconButtonClass} absolute right-1 top-1 bg-white/80 opacity-0 group-hover:opacity-100 dark:bg-black/40`}
-        type="button"
+        className="absolute right-1 top-1 bg-white/80 opacity-0 focus-visible:opacity-100 group-hover:opacity-100 dark:bg-black/40"
+        size="sm"
+        onCanvas
         onClick={() => onDelete(card.id)}
       >
         <Icon className="h-3.5 w-3.5" name="x" />
-      </button>
+      </HeaderIconButton>
       {onAddComment && onDeleteComment ? (
         <div className="flex justify-end px-1.5 pb-1.5">
           <RetroCardComments

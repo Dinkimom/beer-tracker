@@ -7,7 +7,9 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/Button';
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
+import { Input } from '@/components/Input';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useRetroBoard } from '@/features/retro/hooks/useRetroBoard';
 import { cardsForRetroColumn } from '@/lib/retro/retroBoard';
@@ -163,11 +165,11 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
             className="kanban-column-glass flex flex-col gap-2 rounded-xl border border-gray-200 p-2 dark:border-white/10"
             onSubmit={submitColumn}
           >
-            <input
+            <Input
               aria-label={t('retro.columnNamePlaceholder')}
               autoFocus
-              className="w-full rounded-lg border border-black/10 bg-white px-2 py-1.5 text-sm text-gray-900 outline-none focus:border-blue-500 dark:border-white/15 dark:bg-white/[0.08] dark:text-gray-100"
               placeholder={t('retro.columnNamePlaceholder')}
+              size="sm"
               value={columnDraft}
               onChange={(event) => setColumnDraft(event.target.value)}
             />
@@ -175,17 +177,16 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
               <Button className="!px-3 !py-1.5" disabled={!columnDraft.trim()} type="submit" variant="primary">
                 {t('retro.addListSubmit')}
               </Button>
-              <button
+              <HeaderIconButton
                 aria-label={t('retro.cancel')}
-                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-gray-500 transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 dark:text-gray-300 dark:hover:bg-white/10 dark:active:bg-white/15"
-                type="button"
+                onCanvas
                 onClick={() => {
                   setAddingColumn(false);
                   setColumnDraft('');
                 }}
               >
                 <Icon className="h-4 w-4" name="x" />
-              </button>
+              </HeaderIconButton>
             </div>
           </form>
         ) : (

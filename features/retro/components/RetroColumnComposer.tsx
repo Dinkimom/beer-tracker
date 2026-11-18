@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/Button';
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-
-import { retroIconButtonClass } from './retroUi';
 
 const FIELD_CLASS = 'w-full whitespace-pre-wrap break-words text-left text-sm leading-snug';
 
@@ -82,9 +81,9 @@ export function RetroColumnComposer({ onAddNote }: RetroColumnComposerProps) {
         <Button className="!px-2.5 !py-1" disabled={!draft.trim()} type="submit" variant="primary">
           {t('retro.addCardSubmit')}
         </Button>
-        <button aria-label={t('retro.cancel')} className={retroIconButtonClass} type="button" onClick={close}>
+        <HeaderIconButton aria-label={t('retro.cancel')} size="sm" onCanvas onClick={close}>
           <Icon className="h-4 w-4" name="x" />
-        </button>
+        </HeaderIconButton>
       </div>
     </form>
   );

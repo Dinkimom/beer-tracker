@@ -5,12 +5,14 @@ import type { RetroColumn } from '@/lib/retro/retroBoard';
 import * as Popover from '@radix-ui/react-popover';
 import { useState } from 'react';
 
+import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
+import { Input } from '@/components/Input';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useOverlayPresence } from '@/hooks/useOverlayPresence';
 
-import { retroColumnTitle, retroIconButtonClass } from './retroUi';
+import { retroColumnTitle } from './retroUi';
 
 interface RetroColumnHeaderProps {
   cardCount: number;
@@ -54,10 +56,11 @@ export function RetroColumnHeader({
   return (
     <div className="relative flex items-start gap-1 border-b border-gray-200/90 px-2 pb-2 pt-2.5 dark:border-white/10">
       {editing ? (
-        <input
+        <Input
           aria-label={t('retro.renameColumn')}
           autoFocus
-          className="min-w-0 flex-1 rounded-md border border-blue-500 bg-white px-2 py-1 text-sm font-semibold text-gray-900 outline-none dark:bg-white/[0.08] dark:text-gray-100"
+          className="min-w-0 flex-1 font-semibold"
+          size="sm"
           value={draft}
           onBlur={commitTitle}
           onChange={(event) => setDraft(event.target.value)}
@@ -95,8 +98,10 @@ export function RetroColumnHeader({
           if (open) setConfirmDelete(false);
         }}
       >
-        <Popover.Trigger aria-label={t('retro.listMenu')} className={retroIconButtonClass} type="button">
-          <Icon className="h-4 w-4" name="dots-horizontal" />
+        <Popover.Trigger asChild>
+          <HeaderIconButton aria-label={t('retro.listMenu')} size="sm" onCanvas>
+            <Icon className="h-4 w-4" name="dots-horizontal" />
+          </HeaderIconButton>
         </Popover.Trigger>
         {overlay.mounted ? (
         <Popover.Portal forceMount>
