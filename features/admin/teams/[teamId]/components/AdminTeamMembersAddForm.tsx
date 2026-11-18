@@ -12,7 +12,8 @@ import { AdminTeamMembersUserPicker } from './AdminTeamMembersUserPicker';
 
 export type AdminTeamMemberAddSource = 'registry' | 'tracker';
 
-interface AdminTeamMembersAddFormProps {
+/** Состояние формы добавления участника команды — из `useAdminTeamDetailPage`, одним объектом. */
+export interface AdminTeamMemberAddFormState {
   addRoleOptions: CustomSelectOption<string>[];
   addRoleSlug: string;
   addSource: AdminTeamMemberAddSource;
@@ -20,8 +21,6 @@ interface AdminTeamMembersAddFormProps {
   addStaffUid: string;
   addTrackerMeta: { displayName?: string; email?: string | null } | null;
   addTrackerUserId: string;
-  orgId: string;
-  teamId: string;
   setAddRoleSlug: (v: string) => void;
   setAddSource: (v: AdminTeamMemberAddSource) => void;
   setAddStaffMeta: (v: { displayName?: string; email?: string | null } | null) => void;
@@ -30,23 +29,28 @@ interface AdminTeamMembersAddFormProps {
   setAddTrackerUserId: (v: string) => void;
 }
 
-export function AdminTeamMembersAddForm({
-  addRoleOptions,
-  addRoleSlug,
-  addSource,
-  addStaffMeta,
-  addStaffUid,
-  addTrackerMeta,
-  addTrackerUserId,
-  orgId,
-  setAddRoleSlug,
-  setAddSource,
-  setAddStaffMeta,
-  setAddStaffUid,
-  setAddTrackerMeta,
-  setAddTrackerUserId,
-  teamId,
-}: AdminTeamMembersAddFormProps) {
+interface AdminTeamMembersAddFormProps {
+  form: AdminTeamMemberAddFormState;
+  orgId: string;
+  teamId: string;
+}
+
+export function AdminTeamMembersAddForm({ form, orgId, teamId }: AdminTeamMembersAddFormProps) {
+  const {
+    addRoleOptions,
+    addRoleSlug,
+    addSource,
+    addStaffMeta,
+    addStaffUid,
+    addTrackerMeta,
+    addTrackerUserId,
+    setAddRoleSlug,
+    setAddSource,
+    setAddStaffMeta,
+    setAddStaffUid,
+    setAddTrackerMeta,
+    setAddTrackerUserId,
+  } = form;
   const { t } = useI18n();
 
   return (

@@ -10,7 +10,6 @@ import { AnchoredPopover } from '@/components/AnchoredPopover';
 import { Button } from '@/components/Button';
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
-import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { DevelopersManagementContent } from '@/features/sidebar/components/DevelopersManagement';
 import { TeamSwimlaneSettingsItem } from '@/features/sprint/components/DaysHeader/components/TeamSwimlaneSettingsItem';
@@ -184,7 +183,6 @@ export function ParticipantsSettingsPopup({
             <UserSelector
               allowClear
               className="min-w-0 flex-1"
-              menuZIndex={ZIndex.modalNested}
               placeholder={t('sprintPlanner.participants.selectPlaceholder')}
               searchFn={searchRegistry}
               selectedPreview={selectedRegistryUser}

@@ -4,7 +4,6 @@ import type { RegistryUserItem } from '@/lib/api/types';
 
 import { useCallback, useMemo } from 'react';
 
-import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { UserSelector } from '@/features/sprint/components/SprintPlanner/components/UserSelector';
 import { searchAdminTeamRegistry } from '@/lib/api/admin/teams';
@@ -55,7 +54,6 @@ export function AdminTeamMembersUserPicker({
   return (
     <UserSelector
       allowClear
-      menuZIndex={ZIndex.modal + 1}
       placeholder={t('admin.teamMembers.registrySearchPlaceholder')}
       searchFn={searchRegistry}
       selectedPreview={selectedPreview}

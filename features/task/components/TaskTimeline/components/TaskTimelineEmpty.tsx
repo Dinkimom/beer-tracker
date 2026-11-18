@@ -25,8 +25,6 @@ export function TaskTimelineEmpty({ hasNoData = false }: TaskTimelineEmptyProps)
   }
 
   return (
-    <div className="py-4 text-sm text-gray-500 dark:text-gray-400">
-      {t('task.timeline.noStatusData')}
-    </div>
+    <p className="text-xs text-ds-text-muted">{t('task.timeline.noStatusData')}</p>
   );
 }

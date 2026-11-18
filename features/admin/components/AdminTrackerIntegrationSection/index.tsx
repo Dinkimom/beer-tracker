@@ -75,10 +75,10 @@ export function AdminTrackerIntegrationSection({
   }, [load]);
 
   useTrackerMetadataPolling(organizationId, loadMetadata);
-  useUnsavedIntegrationLeaveGuard(
-    form.hasUserUnsavedChanges,
-    t("admin.plannerIntegration.footer.leaveConfirm"),
-  );
+  const leaveConfirmDialog = useUnsavedIntegrationLeaveGuard(form.hasUserUnsavedChanges, {
+    confirmText: t("admin.plannerIntegration.footer.leaveConfirmAction"),
+    message: t("admin.plannerIntegration.footer.leaveConfirm"),
+  });
 
   async function save() {
     if (!organizationId) {
@@ -235,6 +235,7 @@ export function AdminTrackerIntegrationSection({
         onReload={() => void reloadConfigAndCatalog()}
         onSave={() => void save()}
       />
+      {leaveConfirmDialog}
     </section>
   );
 }

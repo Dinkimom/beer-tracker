@@ -32,6 +32,7 @@ export const adminPlannerIntegrationRu = {
   },
   footer: {
     leaveConfirm: 'Есть несохранённые изменения. Уйти со страницы?',
+    leaveConfirmAction: 'Уйти без сохранения',
     reloadToast: 'Нажмите «Перезагрузить» ещё раз, чтобы сбросить изменения',
     reloadLoading: 'Загрузка…',
     reloadConfirm: 'Подтвердить сброс',

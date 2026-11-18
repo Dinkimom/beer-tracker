@@ -1,6 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import type { ReactNode } from 'react';
+
+import { useRouter } from 'next/navigation';
+import { useEffect, useEffectEvent } from 'react';
+
+import { useConfirmDialog } from '@/components/ConfirmDialog';
 
 export function linkLeavesCurrentPath(
   link: { download: boolean; href: string; rawHref: string | null; target: string },
@@ -22,21 +27,22 @@ export function linkLeavesCurrentPath(
   }
 }
 
-function shouldBlockLeaveClick(event: MouseEvent, currentHref: string): boolean {
+/** Ссылка, по которой клик уводит со страницы; `null` — клик не уводит. */
+function leavingLinkHref(event: MouseEvent, currentHref: string): string | null {
   if (event.defaultPrevented || event.button !== 0) {
-    return false;
+    return null;
   }
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-    return false;
+    return null;
   }
   if (!(event.target instanceof Element)) {
-    return false;
+    return null;
   }
   const anchor = event.target.closest('a');
   if (!(anchor instanceof HTMLAnchorElement)) {
-    return false;
+    return null;
   }
-  return linkLeavesCurrentPath(
+  const leaves = linkLeavesCurrentPath(
     {
       download: anchor.hasAttribute('download'),
       href: anchor.href,
@@ -45,9 +51,27 @@ function shouldBlockLeaveClick(event: MouseEvent, currentHref: string): boolean 
     },
     currentHref,
   );
+  return leaves ? anchor.href : null;
 }
 
-export function useUnsavedIntegrationLeaveGuard(enabled: boolean, message: string): void {
+/**
+ * Не дать уйти со страницы с несохранёнными правками: закрытие вкладки — системный вопрос браузера,
+ * ссылка внутри приложения — диалог подтверждения приложения (`DialogComponent` рендерит вызывающий).
+ */
+export function useUnsavedIntegrationLeaveGuard(
+  enabled: boolean,
+  texts: { confirmText: string; message: string }
+): ReactNode {
+  const router = useRouter();
+  const { confirm, DialogComponent } = useConfirmDialog();
+
+  const askAndLeave = useEffectEvent(async (href: string) => {
+    const leave = await confirm(texts.message, { confirmText: texts.confirmText, variant: 'destructive' });
+    if (!leave) return;
+    const target = new URL(href);
+    router.push(`${target.pathname}${target.search}${target.hash}`);
+  });
+
   useEffect(() => {
     if (!enabled) {
       return;
@@ -59,15 +83,13 @@ export function useUnsavedIntegrationLeaveGuard(enabled: boolean, message: strin
     };
 
     const onClick = (event: MouseEvent) => {
-      if (!shouldBlockLeaveClick(event, window.location.href)) {
-        return;
-      }
-      // eslint-disable-next-line no-alert -- same leave prompt as beforeunload, for in-app links
-      if (window.confirm(message)) {
+      const href = leavingLinkHref(event, window.location.href);
+      if (!href) {
         return;
       }
       event.preventDefault();
       event.stopPropagation();
+      void askAndLeave(href);
     };
 
     window.addEventListener('beforeunload', onBeforeUnload);
@@ -76,5 +98,7 @@ export function useUnsavedIntegrationLeaveGuard(enabled: boolean, message: strin
       window.removeEventListener('beforeunload', onBeforeUnload);
       document.removeEventListener('click', onClick, true);
     };
-  }, [enabled, message]);
+  }, [enabled]);
+
+  return DialogComponent;
 }

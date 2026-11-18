@@ -4,7 +4,6 @@ import type { RegistryUserItem } from '@/lib/api/types';
 
 import { useCallback, useMemo } from 'react';
 
-import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { UserSelector } from '@/features/sprint/components/SprintPlanner/components/UserSelector';
 import { searchAdminOrgUsers } from '@/lib/api/admin/tracker';
@@ -42,7 +41,6 @@ export function AdminTeamMembersTrackerPicker({
   return (
     <UserSelector
       allowClear
-      menuZIndex={ZIndex.modal + 1}
       placeholder={t('admin.teamMembers.trackerSearchPlaceholder')}
       searchFn={searchTrackerUsers}
       selectedPreview={selectedPreview}

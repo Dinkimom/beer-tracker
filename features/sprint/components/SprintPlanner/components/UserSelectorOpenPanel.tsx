@@ -21,7 +21,10 @@ interface UserSelectorOpenPanelProps {
   compact?: boolean;
   inputRef: RefObject<HTMLInputElement | null>;
   loading: boolean;
-  /** Слой списка результатов; по умолчанию — поверх модального окна. */
+  /**
+   * Слой списка результатов. По умолчанию — поверх модального окна и поповеров доски;
+   * задают, только когда селектор стоит в слое выше (меню быстрого добавления).
+   */
   menuZIndex?: number;
   placeholder?: string;
   results: RegistryUserItem[];

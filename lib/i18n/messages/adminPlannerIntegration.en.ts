@@ -32,6 +32,7 @@ export const adminPlannerIntegrationEn = {
   },
   footer: {
     leaveConfirm: 'You have unsaved changes. Leave this page?',
+    leaveConfirmAction: 'Leave without saving',
     reloadToast: 'Click Reload again to discard changes',
     reloadLoading: 'Loading…',
     reloadConfirm: 'Confirm reset',

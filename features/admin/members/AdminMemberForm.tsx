@@ -76,7 +76,6 @@ export function AdminMemberForm({
         <label className={label}>{t('admin.membersPage.trackerSearchLabel')}</label>
         <UserSelector
           allowClear
-          menuZIndex={ZIndex.modal + 1}
           placeholder={t('admin.membersPage.trackerSearchPlaceholder')}
           searchFn={searchTrackerUsers}
           selectedPreview={previewFromValues(values)}
