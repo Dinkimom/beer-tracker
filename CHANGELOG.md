@@ -2,6 +2,44 @@
 
 Notable changes to Beer Tracker, newest first. English first, then Russian.
 
+## [1.39.0] — 2026-11-19
+
+### English
+
+- Kanban: a status that has no column on the board (for example «Need info») gets its own column named after it, after the board columns, instead of landing in «No status». Moving a card there changes its status. «No status» is only for tasks without a status.
+- Board search works the same in every mode: cards that don't match are dimmed, not hidden. On kanban a forgotten search used to look like missing tasks. The match is by title, key or assignee name.
+- A card no longer goes back to its previous status (and colour) a minute after a status change: the board keeps the new status until the tracker catches up, and the server cache now stores the status type, which drives the colour.
+- An empty note draft no longer disappears on its own after a minute or after a teammate's change.
+- «By features» mode: the assignee name on a card is shown in full instead of being cut to two letters.
+- The planner works over plain http on a non-localhost address (self-hosted without TLS); it used to crash.
+- Photo card: «Cancel» in the crop window keeps the picture uncropped instead of dropping it.
+- A card dropped above the board (over the page header) stays where it was instead of falling into the «Shared» row.
+- Kanban and sidebar cards: long assignee names end with an ellipsis; avatars of colleagues viewing a card no longer cover its title.
+- A person's initials have the same colour in the «Team» column, in filters and on cards; team colours on initials are darker for readability.
+- Assignee filter (backlog, board sidebar, kanban): buttons are named after the person and react to hover; people with a photo come before initials, the rest are behind «+N». A saved kanban filter for someone without tasks in the sprint no longer empties the board.
+- Sidebar «Metrics», «By status»: status names instead of tracker keys.
+- Burndown tiles count scope by the same rule as retro and the sidebar (without QA tasks).
+- Dialogs, popovers and inputs share one look across settings, admin forms, sprint finishing and the roadmap.
+- Docker Hub images `dinkimom/beer-tracker` and `dinkimom/beer-tracker-sync-worker` tags `1.39.0` and `latest` (`linux/amd64`, `linux/arm64`).
+
+### Русский
+
+- Канбан: у статуса, для которого на доске нет колонки (например «Need info»), своя колонка с его названием после колонок доски, а не «Без статуса». Перенос карточки в неё меняет статус. «Без статуса» — только для задач без статуса.
+- Поиск по доске работает одинаково во всех режимах: неподходящие карточки приглушаются, а не прячутся. На канбане забытый поиск выглядел как пропавшие задачи. Совпадение — по названию, ключу или имени исполнителя.
+- Карточка больше не возвращается к прошлому статусу (и цвету) через минуту после смены: доска держит новый статус, пока трекер не догонит, а серверный кэш хранит тип статуса, от которого зависит цвет.
+- Пустой черновик заметки больше не пропадает сам через минуту или после правки коллеги.
+- Режим «По фичам»: имя исполнителя на карточке видно целиком, а не две буквы.
+- Планер работает по http не с localhost (self-hosted без TLS) — раньше падал.
+- Фото-карточка: «Отмена» в окне обрезки оставляет картинку без обрезки, а не сбрасывает её.
+- Карточка, отпущенная над доской (над шапкой страницы), остаётся на месте, а не падает в строку «Shared».
+- Карточки канбана и сайдбара: длинные имена исполнителей обрезаются с многоточием; аватары коллег, которые смотрят карточку, не закрывают заголовок.
+- Инициалы человека одного цвета в колонке «Команда», фильтрах и на карточках; цвета команд на инициалах темнее, чтобы читались.
+- Фильтр по исполнителю (бэклог, сайдбар доски, канбан): кнопки названы именем и откликаются на наведение; люди с фото — перед инициалами, остальные — за «+N». Сохранённый на канбане фильтр по человеку без задач в спринте больше не опустошает доску.
+- «Метрики» сайдбара, «По статусам»: названия статусов вместо ключей трекера.
+- Плитки диаграммы сгорания считают объём по тому же правилу, что ретро и сайдбар (без QA-задач).
+- Окна, поповеры и поля ввода выглядят одинаково в настройках, формах админки, завершении спринта и роадмэпе.
+- Образы Docker Hub `dinkimom/beer-tracker` и `dinkimom/beer-tracker-sync-worker`, теги `1.39.0` и `latest` (`linux/amd64`, `linux/arm64`).
+
 ## [1.38.0] — 2026-11-18
 
 ### English
