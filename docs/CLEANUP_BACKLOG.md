@@ -30,6 +30,10 @@
 
 - **Скор: цели другой организации и цели без команды.** `aggregateSprintGoalsByTeam` (`lib/sprintGoals/sprintGoalsRepository.ts`) фильтрует только по `sprint_id`, хотя принимает `organizationId`: у двух организаций с разными трекерами и одинаковым id спринта цели смешаются в скоре. Цели без команды группируются по `goal_type` — цель, созданная агентом (`insertSprintGoal` без `team` в `sprintPlanPatchApply.ts`, `sprintPlanPatchGoalPreviewActions.ts`), уходит в отдельную строку скора «delivery»/«discovery» со своей полосой GOALS. (2026-11-19)
 
+- **Escape в списке @-упоминаний удаляет черновик заметки:** `useDiscardStickyNoteCreateDraftOnEscape` слушает Escape на всём окне и не отличает Escape, уже обработанный списком упоминаний (`useStickyNoteRichEditorMentions`). Простая проверка `defaultPrevented` не годится — панель инструментов вызывает `preventDefault` раньше для Safari и штатная отмена сломается. (2026-11-19)
+- **Ручное «Обновить» стирает несохранённые черновики:** `useReloadTasks` (`features/task/hooks/useTaskMutations.ts`) кладёт ответ в кэш задач целиком, без `reconcileFetchedSprintTasks`, — черновик быстрого добавления пропадает. Возможно, это ожидаемо (обновил сам); решить продукту. (2026-11-19)
+- **Фильтр канбана по исполнителю смотрит на исполнителя в трекере:** `filterTasksByAssignees` берёт `task.assignee`, а не строку, в которую карточка поставлена на свимлейне (`useTaskState`), — задачи, переставленные к другому человеку на доске, на канбане фильтруются по старому. (2026-11-19)
+
 ## Роадмэп
 
 - **Привязка цели к строке на сервере** не различает уровень строки и не проверяет, что квартал задевает спринт (`lib/sprintGoals/sprintGoalPlanRow.ts`, `planHasRow`; правило QG5). (2026-11-18)
