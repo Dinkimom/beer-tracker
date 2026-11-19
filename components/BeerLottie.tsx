@@ -2,6 +2,8 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
+import { publicAssetPath } from '@/lib/staticDemoBuild';
+
 export interface BeerLottieRef {
   play: () => void;
 }
@@ -28,8 +30,8 @@ interface LottiePlayerProps {
 type LottiePlayer = (props: LottiePlayerProps) => React.ReactNode;
 
 export const DEFAULT_SIZE = 32;
-const BEER_EMOJI_JSON_URL = '/assets/beer-emoji.json';
-const BEER_MUG_FALLBACK_SRC = '/assets/icons/beer-mug.svg';
+const BEER_EMOJI_JSON_URL = publicAssetPath('/assets/beer-emoji.json');
+const BEER_MUG_FALLBACK_SRC = publicAssetPath('/assets/icons/beer-mug.svg');
 
 function isLottiePlayer(value: unknown): value is LottiePlayer {
   if (typeof value === 'function') {

@@ -26,8 +26,25 @@ function readEmbeddedAppChangelogJson(): string {
   return JSON.stringify(selectAppChangelogReleases(parseAppChangelog(markdown), resolveAppVersion()));
 }
 
+/**
+ * Статическая сборка демо для GitHub Pages (`pnpm demo:pages`, workflow `demo-pages.yml`):
+ * export без сервера под подпутём репозитория. Серверные маршруты из дерева убирает
+ * `scripts/demo-pages/prepare.mjs` — export их не собирает.
+ */
+const STATIC_DEMO = process.env.BEER_TRACKER_STATIC_DEMO === "1";
+const STATIC_DEMO_BASE_PATH = process.env.BEER_TRACKER_STATIC_DEMO_BASE_PATH ?? "/beer-tracker";
+
+const staticDemoConfig: NextConfig = {
+  basePath: STATIC_DEMO_BASE_PATH,
+  images: { unoptimized: true },
+  output: "export",
+  trailingSlash: true,
+};
+
 const nextConfig: NextConfig = {
   env: {
+    NEXT_PUBLIC_BASE_PATH: STATIC_DEMO ? STATIC_DEMO_BASE_PATH : "",
+    NEXT_PUBLIC_STATIC_DEMO: STATIC_DEMO ? "1" : "",
     NEXT_PUBLIC_APP_VERSION: resolveAppVersion(),
     NEXT_PUBLIC_APP_CHANGELOG: readEmbeddedAppChangelogJson(),
     // Yandex / Atlassian OAuth credentials are server-only runtime env
@@ -69,4 +86,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default STATIC_DEMO
+  ? { ...nextConfig, ...staticDemoConfig, headers: undefined }
+  : nextConfig;

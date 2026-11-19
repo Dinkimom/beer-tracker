@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
 
 import { useLayoutEffect } from 'react';
 
-import { McpOAuthClientMark } from '@/app/mcp/oauth/consent/McpOAuthClientMark';
 import { Icon } from '@/components/Icon';
+import { McpOAuthClientMark } from '@/components/McpOAuthClientMark';
 import { useTypewriterText } from '@/hooks/useTypewriterText';
 
 import { AgentMessageText } from './AgentMessageText';

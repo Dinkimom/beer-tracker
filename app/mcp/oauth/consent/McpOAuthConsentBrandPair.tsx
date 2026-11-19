@@ -1,7 +1,8 @@
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
+import { McpOAuthClientMark } from '@/components/McpOAuthClientMark';
+
 import { McpOAuthBeerTrackerMark } from './McpOAuthBeerTrackerMark';
-import { McpOAuthClientMark } from './McpOAuthClientMark';
 
 export function McpOAuthConsentBrandPair({
   beerLabel,

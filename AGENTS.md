@@ -25,6 +25,8 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 Локально это тот же dev-сервер, что уже запущен, плюс путь `/demo/planner` (у `pnpm docker:dev` обычно `http://localhost:3000/demo/planner`).
 
+Та же страница публикуется статикой на GitHub Pages при каждом релизе (тег): https://dinkimom.github.io/beer-tracker/demo/planner/ — `pnpm demo:pages` (только в CI или одноразовом worktree с `--force`: скрипт удаляет серверные маршруты), workflow `demo-pages.yml`. Сервера там нет: всё, что демо берёт из `public/`, — через `publicAssetPath` (`lib/staticDemoBuild.ts`), иначе путь сломается под подпутём `/beer-tracker`.
+
 На этой же странице идёт автоматический регресс (`e2e/`, Playwright). Новое поведение, которое на фикстурах не воспроизвести, сначала получает данные в `lib/demo/`.
 
 ## Команды

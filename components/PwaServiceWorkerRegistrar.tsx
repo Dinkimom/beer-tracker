@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 
+import { IS_STATIC_DEMO_BUILD } from '@/lib/staticDemoBuild';
+
 async function unregisterAllServiceWorkers(): Promise<void> {
   const registrations = await navigator.serviceWorker.getRegistrations();
   await Promise.all(registrations.map((registration) => registration.unregister()));
@@ -18,7 +20,8 @@ function registerProductionServiceWorker(): void {
  */
 export function PwaServiceWorkerRegistrar() {
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) {
+    // Демо на GitHub Pages — под подпутём и без офлайна: SW с scope `/` там не нужен.
+    if (!('serviceWorker' in navigator) || IS_STATIC_DEMO_BUILD) {
       return;
     }
     if (process.env.NODE_ENV !== 'production') {

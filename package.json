@@ -8,6 +8,7 @@
     "dev:skip-lint": "sh scripts/release/with-app-version.sh next dev",
     "dev:docker": "sh scripts/release/with-app-version.sh next dev --hostname 0.0.0.0",
     "build": "sh scripts/release/with-app-version.sh next build",
+    "demo:pages": "node scripts/demo-pages/build.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",

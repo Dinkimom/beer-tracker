@@ -3,9 +3,9 @@
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 import type { MouseEvent, ReactNode } from 'react';
 
-import { McpOAuthClientMark } from '@/app/mcp/oauth/consent/McpOAuthClientMark';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { McpOAuthClientMark } from '@/components/McpOAuthClientMark';
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import {

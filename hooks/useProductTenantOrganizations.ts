@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
 import { fetchDemoProductSession, fetchProductSession } from '@/lib/api/auth';
 import { parseRegistryUuidString } from '@/lib/registryUuidString';
+import { IS_STATIC_DEMO_BUILD } from '@/lib/staticDemoBuild';
 import { PRODUCT_ACTIVE_ORGANIZATION_ID_STORAGE_KEY } from '@/lib/tenantHttpConstants';
 
 const productSessionQueryKey = ['product-session'] as const;
@@ -207,6 +208,8 @@ export function useProductTenantOrganizations(options?: {
     refetchInterval: pollIntervalMs > 0 ? pollIntervalMs : false,
     refetchOnMount: false,
     retry: false,
+    // В статической сборке демо (GitHub Pages) настоящей сессии нет — только фикстурная внутри демо.
+    enabled: isDemoPlanner || !IS_STATIC_DEMO_BUILD,
   });
 
   const organizations = useMemo(

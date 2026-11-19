@@ -22,6 +22,11 @@
 </p>
 
 <p align="center">
+  <a href="https://dinkimom.github.io/beer-tracker/demo/planner/"><img alt="Try the demo" src="https://img.shields.io/badge/%E2%96%B6_Try_the_demo-no_sign--in_or_install-F59E0B?style=for-the-badge" /></a><br />
+  <sub>The demo runs right in your browser on sample data: board, backlog, roadmap, retro and metrics. Your edits last until you reload the tab.</sub>
+</p>
+
+<p align="center">
   <a href="#planner">Planner</a> ·
   <a href="#backlog">Backlog</a> ·
   <a href="#burndown">Burndown</a> ·
@@ -162,6 +167,8 @@ Companies that run their sprints in Beer Tracker.
 </p>
 
 ## Quick start
+
+To look around first, open the [demo](https://dinkimom.github.io/beer-tracker/demo/planner/) — no install needed.
 
 ```bash
 cp env.example .env

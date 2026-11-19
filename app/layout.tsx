@@ -18,6 +18,7 @@ import { isS3Configured } from "@/lib/env";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n/model";
 import { translate } from "@/lib/i18n/translator";
 import { PWA_START_HEADER, buildPwaManifestLinkHref } from "@/lib/pwa/pwaWebManifest";
+import { IS_STATIC_DEMO_BUILD, publicAssetPath } from "@/lib/staticDemoBuild";
 
 import { ThemeProvider } from "./ThemeProvider";
 
@@ -59,8 +60,8 @@ const excalifont = localFont({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const headerList = await headers();
-  const start = headerList.get(PWA_START_HEADER) ?? "/";
+  // Статическое демо (GitHub Pages): заголовков запроса нет, манифест PWA отдаёт роут, которого там нет.
+  const start = IS_STATIC_DEMO_BUILD ? null : (await headers()).get(PWA_START_HEADER) ?? "/";
   return {
     appleWebApp: {
       capable: true,
@@ -69,14 +70,14 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: translate(DEFAULT_LANGUAGE, "rootMeta.description"),
     icons: {
-      apple: "/apple-touch-icon.png",
+      apple: publicAssetPath("/apple-touch-icon.png"),
       icon: [
-        { url: "/favicon.ico", sizes: "any" },
-        { url: "/favicon.svg", type: "image/svg+xml" },
-        { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+        { url: publicAssetPath("/favicon.ico"), sizes: "any" },
+        { url: publicAssetPath("/favicon.svg"), type: "image/svg+xml" },
+        { url: publicAssetPath("/favicon-96x96.png"), sizes: "96x96", type: "image/png" },
       ],
     },
-    manifest: buildPwaManifestLinkHref(start),
+    ...(start == null ? {} : { manifest: buildPwaManifestLinkHref(start) }),
     title: "Beer Tracker",
   };
 }

@@ -3,9 +3,9 @@
 import type { AgentSessionStatus } from '@/lib/agentSessions/agentSession';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
-import { McpOAuthClientMark } from '@/app/mcp/oauth/consent/McpOAuthClientMark';
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { McpOAuthClientMark } from '@/components/McpOAuthClientMark';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   CONTEXT_MENU_GHOST_BUTTON_RESET,

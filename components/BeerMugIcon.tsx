@@ -1,7 +1,9 @@
 'use client';
 
-const BEER_MUG_COLOR_SRC = '/assets/icons/beer-mug.svg';
-const BEER_MUG_SOLID_MASK_SRC = '/assets/icons/beer-mug-solid.svg';
+import { publicAssetPath } from '@/lib/staticDemoBuild';
+
+const BEER_MUG_COLOR_SRC = publicAssetPath('/assets/icons/beer-mug.svg');
+const BEER_MUG_SOLID_MASK_SRC = publicAssetPath('/assets/icons/beer-mug-solid.svg');
 
 const BEER_MUG_SIZE_PX = {
   lg: 36,

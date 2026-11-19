@@ -1,0 +1,64 @@
+name: Demo Pages
+
+# Публикует демо `/demo/planner` на GitHub Pages (https://dinkimom.github.io/beer-tracker/)
+# при каждом релизе — пуш semver-тега, как Release и Docker Hub. Не на каждый пуш в main.
+# Демо — статическая сборка без сервера и БД: данные из фикстур `lib/demo/` прямо в браузере.
+# В настройках репозитория: Settings → Pages → Source: GitHub Actions.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: demo-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build static demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        # version comes from package.json "packageManager"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Удаляет серверные маршруты из этой одноразовой копии и собирает export в out/.
+      - name: Build demo
+        run: pnpm demo:pages
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}demo/planner/
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

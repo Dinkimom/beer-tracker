@@ -108,6 +108,11 @@ docker buildx imagetools inspect "dinkimom/beer-tracker:${VERSION}"
 docker buildx imagetools inspect "dinkimom/beer-tracker-sync-worker:${VERSION}"
 ```
 
+Demo on GitHub Pages: workflow `.github/workflows/demo-pages.yml` starts on the same tag push, builds the
+static `/demo/planner` (`pnpm demo:pages`) and deploys https://dinkimom.github.io/beer-tracker/demo/planner/.
+It needs Settings → Pages → Source: GitHub Actions once. Re-deploy without a release: Actions → Demo Pages →
+Run workflow. Check the page opens after the run.
+
 ## 6. Report back
 
 Return:
@@ -116,6 +121,7 @@ Return:
 - GitHub Release URL
 - Hub repos + tags (`VERSION`, `latest`, amd64+arm64)
 - Docker Hub workflow run URL and result
+- Demo Pages run result and https://dinkimom.github.io/beer-tracker/demo/planner/
 - Any step that was skipped (e.g. missing Hub secrets)
 
 ## Do not

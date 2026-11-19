@@ -90,7 +90,7 @@ SHA=$(git rev-parse HEAD)
 curl -sS "https://api.github.com/repos/Dinkimom/beer-tracker/actions/runs?head_sha=$SHA&per_page=20"
 ```
 
-Expect three runs for the tag commit: `CI`, `Release`, `Docker Hub`. Watch the Docker Hub run with a
+Expect four runs for the tag commit: `CI`, `Release`, `Docker Hub`, `Demo Pages`. Watch the Docker Hub run with a
 Monitor that polls `/actions/runs/<id>/jobs` every 30 s and exits when the run is `completed`.
 
 - Docker Hub builds 4 jobs in parallel (`runner` and `sync-worker` × amd64 on `ubuntu-latest`, arm64 on
@@ -102,6 +102,11 @@ Monitor that polls `/actions/runs/<id>/jobs` every 30 s and exits when the run i
   (untick `latest` for an older version).
 - For other failures, read the failed step and job annotations
   (`/check-runs/<job id>/annotations`) before suggesting a fix.
+
+Demo on GitHub Pages: workflow `.github/workflows/demo-pages.yml` starts on the same tag push, builds the
+static `/demo/planner` (`pnpm demo:pages`) and deploys https://dinkimom.github.io/beer-tracker/demo/planner/.
+It needs Settings → Pages → Source: GitHub Actions once. Re-deploy without a release: Actions → Demo Pages →
+Run workflow. Check the page opens after the run.
 
 ## 6. Verify
 
@@ -117,6 +122,6 @@ Never leave `VERSION` / `latest` without `linux/amd64` — Cloud Run runs amd64 
 ## 7. Report
 
 Reply to the user with: the version and tag, the GitHub Release URL, the Docker Hub run URL and result,
-the images with tags and platforms, CI status on `main`, and anything skipped or left for the user
+the images with tags and platforms, the Demo Pages run and the demo URL, CI status on `main`, and anything skipped or left for the user
 (missing secrets, denied command). Local image build is a last-resort fallback only:
 `.cursor/skills/release-publish/docker-hub.md`.

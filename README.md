@@ -22,6 +22,11 @@
 </p>
 
 <p align="center">
+  <a href="https://dinkimom.github.io/beer-tracker/demo/planner/"><img alt="Попробовать демо" src="https://img.shields.io/badge/%E2%96%B6_%D0%9F%D0%BE%D0%BF%D1%80%D0%BE%D0%B1%D0%BE%D0%B2%D0%B0%D1%82%D1%8C_%D0%B4%D0%B5%D0%BC%D0%BE-%D0%B1%D0%B5%D0%B7_%D0%B2%D1%85%D0%BE%D0%B4%D0%B0_%D0%B8_%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B8-F59E0B?style=for-the-badge" /></a><br />
+  <sub>Демо работает прямо в браузере на тестовых данных: доска, бэклог, роадмэп, ретро и метрики. Правки живут до перезагрузки вкладки.</sub>
+</p>
+
+<p align="center">
   <a href="#планер">Планер</a> ·
   <a href="#бэклог">Бэклог</a> ·
   <a href="#burndown">Burndown</a> ·
@@ -162,6 +167,8 @@ Sync забирает из трекера историю статусов, и н
 </p>
 
 ## Быстрый старт
+
+Сначала посмотреть, как всё устроено, можно без установки — в [демо](https://dinkimom.github.io/beer-tracker/demo/planner/).
 
 ```bash
 cp env.example .env

@@ -1,5 +1,7 @@
 import type { Developer, Task } from '@/types';
 
+import { publicAssetPath } from '@/lib/staticDemoBuild';
+
 import {
   DEMO_DEV_ALICE,
   DEMO_DEV_BOB,
@@ -25,11 +27,11 @@ function task(partial: Omit<Task, 'link' | 'team'> & { link?: string; team?: Tas
 
 /** Display names + Wikimedia portraits under `/public/demo/avatars` (demo only). */
 export const DEMO_DEV_DISPLAY = {
-  alice: { name: 'Linus Torvalds', avatarUrl: '/demo/avatars/linus.jpg' },
-  bob: { name: 'Guido van Rossum', avatarUrl: '/demo/avatars/guido.jpg' },
-  carol: { name: 'Margaret Hamilton', avatarUrl: '/demo/avatars/margaret.jpg' },
-  dana: { name: 'John Carmack', avatarUrl: '/demo/avatars/carmack.jpg' },
-  erin: { name: 'Ken Thompson', avatarUrl: '/demo/avatars/ken.jpg' },
+  alice: { name: 'Linus Torvalds', avatarUrl: publicAssetPath('/demo/avatars/linus.jpg') },
+  bob: { name: 'Guido van Rossum', avatarUrl: publicAssetPath('/demo/avatars/guido.jpg') },
+  carol: { name: 'Margaret Hamilton', avatarUrl: publicAssetPath('/demo/avatars/margaret.jpg') },
+  dana: { name: 'John Carmack', avatarUrl: publicAssetPath('/demo/avatars/carmack.jpg') },
+  erin: { name: 'Ken Thompson', avatarUrl: publicAssetPath('/demo/avatars/ken.jpg') },
 } as const;
 
 export function buildDemoDevelopers(): Developer[] {
