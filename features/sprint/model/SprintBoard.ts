@@ -1,3 +1,4 @@
+import type { SprintLinks } from './sprintLinks';
 import type { SprintMovePlacementStore } from '@/lib/layers/application/mobx/stores/sprintMovePlacementStore';
 import type { TaskPositionsStore } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { Developer, Task, TaskPosition } from '@/types';
@@ -19,6 +20,8 @@ interface SprintTasksSnapshot {
 }
 
 interface SprintBoardDeps {
+  /** Связи спринта живут дольше модели: модель пересоздаётся при смене дат спринта, связи — нет. */
+  links: SprintLinks;
   movePlacement: SprintMovePlacementStore;
   positions: TaskPositionsStore;
   queryClient: QueryClient;
@@ -68,6 +71,11 @@ export class SprintBoard {
       tasksMap: computed,
       visiblePositions: computed({ equals: taskPositionMapsHaveSameEntries }),
     });
+  }
+
+  /** Пользовательские связи задач (стрелки). */
+  get links(): SprintLinks {
+    return this.deps.links;
   }
 
   /** Подписка на кэш, пока доска на экране; возвращает отписку. */

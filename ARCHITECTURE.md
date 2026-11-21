@@ -114,7 +114,7 @@ features/ / components/ / hooks/
 
 | Данные | Хук |
 |--------|-----|
-| Связи задач (стрелки) | `useTaskLinksApi` |
+| Связи задач (стрелки) | `SyncedList` в модели доски — `features/sprint/model/sprintLinks.ts` (`board.links`) |
 | Комментарии на таймлайне | `useCommentsApi` |
 
 `useFeatureLanesApi` **не** строится на `useDebouncedApiSync`: последний рассчитан на массивы, карту отложенных обновлений по id и операции save/delete **по элементу**. Строки фич — монолитный JSON-документ; проще и прозрачнее отдельный `useState` + один таймер.

@@ -31,7 +31,6 @@ import { reloadFeatureLanesSession } from '@/hooks/featureLanesSessionStore';
 import {
   useCommentsApi,
   useFeatureLanesApi,
-  useTaskLinksApi,
   useTaskPositionsApi,
 } from '@/hooks/useApiStorage';
 import { useBoardViewModeStorage, useSidebarWidthStorage, useDataSyncEstimatesStorage } from '@/hooks/useLocalStorage';
@@ -43,6 +42,7 @@ import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientI
 
 import { useTaskState } from '../../../hooks/useTaskState';
 import { SprintBoard } from '../../../model/SprintBoard';
+import { createSprintLinks } from '../../../model/sprintLinks';
 
 
 interface UseSprintPlannerStateProps {
@@ -68,9 +68,13 @@ export function useSprintPlannerState({
   useTasks(selectedSprintId, selectedBoardId);
 
   // Модель доски держит задачи из того же кэша (ссылку, не копию) и выводит из них карты.
+  // Связи живут весь спринт: модель пересоздаётся при смене дат, а их загрузка и ожидающие правки — нет.
+  const links = useMemo(() => createSprintLinks(selectedSprintId), [selectedSprintId]);
+  useEffect(() => links.connect(), [links]);
   const board = useMemo(
     () =>
       new SprintBoard({
+        links,
         movePlacement: sprintMovePlacement,
         positions: positionsStore,
         queryClient,
@@ -81,6 +85,7 @@ export function useSprintPlannerState({
       }),
     [
       forDemoPlanner,
+      links,
       positionsStore,
       queryClient,
       selectedBoardId,
@@ -117,7 +122,8 @@ export function useSprintPlannerState({
     selectedSprintId,
     getTaskInfoRef
   );
-  const [taskLinks, setTaskLinks, saveLink, deleteLink, reloadLinks] = useTaskLinksApi(selectedSprintId);
+  const { delete: deleteLink, items: taskLinks, reloadFromRemote: reloadLinks, save: saveLink, setWithSave: setTaskLinks } =
+    links;
   const [comments, setComments, , deleteComment, reloadComments] = useCommentsApi(selectedSprintId);
   const [, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const [boardViewers, setBoardViewers] = useState<SprintPresenceViewer[]>([]);

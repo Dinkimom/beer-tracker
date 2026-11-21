@@ -8,6 +8,7 @@ import { SprintMovePlacementStore } from '@/lib/layers/application/mobx/stores/s
 import { TaskPositionsStore } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 
 import { SprintBoard } from './SprintBoard';
+import { createSprintLinks } from './sprintLinks';
 
 const KEY = ['tasks', 7, 1] as const;
 
@@ -21,6 +22,7 @@ function setup(tasks: Task[]) {
   const movePlacement = new SprintMovePlacementStore();
   const positions = new TaskPositionsStore();
   const board = new SprintBoard({
+    links: createSprintLinks(null),
     movePlacement,
     positions,
     queryClient,

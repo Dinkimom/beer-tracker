@@ -3,12 +3,12 @@
  * (общие для пользователей спринта, не локальный storage).
  *
  * Два паттерна отложенной записи — см. **«Локальный стейт + API»** в [ARCHITECTURE.md](../ARCHITECTURE.md):
- * - **useDebouncedApiSync** — списки (связи, комментарии) через `useTaskLinksApi` / `useCommentsApi`.
+ * - **useDebouncedApiSync** — список комментариев через `useCommentsApi`; связи — `SyncedList` в модели доски (`features/sprint/model/sprintLinks.ts`).
  * - **useFeatureLanesApi** — один JSON-документ на спринт; отдельная реализация, не generic-список.
  */
 
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
-import type { Comment, TaskLink } from '@/types';
+import type { Comment } from '@/types';
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import toast from 'react-hot-toast';
@@ -19,10 +19,6 @@ import {
   SprintCommentVersionConflictError,
 } from '@/lib/api/sprintsApiCommentsHelpers';
 import {
-  fetchSprintLinks,
-  saveTaskLink,
-  saveTaskLinksBatch,
-  deleteTaskLink,
   fetchSprintComments,
   saveComment as apiSaveComment,
   deleteComment as apiDeleteComment,
@@ -47,61 +43,12 @@ import {
 } from './featureLanesSessionStore';
 import { useDebouncedApiSync } from './useDebouncedApiSync';
 
-function takePrefetchedSprintLinks(sprintId: number): TaskLink[] | undefined {
-  return takePrefetchedSprintBoardList(sprintId, 'links');
-}
-
-function loadSharedSprintLinks(sprintId: number): Promise<TaskLink[]> {
-  return prefetchSprintBoardList(sprintId, 'links', fetchSprintLinks);
-}
-
 function takePrefetchedSprintComments(sprintId: number): Comment[] | undefined {
   return takePrefetchedSprintBoardList(sprintId, 'comments');
 }
 
 function loadSharedSprintComments(sprintId: number): Promise<Comment[]> {
   return prefetchSprintBoardList(sprintId, 'comments', fetchSprintComments);
-}
-
-// ==================== Хуки для связей ====================
-
-/**
- * Хук для работы со связями задач через API
- */
-export function useTaskLinksApi(
-  sprintId: number | null
-): [
-  TaskLink[],
-  (links: TaskLink[] | ((prev: TaskLink[]) => TaskLink[])) => void,
-  (link: TaskLink) => Promise<void>,
-  (linkId: string) => Promise<void>,
-  () => Promise<void>,
-] {
-  const [links, setLinksWithSave, saveLink, deleteLink, reloadFromRemote] = useDebouncedApiSync<TaskLink, string, {
-    id: string;
-    fromTaskId: string;
-    toTaskId: string;
-    fromAnchor: string | null;
-    toAnchor: string | null;
-  }>({
-    sprintId,
-    fetchFn: fetchSprintLinks,
-    saveFn: (sprintId, data) => saveTaskLink(sprintId, data),
-    batchSaveFn: (sprintId, items) => saveTaskLinksBatch(sprintId, items),
-    deleteFn: deleteTaskLink,
-    getId: (link) => link.id,
-    getInitialItems: takePrefetchedSprintLinks,
-    loadSharedItems: loadSharedSprintLinks,
-    toApiFormat: (link) => ({
-      id: link.id,
-      fromTaskId: link.fromTaskId,
-      toTaskId: link.toTaskId,
-      fromAnchor: link.fromAnchor || null,
-      toAnchor: link.toAnchor || null,
-    }),
-  });
-
-  return [links, setLinksWithSave, saveLink, deleteLink, reloadFromRemote];
 }
 
 // ==================== Хуки для комментариев ====================
