@@ -59,6 +59,29 @@ describe('measureFileShape', () => {
   });
 });
 
+describe('hook width', () => {
+  const fields = (n: number, prefix: string) => Array.from({ length: n }, (_, i) => `${prefix}${i}`).join(', ');
+
+  it('flags a hook that takes or returns too many fields', () => {
+    const inputs = SHAPE_LIMITS.maxHookInputs + 1;
+    const outputs = SHAPE_LIMITS.maxHookOutputs + 1;
+    const text = `export function useConductor({ ${fields(inputs, 'a')} }: P) {\n  return { ${fields(outputs, 'a')} };\n}\n`;
+    expect(measureFileShape('features/x/useConductor.ts', text)).toEqual([
+      { file: 'features/x/useConductor.ts', metric: 'hook-inputs', name: 'useConductor', value: inputs },
+      { file: 'features/x/useConductor.ts', metric: 'hook-outputs', name: 'useConductor', value: outputs },
+    ]);
+  });
+
+  it('counts positional params and arrow hooks; ignores returns of nested functions', () => {
+    const positional = Array.from({ length: SHAPE_LIMITS.maxHookInputs + 1 }, (_, i) => `p${i}: number`).join(', ');
+    const nested = `{ ${fields(SHAPE_LIMITS.maxHookOutputs + 5, 'x')} }`;
+    const text = `export const useArrow = (${positional}) => {\n  const build = () => { return ${nested}; };\n  return { build };\n};\n`;
+    expect(measureFileShape('features/x/useArrow.ts', text)).toEqual([
+      { file: 'features/x/useArrow.ts', metric: 'hook-inputs', name: 'useArrow', value: SHAPE_LIMITS.maxHookInputs + 1 },
+    ]);
+  });
+});
+
 describe('countCodeLines', () => {
   it('skips blank lines and comments', () => {
     expect(countCodeLines('// a\n\n/**\n * doc\n */\nconst a = 1;\n/* x */\nconst b = 2;')).toBe(2);

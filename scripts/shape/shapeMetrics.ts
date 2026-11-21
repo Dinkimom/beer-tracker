@@ -3,7 +3,10 @@
  * - ширина `*Props` — сколько полей у пропсов компонента;
  * - проброс — доля JSX-атрибутов, которые передают полученный пропс без вычислений
  *   (`x={x}`, `y={props.x}`, `z={handlers.z}`): слой, который в основном передаёт дальше;
- * - размер хука — непустые строки файла `use*.ts(x)`.
+ * - ширина хука — сколько полей хук принимает и сколько отдаёт объектом: хук-дирижёр, который
+ *   собирает всё и раздаёт всё (`{...viewModel}` в компонент), — та же широкая поверхность, что `*Props`;
+ * - длина хука — страховка на уровне `max-lines`: длинный, но цельный хук (раскладка, движок
+ *   синхронизации) резать ради счётчика строк не нужно.
  */
 import ts from 'typescript';
 
@@ -14,16 +17,20 @@ export const SHAPE_LIMITS = {
   maxPassThroughShare: 0.5,
   /** Проброс считаем только у компонентов с заметным числом атрибутов. */
   minAttrsForPassThrough: 20,
-  /** Хук длиннее — дирижёр, который стоит резать по зонам. */
-  maxHookLines: 300,
+  /** Полей у входа хука (деструктурированный объект или позиционные параметры). */
+  maxHookInputs: 15,
+  /** Полей у объекта, который хук возвращает. */
+  maxHookOutputs: 20,
+  /** Страховка: файл хука длиннее — почти наверняка несколько зон. Как `max-lines`. */
+  maxHookLines: 500,
 } as const;
 
-type ShapeMetric = 'hook-lines' | 'pass-through' | 'props-width';
+type ShapeMetric = 'hook-inputs' | 'hook-lines' | 'hook-outputs' | 'pass-through' | 'props-width';
 
 export interface ShapeViolation {
   file: string;
   metric: ShapeMetric;
-  /** Имя интерфейса для ширины пропсов, иначе пусто. */
+  /** Имя интерфейса для ширины пропсов или хука для его ширины, иначе пусто. */
   name: string;
   /** Для pass-through — процент, иначе число. */
   value: number;
@@ -47,6 +54,54 @@ function measurePropsWidths(source: ts.SourceFile): Array<{ name: string; width:
     } else if (ts.isTypeAliasDeclaration(node) && node.name.text.endsWith('Props')) {
       const width = countTypeMembers(node.type);
       if (width > 0) out.push({ name: node.name.text, width });
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return out;
+}
+
+function hookFunctionOf(node: ts.Node): { body: ts.Node; fn: ts.SignatureDeclaration; name: string } | null {
+  if (ts.isFunctionDeclaration(node) && node.name && node.body && /^use[A-Z]/.test(node.name.text)) {
+    return { body: node.body, fn: node, name: node.name.text };
+  }
+  if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && /^use[A-Z]/.test(node.name.text)) {
+    const init = node.initializer;
+    if (init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init))) {
+      return { body: init.body, fn: init, name: node.name.text };
+    }
+  }
+  return null;
+}
+
+function countHookInputs(fn: ts.SignatureDeclaration): number {
+  const first = fn.parameters[0];
+  if (first && ts.isObjectBindingPattern(first.name)) return first.name.elements.length;
+  if (first && fn.parameters.length === 1 && first.type) return countTypeMembers(first.type);
+  return fn.parameters.length;
+}
+
+/** Самый широкий объект, который хук возвращает сам (не из вложенных функций). */
+function countHookOutputs(body: ts.Node): number {
+  let widest = 0;
+  const visit = (node: ts.Node): void => {
+    if (ts.isReturnStatement(node) && node.expression && ts.isObjectLiteralExpression(node.expression)) {
+      widest = Math.max(widest, node.expression.properties.length);
+    }
+    if (!ts.isFunctionLike(node)) ts.forEachChild(node, visit);
+  };
+  if (ts.isObjectLiteralExpression(body)) return body.properties.length;
+  ts.forEachChild(body, visit);
+  return widest;
+}
+
+function measureHookWidths(source: ts.SourceFile): Array<{ inputs: number; name: string; outputs: number }> {
+  const out: Array<{ inputs: number; name: string; outputs: number }> = [];
+  const visit = (node: ts.Node): void => {
+    const hook = hookFunctionOf(node);
+    if (hook) {
+      out.push({ inputs: countHookInputs(hook.fn), name: hook.name, outputs: countHookOutputs(hook.body) });
+      return;
     }
     ts.forEachChild(node, visit);
   };
@@ -158,6 +213,15 @@ export function measureFileShape(file: string, text: string): ShapeViolation[] {
   const { attrs, passThrough } = measurePassThrough(source);
   if (attrs >= SHAPE_LIMITS.minAttrsForPassThrough && passThrough / attrs > SHAPE_LIMITS.maxPassThroughShare) {
     violations.push({ file, metric: 'pass-through', name: '', value: Math.round((passThrough / attrs) * 100) });
+  }
+
+  for (const { inputs, name, outputs } of measureHookWidths(source)) {
+    if (inputs > SHAPE_LIMITS.maxHookInputs) {
+      violations.push({ file, metric: 'hook-inputs', name, value: inputs });
+    }
+    if (outputs > SHAPE_LIMITS.maxHookOutputs) {
+      violations.push({ file, metric: 'hook-outputs', name, value: outputs });
+    }
   }
 
   if (isHookFile(file)) {
