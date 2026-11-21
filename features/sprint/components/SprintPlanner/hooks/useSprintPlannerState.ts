@@ -106,7 +106,6 @@ export function useSprintPlannerState({
     ]
   );
   useEffect(() => board.connect(), [board]);
-  const tasks = board.tasks;
   const developers = board.developers;
 
   const setTasks = useCallback(
@@ -133,9 +132,8 @@ export function useSprintPlannerState({
     selectedSprintId,
     getTaskInfoRef
   );
-  // Значения — для отрисовки; действия со связями и заметками берут у `board.links` / `board.comments`.
-  const { items: taskLinks, reloadFromRemote: reloadLinks } = links;
-  const { items: comments, reloadFromRemote: reloadComments, setWithSave: setComments } = sprintComments;
+  const { reloadFromRemote: reloadLinks } = links;
+  const { reloadFromRemote: reloadComments, setWithSave: setComments } = sprintComments;
   const [, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const [boardViewers, setBoardViewers] = useState<SprintPresenceViewer[]>([]);
 
@@ -232,35 +230,18 @@ export function useSprintPlannerState({
     };
   }, [positionsStore, selectedSprintId, setComments, setFeatureLanes, setTasks]);
 
-  const filteredTaskLinks = useMemo(() => {
-    return taskLinks.filter(
-      (link) => tasksMap.has(link.fromTaskId) && tasksMap.has(link.toTaskId)
-    );
-  }, [taskLinks, tasksMap]);
-
+  // Данные доски (задачи, позиции, заметки, связи) — у `board`; здесь — то, чего в модели нет.
   return {
     board,
-    developers,
-    tasks,
     setTasks,
     sidebarWidth,
     setSidebarWidth,
     viewMode,
     setViewMode,
     isMounted,
-
-    taskPositions: displayTaskPositions,
     positionHistory,
-    taskLinks,
-    comments,
     boardViewers,
-
-    allTasksForDrag,
-    tasksMap,
-    qaTasksByOriginalId,
     unassignedTasks,
     tasksByAssignee,
-    filteredTaskPositions: board.visiblePositions,
-    filteredTaskLinks,
   };
 }

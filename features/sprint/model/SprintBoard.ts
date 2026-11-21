@@ -73,6 +73,7 @@ export class SprintBoard {
       taskIndex: computed,
       tasks: computed,
       tasksMap: computed,
+      visibleLinks: computed,
       visiblePositions: computed({ equals: taskPositionMapsHaveSameEntries }),
     });
   }
@@ -193,6 +194,14 @@ export class SprintBoard {
         this.deps.sprintEndDate
       ),
     });
+  }
+
+  /** Связи, оба конца которых на доске (задачи и QA-задачи спринта). */
+  get visibleLinks(): TaskLink[] {
+    const { tasksMap } = this;
+    return this.links.items.filter(
+      (link) => tasksMap.has(link.fromTaskId) && tasksMap.has(link.toTaskId)
+    );
   }
 
   /**

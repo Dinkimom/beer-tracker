@@ -109,25 +109,27 @@ export function useSprintPlannerViewModel({
   });
 
   const {
-    developers,
-    tasks,
     setTasks,
     sidebarWidth,
     setSidebarWidth,
     viewMode,
     setViewMode,
     isMounted,
-    taskPositions,
     positionHistory,
-    comments,
     boardViewers,
-    allTasksForDrag,
-    tasksMap,
     unassignedTasks,
     tasksByAssignee,
-    filteredTaskPositions,
-    filteredTaskLinks,
   } = state;
+  const {
+    allTasksForDrag,
+    developers,
+    displayPositions: taskPositions,
+    tasks,
+    tasksMap,
+    visibleLinks: filteredTaskLinks,
+    visiblePositions: filteredTaskPositions,
+  } = state.board;
+  const comments = state.board.comments.items;
 
   const participantsColumnWidth =
     viewMode === 'features' ? featureColumnWidth : assigneeColumnWidth;

@@ -37,6 +37,15 @@ function setup(tasks: Task[]) {
 }
 
 describe('SprintBoard', () => {
+  it('видимые связи — только те, у которых оба конца на доске', () => {
+    const { board } = setup([task('A-1'), task('A-2')]);
+    board.links.setWithSave(() => [
+      { fromTaskId: 'A-1', id: 'l1', toTaskId: 'A-2' },
+      { fromTaskId: 'A-1', id: 'l2', toTaskId: 'B-9' },
+    ]);
+    expect(board.visibleLinks.map((link) => link.id)).toEqual(['l1']);
+  });
+
   it('сохраняет у себя только связи с заметкой; связь двух задач — дело трекера', async () => {
     const { board } = setup([]);
     const save = vi.spyOn(board.links, 'save').mockResolvedValue();

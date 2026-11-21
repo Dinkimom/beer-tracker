@@ -90,19 +90,17 @@ export function useSprintPlannerViewModelInteractions({
 }: UseSprintPlannerViewModelInteractionsParams) {
   const { sprintPlannerUi } = useRootStore();
   const { deleteTrackerOverlayLink, trackerTaskLinks } = trackerLinks;
+  const { board, setTasks, viewMode } = state;
   const {
     allTasksForDrag,
-    board,
-    comments,
     developers,
-    filteredTaskLinks,
-    filteredTaskPositions,
-    setTasks,
-    taskLinks,
-    taskPositions,
+    displayPositions: taskPositions,
     tasksMap,
-    viewMode,
-  } = state;
+    visibleLinks: filteredTaskLinks,
+    visiblePositions: filteredTaskPositions,
+  } = board;
+  const comments = board.comments.items;
+  const taskLinks = board.links.items;
   const selectedSprintId = board.sprintId;
   const { swimlaneImagesVisible, swimlaneNotesVisible, syncAssignees, syncEstimates } = preferences;
   const commentsVisible = swimlaneNotesVisible || swimlaneImagesVisible;
