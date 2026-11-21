@@ -69,6 +69,14 @@
 
 5. **Хуки-дирижёры (с 2026-11-21 меряем ширину, а не строки).** Порог 300 строк ловил цельные длинные хуки (`useSwimlaneLayout`, `useDebouncedApiSync`) и пропускал настоящие дирижёры: view model 279 строк отдавала 56 полей в `{...viewModel}`. Теперь `hook-inputs` ≤ 15 и `hook-outputs` ≤ 20; длину файла держит ESLint `max-lines` (500), отдельной метрики строк нет. Верх долга: `useSprintPlannerViewModel` → 56 выходов, `useSprintPlannerViewModelInteractions` → 42 входа, `useSprintPlannerHandlers` → 33 входа, `useSwimlaneLayout` → 30 выходов. Сделано 2026-11-21: view model отдаёт срезы по потребителю (`swimlanes`, `kanban`, `sidebar`, `controls`, `modals`, `dnd`, `presence`, `onboarding`, `placementToolbar`, `assigneePicker`), `SprintPlannerView` раздаёт их целиком — 56 выходов → 18, проброс View 80% → ниже порога. Сборка срезов теперь в view model (файл ~490 строк при `max-lines` 500 с учётом только кода): следующий шаг по касанию — сборку срезов свимлейнов и сайдбара вынести к их хукам.
 
+### 2.8 Модель доски и классы под вью (высокий)
+
+Направление и правила — [ARCHITECTURE.md](../ARCHITECTURE.md#модель-доски-и-классы-под-вью-направление-с-2026-11). Мерило — сколько транзитных слоёв проходит возможность карточки. Замер до: якорь плана (e56810eb) — 3 транзитных файла (`TaskBar`, `TaskBarOpacityLayer`, `TaskBarOpacityLayerChrome`) и 3 объявления одного поля из 7 UI-файлов фичи.
+
+1. `SprintBoard` только на чтение поверх нынешних источников; перевести читателей карточки, секции, сайдбара.
+2. Действия в модель (`useSprintPlannerHandlers`, `useSprintPlannerTaskHandlers`, комментарии, связи).
+3. `SprintPlannerUiStore` (582 строки, ~35 несвязанных полей) — классы под вью по областям.
+
 ### 2.7 Производительность доски (высокий)
 
 Замер — демо, dev, счётчики рендеров во временных пробах (`console.warn` в `SprintPlannerView`, `Swimlane`, `TaskBar`) и сценарий Playwright: простой 2 с, движение мыши внутри карточки, 12 наведений на карточки. После правки — тот же сценарий до и после.
