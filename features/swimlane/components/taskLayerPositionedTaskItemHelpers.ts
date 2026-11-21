@@ -8,7 +8,6 @@ import {
   computeSwimlaneBaselineInsetsPx,
   computeSwimlaneOverdueBaselineStrips,
   computeSwimlaneRowBandBox,
-  computeTaskLayerCardOpacity,
   resolveOverdueBaselineLinkClearanceOffsetPx,
 } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
@@ -32,14 +31,16 @@ function resolveTaskLayerPlanSegments(
   return { planSegments, segmentEditRange };
 }
 
-export function resolveTaskLayerPlanContext(props: TaskLayerPositionedTaskItemProps) {
+/** `cardOpacity` — приглушение карточки подсветкой; считается в карточке селектором подсветки. */
+export function resolveTaskLayerPlanContext(
+  props: TaskLayerPositionedTaskItemProps,
+  cardOpacity: number
+) {
   const {
     activeDraggableId = null,
     activeTask,
     currentCell,
-    factHoveredTaskId = null,
     hasTaskOverlaps,
-    hoverConnectedTaskIds = null,
     layerHeight,
     onSegmentEditCancel,
     onSegmentEditSave,
@@ -80,16 +81,6 @@ export function resolveTaskLayerPlanContext(props: TaskLayerPositionedTaskItemPr
   const isDraggingThisTask = activeTask?.id === task.id;
   const hideOtherSegmentsWhileDragging =
     isDraggingThisTask && activeDraggableId != null && hasMultiplePlanSegments;
-  const cardOpacity = computeTaskLayerCardOpacity({
-    activeTask,
-    factHoveredTaskId,
-    hoverConnectedTaskIds,
-    onSegmentEditCancel,
-    onSegmentEditSave,
-    segmentEditTaskId,
-    taskId: task.id,
-  });
-
   return {
     baselineHeight,
     baselineTop,

@@ -12,6 +12,7 @@ import { ZIndex } from '@/constants';
 import { SwimlaneLinkingSourceFrame } from '@/features/swimlane/components/SwimlaneLinkingSourceFrame';
 import { SwimlaneLinkingTargetOutline } from '@/features/swimlane/components/SwimlaneLinkingTargetOutline';
 import { SwimlaneSegmentEditFrame } from '@/features/swimlane/components/SwimlaneSegmentEditFrame';
+import { useSwimlaneHighlightSelector } from '@/features/swimlane/SwimlaneBoardContext';
 import { extendLastPlanSegmentToCell } from '@/features/swimlane/utils/overdueBaselineSummary';
 import {
   computeSwimlaneLinkAlreadyExists,
@@ -20,6 +21,7 @@ import {
   resolveSwimlaneLinkingOutlineRadiusClass,
   resolveSwimlanePlacementLinkMode,
 } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
+import { computeTaskLayerCardOpacity } from '@/features/swimlane/utils/taskLayerTaskLayout';
 import { useRootStore } from '@/lib/layers';
 import { getSegmentEditorRangeAndCells } from '@/lib/planner-timeline';
 
@@ -39,7 +41,6 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     currentCell,
     developers,
     hasQuickAddDraftMode = false,
-    hoveredTaskId = null,
     isDraggingTask = false,
     linkingFromTaskId = null,
     qaTasksMap,
@@ -57,6 +58,20 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
   } = props;
 
   const { sprintPlannerUi } = useRootStore();
+  const hovered = useSwimlaneHighlightSelector(
+    (highlight) => highlight.hoveredTaskId === task.id
+  );
+  const highlightCardOpacity = useSwimlaneHighlightSelector((highlight) =>
+    computeTaskLayerCardOpacity({
+      activeTask: props.activeTask,
+      factHoveredTaskId: highlight.factHoveredTaskId,
+      hoverConnectedTaskIds: highlight.hoverConnectedTaskIds,
+      onSegmentEditCancel,
+      onSegmentEditSave,
+      segmentEditTaskId: props.segmentEditTaskId ?? null,
+      taskId: task.id,
+    })
+  );
 
   const {
     baselineHeight,
@@ -71,7 +86,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     segmentEditRange,
     segmentEditorActive,
     swimlaneRowBandStyle,
-  } = resolveTaskLayerPlanContext(props);
+  } = resolveTaskLayerPlanContext(props, highlightCardOpacity);
 
   const baselineCenterOffsetPx = resolveTaskLayerBaselineCenterOffsetPx({
     assigneeOrder: developers,
@@ -120,7 +135,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     <React.Fragment>
       {!isDraggingThisTask && (
         <TaskLayerPlanAnchorMarks
-          focused={hoveredTaskId === task.id}
+          focused={hovered}
           position={position}
           rowBandStyle={swimlaneRowBandStyle}
           task={task}
@@ -207,7 +222,7 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
           }
         />
       )}
-      {linkMode === 'target' && linkingRange && hoveredTaskId === task.id && (
+      {linkMode === 'target' && linkingRange && hovered && (
         <SwimlaneLinkingTargetOutline
           containerStyle={linkingOverlayStyle}
           outlineRadiusClass={linkingOutlineRadiusClass}

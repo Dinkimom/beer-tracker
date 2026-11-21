@@ -24,7 +24,6 @@ import { useTaskBarDragBind } from './TaskBarDragBridge';
 import {
   buildTaskBarLayoutStyle,
   buildTaskBarWidthCss,
-  isDimmedByContextMenuElsewhere,
   resolveHasQaTaskInSwimlane,
   resolveTaskBarContentLayout,
   resolveTaskBarDisplayDimensions,
@@ -108,8 +107,7 @@ function useLongHoverElevation(shouldExpandByLongHover: boolean): boolean {
 
 export function useTaskBarDisplayState(input: {
   assigneeName?: string;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
+  dimmedByContextMenu?: boolean;
   customStyle?: React.CSSProperties;
   developers?: Developer[];
   disableResize?: boolean;
@@ -299,18 +297,11 @@ export function useTaskBarDisplayState(input: {
   });
 
   const effectiveOpacity = resolveTaskBarEffectiveOpacity({
-    contextMenuBlurOtherCards: input.contextMenuBlurOtherCards ?? false,
-    contextMenuTaskId: input.contextMenuTaskId ?? null,
     customStyleOpacity:
       typeof input.customStyle?.opacity === 'number' ? input.customStyle.opacity : undefined,
+    dimmedByContextMenu: input.dimmedByContextMenu ?? false,
     globalNameFilter: input.globalNameFilter,
     task: input.task,
-  });
-
-  const dimmedByContextMenuElsewhere = isDimmedByContextMenuElsewhere({
-    contextMenuBlurOtherCards: input.contextMenuBlurOtherCards ?? false,
-    contextMenuTaskId: input.contextMenuTaskId ?? null,
-    taskId: input.task.id,
   });
 
   const taskBarZIndex = resolveTaskBarZIndex({
@@ -332,7 +323,6 @@ export function useTaskBarDisplayState(input: {
   return {
     contentDurationParts,
     contentWidthPercent,
-    dimmedByContextMenuElsewhere,
     dragActivationProps,
     effectiveIsDragging,
     effectiveOpacity,

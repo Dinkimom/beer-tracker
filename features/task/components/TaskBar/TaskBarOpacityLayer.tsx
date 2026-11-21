@@ -9,6 +9,7 @@ import React, { useCallback, useMemo } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { useSwimlaneCardContextMenu } from '@/features/swimlane/SwimlaneBoardContext';
 
 import { getQuickAddSubmittingOverlayRadiusClass } from './components/taskBarResizeHandleHelpers';
 import { TaskBarDragSourceGhost } from './TaskBarDragSourceGhost';
@@ -98,7 +99,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   } = longHover;
   const shared = { effectiveIsDragging, interactionDisabled, isDraftTask, isQATask, isSelected, task };
 
-  const isContextMenuOpenForThis = card.contextMenuTaskId === task.id;
+  const isContextMenuOpenForThis = useSwimlaneCardContextMenu(task.id).open;
   const cardElementRef = React.useRef<HTMLElement | null>(null);
   const layerRef = React.useRef<HTMLDivElement | null>(null);
   // У заметок упругой деформации нет: бумажка не резиновая.

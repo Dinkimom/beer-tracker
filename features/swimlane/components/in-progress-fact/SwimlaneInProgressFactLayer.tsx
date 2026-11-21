@@ -6,7 +6,7 @@ import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
 import { ZIndex } from '@/constants';
 import { SwimlaneLaneBand } from '@/features/swimlane/components/SwimlaneLaneBand';
-import { useSwimlaneHighlight } from '@/features/swimlane/SwimlaneBoardContext';
+import { useSwimlaneHighlightSelector } from '@/features/swimlane/SwimlaneBoardContext';
 import { SWIMLANE_FACT_ROW_RIGHT_INSET_PX } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
 import {
   buildLanes,
@@ -63,10 +63,8 @@ export function SwimlaneInProgressFactLayer({
   totalParts,
 }: SwimlaneInProgressFactLayerProps) {
   // Подсветка колбасы факта по наведению на факт или на карточку (тень).
-  const highlight = useSwimlaneHighlight();
-  const factHoveredTaskId = resolveFactBarFocusTaskId(
-    highlight.factHoveredTaskId,
-    highlight.cardShadowTaskId
+  const factHoveredTaskId = useSwimlaneHighlightSelector((highlight) =>
+    resolveFactBarFocusTaskId(highlight.factHoveredTaskId, highlight.cardShadowTaskId)
   );
   const toCell = (d: Date) => dateTimeToFractionalCellInRange(sprintStartDate, d, totalParts);
   const nowCell = Math.min(toCell(getPlannerNow()), totalParts);

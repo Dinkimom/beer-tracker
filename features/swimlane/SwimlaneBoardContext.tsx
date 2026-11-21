@@ -6,9 +6,9 @@ import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { OccupancyErrorReason } from '@/lib/planner-timeline';
 import type { Developer, LayoutViewMode, PhaseSegment, Task, TaskParent, TaskPosition } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
-import type { MouseEvent } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 
 /**
  * Общее для всех дорожек доски: конфигурация, данные и обработчики. Задаётся один раз
@@ -71,8 +71,9 @@ export interface SwimlaneBoard {
 
 /**
  * Подсветка и приглушение карточек: наведение, связи, факт, контекстное меню. Меняется на каждое
- * наведение, поэтому отдельно от `SwimlaneBoard` и мимо пропсов дорожки: его читают только слой
- * карточек (`TaskLayer`) и полоса факта, дорожка с раскладкой на наведение не перерисовывается.
+ * наведение, поэтому идёт подпиской, а не значением контекста: карточка выбирает селектором своё
+ * («наведена ли я», «насколько приглушена») и перерисовывается, только когда это изменилось.
+ * Дорожка и слой карточек на наведение не перерисовываются.
  */
 export interface SwimlaneHighlight {
   /** Карточка, у которой hover дожил до тени: затемняет бары факта других задач. */
@@ -86,14 +87,65 @@ export interface SwimlaneHighlight {
   hoveredTaskId: string | null;
 }
 
-export const SwimlaneHighlightContext = createContext<SwimlaneHighlight | null>(null);
+interface SwimlaneHighlightStore {
+  get: () => SwimlaneHighlight;
+  subscribe: (listener: () => void) => () => void;
+}
 
-export function useSwimlaneHighlight(): SwimlaneHighlight {
-  const highlight = useContext(SwimlaneHighlightContext);
-  if (!highlight) {
-    throw new Error('useSwimlaneHighlight must be used inside SwimlaneHighlightContext');
+const SwimlaneHighlightContext = createContext<SwimlaneHighlightStore | null>(null);
+
+export function SwimlaneHighlightProvider({
+  children,
+  value,
+}: {
+  children: ReactNode;
+  value: SwimlaneHighlight;
+}) {
+  const [store] = useState(() => {
+    let current = value;
+    const listeners = new Set<() => void>();
+    return {
+      get: () => current,
+      set: (next: SwimlaneHighlight) => {
+        current = next;
+        for (const listener of listeners) listener();
+      },
+      subscribe: (listener: () => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+  });
+  // До отрисовки кадра: подписчики, у которых изменился выбранный срез, обновятся синхронно.
+  useLayoutEffect(() => store.set(value), [store, value]);
+  return <SwimlaneHighlightContext.Provider value={store}>{children}</SwimlaneHighlightContext.Provider>;
+}
+
+/**
+ * Срез подсветки для одной карточки или полосы. `select` возвращает примитив (флаг, число, id):
+ * компонент перерисуется, только если результат изменился.
+ */
+export function useSwimlaneHighlightSelector<T extends boolean | number | string | null>(
+  select: (highlight: SwimlaneHighlight) => T
+): T {
+  const store = useContext(SwimlaneHighlightContext);
+  if (!store) {
+    throw new Error('useSwimlaneHighlightSelector must be used inside SwimlaneHighlightProvider');
   }
-  return highlight;
+  const getSnapshot = () => select(store.get());
+  return useSyncExternalStore(store.subscribe, getSnapshot, getSnapshot);
+}
+
+/** Контекстное меню глазами одной карточки: открыто ли оно на ней и приглушает ли её чужое меню. */
+export function useSwimlaneCardContextMenu(taskId: string): { dimmed: boolean; open: boolean } {
+  const open = useSwimlaneHighlightSelector((highlight) => highlight.contextMenuTaskId === taskId);
+  const dimmed = useSwimlaneHighlightSelector(
+    (highlight) =>
+      highlight.contextMenuBlurOtherCards &&
+      highlight.contextMenuTaskId != null &&
+      highlight.contextMenuTaskId !== taskId
+  );
+  return { dimmed, open };
 }
 
 export const SwimlaneBoardContext = createContext<SwimlaneBoard | null>(null);

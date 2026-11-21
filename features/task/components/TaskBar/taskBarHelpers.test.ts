@@ -481,8 +481,7 @@ describe('resolveTaskBarEffectiveOpacity', () => {
   it('keeps confirmed cards fully opaque', () => {
     expect(
       resolveTaskBarEffectiveOpacity({
-        contextMenuBlurOtherCards: false,
-        contextMenuTaskId: null,
+        dimmedByContextMenu: false,
         task,
       })
     ).toBe(1);
@@ -491,8 +490,7 @@ describe('resolveTaskBarEffectiveOpacity', () => {
   it('dims MCP draft notes pending apply', () => {
     expect(
       resolveTaskBarEffectiveOpacity({
-        contextMenuBlurOtherCards: false,
-        contextMenuTaskId: null,
+        dimmedByContextMenu: false,
         task: { ...task, pendingApproval: true },
       })
     ).toBe(0.65);

@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { computed } from 'mobx';
+import { useEffect, useMemo } from 'react';
 
 import { LINK_ARROW_DELETE_HANDLE_SELECTOR } from '@/features/swimlane/utils/task-arrows/linkArrowDeleteHandleHelpers';
 import { useRootStore } from '@/lib/layers';
@@ -6,7 +7,7 @@ import { useRootStore } from '@/lib/layers';
 import { shouldCollapseTaskBarLongHoverExpand } from './taskBarHelpers';
 
 export function useTaskBarLifecycle({
-  contextMenuTaskId,
+  contextMenuOpen,
   effectiveIsDragging,
   htmlAnchorId,
   isLinking,
@@ -18,7 +19,8 @@ export function useTaskBarLifecycle({
   taskId,
   widthPercent,
 }: {
-  contextMenuTaskId: string | null;
+  /** Контекстное меню открыто на этой карточке. */
+  contextMenuOpen: boolean;
   effectiveIsDragging: boolean;
   htmlAnchorId: string;
   isLinking: boolean;
@@ -30,7 +32,12 @@ export function useTaskBarLifecycle({
   taskId: string;
   widthPercent: number;
 }): void {
-  const hoveredTaskId = useRootStore().sprintPlannerUi.hoveredTaskId;
+  const { sprintPlannerUi } = useRootStore();
+  // Флаг через computed: observer карточки подписан на «наведена ли я», а не на любой hover доски.
+  const isHoveredSource = useMemo(
+    () => computed(() => sprintPlannerUi.hoveredTaskId === taskId),
+    [sprintPlannerUi, taskId]
+  ).get();
 
   useEffect(() => {
     if (!effectiveIsDragging) {
@@ -79,19 +86,18 @@ export function useTaskBarLifecycle({
   }, [longHoverTimeoutRef]);
 
   useEffect(() => {
-    const contextMenuOpenForThis = contextMenuTaskId === taskId;
     const isPointerOverCard = document.getElementById(htmlAnchorId)?.matches(':hover') ?? false;
     const isPointerOverLinkDeleteHandle =
       document.querySelector(`${LINK_ARROW_DELETE_HANDLE_SELECTOR}:hover`) != null;
     if (
       shouldCollapseTaskBarLongHoverExpand({
-        contextMenuOpenForThis,
-        isHoveredSource: hoveredTaskId === taskId,
+        contextMenuOpenForThis: contextMenuOpen,
+        isHoveredSource,
         isPointerOverCard,
         isPointerOverLinkDeleteHandle,
       })
     ) {
       setIsExpandedByLongHover(false);
     }
-  }, [contextMenuTaskId, hoveredTaskId, htmlAnchorId, setIsExpandedByLongHover, taskId]);
+  }, [contextMenuOpen, htmlAnchorId, isHoveredSource, setIsExpandedByLongHover]);
 }

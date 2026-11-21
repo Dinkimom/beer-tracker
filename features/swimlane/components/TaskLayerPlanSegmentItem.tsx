@@ -112,8 +112,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   const { onCommentApprove, onCommentCardRowLayoutUpdate, onCommentDelete, onCommentUpdate } =
     props.commentActions ?? {};
   const {
-    contextMenuBlurOtherCards = false,
-    contextMenuTaskId,
     developers,
     errorReasons,
     globalNameFilter,
@@ -395,8 +393,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     >
       <TaskBar
         assigneeName={position.assignee}
-        contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-        contextMenuTaskId={contextMenuTaskId}
         developers={developers}
         disableDragAndResize={linkingActive}
         disableResize={renderState.interactionDisabled || linkingActive}

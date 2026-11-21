@@ -1,4 +1,4 @@
-import type { SwimlaneBoard, SwimlaneHighlight } from '@/features/swimlane/SwimlaneBoardContext';
+import type { SwimlaneBoard } from '@/features/swimlane/SwimlaneBoardContext';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { Task, TaskPosition } from '@/types';
 import type { Dispatch, SetStateAction } from 'react';
@@ -35,7 +35,7 @@ export interface TaskLayerProps {
 }
 
 /** Элемент слоя получает свои пропсы вместе с общим (`TaskLayer` объединяет их с контекстом). */
-export type TaskLayerPositionedTaskItemProps = Omit<TaskLayerProps, 'positionedTasks'> & SwimlaneBoard & SwimlaneHighlight & {
+export type TaskLayerPositionedTaskItemProps = Omit<TaskLayerProps, 'positionedTasks'> & SwimlaneBoard & {
   position: TaskPosition;
   segmentEditDraftCells: boolean[] | null;
   setSegmentEditDraftCells: Dispatch<SetStateAction<boolean[] | null>>;

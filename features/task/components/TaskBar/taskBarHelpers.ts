@@ -253,21 +253,17 @@ export function resolveHasQaTaskInSwimlane(params: {
 }
 
 export function resolveTaskBarEffectiveOpacity(params: {
-  contextMenuBlurOtherCards: boolean;
-  contextMenuTaskId: string | null;
   customStyleOpacity?: number;
+  /** Контекстное меню открыто на другой карточке и просит приглушить остальные. */
+  dimmedByContextMenu: boolean;
   globalNameFilter?: string;
   task: Task;
 }): number {
   const matchesFilter = taskMatchesNameFilter(params.task, params.globalNameFilter);
   const taskOpacity = matchesFilter ? 1 : 0.3;
   const opacityFromParent = params.customStyleOpacity ?? 1;
-  const dimmedByContextMenuElsewhere =
-    params.contextMenuBlurOtherCards &&
-    params.contextMenuTaskId != null &&
-    params.contextMenuTaskId !== params.task.id;
   const pendingApprovalOpacity = params.task.pendingApproval === true ? 0.65 : 1;
-  return opacityFromParent * taskOpacity * pendingApprovalOpacity * (dimmedByContextMenuElsewhere ? 0.5 : 1);
+  return opacityFromParent * taskOpacity * pendingApprovalOpacity * (params.dimmedByContextMenu ? 0.5 : 1);
 }
 
 export function resolveTaskBarZIndex(params: {
@@ -403,16 +399,4 @@ export function cancelInlineEditorOnFocusOut(
   ) {
     onCancel();
   }
-}
-
-export function isDimmedByContextMenuElsewhere(params: {
-  contextMenuBlurOtherCards: boolean;
-  contextMenuTaskId: string | null;
-  taskId: string;
-}): boolean {
-  return (
-    params.contextMenuBlurOtherCards &&
-    params.contextMenuTaskId != null &&
-    params.contextMenuTaskId !== params.taskId
-  );
 }

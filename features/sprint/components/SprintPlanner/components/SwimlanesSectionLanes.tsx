@@ -28,7 +28,7 @@ import { PlanPatchSegmentArrows } from '@/features/swimlane/components/task-arro
 import { SwimlaneXarrowRedrawProvider } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import {
   SwimlaneBoardContext,
-  SwimlaneHighlightContext,
+  SwimlaneHighlightProvider,
   type SwimlaneHighlight,
 } from '@/features/swimlane/SwimlaneBoardContext';
 import {
@@ -311,7 +311,7 @@ export function SwimlanesSectionLanes({
     <Xwrapper>
       <SwimlaneXarrowRedrawProvider>
         <SwimlaneBoardContext.Provider value={board}>
-        <SwimlaneHighlightContext.Provider value={highlight}>
+        <SwimlaneHighlightProvider value={highlight}>
         <SwimlanePinnedArrowSync
           active={pinnedRows.length > 0}
           redrawRef={pinnedFrameArrowRedrawRef}
@@ -323,7 +323,7 @@ export function SwimlanesSectionLanes({
         {showArrows ? <TaskArrows {...taskArrowProps} /> : null}
         <PlanPatchScheduleArrows />
         <PlanPatchSegmentArrows />
-        </SwimlaneHighlightContext.Provider>
+        </SwimlaneHighlightProvider>
         </SwimlaneBoardContext.Provider>
       </SwimlaneXarrowRedrawProvider>
     </Xwrapper>

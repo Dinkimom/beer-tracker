@@ -5,6 +5,7 @@ import type { DraggableAttributes } from '@dnd-kit/core';
 
 import React, { useCallback } from 'react';
 
+import { useSwimlaneCardContextMenu } from '@/features/swimlane/SwimlaneBoardContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 
 import { buildTaskBarMouseUpHandler } from './taskBarOpacityLayerHandlers';
@@ -16,9 +17,7 @@ export interface TaskBarOpacityLayerCardProps {
   clickStartPos: { x: number; y: number } | null;
   contentDurationParts: number;
   contentWidthPercent: number;
-  contextMenuTaskId: string | null;
   developers: Developer[];
-  dimmedByContextMenuElsewhere: boolean;
   dragActivationProps: DraggableAttributes;
   effectiveIsDragging: boolean;
   hideSourceForOverlay: boolean;
@@ -58,9 +57,7 @@ export function TaskBarOpacityLayerCard({
   clickStartPos,
   contentDurationParts,
   contentWidthPercent,
-  contextMenuTaskId,
   developers,
-  dimmedByContextMenuElsewhere,
   dragActivationProps,
   effectiveIsDragging,
   hideSourceForOverlay,
@@ -86,7 +83,7 @@ export function TaskBarOpacityLayerCard({
   task,
   taskPositions,
 }: TaskBarOpacityLayerCardProps) {
-  const isContextMenuOpenForThis = contextMenuTaskId === task.id;
+  const contextMenu = useSwimlaneCardContextMenu(task.id);
   const mergedCardRef = useCallback(
     (node: HTMLDivElement | null) => {
       cardElementRef.current = node;
@@ -101,9 +98,9 @@ export function TaskBarOpacityLayerCard({
       assigneeName={assigneeName}
       className={`${interactionDisabled ? 'pointer-events-none ' : ''}relative z-[1]`}
       developers={developers}
-      dimmedByContextMenu={dimmedByContextMenuElsewhere}
+      dimmedByContextMenu={contextMenu.dimmed}
       inlineTitleEditor={inlineTitleEditor}
-      isContextMenuOpen={isContextMenuOpenForThis}
+      isContextMenuOpen={contextMenu.open}
       isDragging={hideSourceForOverlay ? false : effectiveIsDragging}
       isLocalTask={isDraftTask}
       isNotificationFocused={isNotificationFocused}

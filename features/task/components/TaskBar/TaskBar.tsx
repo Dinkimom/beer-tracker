@@ -20,6 +20,7 @@ import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId
 import { DraftItemCommentButton } from '@/features/swimlane/components/DraftItemCommentButton';
 import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
 import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
+import { useSwimlaneCardContextMenu } from '@/features/swimlane/SwimlaneBoardContext';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
 import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar';
@@ -53,8 +54,6 @@ import { useTaskBarPhotoCardInteractions } from './useTaskBarPhotoCardInteractio
 
 interface TaskBarProps {
   assigneeName?: string;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers?: Developer[];
   /** Отключить drag/resize, но оставить клики (режим связей). */
   disableDragAndResize?: boolean;
@@ -159,8 +158,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
   style: customStyle,
   onTaskHover,
   onContextMenu,
-  contextMenuBlurOtherCards = false,
-  contextMenuTaskId = null,
   selectedSprintId,
   stickyNoteCardRowResize,
   swimlaneBarDurationParts,
@@ -186,10 +183,11 @@ const TaskBarSurface = observer(function TaskBarSurface({
   const [hoverExpandFitDurationParts, setHoverExpandFitDurationParts] = useState<number | null>(null);
   const longHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Меню выбирается подпиской: карточка перерисуется, только когда её состояние меню изменилось.
+  const contextMenu = useSwimlaneCardContextMenu(task.id);
   const {
     contentDurationParts,
     contentWidthPercent,
-    dimmedByContextMenuElsewhere,
     dragActivationProps,
     effectiveIsDragging,
     effectiveOpacity,
@@ -211,9 +209,8 @@ const TaskBarSurface = observer(function TaskBarSurface({
     verticalResize,
   } = useTaskBarDisplayState({
     assigneeName,
-    contextMenuBlurOtherCards,
-    contextMenuTaskId,
     customStyle,
+    dimmedByContextMenu: contextMenu.dimmed,
     developers,
     disableResize: resizeDisabled,
     draggableId,
@@ -241,7 +238,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
   });
 
   useTaskBarLifecycle({
-    contextMenuTaskId,
+    contextMenuOpen: contextMenu.open,
     effectiveIsDragging,
     htmlAnchorId,
     isLinking: disableDragAndResize,
@@ -357,9 +354,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
           clickStartPos,
           contentDurationParts,
           contentWidthPercent,
-          contextMenuTaskId,
           developers,
-          dimmedByContextMenuElsewhere,
           dragActivationProps,
           getPhotoClickSuppress,
           inlineTitleEditor,
