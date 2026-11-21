@@ -21,7 +21,6 @@
   "features/sidebar/components/SprintGoalsSection.tsx::pass-through": 59,
   "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBar.tsx::pass-through": 58,
   "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBarLeftSection.tsx::pass-through": 60,
-  "features/sprint/components/SprintPlanner/hooks/useSprintPlannerQuickAddDraft.ts::hook-inputs::useSprintPlannerQuickAddDraft": 17,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerQuickAddIssueActions.ts::hook-inputs::useSprintPlannerQuickAddIssueActions": 18,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerState.ts::hook-outputs::useSprintPlannerState": 21,
   "features/sprint/components/SprintPlanner/kanban/KanbanColumnsLayout.tsx::pass-through": 82,

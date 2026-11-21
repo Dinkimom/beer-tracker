@@ -46,40 +46,30 @@ import { useSprintPlannerQuickAddIssueActions } from './useSprintPlannerQuickAdd
 import { useSprintPlannerQuickAddNoteActions } from './useSprintPlannerQuickAddNoteActions';
 
 interface UseSprintPlannerQuickAddDraftParams {
-  /** Задачи, разработчики, заметки и позиции (с сохранением) — из модели доски. */
+  /** Спринт, задачи, разработчики, заметки и позиции (с сохранением) — из модели доски. */
   board: SprintBoard;
   boardIdForPlannerData: number | null;
   boards: BoardListItem[];
   forDemoPlanner: boolean;
-  selectedSprintId: number | null;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   sprintTimelineWorkingDays: number;
   swimlaneImagesVisible?: boolean;
   tasksMap: Map<string, Task>;
-  closeNoteComposer: () => void;
   getQueueByBoardId: (boardId: number | null) => string | null;
   onCommentCreate: (comment: Comment) => void;
   onCommentDelete: (commentId: string, options?: { retargetLinksTo?: string }) => Promise<void> | void;
   onCommentUpdate: (commentId: string, text: string, color?: StickyNoteColor) => void;
-  onDiagramEditorClose: () => void;
-  onDiagramEditorOpen: (taskId: string) => void;
-  onOpenCreatedTask: (task: Task) => void;
 }
 
 export function useSprintPlannerQuickAddDraft({
   board,
   boardIdForPlannerData,
   boards,
-  closeNoteComposer,
   forDemoPlanner,
   getQueueByBoardId,
   onCommentCreate,
   onCommentDelete,
   onCommentUpdate,
-  onDiagramEditorClose,
-  onDiagramEditorOpen,
-  onOpenCreatedTask,
-  selectedSprintId,
   setTasks,
   sprintTimelineWorkingDays,
   swimlaneImagesVisible = true,
@@ -90,6 +80,11 @@ export function useSprintPlannerQuickAddDraft({
   const { savePosition, setPositionsWithSave: setTaskPositions } = board.positions;
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
+  // Окна заметки и схемы, панель задачи — у UI-стора; спринт — у модели.
+  const { closeDiagramEditor: onDiagramEditorClose, closeNoteComposer, openDiagramEditor: onDiagramEditorOpen } =
+    sprintPlannerUi.tools;
+  const { openTaskInfoPanel: onOpenCreatedTask } = sprintPlannerUi.overlays;
+  const selectedSprintId = board.sprintId;
   const keepInlineCardDraftRef = useRef(false);
   const [featureLanes, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const { handlePasteQuickAddNote, handleSubmitQuickAddCommentDraft } =
