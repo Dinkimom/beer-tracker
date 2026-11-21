@@ -44,17 +44,8 @@ interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onCo
   layoutDuration?: number;
   linkingActive?: boolean;
   linkMode?: 'source' | 'target' | null;
-  releaseGitlabChecks?: {
-    approvalsDone: number | null;
-    approvalsRequired: number;
-    lintSuccess: boolean | null;
-    testsSuccess: boolean | null;
-  } | null;
-  releaseGitlabChecksLoading?: boolean;
   resizePreviewDuration?: number | null;
   selectedSprintId?: number | null;
-  showDangerousReleaseInsteadOfStatus?: boolean;
-  sprintBadge?: { display: string; id: string } | null;
   swimlaneBarDurationParts?: number;
   task: Task;
   taskPosition?: TaskPosition;
@@ -87,8 +78,6 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
   linkMode = null,
   linkingActive = false,
   layoutDuration,
-  sprintBadge,
-  showDangerousReleaseInsteadOfStatus = false,
   className = '',
   style,
   onMouseDown,
@@ -99,8 +88,6 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
   onPhotoClick,
   children,
   selectedSprintId: _,
-  releaseGitlabChecks = null,
-  releaseGitlabChecksLoading = false,
   ...restProps
 }, ref) => {
   const { t } = useI18n();
@@ -244,13 +231,9 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
         phaseCardColorScheme: visual.phaseCardColorScheme,
         qaRightBgColor: visual.qaRightBgColor,
         qaStripedStyle: visual.qaStripedStyle,
-        releaseGitlabChecks,
-        releaseGitlabChecksLoading,
         resolvedSwimlaneCardFields: visual.resolvedSwimlaneCardFields,
         rightPercent,
-        showDangerousReleaseInsteadOfStatus,
         showExtraSplit,
-        sprintBadge,
         task,
         taskPosition,
         variant,

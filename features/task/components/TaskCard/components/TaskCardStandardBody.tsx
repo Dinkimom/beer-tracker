@@ -11,7 +11,6 @@ import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 
 import { TaskCardBody } from './TaskCardBody';
 import { TaskCardExtraSplitOverlay } from './TaskCardExtraSplitOverlay';
-import { TaskCardSprintBadges } from './TaskCardSprintBadges';
 import { TaskCardTags } from './TaskCardTags';
 
 interface TaskCardStandardBodyProps {
@@ -36,17 +35,8 @@ interface TaskCardStandardBodyProps {
   leftPercent: number;
   phaseCardColorScheme: PlanningPhaseCardColorScheme;
   qaRightBgColor?: string;
-  releaseGitlabChecks?: {
-    approvalsDone: number | null;
-    approvalsRequired: number;
-    lintSuccess: boolean | null;
-    testsSuccess: boolean | null;
-  } | null;
-  releaseGitlabChecksLoading?: boolean;
   rightPercent: number;
-  showDangerousReleaseInsteadOfStatus?: boolean;
   showExtraSplit: boolean;
-  sprintBadge?: { display: string; id: string } | null;
   swimlaneCardFields: SwimlaneCardFieldsVisibility | undefined;
   task: Task;
   taskPosition?: TaskPosition;
@@ -60,8 +50,6 @@ export function TaskCardStandardBody({
   isSwimlane,
   isQATask,
   qaRightBgColor,
-  releaseGitlabChecks,
-  releaseGitlabChecksLoading = false,
   leftPercent,
   rightPercent,
   dividerBgClass,
@@ -82,8 +70,6 @@ export function TaskCardStandardBody({
   task,
   variant,
   taskPosition,
-  sprintBadge,
-  showDangerousReleaseInsteadOfStatus = false,
   children,
 }: TaskCardStandardBodyProps) {
   const estimateMapping = useTaskCardEstimateMapping();
@@ -113,7 +99,6 @@ export function TaskCardStandardBody({
           showTpLabels={showTpLabels}
         />
       )}
-      <TaskCardSprintBadges sprintBadge={sprintBadge} />
 
       <div
         className={`flex flex-col min-h-0 overflow-hidden${isSwimlane ? ' flex-1' : ''}`}
@@ -138,9 +123,6 @@ export function TaskCardStandardBody({
 
       <TaskCardTags
         displayDuration={actualDuration}
-        releaseGitlabChecks={releaseGitlabChecks}
-        releaseGitlabChecksLoading={releaseGitlabChecksLoading}
-        showDangerousReleaseInsteadOfStatus={showDangerousReleaseInsteadOfStatus}
         task={task}
         taskPosition={taskPosition}
         variant={variant}

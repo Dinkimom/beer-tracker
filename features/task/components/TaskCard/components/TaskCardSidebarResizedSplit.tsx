@@ -9,7 +9,6 @@ import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility
 import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 
 import { TaskCardBody } from './TaskCardBody';
-import { TaskCardSprintBadges } from './TaskCardSprintBadges';
 import { TaskCardTags } from './TaskCardTags';
 
 interface TaskCardSidebarResizedSplitProps {
@@ -30,7 +29,6 @@ interface TaskCardSidebarResizedSplitProps {
   rightPercent: number;
   showExtraSplit: boolean;
   showQaStripedLeftOverlay: boolean;
-  sprintBadge?: { display: string; id: string } | null;
   task: Task;
   taskPosition?: TaskPosition;
   variant: TaskCardVariant;
@@ -50,7 +48,6 @@ export function TaskCardSidebarResizedSplit({
   task,
   variant,
   taskPosition,
-  sprintBadge,
   dividerBgClass,
   qaRightBgColor,
   isDark,
@@ -82,7 +79,6 @@ export function TaskCardSidebarResizedSplit({
         )}
 
         <div className={`relative w-full h-full flex flex-col ${paddingClasses}`}>
-          <TaskCardSprintBadges sprintBadge={sprintBadge} />
 
           <div className="flex flex-col min-h-0">
             <TaskCardBody

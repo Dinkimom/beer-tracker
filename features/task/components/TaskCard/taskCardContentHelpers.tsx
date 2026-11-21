@@ -33,18 +33,9 @@ interface RenderTaskCardBodyParams {
   phaseCardColorScheme: PlanningPhaseCardColorScheme;
   qaRightBgColor?: string;
   qaStripedStyle?: CSSProperties;
-  releaseGitlabChecks?: {
-    approvalsDone: number | null;
-    approvalsRequired: number;
-    lintSuccess: boolean | null;
-    testsSuccess: boolean | null;
-  } | null;
-  releaseGitlabChecksLoading: boolean;
   resolvedSwimlaneCardFields: SwimlaneCardFieldsVisibility | undefined;
   rightPercent: number;
-  showDangerousReleaseInsteadOfStatus: boolean;
   showExtraSplit: boolean;
-  sprintBadge?: { display: string; id: string } | null;
   task: Task;
   taskPosition?: TaskPosition;
   variant: TaskCardVariant;
@@ -78,7 +69,6 @@ export function renderTaskCardBody(params: RenderTaskCardBodyParams): React.Reac
       showQaStripedLeftOverlay={Boolean(
         params.isQATask && params.cardStylesQaStripedStyle && params.qaStripedStyle
       )}
-      sprintBadge={params.sprintBadge}
       task={params.task}
       taskPosition={params.taskPosition}
       variant={params.variant}
@@ -103,12 +93,8 @@ export function renderTaskCardBody(params: RenderTaskCardBodyParams): React.Reac
       leftPercent={params.leftPercent}
       phaseCardColorScheme={params.phaseCardColorScheme}
       qaRightBgColor={params.qaRightBgColor}
-      releaseGitlabChecks={params.releaseGitlabChecks}
-      releaseGitlabChecksLoading={params.releaseGitlabChecksLoading}
       rightPercent={params.rightPercent}
-      showDangerousReleaseInsteadOfStatus={params.showDangerousReleaseInsteadOfStatus}
       showExtraSplit={params.showExtraSplit}
-      sprintBadge={params.sprintBadge}
       swimlaneCardFields={params.resolvedSwimlaneCardFields}
       task={params.task}
       taskPosition={params.taskPosition}

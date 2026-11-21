@@ -7,10 +7,7 @@ import { taskStatusLabel } from '@/features/task/utils/taskUtils';
 
 
 interface TaskCardTagsSidebarRowProps {
-  dangerousReleaseColorClasses: string;
-  dangerousReleaseValue: string | undefined;
   hideTestPoints: boolean;
-  showDangerousReleaseInsteadOfStatus: boolean;
   showStoryPoints: boolean;
   showTestPoints: boolean;
   spText: string;
@@ -20,12 +17,9 @@ interface TaskCardTagsSidebarRowProps {
 }
 
 export function TaskCardTagsSidebarRow({
-  dangerousReleaseColorClasses,
-  dangerousReleaseValue,
   hideTestPoints,
   showStoryPoints,
   showTestPoints,
-  showDangerousReleaseInsteadOfStatus,
   spText,
   tagTextSize,
   task,
@@ -33,19 +27,11 @@ export function TaskCardTagsSidebarRow({
 }: TaskCardTagsSidebarRowProps) {
   return (
     <div className="flex items-center gap-2 min-w-0 overflow-hidden">
-      {showDangerousReleaseInsteadOfStatus ? (
-        <span
-          className={`text-[12px] font-semibold leading-none whitespace-nowrap px-1.5 py-0.5 rounded shrink-0 border ${dangerousReleaseColorClasses}`}
-        >
-          {`Опасность: ${dangerousReleaseValue || '—'}`}
-        </span>
-      ) : (
-        <StatusTag
-          label={taskStatusLabel(task)}
-          status={task.originalStatus}
-          statusColorKey={task.statusColorKey}
-        />
-      )}
+      <StatusTag
+        label={taskStatusLabel(task)}
+        status={task.originalStatus}
+        statusColorKey={task.statusColorKey}
+      />
       <div className={`flex items-center gap-0 shrink-0 flex-wrap ${tagTextSize} text-gray-600 dark:text-white`}>
         {showStoryPoints ? <span>{spText}</span> : null}
         {showTestPoints && !hideTestPoints ? (

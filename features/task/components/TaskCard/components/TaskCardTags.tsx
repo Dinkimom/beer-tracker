@@ -2,19 +2,15 @@
 
 import type { Task, TaskCardVariant, TaskPosition } from '@/types';
 
-import { useI18n } from '@/contexts/LanguageContext';
 import { formatTaskTestPointsForDisplay } from '@/lib/pointsUtils';
 
 import { useTaskCardBoard } from '../TaskCardBoardContext';
 import { resolveTaskCardEstimateVisibility } from '../taskCardEstimateVisibility';
 import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 
-import { TaskCardTagsGitlabSection } from './TaskCardTagsGitlabSection';
 import {
-  isReleaseSidebarTaskCardTags,
   isSwimlaneTaskCardTagsVariant,
   resolveContainerClass,
-  resolveGitlabChecksDisplay,
   resolveTaskCardTagsLayout,
   resolveTaskCardTagsPoints,
 } from './taskCardTagsHelpers';
@@ -22,14 +18,6 @@ import { TaskCardTagsSidebarRow } from './TaskCardTagsSidebarRow';
 
 interface TaskCardTagsProps {
   displayDuration?: number;
-  releaseGitlabChecks?: {
-    approvalsDone: number | null;
-    approvalsRequired: number;
-    lintSuccess: boolean | null;
-    testsSuccess: boolean | null;
-  } | null;
-  releaseGitlabChecksLoading?: boolean;
-  showDangerousReleaseInsteadOfStatus?: boolean;
   task: Task;
   taskPosition?: TaskPosition;
   variant?: TaskCardVariant;
@@ -40,11 +28,7 @@ export function TaskCardTags({
   taskPosition: _,
   variant = 'swimlane',
   displayDuration,
-  releaseGitlabChecks,
-  releaseGitlabChecksLoading = false,
-  showDangerousReleaseInsteadOfStatus = false,
 }: TaskCardTagsProps) {
-  const { t } = useI18n();
   const estimateMapping = useTaskCardEstimateMapping();
   const board = useTaskCardBoard();
 
@@ -54,12 +38,7 @@ export function TaskCardTags({
   }
 
   const { containerPadding, tagTextSize } = resolveTaskCardTagsLayout(variant, displayDuration);
-  const {
-    dangerousReleaseColorClasses,
-    dangerousReleaseValue,
-    hideTestPoints,
-    spText,
-  } = resolveTaskCardTagsPoints(task);
+  const { hideTestPoints, spText } = resolveTaskCardTagsPoints(task);
   const estimateVisibility = resolveTaskCardEstimateVisibility({
     hideTestPoints,
     isQATask: false,
@@ -68,30 +47,12 @@ export function TaskCardTags({
     taskId: task.id,
   });
   const tpText = formatTaskTestPointsForDisplay(task, 'compact');
-  const gitlabChecks = releaseGitlabChecks
-    ? resolveGitlabChecksDisplay({ releaseGitlabChecks, t })
-    : null;
-  const isReleaseSidebarCard = isReleaseSidebarTaskCardTags(
-    variant,
-    showDangerousReleaseInsteadOfStatus
-  );
-  const containerClass = resolveContainerClass({
-    containerPadding,
-    isReleaseSidebarCard,
-  });
+  const containerClass = resolveContainerClass(containerPadding);
 
   return (
     <div className={containerClass} data-task-card-tags="">
-      <TaskCardTagsGitlabSection
-        gitlabChecks={gitlabChecks}
-        loading={releaseGitlabChecksLoading}
-        releaseGitlabChecks={releaseGitlabChecks}
-      />
       <TaskCardTagsSidebarRow
-        dangerousReleaseColorClasses={dangerousReleaseColorClasses}
-        dangerousReleaseValue={dangerousReleaseValue}
         hideTestPoints={hideTestPoints}
-        showDangerousReleaseInsteadOfStatus={showDangerousReleaseInsteadOfStatus}
         showStoryPoints={estimateVisibility.showStoryPoints}
         showTestPoints={estimateVisibility.showTestPoints}
         spText={spText}
