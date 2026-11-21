@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
+import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { toSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
@@ -16,6 +17,8 @@ import { useSprintHistory } from '@/features/sidebar/hooks/useSprintHistory';
 import {
   matchesSprintHistoryFilter,
   sprintHistoryDayKey,
+  sprintHistoryLinkText,
+  sprintHistoryNoteTexts,
   sprintHistoryTarget,
 } from '@/features/sidebar/utils/sprintHistoryText';
 import { useRootStore } from '@/lib/layers';
@@ -84,6 +87,7 @@ export function HistoryTab() {
     },
     [pathname, router, searchParams, setMainTab, sprintPlannerUi, taskPositions, tasksById]
   );
+  const noteTexts = useMemo(() => sprintHistoryNoteTexts(events), [events]);
   const groups = useMemo(
     () => groupByDay(events.filter((event) => matchesSprintHistoryFilter(event, filter))),
     [events, filter]
@@ -93,7 +97,7 @@ export function HistoryTab() {
     [language]
   );
   const timeFormat = useMemo(
-    () => new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit' }),
+    () => new Intl.DateTimeFormat(language, { hour: 'numeric', minute: '2-digit' }),
     [language]
   );
 
@@ -104,18 +108,20 @@ export function HistoryTab() {
           <Button
             key={id}
             aria-selected={filter === id}
-            className={`shrink-0 px-2 py-1.5 text-xs leading-none ${glassLensControlClass(filter === id)}`}
+            className={`shrink-0 gap-1 px-2 py-1.5 text-xs leading-none ${glassLensControlClass(filter === id)}`}
             role="tab"
             type="button"
             variant="outline"
             onClick={() => setFilter(id)}
           >
+            {/* Та же искра, что у пометки «через Claude» в строке: фильтр про эти события. */}
+            {id === 'agent' && <Icon className="h-3 w-3 text-violet-600 dark:text-violet-300" name="sparkles" />}
             {t(`sidebar.history.filters.${id}`)}
           </Button>
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto pb-4">
         {isPending && <p className="px-4 py-6 text-sm text-gray-500 dark:text-gray-400">{t('sidebar.history.loading')}</p>}
         {isError && <p className="px-4 py-6 text-sm text-red-600 dark:text-red-400">{t('sidebar.history.error')}</p>}
         {!isPending && !isError && groups.length === 0 && (
@@ -125,15 +131,16 @@ export function HistoryTab() {
         )}
         {groups.map((group) => (
           <section key={group.day} aria-label={dayFormat.format(new Date(group.events[0]!.at))}>
-            <h3 className="sticky top-0 z-[1] bg-white/90 px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 backdrop-blur dark:bg-gray-900/90 dark:text-gray-400">
+            <h3 className="planner-pinned-lane-glass sticky top-0 z-[1] px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {dayFormat.format(new Date(group.events[0]!.at))}
             </h3>
-            <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+            <ul>
               {group.events.map((event) => (
                 <HistoryEventRow
                   key={event.id}
                   avatarUrl={event.actor.id ? avatars.get(event.actor.id) ?? null : null}
                   event={event}
+                  linkText={event.source === 'board' && event.linkEnds ? sprintHistoryLinkText(event.linkEnds, noteTexts, t) : null}
                   task={event.source === 'tracker' ? tasksById.get(event.issueKey) ?? null : null}
                   timeLabel={timeFormat.format(new Date(event.at))}
                   onSelect={selectHandler(event)}
@@ -142,9 +149,6 @@ export function HistoryTab() {
             </ul>
           </section>
         ))}
-        {!isPending && !isError && (
-          <p className="px-4 pb-4 pt-3 text-[11px] text-gray-400 dark:text-gray-500">{t('sidebar.history.syncHint')}</p>
-        )}
       </div>
     </div>
   );

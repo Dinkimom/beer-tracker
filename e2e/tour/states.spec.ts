@@ -31,6 +31,8 @@ test.use({ frozenClock: true });
 test.setTimeout(90_000);
 
 interface TourState {
+  /** Состояние держится наведением (подсказка, паспорт): курсор перед кадром не уводить. */
+  hover?: boolean;
   name: string;
   /** Ширина окна, если не стандартная (1680). */
   width?: number;
@@ -125,6 +127,48 @@ const STATES: TourState[] = [
     },
   },
   {
+    name: 'board-sidebar-history',
+    reach: async (page) => {
+      await page.getByRole('button', { exact: true, name: uiOf(page).sidebar.tabs.history }).click();
+      return page.getByTestId('sprint-history-event').first();
+    },
+  },
+  {
+    name: 'board-sidebar-history-agent',
+    reach: async (page) => {
+      await page.getByRole('button', { exact: true, name: uiOf(page).sidebar.tabs.history }).click();
+      await page.getByRole('tab', { exact: true, name: uiOf(page).sidebar.history.filters.agent }).click();
+      return page.getByTestId('sprint-history-event').first();
+    },
+  },
+  {
+    name: 'board-sidebar-history-end',
+    reach: async (page) => {
+      await page.getByRole('button', { exact: true, name: uiOf(page).sidebar.tabs.history }).click();
+      const last = page.getByTestId('sprint-history-event').last();
+      await last.scrollIntoViewIfNeeded();
+      return last;
+    },
+  },
+  {
+    name: 'board-sidebar-history-passport',
+    hover: true,
+    reach: async (page) => {
+      await page.getByRole('button', { exact: true, name: uiOf(page).sidebar.tabs.history }).click();
+      await page.getByTestId('sprint-history-event').filter({ hasText: 'DEMO-109' }).getByTestId('sprint-history-issue').hover();
+      return page.getByTestId('task-passport').first();
+    },
+  },
+  {
+    name: 'board-sidebar-history-passport-removed',
+    hover: true,
+    reach: async (page) => {
+      await page.getByRole('button', { exact: true, name: uiOf(page).sidebar.tabs.history }).click();
+      await page.getByTestId('sprint-history-event').filter({ hasText: 'DEMO-204' }).getByTestId('sprint-history-issue').hover();
+      return page.getByTestId('task-passport').first();
+    },
+  },
+  {
     name: 'settings',
     reach: async (page) => {
       await page.getByRole('button', { exact: true, name: uiOf(page).header.actions.settings }).click();
@@ -209,8 +253,8 @@ const STATES: TourState[] = [
  * Без этого меню снималось посреди fade-in (полупрозрачным), шеврон — на полпути, панели — не на месте,
  * и разбор принимал артефакт съёмки за проблему продукта. Бесконечные анимации (спиннеры) не ждём.
  */
-async function settle(page: Page): Promise<void> {
-  await page.mouse.move(0, 0);
+async function settle(page: Page, keepPointer = false): Promise<void> {
+  if (!keepPointer) await page.mouse.move(0, 0);
   await page.evaluate(async () => {
     const finite = document
       .getAnimations()
@@ -237,7 +281,7 @@ for (const theme of THEMES) {
         await openDemoPlanner(page);
         await expect(await state.reach(page)).toBeVisible();
         await page.waitForLoadState('networkidle');
-        await settle(page);
+        await settle(page, state.hover);
 
         const dir = path.join('e2e/.results/tour', `${VARIANT}-${theme}`);
         fs.mkdirSync(dir, { recursive: true });

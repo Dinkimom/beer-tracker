@@ -23,6 +23,8 @@ export interface IssueFieldEventRow {
   from_ids: string[] | null;
   from_text: string | null;
   issue_key: string;
+  /** Название задачи из `issue_snapshots`, если снимок есть. */
+  issue_title: string | null;
   to_ids: string[] | null;
   to_text: string | null;
 }
@@ -79,6 +81,7 @@ export function issueFieldRowToEvent(row: IssueFieldEventRow, sprintId: number):
     from: row.from_text,
     id: `t:${row.issue_key}:${row.entry_ord}:${row.field_ord}`,
     issueKey: row.issue_key,
+    issueTitle: row.issue_title?.trim() || null,
     source: 'tracker',
     to: row.to_text,
   };

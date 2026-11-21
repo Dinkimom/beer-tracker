@@ -15,6 +15,7 @@ function issueRow(patch: Partial<IssueFieldEventRow>): IssueFieldEventRow {
     from_ids: [],
     from_text: null,
     issue_key: 'BT-1',
+    issue_title: null,
     to_ids: ['41'],
     to_text: 'BT 41',
     ...patch,
@@ -42,6 +43,8 @@ describe('issueFieldRowToEvent', () => {
   it('reads sprint membership changes relative to this sprint', () => {
     expect(issueFieldRowToEvent(issueRow({}), 41)).toMatchObject({ change: 'added', field: 'sprint', issueKey: 'BT-1' });
     expect(issueFieldRowToEvent(issueRow({ from_ids: ['41'], to_ids: ['42'] }), 41)?.change).toBe('removed');
+    expect(issueFieldRowToEvent(issueRow({ issue_title: ' Payouts ' }), 41)?.issueTitle).toBe('Payouts');
+    expect(issueFieldRowToEvent(issueRow({ issue_title: '' }), 41)?.issueTitle).toBeNull();
     // Сменился другой спринт задачи — не про этот.
     expect(issueFieldRowToEvent(issueRow({ from_ids: ['40'], to_ids: ['40', '42'] }), 41)).toBeNull();
   });
@@ -57,6 +60,7 @@ describe('issueFieldRowToEvent', () => {
       from: '2026-11-12',
       id: 't:BT-1:1:1',
       issueKey: 'BT-1',
+      issueTitle: null,
       source: 'tracker',
       to: '2026-11-14',
     });

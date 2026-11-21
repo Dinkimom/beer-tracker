@@ -42,8 +42,10 @@ export function glassLensControlClass(selected = false): string {
   const fill = selected
     ? '!bg-blue-600/10 !text-blue-900 hover:!bg-blue-600/15 dark:!bg-blue-500/20 dark:!text-blue-100 dark:hover:!bg-blue-500/30'
     : '!bg-black/[0.03] hover:!bg-black/[0.06] active:!bg-black/10 dark:!bg-black/25 dark:hover:!bg-black/40 dark:active:!bg-gray-900';
-  const open =
-    'focus:!border-blue-500 data-[state=open]:!border-blue-500 dark:focus:!border-blue-400 dark:focus:!bg-gray-900 dark:data-[state=open]:!border-blue-400 dark:data-[state=open]:!bg-gray-900';
+  // Выбранный (сегмент фильтра) в фокусе после клика сохраняет свою заливку: иначе в тёмной теме
+  // он становился серым, как невыбранные.
+  const openFill = selected ? '' : ' dark:focus:!bg-gray-900 dark:data-[state=open]:!bg-gray-900';
+  const open = `focus:!border-blue-500 data-[state=open]:!border-blue-500 dark:focus:!border-blue-400 dark:data-[state=open]:!border-blue-400${openFill}`;
   return `border ${border} ${fill} ${open}`;
 }
 

@@ -6,6 +6,8 @@ import {
   describeSprintHistoryEvent,
   matchesSprintHistoryFilter,
   sprintHistoryActorLabel,
+  sprintHistoryLinkText,
+  sprintHistoryNoteTexts,
   sprintHistoryTarget,
 } from './sprintHistoryText';
 
@@ -20,6 +22,7 @@ const issue: SprintHistoryIssueEvent = {
   from: '2026-10-14',
   id: 't:1',
   issueKey: 'DEMO-101',
+  issueTitle: null,
   source: 'tracker',
   to: null,
 };
@@ -98,5 +101,23 @@ describe('sprintHistoryTarget', () => {
       sprintHistoryTarget({ ...note, linkEnds: { from: 'DEMO-1', to: 'n1' }, object: 'link' }, noteCard)
     ).toEqual({ kind: 'card', taskId: 'DEMO-1' });
     expect(sprintHistoryTarget({ ...note, action: 'delete' }, noteCard)).toBeNull();
+  });
+});
+
+describe('sprintHistoryLinkText', () => {
+  it('names task ends by key and note ends by their latest text from the feed', () => {
+    const older = { ...note, id: 'b:0', text: 'Old text' };
+    const texts = sprintHistoryNoteTexts([note, older, issue]);
+    expect(texts.get('n1')).toBe('Blocker');
+    expect(sprintHistoryLinkText({ from: 'comment:n1', to: 'DEMO-104' }, texts, t)).toBe(
+      'sidebar.history.noteQuote(text=Blocker) → DEMO-104'
+    );
+    expect(sprintHistoryLinkText({ from: 'n1', to: 'comment:gone' }, texts, t)).toBe(
+      'sidebar.history.noteQuote(text=Blocker) → sidebar.history.linkNote'
+    );
+    const long = new Map([['n2', 'Blocker: promo API contract still TBD']]);
+    expect(sprintHistoryLinkText({ from: 'n2', to: 'DEMO-104' }, long, t)).toBe(
+      'sidebar.history.noteQuote(text=Blocker: promo API cont…) → DEMO-104'
+    );
   });
 });

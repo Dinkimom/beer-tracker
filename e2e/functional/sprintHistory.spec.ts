@@ -21,6 +21,10 @@ test('TC-100/101: история спринта показывает автор�
   await expect(page.getByRole('heading', { name: DAY_HEADING }).first()).toBeVisible();
   await expect(events.filter({ hasText: en.sidebar.history.events.goal.done })).toHaveCount(1);
   await expect(events.filter({ hasText: en.sidebar.history.unknownActor })).toHaveCount(1);
+  await expect(events.filter({ hasText: en.sidebar.history.unknownActor }).getByText('?', { exact: true })).toBeVisible();
+  // Снятая со спринта задача — с названием из снимка; стрелка — с концами.
+  await expect(events.filter({ hasText: 'DEMO-204' })).toContainText('DEMO-204 · Mobile: biometric confirm');
+  await expect(events.filter({ hasText: en.sidebar.history.events.link.create })).toContainText('→ DEMO-104');
 
   const filter = (name: string) => page.getByRole('tab', { exact: true, name });
   await filter(en.sidebar.history.filters.agent).click();

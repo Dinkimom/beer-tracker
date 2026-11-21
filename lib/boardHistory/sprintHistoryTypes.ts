@@ -35,6 +35,8 @@ export interface SprintHistoryIssueEvent {
   from: string | null;
   id: string;
   issueKey: string;
+  /** Название из снимка задачи: нужно, когда задачи уже нет в спринте и планер её не загрузил. */
+  issueTitle: string | null;
   source: 'tracker';
   to: string | null;
 }

@@ -32,7 +32,7 @@ function issue(
   when: string,
   patch: Partial<SprintHistoryIssueEvent> & Pick<SprintHistoryIssueEvent, 'field' | 'issueKey'>
 ): SprintHistoryIssueEvent {
-  return { actor, at: when, change: 'changed', from: null, id, source: 'tracker', to: null, ...patch };
+  return { actor, at: when, change: 'changed', from: null, id, issueTitle: null, source: 'tracker', to: null, ...patch };
 }
 
 function board(
@@ -87,7 +87,7 @@ function buildDemoSprintHistory(): SprintHistoryEvent[] {
       text: 'Blocker: promo API contract still TBD',
     }),
     issue('h-7', KEN, at(14, 14, 0), { field: 'status', from: 'Open', issueKey: 'DEMO-109', to: 'In progress' }),
-    issue('h-8', LINUS, at(14, 12, 0), { change: 'removed', field: 'sprint', issueKey: 'DEMO-204', from: 'Sprint 15 — Checkout' }),
+    issue('h-8', LINUS, at(14, 12, 0), { change: 'removed', field: 'sprint', issueKey: 'DEMO-204', issueTitle: 'Mobile: biometric confirm', from: 'Sprint 15 — Checkout' }),
     board('h-9', MARGARET, at(14, 11, 30), {
       action: 'update',
       changedFields: ['text'],

@@ -8,6 +8,7 @@ import type { SprintHistoryEvent } from './sprintHistoryTypes';
 
 import { STAFF_AUTHOR_DISPLAY_NAME_SQL } from '@/lib/comments/commentAuthor';
 import { query } from '@/lib/db';
+import { ISSUE_SNAPSHOT_FIELDS_JSONB_SQL } from '@/lib/snapshots/overseerIssueDataSprintSql';
 
 import { boardObjectRowToEvent, issueFieldRowToEvent, mergeSprintHistory } from './sprintHistory';
 
@@ -35,9 +36,14 @@ async function listIssueFieldEvents(input: SprintHistoryWindow): Promise<IssueFi
        SELECT task_id FROM task_positions WHERE organization_id = $1 AND sprint_id = $3
      )
      SELECT e.issue_key, e.entry_ord, e.field_ord, e.changed_at, e.author_id, e.author_display,
-            e.field, e.from_ids, e.to_ids, e.from_text, e.to_text
+            e.field, e.from_ids, e.to_ids, e.from_text, e.to_text, sn.issue_title
        FROM issue_field_events e
        JOIN sprint_issues s ON s.issue_key = e.issue_key
+       LEFT JOIN LATERAL (
+         SELECT ${ISSUE_SNAPSHOT_FIELDS_JSONB_SQL}->>'summary' AS issue_title
+           FROM issue_snapshots
+          WHERE organization_id = e.organization_id AND issue_key = e.issue_key
+       ) sn ON true
       WHERE e.organization_id = $1
         AND ($4::timestamptz IS NULL OR e.changed_at >= $4)
         AND ($5::timestamptz IS NULL OR e.changed_at <= $5)

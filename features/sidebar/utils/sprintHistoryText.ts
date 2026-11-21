@@ -5,6 +5,8 @@
 
 import type { SprintHistoryEvent } from '@/lib/boardHistory/sprintHistoryTypes';
 
+import { parsePlannerCommentTaskId } from '@/lib/planner/plannerCardKind';
+
 export type SprintHistoryFilter = 'agent' | 'all' | 'board' | 'tasks';
 
 /** Куда ведёт клик по событию: карточка на доске (id карточки свимлейна) или вкладка целей. */
@@ -16,6 +18,10 @@ const EMPTY_VALUE = '—';
 /** Поля заметки, смена которых — перемещение, а не правка текста. */
 const NOTE_PLACEMENT_FIELDS = new Set(['assigneeId', 'day', 'parent', 'part']);
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** Цитата заметки в строке стрелки короче строки: иначе многоточие съедает второй конец. */
+const LINK_NOTE_MAX_CHARS = 24;
+/** Ключ задачи трекера: DEMO-104, BT-1. */
+const ISSUE_KEY = /^[A-Z][A-Z0-9_]*-\d+$/;
 
 export function matchesSprintHistoryFilter(event: SprintHistoryEvent, filter: SprintHistoryFilter): boolean {
   if (filter === 'tasks') return event.source === 'tracker';
@@ -94,4 +100,35 @@ export function sprintHistoryTarget(
   if (event.object === 'goal') return { kind: 'goals' };
   if (event.object === 'note') return { kind: 'card', taskId: toNoteCardId(event.objectId) };
   return event.linkEnds ? { kind: 'card', taskId: event.linkEnds.from } : null;
+}
+
+/** Тексты заметок из самой ленты: id заметки → последний известный текст (лента — новые сверху). */
+export function sprintHistoryNoteTexts(events: readonly SprintHistoryEvent[]): Map<string, string> {
+  const texts = new Map<string, string>();
+  for (const event of events) {
+    if (event.source === 'board' && event.object === 'note' && event.text && !texts.has(event.objectId)) {
+      texts.set(event.objectId, event.text);
+    }
+  }
+  return texts;
+}
+
+/**
+ * Что связывает стрелка: «DEMO-101 → «Текст заметки»». Конец — ключ задачи или заметка
+ * (id карточки `comment:…` или сам id заметки); заметка без текста в ленте — просто «заметка».
+ */
+export function sprintHistoryLinkText(
+  ends: { from: string; to: string },
+  noteTexts: ReadonlyMap<string, string>,
+  t: Translate
+): string {
+  const label = (endId: string): string => {
+    const text = noteTexts.get(parsePlannerCommentTaskId(endId) ?? endId);
+    if (text) {
+      const short = text.length > LINK_NOTE_MAX_CHARS ? `${text.slice(0, LINK_NOTE_MAX_CHARS - 1).trimEnd()}…` : text;
+      return t('sidebar.history.noteQuote', { text: short });
+    }
+    return ISSUE_KEY.test(endId) ? endId : t('sidebar.history.linkNote');
+  };
+  return `${label(ends.from)} → ${label(ends.to)}`;
 }
