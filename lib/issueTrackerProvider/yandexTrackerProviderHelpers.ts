@@ -23,7 +23,6 @@ const YANDEX_KNOWN_ISSUE_FIELDS = new Set([
   'checklistItems',
   'checklistTotal',
   'createdAt',
-  'dangerousRelease',
   'deadline',
   'description',
   'epic',
@@ -47,6 +46,7 @@ const YANDEX_KNOWN_ISSUE_FIELDS = new Set([
   'updatedAt',
 ]);
 
+import { normalizeTrackerIssue } from './normalizeTrackerIssue';
 import { createYandexIssueLink } from './yandexIssueLinks';
 import {
   applyOptionalProductTeam,
@@ -68,37 +68,10 @@ function extractYandexCustomFields(issue: TrackerIssue): Record<string, unknown>
 }
 
 export function normalizeYandexIssue(issue: TrackerIssue): IssueTrackerIssue {
-  const customFields = extractYandexCustomFields(issue);
-  return {
-    assignee: issue.assignee,
-    createdAt: issue.createdAt,
-    customFields,
-    dangerousRelease: issue.dangerousRelease,
-    deadline: issue.deadline,
-    description: issue.description,
-    epic: issue.epic,
-    functionalTeam: issue.functionalTeam,
-    id: issue.id,
-    key: issue.key,
-    mergeRequestLink: issue.MergeRequestLink,
-    parent: issue.parent,
-    priority: issue.priority,
-    productTeam: issue.bizErpTeam,
+  return normalizeTrackerIssue(issue, {
+    customFields: extractYandexCustomFields(issue),
     provider: 'yandex-tracker',
-    qaEngineer: issue.qaEngineer,
-    raw: issue,
-    self: issue.self,
-    sprint: issue.sprint,
-    stage: issue.stage,
-    start: issue.start,
-    status: issue.status,
-    statusType: issue.statusType,
-    storyPoints: issue.storyPoints,
-    summary: issue.summary,
-    testPoints: issue.testPoints,
-    type: issue.type,
-    updatedAt: issue.updatedAt,
-  };
+  });
 }
 
 export function yandexIssueFromProviderIssue(issue: IssueTrackerIssue): TrackerIssue {

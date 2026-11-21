@@ -65,8 +65,6 @@ export interface Task {
   customFieldUsers?: Record<string, TaskCustomFieldUser[]>;
   /** Значения полей трекера вне встроенного набора карточки, уже приведённые к строке. */
   customFieldValues?: Record<string, string>;
-  /** Признак/метка опасности релиза (кастомное поле Tracker dangerousRelease). */
-  dangerousRelease?: string;
   /** Дедлайн из трекера (YYYY-MM-DD). */
   deadline?: string;
   description?: string;

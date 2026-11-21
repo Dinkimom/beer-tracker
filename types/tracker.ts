@@ -65,7 +65,6 @@ export interface TrackerIssue {
   checklistItems?: ChecklistItem[];
   checklistTotal?: number;
   createdAt?: string;
-  dangerousRelease?: boolean | number | string | { display?: string; key?: string } | null;
   /** Дедлайн задачи (YYYY-MM-DD или datetime), поле Tracker `deadline` / Jira `duedate`. */
   deadline?: string;
   description?: string;

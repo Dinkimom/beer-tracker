@@ -82,18 +82,30 @@ const StatusesConfigSchema = z
   })
   .strict();
 
-/** Вкладка «Релиз» в планере: статус, поле MR, видимость таба. */
-const ReleaseReadinessConfigSchema = z
-  .object({
-    /** Устарело: парсится из старых сохранений, при сохранении не пишется. */
-    enabled: z.boolean().optional(),
-    mergeRequestFieldId: z.string().min(1).optional(),
-    /** Устарело: «сделано» определяет трекер; парсится из старых сохранений, при сохранении не пишется. */
-    readyStatusKey: z.string().min(1).optional(),
-    /** false — скрыть таб «Релизы» в сайдбаре планера. Устарело: таб удалён. */
-    releasesTabVisible: z.boolean().optional(),
-  })
-  .strict();
+/**
+ * Ключи, которые писали старые версии (вкладка «Релизы», статус готовности). В сохранённых
+ * настройках они могут остаться — при разборе отбрасываются, чтобы строгая схема их не отвергла.
+ */
+const LEGACY_RELEASE_READINESS_KEYS = new Set(['enabled', 'readyStatusKey', 'releasesTabVisible']);
+
+function omitLegacyReleaseReadinessKeys(value: unknown): unknown {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+    return value;
+  }
+  return Object.fromEntries(
+    Object.entries(value).filter(([key]) => !LEGACY_RELEASE_READINESS_KEYS.has(key))
+  );
+}
+
+/** Поле трекера со ссылкой на merge request. */
+const ReleaseReadinessConfigSchema = z.preprocess(
+  omitLegacyReleaseReadinessKeys,
+  z
+    .object({
+      mergeRequestFieldId: z.string().min(1).optional(),
+    })
+    .strict()
+);
 
 /** Тело PUT от админки (без revision — выставляет сервер). */
 export const TrackerIntegrationPutBodySchema = z

@@ -16,7 +16,6 @@
     "sup_priority": "true",
     "tags": "sla"
   },
-  "dangerousRelease": "critical",
   "description": "Tooltip must show story points.",
   "epic": {
     "display": "Epic One",

@@ -41,7 +41,7 @@ describe('TrackerIntegrationPutBodySchema', () => {
     expect(r.success).toBe(false);
   });
 
-  it('accepts releaseReadiness', () => {
+  it('accepts releaseReadiness and drops keys of the removed releases tab', () => {
     const r = TrackerIntegrationPutBodySchema.safeParse({
       releaseReadiness: {
         mergeRequestFieldId: 'mrUrl',
@@ -50,6 +50,7 @@ describe('TrackerIntegrationPutBodySchema', () => {
       },
     });
     expect(r.success).toBe(true);
+    expect(r.data?.releaseReadiness).toEqual({ mergeRequestFieldId: 'mrUrl' });
   });
 });
 

@@ -59,7 +59,6 @@ export function buildTrackerIssueFromProviderIssue(issue: IssueTrackerIssue): Tr
       : undefined,
     bizErpTeam: issue.productTeam,
     createdAt: issue.createdAt,
-    dangerousRelease: issue.dangerousRelease,
     deadline: issue.deadline,
     description: issue.description,
     epic: yandexEpicRef(issue),

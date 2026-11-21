@@ -7,7 +7,6 @@ import { issueTrackerIssueWebUrlFromBase } from '@/lib/issueTrackerProvider/issu
 import {
   mapTeam,
   optionalPoints,
-  parseDangerousRelease,
 } from '@/lib/issueTrackerProvider/mapIssueTrackerIssueToTask';
 import { readIssueTagTokens } from '@/lib/trackerIntegration/issueFieldUtils';
 import { mapStatus, trackerStatusDisplayName } from '@/utils/statusMapper';
@@ -193,7 +192,6 @@ export function mapTrackerIssueToTaskBase(
       issue.bizErpTeam && issue.bizErpTeam.length > 0 ? issue.bizErpTeam : undefined,
     stage: issue.stage || undefined,
     sprints,
-    dangerousRelease: parseDangerousRelease(issue.dangerousRelease),
     trackerTags: readIssueTagTokens(issue),
     updatedAt: issue.updatedAt,
     resolution: issue.resolution?.key?.trim() || undefined,
@@ -212,7 +210,6 @@ const TRACKER_ISSUE_MAPPED_KEYS = new Set([
   'checklistItems',
   'checklistTotal',
   'createdAt',
-  'dangerousRelease',
   'deadline',
   'description',
   'epic',

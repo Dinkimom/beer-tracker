@@ -17,28 +17,6 @@ describe('formatTrackerApiDateTimeUtc', () => {
 });
 
 describe('mapTrackerIssueToTask', () => {
-  it('maps dangerousRelease string from issue', () => {
-    const task = mapTrackerIssueToTask({
-      id: '1',
-      key: 'BT-1',
-      self: 'https://tracker.yandex.ru/BT-1',
-      summary: 'Task',
-      dangerousRelease: 'critical',
-    }, TRACKER_WEB);
-    expect(task.dangerousRelease).toBe('critical');
-  });
-
-  it('maps dangerousRelease object display from issue', () => {
-    const task = mapTrackerIssueToTask({
-      id: '2',
-      key: 'BT-2',
-      self: 'https://tracker.yandex.ru/BT-2',
-      summary: 'Task',
-      dangerousRelease: { display: 'High risk', key: 'high' },
-    }, TRACKER_WEB);
-    expect(task.dangerousRelease).toBe('High risk');
-  });
-
   it('keeps a spaced status name for the badge', () => {
     const task = mapTrackerIssueToTask({
       id: '6',

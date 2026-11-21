@@ -77,7 +77,6 @@ export interface IssueTrackerIssue {
   assignee?: IssueTrackerEntityRef;
   createdAt?: string;
   customFields?: Record<string, unknown>;
-  dangerousRelease?: boolean | number | string | { display?: string; key?: string } | null;
   /** Дедлайн (YYYY-MM-DD или datetime). */
   deadline?: string;
   description?: string;

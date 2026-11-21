@@ -71,32 +71,6 @@ function mapSprints(sprint: IssueTrackerIssue['sprint']): Task['sprints'] {
   return [mapSprintItem(sprint)];
 }
 
-function parseDangerousReleaseFromObject(value: object): string | undefined {
-  const obj = value as { display?: string; key?: string };
-  const display = typeof obj.display === 'string' ? obj.display.trim() : '';
-  if (display) {
-    return display;
-  }
-  const key = typeof obj.key === 'string' ? obj.key.trim() : '';
-  return key || undefined;
-}
-
-export function parseDangerousRelease(value: IssueTrackerIssue['dangerousRelease']): string | undefined {
-  if (value == null) {
-    return undefined;
-  }
-  if (typeof value === 'string') {
-    return value.trim() || undefined;
-  }
-  if (typeof value === 'boolean' || typeof value === 'number') {
-    return String(value);
-  }
-  if (typeof value === 'object') {
-    return parseDangerousReleaseFromObject(value);
-  }
-  return undefined;
-}
-
 function queueFromCustomFields(
   customFields: Record<string, unknown> | undefined
 ): Pick<Task, 'trackerQueue' | 'trackerQueueName'> {
@@ -177,7 +151,6 @@ function issueTrackerIssueFieldBag(issue: IssueTrackerIssue): TrackerIssue {
       ? { display: issue.assignee.display ?? issue.assignee.id, id: issue.assignee.id }
       : undefined,
     createdAt: issue.createdAt,
-    dangerousRelease: issue.dangerousRelease,
     description: issue.description,
     functionalTeam: issue.functionalTeam,
     id: issue.id,
@@ -236,7 +209,6 @@ function mapIssueTrackerIssueToTaskBase(
     productTeam: issue.productTeam && issue.productTeam.length > 0 ? issue.productTeam : undefined,
     stage: issue.stage || undefined,
     sprints: mapSprints(issue.sprint),
-    dangerousRelease: parseDangerousRelease(issue.dangerousRelease),
     trackerTags: readIssueTagTokens(fieldBag),
     updatedAt: issue.updatedAt,
     resolution: resolutionFromCustomFields(issue.customFields),

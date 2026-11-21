@@ -13,6 +13,7 @@ import {
   loadJiraScheduleFieldRefsFromCatalog,
 } from './jiraScheduleFields';
 import { jiraNameKey, mapJiraStatus, mapJiraStatusCategory } from './jiraStatusKeys';
+import { normalizeTrackerIssue } from './normalizeTrackerIssue';
 
 export { mapJiraStatus } from './jiraStatusKeys';
 
@@ -310,36 +311,10 @@ export function mapJiraRestIssueToTrackerIssue(raw: unknown): TrackerIssue | nul
 }
 
 export function normalizeJiraIssue(issue: TrackerIssue): IssueTrackerIssue {
-  return {
-    assignee: issue.assignee,
-    createdAt: issue.createdAt,
+  return normalizeTrackerIssue(issue, {
     customFields: extractJiraTrackerIssueCustomFields(issue),
-    dangerousRelease: issue.dangerousRelease,
-    deadline: issue.deadline,
-    description: issue.description,
-    epic: issue.epic,
-    functionalTeam: issue.functionalTeam,
-    id: issue.id,
-    key: issue.key,
-    mergeRequestLink: issue.MergeRequestLink,
-    parent: issue.parent,
-    priority: issue.priority,
-    productTeam: issue.bizErpTeam,
     provider: 'jira',
-    qaEngineer: issue.qaEngineer,
-    raw: issue,
-    self: issue.self,
-    sprint: issue.sprint,
-    stage: issue.stage,
-    start: issue.start,
-    status: issue.status,
-    statusType: issue.statusType,
-    storyPoints: issue.storyPoints,
-    summary: issue.summary,
-    testPoints: issue.testPoints,
-    type: issue.type,
-    updatedAt: issue.updatedAt,
-  };
+  });
 }
 
 /**
