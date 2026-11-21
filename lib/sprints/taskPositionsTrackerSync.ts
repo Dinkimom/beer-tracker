@@ -1,3 +1,4 @@
+import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/types';
 import type { BatchPositionsSchema } from '@/lib/validation';
 import type { PhaseSegment } from '@/types';
 import type { NextRequest } from 'next/server';
@@ -18,6 +19,7 @@ import { buildIssueAssigneePatch } from '@/lib/trackerIntegration/buildIssueAssi
 import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
 import {
+  clearTaskPositionsForSprint,
   loadPersistedPositionsForPlannedSync,
   type PersistedPositionForSync,
   type TaskPositionSegmentInput,
@@ -35,6 +37,13 @@ interface PlannedDateSyncPosition {
 }
 
 type BatchPosition = z.infer<typeof BatchPositionsSchema>['positions'][number];
+
+/** Клиент трекера лениво: из запроса (токен пользователя) или по организации (агент). */
+type GetIssueTracker = () => Promise<IssueTrackerProviderClient>;
+
+function issueTrackerFromRequest(request: Request): GetIssueTracker {
+  return () => getIssueTrackerProviderClientFromRequest(request);
+}
 
 /** Что не удалось записать в трекер после сохранения позиции (запись в БД при этом остаётся). */
 export interface TrackerSyncFailure {
@@ -94,13 +103,13 @@ function buildIssueTaskGroups(positions: PlannedDateSyncPosition[]): Map<string,
   return groups;
 }
 
-async function syncPlannedDatesToTracker({
+export async function syncPlannedDatesToTracker({
+  getIssueTracker,
   positions,
-  request,
   sprintId,
 }: {
+  getIssueTracker: GetIssueTracker;
   positions: PlannedDateSyncPosition[];
-  request: Request;
   sprintId: number;
 }): Promise<TrackerSyncFailure[]> {
   const groups = buildIssueTaskGroups(positions);
@@ -110,7 +119,7 @@ async function syncPlannedDatesToTracker({
 
   const relatedTaskIds = Array.from(new Set(Array.from(groups.values()).flatMap((ids) => [...ids])));
   const persistedPositions = await loadPersistedPositionsForPlannedSync(sprintId, relatedTaskIds);
-  const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
+  const issueTracker = await getIssueTracker();
   const sprintInfo = await issueTracker.getSprint(sprintId);
   const sprintStartDate = new Date(sprintInfo.startDate);
   sprintStartDate.setHours(0, 0, 0, 0);
@@ -234,7 +243,7 @@ export async function trySyncPositionPlannedDates(input: {
           taskId: input.taskId,
         },
       ],
-      request: input.request,
+      getIssueTracker: issueTrackerFromRequest(input.request),
       sprintId: input.sprintId,
     });
   } catch (err) {
@@ -348,8 +357,8 @@ export async function syncBatchPlannedDatesToTracker(input: {
 
   try {
     return await syncPlannedDatesToTracker({
+      getIssueTracker: issueTrackerFromRequest(input.request),
       positions: toSyncDates,
-      request: input.request,
       sprintId: input.sprintId,
     });
   } catch (err) {
@@ -358,7 +367,8 @@ export async function syncBatchPlannedDatesToTracker(input: {
   }
 }
 
-function resolveIssueKeyForPositionDelete(input: {
+/** Ключ задачи трекера для позиции; null — заметка, локальная карточка и т.п. */
+export function resolvePositionIssueKey(input: {
   devTaskKey?: string;
   isQa?: boolean;
   taskId: string;
@@ -372,23 +382,17 @@ function resolveIssueKeyForPositionDelete(input: {
 }
 
 /**
- * После DELETE позиции: если у issue не осталось плановых позиций в спринте —
+ * Задачу сняли с доски: если у issue не осталось плановых позиций в спринте —
  * чистим start/deadline в трекере (иначе fallback снова положит карточку).
  * Если sibling (dev/QA) ещё на плане — пересчитываем даты по оставшимся.
  */
-export async function trySyncPlannedDatesAfterPositionDelete(input: {
-  devTaskKey?: string;
-  isQa?: boolean;
+export async function syncPlannedDatesAfterRemoval(input: {
+  getIssueTracker: GetIssueTracker;
+  issueKey: string;
   logLabel: string;
-  request: NextRequest;
   sprintId: number;
-  taskId: string;
 }): Promise<TrackerSyncFailure[]> {
-  const issueKey = resolveIssueKeyForPositionDelete(input);
-  if (!issueKey) {
-    return [];
-  }
-
+  const { issueKey } = input;
   try {
     const relatedTaskIds = [issueKey, buildSyntheticQaTaskId(issueKey)];
     const persisted = await loadPersistedPositionsForPlannedSync(input.sprintId, relatedTaskIds);
@@ -412,13 +416,13 @@ export async function trySyncPlannedDatesAfterPositionDelete(input: {
 
     if (remaining.length > 0) {
       return await syncPlannedDatesToTracker({
+        getIssueTracker: input.getIssueTracker,
         positions: remaining,
-        request: input.request,
         sprintId: input.sprintId,
       });
     }
 
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(input.request);
+    const issueTracker = await input.getIssueTracker();
     await issueTracker.updateIssue(issueKey, { deadline: null, start: null });
     clearCachedSprintIssueScheduleDates(input.sprintId, issueKey);
     return [];
@@ -426,4 +430,56 @@ export async function trySyncPlannedDatesAfterPositionDelete(input: {
     console.error(`[sync planned dates → tracker] ${input.logLabel}`, err);
     return datesFailuresFor([issueKey]);
   }
+}
+
+/** После DELETE позиции из планера. */
+export function trySyncPlannedDatesAfterPositionDelete(input: {
+  devTaskKey?: string;
+  isQa?: boolean;
+  logLabel: string;
+  request: NextRequest;
+  sprintId: number;
+  taskId: string;
+}): Promise<TrackerSyncFailure[]> {
+  const issueKey = resolvePositionIssueKey(input);
+  if (!issueKey) {
+    return Promise.resolve([]);
+  }
+  return syncPlannedDatesAfterRemoval({
+    getIssueTracker: issueTrackerFromRequest(input.request),
+    issueKey,
+    logLabel: input.logLabel,
+    sprintId: input.sprintId,
+  });
+}
+
+/**
+ * «Вернуть все задачи»: снимает все карточки спринта с доски и очищает сроки снятых задач в трекере.
+ * Ошибки трекера не откатывают очистку доски — возвращаются как `trackerSyncFailures`.
+ */
+export async function clearSprintBoardPositions(input: {
+  organizationId: string;
+  request: NextRequest;
+  sprintId: number;
+}): Promise<TrackerSyncFailure[]> {
+  const removedTaskIds = await clearTaskPositionsForSprint(input);
+  const issueKeys = [
+    ...new Set(
+      removedTaskIds
+        .map((taskId) => resolvePositionIssueKey({ taskId }))
+        .filter((key): key is string => key != null)
+    ),
+  ];
+  const getIssueTracker = issueTrackerFromRequest(input.request);
+  const results = await Promise.all(
+    issueKeys.map((issueKey) =>
+      syncPlannedDatesAfterRemoval({
+        getIssueTracker,
+        issueKey,
+        logLabel: 'DELETE /sprints/.../positions/clear',
+        sprintId: input.sprintId,
+      })
+    )
+  );
+  return results.flat();
 }

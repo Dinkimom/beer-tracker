@@ -7,7 +7,14 @@ import type {
 import { invalidateCache } from '@/lib/cache';
 import { completeIssueSprintMembershipChange } from '@/lib/issues/issueSprintMembershipRealtime';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
+import { parseRegistryUuidString } from '@/lib/registryUuidString';
 import { syncSprintGoalsToTracker } from '@/lib/sprintGoals';
+import {
+  resolvePositionIssueKey,
+  syncPlannedDatesAfterRemoval,
+  syncPlannedDatesToTracker,
+  type TrackerSyncFailure,
+} from '@/lib/sprints/taskPositionsTrackerSync';
 import { resolvePlannerAssigneeIdForTrackerSync } from '@/lib/staffTeams/resolvePlannerAssigneeForTrackerSync';
 import { TENANT_ORG_HEADER } from '@/lib/tenantHttpConstants';
 
@@ -224,9 +231,101 @@ async function runOneTrackerSync(input: {
 
 const GOAL_OPS: ReadonlySet<string> = new Set(['createGoal', 'deleteGoal', 'updateGoal']);
 
+type UpsertPositionOp = Extract<SprintPlanPatchOp, { op: 'upsertPosition' }>;
+
+/** Ключ задачи трекера; QA-карточку (синтетический UUID) и заметки пропускаем. */
+function datesIssueKey(taskId: string): string | null {
+  if (parseRegistryUuidString(taskId)) return null;
+  return resolvePositionIssueKey({ taskId });
+}
+
+function appendDetail(row: SprintPlanPatchApplyOpResult, text: string): void {
+  row.detail = [row.detail, text].filter(Boolean).join('; ');
+}
+
+type DateSyncTarget =
+  | { issueKey: string; kind: 'removed' }
+  | { kind: 'moved'; op: UpsertPositionOp };
+
+function dateSyncTargetFor(op: SprintPlanPatchOp | undefined): DateSyncTarget | null {
+  if (op?.op === 'upsertPosition') {
+    return !op.isQa && datesIssueKey(op.taskId) ? { kind: 'moved', op } : null;
+  }
+  // С moveToSprintId задача уходит в другой спринт целиком — сроки там проставит его план.
+  if (op?.op !== 'deletePosition' || op.moveToSprintId !== undefined) return null;
+  const issueKey = datesIssueKey(op.taskId);
+  return issueKey ? { issueKey, kind: 'removed' } : null;
+}
+
+function collectDateSyncTargets(
+  applied: SprintPlanPatchApplyOpResult[],
+  ops: readonly SprintPlanPatchOp[]
+): { moved: Array<{ op: UpsertPositionOp; row: SprintPlanPatchApplyOpResult }>; removed: Array<{ issueKey: string; row: SprintPlanPatchApplyOpResult }> } {
+  const moved: Array<{ op: UpsertPositionOp; row: SprintPlanPatchApplyOpResult }> = [];
+  const removed: Array<{ issueKey: string; row: SprintPlanPatchApplyOpResult }> = [];
+  for (const row of applied) {
+    const target = row.ok ? dateSyncTargetFor(ops[row.index]) : null;
+    if (target?.kind === 'moved') moved.push({ op: target.op, row });
+    if (target?.kind === 'removed') removed.push({ issueKey: target.issueKey, row });
+  }
+  return { moved, removed };
+}
+
+function reportDatesFailures(
+  targets: ReadonlyArray<{ issueKey: string; row: SprintPlanPatchApplyOpResult }>,
+  failures: readonly TrackerSyncFailure[]
+): void {
+  const failed = new Set(failures.map((failure) => failure.issueKey));
+  for (const { issueKey, row } of targets) {
+    appendDetail(row, failed.has(issueKey) ? `tracker_dates_sync_failed: ${issueKey}` : 'tracker sync: dates');
+  }
+}
+
+/** Сроки в трекер, как при правке в планере: перенос пишет start/deadline, снятие с доски их очищает. */
+async function syncPlanPatchDates(input: {
+  applied: SprintPlanPatchApplyOpResult[];
+  ops: readonly SprintPlanPatchOp[];
+  organizationId: string;
+  sprintId: number;
+}): Promise<void> {
+  const { moved, removed } = collectDateSyncTargets(input.applied, input.ops);
+  const getIssueTracker = () => getIssueTrackerProviderClientForOrganization(input.organizationId);
+  if (moved.length > 0) {
+    let failures: TrackerSyncFailure[];
+    try {
+      failures = await syncPlannedDatesToTracker({
+        getIssueTracker,
+        positions: moved.map(({ op }) => ({
+          duration: op.duration,
+          isQa: false,
+          plannedDuration: op.duration,
+          plannedStartDay: op.startDay,
+          plannedStartPart: op.startPart,
+          taskId: op.taskId,
+        })),
+        sprintId: input.sprintId,
+      });
+    } catch (error) {
+      console.error('[sprint-plan-patch] sync planned dates → tracker', error);
+      failures = moved.map(({ op }) => ({ field: 'dates', issueKey: op.taskId }));
+    }
+    reportDatesFailures(moved.map(({ op, row }) => ({ issueKey: op.taskId, row })), failures);
+  }
+  for (const target of removed) {
+    const failures = await syncPlannedDatesAfterRemoval({
+      getIssueTracker,
+      issueKey: target.issueKey,
+      logLabel: 'apply_plan_patch deletePosition',
+      sprintId: input.sprintId,
+    });
+    reportDatesFailures([target], failures);
+  }
+}
+
 /** Синк в трекер после коммита: детали и предупреждения дописываются к результату операции; цели спринта — одним вызовом. */
 export async function runPlanPatchTrackerSyncs(input: {
   applied: SprintPlanPatchApplyOpResult[];
+  ops: readonly SprintPlanPatchOp[];
   organizationId: string;
   sprintId: number;
   trackerSyncs: readonly PlanPatchTrackerSyncRequest[];
@@ -241,6 +340,8 @@ export async function runPlanPatchTrackerSyncs(input: {
     });
     row.detail = [row.detail, sync.detail, sync.warning].filter(Boolean).join('; ');
   }
+  // После добавления в спринт: сначала задача попадает в спринт трекера, потом получает сроки.
+  await syncPlanPatchDates(input);
   if (input.applied.some((row) => row.ok && GOAL_OPS.has(row.op))) {
     await syncSprintGoalsToTracker({
       getIssueTracker: () => getIssueTrackerProviderClientForOrganization(input.organizationId),

@@ -49,9 +49,10 @@ async function applyUpsertPosition(input: {
     duration: op.duration,
     isQa: op.isQa,
     organizationId,
-    plannedDuration: null,
-    plannedStartDay: null,
-    plannedStartPart: null,
+    // Как перенос в планере: план = новое положение; по нему же сроки уходят в трекер.
+    plannedDuration: op.duration,
+    plannedStartDay: op.startDay,
+    plannedStartPart: op.startPart,
     sprintId,
     startDay: op.startDay,
     startPart: op.startPart,

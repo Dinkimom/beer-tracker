@@ -464,6 +464,7 @@ export async function applySprintPlanPatch(input: {
   }
   await runPlanPatchTrackerSyncs({
     applied,
+    ops,
     organizationId: input.organizationId,
     sprintId: input.sprintId,
     trackerSyncs: outcome.trackerSyncs,

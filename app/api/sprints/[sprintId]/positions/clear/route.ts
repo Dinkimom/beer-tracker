@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-error-handler';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
-import { clearTaskPositionsForSprint } from '@/lib/sprints';
+import { clearSprintBoardPositions, withTrackerSyncFailures } from '@/lib/sprints';
 import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
 
 export async function DELETE(
@@ -16,15 +17,13 @@ export async function DELETE(
     const organizationId = tenantResult.ctx.organizationId;
     const { sprintId } = tenantResult;
 
-    await clearTaskPositionsForSprint({ organizationId, sprintId });
+    const trackerSyncFailures = await clearSprintBoardPositions({ organizationId, request, sprintId });
 
     notifySprintRealtime(request, organizationId, sprintId, ['positions']);
-    return NextResponse.json({ success: true });
+    return NextResponse.json(withTrackerSyncFailures({ success: true }, trackerSyncFailures));
   } catch (error) {
-    console.error('Error clearing positions:', error);
-    return NextResponse.json(
-      { error: 'Failed to clear positions' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'clear positions', {
+      forwardStatuses: TRACKER_UPSTREAM_FORWARD_STATUSES,
+    });
   }
 }

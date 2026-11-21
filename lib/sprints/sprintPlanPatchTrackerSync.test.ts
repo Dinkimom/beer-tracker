@@ -1,10 +1,14 @@
-import type { SprintPlanPatchApplyOpResult } from './sprintPlanPatchTypes';
+import type { SprintPlanPatchApplyOpResult, SprintPlanPatchOp } from './sprintPlanPatchTypes';
 
 import { describe, expect, it, vi } from 'vitest';
 
 import { completeIssueSprintMembershipChange } from '@/lib/issues/issueSprintMembershipRealtime';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import { syncSprintGoalsToTracker } from '@/lib/sprintGoals';
+import {
+  syncPlannedDatesAfterRemoval,
+  syncPlannedDatesToTracker,
+} from '@/lib/sprints/taskPositionsTrackerSync';
 
 import {
   buildIssueNotInSprintPlanPatchHints,
@@ -24,6 +28,11 @@ vi.mock('@/lib/sprintGoals', () => ({
 }));
 vi.mock('@/lib/staffTeams/resolvePlannerAssigneeForTrackerSync', () => ({
   resolvePlannerAssigneeIdForTrackerSync: vi.fn(),
+}));
+vi.mock('@/lib/sprints/taskPositionsTrackerSync', () => ({
+  resolvePositionIssueKey: ({ taskId }: { taskId: string }) => taskId,
+  syncPlannedDatesAfterRemoval: vi.fn(() => Promise.resolve([])),
+  syncPlannedDatesToTracker: vi.fn(() => Promise.resolve([])),
 }));
 
 describe('collectIssueNotInSprintWarnings', () => {
@@ -126,6 +135,12 @@ describe('buildIssueNotInSprintPlanPatchHints', () => {
   });
 });
 
+const GOAL_OPS: SprintPlanPatchOp[] = [
+  { goalType: 'delivery', op: 'createGoal', text: 'g1' },
+  { id: 'g2', op: 'deleteGoal' },
+  { id: 'g3', op: 'updateGoal', text: 'g3' },
+];
+
 describe('runPlanPatchTrackerSyncs', () => {
   it('moves the issue to the target sprint and reports it on the op row', async () => {
     const addIssueToSprint = vi.fn(() =>
@@ -139,6 +154,7 @@ describe('runPlanPatchTrackerSyncs', () => {
     ];
     await runPlanPatchTrackerSyncs({
       applied,
+      ops: [{ moveToSprintId: 8, op: 'deletePosition', taskId: 'BT-2' }],
       organizationId: 'org-1',
       sprintId: 7,
       trackerSyncs: [{ index: 0, moveToSprintId: 8, taskId: 'BT-2' }],
@@ -160,6 +176,7 @@ describe('runPlanPatchTrackerSyncs', () => {
     ];
     await runPlanPatchTrackerSyncs({
       applied,
+      ops: [{ moveToSprintId: 8, op: 'deletePosition', taskId: 'BT-3' }],
       organizationId: 'org-1',
       sprintId: 7,
       trackerSyncs: [{ index: 0, moveToSprintId: 8, taskId: 'BT-3' }],
@@ -175,6 +192,7 @@ describe('runPlanPatchTrackerSyncs', () => {
         { detail: 'goal g2', index: 1, ok: true, op: 'deleteGoal' },
         { error: 'goal g3 not found', index: 2, ok: false, op: 'updateGoal' },
       ],
+      ops: GOAL_OPS,
       organizationId: 'org-1',
       sprintId: 7,
       trackerSyncs: [],
@@ -187,10 +205,80 @@ describe('runPlanPatchTrackerSyncs', () => {
     vi.mocked(syncSprintGoalsToTracker).mockClear();
     await runPlanPatchTrackerSyncs({
       applied: [{ error: 'goal g3 not found', index: 0, ok: false, op: 'updateGoal' }],
+      ops: [GOAL_OPS[2]!],
       organizationId: 'org-1',
       sprintId: 7,
       trackerSyncs: [],
     });
     expect(syncSprintGoalsToTracker).not.toHaveBeenCalled();
+  });
+
+  it('writes planned dates of moved dev cards to the tracker, skipping QA cards', async () => {
+    vi.mocked(syncPlannedDatesToTracker).mockClear();
+    const applied: SprintPlanPatchApplyOpResult[] = [
+      { detail: 'position BT-4', index: 0, ok: true, op: 'upsertPosition' },
+      { detail: 'position qa', index: 1, ok: true, op: 'upsertPosition' },
+      { error: 'boom', index: 2, ok: false, op: 'upsertPosition' },
+    ];
+    await runPlanPatchTrackerSyncs({
+      applied,
+      ops: [
+        { assigneeId: 'staff:a', duration: 3, op: 'upsertPosition', startDay: 2, startPart: 1, taskId: 'BT-4' },
+        { assigneeId: 'staff:b', duration: 1, isQa: true, op: 'upsertPosition', startDay: 4, startPart: 0, taskId: 'BT-4-qa' },
+        { assigneeId: 'staff:a', duration: 1, op: 'upsertPosition', startDay: 0, startPart: 0, taskId: 'BT-5' },
+      ],
+      organizationId: 'org-1',
+      sprintId: 7,
+      trackerSyncs: [],
+    });
+    expect(syncPlannedDatesToTracker).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(syncPlannedDatesToTracker).mock.calls[0]?.[0]).toMatchObject({
+      positions: [
+        { duration: 3, isQa: false, plannedDuration: 3, plannedStartDay: 2, plannedStartPart: 1, taskId: 'BT-4' },
+      ],
+      sprintId: 7,
+    });
+    expect(applied[0]?.detail).toBe('position BT-4; tracker sync: dates');
+    expect(applied[1]?.detail).toBe('position qa');
+  });
+
+  it('clears tracker dates when the agent takes a card off the board', async () => {
+    vi.mocked(syncPlannedDatesAfterRemoval).mockClear();
+    vi.mocked(syncPlannedDatesAfterRemoval).mockResolvedValueOnce([{ field: 'dates', issueKey: 'BT-6' }]);
+    const applied: SprintPlanPatchApplyOpResult[] = [
+      { detail: 'position BT-6', index: 0, ok: true, op: 'deletePosition' },
+      { detail: 'position 6ba7b810-9dad-11d1-80b4-00c04fd430c8', index: 1, ok: true, op: 'deletePosition' },
+    ];
+    await runPlanPatchTrackerSyncs({
+      applied,
+      ops: [
+        { op: 'deletePosition', taskId: 'BT-6' },
+        { op: 'deletePosition', taskId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8' },
+      ],
+      organizationId: 'org-1',
+      sprintId: 7,
+      trackerSyncs: [],
+    });
+    expect(syncPlannedDatesAfterRemoval).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(syncPlannedDatesAfterRemoval).mock.calls[0]?.[0]).toMatchObject({
+      issueKey: 'BT-6',
+      sprintId: 7,
+    });
+    expect(applied[0]?.detail).toBe('position BT-6; tracker_dates_sync_failed: BT-6');
+  });
+
+  it('leaves dates alone when the card moves to another sprint', async () => {
+    vi.mocked(syncPlannedDatesAfterRemoval).mockClear();
+    vi.mocked(getIssueTrackerProviderClientForOrganization).mockResolvedValue({
+      addIssueToSprint: vi.fn(() => Promise.resolve({ affectedSprintIds: [7, 8], backlogBoardIds: [] })),
+    } as never);
+    await runPlanPatchTrackerSyncs({
+      applied: [{ detail: 'position BT-7 → sprint 8', index: 0, ok: true, op: 'deletePosition' }],
+      ops: [{ moveToSprintId: 8, op: 'deletePosition', taskId: 'BT-7' }],
+      organizationId: 'org-1',
+      sprintId: 7,
+      trackerSyncs: [{ index: 0, moveToSprintId: 8, taskId: 'BT-7' }],
+    });
+    expect(syncPlannedDatesAfterRemoval).not.toHaveBeenCalled();
   });
 });

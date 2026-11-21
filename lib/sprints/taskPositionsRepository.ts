@@ -302,11 +302,18 @@ export async function deleteTaskPosition(
   ]);
 }
 
+/** Удаляет все позиции спринта; возвращает task_id снятых dev-карточек (без QA). */
 export async function clearTaskPositionsForSprint(input: {
   organizationId: string;
   sprintId: number;
-}): Promise<void> {
-  await query('DELETE FROM task_positions WHERE sprint_id = $1', [input.sprintId]);
+}): Promise<string[]> {
+  const result = await query(
+    'DELETE FROM task_positions WHERE sprint_id = $1 RETURNING task_id, is_qa',
+    [input.sprintId]
+  );
+  return (result.rows as Array<{ is_qa: boolean | null; task_id: string }>)
+    .filter((row) => row.is_qa !== true)
+    .map((row) => row.task_id);
 }
 
 export async function loadPersistedPositionsForPlannedSync(

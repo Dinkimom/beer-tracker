@@ -5,8 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
 import { resolvePlannerAssigneeIdForTrackerSync } from '@/lib/staffTeams/resolvePlannerAssigneeForTrackerSync';
 
-import { loadPersistedPositionsForPlannedSync } from './taskPositionsRepository';
+import { clearTaskPositionsForSprint, loadPersistedPositionsForPlannedSync } from './taskPositionsRepository';
 import {
+  clearSprintBoardPositions,
   trySyncPlannedDatesAfterPositionDelete,
   trySyncPositionAssigneeToTracker,
   withTrackerSyncFailures,
@@ -23,7 +24,10 @@ vi.mock('@/lib/trackerIntegration', () => ({
   loadTrackerIntegrationForTrackerPatch: vi.fn(() => Promise.resolve(null)),
 }));
 vi.mock('@/lib/trackerApi/sprintIssuesCache', () => ({ clearCachedSprintIssueScheduleDates: vi.fn() }));
-vi.mock('./taskPositionsRepository', () => ({ loadPersistedPositionsForPlannedSync: vi.fn() }));
+vi.mock('./taskPositionsRepository', () => ({
+  clearTaskPositionsForSprint: vi.fn(),
+  loadPersistedPositionsForPlannedSync: vi.fn(),
+}));
 
 const client = vi.mocked(getIssueTrackerProviderClientFromRequest);
 const resolveAssignee = vi.mocked(resolvePlannerAssigneeIdForTrackerSync);
@@ -77,6 +81,18 @@ describe('tracker sync failures after a position write', () => {
       taskId: 'BT-3',
     });
     expect(failures).toEqual([{ field: 'dates', issueKey: 'BT-3' }]);
+  });
+
+  it('clears tracker dates of every card taken off the board, once per issue', async () => {
+    persisted.mockResolvedValue(new Map());
+    updateIssue.mockResolvedValue(undefined);
+    vi.mocked(clearTaskPositionsForSprint).mockResolvedValue(['BT-4', 'BT-5', 'BT-4']);
+    const failures = await clearSprintBoardPositions({ organizationId: 'org-1', request, sprintId: 7 });
+    expect(failures).toEqual([]);
+    expect(updateIssue.mock.calls).toEqual([
+      ['BT-4', { deadline: null, start: null }],
+      ['BT-5', { deadline: null, start: null }],
+    ]);
   });
 
   it('adds failures to the response body only when there are any', () => {

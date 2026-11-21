@@ -18,6 +18,7 @@ export * from './taskLinksRepository';
 export * from './taskPositionsBatchRepository';
 export * from './taskPositionsRepository';
 export {
+  clearSprintBoardPositions,
   syncBatchAssigneesToTracker,
   syncBatchPlannedDatesToTracker,
   syncPutPositionSideEffects,
