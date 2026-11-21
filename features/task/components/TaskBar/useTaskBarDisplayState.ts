@@ -111,14 +111,13 @@ export function useTaskBarDisplayState({
   /** Пропсы карточки как есть: задача, геометрия, ресайз, редактор, меню быстрого добавления. */
   bar: Pick<
     TaskBarProps,
-    | 'disableDragAndResize'
     | 'duration'
     | 'inlineTitleEditor'
-    | 'interactionDisabled'
-    | 'isInError'
+    | 'interaction'
     | 'leftPercent'
     | 'onResize'
-    | 'quickAddMenu'
+    | 'planningError'
+    | 'quickAdd'
     | 'segment'
     | 'stickyNoteCardRowResize'
     | 'style'
@@ -136,10 +135,8 @@ export function useTaskBarDisplayState({
   const {
     duration,
     inlineTitleEditor,
-    isInError = false,
     leftPercent,
     onResize,
-    quickAddMenu,
     stickyNoteCardRowResize,
     style: customStyle,
     swimlaneDragActive,
@@ -150,8 +147,10 @@ export function useTaskBarDisplayState({
   const { globalNameFilter, qaTasksMap, swimlaneTimelineTotalParts } = board;
   const planSegmentIndex = bar.segment?.index;
   // Режим связей запрещает перетаскивание и ресайз, но клики оставляет.
-  const isLinking = bar.disableDragAndResize ?? false;
-  const interactionDisabled = (bar.interactionDisabled ?? false) || isLinking;
+  const isLinking = bar.interaction?.linking ?? false;
+  const interactionDisabled = (bar.interaction?.disabled ?? false) || isLinking;
+  const isInError = bar.planningError != null;
+  const quickAddMenu = bar.quickAdd?.menu;
 
   const { sprintPlannerUi } = useRootStore();
   const onboardingDemo = usePlannerOnboardingChrome();

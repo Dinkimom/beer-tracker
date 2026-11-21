@@ -54,13 +54,9 @@ import { useTaskBarPhotoCardInteractions } from './useTaskBarPhotoCardInteractio
 
 /** Разработчики, фильтр по имени и спринт — из `SwimlaneBoardContext`: у всех карточек доски они общие. */
 export interface TaskBarProps {
-  assigneeName?: string;
   /** Отключить drag/resize, но оставить клики (режим связей). */
-  disableDragAndResize?: boolean;
-  disableResize?: boolean;
   draggableId?: string;
   duration: number;
-  errorTooltip?: string;
   htmlAnchorId?: string;
   inlineTitleEditor?: {
     color?: StickyNoteColor;
@@ -72,19 +68,22 @@ export interface TaskBarProps {
     onColorChange?: (color: StickyNoteColor) => void;
     onSubmit?: () => void;
   };
-  interactionDisabled?: boolean;
-  isInError?: boolean;
+  /** Ограничения взаимодействия: всё (черновик, редактор отрезков), ресайз, режим связей. */
+  interaction?: { disabled?: boolean; linking?: boolean; resizeDisabled?: boolean };
   leftPercent: number;
   /** Обводка в режиме создания связи. */
   linkMode?: 'source' | 'target' | null;
   /** Штриховка стоимости и засечка срока относительно плана на старте работы. */
   planAnchorOverlay?: SegmentPlanAnchorOverlay | null;
+  /** Ошибка планирования: значок с подсказкой; нет поля — ошибки нет. */
+  planningError?: { tooltip?: string };
   /** Карточка предложения: та же задача, геометрия из превью, без перетаскивания. */
   planPatchGhost?: boolean;
-  quickAddMenu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & {
-    title: string;
+  /** Меню быстрого добавления (без якоря и флага отправки) и идёт ли отправка черновика. */
+  quickAdd?: {
+    menu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & { title: string };
+    submitting?: boolean;
   };
-  quickAddSubmitting?: boolean;
   /** Отрезок сегментированной карточки: бейдж «n из m», индекс для ресайза, вторичный отрезок. */
   segment?: {
     badge?: { index: number; total: number } | null;
@@ -112,26 +111,28 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
   const {
   task,
   inlineTitleEditor,
-  quickAddMenu,
-  quickAddSubmitting = false,
+  quickAdd: { menu: quickAddMenu, submitting: quickAddSubmitting = false } = {},
   leftPercent,
   widthPercent,
   duration,
-  errorTooltip,
-  isInError = false,
-  interactionDisabled = false,
-  disableDragAndResize = false,
-  disableResize = false,
+  interaction: {
+    disabled: interactionDisabled = false,
+    linking: disableDragAndResize = false,
+    resizeDisabled: disableResize = false,
+  } = {},
+  planningError,
   draggableId = task.id,
   htmlAnchorId = `task-${task.id}`,
   linkMode = null,
   planPatchGhost = false,
   planAnchorOverlay,
-  assigneeName,
   taskPositions,
   onTaskHover,
   segment: { badge: swimlaneSegmentBadge = null, secondary: swimlaneSegmentSecondary = false } = {},
 } = props;
+  const isInError = planningError != null;
+  const errorTooltip = planningError?.tooltip;
+  const assigneeName = taskPositions?.get(task.id)?.assignee;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const noteFocus = usePlanPatchNoteFocus(task, onTaskHover);
   const planPatchChrome = resolvePlanPatchTaskBarChrome({
@@ -434,7 +435,7 @@ export function TaskBar(props: TaskBarProps) {
   return (
     <TaskBarDragBridge
       draggableId={draggableId}
-      interactionDisabled={Boolean(props.interactionDisabled || props.disableDragAndResize)}
+      interactionDisabled={Boolean(props.interaction?.disabled || props.interaction?.linking)}
       sidebarDropAllowed={canDropTaskOnSidebar(props.task)}
       taskId={props.task.id}
     >

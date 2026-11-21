@@ -357,21 +357,24 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
       }
     >
       <TaskBar
-        assigneeName={position.assignee}
-        disableDragAndResize={linkingActive}
-        disableResize={renderState.interactionDisabled || linkingActive}
         draggableId={renderState.draggableId}
         duration={seg.duration}
-        errorTooltip={formatOccupancyErrorTooltip(errorReasons?.get(task.id), t)}
         htmlAnchorId={renderState.htmlAnchorId}
         inlineTitleEditor={inlineTitleEditor}
-        interactionDisabled={renderState.interactionDisabled}
-        isInError={renderState.isInError}
+        interaction={{
+          disabled: renderState.interactionDisabled,
+          linking: linkingActive,
+          resizeDisabled: renderState.interactionDisabled || linkingActive,
+        }}
         leftPercent={renderState.leftPercent}
         linkMode={linkMode}
         planAnchorOverlay={planAnchorOverlay}
-        quickAddMenu={quickAddMenu}
-        quickAddSubmitting={renderState.isQuickAddSubmitting}
+        planningError={
+          renderState.isInError
+            ? { tooltip: formatOccupancyErrorTooltip(errorReasons?.get(task.id), t) }
+            : undefined
+        }
+        quickAdd={{ menu: quickAddMenu, submitting: renderState.isQuickAddSubmitting }}
         segment={{
           badge: renderState.segmentBadge,
           index: hasMultiplePlanSegments ? segIdx : undefined,

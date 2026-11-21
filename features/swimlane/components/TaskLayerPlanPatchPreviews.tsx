@@ -120,12 +120,12 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
             <TaskBar
               key={bar.key}
               // Как у реальной полосы: отрезки тащатся по одному (`id::index`), сброс двигает предложение.
-              disableResize
               draggableId={
                 bars.length > 1 ? swimlaneTaskDraggableId(previewElementId, barIndex) : previewElementId
               }
               duration={bar.duration}
               htmlAnchorId={segmentAnchorId}
+              interaction={{ resizeDisabled: true }}
               leftPercent={getLeftPercentForSegmentStartCell(startCell, timelineTotalParts)}
               planPatchGhost
               segment={{ secondary: !isPrimary }}
