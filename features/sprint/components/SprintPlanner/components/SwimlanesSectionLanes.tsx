@@ -139,7 +139,7 @@ export function SwimlanesSectionLanes({
   const showLinks = section.display.linksVisible;
   const linksDimOnHover = section.display.linksDimOnHover;
   const [linksIdleMode] = useSwimlaneLinksIdleModeStorage();
-  const arrowTaskLinks = taskLinksForOnboardingArrows(showLinks, section.filteredTaskLinks);
+  const arrowTaskLinks = taskLinksForOnboardingArrows(showLinks, section.links.items);
 
   // Данные дорожек пересобираются только при смене данных доски, не на наведение и drag.
   const imagesVisible = section.display.imagesVisible;
@@ -208,7 +208,7 @@ export function SwimlanesSectionLanes({
     taskPositions: swimlanePositions,
     tasks: section.allTasksForDrag,
     visibleDeveloperIds: visibleSwimlaneAssigneeIds,
-    onDeleteLink: section.onDeleteLink,
+    onDeleteLink: section.links.onDelete,
     onTaskHoverEnd,
   };
 
@@ -278,7 +278,7 @@ export function SwimlanesSectionLanes({
         />
         <div className="relative" data-planner-pattern-origin="">
           {orderedRows.map(renderLane)}
-          <FeatureLaneAddRow participantsColumnWidth={section.participantsColumnWidth} />
+          <FeatureLaneAddRow participantsColumnWidth={section.participantsColumn.width} />
         </div>
         {showArrows ? <TaskArrows {...taskArrowProps} /> : null}
         <PlanPatchScheduleArrows />

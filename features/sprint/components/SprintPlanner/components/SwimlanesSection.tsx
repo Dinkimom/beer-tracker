@@ -67,28 +67,24 @@ function swimlaneHoverValueWhileIdle<T>(suspended: boolean, value: T): T | null 
 export const SwimlanesSection = observer(function SwimlanesSection(props: SwimlanesSectionProps) {
   const {
     allTasksForDrag,
-    boardAvailabilityEvents,
     boardId,
     comments,
     developersManagement,
     hideTeamLane = false,
     occupancyValidationPositions,
     dragAndDrop,
-    filteredTaskLinks,
-    participantsColumnWidth,
     removeParticipantFromTeam,
     scrollContainerRef,
-    sidebarOpen,
-    sprintStartDate,
-    sprintTimelineWorkingDays = WORKING_DAYS,
     taskDurationsByTaskId,
     taskPositions,
     tasksMap,
     viewMode,
-    onAddLink,
-    onParticipantsColumnWidthChange,
     onTaskClick,
   } = props;
+  const { boardAvailabilityEvents, sprintStartDate, sprintTimelineWorkingDays = WORKING_DAYS } = props.timeline;
+  const { items: filteredTaskLinks, onAdd: onAddLink } = props.links;
+  const { width: participantsColumnWidth, onWidthChange: onParticipantsColumnWidthChange } =
+    props.participantsColumn;
   const {
     commentsVisible,
     factTimelineEnabled: swimlaneFactTimelineEnabled,
@@ -98,6 +94,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   } = props.display;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const { developers, qaTasksMap } = useSprintBoard();
+  const { sidebarOpen } = sprintPlannerUi.overlays;
   const { t } = useI18n();
   const globalNameFilter = sprintPlannerUi.focus.globalNameFilter;
   const hoveredTaskId = sprintPlannerUi.cards.hoveredTaskId;

@@ -55,11 +55,36 @@ interface SwimlaneDisplaySettings {
   notesVisible: boolean;
 }
 
+/** Сетка дней спринта и события доступности людей на ней. */
+interface SwimlaneTimeline {
+  /** События доступности участников доски (отпуск, больничный, дежурство) */
+  boardAvailabilityEvents?: BoardAvailabilityEvent[];
+  sprintStartDate: Date;
+  sprintTimelineWorkingDays?: number;
+}
+
+/** Стрелки связей на доске и действия с ними. */
+interface SwimlaneLinks {
+  items: Array<{
+    fromAnchor?: SwimlaneLinkAnchor;
+    fromTaskId: string;
+    id: string;
+    toAnchor?: SwimlaneLinkAnchor;
+    toTaskId: string;
+  }>;
+  onAdd?: (link: { fromTaskId: string; id: string; toTaskId: string }) => void;
+  onDelete: (linkId: string) => void;
+}
+
+/** Колонка участников слева: ширина и её перетаскивание. */
+interface ParticipantsColumn {
+  width: number;
+  onWidthChange?: (width: number) => void;
+}
+
 export interface SwimlanesSectionProps {
   allTasksForDrag: Task[];
   board: SwimlaneBoardInputs;
-  /** События доступности участников доски (отпуск, больничный, дежурство) */
-  boardAvailabilityEvents?: BoardAvailabilityEvent[];
   boardId: number | null;
   comments: Comment[];
   developersManagement: DevelopersManagement;
@@ -70,40 +95,27 @@ export interface SwimlanesSectionProps {
     activeTaskId: string | null;
     isDraggingTask: boolean;
   };
-  filteredTaskLinks: Array<{
-    fromAnchor?: SwimlaneLinkAnchor;
-    fromTaskId: string;
-    id: string;
-    toAnchor?: SwimlaneLinkAnchor;
-    toTaskId: string;
-  }>;
   /** Не дублировать строку «Общее»: в режиме «по фичам» она уже есть в списке строк. */
   hideTeamLane?: boolean;
+  links: SwimlaneLinks;
   /**
    * Позиции для валидации пересечений исполнителей.
    * Если заданы — ошибки считаются по ним, а не по `taskPositions` (проекция на строки фич).
    */
   occupancyValidationPositions?: Map<string, TaskPosition>;
-  participantsColumnWidth: number;
+  participantsColumn: ParticipantsColumn;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
-  sidebarOpen: boolean;
-  sprintStartDate: Date;
-  sprintTimelineWorkingDays?: number;
   /** Длительности по статусам из changelog (как в занятости) — для полосы факта «В работе» */
   taskDurationsByTaskId?: Map<string, StatusDuration[]>;
   taskPositions: Map<string, TaskPosition>;
   tasksByAssignee: Map<string, Task[]>;
   /** Карта всех задач доски — для расчёта статистики по тому, что лежит в свимлейне. */
   tasksMap: Map<string, Task>;
+  timeline: SwimlaneTimeline;
   viewMode: 'compact' | 'full';
-  onAddLink?: (link: { fromTaskId: string; id: string; toTaskId: string }) => void;
-  onDeleteLink: (linkId: string) => void;
-  onParticipantsColumnWidthChange?: (width: number) => void;
   onTaskClick: (taskId: string) => void;
   removeParticipantFromTeam?: (
     developerId: string,
     knownDisplayName?: string | null
   ) => Promise<boolean>;
-  /** Режим по фичам правит родителя локальной задачи. */
-  setTasks?: (updater: (prev: Task[]) => Task[]) => void;
 }

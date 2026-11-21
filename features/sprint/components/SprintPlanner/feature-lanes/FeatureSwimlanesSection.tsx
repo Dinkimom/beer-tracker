@@ -34,6 +34,8 @@ export type FeatureSwimlanesSectionProps = Omit<SwimlanesSectionProps, 'viewMode
     options?: { notify?: boolean }
   ) => Promise<void>;
   onRemoveFromSprint?: (taskId: string, options?: { notify?: boolean }) => Promise<void>;
+  /** Режим по фичам правит родителя локальной задачи. */
+  setTasks?: (updater: (prev: Task[]) => Task[]) => void;
   sprints?: readonly SprintListItem[];
 };
 
@@ -45,6 +47,7 @@ export function FeatureSwimlanesSection({
   onCommentsLeftSprint,
   onMoveToSprint,
   onRemoveFromSprint,
+  setTasks,
   sprints = [],
   ...props
 }: FeatureSwimlanesSectionProps) {
@@ -92,7 +95,6 @@ export function FeatureSwimlanesSection({
     sprintId: props.board.selectedSprintId,
     tasks: tasksForLanes,
   });
-  const setTasks = props.setTasks;
   const handleLocalTaskParentChange = useCallback(
     (taskId: string, parent: TaskParent | null) => {
       setTasks?.((prev) =>

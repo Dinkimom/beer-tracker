@@ -36,14 +36,10 @@ export function useSwimlaneBoardValue({
   onTaskClick: (taskId: string) => void;
   onTaskHover: (taskId: string | null) => void;
 }): SwimlaneBoard {
-  const {
-    boardId,
-    filteredTaskLinks,
-    participantsColumnWidth,
-    sprintStartDate,
-    sprintTimelineWorkingDays = WORKING_DAYS,
-    viewMode,
-  } = section;
+  const { boardId, viewMode } = section;
+  const { sprintStartDate, sprintTimelineWorkingDays = WORKING_DAYS } = section.timeline;
+  const filteredTaskLinks = section.links.items;
+  const participantsColumnWidth = section.participantsColumn.width;
   const {
     commentActions,
     onCloseSidebar,
