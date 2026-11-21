@@ -1,20 +1,16 @@
-
 import type { useSprintPlannerViewModel } from './hooks/useSprintPlannerViewModel';
 
 import { useState } from 'react';
 
 import { ZIndex } from '@/constants';
 import { StickyNoteReactionsProvider } from '@/features/comments/StickyNoteReactionsProvider';
-import { isSwimlaneCommentTask, selectPendingAgentProposalNotes } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import { DAYS_HEADER_ROW_HEIGHT_PX } from '@/features/sprint/components/DaysHeader';
 import { AssigneeVelocityProvider } from '@/features/swimlane/hooks/useAssigneeVelocity';
-import { useCloseOverdueAndCreateNext } from '@/features/swimlane/hooks/useCloseOverdueAndCreateNext';
 import { AgentDevTasksProvider } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCard/FeatureDraftRowNamesContext';
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useHeightCssVar } from '@/hooks/useHeightCssVar';
-import { parseStickyNoteColor } from '@/lib/comments/stickyNoteColor';
 
 import { SprintPlannerBoardViews } from './board';
 import { ModalsSection } from './components/ModalsSection';
@@ -29,146 +25,51 @@ import { SprintPlannerAssigneePickerLayer } from './SprintPlannerAssigneePickerL
 import { SprintPlannerDndShell } from './SprintPlannerDndShell';
 import { SprintPlannerDragStoresProvider } from './SprintPlannerDragStoresProvider';
 
-export type SprintPlannerViewProps = ReturnType<typeof useSprintPlannerViewModel>;
+type SprintPlannerViewProps = ReturnType<typeof useSprintPlannerViewModel>;
 
+/**
+ * Раскладка доски. View model отдаёт срезы по потребителю (свимлейны, канбан, сайдбар, панель,
+ * окна, перетаскивание) — здесь они раздаются целиком; своё у разметки — только DOM-узлы рамки.
+ */
 export function SprintPlannerView({
-  activeTask,
-  allTasksForDrag,
-  allTasksForDragWithComments,
   assigneePicker,
-  assigneePointsStats,
-  availability,
-  boardAvailabilityEvents,
-  boardIdForPlannerData,
   boardViewers,
   comments,
-  commentsVisible,
-  developers,
-  developersManagement,
-  dragAndDrop,
-  dragContextRef,
-  filteredTaskLinks,
-  filteredTaskPositions,
-  getQueueByBoardId,
-  goalTaskIds,
-  handleAddLink,
-  handleAssigneeSelect,
-  handleContextMenuAssigneeSelect,
-  commentActions,
-  handleCreateTaskInSwimlaneCell,
-  handleOccupancyPositionSave,
-  handleRemoveParticipantFromTeam,
-  handleSegmentEditSave,
-  handleSplitPhaseIntoSegments,
-  handleUpdateEstimate,
-  handlers,
-  isDragFromSidebar,
-  kanbanGroupBy,
-  linksDimOnHover,
-  movePlacement,
-  onSprintChange,
-  onTasksReload,
-  participantsColumnWidth,
-  positionHistory,
-  qaTasksMap,
-  quickAdd,
+  controls,
+  dnd,
+  dragStores,
   featureDraftRowNamesById,
-  scrollContainerRef,
-  selectedAssigneeIds,
+  kanban,
+  modals,
+  onboarding,
+  placementToolbar,
+  presence,
   selectedSprintId,
-  setAssigneePicker,
-  setIsDragFromSidebar,
-  setParticipantsColumnWidth,
-  setSelectedAssigneeIds,
-  setSidebarWidth,
-  setTasks,
-  setViewMode,
-  sidebarOpen,
-  sidebarWidth,
-  sprintInfo,
-  sprintStartDate,
-  sprintTimelineWorkingDays,
+  sidebar,
   sprints,
-  sprintsLoading,
-  swimlaneFactTimelineEnabled,
-  swimlaneImagesVisible,
-  swimlaneLinksVisible,
-  swimlaneNotesVisible,
-  swimlaneTaskChangelogsMap,
-  swimlaneTaskDurationsMap,
-  swimlaneTaskIssueCommentsMap,
-  swimlaneTaskLinks,
-  taskPositions,
-  tasks,
-  tasksByAssignee,
-  tasksLoading,
-  tasksMap,
-  tasksReloading,
-  unassignedTasks,
+  swimlanes,
   viewMode,
-  DialogComponent,
+  onPaintNoteColor,
 }: SprintPlannerViewProps) {
   const [boardFrameEl, setBoardFrameEl] = useState<HTMLDivElement | null>(null);
   const [controlsEl, setControlsEl] = useState<HTMLDivElement | null>(null);
   const [daysSlotEl, setDaysSlotEl] = useState<HTMLDivElement | null>(null);
-  const daysChrome =
-    viewMode === 'compact' || viewMode === 'full' || viewMode === 'features';
+  const daysChrome = placementToolbar != null;
 
   useHeightCssVar(boardFrameEl, controlsEl, '--planner-controls-h');
-  const onOverdueCloseAndCreate = useCloseOverdueAndCreateNext({
-    boardId: boardIdForPlannerData ?? null,
-    getQueueByBoardId,
-    onStatusChange: handlers.handleStatusChange,
-    savePosition: handleOccupancyPositionSave,
-    selectedSprintId,
-    setTasks,
-  });
 
   return (
     <AssigneeVelocityProvider selectedSprintId={selectedSprintId} sprints={sprints}>
     <PlannerChromeSlotProvider slot={daysSlotEl}>
-    <StickyNoteReactionsProvider comments={comments} sprintId={selectedSprintId} onPaintNoteColor={handlers.handlePaintNoteColorFromReaction}>
+    <StickyNoteReactionsProvider comments={comments} sprintId={selectedSprintId} onPaintNoteColor={onPaintNoteColor}>
       <PlannerMobxSessionBridge />
-      <SprintPlannerDndShell
-        activeTask={activeTask}
-        activeTaskDuration={dragAndDrop.activeTaskDuration}
-        developers={developers}
-        developersManagement={developersManagement}
-        dragAndDrop={dragAndDrop}
-        dragContextRef={dragContextRef}
-        isDragFromSidebar={isDragFromSidebar}
-        scrollContainerRef={scrollContainerRef}
-        setIsDragFromSidebar={setIsDragFromSidebar}
-        sidebarOpen={sidebarOpen}
-        sidebarWidth={sidebarWidth}
-        sprintTimelineWorkingDays={sprintTimelineWorkingDays}
-        viewMode={viewMode}
-      >
-        <SprintPlannerDragStoresProvider hoverStore={dragAndDrop.hoverStore} sidebarDropPointerStore={dragAndDrop.sidebarDropPointerStore}>
+      <SprintPlannerDndShell {...dnd}>
+        <SprintPlannerDragStoresProvider {...dragStores}>
         <AgentDevTasksProvider sprintId={selectedSprintId}>
         <SprintCardPresenceProvider viewers={boardViewers}>
         <FeatureDraftRowNamesProvider names={featureDraftRowNamesById}>
-        <SprintPlannerPresenceSync
-          dragDuration={dragAndDrop.activeTaskDuration ?? null}
-          dragNoteColor={
-            activeTask && isSwimlaneCommentTask(activeTask)
-              ? parseStickyNoteColor(activeTask.stickyNoteColor)
-              : null
-          }
-          dragNoteText={
-            activeTask && isSwimlaneCommentTask(activeTask) ? (activeTask.name ?? '') : null
-          }
-          draggingTaskId={dragAndDrop.isDraggingTask ? dragAndDrop.activeTaskId : null}
-          sprintId={selectedSprintId}
-          viewMode={viewMode}
-        />
-        <PlannerOnboardingHost
-          scrollContainerRef={scrollContainerRef}
-          selectedSprintId={selectedSprintId}
-          setViewMode={setViewMode}
-          tasksLoading={tasksLoading}
-          viewMode={viewMode}
-        >
+        <SprintPlannerPresenceSync {...presence} />
+        <PlannerOnboardingHost {...onboarding}>
         <div className="relative flex h-full min-h-0 w-full flex-1 gap-3 overflow-hidden">
           <div
             ref={setBoardFrameEl}
@@ -178,104 +79,15 @@ export function SprintPlannerView({
             className="absolute inset-0 flex min-h-0 flex-col overflow-hidden"
             style={{ zIndex: ZIndex.base }}
           >
-              <SprintPlannerBoardViews
-                kanban={{
-                  boardId: boardIdForPlannerData ?? null,
-                  developers,
-                  groupBy: kanbanGroupBy,
-                  selectedAssigneeIds,
-                  tasks: allTasksForDrag,
-                  onContextMenu: handlers.handleContextMenu,
-                  onStatusChange: handlers.handleStatusChange, onTaskClick: handlers.handleTaskClick,
-                }}
-                swimlanes={{
-                  allTasksForDrag: allTasksForDragWithComments ?? allTasksForDrag,
-                  boardAvailabilityEvents,
-                  boardId: boardIdForPlannerData ?? null,
-                  comments,
-                  commentsVisible,
-                  developers,
-                  developersManagement,
-                  dragAndDrop,
-                  filteredTaskLinks: swimlaneTaskLinks ?? filteredTaskLinks,
-                  linksDimOnHover,
-                  participantsColumnWidth,
-                  qaTasksMap,
-                  removeParticipantFromTeam: handleRemoveParticipantFromTeam,
-                  scrollContainerRef,
-                  showLinks: swimlaneLinksVisible,
-                  sidebarOpen,
-                  sprintStartDate,
-                  sprintTimelineWorkingDays,
-                  swimlaneFactTimelineEnabled,
-                  swimlaneImagesVisible,
-                  swimlaneNotesVisible,
-                  taskDurationsByTaskId: swimlaneTaskDurationsMap,
-                  taskPositions,
-                  tasksByAssignee,
-                  tasksMap,
-                  onMoveToSprint: handlers.handleMoveToSprint,
-                  onRemoveFromSprint: handlers.handleRemoveFromSprint,
-                  sprints,
-                  onCommentsLeftSprint: handlers.handleCommentsLeftSprint,
-                  onDeleteLink: handlers.handleDeleteLink,
-                  onParticipantsColumnWidthChange: setParticipantsColumnWidth,
-                  onAddLink: handleAddLink,
-                  onTaskClick: handlers.handleTaskClick,
-                  setTasks,
-                  board: {
-                    selectedSprintId,
-                    taskChangelogsByTaskId: swimlaneTaskChangelogsMap,
-                    taskIssueCommentsByTaskId: swimlaneTaskIssueCommentsMap,
-                    onCloseSidebar: handlers.handleCloseSidebar,
-                    commentActions,
-                    onContextMenu: handlers.handleContextMenu,
-                    onCreateQATask: handlers.handleCreateQATask,
-                    onOverdueCloseAndCreate,
-                    onCreateTaskInCell: handleCreateTaskInSwimlaneCell,
-                    quickAdd,
-                    onSegmentEditSave: handleSegmentEditSave,
-                    onTaskResize: handlers.handleTaskResize,
-                  },
-                }}
-                viewMode={viewMode}
-              />
-              {viewMode === 'compact' || viewMode === 'full' || viewMode === 'features' ? (
-                <SwimlanePlacementToolbar
-                  movePlacement={movePlacement.toolbar}
-                  pendingAgentNotes={selectPendingAgentProposalNotes(comments)}
-                  sprintId={selectedSprintId}
-                  variant={viewMode === 'features' ? 'features' : 'people'}
-                  onApproveAgentNotes={handlers.handleCommentApproveAll}
-                  onRejectAgentNotes={handlers.handleCommentRejectAll}
-                />
-              ) : null}
+              <SprintPlannerBoardViews kanban={kanban} swimlanes={swimlanes} viewMode={viewMode} />
+              {placementToolbar ? <SwimlanePlacementToolbar {...placementToolbar} /> : null}
           </div>
           <div
             ref={setControlsEl}
             className={`absolute inset-x-0 top-0 ${FLOATING_TOOLBAR_GLASS}`}
             style={{ zIndex: ZIndex.plannerControls }}
           >
-            <SprintPlannerControlsBar
-              assigneeFilterTasks={allTasksForDrag}
-              boardId={boardIdForPlannerData ?? null}
-              boardViewers={boardViewers}
-              developers={developers}
-              planHistory={positionHistory}
-              selectedAssigneeIds={selectedAssigneeIds}
-              selectedSprintId={selectedSprintId}
-              setSelectedAssigneeIds={setSelectedAssigneeIds}
-              setViewMode={setViewMode}
-              sidebarOpen={sidebarOpen}
-              sprints={sprints}
-              sprintsLoading={sprintsLoading}
-              tasksLoading={tasksLoading}
-              tasksReloading={tasksReloading}
-              viewMode={viewMode}
-              onOpenSidebar={handlers.handleToggleSidebar}
-              onSprintChange={onSprintChange}
-              onTasksReload={onTasksReload}
-            />
+            <SprintPlannerControlsBar {...controls} />
             <div
               ref={setDaysSlotEl}
               style={daysChrome ? { minHeight: DAYS_HEADER_ROW_HEIGHT_PX } : undefined}
@@ -283,40 +95,7 @@ export function SprintPlannerView({
           </div>
           </div>
 
-            <SidebarSection
-              activeTaskDuration={dragAndDrop.activeTaskDuration}
-              activeTaskId={dragAndDrop.activeTaskId}
-              allSprintTasks={tasks}
-              closedHandleHost={boardFrameEl}
-              developers={developers}
-              developersManagement={developersManagement}
-              goalTaskIds={goalTaskIds}
-              qaTasksMap={qaTasksMap}
-              selectedBoardId={boardIdForPlannerData}
-              selectedSprintId={selectedSprintId}
-              sidebarDropTargetActive={dragAndDrop.isSidebarDropTarget}
-              sidebarOpen={sidebarOpen}
-              sidebarWidth={sidebarWidth}
-              sprintInfo={sprintInfo}
-              sprints={sprints}
-              taskPositions={filteredTaskPositions}
-              tasks={unassignedTasks}
-              viewMode={viewMode}
-              onAutoAddToSwimlane={handlers.handleAutoAddToSwimlane}
-              onAutoAssignTasks={handlers.handleAutoAssignTasks}
-              onContextMenu={handlers.handleContextMenu}
-              onPlanAssignees={handlers.handlePlanAssignees}
-              onReturnAllTasks={handlers.handleReturnAllTasks}
-              onSprintTaskUpserted={(task) => {
-                setTasks((prev) => [
-                  ...prev.filter((existing) => existing.id !== task.id),
-                  task,
-                ]);
-              }}
-              onTasksReload={onTasksReload}
-              onToggle={handlers.handleToggleSidebar}
-              onWidthChange={setSidebarWidth}
-            />
+            <SidebarSection {...sidebar} closedHandleHost={boardFrameEl} />
         </div>
         </PlannerOnboardingHost>
         </FeatureDraftRowNamesProvider>
@@ -324,43 +103,8 @@ export function SprintPlannerView({
         </AgentDevTasksProvider>
         </SprintPlannerDragStoresProvider>
       </SprintPlannerDndShell>
-      <ModalsSection
-        DialogComponent={DialogComponent}
-        assigneeOptions={{
-          assigneePointsStats,
-          availability,
-          developers,
-          sprintStartDate,
-        }}
-        boardId={boardIdForPlannerData}
-        comments={comments}
-        handlers={handlers}
-        movePlacement={movePlacement}
-        selectedSprintId={selectedSprintId}
-        showStartLinking={
-          (viewMode === 'full' || viewMode === 'compact' || viewMode === 'features') &&
-          swimlaneLinksVisible
-        }
-        sprintTasks={tasks}
-        sprints={sprints}
-        taskPositions={filteredTaskPositions}
-        tasksMap={tasksMap}
-        viewMode={viewMode}
-        onAssigneeSelect={handleContextMenuAssigneeSelect}
-        onSplitPhaseIntoSegments={handleSplitPhaseIntoSegments}
-        onUpdateEstimate={handleUpdateEstimate}
-      />
-      {assigneePicker && (
-        <SprintPlannerAssigneePickerLayer
-          assigneePicker={assigneePicker}
-          assigneePointsStats={assigneePointsStats}
-          availability={availability}
-          developers={developers}
-          sprintStartDate={sprintStartDate}
-          onAssigneeSelect={handleAssigneeSelect}
-          onClose={() => setAssigneePicker(null)}
-        />
-      )}
+      <ModalsSection {...modals} />
+      {assigneePicker ? <SprintPlannerAssigneePickerLayer {...assigneePicker} /> : null}
     </StickyNoteReactionsProvider>
     </PlannerChromeSlotProvider>
     </AssigneeVelocityProvider>

@@ -431,7 +431,6 @@ export function useSprintPlannerViewModelInteractions({
     assigneePicker,
     dragAndDrop,
     dragContextRef,
-    filteredTaskPositionsWithComments,
     handleAssigneeSelect,
     handleContextMenuAssigneeSelect,
     commentActions,
@@ -447,6 +446,5 @@ export function useSprintPlannerViewModelInteractions({
     setAssigneePicker,
     setIsDragFromSidebar,
     swimlaneTaskLinks,
-    tasksMapWithComments,
   };
 }

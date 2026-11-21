@@ -1,5 +1,5 @@
 import type { AssigneePickerState } from './hooks/useSprintPlannerAssigneePicker';
-import type { SprintPlannerViewProps } from './SprintPlannerView';
+import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
 import type { Developer, TaskPosition } from '@/types';
 
 import { getDevelopersForTaskSorted } from '@/features/sprint/utils/getDevelopersForTask';
@@ -8,8 +8,8 @@ import { AssigneePicker } from './components/AssigneePicker';
 
 interface SprintPlannerAssigneePickerLayerProps {
   assigneePicker: AssigneePickerState;
-  assigneePointsStats: SprintPlannerViewProps['assigneePointsStats'];
-  availability: SprintPlannerViewProps['availability'];
+  assigneePointsStats: ContextMenuAssigneeOptions['assigneePointsStats'];
+  availability: ContextMenuAssigneeOptions['availability'];
   developers: Developer[];
   sprintStartDate: Date;
   onAssigneeSelect: (assigneeId: string) => void;
