@@ -15,7 +15,7 @@
   "features/sidebar/components/SprintGoalsSection.tsx::pass-through": 59,
   "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBar.tsx::pass-through": 58,
   "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBarLeftSection.tsx::pass-through": 60,
-  "features/sprint/components/SprintPlanner/components/SwimlanesSection.types.ts::props-width::SwimlanesSectionProps": 45,
+  "features/sprint/components/SprintPlanner/components/SwimlanesSection.types.ts::props-width::SwimlanesSectionProps": 34,
   "features/sprint/components/SprintPlanner/components/SwimlanesSectionLanes.tsx::props-width::SwimlanesSectionLanesProps": 25,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerCommentHandlers.ts::hook-lines": 387,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerHandlers.types.ts::props-width::UseSprintPlannerHandlersProps": 33,

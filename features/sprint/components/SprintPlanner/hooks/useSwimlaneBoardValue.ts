@@ -38,18 +38,16 @@ export function useSwimlaneBoardValue({
 }): SwimlaneBoard {
   const {
     boardId,
-    commentActions,
     developers,
     filteredTaskLinks,
     participantsColumnWidth,
     qaTasksMap,
-    quickAdd,
-    selectedSprintId,
     sprintStartDate,
     sprintTimelineWorkingDays = WORKING_DAYS,
-    taskChangelogsByTaskId,
-    taskIssueCommentsByTaskId,
     viewMode,
+  } = section;
+  const {
+    commentActions,
     onCloseSidebar,
     onContextMenu,
     onCreateQATask,
@@ -57,7 +55,11 @@ export function useSwimlaneBoardValue({
     onOverdueCloseAndCreate,
     onSegmentEditSave,
     onTaskResize,
-  } = section;
+    quickAdd,
+    selectedSprintId,
+    taskChangelogsByTaskId,
+    taskIssueCommentsByTaskId,
+  } = section.board;
   return useMemo(
     () => ({
       boardId,

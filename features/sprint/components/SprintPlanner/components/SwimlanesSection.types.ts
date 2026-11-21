@@ -9,13 +9,44 @@ import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
 type SwimlaneLinkAnchor = 'bottom' | 'left' | 'right' | 'top';
 
+/**
+ * Транзитом до `SwimlaneBoardContext` (`useSwimlaneBoardValue`): секция и дорожки их не читают.
+ * Хук разбирает срез по полям, поэтому объект можно собирать на каждый рендер.
+ */
+interface SwimlaneBoardInputs {
+  /** Действия с заметками — одним объектом (`SwimlaneCommentActions`). */
+  commentActions?: SwimlaneCommentActions;
+  /** Быстрое добавление — одним объектом (`QuickAddController`). */
+  quickAdd?: QuickAddController;
+  selectedSprintId: number | null;
+  taskChangelogsByTaskId?: Map<string, ChangelogEntry[]>;
+  taskIssueCommentsByTaskId?: Map<string, IssueComment[]>;
+  onCloseSidebar: () => void;
+  onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
+  onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
+  onCreateTaskInCell?: (data: {
+    assigneeId: string;
+    day: number;
+    imageFile?: File;
+    parent?: TaskParent;
+    part: number;
+  }) => Promise<void> | void;
+  onOverdueCloseAndCreate?: (args: {
+    currentCell: number;
+    position: TaskPosition;
+    task: Task;
+    timelineTotalParts: number;
+  }) => Promise<void> | void;
+  onSegmentEditSave?: (position: TaskPosition, segments: PhaseSegment[], isQa: boolean) => void;
+  onTaskResize: (taskId: string, params: TaskResizeParams) => void;
+}
+
 export interface SwimlanesSectionProps {
   allTasksForDrag: Task[];
+  board: SwimlaneBoardInputs;
   /** События доступности участников доски (отпуск, больничный, дежурство) */
   boardAvailabilityEvents?: BoardAvailabilityEvent[];
   boardId: number | null;
-  /** Действия с заметками — одним объектом (`SwimlaneCommentActions`). */
-  commentActions?: SwimlaneCommentActions;
   comments: Comment[];
   commentsVisible: boolean;
   developers: Developer[];
@@ -43,10 +74,7 @@ export interface SwimlanesSectionProps {
   occupancyValidationPositions?: Map<string, TaskPosition>;
   participantsColumnWidth: number;
   qaTasksMap: Map<string, Task>;
-  /** Быстрое добавление — одним объектом (`QuickAddController`). */
-  quickAdd?: QuickAddController;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
-  selectedSprintId: number | null;
   showLinks?: boolean;
   sidebarOpen: boolean;
   sprintStartDate: Date;
@@ -57,40 +85,21 @@ export interface SwimlanesSectionProps {
   swimlaneImagesVisible?: boolean;
   /** Показывать текстовые заметки на свимлейне */
   swimlaneNotesVisible?: boolean;
-  taskChangelogsByTaskId?: Map<string, ChangelogEntry[]>;
   /** Длительности по статусам из changelog (как в занятости) — для полосы факта «В работе» */
   taskDurationsByTaskId?: Map<string, StatusDuration[]>;
-  taskIssueCommentsByTaskId?: Map<string, IssueComment[]>;
   taskPositions: Map<string, TaskPosition>;
   tasksByAssignee: Map<string, Task[]>;
   /** Карта всех задач доски — для расчёта статистики по тому, что лежит в свимлейне. */
   tasksMap: Map<string, Task>;
   viewMode: 'compact' | 'full';
   onAddLink?: (link: { fromTaskId: string; id: string; toTaskId: string }) => void;
-  onCloseSidebar: () => void;
-  onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
-  onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
-  onCreateTaskInCell?: (data: {
-    assigneeId: string;
-    day: number;
-    imageFile?: File;
-    parent?: TaskParent;
-    part: number;
-  }) => Promise<void> | void;
   onDeleteLink: (linkId: string) => void;
-  onOverdueCloseAndCreate?: (args: {
-    currentCell: number;
-    position: TaskPosition;
-    task: Task;
-    timelineTotalParts: number;
-  }) => Promise<void> | void;
   onParticipantsColumnWidthChange?: (width: number) => void;
-  onSegmentEditSave?: (position: TaskPosition, segments: PhaseSegment[], isQa: boolean) => void;
   onTaskClick: (taskId: string) => void;
-  onTaskResize: (taskId: string, params: TaskResizeParams) => void;
   removeParticipantFromTeam?: (
     developerId: string,
     knownDisplayName?: string | null
   ) => Promise<boolean>;
+  /** Режим по фичам правит родителя локальной задачи. */
   setTasks?: (updater: (prev: Task[]) => Task[]) => void;
 }

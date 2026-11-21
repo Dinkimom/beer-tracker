@@ -49,7 +49,7 @@ export function FeatureSwimlanesSection({
   ...props
 }: FeatureSwimlanesSectionProps) {
   const { t } = useI18n();
-  const [lanes, setLanes, lanesLoaded] = useFeatureLanesApi(props.selectedSprintId);
+  const [lanes, setLanes, lanesLoaded] = useFeatureLanesApi(props.board.selectedSprintId);
   const boardLabels = useMemo(
     () => ({
       noParentLabel: t('task.grouping.noParent'),
@@ -89,7 +89,7 @@ export function FeatureSwimlanesSection({
     projectionRows: projection.rows,
     rowMetaById: projection.rowMetaById,
     setLanes,
-    sprintId: props.selectedSprintId,
+    sprintId: props.board.selectedSprintId,
     tasks: tasksForLanes,
   });
   const setTasks = props.setTasks;
@@ -108,25 +108,25 @@ export function FeatureSwimlanesSection({
   );
   const draftConvert = useFeatureLaneDraftConvert({
     comments: props.comments,
-    onCommentParentChange: props.commentActions?.onCommentParentChange,
+    onCommentParentChange: props.board.commentActions?.onCommentParentChange,
     onLocalTaskParentChange: handleLocalTaskParentChange,
     onPinTrackerRow: rowManagement.pinTrackerRow,
     onReplaceDraftRow: rowManagement.replaceDraftRow,
-    selectedSprintId: props.selectedSprintId,
+    selectedSprintId: props.board.selectedSprintId,
     tasks: tasksForLanes,
   });
   const rowActions = useFeatureLaneRowRemove({
     comments: props.comments,
     onClearTaskParent: (taskId) => handleLocalTaskParentChange(taskId, null),
-    onCommentDelete: props.commentActions?.onCommentDelete,
+    onCommentDelete: props.board.commentActions?.onCommentDelete,
     onCommentsLeftSprint,
-    onDeleteAnnotationTask: props.quickAdd?.onCancelQuickAddDraft,
+    onDeleteAnnotationTask: props.board.quickAdd?.onCancelQuickAddDraft,
     onMoveToSprint,
     onRemoveBoardRow: rowManagement.removeBoardRow,
     onRemoveDraftRow: rowManagement.removeDraftRow,
     onRemoveFromSprint,
     resolveTransferRow: rowManagement.resolveTransferRow,
-    selectedSprintId: props.selectedSprintId,
+    selectedSprintId: props.board.selectedSprintId,
     sprints,
     tasks: tasksForLanes,
   });
@@ -138,15 +138,16 @@ export function FeatureSwimlanesSection({
     () => projectCommentsOntoFeatureRows(props.comments),
     [props.comments]
   );
+  const onCreateTaskInCell = props.board.onCreateTaskInCell;
   const handleCreateOnFeatureRow = useCallback(
     (data: { assigneeId: string; day: number; imageFile?: File; part: number }) => {
       const parent = rowManagement.rowMetaById.get(data.assigneeId)?.parent ?? undefined;
-      props.onCreateTaskInCell?.({
+      onCreateTaskInCell?.({
         ...data,
         parent,
       });
     },
-    [props, rowManagement.rowMetaById]
+    [onCreateTaskInCell, rowManagement.rowMetaById]
   );
   const { taskPositions: positionsStore } = useRootStore();
   const planDraftCount = positionsStore.planDraftCount;
@@ -174,12 +175,12 @@ export function FeatureSwimlanesSection({
     <FeatureLaneCardUiProvider
       convertBoardId={props.boardId}
       convertIsSubmitting={draftConvert.isSubmitting}
-      convertQueueOptions={props.quickAdd?.quickAddQueueOptions ?? []}
+      convertQueueOptions={props.board.quickAdd?.quickAddQueueOptions ?? []}
       moveFeatureRow={rowActions.moveRow}
       removeFeatureRow={rowActions.removeRow}
       renameFeatureRow={rowManagement.renameDraftRow}
       rowTitleById={rowManagement.rowTitleById}
-      selectedSprintId={props.selectedSprintId}
+      selectedSprintId={props.board.selectedSprintId}
       sprints={sprints}
       onAddFeatureRow={rowManagement.addDraftRow}
       onAddFeatureRowFromExisting={draftConvert.attachExisting}
@@ -190,6 +191,8 @@ export function FeatureSwimlanesSection({
       <SwimlanesSection
         {...props}
         allTasksForDrag={tasksForLanes}
+        // Создание в ячейке строки фичи подставляет родителя этой фичи.
+        board={{ ...props.board, onCreateTaskInCell: handleCreateOnFeatureRow }}
         comments={laneComments}
         developersManagement={rowManagement.developersManagement}
         hideTeamLane
@@ -199,7 +202,6 @@ export function FeatureSwimlanesSection({
         tasksByAssignee={tasksByAssignee}
         tasksMap={tasksMapForLanes}
         viewMode="full"
-        onCreateTaskInCell={handleCreateOnFeatureRow}
       />
       {rowActions.DialogComponent}
     </FeatureLaneCardUiProvider>
