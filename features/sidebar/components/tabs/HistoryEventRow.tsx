@@ -1,11 +1,13 @@
 'use client';
 
 import type { SprintHistoryEvent } from '@/lib/boardHistory/sprintHistoryTypes';
+import type { Task } from '@/types';
 
 import { Avatar } from '@/components/Avatar';
 import { Icon } from '@/components/Icon';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
+import { HistoryTaskPassportTooltip } from '@/features/sidebar/components/tabs/HistoryTaskPassportTooltip';
 import { describeSprintHistoryEvent, sprintHistoryActorLabel } from '@/features/sidebar/utils/sprintHistoryText';
 import { getInitials } from '@/utils/displayUtils';
 
@@ -13,25 +15,19 @@ interface HistoryEventRowProps {
   /** Фото автора, если он есть среди людей доски. */
   avatarUrl: string | null;
   event: SprintHistoryEvent;
-  /** Название задачи по ключу, если задача загружена в планере. */
-  taskTitle: string | null;
+  /** Задача события из трекера, если она загружена в планере (название, паспорт без запроса). */
+  task: Task | null;
   timeLabel: string;
   /** Показать на доске; без него строка не кликается (объекта на доске уже нет). */
   onSelect?: () => void;
 }
 
-function eventSubject(event: SprintHistoryEvent, taskTitle: string | null): string | null {
-  if (event.source === 'tracker') {
-    return taskTitle ? `${event.issueKey} · ${taskTitle}` : event.issueKey;
-  }
-  return event.text;
-}
 
 /** Одно событие ленты: кто, что сделал, с чем и когда. */
-export function HistoryEventRow({ avatarUrl, event, onSelect, taskTitle, timeLabel }: HistoryEventRowProps) {
+export function HistoryEventRow({ avatarUrl, event, onSelect, task, timeLabel }: HistoryEventRowProps) {
   const { t } = useI18n();
   const actor = sprintHistoryActorLabel(event, t);
-  const subject = eventSubject(event, taskTitle);
+  const boardText = event.source === 'board' ? event.text : null;
   const previous = event.source === 'board' ? event.previousText : null;
 
   const body = (
@@ -57,9 +53,19 @@ export function HistoryEventRow({ avatarUrl, event, onSelect, taskTitle, timeLab
           </time>
         </div>
         <p className="mt-0.5 text-xs text-gray-700 dark:text-gray-300">{describeSprintHistoryEvent(event, t)}</p>
-        {subject && (
-          <OverflowTooltip content={subject}>
-            <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{subject}</p>
+        {event.source === 'tracker' && (
+          <HistoryTaskPassportTooltip issueKey={event.issueKey} knownTask={task}>
+            <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400" data-testid="sprint-history-issue">
+              <span className="font-medium text-blue-700 underline decoration-dotted underline-offset-2 dark:text-blue-300">
+                {event.issueKey}
+              </span>
+              {task?.name ? ` · ${task.name}` : ''}
+            </p>
+          </HistoryTaskPassportTooltip>
+        )}
+        {boardText && (
+          <OverflowTooltip content={boardText}>
+            <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{boardText}</p>
           </OverflowTooltip>
         )}
         {previous && (

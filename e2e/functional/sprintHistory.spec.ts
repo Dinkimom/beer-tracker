@@ -60,3 +60,24 @@ test('TC-102: событие истории ведёт к карточке на 
   await expect(page.getByRole('heading', { name: en.sidebar.goalsTab.deliveryGoalsHeading })).toBeVisible();
 });
 
+/** TC-103: наведение на ключ задачи показывает её паспорт, в том числе для задачи вне спринта. */
+test('TC-103: паспорт задачи при наведении на ключ в истории', async ({ page }) => {
+  await openDemoPlanner(page);
+  await page.getByRole('button', { exact: true, name: en.sidebar.tabs.history }).click();
+  const events = page.getByTestId('sprint-history-event');
+  // Radix кладёт копию содержимого в скрытый узел для скринридеров — берём видимую.
+  const passport = page.getByTestId('task-passport').first();
+
+  await events.filter({ hasText: 'DEMO-109' }).getByTestId('sprint-history-issue').hover();
+  await expect(passport).toContainText('Payments webhook: signature check');
+  await expect(passport).toContainText(en.taskPassport.assignee);
+  await expect(passport).toContainText(en.taskPassport.estimate);
+
+  await page.mouse.move(0, 0);
+  await expect(passport).toBeHidden();
+
+  // Снята со спринта: в задачах спринта её нет, паспорт приходит запросом по ключу.
+  await events.filter({ hasText: 'DEMO-204' }).getByTestId('sprint-history-issue').hover();
+  await expect(passport).toContainText('DEMO-204');
+});
+

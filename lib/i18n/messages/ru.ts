@@ -1222,6 +1222,17 @@ export const ruMessages = {
       removing: 'Удаляем…',
     },
   },
+  taskPassport: {
+    assignee: 'Исполнитель',
+    qa: 'QA',
+    estimate: 'Оценка',
+    sprint: 'Спринт',
+    parent: 'Родитель',
+    deadline: 'Срок',
+    noAssignee: 'Не назначен',
+    loading: 'Загружаем задачу…',
+    notFound: 'Задача {key} не найдена',
+  },
   sprintPlanner: {
     controls: {
       searchPlaceholder: 'Поиск по названию задачи',

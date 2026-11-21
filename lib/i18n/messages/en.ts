@@ -1220,6 +1220,17 @@ export const enMessages = {
       removing: 'Removing…',
     },
   },
+  taskPassport: {
+    assignee: 'Assignee',
+    qa: 'QA',
+    estimate: 'Estimate',
+    sprint: 'Sprint',
+    parent: 'Parent',
+    deadline: 'Due date',
+    noAssignee: 'Not assigned',
+    loading: 'Loading the task…',
+    notFound: 'Task {key} not found',
+  },
   sprintPlanner: {
     controls: {
       searchPlaceholder: 'Search by task name',

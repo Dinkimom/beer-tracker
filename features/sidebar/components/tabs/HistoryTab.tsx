@@ -134,7 +134,7 @@ export function HistoryTab() {
                   key={event.id}
                   avatarUrl={event.actor.id ? avatars.get(event.actor.id) ?? null : null}
                   event={event}
-                  taskTitle={event.source === 'tracker' ? tasksById.get(event.issueKey)?.name ?? null : null}
+                  task={event.source === 'tracker' ? tasksById.get(event.issueKey) ?? null : null}
                   timeLabel={timeFormat.format(new Date(event.at))}
                   onSelect={selectHandler(event)}
                 />
