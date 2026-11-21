@@ -1,6 +1,5 @@
 'use client';
 
-import type { SwimlaneCommentActions } from '@/features/comments/types';
 import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
@@ -56,8 +55,6 @@ import { useTaskBarPhotoCardInteractions } from './useTaskBarPhotoCardInteractio
 /** Разработчики, фильтр по имени и спринт — из `SwimlaneBoardContext`: у всех карточек доски они общие. */
 export interface TaskBarProps {
   assigneeName?: string;
-  /** Действия с заметками; нет — заметку не править (режим связи, превью плана). */
-  commentActions?: SwimlaneCommentActions;
   /** Отключить drag/resize, но оставить клики (режим связей). */
   disableDragAndResize?: boolean;
   disableResize?: boolean;
@@ -84,12 +81,16 @@ export interface TaskBarProps {
   planAnchorOverlay?: SegmentPlanAnchorOverlay | null;
   /** Карточка предложения: та же задача, геометрия из превью, без перетаскивания. */
   planPatchGhost?: boolean;
-  /** Индекс отрезка плана при ресайзе сегментированной карточки. */
-  planSegmentIndex?: number;
   quickAddMenu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & {
     title: string;
   };
   quickAddSubmitting?: boolean;
+  /** Отрезок сегментированной карточки: бейдж «n из m», индекс для ресайза, вторичный отрезок. */
+  segment?: {
+    badge?: { index: number; total: number } | null;
+    index?: number;
+    secondary?: boolean;
+  };
   stickyNoteCardRowResize?: {
     assignedTaskLayer: number;
     committedCardRowLayout?: StickyNoteCardRowLayout;
@@ -100,14 +101,9 @@ export interface TaskBarProps {
   };
   style?: React.CSSProperties;
   swimlaneDragActive?: boolean;
-  swimlaneSegmentBadge?: { index: number; total: number } | null;
-  swimlaneSegmentSecondary?: boolean;
   task: Task;
   taskPositions?: Map<string, TaskPosition>;
   widthPercent: number;
-  onContextMenu?: (e: React.MouseEvent, task: Task) => void;
-  onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
-  onDeleteLocalImage?: (taskId: string) => void;
   onResize: (params: TaskResizeParams) => void;
   onTaskHover?: (taskId: string | null) => void;
 }
@@ -128,18 +124,13 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
   disableResize = false,
   draggableId = task.id,
   htmlAnchorId = `task-${task.id}`,
-  swimlaneSegmentSecondary = false,
   linkMode = null,
   planPatchGhost = false,
   planAnchorOverlay,
-  commentActions,
-  onDeleteLocalImage,
-  onCreateQATask,
   assigneeName,
   taskPositions,
   onTaskHover,
-  onContextMenu,
-  swimlaneSegmentBadge = null,
+  segment: { badge: swimlaneSegmentBadge = null, secondary: swimlaneSegmentSecondary = false } = {},
 } = props;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const noteFocus = usePlanPatchNoteFocus(task, onTaskHover);
@@ -162,14 +153,18 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
   // Меню выбирается подпиской: карточка перерисуется, только когда её состояние меню изменилось.
   const contextMenu = useCardContextMenu(task.id);
   const {
+    commentActions,
     developers,
     globalNameFilter,
     onClick,
+    onContextMenu,
+    onCreateQATask,
+    onDeleteLocalImage,
     qaTasksMap,
     requestArrowRedraw,
     selectedSprintId,
     swimlaneTimelineTotalParts,
-  } = useTaskBarBoard(planPatchGhost);
+  } = useTaskBarBoard(planPatchGhost, disableDragAndResize);
   const { onCommentApprove, onCommentDelete, onCommentUpdate } = commentActions ?? {};
   const {
     contentDurationParts,

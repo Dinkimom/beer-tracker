@@ -104,8 +104,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     errorReasons,
     hasTaskOverlaps,
     layerHeight,
-    onContextMenu,
-    onCreateQATask,
     onTaskHover,
     onTaskResize,
     position,
@@ -360,7 +358,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     >
       <TaskBar
         assigneeName={position.assignee}
-        commentActions={linkingActive ? undefined : props.commentActions}
         disableDragAndResize={linkingActive}
         disableResize={renderState.interactionDisabled || linkingActive}
         draggableId={renderState.draggableId}
@@ -373,9 +370,13 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         leftPercent={renderState.leftPercent}
         linkMode={linkMode}
         planAnchorOverlay={planAnchorOverlay}
-        planSegmentIndex={hasMultiplePlanSegments ? segIdx : undefined}
         quickAddMenu={quickAddMenu}
         quickAddSubmitting={renderState.isQuickAddSubmitting}
+        segment={{
+          badge: renderState.segmentBadge,
+          index: hasMultiplePlanSegments ? segIdx : undefined,
+          secondary: renderState.segmentSecondary,
+        }}
         stickyNoteCardRowResize={
           isStickyNoteCard || isPhotoCard
             ? {
@@ -400,14 +401,9 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
           transition: 'opacity 0.2s ease',
         }}
         swimlaneDragActive={isDraggingTask}
-        swimlaneSegmentBadge={renderState.segmentBadge}
-        swimlaneSegmentSecondary={renderState.segmentSecondary}
         task={displayTask}
         taskPositions={taskPositions}
         widthPercent={renderState.widthPercent}
-        onContextMenu={linkingActive ? undefined : onContextMenu}
-        onCreateQATask={linkingActive ? undefined : onCreateQATask}
-        onDeleteLocalImage={linkingActive ? undefined : onCancelQuickAddDraft}
         onResize={(params) =>
           onTaskResize(task.id, {
             ...params,

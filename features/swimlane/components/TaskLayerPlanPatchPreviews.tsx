@@ -128,13 +128,13 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
               htmlAnchorId={segmentAnchorId}
               leftPercent={getLeftPercentForSegmentStartCell(startCell, timelineTotalParts)}
               planPatchGhost
+              segment={{ secondary: !isPrimary }}
               style={computeSwimlaneRowBandBox(
                 hasTaskOverlaps,
                 taskLayerMap.get(planPatchPreviewLayerKey(preview.taskId)) ?? 0,
                 taskBandTotalHeight,
                 layerHeight
               )}
-              swimlaneSegmentSecondary={!isPrimary}
               task={taskForPlanPatchPreview(
                 tasksMap.get(preview.taskId) ?? missingTasks.get(preview.taskId),
                 preview.taskId

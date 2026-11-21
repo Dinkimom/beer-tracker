@@ -118,8 +118,8 @@ export function useTaskBarDisplayState({
     | 'isInError'
     | 'leftPercent'
     | 'onResize'
-    | 'planSegmentIndex'
     | 'quickAddMenu'
+    | 'segment'
     | 'stickyNoteCardRowResize'
     | 'style'
     | 'swimlaneDragActive'
@@ -139,7 +139,6 @@ export function useTaskBarDisplayState({
     isInError = false,
     leftPercent,
     onResize,
-    planSegmentIndex,
     quickAddMenu,
     stickyNoteCardRowResize,
     style: customStyle,
@@ -149,6 +148,7 @@ export function useTaskBarDisplayState({
     widthPercent,
   } = bar;
   const { globalNameFilter, qaTasksMap, swimlaneTimelineTotalParts } = board;
+  const planSegmentIndex = bar.segment?.index;
   // Режим связей запрещает перетаскивание и ресайз, но клики оставляет.
   const isLinking = bar.disableDragAndResize ?? false;
   const interactionDisabled = (bar.interactionDisabled ?? false) || isLinking;
