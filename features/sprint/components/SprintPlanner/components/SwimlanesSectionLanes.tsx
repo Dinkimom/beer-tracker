@@ -1,6 +1,5 @@
 import type { SwimlanesSectionProps } from './SwimlanesSection.types';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
-import type { OccupancyErrorReason } from '@/lib/planner-timeline';
 import type { Comment, Developer, Task, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
@@ -79,61 +78,42 @@ function usePinnedSwimlaneFrameTops(
 }
 
 interface SwimlanesSectionLanesProps {
-  cardShadowTaskId: string | null;
+  /** Входы контекста доски — разбираются по полям в `useSwimlaneBoardValue`. */
+  boardInputs: Omit<Parameters<typeof useSwimlaneBoardValue>[0], 'section' | 'showLinks'>;
   comments: Comment[];
   developerAvailabilityMap: Map<string, { boardEvents: BoardAvailabilityEvent[] }>;
-  effectiveFactHoveredTaskId: string | null;
-  errorReasons: Map<string, OccupancyErrorReason[]>;
-  errorTaskIds: Set<string>;
-  globalNameFilter: string;
-  holidayDayIndices: Set<number>;
-  hoverConnectedTaskIds: Set<string> | null;
-  hoveredTaskId: string | null;
+  /** Наведение как есть; кластер связей дорожки приглушают только при включённых связях. */
+  hover: SwimlaneHighlight;
   linkingFromTaskId: string | null;
   linkingSessionActive: boolean;
   /** Капсула «Связь» в тулбаре — крестики удаления не показываем. */
   linkToolArmed?: boolean;
   section: SwimlanesSectionProps;
   segmentEditTaskId: string | null;
-  swimlaneFactDeveloperMap: Map<string, Developer>;
   swimlaneInProgressFactSegmentsByDev: Map<string, SwimlaneInProgressFactSegment[]>;
   swimlanePositions: Map<string, TaskPosition>;
   swimlaneRows: Developer[];
   visibleSwimlaneAssigneeIds: Set<string>;
-  onFactSegmentHover: (taskId: string | null) => void;
-  onSegmentEditCancel: () => void;
-  onTaskClick: (taskId: string) => void;
-  onTaskHover: (taskId: string | null) => void;
   onTaskHoverEnd: () => void;
 }
 
 export function SwimlanesSectionLanes({
-  cardShadowTaskId,
+  boardInputs,
+  hover,
   comments,
   developerAvailabilityMap,
-  effectiveFactHoveredTaskId,
-  errorReasons,
-  errorTaskIds,
-  globalNameFilter,
-  holidayDayIndices,
-  hoverConnectedTaskIds,
-  hoveredTaskId,
   linkToolArmed = false,
   linkingFromTaskId,
   linkingSessionActive,
   section,
   segmentEditTaskId,
-  swimlaneFactDeveloperMap,
   swimlaneInProgressFactSegmentsByDev,
   swimlanePositions,
   swimlaneRows,
   visibleSwimlaneAssigneeIds,
-  onFactSegmentHover,
-  onSegmentEditCancel,
-  onTaskClick,
-  onTaskHover,
   onTaskHoverEnd,
 }: SwimlanesSectionLanesProps) {
+  const { cardShadowTaskId, factHoveredTaskId, hoverConnectedTaskIds, hoveredTaskId } = hover;
   const [pinnedRowIds, setPinnedRowIds] = useSwimlanePinnedRowIdsStorage();
   const { pinned: pinnedRows, unpinned: unpinnedRows } = useMemo(
     () => partitionPinnedSwimlaneRows(swimlaneRows, pinnedRowIds),
@@ -190,19 +170,7 @@ export function SwimlanesSectionLanes({
     swimlaneRows,
   ]);
 
-  const board = useSwimlaneBoardValue({
-    errorReasons,
-    errorTaskIds,
-    globalNameFilter,
-    holidayDayIndices,
-    section,
-    showLinks,
-    swimlaneFactDeveloperMap,
-    onFactSegmentHover,
-    onSegmentEditCancel,
-    onTaskClick,
-    onTaskHover,
-  });
+  const board = useSwimlaneBoardValue({ ...boardInputs, section, showLinks });
 
   const activeTask = resolveSwimlaneActiveTask(
     section.dragAndDrop.activeTaskId,
@@ -213,13 +181,13 @@ export function SwimlanesSectionLanes({
   const highlight = useMemo<SwimlaneHighlight>(
     () => ({
       cardShadowTaskId,
-      factHoveredTaskId: effectiveFactHoveredTaskId,
+      factHoveredTaskId,
       hoverConnectedTaskIds: laneHoverConnectedTaskIds,
       hoveredTaskId,
     }),
     [
       cardShadowTaskId,
-      effectiveFactHoveredTaskId,
+      factHoveredTaskId,
       hoveredTaskId,
       laneHoverConnectedTaskIds,
     ]

@@ -456,30 +456,34 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
             */}
             <div className="relative shrink-0 overflow-x-clip" data-planner-swimlanes-lanes>
               <SwimlanesSectionLanes
-                cardShadowTaskId={effectiveCardShadowTaskId}
+                boardInputs={{
+                  errorReasons: occupancyErrorReasons,
+                  errorTaskIds: occupancyErrorTaskIds,
+                  globalNameFilter,
+                  holidayDayIndices,
+                  swimlaneFactDeveloperMap,
+                  onFactSegmentHover: handleFactSegmentHover,
+                  onSegmentEditCancel: handleSegmentEditCancel,
+                  onTaskClick: handleTaskClickWithLinking,
+                  onTaskHover: handleTaskHover,
+                }}
                 comments={comments}
                 developerAvailabilityMap={developerAvailabilityMap}
-                effectiveFactHoveredTaskId={effectiveFactHoveredTaskId}
-                errorReasons={occupancyErrorReasons}
-                errorTaskIds={occupancyErrorTaskIds}
-                globalNameFilter={globalNameFilter}
-                holidayDayIndices={holidayDayIndices}
-                hoverConnectedTaskIds={effectiveHoverConnectedTaskIds}
-                hoveredTaskId={hoveredTaskId}
+                hover={{
+                  cardShadowTaskId: effectiveCardShadowTaskId,
+                  factHoveredTaskId: effectiveFactHoveredTaskId,
+                  hoverConnectedTaskIds: effectiveHoverConnectedTaskIds,
+                  hoveredTaskId,
+                }}
                 linkToolArmed={linkToolArmed}
                 linkingFromTaskId={linkingFromTaskId}
                 linkingSessionActive={linkingSessionActive}
                 section={laneSection}
                 segmentEditTaskId={segmentEditTaskId}
-                swimlaneFactDeveloperMap={swimlaneFactDeveloperMap}
                 swimlaneInProgressFactSegmentsByDev={swimlaneInProgressFactSegmentsByDev}
                 swimlanePositions={swimlanePositions}
                 swimlaneRows={swimlaneRows}
                 visibleSwimlaneAssigneeIds={visibleSwimlaneAssigneeIds}
-                onFactSegmentHover={handleFactSegmentHover}
-                onSegmentEditCancel={handleSegmentEditCancel}
-                onTaskClick={handleTaskClickWithLinking}
-                onTaskHover={handleTaskHover}
                 onTaskHoverEnd={handleTaskHoverEnd}
               />
             </div>
