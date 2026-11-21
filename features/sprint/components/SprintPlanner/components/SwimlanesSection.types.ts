@@ -1,3 +1,4 @@
+import type { SwimlaneCommentActions } from '@/features/comments/types';
 import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { StatusDuration } from '@/features/task/components/TaskTimeline/types';
@@ -13,6 +14,8 @@ export interface SwimlanesSectionProps {
   /** События доступности участников доски (отпуск, больничный, дежурство) */
   boardAvailabilityEvents?: BoardAvailabilityEvent[];
   boardId: number | null;
+  /** Действия с заметками — одним объектом (`SwimlaneCommentActions`). */
+  commentActions?: SwimlaneCommentActions;
   comments: Comment[];
   commentsVisible: boolean;
   contextMenuBlurOtherCards?: boolean;
@@ -66,15 +69,6 @@ export interface SwimlanesSectionProps {
   viewMode: 'compact' | 'full';
   onAddLink?: (link: { fromTaskId: string; id: string; toTaskId: string }) => void;
   onCloseSidebar: () => void;
-  onCommentApprove?: (commentId: string) => void;
-  onCommentCardRowLayoutUpdate?: (
-    commentId: string,
-    layout: { layerShiftUp: number; span: number }
-  ) => void;
-  onCommentCreate?: (comment: Comment) => void;
-  onCommentDelete?: (commentId: string) => void;
-  onCommentParentChange?: (commentId: string, parent: TaskParent | null) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
   onCreateTaskInCell?: (data: {

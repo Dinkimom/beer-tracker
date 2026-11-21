@@ -108,7 +108,7 @@ export function FeatureSwimlanesSection({
   );
   const draftConvert = useFeatureLaneDraftConvert({
     comments: props.comments,
-    onCommentParentChange: props.onCommentParentChange,
+    onCommentParentChange: props.commentActions?.onCommentParentChange,
     onLocalTaskParentChange: handleLocalTaskParentChange,
     onPinTrackerRow: rowManagement.pinTrackerRow,
     onReplaceDraftRow: rowManagement.replaceDraftRow,
@@ -118,7 +118,7 @@ export function FeatureSwimlanesSection({
   const rowActions = useFeatureLaneRowRemove({
     comments: props.comments,
     onClearTaskParent: (taskId) => handleLocalTaskParentChange(taskId, null),
-    onCommentDelete: props.onCommentDelete,
+    onCommentDelete: props.commentActions?.onCommentDelete,
     onCommentsLeftSprint,
     onDeleteAnnotationTask: props.quickAdd?.onCancelQuickAddDraft,
     onMoveToSprint,

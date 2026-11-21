@@ -61,6 +61,7 @@ const EMPTY_SWIMLANE_FACT_COMMENTS = new Map<string, IssueComment[]>();
 const EMPTY_SWIMLANE_FACT_DEVELOPERS = new Map<string, Developer>();
 
 function SwimlaneComponent({
+  commentActions,
   quickAdd,
   developer,
   tasks: _tasks, // только для сравнения в React.memo, в рендере не используется
@@ -86,11 +87,6 @@ function SwimlaneComponent({
   sprintStartDate,
   sprintTimelineWorkingDays = WORKING_DAYS,
   developers,
-  onCommentCreate,
-  onCommentCardRowLayoutUpdate,
-  onCommentApprove,
-  onCommentDelete,
-  onCommentUpdate,
   onCloseSidebar,
   onTaskHover,
   onContextMenu,
@@ -255,7 +251,7 @@ function SwimlaneComponent({
     cellIndex: quickAddHoverPreview?.cellIndex ?? null,
     enabled: Boolean(quickAddHoverPreview && !hideQuickAddPreview),
     noteClipboard: sprintPlannerUi.noteClipboard,
-    onCommentCreate,
+    onCommentCreate: commentActions?.onCommentCreate,
     onCreateTaskInCell: objectStorageConfigured ? onCreateTaskInCell : undefined,
   });
 
@@ -347,6 +343,7 @@ function SwimlaneComponent({
               activeDraggableId={activeDraggableId}
               activeTask={activeTask}
               activeTaskDuration={activeTaskDuration}
+              commentActions={commentActions}
               contextMenuBlurOtherCards={contextMenuBlurOtherCards}
               contextMenuTaskId={contextMenuTaskId}
               currentCell={layout.currentCell}
@@ -361,8 +358,8 @@ function SwimlaneComponent({
               hoveredTaskId={hoveredTaskId}
               isDraggingTask={isDraggingTask}
               layerHeight={layout.layerHeight}
-              linkingFromTaskId={linkingFromTaskId}
-              planPatchAssigneeId={developer.id} planPatchSprintId={selectedSprintId} planPatchTasksMap={tasksMap} positionedTasks={layout.positionedTasks}
+              linkingFromTaskId={linkingFromTaskId} planPatchAssigneeId={developer.id} planPatchSprintId={selectedSprintId} planPatchTasksMap={tasksMap}
+              positionedTasks={layout.positionedTasks}
               qaTasksMap={qaTasksMap}
               quickAdd={quickAdd}
               requestArrowRedraw={requestArrowRedraw}
@@ -379,10 +376,6 @@ function SwimlaneComponent({
               taskPositions={taskPositions}
               timelineTotalParts={timelineTotalParts}
               totalHeight={layout.totalHeight}
-              onCommentApprove={onCommentApprove}
-              onCommentCardRowLayoutUpdate={onCommentCardRowLayoutUpdate}
-              onCommentDelete={onCommentDelete}
-              onCommentUpdate={onCommentUpdate}
               onContextMenu={onContextMenu}
               onCreateQATask={onCreateQATask}
               onOverdueCloseAndCreate={onOverdueCloseAndCreate}

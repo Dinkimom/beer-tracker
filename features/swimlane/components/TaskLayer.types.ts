@@ -1,3 +1,4 @@
+import type { SwimlaneCommentActions } from '@/features/comments/types';
 import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
@@ -9,6 +10,8 @@ export interface TaskLayerProps {
   activeDraggableId?: string | null;
   activeTask: Task | null;
   activeTaskDuration: number | null;
+  /** Действия с заметками — одним объектом (`SwimlaneCommentActions`). */
+  commentActions?: SwimlaneCommentActions;
   contextMenuBlurOtherCards?: boolean;
   contextMenuTaskId: string | null;
   currentCell: number;
@@ -50,13 +53,6 @@ export interface TaskLayerProps {
   /** Всего частей дня в таймлайне (рабочие дни × части дня) */
   timelineTotalParts: number;
   totalHeight: number;
-  onCommentApprove?: (commentId: string) => void;
-  onCommentCardRowLayoutUpdate?: (
-    commentId: string,
-    layout: { layerShiftUp: number; span: number }
-  ) => void;
-  onCommentDelete?: (commentId: string) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu?: (e: MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
   onOverdueCloseAndCreate?: (args: {

@@ -1,3 +1,4 @@
+import type { SwimlaneCommentActions } from '@/features/comments/types';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
@@ -19,6 +20,8 @@ import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 type SwimlaneProps = ComponentProps<typeof Swimlane>;
 
 export function buildSwimlanePropsForDeveloper(input: {
+  /** Действия с заметками — одним объектом (`SwimlaneCommentActions`). */
+  commentActions?: SwimlaneCommentActions;
   /** Быстрое добавление — одним объектом (`QuickAddController`). */
   quickAdd?: QuickAddController;
   activeDraggableId: string | null;
@@ -44,11 +47,6 @@ export function buildSwimlanePropsForDeveloper(input: {
   hoverConnectedTaskIds: Set<string> | null;
   hoveredTaskId: string | null;
   onCloseSidebar: () => void;
-  onCommentApprove?: (commentId: string) => void;
-  onCommentCardRowLayoutUpdate?: SwimlaneProps['onCommentCardRowLayoutUpdate'];
-  onCommentCreate?: (comment: Comment) => void;
-  onCommentDelete?: (commentId: string) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
   onOverdueCloseAndCreate?: SwimlaneProps['onOverdueCloseAndCreate'];
@@ -95,6 +93,7 @@ export function buildSwimlanePropsForDeveloper(input: {
   );
 
   return {
+    commentActions: input.commentActions,
     quickAdd: input.quickAdd,
     activeDraggableId: input.activeDraggableId,
     activeTask: input.activeTask,
@@ -136,11 +135,6 @@ export function buildSwimlanePropsForDeveloper(input: {
     tasksMap: mergeSwimlaneCommentTasksMap(input.tasksMap, commentProjection.tasksMap),
     viewMode: input.viewMode,
     onCloseSidebar: input.onCloseSidebar,
-    onCommentCreate: input.onCommentCreate,
-    onCommentCardRowLayoutUpdate: input.onCommentCardRowLayoutUpdate,
-    onCommentApprove: input.onCommentApprove,
-    onCommentDelete: input.onCommentDelete,
-    onCommentUpdate: input.onCommentUpdate,
     onContextMenu: input.onContextMenu,
     onCreateQATask: input.onCreateQATask,
     onCreateTaskInCell: input.onCreateTaskInCell,

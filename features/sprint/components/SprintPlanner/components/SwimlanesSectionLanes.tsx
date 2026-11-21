@@ -155,6 +155,7 @@ export function SwimlanesSectionLanes({
     const map = new Map<string, ReturnType<typeof buildSwimlanePropsForDeveloper>>();
     for (const developer of swimlaneRows) {
       map.set(developer.id, buildSwimlanePropsForDeveloper({
+        commentActions: section.commentActions,
         quickAdd: section.quickAdd,
         activeDraggableId: section.dragAndDrop.activeDraggableId,
         activeTask: resolveSwimlaneActiveTask(
@@ -185,11 +186,6 @@ export function SwimlanesSectionLanes({
         linkingFromTaskId: showLinks ? linkingFromTaskId : null,
         showLinks,
         onCloseSidebar: section.onCloseSidebar,
-        onCommentCreate: section.onCommentCreate,
-        onCommentCardRowLayoutUpdate: section.onCommentCardRowLayoutUpdate,
-        onCommentApprove: section.onCommentApprove,
-        onCommentDelete: section.onCommentDelete,
-        onCommentUpdate: section.onCommentUpdate,
         onContextMenu: section.onContextMenu,
         onCreateQATask: section.onCreateQATask,
         onCreateTaskInCell: section.onCreateTaskInCell,

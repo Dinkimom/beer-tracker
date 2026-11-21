@@ -8,7 +8,6 @@ import type { SprintListItem } from '@/types/tracker';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { getPartsPerDay } from '@/constants';
-import { useI18n } from '@/contexts/LanguageContext';
 import { useBoards } from '@/features/board/hooks/useBoards';
 import {
   buildSwimlaneCommentProjection,
@@ -34,7 +33,6 @@ import { useDevelopersManagement } from '../../../hooks/useDevelopersManagement'
 import { useKeyboardAndMouseHandlers } from '../../../hooks/useKeyboardAndMouseHandlers';
 import { useTaskOperations } from '../../../hooks/useTaskOperations';
 
-import { deleteSwimlaneCommentAfterDiagramConfirm } from './confirmSwimlaneDiagramDelete';
 import { useFeatureLanePlannerDrag } from './useFeatureLanePlannerDrag';
 import { useSprintPlannerActiveDragTask } from './useSprintPlannerActiveDragTask';
 import { useSprintPlannerAssigneePicker } from './useSprintPlannerAssigneePicker';
@@ -42,6 +40,7 @@ import { useSprintPlannerEstimateHandlers } from './useSprintPlannerEstimateHand
 import { useSprintPlannerHandlers } from './useSprintPlannerHandlers';
 import { useSprintPlannerQuickAddDraft } from './useSprintPlannerQuickAddDraft';
 import { useSprintPlannerWorkflowScreens } from './useSprintPlannerWorkflowScreens';
+import { useSwimlaneCommentActions } from './useSwimlaneCommentActions';
 
 type DevelopersManagement = ReturnType<typeof useDevelopersManagement>;
 type WorkflowScreens = ReturnType<typeof useSprintPlannerWorkflowScreens>;
@@ -159,7 +158,6 @@ export function useSprintPlannerViewModelInteractions({
   viewMode,
   workflowScreens,
 }: UseSprintPlannerViewModelInteractionsParams) {
-  const { t } = useI18n();
   const annotationLayers = useMemo(
     () => ({
       imagesVisible: swimlaneImagesVisible,
@@ -299,26 +297,7 @@ export function useSprintPlannerViewModelInteractions({
     workflowScreens,
   });
 
-  const handleCommentCreateWithFocus = useCallback(
-    (comment: Parameters<NonNullable<typeof handlers>['handleCommentCreate']>[0]) => {
-      handlers.handleCommentCreate(comment);
-    },
-    [handlers]
-  );
-
-  const handleCommentDelete = useCallback(
-    (commentId: string) =>
-      deleteSwimlaneCommentAfterDiagramConfirm({
-        closeDiagramEditor: sprintPlannerUi.closeDiagramEditor,
-        commentId,
-        comments,
-        confirm,
-        deleteNow: handlers.handleCommentDelete,
-        diagramEditorTaskId: sprintPlannerUi.diagramEditorTaskId,
-        t,
-      }),
-    [comments, confirm, handlers.handleCommentDelete, sprintPlannerUi, t]
-  );
+  const { commentActions, handleCommentDelete } = useSwimlaneCommentActions({ comments, confirm, handlers });
 
   const featureLaneDrag = useFeatureLanePlannerDrag({
     allTasksForDrag,
@@ -423,7 +402,7 @@ export function useSprintPlannerViewModelInteractions({
     developers,
     forDemoPlanner,
     getQueueByBoardId,
-    onCommentCreate: handleCommentCreateWithFocus,
+    onCommentCreate: handlers.handleCommentCreate,
     onCommentDelete: handlers.handleCommentDelete,
     onCommentUpdate: handlers.handleCommentUpdate,
     onDiagramEditorClose: sprintPlannerUi.closeDiagramEditor,
@@ -464,7 +443,7 @@ export function useSprintPlannerViewModelInteractions({
     filteredTaskPositionsWithComments,
     handleAssigneeSelect,
     handleContextMenuAssigneeSelect,
-    handleCommentCreateWithFocus,
+    commentActions,
     handleCreateTaskInSwimlaneCell,
     handleOccupancyPositionSave,
     handleSegmentEditSave,

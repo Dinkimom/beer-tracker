@@ -1,9 +1,10 @@
 import type { TaskLayerProps } from './TaskLayer.types';
+import type { SwimlaneCommentActions } from '@/features/comments/types';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { OccupancyErrorReason } from '@/lib/planner-timeline';
-import type { Comment, Developer, LayoutViewMode, Task, TaskParent, TaskPosition } from '@/types';
+import type { Developer, LayoutViewMode, Task, TaskParent, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
@@ -28,6 +29,8 @@ export interface SwimlaneProps
    * Затемняет бары факта других задач и не трогает карточки.
    */
   cardShadowTaskId?: string | null;
+  /** Действия с заметками — одним объектом (`SwimlaneCommentActions`). */
+  commentActions?: SwimlaneCommentActions;
   commentCardRowById?: ReadonlyMap<string, StickyNoteCardRowLayout>;
   contextMenuBlurOtherCards?: boolean;
   contextMenuTaskId?: string | null;
@@ -83,14 +86,6 @@ export interface SwimlaneProps
   tasksMap: Map<string, Task>;
   viewMode?: LayoutViewMode;
   onCloseSidebar?: () => void;
-  onCommentApprove?: (commentId: string) => void;
-  onCommentCardRowLayoutUpdate?: (
-    commentId: string,
-    layout: { layerShiftUp: number; span: number }
-  ) => void;
-  onCommentCreate?: (comment: Comment) => void;
-  onCommentDelete?: (commentId: string) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
   onCreateTaskInCell?: (data: {

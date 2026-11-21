@@ -109,6 +109,8 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     quickAddParentSelectOptions = [],
     quickAddQueueOptions = [],
   } = props.quickAdd ?? NO_QUICK_ADD;
+  const { onCommentApprove, onCommentCardRowLayoutUpdate, onCommentDelete, onCommentUpdate } =
+    props.commentActions ?? {};
   const {
     contextMenuBlurOtherCards = false,
     contextMenuTaskId,
@@ -117,10 +119,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     globalNameFilter,
     hasTaskOverlaps,
     layerHeight,
-    onCommentApprove,
-    onCommentDelete,
-    onCommentCardRowLayoutUpdate,
-    onCommentUpdate,
     onContextMenu,
     onCreateQATask,
     onTaskClick,
