@@ -24,7 +24,7 @@
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerHandlers.types.ts::props-width::UseSprintPlannerHandlersProps": 34,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerQuickAddDraft.ts::hook-lines": 377,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerUIHandlers.ts::props-width::UseSprintPlannerUIHandlersProps": 22,
-  "features/sprint/components/SprintPlanner/hooks/useSprintPlannerViewModel.ts::hook-lines": 384,
+  "features/sprint/components/SprintPlanner/hooks/useSprintPlannerViewModel.ts::hook-lines": 382,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerViewModelInteractions.ts::hook-lines": 437,
   "features/sprint/components/SprintPlanner/kanban/KanbanColumnsLayout.tsx::pass-through": 84,
   "features/sprint/components/SprintPlanner/kanban/KanbanLaneSection.tsx::pass-through": 65,

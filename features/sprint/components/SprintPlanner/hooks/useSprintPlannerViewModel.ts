@@ -16,6 +16,7 @@ import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoar
 import { useBoards } from '@/features/board/hooks/useBoards';
 import { useSprintPlannerTrackerLinkHandlers } from '@/features/sprint/hooks/useSprintPlannerTrackerLinkHandlers';
 import { computeAssigneePointsStats } from '@/features/sprint/utils/assigneePointsStats';
+import { useLatestCallback } from '@/hooks/useLatestCallback';
 import { useDebouncedCallback } from '@/hooks/usePerformance';
 import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
@@ -80,7 +81,10 @@ export function useSprintPlannerViewModel({
 }: UseSprintPlannerViewModelParams) {
   const forDemoPlanner = useDemoPlannerBoardsQueryScope();
   const { sprintPlannerUi } = useRootStore();
-  const updateXarrow = useXarrow();
+  // useXarrow отдаёт новую функцию на каждый рендер; без стабильной обёртки эффект ниже
+  // (начальная перерисовка стрелок) перезапускался после каждого рендера и сам вызывал рендер —
+  // доска перерисовывалась несколько раз в секунду без действий пользователя.
+  const updateXarrow = useLatestCallback(useXarrow());
   const { boards, getQueueByBoardId } = useBoards();
   const { activeOrganizationId: tenantOrganizationId } = useProductTenantOrganizations({
     pollIntervalMs: 0,
@@ -89,10 +93,8 @@ export function useSprintPlannerViewModel({
   const { data: plannerIntegrationRules, isFetched: plannerRulesFetched } =
     usePlannerIntegrationRules(activeOrganizationId);
 
-  const debouncedUpdateXarrow = useDebouncedCallback(updateXarrow, 100, {
-    leading: true,
-    trailing: true,
-  });
+  // leading и trailing — умолчания useDebouncedCallback.
+  const debouncedUpdateXarrow = useDebouncedCallback(updateXarrow, 100);
 
   const {
     selectedBoardId,

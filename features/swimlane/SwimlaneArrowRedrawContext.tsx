@@ -4,6 +4,7 @@ import { createContext, useCallback, useEffect, useRef, useState, type ReactNode
 import { useXarrow } from 'react-xarrows';
 
 import { PLANNER_LOADING_OVERLAY_HIDDEN_EVENT } from '@/components/plannerLoadingOverlayEvents';
+import { useLatestCallback } from '@/hooks/useLatestCallback';
 import { DELAYS } from '@/utils/constants';
 
 /** Один useXarrow на свимлейны внутри Xwrapper. */
@@ -16,17 +17,13 @@ export const SwimlaneArrowRedrawContext = createContext<(() => void) | null>(nul
 export const SwimlaneArrowRedrawGenerationContext = createContext(0);
 
 export function SwimlaneXarrowRedrawProvider({ children }: { children: ReactNode }) {
-  const rawRedraw = useXarrow();
-  const rawRef = useRef(rawRedraw);
+  const rawRedraw = useLatestCallback(useXarrow());
   const layoutRef = useRef<HTMLDivElement>(null);
   const [redrawGeneration, setRedrawGeneration] = useState(0);
-  useEffect(() => {
-    rawRef.current = rawRedraw;
-  });
   const stableRedraw = useCallback(() => {
-    rawRef.current();
+    rawRedraw();
     setRedrawGeneration((g) => g + 1);
-  }, []);
+  }, [rawRedraw]);
 
   useEffect(() => {
     window.addEventListener(PLANNER_LOADING_OVERLAY_HIDDEN_EVENT, stableRedraw);
