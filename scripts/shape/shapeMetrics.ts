@@ -1,7 +1,8 @@
 /**
  * Метрики формы кода, которые делают доску дорогой в поддержке (см. AGENTS.md, «Форма кода»):
  * - ширина `*Props` — сколько полей у пропсов компонента;
- * - проброс — доля JSX-атрибутов вида `x={x}`: слой, который в основном передаёт дальше;
+ * - проброс — доля JSX-атрибутов, которые передают полученный пропс без вычислений
+ *   (`x={x}`, `y={props.x}`, `z={handlers.z}`): слой, который в основном передаёт дальше;
  * - размер хука — непустые строки файла `use*.ts(x)`.
  */
 import ts from 'typescript';
@@ -53,8 +54,56 @@ function measurePropsWidths(source: ts.SourceFile): Array<{ name: string; width:
   return out;
 }
 
-/** JSX-атрибуты файла и сколько из них — проброс одноимённой переменной `x={x}`. */
+function addBindingNames(name: ts.BindingName, names: Set<string>): void {
+  if (ts.isIdentifier(name)) {
+    names.add(name.text);
+    return;
+  }
+  for (const element of name.elements) {
+    if (!ts.isOmittedExpression(element)) addBindingNames(element.name, names);
+  }
+}
+
+function isComponentPropsParam(param: ts.ParameterDeclaration, source: ts.SourceFile): boolean {
+  const type = param.type;
+  if (type && ts.isTypeReferenceNode(type) && /Props$/.test(type.typeName.getText(source))) return true;
+  return ts.isIdentifier(param.name) && param.name.text === 'props';
+}
+
+/** Имена, под которыми компоненты файла получили пропсы: параметр `{ a, b }: XProps`, `props` и `const { a } = props`. */
+function collectPropNames(source: ts.SourceFile): Set<string> {
+  const names = new Set<string>();
+  const visit = (node: ts.Node): void => {
+    const isFunction = ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node);
+    const first = isFunction ? node.parameters[0] : undefined;
+    if (first && isComponentPropsParam(first, source)) addBindingNames(first.name, names);
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isObjectBindingPattern(node.name) &&
+      node.initializer &&
+      ts.isIdentifier(node.initializer) &&
+      node.initializer.text === 'props'
+    ) {
+      addBindingNames(node.name, names);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return names;
+}
+
+/** Значение передаёт полученный пропс без вычислений: `x`, `props.x`, `handlers.y` (корень — пропс). */
+function isForwardedProp(expression: ts.Expression, propNames: ReadonlySet<string>): boolean {
+  let node: ts.Expression = expression;
+  while (ts.isParenthesizedExpression(node) || ts.isNonNullExpression(node) || ts.isPropertyAccessExpression(node)) {
+    node = node.expression;
+  }
+  return ts.isIdentifier(node) && propNames.has(node.text);
+}
+
+/** JSX-атрибуты файла и сколько из них передают дальше полученный пропс без изменений. */
 function measurePassThrough(source: ts.SourceFile): { attrs: number; passThrough: number } {
+  const propNames = collectPropNames(source);
   let attrs = 0;
   let passThrough = 0;
   const visit = (node: ts.Node): void => {
@@ -62,9 +111,7 @@ function measurePassThrough(source: ts.SourceFile): { attrs: number; passThrough
       attrs += 1;
       const init = node.initializer;
       const expression = init && ts.isJsxExpression(init) ? init.expression : undefined;
-      if (expression && ts.isIdentifier(expression) && expression.text === node.name.getText(source)) {
-        passThrough += 1;
-      }
+      if (expression && isForwardedProp(expression, propNames)) passThrough += 1;
     }
     ts.forEachChild(node, visit);
   };

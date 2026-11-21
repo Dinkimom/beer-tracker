@@ -8,9 +8,10 @@ function propsInterface(name: string, width: number): string {
 }
 
 function forwardingComponent(attrs: number, passThrough: number): string {
-  const forwarded = Array.from({ length: passThrough }, (_, i) => `a${i}={a${i}}`);
+  const props = Array.from({ length: passThrough }, (_, i) => `a${i}`);
+  const forwarded = props.map((name) => `${name}={${name}}`);
   const own = Array.from({ length: attrs - passThrough }, (_, i) => `b${i}={compute(${i})}`);
-  return `export function Layer() {\n  return <Child ${[...forwarded, ...own].join(' ')} />;\n}\n`;
+  return `export function Layer({ ${props.join(', ')} }: LayerProps) {\n  return <Child ${[...forwarded, ...own].join(' ')} />;\n}\n`;
 }
 
 describe('measureFileShape', () => {
@@ -35,6 +36,18 @@ describe('measureFileShape', () => {
     ]);
     expect(measureFileShape('features/a/Layer.tsx', forwardingComponent(20, 10))).toEqual([]);
     expect(measureFileShape('features/a/Small.tsx', forwardingComponent(10, 10))).toEqual([]);
+  });
+
+  it('counts fields of a received slice as pass-through, but not computed locals', () => {
+    const slice = Array.from({ length: 15 }, (_, i) => `on${i}={handlers.handle${i}}`).join(' ');
+    const locals = Array.from({ length: 15 }, (_, i) => `c${i}={c${i}}`).join(' ');
+    const own = Array.from({ length: 5 }, (_, i) => `d${i}={compute(${i})}`).join(' ');
+    const component = (attrs: string) =>
+      `function View({ handlers }: ViewProps) {\n  ${Array.from({ length: 15 }, (_, i) => `const c${i} = compute(${i});`).join('\n  ')}\n  return <Child ${attrs} />;\n}\n`;
+    expect(measureFileShape('features/a/View.tsx', component(`${slice} ${own}`))).toEqual([
+      { file: 'features/a/View.tsx', metric: 'pass-through', name: '', value: 75 },
+    ]);
+    expect(measureFileShape('features/a/View.tsx', component(`${locals} ${own}`))).toEqual([]);
   });
 
   it('flags only hook files over the line limit', () => {

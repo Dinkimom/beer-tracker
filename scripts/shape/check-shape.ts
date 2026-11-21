@@ -49,7 +49,7 @@ function readBaseline(): ShapeBaseline {
 
 const UNIT: Record<ShapeViolation['metric'], string> = {
   'hook-lines': `строк (порог ${SHAPE_LIMITS.maxHookLines})`,
-  'pass-through': `% проброса x={x} (порог ${SHAPE_LIMITS.maxPassThroughShare * 100}%)`,
+  'pass-through': `% проброса пропсов (порог ${SHAPE_LIMITS.maxPassThroughShare * 100}%)`,
   'props-width': `полей (порог ${SHAPE_LIMITS.maxPropsWidth})`,
 };
 
