@@ -63,15 +63,15 @@ export function useTaskPositionsApi(
 
   return [
     positionsStore.positions as Map<string, TaskPosition>,
-    (updater, options) => positionsStore.setPositionsWithSave(updater, options),
-    (position, isQa, devTaskKey, immediate, options) =>
-      positionsStore.savePosition(position, isQa, devTaskKey, immediate, options),
-    (taskId, options) => positionsStore.deletePosition(taskId, options),
+    // Методы стора привязаны (`action.bound`) — ссылки стабильны между рендерами.
+    positionsStore.setPositionsWithSave,
+    positionsStore.savePosition,
+    positionsStore.deletePosition,
     {
       canRedo: positionsStore.canRedo,
       canUndo: positionsStore.canUndo,
-      redo: () => positionsStore.redo(),
-      undo: () => positionsStore.undo(),
+      redo: positionsStore.redo,
+      undo: positionsStore.undo,
     },
   ];
 }

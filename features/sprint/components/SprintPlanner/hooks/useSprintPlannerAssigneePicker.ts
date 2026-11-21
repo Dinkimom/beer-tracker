@@ -24,7 +24,7 @@ export type AssigneePickerState =
     };
 
 interface UseSprintPlannerAssigneePickerParams {
-  /** Задачи и заметки — из модели доски в момент выбора. */
+  /** Задачи, заметки и позиции — из модели доски. */
   board: SprintBoard;
   developers: Developer[];
   filteredTaskPositions: Map<string, TaskPosition>;
@@ -37,14 +37,6 @@ interface UseSprintPlannerAssigneePickerParams {
   };
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   syncAssignees: boolean;
-  taskPositions: Map<string, TaskPosition>;
-  savePosition: (
-    position: TaskPosition,
-    isQa: boolean,
-    devKey?: string,
-    force?: boolean,
-    options?: { recordHistory?: boolean }
-  ) => Promise<void>;
 }
 
 export function useSprintPlannerAssigneePicker({
@@ -52,11 +44,11 @@ export function useSprintPlannerAssigneePicker({
   developers,
   filteredTaskPositions,
   qaTaskManagement,
-  savePosition,
   setTasks,
   syncAssignees,
-  taskPositions,
 }: UseSprintPlannerAssigneePickerParams) {
+  const { displayPositions: taskPositions } = board;
+  const { savePosition } = board.positions;
   const [assigneePicker, setAssigneePicker] = useState<AssigneePickerState | null>(null);
 
   const handleContextMenuAssigneeSelect = useCallback(

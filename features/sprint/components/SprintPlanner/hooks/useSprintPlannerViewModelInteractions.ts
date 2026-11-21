@@ -99,16 +99,12 @@ export function useSprintPlannerViewModelInteractions({
     allTasksForDrag,
     board,
     comments,
-    deletePosition,
     developers,
     filteredTaskLinks,
     filteredTaskPositions,
-    savePosition,
-    setTaskPositions,
     setTasks,
     taskLinks,
     taskPositions,
-    tasks,
     tasksMap,
     viewMode,
   } = state;
@@ -151,10 +147,8 @@ export function useSprintPlannerViewModelInteractions({
   }, [comments, taskLinks, tasksMapWithComments, trackerTaskLinks]);
   const taskOperations = useTaskOperations({
     board,
-    deletePosition,
     onTasksReload,
     selectedSprintId,
-    setTaskPositions,
     setTasks,
     sprints,
     updateXarrow: debouncedUpdateXarrow,
@@ -162,13 +156,10 @@ export function useSprintPlannerViewModelInteractions({
 
   const qaTaskManagement = useQATaskManagement({
     board,
-    taskPositions,
     filteredTaskPositions,
     sortedDevelopers: developersManagement.sortedDevelopers,
     selectedSprintId,
-    savePosition,
     sprintTimelineWorkingDays,
-    setTaskPositions,
     updateXarrow: debouncedUpdateXarrow,
   });
 
@@ -178,7 +169,6 @@ export function useSprintPlannerViewModelInteractions({
     handleSplitPhaseIntoSegments,
     handleUpdateEstimate,
   } = useSprintPlannerEstimateHandlers({
-    savePosition,
     setTasks,
     syncEstimates,
     tasksMap,
@@ -195,10 +185,8 @@ export function useSprintPlannerViewModelInteractions({
     developers,
     filteredTaskPositions,
     qaTaskManagement,
-    savePosition,
     setTasks,
     syncAssignees,
-    taskPositions,
   });
 
   const resetDragStateRef = useRef<(() => void) | null>(null);
@@ -321,11 +309,10 @@ export function useSprintPlannerViewModelInteractions({
     featureDraftRowNamesById,
     quickAdd,
   } = useSprintPlannerQuickAddDraft({
+    board,
     boardIdForPlannerData,
     boards,
     closeNoteComposer: sprintPlannerUi.closeNoteComposer,
-    comments,
-    developers,
     forDemoPlanner,
     getQueueByBoardId,
     onCommentCreate: handlers.handleCommentCreate,
@@ -334,14 +321,10 @@ export function useSprintPlannerViewModelInteractions({
     onDiagramEditorClose: sprintPlannerUi.closeDiagramEditor,
     onDiagramEditorOpen: sprintPlannerUi.openDiagramEditor,
     onOpenCreatedTask: sprintPlannerUi.openTaskInfoPanel,
-    savePosition,
     selectedSprintId,
-    setTaskPositions,
     setTasks,
     sprintTimelineWorkingDays,
     swimlaneImagesVisible,
-    taskPositions,
-    tasks,
     tasksMap,
   });
 

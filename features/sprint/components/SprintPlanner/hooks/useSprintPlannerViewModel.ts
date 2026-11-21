@@ -118,7 +118,6 @@ export function useSprintPlannerViewModel({
     setViewMode,
     isMounted,
     taskPositions,
-    deletePosition,
     positionHistory,
     comments,
     boardViewers,
@@ -170,7 +169,7 @@ export function useSprintPlannerViewModel({
 
   useSprintPlannerBoardEffects({
     debouncedUpdateXarrow,
-    deletePosition,
+    deletePosition: state.board.positions.deletePosition,
     isMounted,
     scrollContainerRef,
     selectedSprintId,

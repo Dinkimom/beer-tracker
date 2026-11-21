@@ -2,6 +2,7 @@
  * Хук для обработчиков операций с задачами в SprintPlanner
  */
 
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { Developer, Task, TaskPosition } from '@/types';
 
@@ -19,53 +20,37 @@ import { handleTaskResizeAfterResize } from './sprintPlannerTaskHandlersResizeHe
 import { runAutoAddToSwimlane } from './useSprintPlannerTaskHandlersAutoAddHelpers';
 
 interface UseSprintPlannerTaskHandlersProps {
+  /** Задачи, QA-задачи и позиции (с сохранением) — из модели доски. */
+  board: SprintBoard;
   developers: Developer[];
   filteredTaskPositions?: Map<string, TaskPosition>;
   qaTaskManagement?: {
     createQATask: (devTaskId: string, qaTasksMap: Map<string, Task>, tasks: Task[]) => void;
   };
-  qaTasksByOriginalId: Map<string, Task>;
-  qaTasksMap: Map<string, Task>;
   selectedSprintId: number | null;
   /** Рабочих дней в таймлайне (длина спринта) */
   sprintTimelineWorkingDays?: number;
-  tasks: Task[];
   tasksMap: Map<string, Task>;
   debouncedUpdateXarrow: () => void;
-  deletePosition: (taskId: string, options?: { recordHistory?: boolean }) => Promise<void>;
   /** Нет qaEngineer на dev-задаче — открыть пикер QA (anchor с кнопки +) */
   onRequestQaEngineerPicker?: (devTaskId: string, anchorRect: DOMRect) => void;
-  savePosition: (
-    position: TaskPosition,
-    isQa: boolean,
-    devTaskKey?: string,
-    immediate?: boolean,
-    options?: PositionHistoryOptions
-  ) => Promise<void>;
-  setTaskPositions: (
-    updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>,
-    options?: PositionHistoryOptions
-  ) => void;
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }
 
 export function useSprintPlannerTaskHandlers({
+  board,
   developers,
   filteredTaskPositions,
   qaTaskManagement,
   onRequestQaEngineerPicker,
-  qaTasksByOriginalId,
-  qaTasksMap,
   selectedSprintId,
   sprintTimelineWorkingDays = WORKING_DAYS,
-  setTaskPositions,
   setTasks,
-  tasks,
   tasksMap,
   debouncedUpdateXarrow,
-  deletePosition,
-  savePosition,
 }: UseSprintPlannerTaskHandlersProps) {
+  const { qaTasksByOriginalId, qaTasksMap, tasks } = board;
+  const { deletePosition, savePosition, setPositionsWithSave: setTaskPositions } = board.positions;
   const [syncEstimates] = useDataSyncEstimatesStorage();
   // Хук для обработки изменения размера задач
   const timelineTotalCells = sprintTimelineWorkingDays * getPartsPerDay();

@@ -4,7 +4,7 @@
 
 import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
-import type { Task, TaskPosition } from '@/types';
+import type { Task } from '@/types';
 
 import { useCallback, type MutableRefObject } from 'react';
 
@@ -36,15 +36,12 @@ interface UseSprintPlannerAutoAssignHandlersProps {
   selectedSprintId: number | null;
   sprintStartDate: Date;
   sprintTimelineWorkingDays: number;
-  taskPositions: Map<string, TaskPosition>;
   tasksMap: Map<string, Task>;
   confirm: (message: string, options?: {
     title?: string;
     variant?: 'default' | 'destructive';
   }) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
-  savePosition: (position: TaskPosition, isQa: boolean) => Promise<void>;
-  setTaskPositions: (updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>) => void;
 }
 
 export function useSprintPlannerAutoAssignHandlers({
@@ -54,19 +51,18 @@ export function useSprintPlannerAutoAssignHandlers({
   holidayDayIndices,
   resetDragStateRef,
   selectedSprintId,
-  setTaskPositions,
   sprintStartDate,
   sprintTimelineWorkingDays,
-  taskPositions,
   tasksMap,
   confirm,
   debouncedUpdateXarrow,
 }: UseSprintPlannerAutoAssignHandlersProps) {
   const { setWithSave: setTaskLinks } = board.links;
+  const { setPositionsWithSave: setTaskPositions } = board.positions;
   const handleAutoAssignTasks = useCallback(async () => {
     const confirmed = await confirmAutoAssignIfNeeded({
       confirm,
-      taskPositionsCount: taskPositions.size,
+      taskPositionsCount: board.displayPositions.size,
     });
     if (!confirmed) {
       return;
@@ -127,7 +123,6 @@ export function useSprintPlannerAutoAssignHandlers({
     setTimeout(() => debouncedUpdateXarrow(), DELAYS.ARROW_UPDATE);
   }, [
     confirm,
-    taskPositions.size,
     selectedSprintId,
     setTaskPositions,
     setTaskLinks,

@@ -82,6 +82,11 @@ export class SprintBoard {
     return this.deps.comments;
   }
 
+  /** Позиции задач спринта: чтение, правки с сохранением и история плана. */
+  get positions(): TaskPositionsStore {
+    return this.deps.positions;
+  }
+
   /** Пользовательские связи задач (стрелки). */
   get links(): SprintLinks {
     return this.deps.links;

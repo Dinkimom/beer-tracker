@@ -1,12 +1,12 @@
 import type { CustomSelectOption } from '@/components/CustomSelect';
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type {
   QuickAddController,
   QuickAddDraftKind,
 } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { BoardListItem } from '@/lib/api/types';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
-import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
-import type { Comment, Developer, Task, TaskParent, TaskPosition } from '@/types';
+import type { Comment, Task, TaskParent } from '@/types';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 
@@ -46,17 +46,15 @@ import { useSprintPlannerQuickAddIssueActions } from './useSprintPlannerQuickAdd
 import { useSprintPlannerQuickAddNoteActions } from './useSprintPlannerQuickAddNoteActions';
 
 interface UseSprintPlannerQuickAddDraftParams {
+  /** Задачи, разработчики, заметки и позиции (с сохранением) — из модели доски. */
+  board: SprintBoard;
   boardIdForPlannerData: number | null;
   boards: BoardListItem[];
-  comments: Comment[];
-  developers: Developer[];
   forDemoPlanner: boolean;
   selectedSprintId: number | null;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   sprintTimelineWorkingDays: number;
   swimlaneImagesVisible?: boolean;
-  taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
   tasksMap: Map<string, Task>;
   closeNoteComposer: () => void;
   getQueueByBoardId: (boardId: number | null) => string | null;
@@ -66,27 +64,13 @@ interface UseSprintPlannerQuickAddDraftParams {
   onDiagramEditorClose: () => void;
   onDiagramEditorOpen: (taskId: string) => void;
   onOpenCreatedTask: (task: Task) => void;
-  savePosition: (
-    position: TaskPosition,
-    isQa: boolean,
-    devKey?: string,
-    force?: boolean,
-    options?: { recordHistory?: boolean }
-  ) => Promise<void>;
-  setTaskPositions: (
-    positions:
-      | Map<string, TaskPosition>
-      | ((prev: Map<string, TaskPosition>) => Map<string, TaskPosition>),
-    options?: PositionHistoryOptions
-  ) => void;
 }
 
 export function useSprintPlannerQuickAddDraft({
+  board,
   boardIdForPlannerData,
   boards,
   closeNoteComposer,
-  comments,
-  developers,
   forDemoPlanner,
   getQueueByBoardId,
   onCommentCreate,
@@ -95,16 +79,15 @@ export function useSprintPlannerQuickAddDraft({
   onDiagramEditorClose,
   onDiagramEditorOpen,
   onOpenCreatedTask,
-  savePosition,
   selectedSprintId,
-  setTaskPositions,
   setTasks,
   sprintTimelineWorkingDays,
   swimlaneImagesVisible = true,
-  taskPositions,
-  tasks,
   tasksMap,
 }: UseSprintPlannerQuickAddDraftParams) {
+  const { developers, displayPositions: taskPositions, tasks } = board;
+  const comments = board.comments.items;
+  const { savePosition, setPositionsWithSave: setTaskPositions } = board.positions;
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
   const keepInlineCardDraftRef = useRef(false);

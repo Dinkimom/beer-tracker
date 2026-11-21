@@ -128,7 +128,8 @@ export function useSprintPlannerState({
 
   const getTaskInfoRef = useRef<GetTaskInfoFn | undefined>(undefined);
 
-  const [, setTaskPositions, savePosition, deletePosition, positionHistory] = useTaskPositionsApi(
+  // Правки позиций — у `board.positions`; здесь — загрузка спринта и история плана.
+  const [, , , , positionHistory] = useTaskPositionsApi(
     selectedSprintId,
     getTaskInfoRef
   );
@@ -249,9 +250,6 @@ export function useSprintPlannerState({
     isMounted,
 
     taskPositions: displayTaskPositions,
-    setTaskPositions,
-    savePosition,
-    deletePosition,
     positionHistory,
     taskLinks,
     comments,

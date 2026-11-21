@@ -124,7 +124,8 @@ export class TaskPositionsStore {
 
   constructor() {
     makeObservable(this, {
-      deletePosition: action,
+      // Действия с позициями привязаны: доска и обработчики передают их как значения.
+      deletePosition: action.bound,
       draftTaskIds: observable,
       canRedo: computed,
       planDraftCount: computed,
@@ -136,14 +137,14 @@ export class TaskPositionsStore {
       positionsLoadPending: observable,
       positionsSettledSprintId: observable,
       recordPlanHistory: action,
-      redo: action,
+      redo: action.bound,
       redoStack: observable.shallow,
-      savePosition: action,
+      savePosition: action.bound,
       setOnPlanHistoryApplied: action,
-      setPositionsWithSave: action,
+      setPositionsWithSave: action.bound,
       setResolveGetTaskInfo: action,
       setSyncAssigneesFlag: action,
-      undo: action,
+      undo: action.bound,
       undoStack: observable.shallow,
     });
   }

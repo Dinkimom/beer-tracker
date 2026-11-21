@@ -15,25 +15,13 @@ import { DELAYS } from '@/utils/constants';
 import { calculateQATaskLinkAnchors, placeQaPhase } from '../utils/qaTaskPlacement';
 
 interface UseQATaskManagementProps {
-  /** Связи dev → QA — список модели доски. */
+  /** Позиции и связи dev → QA — у модели доски. */
   board: SprintBoard;
   filteredTaskPositions: Map<string, TaskPosition>;
   selectedSprintId: number | null;
   sortedDevelopers: Developer[];
   /** Рабочие дни таймлайна спринта: QA-фаза не выходит за последний слот. */
   sprintTimelineWorkingDays: number;
-  taskPositions: Map<string, TaskPosition>;
-  /** Персист фазы QA (кнопка + на dev-карточке и др.) */
-  savePosition?: (
-    position: TaskPosition,
-    isQa: boolean,
-    devTaskKey?: string,
-    immediate?: boolean
-  ) => Promise<void>;
-  setTaskPositions: (
-    updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>,
-    options?: { recordHistory?: boolean }
-  ) => void;
   updateXarrow: () => void;
 }
 
@@ -42,15 +30,14 @@ interface UseQATaskManagementProps {
  */
 export function useQATaskManagement({
   board,
-  taskPositions,
   filteredTaskPositions,
   sortedDevelopers,
   selectedSprintId,
-  savePosition,
   sprintTimelineWorkingDays,
-  setTaskPositions,
   updateXarrow,
 }: UseQATaskManagementProps) {
+  const { displayPositions: taskPositions, positions } = board;
+  const { savePosition, setPositionsWithSave: setTaskPositions } = positions;
   const timelineTotalCells = Math.max(1, sprintTimelineWorkingDays) * getPartsPerDay();
 
   /** Ставит QA-фазу по `placeQaPhase`, сохраняет её (с историей) и связывает с dev. */
@@ -84,7 +71,7 @@ export function useQATaskManagement({
         return newPositions;
       }, { recordHistory: true });
 
-      if (selectedSprintId && savePosition) {
+      if (selectedSprintId) {
         const posWithSource = { ...qaTaskPosition, __source: source } as TaskPosition & {
           __source: string;
         };

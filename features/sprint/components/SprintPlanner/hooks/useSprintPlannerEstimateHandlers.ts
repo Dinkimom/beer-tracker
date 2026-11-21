@@ -20,25 +20,18 @@ interface UseSprintPlannerEstimateHandlersParams {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   syncEstimates: boolean;
   tasksMap: Map<string, Task>;
-  savePosition: (
-    position: TaskPosition,
-    isQa: boolean,
-    devKey?: string,
-    force?: boolean,
-    options?: { recordHistory?: boolean }
-  ) => Promise<void>;
 }
 
 /**
  * Оценки (SP/TP), сохранение позиций при ресайзе фаз и редактор отрезков.
  */
 export function useSprintPlannerEstimateHandlers({
-  savePosition,
   setTasks,
   syncEstimates,
   tasksMap,
 }: UseSprintPlannerEstimateHandlersParams) {
-  const { sprintPlannerUi } = useRootStore();
+  const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
+  const { savePosition } = positionsStore;
 
   const handleUpdateEstimate = useCallback(
     (task: Task, newEstimate: number, isTestPoints: boolean) => {

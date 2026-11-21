@@ -4,7 +4,7 @@
  */
 
 import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
-import type { Task, TaskPosition } from '@/types';
+import type { Task } from '@/types';
 
 import { useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
@@ -27,9 +27,7 @@ export interface UseTaskSprintOperationsProps {
   board: SprintBoard;
   selectedSprintId: number | null;
   sprints: Array<{ id: number; name: string }>;
-  deletePosition: (taskId: string) => Promise<void>;
   onTasksReload?: () => Promise<void> | void;
-  setTaskPositions: (updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>) => void;
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
   updateXarrow?: () => void;
 }
@@ -38,12 +36,11 @@ export function useTaskSprintOperations({
   board,
   selectedSprintId,
   sprints,
-  deletePosition,
   onTasksReload,
-  setTaskPositions,
   setTasks,
   updateXarrow,
 }: UseTaskSprintOperationsProps) {
+  const { deletePosition, setPositionsWithSave: setTaskPositions } = board.positions;
   const { t } = useI18n();
 
   const takeSnapshot = useCallback(

@@ -5,7 +5,7 @@
 import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { TransitionField } from '@/lib/beerTrackerApi';
-import type { Task, TaskPosition } from '@/types';
+import type { Task } from '@/types';
 import type { MutableRefObject } from 'react';
 
 import { useCallback } from 'react';
@@ -18,7 +18,6 @@ import {
   buildAssigneePlanDraft,
   positionsOmittingIds,
 } from '@/features/task/utils/planAssigneeDraft';
-import { useRootStore } from '@/lib/layers';
 import { getCurrentSprintCell } from '@/utils/dateUtils';
 
 import { useSprintPlannerAutoAssignHandlers } from './useSprintPlannerUIHandlers/hooks/useSprintPlannerAutoAssignHandlers';
@@ -29,6 +28,7 @@ import { useTransitionModal } from './useTransitionModal';
 
 interface UseSprintPlannerUIHandlersProps {
   allTasksForDrag: Task[];
+  /** Задачи, позиции и их правка, связи — из модели доски. */
   board: SprintBoard;
   developersManagement: DevelopersManagement;
   resetDragStateRef: MutableRefObject<(() => void) | null>;
@@ -40,8 +40,6 @@ interface UseSprintPlannerUIHandlersProps {
     moveToSprint: (taskId: string, sprintId: number) => Promise<void>;
     removeFromSprint: (taskId: string) => Promise<void>;
   };
-  taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
   tasksMap: Map<string, Task>;
   /** Экранные поля переходов для очереди (typeKey -> transitionId -> fields) */
   workflowScreens?: Record<string, Record<string, TransitionField[]>>;
@@ -51,9 +49,7 @@ interface UseSprintPlannerUIHandlersProps {
   }) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
   onTasksReload?: () => void;
-  savePosition: (position: TaskPosition, isQa: boolean) => Promise<void>;
   setSidebarOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
-  setTaskPositions: (updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>) => void;
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }
 
@@ -64,22 +60,18 @@ export function useSprintPlannerUIHandlers({
   resetDragStateRef,
   selectedSprintId,
   setSidebarOpen,
-  setTaskPositions,
   setTasks,
   sprintStartDate,
   sprintTimelineWorkingDays,
   taskOperations,
-  taskPositions,
-  tasks,
   tasksMap,
   confirm,
   debouncedUpdateXarrow,
   onTasksReload,
-  savePosition,
   workflowScreens = {},
 }: UseSprintPlannerUIHandlersProps) {
   const { t } = useI18n();
-  const { taskPositions: positionsStore } = useRootStore();
+  const { displayPositions: taskPositions, positions: positionsStore, tasks } = board;
   // Те же праздники, что в шапке свимлейна: расстановка их пропускает
   const holidayDayIndices = useHolidayDays(sprintStartDate, sprintTimelineWorkingDays);
   // Обработчики контекстного меню
@@ -102,14 +94,11 @@ export function useSprintPlannerUIHandlers({
     holidayDayIndices,
     resetDragStateRef,
     selectedSprintId,
-    setTaskPositions,
     sprintStartDate,
     sprintTimelineWorkingDays,
-    taskPositions,
     tasksMap,
     confirm,
     debouncedUpdateXarrow,
-    savePosition,
   });
 
   // Обработчики взаимодействия с задачами
