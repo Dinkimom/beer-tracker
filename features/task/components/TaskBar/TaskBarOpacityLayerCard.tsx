@@ -1,6 +1,7 @@
 'use client';
 
-import type { Developer, Task, TaskPosition } from '@/types';
+import type { TaskCardProps } from '@/features/task/components/TaskCard/TaskCard';
+import type { Task } from '@/types';
 import type { DraggableAttributes } from '@dnd-kit/core';
 
 import { observer } from 'mobx-react-lite';
@@ -12,76 +13,57 @@ import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { buildTaskBarMouseUpHandler } from './taskBarOpacityLayerHandlers';
 import { shouldOpenPhotoLightboxAfterPointerUp } from './taskBarPhotoGestureHelpers';
 
+/** Поля `TaskCard`, которые карточка дорожки отдаёт как есть: слой их не читает. */
+type TaskCardPassThrough = Pick<
+  TaskCardProps,
+  'assigneeName' | 'developers' | 'inlineTitleEditor' | 'isNotificationFocused' | 'layoutDuration' | 'linkMode' | 'onCommentUpdate' | 'onPhotoClick' | 'selectedSprintId' | 'swimlaneBarDurationParts' | 'taskPosition' | 'widthPercent'
+>;
+
+/** Своё у слоя — поведение указателя: клик, жест фото, ресайз, перетаскивание, меню в режиме связей. */
 export interface TaskBarOpacityLayerCardProps {
-  assigneeName?: string;
   cardElementRef: React.MutableRefObject<HTMLElement | null>;
   clickStartPos: { x: number; y: number } | null;
-  contentDurationParts: number;
-  contentWidthPercent: number;
-  developers: Developer[];
   dragActivationProps: DraggableAttributes;
   effectiveIsDragging: boolean;
   hideSourceForOverlay: boolean;
-  inlineTitleEditor?: {
-    onChange: (value: string) => void;
-    onSubmit?: () => void;
-    value: string;
-  };
   interactionDisabled: boolean;
   isDraftTask: boolean;
   isLinking?: boolean;
-  isNotificationFocused?: boolean;
   isQATask: boolean;
-  linkMode?: 'source' | 'target' | null;
   resize: {
     isResizing: boolean;
     resizePreviewDuration: number | null;
   };
-  selectedSprintId?: number | null;
   setClickStartPos: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
-  swimlaneBarDurationParts?: number;
   task: Task;
-  taskPositions?: Map<string, TaskPosition>;
+  taskCard: TaskCardPassThrough;
   getPhotoClickSuppress?: () => boolean;
   onClick?: (taskId: string) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
-  onPhotoClick?: () => void;
   onPhotoGestureStart?: (clientX: number, clientY: number) => void;
   setNodeRef: (node: HTMLElement | null) => void;
 }
 
 // observer: меню карточки читается из стора (`useCardContextMenu`).
 export const TaskBarOpacityLayerCard = observer(function TaskBarOpacityLayerCard({
-  assigneeName,
+  taskCard,
   cardElementRef,
   clickStartPos,
-  contentDurationParts,
-  contentWidthPercent,
-  developers,
   dragActivationProps,
   effectiveIsDragging,
   hideSourceForOverlay,
-  inlineTitleEditor,
   interactionDisabled,
   isDraftTask,
   isLinking = false,
-  linkMode = null,
-  isNotificationFocused = false,
   isQATask,
   onClick,
   onContextMenu,
-  onPhotoClick,
-  onCommentUpdate,
   onPhotoGestureStart,
   getPhotoClickSuppress,
   resize,
-  selectedSprintId,
   setClickStartPos,
   setNodeRef,
-  swimlaneBarDurationParts,
   task,
-  taskPositions,
 }: TaskBarOpacityLayerCardProps) {
   const contextMenu = useCardContextMenu(task.id);
   const mergedCardRef = useCallback(
@@ -95,30 +77,19 @@ export const TaskBarOpacityLayerCard = observer(function TaskBarOpacityLayerCard
   return (
     <TaskCard
       ref={mergedCardRef}
-      assigneeName={assigneeName}
+      {...taskCard}
       className={`${interactionDisabled ? 'pointer-events-none ' : ''}relative z-[1]`}
-      developers={developers}
       dimmedByContextMenu={contextMenu.dimmed}
-      inlineTitleEditor={inlineTitleEditor}
       isContextMenuOpen={contextMenu.open}
       isDragging={hideSourceForOverlay ? false : effectiveIsDragging}
       isLocalTask={isDraftTask}
-      isNotificationFocused={isNotificationFocused}
       isQATask={isQATask}
       isResizing={resize.isResizing}
-      layoutDuration={contentDurationParts}
-      linkMode={linkMode}
       linkingActive={isLinking}
       resizePreviewDuration={resize.resizePreviewDuration}
-      swimlaneBarDurationParts={swimlaneBarDurationParts}
       task={task}
-      taskPosition={taskPositions?.get(task.id)}
       variant="swimlane"
-      widthPercent={contentWidthPercent}
-      onCommentUpdate={onCommentUpdate}
-      onPhotoClick={onPhotoClick}
       {...dragActivationProps}
-      selectedSprintId={selectedSprintId}
       onContextMenu={
         interactionDisabled || isLinking
           ? (e) => {

@@ -307,16 +307,23 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
     >
       <TaskBarOpacityLayer
         card={{
-          assigneeName,
+          taskCard: {
+            assigneeName,
+            developers,
+            inlineTitleEditor,
+            isNotificationFocused,
+            layoutDuration: content.durationParts,
+            linkMode,
+            selectedSprintId,
+            swimlaneBarDurationParts: duration,
+            taskPosition: taskPositions?.get(task.id),
+            widthPercent: content.widthPercent,
+            onCommentUpdate: presenceBlocksMutations ? undefined : onCommentUpdate,
+            onPhotoClick: isPhotoCard && task.imageUrl && task.isLocalTask !== true ? openPhotoLightbox : undefined,
+          },
           clickStartPos,
-          contentDurationParts: content.durationParts,
-          contentWidthPercent: content.widthPercent,
-          developers,
           dragActivationProps,
           getPhotoClickSuppress,
-          inlineTitleEditor,
-          isNotificationFocused,
-          linkMode,
           onClick:
             isWidgetCard || (presenceBlocksMutations && !isPhotoCard && !isDiagramCard)
               ? undefined
@@ -330,15 +337,10 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
                   openDiagram: () => sprintPlannerUi.openDiagramEditor(task.id),
                   openLightbox: openPhotoLightbox,
                 }),
-          onCommentUpdate: presenceBlocksMutations ? undefined : onCommentUpdate,
           onContextMenu,
-          onPhotoClick: isPhotoCard && task.imageUrl && task.isLocalTask !== true ? openPhotoLightbox : undefined,
           onPhotoGestureStart: beginPhotoGesture,
-          selectedSprintId,
           setClickStartPos,
           setNodeRef,
-          swimlaneBarDurationParts: duration,
-          taskPositions,
         }}
         chrome={{
           disableResize: resizeDisabled || presenceBlocksMutations,

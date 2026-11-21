@@ -24,7 +24,7 @@ import { useSprintCardPresenceViewers, useSprintPresenceColorSlots } from './Spr
 import { renderTaskCardBody, renderTaskCardChrome } from './taskCardContentHelpers';
 import { useTaskCardVisualState } from './useTaskCardVisualState';
 
-interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onContextMenu'> {
+export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onContextMenu'> {
   assigneeName?: string;
   children?: React.ReactNode;
   developers?: Developer[];
