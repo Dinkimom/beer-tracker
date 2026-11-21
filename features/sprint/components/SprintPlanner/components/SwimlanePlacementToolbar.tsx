@@ -4,14 +4,12 @@ import type { SwimlanePlacementTool } from '@/lib/layers';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
 
 import { observer } from 'mobx-react-lite';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import { FLOATING_MENU_SHELL, FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
-import { hrefWithSearchParams } from '@/features/sidebar/utils/hrefWithSearchParams';
 import { usePlanPatchGoalPreviewDecisions } from '@/features/sprint/hooks/usePlanPatchGoalPreviewDecisions';
 import { useAgentAvailable, useAgentBrand } from '@/features/swimlane/hooks/useAgentSessions';
 import { usePlanPatchPreviewDecisions } from '@/features/swimlane/hooks/usePlanPatchPreviewDecisions';
@@ -23,6 +21,7 @@ import {
   useSwimlaneNotesVisibleStorage,
 } from '@/hooks/useLocalStorage';
 import { useRootStore } from '@/lib/layers';
+import { replaceUrlQuery } from '@/utils/replaceUrlQuery';
 
 import { useAgentIslandChat } from '../hooks/useAgentIslandChat';
 import {
@@ -94,18 +93,10 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   const [factVisible, setFactVisible] = useSwimlaneFactTimelineVisibleStorage();
   const [baselineLayoutMode, setBaselineLayoutMode] = useSwimlaneBaselineLayoutModeStorage();
   const active = sprintPlannerUi.placementTool;
-  const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
   const revealGoalsSidebar = useCallback(() => {
-    if (searchParams.get('sidebarTab') !== 'goals') {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('sidebarTab', 'goals');
-      router.replace(hrefWithSearchParams(pathname, params), { scroll: false });
-    }
+    replaceUrlQuery((params) => params.set('sidebarTab', 'goals'));
     sprintPlannerUi.setSidebarOpen(true);
-  }, [pathname, router, searchParams, sprintPlannerUi]);
+  }, [sprintPlannerUi]);
 
   const applyPlacementTool = useCallback(
     (tool: SwimlanePlacementTool, options?: { toggle?: boolean }) => {
