@@ -3,23 +3,33 @@ import type { PlannerIntegrationRulesDto } from '@/lib/trackerIntegration/toPlan
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
+import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
+import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+
 import { applyIntegrationRulesRevisionGateUpdate } from './sprintPlannerIntegrationRulesRevisionGate';
 
-interface UseSprintPlannerIntegrationRulesInvalidationParams {
-  activeOrganizationId: string | null | undefined;
+interface UseSprintPlannerIntegrationRulesParams {
   boardIdForPlannerData: number | null;
-  plannerIntegrationRules: PlannerIntegrationRulesDto | null | undefined;
-  plannerRulesFetched: boolean;
+  /** Демо-планер берёт правила фикстурной организации, а не текущей. */
+  demoPlannerRulesOrganizationId?: string;
   selectedSprintId: number | null;
 }
 
-export function useSprintPlannerIntegrationRulesInvalidation({
-  activeOrganizationId,
+/**
+ * Правила интеграции трекера для доски: организация, запрос правил и сброс кэша спринта,
+ * когда ревизия правил сменилась.
+ */
+export function useSprintPlannerIntegrationRules({
   boardIdForPlannerData,
-  plannerIntegrationRules,
-  plannerRulesFetched,
+  demoPlannerRulesOrganizationId,
   selectedSprintId,
-}: UseSprintPlannerIntegrationRulesInvalidationParams) {
+}: UseSprintPlannerIntegrationRulesParams): PlannerIntegrationRulesDto | null | undefined {
+  const { activeOrganizationId: tenantOrganizationId } = useProductTenantOrganizations({
+    pollIntervalMs: 0,
+  });
+  const activeOrganizationId = demoPlannerRulesOrganizationId ?? tenantOrganizationId;
+  const { data: plannerIntegrationRules, isFetched: plannerRulesFetched } =
+    usePlannerIntegrationRules(activeOrganizationId);
   const queryClient = useQueryClient();
   const integrationRulesRevisionGateRef = useRef<{
     orgId: string | null;
@@ -65,4 +75,6 @@ export function useSprintPlannerIntegrationRulesInvalidation({
     boardIdForPlannerData,
     selectedSprintId,
   ]);
+
+  return plannerIntegrationRules;
 }

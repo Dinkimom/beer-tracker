@@ -1,12 +1,8 @@
-import type { BoardAvailabilityEvent } from '@/types/quarterly';
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
-import { useQuery } from '@tanstack/react-query';
 import {
-  useEffect,
   useMemo,
   useRef,
-  startTransition,
 } from 'react';
 import { useXarrow } from 'react-xarrows';
 
@@ -17,39 +13,20 @@ import { useSprintPlannerTrackerLinkHandlers } from '@/features/sprint/hooks/use
 import { computeAssigneePointsStats } from '@/features/sprint/utils/assigneePointsStats';
 import { useLatestCallback } from '@/hooks/useLatestCallback';
 import { useDebouncedCallback } from '@/hooks/usePerformance';
-import { usePlannerIntegrationRules } from '@/hooks/usePlannerIntegrationRules';
-import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
-import { fetchBoardAvailabilityEventsForBoard } from '@/lib/beerTrackerApi';
 import { useRootStore } from '@/lib/layers';
-import { DELAYS } from '@/utils/constants';
-import { getSprintStartDate, resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
 import { useDevelopersManagement } from '../../../hooks/useDevelopersManagement';
-import { usePlannerNotificationFocus } from '../../../hooks/usePlannerNotificationFocus';
-import { useScrollToCurrentDay } from '../../../hooks/useScrollToCurrentDay';
 
 import { useSprintMovePlacement } from './useSprintMovePlacement';
-import { useSprintPlannerIntegrationRulesInvalidation } from './useSprintPlannerIntegrationRulesInvalidation';
+import { useSprintPlannerBoardEffects } from './useSprintPlannerBoardEffects';
+import { useSprintPlannerIntegrationRules } from './useSprintPlannerIntegrationRules';
 import { useSprintPlannerLocalPreferences } from './useSprintPlannerLocalPreferences';
 import { useSprintPlannerMembersSync } from './useSprintPlannerMembersSync';
 import { useSprintPlannerState } from './useSprintPlannerState';
 import { useSprintPlannerSwimlaneData } from './useSprintPlannerSwimlaneData';
-import { useSprintPlannerSyntheticQaCleanup } from './useSprintPlannerSyntheticQaCleanup';
+import { useSprintPlannerTimeline } from './useSprintPlannerTimeline';
 import { useSprintPlannerViewModelInteractions } from './useSprintPlannerViewModelInteractions';
 import { useSprintPlannerWorkflowScreens } from './useSprintPlannerWorkflowScreens';
-import { useTrackerSyncFailureToasts } from './useTrackerSyncFailureToasts';
-
-function useBoardAvailabilityEvents(boardId: number | null) {
-  return useQuery({
-    queryKey: ['boardAvailabilityEvents', boardId],
-    queryFn: async (): Promise<BoardAvailabilityEvent[]> => {
-      if (!boardId) return [];
-      return await fetchBoardAvailabilityEventsForBoard(boardId);
-    },
-    enabled: boardId != null,
-    staleTime: 1000 * 60 * 2,
-  });
-}
 
 interface UseSprintPlannerViewModelParams {
   demoPlannerRulesOrganizationId?: string;
@@ -85,12 +62,6 @@ export function useSprintPlannerViewModel({
   // доска перерисовывалась несколько раз в секунду без действий пользователя.
   const updateXarrow = useLatestCallback(useXarrow());
   const { boards, getQueueByBoardId } = useBoards();
-  const { activeOrganizationId: tenantOrganizationId } = useProductTenantOrganizations({
-    pollIntervalMs: 0,
-  });
-  const activeOrganizationId = demoPlannerRulesOrganizationId ?? tenantOrganizationId;
-  const { data: plannerIntegrationRules, isFetched: plannerRulesFetched } =
-    usePlannerIntegrationRules(activeOrganizationId);
 
   // leading и trailing — умолчания useDebouncedCallback.
   const debouncedUpdateXarrow = useDebouncedCallback(updateXarrow, 100);
@@ -116,11 +87,9 @@ export function useSprintPlannerViewModel({
   const boardIdForPlannerData: number | null =
     lockedBoardId !== undefined ? lockedBoardId : selectedBoardId;
 
-  useSprintPlannerIntegrationRulesInvalidation({
-    activeOrganizationId,
+  const plannerIntegrationRules = useSprintPlannerIntegrationRules({
     boardIdForPlannerData,
-    plannerIntegrationRules,
-    plannerRulesFetched,
+    demoPlannerRulesOrganizationId,
     selectedSprintId,
   });
 
@@ -173,26 +142,6 @@ export function useSprintPlannerViewModel({
   const setParticipantsColumnWidth =
     viewMode === 'features' ? setFeatureColumnWidth : setAssigneeColumnWidth;
 
-  useTrackerSyncFailureToasts();
-
-  useSprintPlannerSyntheticQaCleanup({
-    deletePosition,
-    selectedSprintId,
-    taskPositions,
-    tasks,
-    testingFlowMode: plannerIntegrationRules?.testingFlowMode,
-  });
-
-  useEffect(() => {
-    if (viewMode === 'kanban') {
-      sprintPlannerUi.setSegmentEditTaskId(null);
-      sprintPlannerUi.setPlacementTool('cursor');
-    }
-    if (viewMode === 'features' && sprintPlannerUi.placementTool === 'availability') {
-      sprintPlannerUi.setPlacementTool('cursor');
-    }
-  }, [viewMode, sprintPlannerUi]);
-
 
   const swimlaneFactTimelineEnabled =
     swimlaneFactTimelineVisible && (viewMode === 'full' || viewMode === 'compact');
@@ -220,60 +169,26 @@ export function useSprintPlannerViewModel({
     tasksMap,
   });
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      debouncedUpdateXarrow();
-    }, DELAYS.UI_UPDATE);
-    return () => clearTimeout(timeoutId);
-  }, [debouncedUpdateXarrow]);
-
-  useEffect(() => {
-    startTransition(() => {
-      sprintPlannerUi.clearTransientUiOnSprintChange();
-    });
-  }, [selectedSprintId, sprintPlannerUi]);
-
   const assigneePointsStats = useMemo(
     () => computeAssigneePointsStats(filteredTaskPositions, tasksMap),
     [filteredTaskPositions, tasksMap]
   );
 
-  const sprintStartDate = useMemo(() => {
-    return sprintInfo?.startDate ? new Date(sprintInfo.startDate) : getSprintStartDate();
-  }, [sprintInfo]);
+  const { availability, boardAvailabilityEvents, sprintStartDate, sprintTimelineWorkingDays } =
+    useSprintPlannerTimeline(boardIdForPlannerData, sprintInfo);
 
-  const sprintTimelineWorkingDays = useMemo(
-    () => resolveSprintTimelineWorkingDaysCount(sprintInfo?.startDate, sprintInfo?.endDate),
-    [sprintInfo?.endDate, sprintInfo?.startDate]
-  );
-
-  const { data: boardAvailabilityEvents = [] } = useBoardAvailabilityEvents(
-    boardIdForPlannerData ?? null
-  );
-  const availability = useMemo(() => {
-    if (!boardIdForPlannerData) return null;
-    return {
-      planId: `board-${boardIdForPlannerData}`,
-      boardEvents: boardAvailabilityEvents,
-      vacations: [],
-    };
-  }, [boardAvailabilityEvents, boardIdForPlannerData]);
-
-  useScrollToCurrentDay({
+  useSprintPlannerBoardEffects({
+    debouncedUpdateXarrow,
+    deletePosition,
     isMounted,
-    viewMode,
-    sprintInfo,
+    scrollContainerRef,
     selectedSprintId,
-    sprints,
-    scrollContainerRef,
-  });
-
-  usePlannerNotificationFocus({
-    isMounted,
-    plannerDataReady: isMounted,
-    scrollContainerRef,
     setViewMode,
-    sprintPlannerUi,
+    sprintInfo,
+    sprints,
+    taskPositions,
+    tasks,
+    testingFlowMode: plannerIntegrationRules?.testingFlowMode,
     viewMode,
   });
 
