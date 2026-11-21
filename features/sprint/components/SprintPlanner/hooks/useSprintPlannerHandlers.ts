@@ -29,26 +29,22 @@ export function useSprintPlannerHandlers({
   taskOperations,
   deleteTrackerOverlayLink,
   onRequestQaEngineerPicker,
-  saveLink,
   onTasksReload,
   workflowScreens,
 }: UseSprintPlannerHandlersProps) {
   const {
-    comments,
-    deleteComment,
-    deleteLink,
+    board,
     deletePosition,
     qaTasksByOriginalId,
     savePosition,
-    setComments,
-    setTaskLinks,
     setTaskPositions,
     setTasks,
     taskPositions,
     tasks,
   } = state;
-  // QA-задачи — из модели доски.
-  const { qaTasksMap } = state.board;
+  // QA-задачи и связи — из модели доски.
+  const { qaTasksMap } = board;
+  const { delete: deleteLink, setWithSave: setTaskLinks } = board.links;
   const { allTasksForDrag, filteredTaskLinks, filteredTaskPositions, taskLinks, tasksMap } = boardView;
   const { sprintStartDate, sprintTimelineWorkingDays } = timeline;
   const { t } = useI18n();
@@ -70,26 +66,15 @@ export function useSprintPlannerHandlers({
     savePosition,
   });
 
-  const commentHandlers = useSprintPlannerCommentHandlers({
-    comments,
-    deleteComment,
-    deleteLink,
-    saveLink,
-    selectedSprintId,
-    setComments,
-    setTaskLinks,
-    taskLinks,
-  });
+  const commentHandlers = useSprintPlannerCommentHandlers({ board, selectedSprintId });
 
   const uiHandlers = useSprintPlannerUIHandlers({
     allTasksForDrag,
+    board,
     developersManagement,
     resetDragStateRef,
-    qaTasksByOriginalId,
-    qaTasksMap,
     selectedSprintId,
     setSidebarOpen,
-    setTaskLinks,
     setTaskPositions,
     setTasks,
     sprintStartDate,
@@ -101,7 +86,6 @@ export function useSprintPlannerHandlers({
     confirm,
     debouncedUpdateXarrow,
     onTasksReload,
-    saveLink,
     savePosition,
     workflowScreens,
   });

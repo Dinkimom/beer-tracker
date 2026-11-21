@@ -2,7 +2,7 @@ import type { SprintComments } from './sprintComments';
 import type { SprintLinks } from './sprintLinks';
 import type { SprintMovePlacementStore } from '@/lib/layers/application/mobx/stores/sprintMovePlacementStore';
 import type { TaskPositionsStore } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
-import type { Developer, Task, TaskPosition } from '@/types';
+import type { Developer, Task, TaskLink, TaskPosition } from '@/types';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 
 import { QueryObserver } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { action, computed, makeObservable, observable } from 'mobx';
 import { createQATasksMap } from '@/features/qa/utils/qaTaskUtils';
 import { stampPlanDraftTasks, stampPlanDraftTasksMap } from '@/features/task/utils/planAssigneeDraft';
 import { mergeDbPositionsWithTrackerDateFallbacks, parseTrackerIsoDateOnlyLocal } from '@/lib/planner-timeline';
+import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
 import { taskPositionMapsHaveSameEntries } from './taskPositionMaps';
@@ -85,6 +86,17 @@ export class SprintBoard {
   get links(): SprintLinks {
     return this.deps.links;
   }
+
+  /**
+   * Сохранить связь доски. У нас хранятся только связи с заметкой на одном из концов; связь двух
+   * задач — это связь в трекере, её сохраняет обработчик трекера.
+   */
+  readonly savePlannerLink = async (link: Pick<TaskLink, 'fromTaskId' | 'id' | 'toTaskId'>): Promise<void> => {
+    if (!plannerLinkInvolvesComment(link.fromTaskId, link.toTaskId)) {
+      return;
+    }
+    await this.deps.links.save(link);
+  };
 
   /** Подписка на кэш, пока доска на экране; возвращает отписку. */
   connect(): () => void {

@@ -2,7 +2,7 @@ import type { Task } from '@/types';
 
 import { QueryClient } from '@tanstack/react-query';
 import { autorun } from 'mobx';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { SprintMovePlacementStore } from '@/lib/layers/application/mobx/stores/sprintMovePlacementStore';
 import { TaskPositionsStore } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
@@ -37,6 +37,16 @@ function setup(tasks: Task[]) {
 }
 
 describe('SprintBoard', () => {
+  it('сохраняет у себя только связи с заметкой; связь двух задач — дело трекера', async () => {
+    const { board } = setup([]);
+    const save = vi.spyOn(board.links, 'save').mockResolvedValue();
+    await board.savePlannerLink({ fromTaskId: 'A-1', id: 'l1', toTaskId: 'A-2' });
+    expect(save).not.toHaveBeenCalled();
+    const noteLink = { fromTaskId: 'comment:6f1c2a3e-1b2c-4d5e-8f90-1234567890ab', id: 'l2', toTaskId: 'A-2' };
+    await board.savePlannerLink(noteLink);
+    expect(save).toHaveBeenCalledWith(noteLink);
+  });
+
   it('держит ссылку на ответ кэша, а не копию, и выводит QA-задачи', () => {
     const dev = task('A-1', { storyPoints: 3, testPoints: 2 });
     const { board, queryClient } = setup([dev, task('A-2')]);

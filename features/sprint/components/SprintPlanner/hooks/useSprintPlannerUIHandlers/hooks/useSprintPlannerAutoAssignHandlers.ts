@@ -3,6 +3,7 @@
  */
 
 import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { Task, TaskPosition } from '@/types';
 
 import { useCallback, type MutableRefObject } from 'react';
@@ -26,11 +27,11 @@ import {
 
 interface UseSprintPlannerAutoAssignHandlersProps {
   allTasksForDrag: Task[];
+  /** QA-задачи и связи — из модели доски в момент расстановки. */
+  board: SprintBoard;
   developersManagement: DevelopersManagement;
   /** Праздничные дни таймлайна: расстановка их пропускает. */
   holidayDayIndices: ReadonlySet<number>;
-  qaTasksByOriginalId: Map<string, Task>;
-  qaTasksMap: Map<string, Task>;
   resetDragStateRef: MutableRefObject<(() => void) | null>;
   selectedSprintId: number | null;
   sprintStartDate: Date;
@@ -42,29 +43,17 @@ interface UseSprintPlannerAutoAssignHandlersProps {
     variant?: 'default' | 'destructive';
   }) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
-  saveLink: (link: { fromTaskId: string; toTaskId: string; id: string }) => Promise<void>;
   savePosition: (position: TaskPosition, isQa: boolean) => Promise<void>;
-  setTaskLinks: (updater: (prev: Array<{
-    fromTaskId: string;
-    toTaskId: string;
-    id: string;
-  }>) => Array<{
-    fromTaskId: string;
-    toTaskId: string;
-    id: string;
-  }>) => void;
   setTaskPositions: (updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>) => void;
 }
 
 export function useSprintPlannerAutoAssignHandlers({
   allTasksForDrag,
+  board,
   developersManagement,
   holidayDayIndices,
   resetDragStateRef,
-  qaTasksByOriginalId,
-  qaTasksMap,
   selectedSprintId,
-  setTaskLinks,
   setTaskPositions,
   sprintStartDate,
   sprintTimelineWorkingDays,
@@ -73,6 +62,7 @@ export function useSprintPlannerAutoAssignHandlers({
   confirm,
   debouncedUpdateXarrow,
 }: UseSprintPlannerAutoAssignHandlersProps) {
+  const { setWithSave: setTaskLinks } = board.links;
   const handleAutoAssignTasks = useCallback(async () => {
     const confirmed = await confirmAutoAssignIfNeeded({
       confirm,
@@ -95,7 +85,7 @@ export function useSprintPlannerAutoAssignHandlers({
       allTasksForDrag,
       developersManagement.sortedDevelopers,
       new Map(),
-      qaTasksMap,
+      board.qaTasksMap,
       [],
       currentCell,
       Math.max(1, sprintTimelineWorkingDays) * partsPerDay,
@@ -113,7 +103,7 @@ export function useSprintPlannerAutoAssignHandlers({
       const { positionsArray, linksArray } = buildAutoAssignBatchPayload({
         positions: result.positions,
         links: result.links,
-        qaTasksByOriginalId,
+        qaTasksByOriginalId: board.qaTasksByOriginalId,
         tasksMap,
       });
 
@@ -146,9 +136,8 @@ export function useSprintPlannerAutoAssignHandlers({
     allTasksForDrag,
     developersManagement.sortedDevelopers,
     holidayDayIndices,
-    qaTasksMap,
+    board,
     tasksMap,
-    qaTasksByOriginalId,
     debouncedUpdateXarrow,
   ]);
 

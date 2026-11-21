@@ -6,9 +6,10 @@
  * После подтверждения или отмены планер возвращается в исходный спринт.
  */
 
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { BoardViewMode } from '@/hooks/localStorage/hooksSidebarAndDevelopers';
 import type { SprintMovePlacementSession } from '@/lib/layers/application/mobx/stores/sprintMovePlacementStore';
-import type { Comment, Developer, Task, TaskLink, TaskPosition } from '@/types';
+import type { Developer, Task, TaskLink, TaskPosition } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
 import { useQueryClient } from '@tanstack/react-query';
@@ -39,12 +40,12 @@ import { formatSprintListItemDisplayName } from '@/utils/sprintDisplayName';
 import { moveCommentToSprintFirstDay, revertCommentMove } from './sprintMovePlacementComment';
 
 interface UseSprintMovePlacementParams {
-  comments: Comment[];
+  /** Заметки и связи читаются из модели в момент переноса. */
+  board: SprintBoard;
   developers: Developer[];
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   selectedSprintId: number | null;
   sprints: SprintListItem[];
-  taskLinks: TaskLink[];
   taskPositions: Map<string, TaskPosition>;
   tasksLoading: boolean;
   tasksMap: Map<string, Task>;
@@ -79,12 +80,11 @@ async function cleanupSourceSprint(session: SprintMovePlacementSession): Promise
 }
 
 export function useSprintMovePlacement({
-  comments,
+  board,
   developers,
   scrollContainerRef,
   selectedSprintId,
   sprints,
-  taskLinks,
   taskPositions,
   tasksLoading,
   tasksMap,
@@ -118,7 +118,7 @@ export function useSprintMovePlacement({
       }
       moveStore.start({
         kind: 'task',
-        sourceLinkIds: linkIdsTouching(taskLinks, taskId),
+        sourceLinkIds: linkIdsTouching(board.links.items, taskId),
         sourcePositionDuration: taskPositions.get(taskId)?.duration ?? null,
         sourceSprintId: selectedSprintId,
         targetSprintId,
@@ -127,16 +127,17 @@ export function useSprintMovePlacement({
       });
       enterTargetSprint(targetSprintId);
     },
-    [enterTargetSprint, moveStore, selectedSprintId, sprints, taskLinks, taskPositions, tasksMap]
+    [board, enterTargetSprint, moveStore, selectedSprintId, sprints, taskPositions, tasksMap]
   );
 
   const handlePlanCommentInSprint = useCallback(
     (commentId: string, targetSprintId: number) => {
-      const comment = comments.find((item) => item.id === commentId);
+      const comment = board.comments.items.find((item) => item.id === commentId);
       const sourceSprintId = selectedSprintId;
       if (!comment || sourceSprintId == null || targetSprintId === sourceSprintId) {
         return;
       }
+      const sourceLinkIds = linkIdsTouching(board.links.items, toSwimlaneCommentTaskId(commentId));
       moveCommentToSprintFirstDay({ comment, fromSprintId: sourceSprintId, toSprintId: targetSprintId })
         .then((moved) => {
           if (!moved) {
@@ -146,7 +147,7 @@ export function useSprintMovePlacement({
           moveStore.start({
             comment,
             kind: 'comment',
-            sourceLinkIds: linkIdsTouching(taskLinks, toSwimlaneCommentTaskId(commentId)),
+            sourceLinkIds,
             sourceSprintId,
             targetSprintId,
             targetSprintName: sprintName(sprints, targetSprintId),
@@ -155,7 +156,7 @@ export function useSprintMovePlacement({
         })
         .catch(() => toast.error(t(FAILED_KEY)));
     },
-    [comments, enterTargetSprint, moveStore, selectedSprintId, sprints, t, taskLinks]
+    [board, enterTargetSprint, moveStore, selectedSprintId, sprints, t]
   );
 
   // Ушли из целевого спринта не через панель режима. Задача остаётся где была,

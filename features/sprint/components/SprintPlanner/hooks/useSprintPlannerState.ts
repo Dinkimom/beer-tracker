@@ -132,14 +132,9 @@ export function useSprintPlannerState({
     selectedSprintId,
     getTaskInfoRef
   );
-  const { delete: deleteLink, items: taskLinks, reloadFromRemote: reloadLinks, save: saveLink, setWithSave: setTaskLinks } =
-    links;
-  const {
-    delete: deleteComment,
-    items: comments,
-    reloadFromRemote: reloadComments,
-    setWithSave: setComments,
-  } = sprintComments;
+  // Значения — для отрисовки; действия со связями и заметками берут у `board.links` / `board.comments`.
+  const { items: taskLinks, reloadFromRemote: reloadLinks } = links;
+  const { items: comments, reloadFromRemote: reloadComments, setWithSave: setComments } = sprintComments;
   const [, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const [boardViewers, setBoardViewers] = useState<SprintPresenceViewer[]>([]);
 
@@ -259,12 +254,7 @@ export function useSprintPlannerState({
     deletePosition,
     positionHistory,
     taskLinks,
-    setTaskLinks,
-    saveLink,
-    deleteLink,
     comments,
-    setComments,
-    deleteComment,
     boardViewers,
 
     allTasksForDrag,

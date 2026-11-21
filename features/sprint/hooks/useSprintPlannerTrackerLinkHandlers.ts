@@ -1,5 +1,6 @@
 'use client';
 
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { Task, TaskLink } from '@/types';
 
 import { useQueryClient } from '@tanstack/react-query';
@@ -35,14 +36,10 @@ function resolveTrackerIssueKey(
 
 export function useSprintPlannerTrackerLinkHandlers(input: {
   allTasksForDrag: Task[];
+  /** Связи с заметкой хранит модель доски; связи задач — трекер. */
+  board: SprintBoard;
   enabled: boolean;
-  saveLink: (link: {
-    fromTaskId: string;
-    id: string;
-    toTaskId: string;
-  }) => Promise<unknown>;
   selectedSprintId: number | null;
-  setTaskLinks: Dispatch<SetStateAction<TaskLink[]>>;
   tasksMap: Map<string, Task>;
 }) {
   const queryClient = useQueryClient();
@@ -65,22 +62,12 @@ export function useSprintPlannerTrackerLinkHandlers(input: {
       .catch(() => undefined);
   }, [queryClient]);
 
-  const savePlannerLinkOnly = useCallback(
-    async (link: { fromTaskId: string; id: string; toTaskId: string }) => {
-      if (!plannerLinkInvolvesComment(link.fromTaskId, link.toTaskId)) {
-        return;
-      }
-      await input.saveLink(link);
-    },
-    [input]
-  );
-
   const handleAddLink = useCallback(
     (link: { fromTaskId: string; id: string; toTaskId: string }) => {
       if (plannerLinkInvolvesComment(link.fromTaskId, link.toTaskId)) {
         const plannerLink: TaskLink = { ...link, origin: 'planner' };
-        input.setTaskLinks((prev) => [...prev, plannerLink]);
-        savePlannerLinkOnly(plannerLink).catch((err) =>
+        input.board.links.setWithSave((prev) => [...prev, plannerLink]);
+        input.board.savePlannerLink(plannerLink).catch((err) =>
           console.error('Error saving planner link:', err)
         );
         return;
@@ -110,7 +97,7 @@ export function useSprintPlannerTrackerLinkHandlers(input: {
         toKey,
       });
     },
-    [input, invalidateTrackerIssueLinks, savePlannerLinkOnly]
+    [input, invalidateTrackerIssueLinks]
   );
 
   const deleteTrackerOverlayLink = useCallback(
@@ -137,7 +124,6 @@ export function useSprintPlannerTrackerLinkHandlers(input: {
   return {
     deleteTrackerOverlayLink,
     handleAddLink,
-    savePlannerLinkOnly,
     trackerTaskLinks,
   };
 }

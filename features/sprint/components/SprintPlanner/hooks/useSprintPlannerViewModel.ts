@@ -120,9 +120,6 @@ export function useSprintPlannerViewModel({
     taskPositions,
     deletePosition,
     positionHistory,
-    taskLinks,
-    setTaskLinks,
-    saveLink,
     comments,
     boardViewers,
     allTasksForDrag,
@@ -154,14 +151,12 @@ export function useSprintPlannerViewModel({
   const {
     deleteTrackerOverlayLink,
     handleAddLink,
-    savePlannerLinkOnly,
     trackerTaskLinks,
   } = useSprintPlannerTrackerLinkHandlers({
     allTasksForDrag,
+    board: state.board,
     enabled: swimlaneLinksVisible && (viewMode === 'full' || viewMode === 'compact'),
-    saveLink,
     selectedSprintId,
-    setTaskLinks,
     tasksMap,
   });
 
@@ -194,12 +189,11 @@ export function useSprintPlannerViewModel({
     tasksByAssignee
   );
   const movePlacement = useSprintMovePlacement({
-    comments,
+    board: state.board,
     developers: developersManagement.sortedDevelopers,
     scrollContainerRef,
     selectedSprintId,
     sprints,
-    taskLinks,
     taskPositions,
     tasksLoading,
     tasksMap,
@@ -227,7 +221,6 @@ export function useSprintPlannerViewModel({
     forDemoPlanner,
     getQueueByBoardId,
     onTasksReload,
-    saveLink: savePlannerLinkOnly,
     selectedSprintId,
     sprintPlannerUi,
     sprints,

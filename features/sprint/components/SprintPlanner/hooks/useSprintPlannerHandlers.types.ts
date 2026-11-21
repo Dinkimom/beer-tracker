@@ -33,14 +33,9 @@ export interface UseSprintPlannerHandlersProps {
   state: Pick<
     ReturnType<typeof useSprintPlannerState>,
     | 'board'
-    | 'comments'
-    | 'deleteComment'
-    | 'deleteLink'
     | 'deletePosition'
     | 'qaTasksByOriginalId'
     | 'savePosition'
-    | 'setComments'
-    | 'setTaskLinks'
     | 'setTaskPositions'
     | 'setTasks'
     | 'taskPositions'
@@ -76,10 +71,5 @@ export interface UseSprintPlannerHandlersProps {
   /** Кнопка + QA на dev-карточке без qaEngineer — открыть пикер исполнителя QA */
   onRequestQaEngineerPicker?: (devTaskId: string, anchorRect: DOMRect) => void;
   onTasksReload?: (options?: { showToast?: boolean }) => void;
-  saveLink: (link: {
-    fromTaskId: string;
-    toTaskId: string;
-    id: string;
-  }) => Promise<void>;
   setSidebarOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 }

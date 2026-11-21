@@ -2,6 +2,7 @@
  * Хук для обработчиков комментариев в SprintPlanner
  */
 
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Comment as CommentType, TaskParent } from '@/types';
 
@@ -36,18 +37,9 @@ import { parseCommentAuthorName } from '@/lib/comments/commentAuthor';
 import { useRootStore } from '@/lib/layers';
 
 interface UseSprintPlannerCommentHandlersProps {
-  comments: CommentType[];
+  /** Заметки и связи — списки модели доски; читаются в момент действия. */
+  board: SprintBoard;
   selectedSprintId: number | null;
-  taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;
-  deleteComment: (commentId: string) => Promise<void>;
-  deleteLink: (linkId: string) => Promise<void>;
-  saveLink: (link: { fromTaskId: string; id: string; toTaskId: string }) => Promise<void>;
-  setComments: (updater: (prev: CommentType[]) => CommentType[]) => void;
-  setTaskLinks: (
-    updater: (
-      prev: Array<{ fromTaskId: string; id: string; toTaskId: string }>
-    ) => Array<{ fromTaskId: string; id: string; toTaskId: string }>
-  ) => void;
 }
 
 interface CommentHistoryRecordOptions {
@@ -96,42 +88,30 @@ function collectLinksTouchingCommentIds(
  * клиенту остаётся убрать их из локального списка. При конвертации заметки в задачу стрелки
  * сначала перецепляются на новую задачу.
  */
-function syncLinksOnCommentDelete(input: {
-  commentTaskId: string;
-  retargetLinksTo?: string;
-  taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;
-  deleteLink: (linkId: string) => Promise<void>;
-  saveLink: (link: { fromTaskId: string; id: string; toTaskId: string }) => Promise<void>;
-  setTaskLinks: (
-    updater: (
-      prev: Array<{ fromTaskId: string; id: string; toTaskId: string }>
-    ) => Array<{ fromTaskId: string; id: string; toTaskId: string }>
-  ) => void;
-}): Promise<void> {
-  if (input.retargetLinksTo) {
+function syncLinksOnCommentDelete(
+  board: SprintBoard,
+  commentTaskId: string,
+  retargetLinksTo: string | undefined
+): Promise<void> {
+  const { links } = board;
+  if (retargetLinksTo) {
     return persistRetargetedTaskLinks({
-      deleteLink: input.deleteLink,
-      fromTaskId: input.commentTaskId,
-      saveLink: input.saveLink,
-      setTaskLinks: input.setTaskLinks,
-      taskLinks: input.taskLinks,
-      toTaskId: input.retargetLinksTo,
+      deleteLink: links.delete,
+      fromTaskId: commentTaskId,
+      saveLink: board.savePlannerLink,
+      setTaskLinks: links.setWithSave,
+      taskLinks: links.items,
+      toTaskId: retargetLinksTo,
     });
   }
-  input.setTaskLinks((prev) => excludeTaskLinksTouchingId(prev, input.commentTaskId));
+  links.setWithSave((prev) => excludeTaskLinksTouchingId(prev, commentTaskId));
   return Promise.resolve();
 }
 
-export function useSprintPlannerCommentHandlers({
-  comments,
-  deleteComment,
-  deleteLink,
-  saveLink,
-  selectedSprintId,
-  setComments,
-  setTaskLinks,
-  taskLinks,
-}: UseSprintPlannerCommentHandlersProps) {
+export function useSprintPlannerCommentHandlers({ board, selectedSprintId }: UseSprintPlannerCommentHandlersProps) {
+  const { comments: sprintComments, links } = board;
+  const { delete: deleteComment, setWithSave: setComments } = sprintComments;
+  const { delete: deleteLink, setWithSave: setTaskLinks } = links;
   const { data: currentUser } = useCurrentUser();
   const { taskPositions: positionsStore } = useRootStore();
 
@@ -149,14 +129,11 @@ export function useSprintPlannerCommentHandlers({
   const handleCommentDelete = useCallback(
     (id: string, options?: { retargetLinksTo?: string }) => {
       const remove = () => {
-        const linksSync = syncLinksOnCommentDelete({
-          commentTaskId: toSwimlaneCommentTaskId(id),
-          deleteLink,
-          retargetLinksTo: options?.retargetLinksTo,
-          saveLink,
-          setTaskLinks,
-          taskLinks,
-        });
+        const linksSync = syncLinksOnCommentDelete(
+          board,
+          toSwimlaneCommentTaskId(id),
+          options?.retargetLinksTo
+        );
         setComments((prev: CommentType[]) => prev.filter((c: CommentType) => c.id !== id));
         if (!selectedSprintId) {
           return linksSync;
@@ -168,23 +145,14 @@ export function useSprintPlannerCommentHandlers({
             console.error('Error deleting comment:', error);
           });
       };
-      const comment = comments.find((item) => item.id === id);
+      const comment = sprintComments.items.find((item) => item.id === id);
       if (!shouldAnimateStickyNoteDelete(comment, options?.retargetLinksTo)) {
         return remove();
       }
       playStickyNoteExit(toSwimlaneCommentTaskId(id), remove);
       return undefined;
     },
-    [
-      comments,
-      deleteComment,
-      deleteLink,
-      saveLink,
-      selectedSprintId,
-      setComments,
-      setTaskLinks,
-      taskLinks,
-    ]
+    [board, deleteComment, selectedSprintId, setComments, sprintComments]
   );
 
   /** Принять черновики сразу на доске; сервер не принял — вернуть, как было до нажатия. */
@@ -238,7 +206,7 @@ export function useSprintPlannerCommentHandlers({
         return;
       }
       const idSet = new Set(commentIds);
-      const linksToDelete = collectLinksTouchingCommentIds(taskLinks, commentIds);
+      const linksToDelete = collectLinksTouchingCommentIds(links.items, commentIds);
       let removed: CommentType[] = [];
       setComments((prev: CommentType[]) => {
         removed = prev.filter((comment) => idSet.has(comment.id));
@@ -264,7 +232,7 @@ export function useSprintPlannerCommentHandlers({
         }
       });
     },
-    [deleteLink, selectedSprintId, setComments, setTaskLinks, taskLinks]
+    [deleteLink, links, selectedSprintId, setComments, setTaskLinks]
   );
 
   const handleCommentPositionUpdate = useCallback(

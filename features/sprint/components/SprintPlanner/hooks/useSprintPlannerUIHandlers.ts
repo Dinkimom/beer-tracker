@@ -3,6 +3,7 @@
  */
 
 import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { TransitionField } from '@/lib/beerTrackerApi';
 import type { Task, TaskPosition } from '@/types';
 import type { MutableRefObject } from 'react';
@@ -28,9 +29,8 @@ import { useTransitionModal } from './useTransitionModal';
 
 interface UseSprintPlannerUIHandlersProps {
   allTasksForDrag: Task[];
+  board: SprintBoard;
   developersManagement: DevelopersManagement;
-  qaTasksByOriginalId: Map<string, Task>;
-  qaTasksMap: Map<string, Task>;
   resetDragStateRef: MutableRefObject<(() => void) | null>;
   selectedSprintId: number | null;
   sprintStartDate: Date;
@@ -51,31 +51,19 @@ interface UseSprintPlannerUIHandlersProps {
   }) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
   onTasksReload?: () => void;
-  saveLink: (link: { fromTaskId: string; toTaskId: string; id: string }) => Promise<void>;
   savePosition: (position: TaskPosition, isQa: boolean) => Promise<void>;
   setSidebarOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
-  setTaskLinks: (updater: (prev: Array<{
-    fromTaskId: string;
-    toTaskId: string;
-    id: string;
-  }>) => Array<{
-    fromTaskId: string;
-    toTaskId: string;
-    id: string;
-  }>) => void;
   setTaskPositions: (updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>) => void;
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }
 
 export function useSprintPlannerUIHandlers({
   allTasksForDrag,
+  board,
   developersManagement,
   resetDragStateRef,
-  qaTasksByOriginalId,
-  qaTasksMap,
   selectedSprintId,
   setSidebarOpen,
-  setTaskLinks,
   setTaskPositions,
   setTasks,
   sprintStartDate,
@@ -87,7 +75,6 @@ export function useSprintPlannerUIHandlers({
   confirm,
   debouncedUpdateXarrow,
   onTasksReload,
-  saveLink,
   savePosition,
   workflowScreens = {},
 }: UseSprintPlannerUIHandlersProps) {
@@ -110,13 +97,11 @@ export function useSprintPlannerUIHandlers({
   // Обработчики автоматической расстановки
   const { handleAutoAssignTasks, handleReturnAllTasks } = useSprintPlannerAutoAssignHandlers({
     allTasksForDrag,
+    board,
     developersManagement,
     holidayDayIndices,
     resetDragStateRef,
-    qaTasksByOriginalId,
-    qaTasksMap,
     selectedSprintId,
-    setTaskLinks,
     setTaskPositions,
     sprintStartDate,
     sprintTimelineWorkingDays,
@@ -124,7 +109,6 @@ export function useSprintPlannerUIHandlers({
     tasksMap,
     confirm,
     debouncedUpdateXarrow,
-    saveLink,
     savePosition,
   });
 

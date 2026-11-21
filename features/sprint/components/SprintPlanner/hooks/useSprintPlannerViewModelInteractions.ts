@@ -75,7 +75,6 @@ interface UseSprintPlannerViewModelInteractionsParams {
     toTaskId: string;
   }) => Promise<void>;
   onTasksReload?: (options?: { showToast?: boolean }) => void;
-  saveLink: (link: { fromTaskId: string; toTaskId: string; id: string }) => Promise<void>;
 }
 
 export function useSprintPlannerViewModelInteractions({
@@ -91,7 +90,6 @@ export function useSprintPlannerViewModelInteractions({
   forDemoPlanner,
   getQueueByBoardId,
   onTasksReload,
-  saveLink,
   selectedSprintId,
   sprintPlannerUi,
   sprints,
@@ -100,15 +98,13 @@ export function useSprintPlannerViewModelInteractions({
 }: UseSprintPlannerViewModelInteractionsParams) {
   const {
     allTasksForDrag,
+    board,
     comments,
-    deleteLink,
     deletePosition,
     developers,
     filteredTaskLinks,
     filteredTaskPositions,
     savePosition,
-    setComments,
-    setTaskLinks,
     setTaskPositions,
     setTasks,
     taskLinks,
@@ -117,6 +113,10 @@ export function useSprintPlannerViewModelInteractions({
     tasksMap,
     viewMode,
   } = state;
+  // Действия со связями и заметками — у списков модели доски.
+  const { delete: deleteLink, setWithSave: setTaskLinks } = board.links;
+  const { setWithSave: setComments } = board.comments;
+  const saveLink = board.savePlannerLink;
   const { swimlaneImagesVisible, swimlaneNotesVisible, syncAssignees, syncEstimates } = preferences;
   const commentsVisible = swimlaneNotesVisible || swimlaneImagesVisible;
   const { sprintTimelineWorkingDays } = timeline;
@@ -239,7 +239,6 @@ export function useSprintPlannerViewModelInteractions({
     onTasksReload,
     qaTaskManagement,
     resetDragStateRef,
-    saveLink,
     selectedSprintId,
     setSidebarOpen: sprintPlannerUi.setSidebarOpen,
     state,
