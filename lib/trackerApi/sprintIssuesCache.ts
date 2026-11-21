@@ -18,21 +18,22 @@ export function sprintIssuesCacheTtlSeconds(status: string | undefined): number 
     : SPRINT_ISSUES_CACHE_TTL_ACTIVE_SEC;
 }
 
-export function getCachedSprintIssues(sprintId: number): TrackerIssue[] | null {
-  return apiCache.get<TrackerIssue[]>(cacheKeys.sprintIssues(sprintId));
+export function getCachedSprintIssues(organizationId: string, sprintId: number): TrackerIssue[] | null {
+  return apiCache.get<TrackerIssue[]>(cacheKeys.sprintIssues(organizationId, sprintId));
 }
 
 export function setCachedSprintIssues(
+  organizationId: string,
   sprintId: number,
   issues: TrackerIssue[],
   status: string | undefined
 ): void {
-  apiCache.set(cacheKeys.sprintIssues(sprintId), issues, sprintIssuesCacheTtlSeconds(status));
+  apiCache.set(cacheKeys.sprintIssues(organizationId, sprintId), issues, sprintIssuesCacheTtlSeconds(status));
 }
 
 /** Сброс кэша задач спринта (кнопка «Обновить», смена состава спринта и т.п.). */
-export function invalidateCachedSprintIssues(sprintId: number): void {
-  apiCache.delete(cacheKeys.sprintIssues(sprintId));
+export function invalidateCachedSprintIssues(organizationId: string, sprintId: number): void {
+  apiCache.delete(cacheKeys.sprintIssues(organizationId, sprintId));
   apiCache.deleteByPattern(new RegExp(`^jira:sprint-issues:${sprintId}:`));
 }
 
@@ -41,11 +42,12 @@ function optionalEstimateValue(value: number | null | undefined): number | undef
 }
 
 function patchCachedSprintIssue(
+  organizationId: string,
   sprintId: number,
   issueKey: string,
   patch: (issue: TrackerIssue) => TrackerIssue
 ): void {
-  const cached = getCachedSprintIssues(sprintId);
+  const cached = getCachedSprintIssues(organizationId, sprintId);
   if (!cached) return;
 
   let changed = false;
@@ -55,7 +57,7 @@ function patchCachedSprintIssue(
     return patch(issue);
   });
   if (!changed) return;
-  setCachedSprintIssues(sprintId, next, undefined);
+  setCachedSprintIssues(organizationId, sprintId, next, undefined);
 }
 
 function withPatchedEstimates(
@@ -77,16 +79,17 @@ function withPatchedEstimates(
  * правим уже закэшированный снимок, чтобы ближайший refetch не откатил SP/TP.
  */
 export function patchCachedSprintIssueEstimates(
+  organizationId: string,
   sprintId: number,
   issueKey: string,
   estimates: { storyPoints?: number | null; testPoints?: number | null }
 ): void {
-  patchCachedSprintIssue(sprintId, issueKey, (issue) => withPatchedEstimates(issue, estimates));
+  patchCachedSprintIssue(organizationId, sprintId, issueKey, (issue) => withPatchedEstimates(issue, estimates));
 }
 
 /** После очистки start/deadline в трекере — не отдаём старые даты из memory cache. */
-export function clearCachedSprintIssueScheduleDates(sprintId: number, issueKey: string): void {
-  patchCachedSprintIssue(sprintId, issueKey, (issue) => {
+export function clearCachedSprintIssueScheduleDates(organizationId: string, sprintId: number, issueKey: string): void {
+  patchCachedSprintIssue(organizationId, sprintId, issueKey, (issue) => {
     const next = { ...issue };
     delete next.start;
     delete next.deadline;
@@ -99,6 +102,7 @@ export function clearCachedSprintIssueScheduleDates(sprintId: number, issueKey: 
  * подменяем status в кэше, чтобы соседние вкладки не читали старый снимок.
  */
 export function patchCachedSprintIssueStatus(
+  organizationId: string,
   sprintId: number,
   issueKey: string,
   patch: {
@@ -109,7 +113,7 @@ export function patchCachedSprintIssueStatus(
   if (!patch.status && !patch.statusType) {
     return;
   }
-  patchCachedSprintIssue(sprintId, issueKey, (issue) => ({
+  patchCachedSprintIssue(organizationId, sprintId, issueKey, (issue) => ({
     ...issue,
     ...(patch.status ? { status: patch.status } : {}),
     ...(patch.statusType ? { statusType: patch.statusType } : {}),
@@ -121,11 +125,12 @@ export function patchCachedSprintIssueStatus(
  * иначе после перезагрузки карточка попадает в «Без родителя», пока не истечёт TTL.
  */
 export function patchCachedSprintIssueParent(
+  organizationId: string,
   sprintId: number,
   issueKey: string,
   parent: TrackerIssue['parent'] | null
 ): void {
-  patchCachedSprintIssue(sprintId, issueKey, (issue) => {
+  patchCachedSprintIssue(organizationId, sprintId, issueKey, (issue) => {
     if (parent == null) {
       const next = { ...issue };
       delete next.parent;
@@ -135,23 +140,23 @@ export function patchCachedSprintIssueParent(
   });
 }
 
-export function upsertCachedSprintIssue(sprintId: number, issue: TrackerIssue): void {
-  const cached = getCachedSprintIssues(sprintId);
+export function upsertCachedSprintIssue(organizationId: string, sprintId: number, issue: TrackerIssue): void {
+  const cached = getCachedSprintIssues(organizationId, sprintId);
   if (!cached) {
     return;
   }
   const index = cached.findIndex((row) => row.key === issue.key);
   if (index < 0) {
-    setCachedSprintIssues(sprintId, [...cached, issue], undefined);
+    setCachedSprintIssues(organizationId, sprintId, [...cached, issue], undefined);
     return;
   }
   const next = [...cached];
   next[index] = issue;
-  setCachedSprintIssues(sprintId, next, undefined);
+  setCachedSprintIssues(organizationId, sprintId, next, undefined);
 }
 
-export function removeCachedSprintIssue(sprintId: number, issueKey: string): void {
-  const cached = getCachedSprintIssues(sprintId);
+export function removeCachedSprintIssue(organizationId: string, sprintId: number, issueKey: string): void {
+  const cached = getCachedSprintIssues(organizationId, sprintId);
   if (!cached) {
     return;
   }
@@ -159,5 +164,5 @@ export function removeCachedSprintIssue(sprintId: number, issueKey: string): voi
   if (next.length === cached.length) {
     return;
   }
-  setCachedSprintIssues(sprintId, next, undefined);
+  setCachedSprintIssues(organizationId, sprintId, next, undefined);
 }

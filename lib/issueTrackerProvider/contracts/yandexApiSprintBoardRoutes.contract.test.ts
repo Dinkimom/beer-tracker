@@ -59,7 +59,7 @@ describe('GET /api/boards/[boardId] JSON', () => {
       });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });

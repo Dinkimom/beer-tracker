@@ -38,6 +38,7 @@ const trackerConfig = {
   apiUrl: 'https://api.tracker.example',
   jiraEmail: '',
   oauthToken: 'token-xyz',
+  organizationId: 'org-1',
   orgId: 'org-1',
   providerKind: 'tracker' as const,
   cloudId: '',
@@ -117,6 +118,7 @@ describe('loadBoardParamsForRequest', () => {
       apiUrl: 'https://example.atlassian.net/rest/api/3',
       jiraEmail: 'planner@example.com',
       oauthToken: 'org-api-token',
+      organizationId: 'org-1',
     };
     vi.mocked(resolveStoredOrganizationTrackerApiConfig).mockResolvedValue(storedConfig);
     const requestGetBoard = vi.fn().mockResolvedValue({ columns: [], id: 42, name: 'Board' });

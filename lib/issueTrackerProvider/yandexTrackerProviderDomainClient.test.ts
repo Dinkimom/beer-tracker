@@ -20,7 +20,7 @@ describe('yandexTrackerProvider domain client', () => {
     const get = vi.fn().mockResolvedValueOnce({ data: { uid: 123, display: 'User' } });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -35,7 +35,7 @@ describe('yandexTrackerProvider domain client', () => {
     });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -52,7 +52,7 @@ describe('yandexTrackerProvider domain client', () => {
     const get = vi.fn().mockResolvedValueOnce({ data: [{ id: 10, name: 'Sprint' }] });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -71,7 +71,7 @@ describe('yandexTrackerProvider domain client', () => {
     });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ post } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -129,7 +129,7 @@ describe('yandexTrackerProvider domain client', () => {
     const patch = vi.fn().mockResolvedValueOnce({ data: {} });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get, patch, post } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -173,7 +173,7 @@ describe('yandexTrackerProvider domain client', () => {
     const post = vi.fn().mockResolvedValueOnce({ data: { id: 10, name: 'Sprint' } });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ post } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -210,7 +210,7 @@ describe('yandexTrackerProvider domain client', () => {
       });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -228,7 +228,7 @@ describe('yandexTrackerProvider domain client', () => {
     const get = vi.fn().mockResolvedValueOnce({ data: { key: 'BT', name: 'Beer Tracker' } });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -249,7 +249,7 @@ describe('yandexTrackerProvider domain client', () => {
       });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -265,7 +265,7 @@ describe('yandexTrackerProvider domain client', () => {
     });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -288,7 +288,7 @@ describe('yandexTrackerProvider domain client', () => {
     });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -350,7 +350,7 @@ describe('yandexTrackerProvider domain client', () => {
       });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -395,7 +395,7 @@ describe('yandexTrackerProvider domain client', () => {
       });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -432,7 +432,7 @@ describe('yandexTrackerProvider domain client', () => {
       });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -457,7 +457,7 @@ describe('yandexTrackerProvider domain client', () => {
       });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
 
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });

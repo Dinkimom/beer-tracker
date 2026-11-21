@@ -45,7 +45,7 @@ const yandexTransitions = [
 ];
 
 function yandexMapIssueToTask() {
-  return createYandexProviderClient({
+  return createYandexProviderClient({ organizationId: 'org-1',
     oauthToken: 'token-1',
     orgId: 'org-1',
   }).mapIssueToTask;
@@ -142,7 +142,7 @@ describe('GET /api/issues/[issueKey]/transitions and batch JSON', () => {
   it('returns Yandex transition items as the route body', async () => {
     const get = vi.fn().mockResolvedValueOnce({ data: yandexTransitions });
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce({ get } as never);
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });

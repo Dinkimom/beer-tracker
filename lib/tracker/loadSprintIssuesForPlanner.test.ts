@@ -52,7 +52,7 @@ describe('loadSprintIssuesForPlanner', () => {
       sprintId: '1974',
       sprintName: '',
     });
-    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('PG-1'), issue('PG-2')], undefined);
+    expect(deps.setCached).toHaveBeenCalledWith(baseParams.organizationId, 1974, [issue('PG-1'), issue('PG-2')], undefined);
     expect(deps.scheduleTrackerRefresh).toHaveBeenCalledWith(
       1974,
       baseParams.issueTracker,
@@ -90,7 +90,7 @@ describe('loadSprintIssuesForPlanner', () => {
       { forceRefresh: false },
       baseParams.organizationId
     );
-    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], undefined);
+    expect(deps.setCached).toHaveBeenCalledWith(baseParams.organizationId, 1974, [issue('TR-1')], undefined);
   });
 
   it('skips snapshot on forceRefresh', async () => {
@@ -106,7 +106,7 @@ describe('loadSprintIssuesForPlanner', () => {
       { forceRefresh: true },
       baseParams.organizationId
     );
-    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], undefined);
+    expect(deps.setCached).toHaveBeenCalledWith(baseParams.organizationId, 1974, [issue('TR-1')], undefined);
   });
 
   it('skipSnapshots: serves in-memory cache when present', async () => {
@@ -134,7 +134,7 @@ describe('loadSprintIssuesForPlanner', () => {
       { forceRefresh: false },
       baseParams.organizationId
     );
-    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], undefined);
+    expect(deps.setCached).toHaveBeenCalledWith(baseParams.organizationId, 1974, [issue('TR-1')], undefined);
   });
 
   it('forwards known sprint status to Tracker fallback', async () => {
@@ -149,7 +149,7 @@ describe('loadSprintIssuesForPlanner', () => {
       { forceRefresh: false, sprintStatus: 'in_progress' },
       baseParams.organizationId
     );
-    expect(deps.setCached).toHaveBeenCalledWith(1974, [issue('TR-1')], 'in_progress');
+    expect(deps.setCached).toHaveBeenCalledWith(baseParams.organizationId, 1974, [issue('TR-1')], 'in_progress');
   });
 
   it('falls back to Tracker when the board has no team title', async () => {

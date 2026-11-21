@@ -17,6 +17,7 @@ interface ResolvedTrackerApiConfig {
   apiUrl: string;
   jiraEmail?: string;
   oauthToken: string;
+  organizationId: string;
   orgId: string;
   providerKind: IssueTrackerProviderKind;
   webBaseUrl: string;
@@ -32,12 +33,14 @@ export function createIssueTrackerProviderClientFromResolvedConfig(
       apiUrl: config.apiUrl,
       email: config.jiraEmail,
       kind: config.providerKind,
+      organizationId: config.organizationId,
       webBaseUrl: config.webBaseUrl,
     });
   }
   return (provider as YandexIssueTrackerProvider).createProviderClient({
     apiUrl: config.apiUrl,
     oauthToken: config.oauthToken,
+    organizationId: config.organizationId,
     orgId: config.orgId,
   });
 }

@@ -121,6 +121,7 @@ function trackerStatusPatchFromChange(input: {
 
 export function completeIssueStatusChange(input: {
   issueKey: string;
+  organizationId: string;
   request: Request;
   sprintIds: number[];
   statusDisplay?: string;
@@ -143,7 +144,7 @@ export function completeIssueStatusChange(input: {
       statusTypeKey: input.statusTypeKey,
     });
     for (const sprintId of input.sprintIds) {
-      patchCachedSprintIssueStatus(sprintId, input.issueKey, patch);
+      patchCachedSprintIssueStatus(input.organizationId, sprintId, input.issueKey, patch);
     }
   }
   notifySprintRealtimeForSprintIds(input.request, input.sprintIds, ['tasks'], {
@@ -198,6 +199,7 @@ function cachedParentFromTrackerIssue(
 
 export function completeIssueParentChange(input: {
   issueKey: string;
+  organizationId: string;
   parent: TrackerIssue['parent'] | null;
   request: Request;
   sprintIds: number[];
@@ -207,7 +209,7 @@ export function completeIssueParentChange(input: {
     return;
   }
   for (const sprintId of sprintIds) {
-    patchCachedSprintIssueParent(sprintId, input.issueKey, input.parent);
+    patchCachedSprintIssueParent(input.organizationId, sprintId, input.issueKey, input.parent);
   }
   invalidateCache.issueFull(input.issueKey);
   notifySprintRealtimeForSprintIds(input.request, sprintIds, ['tasks']);
@@ -215,7 +217,10 @@ export function completeIssueParentChange(input: {
 
 export async function syncPlannerIssueParentAfterTrackerUpdate(input: {
   issueKey: string;
-  issueTracker: { getIssue: (issueKey: string) => Promise<PlannerIssueParentSource | null> };
+  issueTracker: {
+    getIssue: (issueKey: string) => Promise<PlannerIssueParentSource | null>;
+    organizationId: string;
+  };
   parentKey: string | null;
   request: Request;
   sprintId?: number;
@@ -228,6 +233,7 @@ export async function syncPlannerIssueParentAfterTrackerUpdate(input: {
   }
   completeIssueParentChange({
     issueKey: input.issueKey,
+    organizationId: input.issueTracker.organizationId,
     parent: cachedParentFromTrackerIssue(issue, input.parentKey),
     request: input.request,
     sprintIds: [

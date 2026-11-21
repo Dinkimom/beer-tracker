@@ -17,7 +17,7 @@ describe('IssueTrackerProviderClient surface contract', () => {
   });
 
   it('implements every catalogued method on the Yandex client', () => {
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -29,11 +29,11 @@ describe('IssueTrackerProviderClient surface contract', () => {
   });
 
   it('carries the tracker kind and issue web base on the client', () => {
-    const yandex = createYandexProviderClient({ oauthToken: 'token-1', orgId: 'org-1' });
+    const yandex = createYandexProviderClient({ organizationId: 'org-1', oauthToken: 'token-1', orgId: 'org-1' });
     expect(yandex.providerKind).toBe('tracker');
     expect(yandex.webBaseUrl).toBe('https://tracker.yandex.ru');
 
-    const jira = createJiraProviderClient({
+    const jira = createJiraProviderClient({ organizationId: 'org-1',
       apiToken: 'token',
       email: 'user@example.com',
       kind: 'jira-onprem',
@@ -44,7 +44,7 @@ describe('IssueTrackerProviderClient surface contract', () => {
   });
 
   it('rejects unimplemented catalogued methods on the Jira adapter', async () => {
-    const client = createJiraProviderClient({
+    const client = createJiraProviderClient({ organizationId: 'org-1',
       apiToken: 'token',
       email: 'user@example.com',
       kind: 'jira-cloud',
@@ -65,7 +65,7 @@ describe('IssueTrackerProviderClient surface contract', () => {
   });
 
   it('implements getIssue, transitions, updateIssue, listSprints and searchUsers on the Jira adapter', async () => {
-    const client = createJiraProviderClient({
+    const client = createJiraProviderClient({ organizationId: 'org-1',
       apiToken: 'token',
       email: 'user@example.com',
       kind: 'jira-cloud',
@@ -89,7 +89,7 @@ describe('IssueTrackerProviderClient surface contract', () => {
   });
 
   it('is not thenable so async factories can return the client', async () => {
-    const client = createJiraProviderClient({
+    const client = createJiraProviderClient({ organizationId: 'org-1',
       apiToken: 'token',
       email: 'user@example.com',
       kind: 'jira-cloud',

@@ -102,7 +102,7 @@ describe('Yandex adapter outbound REST contract', () => {
   it.each(YANDEX_ADAPTER_OUTBOUND)('$name calls $method $url', async ({ args, method, name, url }) => {
     const http = createMockAxios();
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce(http as never);
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -116,7 +116,7 @@ describe('Yandex adapter outbound REST contract', () => {
   it('posts createSprint with Yandex board id as string', async () => {
     const http = createMockAxios();
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce(http as never);
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -139,7 +139,7 @@ describe('Yandex adapter outbound REST contract', () => {
   it('posts createIssue with the Yandex issue body', async () => {
     const http = createMockAxios();
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce(http as never);
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });
@@ -155,7 +155,7 @@ describe('Yandex adapter outbound REST contract', () => {
   it('posts comments as { text }', async () => {
     const http = createMockAxios();
     vi.mocked(createTrackerAxiosInstance).mockReturnValueOnce(http as never);
-    const client = createYandexProviderClient({
+    const client = createYandexProviderClient({ organizationId: 'org-1',
       oauthToken: 'token-1',
       orgId: 'org-1',
     });

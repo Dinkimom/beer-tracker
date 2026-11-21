@@ -239,7 +239,7 @@ describe('jiraTrackerProvider skeleton', () => {
   });
 
   it('throws UnsupportedIssueTrackerOperationError for unimplemented methods', async () => {
-    const client = createJiraProviderClient({
+    const client = createJiraProviderClient({ organizationId: 'org-1',
       apiToken: 'token',
       email: 'user@example.com',
       kind: 'jira-cloud',
@@ -252,7 +252,7 @@ describe('jiraTrackerProvider skeleton', () => {
   });
 
   it('is not thenable', async () => {
-    const client = createJiraProviderClient({
+    const client = createJiraProviderClient({ organizationId: 'org-1',
       apiToken: 'token',
       email: 'user@example.com',
       kind: 'jira-cloud',
@@ -263,7 +263,7 @@ describe('jiraTrackerProvider skeleton', () => {
   });
 
   it('implements getIssue, transitions, updateIssue, listSprintIssues and searchUsers', async () => {
-    const client = createJiraProviderClient({
+    const client = createJiraProviderClient({ organizationId: 'org-1',
       apiToken: 'token',
       email: 'user@example.com',
       kind: 'jira-cloud',
@@ -420,7 +420,7 @@ describe('jiraTrackerProvider skeleton', () => {
   });
 
   it('getTasksInSprintWithParents keeps localized task types and drops epics', async () => {
-    const client = createJiraProviderClient({
+    const client = createJiraProviderClient({ organizationId: 'org-1',
       apiToken: 'token',
       email: 'user@example.com',
       kind: 'jira-cloud',
@@ -447,6 +447,7 @@ describe('jiraTrackerProvider skeleton', () => {
   it('uses the same unsupported client from factory helper', async () => {
     const client = createJiraUnsupportedProviderClient({
       kind: 'jira-cloud',
+      organizationId: 'org-1',
       webBaseUrl: 'https://example.atlassian.net',
     });
     await expect(client.getIssue('JIRA-1')).rejects.toMatchObject({

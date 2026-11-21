@@ -20,10 +20,11 @@ function parseBoardIdFromTracker(raw: number | string | null | undefined): numbe
 }
 
 export async function fetchSprintInfo(
+  organizationId: string,
   sprintId: number,
   axiosInstance?: AxiosInstance
 ): Promise<SprintInfo> {
-  const cached = apiCache.get<SprintInfo>(cacheKeys.sprintInfo(sprintId));
+  const cached = apiCache.get<SprintInfo>(cacheKeys.sprintInfo(organizationId, sprintId));
   if (cached) return cached;
 
   const api = requireTrackerAxiosForApiRoute(axiosInstance);
@@ -39,7 +40,7 @@ export async function fetchSprintInfo(
     endDateTime: data.endDateTime,
     version: data.version,
   };
-  apiCache.set(cacheKeys.sprintInfo(sprintId), info, SPRINT_INFO_CACHE_TTL_SEC);
+  apiCache.set(cacheKeys.sprintInfo(organizationId, sprintId), info, SPRINT_INFO_CACHE_TTL_SEC);
   return info;
 }
 

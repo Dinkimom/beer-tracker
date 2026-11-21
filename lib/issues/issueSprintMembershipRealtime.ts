@@ -23,7 +23,7 @@ function uniquePositiveSprintIds(sprintIds: readonly number[]): number[] {
   return [...seen];
 }
 
-type MembershipIssueTracker = Pick<IssueTrackerProviderClient, 'getIssue' | 'mapIssueToTask'>;
+type MembershipIssueTracker = Pick<IssueTrackerProviderClient, 'getIssue' | 'mapIssueToTask' | 'organizationId'>;
 
 interface AddedIssueSnapshot {
   task: Task;
@@ -79,12 +79,12 @@ export async function completeIssueSprintMembershipChange(input: {
     if (snapshot) {
       addedTask = snapshot.task;
       for (const sprintId of addedSprintIds) {
-        upsertCachedSprintIssue(sprintId, snapshot.trackerIssue);
+        upsertCachedSprintIssue(input.issueTracker.organizationId, sprintId, snapshot.trackerIssue);
       }
     }
   }
   for (const sprintId of removedSprintIds) {
-    removeCachedSprintIssue(sprintId, input.issueKey);
+    removeCachedSprintIssue(input.issueTracker.organizationId, sprintId, input.issueKey);
   }
 
   notifySprintRealtimeForSprintIds(input.request, addedSprintIds, ['tasks'], {

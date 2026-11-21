@@ -58,6 +58,7 @@ export async function PATCH(
 
     completeIssueStatusChange({
       issueKey,
+      organizationId: issueTracker.organizationId,
       request,
       sprintIds,
       statusDisplay: targetStatusDisplay || undefined,

@@ -331,6 +331,8 @@ export interface IssueTrackerIssueSearchOptions {
 }
 
 export interface IssueTrackerProviderClient {
+  /** Организация продукта, под которую разобран клиент (членство уже проверено) — ключ кэша спринтов. */
+  readonly organizationId: string;
   /** Трекер организации, для которой создан клиент. */
   readonly providerKind: IssueTrackerProviderKind;
   /** Browser base ссылок на задачи этой организации. */
@@ -466,6 +468,11 @@ export interface YandexTrackerClientConfig {
   orgId: string;
 }
 
+/** Клиент домена: организация продукта нужна для ключей кэша спринтов. */
+export interface YandexProviderClientConfig extends YandexTrackerClientConfig {
+  organizationId: string;
+}
+
 export interface JiraTrackerClientConfig {
   apiToken: string;
   apiUrl?: string;
@@ -475,6 +482,7 @@ export interface JiraTrackerClientConfig {
 
 export interface JiraProviderClientConfig extends JiraTrackerClientConfig {
   kind: 'jira-cloud' | 'jira-onprem';
+  organizationId: string;
   /** От URL сайта: при user OAuth `apiUrl` указывает на шлюз api.atlassian.com. */
   webBaseUrl: string;
 }
@@ -488,7 +496,7 @@ export interface YandexIssueTrackerProvider extends IssueTrackerProviderBase {
   kind: 'yandex-tracker';
   createClient(config: YandexTrackerClientConfig): AxiosInstance;
   createClientFromRequest(request: Request): Promise<AxiosInstance>;
-  createProviderClient(config: YandexTrackerClientConfig): IssueTrackerProviderClient;
+  createProviderClient(config: YandexProviderClientConfig): IssueTrackerProviderClient;
 }
 
 export interface JiraIssueTrackerProvider extends IssueTrackerProviderBase {

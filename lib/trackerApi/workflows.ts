@@ -5,7 +5,7 @@
 import type { WorkflowStep } from './workflowsHelpers';
 import type { AxiosInstance } from 'axios';
 
-import { apiCache, cacheKeys } from '../cache';
+import { apiCache, cacheKeys, trackerConnectionCacheScope } from '../cache';
 import { requireTrackerAxiosForApiRoute } from '../trackerAxiosFactory';
 
 import { TRACKER_V3_BASE, WORKFLOW_CACHE_TTL, TRANSITIONS_BATCH_CONCURRENCY } from './constants';
@@ -50,14 +50,14 @@ export async function fetchQueueWorkflows(
   queueKey: string,
   axiosInstance?: AxiosInstance
 ): Promise<Record<string, Array<{ id: string; key: string; display?: string }>>> {
-  const cacheKey = cacheKeys.queueWorkflows(queueKey.trim().toUpperCase());
+  const api = requireTrackerAxiosForApiRoute(axiosInstance);
+  const cacheKey = cacheKeys.queueWorkflows(trackerConnectionCacheScope(api), queueKey.trim().toUpperCase());
   const cached =
     apiCache.get<Record<string, Array<{ id: string; key: string; display?: string }>>>(cacheKey);
   if (cached) {
     return cached;
   }
 
-  const api = requireTrackerAxiosForApiRoute(axiosInstance);
   const { data } = await api.get<Record<string, Array<{ id: string; key: string; display?: string }>>>(
     `${TRACKER_V3_BASE}/queues/${queueKey}/workflows`
   );
@@ -81,7 +81,7 @@ export async function fetchField(
   axiosInstance?: AxiosInstance
 ): Promise<TrackerFieldSchema | null> {
   const api = requireTrackerAxiosForApiRoute(axiosInstance);
-  const cacheKey = cacheKeys.field(fieldId);
+  const cacheKey = cacheKeys.field(trackerConnectionCacheScope(api), fieldId);
   const cached = apiCache.get<TrackerFieldSchema>(cacheKey);
   if (cached) return cached;
   try {
@@ -129,7 +129,7 @@ export async function getTransitionScreenFields(
 
   if (!screenId) return null;
 
-  const screenCacheKey = cacheKeys.screen(String(screenId));
+  const screenCacheKey = cacheKeys.screen(trackerConnectionCacheScope(api), String(screenId));
   let screen = apiCache.get<{ elements: ScreenElement[] }>(screenCacheKey);
   if (!screen) {
     screen = await fetchScreen(String(screenId), api);
@@ -151,7 +151,7 @@ async function resolveCachedScreen(
   screenId: string,
   api: AxiosInstance
 ): Promise<{ elements: ScreenElement[] }> {
-  const screenCacheKey = cacheKeys.screen(screenId);
+  const screenCacheKey = cacheKeys.screen(trackerConnectionCacheScope(api), screenId);
   const cached = apiCache.get<{ elements: ScreenElement[] }>(screenCacheKey);
   if (cached) {
     return cached;
@@ -245,7 +245,8 @@ export async function fetchQueueWorkflowScreens(
   axiosInstance?: AxiosInstance
 ): Promise<Record<string, Record<string, TransitionField[]>>> {
   const api = requireTrackerAxiosForApiRoute(axiosInstance);
-  const cacheKey = cacheKeys.queueWorkflowScreens(queueKey);
+  const scope = trackerConnectionCacheScope(api);
+  const cacheKey = cacheKeys.queueWorkflowScreens(scope, queueKey);
   const cached = apiCache.get<Record<string, Record<string, TransitionField[]>>>(cacheKey);
   if (cached) return cached;
 
@@ -256,9 +257,9 @@ export async function fetchQueueWorkflowScreens(
     if (!typeList?.length) continue;
 
     const workflow =
-      apiCache.get<{ steps: WorkflowStep[] }>(cacheKeys.workflow(workflowId)) ??
+      apiCache.get<{ steps: WorkflowStep[] }>(cacheKeys.workflow(scope, workflowId)) ??
       (await fetchWorkflow(workflowId, api));
-    apiCache.set(cacheKeys.workflow(workflowId), workflow, WORKFLOW_CACHE_TTL);
+    apiCache.set(cacheKeys.workflow(scope, workflowId), workflow, WORKFLOW_CACHE_TTL);
 
     const transitionScreens = await collectTransitionScreensForWorkflowFromApi(workflow, api);
     await assignWorkflowScreensToIssueTypes(result, queueKey, typeList, transitionScreens, api);

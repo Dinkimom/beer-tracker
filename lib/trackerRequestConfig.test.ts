@@ -74,6 +74,7 @@ describe('trackerRequestConfig provider context', () => {
     ).resolves.toEqual({
       apiUrl: 'https://api.tracker.yandex.net/v3',
       cloudId: '',
+      organizationId: '00000000-0000-4000-8000-000000000001',
       orgId: 'cloud-org-1',
       providerKind: 'tracker',
       storedJiraEmail: '',
@@ -98,6 +99,7 @@ describe('trackerRequestConfig provider context', () => {
     ).resolves.toEqual({
       apiUrl: 'https://jira.example.com/rest/api/2',
       cloudId: '',
+      organizationId: '00000000-0000-4000-8000-000000000001',
       orgId: 'jira-site-1',
       providerKind: 'jira-onprem',
       storedJiraEmail: '',
@@ -210,6 +212,7 @@ describe('resolveStoredOrganizationTrackerApiConfig', () => {
       cloudId: '',
       jiraEmail: '',
       oauthToken: 'stored-oauth',
+      organizationId: '00000000-0000-4000-8000-000000000001',
       orgId: 'cloud-org-1',
       providerKind: 'tracker',
       storedJiraEmail: '',

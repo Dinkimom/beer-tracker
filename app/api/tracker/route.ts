@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     const sprintIdNum = sprintIdParsed;
 
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
-    const sprintInfo = resolveTrackerRouteSprintInfo(boardId, sprintIdNum);
+    const sprintInfo = resolveTrackerRouteSprintInfo(organizationId, boardId, sprintIdNum);
 
     const [issues, integration, developersRaw] = await Promise.all([
       loadSprintIssuesForPlanner({

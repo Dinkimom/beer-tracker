@@ -157,7 +157,7 @@ async function listBoardSprintsCached(
   issueTracker: IssueTrackerProviderClient,
   boardId: number
 ): Promise<SprintListItem[]> {
-  const cacheKey = cacheKeys.sprints(boardId);
+  const cacheKey = cacheKeys.sprints(issueTracker.organizationId, boardId);
   const cached = apiCache.get<SprintListItem[]>(cacheKey);
   if (cached) return cached;
   const sprints = await issueTracker.listSprints(boardId);

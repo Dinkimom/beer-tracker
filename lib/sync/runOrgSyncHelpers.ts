@@ -152,6 +152,7 @@ function createOrgIssueTrackerClient(
     apiUrl: auth.apiUrl,
     jiraEmail: auth.jiraEmail,
     oauthToken: credentials.accessToken,
+    organizationId: org.id,
     orgId: readIssueTrackerExternalOrgId(org),
     providerKind,
     webBaseUrl: issueTrackerWebBaseFromApiUrl(providerKind, tracker.apiUrl),

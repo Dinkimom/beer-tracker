@@ -36,24 +36,24 @@ afterEach(() => {
 describe('resolveTrackerRouteSprintInfo', () => {
   it('returns sprintInfo already cached for the sprint id', () => {
     const cached: SprintInfo = { ...sprintInfoFromListItem(listItem), name: 'Cached' };
-    apiCache.set(cacheKeys.sprintInfo(1974), cached, 60);
+    apiCache.set(cacheKeys.sprintInfo('org-1', 1974), cached, 60);
 
-    expect(resolveTrackerRouteSprintInfo('381', 1974)?.name).toBe('Cached');
+    expect(resolveTrackerRouteSprintInfo('org-1', '381', 1974)?.name).toBe('Cached');
   });
 
   it('maps the sprint from the board sprints list cache', () => {
-    apiCache.set(cacheKeys.sprints(381), [listItem], 60);
+    apiCache.set(cacheKeys.sprints('org-1', 381), [listItem], 60);
 
-    expect(resolveTrackerRouteSprintInfo('381', 1974)).toEqual(sprintInfoFromListItem(listItem));
+    expect(resolveTrackerRouteSprintInfo('org-1', '381', 1974)).toEqual(sprintInfoFromListItem(listItem));
   });
 
   it('does not call out when the board list is missing', () => {
-    expect(resolveTrackerRouteSprintInfo('381', 1974)).toBeNull();
+    expect(resolveTrackerRouteSprintInfo('org-1', '381', 1974)).toBeNull();
   });
 
   it('returns null when the sprint is not on the cached board list', () => {
-    apiCache.set(cacheKeys.sprints(381), [listItem], 60);
+    apiCache.set(cacheKeys.sprints('org-1', 381), [listItem], 60);
 
-    expect(resolveTrackerRouteSprintInfo('381', 1)).toBeNull();
+    expect(resolveTrackerRouteSprintInfo('org-1', '381', 1)).toBeNull();
   });
 });

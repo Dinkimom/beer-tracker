@@ -41,9 +41,9 @@ export async function PATCH(
     // а не force-refresh списка (иначе UI откатывает оптимистичную оценку).
     for (const sprintId of sprintIds) {
       invalidateCache.burndown(sprintId);
-      patchCachedSprintIssueEstimates(sprintId, issueKey, estimates);
+      patchCachedSprintIssueEstimates(issueTracker.organizationId, sprintId, issueKey, estimates);
     }
-    invalidateCache.issueChangelog(issueKey);
+    invalidateCache.issueChangelog();
 
     return NextResponse.json({
       success: true,

@@ -41,6 +41,7 @@ describe('yandexTrackerProvider', () => {
       apiUrl: 'https://api.tracker.test/v3',
       jiraEmail: '',
       oauthToken: 'token-from-request',
+      organizationId: 'org-1',
       cloudId: '',
       orgId: 'org-from-request',
       providerKind: 'tracker',

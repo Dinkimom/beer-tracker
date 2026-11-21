@@ -4,7 +4,7 @@
 
 import type { AxiosInstance } from 'axios';
 
-import { apiCache, cacheKeys } from '../cache';
+import { apiCache, cacheKeys, trackerConnectionCacheScope } from '../cache';
 import { requireTrackerAxiosForApiRoute } from '../trackerAxiosFactory';
 
 import { TRACKER_V3_BASE, WORKFLOW_CACHE_TTL } from './constants';
@@ -68,13 +68,13 @@ async function fetchQueueIssueTypesConfig(
   if (!key) {
     return [];
   }
-  const cacheKey = cacheKeys.queueIssueTypesConfig(key);
+  const api = requireTrackerAxiosForApiRoute(axiosInstance);
+  const cacheKey = cacheKeys.queueIssueTypesConfig(trackerConnectionCacheScope(api), key);
   const cached = apiCache.get<IssueTypesConfigEntry[]>(cacheKey);
   if (cached) {
     return cached;
   }
 
-  const api = requireTrackerAxiosForApiRoute(axiosInstance);
   try {
     const { data } = await api.get<{ issueTypesConfig?: IssueTypesConfigEntry[] }>(
       `${TRACKER_V3_BASE}/queues/${encodeURIComponent(key)}`,

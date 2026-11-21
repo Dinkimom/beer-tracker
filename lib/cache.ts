@@ -3,6 +3,8 @@
  * Используется для кэширования тяжелых запросов на сервере
  */
 
+import type { AxiosInstance } from 'axios';
+
 interface CacheEntry<T> {
   data: T;
   expiresAt: number;
@@ -93,12 +95,27 @@ if (typeof setInterval !== 'undefined' && !globalForApiCache.beerTrackerApiCache
 }
 
 /**
+ * Подключение к трекеру для ключей кэша метаданных (очереди, воркфлоу, экраны, поля):
+ * id полей и экранов уникальны только внутри одной организации трекера (`X-Org-ID`).
+ */
+export function trackerConnectionCacheScope(api: Pick<AxiosInstance, 'defaults'>): string {
+  const defaults = api.defaults as Partial<AxiosInstance['defaults']> | undefined;
+  const orgId = String((defaults?.headers as Record<string, unknown> | undefined)?.['X-Org-ID'] ?? '');
+  return `${defaults?.baseURL ?? ''}|${orgId}`;
+}
+
+/**
  * Генераторы ключей для кэша
  */
 export const cacheKeys = {
   burndownFromPg: (organizationId: string, sprintId: number, boardId?: number) =>
     `burndown:pg:${organizationId}:${sprintId}:${boardId ?? 'na'}`,
-  sprints: (boardId: number) => `sprints:${boardId}`,
+  /**
+   * Номера досок, спринтов и ключи задач у разных трекеров пересекаются, поэтому данные спринтов
+   * в кэше лежат под организацией, а метаданные трекера — под подключением (`trackerScope`,
+   * см. `trackerConnectionCacheScope`).
+   */
+  sprints: (organizationId: string, boardId: number) => `sprints:${organizationId}:${boardId}`,
   /** Справочник статусов трекера организации (ключ → тип) для правила «сделано». */
   trackerStatusCatalog: (organizationId: string) => `tracker:status-catalog:${organizationId}`,
   /**
@@ -106,24 +123,24 @@ export const cacheKeys = {
    * чтобы смена интеграции не отдавала чужой кэш.
    */
   boardParams: (fingerprint: string, boardId: number) => `boardParams:${fingerprint}:${boardId}`,
-  sprintInfo: (sprintId: number) => `sprintInfo:${sprintId}`,
+  sprintInfo: (organizationId: string, sprintId: number) => `sprintInfo:${organizationId}:${sprintId}`,
   /** POST /issues/_search по filter sprint (задачи спринта). */
-  sprintIssues: (sprintId: number) => `sprintIssues:${sprintId}`,
+  sprintIssues: (organizationId: string, sprintId: number) => `sprintIssues:${organizationId}:${sprintId}`,
   backlogFromPg: (organizationId: string, boardId: number, page: number, perPage: number) =>
     `backlog:pg:${organizationId}:${boardId}:${page}:${perPage}`,
-  issueChangelog: (issueKey: string) => `changelog:${issueKey}`,
   /** Детали issue (GET /api/issues/:key) с tenant — избегает утечки кэша между org. */
   issueDetail: (organizationId: string, issueKey: string) =>
     `issue:detail:${organizationId}:${issueKey}`,
-  issueFull: (issueKey: string) => `issue:${issueKey}`,
-  queueWorkflows: (queueKey: string) => `queue-workflows:${queueKey}`,
-  queueByKey: (queueKey: string) => `queue-by-key:${queueKey.trim().toUpperCase()}`,
-  queueIssueTypesConfig: (queueKey: string) =>
-    `queue-issue-types-config:${queueKey.trim().toUpperCase()}`,
-  queueWorkflowScreens: (queueKey: string) => `queue-workflow-screens:${queueKey}`,
-  workflow: (workflowId: string) => `workflow:${workflowId}`,
-  screen: (screenId: string) => `screen:${screenId}`,
-  field: (fieldId: string) => `field:${fieldId}`,
+  queueWorkflows: (trackerScope: string, queueKey: string) => `queue-workflows:${trackerScope}:${queueKey}`,
+  queueByKey: (trackerScope: string, queueKey: string) =>
+    `queue-by-key:${trackerScope}:${queueKey.trim().toUpperCase()}`,
+  queueIssueTypesConfig: (trackerScope: string, queueKey: string) =>
+    `queue-issue-types-config:${trackerScope}:${queueKey.trim().toUpperCase()}`,
+  queueWorkflowScreens: (trackerScope: string, queueKey: string) =>
+    `queue-workflow-screens:${trackerScope}:${queueKey}`,
+  workflow: (trackerScope: string, workflowId: string) => `workflow:${trackerScope}:${workflowId}`,
+  screen: (trackerScope: string, screenId: string) => `screen:${trackerScope}:${screenId}`,
+  field: (trackerScope: string, fieldId: string) => `field:${trackerScope}:${fieldId}`,
   /**
    * Очереди и доски из Yandex Tracker для админки команд (тяжёлый запрос).
    * fingerprint — хэш связки токен + API URL + Cloud Org ID (смена настроек → новый ключ).
@@ -164,29 +181,28 @@ export const invalidateCache = {
     apiCache.deleteByPattern(new RegExp(`^burndown:${sprintId}:`));
     apiCache.deleteByPattern(new RegExp(`^burndown:pg:.+:${sprintId}:`));
   },
-  sprints: (boardId: number) => {
-    apiCache.delete(cacheKeys.sprints(boardId));
+  sprints: (organizationId: string, boardId: number) => {
+    apiCache.delete(cacheKeys.sprints(organizationId, boardId));
   },
   backlog: (boardId: number) => {
     apiCache.deleteByPattern(`^backlog:${boardId}:`);
     const b = Number(boardId);
     apiCache.deleteByPattern(new RegExp(`^backlog:pg:.+:${b}:`));
   },
-  issueChangelog: (issueKey: string) => {
-    apiCache.delete(cacheKeys.issueChangelog(issueKey));
+  /** Оценки задачи поменялись — диаграммы сгорания пересчитываются. */
+  issueChangelog: () => {
     apiCache.deleteByPattern(/^burndown/);
   },
   issueFull: (issueKey: string) => {
-    apiCache.delete(cacheKeys.issueFull(issueKey));
     const escaped = issueKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     apiCache.deleteByPattern(new RegExp(`^issue:detail:.+:${escaped}$`));
   },
   // Инвалидировать все кэши, связанные со спринтом
-  sprint: (sprintId: number) => {
+  sprint: (organizationId: string, sprintId: number) => {
     apiCache.deleteByPattern(new RegExp(`^burndown:${sprintId}:`));
     apiCache.deleteByPattern(new RegExp(`^burndown:pg:.+:${sprintId}:`));
-    apiCache.delete(cacheKeys.sprintInfo(sprintId));
-    apiCache.delete(cacheKeys.sprintIssues(sprintId));
+    apiCache.delete(cacheKeys.sprintInfo(organizationId, sprintId));
+    apiCache.delete(cacheKeys.sprintIssues(organizationId, sprintId));
     apiCache.deleteByPattern(new RegExp(`^jira:sprint-issues:${sprintId}:`));
     apiCache.deleteByPattern(new RegExp(`^jira:sprint-info:${sprintId}:`));
   },

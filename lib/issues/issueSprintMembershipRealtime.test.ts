@@ -36,6 +36,7 @@ const mappedTask = {
 };
 
 const issueTracker = {
+  organizationId: 'org-1',
   getIssue: () => Promise.resolve(issue),
   mapIssueToTask: () => mappedTask,
 };
@@ -43,13 +44,13 @@ const issueTracker = {
 describe('completeIssueSprintMembershipChange', () => {
   afterEach(() => {
     resetSprintRealtimeBusForTests();
-    apiCache.delete(cacheKeys.sprintIssues(10));
-    apiCache.delete(cacheKeys.sprintIssues(11));
+    apiCache.delete(cacheKeys.sprintIssues('org-1', 10));
+    apiCache.delete(cacheKeys.sprintIssues('org-1', 11));
   });
 
   it('upserts into the target sprint cache, drops the previous sprint, and notifies both', async () => {
-    setCachedSprintIssues(10, [{ id: '1', key: 'BT-1', self: '', summary: 'Card' }], 'in_progress');
-    setCachedSprintIssues(11, [], 'in_progress');
+    setCachedSprintIssues('org-1', 10, [{ id: '1', key: 'BT-1', self: '', summary: 'Card' }], 'in_progress');
+    setCachedSprintIssues('org-1', 11, [], 'in_progress');
     const received: SprintRealtimeMessage[] = [];
     const unsubscribe = subscribeLocalSprintRealtime((next) => {
       received.push(next);
@@ -65,8 +66,8 @@ describe('completeIssueSprintMembershipChange', () => {
       }),
     });
 
-    expect(getCachedSprintIssues(10)).toEqual([]);
-    expect(getCachedSprintIssues(11)?.some((row) => row.key === 'BT-1')).toBe(true);
+    expect(getCachedSprintIssues('org-1', 10)).toEqual([]);
+    expect(getCachedSprintIssues('org-1', 11)?.some((row) => row.key === 'BT-1')).toBe(true);
     await vi.waitFor(() => {
       expect(received).toHaveLength(2);
     });
@@ -82,7 +83,7 @@ describe('completeIssueSprintMembershipChange', () => {
   });
 
   it('notifies the target sprint when a task is created directly into it', async () => {
-    setCachedSprintIssues(11, [], 'in_progress');
+    setCachedSprintIssues('org-1', 11, [], 'in_progress');
     const received: SprintRealtimeMessage[] = [];
     const unsubscribe = subscribeLocalSprintRealtime((next) => {
       received.push(next);
@@ -97,7 +98,7 @@ describe('completeIssueSprintMembershipChange', () => {
       sprintId: 11,
     });
 
-    expect(getCachedSprintIssues(11)?.some((row) => row.key === 'BT-1')).toBe(true);
+    expect(getCachedSprintIssues('org-1', 11)?.some((row) => row.key === 'BT-1')).toBe(true);
     await vi.waitFor(() => {
       expect(
         received.some(

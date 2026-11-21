@@ -29,19 +29,31 @@ describe('sprintIssuesCache', () => {
     expect(sprintIssuesCacheTtlSeconds('in_progress')).toBe(SPRINT_ISSUES_CACHE_TTL_ACTIVE_SEC);
   });
 
+  it('keeps sprints with the same id apart between organizations', () => {
+    const sprintId = 424243;
+    setCachedSprintIssues('org-1', sprintId, [{ id: '1', key: 'BT-1', self: '', summary: 'org 1' }], 'in_progress');
+    expect(getCachedSprintIssues('org-2', sprintId)).toBeNull();
+
+    upsertCachedSprintIssue('org-2', sprintId, { id: '2', key: 'BT-1', self: '', summary: 'org 2' });
+    removeCachedSprintIssue('org-2', sprintId, 'BT-1');
+    expect(getCachedSprintIssues('org-1', sprintId)?.map((issue) => issue.summary)).toEqual(['org 1']);
+    invalidateCachedSprintIssues('org-1', sprintId);
+  });
+
   it('invalidateCachedSprintIssues removes cached sprint issues', () => {
     const sprintId = 424242;
-    setCachedSprintIssues(sprintId, [{ id: '1', key: 'BT-1', self: '', summary: 'x' }], 'in_progress');
-    expect(getCachedSprintIssues(sprintId)).not.toBeNull();
+    setCachedSprintIssues('org-1', sprintId, [{ id: '1', key: 'BT-1', self: '', summary: 'x' }], 'in_progress');
+    expect(getCachedSprintIssues('org-1', sprintId)).not.toBeNull();
 
-    invalidateCachedSprintIssues(sprintId);
-    expect(getCachedSprintIssues(sprintId)).toBeNull();
-    apiCache.delete(cacheKeys.sprintIssues(sprintId));
+    invalidateCachedSprintIssues('org-1', sprintId);
+    expect(getCachedSprintIssues('org-1', sprintId)).toBeNull();
+    apiCache.delete(cacheKeys.sprintIssues('org-1', sprintId));
   });
 
   it('patchCachedSprintIssueEstimates updates only the matching issue', () => {
     const sprintId = 424243;
     setCachedSprintIssues(
+      'org-1',
       sprintId,
       [
         { id: '1', key: 'BT-1', self: '', summary: 'a', storyPoints: 3, testPoints: 2 },
@@ -50,23 +62,24 @@ describe('sprintIssuesCache', () => {
       'in_progress'
     );
 
-    patchCachedSprintIssueEstimates(sprintId, 'BT-1', { storyPoints: 8 });
+    patchCachedSprintIssueEstimates('org-1', sprintId, 'BT-1', { storyPoints: 8 });
 
-    const cached = getCachedSprintIssues(sprintId);
+    const cached = getCachedSprintIssues('org-1', sprintId);
     expect(cached?.[0]?.storyPoints).toBe(8);
     expect(cached?.[0]?.testPoints).toBe(2);
     expect(cached?.[1]?.storyPoints).toBe(5);
-    apiCache.delete(cacheKeys.sprintIssues(sprintId));
+    apiCache.delete(cacheKeys.sprintIssues('org-1', sprintId));
   });
 
   it('patchCachedSprintIssueEstimates is a no-op when sprint is not cached', () => {
-    patchCachedSprintIssueEstimates(999001, 'BT-1', { storyPoints: 8 });
-    expect(getCachedSprintIssues(999001)).toBeNull();
+    patchCachedSprintIssueEstimates('org-1', 999001, 'BT-1', { storyPoints: 8 });
+    expect(getCachedSprintIssues('org-1', 999001)).toBeNull();
   });
 
   it('patchCachedSprintIssueStatus updates only the matching issue', () => {
     const sprintId = 424244;
     setCachedSprintIssues(
+      'org-1',
       sprintId,
       [
         {
@@ -87,16 +100,16 @@ describe('sprintIssuesCache', () => {
       'in_progress'
     );
 
-    patchCachedSprintIssueStatus(sprintId, 'BT-1', {
+    patchCachedSprintIssueStatus('org-1', sprintId, 'BT-1', {
       status: { key: 'inProgress', display: 'In progress' },
       statusType: { key: 'inProgress', display: 'In progress' },
     });
 
-    const cached = getCachedSprintIssues(sprintId);
+    const cached = getCachedSprintIssues('org-1', sprintId);
     expect(cached?.[0]?.status).toEqual({ key: 'inProgress', display: 'In progress' });
     expect(cached?.[0]?.statusType).toEqual({ key: 'inProgress', display: 'In progress' });
     expect(cached?.[1]?.status).toEqual({ key: 'open', display: 'Open' });
-    apiCache.delete(cacheKeys.sprintIssues(sprintId));
+    apiCache.delete(cacheKeys.sprintIssues('org-1', sprintId));
   });
 
   it('patchCachedSprintIssueParent updates or clears the parent', () => {
@@ -108,6 +121,7 @@ describe('sprintIssuesCache', () => {
       self: '',
     };
     setCachedSprintIssues(
+      'org-1',
       sprintId,
       [
         { id: '1', key: 'BT-1', self: '', summary: 'a' },
@@ -116,36 +130,38 @@ describe('sprintIssuesCache', () => {
       'in_progress'
     );
 
-    patchCachedSprintIssueParent(sprintId, 'BT-1', parent);
-    patchCachedSprintIssueParent(sprintId, 'BT-2', null);
+    patchCachedSprintIssueParent('org-1', sprintId, 'BT-1', parent);
+    patchCachedSprintIssueParent('org-1', sprintId, 'BT-2', null);
 
-    const cached = getCachedSprintIssues(sprintId);
+    const cached = getCachedSprintIssues('org-1', sprintId);
     expect(cached?.[0]?.parent).toEqual(parent);
     expect(cached?.[1]?.parent).toBeUndefined();
-    apiCache.delete(cacheKeys.sprintIssues(sprintId));
+    apiCache.delete(cacheKeys.sprintIssues('org-1', sprintId));
   });
 
   it('upsertCachedSprintIssue appends a new issue and replaces an existing one', () => {
     const sprintId = 424245;
     setCachedSprintIssues(
+      'org-1',
       sprintId,
       [{ id: '1', key: 'BT-1', self: '', summary: 'a' }],
       'in_progress'
     );
-    upsertCachedSprintIssue(sprintId, { id: '2', key: 'BT-2', self: '', summary: 'b' });
-    upsertCachedSprintIssue(sprintId, { id: '1', key: 'BT-1', self: '', summary: 'a-updated' });
+    upsertCachedSprintIssue('org-1', sprintId, { id: '2', key: 'BT-2', self: '', summary: 'b' });
+    upsertCachedSprintIssue('org-1', sprintId, { id: '1', key: 'BT-1', self: '', summary: 'a-updated' });
 
-    const cached = getCachedSprintIssues(sprintId);
+    const cached = getCachedSprintIssues('org-1', sprintId);
     expect(cached).toEqual([
       { id: '1', key: 'BT-1', self: '', summary: 'a-updated' },
       { id: '2', key: 'BT-2', self: '', summary: 'b' },
     ]);
-    apiCache.delete(cacheKeys.sprintIssues(sprintId));
+    apiCache.delete(cacheKeys.sprintIssues('org-1', sprintId));
   });
 
   it('removeCachedSprintIssue drops only the matching issue', () => {
     const sprintId = 424246;
     setCachedSprintIssues(
+      'org-1',
       sprintId,
       [
         { id: '1', key: 'BT-1', self: '', summary: 'a' },
@@ -153,8 +169,8 @@ describe('sprintIssuesCache', () => {
       ],
       'in_progress'
     );
-    removeCachedSprintIssue(sprintId, 'BT-1');
-    expect(getCachedSprintIssues(sprintId)?.map((issue) => issue.key)).toEqual(['BT-2']);
-    apiCache.delete(cacheKeys.sprintIssues(sprintId));
+    removeCachedSprintIssue('org-1', sprintId, 'BT-1');
+    expect(getCachedSprintIssues('org-1', sprintId)?.map((issue) => issue.key)).toEqual(['BT-2']);
+    apiCache.delete(cacheKeys.sprintIssues('org-1', sprintId));
   });
 });

@@ -72,7 +72,7 @@ function scheduleDefaultTrackerRefresh(
     organizationId
   )
     .then((issues) => {
-      setCachedSprintIssues(sprintId, issues, undefined);
+      setCachedSprintIssues(organizationId, sprintId, issues, undefined);
     })
     .catch((error: unknown) => {
       console.warn('[GET /api/tracker] background Tracker refresh failed:', error);
@@ -171,7 +171,7 @@ async function loadUnorderedSprintIssues(
   deps: LoadSprintIssuesForPlannerDeps
 ): Promise<TrackerIssue[]> {
   if (!params.forceRefresh) {
-    const cached = deps.getCached(params.sprintId);
+    const cached = deps.getCached(params.organizationId, params.sprintId);
     if (cached) {
       return cached;
     }
@@ -179,7 +179,7 @@ async function loadUnorderedSprintIssues(
   if (!params.forceRefresh && !params.skipSnapshots) {
     const fromPg = await loadSprintIssuesFromSnapshots(params, deps);
     if (fromPg.length > 0) {
-      deps.setCached(params.sprintId, fromPg, params.sprintStatus);
+      deps.setCached(params.organizationId, params.sprintId, fromPg, params.sprintStatus);
       deps.scheduleTrackerRefresh(params.sprintId, params.issueTracker, params.organizationId);
       return fromPg;
     }
@@ -193,6 +193,6 @@ async function loadUnorderedSprintIssues(
     },
     params.organizationId
   );
-  deps.setCached(params.sprintId, issues, params.sprintStatus);
+  deps.setCached(params.organizationId, params.sprintId, issues, params.sprintStatus);
   return issues;
 }

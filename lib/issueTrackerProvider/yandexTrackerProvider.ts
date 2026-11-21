@@ -13,6 +13,7 @@ import type {
   IssueTrackerTransitionInput,
   IssueTrackerUpdateChecklistItemInput,
   YandexIssueTrackerProvider,
+  YandexProviderClientConfig,
   YandexTrackerClientConfig,
 } from './types';
 import type { SprintListItem } from '@/types/tracker';
@@ -90,10 +91,12 @@ export async function createYandexTrackerClientFromRequest(
 
 function createYandexIssueTrackerProviderClient(
   api: AxiosInstance,
-  webBaseUrl: string
+  webBaseUrl: string,
+  organizationId: string
 ): IssueTrackerProviderClient {
   const trackerWeb = { kind: 'tracker', webBaseUrl } as const;
   return {
+    organizationId,
     providerKind: 'tracker',
     webBaseUrl,
 
@@ -228,7 +231,7 @@ function createYandexIssueTrackerProviderClient(
     },
 
     getSprint(sprintId: number) {
-      return fetchSprintInfo(sprintId, api);
+      return fetchSprintInfo(organizationId, sprintId, api);
     },
 
     getTransitionFields(issueKey: string, transitionId: string) {
@@ -239,7 +242,7 @@ function createYandexIssueTrackerProviderClient(
       sprintId: number,
       options?: IssueTrackerSprintIssuesOptions
     ) {
-      return fetchTasksInSprintWithParents(sprintId, api, options).then((issues) =>
+      return fetchTasksInSprintWithParents(organizationId, sprintId, api, options).then((issues) =>
         issues.map(normalizeYandexIssue)
       );
     },
@@ -297,7 +300,7 @@ function createYandexIssueTrackerProviderClient(
     },
 
     listSprintIssues(sprintId: number, options) {
-      return fetchTrackerIssues(sprintId, api, options).then((issues) =>
+      return fetchTrackerIssues(organizationId, sprintId, api, options).then((issues) =>
         issues.map(normalizeYandexIssue)
       );
     },
@@ -377,11 +380,12 @@ function createYandexIssueTrackerProviderClient(
 }
 
 export function createYandexProviderClient(
-  config: YandexTrackerClientConfig
+  config: YandexProviderClientConfig
 ): IssueTrackerProviderClient {
   return createYandexIssueTrackerProviderClient(
     createYandexTrackerClient(config),
-    issueTrackerWebBaseFromApiUrl('tracker', config.apiUrl)
+    issueTrackerWebBaseFromApiUrl('tracker', config.apiUrl),
+    config.organizationId
   );
 }
 
@@ -392,6 +396,7 @@ async function createYandexProviderClientFromRequest(
   return createYandexProviderClient({
     apiUrl: config.apiUrl,
     oauthToken: config.oauthToken,
+    organizationId: config.organizationId,
     orgId: config.orgId,
   });
 }

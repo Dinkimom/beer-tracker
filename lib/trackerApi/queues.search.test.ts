@@ -2,7 +2,7 @@ import type { AxiosInstance } from 'axios';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { apiCache, cacheKeys } from '@/lib/cache';
+import { apiCache } from '@/lib/cache';
 
 import { fetchTrackerQueueByKey, searchTrackerQueues } from './queues';
 
@@ -43,8 +43,7 @@ describe('searchTrackerQueues', () => {
 
 describe('fetchTrackerQueueByKey', () => {
   afterEach(() => {
-    apiCache.delete(cacheKeys.queueByKey('POG'));
-    apiCache.delete(cacheKeys.queueByKey('NW'));
+    apiCache.deleteByPattern(/^queue-by-key:/);
   });
 
   it('maps queue response', async () => {

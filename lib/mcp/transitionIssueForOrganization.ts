@@ -133,6 +133,7 @@ async function moveIssueTo(input: {
   // Тот же хвост, что у смены статуса из UI: кэш спринта, burndown и realtime для открытых планеров.
   completeIssueStatusChange({
     issueKey,
+    organizationId: input.organizationId,
     request: new Request('http://localhost/api/mcp', { headers: { [TENANT_ORG_HEADER]: input.organizationId } }),
     sprintIds: sprintIdsFromIssueSprint(issue.sprint),
     statusDisplay: input.status.display,

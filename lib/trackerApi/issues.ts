@@ -265,6 +265,7 @@ interface FetchTrackerIssuesOptions {
 }
 
 async function resolveSprintStatusForCache(
+  organizationId: string,
   sprintId: number,
   api: ReturnType<typeof requireTrackerAxiosForApiRoute>,
   sprintStatus?: string
@@ -273,7 +274,7 @@ async function resolveSprintStatusForCache(
     return sprintStatus;
   }
   try {
-    const info = await fetchSprintInfo(sprintId, api);
+    const info = await fetchSprintInfo(organizationId, sprintId, api);
     return info.status;
   } catch {
     return undefined;
@@ -281,15 +282,16 @@ async function resolveSprintStatusForCache(
 }
 
 export async function fetchTrackerIssues(
+  organizationId: string,
   sprintId: number,
   axiosInstance?: AxiosInstance,
   options?: FetchTrackerIssuesOptions
 ): Promise<TrackerIssue[]> {
   if (options?.forceRefresh) {
-    invalidateCachedSprintIssues(sprintId);
+    invalidateCachedSprintIssues(organizationId, sprintId);
   }
 
-  const cached = getCachedSprintIssues(sprintId);
+  const cached = getCachedSprintIssues(organizationId, sprintId);
   if (cached) return cached;
 
   if (options?.cacheOnly) {
@@ -298,10 +300,10 @@ export async function fetchTrackerIssues(
 
   const api = requireTrackerAxiosForApiRoute(axiosInstance);
   const [sprintStatus, allIssues] = await Promise.all([
-    resolveSprintStatusForCache(sprintId, api, options?.sprintStatus),
+    resolveSprintStatusForCache(organizationId, sprintId, api, options?.sprintStatus),
     searchYandexTrackerIssuesInSprint(api, sprintId),
   ]);
-  setCachedSprintIssues(sprintId, allIssues, sprintStatus);
+  setCachedSprintIssues(organizationId, sprintId, allIssues, sprintStatus);
   return allIssues;
 }
 
@@ -310,11 +312,12 @@ export async function fetchTrackerIssues(
  * С пагинацией. Используем filter (как fetchTrackerIssues), тип отфильтруем на нашей стороне.
  */
 export async function fetchTasksInSprintWithParents(
+  organizationId: string,
   sprintId: number,
   axiosInstance?: AxiosInstance,
   options?: FetchTrackerIssuesOptions
 ): Promise<TrackerIssue[]> {
-  const allIssues = await fetchTrackerIssues(sprintId, axiosInstance, options);
+  const allIssues = await fetchTrackerIssues(organizationId, sprintId, axiosInstance, options);
   return allIssues.filter(
     (issue) => issue.type?.key === 'task' || issue.type?.key === 'bug'
   );

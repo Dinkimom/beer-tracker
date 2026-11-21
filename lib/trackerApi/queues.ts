@@ -4,7 +4,7 @@
 
 import type { AxiosInstance } from 'axios';
 
-import { apiCache, cacheKeys } from '../cache';
+import { apiCache, cacheKeys, trackerConnectionCacheScope } from '../cache';
 import { requireTrackerAxiosForApiRoute } from '../trackerAxiosFactory';
 
 import { TRACKER_V3_BASE, WORKFLOW_CACHE_TTL } from './constants';
@@ -62,12 +62,12 @@ export async function fetchTrackerQueueByKey(
   if (!key) {
     return null;
   }
-  const cacheKey = cacheKeys.queueByKey(key);
+  const api = requireTrackerAxiosForApiRoute(axiosInstance);
+  const cacheKey = cacheKeys.queueByKey(trackerConnectionCacheScope(api), key);
   const cached = apiCache.get<TrackerQueueListItem>(cacheKey);
   if (cached) {
     return cached;
   }
-  const api = requireTrackerAxiosForApiRoute(axiosInstance);
   try {
     const { data } = await api.get<unknown>(
       `${TRACKER_V3_BASE}/queues/${encodeURIComponent(key)}`

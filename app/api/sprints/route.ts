@@ -40,8 +40,9 @@ export async function GET(request: Request) {
     const { boardId: validatedBoardId } = validation.data;
     const refresh = searchParams.get('refresh') === '1';
 
-    // Проверяем кэш
-    const cacheKey = cacheKeys.sprints(Number(validatedBoardId));
+    // Клиент — до кэша: он же проверяет членство в организации, от которой ключ кэша.
+    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
+    const cacheKey = cacheKeys.sprints(issueTracker.organizationId, Number(validatedBoardId));
     const cachedData = refresh ? null : apiCache.get<unknown>(cacheKey);
 
     const acceptEncoding = request.headers.get('accept-encoding');
@@ -49,8 +50,6 @@ export async function GET(request: Request) {
     if (cachedData) {
       return jsonGzipResponse(cachedData, acceptEncoding);
     }
-
-    const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
 
     const data = await issueTracker.listSprints(Number(validatedBoardId));
     // Чужой спринт с тем же именем в селекторе не отличить, а выбор по умолчанию мог взять его (K9).
@@ -101,8 +100,7 @@ export async function POST(request: Request) {
     });
 
     // Инвалидируем кэш спринтов для этой доски
-    const cacheKey = cacheKeys.sprints(boardId);
-    apiCache.delete(cacheKey);
+    apiCache.delete(cacheKeys.sprints(issueTracker.organizationId, boardId));
 
     return NextResponse.json(buildCreateSprintApiResponse(data));
   } catch (error) {

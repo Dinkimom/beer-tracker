@@ -430,7 +430,7 @@ export async function syncPlannedDatesAfterRemoval(input: {
 
     const issueTracker = await input.getIssueTracker();
     await issueTracker.updateIssue(issueKey, { deadline: null, start: null });
-    clearCachedSprintIssueScheduleDates(input.sprintId, issueKey);
+    clearCachedSprintIssueScheduleDates(input.organizationId, input.sprintId, issueKey);
     return [];
   } catch (err) {
     console.error(`[sync planned dates → tracker] ${input.logLabel}`, err);

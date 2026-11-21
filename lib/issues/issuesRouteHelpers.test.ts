@@ -19,7 +19,7 @@ vi.mock('@/lib/env', () => ({
 describe('issuesRouteHelpers', () => {
   afterEach(() => {
     resetSprintRealtimeBusForTests();
-    apiCache.delete(cacheKeys.sprintIssues(77));
+    apiCache.delete(cacheKeys.sprintIssues('org-1', 77));
   });
 
   it('parses sprint ids from Tracker issue.sprint', () => {
@@ -54,6 +54,7 @@ describe('issuesRouteHelpers', () => {
 
   it('patches the sprint issues cache and notifies tasks with the new status', async () => {
     setCachedSprintIssues(
+      'org-1',
       77,
       [
         {
@@ -73,6 +74,7 @@ describe('issuesRouteHelpers', () => {
 
     completeIssueStatusChange({
       issueKey: 'BT-1',
+      organizationId: 'org-1',
       request: new Request('http://localhost/api/issues/BT-1/status', {
         headers: { [TENANT_ORG_HEADER]: 'org-1' },
       }),
@@ -80,7 +82,7 @@ describe('issuesRouteHelpers', () => {
       statusKey: 'inProgress',
     });
 
-    expect(getCachedSprintIssues(77)?.[0]?.status).toEqual({
+    expect(getCachedSprintIssues('org-1', 77)?.[0]?.status).toEqual({
       display: 'inProgress',
       key: 'inProgress',
     });
@@ -100,6 +102,7 @@ describe('issuesRouteHelpers', () => {
 
   it('patches the status id and type in the sprint cache, so the next read keeps the new colour', () => {
     setCachedSprintIssues(
+      'org-1',
       77,
       [
         {
@@ -116,6 +119,7 @@ describe('issuesRouteHelpers', () => {
 
     completeIssueStatusChange({
       issueKey: 'BT-1',
+      organizationId: 'org-1',
       request: new Request('http://localhost/api/issues/BT-1/status', {
         headers: { [TENANT_ORG_HEADER]: 'org-1' },
       }),
@@ -126,13 +130,14 @@ describe('issuesRouteHelpers', () => {
       statusTypeKey: 'inProgress',
     });
 
-    const issue = getCachedSprintIssues(77)?.[0];
+    const issue = getCachedSprintIssues('org-1', 77)?.[0];
     expect(issue?.status).toEqual({ display: 'In review', id: '10', key: 'inReview' });
     expect(issue?.statusType?.key).toBe('inProgress');
   });
 
   it('keeps the human status name in the sprint cache and realtime payload', async () => {
     setCachedSprintIssues(
+      'org-1',
       77,
       [
         {
@@ -152,6 +157,7 @@ describe('issuesRouteHelpers', () => {
 
     completeIssueStatusChange({
       issueKey: 'BT-1',
+      organizationId: 'org-1',
       request: new Request('http://localhost/api/issues/BT-1/status', {
         headers: { [TENANT_ORG_HEADER]: 'org-1' },
       }),
@@ -160,7 +166,7 @@ describe('issuesRouteHelpers', () => {
       statusKey: 'вработе',
     });
 
-    expect(getCachedSprintIssues(77)?.[0]?.status).toEqual({
+    expect(getCachedSprintIssues('org-1', 77)?.[0]?.status).toEqual({
       display: 'В работе',
       key: 'вработе',
     });
@@ -179,6 +185,7 @@ describe('issuesRouteHelpers', () => {
 
   it('patches sprint cache parent after a tracker parent change', async () => {
     setCachedSprintIssues(
+      'org-1',
       77,
       [{ id: '1', key: 'BT-1', self: '', summary: 'Child' }],
       'in_progress'
@@ -190,6 +197,7 @@ describe('issuesRouteHelpers', () => {
 
     completeIssueParentChange({
       issueKey: 'BT-1',
+      organizationId: 'org-1',
       parent: { display: 'Стори', id: '10026', key: 'ST-9', self: '' },
       request: new Request('http://localhost/api/issues/BT-1', {
         headers: { [TENANT_ORG_HEADER]: 'org-1' },
@@ -197,7 +205,7 @@ describe('issuesRouteHelpers', () => {
       sprintIds: [77],
     });
 
-    expect(getCachedSprintIssues(77)?.[0]?.parent).toEqual({
+    expect(getCachedSprintIssues('org-1', 77)?.[0]?.parent).toEqual({
       display: 'Стори',
       id: '10026',
       key: 'ST-9',
@@ -215,6 +223,7 @@ describe('issuesRouteHelpers', () => {
 
   it('reads parent and sprint from Tracker after update, with planner sprint fallback', async () => {
     setCachedSprintIssues(
+      'org-1',
       77,
       [{ id: '1', key: 'BT-1', self: '', summary: 'Child' }],
       'in_progress'
@@ -222,6 +231,7 @@ describe('issuesRouteHelpers', () => {
     await syncPlannerIssueParentAfterTrackerUpdate({
       issueKey: 'BT-1',
       issueTracker: {
+        organizationId: 'org-1',
         getIssue: () =>
           Promise.resolve({
             parent: { display: 'Стори', id: '10026', key: 'ST-9', self: '' },
@@ -234,6 +244,6 @@ describe('issuesRouteHelpers', () => {
       }),
       sprintId: 77,
     });
-    expect(getCachedSprintIssues(77)?.[0]?.parent?.key).toBe('ST-9');
+    expect(getCachedSprintIssues('org-1', 77)?.[0]?.parent?.key).toBe('ST-9');
   });
 });

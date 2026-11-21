@@ -40,6 +40,8 @@ import { normalizeTrackerApiBaseUrl } from '@/lib/trackerCredentialsValidation';
 interface TrackerCloudContext {
   apiUrl: string;
   cloudId: string;
+  /** Организация продукта: от неё ключи кэша данных спринтов. */
+  organizationId: string;
   orgId: string;
   providerKind: IssueTrackerProviderKind;
   storedJiraEmail: string;
@@ -151,6 +153,7 @@ function issueTrackerCloudContextForOrganizationRow(
       // Keep site URL here; OAuth gateway is applied only for user Bearer tokens.
       apiUrl,
       cloudId: readIssueTrackerCloudId(org.settings),
+      organizationId: org.id,
       orgId: externalOrgId || JIRA_EXTERNAL_ORG_ID_FALLBACK,
       providerKind,
       storedJiraEmail: readIssueTrackerBasicAuthEmail(org.settings),
@@ -164,6 +167,7 @@ function issueTrackerCloudContextForOrganizationRow(
   return {
     apiUrl,
     cloudId: '',
+    organizationId: org.id,
     orgId: externalOrgId,
     providerKind,
     storedJiraEmail: '',

@@ -21,12 +21,16 @@ function parseSprintStatusPatch(body: { status?: string; version?: number }) {
   return { status: body.status as (typeof validStatuses)[number], version: body.version };
 }
 
-function invalidateSprintStatusCaches(sprintIdNum: number, boardId: number | undefined): void {
-  invalidateCache.sprint(sprintIdNum);
+function invalidateSprintStatusCaches(
+  organizationId: string,
+  sprintIdNum: number,
+  boardId: number | undefined
+): void {
+  invalidateCache.sprint(organizationId, sprintIdNum);
   if (boardId != null) {
-    invalidateCache.sprints(boardId);
+    invalidateCache.sprints(organizationId, boardId);
   }
-  apiCache.deleteByPattern(/^sprints:\d+$/);
+  apiCache.deleteByPattern(new RegExp(`^sprints:${organizationId}:\\d+$`));
 }
 
 export function sprintStatusPatchMatchesResult(
@@ -87,8 +91,8 @@ export async function patchSprintStatus(
       );
     }
 
-    invalidateSprintStatusCaches(sprintIdNum, updatedSprint.boardId);
-    apiCache.set(cacheKeys.sprintInfo(sprintIdNum), omit(updatedSprint, 'boardId'), SPRINT_INFO_CACHE_TTL_SEC);
+    invalidateSprintStatusCaches(organizationId, sprintIdNum, updatedSprint.boardId);
+    apiCache.set(cacheKeys.sprintInfo(organizationId, sprintIdNum), omit(updatedSprint, 'boardId'), SPRINT_INFO_CACHE_TTL_SEC);
 
     notifySprintLifecycleIfNeeded({
       actorUserId,

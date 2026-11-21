@@ -101,7 +101,10 @@ export const JIRA_IMPLEMENTED_PROVIDER_METHODS = [
 /** Иначе `return proxy` из async-функции ждёт `.then` и валит клиент как thenable. */
 const JIRA_PROXY_PASSTHROUGH = new Set(['catch', 'finally', 'then']);
 
-type JiraClientWebContext = TrackerWebUrlContext & { kind: JiraProviderClientConfig['kind'] };
+type JiraClientWebContext = TrackerWebUrlContext & {
+  kind: JiraProviderClientConfig['kind'];
+  organizationId: string;
+};
 
 function createJiraClientProxy(
   web: JiraClientWebContext,
@@ -118,6 +121,9 @@ function createJiraClientProxy(
       }
       if (prop === 'webBaseUrl') {
         return web.webBaseUrl;
+      }
+      if (prop === 'organizationId') {
+        return web.organizationId;
       }
       const method = implemented[prop as keyof IssueTrackerProviderClient];
       if (typeof method === 'function') {
@@ -216,6 +222,7 @@ export function createJiraProviderClient(
 ): IssueTrackerProviderClient {
   return createJiraProviderClientWithApi(createJiraAxiosInstance(config), {
     kind: config.kind,
+    organizationId: config.organizationId,
     webBaseUrl: config.webBaseUrl,
   });
 }
@@ -232,6 +239,7 @@ async function createJiraProviderClientFromRequest(
     apiUrl: config.apiUrl,
     email: config.jiraEmail,
     kind: config.providerKind,
+    organizationId: config.organizationId,
     webBaseUrl: config.webBaseUrl,
   });
 }
