@@ -46,9 +46,13 @@
 
 ~24 роута `app/api/sprints/[sprintId]/**` начинаются одинаково: сигнатура с `params`, `requireSprintRouteContext`, ранний `return tenantResult.response`, `organizationId` / `sprintId`. jscpd считает это клонами, и каждый новый роут спринта (или правка старого) даёт «новый» клон — baseline обновлялся 2026-11-21 дважды (`positions/clear`, `history`). Обёртка вида `withSprintRoute(handler)` с `{ ctx, sprintId, request }` убрала бы клоны и шаблон. (2026-11-21)
 
-### 2.6 Крупные UI-файлы (по касанию)
+### 2.6 Форма доски (высокий, по шагу в спринт)
 
-`features/sprint/components/SprintPlanner/SprintPlannerView.tsx` (~500 строк) и соседние хуки — дробить при touch по правилам `AGENTS.md` (max-lines, consolidation helpers).
+Доску дорого менять из-за широких интерфейсов и слоёв-пробросов, а не из-за длины файлов (замер 2026-11-21, `pnpm quality:report`; правила — `AGENTS.md`, «Форма кода»). Каждый шаг — отдельный коммит с `pnpm e2e` и `pnpm e2e:visual`, результат — меньше записей в `.shape-baseline.json`.
+
+1. **Карточка: состояние взаимодействия одним объектом.** `TaskBar` → `TaskBarOpacityLayer` (54 поля, 70% проброса) → `TaskBarOpacityLayerCard` → `TaskCard` (30) → `TaskCardStandardBody`. Через `OpacityLayer` идут внутренности `TaskBar` — ресайз, наведение, drag, `setClickStartPos`, `longHoverTimeoutRef`: компонент разрезан ради размера, а не по ответственности. Собрать их в один хук, который возвращает объект `interaction`, и передавать одним пропсом.
+2. **Черновики быстрого добавления — таблица по виду.** Рядом `submitQuickAddCommentDraft`, `…DiagramDraft`, `…ImageDraft`, `…CreatedIssueDraft`, `useSprintPlannerQuickAddDraft` (487 строк): сверить, что ведёт себя иначе, остальное — параметром (антипаттерн «Копия под новый тип»).
+3. **View model доски по срезам.** `useSprintPlannerViewModel` возвращает 103 поля, `SprintPlannerView` пробрасывает половину, `SidebarSection` и `ModalsSection` — в основном проброс. Вернуть объекты-домены (задачи, заметки и черновики, drag, раскладка, окна): секция берёт свой срез, преходящий UI читает из `sprintPlannerUi`. Цель — до 15 пропсов у `SprintPlannerView`.
 
 ---
 
