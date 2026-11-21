@@ -147,11 +147,7 @@ export function useSprintPlannerViewModel({
     swimlaneFactTimelineEnabled,
   });
 
-  const {
-    deleteTrackerOverlayLink,
-    handleAddLink,
-    trackerTaskLinks,
-  } = useSprintPlannerTrackerLinkHandlers({
+  const trackerLinks = useSprintPlannerTrackerLinkHandlers({
     allTasksForDrag,
     board: state.board,
     enabled: swimlaneLinksVisible && (viewMode === 'full' || viewMode === 'compact'),
@@ -215,15 +211,12 @@ export function useSprintPlannerViewModel({
     boards,
     confirm,
     debouncedUpdateXarrow,
-    deleteTrackerOverlayLink,
     developersManagement,
     forDemoPlanner,
     getQueueByBoardId,
     onTasksReload,
-    selectedSprintId,
-    sprintPlannerUi,
     sprints,
-    trackerTaskLinks,
+    trackerLinks,
     workflowScreens,
   });
 
@@ -438,7 +431,7 @@ export function useSprintPlannerViewModel({
       taskPositions,
       tasksByAssignee,
       tasksMap,
-      onAddLink: handleAddLink,
+      onAddLink: trackerLinks.handleAddLink,
       onCommentsLeftSprint: handlers.handleCommentsLeftSprint,
       onDeleteLink: handlers.handleDeleteLink,
       onMoveToSprint: handlers.handleMoveToSprint,

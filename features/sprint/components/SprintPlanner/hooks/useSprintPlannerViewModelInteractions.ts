@@ -2,6 +2,7 @@ import type { useSprintPlannerLocalPreferences } from './useSprintPlannerLocalPr
 import type { useSprintPlannerState } from './useSprintPlannerState';
 import type { useSprintPlannerTimeline } from './useSprintPlannerTimeline';
 import type { ConfirmDialogPromptOptions } from '@/components/ConfirmDialog';
+import type { useSprintPlannerTrackerLinkHandlers } from '@/features/sprint/hooks/useSprintPlannerTrackerLinkHandlers';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { BoardListItem } from '@/lib/api/types';
 import type { SprintListItem } from '@/types/tracker';
@@ -44,7 +45,6 @@ import { useSwimlaneCommentActions } from './useSwimlaneCommentActions';
 
 type DevelopersManagement = ReturnType<typeof useDevelopersManagement>;
 type WorkflowScreens = ReturnType<typeof useSprintPlannerWorkflowScreens>;
-type SprintPlannerUi = ReturnType<typeof useRootStore>['sprintPlannerUi'];
 type GetQueueByBoardId = ReturnType<typeof useBoards>['getQueueByBoardId'];
 interface UseSprintPlannerViewModelInteractionsParams {
   boardIdForPlannerData: number | null;
@@ -57,22 +57,18 @@ interface UseSprintPlannerViewModelInteractionsParams {
     ReturnType<typeof useSprintPlannerLocalPreferences>,
     'swimlaneImagesVisible' | 'swimlaneNotesVisible' | 'syncAssignees' | 'syncEstimates'
   >;
-  selectedSprintId: number | null;
-  sprintPlannerUi: SprintPlannerUi;
   sprints: SprintListItem[];
   /** Данные доски из `useSprintPlannerState` целиком — разбираются здесь. */
   state: ReturnType<typeof useSprintPlannerState>;
   timeline: Pick<ReturnType<typeof useSprintPlannerTimeline>, 'sprintStartDate' | 'sprintTimelineWorkingDays'>;
-  /** Live overlay from Tracker/Jira (not in Postgres). */
-  trackerTaskLinks?: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
+  /** Связи из трекера поверх доски (не в Postgres) и их удаление. */
+  trackerLinks: Pick<
+    ReturnType<typeof useSprintPlannerTrackerLinkHandlers>,
+    'deleteTrackerOverlayLink' | 'trackerTaskLinks'
+  >;
   workflowScreens: WorkflowScreens;
   confirm: (message: string, options?: ConfirmDialogPromptOptions) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
-  deleteTrackerOverlayLink?: (link: {
-    fromTaskId: string;
-    id: string;
-    toTaskId: string;
-  }) => Promise<void>;
   onTasksReload?: (options?: { showToast?: boolean }) => void;
 }
 
@@ -84,17 +80,16 @@ export function useSprintPlannerViewModelInteractions({
   boards,
   confirm,
   debouncedUpdateXarrow,
-  deleteTrackerOverlayLink,
   developersManagement,
   forDemoPlanner,
   getQueueByBoardId,
   onTasksReload,
-  selectedSprintId,
-  sprintPlannerUi,
   sprints,
-  trackerTaskLinks = [],
+  trackerLinks,
   workflowScreens,
 }: UseSprintPlannerViewModelInteractionsParams) {
+  const { sprintPlannerUi } = useRootStore();
+  const { deleteTrackerOverlayLink, trackerTaskLinks } = trackerLinks;
   const {
     allTasksForDrag,
     board,
@@ -108,6 +103,7 @@ export function useSprintPlannerViewModelInteractions({
     tasksMap,
     viewMode,
   } = state;
+  const selectedSprintId = board.sprintId;
   const { swimlaneImagesVisible, swimlaneNotesVisible, syncAssignees, syncEstimates } = preferences;
   const commentsVisible = swimlaneNotesVisible || swimlaneImagesVisible;
   const { sprintTimelineWorkingDays } = timeline;

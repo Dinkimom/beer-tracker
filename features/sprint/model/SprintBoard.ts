@@ -77,6 +77,11 @@ export class SprintBoard {
     });
   }
 
+  /** Спринт доски (null — спринт не выбран). */
+  get sprintId(): number | null {
+    return this.deps.sprintId;
+  }
+
   /** Заметки, фото и схемы на дорожках. */
   get comments(): SprintComments {
     return this.deps.comments;

@@ -25,7 +25,6 @@
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerQuickAddDraft.ts::hook-inputs::useSprintPlannerQuickAddDraft": 17,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerQuickAddIssueActions.ts::hook-inputs::useSprintPlannerQuickAddIssueActions": 18,
   "features/sprint/components/SprintPlanner/hooks/useSprintPlannerState.ts::hook-outputs::useSprintPlannerState": 21,
-  "features/sprint/components/SprintPlanner/hooks/useSprintPlannerViewModelInteractions.ts::hook-inputs::useSprintPlannerViewModelInteractions": 17,
   "features/sprint/components/SprintPlanner/kanban/KanbanColumnsLayout.tsx::pass-through": 82,
   "features/sprint/components/SprintPlanner/kanban/KanbanLaneSection.tsx::pass-through": 63,
   "features/swimlane/components/DeveloperHeader.tsx::props-width::DeveloperHeaderProps": 27,
