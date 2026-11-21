@@ -19,12 +19,12 @@ interface UseQuickAddMenuNavigationInput {
   lockedMode?: Exclude<QuickAddMode, 'existing'>;
   notesVisible: boolean;
   objectStorageConfigured?: boolean;
-  sprintPlannerUi: {
+  taskId: string;
+  tools: {
     noteClipboard: SwimlaneNoteClipboard | null;
     clearNoteEditPreview: () => void;
     setNoteEditPreview: (taskId: string, patch: { color?: StickyNoteColor; text?: string }) => void;
   };
-  taskId: string;
   onCancel: () => void;
   onCommentColorChange: (color: StickyNoteColor) => void;
   onCreateAvailability?: (startDate?: string) => void;
@@ -59,14 +59,14 @@ export function useQuickAddMenuNavigation({
   setDraftImageUrl,
   setMode,
   setStep,
-  sprintPlannerUi,
+  tools,
   taskId,
 }: UseQuickAddMenuNavigationInput) {
   const handleModeChange = useCallback(
     (nextMode: QuickAddMode) => {
       const action = resolveQuickAddModeChange({
         canCreateAvailability: Boolean(onCreateAvailability),
-        canPasteNote: Boolean(onPasteNote) && sprintPlannerUi.noteClipboard != null,
+        canPasteNote: Boolean(onPasteNote) && tools.noteClipboard != null,
         imagesVisible,
         lockedMode,
         nextMode,
@@ -97,13 +97,13 @@ export function useQuickAddMenuNavigation({
       );
       if (nextMode === 'comment' && taskId) {
         onCommentColorChange(draftCommentColor);
-        sprintPlannerUi.setNoteEditPreview(taskId, {
+        tools.setNoteEditPreview(taskId, {
           color: draftCommentColor,
           text: draftComment,
         });
         return;
       }
-      sprintPlannerUi.clearNoteEditPreview();
+      tools.clearNoteEditPreview();
     },
     [
       availabilityStartDate,
@@ -123,7 +123,7 @@ export function useQuickAddMenuNavigation({
       onTitleChange,
       setMode,
       setStep,
-      sprintPlannerUi,
+      tools,
       taskId,
     ]
   );
@@ -132,15 +132,15 @@ export function useQuickAddMenuNavigation({
     if (isSubmitting) {
       return;
     }
-    sprintPlannerUi.clearNoteEditPreview();
+    tools.clearNoteEditPreview();
     onCancel();
-  }, [isSubmitting, onCancel, sprintPlannerUi]);
+  }, [isSubmitting, onCancel, tools]);
 
   const handleBackToPicker = useCallback(() => {
     if (isSubmitting || lockedMode) {
       return;
     }
-    sprintPlannerUi.clearNoteEditPreview();
+    tools.clearNoteEditPreview();
     setDraftImageUrl(undefined);
     onImageUrlChange(undefined);
     onTitleChange('');
@@ -154,7 +154,7 @@ export function useQuickAddMenuNavigation({
     onTitleChange,
     setDraftImageUrl,
     setStep,
-    sprintPlannerUi,
+    tools,
   ]);
 
   return {

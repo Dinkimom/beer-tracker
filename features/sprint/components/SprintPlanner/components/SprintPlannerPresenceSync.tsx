@@ -31,11 +31,11 @@ export const SprintPlannerPresenceSync = observer(function SprintPlannerPresence
 }: SprintPlannerPresenceSyncProps) {
   const dragCell = useSwimlaneDragHoverSelector((cell) => cell);
   const { sprintPlannerUi, taskPositions } = useRootStore();
-  const contextMenuTaskId = sprintPlannerUi.contextMenuTaskId;
-  const note = sprintPlannerUi.noteEditPreview;
-  const editingTaskId = sprintPlannerUi.noteComposer?.taskId ?? note?.taskId ?? null;
+  const contextMenuTaskId = sprintPlannerUi.overlays.contextMenuTaskId;
+  const note = sprintPlannerUi.tools.noteEditPreview;
+  const editingTaskId = sprintPlannerUi.tools.noteComposer?.taskId ?? note?.taskId ?? null;
   const hoveredTaskId = sprintPlannerUi.cards.hoveredTaskId;
-  const linkingTaskId = sprintPlannerUi.linkingFromTaskId;
+  const linkingTaskId = sprintPlannerUi.tools.linkingFromTaskId;
   const resizingTaskId = sprintPlannerUi.cards.resizingTaskId;
   const effectiveDraggingTaskId = draggingTaskId || sprintPlannerUi.cards.boardDraggingTaskId;
   const focus = resolveSprintCardPresenceFocus({

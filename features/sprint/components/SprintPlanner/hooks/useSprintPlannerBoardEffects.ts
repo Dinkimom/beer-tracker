@@ -48,11 +48,11 @@ export function useSprintPlannerBoardEffects({
 
   useEffect(() => {
     if (viewMode === 'kanban') {
-      sprintPlannerUi.setSegmentEditTaskId(null);
-      sprintPlannerUi.setPlacementTool('cursor');
+      sprintPlannerUi.tools.setSegmentEditTaskId(null);
+      sprintPlannerUi.tools.setPlacementTool('cursor');
     }
-    if (viewMode === 'features' && sprintPlannerUi.placementTool === 'availability') {
-      sprintPlannerUi.setPlacementTool('cursor');
+    if (viewMode === 'features' && sprintPlannerUi.tools.placementTool === 'availability') {
+      sprintPlannerUi.tools.setPlacementTool('cursor');
     }
   }, [viewMode, sprintPlannerUi]);
 

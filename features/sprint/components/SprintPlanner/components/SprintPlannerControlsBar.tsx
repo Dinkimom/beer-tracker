@@ -75,8 +75,8 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
 }: SprintPlannerControlsBarProps) {
   const { t } = useI18n();
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
-  const globalNameFilter = sprintPlannerUi.globalNameFilter;
-  const setGlobalNameFilter = sprintPlannerUi.setGlobalNameFilter;
+  const globalNameFilter = sprintPlannerUi.focus.globalNameFilter;
+  const setGlobalNameFilter = sprintPlannerUi.focus.setGlobalNameFilter;
   const isReloading = tasksLoading || tasksReloading;
 
   const livePlanHistory = planHistory

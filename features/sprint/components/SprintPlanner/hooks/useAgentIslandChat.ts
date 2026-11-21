@@ -2,7 +2,7 @@
 
 import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentSession, AgentSessionStatus } from '@/lib/agentSessions/agentSession';
-import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
+import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/agentChatView';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -29,7 +29,7 @@ interface ChatPanel {
   session: AgentSession | null;
 }
 
-type IslandTarget = ReturnType<typeof useRootStore>['sprintPlannerUi']['agentRequestTarget'];
+type IslandTarget = ReturnType<typeof useRootStore>['sprintPlannerUi']['agentChat']['agentRequestTarget'];
 
 /** «Сделать в коде» в чате: задача, которую отдают агенту, пока сессия по ней не создана. */
 function devRequestOf(target: IslandTarget): AgentDevRequest | null {
@@ -89,7 +89,7 @@ export function aggregateAgentSessionStatus(sessions: readonly AgentSession[]): 
  * Сессий может быть несколько, агенты работают над ними параллельно; чат показывает одну —
  * выбранную в списке (заголовок чата), только что созданную или, по умолчанию, сессию драфта
  * на доске, иначе самую свежую. Выбор переживает сворачивание чата. Плашки контекста —
- * `sprintPlannerUi.agentChatContext`: «Попросить агента» с карточки или заметки добавляет плашку
+ * `sprintPlannerUi.agentChat.agentChatContext`: «Попросить агента» с карточки или заметки добавляет плашку
  * в открытый чат, не теряя набранный текст. Вызывать из observer-компонента.
  *
  * Панель чата живёт дольше `chatOpen` на время анимации сворачивания (`panel` + `panelState`).
@@ -100,14 +100,14 @@ export function aggregateAgentSessionStatus(sessions: readonly AgentSession[]): 
 export function useAgentIslandChat(sprintId: number | null) {
   const { sprintPlannerUi } = useRootStore();
   const sessions = useAgentSessions(sprintId);
-  const target = sprintPlannerUi.agentRequestTarget;
+  const target = sprintPlannerUi.agentChat.agentRequestTarget;
   const chatOpen = target != null && sprintId != null;
   /** Какую сессию показывает чат: 'new' — пишем новую, id — выбранная; null — по умолчанию. */
   const [pick, setPick] = useState<string | null>(null);
   /** Вместо ленты — список сессий. */
   const [listOpen, setListOpen] = useState(false);
   const islandRef = useRef<HTMLDivElement>(null);
-  const placementTool = sprintPlannerUi.placementTool;
+  const placementTool = sprintPlannerUi.tools.placementTool;
   const placementToolRef = useRef(placementTool);
   // Чат свернули откуда угодно — в следующий раз он откроется на ленте, а не на списке.
   if (!chatOpen && listOpen) {
@@ -123,7 +123,7 @@ export function useAgentIslandChat(sprintId: number | null) {
 
   // ✨ сам открывает чат (не мигаем), из контекстного меню добавляют плашку — не сворачиваем.
   // Пока открыт список сессий, клик мимо и Escape закрывают его, а не весь чат.
-  usePopoverDismiss(() => sprintPlannerUi.setAgentRequestTarget(null), {
+  usePopoverDismiss(() => sprintPlannerUi.agentChat.setAgentRequestTarget(null), {
     capture: true,
     enabled: chatOpen && !listOpen,
     escape: {},
@@ -138,10 +138,10 @@ export function useAgentIslandChat(sprintId: number | null) {
       return;
     }
     placementToolRef.current = placementTool;
-    sprintPlannerUi.setAgentRequestTarget(null);
+    sprintPlannerUi.agentChat.setAgentRequestTarget(null);
   }, [placementTool, sprintPlannerUi]);
 
-  const contextItems = sprintPlannerUi.agentChatContext;
+  const contextItems = sprintPlannerUi.agentChat.agentChatContext;
   // Ссылка меняется только с плашками (observable.ref): по ней обновляется панель ниже.
   const origin = useMemo(() => resolveAgentChatOrigin(contextItems, undefined), [contextItems]);
   const dev = devRequestOf(target);
@@ -153,7 +153,7 @@ export function useAgentIslandChat(sprintId: number | null) {
     setListOpen(false);
     // Из свёрнутого чата или из ещё не отправленной задачи агенту — в обычный чат сессии.
     if (!chatOpen || dev) {
-      sprintPlannerUi.setAgentRequestTarget({ kind: 'session' });
+      sprintPlannerUi.agentChat.setAgentRequestTarget({ kind: 'session' });
     }
   };
 
@@ -190,8 +190,8 @@ export function useAgentIslandChat(sprintId: number | null) {
     /** Сессии с ответом агента, который человек ещё не видел. */
     unread,
     /** Плашки контекста: снять одну крестиком; реплика ушла — очистить все. */
-    clearContext: sprintPlannerUi.clearAgentChatContext,
-    removeContext: sprintPlannerUi.removeAgentChatContext,
+    clearContext: sprintPlannerUi.agentChat.clearAgentChatContext,
+    removeContext: sprintPlannerUi.agentChat.removeAgentChatContext,
     /** 🗑: завершить показанную сессию — чат остаётся открытым, пустой, под новую просьбу. */
     clearChat: () => {
       if (session) {
@@ -203,20 +203,20 @@ export function useAgentIslandChat(sprintId: number | null) {
     openSession,
     /** «Сделать в коде» в чате: черновик задачи агенту вместо обычной просьбы; плашки уже не нужны. */
     startDev: (request: AgentDevRequest) => {
-      sprintPlannerUi.clearAgentChatContext();
-      sprintPlannerUi.setAgentRequestTarget({ kind: 'dev', request });
+      sprintPlannerUi.agentChat.clearAgentChatContext();
+      sprintPlannerUi.agentChat.setAgentRequestTarget({ kind: 'dev', request });
     },
     /** Первая реплика создала сессию: чат дальше показывает её (задача агенту — уже обычная сессия). */
     selectCreated: (sessionId: string | null) => {
       if (dev && sessionId) {
-        sprintPlannerUi.setAgentRequestTarget({ kind: 'session', sessionId });
+        sprintPlannerUi.agentChat.setAgentRequestTarget({ kind: 'session', sessionId });
         return;
       }
       setPick(sessionId);
     },
     /** ✨ в тулбаре: открыть чат на выбранной сессии или свернуть его. */
     toggleChat: () => {
-      sprintPlannerUi.setAgentRequestTarget(chatOpen ? null : { kind: session ? 'session' : 'sprint' });
+      sprintPlannerUi.agentChat.setAgentRequestTarget(chatOpen ? null : { kind: session ? 'session' : 'sprint' });
     },
     /** Заголовок чата: список сессий вместо ленты и обратно. */
     toggleList: () => setListOpen((prev) => !prev),

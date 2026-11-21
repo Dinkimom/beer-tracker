@@ -5,7 +5,7 @@ import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
 import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
 import type { AgentSessionSkill, AgentTaskCandidate } from '@/lib/agentSessions/agentSkills';
-import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
+import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/agentChatView';
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';

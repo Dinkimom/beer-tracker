@@ -105,7 +105,7 @@ export const TaskLayerPositionedTaskItem = observer(function TaskLayerPositioned
   });
 
   const linkingActive =
-    linkingFromTaskId != null || sprintPlannerUi.placementTool === 'link';
+    linkingFromTaskId != null || sprintPlannerUi.tools.placementTool === 'link';
 
   const linkMode = resolveSwimlanePlacementLinkMode({
     linkAlreadyExists: computeSwimlaneLinkAlreadyExists(
@@ -113,7 +113,7 @@ export const TaskLayerPositionedTaskItem = observer(function TaskLayerPositioned
       task.id,
       taskLinks
     ),
-    linkToolArmed: sprintPlannerUi.placementTool === 'link',
+    linkToolArmed: sprintPlannerUi.tools.placementTool === 'link',
     linkingFromTaskId,
     segmentEditorActive,
     taskId: task.id,
@@ -132,7 +132,7 @@ export const TaskLayerPositionedTaskItem = observer(function TaskLayerPositioned
   const linkingOutlineRadiusClass = resolveSwimlaneLinkingOutlineRadiusClass(task);
   const showSourceCancel = isSwimlaneCardContextLinking(
     linkingFromTaskId,
-    sprintPlannerUi.placementTool === 'link'
+    sprintPlannerUi.tools.placementTool === 'link'
   );
 
   return (
@@ -221,7 +221,7 @@ export const TaskLayerPositionedTaskItem = observer(function TaskLayerPositioned
           totalCells={linkingRange.totalCells}
           onCancel={
             showSourceCancel
-              ? () => sprintPlannerUi.setLinkingFromTaskId(null)
+              ? () => sprintPlannerUi.tools.setLinkingFromTaskId(null)
               : undefined
           }
         />

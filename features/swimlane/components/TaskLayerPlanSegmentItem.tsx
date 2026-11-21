@@ -121,7 +121,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   const { sprintPlannerUi } = useRootStore();
   const { developers } = useSprintBoard();
   const card = useMemo(() => ({ position, segment: seg, task }), [position, seg, task]);
-  const noteComposer = sprintPlannerUi.noteComposer;
+  const noteComposer = sprintPlannerUi.tools.noteComposer;
   const cardPresenceViewers = useSprintCardPresenceViewers(task.id);
   const remoteNote = remotePresenceNotePreview(
     cardPresenceViewers,
@@ -129,7 +129,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     getBrowserRealtimeClientId() || null
   );
   const displayTask = resolveTaskWithNoteEditPreview(
-    resolveTaskWithNoteEditPreview(task, sprintPlannerUi.noteEditPreview),
+    resolveTaskWithNoteEditPreview(task, sprintPlannerUi.tools.noteEditPreview),
     remoteNote
   );
   const inlineNoteDraft = isInlineNoteCreateDraft(task, noteComposer);
@@ -141,7 +141,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     if (!inlineNoteDraft || !onQuickAddDraftCommentColorChange) {
       return;
     }
-    const toolColor = sprintPlannerUi.stickyNoteColor;
+    const toolColor = sprintPlannerUi.tools.stickyNoteColor;
     if (parseStickyNoteColor(task.stickyNoteColor) === toolColor) {
       return;
     }
@@ -149,7 +149,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   }, [
     inlineNoteDraft,
     onQuickAddDraftCommentColorChange,
-    sprintPlannerUi.stickyNoteColor,
+    sprintPlannerUi.tools.stickyNoteColor,
     task.id,
     task.stickyNoteColor,
   ]);
@@ -157,19 +157,19 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   const inlineTitleEditor = useMemo(
     () =>
       resolvePlanSegmentInlineNoteEditor({
-        closeNoteComposer: sprintPlannerUi.closeNoteComposer,
+        closeNoteComposer: sprintPlannerUi.tools.closeNoteComposer,
         displayColor: displayTask.stickyNoteColor,
         displayText: displayTask.name ?? '',
         isCreateDraft: inlineNoteDraft,
         isEdit: inlineNoteEdit,
         placeholder: t('sprintPlanner.swimlane.placementToolbar.notePlaceholder'),
         taskId: task.id,
-        toolColor: sprintPlannerUi.stickyNoteColor,
+        toolColor: sprintPlannerUi.tools.stickyNoteColor,
         onCancelDraft: onCancelQuickAddDraft,
         onCreateColorChange: onQuickAddDraftCommentColorChange,
         onCreateTextChange: onQuickAddDraftTitleChange,
-        onEditColorChange: (taskId, color) => sprintPlannerUi.setNoteEditPreview(taskId, { color }),
-        onEditTextChange: (taskId, title) => sprintPlannerUi.setNoteEditPreview(taskId, { text: title }),
+        onEditColorChange: (taskId, color) => sprintPlannerUi.tools.setNoteEditPreview(taskId, { color }),
+        onEditTextChange: (taskId, title) => sprintPlannerUi.tools.setNoteEditPreview(taskId, { text: title }),
         onSubmit: onSubmitQuickAddCommentDraft,
       }),
     [
@@ -266,7 +266,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
       task.id,
       taskLinks
     ),
-    linkToolArmed: sprintPlannerUi.placementTool === 'link',
+    linkToolArmed: sprintPlannerUi.tools.placementTool === 'link',
     linkingFromTaskId,
     segmentEditorActive,
     taskId: task.id,
@@ -275,7 +275,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
       linkingFromTaskId ? taskPositions.get(linkingFromTaskId) : undefined
     ),
   });
-  const linkingActive = linkingFromTaskId != null || sprintPlannerUi.placementTool === 'link';
+  const linkingActive = linkingFromTaskId != null || sprintPlannerUi.tools.placementTool === 'link';
 
   const quickAddMenu = buildTaskLayerPlanSegmentQuickAddMenu({
     availabilityStartDate:

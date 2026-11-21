@@ -162,7 +162,7 @@ export function useSprintPlannerQuickAddDraft({
     }: {
       assigneeId: string; day: number; imageFile?: File; parent?: TaskParent; part: number;
     }) => {
-      const placementTool = sprintPlannerUi.placementTool;
+      const placementTool = sprintPlannerUi.tools.placementTool;
       createSwimlaneCellFromPlacementTool({
         allowImageDraft: swimlaneImagesVisible,
         assigneeId,
@@ -174,17 +174,17 @@ export function useSprintPlannerQuickAddDraft({
         onCommentCreate,
         onCreated: (taskId, kind) => {
           applyQuickAddImageDraftCardRow(taskId, kind, sprintPlannerUi.cards);
-          syncQuickAddCommentPresencePreview(sprintPlannerUi, taskId, kind);
+          syncQuickAddCommentPresencePreview(sprintPlannerUi.tools, taskId, kind);
         },
         parent,
         part,
         placementTool,
-        getPlacementTool: () => sprintPlannerUi.placementTool,
+        getPlacementTool: () => sprintPlannerUi.tools.placementTool,
         keepInlineCardDraftRef,
-        setPlacementTool: sprintPlannerUi.setPlacementTool,
+        setPlacementTool: sprintPlannerUi.tools.setPlacementTool,
         setTaskPositions,
         setTasks,
-        stickyNoteColor: sprintPlannerUi.stickyNoteColor,
+        stickyNoteColor: sprintPlannerUi.tools.stickyNoteColor,
         t,
         tasksMap,
         timelineTotalParts: sprintTimelineWorkingDays * getPartsPerDay(),
@@ -206,19 +206,19 @@ export function useSprintPlannerQuickAddDraft({
   );
 
   const handleQuickAddDraftTitleChange = useCallback((taskId: string, title: string) => {
-    setTasks((prev) => applyQuickAddDraftTitle(prev, taskId, title, (id, text) => sprintPlannerUi.setNoteEditPreview(id, { text })));
+    setTasks((prev) => applyQuickAddDraftTitle(prev, taskId, title, (id, text) => sprintPlannerUi.tools.setNoteEditPreview(id, { text })));
   }, [setTasks, sprintPlannerUi]);
 
   const handleQuickAddDraftCommentColorChange = useCallback((taskId: string, color: StickyNoteColor) => {
-    sprintPlannerUi.setStickyNoteColor(color);
-    sprintPlannerUi.setNoteEditPreview(taskId, { color });
+    sprintPlannerUi.tools.setStickyNoteColor(color);
+    sprintPlannerUi.tools.setNoteEditPreview(taskId, { color });
     setTasks((prev) => applyQuickAddDraftCommentColor(prev, taskId, color));
   }, [setTasks, sprintPlannerUi]);
 
   const handleCancelQuickAddDraft = useCallback(
     (taskId: string) => {
       cancelQuickAddDraft({
-        clearNoteEditPreview: sprintPlannerUi.clearNoteEditPreview,
+        clearNoteEditPreview: sprintPlannerUi.tools.clearNoteEditPreview,
         clearStickyNoteCardRowOverride: sprintPlannerUi.cards.clearStickyNoteCardRowOverride,
         closeNoteComposer,
         setSubmittingTaskId: setQuickAddSubmittingTaskId,
@@ -242,10 +242,10 @@ export function useSprintPlannerQuickAddDraft({
   });
 
   const cancelDraftOnToolLeave = {
-    clearNoteEditPreview: sprintPlannerUi.clearNoteEditPreview,
+    clearNoteEditPreview: sprintPlannerUi.tools.clearNoteEditPreview,
     clearStickyNoteCardRowOverride: sprintPlannerUi.cards.clearStickyNoteCardRowOverride,
     closeNoteComposer,
-    placementTool: sprintPlannerUi.placementTool,
+    placementTool: sprintPlannerUi.tools.placementTool,
     setSubmittingTaskId: setQuickAddSubmittingTaskId,
     setTaskPositions,
     setTasks,

@@ -34,12 +34,12 @@ export function useSwimlaneCommentActions(input: {
   const handleCommentDelete = useCallback(
     (commentId: string) =>
       deleteSwimlaneCommentAfterDiagramConfirm({
-        closeDiagramEditor: sprintPlannerUi.closeDiagramEditor,
+        closeDiagramEditor: sprintPlannerUi.tools.closeDiagramEditor,
         commentId,
         comments,
         confirm,
         deleteNow: handlers.handleCommentDelete,
-        diagramEditorTaskId: sprintPlannerUi.diagramEditorTaskId,
+        diagramEditorTaskId: sprintPlannerUi.tools.diagramEditorTaskId,
         t,
       }),
     [comments, confirm, handlers.handleCommentDelete, sprintPlannerUi, t]

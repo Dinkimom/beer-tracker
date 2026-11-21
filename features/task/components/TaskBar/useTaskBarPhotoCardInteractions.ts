@@ -12,7 +12,7 @@ export function useTaskBarPhotoCardInteractions(task: Task, effectiveIsDragging:
   const isPhotoCard = isSwimlaneImageTask(task);
   const photoClickGuard = usePhotoCardDragClickGuard(isPhotoCard, effectiveIsDragging);
   const openPhotoLightbox = useCallback(
-    () => sprintPlannerUi.openPhotoLightbox(task.id),
+    () => sprintPlannerUi.tools.openPhotoLightbox(task.id),
     [sprintPlannerUi, task.id]
   );
   const getPhotoClickSuppress = isPhotoCard

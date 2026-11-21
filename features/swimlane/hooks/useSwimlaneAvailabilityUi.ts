@@ -36,9 +36,9 @@ export function useSwimlaneAvailabilityUi({
 
   const close = useCallback(() => {
     setUi(null);
-    const next = resolvePlacementToolAfterAvailabilityPopoverClose(sprintPlannerUi.placementTool);
-    if (next !== sprintPlannerUi.placementTool) {
-      sprintPlannerUi.setPlacementTool(next);
+    const next = resolvePlacementToolAfterAvailabilityPopoverClose(sprintPlannerUi.tools.placementTool);
+    if (next !== sprintPlannerUi.tools.placementTool) {
+      sprintPlannerUi.tools.setPlacementTool(next);
     }
   }, [sprintPlannerUi]);
 

@@ -99,15 +99,15 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const { developers, qaTasksMap } = useSprintBoard();
   const { t } = useI18n();
-  const globalNameFilter = sprintPlannerUi.globalNameFilter;
+  const globalNameFilter = sprintPlannerUi.focus.globalNameFilter;
   const hoveredTaskId = sprintPlannerUi.cards.hoveredTaskId;
-  const linkingFromTaskId = sprintPlannerUi.linkingFromTaskId;
-  const linkToolArmed = sprintPlannerUi.placementTool === 'link';
+  const linkingFromTaskId = sprintPlannerUi.tools.linkingFromTaskId;
+  const linkToolArmed = sprintPlannerUi.tools.placementTool === 'link';
   const linkingSessionActive = isSwimlaneLinkingSessionActive(
     linkingFromTaskId,
     linkToolArmed
   );
-  const segmentEditTaskId = sprintPlannerUi.segmentEditTaskId;
+  const segmentEditTaskId = sprintPlannerUi.tools.segmentEditTaskId;
   const { cardShadowTaskId, syncCardShadowHover } = useCardShadowFactFocusTaskId();
 
   const [factHoveredTaskId, setFactHoveredTaskId] = useState<string | null>(null);
@@ -280,7 +280,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     (taskId: string | null) => {
       if (dragAndDrop.isDraggingTask || taskId == null) {
         sprintPlannerUi.cards.setHoveredTaskId(null);
-        sprintPlannerUi.setPlanPatchFocusTaskId(null);
+        sprintPlannerUi.focus.setPlanPatchFocusTaskId(null);
         syncCardShadowHover(null);
         return;
       }
@@ -289,10 +289,10 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
       syncCardShadowHover(isAnnotationHoverTarget(taskId) ? null : taskId);
       const preview = positionsStore.planPatchPreviews.get(taskId);
       if (preview && !preview.remove) {
-        sprintPlannerUi.setPlanPatchFocusTaskId(taskId);
+        sprintPlannerUi.focus.setPlanPatchFocusTaskId(taskId);
         return;
       }
-      sprintPlannerUi.setPlanPatchFocusTaskId(null);
+      sprintPlannerUi.focus.setPlanPatchFocusTaskId(null);
     },
     [
       dragAndDrop.isDraggingTask,
@@ -316,7 +316,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   // Обработчики уходят в контекст доски: новая функция на рендер перерисовала бы все дорожки.
   const handleTaskHoverEnd = useCallback(() => handleTaskHover(null), [handleTaskHover]);
   const handleSegmentEditCancel = useCallback(
-    () => sprintPlannerUi.setSegmentEditTaskId(null),
+    () => sprintPlannerUi.tools.setSegmentEditTaskId(null),
     [sprintPlannerUi]
   );
   const isDraggingTask = dragAndDrop.isDraggingTask;
@@ -335,7 +335,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     linkingFromTaskId,
     onAddLink,
     onTaskClick,
-    setLinkingFromTaskId: sprintPlannerUi.setLinkingFromTaskId,
+    setLinkingFromTaskId: sprintPlannerUi.tools.setLinkingFromTaskId,
     showLinks,
     taskLinks: filteredTaskLinks,
     taskPositions: swimlanePositions,

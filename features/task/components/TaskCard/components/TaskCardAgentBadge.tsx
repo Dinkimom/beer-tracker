@@ -57,7 +57,7 @@ export const TaskCardAgentBadge = observer(function TaskCardAgentBadge({
         type="button"
         onClick={(event) => {
           event.stopPropagation();
-          sprintPlannerUi.setAgentRequestTarget({ kind: 'session', sessionId: agentDev.sessionId });
+          sprintPlannerUi.agentChat.setAgentRequestTarget({ kind: 'session', sessionId: agentDev.sessionId });
         }}
         onPointerDown={(event) => event.stopPropagation()}
       >

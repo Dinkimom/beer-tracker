@@ -21,7 +21,7 @@ export const SwimlanePhotoLightboxHost = observer(function SwimlanePhotoLightbox
   tasksMap,
 }: SwimlanePhotoLightboxHostProps) {
   const { sprintPlannerUi } = useRootStore();
-  const taskId = sprintPlannerUi.photoLightboxTaskId;
+  const taskId = sprintPlannerUi.tools.photoLightboxTaskId;
   if (!taskId) {
     return null;
   }
@@ -36,7 +36,7 @@ export const SwimlanePhotoLightboxHost = observer(function SwimlanePhotoLightbox
       authorName={task.stickyNoteAuthorName}
       caption={task.name}
       src={task.imageUrl}
-      onClose={sprintPlannerUi.closePhotoLightbox}
+      onClose={sprintPlannerUi.tools.closePhotoLightbox}
     />
   );
 });

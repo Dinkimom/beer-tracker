@@ -254,7 +254,7 @@ features/ / components/ / hooks/
 **Состояние планера:**
 
 - React Query — списки задач спринта, спринты, доски
-- MobX `TaskPositionsStore` / `SprintPlannerUiStore` — позиции и преходящий UI
+- MobX `TaskPositionsStore` / `SprintPlannerUiStore` (классы под вью: `cards`, `overlays`, `tools`, `agentChat`, `focus`) — позиции и преходящий UI
 - Списки с отложенной записью (`SyncedList`) — связи, заметки
 
 Подробно: [ARCHITECTURE.md](../ARCHITECTURE.md), [STRUCTURE.md](./STRUCTURE.md), [AGENTS.md](../AGENTS.md).

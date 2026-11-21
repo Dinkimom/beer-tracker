@@ -75,7 +75,7 @@ export function HistoryTab() {
       const unplacedTask = event.source === 'tracker' && !taskPositions?.has(target.taskId);
       if (unplacedTask) {
         const task = tasksById.get(target.taskId);
-        return task ? () => sprintPlannerUi.openTaskInfoPanel(task) : undefined;
+        return task ? () => sprintPlannerUi.overlays.openTaskInfoPanel(task) : undefined;
       }
       return () => replaceUrlQuery((params) => setPlannerFocusTaskQuery(params, target.taskId));
     },

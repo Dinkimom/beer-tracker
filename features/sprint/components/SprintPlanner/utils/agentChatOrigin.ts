@@ -1,10 +1,10 @@
 import type { AgentMention } from '@/lib/agentSessions/agentMentions';
 import type { AgentSessionContext } from '@/lib/agentSessions/agentSession';
-import type { AgentChatContextItem } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
+import type { AgentChatContextItem } from '@/lib/layers/application/mobx/stores/agentChatView';
 
 import { getTaskTrackerDisplayKey } from '@/features/task/utils/taskUtils';
 import { formatStickyNoteTextForPreview } from '@/lib/comments/stickyNoteMentions';
-import { agentChatContextKey } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
+import { agentChatContextKey } from '@/lib/layers/application/mobx/stores/agentChatView';
 
 /** Плашка контекста над полем ввода: что уйдёт агенту упоминанием и ключ, по которому её снимают. */
 interface AgentChatContextChip {

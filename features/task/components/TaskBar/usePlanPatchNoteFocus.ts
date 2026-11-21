@@ -16,15 +16,15 @@ export function usePlanPatchNoteFocus(
 ): { focused: boolean; hover: ((taskId: string | null) => void) | undefined } {
   const { sprintPlannerUi } = useRootStore();
   const replacesTaskId = task.pendingReplacesTaskId;
-  const focusId = sprintPlannerUi.planPatchNoteFocusTaskId;
+  const focusId = sprintPlannerUi.focus.planPatchNoteFocusTaskId;
 
   useEffect(() => {
     if (!replacesTaskId) {
       return;
     }
     return () => {
-      if (sprintPlannerUi.planPatchNoteFocusTaskId === replacesTaskId) {
-        sprintPlannerUi.setPlanPatchNoteFocusTaskId(null);
+      if (sprintPlannerUi.focus.planPatchNoteFocusTaskId === replacesTaskId) {
+        sprintPlannerUi.focus.setPlanPatchNoteFocusTaskId(null);
       }
     };
   }, [replacesTaskId, sprintPlannerUi]);
@@ -32,7 +32,7 @@ export function usePlanPatchNoteFocus(
   const hover = useCallback(
     (taskId: string | null) => {
       onTaskHover?.(taskId);
-      sprintPlannerUi.setPlanPatchNoteFocusTaskId(taskId && replacesTaskId ? replacesTaskId : null);
+      sprintPlannerUi.focus.setPlanPatchNoteFocusTaskId(taskId && replacesTaskId ? replacesTaskId : null);
     },
     [onTaskHover, replacesTaskId, sprintPlannerUi]
   );

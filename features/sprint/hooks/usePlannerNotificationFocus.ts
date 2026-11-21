@@ -52,7 +52,7 @@ export function usePlannerNotificationFocus({
   const scheduleClearNotificationFocus = useCallback(() => {
     clearNotificationFocusTimer(clearFocusTimerRef);
     clearFocusTimerRef.current = setTimeout(() => {
-      sprintPlannerUi.clearNotificationFocusTaskId();
+      sprintPlannerUi.focus.clearNotificationFocusTaskId();
       clearFocusTimerRef.current = null;
     }, PLANNER_NOTIFICATION_FOCUS_MS);
   }, [sprintPlannerUi]);
@@ -60,7 +60,7 @@ export function usePlannerNotificationFocus({
   const handleFocusTaskFound = useCallback(
     (taskId: string) => {
       handledFocusTaskIdRef.current = taskId;
-      sprintPlannerUi.setNotificationFocusTaskId(taskId);
+      sprintPlannerUi.focus.setNotificationFocusTaskId(taskId);
       stripFocusTaskFromUrl();
       scheduleClearNotificationFocus();
     },

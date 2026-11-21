@@ -95,7 +95,7 @@ export const KanbanView = observer(function KanbanView({
 }: KanbanViewProps) {
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
-  const globalNameFilter = sprintPlannerUi.globalNameFilter;
+  const globalNameFilter = sprintPlannerUi.focus.globalNameFilter;
 
   const { groupByAssignee, groupByParent, hasLaneGrouping } = resolveKanbanGroupFlags(groupBy);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);

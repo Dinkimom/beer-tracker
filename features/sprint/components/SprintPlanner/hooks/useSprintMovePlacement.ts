@@ -301,10 +301,10 @@ export function useSprintMovePlacement({
       container: scrollContainerRef.current,
       focusTaskId: cardId,
       onFound: () => {
-        sprintPlannerUi.setNotificationFocusTaskId(cardId);
+        sprintPlannerUi.focus.setNotificationFocusTaskId(cardId);
         setTimeout(() => {
-          if (sprintPlannerUi.notificationFocusTaskId === cardId) {
-            sprintPlannerUi.clearNotificationFocusTaskId();
+          if (sprintPlannerUi.focus.notificationFocusTaskId === cardId) {
+            sprintPlannerUi.focus.clearNotificationFocusTaskId();
           }
         }, PLANNER_NOTIFICATION_FOCUS_MS);
       },

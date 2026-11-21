@@ -1,6 +1,6 @@
 'use client';
 
-import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
+import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/agentChatView';
 
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';

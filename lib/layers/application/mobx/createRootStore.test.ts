@@ -19,9 +19,9 @@ describe('createRootStore', () => {
 
   it('setSidebarOpen supports functional updates', () => {
     const root = createRootStore();
-    root.sprintPlannerUi.setSidebarOpen(false);
-    expect(root.sprintPlannerUi.sidebarOpen).toBe(false);
-    root.sprintPlannerUi.setSidebarOpen((prev) => !prev);
-    expect(root.sprintPlannerUi.sidebarOpen).toBe(true);
+    root.sprintPlannerUi.overlays.setSidebarOpen(false);
+    expect(root.sprintPlannerUi.overlays.sidebarOpen).toBe(false);
+    root.sprintPlannerUi.overlays.setSidebarOpen((prev) => !prev);
+    expect(root.sprintPlannerUi.overlays.sidebarOpen).toBe(true);
   });
 });

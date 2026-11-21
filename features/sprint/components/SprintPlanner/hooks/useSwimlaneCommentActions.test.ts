@@ -9,7 +9,7 @@ import { useSwimlaneCommentActions } from './useSwimlaneCommentActions';
 
 const closeDiagramEditor = vi.fn();
 vi.mock('@/lib/layers', () => ({
-  useRootStore: () => ({ sprintPlannerUi: { closeDiagramEditor, diagramEditorTaskId: null } }),
+  useRootStore: () => ({ sprintPlannerUi: { tools: { closeDiagramEditor, diagramEditorTaskId: null } } }),
 }));
 vi.mock('@/contexts/LanguageContext', () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 

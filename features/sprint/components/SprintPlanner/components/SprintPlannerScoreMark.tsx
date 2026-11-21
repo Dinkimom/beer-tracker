@@ -31,7 +31,7 @@ export function SprintPlannerScoreMark({ sprintId }: { sprintId: number | null }
 
   const openMetricsSidebar = useCallback(() => {
     replaceUrlQuery((params) => params.set('sidebarTab', 'metrics'));
-    sprintPlannerUi.setSidebarOpen(true);
+    sprintPlannerUi.overlays.setSidebarOpen(true);
   }, [sprintPlannerUi]);
 
   if (mark == null) {

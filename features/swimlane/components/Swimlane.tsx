@@ -109,7 +109,7 @@ function SwimlaneComponent({
     !isOnboardingDemoLane &&
     canQuickAddOnSwimlaneLane({
       isTeamLane,
-      placementTool: sprintPlannerUi.placementTool,
+      placementTool: sprintPlannerUi.tools.placementTool,
     });
   const requestArrowRedraw = useContext(SwimlaneArrowRedrawContext) ?? (() => {});
   const {
@@ -142,8 +142,8 @@ function SwimlaneComponent({
     hoverPreview: quickAddHoverPreview,
     isDraggingTask,
     isLinking: linkingFromTaskId != null,
-    noteComposer: sprintPlannerUi.noteComposer,
-    placementTool: sprintPlannerUi.placementTool,
+    noteComposer: sprintPlannerUi.tools.noteComposer,
+    placementTool: sprintPlannerUi.tools.placementTool,
     tasks: tasksMap.values(),
   });
   const { hasQuickAddDraftMode, hideQuickAddPreview, quickAddFootprint } = quickAddLayout;
@@ -227,7 +227,7 @@ function SwimlaneComponent({
     assigneeId: developer.id,
     cellIndex: quickAddHoverPreview?.cellIndex ?? null,
     enabled: Boolean(quickAddHoverPreview && !hideQuickAddPreview),
-    noteClipboard: sprintPlannerUi.noteClipboard,
+    noteClipboard: sprintPlannerUi.tools.noteClipboard,
     onCommentCreate: commentActions?.onCommentCreate,
     onCreateTaskInCell: objectStorageConfigured ? onCreateTaskInCell : undefined,
   });
@@ -304,7 +304,7 @@ function SwimlaneComponent({
               hasQuickAddDraftMode,
               onCreateTaskInCell,
               onOpenAvailabilityForDate: openAvailabilityCreateForDate,
-              placementTool: sprintPlannerUi.placementTool,
+              placementTool: sprintPlannerUi.tools.placementTool,
               sprintStartDate,
               sprintTimelineWorkingDays,
             })}
@@ -359,8 +359,8 @@ function SwimlaneComponent({
                 taskAreaHeight={layout.taskBandVisualHeight}
                 timelineTotalParts={timelineTotalParts}
                 {...resolveSwimlaneQuickAddPreviewToolProps(
-                  sprintPlannerUi.placementTool,
-                  sprintPlannerUi.stickyNoteColor
+                  sprintPlannerUi.tools.placementTool,
+                  sprintPlannerUi.tools.stickyNoteColor
                 )}
               />
             ) : null}

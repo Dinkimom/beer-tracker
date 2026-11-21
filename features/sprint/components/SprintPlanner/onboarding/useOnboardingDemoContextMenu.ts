@@ -15,18 +15,18 @@ const MENU_SELECTOR = '[data-onboarding-context-menu]';
 
 /** Открывает настоящее контекстное меню у демо-карточки и просит тур перемерить его рамку. */
 export function useOnboardingDemoContextMenu(active: boolean): void {
-  const { sprintPlannerUi } = useRootStore();
+  const { overlays } = useRootStore().sprintPlannerUi;
   const { t } = useI18n();
   const taskName = t('sprintPlanner.onboarding.sampleTaskName');
 
   useEffect(() => {
     if (!active) {
-      closeDemoContextMenu(sprintPlannerUi);
+      closeDemoContextMenu(overlays);
       return;
     }
 
     const frame = requestAnimationFrame(() => {
-      openDemoContextMenu(sprintPlannerUi, taskName);
+      openDemoContextMenu(overlays, taskName);
       window.dispatchEvent(new Event('resize'));
     });
     const resizeObserver = new ResizeObserver(notifyTourMeasure);
@@ -48,9 +48,9 @@ export function useOnboardingDemoContextMenu(active: boolean): void {
       appearance.disconnect();
       resizeObserver.disconnect();
       attributeObserver.disconnect();
-      closeDemoContextMenu(sprintPlannerUi);
+      closeDemoContextMenu(overlays);
     };
-  }, [active, sprintPlannerUi, taskName]);
+  }, [active, overlays, taskName]);
 }
 
 function notifyTourMeasure(): void {
@@ -64,14 +64,14 @@ interface DemoMenuStore {
   setContextMenuTaskId: (id: string | null) => void;
 }
 
-function openDemoContextMenu(sprintPlannerUi: DemoMenuStore, taskName: string): void {
+function openDemoContextMenu(menus: DemoMenuStore, taskName: string): void {
   const card = document.getElementById(`task-${ONBOARDING_SAMPLE_TASK_ID}`);
   if (!(card instanceof HTMLElement)) {
     return;
   }
   const rect = card.getBoundingClientRect();
-  sprintPlannerUi.setContextMenuTaskId(ONBOARDING_SAMPLE_TASK_ID);
-  sprintPlannerUi.setContextMenu({
+  menus.setContextMenuTaskId(ONBOARDING_SAMPLE_TASK_ID);
+  menus.setContextMenu({
     anchorElementId: card.id,
     anchorRect: {
       bottom: rect.bottom,
@@ -87,9 +87,9 @@ function openDemoContextMenu(sprintPlannerUi: DemoMenuStore, taskName: string): 
   });
 }
 
-function closeDemoContextMenu(sprintPlannerUi: DemoMenuStore): void {
-  if (sprintPlannerUi.contextMenu?.task.id !== ONBOARDING_SAMPLE_TASK_ID) {
+function closeDemoContextMenu(menus: DemoMenuStore): void {
+  if (menus.contextMenu?.task.id !== ONBOARDING_SAMPLE_TASK_ID) {
     return;
   }
-  sprintPlannerUi.closeContextMenu();
+  menus.closeContextMenu();
 }

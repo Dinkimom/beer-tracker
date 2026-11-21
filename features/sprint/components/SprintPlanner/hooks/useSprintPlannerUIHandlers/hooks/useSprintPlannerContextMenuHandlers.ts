@@ -109,8 +109,8 @@ export function useSprintPlannerContextMenuHandlers({
         return;
       }
 
-      sprintPlannerUi.closeNoteComposer();
-      sprintPlannerUi.setContextMenuTaskId(task.id);
+      sprintPlannerUi.tools.closeNoteComposer();
+      sprintPlannerUi.overlays.setContextMenuTaskId(task.id);
 
       const startEl = e.currentTarget as HTMLElement | null;
       // Кнопка «⋯» в строке занятости — currentTarget = button; якорим меню к строке задачи.
@@ -145,7 +145,7 @@ export function useSprintPlannerContextMenuHandlers({
       const dimPeerUi =
         !(menuSource === 'occupancy-task-row' && fromOccupancyRowMenuButton);
 
-      sprintPlannerUi.setContextMenu({
+      sprintPlannerUi.overlays.setContextMenu({
         task,
         position,
         anchorRect,

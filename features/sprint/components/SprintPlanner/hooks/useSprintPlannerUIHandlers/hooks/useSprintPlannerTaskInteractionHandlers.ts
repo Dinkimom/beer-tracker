@@ -42,7 +42,7 @@ export function useSprintPlannerTaskInteractionHandlers({
       remainingTestPoints: number;
       targetSprintId: number | null;
     }) => {
-      const modalTask = sprintPlannerUi.accountWorkModal;
+      const modalTask = sprintPlannerUi.overlays.accountWorkModal;
       if (!modalTask) return;
       await handleAccountWorkHook(modalTask, data);
     },
@@ -52,18 +52,18 @@ export function useSprintPlannerTaskInteractionHandlers({
   // Обработчик клика по задаче
   const handleTaskClick = useCallback(
     (_taskId: string, _shiftKey = false) => {
-      if (sprintPlannerUi.contextMenuTaskId !== null) return;
+      if (sprintPlannerUi.overlays.contextMenuTaskId !== null) return;
     },
     [sprintPlannerUi]
   );
 
   const handleTaskInfoFieldsSaved = useCallback(
     (fields: { description?: string; name?: string }) => {
-      const panelTask = sprintPlannerUi.taskInfoPanelTask;
+      const panelTask = sprintPlannerUi.overlays.taskInfoPanelTask;
       if (!panelTask) {
         return;
       }
-      sprintPlannerUi.patchTaskInfoPanelTask(fields);
+      sprintPlannerUi.overlays.patchTaskInfoPanelTask(fields);
       setTasks((prev) =>
         prev.map((task) => (task.id === panelTask.id ? { ...task, ...fields } : task))
       );

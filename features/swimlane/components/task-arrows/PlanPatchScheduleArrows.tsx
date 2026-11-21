@@ -50,7 +50,7 @@ export const PlanPatchScheduleArrows = observer(function PlanPatchScheduleArrows
   const phaseCardColorScheme = usePhaseCardColorScheme();
   const isDark = useDocumentDarkClass();
   const redrawGeneration = useContext(SwimlaneArrowRedrawGenerationContext);
-  const focusTaskId = sprintPlannerUi.planPatchFocusTaskId;
+  const focusTaskId = sprintPlannerUi.focus.planPatchFocusTaskId;
   const idleColor = resolveTaskArrowLinkColor({
     canDelete: false,
     fromTask: undefined,

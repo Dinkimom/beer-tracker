@@ -32,7 +32,7 @@ export const PlannerHistoryControls = observer(function PlannerHistoryControls({
 }: PlannerHistoryControlsProps) {
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
-  const keyboardEnabled = sprintPlannerUi.diagramEditorTaskId == null;
+  const keyboardEnabled = sprintPlannerUi.tools.diagramEditorTaskId == null;
   const undoLabel = t('sprintPlanner.controls.undoPlanChange');
   const redoLabel = t('sprintPlanner.controls.redoPlanChange');
   const undoShortcut = formatPlannerHistoryShortcutHint('undo');

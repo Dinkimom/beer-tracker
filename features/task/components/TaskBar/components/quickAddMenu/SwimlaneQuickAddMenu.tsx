@@ -194,8 +194,8 @@ export function SwimlaneQuickAddMenu({
     setDraftImageUrl,
     setMode,
     setStep,
-    sprintPlannerUi,
     taskId,
+    tools: sprintPlannerUi.tools,
   });
   const pickerItems = buildQuickAddRootPickerItems(visibleModes);
 

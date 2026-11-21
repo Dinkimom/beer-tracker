@@ -258,7 +258,7 @@ export function useSprintPlannerViewModel({
     setTasks,
   });
 
-  const sidebarOpen = sprintPlannerUi.sidebarOpen;
+  const sidebarOpen = sprintPlannerUi.overlays.sidebarOpen;
   const swimlaneViewMode = viewMode === 'compact' || viewMode === 'full' || viewMode === 'features';
   const draggedNote = activeTask && isSwimlaneCommentTask(activeTask) ? activeTask : null;
   // Окна контекстного меню и выбор исполнителя показывают одно и то же.

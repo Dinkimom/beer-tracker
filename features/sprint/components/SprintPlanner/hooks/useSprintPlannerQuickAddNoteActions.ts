@@ -43,7 +43,7 @@ export function useSprintPlannerQuickAddNoteActions({
   const handleSubmitQuickAddCommentDraft = useCallback(
     (taskId: string, draftTitle?: string, color?: StickyNoteColor) => {
       if (color) {
-        sprintPlannerUi.setStickyNoteColor(color);
+        sprintPlannerUi.tools.setStickyNoteColor(color);
       }
       completeQuickAddCommentDraft({
         cardRowUi: sprintPlannerUi.cards,
@@ -77,7 +77,7 @@ export function useSprintPlannerQuickAddNoteActions({
 
   const handlePasteQuickAddNote = useCallback(
     (taskId: string) => {
-      const clipboard = sprintPlannerUi.noteClipboard;
+      const clipboard = sprintPlannerUi.tools.noteClipboard;
       if (!clipboard) {
         return;
       }

@@ -2,6 +2,7 @@
 
 import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
 import type { SprintPlannerContextMenuState } from '@/lib/layers/application/mobx/sprintPlannerUiTypes';
+import type { SprintPlannerUiStore } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 import type { Comment, Task, TaskParent } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
@@ -24,7 +25,6 @@ import { parseStickyNoteColor, type StickyNoteColor } from '@/lib/comments/stick
 import {
   commentToSwimlaneNoteClipboard,
   writeNoteTextToSystemClipboard,
-  type SwimlaneNoteClipboard,
 } from '@/lib/comments/swimlaneNoteClipboard';
 import { useRootStore } from '@/lib/layers';
 
@@ -110,17 +110,17 @@ export const SprintPlannerAnnotationContextMenu = observer(
         onAskAgent={
           agentAvailable && allowed.has('askAgent') && commentId
             ? () => {
-                sprintPlannerUi.setAgentRequestTarget({
+                sprintPlannerUi.agentChat.setAgentRequestTarget({
                   kind: 'note',
                   noteId: commentId,
                   text: note?.text ?? menuTask.name,
                 });
-                sprintPlannerUi.closeContextMenu();
+                sprintPlannerUi.overlays.closeContextMenu();
               }
             : undefined
         }
         onAssigneeSelect={actions.onAssigneeSelect}
-        onClose={sprintPlannerUi.closeContextMenu}
+        onClose={sprintPlannerUi.overlays.closeContextMenu}
         onConvertToTask={actions.onConvertToTask}
         onCopy={actions.onCopy}
         onDelete={actions.onDelete}
@@ -158,7 +158,13 @@ function resolveAnnotationMenuTask(task: Task, comments: Comment[]): Task {
   };
 }
 
-function buildAnnotationContextMenuActions(input: {
+/** Меню заметки закрывает себя и открывает окна инструментов. */
+type AnnotationMenuUi = Pick<SprintPlannerUiStore, 'overlays' | 'tools'>;
+
+function buildAnnotationContextMenuActions(input: Pick<
+  SprintPlannerAnnotationContextMenuProps,
+  'onAssigneeSelect' | 'onCommentApprove' | 'onCommentDelete' | 'onCommentParentChange'
+> & {
   allowed: ReadonlySet<AnnotationContextMenuAction>;
   comments: Comment[];
   menuTask: Task;
@@ -166,20 +172,10 @@ function buildAnnotationContextMenuActions(input: {
   t: (key: string) => string;
   taskId: string;
   variant: SwimlaneAnnotationContextMenuVariant;
-  sprintPlannerUi: {
-    closeContextMenu: () => void;
-    openDiagramEditor: (taskId: string) => void;
-    openNoteComposer: (payload: { mode: 'comment' | 'new'; taskId: string }) => void;
-    setLinkingFromTaskId: (taskId: string | null) => void;
-    setNoteClipboard: (clipboard: SwimlaneNoteClipboard | null) => void;
-  };
-  onAssigneeSelect?: (task: Task, assigneeId: string) => void;
-  onCommentApprove?: (commentId: string) => void;
-  onCommentDelete?: (commentId: string) => void;
-  onCommentParentChange?: (commentId: string, parent: TaskParent | null) => void;
+  sprintPlannerUi: AnnotationMenuUi;
 }) {
   const { allowed, sprintPlannerUi, t, taskId, variant } = input;
-  const close = sprintPlannerUi.closeContextMenu;
+  const close = sprintPlannerUi.overlays.closeContextMenu;
   /** Обработчик только для разрешённого матрицей пункта (и если у пункта есть смысл здесь). */
   const when = <F, >(action: AnnotationContextMenuAction, handler: F, enabled = true): F | undefined =>
     allowed.has(action) && enabled ? handler : undefined;
@@ -193,20 +189,20 @@ function buildAnnotationContextMenuActions(input: {
       (assigneeId: string) => input.onAssigneeSelect?.(input.menuTask, assigneeId),
       input.onAssigneeSelect != null
     ),
-    onConvertToTask: when('convert', () => sprintPlannerUi.openNoteComposer({ mode: 'new', taskId })),
+    onConvertToTask: when('convert', () => sprintPlannerUi.tools.openNoteComposer({ mode: 'new', taskId })),
     onCopy: when('copy', () => copyNoteFromContextMenu(taskId, input.comments, sprintPlannerUi, t)),
     onDelete:
       when('delete', runComment(input.onCommentDelete)) ??
       when('reject', runComment(input.onCommentDelete)),
     onEdit: isEditable
-      ? when('edit', () => editAnnotationFromContextMenu(variant, taskId, sprintPlannerUi))
+      ? when('edit', () => editAnnotationFromContextMenu(variant, taskId, sprintPlannerUi.tools))
       : undefined,
     onParentSelect: when('parent', (parent: TaskParent | null) => {
       selectAnnotationParent(taskId, parent, input.onCommentParentChange, close, t);
     }),
     onStartLinking: when(
       'link',
-      () => sprintPlannerUi.setLinkingFromTaskId(taskId),
+      () => sprintPlannerUi.tools.setLinkingFromTaskId(taskId),
       input.showStartLinking
     ),
   };
@@ -230,18 +226,18 @@ function selectAnnotationParent(
 function copyNoteFromContextMenu(
   taskId: string,
   comments: Comment[],
-  ui: { closeContextMenu: () => void; setNoteClipboard: (clipboard: SwimlaneNoteClipboard | null) => void },
+  ui: AnnotationMenuUi,
   t: (key: string) => string
 ): void {
   const commentId = parseSwimlaneCommentTaskId(taskId);
   const comment = commentId ? comments.find((item) => item.id === commentId) : undefined;
   const clipboard = comment ? commentToSwimlaneNoteClipboard(comment) : null;
   if (clipboard) {
-    ui.setNoteClipboard(clipboard);
+    ui.tools.setNoteClipboard(clipboard);
     void writeNoteTextToSystemClipboard(clipboard.text);
     toast.success(t('sprintPlanner.swimlane.quickAddMenu.copyNoteSuccess'));
   }
-  ui.closeContextMenu();
+  ui.overlays.closeContextMenu();
 }
 
 /** Действие над сохранённой аннотацией по её comment id (удалить, отклонить, принять). */

@@ -20,7 +20,7 @@ export function useSprintPlannerActiveDragTask({
   activeTaskId,
   allTasksForDrag,
 }: UseSprintPlannerActiveDragTaskParams) {
-  const noteEditPreview = useRootStore().sprintPlannerUi.noteEditPreview;
+  const noteEditPreview = useRootStore().sprintPlannerUi.tools.noteEditPreview;
   const queryClient = useQueryClient();
   return useMemo(() => {
     if (!activeTaskId) return null;

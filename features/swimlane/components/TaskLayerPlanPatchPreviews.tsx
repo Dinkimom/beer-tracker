@@ -94,7 +94,7 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
   const { sprintPlannerUi, taskPositions } = useRootStore();
   const onTaskHover = useCallback(
     (taskId: string | null) => {
-      sprintPlannerUi.setPlanPatchFocusTaskId(taskId);
+      sprintPlannerUi.focus.setPlanPatchFocusTaskId(taskId);
     },
     [sprintPlannerUi]
   );

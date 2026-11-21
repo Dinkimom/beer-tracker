@@ -92,10 +92,10 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   const [linksVisible, setLinksVisible] = useSwimlaneLinksVisibilityStorage();
   const [factVisible, setFactVisible] = useSwimlaneFactTimelineVisibleStorage();
   const [baselineLayoutMode, setBaselineLayoutMode] = useSwimlaneBaselineLayoutModeStorage();
-  const active = sprintPlannerUi.placementTool;
+  const active = sprintPlannerUi.tools.placementTool;
   const revealGoalsSidebar = useCallback(() => {
     replaceUrlQuery((params) => params.set('sidebarTab', 'goals'));
-    sprintPlannerUi.setSidebarOpen(true);
+    sprintPlannerUi.overlays.setSidebarOpen(true);
   }, [sprintPlannerUi]);
 
   const applyPlacementTool = useCallback(
@@ -114,7 +114,7 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
       if (layer === 'links') {
         setLinksVisible(true);
       }
-      sprintPlannerUi.setPlacementTool(next);
+      sprintPlannerUi.tools.setPlacementTool(next);
     },
     [
       active,
@@ -127,21 +127,21 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
   );
 
   useEffect(() => {
-    const next = resolvePlacementToolAfterLayerChange(sprintPlannerUi.placementTool, {
+    const next = resolvePlacementToolAfterLayerChange(sprintPlannerUi.tools.placementTool, {
       imagesVisible,
       linksVisible,
       notesVisible,
     });
-    if (next !== sprintPlannerUi.placementTool) {
-      sprintPlannerUi.setPlacementTool(next);
+    if (next !== sprintPlannerUi.tools.placementTool) {
+      sprintPlannerUi.tools.setPlacementTool(next);
     }
   }, [imagesVisible, linksVisible, notesVisible, sprintPlannerUi]);
 
   useEffect(() => {
-    if (isPlacementToolbarToolSelectable(sprintPlannerUi.placementTool, objectStorageConfigured)) {
+    if (isPlacementToolbarToolSelectable(sprintPlannerUi.tools.placementTool, objectStorageConfigured)) {
       return;
     }
-    sprintPlannerUi.setPlacementTool('cursor');
+    sprintPlannerUi.tools.setPlacementTool('cursor');
   }, [objectStorageConfigured, sprintPlannerUi]);
 
   useSwimlanePlacementToolbarKeyboard({
@@ -203,8 +203,8 @@ export const SwimlanePlacementToolbar = observer(function SwimlanePlacementToolb
                 <SwimlanePlacementToolbarNoteTool
                   key={tool}
                   active={active === 'comment'}
-                  color={sprintPlannerUi.stickyNoteColor}
-                  onColorChange={sprintPlannerUi.setStickyNoteColor}
+                  color={sprintPlannerUi.tools.stickyNoteColor}
+                  onColorChange={sprintPlannerUi.tools.setStickyNoteColor}
                   onSelect={() => applyPlacementTool('comment', { toggle: true })}
                 />
               );

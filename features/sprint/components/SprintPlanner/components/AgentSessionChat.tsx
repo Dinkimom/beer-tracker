@@ -4,7 +4,7 @@ import type { AgentSessionChatOrigin } from '../utils/agentChatOrigin';
 import type { AgentBridgeStep } from '@/lib/agentSessions/agentBridge';
 import type { AgentSession } from '@/lib/agentSessions/agentSession';
 import type { AgentSessionScope } from '@/lib/agentSessions/agentSessionScope';
-import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
+import type { AgentDevRequest } from '@/lib/layers/application/mobx/stores/agentChatView';
 
 import { AgentComposer } from '@/features/swimlane/components/AgentComposer';
 import { useAgentBridge } from '@/features/swimlane/hooks/useAgentBridge';

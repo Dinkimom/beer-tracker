@@ -42,9 +42,9 @@ export function useSprintPlannerEstimateHandlers({
 
   const handleSplitPhaseIntoSegments = useCallback(
     (task: Task) => {
-      sprintPlannerUi.setContextMenu(null);
-      sprintPlannerUi.setContextMenuTaskId(null);
-      sprintPlannerUi.setSegmentEditTaskId(task.id);
+      sprintPlannerUi.overlays.setContextMenu(null);
+      sprintPlannerUi.overlays.setContextMenuTaskId(null);
+      sprintPlannerUi.tools.setSegmentEditTaskId(task.id);
     },
     [sprintPlannerUi]
   );

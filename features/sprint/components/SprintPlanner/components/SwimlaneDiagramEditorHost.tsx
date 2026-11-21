@@ -68,7 +68,7 @@ export const SwimlaneDiagramEditorHost = observer(function SwimlaneDiagramEditor
 }: SwimlaneDiagramEditorHostProps) {
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
-  const taskId = sprintPlannerUi.diagramEditorTaskId;
+  const taskId = sprintPlannerUi.tools.diagramEditorTaskId;
   const commentId = taskId ? parseSwimlaneCommentTaskId(taskId) : null;
   const comment = commentId ? comments.find((item) => item.id === commentId) : undefined;
   const [scene, setScene] = useState<ExcalidrawCommentScene | null>(null);
@@ -144,7 +144,7 @@ export const SwimlaneDiagramEditorHost = observer(function SwimlaneDiagramEditor
         closeLabel={t('sprintPlanner.swimlane.quickAddMenu.diagramEditorClose')}
         name={pendingName}
         title={t('sprintPlanner.swimlane.quickAddMenu.diagramEditorTitle')}
-        onClose={sprintPlannerUi.closeDiagramEditor}
+        onClose={sprintPlannerUi.tools.closeDiagramEditor}
       />
     );
   }
@@ -156,7 +156,7 @@ export const SwimlaneDiagramEditorHost = observer(function SwimlaneDiagramEditor
     <SwimlaneDiagramEditor
       key={`${commentId}:${scene.name ?? ''}`}
       initialScene={scene}
-      onClose={sprintPlannerUi.closeDiagramEditor}
+      onClose={sprintPlannerUi.tools.closeDiagramEditor}
       onSave={(nextScene) => {
         persistScene({
           commentId,
@@ -165,7 +165,7 @@ export const SwimlaneDiagramEditorHost = observer(function SwimlaneDiagramEditor
           scene: nextScene,
           sprintId,
         });
-        sprintPlannerUi.closeDiagramEditor();
+        sprintPlannerUi.tools.closeDiagramEditor();
       }}
     />
   );

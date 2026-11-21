@@ -107,7 +107,10 @@ export function applyQuickAddDraftDurationForKind(
   return next;
 }
 
-type QuickAddDraftKindUi = Parameters<typeof syncQuickAddCommentPresencePreview>[0] & { cards: Parameters<typeof applyQuickAddImageDraftCardRow>[2] };
+interface QuickAddDraftKindUi {
+  cards: Parameters<typeof applyQuickAddImageDraftCardRow>[2];
+  tools: Parameters<typeof syncQuickAddCommentPresencePreview>[0];
+}
 
 /**
  * Смена вида черновика из меню quick-add. Вид, который от ячейки черновика не помещается
@@ -136,8 +139,8 @@ export function changeQuickAddDraftKind(input: {
   }
   input.setTasks((prev) => {
     const next = applyQuickAddDraftKind(prev, taskId, kind);
-    syncQuickAddCommentPresencePreview(ui, taskId, kind, next.find((task) => task.id === taskId)?.name ?? '');
-    return kind === 'comment' ? applyQuickAddDraftCommentColor(next, taskId, ui.stickyNoteColor) : next;
+    syncQuickAddCommentPresencePreview(ui.tools, taskId, kind, next.find((task) => task.id === taskId)?.name ?? '');
+    return kind === 'comment' ? applyQuickAddDraftCommentColor(next, taskId, ui.tools.stickyNoteColor) : next;
   });
   input.setTaskPositions((prev) =>
     applyQuickAddDraftDurationForKind(prev, taskId, kind, timelineTotalParts)

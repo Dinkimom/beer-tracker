@@ -117,14 +117,14 @@ export const ModalsSection = observer(function ModalsSection({
   const { sprintPlannerUi } = useRootStore();
   const agentAvailable = useAgentAvailable(selectedSprintId);
 
-  const contextMenu = sprintPlannerUi.contextMenu;
+  const contextMenu = sprintPlannerUi.overlays.contextMenu;
   const presenceLocked = useSprintCardPresenceLocked(contextMenu?.task.id ?? '');
-  const accountWorkModal = sprintPlannerUi.accountWorkModal;
-  const taskInfoPanelTaskSnapshot = sprintPlannerUi.taskInfoPanelTask;
+  const accountWorkModal = sprintPlannerUi.overlays.accountWorkModal;
+  const taskInfoPanelTaskSnapshot = sprintPlannerUi.overlays.taskInfoPanelTask;
 
   useEffect(() => {
     if (contextMenu && presenceLocked) {
-      sprintPlannerUi.closeContextMenu();
+      sprintPlannerUi.overlays.closeContextMenu();
     }
   }, [contextMenu, presenceLocked, sprintPlannerUi]);
 
@@ -191,12 +191,12 @@ export const ModalsSection = observer(function ModalsSection({
               ? withOnboardingMenuPosition(taskPositions, getPartsPerDay())
               : taskPositions
           }
-          onAccountWork={sprintPlannerUi.setAccountWorkModal}
-          onAskAgent={(task) => sprintPlannerUi.setAgentRequestTarget({ kind: 'task', task })}
+          onAccountWork={sprintPlannerUi.overlays.setAccountWorkModal}
+          onAskAgent={(task) => sprintPlannerUi.agentChat.setAgentRequestTarget({ kind: 'task', task })}
           onAssigneeSelect={bindTaskAssigneeSelect(onAssigneeSelect, contextMenu.task)}
-          onClose={sprintPlannerUi.closeContextMenu}
+          onClose={sprintPlannerUi.overlays.closeContextMenu}
           onMoveToSprint={onMoveToSprint}
-          onOpenTaskInfo={sprintPlannerUi.openTaskInfoPanel}
+          onOpenTaskInfo={sprintPlannerUi.overlays.openTaskInfoPanel}
           onParentChange={onParentChange}
           onPlanInSprint={movePlacement?.handlePlanInSprint}
           onRemoveFromPlan={onRemoveFromPlan}
@@ -207,7 +207,7 @@ export const ModalsSection = observer(function ModalsSection({
           onStartLinking={
             showStartLinking
               ? (task) => {
-                  sprintPlannerUi.setLinkingFromTaskId(task.id);
+                  sprintPlannerUi.tools.setLinkingFromTaskId(task.id);
                 }
               : undefined
           }
@@ -218,7 +218,7 @@ export const ModalsSection = observer(function ModalsSection({
 
       <TaskInfoSidebar
         task={taskInfoPanelTask}
-        onClose={sprintPlannerUi.closeTaskInfoPanel}
+        onClose={sprintPlannerUi.overlays.closeTaskInfoPanel}
         onFieldsSaved={onTaskInfoFieldsSaved}
         onStatusChange={onStatusChange}
       />
@@ -229,7 +229,7 @@ export const ModalsSection = observer(function ModalsSection({
           isOpen
           sprints={sprints}
           task={accountWorkModal}
-          onClose={() => sprintPlannerUi.setAccountWorkModal(null)}
+          onClose={() => sprintPlannerUi.overlays.setAccountWorkModal(null)}
           onConfirm={onAccountWork}
         />
       ) : null}

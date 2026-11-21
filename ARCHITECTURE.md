@@ -72,7 +72,7 @@ features/ / components/ / hooks/
 | Стор | Назначение |
 |------|------------|
 | `TaskPositionsStore` | Позиции карточек на свимлейне: `observable.map<taskId, TaskPosition>`, загрузка `fetchSprintPositions`, debounce сохранений, поколения ответов чтобы устаревший `fetch` не затирал локальные правки после DnD |
-| `SprintPlannerUiStore` | Преходящий UI планера: поиск, контекстное меню, hover, сегменты фаз, фокус комментария и т.д. |
+| `SprintPlannerUiStore` | Преходящий UI планера — классы под вью по областям: `cards` (`SwimlaneCardsView`), `overlays` (`PlannerOverlaysView`), `tools` (`AnnotationToolsView`), `agentChat` (`AgentChatView`), `focus` (`PlannerFocusView`); сам стор держит их и сбрасывает при смене спринта |
 | `SprintMovePlacementStore` | Сессия «Запланировать в другом спринте»: задача или заметка показывается на доске целевого спринта до подтверждения или отмены |
 
 Доступ к сторам: `useRootStore()` в клиентских компонентах. Для позиций в планере спринта типичен фасад [`useTaskPositionsApi`](./hooks/useTaskPositionsApi.ts) (внутри — тот же `TaskPositionsStore`).
@@ -97,7 +97,7 @@ features/ / components/ / hooks/
 - Модель режется по доменам, а не растёт одним классом. Новое правило доски — метод или computed доменного класса, не новый `use*`-хук и не `*Helpers`.
 - Пороги `pnpm lint:shape` — сигнал, а не цель: дробить ради порога не нужно.
 
-**Порядок перехода:** 1) модель только на чтение поверх нынешних источников, перевод читателей (карточка, секция, сайдбар); 2) действия в модель вместо `useSprintPlannerHandlers` и соседей; 3) `SprintPlannerUiStore` → классы под вью. Ход — в [`docs/REFACTORING_BACKLOG.md`](./docs/REFACTORING_BACKLOG.md), п. 2.8.
+**Порядок перехода:** 1) модель только на чтение поверх нынешних источников, перевод читателей (карточка, секция, сайдбар); 2) действия в модель вместо `useSprintPlannerHandlers` и соседей; 3) `SprintPlannerUiStore` → классы под вью (сделано: пять областей, см. таблицу сторов выше). Ход — в [`docs/REFACTORING_BACKLOG.md`](./docs/REFACTORING_BACKLOG.md), п. 2.8.
 
 ## Списки и документы с отложенной записью
 

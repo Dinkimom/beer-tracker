@@ -1,4 +1,4 @@
-import type { CardContextMenuState } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
+import type { CardContextMenuState } from '@/lib/layers/application/mobx/stores/plannerOverlaysView';
 
 import { comparer, computed } from 'mobx';
 import { useMemo } from 'react';
@@ -14,7 +14,7 @@ export function useCardContextMenu(taskId: string): CardContextMenuState {
   const { sprintPlannerUi } = useRootStore();
   return useMemo(
     () =>
-      computed(() => sprintPlannerUi.cardContextMenuState(taskId), { equals: comparer.structural }),
+      computed(() => sprintPlannerUi.overlays.cardContextMenuState(taskId), { equals: comparer.structural }),
     [sprintPlannerUi, taskId]
   ).get();
 }

@@ -28,13 +28,13 @@ export function useSwimlanePlacementToolbarKeyboard(input: {
         event,
         fromEditableTarget: isPlannerHistoryShortcutBlockedTarget(event.target),
         hasBlockingOverlay: Boolean(
-          sprintPlannerUi.contextMenu ||
-            sprintPlannerUi.diagramEditorTaskId ||
+          sprintPlannerUi.overlays.contextMenu ||
+            sprintPlannerUi.tools.diagramEditorTaskId ||
             document.querySelector(
               '[data-confirm-dialog="true"], [data-planner-onboarding-dialog="true"], [data-swimlane-availability-popover="true"]'
             )
         ),
-        placementTool: sprintPlannerUi.placementTool,
+        placementTool: sprintPlannerUi.tools.placementTool,
       });
       if (!action) {
         return;

@@ -132,7 +132,7 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const noteFocus = usePlanPatchNoteFocus(task, onTaskHover);
   const planPatchChrome = resolvePlanPatchTaskBarChrome({
-    focusTaskId: sprintPlannerUi.planPatchFocusTaskId,
+    focusTaskId: sprintPlannerUi.focus.planPatchFocusTaskId,
     noteFocused: noteFocus.focused,
     planPatchGhost,
     preview: positionsStore.planPatchPreviews.get(task.id),
@@ -211,7 +211,7 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
   } else if (disableDragAndResize) {
     linkCursorClass = 'cursor-default';
   }
-  const isNotificationFocused = sprintPlannerUi.notificationFocusTaskId === task.id;
+  const isNotificationFocused = sprintPlannerUi.focus.notificationFocusTaskId === task.id;
   const presenceBlocksMutations =
     presenceLocked && !effectiveIsDragging && !isAnyResizing;
   const swimlaneCommentId = parseSwimlaneCommentTaskId(task.id);
@@ -332,7 +332,7 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
                   isLocalTask: task.isLocalTask,
                   isPhotoCard,
                   onClick,
-                  openDiagram: () => sprintPlannerUi.openDiagramEditor(task.id),
+                  openDiagram: () => sprintPlannerUi.tools.openDiagramEditor(task.id),
                   openLightbox: openPhotoLightbox,
                 }),
           onContextMenu,

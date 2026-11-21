@@ -28,7 +28,7 @@ export function useBurndownChartTileState({
   sprintTasksForTiles?: Task[];
 }) {
   const { sprintPlannerUi } = useRootStore();
-  const globalNameFilter = sprintPlannerUi.globalNameFilter;
+  const globalNameFilter = sprintPlannerUi.focus.globalNameFilter;
   const completionRules = useSprintTaskCompletionRules();
 
   const scopeTiles = useMemo(() => {
