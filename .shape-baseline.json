@@ -44,7 +44,6 @@
   "features/task/components/TaskBar/TaskBarOpacityLayerCard.tsx::pass-through": 63,
   "features/task/components/TaskBar/TaskBarOpacityLayerCard.tsx::props-width::TaskBarOpacityLayerCardProps": 29,
   "features/task/components/TaskBar/TaskBarOpacityLayerChrome.tsx::pass-through": 78,
-  "features/task/components/TaskBar/useTaskBarDisplayState.ts::hook-outputs::useTaskBarDisplayState": 22,
   "features/task/components/TaskCard/components/TaskCardStandardBody.tsx::pass-through": 86,
   "features/task/components/TaskCard/components/TaskCardStandardBody.tsx::props-width::TaskCardStandardBodyProps": 25,
   "features/task/components/TaskCard/components/TaskCardSwimlaneContent.tsx::pass-through": 100,

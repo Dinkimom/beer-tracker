@@ -325,31 +325,34 @@ export function useTaskBarDisplayState({
   });
 
   return {
-    contentDurationParts,
-    contentWidthPercent,
+    /** Ширина и длина содержимого (с учётом раскрытия по долгому наведению). */
+    content: { durationParts: contentDurationParts, widthPercent: contentWidthPercent },
+    /** Корневой элемент карточки: мгновенная геометрия, раскладка, слой, разметка онбординга. */
+    root: {
+      geometryClass: instantGeometryClass,
+      layoutStyle,
+      onboardingDataset: resolveTaskBarOnboardingDataset(
+        taskId,
+        onboardingDemo.showResizeHandle,
+        onboardingDemo.sampleDragging,
+        onboardingDemo.sampleAssigneeShift
+      ),
+      zIndex: taskBarZIndex,
+    },
     dragActivationProps,
     effectiveIsDragging,
     effectiveOpacity,
     hasQATaskInSwimlane,
     hideSourceForOverlay,
-    instantGeometryClass,
     isAnyResizing,
-    onboardingDataset: resolveTaskBarOnboardingDataset(
-      taskId,
-      onboardingDemo.showResizeHandle,
-      onboardingDemo.sampleDragging,
-      onboardingDemo.sampleAssigneeShift
-    ),
     isDraftTask,
     isNarrowForLongHoverExpand,
     isQATask,
-    layoutStyle,
     longHoverElevated,
     presenceLocked,
     resize,
     setNodeRef,
     shouldExpandByLongHover,
-    taskBarZIndex,
     transform,
     verticalResize,
   };

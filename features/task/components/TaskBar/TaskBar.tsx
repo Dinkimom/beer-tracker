@@ -167,25 +167,22 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
   } = useTaskBarBoard(planPatchGhost, disableDragAndResize);
   const { onCommentApprove, onCommentDelete, onCommentUpdate } = commentActions ?? {};
   const {
-    contentDurationParts,
-    contentWidthPercent,
+    content,
+    root,
     dragActivationProps,
     effectiveIsDragging,
     effectiveOpacity,
     hasQATaskInSwimlane,
     hideSourceForOverlay,
-    instantGeometryClass,
-    isAnyResizing, onboardingDataset,
+    isAnyResizing,
     isDraftTask,
     isNarrowForLongHoverExpand,
     isQATask,
-    layoutStyle,
     longHoverElevated,
     presenceLocked,
     resize,
     setNodeRef,
     shouldExpandByLongHover,
-    taskBarZIndex,
     transform,
     verticalResize,
   } = useTaskBarDisplayState({
@@ -280,7 +277,7 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
       ref={noteFocusMode.rootRef}
       className={`${getTaskBarRootClassName({
         effectiveIsDragging,
-        instantGeometryClass,
+        instantGeometryClass: root.geometryClass,
         interactionDisabled,
         isAnnotationCard: isStickyNoteCard || isPhotoCard || isDiagramCard || isWidgetCard,
         linkCursorClass,
@@ -288,19 +285,19 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
       })}${stickyNoteExitClassName(isStickyNoteCard, stickyNoteExiting)}${stickyNoteColorPopClassName(isStickyNoteCard, stickyNoteColorPopping)}${stickyNoteSaveMotionClassName(isStickyNoteCard, stickyNoteSaveMotion)}${planPatchChrome.ringClass}`}
       data-draggable-id={draggableId}
       data-task-id={task.id}
-      {...onboardingDataset}
+      {...root.onboardingDataset}
       id={htmlAnchorId}
       style={{
         ...resolveTaskBarRootStyle({
           hideSourceForOverlay,
-          layoutStyle,
+          layoutStyle: root.layoutStyle,
           taskBarZIndex: resolveVisibleTaskBarZIndex({
             pendingApprovalToolbar: taskBarHasPendingApprovalToolbar({
               planPatchToolbar: planPatchChrome.toolbarPreview != null,
               showNoteToolbar: showPendingApprovalToolbar,
               swimlaneCommentId,
             }),
-            taskBarZIndex,
+            taskBarZIndex: root.zIndex,
           }),
         }),
         ...noteFocusMode.rootStyle,
@@ -312,8 +309,8 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
         card={{
           assigneeName,
           clickStartPos,
-          contentDurationParts,
-          contentWidthPercent,
+          contentDurationParts: content.durationParts,
+          contentWidthPercent: content.widthPercent,
           developers,
           dragActivationProps,
           getPhotoClickSuppress,
