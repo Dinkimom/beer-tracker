@@ -173,7 +173,7 @@ export function useSprintPlannerQuickAddDraft({
         imageFile,
         onCommentCreate,
         onCreated: (taskId, kind) => {
-          applyQuickAddImageDraftCardRow(taskId, kind, sprintPlannerUi);
+          applyQuickAddImageDraftCardRow(taskId, kind, sprintPlannerUi.cards);
           syncQuickAddCommentPresencePreview(sprintPlannerUi, taskId, kind);
         },
         parent,
@@ -219,7 +219,7 @@ export function useSprintPlannerQuickAddDraft({
     (taskId: string) => {
       cancelQuickAddDraft({
         clearNoteEditPreview: sprintPlannerUi.clearNoteEditPreview,
-        clearStickyNoteCardRowOverride: sprintPlannerUi.clearStickyNoteCardRowOverride,
+        clearStickyNoteCardRowOverride: sprintPlannerUi.cards.clearStickyNoteCardRowOverride,
         closeNoteComposer,
         setSubmittingTaskId: setQuickAddSubmittingTaskId,
         setTaskPositions,
@@ -243,7 +243,7 @@ export function useSprintPlannerQuickAddDraft({
 
   const cancelDraftOnToolLeave = {
     clearNoteEditPreview: sprintPlannerUi.clearNoteEditPreview,
-    clearStickyNoteCardRowOverride: sprintPlannerUi.clearStickyNoteCardRowOverride,
+    clearStickyNoteCardRowOverride: sprintPlannerUi.cards.clearStickyNoteCardRowOverride,
     closeNoteComposer,
     placementTool: sprintPlannerUi.placementTool,
     setSubmittingTaskId: setQuickAddSubmittingTaskId,

@@ -107,8 +107,7 @@ export function applyQuickAddDraftDurationForKind(
   return next;
 }
 
-type QuickAddDraftKindUi = Parameters<typeof applyQuickAddImageDraftCardRow>[2] &
-  Parameters<typeof syncQuickAddCommentPresencePreview>[0];
+type QuickAddDraftKindUi = Parameters<typeof syncQuickAddCommentPresencePreview>[0] & { cards: Parameters<typeof applyQuickAddImageDraftCardRow>[2] };
 
 /**
  * Смена вида черновика из меню quick-add. Вид, который от ячейки черновика не помещается
@@ -143,7 +142,7 @@ export function changeQuickAddDraftKind(input: {
   input.setTaskPositions((prev) =>
     applyQuickAddDraftDurationForKind(prev, taskId, kind, timelineTotalParts)
   );
-  applyQuickAddImageDraftCardRow(taskId, kind, ui);
+  applyQuickAddImageDraftCardRow(taskId, kind, ui.cards);
 }
 
 export function applyQuickAddDraftImageUrl(

@@ -306,13 +306,13 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   const isStickyNoteCard = isSwimlaneCommentTask(task);
   const isPhotoCard = isSwimlaneImageTask(task);
   const cardRowPreview =
-    sprintPlannerUi.stickyNoteCardRowPreview?.taskId === task.id
-      ? sprintPlannerUi.stickyNoteCardRowPreview
+    sprintPlannerUi.cards.stickyNoteCardRowPreview?.taskId === task.id
+      ? sprintPlannerUi.cards.stickyNoteCardRowPreview
       : null;
   const cardRowOverride =
     cardRowPreview ??
     stickyNoteCardRowById?.get(task.id) ??
-    sprintPlannerUi.getStickyNoteCardRowOverride(task.id);
+    sprintPlannerUi.cards.getStickyNoteCardRowOverride(task.id);
   const committedCardRowLayout = resolveStickyNoteEffectiveCardRowLayout(
     cardRowOverride ??
       (isPhotoCard ? { layerShiftUp: 0, span: DEFAULT_COMMENT_CARD_ROW_HEIGHT } : undefined)

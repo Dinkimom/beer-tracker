@@ -262,8 +262,8 @@ export function useSprintPlannerViewModelInteractions({
             swimlanePositionToCommentResizePatch(result.outgoingPosition, comment)
           );
           if (comment.kind === 'diagram') {
-            sprintPlannerUi.clearStickyNoteCardRowOverride(taskId);
-            sprintPlannerUi.clearStickyNoteCardRowPreview();
+            sprintPlannerUi.cards.clearStickyNoteCardRowOverride(taskId);
+            sprintPlannerUi.cards.clearStickyNoteCardRowPreview();
           }
         }
         return;

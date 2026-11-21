@@ -44,7 +44,7 @@ export const TaskBarCornerBadges = observer(function TaskBarCornerBadges(
   const { interactionDisabled, swimlaneSegmentBadge, swimlaneSegmentSecondary, task } = props;
   const { sprintPlannerUi } = useRootStore();
   const primary = !swimlaneSegmentSecondary;
-  const hiddenLinks = primary ? (sprintPlannerUi.hiddenLinkCountByTaskId.get(task.id) ?? 0) : 0;
+  const hiddenLinks = primary ? (sprintPlannerUi.cards.hiddenLinkCountByTaskId.get(task.id) ?? 0) : 0;
   const { onCreateQATask } = props;
   // Агент делает саму задачу, не её QA-карточку.
   const agentDev = useAgentDevTask(primary && !props.isQATask ? getTaskTrackerDisplayKey(task) : null);

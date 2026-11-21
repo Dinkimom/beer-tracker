@@ -216,7 +216,7 @@ function SwimlaneComponent({
     () => new Set(layout.positionedTasks.map(({ task }) => task.id)),
     [layout.positionedTasks]
   );
-  const resizingTaskId = sprintPlannerUi.resizingTaskId;
+  const resizingTaskId = sprintPlannerUi.cards.resizingTaskId;
   const partDividersVisible =
     isDraggingTask || (resizingTaskId != null && swimlaneRowTaskIds.has(resizingTaskId));
   if (hideQuickAddPreview && quickAddHoverPreview != null) {

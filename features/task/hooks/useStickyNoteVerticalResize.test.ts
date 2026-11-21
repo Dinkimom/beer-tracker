@@ -83,7 +83,7 @@ describe('useStickyNoteVerticalResize', () => {
       document.dispatchEvent(new MouseEvent('mousemove', { clientY: 200 }));
     });
 
-    expect(result.current.sprintPlannerUi.stickyNoteCardRowPreview?.taskId).toBe('note-1');
+    expect(result.current.sprintPlannerUi.cards.stickyNoteCardRowPreview?.taskId).toBe('note-1');
     expect(result.current.resize.isResizing).toBe(true);
 
     act(() => {
@@ -96,8 +96,8 @@ describe('useStickyNoteVerticalResize', () => {
     });
 
     expect(onLayoutCommit).not.toHaveBeenCalled();
-    expect(result.current.sprintPlannerUi.stickyNoteCardRowPreview).toBeNull();
-    expect(result.current.sprintPlannerUi.getStickyNoteCardRowOverride('note-1')).toBeUndefined();
+    expect(result.current.sprintPlannerUi.cards.stickyNoteCardRowPreview).toBeNull();
+    expect(result.current.sprintPlannerUi.cards.getStickyNoteCardRowOverride('note-1')).toBeUndefined();
     expect(result.current.resize.isResizing).toBe(false);
     expect(result.current.resize.resizeSide).toBeNull();
     remove();

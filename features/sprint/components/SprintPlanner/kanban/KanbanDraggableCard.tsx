@@ -60,10 +60,10 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({
     if (!isDragging) {
       return undefined;
     }
-    sprintPlannerUi.setBoardDraggingTaskId(task.id);
+    sprintPlannerUi.cards.setBoardDraggingTaskId(task.id);
     return () => {
-      if (sprintPlannerUi.boardDraggingTaskId === task.id) {
-        sprintPlannerUi.setBoardDraggingTaskId(null);
+      if (sprintPlannerUi.cards.boardDraggingTaskId === task.id) {
+        sprintPlannerUi.cards.setBoardDraggingTaskId(null);
       }
     };
   }, [isDragging, sprintPlannerUi, task.id]);
@@ -116,10 +116,10 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({
           onTaskClick?.(task.id);
         }
       }}
-      onMouseEnter={() => sprintPlannerUi.setHoveredTaskId(task.id)}
+      onMouseEnter={() => sprintPlannerUi.cards.setHoveredTaskId(task.id)}
       onMouseLeave={() => {
-        if (sprintPlannerUi.hoveredTaskId === task.id) {
-          sprintPlannerUi.setHoveredTaskId(null);
+        if (sprintPlannerUi.cards.hoveredTaskId === task.id) {
+          sprintPlannerUi.cards.setHoveredTaskId(null);
         }
       }}
     >

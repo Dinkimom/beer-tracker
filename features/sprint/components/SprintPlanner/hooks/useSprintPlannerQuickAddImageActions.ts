@@ -55,7 +55,7 @@ export function useSprintPlannerQuickAddImageActions({
         const persistSprintId = forDemoPlanner ? null : selectedSprintId;
         const result = await submitQuickAddImageDraft({
           caption,
-          cardRowUi: sprintPlannerUi,
+          cardRowUi: sprintPlannerUi.cards,
           createImageComment:
             persistSprintId == null
               ? undefined

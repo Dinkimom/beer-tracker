@@ -18,11 +18,11 @@ export function usePublishHiddenLinkCounts(counts: Map<string, number>, enabled:
 
   useEffect(() => {
     if (!enabled) return;
-    sprintPlannerUi.setHiddenLinkCounts(countsRef.current);
+    sprintPlannerUi.cards.setHiddenLinkCounts(countsRef.current);
   }, [countsKey, enabled, sprintPlannerUi]);
 
   useEffect(() => {
     if (!enabled) return;
-    return () => sprintPlannerUi.setHiddenLinkCounts(new Map());
+    return () => sprintPlannerUi.cards.setHiddenLinkCounts(new Map());
   }, [enabled, sprintPlannerUi]);
 }

@@ -36,11 +36,13 @@ function draftKindInput(startDay: number, startPart: number) {
     ]),
     timelineTotalParts: 30,
     ui: {
+      cards: {
+        clearStickyNoteCardRowOverride: vi.fn(),
+        setStickyNoteCardRowOverride: vi.fn(),
+      },
       clearNoteEditPreview: vi.fn(),
-      clearStickyNoteCardRowOverride: vi.fn(),
       noteEditPreview: null,
       setNoteEditPreview: vi.fn(),
-      setStickyNoteCardRowOverride: vi.fn(),
       stickyNoteColor: 'yellow' as const,
     },
     setTaskPositions: vi.fn(),
@@ -57,7 +59,7 @@ describe('changeQuickAddDraftKind', () => {
     expect(toast.error).toHaveBeenCalledWith('does-not-fit');
     expect(input.setTasks).not.toHaveBeenCalled();
     expect(input.setTaskPositions).not.toHaveBeenCalled();
-    expect(input.ui.setStickyNoteCardRowOverride).not.toHaveBeenCalled();
+    expect(input.ui.cards.setStickyNoteCardRowOverride).not.toHaveBeenCalled();
   });
 
   it('applies the photo kind when two slots fit', () => {

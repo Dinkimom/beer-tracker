@@ -2,8 +2,6 @@ import type {
   SprintPlannerContextMenuState,
   SprintPlannerNoteComposerState,
   SprintPlannerNoteEditPreview,
-  SprintPlannerOccupancyPresencePreview,
-  SprintPlannerTaskResizePreview,
   SwimlaneNoteClipboard,
   SwimlanePlacementTool,
 } from '../sprintPlannerUiTypes';
@@ -19,6 +17,8 @@ import {
   parseStickyNoteColor,
   type StickyNoteColor,
 } from '@/lib/comments/stickyNoteColor';
+
+import { SwimlaneCardsView } from './swimlaneCardsView';
 
 /**
  * Открытый чат агента и откуда его открыли: задача (меню карточки), заметка (меню заметки),
@@ -68,41 +68,8 @@ export class SprintPlannerUiStore {
   /** Открыт ли сайдбар планера (persist в localStorage). */
   sidebarOpen = true;
 
-  /** Подсветка связей / затемнение при hover по карточке. */
-  hoveredTaskId: string | null = null;
-
-  /** Связи, скрытые в покое (режим «Важные» / «При наведении»): счётчик в правой рейке карточки. */
-  hiddenLinkCountByTaskId = new Map<string, number>();
-
-  /** Drag вне dnd-kit свимлейна (канбан, occupancy) — presence «изменяет». */
-  boardDraggingTaskId: string | null = null;
-
-  /** Живое превью бара занятости для чужих вкладок. */
-  occupancyPresencePreview: SprintPlannerOccupancyPresencePreview | null = null;
-
-  /** Удержание рукояток длительности карточки на свимлейне (presence как при drag). */
-  resizingTaskId: string | null = null;
-
-  /**
-   * Локальный вертикальный размер sticky-note в строках карточек (прототип, без API).
-   * Ключ — taskId (`comment:*` или local draft).
-   */
-  stickyNoteCardRowOverrides: Map<string, { layerShiftUp: number; span: number }> = new Map();
-
-  /** Превью ресайза по строкам карточек до mouseup. */
-  stickyNoteCardRowPreview: { layerShiftUp: number; span: number; taskId: string } | null = null;
-
-  /** Превью ширины/старта карточки до mouseup — слои пересчитываются сразу. */
-  taskResizePreview: SprintPlannerTaskResizePreview | null = null;
-
-  /**
-   * Растёт при отмене ресайза (Escape). Layout сбрасывает latch ширины,
-   * не дожидаясь, пока сохранённая позиция догонит превью.
-   */
-  localTaskResizeDiscardEpoch = 0;
-
-  /** Ревизия превью/override карточек: useSyncExternalStore в layout, минуя memo свимлейна. */
-  cardLayoutRevision = 0;
+  /** Карточки на доске: наведение, перетаскивание, ресайз и превью раскладки. */
+  readonly cards = new SwimlaneCardsView();
 
   /** Контекстное меню по задаче (позиция + задача). */
   contextMenu: SprintPlannerContextMenuState | null = null;
@@ -166,9 +133,6 @@ export class SprintPlannerUiStore {
   /** Режим создания связи (стрелки) на свимлейне: id задачи-источника. */
   linkingFromTaskId: string | null = null;
 
-  /** Фокус редактирования комментария в таймлайне занятости. */
-  openCommentEditId: string | null = null;
-
   /** Глобальный фильтр по имени/ключу в планере. */
   globalNameFilter = '';
 
@@ -192,12 +156,6 @@ export class SprintPlannerUiStore {
       agentRequestTarget: observable.ref,
       clearAgentChatContext: action.bound,
       clearNoteEditPreview: action.bound,
-      cardLayoutRevision: observable,
-      clearStickyNoteCardRowOverride: action.bound,
-      clearStickyNoteCardRowPreview: action.bound,
-      commitStickyNoteCardRowLayout: action.bound,
-      clearTaskResizePreview: action.bound,
-      discardLocalTaskResizePreview: action.bound,
       clearTransientUiOnSprintChange: action.bound,
       removeAgentChatContext: action.bound,
       closeContextMenu: action.bound,
@@ -210,24 +168,17 @@ export class SprintPlannerUiStore {
       contextMenuTaskId: observable,
       diagramEditorTaskId: observable,
       globalNameFilter: observable,
-      boardDraggingTaskId: observable,
-      occupancyPresencePreview: observable,
-      hoveredTaskId: observable,
-      hiddenLinkCountByTaskId: observable,
-      setHiddenLinkCounts: action.bound,
       linkingFromTaskId: observable,
       clearNotificationFocusTaskId: action.bound,
       notificationFocusTaskId: observable,
       planPatchFocusTaskId: observable,
       planPatchNoteFocusTaskId: observable,
-      resizingTaskId: observable,
       noteClipboard: observable,
       noteEditPreview: observable,
       placementTool: observable,
       noteComposer: observable,
       setNoteClipboard: action.bound,
       setPlacementTool: action.bound,
-      openCommentEditId: observable,
       openDiagramEditor: action.bound,
       openPhotoLightbox: action.bound,
       openNoteComposer: action.bound,
@@ -242,25 +193,13 @@ export class SprintPlannerUiStore {
       setContextMenu: action.bound,
       setContextMenuTaskId: action.bound,
       setGlobalNameFilter: action.bound,
-      setBoardDraggingTaskId: action.bound,
-      setOccupancyPresencePreview: action.bound,
-      setHoveredTaskId: action.bound,
       setLinkingFromTaskId: action.bound,
       setNoteEditPreview: action.bound,
       setNotificationFocusTaskId: action.bound,
       setPlanPatchFocusTaskId: action.bound,
       setPlanPatchNoteFocusTaskId: action.bound,
-      setOpenCommentEditId: action.bound,
-      setResizingTaskId: action.bound,
-      setStickyNoteCardRowOverride: action.bound,
-      setStickyNoteCardRowPreview: action.bound,
       setStickyNoteColor: action.bound,
-      setTaskResizePreview: action.bound,
       setSegmentEditTaskId: action.bound,
-      stickyNoteCardRowOverrides: observable,
-      stickyNoteCardRowPreview: observable,
-      localTaskResizeDiscardEpoch: observable,
-      taskResizePreview: observable,
       setSidebarOpen: action.bound,
       sidebarOpen: observable,
       stickyNoteColor: observable,
@@ -276,120 +215,6 @@ export class SprintPlannerUiStore {
 
   resetSession(): void {
     this.sessionId = uuid();
-  }
-
-  /** Точечно: карточки перерисовываются только там, где счётчик поменялся. */
-  setHiddenLinkCounts(counts: ReadonlyMap<string, number>): void {
-    for (const taskId of [...this.hiddenLinkCountByTaskId.keys()]) {
-      if (!counts.has(taskId)) this.hiddenLinkCountByTaskId.delete(taskId);
-    }
-    for (const [taskId, count] of counts) {
-      if (this.hiddenLinkCountByTaskId.get(taskId) !== count) {
-        this.hiddenLinkCountByTaskId.set(taskId, count);
-      }
-    }
-  }
-
-  setHoveredTaskId(id: string | null): void {
-    this.hoveredTaskId = id;
-  }
-
-  setBoardDraggingTaskId(id: string | null): void {
-    this.boardDraggingTaskId = id;
-  }
-
-  setOccupancyPresencePreview(preview: SprintPlannerOccupancyPresencePreview | null): void {
-    this.occupancyPresencePreview = preview;
-  }
-
-  setResizingTaskId(id: string | null): void {
-    this.resizingTaskId = id;
-  }
-
-  getStickyNoteCardRowOverride(
-    taskId: string
-  ): { layerShiftUp: number; span: number } | undefined {
-    return this.stickyNoteCardRowOverrides.get(taskId);
-  }
-
-  setStickyNoteCardRowOverride(
-    taskId: string,
-    layout: { layerShiftUp: number; span: number }
-  ): void {
-    this.stickyNoteCardRowOverrides.set(taskId, layout);
-    this.bumpCardLayoutRevision();
-  }
-
-  clearStickyNoteCardRowOverride(taskId: string): void {
-    if (!this.stickyNoteCardRowOverrides.delete(taskId)) {
-      return;
-    }
-    this.bumpCardLayoutRevision();
-  }
-
-  setStickyNoteCardRowPreview(
-    preview: { layerShiftUp: number; span: number; taskId: string } | null
-  ): void {
-    const current = this.stickyNoteCardRowPreview;
-    if (
-      current?.taskId === preview?.taskId &&
-      current?.span === preview?.span &&
-      current?.layerShiftUp === preview?.layerShiftUp
-    ) {
-      return;
-    }
-    this.stickyNoteCardRowPreview = preview;
-    this.bumpCardLayoutRevision();
-  }
-
-  clearStickyNoteCardRowPreview(): void {
-    if (this.stickyNoteCardRowPreview == null) {
-      return;
-    }
-    this.stickyNoteCardRowPreview = null;
-    this.bumpCardLayoutRevision();
-  }
-
-  /** Override и сброс preview в одном revision — иначе кадр со старой высотой. */
-  commitStickyNoteCardRowLayout(taskId: string, layout: { layerShiftUp: number; span: number }): void {
-    this.stickyNoteCardRowOverrides.set(taskId, layout);
-    if (this.stickyNoteCardRowPreview?.taskId === taskId) {
-      this.stickyNoteCardRowPreview = null;
-    }
-    this.bumpCardLayoutRevision();
-  }
-
-  setTaskResizePreview(preview: SprintPlannerTaskResizePreview | null): void {
-    const current = this.taskResizePreview;
-    if (
-      current?.taskId === preview?.taskId &&
-      current?.duration === preview?.duration &&
-      current?.startCell === preview?.startCell &&
-      current?.planSegmentIndex === preview?.planSegmentIndex
-    ) {
-      return;
-    }
-    this.taskResizePreview = preview;
-    this.bumpCardLayoutRevision();
-  }
-
-  clearTaskResizePreview(): void {
-    if (this.taskResizePreview == null) {
-      return;
-    }
-    this.taskResizePreview = null;
-    this.bumpCardLayoutRevision();
-  }
-
-  /** Escape: убрать превью и не удерживать последний размер в layout. */
-  discardLocalTaskResizePreview(): void {
-    this.taskResizePreview = null;
-    this.localTaskResizeDiscardEpoch += 1;
-    this.bumpCardLayoutRevision();
-  }
-
-  private bumpCardLayoutRevision(): void {
-    this.cardLayoutRevision += 1;
   }
 
   setContextMenu(menu: SprintPlannerContextMenuState | null): void {
@@ -525,10 +350,6 @@ export class SprintPlannerUiStore {
     }
   }
 
-  setOpenCommentEditId(id: string | null): void {
-    this.openCommentEditId = id;
-  }
-
   setGlobalNameFilter(value: string): void {
     this.globalNameFilter = value;
   }
@@ -564,16 +385,7 @@ export class SprintPlannerUiStore {
     this.noteEditPreview = null;
     this.diagramEditorTaskId = null;
     this.photoLightboxTaskId = null;
-    this.openCommentEditId = null;
-    this.hoveredTaskId = null;
-    this.boardDraggingTaskId = null;
-    this.occupancyPresencePreview = null;
-    this.resizingTaskId = null;
-    this.stickyNoteCardRowOverrides = new Map();
-    this.stickyNoteCardRowPreview = null;
-    this.taskResizePreview = null;
-    this.localTaskResizeDiscardEpoch += 1;
-    this.cardLayoutRevision += 1;
+    this.cards.reset();
     this.accountWorkModal = null;
     this.agentRequestTarget = null;
     this.taskInfoPanelTask = null;

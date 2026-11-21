@@ -46,7 +46,7 @@ export function useSprintPlannerQuickAddNoteActions({
         sprintPlannerUi.setStickyNoteColor(color);
       }
       completeQuickAddCommentDraft({
-        cardRowUi: sprintPlannerUi,
+        cardRowUi: sprintPlannerUi.cards,
         closeNoteComposer,
         comments,
         color,

@@ -34,10 +34,10 @@ export const SprintPlannerPresenceSync = observer(function SprintPlannerPresence
   const contextMenuTaskId = sprintPlannerUi.contextMenuTaskId;
   const note = sprintPlannerUi.noteEditPreview;
   const editingTaskId = sprintPlannerUi.noteComposer?.taskId ?? note?.taskId ?? null;
-  const hoveredTaskId = sprintPlannerUi.hoveredTaskId;
+  const hoveredTaskId = sprintPlannerUi.cards.hoveredTaskId;
   const linkingTaskId = sprintPlannerUi.linkingFromTaskId;
-  const resizingTaskId = sprintPlannerUi.resizingTaskId;
-  const effectiveDraggingTaskId = draggingTaskId || sprintPlannerUi.boardDraggingTaskId;
+  const resizingTaskId = sprintPlannerUi.cards.resizingTaskId;
+  const effectiveDraggingTaskId = draggingTaskId || sprintPlannerUi.cards.boardDraggingTaskId;
   const focus = resolveSprintCardPresenceFocus({
     contextMenuTaskId,
     draggingTaskId: effectiveDraggingTaskId,
@@ -46,9 +46,9 @@ export const SprintPlannerPresenceSync = observer(function SprintPlannerPresence
     linkingTaskId,
     resizingTaskId,
   });
-  const occupancy = sprintPlannerUi.occupancyPresencePreview;
-  const resize = sprintPlannerUi.taskResizePreview;
-  const cardRow = sprintPlannerUi.stickyNoteCardRowPreview;
+  const occupancy = sprintPlannerUi.cards.occupancyPresencePreview;
+  const resize = sprintPlannerUi.cards.taskResizePreview;
+  const cardRow = sprintPlannerUi.cards.stickyNoteCardRowPreview;
   const gestureAnchorTaskId =
     editingTaskId ?? resizingTaskId ?? effectiveDraggingTaskId ?? cardRow?.taskId ?? null;
   const notePosition = gestureAnchorTaskId

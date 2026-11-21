@@ -90,11 +90,11 @@ export function useSwimlaneLayout({
   const completionRules = useSprintTaskCompletionRules();
   const subscribeCardLayout = useCallback(
     (onStoreChange: () => void) =>
-      reaction(() => sprintPlannerUi.cardLayoutRevision, onStoreChange),
+      reaction(() => sprintPlannerUi.cards.cardLayoutRevision, onStoreChange),
     [sprintPlannerUi]
   );
   const readCardLayoutRevision = useCallback(
-    () => sprintPlannerUi.cardLayoutRevision,
+    () => sprintPlannerUi.cards.cardLayoutRevision,
     [sprintPlannerUi]
   );
   useSyncExternalStore(subscribeCardLayout, readCardLayoutRevision, readCardLayoutRevision);
@@ -111,16 +111,16 @@ export function useSwimlaneLayout({
   }));
   const mergedOverrides = mergeStickyNoteCardRowOverrideMaps(
     commentCardRowById ?? new Map(),
-    sprintPlannerUi.stickyNoteCardRowOverrides
+    sprintPlannerUi.cards.stickyNoteCardRowOverrides
   );
   const ownClientId = getBrowserRealtimeClientId() || null;
   const boardViewers = useSprintBoardPresenceViewers();
   const localBusyTaskId =
     draggingTaskId ||
-    sprintPlannerUi.resizingTaskId ||
-    sprintPlannerUi.taskResizePreview?.taskId ||
-    sprintPlannerUi.boardDraggingTaskId ||
-    sprintPlannerUi.stickyNoteCardRowPreview?.taskId ||
+    sprintPlannerUi.cards.resizingTaskId ||
+    sprintPlannerUi.cards.taskResizePreview?.taskId ||
+    sprintPlannerUi.cards.boardDraggingTaskId ||
+    sprintPlannerUi.cards.stickyNoteCardRowPreview?.taskId ||
     null;
   const remoteCardRows = retainRemotePresenceCardRows(
     remotePresenceCardRowPreviews(boardViewers, ownClientId),
@@ -130,7 +130,7 @@ export function useSwimlaneLayout({
   const stickyNoteCardRowById = applyRemotePresenceCardRowPreviews(
     buildEffectiveStickyNoteCardRowById({
       overrides: mergedOverrides,
-      preview: sprintPlannerUi.stickyNoteCardRowPreview,
+      preview: sprintPlannerUi.cards.stickyNoteCardRowPreview,
     }),
     remoteCardRows,
     localBusyTaskId
@@ -142,9 +142,9 @@ export function useSwimlaneLayout({
   // Нельзя useMemo([taskPositions, …]): taskPositions — тот же observable.map, при DnD мутирует на месте,
   // ссылка не меняется — positionedTasks оставался со старыми координатами (занятость жила отдельным путём).
   const totalCells = sprintTimelineWorkingDays * getPartsPerDay();
-  const localResizeLive = sprintPlannerUi.taskResizePreview;
+  const localResizeLive = sprintPlannerUi.cards.taskResizePreview;
   const resolvedLocalResize = resolveRetainedLocalResizePreview({
-    discardEpoch: sprintPlannerUi.localTaskResizeDiscardEpoch,
+    discardEpoch: sprintPlannerUi.cards.localTaskResizeDiscardEpoch,
     latched: presenceLatch.localResize,
     latchedEpoch: presenceLatch.localResizeDiscardEpoch,
     live: localResizeLive,

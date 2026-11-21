@@ -15,7 +15,7 @@ function minimalTask(overrides: Partial<Task> = {}): Task {
 }
 
 describe('SprintPlannerUiStore', () => {
-  it('clearTransientUiOnSprintChange сбрасывает поиск, меню, сегменты, режим связей, комментарий, hover, resize, модалку учёта работ и сайдер информации о задаче', () => {
+  it('clearTransientUiOnSprintChange сбрасывает поиск, меню, сегменты, режим связей, hover, resize, модалку учёта работ и сайдер информации о задаче', () => {
     const store = new SprintPlannerUiStore();
     const task = minimalTask();
 
@@ -26,16 +26,15 @@ describe('SprintPlannerUiStore', () => {
       position: { x: 10, y: 20 },
       task,
     });
-    store.setOpenCommentEditId('comment-1');
     store.openNoteComposer({ mode: 'comment', taskId: 'comment:1' });
     store.setNoteEditPreview('comment:1', { color: 'green' });
     store.openDiagramEditor('comment:1');
     store.openPhotoLightbox('comment:photo-1');
-    store.setHoveredTaskId('hover-1');
-    store.setBoardDraggingTaskId('drag-1');
-    store.setResizingTaskId('resize-1');
-    store.setStickyNoteCardRowOverride('comment:1', { layerShiftUp: 0, span: 2 });
-    store.setTaskResizePreview({ duration: 4, startCell: 2, taskId: 'comment:1' });
+    store.cards.setHoveredTaskId('hover-1');
+    store.cards.setBoardDraggingTaskId('drag-1');
+    store.cards.setResizingTaskId('resize-1');
+    store.cards.setStickyNoteCardRowOverride('comment:1', { layerShiftUp: 0, span: 2 });
+    store.cards.setTaskResizePreview({ duration: 4, startCell: 2, taskId: 'comment:1' });
     store.setAccountWorkModal(task);
     store.setAgentRequestTarget({ kind: 'task', task });
     store.openTaskInfoPanel(task);
@@ -57,13 +56,12 @@ describe('SprintPlannerUiStore', () => {
     expect(store.noteEditPreview).toBeNull();
     expect(store.diagramEditorTaskId).toBeNull();
     expect(store.photoLightboxTaskId).toBeNull();
-    expect(store.openCommentEditId).toBeNull();
-    expect(store.hoveredTaskId).toBeNull();
-    expect(store.boardDraggingTaskId).toBeNull();
-    expect(store.resizingTaskId).toBeNull();
-    expect(store.stickyNoteCardRowOverrides.size).toBe(0);
-    expect(store.stickyNoteCardRowPreview).toBeNull();
-    expect(store.taskResizePreview).toBeNull();
+    expect(store.cards.hoveredTaskId).toBeNull();
+    expect(store.cards.boardDraggingTaskId).toBeNull();
+    expect(store.cards.resizingTaskId).toBeNull();
+    expect(store.cards.stickyNoteCardRowOverrides.size).toBe(0);
+    expect(store.cards.stickyNoteCardRowPreview).toBeNull();
+    expect(store.cards.taskResizePreview).toBeNull();
     expect(store.accountWorkModal).toBeNull();
     expect(store.agentRequestTarget).toBeNull();
     expect(store.taskInfoPanelTask).toBeNull();
@@ -179,39 +177,39 @@ describe('SprintPlannerUiStore', () => {
 
   it('bumps cardLayoutRevision only when resize preview actually changes', () => {
     const store = new SprintPlannerUiStore();
-    const start = store.cardLayoutRevision;
+    const start = store.cards.cardLayoutRevision;
 
-    store.setTaskResizePreview({ duration: 3, startCell: null, taskId: 't1' });
-    store.setTaskResizePreview({ duration: 3, startCell: null, taskId: 't1' });
-    expect(store.cardLayoutRevision).toBe(start + 1);
+    store.cards.setTaskResizePreview({ duration: 3, startCell: null, taskId: 't1' });
+    store.cards.setTaskResizePreview({ duration: 3, startCell: null, taskId: 't1' });
+    expect(store.cards.cardLayoutRevision).toBe(start + 1);
 
-    store.setStickyNoteCardRowPreview({ layerShiftUp: 0, span: 2, taskId: 't1' });
-    store.setStickyNoteCardRowPreview({ layerShiftUp: 0, span: 2, taskId: 't1' });
-    expect(store.cardLayoutRevision).toBe(start + 2);
+    store.cards.setStickyNoteCardRowPreview({ layerShiftUp: 0, span: 2, taskId: 't1' });
+    store.cards.setStickyNoteCardRowPreview({ layerShiftUp: 0, span: 2, taskId: 't1' });
+    expect(store.cards.cardLayoutRevision).toBe(start + 2);
 
-    store.clearTaskResizePreview();
-    store.clearStickyNoteCardRowPreview();
-    expect(store.taskResizePreview).toBeNull();
-    expect(store.stickyNoteCardRowPreview).toBeNull();
-    expect(store.cardLayoutRevision).toBe(start + 4);
+    store.cards.clearTaskResizePreview();
+    store.cards.clearStickyNoteCardRowPreview();
+    expect(store.cards.taskResizePreview).toBeNull();
+    expect(store.cards.stickyNoteCardRowPreview).toBeNull();
+    expect(store.cards.cardLayoutRevision).toBe(start + 4);
 
-    store.setTaskResizePreview({ duration: 6, startCell: 1, taskId: 't1' });
-    store.discardLocalTaskResizePreview();
-    expect(store.taskResizePreview).toBeNull();
-    expect(store.localTaskResizeDiscardEpoch).toBe(1);
-    expect(store.cardLayoutRevision).toBe(start + 6);
+    store.cards.setTaskResizePreview({ duration: 6, startCell: 1, taskId: 't1' });
+    store.cards.discardLocalTaskResizePreview();
+    expect(store.cards.taskResizePreview).toBeNull();
+    expect(store.cards.localTaskResizeDiscardEpoch).toBe(1);
+    expect(store.cards.cardLayoutRevision).toBe(start + 6);
   });
 
   it('commits card-row preview and override in one revision', () => {
     const store = new SprintPlannerUiStore();
-    store.setStickyNoteCardRowPreview({ layerShiftUp: 1, span: 3, taskId: 'note-1' });
-    const revision = store.cardLayoutRevision;
+    store.cards.setStickyNoteCardRowPreview({ layerShiftUp: 1, span: 3, taskId: 'note-1' });
+    const revision = store.cards.cardLayoutRevision;
 
-    store.commitStickyNoteCardRowLayout('note-1', { layerShiftUp: 1, span: 3 });
+    store.cards.commitStickyNoteCardRowLayout('note-1', { layerShiftUp: 1, span: 3 });
 
-    expect(store.stickyNoteCardRowPreview).toBeNull();
-    expect(store.getStickyNoteCardRowOverride('note-1')).toEqual({ layerShiftUp: 1, span: 3 });
-    expect(store.cardLayoutRevision).toBe(revision + 1);
+    expect(store.cards.stickyNoteCardRowPreview).toBeNull();
+    expect(store.cards.getStickyNoteCardRowOverride('note-1')).toEqual({ layerShiftUp: 1, span: 3 });
+    expect(store.cards.cardLayoutRevision).toBe(revision + 1);
   });
 
   it('openPhotoLightbox сохраняет taskId и закрывает контекстное меню', () => {
@@ -232,9 +230,9 @@ describe('SprintPlannerUiStore', () => {
 
   it('setHiddenLinkCounts заменяет счётчики скрытых связей и убирает пропавшие задачи', () => {
     const store = new SprintPlannerUiStore();
-    store.setHiddenLinkCounts(new Map([['a', 2], ['b', 1]]));
-    store.setHiddenLinkCounts(new Map([['a', 3]]));
-    expect([...store.hiddenLinkCountByTaskId]).toEqual([['a', 3]]);
+    store.cards.setHiddenLinkCounts(new Map([['a', 2], ['b', 1]]));
+    store.cards.setHiddenLinkCounts(new Map([['a', 3]]));
+    expect([...store.cards.hiddenLinkCountByTaskId]).toEqual([['a', 3]]);
   });
 
   it('копит плашки контекста агента без дублей, снимает их и сбрасывает при смене спринта', () => {

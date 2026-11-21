@@ -32,7 +32,7 @@ import {
 } from './taskBarHelpers';
 
 function publishTaskBarResizePreview(
-  sprintPlannerUi: {
+  cards: {
     clearStickyNoteCardRowPreview: () => void;
     clearTaskResizePreview: () => void;
     discardLocalTaskResizePreview: () => void;
@@ -56,22 +56,22 @@ function publishTaskBarResizePreview(
 ): void {
   if (preview == null) {
     if (discardLatch) {
-      sprintPlannerUi.discardLocalTaskResizePreview();
+      cards.discardLocalTaskResizePreview();
     } else {
-      sprintPlannerUi.clearTaskResizePreview();
+      cards.clearTaskResizePreview();
     }
     if (pairsHeightWithDuration) {
-      sprintPlannerUi.clearStickyNoteCardRowPreview();
+      cards.clearStickyNoteCardRowPreview();
     }
     return;
   }
-  sprintPlannerUi.setTaskResizePreview({
+  cards.setTaskResizePreview({
     ...preview,
     taskId,
     ...(planSegmentIndex != null ? { planSegmentIndex } : {}),
   });
   if (pairsHeightWithDuration) {
-    sprintPlannerUi.setStickyNoteCardRowPreview({
+    cards.setStickyNoteCardRowPreview({
       layerShiftUp: 0,
       span: plannerCommentCardRowHeightFromDurationParts(preview.duration),
       taskId,
@@ -168,7 +168,7 @@ export function useTaskBarDisplayState({
   const isPhotoOrDiagramCard = isSwimlanePhotoCard || isSwimlaneDiagramTask(task);
   const handleResizeSessionChange = useCallback(
     (active: boolean) => {
-      sprintPlannerUi.setResizingTaskId(active ? taskId : null);
+      sprintPlannerUi.cards.setResizingTaskId(active ? taskId : null);
     },
     [sprintPlannerUi, taskId]
   );
@@ -179,7 +179,7 @@ export function useTaskBarDisplayState({
       options?: { discard?: boolean }
     ) => {
       publishTaskBarResizePreview(
-        sprintPlannerUi,
+        sprintPlannerUi.cards,
         taskId,
         pairsHeightWithDuration,
         preview,
@@ -215,8 +215,8 @@ export function useTaskBarDisplayState({
 
   useEffect(() => {
     return () => {
-      if (sprintPlannerUi.resizingTaskId === taskId) {
-        sprintPlannerUi.setResizingTaskId(null);
+      if (sprintPlannerUi.cards.resizingTaskId === taskId) {
+        sprintPlannerUi.cards.setResizingTaskId(null);
       }
     };
   }, [sprintPlannerUi, taskId]);

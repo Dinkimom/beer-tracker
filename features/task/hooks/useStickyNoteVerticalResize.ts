@@ -41,7 +41,7 @@ export function useStickyNoteVerticalResize({
   taskId,
 }: UseStickyNoteVerticalResizeProps) {
   const { sprintPlannerUi } = useRootStore();
-  const committedOverride = enabled ? sprintPlannerUi.getStickyNoteCardRowOverride(taskId) : undefined;
+  const committedOverride = enabled ? sprintPlannerUi.cards.getStickyNoteCardRowOverride(taskId) : undefined;
   const committed = resolveStickyNoteEffectiveCardRowLayout(
     committedOverride ?? committedCardRowLayout
   );
@@ -50,8 +50,8 @@ export function useStickyNoteVerticalResize({
   const [resizeSide, setResizeSide] = useState<'bottom' | 'top' | null>(null);
 
   const previewOverride =
-    enabled && sprintPlannerUi.stickyNoteCardRowPreview?.taskId === taskId
-      ? resolveStickyNoteEffectiveCardRowLayout(sprintPlannerUi.stickyNoteCardRowPreview)
+    enabled && sprintPlannerUi.cards.stickyNoteCardRowPreview?.taskId === taskId
+      ? resolveStickyNoteEffectiveCardRowLayout(sprintPlannerUi.cards.stickyNoteCardRowPreview)
       : null;
   const displayLayout = previewOverride ?? committed;
 
@@ -80,7 +80,7 @@ export function useStickyNoteVerticalResize({
     }
 
     const startLayout = resolveStickyNoteEffectiveCardRowLayout(
-      sprintPlannerUi.getStickyNoteCardRowOverride(taskId) ?? committedCardRowLayout
+      sprintPlannerUi.cards.getStickyNoteCardRowOverride(taskId) ?? committedCardRowLayout
     );
     const startRow = resolveStickyNoteStartCardRow(assignedTaskLayer, startLayout);
     const bottomRow = startRow + startLayout.span - 1;
@@ -102,12 +102,12 @@ export function useStickyNoteVerticalResize({
     bindPointerResizeGesture({
       onCancel: () => {
         endResizeUi();
-        sprintPlannerUi.clearStickyNoteCardRowPreview();
+        sprintPlannerUi.cards.clearStickyNoteCardRowPreview();
       },
       onCommit: () => {
         endResizeUi();
         const committedLayout = resolveStickyNoteEffectiveCardRowLayout(currentLayout);
-        sprintPlannerUi.commitStickyNoteCardRowLayout(taskId, committedLayout);
+        sprintPlannerUi.cards.commitStickyNoteCardRowLayout(taskId, committedLayout);
         onLayoutCommit?.(committedLayout);
       },
       onMove: (moveEvent) => {
@@ -140,7 +140,7 @@ export function useStickyNoteVerticalResize({
                 topRowIndex: pointerRow,
               });
 
-        sprintPlannerUi.setStickyNoteCardRowPreview({
+        sprintPlannerUi.cards.setStickyNoteCardRowPreview({
           ...resolveStickyNoteEffectiveCardRowLayout(currentLayout),
           taskId,
         });

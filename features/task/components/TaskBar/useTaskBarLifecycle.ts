@@ -35,7 +35,7 @@ export function useTaskBarLifecycle({
   const { sprintPlannerUi } = useRootStore();
   // Флаг через computed: observer карточки подписан на «наведена ли я», а не на любой hover доски.
   const isHoveredSource = useMemo(
-    () => computed(() => sprintPlannerUi.hoveredTaskId === taskId),
+    () => computed(() => sprintPlannerUi.cards.hoveredTaskId === taskId),
     [sprintPlannerUi, taskId]
   ).get();
 

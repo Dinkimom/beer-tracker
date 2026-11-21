@@ -100,7 +100,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   const { developers, qaTasksMap } = useSprintBoard();
   const { t } = useI18n();
   const globalNameFilter = sprintPlannerUi.globalNameFilter;
-  const hoveredTaskId = sprintPlannerUi.hoveredTaskId;
+  const hoveredTaskId = sprintPlannerUi.cards.hoveredTaskId;
   const linkingFromTaskId = sprintPlannerUi.linkingFromTaskId;
   const linkToolArmed = sprintPlannerUi.placementTool === 'link';
   const linkingSessionActive = isSwimlaneLinkingSessionActive(
@@ -279,12 +279,12 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   const applyTaskHover = useCallback(
     (taskId: string | null) => {
       if (dragAndDrop.isDraggingTask || taskId == null) {
-        sprintPlannerUi.setHoveredTaskId(null);
+        sprintPlannerUi.cards.setHoveredTaskId(null);
         sprintPlannerUi.setPlanPatchFocusTaskId(null);
         syncCardShadowHover(null);
         return;
       }
-      sprintPlannerUi.setHoveredTaskId(taskId);
+      sprintPlannerUi.cards.setHoveredTaskId(taskId);
       // Факт-таймлайн приглушается только под карточкой задачи: у заметок своего факта нет.
       syncCardShadowHover(isAnnotationHoverTarget(taskId) ? null : taskId);
       const preview = positionsStore.planPatchPreviews.get(taskId);
@@ -302,14 +302,14 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
       syncCardShadowHover,
     ]
   );
-  const getHoveredTaskId = useCallback(() => sprintPlannerUi.hoveredTaskId, [sprintPlannerUi]);
+  const getHoveredTaskId = useCallback(() => sprintPlannerUi.cards.hoveredTaskId, [sprintPlannerUi]);
   const scheduleTaskHover = useSwimlaneTaskHoverIntent(getHoveredTaskId, applyTaskHover);
   const handleTaskHover = useCallback(
     (taskId: string | null) =>
       scheduleTaskHover(
         taskId,
         dragAndDrop.isDraggingTask ||
-          isAnnotationHoverTarget(taskId ?? sprintPlannerUi.hoveredTaskId)
+          isAnnotationHoverTarget(taskId ?? sprintPlannerUi.cards.hoveredTaskId)
       ),
     [dragAndDrop.isDraggingTask, isAnnotationHoverTarget, scheduleTaskHover, sprintPlannerUi]
   );
