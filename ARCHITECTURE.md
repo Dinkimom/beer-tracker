@@ -99,27 +99,25 @@ features/ / components/ / hooks/
 
 **Порядок перехода:** 1) модель только на чтение поверх нынешних источников, перевод читателей (карточка, секция, сайдбар); 2) действия в модель вместо `useSprintPlannerHandlers` и соседей; 3) `SprintPlannerUiStore` → классы под вью. Ход — в [`docs/REFACTORING_BACKLOG.md`](./docs/REFACTORING_BACKLOG.md), п. 2.8.
 
-## Локальный стейт + API (дебаунс сохранения)
+## Списки и документы с отложенной записью
 
-Не MobX и не React Query: данные в React state, запись на сервер **с задержкой** после серии правок (см. `DELAYS.DEBOUNCE` в `utils/constants`).
-
-### Когда что использовать
+Не React Query: данные на клиенте, запись на сервер **с задержкой** после серии правок (см. `DELAYS.DEBOUNCE` в `utils/constants`).
 
 | Паттерн | Файл | Подходит для |
 |---------|------|----------------|
-| **`useDebouncedApiSync`** | [`hooks/useDebouncedApiSync.ts`](./hooks/useDebouncedApiSync.ts) | **Список сущностей** на спринт: загрузка массива, правки/создание/удаление по элементу, отложенный save (и опционально батч). |
+| **`SyncedList`** | [`lib/layers/application/mobx/syncedList.ts`](./lib/layers/application/mobx/syncedList.ts) | **Список сущностей** на спринт: загрузка массива, правки/создание/удаление по элементу, отложенный save (и опционально батч), слияние с realtime без потери несохранённых правок. MobX-класс, экземпляр на спринт; побочные эффекты — в методах, не в апдейтере `setState`. |
 | **`useFeatureLanesApi`** | [`hooks/useApiStorage.ts`](./hooks/useApiStorage.ts) | **Один JSON-документ** на спринт (`FeatureLanesDocument`) — черновые строки фич, порядок и скрытие. Целиком пересохраняется после дебаунса. |
 
-Обёртки над `useDebouncedApiSync` в том же [`useApiStorage.ts`](./hooks/useApiStorage.ts):
+Экземпляры `SyncedList` в модели доски (`board.links`, `board.comments`):
 
-| Данные | Хук |
+| Данные | Где |
 |--------|-----|
-| Связи задач (стрелки) | `SyncedList` в модели доски — `features/sprint/model/sprintLinks.ts` (`board.links`) |
-| Комментарии на таймлайне | `useCommentsApi` |
+| Связи задач (стрелки) | [`features/sprint/model/sprintLinks.ts`](./features/sprint/model/sprintLinks.ts) |
+| Заметки, фото и схемы на дорожках | [`features/sprint/model/sprintComments.ts`](./features/sprint/model/sprintComments.ts) — плюс версии и очередь сохранений: конфликт версии показывает тост и перечитывает список |
 
-`useFeatureLanesApi` **не** строится на `useDebouncedApiSync`: последний рассчитан на массивы, карту отложенных обновлений по id и операции save/delete **по элементу**. Строки фич — монолитный JSON-документ; проще и прозрачнее отдельный `useState` + один таймер.
+Связи и заметки живут дольше модели доски: модель пересоздаётся при смене дат спринта, списки — только при смене спринта.
 
-При гонках с сервером или необходимости шарить состояние шире, чем через пропсы планера — отдельное решение (например React Query или стор); обсуждать в команде.
+`useFeatureLanesApi` **не** строится на `SyncedList`: строки фич — монолитный JSON-документ, а не список с операциями по элементу; проще отдельный `useState` + один таймер.
 
 ## Задачи и разработчики в `SprintPlanner`, оптимистичные правки
 
@@ -137,7 +135,7 @@ REST остаётся единственным каналом записи; real
 - **Шина:** [`lib/realtime/sprintRealtimeBus.ts`](./lib/realtime/sprintRealtimeBus.ts) — слушатели в памяти процесса плюс Redis pub/sub (канал `beer-tracker:sprint-realtime:<org>:<sprint>`) для нескольких инстансов. В `next dev` Redis для realtime выключен, включается `REALTIME_REDIS_IN_DEV=1` ([`lib/realtime/sprintRealtimeConstants.ts`](./lib/realtime/sprintRealtimeConstants.ts)).
 - **Публикация:** маршруты после мутации вызывают `notifySprintRealtime(request, organizationId, sprintId, resources)` ([`lib/realtime/notifySprintRealtime.ts`](./lib/realtime/notifySprintRealtime.ts)). `originClientId` берётся из заголовка `x-realtime-client-id`, поэтому вкладка-автор своё эхо не получает.
 - **События** ([`lib/realtime/sprintRealtimeTypes.ts`](./lib/realtime/sprintRealtimeTypes.ts)): `sprint.changed` со списком `resources` (`positions`, `links`, `comments`, `reactions`, `goals`, `tasks`, `retro`, `agentSessions`) и опционально `issueStatus` / `issueMembership`; `sprint.presence` — кто смотрит спринт и что делает (фокус, жест, вид доски; `PUT /api/realtime/presence`, [`lib/realtime/sprintPresence.ts`](./lib/realtime/sprintPresence.ts)); `sprint.timer` — общий таймер ([`lib/realtime/sprintTimerStore.ts`](./lib/realtime/sprintTimerStore.ts)).
-- **Клиент:** [`hooks/useSprintRealtimeSync.ts`](./hooks/useSprintRealtimeSync.ts) открывает `EventSource` и раскладывает ресурсы по обработчикам. В планере ([`useSprintPlannerState.ts`](./features/sprint/components/SprintPlanner/hooks/useSprintPlannerState.ts)): `positions` → `TaskPositionsStore.reconcileRemoteSprint` (MobX, pending-правки не затираются); `links` / `comments` → `reloadFromRemote` из `useDebouncedApiSync` (слияние через [`lib/realtime/mergeRemoteItemsWithPending.ts`](./lib/realtime/mergeRemoteItemsWithPending.ts)); `tasks` → точечный патч кэша React Query (`patchSprintTaskStatusInQueries`, `upsertSprintTaskInQueries`, `removeSprintTaskFromQueries`), без payload — `reloadSprintTasksQueries`; `goals` / `agentSessions` → `invalidateQueries`. Ретро — [`features/retro/hooks/useRetroBoardCollaboration.ts`](./features/retro/hooks/useRetroBoardCollaboration.ts). На `/demo/planner` SSE не открывается.
+- **Клиент:** [`hooks/useSprintRealtimeSync.ts`](./hooks/useSprintRealtimeSync.ts) открывает `EventSource` и раскладывает ресурсы по обработчикам. В планере ([`useSprintPlannerState.ts`](./features/sprint/components/SprintPlanner/hooks/useSprintPlannerState.ts)): `positions` → `TaskPositionsStore.reconcileRemoteSprint` (MobX, pending-правки не затираются); `links` / `comments` → `board.links` / `board.comments` → `reloadFromRemote` у `SyncedList` (слияние через [`lib/realtime/mergeRemoteItemsWithPending.ts`](./lib/realtime/mergeRemoteItemsWithPending.ts)); `tasks` → точечный патч кэша React Query (`patchSprintTaskStatusInQueries`, `upsertSprintTaskInQueries`, `removeSprintTaskFromQueries`), без payload — `reloadSprintTasksQueries`; `goals` / `agentSessions` → `invalidateQueries`. Ретро — [`features/retro/hooks/useRetroBoardCollaboration.ts`](./features/retro/hooks/useRetroBoardCollaboration.ts). На `/demo/planner` SSE не открывается.
 
 - **Квартальный план:** свой поток `GET /api/realtime/quarter?year=&quarter=&organizationId=&clientId=` ([`lib/realtime/quarterRealtime.ts`](./lib/realtime/quarterRealtime.ts)) на той же шине, событие `quarter.changed` (`notifyQuarterRealtime` после записи плана). Клиент перечитывает план и сливает его со своими несохранёнными правками ([`features/quarterly-plan/quarterlyPlanSync.ts`](./features/quarterly-plan/quarterlyPlanSync.ts), правила QS5–QS7 в [`docs/QUARTERLY_PLAN_RULES.md`](./docs/QUARTERLY_PLAN_RULES.md)). Присутствие — то же хранилище, что у спринта (`SprintPresenceScope`: id спринта или квартал), событие `quarter.presence`; фокус пишет тот же `PUT /api/realtime/presence` с `year` и `quarter` вместо `sprintId` ([`features/quarterly-plan/QuarterlyPlanPresence.tsx`](./features/quarterly-plan/QuarterlyPlanPresence.tsx)).
 

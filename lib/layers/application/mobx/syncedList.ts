@@ -2,8 +2,8 @@
  * Список сущностей спринта с отложенным сохранением на сервер: связи, заметки.
  *
  * Правки видны сразу, запись — после паузы (`debounceDelay`), несколько правок — одним пакетом.
- * Ожидающие правки и удаления не теряются при снимке из realtime. MobX-класс заменяет хук
- * `useDebouncedApiSync`: побочные эффекты здесь не внутри `setState`, и один экземпляр живёт на спринт.
+ * Ожидающие правки и удаления не теряются при снимке из realtime. Один экземпляр живёт на спринт; побочные эффекты — не внутри `setState`
+ * (прежний хук `useDebouncedApiSync` отправлял сохранения из апдейтера, который StrictMode вызывает дважды).
  */
 
 import { action, makeObservable, observable } from 'mobx';
@@ -54,7 +54,7 @@ function itemExists<T, TId>(items: T[], item: T, getId: (item: T) => TId): boole
   return items.some((existing) => getId(existing) === getId(item));
 }
 
-export function collectChangedItems<T, TId>(
+function collectChangedItems<T, TId>(
   previous: T[],
   updated: T[],
   getId: (item: T) => TId,
@@ -79,7 +79,7 @@ function restorePendingUpdates<T, TId>(
   }
 }
 
-export function omitPendingDeletedIds<T, TId>(updates: Map<TId, T>, pendingDeletes: Set<TId>): Map<TId, T> {
+function omitPendingDeletedIds<T, TId>(updates: Map<TId, T>, pendingDeletes: Set<TId>): Map<TId, T> {
   if (pendingDeletes.size === 0) return updates;
   const next = new Map(updates);
   for (const id of pendingDeletes) {
@@ -150,7 +150,7 @@ async function flushSingleUpdates<T, TId, TApiData>(
   return replacements;
 }
 
-export async function flushPendingUpdates<T, TId, TApiData>(
+async function flushPendingUpdates<T, TId, TApiData>(
   options: FlushPendingUpdatesOptions<T, TId, TApiData>
 ): Promise<Array<{ item: T; result: T }>> {
   if (options.batchSaveFn && options.updates.size > 1) {
@@ -168,7 +168,7 @@ export async function flushPendingUpdates<T, TId, TApiData>(
   return flushSingleUpdates(options);
 }
 
-export function applyReplacements<T, TId>(
+function applyReplacements<T, TId>(
   items: T[],
   replacements: Array<{ item: T; result: T }>,
   getId: (item: T) => TId
@@ -180,7 +180,7 @@ export function applyReplacements<T, TId>(
   return next;
 }
 
-export function applyLatePrefetchIfEmpty<T>(
+function applyLatePrefetchIfEmpty<T>(
   items: T[],
   getInitialItems: ((sprintId: number) => T[] | undefined) | undefined,
   sprintId: number,
@@ -195,7 +195,7 @@ export function applyLatePrefetchIfEmpty<T>(
   }
 }
 
-export async function loadSyncedItems<T>(options: {
+async function loadSyncedItems<T>(options: {
   fetchFn: (sprintId: number) => Promise<T[]>;
   getInitialItems?: (sprintId: number) => T[] | undefined;
   loadSharedItems?: (sprintId: number) => Promise<T[]>;

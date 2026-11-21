@@ -24,7 +24,7 @@ beer-tracker/
 │   └── mcp-sprint-context/ # stdio-клиент MCP для отладки (pnpm mcp:sprint-context)
 ├── features/             # Продуктовые домены (UI + хуки + утилиты)
 ├── components/           # Общие UI-примитивы (Button, Icon, PageHeader, SettingsModal/…)
-├── hooks/                # Общие хуки (useTaskPositionsApi, useDebouncedApiSync, localStorage/…)
+├── hooks/                # Общие хуки (useTaskPositionsApi, localStorage/…)
 ├── contexts/             # React-контексты (язык, провайдер трекера, демо-оболочка и т.п.)
 ├── lib/                  # Домены сервера и клиента, API-клиенты, чистые функции
 ├── constants/            # index.ts, zIndex.ts

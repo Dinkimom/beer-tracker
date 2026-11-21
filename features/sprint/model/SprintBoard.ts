@@ -1,3 +1,4 @@
+import type { SprintComments } from './sprintComments';
 import type { SprintLinks } from './sprintLinks';
 import type { SprintMovePlacementStore } from '@/lib/layers/application/mobx/stores/sprintMovePlacementStore';
 import type { TaskPositionsStore } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
@@ -20,6 +21,8 @@ interface SprintTasksSnapshot {
 }
 
 interface SprintBoardDeps {
+  /** Заметки спринта — как и связи, живут дольше модели. */
+  comments: SprintComments;
   /** Связи спринта живут дольше модели: модель пересоздаётся при смене дат спринта, связи — нет. */
   links: SprintLinks;
   movePlacement: SprintMovePlacementStore;
@@ -71,6 +74,11 @@ export class SprintBoard {
       tasksMap: computed,
       visiblePositions: computed({ equals: taskPositionMapsHaveSameEntries }),
     });
+  }
+
+  /** Заметки, фото и схемы на дорожках. */
+  get comments(): SprintComments {
+    return this.deps.comments;
   }
 
   /** Пользовательские связи задач (стрелки). */

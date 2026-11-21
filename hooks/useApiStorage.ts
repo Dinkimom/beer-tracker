@@ -2,37 +2,16 @@
  * Хуки для работы с данными через API вместо localStorage
  * (общие для пользователей спринта, не локальный storage).
  *
- * Два паттерна отложенной записи — см. **«Локальный стейт + API»** в [ARCHITECTURE.md](../ARCHITECTURE.md):
- * - **useDebouncedApiSync** — список комментариев через `useCommentsApi`; связи — `SyncedList` в модели доски (`features/sprint/model/sprintLinks.ts`).
+ * Два паттерна отложенной записи — см. **«Списки и документы с отложенной записью»** в [ARCHITECTURE.md](../ARCHITECTURE.md):
+ * - **SyncedList** — списки сущностей (связи, заметки) живут в модели доски (`features/sprint/model/`).
  * - **useFeatureLanesApi** — один JSON-документ на спринт; отдельная реализация, не generic-список.
  */
 
 import type { FeatureLanesDocument } from '@/lib/sprints/featureLanesDocument';
-import type { Comment } from '@/types';
 
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
-import toast from 'react-hot-toast';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
-import { useI18n } from '@/contexts/LanguageContext';
-import {
-  commentToSaveApiFields,
-  SprintCommentVersionConflictError,
-} from '@/lib/api/sprintsApiCommentsHelpers';
-import {
-  fetchSprintComments,
-  saveComment as apiSaveComment,
-  deleteComment as apiDeleteComment,
-} from '@/lib/beerTrackerApi';
-import {
-  createCommentSaveSerializer,
-  type CommentSaveSerializer,
-} from '@/lib/comments/commentSaveSerializer';
 import { isValidSprintId } from '@/lib/layers/data/mappers/taskPositionToApi';
-import { randomUuid } from '@/lib/randomUuid';
-import {
-  prefetchSprintBoardList,
-  takePrefetchedSprintBoardList,
-} from '@/lib/sprints/sprintBoardListPrefetch';
 
 import {
   ensureFeatureLanesSessionLoaded,
@@ -41,145 +20,6 @@ import {
   patchFeatureLanesSession,
   subscribeFeatureLanesSession,
 } from './featureLanesSessionStore';
-import { useDebouncedApiSync } from './useDebouncedApiSync';
-
-function takePrefetchedSprintComments(sprintId: number): Comment[] | undefined {
-  return takePrefetchedSprintBoardList(sprintId, 'comments');
-}
-
-function loadSharedSprintComments(sprintId: number): Promise<Comment[]> {
-  return prefetchSprintBoardList(sprintId, 'comments', fetchSprintComments);
-}
-
-// ==================== Хуки для комментариев ====================
-
-type CommentSaveApiData = Parameters<typeof apiSaveComment>[1] & { id: string };
-
-/**
- * Сохранение заметки по очереди своих сохранений: `ifVersion` продвигается собственными успешными
- * PUT, 409 (параллельная правка) — `onConflict` и «обработано», чтобы синк не повторял устаревшую правку.
- */
-function saveCommentSerialized(input: {
-  data: CommentSaveApiData;
-  isUpdate: boolean;
-  onConflict: () => void;
-  onFailure: () => void;
-  serializer: CommentSaveSerializer;
-  sprintId: number;
-}): Promise<Comment | boolean> {
-  const { data, isUpdate, serializer } = input;
-  return serializer.run(data.id || `new:${randomUuid()}`, async () => {
-    const ifVersion = isUpdate ? serializer.resolveIfVersion(data.id, data.ifVersion) : undefined;
-    try {
-      const saved = await apiSaveComment(input.sprintId, { ...data, ifVersion }, isUpdate);
-      if (isUpdate && typeof saved === 'object' && saved.id === data.id) {
-        // Не подменяем локальную копию ответом: пока PUT был в полёте, текст могли дописать.
-        serializer.recordSaved(data.id, ifVersion, saved.version);
-        return true;
-      }
-      return saved;
-    } catch (error) {
-      if (error instanceof SprintCommentVersionConflictError) {
-        input.onConflict();
-        return true;
-      }
-      input.onFailure();
-      throw error;
-    }
-  });
-}
-
-/**
- * Хук для работы с комментариями через API
- */
-export function useCommentsApi(
-  sprintId: number | null
-): [
-  Comment[],
-  (comments: Comment[] | ((prev: Comment[]) => Comment[])) => void,
-  (comment: Comment) => Promise<void>,
-  (commentId: string) => Promise<void>,
-  () => Promise<void>,
-] {
-  const { t } = useI18n();
-  const serializerRef = useRef(createCommentSaveSerializer());
-  const reloadRef = useRef<() => Promise<void>>(() => Promise.resolve());
-  const [comments, setCommentsWithSave, saveCommentLocal, deleteCommentLocal, reloadFromRemote] = useDebouncedApiSync<Comment, string, {
-    id: string;
-    ifVersion?: number;
-    assigneeId: string;
-    color?: string;
-    imageFileId: string | null;
-    kind?: 'diagram' | 'image' | 'text' | 'widget';
-    parent?: Comment['parent'] | null;
-    text: string;
-    x: number | null;
-    y: number | null;
-    day: number | null;
-    part: number | null;
-    skipMentionNotifications?: boolean;
-    width: number;
-    height: number;
-  }>({
-    sprintId,
-    debounceDelay: 600,
-    mergeSavedItem: (previous, saved) => ({
-      ...saved,
-      authorName: saved.authorName ?? previous.authorName,
-      clientInstanceId: previous.clientInstanceId,
-      imageFileId: saved.imageFileId ?? previous.imageFileId,
-      imageUrl: saved.imageUrl ?? previous.imageUrl,
-      kind: saved.kind ?? previous.kind,
-      parent: saved.parent ?? previous.parent,
-      reactions: saved.reactions ?? previous.reactions,
-    }),
-    mergeRemotePendingItem: (pending, remote) => ({
-      ...pending,
-      reactions: remote.reactions ?? pending.reactions,
-    }),
-    fetchFn: fetchSprintComments,
-    saveFn: (sprintIdArg, data, isUpdate = false) =>
-      saveCommentSerialized({
-        data,
-        isUpdate,
-        onConflict: () => {
-          toast.error(t('sprint.taskToast.noteEditConflict'));
-          reloadRef.current().catch(() => undefined);
-        },
-        onFailure: () => toast.error(t('sprintPlanner.swimlane.quickAddMenu.createCommentFailed')),
-        serializer: serializerRef.current,
-        sprintId: sprintIdArg,
-      }),
-    deleteFn: apiDeleteComment,
-    getId: (comment) => comment.id,
-    getInitialItems: takePrefetchedSprintComments,
-    loadSharedItems: loadSharedSprintComments,
-    toApiFormat: (comment, isUpdate) =>
-      commentToSaveApiFields({
-        id: isUpdate && comment.id ? comment.id : comment.id ?? '',
-        ...(isUpdate && comment.version != null ? { ifVersion: comment.version } : {}),
-        assigneeId: comment.assigneeId,
-        color: comment.color,
-        imageFileId: comment.imageFileId ?? null,
-        kind: comment.kind,
-        parent: comment.parent ?? null,
-        skipMentionNotifications: comment.skipMentionNotifications,
-        text: comment.text,
-        x: comment.x,
-        y: comment.y,
-        day: comment.day,
-        part: comment.part,
-        width: comment.width,
-        height: comment.height,
-      }),
-  });
-
-  useEffect(() => {
-    reloadRef.current = reloadFromRemote;
-  }, [reloadFromRemote]);
-
-  return [comments, setCommentsWithSave, saveCommentLocal, deleteCommentLocal, reloadFromRemote];
-}
 
 // ==================== Хук порядка занятости ====================
 

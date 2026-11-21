@@ -40,7 +40,7 @@
 
 - **React Query** — списки задач спринта, спринты, доски; оптимистичные правки через `patchSprintTasksQuery` (`features/task/hooks/useTasks.ts`, патчит все кэши задач спринта той же доски).
 - **MobX** — позиции карточек ([`useTaskPositionsApi`](../../hooks/useTaskPositionsApi.ts) → `TaskPositionsStore`), поколения ответов, debounce сохранений; `SprintPlannerUiStore` для преходящего UI планера.
-- **Локальный стейт + debounce** — связи задач, комментарии (`useDebouncedApiSync` и родственные хуки).
+- **Списки с отложенной записью** — связи задач, комментарии (`SyncedList` в модели доски, `features/sprint/model/`).
 - **`lib/`** — геометрия, парсеры, чистые функции без React/MobX; покрытие unit-тестами.
 
 ## Команды качества (обязательны перед merge)

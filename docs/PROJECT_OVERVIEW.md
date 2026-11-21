@@ -255,7 +255,7 @@ features/ / components/ / hooks/
 
 - React Query — списки задач спринта, спринты, доски
 - MobX `TaskPositionsStore` / `SprintPlannerUiStore` — позиции и преходящий UI
-- Локальный стейт + debounce — связи, комментарии
+- Списки с отложенной записью (`SyncedList`) — связи, заметки
 
 Подробно: [ARCHITECTURE.md](../ARCHITECTURE.md), [STRUCTURE.md](./STRUCTURE.md), [AGENTS.md](../AGENTS.md).
 

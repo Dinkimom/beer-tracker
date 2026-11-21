@@ -114,4 +114,36 @@ describe('SyncedList', () => {
     items.connect();
     expect(items.items).toEqual([{ id: 'late', v: 1 }]);
   });
+
+  it('ждёт общий префетч вместо второго запроса и забирает его снимок', async () => {
+    const box: { settled: Row[] | undefined } = { settled: undefined };
+    const fetchFn = vi.fn().mockResolvedValue([]);
+    const { items } = list(13, {
+      fetchFn,
+      getInitialItems: () => {
+        const taken = box.settled;
+        box.settled = undefined;
+        return taken;
+      },
+      loadSharedItems: () => {
+        box.settled = [{ id: 'fresh', v: 1 }];
+        return Promise.resolve(box.settled);
+      },
+    });
+    items.connect();
+    await flush();
+    expect(items.items).toEqual([{ id: 'fresh', v: 1 }]);
+    // Снимок забран: при возврате на спринт не возьмём его устаревшим.
+    expect(box.settled).toBeUndefined();
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('при недоступном префетче грузит список сам', async () => {
+    const fetchFn = vi.fn().mockResolvedValue([{ id: 'direct', v: 1 }]);
+    const { items } = list(14, { fetchFn, loadSharedItems: () => Promise.reject(new Error('offline')) });
+    items.connect();
+    await flush();
+    await flush();
+    expect(items.items).toEqual([{ id: 'direct', v: 1 }]);
+  });
 });

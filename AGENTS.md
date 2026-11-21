@@ -72,7 +72,7 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 ## Архитектура данных (кратко)
 
-Полная карта: **[ARCHITECTURE.md](./ARCHITECTURE.md)** — React Query (задачи спринта, доски), MobX (позиции, UI планера), локальный стейт + `useDebouncedApiSync` (связи, комментарии), паттерн «локальный список задач в планере + оптимистичные правки».
+Полная карта: **[ARCHITECTURE.md](./ARCHITECTURE.md)** — React Query (задачи спринта, доски), MobX (позиции, UI планера), списки с отложенной записью — `SyncedList` в модели доски (связи, заметки), паттерн «локальный список задач в планере + оптимистичные правки».
 
 **Клиент:** UI ходит в `/api/*` только через [`lib/api/*`](./lib/api/) (`getPlannerBeerTrackerApi`); DTO ответов — в `lib/api/types` / `lib/<domain>`, не в `app/api/**/route.ts`. Бэклог выравнивания: [`docs/ARCHITECTURE_UNIFORMITY.md`](./docs/ARCHITECTURE_UNIFORMITY.md).
 

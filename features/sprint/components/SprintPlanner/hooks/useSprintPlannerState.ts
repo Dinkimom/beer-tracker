@@ -29,7 +29,6 @@ import {
 } from '@/features/task/hooks/useTasks';
 import { reloadFeatureLanesSession } from '@/hooks/featureLanesSessionStore';
 import {
-  useCommentsApi,
   useFeatureLanesApi,
   useTaskPositionsApi,
 } from '@/hooks/useApiStorage';
@@ -42,7 +41,10 @@ import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientI
 
 import { useTaskState } from '../../../hooks/useTaskState';
 import { SprintBoard } from '../../../model/SprintBoard';
+import { createSprintComments } from '../../../model/sprintComments';
 import { createSprintLinks } from '../../../model/sprintLinks';
+
+import { useSprintCommentsNotify } from './useSprintCommentsNotify';
 
 
 interface UseSprintPlannerStateProps {
@@ -71,9 +73,16 @@ export function useSprintPlannerState({
   // Связи живут весь спринт: модель пересоздаётся при смене дат, а их загрузка и ожидающие правки — нет.
   const links = useMemo(() => createSprintLinks(selectedSprintId), [selectedSprintId]);
   useEffect(() => links.connect(), [links]);
+  const commentsNotifyRef = useSprintCommentsNotify();
+  const sprintComments = useMemo(
+    () => createSprintComments(selectedSprintId, commentsNotifyRef),
+    [commentsNotifyRef, selectedSprintId]
+  );
+  useEffect(() => sprintComments.connect(), [sprintComments]);
   const board = useMemo(
     () =>
       new SprintBoard({
+        comments: sprintComments,
         links,
         movePlacement: sprintMovePlacement,
         positions: positionsStore,
@@ -86,6 +95,7 @@ export function useSprintPlannerState({
     [
       forDemoPlanner,
       links,
+      sprintComments,
       positionsStore,
       queryClient,
       selectedBoardId,
@@ -124,7 +134,12 @@ export function useSprintPlannerState({
   );
   const { delete: deleteLink, items: taskLinks, reloadFromRemote: reloadLinks, save: saveLink, setWithSave: setTaskLinks } =
     links;
-  const [comments, setComments, , deleteComment, reloadComments] = useCommentsApi(selectedSprintId);
+  const {
+    delete: deleteComment,
+    items: comments,
+    reloadFromRemote: reloadComments,
+    setWithSave: setComments,
+  } = sprintComments;
   const [, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const [boardViewers, setBoardViewers] = useState<SprintPresenceViewer[]>([]);
 
