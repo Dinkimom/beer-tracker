@@ -63,7 +63,7 @@
 
 4. **Сайдбар.** Сборщик `buildTaskSidebarContextValue` (перекладывал 60 полей в контекст на 70) удалён (2026-11-21): цели и их правку вкладка «Цели» берёт сама (`useSprintGoalsSummary`, `useSprintGoalManagement` — минус 16 полей контекста), бэклог — одним полем `backlog`. `TaskSidebarProps` 28 → 21. Затем убрана вкладка «Бэклог» сайдбара — со стартового релиза её всегда скрывал `hideBacklogTab`, а в настройках висел её переключатель. `SidebarSection` — оболочка панели, пропсы `TaskSidebar` проходят одним объектом; меню сайдбар берёт из стора (`contextMenuBlurOtherCards` — computed в `SprintPlannerUiStore`). Записи `SidebarSection` и `TaskSidebarProps` ушли из baseline.
    - Дальше: `backlogTaskRef` всё ещё протянут через view model, interactions, handlers и перетаскивание дорожек фич, хотя его больше никто не заполняет — `handleBacklogTaskDrop` всегда выходит на первой проверке. Перед удалением сверить режим дорожек фич: там `applyFeatureLaneBacklogDrop` до сброса меняет родителя задачи.
-   - `contextMenuBlurOtherCards` протянут пропсом через 7 файлов канбана и 6 файлов вкладки «Задачи» — читать из стора в карточке.
+   - ~~`contextMenuBlurOtherCards` через канбан и вкладку «Задачи».~~ Сделано 2026-11-21: правило меню — `cardContextMenuState` в `SprintPlannerUiStore`, карточки дорожки, канбана и сайдбара читают его хуком `useCardContextMenu` (computed на карточку); пропсы меню ушли из 19 файлов.
 
 ### 2.7 Производительность доски (высокий)
 

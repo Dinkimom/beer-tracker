@@ -13,8 +13,6 @@ interface KanbanColumnsLayoutProps {
   columnsContainerRef: React.RefObject<HTMLDivElement | null>;
   columnsMinWidth: number | undefined;
   columnsWithHeaderData: KanbanColumnHeaderData[];
-  contextMenuBlurOtherCards: boolean;
-  contextMenuTaskId: string | null | undefined;
   developers: Developer[];
   globalNameFilter: string | undefined;
   groupByAssignee: boolean;
@@ -36,8 +34,6 @@ export function KanbanColumnsLayout({
   columnsContainerRef,
   columnsMinWidth,
   columnsWithHeaderData,
-  contextMenuBlurOtherCards,
-  contextMenuTaskId,
   developers,
   globalNameFilter,
   groupByAssignee,
@@ -60,8 +56,6 @@ export function KanbanColumnsLayout({
             canDropInColumn={canDropInColumn}
             collapsedLanes={collapsedLanes}
             columnsMinWidth={columnsMinWidth}
-            contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-            contextMenuTaskId={contextMenuTaskId}
             developers={developers}
             globalNameFilter={globalNameFilter}
             groupByAssignee={groupByAssignee}
@@ -85,8 +79,6 @@ export function KanbanColumnsLayout({
       className="flex min-h-full flex-none items-stretch gap-3 px-4 pb-4 pt-0"
       columnsWithHeaderData={columnsWithHeaderData}
       containerRef={columnsContainerRef}
-      contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-      contextMenuTaskId={contextMenuTaskId}
       developers={developers}
       globalNameFilter={globalNameFilter}
       laneKey={null}

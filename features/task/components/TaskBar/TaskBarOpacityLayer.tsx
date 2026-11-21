@@ -5,11 +5,12 @@ import type { TaskBarOpacityLayerCardProps } from './TaskBarOpacityLayerCard';
 import type { TaskBarOpacityLayerChromeProps } from './TaskBarOpacityLayerChrome';
 import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
 
+import { observer } from 'mobx-react-lite';
 import React, { useCallback, useMemo } from 'react';
 
 import { Icon } from '@/components/Icon';
 import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneCommentTaskBridge';
-import { useSwimlaneCardContextMenu } from '@/features/swimlane/SwimlaneBoardContext';
+import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
 
 import { getQuickAddSubmittingOverlayRadiusClass } from './components/taskBarResizeHandleHelpers';
 import { TaskBarDragSourceGhost } from './TaskBarDragSourceGhost';
@@ -66,7 +67,8 @@ interface TaskBarOpacityLayerProps
   onTaskHover?: (taskId: string | null) => void;
 }
 
-export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
+// observer: меню карточки читается из стора (`useCardContextMenu`).
+export const TaskBarOpacityLayer = observer(function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   const {
     card,
     children,
@@ -99,7 +101,7 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   } = longHover;
   const shared = { effectiveIsDragging, interactionDisabled, isDraftTask, isQATask, isSelected, task };
 
-  const isContextMenuOpenForThis = useSwimlaneCardContextMenu(task.id).open;
+  const isContextMenuOpenForThis = useCardContextMenu(task.id).open;
   const cardElementRef = React.useRef<HTMLElement | null>(null);
   const layerRef = React.useRef<HTMLDivElement | null>(null);
   // У заметок упругой деформации нет: бумажка не резиновая.
@@ -255,4 +257,4 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
       {children}
     </div>
   );
-}
+});

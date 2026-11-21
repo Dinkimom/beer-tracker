@@ -12,8 +12,6 @@ interface KanbanLaneColumnsProps {
   className?: string;
   columnsWithHeaderData: KanbanColumnHeaderData[];
   containerRef?: React.RefObject<HTMLDivElement | null>;
-  contextMenuBlurOtherCards: boolean;
-  contextMenuTaskId: string | null | undefined;
   developers: Developer[];
   globalNameFilter: string | undefined;
   isLaneCollapsed?: boolean;
@@ -30,8 +28,6 @@ export function KanbanLaneColumns({
   className = 'flex min-h-[120px] flex-none items-stretch gap-3 pr-4',
   columnsWithHeaderData,
   containerRef,
-  contextMenuBlurOtherCards,
-  contextMenuTaskId,
   developers,
   globalNameFilter,
   isLaneCollapsed = false,
@@ -47,8 +43,6 @@ export function KanbanLaneColumns({
         <KanbanColumn
           key={laneKey ? `${laneKey}-${column.id}` : column.id}
           columnId={laneKey ? `${laneKey}__${column.id}` : column.id}
-          contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-          contextMenuTaskId={contextMenuTaskId}
           developers={developers}
           globalNameFilter={globalNameFilter}
           isDragging={Boolean(activeTaskId)}

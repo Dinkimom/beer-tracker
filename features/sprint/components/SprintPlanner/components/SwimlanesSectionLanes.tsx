@@ -81,7 +81,6 @@ function usePinnedSwimlaneFrameTops(
 interface SwimlanesSectionLanesProps {
   cardShadowTaskId: string | null;
   comments: Comment[];
-  contextMenuTaskId: string | null;
   developerAvailabilityMap: Map<string, { boardEvents: BoardAvailabilityEvent[] }>;
   effectiveFactHoveredTaskId: string | null;
   errorReasons: Map<string, OccupancyErrorReason[]>;
@@ -111,7 +110,6 @@ interface SwimlanesSectionLanesProps {
 export function SwimlanesSectionLanes({
   cardShadowTaskId,
   comments,
-  contextMenuTaskId,
   developerAvailabilityMap,
   effectiveFactHoveredTaskId,
   errorReasons,
@@ -212,20 +210,15 @@ export function SwimlanesSectionLanes({
   );
   const laneHoverConnectedTaskIds =
     showLinks && linksDimOnHover && !linkingSessionActive ? hoverConnectedTaskIds : null;
-  const contextMenuBlurOtherCards = section.contextMenuBlurOtherCards ?? false;
   const highlight = useMemo<SwimlaneHighlight>(
     () => ({
       cardShadowTaskId,
-      contextMenuBlurOtherCards,
-      contextMenuTaskId,
       factHoveredTaskId: effectiveFactHoveredTaskId,
       hoverConnectedTaskIds: laneHoverConnectedTaskIds,
       hoveredTaskId,
     }),
     [
       cardShadowTaskId,
-      contextMenuBlurOtherCards,
-      contextMenuTaskId,
       effectiveFactHoveredTaskId,
       hoveredTaskId,
       laneHoverConnectedTaskIds,

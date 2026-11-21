@@ -7,7 +7,6 @@ import type { Developer, Task, TaskPosition } from '@/types';
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { useDroppable } from '@dnd-kit/core';
-import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 
 import {
@@ -33,7 +32,6 @@ import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
 import { useTaskGrouping } from '@/features/task/hooks/useTaskGrouping';
 import { useSidebarGroupByStorage, useSidebarStatusFilterStorage, useSidebarTabsSettingsStorage } from '@/hooks/useLocalStorage';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
-import { useRootStore } from '@/lib/layers';
 
 function resolveSidebarTasksToGroup(params: {
   activeTab: 'all' | 'dev' | 'qa';
@@ -94,7 +92,7 @@ export interface TaskSidebarProps
   width?: number;
 }
 
-export const TaskSidebar = observer(function TaskSidebar({
+export function TaskSidebar({
   tasks,
   allSprintTasks,
   qaTasksMap,
@@ -120,7 +118,6 @@ export const TaskSidebar = observer(function TaskSidebar({
   onAutoAddToSwimlane,
   sidebarDropTargetActive = false,
 }: TaskSidebarProps) {
-  const { sprintPlannerUi } = useRootStore();
   const { setNodeRef, isOver } = useDroppable({
     id: 'sidebar-unassigned',
   });
@@ -197,9 +194,6 @@ export const TaskSidebar = observer(function TaskSidebar({
     assigneeIds,
     assigneePeople,
     canEdit,
-    // Меню — из стора: сайдбар перерисуется при открытии и закрытии меню, слои выше — нет.
-    contextMenuBlurOtherCards: sprintPlannerUi.contextMenuBlurOtherCards,
-    contextMenuTaskId: sprintPlannerUi.contextMenuTaskId,
     developers,
     devTasksCount,
     goalsTasks: allSprintTasks ?? tasks,
@@ -266,4 +260,4 @@ export const TaskSidebar = observer(function TaskSidebar({
       </div>
     </TaskSidebarContext.Provider>
   );
-});
+}

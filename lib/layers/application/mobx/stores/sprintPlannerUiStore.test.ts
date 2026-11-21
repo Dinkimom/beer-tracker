@@ -254,4 +254,26 @@ describe('SprintPlannerUiStore', () => {
     store.clearTransientUiOnSprintChange();
     expect(store.agentChatContext).toEqual([]);
   });
+
+  it('cardContextMenuState: меню открыто на карточке, остальные приглушены, пока меню просит', () => {
+    const store = new SprintPlannerUiStore();
+    const task = minimalTask({ id: 'a' });
+    expect(store.cardContextMenuState('a')).toEqual({ dimmed: false, open: false });
+
+    store.setContextMenuTaskId('a');
+    store.setContextMenu({
+      anchorRect: { bottom: 10, height: 10, left: 0, right: 10, top: 0, width: 10 },
+      position: { x: 0, y: 0 },
+      task,
+    });
+    expect(store.cardContextMenuState('a')).toEqual({ dimmed: false, open: true });
+    expect(store.cardContextMenuState('b')).toEqual({ dimmed: true, open: false });
+
+    // Меню из кнопки ⋯ без затемнения соседей.
+    store.setContextMenu({ dimPeerUi: false, position: { x: 0, y: 0 }, task });
+    expect(store.cardContextMenuState('b')).toEqual({ dimmed: false, open: false });
+
+    store.closeContextMenu();
+    expect(store.cardContextMenuState('a')).toEqual({ dimmed: false, open: false });
+  });
 });

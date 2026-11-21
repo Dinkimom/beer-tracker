@@ -78,8 +78,6 @@ export interface SwimlaneBoard {
 export interface SwimlaneHighlight {
   /** Карточка, у которой hover дожил до тени: затемняет бары факта других задач. */
   cardShadowTaskId: string | null;
-  contextMenuBlurOtherCards: boolean;
-  contextMenuTaskId: string | null;
   /** Наведение на сегмент факта — затемнение карточек на всех строках. */
   factHoveredTaskId: string | null;
   /** Кластер связей при hover: несвязанные затемняются, если в кластере больше одной задачи. */
@@ -134,18 +132,6 @@ export function useSwimlaneHighlightSelector<T extends boolean | number | string
   }
   const getSnapshot = () => select(store.get());
   return useSyncExternalStore(store.subscribe, getSnapshot, getSnapshot);
-}
-
-/** Контекстное меню глазами одной карточки: открыто ли оно на ней и приглушает ли её чужое меню. */
-export function useSwimlaneCardContextMenu(taskId: string): { dimmed: boolean; open: boolean } {
-  const open = useSwimlaneHighlightSelector((highlight) => highlight.contextMenuTaskId === taskId);
-  const dimmed = useSwimlaneHighlightSelector(
-    (highlight) =>
-      highlight.contextMenuBlurOtherCards &&
-      highlight.contextMenuTaskId != null &&
-      highlight.contextMenuTaskId !== taskId
-  );
-  return { dimmed, open };
 }
 
 export const SwimlaneBoardContext = createContext<SwimlaneBoard | null>(null);

@@ -43,7 +43,6 @@ export function SprintPlannerView({
   boardViewers,
   comments,
   commentsVisible,
-  contextMenuBlurOtherCards,
   developers,
   developersManagement,
   dragAndDrop,
@@ -182,7 +181,6 @@ export function SprintPlannerView({
               <SprintPlannerBoardViews
                 kanban={{
                   boardId: boardIdForPlannerData ?? null,
-                  contextMenuBlurOtherCards,
                   developers,
                   groupBy: kanbanGroupBy,
                   selectedAssigneeIds,
@@ -196,7 +194,6 @@ export function SprintPlannerView({
                   boardId: boardIdForPlannerData ?? null,
                   comments,
                   commentsVisible,
-                  contextMenuBlurOtherCards,
                   developers,
                   developersManagement,
                   dragAndDrop,

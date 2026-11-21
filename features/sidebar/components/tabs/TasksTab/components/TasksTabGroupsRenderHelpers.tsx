@@ -48,8 +48,6 @@ function planAssigneeGroupAction(
 interface RenderTasksTabGroupSectionParams {
   activeTaskDuration?: number | null;
   activeTaskId?: string | null;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   groupBy: SidebarGroupBy;
   groupedTasks: Record<string, Task[]>;
@@ -100,8 +98,6 @@ export function renderTasksTabGroupSection(
         {renderTasksTabGroupRows({
           activeTaskDuration: params.activeTaskDuration,
           activeTaskId: params.activeTaskId,
-          contextMenuBlurOtherCards: params.contextMenuBlurOtherCards,
-          contextMenuTaskId: params.contextMenuTaskId,
           developers: params.developers,
           hideDraggedTaskInList,
           insertIndex: params.insertIndex,

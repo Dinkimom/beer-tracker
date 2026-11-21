@@ -18,10 +18,11 @@ import { stickyNoteColorPopClassName } from '@/features/comments/utils/stickyNot
 import { stickyNoteExitClassName } from '@/features/comments/utils/stickyNoteExit';
 import { finishStickyNoteSaveMotion, stickyNoteSaveMotionClassName } from '@/features/comments/utils/stickyNoteSaveMotion';
 import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
 import { DraftItemCommentButton } from '@/features/swimlane/components/DraftItemCommentButton';
 import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
 import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
-import { useSwimlaneBoard, useSwimlaneCardContextMenu } from '@/features/swimlane/SwimlaneBoardContext';
+import { useSwimlaneBoard } from '@/features/swimlane/SwimlaneBoardContext';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
 import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar';
@@ -174,7 +175,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
   const longHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Меню выбирается подпиской: карточка перерисуется, только когда её состояние меню изменилось.
-  const contextMenu = useSwimlaneCardContextMenu(task.id);
+  const contextMenu = useCardContextMenu(task.id);
   const { developers, globalNameFilter, selectedSprintId } = useSwimlaneBoard();
   const { onCommentApprove, onCommentDelete, onCommentUpdate } = commentActions ?? {};
   const {

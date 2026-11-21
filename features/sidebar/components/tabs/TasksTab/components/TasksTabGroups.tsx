@@ -21,8 +21,6 @@ import {
 interface TasksTabGroupsProps {
   activeTaskDuration?: number | null;
   activeTaskId?: string | null;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   groupBy: SidebarGroupBy;
   groupedTasks: Record<string, Task[]>;
@@ -43,8 +41,6 @@ export function TasksTabGroups({
   qaTasksMap,
   activeTaskId,
   activeTaskDuration,
-  contextMenuBlurOtherCards = false,
-  contextMenuTaskId = null,
   viewMode,
   selectedSprintId,
   onAutoAddToSwimlane,
@@ -97,8 +93,6 @@ export function TasksTabGroups({
         : renderTasksTabGroupsContent({
             activeTaskDuration,
             activeTaskId,
-            contextMenuBlurOtherCards,
-            contextMenuTaskId,
             developers,
             groupBy,
             groupKeys,

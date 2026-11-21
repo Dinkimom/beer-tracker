@@ -97,7 +97,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
   } = props;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const { t } = useI18n();
-  const contextMenuTaskId = sprintPlannerUi.contextMenuTaskId;
   const globalNameFilter = sprintPlannerUi.globalNameFilter;
   const hoveredTaskId = sprintPlannerUi.hoveredTaskId;
   const linkingFromTaskId = sprintPlannerUi.linkingFromTaskId;
@@ -459,7 +458,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
               <SwimlanesSectionLanes
                 cardShadowTaskId={effectiveCardShadowTaskId}
                 comments={comments}
-                contextMenuTaskId={contextMenuTaskId}
                 developerAvailabilityMap={developerAvailabilityMap}
                 effectiveFactHoveredTaskId={effectiveFactHoveredTaskId}
                 errorReasons={occupancyErrorReasons}

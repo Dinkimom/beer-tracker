@@ -18,7 +18,6 @@ export interface SwimlanesSectionProps {
   commentActions?: SwimlaneCommentActions;
   comments: Comment[];
   commentsVisible: boolean;
-  contextMenuBlurOtherCards?: boolean;
   developers: Developer[];
   developersManagement: DevelopersManagement;
   dragAndDrop: {

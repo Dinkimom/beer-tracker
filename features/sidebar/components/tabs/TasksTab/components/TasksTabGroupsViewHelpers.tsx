@@ -30,8 +30,6 @@ export function renderTasksTabGroupsEmpty(params: RenderTasksTabGroupsEmptyParam
 interface RenderTasksTabGroupsContentParams {
   activeTaskDuration?: number | null;
   activeTaskId?: string | null;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   groupBy: SidebarGroupBy;
   groupedTasks: Record<string, Task[]>;
@@ -57,8 +55,6 @@ export function renderTasksTabGroupsContent(params: RenderTasksTabGroupsContentP
         renderTasksTabGroupSection({
           activeTaskDuration: params.activeTaskDuration,
           activeTaskId: params.activeTaskId,
-          contextMenuBlurOtherCards: params.contextMenuBlurOtherCards,
-          contextMenuTaskId: params.contextMenuTaskId,
           developers: params.developers,
           groupBy: params.groupBy,
           groupIndex,

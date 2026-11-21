@@ -52,7 +52,6 @@ import {
 
 export interface KanbanViewProps {
   boardId: number | null;
-  contextMenuBlurOtherCards?: boolean;
   developers: Developer[];
   groupBy?: SidebarGroupBy;
   /** Пустой set — без фильтра по исполнителю. */
@@ -89,7 +88,6 @@ export const KanbanView = observer(function KanbanView({
   tasks,
   developers,
   groupBy = 'none',
-  contextMenuBlurOtherCards = false,
   selectedAssigneeIds,
   onStatusChange,
   onTaskClick,
@@ -98,7 +96,6 @@ export const KanbanView = observer(function KanbanView({
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
   const globalNameFilter = sprintPlannerUi.globalNameFilter;
-  const contextMenuTaskId = sprintPlannerUi.contextMenuTaskId;
 
   const { groupByAssignee, groupByParent, hasLaneGrouping } = resolveKanbanGroupFlags(groupBy);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -353,8 +350,6 @@ export const KanbanView = observer(function KanbanView({
           columnsContainerRef={columnsContainerRef}
           columnsMinWidth={columnsMinWidth}
           columnsWithHeaderData={columnsWithHeaderData}
-          contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-          contextMenuTaskId={contextMenuTaskId}
           developers={developers}
           globalNameFilter={globalNameFilter}
           groupByAssignee={groupByAssignee}

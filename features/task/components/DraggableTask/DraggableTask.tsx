@@ -2,6 +2,9 @@
 
 import type { Developer, Task } from '@/types';
 
+import { observer } from 'mobx-react-lite';
+
+import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 
@@ -10,8 +13,6 @@ import { useDraggableTask } from './hooks/useDraggableTask';
 interface DraggableTaskProps {
   activeTaskDuration?: number | null;
   activeTaskId?: string | null;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   isQATask?: boolean;
   qaTasksMap?: Map<string, Task>;
@@ -22,20 +23,20 @@ interface DraggableTaskProps {
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
 }
 
-export function DraggableTask({
+// observer: меню карточки читается из стора (`useCardContextMenu`).
+export const DraggableTask = observer(function DraggableTask({
   task,
   developers,
   onContextMenu,
   isQATask,
   activeTaskId,
   activeTaskDuration,
-  contextMenuBlurOtherCards = false,
-  contextMenuTaskId = null,
   viewMode,
   selectedSprintId,
   onAutoAddToSwimlane,
 }: DraggableTaskProps) {
   const presenceLocked = useSprintCardPresenceLocked(task.id);
+  const contextMenu = useCardContextMenu(task.id);
   const {
     attributes,
     listeners,
@@ -61,12 +62,8 @@ export function DraggableTask({
       <TaskCard
         ref={combinedRef}
         developers={developers}
-        dimmedByContextMenu={
-          contextMenuBlurOtherCards &&
-          contextMenuTaskId != null &&
-          contextMenuTaskId !== task.id
-        }
-        isContextMenuOpen={contextMenuTaskId === task.id}
+        dimmedByContextMenu={contextMenu.dimmed}
+        isContextMenuOpen={contextMenu.open}
         isDragging={isDragging}
         isQATask={isQATask}
         selectedSprintId={selectedSprintId}
@@ -82,4 +79,4 @@ export function DraggableTask({
       />
     </div>
   );
-}
+});

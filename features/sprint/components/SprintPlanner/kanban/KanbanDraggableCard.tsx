@@ -4,9 +4,11 @@ import type { Task, Developer } from '@/types';
 
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
 import { PhaseCardColorSchemeOverride } from '@/components/PhaseCardColorSchemeOverride';
+import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
 import { useAgentDevTask } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 import { TaskCardAgentBadge } from '@/features/task/components/TaskCard/components/TaskCardAgentBadge';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
@@ -19,8 +21,6 @@ import { KANBAN_CARD_SURFACE } from './kanbanChromeClasses';
 import { kanbanTaskId } from './kanbanDndUtils';
 
 interface KanbanDraggableCardProps {
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   /** Не подходит под поиск по доске — приглушена, как на свимлейне. */
   dimmedBySearch?: boolean;
@@ -29,11 +29,10 @@ interface KanbanDraggableCardProps {
   onTaskClick?: (taskId: string) => void;
 }
 
-export function KanbanDraggableCard({
+// observer: меню карточки читается из стора (`useCardContextMenu`).
+export const KanbanDraggableCard = observer(function KanbanDraggableCard({
   task,
   developers,
-  contextMenuBlurOtherCards = false,
-  contextMenuTaskId = null,
   dimmedBySearch = false,
   onTaskClick,
   onContextMenu,
@@ -74,11 +73,7 @@ export function KanbanDraggableCard({
     opacity: isDragging ? 0 : dimmedBySearch ? 0.3 : 1,
   };
 
-  const dimOthers =
-    contextMenuBlurOtherCards &&
-    contextMenuTaskId != null &&
-    contextMenuTaskId !== task.id;
-  const menuOpenHere = contextMenuTaskId === task.id;
+  const { dimmed: dimOthers, open: menuOpenHere } = useCardContextMenu(task.id);
   const agentDev = useAgentDevTask(isEffectivelyQaTask(task) ? null : getTaskTrackerDisplayKey(task));
   const blockNewGestures = sprintCardPresenceBlocksNewGestures(presenceLocked, isDragging);
 
@@ -148,4 +143,4 @@ export function KanbanDraggableCard({
       ) : null}
     </div>
   );
-}
+});

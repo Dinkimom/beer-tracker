@@ -56,6 +56,11 @@ export function agentChatContextKey(item: AgentChatContextItem): string {
  * UI-состояние планера спринта (MobX).
  * Сюда по мере рефакторинга переносим флаги из useState/пропсов.
  */
+export interface CardContextMenuState {
+  dimmed: boolean;
+  open: boolean;
+}
+
 export class SprintPlannerUiStore {
   /** Идентификатор «сессии» планера на клиенте (отладка, будущие подписки). */
   sessionId = uuid();
@@ -108,6 +113,15 @@ export class SprintPlannerUiStore {
   /** Меню открыто у точки и просит приглушить остальные карточки (по умолчанию — да). */
   get contextMenuBlurOtherCards(): boolean {
     return Boolean(this.contextMenu?.anchorRect) && this.contextMenu?.dimPeerUi !== false;
+  }
+
+  /** Меню глазами карточки: открыто на ней; открыто на другой и приглушает остальные. */
+  cardContextMenuState(taskId: string): CardContextMenuState {
+    const menuTaskId = this.contextMenuTaskId;
+    return {
+      dimmed: this.contextMenuBlurOtherCards && menuTaskId != null && menuTaskId !== taskId,
+      open: menuTaskId === taskId,
+    };
   }
 
   /** Попап редактирования заметки / конвертации в задачу. */

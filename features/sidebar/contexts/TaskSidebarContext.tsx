@@ -37,9 +37,6 @@ export interface TaskSidebarContextValue {
 
   /** Править цели можно (драфт, админ в работе, первый понедельник). */
   canEdit: boolean;
-  /** Пониженная непрозрачность прочих карточек при контекстном меню с карточки задачи */
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   /** Dev-задачи после фильтров (поиск, статус) — бейдж вкладки Dev */
   devTasksCount: number;

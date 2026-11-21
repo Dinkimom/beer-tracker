@@ -16,8 +16,6 @@ import { KanbanDraggableCard } from './KanbanDraggableCard';
 
 interface KanbanColumnProps {
   columnId: string;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   globalNameFilter?: string;
   /** Идёт перетаскивание задачи (показывать оверлей на недоступных колонках) */
@@ -39,8 +37,6 @@ export function KanbanColumn({
   isDragging = false,
   isDropDisabled = false,
   isSourceColumn = false,
-  contextMenuBlurOtherCards = false,
-  contextMenuTaskId = null,
   onTaskClick,
   onContextMenu,
 }: KanbanColumnProps) {
@@ -75,8 +71,6 @@ export function KanbanColumn({
         {tasks.map((task) => (
           <KanbanDraggableCard
             key={task.id}
-            contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-            contextMenuTaskId={contextMenuTaskId}
             developers={developers}
             dimmedBySearch={!taskMatchesNameFilter(task, globalNameFilter)}
             task={task}

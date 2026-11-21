@@ -3,9 +3,10 @@
 import type { Developer, Task, TaskPosition } from '@/types';
 import type { DraggableAttributes } from '@dnd-kit/core';
 
+import { observer } from 'mobx-react-lite';
 import React, { useCallback } from 'react';
 
-import { useSwimlaneCardContextMenu } from '@/features/swimlane/SwimlaneBoardContext';
+import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 
 import { buildTaskBarMouseUpHandler } from './taskBarOpacityLayerHandlers';
@@ -51,7 +52,8 @@ export interface TaskBarOpacityLayerCardProps {
   setNodeRef: (node: HTMLElement | null) => void;
 }
 
-export function TaskBarOpacityLayerCard({
+// observer: меню карточки читается из стора (`useCardContextMenu`).
+export const TaskBarOpacityLayerCard = observer(function TaskBarOpacityLayerCard({
   assigneeName,
   cardElementRef,
   clickStartPos,
@@ -83,7 +85,7 @@ export function TaskBarOpacityLayerCard({
   task,
   taskPositions,
 }: TaskBarOpacityLayerCardProps) {
-  const contextMenu = useSwimlaneCardContextMenu(task.id);
+  const contextMenu = useCardContextMenu(task.id);
   const mergedCardRef = useCallback(
     (node: HTMLDivElement | null) => {
       cardElementRef.current = node;
@@ -153,4 +155,4 @@ export function TaskBarOpacityLayerCard({
       })}
     />
   );
-}
+});

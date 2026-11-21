@@ -6,8 +6,6 @@ import { DraggableTask } from '@/features/task/components/DraggableTask';
 interface RenderTasksTabGroupRowsParams {
   activeTaskDuration?: number | null;
   activeTaskId?: string | null;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   hideDraggedTaskInList: boolean;
   insertIndex: number | null;
@@ -26,8 +24,6 @@ interface RenderTasksTabGroupRowsParams {
 function renderTasksTabTaskRow(params: {
   activeTaskDuration?: number | null;
   activeTaskId?: string | null;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   onAutoAddToSwimlane?: (task: Task) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
@@ -42,8 +38,6 @@ function renderTasksTabTaskRow(params: {
       <DraggableTask
         activeTaskDuration={params.activeTaskDuration}
         activeTaskId={params.activeTaskId}
-        contextMenuBlurOtherCards={params.contextMenuBlurOtherCards}
-        contextMenuTaskId={params.contextMenuTaskId}
         developers={params.developers}
         qaTasksMap={params.qaTasksMap}
         selectedSprintId={params.selectedSprintId}
@@ -74,8 +68,6 @@ export function renderTasksTabGroupRows(params: RenderTasksTabGroupRowsParams): 
     const row = renderTasksTabTaskRow({
       activeTaskDuration: params.activeTaskDuration,
       activeTaskId: params.activeTaskId,
-      contextMenuBlurOtherCards: params.contextMenuBlurOtherCards,
-      contextMenuTaskId: params.contextMenuTaskId,
       developers: params.developers,
       onAutoAddToSwimlane: params.onAutoAddToSwimlane,
       onContextMenu: params.onContextMenu,

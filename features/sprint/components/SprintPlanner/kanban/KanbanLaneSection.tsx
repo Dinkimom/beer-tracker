@@ -12,8 +12,6 @@ interface KanbanLaneSectionProps {
   activeTaskId: string | null;
   collapsedLanes: Set<string>;
   columnsMinWidth: number | undefined;
-  contextMenuBlurOtherCards: boolean;
-  contextMenuTaskId: string | null | undefined;
   developers: Developer[];
   globalNameFilter: string | undefined;
   groupByAssignee: boolean;
@@ -66,8 +64,6 @@ export function KanbanLaneSection(props: KanbanLaneSectionProps) {
         activeTaskId={props.activeTaskId}
         canDropInColumn={props.canDropInColumn}
         columnsWithHeaderData={props.lane.columnsWithHeaderData}
-        contextMenuBlurOtherCards={props.contextMenuBlurOtherCards}
-        contextMenuTaskId={props.contextMenuTaskId}
         developers={props.developers}
         globalNameFilter={props.globalNameFilter}
         isLaneCollapsed={props.collapsedLanes.has(laneKey)}

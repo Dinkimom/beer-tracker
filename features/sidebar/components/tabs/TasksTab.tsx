@@ -54,8 +54,6 @@ export function TasksTab() {
     viewMode,
     selectedBoardId,
     selectedSprintId,
-    contextMenuBlurOtherCards,
-    contextMenuTaskId,
     onContextMenu,
     onReturnAllTasks,
     onAutoAddToSwimlane,
@@ -91,8 +89,6 @@ export function TasksTab() {
         <TasksTabGroups
           activeTaskDuration={activeTaskDuration}
           activeTaskId={activeTaskId}
-          contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-          contextMenuTaskId={contextMenuTaskId}
           developers={developers}
           groupBy={groupBy}
           groupKeys={groupKeys}

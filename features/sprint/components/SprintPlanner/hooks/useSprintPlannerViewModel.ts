@@ -194,7 +194,6 @@ export function useSprintPlannerViewModel({
     }
   }, [viewMode, sprintPlannerUi]);
 
-  const contextMenuBlurOtherCards = sprintPlannerUi.contextMenuBlurOtherCards;
 
   const swimlaneFactTimelineEnabled =
     swimlaneFactTimelineVisible && (viewMode === 'full' || viewMode === 'compact');
@@ -367,7 +366,6 @@ export function useSprintPlannerViewModel({
     boardViewers,
     comments,
     commentsVisible: swimlaneNotesVisible || swimlaneImagesVisible,
-    contextMenuBlurOtherCards,
     developers,
     developersManagement,
     filteredTaskLinks,
