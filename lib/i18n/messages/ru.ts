@@ -992,7 +992,6 @@ export const ruMessages = {
       goals: 'Спринт',
       metrics: 'Метрики',
       history: 'История',
-      backlog: 'Бэклог',
     },
     tabTitles: {
       metrics: 'Метрики спринта: объём по статусам и исполнителям',
@@ -1147,14 +1146,6 @@ export const ruMessages = {
       planRowSearch: 'Эпик или направление…',
       planRowSearchEmpty: 'Таких строк в плане квартала нет',
       planRowTitle: 'Строка квартального плана, к которой относится цель',
-    },
-    backlogTab: {
-      rateLimitMessage: 'Слишком много запросов. Подождите немного и попробуйте снова.',
-      reload: 'Перезагрузить',
-      loadingTasks: 'Загрузка задач бэклога...',
-      empty: 'Задачи бэклога отсутствуют',
-      loadedCount: 'Загружено: {loaded} из {total} задач',
-      loadMore: 'Загрузить еще',
     },
     releasesTab: {
       heading: 'Задачи, готовые к релизу',

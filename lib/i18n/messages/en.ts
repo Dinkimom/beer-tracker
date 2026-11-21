@@ -991,7 +991,6 @@ export const enMessages = {
       goals: 'Sprint',
       metrics: 'Metrics',
       history: 'History',
-      backlog: 'Backlog',
     },
     tabTitles: {
       metrics: 'Sprint metrics: volume by status and assignee',
@@ -1145,14 +1144,6 @@ export const enMessages = {
       planRowSearch: 'Epic or direction…',
       planRowSearchEmpty: 'No such rows in the quarter plan',
       planRowTitle: 'Quarterly plan row this goal belongs to',
-    },
-    backlogTab: {
-      rateLimitMessage: 'Too many requests. Wait a bit and try again.',
-      reload: 'Reload',
-      loadingTasks: 'Loading backlog…',
-      empty: 'No backlog tasks',
-      loadedCount: 'Loaded: {loaded} of {total} tasks',
-      loadMore: 'Load more',
     },
     releasesTab: {
       heading: 'Tasks ready for release',

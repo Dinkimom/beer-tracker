@@ -10,7 +10,6 @@ import { hrefWithSearchParams } from '@/features/sidebar/utils/hrefWithSearchPar
 import { resolveHiddenSidebarTabFallback } from './useSidebarHeaderTabsHelpers';
 
 export type SidebarMainTab =
-  | 'backlog'
   | 'goals'
   | 'history'
   | 'invalid'
@@ -18,7 +17,6 @@ export type SidebarMainTab =
   | 'tasks';
 
 interface UseSidebarTabsStateProps {
-  hideBacklogTab?: boolean;
   hideTasksTab?: boolean;
 }
 
@@ -27,7 +25,6 @@ function getMainTabFromSearchParams(
 ): SidebarMainTab {
   const tabParam = searchParams.get('sidebarTab');
   if (
-    tabParam === 'backlog' ||
     tabParam === 'goals' ||
     tabParam === 'history' ||
     tabParam === 'invalid' ||
@@ -53,7 +50,6 @@ function getActiveTabFromSearchParams(
 }
 
 export function useSidebarTabsState({
-  hideBacklogTab = false,
   hideTasksTab = false,
 }: UseSidebarTabsStateProps = {}) {
   const pathname = usePathname();
@@ -77,7 +73,6 @@ export function useSidebarTabsState({
 
   useEffect(() => {
     const fallbackTab = resolveHiddenSidebarTabFallback({
-      hideBacklogTab,
       hideTasksTab,
       mainTab,
     });
@@ -89,7 +84,7 @@ export function useSidebarTabsState({
     params.set('sidebarTab', fallbackTab);
     router.replace(hrefWithSearchParams(pathname, params), { scroll: false });
     startTransition(() => setMainTabState(fallbackTab));
-  }, [hideTasksTab, hideBacklogTab, mainTab, pathname, router, searchParams]);
+  }, [hideTasksTab, mainTab, pathname, router, searchParams]);
 
   useEffect(() => {
     if (isUserChangingTabRef.current) {

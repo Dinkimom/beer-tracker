@@ -39,7 +39,6 @@ export function SprintPlannerView({
   assigneePointsStats,
   availability,
   boardAvailabilityEvents,
-  backlogTaskRef,
   boardIdForPlannerData,
   boardViewers,
   comments,
@@ -289,22 +288,20 @@ export function SprintPlannerView({
               activeTaskDuration={dragAndDrop.activeTaskDuration}
               activeTaskId={dragAndDrop.activeTaskId}
               allSprintTasks={tasks}
-              backlogTaskRef={backlogTaskRef}
               closedHandleHost={boardFrameEl}
-              contextMenuBlurOtherCards={contextMenuBlurOtherCards}
               developers={developers}
               developersManagement={developersManagement}
               goalTaskIds={goalTaskIds}
-              isSidebarDropTarget={dragAndDrop.isSidebarDropTarget}
               qaTasksMap={qaTasksMap}
               selectedBoardId={boardIdForPlannerData}
               selectedSprintId={selectedSprintId}
+              sidebarDropTargetActive={dragAndDrop.isSidebarDropTarget}
               sidebarOpen={sidebarOpen}
               sidebarWidth={sidebarWidth}
               sprintInfo={sprintInfo}
               sprints={sprints}
               taskPositions={filteredTaskPositions}
-              unassignedTasks={unassignedTasks}
+              tasks={unassignedTasks}
               viewMode={viewMode}
               onAutoAddToSwimlane={handlers.handleAutoAddToSwimlane}
               onAutoAssignTasks={handlers.handleAutoAssignTasks}

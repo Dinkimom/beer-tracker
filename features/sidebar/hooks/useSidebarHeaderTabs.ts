@@ -21,7 +21,6 @@ const SIDEBAR_HEADER_TAB_IDS = new Set<SidebarMainTab>([
   'goals',
   'metrics',
   'history',
-  'backlog',
 ]);
 
 const DEFAULT_SIDEBAR_ORDER: SidebarMainTab[] = [
@@ -30,7 +29,6 @@ const DEFAULT_SIDEBAR_ORDER: SidebarMainTab[] = [
   'goals',
   'metrics',
   'history',
-  'backlog',
 ];
 
 function sidebarTabTitle(
@@ -47,7 +45,6 @@ interface UseSidebarHeaderTabsProps {
   allTasksCount: number;
   checklistDone: number;
   checklistTotal: number;
-  hideBacklogTab?: boolean;
   hideTasksTab?: boolean;
   invalidTasksCount: number;
   sidebarTabsSettings: SidebarTabSettings[];
@@ -72,7 +69,6 @@ export function useSidebarHeaderTabs({
   allTasksCount,
   checklistDone,
   checklistTotal,
-  hideBacklogTab = false,
   hideTasksTab = false,
   invalidTasksCount,
   sidebarTabsSettings,
@@ -97,7 +93,6 @@ export function useSidebarHeaderTabs({
     })
     .filter((tab) =>
       isSidebarHeaderTabVisible({
-        hideBacklogTab,
         hideTasksTab,
         sprintInfo,
         tabId: tab.id,

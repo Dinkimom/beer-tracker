@@ -18,7 +18,6 @@ const ALL_SIDEBAR_TAB_IDS = [
   'goals',
   'metrics',
   'history',
-  'backlog',
 ] as const satisfies ReadonlyArray<SidebarTabSettings['id']>;
 
 const ALLOWED_SIDEBAR_TAB_IDS = ALL_SIDEBAR_TAB_IDS.filter(

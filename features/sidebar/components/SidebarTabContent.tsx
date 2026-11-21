@@ -7,10 +7,6 @@ import dynamic from 'next/dynamic';
 import { TasksTab } from '@/features/sidebar/components/tabs/TasksTab';
 import { SIDEBAR_INVALID_TAB_ENABLED } from '@/features/sidebar/hooks/useSidebarHeaderTabsHelpers';
 
-const BacklogTab = dynamic(
-  () => import('@/features/sidebar/components/tabs/BacklogTab').then((mod) => mod.BacklogTab),
-  { ssr: false }
-);
 const GoalsTab = dynamic(
   () => import('@/features/sidebar/components/tabs/GoalsTab').then((mod) => mod.GoalsTab),
   { ssr: false }
@@ -31,19 +27,16 @@ const MetricsTab = dynamic(
 const SCROLLABLE_MAIN_TABS: SidebarMainTab[] = [
   'invalid',
   'tasks',
-  'backlog',
   'goals',
   'metrics',
   'history',
 ];
 
 interface SidebarTabContentProps {
-  hideBacklogTab?: boolean;
   mainTab: SidebarMainTab;
 }
 
 export function SidebarTabContent({
-  hideBacklogTab = false,
   mainTab,
 }: SidebarTabContentProps) {
   const isScrollable = SCROLLABLE_MAIN_TABS.includes(mainTab);
@@ -58,7 +51,6 @@ export function SidebarTabContent({
       {mainTab === 'goals' && <GoalsTab />}
       {mainTab === 'history' && <HistoryTab />}
       {SIDEBAR_INVALID_TAB_ENABLED && mainTab === 'invalid' && <InvalidTab />}
-      {mainTab === 'backlog' && !hideBacklogTab && <BacklogTab />}
     </div>
   );
 }

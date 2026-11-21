@@ -9,7 +9,6 @@ import {
 const sprintInfo = { id: 1, status: 'active', version: 1 };
 
 const visibilityBase = {
-  hideBacklogTab: false,
   hideTasksTab: false,
   sprintInfo,
   visible: true,
@@ -45,37 +44,18 @@ describe('resolveHiddenSidebarTabFallback', () => {
   it('redirects the invalid tab to tasks while it is disabled', () => {
     expect(
       resolveHiddenSidebarTabFallback({
-              hideBacklogTab: false,
         hideTasksTab: false,
         mainTab: 'invalid',
       })
     ).toBe('tasks');
   });
 
-  it('redirects hidden tasks to backlog, or goals when backlog is also hidden', () => {
+  it('redirects hidden tasks to goals', () => {
     expect(
       resolveHiddenSidebarTabFallback({
-              hideBacklogTab: false,
-        hideTasksTab: true,
-        mainTab: 'tasks',
-      })
-    ).toBe('backlog');
-    expect(
-      resolveHiddenSidebarTabFallback({
-              hideBacklogTab: true,
         hideTasksTab: true,
         mainTab: 'tasks',
       })
     ).toBe('goals');
-  });
-
-  it('redirects hidden backlog to tasks', () => {
-    expect(
-      resolveHiddenSidebarTabFallback({
-              hideBacklogTab: true,
-        hideTasksTab: false,
-        mainTab: 'backlog',
-      })
-    ).toBe('tasks');
   });
 });

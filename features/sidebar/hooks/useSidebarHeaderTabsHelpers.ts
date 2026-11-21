@@ -23,13 +23,11 @@ const TAB_COUNT_RESOLVERS: Record<
   invalid: (counts) => (counts.invalidTasksCount > 0 ? counts.invalidTasksCount : undefined),
   goals: (counts) =>
     counts.checklistTotal > 0 ? `${counts.checklistDone}/${counts.checklistTotal}` : undefined,
-  backlog: undefined,
   history: undefined,
   metrics: undefined,
 };
 
 interface SidebarHeaderTabVisibilityParams {
-  hideBacklogTab: boolean;
   hideTasksTab: boolean;
   sprintInfo: { id: number; status: string; version?: number } | null;
   tabId: SidebarMainTab;
@@ -39,12 +37,10 @@ const HIDDEN_TAB_FLAGS: Partial<
   Record<SidebarMainTab, (params: SidebarHeaderTabVisibilityParams) => boolean>
 > = {
   tasks: (params) => params.hideTasksTab,
-  backlog: (params) => params.hideBacklogTab,
   invalid: () => !SIDEBAR_INVALID_TAB_ENABLED,
 };
 
 export function resolveHiddenSidebarTabFallback(params: {
-  hideBacklogTab: boolean;
   hideTasksTab: boolean;
   mainTab: SidebarMainTab;
 }): SidebarMainTab | null {
@@ -52,10 +48,7 @@ export function resolveHiddenSidebarTabFallback(params: {
     return 'tasks';
   }
   if (params.hideTasksTab && params.mainTab === 'tasks') {
-    return params.hideBacklogTab ? 'goals' : 'backlog';
-  }
-  if (params.hideBacklogTab && params.mainTab === 'backlog') {
-    return 'tasks';
+    return 'goals';
   }
   return null;
 }
@@ -75,7 +68,6 @@ export function sidebarTabBadgeForId(tabId: SidebarMainTab, counts: SidebarTabCo
 }
 
 export function isSidebarHeaderTabVisible(params: {
-  hideBacklogTab: boolean;
   hideTasksTab: boolean;
   sprintInfo: { id: number; status: string; version?: number } | null;
   tabId: SidebarMainTab;

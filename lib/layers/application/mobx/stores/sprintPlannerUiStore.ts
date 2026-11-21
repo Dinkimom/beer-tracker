@@ -9,7 +9,7 @@ import type {
 } from '../sprintPlannerUiTypes';
 import type { Task } from '@/types';
 
-import { action, makeObservable, observable } from 'mobx';
+import { action, computed, makeObservable, observable } from 'mobx';
 import { v4 as uuid } from 'uuid';
 
 import { STORAGE_KEYS } from '@/hooks/localStorage/storageKeys';
@@ -105,6 +105,11 @@ export class SprintPlannerUiStore {
   /** Какая задача открыла контекстное меню (обводка карточки). */
   contextMenuTaskId: string | null = null;
 
+  /** Меню открыто у точки и просит приглушить остальные карточки (по умолчанию — да). */
+  get contextMenuBlurOtherCards(): boolean {
+    return Boolean(this.contextMenu?.anchorRect) && this.contextMenu?.dimPeerUi !== false;
+  }
+
   /** Попап редактирования заметки / конвертации в задачу. */
   noteComposer: SprintPlannerNoteComposerState | null = null;
 
@@ -187,6 +192,7 @@ export class SprintPlannerUiStore {
       closeNoteComposer: action.bound,
       closeTaskInfoPanel: action.bound,
       contextMenu: observable,
+      contextMenuBlurOtherCards: computed,
       contextMenuTaskId: observable,
       diagramEditorTaskId: observable,
       globalNameFilter: observable,

@@ -45,10 +45,6 @@ interface UseBacklogManagementProps {
   nameFilter: string;
   selectedBoardId: number | null | undefined;
   statusFilter: string;
-  onBacklogTaskRef?: (ref: {
-    getTask: (taskId: string) => Task | undefined;
-    removeTask: (taskId: string) => void;
-  }) => void;
 }
 
 const BACKLOG_PER_PAGE = 50;
@@ -60,7 +56,6 @@ export function useBacklogManagement({
   nameFilter,
   goalTask,
   goalTaskIds,
-  onBacklogTaskRef,
 }: UseBacklogManagementProps) {
   const queryClient = useQueryClient();
   const forDemoPlannerBoards = useDemoPlannerBoardsQueryScope();
@@ -137,20 +132,6 @@ export function useBacklogManagement({
     }
   }, [mainTab, selectedBoardId]);
 
-  useEffect(() => {
-    if (onBacklogTaskRef) {
-      onBacklogTaskRef({
-        getTask: (taskId: string) => backlogTasks.find(t => t.id === taskId),
-        removeTask: (taskId: string) => {
-          queryClient.setQueryData<BacklogResponse>(
-            backlogPage1Key,
-            (old) => removeTaskFromBacklogPage(old, taskId)
-          );
-          setAdditionalPages((prev) => removeTaskFromAdditionalPages(prev, taskId));
-        },
-      });
-    }
-  }, [backlogTasks, backlogPage1Key, onBacklogTaskRef, queryClient]);
 
   const loadMoreBacklogTasks = useCallback(async () => {
     if (!selectedBoardId || backlogLoading || !backlogHasMore) {
@@ -251,5 +232,3 @@ export function useBacklogManagement({
     removeTask,
   };
 }
-
-export type BacklogManagement = ReturnType<typeof useBacklogManagement>;

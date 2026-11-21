@@ -1,7 +1,6 @@
 'use client';
 
 import type { BacklogFilterPerson } from '@/features/backlog/utils/backlogFilterPeople';
-import type { BacklogManagement } from '@/features/sidebar/hooks/useBacklogManagement';
 import type { SidebarMainTab } from '@/features/sidebar/hooks/useSidebarTabsState';
 import type { ValidationIssue } from '@/features/task/utils/taskValidation';
 import type {
@@ -36,8 +35,6 @@ export interface TaskSidebarContextValue {
   assigneeIds: ReadonlySet<string>;
   assigneePeople: BacklogFilterPerson[];
 
-  /** Бэклог доски — результат `useBacklogManagement` как есть. */
-  backlog: BacklogManagement;
   /** Править цели можно (драфт, админ в работе, первый понедельник). */
   canEdit: boolean;
   /** Пониженная непрозрачность прочих карточек при контекстном меню с карточки задачи */
@@ -51,7 +48,6 @@ export interface TaskSidebarContextValue {
   groupBy: SidebarGroupBy;
   groupedTasks: Record<string, Task[]>;
   groupKeys: string[];
-  hideBacklogTab?: boolean;
 
   hideTasksTab?: boolean;
   // InvalidTab

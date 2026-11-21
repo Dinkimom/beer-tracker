@@ -194,9 +194,7 @@ export function useSprintPlannerViewModel({
     }
   }, [viewMode, sprintPlannerUi]);
 
-  const contextMenuBlurOtherCards =
-    Boolean(sprintPlannerUi.contextMenu?.anchorRect) &&
-    sprintPlannerUi.contextMenu?.dimPeerUi !== false;
+  const contextMenuBlurOtherCards = sprintPlannerUi.contextMenuBlurOtherCards;
 
   const swimlaneFactTimelineEnabled =
     swimlaneFactTimelineVisible && (viewMode === 'full' || viewMode === 'compact');
@@ -365,7 +363,6 @@ export function useSprintPlannerViewModel({
     assigneePointsStats,
     availability,
     boardAvailabilityEvents,
-    backlogTaskRef,
     boardIdForPlannerData,
     boardViewers,
     comments,

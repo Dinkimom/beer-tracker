@@ -369,3 +369,11 @@
 - Ожидаемо: через полсекунды рядом появляется паспорт задачи: ключ, статус, название, исполнитель, оценка, спринт, родитель, срок (пустые поля не показываются); для задачи вне спринта паспорт подгружается по ключу.
 - Автотест: e2e/functional/sprintHistory.spec.ts
 
+## 11. Настройки
+
+### TC-110: Вкладки сайдбара в настройках
+- Контур: демо
+- Код: components/SettingsModal/components/SidebarTabsSettingsList.tsx, components/SettingsModal/tabs/SettingsGeneralTab.tsx, hooks/localStorage/hooksSidebarAndDevelopers.ts, features/sidebar/hooks/useSidebarHeaderTabs.ts
+- Шаги: открыть «Настройки» → «Общие», раздел «Табы сайдбара спринта».
+- Ожидаемо: в списке только вкладки, которые есть в сайдбаре планера: «Задачи», «Спринт», «Метрики», «История»; скрытая здесь вкладка пропадает из шапки сайдбара.
+- Автотест: e2e/functional/settingsSidebarTabs.spec.ts

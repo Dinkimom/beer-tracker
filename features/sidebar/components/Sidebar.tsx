@@ -7,6 +7,7 @@ import type { Developer, Task, TaskPosition } from '@/types';
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { useDroppable } from '@dnd-kit/core';
+import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 
 import {
@@ -24,7 +25,6 @@ import {
   resolveSidebarSprintInfoContext,
 } from '@/features/sidebar/components/sidebarTaskSidebarHelpers';
 import { TaskSidebarContext } from '@/features/sidebar/contexts/TaskSidebarContext';
-import { useBacklogManagement } from '@/features/sidebar/hooks/useBacklogManagement';
 import { useSidebarHeaderTabs } from '@/features/sidebar/hooks/useSidebarHeaderTabs';
 import { useSidebarTabsState } from '@/features/sidebar/hooks/useSidebarTabsState';
 import { useSprintGoalsSummary } from '@/features/sprint/hooks/useSprintGoals';
@@ -33,17 +33,16 @@ import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
 import { useTaskGrouping } from '@/features/task/hooks/useTaskGrouping';
 import { useSidebarGroupByStorage, useSidebarStatusFilterStorage, useSidebarTabsSettingsStorage } from '@/hooks/useLocalStorage';
 import { useProductTenantOrganizations } from '@/hooks/useProductTenantOrganizations';
+import { useRootStore } from '@/lib/layers';
 
 function resolveSidebarTasksToGroup(params: {
   activeTab: 'all' | 'dev' | 'qa';
   allTasks: Task[];
-  backlogTasks: Task[];
   devTasks: Task[];
   invalidTasks: Array<{ task: Task }>;
   mainTab: SidebarMainTab;
   qaTasks: Task[];
 }): Task[] {
-  if (params.mainTab === 'backlog') return params.backlogTasks;
   if (params.mainTab === 'invalid') return params.invalidTasks.map(({ task }) => task);
   if (params.mainTab !== 'tasks') return [];
   if (params.activeTab === 'all') return params.allTasks;
@@ -59,7 +58,7 @@ function toggleAssigneeId(current: Set<string>, id: string): Set<string> {
 }
 
 /** Обработчики, которые уходят во вкладки без изменений, — того же типа, что в контексте. */
-interface TaskSidebarProps
+export interface TaskSidebarProps
   extends Pick<
     TaskSidebarContextValue,
     | 'onAutoAddToSwimlane'
@@ -76,12 +75,9 @@ interface TaskSidebarProps
   activeTaskId?: string | null;
   /** Все задачи спринта (для метрик «Разбивка по исполнителям» и целей). Передавать полный список. */
   allSprintTasks?: Task[];
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developers: Developer[];
   developersManagement?: DevelopersManagement;
   goalTaskIds?: string[];
-  hideBacklogTab?: boolean;
   hideTasksTab?: boolean;
   // Все задачи спринта (для метрик)
   qaTasksMap: Map<string, Task>;
@@ -96,10 +92,9 @@ interface TaskSidebarProps
   tasks: Task[]; // Длительность активной задачи для превью
   viewMode?: 'compact' | 'full';
   width?: number;
-  onBacklogTaskRef?: (ref: { getTask: (taskId: string) => Task | undefined; removeTask: (taskId: string) => void }) => void;
 }
 
-export function TaskSidebar({
+export const TaskSidebar = observer(function TaskSidebar({
   tasks,
   allSprintTasks,
   qaTasksMap,
@@ -115,26 +110,22 @@ export function TaskSidebar({
   sprintInfo,
   onSprintTaskUpserted,
   onTasksReload,
-  contextMenuBlurOtherCards = false,
-  contextMenuTaskId = null,
   goalTaskIds: externalGoalTaskIds,
   developersManagement,
   onContextMenu,
   selectedBoardId,
   selectedSprintId,
   sprints = [],
-  onBacklogTaskRef,
   hideTasksTab = false,
-  hideBacklogTab = false,
   onAutoAddToSwimlane,
   sidebarDropTargetActive = false,
 }: TaskSidebarProps) {
+  const { sprintPlannerUi } = useRootStore();
   const { setNodeRef, isOver } = useDroppable({
     id: 'sidebar-unassigned',
   });
 
   const { activeTab, mainTab, setActiveTab, setMainTab } = useSidebarTabsState({
-    hideBacklogTab,
     hideTasksTab,
   });
 
@@ -179,32 +170,20 @@ export function TaskSidebar({
   const qaTasksCount = qaTasks.length;
   const allTasksCount = allTasks.length;
 
-  const backlogManagement = useBacklogManagement({
-    selectedBoardId,
-    mainTab,
-    statusFilter,
-    nameFilter,
-    goalTaskIds,
-    onBacklogTaskRef,
-  });
-
   const tasksToGroup = resolveSidebarTasksToGroup({
     activeTab,
     allTasks,
-    backlogTasks: backlogManagement.filteredBacklogTasks,
     devTasks,
     invalidTasks,
     mainTab,
     qaTasks,
   });
 
-  const developersForGrouping = mainTab === 'backlog' ? backlogManagement.backlogDevelopers : developers;
-
   // Группируем задачи используя хук
   const { groupedTasks, groupKeys } = useTaskGrouping({
     tasks: tasksToGroup,
     groupBy,
-    developers: developersForGrouping,
+    developers,
     sortedDevelopers: developersManagement?.sortedDevelopers,
   });
 
@@ -217,10 +196,10 @@ export function TaskSidebar({
     assigneeFilterActive: appliedAssigneeIds.size > 0,
     assigneeIds,
     assigneePeople,
-    backlog: backlogManagement,
     canEdit,
-    contextMenuBlurOtherCards,
-    contextMenuTaskId,
+    // Меню — из стора: сайдбар перерисуется при открытии и закрытии меню, слои выше — нет.
+    contextMenuBlurOtherCards: sprintPlannerUi.contextMenuBlurOtherCards,
+    contextMenuTaskId: sprintPlannerUi.contextMenuTaskId,
     developers,
     devTasksCount,
     goalsTasks: allSprintTasks ?? tasks,
@@ -228,7 +207,6 @@ export function TaskSidebar({
     groupBy,
     groupedTasks,
     groupKeys,
-    hideBacklogTab,
     hideTasksTab,
     invalidTasks,
     mainTab,
@@ -263,7 +241,6 @@ export function TaskSidebar({
     allTasksCount,
     checklistDone,
     checklistTotal,
-    hideBacklogTab,
     hideTasksTab,
     invalidTasksCount: invalidTasks.length,
     sidebarTabsSettings,
@@ -277,7 +254,6 @@ export function TaskSidebar({
         className="relative flex h-full min-h-0 flex-col"
       >
         <SidebarTabContent
-          hideBacklogTab={hideBacklogTab}
           mainTab={mainTab}
         />
         <div className={`absolute inset-x-0 top-0 z-20 ${FLOATING_TOOLBAR_GLASS}`}>
@@ -290,5 +266,4 @@ export function TaskSidebar({
       </div>
     </TaskSidebarContext.Provider>
   );
-}
-
+});
