@@ -20,6 +20,8 @@ import {
   isInlineNoteCreateDraft,
 } from './taskLayerPlanSegmentItemHelpers';
 
+const EMPTY_EXCLUDED_ISSUE_KEYS: ReadonlySet<string> = new Set();
+
 function isQuickAddDraftTask(task: Task): boolean {
   return task.isLocalTask === true && parseSwimlaneCommentTaskId(task.id) == null;
 }
@@ -44,27 +46,8 @@ function invokeOptionalAsync(handler: (() => Promise<void> | void) | undefined):
   }
 }
 
-/** Поля сегмента + обработчики и опции быстрого добавления из `QuickAddController`. */
-interface QuickAddMenuInput
-  extends Pick<
-      QuickAddController,
-      | 'onCancelQuickAddDraft'
-      | 'onPasteQuickAddNote'
-      | 'onQuickAddDraftAssigneeChange'
-      | 'onQuickAddDraftCommentColorChange'
-      | 'onQuickAddDraftImageUrlChange'
-      | 'onQuickAddDraftKindChange'
-      | 'onQuickAddDraftParentChange'
-      | 'onQuickAddDraftQueueChange'
-      | 'onQuickAddDraftTitleChange'
-      | 'onQuickAddDraftTypeChange'
-      | 'onSelectExistingQuickAddDraft'
-      | 'onSubmitQuickAddDraft'
-      | 'quickAddBoardId'
-      | 'quickAddExcludedIssueKeys'
-      | 'quickAddParentSelectOptions'
-      | 'quickAddQueueOptions'
-    > {
+/** Поля сегмента и срез быстрого добавления (`QuickAddController`) целиком. */
+interface QuickAddMenuInput {
   availabilityStartDate?: string;
   developers?: Developer[];
   draftIssueType: string;
@@ -74,6 +57,8 @@ interface QuickAddMenuInput
   laneAssigneeId?: string;
   noteComposer?: SprintPlannerNoteComposerState | null;
   planSegmentsLength: number;
+  /** Без быстрого добавления (демо, тесты) — пустой объект. */
+  quickAdd: Partial<QuickAddController>;
   segIdx: number;
   segmentEditorActive: boolean;
   task: Task;
@@ -83,8 +68,8 @@ function canShowQuickAddOnSegment(input: QuickAddMenuInput): boolean {
   return (
     input.segIdx === input.planSegmentsLength - 1 &&
     !input.segmentEditorActive &&
-    input.quickAddBoardId != null &&
-    input.quickAddQueueOptions.length > 0 &&
+    input.quickAdd.quickAddBoardId != null &&
+    (input.quickAdd.quickAddQueueOptions?.length ?? 0) > 0 &&
     Boolean(input.draftQueueKey) &&
     !input.isQuickAddSubmitting
   );
@@ -143,10 +128,11 @@ function shouldShowQuickAddAssigneeSelect(
 function buildQuickAddMenuProps(
   input: QuickAddMenuInput & { lockedMode?: SwimlaneQuickAddMenuProps['lockedMode'] }
 ): Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting'> | undefined {
-  if (input.quickAddBoardId == null) {
+  const { quickAdd } = input;
+  if (quickAdd.quickAddBoardId == null) {
     return undefined;
   }
-  const pasteNote = input.onPasteQuickAddNote;
+  const pasteNote = quickAdd.onPasteQuickAddNote;
   const laneAssigneeId = input.laneAssigneeId ?? input.task.assignee;
   return {
     assigneeId: resolveQuickAddPersonAssigneeId(input.task.assignee, input.developers),
@@ -161,41 +147,41 @@ function buildQuickAddMenuProps(
       input.lockedMode
     ),
     availabilityStartDate: input.availabilityStartDate,
-    boardId: input.quickAddBoardId,
-    excludedIssueKeys: input.quickAddExcludedIssueKeys,
+    boardId: quickAdd.quickAddBoardId,
+    excludedIssueKeys: quickAdd.quickAddExcludedIssueKeys ?? EMPTY_EXCLUDED_ISSUE_KEYS,
     issueType: input.draftIssueType,
     lockedMode: input.lockedMode,
     parentKey: input.draftParentKey,
     parentSelectOptions: withCurrentQuickAddParentOption(
-      input.quickAddParentSelectOptions,
+      quickAdd.quickAddParentSelectOptions ?? [],
       input.task.parent,
       buildFeatureDraftRowNamesById(
         (input.developers ?? []).map((row) => ({ id: row.id, name: row.name }))
       )
     ),
     queueKey: input.draftQueueKey,
-    queueOptions: input.quickAddQueueOptions,
+    queueOptions: quickAdd.quickAddQueueOptions ?? [],
     taskId: input.task.id,
     title: input.task.name ?? '',
     commentColor: input.task.stickyNoteColor,
     draftKind: quickAddDraftKind(input.task.localDraftKind),
     imageUrl: input.task.imageUrl,
-    onCancel: () => input.onCancelQuickAddDraft?.(input.task.id),
+    onCancel: () => quickAdd.onCancelQuickAddDraft?.(input.task.id),
     onCommentColorChange: (color) =>
-      input.onQuickAddDraftCommentColorChange?.(input.task.id, color),
+      quickAdd.onQuickAddDraftCommentColorChange?.(input.task.id, color),
     onCreate: (draftTitle, fields) =>
-      invokeOptionalAsync(() => input.onSubmitQuickAddDraft?.(input.task.id, draftTitle, fields)),
-    onDraftKindChange: (kind) => input.onQuickAddDraftKindChange?.(input.task.id, kind),
-    onImageUrlChange: (url) => input.onQuickAddDraftImageUrlChange?.(input.task.id, url),
-    onIssueTypeChange: (type) => input.onQuickAddDraftTypeChange?.(input.task.id, type),
+      invokeOptionalAsync(() => quickAdd.onSubmitQuickAddDraft?.(input.task.id, draftTitle, fields)),
+    onDraftKindChange: (kind) => quickAdd.onQuickAddDraftKindChange?.(input.task.id, kind),
+    onImageUrlChange: (url) => quickAdd.onQuickAddDraftImageUrlChange?.(input.task.id, url),
+    onIssueTypeChange: (type) => quickAdd.onQuickAddDraftTypeChange?.(input.task.id, type),
     onAssigneeChange: (assigneeId) =>
-      input.onQuickAddDraftAssigneeChange?.(input.task.id, assigneeId),
-    onParentChange: (parentKey) => input.onQuickAddDraftParentChange?.(input.task.id, parentKey),
+      quickAdd.onQuickAddDraftAssigneeChange?.(input.task.id, assigneeId),
+    onParentChange: (parentKey) => quickAdd.onQuickAddDraftParentChange?.(input.task.id, parentKey),
     onPasteNote: pasteNote ? () => pasteNote(input.task.id) : undefined,
-    onQueueChange: (queueKey) => input.onQuickAddDraftQueueChange?.(input.task.id, queueKey),
+    onQueueChange: (queueKey) => quickAdd.onQuickAddDraftQueueChange?.(input.task.id, queueKey),
     onSelectExisting: (selectedTask) =>
-      invokeOptionalAsync(() => input.onSelectExistingQuickAddDraft?.(input.task.id, selectedTask)),
-    onTitleChange: (value) => input.onQuickAddDraftTitleChange?.(input.task.id, value),
+      invokeOptionalAsync(() => quickAdd.onSelectExistingQuickAddDraft?.(input.task.id, selectedTask)),
+    onTitleChange: (value) => quickAdd.onQuickAddDraftTitleChange?.(input.task.id, value),
   };
 }
 

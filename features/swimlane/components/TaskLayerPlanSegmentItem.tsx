@@ -56,7 +56,6 @@ import { buildTaskLayerPlanSegmentQuickAddMenu } from './taskLayerPlanSegmentQui
 /** Без быстрого добавления (демо-экраны, тесты): все поля пустые. */
 const NO_QUICK_ADD: Partial<QuickAddController> = {};
 
-const EMPTY_QUICK_ADD_EXCLUDED_ISSUE_KEYS = new Set<string>();
 const EMPTY_TASK_LINKS: Array<{ fromTaskId: string; toTaskId: string; id: string }> = [];
 
 interface TaskLayerPlanSegmentItemProps {
@@ -88,27 +87,17 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   segmentEditorActive,
   swimlaneRowBandStyle,
 }: TaskLayerPlanSegmentItemProps) {
+  // Срез целиком уходит в меню быстрого добавления; здесь — только то, что нужно редакторам черновиков.
+  const quickAdd = props.quickAdd ?? NO_QUICK_ADD;
   const {
     onCancelQuickAddDraft,
-    onPasteQuickAddNote,
-    onQuickAddDraftAssigneeChange,
     onQuickAddDraftCommentColorChange,
     onQuickAddDraftImageUrlChange,
-    onQuickAddDraftKindChange,
-    onQuickAddDraftParentChange,
-    onQuickAddDraftQueueChange,
     onQuickAddDraftTitleChange,
-    onQuickAddDraftTypeChange,
-    onSelectExistingQuickAddDraft,
     onSubmitQuickAddCommentDraft,
     onSubmitQuickAddDiagramDraft,
     onSubmitQuickAddImageDraft,
-    onSubmitQuickAddDraft,
-    quickAddBoardId = null,
-    quickAddExcludedIssueKeys,
-    quickAddParentSelectOptions = [],
-    quickAddQueueOptions = [],
-  } = props.quickAdd ?? NO_QUICK_ADD;
+  } = quickAdd;
   const onCommentCardRowLayoutUpdate = props.commentActions?.onCommentCardRowLayoutUpdate;
   const {
     developers,
@@ -264,7 +253,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     task.id,
   ]);
   const { getQueueByBoardId } = useBoards();
-  const teamQueueKey = getQueueByBoardId(quickAddBoardId);
+  const teamQueueKey = getQueueByBoardId(quickAdd.quickAddBoardId ?? null);
 
   const renderState = resolveTaskLayerPlanSegmentRenderState({
     activeDraggableId,
@@ -311,29 +300,14 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     draftQueueKey: resolveQuickAddDraftQueueKey(
       task.trackerQueue,
       teamQueueKey,
-      quickAddQueueOptions[0]?.key
+      quickAdd.quickAddQueueOptions?.[0]?.key
     ),
     isQuickAddSubmitting: renderState.isQuickAddSubmitting,
     noteComposer,
-    onCancelQuickAddDraft,
-    onPasteQuickAddNote,
-    onQuickAddDraftAssigneeChange,
-    onQuickAddDraftCommentColorChange,
-    onQuickAddDraftImageUrlChange,
-    onQuickAddDraftKindChange,
-    onQuickAddDraftParentChange,
-    onQuickAddDraftQueueChange,
-    onQuickAddDraftTitleChange,
-    onQuickAddDraftTypeChange,
-    onSelectExistingQuickAddDraft,
-    onSubmitQuickAddDraft,
     developers,
     laneAssigneeId: position.assignee,
     planSegmentsLength: planSegments.length,
-    quickAddBoardId,
-    quickAddExcludedIssueKeys: quickAddExcludedIssueKeys ?? EMPTY_QUICK_ADD_EXCLUDED_ISSUE_KEYS,
-    quickAddParentSelectOptions,
-    quickAddQueueOptions,
+    quickAdd,
     segIdx,
     segmentEditorActive,
     task,
@@ -430,7 +404,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
           pointerEvents: renderState.hideSegWhileDragging ? 'none' : undefined,
           transition: 'opacity 0.2s ease',
         }}
-        swimlaneBarDurationParts={seg.duration}
         swimlaneDragActive={isDraggingTask}
         swimlaneSegmentBadge={renderState.segmentBadge}
         swimlaneSegmentSecondary={renderState.segmentSecondary}

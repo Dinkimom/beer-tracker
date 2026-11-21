@@ -1,3 +1,4 @@
+import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { Task } from '@/types';
 
 import { describe, expect, it, vi } from 'vitest';
@@ -22,23 +23,32 @@ function draftTask(overrides?: Partial<Task>): Task {
   };
 }
 
-function buildMenu(
-  overrides?: Partial<Parameters<typeof buildTaskLayerPlanSegmentQuickAddMenu>[0]>
-) {
+type MenuInput = Parameters<typeof buildTaskLayerPlanSegmentQuickAddMenu>[0];
+
+/** Поля сегмента и поля среза `quickAdd` в одном объекте: `on*` и `quickAdd*` уходят в срез. */
+function buildMenu(overrides: Partial<Omit<MenuInput, 'quickAdd'> & QuickAddController> = {}) {
+  const quickAdd: Partial<QuickAddController> = {
+    quickAddBoardId: 1,
+    quickAddExcludedIssueKeys: new Set(),
+    quickAddParentSelectOptions: [],
+    quickAddQueueOptions: [{ key: 'QUEUE', name: 'Queue' }],
+  };
+  const segment: Partial<MenuInput> = {};
+  for (const [key, value] of Object.entries(overrides)) {
+    const target = (key.startsWith('on') || key.startsWith('quickAdd') ? quickAdd : segment) as Record<string, unknown>;
+    target[key] = value;
+  }
   return buildTaskLayerPlanSegmentQuickAddMenu({
     draftIssueType: 'task',
     draftParentKey: '',
     draftQueueKey: 'QUEUE',
     isQuickAddSubmitting: false,
     planSegmentsLength: 1,
-    quickAddBoardId: 1,
-    quickAddExcludedIssueKeys: new Set(),
-    quickAddParentSelectOptions: [],
-    quickAddQueueOptions: [{ key: 'QUEUE', name: 'Queue' }],
+    quickAdd,
     segIdx: 0,
     segmentEditorActive: false,
     task: draftTask(),
-    ...overrides,
+    ...segment,
   });
 }
 

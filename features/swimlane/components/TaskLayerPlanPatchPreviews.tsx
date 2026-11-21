@@ -135,7 +135,6 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
                 taskBandTotalHeight,
                 layerHeight
               )}
-              swimlaneBarDurationParts={bar.duration}
               swimlaneSegmentSecondary={!isPrimary}
               swimlaneTimelineTotalParts={timelineTotalParts}
               task={taskForPlanPatchPreview(

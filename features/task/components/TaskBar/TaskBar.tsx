@@ -101,7 +101,6 @@ interface TaskBarProps {
     taskBandTotalHeight: number;
   };
   style?: React.CSSProperties;
-  swimlaneBarDurationParts?: number;
   swimlaneDragActive?: boolean;
   swimlaneSegmentBadge?: { index: number; total: number } | null;
   swimlaneSegmentSecondary?: boolean;
@@ -152,7 +151,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
   onTaskHover,
   onContextMenu,
   stickyNoteCardRowResize,
-  swimlaneBarDurationParts,
   swimlaneSegmentBadge = null,
   swimlaneDragActive,
   swimlaneTimelineTotalParts = WORKING_DAYS * getPartsPerDay(),
@@ -223,7 +221,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
     qaTasksMap,
     quickAddMenu,
     stickyNoteCardRowResize,
-    swimlaneBarDurationParts,
+    swimlaneBarDurationParts: duration,
     swimlaneDragActive,
     swimlaneTimelineTotalParts,
     task,
@@ -374,7 +372,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
           selectedSprintId,
           setClickStartPos,
           setNodeRef,
-          swimlaneBarDurationParts,
+          swimlaneBarDurationParts: duration,
           taskPositions,
         }}
         chrome={{
@@ -389,7 +387,7 @@ const TaskBarSurface = observer(function TaskBarSurface({
           verticalResize,
         }}
         cornerStyle={cornerStyle}
-        currentDurationParts={swimlaneBarDurationParts ?? duration}
+        currentDurationParts={duration}
         effectiveIsDragging={effectiveIsDragging}
         effectiveOpacity={effectiveOpacity * planPatchChrome.opacityFactor}
         hideSourceForOverlay={hideSourceForOverlay}
@@ -450,39 +448,12 @@ const TaskBarSurface = observer(function TaskBarSurface({
       <TaskBarDraftSaveButton noteEditor={inlineTitleEditor} onNoteExpand={noteFocusMode.onNoteExpand} />
       {noteFocusMode.focusEditor}
       {quickAddMenu && !quickAddSubmitting ? (
+        // quickAddMenu — пропсы меню без якоря и флага отправки: собраны в сегменте, отдаются как есть.
         <SwimlaneQuickAddMenu
           key={htmlAnchorId}
+          {...quickAddMenu}
           anchorId={htmlAnchorId}
-          assigneeId={quickAddMenu.assigneeId}
-          availabilityStartDate={quickAddMenu.availabilityStartDate}
-          boardId={quickAddMenu.boardId}
-          commentColor={quickAddMenu.commentColor}
-          draftKind={quickAddMenu.draftKind}
-          excludedIssueKeys={quickAddMenu.excludedIssueKeys}
-          imageUrl={quickAddMenu.imageUrl}
           isSubmitting={quickAddSubmitting}
-          issueType={quickAddMenu.issueType}
-          lockedMode={quickAddMenu.lockedMode}
-          parentKey={quickAddMenu.parentKey}
-          parentSelectOptions={quickAddMenu.parentSelectOptions}
-          queueKey={quickAddMenu.queueKey}
-          queueOptions={quickAddMenu.queueOptions}
-          requiresAssignee={quickAddMenu.requiresAssignee}
-          showAssigneeSelect={quickAddMenu.showAssigneeSelect}
-          taskId={quickAddMenu.taskId}
-          title={quickAddMenu.title}
-          onCancel={quickAddMenu.onCancel}
-          onCommentColorChange={quickAddMenu.onCommentColorChange}
-          onCreate={quickAddMenu.onCreate}
-          onCreateAvailability={quickAddMenu.onCreateAvailability}
-          onDraftKindChange={quickAddMenu.onDraftKindChange}
-          onImageUrlChange={quickAddMenu.onImageUrlChange}
-          onIssueTypeChange={quickAddMenu.onIssueTypeChange}
-          onParentChange={quickAddMenu.onParentChange}
-          onPasteNote={quickAddMenu.onPasteNote}
-          onQueueChange={quickAddMenu.onQueueChange}
-          onSelectExisting={quickAddMenu.onSelectExisting}
-          onTitleChange={quickAddMenu.onTitleChange}
         />
       ) : null}
     </div>
