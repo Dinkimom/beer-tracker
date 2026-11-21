@@ -23,6 +23,7 @@ import {
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { findOrganizationById } from '@/lib/organizations';
 import { DEFAULT_PLANNER_TIMELINE_SCALE, readPlannerTimelineScale } from '@/lib/plannerTimelineScale';
+import { boardOwnSprints } from '@/lib/sprints/boardOwnSprints';
 import { loadRoleResolutionContext } from '@/lib/sprints/sprintContextTeamMembers';
 import { listTaskCardSpans } from '@/lib/sprints/taskPositionsRepository';
 import { enrichPlannerTeamMembersFromTracker, fetchAllTeamMembersForOrg, listTeams } from '@/lib/staffTeams';
@@ -117,8 +118,7 @@ async function loadBoardSprints(issueTracker: IssueTrackerProviderClient, boardI
  */
 function sprintsInQuarter(sprints: readonly SprintListItem[], boardId: number, ref: QuarterRef): QuarterlyPlanSprint[] {
   const weeks = buildQuarterWeeks(ref);
-  return sprints
-    .filter((sprint) => !sprint.board?.id || sprint.board.id === String(boardId))
+  return boardOwnSprints(sprints, boardId)
     .filter((sprint) => resolveWeekSpan(weeks, sprint.startDate, sprint.endDate) !== null)
     .map((sprint) => ({ endDate: sprint.endDate, id: sprint.id, name: sprint.name, startDate: sprint.startDate }))
     .sort((a, b) => a.startDate.localeCompare(b.startDate));

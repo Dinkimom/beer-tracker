@@ -5,6 +5,7 @@ import { TRACKER_UPSTREAM_FORWARD_STATUSES, handleApiError } from '@/lib/api-err
 import { apiCache, cacheKeys } from '@/lib/cache';
 import { jsonGzipResponse } from '@/lib/http/jsonGzipResponse';
 import { getIssueTrackerProviderClientFromRequest } from '@/lib/issueTrackerProvider/clientFactory';
+import { boardOwnSprints } from '@/lib/sprints/boardOwnSprints';
 import { buildCreateSprintApiResponse } from '@/lib/sprints/sprintTrackerRouteJson';
 import { BoardIdQuerySchema, formatValidationError, validateRequest } from '@/lib/validation';
 
@@ -52,7 +53,8 @@ export async function GET(request: Request) {
     const issueTracker = await getIssueTrackerProviderClientFromRequest(request);
 
     const data = await issueTracker.listSprints(Number(validatedBoardId));
-    const sprints = Array.isArray(data) ? data : [];
+    // Чужой спринт с тем же именем в селекторе не отличить, а выбор по умолчанию мог взять его (K9).
+    const sprints = Array.isArray(data) ? boardOwnSprints(data, Number(validatedBoardId)) : [];
 
     // Не кэшируем пустой список — иначе кратковременный сбой upstream «залипает» на TTL.
     if (sprints.length > 0) {
