@@ -2,6 +2,7 @@
  * Хук для управления QA задачами: размещение в swimlane, создание связей
  */
 
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
 import type { Task, TaskLink, TaskPosition } from '@/types';
 import type { Developer } from '@/types';
 
@@ -14,14 +15,14 @@ import { DELAYS } from '@/utils/constants';
 import { calculateQATaskLinkAnchors, placeQaPhase } from '../utils/qaTaskPlacement';
 
 interface UseQATaskManagementProps {
-  filteredTaskLinks: TaskLink[];
+  /** Связи dev → QA — список модели доски. */
+  board: SprintBoard;
   filteredTaskPositions: Map<string, TaskPosition>;
   selectedSprintId: number | null;
   sortedDevelopers: Developer[];
   /** Рабочие дни таймлайна спринта: QA-фаза не выходит за последний слот. */
   sprintTimelineWorkingDays: number;
   taskPositions: Map<string, TaskPosition>;
-  saveLink: (link: TaskLink) => Promise<void>;
   /** Персист фазы QA (кнопка + на dev-карточке и др.) */
   savePosition?: (
     position: TaskPosition,
@@ -29,7 +30,6 @@ interface UseQATaskManagementProps {
     devTaskKey?: string,
     immediate?: boolean
   ) => Promise<void>;
-  setTaskLinks: (updater: (prev: TaskLink[]) => TaskLink[]) => void;
   setTaskPositions: (
     updater: (prev: Map<string, TaskPosition>) => Map<string, TaskPosition>,
     options?: { recordHistory?: boolean }
@@ -41,16 +41,14 @@ interface UseQATaskManagementProps {
  * Хук для управления QA задачами
  */
 export function useQATaskManagement({
+  board,
   taskPositions,
   filteredTaskPositions,
-  filteredTaskLinks,
   sortedDevelopers,
   selectedSprintId,
   savePosition,
   sprintTimelineWorkingDays,
   setTaskPositions,
-  setTaskLinks,
-  saveLink,
   updateXarrow,
 }: UseQATaskManagementProps) {
   const timelineTotalCells = Math.max(1, sprintTimelineWorkingDays) * getPartsPerDay();
@@ -105,7 +103,7 @@ export function useQATaskManagement({
 
       // Связь — после того как позиции обновятся
       setTimeout(() => {
-        const existingLink = filteredTaskLinks.find(
+        const existingLink = board.links.items.find(
           (link: TaskLink) => link.fromTaskId === devTask.id && link.toTaskId === qaTask.id
         );
 
@@ -118,9 +116,9 @@ export function useQATaskManagement({
             toAnchor: anchors.toAnchor,
           };
 
-          setTaskLinks((prev) => [...prev, newLink]);
+          board.links.setWithSave((prev) => [...prev, newLink]);
           if (selectedSprintId) {
-            saveLink(newLink).catch((error) => {
+            board.savePlannerLink(newLink).catch((error) => {
               console.error('Error saving link:', error);
             });
           }
@@ -132,15 +130,13 @@ export function useQATaskManagement({
       return true;
     },
     [
+      board,
       filteredTaskPositions,
-      filteredTaskLinks,
       sortedDevelopers,
       selectedSprintId,
       taskPositions,
       timelineTotalCells,
       setTaskPositions,
-      setTaskLinks,
-      saveLink,
       savePosition,
       updateXarrow,
     ]

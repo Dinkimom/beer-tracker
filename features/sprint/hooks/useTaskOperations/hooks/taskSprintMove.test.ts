@@ -2,7 +2,7 @@ import type { TaskLink } from '@/types';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { deleteLinksAfterMove } from './useTaskSprintOperationsDeleteHelpers';
+import { deleteLinksAfterMove } from './taskSprintMove';
 
 const NOTE = 'comment:6f1c2a5e-8b1d-4c3e-9f0a-1b2c3d4e5f60';
 

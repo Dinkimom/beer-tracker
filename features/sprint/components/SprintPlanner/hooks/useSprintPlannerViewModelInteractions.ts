@@ -31,7 +31,6 @@ import {
 import { mergePlannerAndTrackerTaskLinks } from '@/lib/planner/trackerLinkOverlay';
 
 import { useDevelopersManagement } from '../../../hooks/useDevelopersManagement';
-import { useKeyboardAndMouseHandlers } from '../../../hooks/useKeyboardAndMouseHandlers';
 import { useTaskOperations } from '../../../hooks/useTaskOperations';
 
 import { useFeatureLanePlannerDrag } from './useFeatureLanePlannerDrag';
@@ -113,10 +112,6 @@ export function useSprintPlannerViewModelInteractions({
     tasksMap,
     viewMode,
   } = state;
-  // Действия со связями и заметками — у списков модели доски.
-  const { delete: deleteLink, setWithSave: setTaskLinks } = board.links;
-  const { setWithSave: setComments } = board.comments;
-  const saveLink = board.savePlannerLink;
   const { swimlaneImagesVisible, swimlaneNotesVisible, syncAssignees, syncEstimates } = preferences;
   const commentsVisible = swimlaneNotesVisible || swimlaneImagesVisible;
   const { sprintTimelineWorkingDays } = timeline;
@@ -155,31 +150,25 @@ export function useSprintPlannerViewModelInteractions({
     return mergePlannerAndTrackerTaskLinks(plannerOnly, trackerTaskLinks);
   }, [comments, taskLinks, tasksMapWithComments, trackerTaskLinks]);
   const taskOperations = useTaskOperations({
-    tasks,
-    taskPositions,
-    taskLinks,
-    selectedSprintId,
-    sprints,
-    setTasks,
-    setTaskPositions,
-    setTaskLinks,
+    board,
     deletePosition,
-    deleteLink,
     onTasksReload,
+    selectedSprintId,
+    setTaskPositions,
+    setTasks,
+    sprints,
     updateXarrow: debouncedUpdateXarrow,
   });
 
   const qaTaskManagement = useQATaskManagement({
+    board,
     taskPositions,
     filteredTaskPositions,
-    filteredTaskLinks,
     sortedDevelopers: developersManagement.sortedDevelopers,
     selectedSprintId,
     savePosition,
     sprintTimelineWorkingDays,
     setTaskPositions,
-    setTaskLinks,
-    saveLink,
     updateXarrow: debouncedUpdateXarrow,
   });
 
@@ -202,15 +191,14 @@ export function useSprintPlannerViewModelInteractions({
     handleContextMenuAssigneeSelect,
     onRequestQaEngineerPicker,
   } = useSprintPlannerAssigneePicker({
+    board,
     developers,
     filteredTaskPositions,
     qaTaskManagement,
     savePosition,
-    setComments,
     setTasks,
     syncAssignees,
     taskPositions,
-    tasks,
   });
 
   const resetDragStateRef = useRef<(() => void) | null>(null);
@@ -321,16 +309,6 @@ export function useSprintPlannerViewModelInteractions({
       resetDragStateRef.current = null;
     };
   }, [dragAndDrop.resetDragState]);
-
-  useKeyboardAndMouseHandlers({
-    filteredTaskPositions,
-    selectedSprintId,
-    setTaskPositions,
-    setTaskLinks,
-    deletePosition,
-    deleteLink,
-    filteredTaskLinks,
-  });
 
   const [isDragFromSidebar, setIsDragFromSidebar] = useState(false);
   const activeTask = useSprintPlannerActiveDragTask({

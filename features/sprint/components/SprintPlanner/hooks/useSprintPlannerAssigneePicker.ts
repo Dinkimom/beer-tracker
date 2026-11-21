@@ -1,4 +1,5 @@
-import type { Comment, Developer, Task, TaskPosition } from '@/types';
+import type { SprintBoard } from '@/features/sprint/model/SprintBoard';
+import type { Developer, Task, TaskPosition } from '@/types';
 
 import { useCallback, useState } from 'react';
 
@@ -23,6 +24,8 @@ export type AssigneePickerState =
     };
 
 interface UseSprintPlannerAssigneePickerParams {
+  /** Задачи и заметки — из модели доски в момент выбора. */
+  board: SprintBoard;
   developers: Developer[];
   filteredTaskPositions: Map<string, TaskPosition>;
   qaTaskManagement: {
@@ -32,11 +35,9 @@ interface UseSprintPlannerAssigneePickerParams {
       devTaskPosition: TaskPosition
     ) => boolean;
   };
-  setComments: React.Dispatch<React.SetStateAction<Comment[]>>;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   syncAssignees: boolean;
   taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
   savePosition: (
     position: TaskPosition,
     isQa: boolean,
@@ -47,15 +48,14 @@ interface UseSprintPlannerAssigneePickerParams {
 }
 
 export function useSprintPlannerAssigneePicker({
+  board,
   developers,
   filteredTaskPositions,
   qaTaskManagement,
   savePosition,
-  setComments,
   setTasks,
   syncAssignees,
   taskPositions,
-  tasks,
 }: UseSprintPlannerAssigneePickerParams) {
   const [assigneePicker, setAssigneePicker] = useState<AssigneePickerState | null>(null);
 
@@ -77,18 +77,18 @@ export function useSprintPlannerAssigneePicker({
         developers,
         position,
         savePosition,
-        setComments,
+        setComments: board.comments.setWithSave,
         setTasks,
         syncAssignees,
         task,
       });
     },
-    [developers, savePosition, setComments, setTasks, syncAssignees, taskPositions]
+    [board, developers, savePosition, setTasks, syncAssignees, taskPositions]
   );
 
   const onRequestQaEngineerPicker = useCallback(
     (devTaskId: string, anchorRect: DOMRect) => {
-      const devTask = tasks.find((t) => t.id === devTaskId);
+      const devTask = board.tasks.find((t) => t.id === devTaskId);
       if (!devTask) return;
       setAssigneePicker({
         mode: 'qaEngineerQuickAdd',
@@ -97,7 +97,7 @@ export function useSprintPlannerAssigneePicker({
         taskName: devTask.name || 'Без названия',
       });
     },
-    [tasks]
+    [board]
   );
 
   const handleAssigneeSelect = useCallback(
@@ -114,7 +114,7 @@ export function useSprintPlannerAssigneePicker({
           setAssigneePicker,
           setTasks,
           taskPositions,
-          tasks,
+          tasks: board.tasks,
         });
         return;
       }
@@ -124,7 +124,7 @@ export function useSprintPlannerAssigneePicker({
         developers,
         position: assigneePicker.position,
         savePosition,
-        setComments,
+        setComments: board.comments.setWithSave,
         setTasks,
         syncAssignees,
         task: assigneePicker.task,
@@ -133,15 +133,14 @@ export function useSprintPlannerAssigneePicker({
     },
     [
       assigneePicker,
+      board,
       developers,
       filteredTaskPositions,
       qaTaskManagement,
       savePosition,
-      setComments,
       setTasks,
       syncAssignees,
       taskPositions,
-      tasks,
     ]
   );
 
