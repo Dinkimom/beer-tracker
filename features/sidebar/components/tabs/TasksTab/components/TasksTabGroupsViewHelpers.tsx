@@ -36,7 +36,6 @@ interface RenderTasksTabGroupsContentParams {
   groupKeys: string[];
   insertIndex: number | null;
   qaTasksMap: Map<string, Task>;
-  selectedSprintId?: number | null;
   sidebarDropTargetActive: boolean;
   viewMode?: LayoutViewMode;
   visibleTaskOrdinal: { value: number };
@@ -68,7 +67,6 @@ export function renderTasksTabGroupsContent(params: RenderTasksTabGroupsContentP
           qaTasksMap: params.qaTasksMap,
           registerTaskRowRef: params.registerTaskRowRef,
           renderDropSlot: params.renderDropSlot,
-          selectedSprintId: params.selectedSprintId,
           sidebarDropTargetActive: params.sidebarDropTargetActive,
           t: params.t,
           viewMode: params.viewMode,

@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskCardProps } from '@/features/task/components/TaskCard/TaskCard';
+import type { TaskCardProps, TaskCardSwimlaneProps } from '@/features/task/components/TaskCard/TaskCard';
 import type { Task } from '@/types';
 import type { DraggableAttributes } from '@dnd-kit/core';
 
@@ -14,10 +14,10 @@ import { buildTaskBarMouseUpHandler } from './taskBarOpacityLayerHandlers';
 import { shouldOpenPhotoLightboxAfterPointerUp } from './taskBarPhotoGestureHelpers';
 
 /** Поля `TaskCard`, которые карточка дорожки отдаёт как есть: слой их не читает. */
-type TaskCardPassThrough = Pick<
-  TaskCardProps,
-  'assigneeName' | 'developers' | 'inlineTitleEditor' | 'isNotificationFocused' | 'layoutDuration' | 'linkMode' | 'onCommentUpdate' | 'onPhotoClick' | 'selectedSprintId' | 'swimlaneBarDurationParts' | 'taskPosition' | 'widthPercent'
->;
+type TaskCardPassThrough = Pick<TaskCardProps, 'assigneeName' | 'developers' | 'swimlaneBarDurationParts' | 'widthPercent'> & {
+  /** Режим связей и превью ресайза слой подставляет сам. */
+  swimlane: Omit<TaskCardSwimlaneProps, 'linkingActive' | 'resizePreviewDuration'>;
+};
 
 /** Своё у слоя — поведение указателя: клик, жест фото, ресайз, перетаскивание, меню в режиме связей. */
 export interface TaskBarOpacityLayerCardProps {
@@ -85,8 +85,11 @@ export const TaskBarOpacityLayerCard = observer(function TaskBarOpacityLayerCard
       isLocalTask={isDraftTask}
       isQATask={isQATask}
       isResizing={resize.isResizing}
-      linkingActive={isLinking}
-      resizePreviewDuration={resize.resizePreviewDuration}
+      swimlane={{
+        ...taskCard.swimlane,
+        linkingActive: isLinking,
+        resizePreviewDuration: resize.resizePreviewDuration,
+      }}
       task={task}
       variant="swimlane"
       {...dragActivationProps}

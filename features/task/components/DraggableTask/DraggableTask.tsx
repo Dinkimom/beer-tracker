@@ -16,7 +16,6 @@ interface DraggableTaskProps {
   developers: Developer[];
   isQATask?: boolean;
   qaTasksMap?: Map<string, Task>;
-  selectedSprintId?: number | null;
   task: Task;
   viewMode?: 'compact' | 'full';
   onAutoAddToSwimlane?: (task: Task) => void;
@@ -32,7 +31,6 @@ export const DraggableTask = observer(function DraggableTask({
   activeTaskId,
   activeTaskDuration,
   viewMode,
-  selectedSprintId,
   onAutoAddToSwimlane,
 }: DraggableTaskProps) {
   const presenceLocked = useSprintCardPresenceLocked(task.id);
@@ -66,7 +64,6 @@ export const DraggableTask = observer(function DraggableTask({
         isContextMenuOpen={contextMenu.open}
         isDragging={isDragging}
         isQATask={isQATask}
-        selectedSprintId={selectedSprintId}
         style={style}
         task={task}
         variant="sidebar"

@@ -94,7 +94,6 @@ export function TasksTab() {
           groupKeys={groupKeys}
           groupedTasks={groupedTasks}
           qaTasksMap={qaTasksMap}
-          selectedSprintId={selectedSprintId}
           viewMode={viewMode}
           onAutoAddToSwimlane={onAutoAddToSwimlane}
           onContextMenu={onContextMenu}

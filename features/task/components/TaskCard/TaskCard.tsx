@@ -24,70 +24,76 @@ import { useSprintCardPresenceViewers, useSprintPresenceColorSlots } from './Spr
 import { renderTaskCardBody, renderTaskCardChrome } from './taskCardContentHelpers';
 import { useTaskCardVisualState } from './useTaskCardVisualState';
 
-export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onContextMenu'> {
-  assigneeName?: string;
-  children?: React.ReactNode;
-  developers?: Developer[];
-  dimmedByContextMenu?: boolean;
+/** Поля варианта дорожки — передаёт только карточка свимлейна. */
+export interface TaskCardSwimlaneProps {
   inlineTitleEditor?: {
     onChange: (value: string) => void;
     onSubmit?: () => void;
     value: string;
   };
-  isContextMenuOpen?: boolean;
-  isDragging?: boolean;
-  isLocalTask?: boolean;
   isNotificationFocused?: boolean;
-  isQATask?: boolean;
-  isResizing?: boolean;
-  isSelected?: boolean;
   layoutDuration?: number;
   linkingActive?: boolean;
   linkMode?: 'source' | 'target' | null;
   resizePreviewDuration?: number | null;
-  selectedSprintId?: number | null;
+  taskPosition?: TaskPosition;
+  onCommentUpdate?: (commentId: string, text: string) => void;
+  onPhotoClick?: () => void;
+}
+
+export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onContextMenu'> {
+  assigneeName?: string;
+  children?: React.ReactNode;
+  developers?: Developer[];
+  dimmedByContextMenu?: boolean;
+  isContextMenuOpen?: boolean;
+  isDragging?: boolean;
+  isLocalTask?: boolean;
+  isQATask?: boolean;
+  isResizing?: boolean;
+  isSelected?: boolean;
+  /** Только для `variant="swimlane"`: редактор заголовка, раскладка, ресайз, связи, позиция, заметка и фото. */
+  swimlane?: TaskCardSwimlaneProps;
   swimlaneBarDurationParts?: number;
   task: Task;
-  taskPosition?: TaskPosition;
   variant: TaskCardVariant;
   widthPercent?: number;
   onAutoAddToSwimlane?: (task: Task) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
-  onPhotoClick?: () => void;
 }
 
 export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
   task,
+  swimlane: {
+    inlineTitleEditor,
+    isNotificationFocused = false,
+    layoutDuration,
+    linkingActive = false,
+    linkMode = null,
+    onCommentUpdate,
+    onPhotoClick,
+    resizePreviewDuration,
+    taskPosition,
+  } = {},
   developers = [],
   assigneeName,
   variant,
   widthPercent,
-  inlineTitleEditor,
-  taskPosition,
-  resizePreviewDuration,
   swimlaneBarDurationParts,
   isQATask: explicitIsQATask,
   isDragging = false,
   isResizing = false,
   isSelected = false,
-  isNotificationFocused = false,
   isContextMenuOpen = false,
   dimmedByContextMenu = false,
   isLocalTask = false,
-  linkMode = null,
-  linkingActive = false,
-  layoutDuration,
   className = '',
   style,
   onMouseDown,
   onMouseUp,
   onAutoAddToSwimlane,
-  onCommentUpdate,
   onContextMenu,
-  onPhotoClick,
   children,
-  selectedSprintId: _,
   ...restProps
 }, ref) => {
   const { t } = useI18n();

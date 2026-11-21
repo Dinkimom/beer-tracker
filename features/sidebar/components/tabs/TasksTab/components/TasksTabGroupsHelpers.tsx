@@ -10,7 +10,6 @@ interface RenderTasksTabGroupRowsParams {
   hideDraggedTaskInList: boolean;
   insertIndex: number | null;
   qaTasksMap: Map<string, Task>;
-  selectedSprintId?: number | null;
   sidebarDropTargetActive: boolean;
   tasksInGroup: Task[];
   viewMode?: LayoutViewMode;
@@ -29,7 +28,6 @@ function renderTasksTabTaskRow(params: {
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   qaTasksMap: Map<string, Task>;
   registerTaskRowRef: (taskId: string, element: HTMLDivElement | null) => void;
-  selectedSprintId?: number | null;
   task: Task;
   viewMode?: LayoutViewMode;
 }): ReactNode {
@@ -40,7 +38,6 @@ function renderTasksTabTaskRow(params: {
         activeTaskId={params.activeTaskId}
         developers={params.developers}
         qaTasksMap={params.qaTasksMap}
-        selectedSprintId={params.selectedSprintId}
         task={params.task}
         viewMode={params.viewMode}
         onAutoAddToSwimlane={params.onAutoAddToSwimlane}
@@ -73,7 +70,6 @@ export function renderTasksTabGroupRows(params: RenderTasksTabGroupRowsParams): 
       onContextMenu: params.onContextMenu,
       qaTasksMap: params.qaTasksMap,
       registerTaskRowRef: params.registerTaskRowRef,
-      selectedSprintId: params.selectedSprintId,
       task,
       viewMode: params.viewMode,
     });
