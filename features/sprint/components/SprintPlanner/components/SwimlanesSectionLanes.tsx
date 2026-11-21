@@ -1,13 +1,13 @@
 import type { SwimlanesSectionProps } from './SwimlanesSection.types';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
 import type { OccupancyErrorReason } from '@/lib/planner-timeline';
-import type { Comment, Developer, TaskPosition } from '@/types';
+import type { Comment, Developer, Task, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { Xwrapper } from 'react-xarrows';
 
-import { WORKING_DAYS, ZIndex } from '@/constants';
+import { ZIndex } from '@/constants';
 import { SwimlanePinnedArrowSync } from '@/features/sprint/components/SprintPlanner/components/SwimlanePinnedArrowSync';
 import { FeatureLaneAddRow } from '@/features/sprint/components/SprintPlanner/feature-lanes/FeatureLaneAddRow';
 import {
@@ -17,19 +17,27 @@ import {
   togglePinnedSwimlaneRowId,
 } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionHelpers';
 import {
-  buildSwimlanePropsForDeveloper,
+  buildSwimlaneLaneData,
   resolveSwimlaneActiveTask,
+  type SwimlaneLaneData,
 } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionSwimlanePropsHelpers';
 import { Swimlane } from '@/features/swimlane/components/Swimlane';
 import { TaskArrows } from '@/features/swimlane/components/task-arrows';
 import { PlanPatchScheduleArrows } from '@/features/swimlane/components/task-arrows/PlanPatchScheduleArrows';
 import { PlanPatchSegmentArrows } from '@/features/swimlane/components/task-arrows/PlanPatchSegmentArrows';
 import { SwimlaneXarrowRedrawProvider } from '@/features/swimlane/SwimlaneArrowRedrawContext';
+import { SwimlaneBoardContext } from '@/features/swimlane/SwimlaneBoardContext';
 import {
   useSwimlaneLinksIdleModeStorage,
   useSwimlanePinnedRowIdsStorage,
 } from '@/hooks/useLocalStorage';
 import { taskLinksForOnboardingArrows } from '@/lib/plannerOnboarding/onboardingDemoLane';
+import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
+
+import { useSwimlaneBoardValue } from '../hooks/useSwimlaneBoardValue';
+
+const EMPTY_TASKS: Task[] = [];
+const EMPTY_FACT_SEGMENTS: SwimlaneInProgressFactSegment[] = [];
 
 function useStableElementRefMap() {
   const nodes = useRef(new Map<string, HTMLDivElement>());
@@ -151,99 +159,56 @@ export function SwimlanesSectionLanes({
   const [linksIdleMode] = useSwimlaneLinksIdleModeStorage();
   const arrowTaskLinks = taskLinksForOnboardingArrows(showLinks, section.filteredTaskLinks);
 
-  const swimlanePropsById = useMemo(() => {
-    const map = new Map<string, ReturnType<typeof buildSwimlanePropsForDeveloper>>();
+  // Данные дорожек пересобираются только при смене данных доски, не на наведение и drag.
+  const imagesVisible = section.swimlaneImagesVisible !== false;
+  const notesVisible = section.swimlaneNotesVisible !== false;
+  const laneDataById = useMemo(() => {
+    const annotationLayers = { imagesVisible, notesVisible };
+    const map = new Map<string, SwimlaneLaneData>();
     for (const developer of swimlaneRows) {
-      map.set(developer.id, buildSwimlanePropsForDeveloper({
-        commentActions: section.commentActions,
-        quickAdd: section.quickAdd,
-        activeDraggableId: section.dragAndDrop.activeDraggableId,
-        activeTask: resolveSwimlaneActiveTask(
-          section.dragAndDrop.activeTaskId,
-          section.allTasksForDrag
-        ),
-        activeTaskDuration: section.dragAndDrop.activeTaskDuration,
-        boardId: section.boardId,
-        cardShadowTaskId,
+      map.set(developer.id, buildSwimlaneLaneData({
+        annotationLayers,
         comments,
         commentsVisible: section.commentsVisible,
-        contextMenuBlurOtherCards: section.contextMenuBlurOtherCards ?? false,
-        contextMenuTaskId,
-        developer,
-        developerAvailability: developerAvailabilityMap.get(developer.id),
-        developers: section.developers,
-        dragAndDropIsDraggingTask: section.dragAndDrop.isDraggingTask,
-        effectiveFactHoveredTaskId,
-        errorReasons,
-        errorTaskIds,
-        globalNameFilter,
-        holidayDayIndices,
-        hoverConnectedTaskIds:
-          showLinks && linksDimOnHover && !linkingSessionActive
-            ? hoverConnectedTaskIds
-            : null,
-        hoveredTaskId,
-        linkingFromTaskId: showLinks ? linkingFromTaskId : null,
-        showLinks,
-        onCloseSidebar: section.onCloseSidebar,
-        onContextMenu: section.onContextMenu,
-        onCreateQATask: section.onCreateQATask,
-        onCreateTaskInCell: section.onCreateTaskInCell,
-        onOverdueCloseAndCreate: section.onOverdueCloseAndCreate,
-        onFactSegmentHover,
-        onSegmentEditCancel,
-        onSegmentEditSave: section.onSegmentEditSave,
-        onTaskClick,
-        onTaskHover,
-        onTaskResize: section.onTaskResize,
-        participantsColumnWidth: section.participantsColumnWidth,
-        qaTasksMap: section.qaTasksMap,
-        segmentEditTaskId,
-        selectedSprintId: section.selectedSprintId,
-        sprintStartDate: section.sprintStartDate,
-        sprintTimelineWorkingDays: section.sprintTimelineWorkingDays ?? WORKING_DAYS,
-        swimlaneFactChangelogsByTaskId: section.taskChangelogsByTaskId,
-        swimlaneFactCommentsByTaskId: section.taskIssueCommentsByTaskId,
-        swimlaneFactDeveloperMap,
-        swimlaneFactTimelineEnabled: Boolean(section.swimlaneFactTimelineEnabled),
-        swimlaneImagesVisible: section.swimlaneImagesVisible,
-        swimlaneInProgressDurations:
-          swimlaneInProgressFactSegmentsByDev.get(developer.id) ?? [],
-        swimlaneNotesVisible: section.swimlaneNotesVisible,
-        taskLinks: section.filteredTaskLinks,
+        developerId: developer.id,
         taskPositions: section.taskPositions,
-        tasks: section.tasksByAssignee.get(developer.id) || [],
+        tasks: section.tasksByAssignee.get(developer.id) ?? EMPTY_TASKS,
         tasksMap: section.tasksMap,
-        viewMode: section.viewMode,
       }));
     }
     return map;
   }, [
-    cardShadowTaskId,
     comments,
-    contextMenuTaskId,
-    developerAvailabilityMap,
-    effectiveFactHoveredTaskId,
+    imagesVisible,
+    notesVisible,
+    section.commentsVisible,
+    section.taskPositions,
+    section.tasksByAssignee,
+    section.tasksMap,
+    swimlaneRows,
+  ]);
+
+  const board = useSwimlaneBoardValue({
     errorReasons,
     errorTaskIds,
     globalNameFilter,
     holidayDayIndices,
-    hoverConnectedTaskIds,
-    hoveredTaskId,
-    linkingFromTaskId,
-    linkingSessionActive,
-    linksDimOnHover,
+    section,
+    showLinks,
+    swimlaneFactDeveloperMap,
     onFactSegmentHover,
     onSegmentEditCancel,
     onTaskClick,
     onTaskHover,
-    section,
-    segmentEditTaskId,
-    showLinks,
-    swimlaneFactDeveloperMap,
-    swimlaneInProgressFactSegmentsByDev,
-    swimlaneRows,
-  ]);
+  });
+
+  const activeTask = resolveSwimlaneActiveTask(
+    section.dragAndDrop.activeTaskId,
+    section.allTasksForDrag
+  );
+  const laneHoverConnectedTaskIds =
+    showLinks && linksDimOnHover && !linkingSessionActive ? hoverConnectedTaskIds : null;
+  const swimlaneFactTimelineEnabled = Boolean(section.swimlaneFactTimelineEnabled);
 
   const showArrows = showLinks || arrowTaskLinks.length > 0;
   const taskArrowProps = {
@@ -265,9 +230,10 @@ export function SwimlanesSectionLanes({
   };
 
   const renderLane = (developer: Developer) => {
-    const laneProps = swimlanePropsById.get(developer.id);
-    if (!laneProps) return null;
+    const laneData = laneDataById.get(developer.id);
+    if (!laneData) return null;
     const isPinned = pinnedIdSet.has(developer.id);
+    const isTeamLane = isTeamSwimlaneAssigneeId(developer.id);
     return (
       <div
         key={developer.id}
@@ -276,8 +242,28 @@ export function SwimlanesSectionLanes({
         style={isPinned ? { zIndex: ZIndex.stickyPinnedRows } : undefined}
       >
         <Swimlane
-          {...laneProps}
+          {...laneData}
+          activeDraggableId={section.dragAndDrop.activeDraggableId}
+          activeTask={activeTask}
+          activeTaskDuration={section.dragAndDrop.activeTaskDuration}
+          cardShadowTaskId={cardShadowTaskId}
+          contextMenuBlurOtherCards={section.contextMenuBlurOtherCards ?? false}
+          contextMenuTaskId={contextMenuTaskId}
+          developer={developer}
+          developerAvailability={isTeamLane ? undefined : developerAvailabilityMap.get(developer.id)}
+          factHoveredTaskId={effectiveFactHoveredTaskId}
+          hoverConnectedTaskIds={laneHoverConnectedTaskIds}
+          hoveredTaskId={hoveredTaskId}
+          isDraggingTask={section.dragAndDrop.isDraggingTask}
           isPinned={isPinned}
+          linkingFromTaskId={showLinks ? linkingFromTaskId : null}
+          segmentEditTaskId={segmentEditTaskId}
+          swimlaneFactTimelineEnabled={!isTeamLane && swimlaneFactTimelineEnabled}
+          swimlaneInProgressDurations={
+            isTeamLane
+              ? EMPTY_FACT_SEGMENTS
+              : (swimlaneInProgressFactSegmentsByDev.get(developer.id) ?? EMPTY_FACT_SEGMENTS)
+          }
           onTogglePin={togglePinnedRow}
         />
         {isPinned && showArrows ? (
@@ -307,6 +293,7 @@ export function SwimlanesSectionLanes({
   return (
     <Xwrapper>
       <SwimlaneXarrowRedrawProvider>
+        <SwimlaneBoardContext.Provider value={board}>
         <SwimlanePinnedArrowSync
           active={pinnedRows.length > 0}
           redrawRef={pinnedFrameArrowRedrawRef}
@@ -318,6 +305,7 @@ export function SwimlanesSectionLanes({
         {showArrows ? <TaskArrows {...taskArrowProps} /> : null}
         <PlanPatchScheduleArrows />
         <PlanPatchSegmentArrows />
+        </SwimlaneBoardContext.Provider>
       </SwimlaneXarrowRedrawProvider>
     </Xwrapper>
   );

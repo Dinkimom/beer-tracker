@@ -312,6 +312,19 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
       ),
     [dragAndDrop.isDraggingTask, isAnnotationHoverTarget, scheduleTaskHover, sprintPlannerUi]
   );
+  // Обработчики уходят в контекст доски: новая функция на рендер перерисовала бы все дорожки.
+  const handleTaskHoverEnd = useCallback(() => handleTaskHover(null), [handleTaskHover]);
+  const handleSegmentEditCancel = useCallback(
+    () => sprintPlannerUi.setSegmentEditTaskId(null),
+    [sprintPlannerUi]
+  );
+  const isDraggingTask = dragAndDrop.isDraggingTask;
+  const handleFactSegmentHover = useCallback(
+    (taskId: string | null) => {
+      if (!isDraggingTask) setFactHoveredTaskId(taskId);
+    },
+    [isDraggingTask]
+  );
 
   const {
     handleSwimlanesClickCapture,
@@ -465,13 +478,11 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
                 swimlanePositions={swimlanePositions}
                 swimlaneRows={swimlaneRows}
                 visibleSwimlaneAssigneeIds={visibleSwimlaneAssigneeIds}
-                onFactSegmentHover={
-                  dragAndDrop.isDraggingTask ? () => undefined : setFactHoveredTaskId
-                }
-                onSegmentEditCancel={() => sprintPlannerUi.setSegmentEditTaskId(null)}
+                onFactSegmentHover={handleFactSegmentHover}
+                onSegmentEditCancel={handleSegmentEditCancel}
                 onTaskClick={handleTaskClickWithLinking}
                 onTaskHover={handleTaskHover}
-                onTaskHoverEnd={() => handleTaskHover(null)}
+                onTaskHoverEnd={handleTaskHoverEnd}
               />
             </div>
             <div

@@ -11,6 +11,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { orderSwimlaneTasksForPaint } from '@/features/swimlane/components/swimlaneHelpers';
 import { TaskLayerPlanPatchPreviews } from '@/features/swimlane/components/TaskLayerPlanPatchPreviews';
 import { TaskLayerPositionedTaskItem } from '@/features/swimlane/components/TaskLayerPositionedTaskItem';
+import { useSwimlaneBoard } from '@/features/swimlane/SwimlaneBoardContext';
 
 export function TaskLayer(props: TaskLayerProps) {
   const {
@@ -19,8 +20,10 @@ export function TaskLayer(props: TaskLayerProps) {
     planPatchTasksMap,
     positionedTasks,
     segmentEditTaskId,
-    ...rest
+    ...own
   } = props;
+  // Элементы слоя и хелперы под ними принимают общее доски вместе со своим — одним объектом.
+  const rest = { ...useSwimlaneBoard(), ...own };
   const [segmentEditDraftCells, setSegmentEditDraftCells] = useState<boolean[] | null>(null);
   const tasksInPaintOrder = useMemo(
     () => orderSwimlaneTasksForPaint(positionedTasks, rest.taskLayerMap),

@@ -8,7 +8,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { observer } from 'mobx-react-lite';
 import React, { useContext, useMemo, useState } from 'react';
 
-import { WORKING_DAYS, getPartsPerDay } from '@/constants';
+import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import { sprintPlannerSwimlaneTimelineWidthCss } from '@/features/sprint/components/SprintPlanner/layout/sprintPlannerSwimlaneLayoutWidths';
@@ -16,7 +16,6 @@ import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintP
 import { canQuickAddOnSwimlaneLane } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import { SwimlaneInProgressFactLayer } from '@/features/swimlane/components/in-progress-fact';
 import { resolveFactBarFocusTaskId } from '@/features/swimlane/components/in-progress-fact/swimlaneFactMarkerHelpers';
-import { memoizedSwimlanePropsEqual } from '@/features/swimlane/components/memoizedSwimlanePropsEqual';
 import { SwimlaneAvailabilityChips } from '@/features/swimlane/components/SwimlaneAvailabilityChips';
 import { SwimlaneAvailabilityPopoverGate } from '@/features/swimlane/components/SwimlaneAvailabilityPopoverGate';
 import { SwimlaneDeveloperHeader } from '@/features/swimlane/components/SwimlaneDeveloperHeader';
@@ -45,6 +44,7 @@ import { onboardingAssigneeMarker } from '@/lib/plannerOnboarding/onboardingDemo
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 
 import { SwimlaneArrowRedrawContext } from '../SwimlaneArrowRedrawContext';
+import { useSwimlaneBoard } from '../SwimlaneBoardContext';
 
 import {
   buildSwimlanePlacementQuickAddHandler,
@@ -61,8 +61,6 @@ const EMPTY_SWIMLANE_FACT_COMMENTS = new Map<string, IssueComment[]>();
 const EMPTY_SWIMLANE_FACT_DEVELOPERS = new Map<string, Developer>();
 
 function SwimlaneComponent({
-  commentActions,
-  quickAdd,
   developer,
   tasks: _tasks, // только для сравнения в React.memo, в рендере не используется
   taskPositions,
@@ -70,53 +68,41 @@ function SwimlaneComponent({
   activeDraggableId = null,
   activeTaskDuration,
   activeTask,
-  boardId = null,
   commentCardRowById,
-  globalNameFilter,
   hoverConnectedTaskIds = null,
   hoveredTaskId = null,
   isDraggingTask = false,
   isPinned = false,
   selectedTaskId = null,
-  onTaskResize,
-  onTaskClick,
-  onCreateQATask,
-  participantsColumnWidth,
-  qaTasksMap,
-  viewMode = 'full',
-  sprintStartDate,
-  sprintTimelineWorkingDays = WORKING_DAYS,
-  developers,
-  onCloseSidebar,
-  onTaskHover,
-  onContextMenu,
-  onCreateTaskInCell,
-  onOverdueCloseAndCreate,
   contextMenuBlurOtherCards = false,
   contextMenuTaskId = null,
-  selectedSprintId,
-  disableCloseSidebarOnClick = false,
-  errorReasons,
-  errorTaskIds,
   cardShadowTaskId = null,
   factHoveredTaskId,
   developerAvailability,
-  holidayDayIndices,
-  swimlaneFactChangelogsByTaskId,
-  swimlaneFactCommentsByTaskId,
-  swimlaneFactDeveloperMap,
   swimlaneFactTimelineEnabled = false,
   linkingFromTaskId = null,
-  showLinks = true,
-  taskLinks,
   segmentEditTaskId = null,
   swimlaneInProgressDurations = [],
-  onFactSegmentHover,
-  onSegmentEditCancel,
-  onSegmentEditSave,
   onTogglePin,
 }: SwimlaneProps) {
   const { t } = useI18n();
+  const {
+    boardId,
+    commentActions,
+    disableCloseSidebarOnClick,
+    holidayDayIndices,
+    onCloseSidebar,
+    onCreateTaskInCell,
+    onFactSegmentHover,
+    participantsColumnWidth,
+    selectedSprintId,
+    sprintStartDate,
+    sprintTimelineWorkingDays,
+    swimlaneFactChangelogsByTaskId,
+    swimlaneFactCommentsByTaskId,
+    swimlaneFactDeveloperMap,
+    viewMode,
+  } = useSwimlaneBoard();
   const objectStorageConfigured = useObjectStorageConfigured();
   const { sprintPlannerUi } = useRootStore();
   const isTeamLane = isTeamSwimlaneAssigneeId(developer.id);
@@ -343,47 +329,30 @@ function SwimlaneComponent({
               activeDraggableId={activeDraggableId}
               activeTask={activeTask}
               activeTaskDuration={activeTaskDuration}
-              commentActions={commentActions}
               contextMenuBlurOtherCards={contextMenuBlurOtherCards}
               contextMenuTaskId={contextMenuTaskId}
               currentCell={layout.currentCell}
-              developers={developers}
-              errorReasons={errorReasons}
-              errorTaskIds={errorTaskIds}
               factHoveredTaskId={factHoveredTaskId}
-              globalNameFilter={globalNameFilter}
               hasQuickAddDraftMode={hasQuickAddDraftMode}
               hasTaskOverlaps={layout.hasTaskOverlaps}
               hoverConnectedTaskIds={hoverConnectedTaskIds}
               hoveredTaskId={hoveredTaskId}
               isDraggingTask={isDraggingTask}
               layerHeight={layout.layerHeight}
-              linkingFromTaskId={linkingFromTaskId} planPatchAssigneeId={developer.id} planPatchSprintId={selectedSprintId} planPatchTasksMap={tasksMap}
+              linkingFromTaskId={linkingFromTaskId}
+              planPatchAssigneeId={developer.id}
+              planPatchSprintId={selectedSprintId}
+              planPatchTasksMap={tasksMap}
               positionedTasks={layout.positionedTasks}
-              qaTasksMap={qaTasksMap}
-              quickAdd={quickAdd}
               requestArrowRedraw={requestArrowRedraw}
               segmentEditTaskId={segmentEditTaskId}
-              selectedSprintId={selectedSprintId}
               selectedTaskId={selectedTaskId}
-              showLinks={showLinks}
-              sprintStartDate={sprintStartDate}
-              sprintTimelineWorkingDays={sprintTimelineWorkingDays}
               stickyNoteCardRowById={layout.stickyNoteCardRowById}
               taskBandTotalHeight={layout.taskBandTotalHeight}
               taskLayerMap={layout.taskLayerMap}
-              taskLinks={taskLinks}
               taskPositions={taskPositions}
               timelineTotalParts={timelineTotalParts}
               totalHeight={layout.totalHeight}
-              onContextMenu={onContextMenu}
-              onCreateQATask={onCreateQATask}
-              onOverdueCloseAndCreate={onOverdueCloseAndCreate}
-              onSegmentEditCancel={onSegmentEditCancel}
-              onSegmentEditSave={onSegmentEditSave}
-              onTaskClick={onTaskClick}
-              onTaskHover={onTaskHover}
-              onTaskResize={onTaskResize}
             />
             <SwimlaneDropPreview
               activeDraggableId={activeDraggableId}
@@ -449,8 +418,9 @@ function SwimlaneComponent({
   );
 }
 
-// observer внутри memo: MobX пересчитывает layout при span sticky-note; сравнение пропсов снаружи.
-export const Swimlane = React.memo(observer(SwimlaneComponent), memoizedSwimlanePropsEqual);
+// observer внутри memo: MobX пересчитывает layout при span sticky-note. Пропсы дорожки стабильны
+// (данные мемоизированы в SwimlanesSectionLanes, общее — в SwimlaneBoardContext), хватает поверхностного сравнения.
+export const Swimlane = React.memo(observer(SwimlaneComponent));
 
 Swimlane.displayName = 'Swimlane';
 
