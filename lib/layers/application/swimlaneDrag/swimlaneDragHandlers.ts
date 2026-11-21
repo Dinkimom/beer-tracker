@@ -11,7 +11,6 @@ import { parseSwimlaneTaskDraggableId } from '@/lib/swimlane/swimlaneDragIds';
 
 import {
   applySwimlaneDragEndPositionUpdate,
-  handleSwimlaneBacklogDrop,
   handleSwimlaneSidebarDrop,
   isSwimlaneSidebarDropTarget,
   resolveSwimlaneDragFinalCell,
@@ -125,7 +124,6 @@ interface SwimlaneDragEndHandlerParams {
    * бросок над сайдбаром отменяется, карточка остаётся на месте. Нет колбэка — можно всем.
    */
   canDropOnSidebar?: (taskId: string) => boolean;
-  onBacklogTaskDrop?: (taskId: string, assigneeId: string, day: number, part: number) => void;
   /**
    * Ручной слой после дропа: вызывается до `onPositionUpdate`, чтобы слой и позиция
    * попали в один шаг истории. `targetTopLayer` — слой под верхним краем карточки.
@@ -136,20 +134,11 @@ interface SwimlaneDragEndHandlerParams {
   updateXarrow: () => void;
 }
 
-function isBacklogSourcedTask(
-  taskId: string,
-  tasks: Task[],
-  taskPositions: Map<string, TaskPosition>
-): boolean {
-  return !taskPositions.has(taskId) && !tasks.some((task) => task.id === taskId);
-}
-
-function tryHandleSwimlaneDragEndDrop(
+/** Сброс над сайдбаром: снять с плана или, если карточку снимать нельзя, отменить бросок. */
+function tryHandleSwimlaneSidebarDrop(
   event: DragEndEvent,
-  params: SwimlaneDragEndHandlerParams & { workingDaysCount: number },
-  taskId: string,
-  activeId: string,
-  overId: string
+  params: SwimlaneDragEndHandlerParams,
+  taskId: string
 ): boolean {
   if (isSwimlaneSidebarDropTarget(event, params.dragState, params.dragContextRef)) {
     if (params.canDropOnSidebar && !params.canDropOnSidebar(taskId)) {
@@ -161,23 +150,6 @@ function tryHandleSwimlaneDragEndDrop(
       onPositionDelete: params.onPositionDelete,
       taskId,
       updateXarrow: params.updateXarrow,
-    });
-    return true;
-  }
-
-  if (isBacklogSourcedTask(taskId, params.tasks, params.taskPositions) && params.onBacklogTaskDrop) {
-    handleSwimlaneBacklogDrop({
-      activeId,
-      dragState: params.dragState,
-      event,
-      onBacklogTaskDrop: params.onBacklogTaskDrop,
-      onLaneLayerDrop: params.onLaneLayerDrop,
-      overId,
-      taskId,
-      taskPositions: params.taskPositions,
-      tasks: params.tasks,
-      updateXarrow: params.updateXarrow,
-      workingDaysCount: params.workingDaysCount,
     });
     return true;
   }
@@ -196,14 +168,13 @@ function processSwimlaneDragEndEvent(
 
   const activeId = active.id as string;
   const { taskId, segmentIndex } = parseSwimlaneTaskDraggableId(activeId);
-  const overId = over.id as string;
   const fromSidebar = isSidebarSourcedDragEventFromContext(event, params.dragContextRef);
 
   if (!fromSidebar && !taskExistsInDragContext(taskId, params.tasks, params.taskPositions)) {
     return;
   }
 
-  if (tryHandleSwimlaneDragEndDrop(event, params, taskId, activeId, overId)) {
+  if (tryHandleSwimlaneSidebarDrop(event, params, taskId)) {
     return;
   }
 

@@ -1437,7 +1437,6 @@ export const ruMessages = {
       addRowSubmit: 'Добавить',
       addModeDraft: 'Драфт',
       addNewHint: 'Создаст эпик или стори в {trackerPrepositional} и добавит строку фичи.',
-      assigneeRequired: 'Сначала назначьте исполнителя на карточке — в режиме по фичам строка не задаёт человека',
       close: 'Закрыть',
       columnTitle: 'Фичи',
       resizeColumn: 'Изменить ширину колонки фич',

@@ -1,4 +1,3 @@
-import type { Task } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
@@ -221,11 +220,6 @@ export function useSprintPlannerViewModel({
     tasksMap,
   });
 
-  const backlogTaskRef = useRef<{
-    getTask: (taskId: string) => Task | undefined;
-    removeTask: (taskId: string) => void;
-  } | null>(null);
-
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       debouncedUpdateXarrow();
@@ -311,7 +305,6 @@ export function useSprintPlannerViewModel({
 
   const interactions = useSprintPlannerViewModelInteractions({
     allTasksForDrag,
-    backlogTaskRef,
     boardIdForPlannerData,
     boards,
     comments,

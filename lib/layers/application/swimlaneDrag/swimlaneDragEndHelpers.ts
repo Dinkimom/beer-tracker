@@ -14,7 +14,7 @@ import {
   moveSwimlanePlanSegmentToStartCell,
 } from '@/lib/swimlane/swimlanePlanSegments';
 
-import { extractAssigneeId, isValidCell } from './swimlaneDragCellUtils';
+import { isValidCell } from './swimlaneDragCellUtils';
 import { calculateCellFromDragEvent } from './swimlaneDragPositionCalculation';
 import { getTaskDuration } from './swimlaneDragTaskDuration';
 import { resolveSidebarDropTargetFromDragEvent } from './swimlaneSidebarDropTarget';
@@ -160,58 +160,6 @@ export function handleSwimlaneSidebarDrop(input: {
   updateXarrow: () => void;
 }): void {
   input.onPositionDelete(input.taskId);
-  requestAnimationFrame(() => {
-    input.updateXarrow();
-  });
-}
-
-export function handleSwimlaneBacklogDrop(input: {
-  activeId: string;
-  dragState: SwimlaneDragStateApi;
-  event: DragEndEvent;
-  onBacklogTaskDrop: (taskId: string, assigneeId: string, day: number, part: number) => void;
-  onLaneLayerDrop?: (input: { position: TaskPosition; targetTopLayer: number; taskId: string }) => void;
-  overId: string;
-  taskId: string;
-  taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
-  updateXarrow: () => void;
-  workingDaysCount: number;
-}): void {
-  const assigneeId = extractAssigneeId(input.overId);
-  if (!assigneeId || isOnboardingDemoAssigneeId(assigneeId)) {
-    return;
-  }
-
-  const cell = calculateCellFromDragEvent(
-    input.event,
-    input.activeId,
-    input.taskPositions,
-    input.tasks,
-    input.dragState.mousePositionRef,
-    input.workingDaysCount,
-    { manualLayers: input.dragState.manualLayers }
-  );
-
-  // Ячейку не определили — дроп отменяется (раньше задача молча вставала в 0,0).
-  if (!cell || !isValidCell(cell, input.workingDaysCount)) {
-    return;
-  }
-  if (cell.layer != null) {
-    input.onLaneLayerDrop?.({
-      position: {
-        assignee: cell.assigneeId,
-        duration: getTaskDuration(input.taskId, input.taskPositions, input.tasks),
-        startDay: cell.day,
-        startPart: cell.part,
-        taskId: input.taskId,
-      },
-      targetTopLayer: cell.layer,
-      taskId: input.taskId,
-    });
-  }
-  input.onBacklogTaskDrop(input.taskId, cell.assigneeId, cell.day, cell.part);
-
   requestAnimationFrame(() => {
     input.updateXarrow();
   });

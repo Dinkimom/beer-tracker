@@ -17,16 +17,8 @@ import {
 } from './clearTaskScheduleDatesOnRemoveFromPlan';
 import { handleTaskResizeAfterResize } from './sprintPlannerTaskHandlersResizeHelpers';
 import { runAutoAddToSwimlane } from './useSprintPlannerTaskHandlersAutoAddHelpers';
-import {
-  applyBacklogTaskDropToState,
-  finalizeBacklogTaskDrop,
-} from './useSprintPlannerTaskHandlersBacklogHelpers';
 
 interface UseSprintPlannerTaskHandlersProps {
-  backlogTaskRef: React.MutableRefObject<{
-    getTask: (taskId: string) => Task | undefined;
-    removeTask: (taskId: string) => void;
-  } | null>;
   developers: Developer[];
   filteredTaskPositions?: Map<string, TaskPosition>;
   qaTaskManagement?: {
@@ -58,7 +50,6 @@ interface UseSprintPlannerTaskHandlersProps {
 }
 
 export function useSprintPlannerTaskHandlers({
-  backlogTaskRef,
   developers,
   filteredTaskPositions,
   qaTaskManagement,
@@ -102,48 +93,6 @@ export function useSprintPlannerTaskHandlers({
       );
     },
   });
-
-  // Обработчик перетаскивания задачи из бэклога на свимлейн
-  const handleBacklogTaskDrop = useCallback(
-    (
-      taskId: string,
-      assigneeId: string,
-      day: number,
-      part: number,
-      historyOptions?: PositionHistoryOptions
-    ) => {
-      if (!selectedSprintId) {
-        return;
-      }
-
-      const sidebarTask =
-        backlogTaskRef.current?.getTask(taskId);
-      if (!sidebarTask) {
-        return;
-      }
-
-      applyBacklogTaskDropToState({
-        assigneeId,
-        day,
-        historyOptions,
-        part,
-        savePosition,
-        setTaskPositions,
-        setTasks,
-        sidebarTask,
-        taskId,
-        totalCells: timelineTotalCells,
-      });
-
-      finalizeBacklogTaskDrop({
-        backlogTaskRef,
-        debouncedUpdateXarrow,
-        selectedSprintId,
-        taskId,
-      });
-    },
-    [selectedSprintId, setTasks, setTaskPositions, savePosition, debouncedUpdateXarrow, backlogTaskRef, timelineTotalCells]
-  );
 
   // Обработчик обновления позиции задачи при перетаскивании
   const handlePositionUpdate = useCallback(
@@ -260,7 +209,6 @@ export function useSprintPlannerTaskHandlers({
 
   return {
     handleAutoAddToSwimlane,
-    handleBacklogTaskDrop,
     handleCreateQATask,
     handlePositionDelete,
     handlePositionUpdate,

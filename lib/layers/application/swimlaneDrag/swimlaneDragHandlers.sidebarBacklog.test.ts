@@ -66,7 +66,7 @@ function dragEnd(partial: {
   } as unknown as DragEndEvent;
 }
 
-describe('swimlane drag end: sidebar and backlog routing', () => {
+describe('swimlane drag end: sidebar routing', () => {
   beforeEach(() => {
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       cb(0);
@@ -127,44 +127,6 @@ describe('swimlane drag end: sidebar and backlog routing', () => {
     });
     handler(dragEnd({ overId: 'sidebar-unassigned' }));
     expect(onPositionDelete).toHaveBeenCalledWith('t1');
-  });
-
-  it('cancels a backlog drop when the target cell cannot be resolved (no 0,0 fallback)', () => {
-    mockCalculateCell.mockReturnValue(null);
-    const onBacklogTaskDrop = vi.fn();
-    const handler = createSwimlaneDragEndHandler({
-      tasks: [],
-      taskPositions: new Map(),
-      dragState: dragState({ activeTaskId: 'BL-1', activeDraggableId: 'BL-1', mousePositionRef: { current: { x: 200, y: 10 } } }),
-      dragContextRef: {
-        current: { isDragFromSidebar: true, sidebarOpen: false, sidebarWidth: 0, viewportWidth: 1200 },
-      },
-      onBacklogTaskDrop,
-      onPositionDelete: vi.fn(),
-      onPositionUpdate: vi.fn(),
-      updateXarrow: vi.fn(),
-    });
-    handler(dragEnd({ activeId: 'BL-1', overId: 'swimlane-dev1', cardCenterX: 200 }));
-    expect(onBacklogTaskDrop).not.toHaveBeenCalled();
-  });
-
-  it('passes the resolved cell for a backlog drop', () => {
-    mockCalculateCell.mockReturnValue({ assigneeId: 'dev1', day: 2, part: 1 });
-    const onBacklogTaskDrop = vi.fn();
-    const handler = createSwimlaneDragEndHandler({
-      tasks: [],
-      taskPositions: new Map(),
-      dragState: dragState({ activeTaskId: 'BL-1', activeDraggableId: 'BL-1', mousePositionRef: { current: { x: 200, y: 10 } } }),
-      dragContextRef: {
-        current: { isDragFromSidebar: true, sidebarOpen: false, sidebarWidth: 0, viewportWidth: 1200 },
-      },
-      onBacklogTaskDrop,
-      onPositionDelete: vi.fn(),
-      onPositionUpdate: vi.fn(),
-      updateXarrow: vi.fn(),
-    });
-    handler(dragEnd({ activeId: 'BL-1', overId: 'swimlane-dev1', cardCenterX: 200 }));
-    expect(onBacklogTaskDrop).toHaveBeenCalledWith('BL-1', 'dev1', 2, 1);
   });
 });
 

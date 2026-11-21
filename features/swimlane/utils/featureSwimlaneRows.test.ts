@@ -6,7 +6,6 @@ import { TASK_GROUP_KEY_NO_PARENT } from '@/features/task/constants/taskGroupKey
 import { TEAM_SWIMLANE_ASSIGNEE_ID } from '@/lib/swimlane/teamSwimlaneAssignee';
 
 import {
-  applyFeatureLaneBacklogDrop,
   applyFeatureLanePositionDrop,
   buildFeatureSwimlaneProjection,
   collectFeatureLaneTaskIdsWaitingForDrafts,
@@ -397,26 +396,6 @@ describe('applyFeatureLanePositionDrop', () => {
       'T-1',
       parent(draftId, draftId, draftId)
     );
-  });
-});
-
-describe('applyFeatureLaneBacklogDrop', () => {
-  it('не кладёт карточку без исполнителя', () => {
-    const onAssigneeRequired = vi.fn();
-    const onBacklogTaskDrop = vi.fn();
-    applyFeatureLaneBacklogDrop({
-      day: 1,
-      droppedRowId: 'p1',
-      part: 0,
-      rowMetaById: new Map([['p1', { parent: parent('p1'), rowId: 'p1' }]]),
-      task: task({ id: 'T-1' }),
-      taskId: 'T-1',
-      onAssigneeRequired,
-      onBacklogTaskDrop,
-      onParentChange: vi.fn(),
-    });
-    expect(onAssigneeRequired).toHaveBeenCalled();
-    expect(onBacklogTaskDrop).not.toHaveBeenCalled();
   });
 });
 

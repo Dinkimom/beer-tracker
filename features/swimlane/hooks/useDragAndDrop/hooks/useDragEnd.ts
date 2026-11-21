@@ -2,29 +2,15 @@
  * Хук для обработки окончания перетаскивания
  */
 
-import type { Task, TaskPosition } from '@/types';
-
 import {
   createSwimlaneDragEndHandler,
   type DragContextRef,
-  type SwimlaneDragStateApi,
 } from '@/lib/layers/application/swimlaneDrag';
 
 export type { DragContextRef };
 
-interface UseDragEndProps {
-  dragContextRef?: DragContextRef | null;
-  dragState: SwimlaneDragStateApi;
-  swimlaneTimelineWorkingDays?: number;
-  taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
-  canDropOnSidebar?: (taskId: string) => boolean;
-  onBacklogTaskDrop?: (taskId: string, assigneeId: string, day: number, part: number) => void;
-  onLaneLayerDrop?: (input: { position: TaskPosition; targetTopLayer: number; taskId: string }) => void;
-  onPositionDelete: (taskId: string) => void;
-  onPositionUpdate: (taskId: string, position: TaskPosition) => void;
-  updateXarrow: () => void;
-}
+/** Те же параметры, что у обработчика: хук только отдаёт его компоненту. */
+type UseDragEndProps = Parameters<typeof createSwimlaneDragEndHandler>[0];
 
 export function useDragEnd(props: UseDragEndProps) {
   return {

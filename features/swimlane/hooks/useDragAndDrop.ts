@@ -26,7 +26,6 @@ interface UseDragAndDropProps {
   swimlaneTimelineWorkingDays?: number;
   taskPositions: Map<string, TaskPosition>;
   tasks: Task[];
-  onBacklogTaskDrop?: (taskId: string, assigneeId: string, day: number, part: number) => void;
   onPositionDelete: (taskId: string) => void;
   onPositionUpdate: (taskId: string, position: TaskPosition) => void;
   updateXarrow: () => void;
@@ -38,7 +37,6 @@ export function useDragAndDrop({
   onPositionUpdate: onBoardPositionUpdate,
   onPositionDelete: onBoardPositionDelete,
   updateXarrow,
-  onBacklogTaskDrop,
   dragContextRef,
   planPatchSprintId,
   swimlaneTimelineWorkingDays,
@@ -87,7 +85,6 @@ export function useDragAndDrop({
     canDropOnSidebar,
     tasks,
     taskPositions,
-    onBacklogTaskDrop,
     onLaneLayerDrop,
     onPositionDelete,
     onPositionUpdate,

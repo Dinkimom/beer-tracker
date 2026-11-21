@@ -23,7 +23,6 @@ export function useSprintPlannerHandlers({
   setTaskLinks,
   setTaskPositions,
   setTasks,
-  backlogTaskRef,
   allTasksForDrag,
   confirm,
   debouncedUpdateXarrow,
@@ -53,7 +52,6 @@ export function useSprintPlannerHandlers({
 }: UseSprintPlannerHandlersProps) {
   const { t } = useI18n();
   const taskHandlers = useSprintPlannerTaskHandlers({
-    backlogTaskRef,
     developers: developersManagement.sortedDevelopers,
     filteredTaskPositions,
     qaTaskManagement,

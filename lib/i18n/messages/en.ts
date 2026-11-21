@@ -1435,8 +1435,6 @@ export const enMessages = {
       addRowSubmit: 'Add',
       addModeDraft: 'Draft',
       addNewHint: 'Creates an epic or story in {tracker} and adds a feature row.',
-      assigneeRequired:
-        'Assign someone on the card first — a feature row does not set the assignee',
       close: 'Close',
       columnTitle: 'Features',
       resizeColumn: 'Resize features column width',

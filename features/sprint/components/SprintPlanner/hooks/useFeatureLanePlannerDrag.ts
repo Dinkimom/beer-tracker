@@ -1,10 +1,8 @@
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { Comment, Task, TaskParent, TaskPosition } from '@/types';
-import type { MutableRefObject } from 'react';
 
 import { useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import {
@@ -12,7 +10,6 @@ import {
   swimlanePositionToCommentPatch,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import {
-  applyFeatureLaneBacklogDrop,
   applyFeatureLaneCommentDrop,
   applyFeatureLanePositionDrop,
   buildFeatureSwimlaneProjection,
@@ -22,13 +19,6 @@ import {
 import { useFeatureLanesApi } from '@/hooks/useApiStorage';
 
 interface FeatureLanePlannerDragHandlers {
-  handleBacklogTaskDrop: (
-    taskId: string,
-    assigneeId: string,
-    day: number,
-    part: number,
-    historyOptions?: PositionHistoryOptions
-  ) => void;
   handleCommentMove: (
     commentId: string,
     patch: ReturnType<typeof swimlanePositionToCommentPatch>,
@@ -55,16 +45,12 @@ interface FeatureLanePlannerDragHandlers {
 export function useFeatureLanePlannerDrag(input: {
   allTasksForDrag: Task[];
   comments: Comment[];
-  backlogTaskRef: MutableRefObject<{
-    getTask: (taskId: string) => Task | undefined;
-  } | null>;
   handlers: FeatureLanePlannerDragHandlers;
   selectedSprintId: number | null;
   taskPositions: Map<string, TaskPosition>;
   tasksMap: Map<string, Task>;
   viewMode: BoardViewMode;
 }): {
-  handleBacklogTaskDrop: (taskId: string, assigneeId: string, day: number, part: number) => void;
   handlePositionUpdate: (taskId: string, position: TaskPosition) => void;
 } {
   const { t } = useI18n();
@@ -140,33 +126,6 @@ export function useFeatureLanePlannerDrag(input: {
     [input.comments, input.handlers, input.taskPositions, input.viewMode, projection, tasksMapForLanes]
   );
 
-  const handleBacklogTaskDrop = useCallback(
-    (taskId: string, assigneeId: string, day: number, part: number) => {
-      if (input.viewMode !== 'features' || !projection) {
-        input.handlers.handleBacklogTaskDrop(taskId, assigneeId, day, part);
-        return;
-      }
-      const sidebarTask = overlayFeatureLaneDraftParents(
-        [
-          input.backlogTaskRef.current?.getTask(taskId) ??
-            tasksMapForLanes.get(taskId),
-        ].filter((task): task is Task => Boolean(task)),
-        featureLanes
-      )[0];
-      applyFeatureLaneBacklogDrop({
-        day,
-        droppedRowId: assigneeId,
-        part,
-        rowMetaById: projection.rowMetaById,
-        task: sidebarTask,
-        taskId,
-        onAssigneeRequired: () => toast.error(t('sprintPlanner.featureLanes.assigneeRequired')),
-        onBacklogTaskDrop: input.handlers.handleBacklogTaskDrop,
-        onParentChange: input.handlers.handleParentChange,
-      });
-    },
-    [featureLanes, input.backlogTaskRef, input.handlers, input.viewMode, projection, t, tasksMapForLanes]
-  );
 
-  return { handleBacklogTaskDrop, handlePositionUpdate };
+  return { handlePositionUpdate };
 }

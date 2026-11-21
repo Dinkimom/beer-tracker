@@ -9,10 +9,6 @@ import type { MutableRefObject } from 'react';
 
 export interface UseSprintPlannerHandlersProps {
   allTasksForDrag: Task[];
-  backlogTaskRef: React.MutableRefObject<{
-    getTask: (taskId: string) => Task | undefined;
-    removeTask: (taskId: string) => void;
-  } | null>;
   comments: Comment[];
   developersManagement: DevelopersManagement;
   filteredTaskLinks: Array<{ fromTaskId: string; toTaskId: string; id: string }>;

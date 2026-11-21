@@ -48,10 +48,6 @@ type SprintPlannerUi = ReturnType<typeof useRootStore>['sprintPlannerUi'];
 type GetQueueByBoardId = ReturnType<typeof useBoards>['getQueueByBoardId'];
 interface UseSprintPlannerViewModelInteractionsParams {
   allTasksForDrag: Task[];
-  backlogTaskRef: React.MutableRefObject<{
-    getTask: (taskId: string) => Task | undefined;
-    removeTask: (taskId: string) => void;
-  } | null>;
   boardIdForPlannerData: number | null;
   boards: BoardListItem[];
   comments: Comment[];
@@ -115,7 +111,6 @@ interface UseSprintPlannerViewModelInteractionsParams {
 
 export function useSprintPlannerViewModelInteractions({
   allTasksForDrag,
-  backlogTaskRef,
   boardIdForPlannerData,
   boards,
   comments,
@@ -268,7 +263,6 @@ export function useSprintPlannerViewModelInteractions({
     setTaskLinks,
     setTaskPositions,
     setTasks,
-    backlogTaskRef,
     allTasksForDrag: allTasksForDragWithComments,
     confirm,
     debouncedUpdateXarrow,
@@ -301,7 +295,6 @@ export function useSprintPlannerViewModelInteractions({
 
   const featureLaneDrag = useFeatureLanePlannerDrag({
     allTasksForDrag,
-    backlogTaskRef,
     comments,
     handlers,
     selectedSprintId,
@@ -361,7 +354,6 @@ export function useSprintPlannerViewModelInteractions({
     onPositionDelete: handlers.handlePositionDelete,
     planPatchSprintId: selectedSprintId,
     updateXarrow: debouncedUpdateXarrow,
-    onBacklogTaskDrop: featureLaneDrag.handleBacklogTaskDrop,
     dragContextRef,
     swimlaneTimelineWorkingDays: sprintTimelineWorkingDays,
   });
@@ -387,7 +379,6 @@ export function useSprintPlannerViewModelInteractions({
   const activeTask = useSprintPlannerActiveDragTask({
     activeTaskId: dragAndDrop.activeTaskId,
     allTasksForDrag: allTasksForDragWithComments,
-    backlogTaskRef,
   });
 
   const {
