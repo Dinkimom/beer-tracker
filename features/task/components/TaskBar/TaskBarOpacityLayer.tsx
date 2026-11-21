@@ -36,7 +36,7 @@ type SharedLayerKey =
   | 'task';
 
 /** Долгое наведение: состояние живёт в `TaskBar` (от него ширина карточки), обработчики — здесь. */
-export interface TaskBarLongHover {
+interface TaskBarLongHover {
   /** Карточка раскрыта: ширина не равна длине, штриховку не рисуем. */
   expanded: boolean;
   isNarrow: boolean;
