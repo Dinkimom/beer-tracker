@@ -10,7 +10,6 @@ import type { Task, TaskPosition } from '@/types';
 import { observer } from 'mobx-react-lite';
 import React, { useRef, useState } from 'react';
 
-import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useStickyNoteColorPop } from '@/features/comments/hooks/useStickyNoteColorPop';
 import { useStickyNoteExiting } from '@/features/comments/hooks/useStickyNoteExiting';
 import { useStickyNoteSaveMotion } from '@/features/comments/hooks/useStickyNoteSaveMotion';
@@ -22,7 +21,6 @@ import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContext
 import { DraftItemCommentButton } from '@/features/swimlane/components/DraftItemCommentButton';
 import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
 import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
-import { useSwimlaneBoard } from '@/features/swimlane/SwimlaneBoardContext';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
 import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar';
@@ -49,6 +47,7 @@ import {
 import { TaskBarOpacityLayer } from './TaskBarOpacityLayer';
 import { TaskBarPendingApprovalToolbar } from './TaskBarPendingApprovalToolbar';
 import { usePlanPatchNoteFocus } from './usePlanPatchNoteFocus';
+import { useTaskBarBoard } from './useTaskBarBoard';
 import { useTaskBarDisplayState } from './useTaskBarDisplayState';
 import { useTaskBarLifecycle } from './useTaskBarLifecycle';
 import { useTaskBarNoteFocus } from './useTaskBarNoteFocus';
@@ -87,7 +86,6 @@ interface TaskBarProps {
   planPatchGhost?: boolean;
   /** Индекс отрезка плана при ресайзе сегментированной карточки. */
   planSegmentIndex?: number;
-  qaTasksMap?: Map<string, Task>;
   quickAddMenu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & {
     title: string;
   };
@@ -104,17 +102,14 @@ interface TaskBarProps {
   swimlaneDragActive?: boolean;
   swimlaneSegmentBadge?: { index: number; total: number } | null;
   swimlaneSegmentSecondary?: boolean;
-  swimlaneTimelineTotalParts?: number;
   task: Task;
   taskPositions?: Map<string, TaskPosition>;
   widthPercent: number;
-  onClick?: (taskId: string) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
   onDeleteLocalImage?: (taskId: string) => void;
   onResize: (params: TaskResizeParams) => void;
   onTaskHover?: (taskId: string | null) => void;
-  requestArrowRedraw: () => void;
 }
 
 const TaskBarSurface = observer(function TaskBarSurface({
@@ -138,21 +133,17 @@ const TaskBarSurface = observer(function TaskBarSurface({
   planSegmentIndex,
   planAnchorOverlay,
   onResize,
-  onClick,
   commentActions,
   onDeleteLocalImage,
   onCreateQATask,
   assigneeName,
   taskPositions,
-  qaTasksMap,
-  requestArrowRedraw,
   style: customStyle,
   onTaskHover,
   onContextMenu,
   stickyNoteCardRowResize,
   swimlaneSegmentBadge = null,
   swimlaneDragActive,
-  swimlaneTimelineTotalParts = WORKING_DAYS * getPartsPerDay(),
 }: TaskBarProps) {
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const noteFocus = usePlanPatchNoteFocus(task, onTaskHover);
@@ -174,7 +165,15 @@ const TaskBarSurface = observer(function TaskBarSurface({
 
   // Меню выбирается подпиской: карточка перерисуется, только когда её состояние меню изменилось.
   const contextMenu = useCardContextMenu(task.id);
-  const { developers, globalNameFilter, selectedSprintId } = useSwimlaneBoard();
+  const {
+    developers,
+    globalNameFilter,
+    onClick,
+    qaTasksMap,
+    requestArrowRedraw,
+    selectedSprintId,
+    swimlaneTimelineTotalParts,
+  } = useTaskBarBoard(planPatchGhost);
   const { onCommentApprove, onCommentDelete, onCommentUpdate } = commentActions ?? {};
   const {
     contentDurationParts,

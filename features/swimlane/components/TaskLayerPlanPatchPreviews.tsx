@@ -128,7 +128,6 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
               htmlAnchorId={segmentAnchorId}
               leftPercent={getLeftPercentForSegmentStartCell(startCell, timelineTotalParts)}
               planPatchGhost
-              requestArrowRedraw={noop}
               style={computeSwimlaneRowBandBox(
                 hasTaskOverlaps,
                 taskLayerMap.get(planPatchPreviewLayerKey(preview.taskId)) ?? 0,
@@ -136,7 +135,6 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
                 layerHeight
               )}
               swimlaneSegmentSecondary={!isPrimary}
-              swimlaneTimelineTotalParts={timelineTotalParts}
               task={taskForPlanPatchPreview(
                 tasksMap.get(preview.taskId) ?? missingTasks.get(preview.taskId),
                 preview.taskId

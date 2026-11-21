@@ -106,12 +106,9 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     layerHeight,
     onContextMenu,
     onCreateQATask,
-    onTaskClick,
     onTaskHover,
     onTaskResize,
     position,
-    qaTasksMap,
-    requestArrowRedraw,
     linkingFromTaskId = null,
     sprintStartDate,
     sprintTimelineWorkingDays,
@@ -377,10 +374,8 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         linkMode={linkMode}
         planAnchorOverlay={planAnchorOverlay}
         planSegmentIndex={hasMultiplePlanSegments ? segIdx : undefined}
-        qaTasksMap={qaTasksMap}
         quickAddMenu={quickAddMenu}
         quickAddSubmitting={renderState.isQuickAddSubmitting}
-        requestArrowRedraw={requestArrowRedraw}
         stickyNoteCardRowResize={
           isStickyNoteCard || isPhotoCard
             ? {
@@ -407,11 +402,9 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         swimlaneDragActive={isDraggingTask}
         swimlaneSegmentBadge={renderState.segmentBadge}
         swimlaneSegmentSecondary={renderState.segmentSecondary}
-        swimlaneTimelineTotalParts={timelineTotalParts}
         task={displayTask}
         taskPositions={taskPositions}
         widthPercent={renderState.widthPercent}
-        onClick={onTaskClick}
         onContextMenu={linkingActive ? undefined : onContextMenu}
         onCreateQATask={linkingActive ? undefined : onCreateQATask}
         onDeleteLocalImage={linkingActive ? undefined : onCancelQuickAddDraft}
