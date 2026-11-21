@@ -45,7 +45,7 @@ beer-tracker/
 | `sprint/` | Планер спринта: `components/SprintPlanner.tsx` → `SprintPlanner/` (`SprintPlannerView.tsx`, `board/`, `kanban/`, `feature-lanes/`, `components/` — тулбары, чат агента, таймер; `sprintPlannerDndHelpers.ts`), селектор спринта, модалка финиша, цели, учёт работ, доступность |
 | `swimlane/` | Свимлейн: дорожки, ячейки, слои, стрелки связей (`task-arrows/`), таймлайн факта (`in-progress-fact/`), чипы доступности, превью плана агента |
 | `task/` | Карточки задач: `TaskCard/`, `TaskBar/`, `DraggableTask/`, `TaskTimeline/`, `TaskInfoSidebar/`; хуки `useTasks`, мутации, ресайз |
-| `sidebar/` | Сайдбар спринта и вкладки `components/tabs/` (задачи, невалидные, цели, дейли, метрики, бэклог, баги) |
+| `sidebar/` | Сайдбар спринта и вкладки `components/tabs/` (задачи, невалидные, цели, метрики, бэклог, баги) |
 | `comments/` | Заметки (стикеры) на свимлейне: WYSIWYG-редактор, реакции, диаграммы Excalidraw |
 | `backlog/` | Вкладка «Бэклог»: колонки спринтов, фильтры, массовый перенос |
 | `burndown/` | Вкладка «Диаграмма сгорания» |

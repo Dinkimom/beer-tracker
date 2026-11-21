@@ -989,7 +989,6 @@ export const enMessages = {
       tasks: 'Tasks',
       invalid: 'Invalid',
       goals: 'Sprint',
-      daily: 'Daily',
       metrics: 'Metrics',
       history: 'History',
       backlog: 'Backlog',
@@ -1047,19 +1046,6 @@ export const enMessages = {
           delete: 'Arrow removed',
         },
       },
-    },
-    dailyTab: {
-      selectSprint: 'Select a sprint to write daily notes',
-      dayHeading: 'Day',
-      dayPickerAria: 'Sprint working days',
-      todayBadge: 'today',
-      dayTodayAria: 'Today, {date}',
-      dayWithNoteAria: '{date}, has notes',
-      dayTodayWithNoteAria: '{date}, today, has notes',
-      noteLabel: 'Notes for {date}',
-      placeholder:
-        '## Blockers\n- [ ] \n\n## Decisions\n- [ ] \n\n## Notes\n- [ ] \n',
-      localOnlyHint: 'Notes are stored in this browser only.',
     },
     tasksTab: {
       addTask: 'Add task',

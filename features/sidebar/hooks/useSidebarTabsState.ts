@@ -11,7 +11,6 @@ import { resolveHiddenSidebarTabFallback } from './useSidebarHeaderTabsHelpers';
 
 export type SidebarMainTab =
   | 'backlog'
-  | 'daily'
   | 'goals'
   | 'history'
   | 'invalid'
@@ -29,7 +28,6 @@ function getMainTabFromSearchParams(
   const tabParam = searchParams.get('sidebarTab');
   if (
     tabParam === 'backlog' ||
-    tabParam === 'daily' ||
     tabParam === 'goals' ||
     tabParam === 'history' ||
     tabParam === 'invalid' ||

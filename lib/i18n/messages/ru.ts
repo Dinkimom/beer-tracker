@@ -990,7 +990,6 @@ export const ruMessages = {
       tasks: 'Задачи',
       invalid: 'Невалидные',
       goals: 'Спринт',
-      daily: 'Дейли',
       metrics: 'Метрики',
       history: 'История',
       backlog: 'Бэклог',
@@ -1048,19 +1047,6 @@ export const ruMessages = {
           delete: 'Стрелка удалена',
         },
       },
-    },
-    dailyTab: {
-      selectSprint: 'Выберите спринт, чтобы писать дейли-заметки',
-      dayHeading: 'День',
-      dayPickerAria: 'Рабочие дни спринта',
-      todayBadge: 'сегодня',
-      dayTodayAria: 'Сегодня, {date}',
-      dayWithNoteAria: '{date}, есть заметка',
-      dayTodayWithNoteAria: '{date}, сегодня, есть заметка',
-      noteLabel: 'Заметки на {date}',
-      placeholder:
-        '## Блокеры\n- [ ] \n\n## Решения\n- [ ] \n\n## Заметки\n- [ ] \n',
-      localOnlyHint: 'Заметки хранятся только в этом браузере.',
     },
     tasksTab: {
       addTask: 'Добавить задачу',

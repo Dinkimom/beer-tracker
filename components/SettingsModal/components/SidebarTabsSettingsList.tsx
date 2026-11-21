@@ -16,7 +16,6 @@ const ALL_SIDEBAR_TAB_IDS = [
   'tasks',
   'invalid',
   'goals',
-  'daily',
   'metrics',
   'history',
   'backlog',

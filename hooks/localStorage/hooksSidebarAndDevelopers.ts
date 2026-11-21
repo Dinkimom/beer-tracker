@@ -53,7 +53,7 @@ export function useSidebarStatusFilterStorage(): [
 // ==================== Настройки табов сайдбара ====================
 
 type SidebarMainTabId =
-  'backlog' | 'daily' | 'goals' | 'history' | 'invalid' | 'metrics' | 'tasks';
+  'backlog' | 'goals' | 'history' | 'invalid' | 'metrics' | 'tasks';
 
 export interface SidebarTabSettings {
   id: SidebarMainTabId;
@@ -64,7 +64,6 @@ const DEFAULT_SIDEBAR_TABS: SidebarTabSettings[] = [
   { id: 'tasks', visible: true },
   { id: 'invalid', visible: true },
   { id: 'goals', visible: true },
-  { id: 'daily', visible: false },
   { id: 'metrics', visible: true },
   { id: 'history', visible: true },
   { id: 'backlog', visible: true },
