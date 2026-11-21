@@ -379,7 +379,6 @@ export function useSprintPlannerViewModel({
       activeTaskDuration: dragAndDrop.activeTaskDuration,
       activeTaskId: dragAndDrop.activeTaskId,
       allSprintTasks: tasks,
-      developers,
       developersManagement,
       goalTaskIds,
       selectedBoardId: boardIdForPlannerData,
@@ -424,7 +423,6 @@ export function useSprintPlannerViewModel({
       boardAvailabilityEvents,
       boardId: boardIdForPlannerData ?? null,
       comments,
-      developers,
       display: {
         commentsVisible: swimlaneNotesVisible || swimlaneImagesVisible,
         factTimelineEnabled: swimlaneFactTimelineEnabled,

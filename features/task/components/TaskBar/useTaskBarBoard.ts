@@ -19,7 +19,7 @@ export function useTaskBarBoard(planPatchGhost: boolean, linkingActive: boolean)
   const actionsOff = planPatchGhost || linkingActive;
   return {
     commentActions: actionsOff ? undefined : board.commentActions,
-    developers: board.developers,
+    developers: sprintBoard.developers,
     globalNameFilter: board.globalNameFilter,
     qaTasksMap: planPatchGhost ? undefined : sprintBoard.qaTasksMap,
     requestArrowRedraw: planPatchGhost ? noop : (arrowRedrawFromLane ?? noop),

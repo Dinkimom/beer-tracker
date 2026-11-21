@@ -16,6 +16,7 @@ import {
   isSwimlaneDiagramTask,
   parseSwimlaneCommentTaskId,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { SwimlaneCardContext } from '@/features/swimlane/SwimlaneCardContext';
 import { isoDateOnlyFromWorkingDayIndex } from '@/features/swimlane/utils/availabilityTimelineMarks';
 import {
@@ -99,7 +100,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   } = quickAdd;
   const onCommentCardRowLayoutUpdate = props.commentActions?.onCommentCardRowLayoutUpdate;
   const {
-    developers,
     errorReasons,
     hasTaskOverlaps,
     layerHeight,
@@ -119,6 +119,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   } = props;
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
+  const { developers } = useSprintBoard();
   const card = useMemo(() => ({ position, segment: seg, task }), [position, seg, task]);
   const noteComposer = sprintPlannerUi.noteComposer;
   const cardPresenceViewers = useSprintCardPresenceViewers(task.id);

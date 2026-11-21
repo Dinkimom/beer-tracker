@@ -20,7 +20,6 @@ export interface SwimlaneBoard {
   /** Доска (нужна для квартального плана отпусков) */
   boardId: number | null;
   commentActions?: SwimlaneCommentActions;
-  developers: Developer[];
   /** Не закрывать сайдбар кликом по дорожке. */
   disableCloseSidebarOnClick: boolean;
   /** Причины ошибок по taskId — для тултипа иконки ошибки на баре */

@@ -70,7 +70,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     boardAvailabilityEvents,
     boardId,
     comments,
-    developers,
     developersManagement,
     hideTeamLane = false,
     occupancyValidationPositions,
@@ -98,7 +97,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     notesVisible: swimlaneNotesVisible,
   } = props.display;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
-  const { qaTasksMap } = useSprintBoard();
+  const { developers, qaTasksMap } = useSprintBoard();
   const { t } = useI18n();
   const globalNameFilter = sprintPlannerUi.globalNameFilter;
   const hoveredTaskId = sprintPlannerUi.hoveredTaskId;

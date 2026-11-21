@@ -38,7 +38,6 @@ export function useSwimlaneBoardValue({
 }): SwimlaneBoard {
   const {
     boardId,
-    developers,
     filteredTaskLinks,
     participantsColumnWidth,
     sprintStartDate,
@@ -63,7 +62,6 @@ export function useSwimlaneBoardValue({
     () => ({
       boardId,
       commentActions,
-      developers,
       disableCloseSidebarOnClick: true,
       errorReasons,
       errorTaskIds,
@@ -95,7 +93,6 @@ export function useSwimlaneBoardValue({
     [
       boardId,
       commentActions,
-      developers,
       errorReasons,
       errorTaskIds,
       filteredTaskLinks,

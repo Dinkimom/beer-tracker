@@ -3,7 +3,7 @@
 import type { TaskSidebarContextValue } from '@/features/sidebar/contexts/TaskSidebarContext';
 import type { SidebarMainTab } from '@/features/sidebar/hooks/useSidebarTabsState';
 import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
-import type { Developer, Task, TaskPosition } from '@/types';
+import type { Task, TaskPosition } from '@/types';
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { useDroppable } from '@dnd-kit/core';
@@ -75,7 +75,6 @@ export interface TaskSidebarProps
   activeTaskId?: string | null;
   /** Все задачи спринта (для метрик «Разбивка по исполнителям» и целей). Передавать полный список. */
   allSprintTasks?: Task[];
-  developers: Developer[];
   developersManagement?: DevelopersManagement;
   goalTaskIds?: string[];
   hideTasksTab?: boolean;
@@ -98,7 +97,6 @@ export const TaskSidebar = observer(function TaskSidebar({
   tasks,
   allSprintTasks,
   taskPositions = null,
-  developers,
   width = 320,
   onReturnAllTasks,
   onAutoAssignTasks,
@@ -119,7 +117,7 @@ export const TaskSidebar = observer(function TaskSidebar({
   onAutoAddToSwimlane,
   sidebarDropTargetActive = false,
 }: TaskSidebarProps) {
-  const { qaTasksMap } = useSprintBoard();
+  const { developers, qaTasksMap } = useSprintBoard();
   const { setNodeRef, isOver } = useDroppable({
     id: 'sidebar-unassigned',
   });

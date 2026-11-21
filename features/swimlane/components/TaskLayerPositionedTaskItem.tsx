@@ -41,11 +41,10 @@ const EMPTY_TASK_LINKS: Array<{ fromTaskId: string; toTaskId: string; id: string
 export const TaskLayerPositionedTaskItem = observer(function TaskLayerPositionedTaskItem(
   props: TaskLayerPositionedTaskItemProps
 ) {
-  const { qaTasksMap } = useSprintBoard();
+  const { developers, qaTasksMap } = useSprintBoard();
   const {
     activeDraggableId = null,
     currentCell,
-    developers,
     hasQuickAddDraftMode = false,
     isDraggingTask = false,
     linkingFromTaskId = null,

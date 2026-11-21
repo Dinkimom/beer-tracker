@@ -3,7 +3,7 @@ import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopers
 import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { StatusDuration } from '@/features/task/components/TaskTimeline/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
-import type { Comment, Developer, PhaseSegment, Task, TaskParent, TaskPosition } from '@/types';
+import type { Comment, PhaseSegment, Task, TaskParent, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
@@ -62,7 +62,6 @@ export interface SwimlanesSectionProps {
   boardAvailabilityEvents?: BoardAvailabilityEvent[];
   boardId: number | null;
   comments: Comment[];
-  developers: Developer[];
   developersManagement: DevelopersManagement;
   display: SwimlaneDisplaySettings;
   dragAndDrop: {
