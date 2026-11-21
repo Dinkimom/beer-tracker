@@ -13,6 +13,7 @@ export type SidebarMainTab =
   | 'backlog'
   | 'daily'
   | 'goals'
+  | 'history'
   | 'invalid'
   | 'metrics'
   | 'tasks';
@@ -30,6 +31,7 @@ function getMainTabFromSearchParams(
     tabParam === 'backlog' ||
     tabParam === 'daily' ||
     tabParam === 'goals' ||
+    tabParam === 'history' ||
     tabParam === 'invalid' ||
     tabParam === 'metrics' ||
     tabParam === 'tasks'

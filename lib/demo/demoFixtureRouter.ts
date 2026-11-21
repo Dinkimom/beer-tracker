@@ -7,6 +7,7 @@ import { defaultRetroColumnTemplate } from '@/lib/retro/retroBoard';
 import { sprintScoreGoalsMark } from '@/lib/sprints/sprintScoreHelpers';
 
 import { buildDemoBurndownPayload } from './demoFixtureBurndown';
+import { demoSprintHistory } from './demoFixtureHistory';
 import { handleDemoComments } from './demoFixtureRouterComments';
 import { handleDemoIssueSprint } from './demoFixtureRouterIssueSprint';
 import { handleDemoMisc } from './demoFixtureRouterMisc';
@@ -336,6 +337,10 @@ function handleSprintExtras(path: string, method: string): DemoFixtureResult | n
   }
   if (matchSprintId(path, 'score') != null && method === 'get') {
     return ok(demoScoreWithGoals(store));
+  }
+  const historySprintId = matchSprintId(path, 'history');
+  if (historySprintId != null && method === 'get') {
+    return ok({ events: demoSprintHistory(historySprintId) });
   }
   return null;
 }

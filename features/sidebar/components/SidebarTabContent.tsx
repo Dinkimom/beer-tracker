@@ -19,6 +19,10 @@ const GoalsTab = dynamic(
   () => import('@/features/sidebar/components/tabs/GoalsTab').then((mod) => mod.GoalsTab),
   { ssr: false }
 );
+const HistoryTab = dynamic(
+  () => import('@/features/sidebar/components/tabs/HistoryTab').then((mod) => mod.HistoryTab),
+  { ssr: false }
+);
 const InvalidTab = dynamic(
   () => import('@/features/sidebar/components/tabs/InvalidTab').then((mod) => mod.InvalidTab),
   { ssr: false }
@@ -35,6 +39,7 @@ const SCROLLABLE_MAIN_TABS: SidebarMainTab[] = [
   'goals',
   'daily',
   'metrics',
+  'history',
 ];
 
 interface SidebarTabContentProps {
@@ -57,6 +62,7 @@ export function SidebarTabContent({
       {mainTab === 'metrics' && <MetricsTab />}
       {mainTab === 'goals' && <GoalsTab />}
       {mainTab === 'daily' && <DailyTab />}
+      {mainTab === 'history' && <HistoryTab />}
       {SIDEBAR_INVALID_TAB_ENABLED && mainTab === 'invalid' && <InvalidTab />}
       {mainTab === 'backlog' && !hideBacklogTab && <BacklogTab />}
     </div>

@@ -25,6 +25,7 @@ const TAB_COUNT_RESOLVERS: Record<
     counts.checklistTotal > 0 ? `${counts.checklistDone}/${counts.checklistTotal}` : undefined,
   backlog: undefined,
   daily: undefined,
+  history: undefined,
   metrics: undefined,
 };
 
@@ -60,7 +61,7 @@ export function resolveHiddenSidebarTabFallback(params: {
   return null;
 }
 
-const SPRINT_REQUIRED_TABS = new Set<SidebarMainTab>(['daily', 'goals', 'metrics']);
+const SPRINT_REQUIRED_TABS = new Set<SidebarMainTab>(['daily', 'goals', 'history', 'metrics']);
 
 function isTabHiddenBySettings(params: SidebarHeaderTabVisibilityParams): boolean {
   return HIDDEN_TAB_FLAGS[params.tabId]?.(params) ?? false;

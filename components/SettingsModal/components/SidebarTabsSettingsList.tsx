@@ -18,6 +18,7 @@ const ALL_SIDEBAR_TAB_IDS = [
   'goals',
   'daily',
   'metrics',
+  'history',
   'backlog',
 ] as const satisfies ReadonlyArray<SidebarTabSettings['id']>;
 

@@ -21,6 +21,7 @@ const SIDEBAR_HEADER_TAB_IDS = new Set<SidebarMainTab>([
   'goals',
   'daily',
   'metrics',
+  'history',
   'backlog',
 ]);
 
@@ -30,6 +31,7 @@ const DEFAULT_SIDEBAR_ORDER: SidebarMainTab[] = [
   'goals',
   'daily',
   'metrics',
+  'history',
   'backlog',
 ];
 
@@ -37,8 +39,8 @@ function sidebarTabTitle(
   tabId: SidebarMainTab,
   t: (key: string) => string
 ): string | undefined {
-  if (tabId === 'metrics') {
-    return t('sidebar.tabTitles.metrics');
+  if (tabId === 'metrics' || tabId === 'history') {
+    return t(`sidebar.tabTitles.${tabId}`);
   }
   return undefined;
 }

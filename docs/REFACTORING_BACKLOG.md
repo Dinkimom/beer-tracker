@@ -42,7 +42,11 @@
 
 Общие мапперы задач/позиций; type guards в `lib/api-error-handler.ts`; именованные константы статусов / `batchSize`.
 
-### 2.5 Крупные UI-файлы (по касанию)
+### 2.5 Пролог роутов спринта (низкий–средний)
+
+~24 роута `app/api/sprints/[sprintId]/**` начинаются одинаково: сигнатура с `params`, `requireSprintRouteContext`, ранний `return tenantResult.response`, `organizationId` / `sprintId`. jscpd считает это клонами, и каждый новый роут спринта (или правка старого) даёт «новый» клон — baseline обновлялся 2026-11-21 дважды (`positions/clear`, `history`). Обёртка вида `withSprintRoute(handler)` с `{ ctx, sprintId, request }` убрала бы клоны и шаблон. (2026-11-21)
+
+### 2.6 Крупные UI-файлы (по касанию)
 
 `features/sprint/components/SprintPlanner/SprintPlannerView.tsx` (~500 строк) и соседние хуки — дробить при touch по правилам `AGENTS.md` (max-lines, consolidation helpers).
 

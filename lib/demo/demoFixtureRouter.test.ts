@@ -87,6 +87,16 @@ describe('handleDemoFixtureRequest', () => {
     expect(result).toEqual({ data: { draftSessionId: null, sessions: [] }, status: 200 });
   });
 
+  it('serves the sprint history only for the current sprint, newest first', () => {
+    const events = (handleDemoFixtureRequest(cfg('get', `/sprints/${DEMO_SPRINT_ID}/history`)).data as {
+      events: Array<{ actor: { channel: string | null }; at: string }>;
+    }).events;
+    expect(events.length).toBeGreaterThan(5);
+    expect(events.some((event) => event.actor.channel === 'agent')).toBe(true);
+    expect([...events].sort((a, b) => b.at.localeCompare(a.at))).toEqual(events);
+    expect(handleDemoFixtureRequest(cfg('get', '/sprints/103/history')).data).toEqual({ events: [] });
+  });
+
   it('returns the demo board list', () => {
     const result = handleDemoFixtureRequest(cfg('get', '/boards'));
     expect(result.status).toBe(200);

@@ -331,3 +331,19 @@
 - Шаги: на «Доске» открыть вкладку сайдбара «Метрики», блок «По статусам».
 - Ожидаемо: строки подписаны названиями статусов из трекера («In progress», «Need info»), а не ключами (`inProgress`); у каждой суммы SP и TP.
 - Автотест: e2e/functional/sidebarMetrics.spec.ts
+
+## 10. История спринта (вкладка сайдбара «История»)
+
+### TC-100: Лента изменений спринта
+- Контур: демо
+- Код: features/sidebar/components/tabs/HistoryTab.tsx, features/sidebar/components/tabs/HistoryEventRow.tsx, features/sidebar/utils/sprintHistoryText.ts, lib/boardHistory/, lib/demo/demoFixtureHistory.ts
+- Шаги: на «Доске» открыть вкладку сайдбара «История».
+- Ожидаемо: события сгруппированы по дням, новые сверху; у каждого автор, время и что изменилось («Задача добавлена в спринт», «Срок: 20.10 → 22.10», «Цель отмечена выполненной»); у задачи — ключ и название; правки агента помечены «через Claude»; правка без автора подписана «Неизвестно».
+- Автотест: e2e/functional/sprintHistory.spec.ts
+
+### TC-101: Фильтр ленты истории
+- Контур: демо
+- Код: features/sidebar/components/tabs/HistoryTab.tsx, features/sidebar/utils/sprintHistoryText.ts
+- Шаги: во вкладке «История» переключить фильтры «Задачи», «Доска», «Агент», «Все».
+- Ожидаемо: «Задачи» — только события из трекера, «Доска» — заметки, цели и стрелки, «Агент» — только правки через агента; «Все» возвращает полную ленту.
+- Автотест: e2e/functional/sprintHistory.spec.ts
