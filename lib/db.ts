@@ -106,6 +106,7 @@ const BEER_TRACKER_TABLES = [
   'teams',
   'user_notifications',
   'board_availability_events',
+  'board_object_events', // журнал заметок, целей и стрелок (пишут триггеры, миграция 0012)
 ] as const;
 
 function schemaQualified(): string {

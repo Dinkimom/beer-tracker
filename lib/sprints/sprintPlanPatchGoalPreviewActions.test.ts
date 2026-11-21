@@ -2,6 +2,7 @@ import type { PlanPatchGoalPreview } from './sprintPlanPatchGoalPreview';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { runAsBoardActor } from '@/lib/boardHistory/boardEventActor';
 import {
   deleteSprintGoal,
   insertSprintGoal,
@@ -17,6 +18,11 @@ import {
   deletePlanPatchGoalPreviews,
   listPlanPatchGoalPreviews,
 } from './sprintPlanPatchGoalPreviewRepository';
+
+const TX = vi.fn();
+vi.mock('@/lib/boardHistory/boardEventActor', () => ({
+  runAsBoardActor: vi.fn((_actor: unknown, fn: (tx: unknown) => Promise<unknown>) => fn(TX)),
+}));
 
 vi.mock('@/lib/issueTrackerProvider/clientFactory', () => ({
   getIssueTrackerProviderClientForOrganization: vi.fn(),
@@ -43,6 +49,7 @@ const syncToTracker = vi.mocked(syncSprintGoalsToTracker);
 
 const created: PlanPatchGoalPreview = {
   action: 'create',
+  clientBrand: 'claude',
   done: false,
   goalId: '11111111-1111-4111-8111-111111111111',
   goalType: 'delivery',
@@ -65,12 +72,21 @@ describe('plan patch goal preview actions', () => {
     await expect(
       approvePlanPatchGoalPreviews({ organizationId: 'org', ownerId: 'user-1', sprintId: 7, goalId: created.goalId })
     ).resolves.toBe(1);
-    expect(insert).toHaveBeenCalledWith({
-      goalId: created.goalId,
-      goalType: 'delivery',
-      organizationId: 'org',
-      sprintId: 7,
-      text: 'Review',
+    expect(insert).toHaveBeenCalledWith(
+      {
+        goalId: created.goalId,
+        goalType: 'delivery',
+        organizationId: 'org',
+        sprintId: 7,
+        text: 'Review',
+      },
+      TX
+    );
+    // В журнале доски: принявший человек, канал агента и клиент агента из черновика.
+    expect(vi.mocked(runAsBoardActor).mock.calls[0]?.[0]).toEqual({
+      actorId: 'user-1',
+      channel: 'agent',
+      clientBrand: 'claude',
     });
     expect(remove).toHaveBeenCalledWith({
       goalId: created.goalId,
@@ -87,12 +103,11 @@ describe('plan patch goal preview actions', () => {
     const removed: PlanPatchGoalPreview = { ...created, action: 'delete', goalId: '22222222-2222-4222-8222-222222222222' };
     list.mockResolvedValue([updated, removed]);
     await approvePlanPatchGoalPreviews({ organizationId: 'org', ownerId: 'user-1', sprintId: 7 });
-    expect(update).toHaveBeenCalledWith({
-      goalId: updated.goalId,
-      organizationId: 'org',
-      patch: { done: false, text: 'Next' },
-    });
-    expect(drop).toHaveBeenCalledWith({ goalId: removed.goalId, organizationId: 'org' });
+    expect(update).toHaveBeenCalledWith(
+      { goalId: updated.goalId, organizationId: 'org', patch: { done: false, text: 'Next' } },
+      TX
+    );
+    expect(drop).toHaveBeenCalledWith({ goalId: removed.goalId, organizationId: 'org' }, TX);
   });
 
   it('rejects by deleting the preview without writing the goal', async () => {

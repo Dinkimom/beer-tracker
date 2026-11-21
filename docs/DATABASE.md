@@ -114,6 +114,7 @@ Sync-worker миграции не запускает. На пустой БД о�
 **Синхронизация с трекером** (подробно — [SYNC.md](./SYNC.md))
 - `issue_snapshots` — нормализованный снимок задачи.
 - `issue_changelog_events` — кеш changelog и комментариев задачи.
+- `board_object_events` — журнал заметок, целей и стрелок доски (их нет в трекере). Пишут триггеры на `comments`, `sprint_goals`, `task_links` при любом пути записи; кто и откуда — из настроек транзакции `beer_tracker.actor_*` (`lib/boardHistory/boardEventActor.ts`: `runAsBoardActor`, `setBoardEventActor`), без них у заметок — из `created_by` / `updated_by` / `deleted_by`. Черновики агента попадают при подтверждении; правки одного автора подряд (2 мин) и перезапись в одной транзакции склеиваются. `beer_tracker.board_events = off` — служебные пересчёты без журнала.
 - `issue_field_events` — materialized view поверх `issue_changelog_events`: одна строка на изменённое поле плана (спринт, исполнитель, start/deadline, статус, оценки) с автором и временем; `*_ids` / `*_text` — значения из разнородного JSON. Пересчитывается `REFRESH … CONCURRENTLY` в конце синка changelog (`lib/snapshots/syncIssueChangelogsFromTracker.ts`). Основа истории изменений спринта.
 - `sync_runs` — журнал прогонов; уникальный индекс `uq_sync_runs_one_running_per_org` — не больше одного `running` на организацию.
 

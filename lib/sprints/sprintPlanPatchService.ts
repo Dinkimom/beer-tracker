@@ -11,6 +11,7 @@ import type {
 import { ZodError } from 'zod';
 
 import { parseAgentSessionReplies } from '@/lib/agentSessions/agentSession';
+import { setBoardEventActor } from '@/lib/boardHistory/boardEventActor';
 import { runBeerTrackerTransaction } from '@/lib/db';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { loadSprintContextForOrganization } from '@/lib/sprints/loadSprintContextForOrganization';
@@ -278,6 +279,7 @@ type AtomicApplyOutcome =
 async function applyVerifiedPlanPatchAtomically(input: {
   actorUserId: string;
   applyToken: string;
+  clientBrand?: string;
   draftNoteIds: string[];
   expiresAtSec: number;
   onError: SprintPlanPatchOnError;
@@ -299,6 +301,11 @@ async function applyVerifiedPlanPatchAtomically(input: {
       if (!claimed) {
         return { kind: 'already_applied' };
       }
+      await setBoardEventActor(tx, {
+        actorId: input.actorUserId,
+        channel: 'agent',
+        clientBrand: input.clientBrand,
+      });
       await confirmProposedCreateNotes({ commentIds: input.draftNoteIds, sprintId: input.sprintId }, tx);
       const result = await applySprintPlanPatchOps({ ...input, tx });
       if (result.error && input.onError === 'stop') {
@@ -405,6 +412,8 @@ async function loadAppliedPlanPatchSummary(input: {
 export async function applySprintPlanPatch(input: {
   actorUserId: string;
   applyToken: string;
+  /** Клиент агента (claude, cursor…) — для журнала доски. */
+  clientBrand?: string;
   confirm: boolean;
   onError?: SprintPlanPatchOnError;
   ops: unknown;
@@ -444,6 +453,7 @@ export async function applySprintPlanPatch(input: {
   const outcome = await applyVerifiedPlanPatchAtomically({
     actorUserId: input.actorUserId,
     applyToken: input.applyToken,
+    clientBrand: input.clientBrand,
     draftNoteIds: verified.draftNoteIds,
     expiresAtSec: verified.exp,
     onError,

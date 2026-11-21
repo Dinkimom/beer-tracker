@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { runAsBoardActor, uiBoardActor } from '@/lib/boardHistory/boardEventActor';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { persistBatchTaskLinks } from '@/lib/sprints';
 import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
@@ -28,11 +29,12 @@ export async function POST(
       );
     }
 
-    const count = await persistBatchTaskLinks({
-      links: validation.data.links,
-      organizationId: tenantResult.ctx.organizationId,
-      sprintId,
-    });
+    const count = await runAsBoardActor(uiBoardActor(tenantResult.ctx.userId), (tx) =>
+      persistBatchTaskLinks(
+        { links: validation.data.links, organizationId: tenantResult.ctx.organizationId, sprintId },
+        tx
+      )
+    );
 
     notifySprintRealtime(request, tenantResult.ctx.organizationId, sprintId, ['links']);
     return NextResponse.json({ success: true, count });

@@ -2,11 +2,15 @@ import type { QueryResult } from 'pg';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { setBoardEventActor } from '@/lib/boardHistory/boardEventActor';
 import { query, runBeerTrackerTransaction } from '@/lib/db';
 
 import { moveSprintCommentLinksSql, moveSprintCommentsToSprint } from './sprintCommentsMoveRepository';
 import { deleteSprintCommentLinksSql } from './sprintCommentsRepository';
 
+vi.mock('@/lib/boardHistory/boardEventActor', () => ({
+  setBoardEventActor: vi.fn(() => Promise.resolve()),
+}));
 vi.mock('@/lib/db', () => ({
   query: vi.fn(),
   runBeerTrackerTransaction: vi.fn(),
@@ -14,6 +18,8 @@ vi.mock('@/lib/db', () => ({
 
 const NOTE_A = '11111111-1111-4111-8111-111111111111';
 const NOTE_B = '22222222-2222-4222-8222-222222222222';
+
+const ACTOR = { actorId: 'user-1', channel: 'ui' as const };
 
 const txCalls: Array<{ params?: unknown[]; sql: string }> = [];
 
@@ -37,6 +43,7 @@ describe('moveSprintCommentsToSprint', () => {
   it('moves notes and their arrows in one transaction and returns the real count', async () => {
     useTransaction([NOTE_A]);
     const moved = await moveSprintCommentsToSprint({
+      actor: ACTOR,
       commentIds: [NOTE_A, NOTE_B],
       fromSprintId: 12,
       organizationId: 'org',
@@ -45,6 +52,7 @@ describe('moveSprintCommentsToSprint', () => {
 
     expect(moved).toBe(1);
     expect(runBeerTrackerTransaction).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(setBoardEventActor).mock.calls[0]?.[1]).toEqual(ACTOR);
     expect(query).not.toHaveBeenCalled();
     expect(txCalls.map((c) => c.sql)).toEqual([
       expect.stringMatching(/^UPDATE comments SET sprint_id = \$2 .* RETURNING id$/),
@@ -61,6 +69,7 @@ describe('moveSprintCommentsToSprint', () => {
     useTransaction([]);
     await expect(
       moveSprintCommentsToSprint({
+        actor: ACTOR,
         commentIds: [NOTE_A],
         fromSprintId: 12,
         organizationId: 'org',
@@ -73,10 +82,10 @@ describe('moveSprintCommentsToSprint', () => {
   it('skips the database for an empty list or the same sprint', async () => {
     useTransaction([NOTE_A]);
     await expect(
-      moveSprintCommentsToSprint({ commentIds: [], fromSprintId: 1, organizationId: 'o', toSprintId: 2 })
+      moveSprintCommentsToSprint({ actor: ACTOR, commentIds: [], fromSprintId: 1, organizationId: 'o', toSprintId: 2 })
     ).resolves.toBe(0);
     await expect(
-      moveSprintCommentsToSprint({ commentIds: [NOTE_A], fromSprintId: 2, organizationId: 'o', toSprintId: 2 })
+      moveSprintCommentsToSprint({ actor: ACTOR, commentIds: [NOTE_A], fromSprintId: 2, organizationId: 'o', toSprintId: 2 })
     ).resolves.toBe(0);
     expect(runBeerTrackerTransaction).not.toHaveBeenCalled();
   });

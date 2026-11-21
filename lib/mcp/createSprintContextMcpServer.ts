@@ -37,6 +37,9 @@ export function createSprintContextMcpServer(input: {
     name: 'beer-tracker-sprint-context',
     version: '1.12.0',
   });
+  /** Клиент агента (claude, cursor…): подпись черновиков и журнала доски. */
+  const resolveClientBrand = () =>
+    input.mcpClientId ? resolveRegisteredMcpClientBrand(input.mcpClientId) : Promise.resolve(undefined);
 
   registerIdentityMcpTools(server, input);
   registerAgentSessionMcpTools(server, input);
@@ -386,7 +389,7 @@ export function createSprintContextMcpServer(input: {
         if (denied) {
           return toolError(new Error(denied));
         }
-        const clientBrand = input.mcpClientId ? await resolveRegisteredMcpClientBrand(input.mcpClientId) : undefined;
+        const clientBrand = await resolveClientBrand();
         const result = await proposeSprintPlanPatch({
           actorUserId: input.userId,
           draftMessage,
@@ -442,9 +445,11 @@ export function createSprintContextMcpServer(input: {
         if (denied) {
           return toolError(new Error(denied));
         }
+        const clientBrand = await resolveClientBrand();
         const result = await applySprintPlanPatch({
           actorUserId: input.userId,
           applyToken,
+          clientBrand,
           confirm,
           onError,
           ops,

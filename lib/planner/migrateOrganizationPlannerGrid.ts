@@ -1,6 +1,7 @@
 import type { PlannerTimelineScale, TimeslotsPerDay } from '@/lib/plannerTimelineScale';
 import type { QueryResultRow } from 'pg';
 
+import { disableBoardEvents } from '@/lib/boardHistory/boardEventActor';
 import { pool, qualifyBeerTrackerTables, query } from '@/lib/db';
 import { findOrganizationById } from '@/lib/organizations';
 import {
@@ -111,6 +112,8 @@ export async function applyPlannerTimelineScale(
     await client.query('BEGIN');
     const run = (sql: string, params?: unknown[]) =>
       client.query(qualifyBeerTrackerTables(sql), params);
+    // Пересчёт сетки сдвигает part у всех заметок — это не правка людей, в журнал доски не идёт.
+    await disableBoardEvents(run);
     if (from !== next.timeslotsPerDay) {
       await run(positionUpdateSql(), [organizationId, from, next.timeslotsPerDay]);
       await run(

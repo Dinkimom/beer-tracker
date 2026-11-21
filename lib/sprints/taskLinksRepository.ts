@@ -88,38 +88,46 @@ export async function deleteTaskLinksForTask(
   ]);
 }
 
-export async function clearTaskLinksForSprint(input: {
-  organizationId: string;
-  sprintId: number;
-}): Promise<void> {
-  await query('DELETE FROM task_links WHERE sprint_id = $1', [input.sprintId]);
+export async function clearTaskLinksForSprint(
+  input: {
+    organizationId: string;
+    sprintId: number;
+  },
+  run: BeerTrackerTransactionQuery = query
+): Promise<void> {
+  await run('DELETE FROM task_links WHERE sprint_id = $1', [input.sprintId]);
 }
 
-export async function persistBatchTaskLinks(params: {
-  links: Array<{
-    fromAnchor?: string | null;
-    fromTaskId: string;
-    id: string;
-    toAnchor?: string | null;
-    toTaskId: string;
-  }>;
-  organizationId: number | string;
-  sprintId: number;
-}): Promise<number> {
-  return await runBeerTrackerTransaction(async (tx) => {
-    const linkIds = params.links.map((l) => l.id);
-    if (linkIds.length === 0) {
-      return 0;
-    }
-    const placeholders = linkIds.map((_, i) => `$${i + 2}`).join(', ');
-    await tx(buildTaskLinksBatchDeleteSql(placeholders), [params.sprintId, ...linkIds]);
+/** Пакетная запись стрелок (удалить по id и вставить заново) — в транзакции `run` или своей. */
+export async function persistBatchTaskLinks(
+  params: {
+    links: Array<{
+      fromAnchor?: string | null;
+      fromTaskId: string;
+      id: string;
+      toAnchor?: string | null;
+      toTaskId: string;
+    }>;
+    organizationId: number | string;
+    sprintId: number;
+  },
+  run?: BeerTrackerTransactionQuery
+): Promise<number> {
+  if (!run) {
+    return runBeerTrackerTransaction((tx) => persistBatchTaskLinks(params, tx));
+  }
+  const linkIds = params.links.map((l) => l.id);
+  if (linkIds.length === 0) {
+    return 0;
+  }
+  const placeholders = linkIds.map((_, i) => `$${i + 2}`).join(', ');
+  await run(buildTaskLinksBatchDeleteSql(placeholders), [params.sprintId, ...linkIds]);
 
-    const { params: insertParams, sql: insertSql } = buildTaskLinksBatchInsert(
-      params.links,
-      params.organizationId,
-      params.sprintId
-    );
-    await tx(insertSql, insertParams);
-    return params.links.length;
-  });
+  const { params: insertParams, sql: insertSql } = buildTaskLinksBatchInsert(
+    params.links,
+    params.organizationId,
+    params.sprintId
+  );
+  await run(insertSql, insertParams);
+  return params.links.length;
 }

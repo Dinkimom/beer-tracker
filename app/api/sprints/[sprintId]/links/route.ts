@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { runAsBoardActor, uiBoardActor } from '@/lib/boardHistory/boardEventActor';
 import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import {
@@ -84,15 +85,12 @@ export async function POST(
     }
     const linkId = id || `link-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-    const link = await upsertTaskLink({
-      fromAnchor,
-      fromTaskId,
-      linkId,
-      organizationId,
-      sprintId,
-      toAnchor,
-      toTaskId,
-    });
+    const link = await runAsBoardActor(uiBoardActor(tenantResult.ctx.userId), (tx) =>
+      upsertTaskLink(
+        { fromAnchor, fromTaskId, linkId, organizationId, sprintId, toAnchor, toTaskId },
+        tx
+      )
+    );
 
     notifySprintRealtime(request, organizationId, sprintId, ['links']);
     return NextResponse.json({ link });
@@ -126,7 +124,9 @@ export async function DELETE(
       );
     }
 
-    await deleteTaskLink({ linkId, organizationId, sprintId });
+    await runAsBoardActor(uiBoardActor(tenantResult.ctx.userId), (tx) =>
+      deleteTaskLink({ linkId, organizationId, sprintId }, tx)
+    );
 
     notifySprintRealtime(request, organizationId, sprintId, ['links']);
     return NextResponse.json({ success: true });

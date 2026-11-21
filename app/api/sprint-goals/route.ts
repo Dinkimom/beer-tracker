@@ -3,6 +3,7 @@ import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPrev
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
+import { runAsBoardActor, uiBoardActor } from '@/lib/boardHistory/boardEventActor';
 import {
   insertSprintGoal,
   listSprintGoals,
@@ -106,14 +107,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: planRow.error }, { status: 400 });
     }
 
-    const row = await insertSprintGoal({
-      organizationId,
-      sprintId,
-      goalType,
-      planRow: planRow.planRow,
-      team,
-      text: text.trim(),
-    });
+    const row = await runAsBoardActor(uiBoardActor(tenantResult.ctx.userId), (tx) =>
+      insertSprintGoal(
+        {
+          organizationId,
+          sprintId,
+          goalType,
+          planRow: planRow.planRow,
+          team,
+          text: text.trim(),
+        },
+        tx
+      )
+    );
     await syncSprintGoalsToTrackerFromRequest(request, sprintId);
 
     return NextResponse.json({ success: true, item: toSprintGoalItem(row) });

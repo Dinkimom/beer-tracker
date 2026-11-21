@@ -1,5 +1,6 @@
 import type { PlanPatchGoalPreview } from '@/lib/sprints/sprintPlanPatchGoalPreview';
 
+import { runAsBoardActor } from '@/lib/boardHistory/boardEventActor';
 import { getIssueTrackerProviderClientForOrganization } from '@/lib/issueTrackerProvider/clientFactory';
 import {
   deleteSprintGoal,
@@ -13,30 +14,31 @@ import {
   listPlanPatchGoalPreviews,
 } from './sprintPlanPatchGoalPreviewRepository';
 
+/** Цель от агента, принятая человеком: в журнале доски — его правка через агента. */
 async function writeGoalPreview(input: {
   organizationId: string;
+  ownerId: string;
   preview: PlanPatchGoalPreview;
   sprintId: number;
 }): Promise<void> {
   const { organizationId, preview, sprintId } = input;
-  if (preview.action === 'delete') {
-    await deleteSprintGoal({ goalId: preview.goalId, organizationId });
-    return;
-  }
-  if (preview.action === 'create') {
-    await insertSprintGoal({
-      goalId: preview.goalId,
-      goalType: preview.goalType,
-      organizationId,
-      sprintId,
-      text: preview.text,
-    });
-    return;
-  }
-  await updateSprintGoal({
-    goalId: preview.goalId,
-    organizationId,
-    patch: { done: preview.done, text: preview.text },
+  const actor = { actorId: input.ownerId, channel: 'agent' as const, clientBrand: preview.clientBrand };
+  await runAsBoardActor(actor, async (tx) => {
+    if (preview.action === 'delete') {
+      await deleteSprintGoal({ goalId: preview.goalId, organizationId }, tx);
+      return;
+    }
+    if (preview.action === 'create') {
+      await insertSprintGoal(
+        { goalId: preview.goalId, goalType: preview.goalType, organizationId, sprintId, text: preview.text },
+        tx
+      );
+      return;
+    }
+    await updateSprintGoal(
+      { goalId: preview.goalId, organizationId, patch: { done: preview.done, text: preview.text } },
+      tx
+    );
   });
 }
 
@@ -53,6 +55,7 @@ export async function approvePlanPatchGoalPreviews(input: {
   for (const preview of selected) {
     await writeGoalPreview({
       organizationId: input.organizationId,
+      ownerId: input.ownerId,
       preview,
       sprintId: input.sprintId,
     });

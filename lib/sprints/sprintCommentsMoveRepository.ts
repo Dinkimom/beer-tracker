@@ -1,3 +1,4 @@
+import { setBoardEventActor, type BoardEventActor } from '@/lib/boardHistory/boardEventActor';
 import { runBeerTrackerTransaction } from '@/lib/db';
 
 import {
@@ -28,6 +29,8 @@ export function moveSprintCommentLinksSql(): string {
  * Возвращает число реально перенесённых заметок (0 — ни одной не нашлось в исходном спринте).
  */
 export async function moveSprintCommentsToSprint(input: {
+  /** Кто переносит — для журнала доски: в старом спринте заметка удалена, в новом создана. */
+  actor: BoardEventActor;
   commentIds: string[];
   fromSprintId: number;
   organizationId: string;
@@ -37,6 +40,7 @@ export async function moveSprintCommentsToSprint(input: {
     return 0;
   }
   return await runBeerTrackerTransaction(async (tx) => {
+    await setBoardEventActor(tx, input.actor);
     const moved = await tx(`${moveSprintCommentsSql()} RETURNING id`, [
       input.fromSprintId,
       input.toSprintId,

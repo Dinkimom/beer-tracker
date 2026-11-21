@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireTenantContext } from '@/lib/api-tenant';
+import { runAsBoardActor, uiBoardActor, type BoardEventActor } from '@/lib/boardHistory/boardEventActor';
 import { resolveParams } from '@/lib/nextjs-utils';
 import {
   deleteSprintGoal,
@@ -17,7 +18,7 @@ interface GoalRouteParams { params: Promise<{ id: string }> | { id: string } }
 async function goalRouteContext(
   request: NextRequest,
   context: GoalRouteParams
-): Promise<{ id: string; organizationId: string } | { response: NextResponse }> {
+): Promise<{ actor: BoardEventActor; id: string; organizationId: string } | { response: NextResponse }> {
   const tenantResult = await requireTenantContext(request);
   if (!('ctx' in tenantResult)) {
     return { response: tenantResult.response };
@@ -26,7 +27,7 @@ async function goalRouteContext(
   if (!id) {
     return { response: NextResponse.json({ error: 'Goal id is required' }, { status: 400 }) };
   }
-  return { id, organizationId: tenantResult.ctx.organizationId };
+  return { actor: uiBoardActor(tenantResult.ctx.userId), id, organizationId: tenantResult.ctx.organizationId };
 }
 
 /** PATCH: обновить цель (text, checked и/или planRow) */
@@ -37,7 +38,7 @@ export async function PATCH(
   try {
     const goal = await goalRouteContext(request, context);
     if ('response' in goal) return goal.response;
-    const { id, organizationId } = goal;
+    const { actor, id, organizationId } = goal;
 
     const body = await request.json() as { text?: string; checked?: boolean; planRow?: unknown };
     const planRow = await resolveSprintGoalPlanRow(organizationId, body.planRow);
@@ -54,7 +55,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Provide text, checked and/or planRow' }, { status: 400 });
     }
 
-    const row = await updateSprintGoal({ organizationId, goalId: id, patch });
+    const row = await runAsBoardActor(actor, (tx) =>
+      updateSprintGoal({ organizationId, goalId: id, patch }, tx)
+    );
 
     if (!row) {
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
@@ -81,12 +84,11 @@ export async function DELETE(
   try {
     const goal = await goalRouteContext(request, context);
     if ('response' in goal) return goal.response;
-    const { id, organizationId } = goal;
+    const { actor, id, organizationId } = goal;
 
-    const deleted = await deleteSprintGoal({
-      organizationId,
-      goalId: id,
-    });
+    const deleted = await runAsBoardActor(actor, (tx) =>
+      deleteSprintGoal({ organizationId, goalId: id }, tx)
+    );
 
     if (!deleted) {
       return NextResponse.json({ success: true, notFound: true });

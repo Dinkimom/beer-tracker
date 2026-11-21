@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { uiBoardActor } from '@/lib/boardHistory/boardEventActor';
 import { notifySprintRealtimeForSprintIds } from '@/lib/realtime/notifySprintRealtime';
 import { moveSprintCommentsToSprint } from '@/lib/sprints';
 import { parseMoveSprintCommentsBody } from '@/lib/sprints/sprintCommentsMoveRouteHelpers';
@@ -20,6 +21,7 @@ export async function POST(
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }
     const moved = await moveSprintCommentsToSprint({
+      actor: uiBoardActor(tenantResult.ctx.userId),
       commentIds: parsed.value.commentIds,
       fromSprintId,
       organizationId: tenantResult.ctx.organizationId,

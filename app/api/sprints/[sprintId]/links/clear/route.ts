@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { runAsBoardActor, uiBoardActor } from '@/lib/boardHistory/boardEventActor';
 import { notifySprintRealtime } from '@/lib/realtime/notifySprintRealtime';
 import { clearTaskLinksForSprint } from '@/lib/sprints';
 import { requireSprintRouteContext } from '@/lib/sprints/sprintRouteContext';
@@ -16,7 +17,9 @@ export async function DELETE(
     const organizationId = tenantResult.ctx.organizationId;
     const { sprintId } = tenantResult;
 
-    await clearTaskLinksForSprint({ organizationId, sprintId });
+    await runAsBoardActor(uiBoardActor(tenantResult.ctx.userId), (tx) =>
+      clearTaskLinksForSprint({ organizationId, sprintId }, tx)
+    );
 
     notifySprintRealtime(request, organizationId, sprintId, ['links']);
     return NextResponse.json({ success: true });
