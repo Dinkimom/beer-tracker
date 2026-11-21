@@ -1,6 +1,5 @@
 'use client';
 
-import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -73,8 +72,6 @@ export interface TaskBarProps {
   leftPercent: number;
   /** Обводка в режиме создания связи. */
   linkMode?: 'source' | 'target' | null;
-  /** Штриховка стоимости и засечка срока относительно плана на старте работы. */
-  planAnchorOverlay?: SegmentPlanAnchorOverlay | null;
   /** Ошибка планирования: значок с подсказкой; нет поля — ошибки нет. */
   planningError?: { tooltip?: string };
   /** Карточка предложения: та же задача, геометрия из превью, без перетаскивания. */
@@ -125,7 +122,6 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
   htmlAnchorId = `task-${task.id}`,
   linkMode = null,
   planPatchGhost = false,
-  planAnchorOverlay,
   taskPositions,
   onTaskHover,
   segment: { badge: swimlaneSegmentBadge = null, secondary: swimlaneSegmentSecondary = false } = {},
@@ -372,7 +368,6 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
           timelineTotalParts: swimlaneTimelineTotalParts,
           timeoutRef: longHoverTimeoutRef,
         }}
-        planAnchorOverlay={planAnchorOverlay}
         quickAddSubmitting={quickAddSubmitting}
         resize={{ ...resize, isResizing: isAnyResizing }}
         task={task}

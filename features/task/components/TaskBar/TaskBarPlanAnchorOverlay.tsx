@@ -1,9 +1,10 @@
 'use client';
 
-import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
+import { observer } from 'mobx-react-lite';
 
 import { CARD_MARGIN, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import { useSwimlaneCardPlanAnchor } from '@/features/swimlane/SwimlaneCardContext';
 import { formatOverdueDayAmount } from '@/features/swimlane/utils/overdueBaselineSummary';
 import { planAnchorHatchStartFraction } from '@/features/swimlane/utils/planAnchorShift';
 
@@ -12,7 +13,6 @@ interface TaskBarPlanAnchorOverlayProps {
   duration: number;
   /** Во время drag и раскрытия по долгому hover ширина карточки не равна её длине. */
   hidden: boolean;
-  overlay: SegmentPlanAnchorOverlay | null | undefined;
   /** Длина отрезка в превью ресайза — штриховка пересчитывается на лету. */
   resizePreviewDuration: number | null | undefined;
   resizing: boolean;
@@ -25,14 +25,15 @@ const PLAN_ANCHOR_HATCH_CLASS =
  * Штриховка стоимости, добавленной после старта работы: хвост карточки сверх исходной длины.
  * Без pointer-events — drag и hover остаются у карточки.
  */
-export function TaskBarPlanAnchorOverlay({
+// observer: якорь плана — из стора позиций по контексту карточки.
+export const TaskBarPlanAnchorOverlay = observer(function TaskBarPlanAnchorOverlay({
   duration,
   hidden,
-  overlay,
   resizePreviewDuration,
   resizing,
 }: TaskBarPlanAnchorOverlayProps) {
   const { language, t } = useI18n();
+  const overlay = useSwimlaneCardPlanAnchor();
   if (!overlay || hidden) return null;
   const liveDuration = resizing ? (resizePreviewDuration ?? duration) : duration;
   const costHatchFrom = planAnchorHatchStartFraction(overlay.baseCells, liveDuration);
@@ -64,4 +65,4 @@ export function TaskBarPlanAnchorOverlay({
       </span>
     </div>
   );
-}
+});

@@ -5,6 +5,7 @@ import type { Task } from '@/types';
 import { observer } from 'mobx-react-lite';
 
 import { ZIndex } from '@/constants';
+import { useSwimlaneCardPlanAnchor } from '@/features/swimlane/SwimlaneCardContext';
 import { useAgentDevTask } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 import { TaskCardAgentBadge } from '@/features/task/components/TaskCard/components/TaskCardAgentBadge';
 import { TaskCardSwimlaneSegmentBadge } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneSegmentBadge';
@@ -24,7 +25,6 @@ interface TaskBarCornerBadgesProps {
   interactionDisabled: boolean;
   isInError: boolean;
   isQATask: boolean;
-  planAnchorMoved: 'earlier' | 'later' | null;
   swimlaneSegmentBadge?: { index: number; total: number } | null;
   /** Не первый отрезок сегментированной карточки: значки задачи живут на первом. */
   swimlaneSegmentSecondary: boolean;
@@ -51,6 +51,7 @@ export const TaskBarCornerBadges = observer(function TaskBarCornerBadges(
   const qaAvailable =
     primary && isTaskBarQACreateAvailable({ ...props, isDragging: props.effectiveIsDragging });
 
+  const planAnchorMoved = useSwimlaneCardPlanAnchor()?.moved ?? null;
   const left = [
     agentDev
       ? { key: 'agent', node: <TaskCardAgentBadge agentDev={agentDev} className={`${TASK_BAR_CORNER_BADGE_CLASS} !px-0`} /> }
@@ -77,12 +78,12 @@ export const TaskBarCornerBadges = observer(function TaskBarCornerBadges(
           ),
         }
       : null,
-    props.planAnchorMoved
+    planAnchorMoved
       ? {
           key: 'moved',
           node: (
             <TaskBarPlanMovedBadge
-              direction={props.planAnchorMoved}
+              direction={planAnchorMoved}
               interactionDisabled={interactionDisabled}
             />
           ),

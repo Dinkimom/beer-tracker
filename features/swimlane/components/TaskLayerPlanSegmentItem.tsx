@@ -7,7 +7,6 @@ import type { PhaseSegment } from '@/types';
 import { observer } from 'mobx-react-lite';
 import React, { useEffect, useMemo } from 'react';
 
-import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useBoards } from '@/features/board/hooks/useBoards';
 import { resolveQuickAddDraftQueueKey } from '@/features/board/quickAddQueueOptions';
@@ -17,8 +16,8 @@ import {
   isSwimlaneDiagramTask,
   parseSwimlaneCommentTaskId,
 } from '@/features/comments/utils/swimlaneCommentTaskBridge';
+import { SwimlaneCardContext } from '@/features/swimlane/SwimlaneCardContext';
 import { isoDateOnlyFromWorkingDayIndex } from '@/features/swimlane/utils/availabilityTimelineMarks';
-import { resolveSegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
 import {
   computeSwimlaneLinkAlreadyExists,
   computeSwimlaneValidLinkTargetByTime,
@@ -119,14 +118,8 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     stickyNoteCardRowById,
   } = props;
   const { t } = useI18n();
-  const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
-  const planAnchorOverlay = resolveSegmentPlanAnchorOverlay({
-    anchor: positionsStore.planAnchors.get(task.id),
-    partsPerDay: getPartsPerDay(),
-    position,
-    segment: seg,
-    task,
-  });
+  const { sprintPlannerUi } = useRootStore();
+  const card = useMemo(() => ({ position, segment: seg, task }), [position, seg, task]);
   const noteComposer = sprintPlannerUi.noteComposer;
   const cardPresenceViewers = useSprintCardPresenceViewers(task.id);
   const remoteNote = remotePresenceNotePreview(
@@ -356,6 +349,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
           : null
       }
     >
+      <SwimlaneCardContext.Provider value={card}>
       <TaskBar
         draggableId={renderState.draggableId}
         duration={seg.duration}
@@ -368,7 +362,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         }}
         leftPercent={renderState.leftPercent}
         linkMode={linkMode}
-        planAnchorOverlay={planAnchorOverlay}
         planningError={
           renderState.isInError
             ? { tooltip: formatOccupancyErrorTooltip(errorReasons?.get(task.id), t) }
@@ -415,6 +408,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         }
         onTaskHover={onTaskHover}
       />
+      </SwimlaneCardContext.Provider>
     </TaskCardSwimlaneImageDraftContext.Provider>
     </TaskCardSwimlaneDiagramDraftContext.Provider>
   );

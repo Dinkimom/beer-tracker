@@ -19,7 +19,6 @@ export interface TaskBarOpacityLayerChromeProps {
   isInError: boolean;
   isQATask: boolean;
   /** Значок переноса относительно плана на старте — в одном ряду с номером сегмента. */
-  planAnchorMoved?: 'earlier' | 'later' | null;
   resize: {
     handleResizeStart: (e: React.MouseEvent, side: 'left' | 'right') => void;
     isResizing: boolean;
@@ -51,7 +50,6 @@ export function TaskBarOpacityLayerChrome({
   isInError,
   isQATask,
   onCreateQATask,
-  planAnchorMoved = null,
   resize,
   showVerticalResize = false,
   swimlaneSegmentBadge,
@@ -123,7 +121,6 @@ export function TaskBarOpacityLayerChrome({
         interactionDisabled={interactionDisabled}
         isInError={isInError}
         isQATask={isQATask}
-        planAnchorMoved={planAnchorMoved}
         swimlaneSegmentBadge={swimlaneSegmentBadge}
         swimlaneSegmentSecondary={swimlaneSegmentSecondary}
         task={task}

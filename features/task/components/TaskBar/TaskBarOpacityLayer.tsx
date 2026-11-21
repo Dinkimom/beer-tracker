@@ -3,7 +3,6 @@
 import type { ResizeHandleCornerStyle } from './components/taskBarResizeHandleHelpers';
 import type { TaskBarOpacityLayerCardProps } from './TaskBarOpacityLayerCard';
 import type { TaskBarOpacityLayerChromeProps } from './TaskBarOpacityLayerChrome';
-import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
 
 import { observer } from 'mobx-react-lite';
 import React, { useCallback, useMemo } from 'react';
@@ -53,13 +52,12 @@ interface TaskBarOpacityLayerProps
   card: Omit<TaskBarOpacityLayerCardProps, SharedLayerKey | 'cardElementRef'>;
   children?: React.ReactNode;
   /** Ручки ресайза, бейджи, ошибка — уходят в `TaskBarOpacityLayerChrome`. */
-  chrome: Omit<TaskBarOpacityLayerChromeProps, SharedLayerKey | 'cornerStyle' | 'planAnchorMoved'>;
+  chrome: Omit<TaskBarOpacityLayerChromeProps, SharedLayerKey | 'cornerStyle'>;
   cornerStyle?: ResizeHandleCornerStyle;
   currentDurationParts: number;
   effectiveOpacity: number;
   longHover: TaskBarLongHover;
   /** Штриховка добавленной стоимости и значок переноса относительно плана на старте работы. */
-  planAnchorOverlay?: SegmentPlanAnchorOverlay | null;
   quickAddSubmitting: boolean;
   resize: TaskBarOpacityLayerChromeProps['resize'] & { resizeStartDuration: number | null };
   transform: { x: number; y: number; scaleX: number; scaleY: number } | null;
@@ -83,7 +81,6 @@ export const TaskBarOpacityLayer = observer(function TaskBarOpacityLayer(props: 
     isQATask,
     longHover,
     onTaskHover,
-    planAnchorOverlay,
     quickAddSubmitting,
     resize,
     task,
@@ -242,13 +239,11 @@ export const TaskBarOpacityLayer = observer(function TaskBarOpacityLayer(props: 
         {...chrome}
         {...shared}
         cornerStyle={cornerStyle}
-        planAnchorMoved={planAnchorOverlay?.moved ?? null}
         resize={resize}
       />
       <TaskBarPlanAnchorOverlay
         duration={currentDurationParts}
         hidden={effectiveIsDragging || longHoverExpanded}
-        overlay={planAnchorOverlay}
         resizePreviewDuration={resize.resizePreviewDuration}
         resizing={resize.isResizing}
       />
