@@ -99,7 +99,7 @@ async function captureOpenSprint(organizationId: string, sprint: OpenSprint): Pr
 
   const taskIds = positions.map((row) => row.task_id);
   const [segmentsByTask, changelogs, snapshotMeta, captures] = await Promise.all([
-    loadPositionSegmentsByTask(sprint.id),
+    loadPositionSegmentsByTask({ organizationId, sprintId: sprint.id }),
     fetchIssueChangelogCacheMap(organizationId, taskIds),
     fetchIssueStatusesTypesAndSummariesFromSnapshots(organizationId, taskIds),
     listPlanCapturesForSprint({ organizationId, sprintId: sprint.id }),

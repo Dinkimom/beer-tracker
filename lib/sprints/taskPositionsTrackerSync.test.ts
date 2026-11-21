@@ -76,6 +76,7 @@ describe('tracker sync failures after a position write', () => {
     updateIssue.mockRejectedValue(new Error('timeout'));
     const failures = await trySyncPlannedDatesAfterPositionDelete({
       logLabel: 'test',
+      organizationId: 'org-1',
       request,
       sprintId: 7,
       taskId: 'BT-3',

@@ -1,9 +1,13 @@
-function taskPositionsDeleteWhere(placeholders: string): string {
-  return `sprint_id = $1 AND task_id IN (${placeholders})`;
-}
+import { buildSprintTaskIdsScopeQuery } from './sprintTenantSql';
 
-export function buildTaskPositionsBatchDeleteSql(placeholders: string): string {
-  return `DELETE FROM task_positions WHERE ${taskPositionsDeleteWhere(placeholders)}`;
+/** Удаление карточек `taskIds` с доски спринта организации. */
+export function buildTaskPositionsBatchDelete(input: {
+  organizationId: string;
+  sprintId: number;
+  taskIds: readonly string[];
+}): { params: [string, number, string[]]; sql: string } {
+  const { params, scopeSql } = buildSprintTaskIdsScopeQuery(input);
+  return { params, sql: `DELETE FROM task_positions WHERE ${scopeSql}` };
 }
 
 /** PK beer_tracker.task_positions: (organization_id, sprint_id, task_id). */

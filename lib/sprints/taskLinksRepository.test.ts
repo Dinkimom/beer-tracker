@@ -43,7 +43,7 @@ describe('persistBatchTaskLinks', () => {
     expect(query).not.toHaveBeenCalled();
     expect(txCalls).toHaveLength(2);
     expect(txCalls[0]!.sql).toMatch(/^DELETE FROM task_links/);
-    expect(txCalls[0]!.params).toEqual([7, 'l1', 'l2']);
+    expect(txCalls[0]!.params).toEqual(['org', 7, ['l1', 'l2']]);
     expect(txCalls[1]!.sql).toMatch(/INSERT INTO task_links/);
     expect(txCalls.some((c) => /^(BEGIN|COMMIT|ROLLBACK)/.test(c.sql))).toBe(false);
   });

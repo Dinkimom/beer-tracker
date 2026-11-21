@@ -27,6 +27,7 @@ export async function POST(
 
     const result = await approvePendingSprintComment({
       commentId,
+      organizationId: tenantResult.ctx.organizationId,
       ownerId: tenantResult.ctx.userId,
       sprintId,
     });

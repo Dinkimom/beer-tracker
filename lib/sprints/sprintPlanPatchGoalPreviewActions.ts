@@ -69,6 +69,7 @@ export async function approvePlanPatchGoalPreviews(input: {
   if (selected.length > 0) {
     await syncSprintGoalsToTracker({
       getIssueTracker: () => getIssueTrackerProviderClientForOrganization(input.organizationId),
+      organizationId: input.organizationId,
       sprintId: input.sprintId,
     });
   }

@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
         tx
       )
     );
-    await syncSprintGoalsToTrackerFromRequest(request, sprintId);
+    await syncSprintGoalsToTrackerFromRequest(request, { organizationId, sprintId });
 
     return NextResponse.json({ success: true, item: toSprintGoalItem(row) });
   } catch (error) {

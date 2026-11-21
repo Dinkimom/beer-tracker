@@ -69,23 +69,23 @@ describe('sprintCommentReplacements', () => {
 
   it('applies the chosen copies (single ✓) or all copies of the draft owner', async () => {
     mockedQuery.mockResolvedValue(result(1));
-    await applyPendingCommentReplacements({ commentIds: ['c1'], ownerId: 'owner', sprintId: 7 });
-    await applyPendingCommentReplacements({ ownerId: 'owner', sprintId: 7 });
-    expect(mockedQuery.mock.calls[0]![1]).toEqual([7, ['c1'], 'owner']);
-    expect(mockedQuery.mock.calls[1]![1]).toEqual([7, null, 'owner']);
+    await applyPendingCommentReplacements({ commentIds: ['c1'], organizationId: 'org', ownerId: 'owner', sprintId: 7 });
+    await applyPendingCommentReplacements({ organizationId: 'org', ownerId: 'owner', sprintId: 7 });
+    expect(mockedQuery.mock.calls[0]![1]).toEqual(['org', 7, ['c1'], 'owner']);
+    expect(mockedQuery.mock.calls[1]![1]).toEqual(['org', 7, null, 'owner']);
     const sql = String(mockedQuery.mock.calls[0]![0]);
     // Правка → в оригинал, удаление → soft delete оригинала, копии убираются.
     expect(sql).toContain("d.replace_action = 'update'");
     expect(sql).toContain("d.replace_action = 'delete'");
     expect(sql).toContain('SET deleted_at = CURRENT_TIMESTAMP');
     expect(sql).toMatch(/DELETE FROM comments c USING drafts d WHERE c\.id = d\.id/);
-    expect(sql).toContain('LOWER(d.created_by::text) = LOWER($3)');
+    expect(sql).toContain('LOWER(d.created_by::text) = LOWER($4)');
   });
 
   it('drops the owner copies once apply_plan_patch applied the note ops itself', async () => {
     mockedQuery.mockResolvedValue(result(2));
-    await deletePendingCommentReplacements({ ownerId: 'owner', sprintId: 7 });
+    await deletePendingCommentReplacements({ organizationId: 'org', ownerId: 'owner', sprintId: 7 });
     expect(String(mockedQuery.mock.calls[0]![0])).toMatch(/^DELETE FROM comments d WHERE/);
-    expect(mockedQuery.mock.calls[0]![1]).toEqual([7, null, 'owner']);
+    expect(mockedQuery.mock.calls[0]![1]).toEqual(['org', 7, null, 'owner']);
   });
 });

@@ -160,7 +160,7 @@ async function loadSprintCards(
   if (taskIds.length === 0 || sprints.length === 0) return {};
   try {
     const [positions, organization] = await Promise.all([
-      listTaskCardSpans({ sprintIds: sprints.map((sprint) => sprint.id), taskIds }),
+      listTaskCardSpans({ organizationId, sprintIds: sprints.map((sprint) => sprint.id), taskIds }),
       findOrganizationById(organizationId),
     ]);
     const members = await loadTrackerSprintMembers(issueTracker, [...new Set(positions.map((position) => position.sprintId))]);

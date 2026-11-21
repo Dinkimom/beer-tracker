@@ -1,18 +1,23 @@
-/** WHERE для строк, привязанных к спринту (on-prem: только sprint_id). */
+/**
+ * WHERE для строк доски спринта. Номера спринтов у трекеров пересекаются между организациями,
+ * поэтому спринт всегда ищется внутри организации: `$1` — организация, `$2` — спринт.
+ */
 export function sprintTenantWhere(): string {
-  return 'sprint_id = $1';
+  return 'organization_id = $1 AND sprint_id = $2';
 }
 
-export function sprintTenantParams(sprintId: number): [number] {
-  return [sprintId];
+export function sprintTenantParams(input: { organizationId: string; sprintId: number }): [string, number] {
+  return [input.organizationId, input.sprintId];
 }
 
-export function buildSprintTaskIdsScopeQuery(
-  sprintId: number,
-  taskIds: string[]
-): { params: Array<number | string>; scopeSql: string } {
-  const placeholders = taskIds.map((_, i) => `$${i + 2}`).join(', ');
-  const scopeSql = `sprint_id = $1 AND task_id IN (${placeholders})`;
-  const params = [sprintId, ...taskIds];
-  return { params, scopeSql };
+/** Строки спринта с `task_id` из списка: `$3` — массив id задач. */
+export function buildSprintTaskIdsScopeQuery(input: {
+  organizationId: string;
+  sprintId: number;
+  taskIds: readonly string[];
+}): { params: [string, number, string[]]; scopeSql: string } {
+  return {
+    params: [input.organizationId, input.sprintId, [...input.taskIds]],
+    scopeSql: `${sprintTenantWhere()} AND task_id = ANY($3::text[])`,
+  };
 }

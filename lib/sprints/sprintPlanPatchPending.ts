@@ -23,7 +23,7 @@ export async function loadPendingPlanPatchSnapshot(input: {
   const [positionPeek, goalPeek, draftNoteCount] = await Promise.all([
     peekPlanPatchPositionPreviewProposal(input),
     peekPlanPatchGoalPreviewProposal(input),
-    countPendingPlanPatchSprintComments({ ownerId: input.ownerId, sprintId: input.sprintId }),
+    countPendingPlanPatchSprintComments(input),
   ]);
 
   const positionPreviewCount = positionPeek?.count ?? 0;
@@ -34,10 +34,7 @@ export async function loadPendingPlanPatchSnapshot(input: {
 
   let proposalId = positionPeek?.proposalId ?? goalPeek?.proposalId ?? null;
   if (!proposalId && draftNoteCount > 0) {
-    const noteHash = await peekPendingPlanPatchCommentProposalId({
-      ownerId: input.ownerId,
-      sprintId: input.sprintId,
-    });
+    const noteHash = await peekPendingPlanPatchCommentProposalId(input);
     proposalId = noteHash ? proposalIdFromOpsHash(noteHash) : null;
   }
 

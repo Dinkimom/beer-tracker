@@ -41,9 +41,10 @@ describe('syncSprintGoalsToTracker', () => {
     const updateSprintGoal = vi.fn(() => Promise.resolve());
     await syncSprintGoalsToTracker({
       getIssueTracker: () => Promise.resolve({ providerKind: 'jira-cloud', updateSprintGoal } as never),
+      organizationId: 'org-1',
       sprintId: 42,
     });
-    expect(listSprintGoalTexts).toHaveBeenCalledWith({ sprintId: 42 });
+    expect(listSprintGoalTexts).toHaveBeenCalledWith({ organizationId: 'org-1', sprintId: 42 });
     expect(updateSprintGoal).toHaveBeenCalledWith(42, '- Ship checkout');
   });
 
@@ -51,6 +52,7 @@ describe('syncSprintGoalsToTracker', () => {
     const updateSprintGoal = vi.fn(() => Promise.resolve());
     await syncSprintGoalsToTracker({
       getIssueTracker: () => Promise.resolve({ providerKind: 'tracker', updateSprintGoal } as never),
+      organizationId: 'org-1',
       sprintId: 42,
     });
     expect(updateSprintGoal).not.toHaveBeenCalled();
@@ -66,6 +68,7 @@ describe('syncSprintGoalsToTracker', () => {
             providerKind: 'jira-onprem',
             updateSprintGoal: () => Promise.reject(new Error('403')),
           } as never),
+        organizationId: 'org-1',
         sprintId: 42,
       })
     ).resolves.toBeUndefined();

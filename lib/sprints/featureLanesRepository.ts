@@ -16,7 +16,7 @@ export async function fetchFeatureLanes(
     `SELECT draft_rows as "draftRows", hidden_ids as "hiddenIds", order_ids as "orderIds"
        FROM sprint_feature_lanes
        WHERE ${sprintTenantWhere()}`,
-    sprintTenantParams(input.sprintId)
+    sprintTenantParams(input)
   );
 
   const row = result.rows[0];

@@ -88,22 +88,23 @@ export async function listSprintComments(input: {
    */
   viewerUserId?: string;
 }): Promise<unknown[]> {
-  await deleteExpiredPendingSprintComments({ sprintId: input.sprintId });
+  await deleteExpiredPendingSprintComments(input);
   const result = await query(
     `SELECT ${COMMENT_RETURNING}
       FROM comments
       WHERE ${sprintTenantWhere()}
         AND deleted_at IS NULL
-        AND (pending_approval = FALSE OR LOWER(created_by::text) = LOWER($2))
+        AND (pending_approval = FALSE OR LOWER(created_by::text) = LOWER($3))
       ORDER BY created_at`,
-    [...sprintTenantParams(input.sprintId), input.viewerUserId ?? '']
+    [...sprintTenantParams(input), input.viewerUserId ?? '']
   );
   return withCommentAuthors(result.rows as CommentRowWithCreator[]);
 }
 
 export async function listSprintCommentIds(
   input: {
-   sprintId: number
+    organizationId: string;
+    sprintId: number;
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<string[]> {
@@ -111,7 +112,7 @@ export async function listSprintCommentIds(
     `SELECT id FROM comments
       WHERE ${sprintTenantWhere()}
         AND deleted_at IS NULL`,
-    sprintTenantParams(input.sprintId)
+    sprintTenantParams(input)
   );
   return result.rows.map((row) => String((row as { id: string }).id));
 }
@@ -119,6 +120,7 @@ export async function listSprintCommentIds(
 export async function sprintCommentExists(
   input: {
     commentId: string;
+    organizationId: string;
     sprintId: number;
   },
   run: BeerTrackerTransactionQuery = query
@@ -126,10 +128,10 @@ export async function sprintCommentExists(
   const result = await run(
     `SELECT 1 FROM comments
       WHERE ${sprintTenantWhere()}
-        AND id = $2
+        AND id = $3
         AND deleted_at IS NULL
       LIMIT 1`,
-    [...sprintTenantParams(input.sprintId), input.commentId]
+    [...sprintTenantParams(input), input.commentId]
   );
   return result.rows.length > 0;
 }
@@ -259,10 +261,10 @@ async function loadSprintCommentRow(
     `SELECT ${COMMENT_RETURNING}
        FROM comments
       WHERE ${sprintTenantWhere()}
-        AND id = $2
+        AND id = $3
         AND deleted_at IS NULL
       LIMIT 1`,
-    [...sprintTenantParams(input.sprintId), input.commentId]
+    [...sprintTenantParams(input), input.commentId]
   );
   return result.rows[0] as CommentRowWithCreator | undefined;
 }
@@ -292,10 +294,11 @@ export function updateSprintCommentSql(): string {
         updated_by = COALESCE($12, updated_by),
         version = version + 1,
         updated_at = CURRENT_TIMESTAMP
-      WHERE sprint_id = $13
-        AND id = $14
+      WHERE organization_id = $13
+        AND sprint_id = $14
+        AND id = $15
         AND deleted_at IS NULL
-        AND ($15::int IS NULL OR version = $15)
+        AND ($16::int IS NULL OR version = $16)
       RETURNING ${COMMENT_RETURNING}`;
 }
 
@@ -330,6 +333,7 @@ function updateSprintCommentParams(input: {
     input.parentProvided,
     commentParentToJsonb(input.parent),
     input.updatedBy ?? null,
+    input.organizationId,
     input.sprintId,
     input.commentId,
     input.ifVersion ?? null,
@@ -371,6 +375,7 @@ export async function updateSprintComment(
       const stillThere = await sprintCommentExists(
         {
           commentId: input.commentId,
+          organizationId: input.organizationId,
           sprintId: input.sprintId,
         },
         run
@@ -390,24 +395,24 @@ export function sprintCommentLinkEndpoints(commentIds: readonly string[]): strin
   return commentIds.flatMap((id) => [id, toPlannerCommentTaskId(id)]);
 }
 
-/** Стрелки спринта, у которых хотя бы один конец — одна из заметок ($2 — концы обоих написаний). */
+/** Стрелки спринта, у которых хотя бы один конец — одна из заметок ($3 — концы обоих написаний). */
 export function deleteSprintCommentLinksSql(): string {
   return `DELETE FROM task_links
-    WHERE sprint_id = $1
-      AND (from_task_id = ANY($2::text[]) OR to_task_id = ANY($2::text[]))`;
+    WHERE ${sprintTenantWhere()}
+      AND (from_task_id = ANY($3::text[]) OR to_task_id = ANY($3::text[]))`;
 }
 
 export function softDeleteSprintCommentSql(): string {
   return `UPDATE comments SET
         deleted_at = CURRENT_TIMESTAMP,
-        deleted_by = $3::uuid,
+        deleted_by = $4::uuid,
         updated_at = CURRENT_TIMESTAMP,
-        updated_by = COALESCE($3::uuid, updated_by),
+        updated_by = COALESCE($4::uuid, updated_by),
         version = version + 1
-      WHERE sprint_id = $1
-        AND id = $2
+      WHERE ${sprintTenantWhere()}
+        AND id = $3
         AND deleted_at IS NULL
-        AND (pending_approval = FALSE OR created_by = $3::uuid)
+        AND (pending_approval = FALSE OR created_by = $4::uuid)
       RETURNING id`;
 }
 
@@ -417,11 +422,11 @@ export function softDeleteSprintCommentSql(): string {
  * остаётся с deleted_at.
  */
 async function softDeleteSprintCommentWithLinks(
-  input: { actorUserId?: string | null; commentId: string; sprintId: number },
+  input: { actorUserId?: string | null; commentId: string; organizationId: string; sprintId: number },
   tx: BeerTrackerTransactionQuery
 ): Promise<{ ok: boolean }> {
   const result = await tx(softDeleteSprintCommentSql(), [
-    input.sprintId,
+    ...sprintTenantParams(input),
     input.commentId,
     input.actorUserId ?? null,
   ]);
@@ -429,7 +434,7 @@ async function softDeleteSprintCommentWithLinks(
     return { ok: false };
   }
   await tx(deleteSprintCommentLinksSql(), [
-    input.sprintId,
+    ...sprintTenantParams(input),
     sprintCommentLinkEndpoints([input.commentId]),
   ]);
   return { ok: true };
@@ -452,6 +457,7 @@ export function deleteSprintComment(
 }
 
 async function deleteExpiredPendingSprintComments(input: {
+  organizationId: string;
   sprintId: number;
 }): Promise<number> {
   const result = await query(
@@ -460,11 +466,12 @@ async function deleteExpiredPendingSprintComments(input: {
         AND pending_approval = TRUE
         AND pending_approval_expires_at IS NOT NULL
         AND pending_approval_expires_at < CURRENT_TIMESTAMP`,
-    sprintTenantParams(input.sprintId)
+    sprintTenantParams(input)
   );
   return result.rowCount ?? 0;
 }
 
+/** Перенос заметок в другой спринт той же организации: `$2` — откуда, `$3` — куда, `$4` — id заметок. */
 export function moveSprintCommentsSql(): string {
-  return 'UPDATE comments SET sprint_id = $2 WHERE sprint_id = $1 AND id = ANY($3::uuid[])';
+  return 'UPDATE comments SET sprint_id = $3 WHERE organization_id = $1 AND sprint_id = $2 AND id = ANY($4::uuid[])';
 }

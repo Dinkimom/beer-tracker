@@ -251,7 +251,7 @@ async function loadPositions(input: {
 }): Promise<SprintContextPosition[]> {
   const positions = await listTaskPositionsForSprint(input);
   if (positions.length > 0) {
-    const segmentsByTask = await loadPositionSegmentsByTask(input.sprintId);
+    const segmentsByTask = await loadPositionSegmentsByTask(input);
     attachSegmentsToPositions(positions, segmentsByTask);
   }
   return positions.map((row) => mapPosition(row as Record<string, unknown>));

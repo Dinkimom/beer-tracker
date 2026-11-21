@@ -37,6 +37,10 @@ describe('assertPlanPatchTargetsExist', () => {
         sprintId: 1,
       })
     ).resolves.toBeUndefined();
+    expect(sprintGoalExists).toHaveBeenCalledWith({
+      goalId: '22222222-2222-4222-8222-222222222222',
+      organizationId: 'org-1',
+    });
   });
 
   it('fails with preflight_failed when note is missing', async () => {

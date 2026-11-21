@@ -50,6 +50,7 @@ describe('persistProposedCreateNotes', () => {
 
     // Драфты приватны: снимаем только свои прошлые черновые заметки.
     expect(clearPending).toHaveBeenCalledWith({
+      organizationId: 'org',
       ownerId: '11111111-1111-4111-8111-111111111111',
       sprintId: 42,
     });
@@ -84,6 +85,7 @@ describe('persistProposedCreateNotes', () => {
     });
 
     expect(clearPending).toHaveBeenCalledWith({
+      organizationId: 'org',
       ownerId: '11111111-1111-4111-8111-111111111111',
       sprintId: 7,
     });

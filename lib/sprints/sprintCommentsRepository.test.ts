@@ -35,20 +35,20 @@ describe('listSprintComments', () => {
     expect(purgeSql).toMatch(/^DELETE FROM comments/);
     expect(purgeSql).toContain('pending_approval = TRUE');
     expect(purgeSql).toContain('pending_approval_expires_at < CURRENT_TIMESTAMP');
-    expect(purgeParams).toEqual([7]);
+    expect(purgeParams).toEqual(['org', 7]);
   });
 
   it('shows pending drafts only to their creator', async () => {
     await listSprintComments({ organizationId: 'org', sprintId: 7, viewerUserId: 'Owner' });
     const [sql, params] = mockedQuery.mock.calls[1]!;
     expect(sql).toContain('deleted_at IS NULL');
-    expect(sql).toContain('(pending_approval = FALSE OR LOWER(created_by::text) = LOWER($2))');
-    expect(params).toEqual([7, 'Owner']);
+    expect(sql).toContain('(pending_approval = FALSE OR LOWER(created_by::text) = LOWER($3))');
+    expect(params).toEqual(['org', 7, 'Owner']);
   });
 
   it('hides every draft when there is no viewer', async () => {
     await listSprintComments({ organizationId: 'org', sprintId: 7 });
-    expect(mockedQuery.mock.calls[1]![1]).toEqual([7, '']);
+    expect(mockedQuery.mock.calls[1]![1]).toEqual(['org', 7, '']);
   });
 });
 
@@ -59,21 +59,21 @@ describe('pending approval', () => {
   });
 
   it('confirms only the owner drafts when ownerId is given', async () => {
-    await confirmPendingSprintComments({ commentIds: [NOTE], ownerId: 'owner', sprintId: 7 });
-    await confirmPendingSprintComments({ commentIds: [NOTE], sprintId: 7 });
+    await confirmPendingSprintComments({ commentIds: [NOTE], organizationId: 'org', ownerId: 'owner', sprintId: 7 });
+    await confirmPendingSprintComments({ commentIds: [NOTE], organizationId: 'org', sprintId: 7 });
     expect(String(mockedQuery.mock.calls[0]![0])).toContain(
-      '($3::text IS NULL OR LOWER(created_by::text) = LOWER($3))'
+      '($4::text IS NULL OR LOWER(created_by::text) = LOWER($4))'
     );
-    expect(mockedQuery.mock.calls[0]![1]).toEqual([7, [NOTE], 'owner']);
-    expect(mockedQuery.mock.calls[1]![1]).toEqual([7, [NOTE], null]);
+    expect(mockedQuery.mock.calls[0]![1]).toEqual(['org', 7, [NOTE], 'owner']);
+    expect(mockedQuery.mock.calls[1]![1]).toEqual(['org', 7, [NOTE], null]);
   });
 
   it('rejects all drafts (and replacement copies) of the owner only', async () => {
-    await deleteAllPendingSprintComments({ ownerId: 'owner', sprintId: 7 });
+    await deleteAllPendingSprintComments({ organizationId: 'org', ownerId: 'owner', sprintId: 7 });
     const [sql, params] = mockedQuery.mock.calls[0]!;
     expect(sql).toContain('pending_approval = TRUE');
-    expect(sql).toContain('LOWER(created_by::text) = LOWER($2)');
-    expect(params).toEqual([7, 'owner']);
+    expect(sql).toContain('LOWER(created_by::text) = LOWER($3)');
+    expect(params).toEqual(['org', 7, 'owner']);
   });
 });
 
@@ -103,8 +103,8 @@ describe('deleteSprintComment', () => {
     expect(runBeerTrackerTransaction).toHaveBeenCalledTimes(1);
     expect(mockedQuery).not.toHaveBeenCalled();
     expect(txCalls).toEqual([
-      { params: [7, NOTE, 'u1'], sql: softDeleteSprintCommentSql() },
-      { params: [7, [NOTE, `comment:${NOTE}`]], sql: deleteSprintCommentLinksSql() },
+      { params: ['org', 7, NOTE, 'u1'], sql: softDeleteSprintCommentSql() },
+      { params: ['org', 7, [NOTE, `comment:${NOTE}`]], sql: deleteSprintCommentLinksSql() },
     ]);
   });
 
@@ -114,17 +114,17 @@ describe('deleteSprintComment', () => {
       deleteSprintComment({ commentId: NOTE, organizationId: 'org', sprintId: 7 })
     ).resolves.toEqual({ ok: false });
     expect(txCalls).toHaveLength(1);
-    expect(txCalls[0]!.params).toEqual([7, NOTE, null]);
+    expect(txCalls[0]!.params).toEqual(['org', 7, NOTE, null]);
   });
 
   it('lets only the author delete an agent draft (pending_approval)', () => {
     expect(softDeleteSprintCommentSql()).toContain(
-      'AND (pending_approval = FALSE OR created_by = $3::uuid)'
+      'AND (pending_approval = FALSE OR created_by = $4::uuid)'
     );
   });
 
-  it('types $3 as uuid everywhere so Postgres does not deduce text for it', () => {
+  it('types $4 as uuid everywhere so Postgres does not deduce text for it', () => {
     const sql = softDeleteSprintCommentSql();
-    expect(sql).not.toMatch(/\$3(?!::uuid)/);
+    expect(sql).not.toMatch(/\$4(?!::uuid)/);
   });
 });

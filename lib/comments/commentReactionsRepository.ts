@@ -23,9 +23,9 @@ async function commentExistsInSprint(input: {
 }): Promise<boolean> {
   const result = await query(
     `SELECT 1 FROM comments
-      WHERE ${sprintTenantWhere()} AND id = $2
+      WHERE ${sprintTenantWhere()} AND id = $3
       LIMIT 1`,
-    [...sprintTenantParams(input.sprintId), input.commentId] as QueryParams
+    [...sprintTenantParams(input), input.commentId] as QueryParams
   );
   return result.rows.length > 0;
 }

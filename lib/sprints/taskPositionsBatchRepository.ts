@@ -5,7 +5,7 @@ import type { z } from 'zod';
 import { runBeerTrackerTransaction } from '@/lib/db';
 
 import {
-  buildTaskPositionsBatchDeleteSql,
+  buildTaskPositionsBatchDelete,
   buildTaskPositionsBatchInsertSql,
 } from './taskPositionsBatchSql';
 import { replaceTaskPositionSegments } from './taskPositionsRepository';
@@ -59,11 +59,14 @@ function buildBatchInsertValues(
 
 async function deleteExistingBatchPositions(
   tx: BeerTrackerTransactionQuery,
-  input: { positions: BatchPosition[]; sprintId: number }
+  input: { organizationId: string; positions: BatchPosition[]; sprintId: number }
 ): Promise<void> {
-  const taskIds = input.positions.map((p) => p.taskId);
-  const placeholders = taskIds.map((_, i) => `$${i + 2}`).join(', ');
-  await tx(buildTaskPositionsBatchDeleteSql(placeholders), [input.sprintId, ...taskIds]);
+  const { params, sql } = buildTaskPositionsBatchDelete({
+    organizationId: input.organizationId,
+    sprintId: input.sprintId,
+    taskIds: input.positions.map((p) => p.taskId),
+  });
+  await tx(sql, params);
 }
 
 async function insertBatchPositions(

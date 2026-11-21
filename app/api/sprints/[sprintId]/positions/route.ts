@@ -42,7 +42,7 @@ export async function GET(
 
     const positions = await listTaskPositionsForSprint({ organizationId, sprintId });
     if (positions.length > 0) {
-      const segmentsByTask = await loadPositionSegmentsByTask(sprintId);
+      const segmentsByTask = await loadPositionSegmentsByTask({ organizationId, sprintId });
       attachSegmentsToPositions(positions, segmentsByTask);
     }
     const planAnchors = await listPlanAnchorsForSprint({ organizationId, sprintId });
@@ -306,6 +306,7 @@ export async function DELETE(
       ...(devTaskKey ? { devTaskKey } : {}),
       isQa,
       logLabel: 'DELETE /sprints/.../positions',
+      organizationId,
       request,
       sprintId,
       taskId,

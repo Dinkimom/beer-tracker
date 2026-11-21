@@ -41,15 +41,15 @@ describe('approvePendingSprintComment', () => {
 
   it('applies a replacement draft to the original instead of confirming it', async () => {
     applyReplacements.mockResolvedValue(1);
-    await expect(approvePendingSprintComment({ commentId: 'c1', ownerId: 'owner', sprintId: 1152 })).resolves.toBe('ok');
-    expect(applyReplacements).toHaveBeenCalledWith({ commentIds: ['c1'], ownerId: 'owner', sprintId: 1152 });
+    await expect(approvePendingSprintComment({ commentId: 'c1', organizationId: 'org', ownerId: 'owner', sprintId: 1152 })).resolves.toBe('ok');
+    expect(applyReplacements).toHaveBeenCalledWith({ commentIds: ['c1'], organizationId: 'org', ownerId: 'owner', sprintId: 1152 });
     expect(confirmPending).not.toHaveBeenCalled();
   });
 
   it('confirms a pending note', async () => {
     confirmPending.mockResolvedValue(1);
     await expect(
-      approvePendingSprintComment({ commentId: 'c1', ownerId: 'owner', sprintId: 1152 })
+      approvePendingSprintComment({ commentId: 'c1', organizationId: 'org', ownerId: 'owner', sprintId: 1152 })
     ).resolves.toBe('ok');
     expect(exists).not.toHaveBeenCalled();
   });
@@ -58,7 +58,7 @@ describe('approvePendingSprintComment', () => {
     confirmPending.mockResolvedValue(0);
     exists.mockResolvedValue(true);
     await expect(
-      approvePendingSprintComment({ commentId: 'c1', ownerId: 'owner', sprintId: 1152 })
+      approvePendingSprintComment({ commentId: 'c1', organizationId: 'org', ownerId: 'owner', sprintId: 1152 })
     ).resolves.toBe('ok');
   });
 
@@ -66,26 +66,28 @@ describe('approvePendingSprintComment', () => {
     confirmPending.mockResolvedValue(0);
     exists.mockResolvedValue(false);
     await expect(
-      approvePendingSprintComment({ commentId: 'c1', ownerId: 'someone-else', sprintId: 1152 })
+      approvePendingSprintComment({ commentId: 'c1', organizationId: 'org', ownerId: 'someone-else', sprintId: 1152 })
     ).resolves.toBe('not_found');
     expect(applyReplacements).toHaveBeenCalledWith({
       commentIds: ['c1'],
+      organizationId: 'org',
       ownerId: 'someone-else',
       sprintId: 1152,
     });
     expect(confirmPending).toHaveBeenCalledWith({
       commentIds: ['c1'],
+      organizationId: 'org',
       ownerId: 'someone-else',
       sprintId: 1152,
     });
-    expect(exists).toHaveBeenCalledWith({ commentId: 'c1', sprintId: 1152 });
+    expect(exists).toHaveBeenCalledWith({ commentId: 'c1', organizationId: 'org', sprintId: 1152 });
   });
 
   it('returns not_found when the comment is missing', async () => {
     confirmPending.mockResolvedValue(0);
     exists.mockResolvedValue(false);
     await expect(
-      approvePendingSprintComment({ commentId: 'c1', ownerId: 'owner', sprintId: 1152 })
+      approvePendingSprintComment({ commentId: 'c1', organizationId: 'org', ownerId: 'owner', sprintId: 1152 })
     ).resolves.toBe('not_found');
   });
 });
@@ -100,12 +102,12 @@ describe('batch pending comments', () => {
   it('applies replacement drafts and confirms every other pending note in the sprint', async () => {
     applyReplacements.mockResolvedValue(1);
     confirmAll.mockResolvedValue(3);
-    await expect(approveAllPendingSprintComments({ ownerId: 'user-1', sprintId: 1152 })).resolves.toBe(4);
-    expect(applyReplacements).toHaveBeenCalledWith({ ownerId: 'user-1', sprintId: 1152 });
+    await expect(approveAllPendingSprintComments({ organizationId: 'org', ownerId: 'user-1', sprintId: 1152 })).resolves.toBe(4);
+    expect(applyReplacements).toHaveBeenCalledWith({ organizationId: 'org', ownerId: 'user-1', sprintId: 1152 });
   });
 
   it('deletes every pending note in the sprint', async () => {
     deleteAll.mockResolvedValue(2);
-    await expect(rejectAllPendingSprintComments({ ownerId: 'user-1', sprintId: 1152 })).resolves.toBe(2);
+    await expect(rejectAllPendingSprintComments({ organizationId: 'org', ownerId: 'user-1', sprintId: 1152 })).resolves.toBe(2);
   });
 });

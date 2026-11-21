@@ -306,7 +306,10 @@ async function applyVerifiedPlanPatchAtomically(input: {
         channel: 'agent',
         clientBrand: input.clientBrand,
       });
-      await confirmProposedCreateNotes({ commentIds: input.draftNoteIds, sprintId: input.sprintId }, tx);
+      await confirmProposedCreateNotes(
+        { commentIds: input.draftNoteIds, organizationId: input.organizationId, sprintId: input.sprintId },
+        tx
+      );
       const result = await applySprintPlanPatchOps({ ...input, tx });
       if (result.error && input.onError === 'stop') {
         throw new PlanPatchStopped(result.applied, result.error);
@@ -368,7 +371,11 @@ async function clearAppliedProposalPreviews(input: {
   organizationId: string;
   sprintId: number;
 }): Promise<void> {
-  await deletePendingCommentReplacements({ ownerId: input.actorUserId, sprintId: input.sprintId });
+  await deletePendingCommentReplacements({
+    organizationId: input.organizationId,
+    ownerId: input.actorUserId,
+    sprintId: input.sprintId,
+  });
   const proposalId = proposalIdFromOpsHash(hashSprintPlanPatchOps(input.ops));
   const scope = {
     organizationId: input.organizationId,

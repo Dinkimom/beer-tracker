@@ -408,6 +408,7 @@ export function collectRealtimeResources(ops: SprintPlanPatchOp[]): SprintRealti
 async function collectCommentIdsForLinkOps(input: {
   draftNoteIds: readonly string[];
   ops: SprintPlanPatchOp[];
+  organizationId: string;
   sprintId: number;
   tx: BeerTrackerTransactionQuery;
 }): Promise<ReadonlySet<string> | undefined> {
@@ -415,7 +416,7 @@ async function collectCommentIdsForLinkOps(input: {
     return undefined;
   }
   const commentIds = new Set(input.draftNoteIds);
-  for (const id of await listSprintCommentIds({ sprintId: input.sprintId }, input.tx)) {
+  for (const id of await listSprintCommentIds({ organizationId: input.organizationId, sprintId: input.sprintId }, input.tx)) {
     commentIds.add(id);
   }
   return commentIds;
@@ -476,6 +477,7 @@ export async function applySprintPlanPatchOps(input: {
   const commentIds = await collectCommentIdsForLinkOps({
     draftNoteIds,
     ops: input.ops,
+    organizationId: input.organizationId,
     sprintId: input.sprintId,
     tx: input.tx,
   });

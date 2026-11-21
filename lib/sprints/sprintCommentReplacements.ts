@@ -86,11 +86,13 @@ export async function insertPendingCommentReplacements(input: {
   return ids;
 }
 
-const DRAFT_SCOPE = `d.sprint_id = $1
+/** Черновики-замены спринта организации: `$1` — организация, `$2` — спринт, `$3` — id копий, `$4` — автор. */
+const DRAFT_SCOPE = `d.organization_id = $1
+      AND d.sprint_id = $2
       AND d.pending_approval = TRUE
       AND d.replaces_comment_id IS NOT NULL
-      AND ($2::uuid[] IS NULL OR d.id = ANY($2::uuid[]))
-      AND ($3::text IS NULL OR LOWER(d.created_by::text) = LOWER($3))`;
+      AND ($3::uuid[] IS NULL OR d.id = ANY($3::uuid[]))
+      AND ($4::text IS NULL OR LOWER(d.created_by::text) = LOWER($4))`;
 
 const APPLY_REPLACEMENTS_SQL = `WITH drafts AS (
      SELECT d.* FROM comments d WHERE ${DRAFT_SCOPE}
@@ -102,7 +104,7 @@ const APPLY_REPLACEMENTS_SQL = `WITH drafts AS (
             updated_at = CURRENT_TIMESTAMP, updated_by = d.created_by, version = o.version + 1
        FROM drafts d
       WHERE d.replace_action = 'update' AND o.id = d.replaces_comment_id
-        AND o.sprint_id = d.sprint_id AND o.deleted_at IS NULL
+        AND o.organization_id = d.organization_id AND o.sprint_id = d.sprint_id AND o.deleted_at IS NULL
       RETURNING o.id
    ),
    removed AS (
@@ -111,7 +113,7 @@ const APPLY_REPLACEMENTS_SQL = `WITH drafts AS (
             updated_at = CURRENT_TIMESTAMP, updated_by = d.created_by, version = o.version + 1
        FROM drafts d
       WHERE d.replace_action = 'delete' AND o.id = d.replaces_comment_id
-        AND o.sprint_id = d.sprint_id AND o.deleted_at IS NULL
+        AND o.organization_id = d.organization_id AND o.sprint_id = d.sprint_id AND o.deleted_at IS NULL
       RETURNING o.id
    )
    DELETE FROM comments c USING drafts d WHERE c.id = d.id RETURNING c.id`;
@@ -122,10 +124,12 @@ const APPLY_REPLACEMENTS_SQL = `WITH drafts AS (
  */
 export async function applyPendingCommentReplacements(input: {
   commentIds?: readonly string[];
+  organizationId: string;
   ownerId?: string;
   sprintId: number;
 }): Promise<number> {
   const result = await query(APPLY_REPLACEMENTS_SQL, [
+    input.organizationId,
     input.sprintId,
     input.commentIds ? [...input.commentIds] : null,
     input.ownerId ?? null,
@@ -134,6 +138,10 @@ export async function applyPendingCommentReplacements(input: {
 }
 
 /** apply_plan_patch сам применил updateNote / deleteNote — копии на доске больше не нужны. */
-export async function deletePendingCommentReplacements(input: { ownerId: string; sprintId: number }): Promise<void> {
-  await query(`DELETE FROM comments d WHERE ${DRAFT_SCOPE}`, [input.sprintId, null, input.ownerId]);
+export async function deletePendingCommentReplacements(input: {
+  organizationId: string;
+  ownerId: string;
+  sprintId: number;
+}): Promise<void> {
+  await query(`DELETE FROM comments d WHERE ${DRAFT_SCOPE}`, [input.organizationId, input.sprintId, null, input.ownerId]);
 }

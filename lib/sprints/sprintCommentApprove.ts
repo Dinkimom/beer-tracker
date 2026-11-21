@@ -12,12 +12,14 @@ import {
  */
 export async function approvePendingSprintComment(input: {
   commentId: string;
+  organizationId: string;
   ownerId: string;
   sprintId: number;
 }): Promise<'not_found' | 'ok'> {
   // Черновик-замена: принять — значит перенести правку в оригинал, а копию убрать.
   const replaced = await applyPendingCommentReplacements({
     commentIds: [input.commentId],
+    organizationId: input.organizationId,
     ownerId: input.ownerId,
     sprintId: input.sprintId,
   });
@@ -26,6 +28,7 @@ export async function approvePendingSprintComment(input: {
   }
   const count = await confirmPendingSprintComments({
     commentIds: [input.commentId],
+    organizationId: input.organizationId,
     ownerId: input.ownerId,
     sprintId: input.sprintId,
   });
@@ -35,12 +38,14 @@ export async function approvePendingSprintComment(input: {
   // Повторный клик по уже принятой заметке — не ошибка; чужой черновик — не найден.
   const alreadyConfirmed = await hasConfirmedSprintComment({
     commentId: input.commentId,
+    organizationId: input.organizationId,
     sprintId: input.sprintId,
   });
   return alreadyConfirmed ? 'ok' : 'not_found';
 }
 
 export async function approveAllPendingSprintComments(input: {
+  organizationId: string;
   ownerId: string;
   sprintId: number;
 }): Promise<number> {
@@ -49,6 +54,7 @@ export async function approveAllPendingSprintComments(input: {
 }
 
 export function rejectAllPendingSprintComments(input: {
+  organizationId: string;
   ownerId: string;
   sprintId: number;
 }): Promise<number> {

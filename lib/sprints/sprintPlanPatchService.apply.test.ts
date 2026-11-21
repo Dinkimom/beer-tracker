@@ -80,7 +80,7 @@ describe('applySprintPlanPatch transaction', () => {
     const result = await apply();
     expect(result.ok).toBe(true);
     expect(claim.mock.calls[0]?.[1]).toBe(tx);
-    expect(confirmNotes).toHaveBeenCalledWith({ commentIds: ['note-1'], sprintId: 7 }, tx);
+    expect(confirmNotes).toHaveBeenCalledWith({ commentIds: ['note-1'], organizationId: 'org-1', sprintId: 7 }, tx);
   });
 
   it('rejects a token that was already applied', async () => {

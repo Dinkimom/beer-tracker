@@ -13,7 +13,7 @@ import {
   SPRINT_COMMENT_RETURNING,
   withCommentAuthors,
 } from './sprintCommentsRepository';
-import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
+import { sprintTenantParams } from './sprintTenantSql';
 
 type PlannerFileCommentKind = 'diagram' | 'image';
 
@@ -122,11 +122,12 @@ async function getPlannerCommentFileRef(input: {
     `SELECT f.id, f.storage_key, f.content_type, f.byte_size
        FROM planner_files f
        INNER JOIN comments c ON c.image_file_id = f.id
-      WHERE ${sprintTenantWhere()}
-        AND c.id = $2
-        AND c.kind = $3
+      WHERE c.organization_id = $1
+        AND c.sprint_id = $2
+        AND c.id = $3
+        AND c.kind = $4
       LIMIT 1`,
-    [...sprintTenantParams(input.sprintId), input.commentId, input.kind]
+    [...sprintTenantParams(input), input.commentId, input.kind]
   );
   const row = result.rows[0];
   if (!row?.storage_key) {
@@ -174,15 +175,16 @@ export async function overwritePlannerCommentStoredBytes(input: {
     return false;
   }
   await getPlannerObjectStore().putObject(fileRef.storageKey, input.data, input.contentType);
-  await query('UPDATE planner_files SET byte_size = $1 WHERE id = $2', [
+  await query('UPDATE planner_files SET byte_size = $1 WHERE organization_id = $2 AND id = $3', [
     input.data.length,
+    input.organizationId,
     fileRef.fileId,
   ]);
   if (input.text !== undefined) {
     await query(
       `UPDATE comments SET text = $1, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $2`,
-      [input.text, input.commentId]
+        WHERE organization_id = $2 AND id = $3`,
+      [input.text, input.organizationId, input.commentId]
     );
   }
   return true;

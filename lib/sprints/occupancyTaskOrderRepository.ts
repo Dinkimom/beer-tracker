@@ -15,7 +15,7 @@ export async function fetchOccupancyTaskOrder(input: {
     `SELECT parent_ids as "parentIds", task_orders as "taskOrders"
        FROM occupancy_task_order
        WHERE ${sprintTenantWhere()}`,
-    sprintTenantParams(input.sprintId)
+    sprintTenantParams(input)
   );
 
   const row = result.rows[0] as { parentIds?: unknown[]; taskOrders?: Record<string, unknown> } | undefined;

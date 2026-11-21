@@ -105,10 +105,12 @@ function buildIssueTaskGroups(positions: PlannedDateSyncPosition[]): Map<string,
 
 export async function syncPlannedDatesToTracker({
   getIssueTracker,
+  organizationId,
   positions,
   sprintId,
 }: {
   getIssueTracker: GetIssueTracker;
+  organizationId: string;
   positions: PlannedDateSyncPosition[];
   sprintId: number;
 }): Promise<TrackerSyncFailure[]> {
@@ -118,7 +120,7 @@ export async function syncPlannedDatesToTracker({
   }
 
   const relatedTaskIds = Array.from(new Set(Array.from(groups.values()).flatMap((ids) => [...ids])));
-  const persistedPositions = await loadPersistedPositionsForPlannedSync(sprintId, relatedTaskIds);
+  const persistedPositions = await loadPersistedPositionsForPlannedSync({ organizationId, sprintId, taskIds: relatedTaskIds });
   const issueTracker = await getIssueTracker();
   const sprintInfo = await issueTracker.getSprint(sprintId);
   const sprintStartDate = new Date(sprintInfo.startDate);
@@ -244,6 +246,7 @@ export async function trySyncPositionPlannedDates(input: {
         },
       ],
       getIssueTracker: issueTrackerFromRequest(input.request),
+      organizationId: input.organizationId,
       sprintId: input.sprintId,
     });
   } catch (err) {
@@ -359,6 +362,7 @@ export async function syncBatchPlannedDatesToTracker(input: {
     return await syncPlannedDatesToTracker({
       getIssueTracker: issueTrackerFromRequest(input.request),
       positions: toSyncDates,
+      organizationId: input.organizationId,
       sprintId: input.sprintId,
     });
   } catch (err) {
@@ -390,12 +394,13 @@ export async function syncPlannedDatesAfterRemoval(input: {
   getIssueTracker: GetIssueTracker;
   issueKey: string;
   logLabel: string;
+  organizationId: string;
   sprintId: number;
 }): Promise<TrackerSyncFailure[]> {
   const { issueKey } = input;
   try {
     const relatedTaskIds = [issueKey, buildSyntheticQaTaskId(issueKey)];
-    const persisted = await loadPersistedPositionsForPlannedSync(input.sprintId, relatedTaskIds);
+    const persisted = await loadPersistedPositionsForPlannedSync({ organizationId: input.organizationId, sprintId: input.sprintId, taskIds: relatedTaskIds });
     const remaining: PlannedDateSyncPosition[] = [];
     for (const position of persisted.values()) {
       if (!getPlannedPositionCellRange(position)) {
@@ -418,6 +423,7 @@ export async function syncPlannedDatesAfterRemoval(input: {
       return await syncPlannedDatesToTracker({
         getIssueTracker: input.getIssueTracker,
         positions: remaining,
+        organizationId: input.organizationId,
         sprintId: input.sprintId,
       });
     }
@@ -437,6 +443,7 @@ export function trySyncPlannedDatesAfterPositionDelete(input: {
   devTaskKey?: string;
   isQa?: boolean;
   logLabel: string;
+  organizationId: string;
   request: NextRequest;
   sprintId: number;
   taskId: string;
@@ -449,6 +456,7 @@ export function trySyncPlannedDatesAfterPositionDelete(input: {
     getIssueTracker: issueTrackerFromRequest(input.request),
     issueKey,
     logLabel: input.logLabel,
+    organizationId: input.organizationId,
     sprintId: input.sprintId,
   });
 }
@@ -477,6 +485,7 @@ export async function clearSprintBoardPositions(input: {
         getIssueTracker,
         issueKey,
         logLabel: 'DELETE /sprints/.../positions/clear',
+        organizationId: input.organizationId,
         sprintId: input.sprintId,
       })
     )

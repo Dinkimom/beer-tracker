@@ -36,6 +36,7 @@ export function formatSprintGoalsForTracker(rows: readonly SprintGoalTextRow[]):
  */
 export async function syncSprintGoalsToTracker(input: {
   getIssueTracker: () => Promise<IssueTrackerProviderClient>;
+  organizationId: string;
   sprintId: number;
 }): Promise<void> {
   try {
@@ -43,7 +44,7 @@ export async function syncSprintGoalsToTracker(input: {
     if (!isJiraProviderKind(issueTracker.providerKind)) {
       return;
     }
-    const rows = await listSprintGoalTexts({ sprintId: input.sprintId });
+    const rows = await listSprintGoalTexts({ organizationId: input.organizationId, sprintId: input.sprintId });
     await issueTracker.updateSprintGoal(input.sprintId, formatSprintGoalsForTracker(rows));
   } catch (error) {
     console.error(`Failed to sync sprint ${input.sprintId} goals to tracker:`, error);
@@ -51,9 +52,12 @@ export async function syncSprintGoalsToTracker(input: {
 }
 
 /** Синк из HTTP-роута: в трекер идём с токеном из запроса. */
-export function syncSprintGoalsToTrackerFromRequest(request: Request, sprintId: number): Promise<void> {
+export function syncSprintGoalsToTrackerFromRequest(
+  request: Request,
+  input: { organizationId: string; sprintId: number }
+): Promise<void> {
   return syncSprintGoalsToTracker({
     getIssueTracker: () => getIssueTrackerProviderClientFromRequest(request),
-    sprintId,
+    ...input,
   });
 }

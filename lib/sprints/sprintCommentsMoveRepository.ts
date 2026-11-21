@@ -9,15 +9,18 @@ import {
 
 /**
  * Стрелки к заметке переносим тем же UPDATE, если в целевом спринте ещё нет
- * такой же пары (unique по sprint/from/to). $3 — концы: `comment:{uuid}` и сырой uuid.
+ * такой же пары (unique по org/sprint/from/to). $1 — организация, $2 — откуда, $3 — куда,
+ * $4 — концы: `comment:{uuid}` и сырой uuid.
  */
 export function moveSprintCommentLinksSql(): string {
-  return `UPDATE task_links AS l SET sprint_id = $2
-    WHERE l.sprint_id = $1
-      AND (l.from_task_id = ANY($3::text[]) OR l.to_task_id = ANY($3::text[]))
+  return `UPDATE task_links AS l SET sprint_id = $3
+    WHERE l.organization_id = $1
+      AND l.sprint_id = $2
+      AND (l.from_task_id = ANY($4::text[]) OR l.to_task_id = ANY($4::text[]))
       AND NOT EXISTS (
         SELECT 1 FROM task_links AS d
-         WHERE d.sprint_id = $2
+         WHERE d.organization_id = $1
+           AND d.sprint_id = $3
            AND d.from_task_id = l.from_task_id
            AND d.to_task_id = l.to_task_id
       )`;
@@ -42,6 +45,7 @@ export async function moveSprintCommentsToSprint(input: {
   return await runBeerTrackerTransaction(async (tx) => {
     await setBoardEventActor(tx, input.actor);
     const moved = await tx(`${moveSprintCommentsSql()} RETURNING id`, [
+      input.organizationId,
       input.fromSprintId,
       input.toSprintId,
       input.commentIds,
@@ -51,9 +55,9 @@ export async function moveSprintCommentsToSprint(input: {
       return 0;
     }
     const endpoints = sprintCommentLinkEndpoints(movedIds);
-    await tx(moveSprintCommentLinksSql(), [input.fromSprintId, input.toSprintId, endpoints]);
+    await tx(moveSprintCommentLinksSql(), [input.organizationId, input.fromSprintId, input.toSprintId, endpoints]);
     // Что не переехало из-за дубля в целевом спринте, в исходном висит уже без заметки.
-    await tx(deleteSprintCommentLinksSql(), [input.fromSprintId, endpoints]);
+    await tx(deleteSprintCommentLinksSql(), [input.organizationId, input.fromSprintId, endpoints]);
     return movedIds.length;
   });
 }

@@ -31,6 +31,7 @@ export async function persistProposedCreateNotes(input: {
   const notes = collectCreateNoteOps(input.ops);
   // Снимаем прошлые draft createNote: proposal_id = opsHash, при правке ops хеш другой.
   await deletePendingPlanPatchSprintComments({
+    organizationId: input.organizationId,
     ownerId: input.actorUserId,
     sprintId: input.sprintId,
   });
@@ -81,15 +82,10 @@ export async function persistProposedCreateNotes(input: {
 export function confirmProposedCreateNotes(
   input: {
     commentIds: readonly string[];
+    organizationId: string;
     sprintId: number;
   },
   tx?: BeerTrackerTransactionQuery
 ): Promise<number> {
-  return confirmPendingSprintComments(
-    {
-      commentIds: input.commentIds,
-      sprintId: input.sprintId,
-    },
-    tx
-  );
+  return confirmPendingSprintComments(input, tx);
 }

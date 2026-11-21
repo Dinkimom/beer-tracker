@@ -20,7 +20,7 @@ export async function listTaskLinksForSprint(input: {
       FROM task_links 
       WHERE ${sprintTenantWhere()}
       ORDER BY created_at`,
-    sprintTenantParams(input.sprintId)
+    sprintTenantParams(input)
   );
   return result.rows;
 }
@@ -67,8 +67,8 @@ export async function deleteTaskLink(
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<void> {
-  await run('DELETE FROM task_links WHERE sprint_id = $1 AND id = $2', [
-    input.sprintId,
+  await run(`DELETE FROM task_links WHERE ${sprintTenantWhere()} AND id = $3`, [
+    ...sprintTenantParams(input),
     input.linkId,
   ]);
 }
@@ -82,8 +82,8 @@ export async function deleteTaskLinksForTask(
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<void> {
-  await run('DELETE FROM task_links WHERE sprint_id = $1 AND (from_task_id = $2 OR to_task_id = $2)', [
-    input.sprintId,
+  await run(`DELETE FROM task_links WHERE ${sprintTenantWhere()} AND (from_task_id = $3 OR to_task_id = $3)`, [
+    ...sprintTenantParams(input),
     input.taskId,
   ]);
 }
@@ -95,7 +95,7 @@ export async function clearTaskLinksForSprint(
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<void> {
-  await run('DELETE FROM task_links WHERE sprint_id = $1', [input.sprintId]);
+  await run(`DELETE FROM task_links WHERE ${sprintTenantWhere()}`, sprintTenantParams(input));
 }
 
 /** Пакетная запись стрелок (удалить по id и вставить заново) — в транзакции `run` или своей. */
@@ -120,8 +120,7 @@ export async function persistBatchTaskLinks(
   if (linkIds.length === 0) {
     return 0;
   }
-  const placeholders = linkIds.map((_, i) => `$${i + 2}`).join(', ');
-  await run(buildTaskLinksBatchDeleteSql(placeholders), [params.sprintId, ...linkIds]);
+  await run(buildTaskLinksBatchDeleteSql(), [String(params.organizationId), params.sprintId, linkIds]);
 
   const { params: insertParams, sql: insertSql } = buildTaskLinksBatchInsert(
     params.links,

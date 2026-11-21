@@ -63,7 +63,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
     }
     if (typeof body.text === 'string') {
-      await syncSprintGoalsToTrackerFromRequest(request, row.sprint_id);
+      await syncSprintGoalsToTrackerFromRequest(request, { organizationId, sprintId: row.sprint_id });
     }
 
     return NextResponse.json({ success: true, item: toSprintGoalItem(row) });
@@ -93,7 +93,7 @@ export async function DELETE(
     if (!deleted) {
       return NextResponse.json({ success: true, notFound: true });
     }
-    await syncSprintGoalsToTrackerFromRequest(request, deleted.sprintId);
+    await syncSprintGoalsToTrackerFromRequest(request, { organizationId, sprintId: deleted.sprintId });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting sprint goal:', error);

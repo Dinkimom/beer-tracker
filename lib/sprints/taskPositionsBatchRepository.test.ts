@@ -57,13 +57,13 @@ describe('persistBatchPositionsTransaction', () => {
     expect(query).not.toHaveBeenCalled();
     const sqls = txCalls.map((c) => c.sql);
     expect(sqls[0]).toMatch(/^DELETE FROM task_positions/);
-    expect(txCalls[0]!.params).toEqual([5, 'A-1', 'A-2', 'A-3']);
+    expect(txCalls[0]!.params).toEqual(['org', 5, ['A-1', 'A-2', 'A-3']]);
     expect(sqls[1]).toMatch(/INSERT INTO task_positions/);
     // A-1: delete + 2 upserts; A-2: segments untouched; A-3: delete only
     const segmentDeletes = txCalls.filter((c) => c.sql.startsWith('DELETE FROM task_position_segments'));
     expect(segmentDeletes.map((c) => c.params)).toEqual([
-      [5, 'A-1'],
-      [5, 'A-3'],
+      ['org', 5, 'A-1'],
+      ['org', 5, 'A-3'],
     ]);
     const segmentInserts = txCalls.filter((c) => c.sql.includes('INSERT INTO task_position_segments'));
     expect(segmentInserts.map((c) => c.params)).toEqual([

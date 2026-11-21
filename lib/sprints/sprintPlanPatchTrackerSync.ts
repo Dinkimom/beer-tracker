@@ -303,6 +303,7 @@ async function syncPlanPatchDates(input: {
           plannedStartPart: op.startPart,
           taskId: op.taskId,
         })),
+        organizationId: input.organizationId,
         sprintId: input.sprintId,
       });
     } catch (error) {
@@ -316,6 +317,7 @@ async function syncPlanPatchDates(input: {
       getIssueTracker,
       issueKey: target.issueKey,
       logLabel: 'apply_plan_patch deletePosition',
+      organizationId: input.organizationId,
       sprintId: input.sprintId,
     });
     reportDatesFailures([target], failures);
@@ -345,6 +347,7 @@ export async function runPlanPatchTrackerSyncs(input: {
   if (input.applied.some((row) => row.ok && GOAL_OPS.has(row.op))) {
     await syncSprintGoalsToTracker({
       getIssueTracker: () => getIssueTrackerProviderClientForOrganization(input.organizationId),
+      organizationId: input.organizationId,
       sprintId: input.sprintId,
     });
   }

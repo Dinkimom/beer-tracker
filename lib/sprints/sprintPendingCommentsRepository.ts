@@ -11,6 +11,7 @@ import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
 /** Удаляет pending-заметки plan patch автора драфта в спринте (повторный propose / смена ops). */
 export async function deletePendingPlanPatchSprintComments(input: {
   ownerId: string;
+  organizationId: string;
   sprintId: number;
 }): Promise<number> {
   const result = await query(
@@ -18,8 +19,8 @@ export async function deletePendingPlanPatchSprintComments(input: {
       WHERE ${sprintTenantWhere()}
         AND pending_approval = TRUE
         AND plan_patch_proposal_id IS NOT NULL
-        AND LOWER(created_by::text) = LOWER($2)`,
-    [...sprintTenantParams(input.sprintId), input.ownerId]
+        AND LOWER(created_by::text) = LOWER($3)`,
+    [...sprintTenantParams(input), input.ownerId]
   );
   return result.rowCount ?? 0;
 }
@@ -29,6 +30,7 @@ export async function confirmPendingSprintComments(
   input: {
     commentIds: readonly string[];
     ownerId?: string;
+    organizationId: string;
     sprintId: number;
   },
   run: BeerTrackerTransactionQuery = query
@@ -44,10 +46,10 @@ export async function confirmPendingSprintComments(
             client_brand = '',
             updated_at = CURRENT_TIMESTAMP
       WHERE ${sprintTenantWhere()}
-        AND id = ANY($2::uuid[])
+        AND id = ANY($3::uuid[])
         AND pending_approval = TRUE
-        AND ($3::text IS NULL OR LOWER(created_by::text) = LOWER($3))`,
-    [...sprintTenantParams(input.sprintId), [...input.commentIds], input.ownerId ?? null]
+        AND ($4::text IS NULL OR LOWER(created_by::text) = LOWER($4))`,
+    [...sprintTenantParams(input), [...input.commentIds], input.ownerId ?? null]
   );
   return result.rowCount ?? 0;
 }
@@ -55,22 +57,24 @@ export async function confirmPendingSprintComments(
 /** Обычная (не черновая) заметка спринта существует. */
 export async function hasConfirmedSprintComment(input: {
   commentId: string;
+  organizationId: string;
   sprintId: number;
 }): Promise<boolean> {
   const result = await query(
     `SELECT 1 FROM comments
       WHERE ${sprintTenantWhere()}
-        AND id = $2::uuid
+        AND id = $3::uuid
         AND pending_approval = FALSE
         AND deleted_at IS NULL
       LIMIT 1`,
-    [...sprintTenantParams(input.sprintId), input.commentId]
+    [...sprintTenantParams(input), input.commentId]
   );
   return (result.rowCount ?? 0) > 0;
 }
 
 export async function confirmAllPendingSprintComments(input: {
   ownerId: string;
+  organizationId: string;
   sprintId: number;
 }): Promise<number> {
   const result = await query(
@@ -82,22 +86,23 @@ export async function confirmAllPendingSprintComments(input: {
             updated_at = CURRENT_TIMESTAMP
       WHERE ${sprintTenantWhere()}
         AND pending_approval = TRUE
-        AND LOWER(created_by::text) = LOWER($2)`,
-    [...sprintTenantParams(input.sprintId), input.ownerId]
+        AND LOWER(created_by::text) = LOWER($3)`,
+    [...sprintTenantParams(input), input.ownerId]
   );
   return result.rowCount ?? 0;
 }
 
 export async function deleteAllPendingSprintComments(input: {
   ownerId: string;
+  organizationId: string;
   sprintId: number;
 }): Promise<number> {
   const result = await query(
     `DELETE FROM comments
       WHERE ${sprintTenantWhere()}
         AND pending_approval = TRUE
-        AND LOWER(created_by::text) = LOWER($2)`,
-    [...sprintTenantParams(input.sprintId), input.ownerId]
+        AND LOWER(created_by::text) = LOWER($3)`,
+    [...sprintTenantParams(input), input.ownerId]
   );
   return result.rowCount ?? 0;
 }

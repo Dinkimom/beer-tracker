@@ -5,6 +5,7 @@ import { sprintTenantParams, sprintTenantWhere } from './sprintTenantSql';
 /** Число pending-заметок plan patch в спринте (ещё не apply / не истекли). */
 export async function countPendingPlanPatchSprintComments(input: {
   ownerId: string;
+  organizationId: string;
   sprintId: number;
 }): Promise<number> {
   const result = await query<{ count: string }>(
@@ -14,8 +15,8 @@ export async function countPendingPlanPatchSprintComments(input: {
         AND pending_approval = TRUE
         AND plan_patch_proposal_id IS NOT NULL
         AND (pending_approval_expires_at IS NULL OR pending_approval_expires_at >= CURRENT_TIMESTAMP)
-        AND LOWER(created_by::text) = LOWER($2)`,
-    [...sprintTenantParams(input.sprintId), input.ownerId]
+        AND LOWER(created_by::text) = LOWER($3)`,
+    [...sprintTenantParams(input), input.ownerId]
   );
   return Number(result.rows[0]?.count ?? 0);
 }
@@ -23,6 +24,7 @@ export async function countPendingPlanPatchSprintComments(input: {
 /** Полный opsHash из первой pending-заметки (proposal id в notes = hash, не short id). */
 export async function peekPendingPlanPatchCommentProposalId(input: {
   ownerId: string;
+  organizationId: string;
   sprintId: number;
 }): Promise<string | null> {
   const result = await query<{ plan_patch_proposal_id: string }>(
@@ -32,10 +34,10 @@ export async function peekPendingPlanPatchCommentProposalId(input: {
         AND pending_approval = TRUE
         AND plan_patch_proposal_id IS NOT NULL
         AND (pending_approval_expires_at IS NULL OR pending_approval_expires_at >= CURRENT_TIMESTAMP)
-        AND LOWER(created_by::text) = LOWER($2)
+        AND LOWER(created_by::text) = LOWER($3)
       ORDER BY updated_at DESC
       LIMIT 1`,
-    [...sprintTenantParams(input.sprintId), input.ownerId]
+    [...sprintTenantParams(input), input.ownerId]
   );
   const value = result.rows[0]?.plan_patch_proposal_id?.trim();
   return value || null;

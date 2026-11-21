@@ -1,9 +1,8 @@
-function taskLinksDeleteWhere(placeholders: string): string {
-  return `sprint_id = $1 AND id IN (${placeholders})`;
-}
+import { sprintTenantWhere } from './sprintTenantSql';
 
-export function buildTaskLinksBatchDeleteSql(placeholders: string): string {
-  return `DELETE FROM task_links WHERE ${taskLinksDeleteWhere(placeholders)}`;
+/** Удаление стрелок спринта организации по id: `$3` — массив id стрелок. */
+export function buildTaskLinksBatchDeleteSql(): string {
+  return `DELETE FROM task_links WHERE ${sprintTenantWhere()} AND id = ANY($3::text[])`;
 }
 
 interface BatchLinkInput {

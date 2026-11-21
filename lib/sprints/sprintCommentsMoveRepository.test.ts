@@ -55,14 +55,14 @@ describe('moveSprintCommentsToSprint', () => {
     expect(vi.mocked(setBoardEventActor).mock.calls[0]?.[1]).toEqual(ACTOR);
     expect(query).not.toHaveBeenCalled();
     expect(txCalls.map((c) => c.sql)).toEqual([
-      expect.stringMatching(/^UPDATE comments SET sprint_id = \$2 .* RETURNING id$/),
+      expect.stringMatching(/^UPDATE comments SET sprint_id = \$3 WHERE organization_id = \$1 .* RETURNING id$/),
       moveSprintCommentLinksSql(),
       deleteSprintCommentLinksSql(),
     ]);
-    expect(txCalls[0]!.params).toEqual([12, 44, [NOTE_A, NOTE_B]]);
+    expect(txCalls[0]!.params).toEqual(['org', 12, 44, [NOTE_A, NOTE_B]]);
     // Only the note that actually moved; both endpoint spellings.
-    expect(txCalls[1]!.params).toEqual([12, 44, [NOTE_A, `comment:${NOTE_A}`]]);
-    expect(txCalls[2]!.params).toEqual([12, [NOTE_A, `comment:${NOTE_A}`]]);
+    expect(txCalls[1]!.params).toEqual(['org', 12, 44, [NOTE_A, `comment:${NOTE_A}`]]);
+    expect(txCalls[2]!.params).toEqual(['org', 12, [NOTE_A, `comment:${NOTE_A}`]]);
   });
 
   it('returns 0 and leaves links alone when no note was in the source sprint', async () => {
@@ -92,8 +92,10 @@ describe('moveSprintCommentsToSprint', () => {
 
   it('link move skips pairs that already exist in the target sprint', () => {
     const sql = moveSprintCommentLinksSql();
-    expect(sql).toContain('UPDATE task_links AS l SET sprint_id = $2');
+    expect(sql).toContain('UPDATE task_links AS l SET sprint_id = $3');
+    expect(sql).toContain('l.organization_id = $1');
     expect(sql).toContain('NOT EXISTS');
-    expect(sql).toContain('d.sprint_id = $2');
+    expect(sql).toContain('d.organization_id = $1');
+    expect(sql).toContain('d.sprint_id = $3');
   });
 });

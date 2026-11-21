@@ -48,7 +48,7 @@ export async function listTaskPositionsForSprint(input: {
       FROM task_positions
       WHERE ${sprintTenantWhere()}
       ORDER BY assignee_id, start_day, start_part`,
-    sprintTenantParams(input.sprintId)
+    sprintTenantParams(input)
   );
   return result.rows as TaskPositionRow[];
 }
@@ -64,6 +64,7 @@ export async function listTaskPositionSprintIds(input: { organizationId: string;
 
 /** Карточки задач `taskIds` на досках спринтов `sprintIds` вместе с их отрезками — для квартального плана (QK8). */
 export async function listTaskCardSpans(input: {
+  organizationId: string;
   sprintIds: readonly number[];
   taskIds: readonly string[];
 }): Promise<
@@ -84,23 +85,24 @@ export async function listTaskCardSpans(input: {
        LEFT JOIN LATERAL (
          SELECT json_agg(json_build_object('startDay', seg.start_day, 'startPart', seg.start_part, 'duration', seg.duration)) AS segments
            FROM task_position_segments seg
-          WHERE seg.sprint_id = p.sprint_id AND seg.task_id = p.task_id
+          WHERE seg.organization_id = p.organization_id AND seg.sprint_id = p.sprint_id AND seg.task_id = p.task_id
        ) s ON TRUE
-      WHERE p.sprint_id = ANY($1::int[]) AND p.task_id = ANY($2::text[])`,
-    [[...input.sprintIds], [...input.taskIds]]
+      WHERE p.organization_id = $1 AND p.sprint_id = ANY($2::int[]) AND p.task_id = ANY($3::text[])`,
+    [input.organizationId, [...input.sprintIds], [...input.taskIds]]
   );
   return result.rows;
 }
 
-export async function loadPositionSegmentsByTask(
-  sprintId: number
-): Promise<Map<string, Array<{ segment_index: number; start_day: number; start_part: number; duration: number }>>> {
+export async function loadPositionSegmentsByTask(input: {
+  organizationId: string;
+  sprintId: number;
+}): Promise<Map<string, Array<{ segment_index: number; start_day: number; start_part: number; duration: number }>>> {
   const segmentsResult = await query(
     `SELECT task_id, segment_index, start_day, start_part, duration
      FROM task_position_segments
      WHERE ${sprintTenantWhere()}
      ORDER BY task_id, segment_index`,
-    sprintTenantParams(sprintId)
+    sprintTenantParams(input)
   );
   const segmentsByTask = new Map<
     string,
@@ -221,8 +223,8 @@ export async function replaceTaskPositionSegments(
     return;
   }
 
-  await run('DELETE FROM task_position_segments WHERE sprint_id = $1 AND task_id = $2', [
-    sprintId,
+  await run(`DELETE FROM task_position_segments WHERE ${sprintTenantWhere()} AND task_id = $3`, [
+    ...sprintTenantParams(input),
     taskId,
   ]);
 
@@ -258,6 +260,7 @@ export function updateTaskPositionRecord(input: {
     plannedStartDay,
     plannedStartPart,
     plannedDuration,
+    organizationId,
     sprintId,
     taskId,
   } = input;
@@ -272,7 +275,7 @@ export function updateTaskPositionRecord(input: {
       planned_start_part = $6,
       planned_duration = $7,
       updated_at = CURRENT_TIMESTAMP
-    WHERE sprint_id = $8 AND task_id = $9
+    WHERE organization_id = $8 AND sprint_id = $9 AND task_id = $10
     RETURNING *`,
     [
       assigneeId,
@@ -282,6 +285,7 @@ export function updateTaskPositionRecord(input: {
       plannedStartDay,
       plannedStartPart,
       plannedDuration,
+      organizationId,
       sprintId,
       taskId,
     ] as QueryParams
@@ -296,8 +300,8 @@ export async function deleteTaskPosition(
   },
   run: BeerTrackerTransactionQuery = query
 ): Promise<void> {
-  await run('DELETE FROM task_positions WHERE sprint_id = $1 AND task_id = $2', [
-    input.sprintId,
+  await run(`DELETE FROM task_positions WHERE ${sprintTenantWhere()} AND task_id = $3`, [
+    ...sprintTenantParams(input),
     input.taskId,
   ]);
 }
@@ -308,23 +312,24 @@ export async function clearTaskPositionsForSprint(input: {
   sprintId: number;
 }): Promise<string[]> {
   const result = await query(
-    'DELETE FROM task_positions WHERE sprint_id = $1 RETURNING task_id, is_qa',
-    [input.sprintId]
+    `DELETE FROM task_positions WHERE ${sprintTenantWhere()} RETURNING task_id, is_qa`,
+    sprintTenantParams(input)
   );
   return (result.rows as Array<{ is_qa: boolean | null; task_id: string }>)
     .filter((row) => row.is_qa !== true)
     .map((row) => row.task_id);
 }
 
-export async function loadPersistedPositionsForPlannedSync(
-  sprintId: number,
-  taskIds: string[]
-): Promise<Map<string, PersistedPositionForSync>> {
-  if (taskIds.length === 0) {
+export async function loadPersistedPositionsForPlannedSync(input: {
+  organizationId: string;
+  sprintId: number;
+  taskIds: string[];
+}): Promise<Map<string, PersistedPositionForSync>> {
+  if (input.taskIds.length === 0) {
     return new Map();
   }
 
-  const { params, scopeSql } = buildSprintTaskIdsScopeQuery(sprintId, taskIds);
+  const { params, scopeSql } = buildSprintTaskIdsScopeQuery(input);
 
   const positionsResult = await query(
     `SELECT task_id, duration, planned_start_day, planned_start_part, planned_duration
@@ -390,8 +395,8 @@ export async function getTaskPositionAssigneeId(input: {
     `SELECT assignee_id
      FROM task_positions
      WHERE ${sprintTenantWhere()}
-       AND task_id = $2`,
-    [...sprintTenantParams(input.sprintId), input.taskId]
+       AND task_id = $3`,
+    [...sprintTenantParams(input), input.taskId]
   );
   return result.rows[0]?.assignee_id ?? null;
 }

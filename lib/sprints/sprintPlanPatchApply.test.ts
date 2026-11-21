@@ -108,7 +108,7 @@ describe('applySprintPlanPatchOps', () => {
     expect(result.applied[0]).toMatchObject({ detail: 'position BT-2 → sprint 8', ok: true });
     expect(deletePosition.mock.calls.map((call) => call[0].sprintId)).toEqual([7, 8]);
     expect(statements).toContain(
-      'DELETE FROM task_links WHERE sprint_id = $1 AND (from_task_id = $2 OR to_task_id = $2)'
+      'DELETE FROM task_links WHERE organization_id = $1 AND sprint_id = $2 AND (from_task_id = $3 OR to_task_id = $3)'
     );
     expect(result.trackerSyncs).toEqual([{ index: 0, moveToSprintId: 8, taskId: 'BT-2' }]);
   });

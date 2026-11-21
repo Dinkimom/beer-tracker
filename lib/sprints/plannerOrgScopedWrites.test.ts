@@ -14,15 +14,15 @@ describe('planner writes include organization_id', () => {
       'pending_approval, pending_approval_expires_at, plan_patch_proposal_id, client_brand'
     );
     expect(moveSprintCommentsSql()).toBe(
-      'UPDATE comments SET sprint_id = $2 WHERE sprint_id = $1 AND id = ANY($3::uuid[])'
+      'UPDATE comments SET sprint_id = $3 WHERE organization_id = $1 AND sprint_id = $2 AND id = ANY($4::uuid[])'
     );
-    expect(moveSprintCommentsSql()).not.toContain('organization_id');
     expect(insertFileCommentSql()).toContain('organization_id, sprint_id, assignee_id');
     expect(updateSprintCommentSql()).toContain(
       'parent = CASE WHEN $10 THEN $11::jsonb ELSE parent END'
     );
-    expect(updateSprintCommentSql()).toContain('WHERE sprint_id = $13');
-    expect(updateSprintCommentSql()).toContain('AND id = $14');
+    expect(updateSprintCommentSql()).toContain('WHERE organization_id = $13');
+    expect(updateSprintCommentSql()).toContain('AND sprint_id = $14');
+    expect(updateSprintCommentSql()).toContain('AND id = $15');
     expect(updateSprintCommentSql()).toContain('deleted_at IS NULL');
   });
 

@@ -7,20 +7,18 @@ import { sprintCommentExists } from '@/lib/sprints/sprintCommentsRepository';
 async function missingNoteTarget(
   op: Extract<SprintPlanPatchOp, { op: 'deleteNote' | 'updateNote' }>,
   index: number,
-  sprintId: number
+  scope: { organizationId: string; sprintId: number }
 ): Promise<string | null> {
-  const exists = await sprintCommentExists({
-    commentId: op.commentId,
-    sprintId,
-  });
+  const exists = await sprintCommentExists({ commentId: op.commentId, ...scope });
   return exists ? null : `ops[${index}] ${op.op}: note ${op.commentId} not found`;
 }
 
 async function missingGoalTarget(
   op: Extract<SprintPlanPatchOp, { op: 'deleteGoal' | 'updateGoal' }>,
-  index: number
+  index: number,
+  organizationId: string
 ): Promise<string | null> {
-  const exists = await sprintGoalExists({ goalId: op.id });
+  const exists = await sprintGoalExists({ goalId: op.id, organizationId });
   return exists ? null : `ops[${index}] ${op.op}: goal ${op.id} not found`;
 }
 
@@ -42,16 +40,16 @@ async function missingTargetForOp(
   organizationId: string
 ): Promise<string | null> {
   if (op.op === 'updateNote' || op.op === 'deleteNote') {
-    return missingNoteTarget(op, index, sprintId);
+    return missingNoteTarget(op, index, { organizationId, sprintId });
   }
   if (op.op === 'createGoal') {
     return missingGoalPlanRow(op, index, organizationId);
   }
   if (op.op === 'updateGoal') {
-    return (await missingGoalTarget(op, index)) ?? missingGoalPlanRow(op, index, organizationId);
+    return (await missingGoalTarget(op, index, organizationId)) ?? missingGoalPlanRow(op, index, organizationId);
   }
   if (op.op === 'deleteGoal') {
-    return missingGoalTarget(op, index);
+    return missingGoalTarget(op, index, organizationId);
   }
   if (op.op === 'deletePosition' && op.moveToSprintId === sprintId) {
     return Promise.resolve(`ops[${index}] deletePosition: moveToSprintId ${sprintId} is this sprint`);
