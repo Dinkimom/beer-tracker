@@ -6,9 +6,11 @@
 
 import type { TaskLayerPositionedTaskItemProps } from './TaskLayer.types';
 
+import { observer } from 'mobx-react-lite';
 import React from 'react';
 
 import { ZIndex } from '@/constants';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { SwimlaneLinkingSourceFrame } from '@/features/swimlane/components/SwimlaneLinkingSourceFrame';
 import { SwimlaneLinkingTargetOutline } from '@/features/swimlane/components/SwimlaneLinkingTargetOutline';
 import { SwimlaneSegmentEditFrame } from '@/features/swimlane/components/SwimlaneSegmentEditFrame';
@@ -35,7 +37,11 @@ import {
 
 const EMPTY_TASK_LINKS: Array<{ fromTaskId: string; toTaskId: string; id: string }> = [];
 
-export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemProps) {
+// observer: QA-задачи для отступа бейзлайна читаются из модели доски.
+export const TaskLayerPositionedTaskItem = observer(function TaskLayerPositionedTaskItem(
+  props: TaskLayerPositionedTaskItemProps
+) {
+  const { qaTasksMap } = useSprintBoard();
   const {
     activeDraggableId = null,
     currentCell,
@@ -43,7 +49,6 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
     hasQuickAddDraftMode = false,
     isDraggingTask = false,
     linkingFromTaskId = null,
-    qaTasksMap,
     showLinks = true,
     onSegmentEditCancel,
     onSegmentEditSave,
@@ -233,4 +238,4 @@ export function TaskLayerPositionedTaskItem(props: TaskLayerPositionedTaskItemPr
       )}
     </React.Fragment>
   );
-}
+});

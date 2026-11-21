@@ -125,7 +125,6 @@ export function useSprintPlannerViewModel({
     saveLink,
     comments,
     boardViewers,
-    qaTasksMap,
     allTasksForDrag,
     tasksMap,
     unassignedTasks,
@@ -283,6 +282,8 @@ export function useSprintPlannerViewModel({
           onClose: () => setAssigneePicker(null),
         }
       : null,
+    /** Модель доски — для провайдера: листья читают её сами. */
+    board: state.board,
     boardViewers,
     comments,
     controls: {
@@ -381,7 +382,6 @@ export function useSprintPlannerViewModel({
       developers,
       developersManagement,
       goalTaskIds,
-      qaTasksMap,
       selectedBoardId: boardIdForPlannerData,
       selectedSprintId,
       sidebarDropTargetActive: dragAndDrop.isSidebarDropTarget,
@@ -437,7 +437,6 @@ export function useSprintPlannerViewModel({
       dragAndDrop,
       filteredTaskLinks: swimlaneTaskLinks ?? filteredTaskLinks,
       participantsColumnWidth,
-      qaTasksMap,
       removeParticipantFromTeam: handleRemoveParticipantFromTeam,
       scrollContainerRef,
       setTasks,

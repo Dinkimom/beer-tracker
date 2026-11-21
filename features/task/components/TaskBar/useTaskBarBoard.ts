@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 
 import { getPartsPerDay } from '@/constants';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { SwimlaneArrowRedrawContext } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import { useSwimlaneBoard } from '@/features/swimlane/SwimlaneBoardContext';
 
@@ -13,13 +14,14 @@ function noop(): void {}
  */
 export function useTaskBarBoard(planPatchGhost: boolean, linkingActive: boolean) {
   const board = useSwimlaneBoard();
+  const sprintBoard = useSprintBoard();
   const arrowRedrawFromLane = useContext(SwimlaneArrowRedrawContext);
   const actionsOff = planPatchGhost || linkingActive;
   return {
     commentActions: actionsOff ? undefined : board.commentActions,
     developers: board.developers,
     globalNameFilter: board.globalNameFilter,
-    qaTasksMap: planPatchGhost ? undefined : board.qaTasksMap,
+    qaTasksMap: planPatchGhost ? undefined : sprintBoard.qaTasksMap,
     requestArrowRedraw: planPatchGhost ? noop : (arrowRedrawFromLane ?? noop),
     selectedSprintId: board.selectedSprintId,
     swimlaneTimelineTotalParts: board.sprintTimelineWorkingDays * getPartsPerDay(),

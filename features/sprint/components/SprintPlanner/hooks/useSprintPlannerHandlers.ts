@@ -39,7 +39,6 @@ export function useSprintPlannerHandlers({
     deleteLink,
     deletePosition,
     qaTasksByOriginalId,
-    qaTasksMap,
     savePosition,
     setComments,
     setTaskLinks,
@@ -48,6 +47,8 @@ export function useSprintPlannerHandlers({
     taskPositions,
     tasks,
   } = state;
+  // QA-задачи — из модели доски.
+  const { qaTasksMap } = state.board;
   const { allTasksForDrag, filteredTaskLinks, filteredTaskPositions, taskLinks, tasksMap } = boardView;
   const { sprintStartDate, sprintTimelineWorkingDays } = timeline;
   const { t } = useI18n();

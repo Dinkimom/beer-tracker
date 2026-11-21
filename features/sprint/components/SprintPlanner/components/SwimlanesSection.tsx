@@ -29,6 +29,7 @@ import {
 } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionHelpers';
 import { mergeSwimlanePositionsWithVisibleComments } from '@/features/sprint/components/SprintPlanner/utils/swimlanesSectionSwimlanePropsHelpers';
 import { useHolidayDays } from '@/features/sprint/hooks/useHolidayDays';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { buildAssigneeUnavailableDays, getOccupancyErrorDays, getOccupancyErrorDetailsByDay, getOccupancyErrorReasons, getOccupancyErrorTaskIds } from '@/features/sprint/utils/occupancyValidation';
 import { useCardShadowFactFocusTaskId } from '@/features/swimlane/components/in-progress-fact/useCardShadowFactFocusTaskId';
 import { useSwimlaneTaskHoverIntent } from '@/features/swimlane/hooks/useSwimlaneTaskHoverIntent';
@@ -76,7 +77,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     dragAndDrop,
     filteredTaskLinks,
     participantsColumnWidth,
-    qaTasksMap,
     removeParticipantFromTeam,
     scrollContainerRef,
     sidebarOpen,
@@ -98,6 +98,7 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     notesVisible: swimlaneNotesVisible,
   } = props.display;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
+  const { qaTasksMap } = useSprintBoard();
   const { t } = useI18n();
   const globalNameFilter = sprintPlannerUi.globalNameFilter;
   const hoveredTaskId = sprintPlannerUi.hoveredTaskId;

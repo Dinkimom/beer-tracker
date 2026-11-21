@@ -25,7 +25,6 @@ interface TasksTabGroupsProps {
   groupBy: SidebarGroupBy;
   groupedTasks: Record<string, Task[]>;
   groupKeys: string[];
-  qaTasksMap: Map<string, Task>;
   viewMode?: LayoutViewMode;
   onAutoAddToSwimlane?: (task: Task) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
@@ -37,7 +36,6 @@ export function TasksTabGroups({
   groupBy,
   developers,
   onContextMenu,
-  qaTasksMap,
   activeTaskId,
   activeTaskDuration,
   viewMode,
@@ -99,7 +97,6 @@ export function TasksTabGroups({
             onAutoAddToSwimlane,
             onContextMenu,
             onPlanAssignees,
-            qaTasksMap,
             registerTaskRowRef,
             renderDropSlot,
             sidebarDropTargetActive,

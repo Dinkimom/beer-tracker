@@ -9,6 +9,7 @@ import { useXarrow } from 'react-xarrows';
 
 import { usePhaseCardColorScheme } from '@/components/PhaseCardColorSchemeContext';
 import { ZIndex } from '@/constants';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { useLinkPreviewCursor } from '@/features/swimlane/hooks/useLinkPreviewCursor';
 import { usePublishHiddenLinkCounts } from '@/features/swimlane/hooks/usePublishHiddenLinkCounts';
 import { SwimlaneArrowRedrawContext } from '@/features/swimlane/SwimlaneArrowRedrawContext';
@@ -61,7 +62,6 @@ interface TaskArrowsProps {
   /** Капсула «Связь»: крестики удаления всех пользовательских связей. */
   linkToolArmed?: boolean;
   /** Dev task id → QA task. Если передан, рисуются стрелки от задачи разработки к задаче тестирования. */
-  qaTasksMap?: Map<string, Task>;
   /** Порядок строк и набор закреплений — позиции карточек по Y меняются без смены assignee. */
   rowsLayoutKey?: string;
   /** Задача в режиме редактирования отрезков — связи с ней скрываем (как в занятости). */
@@ -79,7 +79,6 @@ export const TaskArrows = observer(function TaskArrows({
   taskLinks,
   taskPositions,
   tasks,
-  qaTasksMap,
   activeTaskId = null,
   hoveredTaskId = null,
   idleMode = 'all',
@@ -94,6 +93,7 @@ export const TaskArrows = observer(function TaskArrows({
   onDeleteLink,
   onTaskHoverEnd,
 }: TaskArrowsProps) {
+  const { qaTasksMap } = useSprintBoard();
   useDocumentDarkClass();
   const phaseCardColorScheme = usePhaseCardColorScheme();
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);

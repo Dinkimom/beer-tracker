@@ -35,7 +35,6 @@ interface RenderTasksTabGroupsContentParams {
   groupedTasks: Record<string, Task[]>;
   groupKeys: string[];
   insertIndex: number | null;
-  qaTasksMap: Map<string, Task>;
   sidebarDropTargetActive: boolean;
   viewMode?: LayoutViewMode;
   visibleTaskOrdinal: { value: number };
@@ -64,7 +63,6 @@ export function renderTasksTabGroupsContent(params: RenderTasksTabGroupsContentP
           onAutoAddToSwimlane: params.onAutoAddToSwimlane,
           onContextMenu: params.onContextMenu,
           onPlanAssignees: params.onPlanAssignees,
-          qaTasksMap: params.qaTasksMap,
           registerTaskRowRef: params.registerTaskRowRef,
           renderDropSlot: params.renderDropSlot,
           sidebarDropTargetActive: params.sidebarDropTargetActive,

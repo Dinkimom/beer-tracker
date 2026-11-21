@@ -48,7 +48,6 @@ export function TasksTab() {
     groupKeys,
     groupedTasks,
     developers,
-    qaTasksMap,
     activeTaskId,
     activeTaskDuration,
     viewMode,
@@ -93,7 +92,6 @@ export function TasksTab() {
           groupBy={groupBy}
           groupKeys={groupKeys}
           groupedTasks={groupedTasks}
-          qaTasksMap={qaTasksMap}
           viewMode={viewMode}
           onAutoAddToSwimlane={onAutoAddToSwimlane}
           onContextMenu={onContextMenu}

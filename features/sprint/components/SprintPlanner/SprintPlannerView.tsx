@@ -12,6 +12,8 @@ import { FeatureDraftRowNamesProvider } from '@/features/task/components/TaskCar
 import { SprintCardPresenceProvider } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useHeightCssVar } from '@/hooks/useHeightCssVar';
 
+import { SprintBoardContext } from '../../model/SprintBoardContext';
+
 import { SprintPlannerBoardViews } from './board';
 import { ModalsSection } from './components/ModalsSection';
 import { SidebarSection } from './components/SidebarSection';
@@ -33,6 +35,7 @@ type SprintPlannerViewProps = ReturnType<typeof useSprintPlannerViewModel>;
  */
 export function SprintPlannerView({
   assigneePicker,
+  board,
   boardViewers,
   comments,
   controls,
@@ -59,6 +62,7 @@ export function SprintPlannerView({
   useHeightCssVar(boardFrameEl, controlsEl, '--planner-controls-h');
 
   return (
+    <SprintBoardContext.Provider value={board}>
     <AssigneeVelocityProvider selectedSprintId={selectedSprintId} sprints={sprints}>
     <PlannerChromeSlotProvider slot={daysSlotEl}>
     <StickyNoteReactionsProvider comments={comments} sprintId={selectedSprintId} onPaintNoteColor={onPaintNoteColor}>
@@ -108,5 +112,6 @@ export function SprintPlannerView({
     </StickyNoteReactionsProvider>
     </PlannerChromeSlotProvider>
     </AssigneeVelocityProvider>
+    </SprintBoardContext.Provider>
   );
 }

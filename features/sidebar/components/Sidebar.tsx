@@ -7,6 +7,7 @@ import type { Developer, Task, TaskPosition } from '@/types';
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { useDroppable } from '@dnd-kit/core';
+import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
 
 import {
@@ -27,6 +28,7 @@ import { TaskSidebarContext } from '@/features/sidebar/contexts/TaskSidebarConte
 import { useSidebarHeaderTabs } from '@/features/sidebar/hooks/useSidebarHeaderTabs';
 import { useSidebarTabsState } from '@/features/sidebar/hooks/useSidebarTabsState';
 import { useSprintGoalsSummary } from '@/features/sprint/hooks/useSprintGoals';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { collectInvalidSprintDevTasks } from '@/features/sprint/utils/sprintStartChecks';
 import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
 import { useTaskGrouping } from '@/features/task/hooks/useTaskGrouping';
@@ -78,7 +80,6 @@ export interface TaskSidebarProps
   goalTaskIds?: string[];
   hideTasksTab?: boolean;
   // Все задачи спринта (для метрик)
-  qaTasksMap: Map<string, Task>;
   selectedBoardId?: number | null; // ID выбранной доски для загрузки бэклога
   selectedSprintId?: number | null; // ID текущего спринта для валидации
   /** Дроп в неназначенные: слот в списке задач */
@@ -92,10 +93,10 @@ export interface TaskSidebarProps
   width?: number;
 }
 
-export function TaskSidebar({
+// observer: QA-задачи для фильтра читаются из модели доски.
+export const TaskSidebar = observer(function TaskSidebar({
   tasks,
   allSprintTasks,
-  qaTasksMap,
   taskPositions = null,
   developers,
   width = 320,
@@ -118,6 +119,7 @@ export function TaskSidebar({
   onAutoAddToSwimlane,
   sidebarDropTargetActive = false,
 }: TaskSidebarProps) {
+  const { qaTasksMap } = useSprintBoard();
   const { setNodeRef, isOver } = useDroppable({
     id: 'sidebar-unassigned',
   });
@@ -206,7 +208,6 @@ export function TaskSidebar({
     mainTab,
     nameFilter,
     qaTasksCount,
-    qaTasksMap,
     selectedBoardId,
     selectedSprintId,
     sidebarDropTargetActive: sidebarDropTargetActive || isOver,
@@ -260,4 +261,4 @@ export function TaskSidebar({
       </div>
     </TaskSidebarContext.Provider>
   );
-}
+});

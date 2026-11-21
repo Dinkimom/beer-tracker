@@ -24,6 +24,7 @@ import {
   reloadSprintTasksQueries,
   removeSprintTaskFromQueries,
   upsertSprintTaskInQueries,
+  sprintTasksQueryKey,
   useTasks,
 } from '@/features/task/hooks/useTasks';
 import { reloadFeatureLanesSession } from '@/hooks/featureLanesSessionStore';
@@ -43,6 +44,7 @@ import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientI
 import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
 import { useTaskState } from '../../../hooks/useTaskState';
+import { SprintBoard } from '../../../model/SprintBoard';
 
 import { retainTaskPositionMap } from './retainTaskPositionMap';
 
@@ -65,26 +67,24 @@ export function useSprintPlannerState({
   const { sprintMovePlacement, taskPositions: positionsStore } = useRootStore();
   const [syncEstimates] = useDataSyncEstimatesStorage();
   const forDemoPlanner = useDemoPlannerBoardsQueryScope();
-  const tasksQuery = useTasks(selectedSprintId, selectedBoardId);
+  // Запрос задач делает useTasks; данные доска читает из модели, которая смотрит в тот же кэш.
+  useTasks(selectedSprintId, selectedBoardId);
 
-  const queryTasks = tasksQuery.data?.tasks;
-  // Задача, которую переносят сюда с выбором места: в трекере она ещё в старом спринте.
-  const moveSession = sprintMovePlacement.session;
-  const movingTask =
-    moveSession?.kind === 'task' && moveSession.targetSprintId === selectedSprintId
-      ? moveSession.task
-      : null;
-  const tasks = useMemo(() => {
-    const list = queryTasks ?? [];
-    if (!movingTask || list.some((task) => task.id === movingTask.id)) {
-      return list;
-    }
-    return [...list, movingTask];
-  }, [movingTask, queryTasks]);
-  const developers = useMemo(
-    () => tasksQuery.data?.developers ?? [],
-    [tasksQuery.data?.developers],
+  // Модель доски держит задачи из того же кэша (ссылку, не копию) и выводит из них карты.
+  const board = useMemo(
+    () =>
+      new SprintBoard({
+        movePlacement: sprintMovePlacement,
+        positions: positionsStore,
+        queryClient,
+        sprintId: selectedSprintId,
+        tasksQueryKey: sprintTasksQueryKey(selectedSprintId, selectedBoardId, forDemoPlanner),
+      }),
+    [forDemoPlanner, positionsStore, queryClient, selectedBoardId, selectedSprintId, sprintMovePlacement]
   );
+  useEffect(() => board.connect(), [board]);
+  const tasks = board.tasks;
+  const developers = board.developers;
 
   const setTasks = useCallback(
     (patch: Task[] | ((prev: Task[]) => Task[])) => {
@@ -187,16 +187,12 @@ export function useSprintPlannerState({
           workingDaysCount,
         });
 
-  const planDraftTaskIds =
-    positionsStore.planDraftCount > 0 ? positionsStore.draftTaskIds : undefined;
-  const taskState = useTaskState({
+  const { allTasksForDrag, qaTasksByOriginalId, tasksMap } = board;
+  const { tasksByAssignee, unassignedTasks } = useTaskState({
+    allTasksForDrag,
     developers,
-    planDraftTaskIds,
     taskPositions: displayTaskPositions,
-    tasks,
   });
-  const { qaTasksMap, allTasksForDrag, tasksMap, qaTasksByOriginalId, unassignedTasks, tasksByAssignee } =
-    taskState;
 
   useEffect(() => {
     getTaskInfoRef.current = (taskId: string) => {
@@ -255,6 +251,7 @@ export function useSprintPlannerState({
   }, [taskLinks, tasksMap]);
 
   return {
+    board,
     developers,
     tasks,
     setTasks,
@@ -278,7 +275,6 @@ export function useSprintPlannerState({
     deleteComment,
     boardViewers,
 
-    qaTasksMap,
     allTasksForDrag,
     tasksMap,
     qaTasksByOriginalId,

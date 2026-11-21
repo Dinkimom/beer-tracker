@@ -1,0 +1,129 @@
+import type { SprintMovePlacementStore } from '@/lib/layers/application/mobx/stores/sprintMovePlacementStore';
+import type { TaskPositionsStore } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
+import type { Developer, Task } from '@/types';
+import type { QueryClient, QueryKey } from '@tanstack/react-query';
+
+import { QueryObserver } from '@tanstack/react-query';
+import { action, computed, makeObservable, observable } from 'mobx';
+
+import { createQATasksMap } from '@/features/qa/utils/qaTaskUtils';
+import { stampPlanDraftTasks, stampPlanDraftTasksMap } from '@/features/task/utils/planAssigneeDraft';
+
+interface SprintTasksSnapshot {
+  developers: Developer[];
+  tasks: Task[];
+}
+
+interface SprintBoardDeps {
+  movePlacement: SprintMovePlacementStore;
+  positions: TaskPositionsStore;
+  queryClient: QueryClient;
+  sprintId: number | null;
+  /** Ключ кэша задач спринта — тот же, что у `useTasks`. */
+  tasksQueryKey: QueryKey;
+}
+
+const NO_DEVELOPERS: Developer[] = [];
+const NO_TASKS: Task[] = [];
+
+/**
+ * Доменная модель доски одного спринта: задачи и всё, что из них выводится.
+ *
+ * Источник правды по задачам — кэш React Query: модель держит ссылку на ответ (`observable.ref`),
+ * а не копию, и не запрашивает его сама (`enabled: false`) — запрос делает `useTasks`. Правки, как и
+ * раньше, идут через `patchSprintTasksQuery`, модель видит их через подписку на кэш.
+ * Позиции и перенос из другого спринта — существующие сторы, модель их только читает.
+ *
+ * Читать модель — из `observer`: computed кэшируются только пока их кто-то наблюдает, вне реакции
+ * каждое чтение пересчитывает карты заново (и отдаёт новые ссылки).
+ */
+export class SprintBoard {
+  snapshot: SprintTasksSnapshot | undefined;
+
+  private readonly observer: QueryObserver<SprintTasksSnapshot>;
+
+  constructor(private readonly deps: SprintBoardDeps) {
+    this.observer = new QueryObserver<SprintTasksSnapshot>(deps.queryClient, {
+      enabled: false,
+      queryKey: deps.tasksQueryKey,
+    });
+    this.snapshot = this.observer.getCurrentResult().data;
+    makeObservable<SprintBoard, 'setSnapshot' | 'taskIndex'>(this, {
+      allTasksForDrag: computed,
+      developers: computed,
+      qaTasksByOriginalId: computed,
+      qaTasksMap: computed,
+      setSnapshot: action,
+      snapshot: observable.ref,
+      taskIndex: computed,
+      tasks: computed,
+      tasksMap: computed,
+    });
+  }
+
+  /** Подписка на кэш, пока доска на экране; возвращает отписку. */
+  connect(): () => void {
+    const unsubscribe = this.observer.subscribe((result) => this.setSnapshot(result.data));
+    this.setSnapshot(this.observer.getCurrentResult().data);
+    return unsubscribe;
+  }
+
+  private setSnapshot(snapshot: SprintTasksSnapshot | undefined): void {
+    this.snapshot = snapshot;
+  }
+
+  get developers(): Developer[] {
+    return this.snapshot?.developers ?? NO_DEVELOPERS;
+  }
+
+  /** Задачи спринта; задача, которую переносят сюда с выбором места, — в конце (в трекере она ещё в старом спринте). */
+  get tasks(): Task[] {
+    const list = this.snapshot?.tasks ?? NO_TASKS;
+    const session = this.deps.movePlacement.session;
+    const movingTask =
+      session?.kind === 'task' && session.targetSprintId === this.deps.sprintId ? session.task : null;
+    if (!movingTask || list.some((task) => task.id === movingTask.id)) {
+      return list;
+    }
+    return [...list, movingTask];
+  }
+
+  /** Синтетические QA-задачи: ключ — id dev-задачи. */
+  get qaTasksMap(): Map<string, Task> {
+    return createQATasksMap(this.tasks);
+  }
+
+  private get taskIndex() {
+    const qaTasks = Array.from(this.qaTasksMap.values());
+    const allTasks = [...this.tasks, ...qaTasks];
+    const tasksMap = new Map(allTasks.map((task) => [task.id, task]));
+    const qaTasksByOriginalId = new Map<string, Task>();
+    for (const qaTask of qaTasks) {
+      if (qaTask.originalTaskId) {
+        qaTasksByOriginalId.set(qaTask.originalTaskId, qaTask);
+      }
+    }
+    return { allTasks, qaTasksByOriginalId, tasksMap };
+  }
+
+  /** QA-задача по id исходной dev-задачи. */
+  get qaTasksByOriginalId(): Map<string, Task> {
+    return this.taskIndex.qaTasksByOriginalId;
+  }
+
+  /** Черновики плана агента помечены: карточка читает задачу из этой карты, а не из группировки. */
+  private get planDraftTaskIds(): ReadonlySet<string> | undefined {
+    const positions = this.deps.positions;
+    return positions.planDraftCount > 0 ? positions.draftTaskIds : undefined;
+  }
+
+  /** Задачи и QA-задачи по id. */
+  get tasksMap(): Map<string, Task> {
+    return stampPlanDraftTasksMap(this.taskIndex.tasksMap, this.planDraftTaskIds);
+  }
+
+  /** Задачи и QA-задачи списком — для перетаскивания и группировки. */
+  get allTasksForDrag(): Task[] {
+    return stampPlanDraftTasks(this.taskIndex.allTasks, this.planDraftTaskIds);
+  }
+}

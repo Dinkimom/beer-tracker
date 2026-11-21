@@ -86,7 +86,6 @@ export interface SwimlanesSectionProps {
    */
   occupancyValidationPositions?: Map<string, TaskPosition>;
   participantsColumnWidth: number;
-  qaTasksMap: Map<string, Task>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   sidebarOpen: boolean;
   sprintStartDate: Date;

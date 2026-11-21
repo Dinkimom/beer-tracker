@@ -55,7 +55,6 @@ interface RenderTasksTabGroupSectionParams {
   groupKey: string;
   groupKeysLength: number;
   insertIndex: number | null;
-  qaTasksMap: Map<string, Task>;
   sidebarDropTargetActive: boolean;
   viewMode?: LayoutViewMode;
   visibleTaskOrdinalRef: { value: number };
@@ -102,7 +101,6 @@ export function renderTasksTabGroupSection(
           insertIndex: params.insertIndex,
           onAutoAddToSwimlane: params.onAutoAddToSwimlane,
           onContextMenu: params.onContextMenu,
-          qaTasksMap: params.qaTasksMap,
           registerTaskRowRef: params.registerTaskRowRef,
           renderDropSlot: params.renderDropSlot,
           sidebarDropTargetActive: params.sidebarDropTargetActive,

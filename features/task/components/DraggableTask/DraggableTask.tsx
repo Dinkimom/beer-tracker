@@ -15,7 +15,6 @@ interface DraggableTaskProps {
   activeTaskId?: string | null;
   developers: Developer[];
   isQATask?: boolean;
-  qaTasksMap?: Map<string, Task>;
   task: Task;
   viewMode?: 'compact' | 'full';
   onAutoAddToSwimlane?: (task: Task) => void;

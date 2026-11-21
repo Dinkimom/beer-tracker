@@ -9,7 +9,6 @@ interface RenderTasksTabGroupRowsParams {
   developers: Developer[];
   hideDraggedTaskInList: boolean;
   insertIndex: number | null;
-  qaTasksMap: Map<string, Task>;
   sidebarDropTargetActive: boolean;
   tasksInGroup: Task[];
   viewMode?: LayoutViewMode;
@@ -26,7 +25,6 @@ function renderTasksTabTaskRow(params: {
   developers: Developer[];
   onAutoAddToSwimlane?: (task: Task) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
-  qaTasksMap: Map<string, Task>;
   registerTaskRowRef: (taskId: string, element: HTMLDivElement | null) => void;
   task: Task;
   viewMode?: LayoutViewMode;
@@ -37,7 +35,6 @@ function renderTasksTabTaskRow(params: {
         activeTaskDuration={params.activeTaskDuration}
         activeTaskId={params.activeTaskId}
         developers={params.developers}
-        qaTasksMap={params.qaTasksMap}
         task={params.task}
         viewMode={params.viewMode}
         onAutoAddToSwimlane={params.onAutoAddToSwimlane}
@@ -68,7 +65,6 @@ export function renderTasksTabGroupRows(params: RenderTasksTabGroupRowsParams): 
       developers: params.developers,
       onAutoAddToSwimlane: params.onAutoAddToSwimlane,
       onContextMenu: params.onContextMenu,
-      qaTasksMap: params.qaTasksMap,
       registerTaskRowRef: params.registerTaskRowRef,
       task,
       viewMode: params.viewMode,

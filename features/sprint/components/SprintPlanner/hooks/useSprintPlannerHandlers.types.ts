@@ -32,12 +32,12 @@ export interface UseSprintPlannerHandlersProps {
   /** Сырые данные доски из `useSprintPlannerState` — эти поля хук получает без подмен. */
   state: Pick<
     ReturnType<typeof useSprintPlannerState>,
+    | 'board'
     | 'comments'
     | 'deleteComment'
     | 'deleteLink'
     | 'deletePosition'
     | 'qaTasksByOriginalId'
-    | 'qaTasksMap'
     | 'savePosition'
     | 'setComments'
     | 'setTaskLinks'

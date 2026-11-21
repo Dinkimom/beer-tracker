@@ -31,7 +31,6 @@ export interface SwimlaneBoard {
   /** Индексы дней (0..9), которые являются нерабочими/праздничными */
   holidayDayIndices?: Set<number>;
   participantsColumnWidth: number;
-  qaTasksMap?: Map<string, Task>;
   quickAdd?: QuickAddController;
   selectedSprintId?: number | null;
   /** Пользовательские стрелки видны. От этого зависит, уступает ли бейзлайн место связи. */

@@ -53,7 +53,6 @@ export interface TaskSidebarContextValue {
   nameFilter: string;
   /** QA-задачи после фильтров (поиск, статус) — бейдж вкладки QA */
   qaTasksCount: number;
-  qaTasksMap: Map<string, Task>;
   selectedBoardId?: number | null;
   selectedSprintId?: number | null;
   /** Дроп в неназначенные: показывать слот в списке */

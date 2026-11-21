@@ -202,7 +202,6 @@ export function SwimlanesSectionLanes({
     linkToolArmed,
     linkingFromTaskId,
     linkingSessionActive,
-    qaTasksMap: section.qaTasksMap,
     rowsLayoutKey,
     segmentEditTaskId,
     taskLinks: arrowTaskLinks,
