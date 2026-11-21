@@ -31,7 +31,6 @@
   "features/task/components/TaskBar/components/quickAddMenu/QuickAddMenuPanels.tsx::props-width::QuickAddMenuPanelsProps": 24,
   "features/task/components/TaskBar/components/quickAddMenu/types.ts::props-width::SwimlaneQuickAddMenuProps": 32,
   "features/task/components/TaskBar/components/quickAddMenu/useQuickAddMenuNavigation.ts::hook-inputs::useQuickAddMenuNavigation": 23,
-  "features/task/components/TaskBar/TaskBarOpacityLayerChrome.tsx::pass-through": 77,
   "features/task/components/TaskCard/components/TaskCardStandardBody.tsx::pass-through": 86,
   "features/task/components/TaskCard/components/TaskCardStandardBody.tsx::props-width::TaskCardStandardBodyProps": 25,
   "features/task/components/TaskCard/components/TaskCardSwimlaneContent.tsx::pass-through": 100,

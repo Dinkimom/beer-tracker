@@ -303,6 +303,14 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
       onBlur={(event) => cancelInlineEditorOnFocusOut(event, inlineTitleEditor?.onCancel, isStickyNoteCard)}
     >
       <TaskBarOpacityLayer
+        badges={{
+          errorTooltip,
+          hasQATaskInSwimlane,
+          isInError,
+          onCreateQATask: presenceBlocksMutations ? undefined : onCreateQATask,
+          swimlaneSegmentBadge,
+          swimlaneSegmentSecondary,
+        }}
         card={{
           taskCard: {
             assigneeName,
@@ -340,17 +348,6 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
           setClickStartPos,
           setNodeRef,
         }}
-        chrome={{
-          disableResize: resizeDisabled || presenceBlocksMutations,
-          errorTooltip,
-          hasQATaskInSwimlane,
-          isInError,
-          onCreateQATask: presenceBlocksMutations ? undefined : onCreateQATask,
-          showVerticalResize: isStickyNoteCard || isSwimlanePhotoCard,
-          swimlaneSegmentBadge,
-          swimlaneSegmentSecondary,
-          verticalResize,
-        }}
         cornerStyle={cornerStyle}
         currentDurationParts={duration}
         effectiveIsDragging={effectiveIsDragging}
@@ -370,6 +367,11 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
         }}
         quickAddSubmitting={quickAddSubmitting}
         resize={{ ...resize, isResizing: isAnyResizing }}
+        resizeHandles={{
+          disableResize: resizeDisabled || presenceBlocksMutations,
+          showVerticalResize: isStickyNoteCard || isSwimlanePhotoCard,
+          verticalResize,
+        }}
         task={task}
         transform={transform}
         onTaskHover={noteFocus.hover}

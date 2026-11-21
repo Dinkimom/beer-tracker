@@ -18,7 +18,7 @@ import { TaskBarHiddenLinksBadge } from './TaskBarHiddenLinksBadge';
 import { TaskBarPlanMovedBadge } from './TaskBarPlanMovedBadge';
 import { TaskBarPlanningErrorBadge } from './TaskBarPlanningErrorBadge';
 
-interface TaskBarCornerBadgesProps {
+export interface TaskBarCornerBadgesProps {
   effectiveIsDragging: boolean;
   errorTooltip?: string;
   hasQATaskInSwimlane: boolean;

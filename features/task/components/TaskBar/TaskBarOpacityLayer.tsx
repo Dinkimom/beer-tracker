@@ -1,8 +1,9 @@
 'use client';
 
 import type { ResizeHandleCornerStyle } from './components/taskBarResizeHandleHelpers';
+import type { TaskBarCornerBadgesProps } from './TaskBarCornerBadges';
 import type { TaskBarOpacityLayerCardProps } from './TaskBarOpacityLayerCard';
-import type { TaskBarOpacityLayerChromeProps } from './TaskBarOpacityLayerChrome';
+import type { TaskBarResizeHandlesProps } from './TaskBarResizeHandles';
 
 import { observer } from 'mobx-react-lite';
 import React, { useCallback, useMemo } from 'react';
@@ -12,9 +13,9 @@ import { isSwimlaneCommentTask } from '@/features/comments/utils/swimlaneComment
 import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
 
 import { getQuickAddSubmittingOverlayRadiusClass } from './components/taskBarResizeHandleHelpers';
+import { TaskBarCornerBadges } from './TaskBarCornerBadges';
 import { TaskBarDragSourceGhost } from './TaskBarDragSourceGhost';
 import { TaskBarOpacityLayerCard } from './TaskBarOpacityLayerCard';
-import { TaskBarOpacityLayerChrome } from './TaskBarOpacityLayerChrome';
 import {
   buildTaskBarMouseLeaveHandler,
   runTaskBarMouseEnter,
@@ -22,6 +23,7 @@ import {
   runTaskBarMouseOver,
 } from './taskBarOpacityLayerHandlers';
 import { TaskBarPlanAnchorOverlay } from './TaskBarPlanAnchorOverlay';
+import { TaskBarResizeHandles } from './TaskBarResizeHandles';
 import { useTaskBarResizeSquash } from './useTaskBarResizeSquash';
 
 /** Поля, которые нужны и слою, и карточке, и хрому, — передаются один раз. */
@@ -48,18 +50,20 @@ interface TaskBarLongHover {
 
 interface TaskBarOpacityLayerProps
   extends Pick<TaskBarOpacityLayerCardProps, Exclude<SharedLayerKey, 'resize'>> {
+  /** Значки и кнопки на углах: ошибка планирования, номер отрезка, + QA. */
+  badges: Omit<TaskBarCornerBadgesProps, SharedLayerKey>;
   /** Карточка задачи — уходит в `TaskBarOpacityLayerCard` как есть. */
   card: Omit<TaskBarOpacityLayerCardProps, SharedLayerKey | 'cardElementRef'>;
   children?: React.ReactNode;
-  /** Ручки ресайза, бейджи, ошибка — уходят в `TaskBarOpacityLayerChrome`. */
-  chrome: Omit<TaskBarOpacityLayerChromeProps, SharedLayerKey | 'cornerStyle'>;
   cornerStyle?: ResizeHandleCornerStyle;
   currentDurationParts: number;
   effectiveOpacity: number;
   longHover: TaskBarLongHover;
   /** Штриховка добавленной стоимости и значок переноса относительно плана на старте работы. */
   quickAddSubmitting: boolean;
-  resize: TaskBarOpacityLayerChromeProps['resize'] & { resizeStartDuration: number | null };
+  resize: TaskBarResizeHandlesProps['resize'] & { resizeStartDuration: number | null };
+  /** Ручки ресайза: можно ли тянуть и, у заметки и фото, по высоте. */
+  resizeHandles: Pick<TaskBarResizeHandlesProps, 'disableResize' | 'showVerticalResize' | 'verticalResize'>;
   transform: { x: number; y: number; scaleX: number; scaleY: number } | null;
   onTaskHover?: (taskId: string | null) => void;
 }
@@ -67,9 +71,9 @@ interface TaskBarOpacityLayerProps
 // observer: меню карточки читается из стора (`useCardContextMenu`).
 export const TaskBarOpacityLayer = observer(function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   const {
+    badges,
     card,
     children,
-    chrome,
     cornerStyle = 'rounded',
     currentDurationParts,
     effectiveIsDragging,
@@ -83,6 +87,7 @@ export const TaskBarOpacityLayer = observer(function TaskBarOpacityLayer(props: 
     onTaskHover,
     quickAddSubmitting,
     resize,
+    resizeHandles,
     task,
     transform,
   } = props;
@@ -235,12 +240,8 @@ export const TaskBarOpacityLayer = observer(function TaskBarOpacityLayer(props: 
         isLinking={isLinking}
         resize={resize}
       />
-      <TaskBarOpacityLayerChrome
-        {...chrome}
-        {...shared}
-        cornerStyle={cornerStyle}
-        resize={resize}
-      />
+      <TaskBarResizeHandles {...resizeHandles} {...shared} cornerStyle={cornerStyle} resize={resize} />
+      <TaskBarCornerBadges {...badges} {...shared} />
       <TaskBarPlanAnchorOverlay
         duration={currentDurationParts}
         hidden={effectiveIsDragging || longHoverExpanded}
