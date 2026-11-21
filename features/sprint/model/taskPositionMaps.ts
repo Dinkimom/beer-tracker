@@ -1,6 +1,6 @@
 import type { TaskPosition } from '@/types';
 
-/** Same object or same planner geometry — tracker-date fallbacks rebuild every render. */
+/** Та же позиция или та же геометрия плана — даты из трекера пересобирают объекты при каждом расчёте. */
 function taskPositionsEqualForRetain(left: TaskPosition, right: TaskPosition): boolean {
   if (left === right) {
     return true;
@@ -17,6 +17,7 @@ function taskPositionsEqualForRetain(left: TaskPosition, right: TaskPosition): b
   );
 }
 
+/** Карты позиций с одинаковым набором и геометрией — для `equals` у computed модели: ссылка не меняется. */
 export function taskPositionMapsHaveSameEntries(
   left: ReadonlyMap<string, TaskPosition>,
   right: ReadonlyMap<string, TaskPosition>
@@ -31,14 +32,4 @@ export function taskPositionMapsHaveSameEntries(
     }
   }
   return true;
-}
-
-/** Новый Map только если набор ссылок на позиции изменился — hover не должен сбрасывать memo свимлейнов. */
-export function retainTaskPositionMap(
-  previous: ReadonlyMap<string, TaskPosition>,
-  next: Map<string, TaskPosition>
-): Map<string, TaskPosition> {
-  return taskPositionMapsHaveSameEntries(previous, next) && previous instanceof Map
-    ? previous
-    : next;
 }

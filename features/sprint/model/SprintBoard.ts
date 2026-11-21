@@ -1,6 +1,6 @@
 import type { SprintMovePlacementStore } from '@/lib/layers/application/mobx/stores/sprintMovePlacementStore';
 import type { TaskPositionsStore } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
-import type { Developer, Task } from '@/types';
+import type { Developer, Task, TaskPosition } from '@/types';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 
 import { QueryObserver } from '@tanstack/react-query';
@@ -8,6 +8,10 @@ import { action, computed, makeObservable, observable } from 'mobx';
 
 import { createQATasksMap } from '@/features/qa/utils/qaTaskUtils';
 import { stampPlanDraftTasks, stampPlanDraftTasksMap } from '@/features/task/utils/planAssigneeDraft';
+import { mergeDbPositionsWithTrackerDateFallbacks, parseTrackerIsoDateOnlyLocal } from '@/lib/planner-timeline';
+import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
+
+import { taskPositionMapsHaveSameEntries } from './taskPositionMaps';
 
 interface SprintTasksSnapshot {
   developers: Developer[];
@@ -18,7 +22,10 @@ interface SprintBoardDeps {
   movePlacement: SprintMovePlacementStore;
   positions: TaskPositionsStore;
   queryClient: QueryClient;
+  /** Даты спринта (YYYY-MM-DD) — позиции из дат трекера и число рабочих дней сетки. */
+  sprintEndDate: string | null;
   sprintId: number | null;
+  sprintStartDate: string | null;
   /** Ключ кэша задач спринта — тот же, что у `useTasks`. */
   tasksQueryKey: QueryKey;
 }
@@ -50,6 +57,7 @@ export class SprintBoard {
     this.snapshot = this.observer.getCurrentResult().data;
     makeObservable<SprintBoard, 'setSnapshot' | 'taskIndex'>(this, {
       allTasksForDrag: computed,
+      displayPositions: computed,
       developers: computed,
       qaTasksByOriginalId: computed,
       qaTasksMap: computed,
@@ -58,6 +66,7 @@ export class SprintBoard {
       taskIndex: computed,
       tasks: computed,
       tasksMap: computed,
+      visiblePositions: computed({ equals: taskPositionMapsHaveSameEntries }),
     });
   }
 
@@ -125,5 +134,40 @@ export class SprintBoard {
   /** Задачи и QA-задачи списком — для перетаскивания и группировки. */
   get allTasksForDrag(): Task[] {
     return stampPlanDraftTasks(this.taskIndex.allTasks, this.planDraftTaskIds);
+  }
+
+  /**
+   * Позиции для показа: из стора, а задачам без позиции — из дат начала и срока в трекере.
+   * Без даты старта спринта — сам стор (observable.map, мутируется на месте при DnD).
+   */
+  get displayPositions(): Map<string, TaskPosition> {
+    const dbPositions = this.deps.positions.positions as Map<string, TaskPosition>;
+    const sprintStartDate = parseTrackerIsoDateOnlyLocal(this.deps.sprintStartDate);
+    if (sprintStartDate == null) {
+      return dbPositions;
+    }
+    return mergeDbPositionsWithTrackerDateFallbacks({
+      dbPositions,
+      sprintStartDate,
+      tasks: this.tasks,
+      workingDaysCount: resolveSprintTimelineWorkingDaysCount(
+        this.deps.sprintStartDate,
+        this.deps.sprintEndDate
+      ),
+    });
+  }
+
+  /**
+   * Позиции только задач этой доски (и их QA). Ссылка меняется, лишь когда сменился набор или
+   * геометрия: наведение и presence не должны сбрасывать memo дорожек.
+   */
+  get visiblePositions(): Map<string, TaskPosition> {
+    const next = new Map<string, TaskPosition>();
+    this.displayPositions.forEach((position, taskId) => {
+      if (this.tasksMap.has(taskId) || this.qaTasksByOriginalId.has(taskId)) {
+        next.set(taskId, position);
+      }
+    });
+    return next;
   }
 }

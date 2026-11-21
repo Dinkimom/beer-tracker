@@ -9,7 +9,7 @@
 import type { GetTaskInfoFn } from '@/hooks/useApiStorage';
 import type { PlanHistoryAppliedPayload } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
-import type { Task, TaskPosition } from '@/types';
+import type { Task } from '@/types';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -38,15 +38,12 @@ import { useBoardViewModeStorage, useSidebarWidthStorage, useDataSyncEstimatesSt
 import { useSprintRealtimeSync } from '@/hooks/useSprintRealtimeSync';
 import { bumpPlannerDiagramRemoteEpoch } from '@/lib/comments/plannerDiagramPreviewStore';
 import { useRootStore } from '@/lib/layers';
-import { mergeDbPositionsWithTrackerDateFallbacks, parseTrackerIsoDateOnlyLocal } from '@/lib/planner-timeline';
 import { sprintPresenceViewersUiEqual } from '@/lib/realtime/sprintPresenceCollapse';
 import { getBrowserRealtimeClientId } from '@/lib/realtime/sprintRealtimeClientId';
-import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
 import { useTaskState } from '../../../hooks/useTaskState';
 import { SprintBoard } from '../../../model/SprintBoard';
 
-import { retainTaskPositionMap } from './retainTaskPositionMap';
 
 interface UseSprintPlannerStateProps {
   selectedBoardId: number | null;
@@ -77,10 +74,21 @@ export function useSprintPlannerState({
         movePlacement: sprintMovePlacement,
         positions: positionsStore,
         queryClient,
+        sprintEndDate,
         sprintId: selectedSprintId,
+        sprintStartDate,
         tasksQueryKey: sprintTasksQueryKey(selectedSprintId, selectedBoardId, forDemoPlanner),
       }),
-    [forDemoPlanner, positionsStore, queryClient, selectedBoardId, selectedSprintId, sprintMovePlacement]
+    [
+      forDemoPlanner,
+      positionsStore,
+      queryClient,
+      selectedBoardId,
+      selectedSprintId,
+      sprintEndDate,
+      sprintMovePlacement,
+      sprintStartDate,
+    ]
   );
   useEffect(() => board.connect(), [board]);
   const tasks = board.tasks;
@@ -105,7 +113,7 @@ export function useSprintPlannerState({
 
   const getTaskInfoRef = useRef<GetTaskInfoFn | undefined>(undefined);
 
-  const [taskPositions, setTaskPositions, savePosition, deletePosition, positionHistory] = useTaskPositionsApi(
+  const [, setTaskPositions, savePosition, deletePosition, positionHistory] = useTaskPositionsApi(
     selectedSprintId,
     getTaskInfoRef
   );
@@ -113,9 +121,6 @@ export function useSprintPlannerState({
   const [comments, setComments, , deleteComment, reloadComments] = useCommentsApi(selectedSprintId);
   const [, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const [boardViewers, setBoardViewers] = useState<SprintPresenceViewer[]>([]);
-  const [filteredTaskPositions, setFilteredTaskPositions] = useState(
-    () => new Map<string, TaskPosition>()
-  );
 
   useSprintRealtimeSync(selectedSprintId, {
     onComments: () => {
@@ -166,26 +171,8 @@ export function useSprintPlannerState({
     },
   });
 
-  const workingDaysCount = useMemo(
-    () => resolveSprintTimelineWorkingDaysCount(sprintStartDate, sprintEndDate),
-    [sprintEndDate, sprintStartDate]
-  );
-
-  const sprintStartDateObj = useMemo(
-    () => parseTrackerIsoDateOnlyLocal(sprintStartDate),
-    [sprintStartDate]
-  );
-
-  // Без useMemo: MobX мутирует `taskPositions` in-place при DnD, ссылка стабильна.
-  const displayTaskPositions =
-    sprintStartDateObj == null
-      ? taskPositions
-      : mergeDbPositionsWithTrackerDateFallbacks({
-          dbPositions: taskPositions,
-          sprintStartDate: sprintStartDateObj,
-          tasks,
-          workingDaysCount,
-        });
+  // Позиции для показа (стор + даты из трекера) — из модели.
+  const displayTaskPositions = board.displayPositions;
 
   const { allTasksForDrag, qaTasksByOriginalId, tasksMap } = board;
   const { tasksByAssignee, unassignedTasks } = useTaskState({
@@ -228,22 +215,6 @@ export function useSprintPlannerState({
     };
   }, [positionsStore, selectedSprintId, setComments, setFeatureLanes, setTasks]);
 
-  // displayTaskPositions — DB + fallback из start/deadline трекера. Новый filtered Map только при смене
-  // ссылок на позиции: hover/presence не должны сбрасывать React.memo свимлейнов.
-  const nextFilteredTaskPositions = new Map<string, TaskPosition>();
-  displayTaskPositions.forEach((pos, taskId) => {
-    if (tasksMap.has(taskId) || qaTasksByOriginalId.has(taskId)) {
-      nextFilteredTaskPositions.set(taskId, pos);
-    }
-  });
-  const retainedFilteredTaskPositions = retainTaskPositionMap(
-    filteredTaskPositions,
-    nextFilteredTaskPositions
-  );
-  if (retainedFilteredTaskPositions !== filteredTaskPositions) {
-    setFilteredTaskPositions(retainedFilteredTaskPositions);
-  }
-
   const filteredTaskLinks = useMemo(() => {
     return taskLinks.filter(
       (link) => tasksMap.has(link.fromTaskId) && tasksMap.has(link.toTaskId)
@@ -280,7 +251,7 @@ export function useSprintPlannerState({
     qaTasksByOriginalId,
     unassignedTasks,
     tasksByAssignee,
-    filteredTaskPositions: retainedFilteredTaskPositions,
+    filteredTaskPositions: board.visiblePositions,
     filteredTaskLinks,
   };
 }

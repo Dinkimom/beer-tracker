@@ -1,6 +1,7 @@
 import type { Task } from '@/types';
 
 import { QueryClient } from '@tanstack/react-query';
+import { autorun } from 'mobx';
 import { describe, expect, it } from 'vitest';
 
 import { SprintMovePlacementStore } from '@/lib/layers/application/mobx/stores/sprintMovePlacementStore';
@@ -18,14 +19,17 @@ function setup(tasks: Task[]) {
   const queryClient = new QueryClient();
   queryClient.setQueryData(KEY, { developers: [], sprintInfo: null, tasks });
   const movePlacement = new SprintMovePlacementStore();
+  const positions = new TaskPositionsStore();
   const board = new SprintBoard({
     movePlacement,
-    positions: new TaskPositionsStore(),
+    positions,
     queryClient,
+    sprintEndDate: null,
     sprintId: 7,
+    sprintStartDate: null,
     tasksQueryKey: KEY,
   });
-  return { board, movePlacement, queryClient };
+  return { board, movePlacement, positions, queryClient };
 }
 
 describe('SprintBoard', () => {
@@ -58,5 +62,20 @@ describe('SprintBoard', () => {
       task: task('B-9'),
     } as Parameters<SprintMovePlacementStore['start']>[0]);
     expect(board.tasks.map((t) => t.id)).toEqual(['A-1', 'B-9']);
+  });
+
+  it('видимые позиции — только задачи доски; ссылка не меняется, пока геометрия та же', () => {
+    const { board, positions } = setup([task('A-1')]);
+    const geometry = { assignee: 'dev', duration: 2, startDay: 0, startPart: 0 };
+    positions.positions.set('A-1', { ...geometry, taskId: 'A-1' });
+    positions.positions.set('GONE-1', { ...geometry, taskId: 'GONE-1' });
+    const seen: Array<Map<string, unknown>> = [];
+    const stop = autorun(() => seen.push(board.visiblePositions));
+    expect([...seen[0].keys()]).toEqual(['A-1']);
+    positions.positions.set('A-1', { ...geometry, taskId: 'A-1' });
+    expect(seen).toHaveLength(1);
+    positions.positions.set('A-1', { ...geometry, startDay: 3, taskId: 'A-1' });
+    expect(seen).toHaveLength(2);
+    stop();
   });
 });
