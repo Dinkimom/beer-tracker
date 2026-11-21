@@ -11,22 +11,10 @@ export interface SwimlaneProps {
   activeDraggableId?: string | null;
   activeTask: Task | null;
   activeTaskDuration: number | null;
-  /**
-   * Карточка, у которой hover дожил до тени.
-   * Затемняет бары факта других задач и не трогает карточки.
-   */
-  cardShadowTaskId?: string | null;
   commentCardRowById?: ReadonlyMap<string, StickyNoteCardRowLayout>;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId?: string | null;
   developer: Developer;
   /** События доступности исполнителя (отпуск, больничный, дежурство) */
   developerAvailability?: { boardEvents: BoardAvailabilityEvent[] };
-  /** Наведение на сегмент факта (общее состояние секции свимлейнов) — затемнение карточек на всех строках */
-  factHoveredTaskId: string | null;
-  /** Кластер связей при hover. Несвязанные затемняются (opacity 0.5), если в кластере больше одной задачи. */
-  hoverConnectedTaskIds?: Set<string> | null;
-  hoveredTaskId?: string | null;
   isDraggingTask?: boolean;
   /** Строка закреплена под шапкой дат */
   isPinned?: boolean;

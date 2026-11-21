@@ -69,6 +69,33 @@ export interface SwimlaneBoard {
   onTaskResize: (taskId: string, params: TaskResizeParams) => void;
 }
 
+/**
+ * Подсветка и приглушение карточек: наведение, связи, факт, контекстное меню. Меняется на каждое
+ * наведение, поэтому отдельно от `SwimlaneBoard` и мимо пропсов дорожки: его читают только слой
+ * карточек (`TaskLayer`) и полоса факта, дорожка с раскладкой на наведение не перерисовывается.
+ */
+export interface SwimlaneHighlight {
+  /** Карточка, у которой hover дожил до тени: затемняет бары факта других задач. */
+  cardShadowTaskId: string | null;
+  contextMenuBlurOtherCards: boolean;
+  contextMenuTaskId: string | null;
+  /** Наведение на сегмент факта — затемнение карточек на всех строках. */
+  factHoveredTaskId: string | null;
+  /** Кластер связей при hover: несвязанные затемняются, если в кластере больше одной задачи. */
+  hoverConnectedTaskIds: Set<string> | null;
+  hoveredTaskId: string | null;
+}
+
+export const SwimlaneHighlightContext = createContext<SwimlaneHighlight | null>(null);
+
+export function useSwimlaneHighlight(): SwimlaneHighlight {
+  const highlight = useContext(SwimlaneHighlightContext);
+  if (!highlight) {
+    throw new Error('useSwimlaneHighlight must be used inside SwimlaneHighlightContext');
+  }
+  return highlight;
+}
+
 export const SwimlaneBoardContext = createContext<SwimlaneBoard | null>(null);
 
 export function useSwimlaneBoard(): SwimlaneBoard {

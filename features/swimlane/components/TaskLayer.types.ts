@@ -1,4 +1,4 @@
-import type { SwimlaneBoard } from '@/features/swimlane/SwimlaneBoardContext';
+import type { SwimlaneBoard, SwimlaneHighlight } from '@/features/swimlane/SwimlaneBoardContext';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { Task, TaskPosition } from '@/types';
 import type { Dispatch, SetStateAction } from 'react';
@@ -8,14 +8,9 @@ export interface TaskLayerProps {
   activeDraggableId?: string | null;
   activeTask: Task | null;
   activeTaskDuration: number | null;
-  contextMenuBlurOtherCards?: boolean;
-  contextMenuTaskId: string | null;
   currentCell: number;
-  factHoveredTaskId?: string | null;
   hasQuickAddDraftMode?: boolean;
   hasTaskOverlaps: boolean;
-  hoverConnectedTaskIds?: Set<string> | null;
-  hoveredTaskId?: string | null;
   /** Синхронизация с MobX: подсветка превью только во время активного drag */
   isDraggingTask?: boolean;
   layerHeight: number;
@@ -40,7 +35,7 @@ export interface TaskLayerProps {
 }
 
 /** Элемент слоя получает свои пропсы вместе с общим (`TaskLayer` объединяет их с контекстом). */
-export type TaskLayerPositionedTaskItemProps = Omit<TaskLayerProps, 'positionedTasks'> & SwimlaneBoard & {
+export type TaskLayerPositionedTaskItemProps = Omit<TaskLayerProps, 'positionedTasks'> & SwimlaneBoard & SwimlaneHighlight & {
   position: TaskPosition;
   segmentEditDraftCells: boolean[] | null;
   setSegmentEditDraftCells: Dispatch<SetStateAction<boolean[] | null>>;

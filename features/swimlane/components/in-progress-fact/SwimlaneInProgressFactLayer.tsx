@@ -6,6 +6,7 @@ import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
 import { ZIndex } from '@/constants';
 import { SwimlaneLaneBand } from '@/features/swimlane/components/SwimlaneLaneBand';
+import { useSwimlaneHighlight } from '@/features/swimlane/SwimlaneBoardContext';
 import { SWIMLANE_FACT_ROW_RIGHT_INSET_PX } from '@/features/swimlane/utils/in-progress-fact/swimlaneInProgressFactLayerConstants';
 import {
   buildLanes,
@@ -25,14 +26,13 @@ import {
 import { getPlannerNow } from '@/utils/plannerClock';
 
 import { SwimlaneFactLaneFlexRow } from './SwimlaneFactLaneFlexRow';
+import { resolveFactBarFocusTaskId } from './swimlaneFactMarkerHelpers';
 
 interface SwimlaneInProgressFactLayerProps {
   assigneeRole: Developer['role'];
   changelogsByTaskId: Map<string, ChangelogEntry[]>;
   commentsByTaskId: Map<string, IssueComment[]>;
   developerMap: Map<string, Developer>;
-  /** Подсветка колбасы факта по hover карточки/факта конкретной задачи */
-  factHoveredTaskId?: string | null;
   layerId: string;
   segments: SwimlaneInProgressFactSegment[];
   sprintStartDate: Date;
@@ -56,13 +56,18 @@ export function SwimlaneInProgressFactLayer({
   developerMap,
   layerId,
   onFactSegmentHover,
-  factHoveredTaskId = null,
   segments,
   sprintStartDate,
   swimlaneRowTaskIds,
   tasksMap,
   totalParts,
 }: SwimlaneInProgressFactLayerProps) {
+  // Подсветка колбасы факта по наведению на факт или на карточку (тень).
+  const highlight = useSwimlaneHighlight();
+  const factHoveredTaskId = resolveFactBarFocusTaskId(
+    highlight.factHoveredTaskId,
+    highlight.cardShadowTaskId
+  );
   const toCell = (d: Date) => dateTimeToFractionalCellInRange(sprintStartDate, d, totalParts);
   const nowCell = Math.min(toCell(getPlannerNow()), totalParts);
   const timelineStartCell = 0;

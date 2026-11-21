@@ -15,7 +15,6 @@ import { sprintPlannerSwimlaneTimelineWidthCss } from '@/features/sprint/compone
 import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintPlanner/onboarding/plannerOnboardingChrome';
 import { canQuickAddOnSwimlaneLane } from '@/features/sprint/components/SprintPlanner/utils/swimlanePlacementToolbar';
 import { SwimlaneInProgressFactLayer } from '@/features/swimlane/components/in-progress-fact';
-import { resolveFactBarFocusTaskId } from '@/features/swimlane/components/in-progress-fact/swimlaneFactMarkerHelpers';
 import { SwimlaneAvailabilityChips } from '@/features/swimlane/components/SwimlaneAvailabilityChips';
 import { SwimlaneAvailabilityPopoverGate } from '@/features/swimlane/components/SwimlaneAvailabilityPopoverGate';
 import { SwimlaneDeveloperHeader } from '@/features/swimlane/components/SwimlaneDeveloperHeader';
@@ -69,15 +68,9 @@ function SwimlaneComponent({
   activeTaskDuration,
   activeTask,
   commentCardRowById,
-  hoverConnectedTaskIds = null,
-  hoveredTaskId = null,
   isDraggingTask = false,
   isPinned = false,
   selectedTaskId = null,
-  contextMenuBlurOtherCards = false,
-  contextMenuTaskId = null,
-  cardShadowTaskId = null,
-  factHoveredTaskId,
   developerAvailability,
   swimlaneFactTimelineEnabled = false,
   linkingFromTaskId = null,
@@ -227,7 +220,6 @@ function SwimlaneComponent({
   const resizingTaskId = sprintPlannerUi.resizingTaskId;
   const partDividersVisible =
     isDraggingTask || (resizingTaskId != null && swimlaneRowTaskIds.has(resizingTaskId));
-  const factBarFocusTaskId = resolveFactBarFocusTaskId(factHoveredTaskId, cardShadowTaskId);
   if (hideQuickAddPreview && quickAddHoverPreview != null) {
     setQuickAddHoverPreview(null);
   }
@@ -329,14 +321,9 @@ function SwimlaneComponent({
               activeDraggableId={activeDraggableId}
               activeTask={activeTask}
               activeTaskDuration={activeTaskDuration}
-              contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-              contextMenuTaskId={contextMenuTaskId}
               currentCell={layout.currentCell}
-              factHoveredTaskId={factHoveredTaskId}
               hasQuickAddDraftMode={hasQuickAddDraftMode}
               hasTaskOverlaps={layout.hasTaskOverlaps}
-              hoverConnectedTaskIds={hoverConnectedTaskIds}
-              hoveredTaskId={hoveredTaskId}
               isDraggingTask={isDraggingTask}
               layerHeight={layout.layerHeight}
               linkingFromTaskId={linkingFromTaskId}
@@ -388,7 +375,6 @@ function SwimlaneComponent({
                 }
                 commentsByTaskId={swimlaneFactCommentsByTaskId ?? EMPTY_SWIMLANE_FACT_COMMENTS}
                 developerMap={swimlaneFactDeveloperMap ?? EMPTY_SWIMLANE_FACT_DEVELOPERS}
-                factHoveredTaskId={factBarFocusTaskId}
                 layerId={`swimlane-fact-${developer.id}`}
                 segments={swimlaneInProgressDurations}
                 sprintStartDate={sprintStartDate}

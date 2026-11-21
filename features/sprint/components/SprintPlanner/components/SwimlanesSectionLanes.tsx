@@ -26,7 +26,11 @@ import { TaskArrows } from '@/features/swimlane/components/task-arrows';
 import { PlanPatchScheduleArrows } from '@/features/swimlane/components/task-arrows/PlanPatchScheduleArrows';
 import { PlanPatchSegmentArrows } from '@/features/swimlane/components/task-arrows/PlanPatchSegmentArrows';
 import { SwimlaneXarrowRedrawProvider } from '@/features/swimlane/SwimlaneArrowRedrawContext';
-import { SwimlaneBoardContext } from '@/features/swimlane/SwimlaneBoardContext';
+import {
+  SwimlaneBoardContext,
+  SwimlaneHighlightContext,
+  type SwimlaneHighlight,
+} from '@/features/swimlane/SwimlaneBoardContext';
 import {
   useSwimlaneLinksIdleModeStorage,
   useSwimlanePinnedRowIdsStorage,
@@ -208,6 +212,25 @@ export function SwimlanesSectionLanes({
   );
   const laneHoverConnectedTaskIds =
     showLinks && linksDimOnHover && !linkingSessionActive ? hoverConnectedTaskIds : null;
+  const contextMenuBlurOtherCards = section.contextMenuBlurOtherCards ?? false;
+  const highlight = useMemo<SwimlaneHighlight>(
+    () => ({
+      cardShadowTaskId,
+      contextMenuBlurOtherCards,
+      contextMenuTaskId,
+      factHoveredTaskId: effectiveFactHoveredTaskId,
+      hoverConnectedTaskIds: laneHoverConnectedTaskIds,
+      hoveredTaskId,
+    }),
+    [
+      cardShadowTaskId,
+      contextMenuBlurOtherCards,
+      contextMenuTaskId,
+      effectiveFactHoveredTaskId,
+      hoveredTaskId,
+      laneHoverConnectedTaskIds,
+    ]
+  );
   const swimlaneFactTimelineEnabled = Boolean(section.swimlaneFactTimelineEnabled);
 
   const showArrows = showLinks || arrowTaskLinks.length > 0;
@@ -246,14 +269,8 @@ export function SwimlanesSectionLanes({
           activeDraggableId={section.dragAndDrop.activeDraggableId}
           activeTask={activeTask}
           activeTaskDuration={section.dragAndDrop.activeTaskDuration}
-          cardShadowTaskId={cardShadowTaskId}
-          contextMenuBlurOtherCards={section.contextMenuBlurOtherCards ?? false}
-          contextMenuTaskId={contextMenuTaskId}
           developer={developer}
           developerAvailability={isTeamLane ? undefined : developerAvailabilityMap.get(developer.id)}
-          factHoveredTaskId={effectiveFactHoveredTaskId}
-          hoverConnectedTaskIds={laneHoverConnectedTaskIds}
-          hoveredTaskId={hoveredTaskId}
           isDraggingTask={section.dragAndDrop.isDraggingTask}
           isPinned={isPinned}
           linkingFromTaskId={showLinks ? linkingFromTaskId : null}
@@ -294,6 +311,7 @@ export function SwimlanesSectionLanes({
     <Xwrapper>
       <SwimlaneXarrowRedrawProvider>
         <SwimlaneBoardContext.Provider value={board}>
+        <SwimlaneHighlightContext.Provider value={highlight}>
         <SwimlanePinnedArrowSync
           active={pinnedRows.length > 0}
           redrawRef={pinnedFrameArrowRedrawRef}
@@ -305,6 +323,7 @@ export function SwimlanesSectionLanes({
         {showArrows ? <TaskArrows {...taskArrowProps} /> : null}
         <PlanPatchScheduleArrows />
         <PlanPatchSegmentArrows />
+        </SwimlaneHighlightContext.Provider>
         </SwimlaneBoardContext.Provider>
       </SwimlaneXarrowRedrawProvider>
     </Xwrapper>

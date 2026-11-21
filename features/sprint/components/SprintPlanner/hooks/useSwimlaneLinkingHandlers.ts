@@ -14,6 +14,7 @@ import {
   resolveSwimlaneTaskLinkMode,
 } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useLatestCallback } from '@/hooks/useLatestCallback';
 import { orderTaskIdsByTimeline } from '@/utils/linkAnchors';
 
 export function useSwimlaneLinkingHandlers(input: {
@@ -144,6 +145,8 @@ export function useSwimlaneLinkingHandlers(input: {
 
   return {
     handleSwimlanesClickCapture,
-    handleTaskClickWithLinking,
+    // Уходит в контекст всех дорожек; зависит от позиций и режима связи — без стабильной ссылки
+    // каждое их изменение перерисовывало бы всю доску.
+    handleTaskClickWithLinking: useLatestCallback(handleTaskClickWithLinking),
   };
 }
