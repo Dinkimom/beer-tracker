@@ -15,6 +15,7 @@ import {
 } from './changelogNormalizer';
 import { jiraAdfToMarkdown } from './jiraAdfToMarkdown';
 import { axiosErrorStatusAndDetails } from './jiraAgileAuthError';
+import { JIRA_START_DATE_FIELD_NAMES } from './jiraScheduleFields';
 import { yandexIssueFromProviderIssue } from './yandexTrackerProviderHelpers';
 
 const CHANGELOG_PAGE = 100;
@@ -53,18 +54,35 @@ function jiraNameKey(name: string): string {
   return name.toLowerCase().replaceAll(/\s+/g, '');
 }
 
-function jiraChangelogFieldId(field: unknown): string | null {
+/**
+ * Какие поля changelog нужны потребителю: burndown считает только статус и оценки;
+ * кеш changelog (строка факта, история спринта) — ещё спринт, исполнителя и сроки.
+ */
+type JiraChangelogScope = 'burndown' | 'history';
+
+const BURNDOWN_FIELD_IDS: ReadonlySet<string> = new Set(['status', 'storyPoints', 'testPoints']);
+
+/** Имя поля Jira (lowercase) → id поля в Yandex-shaped changelog. */
+const JIRA_FIELD_NAME_TO_ID: ReadonlyMap<string, string> = new Map([
+  ['assignee', 'assignee'],
+  ['due date', 'deadline'],
+  ['duedate', 'deadline'],
+  ['sprint', 'sprint'],
+  ['status', 'status'],
+  ['story points', 'storyPoints'],
+  ['storypoints', 'storyPoints'],
+  ['test point', 'testPoints'],
+  ['test points', 'testPoints'],
+  ['testpoints', 'testPoints'],
+  ...[...JIRA_START_DATE_FIELD_NAMES].map((name): [string, string] => [name, 'start']),
+]);
+
+function jiraChangelogFieldId(field: unknown, fieldId: unknown): string | null {
   const name = String(field ?? '').trim().toLowerCase();
-  if (name === 'status') {
-    return 'status';
+  if (String(fieldId ?? '').trim() === 'duedate') {
+    return 'deadline';
   }
-  if (name === 'story points' || name === 'storypoints') {
-    return 'storyPoints';
-  }
-  if (name === 'test points' || name === 'testpoints' || name === 'test point') {
-    return 'testPoints';
-  }
-  return null;
+  return JIRA_FIELD_NAME_TO_ID.get(name) ?? null;
 }
 
 function changelogFieldValue(
@@ -79,34 +97,74 @@ function changelogFieldValue(
   return { display: label, id: String(id ?? key), key };
 }
 
-function mapJiraChangelogItem(item: unknown): {
-  field: { display: string; id: string };
-  from: { display: string; id: string; key: string } | null;
-  to: { display: string; id: string; key: string } | null;
-} | null {
-  if (!item || typeof item !== 'object') {
+/** Дата как у Yandex: строка YYYY-MM-DD (у `duedate` она в from/to, у custom-поля — в *String). */
+function changelogDateValue(raw: unknown, rawString: unknown): string | null {
+  const text = String(raw ?? rawString ?? '').trim();
+  const match = /^\d{4}-\d{2}-\d{2}/.exec(text);
+  return match ? match[0] : null;
+}
+
+/** Спринты как у Yandex: массив `{ id, display }`; Jira отдаёт id и имена через запятую. */
+function changelogSprintValue(raw: unknown, rawString: unknown): Array<{ display: string; id: string }> | null {
+  const ids = String(raw ?? '').split(',').map((part) => part.trim()).filter(Boolean);
+  if (ids.length === 0) {
     return null;
   }
-  const row = item as {
-    field?: unknown;
-    from?: unknown;
-    fromString?: unknown;
-    to?: unknown;
-    toString?: unknown;
-  };
-  const fieldId = jiraChangelogFieldId(row.field);
-  if (!fieldId) {
-    return null;
+  const names = String(rawString ?? '').split(', ').map((part) => part.trim());
+  const namesMatch = names.length === ids.length;
+  return ids.map((id, index) => ({ display: namesMatch ? names[index]! : id, id }));
+}
+
+interface JiraChangelogItemRow {
+  field?: unknown;
+  fieldId?: unknown;
+  from?: unknown;
+  fromString?: unknown;
+  to?: unknown;
+  toString?: unknown;
+}
+
+function changelogItemValues(fieldId: string, row: JiraChangelogItemRow): { from: unknown; to: unknown } {
+  if (fieldId === 'start' || fieldId === 'deadline') {
+    return {
+      from: changelogDateValue(row.from, row.fromString),
+      to: changelogDateValue(row.to, row.toString),
+    };
   }
-  const display = String(row.field ?? fieldId);
+  if (fieldId === 'sprint') {
+    return {
+      from: changelogSprintValue(row.from, row.fromString),
+      to: changelogSprintValue(row.to, row.toString),
+    };
+  }
   return {
-    field: { display, id: fieldId },
     from: changelogFieldValue(row.from, row.fromString),
     to: changelogFieldValue(row.to, row.toString),
   };
 }
 
-export function mapJiraChangelogHistoryToLog(raw: unknown): Record<string, unknown> | null {
+function mapJiraChangelogItem(
+  item: unknown,
+  scope: JiraChangelogScope
+): { field: { display: string; id: string }; from: unknown; to: unknown } | null {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+  const row = item as JiraChangelogItemRow;
+  const fieldId = jiraChangelogFieldId(row.field, row.fieldId);
+  if (!fieldId || (scope === 'burndown' && !BURNDOWN_FIELD_IDS.has(fieldId))) {
+    return null;
+  }
+  return {
+    field: { display: String(row.field ?? fieldId), id: fieldId },
+    ...changelogItemValues(fieldId, row),
+  };
+}
+
+export function mapJiraChangelogHistoryToLog(
+  raw: unknown,
+  scope: JiraChangelogScope = 'history'
+): Record<string, unknown> | null {
   if (!raw || typeof raw !== 'object') {
     return null;
   }
@@ -122,7 +180,7 @@ export function mapJiraChangelogHistoryToLog(raw: unknown): Record<string, unkno
   }
   const items = Array.isArray(row.items) ? row.items : [];
   const fields = items
-    .map((item) => mapJiraChangelogItem(item))
+    .map((item) => mapJiraChangelogItem(item, scope))
     .filter((field): field is NonNullable<typeof field> => field !== null);
   const authorId = row.author?.accountId || row.author?.name || '';
   return {
@@ -137,10 +195,13 @@ export function mapJiraChangelogHistoryToLog(raw: unknown): Record<string, unkno
   };
 }
 
-export function jiraChangelogLogsFromHistories(histories: unknown[]): unknown[] {
+export function jiraChangelogLogsFromHistories(
+  histories: unknown[],
+  scope: JiraChangelogScope = 'history'
+): unknown[] {
   const out: unknown[] = [];
   for (const history of histories) {
-    const log = mapJiraChangelogHistoryToLog(history);
+    const log = mapJiraChangelogHistoryToLog(history, scope);
     if (log) {
       out.push(log);
     }
@@ -196,11 +257,12 @@ async function fetchExpandChangelogHistories(
 
 async function fetchJiraIssueChangelogLogs(
   api: AxiosInstance,
-  issueKey: string
+  issueKey: string,
+  scope: JiraChangelogScope
 ): Promise<unknown[]> {
   const dedicated = await fetchDedicatedChangelogPages(api, issueKey);
   const histories = dedicated ?? (await fetchExpandChangelogHistories(api, issueKey));
-  return jiraChangelogLogsFromHistories(histories);
+  return jiraChangelogLogsFromHistories(histories, scope);
 }
 
 function jiraCommentText(body: unknown): string {
@@ -290,7 +352,7 @@ export async function fetchJiraIssueChangelogWithComments(
   issueKey: string
 ): Promise<IssueTrackerIssueChangelogWithComments> {
   const [changelogLogs, comments] = await Promise.all([
-    fetchJiraIssueChangelogLogs(api, issueKey),
+    fetchJiraIssueChangelogLogs(api, issueKey, 'history'),
     fetchJiraIssueComments(api, issueKey),
   ]);
   return {
@@ -334,7 +396,7 @@ export function fetchJiraBurndownIssuesForKeys(
     const payload = issue ? yandexIssueFromProviderIssue(issue) : { key };
     let rawLogs: unknown[] = [];
     try {
-      rawLogs = await fetchJiraIssueChangelogLogs(api, key);
+      rawLogs = await fetchJiraIssueChangelogLogs(api, key, 'burndown');
     } catch (error) {
       if (axiosErrorStatusAndDetails(error).status !== 404) {
         throw error;

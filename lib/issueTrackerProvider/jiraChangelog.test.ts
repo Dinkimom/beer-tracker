@@ -60,6 +60,64 @@ describe('mapJiraChangelogHistoryToLog', () => {
   });
 });
 
+const planHistory = {
+  author: { accountId: 'acc-ada', displayName: 'Ada' },
+  created: '2026-03-11T09:00:00.000+0000',
+  id: '10001',
+  items: [
+    { field: 'Sprint', fieldId: 'customfield_10020', from: '', fromString: '', to: '41, 42', toString: 'BT 41, BT 42' },
+    { field: 'assignee', fieldId: 'assignee', from: 'acc-1', fromString: 'Bob', to: 'acc-2', toString: 'Eve' },
+    { field: 'duedate', fieldId: 'duedate', from: '2026-03-12', fromString: '2026-03-12 00:00:00.0', to: null, toString: null },
+    { field: 'Start date', fieldId: 'customfield_10015', from: null, fromString: null, to: null, toString: '2026-03-09' },
+    { field: 'Story Points', fieldId: 'customfield_10016', from: null, fromString: '3', to: null, toString: '5' },
+  ],
+};
+
+describe('mapJiraChangelogHistoryToLog — plan fields', () => {
+  it('keeps sprint, assignee and dates in the Yandex shape for the changelog cache', () => {
+    expect(mapJiraChangelogHistoryToLog(planHistory)?.fields).toEqual([
+      {
+        field: { display: 'Sprint', id: 'sprint' },
+        from: null,
+        to: [{ display: 'BT 41', id: '41' }, { display: 'BT 42', id: '42' }],
+      },
+      {
+        field: { display: 'assignee', id: 'assignee' },
+        from: { display: 'Bob', id: 'acc-1', key: 'bob' },
+        to: { display: 'Eve', id: 'acc-2', key: 'eve' },
+      },
+      { field: { display: 'duedate', id: 'deadline' }, from: '2026-03-12', to: null },
+      { field: { display: 'Start date', id: 'start' }, from: null, to: '2026-03-09' },
+      {
+        field: { display: 'Story Points', id: 'storyPoints' },
+        from: { display: '3', id: '3', key: '3' },
+        to: { display: '5', id: '5', key: '5' },
+      },
+    ]);
+  });
+
+  it('keeps only status and points for burndown', () => {
+    const fields = mapJiraChangelogHistoryToLog(planHistory, 'burndown')?.fields as Array<{
+      field: { id: string };
+    }>;
+    expect(fields.map((field) => field.field.id)).toEqual(['storyPoints']);
+  });
+
+  it('falls back to sprint ids when sprint names cannot be paired', () => {
+    const log = mapJiraChangelogHistoryToLog({
+      ...planHistory,
+      items: [{ field: 'Sprint', from: '41', fromString: 'BT, 41', to: '41, 42', toString: 'BT 41' }],
+    });
+    expect(log?.fields).toEqual([
+      {
+        field: { display: 'Sprint', id: 'sprint' },
+        from: [{ display: '41', id: '41' }],
+        to: [{ display: '41', id: '41' }, { display: '42', id: '42' }],
+      },
+    ]);
+  });
+});
+
 describe('fetchJiraIssueChangelogWithComments', () => {
   it('maps dedicated changelog + comments', async () => {
     const get = vi.fn().mockImplementation((url: string) => {

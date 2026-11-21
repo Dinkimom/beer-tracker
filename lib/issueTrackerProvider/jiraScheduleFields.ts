@@ -5,7 +5,8 @@ import { asRecord } from '@/lib/isRecord';
 
 import { clearJiraFieldCatalogCacheForTests, loadJiraFieldCatalog } from './jiraFieldCatalog';
 
-const START_DATE_NAMES = new Set(['start date', 'дата начала']);
+/** Имена поля «Дата начала» в Jira (каталог полей и changelog). */
+export const JIRA_START_DATE_FIELD_NAMES: ReadonlySet<string> = new Set(['start date', 'дата начала']);
 const TARGET_START_NAMES = new Set(['target start', 'целевое начало']);
 const END_DATE_NAMES = new Set([
   'due date',
@@ -111,7 +112,7 @@ function absorbScheduleField(field: JiraNamedDateField, acc: ScheduleFieldAccumu
     acc.due ??= toDateFieldRef(field, 'duedate');
     return;
   }
-  if (START_DATE_NAMES.has(field.name)) {
+  if (JIRA_START_DATE_FIELD_NAMES.has(field.name)) {
     acc.start ??= toDateFieldRef(field);
   }
   if (TARGET_START_NAMES.has(field.name)) {
