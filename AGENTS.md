@@ -54,7 +54,7 @@ UI планера можно проверять на **`/demo/planner`**, без
 | `pnpm sync-worker:build` | Бандл воркера в `dist/sync-worker` (Docker target `sync-worker`) |
 | `pnpm lint:unused` | Knip: неиспользуемые файлы/зависимости |
 | `pnpm lint:dup` | jscpd: новые копии кода сверх `.jscpd-baseline.json` (конфиг `.jscpd.json`). Убрал дубли — `pnpm lint:dup:baseline` и закоммитить baseline |
-| `pnpm lint:shape` | Храповик формы кода: ширина `*Props`, проброс пропсов, размер хуков против `.shape-baseline.json`; `pnpm lint:shape:baseline` — переснять после упрощения |
+| `pnpm lint:shape` | Храповик формы кода: ширина `*Props`, проброс пропсов, вход и выход хуков против `.shape-baseline.json`; `pnpm lint:shape:baseline` — переснять после упрощения |
 | `pnpm quality:report` | Горячие точки: нарушения формы × правки за 30 дней — кандидаты в `docs/REFACTORING_BACKLOG.md` |
 | `pnpm build` | Production-сборка Next.js |
 | `pnpm storybook` | Витрина UI (Storybook, порт 6006) |
