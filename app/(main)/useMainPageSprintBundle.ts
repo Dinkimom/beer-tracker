@@ -3,7 +3,6 @@ import type { SprintTab } from '@/components/PageHeader';
 import { reaction } from 'mobx';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
-import { useSprintGoals } from '@/features/sprint/hooks/useSprintGoals';
 import { useSprints } from '@/features/sprint/hooks/useSprints';
 import { useSprintTasksBackgroundRefresh } from '@/features/task/hooks/useSprintTasksBackgroundRefresh';
 import { useReloadTasks } from '@/features/task/hooks/useTaskMutations';
@@ -20,13 +19,6 @@ function resolveSprintQueryIds(selectedBoardId: number | null, selectedSprintId:
     boardId: selectedBoardId,
     sprintId: selectedSprintId,
   };
-}
-
-function useMainPageSprintGoals(selectedSprintId: number | null, enabled: boolean) {
-  const sprintId = enabled ? selectedSprintId : null;
-  const delivery = useSprintGoals(sprintId, 'delivery');
-  const discovery = useSprintGoals(sprintId, 'discovery');
-  return { delivery, discovery };
 }
 
 function useSprintPositionsPending(sprintId: number | null): boolean {
@@ -74,7 +66,6 @@ export function useMainPageSprintBundle({
   );
   useSprintTasksBackgroundRefresh(sprintId, boardId, sprintInfo?.status);
 
-  const { delivery, discovery } = useMainPageSprintGoals(selectedSprintId, true);
   const reloadTasksMutation = useReloadTasks(selectedSprintId, selectedBoardId);
   const { taskPositions } = useRootStore();
   const boardTabSprintId = isSprintBoardTab(activeTab) ? selectedSprintId : null;
@@ -89,10 +80,6 @@ export function useMainPageSprintBundle({
   }, [boardTabSprintId, taskPositions]);
 
   return {
-    deliveryGoalsData: delivery.data,
-    deliveryGoalsLoading: delivery.isLoading,
-    discoveryGoalsData: discovery.data,
-    discoveryGoalsLoading: discovery.isLoading,
     positionsPending,
     reloadTasksMutation,
     sprints,

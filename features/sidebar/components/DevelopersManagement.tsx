@@ -1,5 +1,6 @@
 'use client';
 
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { Developer } from '@/types';
 
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
@@ -9,16 +10,7 @@ import { SortableDeveloperItem } from '@/features/sidebar/components/SortableDev
 
 interface DevelopersManagementContentProps {
   developers: Developer[];
-  developersManagement: {
-    handleDragEnd: (activeId: string, overId: string) => void;
-    hiddenIds: Set<string>;
-    hideAllDevelopers: () => void;
-    setSortBy: (sort: 'custom' | 'name' | 'sp' | 'tasks' | 'tp') => void;
-    showAllDevelopers: () => void;
-    sortBy: 'custom' | 'name' | 'sp' | 'tasks' | 'tp';
-    sortedDevelopers: Developer[];
-    toggleDeveloperVisibility: (id: string) => void;
-  };
+  developersManagement: DevelopersManagement;
   hideAvatar?: boolean;
   removingDeveloperId?: string | null;
   canRemoveDeveloper?: (developer: Developer) => boolean;

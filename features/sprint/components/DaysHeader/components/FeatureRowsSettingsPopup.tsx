@@ -1,6 +1,6 @@
 'use client';
 
-import type { Developer } from '@/types';
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 
 import { useState } from 'react';
 
@@ -16,16 +16,7 @@ import { isFeatureLaneDraftRowId } from '@/features/swimlane/utils/featureSwimla
 import { useFeatureLaneColumnUi } from '@/features/task/components/TaskCard/FeatureLaneCardUiContext';
 
 interface FeatureRowsSettingsPopupProps {
-  developersManagement: {
-    handleDragEnd: (activeId: string, overId: string) => void;
-    hiddenIds: Set<string>;
-    hideAllDevelopers: () => void;
-    setSortBy: (sort: 'custom' | 'name' | 'sp' | 'tasks' | 'tp') => void;
-    showAllDevelopers: () => void;
-    sortBy: 'custom' | 'name' | 'sp' | 'tasks' | 'tp';
-    sortedDevelopers: Developer[];
-    toggleDeveloperVisibility: (id: string) => void;
-  };
+  developersManagement: DevelopersManagement;
   isOpen: boolean;
   position: { left: number; top: number };
   onAddRow: (name: string) => void;

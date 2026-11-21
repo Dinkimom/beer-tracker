@@ -5,6 +5,7 @@
  * Внутри `children` возможны **вложенные** `DndContext` (канбан, DnD комментариев в занятости) — см. раздел в `SprintPlanner/README.md`.
  */
 
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { DragContextRef } from '@/features/swimlane/hooks/useDragAndDrop/hooks/useDragEnd';
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { Developer, Task } from '@/types';
@@ -32,9 +33,7 @@ interface SprintPlannerDndShellProps {
   activeTaskDuration: number | null;
   children: ReactNode;
   developers: Developer[];
-  developersManagement: {
-    handleDragEnd: (activeDeveloperId: string, overDeveloperId: string) => void;
-  };
+  developersManagement: DevelopersManagement;
   dragAndDrop: {
     handleDragEnd: (event: DragEndEvent) => void;
     handleDragOver: (event: DragMoveEvent) => void;

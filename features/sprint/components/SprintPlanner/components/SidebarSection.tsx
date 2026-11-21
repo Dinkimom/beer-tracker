@@ -3,8 +3,9 @@
  * Отвечает за отображение кнопки переключения и самого сайдбара
  */
 
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { Developer, Task, TaskPosition } from '@/types';
-import type { ChecklistItem, SprintInfo, SprintListItem } from '@/types/tracker';
+import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { observer } from 'mobx-react-lite';
 
@@ -20,27 +21,10 @@ interface SidebarSectionProps {
     getTask: (taskId: string) => Task | undefined;
     removeTask: (taskId: string) => void;
   } | null>;
-  checklistDone: number;
-  checklistTotal: number;
   closedHandleHost?: HTMLElement | null;
   contextMenuBlurOtherCards?: boolean;
-  deliveryChecklistItems?: ChecklistItem[];
-  deliveryGoalsLoading?: boolean;
   developers: Developer[];
-  developersManagement: {
-    handleDragEnd: (activeId: string, overId: string) => void;
-    hiddenIds: Set<string>;
-    hideAllDevelopers: () => void;
-    setSortBy: (sort: 'custom' | 'name' | 'sp' | 'tasks' | 'tp') => void;
-    showAllDevelopers: () => void;
-    sortBy: 'custom' | 'name' | 'sp' | 'tasks' | 'tp';
-    toggleDeveloperVisibility: (id: string) => void;
-    sortedDevelopers: Developer[];
-    visibleDevelopers: Developer[];
-  };
-  discoveryChecklistItems?: ChecklistItem[];
-  discoveryGoalsLoading?: boolean;
-  goalsLoading: boolean;
+  developersManagement: DevelopersManagement;
   goalTaskIds?: string[];
   isSidebarDropTarget?: boolean;
   qaTasksMap: Map<string, Task>;
@@ -56,7 +40,6 @@ interface SidebarSectionProps {
   onAutoAddToSwimlane?: (task: Task) => void;
   onAutoAssignTasks: () => Promise<void>;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
-  onGoalsUpdate?: () => void;
   onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   onReturnAllTasks: () => Promise<void>;
   onSprintTaskUpserted?: (task: Task) => void;
@@ -70,18 +53,11 @@ export const SidebarSection = observer(function SidebarSection({
   activeTaskId,
   isSidebarDropTarget = false,
   allSprintTasks,
-  checklistDone,
-  checklistTotal,
   closedHandleHost = null,
   contextMenuBlurOtherCards = false,
-  deliveryChecklistItems = [],
-  discoveryChecklistItems = [],
   developers,
   developersManagement,
-  deliveryGoalsLoading = false,
-  discoveryGoalsLoading = false,
   goalTaskIds = [],
-  goalsLoading,
   qaTasksMap,
   taskPositions = null,
   selectedBoardId,
@@ -97,7 +73,6 @@ export const SidebarSection = observer(function SidebarSection({
   onAutoAssignTasks,
   onPlanAssignees,
   onContextMenu,
-  onGoalsUpdate,
   onReturnAllTasks,
   onSprintTaskUpserted,
   onTasksReload,
@@ -123,18 +98,11 @@ export const SidebarSection = observer(function SidebarSection({
         activeTaskDuration={activeTaskDuration}
         activeTaskId={activeTaskId}
         allSprintTasks={allSprintTasks}
-        checklistDone={checklistDone}
-        checklistTotal={checklistTotal}
         contextMenuBlurOtherCards={contextMenuBlurOtherCards}
         contextMenuTaskId={contextMenuTaskId}
-        deliveryChecklistItems={deliveryChecklistItems}
-        deliveryGoalsLoading={deliveryGoalsLoading}
         developers={developers}
         developersManagement={developersManagement}
-        discoveryChecklistItems={discoveryChecklistItems}
-        discoveryGoalsLoading={discoveryGoalsLoading}
         goalTaskIds={goalTaskIds}
-        goalsLoading={goalsLoading}
         hideBacklogTab
         hideTasksTab={viewMode === 'kanban'}
         qaTasksMap={qaTasksMap}
@@ -157,7 +125,6 @@ export const SidebarSection = observer(function SidebarSection({
           backlogTaskRef.current = ref;
         }}
         onContextMenu={onContextMenu}
-        onGoalsUpdate={onGoalsUpdate}
         onPlanAssignees={onPlanAssignees}
         onReturnAllTasks={onReturnAllTasks}
         onSprintTaskUpserted={onSprintTaskUpserted}

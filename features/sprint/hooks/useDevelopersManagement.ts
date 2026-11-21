@@ -129,3 +129,21 @@ export function useDevelopersManagement(
     handleDragEnd,
   };
 }
+
+/**
+ * Участники доски: порядок, скрытые, сортировка. Контракт для потребителей — результат
+ * `useDevelopersManagement` или собранный вручную объект (строки фич, попап участников).
+ */
+export interface DevelopersManagement {
+  hiddenIds: Set<string>;
+  sortBy: DevelopersSortBy;
+  sortedDevelopers: Developer[];
+  visibleDevelopers: Developer[];
+  handleDragEnd: (activeId: string, overId: string) => void;
+  hideAllDevelopers: () => void;
+  setSortBy: (sort: DevelopersSortBy) => void;
+  showAllDevelopers: () => void;
+  toggleDeveloperVisibility: (id: string) => void;
+}
+
+type DevelopersSortBy = 'custom' | 'name' | 'sp' | 'tasks' | 'tp';

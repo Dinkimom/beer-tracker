@@ -2,8 +2,9 @@
  * Хук для UI обработчиков в SprintPlanner (контекстное меню, сайдбар, автоматическая расстановка)
  */
 
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { TransitionField } from '@/lib/beerTrackerApi';
-import type { Developer, Task, TaskPosition } from '@/types';
+import type { Task, TaskPosition } from '@/types';
 import type { MutableRefObject } from 'react';
 
 import { useCallback } from 'react';
@@ -27,9 +28,7 @@ import { useTransitionModal } from './useTransitionModal';
 
 interface UseSprintPlannerUIHandlersProps {
   allTasksForDrag: Task[];
-  developersManagement: {
-    sortedDevelopers: Developer[];
-  };
+  developersManagement: DevelopersManagement;
   qaTasksByOriginalId: Map<string, Task>;
   qaTasksMap: Map<string, Task>;
   resetDragStateRef: MutableRefObject<(() => void) | null>;

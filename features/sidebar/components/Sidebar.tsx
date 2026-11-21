@@ -2,8 +2,9 @@
 
 import type { TaskSidebarContextValue } from '@/features/sidebar/contexts/TaskSidebarContext';
 import type { SidebarMainTab } from '@/features/sidebar/hooks/useSidebarTabsState';
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { Developer, Task, TaskPosition } from '@/types';
-import type { ChecklistItem, SprintInfo, SprintListItem } from '@/types/tracker';
+import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { useDroppable } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,7 +22,6 @@ import { SidebarTabContent } from '@/features/sidebar/components/SidebarTabConte
 import {
   resolveSidebarCanEdit,
   resolveSidebarGoalTaskIds,
-  resolveSidebarGoalsLoading,
   resolveSidebarHeaderSprintInfo,
 } from '@/features/sidebar/components/sidebarTaskSidebarHelpers';
 import { TaskSidebarContext } from '@/features/sidebar/contexts/TaskSidebarContext';
@@ -29,6 +29,7 @@ import { useBacklogManagement } from '@/features/sidebar/hooks/useBacklogManagem
 import { useSidebarHeaderTabs } from '@/features/sidebar/hooks/useSidebarHeaderTabs';
 import { useSidebarTabsState } from '@/features/sidebar/hooks/useSidebarTabsState';
 import { useSprintGoalManagement } from '@/features/sprint/hooks/useSprintGoalManagement';
+import { useSprintGoalsSummary } from '@/features/sprint/hooks/useSprintGoals';
 import { collectInvalidSprintDevTasks } from '@/features/sprint/utils/sprintStartChecks';
 import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
 import { useTaskGrouping } from '@/features/task/hooks/useTaskGrouping';
@@ -66,27 +67,10 @@ interface TaskSidebarProps {
   activeTaskId?: string | null;
   /** Все задачи спринта (для метрик «Разбивка по исполнителям» и целей). Передавать полный список. */
   allSprintTasks?: Task[];
-  // Чеклист целей спринта
-  checklistDone?: number;
-  checklistTotal?: number;
   contextMenuBlurOtherCards?: boolean;
   contextMenuTaskId?: string | null;
-  deliveryChecklistItems?: ChecklistItem[];
-  deliveryGoalsLoading?: boolean;
   developers: Developer[];
-  developersManagement?: {
-    handleDragEnd: (activeId: string, overId: string) => void;
-    hiddenIds: Set<string>;
-    hideAllDevelopers: () => void;
-    setSortBy: (sort: 'custom' | 'name' | 'sp' | 'tasks' | 'tp') => void;
-    showAllDevelopers: () => void;
-    sortBy: 'custom' | 'name' | 'sp' | 'tasks' | 'tp';
-    toggleDeveloperVisibility: (id: string) => void;
-    sortedDevelopers: Developer[];
-  };
-  discoveryChecklistItems?: ChecklistItem[];
-  discoveryGoalsLoading?: boolean;
-  goalsLoading?: boolean;
+  developersManagement?: DevelopersManagement;
   goalTaskIds?: string[];
   hideBacklogTab?: boolean;
   hideTasksTab?: boolean;
@@ -107,8 +91,6 @@ interface TaskSidebarProps {
   onAutoAssignTasks?: () => void;
   onBacklogTaskRef?: (ref: { getTask: (taskId: string) => Task | undefined; removeTask: (taskId: string) => void }) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
-  // Информация о спринте для отображения целей
-  onGoalsUpdate?: () => void;
   onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   onReturnAllTasks?: () => void; // Общее количество целей
   onSprintTaskUpserted?: (task: Task) => void;
@@ -129,19 +111,11 @@ export function TaskSidebar({
   activeTaskDuration,
   viewMode = 'full',
   sprintInfo,
-  onGoalsUpdate,
   onSprintTaskUpserted,
   onTasksReload,
-  checklistDone: externalChecklistDone = 0,
-  checklistTotal: externalChecklistTotal = 0,
   contextMenuBlurOtherCards = false,
   contextMenuTaskId = null,
-  deliveryChecklistItems: externalDeliveryChecklistItems = [],
-  discoveryChecklistItems: externalDiscoveryChecklistItems = [],
-  deliveryGoalsLoading: externalDeliveryGoalsLoading = false,
-  discoveryGoalsLoading: externalDiscoveryGoalsLoading = false,
   goalTaskIds: externalGoalTaskIds,
-  goalsLoading: externalGoalsLoading = false,
   developersManagement,
   onContextMenu,
   selectedBoardId,
@@ -173,15 +147,17 @@ export function TaskSidebar({
   }
   const [sidebarTabsSettings] = useSidebarTabsSettingsStorage();
 
-  const checklistDone = externalChecklistDone;
-  const checklistTotal = externalChecklistTotal;
-  const deliveryChecklistItems = externalDeliveryChecklistItems;
-  const discoveryChecklistItems = externalDiscoveryChecklistItems;
-  const goalsLoading = resolveSidebarGoalsLoading(
-    externalGoalsLoading,
-    externalDeliveryGoalsLoading,
-    externalDiscoveryGoalsLoading
-  );
+  // Цели сайдбар берёт сам: запросы те же, что у страницы, данные приходят из кэша.
+  const {
+    checklistDone,
+    checklistTotal,
+    deliveryChecklistItems,
+    deliveryGoalsLoading,
+    discoveryChecklistItems,
+    discoveryGoalsLoading,
+    goalsLoading,
+    refresh: onGoalsUpdate,
+  } = useSprintGoalsSummary(selectedSprintId ?? null);
 
   const goalTaskIds = resolveSidebarGoalTaskIds(externalGoalTaskIds, allSprintTasks, tasks);
 
@@ -278,12 +254,12 @@ export function TaskSidebar({
     contextMenuTaskId,
     deliveryChecklistItems,
     deliveryGoalManagement,
-    deliveryGoalsLoading: externalDeliveryGoalsLoading,
+    deliveryGoalsLoading,
     developers,
     devTasksCount,
     discoveryChecklistItems,
     discoveryGoalManagement,
-    discoveryGoalsLoading: externalDiscoveryGoalsLoading,
+    discoveryGoalsLoading,
     goalTaskIds,
     goalsLoading,
     groupBy,

@@ -2,7 +2,8 @@
  * Хук для обработчиков автоматической расстановки задач в SprintPlanner
  */
 
-import type { Developer, Task, TaskPosition } from '@/types';
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
+import type { Task, TaskPosition } from '@/types';
 
 import { useCallback, type MutableRefObject } from 'react';
 
@@ -25,9 +26,7 @@ import {
 
 interface UseSprintPlannerAutoAssignHandlersProps {
   allTasksForDrag: Task[];
-  developersManagement: {
-    sortedDevelopers: Developer[];
-  };
+  developersManagement: DevelopersManagement;
   /** Праздничные дни таймлайна: расстановка их пропускает. */
   holidayDayIndices: ReadonlySet<number>;
   qaTasksByOriginalId: Map<string, Task>;

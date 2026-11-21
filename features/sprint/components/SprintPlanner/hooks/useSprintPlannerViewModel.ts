@@ -1,6 +1,6 @@
 import type { Task } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
-import type { SprintInfo, SprintListItem, ChecklistItem } from '@/types/tracker';
+import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -52,14 +52,7 @@ function useBoardAvailabilityEvents(boardId: number | null) {
 }
 
 interface UseSprintPlannerViewModelParams {
-  checklistDone: number;
-  checklistTotal: number;
-  deliveryChecklistItems: ChecklistItem[];
-  deliveryGoalsLoading: boolean;
   demoPlannerRulesOrganizationId?: string;
-  discoveryChecklistItems: ChecklistItem[];
-  discoveryGoalsLoading: boolean;
-  goalsLoading: boolean;
   goalTaskIds: string[];
   lockedBoardId?: number;
   selectedSprintId: number | null;
@@ -68,23 +61,14 @@ interface UseSprintPlannerViewModelParams {
   sprintsLoading: boolean;
   tasksLoading: boolean;
   tasksReloading: boolean;
-  onGoalsUpdate?: () => void;
   onSprintChange: (sprintId: number | null) => void;
   onTasksReload?: (options?: { showToast?: boolean }) => void;
 }
 
 export function useSprintPlannerViewModel({
-  checklistDone,
-  checklistTotal,
-  deliveryChecklistItems,
-  deliveryGoalsLoading,
   demoPlannerRulesOrganizationId,
-  discoveryChecklistItems,
-  discoveryGoalsLoading,
   goalTaskIds,
-  goalsLoading,
   lockedBoardId,
-  onGoalsUpdate,
   onSprintChange,
   onTasksReload,
   selectedSprintId,
@@ -382,28 +366,20 @@ export function useSprintPlannerViewModel({
     backlogTaskRef,
     boardIdForPlannerData,
     boardViewers,
-    checklistDone,
-    checklistTotal,
     comments,
     commentsVisible: swimlaneNotesVisible || swimlaneImagesVisible,
     contextMenuBlurOtherCards,
-    deliveryChecklistItems,
-    deliveryGoalsLoading,
     developers,
     developersManagement,
-    discoveryChecklistItems,
-    discoveryGoalsLoading,
     filteredTaskLinks,
     filteredTaskPositions,
     getQueueByBoardId,
     goalTaskIds,
-    goalsLoading,
     handleAddLink,
     handleRemoveParticipantFromTeam,
     kanbanGroupBy,
     linksDimOnHover,
     movePlacement,
-    onGoalsUpdate,
     onSprintChange,
     onTasksReload,
     participantsColumnWidth,

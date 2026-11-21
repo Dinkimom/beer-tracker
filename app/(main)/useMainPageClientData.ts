@@ -80,10 +80,6 @@ export function useMainPageClientData({
     selectedSprintId: querySprintId,
   });
   const {
-    deliveryGoalsData,
-    deliveryGoalsLoading,
-    discoveryGoalsData,
-    discoveryGoalsLoading,
     positionsPending,
     reloadTasksMutation,
     sprintInfo,
@@ -148,21 +144,9 @@ export function useMainPageClientData({
     [setSelectedSprintIdState, queryBoardId, router, searchParamsKey]
   );
 
-  const checklistDone =
-    (deliveryGoalsData?.checklistDone ?? 0) + (discoveryGoalsData?.checklistDone ?? 0);
-  const checklistTotal =
-    (deliveryGoalsData?.checklistTotal ?? 0) + (discoveryGoalsData?.checklistTotal ?? 0);
-
   return {
-    checklistDone,
-    checklistTotal,
-    deliveryChecklistItems: deliveryGoalsData?.checklistItems ?? [],
-    deliveryGoalsLoading,
-    discoveryChecklistItems: discoveryGoalsData?.checklistItems ?? [],
-    discoveryGoalsLoading,
     error,
     goalTaskIds: tasks.filter((task) => task.type === 'goal').map((task) => task.id),
-    goalsLoading: deliveryGoalsLoading || discoveryGoalsLoading,
     loading: tasksLoading,
     productTenant,
     reloadTasksMutation,

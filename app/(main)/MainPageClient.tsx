@@ -118,15 +118,8 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
   }, [pathname, router, searchParamsKey]);
 
   const {
-    checklistDone,
-    checklistTotal,
-    deliveryChecklistItems,
-    deliveryGoalsLoading,
-    discoveryChecklistItems,
-    discoveryGoalsLoading,
     error,
     goalTaskIds,
-    goalsLoading,
     handleSprintChange,
     loading,
     productTenant,
@@ -188,10 +181,6 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
   const handleTasksReload = (options?: { showToast?: boolean }) => {
     reloadTasksMutation.mutate(options);
   };
-
-  const handleGoalsUpdate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['sprintGoals'] });
-  }, [queryClient]);
 
   const handleBoardChange = useCallback(async (boardId: number | null) => {
     if (!boardId) {
@@ -292,14 +281,7 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
                 >
                   <MainPageClientContent
                     activeTab={activeTab}
-                    checklistDone={checklistDone}
-                    checklistTotal={checklistTotal}
-                    deliveryChecklistItems={deliveryChecklistItems}
-                    deliveryGoalsLoading={deliveryGoalsLoading}
-                    discoveryChecklistItems={discoveryChecklistItems}
-                    discoveryGoalsLoading={discoveryGoalsLoading}
                     goalTaskIds={goalTaskIds}
-                    goalsLoading={goalsLoading}
                     isMounted={isMounted}
                     loading={loading}
                     reloadTasksPending={reloadTasksMutation.isPending}
@@ -310,7 +292,6 @@ export default function MainPageClient({ plannerBoardId, plannerSprintId }: Main
                     sprintsLoading={sprintsLoading}
                     tasks={tasks}
                     tasksPending={tasksPending}
-                    onGoalsUpdate={handleGoalsUpdate}
                     onSprintChange={handleSprintChange}
                     onTasksReload={handleTasksReload}
                   />

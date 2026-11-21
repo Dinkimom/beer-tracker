@@ -42,24 +42,17 @@ export function SprintPlannerView({
   backlogTaskRef,
   boardIdForPlannerData,
   boardViewers,
-  checklistDone,
-  checklistTotal,
   comments,
   commentsVisible,
   contextMenuBlurOtherCards,
-  deliveryChecklistItems,
-  deliveryGoalsLoading,
   developers,
   developersManagement,
-  discoveryChecklistItems,
-  discoveryGoalsLoading,
   dragAndDrop,
   dragContextRef,
   filteredTaskLinks,
   filteredTaskPositions,
   getQueueByBoardId,
   goalTaskIds,
-  goalsLoading,
   handleAddLink,
   handleAssigneeSelect,
   handleContextMenuAssigneeSelect,
@@ -75,7 +68,6 @@ export function SprintPlannerView({
   kanbanGroupBy,
   linksDimOnHover,
   movePlacement,
-  onGoalsUpdate,
   onSprintChange,
   onTasksReload,
   participantsColumnWidth,
@@ -303,18 +295,11 @@ export function SprintPlannerView({
               activeTaskId={dragAndDrop.activeTaskId}
               allSprintTasks={tasks}
               backlogTaskRef={backlogTaskRef}
-              checklistDone={checklistDone}
-              checklistTotal={checklistTotal}
               closedHandleHost={boardFrameEl}
               contextMenuBlurOtherCards={contextMenuBlurOtherCards}
-              deliveryChecklistItems={deliveryChecklistItems}
-              deliveryGoalsLoading={deliveryGoalsLoading}
               developers={developers}
               developersManagement={developersManagement}
-              discoveryChecklistItems={discoveryChecklistItems}
-              discoveryGoalsLoading={discoveryGoalsLoading}
               goalTaskIds={goalTaskIds}
-              goalsLoading={goalsLoading}
               isSidebarDropTarget={dragAndDrop.isSidebarDropTarget}
               qaTasksMap={qaTasksMap}
               selectedBoardId={boardIdForPlannerData}
@@ -329,7 +314,6 @@ export function SprintPlannerView({
               onAutoAddToSwimlane={handlers.handleAutoAddToSwimlane}
               onAutoAssignTasks={handlers.handleAutoAssignTasks}
               onContextMenu={handlers.handleContextMenu}
-              onGoalsUpdate={onGoalsUpdate}
               onPlanAssignees={handlers.handlePlanAssignees}
               onReturnAllTasks={handlers.handleReturnAllTasks}
               onSprintTaskUpserted={(task) => {

@@ -2,8 +2,9 @@
  * Типы для useSprintPlannerHandlers (вынесены для уменьшения размера основного хука).
  */
 
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { TransitionField } from '@/lib/beerTrackerApi';
-import type { Comment, Developer, Task, TaskPosition } from '@/types';
+import type { Comment, Task, TaskPosition } from '@/types';
 import type { MutableRefObject } from 'react';
 
 export interface UseSprintPlannerHandlersProps {
@@ -13,10 +14,7 @@ export interface UseSprintPlannerHandlersProps {
     removeTask: (taskId: string) => void;
   } | null>;
   comments: Comment[];
-  developersManagement: {
-    handleDragEnd: (activeId: string, overId: string) => void;
-    sortedDevelopers: Developer[];
-  };
+  developersManagement: DevelopersManagement;
   filteredTaskLinks: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
   filteredTaskPositions: Map<string, TaskPosition>;
   qaTaskManagement?: {

@@ -22,14 +22,6 @@ export function resolveSidebarCanEdit(
   return isTodaySprintFirstWeekMonday(sprintInfo.startDate);
 }
 
-export function resolveSidebarGoalsLoading(
-  externalGoalsLoading: boolean,
-  externalDeliveryGoalsLoading: boolean,
-  externalDiscoveryGoalsLoading: boolean,
-): boolean {
-  return externalGoalsLoading || externalDeliveryGoalsLoading || externalDiscoveryGoalsLoading;
-}
-
 export function resolveSidebarGoalTaskIds(
   externalGoalTaskIds: string[] | undefined,
   allSprintTasks: Task[] | undefined,

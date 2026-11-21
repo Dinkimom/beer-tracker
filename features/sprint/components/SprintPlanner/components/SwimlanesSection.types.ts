@@ -1,3 +1,4 @@
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { StatusDuration } from '@/features/task/components/TaskTimeline/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
@@ -16,17 +17,7 @@ export interface SwimlanesSectionProps {
   commentsVisible: boolean;
   contextMenuBlurOtherCards?: boolean;
   developers: Developer[];
-  developersManagement: {
-    handleDragEnd: (activeId: string, overId: string) => void;
-    hiddenIds: Set<string>;
-    hideAllDevelopers: () => void;
-    setSortBy: (sort: 'custom' | 'name' | 'sp' | 'tasks' | 'tp') => void;
-    showAllDevelopers: () => void;
-    sortBy: 'custom' | 'name' | 'sp' | 'tasks' | 'tp';
-    sortedDevelopers: Developer[];
-    toggleDeveloperVisibility: (id: string) => void;
-    visibleDevelopers: Developer[];
-  };
+  developersManagement: DevelopersManagement;
   dragAndDrop: {
     activeDraggableId: string | null;
     activeTaskDuration: number | null;

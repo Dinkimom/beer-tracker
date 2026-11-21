@@ -1,6 +1,6 @@
 'use client';
 
-import type { SprintInfo, SprintListItem, ChecklistItem } from '@/types/tracker';
+import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { observer } from 'mobx-react-lite';
 
@@ -8,15 +8,8 @@ import { useSprintPlannerViewModel } from './SprintPlanner/hooks/useSprintPlanne
 import { SprintPlannerView } from './SprintPlanner/SprintPlannerView';
 
 interface SprintPlannerProps {
-  checklistDone?: number;
-  checklistTotal?: number;
-  deliveryChecklistItems?: ChecklistItem[];
-  deliveryGoalsLoading?: boolean;
   /** Для `/demo/planner`: UUID организации в БД для загрузки правил интеграции без активного tenant. */
   demoPlannerRulesOrganizationId?: string;
-  discoveryChecklistItems?: ChecklistItem[];
-  discoveryGoalsLoading?: boolean;
-  goalsLoading?: boolean;
   goalTaskIds?: string[];
   loading?: boolean;
   /**
@@ -30,7 +23,6 @@ interface SprintPlannerProps {
   sprintsLoading?: boolean;
   /** Идёт перезагрузка задач по кнопке «Обновить задачи» */
   tasksReloading?: boolean;
-  onGoalsUpdate?: () => void;
   onSprintChange: (sprintId: number | null) => void;
   onTasksReload?: (options?: { showToast?: boolean }) => void;
 }
@@ -42,32 +34,16 @@ export const SprintPlanner = observer(function SprintPlanner({
   onSprintChange,
   loading: tasksLoading = false,
   sprintsLoading = false,
-  checklistDone = 0,
-  checklistTotal = 0,
-  deliveryChecklistItems = [],
-  deliveryGoalsLoading = false,
-  discoveryChecklistItems = [],
-  discoveryGoalsLoading = false,
   goalTaskIds = [],
-  goalsLoading = false,
-  onGoalsUpdate,
   onTasksReload,
   tasksReloading = false,
   demoPlannerRulesOrganizationId,
   lockedBoardId,
 }: SprintPlannerProps) {
   const viewModel = useSprintPlannerViewModel({
-    checklistDone,
-    checklistTotal,
-    deliveryChecklistItems,
-    deliveryGoalsLoading,
     demoPlannerRulesOrganizationId,
-    discoveryChecklistItems,
-    discoveryGoalsLoading,
     goalTaskIds,
-    goalsLoading,
     lockedBoardId,
-    onGoalsUpdate,
     onSprintChange,
     onTasksReload,
     selectedSprintId,

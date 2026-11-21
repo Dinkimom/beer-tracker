@@ -2,7 +2,7 @@
 
 import type { SprintTab } from '@/components/PageHeader';
 import type { Task } from '@/types';
-import type { ChecklistItem, SprintInfo, SprintListItem } from '@/types/tracker';
+import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import dynamic from 'next/dynamic';
 
@@ -36,15 +36,8 @@ const RetroPage = dynamic(
   { ssr: false }
 );
 
-interface MainPageClientSprintsContentProps {
+export interface MainPageClientSprintsContentProps {
   activeTab: SprintTab;
-  checklistDone: number;
-  checklistTotal: number;
-  deliveryChecklistItems: ChecklistItem[];
-  deliveryGoalsLoading: boolean;
-  discoveryChecklistItems: ChecklistItem[];
-  discoveryGoalsLoading: boolean;
-  goalsLoading: boolean;
   goalTaskIds: string[];
   loading: boolean;
   reloadTasksPending: boolean;
@@ -55,21 +48,13 @@ interface MainPageClientSprintsContentProps {
   sprintsLoading: boolean;
   tasks: Task[];
   tasksPending: boolean;
-  onGoalsUpdate: () => void;
   onSprintChange: (sprintId: number | null) => void;
   onTasksReload: (options?: { showToast?: boolean }) => void;
 }
 
 export function MainPageClientSprintsContent({
   activeTab,
-  checklistDone,
-  checklistTotal,
-  deliveryChecklistItems,
-  deliveryGoalsLoading,
-  discoveryChecklistItems,
-  discoveryGoalsLoading,
   goalTaskIds,
-  goalsLoading,
   loading,
   reloadTasksPending,
   selectedBoardId,
@@ -79,7 +64,6 @@ export function MainPageClientSprintsContent({
   sprintsLoading,
   tasks,
   tasksPending,
-  onGoalsUpdate,
   onSprintChange,
   onTasksReload,
 }: MainPageClientSprintsContentProps) {
@@ -92,21 +76,13 @@ export function MainPageClientSprintsContent({
       {activeTab === 'board' && (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <SprintPlanner
-            checklistDone={checklistDone}
-            checklistTotal={checklistTotal}
-            deliveryChecklistItems={deliveryChecklistItems}
-            deliveryGoalsLoading={deliveryGoalsLoading}
-            discoveryChecklistItems={discoveryChecklistItems}
-            discoveryGoalsLoading={discoveryGoalsLoading}
             goalTaskIds={goalTaskIds}
-            goalsLoading={goalsLoading}
             loading={loading}
             selectedSprintId={selectedSprintId}
             sprintInfo={sprintInfo}
             sprints={sprints}
             sprintsLoading={sprintsLoading}
             tasksReloading={reloadTasksPending}
-            onGoalsUpdate={onGoalsUpdate}
             onSprintChange={onSprintChange}
             onTasksReload={onTasksReload}
           />

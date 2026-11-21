@@ -1,5 +1,6 @@
 'use client';
 
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { RegistryUserItem } from '@/lib/api/types';
 import type { Developer } from '@/types';
 
@@ -27,16 +28,7 @@ import {
 interface ParticipantsSettingsPopupProps {
   boardId?: number | null;
   developers: Developer[];
-  developersManagement: {
-    handleDragEnd: (activeId: string, overId: string) => void;
-    hiddenIds: Set<string>;
-    hideAllDevelopers: () => void;
-    setSortBy: (sort: 'custom' | 'name' | 'sp' | 'tasks' | 'tp') => void;
-    showAllDevelopers: () => void;
-    sortBy: 'custom' | 'name' | 'sp' | 'tasks' | 'tp';
-    sortedDevelopers: Developer[];
-    toggleDeveloperVisibility: (id: string) => void;
-  };
+  developersManagement: DevelopersManagement;
   isOpen: boolean;
   position: { top: number; left: number };
   onClose: () => void;

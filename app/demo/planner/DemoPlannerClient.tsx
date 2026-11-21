@@ -19,7 +19,7 @@ import { QuarterlyPlanPage } from '@/features/quarterly-plan/QuarterlyPlanPage';
 import { RetroPage } from '@/features/retro/components/RetroPage';
 import { SprintMetricsPage } from '@/features/sprint-metrics/components/SprintMetricsPage';
 import { SprintPlanner } from '@/features/sprint/components/SprintPlanner';
-import { useSprintGoals } from '@/features/sprint/hooks/useSprintGoals';
+import { useSprintGoalsSummary } from '@/features/sprint/hooks/useSprintGoals';
 import { useSprints } from '@/features/sprint/hooks/useSprints';
 import { useReloadTasks } from '@/features/task/hooks/useTaskMutations';
 import { useTasks } from '@/features/task/hooks/useTasks';
@@ -120,23 +120,7 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
   const tasks = tasksData?.tasks ?? [];
   const sprintInfo = tasksData?.sprintInfo ?? null;
 
-  const shouldLoadGoals = selectedSprintId != null;
-  const { data: deliveryGoalsData, isLoading: deliveryGoalsLoading } = useSprintGoals(
-    shouldLoadGoals ? selectedSprintId : null,
-    'delivery'
-  );
-  const { data: discoveryGoalsData, isLoading: discoveryGoalsLoading } = useSprintGoals(
-    shouldLoadGoals ? selectedSprintId : null,
-    'discovery'
-  );
-
-  const deliveryChecklistItems = deliveryGoalsData?.checklistItems ?? [];
-  const discoveryChecklistItems = discoveryGoalsData?.checklistItems ?? [];
-  const checklistDone =
-    (deliveryGoalsData?.checklistDone ?? 0) + (discoveryGoalsData?.checklistDone ?? 0);
-  const checklistTotal =
-    (deliveryGoalsData?.checklistTotal ?? 0) + (discoveryGoalsData?.checklistTotal ?? 0);
-  const goalsLoading = deliveryGoalsLoading || discoveryGoalsLoading;
+  const { goalsLoading } = useSprintGoalsSummary(selectedSprintId);
 
   const goalTaskIds = tasks.filter((task) => task.type === 'goal').map((task) => task.id);
 
@@ -160,10 +144,6 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
   const handleTasksReload = (options?: { showToast?: boolean }) => {
     reloadTasksMutation.mutate(options);
   };
-
-  const handleGoalsUpdate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['sprintGoals'] });
-  }, [queryClient]);
 
   const handleSprintChange = useCallback((sprintId: number | null) => {
     setSelectedSprintId(sprintId);
@@ -239,15 +219,8 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
               {activeTab === 'board' && (
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                   <SprintPlanner
-                    checklistDone={checklistDone}
-                    checklistTotal={checklistTotal}
-                    deliveryChecklistItems={deliveryChecklistItems}
-                    deliveryGoalsLoading={deliveryGoalsLoading}
                     demoPlannerRulesOrganizationId={productOrganizationId}
-                    discoveryChecklistItems={discoveryChecklistItems}
-                    discoveryGoalsLoading={discoveryGoalsLoading}
                     goalTaskIds={goalTaskIds}
-                    goalsLoading={goalsLoading}
                     loading={tasksLoading}
                     lockedBoardId={activeBoardId}
                     selectedSprintId={selectedSprintId}
@@ -255,7 +228,6 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
                     sprints={sprints}
                     sprintsLoading={sprintsLoading}
                     tasksReloading={reloadTasksMutation.isPending}
-                    onGoalsUpdate={handleGoalsUpdate}
                     onSprintChange={handleSprintChange}
                     onTasksReload={handleTasksReload}
                   />

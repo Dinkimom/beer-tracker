@@ -1,6 +1,7 @@
 'use client';
 
 import type { PlannerHatchTone } from '@/features/sprint/components/SprintPlanner/layout/plannerHatchTones';
+import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { DayErrorDetail } from '@/features/sprint/utils/occupancyValidation';
 import type { Developer } from '@/types';
 
@@ -35,16 +36,7 @@ interface DaysHeaderProps {
   afterSprintTone?: PlannerHatchTone;
   boardId?: number | null;
   developers?: Developer[];
-  developersManagement?: {
-    handleDragEnd: (activeId: string, overId: string) => void;
-    hiddenIds: Set<string>;
-    hideAllDevelopers: () => void;
-    setSortBy: (sort: 'custom' | 'name' | 'sp' | 'tasks' | 'tp') => void;
-    showAllDevelopers: () => void;
-    sortBy: 'custom' | 'name' | 'sp' | 'tasks' | 'tp';
-    sortedDevelopers: Developer[];
-    toggleDeveloperVisibility: (id: string) => void;
-  };
+  developersManagement?: DevelopersManagement;
   /** По каждому дню — список проблемных задач и причин для тултипа иконки ошибки */
   errorDayDetails?: Map<number, DayErrorDetail[]>;
   /** Индексы дней (0..9), в которых есть ошибки планирования — в шапке показывается иконка ошибки */
