@@ -69,7 +69,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     boardAvailabilityEvents,
     boardId,
     comments,
-    commentsVisible,
     developers,
     developersManagement,
     hideTeamLane = false,
@@ -80,13 +79,9 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     qaTasksMap,
     removeParticipantFromTeam,
     scrollContainerRef,
-    showLinks = true,
     sidebarOpen,
     sprintStartDate,
     sprintTimelineWorkingDays = WORKING_DAYS,
-    swimlaneFactTimelineEnabled = false,
-    swimlaneImagesVisible = true,
-    swimlaneNotesVisible = true,
     taskDurationsByTaskId,
     taskPositions,
     tasksMap,
@@ -95,6 +90,13 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     onParticipantsColumnWidthChange,
     onTaskClick,
   } = props;
+  const {
+    commentsVisible,
+    factTimelineEnabled: swimlaneFactTimelineEnabled,
+    imagesVisible: swimlaneImagesVisible,
+    linksVisible: showLinks,
+    notesVisible: swimlaneNotesVisible,
+  } = props.display;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const { t } = useI18n();
   const globalNameFilter = sprintPlannerUi.globalNameFilter;

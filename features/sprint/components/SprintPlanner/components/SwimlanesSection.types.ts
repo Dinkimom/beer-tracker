@@ -41,6 +41,20 @@ interface SwimlaneBoardInputs {
   onTaskResize: (taskId: string, params: TaskResizeParams) => void;
 }
 
+/** Что показывать на доске — из локальных настроек планера. */
+interface SwimlaneDisplaySettings {
+  /** Заметки или фото видны (хотя бы один слой аннотаций). */
+  commentsVisible: boolean;
+  /** Полоса факта «в работе» под карточками. */
+  factTimelineEnabled: boolean;
+  imagesVisible: boolean;
+  /** Наведение приглушает карточки вне кластера связей. */
+  linksDimOnHover: boolean;
+  /** Пользовательские стрелки связей. */
+  linksVisible: boolean;
+  notesVisible: boolean;
+}
+
 export interface SwimlanesSectionProps {
   allTasksForDrag: Task[];
   board: SwimlaneBoardInputs;
@@ -48,9 +62,9 @@ export interface SwimlanesSectionProps {
   boardAvailabilityEvents?: BoardAvailabilityEvent[];
   boardId: number | null;
   comments: Comment[];
-  commentsVisible: boolean;
   developers: Developer[];
   developersManagement: DevelopersManagement;
+  display: SwimlaneDisplaySettings;
   dragAndDrop: {
     activeDraggableId: string | null;
     activeTaskDuration: number | null;
@@ -66,7 +80,6 @@ export interface SwimlanesSectionProps {
   }>;
   /** Не дублировать строку «Общее»: в режиме «по фичам» она уже есть в списке строк. */
   hideTeamLane?: boolean;
-  linksDimOnHover?: boolean;
   /**
    * Позиции для валидации пересечений исполнителей.
    * Если заданы — ошибки считаются по ним, а не по `taskPositions` (проекция на строки фич).
@@ -75,16 +88,9 @@ export interface SwimlanesSectionProps {
   participantsColumnWidth: number;
   qaTasksMap: Map<string, Task>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
-  showLinks?: boolean;
   sidebarOpen: boolean;
   sprintStartDate: Date;
   sprintTimelineWorkingDays?: number;
-  /** Показывать под строкой свимлейна таймлайн факта только по статусу «В работе» */
-  swimlaneFactTimelineEnabled?: boolean;
-  /** Показывать фотокарточки на свимлейне */
-  swimlaneImagesVisible?: boolean;
-  /** Показывать текстовые заметки на свимлейне */
-  swimlaneNotesVisible?: boolean;
   /** Длительности по статусам из changelog (как в занятости) — для полосы факта «В работе» */
   taskDurationsByTaskId?: Map<string, StatusDuration[]>;
   taskPositions: Map<string, TaskPosition>;

@@ -195,9 +195,10 @@ export function FeatureSwimlanesSection({
         board={{ ...props.board, onCreateTaskInCell: handleCreateOnFeatureRow }}
         comments={laneComments}
         developersManagement={rowManagement.developersManagement}
+        // Полоса факта в режиме по фичам не показывается.
+        display={{ ...props.display, factTimelineEnabled: false }}
         hideTeamLane
         occupancyValidationPositions={props.taskPositions}
-        swimlaneFactTimelineEnabled={false}
         taskPositions={projectedPositions}
         tasksByAssignee={tasksByAssignee}
         tasksMap={tasksMapForLanes}

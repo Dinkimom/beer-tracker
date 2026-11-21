@@ -136,14 +136,14 @@ export function SwimlanesSectionLanes({
     [setPinnedRowIds]
   );
 
-  const showLinks = section.showLinks !== false;
-  const linksDimOnHover = section.linksDimOnHover !== false;
+  const showLinks = section.display.linksVisible;
+  const linksDimOnHover = section.display.linksDimOnHover;
   const [linksIdleMode] = useSwimlaneLinksIdleModeStorage();
   const arrowTaskLinks = taskLinksForOnboardingArrows(showLinks, section.filteredTaskLinks);
 
   // Данные дорожек пересобираются только при смене данных доски, не на наведение и drag.
-  const imagesVisible = section.swimlaneImagesVisible !== false;
-  const notesVisible = section.swimlaneNotesVisible !== false;
+  const imagesVisible = section.display.imagesVisible;
+  const notesVisible = section.display.notesVisible;
   const laneDataById = useMemo(() => {
     const annotationLayers = { imagesVisible, notesVisible };
     const map = new Map<string, SwimlaneLaneData>();
@@ -151,7 +151,7 @@ export function SwimlanesSectionLanes({
       map.set(developer.id, buildSwimlaneLaneData({
         annotationLayers,
         comments,
-        commentsVisible: section.commentsVisible,
+        commentsVisible: section.display.commentsVisible,
         developerId: developer.id,
         taskPositions: section.taskPositions,
         tasks: section.tasksByAssignee.get(developer.id) ?? EMPTY_TASKS,
@@ -163,7 +163,7 @@ export function SwimlanesSectionLanes({
     comments,
     imagesVisible,
     notesVisible,
-    section.commentsVisible,
+    section.display.commentsVisible,
     section.taskPositions,
     section.tasksByAssignee,
     section.tasksMap,
@@ -192,7 +192,7 @@ export function SwimlanesSectionLanes({
       laneHoverConnectedTaskIds,
     ]
   );
-  const swimlaneFactTimelineEnabled = Boolean(section.swimlaneFactTimelineEnabled);
+  const swimlaneFactTimelineEnabled = section.display.factTimelineEnabled;
 
   const showArrows = showLinks || arrowTaskLinks.length > 0;
   const taskArrowProps = {
