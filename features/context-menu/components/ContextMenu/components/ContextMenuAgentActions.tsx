@@ -6,24 +6,24 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { MENU_QUICK_ACTION, MENU_QUICK_ACTION_LABEL } from '@/features/context-menu/contextMenuClasses';
+import { useRootStore } from '@/lib/layers';
 
 /**
  * «Агенту» в меню карточки: чат с плашкой задачи. Там же — спросить про задачу или сразу отдать её
  * агенту сделать в коде («Сделать в коде» в пустом чате): один вход вместо двух кнопок.
  */
-export function ContextMenuAgentActions({
-  task,
-  onAskAgent,
-  onClose,
-}: {
-  task: Task;
-  onAskAgent?: (task: Task) => void;
-  onClose: () => void;
-}) {
+export function ContextMenuAgentActions({ task, onClose }: { task: Task; onClose: () => void }) {
   const { t } = useI18n();
+  const { agentChat } = useRootStore().sprintPlannerUi;
   const actions = [
-    onAskAgent && { icon: 'sparkles', label: t('agentSession.menuShort'), marker: 'ask', run: onAskAgent, title: t('agentSession.menuAria') },
-  ].filter((action) => !!action);
+    {
+      icon: 'sparkles',
+      label: t('agentSession.menuShort'),
+      marker: 'ask',
+      run: (target: Task) => agentChat.setAgentRequestTarget({ kind: 'task', task: target }),
+      title: t('agentSession.menuAria'),
+    },
+  ];
 
   return actions.map((action) => (
     <Button

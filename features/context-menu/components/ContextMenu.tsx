@@ -1,6 +1,7 @@
 'use client';
 
 import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
+import type { SprintPlannerContextMenuState } from '@/lib/layers';
 import type { Task, TaskParent, TaskPosition } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
@@ -30,6 +31,7 @@ import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
 import { useFollowAnchorRectByElementId } from '@/hooks/useFollowAnchorRect';
 import { useThemeStorage } from '@/hooks/useLocalStorage';
 import { useDeferredOverlayClose } from '@/hooks/useOverlayPresence';
+import { useRootStore } from '@/lib/layers';
 import { getPositionEffectiveDuration } from '@/lib/planner-timeline/occupancyUtils';
 import { ONBOARDING_SAMPLE_TASK_ID } from '@/lib/plannerOnboarding/onboardingDemoLane';
 import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
@@ -41,52 +43,38 @@ import { ContextMenuPlanItems } from './ContextMenu/components/ContextMenuPlanIt
 import { useContextMenu } from './ContextMenu/hooks/useContextMenu';
 
 interface ContextMenuProps {
-  /** DOM id полосы свимлейна — меню следует за живым getBoundingClientRect */
-  anchorElementId?: string | null;
-  /** Якорь у карточки задачи — меню строится от границ карточки, не от курсора */
-  anchorRect?: Pick<DOMRect, 'bottom' | 'height' | 'left' | 'right' | 'top' | 'width'> | null;
   assigneeOptions?: ContextMenuAssigneeOptions | null;
   /** Board id для поиска родителя в Tracker, если локальный список пуст */
   boardId?: number | null;
+  /** Пункт «Связать с другой карточкой» (режим связи — у UI-стора). */
+  canStartLinking?: boolean;
   currentSprintId: number | null;
-  /** Скрыть пункт «Удалить из плана» (например, при открытии меню по клику по строке в occupancy) */
-  hideRemoveFromPlan?: boolean;
-  isBacklogTask?: boolean;
   /** В канбане скрываем оценку, дробление фазы и удаление из плана. Смена статуса остаётся. */
   isKanbanView?: boolean;
+  /** Открытое меню: задача, точка и якорь (карточка), что скрыть. Закрыть, панель задачи, учёт работ, агент — у UI-стора. */
+  menu: SprintPlannerContextMenuState;
   /** Родительские задачи текущего спринта для подменю */
   parentOptions?: TaskParent[];
-  position: { x: number; y: number };
   sprints: SprintListItem[];
-  task: Task;
   taskPositions?: Map<string, TaskPosition>;
-  onAccountWork?: (task: Task) => void;
-  /** «Агенту»: окно с просьбой, которая уходит в чат агента вместе с контекстом задачи. */
-  onAskAgent?: (task: Task) => void;
   onAssigneeSelect?: (assigneeId: string) => void;
-  onClose: () => void;
   onCloseByClickOutside?: () => void;
   onMoveToSprint: (taskId: string, sprintId: number) => Promise<void>;
-  onOpenTaskInfo?: (task: Task) => void;
   onParentChange?: (taskId: string, parent: TaskParent | null) => Promise<void>;
   onPlanInSprint?: (taskId: string, sprintId: number) => void;
   onRemoveFromPlan?: (taskId: string) => void;
   onRemoveFromSprint: (taskId: string) => Promise<void>;
   onSplitPhaseIntoSegments?: (task: Task) => void;
-  onStartLinking?: (task: Task) => void;
   onStatusChange: (taskId: string, transitionId: string, targetStatusKey?: string, targetStatusDisplay?: string, screenId?: string) => Promise<void>;
   onUpdateEstimate?: (task: Task, newEstimate: number, isTestPoints: boolean) => void;
 }
 
 export function ContextMenu({
-  task,
+  menu,
   sprints,
   currentSprintId,
-  position,
-  anchorRect = null,
-  anchorElementId = null,
   boardId = null,
-  onClose,
+  canStartLinking = false,
   onStatusChange,
   onMoveToSprint,
   onParentChange,
@@ -94,20 +82,19 @@ export function ContextMenu({
   onRemoveFromPlan,
   onRemoveFromSprint,
   onSplitPhaseIntoSegments,
-  onStartLinking,
   assigneeOptions = null,
-  onAccountWork,
-  onAskAgent,
   onAssigneeSelect,
   onUpdateEstimate,
   onCloseByClickOutside,
-  onOpenTaskInfo,
   taskPositions,
   parentOptions = [],
-  hideRemoveFromPlan = false,
-  isBacklogTask = false,
   isKanbanView = false,
 }: ContextMenuProps) {
+  const { anchorElementId, anchorRect, hideRemoveFromPlan, isBacklogTask, position, task } = menu;
+  const { overlays } = useRootStore().sprintPlannerUi;
+  const onClose = overlays.closeContextMenu;
+  const onAccountWork = overlays.setAccountWorkModal;
+  const onOpenTaskInfo = overlays.openTaskInfoPanel;
   const { t } = useI18n();
   const agentAvailable = useAgentAvailable(currentSprintId);
   const tracker = useTrackerWebUrlContext();
@@ -244,7 +231,6 @@ export function ContextMenu({
             {agentAvailable && !isBacklogTask && currentSprintId !== null ? (
               <ContextMenuAgentActions
                 task={task}
-                onAskAgent={onAskAgent}
                 onClose={requestClose}
               />
             ) : null}
@@ -317,9 +303,10 @@ export function ContextMenu({
             hasPosition={!!taskPositions?.has(task.id)}
             hideRemoveFromPlan={hideRemoveFromPlan}
             isAssigneeMenuOpen={isAssigneeMenuOpen}
-            isBacklogTask={isBacklogTask}
+            isBacklogTask={isBacklogTask === true}
             isKanbanView={isKanbanView}
             isLoading={isLoading}
+            linkingEnabled={canStartLinking}
             selectedAssigneeId={
               (task.team === 'QA' ? task.qaEngineer : task.assignee) ||
               taskPositions?.get(task.id)?.assignee ||
@@ -331,7 +318,6 @@ export function ContextMenu({
             onClose={requestClose}
             onRemoveFromPlan={handleRemoveFromPlan}
             onRemoveFromSprint={handleRemoveFromSprint}
-            onStartLinking={onStartLinking}
           />
         </div>
       </div>

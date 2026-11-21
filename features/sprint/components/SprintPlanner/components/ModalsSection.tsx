@@ -174,42 +174,27 @@ export const ModalsSection = observer(function ModalsSection({
       ) : null}
       {showContextMenu && contextMenu && annotationMenuVariant == null ? (
         <ContextMenu
-          anchorElementId={contextMenu.anchorElementId}
-          anchorRect={contextMenu.anchorRect ?? null}
           assigneeOptions={assigneeOptions}
           boardId={boardId}
+          canStartLinking={showStartLinking}
           currentSprintId={selectedSprintId}
-          hideRemoveFromPlan={contextMenu.hideRemoveFromPlan}
-          isBacklogTask={contextMenu.isBacklogTask || false}
           isKanbanView={viewMode === 'kanban'}
+          menu={contextMenu}
           parentOptions={parentOptions}
-          position={contextMenu.position}
           sprints={sprints}
-          task={contextMenu.task}
           taskPositions={
             contextMenu.task.id === ONBOARDING_SAMPLE_TASK_ID
               ? withOnboardingMenuPosition(taskPositions, getPartsPerDay())
               : taskPositions
           }
-          onAccountWork={sprintPlannerUi.overlays.setAccountWorkModal}
-          onAskAgent={(task) => sprintPlannerUi.agentChat.setAgentRequestTarget({ kind: 'task', task })}
           onAssigneeSelect={bindTaskAssigneeSelect(onAssigneeSelect, contextMenu.task)}
-          onClose={sprintPlannerUi.overlays.closeContextMenu}
           onMoveToSprint={onMoveToSprint}
-          onOpenTaskInfo={sprintPlannerUi.overlays.openTaskInfoPanel}
           onParentChange={onParentChange}
           onPlanInSprint={movePlacement?.handlePlanInSprint}
           onRemoveFromPlan={onRemoveFromPlan}
           onRemoveFromSprint={onRemoveFromSprint}
           onSplitPhaseIntoSegments={
             viewMode === 'kanban' ? undefined : onSplitPhaseIntoSegments
-          }
-          onStartLinking={
-            showStartLinking
-              ? (task) => {
-                  sprintPlannerUi.tools.setLinkingFromTaskId(task.id);
-                }
-              : undefined
           }
           onStatusChange={onStatusChange}
           onUpdateEstimate={onUpdateEstimate}

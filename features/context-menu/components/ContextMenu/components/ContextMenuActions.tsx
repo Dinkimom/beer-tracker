@@ -12,6 +12,7 @@ import { AssigneeSubmenu } from '@/features/context-menu/components/AssigneeSubm
 import { ContextMenuGroup } from '@/features/context-menu/components/ContextMenuGroup';
 import { ContextMenuRow } from '@/features/context-menu/components/ContextMenuRow';
 import { MENU_ROW_ICON } from '@/features/context-menu/contextMenuClasses';
+import { useRootStore } from '@/lib/layers';
 
 interface ContextMenuActionsProps {
   assigneeOptions?: ContextMenuAssigneeOptions | null;
@@ -22,6 +23,8 @@ interface ContextMenuActionsProps {
   isBacklogTask: boolean;
   isKanbanView?: boolean;
   isLoading: boolean;
+  /** Пункт «Связать с другой карточкой» разрешён экраном (режим связи — у UI-стора). */
+  linkingEnabled?: boolean;
   selectedAssigneeId: string;
   task: Task;
   onAssigneeSelect?: (assigneeId: string) => void;
@@ -29,7 +32,6 @@ interface ContextMenuActionsProps {
   onClose: () => void;
   onRemoveFromPlan?: () => void;
   onRemoveFromSprint: () => void;
-  onStartLinking?: (task: Task) => void;
 }
 
 export function ContextMenuActions({
@@ -48,13 +50,14 @@ export function ContextMenuActions({
   onClose,
   onRemoveFromPlan,
   onRemoveFromSprint,
-  onStartLinking,
+  linkingEnabled = false,
 }: ContextMenuActionsProps) {
   const { t } = useI18n();
+  const { tools } = useRootStore().sprintPlannerUi;
 
   const showRemoveFromPlan =
     !hideRemoveFromPlan && !isBacklogTask && !isKanbanView && currentSprintId !== null;
-  const canStartLinking = hasPosition && !isBacklogTask && !isKanbanView;
+  const canStartLinking = linkingEnabled && hasPosition && !isBacklogTask && !isKanbanView;
 
   return (
     <>
@@ -73,13 +76,13 @@ export function ContextMenuActions({
             onToggle={onAssigneeToggle}
           />
         ) : null}
-        {canStartLinking && onStartLinking ? (
+        {canStartLinking ? (
           <ContextMenuRow
             disabled={isLoading}
             icon={<CardLinkIcon className={MENU_ROW_ICON} />}
             label={t('sprintPlanner.contextMenu.linkCards')}
             onClick={() => {
-              onStartLinking(task);
+              tools.setLinkingFromTaskId(task.id);
               onClose();
             }}
           />

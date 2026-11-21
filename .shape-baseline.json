@@ -14,7 +14,6 @@
   "features/burndown/components/BurndownChartLoadedBody.tsx::pass-through": 73,
   "features/burndown/components/BurndownChartLoadedBody.tsx::props-width::BurndownChartLoadedBodyProps": 24,
   "features/comments/components/SwimlaneCommentContextMenu.tsx::props-width::SwimlaneCommentContextMenuProps": 24,
-  "features/context-menu/components/ContextMenu.tsx::props-width::ContextMenuProps": 28,
   "features/context-menu/components/ContextMenu/components/ContextMenuPlanItems.tsx::pass-through": 77,
   "features/context-menu/components/ContextMenu/hooks/useContextMenu.ts::hook-outputs::useContextMenu": 24,
   "features/sidebar/components/GoalItemBody.tsx::pass-through": 79,
