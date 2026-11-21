@@ -22,7 +22,6 @@ export interface SwimlaneProps {
   linkingFromTaskId?: string | null;
   /** Редактирование отрезков (PhaseSegmentInlineEditor, как в занятости). */
   segmentEditTaskId?: string | null;
-  selectedTaskId?: string | null;
   /** Показывать полосу факта «В работе» под карточками (на дорожке команды — нет). */
   swimlaneFactTimelineEnabled?: boolean;
   /** Фазы факта по changelog (зависят от типа задачи): отдельные полосы, при пересечении — разные дорожки */

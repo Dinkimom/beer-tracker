@@ -70,7 +70,6 @@ function SwimlaneComponent({
   commentCardRowById,
   isDraggingTask = false,
   isPinned = false,
-  selectedTaskId = null,
   developerAvailability,
   swimlaneFactTimelineEnabled = false,
   linkingFromTaskId = null,
@@ -328,12 +327,10 @@ function SwimlaneComponent({
               layerHeight={layout.layerHeight}
               linkingFromTaskId={linkingFromTaskId}
               planPatchAssigneeId={developer.id}
-              planPatchSprintId={selectedSprintId}
               planPatchTasksMap={tasksMap}
               positionedTasks={layout.positionedTasks}
               requestArrowRedraw={requestArrowRedraw}
               segmentEditTaskId={segmentEditTaskId}
-              selectedTaskId={selectedTaskId}
               stickyNoteCardRowById={layout.stickyNoteCardRowById}
               taskBandTotalHeight={layout.taskBandTotalHeight}
               taskLayerMap={layout.taskLayerMap}

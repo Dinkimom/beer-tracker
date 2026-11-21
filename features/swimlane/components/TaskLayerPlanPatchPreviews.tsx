@@ -1,7 +1,7 @@
 'use client';
 
 import type { PlanPatchPositionPreview } from '@/lib/sprints/sprintPlanPatchPositionPreview';
-import type { Developer, Task } from '@/types';
+import type { Task } from '@/types';
 
 import { useQueries } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
@@ -24,11 +24,8 @@ import { useRootStore } from '@/lib/layers';
 
 interface TaskLayerPlanPatchPreviewsProps {
   assigneeId: string;
-  developers: Developer[];
-  globalNameFilter?: string;
   hasTaskOverlaps: boolean;
   layerHeight: number;
-  sprintId?: number | null;
   taskBandTotalHeight: number;
   taskLayerMap: Map<string, number>;
   tasksMap: Map<string, Task>;
@@ -87,11 +84,8 @@ function previewBars(preview: PlanPatchPositionPreview): Array<{
 
 export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPreviews({
   assigneeId,
-  developers,
-  globalNameFilter,
   hasTaskOverlaps,
   layerHeight,
-  sprintId,
   taskBandTotalHeight,
   taskLayerMap,
   tasksMap,
@@ -125,19 +119,16 @@ export const TaskLayerPlanPatchPreviews = observer(function TaskLayerPlanPatchPr
           return (
             <TaskBar
               key={bar.key}
-              developers={developers}
               // Как у реальной полосы: отрезки тащатся по одному (`id::index`), сброс двигает предложение.
               disableResize
               draggableId={
                 bars.length > 1 ? swimlaneTaskDraggableId(previewElementId, barIndex) : previewElementId
               }
               duration={bar.duration}
-              globalNameFilter={globalNameFilter}
               htmlAnchorId={segmentAnchorId}
               leftPercent={getLeftPercentForSegmentStartCell(startCell, timelineTotalParts)}
               planPatchGhost
               requestArrowRedraw={noop}
-              selectedSprintId={sprintId}
               style={computeSwimlaneRowBandBox(
                 hasTaskOverlaps,
                 taskLayerMap.get(planPatchPreviewLayerKey(preview.taskId)) ?? 0,

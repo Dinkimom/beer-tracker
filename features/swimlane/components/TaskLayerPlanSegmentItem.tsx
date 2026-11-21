@@ -109,12 +109,10 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     quickAddParentSelectOptions = [],
     quickAddQueueOptions = [],
   } = props.quickAdd ?? NO_QUICK_ADD;
-  const { onCommentApprove, onCommentCardRowLayoutUpdate, onCommentDelete, onCommentUpdate } =
-    props.commentActions ?? {};
+  const onCommentCardRowLayoutUpdate = props.commentActions?.onCommentCardRowLayoutUpdate;
   const {
     developers,
     errorReasons,
-    globalNameFilter,
     hasTaskOverlaps,
     layerHeight,
     onContextMenu,
@@ -126,8 +124,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     qaTasksMap,
     requestArrowRedraw,
     linkingFromTaskId = null,
-    selectedSprintId,
-    selectedTaskId,
     sprintStartDate,
     sprintTimelineWorkingDays,
     task,
@@ -393,18 +389,16 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     >
       <TaskBar
         assigneeName={position.assignee}
-        developers={developers}
+        commentActions={linkingActive ? undefined : props.commentActions}
         disableDragAndResize={linkingActive}
         disableResize={renderState.interactionDisabled || linkingActive}
         draggableId={renderState.draggableId}
         duration={seg.duration}
         errorTooltip={formatOccupancyErrorTooltip(errorReasons?.get(task.id), t)}
-        globalNameFilter={globalNameFilter}
         htmlAnchorId={renderState.htmlAnchorId}
         inlineTitleEditor={inlineTitleEditor}
         interactionDisabled={renderState.interactionDisabled}
         isInError={renderState.isInError}
-        isSelected={selectedTaskId === task.id}
         leftPercent={renderState.leftPercent}
         linkMode={linkMode}
         planAnchorOverlay={planAnchorOverlay}
@@ -413,8 +407,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         quickAddMenu={quickAddMenu}
         quickAddSubmitting={renderState.isQuickAddSubmitting}
         requestArrowRedraw={requestArrowRedraw}
-        selectedSprintId={selectedSprintId}
-        selectedTaskId={selectedTaskId}
         stickyNoteCardRowResize={
           isStickyNoteCard || isPhotoCard
             ? {
@@ -447,9 +439,6 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
         taskPositions={taskPositions}
         widthPercent={renderState.widthPercent}
         onClick={onTaskClick}
-        onCommentApprove={linkingActive ? undefined : onCommentApprove}
-        onCommentDelete={linkingActive ? undefined : onCommentDelete}
-        onCommentUpdate={linkingActive ? undefined : onCommentUpdate}
         onContextMenu={linkingActive ? undefined : onContextMenu}
         onCreateQATask={linkingActive ? undefined : onCreateQATask}
         onDeleteLocalImage={linkingActive ? undefined : onCancelQuickAddDraft}

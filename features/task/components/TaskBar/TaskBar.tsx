@@ -1,10 +1,11 @@
 'use client';
 
+import type { SwimlaneCommentActions } from '@/features/comments/types';
 import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
-import type { Task, Developer, TaskPosition } from '@/types';
+import type { Task, TaskPosition } from '@/types';
 
 import { observer } from 'mobx-react-lite';
 import React, { useRef, useState } from 'react';
@@ -20,7 +21,7 @@ import { isSwimlaneDiagramTask, isSwimlaneWidgetTask, parseSwimlaneCommentTaskId
 import { DraftItemCommentButton } from '@/features/swimlane/components/DraftItemCommentButton';
 import { PlanPatchPendingToolbar } from '@/features/swimlane/components/PlanPatchPendingToolbar';
 import { resolvePlanPatchTaskBarChrome } from '@/features/swimlane/components/PlanPatchPreviewCaption';
-import { useSwimlaneCardContextMenu } from '@/features/swimlane/SwimlaneBoardContext';
+import { useSwimlaneBoard, useSwimlaneCardContextMenu } from '@/features/swimlane/SwimlaneBoardContext';
 import { isQuickAddChooserDraft } from '@/features/task/components/TaskCard/components/taskCardContentHelpers';
 import { DiagramNameEditContext } from '@/features/task/components/TaskCard/components/TaskCardSwimlaneDiagramCaption';
 import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar';
@@ -52,16 +53,17 @@ import { useTaskBarLifecycle } from './useTaskBarLifecycle';
 import { useTaskBarNoteFocus } from './useTaskBarNoteFocus';
 import { useTaskBarPhotoCardInteractions } from './useTaskBarPhotoCardInteractions';
 
+/** Разработчики, фильтр по имени и спринт — из `SwimlaneBoardContext`: у всех карточек доски они общие. */
 interface TaskBarProps {
   assigneeName?: string;
-  developers?: Developer[];
+  /** Действия с заметками; нет — заметку не править (режим связи, превью плана). */
+  commentActions?: SwimlaneCommentActions;
   /** Отключить drag/resize, но оставить клики (режим связей). */
   disableDragAndResize?: boolean;
   disableResize?: boolean;
   draggableId?: string;
   duration: number;
   errorTooltip?: string;
-  globalNameFilter?: string;
   htmlAnchorId?: string;
   inlineTitleEditor?: {
     color?: StickyNoteColor;
@@ -90,8 +92,6 @@ interface TaskBarProps {
     title: string;
   };
   quickAddSubmitting?: boolean;
-  selectedSprintId?: number | null;
-  selectedTaskId?: string | null;
   stickyNoteCardRowResize?: {
     assignedTaskLayer: number;
     committedCardRowLayout?: StickyNoteCardRowLayout;
@@ -110,9 +110,6 @@ interface TaskBarProps {
   taskPositions?: Map<string, TaskPosition>;
   widthPercent: number;
   onClick?: (taskId: string) => void;
-  onCommentApprove?: (commentId: string) => void;
-  onCommentDelete?: (commentId: string) => void;
-  onCommentUpdate?: (commentId: string, text: string, color?: StickyNoteColor) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
   onDeleteLocalImage?: (taskId: string) => void;
@@ -130,7 +127,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
   widthPercent,
   duration,
   errorTooltip,
-  globalNameFilter,
   isInError = false,
   isSelected = false,
   interactionDisabled = false,
@@ -145,12 +141,9 @@ const TaskBarSurface = observer(function TaskBarSurface({
   planAnchorOverlay,
   onResize,
   onClick,
-  onCommentApprove,
-  onCommentDelete,
-  onCommentUpdate,
+  commentActions,
   onDeleteLocalImage,
   onCreateQATask,
-  developers = [],
   assigneeName,
   taskPositions,
   qaTasksMap,
@@ -158,7 +151,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
   style: customStyle,
   onTaskHover,
   onContextMenu,
-  selectedSprintId,
   stickyNoteCardRowResize,
   swimlaneBarDurationParts,
   swimlaneSegmentBadge = null,
@@ -185,6 +177,8 @@ const TaskBarSurface = observer(function TaskBarSurface({
 
   // Меню выбирается подпиской: карточка перерисуется, только когда её состояние меню изменилось.
   const contextMenu = useSwimlaneCardContextMenu(task.id);
+  const { developers, globalNameFilter, selectedSprintId } = useSwimlaneBoard();
+  const { onCommentApprove, onCommentDelete, onCommentUpdate } = commentActions ?? {};
   const {
     contentDurationParts,
     contentWidthPercent,

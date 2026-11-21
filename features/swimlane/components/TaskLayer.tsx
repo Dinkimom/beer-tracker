@@ -16,7 +16,6 @@ import { useSwimlaneBoard } from '@/features/swimlane/SwimlaneBoardContext';
 export function TaskLayer(props: TaskLayerProps) {
   const {
     planPatchAssigneeId,
-    planPatchSprintId,
     planPatchTasksMap,
     positionedTasks,
     segmentEditTaskId,
@@ -55,11 +54,8 @@ export function TaskLayer(props: TaskLayerProps) {
       {planPatchAssigneeId && planPatchTasksMap ? (
         <TaskLayerPlanPatchPreviews
           assigneeId={planPatchAssigneeId}
-          developers={rest.developers}
-          globalNameFilter={rest.globalNameFilter}
           hasTaskOverlaps={rest.hasTaskOverlaps}
           layerHeight={rest.layerHeight}
-          sprintId={planPatchSprintId}
           taskBandTotalHeight={rest.taskBandTotalHeight}
           taskLayerMap={rest.taskLayerMap}
           tasksMap={planPatchTasksMap}

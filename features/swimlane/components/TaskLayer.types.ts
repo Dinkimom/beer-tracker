@@ -17,11 +17,9 @@ export interface TaskLayerProps {
   linkingFromTaskId?: string | null;
   /** Дорожка, на которую агент предлагает поставить карточку. */
   planPatchAssigneeId?: string;
-  planPatchSprintId?: number | null;
   planPatchTasksMap?: Map<string, Task>;
   positionedTasks: Array<{ task: Task; position: TaskPosition }>;
   segmentEditTaskId?: string | null;
-  selectedTaskId?: string | null;
   /** Эффективный вертикальный layout заметок/фото (БД + MobX override). */
   stickyNoteCardRowById?: ReadonlyMap<string, StickyNoteCardRowLayout>;
   /** Высота зоны обычных карточек (без увеличения строки под фото). */
