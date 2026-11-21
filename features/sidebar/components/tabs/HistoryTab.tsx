@@ -3,15 +3,23 @@
 import type { SprintHistoryFilter } from '@/features/sidebar/utils/sprintHistoryText';
 import type { SprintHistoryEvent } from '@/lib/boardHistory/sprintHistoryTypes';
 
-import { useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { useI18n } from '@/contexts/LanguageContext';
+import { toSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 import { HistoryEventRow } from '@/features/sidebar/components/tabs/HistoryEventRow';
 import { useTaskSidebar } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { useSprintHistory } from '@/features/sidebar/hooks/useSprintHistory';
-import { matchesSprintHistoryFilter, sprintHistoryDayKey } from '@/features/sidebar/utils/sprintHistoryText';
+import {
+  matchesSprintHistoryFilter,
+  sprintHistoryDayKey,
+  sprintHistoryTarget,
+} from '@/features/sidebar/utils/sprintHistoryText';
+import { useRootStore } from '@/lib/layers';
+import { appendPlannerFocusTaskQuery, stripPlannerFocusTaskFromHref } from '@/lib/planner/plannerUrl';
 
 const FILTERS: SprintHistoryFilter[] = ['all', 'tasks', 'board', 'agent'];
 
@@ -32,12 +40,16 @@ function groupByDay(events: readonly SprintHistoryEvent[]): Array<{ day: string;
 /** Вкладка «История»: кто и что менял в спринте — задачи из трекера, заметки, цели и стрелки доски. */
 export function HistoryTab() {
   const { language, t } = useI18n();
-  const { allSprintTasksForMetrics, developers, goalsTasks, sprintInfo } = useTaskSidebar();
+  const { allSprintTasksForMetrics, developers, goalsTasks, setMainTab, sprintInfo, taskPositions } = useTaskSidebar();
+  const { sprintPlannerUi } = useRootStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<SprintHistoryFilter>('all');
   const { data: events = [], isError, isPending } = useSprintHistory(sprintInfo);
 
-  const titles = useMemo(
-    () => new Map((allSprintTasksForMetrics ?? goalsTasks).map((task) => [task.id, task.name])),
+  const tasksById = useMemo(
+    () => new Map((allSprintTasksForMetrics ?? goalsTasks).map((task) => [task.id, task])),
     [allSprintTasksForMetrics, goalsTasks]
   );
   // Автор журнала доски — пользователь продукта (id staff), на доске люди — `staff:<id>`.
@@ -51,6 +63,27 @@ export function HistoryTab() {
     }
     return map;
   }, [developers]);
+  /**
+   * Карточка на доске — через `focusTask` в URL (прокрутка и подсветка, как у уведомлений).
+   * Задача спринта, не разложенная на доске, — панель информации о задаче; цель — вкладка «Спринт».
+   */
+  const selectHandler = useCallback(
+    (event: SprintHistoryEvent): (() => void) | undefined => {
+      const target = sprintHistoryTarget(event, toSwimlaneCommentTaskId);
+      if (!target) return undefined;
+      if (target.kind === 'goals') return () => setMainTab('goals');
+      const unplacedTask = event.source === 'tracker' && !taskPositions?.has(target.taskId);
+      if (unplacedTask) {
+        const task = tasksById.get(target.taskId);
+        return task ? () => sprintPlannerUi.openTaskInfoPanel(task) : undefined;
+      }
+      return () => {
+        const base = stripPlannerFocusTaskFromHref(pathname, new URLSearchParams(searchParams.toString()));
+        router.replace(appendPlannerFocusTaskQuery(base, target.taskId), { scroll: false });
+      };
+    },
+    [pathname, router, searchParams, setMainTab, sprintPlannerUi, taskPositions, tasksById]
+  );
   const groups = useMemo(
     () => groupByDay(events.filter((event) => matchesSprintHistoryFilter(event, filter))),
     [events, filter]
@@ -101,8 +134,9 @@ export function HistoryTab() {
                   key={event.id}
                   avatarUrl={event.actor.id ? avatars.get(event.actor.id) ?? null : null}
                   event={event}
-                  taskTitle={event.source === 'tracker' ? titles.get(event.issueKey) ?? null : null}
+                  taskTitle={event.source === 'tracker' ? tasksById.get(event.issueKey)?.name ?? null : null}
                   timeLabel={timeFormat.format(new Date(event.at))}
+                  onSelect={selectHandler(event)}
                 />
               ))}
             </ul>

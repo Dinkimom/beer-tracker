@@ -16,6 +16,8 @@ interface HistoryEventRowProps {
   /** Название задачи по ключу, если задача загружена в планере. */
   taskTitle: string | null;
   timeLabel: string;
+  /** Показать на доске; без него строка не кликается (объекта на доске уже нет). */
+  onSelect?: () => void;
 }
 
 function eventSubject(event: SprintHistoryEvent, taskTitle: string | null): string | null {
@@ -26,14 +28,14 @@ function eventSubject(event: SprintHistoryEvent, taskTitle: string | null): stri
 }
 
 /** Одно событие ленты: кто, что сделал, с чем и когда. */
-export function HistoryEventRow({ avatarUrl, event, taskTitle, timeLabel }: HistoryEventRowProps) {
+export function HistoryEventRow({ avatarUrl, event, onSelect, taskTitle, timeLabel }: HistoryEventRowProps) {
   const { t } = useI18n();
   const actor = sprintHistoryActorLabel(event, t);
   const subject = eventSubject(event, taskTitle);
   const previous = event.source === 'board' ? event.previousText : null;
 
-  return (
-    <li className="flex gap-2.5 px-4 py-2.5" data-testid="sprint-history-event">
+  const body = (
+    <>
       <Avatar
         avatarUrl={avatarUrl}
         className="mt-0.5 shrink-0"
@@ -66,6 +68,22 @@ export function HistoryEventRow({ avatarUrl, event, taskTitle, timeLabel }: Hist
           </OverflowTooltip>
         )}
       </div>
+    </>
+  );
+
+  return (
+    <li data-testid="sprint-history-event">
+      {onSelect ? (
+        <button
+          className="flex w-full cursor-pointer gap-2.5 px-4 py-2.5 text-left transition-colors hover:bg-black/[0.04] active:bg-black/[0.08] dark:hover:bg-white/[0.05] dark:active:bg-white/[0.1]"
+          type="button"
+          onClick={onSelect}
+        >
+          {body}
+        </button>
+      ) : (
+        <div className="flex gap-2.5 px-4 py-2.5">{body}</div>
+      )}
     </li>
   );
 }

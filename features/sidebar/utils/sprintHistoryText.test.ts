@@ -6,6 +6,7 @@ import {
   describeSprintHistoryEvent,
   matchesSprintHistoryFilter,
   sprintHistoryActorLabel,
+  sprintHistoryTarget,
 } from './sprintHistoryText';
 
 const t = (key: string, params?: Record<string, string>) =>
@@ -79,5 +80,23 @@ describe('sprintHistoryActorLabel and filter', () => {
     expect(matchesSprintHistoryFilter(issue, 'board')).toBe(false);
     expect(matchesSprintHistoryFilter(note, 'agent')).toBe(true);
     expect(matchesSprintHistoryFilter(issue, 'agent')).toBe(false);
+  });
+});
+
+describe('sprintHistoryTarget', () => {
+  const noteCard = (id: string) => `comment:${id}`;
+
+  it('points at the task card unless the task left the sprint', () => {
+    expect(sprintHistoryTarget(issue, noteCard)).toEqual({ kind: 'card', taskId: 'DEMO-101' });
+    expect(sprintHistoryTarget({ ...issue, change: 'removed', field: 'sprint' }, noteCard)).toBeNull();
+  });
+
+  it('points at the note card, the arrow start or the goals tab; nothing for deleted objects', () => {
+    expect(sprintHistoryTarget(note, noteCard)).toEqual({ kind: 'card', taskId: 'comment:n1' });
+    expect(sprintHistoryTarget({ ...note, object: 'goal' }, noteCard)).toEqual({ kind: 'goals' });
+    expect(
+      sprintHistoryTarget({ ...note, linkEnds: { from: 'DEMO-1', to: 'n1' }, object: 'link' }, noteCard)
+    ).toEqual({ kind: 'card', taskId: 'DEMO-1' });
+    expect(sprintHistoryTarget({ ...note, action: 'delete' }, noteCard)).toBeNull();
   });
 });

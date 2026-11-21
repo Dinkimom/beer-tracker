@@ -7,6 +7,9 @@ import type { SprintHistoryEvent } from '@/lib/boardHistory/sprintHistoryTypes';
 
 export type SprintHistoryFilter = 'agent' | 'all' | 'board' | 'tasks';
 
+/** Куда ведёт клик по событию: карточка на доске (id карточки свимлейна) или вкладка целей. */
+type SprintHistoryTarget = { kind: 'card'; taskId: string } | { kind: 'goals' };
+
 type Translate = (key: string, params?: Record<string, string>) => string;
 
 const EMPTY_VALUE = '—';
@@ -74,4 +77,21 @@ export function sprintHistoryDayKey(iso: string): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Цель клика по событию; null — на доске этого уже нет (удалено, снято со спринта).
+ * `toNoteCardId` — id карточки заметки на свимлейне (заметки рисуются как карточки).
+ */
+export function sprintHistoryTarget(
+  event: SprintHistoryEvent,
+  toNoteCardId: (commentId: string) => string
+): SprintHistoryTarget | null {
+  if (event.source === 'tracker') {
+    return event.change === 'removed' ? null : { kind: 'card', taskId: event.issueKey };
+  }
+  if (event.action === 'delete') return null;
+  if (event.object === 'goal') return { kind: 'goals' };
+  if (event.object === 'note') return { kind: 'card', taskId: toNoteCardId(event.objectId) };
+  return event.linkEnds ? { kind: 'card', taskId: event.linkEnds.from } : null;
 }

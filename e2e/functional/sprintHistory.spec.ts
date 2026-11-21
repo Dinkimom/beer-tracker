@@ -33,3 +33,30 @@ test('TC-100/101: история спринта показывает автор�
   await filter(en.sidebar.history.filters.all).click();
   await expect(events).toHaveCount(total);
 });
+
+/** TC-102: клик по событию показывает карточку на доске или вкладку целей. */
+test('TC-102: событие истории ведёт к карточке на доске', async ({ page }) => {
+  await openDemoPlanner(page);
+  await page.getByRole('button', { exact: true, name: en.sidebar.tabs.history }).click();
+  const events = page.getByTestId('sprint-history-event');
+
+  // Задача на доске — прокрутка и подсветка карточки.
+  await events.filter({ hasText: 'DEMO-109' }).getByRole('button').click();
+  await expect(page.locator('[id="task-DEMO-109"] .ring-amber-500, [id="task-DEMO-109"].ring-amber-500')).toHaveCount(1);
+
+  // Задача спринта не разложена на доске — открывается панель задачи.
+  await events.filter({ hasText: 'DEMO-111' }).getByRole('button').click();
+  await expect(page.getByText('Payouts report export', { exact: true }).last()).toBeVisible();
+  await page.getByRole('button', { exact: true, name: en.sprintPlanner.taskInfo.close }).click();
+
+  // Заметка — подсвечивается её карточка на доске.
+  await events.filter({ hasText: en.sidebar.history.events.note.create }).getByRole('button').click();
+  await expect(page.locator('[id$="demo-note-1"].ring-amber-500, [id$="demo-note-1"] .ring-amber-500')).toHaveCount(1);
+
+  // Снятая со спринта задача на доске не лежит — строка не кнопка.
+  await expect(events.filter({ hasText: 'DEMO-204' }).getByRole('button')).toHaveCount(0);
+
+  await events.filter({ hasText: en.sidebar.history.events.goal.done }).getByRole('button').click();
+  await expect(page.getByRole('heading', { name: en.sidebar.goalsTab.deliveryGoalsHeading })).toBeVisible();
+});
+
