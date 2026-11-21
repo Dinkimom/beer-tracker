@@ -17,12 +17,13 @@ async function createNoteDraftInFreeCell(page: Page): Promise<Locator> {
     .first()
     .click();
 
-  const lane = await page.locator(`[data-swimlane="${DEMO_DEV_ERIN}"]`).boundingBox();
-  const day = await page.locator('[data-onboarding-day="2"]').boundingBox();
-  if (!lane || !day) throw new Error('нет строки Ken или колонки четверга');
   const draft = page.locator('[data-task-id^="local-task-"]').first();
   // Ячейка создаёт черновик по клику, когда наведение уже нарисовало превью места.
+  // Координаты — на каждой попытке: под нагрузкой строки ещё сдвигаются после первой отрисовки.
   await expect(async () => {
+    const lane = await page.locator(`[data-swimlane="${DEMO_DEV_ERIN}"]`).boundingBox();
+    const day = await page.locator('[data-onboarding-day="2"]').boundingBox();
+    if (!lane || !day) throw new Error('нет строки Ken или колонки четверга');
     await page.mouse.move(day.x + 20, lane.y + 30, { steps: 5 });
     await page.waitForTimeout(400);
     await page.mouse.down();
