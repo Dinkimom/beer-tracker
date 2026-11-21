@@ -343,6 +343,7 @@ export function SprintPlannerView({
         }}
         boardId={boardIdForPlannerData}
         comments={comments}
+        handlers={handlers}
         movePlacement={movePlacement}
         selectedSprintId={selectedSprintId}
         showStartLinking={
@@ -353,23 +354,9 @@ export function SprintPlannerView({
         sprints={sprints}
         taskPositions={filteredTaskPositions}
         tasksMap={tasksMap}
-        transitionModal={handlers.transitionModal}
         viewMode={viewMode}
-        onAccountWork={handlers.handleAccountWork}
         onAssigneeSelect={handleContextMenuAssigneeSelect}
-        onCloseTransitionModal={handlers.closeTransitionModal}
-        onCommentApprove={handlers.handleCommentApprove}
-        onCommentDelete={handlers.handleCommentDelete}
-        onCommentParentChange={handlers.handleCommentParentChange}
-        onCommentUpdate={handlers.handleCommentUpdate}
-        onMoveToSprint={handlers.handleMoveToSprint}
-        onParentChange={handlers.handleParentChange}
-        onRemoveFromPlan={handlers.handleRemoveFromPlan}
-        onRemoveFromSprint={handlers.handleRemoveFromSprint}
         onSplitPhaseIntoSegments={handleSplitPhaseIntoSegments}
-        onStatusChange={handlers.handleStatusChange}
-        onTaskInfoFieldsSaved={handlers.handleTaskInfoFieldsSaved}
-        onTransitionSubmit={handlers.handleTransitionSubmit}
         onUpdateEstimate={handleUpdateEstimate}
       />
       {assigneePicker && (

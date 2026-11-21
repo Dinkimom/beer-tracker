@@ -217,3 +217,5 @@ export function useSprintPlannerHandlers({
   };
 }
 
+/** Обработчики доски одним объектом — секции берут его целиком, а не по полю. */
+export type SprintPlannerHandlers = ReturnType<typeof useSprintPlannerHandlers>;

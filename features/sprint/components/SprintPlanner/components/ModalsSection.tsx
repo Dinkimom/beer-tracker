@@ -5,11 +5,10 @@
  * Отвечает за отображение контекстного меню, модального окна учета работы и диалога подтверждения
  */
 
+import type { SprintPlannerHandlers } from '../hooks/useSprintPlannerHandlers';
 import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
-import type { TransitionField } from '@/lib/beerTrackerApi';
-import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
-import type { Comment, Task, TaskParent, TaskPosition } from '@/types';
+import type { Comment, Task, TaskPosition } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
 import { observer } from 'mobx-react-lite';
@@ -52,6 +51,8 @@ interface ModalsSectionProps {
   boardId?: number | null;
   comments?: Comment[];
   DialogComponent: React.ReactNode;
+  /** Обработчики доски целиком (`useSprintPlannerHandlers`). */
+  handlers: SprintPlannerHandlers;
   /** Перенос задачи или заметки в другой спринт с выбором места на его доске. */
   movePlacement?: {
     handlePlanCommentInSprint: (commentId: string, sprintId: number) => void;
@@ -63,37 +64,9 @@ interface ModalsSectionProps {
   sprintTasks?: Task[];
   taskPositions?: Map<string, TaskPosition>;
   tasksMap?: Map<string, Task>;
-  transitionModal?: {
-    taskId: string;
-    transitionId: string;
-    targetStatusKey: string;
-    targetStatusDisplay?: string;
-    fields: TransitionField[];
-    task?: Task;
-  } | null;
   viewMode?: BoardViewMode;
-  onAccountWork: (data: {
-    burnedStoryPoints: number;
-    burnedTestPoints: number;
-    newTaskTitle: string;
-    remainingStoryPoints: number;
-    remainingTestPoints: number;
-    targetSprintId: number | null;
-  }) => Promise<void>;
   onAssigneeSelect?: (task: Task, assigneeId: string) => void;
-  onCloseTransitionModal?: () => void;
-  onCommentApprove?: (commentId: string) => void;
-  onCommentDelete?: (commentId: string) => void;
-  onCommentParentChange?: (commentId: string, parent: TaskParent | null) => void;
-  onCommentUpdate?: (commentId: string, text: string, color?: StickyNoteColor) => void;
-  onMoveToSprint: (taskId: string, sprintId: number) => Promise<void>;
-  onParentChange?: (taskId: string, parent: TaskParent | null) => Promise<void>;
-  onRemoveFromPlan?: (taskId: string) => void;
-  onRemoveFromSprint: (taskId: string) => Promise<void>;
   onSplitPhaseIntoSegments?: (task: Task) => void;
-  onStatusChange: (taskId: string, transitionId: string, targetStatusKey?: string, targetStatusDisplay?: string, screenId?: string) => Promise<void>;
-  onTaskInfoFieldsSaved?: (fields: { description?: string; name?: string }) => void;
-  onTransitionSubmit?: (values: Record<string, unknown>) => Promise<void>;
   onUpdateEstimate?: (task: Task, newEstimate: number, isTestPoints: boolean) => void;
 }
 
@@ -118,26 +91,29 @@ export const ModalsSection = observer(function ModalsSection({
   tasksMap,
   viewMode = 'full',
   DialogComponent,
-  onAccountWork,
+  handlers,
   onAssigneeSelect,
-  onMoveToSprint,
-  onCommentApprove,
-  onCommentDelete,
-  onCommentParentChange,
-  onCommentUpdate,
-  onParentChange,
   movePlacement,
-  onRemoveFromPlan,
-  onRemoveFromSprint,
   showStartLinking = false,
   onSplitPhaseIntoSegments,
-  onStatusChange,
-  onTaskInfoFieldsSaved,
   onUpdateEstimate,
-  transitionModal,
-  onCloseTransitionModal,
-  onTransitionSubmit,
 }: ModalsSectionProps) {
+  const {
+    transitionModal,
+    handleAccountWork: onAccountWork,
+    closeTransitionModal: onCloseTransitionModal,
+    handleCommentApprove: onCommentApprove,
+    handleCommentDelete: onCommentDelete,
+    handleCommentParentChange: onCommentParentChange,
+    handleCommentUpdate: onCommentUpdate,
+    handleMoveToSprint: onMoveToSprint,
+    handleParentChange: onParentChange,
+    handleRemoveFromPlan: onRemoveFromPlan,
+    handleRemoveFromSprint: onRemoveFromSprint,
+    handleStatusChange: onStatusChange,
+    handleTaskInfoFieldsSaved: onTaskInfoFieldsSaved,
+    handleTransitionSubmit: onTransitionSubmit,
+  } = handlers;
   const { sprintPlannerUi } = useRootStore();
   const agentAvailable = useAgentAvailable(selectedSprintId);
 
