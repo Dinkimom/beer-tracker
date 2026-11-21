@@ -1,11 +1,10 @@
 'use client';
 
-import type { Task, Developer } from '@/types';
+import type { Task } from '@/types';
 
 import { useDroppable } from '@dnd-kit/core';
 
 import { useI18n } from '@/contexts/LanguageContext';
-import { taskMatchesNameFilter } from '@/features/task/utils/taskMatchesNameFilter';
 
 import {
   KANBAN_COLUMN_BODY,
@@ -16,8 +15,6 @@ import { KanbanDraggableCard } from './KanbanDraggableCard';
 
 interface KanbanColumnProps {
   columnId: string;
-  developers: Developer[];
-  globalNameFilter?: string;
   /** Идёт перетаскивание задачи (показывать оверлей на недоступных колонках) */
   isDragging?: boolean;
   /** В режиме перетаскивания колонка недоступна для дропа — показываем предупреждение */
@@ -25,20 +22,14 @@ interface KanbanColumnProps {
   /** Колонка, из которой перетаскивают — не подсвечиваем ошибкой */
   isSourceColumn?: boolean;
   tasks: Task[];
-  onContextMenu?: (e: React.MouseEvent, task: Task) => void;
-  onTaskClick?: (taskId: string) => void;
 }
 
 export function KanbanColumn({
   columnId,
   tasks,
-  developers,
-  globalNameFilter = '',
   isDragging = false,
   isDropDisabled = false,
   isSourceColumn = false,
-  onTaskClick,
-  onContextMenu,
 }: KanbanColumnProps) {
   const { t } = useI18n();
   const { setNodeRef, isOver } = useDroppable({
@@ -69,14 +60,7 @@ export function KanbanColumn({
           </div>
         )}
         {tasks.map((task) => (
-          <KanbanDraggableCard
-            key={task.id}
-            developers={developers}
-            dimmedBySearch={!taskMatchesNameFilter(task, globalNameFilter)}
-            task={task}
-            onContextMenu={onContextMenu}
-            onTaskClick={onTaskClick}
-          />
+          <KanbanDraggableCard key={task.id} task={task} />
         ))}
       </div>
     </div>

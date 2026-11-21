@@ -1,6 +1,6 @@
 'use client';
 
-import type { Task, Developer } from '@/types';
+import type { Task } from '@/types';
 
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -9,36 +9,32 @@ import { useEffect, useState } from 'react';
 
 import { PhaseCardColorSchemeOverride } from '@/components/PhaseCardColorSchemeOverride';
 import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { useAgentDevTask } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 import { TaskCardAgentBadge } from '@/features/task/components/TaskCard/components/TaskCardAgentBadge';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
+import { taskMatchesNameFilter } from '@/features/task/utils/taskMatchesNameFilter';
 import { getTaskTrackerDisplayKey, isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { useRootStore } from '@/lib/layers';
 import { sprintCardPresenceBlocksNewGestures } from '@/lib/realtime/sprintCardPresence';
 
+import { useKanbanBoard } from './KanbanBoardContext';
 import { KANBAN_CARD_SURFACE } from './kanbanChromeClasses';
 import { kanbanTaskId } from './kanbanDndUtils';
 
 interface KanbanDraggableCardProps {
-  developers: Developer[];
-  /** Не подходит под поиск по доске — приглушена, как на свимлейне. */
-  dimmedBySearch?: boolean;
   task: Task;
-  onContextMenu?: (e: React.MouseEvent, task: Task) => void;
-  onTaskClick?: (taskId: string) => void;
 }
 
-// observer: меню карточки читается из стора (`useCardContextMenu`).
-export const KanbanDraggableCard = observer(function KanbanDraggableCard({
-  task,
-  developers,
-  dimmedBySearch = false,
-  onTaskClick,
-  onContextMenu,
-}: KanbanDraggableCardProps) {
+// observer: меню карточки, поиск по доске и разработчики читаются из сторов и модели.
+export const KanbanDraggableCard = observer(function KanbanDraggableCard({ task }: KanbanDraggableCardProps) {
   const presenceLocked = useSprintCardPresenceLocked(task.id);
   const { sprintPlannerUi } = useRootStore();
+  const { developers } = useSprintBoard();
+  const { onContextMenu, onTaskClick } = useKanbanBoard();
+  // Не подходит под поиск по доске — приглушена, как на свимлейне.
+  const dimmedBySearch = !taskMatchesNameFilter(task, sprintPlannerUi.focus.globalNameFilter);
   const [ownDragActive, setOwnDragActive] = useState(false);
   const {
     attributes,

@@ -20,8 +20,8 @@ import {
   getIssueTransitionsBatch,
   type TransitionItem,
 } from '@/lib/beerTrackerApi';
-import { useRootStore } from '@/lib/layers';
 
+import { KanbanBoardContext, type KanbanBoard } from './KanbanBoardContext';
 import { KANBAN_CARD_SURFACE, KANBAN_COLUMN_HEADER_GLASS } from './kanbanChromeClasses';
 import { KanbanColumnHeader } from './KanbanColumnHeader';
 import { KanbanColumnsLayout } from './KanbanColumnsLayout';
@@ -94,8 +94,6 @@ export const KanbanView = observer(function KanbanView({
   onContextMenu,
 }: KanbanViewProps) {
   const { t } = useI18n();
-  const { sprintPlannerUi } = useRootStore();
-  const globalNameFilter = sprintPlannerUi.focus.globalNameFilter;
 
   const { groupByAssignee, groupByParent, hasLaneGrouping } = resolveKanbanGroupFlags(groupBy);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -285,6 +283,10 @@ export const KanbanView = observer(function KanbanView({
   );
 
   const activeTask = activeTaskId ? tasksForKanban.find((t) => t.id === activeTaskId) : null;
+  const kanbanBoard = useMemo<KanbanBoard>(
+    () => ({ activeTaskId, canDropInColumn, sourceColumnId, onContextMenu, onTaskClick }),
+    [activeTaskId, canDropInColumn, onContextMenu, onTaskClick, sourceColumnId]
+  );
   const statusChoiceTask = statusChoice
     ? tasksForKanban.find((task) => task.id === statusChoice.taskId)
     : null;
@@ -343,25 +345,19 @@ export const KanbanView = observer(function KanbanView({
             </div>
           ))}
         </div>
-        <KanbanColumnsLayout
-          activeTaskId={activeTaskId}
-          canDropInColumn={canDropInColumn}
-          collapsedLanes={collapsedLanes}
-          columnsContainerRef={columnsContainerRef}
-          columnsMinWidth={columnsMinWidth}
-          columnsWithHeaderData={columnsWithHeaderData}
-          developers={developers}
-          globalNameFilter={globalNameFilter}
-          groupByAssignee={groupByAssignee}
-          groupByParent={groupByParent}
-          hasLaneGrouping={hasLaneGrouping}
-          lanesWithColumns={lanesWithColumns}
-          sourceColumnId={sourceColumnId}
-          t={t}
-          toggleLaneCollapsed={toggleLaneCollapsed}
-          onContextMenu={onContextMenu}
-          onTaskClick={onTaskClick}
-        />
+        <KanbanBoardContext.Provider value={kanbanBoard}>
+          <KanbanColumnsLayout
+            collapsedLanes={collapsedLanes}
+            columnsContainerRef={columnsContainerRef}
+            columnsMinWidth={columnsMinWidth}
+            columnsWithHeaderData={columnsWithHeaderData}
+            groupByAssignee={groupByAssignee}
+            groupByParent={groupByParent}
+            hasLaneGrouping={hasLaneGrouping}
+            lanesWithColumns={lanesWithColumns}
+            toggleLaneCollapsed={toggleLaneCollapsed}
+          />
+        </KanbanBoardContext.Provider>
         </div>
         </div>
         <DragOverlay>

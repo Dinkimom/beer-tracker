@@ -1,31 +1,24 @@
 'use client';
 
 import type { KanbanLaneWithColumns } from './kanbanLane.types';
-import type { Developer, Task } from '@/types';
-import type { BoardColumn } from '@/types/tracker';
+
+import { useI18n } from '@/contexts/LanguageContext';
 
 import { KanbanLaneColumns } from './KanbanLaneColumns';
 import { KanbanLaneHeader } from './KanbanLaneHeader';
 import { kanbanLaneTotals, resolveKanbanLaneDisplayName } from './kanbanViewHelpers';
 
 interface KanbanLaneSectionProps {
-  activeTaskId: string | null;
   collapsedLanes: Set<string>;
   columnsMinWidth: number | undefined;
-  developers: Developer[];
-  globalNameFilter: string | undefined;
   groupByAssignee: boolean;
   groupByParent: boolean;
   lane: KanbanLaneWithColumns;
-  sourceColumnId: string | null | undefined;
-  canDropInColumn: (column: BoardColumn) => boolean;
-  onContextMenu?: (e: React.MouseEvent, task: Task) => void;
-  onTaskClick?: (taskId: string) => void;
-  t: (key: string, values?: Record<string, number | string>) => string;
   toggleLaneCollapsed: (laneKey: string) => void;
 }
 
 export function KanbanLaneSection(props: KanbanLaneSectionProps) {
+  const { t } = useI18n();
   const laneKey = props.lane.assigneeKey ?? props.lane.laneKey ?? '';
   const resolvedLaneName = resolveKanbanLaneDisplayName(
     {
@@ -36,7 +29,7 @@ export function KanbanLaneSection(props: KanbanLaneSectionProps) {
     },
     props.groupByAssignee,
     props.groupByParent,
-    props.t
+    t
   );
   const showAvatar =
     props.groupByAssignee &&
@@ -55,22 +48,15 @@ export function KanbanLaneSection(props: KanbanLaneSectionProps) {
         laneKey={laneKey}
         resolvedLaneName={resolvedLaneName}
         showAvatar={showAvatar}
-        t={props.t}
+        t={t}
         toggleLaneCollapsed={props.toggleLaneCollapsed}
         totalSp={totalSp}
         totalTp={totalTp}
       />
       <KanbanLaneColumns
-        activeTaskId={props.activeTaskId}
-        canDropInColumn={props.canDropInColumn}
         columnsWithHeaderData={props.lane.columnsWithHeaderData}
-        developers={props.developers}
-        globalNameFilter={props.globalNameFilter}
         isLaneCollapsed={props.collapsedLanes.has(laneKey)}
         laneKey={laneKey}
-        sourceColumnId={props.sourceColumnId}
-        onContextMenu={props.onContextMenu}
-        onTaskClick={props.onTaskClick}
       />
     </div>
   );
