@@ -2,17 +2,23 @@
  * Типы для useSprintPlannerHandlers (вынесены для уменьшения размера основного хука).
  */
 
+import type { useSprintPlannerState } from './useSprintPlannerState';
+import type { useSprintPlannerTimeline } from './useSprintPlannerTimeline';
 import type { DevelopersManagement } from '@/features/sprint/hooks/useDevelopersManagement';
 import type { TransitionField } from '@/lib/beerTrackerApi';
-import type { Comment, Task, TaskPosition } from '@/types';
+import type { Task, TaskPosition } from '@/types';
 import type { MutableRefObject } from 'react';
 
 export interface UseSprintPlannerHandlersProps {
-  allTasksForDrag: Task[];
-  comments: Comment[];
+  /** Доска, какой её видит пользователь: задачи, позиции и карта задач вместе с заметками, видимые связи. */
+  boardView: {
+    allTasksForDrag: Task[];
+    filteredTaskLinks: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
+    filteredTaskPositions: Map<string, TaskPosition>;
+    taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;
+    tasksMap: Map<string, Task>;
+  };
   developersManagement: DevelopersManagement;
-  filteredTaskLinks: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
-  filteredTaskPositions: Map<string, TaskPosition>;
   qaTaskManagement?: {
     createQATask: (
       devTaskId: string,
@@ -20,15 +26,26 @@ export interface UseSprintPlannerHandlersProps {
       tasks: Task[]
     ) => void;
   };
-  qaTasksByOriginalId: Map<string, Task>;
-  qaTasksMap: Map<string, Task>;
   /** Синхронизируется из `useDragAndDrop` в `SprintPlanner` (после монтирования хука). */
   resetDragStateRef: MutableRefObject<(() => void) | null>;
   selectedSprintId: number | null;
-  /** Открытые SLA-баги вкладки «Баги» (для DnD и дропа на свимлейн). */
-  sprintStartDate: Date;
-  sprintTimelineWorkingDays: number;
-  taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;
+  /** Сырые данные доски из `useSprintPlannerState` — эти поля хук получает без подмен. */
+  state: Pick<
+    ReturnType<typeof useSprintPlannerState>,
+    | 'comments'
+    | 'deleteComment'
+    | 'deleteLink'
+    | 'deletePosition'
+    | 'qaTasksByOriginalId'
+    | 'qaTasksMap'
+    | 'savePosition'
+    | 'setComments'
+    | 'setTaskLinks'
+    | 'setTaskPositions'
+    | 'setTasks'
+    | 'taskPositions'
+    | 'tasks'
+  >;
   taskOperations: {
     changeStatus: (
       taskId: string,
@@ -38,9 +55,7 @@ export interface UseSprintPlannerHandlersProps {
     moveToSprint: (taskId: string, sprintId: number) => Promise<void>;
     removeFromSprint: (taskId: string) => Promise<void>;
   };
-  taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
-  tasksMap: Map<string, Task>;
+  timeline: Pick<ReturnType<typeof useSprintPlannerTimeline>, 'sprintStartDate' | 'sprintTimelineWorkingDays'>;
   workflowScreens?: Record<string, Record<string, TransitionField[]>>;
   confirm: (
     message: string,
@@ -52,9 +67,6 @@ export interface UseSprintPlannerHandlersProps {
     }
   ) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
-  deleteComment: (commentId: string) => Promise<void>;
-  deleteLink: (linkId: string) => Promise<void>;
-  deletePosition: (taskId: string, options?: { recordHistory?: boolean }) => Promise<void>;
   /** Удаление оверлея Tracker/Jira (`tracker:{id}`). */
   deleteTrackerOverlayLink?: (link: {
     fromTaskId: string;
@@ -69,25 +81,5 @@ export interface UseSprintPlannerHandlersProps {
     toTaskId: string;
     id: string;
   }) => Promise<void>;
-  savePosition: (
-    position: TaskPosition,
-    isQa: boolean,
-    devTaskKey?: string,
-    immediate?: boolean,
-    options?: { recordHistory?: boolean }
-  ) => Promise<void>;
-  setComments: (updater: (prev: Comment[]) => Comment[]) => void;
   setSidebarOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
-  setTaskLinks: (
-    updater: (
-      prev: Array<{ fromTaskId: string; toTaskId: string; id: string }>
-    ) => Array<{ fromTaskId: string; toTaskId: string; id: string }>
-  ) => void;
-  setTaskPositions: (
-    updater: (
-      prev: Map<string, TaskPosition>
-    ) => Map<string, TaskPosition>,
-    options?: { recordHistory?: boolean }
-  ) => void;
-  setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }

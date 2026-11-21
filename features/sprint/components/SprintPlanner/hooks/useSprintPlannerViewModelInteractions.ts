@@ -101,14 +101,11 @@ export function useSprintPlannerViewModelInteractions({
   const {
     allTasksForDrag,
     comments,
-    deleteComment,
     deleteLink,
     deletePosition,
     developers,
     filteredTaskLinks,
     filteredTaskPositions,
-    qaTasksByOriginalId,
-    qaTasksMap,
     savePosition,
     setComments,
     setTaskLinks,
@@ -122,7 +119,7 @@ export function useSprintPlannerViewModelInteractions({
   } = state;
   const { swimlaneImagesVisible, swimlaneNotesVisible, syncAssignees, syncEstimates } = preferences;
   const commentsVisible = swimlaneNotesVisible || swimlaneImagesVisible;
-  const { sprintStartDate, sprintTimelineWorkingDays } = timeline;
+  const { sprintTimelineWorkingDays } = timeline;
   const annotationLayers = useMemo(
     () => ({
       imagesVisible: swimlaneImagesVisible,
@@ -227,39 +224,30 @@ export function useSprintPlannerViewModelInteractions({
     [taskLinks, trackerTaskLinks]
   );
   const handlers = useSprintPlannerHandlers({
-    comments, selectedSprintId,
-    setComments,
-    setSidebarOpen: sprintPlannerUi.setSidebarOpen,
-    setTaskLinks,
-    setTaskPositions,
-    setTasks,
-    allTasksForDrag: allTasksForDragWithComments,
+    boardView: {
+      allTasksForDrag: allTasksForDragWithComments,
+      filteredTaskLinks: linksVisibleForHandlers,
+      filteredTaskPositions: filteredTaskPositionsWithComments,
+      taskLinks: taskLinksForHandlers,
+      tasksMap: tasksMapWithComments,
+    },
     confirm,
     debouncedUpdateXarrow,
-    developersManagement,
-    resetDragStateRef,
-    filteredTaskLinks: linksVisibleForHandlers,
-    filteredTaskPositions: filteredTaskPositionsWithComments,
-    qaTaskManagement,
-    qaTasksMap,
-    qaTasksByOriginalId,
-    sprintStartDate,
-    sprintTimelineWorkingDays,
-    taskOperations,
-    tasks,
-    tasksMap: tasksMapWithComments,
-    taskPositions,
-    deleteLink,
     deleteTrackerOverlayLink,
-    deletePosition,
-    deleteComment,
+    developersManagement,
     onRequestQaEngineerPicker,
-    saveLink,
-    savePosition,
     onTasksReload,
-    taskLinks: taskLinksForHandlers,
+    qaTaskManagement,
+    resetDragStateRef,
+    saveLink,
+    selectedSprintId,
+    setSidebarOpen: sprintPlannerUi.setSidebarOpen,
+    state,
+    taskOperations,
+    timeline,
     workflowScreens,
   });
+
 
   const { commentActions, handleCommentDelete } = useSwimlaneCommentActions({ comments, confirm, handlers });
 
