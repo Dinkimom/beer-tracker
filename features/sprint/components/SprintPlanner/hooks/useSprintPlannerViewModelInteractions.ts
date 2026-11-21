@@ -1,8 +1,9 @@
+import type { useSprintPlannerLocalPreferences } from './useSprintPlannerLocalPreferences';
+import type { useSprintPlannerState } from './useSprintPlannerState';
+import type { useSprintPlannerTimeline } from './useSprintPlannerTimeline';
 import type { ConfirmDialogPromptOptions } from '@/components/ConfirmDialog';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
-import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { BoardListItem } from '@/lib/api/types';
-import type { Comment, Developer, Task, TaskPosition } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -47,46 +48,27 @@ type WorkflowScreens = ReturnType<typeof useSprintPlannerWorkflowScreens>;
 type SprintPlannerUi = ReturnType<typeof useRootStore>['sprintPlannerUi'];
 type GetQueueByBoardId = ReturnType<typeof useBoards>['getQueueByBoardId'];
 interface UseSprintPlannerViewModelInteractionsParams {
-  allTasksForDrag: Task[];
   boardIdForPlannerData: number | null;
   boards: BoardListItem[];
-  comments: Comment[];
-  commentsVisible: boolean;
-  developers: Developer[];
   developersManagement: DevelopersManagement;
-  filteredTaskLinks: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
-  filteredTaskPositions: Map<string, TaskPosition>;
   forDemoPlanner: boolean;
   getQueueByBoardId: GetQueueByBoardId;
-  qaTasksByOriginalId: Map<string, Task>;
-  qaTasksMap: Map<string, Task>;
-  selectedSprintId: number | null;
-  setComments: React.Dispatch<React.SetStateAction<Comment[]>>;
-  setTaskLinks: React.Dispatch<
-    React.SetStateAction<Array<{ fromTaskId: string; toTaskId: string; id: string }>>
+  /** Отображение заметок и фото, синхронизация исполнителей и оценок. */
+  preferences: Pick<
+    ReturnType<typeof useSprintPlannerLocalPreferences>,
+    'swimlaneImagesVisible' | 'swimlaneNotesVisible' | 'syncAssignees' | 'syncEstimates'
   >;
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  selectedSprintId: number | null;
   sprintPlannerUi: SprintPlannerUi;
   sprints: SprintListItem[];
-  sprintStartDate: Date;
-  sprintTimelineWorkingDays: number;
-  swimlaneImagesVisible: boolean;
-  swimlaneNotesVisible: boolean;
-  syncAssignees: boolean;
-  syncEstimates: boolean;
-  taskLinks: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
-  taskPositions: Map<string, TaskPosition>;
-  tasks: Task[];
-  tasksMap: Map<string, Task>;
+  /** Данные доски из `useSprintPlannerState` целиком — разбираются здесь. */
+  state: ReturnType<typeof useSprintPlannerState>;
+  timeline: Pick<ReturnType<typeof useSprintPlannerTimeline>, 'sprintStartDate' | 'sprintTimelineWorkingDays'>;
   /** Live overlay from Tracker/Jira (not in Postgres). */
   trackerTaskLinks?: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
-  viewMode: BoardViewMode;
   workflowScreens: WorkflowScreens;
   confirm: (message: string, options?: ConfirmDialogPromptOptions) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
-  deleteComment: (commentId: string) => Promise<void>;
-  deleteLink: (linkId: string) => Promise<void>;
-  deletePosition: (taskId: string) => Promise<void>;
   deleteTrackerOverlayLink?: (link: {
     fromTaskId: string;
     id: string;
@@ -94,65 +76,53 @@ interface UseSprintPlannerViewModelInteractionsParams {
   }) => Promise<void>;
   onTasksReload?: (options?: { showToast?: boolean }) => void;
   saveLink: (link: { fromTaskId: string; toTaskId: string; id: string }) => Promise<void>;
-  savePosition: (
-    position: TaskPosition,
-    isQa?: boolean,
-    devTaskKey?: string,
-    immediate?: boolean,
-    options?: { recordHistory?: boolean }
-  ) => Promise<void>;
-  setTaskPositions: (
-    positions:
-      | Map<string, TaskPosition>
-      | ((prev: Map<string, TaskPosition>) => Map<string, TaskPosition>),
-    options?: { recordHistory?: boolean }
-  ) => void;
 }
 
 export function useSprintPlannerViewModelInteractions({
-  allTasksForDrag,
+  preferences,
+  state,
+  timeline,
   boardIdForPlannerData,
   boards,
-  comments,
-  commentsVisible,
   confirm,
   debouncedUpdateXarrow,
-  deleteComment,
-  deleteLink,
   deleteTrackerOverlayLink,
-  deletePosition,
-  developers,
   developersManagement,
-  filteredTaskLinks,
-  filteredTaskPositions,
   forDemoPlanner,
   getQueueByBoardId,
   onTasksReload,
-  qaTasksByOriginalId,
-  qaTasksMap,
   saveLink,
-  savePosition,
   selectedSprintId,
-  setComments,
-  setTaskLinks,
-  setTaskPositions,
-  setTasks,
   sprintPlannerUi,
-  sprintStartDate,
-  sprintTimelineWorkingDays,
   sprints,
-  swimlaneImagesVisible,
-  swimlaneNotesVisible,
-  syncAssignees,
-  syncEstimates,
-  taskLinks,
   trackerTaskLinks = [],
-  taskPositions,
-  tasks,
-  tasksMap,
-  viewMode,
   workflowScreens,
 }: UseSprintPlannerViewModelInteractionsParams) {
+  const {
+    allTasksForDrag,
+    comments,
+    deleteComment,
+    deleteLink,
+    deletePosition,
+    developers,
+    filteredTaskLinks,
+    filteredTaskPositions,
+    qaTasksByOriginalId,
+    qaTasksMap,
+    savePosition,
+    setComments,
+    setTaskLinks,
+    setTaskPositions,
+    setTasks,
+    taskLinks,
+    taskPositions,
+    tasks,
+    tasksMap,
+    viewMode,
+  } = state;
+  const { swimlaneImagesVisible, swimlaneNotesVisible, syncAssignees, syncEstimates } = preferences;
+  const commentsVisible = swimlaneNotesVisible || swimlaneImagesVisible;
+  const { sprintStartDate, sprintTimelineWorkingDays } = timeline;
   const annotationLayers = useMemo(
     () => ({
       imagesVisible: swimlaneImagesVisible,

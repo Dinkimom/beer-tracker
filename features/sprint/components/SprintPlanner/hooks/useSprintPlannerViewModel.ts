@@ -70,6 +70,7 @@ export function useSprintPlannerViewModel({
   // leading и trailing — умолчания useDebouncedCallback.
   const debouncedUpdateXarrow = useDebouncedCallback(updateXarrow, 100);
 
+  const preferences = useSprintPlannerLocalPreferences();
   const {
     selectedBoardId,
     assigneeColumnWidth,
@@ -83,10 +84,8 @@ export function useSprintPlannerViewModel({
     swimlaneNotesVisible,
     swimlaneImagesVisible,
     linksDimOnHover,
-    syncAssignees,
-    syncEstimates,
     kanbanGroupBy,
-  } = useSprintPlannerLocalPreferences();
+  } = preferences;
 
   const boardIdForPlannerData: number | null =
     lockedBoardId !== undefined ? lockedBoardId : selectedBoardId;
@@ -119,22 +118,16 @@ export function useSprintPlannerViewModel({
     setViewMode,
     isMounted,
     taskPositions,
-    setTaskPositions,
-    savePosition,
     deletePosition,
     positionHistory,
     taskLinks,
     setTaskLinks,
     saveLink,
-    deleteLink,
     comments,
-    setComments,
-    deleteComment,
     boardViewers,
     qaTasksMap,
     allTasksForDrag,
     tasksMap,
-    qaTasksByOriginalId,
     unassignedTasks,
     tasksByAssignee,
     filteredTaskPositions,
@@ -178,8 +171,8 @@ export function useSprintPlannerViewModel({
     [filteredTaskPositions, tasksMap]
   );
 
-  const { availability, boardAvailabilityEvents, sprintStartDate, sprintTimelineWorkingDays } =
-    useSprintPlannerTimeline(boardIdForPlannerData, sprintInfo);
+  const timeline = useSprintPlannerTimeline(boardIdForPlannerData, sprintInfo);
+  const { availability, boardAvailabilityEvents, sprintStartDate, sprintTimelineWorkingDays } = timeline;
 
   useSprintPlannerBoardEffects({
     debouncedUpdateXarrow,
@@ -223,47 +216,23 @@ export function useSprintPlannerViewModel({
   });
 
   const interactions = useSprintPlannerViewModelInteractions({
-    allTasksForDrag,
+    preferences,
+    state,
+    timeline,
     boardIdForPlannerData,
     boards,
-    comments,
-    commentsVisible: swimlaneNotesVisible || swimlaneImagesVisible,
     confirm,
     debouncedUpdateXarrow,
-    deleteComment,
-    deleteLink,
     deleteTrackerOverlayLink,
-    deletePosition,
-    developers,
     developersManagement,
-    filteredTaskLinks,
-    filteredTaskPositions,
     forDemoPlanner,
     getQueueByBoardId,
     onTasksReload,
-    qaTasksByOriginalId,
-    qaTasksMap,
     saveLink: savePlannerLinkOnly,
-    savePosition,
     selectedSprintId,
-    setComments,
-    setTaskLinks,
-    setTaskPositions,
-    setTasks,
     sprintPlannerUi,
-    sprintStartDate,
-    sprintTimelineWorkingDays,
     sprints,
-    swimlaneImagesVisible,
-    swimlaneNotesVisible,
-    syncAssignees,
-    syncEstimates,
-    taskLinks,
     trackerTaskLinks,
-    taskPositions,
-    tasks,
-    tasksMap,
-    viewMode,
     workflowScreens,
   });
 
