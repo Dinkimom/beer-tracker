@@ -68,3 +68,11 @@ export async function upsertIssueChangelogCacheBatchForOrg(
   }
   return n;
 }
+
+/**
+ * Пересчитывает представление `issue_field_events` (события задач по полям плана) из кеша changelog.
+ * CONCURRENTLY — чтение истории спринта не блокируется на время пересчёта.
+ */
+export async function refreshIssueFieldEvents(): Promise<void> {
+  await query('REFRESH MATERIALIZED VIEW CONCURRENTLY issue_field_events');
+}

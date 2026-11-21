@@ -74,6 +74,7 @@ const BEER_TRACKER_TABLES = [
   'comment_reactions',
   'comments',
   'issue_changelog_events',
+  'issue_field_events', // materialized view поверх issue_changelog_events
   'issue_snapshots',
   'mcp_oauth_clients',
   'mcp_oauth_codes',
@@ -118,7 +119,7 @@ export function qualifyBeerTrackerTables(sql: string): string {
   let out = sql;
   for (const table of BEER_TRACKER_TABLES) {
     out = out.replace(
-      new RegExp(`\\b(FROM|INTO|UPDATE|JOIN|REFERENCES|ALTER TABLE|USING)\\s+${table}\\b`, 'gi'),
+      new RegExp(`\\b(FROM|INTO|UPDATE|JOIN|REFERENCES|ALTER TABLE|USING|MATERIALIZED VIEW CONCURRENTLY|MATERIALIZED VIEW)\\s+${table}\\b`, 'gi'),
       `$1 ${schema}.${table}`
     );
   }

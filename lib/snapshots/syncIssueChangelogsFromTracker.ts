@@ -4,7 +4,7 @@
 
 import type { IssueTrackerProviderClient } from '@/lib/issueTrackerProvider/types';
 
-import { upsertIssueChangelogCacheBatchForOrg } from './issueChangelogWrite';
+import { refreshIssueFieldEvents, upsertIssueChangelogCacheBatchForOrg } from './issueChangelogWrite';
 
 const BATCH_KEYS = 100;
 
@@ -44,5 +44,17 @@ export async function syncIssueChangelogsFromTrackerForKeys(
       keysTotal: unique.length,
     });
   }
+  if (upserted > 0) {
+    await refreshIssueFieldEventsSafely();
+  }
   return upserted;
+}
+
+/** История спринта отстанет до следующего синка, но сам синк changelog из-за неё не падает. */
+async function refreshIssueFieldEventsSafely(): Promise<void> {
+  try {
+    await refreshIssueFieldEvents();
+  } catch (error) {
+    console.warn('[changelog sync] refresh issue_field_events failed', error);
+  }
 }

@@ -114,6 +114,7 @@ Sync-worker миграции не запускает. На пустой БД о�
 **Синхронизация с трекером** (подробно — [SYNC.md](./SYNC.md))
 - `issue_snapshots` — нормализованный снимок задачи.
 - `issue_changelog_events` — кеш changelog и комментариев задачи.
+- `issue_field_events` — materialized view поверх `issue_changelog_events`: одна строка на изменённое поле плана (спринт, исполнитель, start/deadline, статус, оценки) с автором и временем; `*_ids` / `*_text` — значения из разнородного JSON. Пересчитывается `REFRESH … CONCURRENTLY` в конце синка changelog (`lib/snapshots/syncIssueChangelogsFromTracker.ts`). Основа истории изменений спринта.
 - `sync_runs` — журнал прогонов; уникальный индекс `uq_sync_runs_one_running_per_org` — не больше одного `running` на организацию.
 
 **Уведомления и аналитика**

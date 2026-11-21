@@ -43,4 +43,14 @@ describe('qualifyBeerTrackerTables', () => {
     );
     expect(sql).toMatch(/INSERT INTO beer_tracker\.mcp_oauth_clients/i);
   });
+
+  it('prefixes REFRESH MATERIALIZED VIEW', () => {
+    process.env.BEER_TRACKER_SCHEMA = 'beer_tracker';
+    expect(qualifyBeerTrackerTables('REFRESH MATERIALIZED VIEW CONCURRENTLY issue_field_events')).toBe(
+      'REFRESH MATERIALIZED VIEW CONCURRENTLY beer_tracker.issue_field_events'
+    );
+    expect(qualifyBeerTrackerTables('SELECT * FROM issue_field_events')).toBe(
+      'SELECT * FROM beer_tracker.issue_field_events'
+    );
+  });
 });
