@@ -6,7 +6,7 @@ import {
   isPlannerPath,
   parsePlannerPath,
   readPlannerFocusTaskFromSearchParams,
-  stripPlannerFocusTaskFromHref,
+  setPlannerFocusTaskQuery,
 } from './plannerUrl';
 
 describe('plannerUrl', () => {
@@ -25,11 +25,12 @@ describe('plannerUrl', () => {
     expect(readPlannerFocusTaskFromSearchParams(params)).toBe('DEV-1');
   });
 
-  it('stripPlannerFocusTaskFromHref preserves other query params', () => {
-    const params = new URLSearchParams('page=sprints&tab=board&focusTask=DEV-1');
-    expect(stripPlannerFocusTaskFromHref('/planner/1/sprint/2', params)).toBe(
-      '/planner/1/sprint/2?page=sprints&tab=board'
-    );
+  it('setPlannerFocusTaskQuery ставит и снимает deep-link, не трогая остальное', () => {
+    const params = new URLSearchParams('page=sprints&tab=board');
+    setPlannerFocusTaskQuery(params, 'DEV-1');
+    expect(params.toString()).toBe('page=sprints&tab=board&focusTask=DEV-1');
+    setPlannerFocusTaskQuery(params, null);
+    expect(params.toString()).toBe('page=sprints&tab=board');
   });
 
   it('parsePlannerPath', () => {

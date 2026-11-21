@@ -3,7 +3,6 @@
 import type { SprintHistoryFilter } from '@/features/sidebar/utils/sprintHistoryText';
 import type { SprintHistoryEvent } from '@/lib/boardHistory/sprintHistoryTypes';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
@@ -22,7 +21,8 @@ import {
   sprintHistoryTarget,
 } from '@/features/sidebar/utils/sprintHistoryText';
 import { useRootStore } from '@/lib/layers';
-import { appendPlannerFocusTaskQuery, stripPlannerFocusTaskFromHref } from '@/lib/planner/plannerUrl';
+import { setPlannerFocusTaskQuery } from '@/lib/planner/plannerUrl';
+import { replaceUrlQuery } from '@/utils/replaceUrlQuery';
 
 const FILTERS: SprintHistoryFilter[] = ['all', 'tasks', 'board', 'agent'];
 
@@ -45,9 +45,6 @@ export function HistoryTab() {
   const { language, t } = useI18n();
   const { allSprintTasksForMetrics, developers, goalsTasks, setMainTab, sprintInfo, taskPositions } = useTaskSidebar();
   const { sprintPlannerUi } = useRootStore();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<SprintHistoryFilter>('all');
   const { data: events = [], isError, isPending } = useSprintHistory(sprintInfo);
 
@@ -80,12 +77,9 @@ export function HistoryTab() {
         const task = tasksById.get(target.taskId);
         return task ? () => sprintPlannerUi.openTaskInfoPanel(task) : undefined;
       }
-      return () => {
-        const base = stripPlannerFocusTaskFromHref(pathname, new URLSearchParams(searchParams.toString()));
-        router.replace(appendPlannerFocusTaskQuery(base, target.taskId), { scroll: false });
-      };
+      return () => replaceUrlQuery((params) => setPlannerFocusTaskQuery(params, target.taskId));
     },
-    [pathname, router, searchParams, setMainTab, sprintPlannerUi, taskPositions, tasksById]
+    [setMainTab, sprintPlannerUi, taskPositions, tasksById]
   );
   const noteTexts = useMemo(() => sprintHistoryNoteTexts(events), [events]);
   const groups = useMemo(

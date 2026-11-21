@@ -2,18 +2,16 @@
 
 import type { SprintPlannerUiStore } from '@/lib/layers/application/mobx/stores/sprintPlannerUiStore';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef } from 'react';
 
 import {
   PLANNER_NOTIFICATION_FOCUS_MS,
   tryScrollPlannerToTaskElement,
 } from '@/features/sprint/hooks/plannerFocusTaskHelpers';
-import {
-  readPlannerFocusTaskFromSearchParams,
-  stripPlannerFocusTaskFromHref,
-} from '@/lib/planner/plannerUrl';
+import { readPlannerFocusTaskFromSearchParams, setPlannerFocusTaskQuery } from '@/lib/planner/plannerUrl';
 import { DELAYS } from '@/utils/constants';
+import { replaceUrlQuery } from '@/utils/replaceUrlQuery';
 
 interface UsePlannerNotificationFocusInput {
   isMounted: boolean;
@@ -42,24 +40,14 @@ export function usePlannerNotificationFocus({
   viewMode,
 }: UsePlannerNotificationFocusInput): void {
   const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const router = useRouter();
   const focusTaskId = readPlannerFocusTaskFromSearchParams(searchParams);
   const handledFocusTaskIdRef = useRef<string | null>(null);
   const clearFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Снимаем из текущего адреса: колбэк зовётся из таймера прокрутки, query в замыкании может устареть.
   const stripFocusTaskFromUrl = useCallback(() => {
-    const currentSearch = searchParams.toString();
-    const currentHref = currentSearch ? `${pathname}?${currentSearch}` : pathname;
-    const nextHref = stripPlannerFocusTaskFromHref(
-      pathname,
-      new URLSearchParams(currentSearch)
-    );
-    if (nextHref === currentHref) {
-      return;
-    }
-    router.replace(nextHref, { scroll: false });
-  }, [pathname, router, searchParams]);
+    replaceUrlQuery((params) => setPlannerFocusTaskQuery(params, null));
+  }, []);
 
   const scheduleClearNotificationFocus = useCallback(() => {
     clearNotificationFocusTimer(clearFocusTimerRef);

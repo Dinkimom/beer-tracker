@@ -25,11 +25,13 @@ export function readPlannerFocusTaskFromSearchParams(
   return raw || null;
 }
 
-export function stripPlannerFocusTaskFromHref(pathname: string, searchParams: URLSearchParams): string {
-  const next = new URLSearchParams(searchParams);
-  next.delete(PLANNER_FOCUS_TASK_QUERY_KEY);
-  const qs = next.toString();
-  return qs ? `${pathname}?${qs}` : pathname;
+/** Ставит или снимает (`null`) deep-link к карточке в query. */
+export function setPlannerFocusTaskQuery(params: URLSearchParams, focusTaskId: string | null): void {
+  if (focusTaskId) {
+    params.set(PLANNER_FOCUS_TASK_QUERY_KEY, focusTaskId);
+  } else {
+    params.delete(PLANNER_FOCUS_TASK_QUERY_KEY);
+  }
 }
 
 const PLANNER_PATH_RE = /^\/planner\/(\d+)\/sprint\/(\d+)(?:\/|$)/;

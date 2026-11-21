@@ -2,10 +2,10 @@
 
 import type { SidebarTasksTab } from '@/types';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
-import { hrefWithSearchParams } from '@/features/sidebar/utils/hrefWithSearchParams';
+import { replaceUrlQuery } from '@/utils/replaceUrlQuery';
 
 import { resolveHiddenSidebarTabFallback } from './useSidebarHeaderTabsHelpers';
 
@@ -52,8 +52,6 @@ function getActiveTabFromSearchParams(
 export function useSidebarTabsState({
   hideTasksTab = false,
 }: UseSidebarTabsStateProps = {}) {
-  const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const getMainTabFromUrl = useCallback(
@@ -80,11 +78,9 @@ export function useSidebarTabsState({
       return;
     }
     isUserChangingTabRef.current = true;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('sidebarTab', fallbackTab);
-    router.replace(hrefWithSearchParams(pathname, params), { scroll: false });
+    replaceUrlQuery((params) => params.set('sidebarTab', fallbackTab));
     startTransition(() => setMainTabState(fallbackTab));
-  }, [hideTasksTab, mainTab, pathname, router, searchParams]);
+  }, [hideTasksTab, mainTab]);
 
   useEffect(() => {
     if (isUserChangingTabRef.current) {
@@ -109,22 +105,18 @@ export function useSidebarTabsState({
     (tab: SidebarMainTab) => {
       isUserChangingTabRef.current = true;
       setMainTabState(tab);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('sidebarTab', tab);
-      router.replace(hrefWithSearchParams(pathname, params), { scroll: false });
+      replaceUrlQuery((params) => params.set('sidebarTab', tab));
     },
-    [pathname, router, searchParams]
+    []
   );
 
   const setActiveTab = useCallback(
     (tab: SidebarTasksTab) => {
       isUserChangingTabRef.current = true;
       setActiveTabState(tab);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('sidebarSubTab', tab);
-      router.replace(hrefWithSearchParams(pathname, params), { scroll: false });
+      replaceUrlQuery((params) => params.set('sidebarSubTab', tab));
     },
-    [pathname, router, searchParams]
+    []
   );
 
   return {
