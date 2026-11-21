@@ -124,7 +124,6 @@ export function useTaskBarDisplayState(input: {
   isExpandedByLongHover: boolean;
   isInError?: boolean;
   isLinking?: boolean;
-  isSelected?: boolean;
   leftPercent: number;
   onResize: (params: TaskResizeParams) => void;
   /** Индекс отрезка плана — превью ресайза не должно схлопывать siblings. */

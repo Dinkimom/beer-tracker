@@ -78,7 +78,6 @@ interface TaskBarProps {
   };
   interactionDisabled?: boolean;
   isInError?: boolean;
-  isSelected?: boolean;
   leftPercent: number;
   /** Обводка в режиме создания связи. */
   linkMode?: 'source' | 'target' | null;
@@ -128,7 +127,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
   duration,
   errorTooltip,
   isInError = false,
-  isSelected = false,
   interactionDisabled = false,
   disableDragAndResize = false,
   disableResize = false,
@@ -215,7 +213,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
     isExpandedByLongHover,
     isInError,
     isLinking: disableDragAndResize,
-    isSelected,
     leftPercent,
     onResize,
     planSegmentIndex,
@@ -396,7 +393,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
         isDraftTask={isDraftTask}
         isLinking={disableDragAndResize}
         isQATask={isQATask}
-        isSelected={isSelected}
         longHover={{
           expanded: isExpandedByLongHover || longHoverElevated,
           isNarrow: isNarrowForLongHoverExpand,

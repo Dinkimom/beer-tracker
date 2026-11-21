@@ -33,7 +33,6 @@ type SharedLayerKey =
   | 'isDraftTask'
   | 'isLinking'
   | 'isQATask'
-  | 'isSelected'
   | 'resize'
   | 'task';
 
@@ -82,7 +81,6 @@ export const TaskBarOpacityLayer = observer(function TaskBarOpacityLayer(props: 
     isDraftTask,
     isLinking = false,
     isQATask,
-    isSelected,
     longHover,
     onTaskHover,
     planAnchorOverlay,
@@ -99,7 +97,7 @@ export const TaskBarOpacityLayer = observer(function TaskBarOpacityLayer(props: 
     timelineTotalParts: hoverExpandTimelineTotalParts,
     timeoutRef: longHoverTimeoutRef,
   } = longHover;
-  const shared = { effectiveIsDragging, interactionDisabled, isDraftTask, isQATask, isSelected, task };
+  const shared = { effectiveIsDragging, interactionDisabled, isDraftTask, isQATask, task };
 
   const isContextMenuOpenForThis = useCardContextMenu(task.id).open;
   const cardElementRef = React.useRef<HTMLElement | null>(null);

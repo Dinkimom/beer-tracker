@@ -18,7 +18,6 @@ export interface TaskBarOpacityLayerChromeProps {
   isDraftTask: boolean;
   isInError: boolean;
   isQATask: boolean;
-  isSelected: boolean;
   /** Значок переноса относительно плана на старте — в одном ряду с номером сегмента. */
   planAnchorMoved?: 'earlier' | 'later' | null;
   resize: {
@@ -51,7 +50,6 @@ export function TaskBarOpacityLayerChrome({
   isDraftTask,
   isInError,
   isQATask,
-  isSelected,
   onCreateQATask,
   planAnchorMoved = null,
   resize,
@@ -61,7 +59,7 @@ export function TaskBarOpacityLayerChrome({
   task,
   verticalResize,
 }: TaskBarOpacityLayerChromeProps) {
-  const showResizeHandles = !isSelected && !disableResize && !interactionDisabled;
+  const showResizeHandles = !disableResize && !interactionDisabled;
 
   return (
     <>
@@ -125,7 +123,6 @@ export function TaskBarOpacityLayerChrome({
         interactionDisabled={interactionDisabled}
         isInError={isInError}
         isQATask={isQATask}
-        isSelected={isSelected}
         planAnchorMoved={planAnchorMoved}
         swimlaneSegmentBadge={swimlaneSegmentBadge}
         swimlaneSegmentSecondary={swimlaneSegmentSecondary}

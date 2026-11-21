@@ -24,7 +24,6 @@ interface TaskBarCornerBadgesProps {
   interactionDisabled: boolean;
   isInError: boolean;
   isQATask: boolean;
-  isSelected: boolean;
   planAnchorMoved: 'earlier' | 'later' | null;
   swimlaneSegmentBadge?: { index: number; total: number } | null;
   /** Не первый отрезок сегментированной карточки: значки задачи живут на первом. */

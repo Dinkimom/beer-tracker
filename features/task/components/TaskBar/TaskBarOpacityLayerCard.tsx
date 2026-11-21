@@ -32,7 +32,6 @@ export interface TaskBarOpacityLayerCardProps {
   isLinking?: boolean;
   isNotificationFocused?: boolean;
   isQATask: boolean;
-  isSelected: boolean;
   linkMode?: 'source' | 'target' | null;
   resize: {
     isResizing: boolean;
@@ -70,7 +69,6 @@ export const TaskBarOpacityLayerCard = observer(function TaskBarOpacityLayerCard
   linkMode = null,
   isNotificationFocused = false,
   isQATask,
-  isSelected,
   onClick,
   onContextMenu,
   onPhotoClick,
@@ -108,7 +106,6 @@ export const TaskBarOpacityLayerCard = observer(function TaskBarOpacityLayerCard
       isNotificationFocused={isNotificationFocused}
       isQATask={isQATask}
       isResizing={resize.isResizing}
-      isSelected={isSelected}
       layoutDuration={contentDurationParts}
       linkMode={linkMode}
       linkingActive={isLinking}

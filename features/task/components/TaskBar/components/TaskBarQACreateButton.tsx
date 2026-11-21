@@ -16,7 +16,6 @@ interface TaskBarQACreateAvailabilityInput {
   isDragging: boolean;
   isInError?: boolean;
   isQATask: boolean;
-  isSelected: boolean;
   task: Task;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
 }
@@ -27,7 +26,6 @@ export function isTaskBarQACreateAvailable({
   isDragging,
   isInError,
   isQATask,
-  isSelected,
   onCreateQATask,
   task,
 }: TaskBarQACreateAvailabilityInput): boolean {
@@ -39,7 +37,6 @@ export function isTaskBarQACreateAvailable({
     !onCreateQATask ||
     task.team === 'QA' ||
     hasQATaskInSwimlane ||
-    isSelected ||
     isDragging ||
     isInError
   );
