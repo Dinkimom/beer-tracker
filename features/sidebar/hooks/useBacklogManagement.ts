@@ -252,3 +252,4 @@ export function useBacklogManagement({
   };
 }
 
+export type BacklogManagement = ReturnType<typeof useBacklogManagement>;

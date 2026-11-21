@@ -12,7 +12,7 @@
   "features/context-menu/components/ContextMenu/components/ContextMenuPlanItems.tsx::pass-through": 77,
   "features/context-menu/components/ContextMenu/hooks/useContextMenu.ts::hook-lines": 301,
   "features/sidebar/components/GoalItemBody.tsx::pass-through": 79,
-  "features/sidebar/components/Sidebar.tsx::props-width::TaskSidebarProps": 28,
+  "features/sidebar/components/Sidebar.tsx::props-width::TaskSidebarProps": 21,
   "features/sidebar/components/SprintGoalsSection.tsx::pass-through": 59,
   "features/sprint/components/SprintPlanner/components/SidebarSection.tsx::pass-through": 76,
   "features/sprint/components/SprintPlanner/components/SidebarSection.tsx::props-width::SidebarSectionProps": 29,

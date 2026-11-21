@@ -6,13 +6,16 @@ import { useCallback, useState } from 'react';
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
+import { whenSidebarCanEdit } from '@/features/sidebar/components/sidebarTaskSidebarHelpers';
 import { SprintActions } from '@/features/sidebar/components/SprintActions';
 import { SprintGoalsSection } from '@/features/sidebar/components/SprintGoalsSection';
 import { submitStartSprint } from '@/features/sidebar/components/tabs/goalsTabStartSprintHelpers';
 import { useTaskSidebar } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { useGoalsTab } from '@/features/sidebar/hooks/useGoalsTab';
 import { FinishSprintModal } from '@/features/sprint/components/FinishSprintModal';
+import { useSprintGoalManagement } from '@/features/sprint/hooks/useSprintGoalManagement';
 import { useSprintGoalPlanRows } from '@/features/sprint/hooks/useSprintGoalPlanRows';
+import { useSprintGoalsSummary } from '@/features/sprint/hooks/useSprintGoals';
 import { patchSprintInSprintsQueries } from '@/features/sprint/hooks/useSprints';
 import { patchSprintInfoInTasksQueries } from '@/features/task/hooks/useTasks';
 
@@ -21,42 +24,50 @@ export function GoalsTab() {
   const queryClient = useQueryClient();
   const {
     canEdit,
-    deliveryChecklistItems,
-    deliveryGoalsLoading,
-    deliveryUpdatingItems,
-    discoveryChecklistItems,
-    discoveryGoalsLoading,
-    discoveryUpdatingItems,
-    goalsLoading,
     selectedBoardId = null,
     selectedSprintId = null,
     sprintInfo,
     sprints,
     goalsTasks: tasks,
-    onCheckboxChangeDelivery,
-    onCheckboxChangeDiscovery,
-    onAddDeliveryGoal,
-    onAddDiscoveryGoal,
-    onEditDeliveryGoal,
-    onEditDiscoveryGoal,
-    onDeleteDeliveryGoal,
-    onDeleteDiscoveryGoal,
     onTasksReload,
   } = useTaskSidebar();
+  // Цели вкладка берёт сама: те же запросы, что у шапки сайдбара, данные из кэша React Query.
+  const {
+    deliveryChecklistItems,
+    deliveryGoalsLoading,
+    discoveryChecklistItems,
+    discoveryGoalsLoading,
+    goalsLoading,
+    refresh: onGoalsUpdate,
+  } = useSprintGoalsSummary(selectedSprintId);
+  const delivery = useSprintGoalManagement({
+    boardId: selectedBoardId,
+    goalType: 'delivery',
+    queryClient,
+    sprintId: selectedSprintId,
+    onGoalsUpdate,
+  });
+  const discovery = useSprintGoalManagement({
+    boardId: selectedBoardId,
+    goalType: 'discovery',
+    queryClient,
+    sprintId: selectedSprintId,
+    onGoalsUpdate,
+  });
   const deliveryGoalsTab = useGoalsTab({
     canEdit,
     checklistItems: deliveryChecklistItems,
-    onAddGoal: onAddDeliveryGoal,
-    onDeleteGoal: onDeleteDeliveryGoal,
-    onEditGoal: onEditDeliveryGoal,
+    onAddGoal: whenSidebarCanEdit(canEdit, delivery.handleAddGoal),
+    onDeleteGoal: whenSidebarCanEdit(canEdit, delivery.handleDeleteGoal),
+    onEditGoal: whenSidebarCanEdit(canEdit, delivery.handleEditGoal),
   });
 
   const discoveryGoalsTab = useGoalsTab({
     canEdit,
     checklistItems: discoveryChecklistItems,
-    onAddGoal: onAddDiscoveryGoal,
-    onDeleteGoal: onDeleteDiscoveryGoal,
-    onEditGoal: onEditDiscoveryGoal,
+    onAddGoal: whenSidebarCanEdit(canEdit, discovery.handleAddGoal),
+    onDeleteGoal: whenSidebarCanEdit(canEdit, discovery.handleDeleteGoal),
+    onEditGoal: whenSidebarCanEdit(canEdit, discovery.handleEditGoal),
   });
 
   const goalPlanRows = useSprintGoalPlanRows({
@@ -115,8 +126,8 @@ export function GoalsTab() {
               planRowOptions={planRowOptions}
               sprintId={selectedSprintId}
               tab={deliveryGoalsTab}
-              updatingItems={deliveryUpdatingItems}
-              onCheckboxChange={onCheckboxChangeDelivery}
+              updatingItems={delivery.updatingItems}
+              onCheckboxChange={delivery.handleCheckboxChange}
               onPlanRowChange={(itemId, planRow) => goalPlanRows.setPlanRow('delivery', itemId, planRow)}
             />
             <SprintGoalsSection
@@ -126,8 +137,8 @@ export function GoalsTab() {
               planRowOptions={planRowOptions}
               sprintId={selectedSprintId}
               tab={discoveryGoalsTab}
-              updatingItems={discoveryUpdatingItems}
-              onCheckboxChange={onCheckboxChangeDiscovery}
+              updatingItems={discovery.updatingItems}
+              onCheckboxChange={discovery.handleCheckboxChange}
               onPlanRowChange={(itemId, planRow) => goalPlanRows.setPlanRow('discovery', itemId, planRow)}
             />
           </>

@@ -22,26 +22,29 @@ function isBacklogTabEmpty(
 export function BacklogTab() {
   const { t } = useI18n();
   const {
-    backlogLoading,
-    isInitialBacklogLoad,
+    backlog,
     groupKeys,
     groupedTasks,
     groupBy,
-    backlogDevelopers,
     onContextMenu,
     activeTaskId,
     activeTaskDuration,
     viewMode,
     selectedSprintId,
-    backlogTasks,
-    backlogTotalCount,
-    backlogHasMore,
-    isBacklogRateLimitError,
-    onRetryBacklog,
-    onLoadMore,
     contextMenuBlurOtherCards,
     contextMenuTaskId,
   } = useTaskSidebar();
+  const {
+    backlogDevelopers,
+    backlogHasMore,
+    backlogLoading,
+    backlogTasks,
+    backlogTotalCount,
+    isBacklogRateLimitError,
+    isInitialBacklogLoad,
+    loadMoreBacklogTasks: onLoadMore,
+    refetchBacklog: onRetryBacklog,
+  } = backlog;
 
   if (isBacklogRateLimitError && onRetryBacklog) {
     return (
@@ -49,7 +52,7 @@ export function BacklogTab() {
         <p className="text-sm text-amber-700 dark:text-amber-400">
           {t('sidebar.backlogTab.rateLimitMessage')}
         </p>
-        <Button className="gap-2" type="button" variant="outline" onClick={onRetryBacklog}>
+        <Button className="gap-2" type="button" variant="outline" onClick={() => void onRetryBacklog()}>
           <Icon className="h-4 w-4" name="refresh" />
           {t('sidebar.backlogTab.reload')}
         </Button>

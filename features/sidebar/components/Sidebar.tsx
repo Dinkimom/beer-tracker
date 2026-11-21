@@ -7,7 +7,6 @@ import type { Developer, Task, TaskPosition } from '@/types';
 import type { SprintInfo, SprintListItem } from '@/types/tracker';
 
 import { useDroppable } from '@dnd-kit/core';
-import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import {
@@ -16,19 +15,18 @@ import {
   selectedAssigneeIdsInPeople,
 } from '@/features/backlog/utils/backlogFilterPeople';
 import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
-import { buildTaskSidebarContextValue } from '@/features/sidebar/components/buildTaskSidebarContextValue';
 import { SidebarHeader } from '@/features/sidebar/components/SidebarHeader';
 import { SidebarTabContent } from '@/features/sidebar/components/SidebarTabContent';
 import {
   resolveSidebarCanEdit,
   resolveSidebarGoalTaskIds,
   resolveSidebarHeaderSprintInfo,
+  resolveSidebarSprintInfoContext,
 } from '@/features/sidebar/components/sidebarTaskSidebarHelpers';
 import { TaskSidebarContext } from '@/features/sidebar/contexts/TaskSidebarContext';
 import { useBacklogManagement } from '@/features/sidebar/hooks/useBacklogManagement';
 import { useSidebarHeaderTabs } from '@/features/sidebar/hooks/useSidebarHeaderTabs';
 import { useSidebarTabsState } from '@/features/sidebar/hooks/useSidebarTabsState';
-import { useSprintGoalManagement } from '@/features/sprint/hooks/useSprintGoalManagement';
 import { useSprintGoalsSummary } from '@/features/sprint/hooks/useSprintGoals';
 import { collectInvalidSprintDevTasks } from '@/features/sprint/utils/sprintStartChecks';
 import { useTaskFiltering } from '@/features/task/hooks/useTaskFiltering';
@@ -60,7 +58,18 @@ function toggleAssigneeId(current: Set<string>, id: string): Set<string> {
   return next;
 }
 
-interface TaskSidebarProps {
+/** Обработчики, которые уходят во вкладки без изменений, — того же типа, что в контексте. */
+interface TaskSidebarProps
+  extends Pick<
+    TaskSidebarContextValue,
+    | 'onAutoAddToSwimlane'
+    | 'onAutoAssignTasks'
+    | 'onContextMenu'
+    | 'onPlanAssignees'
+    | 'onReturnAllTasks'
+    | 'onSprintTaskUpserted'
+    | 'onTasksReload'
+  > {
   // ID активной перетаскиваемой задачи
   activeTaskDuration?: number | null;
   // Функция автоматической расстановки задач
@@ -87,14 +96,7 @@ interface TaskSidebarProps {
   tasks: Task[]; // Длительность активной задачи для превью
   viewMode?: 'compact' | 'full';
   width?: number;
-  onAutoAddToSwimlane?: (task: Task) => void;
-  onAutoAssignTasks?: () => void;
   onBacklogTaskRef?: (ref: { getTask: (taskId: string) => Task | undefined; removeTask: (taskId: string) => void }) => void;
-  onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
-  onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
-  onReturnAllTasks?: () => void; // Общее количество целей
-  onSprintTaskUpserted?: (task: Task) => void;
-  onTasksReload?: () => void;
 }
 
 export function TaskSidebar({
@@ -147,17 +149,8 @@ export function TaskSidebar({
   }
   const [sidebarTabsSettings] = useSidebarTabsSettingsStorage();
 
-  // Цели сайдбар берёт сам: запросы те же, что у страницы, данные приходят из кэша.
-  const {
-    checklistDone,
-    checklistTotal,
-    deliveryChecklistItems,
-    deliveryGoalsLoading,
-    discoveryChecklistItems,
-    discoveryGoalsLoading,
-    goalsLoading,
-    refresh: onGoalsUpdate,
-  } = useSprintGoalsSummary(selectedSprintId ?? null);
+  // Счётчик целей для шапки; сами цели и правку берёт вкладка «Цели» — из того же кэша.
+  const { checklistDone, checklistTotal } = useSprintGoalsSummary(selectedSprintId ?? null);
 
   const goalTaskIds = resolveSidebarGoalTaskIds(externalGoalTaskIds, allSprintTasks, tasks);
 
@@ -165,24 +158,6 @@ export function TaskSidebar({
 
   const { activeOrganization } = useProductTenantOrganizations({ pollIntervalMs: 0 });
   const canEdit = resolveSidebarCanEdit(sprintInfo, activeOrganization?.canAccessAdmin === true);
-
-  const queryClient = useQueryClient();
-
-  const deliveryGoalManagement = useSprintGoalManagement({
-    goalType: 'delivery',
-    sprintId: selectedSprintId ?? null,
-    boardId: selectedBoardId ?? null,
-    queryClient,
-    onGoalsUpdate,
-  });
-
-  const discoveryGoalManagement = useSprintGoalManagement({
-    goalType: 'discovery',
-    sprintId: selectedSprintId ?? null,
-    boardId: selectedBoardId ?? null,
-    queryClient,
-    onGoalsUpdate,
-  });
 
   const taskFiltering = useTaskFiltering({
     tasks,
@@ -233,70 +208,56 @@ export function TaskSidebar({
     sortedDevelopers: developersManagement?.sortedDevelopers,
   });
 
-  const contextValue: TaskSidebarContextValue = buildTaskSidebarContextValue({
+  const contextValue: TaskSidebarContextValue = {
     activeTab,
     activeTaskDuration,
+    activeTaskId,
+    allSprintTasksForMetrics: allSprintTasks,
+    allTasksCount,
     assigneeFilterActive: appliedAssigneeIds.size > 0,
     assigneeIds,
     assigneePeople,
-    onAssigneeToggle: (id: string) => setAssigneeIds((current) => toggleAssigneeId(current, id)),
-    activeTaskId,
-    allSprintTasks,
-    allTasksCount,
-    backlogDevelopers: backlogManagement.backlogDevelopers,
-    backlogHasMore: backlogManagement.backlogHasMore,
-    backlogLoading: backlogManagement.backlogLoading,
-    backlogManagement,
-    backlogTasks: backlogManagement.backlogTasks,
-    backlogTotalCount: backlogManagement.backlogTotalCount,
+    backlog: backlogManagement,
     canEdit,
     contextMenuBlurOtherCards,
     contextMenuTaskId,
-    deliveryChecklistItems,
-    deliveryGoalManagement,
-    deliveryGoalsLoading,
     developers,
     devTasksCount,
-    discoveryChecklistItems,
-    discoveryGoalManagement,
-    discoveryGoalsLoading,
+    goalsTasks: allSprintTasks ?? tasks,
     goalTaskIds,
-    goalsLoading,
     groupBy,
     groupedTasks,
     groupKeys,
     hideBacklogTab,
     hideTasksTab,
     invalidTasks,
-    isOver,
     mainTab,
     nameFilter,
-    onAutoAddToSwimlane,
-    onAutoAssignTasks,
-    onPlanAssignees,
-    onContextMenu,
-    onGoalsUpdate,
-    onReturnAllTasks,
-    onSprintTaskUpserted,
-    onTasksReload,
     qaTasksCount,
     qaTasksMap,
     selectedBoardId,
     selectedSprintId,
+    sidebarDropTargetActive: sidebarDropTargetActive || isOver,
+    sprintInfo: resolveSidebarSprintInfoContext(sprintInfo),
+    sprints,
+    statusFilter,
+    taskPositions,
+    viewMode,
+    width,
+    onAssigneeToggle: (id: string) => setAssigneeIds((current) => toggleAssigneeId(current, id)),
+    onAutoAddToSwimlane,
+    onAutoAssignTasks,
+    onContextMenu,
+    onPlanAssignees,
+    onReturnAllTasks,
+    onSprintTaskUpserted,
+    onTasksReload,
     setActiveTab,
     setGroupBy,
     setMainTab,
     setNameFilter,
     setStatusFilter,
-    sidebarDropTargetActive,
-    sprintInfo,
-    sprints,
-    statusFilter,
-    taskPositions,
-    tasks,
-    viewMode,
-    width,
-  });
+  };
 
   const headerTabs = useSidebarHeaderTabs({
     allTasksCount,

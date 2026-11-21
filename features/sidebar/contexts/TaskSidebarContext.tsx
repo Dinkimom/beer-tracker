@@ -1,6 +1,7 @@
 'use client';
 
 import type { BacklogFilterPerson } from '@/features/backlog/utils/backlogFilterPeople';
+import type { BacklogManagement } from '@/features/sidebar/hooks/useBacklogManagement';
 import type { SidebarMainTab } from '@/features/sidebar/hooks/useSidebarTabsState';
 import type { ValidationIssue } from '@/features/task/utils/taskValidation';
 import type {
@@ -12,7 +13,7 @@ import type {
   Task,
   TaskPosition,
 } from '@/types';
-import type { ChecklistItem, SprintListItem } from '@/types/tracker';
+import type { SprintListItem } from '@/types/tracker';
 
 import React from 'react';
 
@@ -35,27 +36,16 @@ export interface TaskSidebarContextValue {
   assigneeIds: ReadonlySet<string>;
   assigneePeople: BacklogFilterPerson[];
 
-  // BacklogTab
-  backlogDevelopers: Developer[];
-  backlogHasMore: boolean;
-  backlogLoading: boolean;
-  backlogTasks: Task[];
-  backlogTotalCount: number;
-  // GoalsTab
+  /** Бэклог доски — результат `useBacklogManagement` как есть. */
+  backlog: BacklogManagement;
+  /** Править цели можно (драфт, админ в работе, первый понедельник). */
   canEdit: boolean;
   /** Пониженная непрозрачность прочих карточек при контекстном меню с карточки задачи */
   contextMenuBlurOtherCards?: boolean;
   contextMenuTaskId?: string | null;
-  deliveryChecklistItems: ChecklistItem[];
-  deliveryGoalsLoading: boolean;
-  deliveryUpdatingItems: Set<string>;
   developers: Developer[];
   /** Dev-задачи после фильтров (поиск, статус) — бейдж вкладки Dev */
   devTasksCount: number;
-  discoveryChecklistItems: ChecklistItem[];
-  discoveryGoalsLoading: boolean;
-  discoveryUpdatingItems: Set<string>;
-  goalsLoading: boolean;
   goalsTasks: Task[];
   goalTaskIds: string[];
   groupBy: SidebarGroupBy;
@@ -66,8 +56,6 @@ export interface TaskSidebarContextValue {
   hideTasksTab?: boolean;
   // InvalidTab
   invalidTasks: Array<{ issues: ValidationIssue[]; task: Task }>;
-  isBacklogRateLimitError?: boolean;
-  isInitialBacklogLoad: boolean;
   mainTab: SidebarMainTab;
   nameFilter: string;
   /** QA-задачи после фильтров (поиск, статус) — бейдж вкладки QA */
@@ -85,23 +73,12 @@ export interface TaskSidebarContextValue {
   viewMode?: LayoutViewMode;
   // Общие
   width: number;
-  onAddDeliveryGoal?: (text: string) => Promise<void>;
-  onAddDiscoveryGoal?: (text: string) => Promise<void>;
   onAssigneeToggle: (id: string) => void;
   onAutoAddToSwimlane?: (task: Task) => void;
   onAutoAssignTasks?: () => void;
-  onCheckboxChangeDelivery: (itemId: string, checked: boolean) => void;
-  onCheckboxChangeDiscovery: (itemId: string, checked: boolean) => void;
   onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
-  onDeleteDeliveryGoal?: (itemId: string) => Promise<void>;
-  onDeleteDiscoveryGoal?: (itemId: string) => Promise<void>;
-  onEditDeliveryGoal?: (itemId: string, text: string) => Promise<void>;
-  onEditDiscoveryGoal?: (itemId: string, text: string) => Promise<void>;
 
-  onGoalsUpdate?: () => void;
-  onLoadMore: () => void;
   onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
-  onRetryBacklog?: () => void;
   onReturnAllTasks?: () => void;
   /** Оптимистично добавить задачу в локальный список спринта (таб «Задачи»). */
   onSprintTaskUpserted?: (task: Task) => void;
