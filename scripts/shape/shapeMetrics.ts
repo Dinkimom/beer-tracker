@@ -5,8 +5,9 @@
  *   (`x={x}`, `y={props.x}`, `z={handlers.z}`): слой, который в основном передаёт дальше;
  * - ширина хука — сколько полей хук принимает и сколько отдаёт объектом: хук-дирижёр, который
  *   собирает всё и раздаёт всё (`{...viewModel}` в компонент), — та же широкая поверхность, что `*Props`;
- * - длина хука — страховка на уровне `max-lines`: длинный, но цельный хук (раскладка, движок
- *   синхронизации) резать ради счётчика строк не нужно.
+ *
+ * Длину не меряем: длину любого файла держит ESLint `max-lines` (500), а длинный, но цельный
+ * хук ради счётчика строк дробить не нужно — дорого обходится ширина, а не длина.
  */
 import ts from 'typescript';
 
@@ -21,11 +22,9 @@ export const SHAPE_LIMITS = {
   maxHookInputs: 15,
   /** Полей у объекта, который хук возвращает. */
   maxHookOutputs: 20,
-  /** Страховка: файл хука длиннее — почти наверняка несколько зон. Как `max-lines`. */
-  maxHookLines: 500,
 } as const;
 
-type ShapeMetric = 'hook-inputs' | 'hook-lines' | 'hook-outputs' | 'pass-through' | 'props-width';
+type ShapeMetric = 'hook-inputs' | 'hook-outputs' | 'pass-through' | 'props-width';
 
 export interface ShapeViolation {
   file: string;
@@ -174,30 +173,6 @@ function measurePassThrough(source: ts.SourceFile): { attrs: number; passThrough
   return { attrs, passThrough };
 }
 
-/** Непустые строки без комментариев. */
-export function countCodeLines(text: string): number {
-  let inBlock = false;
-  let count = 0;
-  for (const raw of text.split('\n')) {
-    const line = raw.trim();
-    if (inBlock) {
-      if (line.includes('*/')) inBlock = false;
-      continue;
-    }
-    if (!line || line.startsWith('//')) continue;
-    if (line.startsWith('/*')) {
-      inBlock = !line.includes('*/');
-      continue;
-    }
-    count += 1;
-  }
-  return count;
-}
-
-function isHookFile(file: string): boolean {
-  return /(^|\/)use[A-Z]\w*\.tsx?$/.test(file);
-}
-
 /** Нарушения порогов в одном файле. */
 export function measureFileShape(file: string, text: string): ShapeViolation[] {
   const kind = file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
@@ -224,12 +199,6 @@ export function measureFileShape(file: string, text: string): ShapeViolation[] {
     }
   }
 
-  if (isHookFile(file)) {
-    const lines = countCodeLines(text);
-    if (lines > SHAPE_LIMITS.maxHookLines) {
-      violations.push({ file, metric: 'hook-lines', name: '', value: lines });
-    }
-  }
   return violations;
 }
 

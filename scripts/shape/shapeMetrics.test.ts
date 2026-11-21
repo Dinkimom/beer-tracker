@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SHAPE_LIMITS, compareWithBaseline, countCodeLines, measureFileShape, toBaseline } from './shapeMetrics';
+import { SHAPE_LIMITS, compareWithBaseline, measureFileShape, toBaseline } from './shapeMetrics';
 
 function propsInterface(name: string, width: number): string {
   const fields = Array.from({ length: width }, (_, i) => `  field${i}: string;`).join('\n');
@@ -50,13 +50,6 @@ describe('measureFileShape', () => {
     expect(measureFileShape('features/a/View.tsx', component(`${locals} ${own}`))).toEqual([]);
   });
 
-  it('flags only hook files over the line limit', () => {
-    const body = Array.from({ length: SHAPE_LIMITS.maxHookLines + 1 }, (_, i) => `const v${i} = ${i};`).join('\n');
-    expect(measureFileShape('hooks/useBig.ts', body)).toEqual([
-      { file: 'hooks/useBig.ts', metric: 'hook-lines', name: '', value: SHAPE_LIMITS.maxHookLines + 1 },
-    ]);
-    expect(measureFileShape('lib/big.ts', body)).toEqual([]);
-  });
 });
 
 describe('hook width', () => {
@@ -82,17 +75,11 @@ describe('hook width', () => {
   });
 });
 
-describe('countCodeLines', () => {
-  it('skips blank lines and comments', () => {
-    expect(countCodeLines('// a\n\n/**\n * doc\n */\nconst a = 1;\n/* x */\nconst b = 2;')).toBe(2);
-  });
-});
-
 describe('compareWithBaseline', () => {
   const wide = { file: 'f.tsx', metric: 'props-width' as const, name: 'P', value: 30 };
 
   it('fails on new and grown violations, reports shrunk and fixed ones', () => {
-    const baseline = toBaseline([wide, { file: 'g.ts', metric: 'hook-lines', name: '', value: 400 }]);
+    const baseline = toBaseline([wide, { file: 'g.ts', metric: 'hook-outputs', name: 'useG', value: 40 }]);
     const result = compareWithBaseline(
       [
         { ...wide, value: 31 },
@@ -102,7 +89,7 @@ describe('compareWithBaseline', () => {
     );
     expect(result.added.map((v) => v.file)).toEqual(['h.tsx']);
     expect(result.grown).toEqual([{ ...wide, baseline: 30, value: 31 }]);
-    expect(result.improved).toEqual(['g.ts::hook-lines']);
+    expect(result.improved).toEqual(['g.ts::hook-outputs::useG']);
   });
 
   it('accepts unchanged debt and lists shrunk entries as improved', () => {
