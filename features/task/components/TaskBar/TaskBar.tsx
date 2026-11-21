@@ -54,7 +54,7 @@ import { useTaskBarNoteFocus } from './useTaskBarNoteFocus';
 import { useTaskBarPhotoCardInteractions } from './useTaskBarPhotoCardInteractions';
 
 /** Разработчики, фильтр по имени и спринт — из `SwimlaneBoardContext`: у всех карточек доски они общие. */
-interface TaskBarProps {
+export interface TaskBarProps {
   assigneeName?: string;
   /** Действия с заметками; нет — заметку не править (режим связи, превью плана). */
   commentActions?: SwimlaneCommentActions;
@@ -112,7 +112,8 @@ interface TaskBarProps {
   onTaskHover?: (taskId: string | null) => void;
 }
 
-const TaskBarSurface = observer(function TaskBarSurface({
+const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
+  const {
   task,
   inlineTitleEditor,
   quickAddMenu,
@@ -130,21 +131,16 @@ const TaskBarSurface = observer(function TaskBarSurface({
   swimlaneSegmentSecondary = false,
   linkMode = null,
   planPatchGhost = false,
-  planSegmentIndex,
   planAnchorOverlay,
-  onResize,
   commentActions,
   onDeleteLocalImage,
   onCreateQATask,
   assigneeName,
   taskPositions,
-  style: customStyle,
   onTaskHover,
   onContextMenu,
-  stickyNoteCardRowResize,
   swimlaneSegmentBadge = null,
-  swimlaneDragActive,
-}: TaskBarProps) {
+} = props;
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const noteFocus = usePlanPatchNoteFocus(task, onTaskHover);
   const planPatchChrome = resolvePlanPatchTaskBarChrome({
@@ -198,33 +194,13 @@ const TaskBarSurface = observer(function TaskBarSurface({
     transform,
     verticalResize,
   } = useTaskBarDisplayState({
-    assigneeName,
-    customStyle,
+    bar: props,
+    board: { globalNameFilter, qaTasksMap, swimlaneTimelineTotalParts },
     dimmedByContextMenu: contextMenu.dimmed,
-    developers,
-    disableResize: resizeDisabled,
-    draggableId,
-    duration,
-    globalNameFilter,
-    hoverExpandFitDurationParts,
-    inlineTitleEditor,
-    interactionDisabled: interactionDisabled || disableDragAndResize,
-    isExpandedByLongHover,
-    isInError,
-    isLinking: disableDragAndResize,
-    leftPercent,
-    onResize,
-    planSegmentIndex,
-    qaTasksMap,
-    quickAddMenu,
-    stickyNoteCardRowResize,
-    swimlaneBarDurationParts: duration,
-    swimlaneDragActive,
-    swimlaneTimelineTotalParts,
-    task,
-    taskPositions,
-    widthPercent,
+    longHover: { expanded: isExpandedByLongHover, fitDurationParts: hoverExpandFitDurationParts },
+    resizeDisabled,
   });
+
 
   useTaskBarLifecycle({
     contextMenuOpen: contextMenu.open,

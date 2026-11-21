@@ -1,6 +1,5 @@
-import type { SwimlaneQuickAddMenuProps } from './components/quickAddMenu/SwimlaneQuickAddMenu';
-import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
-import type { Task, Developer, TaskPosition } from '@/types';
+import type { TaskBarProps } from './TaskBar';
+import type { useTaskBarBoard } from './useTaskBarBoard';
 
 import { CSS } from '@dnd-kit/utilities';
 import omit from 'lodash-es/omit';
@@ -11,9 +10,6 @@ import { usePlannerOnboardingChrome } from '@/features/sprint/components/SprintP
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useStickyNoteVerticalResize } from '@/features/task/hooks/useStickyNoteVerticalResize';
 import { useTaskBarResize } from '@/features/task/hooks/useTaskBarResize';
-import {
-  type StickyNoteCardRowLayout,
-} from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
 import { plannerCommentCardRowHeightFromDurationParts } from '@/lib/comments/plannerCommentCardRow';
@@ -105,51 +101,61 @@ function useLongHoverElevation(shouldExpandByLongHover: boolean): boolean {
   return shouldExpandByLongHover || isCollapsing;
 }
 
-export function useTaskBarDisplayState(input: {
-  assigneeName?: string;
-  dimmedByContextMenu?: boolean;
-  customStyle?: React.CSSProperties;
-  developers?: Developer[];
-  disableResize?: boolean;
-  draggableId: string;
-  duration: number;
-  globalNameFilter?: string;
-  inlineTitleEditor?: {
-    onChange: (value: string) => void;
-    onSubmit?: () => void;
-    value: string;
-  };
-  hoverExpandFitDurationParts?: number | null;
-  interactionDisabled?: boolean;
-  isExpandedByLongHover: boolean;
-  isInError?: boolean;
-  isLinking?: boolean;
-  leftPercent: number;
-  onResize: (params: TaskResizeParams) => void;
-  /** Индекс отрезка плана — превью ресайза не должно схлопывать siblings. */
-  planSegmentIndex?: number;
-  qaTasksMap?: Map<string, Task>;
-  quickAddMenu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & {
-    title: string;
-  };
-  swimlaneBarDurationParts?: number;
-  swimlaneDragActive?: boolean;
-  stickyNoteCardRowResize?: {
-    assignedTaskLayer: number;
-    committedCardRowLayout?: StickyNoteCardRowLayout;
-    hasTaskOverlaps: boolean;
-    layerHeight: number;
-    onLayoutCommit?: (layout: StickyNoteCardRowLayout) => void;
-    taskBandTotalHeight: number;
-  };
-  swimlaneTimelineTotalParts: number;
-  task: Task;
-  taskPositions?: Map<string, TaskPosition>;
-  widthPercent: number;
+export function useTaskBarDisplayState({
+  bar,
+  board,
+  dimmedByContextMenu,
+  longHover,
+  resizeDisabled,
+}: {
+  /** Пропсы карточки как есть: задача, геометрия, ресайз, редактор, меню быстрого добавления. */
+  bar: Pick<
+    TaskBarProps,
+    | 'disableDragAndResize'
+    | 'duration'
+    | 'inlineTitleEditor'
+    | 'interactionDisabled'
+    | 'isInError'
+    | 'leftPercent'
+    | 'onResize'
+    | 'planSegmentIndex'
+    | 'quickAddMenu'
+    | 'stickyNoteCardRowResize'
+    | 'style'
+    | 'swimlaneDragActive'
+    | 'task'
+    | 'taskPositions'
+    | 'widthPercent'
+  >;
+  board: Pick<ReturnType<typeof useTaskBarBoard>, 'globalNameFilter' | 'qaTasksMap' | 'swimlaneTimelineTotalParts'>;
+  dimmedByContextMenu: boolean;
+  /** Долгое наведение: раскрыта ли карточка и до какой длины её дотянуть. */
+  longHover: { expanded: boolean; fitDurationParts: number | null };
+  resizeDisabled: boolean;
 }) {
+  const {
+    duration,
+    inlineTitleEditor,
+    isInError = false,
+    leftPercent,
+    onResize,
+    planSegmentIndex,
+    quickAddMenu,
+    stickyNoteCardRowResize,
+    style: customStyle,
+    swimlaneDragActive,
+    task,
+    taskPositions,
+    widthPercent,
+  } = bar;
+  const { globalNameFilter, qaTasksMap, swimlaneTimelineTotalParts } = board;
+  // Режим связей запрещает перетаскивание и ресайз, но клики оставляет.
+  const isLinking = bar.disableDragAndResize ?? false;
+  const interactionDisabled = (bar.interactionDisabled ?? false) || isLinking;
+
   const { sprintPlannerUi } = useRootStore();
   const onboardingDemo = usePlannerOnboardingChrome();
-  const taskId = input.task.id;
+  const taskId = task.id;
   const presenceLocked = useSprintCardPresenceLocked(taskId);
   const {
     attributes,
@@ -158,16 +164,16 @@ export function useTaskBarDisplayState(input: {
     setNodeRef,
     transform,
   } = useTaskBarDragBind();
-  const isStickyNoteCard = isSwimlaneCommentTask(input.task);
-  const isSwimlanePhotoCard = isSwimlaneImageTask(input.task);
-  const isPhotoOrDiagramCard = isSwimlanePhotoCard || isSwimlaneDiagramTask(input.task);
+  const isStickyNoteCard = isSwimlaneCommentTask(task);
+  const isSwimlanePhotoCard = isSwimlaneImageTask(task);
+  const isPhotoOrDiagramCard = isSwimlanePhotoCard || isSwimlaneDiagramTask(task);
   const handleResizeSessionChange = useCallback(
     (active: boolean) => {
       sprintPlannerUi.setResizingTaskId(active ? taskId : null);
     },
     [sprintPlannerUi, taskId]
   );
-  const pairsHeightWithDuration = isSwimlaneDiagramTask(input.task);
+  const pairsHeightWithDuration = isSwimlaneDiagramTask(task);
   const handleResizePreview = useCallback(
     (
       preview: { duration: number; startCell: number | null } | null,
@@ -179,31 +185,31 @@ export function useTaskBarDisplayState(input: {
         pairsHeightWithDuration,
         preview,
         options?.discard ?? false,
-        input.planSegmentIndex
+        planSegmentIndex
       );
     },
-    [input.planSegmentIndex, pairsHeightWithDuration, sprintPlannerUi, taskId]
+    [planSegmentIndex, pairsHeightWithDuration, sprintPlannerUi, taskId]
   );
   const resize = useTaskBarResize({
-    duration: input.duration,
-    onResize: input.onResize,
+    duration: duration,
+    onResize: onResize,
     onResizePreview: handleResizePreview,
     onResizeSessionChange: handleResizeSessionChange,
-    timelineTotalCells: input.swimlaneTimelineTotalParts,
+    timelineTotalCells: swimlaneTimelineTotalParts,
   });
   const supportsCardRowVerticalResize =
-    (isStickyNoteCard || isSwimlanePhotoCard) && input.stickyNoteCardRowResize != null;
+    (isStickyNoteCard || isSwimlanePhotoCard) && stickyNoteCardRowResize != null;
   const verticalResize = useStickyNoteVerticalResize({
-    assignedTaskLayer: input.stickyNoteCardRowResize?.assignedTaskLayer ?? 0,
-    committedCardRowLayout: input.stickyNoteCardRowResize?.committedCardRowLayout,
+    assignedTaskLayer: stickyNoteCardRowResize?.assignedTaskLayer ?? 0,
+    committedCardRowLayout: stickyNoteCardRowResize?.committedCardRowLayout,
     enabled:
       supportsCardRowVerticalResize &&
-      !input.disableResize,
-    hasTaskOverlaps: input.stickyNoteCardRowResize?.hasTaskOverlaps ?? false,
-    layerHeight: input.stickyNoteCardRowResize?.layerHeight ?? 1,
+      !resizeDisabled,
+    hasTaskOverlaps: stickyNoteCardRowResize?.hasTaskOverlaps ?? false,
+    layerHeight: stickyNoteCardRowResize?.layerHeight ?? 1,
     onResizeSessionChange: handleResizeSessionChange,
-    onLayoutCommit: input.stickyNoteCardRowResize?.onLayoutCommit,
-    taskBandTotalHeight: input.stickyNoteCardRowResize?.taskBandTotalHeight ?? 1,
+    onLayoutCommit: stickyNoteCardRowResize?.onLayoutCommit,
+    taskBandTotalHeight: stickyNoteCardRowResize?.taskBandTotalHeight ?? 1,
     taskId,
   });
   const isAnyResizing = resize.isResizing || verticalResize.isResizing;
@@ -217,48 +223,48 @@ export function useTaskBarDisplayState(input: {
   }, [sprintPlannerUi, taskId]);
 
   const effectiveIsDragging =
-    input.swimlaneDragActive === undefined ? isDragging : isDragging && input.swimlaneDragActive;
+    swimlaneDragActive === undefined ? isDragging : isDragging && swimlaneDragActive;
 
   const dragActivationProps = useMemo(
     () =>
       resolveTaskBarDragActivationProps({
         attributes,
-        inlineTitleEditor: input.inlineTitleEditor,
+        inlineTitleEditor: inlineTitleEditor,
         interactionDisabled:
-          (input.interactionDisabled ?? false) ||
+          interactionDisabled ||
           sprintCardPresenceBlocksNewGestures(presenceLocked, isDragging),
         isResizing: isAnyResizing,
         listeners,
       }),
-    [attributes, input.inlineTitleEditor, input.interactionDisabled, isAnyResizing, isDragging, listeners, presenceLocked]
+    [attributes, inlineTitleEditor, interactionDisabled, isAnyResizing, isDragging, listeners, presenceLocked]
   );
 
-  const usesPlannerDragOverlay = input.swimlaneDragActive !== undefined;
+  const usesPlannerDragOverlay = swimlaneDragActive !== undefined;
   const hideSourceForOverlay = usesPlannerDragOverlay && effectiveIsDragging;
 
   const { displayLeftPercent, displayWidthPercent } = resolveTaskBarDisplayDimensions({
     isResizing: resize.isResizing,
-    leftPercent: input.leftPercent,
+    leftPercent: leftPercent,
     resizePreviewDuration: resize.resizePreviewDuration,
     resizePreviewStartCell: resize.resizePreviewStartCell,
-    swimlaneTimelineTotalParts: input.swimlaneTimelineTotalParts,
-    widthPercent: input.widthPercent,
+    swimlaneTimelineTotalParts: swimlaneTimelineTotalParts,
+    widthPercent: widthPercent,
   });
 
-  const isDraftTask = input.task.isLocalTask === true;
+  const isDraftTask = task.isLocalTask === true;
   const isPhotoCard = isPhotoOrDiagramCard;
   const { expandedMinWidthPercent, isNarrowForLongHoverExpand, shouldExpandByLongHover } =
     resolveTaskBarLongHoverExpand({
-      duration: input.duration,
+      duration: duration,
       effectiveIsDragging,
-      hoverExpandFitDurationParts: input.hoverExpandFitDurationParts,
+      hoverExpandFitDurationParts: longHover.fitDurationParts,
       isDraftTask,
-      isExpandedByLongHover: input.isExpandedByLongHover,
-      isLinking: input.isLinking,
-      isPhotoCard: isPhotoCard || isSwimlaneWidgetTask(input.task),
+      isExpandedByLongHover: longHover.expanded,
+      isLinking: isLinking,
+      isPhotoCard: isPhotoCard || isSwimlaneWidgetTask(task),
       isResizing: isAnyResizing,
-      swimlaneBarDurationParts: input.swimlaneBarDurationParts,
-      swimlaneTimelineTotalParts: input.swimlaneTimelineTotalParts,
+      swimlaneBarDurationParts: duration,
+      swimlaneTimelineTotalParts: swimlaneTimelineTotalParts,
     });
 
   // Пока карточка сжимается, контент остаётся в раскрытой раскладке: текст обрезает сама ширина.
@@ -268,15 +274,14 @@ export function useTaskBarDisplayState(input: {
     displayWidthPercent,
     expandedMinWidthPercent
   );
-  const barDurationParts = input.swimlaneBarDurationParts ?? input.duration;
-  const { contentDurationParts, contentWidthPercent } = resolveTaskBarContentLayout({
+    const { contentDurationParts, contentWidthPercent } = resolveTaskBarContentLayout({
     displayWidthPercent,
-    durationParts: barDurationParts,
+    durationParts: duration,
     expandedMinWidthPercent,
     shouldExpandByLongHover: longHoverElevated,
   });
 
-  const customStyleLayout = omit(input.customStyle ?? {}, ['opacity', 'transition']);
+  const customStyleLayout = omit(customStyle ?? {}, ['opacity', 'transition']);
   const layoutStyle = buildTaskBarLayoutStyle({
     baseWidthCss,
     customStyleLayout,
@@ -287,30 +292,30 @@ export function useTaskBarDisplayState(input: {
     transformCss: hideSourceForOverlay ? undefined : CSS.Translate.toString(transform),
   });
 
-  const isQATask = isEffectivelyQaTask(input.task);
+  const isQATask = isEffectivelyQaTask(task);
   const hasQATaskInSwimlane = resolveHasQaTaskInSwimlane({
     isQATask,
-    qaTasksMap: input.qaTasksMap,
-    task: input.task,
-    taskPositions: input.taskPositions,
+    qaTasksMap: qaTasksMap,
+    task: task,
+    taskPositions: taskPositions,
   });
 
   const effectiveOpacity = resolveTaskBarEffectiveOpacity({
     customStyleOpacity:
-      typeof input.customStyle?.opacity === 'number' ? input.customStyle.opacity : undefined,
-    dimmedByContextMenu: input.dimmedByContextMenu ?? false,
-    globalNameFilter: input.globalNameFilter,
-    task: input.task,
+      typeof customStyle?.opacity === 'number' ? customStyle.opacity : undefined,
+    dimmedByContextMenu: dimmedByContextMenu,
+    globalNameFilter: globalNameFilter,
+    task: task,
   });
 
   const taskBarZIndex = resolveTaskBarZIndex({
     effectiveIsDragging,
     hideSourceForOverlay,
-    inlineTitleEditor: input.inlineTitleEditor,
-    isInError: input.isInError ?? false,
+    inlineTitleEditor: inlineTitleEditor,
+    isInError: isInError,
     isPhotoCard,
-    isStickyNote: isSwimlaneCommentTask(input.task),
-    quickAddMenu: input.quickAddMenu,
+    isStickyNote: isSwimlaneCommentTask(task),
+    quickAddMenu: quickAddMenu,
     shouldExpandByLongHover: longHoverElevated,
   });
 
@@ -338,7 +343,6 @@ export function useTaskBarDisplayState(input: {
     isDraftTask,
     isNarrowForLongHoverExpand,
     isQATask,
-    isStickyNoteCard,
     layoutStyle,
     longHoverElevated,
     presenceLocked,
