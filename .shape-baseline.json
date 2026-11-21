@@ -47,8 +47,6 @@
   "features/task/components/TaskBar/components/quickAddMenu/QuickAddMenuPanels.tsx::props-width::QuickAddMenuPanelsProps": 24,
   "features/task/components/TaskBar/components/quickAddMenu/types.ts::props-width::SwimlaneQuickAddMenuProps": 32,
   "features/task/components/TaskBar/TaskBar.tsx::props-width::TaskBarProps": 45,
-  "features/task/components/TaskBar/TaskBarOpacityLayer.tsx::pass-through": 70,
-  "features/task/components/TaskBar/TaskBarOpacityLayer.tsx::props-width::TaskBarOpacityLayerProps": 54,
   "features/task/components/TaskBar/TaskBarOpacityLayerCard.tsx::props-width::TaskBarOpacityLayerCardProps": 32,
   "features/task/components/TaskBar/useTaskBarDisplayState.ts::hook-lines": 334,
   "features/task/components/TaskCard/components/TaskCardContent.tsx::pass-through": 64,

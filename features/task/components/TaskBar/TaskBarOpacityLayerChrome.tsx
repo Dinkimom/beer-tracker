@@ -8,7 +8,7 @@ import React from 'react';
 import { TaskBarResizeHandle } from './components/TaskBarResizeHandle';
 import { TaskBarCornerBadges } from './TaskBarCornerBadges';
 
-interface TaskBarOpacityLayerChromeProps {
+export interface TaskBarOpacityLayerChromeProps {
   cornerStyle?: ResizeHandleCornerStyle;
   disableResize: boolean;
   effectiveIsDragging: boolean;

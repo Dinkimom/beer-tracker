@@ -162,7 +162,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
   contextMenuBlurOtherCards = false,
   contextMenuTaskId = null,
   selectedSprintId,
-  selectedTaskId: _selectedTaskId = null,
   stickyNoteCardRowResize,
   swimlaneBarDurationParts,
   swimlaneSegmentBadge = null,
@@ -334,7 +333,6 @@ const TaskBarSurface = observer(function TaskBarSurface({
       data-task-id={task.id}
       {...onboardingDataset}
       id={htmlAnchorId}
-
       style={{
         ...resolveTaskBarRootStyle({
           hideSourceForOverlay,
@@ -354,75 +352,76 @@ const TaskBarSurface = observer(function TaskBarSurface({
       onBlur={(event) => cancelInlineEditorOnFocusOut(event, inlineTitleEditor?.onCancel, isStickyNoteCard)}
     >
       <TaskBarOpacityLayer
-        assigneeName={assigneeName}
-        clickStartPos={clickStartPos}
-        contentDurationParts={contentDurationParts}
-        contentWidthPercent={contentWidthPercent}
-        contextMenuTaskId={contextMenuTaskId}
+        card={{
+          assigneeName,
+          clickStartPos,
+          contentDurationParts,
+          contentWidthPercent,
+          contextMenuTaskId,
+          developers,
+          dimmedByContextMenuElsewhere,
+          dragActivationProps,
+          getPhotoClickSuppress,
+          inlineTitleEditor,
+          isNotificationFocused,
+          linkMode,
+          onClick:
+            isWidgetCard || (presenceBlocksMutations && !isPhotoCard && !isDiagramCard)
+              ? undefined
+              : resolveTaskBarCardClick({
+                  imageUrl: task.imageUrl,
+                  isDiagramCard,
+                  isLinkingSession: disableDragAndResize,
+                  isLocalTask: task.isLocalTask,
+                  isPhotoCard,
+                  onClick,
+                  openDiagram: () => sprintPlannerUi.openDiagramEditor(task.id),
+                  openLightbox: openPhotoLightbox,
+                }),
+          onCommentUpdate: presenceBlocksMutations ? undefined : onCommentUpdate,
+          onContextMenu,
+          onPhotoClick: isPhotoCard && task.imageUrl && task.isLocalTask !== true ? openPhotoLightbox : undefined,
+          onPhotoGestureStart: beginPhotoGesture,
+          selectedSprintId,
+          setClickStartPos,
+          setNodeRef,
+          swimlaneBarDurationParts,
+          taskPositions,
+        }}
+        chrome={{
+          disableResize: resizeDisabled || presenceBlocksMutations,
+          errorTooltip,
+          hasQATaskInSwimlane,
+          isInError,
+          onCreateQATask: presenceBlocksMutations ? undefined : onCreateQATask,
+          showVerticalResize: isStickyNoteCard || isSwimlanePhotoCard,
+          swimlaneSegmentBadge,
+          swimlaneSegmentSecondary,
+          verticalResize,
+        }}
         cornerStyle={cornerStyle}
         currentDurationParts={swimlaneBarDurationParts ?? duration}
-        developers={developers}
-        dimmedByContextMenuElsewhere={dimmedByContextMenuElsewhere}
-        disableResize={resizeDisabled || presenceBlocksMutations}
-        dragActivationProps={dragActivationProps}
         effectiveIsDragging={effectiveIsDragging}
         effectiveOpacity={effectiveOpacity * planPatchChrome.opacityFactor}
-        errorTooltip={errorTooltip}
-        getPhotoClickSuppress={getPhotoClickSuppress}
-        hasQATaskInSwimlane={hasQATaskInSwimlane}
         hideSourceForOverlay={hideSourceForOverlay}
-        hoverExpandTimelineTotalParts={swimlaneTimelineTotalParts}
-        inlineTitleEditor={inlineTitleEditor}
         interactionDisabled={interactionDisabled ?? false}
         isDraftTask={isDraftTask}
-        isInError={isInError}
         isLinking={disableDragAndResize}
-        isNarrowForLongHoverExpand={isNarrowForLongHoverExpand}
-        isNotificationFocused={isNotificationFocused}
         isQATask={isQATask}
         isSelected={isSelected}
-        linkMode={linkMode}
-        longHoverExpanded={isExpandedByLongHover || longHoverElevated}
-        longHoverTimeoutRef={longHoverTimeoutRef}
+        longHover={{
+          expanded: isExpandedByLongHover || longHoverElevated,
+          isNarrow: isNarrowForLongHoverExpand,
+          setExpanded: setIsExpandedByLongHover,
+          setFitDurationParts: setHoverExpandFitDurationParts,
+          timelineTotalParts: swimlaneTimelineTotalParts,
+          timeoutRef: longHoverTimeoutRef,
+        }}
         planAnchorOverlay={planAnchorOverlay}
         quickAddSubmitting={quickAddSubmitting}
         resize={{ ...resize, isResizing: isAnyResizing }}
-        selectedSprintId={selectedSprintId}
-        setClickStartPos={setClickStartPos}
-        setHoverExpandFitDurationParts={setHoverExpandFitDurationParts}
-        setIsExpandedByLongHover={setIsExpandedByLongHover}
-        setNodeRef={setNodeRef}
-        showVerticalResize={isStickyNoteCard || isSwimlanePhotoCard}
-        swimlaneBarDurationParts={swimlaneBarDurationParts}
-        swimlaneSegmentBadge={swimlaneSegmentBadge}
-        swimlaneSegmentSecondary={swimlaneSegmentSecondary}
         task={task}
-        taskPositions={taskPositions}
         transform={transform}
-        verticalResize={verticalResize}
-        onClick={
-          isWidgetCard || (presenceBlocksMutations && !isPhotoCard && !isDiagramCard)
-            ? undefined
-            : resolveTaskBarCardClick({
-                imageUrl: task.imageUrl,
-                isDiagramCard,
-                isLinkingSession: disableDragAndResize,
-                isLocalTask: task.isLocalTask,
-                isPhotoCard,
-                onClick,
-                openDiagram: () => sprintPlannerUi.openDiagramEditor(task.id),
-                openLightbox: openPhotoLightbox,
-              })
-        }
-        onCommentUpdate={presenceBlocksMutations ? undefined : onCommentUpdate}
-        onContextMenu={onContextMenu}
-        onCreateQATask={presenceBlocksMutations ? undefined : onCreateQATask}
-        onPhotoClick={
-          isPhotoCard && task.imageUrl && task.isLocalTask !== true
-            ? openPhotoLightbox
-            : undefined
-        }
-        onPhotoGestureStart={beginPhotoGesture}
         onTaskHover={noteFocus.hover}
       >
         <TaskBarAnnotationOverlays

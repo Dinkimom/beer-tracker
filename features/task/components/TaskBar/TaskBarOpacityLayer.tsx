@@ -1,9 +1,9 @@
 'use client';
 
 import type { ResizeHandleCornerStyle } from './components/taskBarResizeHandleHelpers';
+import type { TaskBarOpacityLayerCardProps } from './TaskBarOpacityLayerCard';
+import type { TaskBarOpacityLayerChromeProps } from './TaskBarOpacityLayerChrome';
 import type { SegmentPlanAnchorOverlay } from '@/features/swimlane/utils/planAnchorShift';
-import type { Developer, Task, TaskPosition } from '@/types';
-import type { DraggableAttributes } from '@dnd-kit/core';
 
 import React, { useCallback, useMemo } from 'react';
 
@@ -23,137 +23,82 @@ import {
 import { TaskBarPlanAnchorOverlay } from './TaskBarPlanAnchorOverlay';
 import { useTaskBarResizeSquash } from './useTaskBarResizeSquash';
 
-interface TaskBarOpacityLayerProps {
-  assigneeName?: string;
+/** Поля, которые нужны и слою, и карточке, и хрому, — передаются один раз. */
+type SharedLayerKey =
+  | 'effectiveIsDragging'
+  | 'hideSourceForOverlay'
+  | 'interactionDisabled'
+  | 'isDraftTask'
+  | 'isLinking'
+  | 'isQATask'
+  | 'isSelected'
+  | 'resize'
+  | 'task';
+
+/** Долгое наведение: состояние живёт в `TaskBar` (от него ширина карточки), обработчики — здесь. */
+export interface TaskBarLongHover {
+  /** Карточка раскрыта: ширина не равна длине, штриховку не рисуем. */
+  expanded: boolean;
+  isNarrow: boolean;
+  setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  timelineTotalParts: number;
+  timeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  setFitDurationParts: (durationParts: number) => void;
+}
+
+interface TaskBarOpacityLayerProps
+  extends Pick<TaskBarOpacityLayerCardProps, Exclude<SharedLayerKey, 'resize'>> {
+  /** Карточка задачи — уходит в `TaskBarOpacityLayerCard` как есть. */
+  card: Omit<TaskBarOpacityLayerCardProps, SharedLayerKey | 'cardElementRef'>;
   children?: React.ReactNode;
-  clickStartPos: { x: number; y: number } | null;
-  contentDurationParts: number;
-  contentWidthPercent: number;
-  contextMenuTaskId: string | null;
+  /** Ручки ресайза, бейджи, ошибка — уходят в `TaskBarOpacityLayerChrome`. */
+  chrome: Omit<TaskBarOpacityLayerChromeProps, SharedLayerKey | 'cornerStyle' | 'planAnchorMoved'>;
   cornerStyle?: ResizeHandleCornerStyle;
   currentDurationParts: number;
-  developers: Developer[];
-  dimmedByContextMenuElsewhere: boolean;
-  disableResize: boolean;
-  dragActivationProps: DraggableAttributes;
-  effectiveIsDragging: boolean;
   effectiveOpacity: number;
-  errorTooltip?: string;
-  hasQATaskInSwimlane: boolean;
-  hideSourceForOverlay: boolean;
-  hoverExpandTimelineTotalParts: number;
-  inlineTitleEditor?: {
-    onChange: (value: string) => void;
-    onSubmit?: () => void;
-    value: string;
-  };
-  interactionDisabled: boolean;
-  isDraftTask: boolean;
-  isInError: boolean;
-  isLinking?: boolean;
-  isNarrowForLongHoverExpand: boolean;
-  isNotificationFocused?: boolean;
-  isQATask: boolean;
-  isSelected: boolean;
-  linkMode?: 'source' | 'target' | null;
-  /** Карточка раскрыта по долгому hover: ширина не равна длине, штриховку не рисуем. */
-  longHoverExpanded: boolean;
-  longHoverTimeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  longHover: TaskBarLongHover;
   /** Штриховка добавленной стоимости и значок переноса относительно плана на старте работы. */
   planAnchorOverlay?: SegmentPlanAnchorOverlay | null;
   quickAddSubmitting: boolean;
-  resize: {
-    handleResizeStart: (e: React.MouseEvent, side: 'left' | 'right') => void;
-    isResizing: boolean;
-    resizePreviewDuration: number | null;
-    resizeSide: 'left' | 'right' | null;
-    resizeStartDuration: number | null;
-  };
-  selectedSprintId?: number | null;
-  setClickStartPos: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
-  setIsExpandedByLongHover: React.Dispatch<React.SetStateAction<boolean>>;
-  showVerticalResize?: boolean;
-  swimlaneBarDurationParts?: number;
-  swimlaneSegmentBadge?: { index: number; total: number } | null;
-  swimlaneSegmentSecondary: boolean;
-  task: Task;
-  taskPositions?: Map<string, TaskPosition>;
+  resize: TaskBarOpacityLayerChromeProps['resize'] & { resizeStartDuration: number | null };
   transform: { x: number; y: number; scaleX: number; scaleY: number } | null;
-  verticalResize?: {
-    cardRowLayout?: { span: number };
-    handleResizeStart: (e: React.MouseEvent, side: 'bottom' | 'top') => void;
-    isResizing: boolean;
-    resizeSide: 'bottom' | 'top' | null;
-  };
-  getPhotoClickSuppress?: () => boolean;
-  onClick?: (taskId: string) => void;
-  onCommentUpdate?: (commentId: string, text: string) => void;
-  onContextMenu?: (e: React.MouseEvent, task: Task) => void;
-  onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
-  onPhotoClick?: () => void;
-  onPhotoGestureStart?: (clientX: number, clientY: number) => void;
   onTaskHover?: (taskId: string | null) => void;
-  setHoverExpandFitDurationParts: (durationParts: number) => void;
-  setNodeRef: (node: HTMLElement | null) => void;
 }
 
 export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
   const {
-    assigneeName,
+    card,
     children,
-    clickStartPos,
-    contentDurationParts,
-    contentWidthPercent,
-    contextMenuTaskId,
+    chrome,
     cornerStyle = 'rounded',
     currentDurationParts,
-    developers,
-    dimmedByContextMenuElsewhere,
-    disableResize,
-    dragActivationProps,
     effectiveIsDragging,
     effectiveOpacity,
-    errorTooltip,
-    hasQATaskInSwimlane,
     hideSourceForOverlay,
-    hoverExpandTimelineTotalParts,
-    inlineTitleEditor,
     interactionDisabled,
     isDraftTask,
-    isInError,
     isLinking = false,
-    isNarrowForLongHoverExpand,
-    linkMode = null,
-    isNotificationFocused = false,
     isQATask,
     isSelected,
-    longHoverExpanded,
-    longHoverTimeoutRef,
-    onClick,
-    onContextMenu,
-    onCreateQATask,
-    onPhotoClick,
-    onPhotoGestureStart,
-    onCommentUpdate,
-    getPhotoClickSuppress,
+    longHover,
     onTaskHover,
+    planAnchorOverlay,
     quickAddSubmitting,
     resize,
-    selectedSprintId,
-    setClickStartPos,
-    setHoverExpandFitDurationParts,
-    setIsExpandedByLongHover,
-    setNodeRef,
-    swimlaneBarDurationParts,
-    planAnchorOverlay,
-    swimlaneSegmentBadge,
-    swimlaneSegmentSecondary,
     task,
-    taskPositions,
     transform,
   } = props;
+  const {
+    expanded: longHoverExpanded,
+    isNarrow: isNarrowForLongHoverExpand,
+    setExpanded: setIsExpandedByLongHover,
+    setFitDurationParts: setHoverExpandFitDurationParts,
+    timelineTotalParts: hoverExpandTimelineTotalParts,
+    timeoutRef: longHoverTimeoutRef,
+  } = longHover;
+  const shared = { effectiveIsDragging, interactionDisabled, isDraftTask, isQATask, isSelected, task };
 
-  const isContextMenuOpenForThis = contextMenuTaskId === task.id;
+  const isContextMenuOpenForThis = card.contextMenuTaskId === task.id;
   const cardElementRef = React.useRef<HTMLElement | null>(null);
   const layerRef = React.useRef<HTMLDivElement | null>(null);
   // У заметок упругой деформации нет: бумажка не резиновая.
@@ -285,58 +230,19 @@ export function TaskBarOpacityLayer(props: TaskBarOpacityLayerProps) {
         </div>
       ) : null}
       <TaskBarOpacityLayerCard
-        assigneeName={assigneeName}
+        {...card}
+        {...shared}
         cardElementRef={cardElementRef}
-        clickStartPos={clickStartPos}
-        contentDurationParts={contentDurationParts}
-        contentWidthPercent={contentWidthPercent}
-        contextMenuTaskId={contextMenuTaskId}
-        developers={developers}
-        dimmedByContextMenuElsewhere={dimmedByContextMenuElsewhere}
-        dragActivationProps={dragActivationProps}
-        effectiveIsDragging={effectiveIsDragging}
-        getPhotoClickSuppress={getPhotoClickSuppress}
         hideSourceForOverlay={hideSourceForOverlay}
-        inlineTitleEditor={inlineTitleEditor}
-        interactionDisabled={interactionDisabled}
-        isDraftTask={isDraftTask}
         isLinking={isLinking}
-        isNotificationFocused={isNotificationFocused}
-        isQATask={isQATask}
-        isSelected={isSelected}
-        linkMode={linkMode}
         resize={resize}
-        selectedSprintId={selectedSprintId}
-        setClickStartPos={setClickStartPos}
-        setNodeRef={setNodeRef}
-        swimlaneBarDurationParts={swimlaneBarDurationParts}
-        task={task}
-        taskPositions={taskPositions}
-        onClick={onClick}
-        onCommentUpdate={onCommentUpdate}
-        onContextMenu={onContextMenu}
-        onPhotoClick={onPhotoClick}
-        onPhotoGestureStart={onPhotoGestureStart}
       />
       <TaskBarOpacityLayerChrome
+        {...chrome}
+        {...shared}
         cornerStyle={cornerStyle}
-        disableResize={disableResize}
-        effectiveIsDragging={effectiveIsDragging}
-        errorTooltip={errorTooltip}
-        hasQATaskInSwimlane={hasQATaskInSwimlane}
-        interactionDisabled={interactionDisabled}
-        isDraftTask={isDraftTask}
-        isInError={isInError}
-        isQATask={isQATask}
-        isSelected={isSelected}
         planAnchorMoved={planAnchorOverlay?.moved ?? null}
         resize={resize}
-        showVerticalResize={props.showVerticalResize}
-        swimlaneSegmentBadge={swimlaneSegmentBadge}
-        swimlaneSegmentSecondary={swimlaneSegmentSecondary}
-        task={task}
-        verticalResize={props.verticalResize}
-        onCreateQATask={onCreateQATask}
       />
       <TaskBarPlanAnchorOverlay
         duration={currentDurationParts}

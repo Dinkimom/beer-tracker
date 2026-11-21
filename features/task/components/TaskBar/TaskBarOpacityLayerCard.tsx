@@ -10,7 +10,7 @@ import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { buildTaskBarMouseUpHandler } from './taskBarOpacityLayerHandlers';
 import { shouldOpenPhotoLightboxAfterPointerUp } from './taskBarPhotoGestureHelpers';
 
-interface TaskBarOpacityLayerCardProps {
+export interface TaskBarOpacityLayerCardProps {
   assigneeName?: string;
   cardElementRef: React.MutableRefObject<HTMLElement | null>;
   clickStartPos: { x: number; y: number } | null;
