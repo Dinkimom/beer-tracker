@@ -312,7 +312,8 @@ export function resolveTaskLayerPlanSegmentRenderState(input: {
     taskId,
     timelineTotalParts,
   } = input;
-  const { quickAddSubmittingTaskId = null, task } = props;
+  const { quickAdd, task } = props;
+  const quickAddSubmittingTaskId = quickAdd?.quickAddSubmittingTaskId ?? null;
   const isQuickAddSubmitting = quickAddSubmittingTaskId === taskId;
   const isActiveQuickAddTarget = isQuickAddDraftTask(task) || isComposerTarget;
 

@@ -64,6 +64,38 @@ export interface SwimlaneQuickAddMenuProps {
   onTitleChange: (value: string) => void;
 }
 
+/**
+ * Быстрое добавление на доске одним объектом: создаётся в `useSprintPlannerQuickAddDraft`
+ * и без изменений доходит до сегмента карточки (секция → дорожка → слой задач).
+ * Добавить поле — сюда, а не в каждый слой.
+ */
+export interface QuickAddController {
+  quickAddBoardId: number | null;
+  quickAddExcludedIssueKeys: ReadonlySet<string>;
+  quickAddParentSelectOptions: CustomSelectOption<string>[];
+  quickAddQueueOptions: QuickAddQueueOption[];
+  quickAddSubmittingTaskId: string | null;
+  onCancelQuickAddDraft?: (taskId: string) => void;
+  onPasteQuickAddNote?: (taskId: string) => void;
+  onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;
+  onQuickAddDraftCommentColorChange?: (taskId: string, color: StickyNoteColor) => void;
+  onQuickAddDraftImageUrlChange?: (taskId: string, url: string | undefined) => void;
+  onQuickAddDraftKindChange?: (taskId: string, kind: QuickAddDraftKind | undefined) => void;
+  onQuickAddDraftParentChange?: (taskId: string, parentKey: string) => void;
+  onQuickAddDraftQueueChange?: (taskId: string, queueKey: string) => void;
+  onQuickAddDraftTitleChange?: (taskId: string, title: string) => void;
+  onQuickAddDraftTypeChange?: (taskId: string, type: string) => void;
+  onSelectExistingQuickAddDraft?: (taskId: string, task: Task) => void;
+  onSubmitQuickAddCommentDraft?: (taskId: string, draftTitle?: string, color?: StickyNoteColor) => void;
+  onSubmitQuickAddDiagramDraft?: (taskId: string, name?: string) => void;
+  onSubmitQuickAddDraft?: (
+    taskId: string,
+    draftTitle?: string,
+    fields?: QuickAddCreateFields
+  ) => Promise<void> | void;
+  onSubmitQuickAddImageDraft?: (taskId: string, caption: string, imageUrl: string) => void;
+}
+
 export interface QuickAddIssueSearchResult {
   key: string;
   summary: string;

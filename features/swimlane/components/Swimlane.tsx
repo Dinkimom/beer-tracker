@@ -61,6 +61,7 @@ const EMPTY_SWIMLANE_FACT_COMMENTS = new Map<string, IssueComment[]>();
 const EMPTY_SWIMLANE_FACT_DEVELOPERS = new Map<string, Developer>();
 
 function SwimlaneComponent({
+  quickAdd,
   developer,
   tasks: _tasks, // только для сравнения в React.memo, в рендере не используется
   taskPositions,
@@ -95,26 +96,6 @@ function SwimlaneComponent({
   onContextMenu,
   onCreateTaskInCell,
   onOverdueCloseAndCreate,
-  onCancelQuickAddDraft,
-  quickAddBoardId = null,
-  quickAddExcludedIssueKeys,
-  quickAddParentSelectOptions = [],
-  quickAddQueueOptions = [],
-  quickAddSubmittingTaskId = null,
-  onPasteQuickAddNote,
-  onQuickAddDraftAssigneeChange,
-  onQuickAddDraftCommentColorChange,
-  onQuickAddDraftKindChange,
-  onQuickAddDraftImageUrlChange,
-  onQuickAddDraftParentChange,
-  onQuickAddDraftQueueChange,
-  onQuickAddDraftTypeChange,
-  onQuickAddDraftTitleChange,
-  onSubmitQuickAddCommentDraft,
-  onSubmitQuickAddDiagramDraft,
-  onSubmitQuickAddImageDraft,
-  onSubmitQuickAddDraft,
-  onSelectExistingQuickAddDraft,
   contextMenuBlurOtherCards = false,
   contextMenuTaskId = null,
   selectedSprintId,
@@ -380,14 +361,10 @@ function SwimlaneComponent({
               hoveredTaskId={hoveredTaskId}
               isDraggingTask={isDraggingTask}
               layerHeight={layout.layerHeight}
-              linkingFromTaskId={linkingFromTaskId} planPatchAssigneeId={developer.id} planPatchSprintId={selectedSprintId} planPatchTasksMap={tasksMap}
-              positionedTasks={layout.positionedTasks}
+              linkingFromTaskId={linkingFromTaskId}
+              planPatchAssigneeId={developer.id} planPatchSprintId={selectedSprintId} planPatchTasksMap={tasksMap} positionedTasks={layout.positionedTasks}
               qaTasksMap={qaTasksMap}
-              quickAddBoardId={quickAddBoardId}
-              quickAddExcludedIssueKeys={quickAddExcludedIssueKeys}
-              quickAddParentSelectOptions={quickAddParentSelectOptions}
-              quickAddQueueOptions={quickAddQueueOptions}
-              quickAddSubmittingTaskId={quickAddSubmittingTaskId}
+              quickAdd={quickAdd}
               requestArrowRedraw={requestArrowRedraw}
               segmentEditTaskId={segmentEditTaskId}
               selectedSprintId={selectedSprintId}
@@ -402,7 +379,6 @@ function SwimlaneComponent({
               taskPositions={taskPositions}
               timelineTotalParts={timelineTotalParts}
               totalHeight={layout.totalHeight}
-              onCancelQuickAddDraft={onCancelQuickAddDraft}
               onCommentApprove={onCommentApprove}
               onCommentCardRowLayoutUpdate={onCommentCardRowLayoutUpdate}
               onCommentDelete={onCommentDelete}
@@ -410,22 +386,8 @@ function SwimlaneComponent({
               onContextMenu={onContextMenu}
               onCreateQATask={onCreateQATask}
               onOverdueCloseAndCreate={onOverdueCloseAndCreate}
-              onPasteQuickAddNote={onPasteQuickAddNote}
-              onQuickAddDraftAssigneeChange={onQuickAddDraftAssigneeChange}
-              onQuickAddDraftCommentColorChange={onQuickAddDraftCommentColorChange}
-              onQuickAddDraftImageUrlChange={onQuickAddDraftImageUrlChange}
-              onQuickAddDraftKindChange={onQuickAddDraftKindChange}
-              onQuickAddDraftParentChange={onQuickAddDraftParentChange}
-              onQuickAddDraftQueueChange={onQuickAddDraftQueueChange}
-              onQuickAddDraftTitleChange={onQuickAddDraftTitleChange}
-              onQuickAddDraftTypeChange={onQuickAddDraftTypeChange}
               onSegmentEditCancel={onSegmentEditCancel}
               onSegmentEditSave={onSegmentEditSave}
-              onSelectExistingQuickAddDraft={onSelectExistingQuickAddDraft}
-              onSubmitQuickAddCommentDraft={onSubmitQuickAddCommentDraft}
-              onSubmitQuickAddDiagramDraft={onSubmitQuickAddDiagramDraft}
-              onSubmitQuickAddDraft={onSubmitQuickAddDraft}
-              onSubmitQuickAddImageDraft={onSubmitQuickAddImageDraft}
               onTaskClick={onTaskClick}
               onTaskHover={onTaskHover}
               onTaskResize={onTaskResize}

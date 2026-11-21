@@ -1,6 +1,7 @@
 'use client';
 
 import type { TaskLayerPositionedTaskItemProps } from './TaskLayer.types';
+import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { PhaseSegment } from '@/types';
 
 import { observer } from 'mobx-react-lite';
@@ -52,6 +53,9 @@ import {
 } from './taskLayerPlanSegmentItemHelpers';
 import { buildTaskLayerPlanSegmentQuickAddMenu } from './taskLayerPlanSegmentQuickAddMenu';
 
+/** Без быстрого добавления (демо-экраны, тесты): все поля пустые. */
+const NO_QUICK_ADD: Partial<QuickAddController> = {};
+
 const EMPTY_QUICK_ADD_EXCLUDED_ISSUE_KEYS = new Set<string>();
 const EMPTY_TASK_LINKS: Array<{ fromTaskId: string; toTaskId: string; id: string }> = [];
 
@@ -85,20 +89,7 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
   swimlaneRowBandStyle,
 }: TaskLayerPlanSegmentItemProps) {
   const {
-    contextMenuBlurOtherCards = false,
-    contextMenuTaskId,
-    developers,
-    errorReasons,
-    globalNameFilter,
-    hasTaskOverlaps,
-    layerHeight,
     onCancelQuickAddDraft,
-    onCommentApprove,
-    onCommentDelete,
-    onCommentCardRowLayoutUpdate,
-    onCommentUpdate,
-    onContextMenu,
-    onCreateQATask,
     onPasteQuickAddNote,
     onQuickAddDraftAssigneeChange,
     onQuickAddDraftCommentColorChange,
@@ -113,14 +104,29 @@ export const TaskLayerPlanSegmentItem = observer(function TaskLayerPlanSegmentIt
     onSubmitQuickAddDiagramDraft,
     onSubmitQuickAddImageDraft,
     onSubmitQuickAddDraft,
-    onTaskClick,
-    onTaskHover,
-    onTaskResize,
-    position,
     quickAddBoardId = null,
     quickAddExcludedIssueKeys,
     quickAddParentSelectOptions = [],
     quickAddQueueOptions = [],
+  } = props.quickAdd ?? NO_QUICK_ADD;
+  const {
+    contextMenuBlurOtherCards = false,
+    contextMenuTaskId,
+    developers,
+    errorReasons,
+    globalNameFilter,
+    hasTaskOverlaps,
+    layerHeight,
+    onCommentApprove,
+    onCommentDelete,
+    onCommentCardRowLayoutUpdate,
+    onCommentUpdate,
+    onContextMenu,
+    onCreateQATask,
+    onTaskClick,
+    onTaskHover,
+    onTaskResize,
+    position,
     qaTasksMap,
     requestArrowRedraw,
     linkingFromTaskId = null,

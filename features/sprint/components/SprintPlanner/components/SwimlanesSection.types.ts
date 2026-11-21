@@ -1,9 +1,6 @@
-import type { CustomSelectOption } from '@/components/CustomSelect';
-import type { QuickAddQueueOption } from '@/features/board/quickAddQueueOptions';
-import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
+import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { StatusDuration } from '@/features/task/components/TaskTimeline/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
-import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Comment, Developer, PhaseSegment, Task, TaskParent, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
@@ -53,11 +50,8 @@ export interface SwimlanesSectionProps {
   occupancyValidationPositions?: Map<string, TaskPosition>;
   participantsColumnWidth: number;
   qaTasksMap: Map<string, Task>;
-  quickAddBoardId?: number | null;
-  quickAddExcludedIssueKeys?: ReadonlySet<string>;
-  quickAddParentSelectOptions?: CustomSelectOption<string>[];
-  quickAddQueueOptions?: QuickAddQueueOption[];
-  quickAddSubmittingTaskId?: string | null;
+  /** Быстрое добавление — одним объектом (`QuickAddController`). */
+  quickAdd?: QuickAddController;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   selectedSprintId: number | null;
   showLinks?: boolean;
@@ -80,7 +74,6 @@ export interface SwimlanesSectionProps {
   tasksMap: Map<string, Task>;
   viewMode: 'compact' | 'full';
   onAddLink?: (link: { fromTaskId: string; id: string; toTaskId: string }) => void;
-  onCancelQuickAddDraft?: (taskId: string) => void;
   onCloseSidebar: () => void;
   onCommentApprove?: (commentId: string) => void;
   onCommentCardRowLayoutUpdate?: (
@@ -108,21 +101,7 @@ export interface SwimlanesSectionProps {
     timelineTotalParts: number;
   }) => Promise<void> | void;
   onParticipantsColumnWidthChange?: (width: number) => void;
-  onPasteQuickAddNote?: (taskId: string) => void;
-  onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;
-  onQuickAddDraftCommentColorChange?: (taskId: string, color: StickyNoteColor) => void;
-  onQuickAddDraftImageUrlChange?: (taskId: string, url: string | undefined) => void;
-  onQuickAddDraftKindChange?: (taskId: string, kind: QuickAddDraftKind | undefined) => void;
-  onQuickAddDraftParentChange?: (taskId: string, parentKey: string) => void;
-  onQuickAddDraftQueueChange?: (taskId: string, queueKey: string) => void;
-  onQuickAddDraftTitleChange?: (taskId: string, title: string) => void;
-  onQuickAddDraftTypeChange?: (taskId: string, type: string) => void;
   onSegmentEditSave?: (position: TaskPosition, segments: PhaseSegment[], isQa: boolean) => void;
-  onSelectExistingQuickAddDraft?: (taskId: string, task: Task) => void;
-  onSubmitQuickAddCommentDraft?: (taskId: string, draftTitle?: string) => void;
-  onSubmitQuickAddDiagramDraft?: (taskId: string, name?: string) => void;
-  onSubmitQuickAddDraft?: (taskId: string, draftTitle?: string) => Promise<void> | void;
-  onSubmitQuickAddImageDraft?: (taskId: string, caption: string, imageUrl: string) => void;
   onTaskClick: (taskId: string) => void;
   onTaskResize: (taskId: string, params: TaskResizeParams) => void;
   removeParticipantFromTeam?: (

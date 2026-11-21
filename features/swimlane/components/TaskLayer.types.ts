@@ -1,9 +1,6 @@
-import type { CustomSelectOption } from '@/components/CustomSelect';
-import type { QuickAddQueueOption } from '@/features/board/quickAddQueueOptions';
-import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
+import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
-import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { OccupancyErrorReason } from '@/lib/planner-timeline';
 import type { Developer, PhaseSegment, Task, TaskPosition } from '@/types';
 import type { Dispatch, MouseEvent, SetStateAction } from 'react';
@@ -34,11 +31,8 @@ export interface TaskLayerProps {
   planPatchTasksMap?: Map<string, Task>;
   positionedTasks: Array<{ task: Task; position: TaskPosition }>;
   qaTasksMap?: Map<string, Task>;
-  quickAddBoardId?: number | null;
-  quickAddExcludedIssueKeys?: ReadonlySet<string>;
-  quickAddParentSelectOptions?: CustomSelectOption<string>[];
-  quickAddQueueOptions?: QuickAddQueueOption[];
-  quickAddSubmittingTaskId?: string | null;
+  /** Быстрое добавление — одним объектом (`QuickAddController`). */
+  quickAdd?: QuickAddController;
   segmentEditTaskId?: string | null;
   selectedSprintId?: number | null;
   selectedTaskId?: string | null;
@@ -56,7 +50,6 @@ export interface TaskLayerProps {
   /** Всего частей дня в таймлайне (рабочие дни × части дня) */
   timelineTotalParts: number;
   totalHeight: number;
-  onCancelQuickAddDraft?: (taskId: string) => void;
   onCommentApprove?: (commentId: string) => void;
   onCommentCardRowLayoutUpdate?: (
     commentId: string,
@@ -72,22 +65,8 @@ export interface TaskLayerProps {
     task: Task;
     timelineTotalParts: number;
   }) => Promise<void> | void;
-  onPasteQuickAddNote?: (taskId: string) => void;
-  onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;
-  onQuickAddDraftCommentColorChange?: (taskId: string, color: StickyNoteColor) => void;
-  onQuickAddDraftImageUrlChange?: (taskId: string, url: string | undefined) => void;
-  onQuickAddDraftKindChange?: (taskId: string, kind: QuickAddDraftKind | undefined) => void;
-  onQuickAddDraftParentChange?: (taskId: string, parentKey: string) => void;
-  onQuickAddDraftQueueChange?: (taskId: string, queueKey: string) => void;
-  onQuickAddDraftTitleChange?: (taskId: string, title: string) => void;
-  onQuickAddDraftTypeChange?: (taskId: string, type: string) => void;
   onSegmentEditCancel?: () => void;
   onSegmentEditSave?: (position: TaskPosition, segments: PhaseSegment[], isQa: boolean) => void;
-  onSelectExistingQuickAddDraft?: (taskId: string, task: Task) => void;
-  onSubmitQuickAddCommentDraft?: (taskId: string, draftTitle?: string, color?: StickyNoteColor) => void;
-  onSubmitQuickAddDiagramDraft?: (taskId: string, name?: string) => void;
-  onSubmitQuickAddDraft?: (taskId: string, draftTitle?: string) => Promise<void> | void;
-  onSubmitQuickAddImageDraft?: (taskId: string, caption: string, imageUrl: string) => void;
   onTaskClick?: (taskId: string) => void;
   onTaskHover?: (taskId: string | null) => void;
   onTaskResize: (taskId: string, params: TaskResizeParams) => void;

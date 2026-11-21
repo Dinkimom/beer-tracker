@@ -152,6 +152,13 @@
 - Ожидаемо: черновик остаётся на месте, пока его не сохранят, не удалят или не нажмут Escape.
 - Автотест: e2e/functional/swimlaneNotes.spec.ts
 
+### TC-104: Заметка из быстрого добавления сохраняется
+- Контур: демо
+- Код: features/sprint/components/SprintPlanner/hooks/useSprintPlannerQuickAddDraft.ts, features/sprint/components/SprintPlanner/hooks/useSprintPlannerQuickAddIssueActions.ts, features/sprint/components/SprintPlanner/hooks/useSprintPlannerViewModelInteractions.ts, features/sprint/components/SprintPlanner/SprintPlannerView.tsx, features/sprint/components/SprintPlanner/utils/swimlanesSectionSwimlanePropsHelpers.ts, features/swimlane/components/TaskLayerPlanSegmentItem.tsx, features/task/components/TaskBar/components/quickAddMenu/types.ts
+- Шаги: выбрать «Заметка», кликнуть по свободной ячейке, ввести текст в черновик и нажать «Подтвердить» на панели черновика.
+- Ожидаемо: на месте черновика появляется сохранённая заметка с введённым текстом, черновик исчезает.
+- Автотест: e2e/functional/swimlaneNotes.spec.ts
+
 ## 4. Бэклог
 
 ### TC-030: Отображение бэклога

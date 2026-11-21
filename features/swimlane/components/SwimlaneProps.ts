@@ -1,16 +1,23 @@
-import type { CustomSelectOption } from '@/components/CustomSelect';
-import type { QuickAddQueueOption } from '@/features/board/quickAddQueueOptions';
+import type { TaskLayerProps } from './TaskLayer.types';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
-import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
-import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
+import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
-import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { OccupancyErrorReason } from '@/lib/planner-timeline';
-import type { Comment, Developer, LayoutViewMode, PhaseSegment, Task, TaskParent, TaskPosition } from '@/types';
+import type { Comment, Developer, LayoutViewMode, Task, TaskParent, TaskPosition } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 
-export interface SwimlaneProps {
+/** Обработчики, которые дорожка отдаёт слою задач как есть, — сигнатуры из `TaskLayerProps`. */
+export interface SwimlaneProps
+  extends Pick<
+    TaskLayerProps,
+    | 'onOverdueCloseAndCreate'
+    | 'onSegmentEditCancel'
+    | 'onSegmentEditSave'
+    | 'onTaskClick'
+    | 'onTaskHover'
+    | 'onTaskResize'
+  > {
   activeDraggableId?: string | null;
   activeTask: Task | null;
   activeTaskDuration: number | null;
@@ -49,11 +56,8 @@ export interface SwimlaneProps {
   linkingFromTaskId?: string | null;
   participantsColumnWidth: number;
   qaTasksMap?: Map<string, Task>;
-  quickAddBoardId?: number | null;
-  quickAddExcludedIssueKeys?: ReadonlySet<string>;
-  quickAddParentSelectOptions?: CustomSelectOption<string>[];
-  quickAddQueueOptions?: QuickAddQueueOption[];
-  quickAddSubmittingTaskId?: string | null;
+  /** Быстрое добавление — одним объектом (`QuickAddController`). */
+  quickAdd?: QuickAddController;
   /** Редактирование отрезков (PhaseSegmentInlineEditor, как в занятости). */
   segmentEditTaskId?: string | null;
   selectedSprintId?: number | null;
@@ -78,7 +82,6 @@ export interface SwimlaneProps {
   /** Карта всех задач доски: по ней в свимлейне считаются только задачи, лежащие на строке (по taskPositions). */
   tasksMap: Map<string, Task>;
   viewMode?: LayoutViewMode;
-  onCancelQuickAddDraft?: (taskId: string) => void;
   onCloseSidebar?: () => void;
   onCommentApprove?: (commentId: string) => void;
   onCommentCardRowLayoutUpdate?: (
@@ -98,30 +101,5 @@ export interface SwimlaneProps {
     part: number;
   }) => Promise<void> | void;
   onFactSegmentHover: (taskId: string | null) => void;
-  onOverdueCloseAndCreate?: (args: {
-    currentCell: number;
-    position: TaskPosition;
-    task: Task;
-    timelineTotalParts: number;
-  }) => Promise<void> | void;
-  onPasteQuickAddNote?: (taskId: string) => void;
-  onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;
-  onQuickAddDraftCommentColorChange?: (taskId: string, color: StickyNoteColor) => void;
-  onQuickAddDraftImageUrlChange?: (taskId: string, url: string | undefined) => void;
-  onQuickAddDraftKindChange?: (taskId: string, kind: QuickAddDraftKind | undefined) => void;
-  onQuickAddDraftParentChange?: (taskId: string, parentKey: string) => void;
-  onQuickAddDraftQueueChange?: (taskId: string, queueKey: string) => void;
-  onQuickAddDraftTitleChange?: (taskId: string, title: string) => void;
-  onQuickAddDraftTypeChange?: (taskId: string, type: string) => void;
-  onSegmentEditCancel?: () => void;
-  onSegmentEditSave?: (position: TaskPosition, segments: PhaseSegment[], isQa: boolean) => void;
-  onSelectExistingQuickAddDraft?: (taskId: string, task: Task) => void;
-  onSubmitQuickAddCommentDraft?: (taskId: string, draftTitle?: string) => void;
-  onSubmitQuickAddDiagramDraft?: (taskId: string, name?: string) => void;
-  onSubmitQuickAddDraft?: (taskId: string, draftTitle?: string) => Promise<void> | void;
-  onSubmitQuickAddImageDraft?: (taskId: string, caption: string, imageUrl: string) => void;
-  onTaskClick?: (taskId: string) => void;
-  onTaskHover?: (taskId: string | null) => void;
-  onTaskResize: (taskId: string, params: TaskResizeParams) => void;
   onTogglePin?: (assigneeId: string) => void;
 }

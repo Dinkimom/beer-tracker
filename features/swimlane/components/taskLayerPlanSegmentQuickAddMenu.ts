@@ -1,8 +1,6 @@
-import type { CustomSelectOption } from '@/components/CustomSelect';
-import type { QuickAddQueueOption } from '@/features/board/quickAddQueueOptions';
 import type { SwimlaneQuickAddMenuProps } from '@/features/task/components/TaskBar/components/quickAddMenu/SwimlaneQuickAddMenu';
 import type {
-  QuickAddCreateFields,
+  QuickAddController,
   QuickAddDraftKind,
 } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { SprintPlannerNoteComposerState } from '@/lib/layers';
@@ -13,7 +11,6 @@ import { buildFeatureDraftRowNamesById } from '@/features/swimlane/utils/feature
 import { isSyntheticFeatureLaneAssignee } from '@/features/swimlane/utils/featureSwimlaneRows';
 import { withCurrentQuickAddParentOption } from '@/features/task/components/TaskBar/components/quickAddMenu/quickAddParentSelectHelpers';
 import { isTaskGroupSentinelKey } from '@/features/task/constants/taskGroupKeys';
-import { type StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import { isFeatureLaneDraftRowId } from '@/lib/sprints/featureLanesDocument';
 import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 
@@ -47,7 +44,27 @@ function invokeOptionalAsync(handler: (() => Promise<void> | void) | undefined):
   }
 }
 
-interface QuickAddMenuInput {
+/** Поля сегмента + обработчики и опции быстрого добавления из `QuickAddController`. */
+interface QuickAddMenuInput
+  extends Pick<
+      QuickAddController,
+      | 'onCancelQuickAddDraft'
+      | 'onPasteQuickAddNote'
+      | 'onQuickAddDraftAssigneeChange'
+      | 'onQuickAddDraftCommentColorChange'
+      | 'onQuickAddDraftImageUrlChange'
+      | 'onQuickAddDraftKindChange'
+      | 'onQuickAddDraftParentChange'
+      | 'onQuickAddDraftQueueChange'
+      | 'onQuickAddDraftTitleChange'
+      | 'onQuickAddDraftTypeChange'
+      | 'onSelectExistingQuickAddDraft'
+      | 'onSubmitQuickAddDraft'
+      | 'quickAddBoardId'
+      | 'quickAddExcludedIssueKeys'
+      | 'quickAddParentSelectOptions'
+      | 'quickAddQueueOptions'
+    > {
   availabilityStartDate?: string;
   developers?: Developer[];
   draftIssueType: string;
@@ -57,29 +74,9 @@ interface QuickAddMenuInput {
   laneAssigneeId?: string;
   noteComposer?: SprintPlannerNoteComposerState | null;
   planSegmentsLength: number;
-  quickAddBoardId: number | null;
-  quickAddExcludedIssueKeys: ReadonlySet<string>;
-  quickAddParentSelectOptions: CustomSelectOption<string>[];
-  quickAddQueueOptions: QuickAddQueueOption[];
   segIdx: number;
   segmentEditorActive: boolean;
   task: Task;
-  onCancelQuickAddDraft?: (taskId: string) => void;
-  onPasteQuickAddNote?: (taskId: string) => void;
-  onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;
-  onQuickAddDraftCommentColorChange?: (taskId: string, color: StickyNoteColor) => void;
-  onQuickAddDraftImageUrlChange?: (taskId: string, url: string | undefined) => void;
-  onQuickAddDraftKindChange?: (taskId: string, kind: QuickAddDraftKind | undefined) => void;
-  onQuickAddDraftParentChange?: (taskId: string, parentKey: string) => void;
-  onQuickAddDraftQueueChange?: (taskId: string, queueKey: string) => void;
-  onQuickAddDraftTitleChange?: (taskId: string, title: string) => void;
-  onQuickAddDraftTypeChange?: (taskId: string, type: string) => void;
-  onSelectExistingQuickAddDraft?: (taskId: string, task: Task) => void;
-  onSubmitQuickAddDraft?: (
-    taskId: string,
-    draftTitle?: string,
-    fields?: QuickAddCreateFields
-  ) => Promise<void> | void;
 }
 
 function canShowQuickAddOnSegment(input: QuickAddMenuInput): boolean {

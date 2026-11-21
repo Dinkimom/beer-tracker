@@ -1,25 +1,24 @@
 import type { CustomSelectOption } from '@/components/CustomSelect';
-import type { QuickAddCreateFields, QuickAddDraftKind } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
+import type {
+  QuickAddController,
+  QuickAddDraftKind,
+} from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { BoardListItem } from '@/lib/api/types';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { Comment, Developer, Task, TaskParent, TaskPosition } from '@/types';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
 
 import { getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { buildQuickAddQueueOptionsFromBoards } from '@/features/board/quickAddQueueOptions';
-import { parseSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { buildFeatureDraftRowNamesById, formatTaskParentLabel } from '@/features/swimlane/utils/featureDraftParentLabel';
 import {
   collectQuickAddExcludedIssueKeys,
   collectUniqueSprintParentTasks,
   mergeQuickAddParentTasks,
 } from '@/features/task/components/TaskBar/components/quickAddMenu/collectUniqueSprintParentTasks';
-import { upsertSprintTaskInQueries } from '@/features/task/hooks/useTasks';
 import { useFeatureLanesApi } from '@/hooks/useApiStorage';
 import { useRootStore } from '@/lib/layers';
 import {
@@ -35,21 +34,15 @@ import {
   applyQuickAddDraftTitle,
   applyQuickAddImageDraftCardRow,
   changeQuickAddDraftKind,
-  plannerDraftParentFromKey,
   syncQuickAddCommentPresencePreview,
 } from './applyQuickAddDraftFields';
 import { cancelQuickAddDraft } from './cancelQuickAddDraft';
 import { createSwimlaneCellFromPlacementTool } from './createQuickAddDraftInSwimlaneCell';
-import { submitConvertedSwimlaneComment } from './submitConvertedSwimlaneComment';
-import {
-  ensureExistingQuickAddFitsSprint,
-  submitExistingQuickAddDraft,
-} from './submitExistingQuickAddDraft';
-import { submitQuickAddCreatedIssueDraft } from './submitQuickAddCreatedIssueDraft';
 import { completeQuickAddDiagramDraft } from './submitQuickAddDiagramDraft';
 import { useCancelInlineDraftsOnToolLeave } from './useCancelInlineDraftsOnToolLeave';
 import { useDiscardStickyNoteCreateDraftOnEscape } from './useDiscardStickyNoteCreateDraftOnEscape';
 import { useSprintPlannerQuickAddImageActions } from './useSprintPlannerQuickAddImageActions';
+import { useSprintPlannerQuickAddIssueActions } from './useSprintPlannerQuickAddIssueActions';
 import { useSprintPlannerQuickAddNoteActions } from './useSprintPlannerQuickAddNoteActions';
 
 interface UseSprintPlannerQuickAddDraftParams {
@@ -114,7 +107,6 @@ export function useSprintPlannerQuickAddDraft({
 }: UseSprintPlannerQuickAddDraftParams) {
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
-  const queryClient = useQueryClient();
   const keepInlineCardDraftRef = useRef(false);
   const [featureLanes, setFeatureLanes] = useFeatureLanesApi(selectedSprintId);
   const { handlePasteQuickAddNote, handleSubmitQuickAddCommentDraft } =
@@ -338,175 +330,73 @@ export function useSprintPlannerQuickAddDraft({
     [developers, setTasks]
   );
 
-  const handleSubmitQuickAddDraft = useCallback(
-    async (taskId: string, draftTitle?: string, fields?: QuickAddCreateFields) => {
-      if (!selectedSprintId || !boardIdForPlannerData) return;
-      const savedCommentId = parseSwimlaneCommentTaskId(taskId);
-      if (savedCommentId) {
-        const savedComment = comments.find((comment) => comment.id === savedCommentId);
-        if (!savedComment) {
-          return;
-        }
-        try {
-          setQuickAddSubmittingTaskId(taskId);
-          const converted = await submitConvertedSwimlaneComment({
-            comment: savedComment,
-            createFailedMessage: t('planning.featurePlanner.epicOccupancy.createTaskFailed'),
-            defaultQueue: getQueueByBoardId(boardIdForPlannerData),
-            draftTitle,
-            fallbackTitle: t('sprintPlanner.swimlane.quickAddPreviewTitle'),
-            fields,
-            missingAssigneeMessage: t('sprintPlanner.swimlane.quickAddMenu.assigneeRequired'),
-            missingQueueMessage: t('task.mutations.tasksReloadFailed'),
-            onCommentDelete,
-            plannerParent: plannerDraftParentFromKey(
-              fields?.parentKey || savedComment.parent?.key || savedComment.parent?.id,
-              quickAddParentTasks,
-              featureDraftRowNamesById
-            ),
-            savePosition: (position, isQa) => savePosition(position, isQa),
-            selectedSprintId,
-            setTaskPositions: (updater) => setTaskPositions(updater, { recordHistory: true }),
-            setTasks,
-          });
-          if (!converted.ok) {
-            toast.error(converted.error);
-            return;
-          }
-          persistPlannerDraftParent(converted.issueKey, converted.task.parent);
-          upsertSprintTaskInQueries(queryClient, selectedSprintId, converted.task);
-          closeNoteComposer();
-          onOpenCreatedTask(converted.task);
-          toast.success(
-            t('planning.featurePlanner.epicOccupancy.createTaskSuccess', {
-              key: converted.issueKey,
-            })
-          );
-        } finally {
-          setQuickAddSubmittingTaskId((prev) => (prev === taskId ? null : prev));
-        }
-        return;
-      }
-      try {
-        setQuickAddSubmittingTaskId(taskId);
-        await submitQuickAddCreatedIssueDraft({
-          boardIdForPlannerData,
-          draftTitle,
-          featureDraftRowNamesById,
-          fields,
-          forDemoPlanner,
-          getQueueByBoardId,
-          onOpenCreatedTask,
-          persistPlannerDraftParent,
-          queryClient,
-          quickAddParentTasks,
-          savePosition,
-          selectedSprintId,
-          setTaskPositions,
-          setTasks,
-          t,
-          taskId,
-          taskPositions,
-          tasks,
-        });
-      } finally {
-        setQuickAddSubmittingTaskId((prev) => (prev === taskId ? null : prev));
-      }
-    },
+  const { handleSelectExistingQuickAddDraft, handleSubmitQuickAddDraft } = useSprintPlannerQuickAddIssueActions({
+    boardIdForPlannerData,
+    closeNoteComposer,
+    comments,
+    featureDraftRowNamesById,
+    forDemoPlanner,
+    getQueueByBoardId,
+    onCommentDelete,
+    onOpenCreatedTask,
+    persistPlannerDraftParent,
+    quickAddParentTasks,
+    savePosition,
+    selectedSprintId,
+    setQuickAddSubmittingTaskId,
+    setTaskPositions,
+    setTasks,
+    sprintTimelineWorkingDays,
+    taskPositions,
+    tasks,
+  });
+
+  const quickAdd = useMemo(
+    (): QuickAddController => ({
+      onCancelQuickAddDraft: handleCancelQuickAddDraft,
+      onPasteQuickAddNote: handlePasteQuickAddNote,
+      onQuickAddDraftAssigneeChange: handleQuickAddDraftAssigneeChange,
+      onQuickAddDraftCommentColorChange: handleQuickAddDraftCommentColorChange,
+      onQuickAddDraftImageUrlChange: handleQuickAddDraftImageUrlChange,
+      onQuickAddDraftKindChange: handleQuickAddDraftKindChange,
+      onQuickAddDraftParentChange: handleQuickAddDraftParentChange,
+      onQuickAddDraftQueueChange: handleQuickAddDraftQueueChange,
+      onQuickAddDraftTitleChange: handleQuickAddDraftTitleChange,
+      onQuickAddDraftTypeChange: handleQuickAddDraftTypeChange,
+      onSelectExistingQuickAddDraft: handleSelectExistingQuickAddDraft,
+      onSubmitQuickAddCommentDraft: handleSubmitQuickAddCommentDraft,
+      onSubmitQuickAddDiagramDraft: handleSubmitQuickAddDiagramDraft,
+      onSubmitQuickAddDraft: handleSubmitQuickAddDraft,
+      onSubmitQuickAddImageDraft: handleSubmitQuickAddImageDraft,
+      quickAddBoardId: boardIdForPlannerData,
+      quickAddExcludedIssueKeys,
+      quickAddParentSelectOptions,
+      quickAddQueueOptions,
+      quickAddSubmittingTaskId,
+    }),
     [
       boardIdForPlannerData,
-      closeNoteComposer,
-      comments,
-      featureDraftRowNamesById,
-      forDemoPlanner,
-      getQueueByBoardId,
-      onCommentDelete,
-      onOpenCreatedTask,
-      persistPlannerDraftParent,
-      queryClient,
-      quickAddParentTasks,
-      savePosition,
-      selectedSprintId,
-      setTaskPositions,
-      setTasks,
-      t,
-      taskPositions,
-      tasks,
+      handleCancelQuickAddDraft,
+      handlePasteQuickAddNote,
+      handleQuickAddDraftAssigneeChange,
+      handleQuickAddDraftCommentColorChange,
+      handleQuickAddDraftImageUrlChange,
+      handleQuickAddDraftKindChange,
+      handleQuickAddDraftParentChange,
+      handleQuickAddDraftQueueChange,
+      handleQuickAddDraftTitleChange,
+      handleQuickAddDraftTypeChange,
+      handleSelectExistingQuickAddDraft,
+      handleSubmitQuickAddCommentDraft,
+      handleSubmitQuickAddDiagramDraft,
+      handleSubmitQuickAddDraft,
+      handleSubmitQuickAddImageDraft,
+      quickAddExcludedIssueKeys,
+      quickAddParentSelectOptions,
+      quickAddQueueOptions,
+      quickAddSubmittingTaskId,
     ]
   );
 
-  const handleSelectExistingQuickAddDraft = useCallback(
-    async (taskId: string, selectedTask: Task) => {
-      if (!selectedSprintId) {
-        return;
-      }
-      const draftTask = tasks.find((task) => task.id === taskId);
-      const plannerParent = plannerDraftParentFromKey(
-        draftTask?.parent?.key ?? draftTask?.parent?.id,
-        quickAddParentTasks,
-        featureDraftRowNamesById
-      );
-      const taskToAdd = plannerParent ? { ...selectedTask, parent: plannerParent } : selectedTask;
-      const submitInput = {
-        queryClient,
-        savePosition,
-        selectedSprintId,
-        selectedTask: taskToAdd,
-        setTaskPositions,
-        setTasks,
-        t,
-        taskId,
-        taskPositions,
-        timelineTotalParts: sprintTimelineWorkingDays * getPartsPerDay(),
-      };
-      if (!ensureExistingQuickAddFitsSprint(submitInput)) {
-        return;
-      }
-      try {
-        setQuickAddSubmittingTaskId(taskId);
-        await submitExistingQuickAddDraft(submitInput);
-        persistPlannerDraftParent(taskToAdd.id, plannerParent);
-      } finally {
-        setQuickAddSubmittingTaskId((prev) => (prev === taskId ? null : prev));
-      }
-    },
-    [
-      featureDraftRowNamesById,
-      persistPlannerDraftParent,
-      queryClient,
-      quickAddParentTasks,
-      savePosition,
-      selectedSprintId,
-      setTaskPositions,
-      setTasks,
-      sprintTimelineWorkingDays,
-      t,
-      taskPositions,
-      tasks,
-    ]
-  );
-
-  return {
-    handleCancelQuickAddDraft,
-    handleCreateTaskInSwimlaneCell,
-    handlePasteQuickAddNote,
-    handleQuickAddDraftAssigneeChange,
-    handleQuickAddDraftCommentColorChange,
-    handleQuickAddDraftImageUrlChange,
-    handleQuickAddDraftKindChange,
-    handleQuickAddDraftParentChange,
-    handleQuickAddDraftQueueChange,
-    handleQuickAddDraftTitleChange,
-    handleQuickAddDraftTypeChange,
-    handleSelectExistingQuickAddDraft,
-    handleSubmitQuickAddCommentDraft,
-    handleSubmitQuickAddDiagramDraft,
-    handleSubmitQuickAddDraft,
-    handleSubmitQuickAddImageDraft,
-    featureDraftRowNamesById,
-    quickAddExcludedIssueKeys,
-    quickAddParentSelectOptions,
-    quickAddQueueOptions,
-    quickAddSubmittingTaskId,
-  };
+  return { featureDraftRowNamesById, handleCreateTaskInSwimlaneCell, quickAdd };
 }

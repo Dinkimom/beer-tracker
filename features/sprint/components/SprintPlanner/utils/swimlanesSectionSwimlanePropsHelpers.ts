@@ -1,9 +1,6 @@
-import type { CustomSelectOption } from '@/components/CustomSelect';
-import type { QuickAddQueueOption } from '@/features/board/quickAddQueueOptions';
 import type { SwimlaneInProgressFactSegment } from '@/features/swimlane/utils/mergeInProgressDurationsForAssignee';
-import type { QuickAddDraftKind } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
+import type { QuickAddController } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
-import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { Comment, Developer, PhaseSegment, Task, TaskPosition } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
 import type { ComponentProps } from 'react';
@@ -22,6 +19,8 @@ import { isTeamSwimlaneAssigneeId } from '@/lib/swimlane/teamSwimlaneAssignee';
 type SwimlaneProps = ComponentProps<typeof Swimlane>;
 
 export function buildSwimlanePropsForDeveloper(input: {
+  /** Быстрое добавление — одним объектом (`QuickAddController`). */
+  quickAdd?: QuickAddController;
   activeDraggableId: string | null;
   activeTask: Task | null;
   activeTaskDuration: number | null;
@@ -44,7 +43,6 @@ export function buildSwimlanePropsForDeveloper(input: {
   holidayDayIndices: Set<number>;
   hoverConnectedTaskIds: Set<string> | null;
   hoveredTaskId: string | null;
-  onCancelQuickAddDraft?: (taskId: string) => void;
   onCloseSidebar: () => void;
   onCommentApprove?: (commentId: string) => void;
   onCommentCardRowLayoutUpdate?: SwimlaneProps['onCommentCardRowLayoutUpdate'];
@@ -56,32 +54,13 @@ export function buildSwimlanePropsForDeveloper(input: {
   onOverdueCloseAndCreate?: SwimlaneProps['onOverdueCloseAndCreate'];
   onCreateTaskInCell?: SwimlaneProps['onCreateTaskInCell'];
   onFactSegmentHover: (taskId: string | null) => void;
-  onPasteQuickAddNote?: (taskId: string) => void;
-  onQuickAddDraftAssigneeChange?: (taskId: string, assigneeId: string) => void;
-  onQuickAddDraftCommentColorChange?: (taskId: string, color: StickyNoteColor) => void;
-  onQuickAddDraftImageUrlChange?: (taskId: string, url: string | undefined) => void;
-  onQuickAddDraftKindChange?: (taskId: string, kind: QuickAddDraftKind | undefined) => void;
-  onQuickAddDraftParentChange?: (taskId: string, parentKey: string) => void;
-  onQuickAddDraftQueueChange?: (taskId: string, queueKey: string) => void;
-  onQuickAddDraftTitleChange?: (taskId: string, title: string) => void;
-  onQuickAddDraftTypeChange?: (taskId: string, type: string) => void;
   onSegmentEditCancel: () => void;
   onSegmentEditSave?: (position: TaskPosition, segments: PhaseSegment[], isQa: boolean) => void;
-  onSelectExistingQuickAddDraft?: (taskId: string, task: Task) => void;
-  onSubmitQuickAddCommentDraft?: (taskId: string, draftTitle?: string) => void;
-  onSubmitQuickAddDiagramDraft?: (taskId: string, name?: string) => void;
-  onSubmitQuickAddImageDraft?: (taskId: string, caption: string, imageUrl: string) => void;
-  onSubmitQuickAddDraft?: (taskId: string, draftTitle?: string) => Promise<void> | void;
   onTaskClick: (taskId: string) => void;
   onTaskHover: (taskId: string | null) => void;
   onTaskResize: (taskId: string, params: TaskResizeParams) => void;
   participantsColumnWidth: number;
   qaTasksMap: Map<string, Task>;
-  quickAddBoardId: number | null;
-  quickAddExcludedIssueKeys?: ReadonlySet<string>;
-  quickAddParentSelectOptions?: CustomSelectOption<string>[];
-  quickAddQueueOptions: QuickAddQueueOption[];
-  quickAddSubmittingTaskId: string | null;
   linkingFromTaskId?: string | null;
   showLinks?: boolean;
   taskLinks?: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
@@ -116,6 +95,7 @@ export function buildSwimlanePropsForDeveloper(input: {
   );
 
   return {
+    quickAdd: input.quickAdd,
     activeDraggableId: input.activeDraggableId,
     activeTask: input.activeTask,
     activeTaskDuration: input.activeTaskDuration,
@@ -140,11 +120,6 @@ export function buildSwimlanePropsForDeveloper(input: {
     showLinks: input.showLinks,
     participantsColumnWidth: input.participantsColumnWidth,
     qaTasksMap: input.qaTasksMap,
-    quickAddBoardId: input.quickAddBoardId,
-    quickAddExcludedIssueKeys: input.quickAddExcludedIssueKeys,
-    quickAddParentSelectOptions: input.quickAddParentSelectOptions,
-    quickAddQueueOptions: input.quickAddQueueOptions,
-    quickAddSubmittingTaskId: input.quickAddSubmittingTaskId,
     segmentEditTaskId: input.segmentEditTaskId,
     selectedSprintId: input.selectedSprintId,
     selectedTaskId: null,
@@ -160,7 +135,6 @@ export function buildSwimlanePropsForDeveloper(input: {
     tasks: [...visibleAssigneeTasks, ...commentProjection.tasks],
     tasksMap: mergeSwimlaneCommentTasksMap(input.tasksMap, commentProjection.tasksMap),
     viewMode: input.viewMode,
-    onCancelQuickAddDraft: input.onCancelQuickAddDraft,
     onCloseSidebar: input.onCloseSidebar,
     onCommentCreate: input.onCommentCreate,
     onCommentCardRowLayoutUpdate: input.onCommentCardRowLayoutUpdate,
@@ -172,22 +146,8 @@ export function buildSwimlanePropsForDeveloper(input: {
     onCreateTaskInCell: input.onCreateTaskInCell,
     onOverdueCloseAndCreate: input.onOverdueCloseAndCreate,
     onFactSegmentHover: input.onFactSegmentHover,
-    onPasteQuickAddNote: input.onPasteQuickAddNote,
-    onQuickAddDraftAssigneeChange: input.onQuickAddDraftAssigneeChange,
-    onQuickAddDraftCommentColorChange: input.onQuickAddDraftCommentColorChange,
-    onQuickAddDraftImageUrlChange: input.onQuickAddDraftImageUrlChange,
-    onQuickAddDraftKindChange: input.onQuickAddDraftKindChange,
-    onQuickAddDraftParentChange: input.onQuickAddDraftParentChange,
-    onQuickAddDraftQueueChange: input.onQuickAddDraftQueueChange,
-    onQuickAddDraftTitleChange: input.onQuickAddDraftTitleChange,
-    onQuickAddDraftTypeChange: input.onQuickAddDraftTypeChange,
     onSegmentEditCancel: input.onSegmentEditCancel,
     onSegmentEditSave: input.onSegmentEditSave,
-    onSelectExistingQuickAddDraft: input.onSelectExistingQuickAddDraft,
-    onSubmitQuickAddCommentDraft: input.onSubmitQuickAddCommentDraft,
-    onSubmitQuickAddDiagramDraft: input.onSubmitQuickAddDiagramDraft,
-    onSubmitQuickAddImageDraft: input.onSubmitQuickAddImageDraft,
-    onSubmitQuickAddDraft: input.onSubmitQuickAddDraft,
     onTaskClick: input.onTaskClick,
     onTaskHover: input.onTaskHover,
     onTaskResize: input.onTaskResize,

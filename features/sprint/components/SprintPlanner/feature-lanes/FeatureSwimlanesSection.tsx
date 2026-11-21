@@ -120,7 +120,7 @@ export function FeatureSwimlanesSection({
     onClearTaskParent: (taskId) => handleLocalTaskParentChange(taskId, null),
     onCommentDelete: props.onCommentDelete,
     onCommentsLeftSprint,
-    onDeleteAnnotationTask: props.onCancelQuickAddDraft,
+    onDeleteAnnotationTask: props.quickAdd?.onCancelQuickAddDraft,
     onMoveToSprint,
     onRemoveBoardRow: rowManagement.removeBoardRow,
     onRemoveDraftRow: rowManagement.removeDraftRow,
@@ -174,7 +174,7 @@ export function FeatureSwimlanesSection({
     <FeatureLaneCardUiProvider
       convertBoardId={props.boardId}
       convertIsSubmitting={draftConvert.isSubmitting}
-      convertQueueOptions={props.quickAddQueueOptions ?? []}
+      convertQueueOptions={props.quickAdd?.quickAddQueueOptions ?? []}
       moveFeatureRow={rowActions.moveRow}
       removeFeatureRow={rowActions.removeRow}
       renameFeatureRow={rowManagement.renameDraftRow}

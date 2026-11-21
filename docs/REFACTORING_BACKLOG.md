@@ -51,8 +51,8 @@
 Доску дорого менять из-за широких интерфейсов и слоёв-пробросов, а не из-за длины файлов (замер 2026-11-21, `pnpm quality:report`; правила — `AGENTS.md`, «Форма кода»). Каждый шаг — отдельный коммит с `pnpm e2e` и `pnpm e2e:visual`, результат — меньше записей в `.shape-baseline.json`.
 
 1. **Карточка: срезы вместо плоских пропсов.** `TaskBarOpacityLayer` переведён на срезы `card` / `chrome` / `longHover` (2026-11-21, было 54 поля и 70% проброса). Осталось: `TaskBarProps` (45) и `TaskCardProps` (30) — тот же приём, срез держит связанные поля вместе.
-2. **Черновики быстрого добавления — таблица по виду.** Рядом `submitQuickAddCommentDraft`, `…DiagramDraft`, `…ImageDraft`, `…CreatedIssueDraft`, `useSprintPlannerQuickAddDraft` (487 строк): сверить, что ведёт себя иначе, остальное — параметром (антипаттерн «Копия под новый тип»).
-3. **View model доски по срезам.** `useSprintPlannerViewModel` возвращает 103 поля, `SprintPlannerView` пробрасывает половину, `SidebarSection` и `ModalsSection` — в основном проброс. Вернуть объекты-домены (задачи, заметки и черновики, drag, раскладка, окна): секция берёт свой срез, преходящий UI читает из `sprintPlannerUi`. Цель — до 15 пропсов у `SprintPlannerView`.
+2. ~~**Черновики быстрого добавления — таблица по виду.**~~ Сверено 2026-11-21: `submitQuickAdd{Comment,Diagram,Image}Draft` — не копии, у каждого вида своё поведение (правка сохранённой заметки и анимации; API и редактор схемы; сжатие фото и работа вне спринта). Общий скелет — 3–4 строки, хелпер не нужен. Настоящей проблемой был плоский интерфейс механизма — закрыт срезом `quickAdd` (п. 3).
+3. **View model доски по срезам.** Было 103 поля у `SprintPlannerView`, проброс в `SidebarSection` и `ModalsSection`. Сделано (2026-11-21): срез `quickAdd` (`QuickAddController`) — 20 полей быстрого добавления одним объектом от `useSprintPlannerQuickAddDraft` до сегмента карточки, минус 20 полей в шести интерфейсах; `SprintPlannerView` — 85 полей. Дальше по тому же образцу: заметки (`onComment*`), drag, раскладка, окна (`ModalsSection`), сайдбар (`SidebarSection`). Цель — до 15 пропсов у `SprintPlannerView`.
 
 ---
 
