@@ -11,6 +11,7 @@ import { useCallback, useMemo } from 'react';
 import { useI18n } from '@/contexts/LanguageContext';
 import { collectBacklogFilterPeople } from '@/features/backlog/utils/backlogFilterPeople';
 import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
+import { taskMatchesNameFilter } from '@/features/task/utils/taskMatchesNameFilter';
 import { useRootStore } from '@/lib/layers';
 
 import {
@@ -77,6 +78,10 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
   const { t } = useI18n();
   const { sprintPlannerUi, taskPositions: positionsStore } = useRootStore();
   const globalNameFilter = sprintPlannerUi.focus.globalNameFilter;
+  const sprintBoard = useSprintBoard();
+  // Поиск без совпадений: карточки только гаснут, поэтому говорим об этом словами рядом с полем.
+  const searchHasNoMatches =
+    globalNameFilter.trim() !== '' && !sprintBoard.tasks.some((task) => taskMatchesNameFilter(task, globalNameFilter));
   const setGlobalNameFilter = sprintPlannerUi.focus.setGlobalNameFilter;
   const isReloading = tasksLoading || tasksReloading;
 
@@ -105,7 +110,7 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
   );
 
   // Люди фильтра канбана — по строкам доски, как и сам фильтр (`SprintBoard.rowAssigneeOf`).
-  const { rowAssigneeOf } = useSprintBoard();
+  const { rowAssigneeOf } = sprintBoard;
   const assigneeFilterPeople = useMemo(
     () =>
       viewMode === 'kanban'
@@ -135,6 +140,7 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
             assigneeFilterPeople={assigneeFilterPeople}
             boardId={boardId}
             globalNameFilter={globalNameFilter}
+            searchHasNoMatches={searchHasNoMatches}
             selectedAssigneeIds={selectedAssigneeIds}
             selectedSprintId={selectedSprintId}
             setGlobalNameFilter={setGlobalNameFilter}

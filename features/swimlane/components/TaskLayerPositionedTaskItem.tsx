@@ -24,6 +24,7 @@ import {
   resolveSwimlanePlacementLinkMode,
 } from '@/features/swimlane/utils/swimlaneLinkingHelpers';
 import { computeTaskLayerCardOpacity } from '@/features/swimlane/utils/taskLayerTaskLayout';
+import { taskMatchesNameFilter } from '@/features/task/utils/taskMatchesNameFilter';
 import { useRootStore } from '@/lib/layers';
 import { getSegmentEditorRangeAndCells } from '@/lib/planner-timeline';
 
@@ -154,6 +155,7 @@ export const TaskLayerPositionedTaskItem = observer(function TaskLayerPositioned
           baselineHeight={baselineHeight}
           baselineTop={baselineTop}
           currentCell={currentCell}
+          dimmed={!taskMatchesNameFilter(task, sprintPlannerUi.focus.globalNameFilter)}
           isDraggingTask={props.isDraggingTask ?? false}
           linkingActive={linkingActive}
           status={task.status}

@@ -1201,6 +1201,7 @@ export const ruMessages = {
   sprintPlanner: {
     controls: {
       searchPlaceholder: 'Поиск по названию задачи',
+      searchNoMatches: 'Ничего не найдено',
       taskStatusPrefix: 'Задачи: ',
       statusFilterTitle: 'Фильтр по статусу задач',
       statusAll: 'Все',

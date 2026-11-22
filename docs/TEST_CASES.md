@@ -75,9 +75,9 @@
 
 ### TC-014: Поиск по доске при смене режима
 - Контур: демо
-- Код: features/task/utils/taskMatchesNameFilter.ts, features/sprint/components/SprintPlanner/kanban/, features/task/components/TaskBar/taskBarHelpers.ts
-- Шаги: на свимлейне ввести поиск по названию, переключиться на «Канбан».
-- Ожидаемо: в обоих режимах карточки, не подходящие под поиск, приглушены, но не пропадают; счётчики колонок канбана — по всем задачам. Правило совпадения одно: название, ключ или имя исполнителя.
+- Код: features/task/utils/taskMatchesNameFilter.ts, features/sprint/components/SprintPlanner/kanban/, features/task/components/TaskBar/taskBarHelpers.ts, features/sprint/components/SprintPlanner/components/SprintPlannerControlsBarLeftSection.tsx, features/swimlane/components/TaskLayerOverdueBaselineStrips.tsx
+- Шаги: на свимлейне ввести поиск, который ни с чем не совпадает; затем поиск по названию, переключиться на «Канбан».
+- Ожидаемо: без совпадений рядом с полем — «Ничего не найдено»; в обоих режимах карточки, не подходящие под поиск, приглушены, но не пропадают, вместе с линией просрочки и чипом «Отстаёт»; счётчики колонок канбана — по всем задачам. Правило совпадения одно: название, ключ или имя исполнителя.
 - Автотест: e2e/functional/kanban.spec.ts
 
 ## 3. Планирование на свимлейне

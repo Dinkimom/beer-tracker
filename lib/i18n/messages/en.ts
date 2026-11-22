@@ -1199,6 +1199,7 @@ export const enMessages = {
   sprintPlanner: {
     controls: {
       searchPlaceholder: 'Search by task name',
+      searchNoMatches: 'Nothing found',
       taskStatusPrefix: 'Tasks: ',
       statusFilterTitle: 'Filter tasks by status',
       statusAll: 'All',

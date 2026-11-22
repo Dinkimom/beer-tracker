@@ -17,6 +17,8 @@ interface SprintPlannerControlsBarLeftSectionProps {
   assigneeFilterPeople?: BacklogFilterPerson[];
   boardId: number | null;
   globalNameFilter: string;
+  /** Поиск по доске ни с чем не совпал. */
+  searchHasNoMatches: boolean;
   selectedAssigneeIds: Set<string>;
   selectedSprintId: number | null;
   sprints: SprintListItem[];
@@ -32,6 +34,7 @@ export function SprintPlannerControlsBarLeftSection({
   assigneeFilterPeople = [],
   boardId,
   globalNameFilter,
+  searchHasNoMatches,
   selectedAssigneeIds,
   selectedSprintId,
   setGlobalNameFilter,
@@ -69,6 +72,11 @@ export function SprintPlannerControlsBarLeftSection({
           onChange={setGlobalNameFilter}
         />
       </div>
+      {searchHasNoMatches ? (
+        <span className="shrink-0 text-xs text-ds-text-muted" role="status">
+          {t('sprintPlanner.controls.searchNoMatches')}
+        </span>
+      ) : null}
       {showKanbanAssigneeFilter ? (
         <BacklogAssigneeFilter
           people={assigneeFilterPeople}

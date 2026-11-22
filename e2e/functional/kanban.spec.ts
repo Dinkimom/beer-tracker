@@ -37,7 +37,12 @@ test('TC-013: статус без колонки доски — своя кол�
 /** TC-014: поиск, набранный на свимлейне, на канбане приглушает карточки, а не прячет их. */
 test('TC-014: поиск по доске на канбане приглушает, а не прячет карточки', async ({ page }) => {
   await openDemoPlanner(page);
-  await page.getByPlaceholder(controls.searchPlaceholder).fill('Payments webhook');
+  const search = page.getByPlaceholder(controls.searchPlaceholder);
+  // Поиск без совпадений говорит об этом словами — карточки только гаснут.
+  await search.fill('zzzz-no-such-task');
+  await expect(page.getByRole('status').filter({ hasText: controls.searchNoMatches })).toBeVisible();
+  await search.fill('Payments webhook');
+  await expect(page.getByRole('status').filter({ hasText: controls.searchNoMatches })).toHaveCount(0);
   await page.getByRole('button', { exact: true, expanded: false, name: controls.viewByAssignees }).click();
   await page.getByRole('dialog').getByRole('button', { exact: true, name: controls.viewKanban }).click();
 

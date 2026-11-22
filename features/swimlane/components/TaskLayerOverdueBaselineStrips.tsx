@@ -23,6 +23,8 @@ interface TaskLayerOverdueBaselineStripsProps {
   baselineHeight: number;
   baselineTop: number;
   currentCell: number;
+  /** Карточка не подходит под поиск по доске — линия и чип гаснут вместе с ней. */
+  dimmed?: boolean;
   isDraggingTask: boolean;
   linkingActive?: boolean;
   status: string | undefined;
@@ -42,6 +44,7 @@ export function TaskLayerOverdueBaselineStrips({
   baselineHeight,
   baselineTop,
   currentCell,
+  dimmed = false,
   isDraggingTask,
   linkingActive = false,
   onCloseAndCreate,
@@ -69,7 +72,10 @@ export function TaskLayerOverdueBaselineStrips({
   const showChip = !isDraggingTask && !linkingActive;
 
   return (
-    <div className="pointer-events-none absolute inset-0">
+    <div
+      className="pointer-events-none absolute inset-0 transition-opacity duration-200"
+      style={dimmed ? { opacity: 0.3 } : undefined}
+    >
       {/* Как факт-таймлайн: поверх штриховки выходных, без разрывов по нерабочим дням. */}
       <div className={`absolute inset-0 ${ZIndex.class('base')}`}>
       {strips.map(({ baselineStart, baselineWidth }, stripIdx) => {
