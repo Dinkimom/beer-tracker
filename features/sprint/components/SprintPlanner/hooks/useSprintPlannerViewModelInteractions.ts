@@ -189,16 +189,11 @@ export function useSprintPlannerViewModelInteractions({
     () => mergePlannerAndTrackerTaskLinks(filteredTaskLinks, trackerTaskLinks),
     [filteredTaskLinks, trackerTaskLinks]
   );
-  const taskLinksForHandlers = useMemo(
-    () => mergePlannerAndTrackerTaskLinks(taskLinks, trackerTaskLinks),
-    [taskLinks, trackerTaskLinks]
-  );
   const handlers = useSprintPlannerHandlers({
     boardView: {
       allTasksForDrag: allTasksForDragWithComments,
       filteredTaskLinks: linksVisibleForHandlers,
       filteredTaskPositions: filteredTaskPositionsWithComments,
-      taskLinks: taskLinksForHandlers,
       tasksMap: tasksMapWithComments,
     },
     confirm,

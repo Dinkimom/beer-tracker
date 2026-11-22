@@ -39,6 +39,17 @@ function setup(tasks: Task[]) {
 }
 
 describe('SprintBoard', () => {
+  it('снятая с плана задача забирает с собой все свои связи, чужие остаются', () => {
+    const { board } = setup([task('A-1'), task('A-2'), task('A-3')]);
+    board.links.setWithSave(() => [
+      { fromTaskId: 'A-1', id: 'l1', toTaskId: 'A-2' },
+      { fromTaskId: 'comment:c1', id: 'l2', toTaskId: 'A-1' },
+      { fromTaskId: 'A-2', id: 'l3', toTaskId: 'A-3' },
+    ]);
+    board.removeTaskLinks('A-1');
+    expect(board.links.items.map((link) => link.id)).toEqual(['l3']);
+  });
+
   it('видимые связи — только те, у которых оба конца на доске', () => {
     const { board } = setup([task('A-1'), task('A-2')]);
     board.links.setWithSave(() => [

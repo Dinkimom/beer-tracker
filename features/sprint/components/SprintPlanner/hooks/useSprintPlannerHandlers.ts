@@ -41,9 +41,7 @@ export function useSprintPlannerHandlers({
   workflowScreens,
 }: UseSprintPlannerHandlersProps) {
   const { board, setTasks } = state;
-  // Связи — из модели доски.
-  const { delete: deleteLink, setWithSave: setTaskLinks } = board.links;
-  const { allTasksForDrag, filteredTaskLinks, filteredTaskPositions, taskLinks, tasksMap } = boardView;
+  const { allTasksForDrag, filteredTaskLinks, filteredTaskPositions, tasksMap } = boardView;
   const { sprintStartDate, sprintTimelineWorkingDays } = timeline;
   const { t } = useI18n();
   const taskHandlers = useSprintPlannerTaskHandlers({
@@ -94,39 +92,20 @@ export function useSprintPlannerHandlers({
 
   const applyDeleteLink = useCallback(
     (linkId: string) => {
-      const trackerLinkId = parseTrackerOverlayLinkId(linkId);
-      const link =
-        taskLinks.find((item) => item.id === linkId) ??
-        filteredTaskLinks.find((item) => item.id === linkId);
-
-      setTaskLinks((prev) => prev.filter((item) => item.id !== linkId));
-
-      if (trackerLinkId) {
+      // Связь из трекера удаляется в трекере; связь доски — правило модели.
+      if (parseTrackerOverlayLinkId(linkId)) {
+        const link = filteredTaskLinks.find((item) => item.id === linkId);
         if (link && deleteTrackerOverlayLink) {
           deleteTrackerOverlayLink(link).catch((error) => {
             console.error('Error deleting tracker link:', error);
           });
         }
-        debouncedUpdateXarrow();
-        return;
-      }
-
-      if (selectedSprintId) {
-        deleteLink(linkId).catch((error) => {
-          console.error('Error deleting link:', error);
-        });
+      } else {
+        board.removeLink(linkId);
       }
       debouncedUpdateXarrow();
     },
-    [
-      setTaskLinks,
-      selectedSprintId,
-      deleteLink,
-      deleteTrackerOverlayLink,
-      debouncedUpdateXarrow,
-      taskLinks,
-      filteredTaskLinks,
-    ]
+    [board, deleteTrackerOverlayLink, debouncedUpdateXarrow, filteredTaskLinks]
   );
 
   // Обработчик удаления связи (с подтверждением)
@@ -166,30 +145,11 @@ export function useSprintPlannerHandlers({
       // Карточка сначала «снимается» с доски, позиция и связи уходят после анимации.
       void playTaskBoardExit([taskId], 'plan', () => {
         board.plan.unplace(taskId);
-        const linksToDelete = filteredTaskLinks.filter(
-          (link) => link.fromTaskId === taskId || link.toTaskId === taskId
-        );
-        setTaskLinks((prev) =>
-          prev.filter((link) => link.fromTaskId !== taskId && link.toTaskId !== taskId)
-        );
-        if (selectedSprintId) {
-          linksToDelete.forEach((link) => {
-            deleteLink(link.id).catch((error) => {
-              console.error('Error deleting link:', error);
-            });
-          });
-        }
+        board.removeTaskLinks(taskId);
         debouncedUpdateXarrow();
       });
     },
-    [
-      board,
-      filteredTaskLinks,
-      setTaskLinks,
-      selectedSprintId,
-      deleteLink,
-      debouncedUpdateXarrow,
-    ]
+    [board, debouncedUpdateXarrow]
   );
 
   return {

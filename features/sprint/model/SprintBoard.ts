@@ -137,6 +137,25 @@ export class SprintBoard {
     await this.deps.links.save(link);
   };
 
+  /** Удалить связь доски: сразу из списка, затем запросом. */
+  readonly removeLink = (linkId: string): void => {
+    const { links, sprintId } = this.deps;
+    links.setWithSave((prev) => prev.filter((link) => link.id !== linkId));
+    if (sprintId) {
+      links.delete(linkId).catch((error) => {
+        console.error('Error deleting link:', error);
+      });
+    }
+  };
+
+  /** Задачу сняли с плана — её связи на доске уходят вместе с ней. */
+  readonly removeTaskLinks = (taskId: string): void => {
+    const touching = this.deps.links.items.filter((link) => link.fromTaskId === taskId || link.toTaskId === taskId);
+    for (const link of touching) {
+      this.removeLink(link.id);
+    }
+  };
+
   /** Правка задач спринта — в кэше Query (все запросы задач этой доски и спринта). */
   readonly updateTasks = (patch: Task[] | ((prev: Task[]) => Task[])): void => {
     const { boardId, forDemoPlanner, queryClient, sprintId } = this.deps;

@@ -15,7 +15,6 @@ export interface UseSprintPlannerHandlersProps {
     allTasksForDrag: Task[];
     filteredTaskLinks: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
     filteredTaskPositions: Map<string, TaskPosition>;
-    taskLinks: Array<{ fromTaskId: string; id: string; toTaskId: string }>;
     tasksMap: Map<string, Task>;
   };
   developersManagement: DevelopersManagement;
