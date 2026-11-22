@@ -3,8 +3,12 @@ import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 import axios from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { storedIssueSnapshotForUpsert } from '@/lib/snapshots/issueSnapshotWrite';
+
+import { mapIssueSnapshotPayloadToTask } from './issueSnapshotMapper';
 import { OTORVA_DEFAULT_API_URL } from './otorvaApi';
 import { createOtorvaProviderClient } from './otorvaProvider';
+import { yandexIssueFromProviderIssue } from './yandexTrackerProviderHelpers';
 
 const STATUS = {
   backlog: { category: 'todo', id: 's-backlog', is_initial: true, is_terminal: false, name: 'Беклог', sort_order: 0, workflow_id: 'wf' },
@@ -145,6 +149,20 @@ describe('otorva provider client (read)', () => {
     await expect(client().getIssue('DEMO-404')).resolves.toBeNull();
   });
 
+  it('survives the sync snapshot round trip: card from the snapshot equals the direct card', async () => {
+    const c = client();
+    const issue = (await c.getIssue('DEMO-2'))!;
+    const web = { kind: 'otorva' as const, webBaseUrl: '' };
+    const stored = storedIssueSnapshotForUpsert(yandexIssueFromProviderIssue(issue), 'otorva').storedPayload;
+    const fromSnapshot = mapIssueSnapshotPayloadToTask(JSON.parse(JSON.stringify(stored)), web);
+    const direct = c.mapIssueToTask(issue);
+    for (const field of ['id', 'name', 'status', 'originalStatus', 'statusTypeKey', 'storyPoints', 'testPoints', 'assignee', 'assigneeName', 'trackerQueue', 'link'] as const) {
+      expect(fromSnapshot[field], field).toEqual(direct[field]);
+    }
+    expect(fromSnapshot.parent?.key ?? fromSnapshot.parent?.id).toBe('DEMO-1');
+    expect(fromSnapshot.sprints).toEqual([{ display: 'S7', id: '7' }]);
+  });
+
   it('turns the issue into a planner card without a web link', async () => {
     const c = client();
     const card = c.mapIssueToTask((await c.getIssue('DEMO-2'))!);
@@ -226,6 +244,16 @@ describe('otorva provider client (read)', () => {
       id: '11',
       updatedAt: '2026-11-21T10:00:00Z',
     });
+  });
+
+  it('builds burndown issues from the journal like the other trackers', async () => {
+    const c = client();
+    const issue = (await c.getIssue('DEMO-2'))!;
+    const [burndown] = await c.getBurndownIssuesForKeys(['DEMO-2'], { sprintId: '7', sprintName: 'S7' }, new Map([['DEMO-2', issue]]));
+    expect(burndown).toMatchObject({ inCurrentSprint: true, issueKey: 'DEMO-2', statusKey: 'в работе', storyPoints: 3, testPoints: 1 });
+    const fields = burndown!.rawChangelog[0]!.fields!.map((f) => f.field.id);
+    expect(fields).toEqual(['status', 'storyPoints', 'sprint']);
+    expect(await c.getBurndownIssuesForKeys([], undefined, new Map())).toEqual([]);
   });
 
   it('rejects what the built-in tracker does not have (comments)', async () => {

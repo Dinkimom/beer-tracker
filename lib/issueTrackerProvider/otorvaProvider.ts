@@ -14,6 +14,7 @@ import { resolveTrackerApiConfigFromRequest } from '@/lib/trackerRequestConfig';
 import { mapIssueTrackerIssueToTask } from './mapIssueTrackerIssueToTask';
 import { createOtorvaAxiosInstance, createOtorvaCatalog, OTORVA_DEFAULT_API_URL } from './otorvaApi';
 import {
+  getOtorvaBurndownIssues,
   getOtorvaChangelogBatch,
   getOtorvaIssue,
   getOtorvaIssueTransitions,
@@ -59,6 +60,7 @@ export const OTORVA_IMPLEMENTED_PROVIDER_METHODS = [
   'createSprint',
   'deleteIssueLink',
   'getBoard',
+  'getBurndownIssuesForKeys',
   'getCurrentUser',
   'getIssue',
   'getIssueChangelogWithComments',
@@ -113,6 +115,7 @@ export function createOtorvaProviderClient(config: OtorvaProviderClientConfig): 
     createSprint: (input) => createOtorvaSprint(api, input),
     deleteIssueLink: (_key, linkId) => deleteOtorvaIssueLink(api, linkId),
     getBoard: (boardId) => getOtorvaBoard(api, catalog, boardId),
+    getBurndownIssuesForKeys: (keys, sprint, issueByKey) => getOtorvaBurndownIssues(api, keys, sprint, issueByKey),
     getCurrentUser: () => getOtorvaCurrentUser(api),
     getIssue: (key) => getOtorvaIssue(api, catalog, key),
     getIssueChangelogWithComments: async (key) =>

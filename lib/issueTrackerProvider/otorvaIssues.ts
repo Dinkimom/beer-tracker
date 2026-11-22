@@ -1,14 +1,17 @@
+import type { IssueTrackerBurndownIssue } from './changelogTypes';
 /**
  * Задачи встроенного трекера otorva в нейтральной форме провайдера: маппинг `OtorvaTask` →
  * `IssueTrackerIssue`, выборки, переходы, журнал (→ changelog) и связи.
  */
 import type { IssueTrackerIssueLink } from './issueLinkTypes';
 import type { OtorvaCatalog, OtorvaEvent, OtorvaTask } from './otorvaApi';
-import type { IssueTrackerIssue } from './types';
+import type { IssueTrackerBurndownSprintContext, IssueTrackerIssue } from './types';
 import type { ChangelogEntry, IssueChangelogWithComments } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
+import { buildIssueTrackerBurndownIssueFromPayloadAndLogs } from './changelogNormalizer';
 import { fetchOtorvaPages, fetchOtorvaTaskByKey, otorvaProfileName, otorvaStatusKey } from './otorvaApi';
+import { yandexIssueFromProviderIssue } from './yandexTrackerProviderHelpers';
 
 /** Ключей в одном запросе журнала (`MAX_EVENT_KEYS` otorva). */
 const EVENT_KEYS_CHUNK = 200;
@@ -64,7 +67,8 @@ async function otorvaTasksToIssues(
       key: task.key,
       parent: task.parent_id ? parents.get(task.parent_id) : undefined,
       provider: 'otorva',
-      raw: task,
+      // Без `raw`: снимок синка строится из полей провайдера в форме Яндекса (yandexIssueFromProviderIssue
+      // отдаёт `raw` как есть, если ключ совпадает, — сырой DTO otorva в снимке потерял бы статус и спринты).
       sprint: (task.sprint_ids ?? []).map((id) => ({ display: sprintNames.get(id) ?? String(id), id: String(id) })),
       start: task.start_date ?? undefined,
       status: status ? { display: status.name, id: status.id, key: status.key } : undefined,
@@ -199,6 +203,25 @@ export async function getOtorvaChangelogBatch(
     }
   }
   return result;
+}
+
+/** Задачи для сгорания: журнал otorva пачкой и тот же нейтральный сборщик, что у Яндекса и Jira. */
+export async function getOtorvaBurndownIssues(
+  api: AxiosInstance,
+  keys: string[],
+  sprint: IssueTrackerBurndownSprintContext | undefined,
+  issueByKey: ReadonlyMap<string, IssueTrackerIssue>
+): Promise<IssueTrackerBurndownIssue[]> {
+  if (keys.length === 0) {
+    return [];
+  }
+  const changelogs = await getOtorvaChangelogBatch(api, keys);
+  return keys.map((key) => {
+    const issue = issueByKey.get(key);
+    const payload = issue ? yandexIssueFromProviderIssue(issue) : { key };
+    const logs = changelogs[key.trim().toUpperCase()]?.changelog ?? [];
+    return buildIssueTrackerBurndownIssueFromPayloadAndLogs(payload, logs, sprint, key);
+  });
 }
 
 // --- Связи ---
