@@ -54,7 +54,8 @@ export function BacklogTaskRowView({ developers, embedded = false, task }: Backl
       <span className="flex min-w-0 flex-1 items-baseline gap-2">
         {parents.length > 0 ? (
           <TextTooltip content={parentsTitle}>
-          <span className="max-w-[40%] shrink-0 truncate text-xs text-ds-text-muted">
+          {/* Предел в rem, а не в % строки: длинный эпик не съедает название задачи; цепочка целиком — в подсказке. */}
+          <span className="max-w-[16rem] shrink-0 truncate text-xs text-ds-text-muted">
             {parents.map((parent, index) => (
               <span key={parent.key ?? parent.title}>
                 {index > 0 ? BACKLOG_TASK_PARENT_SEPARATOR : null}
