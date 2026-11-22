@@ -1,10 +1,4 @@
 {
-  "axe:color-contrast · button \"Backlog\"": 1,
-  "axe:color-contrast · button \"Board\"": 1,
-  "axe:color-contrast · button \"Burndown Chart\"": 1,
-  "axe:color-contrast · button \"Metrics\"": 1,
-  "axe:color-contrast · button \"Retro\"": 1,
-  "axe:color-contrast · span \"# people\"": 1,
   "axe:color-contrast · span \"Guido van Rossum\"": 1,
   "axe:nested-interactive · button \"Holidays: on-call only\"": 1,
   "axe:nested-interactive · button \"Release # code freeze on Wed\"": 1,

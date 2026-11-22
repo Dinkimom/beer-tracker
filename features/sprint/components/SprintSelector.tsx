@@ -38,7 +38,7 @@ function sprintSelectorItemDateClass(isSelected: boolean): string {
   if (isSelected) {
     return 'text-blue-700 dark:text-blue-400';
   }
-  return 'text-gray-600 dark:text-gray-400';
+  return 'text-gray-600 dark:text-gray-300';
 }
 
 function sprintSelectorTriggerClassName(
@@ -172,7 +172,7 @@ export function SprintSelector({
                 className="pointer-events-none invisible col-start-1 row-start-1 flex items-center gap-1.5 whitespace-nowrap"
               >
                 <SprintSelectorOptionLabel
-                  dateClassName="text-gray-600 dark:text-gray-400"
+                  dateClassName="text-gray-600 dark:text-gray-300"
                   formatDate={formatDate}
                   sprint={sprint}
                   titleClassName="text-gray-900 dark:text-gray-100"

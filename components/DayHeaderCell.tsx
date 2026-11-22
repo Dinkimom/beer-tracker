@@ -21,15 +21,16 @@ const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 type DayTone = 'future' | 'past' | 'today';
 
+// Прошедшие дни бледнее будущих, но не ниже AA: самый бледный тон — общий приглушённый токен.
 const WEEKDAY_TONE_CLASS: Record<DayTone, string> = {
-  future: 'text-gray-500 dark:text-gray-400',
-  past: 'text-gray-400 dark:text-gray-500',
+  future: 'text-gray-600 dark:text-gray-300',
+  past: 'text-ds-text-muted',
   today: 'text-blue-600 dark:text-blue-400',
 };
 
 const NUMBER_TONE_CLASS: Record<DayTone, string> = {
   future: 'text-gray-900 dark:text-gray-100',
-  past: 'text-gray-400 dark:text-gray-500',
+  past: 'text-ds-text-muted',
   today: 'text-blue-600 dark:text-blue-400',
 };
 
@@ -107,7 +108,7 @@ export function DayHeaderCellContent({
     </span>
   );
   const nonWorkingCaption = nonWorking ? (
-    <span className="min-w-0 truncate text-xs font-normal text-gray-400 dark:text-gray-500">
+    <span className="min-w-0 truncate text-xs font-normal text-ds-text-muted">
       {nonWorkingLabel}
     </span>
   ) : null;

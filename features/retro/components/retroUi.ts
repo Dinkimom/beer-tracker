@@ -3,9 +3,9 @@ import type { RetroColumn, RetroColumnPreset } from '@/lib/retro/retroBoard';
 import { retroColumnLabel } from '@/lib/retro/retroBoard';
 
 export const retroFactsSectionTitleClass =
-  'text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500';
+  'text-[11px] font-semibold uppercase tracking-wider text-ds-text-muted';
 
-export const retroFactsCaptionClass = 'text-[11px] leading-4 text-gray-400 dark:text-gray-500';
+export const retroFactsCaptionClass = 'text-[11px] leading-4 text-ds-text-muted';
 
 export const retroFactsTableClass =
   'divide-y divide-gray-200 border-y border-gray-200 dark:divide-gray-700 dark:border-gray-700';

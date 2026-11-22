@@ -7,7 +7,7 @@ describe('pageHeaderMainPageButtonClass', () => {
     const className = pageHeaderMainPageButtonClass(true);
     expect(className).toContain('!bg-transparent');
     expect(className).toContain('!border-transparent');
-    expect(className).toContain('!text-blue-600');
+    expect(className).toContain('!text-blue-700');
     expect(className).toContain('dark:!text-blue-300');
   });
 

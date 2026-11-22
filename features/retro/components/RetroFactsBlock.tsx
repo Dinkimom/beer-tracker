@@ -34,7 +34,7 @@ export function RetroFactsBlock({
         {t('retro.facts.heading')}
       </h2>
       {loading ? (
-        <p className="text-sm text-gray-400 dark:text-gray-500">{t('retro.facts.loading')}</p>
+        <p className="text-sm text-ds-text-muted">{t('retro.facts.loading')}</p>
       ) : null}
       {error ? (
         <p className="text-sm text-red-500 dark:text-red-400">{t('retro.facts.loadError')}</p>

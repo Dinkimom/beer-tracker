@@ -11,7 +11,8 @@
   --ds-canvas: #f3f4f6;
   /* Кольцо фокуса с клавиатуры (`:focus-visible`) — одно на весь продукт. */
   --ds-focus-ring: #3b82f6;
-  --ds-text-muted: #6b7280;
+  /* Приглушённый текст: не ниже AA (4,5) на сером холсте и панелях — #6b7280 давал 4,39 на #f3f4f6. */
+  --ds-text-muted: #646b78;
   --ds-surface-header: #ffffff;
   /* Тосты (`components/AppToaster.tsx`): стекло как у `.floating-menu-glass` */
   --toast-bg: rgba(255, 255, 255, 0.82);
@@ -84,7 +85,8 @@
   --ds-border-subtle: #374151;
   --ds-canvas: #151e2e;
   --ds-focus-ring: #60a5fa;
-  --ds-text-muted: #9ca3af;
+  /* Не ниже AA и на самых светлых тёмных панелях (#364153) — #9ca3af давал там 4,06. */
+  --ds-text-muted: #a8afba;
   --ds-surface-header: #1f2937;
   --toast-bg: rgb(31 41 55 / 0.88);
   --toast-fg: #f3f4f6;

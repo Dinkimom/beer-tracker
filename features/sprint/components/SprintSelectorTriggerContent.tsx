@@ -47,7 +47,7 @@ export function SprintSelectorTriggerContent({
 
   return (
     <SprintSelectorOptionLabel
-      dateClassName="text-gray-600 dark:text-gray-400"
+      dateClassName="text-gray-600 dark:text-gray-300"
       formatDate={formatDate}
       sprint={selectedSprint}
       titleClassName="text-gray-900 dark:text-gray-100"

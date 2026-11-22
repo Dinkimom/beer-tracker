@@ -1,8 +1,3 @@
 {
-  "axe:color-contrast · button \"Board\"": 1,
-  "axe:color-contrast · button \"Burndown Chart\"": 1,
-  "axe:color-contrast · button \"Metrics\"": 1,
-  "axe:color-contrast · button \"Retro\"": 1,
-  "axe:color-contrast · button \"Roadmap\"": 1,
   "button:no-hover · button \"Beer Tracker — click to play animation\"": 1
 }

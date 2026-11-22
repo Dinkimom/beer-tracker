@@ -1,10 +1,4 @@
 {
-  "axe:color-contrast · button \"Бэклог\"": 1,
-  "axe:color-contrast · button \"Диаграмма сгорания\"": 1,
-  "axe:color-contrast · button \"Доска\"": 1,
-  "axe:color-contrast · button \"Метрики\"": 1,
-  "axe:color-contrast · button \"Ретро\"": 1,
-  "axe:color-contrast · span \"# чел.\"": 1,
   "axe:color-contrast · span \"Guido van Rossum\"": 1,
   "axe:nested-interactive · button \"Holidays: on-call only\"": 1,
   "axe:nested-interactive · button \"Release # code freeze on Wed\"": 1,

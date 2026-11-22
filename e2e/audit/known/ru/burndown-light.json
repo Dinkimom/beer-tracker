@@ -1,11 +1,3 @@
 {
-  "axe:color-contrast · button \"Бэклог\"": 1,
-  "axe:color-contrast · button \"Доска\"": 1,
-  "axe:color-contrast · button \"Метрики\"": 1,
-  "axe:color-contrast · button \"Ретро\"": 1,
-  "axe:color-contrast · button \"Роадмэп\"": 1,
-  "axe:color-contrast · span \"Осталось SP\"": 1,
-  "axe:color-contrast · span \"Осталось TP\"": 1,
-  "axe:color-contrast · span \"Плановая сходимость\"": 1,
   "button:no-hover · button \"Пивтрекер — нажмите для анимации\"": 1
 }
