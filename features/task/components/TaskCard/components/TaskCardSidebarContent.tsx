@@ -52,15 +52,20 @@ export function TaskCardSidebarContent({
           {task.priority && <PriorityIcon className="w-4 h-4 shrink-0" priority={task.priority} />}
           <IssueTypeIcon className="w-4 h-4 shrink-0" type={task.type} />
         </span>
-        <TextTooltip content={keyLinkProps.title}>
-        <a
-          className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-          {...keyLinkProps}
-          title={undefined}
-        >
-          {displayId}
-        </a>
-        </TextTooltip>
+        {keyLinkProps.href ? (
+          <TextTooltip content={keyLinkProps.title}>
+          <a
+            className="font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            {...keyLinkProps}
+            title={undefined}
+          >
+            {displayId}
+          </a>
+          </TextTooltip>
+        ) : (
+          // Трекер без веб-интерфейса (встроенный): ключ — текст.
+          <span className="font-bold">{displayId}</span>
+        )}
         {title}
       </div>
     </div>

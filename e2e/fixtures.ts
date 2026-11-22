@@ -92,9 +92,15 @@ export const test = base.extend<DemoOptions>({
 
 export { expect };
 
-/** Открывает демо-планер и ждёт, пока доска отрисуется. */
-export async function openDemoPlanner(page: Page): Promise<void> {
-  await page.goto(fixtureByPage.get(page) === 'stress' ? `${DEMO_PATH}?fixture=stress` : DEMO_PATH);
+/**
+ * Открывает демо-планер и ждёт, пока доска отрисуется.
+ * `tracker: 'otorva'` — экраны как при встроенном трекере (без веб-ссылок, `?tracker=otorva`).
+ */
+export async function openDemoPlanner(page: Page, options: { tracker?: 'otorva' } = {}): Promise<void> {
+  const params = new URLSearchParams();
+  if (fixtureByPage.get(page) === 'stress') params.set('fixture', 'stress');
+  if (options.tracker) params.set('tracker', options.tracker);
+  await page.goto(params.size > 0 ? `${DEMO_PATH}?${params}` : DEMO_PATH);
   // Плашка Next.js Dev Tools есть только у dev-сервера — в кадр и под клики не идёт.
   await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
   await expect(sprintTab(page, 'board')).toHaveAttribute('aria-current', 'page');

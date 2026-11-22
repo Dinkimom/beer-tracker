@@ -159,6 +159,13 @@
 - Ожидаемо: на месте черновика появляется сохранённая заметка с введённым текстом, черновик исчезает.
 - Автотест: e2e/functional/swimlaneNotes.spec.ts
 
+### TC-133: Встроенный трекер — ключи задач без ссылок
+- Контур: демо
+- Код: lib/issueTrackerProvider/issueTrackerUi.ts, features/task/components/TaskCard/slots/TaskCardSlotItem.tsx, features/task/components/TaskCard/components/TaskCardSidebarContent.tsx, features/task/components/TaskInfoSidebar/TaskInfoSidebarHeader.tsx, features/context-menu/components/ContextMenu/components/ContextMenuCopyQuickActions.tsx, features/swimlane/components/FeatureLaneRowTitle.tsx, features/sprint/components/SprintPlanner/kanban/KanbanLaneHeaderTitle.tsx, features/sidebar/components/tabs/InvalidTab.tsx, app/demo/planner/DemoPlannerClient.tsx
+- Шаги: открыть `/demo/planner?tracker=otorva` (экраны как при встроенном трекере), посмотреть ключ на карточке, открыть меню карточки; затем то же в обычном демо.
+- Ожидаемо: при встроенном трекере ключ задачи — текст, а не ссылка «открыть в трекере» (у трекера нет веб-интерфейса), в меню карточки есть «скопировать ключ», но нет «скопировать ссылку»; очередь и родитель в панели задачи — текстом. В обычном демо (Яндекс Трекер) ключ — ссылка, «скопировать ссылку» есть.
+- Автотест: e2e/functional/builtInTracker.spec.ts
+
 ### TC-131: Упоминания в заметке
 - Контур: демо
 - Код: features/comments/hooks/useStickyNoteRichEditorMentions.ts, features/task/components/TaskBar/components/quickAddMenu/CommentMentionSelector.tsx, features/comments/components/StickyNoteRichEditor.tsx

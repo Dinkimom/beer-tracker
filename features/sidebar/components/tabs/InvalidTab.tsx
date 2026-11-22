@@ -104,15 +104,20 @@ export function InvalidTab() {
                       className="bg-red-50 dark:bg-red-900/25 border border-red-200 dark:border-red-800 rounded-lg p-3"
                     >
                       <div className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        <a
-                          className="text-blue-600 dark:text-blue-400 hover:underline"
-                          href={task.link}
-                          rel="noopener noreferrer"
-                          target="_blank"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {task.id}
-                        </a>
+                        {task.link ? (
+                          <a
+                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                            href={task.link}
+                            rel="noopener noreferrer"
+                            target="_blank"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {task.id}
+                          </a>
+                        ) : (
+                          // Трекер без веб-интерфейса (встроенный): ключ — текст.
+                          <span>{task.id}</span>
+                        )}
                         <span className="font-semibold">
                           {' - ['}
                           {task.team}

@@ -3,6 +3,7 @@
 import type { TrackerWebUrlContext } from '@/lib/issueTrackerProvider/issueTrackerUi';
 import type { Task } from '@/types';
 
+import { useIssueTrackerProviderCapabilities } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { ContextMenuGitlabLogoIcon } from '@/features/context-menu/components/ContextMenuGitlabLogoIcon';
 import {
@@ -21,6 +22,8 @@ interface ContextMenuCopyQuickActionsProps {
 
 export function ContextMenuCopyQuickActions({ task, tracker }: ContextMenuCopyQuickActionsProps) {
   const { t } = useI18n();
+  // Ссылку копировать некуда, если у трекера нет веб-интерфейса (встроенный).
+  const { supportsIssueWebLinks } = useIssueTrackerProviderCapabilities();
 
   return (
     <>
@@ -41,13 +44,15 @@ export function ContextMenuCopyQuickActions({ task, tracker }: ContextMenuCopyQu
         title={t('sprintPlanner.contextMenu.copyMr')}
         value={getTaskMergeRequestUrl(task) ?? null}
       />
-      <ContextMenuCopyQuickAction
-        ariaLabel={t('sprintPlanner.contextMenu.copyLinkAria', { ...issueTrackerI18nParams(t, tracker.kind) })}
-        idleName="link"
-        label={t('sprintPlanner.contextMenu.copyLinkShort')}
-        title={t('sprintPlanner.contextMenu.copyLink')}
-        value={getTaskTrackerIssueUrl(task, tracker)}
-      />
+      {supportsIssueWebLinks ? (
+        <ContextMenuCopyQuickAction
+          ariaLabel={t('sprintPlanner.contextMenu.copyLinkAria', { ...issueTrackerI18nParams(t, tracker.kind) })}
+          idleName="link"
+          label={t('sprintPlanner.contextMenu.copyLinkShort')}
+          title={t('sprintPlanner.contextMenu.copyLink')}
+          value={getTaskTrackerIssueUrl(task, tracker)}
+        />
+      ) : null}
     </>
   );
 }

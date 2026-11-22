@@ -22,6 +22,10 @@ const BREADCRUMB_MUTED_LINK_CLASS =
 const BREADCRUMB_KEY_CLASS =
   'shrink-0 font-medium text-blue-600 hover:underline dark:text-blue-400';
 
+/** Без веб-интерфейса трекера (встроенный) крошки и ключ — текст, не ссылки. */
+const BREADCRUMB_MUTED_TEXT_CLASS = 'min-w-0 truncate text-gray-500 dark:text-gray-400';
+const BREADCRUMB_KEY_TEXT_CLASS = 'shrink-0 font-medium text-gray-900 dark:text-gray-100';
+
 const BREADCRUMB_SEP_CLASS = 'shrink-0 px-0.5 text-gray-400 dark:text-gray-500';
 
 interface TaskInfoSidebarHeaderProps {
@@ -39,7 +43,7 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
   const issueUrl = getTaskTrackerIssueUrl(task, tracker);
   const breadcrumb = resolveTaskInfoBreadcrumbParts(task, issueKey, tracker);
 
-  const showQueue = Boolean(breadcrumb.queueLabel && breadcrumb.queueUrl);
+  const showQueue = Boolean(breadcrumb.queueLabel);
   const showParent = Boolean(breadcrumb.parent);
 
   return (
@@ -49,14 +53,18 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
           {showQueue ? (
             <>
               <OverflowTooltip content={breadcrumb.queueLabel ?? ''}>
-              <a
-                className={BREADCRUMB_MUTED_LINK_CLASS}
-                href={breadcrumb.queueUrl ?? undefined}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {breadcrumb.queueLabel}
-              </a>
+              {breadcrumb.queueUrl ? (
+                <a
+                  className={BREADCRUMB_MUTED_LINK_CLASS}
+                  href={breadcrumb.queueUrl}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {breadcrumb.queueLabel}
+                </a>
+              ) : (
+                <span className={BREADCRUMB_MUTED_TEXT_CLASS}>{breadcrumb.queueLabel}</span>
+              )}
               </OverflowTooltip>
               <span aria-hidden className={BREADCRUMB_SEP_CLASS}>
                 /
@@ -66,30 +74,38 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
           {showParent && breadcrumb.parent ? (
             <>
               <OverflowTooltip content={breadcrumb.parent.label}>
-              <a
-                className={BREADCRUMB_MUTED_LINK_CLASS}
-                href={breadcrumb.parent.url}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {breadcrumb.parent.label}
-              </a>
+              {breadcrumb.parent.url ? (
+                <a
+                  className={BREADCRUMB_MUTED_LINK_CLASS}
+                  href={breadcrumb.parent.url}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {breadcrumb.parent.label}
+                </a>
+              ) : (
+                <span className={BREADCRUMB_MUTED_TEXT_CLASS}>{breadcrumb.parent.label}</span>
+              )}
               </OverflowTooltip>
               <span aria-hidden className={BREADCRUMB_SEP_CLASS}>
                 /
               </span>
             </>
           ) : null}
-          <TextTooltip content={t('sprintPlanner.taskInfo.openInTracker')}>
-          <a
-            className={BREADCRUMB_KEY_CLASS}
-            href={issueUrl}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {issueKey}
-          </a>
-          </TextTooltip>
+          {issueUrl ? (
+            <TextTooltip content={t('sprintPlanner.taskInfo.openInTracker')}>
+            <a
+              className={BREADCRUMB_KEY_CLASS}
+              href={issueUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {issueKey}
+            </a>
+            </TextTooltip>
+          ) : (
+            <span className={BREADCRUMB_KEY_TEXT_CLASS}>{issueKey}</span>
+          )}
           <HeaderIconButton
             title={t('sprintPlanner.taskInfo.copyKey')}
             onClick={() => {

@@ -12,6 +12,7 @@ import { LoadingOverlay } from '@/components/LoadingOverlay';
 import { PageHeader } from '@/components/PageHeader';
 import { PhaseCardColorSchemeProvider } from '@/components/PhaseCardColorSchemeContext';
 import { Snow } from '@/components/Snow';
+import { IssueTrackerProviderOverride } from '@/contexts/IssueTrackerProviderOverride';
 import { useI18n } from '@/contexts/LanguageContext';
 import { BacklogPage } from '@/features/backlog/components/BacklogPage';
 import { useBoards } from '@/features/board/hooks/useBoards';
@@ -65,12 +66,18 @@ function useDemoSprintPositionsPending(sprintId: number | null): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+const subscribeNever = () => () => {};
+/** `?tracker=otorva` — экраны демо как при встроенном трекере (без веб-ссылок): для регресса. */
+const demoTrackerFromLocation = (): 'otorva' | null =>
+  new URLSearchParams(window.location.search).get('tracker') === 'otorva' ? 'otorva' : null;
+
 interface DemoPlannerClientProps {
   boardId: number;
   productOrganizationId: string;
 }
 
 const DemoPlannerClient = observer(function DemoPlannerClient({ boardId, productOrganizationId }: DemoPlannerClientProps) {
+  const demoTracker = useSyncExternalStore(subscribeNever, demoTrackerFromLocation, () => null);
   const { t } = useI18n();
   const queryClient = useQueryClient();
   /**
@@ -195,7 +202,7 @@ const DemoPlannerClient = observer(function DemoPlannerClient({ boardId, product
     );
   }
 
-  return (
+  const content = (
     <ErrorBoundary>
       <Snow />
       <PhaseCardColorSchemeProvider>
@@ -265,6 +272,11 @@ const DemoPlannerClient = observer(function DemoPlannerClient({ boardId, product
         </div>
       </PhaseCardColorSchemeProvider>
     </ErrorBoundary>
+  );
+  return demoTracker ? (
+    <IssueTrackerProviderOverride kind={demoTracker}>{content}</IssueTrackerProviderOverride>
+  ) : (
+    content
   );
 });
 

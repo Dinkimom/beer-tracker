@@ -116,7 +116,8 @@ function renderKey(
   if (!displayId) {
     return null;
   }
-  if (item.presentation === 'text') {
+  // Текстом — по настройке слота или когда у трекера нет веб-интерфейса (встроенный).
+  if (item.presentation === 'text' || !keyLinkProps.href) {
     return (
       <span className={`${META_TEXT} font-bold`} data-task-card-field="key">
         {displayId}

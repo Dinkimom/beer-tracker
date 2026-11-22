@@ -27,18 +27,22 @@ const FEATURE_LANE_RENAME_INPUT_CLASS =
 
 function resolveFeatureLaneRowTitleClasses(variant: 'header' | 'list'): {
   keyClassName: string;
+  /** Ключ без ссылки — у трекера нет веб-интерфейса (встроенный). */
+  plainKeyClassName: string;
   titleClassName: string;
 } {
   if (variant === 'list') {
     return {
       keyClassName:
         'shrink-0 cursor-pointer text-sm font-medium text-blue-600 hover:underline dark:text-blue-400',
+      plainKeyClassName: 'shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400',
       titleClassName: 'min-w-0 flex-1 truncate text-sm text-gray-700 dark:text-gray-300',
     };
   }
   return {
     keyClassName:
       'shrink-0 cursor-pointer text-sm font-bold leading-tight text-blue-600 hover:underline dark:text-blue-400',
+    plainKeyClassName: 'shrink-0 text-sm font-bold leading-tight text-gray-500 dark:text-gray-400',
     titleClassName:
       'min-w-0 flex-1 truncate text-sm font-bold leading-tight text-gray-900 dark:text-gray-100',
   };
@@ -70,7 +74,7 @@ export function FeatureLaneRowTitle({
 }: FeatureLaneRowTitleProps) {
   const { t } = useI18n();
   const issueUrl = useIssueTrackerIssueWebUrl(issueKey ?? '');
-  const { keyClassName, titleClassName } = resolveFeatureLaneRowTitleClasses(variant);
+  const { keyClassName, plainKeyClassName, titleClassName } = resolveFeatureLaneRowTitleClasses(variant);
   const [draft, setDraft] = useState(title);
   const [editing, setEditing] = useState(false);
   const typeTitle = featureLaneRowTypeTitle(issueType, t);
@@ -152,7 +156,8 @@ export function FeatureLaneRowTitle({
   return (
     <span className={onRename ? FEATURE_LANE_RENAME_ROW_CLASS : FEATURE_LANE_TITLE_ROW_CLASS}>
       {typeIcon}
-      {issueKey ? (
+      {issueKey && !issueUrl ? <span className={plainKeyClassName}>{issueKey}</span> : null}
+      {issueKey && issueUrl ? (
         <TextTooltip content={t('sprintPlanner.occupancy.openInTracker', { key: issueKey })}>
         <a
           className={keyClassName}
