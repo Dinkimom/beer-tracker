@@ -18,6 +18,11 @@ interface FeatureLaneRowTitleProps {
 }
 
 const FEATURE_LANE_TITLE_ROW_CLASS = 'flex min-w-0 w-full items-center gap-1.5';
+/** В шапке строки места по высоте много: название до трёх строк, а не обрезано в одну. */
+const HEADER_MULTILINE_TITLE_CLASS =
+  'min-w-0 flex-1 line-clamp-3 [overflow-wrap:anywhere] text-sm font-bold leading-tight text-gray-900 dark:text-gray-100';
+/** Многострочное название в шапке: иконка и ключ — у первой строки. */
+const FEATURE_LANE_HEADER_ROW_CLASS = 'flex min-w-0 w-full items-start gap-1.5';
 /** Одна высота названия и инпута — иначе счётчик SP/TP прыгает при клике. */
 const FEATURE_LANE_RENAME_ROW_CLASS = `${FEATURE_LANE_TITLE_ROW_CLASS} min-h-7`;
 const FEATURE_LANE_RENAME_TITLE_CLASS =
@@ -46,6 +51,11 @@ function resolveFeatureLaneRowTitleClasses(variant: 'header' | 'list'): {
     titleClassName:
       'min-w-0 flex-1 truncate text-sm font-bold leading-tight text-gray-900 dark:text-gray-100',
   };
+}
+
+function resolveFeatureLaneRowClass(renamable: boolean, multiline: boolean): string {
+  if (renamable) return FEATURE_LANE_RENAME_ROW_CLASS;
+  return multiline ? FEATURE_LANE_HEADER_ROW_CLASS : FEATURE_LANE_TITLE_ROW_CLASS;
 }
 
 const FEATURE_LANE_ROW_TYPE_I18N: Record<string, string> = {
@@ -78,9 +88,10 @@ export function FeatureLaneRowTitle({
   const [draft, setDraft] = useState(title);
   const [editing, setEditing] = useState(false);
   const typeTitle = featureLaneRowTypeTitle(issueType, t);
+  const multiline = variant === 'header' && !onRename;
   const typeIcon = issueType ? (
     <TextTooltip content={typeTitle}>
-      <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center self-center leading-none">
+      <span className={`inline-flex h-4 w-4 shrink-0 items-center justify-center leading-none ${multiline ? 'self-start' : 'self-center'}`}>
         <IssueTypeIcon className="h-4 w-4" type={issueType} />
       </span>
     </TextTooltip>
@@ -114,7 +125,7 @@ export function FeatureLaneRowTitle({
     </TextTooltip>
   ) : (
     <OverflowTooltip content={title}>
-      <span className={titleClassName}>{title}</span>
+      <span className={multiline ? HEADER_MULTILINE_TITLE_CLASS : titleClassName}>{title}</span>
     </OverflowTooltip>
   );
 
@@ -154,7 +165,7 @@ export function FeatureLaneRowTitle({
   }
 
   return (
-    <span className={onRename ? FEATURE_LANE_RENAME_ROW_CLASS : FEATURE_LANE_TITLE_ROW_CLASS}>
+    <span className={resolveFeatureLaneRowClass(onRename != null, multiline)}>
       {typeIcon}
       {issueKey && !issueUrl ? <span className={plainKeyClassName}>{issueKey}</span> : null}
       {issueKey && issueUrl ? (
