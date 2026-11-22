@@ -12,6 +12,13 @@ import { Icon } from '@/components/Icon';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
+import {
+  FLOATING_MENU_GLASS_SHELL,
+  MENU_PANEL_PADDING,
+  MENU_ROW,
+  MENU_ROW_CHECK,
+  MENU_ROW_STACK,
+} from '@/features/context-menu/contextMenuClasses';
 import { getInitials } from '@/utils/displayUtils';
 
 
@@ -69,7 +76,8 @@ export function UserSelectorOpenPanel({
       <Popover.Content
         ref={resultsRef}
         align="start"
-        className={`min-w-[12rem] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg outline-none dark:border-gray-700 dark:bg-gray-800 ${OVERLAY_FLOATING_ANIMATION}`}
+        // Стекло и строки — как у меню задачи и стеклянного CustomSelect: панель над доской не белая плашка.
+        className={`relative flex min-w-[12rem] flex-col overflow-hidden outline-none ${FLOATING_MENU_GLASS_SHELL} ${OVERLAY_FLOATING_ANIMATION}`}
         collisionPadding={8}
         sideOffset={4}
         style={{ width: 'var(--radix-popover-trigger-width)', zIndex: menuZIndex ?? ZIndex.modalNested }}
@@ -79,15 +87,18 @@ export function UserSelectorOpenPanel({
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         {loading && (
-          <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</div>
+          <div className="px-3 py-2 text-sm text-ds-text-muted">{t('common.loading')}</div>
         )}
         {!loading && results.length === 0 && (
-          <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="px-3 py-2 text-sm text-ds-text-muted">
             {t('common.userSelector.empty')}
           </div>
         )}
         {!loading && results.length > 0 && (
-          <div className="max-h-48 overflow-y-auto">
+          <div
+            className={`max-h-48 overflow-y-auto overscroll-contain ${MENU_PANEL_PADDING} ${MENU_ROW_STACK}`}
+            role="listbox"
+          >
             {results.map((user) => {
               const isSelected = selectedIds
                 ? selectedIds.includes(user.trackerId)
@@ -95,11 +106,9 @@ export function UserSelectorOpenPanel({
               return (
                 <Button
                   key={user.trackerId}
-                  className={`h-auto min-h-0 w-full !rounded-none border-0 !justify-start !gap-3 !px-3 !py-2 text-left text-sm font-medium shadow-none ${
-                    isSelected
-                      ? 'cursor-pointer !bg-blue-50 !text-blue-700 hover:!bg-blue-50 dark:!bg-blue-900/30 dark:!text-blue-300 dark:hover:!bg-blue-900/30'
-                      : 'cursor-pointer text-gray-700 hover:!bg-gray-50 dark:text-gray-300 dark:hover:!bg-gray-700'
-                  }`}
+                  aria-selected={isSelected}
+                  className={MENU_ROW}
+                  role="option"
                   type="button"
                   variant="ghost"
                   onMouseDown={(event) => {
@@ -113,9 +122,7 @@ export function UserSelectorOpenPanel({
                     size="sm"
                   />
                   <span className="min-w-0 flex-1 truncate">{user.displayName}</span>
-                  {isSelected && (
-                    <Icon className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" name="check" />
-                  )}
+                  {isSelected && <Icon className={`ml-auto ${MENU_ROW_CHECK}`} name="check" />}
                 </Button>
               );
             })}

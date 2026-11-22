@@ -75,7 +75,7 @@ test('TC-135: команда на доске встроенного трекер
     await dialog.getByRole('tab', { name: /Новый из/ }).click();
     await dialog.getByRole('button', { name: /^Сотрудник в/ }).click();
     await dialog.getByRole('textbox', { name: /^Сотрудник в/ }).fill(dev.name.split(' ')[0] ?? dev.name);
-    await page.getByRole('button', { name: new RegExp(`${dev.name}$`) }).click();
+    await page.getByRole('option', { name: new RegExp(`${dev.name}$`) }).click();
     await dialog.getByRole('button', { name: ui.admin.teamDetail.noRole }).click();
     await page.getByRole('option', { name: ROLE_BY_TITLE[dev.roleTitle ?? ''] ?? 'Бэкенд', exact: true }).click();
     await dialog.getByRole('button', { name: ui.admin.teamMembers.addSubmit }).click();
