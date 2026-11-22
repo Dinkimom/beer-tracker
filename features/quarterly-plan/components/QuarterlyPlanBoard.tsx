@@ -2,6 +2,7 @@
 
 import type { QuarterlyPlan } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
 import { type CSSProperties, Fragment, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/Button';
@@ -35,31 +36,27 @@ import { QuarterlyPlanTimelineHeader } from './QuarterlyPlanTimelineHeader';
 const QUARTER_COLUMN_SELECTORS = { header: '[data-quarter-header]', rows: '[data-quarter-rows]' };
 
 interface QuarterlyPlanBoardProps {
-  /** Свёрнутые команды и направления: идентификаторы у них не пересекаются. */
-  collapsedIds: ReadonlySet<string>;
   hideDone: boolean;
   /** Рядом открыт сайдбар (история версий, цели спринта): доска уже, но недели не сжимаются — появляется прокрутка. */
   holdWidth: boolean;
   plan: QuarterlyPlan;
   /** Меняется по кнопке «Текущий»: доска снова листает к текущей неделе. */
   todayNonce: number;
-  onToggle: (id: string) => void;
 }
 
 /**
  * Сетка квартала: команды блоками, в каждой — отсутствия и направления с эпиками.
  * Команда сворачивается до своей строки со спринтами — так на доске помещается много команд.
  */
-export function QuarterlyPlanBoard({
-  collapsedIds,
+export const QuarterlyPlanBoard = observer(function QuarterlyPlanBoard({
   hideDone,
   holdWidth,
   plan,
   todayNonce,
-  onToggle: toggle,
 }: QuarterlyPlanBoardProps) {
   const { t } = useI18n();
-  const { detail, draft, linking, onLinkSourceClear, onStartDraft, shownLinks } = useQuarterlyPlanBoard();
+  const { detail, linking, onLinkSourceClear, rows, shownLinks } = useQuarterlyPlanBoard();
+  const { collapsedIds, draft, startDraft: onStartDraft, toggleCollapsed: toggle } = rows;
   const { currentWeek, violatedBlockers, weeks } = useQuarterPlanView();
   const directionInput = <QuarterlyPlanInputRow level="direction" placeholder={t('quarterlyPlan.addDirectionPlaceholder')} />;
   const violatedLinkIds = useMemo(() => {
@@ -223,4 +220,4 @@ export function QuarterlyPlanBoard({
       </div>
     </div>
   );
-}
+});

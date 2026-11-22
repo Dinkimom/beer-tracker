@@ -1,8 +1,8 @@
 'use client';
 
+import type { QuarterBoardRows } from './model/quarterBoardRows';
 import type { QuarterDetailLevel } from './quarterlyPlanDetail';
 import type { QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
-import type { Dispatch, SetStateAction } from 'react';
 
 import { useCallback } from 'react';
 
@@ -16,17 +16,16 @@ import { parseQuarterDetailLevel } from './quarterlyPlanDetail';
  */
 export function useQuarterDetail(
   epics: readonly QuarterlyPlanEpic[] | undefined,
-  setExpandedEpicIds: Dispatch<SetStateAction<ReadonlySet<string>>>
+  rows: Pick<QuarterBoardRows, 'showDetail'>
 ): { detail: QuarterDetailLevel; setDetail: (level: QuarterDetailLevel) => void } {
   const [stored, setStored] = useQuarterDetailLevelStorage();
   const detail = parseQuarterDetailLevel(stored);
   const setDetail = useCallback(
     (level: QuarterDetailLevel) => {
       setStored(level);
-      const parents = (epics ?? []).flatMap((epic) => (epic.parentEpicId ? [epic.parentEpicId] : []));
-      setExpandedEpicIds(new Set(level === 'days' ? parents : []));
+      rows.showDetail(level, epics ?? []);
     },
-    [epics, setExpandedEpicIds, setStored]
+    [epics, rows, setStored]
   );
   return { detail, setDetail };
 }

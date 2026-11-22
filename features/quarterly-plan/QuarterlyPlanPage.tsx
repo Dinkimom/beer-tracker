@@ -2,7 +2,6 @@
 
 import type {
   QuarterlyPlanBoardContextValue,
-  QuarterlyPlanDraft,
 } from './QuarterlyPlanBoardContext';
 import type {
   QuarterlyPlanMenuState,
@@ -22,16 +21,12 @@ import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskB
 import { useHeightCssVar } from '@/hooks/useHeightCssVar';
 import { useQuarterHideDoneStorage } from '@/hooks/useLocalStorage';
 import {
-  addDirection,
-  addEpic,
   assignmentPhase,
   daySpanOf,
   planIssueKeys,
   removeDirection,
   removeEpic,
   updateAssignment,
-  updateDirection,
-  updateEpic,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { epicRowIds, moveDirection, moveEpic } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 import {
@@ -51,6 +46,7 @@ import { QuarterlyPlanSprintGoals } from './components/QuarterlyPlanSprintGoals'
 import { QuarterlyPlanSprintSyncDialog } from './components/QuarterlyPlanSprintSyncDialog';
 import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
 import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTrackerEpicDialog';
+import { applyDraftTitle, QuarterBoardRows } from './model/quarterBoardRows';
 import { QuarterPlanView } from './model/quarterPlanView';
 import { QuarterlyPlanBoardProvider, QuarterPlanViewProvider } from './QuarterlyPlanBoardContext';
 import { applyTrackerPickToPlan, buildQuarterlyPlanMenuSections, trackerPickBoardId } from './quarterlyPlanMenuSections';
@@ -88,13 +84,9 @@ export function QuarterlyPlanPage() {
    */
   const [previewCut, setPreviewCut] = useState(false);
   if (menu !== null && previewCut) setPreviewCut(false);
-  const [draft, setDraft] = useState<QuarterlyPlanDraft | null>(null);
   const [trackerPick, setTrackerPick] = useState<QuarterlyPlanTrackerPick | null>(null);
-  /** Свёрнутые команды и направления: идентификаторы у них не пересекаются. */
-  const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(new Set());
-  /** Эпики с раскрытым списком задач: по умолчанию задачи свёрнуты, доска остаётся компактной (QT4). */
-  const [expandedEpicIds, setExpandedEpicIds] = useState<ReadonlySet<string>>(new Set());
-  const [focusedIssue, setFocusedIssue] = useState<{ assignmentId: string; nonce: number } | null>(null);
+  /** Свёрнутое, раскрытое, поле ввода и переход к проблеме — вид этой вкладки, не план. */
+  const [rows] = useState(() => new QuarterBoardRows());
   const [todayNonce, setTodayNonce] = useState(0);
   const [frameEl, setFrameEl] = useState<HTMLDivElement | null>(null);
   const [controlsEl, setControlsEl] = useState<HTMLDivElement | null>(null);
@@ -128,7 +120,7 @@ export function QuarterlyPlanPage() {
   /** Выбрана версия из истории (QH4): на доске она, только для просмотра, с пометками её изменений. */
   const shownView = useQuarterlyPlanShownView(draftView, history.preview);
   const { after: planAfterDraft, applyEdit, plan } = shownView;
-  const { detail, setDetail } = useQuarterDetail(plan?.epics, setExpandedEpicIds);
+  const { detail, setDetail } = useQuarterDetail(plan?.epics, rows);
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
   const notes = useQuarterlyPlanNotes({ applyEdit, plan, weekCount: weeks.length });
@@ -154,68 +146,12 @@ export function QuarterlyPlanPage() {
   );
   const issues = view?.issues ?? NO_ISSUES;
 
-  const toggleCollapsed = useCallback((id: string) => {
-    setCollapsedIds((current) => {
-      const next = new Set(current);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
-  }, []);
-
-  const toggleEpic = useCallback((id: string) => {
-    setExpandedEpicIds((current) => {
-      const next = new Set(current);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
-  }, []);
-  const expandEpic = useCallback((id: string | undefined) => {
-    if (id) setExpandedEpicIds((current) => new Set(current).add(id));
-  }, []);
-  /** Поле новой задачи открывается в раскрытом эпике и оставляет его раскрытым. */
-  const startDraft = useCallback(
-    (next: QuarterlyPlanDraft) => {
-      if (next.kind === 'newEpic') expandEpic(next.parentEpicId);
-      setDraft(next);
-    },
-    [expandEpic]
-  );
-
-  /** Следующее пересечение по порядку доски; свёрнутые команда, направление и эпик задачи раскрываются. */
-  const focusNextIssue = () => {
-    const index = issues.findIndex((issue) => issue.assignmentId === focusedIssue?.assignmentId);
-    const next = issues[(index + 1) % issues.length];
-    if (!next) return;
-    const epicId = plan?.assignments.find((assignment) => assignment.id === next.assignmentId)?.epicId;
-    expandEpic(plan?.epics.find((epic) => epic.id === epicId)?.parentEpicId);
-    setCollapsedIds((current) => {
-      const expanded = new Set(current);
-      expanded.delete(next.teamId);
-      expanded.delete(next.directionId);
-      return expanded;
-    });
-    setFocusedIssue({ assignmentId: next.assignmentId, nonce: (focusedIssue?.nonce ?? 0) + 1 });
-  };
-
   const submitDraft = useCallback(
     (title: string | null) => {
-      setDraft(null);
-      if (!draft || !title) return;
-      applyEdit((content) => {
-        if (draft.kind === 'newDirection') {
-          return addDirection(content, { id: randomUuid(), teamId: draft.teamId, title }, draft.afterId);
-        }
-        if (draft.kind === 'newEpic') {
-          const { afterId, directionId, parentEpicId } = draft;
-          const epic = { directionId, id: randomUuid(), ...(parentEpicId ? { parentEpicId } : {}), status: 'backlog' as const, title };
-          return addEpic(content, epic, afterId);
-        }
-        return draft.kind === 'renameDirection'
-          ? updateDirection(content, draft.id, { title })
-          : updateEpic(content, draft.id, { title });
-      });
+      const draft = rows.takeDraft();
+      if (draft && title) applyEdit((content) => applyDraftTitle(content, draft, title, randomUuid()));
     },
-    [applyEdit, draft]
+    [applyEdit, rows]
   );
 
   const notesBoard = notes.board;
@@ -234,10 +170,7 @@ export function QuarterlyPlanPage() {
               weeks: (shownMenu.days ?? shownMenu.weeks * QUARTER_WORKING_DAYS_PER_WEEK) / QUARTER_WORKING_DAYS_PER_WEEK,
             }
           : null,
-      draft,
-      expandedEpicIds,
       detail,
-      focusedIssue,
       goalsByRow: rowGoals,
       hideDone,
       ...linksBoard,
@@ -247,23 +180,22 @@ export function QuarterlyPlanPage() {
       onBarClick: (assignmentId, anchor) => setMenu({ anchor, assignmentId, kind: 'bar' }),
       onCellClick: (row, week, anchor, span) => setMenu({ anchor, kind: 'assign', row, week, weeks: 1, ...span }),
       onDraftSubmit: submitDraft,
+      rows,
       onRowMenu: (target, anchor) => setMenu({ anchor, kind: 'row', target }),
       onRowMove: (level, id, anchorId, place) =>
         applyEdit((content) =>
           level === 'direction' ? moveDirection(content, id, anchorId, place) : moveEpic(content, id, anchorId, place)
         ),
-      onStartDraft: startDraft,
       onStatusClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'status' }),
       onSprintDriftClick: (epicId, anchor) => setMenu({ anchor, epicId, kind: 'sprintDrift' }),
       onSprintGoalsOpen: openSprintGoals,
-      onToggleEpic: toggleEpic,
       onTrackerStatusChange: (...change) => void changeTrackerStatus(...change),
       draftMarks: shownView.marks,
       draftReview: shownView.review,
       // Уровень «Квартал» — вид для бизнеса (QZ3): без расхождений со спринтом.
       sprintCards: detail === 'quarter' ? {} : plan.sprintCards,
     };
-  }, [closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, openSprintGoals, detail, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, rowGoals, linksBoard, notesBoard, plan, startDraft, submitDraft, toggleEpic]);
+  }, [closingMenu.open, previewCut, shownMenu, applyEdit, shownView.marks, shownView.review, openSprintGoals, detail, hideDone, changeTrackerStatus, rowGoals, linksBoard, notesBoard, plan, rows, submitDraft]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -309,13 +241,13 @@ export function QuarterlyPlanPage() {
         remove();
       }
     },
-    onStartDraft: startDraft,
+    onStartDraft: rows.startDraft,
   };
 
   const applyTrackerPick = (issueKey: string, title: string) => {
     if (!trackerPick) return;
     applyEdit((content) => applyTrackerPickToPlan(content, trackerPick, { issueKey, title }));
-    if (trackerPick.kind === 'add') expandEpic(trackerPick.parentEpicId);
+    if (trackerPick.kind === 'add') rows.expandEpic(trackerPick.parentEpicId);
     setTrackerPick(null);
   };
 
@@ -346,7 +278,7 @@ export function QuarterlyPlanPage() {
             quarterRef={quarterRef}
             sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
             onDetailChange={setDetail}
-            onNextIssue={focusNextIssue}
+            onNextIssue={() => plan && rows.focusNextIssue(issues, plan)}
             onQuarterChange={setQuarterRef}
             onToday={() => {
               setQuarterRef(quarterOfDate(getPlannerNow()));
@@ -359,12 +291,10 @@ export function QuarterlyPlanPage() {
           <QuarterlyPlanBoardProvider value={board}>
             <QuarterlyPlanPresence quarterRef={quarterRef} viewers={presenceViewers}>
               <QuarterlyPlanBoard
-                collapsedIds={collapsedIds}
                 hideDone={hideDone}
                 holdWidth={history.open || goalsTarget !== null}
                 plan={plan}
                 todayNonce={todayNonce}
-                onToggle={toggleCollapsed}
               />
             </QuarterlyPlanPresence>
             {shownMenu ? (

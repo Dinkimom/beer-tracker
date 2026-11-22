@@ -2,6 +2,8 @@
 
 import type { QuarterlyPlanTeam } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -27,9 +29,10 @@ interface QuarterlyPlanTeamHeaderProps {
  * у каждой команды своя сетка, границы спринтов видны по разделителям. Текущий спринт залит непрозрачно:
  * под ним лежит подсветка текущей недели, и полупрозрачная заливка распадалась бы на два оттенка.
  */
-export function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: QuarterlyPlanTeamHeaderProps) {
+export const QuarterlyPlanTeamHeader = observer(function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: QuarterlyPlanTeamHeaderProps) {
   const { t } = useI18n();
-  const { onStartDraft } = useQuarterlyPlanBoard();
+  const { rows } = useQuarterlyPlanBoard();
+  const { startDraft: onStartDraft } = rows;
   const { currentWeek, issueCountByTeam, weeks } = useQuarterPlanView();
   const issueCount = issueCountByTeam.get(team.id) ?? 0;
 
@@ -94,4 +97,4 @@ export function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: Quarterly
       })}
     </QuarterlyPlanRow>
   );
-}
+});

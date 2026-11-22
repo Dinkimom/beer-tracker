@@ -3,6 +3,7 @@
 import type { QuarterlyPlanAssignment } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { Developer } from '@/types';
 
+import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
 
 import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
@@ -91,7 +92,7 @@ export function quarterMemberInitials(name: string): string {
  * Заштрихованы дни отсутствия и недели, где у человека стоит ещё один эпик, — видно, какая часть
  * работы под вопросом; причину называет подсказка у значка. Подпись липнет к левой колонке, пока полоса на экране.
  */
-export function QuarterlyPlanBar({
+export const QuarterlyPlanBar = observer(function QuarterlyPlanBar({
   assignment,
   faded = false,
   level,
@@ -102,7 +103,8 @@ export function QuarterlyPlanBar({
   toneClass,
 }: QuarterlyPlanBarProps) {
   const { t } = useI18n();
-  const { canLinkTo, focusedIssue, linking, onBarChange, onBarClick, onLinkBarClick, draftMarks, draftReview } = useQuarterlyPlanBoard();
+  const { canLinkTo, draftMarks, draftReview, linking, onBarChange, onBarClick, onLinkBarClick, rows } = useQuarterlyPlanBoard();
+  const { focusedIssue } = rows;
   const { absenceByMember, dayCount, rivalAssignmentsOf, weeks } = useQuarterPlanView();
   /** Полосу добавил или изменил показанный черновик агента (QM9) — пунктирная обводка. */
   const draftOutline = draftOutlineClass(draftMarks, assignment.id);
@@ -225,4 +227,4 @@ export function QuarterlyPlanBar({
       <QuarterlyPlanDraftItemToolbar hidden={drag !== null} id={assignment.id} placement="below" />
     </div>
   );
-}
+});

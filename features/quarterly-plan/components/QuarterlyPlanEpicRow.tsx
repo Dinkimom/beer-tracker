@@ -3,6 +3,8 @@
 import type { QuarterlyPlanEpicTasks } from './QuarterlyPlanEpicHeader';
 import type { QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { useI18n } from '@/contexts/LanguageContext';
 import { isEpicDone, trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
@@ -36,9 +38,10 @@ interface QuarterlyPlanEpicRowProps {
  * Эпик направления или задача эпика: клик по свободной неделе назначает человека, параллельная работа —
  * дорожками в одной строке (второго человека на занятые недели добавляют из меню полосы).
  */
-export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps) {
+export const QuarterlyPlanEpicRow = observer(function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps) {
   const { t } = useI18n();
-  const { detail, draft, onCellClick, onDraftSubmit, sprintCards } = useQuarterlyPlanBoard();
+  const { detail, onCellClick, onDraftSubmit, rows, sprintCards } = useQuarterlyPlanBoard();
+  const { draft } = rows;
   const { assignmentsByEpic, assignmentsByEpicTree, trackerEpics } = useQuarterPlanView();
   const level = epic.parentEpicId === undefined ? 'epic' : 'task';
   const assignments = assignmentsByEpic.get(epic.id) ?? [];
@@ -89,4 +92,4 @@ export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps)
       )}
     </QuarterlyPlanRow>
   );
-}
+});

@@ -2,6 +2,7 @@
 
 import type { QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
 import { Fragment } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
@@ -20,9 +21,10 @@ interface QuarterlyPlanEpicGroupProps {
  * Эпик и его задачи (QT1): задачи — такие же строки уровнем ниже, раскрываются по стрелке эпика (QT4).
  * Поле новой задачи стоит там, куда она встанет: под указанной задачей или в конце списка.
  */
-export function QuarterlyPlanEpicGroup({ epic }: QuarterlyPlanEpicGroupProps) {
+export const QuarterlyPlanEpicGroup = observer(function QuarterlyPlanEpicGroup({ epic }: QuarterlyPlanEpicGroupProps) {
   const { t } = useI18n();
-  const { detail, draft, expandedEpicIds, hideDone, onToggleEpic } = useQuarterlyPlanBoard();
+  const { detail, hideDone, rows } = useQuarterlyPlanBoard();
+  const { draft, expandedEpicIds, toggleEpic: onToggleEpic } = rows;
   const { tasksByEpic, trackerEpics } = useQuarterPlanView();
   const allTasks = tasksByEpic.get(epic.id) ?? [];
   const tasks = hideDone ? allTasks.filter((task) => !isEpicDone(task, trackerEpics)) : allTasks;
@@ -50,4 +52,4 @@ export function QuarterlyPlanEpicGroup({ epic }: QuarterlyPlanEpicGroupProps) {
       {adding && !quarterView && !tasks.some((task) => task.id === adding.afterId) ? input : null}
     </>
   );
-}
+});

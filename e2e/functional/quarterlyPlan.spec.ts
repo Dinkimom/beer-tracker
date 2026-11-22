@@ -113,3 +113,29 @@ test('TC-124: версия из истории восстанавливаетс�
   await page.getByRole('button', { name: q.history.title }).click();
   await expect(page.getByRole('button', { name: /Current version .*Directions \+1/ })).toBeVisible();
 });
+
+test('TC-126: команда сворачивается, задачи эпика раскрываются, «Дни» раскрывают все эпики', async ({ page }) => {
+  const team = await openRoadmap(page);
+  const tasksToggle = team.getByRole('button', { exact: true, name: q.taskCount.replace('{count}', '5') }).first();
+  const task = team.getByText('Payment intent endpoint', { exact: true });
+
+  await expect(task).toHaveCount(0);
+  await tasksToggle.click();
+  await expect(tasksToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(task).toBeVisible();
+  await tasksToggle.click();
+  await expect(task).toHaveCount(0);
+
+  const teamToggle = team.getByRole('button', { exact: true, name: 'Demo Team' });
+  await teamToggle.click();
+  await expect(teamToggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(team.getByRole('button', { exact: true, name: 'Checkout redesign' })).toHaveCount(0);
+  // Переход к проблеме раскрывает свёрнутую команду, в которой она есть.
+  await page.getByRole('button', { name: q.issues.replace('{count}', '2') }).click();
+  await expect(teamToggle).toHaveAttribute('aria-expanded', 'true');
+
+  await page.getByRole('radio', { name: q.detail.days }).click();
+  await expect(task).toBeVisible();
+  await page.getByRole('radio', { name: q.detail.weeks }).click();
+  await expect(task).toHaveCount(0);
+});

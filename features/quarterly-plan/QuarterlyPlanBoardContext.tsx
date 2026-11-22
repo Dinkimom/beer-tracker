@@ -1,5 +1,6 @@
 'use client';
 
+import type { QuarterBoardRows } from './model/quarterBoardRows';
 import type { QuarterPlanView } from './model/quarterPlanView';
 import type { QuarterRowGoalFlag, QuarterRowLevel } from './quarterlyPlanBoardModel';
 import type { QuarterDetailLevel } from './quarterlyPlanDetail';
@@ -86,15 +87,10 @@ export interface QuarterlyPlanBoardContextValue {
   } | null;
   /** Уровень детализации доски: квартал, недели или дни (QZ1). */
   detail: QuarterDetailLevel;
-  draft: QuarterlyPlanDraft | null;
   /** Черновик агента показан: что в нём новое, изменено и убрано (QM9); null — черновика на доске нет. */
   draftMarks: QuarterlyPlanDraftDiff | null;
   /** ✓/✗ пунктов показанного черновика на доске (QM10); null — черновика на доске нет. */
   draftReview: QuarterlyPlanDraftReview | null;
-  /** Эпики с раскрытым списком задач (QT4). */
-  expandedEpicIds: ReadonlySet<string>;
-  /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
-  focusedIssue: { assignmentId: string; nonce: number } | null;
   /** Флажки целей спринтов по id строки плана — эпика или направления (QG8). */
   goalsByRow: ReadonlyMap<string, QuarterRowGoalFlag[]>;
   /** Включено «Скрыть готовые»: готовые задачи эпиков тоже не показываются (QB7). */
@@ -123,6 +119,8 @@ export interface QuarterlyPlanBoardContextValue {
   notesByRow: ReadonlyMap<string, QuarterlyPlanNote[]>;
   /** Включён инструмент «Заметка»: клик по неделе любой строки ставит заметку. */
   noteTool: boolean;
+  /** Свёрнутое, раскрытое, поле ввода и переход к проблеме (`QuarterBoardRows`); компоненты — `observer`. */
+  rows: QuarterBoardRows;
   /** Связи, которые доска рисует: связи назначений, а на уровне «Квартал» — связи сводных полос (QL7). */
   shownLinks: ReadonlyArray<QuarterlyPlanLink & { linkIds?: readonly string[] }>;
   /** Карточки привязанных задач на досках спринтов, по ключу трекера (QK8). */
@@ -157,9 +155,7 @@ export interface QuarterlyPlanBoardContextValue {
   onSprintDriftClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
   /** Клик по спринту в строке команды: цели спринта в сайдбаре (QG13). */
   onSprintGoalsOpen: (sprint: QuarterlyPlanSprint, boardId: number) => void;
-  onStartDraft: (draft: QuarterlyPlanDraft) => void;
   onStatusClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
-  onToggleEpic: (epicId: string) => void;
   /** Сменить статус привязанной строки: переход её задачи в трекере (QE7). */
   onTrackerStatusChange: (
     issueKey: string,

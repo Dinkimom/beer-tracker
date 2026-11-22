@@ -2,6 +2,8 @@
 
 import type { QuarterlyPlanDirection } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -25,14 +27,15 @@ interface QuarterlyPlanDirectionHeaderProps {
 }
 
 /** Левая ячейка строки направления: название (или поле переименования), ключ трекера и действия. */
-export function QuarterlyPlanDirectionHeader({
+export const QuarterlyPlanDirectionHeader = observer(function QuarterlyPlanDirectionHeader({
   collapsed,
   direction,
   unplannedCount,
   onToggle,
 }: QuarterlyPlanDirectionHeaderProps) {
   const { t } = useI18n();
-  const { draft, onDraftSubmit, onRowMenu } = useQuarterlyPlanBoard();
+  const { onDraftSubmit, onRowMenu, rows } = useQuarterlyPlanBoard();
+  const { draft } = rows;
   const { trackerEpics, unsplitDirectionIds } = useQuarterPlanView();
   const renaming = draft?.kind === 'renameDirection' && draft.id === direction.id;
 
@@ -97,4 +100,4 @@ export function QuarterlyPlanDirectionHeader({
       )}
     </div>
   );
-}
+});

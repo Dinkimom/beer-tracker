@@ -422,6 +422,13 @@
 - Ожидаемо: выбранная версия показывается на доске только для чтения; после восстановления на доске она, а не последняя правка; следующая правка идёт поверх восстановленной версии и становится текущей версией.
 - Автотест: e2e/functional/quarterlyPlan.spec.ts
 
+### TC-126: Сворачивание и раскрытие строк
+- Контур: демо
+- Код: features/quarterly-plan/model/quarterBoardRows.ts, features/quarterly-plan/useQuarterDetail.ts, features/quarterly-plan/components/QuarterlyPlanBoard.tsx, features/quarterly-plan/components/QuarterlyPlanEpicGroup.tsx, features/quarterly-plan/components/QuarterlyPlanHeader.tsx
+- Шаги: у эпика нажать счётчик задач, нажать ещё раз; свернуть команду; нажать счётчик проблем; переключить вид на «Дни», затем на «Недели».
+- Ожидаемо: счётчик задач раскрывает и сворачивает задачи эпика; свёрнутая команда прячет свои строки, переход к проблеме в ней раскрывает её снова; «Дни» раскрывают задачи всех эпиков, «Недели» сворачивают.
+- Автотест: e2e/functional/quarterlyPlan.spec.ts
+
 ### TC-125: Черновик агента
 - Контур: боевой
 - Код: features/quarterly-plan/useQuarterlyPlanAgent.ts, features/quarterly-plan/components/QuarterlyPlanAgentIsland.tsx, features/quarterly-plan/components/QuarterlyPlanDraftBar.tsx
