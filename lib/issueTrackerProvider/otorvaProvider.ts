@@ -68,6 +68,7 @@ export const OTORVA_IMPLEMENTED_PROVIDER_METHODS = [
   'getIssuesChangelogBatch',
   'getIssueTransitions',
   'getQueue',
+  'getQueueWorkflowScreens',
   'getQueueWorkflows',
   'getSprint',
   'getTasksInSprintWithParents',
@@ -131,6 +132,8 @@ export function createOtorvaProviderClient(config: OtorvaProviderClientConfig): 
     getIssueTransitions: (key) => getOtorvaIssueTransitions(api, catalog, key),
     getQueue: async (queueKey) =>
       (await listOtorvaQueues(catalog)).find((q) => q.key === queueKey.trim().toUpperCase()) ?? null,
+    // Экранов перехода (обязательных полей) в otorva нет: модалка перехода не нужна, как у Jira без полей.
+    getQueueWorkflowScreens: () => Promise.resolve({}),
     getQueueWorkflows: () => getOtorvaQueueWorkflows(catalog),
     getSprint: (sprintId) => getOtorvaSprint(api, sprintId),
     getTasksInSprintWithParents: async (sprintId) =>

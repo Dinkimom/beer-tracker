@@ -134,7 +134,11 @@ export async function addOtorvaIssueToSprint(
   if (task.sprint_ids.includes(sprintId)) {
     return { affectedSprintIds: [], backlogBoardIds: [] };
   }
-  await api.post(`/sprints/${sprintId}/tasks`, { task_id: task.id });
+  // «В спринт» — перенос, как у Яндекса: спринты той же доски заменяются, спринты других досок остаются.
+  const target = await catalog.sprint(sprintId);
+  const current = await Promise.all(task.sprint_ids.map(async (id) => ({ id, sprint: await catalog.sprint(id) })));
+  const kept = current.filter(({ sprint }) => target == null || sprint?.board_id !== target.board_id).map(({ id }) => id);
+  await api.put(`/tasks/${task.id}/sprints`, { sprint_ids: [...kept, sprintId] });
   return membershipResult(catalog, [...task.sprint_ids, sprintId]);
 }
 

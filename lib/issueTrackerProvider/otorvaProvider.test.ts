@@ -85,6 +85,7 @@ const ROUTES: Record<string, unknown> = {
     links: [{ from_task_id: 't-child', id: 'l-1', link_type_id: 'lt', to_task_id: 't-epic' }],
   },
   '/sprints/8': { author_id: null, board_id: 2, created_at: '2026-11-20T09:00:00Z', end_date: '2026-12-18', goal: '', id: 8, name: 'S8', start_date: '2026-12-07', status: 'draft', version: 1 },
+  '/sprints/9': { author_id: null, board_id: 1, created_at: '2026-11-20T09:00:00Z', end_date: '2026-12-18', goal: '', id: 9, name: 'S9', start_date: '2026-12-07', status: 'draft', version: 1 },
   '/tasks/by-key/DEMO-1': { ...EPIC, available_transitions: [], links: [], sprint_ids: [] },
   '/tasks/t-epic': EPIC,
   '/workflows': [{ id: 'wf' }],
@@ -294,7 +295,7 @@ describe('otorva provider client (write)', () => {
     ]);
   });
 
-  it('transitions by the target status id and adds to a sprint only once', async () => {
+  it('transitions by the target status id; moving to a sprint replaces sprints of the same board only', async () => {
     const c = client();
     await c.transitionIssue('DEMO-2', 's-closed', {});
     expect(writes()).toEqual([['post', '/tasks/t-child/transition', { to_status_id: 's-closed' }]]);
@@ -302,8 +303,18 @@ describe('otorva provider client (write)', () => {
     requests = [];
     expect(await c.addIssueToSprint('DEMO-2', 7)).toEqual({ affectedSprintIds: [], backlogBoardIds: [] });
     expect(writes()).toEqual([]);
+    // S8 — на другой доске: S7 остаётся.
     expect(await c.addIssueToSprint('DEMO-2', 8)).toEqual({ affectedSprintIds: [7, 8], backlogBoardIds: [1, 2] });
-    expect(writes()).toEqual([['post', '/sprints/8/tasks', { task_id: 't-child' }]]);
+    expect(writes()).toEqual([['put', '/tasks/t-child/sprints', { sprint_ids: [7, 8] }]]);
+    // S9 — на той же доске, что S7: перенос, S7 снимается (как «Перенести в спринт» у Яндекса).
+    requests = [];
+    expect(await c.addIssueToSprint('DEMO-2', 9)).toEqual({ affectedSprintIds: [7, 9], backlogBoardIds: [1] });
+    expect(writes()).toEqual([['put', '/tasks/t-child/sprints', { sprint_ids: [9] }]]);
+  });
+
+  it('has no transition screens: the planner opens no transition form', async () => {
+    await expect(client().getQueueWorkflowScreens('DEMO')).resolves.toEqual({});
+    expect(requests).toEqual([]);
   });
 
   it('creates issues in a queue with type and sprint, and only relates links', async () => {
