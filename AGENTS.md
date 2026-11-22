@@ -30,6 +30,14 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 На этой же странице идёт автоматический регресс (`e2e/`, Playwright). Новое поведение, которое на фикстурах не воспроизвести, сначала получает данные в `lib/demo/`.
 
+## Встроенный трекер otorva
+
+Собственный трекер на Rust — [`services/otorva`](./services/otorva/) (ntex + diesel + PostgreSQL, свои `AGENTS.md`, `README.md`, `SPECS.md`). Перенесён в монорепу с историей (git subtree); доски, спринты, ключи задач, оценки, фильтры и журнал изменений развиваются в нём, провайдер в beer-tracker остаётся тонким. План интеграции и что уже сделано — `docs/OTORVA_INTEGRATION.md`.
+
+- Запуск рядом с приложением: `docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile otorva up -d otorva` — своя база `otorva` на общем PostgreSQL (создаёт мигратор), API на `http://127.0.0.1:8090` (в сети compose — `http://otorva:8080`).
+- Rust локально не нужен: сборка и тесты идут в контейнере `rust:1.100.0-alpine3.24`. Поменял `services/otorva` — `cargo test --locked` в этом образе с PostgreSQL (`TEST_DATABASE_ADMIN_URL`), как в job `otorva` в CI.
+- Схема otorva — только миграциями `services/otorva/migrations/NNN_*/up.sql` + `down.sql`; применённую не править.
+
 ## Команды
 
 | Команда | Назначение |
@@ -206,4 +214,4 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 ## CI
 
-В GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) на `push`/`pull_request` в основную ветку запускаются `pnpm lint`, `pnpm lint:dup`, `pnpm lint:shape`, `pnpm typecheck` и `pnpm test`, а отдельным job `e2e` — функциональные и визуальные спеки Playwright в его Linux-образе. Сборка Docker-образа не запускает ESLint (`NEXT_IGNORE_ESLINT` в Dockerfile), поэтому локальные и CI-проверки обязательны.
+В GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) на `push`/`pull_request` в основную ветку запускаются `pnpm lint`, `pnpm lint:dup`, `pnpm lint:shape`, `pnpm typecheck` и `pnpm test`, отдельным job `e2e` — функциональные и визуальные спеки Playwright в его Linux-образе, job `otorva` — `cargo test` встроенного трекера с PostgreSQL. Сборка Docker-образа не запускает ESLint (`NEXT_IGNORE_ESLINT` в Dockerfile), поэтому локальные и CI-проверки обязательны.

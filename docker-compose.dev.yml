@@ -63,6 +63,18 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Встроенный трекер otorva: пароль БД — как у dev-сервиса db; секрет JWT — только для локальной разработки.
+  otorva-migrate:
+    environment:
+      PGUSER: postgres
+      PGPASSWORD: ${BEER_TRACKER_DEV_POSTGRES_PASSWORD:-beer_tracker_local}
+      MIGRATION_DATABASE_URL: postgresql://postgres@db:5432/otorva
+
+  otorva:
+    environment:
+      DATABASE_URL: postgresql://postgres:${BEER_TRACKER_DEV_POSTGRES_PASSWORD:-beer_tracker_local}@db:5432/otorva
+      JWT_SECRET: ${OTORVA_JWT_SECRET:-local-dev-only-otorva-jwt-secret-0123456789abcdef}
+
   db:
     environment:
       POSTGRES_USER: postgres

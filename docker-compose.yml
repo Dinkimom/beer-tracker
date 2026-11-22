@@ -116,6 +116,53 @@ services:
         done
     restart: unless-stopped
 
+  # Встроенный трекер otorva (services/otorva, Rust): своя база `otorva` на том же PostgreSQL.
+  # Профиль «otorva»: docker compose --profile otorva up. Нужен OTORVA_JWT_SECRET в .env
+  # (≥32 байт, `openssl rand -hex 32`) — без него API не стартует.
+  otorva-migrate:
+    profiles: ["otorva"]
+    build:
+      context: services/otorva
+      dockerfile: Containerfile
+      target: migrator
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      MIGRATION_DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}@db:5432/otorva
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        exists=$$(psql -X -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'otorva'")
+        [ "$$exists" = 1 ] || psql -X -d postgres -c 'CREATE DATABASE otorva'
+        exec sh /usr/local/bin/task-tracker-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+
+  otorva:
+    profiles: ["otorva"]
+    build:
+      context: services/otorva
+      dockerfile: Containerfile
+      target: api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/otorva
+      JWT_SECRET: ${OTORVA_JWT_SECRET:-}
+      ALLOW_REGISTRATION: ${OTORVA_ALLOW_REGISTRATION:-false}
+    ports:
+      - "127.0.0.1:8090:8080"
+    healthcheck:
+      test: ["CMD", "task-tracker-api", "healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      otorva-migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     ports:
