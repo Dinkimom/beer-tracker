@@ -39,11 +39,14 @@ export function BacklogPointsBreakdown({ tasks }: BacklogPointsBreakdownProps) {
       {groups.map((group) => (
         <span key={group.label} className="inline-flex items-center gap-1">
           {BUCKETS.map((bucket) => {
-            const bucketLabel = t(`backlog.points.${bucket}`);
+            // «To do: 6 sp» — что значит число, словами: в подсказке и для скринридера.
+            const description = `${t(`backlog.points.${bucket}`)}: ${formatPointsForDisplay(group.buckets[bucket])} ${group.label}`;
             return (
-              <TextTooltip key={bucket} content={`${group.label}: ${bucketLabel}`}>
+              <TextTooltip key={bucket} content={description}>
               <span
+                aria-label={description}
                 className={`inline-flex min-w-5 items-center justify-center rounded-sm px-1.5 py-0.5 text-[11px] font-medium tabular-nums leading-none ${TONE_CLASS[bucket]}`}
+                role="img"
               >
                 {formatPointsForDisplay(group.buckets[bucket])}
               </span>
