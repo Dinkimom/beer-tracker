@@ -33,7 +33,8 @@ test('TC-134: онбординг на встроенном трекере и в�
   await signIn.getByLabel(ui.auth.otorva.emailLabel).fill(STAND_ADMIN.email);
   await signIn.getByLabel(ui.auth.otorva.passwordLabel, { exact: true }).fill('wrong-password');
   await signIn.keyboard.press('Enter');
-  await expect(signIn.getByRole('alert').filter({ hasText: 'Неверный email или пароль' })).toBeVisible();
+  // Текст ошибки — на языке интерфейса (из словаря по коду ответа), не русский текст сервера.
+  await expect(signIn.getByRole('alert').filter({ hasText: ui.auth.otorva.errors.invalid_credentials })).toBeVisible();
   await expect(signIn).toHaveURL(/\/auth-setup/);
 
   await signIn.getByLabel(ui.auth.otorva.passwordLabel, { exact: true }).fill(STAND_ADMIN.secret);

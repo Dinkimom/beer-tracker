@@ -10,8 +10,7 @@ import { readOtorvaCredentials } from '@/components/OtorvaCredentialsFields';
 import { IssueTrackerProviderOverride } from '@/contexts/IssueTrackerProviderOverride';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useTrackerTokenStorage } from '@/hooks/useLocalStorage';
-import { postOtorvaSession } from '@/lib/api/auth';
-import { readApiErrorMessage } from '@/lib/api/readApiError';
+import { otorvaSessionErrorMessage, postOtorvaSession } from '@/lib/api/auth';
 import { useAtlassianOAuthClientTokenState } from '@/lib/atlassianOAuth/authSetupTokenState';
 import { parseIssueTrackerProviderKind } from '@/lib/issueTrackerProvider/providerKind';
 import { useYandexOAuthClientTokenState } from '@/lib/yandexOAuth/clientTokenState';
@@ -83,7 +82,7 @@ export function RegisterForm() {
         const credentials = readOtorvaCredentials(e.currentTarget as HTMLFormElement);
         submitToken = (await postOtorvaSession({ ...credentials, mode: 'register' })).token;
       } catch (exchangeError) {
-        setError(readApiErrorMessage(exchangeError, t('productAuth.register.genericError')));
+        setError(otorvaSessionErrorMessage(exchangeError, t, t('productAuth.register.genericError')));
         setLoading(false);
         return;
       }

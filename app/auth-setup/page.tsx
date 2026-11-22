@@ -13,7 +13,7 @@ import {
   productSessionQueryKey,
   useProductTenantOrganizations,
 } from '@/hooks/useProductTenantOrganizations';
-import { postOtorvaSession } from '@/lib/api/auth';
+import { otorvaSessionErrorMessage, postOtorvaSession } from '@/lib/api/auth';
 import { postOnPremTrackerSession } from '@/lib/api/onprem';
 import { readApiErrorMessage } from '@/lib/api/readApiError';
 import { useAtlassianOAuthClientTokenState } from '@/lib/atlassianOAuth/authSetupTokenState';
@@ -32,6 +32,7 @@ import {
 /** Встроенный трекер: email и пароль из формы → JWT otorva; при ошибке — текст в форму и `null`. */
 async function signInToOtorva(
   form: HTMLFormElement,
+  t: (key: string) => string,
   fallbackError: string,
   setError: (message: string) => void
 ): Promise<string | null> {
@@ -39,7 +40,7 @@ async function signInToOtorva(
     const { email, password } = readOtorvaCredentials(form);
     return (await postOtorvaSession({ email, mode: 'login', password })).token;
   } catch (exchangeError) {
-    setError(readApiErrorMessage(exchangeError, fallbackError));
+    setError(otorvaSessionErrorMessage(exchangeError, t, fallbackError));
     return null;
   }
 }
@@ -203,7 +204,7 @@ export default function AuthSetupPage() {
 
     try {
       // Встроенный трекер: email и пароль → JWT otorva, дальше — тот же путь, что у вставленного токена.
-      const token = isOtorva ? await signInToOtorva(form, t('auth.setup.validationError'), setError) : tokenForAuth;
+      const token = isOtorva ? await signInToOtorva(form, t, t('auth.setup.validationError'), setError) : tokenForAuth;
       if (!token) {
         return;
       }

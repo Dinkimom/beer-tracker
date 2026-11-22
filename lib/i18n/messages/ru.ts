@@ -2512,6 +2512,15 @@ export const ruMessages = {
       emailLabel: 'Email',
       passwordLabel: 'Пароль',
       passwordHint: 'Не короче 6 символов. Эта учётная запись станет администратором встроенного трекера.',
+      errors: {
+        already_initialized: 'Планер уже настроен — войдите на странице входа',
+        bootstrap_missing: 'Встроенный трекер не настроен: задайте OTORVA_BOOTSTRAP_TOKEN на сервере',
+        email_taken: 'Пользователь с таким email уже есть во встроенном трекере',
+        invalid_credentials: 'Неверный email или пароль',
+        invalid_input: 'Проверьте email, имя и пароль (не короче 6 символов)',
+        rate_limited: 'Слишком много попыток входа. Подождите минуту и повторите.',
+        unavailable: 'Встроенный трекер недоступен. Проверьте, что сервис otorva запущен.',
+      },
     },
     setup: {
       title: 'Настройка доступа',

@@ -3,6 +3,7 @@
  */
 
 import type { TrackerMyselfUser } from './types';
+import type { OtorvaSessionErrorCode } from '@/lib/auth/otorvaCredentials';
 import type { OrganizationIssueTrackerPublicDto } from '@/lib/issueTrackerProvider/settings';
 import type { IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import type { OrganizationTrackerAdminFormState } from '@/lib/organizations/organizationTrackerAdminFormState';
@@ -117,6 +118,28 @@ export async function postOtorvaSession(body: {
 }): Promise<{ token: string }> {
   const { data } = await getPlannerBeerTrackerApi().post('/auth/otorva/session', body);
   return data;
+}
+
+const OTORVA_SESSION_ERROR_CODES: ReadonlySet<OtorvaSessionErrorCode> = new Set<OtorvaSessionErrorCode>([
+  'already_initialized',
+  'bootstrap_missing',
+  'email_taken',
+  'invalid_credentials',
+  'invalid_input',
+  'rate_limited',
+  'unavailable',
+]);
+
+/** Текст ошибки входа во встроенный трекер на языке интерфейса: по коду из ответа, иначе `fallback`. */
+export function otorvaSessionErrorMessage(
+  error: unknown,
+  t: (key: string) => string,
+  fallback: string
+): string {
+  const code = (error as AxiosError<{ code?: string }>).response?.data?.code;
+  return code && OTORVA_SESSION_ERROR_CODES.has(code as OtorvaSessionErrorCode)
+    ? t(`auth.otorva.errors.${code}`)
+    : fallback;
 }
 
 export async function postProductLogout(): Promise<void> {

@@ -88,22 +88,24 @@ describe('exchangeOtorvaCredentials', () => {
 
   it('refuses registration once the planner is set up, and without a bootstrap secret', async () => {
     setupState.initialized = true;
-    expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'register', password: 'password123' })).toMatchObject({ ok: false, status: 403 });
+    expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'register', password: 'password123' })).toMatchObject({ code: 'already_initialized', ok: false, status: 403 });
     expect(requests).toEqual([]);
 
     setupState.initialized = false;
     delete process.env.OTORVA_BOOTSTRAP_TOKEN;
-    expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'register', password: 'password123' })).toMatchObject({ ok: false, status: 503 });
+    expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'register', password: 'password123' })).toMatchObject({ code: 'bootstrap_missing', ok: false, status: 503 });
   });
 
-  it('turns tracker errors into user messages', async () => {
+  it('turns tracker errors into codes; the text comes from the UI dictionary', async () => {
     loginStatus = 401;
     expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'login', password: 'wrong-pass' })).toEqual({
-      error: 'Неверный email или пароль',
+      code: 'invalid_credentials',
       ok: false,
       status: 401,
     });
     loginStatus = 429;
-    expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'login', password: 'wrong-pass' })).toMatchObject({ ok: false, status: 429 });
+    expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'login', password: 'wrong-pass' })).toMatchObject({ code: 'rate_limited', status: 429 });
+    loginStatus = 502;
+    expect(await exchangeOtorvaCredentials({ email: 'a@b.c', mode: 'login', password: 'wrong-pass' })).toMatchObject({ code: 'unavailable', status: 503 });
   });
 });

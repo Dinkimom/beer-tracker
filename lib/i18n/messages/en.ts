@@ -2508,6 +2508,15 @@ export const enMessages = {
       emailLabel: 'Email',
       passwordLabel: 'Password',
       passwordHint: 'At least 6 characters. This account becomes the built-in tracker administrator.',
+      errors: {
+        already_initialized: 'The planner is already set up — sign in on the sign-in page',
+        bootstrap_missing: 'The built-in tracker is not set up: set OTORVA_BOOTSTRAP_TOKEN on the server',
+        email_taken: 'A user with this email already exists in the built-in tracker',
+        invalid_credentials: 'Wrong email or password',
+        invalid_input: 'Check the email, name and password (at least 6 characters)',
+        rate_limited: 'Too many sign-in attempts. Wait a minute and try again.',
+        unavailable: 'The built-in tracker is unavailable. Check that the otorva service is running.',
+      },
     },
     setup: {
       title: 'Access setup',

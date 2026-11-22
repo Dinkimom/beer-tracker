@@ -25,8 +25,18 @@ interface OtorvaCredentialsInput {
   password: string;
 }
 
+/** Код ошибки входа: текст для человека — в словаре интерфейса (`auth.otorva.errors.<code>`). */
+export type OtorvaSessionErrorCode =
+  | 'already_initialized'
+  | 'bootstrap_missing'
+  | 'email_taken'
+  | 'invalid_credentials'
+  | 'invalid_input'
+  | 'rate_limited'
+  | 'unavailable';
+
 type OtorvaCredentialsResult =
-  | { error: string; ok: false; status: number }
+  | { code: OtorvaSessionErrorCode; ok: false; status: number }
   | { ok: true; token: string };
 
 /** Адрес otorva подключённой организации; до настройки — адрес этого сервера. */
@@ -37,21 +47,17 @@ async function resolveOtorvaApiUrl(): Promise<string> {
   return config?.kind === 'otorva' ? config.apiUrl : otorvaApiUrlFromEnv();
 }
 
+const OTORVA_STATUS_ERRORS: Readonly<Record<number, OtorvaSessionErrorCode>> = {
+  400: 'invalid_input',
+  401: 'invalid_credentials',
+  409: 'email_taken',
+  429: 'rate_limited',
+};
+
 function otorvaError(error: unknown): OtorvaCredentialsResult {
   const status = axios.isAxiosError(error) ? error.response?.status : undefined;
-  if (status === 401) {
-    return { error: 'Неверный email или пароль', ok: false, status: 401 };
-  }
-  if (status === 429) {
-    return { error: 'Слишком много попыток входа. Подождите минуту и повторите.', ok: false, status: 429 };
-  }
-  if (status === 409) {
-    return { error: 'Пользователь с таким email уже есть во встроенном трекере', ok: false, status: 409 };
-  }
-  if (status === 400) {
-    return { error: 'Проверьте email, имя и пароль (не короче 6 символов)', ok: false, status: 400 };
-  }
-  return { error: 'Встроенный трекер недоступен. Проверьте, что сервис otorva запущен.', ok: false, status: 503 };
+  const code = status != null ? OTORVA_STATUS_ERRORS[status] : undefined;
+  return code ? { code, ok: false, status: status! } : { code: 'unavailable', ok: false, status: 503 };
 }
 
 /** Имя для первого админа: из формы, иначе — локальная часть email. */
@@ -66,13 +72,13 @@ export async function exchangeOtorvaCredentials(input: OtorvaCredentialsInput): 
   try {
     if (input.mode === 'register') {
       if ((await readOnPremSetupState()).initialized) {
-        return { error: 'Планер уже настроен — войдите на странице входа', ok: false, status: 403 };
+        return { code: 'already_initialized', ok: false, status: 403 };
       }
       const { data: setup } = await api.get<{ initialized: boolean }>('/auth/setup-state');
       if (!setup.initialized) {
         const bootstrapToken = process.env.OTORVA_BOOTSTRAP_TOKEN?.trim();
         if (!bootstrapToken) {
-          return { error: 'Встроенный трекер не настроен: задайте OTORVA_BOOTSTRAP_TOKEN', ok: false, status: 503 };
+          return { code: 'bootstrap_missing', ok: false, status: 503 };
         }
         const { data } = await api.post<{ token: string }>('/auth/bootstrap', {
           bootstrap_token: bootstrapToken,

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { exchangeOtorvaCredentials } from '@/lib/auth/otorvaCredentials';
-import { parseJsonRequestBodyWithSchema } from '@/lib/http/parseJsonRequestBody';
+import { parseJsonRequestBody } from '@/lib/http/parseJsonRequestBody';
 
 const BodySchema = z.object({
   email: z.string().trim().email().max(255),
@@ -15,19 +15,18 @@ const BodySchema = z.object({
 /**
  * POST /api/auth/otorva/session — встроенный трекер: email и пароль → JWT otorva (токен трекера).
  * Публичный (`/api/auth/`): вход и первичная настройка. Логика — `lib/auth/otorvaCredentials.ts`.
+ * Ошибка — `{ code }` (`OtorvaSessionErrorCode`), текст — в словаре интерфейса.
  */
 export async function POST(request: Request) {
-  const body = await parseJsonRequestBodyWithSchema(
-    request,
-    BodySchema,
-    'Проверьте email и пароль (не короче 6 символов)'
-  );
-  if (body instanceof NextResponse) {
-    return body;
+  const json = await parseJsonRequestBody(request);
+  const parsed = json instanceof NextResponse ? null : BodySchema.safeParse(json);
+  if (!parsed?.success) {
+    return NextResponse.json({ code: 'invalid_input', error: 'invalid_input' }, { status: 400 });
   }
-  const result = await exchangeOtorvaCredentials(body);
+  const result = await exchangeOtorvaCredentials(parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    // Текст ошибки форма берёт из словаря по коду; `error` — для логов и клиентов без словаря.
+    return NextResponse.json({ code: result.code, error: result.code }, { status: result.status });
   }
   return NextResponse.json({ token: result.token });
 }
