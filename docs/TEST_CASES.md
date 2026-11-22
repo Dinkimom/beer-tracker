@@ -384,3 +384,47 @@
 - Шаги: открыть «Настройки» → «Общие», раздел «Табы сайдбара спринта».
 - Ожидаемо: в списке только вкладки, которые есть в сайдбаре планера: «Задачи», «Спринт», «Метрики», «История»; скрытая здесь вкладка пропадает из шапки сайдбара.
 - Автотест: e2e/functional/settingsSidebarTabs.spec.ts
+
+## 12. Роадмап (квартальный план)
+
+### TC-120: Переключение квартала
+- Контур: демо
+- Код: features/quarterly-plan/components/QuarterlyPlanHeader.tsx, features/quarterly-plan/QuarterlyPlanPage.tsx, features/quarterly-plan/useQuarterlyPlan.ts
+- Шаги: открыть вкладку «Роадмап», нажать «Следующий квартал», затем «Текущий».
+- Ожидаемо: видны команды доски с направлениями и эпиками; в следующем квартале своего плана и строк текущего квартала нет; «Текущий» возвращает текущий квартал с его планом.
+- Автотест: e2e/functional/quarterlyPlan.spec.ts
+
+### TC-121: Новое направление и эпик
+- Контур: демо
+- Код: features/quarterly-plan/components/QuarterlyPlanTeamHeader.tsx, features/quarterly-plan/components/QuarterlyPlanDirectionHeader.tsx, features/quarterly-plan/components/QuarterlyPlanInlineInput.tsx, features/quarterly-plan/quarterlyPlanMenuSections.tsx, features/quarterly-plan/quarterlyPlanBoardModel.ts
+- Шаги: у команды «Добавить направление», ввести название, Enter; у направления «Добавить эпик» → «Новый эпик», ввести название, Enter.
+- Ожидаемо: направление и эпик появляются в плане; у нового эпика метка «Не запланировано».
+- Автотест: e2e/functional/quarterlyPlan.spec.ts
+
+### TC-122: Назначение человека на неделю
+- Контур: демо
+- Код: features/quarterly-plan/components/QuarterlyPlanEpicRow.tsx, features/quarterly-plan/components/QuarterlyPlanWeekCells.tsx, features/quarterly-plan/components/QuarterlyPlanMenu.tsx, features/quarterly-plan/quarterlyPlanMenuSections.tsx, features/quarterly-plan/quarterlyPlanBoardModel.ts
+- Шаги: у незапланированного эпика нажать на клетку недели, в окне «Кто делает» выбрать человека.
+- Ожидаемо: в строке полоса человека на эту неделю (фаза по умолчанию — Delivery); метка «Не запланировано» у эпика пропадает, счётчик незапланированных у направления уменьшается.
+- Автотест: e2e/functional/quarterlyPlan.spec.ts
+
+### TC-123: Удаление эпика из плана
+- Контур: демо
+- Код: features/quarterly-plan/quarterlyPlanMenuSections.tsx, features/quarterly-plan/QuarterlyPlanPage.tsx, features/quarterly-plan/quarterlyPlanBoardModel.ts
+- Шаги: в меню «Действия» эпика выбрать «Убрать из плана», подтвердить.
+- Ожидаемо: перед удалением — подтверждение, что в трекере ничего не меняется; после него строка и её полосы пропадают из плана.
+- Автотест: e2e/functional/quarterlyPlan.spec.ts
+
+### TC-124: Восстановление версии
+- Контур: демо
+- Код: features/quarterly-plan/components/QuarterlyPlanHistorySidebar.tsx, features/quarterly-plan/useQuarterlyPlanHistory.ts, features/quarterly-plan/useQuarterlyPlan.ts, lib/quarterlyPlans/
+- Шаги: изменить план, открыть «История версий», выбрать прошлую версию, «Восстановить эту версию», закрыть историю, снова изменить план.
+- Ожидаемо: выбранная версия показывается на доске только для чтения; после восстановления на доске она, а не последняя правка; следующая правка идёт поверх восстановленной версии и становится текущей версией.
+- Автотест: e2e/functional/quarterlyPlan.spec.ts
+
+### TC-125: Черновик агента
+- Контур: боевой
+- Код: features/quarterly-plan/useQuarterlyPlanAgent.ts, features/quarterly-plan/components/QuarterlyPlanAgentIsland.tsx, features/quarterly-plan/components/QuarterlyPlanDraftBar.tsx
+- Шаги: агент через MCP предлагает правку плана; на доске принять черновик целиком или по пунктам либо отклонить.
+- Ожидаемо: предложенные строки и полосы помечены как черновик; принятые становятся частью плана и попадают в историю версий с меткой «черновик агента»; отклонённые пропадают.
+- Автотест: нет — черновик пишет внешний агент через MCP, в фикстурах демо его нет
