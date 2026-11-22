@@ -56,7 +56,7 @@ describe('applyAvailabilityEventOps', () => {
     const result = await run([vacation]);
     expect(result.ok && result.applied.map((item) => item.id)).toEqual(['ev1']);
     expect(insertBoardAvailabilityEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ boardId: 42, eventType: 'vacation', memberName: 'Alice' })
+      expect.objectContaining({ boardId: 42, eventType: 'vacation', memberName: 'Alice', organizationId: 'org-1' })
     );
     expect(notifyAvailabilityChangedIfNeeded).toHaveBeenCalledWith(expect.objectContaining({ boardId: 42 }));
   });
@@ -94,7 +94,7 @@ describe('applyAvailabilityEventOps', () => {
       applied: [{ id: 'ev1', op: 'remove' }],
       ok: true,
     });
-    expect(deleteBoardAvailabilityEvent).toHaveBeenCalledWith('ev1', 42, 'alice');
+    expect(deleteBoardAvailabilityEvent).toHaveBeenCalledWith('org-1', 'ev1', 42, 'alice');
   });
 
   it('схема отклоняет неизвестный вид отсутствия', () => {

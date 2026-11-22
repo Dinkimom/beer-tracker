@@ -318,12 +318,13 @@ async function loadNotesWithDiagramText(input: {
 
 async function loadAvailability(input: {
   boardId: number | undefined;
+  organizationId: string;
   sprintWindow: SprintContextSoftMeta['sprintWindow'];
 }): Promise<SprintContextAvailabilityEvent[]> {
   if (input.boardId == null) {
     return [];
   }
-  const rows = await listBoardAvailabilityEvents(input.boardId);
+  const rows = await listBoardAvailabilityEvents(input.organizationId, input.boardId);
   const mapped = rows.flatMap((row) => {
     const event = mapAvailabilityRow(row);
     return event ? [event] : [];
@@ -378,6 +379,7 @@ export async function buildSprintContext(input: {
     ),
     loadAvailability({
       boardId: softMeta.boardId,
+      organizationId,
       sprintWindow: softMeta.sprintWindow,
     }),
     loadOrgPartsPerDay(organizationId),

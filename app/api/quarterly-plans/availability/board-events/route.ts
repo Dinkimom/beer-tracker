@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/api-error-handler';
-import { requireTenantContext } from '@/lib/api-tenant';
+import { requireTenantContext, type TenantContext } from '@/lib/api-tenant';
 import {
   boardAvailabilityEventFromRow as rowToEvent,
   deleteBoardAvailabilityEvent,
@@ -10,8 +10,51 @@ import {
   updateBoardAvailabilityEvent,
 } from '@/lib/boardAvailability/boardAvailabilityEventsRepository';
 import { notifyAvailabilityChangedIfNeeded } from '@/lib/notifications/notifyLifecycleAndAvailability';
+import { getTeamByBoardId } from '@/lib/staffTeams/teamsRepository';
 
 const EVENT_TYPES = new Set(['vacation', 'sick_leave', 'duty']);
+
+type OrgBoard = { boardId: number; ctx: TenantContext } | { response: NextResponse };
+
+/**
+ * Организация из сессии и её доска. Доска чужой организации — 404, как несуществующая:
+ * номер доски уникален только внутри организации, события читаются и меняются только у своей.
+ */
+async function requireOrgBoard(request: NextRequest, boardIdRaw: unknown): Promise<OrgBoard> {
+  const tenant = await requireTenantContext(request);
+  if (!('ctx' in tenant)) {
+    return { response: tenant.response };
+  }
+  const boardId = Number(boardIdRaw);
+  if (boardIdRaw == null || boardIdRaw === '' || Number.isNaN(boardId)) {
+    return { response: NextResponse.json({ error: 'Некорректный boardId' }, { status: 400 }) };
+  }
+  if (!(await getTeamByBoardId(tenant.ctx.organizationId, boardId))) {
+    return { response: NextResponse.json({ error: 'Доска не найдена' }, { status: 404 }) };
+  }
+  return { boardId, ctx: tenant.ctx };
+}
+
+/** Новое или изменённое событие уходит в уведомления команды. */
+function notifyChange(
+  ctx: TenantContext,
+  boardId: number,
+  event: { endDate: string; eventType: string; memberId: string; memberName: string; startDate: string },
+  sprintIdRaw: unknown
+): void {
+  const sprintId = sprintIdRaw != null && !Number.isNaN(Number(sprintIdRaw)) ? Number(sprintIdRaw) : undefined;
+  notifyAvailabilityChangedIfNeeded({
+    actorUserId: ctx.userId,
+    endDate: event.endDate,
+    eventType: event.eventType,
+    memberId: event.memberId,
+    memberName: event.memberName,
+    startDate: event.startDate,
+    boardId,
+    organizationId: ctx.organizationId,
+    sprintId,
+  });
+}
 
 function parseDateOnly(value: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -117,22 +160,15 @@ function validateEventPayload(body: Record<string, unknown>): {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const boardIdParam = searchParams.get('boardId');
-    const memberId = searchParams.get('memberId');
+    const access = await requireOrgBoard(request, searchParams.get('boardId'));
+    if ('response' in access) return access.response;
 
-    if (!boardIdParam) {
-      return NextResponse.json({ error: 'boardId обязателен' }, { status: 400 });
-    }
-
-    const boardId = Number(boardIdParam);
-    if (Number.isNaN(boardId)) {
-      return NextResponse.json({ error: 'Некорректные параметры' }, { status: 400 });
-    }
-
-    const rows = await listBoardAvailabilityEvents(boardId, memberId);
-    const events = rows.map((row) => rowToEvent(row));
-
-    return NextResponse.json({ events });
+    const rows = await listBoardAvailabilityEvents(
+      access.ctx.organizationId,
+      access.boardId,
+      searchParams.get('memberId')
+    );
+    return NextResponse.json({ events: rows.map((row) => rowToEvent(row)) });
   } catch (error) {
     return handleApiError(error, 'Failed to get board availability events');
   }
@@ -143,41 +179,22 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const tenantResult = await requireTenantContext(request);
-    if (!('ctx' in tenantResult)) {
-      return tenantResult.response;
-    }
-    const { organizationId, userId: actorUserId } = tenantResult.ctx;
-
     const body = (await request.json()) ?? {};
+    const access = await requireOrgBoard(request, body.boardId);
+    if ('response' in access) return access.response;
     const parsed = validateEventPayload(body);
     if (!parsed.ok) return parsed.response;
 
     const row = await insertBoardAvailabilityEvent({
-      boardId: parsed.boardIdNum,
-      memberId: parsed.memberId,
-      memberName: parsed.memberName,
-      eventType: parsed.eventType,
-      startDate: parsed.startDate,
-      endDate: parsed.endDate,
-    });
-
-    const sprintIdRaw = body.sprintId;
-    const sprintId =
-      sprintIdRaw != null && !Number.isNaN(Number(sprintIdRaw)) ? Number(sprintIdRaw) : undefined;
-
-    notifyAvailabilityChangedIfNeeded({
-      actorUserId,
-      boardId: parsed.boardIdNum,
+      boardId: access.boardId,
       endDate: parsed.endDate,
       eventType: parsed.eventType,
       memberId: parsed.memberId,
       memberName: parsed.memberName,
-      organizationId,
-      sprintId,
+      organizationId: access.ctx.organizationId,
       startDate: parsed.startDate,
     });
-
+    notifyChange(access.ctx, access.boardId, parsed, body.sprintId);
     return NextResponse.json(rowToEvent(row));
   } catch (error) {
     return handleApiError(error, 'Failed to create board availability event');
@@ -189,60 +206,30 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const tenantResult = await requireTenantContext(request);
-    if (!('ctx' in tenantResult)) {
-      return tenantResult.response;
-    }
-    const { organizationId, userId: actorUserId } = tenantResult.ctx;
-
     const body = (await request.json()) ?? {};
-    const { id, boardId, memberId } = body ?? {};
-
-    if (!id || boardId == null || memberId == null) {
-      return NextResponse.json(
-        { error: 'id, boardId и memberId обязательны' },
-        { status: 400 }
-      );
+    const access = await requireOrgBoard(request, body.boardId);
+    if ('response' in access) return access.response;
+    const { id, memberId } = body;
+    if (!id || memberId == null) {
+      return NextResponse.json({ error: 'id, boardId и memberId обязательны' }, { status: 400 });
     }
-
     const parsed = validateEventPayload(body);
     if (!parsed.ok) return parsed.response;
 
-    const boardIdNum = Number(boardId);
-    if (Number.isNaN(boardIdNum)) {
-      return NextResponse.json({ error: 'Некорректные параметры' }, { status: 400 });
-    }
-
     const row = await updateBoardAvailabilityEvent({
+      boardId: access.boardId,
+      endDate: parsed.endDate,
+      eventType: parsed.eventType,
       id,
-      boardId: boardIdNum,
       memberId: String(memberId),
       memberName: parsed.memberName,
-      eventType: parsed.eventType,
+      organizationId: access.ctx.organizationId,
       startDate: parsed.startDate,
-      endDate: parsed.endDate,
     });
-
     if (!row) {
       return NextResponse.json({ error: 'Запись не найдена' }, { status: 404 });
     }
-
-    const sprintIdRaw = body.sprintId;
-    const sprintId =
-      sprintIdRaw != null && !Number.isNaN(Number(sprintIdRaw)) ? Number(sprintIdRaw) : undefined;
-
-    notifyAvailabilityChangedIfNeeded({
-      actorUserId,
-      boardId: boardIdNum,
-      endDate: parsed.endDate,
-      eventType: parsed.eventType,
-      memberId: parsed.memberId,
-      memberName: parsed.memberName,
-      organizationId,
-      sprintId,
-      startDate: parsed.startDate,
-    });
-
+    notifyChange(access.ctx, access.boardId, parsed, body.sprintId);
     return NextResponse.json(rowToEvent(row));
   } catch (error) {
     return handleApiError(error, 'Failed to update board availability event');
@@ -255,24 +242,15 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const access = await requireOrgBoard(request, searchParams.get('boardId'));
+    if ('response' in access) return access.response;
     const id = searchParams.get('id');
-    const boardIdParam = searchParams.get('boardId');
     const memberId = searchParams.get('memberId');
-
-    if (!id || !boardIdParam || !memberId) {
-      return NextResponse.json(
-        { error: 'id, boardId и memberId обязательны' },
-        { status: 400 }
-      );
+    if (!id || !memberId) {
+      return NextResponse.json({ error: 'id, boardId и memberId обязательны' }, { status: 400 });
     }
 
-    const boardId = Number(boardIdParam);
-    if (Number.isNaN(boardId)) {
-      return NextResponse.json({ error: 'Некорректные параметры' }, { status: 400 });
-    }
-
-    const deleted = await deleteBoardAvailabilityEvent(id, boardId, memberId);
-
+    const deleted = await deleteBoardAvailabilityEvent(access.ctx.organizationId, id, access.boardId, memberId);
     return NextResponse.json({ success: true, deleted });
   } catch (error) {
     return handleApiError(error, 'Failed to delete board availability event');

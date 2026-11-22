@@ -75,14 +75,14 @@ export function registerQuarterlyPlanMcpTools(
         const directions = plan.directions.filter((direction) => teams.some((team) => team.id === direction.teamId));
         const epics = plan.epics.filter((epic) => directions.some((direction) => direction.id === epic.directionId));
         const owner = { organizationId: input.organizationId, ownerId: input.userId, ref };
-        const [findings, pendingProposal] = await Promise.all([findQuarterlyPlanProblems(plan), loadQuarterlyPlanDraft(owner)]);
+        const [findings, pendingProposal] = await Promise.all([findQuarterlyPlanProblems(input.organizationId, plan), loadQuarterlyPlanDraft(owner)]);
         const agentSession = pendingProposal
           ? await loadDraftAgentSessionSummary({ ...owner, proposalId: pendingProposal.proposalId, scope: quarterScope(ref) })
           : null;
         const inTeams = new Set(teams.map((team) => team.id));
         const absences = await Promise.all(
           teams.map(async (team) => ({
-            events: (await listBoardAvailabilityEvents(team.boardId)).map(boardAvailabilityEventFromRow),
+            events: (await listBoardAvailabilityEvents(input.organizationId, team.boardId)).map(boardAvailabilityEventFromRow),
             teamId: team.id,
           }))
         );

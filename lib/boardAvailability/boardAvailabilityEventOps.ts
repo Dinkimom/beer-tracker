@@ -72,7 +72,7 @@ async function applyOne(
   actor: { organizationId: string; userId: string }
 ): Promise<{ event?: BoardAvailabilityEvent; id: string } | null> {
   if (op.op === 'remove') {
-    const deleted = await deleteBoardAvailabilityEvent(op.id, team.boardId, op.memberId);
+    const deleted = await deleteBoardAvailabilityEvent(actor.organizationId, op.id, team.boardId, op.memberId);
     return deleted > 0 ? { id: op.id } : null;
   }
   const fields = {
@@ -81,6 +81,7 @@ async function applyOne(
     eventType: op.eventType,
     memberId: op.memberId,
     memberName: team.members.find((member) => member.id === op.memberId)?.name ?? op.memberId,
+    organizationId: actor.organizationId,
     startDate: op.startDate,
   };
   const row =

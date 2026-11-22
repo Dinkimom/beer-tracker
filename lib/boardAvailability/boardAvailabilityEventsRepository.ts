@@ -29,7 +29,12 @@ export function boardAvailabilityEventFromRow(row: BoardAvailabilityEventRow): B
   };
 }
 
+/**
+ * События отсутствия доски организации. Номер доски уникален только внутри организации,
+ * поэтому каждый запрос — по паре (организация, доска).
+ */
 export async function listBoardAvailabilityEvents(
+  organizationId: string,
   boardId: number,
   memberId?: string | null
 ): Promise<BoardAvailabilityEventRow[]> {
@@ -37,22 +42,23 @@ export async function listBoardAvailabilityEvents(
     ? await query(
         `SELECT id, board_id, member_id, member_name, event_type, start_date, end_date
            FROM board_availability_events
-           WHERE board_id = $1 AND member_id = $2
+           WHERE organization_id = $1 AND board_id = $2 AND member_id = $3
            ORDER BY start_date ASC, end_date ASC`,
-        [boardId, memberId]
+        [organizationId, boardId, memberId]
       )
     : await query(
         `SELECT id, board_id, member_id, member_name, event_type, start_date, end_date
            FROM board_availability_events
-           WHERE board_id = $1
+           WHERE organization_id = $1 AND board_id = $2
            ORDER BY member_name ASC, start_date ASC, end_date ASC`,
-        [boardId]
+        [organizationId, boardId]
       );
   return result.rows as BoardAvailabilityEventRow[];
 }
 
 export async function insertBoardAvailabilityEvent(input: {
   boardId: number;
+  organizationId: string;
   endDate: string;
   eventType: string;
   memberId: string;
@@ -61,9 +67,9 @@ export async function insertBoardAvailabilityEvent(input: {
 }): Promise<BoardAvailabilityEventRow> {
   const insertResult = await query(
     `INSERT INTO board_availability_events (
-         board_id, member_id, member_name, event_type, start_date, end_date, updated_at
+         board_id, member_id, member_name, event_type, start_date, end_date, organization_id, updated_at
        )
-       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
        RETURNING id, member_id, member_name, event_type, start_date, end_date`,
     [
       input.boardId,
@@ -72,6 +78,7 @@ export async function insertBoardAvailabilityEvent(input: {
       input.eventType,
       input.startDate,
       input.endDate,
+      input.organizationId,
     ]
   );
   return insertResult.rows[0] as BoardAvailabilityEventRow;
@@ -79,6 +86,7 @@ export async function insertBoardAvailabilityEvent(input: {
 
 export async function updateBoardAvailabilityEvent(input: {
   boardId: number;
+  organizationId: string;
   endDate: string;
   eventType: string;
   id: string;
@@ -90,7 +98,7 @@ export async function updateBoardAvailabilityEvent(input: {
     `UPDATE board_availability_events
        SET member_name = $1, event_type = $2,
            start_date = $3, end_date = $4, updated_at = NOW()
-       WHERE id = $5 AND board_id = $6 AND member_id = $7
+       WHERE id = $5 AND board_id = $6 AND member_id = $7 AND organization_id = $8
        RETURNING id, member_id, member_name, event_type, start_date, end_date`,
     [
       input.memberName,
@@ -100,19 +108,22 @@ export async function updateBoardAvailabilityEvent(input: {
       input.id,
       input.boardId,
       input.memberId,
+      input.organizationId,
     ]
   );
   return (updateResult.rows[0] as BoardAvailabilityEventRow | undefined) ?? null;
 }
 
 export async function deleteBoardAvailabilityEvent(
+  organizationId: string,
   id: string,
   boardId: number,
   memberId: string
 ): Promise<number> {
   const del = await query(
-    `DELETE FROM board_availability_events WHERE id = $1 AND board_id = $2 AND member_id = $3`,
-    [id, boardId, memberId]
+    `DELETE FROM board_availability_events
+      WHERE id = $1 AND board_id = $2 AND member_id = $3 AND organization_id = $4`,
+    [id, boardId, memberId, organizationId]
   );
   return del.rowCount ?? 0;
 }

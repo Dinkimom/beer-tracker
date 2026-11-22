@@ -311,12 +311,18 @@ interface QuarterlyPlanFindings {
 }
 
 /** Проблемы и риски плана по событиям отсутствия досок его команд (QM4). */
-export async function findQuarterlyPlanProblems(plan: QuarterlyPlan): Promise<QuarterlyPlanFindings> {
+export async function findQuarterlyPlanProblems(
+  organizationId: string,
+  plan: QuarterlyPlan
+): Promise<QuarterlyPlanFindings> {
   const eventsByBoard = new Map(
     await Promise.all(
       plan.teams.map(
         async (team) =>
-          [team.boardId, (await listBoardAvailabilityEvents(team.boardId)).map(boardAvailabilityEventFromRow)] as const
+          [
+            team.boardId,
+            (await listBoardAvailabilityEvents(organizationId, team.boardId)).map(boardAvailabilityEventFromRow),
+          ] as const
       )
     )
   );
@@ -371,7 +377,7 @@ export async function applyQuarterlyPlanOps(input: {
   if (!applied.ok) return { error: applied.error, opIndex: applied.opIndex, status: 'invalid' };
   if (input.dryRun) {
     // Предпросмотр показывает, что пакет сделает с проблемами плана (QM4); спринты и трекер не нужны.
-    const findings = await findQuarterlyPlanProblems({
+    const findings = await findQuarterlyPlanProblems(input.organizationId, {
       ...input.ref,
       ...applied.content,
       sprintCards: {},
