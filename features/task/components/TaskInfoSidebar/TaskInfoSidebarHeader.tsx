@@ -26,6 +26,12 @@ const BREADCRUMB_KEY_CLASS =
 const BREADCRUMB_MUTED_TEXT_CLASS = 'min-w-0 truncate text-gray-500 dark:text-gray-400';
 const BREADCRUMB_KEY_TEXT_CLASS = 'shrink-0 font-medium text-gray-900 dark:text-gray-100';
 
+/**
+ * Очередь — короткое имя: не сжимается, пока есть место у родителя (длинное имя фичи вытесняло её до буквы).
+ * Потолок — на случай длинного имени очереди.
+ */
+const BREADCRUMB_QUEUE_CLASS = 'shrink-0 max-w-[10rem]';
+
 const BREADCRUMB_SEP_CLASS = 'shrink-0 px-0.5 text-gray-400 dark:text-gray-500';
 
 interface TaskInfoSidebarHeaderProps {
@@ -55,7 +61,7 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
               <OverflowTooltip content={breadcrumb.queueLabel ?? ''}>
               {breadcrumb.queueUrl ? (
                 <a
-                  className={BREADCRUMB_MUTED_LINK_CLASS}
+                  className={`${BREADCRUMB_MUTED_LINK_CLASS} ${BREADCRUMB_QUEUE_CLASS}`}
                   href={breadcrumb.queueUrl}
                   rel="noopener noreferrer"
                   target="_blank"
@@ -63,7 +69,7 @@ export function TaskInfoSidebarHeader({ task, onClose }: TaskInfoSidebarHeaderPr
                   {breadcrumb.queueLabel}
                 </a>
               ) : (
-                <span className={BREADCRUMB_MUTED_TEXT_CLASS}>{breadcrumb.queueLabel}</span>
+                <span className={`${BREADCRUMB_MUTED_TEXT_CLASS} ${BREADCRUMB_QUEUE_CLASS}`}>{breadcrumb.queueLabel}</span>
               )}
               </OverflowTooltip>
               <span aria-hidden className={BREADCRUMB_SEP_CLASS}>
