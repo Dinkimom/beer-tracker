@@ -42,7 +42,7 @@ import {
   trackRetroSave,
 } from './retroBoardSyncState';
 
-function retroBoardQueryKey(sprintId: number): ['retroBoard', number] {
+export function retroBoardQueryKey(sprintId: number): ['retroBoard', number] {
   return ['retroBoard', sprintId];
 }
 
@@ -61,12 +61,12 @@ export function useRetroBoard(
   const previousSprintId = adjacent.previousSprintId;
   const currentQuery = useQuery({
     queryKey: retroBoardQueryKey(sprintId),
-    queryFn: () => loadSyncedRetroBoard(sprintId),
+    queryFn: () => loadSyncedRetroBoard(queryClient, sprintId),
   });
   const previousQuery = useQuery({
     enabled: previousSprintId != null,
     queryKey: retroBoardQueryKey(previousSprintId ?? 0),
-    queryFn: () => loadSyncedRetroBoard(previousSprintId ?? 0),
+    queryFn: () => loadSyncedRetroBoard(queryClient, previousSprintId ?? 0),
   });
   const store = useMemo(
     () => retroStoreFromBoards([currentQuery.data, previousQuery.data]),
@@ -228,11 +228,22 @@ function cachedRetroStore(
   return retroStoreFromBoards([current, previous]);
 }
 
-function loadSyncedRetroBoard(sprintId: number): Promise<RetroBoard | null> {
-  return loadRetroBoard(sprintId).then((board) => {
-    rememberRetroBoardSync(sprintId, board);
-    return board;
-  });
+/**
+ * Доска с сервера склеивается с локальной, а не заменяет её: пока ответ шёл, человек мог
+ * добавить карточку, и её сохранение ещё в пути. Общий предок — последняя подтверждённая
+ * сервером доска; без локальных правок результат — просто ответ сервера.
+ */
+async function loadSyncedRetroBoard(
+  queryClient: ReturnType<typeof useQueryClient>,
+  sprintId: number
+): Promise<RetroBoard | null> {
+  const remote = await loadRetroBoard(sprintId);
+  const base = retroBoardSyncBase(sprintId);
+  const local = queryClient.getQueryData<RetroBoard | null>(retroBoardQueryKey(sprintId));
+  rememberRetroBoardSync(sprintId, remote);
+  if (!local || local === base) return remote;
+  if (!remote) return local;
+  return base ? mergeRetroBoards(base, local, remote) : remote;
 }
 
 function enqueueRetroSave(

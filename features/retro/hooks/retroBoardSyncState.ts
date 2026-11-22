@@ -9,7 +9,7 @@ export function trackRetroSave(sprintId: number, delta: -1 | 1): void {
   else inflight.set(sprintId, next);
 }
 
-export function isRetroSaveInflight(sprintId: number): boolean {
+function isRetroSaveInflight(sprintId: number): boolean {
   return (inflight.get(sprintId) ?? 0) > 0;
 }
 

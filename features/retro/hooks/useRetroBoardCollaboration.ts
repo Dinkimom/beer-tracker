@@ -8,11 +8,8 @@ import { useState } from 'react';
 import { useSprintCardPresenceReporter } from '@/hooks/useSprintCardPresenceReporter';
 import { useSprintRealtimeSync } from '@/hooks/useSprintRealtimeSync';
 
-import { isRetroSaveInflight } from './retroBoardSyncState';
+import { retroBoardQueryKey } from './useRetroBoard';
 
-function retroBoardQueryKey(sprintId: number): ['retroBoard', number] {
-  return ['retroBoard', sprintId];
-}
 
 export function useRetroBoardCollaboration(
   sprintId: number | null,
@@ -21,8 +18,9 @@ export function useRetroBoardCollaboration(
   const queryClient = useQueryClient();
   const [viewers, setViewers] = useState<SprintPresenceViewer[]>([]);
 
+  // Ответ склеивается с несохранёнными правками (`loadSyncedRetroBoard`), поэтому событие во время
+  // своего сохранения не пропускается: иначе чужая правка не видна до следующего события.
   const refresh = (id: number) => {
-    if (isRetroSaveInflight(id)) return;
     queryClient.invalidateQueries({ queryKey: retroBoardQueryKey(id) }).catch(() => undefined);
   };
 
