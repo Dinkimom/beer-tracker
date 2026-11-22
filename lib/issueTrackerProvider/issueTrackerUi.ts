@@ -109,8 +109,9 @@ interface IssueTrackerI18nParams {
   tracker: string;
   trackerDative: string;
   trackerGenitive: string;
+  /** С предлогом: «во встроенном трекере», «in the built-in tracker». */
+  trackerIn: string;
   trackerInstrumental: string;
-  trackerPrepositional: string;
 }
 
 export function issueTrackerI18nParams(
@@ -125,15 +126,11 @@ export function issueTrackerI18nParams(
       kind,
       'common.issueTracker.nameGenitive'
     ),
+    trackerIn: translateIssueTrackerProviderMessage(t, kind, 'common.issueTracker.nameIn'),
     trackerInstrumental: translateIssueTrackerProviderMessage(
       t,
       kind,
       'common.issueTracker.nameInstrumental'
-    ),
-    trackerPrepositional: translateIssueTrackerProviderMessage(
-      t,
-      kind,
-      'common.issueTracker.namePrepositional'
     ),
   };
 }
