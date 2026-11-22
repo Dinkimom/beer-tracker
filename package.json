@@ -42,6 +42,7 @@
     "e2e:visual:update": "bash scripts/e2e/docker.sh --project=visual --update-snapshots",
     "e2e:audit": "bash scripts/e2e/docker.sh --project=audit --project=audit-ru --project=audit-ru-stress",
     "e2e:audit:update": "E2E_AUDIT_UPDATE=1 bash scripts/e2e/docker.sh --project=audit --project=audit-ru --project=audit-ru-stress",
+    "e2e:stand": "bash scripts/e2e/stand.sh run",
     "e2e:tour": "E2E_TOUR=1 playwright test --project=tour",
     "e2e:report": "playwright show-report e2e/.results/report",
     "bench:planner": "node --expose-gc --import tsx scripts/bench/runPlannerHotPathBench.ts",

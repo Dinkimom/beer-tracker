@@ -9,7 +9,9 @@
     "scripts/knip/*.mjs",
     ".claude/skills/*/*.cjs",
     "scripts/bench/runPlannerHotPathBench.ts",
-    "scripts/bench/plannerHotPath.bench.ts"
+    "scripts/bench/plannerHotPath.bench.ts",
+    "playwright.stand.config.ts",
+    "e2e/stand/*.spec.ts"
   ],
   "ignoreDependencies": ["playwright"]
 }

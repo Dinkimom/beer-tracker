@@ -139,3 +139,42 @@ jobs:
           name: e2e-report
           path: e2e/.results/
           retention-days: 7
+
+  e2e-stand:
+    name: E2E stand (built-in tracker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # Стенд регресса: пустые PostgreSQL и otorva в Docker Compose, dev-сервер планера на раннере
+    # (scripts/e2e/stand.sh). Онбординг, сид из фикстур демо, сценарии с записью в трекер — e2e/stand.
+    env:
+      CI: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Stand
+        run: pnpm e2e:stand
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-stand-report
+          path: e2e/.results/stand/
+          retention-days: 7

@@ -30,9 +30,9 @@ export function sidebarCard(page: Page, key: string): Locator {
   return page.locator(`[data-task-id="${key}"][role="button"]:not([data-swimlane] *)`);
 }
 
-/** Вкладка сайдбара «Задачи»: в доступном имени — число незапланированных задач. */
-export function sidebarTasksTab(page: Page): Locator {
-  return page.getByRole('button', { name: new RegExp(`^${en.sidebar.tabs.tasks} \\d+$`) });
+/** Вкладка сайдбара «Задачи»: в доступном имени — число незапланированных задач. Подпись — на языке страницы. */
+export function sidebarTasksTab(page: Page, label: string = en.sidebar.tabs.tasks): Locator {
+  return page.getByRole('button', { name: new RegExp(`^${label} \\d+$`) });
 }
 
 /** Ручка длительности карточки: правая меняет длительность, левая — начало и длительность. */

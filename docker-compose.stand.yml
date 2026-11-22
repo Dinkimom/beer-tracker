@@ -1,0 +1,78 @@
+# Стенд регресса на встроенном трекере: пустой PostgreSQL (tmpfs — каждый подъём с нуля), Redis и otorva.
+# Планер к нему поднимает scripts/e2e/stand.sh — отдельный dev-сервер хоста на порту стенда, рабочий стек не трогает.
+#
+#   pnpm e2e:stand          # поднять, прогнать e2e/stand, опустить
+#   bash scripts/e2e/stand.sh up | down
+#
+# Секреты — только для стенда, наружу порты слушают на 127.0.0.1.
+name: beer-tracker-stand
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: stand-only-postgres
+      POSTGRES_DB: beer_tracker
+    tmpfs:
+      - /var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${STAND_DB_PORT:-55432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d beer_tracker"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:${STAND_REDIS_PORT:-56379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  otorva-migrate:
+    build:
+      context: services/otorva
+      dockerfile: Containerfile
+      target: migrator
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGPASSWORD: stand-only-postgres
+      MIGRATION_DATABASE_URL: postgresql://postgres@db:5432/otorva
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        psql -X -d postgres -c 'CREATE DATABASE otorva'
+        exec sh /usr/local/bin/task-tracker-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+
+  otorva:
+    build:
+      context: services/otorva
+      dockerfile: Containerfile
+      target: api
+    environment:
+      DATABASE_URL: postgresql://postgres:stand-only-postgres@db:5432/otorva
+      JWT_SECRET: stand-only-otorva-jwt-secret-0123456789abcdef
+      JWT_EXP_HOURS: "720"
+      BOOTSTRAP_TOKEN: stand-only-otorva-bootstrap-0123456789abcdef
+      # Все входы стенда идут с одного адреса (сервер планера и сид) — лимит по умолчанию (30 в минуту) тесен.
+      AUTH_RATE_LIMIT_PER_MINUTE: "1000"
+    ports:
+      - "127.0.0.1:${STAND_OTORVA_PORT:-58090}:8080"
+    healthcheck:
+      test: ["CMD", "task-tracker-api", "healthcheck"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    depends_on:
+      otorva-migrate:
+        condition: service_completed_successfully
