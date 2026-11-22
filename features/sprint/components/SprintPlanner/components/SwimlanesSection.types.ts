@@ -21,7 +21,6 @@ interface SwimlaneBoardInputs {
   selectedSprintId: number | null;
   taskChangelogsByTaskId?: Map<string, ChangelogEntry[]>;
   taskIssueCommentsByTaskId?: Map<string, IssueComment[]>;
-  onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
   onCreateTaskInCell?: (data: {
     assigneeId: string;

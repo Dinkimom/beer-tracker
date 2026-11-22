@@ -1,9 +1,13 @@
+import type { Task } from '@/types';
+
 import { useContext } from 'react';
 
 import { getPartsPerDay } from '@/constants';
+import { openCardContextMenu } from '@/features/context-menu/openCardContextMenu';
 import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { SwimlaneArrowRedrawContext } from '@/features/swimlane/SwimlaneArrowRedrawContext';
 import { useSwimlaneBoard } from '@/features/swimlane/SwimlaneBoardContext';
+import { useRootStore } from '@/lib/layers';
 
 function noop(): void {}
 
@@ -17,6 +21,7 @@ export function useTaskBarBoard(planPatchGhost: boolean, linkingActive: boolean)
   const sprintBoard = useSprintBoard();
   const arrowRedrawFromLane = useContext(SwimlaneArrowRedrawContext);
   const actionsOff = planPatchGhost || linkingActive;
+  const { sprintPlannerUi } = useRootStore();
   return {
     commentActions: actionsOff ? undefined : board.commentActions,
     developers: sprintBoard.developers,
@@ -26,7 +31,9 @@ export function useTaskBarBoard(planPatchGhost: boolean, linkingActive: boolean)
     selectedSprintId: board.selectedSprintId,
     swimlaneTimelineTotalParts: board.sprintTimelineWorkingDays * getPartsPerDay(),
     onClick: planPatchGhost ? undefined : board.onTaskClick,
-    onContextMenu: actionsOff ? undefined : board.onContextMenu,
+    onContextMenu: actionsOff
+      ? undefined
+      : (e: React.MouseEvent, task: Task) => openCardContextMenu(sprintPlannerUi, e, task),
     onCreateQATask: actionsOff ? undefined : board.onCreateQATask,
     onDeleteLocalImage: actionsOff ? undefined : board.quickAdd?.onCancelQuickAddDraft,
   };

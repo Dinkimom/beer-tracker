@@ -42,7 +42,6 @@ export function useSwimlaneBoardValue({
   const participantsColumnWidth = section.participantsColumn.width;
   const {
     commentActions,
-    onContextMenu,
     onCreateQATask,
     onCreateTaskInCell,
     onOverdueCloseAndCreate,
@@ -72,8 +71,7 @@ export function useSwimlaneBoardValue({
       swimlaneFactDeveloperMap,
       taskLinks: filteredTaskLinks,
       viewMode,
-        onContextMenu,
-      onCreateQATask,
+          onCreateQATask,
       onCreateTaskInCell,
       onFactSegmentHover,
       onOverdueCloseAndCreate,
@@ -101,8 +99,7 @@ export function useSwimlaneBoardValue({
       taskChangelogsByTaskId,
       taskIssueCommentsByTaskId,
       viewMode,
-        onContextMenu,
-      onCreateQATask,
+          onCreateQATask,
       onCreateTaskInCell,
       onFactSegmentHover,
       onOverdueCloseAndCreate,

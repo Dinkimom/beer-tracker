@@ -1,7 +1,6 @@
-import type { Developer, LayoutViewMode, SidebarGroupBy, Task } from '@/types';
 import type { ReactNode } from 'react';
 
-import { renderTasksTabGroupSection } from './TasksTabGroupsRenderHelpers';
+import { type RenderTasksTabGroupSectionParams, renderTasksTabGroupSection } from './TasksTabGroupsRenderHelpers';
 
 interface RenderTasksTabGroupsEmptyParams {
   emptyLabel: string;
@@ -27,24 +26,14 @@ export function renderTasksTabGroupsEmpty(params: RenderTasksTabGroupsEmptyParam
   );
 }
 
-interface RenderTasksTabGroupsContentParams {
-  activeTaskDuration?: number | null;
-  activeTaskId?: string | null;
-  developers: Developer[];
-  groupBy: SidebarGroupBy;
-  groupedTasks: Record<string, Task[]>;
+/** Все группы: то же, что у одной секции, но со списком ключей вместо одной группы. */
+type RenderTasksTabGroupsContentParams = Omit<
+  RenderTasksTabGroupSectionParams,
+  'groupIndex' | 'groupKey' | 'groupKeysLength' | 'visibleTaskOrdinalRef'
+> & {
   groupKeys: string[];
-  insertIndex: number | null;
-  sidebarDropTargetActive: boolean;
-  viewMode?: LayoutViewMode;
   visibleTaskOrdinal: { value: number };
-  onAutoAddToSwimlane?: (task: Task) => void;
-  onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
-  onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
-  registerTaskRowRef: (taskId: string, element: HTMLDivElement | null) => void;
-  renderDropSlot: (slotKey: string) => ReactNode;
-  t: (key: string) => string;
-}
+};
 
 export function renderTasksTabGroupsContent(params: RenderTasksTabGroupsContentParams): ReactNode {
   return (
@@ -61,7 +50,6 @@ export function renderTasksTabGroupsContent(params: RenderTasksTabGroupsContentP
           groupedTasks: params.groupedTasks,
           insertIndex: params.insertIndex,
           onAutoAddToSwimlane: params.onAutoAddToSwimlane,
-          onContextMenu: params.onContextMenu,
           onPlanAssignees: params.onPlanAssignees,
           registerTaskRowRef: params.registerTaskRowRef,
           renderDropSlot: params.renderDropSlot,

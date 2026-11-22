@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 
 import { PhaseCardColorSchemeOverride } from '@/components/PhaseCardColorSchemeOverride';
 import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
+import { openCardContextMenu } from '@/features/context-menu/openCardContextMenu';
 import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { useAgentDevTask } from '@/features/task/components/TaskCard/AgentDevTasksContext';
 import { TaskCardAgentBadge } from '@/features/task/components/TaskCard/components/TaskCardAgentBadge';
@@ -19,7 +20,6 @@ import { getTaskTrackerDisplayKey, isEffectivelyQaTask } from '@/features/task/u
 import { useRootStore } from '@/lib/layers';
 import { sprintCardPresenceBlocksNewGestures } from '@/lib/realtime/sprintCardPresence';
 
-import { useKanbanBoard } from './KanbanBoardContext';
 import { KANBAN_CARD_SURFACE } from './kanbanChromeClasses';
 import { kanbanTaskId } from './kanbanDndUtils';
 
@@ -32,7 +32,6 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({ task 
   const presenceLocked = useSprintCardPresenceLocked(task.id);
   const { sprintPlannerUi } = useRootStore();
   const { developers } = useSprintBoard();
-  const { onContextMenu } = useKanbanBoard();
   // Не подходит под поиск по доске — приглушена, как на свимлейне.
   const dimmedBySearch = !taskMatchesNameFilter(task, sprintPlannerUi.focus.globalNameFilter);
   const [ownDragActive, setOwnDragActive] = useState(false);
@@ -95,7 +94,7 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({ task 
           e.stopPropagation();
           return;
         }
-        onContextMenu?.(e, task);
+        openCardContextMenu(sprintPlannerUi, e, task);
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

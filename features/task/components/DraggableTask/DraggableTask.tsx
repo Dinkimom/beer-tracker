@@ -5,8 +5,10 @@ import type { Developer, Task } from '@/types';
 import { observer } from 'mobx-react-lite';
 
 import { useCardContextMenu } from '@/features/context-menu/hooks/useCardContextMenu';
+import { openCardContextMenu } from '@/features/context-menu/openCardContextMenu';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
+import { useRootStore } from '@/lib/layers';
 
 import { useDraggableTask } from './hooks/useDraggableTask';
 
@@ -18,14 +20,12 @@ interface DraggableTaskProps {
   task: Task;
   viewMode?: 'compact' | 'full';
   onAutoAddToSwimlane?: (task: Task) => void;
-  onContextMenu?: (e: React.MouseEvent, task: Task) => void;
 }
 
 // observer: меню карточки читается из стора (`useCardContextMenu`).
 export const DraggableTask = observer(function DraggableTask({
   task,
   developers,
-  onContextMenu,
   isQATask,
   activeTaskId,
   activeTaskDuration,
@@ -34,6 +34,7 @@ export const DraggableTask = observer(function DraggableTask({
 }: DraggableTaskProps) {
   const presenceLocked = useSprintCardPresenceLocked(task.id);
   const contextMenu = useCardContextMenu(task.id);
+  const { sprintPlannerUi } = useRootStore();
   const {
     attributes,
     listeners,
@@ -68,7 +69,7 @@ export const DraggableTask = observer(function DraggableTask({
         variant="sidebar"
         widthPercent={widthPercent}
         onAutoAddToSwimlane={onAutoAddToSwimlane}
-        onContextMenu={onContextMenu}
+        onContextMenu={(e, menuTask) => openCardContextMenu(sprintPlannerUi, e, menuTask)}
         onMouseDown={handleMouseDown}
         {...(presenceLocked && !isDragging ? {} : listeners)}
         {...attributes}

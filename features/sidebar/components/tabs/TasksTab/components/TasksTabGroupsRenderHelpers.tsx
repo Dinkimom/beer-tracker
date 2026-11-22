@@ -45,7 +45,7 @@ function planAssigneeGroupAction(
   );
 }
 
-interface RenderTasksTabGroupSectionParams {
+export interface RenderTasksTabGroupSectionParams {
   activeTaskDuration?: number | null;
   activeTaskId?: string | null;
   developers: Developer[];
@@ -59,7 +59,6 @@ interface RenderTasksTabGroupSectionParams {
   viewMode?: LayoutViewMode;
   visibleTaskOrdinalRef: { value: number };
   onAutoAddToSwimlane?: (task: Task) => void;
-  onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   registerTaskRowRef: (taskId: string, element: HTMLDivElement | null) => void;
   renderDropSlot: (slotKey: string) => ReactNode;
@@ -100,7 +99,6 @@ export function renderTasksTabGroupSection(
           hideDraggedTaskInList,
           insertIndex: params.insertIndex,
           onAutoAddToSwimlane: params.onAutoAddToSwimlane,
-          onContextMenu: params.onContextMenu,
           registerTaskRowRef: params.registerTaskRowRef,
           renderDropSlot: params.renderDropSlot,
           sidebarDropTargetActive: params.sidebarDropTargetActive,

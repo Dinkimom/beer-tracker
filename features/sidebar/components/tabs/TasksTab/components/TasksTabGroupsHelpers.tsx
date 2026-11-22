@@ -14,7 +14,6 @@ interface RenderTasksTabGroupRowsParams {
   viewMode?: LayoutViewMode;
   visibleTaskOrdinalRef: { value: number };
   onAutoAddToSwimlane?: (task: Task) => void;
-  onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   registerTaskRowRef: (taskId: string, element: HTMLDivElement | null) => void;
   renderDropSlot: (slotKey: string) => ReactNode;
 }
@@ -24,7 +23,6 @@ function renderTasksTabTaskRow(params: {
   activeTaskId?: string | null;
   developers: Developer[];
   onAutoAddToSwimlane?: (task: Task) => void;
-  onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   registerTaskRowRef: (taskId: string, element: HTMLDivElement | null) => void;
   task: Task;
   viewMode?: LayoutViewMode;
@@ -38,11 +36,6 @@ function renderTasksTabTaskRow(params: {
         task={params.task}
         viewMode={params.viewMode}
         onAutoAddToSwimlane={params.onAutoAddToSwimlane}
-        onContextMenu={
-          params.onContextMenu
-            ? (e: React.MouseEvent) => params.onContextMenu!(e, params.task, false)
-            : undefined
-        }
       />
     </div>
   );
@@ -64,7 +57,6 @@ export function renderTasksTabGroupRows(params: RenderTasksTabGroupRowsParams): 
       activeTaskId: params.activeTaskId,
       developers: params.developers,
       onAutoAddToSwimlane: params.onAutoAddToSwimlane,
-      onContextMenu: params.onContextMenu,
       registerTaskRowRef: params.registerTaskRowRef,
       task,
       viewMode: params.viewMode,

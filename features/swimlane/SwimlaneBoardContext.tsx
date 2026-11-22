@@ -6,7 +6,7 @@ import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { OccupancyErrorReason } from '@/lib/planner-timeline';
 import type { Developer, LayoutViewMode, PhaseSegment, Task, TaskParent, TaskPosition } from '@/types';
 import type { ChangelogEntry, IssueComment } from '@/types/tracker';
-import type { MouseEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore } from 'react';
 
@@ -41,7 +41,6 @@ export interface SwimlaneBoard {
   /** Пользовательские связи задач — для режима рисования стрелок. */
   taskLinks?: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
   viewMode: LayoutViewMode;
-  onContextMenu?: (e: MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
   onCreateTaskInCell?: (data: {
     assigneeId: string;

@@ -72,7 +72,7 @@ export function useSprintPlannerUIHandlers({
   // Те же праздники, что в шапке свимлейна: расстановка их пропускает
   const holidayDayIndices = useHolidayDays(sprintStartDate, sprintTimelineWorkingDays);
   // Обработчики контекстного меню
-  const { handleContextMenu, handleParentChange } = useSprintPlannerContextMenuHandlers({
+  const { handleParentChange } = useSprintPlannerContextMenuHandlers({
     onParentLayoutChanged: debouncedUpdateXarrow,
     selectedSprintId,
     setTasks,
@@ -150,7 +150,6 @@ export function useSprintPlannerUIHandlers({
   return {
     handleAccountWork,
     handleAutoAssignTasks,
-    handleContextMenu,
     handleMoveToSprint,
     handleParentChange,
     handlePlanAssignees,

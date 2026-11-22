@@ -57,7 +57,6 @@ export interface KanbanViewProps {
   /** Пустой set — без фильтра по исполнителю. */
   selectedAssigneeIds?: ReadonlySet<string>;
   tasks: Task[];
-  onContextMenu?: (e: React.MouseEvent, task: Task) => void;
   onStatusChange?: (taskId: string, transitionId: string, targetStatusKey?: string, targetStatusDisplay?: string, screenId?: string) => Promise<void>;
 }
 
@@ -89,7 +88,6 @@ export const KanbanView = observer(function KanbanView({
   groupBy = 'none',
   selectedAssigneeIds,
   onStatusChange,
-  onContextMenu,
 }: KanbanViewProps) {
   const { t } = useI18n();
 
@@ -282,8 +280,8 @@ export const KanbanView = observer(function KanbanView({
 
   const activeTask = activeTaskId ? tasksForKanban.find((t) => t.id === activeTaskId) : null;
   const kanbanBoard = useMemo<KanbanBoard>(
-    () => ({ activeTaskId, canDropInColumn, sourceColumnId, onContextMenu }),
-    [activeTaskId, canDropInColumn, onContextMenu, sourceColumnId]
+    () => ({ activeTaskId, canDropInColumn, sourceColumnId }),
+    [activeTaskId, canDropInColumn, sourceColumnId]
   );
   const statusChoiceTask = statusChoice
     ? tasksForKanban.find((task) => task.id === statusChoice.taskId)

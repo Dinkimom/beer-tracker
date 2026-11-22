@@ -68,7 +68,6 @@ export interface TaskSidebarContextValue {
   onAssigneeToggle: (id: string) => void;
   onAutoAddToSwimlane?: (task: Task) => void;
   onAutoAssignTasks?: () => void;
-  onContextMenu?: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
 
   onPlanAssignees?: (assigneeIds: ReadonlySet<string>) => void;
   onReturnAllTasks?: () => void;

@@ -53,7 +53,6 @@ export function TasksTab() {
     viewMode,
     selectedBoardId,
     selectedSprintId,
-    onContextMenu,
     onReturnAllTasks,
     onAutoAddToSwimlane,
     onSprintTaskUpserted,
@@ -94,7 +93,6 @@ export function TasksTab() {
           groupedTasks={groupedTasks}
           viewMode={viewMode}
           onAutoAddToSwimlane={onAutoAddToSwimlane}
-          onContextMenu={onContextMenu}
         />
       </div>
       <div

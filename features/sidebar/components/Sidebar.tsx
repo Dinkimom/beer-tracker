@@ -63,7 +63,6 @@ export interface TaskSidebarProps
     TaskSidebarContextValue,
     | 'onAutoAddToSwimlane'
     | 'onAutoAssignTasks'
-    | 'onContextMenu'
     | 'onPlanAssignees'
     | 'onReturnAllTasks'
     | 'onSprintTaskUpserted'
@@ -109,7 +108,6 @@ export const TaskSidebar = observer(function TaskSidebar({
   onTasksReload,
   goalTaskIds: externalGoalTaskIds,
   developersManagement,
-  onContextMenu,
   selectedBoardId,
   selectedSprintId,
   sprints = [],
@@ -218,7 +216,6 @@ export const TaskSidebar = observer(function TaskSidebar({
     onAssigneeToggle: (id: string) => setAssigneeIds((current) => toggleAssigneeId(current, id)),
     onAutoAddToSwimlane,
     onAutoAssignTasks,
-    onContextMenu,
     onPlanAssignees,
     onReturnAllTasks,
     onSprintTaskUpserted,

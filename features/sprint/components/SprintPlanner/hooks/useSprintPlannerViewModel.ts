@@ -319,7 +319,6 @@ export function useSprintPlannerViewModel({
       groupBy: kanbanGroupBy,
       selectedAssigneeIds,
       tasks: allTasksForDrag,
-      onContextMenu: handlers.handleContextMenu,
       onStatusChange: handlers.handleStatusChange,
     },
     modals: {
@@ -379,7 +378,6 @@ export function useSprintPlannerViewModel({
       viewMode,
       onAutoAddToSwimlane: handlers.handleAutoAddToSwimlane,
       onAutoAssignTasks: handlers.handleAutoAssignTasks,
-      onContextMenu: handlers.handleContextMenu,
       onPlanAssignees: handlers.handlePlanAssignees,
       onReturnAllTasks: handlers.handleReturnAllTasks,
       onSprintTaskUpserted: (task: Task) => {
@@ -398,8 +396,7 @@ export function useSprintPlannerViewModel({
         selectedSprintId,
         taskChangelogsByTaskId: swimlaneTaskChangelogsMap,
         taskIssueCommentsByTaskId: swimlaneTaskIssueCommentsMap,
-        onContextMenu: handlers.handleContextMenu,
-        onCreateQATask: handlers.handleCreateQATask,
+          onCreateQATask: handlers.handleCreateQATask,
         onCreateTaskInCell: handleCreateTaskInSwimlaneCell,
         onOverdueCloseAndCreate,
         onSegmentEditSave: handleSegmentEditSave,
