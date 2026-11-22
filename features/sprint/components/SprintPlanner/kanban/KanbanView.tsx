@@ -3,7 +3,15 @@
 import type { Developer, SidebarGroupBy, Task } from '@/types';
 import type { BoardColumn } from '@/types/tracker';
 
-import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -212,6 +220,10 @@ export const KanbanView = observer(function KanbanView({
     });
   }, [tasksForKanban]);
 
+  // Канбан перетаскивается только мышью: клавиатурный перенос между колонками не поддерживаем
+  // (Enter и пробел на карточке — не жест dnd-kit).
+  const sensors = useSensors(useSensor(PointerSensor));
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = parseKanbanTaskId(String(event.active.id));
     if (!taskId) return;
@@ -300,7 +312,7 @@ export const KanbanView = observer(function KanbanView({
       t={t}
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
         <div
           className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-auto overflow-y-auto bg-white scrollbar-thin-custom dark:bg-transparent"
           style={{

@@ -77,7 +77,7 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({ task 
       ref={setNodeRef}
       className={`${
         blockNewGestures ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
-      } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
+      } rounded-lg ${
         menuOpenHere ? 'overflow-visible relative z-20' : 'relative overflow-hidden'
       } ${
         dimOthers
@@ -95,11 +95,6 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({ task 
           return;
         }
         openCardContextMenu(sprintPlannerUi, e, task);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-        }
       }}
       onMouseEnter={() => sprintPlannerUi.cards.setHoveredTaskId(task.id)}
       onMouseLeave={() => {
