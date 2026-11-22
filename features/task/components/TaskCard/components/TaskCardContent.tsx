@@ -1,5 +1,6 @@
 'use client';
 
+import type { TaskCardEditing } from '../TaskCard';
 import type { TaskCardSlotItemContext } from '@/features/task/components/TaskCard/slots/taskCardSlotItemContext';
 import type { PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
 import type { ResolvedTaskCardSlotItem } from '@/lib/taskCard/taskCardSlots';
@@ -31,22 +32,22 @@ import {
   resolveTaskCardTitleMaxLinesFallback,
 } from './taskCardContentHelpers';
 import { TaskCardSidebarContent } from './TaskCardSidebarContent';
-import { TaskCardSwimlaneContent } from './TaskCardSwimlaneContent';
 import { TaskCardSwimlaneDiagramContent } from './TaskCardSwimlaneDiagramContent';
 import { TaskCardSwimlaneImageContent } from './TaskCardSwimlaneImageContent';
+import { TaskCardSwimlaneInlineEditor } from './TaskCardSwimlaneInlineEditor';
+import { TaskCardSwimlaneReadOnlyContent } from './TaskCardSwimlaneReadOnlyContent';
 import { useTaskCardKeyLinkProps } from './useTaskCardKeyLinkProps';
 import { useTaskCardTitleEditorEffects } from './useTaskCardTitleEditorEffects';
+
+/** Дорожка без ведущих слотов заголовка — пустой список (сайдбар их просто не рисует). */
+const NO_TITLE_LEAD_ITEMS: readonly ResolvedTaskCardSlotItem[] = [];
 
 interface TaskCardContentProps {
   centerTitle?: boolean;
   developers?: readonly Developer[];
   displayDuration: number;
+  editing?: TaskCardEditing;
   fontDuration?: number;
-  inlineTitleEditor?: {
-    onChange: (value: string) => void;
-    onSubmit?: () => void;
-    value: string;
-  };
   isDragging?: boolean;
   isResizing?: boolean;
   phaseCardColorScheme?: PlanningPhaseCardColorScheme;
@@ -54,8 +55,6 @@ interface TaskCardContentProps {
   task: Task;
   titleLeadItems?: readonly ResolvedTaskCardSlotItem[];
   variant?: TaskCardVariant;
-  onCommentUpdate?: (commentId: string, text: string) => void;
-  onPhotoClick?: () => void;
 }
 
 export function TaskCardContent({
@@ -63,17 +62,16 @@ export function TaskCardContent({
   developers = [],
   task,
   displayDuration,
+  editing = {},
   fontDuration,
-  inlineTitleEditor,
   variant = 'swimlane',
   isDragging = false,
   isResizing = false,
-  onPhotoClick,
-  onCommentUpdate,
   phaseCardColorScheme = 'status',
   slotContext,
   titleLeadItems,
 }: TaskCardContentProps) {
+  const { inlineTitleEditor, onCommentUpdate, onPhotoClick } = editing;
   const { t } = useI18n();
   const teamTextColor = resolveTaskCardTeamTextColor(task, phaseCardColorScheme);
   const displayId = resolveTaskCardDisplayId(task);
@@ -199,11 +197,27 @@ export function TaskCardContent({
       />
     );
   } else {
-    contentEl = (
-      <TaskCardSwimlaneContent
+    contentEl = inlineTitleEditor ? (
+      <TaskCardSwimlaneInlineEditor
         developers={developers}
-        displayId={displayId}
         inlineTitleEditor={inlineTitleEditor}
+        lineHeightClass={lineHeightClass}
+        slotContext={slotContext}
+        task={task}
+        teamTextColor={teamTextColor}
+        textSize={textSize}
+        titleEditorClassName={titleEditorClassName}
+        titleInputRef={titleInputRef}
+        titleLeadItems={titleLeadItems ?? NO_TITLE_LEAD_ITEMS}
+        onTitleChange={(value, selection) => {
+          pendingTitleEditorSelectionRef.current = selection;
+          inlineTitleEditor.onChange(value);
+          adjustTaskCardTitleEditorHeight(titleInputRef.current, wrapperRef.current);
+        }}
+      />
+    ) : (
+      <TaskCardSwimlaneReadOnlyContent
+        displayId={displayId}
         isDragging={isDragging}
         lineHeightClass={lineHeightClass}
         maxLines={maxLines}
@@ -213,15 +227,8 @@ export function TaskCardContent({
         teamTextColor={teamTextColor}
         textRef={textRef}
         textSize={textSize}
-        titleEditorClassName={titleEditorClassName}
-        titleInputRef={titleInputRef}
-        titleLeadItems={titleLeadItems}
+        titleLeadItems={titleLeadItems ?? NO_TITLE_LEAD_ITEMS}
         onCommentUpdate={onCommentUpdate}
-        onTitleChange={(value, selection) => {
-          pendingTitleEditorSelectionRef.current = selection;
-          inlineTitleEditor?.onChange(value);
-          adjustTaskCardTitleEditorHeight(titleInputRef.current, wrapperRef.current);
-        }}
       />
     );
   }

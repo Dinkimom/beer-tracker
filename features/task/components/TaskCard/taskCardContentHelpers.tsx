@@ -1,110 +1,21 @@
-import type { SwimlaneCardFieldsVisibility, PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
-import type { Task, Developer, TaskCardVariant, TaskPosition } from '@/types';
-import type { CSSProperties } from 'react';
+import type { TaskCardBodyLayerProps } from './components/TaskCardStandardBody';
+import type { Task, TaskCardVariant } from '@/types';
 
 import { TaskCardAutoAddToSwimlaneButton } from './components/TaskCardAutoAddToSwimlaneButton';
 import { TaskCardSidebarResizedSplit } from './components/TaskCardSidebarResizedSplit';
 import { TaskCardStandardBody } from './components/TaskCardStandardBody';
 import { shouldRenderTaskCardSidebarSplit } from './taskCardRenderHelpers';
 
-interface RenderTaskCardBodyParams {
-  actualDuration: number;
-  assigneeName?: string;
-  cardStylesQaStripedStyle?: CSSProperties;
-  children?: React.ReactNode;
-  developers: Developer[];
-  dividerBgClass: string;
-  estimatedTimeslots: number;
-  extraSP: number;
-  inlineTitleEditor?: {
-    onChange: (value: string) => void;
-    onSubmit?: () => void;
-    value: string;
-  };
-  isDark: boolean;
-  isDragging: boolean;
-  isQATask: boolean;
-  isResizing?: boolean;
-  isSwimlane: boolean;
-  isVeryNarrow: boolean;
-  layoutDuration: number;
-  leftPercent: number;
-  paddingClasses: string;
-  phaseCardColorScheme: PlanningPhaseCardColorScheme;
-  qaRightBgColor?: string;
-  qaStripedStyle?: CSSProperties;
-  resolvedSwimlaneCardFields: SwimlaneCardFieldsVisibility | undefined;
-  rightPercent: number;
-  showExtraSplit: boolean;
-  task: Task;
-  taskPosition?: TaskPosition;
-  variant: TaskCardVariant;
-  onCommentUpdate?: (commentId: string, text: string) => void;
-  onPhotoClick?: () => void;
-}
-
-export function renderTaskCardBody(params: RenderTaskCardBodyParams): React.ReactNode {
+export function renderTaskCardBody(params: TaskCardBodyLayerProps): React.ReactNode {
   const showSidebarSplit = shouldRenderTaskCardSidebarSplit({
-    showExtraSplit: params.showExtraSplit,
+    showExtraSplit: params.visual.barMetrics.showExtraSplit,
     variant: params.variant,
   });
-
-  return showSidebarSplit ? (
-    <TaskCardSidebarResizedSplit
-      assigneeName={params.assigneeName}
-      developers={params.developers}
-      dividerBgClass={params.dividerBgClass}
-      estimatedTimeslots={params.estimatedTimeslots}
-      extraSP={params.extraSP}
-      isDark={params.isDark}
-      isDragging={params.isDragging}
-      isQATask={params.isQATask}
-      leftPercent={params.leftPercent}
-      paddingClasses={params.paddingClasses}
-      phaseCardColorScheme={params.phaseCardColorScheme}
-      qaRightBgColor={params.qaRightBgColor}
-      qaStripedStyle={params.qaStripedStyle}
-      rightPercent={params.rightPercent}
-      showExtraSplit={params.showExtraSplit}
-      showQaStripedLeftOverlay={Boolean(
-        params.isQATask && params.cardStylesQaStripedStyle && params.qaStripedStyle
-      )}
-      task={params.task}
-      taskPosition={params.taskPosition}
-      variant={params.variant}
-    >
-      {params.children}
-    </TaskCardSidebarResizedSplit>
-  ) : (
-    <TaskCardStandardBody
-      actualDuration={params.actualDuration}
-      assigneeName={params.assigneeName}
-      developers={params.developers}
-      dividerBgClass={params.dividerBgClass}
-      extraSP={params.extraSP}
-      inlineTitleEditor={params.inlineTitleEditor}
-      isDark={params.isDark}
-      isDragging={params.isDragging}
-      isQATask={params.isQATask}
-      isResizing={params.isResizing}
-      isSwimlane={params.isSwimlane}
-      isVeryNarrow={params.isVeryNarrow}
-      layoutDuration={params.layoutDuration}
-      leftPercent={params.leftPercent}
-      phaseCardColorScheme={params.phaseCardColorScheme}
-      qaRightBgColor={params.qaRightBgColor}
-      rightPercent={params.rightPercent}
-      showExtraSplit={params.showExtraSplit}
-      swimlaneCardFields={params.resolvedSwimlaneCardFields}
-      task={params.task}
-      taskPosition={params.taskPosition}
-      variant={params.variant}
-      onCommentUpdate={params.onCommentUpdate}
-      onPhotoClick={params.onPhotoClick}
-    >
-      {params.children}
-    </TaskCardStandardBody>
-  );
+  if (!showSidebarSplit) {
+    return <TaskCardStandardBody {...params} />;
+  }
+  const { editing: _editing, isResizing: _isResizing, layoutDuration: _layoutDuration, ...split } = params;
+  return <TaskCardSidebarResizedSplit {...split} />;
 }
 
 export function renderTaskCardChrome(params: {

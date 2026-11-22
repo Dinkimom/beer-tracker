@@ -1,5 +1,6 @@
 'use client';
 
+import type { TaskCardEditing } from '../TaskCard';
 import type { TaskCardSlotItemContext } from '@/features/task/components/TaskCard/slots/taskCardSlotItemContext';
 import type { PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
 import type { Task, Developer, TaskCardVariant } from '@/types';
@@ -38,19 +39,14 @@ interface TaskCardBodyProps {
   assigneeName?: string;
   developers?: Developer[];
   displayDuration?: number;
-  inlineTitleEditor?: {
-    onChange: (value: string) => void;
-    onSubmit?: () => void;
-    value: string;
-  };
+  /** Правка листа дорожки (заголовок черновика, текст заметки, фото); у сайдбара нет. */
+  editing?: TaskCardEditing;
   isDragging?: boolean;
   isQATask?: boolean;
   isResizing?: boolean;
   phaseCardColorScheme?: PlanningPhaseCardColorScheme;
   task: Task;
   variant?: TaskCardVariant;
-  onCommentUpdate?: (commentId: string, text: string) => void;
-  onPhotoClick?: () => void;
 }
 
 export function TaskCardBody({
@@ -60,12 +56,10 @@ export function TaskCardBody({
   assigneeName,
   variant = 'swimlane',
   displayDuration,
-  inlineTitleEditor,
+  editing,
   isQATask: explicitIsQATask,
   isDragging = false,
   isResizing = false,
-  onPhotoClick,
-  onCommentUpdate,
   phaseCardColorScheme = 'status',
 }: TaskCardBodyProps) {
   const { t } = useI18n();
@@ -149,8 +143,8 @@ export function TaskCardBody({
         centerTitle={showEyebrow}
         developers={developers}
         displayDuration={resolveTaskCardContentDisplayDuration(variant, displayDuration)}
+        editing={editing}
         fontDuration={actualDuration ?? displayDuration}
-        inlineTitleEditor={inlineTitleEditor}
         isDragging={isDragging}
         isResizing={isResizing}
         phaseCardColorScheme={phaseCardColorScheme}
@@ -158,8 +152,6 @@ export function TaskCardBody({
         task={task}
         titleLeadItems={slots?.titleLead}
         variant={variant}
-        onCommentUpdate={onCommentUpdate}
-        onPhotoClick={onPhotoClick}
       />
 
       {variant === 'sidebar' ? <TaskCardDueDateChip task={task} /> : null}

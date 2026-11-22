@@ -24,21 +24,25 @@ import { useSprintCardPresenceViewers, useSprintPresenceColorSlots } from './Spr
 import { renderTaskCardBody, renderTaskCardChrome } from './taskCardContentHelpers';
 import { useTaskCardVisualState } from './useTaskCardVisualState';
 
-/** Поля варианта дорожки — передаёт только карточка свимлейна. */
-export interface TaskCardSwimlaneProps {
+/** Что лист карточки дорожки правит или открывает сам: заголовок черновика, текст заметки, фото. */
+export interface TaskCardEditing {
   inlineTitleEditor?: {
     onChange: (value: string) => void;
     onSubmit?: () => void;
     value: string;
   };
+  onCommentUpdate?: (commentId: string, text: string) => void;
+  onPhotoClick?: () => void;
+}
+
+/** Поля варианта дорожки — передаёт только карточка свимлейна. */
+export interface TaskCardSwimlaneProps extends TaskCardEditing {
   isNotificationFocused?: boolean;
   layoutDuration?: number;
   linkingActive?: boolean;
   linkMode?: 'source' | 'target' | null;
   resizePreviewDuration?: number | null;
   taskPosition?: TaskPosition;
-  onCommentUpdate?: (commentId: string, text: string) => void;
-  onPhotoClick?: () => void;
 }
 
 export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onContextMenu'> {
@@ -64,17 +68,7 @@ export interface TaskCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 
 export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
   task,
-  swimlane: {
-    inlineTitleEditor,
-    isNotificationFocused = false,
-    layoutDuration,
-    linkingActive = false,
-    linkMode = null,
-    onCommentUpdate,
-    onPhotoClick,
-    resizePreviewDuration,
-    taskPosition,
-  } = {},
+  swimlane = {},
   developers = [],
   assigneeName,
   variant,
@@ -115,14 +109,10 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
     isQATask: explicitIsQATask,
     isResizing,
     isSelected,
-    isNotificationFocused,
-    linkMode,
-    linkingActive,
-    resizePreviewDuration,
+    swimlane,
     swimlaneBarDurationParts,
     swimlaneCardFields: variant === 'swimlane' ? (swimlaneCardFields as SwimlaneCardFieldsVisibility) : undefined,
     task,
-    taskPosition,
     variant,
     widthPercent,
   });
@@ -149,15 +139,8 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
     [ref, tiltRef]
   );
 
-  const {
-    actualDuration,
-    estimatedSP,
-    estimatedTimeslots,
-    extraSP,
-    leftPercent,
-    rightPercent,
-    showExtraSplit,
-  } = visual.barMetrics;
+  const { inlineTitleEditor, layoutDuration, onCommentUpdate, onPhotoClick, taskPosition } = swimlane;
+  const { actualDuration, estimatedSP } = visual.barMetrics;
 
   return wrapWithTextTooltip(
     <div
@@ -214,35 +197,21 @@ export const TaskCard = React.forwardRef<HTMLDivElement, TaskCardProps>(({
         variant,
       })}
       {renderTaskCardBody({
-        actualDuration,
         assigneeName,
-        cardStylesQaStripedStyle: visual.cardStyles.qaStripedStyle,
         children,
         developers,
-        dividerBgClass: visual.dividerBgClass,
-        estimatedTimeslots,
-        extraSP,
-        inlineTitleEditor,
-        isDark: visual.isDark,
+        editing: {
+          inlineTitleEditor,
+          onCommentUpdate: isPresenceLocked ? undefined : onCommentUpdate,
+          onPhotoClick,
+        },
         isDragging,
         isResizing,
-        isQATask: visual.isQATask,
-        isSwimlane: visual.isSwimlane,
-        isVeryNarrow: visual.isVeryNarrow,
         layoutDuration: layoutDuration ?? actualDuration,
-        leftPercent,
-        onCommentUpdate: isPresenceLocked ? undefined : onCommentUpdate,
-        onPhotoClick,
-        paddingClasses: visual.paddingClasses,
-        phaseCardColorScheme: visual.phaseCardColorScheme,
-        qaRightBgColor: visual.qaRightBgColor,
-        qaStripedStyle: visual.qaStripedStyle,
-        resolvedSwimlaneCardFields: visual.resolvedSwimlaneCardFields,
-        rightPercent,
-        showExtraSplit,
         task,
         taskPosition,
         variant,
+        visual,
       })}
       <SprintCardPresenceAvatars taskId={task.id} />
     </div>,

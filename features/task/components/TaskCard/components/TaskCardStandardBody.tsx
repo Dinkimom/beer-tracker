@@ -1,7 +1,5 @@
-import type {
-  PlanningPhaseCardColorScheme,
-  SwimlaneCardFieldsVisibility,
-} from '@/hooks/useLocalStorage';
+import type { TaskCardEditing } from '../TaskCard';
+import type { TaskCardVisual } from '../useTaskCardVisualState';
 import type { Developer, Task, TaskCardVariant, TaskPosition } from '@/types';
 
 import React from 'react';
@@ -13,65 +11,46 @@ import { TaskCardBody } from './TaskCardBody';
 import { TaskCardExtraSplitOverlay } from './TaskCardExtraSplitOverlay';
 import { TaskCardTags } from './TaskCardTags';
 
-interface TaskCardStandardBodyProps {
-  actualDuration: number;
+/** Тело карточки (обычное и разделённое для сайдбара): вид — одним объектом, правка листа — срезом. */
+export interface TaskCardBodyLayerProps {
   assigneeName?: string;
   children?: React.ReactNode;
   developers: Developer[];
-  dividerBgClass: string;
-  extraSP: number;
-  inlineTitleEditor?: {
-    onChange: (value: string) => void;
-    onSubmit?: () => void;
-    value: string;
-  };
-  isDark: boolean;
+  editing: TaskCardEditing;
   isDragging: boolean;
-  isQATask: boolean;
   isResizing?: boolean;
-  isSwimlane: boolean;
-  isVeryNarrow: boolean;
+  /** Длительность раскладки (с превью ресайза), в ячейках. */
   layoutDuration: number;
-  leftPercent: number;
-  phaseCardColorScheme: PlanningPhaseCardColorScheme;
-  qaRightBgColor?: string;
-  rightPercent: number;
-  showExtraSplit: boolean;
-  swimlaneCardFields: SwimlaneCardFieldsVisibility | undefined;
   task: Task;
   taskPosition?: TaskPosition;
   variant: TaskCardVariant;
-  onCommentUpdate?: (commentId: string, text: string) => void;
-  onPhotoClick?: () => void;
+  visual: TaskCardVisual;
 }
 
 export function TaskCardStandardBody({
-  showExtraSplit,
-  isSwimlane,
-  isQATask,
-  qaRightBgColor,
-  leftPercent,
-  rightPercent,
-  dividerBgClass,
-  extraSP,
-  isVeryNarrow,
-  layoutDuration,
-  inlineTitleEditor,
-  isDark,
   assigneeName,
+  children,
   developers,
-  actualDuration,
+  editing,
   isDragging,
   isResizing = false,
-  onCommentUpdate,
-  onPhotoClick,
-  phaseCardColorScheme,
-  swimlaneCardFields,
+  layoutDuration,
   task,
-  variant,
   taskPosition,
-  children,
-}: TaskCardStandardBodyProps) {
+  variant,
+  visual,
+}: TaskCardBodyLayerProps) {
+  const {
+    dividerBgClass,
+    isDark,
+    isQATask,
+    isSwimlane,
+    isVeryNarrow,
+    phaseCardColorScheme,
+    qaRightBgColor,
+    resolvedSwimlaneCardFields: swimlaneCardFields,
+  } = visual;
+  const { actualDuration, extraSP, leftPercent, rightPercent, showExtraSplit } = visual.barMetrics;
   const estimateMapping = useTaskCardEstimateMapping();
   const showTpLabels = isQATask && task.hideTestPointsByIntegration !== true;
   const showPointsLabel = resolveTaskCardEstimateVisibility({
@@ -109,15 +88,13 @@ export function TaskCardStandardBody({
           assigneeName={assigneeName}
           developers={developers}
           displayDuration={layoutDuration}
-          inlineTitleEditor={inlineTitleEditor}
+          editing={editing}
           isDragging={isDragging}
           isQATask={isQATask}
           isResizing={isResizing}
           phaseCardColorScheme={phaseCardColorScheme}
           task={task}
           variant={variant}
-          onCommentUpdate={onCommentUpdate}
-          onPhotoClick={onPhotoClick}
         />
       </div>
 

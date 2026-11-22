@@ -1,5 +1,4 @@
-import type { PlanningPhaseCardColorScheme } from '@/hooks/useLocalStorage';
-import type { Developer, Task, TaskCardVariant, TaskPosition } from '@/types';
+import type { TaskCardBodyLayerProps } from './TaskCardStandardBody';
 
 import React from 'react';
 
@@ -11,51 +10,23 @@ import { useTaskCardEstimateMapping } from '../useTaskCardEstimateMapping';
 import { TaskCardBody } from './TaskCardBody';
 import { TaskCardTags } from './TaskCardTags';
 
-interface TaskCardSidebarResizedSplitProps {
-  assigneeName?: string;
-  children?: React.ReactNode;
-  developers: Developer[];
-  dividerBgClass: string;
-  estimatedTimeslots: number;
-  extraSP: number;
-  isDark: boolean;
-  isDragging: boolean;
-  isQATask: boolean;
-  leftPercent: number;
-  paddingClasses: string;
-  phaseCardColorScheme: PlanningPhaseCardColorScheme;
-  qaRightBgColor?: string;
-  qaStripedStyle?: React.CSSProperties;
-  rightPercent: number;
-  showExtraSplit: boolean;
-  showQaStripedLeftOverlay: boolean;
-  task: Task;
-  taskPosition?: TaskPosition;
-  variant: TaskCardVariant;
-}
+/** Разделённое тело сайдбара: правки листа и длительность раскладки ему не нужны. */
+type TaskCardSidebarResizedSplitProps = Omit<TaskCardBodyLayerProps, 'editing' | 'isResizing' | 'layoutDuration'>;
 
 export function TaskCardSidebarResizedSplit({
-  leftPercent,
-  rightPercent,
-  paddingClasses,
-  showQaStripedLeftOverlay,
-  qaStripedStyle,
   assigneeName,
-  developers,
-  estimatedTimeslots,
-  isDragging,
-  phaseCardColorScheme,
-  task,
-  variant,
-  taskPosition,
-  dividerBgClass,
-  qaRightBgColor,
-  isDark,
-  showExtraSplit,
-  extraSP,
-  isQATask,
   children,
+  developers,
+  isDragging,
+  task,
+  taskPosition,
+  variant,
+  visual,
 }: TaskCardSidebarResizedSplitProps) {
+  const { dividerBgClass, isDark, isQATask, paddingClasses, phaseCardColorScheme, qaRightBgColor, qaStripedStyle } =
+    visual;
+  const { estimatedTimeslots, extraSP, leftPercent, rightPercent, showExtraSplit } = visual.barMetrics;
+  const showQaStripedLeftOverlay = Boolean(isQATask && visual.cardStyles.qaStripedStyle && qaStripedStyle);
   const estimateMapping = useTaskCardEstimateMapping();
   const showTpLabels = isQATask && task.hideTestPointsByIntegration !== true;
   const showPointsLabel = resolveTaskCardEstimateVisibility({

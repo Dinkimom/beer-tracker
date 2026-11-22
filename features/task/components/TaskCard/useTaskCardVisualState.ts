@@ -1,7 +1,8 @@
 'use client';
 
+import type { TaskCardSwimlaneProps } from './TaskCard';
 import type { SwimlaneCardFieldsVisibility } from '@/hooks/useLocalStorage';
-import type { Task, TaskCardVariant, TaskPosition } from '@/types';
+import type { Task, TaskCardVariant } from '@/types';
 
 import { usePhaseCardColorScheme } from '@/components/PhaseCardColorSchemeContext';
 import { isEffectivelyQaTask } from '@/features/task/utils/taskUtils';
@@ -23,17 +24,24 @@ export function useTaskCardVisualState(input: {
   isQATask?: boolean;
   isResizing: boolean;
   isSelected: boolean;
-  isNotificationFocused?: boolean;
-  linkMode?: 'source' | 'target' | null;
-  linkingActive?: boolean;
-  resizePreviewDuration?: number | null;
+  /** Поля дорожки, от которых зависит вид: связи, фокус уведомления, ресайз, позиция. */
+  swimlane?: Pick<
+    TaskCardSwimlaneProps,
+    'isNotificationFocused' | 'linkingActive' | 'linkMode' | 'resizePreviewDuration' | 'taskPosition'
+  >;
   swimlaneBarDurationParts?: number;
   swimlaneCardFields?: SwimlaneCardFieldsVisibility;
   task: Task;
-  taskPosition?: TaskPosition;
   variant: TaskCardVariant;
   widthPercent?: number;
 }) {
+  const {
+    isNotificationFocused = false,
+    linkMode = null,
+    linkingActive = false,
+    resizePreviewDuration,
+    taskPosition,
+  } = input.swimlane ?? {};
   const phaseCardColorScheme = usePhaseCardColorScheme();
   const isDark = useDocumentDarkClass();
   const isQATask = input.isQATask === true || isEffectivelyQaTask(input.task);
@@ -44,9 +52,9 @@ export function useTaskCardVisualState(input: {
   );
   const barMetrics = useTaskCardBarMetrics(
     input.task,
-    input.taskPosition,
+    taskPosition,
     input.swimlaneBarDurationParts,
-    input.resizePreviewDuration,
+    resizePreviewDuration,
     input.isResizing
   );
 
@@ -61,11 +69,11 @@ export function useTaskCardVisualState(input: {
     isQATask,
     isResizing: input.isResizing,
     isSelected: input.isSelected,
-    isNotificationFocused: input.isNotificationFocused,
-    linkMode: input.linkMode,
-    linkingActive: input.linkingActive,
+    isNotificationFocused,
+    linkMode,
+    linkingActive,
     phaseCardColorScheme,
-    resizePreviewDuration: input.resizePreviewDuration,
+    resizePreviewDuration,
     showExtraSplit: barMetrics.showExtraSplit,
     statusForCardColors,
     swimlaneCardFields: input.swimlaneCardFields,
@@ -82,3 +90,6 @@ export function useTaskCardVisualState(input: {
     ...surface,
   };
 }
+
+/** Вид карточки целиком: классы и стиль корня, цвета, ширина, метрики полосы — отдаётся телу одним объектом. */
+export type TaskCardVisual = ReturnType<typeof useTaskCardVisualState>;
