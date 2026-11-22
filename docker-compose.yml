@@ -151,6 +151,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/otorva
       JWT_SECRET: ${OTORVA_JWT_SECRET:-}
       ALLOW_REGISTRATION: ${OTORVA_ALLOW_REGISTRATION:-false}
+      # Секрет первого админа (POST /auth/bootstrap): онбординг «Встроенный трекер».
+      BOOTSTRAP_TOKEN: ${OTORVA_BOOTSTRAP_TOKEN:-}
     ports:
       - "127.0.0.1:8090:8080"
     healthcheck:

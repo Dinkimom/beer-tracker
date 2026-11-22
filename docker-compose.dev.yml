@@ -74,6 +74,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:${BEER_TRACKER_DEV_POSTGRES_PASSWORD:-beer_tracker_local}@db:5432/otorva
       JWT_SECRET: ${OTORVA_JWT_SECRET:-local-dev-only-otorva-jwt-secret-0123456789abcdef}
+      BOOTSTRAP_TOKEN: ${OTORVA_BOOTSTRAP_TOKEN:-local-dev-only-otorva-bootstrap-0123456789abcdef}
 
   db:
     environment:
