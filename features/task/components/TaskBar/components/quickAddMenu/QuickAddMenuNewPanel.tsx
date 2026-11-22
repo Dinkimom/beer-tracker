@@ -1,9 +1,13 @@
 'use client';
 
+import type { useQuickAddParentSelect } from './hooks/useQuickAddParentSelect';
+import type { useQuickAddQueueSelect } from './hooks/useQuickAddQueueSelect';
+
 import { useId, type RefObject } from 'react';
 
 import { Button } from '@/components/Button';
 import { CustomSelect, type CustomSelectOption } from '@/components/CustomSelect';
+import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { formatQuickAddQueueLabel } from '@/features/board/quickAddQueueOptions';
 import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
@@ -22,21 +26,22 @@ const TITLE_TEXTAREA_CLASS =
 
 const SELECT_TRIGGER_CLASS = 'min-w-0 flex-1 !h-9 !rounded-lg !px-3';
 
+/** Выпадающие списки панели — над попапом меню. */
+const SELECT_MENU_Z_INDEX = ZIndex.popupContent + 20;
+
 interface QuickAddMenuNewPanelProps {
   assigneeId?: string;
   canCreate: boolean;
-  isParentSearching: boolean;
-  isQueueSearching: boolean;
   isSubmitting: boolean;
   issueType: string;
   issueTypeOptions: CustomSelectOption<string>[];
-  menuZIndex: number;
   parentKey: string;
-  parentSelectOptions: CustomSelectOption<string>[];
+  /** Варианты и поиск родителя — как отдаёт `useQuickAddParentSelect`. */
+  parentSelect: ReturnType<typeof useQuickAddParentSelect>;
   queueKey: string;
   queueNamesByKey: Map<string, string>;
-  queueSelectOptions: CustomSelectOption<string>[];
-  selectedQueueName: string;
+  /** Варианты, поиск и подпись очереди — как отдаёт `useQuickAddQueueSelect`. */
+  queueSelect: ReturnType<typeof useQuickAddQueueSelect>;
   showAssigneeSelect?: boolean;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   title: string;
@@ -44,27 +49,21 @@ interface QuickAddMenuNewPanelProps {
   onCreate: () => void;
   onIssueTypeChange: (type: string) => void;
   onParentChange: (parentKey: string) => void;
-  onParentSearchQueryChange: (query: string) => void;
   onQueueChange: (queueKey: string) => void;
-  onQueueSearchQueryChange: (query: string) => void;
   onTitleChange: (value: string) => void;
 }
 
 export function QuickAddMenuNewPanel({
   assigneeId,
   canCreate,
-  isParentSearching,
-  isQueueSearching,
   isSubmitting,
   issueType,
   issueTypeOptions,
-  menuZIndex,
   parentKey,
-  parentSelectOptions,
+  parentSelect,
   queueKey,
   queueNamesByKey,
-  queueSelectOptions,
-  selectedQueueName,
+  queueSelect,
   showAssigneeSelect = false,
   textareaRef,
   title,
@@ -72,11 +71,18 @@ export function QuickAddMenuNewPanel({
   onCreate,
   onIssueTypeChange,
   onParentChange,
-  onParentSearchQueryChange,
   onQueueChange,
-  onQueueSearchQueryChange,
   onTitleChange,
 }: QuickAddMenuNewPanelProps) {
+  const { isParentSearching, parentSelectOptions, handleParentSearchQueryChange: onParentSearchQueryChange } =
+    parentSelect;
+  const {
+    isQueueSearching,
+    queueSelectOptions,
+    selectedQueueName,
+    handleQueueSearchQueryChange: onQueueSearchQueryChange,
+  } = queueSelect;
+  const menuZIndex = SELECT_MENU_Z_INDEX;
   const { t } = useI18n();
   const titleInputId = useId();
   const placeholder = t('sprintPlanner.swimlane.quickAddMenu.titlePlaceholder');

@@ -171,13 +171,9 @@ export function QuickAddMenuConvert({
               />
               {step === 'existing' ? (
                 <QuickAddMenuExistingPanel
-                  isSearching={issueSearch.isSearching}
                   isSubmitting={isSubmitting}
+                  issueSearch={issueSearch}
                   searchInputRef={searchInputRef}
-                  searchQuery={issueSearch.searchQuery}
-                  showResultsPanel={issueSearch.showResultsPanel}
-                  visibleResults={issueSearch.visibleResults}
-                  onSearchQueryChange={issueSearch.handleSearchQueryChange}
                   onSelectExisting={(task) => {
                     void handleSelectExisting(task);
                   }}

@@ -1,7 +1,8 @@
-import type { SwimlaneQuickAddMenuProps } from '@/features/task/components/TaskBar/components/quickAddMenu/SwimlaneQuickAddMenu';
 import type {
   QuickAddController,
   QuickAddDraftKind,
+  QuickAddMenuOptions,
+  SwimlaneQuickAddMenuContent,
 } from '@/features/task/components/TaskBar/components/quickAddMenu/types';
 import type { SprintPlannerNoteComposerState } from '@/lib/layers';
 import type { Developer, Task } from '@/types';
@@ -21,6 +22,8 @@ import {
 } from './taskLayerPlanSegmentItemHelpers';
 
 const EMPTY_EXCLUDED_ISSUE_KEYS: ReadonlySet<string> = new Set();
+
+type LockedMode = QuickAddMenuOptions['lockedMode'];
 
 function isQuickAddDraftTask(task: Task): boolean {
   return task.isLocalTask === true && parseSwimlaneCommentTaskId(task.id) == null;
@@ -78,7 +81,7 @@ function canShowQuickAddOnSegment(input: QuickAddMenuInput): boolean {
 function resolveQuickAddRequiresAssignee(
   laneAssigneeId: string | undefined,
   developers: Developer[] | undefined,
-  lockedMode: SwimlaneQuickAddMenuProps['lockedMode']
+  lockedMode: LockedMode
 ): boolean {
   if (!isSyntheticFeatureLaneAssignee(laneAssigneeId, developers)) {
     return false;
@@ -114,7 +117,7 @@ export function resolveQuickAddPersonAssigneeId(
 function shouldShowQuickAddAssigneeSelect(
   developers: Developer[] | undefined,
   laneAssigneeId: string | undefined,
-  lockedMode: SwimlaneQuickAddMenuProps['lockedMode']
+  lockedMode: LockedMode
 ): boolean {
   if (lockedMode && lockedMode !== 'new') {
     return false;
@@ -126,68 +129,65 @@ function shouldShowQuickAddAssigneeSelect(
 }
 
 function buildQuickAddMenuProps(
-  input: QuickAddMenuInput & { lockedMode?: SwimlaneQuickAddMenuProps['lockedMode'] }
-): Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting'> | undefined {
-  const { quickAdd } = input;
+  input: QuickAddMenuInput & { lockedMode?: LockedMode }
+): SwimlaneQuickAddMenuContent | undefined {
+  const { quickAdd, task } = input;
   if (quickAdd.quickAddBoardId == null) {
     return undefined;
   }
+  const taskId = task.id;
   const pasteNote = quickAdd.onPasteQuickAddNote;
-  const laneAssigneeId = input.laneAssigneeId ?? input.task.assignee;
+  const laneAssigneeId = input.laneAssigneeId ?? task.assignee;
   return {
-    assigneeId: resolveQuickAddPersonAssigneeId(input.task.assignee, input.developers),
-    showAssigneeSelect: shouldShowQuickAddAssigneeSelect(
-      input.developers,
-      laneAssigneeId,
-      input.lockedMode
-    ),
-    requiresAssignee: resolveQuickAddRequiresAssignee(
-      laneAssigneeId,
-      input.developers,
-      input.lockedMode
-    ),
-    availabilityStartDate: input.availabilityStartDate,
-    boardId: quickAdd.quickAddBoardId,
-    excludedIssueKeys: quickAdd.quickAddExcludedIssueKeys ?? EMPTY_EXCLUDED_ISSUE_KEYS,
-    issueType: input.draftIssueType,
-    lockedMode: input.lockedMode,
-    parentKey: input.draftParentKey,
-    parentSelectOptions: withCurrentQuickAddParentOption(
-      quickAdd.quickAddParentSelectOptions ?? [],
-      input.task.parent,
-      buildFeatureDraftRowNamesById(
-        (input.developers ?? []).map((row) => ({ id: row.id, name: row.name }))
-      )
-    ),
-    queueKey: input.draftQueueKey,
-    queueOptions: quickAdd.quickAddQueueOptions ?? [],
-    taskId: input.task.id,
-    title: input.task.name ?? '',
-    commentColor: input.task.stickyNoteColor,
-    draftKind: quickAddDraftKind(input.task.localDraftKind),
-    imageUrl: input.task.imageUrl,
-    onCancel: () => quickAdd.onCancelQuickAddDraft?.(input.task.id),
-    onCommentColorChange: (color) =>
-      quickAdd.onQuickAddDraftCommentColorChange?.(input.task.id, color),
-    onCreate: (draftTitle, fields) =>
-      invokeOptionalAsync(() => quickAdd.onSubmitQuickAddDraft?.(input.task.id, draftTitle, fields)),
-    onDraftKindChange: (kind) => quickAdd.onQuickAddDraftKindChange?.(input.task.id, kind),
-    onImageUrlChange: (url) => quickAdd.onQuickAddDraftImageUrlChange?.(input.task.id, url),
-    onIssueTypeChange: (type) => quickAdd.onQuickAddDraftTypeChange?.(input.task.id, type),
-    onAssigneeChange: (assigneeId) =>
-      quickAdd.onQuickAddDraftAssigneeChange?.(input.task.id, assigneeId),
-    onParentChange: (parentKey) => quickAdd.onQuickAddDraftParentChange?.(input.task.id, parentKey),
-    onPasteNote: pasteNote ? () => pasteNote(input.task.id) : undefined,
-    onQueueChange: (queueKey) => quickAdd.onQuickAddDraftQueueChange?.(input.task.id, queueKey),
-    onSelectExisting: (selectedTask) =>
-      invokeOptionalAsync(() => quickAdd.onSelectExistingQuickAddDraft?.(input.task.id, selectedTask)),
-    onTitleChange: (value) => quickAdd.onQuickAddDraftTitleChange?.(input.task.id, value),
+    draft: {
+      assigneeId: resolveQuickAddPersonAssigneeId(task.assignee, input.developers),
+      availabilityStartDate: input.availabilityStartDate,
+      commentColor: task.stickyNoteColor,
+      draftKind: quickAddDraftKind(task.localDraftKind),
+      imageUrl: task.imageUrl,
+      issueType: input.draftIssueType,
+      parentKey: input.draftParentKey,
+      queueKey: input.draftQueueKey,
+      taskId,
+      title: task.name ?? '',
+    },
+    options: {
+      boardId: quickAdd.quickAddBoardId,
+      excludedIssueKeys: quickAdd.quickAddExcludedIssueKeys ?? EMPTY_EXCLUDED_ISSUE_KEYS,
+      lockedMode: input.lockedMode,
+      parentSelectOptions: withCurrentQuickAddParentOption(
+        quickAdd.quickAddParentSelectOptions ?? [],
+        task.parent,
+        buildFeatureDraftRowNamesById(
+          (input.developers ?? []).map((row) => ({ id: row.id, name: row.name }))
+        )
+      ),
+      queueOptions: quickAdd.quickAddQueueOptions ?? [],
+      requiresAssignee: resolveQuickAddRequiresAssignee(laneAssigneeId, input.developers, input.lockedMode),
+      showAssigneeSelect: shouldShowQuickAddAssigneeSelect(input.developers, laneAssigneeId, input.lockedMode),
+    },
+    actions: {
+      onAssigneeChange: (assigneeId) => quickAdd.onQuickAddDraftAssigneeChange?.(taskId, assigneeId),
+      onCancel: () => quickAdd.onCancelQuickAddDraft?.(taskId),
+      onCommentColorChange: (color) => quickAdd.onQuickAddDraftCommentColorChange?.(taskId, color),
+      onCreate: (draftTitle, fields) =>
+        invokeOptionalAsync(() => quickAdd.onSubmitQuickAddDraft?.(taskId, draftTitle, fields)),
+      onDraftKindChange: (kind) => quickAdd.onQuickAddDraftKindChange?.(taskId, kind),
+      onImageUrlChange: (url) => quickAdd.onQuickAddDraftImageUrlChange?.(taskId, url),
+      onIssueTypeChange: (type) => quickAdd.onQuickAddDraftTypeChange?.(taskId, type),
+      onParentChange: (parentKey) => quickAdd.onQuickAddDraftParentChange?.(taskId, parentKey),
+      onPasteNote: pasteNote ? () => pasteNote(taskId) : undefined,
+      onQueueChange: (queueKey) => quickAdd.onQuickAddDraftQueueChange?.(taskId, queueKey),
+      onSelectExisting: (selectedTask) =>
+        invokeOptionalAsync(() => quickAdd.onSelectExistingQuickAddDraft?.(taskId, selectedTask)),
+      onTitleChange: (value) => quickAdd.onQuickAddDraftTitleChange?.(taskId, value),
+    },
   };
 }
 
 export function buildTaskLayerPlanSegmentQuickAddMenu(
   input: QuickAddMenuInput
-): Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting'> | undefined {
+): SwimlaneQuickAddMenuContent | undefined {
   const noteComposer = input.noteComposer;
   if (noteComposer?.taskId === input.task.id) {
     if (noteComposer.mode === 'comment') {

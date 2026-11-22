@@ -1,4 +1,5 @@
-import type { QuickAddDraftKind, QuickAddMode } from './types';
+import type { QuickAddDraftTextFields } from './quickAddMenuDraftState';
+import type { QuickAddMenuActions, QuickAddMode } from './types';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { SwimlaneNoteClipboard } from '@/lib/comments/swimlaneNoteClipboard';
 
@@ -8,12 +9,21 @@ import { quickAddModeToDraftKind, resolveQuickAddGhostText } from './quickAddMen
 import { resolveQuickAddModeChange } from './quickAddMenuModes';
 
 interface UseQuickAddMenuNavigationInput {
+  /** Действия меню, привязанные к черновику: отмена, вид, заголовок, цвет, фото, вставка, отсутствие. */
+  actions: Pick<
+    QuickAddMenuActions,
+    | 'onCancel'
+    | 'onCommentColorChange'
+    | 'onCreateAvailability'
+    | 'onDraftKindChange'
+    | 'onImageUrlChange'
+    | 'onPasteNote'
+    | 'onTitleChange'
+  >;
   availabilityStartDate?: string;
-  draftCaption: string;
-  draftComment: string;
   draftCommentColor: StickyNoteColor;
-  draftDiagramName: string;
-  draftTitle: string;
+  /** Введённое в каждом виде — подставляется в карточку при смене вида. */
+  draftTexts: QuickAddDraftTextFields;
   imagesVisible: boolean;
   isSubmitting: boolean;
   lockedMode?: Exclude<QuickAddMode, 'existing'>;
@@ -25,43 +35,38 @@ interface UseQuickAddMenuNavigationInput {
     clearNoteEditPreview: () => void;
     setNoteEditPreview: (taskId: string, patch: { color?: StickyNoteColor; text?: string }) => void;
   };
-  onCancel: () => void;
-  onCommentColorChange: (color: StickyNoteColor) => void;
-  onCreateAvailability?: (startDate?: string) => void;
-  onDraftKindChange: (kind: QuickAddDraftKind | undefined) => void;
-  onImageUrlChange: (url: string | undefined) => void;
-  onPasteNote?: () => void;
-  onTitleChange: (value: string) => void;
   setDraftImageUrl: (url: string | undefined) => void;
   setMode: (mode: QuickAddMode) => void;
   setStep: (step: 'form' | 'picker') => void;
 }
 
 export function useQuickAddMenuNavigation({
+  actions,
   availabilityStartDate,
-  draftCaption,
-  draftComment,
   draftCommentColor,
-  draftDiagramName,
-  draftTitle,
+  draftTexts,
   imagesVisible,
   isSubmitting,
   lockedMode,
   notesVisible,
   objectStorageConfigured = true,
-  onCancel,
-  onCommentColorChange,
-  onCreateAvailability,
-  onDraftKindChange,
-  onImageUrlChange,
-  onPasteNote,
-  onTitleChange,
   setDraftImageUrl,
   setMode,
   setStep,
   tools,
   taskId,
 }: UseQuickAddMenuNavigationInput) {
+  const {
+    onCancel,
+    onCommentColorChange,
+    onCreateAvailability,
+    onDraftKindChange,
+    onImageUrlChange,
+    onPasteNote,
+    onTitleChange,
+  } = actions;
+  const { caption: draftCaption, comment: draftComment, diagramName: draftDiagramName, title: draftTitle } =
+    draftTexts;
   const handleModeChange = useCallback(
     (nextMode: QuickAddMode) => {
       const action = resolveQuickAddModeChange({

@@ -1,6 +1,6 @@
 import type { QuickAddDraftKind, QuickAddMode } from './types';
 
-interface QuickAddDraftTextFields {
+export interface QuickAddDraftTextFields {
   caption: string;
   comment: string;
   diagramName: string;

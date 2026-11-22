@@ -26,29 +26,36 @@ export interface QuickAddCreateFields {
   queueKey: string;
 }
 
-export interface SwimlaneQuickAddMenuProps {
-  anchorId: string;
+/** Черновик на карточке, с которого открыто меню: что в нём уже выбрано. */
+interface QuickAddMenuDraft {
   /** Человек с заметки / выбранный в попапе Tracker-исполнитель. */
   assigneeId?: string;
   /** ISO-дата ячейки, с которой открыли «+» — старт отсутствия. */
   availabilityStartDate?: string;
-  boardId: number;
   commentColor?: StickyNoteColor;
   draftKind?: QuickAddDraftKind;
-  excludedIssueKeys: ReadonlySet<string>;
   imageUrl?: string;
-  isSubmitting: boolean;
   issueType: string;
-  lockedMode?: Exclude<QuickAddMode, 'existing'>;
   parentKey: string;
-  parentSelectOptions: CustomSelectOption<string>[];
   queueKey: string;
+  taskId: string;
+  title: string;
+}
+
+/** Что меню предлагает для этой ячейки: доска, очереди, родители, закреплённый вид, правила исполнителя. */
+export interface QuickAddMenuOptions {
+  boardId: number;
+  excludedIssueKeys: ReadonlySet<string>;
+  lockedMode?: Exclude<QuickAddMode, 'existing'>;
+  parentSelectOptions: CustomSelectOption<string>[];
   queueOptions: QuickAddQueueOption[];
   requiresAssignee?: boolean;
   /** Показать селектор исполнителя (строка фичи / «Общее»). */
   showAssigneeSelect?: boolean;
-  taskId: string;
-  title: string;
+}
+
+/** Действия меню, уже привязанные к черновику (`QuickAddController` → эта карточка). */
+export interface QuickAddMenuActions {
   onAssigneeChange?: (assigneeId: string) => void;
   onCancel: () => void;
   onCommentColorChange: (color: StickyNoteColor) => void;
@@ -62,6 +69,18 @@ export interface SwimlaneQuickAddMenuProps {
   onQueueChange: (queueKey: string) => void;
   onSelectExisting: (task: Task) => void;
   onTitleChange: (value: string) => void;
+}
+
+/** Меню собирает сегмент карточки (`buildTaskLayerPlanSegmentQuickAddMenu`); якорь и флаг отправки — от `TaskBar`. */
+export interface SwimlaneQuickAddMenuContent {
+  actions: QuickAddMenuActions;
+  draft: QuickAddMenuDraft;
+  options: QuickAddMenuOptions;
+}
+
+export interface SwimlaneQuickAddMenuProps extends SwimlaneQuickAddMenuContent {
+  anchorId: string;
+  isSubmitting: boolean;
 }
 
 /**

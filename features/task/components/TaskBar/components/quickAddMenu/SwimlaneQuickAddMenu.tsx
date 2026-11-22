@@ -3,9 +3,8 @@
 import type { QuickAddMode, SwimlaneQuickAddMenuProps } from './types';
 
 import { observer } from 'mobx-react-lite';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { ZIndex } from '@/constants';
 import { useObjectStorageConfigured } from '@/contexts/ObjectStorageConfiguredContext';
 import {
   QUICK_ADD_KIND_PICKER_WIDTH_PX,
@@ -26,18 +25,16 @@ import { useQuickAddParentSelect } from './hooks/useQuickAddParentSelect';
 import { useQuickAddQueueSelect } from './hooks/useQuickAddQueueSelect';
 import { QuickAddMenu } from './QuickAddMenu';
 import { quickAddDraftKindToMode, splitQuickAddDraftFields } from './quickAddMenuDraftState';
+import { QuickAddMenuExistingPanel } from './QuickAddMenuExistingPanel';
 import {
   buildQuickAddRootPickerItems,
   filterQuickAddVisibleModes,
   shouldOpenQuickAddKindPicker,
   shouldShowQuickAddBootstrapLoader,
 } from './quickAddMenuModes';
-import { QuickAddMenuPanels } from './QuickAddMenuPanels';
+import { QuickAddMenuNewPanel } from './QuickAddMenuNewPanel';
 import { useQuickAddMenuNavigation } from './useQuickAddMenuNavigation';
 
-export type { SwimlaneQuickAddMenuProps };
-
-const SELECT_MENU_Z_INDEX = ZIndex.popupContent + 20;
 
 function resolveQuickAddPopoverMinWidth(isPickerStep: boolean): number | undefined {
   if (isPickerStep) {
@@ -47,39 +44,35 @@ function resolveQuickAddPopoverMinWidth(isPickerStep: boolean): number | undefin
 }
 
 export const SwimlaneQuickAddMenu = observer(function SwimlaneQuickAddMenu({
+  actions,
   anchorId,
-  assigneeId,
-  availabilityStartDate,
-  boardId,
-  commentColor,
-  draftKind,
-  excludedIssueKeys,
-  imageUrl,
+  draft,
   isSubmitting,
-  issueType,
-  lockedMode,
-  requiresAssignee = false,
-  showAssigneeSelect = false,
-  onAssigneeChange,
-  onCancel,
-  onCommentColorChange,
-  onCreate,
-  onCreateAvailability,
-  onDraftKindChange,
-  onImageUrlChange,
-  onIssueTypeChange,
-  onParentChange,
-  onPasteNote,
-  onQueueChange,
-  onSelectExisting,
-  onTitleChange,
-  parentKey,
-  parentSelectOptions,
-  queueKey,
-  queueOptions,
-  taskId,
-  title,
+  options,
 }: SwimlaneQuickAddMenuProps) {
+  const {
+    assigneeId,
+    availabilityStartDate,
+    commentColor,
+    draftKind,
+    imageUrl,
+    issueType,
+    parentKey,
+    queueKey,
+    taskId,
+    title,
+  } = draft;
+  const {
+    boardId,
+    excludedIssueKeys,
+    lockedMode,
+    parentSelectOptions,
+    queueOptions,
+    requiresAssignee = false,
+    showAssigneeSelect = false,
+  } = options;
+  const { onAssigneeChange, onCreate, onIssueTypeChange, onParentChange, onQueueChange, onSelectExisting, onTitleChange } =
+    actions;
   const sprintPlannerUi = useRootStore().sprintPlannerUi;
   const objectStorageConfigured = useObjectStorageConfigured();
   const [notesVisible] = useSwimlaneNotesVisibleStorage();
@@ -95,9 +88,11 @@ export const SwimlaneQuickAddMenu = observer(function SwimlaneQuickAddMenu({
     shouldOpenQuickAddKindPicker({ draftKind, imageUrl, lockedMode })
   );
   const [draftTitle, setDraftTitle] = useState(initialDraft.title);
-  const draftComment = initialDraft.comment;
-  const draftCaption = initialDraft.caption;
-  const draftDiagramName = initialDraft.diagramName;
+  const { caption: draftCaption, comment: draftComment, diagramName: draftDiagramName } = initialDraft;
+  const draftTexts = useMemo(
+    () => ({ caption: draftCaption, comment: draftComment, diagramName: draftDiagramName, title: draftTitle }),
+    [draftCaption, draftComment, draftDiagramName, draftTitle]
+  );
   const draftCommentColor = parseStickyNoteColor(commentColor);
   const [draftImageUrl, setDraftImageUrl] = useState(imageUrl);
   const [draftAssigneeId, setDraftAssigneeId] = useState(assigneeId?.trim() ?? '');
@@ -137,12 +132,7 @@ export const SwimlaneQuickAddMenu = observer(function SwimlaneQuickAddMenu({
       queueOptions,
     });
 
-  const {
-    handleQueueSearchQueryChange,
-    isQueueSearching,
-    queueSelectOptions,
-    selectedQueueName,
-  } = useQuickAddQueueSelect({
+  const queueSelect = useQuickAddQueueSelect({
     queueKey: effectiveQueueKey,
     queueNamesByKey,
     queueOptions,
@@ -174,24 +164,15 @@ export const SwimlaneQuickAddMenu = observer(function SwimlaneQuickAddMenu({
     handleModeChange,
     handleRequestClose,
   } = useQuickAddMenuNavigation({
+    actions,
     availabilityStartDate,
-    draftCaption,
-    draftComment,
     draftCommentColor,
-    draftDiagramName,
-    draftTitle,
+    draftTexts,
     imagesVisible,
     isSubmitting,
     lockedMode,
     notesVisible,
     objectStorageConfigured,
-    onCancel,
-    onCommentColorChange,
-    onCreateAvailability,
-    onDraftKindChange,
-    onImageUrlChange,
-    onPasteNote,
-    onTitleChange,
     setDraftImageUrl,
     setMode,
     setStep,
@@ -245,45 +226,44 @@ export const SwimlaneQuickAddMenu = observer(function SwimlaneQuickAddMenu({
       anchorRect={anchorRect}
       canReturnToPicker={canReturnToPicker}
       form={
-        <QuickAddMenuPanels
-          assigneeId={draftAssigneeId}
-          canCreateTask={
-            draftTitle.trim().length > 0 &&
-            !isSubmitting &&
-            Boolean(effectiveQueueKey) &&
-            (!requiresAssignee || Boolean(draftAssigneeId.trim()))
-          }
-          draftTitle={draftTitle}
-          effectiveIssueType={effectiveIssueType}
-          effectiveParentKey={effectiveParentKey}
-          effectiveQueueKey={effectiveQueueKey}
-          isSubmitting={isSubmitting}
-          issueSearch={issueSearch}
-          issueTypeOptions={issueTypeOptions}
-          menuZIndex={SELECT_MENU_Z_INDEX}
-          mode={panelMode}
-          newTaskInputRef={newTaskInputRef}
-          parentSelect={parentSelect}
-          queueNamesByKey={queueNamesByKey}
-          queueSelect={{
-            handleQueueSearchQueryChange,
-            isQueueSearching,
-            queueSelectOptions,
-            selectedQueueName,
-          }}
-          searchInputRef={searchInputRef}
-          showAssigneeSelect={showAssigneeSelect}
-          onAssigneeChange={(nextAssigneeId) => {
-            setDraftAssigneeId(nextAssigneeId);
-            onAssigneeChange?.(nextAssigneeId);
-          }}
-          onCreateTask={handleCreateTask}
-          onIssueTypeChange={handleIssueTypeChange}
-          onParentChange={handleParentChange}
-          onQueueChange={handleQueueChange}
-          onSelectExisting={onSelectExisting}
-          onTitleChange={handleTaskTitleChange}
-        />
+        panelMode === 'existing' ? (
+          <QuickAddMenuExistingPanel
+            isSubmitting={isSubmitting}
+            issueSearch={issueSearch}
+            searchInputRef={searchInputRef}
+            onSelectExisting={onSelectExisting}
+          />
+        ) : (
+          <QuickAddMenuNewPanel
+            assigneeId={draftAssigneeId}
+            canCreate={
+              draftTitle.trim().length > 0 &&
+              !isSubmitting &&
+              Boolean(effectiveQueueKey) &&
+              (!requiresAssignee || Boolean(draftAssigneeId.trim()))
+            }
+            isSubmitting={isSubmitting}
+            issueType={effectiveIssueType}
+            issueTypeOptions={issueTypeOptions}
+            parentKey={effectiveParentKey}
+            parentSelect={parentSelect}
+            queueKey={effectiveQueueKey}
+            queueNamesByKey={queueNamesByKey}
+            queueSelect={queueSelect}
+            showAssigneeSelect={showAssigneeSelect}
+            textareaRef={newTaskInputRef}
+            title={draftTitle}
+            onAssigneeChange={(nextAssigneeId) => {
+              setDraftAssigneeId(nextAssigneeId);
+              onAssigneeChange?.(nextAssigneeId);
+            }}
+            onCreate={handleCreateTask}
+            onIssueTypeChange={handleIssueTypeChange}
+            onParentChange={handleParentChange}
+            onQueueChange={handleQueueChange}
+            onTitleChange={handleTaskTitleChange}
+          />
+        )
       }
       formMode={mode}
       isPickerStep={isPickerStep}

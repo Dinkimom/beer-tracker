@@ -166,6 +166,13 @@
 - Ожидаемо: список людей один, имена видны целиком даже у узкой заметки; Escape закрывает список, черновик и текст остаются; выбранный человек вставляется упоминанием, список закрывается.
 - Автотест: e2e/functional/swimlaneNotes.spec.ts
 
+### TC-132: Меню быстрого добавления — новая задача и задача из трекера
+- Контур: демо
+- Код: features/task/components/TaskBar/components/quickAddMenu/SwimlaneQuickAddMenu.tsx, features/task/components/TaskBar/components/quickAddMenu/QuickAddMenuNewPanel.tsx, features/task/components/TaskBar/components/quickAddMenu/QuickAddMenuExistingPanel.tsx, features/task/components/TaskBar/components/quickAddMenu/useQuickAddMenuNavigation.ts, features/task/components/TaskBar/components/quickAddMenu/types.ts, features/swimlane/components/taskLayerPlanSegmentQuickAddMenu.ts
+- Шаги: выбрать инструмент «Задача», кликнуть по свободной ячейке; в меню выбрать «Новая задача», ввести название; нажать «Назад», выбрать «Из трекера», набрать запрос; закрыть меню.
+- Ожидаемо: меню предлагает новую задачу и задачу из трекера; в форме новой задачи есть тип, очередь доски и родитель, «Создать» неактивна до ввода названия; введённое название сразу видно на карточке-черновике; «Назад» возвращает к выбору и очищает черновик; в виде «Из трекера» — поле поиска с запросом; «Закрыть» убирает черновик с доски. Создание задачи в трекере на демо не проверяется — трекера там нет.
+- Автотест: e2e/functional/swimlaneQuickAdd.spec.ts
+
 ## 4. Бэклог
 
 ### TC-030: Отображение бэклога

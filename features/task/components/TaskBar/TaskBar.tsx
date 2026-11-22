@@ -1,5 +1,6 @@
 'use client';
 
+import type { SwimlaneQuickAddMenuContent } from './components/quickAddMenu/types';
 import type { TaskResizeParams } from '@/features/task/hooks/useTaskResize';
 import type { StickyNoteCardRowLayout } from '@/features/task/utils/stickyNoteCardRowResizeHelpers';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
@@ -25,7 +26,7 @@ import { canDropTaskOnSidebar } from '@/features/task/utils/canDropTaskOnSidebar
 import { isSwimlaneImageTask } from '@/features/task/utils/swimlaneImageTask';
 import { useRootStore } from '@/lib/layers';
 
-import { SwimlaneQuickAddMenu, type SwimlaneQuickAddMenuProps } from './components/quickAddMenu/SwimlaneQuickAddMenu';
+import { SwimlaneQuickAddMenu } from './components/quickAddMenu/SwimlaneQuickAddMenu';
 import { resolveResizeHandleCornerStyle } from './components/taskBarResizeHandleHelpers';
 import {
   getTaskBarRootClassName,
@@ -78,7 +79,7 @@ export interface TaskBarProps {
   planPatchGhost?: boolean;
   /** Меню быстрого добавления (без якоря и флага отправки) и идёт ли отправка черновика. */
   quickAdd?: {
-    menu?: Omit<SwimlaneQuickAddMenuProps, 'anchorId' | 'isSubmitting' | 'title'> & { title: string };
+    menu?: SwimlaneQuickAddMenuContent;
     submitting?: boolean;
   };
   /** Отрезок сегментированной карточки: бейдж «n из m», индекс для ресайза, вторичный отрезок. */
@@ -413,7 +414,7 @@ const TaskBarSurface = observer(function TaskBarSurface(props: TaskBarProps) {
       <TaskBarDraftSaveButton noteEditor={inlineTitleEditor} onNoteExpand={noteFocusMode.onNoteExpand} />
       {noteFocusMode.focusEditor}
       {quickAddMenu && !quickAddSubmitting ? (
-        // quickAddMenu — пропсы меню без якоря и флага отправки: собраны в сегменте, отдаются как есть.
+        // Срезы меню (черновик, варианты, действия) собраны в сегменте; здесь — якорь и флаг отправки.
         <SwimlaneQuickAddMenu
           key={htmlAnchorId}
           {...quickAddMenu}

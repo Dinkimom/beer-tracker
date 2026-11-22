@@ -58,7 +58,7 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
     const menu = buildMenu({ onQuickAddDraftTitleChange });
 
     expect(menu).toBeDefined();
-    menu?.onTitleChange('Typed from popup');
+    menu?.actions.onTitleChange('Typed from popup');
 
     expect(onQuickAddDraftTitleChange).toHaveBeenCalledWith(
       'local-task-1',
@@ -71,7 +71,7 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
     const menu = buildMenu({ onQuickAddDraftCommentColorChange });
 
     expect(menu).toBeDefined();
-    menu?.onCommentColorChange('pink');
+    menu?.actions.onCommentColorChange('pink');
 
     expect(onQuickAddDraftCommentColorChange).toHaveBeenCalledWith('local-task-1', 'pink');
   });
@@ -108,9 +108,9 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       }),
     });
 
-    expect(menu?.lockedMode).toBe('new');
-    expect(menu?.queueKey).toBe('TEAM');
-    expect(menu?.showAssigneeSelect).toBe(false);
+    expect(menu?.options.lockedMode).toBe('new');
+    expect(menu?.draft.queueKey).toBe('TEAM');
+    expect(menu?.options.showAssigneeSelect).toBe(false);
   });
 
   it('asks for an assignee when converting a team-lane note', () => {
@@ -130,10 +130,10 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       }),
     });
 
-    expect(menu?.lockedMode).toBe('new');
-    expect(menu?.requiresAssignee).toBe(true);
-    expect(menu?.showAssigneeSelect).toBe(true);
-    expect(menu?.assigneeId).toBeUndefined();
+    expect(menu?.options.lockedMode).toBe('new');
+    expect(menu?.options.requiresAssignee).toBe(true);
+    expect(menu?.options.showAssigneeSelect).toBe(true);
+    expect(menu?.draft.assigneeId).toBeUndefined();
   });
 
   it('does not open a popup for a feature-lane note draft', () => {
@@ -159,9 +159,9 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       }),
     });
 
-    expect(menu?.requiresAssignee).toBe(true);
-    expect(menu?.showAssigneeSelect).toBe(true);
-    expect(menu?.assigneeId).toBeUndefined();
+    expect(menu?.options.requiresAssignee).toBe(true);
+    expect(menu?.options.showAssigneeSelect).toBe(true);
+    expect(menu?.draft.assigneeId).toBeUndefined();
   });
 
   it('offers an optional assignee on a team-lane task draft', () => {
@@ -176,9 +176,9 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       }),
     });
 
-    expect(menu?.requiresAssignee).toBe(false);
-    expect(menu?.showAssigneeSelect).toBe(true);
-    expect(menu?.assigneeId).toBeUndefined();
+    expect(menu?.options.requiresAssignee).toBe(false);
+    expect(menu?.options.showAssigneeSelect).toBe(true);
+    expect(menu?.draft.assigneeId).toBeUndefined();
   });
 
   it('prefills the person already assigned on a note being converted', () => {
@@ -195,10 +195,10 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       }),
     });
 
-    expect(menu?.lockedMode).toBe('new');
-    expect(menu?.assigneeId).toBe('dev-1');
-    expect(menu?.showAssigneeSelect).toBe(true);
-    expect(menu?.requiresAssignee).toBe(true);
+    expect(menu?.options.lockedMode).toBe('new');
+    expect(menu?.draft.assigneeId).toBe('dev-1');
+    expect(menu?.options.showAssigneeSelect).toBe(true);
+    expect(menu?.options.requiresAssignee).toBe(true);
   });
 
   it('keeps a feature draft row as the parent so it can be linked from the popup', () => {
@@ -216,7 +216,7 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       }),
     });
 
-    expect(menu?.parentKey).toBe('feature-draft:44e9e9a0-1');
+    expect(menu?.draft.parentKey).toBe('feature-draft:44e9e9a0-1');
   });
 
   it('labels the current feature draft parent by name in the selector', () => {
@@ -227,7 +227,7 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       }),
     });
 
-    expect(menu?.parentSelectOptions).toEqual(
+    expect(menu?.options.parentSelectOptions).toEqual(
       expect.arrayContaining([{ label: 'Пупи', value: 'feature-draft:1' }])
     );
   });
@@ -245,7 +245,7 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       }),
     });
 
-    expect(menu?.parentSelectOptions).toEqual(
+    expect(menu?.options.parentSelectOptions).toEqual(
       expect.arrayContaining([{ label: 'Пупи', value: 'feature-draft:1' }])
     );
   });
@@ -285,15 +285,15 @@ describe('buildTaskLayerPlanSegmentQuickAddMenu', () => {
       availabilityStartDate: '2026-08-31',
     });
 
-    expect(menu?.onCreateAvailability).toBeUndefined();
+    expect(menu?.actions.onCreateAvailability).toBeUndefined();
   });
 
   it('pastes the clipboard note onto the draft cell from the kind picker', () => {
     const onPasteQuickAddNote = vi.fn();
     const menu = buildMenu({ onPasteQuickAddNote });
 
-    expect(menu?.onPasteNote).toBeDefined();
-    menu?.onPasteNote?.();
+    expect(menu?.actions.onPasteNote).toBeDefined();
+    menu?.actions.onPasteNote?.();
 
     expect(onPasteQuickAddNote).toHaveBeenCalledWith('local-task-1');
   });

@@ -247,13 +247,9 @@ export function FeatureLaneDraftRowActions({ rowId }: FeatureLaneDraftRowActions
                 />
                 {step === 'existing' ? (
                   <QuickAddMenuExistingPanel
-                    isSearching={issueSearch.isSearching}
                     isSubmitting={convertIsSubmitting}
+                    issueSearch={issueSearch}
                     searchInputRef={searchInputRef}
-                    searchQuery={issueSearch.searchQuery}
-                    showResultsPanel={issueSearch.showResultsPanel}
-                    visibleResults={issueSearch.visibleResults}
-                    onSearchQueryChange={issueSearch.handleSearchQueryChange}
                     onSelectExisting={handleSelectExisting}
                   />
                 ) : (

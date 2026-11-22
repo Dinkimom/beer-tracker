@@ -1,6 +1,6 @@
 'use client';
 
-import type { QuickAddIssueSearchResult } from './types';
+import type { useQuickAddIssueSearch } from './hooks/useQuickAddIssueSearch';
 import type { Task } from '@/types';
 
 import { useId, useState, type KeyboardEvent, type RefObject } from 'react';
@@ -24,26 +24,26 @@ import {
 const SEARCH_INPUT_CLASS = `h-9 w-full rounded-lg pl-2.5 pr-8 text-sm text-gray-900 outline-none placeholder:text-gray-500 dark:text-gray-100 dark:placeholder:text-gray-400 ${glassLensControlClass()}`;
 
 interface QuickAddMenuExistingPanelProps {
-  isSearching: boolean;
   isSubmitting: boolean;
+  /** Запрос, результаты и их загрузка — как отдаёт `useQuickAddIssueSearch`. */
+  issueSearch: ReturnType<typeof useQuickAddIssueSearch>;
   searchInputRef: RefObject<HTMLInputElement | null>;
-  searchQuery: string;
-  showResultsPanel: boolean;
-  visibleResults: QuickAddIssueSearchResult[];
-  onSearchQueryChange: (value: string) => void;
   onSelectExisting: (task: Task) => void;
 }
 
 export function QuickAddMenuExistingPanel({
-  isSearching,
   isSubmitting,
+  issueSearch,
   searchInputRef,
-  searchQuery,
-  showResultsPanel,
-  visibleResults,
-  onSearchQueryChange,
   onSelectExisting,
 }: QuickAddMenuExistingPanelProps) {
+  const {
+    isSearching,
+    searchQuery,
+    showResultsPanel,
+    visibleResults,
+    handleSearchQueryChange: onSearchQueryChange,
+  } = issueSearch;
   const { t } = useI18n();
   const searchInputId = useId();
   const listId = useId();
