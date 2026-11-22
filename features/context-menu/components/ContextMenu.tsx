@@ -5,6 +5,8 @@ import type { SprintPlannerContextMenuState } from '@/lib/layers';
 import type { Task, TaskParent, TaskPosition } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
+import { observer } from 'mobx-react-lite';
+
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_PANEL_ENTER } from '@/components/overlayAnimationClasses';
@@ -69,7 +71,7 @@ interface ContextMenuProps {
   onUpdateEstimate?: (task: Task, newEstimate: number, isTestPoints: boolean) => void;
 }
 
-export function ContextMenu({
+export const ContextMenu = observer(function ContextMenu({
   menu,
   sprints,
   currentSprintId,
@@ -324,4 +326,4 @@ export function ContextMenu({
       {DialogComponent}
     </>
   );
-}
+});

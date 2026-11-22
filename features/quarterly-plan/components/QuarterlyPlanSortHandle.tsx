@@ -2,6 +2,7 @@
 
 import type { QuarterRowPlace } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 
+import { observer } from 'mobx-react-lite';
 import { useRef, useState } from 'react';
 
 import { Icon } from '@/components/Icon';
@@ -61,7 +62,7 @@ interface QuarterlyPlanSortHandleProps {
  * Ручка порядка строки (QO2, QO3): строку тянут вверх или вниз и отпускают рядом со строкой того же
  * уровня; линия показывает, куда она встанет. Видна при наведении на строку.
  */
-export function QuarterlyPlanSortHandle({ id, level }: QuarterlyPlanSortHandleProps) {
+export const QuarterlyPlanSortHandle = observer(function QuarterlyPlanSortHandle({ id, level }: QuarterlyPlanSortHandleProps) {
   const { t } = useI18n();
   const { onRowMove } = useQuarterlyPlanBoard();
   const dropRef = useRef<RowDrop | null>(null);
@@ -110,4 +111,4 @@ export function QuarterlyPlanSortHandle({ id, level }: QuarterlyPlanSortHandlePr
       ) : null}
     </>
   );
-}
+});

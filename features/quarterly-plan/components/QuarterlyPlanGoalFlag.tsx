@@ -2,6 +2,8 @@
 
 import type { QuarterRowGoalFlag } from '../quarterlyPlanBoardModel';
 
+import { observer } from 'mobx-react-lite';
+
 import { Icon } from '@/components/Icon';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -25,7 +27,7 @@ const PILL_INSET_PX = 4;
  * с полосами. Тип — словом (Delivery / Discovery, как на доске спринта), открытые цели — иконкой цели и счётчиком «выполнено/всего», все выполнены —
  * зелёная с галочкой. Текст — первая цель, весь список — в подсказке. Клик открывает цели спринта (QG13).
  */
-export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFlagProps) {
+export const QuarterlyPlanGoalFlag = observer(function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFlagProps) {
   const { t } = useI18n();
   const { detail, onSprintGoalsOpen } = useQuarterlyPlanBoard();
   const { weeks } = useQuarterPlanView();
@@ -69,4 +71,4 @@ export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFl
       </button>
     </div>
   );
-}
+});

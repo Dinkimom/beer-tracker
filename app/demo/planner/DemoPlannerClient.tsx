@@ -4,6 +4,7 @@ import type { SprintTab } from '@/components/PageHeader';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { reaction } from 'mobx';
+import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -69,7 +70,7 @@ interface DemoPlannerClientProps {
   productOrganizationId: string;
 }
 
-export default function DemoPlannerClient({ boardId, productOrganizationId }: DemoPlannerClientProps) {
+const DemoPlannerClient = observer(function DemoPlannerClient({ boardId, productOrganizationId }: DemoPlannerClientProps) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   /**
@@ -265,4 +266,6 @@ export default function DemoPlannerClient({ boardId, productOrganizationId }: De
       </PhaseCardColorSchemeProvider>
     </ErrorBoundary>
   );
-}
+});
+
+export default DemoPlannerClient;

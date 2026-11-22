@@ -3,6 +3,7 @@
 import type { SprintHistoryFilter } from '@/features/sidebar/utils/sprintHistoryText';
 import type { SprintHistoryEvent } from '@/lib/boardHistory/sprintHistoryTypes';
 
+import { observer } from 'mobx-react-lite';
 import { useCallback, useMemo, useState } from 'react';
 
 import { Button } from '@/components/Button';
@@ -41,7 +42,7 @@ function groupByDay(events: readonly SprintHistoryEvent[]): Array<{ day: string;
 }
 
 /** Вкладка «История»: кто и что менял в спринте — задачи из трекера, заметки, цели и стрелки доски. */
-export function HistoryTab() {
+export const HistoryTab = observer(function HistoryTab() {
   const { language, t } = useI18n();
   const { allSprintTasksForMetrics, developers, goalsTasks, setMainTab, sprintInfo, taskPositions } = useTaskSidebar();
   const { sprintPlannerUi } = useRootStore();
@@ -146,4 +147,4 @@ export function HistoryTab() {
       </div>
     </div>
   );
-}
+});

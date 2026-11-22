@@ -1,12 +1,14 @@
 'use client';
 
+import { observer } from 'mobx-react-lite';
+
 import { useI18n } from '@/contexts/LanguageContext';
 
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import { draftMarkOf } from '../quarterlyPlanBoardModel';
 
 /** Метка строки, которую добавил, изменил или убрал показанный черновик агента (QM9); иначе ничего. */
-export function QuarterlyPlanDraftMark({ id }: { id: string }) {
+export const QuarterlyPlanDraftMark = observer(function QuarterlyPlanDraftMark({ id }: { id: string }) {
   const { t } = useI18n();
   const { draftMarks } = useQuarterlyPlanBoard();
   const kind = draftMarkOf(draftMarks, id);
@@ -22,4 +24,4 @@ export function QuarterlyPlanDraftMark({ id }: { id: string }) {
       {t(`quarterlyPlan.draft.mark.${kind}`)}
     </span>
   );
-}
+});

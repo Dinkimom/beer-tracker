@@ -1,5 +1,7 @@
 'use client';
 
+import { observer } from 'mobx-react-lite';
+
 import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
 import { QUARTER_ROW_HEIGHT_PX, QUARTER_ROW_INDENT_CLASS, type QuarterRowLevel } from '../quarterlyPlanBoardModel';
 
@@ -13,7 +15,7 @@ interface QuarterlyPlanInputRowProps {
 }
 
 /** Строка с полем названия новой строки плана — на том месте, куда строка встанет (QO1). */
-export function QuarterlyPlanInputRow({ level, placeholder }: QuarterlyPlanInputRowProps) {
+export const QuarterlyPlanInputRow = observer(function QuarterlyPlanInputRow({ level, placeholder }: QuarterlyPlanInputRowProps) {
   const { onDraftSubmit } = useQuarterlyPlanBoard();
   return (
     <QuarterlyPlanRow
@@ -26,4 +28,4 @@ export function QuarterlyPlanInputRow({ level, placeholder }: QuarterlyPlanInput
       tone={level === 'direction' ? 'direction' : 'default'}
     />
   );
-}
+});

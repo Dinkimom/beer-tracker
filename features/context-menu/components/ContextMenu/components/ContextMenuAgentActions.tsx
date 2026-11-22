@@ -2,6 +2,8 @@
 
 import type { Task } from '@/types';
 
+import { observer } from 'mobx-react-lite';
+
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -12,7 +14,7 @@ import { useRootStore } from '@/lib/layers';
  * «Агенту» в меню карточки: чат с плашкой задачи. Там же — спросить про задачу или сразу отдать её
  * агенту сделать в коде («Сделать в коде» в пустом чате): один вход вместо двух кнопок.
  */
-export function ContextMenuAgentActions({ task, onClose }: { task: Task; onClose: () => void }) {
+export const ContextMenuAgentActions = observer(function ContextMenuAgentActions({ task, onClose }: { task: Task; onClose: () => void }) {
   const { t } = useI18n();
   const { agentChat } = useRootStore().sprintPlannerUi;
   const actions = [
@@ -44,4 +46,4 @@ export function ContextMenuAgentActions({ task, onClose }: { task: Task; onClose
       <span className={MENU_QUICK_ACTION_LABEL}>{action.label}</span>
     </Button>
   ));
-}
+});

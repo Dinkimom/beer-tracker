@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { observer } from 'mobx-react-lite';
 import { useCallback } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
@@ -14,7 +15,7 @@ import { useRootStore } from '@/lib/layers';
 import { replaceUrlQuery } from '@/utils/replaceUrlQuery';
 
 /** Пять кружек скора на панели спринта: клик открывает сайдбар на вкладке метрик. */
-export function SprintPlannerScoreMark({ sprintId }: { sprintId: number | null }) {
+export const SprintPlannerScoreMark = observer(function SprintPlannerScoreMark({ sprintId }: { sprintId: number | null }) {
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
   const forDemoPlanner = useDemoPlannerBoardsQueryScope();
@@ -47,4 +48,4 @@ export function SprintPlannerScoreMark({ sprintId }: { sprintId: number | null }
       onClick={openMetricsSidebar}
     />
   );
-}
+});

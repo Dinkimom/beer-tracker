@@ -1,9 +1,10 @@
+import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
 /**
  * Компонент действий для ContextMenu
  */
-
-import type { ContextMenuAssigneeOptions } from '@/features/context-menu/components/AssigneeSubmenu';
 import type { Task } from '@/types';
+
+import { observer } from 'mobx-react-lite';
 
 import { CardLinkIcon } from '@/components/CardLinkIcon';
 import { Icon } from '@/components/Icon';
@@ -34,7 +35,7 @@ interface ContextMenuActionsProps {
   onRemoveFromSprint: () => void;
 }
 
-export function ContextMenuActions({
+export const ContextMenuActions = observer(function ContextMenuActions({
   assigneeOptions = null,
   currentSprintId,
   hasPosition,
@@ -111,4 +112,4 @@ export function ContextMenuActions({
       </ContextMenuGroup>
     </>
   );
-}
+});

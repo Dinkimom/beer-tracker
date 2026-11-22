@@ -3,6 +3,8 @@
 import type { QuarterRowLevel } from '../quarterlyPlanBoardModel';
 import type { QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
@@ -43,7 +45,7 @@ interface QuarterlyPlanEpicHeaderProps {
  * Название строки эпика или задачи с её управлением: ручка порядка, стрелка и число задач, ключ трекера,
  * пометка черновика, «+ задача» и меню действий.
  */
-export function QuarterlyPlanEpicHeader({ epic, level, tasks, unplanned }: QuarterlyPlanEpicHeaderProps) {
+export const QuarterlyPlanEpicHeader = observer(function QuarterlyPlanEpicHeader({ epic, level, tasks, unplanned }: QuarterlyPlanEpicHeaderProps) {
   const { t } = useI18n();
   const { openRow: onRowMenu } = useQuarterlyPlanBoard().menu;
   const { trackerEpics } = useQuarterPlanView();
@@ -108,4 +110,4 @@ export function QuarterlyPlanEpicHeader({ epic, level, tasks, unplanned }: Quart
       </HeaderIconButton>
     </>
   );
-}
+});

@@ -2,6 +2,7 @@
 
 import type { QuickAddMode, SwimlaneQuickAddMenuProps } from './types';
 
+import { observer } from 'mobx-react-lite';
 import { useCallback, useRef, useState } from 'react';
 
 import { ZIndex } from '@/constants';
@@ -45,7 +46,7 @@ function resolveQuickAddPopoverMinWidth(isPickerStep: boolean): number | undefin
   return undefined;
 }
 
-export function SwimlaneQuickAddMenu({
+export const SwimlaneQuickAddMenu = observer(function SwimlaneQuickAddMenu({
   anchorId,
   assigneeId,
   availabilityStartDate,
@@ -296,4 +297,4 @@ export function SwimlaneQuickAddMenu({
       onSelectMode={handleModeChange}
     />
   );
-}
+});

@@ -2,6 +2,8 @@
 
 import type { QuarterlyPlanSprint } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useSprintGoals } from '@/features/sprint/hooks/useSprintGoals';
@@ -25,7 +27,7 @@ interface QuarterlyPlanSprintCellProps {
  * если их ещё нет. Кнопка открывает цели спринта в сайдбаре. Ячейка — на всю высоту строки, подпись — в верхней
  * ленте и липнет к колонке.
  */
-export function QuarterlyPlanSprintCell({ boardId, current, divided, span, sprint }: QuarterlyPlanSprintCellProps) {
+export const QuarterlyPlanSprintCell = observer(function QuarterlyPlanSprintCell({ boardId, current, divided, span, sprint }: QuarterlyPlanSprintCellProps) {
   const { t } = useI18n();
   const { onSprintGoalsOpen } = useQuarterlyPlanBoard();
   const { weeks } = useQuarterPlanView();
@@ -69,4 +71,4 @@ export function QuarterlyPlanSprintCell({ boardId, current, divided, span, sprin
       </span>
     </div>
   );
-}
+});

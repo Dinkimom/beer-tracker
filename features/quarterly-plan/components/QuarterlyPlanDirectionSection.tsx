@@ -4,6 +4,8 @@ import type { QuarterMenuAnchor } from '../QuarterlyPlanBoardContext';
 import type { DaySpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type { QuarterlyPlanDirection, QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { useI18n } from '@/contexts/LanguageContext';
 import { isEpicDone, trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
@@ -34,7 +36,7 @@ interface QuarterlyPlanDirectionSectionProps {
  * Направление (веха): сворачиваемый заголовок, под ним эпики. В своей строке — полосы самого
  * направления (QG2): проработка фичи, пока она не разбита на эпики. Свёрнутое показывает общий срок.
  */
-export function QuarterlyPlanDirectionSection({
+export const QuarterlyPlanDirectionSection = observer(function QuarterlyPlanDirectionSection({
   collapsed,
   direction,
   epics,
@@ -114,4 +116,4 @@ export function QuarterlyPlanDirectionSection({
       <QuarterlyPlanDirectionEpics collapsed={collapsed} directionId={direction.id} epics={epics} />
     </>
   );
-}
+});

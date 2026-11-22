@@ -3,6 +3,8 @@
 import type { QuarterlyPlanDraftReview } from '../QuarterlyPlanBoardContext';
 import type { QuarterlyPlanDraftItem } from '@/lib/quarterlyPlans/quarterlyPlanDraftItems';
 
+import { observer } from 'mobx-react-lite';
+
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskBarPendingApprovalToolbar } from '@/features/task/components/TaskBar/TaskBarPendingApprovalToolbar';
 
@@ -36,7 +38,7 @@ interface QuarterlyPlanDraftItemToolbarProps {
  * ✓/✗ пункта черновика агента на доске квартала (QM10) — тот же тулбар, что у предложений агента на доске спринта:
  * переход «‹ 1/N ›» находит его в DOM, решение о пункте уходит сразу. Пункта нет — ничего.
  */
-export function QuarterlyPlanDraftItemToolbar({ hidden = false, id, placement }: QuarterlyPlanDraftItemToolbarProps) {
+export const QuarterlyPlanDraftItemToolbar = observer(function QuarterlyPlanDraftItemToolbar({ hidden = false, id, placement }: QuarterlyPlanDraftItemToolbarProps) {
   const { t } = useI18n();
   const { draftMarks, draftReview } = useQuarterlyPlanBoard();
   const items = draftItemsOf(draftReview, id);
@@ -70,4 +72,4 @@ export function QuarterlyPlanDraftItemToolbar({ hidden = false, id, placement }:
       {toolbars}
     </div>
   );
-}
+});

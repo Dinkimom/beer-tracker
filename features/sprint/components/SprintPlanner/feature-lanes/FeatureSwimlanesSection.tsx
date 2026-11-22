@@ -4,6 +4,7 @@ import type { SwimlanesSectionProps } from '../components/SwimlanesSection.types
 import type { Task, TaskParent } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
+import { observer } from 'mobx-react-lite';
 import { useCallback, useMemo } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
@@ -43,7 +44,7 @@ export type FeatureSwimlanesSectionProps = Omit<SwimlanesSectionProps, 'viewMode
  * POC: свимлейн, нарезанный по родителю (стори/эпик).
  * Карточки и позиции те же; строка — фича, исполнитель остаётся на аватаре.
  */
-export function FeatureSwimlanesSection({
+export const FeatureSwimlanesSection = observer(function FeatureSwimlanesSection({
   onCommentsLeftSprint,
   onMoveToSprint,
   onRemoveFromSprint,
@@ -209,4 +210,4 @@ export function FeatureSwimlanesSection({
       {rowActions.DialogComponent}
     </FeatureLaneCardUiProvider>
   );
-}
+});

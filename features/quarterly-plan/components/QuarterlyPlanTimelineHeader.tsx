@@ -1,5 +1,7 @@
 'use client';
 
+import { observer } from 'mobx-react-lite';
+
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { groupWeeksByMonth } from '@/lib/quarterlyPlans/quarterWeeks';
@@ -31,7 +33,7 @@ function weekDayNumbers(mondayIso: string): number[] {
 }
 
 /** Липкая шапка: месяцы и недели квартала, текущая неделя выделена. */
-export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPlanTimelineHeaderProps) {
+export const QuarterlyPlanTimelineHeader = observer(function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPlanTimelineHeaderProps) {
   const { language } = useI18n();
   const { detail } = useQuarterlyPlanBoard();
   const { currentWeek, weeks } = useQuarterPlanView();
@@ -122,4 +124,4 @@ export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPla
       </div>
     </div>
   );
-}
+});

@@ -9,6 +9,7 @@ import perfectionist from 'eslint-plugin-perfectionist';
 import unusedImports from 'eslint-plugin-unused-imports';
 import sonarjs from 'eslint-plugin-sonarjs';
 import i18nPlugin from './scripts/eslint/plugin-i18n.mjs';
+import mobxPlugin from './scripts/eslint/plugin-mobx.mjs';
 
 /**
  * Политика качества (SonarJS + React Hooks). `pnpm lint` = `--max-warnings 0`.
@@ -397,6 +398,18 @@ export default [
     },
     rules: {
       'i18n/no-literal-ui-string': 'error',
+    },
+  },
+  // Компонент, читающий модель доски или MobX-стор, — observer (ARCHITECTURE.md, «Модель доски и классы под вью»).
+  {
+    files: ['app/**/*.tsx', 'components/**/*.tsx', 'contexts/**/*.tsx', 'features/**/*.tsx'],
+    ignores: ['**/*.{test,spec}.tsx', '**/*.stories.tsx'],
+    name: 'mobx/observer-reads-store',
+    plugins: {
+      mobx: mobxPlugin,
+    },
+    rules: {
+      'mobx/observer-reads-store': 'error',
     },
   },
   {

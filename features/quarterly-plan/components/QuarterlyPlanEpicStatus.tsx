@@ -2,6 +2,8 @@
 
 import type { QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { StatusTag } from '@/components/StatusTag';
 import { useI18n } from '@/contexts/LanguageContext';
 import { TaskStatusSelect } from '@/features/task/components/TaskStatusSelect';
@@ -18,7 +20,7 @@ interface QuarterlyPlanEpicStatusProps {
  * Статус строки (QE7). У привязанной — статус задачи в трекере; по клику — её переходы, выбранный
  * переход делается в трекере. У своей — кнопка с выбором из пяти.
  */
-export function QuarterlyPlanEpicStatus({ epic }: QuarterlyPlanEpicStatusProps) {
+export const QuarterlyPlanEpicStatus = observer(function QuarterlyPlanEpicStatus({ epic }: QuarterlyPlanEpicStatusProps) {
   const { t } = useI18n();
   const { menu, onTrackerStatusChange } = useQuarterlyPlanBoard();
   const { openStatus: onStatusClick } = menu;
@@ -64,4 +66,4 @@ export function QuarterlyPlanEpicStatus({ epic }: QuarterlyPlanEpicStatusProps) 
       <StatusTag label={t(`quarterlyPlan.status.${epic.status}`)} status={QUARTER_STATUS_PALETTE_KEY[epic.status]} />
     </button>
   );
-}
+});

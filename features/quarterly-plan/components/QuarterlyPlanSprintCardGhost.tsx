@@ -2,6 +2,8 @@
 
 import type { QuarterlyPlanAssignment, QuarterlyPlanSprintCard } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
+
 import { Icon } from '@/components/Icon';
 import { TextTooltip } from '@/components/TextTooltip';
 import { ZIndex } from '@/constants';
@@ -25,7 +27,7 @@ interface QuarterlyPlanSprintCardGhostProps {
  * Расхождение плана и спринта (QK8): пунктирный контур там, где карточка задачи стоит на доске спринта,
  * если это не дни её полос в плане. Само ничего не двигается; клик — поповер с синхронизацией этой задачи (QK9).
  */
-export function QuarterlyPlanSprintCardGhost({ assignments, card, epicId }: QuarterlyPlanSprintCardGhostProps) {
+export const QuarterlyPlanSprintCardGhost = observer(function QuarterlyPlanSprintCardGhost({ assignments, card, epicId }: QuarterlyPlanSprintCardGhostProps) {
   const { t } = useI18n();
   const { menu } = useQuarterlyPlanBoard();
   const { openSprintDrift: onSprintDriftClick } = menu;
@@ -61,4 +63,4 @@ export function QuarterlyPlanSprintCardGhost({ assignments, card, epicId }: Quar
       </button>
     </TextTooltip>
   );
-}
+});
