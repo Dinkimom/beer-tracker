@@ -289,7 +289,7 @@ export function useSprintPlannerViewModel({
       tasksLoading,
       tasksReloading,
       viewMode,
-      onOpenSidebar: handlers.handleToggleSidebar,
+      onOpenSidebar: sprintPlannerUi.overlays.toggleSidebar,
       onSprintChange,
       onTasksReload,
     },
@@ -321,7 +321,6 @@ export function useSprintPlannerViewModel({
       tasks: allTasksForDrag,
       onContextMenu: handlers.handleContextMenu,
       onStatusChange: handlers.handleStatusChange,
-      onTaskClick: handlers.handleTaskClick,
     },
     modals: {
       DialogComponent,
@@ -387,7 +386,7 @@ export function useSprintPlannerViewModel({
         setTasks((prev) => [...prev.filter((existing) => existing.id !== task.id), task]);
       },
       onTasksReload,
-      onToggle: handlers.handleToggleSidebar,
+      onToggle: sprintPlannerUi.overlays.toggleSidebar,
       onWidthChange: setSidebarWidth,
     },
     sprints,
@@ -399,7 +398,6 @@ export function useSprintPlannerViewModel({
         selectedSprintId,
         taskChangelogsByTaskId: swimlaneTaskChangelogsMap,
         taskIssueCommentsByTaskId: swimlaneTaskIssueCommentsMap,
-        onCloseSidebar: handlers.handleCloseSidebar,
         onContextMenu: handlers.handleContextMenu,
         onCreateQATask: handlers.handleCreateQATask,
         onCreateTaskInCell: handleCreateTaskInSwimlaneCell,
@@ -437,7 +435,6 @@ export function useSprintPlannerViewModel({
       onCommentsLeftSprint: state.board.notes.leftSprint,
       onMoveToSprint: handlers.handleMoveToSprint,
       onRemoveFromSprint: handlers.handleRemoveFromSprint,
-      onTaskClick: handlers.handleTaskClick,
     },
     viewMode,
   };

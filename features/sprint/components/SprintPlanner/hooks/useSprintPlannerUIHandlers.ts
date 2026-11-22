@@ -22,7 +22,6 @@ import { getCurrentSprintCell } from '@/utils/dateUtils';
 
 import { useSprintPlannerAutoAssignHandlers } from './useSprintPlannerUIHandlers/hooks/useSprintPlannerAutoAssignHandlers';
 import { useSprintPlannerContextMenuHandlers } from './useSprintPlannerUIHandlers/hooks/useSprintPlannerContextMenuHandlers';
-import { useSprintPlannerSidebarHandlers } from './useSprintPlannerUIHandlers/hooks/useSprintPlannerSidebarHandlers';
 import { useSprintPlannerTaskInteractionHandlers } from './useSprintPlannerUIHandlers/hooks/useSprintPlannerTaskInteractionHandlers';
 import { useTransitionModal } from './useTransitionModal';
 
@@ -49,7 +48,6 @@ interface UseSprintPlannerUIHandlersProps {
   }) => Promise<boolean>;
   debouncedUpdateXarrow: () => void;
   onTasksReload?: () => void;
-  setSidebarOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }
 
@@ -59,7 +57,6 @@ export function useSprintPlannerUIHandlers({
   developersManagement,
   resetDragStateRef,
   selectedSprintId,
-  setSidebarOpen,
   setTasks,
   sprintStartDate,
   sprintTimelineWorkingDays,
@@ -81,11 +78,6 @@ export function useSprintPlannerUIHandlers({
     setTasks,
   });
 
-  // Обработчики сайдбара
-  const { handleCloseSidebar, handleToggleSidebar } = useSprintPlannerSidebarHandlers({
-    setSidebarOpen,
-  });
-
   // Обработчики автоматической расстановки
   const { handleAutoAssignTasks, handleReturnAllTasks } = useSprintPlannerAutoAssignHandlers({
     allTasksForDrag,
@@ -102,7 +94,7 @@ export function useSprintPlannerUIHandlers({
   });
 
   // Обработчики взаимодействия с задачами
-  const { handleAccountWork, handleTaskClick, handleTaskInfoFieldsSaved } =
+  const { handleAccountWork, handleTaskInfoFieldsSaved } =
     useSprintPlannerTaskInteractionHandlers({
       selectedSprintId,
       setTasks,
@@ -158,7 +150,6 @@ export function useSprintPlannerUIHandlers({
   return {
     handleAccountWork,
     handleAutoAssignTasks,
-    handleCloseSidebar,
     handleContextMenu,
     handleMoveToSprint,
     handleParentChange,
@@ -166,9 +157,7 @@ export function useSprintPlannerUIHandlers({
     handleRemoveFromSprint,
     handleReturnAllTasks,
     handleStatusChange: handleStatusChangeWithModal,
-    handleTaskClick,
     handleTaskInfoFieldsSaved,
-    handleToggleSidebar,
     transitionModal,
     closeTransitionModal,
     handleTransitionSubmit,

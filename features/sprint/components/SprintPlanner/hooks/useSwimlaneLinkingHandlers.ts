@@ -21,7 +21,6 @@ export function useSwimlaneLinkingHandlers(input: {
   linkToolArmed: boolean;
   linkingFromTaskId: string | null;
   onAddLink?: (link: { fromTaskId: string; id: string; toTaskId: string }) => void;
-  onTaskClick: (taskId: string) => void;
   setLinkingFromTaskId: (id: string | null) => void;
   showLinks: boolean;
   taskLinks: Array<Pick<TaskLink, 'fromTaskId' | 'toTaskId'>>;
@@ -31,7 +30,6 @@ export function useSwimlaneLinkingHandlers(input: {
     linkToolArmed,
     linkingFromTaskId,
     onAddLink,
-    onTaskClick,
     setLinkingFromTaskId,
     showLinks,
     taskLinks,
@@ -101,18 +99,12 @@ export function useSwimlaneLinkingHandlers(input: {
       }
       if (action === 'start-source') {
         setLinkingFromTaskId(taskId);
-        return;
       }
-      if (action === 'ignore') {
-        return;
-      }
-      onTaskClick(taskId);
     },
     [
       handleCompleteLink,
       linkToolArmed,
       linkingFromTaskId,
-      onTaskClick,
       resolveTaskLinkMode,
       setLinkingFromTaskId,
     ]

@@ -21,22 +21,9 @@ import { getVisibleSwimlaneFactLayerHeightPx } from '@/features/swimlane/utils/i
 import { getSegmentsForDeveloper } from '@/lib/boardAvailability/availabilitySegments';
 import { isCellOccupiedByTask } from '@/lib/planner-timeline';
 
-export function buildSwimlaneRootClassName(sidebarClickEnabled: boolean): string {
-  const interactive = sidebarClickEnabled ? 'cursor-pointer' : '';
+export function buildSwimlaneRootClassName(): string {
   // Нижняя линия строки — у колонок дней в TimelineGrid (border-b на каждой ячейке).
-  return `group/swimlane relative bg-white swimlane-lane-fill dark:bg-gray-800 swimlane-row-resizing:pointer-events-none ${interactive}`;
-}
-
-export function createSwimlaneRootClickHandler(
-  sidebarClickEnabled: boolean,
-  onCloseSidebar?: () => void
-): ((e: React.MouseEvent) => void) | undefined {
-  if (!sidebarClickEnabled || !onCloseSidebar) return undefined;
-  return (e) => {
-    if (shouldCloseSidebarOnSwimlaneClick(e.target as HTMLElement)) {
-      onCloseSidebar();
-    }
-  };
+  return 'group/swimlane relative bg-white swimlane-lane-fill dark:bg-gray-800 swimlane-row-resizing:pointer-events-none';
 }
 
 export function resolveSwimlaneFactExtra(
@@ -129,18 +116,6 @@ export function resolveSwimlaneSecondaryLaneLayout(input: {
     mainAreaHeight,
     timelineOuterHeight: mainAreaHeight,
   };
-}
-
-function shouldCloseSidebarOnSwimlaneClick(target: HTMLElement): boolean {
-  return (
-    !target.closest('[data-task-id]') &&
-    !target.closest('[data-comment-id]') &&
-    !target.closest('[data-swimlane-row-border-resize]') &&
-    !target.closest('button') &&
-    !target.closest('a') &&
-    !target.closest('[role="button"]') &&
-    !target.closest('.pointer-events-none')
-  );
 }
 
 export function resolveSwimlaneDropPreviewTarget(input: {

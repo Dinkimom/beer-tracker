@@ -20,8 +20,6 @@ export interface SwimlaneBoard {
   /** Доска (нужна для квартального плана отпусков) */
   boardId: number | null;
   commentActions?: SwimlaneCommentActions;
-  /** Не закрывать сайдбар кликом по дорожке. */
-  disableCloseSidebarOnClick: boolean;
   /** Причины ошибок по taskId — для тултипа иконки ошибки на баре */
   errorReasons?: Map<string, OccupancyErrorReason[]>;
   /** ID задач, у которых фаза занятости участвует в ошибке планирования — подсветка и иконка на баре */
@@ -43,7 +41,6 @@ export interface SwimlaneBoard {
   /** Пользовательские связи задач — для режима рисования стрелок. */
   taskLinks?: Array<{ fromTaskId: string; toTaskId: string; id: string }>;
   viewMode: LayoutViewMode;
-  onCloseSidebar?: () => void;
   onContextMenu?: (e: MouseEvent, task: Task) => void;
   onCreateQATask?: (taskId: string, anchorRect?: DOMRect) => void;
   onCreateTaskInCell?: (data: {

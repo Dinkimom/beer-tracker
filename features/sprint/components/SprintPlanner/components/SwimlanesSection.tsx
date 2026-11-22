@@ -79,7 +79,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     taskPositions,
     tasksMap,
     viewMode,
-    onTaskClick,
   } = props;
   const { boardAvailabilityEvents, sprintStartDate, sprintTimelineWorkingDays = WORKING_DAYS } = props.timeline;
   const { items: filteredTaskLinks, onAdd: onAddLink } = props.links;
@@ -331,7 +330,6 @@ export const SwimlanesSection = observer(function SwimlanesSection(props: Swimla
     linkToolArmed,
     linkingFromTaskId,
     onAddLink,
-    onTaskClick,
     setLinkingFromTaskId: sprintPlannerUi.tools.setLinkingFromTaskId,
     showLinks,
     taskLinks: filteredTaskLinks,

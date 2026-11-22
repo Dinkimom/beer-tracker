@@ -21,7 +21,6 @@ interface SwimlaneBoardInputs {
   selectedSprintId: number | null;
   taskChangelogsByTaskId?: Map<string, ChangelogEntry[]>;
   taskIssueCommentsByTaskId?: Map<string, IssueComment[]>;
-  onCloseSidebar: () => void;
   onContextMenu: (e: React.MouseEvent, task: Task, isBacklogTask?: boolean) => void;
   onCreateQATask: (devTaskId: string, anchorRect?: DOMRect) => void;
   onCreateTaskInCell?: (data: {
@@ -113,7 +112,6 @@ export interface SwimlanesSectionProps {
   tasksMap: Map<string, Task>;
   timeline: SwimlaneTimeline;
   viewMode: 'compact' | 'full';
-  onTaskClick: (taskId: string) => void;
   removeParticipantFromTeam?: (
     developerId: string,
     knownDisplayName?: string | null

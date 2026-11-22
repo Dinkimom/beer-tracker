@@ -49,14 +49,6 @@ export function useSprintPlannerTaskInteractionHandlers({
     [sprintPlannerUi, handleAccountWorkHook]
   );
 
-  // Обработчик клика по задаче
-  const handleTaskClick = useCallback(
-    (_taskId: string, _shiftKey = false) => {
-      if (sprintPlannerUi.overlays.contextMenuTaskId !== null) return;
-    },
-    [sprintPlannerUi]
-  );
-
   const handleTaskInfoFieldsSaved = useCallback(
     (fields: { description?: string; name?: string }) => {
       const panelTask = sprintPlannerUi.overlays.taskInfoPanelTask;
@@ -73,7 +65,6 @@ export function useSprintPlannerTaskInteractionHandlers({
 
   return {
     handleAccountWork,
-    handleTaskClick,
     handleTaskInfoFieldsSaved,
   };
 }

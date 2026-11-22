@@ -32,7 +32,7 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({ task 
   const presenceLocked = useSprintCardPresenceLocked(task.id);
   const { sprintPlannerUi } = useRootStore();
   const { developers } = useSprintBoard();
-  const { onContextMenu, onTaskClick } = useKanbanBoard();
+  const { onContextMenu } = useKanbanBoard();
   // Не подходит под поиск по доске — приглушена, как на свимлейне.
   const dimmedBySearch = !taskMatchesNameFilter(task, sprintPlannerUi.focus.globalNameFilter);
   const [ownDragActive, setOwnDragActive] = useState(false);
@@ -89,12 +89,6 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({ task 
       style={style}
       {...(blockNewGestures ? {} : listeners)}
       {...attributes}
-      onClick={() => {
-        if (blockNewGestures) {
-          return;
-        }
-        onTaskClick?.(task.id);
-      }}
       onContextMenu={(e) => {
         if (blockNewGestures) {
           e.preventDefault();
@@ -106,10 +100,6 @@ export const KanbanDraggableCard = observer(function KanbanDraggableCard({ task 
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          if (blockNewGestures) {
-            return;
-          }
-          onTaskClick?.(task.id);
         }
       }}
       onMouseEnter={() => sprintPlannerUi.cards.setHoveredTaskId(task.id)}

@@ -6,8 +6,8 @@ import type { BoardColumn } from '@/types/tracker';
 import { createContext, useContext } from 'react';
 
 /**
- * Канбан глазами колонки и карточки: что сейчас тащат и куда можно бросить, что делать по клику
- * и правому клику. Задаёт `KanbanView`; дорожки и колонки между ним и карточкой это не передают.
+ * Канбан глазами колонки и карточки: что сейчас тащат и куда можно бросить, что делать по правому
+ * клику. Задаёт `KanbanView`; дорожки и колонки между ним и карточкой это не передают.
  */
 export interface KanbanBoard {
   activeTaskId: string | null;
@@ -15,7 +15,6 @@ export interface KanbanBoard {
   sourceColumnId: string | null | undefined;
   canDropInColumn: (column: BoardColumn) => boolean;
   onContextMenu?: (e: React.MouseEvent, task: Task) => void;
-  onTaskClick?: (taskId: string) => void;
 }
 
 export const KanbanBoardContext = createContext<KanbanBoard | null>(null);

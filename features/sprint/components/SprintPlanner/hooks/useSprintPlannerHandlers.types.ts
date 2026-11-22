@@ -60,5 +60,4 @@ export interface UseSprintPlannerHandlersProps {
   /** Кнопка + QA на dev-карточке без qaEngineer — открыть пикер исполнителя QA */
   onRequestQaEngineerPicker?: (devTaskId: string, anchorRect: DOMRect) => void;
   onTasksReload?: (options?: { showToast?: boolean }) => void;
-  setSidebarOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 }

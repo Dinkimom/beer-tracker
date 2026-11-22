@@ -48,7 +48,6 @@ import { useSwimlaneBoard } from '../SwimlaneBoardContext';
 import {
   buildSwimlanePlacementQuickAddHandler,
   buildSwimlaneRootClassName,
-  createSwimlaneRootClickHandler,
   resolveSwimlaneAvailabilityTimeline,
   resolveSwimlaneFactExtra,
   resolveSwimlaneQuickAddLayoutState,
@@ -81,9 +80,7 @@ function SwimlaneComponent({
   const {
     boardId,
     commentActions,
-    disableCloseSidebarOnClick,
     holidayDayIndices,
-    onCloseSidebar,
     onCreateTaskInCell,
     onFactSegmentHover,
     participantsColumnWidth,
@@ -234,11 +231,7 @@ function SwimlaneComponent({
 
   return (
     <div
-      className={`${buildSwimlaneRootClassName(Boolean(onCloseSidebar && !disableCloseSidebarOnClick))}${raiseOnboardingRow ? ' z-20' : ''}`}
-      onClick={createSwimlaneRootClickHandler(
-        !disableCloseSidebarOnClick,
-        onCloseSidebar
-      )}
+      className={`${buildSwimlaneRootClassName()}${raiseOnboardingRow ? ' z-20' : ''}`}
     >
       <div
         className="flex min-w-max"

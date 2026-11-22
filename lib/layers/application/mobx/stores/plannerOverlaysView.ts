@@ -45,6 +45,7 @@ export class PlannerOverlaysView {
       setContextMenu: action.bound,
       setContextMenuTaskId: action.bound,
       setSidebarOpen: action.bound,
+      toggleSidebar: action.bound,
       sidebarOpen: observable,
       taskInfoPanelTask: observable,
     });
@@ -67,6 +68,10 @@ export class PlannerOverlaysView {
     const next = typeof open === 'function' ? open(this.sidebarOpen) : open;
     this.sidebarOpen = next;
     saveToStorage(STORAGE_KEYS.SIDEBAR_OPEN, next);
+  }
+
+  toggleSidebar(): void {
+    this.setSidebarOpen(!this.sidebarOpen);
   }
 
   setContextMenu(menu: SprintPlannerContextMenuState | null): void {

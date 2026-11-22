@@ -17,13 +17,13 @@ import {
 
 describe('buildSwimlaneRootClassName', () => {
   it('disables row hover while another swimlane row is being resized', () => {
-    expect(buildSwimlaneRootClassName(false)).toContain('swimlane-row-resizing:pointer-events-none');
-    expect(buildSwimlaneRootClassName(false)).toContain('swimlane-lane-fill');
+    expect(buildSwimlaneRootClassName()).toContain('swimlane-row-resizing:pointer-events-none');
+    expect(buildSwimlaneRootClassName()).toContain('swimlane-lane-fill');
   });
 
   it('keeps row fill without a full-width border-b on the swimlane root', () => {
-    expect(buildSwimlaneRootClassName(false)).toContain('bg-white');
-    expect(buildSwimlaneRootClassName(false)).not.toContain('border-b');
+    expect(buildSwimlaneRootClassName()).toContain('bg-white');
+    expect(buildSwimlaneRootClassName()).not.toContain('border-b');
   });
 });
 

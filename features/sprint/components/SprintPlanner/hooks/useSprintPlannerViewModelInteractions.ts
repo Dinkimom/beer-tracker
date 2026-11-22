@@ -205,7 +205,6 @@ export function useSprintPlannerViewModelInteractions({
     qaTaskManagement,
     resetDragStateRef,
     selectedSprintId,
-    setSidebarOpen: sprintPlannerUi.overlays.setSidebarOpen,
     state,
     taskOperations,
     timeline,
