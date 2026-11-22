@@ -17,7 +17,7 @@ export function parseIssueTrackerProviderKind(
   if (key === 'tracker' || key === 'yandex-tracker') {
     return 'tracker';
   }
-  if (key === 'jira-onprem' || key === 'jira-cloud') {
+  if (key === 'jira-onprem' || key === 'jira-cloud' || key === 'otorva') {
     return key;
   }
   if (key === 'jira') {

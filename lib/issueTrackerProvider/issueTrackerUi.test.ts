@@ -18,6 +18,7 @@ import {
   resolveIssueTrackerExternalOrgIdForConnect,
   translateIssueTrackerProviderMessage,
 } from './issueTrackerUi';
+import { OTORVA_DEFAULT_API_URL } from './otorvaProvider';
 
 describe('issueTrackerUi', () => {
   it('treats Jira checklists and related issues as unsupported', () => {
@@ -26,6 +27,7 @@ describe('issueTrackerUi', () => {
       supportsFieldCatalog: false,
       supportsIssueChildren: false,
       supportsIssueLinks: true,
+      supportsIssueWebLinks: true,
       supportsQueryLanguageSearch: false,
       supportsRelatedIssues: false,
       supportsScreenCatalog: false,
@@ -35,10 +37,35 @@ describe('issueTrackerUi', () => {
       supportsFieldCatalog: true,
       supportsIssueChildren: true,
       supportsIssueLinks: true,
+      supportsIssueWebLinks: true,
       supportsQueryLanguageSearch: true,
       supportsRelatedIssues: true,
       supportsScreenCatalog: true,
     });
+  });
+
+  it('gives the built-in tracker links between issues but no web links and no token tab', () => {
+    expect(issueTrackerProviderCapabilities('otorva')).toEqual({
+      supportsChecklists: false,
+      supportsFieldCatalog: false,
+      supportsIssueChildren: true,
+      supportsIssueLinks: true,
+      supportsIssueWebLinks: false,
+      supportsQueryLanguageSearch: false,
+      supportsRelatedIssues: false,
+      supportsScreenCatalog: false,
+    });
+    expect(issueTrackerWebBaseFromApiUrl('otorva', OTORVA_DEFAULT_API_URL)).toBe('');
+    // No `/DEMO-1` link into the app itself.
+    expect(issueTrackerIssueWebUrlFromBase('otorva', '', 'DEMO-1')).toBe('');
+    expect(issueTrackerQueueWebUrlFromBase('otorva', '', 'DEMO')).toBe('');
+    expect(issueTrackerShowsSettingsTokenTab('otorva')).toBe(false);
+    expect(issueTrackerRequiresExternalOrgId('otorva')).toBe(false);
+    expect(resolveIssueTrackerExternalOrgIdForConnect('otorva', '')).toBe('otorva');
+    expect(issueTrackerTokenHelpUrl('otorva')).toBe('');
+    expect(issueTrackerProviderMessageKey('admin.trackerSection.title', 'otorva')).toBe(
+      'admin.trackerSection.title.otorva'
+    );
   });
 
   it('appends provider kind to an i18n base key', () => {

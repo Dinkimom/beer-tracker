@@ -1,11 +1,10 @@
-import type { TrackerWebUrlContext } from './issueTrackerUi';
+import type { PartialProviderClientContext } from './partialProviderClient';
 import type { IssueTrackerProviderClient } from './types';
 import type { JiraIssueTrackerProvider, JiraProviderClientConfig } from './types';
 import type { AxiosInstance } from 'axios';
 
 import { resolveTrackerApiConfigFromRequest } from '@/lib/trackerRequestConfig';
 
-import { UnsupportedIssueTrackerOperationError } from './errors';
 import { createJiraAxiosInstance } from './jiraAxios';
 import { fetchJiraBoardParams } from './jiraBoardParams';
 import { fetchJiraBoardsForCatalog, fetchJiraProjectsAsQueues } from './jiraCatalog';
@@ -51,6 +50,7 @@ import {
 } from './jiraTransitions';
 import { searchJiraUsers } from './jiraUserSearch';
 import { mapIssueTrackerIssueToTask } from './mapIssueTrackerIssueToTask';
+import { createPartialProviderClient } from './partialProviderClient';
 import { isJiraProviderKind } from './types';
 
 const JIRA_PROVIDER_KIND = 'jira' as const;
@@ -98,41 +98,15 @@ export const JIRA_IMPLEMENTED_PROVIDER_METHODS = [
   'updateSprintStatus',
 ] as const satisfies ReadonlyArray<keyof IssueTrackerProviderClient>;
 
-/** Иначе `return proxy` из async-функции ждёт `.then` и валит клиент как thenable. */
-const JIRA_PROXY_PASSTHROUGH = new Set(['catch', 'finally', 'then']);
-
-type JiraClientWebContext = TrackerWebUrlContext & {
+type JiraClientWebContext = PartialProviderClientContext & {
   kind: JiraProviderClientConfig['kind'];
-  organizationId: string;
 };
 
 function createJiraClientProxy(
   web: JiraClientWebContext,
   implemented: Partial<IssueTrackerProviderClient>
 ): IssueTrackerProviderClient {
-  const client = {} as IssueTrackerProviderClient;
-  return new Proxy(client, {
-    get(_target, prop) {
-      if (typeof prop !== 'string' || JIRA_PROXY_PASSTHROUGH.has(prop)) {
-        return undefined;
-      }
-      if (prop === 'providerKind') {
-        return web.kind;
-      }
-      if (prop === 'webBaseUrl') {
-        return web.webBaseUrl;
-      }
-      if (prop === 'organizationId') {
-        return web.organizationId;
-      }
-      const method = implemented[prop as keyof IssueTrackerProviderClient];
-      if (typeof method === 'function') {
-        return method;
-      }
-      return (..._args: unknown[]) =>
-        Promise.reject(new UnsupportedIssueTrackerOperationError(prop, JIRA_PROVIDER_KIND));
-    },
-  });
+  return createPartialProviderClient(JIRA_PROVIDER_KIND, web, implemented);
 }
 
 export function createJiraUnsupportedProviderClient(

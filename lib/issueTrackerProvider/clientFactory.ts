@@ -2,6 +2,7 @@ import type {
   IssueTrackerProviderClient,
   IssueTrackerProviderKind,
   JiraIssueTrackerProvider,
+  OtorvaIssueTrackerProvider,
   YandexIssueTrackerProvider,
 } from './types';
 
@@ -27,6 +28,13 @@ export function createIssueTrackerProviderClientFromResolvedConfig(
   config: ResolvedTrackerApiConfig
 ): IssueTrackerProviderClient {
   const provider = resolveIssueTrackerProvider(config.providerKind);
+  if (config.providerKind === 'otorva') {
+    return (provider as OtorvaIssueTrackerProvider).createProviderClient({
+      apiUrl: config.apiUrl,
+      organizationId: config.organizationId,
+      token: config.oauthToken,
+    });
+  }
   if (isJiraProviderKind(config.providerKind)) {
     return (provider as JiraIssueTrackerProvider).createProviderClient({
       apiToken: config.oauthToken,

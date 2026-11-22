@@ -33,9 +33,10 @@ export function IssueTrackerConnectionFields({
   onKindChange,
 }: IssueTrackerConnectionFieldsProps) {
   const { t } = useI18n();
-  const options: CustomSelectOption<IssueTrackerProviderKind>[] = ISSUE_TRACKER_PROVIDER_KINDS.map(
-    (value) => ({ label: t(`common.issueTracker.providerOption.${value}`), value })
-  );
+  // Встроенный трекер появится в выборе вместе со входом по email и паролю (docs/OTORVA_INTEGRATION.md, этап 2).
+  const options: CustomSelectOption<IssueTrackerProviderKind>[] = ISSUE_TRACKER_PROVIDER_KINDS.filter(
+    (value) => value !== 'otorva' || kind === 'otorva'
+  ).map((value) => ({ label: t(`common.issueTracker.providerOption.${value}`), value }));
   const apiUrlId = `${idPrefix}-tracker-api-url`;
   const showApiUrl = !apiUrlHidden && kind !== 'tracker';
 

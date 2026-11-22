@@ -15,7 +15,7 @@ function isProviderIssue(payload: unknown): payload is IssueTrackerIssue {
     return false;
   }
   const rec = payload as Record<string, unknown>;
-  return rec.provider === 'yandex-tracker' || rec.provider === 'jira';
+  return rec.provider === 'yandex-tracker' || rec.provider === 'jira' || rec.provider === 'otorva';
 }
 
 function mapProviderIssueToTask(
@@ -26,6 +26,7 @@ function mapProviderIssueToTask(
   switch (issue.provider) {
     case 'yandex-tracker':
     case 'jira':
+    case 'otorva':
       return mapIssueTrackerIssueToTask(issue, trackerWeb, integration);
     default: {
       const exhaustive: never = issue.provider;

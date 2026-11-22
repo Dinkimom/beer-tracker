@@ -61,38 +61,46 @@ export const enMessages = {
       name: {
         jira: 'Jira',
         'yandex-tracker': 'Yandex Tracker',
+        otorva: 'Built-in tracker',
       },
       nameDative: {
         jira: 'Jira',
         'yandex-tracker': 'Yandex Tracker',
+        otorva: 'Built-in tracker',
       },
       nameGenitive: {
         jira: 'Jira',
         'yandex-tracker': 'Yandex Tracker',
+        otorva: 'Built-in tracker',
       },
       nameInstrumental: {
         jira: 'Jira',
         'yandex-tracker': 'Yandex Tracker',
+        otorva: 'Built-in tracker',
       },
       namePrepositional: {
         jira: 'Jira',
         'yandex-tracker': 'Yandex Tracker',
+        otorva: 'Built-in tracker',
       },
       providerLabel: 'Issue tracker',
       providerOption: {
         tracker: 'Yandex Tracker',
         'jira-cloud': 'Jira Cloud',
         'jira-onprem': 'Jira Server / Data Center',
+        otorva: 'Built-in tracker',
       },
       providerLocked: 'The tracker cannot be changed after the first sync.',
       apiUrlLabel: 'Tracker API URL',
       apiUrlPlaceholder: {
         'jira-cloud': 'https://your-site.atlassian.net/rest/api/3',
         'jira-onprem': 'https://jira.example.com/rest/api/2',
+        otorva: 'Default: the built-in service in Docker Compose',
       },
       apiUrlHint: {
         'jira-cloud': 'REST API of your Atlassian site: https://<site>.atlassian.net/rest/api/3.',
         'jira-onprem': 'REST API of your Jira server, usually …/rest/api/2.',
+        otorva: 'API of the built-in tracker. Keep the default unless the tracker runs on another host.',
       },
     },
   },
@@ -168,6 +176,7 @@ export const enMessages = {
       tracker: {
         jira: 'Jira',
         'yandex-tracker': 'YTracker',
+        otorva: 'Tracker',
       },
       general: 'General',
       agent: 'Agent',
@@ -263,10 +272,12 @@ export const enMessages = {
       oauthTokenLabel: {
         jira: 'Jira — API token',
         'yandex-tracker': 'Yandex Tracker — OAuth token',
+        otorva: 'Built-in tracker — session token',
       },
       oauthTokenPlaceholder: {
         jira: 'Enter API token',
         'yandex-tracker': 'Enter OAuth token',
+        otorva: 'Sign in with email and password',
       },
       hideToken: 'Hide token',
       showToken: 'Show token',
@@ -279,6 +290,7 @@ export const enMessages = {
       getTokenLink: {
         jira: 'Create an API token in your Atlassian account',
         'yandex-tracker': 'Get a token in Yandex ID settings',
+        otorva: 'Sign in again with email and password',
       },
     },
     sidebarTabList: {
@@ -770,6 +782,7 @@ export const enMessages = {
           'Create the first organization. Enter the Jira personal access token of the administrator who connects the site.',
         'jira-cloud':
           'Create the first organization. Continue with Atlassian as the administrator who links Jira.',
+        otorva: 'Create the first organization and the built-in tracker administrator: email and password.',
       },
       atlassianConnectedSite: 'Atlassian connected: {site}',
       yandexConnected: 'Yandex ID connected',
@@ -1869,14 +1882,17 @@ export const enMessages = {
         jira: 'Connect Jira first: save an access token under Tracker.',
         'yandex-tracker':
           'Connect Yandex Tracker first: set Cloud Organization ID and save the OAuth token under Tracker.',
+        otorva: 'Connect the built-in tracker first under Tracker.',
       },
       trackerIncompleteAria: {
         jira: 'Jira — integration not configured',
         'yandex-tracker': 'Yandex Tracker — integration not configured',
+        otorva: 'Built-in tracker — integration not configured',
       },
       trackerIncompleteTitle: {
         jira: 'Jira integration is not configured',
         'yandex-tracker': 'Yandex Tracker integration is not configured',
+        otorva: 'Built-in tracker integration is not configured',
       },
       superAdmin: 'Super admin',
       orgRole: {
@@ -1903,6 +1919,7 @@ export const enMessages = {
       redirectingToTrackerSettings: {
         jira: 'Opening Jira settings…',
         'yandex-tracker': 'Opening Yandex Tracker settings…',
+        otorva: 'Opening built-in tracker settings…',
       },
       pickOrgForSync: 'Select an organization in the header to configure sync.',
       pickOrgForTracker: 'Select an organization above to configure {tracker} and integration.',
@@ -1912,15 +1929,18 @@ export const enMessages = {
         jira: 'Save a personal access token on the «Connection» tab first.',
         'yandex-tracker':
           'Set Cloud Organization ID and save the OAuth token on the «Connection» tab first.',
+        otorva: 'Connect the built-in tracker on the «Connection» tab first.',
       },
       verifyFailed: 'Verification failed',
       tokenVerifiedMessage: {
         jira: 'Token is valid; Jira admin rights confirmed',
         'yandex-tracker': 'Token is valid; Yandex Tracker admin rights confirmed',
+        otorva: 'Session is valid; built-in tracker admin rights confirmed',
       },
       tablistAria: {
         jira: 'Jira settings sections',
         'yandex-tracker': 'Yandex Tracker settings sections',
+        otorva: 'Built-in tracker settings sections',
       },
       tabConnection: 'Connection',
       tabIntegration: 'Integration',
@@ -1934,18 +1954,21 @@ export const enMessages = {
       tokenPromptFirst: {
         jira: 'Enter the personal access token for the first connection',
         'yandex-tracker': 'Enter the OAuth token for the first connection',
+        otorva: 'Sign in as the built-in tracker administrator for the first connection',
       },
     },
     trackerSection: {
       title: {
         jira: 'Jira',
         'yandex-tracker': 'Yandex Tracker',
+        otorva: 'Built-in tracker',
       },
       description: {
         jira:
           'For sync and the field catalog, save the organization access token for Jira. You can verify before saving; secrets are stored encrypted on the server.',
         'yandex-tracker':
           'Cloud Organization ID and OAuth token are both required to access the API. You can verify before saving; secrets are stored encrypted on the server.',
+        otorva: 'The tracker runs next to the planner. Sync uses the administrator session; it is stored encrypted on the server.',
       },
       jiraCloudSite: 'Jira Cloud site: {site}',
       tokenSaved: 'Token saved',
@@ -1953,22 +1976,27 @@ export const enMessages = {
       orgIdLabel: {
         jira: 'Jira Cloud ID',
         'yandex-tracker': 'Cloud Organization ID',
+        otorva: 'Organization ID',
       },
       orgPlaceholder: {
         jira: 'Atlassian Cloud ID',
         'yandex-tracker': 'From Yandex 360 / Yandex Tracker',
+        otorva: 'Not needed for the built-in tracker',
       },
       oauthTokenLabel: {
         jira: 'API token',
         'yandex-tracker': 'OAuth token',
+        otorva: 'Session token',
       },
       oauthTokenNewLabel: {
         jira: 'New API token',
         'yandex-tracker': 'New OAuth token',
+        otorva: 'New session token',
       },
       oauthLink: {
         jira: 'API token in Atlassian account',
         'yandex-tracker': 'Yandex ID OAuth',
+        otorva: 'Sign in with email and password',
       },
       changeToken: 'Change token',
       pasteTokenPlaceholder: 'Paste token',
@@ -2479,6 +2507,7 @@ export const enMessages = {
         'jira-onprem':
           'A personal access token is required. It stays in your browser and is only sent to this instance.',
         'jira-cloud': 'Authorization credentials are stored only in your browser',
+        otorva: 'Sign in with your built-in tracker email and password. The session token stays in your browser.',
       },
       atlassianConnectButton: 'Continue with Atlassian',
       atlassianConnectedHint: 'Atlassian connected — signing you in…',
@@ -2492,10 +2521,12 @@ export const enMessages = {
       tokenLabel: {
         jira: 'API token',
         'yandex-tracker': 'OAuth Token',
+        otorva: 'Session token',
       },
       tokenPlaceholder: {
         jira: 'Enter your API token',
         'yandex-tracker': 'Enter your OAuth token',
+        otorva: 'Session token from sign-in',
       },
       hideToken: 'Hide token',
       showToken: 'Show token',
@@ -2503,6 +2534,7 @@ export const enMessages = {
       oauthLink: {
         jira: 'Continue with Atlassian',
         'yandex-tracker': 'Yandex ID OAuth',
+        otorva: 'Sign in with email and password',
       },
       validatingToken: 'Validating token...',
       continueAction: 'Continue',

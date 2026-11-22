@@ -19,6 +19,8 @@ export const ISSUE_TRACKER_PROVIDER_KINDS = [
   DEFAULT_ISSUE_TRACKER_PROVIDER_KIND,
   'jira-onprem',
   'jira-cloud',
+  /** Встроенный трекер otorva (services/otorva): вход по email и паролю, без веб-интерфейса. */
+  'otorva',
 ] as const;
 export type IssueTrackerProviderKind = (typeof ISSUE_TRACKER_PROVIDER_KINDS)[number];
 
@@ -31,8 +33,8 @@ export interface IssueTrackerStatusCatalogItem {
   untranslatedKey?: string;
 }
 
-/** Адаптер и payload снимков: Yandex Tracker vs Jira (Cloud и DC — один REST-адаптер). */
-export type IssueTrackerStoredProvider = 'jira' | 'yandex-tracker';
+/** Адаптер и payload снимков: Yandex Tracker, Jira (Cloud и DC — один REST-адаптер), встроенный otorva. */
+export type IssueTrackerStoredProvider = 'jira' | 'otorva' | 'yandex-tracker';
 
 export function isJiraProviderKind(
   kind: IssueTrackerProviderKind
@@ -43,7 +45,10 @@ export function isJiraProviderKind(
 export function issueTrackerStoredProvider(
   kind: IssueTrackerProviderKind
 ): IssueTrackerStoredProvider {
-  return isJiraProviderKind(kind) ? 'jira' : 'yandex-tracker';
+  if (isJiraProviderKind(kind)) {
+    return 'jira';
+  }
+  return kind === 'otorva' ? 'otorva' : 'yandex-tracker';
 }
 
 /** Ссылки на задачи для маппинга снапшотов тем же трекером, что и клиент. */
@@ -65,6 +70,9 @@ export function issueTrackerProviderI18nSuffix(
  * пишем этот sentinel, если поле в форме скрыто.
  */
 export const JIRA_EXTERNAL_ORG_ID_FALLBACK = 'jira';
+
+/** Встроенному трекеру внешний ID организации тоже не нужен — тот же приём, что у Jira DC. */
+export const OTORVA_EXTERNAL_ORG_ID_FALLBACK = 'otorva';
 
 interface IssueTrackerEntityRef {
   display?: string;
@@ -486,6 +494,14 @@ export interface JiraProviderClientConfig extends JiraTrackerClientConfig {
   webBaseUrl: string;
 }
 
+export interface OtorvaProviderClientConfig {
+  /** REST root otorva, `…/api/v1`. */
+  apiUrl: string;
+  organizationId: string;
+  /** JWT пользователя otorva (вход по email и паролю). */
+  token: string;
+}
+
 interface IssueTrackerProviderBase {
   kind: IssueTrackerStoredProvider;
   createProviderClientFromRequest(request: Request): Promise<IssueTrackerProviderClient>;
@@ -503,4 +519,12 @@ export interface JiraIssueTrackerProvider extends IssueTrackerProviderBase {
   createProviderClient(config: JiraProviderClientConfig): IssueTrackerProviderClient;
 }
 
-export type IssueTrackerProvider = JiraIssueTrackerProvider | YandexIssueTrackerProvider;
+export interface OtorvaIssueTrackerProvider extends IssueTrackerProviderBase {
+  kind: 'otorva';
+  createProviderClient(config: OtorvaProviderClientConfig): IssueTrackerProviderClient;
+}
+
+export type IssueTrackerProvider =
+  | JiraIssueTrackerProvider
+  | OtorvaIssueTrackerProvider
+  | YandexIssueTrackerProvider;

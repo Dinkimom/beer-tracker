@@ -2,6 +2,7 @@ import { YANDEX_TRACKER_TOKEN_HELP_PATH } from '@/lib/yandexOAuth/constants';
 
 import {
   JIRA_EXTERNAL_ORG_ID_FALLBACK,
+  OTORVA_EXTERNAL_ORG_ID_FALLBACK,
   isJiraProviderKind,
   issueTrackerProviderI18nSuffix,
   type IssueTrackerProviderKind,
@@ -15,7 +16,8 @@ export const JIRA_CLOUD_OAUTH_START_PATH = '/api/auth/atlassian/start';
  * Hidden for Jira Cloud — users reconnect via «Continue with Atlassian» on `/auth-setup`.
  */
 export function issueTrackerShowsSettingsTokenTab(kind: IssueTrackerProviderKind): boolean {
-  return kind !== 'jira-cloud';
+  // Встроенный трекер — вход по email и паролю, токен руками не вставляют.
+  return kind !== 'jira-cloud' && kind !== 'otorva';
 }
 
 /** Org admin API token page (Basic auth against site REST). */
@@ -43,6 +45,8 @@ export interface IssueTrackerProviderCapabilities {
   supportsFieldCatalog: boolean;
   supportsIssueChildren: boolean;
   supportsIssueLinks: boolean;
+  /** У трекера есть веб-интерфейс: ключи задач и очередей — ссылки «открыть в трекере». */
+  supportsIssueWebLinks: boolean;
   supportsQueryLanguageSearch: boolean;
   supportsRelatedIssues: boolean;
   supportsScreenCatalog: boolean;
@@ -51,6 +55,18 @@ export interface IssueTrackerProviderCapabilities {
 export function issueTrackerProviderCapabilities(
   kind: IssueTrackerProviderKind
 ): IssueTrackerProviderCapabilities {
+  if (kind === 'otorva') {
+    return {
+      supportsChecklists: false,
+      supportsFieldCatalog: false,
+      supportsIssueChildren: true,
+      supportsIssueLinks: true,
+      supportsIssueWebLinks: false,
+      supportsQueryLanguageSearch: false,
+      supportsRelatedIssues: false,
+      supportsScreenCatalog: false,
+    };
+  }
   const yandexShaped = !isJiraProviderKind(kind);
   return {
     supportsChecklists: yandexShaped,
@@ -58,6 +74,7 @@ export function issueTrackerProviderCapabilities(
     supportsIssueChildren: yandexShaped,
     /** Список/создание/удаление issue links — Yandex и Jira. */
     supportsIssueLinks: true,
+    supportsIssueWebLinks: true,
     supportsQueryLanguageSearch: yandexShaped,
     supportsRelatedIssues: yandexShaped,
     supportsScreenCatalog: yandexShaped,
@@ -134,6 +151,9 @@ export function resolveIssueTrackerExternalOrgIdForConnect(
   if (trimmed) {
     return trimmed;
   }
+  if (kind === 'otorva') {
+    return OTORVA_EXTERNAL_ORG_ID_FALLBACK;
+  }
   return isJiraProviderKind(kind) ? JIRA_EXTERNAL_ORG_ID_FALLBACK : '';
 }
 
@@ -168,6 +188,9 @@ export function issueTrackerWebBaseFromApiUrl(
   kind: IssueTrackerProviderKind,
   trackerApiUrl?: string
 ): string {
+  if (kind === 'otorva') {
+    return '';
+  }
   if (isJiraProviderKind(kind)) {
     return jiraSiteBaseFromTrackerApiUrl(trackerApiUrl) ?? '';
   }
@@ -180,7 +203,8 @@ export function issueTrackerIssueWebUrlFromBase(
   issueKey: string
 ): string {
   const key = issueKey.trim();
-  if (!key) {
+  // Без веб-интерфейса ссылки нет; пустая база иначе дала бы `/KEY` внутрь приложения.
+  if (!key || kind === 'otorva') {
     return '';
   }
   const path = isJiraProviderKind(kind)
@@ -195,7 +219,7 @@ export function issueTrackerQueueWebUrlFromBase(
   queueKey: string
 ): string {
   const key = queueKey.trim();
-  if (!key) {
+  if (!key || kind === 'otorva') {
     return '';
   }
   const encoded = encodeURIComponent(key);
@@ -237,6 +261,9 @@ export function issueTrackerTokenHelpUrl(
   if (kind === 'jira-onprem') {
     const base = jiraSiteBaseFromTrackerApiUrl(trackerApiUrl);
     return base ? `${base}${JIRA_PROFILE_TOKEN_PATH}` : '';
+  }
+  if (kind === 'otorva') {
+    return '';
   }
   // Admin org token (implicit flow); user login uses «Sign in with Yandex ID» (separate UI).
   return YANDEX_TRACKER_TOKEN_HELP_PATH;

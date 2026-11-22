@@ -61,38 +61,46 @@ export const ruMessages = {
       name: {
         jira: 'Jira',
         'yandex-tracker': 'Яндекс Трекер',
+        otorva: 'Встроенный трекер',
       },
       nameDative: {
         jira: 'Jira',
         'yandex-tracker': 'Яндекс Трекеру',
+        otorva: 'Встроенному трекеру',
       },
       nameGenitive: {
         jira: 'Jira',
         'yandex-tracker': 'Яндекс Трекера',
+        otorva: 'Встроенного трекера',
       },
       nameInstrumental: {
         jira: 'Jira',
         'yandex-tracker': 'Яндекс Трекером',
+        otorva: 'Встроенным трекером',
       },
       namePrepositional: {
         jira: 'Jira',
         'yandex-tracker': 'Яндекс Трекере',
+        otorva: 'Встроенном трекере',
       },
       providerLabel: 'Трекер задач',
       providerOption: {
         tracker: 'Яндекс Трекер',
         'jira-cloud': 'Jira Cloud',
         'jira-onprem': 'Jira Server / Data Center',
+        otorva: 'Встроенный трекер',
       },
       providerLocked: 'Трекер нельзя сменить после первой синхронизации.',
       apiUrlLabel: 'URL API трекера',
       apiUrlPlaceholder: {
         'jira-cloud': 'https://your-site.atlassian.net/rest/api/3',
         'jira-onprem': 'https://jira.example.com/rest/api/2',
+        otorva: 'По умолчанию — встроенный сервис в Docker Compose',
       },
       apiUrlHint: {
         'jira-cloud': 'REST API вашего сайта Atlassian: https://<сайт>.atlassian.net/rest/api/3.',
         'jira-onprem': 'REST API вашего сервера Jira, обычно …/rest/api/2.',
+        otorva: 'API встроенного трекера. Оставьте адрес по умолчанию, если трекер не вынесен на другой хост.',
       },
     },
   },
@@ -168,6 +176,7 @@ export const ruMessages = {
       tracker: {
         jira: 'Jira',
         'yandex-tracker': 'YTracker',
+        otorva: 'Трекер',
       },
       general: 'Общие',
       agent: 'Агент',
@@ -263,10 +272,12 @@ export const ruMessages = {
       oauthTokenLabel: {
         jira: 'Jira — API-токен',
         'yandex-tracker': 'Яндекс Трекер — OAuth Token',
+        otorva: 'Встроенный трекер — токен сессии',
       },
       oauthTokenPlaceholder: {
         jira: 'Введите API-токен',
         'yandex-tracker': 'Введите OAuth токен',
+        otorva: 'Войдите по email и паролю',
       },
       hideToken: 'Скрыть токен',
       showToken: 'Показать токен',
@@ -279,6 +290,7 @@ export const ruMessages = {
       getTokenLink: {
         jira: 'Создайте API-токен в аккаунте Atlassian',
         'yandex-tracker': 'Получить токен в настройках Яндекс ID',
+        otorva: 'Войти заново по email и паролю',
       },
     },
     sidebarTabList: {
@@ -770,6 +782,7 @@ export const ruMessages = {
           'Создайте первую организацию. Укажите персональный токен доступа администратора, который подключает Jira.',
         'jira-cloud':
           'Создайте первую организацию. Нажмите «Продолжить с Atlassian» от имени администратора, который связывает Jira.',
+        otorva: 'Создайте первую организацию и администратора встроенного трекера: email и пароль.',
       },
       atlassianConnectedSite: 'Atlassian подключён: {site}',
       yandexConnected: 'Яндекс ID подключён',
@@ -1870,14 +1883,17 @@ export const ruMessages = {
         jira: 'Сначала подключите Jira: сохраните токен доступа в разделе «Трекер».',
         'yandex-tracker':
           'Сначала подключите Яндекс Трекер: укажите Cloud Organization ID и сохраните OAuth-токен в разделе «Трекер».',
+        otorva: 'Сначала подключите встроенный трекер в разделе «Трекер».',
       },
       trackerIncompleteAria: {
         jira: 'Jira, интеграция не настроена',
         'yandex-tracker': 'Яндекс Трекер, интеграция не настроена',
+        otorva: 'Встроенный трекер, интеграция не настроена',
       },
       trackerIncompleteTitle: {
         jira: 'Интеграция с Jira не настроена',
         'yandex-tracker': 'Интеграция с Яндекс Трекером не настроена',
+        otorva: 'Интеграция со встроенным трекером не настроена',
       },
       superAdmin: 'Супер-админ',
       orgRole: {
@@ -1904,6 +1920,7 @@ export const ruMessages = {
       redirectingToTrackerSettings: {
         jira: 'Переход к настройкам Jira…',
         'yandex-tracker': 'Переход к настройкам Яндекс Трекера…',
+        otorva: 'Переход к настройкам встроенного трекера…',
       },
       pickOrgForSync: 'Выберите организацию в шапке, чтобы настроить синхронизацию.',
       pickOrgForTracker:
@@ -1914,15 +1931,18 @@ export const ruMessages = {
         jira: 'Сначала сохраните персональный токен доступа на вкладке «Подключение».',
         'yandex-tracker':
           'Сначала укажите Cloud Organization ID и сохраните OAuth-токен на вкладке «Подключение».',
+        otorva: 'Сначала подключите встроенный трекер на вкладке «Подключение».',
       },
       verifyFailed: 'Проверка не удалась',
       tokenVerifiedMessage: {
         jira: 'Токен рабочий, права администратора в Jira подтверждены',
         'yandex-tracker': 'Токен рабочий, права администратора в Яндекс Трекере подтверждены',
+        otorva: 'Сессия рабочая, права администратора встроенного трекера подтверждены',
       },
       tablistAria: {
         jira: 'Разделы настроек Jira',
         'yandex-tracker': 'Разделы настроек Яндекс Трекера',
+        otorva: 'Разделы настроек встроенного трекера',
       },
       tabConnection: 'Подключение',
       tabIntegration: 'Интеграция',
@@ -1936,18 +1956,21 @@ export const ruMessages = {
       tokenPromptFirst: {
         jira: 'Укажите персональный токен доступа для первого подключения',
         'yandex-tracker': 'Укажите OAuth-токен для первого подключения',
+        otorva: 'Для первого подключения войдите как администратор встроенного трекера',
       },
     },
     trackerSection: {
       title: {
         jira: 'Jira',
         'yandex-tracker': 'Яндекс Трекер',
+        otorva: 'Встроенный трекер',
       },
       description: {
         jira:
           'Для синхронизации и каталога полей сохраните токен доступа организации к Jira. Проверить можно до сохранения; секреты на сервере хранятся в зашифрованном виде.',
         'yandex-tracker':
           'Cloud Organization ID и OAuth-токен нужны вместе: по ним проверяется доступ к API. Проверить можно до сохранения; секреты на сервере хранятся в зашифрованном виде.',
+        otorva: 'Трекер работает рядом с планером. Для синхронизации используется сессия администратора; на сервере она хранится в зашифрованном виде.',
       },
       jiraCloudSite: 'Сайт Jira Cloud: {site}',
       tokenSaved: 'Токен сохранён',
@@ -1955,22 +1978,27 @@ export const ruMessages = {
       orgIdLabel: {
         jira: 'Jira Cloud ID',
         'yandex-tracker': 'Cloud Organization ID',
+        otorva: 'ID организации',
       },
       orgPlaceholder: {
         jira: 'Cloud ID Atlassian',
         'yandex-tracker': 'Из 360 / Яндекс Трекера',
+        otorva: 'Для встроенного трекера не нужен',
       },
       oauthTokenLabel: {
         jira: 'API-токен',
         'yandex-tracker': 'OAuth-токен',
+        otorva: 'Токен сессии',
       },
       oauthTokenNewLabel: {
         jira: 'Новый API-токен',
         'yandex-tracker': 'Новый OAuth-токен',
+        otorva: 'Новый токен сессии',
       },
       oauthLink: {
         jira: 'API-токен в аккаунте Atlassian',
         'yandex-tracker': 'OAuth Яндекс ID',
+        otorva: 'Вход по email и паролю',
       },
       changeToken: 'Изменить токен',
       pasteTokenPlaceholder: 'Вставьте токен',
@@ -2483,6 +2511,7 @@ export const ruMessages = {
         'jira-onprem':
           'Для работы нужен персональный токен доступа. Он хранится в браузере и уходит только на этот инстанс.',
         'jira-cloud': 'Авторизационные данные хранятся только в вашем браузере',
+        otorva: 'Вход по email и паролю встроенного трекера. Токен сессии хранится только в вашем браузере.',
       },
       atlassianConnectButton: 'Продолжить с Atlassian',
       atlassianConnectedHint: 'Atlassian подключён — выполняем вход…',
@@ -2496,10 +2525,12 @@ export const ruMessages = {
       tokenLabel: {
         jira: 'API-токен',
         'yandex-tracker': 'OAuth Token',
+        otorva: 'Токен сессии',
       },
       tokenPlaceholder: {
         jira: 'Введите API-токен',
         'yandex-tracker': 'Введите ваш OAuth токен',
+        otorva: 'Токен сессии после входа',
       },
       hideToken: 'Скрыть токен',
       showToken: 'Показать токен',
@@ -2507,6 +2538,7 @@ export const ruMessages = {
       oauthLink: {
         jira: 'Продолжить с Atlassian',
         'yandex-tracker': 'Яндекс ID OAuth',
+        otorva: 'Вход по email и паролю',
       },
       validatingToken: 'Проверка токена...',
       continueAction: 'Продолжить',

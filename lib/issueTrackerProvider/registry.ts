@@ -1,6 +1,7 @@
 import type { IssueTrackerProvider, IssueTrackerProviderKind } from './types';
 
 import { jiraTrackerProvider } from './jiraProvider';
+import { otorvaTrackerProvider } from './otorvaProvider';
 import {
   DEFAULT_ISSUE_TRACKER_PROVIDER_KIND,
   ISSUE_TRACKER_PROVIDER_KINDS,
@@ -11,6 +12,7 @@ const issueTrackerProviders = {
   tracker: yandexTrackerProvider,
   'jira-cloud': jiraTrackerProvider,
   'jira-onprem': jiraTrackerProvider,
+  otorva: otorvaTrackerProvider,
 } satisfies Record<IssueTrackerProviderKind, IssueTrackerProvider>;
 
 export function isIssueTrackerProviderKind(

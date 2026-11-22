@@ -4,6 +4,11 @@ import { handleApiError } from '@/lib/api-error-handler';
 
 import { UnsupportedIssueTrackerOperationError } from '../errors';
 import { createJiraProviderClient, JIRA_IMPLEMENTED_PROVIDER_METHODS } from '../jiraProvider';
+import {
+  createOtorvaProviderClient,
+  OTORVA_DEFAULT_API_URL,
+  OTORVA_IMPLEMENTED_PROVIDER_METHODS,
+} from '../otorvaProvider';
 import { createYandexProviderClient } from '../yandexTrackerProvider';
 
 import {
@@ -86,6 +91,29 @@ describe('IssueTrackerProviderClient surface contract', () => {
     expect(typeof client.mapIssueToTask).toBe('function');
     expect(typeof client.searchIssuesOnBoard).toBe('function');
     expect(typeof client.transitionIssue).toBe('function');
+  });
+
+  it('rejects unimplemented catalogued methods on the built-in tracker adapter', async () => {
+    const client = createOtorvaProviderClient({
+      apiUrl: OTORVA_DEFAULT_API_URL,
+      organizationId: 'org-1',
+      token: 'jwt',
+    });
+    expect(client.providerKind).toBe('otorva');
+    expect(client.webBaseUrl).toBe('');
+    expect(Reflect.get(client, 'then')).toBeUndefined();
+
+    for (const method of ISSUE_TRACKER_PROVIDER_CLIENT_METHODS) {
+      if ((OTORVA_IMPLEMENTED_PROVIDER_METHODS as readonly string[]).includes(method)) {
+        continue;
+      }
+      const impl = client[method] as (...args: never[]) => unknown;
+      await expect(Promise.resolve(impl('BT-1' as never, 'x' as never, {} as never))).rejects.toMatchObject({
+        operation: method,
+        providerKind: 'otorva',
+        status: 422,
+      });
+    }
   });
 
   it('is not thenable so async factories can return the client', async () => {
