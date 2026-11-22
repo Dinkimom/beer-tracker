@@ -170,4 +170,23 @@ describe('useQuarterlyPlan saving', () => {
     expect(saveMock).not.toHaveBeenCalled();
     expect(result.current.getVersion()).toBe(6);
   });
+
+  it('after a restore, an edit made before the reload builds on the restored plan, not the old one', async () => {
+    const { result } = await renderLoadedPlan();
+    saveMock.mockResolvedValueOnce({ version: 6 });
+    act(() => result.current.applyEdit(addNote('before-restore')));
+    await waitFor(() => expect(saveMock).toHaveBeenCalledTimes(1));
+    saveMock.mockClear();
+
+    // Откат записан (версия 7); перечитывание из трекера ещё не пришло, а человек уже правит.
+    act(() => result.current.setVersion(7, planWith('restored')));
+    await waitFor(() => expect(noteIds(result.current.plan)).toEqual(['restored']));
+    saveMock.mockResolvedValueOnce({ version: 8 });
+    act(() => result.current.applyEdit(addNote('after-restore')));
+
+    await waitFor(() => expect(saveMock).toHaveBeenCalledTimes(1));
+    const [, sent, ifVersion] = saveMock.mock.calls[0];
+    expect(ifVersion).toBe(7);
+    expect((sent as QuarterlyPlanContent).notes.map((item) => item.id)).toEqual(['restored', 'after-restore']);
+  });
 });

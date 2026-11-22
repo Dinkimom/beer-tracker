@@ -287,20 +287,28 @@ export async function restoreQuarterlyPlanVersion(input: {
   organizationId: string;
   ref: QuarterRef;
   versionId: string;
-}): Promise<SaveQuarterlyPlanResult | { status: 'not_found' }> {
+}): Promise<
+  | Exclude<SaveQuarterlyPlanResult, { status: 'saved' }>
+  | { content: QuarterlyPlanContent; status: 'saved'; version: number }
+  | { status: 'not_found' }
+> {
   const found = await fetchQuarterlyPlanVersionWithPrevious(input.organizationId, input.ref, input.versionId);
   if (!found) return { status: 'not_found' };
   const rosters = await loadTeamRosters(input.organizationId, false);
-  return writePlan(
+  const content = planContentForClient(found.version.content, rosters.index);
+  const result = await writePlan(
     {
       author: { id: input.authorId, source: 'restore' },
-      content: planContentForClient(found.version.content, rosters.index),
+      content,
       ifVersion: input.ifVersion,
       organizationId: input.organizationId,
       ref: input.ref,
     },
     rosters
   );
+  // Клиент кладёт восстановленный план на доску сразу: иначе правка до перечитывания ушла бы со
+  // старым содержимым и подходящей версией и молча затёрла бы откат.
+  return result.status === 'saved' ? { ...result, content } : result;
 }
 
 /** Проблемы назначений (QI1–QI3, QI6) и риски дежурства (QV3) — как их считает доска. */

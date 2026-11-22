@@ -53,7 +53,8 @@ export function useQuarterlyPlanHistory(input: {
   savedPlan: QuarterlyPlan | null;
   /** Версия плана, поверх которой пойдёт откат (QS5). */
   getVersion: () => number;
-  onRestored: (version: number) => void;
+  /** Откат записан: версия и восстановленный план — сразу на доску. */
+  onRestored: (version: number, content: QuarterlyPlanContent) => void;
 }) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -94,7 +95,7 @@ export function useQuarterlyPlanHistory(input: {
       if ('conflict' in result) {
         toast.error(t('quarterlyPlan.history.restoreConflict'));
       } else {
-        input.onRestored(result.version);
+        input.onRestored(result.version, result.content);
         toast.success(t('quarterlyPlan.history.restored'));
         setSelectedId(null);
       }

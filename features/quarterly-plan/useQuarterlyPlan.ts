@@ -166,11 +166,21 @@ export function useQuarterlyPlan(ref: QuarterRef) {
     [flush, queryClient, queryKey]
   );
 
-  /** Версия плана после своей записи мимо доски (принятый черновик агента, откат к версии). */
+  /**
+   * План записан мимо доски (принятый черновик агента, откат к версии): версия и, если известно,
+   * содержимое — сразу на доску и в базу склейки. Иначе правка до перечитывания ушла бы со старым
+   * содержимым и подходящей версией и молча затёрла бы записанное.
+   */
   const setVersion = useCallback(
-    (version: number, content?: QuarterlyPlanContent) =>
-      noteQuarterlyPlanVersion(queryClient, { quarter, year }, version, content),
-    [quarter, queryClient, year]
+    (version: number, content?: QuarterlyPlanContent) => {
+      noteQuarterlyPlanVersion(queryClient, { quarter, year }, version, content);
+      if (!content) return;
+      const { assignments, directions, epics, links, notes } = content;
+      queryClient.setQueryData<QuarterlyPlan>(queryKey, (plan) =>
+        plan ? { ...plan, assignments, directions, epics, links, notes } : plan
+      );
+    },
+    [quarter, queryClient, queryKey, year]
   );
 
   /** Перечитываем только то, что план берёт из трекера и спринтов, — свои правки не трогаем. */

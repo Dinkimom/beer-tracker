@@ -54,7 +54,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (result.status === 'invalid') return NextResponse.json({ error: result.error }, { status: 422 });
     if (result.status === 'conflict') return NextResponse.json({ error: 'The plan changed, try again' }, { status: 409 });
     notifyQuarterRealtime(request, { organizationId: route.ctx.organizationId, quarter, year });
-    return NextResponse.json({ version: result.version });
+    return NextResponse.json({ content: result.content, version: result.version });
   } catch (error) {
     return handleApiError(error, 'restore quarterly plan version');
   }

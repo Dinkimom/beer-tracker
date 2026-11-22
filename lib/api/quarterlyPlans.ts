@@ -123,12 +123,11 @@ export async function restoreQuarterlyPlanVersion(
   ref: QuarterRef,
   versionId: string,
   ifVersion: number
-): Promise<{ conflict: true } | { version: number }> {
-  return versionOrConflict(
-    await getPlannerBeerTrackerApi().post<{ version: number }>(
-      `/quarterly-plans/versions/${encodeURIComponent(versionId)}`,
-      { ...ref, ifVersion },
-      CONFLICT_IS_ANSWER
-    )
+): Promise<{ conflict: true } | { content: QuarterlyPlanContent; version: number }> {
+  const response = await getPlannerBeerTrackerApi().post<{ content: QuarterlyPlanContent; version: number }>(
+    `/quarterly-plans/versions/${encodeURIComponent(versionId)}`,
+    { ...ref, ifVersion },
+    CONFLICT_IS_ANSWER
   );
+  return response.status === 409 ? { conflict: true } : response.data;
 }
