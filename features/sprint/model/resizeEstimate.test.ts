@@ -8,7 +8,7 @@ import {
   setActivePlannerTimelineScale,
 } from '@/lib/plannerTimelineScale';
 
-import { handleTaskResizeAfterResize } from './sprintPlannerTaskHandlersResizeHelpers';
+import { handleTaskResizeAfterResize } from './resizeEstimate';
 
 vi.mock('@/lib/beerTrackerApi', () => ({
   updateIssueWorkForPhase: vi.fn().mockResolvedValue(true),

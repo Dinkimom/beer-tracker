@@ -11,7 +11,6 @@ import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useTaskResize } from '@/features/task/hooks/useTaskResize';
 import { useDataSyncEstimatesStorage } from '@/hooks/useLocalStorage';
 
-import { handleTaskResizeAfterResize } from './sprintPlannerTaskHandlersResizeHelpers';
 
 interface UseSprintPlannerTaskHandlersProps {
   /** Задачи, QA-задачи и позиции (с сохранением) — из модели доски. */
@@ -21,11 +20,9 @@ interface UseSprintPlannerTaskHandlersProps {
   };
   /** Рабочих дней в таймлайне (длина спринта) */
   sprintTimelineWorkingDays?: number;
-  tasksMap: Map<string, Task>;
   debouncedUpdateXarrow: () => void;
   /** Нет qaEngineer на dev-задаче — открыть пикер QA (anchor с кнопки +) */
   onRequestQaEngineerPicker?: (devTaskId: string, anchorRect: DOMRect) => void;
-  setTasks: (updater: (prev: Task[]) => Task[]) => void;
 }
 
 export function useSprintPlannerTaskHandlers({
@@ -33,12 +30,10 @@ export function useSprintPlannerTaskHandlers({
   qaTaskManagement,
   onRequestQaEngineerPicker,
   sprintTimelineWorkingDays = WORKING_DAYS,
-  setTasks,
-  tasksMap,
   debouncedUpdateXarrow,
 }: UseSprintPlannerTaskHandlersProps) {
-  const { qaTasksByOriginalId, qaTasksMap, tasks } = board;
-  const { savePosition, setPositionsWithSave: setTaskPositions } = board.positions;
+  const { qaTasksMap, tasks } = board;
+  const { setPositionsWithSave: setTaskPositions } = board.positions;
   const [syncEstimates] = useDataSyncEstimatesStorage();
   // Хук для обработки изменения размера задач
   const timelineTotalCells = sprintTimelineWorkingDays * getPartsPerDay();
@@ -53,18 +48,9 @@ export function useSprintPlannerTaskHandlers({
     setTaskPositions: setPlanTaskPositions,
     timelineTotalCells,
     updateXarrow: debouncedUpdateXarrow,
-    onAfterResize: (taskId, newDuration, updatedPosition) => {
-      handleTaskResizeAfterResize(
-        taskId,
-        newDuration,
-        updatedPosition,
-        tasksMap,
-        qaTasksByOriginalId,
-        setTasks,
-        syncEstimates,
-        savePosition
-      );
-    },
+    // Сохранение и пересчёт оценки — правило плана; жест ресайза — здесь.
+    onAfterResize: (taskId, newDuration, updatedPosition) =>
+      board.plan.afterResize(taskId, newDuration, updatedPosition, syncEstimates),
   });
 
   const handleCreateQATask = useCallback(

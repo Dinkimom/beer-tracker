@@ -14,10 +14,13 @@ import {
   clearTaskScheduleDatesInList,
   resolveIssueKeyForScheduleClear,
 } from './clearTaskScheduleDates';
+import { handleTaskResizeAfterResize } from './resizeEstimate';
 
 interface SprintPlanDeps {
   positions: TaskPositionsStore;
   sprintId: number | null;
+  /** QA-задачи по id исходной dev-задачи. */
+  qaTasksByOriginalId: () => ReadonlyMap<string, Task>;
   /** Задачи и QA-задачи доски по id (QA — и по id исходной задачи). */
   taskById: (taskId: string) => Task | undefined;
   tasksMap: () => ReadonlyMap<string, Task>;
@@ -123,5 +126,27 @@ export class SprintPlan {
       console.error('Error saving position:', error);
     });
     return true;
+  };
+
+  /**
+   * После ресайза карточки: позиция сохраняется, оценка задачи пересчитывается по длительности
+   * (таблица приведения из админки); `syncEstimates` — оценка уходит и в трекер.
+   */
+  readonly afterResize = (
+    taskId: string,
+    newDuration: number,
+    updatedPosition: TaskPosition,
+    syncEstimates: boolean
+  ): void => {
+    handleTaskResizeAfterResize(
+      taskId,
+      newDuration,
+      updatedPosition,
+      this.deps.tasksMap(),
+      this.deps.qaTasksByOriginalId(),
+      this.deps.updateTasks,
+      syncEstimates,
+      this.deps.positions.savePosition
+    );
   };
 }

@@ -51,8 +51,6 @@ export function useSprintPlannerHandlers({
     qaTaskManagement,
     onRequestQaEngineerPicker,
     sprintTimelineWorkingDays,
-    setTasks,
-    tasksMap,
     debouncedUpdateXarrow,
   });
 

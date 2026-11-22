@@ -6,7 +6,7 @@ import { timeslotsToStoryPoints } from '@/lib/pointsUtils';
 
 function resolveDevTaskForResize(
   task: Task,
-  tasksMap: Map<string, Task>
+  tasksMap: ReadonlyMap<string, Task>
 ): Task {
   const effectiveIsQa = isEffectivelyQaTask(task);
   if (effectiveIsQa && task.originalTaskId) {
@@ -100,7 +100,7 @@ function persistResizedPosition(
   const isQaPhase = effectiveIsQa && task.team === 'QA';
   const updatedPos: TaskPosition & { __source: string } = {
     ...updatedPosition,
-    __source: 'useSprintPlannerTaskHandlers.handleTaskResize',
+    __source: 'SprintPlan.afterResize',
   };
   savePosition(updatedPos, isQaPhase, isQaPhase ? task.originalTaskId : undefined).catch((error) => {
     console.error('Error saving position after swimlane resize:', error);
@@ -134,8 +134,8 @@ export function handleTaskResizeAfterResize(
   taskId: string,
   newDuration: number,
   updatedPosition: TaskPosition,
-  tasksMap: Map<string, Task>,
-  qaTasksByOriginalId: Map<string, Task>,
+  tasksMap: ReadonlyMap<string, Task>,
+  qaTasksByOriginalId: ReadonlyMap<string, Task>,
   setTasks: HandleTaskResizeAfterResizeParams['setTasks'],
   syncEstimates: boolean,
   savePosition: HandleTaskResizeAfterResizeParams['savePosition']

@@ -23,6 +23,7 @@ function setup(tasks: Task[], initial: TaskPosition[] = [], sprintId: number | n
   };
   const plan = new SprintPlan({
     positions: store as unknown as TaskPositionsStore,
+    qaTasksByOriginalId: () => new Map(),
     sprintId,
     taskById: (taskId) => taskList.find((item) => item.id === taskId),
     tasksMap: () => new Map(taskList.map((item) => [item.id, item])),

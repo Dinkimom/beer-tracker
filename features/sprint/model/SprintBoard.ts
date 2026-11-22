@@ -84,6 +84,7 @@ export class SprintBoard {
     });
     this.plan = new SprintPlan({
       positions: deps.positions,
+      qaTasksByOriginalId: () => this.qaTasksByOriginalId,
       sprintId: deps.sprintId,
       taskById: (taskId) => this.tasksMap.get(taskId) ?? this.qaTasksByOriginalId.get(taskId),
       tasksMap: () => this.tasksMap,
