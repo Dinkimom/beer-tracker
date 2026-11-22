@@ -84,14 +84,14 @@ const STATES: TourState[] = [
     name: 'board-mode-select',
     reach: async (page) => {
       await page.getByRole('button', { name: uiOf(page).sprintPlanner.controls.viewByAssignees }).click();
-      return page.getByRole('dialog').getByRole('button', { name: uiOf(page).sprintPlanner.controls.viewKanban });
+      return page.getByRole('dialog').getByRole('option', { name: uiOf(page).sprintPlanner.controls.viewKanban });
     },
   },
   {
     name: 'board-kanban',
     reach: async (page) => {
       await page.getByRole('button', { name: uiOf(page).sprintPlanner.controls.viewByAssignees }).click();
-      await page.getByRole('dialog').getByRole('button', { exact: true, name: uiOf(page).sprintPlanner.controls.viewKanban }).click();
+      await page.getByRole('dialog').getByRole('option', { exact: true, name: uiOf(page).sprintPlanner.controls.viewKanban }).click();
       return page.getByRole('heading', { exact: true, level: 3, name: 'In progress' });
     },
   },
@@ -99,7 +99,7 @@ const STATES: TourState[] = [
     name: 'board-features',
     reach: async (page) => {
       await page.getByRole('button', { name: uiOf(page).sprintPlanner.controls.viewByAssignees }).click();
-      await page.getByRole('dialog').getByRole('button', { exact: true, name: uiOf(page).sprintPlanner.controls.viewByFeatures }).click();
+      await page.getByRole('dialog').getByRole('option', { exact: true, name: uiOf(page).sprintPlanner.controls.viewByFeatures }).click();
       await expect(page.getByRole('button', { exact: true, expanded: false, name: uiOf(page).sprintPlanner.controls.viewByFeatures })).toBeVisible();
       // Режим готов, когда отрисованы строки фич, а не только переключатель.
       return page.locator('[data-swimlane]').first();

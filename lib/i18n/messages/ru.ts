@@ -27,6 +27,7 @@ export const ruMessages = {
     showPassword: 'Показать пароль',
     hidePassword: 'Скрыть пароль',
     searchPlaceholder: 'Поиск…',
+    noMatches: 'Ничего не найдено',
     resizePanelWidth: 'Изменить ширину панели',
     clearSearch: 'Очистить поиск',
     delete: 'Удалить',

@@ -59,6 +59,7 @@ export const CustomSelectTrigger = forwardRef<HTMLButtonElement, CustomSelectTri
           assignRef(ref, node);
         }}
         aria-expanded={isOpen}
+        aria-haspopup="listbox"
         aria-label={isIconTrigger ? title : undefined}
         className={customSelectTriggerClassName(isIconTrigger, size, className)}
         disabled={disabled}

@@ -12,7 +12,7 @@ const modeTrigger = (page: Page, mode: string) =>
 
 async function switchBoardMode(page: Page, from: string, to: string): Promise<void> {
   await modeTrigger(page, from).click();
-  await page.getByRole('dialog').getByRole('button', { exact: true, name: to }).click();
+  await page.getByRole('dialog').getByRole('option', { exact: true, name: to }).click();
   await expect(modeTrigger(page, to)).toBeVisible();
 }
 

@@ -13,7 +13,7 @@ const controls = en.sprintPlanner.controls;
 test('TC-013: статус без колонки доски — своя колонка, в неё можно перенести задачу', async ({ page }) => {
   await openDemoPlanner(page);
   await page.getByRole('button', { exact: true, expanded: false, name: controls.viewByAssignees }).click();
-  await page.getByRole('dialog').getByRole('button', { exact: true, name: controls.viewKanban }).click();
+  await page.getByRole('dialog').getByRole('option', { exact: true, name: controls.viewKanban }).click();
 
   // Шапки колонок отрисованы отдельно от тел; тело колонки статуса — по id `unmapped-status-<ключ>`.
   const needInfo = page.locator('[data-kanban-column="unmapped-status-needinfo"]');
@@ -44,7 +44,7 @@ test('TC-014: поиск по доске на канбане приглушае�
   await search.fill('Payments webhook');
   await expect(page.getByRole('status').filter({ hasText: controls.searchNoMatches })).toHaveCount(0);
   await page.getByRole('button', { exact: true, expanded: false, name: controls.viewByAssignees }).click();
-  await page.getByRole('dialog').getByRole('button', { exact: true, name: controls.viewKanban }).click();
+  await page.getByRole('dialog').getByRole('option', { exact: true, name: controls.viewKanban }).click();
 
   const card = (key: string) => page.locator(`[data-kanban-column] [data-task-id="${key}"]`).first();
   await expect(card('DEMO-109')).toBeVisible();
@@ -70,7 +70,7 @@ test('TC-142: фильтр канбана по исполнителю — по �
   await expect.poll(() => cardPlacement(page, 'DEMO-104')).toEqual({ lane: DEMO_DEV_DANA, length: 3, start: 6 });
 
   await page.getByRole('button', { exact: true, expanded: false, name: controls.viewByAssignees }).click();
-  await page.getByRole('dialog').getByRole('button', { exact: true, name: controls.viewKanban }).click();
+  await page.getByRole('dialog').getByRole('option', { exact: true, name: controls.viewKanban }).click();
   const filter = page.getByRole('group', { name: en.backlog.filters.assigneeAria });
   const kanbanCard = page.locator('[data-kanban-column] [data-task-id="DEMO-104"]');
 

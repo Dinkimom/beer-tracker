@@ -27,6 +27,7 @@ export const enMessages = {
     showPassword: 'Show password',
     hidePassword: 'Hide password',
     searchPlaceholder: 'Search…',
+    noMatches: 'Nothing found',
     resizePanelWidth: 'Resize panel width',
     clearSearch: 'Clear search',
     delete: 'Delete',

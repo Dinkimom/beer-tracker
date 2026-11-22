@@ -43,7 +43,7 @@ export function CustomSelectOptionsList<T extends string>({
   const isGlass = surface === 'glass';
   const solidListClass = searchable ? 'min-h-0 flex-1 overflow-y-auto' : undefined;
   return (
-    <div className={isGlass ? GLASS_LIST_CLASS : solidListClass}>
+    <div className={isGlass ? GLASS_LIST_CLASS : solidListClass} role={filteredOptions.length > 0 ? 'listbox' : undefined}>
       {filteredOptions.length === 0 ? (
         <p className={`${isGlass ? 'px-2 py-1.5' : 'px-3 py-2'} text-sm text-gray-500 dark:text-gray-400`}>
           {isSearchLoading ? searchLoadingMessage : searchEmptyMessage}
@@ -58,9 +58,11 @@ export function CustomSelectOptionsList<T extends string>({
           return (
             <Button
               key={String(option.value)}
-              aria-current={isSelected || undefined}
+              aria-disabled={isOptionDisabled || undefined}
+              aria-selected={isSelected}
               className={rowClass}
               disabled={isOptionDisabled}
+              role="option"
               type="button"
               variant="ghost"
               onClick={() => {

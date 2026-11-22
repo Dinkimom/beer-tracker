@@ -46,7 +46,6 @@
 ### Встроенный трекер (стенд `pnpm e2e:stand`)
 
 - **косметика — английский: «Built-in tracker» с заглавной посреди фразы:** имя трекера `common.issueTracker.name` одно на начало и середину фразы — «New from Built-in tracker», «Refresh tasks from Built-in tracker». Предлог «in» уже вынесен в `{trackerIn}` («in the built-in tracker»); остальным предлогам («from») нужна такая же форма. (2026-11-22)
-- **косметика — варианты `CustomSelect` без роли `option`:** выпадающий список (выбор трекера на `/register`, очередь и доска команды) — кнопки без `listbox`/`option`, скринридер не слышит список и выбранный пункт. (2026-11-22)
 
 ### Русский язык и стресс-данные (`E2E_LANG=ru`, `E2E_FIXTURE=stress`, `/demo/planner?fixture=stress`)
 

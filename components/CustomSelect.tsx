@@ -11,6 +11,7 @@ import {
 import { CustomSelectMenu } from '@/components/CustomSelectMenu';
 import { CustomSelectTrigger } from '@/components/CustomSelectTrigger';
 import { ZIndex } from '@/constants';
+import { useI18n } from '@/contexts/LanguageContext';
 import { glassLensControlClass } from '@/features/context-menu/contextMenuClasses';
 
 export interface CustomSelectOption<T extends string> {
@@ -106,9 +107,9 @@ export function CustomSelect<T extends string>({
   options,
   onChange,
   searchable = false,
-  searchPlaceholder = 'Поиск…',
+  searchPlaceholder,
   isSearchLoading = false,
-  searchEmptyMessage = 'Ничего не найдено',
+  searchEmptyMessage,
   searchLoadingMessage = '…',
   onSearchQueryChange,
   menuMinWidth,
@@ -121,6 +122,7 @@ export function CustomSelect<T extends string>({
   surface = 'solid',
   triggerVariant = 'default',
 }: CustomSelectProps<T>) {
+  const { t } = useI18n();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isIconTrigger = triggerVariant === 'icon';
   const {
@@ -187,10 +189,10 @@ export function CustomSelect<T extends string>({
         isSearchLoading={isSearchLoading}
         popoverStyle={popoverStyle}
         renderOption={renderOption}
-        searchEmptyMessage={searchEmptyMessage}
+        searchEmptyMessage={searchEmptyMessage ?? t('common.noMatches')}
         searchInputRef={searchInputRef}
         searchLoadingMessage={searchLoadingMessage}
-        searchPlaceholder={searchPlaceholder}
+        searchPlaceholder={searchPlaceholder ?? t('common.searchPlaceholder')}
         searchQuery={searchQuery}
         searchable={searchable}
         setSearchQuery={setSearchQuery}

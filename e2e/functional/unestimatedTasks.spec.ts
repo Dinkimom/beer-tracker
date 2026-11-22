@@ -21,7 +21,7 @@ test('TC-141: задачи без оценки видны в шапке стро
   await expect(page.locator('[data-unestimated-count]').filter({ hasText: /Unestimated: \d+/ }).first()).toBeVisible();
 
   await page.getByRole('button', { exact: true, expanded: false, name: controls.viewByAssignees }).click();
-  await page.getByRole('dialog').getByRole('button', { exact: true, name: controls.viewKanban }).click();
+  await page.getByRole('dialog').getByRole('option', { exact: true, name: controls.viewKanban }).click();
   await expect(page.locator('[data-kanban-header] [data-unestimated-count]').first()).toBeVisible();
 
   await openSprintTab(page, 'burndown');

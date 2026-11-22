@@ -15,7 +15,7 @@ test('TC-134: онбординг на встроенном трекере и в�
 
   await page.getByLabel(ui.productAuth.register.orgName).fill(STAND_ADMIN.organization);
   await page.getByRole('button', { name: ui.common.issueTracker.providerOption.tracker }).click();
-  await page.getByRole('button', { name: ui.common.issueTracker.providerOption.otorva }).click();
+  await page.getByRole('option', { name: ui.common.issueTracker.providerOption.otorva }).click();
   // Адреса API и токена нет: трекер — сервис этого сервера, вход — email и пароль.
   await expect(page.getByLabel(ui.common.issueTracker.apiUrlLabel)).toHaveCount(0);
   await page.getByLabel(ui.auth.otorva.firstNameLabel).fill(STAND_ADMIN.firstName);
@@ -62,9 +62,9 @@ test('TC-135: команда на доске встроенного трекер
   const create = page.getByRole('dialog');
   await create.getByLabel(ui.admin.newTeamForm.nameLabel).fill(STAND_TEAM);
   await create.getByRole('button', { name: ui.admin.teamsPage.selectQueue }).click();
-  await page.getByRole('button', { name: /DEMO/ }).first().click();
+  await page.getByRole('option', { name: /DEMO/ }).first().click();
   await create.getByRole('button', { name: ui.admin.teamsPage.selectBoard }).click();
-  await page.getByRole('button', { name: /Демо/ }).last().click();
+  await page.getByRole('option', { name: /Демо/ }).last().click();
   await create.getByRole('button', { name: ui.admin.newTeamForm.submit }).click();
   await expect(page.getByText(ui.admin.teamsPage.createSuccess)).toBeVisible();
 
@@ -77,7 +77,7 @@ test('TC-135: команда на доске встроенного трекер
     await dialog.getByRole('textbox', { name: /^Сотрудник в/ }).fill(dev.name.split(' ')[0] ?? dev.name);
     await page.getByRole('button', { name: new RegExp(`${dev.name}$`) }).click();
     await dialog.getByRole('button', { name: ui.admin.teamDetail.noRole }).click();
-    await page.getByRole('button', { name: ROLE_BY_TITLE[dev.roleTitle ?? ''] ?? 'Бэкенд', exact: true }).click();
+    await page.getByRole('option', { name: ROLE_BY_TITLE[dev.roleTitle ?? ''] ?? 'Бэкенд', exact: true }).click();
     await dialog.getByRole('button', { name: ui.admin.teamMembers.addSubmit }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByText(dev.name).first()).toBeVisible();
