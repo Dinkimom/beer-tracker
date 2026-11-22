@@ -96,7 +96,8 @@ export function BurndownAreaChart({
 
   return (
     <div className={`${burndownIslandClassName} flex min-h-[220px] min-w-0 flex-1 flex-col p-4`}>
-      <h3 className="sr-only">{title}</h3>
+      {/* Видимый заголовок: SP и TP иначе различимы только по цвету через легенду. */}
+      <h3 className="mb-2 text-sm font-medium text-ds-text-muted">{title}</h3>
       <div className="min-h-0 flex-1">
         <ResponsiveContainer height="100%" width="100%">
           <AreaChart data={chartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
@@ -125,7 +126,8 @@ export function BurndownAreaChart({
                 label={{
                   fill: axisTickFill,
                   fontSize: 11,
-                  position: 'insideTop',
+                  // Справа от линии дня, а не по центру — иначе линия перечёркивает подпись.
+                  position: 'insideTopRight',
                   value: t('burndown.chart.today'),
                 }}
                 stroke={axisStroke}
