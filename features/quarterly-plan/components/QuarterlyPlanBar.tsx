@@ -103,10 +103,14 @@ export const QuarterlyPlanBar = observer(function QuarterlyPlanBar({
   toneClass,
 }: QuarterlyPlanBarProps) {
   const { t } = useI18n();
-  const { canLinkTo, draftMarks, draftReview, linking, menu, onBarChange, onLinkBarClick, rows } = useQuarterlyPlanBoard();
+  const { draftMarks, draftReview, links, menu, onBarChange, rows } = useQuarterlyPlanBoard();
+  const { absenceByMember, dayCount, rivalAssignmentsOf, shownLinks, weeks } = useQuarterPlanView();
+  const linking = { armed: links.armed, sourceId: links.sourceId };
+  const canLinkTo = (barId: string) => links.canLinkTo(barId, shownLinks);
+  const onLinkBarClick = links.clickBar;
   const { openBar: onBarClick } = menu;
   const { focusedIssue } = rows;
-  const { absenceByMember, dayCount, rivalAssignmentsOf, weeks } = useQuarterPlanView();
+
   /** Полосу добавил или изменил показанный черновик агента (QM9) — пунктирная обводка. */
   const draftOutline = draftOutlineClass(draftMarks, assignment.id);
   // ✓/✗ пункта черновика — под полосой: она поверх соседних, чтобы их не закрывали.

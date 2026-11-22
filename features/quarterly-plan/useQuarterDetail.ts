@@ -1,6 +1,7 @@
 'use client';
 
 import type { QuarterBoardRows } from './model/quarterBoardRows';
+import type { QuarterLinkTool } from './model/quarterLinkTool';
 import type { QuarterDetailLevel } from './quarterlyPlanDetail';
 import type { QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
@@ -16,7 +17,8 @@ import { parseQuarterDetailLevel } from './quarterlyPlanDetail';
  */
 export function useQuarterDetail(
   epics: readonly QuarterlyPlanEpic[] | undefined,
-  rows: Pick<QuarterBoardRows, 'showDetail'>
+  rows: Pick<QuarterBoardRows, 'showDetail'>,
+  links: Pick<QuarterLinkTool, 'clearSource'>
 ): { detail: QuarterDetailLevel; setDetail: (level: QuarterDetailLevel) => void } {
   const [stored, setStored] = useQuarterDetailLevelStorage();
   const detail = parseQuarterDetailLevel(stored);
@@ -24,8 +26,10 @@ export function useQuarterDetail(
     (level: QuarterDetailLevel) => {
       setStored(level);
       rows.showDetail(level, epics ?? []);
+      // На уровне «Квартал» полосы сводные, на других — назначения: выбранный источник связи снимается.
+      if ((level === 'quarter') !== (detail === 'quarter')) links.clearSource();
     },
-    [epics, rows, setStored]
+    [detail, epics, links, rows, setStored]
   );
   return { detail, setDetail };
 }

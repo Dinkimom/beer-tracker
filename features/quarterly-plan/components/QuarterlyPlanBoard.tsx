@@ -55,9 +55,12 @@ export const QuarterlyPlanBoard = observer(function QuarterlyPlanBoard({
   todayNonce,
 }: QuarterlyPlanBoardProps) {
   const { t } = useI18n();
-  const { detail, linking, onLinkSourceClear, rows, shownLinks } = useQuarterlyPlanBoard();
+  const { detail, links, rows } = useQuarterlyPlanBoard();
+  const { currentWeek, shownLinks, violatedBlockers, weeks } = useQuarterPlanView();
+  const linking = { armed: links.armed, sourceId: links.sourceId };
+  const onLinkSourceClear = links.clearSource;
   const { collapsedIds, draft, startDraft: onStartDraft, toggleCollapsed: toggle } = rows;
-  const { currentWeek, violatedBlockers, weeks } = useQuarterPlanView();
+
   const directionInput = <QuarterlyPlanInputRow level="direction" placeholder={t('quarterlyPlan.addDirectionPlaceholder')} />;
   const violatedLinkIds = useMemo(() => {
     const violated = new Set(
@@ -141,7 +144,7 @@ export const QuarterlyPlanBoard = observer(function QuarterlyPlanBoard({
           title={t('quarterlyPlan.resizeColumn')}
           onWidthChange={setColumnWidth}
         />
-        <QuarterlyPlanLinksLayer links={shownLinks} violatedLinkIds={violatedLinkIds} />
+        <QuarterlyPlanLinksLayer violatedLinkIds={violatedLinkIds} />
         <QuarterlyPlanTimelineHeader
           columnLabel={t('quarterlyPlan.columnDirections')}
           title={t('quarterlyPlan.quarterLabel', { quarter: plan.quarter, year: plan.year })}

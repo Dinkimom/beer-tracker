@@ -7,19 +7,20 @@
 
 import type { MemberAbsence } from '../quarterlyPlanBoardModel';
 import type { QuarterlyPlanIssue } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
-import type { QuarterlyPlan, QuarterlyPlanAssignment, QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
+import type { QuarterlyPlan, QuarterlyPlanAssignment, QuarterlyPlanEpic, QuarterlyPlanLink } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
 import type { Developer } from '@/types';
 import type { BoardAvailabilityEvent } from '@/types/quarterly';
 
 import { formatLocalDateToIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
 import { collectQuarterlyPlanIssues } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
-import { epicTitle, violatedBlockersByAssignment } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
+import { epicTitle, orderLinkEnds, violatedBlockersByAssignment } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { collectUnsplitDirectionIds } from '@/lib/quarterlyPlans/quarterlyPlanPhases';
 import { epicRowIds, rivalAssignments, tasksByEpic } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 import { QUARTER_WORKING_DAYS_PER_WEEK, weekIndexOfDate } from '@/lib/quarterlyPlans/quarterWeeks';
 
 import { buildAbsenceByMember } from '../quarterlyPlanBoardModel';
+import { rollupLinkEnds, rollupLinks } from '../quarterlyPlanDetail';
 
 interface QuarterPlanViewInput {
   eventsByBoard: ReadonlyMap<number, BoardAvailabilityEvent[]>;
@@ -30,6 +31,8 @@ interface QuarterPlanViewInput {
   plan: QuarterlyPlan;
   /** План после черновика: убранное черновиком стоит на доске, но в проблемы не идёт. */
   planAfterDraft: QuarterlyPlan;
+  /** Уровень «Квартал» (QZ3): сводные полосы и их связи, без расхождений со спринтом. */
+  quarterView: boolean;
   weeks: readonly QuarterWeek[];
 }
 
@@ -44,6 +47,8 @@ function groupBy(
   }
   return groups;
 }
+
+const NO_SPRINT_CARDS: QuarterlyPlan['sprintCards'] = {};
 
 export class QuarterPlanView {
   private readonly cache = new Map<string, unknown>();
@@ -65,6 +70,24 @@ export class QuarterPlanView {
 
   get dayCount(): number {
     return this.weeks.length * QUARTER_WORKING_DAYS_PER_WEEK;
+  }
+
+  /** Карточки привязанных задач на досках спринтов по ключу трекера (QK8); на уровне «Квартал» их нет (QZ3). */
+  get sprintCards(): QuarterlyPlan['sprintCards'] {
+    return this.input.quarterView ? NO_SPRINT_CARDS : this.plan.sprintCards;
+  }
+
+  /** Связи, которые доска рисует: связи назначений, а на уровне «Квартал» — связи сводных полос (QL7). */
+  get shownLinks(): ReadonlyArray<QuarterlyPlanLink & { linkIds?: readonly string[] }> {
+    return this.once('shownLinks', () => (this.input.quarterView ? rollupLinks(this.plan) : this.plan.links));
+  }
+
+  /** Концы новой связи от полосы к полосе — всегда назначения; на уровне «Квартал» полосы сводные. */
+  linkEnds(sourceId: string, targetId: string): Pick<QuarterlyPlanLink, 'fromId' | 'toId'> | null {
+    if (this.input.quarterView) return rollupLinkEnds(this.plan, sourceId, targetId);
+    const source = this.plan.assignments.find((assignment) => assignment.id === sourceId);
+    const target = this.plan.assignments.find((assignment) => assignment.id === targetId);
+    return source && target ? orderLinkEnds(source, target) : null;
   }
 
   /** Привязанные эпики трекера по ключу: название, статус, «сделано» (QE5, QE7). */

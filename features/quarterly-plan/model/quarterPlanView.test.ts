@@ -53,6 +53,7 @@ function viewOf(plan: QuarterlyPlan, planAfterDraft = plan) {
     now: new Date('2026-10-16T12:00:00'),
     plan,
     planAfterDraft,
+    quarterView: false,
     weeks,
   });
 }

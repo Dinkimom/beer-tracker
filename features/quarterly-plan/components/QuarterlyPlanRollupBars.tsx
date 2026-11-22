@@ -2,6 +2,8 @@
 
 import type { KeyboardEvent, MouseEvent } from 'react';
 
+import { observer } from 'mobx-react-lite';
+
 import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
@@ -37,10 +39,14 @@ interface QuarterlyPlanRollupBarsProps {
  * Проработка — пунктир и бледная заливка, как у её полос на уровне «Недели» (QG1). Сроки и людей здесь не правят;
  * с инструментом «Связь» клик по полосе выбирает её источником или целью связи (QL7).
  */
-export function QuarterlyPlanRollupBars({ faded = false, rollups, rowId, statusKey }: QuarterlyPlanRollupBarsProps) {
+export const QuarterlyPlanRollupBars = observer(function QuarterlyPlanRollupBars({ faded = false, rollups, rowId, statusKey }: QuarterlyPlanRollupBarsProps) {
   const { t } = useI18n();
-  const { canLinkTo, linking, onLinkBarClick } = useQuarterlyPlanBoard();
-  const { dayCount, memberById, weeks } = useQuarterPlanView();
+  const { links } = useQuarterlyPlanBoard();
+  const { dayCount, memberById, shownLinks, weeks } = useQuarterPlanView();
+  const linking = { armed: links.armed, sourceId: links.sourceId };
+  const canLinkTo = (barId: string) => links.canLinkTo(barId, shownLinks);
+  const onLinkBarClick = links.clickBar;
+
   const laneHeightPx = useQuarterLaneHeight();
   const barsTopPx = useQuarterBarsTop();
   const toneClass = quarterBarToneClass(statusKey);
@@ -109,4 +115,4 @@ export function QuarterlyPlanRollupBars({ faded = false, rollups, rowId, statusK
       </div>
     );
   });
-}
+});

@@ -429,6 +429,13 @@
 - Ожидаемо: счётчик задач раскрывает и сворачивает задачи эпика; свёрнутая команда прячет свои строки, переход к проблеме в ней раскрывает её снова; «Дни» раскрывают задачи всех эпиков, «Недели» сворачивают.
 - Автотест: e2e/functional/quarterlyPlan.spec.ts
 
+### TC-127: Инструмент «Связь»
+- Контур: демо
+- Код: features/quarterly-plan/model/quarterLinkTool.ts, features/quarterly-plan/components/QuarterlyPlanLinksLayer.tsx, features/quarterly-plan/components/QuarterlyPlanBar.tsx, features/quarterly-plan/components/QuarterlyPlanToolbar.tsx
+- Шаги: включить «Связь», нажать на одну полосу, затем на другую; удалить связь кнопкой у начала стрелки и подтвердить; выбрать полосу и дважды нажать Escape.
+- Ожидаемо: между полосами появляется стрелка, инструмент остаётся включённым; после подтверждения стрелка пропадает; первый Escape снимает выбор полосы, второй выключает инструмент.
+- Автотест: e2e/functional/quarterlyPlan.spec.ts
+
 ### TC-125: Черновик агента
 - Контур: боевой
 - Код: features/quarterly-plan/useQuarterlyPlanAgent.ts, features/quarterly-plan/components/QuarterlyPlanAgentIsland.tsx, features/quarterly-plan/components/QuarterlyPlanDraftBar.tsx

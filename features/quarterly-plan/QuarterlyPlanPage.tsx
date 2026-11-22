@@ -9,7 +9,8 @@ import type {
 } from './quarterlyPlanMenuSections';
 import type { QuarterlyPlanSprint, QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
-import { useCallback, useMemo, useState } from 'react';
+import { observer } from 'mobx-react-lite';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useConfirmDialog } from '@/components/ConfirmDialog';
 import { Icon } from '@/components/Icon';
@@ -17,6 +18,7 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClasses';
 import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskBarNoteFocusEditor';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useHeightCssVar } from '@/hooks/useHeightCssVar';
 import { useQuarterHideDoneStorage } from '@/hooks/useLocalStorage';
 import {
@@ -44,6 +46,7 @@ import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
 import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTrackerEpicDialog';
 import { QuarterBoardMenu } from './model/quarterBoardMenu';
 import { applyDraftTitle, QuarterBoardRows } from './model/quarterBoardRows';
+import { type QuarterEditPort, QuarterLinkTool } from './model/quarterLinkTool';
 import { QuarterPlanView } from './model/quarterPlanView';
 import { QuarterlyPlanBoardProvider, QuarterPlanViewProvider } from './QuarterlyPlanBoardContext';
 import { applyTrackerPickToPlan, trackerPickBoardId } from './quarterlyPlanMenuSections';
@@ -52,7 +55,6 @@ import { useQuarterDetail } from './useQuarterDetail';
 import { useQuarterlyPlan } from './useQuarterlyPlan';
 import { useQuarterlyPlanAgent, useQuarterlyPlanDraftPreview } from './useQuarterlyPlanAgent';
 import { useQuarterlyPlanHistory, useQuarterlyPlanShownView } from './useQuarterlyPlanHistory';
-import { useQuarterlyPlanLinks } from './useQuarterlyPlanLinks';
 import { useQuarterlyPlanNotes } from './useQuarterlyPlanNotes';
 import { useQuarterlyPlanRowGoals } from './useQuarterlyPlanRowGoals';
 import { useQuarterlyPlanSprintSync } from './useQuarterlyPlanSprintSync';
@@ -62,10 +64,12 @@ import { useQuarterlyPlanTrackerStatus } from './useQuarterlyPlanTrackerStatus';
  * Квартальный план организации: все команды в одной сетке недель.
  * Направления (вехи) и эпики по командам; отпуска и дежурства — общие с доской спринта.
  */
+const NO_EDIT_PORT: QuarterEditPort = { applyEdit: () => undefined, confirmLinkDelete: () => Promise.resolve(false), view: null };
 const NO_ISSUES: QuarterPlanView['issues'] = [];
 const NO_ISSUE_COUNTS: QuarterPlanView['issueCounts'] = { away: 0, blocked: 0, notInTeam: 0, parallel: 0, total: 0 };
 
-export function QuarterlyPlanPage() {
+/** Страница — `observer`: панель инструментов показывает включённый инструмент. */
+export const QuarterlyPlanPage = observer(function QuarterlyPlanPage() {
   const { t } = useI18n();
   const { confirm, DialogComponent } = useConfirmDialog();
   const [quarterRef, setQuarterRef] = useState<QuarterRef>(() => quarterOfDate(getPlannerNow()));
@@ -75,6 +79,9 @@ export function QuarterlyPlanPage() {
   const [trackerPick, setTrackerPick] = useState<QuarterlyPlanTrackerPick | null>(null);
   /** Свёрнутое, раскрытое, поле ввода и переход к проблеме — вид этой вкладки, не план. */
   const [rows] = useState(() => new QuarterBoardRows());
+  /** Инструментам — план и запись на момент действия: на доске может быть версия из истории или черновик агента. */
+  const port = useRef<QuarterEditPort>(NO_EDIT_PORT);
+  const [links] = useState(() => new QuarterLinkTool(() => port.current));
   const [todayNonce, setTodayNonce] = useState(0);
   const [frameEl, setFrameEl] = useState<HTMLDivElement | null>(null);
   const [controlsEl, setControlsEl] = useState<HTMLDivElement | null>(null);
@@ -108,7 +115,7 @@ export function QuarterlyPlanPage() {
   /** Выбрана версия из истории (QH4): на доске она, только для просмотра, с пометками её изменений. */
   const shownView = useQuarterlyPlanShownView(draftView, history.preview);
   const { after: planAfterDraft, applyEdit, plan } = shownView;
-  const { detail, setDetail } = useQuarterDetail(plan?.epics, rows);
+  const { detail, setDetail } = useQuarterDetail(plan?.epics, rows, links);
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
   const notes = useQuarterlyPlanNotes({ applyEdit, plan, weekCount: weeks.length });
@@ -124,15 +131,18 @@ export function QuarterlyPlanPage() {
       }),
     [confirm, t]
   );
-  const planLinks = useQuarterlyPlanLinks({ applyEdit, confirmDelete: confirmLinkDelete, plan, quarterView: detail === 'quarter' });
   const view = useMemo(
     () =>
       plan
-        ? new QuarterPlanView({ eventsByBoard, hideDone, now: getPlannerNow(), plan, planAfterDraft: planAfterDraft ?? plan, weeks })
+        ? new QuarterPlanView({ eventsByBoard, hideDone, now: getPlannerNow(), plan, planAfterDraft: planAfterDraft ?? plan, quarterView: detail === 'quarter', weeks })
         : null,
-    [eventsByBoard, hideDone, plan, planAfterDraft, weeks]
+    [detail, eventsByBoard, hideDone, plan, planAfterDraft, weeks]
   );
   const issues = view?.issues ?? NO_ISSUES;
+  useEffect(() => {
+    port.current = { applyEdit, confirmLinkDelete, view };
+  }, [applyEdit, confirmLinkDelete, view]);
+  useEscapeKey(links.escape, { enabled: links.armed });
 
   const submitDraft = useCallback(
     (title: string | null) => {
@@ -143,7 +153,6 @@ export function QuarterlyPlanPage() {
   );
 
   const notesBoard = notes.board;
-  const linksBoard = planLinks.board;
   const board = useMemo<QuarterlyPlanBoardContextValue | null>(() => {
     if (!plan) return null;
     return {
@@ -151,7 +160,7 @@ export function QuarterlyPlanPage() {
       detail,
       goalsByRow: rowGoals,
       hideDone,
-      ...linksBoard,
+      links,
       ...notesBoard,
       onBarChange: (assignmentId, span) =>
         applyEdit((content) => updateAssignment(content, assignmentId, span)),
@@ -165,10 +174,8 @@ export function QuarterlyPlanPage() {
       onTrackerStatusChange: (...change) => void changeTrackerStatus(...change),
       draftMarks: shownView.marks,
       draftReview: shownView.review,
-      // Уровень «Квартал» — вид для бизнеса (QZ3): без расхождений со спринтом.
-      sprintCards: detail === 'quarter' ? {} : plan.sprintCards,
     };
-  }, [applyEdit, shownView.marks, shownView.review, openSprintGoals, detail, hideDone, changeTrackerStatus, rowGoals, linksBoard, menu, notesBoard, plan, rows, submitDraft]);
+  }, [applyEdit, shownView.marks, shownView.review, openSprintGoals, detail, hideDone, changeTrackerStatus, rowGoals, links, menu, notesBoard, plan, rows, submitDraft]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -179,7 +186,7 @@ export function QuarterlyPlanPage() {
   };
 
   const rowActions: QuarterlyPlanRowActions = {
-    onStartLink: planLinks.startFrom,
+    onStartLink: links.startFrom,
     onAssignMore: menu.assignMore,
     onOpenSprintSync: (rowId) => sprintSync.open(new Set([rowId])),
     onSyncDrift: (drift, to) => sprintSync.apply([{ drift, to }]),
@@ -293,19 +300,19 @@ export function QuarterlyPlanPage() {
               : null
           }
           hideDone={hideDone}
-          linkTool={planLinks.armed}
+          linkTool={links.armed}
           noteColor={notes.noteColor}
           noteTool={notes.noteTool}
           notesVisible={notes.notesVisible}
           onHideDoneChange={setHideDone}
           onLinkToolChange={(active) => {
-            planLinks.setArmed(active);
+            links.setArmed(active);
             if (active) notes.setNoteTool(false);
           }}
           onNoteColorChange={notes.setNoteColor}
           onNoteToolChange={(active) => {
             notes.setNoteTool(active);
-            if (active) planLinks.setArmed(false);
+            if (active) links.setArmed(false);
           }}
           onNotesVisibleChange={notes.setNotesVisible}
         />
@@ -333,4 +340,4 @@ export function QuarterlyPlanPage() {
       {DialogComponent}
     </div>
   );
-}
+});

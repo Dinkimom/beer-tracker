@@ -2,6 +2,7 @@
 
 import type { QuarterBoardMenu } from './model/quarterBoardMenu';
 import type { QuarterBoardRows } from './model/quarterBoardRows';
+import type { QuarterLinkTool } from './model/quarterLinkTool';
 import type { QuarterPlanView } from './model/quarterPlanView';
 import type { QuarterRowGoalFlag, QuarterRowLevel } from './quarterlyPlanBoardModel';
 import type { QuarterDetailLevel } from './quarterlyPlanDetail';
@@ -12,8 +13,6 @@ import type { QuarterlyPlanDraftItem } from '@/lib/quarterlyPlans/quarterlyPlanD
 import type { DaySpan, NoteLaneBlocker, WeekSpan } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import type { QuarterRowPlace } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 import type {
-  QuarterlyPlan,
-  QuarterlyPlanLink,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
   QuarterlyPlanSprint,
@@ -86,8 +85,8 @@ export interface QuarterlyPlanBoardContextValue {
   goalsByRow: ReadonlyMap<string, QuarterRowGoalFlag[]>;
   /** Включено «Скрыть готовые»: готовые задачи эпиков тоже не показываются (QB7). */
   hideDone: boolean;
-  /** Инструмент «Связь»: включён ли и какая полоса выбрана источником. */
-  linking: { armed: boolean; sourceId: string | null };
+  /** Инструмент «Связь» (`QuarterLinkTool`); читающие — `observer`. */
+  links: QuarterLinkTool;
   /** Меню у точки клика и превью полосы из меню назначения (`QuarterBoardMenu`); читающие — `observer`. */
   menu: QuarterBoardMenu;
   /** Цвет, которым инструмент «Заметка» поставит следующую заметку. */
@@ -114,21 +113,10 @@ export interface QuarterlyPlanBoardContextValue {
   noteTool: boolean;
   /** Свёрнутое, раскрытое, поле ввода и переход к проблеме (`QuarterBoardRows`); компоненты — `observer`. */
   rows: QuarterBoardRows;
-  /** Связи, которые доска рисует: связи назначений, а на уровне «Квартал» — связи сводных полос (QL7). */
-  shownLinks: ReadonlyArray<QuarterlyPlanLink & { linkIds?: readonly string[] }>;
-  /** Карточки привязанных задач на досках спринтов, по ключу трекера (QK8). */
-  sprintCards: QuarterlyPlan['sprintCards'];
-  /** Полосу можно сделать целью связи от выбранного источника. */
-  canLinkTo: (assignmentId: string) => boolean;
   /** Полосу сдвинули или растянули: срок неделями, у полосы задачи — ещё и днями (QT5). */
   onBarChange: (assignmentId: string, span: Partial<DaySpan> & WeekSpan) => void;
   /** Завершить ввод в открытом поле: название или null, если ввод отменён. */
   onDraftSubmit: (title: string | null) => void;
-  /** Клик по полосе с включённым инструментом «Связь»: источник, цель или снятие выбора. */
-  onLinkBarClick: (assignmentId: string) => void;
-  onLinkDelete: (linkId: string) => void;
-  /** Кликнули мимо полос — выбор источника снимается. */
-  onLinkSourceClear: () => void;
   /** Заметку сдвинули, растянули или перенесли в другую строку. */
   onNoteChange: (
     noteId: string,

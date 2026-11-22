@@ -139,3 +139,31 @@ test('TC-126: команда сворачивается, задачи эпика
   await page.getByRole('radio', { name: q.detail.weeks }).click();
   await expect(task).toHaveCount(0);
 });
+
+test('TC-127: инструмент «Связь» ставит и удаляет связь, Escape выключает его', async ({ page }) => {
+  const team = await openRoadmap(page);
+  const tool = page.getByRole('button', { exact: true, name: q.linkTool });
+  const deleteButtons = page.getByRole('button', { name: en.sprintPlanner.links.deleteAria });
+
+  await tool.click();
+  await expect(tool).toHaveAttribute('aria-pressed', 'true');
+  // В фикстуре две связи: кнопки удаления появляются у начала стрелок, пока инструмент включён.
+  const before = 2;
+  await expect(deleteButtons).toHaveCount(before);
+
+  await team.getByRole('button', { name: 'Margaret Hamilton, Delivery, 02.11–13.11' }).click();
+  await team.getByRole('button', { name: 'Ken Thompson, Delivery, 28.09–16.10' }).click();
+  await expect(deleteButtons).toHaveCount(before + 1);
+  await expect(tool).toHaveAttribute('aria-pressed', 'true');
+
+  await deleteButtons.first().click();
+  await page.getByRole('button', { name: en.sprintPlanner.links.removeConfirmAction }).click();
+  await expect(deleteButtons).toHaveCount(before);
+
+  await team.getByRole('button', { name: 'Margaret Hamilton, Delivery, 02.11–13.11' }).click();
+  await page.keyboard.press('Escape');
+  await expect(tool).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await expect(tool).toHaveAttribute('aria-pressed', 'false');
+  await expect(deleteButtons).toHaveCount(0);
+});

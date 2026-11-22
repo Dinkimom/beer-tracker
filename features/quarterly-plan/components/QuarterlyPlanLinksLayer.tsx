@@ -1,13 +1,13 @@
 'use client';
 
-import type { QuarterlyPlanLink } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
+import { observer } from 'mobx-react-lite';
 import { useEffect, useRef, useState } from 'react';
 
 import { ZIndex } from '@/constants';
 import { LinkArrowDeleteButton } from '@/features/swimlane/components/task-arrows/LinkArrowDeleteButton';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { draftMarkOf } from '../quarterlyPlanBoardModel';
 
 /** Вынос стрелки от края полосы до поворота. */
@@ -51,8 +51,6 @@ interface Measured {
 }
 
 interface QuarterlyPlanLinksLayerProps {
-  /** Связи между полосами доски: концы — значения `data-quarter-bar` (назначения или сводные полосы уровня «Квартал»). */
-  links: readonly QuarterlyPlanLink[];
   /** Зависимости с нарушенным порядком. */
   violatedLinkIds: ReadonlySet<string>;
 }
@@ -104,8 +102,13 @@ function boxOf(element: Element, origin: DOMRect): Box {
  * Координаты берутся из разметки каждый кадр: стрелки идут за полосами при перетаскивании
  * и при плавном росте строк. Связь со скрытой полосой (свёрнутая команда) не рисуется.
  */
-export function QuarterlyPlanLinksLayer({ links, violatedLinkIds }: QuarterlyPlanLinksLayerProps) {
-  const { canLinkTo, draftMarks, linking, onLinkDelete } = useQuarterlyPlanBoard();
+export const QuarterlyPlanLinksLayer = observer(function QuarterlyPlanLinksLayer({ violatedLinkIds }: QuarterlyPlanLinksLayerProps) {
+  const { draftMarks, links: linkTool } = useQuarterlyPlanBoard();
+  /** Связи между полосами доски: концы — значения `data-quarter-bar` (назначения или сводные полосы уровня «Квартал»). */
+  const { shownLinks: links } = useQuarterPlanView();
+  const linking = { armed: linkTool.armed, sourceId: linkTool.sourceId };
+  const canLinkTo = (barId: string) => linkTool.canLinkTo(barId, links);
+  const onLinkDelete = linkTool.deleteLink;
   const svgRef = useRef<SVGSVGElement>(null);
   const pointerRef = useRef<{ x: number; y: number } | null>(null);
   const [measured, setMeasured] = useState<Measured>({ paths: [], preview: null });
@@ -263,7 +266,7 @@ export function QuarterlyPlanLinksLayer({ links, violatedLinkIds }: QuarterlyPla
         : null}
     </>
   );
-}
+});
 
 /**
  * Пунктир от выбранной полосы: к цели под курсором (острие — у той, что стоит позже) или к самому
