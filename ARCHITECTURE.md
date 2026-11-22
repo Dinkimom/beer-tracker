@@ -97,7 +97,7 @@ features/ / components/ / hooks/
 - Модель режется по доменам, а не растёт одним классом. Новое правило доски — метод или computed доменного класса, не новый `use*`-хук и не `*Helpers`.
 - Пороги `pnpm lint:shape` — сигнал, а не цель: дробить ради порога не нужно.
 
-**Порядок перехода:** 1) модель только на чтение поверх нынешних источников, перевод читателей (карточка, секция, сайдбар); 2) действия в модель вместо `useSprintPlannerHandlers` и соседей; 3) `SprintPlannerUiStore` → классы под вью (сделано: пять областей, см. таблицу сторов выше). Ход — в [`docs/REFACTORING_BACKLOG.md`](./docs/REFACTORING_BACKLOG.md), п. 2.8.
+**Состояние (2026-11-21): переход выполнен.** Модель `SprintBoard` (`features/sprint/model/`) — единственный источник данных доски: задачи (ссылка на кэш Query, правка — `board.updateTasks`), позиции (`board.positions`), связи и заметки (`SyncedList`), действия — доменные классы `board.notes` (`SprintNotes`) и `board.plan` (`SprintPlan`: поставить, снять, автодобавить, после ресайза), удаление связей — `board.removeLink` / `board.removeTaskLinks`. Преходящий UI — классы под вью в `SprintPlannerUiStore` (`cards`, `overlays`, `tools`, `agentChat`, `focus`). В `useSprintPlannerHandlers` остались только React-обработчики: модалки переходов, запросы с тостами, подтверждения, анимации, жест ресайза, пикер QA. Новое правило доски — метод модели или класса под вью, а не обработчик. Ход — [`docs/REFACTORING_BACKLOG.md`](./docs/REFACTORING_BACKLOG.md), п. 2.8.
 
 ## Списки и документы с отложенной записью
 

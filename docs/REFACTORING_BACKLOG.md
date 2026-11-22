@@ -69,7 +69,9 @@
 
 5. **Хуки-дирижёры (с 2026-11-21 меряем ширину, а не строки).** Порог 300 строк ловил цельные длинные хуки (`useSwimlaneLayout`, `useDebouncedApiSync`) и пропускал настоящие дирижёры: view model 279 строк отдавала 56 полей в `{...viewModel}`. Теперь `hook-inputs` ≤ 15 и `hook-outputs` ≤ 20; длину файла держит ESLint `max-lines` (500), отдельной метрики строк нет. Верх долга: `useSprintPlannerViewModel` → 56 выходов, `useSprintPlannerViewModelInteractions` → 42 входа, `useSprintPlannerHandlers` → 33 входа, `useSwimlaneLayout` → 30 выходов. Сделано 2026-11-21: view model отдаёт срезы по потребителю (`swimlanes`, `kanban`, `sidebar`, `controls`, `modals`, `dnd`, `presence`, `onboarding`, `placementToolbar`, `assigneePicker`), `SprintPlannerView` раздаёт их целиком — 56 выходов → 18, проброс View 80% → ниже порога. Сборка срезов теперь в view model (файл ~490 строк при `max-lines` 500 с учётом только кода): следующий шаг по касанию — сборку срезов свимлейнов и сайдбара вынести к их хукам.
 
-### 2.8 Модель доски и классы под вью (высокий)
+### 2.8 Модель доски и классы под вью — выполнено 2026-11-21
+
+Итог: 24 коммита; `.shape-baseline.json` 46 → 35 записей; `SprintPlanner/hooks` 84 → 77 файлов; `SprintPlannerUiStore` 582 → 53 строки; модель — 15 файлов, 26 тестов без рендера; повторов (jscpd) 270 → 263; рендеры при наведении не выросли (TaskBar 86, Section 16). Остаток — по `pnpm quality:report` раз в спринт и по касанию.
 
 Направление и правила — [ARCHITECTURE.md](../ARCHITECTURE.md#модель-доски-и-классы-под-вью-направление-с-2026-11). Мерило — сколько транзитных слоёв проходит возможность карточки. Замер до: якорь плана (e56810eb) — 3 транзитных файла (`TaskBar`, `TaskBarOpacityLayer`, `TaskBarOpacityLayerChrome`) и 3 объявления одного поля из 7 UI-файлов фичи.
 
