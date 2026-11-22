@@ -41,7 +41,8 @@ export function QuarterlyPlanDirectionSection({
   onToggle,
 }: QuarterlyPlanDirectionSectionProps) {
   const { t } = useI18n();
-  const { detail, goalsByRow, onCellClick } = useQuarterlyPlanBoard();
+  const { detail, goalsByRow, menu } = useQuarterlyPlanBoard();
+  const { openAssign: onCellClick } = menu;
   const { assignmentsByDirection, assignmentsByEpicTree, trackerEpics, weeks } = useQuarterPlanView();
   const ownAssignments = assignmentsByDirection.get(direction.id) ?? [];
   /** Свои полосы видны, пока направление раскрыто; свёрнутое сводит их в общий срок. */

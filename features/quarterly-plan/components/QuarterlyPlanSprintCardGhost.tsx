@@ -27,7 +27,8 @@ interface QuarterlyPlanSprintCardGhostProps {
  */
 export function QuarterlyPlanSprintCardGhost({ assignments, card, epicId }: QuarterlyPlanSprintCardGhostProps) {
   const { t } = useI18n();
-  const { onSprintDriftClick } = useQuarterlyPlanBoard();
+  const { menu } = useQuarterlyPlanBoard();
+  const { openSprintDrift: onSprintDriftClick } = menu;
   const { dayCount, weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const barsTopPx = useQuarterBarsTop();

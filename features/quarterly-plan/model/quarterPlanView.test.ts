@@ -106,4 +106,11 @@ describe('QuarterPlanView', () => {
     // Полоса задачи — та же работа, что эпик (QT3): её среди соперников нет; саму полосу отсекает проверка перегрузки.
     expect(rivalAssignmentsOf(plan.assignments[0]).map((item) => item.id)).toEqual(['a1', 'a3']);
   });
+
+  it('эпик с задачами или полосами убирают после подтверждения, пустой — сразу', () => {
+    const view = viewOf(planWith({ assignments: [bar('a1', { epicId: 'e2' })] }));
+    expect(view.epicRemovalNeedsConfirm('e1')).toBe(true);
+    expect(view.epicRemovalNeedsConfirm('e2')).toBe(true);
+    expect(view.epicRemovalNeedsConfirm('task')).toBe(false);
+  });
 });

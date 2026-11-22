@@ -34,7 +34,8 @@ export const QuarterlyPlanDirectionHeader = observer(function QuarterlyPlanDirec
   onToggle,
 }: QuarterlyPlanDirectionHeaderProps) {
   const { t } = useI18n();
-  const { onDraftSubmit, onRowMenu, rows } = useQuarterlyPlanBoard();
+  const { menu, onDraftSubmit, rows } = useQuarterlyPlanBoard();
+  const { openRow: onRowMenu } = menu;
   const { draft } = rows;
   const { trackerEpics, unsplitDirectionIds } = useQuarterPlanView();
   const renaming = draft?.kind === 'renameDirection' && draft.id === direction.id;

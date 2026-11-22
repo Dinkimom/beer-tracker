@@ -103,7 +103,8 @@ export const QuarterlyPlanBar = observer(function QuarterlyPlanBar({
   toneClass,
 }: QuarterlyPlanBarProps) {
   const { t } = useI18n();
-  const { canLinkTo, draftMarks, draftReview, linking, onBarChange, onBarClick, onLinkBarClick, rows } = useQuarterlyPlanBoard();
+  const { canLinkTo, draftMarks, draftReview, linking, menu, onBarChange, onLinkBarClick, rows } = useQuarterlyPlanBoard();
+  const { openBar: onBarClick } = menu;
   const { focusedIssue } = rows;
   const { absenceByMember, dayCount, rivalAssignmentsOf, weeks } = useQuarterPlanView();
   /** Полосу добавил или изменил показанный черновик агента (QM9) — пунктирная обводка. */

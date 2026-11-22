@@ -1,5 +1,6 @@
 'use client';
 
+import type { QuarterBoardMenu } from './model/quarterBoardMenu';
 import type { QuarterBoardRows } from './model/quarterBoardRows';
 import type { QuarterPlanView } from './model/quarterPlanView';
 import type { QuarterRowGoalFlag, QuarterRowLevel } from './quarterlyPlanBoardModel';
@@ -15,7 +16,6 @@ import type {
   QuarterlyPlanLink,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
-  QuarterlyPlanPhase,
   QuarterlyPlanSprint,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
@@ -76,15 +76,6 @@ export interface QuarterlyPlanDraftReview {
 
 /** Преходящее UI доски квартала и её действия; вычисляемое из плана — в `QuarterPlanView` (`useQuarterPlanView`). */
 export interface QuarterlyPlanBoardContextValue {
-  /** Открыто меню назначения: строка, недели и фаза будущей полосы — строка рисует её превью. */
-  assignPreview: {
-    /** Меню уже закрыто: превью уходит. */
-    closing: boolean;
-    phase: QuarterlyPlanPhase;
-    row: QuarterlyPlanAssignRow;
-    startWeek: number;
-    weeks: number;
-  } | null;
   /** Уровень детализации доски: квартал, недели или дни (QZ1). */
   detail: QuarterDetailLevel;
   /** Черновик агента показан: что в нём новое, изменено и убрано (QM9); null — черновика на доске нет. */
@@ -97,6 +88,8 @@ export interface QuarterlyPlanBoardContextValue {
   hideDone: boolean;
   /** Инструмент «Связь»: включён ли и какая полоса выбрана источником. */
   linking: { armed: boolean; sourceId: string | null };
+  /** Меню у точки клика и превью полосы из меню назначения (`QuarterBoardMenu`); читающие — `observer`. */
+  menu: QuarterBoardMenu;
   /** Цвет, которым инструмент «Заметка» поставит следующую заметку. */
   noteColor: StickyNoteColor;
   /** Идущий жест над заметкой; null — жеста нет или заметку несут мимо строк. */
@@ -129,9 +122,6 @@ export interface QuarterlyPlanBoardContextValue {
   canLinkTo: (assignmentId: string) => boolean;
   /** Полосу сдвинули или растянули: срок неделями, у полосы задачи — ещё и днями (QT5). */
   onBarChange: (assignmentId: string, span: Partial<DaySpan> & WeekSpan) => void;
-  onBarClick: (assignmentId: string, anchor: QuarterMenuAnchor) => void;
-  /** Клик по свободной клетке строки; `span` — свободные дни этой недели, на них встанет новая полоса. */
-  onCellClick: (row: QuarterlyPlanAssignRow, week: number, anchor: QuarterMenuAnchor, span: DaySpan) => void;
   /** Завершить ввод в открытом поле: название или null, если ввод отменён. */
   onDraftSubmit: (title: string | null) => void;
   /** Клик по полосе с включённым инструментом «Связь»: источник, цель или снятие выбора. */
@@ -148,14 +138,10 @@ export interface QuarterlyPlanBoardContextValue {
   onNoteDelete: (noteId: string) => void;
   onNoteDrag: (drag: QuarterlyPlanNoteDrag | null) => void;
   onNotePlace: (row: QuarterlyPlanNoteRow, week: number, anchor: QuarterMenuAnchor) => void;
-  onRowMenu: (target: QuarterlyPlanRowTarget, anchor: QuarterMenuAnchor) => void;
   /** Строку перетащили: она встаёт перед строкой `anchorId` того же уровня или после неё (QO2, QO3). */
   onRowMove: (level: QuarterRowLevel, id: string, anchorId: string, place: QuarterRowPlace) => void;
-  /** Клик по пунктиру расхождения задачи (QK8): поповер с синхронизацией этой задачи (QK9). */
-  onSprintDriftClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
   /** Клик по спринту в строке команды: цели спринта в сайдбаре (QG13). */
   onSprintGoalsOpen: (sprint: QuarterlyPlanSprint, boardId: number) => void;
-  onStatusClick: (epicId: string, anchor: QuarterMenuAnchor) => void;
   /** Сменить статус привязанной строки: переход её задачи в трекере (QE7). */
   onTrackerStatusChange: (
     issueKey: string,

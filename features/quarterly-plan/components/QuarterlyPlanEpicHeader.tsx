@@ -45,7 +45,7 @@ interface QuarterlyPlanEpicHeaderProps {
  */
 export function QuarterlyPlanEpicHeader({ epic, level, tasks, unplanned }: QuarterlyPlanEpicHeaderProps) {
   const { t } = useI18n();
-  const { onRowMenu } = useQuarterlyPlanBoard();
+  const { openRow: onRowMenu } = useQuarterlyPlanBoard().menu;
   const { trackerEpics } = useQuarterPlanView();
   /** Готовый эпик уходит на второй план: приглушён и зачёркнут (QE8). */
   const done = isEpicDone(epic, trackerEpics);

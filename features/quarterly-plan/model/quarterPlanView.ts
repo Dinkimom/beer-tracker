@@ -161,6 +161,10 @@ export class QuarterPlanView {
     }));
   }
 
+  /** Эпик с задачами или полосами убирают после подтверждения — отмены на доске нет; пустой — сразу. */
+  readonly epicRemovalNeedsConfirm = (epicId: string): boolean =>
+    epicRowIds(this.plan.epics, epicId).size > 1 || this.plan.assignments.some((assignment) => assignment.epicId === epicId);
+
   /** Методы — стрелочные поля: компоненты берут их деструктуризацией. Другие назначения того же человека, с которыми это может стоять параллельно: без полос той же работы (QT3). */
   readonly rivalAssignmentsOf = (assignment: QuarterlyPlanAssignment): QuarterlyPlanAssignment[] => {
     const rivalsOf = this.once('rivalsOf', () => rivalAssignments(this.plan.epics));

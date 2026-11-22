@@ -20,7 +20,8 @@ interface QuarterlyPlanEpicStatusProps {
  */
 export function QuarterlyPlanEpicStatus({ epic }: QuarterlyPlanEpicStatusProps) {
   const { t } = useI18n();
-  const { onStatusClick, onTrackerStatusChange } = useQuarterlyPlanBoard();
+  const { menu, onTrackerStatusChange } = useQuarterlyPlanBoard();
+  const { openStatus: onStatusClick } = menu;
   const { trackerEpics } = useQuarterPlanView();
   const tracked = trackerEpicOf(epic, trackerEpics);
   const { issueKey } = epic;

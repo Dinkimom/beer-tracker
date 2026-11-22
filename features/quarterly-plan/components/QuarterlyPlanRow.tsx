@@ -6,6 +6,8 @@ import type { DaySpan, NoteLaneBlocker } from '@/lib/quarterlyPlans/quarterlyPla
 import type { QuarterlyPlanNoteRow } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 import type { ReactNode } from 'react';
 
+import { observer } from 'mobx-react-lite';
+
 import { ZIndex } from '@/constants';
 import { assignNoteLanes, quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
@@ -123,7 +125,7 @@ interface QuarterlyPlanRowProps {
  * Строка квартальной доски: липкая левая ячейка и таймлайн с сеткой недель. Заметки строки лежат
  * дорожками под её содержимым.
  */
-export function QuarterlyPlanRow({
+export const QuarterlyPlanRow = observer(function QuarterlyPlanRow({
   children,
   heightPx,
   laneHeightPx = QUARTER_LANE_HEIGHT_PX,
@@ -138,7 +140,8 @@ export function QuarterlyPlanRow({
   weekActionLabel,
   onWeekClick,
 }: QuarterlyPlanRowProps) {
-  const { assignPreview, detail, goalsByRow, noteEditing } = useQuarterlyPlanBoard();
+  const { detail, goalsByRow, menu, noteEditing } = useQuarterlyPlanBoard();
+  const { assignPreview } = menu;
   const { currentWeek, weeks } = useQuarterPlanView();
   const dayGrid = DAY_GRID_BY_DETAIL[detail];
   // Цели спринтов (QG8) — только у эпика и направления, всегда сверху (`layoutRowGoals`); полосы встают
@@ -292,4 +295,4 @@ export function QuarterlyPlanRow({
     </QuarterBarsTopProvider>
     </QuarterLaneHeightProvider>
   );
-}
+});

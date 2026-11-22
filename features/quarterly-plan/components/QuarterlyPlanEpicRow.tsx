@@ -40,7 +40,8 @@ interface QuarterlyPlanEpicRowProps {
  */
 export const QuarterlyPlanEpicRow = observer(function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps) {
   const { t } = useI18n();
-  const { detail, onCellClick, onDraftSubmit, rows, sprintCards } = useQuarterlyPlanBoard();
+  const { detail, menu, onDraftSubmit, rows, sprintCards } = useQuarterlyPlanBoard();
+  const { openAssign: onCellClick } = menu;
   const { draft } = rows;
   const { assignmentsByEpic, assignmentsByEpicTree, trackerEpics } = useQuarterPlanView();
   const level = epic.parentEpicId === undefined ? 'epic' : 'task';
