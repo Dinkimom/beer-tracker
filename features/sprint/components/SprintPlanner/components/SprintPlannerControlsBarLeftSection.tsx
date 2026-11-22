@@ -49,7 +49,7 @@ export function SprintPlannerControlsBarLeftSection({
   const showKanbanAssigneeFilter = viewMode === 'kanban' && assigneeFilterPeople.length > 0;
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-x-3">
+    <div className="flex flex-1 items-center gap-x-3">
       <div className="max-w-[min(100%,24rem)] shrink-0">
         <SprintSelectorWithCreate
           boardId={boardId}
@@ -62,7 +62,7 @@ export function SprintPlannerControlsBarLeftSection({
         />
       </div>
       <SprintPlannerScoreMark sprintId={selectedSprintId} />
-      <div className="min-w-0 max-w-[16rem] flex-1 basis-[12rem]">
+      <div className="min-w-[9rem] max-w-[16rem] flex-1 basis-[12rem]">
         <SearchInput
           className="min-w-0 max-w-full"
           placeholder={t('sprintPlanner.controls.searchPlaceholder')}
