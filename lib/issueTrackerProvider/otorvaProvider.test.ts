@@ -79,6 +79,8 @@ const ROUTES: Record<string, unknown> = {
     available_transitions: [STATUS.closed],
     links: [{ from_task_id: 't-child', id: 'l-1', link_type_id: 'lt', to_task_id: 't-epic' }],
   },
+  '/sprints/8': { author_id: null, board_id: 2, created_at: '2026-11-20T09:00:00Z', end_date: '2026-12-18', goal: '', id: 8, name: 'S8', start_date: '2026-12-07', status: 'draft', version: 1 },
+  '/tasks/by-key/DEMO-1': { ...EPIC, available_transitions: [], links: [], sprint_ids: [] },
   '/tasks/t-epic': EPIC,
   '/workflows': [{ id: 'wf' }],
   '/workflows/wf': { statuses: Object.values(STATUS), task_type_id: 'tt-task' },
@@ -89,6 +91,9 @@ let requests: InternalAxiosRequestConfig[] = [];
 const adapter: AxiosAdapter = (config) => {
   requests.push(config);
   const path = config.url ?? '';
+  if (config.method && config.method !== 'get') {
+    return Promise.resolve({ config, data: { id: 'written', key: 'DEMO-9' }, headers: {}, status: 200, statusText: '' } as AxiosResponse);
+  }
   const data = path in ROUTES ? ROUTES[path] : undefined;
   if (data === undefined) {
     const response = { config, data: { error: 'not found' }, headers: {}, status: 404, statusText: '' } as AxiosResponse;
@@ -222,11 +227,63 @@ describe('otorva provider client (read)', () => {
     });
   });
 
-  it('still rejects write operations until they are implemented', async () => {
-    await expect(client().createSprint({ boardId: 1, endDate: '2026-12-04', name: 'S8', startDate: '2026-11-23' })).rejects.toMatchObject({
-      operation: 'createSprint',
+  it('rejects what the built-in tracker does not have (comments)', async () => {
+    await expect(client().addIssueComment('DEMO-2', 'hi')).rejects.toMatchObject({
+      operation: 'addIssueComment',
       providerKind: 'otorva',
       status: 422,
     });
+  });
+});
+
+describe('otorva provider client (write)', () => {
+  beforeEach(() => {
+    requests = [];
+    const create = axios.create.bind(axios);
+    vi.spyOn(axios, 'create').mockImplementation((config) => create({ ...config, adapter }));
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const writes = () =>
+    requests
+      .filter((r) => r.method !== 'get')
+      .map((r) => [r.method, r.url, typeof r.data === 'string' ? JSON.parse(r.data) : r.data]);
+
+  it('maps a planner patch to PUT /tasks/{id}: dates to YYYY-MM-DD, empty assignee clears, parent by key', async () => {
+    await client().updateIssue('DEMO-2', {
+      assigneeId: '',
+      deadline: '2026-11-28T12:00:00Z',
+      parent: 'DEMO-1',
+      start: null,
+      storyPoints: 5,
+      summary: 'Renamed',
+    });
+    expect(writes()).toEqual([
+      ['put', '/tasks/t-child', { assignee_id: null, end_date: '2026-11-28', parent_id: 't-epic', start_date: null, story_points: 5, title: 'Renamed' }],
+    ]);
+  });
+
+  it('transitions by the target status id and adds to a sprint only once', async () => {
+    const c = client();
+    await c.transitionIssue('DEMO-2', 's-closed', {});
+    expect(writes()).toEqual([['post', '/tasks/t-child/transition', { to_status_id: 's-closed' }]]);
+
+    requests = [];
+    expect(await c.addIssueToSprint('DEMO-2', 7)).toEqual({ affectedSprintIds: [], backlogBoardIds: [] });
+    expect(writes()).toEqual([]);
+    expect(await c.addIssueToSprint('DEMO-2', 8)).toEqual({ affectedSprintIds: [7, 8], backlogBoardIds: [1, 2] });
+    expect(writes()).toEqual([['post', '/sprints/8/tasks', { task_id: 't-child' }]]);
+  });
+
+  it('creates issues in a queue with type and sprint, and only relates links', async () => {
+    const c = client();
+    await expect(c.createIssue({ queue: 'demo', sprint: 7, summary: 'New', type: 'epic' })).resolves.toEqual({ id: 'written', key: 'DEMO-9' });
+    expect(writes()).toEqual([
+      ['post', '/tasks', { assignee_id: null, description: '', parent_id: null, queue_id: 'q-demo', task_type_id: 'tt-epic', title: 'New' }],
+      ['post', '/sprints/7/tasks', { task_id: 'written' }],
+    ]);
+    await expect(c.createIssueLink('DEMO-2', { relationship: 'blocks', targetIssueKey: 'DEMO-1' })).rejects.toMatchObject({ status: 422 });
   });
 });

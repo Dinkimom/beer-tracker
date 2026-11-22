@@ -34,6 +34,19 @@ import {
   searchOtorvaQueues,
   searchOtorvaUsers,
 } from './otorvaPlanning';
+import {
+  addOtorvaIssueToSprint,
+  createOtorvaIssue,
+  createOtorvaIssueLink,
+  createOtorvaSprint,
+  deleteOtorvaIssueLink,
+  removeOtorvaIssueFromSprint,
+  replaceOtorvaIssueSprints,
+  transitionOtorvaIssue,
+  updateOtorvaIssue,
+  updateOtorvaSprintGoal,
+  updateOtorvaSprintStatus,
+} from './otorvaWrites';
 import { createPartialProviderClient } from './partialProviderClient';
 
 const OTORVA_PROVIDER_KIND = 'otorva' as const;
@@ -46,6 +59,11 @@ const OTORVA_PROVIDER_KIND = 'otorva' as const;
 export const OTORVA_DEFAULT_API_URL = 'http://otorva:8080/api/v1';
 
 export const OTORVA_IMPLEMENTED_PROVIDER_METHODS = [
+  'addIssueToSprint',
+  'createIssue',
+  'createIssueLink',
+  'createSprint',
+  'deleteIssueLink',
   'getBoard',
   'getCurrentUser',
   'getIssue',
@@ -72,6 +90,12 @@ export const OTORVA_IMPLEMENTED_PROVIDER_METHODS = [
   'searchIssuesOnBoard',
   'searchQueues',
   'searchUsers',
+  'removeIssueFromSprint',
+  'replaceIssueSprints',
+  'transitionIssue',
+  'updateIssue',
+  'updateSprintGoal',
+  'updateSprintStatus',
 ] as const satisfies ReadonlyArray<keyof IssueTrackerProviderClient>;
 
 /** Выборка по ключам задач, по одному запросу на ключ (журнал и связи otorva — по задаче). */
@@ -89,6 +113,11 @@ export function createOtorvaProviderClient(config: OtorvaProviderClientConfig): 
     return queueId ? listOtorvaIssues(api, catalog, { queue_id: queueId }, maxItems) : { issues: [], truncated: false };
   };
   return createPartialProviderClient(OTORVA_PROVIDER_KIND, web, {
+    addIssueToSprint: (key, sprintId) => addOtorvaIssueToSprint(api, catalog, key, sprintId),
+    createIssue: (input) => createOtorvaIssue(api, catalog, input),
+    createIssueLink: (key, input) => createOtorvaIssueLink(api, key, input),
+    createSprint: (input) => createOtorvaSprint(api, input),
+    deleteIssueLink: (_key, linkId) => deleteOtorvaIssueLink(api, linkId),
     getBoard: (boardId) => getOtorvaBoard(api, catalog, boardId),
     getCurrentUser: () => getOtorvaCurrentUser(api),
     getIssue: (key) => getOtorvaIssue(api, catalog, key),
@@ -139,6 +168,12 @@ export function createOtorvaProviderClient(config: OtorvaProviderClientConfig): 
         .issues,
     searchQueues: (query) => searchOtorvaQueues(catalog, query),
     searchUsers: (query) => searchOtorvaUsers(catalog, query),
+    removeIssueFromSprint: (key, sprintId) => removeOtorvaIssueFromSprint(api, catalog, key, sprintId),
+    replaceIssueSprints: (key, sprints) => replaceOtorvaIssueSprints(api, catalog, key, sprints),
+    transitionIssue: (key, transitionId) => transitionOtorvaIssue(api, key, transitionId),
+    updateIssue: (key, patch) => updateOtorvaIssue(api, key, patch),
+    updateSprintGoal: (sprintId, goal) => updateOtorvaSprintGoal(api, sprintId, goal),
+    updateSprintStatus: (sprintId, status, version) => updateOtorvaSprintStatus(api, sprintId, status, version),
   });
 }
 

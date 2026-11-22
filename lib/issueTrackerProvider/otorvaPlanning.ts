@@ -97,7 +97,7 @@ function dayStart(date: string): string {
   return `${date}T00:00:00.000Z`;
 }
 
-function otorvaSprintInfo(sprint: OtorvaSprint): SprintInfo {
+export function otorvaSprintInfo(sprint: OtorvaSprint): SprintInfo {
   return {
     endDate: sprint.end_date,
     endDateTime: dayStart(sprint.end_date),
