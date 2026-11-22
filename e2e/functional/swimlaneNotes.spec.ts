@@ -67,6 +67,7 @@ test('TC-104: заметка из быстрого добавления сохр
 /**
  * TC-131: @-упоминание в заметке. Escape сначала закрывает список, черновик с текстом остаётся. В режиме
  * фокуса список один: лист на доске под оверлеем получает тот же текст, но свой список не открывает.
+ * Клик по упоминанию на доске не глотает дальнейший набор.
  */
 test('TC-131: список упоминаний — Escape закрывает его, не черновик; в режиме фокуса список один', async ({ page }) => {
   await openDemoPlanner(page);
@@ -88,4 +89,11 @@ test('TC-131: список упоминаний — Escape закрывает е
   await page.getByRole('listbox').getByRole('button', { name: 'Ken Thompson' }).click();
   await expect(page.getByRole('listbox')).toHaveCount(0);
   await expect(page.locator('[contenteditable="true"]').last()).toContainText('@Ken Thompson');
+
+  // Упоминание не редактируется: клик по нему ставит каретку после, набор не теряется.
+  await page.getByRole('button', { name: toolbar.noteCollapse }).click();
+  await editor.locator('[data-note-mention]').click();
+  await page.keyboard.type('Z');
+  await expect(editor).toContainText('@Ken ThompsonZ');
 });
+

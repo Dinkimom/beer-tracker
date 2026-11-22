@@ -6,6 +6,7 @@ import type { EditorView } from '@tiptap/pm/view';
 import type { SyntheticEvent } from 'react';
 
 import { Slice } from '@tiptap/pm/model';
+import { TextSelection } from '@tiptap/pm/state';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
@@ -97,6 +98,17 @@ export function StickyNoteRichEditor({
       },
       clipboardTextParser: (text, _context, _plain, view) => parseClipboardText(text, view),
       clipboardTextSerializer: serializeClipboardSlice,
+      // Упоминание неделимо и не редактируется (`contenteditable=false`): каретка браузера внутри него
+      // глотает набор. Клик по нему ставит каретку сразу после.
+      handleClickOn: (view, _pos, node, nodePos) => {
+        if (node.type.name !== STICKY_NOTE_MENTION_NODE) {
+          return false;
+        }
+        const { state } = view;
+        view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, nodePos + node.nodeSize)));
+        view.focus();
+        return true;
+      },
       handleKeyDown: (_view, event) => {
         if (mentionKeyDownRef.current(event)) {
           return true;

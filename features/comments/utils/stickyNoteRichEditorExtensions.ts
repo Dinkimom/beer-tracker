@@ -32,9 +32,18 @@ const StickyNoteMention = Node.create({
   inline: true,
   selectable: false,
   addAttributes() {
+    // В DOM — как data-атрибуты: голый `id` дал бы одинаковые id у двух упоминаний одного человека.
     return {
-      id: { default: '' },
-      name: { default: '' },
+      id: {
+        default: '',
+        parseHTML: (element) => element.getAttribute('data-mention-id') ?? '',
+        renderHTML: (attributes) => ({ 'data-mention-id': String(attributes.id) }),
+      },
+      name: {
+        default: '',
+        parseHTML: (element) => element.getAttribute('data-mention-name') ?? '',
+        renderHTML: (attributes) => ({ 'data-mention-name': String(attributes.name) }),
+      },
     };
   },
   parseHTML() {
