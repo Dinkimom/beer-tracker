@@ -4,14 +4,20 @@
  */
 
 import type { UseSprintPlannerHandlersProps } from './useSprintPlannerHandlers.types';
+import type { Comment } from '@/types';
 
 import { useCallback } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import {
+  playStickyNoteExit,
+  shouldAnimateStickyNoteDelete,
+} from '@/features/comments/utils/stickyNoteExit';
+import { toSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { playTaskBoardExit } from '@/features/task/utils/taskBoardExit';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { parseTrackerOverlayLinkId } from '@/lib/planner/trackerLinkOverlay';
 
-import { useSprintPlannerCommentHandlers } from './useSprintPlannerCommentHandlers';
 import { useSprintPlannerTaskHandlers } from './useSprintPlannerTaskHandlers';
 import { useSprintPlannerUIHandlers } from './useSprintPlannerUIHandlers';
 
@@ -51,7 +57,25 @@ export function useSprintPlannerHandlers({
     debouncedUpdateXarrow,
   });
 
-  const commentHandlers = useSprintPlannerCommentHandlers({ board, selectedSprintId });
+  const { data: currentUser } = useCurrentUser();
+  const authorDisplay = currentUser?.display;
+  // Заметки: правила — у модели (`board.notes`); здесь только автор и анимация ухода с доски.
+  const handleCommentCreate = useCallback(
+    (comment: Comment) => board.notes.create(comment, authorDisplay),
+    [authorDisplay, board]
+  );
+  const handleCommentDelete = useCallback(
+    (id: string, options?: { retargetLinksTo?: string }) => {
+      const remove = () => board.notes.remove(id, options);
+      const comment = board.comments.items.find((item) => item.id === id);
+      if (!shouldAnimateStickyNoteDelete(comment, options?.retargetLinksTo)) {
+        return remove();
+      }
+      playStickyNoteExit(toSwimlaneCommentTaskId(id), remove);
+      return undefined;
+    },
+    [board]
+  );
 
   const uiHandlers = useSprintPlannerUIHandlers({
     allTasksForDrag,
@@ -172,8 +196,9 @@ export function useSprintPlannerHandlers({
     handleTransitionSubmit: uiHandlers.handleTransitionSubmit,
     // Task handlers
     ...taskHandlers,
-    // Comment handlers
-    ...commentHandlers,
+    // Заметки: создание с автором и удаление с анимацией; остальное — `board.notes`
+    handleCommentCreate,
+    handleCommentDelete,
     // Link handlers
     handleDeleteLink,
     handlePositionDelete,

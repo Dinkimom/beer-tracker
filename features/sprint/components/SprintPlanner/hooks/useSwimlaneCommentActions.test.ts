@@ -15,18 +15,20 @@ vi.mock('@/contexts/LanguageContext', () => ({ useI18n: () => ({ t: (key: string
 
 function setup(comments: Array<Pick<Comment, 'id' | 'kind'>>, confirmed: boolean) {
   const handlers = {
-    handleCommentApprove: vi.fn(),
-    handleCommentCardRowLayoutUpdate: vi.fn(),
     handleCommentCreate: vi.fn(),
     handleCommentDelete: vi.fn(),
-    handleCommentParentChange: vi.fn(),
-    handleCommentUpdate: vi.fn(),
+  };
+  const notes = {
+    approve: vi.fn(),
+    changeParent: vi.fn(),
+    setCardRowLayout: vi.fn(),
+    updateText: vi.fn(),
   };
   const confirm = vi.fn(() => Promise.resolve(confirmed));
   const { result } = renderHook(() =>
-    useSwimlaneCommentActions({ comments: comments as Comment[], confirm, handlers })
+    useSwimlaneCommentActions({ comments: comments as Comment[], confirm, handlers, notes })
   );
-  return { confirm, handlers, result };
+  return { confirm, handlers, notes, result };
 }
 
 describe('useSwimlaneCommentActions', () => {
@@ -46,8 +48,8 @@ describe('useSwimlaneCommentActions', () => {
   });
 
   it('passes the other note actions through unchanged', () => {
-    const { handlers, result } = setup([], true);
-    expect(result.current.commentActions.onCommentUpdate).toBe(handlers.handleCommentUpdate);
+    const { handlers, notes, result } = setup([], true);
+    expect(result.current.commentActions.onCommentUpdate).toBe(notes.updateText);
     expect(result.current.commentActions.onCommentCreate).toBe(handlers.handleCommentCreate);
   });
 });

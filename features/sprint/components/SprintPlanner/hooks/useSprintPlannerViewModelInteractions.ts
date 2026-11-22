@@ -218,12 +218,18 @@ export function useSprintPlannerViewModelInteractions({
   });
 
 
-  const { commentActions, handleCommentDelete } = useSwimlaneCommentActions({ comments, confirm, handlers });
+  const { commentActions, handleCommentDelete } = useSwimlaneCommentActions({
+    comments,
+    confirm,
+    handlers,
+    notes: board.notes,
+  });
 
   const featureLaneDrag = useFeatureLanePlannerDrag({
     allTasksForDrag,
     comments,
     handlers,
+    notes: board.notes,
     selectedSprintId,
     taskPositions,
     tasksMap,
@@ -251,7 +257,7 @@ export function useSprintPlannerViewModelInteractions({
           if (!comment) {
             return;
           }
-          handlers.handleCommentMove(
+          board.notes.move(
             commentId,
             swimlanePositionToCommentResizePatch(result.outgoingPosition, comment)
           );
@@ -264,7 +270,7 @@ export function useSprintPlannerViewModelInteractions({
       }
       handlers.handleTaskResize(taskId, params);
     },
-    [commentProjection.positions, comments, handlers, sprintPlannerUi, timelineTotalCells]
+    [board.notes, commentProjection.positions, comments, handlers, sprintPlannerUi, timelineTotalCells]
   );
 
   const dragContextRef = useRef<{
@@ -310,7 +316,7 @@ export function useSprintPlannerViewModelInteractions({
     getQueueByBoardId,
     onCommentCreate: handlers.handleCommentCreate,
     onCommentDelete: handlers.handleCommentDelete,
-    onCommentUpdate: handlers.handleCommentUpdate,
+    onCommentUpdate: board.notes.updateText,
     setTasks,
     sprintTimelineWorkingDays,
     swimlaneImagesVisible,

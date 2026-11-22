@@ -342,15 +342,15 @@ export function useSprintPlannerViewModel({
       onUpdateEstimate: handleUpdateEstimate,
     },
     onboarding: { scrollContainerRef, selectedSprintId, setViewMode, tasksLoading, viewMode },
-    onPaintNoteColor: handlers.handlePaintNoteColorFromReaction,
+    onPaintNoteColor: state.board.notes.paintColor,
     placementToolbar: swimlaneViewMode
       ? {
           movePlacement: movePlacement.toolbar,
           pendingAgentNotes: selectPendingAgentProposalNotes(comments),
           sprintId: selectedSprintId,
           variant: viewMode === 'features' ? ('features' as const) : ('people' as const),
-          onApproveAgentNotes: handlers.handleCommentApproveAll,
-          onRejectAgentNotes: handlers.handleCommentRejectAll,
+          onApproveAgentNotes: state.board.notes.approveAll,
+          onRejectAgentNotes: state.board.notes.rejectAll,
         }
       : null,
     presence: {
@@ -434,7 +434,7 @@ export function useSprintPlannerViewModel({
       tasksByAssignee,
       tasksMap,
       timeline: { boardAvailabilityEvents, sprintStartDate, sprintTimelineWorkingDays },
-      onCommentsLeftSprint: handlers.handleCommentsLeftSprint,
+      onCommentsLeftSprint: state.board.notes.leftSprint,
       onMoveToSprint: handlers.handleMoveToSprint,
       onRemoveFromSprint: handlers.handleRemoveFromSprint,
       onTaskClick: handlers.handleTaskClick,

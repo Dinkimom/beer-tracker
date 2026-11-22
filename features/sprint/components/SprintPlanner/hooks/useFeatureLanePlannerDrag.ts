@@ -1,3 +1,4 @@
+import type { SprintNotes } from '@/features/sprint/model/sprintNotes';
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
 import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { Comment, Task, TaskParent, TaskPosition } from '@/types';
@@ -19,21 +20,6 @@ import {
 import { useFeatureLanesApi } from '@/hooks/useApiStorage';
 
 interface FeatureLanePlannerDragHandlers {
-  handleCommentMove: (
-    commentId: string,
-    patch: ReturnType<typeof swimlanePositionToCommentPatch>,
-    options?: { recordHistory?: boolean }
-  ) => void;
-  handleCommentParentChange: (
-    commentId: string,
-    parent: TaskParent | null,
-    options?: { recordHistory?: boolean }
-  ) => void;
-  handleCommentPlanChange: (
-    commentId: string,
-    patch: ReturnType<typeof swimlanePositionToCommentPatch>,
-    parentChange: TaskParent | null | undefined
-  ) => void;
   handleParentChange: (taskId: string, parent: TaskParent | null) => Promise<void> | void;
   handlePositionUpdate: (
     taskId: string,
@@ -46,6 +32,8 @@ export function useFeatureLanePlannerDrag(input: {
   allTasksForDrag: Task[];
   comments: Comment[];
   handlers: FeatureLanePlannerDragHandlers;
+  /** Перемещение заметки и смена её родителя — методы модели заметок. */
+  notes: Pick<SprintNotes, 'changePlan' | 'move'>;
   selectedSprintId: number | null;
   taskPositions: Map<string, TaskPosition>;
   tasksMap: Map<string, Task>;
@@ -101,11 +89,11 @@ export function useFeatureLanePlannerDrag(input: {
             droppedRowId: position.assignee,
             incoming: position,
             rowMetaById: projection.rowMetaById,
-            onCommentPlanChange: input.handlers.handleCommentPlanChange,
+            onCommentPlanChange: input.notes.changePlan,
           });
           return;
         }
-        input.handlers.handleCommentMove(commentId, swimlanePositionToCommentPatch(position));
+        input.notes.move(commentId, swimlanePositionToCommentPatch(position));
         return;
       }
       if (input.viewMode === 'features' && projection) {
@@ -123,7 +111,7 @@ export function useFeatureLanePlannerDrag(input: {
       }
       input.handlers.handlePositionUpdate(taskId, position);
     },
-    [input.comments, input.handlers, input.taskPositions, input.viewMode, projection, tasksMapForLanes]
+    [input.comments, input.handlers, input.notes, input.taskPositions, input.viewMode, projection, tasksMapForLanes]
   );
 
 

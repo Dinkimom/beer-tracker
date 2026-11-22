@@ -1,6 +1,7 @@
 import type { SprintPlannerHandlers } from './useSprintPlannerHandlers';
 import type { ConfirmDialogPromptOptions } from '@/components/ConfirmDialog';
 import type { SwimlaneCommentActions } from '@/features/comments/types';
+import type { SprintNotes } from '@/features/sprint/model/sprintNotes';
 import type { Comment } from '@/types';
 
 import { useCallback, useMemo } from 'react';
@@ -17,17 +18,11 @@ import { deleteSwimlaneCommentAfterDiagramConfirm } from './confirmSwimlaneDiagr
 export function useSwimlaneCommentActions(input: {
   comments: Comment[];
   confirm: (message: string, options?: ConfirmDialogPromptOptions) => Promise<boolean>;
-  handlers: Pick<
-    SprintPlannerHandlers,
-    | 'handleCommentApprove'
-    | 'handleCommentCardRowLayoutUpdate'
-    | 'handleCommentCreate'
-    | 'handleCommentDelete'
-    | 'handleCommentParentChange'
-    | 'handleCommentUpdate'
-  >;
+  handlers: Pick<SprintPlannerHandlers, 'handleCommentCreate' | 'handleCommentDelete'>;
+  /** Принять, родитель, текст, раскладка — методы модели заметок. */
+  notes: Pick<SprintNotes, 'approve' | 'changeParent' | 'setCardRowLayout' | 'updateText'>;
 }): { commentActions: SwimlaneCommentActions; handleCommentDelete: (commentId: string) => Promise<void> } {
-  const { comments, confirm, handlers } = input;
+  const { comments, confirm, handlers, notes } = input;
   const { t } = useI18n();
   const { sprintPlannerUi } = useRootStore();
 
@@ -47,20 +42,20 @@ export function useSwimlaneCommentActions(input: {
 
   const commentActions = useMemo(
     (): SwimlaneCommentActions => ({
-      onCommentApprove: handlers.handleCommentApprove,
-      onCommentCardRowLayoutUpdate: handlers.handleCommentCardRowLayoutUpdate,
+      onCommentApprove: notes.approve,
+      onCommentCardRowLayoutUpdate: notes.setCardRowLayout,
       onCommentCreate: handlers.handleCommentCreate,
       onCommentDelete: handleCommentDelete,
-      onCommentParentChange: handlers.handleCommentParentChange,
-      onCommentUpdate: handlers.handleCommentUpdate,
+      onCommentParentChange: notes.changeParent,
+      onCommentUpdate: notes.updateText,
     }),
     [
       handleCommentDelete,
-      handlers.handleCommentApprove,
-      handlers.handleCommentCardRowLayoutUpdate,
       handlers.handleCommentCreate,
-      handlers.handleCommentParentChange,
-      handlers.handleCommentUpdate,
+      notes.approve,
+      notes.changeParent,
+      notes.setCardRowLayout,
+      notes.updateText,
     ]
   );
 

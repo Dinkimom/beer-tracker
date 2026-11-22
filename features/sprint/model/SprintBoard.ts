@@ -14,6 +14,7 @@ import { mergeDbPositionsWithTrackerDateFallbacks, parseTrackerIsoDateOnlyLocal 
 import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
+import { SprintNotes } from './sprintNotes';
 import { taskPositionMapsHaveSameEntries } from './taskPositionMaps';
 
 interface SprintTasksSnapshot {
@@ -54,6 +55,9 @@ const NO_TASKS: Task[] = [];
 export class SprintBoard {
   snapshot: SprintTasksSnapshot | undefined;
 
+  /** Действия с заметками, фото и схемами доски. */
+  readonly notes: SprintNotes;
+
   private readonly observer: QueryObserver<SprintTasksSnapshot>;
 
   constructor(private readonly deps: SprintBoardDeps) {
@@ -62,6 +66,13 @@ export class SprintBoard {
       queryKey: deps.tasksQueryKey,
     });
     this.snapshot = this.observer.getCurrentResult().data;
+    this.notes = new SprintNotes({
+      comments: deps.comments,
+      links: deps.links,
+      positions: deps.positions,
+      savePlannerLink: (link) => this.savePlannerLink(link),
+      sprintId: deps.sprintId,
+    });
     makeObservable<SprintBoard, 'setSnapshot' | 'taskIndex'>(this, {
       allTasksForDrag: computed,
       displayPositions: computed,

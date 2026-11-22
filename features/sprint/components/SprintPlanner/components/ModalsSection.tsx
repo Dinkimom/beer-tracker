@@ -19,6 +19,7 @@ import { getPartsPerDay } from '@/constants';
 import { resolveSwimlaneAnnotationContextMenuVariant } from '@/features/comments/utils/swimlaneCommentTaskBridge';
 import { ContextMenu } from '@/features/context-menu/components/ContextMenu';
 import { buildContextMenuParentOptions } from '@/features/context-menu/utils/buildContextMenuParentOptions';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { useAgentAvailable } from '@/features/swimlane/hooks/useAgentSessions';
 import { useSprintCardPresenceLocked } from '@/features/task/components/TaskCard/SprintCardPresenceContext';
 import { useRootStore } from '@/lib/layers';
@@ -102,10 +103,7 @@ export const ModalsSection = observer(function ModalsSection({
     transitionModal,
     handleAccountWork: onAccountWork,
     closeTransitionModal: onCloseTransitionModal,
-    handleCommentApprove: onCommentApprove,
     handleCommentDelete: onCommentDelete,
-    handleCommentParentChange: onCommentParentChange,
-    handleCommentUpdate: onCommentUpdate,
     handleMoveToSprint: onMoveToSprint,
     handleParentChange: onParentChange,
     handleRemoveFromPlan: onRemoveFromPlan,
@@ -114,6 +112,12 @@ export const ModalsSection = observer(function ModalsSection({
     handleTaskInfoFieldsSaved: onTaskInfoFieldsSaved,
     handleTransitionSubmit: onTransitionSubmit,
   } = handlers;
+  // Принять, родитель и текст заметки — методы модели.
+  const {
+    approve: onCommentApprove,
+    changeParent: onCommentParentChange,
+    updateText: onCommentUpdate,
+  } = useSprintBoard().notes;
   const { sprintPlannerUi } = useRootStore();
   const agentAvailable = useAgentAvailable(selectedSprintId);
 
