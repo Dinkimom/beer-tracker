@@ -9,12 +9,14 @@ import { QueryObserver } from '@tanstack/react-query';
 import { action, computed, makeObservable, observable } from 'mobx';
 
 import { createQATasksMap } from '@/features/qa/utils/qaTaskUtils';
+import { patchSprintTasksQuery } from '@/features/task/hooks/useTasks';
 import { stampPlanDraftTasks, stampPlanDraftTasksMap } from '@/features/task/utils/planAssigneeDraft';
 import { mergeDbPositionsWithTrackerDateFallbacks, parseTrackerIsoDateOnlyLocal } from '@/lib/planner-timeline';
 import { plannerLinkInvolvesComment } from '@/lib/planner/plannerLinkPersistence';
 import { resolveSprintTimelineWorkingDaysCount } from '@/utils/dateUtils';
 
 import { SprintNotes } from './sprintNotes';
+import { SprintPlan } from './sprintPlan';
 import { taskPositionMapsHaveSameEntries } from './taskPositionMaps';
 
 interface SprintTasksSnapshot {
@@ -23,8 +25,12 @@ interface SprintTasksSnapshot {
 }
 
 interface SprintBoardDeps {
+  /** Доска трекера — вместе со спринтом задаёт кэш задач, который правит `updateTasks`. */
+  boardId: number | null;
   /** Заметки спринта — как и связи, живут дольше модели. */
   comments: SprintComments;
+  /** Демо-планер: кэш задач на фикстурах. */
+  forDemoPlanner: boolean;
   /** Связи спринта живут дольше модели: модель пересоздаётся при смене дат спринта, связи — нет. */
   links: SprintLinks;
   movePlacement: SprintMovePlacementStore;
@@ -58,6 +64,9 @@ export class SprintBoard {
   /** Действия с заметками, фото и схемами доски. */
   readonly notes: SprintNotes;
 
+  /** Раскладка задач на плане: поставить, снять, добавить в свободное место. */
+  readonly plan: SprintPlan;
+
   private readonly observer: QueryObserver<SprintTasksSnapshot>;
 
   constructor(private readonly deps: SprintBoardDeps) {
@@ -72,6 +81,13 @@ export class SprintBoard {
       positions: deps.positions,
       savePlannerLink: (link) => this.savePlannerLink(link),
       sprintId: deps.sprintId,
+    });
+    this.plan = new SprintPlan({
+      positions: deps.positions,
+      sprintId: deps.sprintId,
+      taskById: (taskId) => this.tasksMap.get(taskId) ?? this.qaTasksByOriginalId.get(taskId),
+      tasksMap: () => this.tasksMap,
+      updateTasks: (updater) => this.updateTasks(updater),
     });
     makeObservable<SprintBoard, 'setSnapshot' | 'taskIndex'>(this, {
       allTasksForDrag: computed,
@@ -118,6 +134,12 @@ export class SprintBoard {
       return;
     }
     await this.deps.links.save(link);
+  };
+
+  /** Правка задач спринта — в кэше Query (все запросы задач этой доски и спринта). */
+  readonly updateTasks = (patch: Task[] | ((prev: Task[]) => Task[])): void => {
+    const { boardId, forDemoPlanner, queryClient, sprintId } = this.deps;
+    patchSprintTasksQuery(queryClient, sprintId, boardId, patch, forDemoPlanner);
   };
 
   /** Подписка на кэш, пока доска на экране; возвращает отписку. */

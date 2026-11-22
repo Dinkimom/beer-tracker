@@ -1,6 +1,6 @@
 import type { SprintNotes } from '@/features/sprint/model/sprintNotes';
+import type { SprintPlan } from '@/features/sprint/model/sprintPlan';
 import type { BoardViewMode } from '@/hooks/useLocalStorage';
-import type { PositionHistoryOptions } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { Comment, Task, TaskParent, TaskPosition } from '@/types';
 
 import { useCallback, useMemo } from 'react';
@@ -21,11 +21,6 @@ import { useFeatureLanesApi } from '@/hooks/useApiStorage';
 
 interface FeatureLanePlannerDragHandlers {
   handleParentChange: (taskId: string, parent: TaskParent | null) => Promise<void> | void;
-  handlePositionUpdate: (
-    taskId: string,
-    position: TaskPosition,
-    historyOptions?: PositionHistoryOptions
-  ) => void;
 }
 
 export function useFeatureLanePlannerDrag(input: {
@@ -34,6 +29,8 @@ export function useFeatureLanePlannerDrag(input: {
   handlers: FeatureLanePlannerDragHandlers;
   /** Перемещение заметки и смена её родителя — методы модели заметок. */
   notes: Pick<SprintNotes, 'changePlan' | 'move'>;
+  /** Поставить задачу на план — модель. */
+  plan: Pick<SprintPlan, 'place'>;
   selectedSprintId: number | null;
   taskPositions: Map<string, TaskPosition>;
   tasksMap: Map<string, Task>;
@@ -105,13 +102,13 @@ export function useFeatureLanePlannerDrag(input: {
           task: tasksMapForLanes.get(taskId),
           taskId,
           onParentChange: input.handlers.handleParentChange,
-          onPositionUpdate: input.handlers.handlePositionUpdate,
+          onPositionUpdate: input.plan.place,
         });
         return;
       }
-      input.handlers.handlePositionUpdate(taskId, position);
+      input.plan.place(taskId, position);
     },
-    [input.comments, input.handlers, input.notes, input.taskPositions, input.viewMode, projection, tasksMapForLanes]
+    [input.comments, input.handlers, input.notes, input.plan, input.taskPositions, input.viewMode, projection, tasksMapForLanes]
   );
 
 

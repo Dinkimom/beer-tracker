@@ -23,7 +23,9 @@ function setup(tasks: Task[]) {
   const movePlacement = new SprintMovePlacementStore();
   const positions = new TaskPositionsStore();
   const board = new SprintBoard({
+    boardId: 1,
     comments: createSprintComments(null, { current: { conflict: () => undefined, failure: () => undefined } }),
+    forDemoPlanner: false,
     links: createSprintLinks(null),
     movePlacement,
     positions,

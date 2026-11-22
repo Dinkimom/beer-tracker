@@ -9,10 +9,9 @@
 import type { GetTaskInfoFn } from '@/hooks/useApiStorage';
 import type { PlanHistoryAppliedPayload } from '@/lib/layers/application/mobx/stores/taskPositionsStore';
 import type { SprintPresenceViewer } from '@/lib/realtime/sprintRealtimeTypes';
-import type { Task } from '@/types';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { applyPlanHistorySideEffects } from '@/features/sprint/components/SprintPlanner/utils/applyPlanHistorySideEffects';
@@ -20,7 +19,6 @@ import { reconcileTasksAfterPlanHistoryStep } from '@/features/sprint/components
 import { AGENT_SESSIONS_QUERY_KEY } from '@/features/swimlane/hooks/useAgentSessions';
 import {
   patchSprintTaskStatusInQueries,
-  patchSprintTasksQuery,
   reloadSprintTasksQueries,
   removeSprintTaskFromQueries,
   upsertSprintTaskInQueries,
@@ -82,7 +80,9 @@ export function useSprintPlannerState({
   const board = useMemo(
     () =>
       new SprintBoard({
+        boardId: selectedBoardId,
         comments: sprintComments,
+        forDemoPlanner,
         links,
         movePlacement: sprintMovePlacement,
         positions: positionsStore,
@@ -108,12 +108,8 @@ export function useSprintPlannerState({
   useEffect(() => board.connect(), [board]);
   const developers = board.developers;
 
-  const setTasks = useCallback(
-    (patch: Task[] | ((prev: Task[]) => Task[])) => {
-      patchSprintTasksQuery(queryClient, selectedSprintId, selectedBoardId, patch, forDemoPlanner);
-    },
-    [queryClient, selectedSprintId, selectedBoardId, forDemoPlanner]
-  );
+  // Правка задач — у модели (кэш Query); имя `setTasks` — для старых потребителей.
+  const setTasks = board.updateTasks;
 
   const [sidebarWidth, setSidebarWidth] = useSidebarWidthStorage(320);
   const [viewMode, setViewMode] = useBoardViewModeStorage();

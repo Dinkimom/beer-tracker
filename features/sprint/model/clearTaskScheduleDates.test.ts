@@ -5,7 +5,7 @@ import { buildSyntheticQaTaskId } from '@/lib/qaTaskIdentity';
 import {
   clearTaskScheduleDatesInList,
   resolveIssueKeyForScheduleClear,
-} from './clearTaskScheduleDatesOnRemoveFromPlan';
+} from './clearTaskScheduleDates';
 
 describe('clearTaskScheduleDatesOnRemoveFromPlan', () => {
   it('resolves originalTaskId for synthetic QA cards', () => {

@@ -108,7 +108,7 @@ features/ / components/ / hooks/
 | **`SyncedList`** | [`lib/layers/application/mobx/syncedList.ts`](./lib/layers/application/mobx/syncedList.ts) | **Список сущностей** на спринт: загрузка массива, правки/создание/удаление по элементу, отложенный save (и опционально батч), слияние с realtime без потери несохранённых правок. MobX-класс, экземпляр на спринт; побочные эффекты — в методах, не в апдейтере `setState`. |
 | **`useFeatureLanesApi`** | [`hooks/useApiStorage.ts`](./hooks/useApiStorage.ts) | **Один JSON-документ** на спринт (`FeatureLanesDocument`) — черновые строки фич, порядок и скрытие. Целиком пересохраняется после дебаунса. |
 
-Правила действий с заметками (удалить с перецепкой стрелок, принять/отклонить черновики, перемещение с историей) — `SprintNotes` (`board.notes`) поверх этих списков.
+Правила действий с заметками (удалить с перецепкой стрелок, принять/отклонить черновики, перемещение с историей) — `SprintNotes` (`board.notes`) поверх этих списков. Раскладка задач на плане (поставить, снять с плана, автодобавить) — `SprintPlan` (`board.plan`), правка задач в кэше Query — `board.updateTasks`.
 
 Экземпляры `SyncedList` в модели доски (`board.links`, `board.comments`):
 

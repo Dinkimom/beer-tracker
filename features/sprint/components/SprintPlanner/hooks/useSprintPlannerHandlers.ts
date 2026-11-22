@@ -4,10 +4,11 @@
  */
 
 import type { UseSprintPlannerHandlersProps } from './useSprintPlannerHandlers.types';
-import type { Comment } from '@/types';
+import type { Comment, Task } from '@/types';
 
 import { useCallback } from 'react';
 
+import { WORKING_DAYS, getPartsPerDay } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import {
   playStickyNoteExit,
@@ -17,6 +18,7 @@ import { toSwimlaneCommentTaskId } from '@/features/comments/utils/swimlaneComme
 import { playTaskBoardExit } from '@/features/task/utils/taskBoardExit';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { parseTrackerOverlayLinkId } from '@/lib/planner/trackerLinkOverlay';
+import { DELAYS } from '@/utils/constants';
 
 import { useSprintPlannerTaskHandlers } from './useSprintPlannerTaskHandlers';
 import { useSprintPlannerUIHandlers } from './useSprintPlannerUIHandlers';
@@ -46,11 +48,8 @@ export function useSprintPlannerHandlers({
   const { t } = useI18n();
   const taskHandlers = useSprintPlannerTaskHandlers({
     board,
-    developers: developersManagement.sortedDevelopers,
-    filteredTaskPositions,
     qaTaskManagement,
     onRequestQaEngineerPicker,
-    selectedSprintId,
     sprintTimelineWorkingDays,
     setTasks,
     tasksMap,
@@ -148,12 +147,19 @@ export function useSprintPlannerHandlers({
     [confirm, applyDeleteLink, t]
   );
 
-  // Обработчик удаления позиции задачи (оптимистично: сначала локально, затем запрос)
-  const handlePositionDelete = useCallback(
-    (taskId: string) => {
-      taskHandlers.handlePositionDelete(taskId);
+  // Добавить в первое свободное место строки исполнителя (кнопка в сайдбаре) — правило у `board.plan`.
+  const handleAutoAddToSwimlane = useCallback(
+    (task: Task) => {
+      const placed = board.plan.autoAdd(task, {
+        developers: developersManagement.sortedDevelopers,
+        positions: filteredTaskPositions,
+        timelineTotalCells: (sprintTimelineWorkingDays ?? WORKING_DAYS) * getPartsPerDay(),
+      });
+      if (placed) {
+        setTimeout(() => debouncedUpdateXarrow(), DELAYS.IMMEDIATE);
+      }
     },
-    [taskHandlers]
+    [board, debouncedUpdateXarrow, developersManagement.sortedDevelopers, filteredTaskPositions, sprintTimelineWorkingDays]
   );
 
   // Удалить из плана — убрать позицию и связи, задача остаётся в спринте
@@ -161,7 +167,7 @@ export function useSprintPlannerHandlers({
     (taskId: string) => {
       // Карточка сначала «снимается» с доски, позиция и связи уходят после анимации.
       void playTaskBoardExit([taskId], 'plan', () => {
-        taskHandlers.handlePositionDelete(taskId);
+        board.plan.unplace(taskId);
         const linksToDelete = filteredTaskLinks.filter(
           (link) => link.fromTaskId === taskId || link.toTaskId === taskId
         );
@@ -179,7 +185,7 @@ export function useSprintPlannerHandlers({
       });
     },
     [
-      taskHandlers,
+      board,
       filteredTaskLinks,
       setTaskLinks,
       selectedSprintId,
@@ -201,7 +207,7 @@ export function useSprintPlannerHandlers({
     handleCommentDelete,
     // Link handlers
     handleDeleteLink,
-    handlePositionDelete,
+    handleAutoAddToSwimlane,
     handleRemoveFromPlan,
   };
 }
