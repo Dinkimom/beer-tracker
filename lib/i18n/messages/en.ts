@@ -2494,6 +2494,13 @@ export const enMessages = {
     },
   },
   auth: {
+    otorva: {
+      firstNameLabel: 'First name',
+      lastNameLabel: 'Last name',
+      emailLabel: 'Email',
+      passwordLabel: 'Password',
+      passwordHint: 'At least 6 characters. This account becomes the built-in tracker administrator.',
+    },
     setup: {
       title: 'Access setup',
       welcome: 'Welcome!',

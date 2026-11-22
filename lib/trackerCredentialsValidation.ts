@@ -2,7 +2,10 @@
  * Проверка токена трекера до сохранения в organization_secrets.
  */
 
+import axios from 'axios';
+
 import { createJiraAxiosInstance } from '@/lib/issueTrackerProvider/jiraAxios';
+import { createOtorvaProviderClient } from '@/lib/issueTrackerProvider/otorvaProvider';
 import { isJiraProviderKind, type IssueTrackerProviderKind } from '@/lib/issueTrackerProvider/types';
 import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
 
@@ -107,6 +110,22 @@ export async function validateJiraTrackerToken(params: {
 }
 
 /** Проверка токена выбранного трекера организации до сохранения в organization_secrets. */
+/** Встроенный трекер: JWT рабочий и принадлежит администратору otorva (синк и каталог идут от его имени). */
+async function validateOtorvaTrackerToken(apiUrl: string, token: string): Promise<ValidateTrackerCredentialsResult> {
+  try {
+    const me = await createOtorvaProviderClient({ apiUrl, organizationId: '', token }).getCurrentUser();
+    if (me.isAdmin !== true) {
+      return { message: 'Нужна сессия администратора встроенного трекера', ok: false, status: 403 };
+    }
+    return { ok: true };
+  } catch (error) {
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    return status === 401
+      ? { message: 'Сессия встроенного трекера недействительна — войдите заново', ok: false, status: 401 }
+      : { message: 'Встроенный трекер недоступен', ok: false, status: 503 };
+  }
+}
+
 export function validateIssueTrackerCredentials(params: {
   apiUrl: string;
   email?: string;
@@ -114,6 +133,9 @@ export function validateIssueTrackerCredentials(params: {
   orgId: string;
   providerKind: IssueTrackerProviderKind;
 }): Promise<ValidateTrackerCredentialsResult> {
+  if (params.providerKind === 'otorva') {
+    return validateOtorvaTrackerToken(params.apiUrl, params.oauthToken);
+  }
   if (isJiraProviderKind(params.providerKind)) {
     return validateJiraTrackerToken({
       apiToken: params.oauthToken,

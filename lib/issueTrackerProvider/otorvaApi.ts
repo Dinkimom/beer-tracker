@@ -7,6 +7,18 @@ import type { AxiosInstance } from 'axios';
 
 import axios from 'axios';
 
+/**
+ * В сети compose; для `pnpm dev` на хосте — `127.0.0.1:8090` в настройках организации.
+ * HTTP: обмен между контейнерами внутри сети compose, наружу сервис не публикуется.
+ */
+// eslint-disable-next-line sonarjs/no-clear-text-protocols -- внутренняя сеть compose, без TLS
+export const OTORVA_DEFAULT_API_URL = 'http://otorva:8080/api/v1';
+
+/** Адрес otorva на этом сервере: `OTORVA_API_URL` (например, `pnpm dev` на хосте) или сеть compose. */
+export function otorvaApiUrlFromEnv(): string {
+  return process.env.OTORVA_API_URL?.trim() || OTORVA_DEFAULT_API_URL;
+}
+
 const OTORVA_REQUEST_TIMEOUT_MS = 15_000;
 /** Максимум otorva на страницу (`MAX_LIMIT`). */
 const OTORVA_PAGE_SIZE = 200;
@@ -157,6 +169,35 @@ export function createOtorvaAxiosInstance(apiUrl: string, token: string): AxiosI
     },
     timeout: OTORVA_REQUEST_TIMEOUT_MS,
   });
+}
+
+/** Профиль otorva (`/auth/me`) в форме «кто я» провайдера: так его читает разбор личности планера. */
+export function otorvaMyself(profile: OtorvaProfile & { email?: string }) {
+  return {
+    display: otorvaProfileName(profile),
+    email: profile.email,
+    firstName: profile.first_name,
+    isAdmin: profile.is_admin,
+    lastName: profile.last_name,
+    login: profile.email,
+    trackerUid: profile.id,
+    uid: profile.id,
+  };
+}
+
+/**
+ * Сырой клиент для мест, которые спрашивают «кто я» по пути Яндекса/Jira (`/myself`):
+ * запрос уходит в `/auth/me`, ответ приводится к форме провайдера. Остальные пути — как есть.
+ */
+export function createOtorvaRawAxios(apiUrl: string, token: string): AxiosInstance {
+  const api = createOtorvaAxiosInstance(apiUrl, token);
+  api.interceptors.request.use((config) =>
+    config.url === '/myself' ? { ...config, url: '/auth/me', headers: config.headers } : config
+  );
+  api.interceptors.response.use((response) =>
+    response.config.url === '/auth/me' ? { ...response, data: otorvaMyself(response.data as OtorvaProfile) } : response
+  );
+  return api;
 }
 
 /** Все страницы списка (или до `maxItems`); `truncated` — дальше ещё есть. */

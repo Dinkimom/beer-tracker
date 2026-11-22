@@ -56,6 +56,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       REDIS_URL: redis://redis:6379
       SYNC_CRON_SECRET: ${SYNC_CRON_SECRET:-}
+      # Встроенный трекер: онбординг создаёт его первого админа этим секретом (тот же, что у otorva).
+      OTORVA_BOOTSTRAP_TOKEN: ${OTORVA_BOOTSTRAP_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy
@@ -150,6 +152,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/otorva
       JWT_SECRET: ${OTORVA_JWT_SECRET:-}
+      # Сессия админа — секрет организации для синка: 24 ч по умолчанию otorva мало (API-токены — в бэклоге).
+      JWT_EXP_HOURS: ${OTORVA_JWT_EXP_HOURS:-720}
       ALLOW_REGISTRATION: ${OTORVA_ALLOW_REGISTRATION:-false}
       # Секрет первого админа (POST /auth/bootstrap): онбординг «Встроенный трекер».
       BOOTSTRAP_TOKEN: ${OTORVA_BOOTSTRAP_TOKEN:-}

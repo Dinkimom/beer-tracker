@@ -24,6 +24,7 @@ services:
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
       DOCKER_DEV_INSTALL_NODE_MODULES: "1"
+      OTORVA_BOOTSTRAP_TOKEN: ${OTORVA_BOOTSTRAP_TOKEN:-local-dev-only-otorva-bootstrap-0123456789abcdef}
       # Postgres/Redis — из .env (как у `pnpm dev`).
       # localhost/127.0.0.1 entrypoint подменяет на db:5432 и redis:6379; удалённый хост как есть.
       REDIS_URL: redis://redis:6379

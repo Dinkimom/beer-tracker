@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { registerOnPremFirstUserFromTrackerToken } from '@/lib/auth/onPremRegisterRouteHelpers';
-import { parseJsonRequestBody } from '@/lib/http/parseJsonRequestBody';
+import { parseJsonRequestBodyWithSchema } from '@/lib/http/parseJsonRequestBody';
 import { ISSUE_TRACKER_PROVIDER_KINDS } from '@/lib/issueTrackerProvider/types';
 import { readOnPremSetupState } from '@/lib/onPrem/setupState';
 
@@ -23,16 +23,13 @@ const BodySchema = z.object({
  * Email берётся из профиля трекера (GET /myself) по переданному токену.
  */
 export async function POST(request: Request) {
-  const json = await parseJsonRequestBody(request);
-  if (json instanceof NextResponse) {
-    return json;
-  }
-  const parsed = BodySchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Проверьте название организации и токен трекера' },
-      { status: 400 }
-    );
+  const parsed = await parseJsonRequestBodyWithSchema(
+    request,
+    BodySchema,
+    'Проверьте название организации и токен трекера'
+  );
+  if (parsed instanceof NextResponse) {
+    return parsed;
   }
 
   const setupState = await readOnPremSetupState();
@@ -46,7 +43,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const orgName = parsed.data.orgName.trim();
+  const orgName = parsed.orgName.trim();
   if (!orgName) {
     return NextResponse.json(
       { error: 'Для первичной настройки укажите название организации' },
@@ -55,14 +52,14 @@ export async function POST(request: Request) {
   }
 
   return registerOnPremFirstUserFromTrackerToken({
-    cloudId: parsed.data.cloudId,
-    expiresAt: parsed.data.expiresAt,
-    jiraEmail: parsed.data.jiraEmail,
+    cloudId: parsed.cloudId,
+    expiresAt: parsed.expiresAt,
+    jiraEmail: parsed.jiraEmail,
     orgName,
-    provider: parsed.data.provider,
-    refreshToken: parsed.data.refreshToken,
-    token: parsed.data.token,
-    trackerApiBaseUrl: parsed.data.trackerApiBaseUrl,
-    trackerOrgId: parsed.data.trackerOrgId,
+    provider: parsed.provider,
+    refreshToken: parsed.refreshToken,
+    token: parsed.token,
+    trackerApiBaseUrl: parsed.trackerApiBaseUrl,
+    trackerOrgId: parsed.trackerOrgId,
   });
 }

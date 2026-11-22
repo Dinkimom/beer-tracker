@@ -12,7 +12,7 @@ import type {
 import { resolveTrackerApiConfigFromRequest } from '@/lib/trackerRequestConfig';
 
 import { mapIssueTrackerIssueToTask } from './mapIssueTrackerIssueToTask';
-import { createOtorvaAxiosInstance, createOtorvaCatalog } from './otorvaApi';
+import { createOtorvaAxiosInstance, createOtorvaCatalog, OTORVA_DEFAULT_API_URL } from './otorvaApi';
 import {
   getOtorvaChangelogBatch,
   getOtorvaIssue,
@@ -51,12 +51,6 @@ import { createPartialProviderClient } from './partialProviderClient';
 
 const OTORVA_PROVIDER_KIND = 'otorva' as const;
 
-/**
- * В сети compose; для `pnpm dev` на хосте — `127.0.0.1:8090` в настройках организации.
- * HTTP: обмен между контейнерами внутри сети compose, наружу сервис не публикуется.
- */
-// eslint-disable-next-line sonarjs/no-clear-text-protocols -- внутренняя сеть compose, без TLS
-export const OTORVA_DEFAULT_API_URL = 'http://otorva:8080/api/v1';
 
 export const OTORVA_IMPLEMENTED_PROVIDER_METHODS = [
   'addIssueToSprint',

@@ -4,6 +4,7 @@ import type { AxiosInstance } from 'axios';
 import { createTrackerAxiosInstance } from '@/lib/trackerAxiosFactory';
 
 import { createJiraAxiosInstance } from './jiraAxios';
+import { createOtorvaRawAxios, OTORVA_DEFAULT_API_URL } from './otorvaApi';
 import { isJiraProviderKind } from './types';
 
 /** Axios к API трекера с заголовком выбранного провайдера (OAuth vs Bearer/Basic). */
@@ -14,6 +15,9 @@ export function createIssueTrackerAxiosForCredentials(config: {
   orgId: string;
   providerKind: IssueTrackerProviderKind;
 }): AxiosInstance {
+  if (config.providerKind === 'otorva') {
+    return createOtorvaRawAxios(config.apiUrl.trim() || OTORVA_DEFAULT_API_URL, config.oauthToken);
+  }
   if (isJiraProviderKind(config.providerKind)) {
     return createJiraAxiosInstance({
       apiToken: config.oauthToken,

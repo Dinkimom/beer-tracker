@@ -2498,6 +2498,13 @@ export const ruMessages = {
     },
   },
   auth: {
+    otorva: {
+      firstNameLabel: 'Имя',
+      lastNameLabel: 'Фамилия',
+      emailLabel: 'Email',
+      passwordLabel: 'Пароль',
+      passwordHint: 'Не короче 6 символов. Эта учётная запись станет администратором встроенного трекера.',
+    },
     setup: {
       title: 'Настройка доступа',
       welcome: 'Добро пожаловать!',

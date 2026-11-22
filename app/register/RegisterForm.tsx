@@ -6,9 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { AuthPageLoadingFallback } from '@/components/AuthScreenChrome';
+import { readOtorvaCredentials } from '@/components/OtorvaCredentialsFields';
 import { IssueTrackerProviderOverride } from '@/contexts/IssueTrackerProviderOverride';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useTrackerTokenStorage } from '@/hooks/useLocalStorage';
+import { postOtorvaSession } from '@/lib/api/auth';
+import { readApiErrorMessage } from '@/lib/api/readApiError';
 import { useAtlassianOAuthClientTokenState } from '@/lib/atlassianOAuth/authSetupTokenState';
 import { parseIssueTrackerProviderKind } from '@/lib/issueTrackerProvider/providerKind';
 import { useYandexOAuthClientTokenState } from '@/lib/yandexOAuth/clientTokenState';
@@ -73,6 +76,18 @@ export function RegisterForm() {
       return;
     }
     setLoading(true);
+    // Встроенный трекер: email и пароль → JWT otorva (первый админ, если трекер пуст), дальше — как токен.
+    let submitToken = tokenForSubmit;
+    if (providerKind === 'otorva') {
+      try {
+        const credentials = readOtorvaCredentials(e.currentTarget as HTMLFormElement);
+        submitToken = (await postOtorvaSession({ ...credentials, mode: 'register' })).token;
+      } catch (exchangeError) {
+        setError(readApiErrorMessage(exchangeError, t('productAuth.register.genericError')));
+        setLoading(false);
+        return;
+      }
+    }
     const result = await submitRegisterForm({
       cloudId,
       expiresAt,
@@ -81,7 +96,7 @@ export function RegisterForm() {
       provider: providerKind,
       refreshToken,
       t,
-      token: tokenForSubmit,
+      token: submitToken,
       trackerApiBaseUrl: apiUrlForSubmit,
       trackerOrgId,
     });
@@ -90,7 +105,7 @@ export function RegisterForm() {
       setLoading(false);
       return;
     }
-    setToken(tokenForSubmit, result.organizationId, {
+    setToken(submitToken, result.organizationId, {
       cloudId: cloudId || undefined,
       expiresAt,
       refreshToken: refreshToken || undefined,

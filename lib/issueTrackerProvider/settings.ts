@@ -6,11 +6,20 @@ import { cleanTrackerCloudId } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
 
 import { issueTrackerWebBaseFromApiUrl } from './issueTrackerUi';
 import { cleanJiraBasicAuthEmail } from './jiraBasicAuthEmail';
+import { otorvaApiUrlFromEnv } from './otorvaApi';
 import { parseIssueTrackerProviderKind } from './providerKind';
 import { ISSUE_TRACKER_PROVIDER_KINDS } from './types';
 
 /** Публичный API Яндекс Трекера; для Jira URL всегда задаётся явно. */
 export const YANDEX_TRACKER_DEFAULT_API_URL = 'https://api.tracker.yandex.net/v3';
+
+/** URL API по умолчанию, если в настройках пусто: Яндекс — публичный, встроенный — на этом сервере, Jira — нет. */
+export function defaultIssueTrackerApiUrl(kind: IssueTrackerProviderKind): string {
+  if (kind === 'tracker') {
+    return YANDEX_TRACKER_DEFAULT_API_URL;
+  }
+  return kind === 'otorva' ? otorvaApiUrlFromEnv() : '';
+}
 
 const IssueTrackerProviderKindSchema = z.preprocess((raw) => {
   if (raw === undefined || raw === null || raw === '') {
@@ -77,9 +86,7 @@ export function readOrganizationIssueTrackerConfig(
   if (!settings.provider) {
     return null;
   }
-  const apiUrl =
-    settings.apiUrl?.trim() ||
-    (settings.provider === 'tracker' ? YANDEX_TRACKER_DEFAULT_API_URL : '');
+  const apiUrl = settings.apiUrl?.trim() || defaultIssueTrackerApiUrl(settings.provider);
   if (!apiUrl) {
     return null;
   }

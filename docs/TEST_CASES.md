@@ -166,6 +166,13 @@
 - Ожидаемо: при встроенном трекере ключ задачи — текст, а не ссылка «открыть в трекере» (у трекера нет веб-интерфейса), в меню карточки есть «скопировать ключ», но нет «скопировать ссылку»; очередь и родитель в панели задачи — текстом. В обычном демо (Яндекс Трекер) ключ — ссылка, «скопировать ссылку» есть.
 - Автотест: e2e/functional/builtInTracker.spec.ts
 
+### TC-134: Встроенный трекер — онбординг и вход по email и паролю
+- Контур: боевой
+- Код: app/register/RegisterForm.tsx, app/register/RegisterFormFields.tsx, app/register/RegisterTrackerCredentials.tsx, app/auth-setup/page.tsx, app/auth-setup/AuthSetupCardInner.tsx, app/auth-setup/AuthSetupOtorvaSection.tsx, components/OtorvaCredentialsFields.tsx, components/IssueTrackerConnectionFields.tsx, app/api/auth/otorva/session/route.ts, lib/auth/otorvaCredentials.ts
+- Шаги: на пустой установке (`pnpm docker:dev`, профиль otorva) открыть `/register`, выбрать «Встроенный трекер», указать организацию, имя, email и пароль; выйти и войти на `/auth-setup` по тем же email и паролю; попробовать неверный пароль.
+- Ожидаемо: при регистрации поля адреса API и токена нет — только имя, email и пароль; создаётся организация, её администратор и первый администратор встроенного трекера; вход по email и паролю открывает планер; неверный пароль — «Неверный email или пароль», без входа.
+- Автотест: нет — нужна пустая база планера и запущенный otorva (стенд регресса, этап 4 docs/OTORVA_INTEGRATION.md)
+
 ### TC-131: Упоминания в заметке
 - Контур: демо
 - Код: features/comments/hooks/useStickyNoteRichEditorMentions.ts, features/task/components/TaskBar/components/quickAddMenu/CommentMentionSelector.tsx, features/comments/components/StickyNoteRichEditor.tsx

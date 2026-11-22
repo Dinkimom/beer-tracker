@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { AuthBackground, AuthCard } from '@/components/AuthScreenChrome';
+import { readOtorvaCredentials } from '@/components/OtorvaCredentialsFields';
 import { useIssueTrackerProviderKind } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
 import { useTrackerTokenStorage } from '@/hooks/useLocalStorage';
@@ -12,6 +13,7 @@ import {
   productSessionQueryKey,
   useProductTenantOrganizations,
 } from '@/hooks/useProductTenantOrganizations';
+import { postOtorvaSession } from '@/lib/api/auth';
 import { postOnPremTrackerSession } from '@/lib/api/onprem';
 import { readApiErrorMessage } from '@/lib/api/readApiError';
 import { useAtlassianOAuthClientTokenState } from '@/lib/atlassianOAuth/authSetupTokenState';
@@ -26,6 +28,21 @@ import {
   shouldShowAuthSetupSpinner,
   type OnPremGateState,
 } from './authSetupPageHelpers';
+
+/** Встроенный трекер: email и пароль из формы → JWT otorva; при ошибке — текст в форму и `null`. */
+async function signInToOtorva(
+  form: HTMLFormElement,
+  fallbackError: string,
+  setError: (message: string) => void
+): Promise<string | null> {
+  try {
+    const { email, password } = readOtorvaCredentials(form);
+    return (await postOtorvaSession({ email, mode: 'login', password })).token;
+  } catch (exchangeError) {
+    setError(readApiErrorMessage(exchangeError, fallbackError));
+    return null;
+  }
+}
 
 export default function AuthSetupPage() {
   const { t } = useI18n();
@@ -164,10 +181,10 @@ export default function AuthSetupPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const isOtorva = providerKind === 'otorva';
+    const form = e.currentTarget as HTMLFormElement;
 
-    if (!tokenForAuth) {
-      return;
-    }
+    // Пустой токен отсекает `if (!token)` ниже; кнопка без токена (кроме встроенного трекера) и так неактивна.
     if (providerKind === 'jira-cloud' && !cloudId.trim()) {
       setError(t('auth.setup.jiraCloudEmailRequired'));
       return;
@@ -185,7 +202,12 @@ export default function AuthSetupPage() {
     setError('');
 
     try {
-      const result = await validateToken(tokenForAuth, {
+      // Встроенный трекер: email и пароль → JWT otorva, дальше — тот же путь, что у вставленного токена.
+      const token = isOtorva ? await signInToOtorva(form, t('auth.setup.validationError'), setError) : tokenForAuth;
+      if (!token) {
+        return;
+      }
+      const result = await validateToken(token, {
         cloudId: cloudId || undefined,
         organizationId: orgIdForToken,
       });
@@ -200,7 +222,7 @@ export default function AuthSetupPage() {
           await postOnPremTrackerSession({
             cloudId: cloudId || undefined,
             organizationId: orgIdForToken,
-            token: tokenForAuth,
+            token,
           });
         } catch (sessionError) {
           if (!productTenant.signedIn) {
@@ -210,7 +232,7 @@ export default function AuthSetupPage() {
         }
       }
 
-      setToken(tokenForAuth, orgIdForToken, {
+      setToken(token, orgIdForToken, {
         cloudId: cloudId || undefined,
         expiresAt,
         refreshToken: refreshToken || undefined,

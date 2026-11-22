@@ -16,7 +16,7 @@ import {
   readIssueTrackerBasicAuthEmail,
   readIssueTrackerCloudId,
   readOrganizationIssueTrackerConfig,
-  YANDEX_TRACKER_DEFAULT_API_URL,
+  defaultIssueTrackerApiUrl,
 } from '@/lib/issueTrackerProvider/settings';
 import { readIssueTrackerExternalOrgId } from '@/lib/issueTrackerProvider/storageAliases';
 import { enqueueInitialFullSync } from '@/lib/sync/queue';
@@ -54,7 +54,7 @@ export function resolveIssueTrackerForConnection(
   }
   const fromInput = input.trackerApiBaseUrl?.trim() ?? '';
   const fromStored = stored?.kind === kind ? stored.apiUrl : '';
-  const rawUrl = fromInput || fromStored || (kind === 'tracker' ? YANDEX_TRACKER_DEFAULT_API_URL : '');
+  const rawUrl = fromInput || fromStored || defaultIssueTrackerApiUrl(kind);
   if (!rawUrl) {
     return { error: 'Укажите URL API трекера', ok: false, status: 400 };
   }

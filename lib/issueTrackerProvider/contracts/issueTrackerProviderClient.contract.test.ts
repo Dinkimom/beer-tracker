@@ -4,11 +4,8 @@ import { handleApiError } from '@/lib/api-error-handler';
 
 import { UnsupportedIssueTrackerOperationError } from '../errors';
 import { createJiraProviderClient, JIRA_IMPLEMENTED_PROVIDER_METHODS } from '../jiraProvider';
-import {
-  createOtorvaProviderClient,
-  OTORVA_DEFAULT_API_URL,
-  OTORVA_IMPLEMENTED_PROVIDER_METHODS,
-} from '../otorvaProvider';
+import { OTORVA_DEFAULT_API_URL } from '../otorvaApi';
+import { createOtorvaProviderClient, OTORVA_IMPLEMENTED_PROVIDER_METHODS } from '../otorvaProvider';
 import { createYandexProviderClient } from '../yandexTrackerProvider';
 
 import {

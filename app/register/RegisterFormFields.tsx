@@ -10,14 +10,10 @@ import { BeerLottie } from '@/components/BeerLottie';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
 import { IssueTrackerConnectionFields } from '@/components/IssueTrackerConnectionFields';
-import { PasswordInput } from '@/components/PasswordInput';
-import { TrackerOAuthConnectButton } from '@/components/TrackerOAuthConnectButton';
 import {
   useIssueTrackerProviderKind,
-  useIssueTrackerTokenHelpUrl,
 } from '@/contexts/IssueTrackerProviderKindContext';
 import { useI18n } from '@/contexts/LanguageContext';
-import { jiraCloudSiteHost } from '@/lib/atlassianOAuth/jiraCloudApiUrl';
 import {
   issueTrackerRequiresExternalOrgId,
   translateIssueTrackerProviderMessage,
@@ -25,6 +21,7 @@ import {
 
 import { RegisterFormOrgNameField } from './RegisterFormOrgNameField';
 import { RegisterFormSignInFooter } from './RegisterFormSignInFooter';
+import { RegisterTrackerCredentials } from './RegisterTrackerCredentials';
 
 interface RegisterFormFieldsProps {
   atlassianConnected: boolean;
@@ -69,7 +66,6 @@ export function RegisterFormFields({
 }: RegisterFormFieldsProps) {
   const { t } = useI18n();
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
-  const tokenHelpUrl = useIssueTrackerTokenHelpUrl();
   const isJiraCloud = issueTrackerProviderKind === 'jira-cloud';
   const isYandex = issueTrackerProviderKind === 'tracker';
   const showTrackerOrgId = issueTrackerRequiresExternalOrgId(issueTrackerProviderKind);
@@ -141,71 +137,14 @@ export function RegisterFormFields({
               />
             </div>
           ) : null}
-          {isJiraCloud ? (
-            <div className="space-y-2">
-              {atlassianConnected ? (
-                <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                  {t('productAuth.register.atlassianConnectedSite', {
-                    site: jiraCloudSiteHost(atlassianSiteUrl),
-                  })}
-                </p>
-              ) : (
-                <TrackerOAuthConnectButton provider="jira-cloud" returnPath={oauthReturnPath} />
-              )}
-            </div>
-          ) : null}
-          {isYandex ? (
-            token.trim() ? (
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                {t('productAuth.register.yandexConnected')}
-              </p>
-            ) : (
-              <TrackerOAuthConnectButton provider="tracker" returnPath={oauthReturnPath} />
-            )
-          ) : null}
-          {isJiraCloud || isYandex ? null : (
-            <div>
-              <label
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                htmlFor="reg-tracker-token"
-              >
-                {translateIssueTrackerProviderMessage(
-                  t,
-                  issueTrackerProviderKind,
-                  'auth.setup.tokenLabel'
-                )}
-              </label>
-              <div className="mt-1">
-                <PasswordInput
-                  autoComplete="off"
-                  id="reg-tracker-token"
-                  placeholder={translateIssueTrackerProviderMessage(
-                    t,
-                    issueTrackerProviderKind,
-                    'auth.setup.tokenPlaceholder'
-                  )}
-                  required
-                  value={token}
-                  onChange={(e) => onTokenChange(e.target.value)}
-                />
-              </div>
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                {t('auth.setup.getTokenPrefix')}{' '}
-                <a
-                  className="font-semibold text-amber-600 hover:underline dark:text-amber-400"
-                  href={tokenHelpUrl}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  {translateIssueTrackerProviderMessage(
-                    t,
-                    issueTrackerProviderKind,
-                    'auth.setup.oauthLink'
-                  )}
-                </a>
-              </p>
-            </div>
-          )}
+          <RegisterTrackerCredentials
+            atlassianConnected={atlassianConnected}
+            atlassianSiteUrl={atlassianSiteUrl}
+            loading={loading}
+            oauthReturnPath={oauthReturnPath}
+            token={token}
+            onTokenChange={onTokenChange}
+          />
           {error ? (
             <div
               className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/45 dark:text-red-200"

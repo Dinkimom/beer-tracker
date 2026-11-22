@@ -7,20 +7,11 @@ import type { IssueTrackerStatusCatalogItem, IssueTrackerUser } from './types';
 import type { BoardParams, SprintInfo, SprintListItem } from '@/types/tracker';
 import type { AxiosInstance } from 'axios';
 
-import { fetchOtorvaPages, otorvaProfileName } from './otorvaApi';
+import { fetchOtorvaPages, otorvaMyself, otorvaProfileName } from './otorvaApi';
 
 export async function getOtorvaCurrentUser(api: AxiosInstance) {
   const { data } = await api.get<OtorvaProfile & { email: string }>('/auth/me');
-  return {
-    display: otorvaProfileName(data),
-    email: data.email,
-    firstName: data.first_name,
-    isAdmin: data.is_admin,
-    lastName: data.last_name,
-    login: data.email,
-    trackerUid: data.id,
-    uid: data.id,
-  };
+  return otorvaMyself(data);
 }
 
 function toTrackerUser(profile: OtorvaProfile): IssueTrackerUser {

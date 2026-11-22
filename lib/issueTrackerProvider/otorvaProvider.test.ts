@@ -3,7 +3,8 @@ import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 import axios from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createOtorvaProviderClient, OTORVA_DEFAULT_API_URL } from './otorvaProvider';
+import { OTORVA_DEFAULT_API_URL } from './otorvaApi';
+import { createOtorvaProviderClient } from './otorvaProvider';
 
 const STATUS = {
   backlog: { category: 'todo', id: 's-backlog', is_initial: true, is_terminal: false, name: 'Беклог', sort_order: 0, workflow_id: 'wf' },

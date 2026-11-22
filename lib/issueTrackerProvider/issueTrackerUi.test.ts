@@ -18,7 +18,7 @@ import {
   resolveIssueTrackerExternalOrgIdForConnect,
   translateIssueTrackerProviderMessage,
 } from './issueTrackerUi';
-import { OTORVA_DEFAULT_API_URL } from './otorvaProvider';
+import { OTORVA_DEFAULT_API_URL } from './otorvaApi';
 
 describe('issueTrackerUi', () => {
   it('treats Jira checklists and related issues as unsupported', () => {

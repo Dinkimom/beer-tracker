@@ -107,6 +107,18 @@ export async function postProductRegister(body: {
   return data;
 }
 
+/** Встроенный трекер: email и пароль → JWT otorva (дальше — как токен трекера). */
+export async function postOtorvaSession(body: {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  mode: 'login' | 'register';
+  password: string;
+}): Promise<{ token: string }> {
+  const { data } = await getPlannerBeerTrackerApi().post('/auth/otorva/session', body);
+  return data;
+}
+
 export async function postProductLogout(): Promise<void> {
   await getPlannerBeerTrackerApi().post('/auth/logout');
 }

@@ -17,6 +17,7 @@ import { translateIssueTrackerProviderMessage } from '@/lib/issueTrackerProvider
 
 import { AuthSetupBrandHeader } from './AuthSetupBrandHeader';
 import { AuthSetupOAuthSection } from './AuthSetupOAuthSection';
+import { AuthSetupOtorvaSection } from './AuthSetupOtorvaSection';
 import { type OnPremGateState } from './authSetupPageHelpers';
 import { AuthSetupTokenPasteSection } from './AuthSetupTokenPasteSection';
 
@@ -53,6 +54,8 @@ export function AuthSetupCardInner({
 }: AuthSetupCardInnerProps): ReactNode {
   const issueTrackerProviderKind = useIssueTrackerProviderKind();
   const tokenHelpUrl = useIssueTrackerTokenHelpUrl();
+  // Встроенный трекер: email и пароль вместо вставки токена.
+  const isOtorva = issueTrackerProviderKind === 'otorva';
   const oauthProvider =
     issueTrackerProviderKind === 'jira-cloud' || issueTrackerProviderKind === 'tracker'
       ? issueTrackerProviderKind
@@ -104,19 +107,23 @@ export function AuthSetupCardInner({
         />
       ) : (
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-          <AuthSetupTokenPasteSection
-            error={error}
-            issueTrackerProviderKind={issueTrackerProviderKind}
-            localToken={localToken}
-            setError={setError}
-            t={t}
-            tokenHelpUrl={tokenHelpUrl}
-            onTokenChange={onTokenChange}
-          />
+          {isOtorva ? (
+            <AuthSetupOtorvaSection error={error} isLoading={isLoading} />
+          ) : (
+            <AuthSetupTokenPasteSection
+              error={error}
+              issueTrackerProviderKind={issueTrackerProviderKind}
+              localToken={localToken}
+              setError={setError}
+              t={t}
+              tokenHelpUrl={tokenHelpUrl}
+              onTokenChange={onTokenChange}
+            />
+          )}
           <Button
             className="w-full"
             disabled={
-              !localToken.trim() ||
+              (!isOtorva && !localToken.trim()) ||
               isLoading ||
               !(productTenant.activeOrganizationId ?? premGate.organizationId)
             }
