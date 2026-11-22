@@ -459,7 +459,7 @@ export const ruMessages = {
       workLogged: 'Работа учтена',
     },
     status: {
-      archived: 'Архив',
+      archived: 'В архиве',
       closed: 'Завершен',
       draft: 'Черновик',
       inProgress: 'В работе',

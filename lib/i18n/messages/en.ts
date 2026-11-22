@@ -459,7 +459,7 @@ export const enMessages = {
       workLogged: 'Work logged',
     },
     status: {
-      archived: 'Archive',
+      archived: 'Archived',
       closed: 'Completed',
       draft: 'Draft',
       inProgress: 'In progress',

@@ -4,10 +4,14 @@ import { StatusTag } from '@/components/StatusTag';
 import { useI18n } from '@/contexts/LanguageContext';
 import { translateSprintStatus } from '@/utils/translations';
 
+/**
+ * Цвет пилюли спринта — палитра статусов задач. Черновик и архив нейтральные (серые): это не тревога,
+ * а состояние; оранжевый «готово к тесту» у черновика в тёмной теме читался как ошибка.
+ */
 function mapSprintStatusToTaskStatus(sprintStatus: string): string {
   const statusMap: Record<string, string> = {
     closed: 'closed',
-    draft: 'readyfortest',
+    draft: 'open',
     in_progress: 'inprogress',
   };
   return statusMap[sprintStatus] || sprintStatus;
@@ -23,11 +27,7 @@ export function SprintStatusTag({ archived, status }: SprintStatusTagProps) {
   const { language, t } = useI18n();
 
   if (archived) {
-    return (
-      <span className="shrink-0 whitespace-nowrap rounded-md border border-gray-300 bg-gray-100 px-1.5 py-0.5 text-sm font-medium leading-none text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
-        {t('sprint.status.archived')}
-      </span>
-    );
+    return <StatusTag label={t('sprint.status.archived')} status="open" />;
   }
 
   if (!status) return null;

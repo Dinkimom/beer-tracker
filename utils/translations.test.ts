@@ -8,7 +8,7 @@ describe('translateSprintStatus', () => {
     expect(translateSprintStatus('in_progress')).toBe('В работе');
     expect(translateSprintStatus('closed')).toBe('Завершен');
     expect(translateSprintStatus('released')).toBe('Выпущен');
-    expect(translateSprintStatus('archived')).toBe('Архив');
+    expect(translateSprintStatus('archived')).toBe('В архиве');
   });
 
   it('maps tracker codes to English labels', () => {
@@ -16,7 +16,7 @@ describe('translateSprintStatus', () => {
     expect(translateSprintStatus('in_progress', 'en')).toBe('In progress');
     expect(translateSprintStatus('closed', 'en')).toBe('Completed');
     expect(translateSprintStatus('released', 'en')).toBe('Released');
-    expect(translateSprintStatus('archived', 'en')).toBe('Archive');
+    expect(translateSprintStatus('archived', 'en')).toBe('Archived');
   });
 
   it('normalizes case and returns unknown codes unchanged', () => {
