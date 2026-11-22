@@ -77,6 +77,8 @@ jobs:
       RUSTFLAGS: -Ctarget-feature=-crt-static
       # Интеграционные тесты создают временную БД на этом сервере и удаляют её (tests/api.rs).
       TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@postgres:5432/postgres
+      # Каждый тест поднимает свой сервер; параллельность по числу ядер перегружает машину (services/otorva/AGENTS.md).
+      RUST_TEST_THREADS: 4
     steps:
       - name: System packages
         working-directory: /

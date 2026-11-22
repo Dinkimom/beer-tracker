@@ -35,7 +35,7 @@ UI планера можно проверять на **`/demo/planner`**, без
 Собственный трекер на Rust — [`services/otorva`](./services/otorva/) (ntex + diesel + PostgreSQL, свои `AGENTS.md`, `README.md`, `SPECS.md`). Перенесён в монорепу с историей (git subtree); доски, спринты, ключи задач, оценки, фильтры и журнал изменений развиваются в нём, провайдер в beer-tracker остаётся тонким. План интеграции и что уже сделано — `docs/OTORVA_INTEGRATION.md`.
 
 - Запуск рядом с приложением: `docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile otorva up -d otorva` — своя база `otorva` на общем PostgreSQL (создаёт мигратор), API на `http://127.0.0.1:8090` (в сети compose — `http://otorva:8080`).
-- Rust локально не нужен: сборка и тесты идут в контейнере `rust:1.100.0-alpine3.24`. Поменял `services/otorva` — `cargo test --locked` в этом образе с PostgreSQL (`TEST_DATABASE_ADMIN_URL`), как в job `otorva` в CI.
+- Rust локально не нужен: сборка и тесты идут в контейнере `rust:1.100.0-alpine3.24`. Поменял `services/otorva` — `cargo test --locked` в этом образе с PostgreSQL (`TEST_DATABASE_ADMIN_URL`, `RUST_TEST_THREADS=4`), как в job `otorva` в CI.
 - Схема otorva — только миграциями `services/otorva/migrations/NNN_*/up.sql` + `down.sql`; применённую не править.
 
 ## Команды
