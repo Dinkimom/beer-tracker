@@ -147,7 +147,8 @@ export function MetricsTab() {
                       />
                     )}
                     <OverflowTooltip content={displayName}>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-0 truncate">
+                    {/* Сайдбар узкий: имя переносится на вторую строку, а не режется; целиком — в подсказке. */}
+                    <span className="min-w-0 line-clamp-2 [overflow-wrap:anywhere] text-sm font-medium leading-snug text-gray-700 dark:text-gray-300">
                       {displayName}
                     </span>
                     </OverflowTooltip>
