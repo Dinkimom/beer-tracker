@@ -19,7 +19,7 @@ export const ISSUE_TRACKER_PROVIDER_KINDS = [
   DEFAULT_ISSUE_TRACKER_PROVIDER_KIND,
   'jira-onprem',
   'jira-cloud',
-  /** Встроенный трекер otorva (services/otorva): вход по email и паролю, без веб-интерфейса. */
+  /** Встроенный трекер otorva (rusticapps/otorva): вход по email и паролю, без веб-интерфейса. */
   'otorva',
 ] as const;
 export type IssueTrackerProviderKind = (typeof ISSUE_TRACKER_PROVIDER_KINDS)[number];

@@ -48,5 +48,3 @@ Dockerfile*
 .dockerignore
 docker-compose*.yml
 
-# Встроенный трекер собирается своим контекстом (services/otorva)
-services

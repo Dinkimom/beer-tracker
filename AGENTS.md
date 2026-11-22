@@ -32,12 +32,12 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 ## Встроенный трекер otorva
 
-Собственный трекер на Rust — [`services/otorva`](./services/otorva/) (ntex + diesel + PostgreSQL, свои `AGENTS.md`, `README.md`, `SPECS.md`). Перенесён в монорепу с историей (git subtree); доски, спринты, ключи задач, оценки, фильтры и журнал изменений развиваются в нём, провайдер в beer-tracker остаётся тонким. План интеграции и что уже сделано — `docs/OTORVA_INTEGRATION.md`.
+Собственный трекер на Rust — отдельный приватный репозиторий [`rusticapps/otorva`](https://github.com/rusticapps/otorva) (ntex + diesel + PostgreSQL, свои `AGENTS.md`, `README.md`, `SPECS.md`). Доски, спринты, ключи задач, оценки, фильтры и журнал изменений развиваются в нём, провайдер в beer-tracker остаётся тонким; здесь — только обвязка (провайдер, compose, стенд). План интеграции и что уже сделано — `docs/OTORVA_INTEGRATION.md`.
 
+- Клон рядом с репозиторием: `git clone git@github.com:rusticapps/otorva.git ../otorva` (другой каталог — `OTORVA_SOURCE`); compose и стенд собирают образ из него.
 - `pnpm docker:dev` поднимает otorva вместе с приложением (профиль `otorva`); отдельно — `docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile otorva up -d otorva` — своя база `otorva` на общем PostgreSQL (создаёт мигратор), API на `http://127.0.0.1:8090` (в сети compose — `http://otorva:8080`).
-- Rust локально не нужен: сборка и тесты идут в контейнере `rust:1.100.0-alpine3.24`. Поменял `services/otorva` — `cargo test --locked` в этом образе с PostgreSQL (`TEST_DATABASE_ADMIN_URL`, `RUST_TEST_THREADS=4`), как в job `otorva` в CI.
+- Правка нужна в самом трекере — PR в `rusticapps/otorva` по его `AGENTS.md` (тесты — `cargo test` в контейнере `rust:1.100.0-alpine3.24`), потом пересобрать образ: `pnpm docker:dev` или `pnpm e2e:stand`.
 - Провайдер в планере: `lib/issueTrackerProvider/otorva*.ts` (вид `otorva`), вход по email и паролю — `POST /api/auth/otorva/session` (`lib/auth/otorvaCredentials.ts`); веб-интерфейса нет — `supportsIssueWebLinks: false`, ключи задач текстом. Проверка UI без ссылок — `/demo/planner?tracker=otorva`.
-- Схема otorva — только миграциями `services/otorva/migrations/NNN_*/up.sql` + `down.sql`; применённую не править.
 
 ## Команды
 
@@ -216,4 +216,4 @@ UI планера можно проверять на **`/demo/planner`**, без
 
 ## CI
 
-В GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) на `push`/`pull_request` в основную ветку запускаются `pnpm lint`, `pnpm lint:dup`, `pnpm lint:shape`, `pnpm typecheck` и `pnpm test`, отдельным job `e2e` — функциональные и визуальные спеки Playwright в его Linux-образе, job `otorva` — `cargo test` встроенного трекера с PostgreSQL. Сборка Docker-образа не запускает ESLint (`NEXT_IGNORE_ESLINT` в Dockerfile), поэтому локальные и CI-проверки обязательны.
+В GitHub Actions workflow **CI** (`.github/workflows/ci.yml`) на `push`/`pull_request` в основную ветку запускаются `pnpm lint`, `pnpm lint:dup`, `pnpm lint:shape`, `pnpm typecheck` и `pnpm test`, отдельным job `e2e` — функциональные и визуальные спеки Playwright в его Linux-образе, job `e2e-stand` — стенд регресса на встроенном трекере (клон `rusticapps/otorva` по токену `OTORVA_REPO_TOKEN`). Сборка Docker-образа не запускает ESLint (`NEXT_IGNORE_ESLINT` в Dockerfile), поэтому локальные и CI-проверки обязательны.

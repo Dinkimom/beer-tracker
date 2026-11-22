@@ -118,13 +118,14 @@ services:
         done
     restart: unless-stopped
 
-  # Встроенный трекер otorva (services/otorva, Rust): своя база `otorva` на том же PostgreSQL.
+  # Встроенный трекер otorva (Rust, отдельный репозиторий rusticapps/otorva): своя база `otorva` на том же PostgreSQL.
+  # Собирается из клона рядом с репозиторием (../otorva) или из каталога OTORVA_SOURCE.
   # Профиль «otorva»: docker compose --profile otorva up. Нужен OTORVA_JWT_SECRET в .env
   # (≥32 байт, `openssl rand -hex 32`) — без него API не стартует.
   otorva-migrate:
     profiles: ["otorva"]
     build:
-      context: services/otorva
+      context: ${OTORVA_SOURCE:-../otorva}
       dockerfile: Containerfile
       target: migrator
     environment:
@@ -146,7 +147,7 @@ services:
   otorva:
     profiles: ["otorva"]
     build:
-      context: services/otorva
+      context: ${OTORVA_SOURCE:-../otorva}
       dockerfile: Containerfile
       target: api
     environment:

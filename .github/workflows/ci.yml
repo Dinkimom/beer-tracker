@@ -52,53 +52,6 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-  otorva:
-    name: Otorva (cargo test)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # Тот же образ, что в services/otorva/Containerfile (stage build).
-    container:
-      image: docker.io/library/rust:1.100.0-alpine3.24
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 12
-    defaults:
-      run:
-        working-directory: services/otorva
-    env:
-      # libpq из Alpine — динамически, как RELEASE_MUSL_DYNAMIC=1 в deploy/build-release.sh.
-      RUSTFLAGS: -Ctarget-feature=-crt-static
-      # Интеграционные тесты создают временную БД на этом сервере и удаляют её (tests/api.rs).
-      TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@postgres:5432/postgres
-      # Каждый тест поднимает свой сервер; параллельность по числу ядер перегружает машину (services/otorva/AGENTS.md).
-      RUST_TEST_THREADS: 4
-    steps:
-      - name: System packages
-        working-directory: /
-        run: apk add --no-cache build-base libpq-dev pkgconf tar
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Cargo cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /usr/local/cargo/registry
-            services/otorva/target
-          key: otorva-cargo-${{ hashFiles('services/otorva/Cargo.lock') }}
-          restore-keys: otorva-cargo-
-
-      - name: Test
-        run: cargo test --locked
-
   e2e:
     name: E2E (functional + visual)
     runs-on: ubuntu-latest
@@ -153,6 +106,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Встроенный трекер — отдельный приватный репозиторий: токен с правом чтения rusticapps/otorva.
+      - name: Checkout otorva
+        uses: actions/checkout@v4
+        with:
+          repository: rusticapps/otorva
+          token: ${{ secrets.OTORVA_REPO_TOKEN }}
+          path: .otorva
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
@@ -170,6 +131,8 @@ jobs:
 
       - name: Stand
         run: pnpm e2e:stand
+        env:
+          OTORVA_SOURCE: ${{ github.workspace }}/.otorva
 
       - name: Upload report
         if: failure()

@@ -1,5 +1,5 @@
 /**
- * Встроенный трекер otorva (`services/otorva`): REST `…/api/v1`, JWT пользователя по email и паролю.
+ * Встроенный трекер otorva (`rusticapps/otorva`): REST `…/api/v1`, JWT пользователя по email и паролю.
  * Веб-интерфейса у трекера нет — `webBaseUrl` пустой, ссылок «открыть в трекере» нет.
  * Нереализованные методы контракта отклоняются `UnsupportedIssueTrackerOperationError`.
  */

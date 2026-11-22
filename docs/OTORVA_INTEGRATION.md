@@ -1,15 +1,15 @@
 # Встроенный трекер otorva
 
-Собственный трекер задач на Rust ([`services/otorva`](../services/otorva/)) — третий провайдер beer-tracker рядом с Яндекс Трекером и Jira и вариант «Встроенный трекер» на онбординге. Второе назначение — регресс: сквозные сценарии на настоящем трекере, а не только на фикстурах демо.
+Собственный трекер задач на Rust ([`rusticapps/otorva`](https://github.com/rusticapps/otorva)) — третий провайдер beer-tracker рядом с Яндекс Трекером и Jira и вариант «Встроенный трекер» на онбординге. Второе назначение — регресс: сквозные сценарии на настоящем трекере, а не только на фикстурах демо.
 
 ## Решения
 
 | Вопрос | Решение |
 |---|---|
-| Где код | Монорепа: `services/otorva`, перенесён из `rusticapps/otorva` с историей (git subtree, 2026-11-22). Публичный, под лицензией репозитория |
+| Где код | Отдельный приватный репозиторий `rusticapps/otorva`. Доработки этапа 1 делались в монорепе и влиты PR #1 (2026-11-22); в beer-tracker — только обвязка: провайдер, compose, стенд |
 | Где логика трекера | В otorva. Доски, спринты, ключи, оценки, фильтры и журнал изменений — Rust и интеграционные тесты otorva; провайдер в beer-tracker тонкий, как для Яндекса и Jira |
 | Вход | Email и пароль otorva: онбординг создаёт первого пользователя, вход в beer-tracker — по email и паролю otorva, JWT — токен трекера (вместо OAuth). Новых людей добавляет админ |
-| Поставка | Свой образ: Containerfile otorva (stage `api` и `migrator`). В compose — сервисы `otorva-migrate` и `otorva`, своя база `otorva` на общем PostgreSQL |
+| Поставка | Свой образ: Containerfile otorva (stage `api` и `migrator`) из клона `../otorva` или `OTORVA_SOURCE`. В compose — сервисы `otorva-migrate` и `otorva`, своя база `otorva` на общем PostgreSQL; в CI клон берётся токеном `OTORVA_REPO_TOKEN` |
 
 ## Контракт провайдера и otorva
 
@@ -28,7 +28,7 @@
 
 ## Этапы
 
-0. **Монорепа и сборка** — сделано: `services/otorva`, compose-профиль `otorva`, job `otorva` в CI (`cargo test` с PostgreSQL).
+0. **Сборка** — сделано: compose-профиль `otorva` из клона `rusticapps/otorva`; тесты трекера — в его репозитории.
 1. **Модель планирования в otorva** — сделано: ~~очереди с ключом и порядковыми ключами задач~~ (сделано: `queues`, ключ `KEY-12`, `GET /tasks/by-key/{key}`); ~~поля оценок, сроков и родителя~~ (сделано); ~~доски и спринты с составом~~ (сделано); ~~фильтры списка (очередь, спринт, исполнитель, статус, родитель, обновлено с/по, текст)~~ (сделано, плюс `keys`, `sort=updated_asc`, `X-Total-Count`); ~~журнал изменений задачи (поле, было, стало, автор, время) в транзакции правки~~ (сделано: `task_events`); ~~создание пользователей админом~~ (сделано: `is_admin`, `GET /auth/setup-state`, `POST /auth/bootstrap` по `OTORVA_BOOTSTRAP_TOKEN`).
 2. **Провайдер `otorva` в beer-tracker** — сделано, кроме админки: вид провайдера и хранимый провайдер, клиент (частичная реализация по образцу Jira: неподдержанное — `UnsupportedIssueTrackerOperationError`), capabilities, вход по email и паролю, вариант на онбординге и в админке, i18n ru/en, контрактные тесты. Сервис `otorva` — стандартный в compose (без профиля).
 3. **Синк и история** — сделано (живой прогон синка — на стенде этапа 4): синк на `listIssuesUpdatedInRange` и `listIssuesForQueue`, снимки, журнал otorva → `issue_changelog_events`, вкладка «История» и диаграмма сгорания.
@@ -62,6 +62,7 @@
 ## Запуск
 
 ```bash
+git clone git@github.com:rusticapps/otorva.git ../otorva   # один раз
 docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile otorva up -d otorva
 curl http://127.0.0.1:8090/health
 ```
