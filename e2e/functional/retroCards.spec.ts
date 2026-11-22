@@ -22,3 +22,27 @@ test('TC-080/081: карточка ретро добавляется и удал
     await expect(card).toHaveCount(0);
   });
 });
+
+/** TC-085: реакция на карточку ретро. В демо нет сессии трекера — раньше реакция молча не ставилась. */
+test('TC-085: реакция на карточку ретро ставится и снимается', async ({ page }) => {
+  await openDemoPlanner(page);
+  await openSprintTab(page, 'retro');
+
+  const column = page.getByRole('region', { name: en.retro.presets.glad });
+  await column.getByRole('button', { name: en.retro.addCard }).click();
+  const input = column.getByRole('textbox', { name: en.retro.addCard });
+  await input.fill('E2E: reactions');
+  await input.press('Enter');
+  const card = column.getByRole('article').filter({ hasText: 'E2E: reactions' });
+  await expect(card).toBeVisible();
+
+  await card.hover();
+  await card.getByRole('button', { name: en.comments.addReactionAria }).click();
+  // Тулбар реакций — в поповере у карточки (портал), а не чипы соседних карточек.
+  await page.locator('[data-radix-popper-content-wrapper]').getByRole('button', { name: /^React with / }).first().click();
+  const mine = card.locator('[aria-pressed="true"]');
+  await expect(mine).toHaveCount(1);
+
+  await mine.click();
+  await expect(card.locator('[aria-pressed="true"]')).toHaveCount(0);
+});

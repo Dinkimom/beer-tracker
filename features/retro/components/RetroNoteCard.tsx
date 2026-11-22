@@ -1,6 +1,6 @@
 'use client';
 
-import type { RetroCommentAuthor, RetroVisibleCard } from '@/lib/retro/retroBoard';
+import type { RetroVisibleCard } from '@/lib/retro/retroBoard';
 
 import * as Popover from '@radix-ui/react-popover';
 import { memo, useState } from 'react';
@@ -13,13 +13,13 @@ import { StickyNoteReactionChips } from '@/features/comments/components/StickyNo
 import { StickyNoteReactionPicker } from '@/features/comments/components/StickyNoteReactionPicker';
 import { StickyNoteReactionToolbar } from '@/features/comments/components/StickyNoteReactionToolbar';
 import { StickyNoteTextContent } from '@/features/comments/components/StickyNoteTextContent';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
   aggregateRetroReactions,
   myRetroReactionEmojis,
   uniqueRetroReactionEmojis,
-  type RetroReactionActor,
 } from '@/lib/retro/retroBoard';
+
+import { useRetroCardActions } from '../RetroCardActionsContext';
 
 import { RetroCardAuthorButton } from './RetroCardAuthorButton';
 import { RetroCardComments } from './RetroCardComments';
@@ -37,41 +37,16 @@ const REACTION_ADD_CLASS =
 interface RetroNoteCardProps {
   card: RetroVisibleCard;
   pinReactions?: boolean;
-  onAddComment?: (ownerSprintId: number, cardId: string, text: string, author: RetroCommentAuthor) => void;
-  onDelete: (cardId: string) => void;
-  onDeleteComment?: (ownerSprintId: number, cardId: string, commentId: string) => void;
-  onToggleReaction: (
-    ownerSprintId: number,
-    cardId: string,
-    emoji: string,
-    actor: RetroReactionActor
-  ) => void;
-  onUpdateText: (ownerSprintId: number, cardId: string, text: string) => void;
-}
-
-function reactionActor(user: {
-  display: string;
-  email: string;
-  login: string;
-  uid: number;
-}): RetroReactionActor {
-  const userName = user.display.trim() || user.login.trim() || user.email.trim();
-  return { userId: String(user.uid), userName };
 }
 
 export const RetroNoteCard = memo(function RetroNoteCard({
   card,
   pinReactions = false,
-  onAddComment,
-  onDelete,
-  onDeleteComment,
-  onToggleReaction,
-  onUpdateText,
 }: RetroNoteCardProps) {
   const { t } = useI18n();
-  const { data: user } = useCurrentUser();
-  const actor = user ? reactionActor(user) : null;
-  const currentUserId = actor?.userId ?? '';
+  // Без контекста действий (превью перетаскивания) карточка только для чтения.
+  const actions = useRetroCardActions();
+  const currentUserId = actions?.me.actor?.userId ?? '';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(card.text);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -88,12 +63,11 @@ export const RetroNoteCard = memo(function RetroNoteCard({
     setEditing(false);
     const trimmed = draft.trim();
     if (!trimmed || trimmed === card.text) return;
-    onUpdateText(card.ownerSprintId, card.id, trimmed);
+    actions?.updateText(card, trimmed);
   };
 
   const toggle = (emoji: string) => {
-    if (!actor) return;
-    onToggleReaction(card.ownerSprintId, card.id, emoji, actor);
+    actions?.toggleReaction(card, emoji);
   };
 
   const selectFromMenu = (emoji: string) => {
@@ -160,7 +134,7 @@ export const RetroNoteCard = memo(function RetroNoteCard({
             className="opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
             size="sm"
             onCanvas
-            onClick={() => onDelete(card.id)}
+            onClick={() => actions?.deleteCard(card)}
             onPointerDown={(event) => event.stopPropagation()}
           >
             <Icon className="h-3.5 w-3.5" name="x" />
@@ -182,13 +156,7 @@ export const RetroNoteCard = memo(function RetroNoteCard({
             {card.authorName ? (
               <RetroCardAuthorButton avatarUrl={card.authorAvatarUrl} name={card.authorName} />
             ) : null}
-            {onAddComment && onDeleteComment ? (
-              <RetroCardComments
-                comments={card.comments}
-                onAdd={(text, author) => onAddComment(card.ownerSprintId, card.id, text, author)}
-                onDelete={(commentId) => onDeleteComment(card.ownerSprintId, card.id, commentId)}
-              />
-            ) : null}
+            {actions ? <RetroCardComments card={card} /> : null}
           </div>
         </div>
         {card.kind === 'agreement' && !card.carried ? (

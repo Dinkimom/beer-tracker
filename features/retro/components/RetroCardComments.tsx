@@ -1,6 +1,6 @@
 'use client';
 
-import type { RetroCardComment, RetroCommentAuthor } from '@/lib/retro/retroBoard';
+import type { RetroCardComment, RetroVisibleCard } from '@/lib/retro/retroBoard';
 
 import * as Popover from '@radix-ui/react-popover';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
@@ -9,10 +9,11 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { OVERLAY_FLOATING_ANIMATION } from '@/components/overlayAnimationClasses';
 import { useI18n } from '@/contexts/LanguageContext';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { RETRO_COMMENT_MAX_LENGTH } from '@/lib/retro/retroBoard';
 
-import { currentRetroCommentAuthor, RetroCommentItem } from './RetroCommentItem';
+import { useRetroCardActions } from '../RetroCardActionsContext';
+
+import { RetroCommentItem } from './RetroCommentItem';
 
 const TRIGGER_CLASS =
   'inline-flex h-6 cursor-pointer items-center gap-0.5 rounded-md px-1 text-gray-500 transition-all duration-200 hover:bg-black/5 active:scale-[0.98] active:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:text-gray-300 dark:hover:bg-white/10 dark:active:bg-white/15';
@@ -30,9 +31,7 @@ const FIELD_CLASS =
   'block max-h-24 min-h-10 w-full resize-none bg-transparent text-sm leading-snug text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500';
 
 interface RetroCardCommentsProps {
-  comments: readonly RetroCardComment[];
-  onAdd: (text: string, author: RetroCommentAuthor) => void;
-  onDelete: (commentId: string) => void;
+  card: RetroVisibleCard;
 }
 
 function orderedComments(comments: readonly RetroCardComment[]): RetroCardComment[] {
@@ -51,9 +50,10 @@ function resizeField(field: HTMLTextAreaElement) {
   field.style.height = `${Math.min(field.scrollHeight, 96)}px`;
 }
 
-export function RetroCardComments({ comments, onAdd, onDelete }: RetroCardCommentsProps) {
+export function RetroCardComments({ card }: RetroCardCommentsProps) {
+  const { comments } = card;
+  const actions = useRetroCardActions();
   const { t } = useI18n();
-  const { data: user } = useCurrentUser();
   const fieldRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
   const bindList = useCallback((node: HTMLUListElement | null) => {
@@ -63,7 +63,6 @@ export function RetroCardComments({ comments, onAdd, onDelete }: RetroCardCommen
   }, []);
   const [draft, setDraft] = useState('');
   const count = comments.length;
-  const author = currentRetroCommentAuthor(user);
   const label = count > 0 ? t('retro.commentsAria', { count }) : t('retro.addComment');
 
   useEffect(() => {
@@ -76,7 +75,7 @@ export function RetroCardComments({ comments, onAdd, onDelete }: RetroCardCommen
     event.preventDefault();
     const text = draft.trim();
     if (!text) return;
-    onAdd(text, author);
+    actions?.addComment(card, text);
     setDraft('');
     const field = fieldRef.current;
     if (!field) return;
@@ -118,8 +117,8 @@ export function RetroCardComments({ comments, onAdd, onDelete }: RetroCardCommen
                 <RetroCommentItem
                   key={comment.id}
                   comment={comment}
-                  currentUser={user}
-                  onDelete={() => onDelete(comment.id)}
+                  me={actions?.me.author ?? null}
+                  onDelete={() => actions?.deleteComment(card, comment.id)}
                 />
               ))}
             </ul>

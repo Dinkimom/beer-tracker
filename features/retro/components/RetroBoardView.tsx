@@ -14,6 +14,8 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useRetroBoard } from '@/features/retro/hooks/useRetroBoard';
 import { cardsForRetroColumn } from '@/lib/retro/retroBoard';
 
+import { RetroCardActionsContext } from '../RetroCardActionsContext';
+
 import { applyRetroBoardHorizontalWheel } from './retroBoardHorizontalWheel';
 import { RetroColumnView } from './RetroColumnView';
 import { RetroNoteCard } from './RetroNoteCard';
@@ -37,23 +39,13 @@ function dragCardWidth(active: DragEndEvent['active']): number | null {
   return typeof width === 'number' && width > 0 ? width : null;
 }
 
-function ignore() {
-  return undefined;
-}
 
 function dragPreview(card: RetroVisibleCard) {
   if (card.kind === 'image') {
-    return <RetroPhotoCard card={card} onDelete={ignore} />;
+    return <RetroPhotoCard card={card} />;
   }
-  return (
-    <RetroNoteCard
-      card={card}
-      pinReactions
-      onDelete={ignore}
-      onToggleReaction={ignore}
-      onUpdateText={ignore}
-    />
-  );
+  // Превью перетаскивания — вне контекста действий: карточка только для чтения.
+  return <RetroNoteCard card={card} pinReactions />;
 }
 
 function dragCardId(active: DragEndEvent['active']): string | null {
@@ -140,6 +132,7 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
     >
       {/* w-max: иначе flex-ребёнок сжимается по ширине и overflow-x не появляется */}
       <div className="flex h-full w-max min-w-full items-stretch gap-3 px-3 pb-3">
+        <RetroCardActionsContext.Provider value={boardApi.cardActions}>
         {columns.map(({ cards, column }, index) => (
           <RetroColumnView
             key={column.id}
@@ -148,17 +141,13 @@ export function RetroBoardView({ organizationId, sprintId, sprints }: RetroBoard
             isFirst={index === 0}
             isLast={index === lastIndex}
             sprintId={sprintId}
-            onAddComment={boardApi.addComment}
             onAddNote={boardApi.addNote}
             onDelete={boardApi.removeColumn}
-            onDeleteCard={boardApi.removeCard}
-            onDeleteComment={boardApi.deleteComment}
             onMove={boardApi.moveColumn}
             onRename={boardApi.renameColumn}
-            onToggleReaction={boardApi.toggleReaction}
-            onUpdateCardText={boardApi.updateCardText}
           />
         ))}
+        </RetroCardActionsContext.Provider>
         <div className="w-[280px] shrink-0 self-start pt-1">
         {addingColumn ? (
           <form

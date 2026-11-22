@@ -1,6 +1,6 @@
 'use client';
 
-import type { RetroCommentAuthor, RetroVisibleCard } from '@/lib/retro/retroBoard';
+import type { RetroVisibleCard } from '@/lib/retro/retroBoard';
 
 import { HeaderIconButton } from '@/components/HeaderIconButton';
 import { Icon } from '@/components/Icon';
@@ -13,22 +13,18 @@ import {
 } from '@/features/task/utils/photoCardSurface';
 import { useThemeStorage } from '@/hooks/useLocalStorage';
 
+import { useRetroCardActions } from '../RetroCardActionsContext';
+
 import { RetroCardComments } from './RetroCardComments';
 
 interface RetroPhotoCardProps {
   card: RetroVisibleCard;
-  onAddComment?: (ownerSprintId: number, cardId: string, text: string, author: RetroCommentAuthor) => void;
-  onDelete: (cardId: string) => void;
-  onDeleteComment?: (ownerSprintId: number, cardId: string, commentId: string) => void;
 }
 
-export function RetroPhotoCard({
-  card,
-  onAddComment,
-  onDelete,
-  onDeleteComment,
-}: RetroPhotoCardProps) {
+export function RetroPhotoCard({ card }: RetroPhotoCardProps) {
   const { t } = useI18n();
+  // Без контекста действий (превью перетаскивания) карточка только для чтения.
+  const actions = useRetroCardActions();
   const [theme] = useThemeStorage();
   if (!card.imageDataUrl) return null;
 
@@ -48,17 +44,13 @@ export function RetroPhotoCard({
         className="absolute right-1 top-1 bg-white/80 opacity-0 focus-visible:opacity-100 group-hover:opacity-100 dark:bg-black/40"
         size="sm"
         onCanvas
-        onClick={() => onDelete(card.id)}
+        onClick={() => actions?.deleteCard(card)}
       >
         <Icon className="h-3.5 w-3.5" name="x" />
       </HeaderIconButton>
-      {onAddComment && onDeleteComment ? (
+      {actions ? (
         <div className="flex justify-end px-1.5 pb-1.5">
-          <RetroCardComments
-            comments={card.comments}
-            onAdd={(text, author) => onAddComment(card.ownerSprintId, card.id, text, author)}
-            onDelete={(commentId) => onDeleteComment(card.ownerSprintId, card.id, commentId)}
-          />
+          <RetroCardComments card={card} />
         </div>
       ) : null}
     </article>

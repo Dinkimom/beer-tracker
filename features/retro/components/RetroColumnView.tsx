@@ -3,20 +3,17 @@
 import type {
   RetroColumn,
   RetroCommentAuthor,
-  RetroReactionActor,
   RetroVisibleCard,
 } from '@/lib/retro/retroBoard';
 
 import { useDroppable } from '@dnd-kit/core';
 import { useState } from 'react';
 
-import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
 import { useI18n } from '@/contexts/LanguageContext';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { DEFAULT_STICKY_NOTE_COLOR } from '@/lib/comments/stickyNoteColor';
 import { randomUuid } from '@/lib/randomUuid';
 
-import { retroNoteAuthor } from '../retroNoteAuthor';
+import { useRetroIdentity } from '../retroIdentity';
 
 import { RetroCardView } from './RetroCardView';
 import { RetroColumnComposer } from './RetroColumnComposer';
@@ -29,20 +26,10 @@ interface RetroColumnViewProps {
   isFirst: boolean;
   isLast: boolean;
   sprintId: number;
-  onAddComment: (ownerSprintId: number, cardId: string, text: string, author: RetroCommentAuthor) => void;
   onAddNote: (columnId: string, text: string, cardId: string) => void;
   onDelete: (columnId: string) => void;
-  onDeleteCard: (cardId: string) => void;
-  onDeleteComment: (ownerSprintId: number, cardId: string, commentId: string) => void;
   onMove: (columnId: string, direction: -1 | 1) => void;
   onRename: (columnId: string, title: string) => void;
-  onToggleReaction: (
-    ownerSprintId: number,
-    cardId: string,
-    emoji: string,
-    actor: RetroReactionActor
-  ) => void;
-  onUpdateCardText: (ownerSprintId: number, cardId: string, text: string) => void;
 }
 
 export function RetroColumnView({
@@ -51,20 +38,14 @@ export function RetroColumnView({
   isFirst,
   isLast,
   sprintId,
-  onAddComment,
   onAddNote,
   onDelete,
-  onDeleteCard,
-  onDeleteComment,
   onMove,
   onRename,
-  onToggleReaction,
-  onUpdateCardText,
 }: RetroColumnViewProps) {
   const { t } = useI18n();
-  const { data: user } = useCurrentUser();
-  const { isDemoPlanner } = useDemoPlannerShell();
-  const author = retroNoteAuthor(user, isDemoPlanner);
+  // Тот же автор, что у `addNote`: заглушка заметки до ответа выглядит как будущая заметка.
+  const author = useRetroIdentity().author;
   const title = retroColumnTitle(column, t);
   const [pending, setPending] = useState<RetroVisibleCard | null>(null);
   const [enterId, setEnterId] = useState<string | null>(null);
@@ -98,12 +79,7 @@ export function RetroColumnView({
             key={`${card.ownerSprintId}-${card.id}`}
             card={card}
             enter={card.id === enterId}
-            onAddComment={onAddComment}
-            onDelete={onDeleteCard}
-            onDeleteComment={onDeleteComment}
             onEnterEnd={() => setEnterId((current) => (current === card.id ? null : current))}
-            onToggleReaction={onToggleReaction}
-            onUpdateText={onUpdateCardText}
           />
         ))}
         <RetroColumnComposer
@@ -123,7 +99,7 @@ function pendingNote(
   columnId: string,
   sprintId: number,
   text: string,
-  author: ReturnType<typeof retroNoteAuthor>
+  author: RetroCommentAuthor
 ): RetroVisibleCard {
   return {
     carried: false,

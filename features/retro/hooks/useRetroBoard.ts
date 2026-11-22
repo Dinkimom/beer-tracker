@@ -1,17 +1,15 @@
 'use client';
 
+import type { RetroCardActions } from '../RetroCardActionsContext';
 import type { RetroSprintOrderItem, RetroStore } from '@/lib/retro/retroBoard';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef } from 'react';
 
-import { useDemoPlannerShell } from '@/contexts/DemoPlannerShellContext';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { fetchRetroColumnTemplate } from '@/lib/api/retroColumnTemplate';
 import { saveRetroBoard } from '@/lib/api/sprints';
 import {
   type RetroBoard,
-  type RetroCommentAuthor,
   type RetroColumn,
   addRetroCardComment,
   addRetroColumn,
@@ -28,11 +26,10 @@ import {
   retroStoreFromBoards,
   toggleRetroCardReaction,
   updateRetroCardText,
-  type RetroReactionActor,
 } from '@/lib/retro/retroBoard';
 import { mergeRetroBoards } from '@/lib/retro/retroBoardMerge';
 
-import { retroNoteAuthor } from '../retroNoteAuthor';
+import { useRetroIdentity } from '../retroIdentity';
 
 import { loadRetroBoard } from './loadRetroBoard';
 import {
@@ -52,8 +49,7 @@ export function useRetroBoard(
   organizationId: string | null
 ) {
   const queryClient = useQueryClient();
-  const { data: user } = useCurrentUser();
-  const { isDemoPlanner } = useDemoPlannerShell();
+  const me = useRetroIdentity();
   const adjacent = useMemo(
     () => resolveAdjacentSprintIds(sprints, sprintId),
     [sprintId, sprints]
@@ -137,10 +133,10 @@ export function useRetroBoard(
   const addNote = useCallback(
     (columnId: string, text: string, cardId?: string) => {
       commit((current) =>
-        addRetroNote(current, sprintId, columnId, text, cardId, retroNoteAuthor(user, isDemoPlanner))
+        addRetroNote(current, sprintId, columnId, text, cardId, me.author)
       );
     },
-    [commit, isDemoPlanner, sprintId, user]
+    [commit, me, sprintId]
   );
   const moveCard = useCallback(
     (cardId: string, columnId: string) => {
@@ -148,53 +144,37 @@ export function useRetroBoard(
     },
     [commit, sprintId]
   );
-  const toggleReaction = useCallback(
-    (ownerSprintId: number, cardId: string, emoji: string, actor: RetroReactionActor) => {
-      commit((current) => toggleRetroCardReaction(current, ownerSprintId, cardId, emoji, actor));
-    },
-    [commit]
-  );
-  const updateCardText = useCallback(
-    (ownerSprintId: number, cardId: string, text: string) => {
-      commit((current) => updateRetroCardText(current, ownerSprintId, cardId, text));
-    },
-    [commit]
-  );
-  const removeCard = useCallback(
-    (cardId: string) => {
-      commit((current) => deleteRetroCard(current, cardId));
-    },
-    [commit]
-  );
-  const addComment = useCallback(
-    (ownerSprintId: number, cardId: string, text: string, author: RetroCommentAuthor) => {
-      commit((current) => addRetroCardComment(current, ownerSprintId, cardId, text, author));
-    },
-    [commit]
-  );
-  const deleteComment = useCallback(
-    (ownerSprintId: number, cardId: string, commentId: string) => {
-      commit((current) => deleteRetroCardComment(current, ownerSprintId, cardId, commentId));
-    },
-    [commit]
+  // Действия с карточкой от имени `me` — карточки берут их из контекста доски.
+  const cardActions = useMemo(
+    (): RetroCardActions => ({
+      addComment: (card, text) =>
+        commit((current) => addRetroCardComment(current, card.ownerSprintId, card.id, text, me.author)),
+      deleteCard: (card) => commit((current) => deleteRetroCard(current, card.id)),
+      deleteComment: (card, commentId) =>
+        commit((current) => deleteRetroCardComment(current, card.ownerSprintId, card.id, commentId)),
+      me,
+      toggleReaction: (card, emoji) => {
+        if (!me.actor) return;
+        const actor = me.actor;
+        commit((current) => toggleRetroCardReaction(current, card.ownerSprintId, card.id, emoji, actor));
+      },
+      updateText: (card, text) => commit((current) => updateRetroCardText(current, card.ownerSprintId, card.id, text)),
+    }),
+    [commit, me]
   );
 
   return {
     addColumn,
-    addComment,
     addNote,
     board,
+    cardActions,
     isReady,
     moveCard,
     moveColumn,
-    deleteComment,
     previousSprintId,
-    removeCard,
     removeColumn,
     renameColumn,
     store,
-    toggleReaction,
-    updateCardText,
   };
 }
 
