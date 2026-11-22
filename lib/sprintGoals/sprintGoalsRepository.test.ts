@@ -5,6 +5,7 @@ import { query } from '@/lib/db';
 import {
   aggregateSprintGoalsByTeam,
   deleteSprintGoal,
+  insertSprintGoal,
   listSprintGoals,
   listSprintGoalTexts,
   sprintGoalExists,
@@ -28,6 +29,14 @@ describe('sprintGoalsRepository: scoped to organization', () => {
   beforeEach(() => {
     vi.mocked(query).mockReset();
     vi.mocked(query).mockResolvedValue({ rows: [] } as never);
+  });
+
+  it('a goal without a team takes the team of the sprint goals of the same organization', async () => {
+    vi.mocked(query).mockResolvedValue({ rows: [{ id: GOAL }] } as never);
+    await insertSprintGoal({ goalType: 'discovery', organizationId: ORG, sprintId: 7, text: 'From agent' });
+    const { params, sql } = lastCall();
+    expect(sql).toContain("COALESCE( NULLIF(TRIM(BOTH FROM $4::text), ''), (SELECT team FROM sprint_goals WHERE organization_id = $2 AND sprint_id = $3");
+    expect(params.slice(1, 4)).toEqual([ORG, 7, null]);
   });
 
   it('lists goals of one organization', async () => {

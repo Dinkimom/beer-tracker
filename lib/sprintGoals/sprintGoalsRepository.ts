@@ -72,7 +72,17 @@ export async function insertSprintGoal(
   const insert = await run(
     `INSERT INTO sprint_goals
              (id, organization_id, sprint_id, team, text, goal_type, done, plan_year, plan_quarter, plan_row_id)
-           VALUES (COALESCE($1::uuid, gen_random_uuid()), $2, $3, $4, $5, $6, false, $7, $8, $9)
+           VALUES (
+             COALESCE($1::uuid, gen_random_uuid()), $2, $3,
+             -- Без команды (цель от агента) — команда остальных целей спринта, иначе скор
+             -- заводит для неё отдельную строку по goal_type.
+             COALESCE(
+               NULLIF(TRIM(BOTH FROM $4::text), ''),
+               (SELECT team FROM sprint_goals
+                 WHERE organization_id = $2 AND sprint_id = $3 AND NULLIF(TRIM(BOTH FROM team), '') IS NOT NULL
+                 GROUP BY team ORDER BY COUNT(*) DESC, team LIMIT 1)
+             ),
+             $5, $6, false, $7, $8, $9)
            RETURNING ${GOAL_COLUMNS}`,
     [
       input.goalId ?? null,
