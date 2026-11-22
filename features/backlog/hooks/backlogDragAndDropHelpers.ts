@@ -9,7 +9,6 @@ export interface SprintTasksBundle {
   tasks: Task[];
 }
 
-export { findTaskInSprints } from './backlogDragAndDropFindTask';
 
 export function getSprintTasksData(
   queryClient: QueryClient,

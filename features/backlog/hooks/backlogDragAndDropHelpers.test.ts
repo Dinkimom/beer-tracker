@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest';
 
 import { sprintTasksQueryKey } from '@/features/task/hooks/useTasks';
 
-import { findTaskInSprints, getSprintTasksData } from './backlogDragAndDropHelpers';
+import { findTaskInSprints } from './backlogDragAndDropFindTask';
+import { getSprintTasksData } from './backlogDragAndDropHelpers';
 
 function minimalSprint(id: number): SprintListItem {
   return {

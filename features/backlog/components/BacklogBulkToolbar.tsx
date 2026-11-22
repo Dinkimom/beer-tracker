@@ -1,6 +1,6 @@
 'use client';
 
-import type { Developer, Task } from '@/types';
+import type { Task } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
 import { useState } from 'react';
@@ -30,34 +30,20 @@ const TOOLBAR_SEPARATOR_CLASS = 'mx-1 h-6 w-px shrink-0 self-center bg-gray-200 
 
 interface BacklogBulkToolbarProps {
   activeSprints: SprintListItem[];
-  backlogDevelopers: Developer[];
   backlogTasks: Task[];
   boardId: number | null;
   movingRef: { current: boolean };
-  addTask: (task: Task) => void;
-  removeTask: (taskId: string) => void;
 }
 
 export function BacklogBulkToolbar({
   activeSprints,
-  addTask,
-  backlogDevelopers,
   backlogTasks,
   boardId,
   movingRef,
-  removeTask,
 }: BacklogBulkToolbarProps) {
   const { t } = useI18n();
   const { clear, selectAllVisible, selectedCount } = useBacklogSelection();
-  const { moveToBacklog, moveToSprint, moving } = useBacklogBulkMove({
-    activeSprints,
-    addTask,
-    backlogDevelopers,
-    backlogTasks,
-    boardId,
-    movingRef,
-    removeTask,
-  });
+  const { moveToBacklog, moveToSprint, moving } = useBacklogBulkMove({ activeSprints, backlogTasks, boardId, movingRef });
   const [sprintMenuOpen, setSprintMenuOpen] = useState(false);
 
   useEscapeKey(

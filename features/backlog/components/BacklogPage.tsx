@@ -1,17 +1,17 @@
 'use client';
 
-import type { StatusFilter, Task } from '@/types';
+import type { StatusFilter } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
-import { patchBacklogTasks, useBacklog } from '@/features/backlog/hooks/useBacklog';
+import { useBacklog } from '@/features/backlog/hooks/useBacklog';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 import { filterTasksByName, filterTasksByStatus } from '@/features/task/hooks/useTaskFilteringHelpers';
 import { useSelectedBoardStorage } from '@/hooks/useLocalStorage';
@@ -60,24 +60,11 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
   const {
     developers: backlogDevelopers,
     isLoading: backlogLoading,
-    key: backlogKey,
     tasks: backlogTasks,
   } = useBacklog(selectedBoardId ?? null);
   const filteredBacklogTasks = useMemo(
     () => filterTasksByStatus(filterTasksByName(backlogTasks, nameFilter), statusFilter),
     [backlogTasks, nameFilter, statusFilter]
-  );
-  // Оптимистичный перенос: задача сразу появляется в бэклоге или уходит из него.
-  const addTask = useCallback(
-    (task: Task) => {
-      if (backlogTasks.some((item) => item.id === task.id)) return;
-      patchBacklogTasks(queryClient, backlogKey, (tasks) => [...tasks, task]);
-    },
-    [backlogKey, backlogTasks, queryClient]
-  );
-  const removeTask = useCallback(
-    (taskId: string) => patchBacklogTasks(queryClient, backlogKey, (tasks) => tasks.filter((item) => item.id !== taskId)),
-    [backlogKey, queryClient]
   );
 
   const { activeSprints, archivedSprints } = useMemo(
@@ -119,10 +106,7 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
     activeSprints,
     boardId: selectedBoardId,
     backlogTasks: visibleBacklogTasks,
-    backlogDevelopers,
     bulkMovingRef,
-    addTask,
-    removeTask,
   });
 
   const { activeTask, activeTaskDevelopers } = useActiveTask({
@@ -244,12 +228,9 @@ export function BacklogPage({ lockedBoardId, sprints, sprintsLoading }: BacklogP
       </DndContext>
       <BacklogBulkToolbar
         activeSprints={activeSprints}
-        addTask={addTask}
-        backlogDevelopers={backlogDevelopers}
         backlogTasks={backlogTasks}
         boardId={selectedBoardId}
         movingRef={bulkMovingRef}
-        removeTask={removeTask}
       />
     </BacklogSelectionProvider>
   );

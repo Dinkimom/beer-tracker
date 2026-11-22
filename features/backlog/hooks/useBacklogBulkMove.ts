@@ -1,6 +1,6 @@
 'use client';
 
-import type { Developer, Task } from '@/types';
+import type { Task } from '@/types';
 import type { SprintListItem } from '@/types/tracker';
 import type { QueryClient } from '@tanstack/react-query';
 
@@ -12,6 +12,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoardsQueryScope';
 
 import { useBacklogSelection } from '../components/BacklogSelectionProvider';
+import { moveBacklogTask } from '../model/backlogTaskMove';
 import {
   backlogBulkMoveFeedback,
   locateBacklogSelections,
@@ -21,7 +22,6 @@ import {
 } from '../utils/backlogBulkMove';
 
 import { getSprintTasksData } from './backlogDragAndDropHelpers';
-import { moveTaskToBacklog, moveTaskToSprint } from './backlogDragAndDropMoveHelpers';
 
 interface LocatedMove {
   sourceSprintId: number | null;
@@ -62,74 +62,18 @@ function hydrateLocations(
   return { missingIds, moves };
 }
 
-async function moveSelectedBacklogTask(input: {
-  addTask: (task: Task) => void;
-  backlogDevelopers: Developer[];
-  boardId: number | null;
-  destination: 'backlog' | 'sprint';
-  forDemoPlanner: boolean;
-  item: LocatedMove;
-  queryClient: QueryClient;
-  removeTask: (taskId: string) => void;
-  t: (key: string, params?: Record<string, number | string>) => string;
-  targetSprintId: number | undefined;
-}): Promise<void> {
-  if (input.destination === 'backlog') {
-    if (input.item.sourceSprintId == null) {
-      throw new Error(input.t('common.unknownError'));
-    }
-    await moveTaskToBacklog({
-      addTask: input.addTask,
-      boardId: input.boardId,
-      forDemoPlanner: input.forDemoPlanner,
-      queryClient: input.queryClient,
-      quiet: true,
-      removeTask: input.removeTask,
-      sourceSprintId: input.item.sourceSprintId,
-      t: input.t,
-      taskId: input.item.taskId,
-      taskToMove: input.item.task,
-    });
-    return;
-  }
-  if (input.targetSprintId == null) {
-    throw new Error(input.t('common.unknownError'));
-  }
-  await moveTaskToSprint({
-    addTask: input.addTask,
-    backlogDevelopers: input.backlogDevelopers,
-    boardId: input.boardId,
-    forDemoPlanner: input.forDemoPlanner,
-    queryClient: input.queryClient,
-    quiet: true,
-    removeTask: input.removeTask,
-    sourceSprintId: input.item.sourceSprintId,
-    t: input.t,
-    targetSprintId: input.targetSprintId,
-    taskId: input.item.taskId,
-    taskToMove: input.item.task,
-    wasInBacklog: input.item.sourceSprintId == null,
-  });
-}
-
 interface UseBacklogBulkMoveInput {
   activeSprints: SprintListItem[];
-  backlogDevelopers: Developer[];
   backlogTasks: Task[];
   boardId: number | null;
   movingRef: { current: boolean };
-  addTask: (task: Task) => void;
-  removeTask: (taskId: string) => void;
 }
 
 export function useBacklogBulkMove({
   activeSprints,
-  addTask,
-  backlogDevelopers,
   backlogTasks,
   boardId,
   movingRef,
-  removeTask,
 }: UseBacklogBulkMoveInput) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
@@ -166,20 +110,14 @@ export function useBacklogBulkMove({
       movingRef.current = true;
       setMoving(true);
       try {
-        const result = await runBacklogBulkMoves(hydrated.moves, (item) =>
-          moveSelectedBacklogTask({
-            addTask,
-            backlogDevelopers,
-            boardId,
-            destination,
-            forDemoPlanner,
-            item,
-            queryClient,
-            removeTask,
-            t,
-            targetSprintId,
-          })
-        );
+        const to = destination === 'backlog' ? 'backlog' : targetSprintId;
+        const result = await runBacklogBulkMoves(hydrated.moves, (item) => {
+          if (to == null) throw new Error('target sprint is required');
+          return moveBacklogTask(
+            { boardId, forDemoPlanner, queryClient },
+            { from: item.sourceSprintId ?? 'backlog', task: item.task, to }
+          );
+        });
         unselect([...result.movedIds, ...planned.skippedIds]);
         showFeedback(destination, result.movedIds.length, result.failed + alreadyMissing);
       } finally {
@@ -189,17 +127,13 @@ export function useBacklogBulkMove({
     },
     [
       activeSprints,
-      addTask,
-      backlogDevelopers,
       backlogTasks,
       boardId,
       forDemoPlanner,
       movingRef,
       queryClient,
-      removeTask,
       selectedIds,
       showFeedback,
-      t,
       unselect,
     ]
   );
