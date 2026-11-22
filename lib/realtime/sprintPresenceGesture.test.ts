@@ -7,17 +7,14 @@ import {
   parseSprintPresenceGesture,
   remotePresenceCardRowPreviews,
   remotePresenceNotePreview,
-  remotePresenceOccupancyPreviews,
   remotePresenceResizePreview,
   sprintPresenceGestureEquals,
   sprintPresenceGesturePublishDelayMs,
 } from './sprintPresenceGesture';
 import {
   presenceCardRowMapsEqual,
-  presenceOccupancyPreviewMapsEqual,
   presencePositionPreviewEquals,
   resolveRetainedLocalResizePreview,
-  retainPresenceOccupancyPreviews,
   retainPresencePositionPreview,
   retainRemotePresenceCardRows,
 } from './sprintPresenceGestureRetain';
@@ -134,25 +131,6 @@ describe('buildLocalSprintPresenceGesture', () => {
     });
   });
 
-  it('packs occupancy drag before swimlane hover', () => {
-    expect(
-      buildLocalSprintPresenceGesture({
-        dragDay: 4,
-        dragDuration: 3,
-        dragPart: 0,
-        draggingTaskId: 'BT-1',
-        focus: { state: 'dragging', targetId: 'BT-1' },
-        occupancyDuration: 6,
-        occupancyStartDay: 2,
-        occupancyStartPart: 1,
-        occupancyTaskId: 'BT-1',
-      })
-    ).toEqual({
-      kind: 'drag',
-      position: { duration: 6, startDay: 2, startPart: 1 },
-    });
-  });
-
   it('packs a swimlane hover cell as a drag position', () => {
     expect(
       buildLocalSprintPresenceGesture({
@@ -185,7 +163,7 @@ describe('remote presence previews', () => {
     userId: 'user-b',
   });
 
-  it('ignores the local tab and maps note / occupancy / swimlane previews', () => {
+  it('ignores the local tab and maps note / swimlane previews', () => {
     const own = viewer({
       clientId: 'tab-a',
       focus: { state: 'editing', targetId: 'BT-1' },
@@ -202,11 +180,6 @@ describe('remote presence previews', () => {
       note: { text: 'draft' },
       startCell: 3,
       taskId: 'BT-1',
-    });
-    expect(remotePresenceOccupancyPreviews([own, remote], 'tab-a').get('BT-1')).toEqual({
-      duration: 3,
-      startDay: 1,
-      startPart: 0,
     });
     expect(
       remotePresenceCardRowPreviews(
@@ -279,21 +252,6 @@ describe('remote presence previews', () => {
     expect(presencePositionPreviewEquals(live, { duration: 5, startCell: 3, taskId: 'BT-1' })).toBe(
       true
     );
-    const occupancyLive = new Map([['BT-1', { duration: 5, startDay: 1, startPart: 0 }]]);
-    const occupancyLatched = retainPresenceOccupancyPreviews(occupancyLive, new Map(), new Map());
-    expect(
-      retainPresenceOccupancyPreviews(
-        new Map(),
-        occupancyLatched,
-        new Map([['BT-1', { duration: 2, startDay: 0, startPart: 0, assignee: 'a', taskId: 'BT-1' }]])
-      ).get('BT-1')
-    ).toEqual({ duration: 5, startDay: 1, startPart: 0 });
-    expect(
-      presenceOccupancyPreviewMapsEqual(
-        occupancyLatched,
-        new Map([['BT-1', { duration: 5, startDay: 1, startPart: 0 }]])
-      )
-    ).toBe(true);
   });
 
   it('releases segment resize latch when that segment matches even if envelope duration differs', () => {

@@ -101,7 +101,7 @@ export interface SprintPresenceViewer {
   /** active — смотрит; idle — вкладка в фоне или давно без действий (блеклый аватар). */
   attention?: SprintPresenceAttention;
   avatarUrl: string | null;
-  /** Вид планера, который открыт у вкладки (свимлейн / канбан / occupancy). */
+  /** Вид планера, который открыт у вкладки (свимлейн / канбан). */
   boardView?: SprintPresenceBoardView;
   /** Id вкладки; нужен, чтобы не показывать своё присутствие на карточке. */
   clientId?: string;

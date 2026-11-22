@@ -58,11 +58,3 @@ export interface SprintPlannerTaskResizePreview {
   startCell: number | null;
   taskId: string;
 }
-
-/** Превью бара занятости для presence (локальный drag/resize). */
-export interface SprintPlannerOccupancyPresencePreview {
-  duration: number;
-  startDay: number;
-  startPart: number;
-  taskId: string;
-}

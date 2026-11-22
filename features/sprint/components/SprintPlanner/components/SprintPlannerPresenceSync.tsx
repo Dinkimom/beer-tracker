@@ -46,7 +46,6 @@ export const SprintPlannerPresenceSync = observer(function SprintPlannerPresence
     linkingTaskId,
     resizingTaskId,
   });
-  const occupancy = sprintPlannerUi.cards.occupancyPresencePreview;
   const resize = sprintPlannerUi.cards.taskResizePreview;
   const cardRow = sprintPlannerUi.cards.stickyNoteCardRowPreview;
   const gestureAnchorTaskId =
@@ -71,10 +70,6 @@ export const SprintPlannerPresenceSync = observer(function SprintPlannerPresence
     notePart: notePosition?.startPart ?? null,
     noteTaskId: note?.taskId ?? (dragNoteText != null || dragNoteColor != null ? effectiveDraggingTaskId : null),
     noteText: note?.text ?? dragNoteText,
-    occupancyDuration: occupancy?.duration ?? null,
-    occupancyStartDay: occupancy?.startDay ?? null,
-    occupancyStartPart: occupancy?.startPart ?? null,
-    occupancyTaskId: occupancy?.taskId ?? null,
     resizeDuration: resize?.duration ?? null,
     resizeStartCell: resize?.startCell ?? null,
     resizeTaskId: resize?.taskId ?? null,

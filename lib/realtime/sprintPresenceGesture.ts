@@ -174,10 +174,6 @@ interface LocalSprintPresenceGestureInput {
   notePart?: number | null;
   noteTaskId?: string | null;
   noteText?: string | null;
-  occupancyDuration?: number | null;
-  occupancyStartDay?: number | null;
-  occupancyStartPart?: number | null;
-  occupancyTaskId?: string | null;
   resizeDuration?: number | null;
   resizeStartCell?: number | null;
   resizeTaskId?: string | null;
@@ -240,31 +236,6 @@ function buildLocalNoteGesture(
     kind: 'edit',
     ...(note ? { note } : {}),
     ...(position ? { position } : {}),
-  };
-}
-
-function buildLocalOccupancyGesture(
-  input: LocalSprintPresenceGestureInput,
-  focus: SprintPresenceFocus
-): SprintPresenceGesture | null {
-  if (focus.state !== 'dragging' && focus.state !== 'resizing') {
-    return null;
-  }
-  if (
-    input.occupancyTaskId !== focus.targetId ||
-    input.occupancyDuration == null ||
-    input.occupancyStartDay == null ||
-    input.occupancyStartPart == null
-  ) {
-    return null;
-  }
-  return {
-    kind: focus.state === 'resizing' ? 'resize' : 'drag',
-    position: {
-      duration: input.occupancyDuration,
-      startDay: input.occupancyStartDay,
-      startPart: input.occupancyStartPart,
-    },
   };
 }
 
@@ -359,7 +330,6 @@ export function buildLocalSprintPresenceGesture(
   }
   const gesture =
     buildLocalNoteGesture(input, focus) ??
-    buildLocalOccupancyGesture(input, focus) ??
     buildLocalResizeGesture(input, focus) ??
     buildLocalCardRowResizeGesture(input, focus) ??
     buildLocalDragGesture(input, focus);
@@ -444,29 +414,6 @@ export function remotePresenceCardRowPreviews(
       continue;
     }
     next.set(taskId, cardRow);
-  }
-  return next;
-}
-
-export function remotePresenceOccupancyPreviews(
-  viewers: readonly SprintPresenceViewer[],
-  ownClientId: string | null
-): Map<string, { duration: number; startDay: number; startPart: number }> {
-  const next = new Map<string, { duration: number; startDay: number; startPart: number }>();
-  for (const viewer of viewers) {
-    const position = viewer.gesture?.position;
-    const taskId = viewer.focus?.targetId;
-    if (!position || !taskId) {
-      continue;
-    }
-    if (ownClientId && viewer.clientId === ownClientId) {
-      continue;
-    }
-    next.set(taskId, {
-      duration: position.duration,
-      startDay: position.startDay,
-      startPart: position.startPart,
-    });
   }
   return next;
 }

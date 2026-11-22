@@ -1,5 +1,4 @@
 import type {
-  SprintPlannerOccupancyPresencePreview,
   SprintPlannerTaskResizePreview,
 } from '../sprintPlannerUiTypes';
 
@@ -25,7 +24,6 @@ export class SwimlaneCardsView {
   boardDraggingTaskId: string | null = null;
 
   /** Превью бара занятости из чужих вкладок (старый планер; локально не пишется). */
-  occupancyPresencePreview: SprintPlannerOccupancyPresencePreview | null = null;
 
   /** Удержание рукояток длительности карточки на свимлейне (presence как при drag). */
   resizingTaskId: string | null = null;
@@ -64,7 +62,6 @@ export class SwimlaneCardsView {
       hiddenLinkCountByTaskId: observable,
       hoveredTaskId: observable,
       localTaskResizeDiscardEpoch: observable,
-      occupancyPresencePreview: observable,
       reset: action.bound,
       resizingTaskId: observable,
       setBoardDraggingTaskId: action.bound,
@@ -183,7 +180,6 @@ export class SwimlaneCardsView {
   reset(): void {
     this.hoveredTaskId = null;
     this.boardDraggingTaskId = null;
-    this.occupancyPresencePreview = null;
     this.resizingTaskId = null;
     this.stickyNoteCardRowOverrides = new Map();
     this.stickyNoteCardRowPreview = null;
