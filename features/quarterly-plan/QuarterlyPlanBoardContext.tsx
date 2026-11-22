@@ -1,6 +1,7 @@
 'use client';
 
-import type { MemberAbsence, QuarterRowGoalFlag, QuarterRowLevel } from './quarterlyPlanBoardModel';
+import type { QuarterPlanView } from './model/quarterPlanView';
+import type { QuarterRowGoalFlag, QuarterRowLevel } from './quarterlyPlanBoardModel';
 import type { QuarterDetailLevel } from './quarterlyPlanDetail';
 import type { StickyNoteColor } from '@/lib/comments/stickyNoteColor';
 import type { McpOAuthClientBrand } from '@/lib/mcp/oauth/resolveMcpOAuthClientBrand';
@@ -10,17 +11,12 @@ import type { DaySpan, NoteLaneBlocker, WeekSpan } from '@/lib/quarterlyPlans/qu
 import type { QuarterRowPlace } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 import type {
   QuarterlyPlan,
-  QuarterlyPlanAssignment,
-  QuarterlyPlanEpic,
   QuarterlyPlanLink,
   QuarterlyPlanNote,
   QuarterlyPlanNoteRow,
   QuarterlyPlanPhase,
   QuarterlyPlanSprint,
-  QuarterlyPlanTrackerEpic,
 } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
-import type { QuarterWeek } from '@/lib/quarterlyPlans/quarterWeeks';
-import type { Developer } from '@/types';
 
 import { createContext, useContext } from 'react';
 
@@ -77,13 +73,8 @@ export interface QuarterlyPlanDraftReview {
   onReject: (itemId: string) => void;
 }
 
+/** Преходящее UI доски квартала и её действия; вычисляемое из плана — в `QuarterPlanView` (`useQuarterPlanView`). */
 export interface QuarterlyPlanBoardContextValue {
-  absenceByMember: ReadonlyMap<string, MemberAbsence>;
-  /** Свои полосы направлений (QG2). */
-  assignmentsByDirection: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
-  assignmentsByEpic: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
-  /** Полосы эпика вместе с полосами его задач (QT3); у задачи — только свои. */
-  assignmentsByEpicTree: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
   /** Открыто меню назначения: строка, недели и фаза будущей полосы — строка рисует её превью. */
   assignPreview: {
     /** Меню уже закрыто: превью уходит. */
@@ -93,11 +84,6 @@ export interface QuarterlyPlanBoardContextValue {
     startWeek: number;
     weeks: number;
   } | null;
-
-  /** Индекс текущей недели; -1, если «сегодня» вне квартала. */
-  currentWeek: number;
-  dayCount: number;
-  /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   /** Уровень детализации доски: квартал, недели или дни (QZ1). */
   detail: QuarterDetailLevel;
   draft: QuarterlyPlanDraft | null;
@@ -107,16 +93,14 @@ export interface QuarterlyPlanBoardContextValue {
   draftReview: QuarterlyPlanDraftReview | null;
   /** Эпики с раскрытым списком задач (QT4). */
   expandedEpicIds: ReadonlySet<string>;
+  /** Полоса, к которой перешли по счётчику пересечений; `nonce` меняется при каждом переходе. */
   focusedIssue: { assignmentId: string; nonce: number } | null;
   /** Флажки целей спринтов по id строки плана — эпика или направления (QG8). */
   goalsByRow: ReadonlyMap<string, QuarterRowGoalFlag[]>;
   /** Включено «Скрыть готовые»: готовые задачи эпиков тоже не показываются (QB7). */
   hideDone: boolean;
-  /** Сколько назначений с пересечениями у команды. */
-  issueCountByTeam: ReadonlyMap<string, number>;
   /** Инструмент «Связь»: включён ли и какая полоса выбрана источником. */
   linking: { armed: boolean; sourceId: string | null };
-  memberById: ReadonlyMap<string, Developer>;
   /** Цвет, которым инструмент «Заметка» поставит следующую заметку. */
   noteColor: StickyNoteColor;
   /** Идущий жест над заметкой; null — жеста нет или заметку несут мимо строк. */
@@ -139,22 +123,10 @@ export interface QuarterlyPlanBoardContextValue {
   notesByRow: ReadonlyMap<string, QuarterlyPlanNote[]>;
   /** Включён инструмент «Заметка»: клик по неделе любой строки ставит заметку. */
   noteTool: boolean;
-  /** Назначения, исполнитель которых больше не в команде эпика (QI6). */
-  notInTeamAssignmentIds: ReadonlySet<string>;
   /** Связи, которые доска рисует: связи назначений, а на уровне «Квартал» — связи сводных полос (QL7). */
   shownLinks: ReadonlyArray<QuarterlyPlanLink & { linkIds?: readonly string[] }>;
   /** Карточки привязанных задач на досках спринтов, по ключу трекера (QK8). */
   sprintCards: QuarterlyPlan['sprintCards'];
-  /** Задачи эпиков по эпику-родителю, в порядке плана (QT1). */
-  tasksByEpic: ReadonlyMap<string, QuarterlyPlanEpic[]>;
-  timelineStart: Date;
-  /** Привязанные эпики трекера по ключу: название, статус, «сделано» (QE5, QE7). */
-  trackerEpics: Readonly<Record<string, QuarterlyPlanTrackerEpic>>;
-  /** Направления «проработано, не разбито» (QG4). */
-  unsplitDirectionIds: ReadonlySet<string>;
-  /** Для зависимого назначения — те, кого оно ждёт и кто ещё не закончит к его началу. */
-  violatedBlockers: ReadonlyMap<string, QuarterlyPlanAssignment[]>;
-  weeks: readonly QuarterWeek[];
   /** Полосу можно сделать целью связи от выбранного источника. */
   canLinkTo: (assignmentId: string) => boolean;
   /** Полосу сдвинули или растянули: срок неделями, у полосы задачи — ещё и днями (QT5). */
@@ -195,13 +167,22 @@ export interface QuarterlyPlanBoardContextValue {
     targetStatusKey?: string,
     targetStatusDisplay?: string
   ) => void;
-  /** Другие назначения того же человека, с которыми это может стоять параллельно: без полос той же работы (QT3). */
-  rivalAssignmentsOf: (assignment: QuarterlyPlanAssignment) => QuarterlyPlanAssignment[];
-  /** Название строки назначения — эпика или направления; для подсказок полос. */
-  rowTitleOf: (assignment: Pick<QuarterlyPlanAssignment, 'directionId' | 'epicId'>) => string;
 }
 
 const QuarterlyPlanBoardContext = createContext<QuarterlyPlanBoardContextValue | null>(null);
+
+/** Вычисляемые данные плана (`QuarterPlanView`): отдельно от преходящего UI доски — меню их не пересчитывает. */
+const QuarterPlanViewContext = createContext<QuarterPlanView | null>(null);
+
+export const QuarterPlanViewProvider = QuarterPlanViewContext.Provider;
+
+export function useQuarterPlanView(): QuarterPlanView {
+  const view = useContext(QuarterPlanViewContext);
+  if (!view) {
+    throw new Error('useQuarterPlanView must be used inside QuarterPlanViewProvider');
+  }
+  return view;
+}
 
 export const QuarterlyPlanBoardProvider = QuarterlyPlanBoardContext.Provider;
 

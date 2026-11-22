@@ -15,7 +15,7 @@ import { useQuarterLeftColumnWidthStorage } from '@/hooks/useLocalStorage';
 import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { topLevelEpics } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 
-import { QuarterSprintStartWeeksProvider, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { QuarterSprintStartWeeksProvider, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import {
   clampQuarterLeftColumnWidth,
   QUARTER_LEFT_COLUMN_PX,
@@ -59,8 +59,8 @@ export function QuarterlyPlanBoard({
   onToggle: toggle,
 }: QuarterlyPlanBoardProps) {
   const { t } = useI18n();
-  const { currentWeek, detail, draft, linking, onLinkSourceClear, onStartDraft, shownLinks, violatedBlockers, weeks } =
-    useQuarterlyPlanBoard();
+  const { detail, draft, linking, onLinkSourceClear, onStartDraft, shownLinks } = useQuarterlyPlanBoard();
+  const { currentWeek, violatedBlockers, weeks } = useQuarterPlanView();
   const directionInput = <QuarterlyPlanInputRow level="direction" placeholder={t('quarterlyPlan.addDirectionPlaceholder')} />;
   const violatedLinkIds = useMemo(() => {
     const violated = new Set(

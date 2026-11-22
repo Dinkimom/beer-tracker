@@ -7,7 +7,7 @@ import type { QuarterlyPlanDirection, QuarterlyPlanEpic } from '@/lib/quarterlyP
 import { useI18n } from '@/contexts/LanguageContext';
 import { isEpicDone, trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView, useQuarterRowNotes } from '../QuarterlyPlanBoardContext';
 import {
   layoutRowBars,
   QUARTER_LANE_HEIGHT_BY_LEVEL,
@@ -41,8 +41,8 @@ export function QuarterlyPlanDirectionSection({
   onToggle,
 }: QuarterlyPlanDirectionSectionProps) {
   const { t } = useI18n();
-  const { assignmentsByDirection, assignmentsByEpicTree, detail, goalsByRow, onCellClick, trackerEpics, weeks } =
-    useQuarterlyPlanBoard();
+  const { detail, goalsByRow, onCellClick } = useQuarterlyPlanBoard();
+  const { assignmentsByDirection, assignmentsByEpicTree, trackerEpics, weeks } = useQuarterPlanView();
   const ownAssignments = assignmentsByDirection.get(direction.id) ?? [];
   /** Свои полосы видны, пока направление раскрыто; свёрнутое сводит их в общий срок. */
   const shownAssignments = collapsed ? [] : ownAssignments;

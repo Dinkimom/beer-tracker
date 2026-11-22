@@ -4,7 +4,7 @@ import type { QuarterlyPlanPhase } from '@/lib/quarterlyPlans/quarterlyPlanTypes
 
 import { ZIndex } from '@/constants';
 
-import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { QUARTER_ROW_PADDING_PX } from '../quarterlyPlanBoardModel';
 
 interface QuarterlyPlanAssignGhostProps {
@@ -21,7 +21,7 @@ interface QuarterlyPlanAssignGhostProps {
  * куда она встанет. Меню не висит в воздухе — видно, к какой строке и срокам оно относится.
  */
 export function QuarterlyPlanAssignGhost({ closing, lane, phase, startWeek, weeks }: QuarterlyPlanAssignGhostProps) {
-  const { weeks: quarterWeeks } = useQuarterlyPlanBoard();
+  const { weeks: quarterWeeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   return (
     <div

@@ -4,7 +4,7 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { groupWeeksByMonth } from '@/lib/quarterlyPlans/quarterWeeks';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import {
   formatWeekRange,
   QUARTER_HEADER_ROW_PX,
@@ -33,7 +33,8 @@ function weekDayNumbers(mondayIso: string): number[] {
 /** Липкая шапка: месяцы и недели квартала, текущая неделя выделена. */
 export function QuarterlyPlanTimelineHeader({ columnLabel, title }: QuarterlyPlanTimelineHeaderProps) {
   const { language } = useI18n();
-  const { currentWeek, detail, weeks } = useQuarterlyPlanBoard();
+  const { detail } = useQuarterlyPlanBoard();
+  const { currentWeek, weeks } = useQuarterPlanView();
   const weekWidth = 100 / weeks.length;
   const monthFormat = new Intl.DateTimeFormat(language === 'ru' ? 'ru-RU' : 'en-US', { month: 'long' });
 

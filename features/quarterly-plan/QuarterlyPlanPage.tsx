@@ -9,7 +9,7 @@ import type {
   QuarterlyPlanRowActions,
   QuarterlyPlanTrackerPick,
 } from './quarterlyPlanMenuSections';
-import type { QuarterlyPlanAssignment, QuarterlyPlanSprint, QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
+import type { QuarterlyPlanSprint, QuarterRef } from '@/lib/quarterlyPlans/quarterlyPlanTypes';
 
 import { useCallback, useMemo, useState } from 'react';
 
@@ -21,29 +21,23 @@ import { FLOATING_TOOLBAR_GLASS } from '@/features/context-menu/contextMenuClass
 import { TaskBarNoteFocusEditor } from '@/features/task/components/TaskBar/TaskBarNoteFocusEditor';
 import { useHeightCssVar } from '@/hooks/useHeightCssVar';
 import { useQuarterHideDoneStorage } from '@/hooks/useLocalStorage';
-import { formatLocalDateToIsoDateOnly } from '@/lib/isoDateOnlyCalendar';
-import { collectQuarterlyPlanIssues, quarterTimelineStart } from '@/lib/quarterlyPlans/quarterlyPlanIssues';
 import {
   addDirection,
   addEpic,
   assignmentPhase,
   daySpanOf,
-  epicTitle,
   planIssueKeys,
   removeDirection,
   removeEpic,
   updateAssignment,
   updateDirection,
   updateEpic,
-  violatedBlockersByAssignment,
 } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
-import { collectUnsplitDirectionIds } from '@/lib/quarterlyPlans/quarterlyPlanPhases';
-import { epicRowIds, moveDirection, moveEpic, rivalAssignments, tasksByEpic } from '@/lib/quarterlyPlans/quarterlyPlanRows';
+import { epicRowIds, moveDirection, moveEpic } from '@/lib/quarterlyPlans/quarterlyPlanRows';
 import {
   buildQuarterWeeks,
   QUARTER_WORKING_DAYS_PER_WEEK,
   quarterOfDate,
-  weekIndexOfDate,
 } from '@/lib/quarterlyPlans/quarterWeeks';
 import { randomUuid } from '@/lib/randomUuid';
 import { getPlannerNow } from '@/utils/plannerClock';
@@ -57,10 +51,8 @@ import { QuarterlyPlanSprintGoals } from './components/QuarterlyPlanSprintGoals'
 import { QuarterlyPlanSprintSyncDialog } from './components/QuarterlyPlanSprintSyncDialog';
 import { QuarterlyPlanToolbar } from './components/QuarterlyPlanToolbar';
 import { QuarterlyPlanTrackerEpicDialog } from './components/QuarterlyPlanTrackerEpicDialog';
-import { QuarterlyPlanBoardProvider } from './QuarterlyPlanBoardContext';
-import {
-  buildAbsenceByMember,
-} from './quarterlyPlanBoardModel';
+import { QuarterPlanView } from './model/quarterPlanView';
+import { QuarterlyPlanBoardProvider, QuarterPlanViewProvider } from './QuarterlyPlanBoardContext';
 import { applyTrackerPickToPlan, buildQuarterlyPlanMenuSections, trackerPickBoardId } from './quarterlyPlanMenuSections';
 import { QuarterlyPlanPresence } from './QuarterlyPlanPresence';
 import { useClosingValue } from './useClosingValue';
@@ -74,22 +66,13 @@ import { useQuarterlyPlanRowGoals } from './useQuarterlyPlanRowGoals';
 import { useQuarterlyPlanSprintSync } from './useQuarterlyPlanSprintSync';
 import { useQuarterlyPlanTrackerStatus } from './useQuarterlyPlanTrackerStatus';
 
-function groupBy(
-  assignments: readonly QuarterlyPlanAssignment[],
-  key: 'directionId' | 'epicId' | 'memberId'
-): Map<string, QuarterlyPlanAssignment[]> {
-  const groups = new Map<string, QuarterlyPlanAssignment[]>();
-  for (const assignment of assignments) {
-    const value = assignment[key];
-    if (value !== undefined) groups.set(value, [...(groups.get(value) ?? []), assignment]);
-  }
-  return groups;
-}
-
 /**
  * Квартальный план организации: все команды в одной сетке недель.
  * Направления (вехи) и эпики по командам; отпуска и дежурства — общие с доской спринта.
  */
+const NO_ISSUES: QuarterPlanView['issues'] = [];
+const NO_ISSUE_COUNTS: QuarterPlanView['issueCounts'] = { away: 0, blocked: 0, notInTeam: 0, parallel: 0, total: 0 };
+
 export function QuarterlyPlanPage() {
   const { t } = useI18n();
   const { confirm, DialogComponent } = useConfirmDialog();
@@ -148,7 +131,6 @@ export function QuarterlyPlanPage() {
   const { detail, setDetail } = useQuarterDetail(plan?.epics, setExpandedEpicIds);
 
   const weeks = useMemo(() => buildQuarterWeeks(quarterRef), [quarterRef]);
-  const timelineStart = useMemo(() => quarterTimelineStart(weeks), [weeks]);
   const notes = useQuarterlyPlanNotes({ applyEdit, plan, weekCount: weeks.length });
   const rowGoals = useQuarterlyPlanRowGoals(plan, weeks);
   const sprintSync = useQuarterlyPlanSprintSync({ applyEdit, plan, refreshSprintCards, weeks });
@@ -163,16 +145,14 @@ export function QuarterlyPlanPage() {
     [confirm, t]
   );
   const planLinks = useQuarterlyPlanLinks({ applyEdit, confirmDelete: confirmLinkDelete, plan, quarterView: detail === 'quarter' });
-  const absenceByMember = useMemo(
-    () => buildAbsenceByMember(plan?.teams ?? [], eventsByBoard, weeks),
-    [eventsByBoard, plan?.teams, weeks]
+  const view = useMemo(
+    () =>
+      plan
+        ? new QuarterPlanView({ eventsByBoard, hideDone, now: getPlannerNow(), plan, planAfterDraft: planAfterDraft ?? plan, weeks })
+        : null,
+    [eventsByBoard, hideDone, plan, planAfterDraft, weeks]
   );
-
-  // Проблемы — по плану после черновика: убранное черновиком стоит на доске, но в счёт не идёт.
-  const issues = useMemo(
-    () => (planAfterDraft ? collectQuarterlyPlanIssues(planAfterDraft, absenceByMember, hideDone) : []),
-    [absenceByMember, hideDone, planAfterDraft]
-  );
+  const issues = view?.issues ?? NO_ISSUES;
 
   const toggleCollapsed = useCallback((id: string) => {
     setCollapsedIds((current) => {
@@ -242,13 +222,7 @@ export function QuarterlyPlanPage() {
   const linksBoard = planLinks.board;
   const board = useMemo<QuarterlyPlanBoardContextValue | null>(() => {
     if (!plan) return null;
-    const members = plan.teams.flatMap((team) => team.members);
-    const rowById = new Map([...plan.directions, ...plan.epics].map((row) => [row.id, row]));
-    const assignmentsByEpic = groupBy(plan.assignments, 'epicId');
-    const assignmentsByMember = groupBy(plan.assignments, 'memberId');
-    const rivalsOf = rivalAssignments(plan.epics);
     return {
-      absenceByMember,
       assignPreview:
         shownMenu?.kind === 'assign' && !previewCut
           ? {
@@ -260,28 +234,12 @@ export function QuarterlyPlanPage() {
               weeks: (shownMenu.days ?? shownMenu.weeks * QUARTER_WORKING_DAYS_PER_WEEK) / QUARTER_WORKING_DAYS_PER_WEEK,
             }
           : null,
-      assignmentsByDirection: groupBy(plan.assignments, 'directionId'),
-      assignmentsByEpic,
-      assignmentsByEpicTree: new Map(
-        plan.epics.map((epic) => [
-          epic.id,
-          [...epicRowIds(plan.epics, epic.id)].flatMap((rowId) => assignmentsByEpic.get(rowId) ?? []),
-        ])
-      ),
-      currentWeek: weekIndexOfDate(weeks, getPlannerNow()),
-      dayCount: weeks.length * QUARTER_WORKING_DAYS_PER_WEEK,
       draft,
       expandedEpicIds,
       detail,
       focusedIssue,
       goalsByRow: rowGoals,
       hideDone,
-      issueCountByTeam: issues.reduce(
-        (counts, issue) => counts.set(issue.teamId, (counts.get(issue.teamId) ?? 0) + 1),
-        new Map<string, number>()
-      ),
-      memberById: new Map(members.map((member) => [member.id, member])),
-      notInTeamAssignmentIds: new Set(issues.filter((issue) => issue.notInTeam).map((issue) => issue.assignmentId)),
       ...linksBoard,
       ...notesBoard,
       onBarChange: (assignmentId, span) =>
@@ -300,25 +258,12 @@ export function QuarterlyPlanPage() {
       onSprintGoalsOpen: openSprintGoals,
       onToggleEpic: toggleEpic,
       onTrackerStatusChange: (...change) => void changeTrackerStatus(...change),
-      rivalAssignmentsOf: (assignment) => rivalsOf(assignment, assignmentsByMember.get(assignment.memberId) ?? []),
-      rowTitleOf: (assignment) => {
-        const row = rowById.get(assignment.epicId ?? assignment.directionId ?? '');
-        return row ? epicTitle(row, plan.trackerEpics) : '';
-      },
       draftMarks: shownView.marks,
       draftReview: shownView.review,
       // Уровень «Квартал» — вид для бизнеса (QZ3): без расхождений со спринтом.
       sprintCards: detail === 'quarter' ? {} : plan.sprintCards,
-      tasksByEpic: tasksByEpic(plan.epics),
-      timelineStart,
-      trackerEpics: plan.trackerEpics,
-      unsplitDirectionIds: new Set(
-        collectUnsplitDirectionIds(plan, weeks, formatLocalDateToIsoDateOnly(getPlannerNow()))
-      ),
-      violatedBlockers: violatedBlockersByAssignment(plan),
-      weeks,
     };
-  }, [absenceByMember, closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, openSprintGoals, detail, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, rowGoals, issues, linksBoard, notesBoard, plan, startDraft, submitDraft, timelineStart, toggleEpic, weeks]);
+  }, [closingMenu.open, previewCut, shownMenu, applyEdit, draft, shownView.marks, shownView.review, openSprintGoals, detail, expandedEpicIds, focusedIssue, hideDone, changeTrackerStatus, rowGoals, linksBoard, notesBoard, plan, startDraft, submitDraft, toggleEpic]);
 
   const confirmThen = (message: string, action: () => void) => {
     confirm(message, { variant: 'destructive' })
@@ -396,13 +341,7 @@ export function QuarterlyPlanPage() {
                 history.toggle();
               },
             }}
-            issueCounts={{
-              away: issues.filter((issue) => issue.away).length,
-              blocked: issues.filter((issue) => issue.blocked).length,
-              notInTeam: issues.filter((issue) => issue.notInTeam).length,
-              parallel: issues.filter((issue) => issue.parallel).length,
-              total: issues.length,
-            }}
+            issueCounts={view?.issueCounts ?? NO_ISSUE_COUNTS}
             presenceViewers={presenceViewers}
             quarterRef={quarterRef}
             sprintSync={{ count: sprintSync.count, onOpen: () => sprintSync.open() }}
@@ -415,7 +354,8 @@ export function QuarterlyPlanPage() {
             }}
           />
         </div>
-        {plan && board ? (
+        {plan && board && view ? (
+          <QuarterPlanViewProvider value={view}>
           <QuarterlyPlanBoardProvider value={board}>
             <QuarterlyPlanPresence quarterRef={quarterRef} viewers={presenceViewers}>
               <QuarterlyPlanBoard
@@ -432,7 +372,7 @@ export function QuarterlyPlanPage() {
                 anchor={shownMenu.anchor}
                 open={closingMenu.open}
                 sections={buildQuarterlyPlanMenuSections({
-                  absenceByMember,
+                  absenceByMember: view.absenceByMember,
                   actions: rowActions,
                   applyEdit,
                   menu: shownMenu,
@@ -464,6 +404,7 @@ export function QuarterlyPlanPage() {
               />
             ) : null}
           </QuarterlyPlanBoardProvider>
+          </QuarterPlanViewProvider>
         ) : (
           <div
             className="flex flex-1 items-center justify-center gap-2 text-sm text-ds-text-muted"

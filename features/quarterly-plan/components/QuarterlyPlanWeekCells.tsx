@@ -11,7 +11,7 @@ import { getStickyNoteDashedGhostStyle } from '@/features/comments/utils/stickyN
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
-import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import {
   freeDaysOfWeek,
   formatWeekRange,
@@ -50,7 +50,8 @@ export function QuarterlyPlanWeekCells({
   onWeekClick,
 }: QuarterlyPlanWeekCellsProps) {
   const { t } = useI18n();
-  const { noteColor, noteTool, onNotePlace, weeks } = useQuarterlyPlanBoard();
+  const { noteColor, noteTool, onNotePlace } = useQuarterlyPlanBoard();
+  const { weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
   const weekWidth = 100 / weeks.length;

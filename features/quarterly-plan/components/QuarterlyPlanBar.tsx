@@ -11,7 +11,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { SprintCardPresenceAvatars } from '@/features/task/components/TaskCard/SprintCardPresenceAvatars';
 import { assignmentPhase, assignmentSpanFields, daySpanFields, daySpanOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import {
   formatSpanRange,
   QUARTER_BAR_LOOK_BY_LEVEL,
@@ -102,20 +102,8 @@ export function QuarterlyPlanBar({
   toneClass,
 }: QuarterlyPlanBarProps) {
   const { t } = useI18n();
-  const {
-    absenceByMember,
-    canLinkTo,
-    dayCount,
-    focusedIssue,
-    linking,
-    onBarChange,
-    onBarClick,
-    onLinkBarClick,
-    rivalAssignmentsOf,
-    weeks,
-    draftMarks,
-    draftReview,
-  } = useQuarterlyPlanBoard();
+  const { canLinkTo, focusedIssue, linking, onBarChange, onBarClick, onLinkBarClick, draftMarks, draftReview } = useQuarterlyPlanBoard();
+  const { absenceByMember, dayCount, rivalAssignmentsOf, weeks } = useQuarterPlanView();
   /** Полосу добавил или изменил показанный черновик агента (QM9) — пунктирная обводка. */
   const draftOutline = draftOutlineClass(draftMarks, assignment.id);
   // ✓/✗ пункта черновика — под полосой: она поверх соседних, чтобы их не закрывали.

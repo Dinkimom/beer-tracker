@@ -6,7 +6,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
 import { absentDaysWithinSpan, overloadingAssignments } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { quarterBarToneClass, type QuarterRowLevel } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanBar } from './QuarterlyPlanBar';
@@ -32,14 +32,7 @@ export function QuarterlyPlanRowBars({
   statusKey,
 }: QuarterlyPlanRowBarsProps) {
   const { t } = useI18n();
-  const {
-    absenceByMember,
-    memberById,
-    notInTeamAssignmentIds,
-    rivalAssignmentsOf,
-    rowTitleOf,
-    violatedBlockers,
-  } = useQuarterlyPlanBoard();
+  const { absenceByMember, memberById, notInTeamAssignmentIds, rivalAssignmentsOf, rowTitleOf, violatedBlockers } = useQuarterPlanView();
 
   /** Что не так с назначением: человек отсутствует, занят другими строками или нарушен порядок работ. */
   const issuesOf = (assignment: QuarterlyPlanAssignment): string[] => {

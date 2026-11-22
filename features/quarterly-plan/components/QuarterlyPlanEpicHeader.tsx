@@ -9,7 +9,7 @@ import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
 import { epicTitle, isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { QUARTER_ROW_ACTION_CLASS } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
@@ -45,7 +45,8 @@ interface QuarterlyPlanEpicHeaderProps {
  */
 export function QuarterlyPlanEpicHeader({ epic, level, tasks, unplanned }: QuarterlyPlanEpicHeaderProps) {
   const { t } = useI18n();
-  const { onRowMenu, trackerEpics } = useQuarterlyPlanBoard();
+  const { onRowMenu } = useQuarterlyPlanBoard();
+  const { trackerEpics } = useQuarterPlanView();
   /** Готовый эпик уходит на второй план: приглушён и зачёркнут (QE8). */
   const done = isEpicDone(epic, trackerEpics);
   const title = epicTitle(epic, trackerEpics);

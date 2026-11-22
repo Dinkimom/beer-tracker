@@ -11,7 +11,7 @@ import {
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { assignNoteLanes, quarterNoteRowKey } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { quarterNoteHeightPx } from '../quarterlyPlanBoardModel';
 
 /** Толщина черты «встанет сюда, строка вырастет» — как у превью нового слоя на доске спринта. */
@@ -43,7 +43,8 @@ export function QuarterlyPlanNoteDropGhost({
   rowHeightPx,
   topPx,
 }: QuarterlyPlanNoteDropGhostProps) {
-  const { noteDrag, weeks } = useQuarterlyPlanBoard();
+  const { noteDrag } = useQuarterlyPlanBoard();
+  const { weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
   if (noteDrag?.mode !== 'move' || !noteRow || quarterNoteRowKey(noteDrag.row) !== quarterNoteRowKey(noteRow)) {

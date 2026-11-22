@@ -10,7 +10,7 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { availabilityKindMessageKey } from '@/lib/boardAvailability/availabilityCardKind';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { QUARTER_LANE_HEIGHT_PX, QUARTER_ROW_PADDING_PX } from '../quarterlyPlanBoardModel';
 import { useQuarterSpanDrag } from '../useQuarterSpanDrag';
 
@@ -53,7 +53,7 @@ interface QuarterlyPlanAbsenceChipProps {
  */
 export function QuarterlyPlanAbsenceChip({ chip, lane, onChange, onClick }: QuarterlyPlanAbsenceChipProps) {
   const { t } = useI18n();
-  const { dayCount } = useQuarterlyPlanBoard();
+  const { dayCount } = useQuarterPlanView();
   const { begin, drag, rootProps, rootRef, span } = useQuarterSpanDrag({
     span: { startWeek: chip.startDay, weeks: chip.days },
     weekCount: dayCount,

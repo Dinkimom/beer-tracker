@@ -7,7 +7,7 @@ import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { epicTitle } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { QUARTER_ROW_ACTION_CLASS } from '../quarterlyPlanBoardModel';
 
 import { QuarterlyPlanDraftItemToolbar } from './QuarterlyPlanDraftItemToolbar';
@@ -32,7 +32,8 @@ export function QuarterlyPlanDirectionHeader({
   onToggle,
 }: QuarterlyPlanDirectionHeaderProps) {
   const { t } = useI18n();
-  const { draft, onDraftSubmit, onRowMenu, trackerEpics, unsplitDirectionIds } = useQuarterlyPlanBoard();
+  const { draft, onDraftSubmit, onRowMenu } = useQuarterlyPlanBoard();
+  const { trackerEpics, unsplitDirectionIds } = useQuarterPlanView();
   const renaming = draft?.kind === 'renameDirection' && draft.id === direction.id;
 
   return (

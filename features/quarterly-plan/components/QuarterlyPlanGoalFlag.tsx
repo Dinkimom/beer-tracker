@@ -6,7 +6,7 @@ import { Icon } from '@/components/Icon';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 
-import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { quarterNoteBoxStyle } from '../quarterlyPlanBoardModel';
 
 interface QuarterlyPlanGoalFlagProps {
@@ -27,7 +27,8 @@ const PILL_INSET_PX = 4;
  */
 export function QuarterlyPlanGoalFlag({ flag, lane, topPx }: QuarterlyPlanGoalFlagProps) {
   const { t } = useI18n();
-  const { detail, onSprintGoalsOpen, weeks } = useQuarterlyPlanBoard();
+  const { detail, onSprintGoalsOpen } = useQuarterlyPlanBoard();
+  const { weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const done = flag.goals.filter((goal) => goal.done).length;
   const allDone = done === flag.goals.length;

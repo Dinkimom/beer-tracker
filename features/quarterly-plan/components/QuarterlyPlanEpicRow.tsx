@@ -6,7 +6,7 @@ import type { QuarterlyPlanEpic } from '@/lib/quarterlyPlans/quarterlyPlanTypes'
 import { useI18n } from '@/contexts/LanguageContext';
 import { isEpicDone, trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import {
   layoutRowBars,
   QUARTER_LANE_HEIGHT_BY_LEVEL,
@@ -38,8 +38,8 @@ interface QuarterlyPlanEpicRowProps {
  */
 export function QuarterlyPlanEpicRow({ epic, tasks }: QuarterlyPlanEpicRowProps) {
   const { t } = useI18n();
-  const { assignmentsByEpic, assignmentsByEpicTree, detail, draft, onCellClick, onDraftSubmit, sprintCards, trackerEpics } =
-    useQuarterlyPlanBoard();
+  const { detail, draft, onCellClick, onDraftSubmit, sprintCards } = useQuarterlyPlanBoard();
+  const { assignmentsByEpic, assignmentsByEpicTree, trackerEpics } = useQuarterPlanView();
   const level = epic.parentEpicId === undefined ? 'epic' : 'task';
   const assignments = assignmentsByEpic.get(epic.id) ?? [];
   const bars = layoutRowBars(assignments);

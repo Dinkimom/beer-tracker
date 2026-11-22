@@ -11,7 +11,7 @@ import { getStickyNoteCardStyle } from '@/features/comments/utils/stickyNotePale
 import { TaskBarDraftSaveButton } from '@/features/task/components/TaskBar/TaskBarDraftSaveButton';
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 
-import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { quarterNoteBoxStyle } from '../quarterlyPlanBoardModel';
 
 /** Клик сюда — не «мимо заметки»: тулбар листа и выпадающие списки редактора (цвет, упоминания). */
@@ -32,7 +32,8 @@ interface QuarterlyPlanNoteInlineEditorProps {
  */
 export function QuarterlyPlanNoteInlineEditor({ lane, note, topPx }: QuarterlyPlanNoteInlineEditorProps) {
   const { t } = useI18n();
-  const { memberById, noteEditActions, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const { noteEditActions, noteEditing } = useQuarterlyPlanBoard();
+  const { memberById, weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
   const rootRef = useRef<HTMLDivElement>(null);

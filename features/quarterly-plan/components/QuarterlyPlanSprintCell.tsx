@@ -7,7 +7,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { useSprintGoals } from '@/features/sprint/hooks/useSprintGoals';
 import { formatSprintDisplayName } from '@/utils/sprintDisplayName';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { QUARTER_ROW_HEIGHT_PX, QUARTER_STICKY_LABEL_LEFT } from '../quarterlyPlanBoardModel';
 
 interface QuarterlyPlanSprintCellProps {
@@ -27,7 +27,8 @@ interface QuarterlyPlanSprintCellProps {
  */
 export function QuarterlyPlanSprintCell({ boardId, current, divided, span, sprint }: QuarterlyPlanSprintCellProps) {
   const { t } = useI18n();
-  const { onSprintGoalsOpen, weeks } = useQuarterlyPlanBoard();
+  const { onSprintGoalsOpen } = useQuarterlyPlanBoard();
+  const { weeks } = useQuarterPlanView();
   const delivery = useSprintGoals(sprint.id, 'delivery').data?.checklistItems ?? [];
   const discovery = useSprintGoals(sprint.id, 'discovery').data?.checklistItems ?? [];
   const goals = [...delivery, ...discovery];

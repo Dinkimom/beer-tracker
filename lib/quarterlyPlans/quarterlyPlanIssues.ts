@@ -30,7 +30,7 @@ export interface MemberAbsenceDays {
   segments: AvailabilitySegment[];
 }
 
-export function quarterTimelineStart(weeks: readonly QuarterWeek[]): Date {
+function quarterTimelineStart(weeks: readonly QuarterWeek[]): Date {
   const parsed = parseIsoDateOnly(weeks[0]?.startDate ?? '');
   return parsed ? new Date(parsed.y, parsed.m - 1, parsed.d) : new Date();
 }

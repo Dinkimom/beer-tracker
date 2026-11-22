@@ -13,7 +13,7 @@ import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks
 import {
   QuarterBarsTopProvider,
   QuarterLaneHeightProvider,
-  useQuarterlyPlanBoard,
+  useQuarterlyPlanBoard, useQuarterPlanView,
   useQuarterRowNotes,
   useQuarterSprintStartWeeks,
 } from '../QuarterlyPlanBoardContext';
@@ -138,7 +138,8 @@ export function QuarterlyPlanRow({
   weekActionLabel,
   onWeekClick,
 }: QuarterlyPlanRowProps) {
-  const { assignPreview, currentWeek, detail, goalsByRow, noteEditing, weeks } = useQuarterlyPlanBoard();
+  const { assignPreview, detail, goalsByRow, noteEditing } = useQuarterlyPlanBoard();
+  const { currentWeek, weeks } = useQuarterPlanView();
   const dayGrid = DAY_GRID_BY_DETAIL[detail];
   // Цели спринтов (QG8) — только у эпика и направления, всегда сверху (`layoutRowGoals`); полосы встают
   // под ними через `QuarterBarsTopProvider`, заметки обходят и цели, и полосы.

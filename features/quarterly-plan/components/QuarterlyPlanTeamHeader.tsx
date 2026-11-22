@@ -7,7 +7,7 @@ import { Icon } from '@/components/Icon';
 import { useI18n } from '@/contexts/LanguageContext';
 import { resolveWeekSpan } from '@/lib/quarterlyPlans/quarterWeeks';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import {
   QUARTER_ROW_ACTION_CLASS,
   QUARTER_ROW_HEIGHT_PX,
@@ -29,7 +29,8 @@ interface QuarterlyPlanTeamHeaderProps {
  */
 export function QuarterlyPlanTeamHeader({ collapsed, team, onToggle }: QuarterlyPlanTeamHeaderProps) {
   const { t } = useI18n();
-  const { currentWeek, issueCountByTeam, onStartDraft, weeks } = useQuarterlyPlanBoard();
+  const { onStartDraft } = useQuarterlyPlanBoard();
+  const { currentWeek, issueCountByTeam, weeks } = useQuarterPlanView();
   const issueCount = issueCountByTeam.get(team.id) ?? 0;
 
   return (

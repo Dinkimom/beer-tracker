@@ -6,7 +6,7 @@ import { Avatar, getAvatarVariantForDeveloper } from '@/components/Avatar';
 import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 
-import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { formatSpanRange, QUARTER_ROW_PADDING_PX, quarterBarToneClass } from '../quarterlyPlanBoardModel';
 import { type QuarterPhaseRollup, rollupBarId } from '../quarterlyPlanDetail';
 
@@ -39,7 +39,8 @@ interface QuarterlyPlanRollupBarsProps {
  */
 export function QuarterlyPlanRollupBars({ faded = false, rollups, rowId, statusKey }: QuarterlyPlanRollupBarsProps) {
   const { t } = useI18n();
-  const { canLinkTo, dayCount, linking, memberById, onLinkBarClick, weeks } = useQuarterlyPlanBoard();
+  const { canLinkTo, linking, onLinkBarClick } = useQuarterlyPlanBoard();
+  const { dayCount, memberById, weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const barsTopPx = useQuarterBarsTop();
   const toneClass = quarterBarToneClass(statusKey);

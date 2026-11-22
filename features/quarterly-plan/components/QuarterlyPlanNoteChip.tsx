@@ -23,7 +23,7 @@ import { useSprintCardPresenceViewers } from '@/features/task/components/TaskCar
 import { useDocumentDarkClass } from '@/hooks/useDocumentDarkClass';
 import { resizeNoteRows } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterLaneHeight, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import {
   draftOutlineClass,
   QUARTER_STICKY_LABEL_LEFT,
@@ -75,8 +75,8 @@ function noteRowAtPoint(x: number, y: number, dragged: HTMLElement | null): Quar
  */
 export function QuarterlyPlanNoteChip({ lane, note, topPx }: QuarterlyPlanNoteChipProps) {
   const { t } = useI18n();
-  const { draftMarks, draftReview, noteEditing, onNoteChange, onNoteClick, onNoteDelete, onNoteDrag, weeks } =
-    useQuarterlyPlanBoard();
+  const { draftMarks, draftReview, noteEditing, onNoteChange, onNoteClick, onNoteDelete, onNoteDrag } = useQuarterlyPlanBoard();
+  const { weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const isDark = useDocumentDarkClass();
   const tiltRef = useStickyNoteTilt(true, note.id);

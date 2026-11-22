@@ -9,7 +9,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { daySpanFields } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { sprintCardDrift } from '@/lib/quarterlyPlans/quarterlyPlanSprintCards';
 
-import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterBarsTop, useQuarterLaneHeight, useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { formatSpanRange, QUARTER_ROW_PADDING_PX } from '../quarterlyPlanBoardModel';
 
 interface QuarterlyPlanSprintCardGhostProps {
@@ -27,7 +27,8 @@ interface QuarterlyPlanSprintCardGhostProps {
  */
 export function QuarterlyPlanSprintCardGhost({ assignments, card, epicId }: QuarterlyPlanSprintCardGhostProps) {
   const { t } = useI18n();
-  const { dayCount, onSprintDriftClick, weeks } = useQuarterlyPlanBoard();
+  const { onSprintDriftClick } = useQuarterlyPlanBoard();
+  const { dayCount, weeks } = useQuarterPlanView();
   const laneHeightPx = useQuarterLaneHeight();
   const barsTopPx = useQuarterBarsTop();
   const span = sprintCardDrift({ assignments, card, weeks });

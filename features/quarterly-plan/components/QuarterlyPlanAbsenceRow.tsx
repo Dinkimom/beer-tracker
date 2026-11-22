@@ -13,7 +13,7 @@ import { availabilityKindMessageKey } from '@/lib/boardAvailability/availability
 import { assignBarLanes } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { QUARTER_WORKING_DAYS_PER_WEEK } from '@/lib/quarterlyPlans/quarterWeeks';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import {
   absenceDatesAfterDrag,
   QUARTER_ABSENCE_ROW_KINDS,
@@ -40,7 +40,7 @@ interface QuarterlyPlanAbsenceRowProps {
  */
 export function QuarterlyPlanAbsenceRow({ group, team }: QuarterlyPlanAbsenceRowProps) {
   const { t } = useI18n();
-  const { absenceByMember, weeks } = useQuarterlyPlanBoard();
+  const { absenceByMember, weeks } = useQuarterPlanView();
   const edits = useQuarterAbsenceEdits(team.boardId);
   const [picker, setPicker] = useState<{ anchor: QuarterMenuAnchor; week: number } | null>(null);
   const [menu, setMenu] = useState<{ anchor: QuarterMenuAnchor; eventId: string } | null>(null);

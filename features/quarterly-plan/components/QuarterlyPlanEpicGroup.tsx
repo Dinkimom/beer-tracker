@@ -7,7 +7,7 @@ import { Fragment } from 'react';
 import { useI18n } from '@/contexts/LanguageContext';
 import { isEpicDone } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 
 import { QuarterlyPlanEpicRow } from './QuarterlyPlanEpicRow';
 import { QuarterlyPlanInputRow } from './QuarterlyPlanInputRow';
@@ -22,7 +22,8 @@ interface QuarterlyPlanEpicGroupProps {
  */
 export function QuarterlyPlanEpicGroup({ epic }: QuarterlyPlanEpicGroupProps) {
   const { t } = useI18n();
-  const { detail, draft, expandedEpicIds, hideDone, onToggleEpic, tasksByEpic, trackerEpics } = useQuarterlyPlanBoard();
+  const { detail, draft, expandedEpicIds, hideDone, onToggleEpic } = useQuarterlyPlanBoard();
+  const { tasksByEpic, trackerEpics } = useQuarterPlanView();
   const allTasks = tasksByEpic.get(epic.id) ?? [];
   const tasks = hideDone ? allTasks.filter((task) => !isEpicDone(task, trackerEpics)) : allTasks;
   const adding = draft?.kind === 'newEpic' && draft.parentEpicId === epic.id ? draft : null;

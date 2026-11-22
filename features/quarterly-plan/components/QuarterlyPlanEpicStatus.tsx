@@ -7,7 +7,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 import { TaskStatusSelect } from '@/features/task/components/TaskStatusSelect';
 import { trackerEpicOf } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 
-import { useQuarterlyPlanBoard } from '../QuarterlyPlanBoardContext';
+import { useQuarterlyPlanBoard, useQuarterPlanView } from '../QuarterlyPlanBoardContext';
 import { QUARTER_STATUS_PALETTE_KEY } from '../quarterlyPlanBoardModel';
 
 interface QuarterlyPlanEpicStatusProps {
@@ -20,7 +20,8 @@ interface QuarterlyPlanEpicStatusProps {
  */
 export function QuarterlyPlanEpicStatus({ epic }: QuarterlyPlanEpicStatusProps) {
   const { t } = useI18n();
-  const { onStatusClick, onTrackerStatusChange, trackerEpics } = useQuarterlyPlanBoard();
+  const { onStatusClick, onTrackerStatusChange } = useQuarterlyPlanBoard();
+  const { trackerEpics } = useQuarterPlanView();
   const tracked = trackerEpicOf(epic, trackerEpics);
   const { issueKey } = epic;
   if (issueKey && tracked?.statusColorKey) {
