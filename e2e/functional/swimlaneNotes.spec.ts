@@ -63,3 +63,29 @@ test('TC-104: заметка из быстрого добавления сохр
   await expect(page.locator('[id^="task-comment:"]').filter({ hasText: text })).toBeVisible();
   await expect(page.locator('[data-task-id^="local-task-"]')).toHaveCount(0);
 });
+
+/**
+ * TC-131: @-упоминание в заметке. Escape сначала закрывает список, черновик с текстом остаётся. В режиме
+ * фокуса список один: лист на доске под оверлеем получает тот же текст, но свой список не открывает.
+ */
+test('TC-131: список упоминаний — Escape закрывает его, не черновик; в режиме фокуса список один', async ({ page }) => {
+  await openDemoPlanner(page);
+  const draft = await createNoteDraftInFreeCell(page);
+  const editor = draft.locator('[contenteditable="true"]').first();
+  const toolbar = en.sprintPlanner.swimlane.placementToolbar;
+  await editor.click();
+  await page.keyboard.type('Ask @');
+  await expect(page.getByRole('listbox')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(editor).toHaveText('Ask @');
+  await expect(page.locator('[data-task-id^="local-task-"]')).not.toHaveCount(0);
+
+  await page.keyboard.press('Backspace');
+  await page.getByRole('button', { name: toolbar.noteExpand }).click();
+  await page.keyboard.type(' @');
+  await expect(page.getByRole('listbox')).toHaveCount(1);
+  await page.getByRole('listbox').getByRole('button', { name: 'Ken Thompson' }).click();
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]').last()).toContainText('@Ken Thompson');
+});

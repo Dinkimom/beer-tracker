@@ -22,7 +22,14 @@ interface MentionQuery {
 /** Неделимые узлы (упоминания) — один символ, как и их размер в документе. */
 const LEAF_PLACEHOLDER = '￼';
 
+/**
+ * Подсказка — только у редактора в фокусе: копия заметки (лист на доске под режимом фокуса) получает тот же
+ * текст с `@` и без проверки открывала свой список вторым.
+ */
 function readMentionQuery(editor: Editor): MentionQuery | null {
+  if (!editor.isFocused) {
+    return null;
+  }
   const { $from, empty } = editor.state.selection;
   if (!empty || !$from.parent.isTextblock) {
     return null;
@@ -68,8 +75,12 @@ export function useStickyNoteRichEditorMentions(
       setQuery(next);
     };
     editor.on('transaction', update);
+    editor.on('focus', update);
+    editor.on('blur', update);
     return () => {
       editor.off('transaction', update);
+      editor.off('focus', update);
+      editor.off('blur', update);
     };
   }, [editor]);
 

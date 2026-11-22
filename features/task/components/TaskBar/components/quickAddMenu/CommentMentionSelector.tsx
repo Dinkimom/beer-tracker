@@ -23,6 +23,10 @@ interface MentionSelectorPosition {
   width: number;
 }
 
+/** Узкая заметка не обрезает имена до буквы: список не уже этого и не выходит за край окна. */
+const MIN_SELECTOR_WIDTH_PX = 220;
+const VIEWPORT_MARGIN_PX = 8;
+
 function resolveMentionSelectorPosition(
   anchor: HTMLElement | null
 ): MentionSelectorPosition | null {
@@ -30,10 +34,11 @@ function resolveMentionSelectorPosition(
     return null;
   }
   const rect = anchor.getBoundingClientRect();
+  const width = Math.max(rect.width, MIN_SELECTOR_WIDTH_PX);
   return {
-    left: rect.left,
+    left: Math.max(VIEWPORT_MARGIN_PX, Math.min(rect.left, window.innerWidth - width - VIEWPORT_MARGIN_PX)),
     top: rect.bottom + 4,
-    width: rect.width,
+    width,
   };
 }
 

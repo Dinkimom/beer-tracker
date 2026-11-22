@@ -159,6 +159,13 @@
 - Ожидаемо: на месте черновика появляется сохранённая заметка с введённым текстом, черновик исчезает.
 - Автотест: e2e/functional/swimlaneNotes.spec.ts
 
+### TC-131: Упоминания в заметке
+- Контур: демо
+- Код: features/comments/hooks/useStickyNoteRichEditorMentions.ts, features/task/components/TaskBar/components/quickAddMenu/CommentMentionSelector.tsx, features/comments/components/StickyNoteRichEditor.tsx
+- Шаги: в черновике заметки набрать «@»; нажать Escape; развернуть заметку в режим фокуса, набрать «@», выбрать человека мышью.
+- Ожидаемо: список людей один, имена видны целиком даже у узкой заметки; Escape закрывает список, черновик и текст остаются; выбранный человек вставляется упоминанием, список закрывается.
+- Автотест: e2e/functional/swimlaneNotes.spec.ts
+
 ## 4. Бэклог
 
 ### TC-030: Отображение бэклога
