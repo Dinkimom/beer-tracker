@@ -9,6 +9,8 @@
   /* Дизайн-система: семантические токены (см. COMPONENT_CATALOG.md) */
   --ds-border-subtle: #e5e7eb;
   --ds-canvas: #f3f4f6;
+  /* Кольцо фокуса с клавиатуры (`:focus-visible`) — одно на весь продукт. */
+  --ds-focus-ring: #3b82f6;
   --ds-text-muted: #6b7280;
   --ds-surface-header: #ffffff;
   /* Тосты (`components/AppToaster.tsx`): стекло как у `.floating-menu-glass` */
@@ -81,6 +83,7 @@
   --foreground: #f1f5f9;
   --ds-border-subtle: #374151;
   --ds-canvas: #151e2e;
+  --ds-focus-ring: #60a5fa;
   --ds-text-muted: #9ca3af;
   --ds-surface-header: #1f2937;
   --toast-bg: rgb(31 41 55 / 0.88);
@@ -1684,12 +1687,39 @@ select,
   overscroll-behavior: none;
 }
 
-/* Убираем outline и focus-ring (кольцо после клика) глобально у интерактивных элементов.
-   Не трогаем tabindex="-1": так Radix помечает Popover/Dialog Content, и сброс
-   box-shadow снимал бы drop-shadow попапа при клике и фокусе поля внутри. */
+/* Фокус. После клика мышью кольца нет; с клавиатуры (`:focus-visible`) у элементов управления — одно
+   кольцо на весь продукт (`--ds-focus-ring`). Текстовые поля и редакторы его не получают: там видны каретка
+   и рамка поля. tabindex="-1" — так Radix помечает Popover/Dialog Content: кольца вокруг окна не нужно.
+   Тени фокуса (Tailwind `focus:ring-*`) по-прежнему сняты: сброс box-shadow не снимает drop-shadow попапа
+   при фокусе поля внутри, а у кнопки кольцо одно — outline. */
 *:focus,
 *:focus-visible {
   outline: none !important;
+}
+
+:is(
+    button,
+    a[href],
+    summary,
+    select,
+    input[type='checkbox'],
+    input[type='radio'],
+    input[type='range'],
+    [role='button'],
+    [role='link'],
+    [role='tab'],
+    [role='radio'],
+    [role='checkbox'],
+    [role='switch'],
+    [role='option'],
+    [role='menuitem'],
+    [role='menuitemradio'],
+    [role='menuitemcheckbox'],
+    [role='slider'],
+    [tabindex]:not([tabindex='-1'])
+  ):focus-visible {
+  outline: 2px solid var(--ds-focus-ring) !important;
+  outline-offset: 2px;
 }
 
 button:focus,
@@ -2121,9 +2151,8 @@ input[type="checkbox"]:checked::after {
   margin-top: -1px;
 }
 
-/* Фокус для чекбоксов — без outline */
-input[type="checkbox"]:focus,
-input[type="checkbox"]:focus-visible {
+/* Фокус чекбокса после клика — без outline; с клавиатуры — общее кольцо фокуса. */
+input[type="checkbox"]:focus:not(:focus-visible) {
   outline: none !important;
 }
 
