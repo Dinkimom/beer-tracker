@@ -31,7 +31,7 @@
 0. **Монорепа и сборка** — сделано: `services/otorva`, compose-профиль `otorva`, job `otorva` в CI (`cargo test` с PostgreSQL).
 1. **Модель планирования в otorva** — сделано: ~~очереди с ключом и порядковыми ключами задач~~ (сделано: `queues`, ключ `KEY-12`, `GET /tasks/by-key/{key}`); ~~поля оценок, сроков и родителя~~ (сделано); ~~доски и спринты с составом~~ (сделано); ~~фильтры списка (очередь, спринт, исполнитель, статус, родитель, обновлено с/по, текст)~~ (сделано, плюс `keys`, `sort=updated_asc`, `X-Total-Count`); ~~журнал изменений задачи (поле, было, стало, автор, время) в транзакции правки~~ (сделано: `task_events`); ~~создание пользователей админом~~ (сделано: `is_admin`, `GET /auth/setup-state`, `POST /auth/bootstrap` по `OTORVA_BOOTSTRAP_TOKEN`).
 2. **Провайдер `otorva` в beer-tracker** — сделано, кроме админки: вид провайдера и хранимый провайдер, клиент (частичная реализация по образцу Jira: неподдержанное — `UnsupportedIssueTrackerOperationError`), capabilities, вход по email и паролю, вариант на онбординге и в админке, i18n ru/en, контрактные тесты. Сервис `otorva` — стандартный в compose (без профиля).
-3. **Синк и история**: синк на `listIssuesUpdatedInRange` и `listIssuesForQueue`, снимки, журнал otorva → `issue_changelog_events`, вкладка «История» и диаграмма сгорания.
+3. **Синк и история** — сделано (живой прогон синка — на стенде этапа 4): синк на `listIssuesUpdatedInRange` и `listIssuesForQueue`, снимки, журнал otorva → `issue_changelog_events`, вкладка «История» и диаграмма сгорания.
 4. **Регресс на локальном трекере**: сид из фикстур демо (`lib/demo/`), контур «локальный трекер» в [`TEST_CASES.md`](./TEST_CASES.md), e2e по сквозным сценариям, job в CI.
 
 ### Что сделано на этапе 2
@@ -40,6 +40,12 @@
 - Без веб-интерфейса: ключи задач текстом, «скопировать ссылку» скрыто (`supportsIssueWebLinks`); демо `?tracker=otorva`, TC-133.
 - Вход: `POST /api/auth/otorva/session` — email и пароль → JWT otorva; онбординг на пустом otorva создаёт первого админа по серверному `OTORVA_BOOTSTRAP_TOKEN`. JWT дальше идёт по общим путям как токен трекера; сырой `/myself` для otorva уходит в `/auth/me`. Подключение организации требует админа otorva.
 - `pnpm docker:dev` поднимает otorva; в обычном compose — профиль `otorva` и секреты `OTORVA_*` (env.example).
+
+### Что сделано на этапе 3
+
+- Снимок задачи (`issue_snapshots`) — в форме Яндекса из полей провайдера, с меткой `otorva` в конверте; сырой DTO otorva в снимок не попадает (терял бы статус и спринты). Полный цикл «задача → снимок → задача» закреплён тестом.
+- Журнал otorva (`GET /task-events?keys=`) → changelog в форме Яндекса: поля `assignee`, `deadline`, `sprint`, `start`, `status`, `storyPoints`, `testPoints` — их читает `issue_field_events` для вкладки «История»; статус узнаётся по ключу из справочника.
+- Диаграмма сгорания — `getBurndownIssuesForKeys` из журнала, по общему построителю.
 
 ### Открытые вопросы
 
