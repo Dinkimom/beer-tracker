@@ -85,6 +85,16 @@ describe('buildTaskStateAtSprintStart', () => {
     const s = buildTaskStateAtSprintStart(yt, 'My Sprint', '1', sprintStart);
     expect(s.inSprint).toBe(false);
   });
+
+  it.each([
+    ['added mid-sprint: not in sprint at start', null, [{ display: 'My Sprint', id: '1' }], false],
+    ['removed mid-sprint: in sprint at start', [{ display: 'My Sprint', id: '1' }], null, true],
+  ])('first sprint change %s', (_name, from, to, expected) => {
+    const yt = issue({
+      rawChangelog: [{ updatedAt: '2025-06-05T10:00:00.000Z', fields: [{ field: { id: 'sprint' }, from, to }] }],
+    });
+    expect(buildTaskStateAtSprintStart(yt, 'My Sprint', '1', sprintStart).inSprint).toBe(expected);
+  });
 });
 
 describe('computeBurndownFromChangelog', () => {

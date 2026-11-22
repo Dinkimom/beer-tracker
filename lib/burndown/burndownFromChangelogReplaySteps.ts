@@ -4,6 +4,7 @@ import type { StatusRef } from '@/lib/sprints/sprintTaskCompletion';
 import type { YtrackerBurndownChangelogEntry, YtrackerBurndownIssue } from '@/lib/ytrackerRawIssues';
 
 import { extractStatusKey, extractStatusRef } from '@/lib/burndown/extractStatusKey';
+import { sprintArrayContainsSprint } from '@/lib/burndown/sprintMembership';
 
 import {
   appendDailyChangelogFieldsForEntry,
@@ -170,6 +171,23 @@ function rewindEstimatesAlreadyReflectedInCurrent(
   }
 }
 
+/**
+ * До старта спринта поле спринта не менялось. Первая его смена уже внутри спринта говорит,
+ * был ли спринт у задачи с самого начала: «добавлена в середине» — значит, на старте её не было.
+ * Смен нет вовсе — задача в спринте с создания.
+ */
+function inSprintBeforeFirstSprintChange(
+  raw: YtrackerBurndownChangelogEntry[],
+  sprintName: string,
+  sprintIdForMatch: string | undefined,
+): boolean {
+  for (const entry of raw) {
+    const field = entry.fields?.find((item) => item?.field?.id === 'sprint');
+    if (field) return sprintArrayContainsSprint(field.from, sprintName, sprintIdForMatch);
+  }
+  return true;
+}
+
 export function buildTaskStateAtSprintStart(
   yt: YtrackerBurndownIssue,
   sprintName: string,
@@ -187,7 +205,9 @@ export function buildTaskStateAtSprintStart(
     state,
     rules,
   );
-  if (!flags.hasSprintField) state.inSprint = true;
+  if (!flags.hasSprintField) {
+    state.inSprint = inSprintBeforeFirstSprintChange(yt.rawChangelog ?? [], sprintName, sprintIdForMatch);
+  }
   rewindEstimatesAlreadyReflectedInCurrent(
     state,
     flags,

@@ -55,12 +55,17 @@ function jiraNameKey(name: string): string {
 }
 
 /**
- * Какие поля changelog нужны потребителю: burndown считает только статус и оценки;
- * кеш changelog (строка факта, история спринта) — ещё спринт, исполнителя и сроки.
+ * Какие поля changelog нужны потребителю: burndown считает статус, оценки и спринт
+ * (добавлена / снята); кеш changelog (строка факта, история спринта) — ещё исполнителя и сроки.
  */
 type JiraChangelogScope = 'burndown' | 'history';
 
-const BURNDOWN_FIELD_IDS: ReadonlySet<string> = new Set(['status', 'storyPoints', 'testPoints']);
+const BURNDOWN_FIELD_IDS: ReadonlySet<string> = new Set([
+  'sprint',
+  'status',
+  'storyPoints',
+  'testPoints',
+]);
 
 /** Имя поля Jira (lowercase) → id поля в Yandex-shaped changelog. */
 const JIRA_FIELD_NAME_TO_ID: ReadonlyMap<string, string> = new Map([

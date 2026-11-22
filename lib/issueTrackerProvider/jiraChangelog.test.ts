@@ -96,11 +96,11 @@ describe('mapJiraChangelogHistoryToLog — plan fields', () => {
     ]);
   });
 
-  it('keeps only status and points for burndown', () => {
+  it('keeps sprint, status and points for burndown', () => {
     const fields = mapJiraChangelogHistoryToLog(planHistory, 'burndown')?.fields as Array<{
       field: { id: string };
     }>;
-    expect(fields.map((field) => field.field.id)).toEqual(['storyPoints']);
+    expect(fields.map((field) => field.field.id)).toEqual(['sprint', 'storyPoints']);
   });
 
   it('falls back to sprint ids when sprint names cannot be paired', () => {
