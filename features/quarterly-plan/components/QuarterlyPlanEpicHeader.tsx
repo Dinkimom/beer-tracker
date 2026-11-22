@@ -73,7 +73,9 @@ export const QuarterlyPlanEpicHeader = observer(function QuarterlyPlanEpicHeader
       ) : null}
       <OverflowTooltip content={title}>
         <span
-          className={`truncate ${TITLE_CLASS[level === 'task' ? 'task' : 'epic']} ${
+          // Две строки, а не одна: ключ, счётчик и кнопки строки оставляют названию ~100 px, и похожие
+          // названия («Payment ste…») становились неразличимы.
+          className={`min-w-0 line-clamp-2 [overflow-wrap:anywhere] leading-tight ${TITLE_CLASS[level === 'task' ? 'task' : 'epic']} ${
             done ? '!font-normal !text-ds-text-muted line-through opacity-70' : ''
           }`}
         >
