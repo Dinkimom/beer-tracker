@@ -74,7 +74,7 @@ describe('assertPlanPatchTargetsExist', () => {
         sprintId: 1,
       })
     ).rejects.toThrow('ops[0] createGoal: planRow: no epic or direction gone');
-    expect(resolveSprintGoalPlanRow).toHaveBeenCalledWith('org-1', planRow);
+    expect(resolveSprintGoalPlanRow).toHaveBeenCalledWith('org-1', planRow, 1);
   });
 
   it('does not look up the plan for goals without planRow', async () => {

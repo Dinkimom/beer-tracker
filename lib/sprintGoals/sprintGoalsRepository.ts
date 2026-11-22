@@ -161,6 +161,19 @@ export async function sprintGoalExists(input: { goalId: string; organizationId: 
   return result.rows.length > 0;
 }
 
+/** Спринт цели организации; null — цели нет. */
+export async function fetchSprintGoalSprintId(input: {
+  goalId: string;
+  organizationId: string;
+}): Promise<number | null> {
+  const result = await query(
+    'SELECT sprint_id FROM sprint_goals WHERE id = $1 AND organization_id = $2 LIMIT 1',
+    [input.goalId, input.organizationId]
+  );
+  const row = result.rows[0] as { sprint_id: number } | undefined;
+  return row ? Number(row.sprint_id) : null;
+}
+
 interface SprintGoalsAggRow {
   goals_done: number;
   goals_total: number;

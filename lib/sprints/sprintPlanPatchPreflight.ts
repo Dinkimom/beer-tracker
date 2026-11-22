@@ -22,14 +22,17 @@ async function missingGoalTarget(
   return exists ? null : `ops[${index}] ${op.op}: goal ${op.id} not found`;
 }
 
-/** Строка плана у цели (QG5) должна быть в сохранённом плане своего квартала — та же проверка, что у роута целей. */
+/**
+ * Строка плана у цели (QG5) должна быть в сохранённом плане своего квартала, а квартал — задевать спринт:
+ * та же проверка, что у роута целей.
+ */
 async function missingGoalPlanRow(
   op: Extract<SprintPlanPatchOp, { op: 'createGoal' | 'updateGoal' }>,
   index: number,
-  organizationId: string
+  scope: { organizationId: string; sprintId: number }
 ): Promise<string | null> {
   if (!op.planRow) return null;
-  const resolved = await resolveSprintGoalPlanRow(organizationId, op.planRow);
+  const resolved = await resolveSprintGoalPlanRow(scope.organizationId, op.planRow, scope.sprintId);
   return 'error' in resolved ? `ops[${index}] ${op.op}: ${resolved.error}` : null;
 }
 
@@ -43,10 +46,10 @@ async function missingTargetForOp(
     return missingNoteTarget(op, index, { organizationId, sprintId });
   }
   if (op.op === 'createGoal') {
-    return missingGoalPlanRow(op, index, organizationId);
+    return missingGoalPlanRow(op, index, { organizationId, sprintId });
   }
   if (op.op === 'updateGoal') {
-    return (await missingGoalTarget(op, index, organizationId)) ?? missingGoalPlanRow(op, index, organizationId);
+    return (await missingGoalTarget(op, index, organizationId)) ?? missingGoalPlanRow(op, index, { organizationId, sprintId });
   }
   if (op.op === 'deleteGoal') {
     return missingGoalTarget(op, index, organizationId);

@@ -5,6 +5,7 @@ import { runAsBoardActor, uiBoardActor, type BoardEventActor } from '@/lib/board
 import { resolveParams } from '@/lib/nextjs-utils';
 import {
   deleteSprintGoal,
+  fetchSprintGoalSprintId,
   resolveSprintGoalPlanRow,
   syncSprintGoalsToTrackerFromRequest,
   toSprintGoalItem,
@@ -41,7 +42,8 @@ export async function PATCH(
     const { actor, id, organizationId } = goal;
 
     const body = await request.json() as { text?: string; checked?: boolean; planRow?: unknown };
-    const planRow = await resolveSprintGoalPlanRow(organizationId, body.planRow);
+    const goalSprintId = body.planRow ? await fetchSprintGoalSprintId({ goalId: id, organizationId }) : null;
+    const planRow = await resolveSprintGoalPlanRow(organizationId, body.planRow, goalSprintId);
     if ('error' in planRow) {
       return NextResponse.json({ error: planRow.error }, { status: 400 });
     }

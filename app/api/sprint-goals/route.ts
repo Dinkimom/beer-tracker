@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const planRow = await resolveSprintGoalPlanRow(organizationId, body.planRow);
+    const planRow = await resolveSprintGoalPlanRow(organizationId, body.planRow, sprintId);
     if ('error' in planRow) {
       return NextResponse.json({ error: planRow.error }, { status: 400 });
     }

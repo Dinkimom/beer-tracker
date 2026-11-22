@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { QuarterRefSchema } from '@/lib/quarterlyPlans/quarterlyPlanContentParse';
 import { epicTitle } from '@/lib/quarterlyPlans/quarterlyPlanLayout';
 import { topLevelEpics } from '@/lib/quarterlyPlans/quarterlyPlanRows';
+import { quartersOfWindow } from '@/lib/quarterlyPlans/quarterWeeks';
 
 /** Строка плана у цели: квартал плана и id эпика или направления в нём. */
 export interface SprintGoalPlanRow extends QuarterRef {
@@ -29,6 +30,16 @@ export function parseSprintGoalPlanRow(value: unknown): SprintGoalPlanRow | null
 /** Есть ли в плане строка с таким id: эпик или направление (id общие на план, QE4). */
 export function planHasRow(plan: Pick<QuarterlyPlanContent, 'directions' | 'epics'>, rowId: string): boolean {
   return plan.epics.some((epic) => epic.id === rowId) || plan.directions.some((direction) => direction.id === rowId);
+}
+
+/** Квартал привязки задевает окно спринта (QG5, на стыке — любой из двух, QK2). */
+export function planRowQuarterTouchesSprint(
+  planRow: QuarterRef,
+  sprintWindow: { endDate: string; startDate: string }
+): boolean {
+  return quartersOfWindow(sprintWindow).some(
+    (ref) => ref.year === planRow.year && ref.quarter === planRow.quarter
+  );
 }
 
 /** Привязка из колонок `sprint_goals`; их три, и заполнены они только вместе. */
