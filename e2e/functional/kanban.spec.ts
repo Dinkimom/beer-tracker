@@ -1,4 +1,8 @@
+import { DEMO_DEV_DISPLAY } from '@/lib/demo/demoFixtureSeedTasks';
+import { DEMO_DEV_DANA } from '@/lib/demo/demoIds';
+
 import { en, expect, openDemoPlanner, test } from '../fixtures';
+import { cardPlacement, dragCardToCell, plannedCard } from '../swimlane';
 
 const controls = en.sprintPlanner.controls;
 
@@ -49,4 +53,27 @@ test('TC-014: поиск по доске на канбане приглушае�
     });
   expect(await opacity('DEMO-109')).toBe('1');
   expect(await opacity('DEMO-106')).toBe('0.3');
+});
+
+/**
+ * TC-142: фильтр канбана по исполнителю смотрит на строку доски. Карточка DEMO-104 (в трекере — Guido)
+ * переставлена на свимлейне в строку John Carmack: на канбане она у John, не у Guido.
+ */
+test('TC-142: фильтр канбана по исполнителю — по строке доски, а не по исполнителю в трекере', async ({ page }) => {
+  await openDemoPlanner(page);
+  await dragCardToCell(page, plannedCard(page, 'DEMO-104'), DEMO_DEV_DANA, 6);
+  await expect.poll(() => cardPlacement(page, 'DEMO-104')).toEqual({ lane: DEMO_DEV_DANA, length: 3, start: 6 });
+
+  await page.getByRole('button', { exact: true, expanded: false, name: controls.viewByAssignees }).click();
+  await page.getByRole('dialog').getByRole('button', { exact: true, name: controls.viewKanban }).click();
+  const filter = page.getByRole('group', { name: en.backlog.filters.assigneeAria });
+  const kanbanCard = page.locator('[data-kanban-column] [data-task-id="DEMO-104"]');
+
+  await filter.getByRole('button', { exact: true, name: DEMO_DEV_DISPLAY.dana.name }).click();
+  await expect(kanbanCard).toBeVisible();
+
+  await filter.getByRole('button', { exact: true, name: DEMO_DEV_DISPLAY.dana.name }).click();
+  await filter.getByRole('button', { exact: true, name: DEMO_DEV_DISPLAY.bob.name }).click();
+  await expect(page.locator('[data-kanban-column] [data-task-id]').first()).toBeVisible();
+  await expect(kanbanCard).toHaveCount(0);
 });

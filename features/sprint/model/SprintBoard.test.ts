@@ -114,4 +114,22 @@ describe('SprintBoard', () => {
     expect(seen).toHaveLength(2);
     stop();
   });
+
+  it('чья задача: строка доски важнее исполнителя в трекере, без карточки — исполнитель', () => {
+    const { board, positions } = setup([task('A-1', { assignee: 'ann' }), task('A-2', { assignee: 'ann' })]);
+    positions.positions.set('A-1', { assignee: 'bob', duration: 2, startDay: 0, startPart: 0, taskId: 'A-1' });
+    expect(board.rowAssigneeOf({ assignee: 'ann', id: 'A-1' })).toBe('bob');
+    expect(board.rowAssigneeOf({ assignee: 'ann', id: 'A-2' })).toBe('ann');
+    expect(board.rowAssigneeOf({ id: 'A-3' })).toBeUndefined();
+
+    // Та же функция, пока строки не менялись (сдвиг по дням), новая — после переноса в другую строку.
+    const seen: unknown[] = [];
+    const stop = autorun(() => seen.push(board.rowAssigneeOf));
+    const before = board.rowAssigneeOf;
+    positions.positions.set('A-1', { assignee: 'bob', duration: 2, startDay: 3, startPart: 0, taskId: 'A-1' });
+    expect(board.rowAssigneeOf).toBe(before);
+    positions.positions.set('A-1', { assignee: 'eve', duration: 2, startDay: 3, startPart: 0, taskId: 'A-1' });
+    expect(board.rowAssigneeOf).not.toBe(before);
+    stop();
+  });
 });

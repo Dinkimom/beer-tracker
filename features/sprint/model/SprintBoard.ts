@@ -58,6 +58,14 @@ const NO_TASKS: Task[] = [];
  * Читать модель — из `observer`: computed кэшируются только пока их кто-то наблюдает, вне реакции
  * каждое чтение пересчитывает карты заново (и отдаёт новые ссылки).
  */
+function sameStringMapEntries(a: ReadonlyMap<string, string>, b: ReadonlyMap<string, string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const [key, value] of a) {
+    if (b.get(key) !== value) return false;
+  }
+  return true;
+}
+
 export class SprintBoard {
   snapshot: SprintTasksSnapshot | undefined;
 
@@ -90,12 +98,14 @@ export class SprintBoard {
       tasksMap: () => this.tasksMap,
       updateTasks: (updater) => this.updateTasks(updater),
     });
-    makeObservable<SprintBoard, 'setSnapshot' | 'taskIndex'>(this, {
+    makeObservable<SprintBoard, 'rowAssigneeById' | 'setSnapshot' | 'taskIndex'>(this, {
       allTasksForDrag: computed,
       displayPositions: computed,
       developers: computed,
       qaTasksByOriginalId: computed,
       qaTasksMap: computed,
+      rowAssigneeById: computed({ equals: sameStringMapEntries }),
+      rowAssigneeOf: computed,
       setSnapshot: action,
       snapshot: observable.ref,
       taskIndex: computed,
@@ -119,6 +129,25 @@ export class SprintBoard {
   /** Позиции задач спринта: чтение, правки с сохранением и история плана. */
   get positions(): TaskPositionsStore {
     return this.deps.positions;
+  }
+
+  /**
+   * Чья задача на доске: строка свимлейна, куда поставлена карточка; незапланированная — исполнитель
+   * в трекере. Перенос карточки в чужую строку исполнителя в трекере не меняет.
+   */
+  get rowAssigneeOf(): (task: Pick<Task, 'assignee' | 'id'>) => string | undefined {
+    const rowById = this.rowAssigneeById;
+    // Новая функция — только когда сменилась строка какой-то карточки: её можно класть в зависимости хуков.
+    return (task) => rowById.get(task.id) || task.assignee || undefined;
+  }
+
+  /** Строка свимлейна каждой поставленной карточки; та же ссылка, пока строки не менялись. */
+  private get rowAssigneeById(): ReadonlyMap<string, string> {
+    const rowById = new Map<string, string>();
+    for (const [taskId, position] of this.deps.positions.positions) {
+      if (position.assignee) rowById.set(taskId, position.assignee);
+    }
+    return rowById;
   }
 
   /** Пользовательские связи задач (стрелки). */

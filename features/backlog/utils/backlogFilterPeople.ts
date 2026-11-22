@@ -40,18 +40,25 @@ function rememberDeveloper(byId: Map<string, PersonAcc>, developer: Developer): 
   });
 }
 
-function noteTaskAssignee(byId: Map<string, PersonAcc>, task: Task): void {
-  if (!task.assignee) return;
-  const current = byId.get(task.assignee);
+/** Чья задача для фильтра: по умолчанию исполнитель в трекере; на доске спринта — строка карточки. */
+type TaskAssigneeOf = (task: Task) => string | null | undefined;
+
+const trackerAssigneeOf: TaskAssigneeOf = (task) => task.assignee;
+
+function noteTaskAssignee(byId: Map<string, PersonAcc>, task: Task, assigneeOf: TaskAssigneeOf): void {
+  const assigneeId = assigneeOf(task);
+  if (!assigneeId) return;
+  const current = byId.get(assigneeId);
   if (current) {
     current.taskCount += 1;
     return;
   }
-  const name = task.assigneeName?.trim();
+  // Имя из задачи годится, только если это её исполнитель в трекере.
+  const name = assigneeId === task.assignee ? task.assigneeName?.trim() : undefined;
   if (!name) return;
-  byId.set(task.assignee, {
+  byId.set(assigneeId, {
     avatarUrl: null,
-    id: task.assignee,
+    id: assigneeId,
     initialsVariant: getAvatarVariantForTeam(task.team),
     name,
     taskCount: 1,
@@ -60,11 +67,13 @@ function noteTaskAssignee(byId: Map<string, PersonAcc>, task: Task): void {
 
 /** Люди, у которых есть задачи в бэклоге или спринтах. Чаще назначенные — раньше. */
 export function collectBacklogFilterPeople(input: {
+  assigneeOf?: TaskAssigneeOf;
   backlogDevelopers: Developer[];
   backlogTasks: Task[];
   sprintBundles: Array<SprintPeopleBundle | undefined>;
 }): BacklogFilterPerson[] {
   const byId = new Map<string, PersonAcc>();
+  const assigneeOf = input.assigneeOf ?? trackerAssigneeOf;
   for (const developer of input.backlogDevelopers) {
     rememberDeveloper(byId, developer);
   }
@@ -74,11 +83,11 @@ export function collectBacklogFilterPeople(input: {
     }
   }
   for (const task of input.backlogTasks) {
-    noteTaskAssignee(byId, task);
+    noteTaskAssignee(byId, task, assigneeOf);
   }
   for (const bundle of input.sprintBundles) {
     for (const task of bundle?.tasks ?? []) {
-      noteTaskAssignee(byId, task);
+      noteTaskAssignee(byId, task, assigneeOf);
     }
   }
 
@@ -91,9 +100,16 @@ export function collectBacklogFilterPeople(input: {
     .map(({ avatarUrl, id, initialsVariant, name }) => ({ avatarUrl, id, initialsVariant, name }));
 }
 
-export function filterTasksByAssignees(tasks: Task[], assigneeIds: ReadonlySet<string>): Task[] {
+export function filterTasksByAssignees(
+  tasks: Task[],
+  assigneeIds: ReadonlySet<string>,
+  assigneeOf: TaskAssigneeOf = trackerAssigneeOf
+): Task[] {
   if (assigneeIds.size === 0) return tasks;
-  return tasks.filter((task) => task.assignee != null && assigneeIds.has(task.assignee));
+  return tasks.filter((task) => {
+    const assigneeId = assigneeOf(task);
+    return assigneeId != null && assigneeIds.has(assigneeId);
+  });
 }
 
 /** Оставляет только выбранных людей, которые есть в текущем списке. */

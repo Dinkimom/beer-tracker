@@ -13,11 +13,12 @@ import { KANBAN_UNKNOWN_STATUS_COLUMN_ID } from './kanbanGroupTasksHelpers';
 
 export function buildKanbanAssigneeLanes(
   tasksForKanban: Task[],
-  developers: Developer[]
+  developers: Developer[],
+  assigneeOf: (task: Task) => string | undefined = (task) => task.assignee
 ): Array<{ assigneeKey: string; assigneeName: string; developer: Developer | null; tasks: Task[] }> {
   const keyToLane = new Map<string, { assigneeName: string; developer: Developer | null; tasks: Task[] }>();
   for (const task of tasksForKanban) {
-    addTaskToKanbanAssigneeLane(keyToLane, task, developers);
+    addTaskToKanbanAssigneeLane(keyToLane, task, developers, assigneeOf(task));
   }
   const ordered: Array<{ assigneeKey: string; assigneeName: string; developer: Developer | null; tasks: Task[] }> = [];
   for (const d of developers) {

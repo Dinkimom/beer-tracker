@@ -10,6 +10,7 @@ import { useCallback, useMemo } from 'react';
 
 import { useI18n } from '@/contexts/LanguageContext';
 import { collectBacklogFilterPeople } from '@/features/backlog/utils/backlogFilterPeople';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { useRootStore } from '@/lib/layers';
 
 import {
@@ -103,16 +104,19 @@ export const SprintPlannerControlsBar = observer(function SprintPlannerControlsB
     [setSelectedAssigneeIds]
   );
 
+  // Люди фильтра канбана — по строкам доски, как и сам фильтр (`SprintBoard.rowAssigneeOf`).
+  const { rowAssigneeOf } = useSprintBoard();
   const assigneeFilterPeople = useMemo(
     () =>
       viewMode === 'kanban'
         ? collectBacklogFilterPeople({
+            assigneeOf: rowAssigneeOf,
             backlogDevelopers: developers,
             backlogTasks: assigneeFilterTasks,
             sprintBundles: [],
           })
         : [],
-    [assigneeFilterTasks, developers, viewMode]
+    [assigneeFilterTasks, developers, viewMode, rowAssigneeOf]
   );
 
   const blendWithBoard = viewMode === 'kanban';

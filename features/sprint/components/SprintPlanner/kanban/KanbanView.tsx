@@ -20,6 +20,7 @@ import { ZIndex } from '@/constants';
 import { useI18n } from '@/contexts/LanguageContext';
 import { filterTasksByAssignees, selectedAssigneeIdsInPeople } from '@/features/backlog/utils/backlogFilterPeople';
 import { useBoardParams } from '@/features/board/hooks/useBoardParams';
+import { useSprintBoard } from '@/features/sprint/model/SprintBoardContext';
 import { TaskCardDueDateContext } from '@/features/task/components/TaskCard/components/TaskCardDueDateChip';
 import { TaskCard } from '@/features/task/components/TaskCard/TaskCard';
 import { TaskCardBoardProvider } from '@/features/task/components/TaskCard/TaskCardBoardContext';
@@ -120,6 +121,8 @@ export const KanbanView = observer(function KanbanView({
   }, []);
 
   const { data: board, isLoading, error } = useBoardParams(boardId);
+  // Строки доски читаются в рендере (observer видит перенос карточки) и пересобирают фильтр и дорожки.
+  const { rowAssigneeOf } = useSprintBoard();
 
   const tasksForKanban = useMemo(() => {
     const displayTasks = filterKanbanTasksForDisplay(tasks);
@@ -128,10 +131,11 @@ export const KanbanView = observer(function KanbanView({
     }
     // Сохранённый выбор (localStorage) — только из людей с задачами здесь, как в самом фильтре:
     // иначе человек из другого спринта давал пустой канбан без выбранного аватара, и сбросить было нечем.
-    const assignees = [...new Set(displayTasks.flatMap((task) => (task.assignee ? [task.assignee] : [])))];
+    // Чья задача — по строке доски, как на свимлейне, а не по исполнителю в трекере.
+    const assignees = [...new Set(displayTasks.flatMap((task) => rowAssigneeOf(task) ?? []))];
     const effective = selectedAssigneeIdsInPeople(selectedAssigneeIds, assignees.map((id) => ({ id })));
-    return filterTasksByAssignees(displayTasks, effective);
-  }, [selectedAssigneeIds, tasks]);
+    return filterTasksByAssignees(displayTasks, effective, rowAssigneeOf);
+  }, [rowAssigneeOf, selectedAssigneeIds, tasks]);
 
   const kanbanColumns = useMemo(
     () => (board?.columns?.length ? appendKanbanUnmappedStatusColumns(board.columns, tasksForKanban) : []),
@@ -154,8 +158,8 @@ export const KanbanView = observer(function KanbanView({
 
   const assigneeLanes = useMemo(() => {
     if (!groupByAssignee || !board?.columns?.length) return [];
-    return buildKanbanAssigneeLanes(tasksForKanban, developers);
-  }, [groupByAssignee, board?.columns?.length, tasksForKanban, developers]);
+    return buildKanbanAssigneeLanes(tasksForKanban, developers, rowAssigneeOf);
+  }, [groupByAssignee, board?.columns?.length, tasksForKanban, developers, rowAssigneeOf]);
 
   const parentLanes = useMemo(() => {
     if (!groupByParent || !board?.columns?.length) return [];
