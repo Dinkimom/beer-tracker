@@ -36,8 +36,12 @@ describe('computeSwimlanePointTotals (standalone QA)', () => {
       completedTP: 0,
       hasVolumeTasks: true,
       hideTestPoints: true,
+      percentSP: 0,
+      percentTP: 0,
       totalSP: 4,
       totalTP: 0,
+      unestimatedSP: 0,
+      unestimatedTP: 0,
     });
   });
 });
@@ -97,6 +101,16 @@ describe('computeSwimlanePointTotals (row header points)', () => {
     ]);
     expect(totals.totalSP).toBe(0);
     expect(totals.totalTP).toBe(3);
+  });
+
+  it('counts unestimated tasks apart from zero estimates; QA tasks by TP', () => {
+    const totals = computeSwimlanePointTotals([
+      placed({ id: 'DEV-1' }),
+      placed({ id: 'DEV-2', storyPoints: 0 }),
+      placed({ id: 'DEV-3', storyPoints: 3 }),
+      placed({ id: 'qa-phantom', originalTaskId: 'DEV-3', team: 'QA' }),
+    ]);
+    expect(totals).toMatchObject({ totalSP: 3, unestimatedSP: 1, unestimatedTP: 1 });
   });
 
   it('closes SP and TP together only on a status of type done; rc closes nothing', () => {

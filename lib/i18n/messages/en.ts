@@ -13,6 +13,8 @@ export const enMessages = {
     goHome: 'Back to planner',
   },
   common: {
+    unestimatedCount: 'Unestimated: {count}',
+    unestimatedTooltip: 'Tasks without an estimate are not counted in the totals',
     loading: 'Loading...',
     redirecting: 'Redirecting...',
     close: 'Close',
@@ -1503,6 +1505,12 @@ export const enMessages = {
       editParticipantsTitle: 'Edit participants',
       resizeParticipantsColumn: 'Resize participants column width',
       noTasks: 'No tasks',
+      pointsTooltip: {
+        sp: 'Story points',
+        spProgress: 'Story points: done / total',
+        tp: 'Test points',
+        tpProgress: 'Test points: done / total',
+      },
       velocityLabel: 'Velocity: {points}',
       velocityTooltipSp: 'Average velocity across recent sprints ({count}): completed story points',
       velocityTooltipTp: 'Average velocity across recent sprints ({count}): completed test points',

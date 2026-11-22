@@ -1,38 +1,48 @@
 'use client';
 
 import { useI18n } from '@/contexts/LanguageContext';
+import { UnestimatedTasksCount } from '@/features/sprint/components/UnestimatedTasksCount';
 import { formatPointsForDisplay } from '@/lib/pointsUtils';
 
 import { BURNDOWN_SP_COLOR, BURNDOWN_TP_COLOR } from './burndownAreaChartHelpers';
 import { BurndownMetricTile } from './BurndownMetricTile';
 
-interface BurndownChartMetricsPanelProps {
+/** Плитки «сделано / объём» диаграммы сгорания. */
+export interface BurndownTileMetrics {
   completedSP: number;
   completedTP: number;
   completionPercentSP: number;
   completionPercentTP: number;
-  hideTpInBurndown: boolean;
   remainingSPForLabel: number;
   remainingTPForLabel: number;
   totalScopeSP: number;
   totalScopeTP: number;
+  /** Задачи спринта без оценки: в объём плиток не вошли. */
+  unestimatedCount: number;
 }
 
 export function BurndownChartMetricsPanel({
-  completedSP,
-  completedTP,
-  completionPercentSP,
-  completionPercentTP,
   hideTpInBurndown,
-  remainingSPForLabel,
-  remainingTPForLabel,
-  totalScopeSP,
-  totalScopeTP,
-}: BurndownChartMetricsPanelProps) {
+  metrics,
+}: {
+  hideTpInBurndown: boolean;
+  metrics: BurndownTileMetrics;
+}) {
   const { t } = useI18n();
+  const {
+    completedSP,
+    completedTP,
+    completionPercentSP,
+    completionPercentTP,
+    remainingSPForLabel,
+    remainingTPForLabel,
+    totalScopeSP,
+    totalScopeTP,
+  } = metrics;
 
   return (
-    <div className={`grid shrink-0 ${hideTpInBurndown ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
+    <div className="flex shrink-0 flex-col gap-1.5">
+    <div className={`grid ${hideTpInBurndown ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
       <BurndownMetricTile
         barColor={BURNDOWN_SP_COLOR}
         completed={completedSP}
@@ -55,6 +65,12 @@ export function BurndownChartMetricsPanel({
           total={totalScopeTP}
         />
       )}
+    </div>
+      {metrics.unestimatedCount > 0 ? (
+        <p className="text-xs">
+          <UnestimatedTasksCount count={metrics.unestimatedCount} />
+        </p>
+      ) : null}
     </div>
   );
 }

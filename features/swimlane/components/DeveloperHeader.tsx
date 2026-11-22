@@ -1,11 +1,14 @@
 'use client';
 
+import type { SwimlanePointTotals } from '@/features/swimlane/hooks/useSwimlaneLayoutHelpers';
+
 import { Avatar, type AvatarInitialsVariant } from '@/components/Avatar';
 import { OverflowTooltip } from '@/components/OverflowTooltip';
 import { wrapWithTextTooltip } from '@/components/TextTooltip';
 import { DEVELOPER_COLUMN_WIDTH, ZIndex } from '@/constants';
 import { PlannerHatchOverlay } from '@/features/sprint/components/SprintPlanner/layout/PlannerHatchOverlay';
 import { SWIMLANE_GROUP_HOVER_REVEAL_CLASS } from '@/features/swimlane/utils/swimlaneHoverMotion';
+import { roundPointsForDisplay } from '@/lib/pointsUtils';
 import { getInitials } from '@/utils/displayUtils';
 
 import {
@@ -26,30 +29,23 @@ interface DeveloperHeaderProps {
   avatarInitialsVariant?: AvatarInitialsVariant;
   /** URL фото профиля; при отсутствии показываются инициалы */
   avatarUrl?: string | null;
-  /** Сделано SP (для прогресса) */
-  completedSP?: number;
-  completedTP?: number;
   developerName: string;
   /**
    * Закреплённая строка. Ячейка сама `sticky left`, поэтому вуаль должна
    * быть на ней: фон кадра строки при боковом скролле уезжает.
    */
   frosted?: boolean;
-  /** Есть ли на строке задачи с объёмом (даже если SP/TP = 0). */
-  hasTasks?: boolean;
   hideAvatar?: boolean;
-  /** Режим отдельных QA-задач: в шапке только SP (в т.ч. у тестировщиков). */
-  hideTestPoints?: boolean;
   /** Подписи дорожек факта / календаря, выровненные по таймлайну */
   laneLabels?: DeveloperHeaderLaneLabelItem[];
   /** Закреплённая строка рисуется выше остальных имён, но всё ещё над общим стеклом колонки. */
   layerZIndex?: number;
   /** Заменяет текст имени (ключ-ссылка в режиме фич). */
   nameContent?: React.ReactNode;
-  percentSP?: number;
-  percentTP?: number;
   /** Кнопка закрепления и др. контролы, видимость которых задаёт сам слот */
   persistentActions?: React.ReactNode;
+  /** Итоги SP/TP строки: объём, сделано, неоценённые; режим отдельных QA-задач — только SP. */
+  points: SwimlanePointTotals;
   /** Роль: для разработчика показываем только SP, для тестировщика — только TP */
   role?: 'developer' | 'other' | 'tester';
   /** Ручка высоты строки — на нижней границе всей строки (включая факт / календарь). */
@@ -68,8 +64,6 @@ interface DeveloperHeaderProps {
    * а не по всей строке свимлейна (факт / календарь ниже).
    */
   taskAreaHeight?: number;
-  totalSP: number;
-  totalTP: number;
   /** `team` — общая строка: штриховка вместо имени, без аватара и SP/TP. */
   variant?: 'person' | 'team';
   /** Средний велосити за последние закрытые спринты. */
@@ -84,19 +78,12 @@ export function DeveloperHeader({
   avatarUrl,
   developerName,
   frosted = false,
-  hasTasks,
   hideAvatar = false,
-  hideTestPoints = false,
   laneLabels = [],
   nameContent,
   taskAreaHeight,
-  totalSP,
-  totalTP,
-  completedSP = 0,
-  completedTP = 0,
-  percentSP = 0,
-  percentTP = 0,
   persistentActions,
+  points,
   role,
   rowResizeHandle,
   rowResizeHandleTopPx,
@@ -110,22 +97,25 @@ export function DeveloperHeader({
   const isTeamLane = variant === 'team';
   const { hasPoints, showSP, showTP } = resolveDeveloperHeaderPointsVisibility(
     role,
-    totalSP,
-    totalTP,
+    points.totalSP,
+    points.totalTP,
     showBothPointKinds,
-    hasTasks,
-    hideTestPoints
+    points.hasVolumeTasks,
+    points.hideTestPoints
   );
   const { spContent, tpContent } = formatDeveloperHeaderPointsContent(
     showProgress,
-    completedSP,
-    totalSP,
-    percentSP,
-    completedTP,
-    totalTP,
-    percentTP,
+    points.completedSP,
+    points.totalSP,
+    points.percentSP,
+    points.completedTP,
+    points.totalTP,
+    points.percentTP,
     showSP && showTP
   );
+  // Неоценённые — того вида очков, что показан (строка фичи с SP и TP — по SP).
+  const unestimatedCount = showSP ? points.unestimatedSP : points.unestimatedTP;
+  const shownTotal = showSP ? points.totalSP : points.totalTP;
 
   return wrapWithTextTooltip(
     <div
@@ -190,6 +180,10 @@ export function DeveloperHeader({
                     showTP={showTP}
                     spContent={spContent}
                     tpContent={tpContent}
+                    unestimated={{
+                      count: unestimatedCount,
+                      onlyUnestimated: !(showSP && showTP) && roundPointsForDisplay(shownTotal) <= 0,
+                    }}
                     velocity={velocity}
                   />
                 </div>

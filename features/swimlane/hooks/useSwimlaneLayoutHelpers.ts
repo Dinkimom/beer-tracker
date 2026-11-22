@@ -17,6 +17,7 @@ import {
   collectOriginalTaskIds,
   getTaskStoryPoints,
   getTaskTestPointsInList,
+  missingEstimateKind,
   shouldCountTaskForParticipantVolume,
 } from '@/lib/pointsUtils';
 import { isTaskCompleted } from '@/lib/sprints/sprintTaskCompletion';
@@ -195,6 +196,26 @@ function shouldHideRowTestPoints(
   );
 }
 
+/** Итоги SP/TP строки свимлейна для шапки исполнителя. */
+export interface SwimlanePointTotals {
+  completedSP: number;
+  completedTP: number;
+  hasVolumeTasks: boolean;
+  hideTestPoints: boolean;
+  percentSP: number;
+  percentTP: number;
+  totalSP: number;
+  totalTP: number;
+  /** Задачи без оценки SP: в сумму не попали, объём занижен. */
+  unestimatedSP: number;
+  /** QA-задачи без оценки TP. */
+  unestimatedTP: number;
+}
+
+function percentOf(done: number, total: number): number {
+  return total > 0 ? Math.round((done / total) * 100) : 0;
+}
+
 /**
  * Итоги SP/TP строки свимлейна. «Сделано» — правила завершения организации (SP и TP раздельно:
  * статус готовности к релизу закрывает TP, но не SP); без правил — эвристика по статусу.
@@ -202,14 +223,7 @@ function shouldHideRowTestPoints(
 export function computeSwimlanePointTotals(
   positionedTasks: Array<{ task: Task; position: TaskPosition }>,
   rules?: SprintTaskCompletionRules | null
-): {
-  completedSP: number;
-  completedTP: number;
-  hasVolumeTasks: boolean;
-  hideTestPoints: boolean;
-  totalSP: number;
-  totalTP: number;
-} {
+): SwimlanePointTotals {
   const volumeTasks = positionedTasks.filter(({ task }) => shouldCountTaskForParticipantVolume(task));
   const originalIdsOnRow = collectOriginalTaskIds(volumeTasks.map(({ task }) => task));
 
@@ -217,6 +231,8 @@ export function computeSwimlanePointTotals(
   let totalTP = 0;
   let completedSP = 0;
   let completedTP = 0;
+  let unestimatedSP = 0;
+  let unestimatedTP = 0;
   for (const { task } of volumeTasks) {
     const sp = getTaskStoryPoints(task);
     const tp = getTaskTestPointsInList(task, originalIdsOnRow);
@@ -224,6 +240,9 @@ export function computeSwimlanePointTotals(
     totalTP += tp;
     if (isTaskCompleted(task, rules)) completedSP += sp;
     if (isTaskCompleted(task, rules)) completedTP += tp;
+    const missing = missingEstimateKind(task);
+    if (missing === 'sp') unestimatedSP += 1;
+    if (missing === 'tp') unestimatedTP += 1;
   }
 
   return {
@@ -231,8 +250,12 @@ export function computeSwimlanePointTotals(
     completedTP,
     hasVolumeTasks: volumeTasks.length > 0,
     hideTestPoints: shouldHideRowTestPoints(volumeTasks, originalIdsOnRow),
+    percentSP: percentOf(completedSP, totalSP),
+    percentTP: percentOf(completedTP, totalTP),
     totalSP,
     totalTP,
+    unestimatedSP,
+    unestimatedTP,
   };
 }
 

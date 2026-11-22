@@ -334,7 +334,7 @@ export const KanbanView = observer(function KanbanView({
             >
               <KanbanColumnHeader
                 displayName={column.display}
-                taskCount={columnTasks.length}
+                tasks={columnTasks}
                 totalSp={totalSp}
                 totalTp={totalTp}
               />

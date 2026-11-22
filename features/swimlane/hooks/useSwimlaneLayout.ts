@@ -191,10 +191,7 @@ export function useSwimlaneLayout({
     totalCells
   );
 
-  const { totalSP, totalTP, completedSP, completedTP, hasVolumeTasks, hideTestPoints } =
-    computeSwimlanePointTotals(positionedTasks, completionRules);
-  const percentSP = totalSP > 0 ? Math.round((completedSP / totalSP) * 100) : 0;
-  const percentTP = totalTP > 0 ? Math.round((completedTP / totalTP) * 100) : 0;
+  const points = computeSwimlanePointTotals(positionedTasks, completionRules);
 
   const currentCell = useMemo(() => {
     return getCurrentSprintCell(sprintStartDate, getPartsPerDay(), sprintTimelineWorkingDays);
@@ -322,14 +319,7 @@ export function useSwimlaneLayout({
   return {
     positionedTasks,
     stickyNoteCardRowById,
-    totalSP,
-    totalTP,
-    completedSP,
-    completedTP,
-    hasVolumeTasks,
-    hideTestPoints,
-    percentSP,
-    percentTP,
+    points,
     currentCell,
     baselines,
     taskLayerMap,

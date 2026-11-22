@@ -11,8 +11,7 @@
   "features/admin/roles/hooks/useAdminOrgRoles.ts::hook-outputs::useAdminOrgRoles": 29,
   "features/admin/teams/[teamId]/hooks/useAdminTeamDetailPage.ts::hook-outputs::useAdminTeamDetailPage": 39,
   "features/admin/teams/hooks/useAdminTeamsPage.ts::hook-outputs::useAdminTeamsPage": 25,
-  "features/burndown/components/BurndownChartLoadedBody.tsx::pass-through": 73,
-  "features/burndown/components/BurndownChartLoadedBody.tsx::props-width::BurndownChartLoadedBodyProps": 24,
+  "features/burndown/components/BurndownChartLoadedBody.tsx::pass-through": 59,
   "features/comments/components/SwimlaneCommentContextMenu.tsx::props-width::SwimlaneCommentContextMenuProps": 24,
   "features/context-menu/components/ContextMenu/components/ContextMenuPlanItems.tsx::pass-through": 77,
   "features/context-menu/components/ContextMenu/hooks/useContextMenu.ts::hook-outputs::useContextMenu": 24,
@@ -20,8 +19,7 @@
   "features/sidebar/components/SprintGoalsSection.tsx::pass-through": 59,
   "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBar.tsx::pass-through": 58,
   "features/sprint/components/SprintPlanner/components/SprintPlannerControlsBarLeftSection.tsx::pass-through": 60,
-  "features/swimlane/components/DeveloperHeader.tsx::props-width::DeveloperHeaderProps": 27,
-  "features/swimlane/components/SwimlaneDeveloperHeader.tsx::pass-through": 63,
-  "features/swimlane/hooks/useSwimlaneLayout.ts::hook-outputs::useSwimlaneLayout": 30,
+  "features/swimlane/components/SwimlaneDeveloperHeader.tsx::pass-through": 55,
+  "features/swimlane/hooks/useSwimlaneLayout.ts::hook-outputs::useSwimlaneLayout": 23,
   "features/task/components/TaskCard/components/TaskCardSwimlaneInlineEditor.tsx::pass-through": 61
 }

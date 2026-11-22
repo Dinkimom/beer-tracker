@@ -1,7 +1,7 @@
 'use client';
 
 import type { BurndownChartDataPoint } from './BurndownAreaChart';
-import type { SprintListItem } from '@/types/tracker';
+import type { BurndownTileMetrics } from './BurndownChartMetricsPanel';
 
 import { useI18n } from '@/contexts/LanguageContext';
 
@@ -9,87 +9,43 @@ import { BurndownAreaChart } from './BurndownAreaChart';
 import { BurndownChartMetricsPanel } from './BurndownChartMetricsPanel';
 import { BurndownChartPinnedTooltipOverlay } from './BurndownChartPinnedTooltipOverlay';
 import { BurndownChartSeriesLegend } from './BurndownChartSeriesLegend';
-import { BurndownPageFrame } from './BurndownPageFrame';
 
 interface BurndownChartLoadedBodyProps {
-  boardId?: number | null;
   changelogTypeLabels: Record<string, string>;
   chartData: BurndownChartDataPoint[];
-  completedSP: number;
-  completedTP: number;
-  completionPercentSP: number;
-  completionPercentTP: number;
   hideTpInBurndown: boolean;
-  isLoading: boolean;
   locale: string;
+  metrics: BurndownTileMetrics;
   pinnedMetricType: 'SP' | 'TP';
   pinnedPoint: BurndownChartDataPoint | null;
   pinnedPosition: { x: number; y: number } | null;
-  remainingSPForLabel: number;
-  remainingTPForLabel: number;
-  sprintId: number;
-  sprints: SprintListItem[];
-  sprintsLoading: boolean;
   theme: 'dark' | 'light';
-  totalScopeSP: number;
-  totalScopeTP: number;
   clearPinned: () => void;
   handlePointClick: (
     payload: BurndownChartDataPoint,
     metricType: 'SP' | 'TP',
     event: React.MouseEvent
   ) => void;
-  onSprintChange: (sprintId: number | null) => void;
 }
 
 export function BurndownChartLoadedBody({
-  boardId = null,
   changelogTypeLabels,
   chartData,
   clearPinned,
-  completedSP,
-  completedTP,
-  completionPercentSP,
-  completionPercentTP,
   handlePointClick,
   hideTpInBurndown,
-  isLoading,
   locale,
+  metrics,
   pinnedMetricType,
   pinnedPoint,
   pinnedPosition,
-  remainingSPForLabel,
-  remainingTPForLabel,
-  sprintId,
-  sprints,
-  sprintsLoading,
   theme,
-  totalScopeSP,
-  totalScopeTP,
-  onSprintChange,
 }: BurndownChartLoadedBodyProps) {
   const { t } = useI18n();
 
   return (
-    <BurndownPageFrame
-      boardId={boardId}
-      isLoading={isLoading}
-      selectedSprintId={sprintId}
-      sprints={sprints}
-      sprintsLoading={sprintsLoading}
-      onSprintChange={onSprintChange}
-    >
-      <BurndownChartMetricsPanel
-        completedSP={completedSP}
-        completedTP={completedTP}
-        completionPercentSP={completionPercentSP}
-        completionPercentTP={completionPercentTP}
-        hideTpInBurndown={hideTpInBurndown}
-        remainingSPForLabel={remainingSPForLabel}
-        remainingTPForLabel={remainingTPForLabel}
-        totalScopeSP={totalScopeSP}
-        totalScopeTP={totalScopeTP}
-      />
+    <>
+      <BurndownChartMetricsPanel hideTpInBurndown={hideTpInBurndown} metrics={metrics} />
       <BurndownChartSeriesLegend hideTpInBurndown={hideTpInBurndown} />
 
       <div className="relative flex flex-1 flex-col gap-3">
@@ -127,6 +83,6 @@ export function BurndownChartLoadedBody({
           />
         )}
       </div>
-    </BurndownPageFrame>
+    </>
   );
 }

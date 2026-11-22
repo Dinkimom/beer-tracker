@@ -123,10 +123,10 @@ describe('formatDeveloperHeaderPointsContent', () => {
     });
   });
 
-  it('formats a missing estimate as ?sp / ?tp', () => {
+  it('formats an empty total as zero progress, not as a missing estimate', () => {
     expect(formatDeveloperHeaderPointsContent(true, 0, 0, 0, 0, 0, 0, false)).toEqual({
-      spContent: '?sp',
-      tpContent: '?tp',
+      spContent: '0/0 (0%)',
+      tpContent: '0/0 (0%)',
     });
   });
 

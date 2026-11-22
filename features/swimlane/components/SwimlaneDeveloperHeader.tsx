@@ -1,6 +1,7 @@
 'use client';
 
 import type { DeveloperHeaderLaneLabelItem } from '@/features/swimlane/components/DeveloperHeaderLaneLabels';
+import type { SwimlanePointTotals } from '@/features/swimlane/hooks/useSwimlaneLayoutHelpers';
 import type { Developer } from '@/types';
 
 import { getAvatarVariantForDeveloper } from '@/components/Avatar';
@@ -20,15 +21,8 @@ interface SwimlaneDeveloperHeaderProps {
   isTeamLane: boolean;
   laneLabels: DeveloperHeaderLaneLabelItem[];
   layout: {
-    completedSP: number;
-    completedTP: number;
-    hasVolumeTasks: boolean;
-    hideTestPoints: boolean;
-    percentSP: number;
-    percentTP: number;
+    points: SwimlanePointTotals;
     totalHeight: number;
-    totalSP: number;
-    totalTP: number;
   };
   participantsColumnWidth: number;
   rowResize: {
@@ -60,7 +54,7 @@ export function SwimlaneDeveloperHeader({
     developer.id,
     developer.name,
     developer.role,
-    layout.hideTestPoints
+    layout.points.hideTestPoints
   );
   const featureTitle = featureColumn.rowTitleById.get(developer.id);
   const isDraftRow = isFeatureLaneDraftRowId(developer.id);
@@ -69,13 +63,9 @@ export function SwimlaneDeveloperHeader({
     <DeveloperHeader
       avatarInitialsVariant={getAvatarVariantForDeveloper(developer)}
       avatarUrl={developer.avatarUrl}
-      completedSP={layout.completedSP}
-      completedTP={layout.completedTP}
       developerName={developer.name}
       frosted={isPinned}
-      hasTasks={layout.hasVolumeTasks}
       hideAvatar={featureColumn.isFeatureLane}
-      hideTestPoints={layout.hideTestPoints}
       laneLabels={laneLabels}
       layerZIndex={isPinned ? ZIndex.stickyPinnedRows : ZIndex.stickyLeftColumn}
       nameContent={
@@ -92,8 +82,6 @@ export function SwimlaneDeveloperHeader({
           />
         ) : undefined
       }
-      percentSP={layout.percentSP}
-      percentTP={layout.percentTP}
       persistentActions={
         <div className="flex h-6 items-center gap-0.5 leading-none">
           {showRowActions ? <FeatureLaneDraftRowActions rowId={developer.id} /> : null}
@@ -104,6 +92,7 @@ export function SwimlaneDeveloperHeader({
           />
         </div>
       }
+      points={layout.points}
       role={developer.role}
       rowResizeHandle={
         <SwimlaneRowBorderResizeHandle
@@ -118,8 +107,6 @@ export function SwimlaneDeveloperHeader({
       showBothPointKinds={featureColumn.isFeatureLane}
       showProgress
       taskAreaHeight={layout.totalHeight}
-      totalSP={layout.totalSP}
-      totalTP={layout.totalTP}
       variant={isTeamLane ? 'team' : 'person'}
       velocity={isTeamLane || featureColumn.isFeatureLane ? null : velocityReadout}
       width={participantsColumnWidth}

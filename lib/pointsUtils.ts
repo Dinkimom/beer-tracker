@@ -40,6 +40,26 @@ export function isOriginalTask(task: TaskLikeForPoints): boolean {
 }
 
 /**
+ * Какой оценки нет у задачи: у QA-фантома (embedded) — TP, у остальных — SP; `null` — оценена
+ * (ноль — тоже оценка). Неоценённые задачи не входят в суммы, объём без них занижен.
+ */
+export function missingEstimateKind(task: TaskLikeForPoints): 'sp' | 'tp' | null {
+  if (task.team === 'QA' && task.hideTestPointsByIntegration !== true) {
+    return task.testPoints == null ? 'tp' : null;
+  }
+  return task.storyPoints == null ? 'sp' : null;
+}
+
+/** Сколько задач объёма (без заметок и черновиков-аннотаций) не оценено. */
+export function countUnestimatedTasks(tasks: Iterable<TaskLikeForPoints>): number {
+  let count = 0;
+  for (const task of tasks) {
+    if (shouldCountTaskForParticipantVolume(task) && missingEstimateKind(task) != null) count += 1;
+  }
+  return count;
+}
+
+/**
  * Вклад задачи в Story Points.
  * Синтетические QA-фантомы (embedded, team === 'QA') — 0: оценка тестирования в TP.
  * Отдельные QA-задачи (standalone, hideTestPointsByIntegration) — SP как у остальных.

@@ -1,7 +1,10 @@
 'use client';
 
+import { Fragment } from 'react';
+
 import { TextTooltip } from '@/components/TextTooltip';
 import { useI18n } from '@/contexts/LanguageContext';
+import { UnestimatedTasksCount } from '@/features/sprint/components/UnestimatedTasksCount';
 import { formatPointsForDisplay, roundPointsForDisplay } from '@/lib/pointsUtils';
 
 export interface DeveloperHeaderVelocityReadout {
@@ -57,9 +60,6 @@ function formatHeaderPointValue(
   includeUnits: boolean
 ): string {
   const displayTotal = roundPointsForDisplay(total);
-  if (displayTotal <= 0) {
-    return `?${unit}`;
-  }
   const displayCompleted = formatPointsForDisplay(completed);
   const displayTotalText = formatPointsForDisplay(displayTotal);
   if (showProgress) {
@@ -106,21 +106,25 @@ function velocityTooltipKey(unit: 'sp' | 'tp'): string {
     : 'sprintPlanner.swimlane.velocityTooltipTp';
 }
 
-function developerHeaderPointTitle(showProgress: boolean, kind: 'sp' | 'tp'): string {
+function developerHeaderPointTitleKey(showProgress: boolean, kind: 'sp' | 'tp'): string {
+  const base = 'sprintPlanner.swimlane.pointsTooltip';
   if (kind === 'sp') {
-    return showProgress ? 'Story points: сделано / всего' : 'Story points';
+    return showProgress ? `${base}.spProgress` : `${base}.sp`;
   }
-  return showProgress ? 'Test points: сделано / всего' : 'Test points';
+  return showProgress ? `${base}.tpProgress` : `${base}.tp`;
 }
 
-function renderDeveloperHeaderPointSpan(
-  content: string,
-  kind: 'sp' | 'tp',
-  showProgress: boolean
+function renderVelocityLine(
+  velocity: DeveloperHeaderVelocityReadout,
+  t: (key: string, params?: Record<string, number | string>) => string
 ) {
   return (
-    <TextTooltip content={developerHeaderPointTitle(showProgress, kind)}>
-      <span>{content}</span>
+    <TextTooltip content={t(velocityTooltipKey(velocity.unit), { count: velocity.sprintCount })}>
+      <span>
+        {t('sprintPlanner.swimlane.velocityLabel', {
+          points: formatPointsForDisplay(velocity.points),
+        })}
+      </span>
     </TextTooltip>
   );
 }
@@ -132,30 +136,36 @@ export function DeveloperHeaderPoints({
   showTP,
   spContent,
   tpContent,
+  unestimated,
   velocity,
 }: DeveloperHeaderPointsProps & {
   hasPoints: boolean;
+  /** Задачи без оценки; `onlyUnestimated` — оценённого объёма нет, вместо «0/0» только счётчик. */
+  unestimated: { count: number; onlyUnestimated: boolean };
   velocity?: DeveloperHeaderVelocityReadout | null;
 }) {
   const { t } = useI18n();
-  const sprintLine = hasPoints ? (
-    <>
-      {showSP ? renderDeveloperHeaderPointSpan(spContent, 'sp', showProgress) : null}
-      {showSP && showTP ? <span aria-hidden> · </span> : null}
-      {showTP ? renderDeveloperHeaderPointSpan(tpContent, 'tp', showProgress) : null}
-    </>
-  ) : (
-    t('sprintPlanner.swimlane.noTasks')
-  );
-  const velocityLine = velocity ? (
-    <TextTooltip content={t(velocityTooltipKey(velocity.unit), { count: velocity.sprintCount })}>
-      <span>
-        {t('sprintPlanner.swimlane.velocityLabel', {
-          points: formatPointsForDisplay(velocity.points),
-        })}
-      </span>
-    </TextTooltip>
-  ) : null;
+  const showPoints = !(unestimated.count > 0 && unestimated.onlyUnestimated);
+  const parts = [
+    showPoints && showSP ? { content: spContent, kind: 'sp' as const } : null,
+    showPoints && showTP ? { content: tpContent, kind: 'tp' as const } : null,
+    unestimated.count > 0 ? { content: '', kind: 'unestimated' as const } : null,
+  ].filter((part) => part != null);
+  const sprintLine = hasPoints
+    ? parts.map((part, index) => (
+        <Fragment key={part.kind}>
+          {index > 0 ? <span aria-hidden> · </span> : null}
+          {part.kind === 'unestimated' ? (
+            <UnestimatedTasksCount count={unestimated.count} />
+          ) : (
+            <TextTooltip content={t(developerHeaderPointTitleKey(showProgress, part.kind))}>
+              <span>{part.content}</span>
+            </TextTooltip>
+          )}
+        </Fragment>
+      ))
+    : t('sprintPlanner.swimlane.noTasks');
+  const velocityLine = velocity ? renderVelocityLine(velocity, t) : null;
 
   return (
     <span className="flex min-w-0 flex-col gap-0.5">

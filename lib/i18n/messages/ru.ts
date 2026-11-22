@@ -13,6 +13,8 @@ export const ruMessages = {
     goHome: 'На главную',
   },
   common: {
+    unestimatedCount: 'Без оценки: {count}',
+    unestimatedTooltip: 'Задачи без оценки не входят в суммы — объём занижен',
     loading: 'Загрузка...',
     redirecting: 'Перенаправление...',
     close: 'Закрыть',
@@ -1504,6 +1506,12 @@ export const ruMessages = {
       editParticipantsTitle: 'Редактировать участников',
       resizeParticipantsColumn: 'Изменить ширину колонки участников',
       noTasks: 'Нет задач',
+      pointsTooltip: {
+        sp: 'Story points',
+        spProgress: 'Story points: сделано / всего',
+        tp: 'Test points',
+        tpProgress: 'Test points: сделано / всего',
+      },
       velocityLabel: 'Velocity: {points}',
       velocityTooltipSp: 'Средний велосити за последние спринты ({count}): закрытые story points',
       velocityTooltipTp: 'Средний велосити за последние спринты ({count}): закрытые test points',

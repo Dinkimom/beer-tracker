@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import { computeBurndownTilesFromTasks } from '@/features/sprint/utils/sprintMetrics';
 import { useSprintTaskCompletionRules } from '@/hooks/useSprintTaskCompletionRules';
 import { useRootStore } from '@/lib/layers';
+import { countUnestimatedTasks } from '@/lib/pointsUtils';
 
 import { computeBurndownScopeTiles } from '../utils/burndownScopeTiles';
 
@@ -74,11 +75,22 @@ export function useBurndownChartTileState({
       ? Math.max(0, taskTileMetrics.totalScopeTP - taskTileMetrics.completedTP)
       : (burndownData?.sprintTimelineTotals?.remainingTP ?? burndownData?.currentTP ?? 0);
 
+  const unestimatedCount = useMemo(() => {
+    if (!sprintTasksForTiles?.length) return 0;
+    const goalIds = new Set(goalTaskIdsForTiles ?? []);
+    return countUnestimatedTasks(sprintTasksForTiles.filter((task) => !goalIds.has(task.id)));
+  }, [sprintTasksForTiles, goalTaskIdsForTiles]);
+
   return {
-    ...metrics,
+    completedSP: metrics.completedSP,
+    completedTP: metrics.completedTP,
+    completionPercentSP: metrics.completionPercentSP,
+    completionPercentTP: metrics.completionPercentTP,
     remainingSPForLabel,
     remainingTPForLabel,
-    taskTileMetrics,
+    totalScopeSP: metrics.totalScopeSP,
+    totalScopeTP: metrics.totalScopeTP,
+    unestimatedCount,
   };
 }
 

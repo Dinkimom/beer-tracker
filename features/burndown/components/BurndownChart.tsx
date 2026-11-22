@@ -19,11 +19,11 @@ import {
 } from '../hooks/useBurndownChartTileState';
 import { useBurndownHolidayDateKeys } from '../hooks/useBurndownHolidayDateKeys';
 
-import { BurndownChartEmptySprintState } from './BurndownChartEmptySprintState';
-import { BurndownChartErrorState } from './BurndownChartErrorState';
 import { BurndownChartLoadedBody } from './BurndownChartLoadedBody';
-import { BurndownChartLoadingState } from './BurndownChartLoadingState';
+import { BurndownChartLoadingBody } from './BurndownChartLoadingBody';
+import { BurndownChartStatusBody } from './BurndownChartStatusBody';
 import { BurndownChartTooltipContext } from './burndownChartTooltipContext';
+import { BurndownPageFrame } from './BurndownPageFrame';
 
 interface BurndownChartProps {
   boardId?: number;
@@ -111,94 +111,74 @@ export const BurndownChart = observer(function BurndownChart({
     isDraft,
   });
 
-  const {
-    completedSP,
-    completedTP,
-    totalScopeSP,
-    totalScopeTP,
-    completionPercentSP,
-    completionPercentTP,
-    remainingSPForLabel,
-    remainingTPForLabel,
-  } = useBurndownChartTileState({
+  const tileMetrics = useBurndownChartTileState({
     burndownData,
     goalTaskIdsForTiles,
     sprintId,
     sprintTasksForTiles,
   });
 
-  if (!sprintId) {
-    return (
-      <BurndownChartEmptySprintState
-        boardId={boardId}
-        sprints={sprints}
-        sprintsLoading={sprintsLoading}
-        t={t}
-        onSprintChange={onSprintChange}
-      />
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <BurndownChartLoadingState
-        boardId={boardId}
-        sprintId={sprintId}
-        sprints={sprints}
-        sprintsLoading={sprintsLoading}
-        t={t}
-        onSprintChange={onSprintChange}
-      />
-    );
-  }
-
-  if (error || !burndownData) {
-    return (
-      <BurndownChartErrorState
-        boardId={boardId}
-        error={error}
-        sprintId={sprintId}
-        sprints={sprints}
-        sprintsLoading={sprintsLoading}
-        t={t}
-        onSprintChange={onSprintChange}
-      />
-    );
-  }
-
-  const hideTpFromTasksIntegration =
-    sprintTasksForTiles?.some((task) => task.hideTestPointsByIntegration === true) ?? false;
   const hideTpInBurndown =
-    burndownData.testingFlowMode === 'standalone_qa_tasks' || hideTpFromTasksIntegration;
+    burndownData?.testingFlowMode === 'standalone_qa_tasks' ||
+    (sprintTasksForTiles?.some((task) => task.hideTestPointsByIntegration === true) ?? false);
+
+  let content: React.ReactNode;
+  if (!sprintId) {
+    content = (
+      <BurndownChartStatusBody>
+        <div className="text-center text-ds-text-muted">
+          <p className="mb-2 text-lg font-medium">{t('burndown.selectSprintTitle')}</p>
+          <p className="text-sm">{t('burndown.selectSprintDescription')}</p>
+        </div>
+      </BurndownChartStatusBody>
+    );
+  } else if (isLoading) {
+    content = (
+      <BurndownChartStatusBody>
+        <BurndownChartLoadingBody message={t('burndown.loadingData')} />
+      </BurndownChartStatusBody>
+    );
+  } else if (error || !burndownData) {
+    content = (
+      <BurndownChartStatusBody>
+        <div className="text-center text-red-500 dark:text-red-400">
+          <p className="mb-2 text-lg font-medium">{t('burndown.loadErrorTitle')}</p>
+          <p className="text-sm">
+            {error instanceof Error ? error.message : t('burndown.loadErrorFallback')}
+          </p>
+        </div>
+      </BurndownChartStatusBody>
+    );
+  } else {
+    content = (
+      <BurndownChartTooltipContext.Provider value={tooltipContextValue}>
+        <BurndownChartLoadedBody
+          changelogTypeLabels={changelogTypeLabels}
+          chartData={chartData}
+          clearPinned={clearPinned}
+          handlePointClick={handlePointClick}
+          hideTpInBurndown={hideTpInBurndown}
+          locale={locale}
+          metrics={tileMetrics}
+          pinnedMetricType={pinnedMetricType}
+          pinnedPoint={pinnedPoint}
+          pinnedPosition={pinnedPosition}
+          theme={theme}
+        />
+      </BurndownChartTooltipContext.Provider>
+    );
+  }
 
   return (
-    <BurndownChartTooltipContext.Provider value={tooltipContextValue}>
-      <BurndownChartLoadedBody
-        boardId={boardId}
-        changelogTypeLabels={changelogTypeLabels}
-        chartData={chartData}
-        clearPinned={clearPinned}
-        completedSP={completedSP}
-        completedTP={completedTP}
-        completionPercentSP={completionPercentSP}
-        completionPercentTP={completionPercentTP}
-        handlePointClick={handlePointClick}
-        hideTpInBurndown={hideTpInBurndown}
-        isLoading={isLoading}
-        locale={locale}
-        pinnedMetricType={pinnedMetricType}
-        pinnedPoint={pinnedPoint}
-        pinnedPosition={pinnedPosition}
-        remainingSPForLabel={remainingSPForLabel}
-        remainingTPForLabel={remainingTPForLabel}
-        sprintId={sprintId}
-        sprints={sprints}
-        sprintsLoading={sprintsLoading}
-        theme={theme}
-        totalScopeSP={totalScopeSP}
-        totalScopeTP={totalScopeTP}
-        onSprintChange={onSprintChange}
-      />
-    </BurndownChartTooltipContext.Provider>
+    <BurndownPageFrame
+      boardId={boardId}
+      isLoading={isLoading}
+      selectedSprintId={sprintId}
+      sprints={sprints}
+      sprintsLoading={sprintsLoading}
+      onSprintChange={onSprintChange}
+    >
+      {content}
+    </BurndownPageFrame>
   );
 });

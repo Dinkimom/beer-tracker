@@ -67,7 +67,7 @@ describe('computeSwimlanePointTotals', () => {
       },
     ];
 
-    expect(computeSwimlanePointTotals(positionedTasks)).toEqual({
+    expect(computeSwimlanePointTotals(positionedTasks)).toMatchObject({
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
@@ -98,7 +98,7 @@ describe('computeSwimlanePointTotals', () => {
       },
     ];
 
-    expect(computeSwimlanePointTotals(positionedTasks)).toEqual({
+    expect(computeSwimlanePointTotals(positionedTasks)).toMatchObject({
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
@@ -147,7 +147,7 @@ describe('computeSwimlanePointTotals', () => {
       },
     ];
 
-    expect(computeSwimlanePointTotals(positionedTasks)).toEqual({
+    expect(computeSwimlanePointTotals(positionedTasks)).toMatchObject({
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
@@ -179,7 +179,7 @@ describe('computeSwimlanePointTotals', () => {
       },
     ];
 
-    expect(computeSwimlanePointTotals(positionedTasks)).toEqual({
+    expect(computeSwimlanePointTotals(positionedTasks)).toMatchObject({
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,
@@ -210,7 +210,7 @@ describe('computeSwimlanePointTotals', () => {
           },
         },
       ])
-    ).toEqual({
+    ).toMatchObject({
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: false,
@@ -241,7 +241,7 @@ describe('computeSwimlanePointTotals', () => {
           },
         },
       ])
-    ).toEqual({
+    ).toMatchObject({
       completedSP: 0,
       completedTP: 0,
       hasVolumeTasks: true,

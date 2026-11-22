@@ -1,22 +1,26 @@
 'use client';
 
+import type { Task } from '@/types';
+
 import { OverflowTooltip } from '@/components/OverflowTooltip';
-import { formatSprintTotalsPointsLabels } from '@/lib/pointsUtils';
+import { UnestimatedTasksCount } from '@/features/sprint/components/UnestimatedTasksCount';
+import { countUnestimatedTasks, formatSprintTotalsPointsLabels } from '@/lib/pointsUtils';
 
 interface KanbanColumnHeaderProps {
   displayName: string;
-  taskCount: number;
+  tasks: readonly Task[];
   totalSp: number;
   totalTp: number;
 }
 
 export function KanbanColumnHeader({
   displayName,
-  taskCount,
+  tasks,
   totalSp,
   totalTp,
 }: KanbanColumnHeaderProps) {
   const { spLabel, tpLabel } = formatSprintTotalsPointsLabels(totalSp, totalTp, 'spaced');
+  const unestimated = countUnestimatedTasks(tasks);
   const hasPoints = Boolean(spLabel || tpLabel);
 
   return (
@@ -28,15 +32,17 @@ export function KanbanColumnHeader({
           </h3>
         </OverflowTooltip>
         <span className="inline-flex shrink-0 items-center rounded-md bg-white px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-gray-600 shadow-sm dark:bg-white/[0.08] dark:text-gray-300 dark:shadow-none">
-          {taskCount}
+          {tasks.length}
         </span>
       </div>
       <p className="mt-1 min-h-4 text-xs leading-4 tabular-nums text-gray-500 dark:text-gray-400">
-        {hasPoints ? (
+        {hasPoints || unestimated > 0 ? (
           <>
             {spLabel ? <span>{spLabel}</span> : null}
             {spLabel && tpLabel ? ' · ' : null}
             {tpLabel ? <span>{tpLabel}</span> : null}
+            {hasPoints && unestimated > 0 ? ' · ' : null}
+            <UnestimatedTasksCount count={unestimated} />
           </>
         ) : (
           '\u00a0'

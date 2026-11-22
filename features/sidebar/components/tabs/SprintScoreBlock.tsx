@@ -12,8 +12,10 @@ import { useDemoPlannerBoardsQueryScope } from '@/features/board/demoPlannerBoar
 import {
   SprintScoreMetricsPanel,
 } from '@/features/sprint/components/SprintScoreMetricsPanel';
+import { UnestimatedTasksCount } from '@/features/sprint/components/UnestimatedTasksCount';
 import { computeBurndownTilesFromTasks } from '@/features/sprint/utils/sprintMetrics';
 import { fetchSprintScore } from '@/lib/api/sprints';
+import { countUnestimatedTasks } from '@/lib/pointsUtils';
 
 import { SprintScoreBadge } from './SprintScoreBadge';
 import { SprintScoreInfoButton } from './SprintScoreInfoButton';
@@ -79,6 +81,8 @@ export function SprintScoreBlock({
     if (!localTasks?.length) return null;
     return computeBurndownTilesFromTasks(localTasks, goalTaskIds, completionRules);
   }, [localTasks, goalTaskIds, completionRules]);
+
+  const unestimatedCount = useMemo(() => countUnestimatedTasks(localTasks ?? []), [localTasks]);
 
   const rows = useMemo(() => {
     if (!localTiles || localTiles.totalScopeSP + localTiles.totalScopeTP <= 0) {
@@ -150,6 +154,11 @@ export function SprintScoreBlock({
           rows={rows}
         />
       )}
+      {unestimatedCount > 0 ? (
+        <p className="mt-2 text-xs">
+          <UnestimatedTasksCount count={unestimatedCount} />
+        </p>
+      ) : null}
     </div>
   );
 }
