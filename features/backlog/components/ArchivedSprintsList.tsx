@@ -25,7 +25,7 @@ export function ArchivedSprintsList({ sprints }: ArchivedSprintsListProps) {
 
   return (
     <BacklogSectionFrame
-      countLabel={String(sprints.length)}
+      countLabel={t('backlog.archived.count', { count: sprints.length })}
       expanded={expanded}
       title={t('backlog.archived.title')}
       onToggle={() => setExpanded((open) => !open)}

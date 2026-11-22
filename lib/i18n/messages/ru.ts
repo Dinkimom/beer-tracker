@@ -487,7 +487,7 @@ export const ruMessages = {
       expand: 'Развернуть',
       taskCount: 'Задач: {count}',
       showMore: 'Показать ещё {count}',
-      visibleCount: 'Видимых задач: {visible} из {total}',
+      visibleCount: 'Задач: {visible} из {total}',
     },
     points: {
       done: 'Готово',
@@ -521,6 +521,7 @@ export const ruMessages = {
     },
     archived: {
       title: 'Завершенные спринты',
+      count: 'Спринтов: {count}',
       empty: 'Нет завершенных спринтов',
       loadingTasks: 'Загрузка задач...',
       noTasks: 'Нет задач',
@@ -574,7 +575,6 @@ export const ruMessages = {
     addListSubmit: 'Добавить колонку',
     addCard: 'Добавить карточку',
     addCardSubmit: 'Добавить карточку',
-    addCardPlaceholder: 'Название или ссылка',
     cardCount: 'Карточек: {count}',
     listMenu: 'Действия списка',
     columnNamePlaceholder: 'Название колонки',
@@ -585,7 +585,7 @@ export const ruMessages = {
     deleteColumnConfirm: 'Удалить колонку вместе с карточками?',
     confirmDelete: 'Удалить',
     cancel: 'Отмена',
-    addNotePlaceholder: 'Заметка',
+    addNotePlaceholder: 'Текст карточки',
     addNote: 'Добавить заметку',
     addImage: 'Добавить картинку',
     imageAlt: 'Картинка ретро',
