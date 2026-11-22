@@ -23,7 +23,8 @@ export interface QuarterlyPlanSprintSyncChoice {
  * выбранного. В план правка уходит обычным сохранением плана, в спринт — переносом карточек на доске спринта.
  */
 export function useQuarterlyPlanSprintSync(input: {
-  applyEdit: (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => void;
+  /** false — доска только для просмотра (черновик агента, версия из истории): правка в план не прошла. */
+  applyEdit: (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => boolean;
   plan: QuarterlyPlan | null;
   refreshSprintCards: () => Promise<void>;
   weeks: readonly QuarterWeek[];
@@ -44,11 +45,14 @@ export function useQuarterlyPlanSprintSync(input: {
   const apply = useCallback(
     async (choices: readonly QuarterlyPlanSprintSyncChoice[]) => {
       const toPlan = choices.flatMap(({ drift, to }) => (to === 'plan' && 'span' in drift.toPlan ? [drift.toPlan] : []));
-      if (toPlan.length > 0) {
+      // В тост идёт только применённое: при показанном черновике агента правка в план не проходит.
+      const appliedToPlan =
+        toPlan.length > 0 &&
         applyEdit((content) =>
           toPlan.reduce((next, { assignmentId, span }) => updateAssignment(next, assignmentId, assignmentSpanFields(span)), content)
-        );
-      }
+        )
+          ? toPlan.length
+          : 0;
       const bySprint = new Map<number, Array<{ startDay: number; taskId: string }>>();
       for (const { drift, to } of choices) {
         if (to !== 'sprint' || !('startDay' in drift.toSprint)) continue;
@@ -61,8 +65,8 @@ export function useQuarterlyPlanSprintSync(input: {
         let moved = 0;
         for (const [sprintId, moves] of bySprint) moved += await shiftSprintCards(sprintId, moves);
         if (bySprint.size > 0) await refreshSprintCards();
-        toast.success(t('quarterlyPlan.sync.done', { count: toPlan.length + moved }));
-        setScope(null);
+        if (appliedToPlan + moved > 0) toast.success(t('quarterlyPlan.sync.done', { count: appliedToPlan + moved }));
+        if (appliedToPlan === toPlan.length) setScope(null);
       } catch {
         toast.error(t('quarterlyPlan.sync.failed'));
       } finally {

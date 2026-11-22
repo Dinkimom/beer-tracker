@@ -25,7 +25,8 @@ interface QuarterlyPlanBoardView {
   marks: QuarterlyPlanDraftDiff | null;
   plan: QuarterlyPlan | null;
   review: QuarterlyPlanDraftReview | null;
-  applyEdit: (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => void;
+  /** Правка плана; false — доска только для просмотра (версия из истории, черновик агента), правка не прошла. */
+  applyEdit: (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => boolean;
 }
 
 /**
@@ -39,6 +40,7 @@ export function useQuarterlyPlanShownView(
   const { t } = useI18n();
   const readOnly = useCallback(() => {
     toast(t('quarterlyPlan.history.readOnly'));
+    return false;
   }, [t]);
   if (!preview) return draftView;
   return { after: preview.plan, applyEdit: readOnly, marks: preview.marks, plan: preview.plan, review: null };

@@ -151,9 +151,10 @@ export function useQuarterlyPlanDraftPreview(input: {
     (edit: (content: QuarterlyPlanContent) => QuarterlyPlanContent) => {
       if (showing) {
         toast(t('quarterlyPlan.draft.readOnly'));
-        return;
+        return false;
       }
       saveEdit(edit);
+      return true;
     },
     [saveEdit, showing, t]
   );
