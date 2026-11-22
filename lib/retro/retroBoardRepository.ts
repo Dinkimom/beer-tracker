@@ -35,15 +35,18 @@ export async function upsertRetroBoard(input: {
 }): Promise<RetroBoard | null> {
   const incoming = parseRetroBoard(input.board, input.sprintId);
   if (!incoming) return null;
-  const base = input.base == null ? null : parseRetroBoard(input.base, input.sprintId);
+  let base = input.base == null ? null : parseRetroBoard(input.base, input.sprintId);
   for (let attempt = 0; attempt < SAVE_ATTEMPTS; attempt += 1) {
-    const saved = await writeMergedRetroBoard({
+    const result = await writeMergedRetroBoard({
       base,
       incoming,
       organizationId: input.organizationId,
       sprintId: input.sprintId,
     });
-    if (saved) return saved;
+    if (result.saved) return result.saved;
+    // Доски не было, но её успел создать другой: входящая собрана «с нуля», поэтому склеиваем с пустой
+    // базой — первые заметки обоих остаются. Без этого повтор взял бы входящую доску целиком.
+    if (result.lostInsertRace && !base) base = { cards: [], columns: [], sprintId: input.sprintId };
   }
   return null;
 }
@@ -83,14 +86,15 @@ async function writeMergedRetroBoard(input: {
   incoming: RetroBoard;
   organizationId: string;
   sprintId: number;
-}): Promise<RetroBoard | null> {
+}): Promise<{ lostInsertRace?: boolean; saved: RetroBoard | null }> {
   const row = await fetchRetroBoardRow(input);
   if (!row) {
-    return insertRetroBoard({
+    const inserted = await insertRetroBoard({
       board: input.incoming,
       organizationId: input.organizationId,
       sprintId: input.sprintId,
     });
+    return inserted ? { saved: inserted } : { lostInsertRace: true, saved: null };
   }
   const merged = input.base ? mergeRetroBoards(input.base, row.board, input.incoming) : input.incoming;
   const result = await query(
@@ -99,5 +103,5 @@ async function writeMergedRetroBoard(input: {
      RETURNING board`,
     [input.organizationId, input.sprintId, JSON.stringify(merged), row.updatedAt]
   );
-  return result.rows[0] ? merged : null;
+  return { saved: result.rows[0] ? merged : null };
 }
